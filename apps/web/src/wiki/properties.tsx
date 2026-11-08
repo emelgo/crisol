@@ -639,7 +639,7 @@ function ValueField({
           })}
           <input
             id={valueId}
-            className={styles.valueInput}
+            className={`${styles.valueInput} ${styles.pageInput}`}
             aria-label={label}
             list={`${id}-paginas`}
             value={choice}
@@ -662,7 +662,11 @@ function ValueField({
             ))}
           </datalist>
           {preferred && (
-            <button type="button" className={fieldStyles.allPages} onClick={() => setEveryPage(!everyPage)}>
+            <button
+              type="button"
+              className={`${fieldStyles.allPages} ${styles.allPagesHere}`}
+              onClick={() => setEveryPage(!everyPage)}
+            >
               {t(everyPage ? 'fields.onlyTargets' : 'fields.allPages')}
             </button>
           )}

@@ -14,6 +14,7 @@ import {
   GripVertical,
   Hash,
   Image as ImageIcon,
+  ImagePlus,
   ListPlus,
   ListTree,
   Minus,
@@ -658,6 +659,7 @@ function ImageBody({
   const files = useWorldFiles(page.worldId)
   const upload = useRef<HTMLInputElement>(null)
   const selectId = useId()
+  const [picking, setPicking] = useState(false)
   const [draft, setDraft] = useState(caption)
   useEffect(() => setDraft(caption), [caption])
   const images = files.data?.files.filter((file) => file.kind === 'image') ?? []
@@ -687,6 +689,14 @@ function ImageBody({
       </figure>
     )
   }
+  // Vacío, un recuadro discreto; al pulsarlo, elegir una del mundo o subir otra (alrededor de la página, nada pesa)
+  if (!picking)
+    return (
+      <button type="button" className={styles.imageEmpty} onClick={() => setPicking(true)}>
+        <ImagePlus size={18} aria-hidden="true" />
+        {t('panelBlocks.addImage')}
+      </button>
+    )
   return (
     <div className={styles.imagePick}>
       <label htmlFor={selectId} className={styles.visuallyHidden}>

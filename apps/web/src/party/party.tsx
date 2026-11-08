@@ -192,7 +192,6 @@ export function PartyInventory({ campaignId, me }: { campaignId: string; me?: st
                     <span className={styles.itemName}>
                       {item.name}
                       {item.note && <span className={styles.note}>{item.note}</span>}
-                      {!item.key && <span className={styles.note}>{t('party.handwritten')}</span>}
                     </span>
                     <span className={styles.quantity}>
                       <span className={styles.hidden}>{t('party.quantity')}: </span>×{item.quantity}

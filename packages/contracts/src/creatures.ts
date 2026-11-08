@@ -25,7 +25,7 @@ export const creatureInPlay = z.object({
   stats: z
     .array(z.object({ key: z.string(), label: z.string(), value: z.string() }))
     .describe('Sus primeras cifras (la CA)'),
-  condition: z.enum(['ok', 'bloodied', 'down']).describe('Malherida (a la mitad de su vida) o fuera de combate (a 0)'),
+  condition: z.enum(['ok', 'bloodied', 'down']).describe('Con heridas graves (a la mitad de su vida) o fuera de combate (a 0)'),
   hidden: z.boolean().optional().describe('Oculta a los jugadores'),
   play: z.record(z.string(), z.unknown()).describe('Lo de la partida guardado (sus valores, lo gastado, lo que lleva)')
 })

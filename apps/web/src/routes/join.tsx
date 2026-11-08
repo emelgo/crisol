@@ -6,7 +6,6 @@ import { NewAccountFields } from '../account/account-fields.tsx'
 import type { JoinResult } from '../account/client.ts'
 import { useAccounts } from '../account/context.tsx'
 import { useAnnounce } from '../components/announcer.tsx'
-import { Banner } from '../components/banner.tsx'
 import { Loading } from '../components/brand.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
 import { Field, FormError } from '../components/field.tsx'
@@ -37,9 +36,9 @@ export function Join() {
   if (pending || info.isPending) return <Loading />
   if (!info.data) {
     return (
-      <section>
+      <section className={form.centered}>
         <PageTitle>{t('join.invalidTitle')}</PageTitle>
-        <p>{t('join.invalidBody')}</p>
+        <p className={form.intro}>{t('join.invalidBody')}</p>
       </section>
     )
   }
@@ -74,13 +73,12 @@ export function Join() {
 
   const { campaignName, worldName, masterName } = info.data
   return (
-    <section>
-      <Banner
-        crumb={worldName}
-        title={t('join.title', { campaign: campaignName })}
-        detail={masterName ? t('join.byMaster', { master: masterName }) : undefined}
-        stats={[]}
-      />
+    // Centrada, como entrar y crear la cuenta (docs/diseno.md)
+    <section className={form.centered}>
+      <PageTitle>{t('join.title', { campaign: campaignName })}</PageTitle>
+      <p className={form.intro}>
+        {masterName ? `${worldName} · ${t('join.byMaster', { master: masterName })}` : worldName}
+      </p>
       <FormError message={error} />
       {account ? (
         <>

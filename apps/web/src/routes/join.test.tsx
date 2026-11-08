@@ -49,8 +49,8 @@ describe('unirse con el enlace', () => {
     })
     const router = renderJoin(accounts)
     expect(await screen.findByRole('heading', { name: 'Te invitan a La Marca' })).toBeDefined()
-    expect(screen.getByText('Eana')).toBeDefined()
-    expect(screen.getByText('Máster: Enrique')).toBeDefined()
+    // De qué mundo es y quién es su máster, en una línea bajo el título
+    expect(screen.getByText('Eana · Máster: Enrique')).toBeDefined()
     expect(accounts.calls).not.toContain('join abc')
     await userEvent.click(screen.getByRole('button', { name: 'Entrar en La Marca como jugador' }))
     expect(accounts.calls).toContain('join abc')

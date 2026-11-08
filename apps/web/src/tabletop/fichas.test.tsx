@@ -298,9 +298,12 @@ describe('las fichas en la tele', () => {
       })
     )
     const list = within(await screen.findByRole('list', { name: 'Lo que hay en la mesa' }))
-    expect(list.getAllByRole('listitem').map((item) => item.textContent)).toEqual(['Lobo 1, Herida, Derribado', 'Lía'])
+    expect(list.getAllByRole('listitem').map((item) => item.textContent)).toEqual([
+      'Lobo 1, Con heridas, Derribado',
+      'Lía'
+    ])
     await waitFor(() =>
-      expect(drawn.tokens[0]).toMatchObject({ label: 'Lobo 1', state: { text: 'Herida', tone: 'hurt' } })
+      expect(drawn.tokens[0]).toMatchObject({ label: 'Lobo 1', state: { text: 'Con heridas', tone: 'hurt' } })
     )
     act(() => channel?.onMessage({ type: 'drag', moves: [{ tokenId: wolf.id, x: 400, y: 420 }] }))
     await waitFor(() => expect(drawn.tokens[0]).toMatchObject({ x: 400, y: 420 }))

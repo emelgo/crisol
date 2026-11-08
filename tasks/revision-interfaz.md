@@ -76,25 +76,25 @@ que él decide de verdad (F, G1, G10) va con la opción por defecto apuntada en 
 - [x] C3. **«Expulsar» y «Dejar la campaña» sueltos**, sin zona de peligro ni confirmación a la vista (060, 101).
 - [ ] C4. **Filas de botones con borde, todos con el mismo peso**: Daño / Curar / Temporales (062); Tirar PG / Volver
   al suyo / Quitar de juego, uno bajo otro (066); «Quitar las copias».
-- [ ] C5. **Textos de ayuda fijos**: los atajos al pie del menú «/» (042), «Pie (opcional)» bajo cada imagen (036),
+- [x] C5. **Textos de ayuda fijos**: los atajos al pie del menú «/» (042), «Pie (opcional)» bajo cada imagen (036),
   «Escrito a mano: se queda en el grupo» en cada objeto (067), «Panel vacío · Añade datos de toda la página:
   medidores, estrellas, notas…» (enumera; en cada página sin panel), «Campaña de Valdren. Eres su máster.» (060),
   «Los dados van como siempre: sin reglas de ningún juego.» (014).
-- [ ] C6. **Alrededor de la página todo pesa**: en el panel, cada campo de enlace vacío enseña siempre «Enlazar una
+- [x] C6. **Alrededor de la página todo pesa**: en el panel, cada campo de enlace vacío enseña siempre «Enlazar una
   página…» y «Todas las páginas» (Padres, Pareja…: 031); el bloque de imagen vacío, un desplegable y «Subir una
   imagen» (033). Que salgan al acercarse, como el tipo y la × de las propiedades.
-- [ ] C7. **Las tarjetas de Sistemas no tienen engranaje** (025): la norma pone las acciones en el engranaje, siempre a
+- [x] C7. **Las tarjetas de Sistemas no tienen engranaje** (025): la norma pone las acciones en el engranaje, siempre a
   la vista (Plantillas sí lo tiene).
 - [x] C8. **Los dados, en un botón flotante con forma de d20** (Enrique, 2026-11-08; norma nueva en `docs/diseno.md`):
   fuera de la barra, en una esquina, y la ficha se abre junto a él. Resuelve lo que se vio: **«Dados» tapa el contenido fuera de las páginas** (071, 072, 075): la cabecera de la campaña, «Quién la ve»
   y Versiones en la ficha, la barra de la Mesa. Y el «?» se monta encima de sus botones. La norma: en el sitio del
   panel, sin tapar.
-- [ ] C9. **Género en la tele**: «Ilesa» bajo criaturas que nombra el máster (073); mejor «Sin heridas» (y revisar el
+- [x] C9. **Género en la tele**: «Ilesa» bajo criaturas que nombra el máster (073); mejor «Sin heridas» (y revisar el
   resto de estados).
-- [ ] C10. **`docs/diseno.md` no recoge «toda página es una hoja»** (aprobado el 2026-11-03): aún dice «con la hoja
+- [x] C10. **`docs/diseno.md` no recoge «toda página es una hoja»** (aprobado el 2026-11-03): aún dice «con la hoja
   puesta» y que los bloques de hoja solo salen en «/» en las páginas con hoja. Hoy salen en todas («Maquetación»,
   042) y las páginas largas llevan «Página 2» (036). Actualizar la norma.
-- [ ] C11. **Pantallas de cuenta**: Unirse y «Este enlace no vale» van a la izquierda; Entrar, centrada (la norma:
+- [x] C11. **Pantallas de cuenta**: Unirse y «Este enlace no vale» van a la izquierda; Entrar, centrada (la norma:
   centradas, 000–003). En Entrar, el enlace «Entrar» de arriba sobra.
 
 ## D. Móvil de la jugadora

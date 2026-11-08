@@ -1,6 +1,6 @@
 import { autoUpdate, computePosition, flip, offset, shift } from '@floating-ui/dom'
 import { useQueryClient } from '@tanstack/react-query'
-import { Link, useNavigate } from '@tanstack/react-router'
+import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
 import { LogOut, Settings, User } from 'lucide-react'
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -22,6 +22,8 @@ export function AccountMenu({ variant = 'bar' }: { variant?: 'bar' | 'ribbon' })
   const accounts = useAccounts()
   const { account, pending } = accounts.useAccount()
   const navigate = useNavigate()
+  // En «Entrar», el enlace a entrar sobra
+  const signingIn = useRouterState({ select: (state) => state.location.pathname === '/entrar' })
   const [open, setOpen] = useState(false)
   // Cerrado, se queda un momento mientras se va (animado); luego se quita
   const [shown, setShown] = useState(false)
@@ -89,6 +91,7 @@ export function AccountMenu({ variant = 'bar' }: { variant?: 'bar' | 'ribbon' })
 
   if (pending) return null
   if (!account) {
+    if (signingIn) return null
     return (
       <Link to="/entrar" className={styles.signIn}>
         {t('account.signIn')}

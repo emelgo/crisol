@@ -43,6 +43,16 @@
   font-family: inherit;
 }
 
+/* Sin pie, no se ve hasta acercarse a la imagen o escribir en él: nada de textos de ayuda fijos (docs/diseno.md) */
+.caption:placeholder-shown:not(:focus) {
+  opacity: 0;
+  transition: opacity 150ms ease-out;
+}
+
+:hover > .caption:placeholder-shown {
+  opacity: 1;
+}
+
 .tools {
   display: flex;
   flex-wrap: wrap;

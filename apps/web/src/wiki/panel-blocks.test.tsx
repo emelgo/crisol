@@ -237,6 +237,8 @@ describe('el panel de bloques de una página', () => {
     const { saved } = await renderPort()
     await add('Imagen')
     const image = await block('Imagen')
+    // Vacío, un recuadro discreto: al pulsarlo, se elige o se sube
+    await userEvent.click(image.getByRole('button', { name: 'Añadir imagen' }))
     const select = await image.findByRole('combobox', { name: 'Imagen' })
     await waitFor(() => expect(within(select).getByRole('option', { name: 'faro.png' })).toBeDefined())
     await userEvent.selectOptions(select, 'faro.png')
@@ -252,6 +254,7 @@ describe('el panel de bloques de una página', () => {
     const { api, saved } = await renderPort()
     await add('Imagen')
     const image = await block('Imagen')
+    await userEvent.click(image.getByRole('button', { name: 'Añadir imagen' }))
     const input = (await panel()).getByRole('region', { name: 'Imagen' }).querySelector('input[type="file"]')
     if (!(input instanceof HTMLInputElement)) throw new Error('sin campo de archivo')
     const click = vi.spyOn(input, 'click')
@@ -267,6 +270,7 @@ describe('el panel de bloques de una página', () => {
     const { api } = await renderPort()
     await add('Imagen')
     const region = (await panel()).getByRole('region', { name: 'Imagen' })
+    await userEvent.click(within(region).getByRole('button', { name: 'Añadir imagen' }))
     const input = region.querySelector('input[type="file"]')
     if (!(input instanceof HTMLInputElement)) throw new Error('sin campo de archivo')
     // El accept del campo no deja elegirlo con userEvent: se sube a mano

@@ -7,7 +7,7 @@ import type { SystemSummary } from '@crisol/contracts'
 import { type Problem, validateFile } from '@crisol/systems'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Navigate } from '@tanstack/react-router'
-import { CircleAlert, Download, FileUp, Info, Lock, Plus, ScrollText, Sparkles } from 'lucide-react'
+import { CircleAlert, Download, FileUp, Info, Lock, Plus, ScrollText, Settings, Sparkles } from 'lucide-react'
 import { useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
@@ -141,6 +141,17 @@ function SystemCard({ system, onHover }: { system: SystemSummary; onHover: (id: 
         <span className={styles.version}>
           {t('systems.version', { version: system.builtIn ? system.release : system.version })}
         </span>
+        {/* Sus acciones, en su engranaje, siempre a la vista (docs/diseno.md) */}
+        <button
+          type="button"
+          className={screen.gear}
+          aria-label={t('systems.settingsOf', { name: system.name })}
+          title={t('systems.settingsOf', { name: system.name })}
+          aria-haspopup="dialog"
+          onClick={() => setOpen(true)}
+        >
+          <Settings size={16} aria-hidden="true" />
+        </button>
       </div>
       {open && (
         <SystemWindow

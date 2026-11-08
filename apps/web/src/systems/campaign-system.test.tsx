@@ -123,7 +123,7 @@ describe('el sistema de una campaña', () => {
     const dialog = await settingsOf('La Marca')
     const select = dialog.getByRole<HTMLSelectElement>('combobox', { name: 'Sistema' })
     expect(select.value).toBe('')
-    expect(dialog.getByText('Los dados van como siempre: sin reglas de ningún juego.')).toBeDefined()
+    expect(dialog.getByText('Sin reglas de ningún juego.')).toBeDefined()
     // Sin cambios, ni «Guardar»
     expect(dialog.queryByRole('button', { name: 'Guardar' })).toBeNull()
     await userEvent.selectOptions(select, CINCO.id)

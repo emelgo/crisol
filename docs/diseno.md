@@ -146,11 +146,14 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   columna de iconos arriba a la izquierda; el botón derecho ofrece «Pin aquí» y «Pin con página nueva» (su nombre es
   el de la página, que nace como subpágina). Pulsar un pin abre su panel a la derecha (abajo en el móvil), donde todo
   se guarda al momento; arrastrarlo lo mueve y el doble clic abre su página. Los pines, las ocho formas de Everlore.
-- **La hoja es lo que hace única la wiki**, y se escribe ya maquetada (Enrique, 2026-11-03: «verlo directamente como
-  se ve en la hoja pero sin las texturas»): con la hoja puesta, el texto cae en sus páginas y sus dos columnas como al
-  imprimir (el mismo paginador y la misma letra y tamaño), con su número y su pie, pero con los colores de la app; el
-  papel y las texturas del tema, solo al imprimir y en el PDF. En el móvil, una columna seguida. Los bloques de hoja
-  (saltos, statblock, nota lateral, a lo ancho, índice) solo salen en «/» en las páginas con hoja.
+- **La hoja es lo que hace única la wiki, y toda página es una hoja** (Enrique, 2026-11-03: «verlo directamente como
+  se ve en la hoja pero sin las texturas»; aprobada la prueba «toda página es una hoja», «está quedando genial»): el
+  texto se escribe seguido y cae en sus páginas como al imprimir (el mismo paginador y la misma letra y tamaño), con una
+  raya fina y «Página N» donde empieza cada una, y con los colores de la app; el papel y las texturas del tema, solo al
+  imprimir y en el PDF. Una columna por defecto; «Columnas» (1 o 2 desde ese punto) y los demás bloques de maquetación
+  (saltos, statblock, nota lateral, a lo ancho, índice) están en «/» → Maquetación en todas las páginas. En el móvil,
+  una columna seguida. Los títulos del texto, igual con hoja y sin ella (en su letra, sin mayúsculas, cada nivel en su
+  color), también en lo que lee un jugador.
 
 - **Los cambios no son bruscos y se notan**: un elemento nuevo entra animado (sube y crece, con el contorno
   iluminado un momento) cuando el cuadro que lo creó ya se ha ido, y uno borrado baja, encoge y se desvanece antes de

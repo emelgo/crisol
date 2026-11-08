@@ -62,7 +62,9 @@ describe('«Sistemas», en Mis mundos', () => {
     expect(mine.getByRole('button', { name: 'Fronteras' })).toBeDefined()
     expect(mine.getByText('Subido de un archivo')).toBeDefined()
     const builtIn = within(screen.getByRole('list', { name: 'De serie' }))
-    expect(builtIn.getAllByRole('button').map((a) => a.textContent)).toEqual(['En blanco'])
+    expect(builtIn.getAllByRole('button').map((a) => a.textContent)).toEqual(['En blanco', ''])
+    // Su engranaje, siempre a la vista
+    expect(builtIn.getByRole('button', { name: 'Ajustes de En blanco' })).toBeDefined()
     const blankItem = within(builtIn.getByRole('button', { name: 'En blanco' }).closest('li') as HTMLElement)
     expect(blankItem.getByLabelText('No se puede cambiar')).toBeDefined()
     expect(screen.queryByRole('button', { name: 'Copiar' })).toBeNull()

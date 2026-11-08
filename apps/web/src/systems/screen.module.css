@@ -39,6 +39,9 @@
 }
 
 .version {
+  /* A la izquierda del pie; el engranaje, a la derecha */
+  align-self: center;
+  margin-inline-end: auto;
   font-size: 0.75rem;
   color: var(--color-muted);
   font-variant-numeric: tabular-nums;

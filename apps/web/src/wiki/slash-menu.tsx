@@ -205,9 +205,6 @@ const SlashList = forwardRef<SlashListHandle, SlashListProps>(function SlashList
         ))}
       </div>
       {items.length === 0 && <p className={styles.empty}>{t('blocks.none')}</p>}
-      <p className={styles.help} aria-hidden="true">
-        {t('blocks.help')}
-      </p>
     </div>
   )
 })

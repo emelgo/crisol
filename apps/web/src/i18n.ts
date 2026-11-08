@@ -501,7 +501,7 @@ export const es = {
     otherMax: 'Otro máximo',
     ownMax: 'Volver al suyo',
     remove: 'Quitar de juego',
-    condition: { bloodied: 'Malherida', down: 'Fuera de combate' },
+    condition: { bloodied: 'Con heridas graves', down: 'Fuera de combate' },
     // Lo que ven los jugadores (docs/specs/compendio-jugadores.md)
     players: 'Los jugadores',
     visible: 'A la vista',
@@ -513,9 +513,10 @@ export const es = {
     inSight_other: '{{count}} a la vista',
     nothingInSight: 'No hay nada a la vista.',
     state: {
-      unhurt: 'Ilesa',
-      hurt: 'Herida',
-      bloodied: 'Malherida',
+      // Sin género: valen para cualquier nombre que ponga el máster (docs/diseno.md)
+      unhurt: 'Sin heridas',
+      hurt: 'Con heridas',
+      bloodied: 'Con heridas graves',
       dying: 'A punto de caer',
       down: 'Fuera de combate'
     },
@@ -612,7 +613,6 @@ export const es = {
     toContainer: 'A {{name}}',
     toParty: 'Al grupo',
     you: 'tú',
-    handwritten: 'Escrito a mano: se queda en el grupo',
     remove: 'Quitar «{{name}}»',
     save: 'Guardar',
     cancel: 'Cancelar',
@@ -867,7 +867,6 @@ export const es = {
     note: 'Nota oculta',
     noteHint: 'Solo al editar',
     none: 'Ningún bloque se llama así.',
-    help: '↑↓ para moverte · Intro para elegir · Esc para cerrar',
     inserted: 'Bloque insertado: {{block}}.'
   },
   summaries: {
@@ -1156,7 +1155,7 @@ export const es = {
   },
   panelBlocks: {
     empty: 'Panel vacío',
-    emptyHint: 'Añade datos de toda la página: medidores, estrellas, notas…',
+    emptyHint: 'Lo de esta página que quieras tener a la vista.',
     add: 'Añadir bloque',
     kinds: {
       text: 'Texto',
@@ -1190,6 +1189,7 @@ export const es = {
     token: 'Ficha {{count}} de {{max}}',
     chooseImage: 'Imagen',
     noImage: 'Sin imagen',
+    addImage: 'Añadir imagen',
     upload: 'Subir una imagen',
     caption: 'Pie',
     noSubpages: 'Aún no tiene subpáginas.',
@@ -1460,7 +1460,7 @@ export const es = {
   campaignSystem: {
     system: 'Sistema',
     none: 'Sin sistema',
-    noneHint: 'Los dados van como siempre: sin reglas de ningún juego.',
+    noneHint: 'Sin reglas de ningún juego.',
     sources: 'Fuentes',
     language: 'Idioma del contenido',
     languages: { es: 'Español', en: 'English' },
@@ -2772,7 +2772,7 @@ export const es = {
       home: 'El mundo: lo esencial y lo último que has tocado.',
       wiki: 'El mundo: se abre en su portada; aquí se esconde o se ve su árbol.',
       search: 'Filtra el árbol por nombre o #etiqueta; con Intro, busca en el texto de todas.',
-      panel: 'Datos de toda la página, a la vista: medidores, estrellas, notas…',
+      panel: 'Lo de la página que quieras tener a la vista.',
       whoKnows: 'Qué sabe de esta página cada campaña, y lo que ven sus jugadores.',
       bookmarks: 'Tus páginas marcadas, a mano.',
       files: 'Las imágenes y documentos del mundo.',

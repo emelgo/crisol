@@ -372,3 +372,17 @@ textarea.valueInput {
 .valueInput::-webkit-calendar-picker-indicator {
   display: none !important;
 }
+
+/* Un campo de enlaces: «Enlazar una página…» y «Todas las páginas» solo al acercarse o al escribir (alrededor de la
+   página, nada pesa) */
+.prop:not(:hover, :focus-within) .pageInput::placeholder {
+  color: transparent;
+}
+
+.allPagesHere {
+  display: none;
+}
+
+.prop:focus-within .allPagesHere {
+  display: inline-block;
+}

@@ -28,7 +28,7 @@ test('una jugadora nueva abre el enlace, crea su cuenta y queda en la campaña',
   await skipTours(player, jugadora.email)
   await player.goto(link)
   await expect(player.getByRole('heading', { name: 'Te invitan a La Marca' })).toBeVisible()
-  await expect(player.getByText('Máster: Enrique')).toBeVisible()
+  await expect(player.getByText('Eana · Máster: Enrique')).toBeVisible()
   await fillNewAccount(player, jugadora)
   await player.getByRole('button', { name: 'Crear la cuenta y entrar' }).click()
   await expect(player.getByRole('heading', { level: 1, name: 'La Marca', exact: true })).toBeVisible()

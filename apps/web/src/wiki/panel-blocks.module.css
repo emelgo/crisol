@@ -393,6 +393,29 @@
   outline: none;
 }
 
+/* Un bloque de imagen vacío: un recuadro discontinuo y discreto, que se aviva al pasar */
+.imageEmpty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  inline-size: 100%;
+  min-block-size: 4.5rem;
+  border: 1px dashed var(--color-border);
+  border-radius: 6px;
+  background: none;
+  color: var(--color-muted);
+  font: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.imageEmpty:hover,
+.imageEmpty:focus-visible {
+  border-color: var(--color-text);
+  color: var(--color-text);
+}
+
 .imagePick {
   display: flex;
   flex-wrap: wrap;
