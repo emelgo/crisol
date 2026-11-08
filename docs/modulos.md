@@ -16,8 +16,9 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
 - **Decidido por Enrique (2026-11-08)** y apuntado en `docs/diseno.md`: la campaña se abre en la Mesa a pantalla completa,
   con barra de pestañas a la derecha como Foundry (Tiradas, Combate, Escenas, Personajes, Compendio, Páginas, Ajustes);
   páginas del mundo en ventanas sobre la Mesa; la jugadora abre en su ficha; el inventario del grupo, en la ficha (como
-  D&D Beyond). **Siguiente paso**: el lienzo de esa campaña nueva (ciclo de módulo: prototipos que Enrique aprueba),
-  luego el plan y construirlo en porciones.
+  D&D Beyond). El lienzo ya está («Campaña en la Mesa», https://claude.ai/artifact/1gY6Mun8KisrJ6d2fXGbLj;
+  fuentes en `out/lienzo-campana/`, fuera de git). **Siguiente paso**: que Enrique lo apruebe y confirme las 14
+  «Decisiones que tomé yo» del final; luego el plan y construirlo en porciones.
 - Dev: si una pantalla da «Ya no existe» o 500 con «relation … does not exist», faltan migraciones en la base de
   desarrollo: `pnpm db:migrate`.
 
