@@ -7,6 +7,21 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
+### Para retomar (2026-11-08: revisión global de la interfaz, hallazgos por repasar)
+
+- **Hecho**: recorrido de todas las pantallas (máster, jugadora, tele, tema claro, móvil de la jugadora) con datos de
+  muestra; unos 60 hallazgos en `tasks/revision-interfaz.md` (fallos, incoherencias entre módulos, normas sin cumplir, accesibilidad del código,
+  menores y preguntas), también en la página «Revisión de la interfaz»
+  (https://claude.ai/artifact/GfPUrKjx5L2MbQbPYjbJv6) con sus capturas. Nada arreglado aún.
+- **Decidido por Enrique**: el móvil solo para la vista de la jugadora; el máster, siempre en el PC (`docs/diseno.md`).
+- **El entorno de la revisión** (para volver a capturar): `node e2e/.revision/servidor.ts` (API en 8132, base
+  `crisol_revision`; `REVISION_NUEVA=1` la rehace y luego `node e2e/.revision/sembrar.ts`), Vite en 5174 con
+  `npx vite --config .revision/vite.config.ts` desde `apps/web`, y `node e2e/.revision/capturar.ts [filtro]` (deja las
+  capturas en `out/revision/`). Esos archivos no van a git (`.git/info/exclude`). Cuentas en `tasks/revision-interfaz.md`.
+- **Lo siguiente**: repasar la lista con Enrique (qué sí, qué no, las preguntas de la sección F) y arreglar en local
+  (`pnpm dev` en 5173, que lo vea al momento), empezando por los fallos (A) y el esqueleto común de pantalla (B1, B2).
+  Pruebas, CI y despliegue al final, en un PR que lleve también esta rama.
+
 ### Para retomar (2026-11-07, noche: módulo 6 en `main` y en staging)
 
 - **PR #114, fusionado y desplegado en staging** (2026-11-07; migraciones hasta la 0062). El ciclo entero: entrevista (abajo, § «### 6.
