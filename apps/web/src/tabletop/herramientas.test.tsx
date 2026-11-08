@@ -146,9 +146,7 @@ async function renderMesa() {
   })
   render(
     <App
-      router={createAppRouter(
-        createMemoryHistory({ initialEntries: [`/mundos/${WORLD.id}/campanas/${CAMPAIGN.id}/mesa`] })
-      )}
+      router={createAppRouter(createMemoryHistory({ initialEntries: [`/mundos/${WORLD.id}/campanas/${CAMPAIGN.id}`] }))}
       accounts={fakeAccountClient({ account: { name: 'Enrique', email: EMAIL } }).client}
       api={api.client}
     />

@@ -116,7 +116,7 @@ async function renderMesa(campaign: Campaign = CAMPAIGN) {
     )
   }
   const router = createAppRouter(
-    createMemoryHistory({ initialEntries: [`/mundos/${WORLD.id}/campanas/${campaign.id}/mesa`] })
+    createMemoryHistory({ initialEntries: [`/mundos/${WORLD.id}/campanas/${campaign.id}`] })
   )
   render(
     <App

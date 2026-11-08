@@ -1,0 +1,160 @@
+/* La barra de la derecha de la Mesa: pestañas con icono y nombre arriba, el panel debajo (lienzo «Campaña en la Mesa») */
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  inline-size: 24rem;
+  min-block-size: 0;
+  border-inline-start: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.folded {
+  inline-size: 3rem;
+  align-items: center;
+  gap: 0.25rem;
+  padding-block: 0.5rem;
+}
+
+.tabs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  grid-auto-flow: column;
+  padding: 6px 4px 0;
+  border-block-end: 1px solid var(--color-border);
+}
+
+.tab {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 0 9px;
+  border: 0;
+  background: none;
+  color: var(--color-muted);
+  font: inherit;
+  min-inline-size: 0;
+  font-size: 0.625rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.tab:hover,
+.tab[aria-selected="true"] {
+  color: var(--color-text);
+}
+
+.tab[aria-selected="true"] svg {
+  color: var(--color-brand);
+}
+
+.tab[aria-selected="true"]::after {
+  content: "";
+  position: absolute;
+  inset-inline: 8px;
+  inset-block-end: -1px;
+  block-size: 2px;
+  background: var(--color-brand);
+}
+
+.tab:focus-visible,
+.icon:focus-visible,
+.fold:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
+}
+
+.dot {
+  position: absolute;
+  inset-block-start: 4px;
+  inset-inline-end: calc(50% - 16px);
+  inline-size: 7px;
+  block-size: 7px;
+  border-radius: 50%;
+  background: var(--color-brand);
+  box-shadow: 0 0 0 2px var(--color-surface);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem 0.75rem 0.5rem 1rem;
+}
+
+.title {
+  flex: 1;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  color: var(--color-h2);
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+.fold,
+.icon {
+  position: relative;
+  display: grid;
+  place-items: center;
+  inline-size: 2rem;
+  block-size: 2rem;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.fold:hover,
+.icon:hover {
+  background: var(--color-raised);
+  color: var(--color-text);
+}
+
+.icons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0.5rem 0 0;
+  border-block-start: 1px solid var(--color-border);
+  list-style: none;
+}
+
+.icons .dot {
+  inset-block-start: 3px;
+  inset-inline-end: 3px;
+}
+
+.body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.6rem;
+  min-block-size: 0;
+  padding: 0.25rem 1rem 1rem;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .body {
+    animation: in 0.16s ease-out;
+  }
+
+  @keyframes in {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+  }
+}

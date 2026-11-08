@@ -10,6 +10,10 @@ import { App } from '../app.tsx'
 import { createAppRouter } from '../router.tsx'
 import { announced, inMain } from '../testing.ts'
 
+// El máster abre la campaña en la Mesa: su canal y su lienzo, de mentira (los ajustes van en su barra)
+vi.mock('../tabletop/channel.ts', async () => (await import('../tabletop/fakes.ts')).quietChannel())
+vi.mock('../tabletop/use-renderer.ts', async () => (await import('../tabletop/fakes.ts')).blindRenderer())
+
 const ORG = { id: crypto.randomUUID(), name: 'Fateforge', role: 'owner' as const }
 const world: World = {
   id: crypto.randomUUID(),
@@ -41,7 +45,10 @@ const members: Member[] = [
 
 const renderCampaign = (c: Campaign, w: World = world) => {
   const api = fakeApi({ organizations: [ORG], worlds: [w], campaigns: [c], members: { [c.id]: members } })
-  const router = createAppRouter(createMemoryHistory({ initialEntries: [`/mundos/${w.id}/campanas/${c.id}`] }))
+  // El máster, en la pestaña Ajustes de la Mesa (quien juega no tiene Mesa aún: su portada)
+  const router = createAppRouter(
+    createMemoryHistory({ initialEntries: [`/mundos/${w.id}/campanas/${c.id}?panel=ajustes`] })
+  )
   render(
     <App
       router={router}
@@ -52,18 +59,12 @@ const renderCampaign = (c: Campaign, w: World = world) => {
   return { api, router }
 }
 
-/** La ventana de la invitación (se abre con «Invitar», junto al título) */
-const openInvite = async () => userEvent.click(await screen.findByRole('button', { name: 'Invitar' }))
-/** El enlace de invitación que hay ahora: abre su ventana, lo lee y la cierra */
-const currentLink = async () => {
-  await openInvite()
-  const value = ((await screen.findByLabelText('Enlace de invitación')) as HTMLInputElement).value
-  await userEvent.click(
-    within(screen.getByRole('dialog', { name: 'Invitación' })).getByRole('button', { name: 'Cerrar' })
-  )
-  await waitFor(() => expect(screen.queryByLabelText('Enlace de invitación')).toBeNull())
-  return value
+/** La invitación, a la vista en la pestaña Ajustes de la Mesa */
+const openInvite = async () => {
+  await screen.findByRole('heading', { name: 'Invitación' })
 }
+/** El enlace de invitación que hay ahora */
+const currentLink = async () => ((await screen.findByLabelText('Enlace de invitación')) as HTMLInputElement).value
 
 describe('una campaña y su enlace de invitación', () => {
   it('desde Mis mundos se entra en la campaña, por su tarjeta', async () => {

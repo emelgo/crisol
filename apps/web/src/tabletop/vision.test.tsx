@@ -119,9 +119,7 @@ async function renderMesa() {
   await api.client.call('openScene', { campaignId: CAMPAIGN.id, sceneId: scene.id })
   render(
     <App
-      router={createAppRouter(
-        createMemoryHistory({ initialEntries: [`/mundos/${WORLD.id}/campanas/${CAMPAIGN.id}/mesa`] })
-      )}
+      router={createAppRouter(createMemoryHistory({ initialEntries: [`/mundos/${WORLD.id}/campanas/${CAMPAIGN.id}`] }))}
       accounts={fakeAccountClient({ account: { name: 'Enrique', email: EMAIL } }).client}
       api={api.client}
     />

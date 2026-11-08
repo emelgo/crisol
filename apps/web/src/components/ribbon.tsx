@@ -328,7 +328,8 @@ export function Ribbon() {
       </nav>
       {/* Abajo y fijo: lo de arriba puede crecer o no caber (al entrar en un mundo) sin moverlo */}
       <div className={styles.foot}>
-        {isOwner && (
+        {/* En la Mesa del máster, el historial y la papelera van con el mundo */}
+        {isOwner && !(panelsCampaign && campaignRole === 'master') && (
           <>
             {/* Se abren encima, sin dejar lo que se está viendo */}
             <button
@@ -418,6 +419,26 @@ function CampaignPanels({
   const { t } = useTranslation()
   const { setCampaign } = useDice()
   useEffect(() => setCampaign(worldId, campaignId), [setCampaign, worldId, campaignId])
+  // El máster: la Mesa (es la campaña) y el mundo, para escribir con calma; lo demás está en la barra de la Mesa
+  if (master)
+    return (
+      <>
+        <Link
+          to="/mundos/$worldId/campanas/$campaignId"
+          params={{ worldId, campaignId }}
+          className={styles.item}
+          viewTransition={SECTION}
+          data-tour="barra-mesa"
+        >
+          <Label icon={Layers} text={t('ribbon.table')} />
+        </Link>
+        {ownsWiki && (
+          <Link to="/mundos/$worldId/wiki" params={{ worldId }} className={styles.item} data-tour="barra-paginas">
+            <Label icon={Globe} text={worldName} />
+          </Link>
+        )}
+      </>
+    )
   return (
     <>
       <Link

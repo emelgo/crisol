@@ -6,7 +6,7 @@
  */
 import type { CombatantView, CombatView, TokenView, TurnStarted } from '@crisol/contracts'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { ChevronLeft, ChevronRight, Dices, EyeOff, Flag, GripVertical, Layers, Link2, Unlink, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Dices, EyeOff, Flag, GripVertical, Link2, Unlink, X } from 'lucide-react'
 import { type DragEvent, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
@@ -43,8 +43,7 @@ export function CombatPanel({
   combat,
   tokens,
   selected,
-  onPick,
-  onShowPanel
+  onPick
 }: {
   campaignId: string
   combat: CombatView
@@ -53,7 +52,6 @@ export function CombatPanel({
   selected: string[]
   /** Elegir a alguien de la lista: su ficha, y la mesa se centra en ella */
   onPick: (tokenId: string) => void
-  onShowPanel: () => void
 }) {
   const { t } = useTranslation()
   const api = useApi()
@@ -104,20 +102,11 @@ export function CombatPanel({
   }
   return (
     <aside className={styles.panel} aria-label={t('combat.title')}>
+      {/* El título es el de la pestaña: aquí, la ronda */}
       <header className={styles.head}>
-        <h2>{t('combat.title')}</h2>
         <span className={styles.round}>
           {combat.round === 0 ? t('combat.notStarted') : t('combat.round', { round: combat.round })}
         </span>
-        <button
-          type="button"
-          className={styles.icon}
-          aria-label={t('combat.showPanel')}
-          title={t('combat.showPanel')}
-          onClick={onShowPanel}
-        >
-          <Layers aria-hidden="true" size={16} />
-        </button>
       </header>
       <div className={styles.controls} data-tour="combate-turno">
         <button

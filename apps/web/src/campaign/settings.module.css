@@ -1,0 +1,56 @@
+/* La pestaña Ajustes de la Mesa: la tarjeta de la campaña y, debajo, sus secciones */
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.root h2 {
+  margin: 0 0 0.5rem;
+  color: var(--color-muted);
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+.card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: var(--color-raised);
+  clip-path: var(--cut);
+}
+
+.cover {
+  flex: none;
+  inline-size: 3.5rem;
+  block-size: 3.5rem;
+  object-fit: cover;
+  background: var(--color-frame);
+  clip-path: var(--cut-inner);
+}
+
+.name {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-inline-size: 0;
+}
+
+.name b {
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  text-transform: uppercase;
+}
+
+.name span {
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+}
+
+.invite {
+  display: block;
+}

@@ -100,9 +100,7 @@ async function renderTable() {
   const wolves = (await api.client.call('putInPlay', { campaignId: CAMPAIGN.id, key: 'lobo', count: 2 })).creatures
   render(
     <App
-      router={createAppRouter(
-        createMemoryHistory({ initialEntries: [`/mundos/${WORLD.id}/campanas/${CAMPAIGN.id}/mesa`] })
-      )}
+      router={createAppRouter(createMemoryHistory({ initialEntries: [`/mundos/${WORLD.id}/campanas/${CAMPAIGN.id}`] }))}
       accounts={fakeAccountClient({ account: { name: 'Enrique', email: EMAIL } }).client}
       api={api.client}
     />
@@ -126,7 +124,7 @@ describe('las fichas en la mesa', () => {
   it('las criaturas en juego se ponen desde el panel; la ficha se pinta con su rótulo y su vida', async () => {
     const user = userEvent.setup()
     const { api, push } = await renderTable()
-    await user.click(panel().getByRole('tab', { name: 'Criaturas' }))
+    await user.click(panel().getByRole('tab', { name: 'Compendio' }))
     const inPlay = within(await panel().findByRole('list', { name: 'En juego' }))
     await user.click(inPlay.getByRole('button', { name: 'Poner en la mesa: Lobo 1' }))
     await waitFor(async () => expect(await tokensOf(api)).toHaveLength(1))
@@ -180,7 +178,7 @@ describe('las fichas en la mesa', () => {
     await user.tab()
     await waitFor(async () => expect((await tokensOf(api))[0]?.label).toBe('Alfa'))
     // Con la ficha elegida, el panel guarda un encuentro con ella
-    await user.click(panel().getByRole('tab', { name: 'Encuentros' }))
+    await user.click(panel().getByRole('tab', { name: 'Escenas' }))
     await user.type(panel().getByLabelText('Guardar como encuentro (la elegida)'), 'Manada')
     await user.click(panel().getByRole('button', { name: 'Guardar' }))
     await waitFor(async () =>
@@ -210,7 +208,9 @@ describe('las fichas en la mesa', () => {
         }
       ]
     })
-    await user.click(panel().getByRole('tab', { name: 'Encuentros' }))
+    // Escenas ya está abierta (con los encuentros de antes): se vuelve a ella para verlo
+    await user.click(panel().getByRole('tab', { name: 'Compendio' }))
+    await user.click(panel().getByRole('tab', { name: 'Escenas' }))
     await user.click(await panel().findByRole('button', { name: 'Poner en la mesa: Manada' }))
     await waitFor(async () => expect(await tokensOf(api)).toHaveLength(2))
     const [a, b] = await tokensOf(api)

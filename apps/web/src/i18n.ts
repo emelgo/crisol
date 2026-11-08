@@ -1655,6 +1655,24 @@ export const es = {
     zoomOut: 'Alejar',
     fit: 'Encuadrar todo',
     panel: 'Panel de la mesa',
+    // La barra de la derecha de la Mesa (sidebar.tsx)
+    sidebar: {
+      rolls: 'Tiradas',
+      combat: 'Combate',
+      scenes: 'Escenas',
+      characters: 'Personajes',
+      compendium: 'Compendio',
+      pages: 'Páginas',
+      settings: 'Ajustes',
+      fold: 'Plegar la barra',
+      unfold: 'Desplegar la barra'
+    },
+    pages: {
+      search: 'Buscar en las páginas',
+      empty: 'El mundo aún no tiene páginas.',
+      expand: 'Abrir {{title}}',
+      collapse: 'Cerrar {{title}}'
+    },
     scenes: 'Escenas',
     searchScenes: 'Buscar escenas',
     open: 'Abrir',
@@ -1965,16 +1983,13 @@ export const es = {
   },
   // El combate en la mesa (docs/specs/combate.md)
   combat: {
+    none: 'Sin combate. Elige fichas en el mapa o empieza con todas.',
     title: 'Combate',
-    start: 'Combate',
+    start: 'Empezar el combate',
     startChosen_one: 'Combate con la elegida',
     startChosen_other: 'Combate con las {{count}} elegidas',
-    startAll: 'Empezar un combate con todas las fichas de la escena',
-    back: 'Combate · ronda {{round}}',
-    backNotStarted: 'Volver al combate',
     notStarted: 'Sin empezar',
     round: 'Ronda {{round}}',
-    showPanel: 'Ver el panel de la mesa',
     previous: 'Turno anterior',
     first: 'Primer turno',
     next: 'Siguiente turno',

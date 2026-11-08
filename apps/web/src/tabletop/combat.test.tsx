@@ -124,9 +124,7 @@ async function renderTable() {
   })
   render(
     <App
-      router={createAppRouter(
-        createMemoryHistory({ initialEntries: [`/mundos/${WORLD.id}/campanas/${CAMPAIGN.id}/mesa`] })
-      )}
+      router={createAppRouter(createMemoryHistory({ initialEntries: [`/mundos/${WORLD.id}/campanas/${CAMPAIGN.id}`] }))}
       accounts={fakeAccountClient({ account: { name: 'Enrique', email: EMAIL } }).client}
       api={api.client}
     />
@@ -145,7 +143,8 @@ describe('el combate en la mesa', () => {
   it('empezar, escribir la iniciativa, pasar turnos (con su aviso y su aro), dañar a dos a la vez y acabar', async () => {
     const user = userEvent.setup()
     const { api, push } = await renderTable()
-    await user.click(await screen.findByRole('button', { name: 'Combate' }))
+    await user.click(await screen.findByRole('tab', { name: 'Combate' }))
+    await user.click(await screen.findByRole('button', { name: 'Empezar el combate' }))
     await waitFor(async () =>
       expect((await api.client.call('getCombat', { campaignId: CAMPAIGN.id })).combat?.combatants).toHaveLength(2)
     )

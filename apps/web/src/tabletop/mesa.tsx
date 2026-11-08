@@ -8,7 +8,7 @@
  * láser; abajo en la columna, los widgets, la pantalla del máster y las instantáneas. Lo de la campaña llega por el
  * canal de la mesa; lo que se cambia, por la API
  */
-import type { CampaignTableView, SceneView, SceneViewport, TokenView } from '@crisol/contracts'
+import type { Campaign, CampaignTableView, SceneView, SceneViewport, TokenView } from '@crisol/contracts'
 import {
   framingRect,
   isTrackpadWheel,
@@ -23,7 +23,7 @@ import {
 } from '@crisol/tabletop'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getRouteApi, Link, Navigate } from '@tanstack/react-router'
-import { ChevronDown, ExternalLink, EyeOff, Maximize, Minus, Play, Plus, Swords, Tv } from 'lucide-react'
+import { ChevronDown, ExternalLink, EyeOff, Maximize, Minus, Play, Plus, Tv } from 'lucide-react'
 import {
   type KeyboardEvent,
   type PointerEvent,
@@ -36,25 +36,22 @@ import {
   useState
 } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
-import { Loading } from '../components/brand.tsx'
 import { useDismiss } from '../components/dismiss.ts'
 import { FormError } from '../components/field.tsx'
-import { failed, LoadError } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { Tour } from '../components/tour.tsx'
 import { canvasViewOf, framingOf, REFERENCE_ASPECT, sceneViewportOf, sceneViewportOfCanvas } from './camera.ts'
 import { connectTable, type DragMove, type TableChannel, type TableStatus } from './channel.ts'
-import { CombatPanel } from './combat-panel.tsx'
 import { masterDraw } from './draw.ts'
 import { decodeMask, fogImage, fogLayerOf } from './fog-paint.ts'
 import { GmPanel, GmScreen, useGmSettings } from './gm-screen.tsx'
 import { GroupDamage } from './group-damage.tsx'
 import { MarksLayer, placeMarks } from './marks-layer.tsx'
+import { MasterSidebar } from './master-sidebar.tsx'
 import styles from './mesa.module.css'
-import { PLACING_TYPE, type Placing, TablePanel } from './panel.tsx'
+import { PLACING_TYPE, type Placing } from './panel.tsx'
 import { Preparing } from './preparing.tsx'
 import { masterTileUrl, sceneListKey } from './queries.ts'
 import type { RendererScene } from './renderer.ts'
@@ -86,33 +83,10 @@ import { useWidgets, WidgetCards, WidgetsPanel } from './widgets.tsx'
 
 const route = getRouteApi('/mundos/$worldId/campanas/$campaignId/mesa')
 
-/** La ruta: la mesa solo es del máster de la campaña */
+/** La dirección vieja de la mesa: la campaña ya se abre en ella */
 export function MesaScreen() {
-  const { t } = useTranslation()
-  const api = useApi()
   const { worldId, campaignId } = route.useParams()
-  const { account, pending } = useAccounts().useAccount()
-  const campaigns = useQuery({
-    queryKey: ['campaigns', worldId],
-    queryFn: () => api.call('listCampaigns', { worldId }),
-    enabled: Boolean(account)
-  })
-  const campaign = campaigns.data?.campaigns.find((c) => c.id === campaignId)
-  if (pending) return null
-  if (!account) return <Navigate to="/entrar" replace />
-  if (!campaigns.data)
-    return failed(campaigns) ? <LoadError error={campaigns.error} onRetry={() => campaigns.refetch()} /> : <Loading />
-  if (!campaign)
-    return (
-      <section className={styles.missing}>
-        <PageTitle>{t('campaign.notFound')}</PageTitle>
-        <Link to="/mundos">{t('worlds.title')}</Link>
-      </section>
-    )
-  // La mesa es del máster: un jugador vuelve a su campaña
-  if (campaign.role !== 'master')
-    return <Navigate to="/mundos/$worldId/campanas/$campaignId" params={{ worldId, campaignId }} replace />
-  return <Mesa key={campaignId} worldId={worldId} campaignId={campaignId} campaignName={campaign.name} />
+  return <Navigate to="/mundos/$worldId/campanas/$campaignId" params={{ worldId, campaignId }} replace />
 }
 
 type Gesture = {
@@ -124,7 +98,18 @@ type Gesture = {
 
 type FrameDrag = { kind: 'move' | 'resize'; start: Point; center: Point; width: number }
 
-function Mesa({ worldId, campaignId, campaignName }: { worldId: string; campaignId: string; campaignName: string }) {
+/** La mesa del máster: es lo que se ve al abrir su campaña (la ruta de la campaña comprueba quién es) */
+export function Mesa({
+  worldId,
+  worldName,
+  campaign: current
+}: {
+  worldId: string
+  worldName: string
+  campaign: Campaign
+}) {
+  const campaignId = current.id
+  const campaignName = current.name
   const { t } = useTranslation()
   const api = useApi()
   const errorText = useErrorText()
@@ -186,14 +171,8 @@ function Mesa({ worldId, campaignId, campaignName }: { worldId: string; campaign
     act.mutate(() => api.call('openScene', { campaignId, sceneId }))
   }
   const tokens = useMemo(() => (table?.tokens ?? []).filter((token) => token.sceneId === table?.open?.id), [table])
-  // El combate: su panel en lugar del de la mesa (con un botón para ir y volver)
+  // El combate (su panel, en la pestaña Combate de la barra)
   const combat = table?.combat ?? null
-  const [panelView, setPanelView] = useState<'combat' | 'tabs'>('combat')
-  const [shownCombat, setShownCombat] = useState<string | null>(null)
-  if ((combat?.id ?? null) !== shownCombat) {
-    setShownCombat(combat?.id ?? null)
-    setPanelView('combat')
-  }
   // Quien tiene el turno: su ficha lleva el aro y la mesa se centra en ella (si no se ve)
   const turnTokens = useMemo(
     () => new Set((combat?.combatants ?? []).filter((c) => c.active && c.tokenId).map((c) => c.tokenId as string)),
@@ -461,7 +440,6 @@ function Mesa({ worldId, campaignId, campaignName }: { worldId: string; campaign
           onAct={(run) => act.mutate(run)}
           busy={act.isPending}
           framing={() => (size.width > 0 ? sceneViewportOfCanvas(view.current, size) : null)}
-          selected={selected}
         />
         {(selected.length > 1 || (fromTemplate && selected.length > 0)) && (
           <GroupDamage
@@ -540,30 +518,24 @@ function Mesa({ worldId, campaignId, campaignName }: { worldId: string; campaign
             setAsGroup(true)
           }}
         />
-      ) : combat && panelView === 'combat' ? (
-        <CombatPanel
-          campaignId={campaignId}
-          combat={combat}
-          tokens={tokens}
-          selected={selected}
-          onPick={(tokenId) => {
-            setSelected([tokenId])
-            center.current?.(tokenId, true)
-          }}
-          onShowPanel={() => setPanelView('tabs')}
-        />
       ) : (
-        <TablePanel
-          combatRound={combat ? combat.round : null}
-          onCombat={() => setPanelView('combat')}
+        <MasterSidebar
           worldId={worldId}
-          campaignId={campaignId}
+          worldName={worldName}
+          campaign={current}
           systemId={systemId}
           table={table}
-          selected={tokens.filter((token) => selected.includes(token.id))}
+          tokens={tokens}
+          selected={selected}
+          busy={act.isPending}
+          onAct={(run) => act.mutate(run)}
           onOpen={openScene}
           onPlace={(placing) => place.mutate({ placing, at: null })}
           onImage={(fileId) => selected[0] && setImageFor({ tokenId: selected[0], fileId })}
+          onPickCombatant={(tokenId) => {
+            setSelected([tokenId])
+            center.current?.(tokenId, true)
+          }}
         />
       )}
       <Tour
@@ -580,7 +552,7 @@ function Mesa({ worldId, campaignId, campaignName }: { worldId: string; campaign
           { target: '[data-tour="mesa-zoom"]', text: t('tour.tabletop.zoom'), placement: 'top' }
         ]}
       />
-      <PageTitle className={styles.hidden}>{`${t('tabletop.title')} · ${campaignName}`}</PageTitle>
+      <PageTitle className={styles.hidden}>{campaignName}</PageTitle>
     </div>
   )
 }
@@ -1207,11 +1179,8 @@ function TopBar({
   onOpen,
   onAct,
   busy,
-  framing,
-  selected
+  framing
 }: {
-  /** Las fichas elegidas: con ellas empieza el combate (sin ninguna, con todas) */
-  selected: string[]
   worldId: string
   campaignId: string
   table: CampaignTableView | null
@@ -1270,25 +1239,6 @@ function TopBar({
             </button>
           )}
         </span>
-        {open && !table?.combat && (table?.tokens.length ?? 0) > 0 && (
-          <button
-            type="button"
-            className={styles.ghost}
-            disabled={busy}
-            data-tour="mesa-combate"
-            title={selected.length > 0 ? t('combat.startChosen', { count: selected.length }) : t('combat.startAll')}
-            onClick={() =>
-              onAct(() =>
-                api
-                  .call('startCombat', { campaignId, ...(selected.length > 0 ? { tokenIds: selected } : {}) })
-                  .then(() => api.call('getCampaignTable', { campaignId }))
-              )
-            }
-          >
-            <Swords aria-hidden="true" size={15} />
-            {selected.length > 0 ? t('combat.startChosen', { count: selected.length }) : t('combat.start')}
-          </button>
-        )}
         <button type="button" className={styles.ghost} onClick={openScreen} data-tour="mesa-pantalla">
           <Tv aria-hidden="true" size={15} />
           {t('tabletop.screen')}

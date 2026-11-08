@@ -4,16 +4,17 @@ Plan: `tasks/plan.md`. Lienzo: `out/lienzo-campana/`.
 
 ## Fase 1: el armazón
 
-- [ ] 1. **La campaña abre en la Mesa (máster).** `/campanas/$c` pinta la Mesa para el máster (y, de momento, la portada
+- [x] 1. **La campaña abre en la Mesa (máster).** `/campanas/$c` pinta la Mesa para el máster (y, de momento, la portada
   de antes para la jugadora); `?panel=` elige la pestaña; `/mesa` redirige. `mesa.tsx` se parte sin cambiar lo que hace.
   - Acepta: el máster entra en la campaña y ve la Mesa; las pruebas de la Mesa siguen en verde; `/mesa` lleva a la campaña.
   - Comprueba: `pnpm --filter @crisol/web test`, `pnpm typecheck`, mirarlo en el servidor de desarrollo.
-- [ ] 2. **La barra derecha.** Pestañas Tiradas, Combate, Escenas, Personajes, Compendio, Páginas y Ajustes, con icono y
+- [x] 2. **La barra derecha.** Pestañas Tiradas, Combate, Escenas, Personajes, Compendio, Páginas y Ajustes, con icono y
   nombre, `tablist` con flechas, la última recordada, plegable; dentro, de momento, lo que ya hay (paneles de escenas,
   encuentros, criaturas, personajes, combate). Las herramientas siguen tapando el panel cuando lo necesitan.
   - Acepta: cada pestaña abre su panel; al volver se abre la última; plegada, el mapa ocupa todo.
   - Comprueba: pruebas de la barra (teclado, recordar, plegar) y las de la Mesa.
-- [ ] 3. **La barra izquierda corta, Ajustes y las redirecciones.** La llama, la Mesa, el mundo y la cuenta (jugadora:
+- [x] 3. **La barra izquierda corta, Ajustes y las redirecciones.** (Hecho sin las redirecciones: cada vista vieja
+  redirige cuando su pestaña la sustituye del todo, en las tareas 5, 6, 8 y 11.) La llama, la Mesa, el mundo y la cuenta (jugadora:
   la llama, su ficha, la Mesa). Pestaña Ajustes: la campaña, miembros (expulsar), Invitar (el enlace en línea), dejar la
   campaña o borrarla en la zona de peligro. `/en-juego`, `/compendio`, `/biblioteca`, `/paginas…`, `/grupo` redirigen.
   - Acepta: no queda ninguna vista suelta en la barra; invitar y expulsar funcionan desde Ajustes; los enlaces viejos

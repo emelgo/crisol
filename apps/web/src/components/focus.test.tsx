@@ -2,12 +2,16 @@ import type { Approval, Campaign, HistoryEntry, Member, World } from '@crisol/co
 import { createMemoryHistory } from '@tanstack/react-router'
 import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { fakeAccountClient } from '../account/fake.ts'
 import { fakeApi } from '../api/fake.ts'
 import { App } from '../app.tsx'
 import { fakeRealtime } from '../realtime/fake.ts'
 import { createAppRouter } from '../router.tsx'
+
+// El máster abre la campaña en la Mesa: su canal y su lienzo, de mentira
+vi.mock('../tabletop/channel.ts', async () => (await import('../tabletop/fakes.ts')).quietChannel())
+vi.mock('../tabletop/use-renderer.ts', async () => (await import('../tabletop/fakes.ts')).blindRenderer())
 
 const ORG = { id: crypto.randomUUID(), name: 'Fateforge', role: 'owner' as const }
 const world = (name: string, role: World['role'] = 'master'): World => ({
@@ -77,7 +81,8 @@ const button = (name: string) => screen.getByRole('button', { name })
 const description = (element: Element) =>
   document.getElementById(element.getAttribute('aria-describedby') ?? '')?.textContent
 const expectFocus = (element: () => Element) => waitFor(() => expect(document.activeElement).toBe(element()))
-const campaignPath = `/mundos/${eana.id}/campanas/${marca.id}`
+// El máster, en los Ajustes de la Mesa (miembros e invitación)
+const campaignPath = `/mundos/${eana.id}/campanas/${marca.id}?panel=ajustes`
 
 /** Abre la ventana de un mundo por su engranaje y, en su zona de peligro, la confirmación de borrarlo */
 async function openDelete(name: string) {
@@ -150,8 +155,6 @@ describe('el foco en las confirmaciones', () => {
 
   it('«Nuevo enlace»: va a confirmar, con el aviso; al cancelar o generarlo, vuelve a «Nuevo enlace»', async () => {
     renderAt(campaignPath)
-    // La invitación, en su ventana («Invitar», junto al título)
-    await userEvent.click(await screen.findByRole('button', { name: 'Invitar' }))
     await userEvent.click(await screen.findByRole('button', { name: 'Nuevo enlace' }))
     expect(document.activeElement).toBe(button('Generar el nuevo'))
     expect(description(button('Generar el nuevo'))).toBe('Quien aún no haya entrado necesitará el nuevo.')

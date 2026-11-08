@@ -1,36 +1,24 @@
-import type { Campaign, Member } from '@crisol/contracts'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { getRouteApi, Link, Navigate, useNavigate } from '@tanstack/react-router'
-import { UserPlus } from 'lucide-react'
-import { useId, useRef, useState } from 'react'
+import type { Campaign } from '@crisol/contracts'
+import { useQuery } from '@tanstack/react-query'
+import { getRouteApi, Link, Navigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
-import { useErrorText } from '../api/errors.ts'
-import { useAnnounce } from '../components/announcer.tsx'
+import { MembersPanel } from '../campaign/settings.tsx'
 import { Loading } from '../components/brand.tsx'
-import { BusyButton } from '../components/busy-button.tsx'
-import { CopyField } from '../components/copy-field.tsx'
-import { DangerZone } from '../components/danger.tsx'
-import { FormError } from '../components/field.tsx'
-import { Floating } from '../components/floating.tsx'
-import { focusAfterRemoving, focusOnMount, useReturnFocus } from '../components/focus.ts'
-import form from '../components/form.module.css'
 import styles from '../components/list.module.css'
 import { failed, LoadError, SectionError } from '../components/load-error.tsx'
-import { Modal } from '../components/modal.tsx'
 import { PageTitle } from '../components/page-title.tsx'
-import { RemovedMessage, RemoveMemberConfirm, useRemoveMember } from '../components/remove-member.tsx'
 import screen from '../components/screen.module.css'
 import { Screen } from '../components/screen.tsx'
 import { Tour } from '../components/tour.tsx'
 import { worldTransition } from '../components/world-transition.ts'
+import { Mesa } from '../tabletop/mesa.tsx'
 import { coverStyle } from '../wiki/cover-look.ts'
-import cards from './world-card.module.css'
 
 const route = getRouteApi('/mundos/$worldId/campanas/$campaignId')
 
-/** Una campaña: quién está en ella y, para su máster, el enlace de invitación */
+/** Una campaña: el máster, en su Mesa; quien juega, quién está en ella (hasta que abra en su ficha) */
 export function CampaignPage() {
   const { t } = useTranslation()
   const { worldId, campaignId } = route.useParams()
@@ -66,12 +54,12 @@ export function CampaignPage() {
     )
   }
 
+  // El máster abre la campaña en la Mesa, como en Foundry VTT (docs/diseno.md)
+  if (campaign.role === 'master')
+    return <Mesa key={campaign.id} worldId={worldId} worldName={world.name} campaign={campaign} />
+
   return (
-    <Screen
-      title={campaign.name}
-      // Invitar, discreto junto al título (Enrique, 2026-11-08: «la invitación, de forma más sutil»)
-      actions={campaign.role === 'master' ? <InviteButton campaignId={campaignId} /> : undefined}
-    >
+    <Screen title={campaign.name}>
       {/* Su portada (la de su tarjeta), como franja bajo el título: el título no se mueve */}
       {campaign.cover && (
         <div className={screen.cover} style={worldTransition(campaign.id)}>
@@ -94,30 +82,6 @@ export function CampaignPage() {
           { target: '[data-tour="barra-personajes"]', text: t('tour.campaign.characters'), placement: 'right' },
           { target: '[data-tour="barra-compendio"]', text: t('tour.campaign.compendium'), placement: 'right' },
           { target: '[data-tour="barra-grupo"]', text: t('tour.campaign.party'), placement: 'right' },
-          ...(campaign.role === 'master'
-            ? [
-                {
-                  target: '[data-tour="barra-en-juego"]',
-                  text: t('tour.campaign.inPlay'),
-                  placement: 'right' as const
-                },
-                {
-                  target: '[data-tour="barra-mesa"]',
-                  text: t('tour.campaign.table'),
-                  placement: 'right' as const
-                },
-                {
-                  target: '[data-tour="barra-revelado"]',
-                  text: t('tour.campaign.revealed'),
-                  placement: 'right' as const
-                },
-                {
-                  target: '[data-tour="barra-biblioteca"]',
-                  text: t('tour.campaign.library'),
-                  placement: 'right' as const
-                }
-              ]
-            : []),
           { target: '[data-tour="dados"]', text: t('tour.world.dice'), placement: 'top' },
           { target: '[data-tour="barra-llama"]', text: t('tour.world.back'), placement: 'right' },
           { target: '[data-tour="menu-movil"]', text: t('tour.menu') }
@@ -170,335 +134,5 @@ function CharactersPanel({ campaign }: { campaign: Campaign }) {
         ))}
       </ul>
     </section>
-  )
-}
-
-function MembersPanel({ campaign }: { campaign: Campaign }) {
-  const { t } = useTranslation()
-  const api = useApi()
-  const queryClient = useQueryClient()
-  const navigate = useNavigate()
-  const errorText = useErrorText()
-  const announce = useAnnounce()
-  const campaignId = campaign.id
-  const key = ['members', campaignId]
-  const members = useQuery({ queryKey: key, queryFn: () => api.call('listMembers', { campaignId }) })
-  const [confirmingRemove, setConfirmingRemove] = useState<string | null>(null)
-  const [removed, setRemoved] = useState<{ name: string; linkFailed: boolean } | null>(null)
-  const [confirmingLeave, setConfirmingLeave] = useState(false)
-  const leaveButton = useReturnFocus()
-  const leaveWarningId = useId()
-  const remove = useRemoveMember(campaignId)
-  const leave = useMutation({
-    mutationFn: () => api.call('leaveCampaign', { campaignId }),
-    // Primero fuera de la campaña: refrescar aquí pediría lo que ya no ve
-    onSuccess: async () => {
-      await navigate({ to: '/mundos' })
-      queryClient.removeQueries({ queryKey: ['members', campaignId] })
-      queryClient.removeQueries({ queryKey: ['campaigns', campaign.worldId] })
-      await queryClient.invalidateQueries({ queryKey: ['worlds'] })
-      await queryClient.invalidateQueries({ queryKey: ['organizations'] })
-    }
-  })
-
-  if (!members.data) return <FormError message={failed(members) ? errorText(members.error) : null} />
-  const canRemove = campaign.role === 'master'
-  const error = remove.error ?? leave.error
-
-  return (
-    <>
-      <section aria-labelledby="miembros" data-tour="campana-miembros">
-        <h2 id="miembros">{t('members.title')}</h2>
-        <ul className={styles.list} aria-labelledby="miembros">
-          {members.data.members.map((member) => (
-            <MemberItem
-              key={member.userId}
-              member={member}
-              removable={canRemove && member.role === 'player'}
-              confirming={confirmingRemove === member.userId}
-              busy={remove.isPending}
-              onStart={() => {
-                setConfirmingRemove(member.userId)
-                setRemoved(null)
-              }}
-              onCancel={() => setConfirmingRemove(null)}
-              onRemove={(newLink, refocus) =>
-                remove.mutate(
-                  { userId: member.userId, newLink },
-                  {
-                    onSuccess: ({ linkFailed }) => {
-                      setConfirmingRemove(null)
-                      setRemoved({ name: member.name, linkFailed })
-                      // Si el enlace no cambió, lo dice el aviso (alert)
-                      if (!linkFailed) announce(t('members.removed', { name: member.name }))
-                      refocus()
-                    }
-                  }
-                )
-              }
-            />
-          ))}
-        </ul>
-        {removed && (
-          <p>
-            <RemovedMessage {...removed} />
-          </p>
-        )}
-
-        <FormError message={error ? errorText(error) : null} />
-      </section>
-      {/* Dejarla, en su zona de peligro al final (docs/diseno.md) */}
-      {campaign.role === 'player' && (
-        <DangerZone>
-          {confirmingLeave ? (
-            <div>
-              <p id={leaveWarningId}>{t('members.leaveWarning')}</p>
-              <div className={styles.actions}>
-                <BusyButton
-                  ref={focusOnMount}
-                  className={form.button}
-                  aria-describedby={leaveWarningId}
-                  busy={leave.isPending}
-                  onClick={() => leave.mutate()}
-                >
-                  {t('members.leaveConfirm')}
-                </BusyButton>
-                <button
-                  type="button"
-                  className={styles.secondary}
-                  onClick={() => {
-                    leaveButton.back()
-                    setConfirmingLeave(false)
-                  }}
-                >
-                  {t('list.cancel')}
-                </button>
-              </div>
-            </div>
-          ) : (
-            <button
-              type="button"
-              ref={leaveButton.ref}
-              className={styles.secondary}
-              onClick={() => setConfirmingLeave(true)}
-            >
-              {t('members.leave')}
-            </button>
-          )}
-        </DangerZone>
-      )}
-    </>
-  )
-}
-
-/** Un miembro: al abrir la confirmación de expulsar, el foco va a ella; al cancelar, vuelve a «Expulsar» */
-function MemberItem(props: {
-  member: Member
-  removable: boolean
-  confirming: boolean
-  busy: boolean
-  onStart(): void
-  onCancel(): void
-  /** refocus: con qué dejar el foco en el siguiente cuando ya no esté */
-  onRemove(newLink: boolean, refocus: () => void): void
-}) {
-  const { t } = useTranslation()
-  const { member } = props
-  const item = useRef<HTMLLIElement>(null)
-  const opener = useReturnFocus()
-  return (
-    <li ref={item} className={styles.item}>
-      <span className={`${styles.name} ${styles.entity}`}>{member.name}</span>
-      <span className={`${styles.role} ${styles.tag}`}>{t(`roles.${member.role}`)}</span>
-      {props.removable && !props.confirming && (
-        <button
-          type="button"
-          ref={opener.ref}
-          className={styles.secondary}
-          aria-label={t('members.removeButton', { name: member.name })}
-          onClick={props.onStart}
-        >
-          {t('members.remove')}
-        </button>
-      )}
-      {props.confirming && (
-        <RemoveMemberConfirm
-          name={member.name}
-          pending={props.busy}
-          onConfirm={(newLink) => props.onRemove(newLink, focusAfterRemoving(item.current))}
-          onCancel={() => {
-            opener.back()
-            props.onCancel()
-          }}
-        />
-      )}
-    </li>
-  )
-}
-
-/** «Invitar»: un botón discreto que abre la ventana del enlace de invitación */
-function InviteButton({ campaignId }: { campaignId: string }) {
-  const { t } = useTranslation()
-  const [open, setOpen] = useState(false)
-  const trigger = useRef<HTMLButtonElement>(null)
-  const titleId = useId()
-  return (
-    <>
-      <button
-        ref={trigger}
-        type="button"
-        className={styles.secondary}
-        aria-haspopup="dialog"
-        onClick={() => setOpen(true)}
-      >
-        <UserPlus aria-hidden="true" size={16} />
-        {t('invitation.invite')}
-      </button>
-      {open && (
-        <Modal
-          aria-labelledby={titleId}
-          className={cards.dialog}
-          onClose={() => {
-            setOpen(false)
-            trigger.current?.focus()
-          }}
-        >
-          <div className={cards.form}>
-            <InvitationPanel campaignId={campaignId} titleId={titleId} />
-          </div>
-        </Modal>
-      )}
-    </>
-  )
-}
-
-function InvitationPanel({ campaignId, titleId }: { campaignId: string; titleId: string }) {
-  const { t, i18n } = useTranslation()
-  const api = useApi()
-  const queryClient = useQueryClient()
-  const errorText = useErrorText()
-  const [confirming, setConfirming] = useState(false)
-  // El botón se queda a la vista mientras se confirma (la confirmación flota): al cerrarla, el foco vuelve a él
-  const regenerateButton = useRef<HTMLButtonElement>(null)
-  const backToButton = () => regenerateButton.current?.focus()
-  const warningId = useId()
-  const key = ['invitation', campaignId]
-  const invitation = useQuery({ queryKey: key, queryFn: () => api.call('getInvitation', { campaignId }) })
-  const update = (data: Awaited<ReturnType<typeof api.call<'getInvitation'>>>) => queryClient.setQueryData(key, data)
-  const regenerate = useMutation({
-    mutationFn: () => api.call('regenerateInvitation', { campaignId }),
-    onSuccess: (data) => {
-      update(data)
-      // Desde la confirmación: se cierra y el foco vuelve a «Nuevo enlace»
-      if (confirming) backToButton()
-      setConfirming(false)
-    }
-  })
-  // Optimista: la casilla cambia en el mismo clic (estado local) y vuelve atrás si el servidor falla
-  const [pendingOpen, setPendingOpen] = useState<boolean | null>(null)
-  const setOpen = useMutation({
-    mutationFn: (open: boolean) => api.call('setInvitationsOpen', { campaignId, open }),
-    onSuccess: (data) => {
-      update(data)
-      setPendingOpen(null)
-    },
-    onError: () => setPendingOpen(null)
-  })
-
-  if (!invitation.data) return <FormError message={failed(invitation) ? errorText(invitation.error) : null} />
-  const { url, issuedAt, joins } = invitation.data
-  const open = pendingOpen ?? invitation.data.open
-  const error = regenerate.error ?? setOpen.error
-
-  return (
-    <div className={styles.invitation}>
-      <h2 id={titleId}>{t('invitation.title')}</h2>
-      {url ? (
-        <>
-          <CopyField label={t('invitation.link')} value={url} />
-          {issuedAt && (
-            <p className={styles.role}>
-              {t('invitation.issued', {
-                date: new Intl.DateTimeFormat(i18n.language, { dateStyle: 'long' }).format(new Date(issuedAt))
-              })}
-            </p>
-          )}
-          <p className={styles.role}>{t('invitation.joins', { count: joins })}</p>
-        </>
-      ) : (
-        <p>{t('invitation.none')}</p>
-      )}
-
-      {/* La confirmación flota bajo el botón, sin empujar la página (docs/diseno.md: los desplegables flotan) */}
-      <div className={styles.anchor}>
-        <BusyButton
-          ref={regenerateButton}
-          className={styles.secondary}
-          busy={regenerate.isPending && !confirming}
-          aria-expanded={url ? confirming : undefined}
-          onClick={() => (url ? setConfirming(!confirming) : regenerate.mutate())}
-        >
-          {url ? t('invitation.regenerate') : t('invitation.create')}
-        </BusyButton>
-        {confirming && (
-          <Floating
-            anchor={regenerateButton}
-            role="dialog"
-            aria-labelledby={warningId}
-            className={styles.floating}
-            onKeyDown={(event) => {
-              if (event.key !== 'Escape') return
-              event.stopPropagation()
-              backToButton()
-              setConfirming(false)
-            }}
-          >
-            <p id={warningId}>{t('invitation.warning')}</p>
-            <div className={styles.actions}>
-              <BusyButton
-                ref={focusOnMount}
-                className={form.button}
-                aria-describedby={warningId}
-                busy={regenerate.isPending}
-                onClick={() => regenerate.mutate()}
-              >
-                {t('invitation.confirm')}
-              </BusyButton>
-              <button
-                type="button"
-                className={styles.secondary}
-                onClick={() => {
-                  backToButton()
-                  setConfirming(false)
-                }}
-              >
-                {t('list.cancel')}
-              </button>
-            </div>
-          </Floating>
-        )}
-      </div>
-
-      {url && (
-        <p>
-          <label>
-            <input
-              type="checkbox"
-              checked={open}
-              onChange={(event) => {
-                // Mientras se guarda, se ignora: deshabilitarla sacaría el foco de la casilla
-                if (setOpen.isPending) return
-                const value = event.currentTarget.checked
-                setPendingOpen(value)
-                setOpen.mutate(value)
-              }}
-            />{' '}
-            {t('invitation.open')}
-          </label>
-        </p>
-      )}
-      {url && !open && <p>{t('invitation.closed')}</p>}
-      <FormError message={error ? errorText(error) : null} />
-    </div>
   )
 }

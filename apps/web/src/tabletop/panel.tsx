@@ -1,11 +1,12 @@
 /**
- * El panel de la mesa (como el lienzo): las escenas del mundo, sus encuentros, las criaturas (las que ya están en
- * juego y el compendio de la campaña, con cuántas), los personajes de la campaña y las imágenes del mundo (para la
- * imagen de una ficha). Lo que se pone se arrastra al mapa; con el teclado, su «+» lo pone en medio de lo que se ve
+ * Lo que va en las pestañas de la barra de la Mesa (sidebar.tsx): las escenas del mundo, sus encuentros, las criaturas
+ * (las que ya están en juego y el compendio de la campaña, con cuántas), los personajes de la campaña y las imágenes del
+ * mundo (para la imagen de una ficha). Lo que se pone se arrastra al mapa; con el teclado, su «+» lo pone en medio de lo
+ * que se ve
  */
 import type { CampaignTableView, SceneGrid, TokenView } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { BookOpen, ImageIcon, Layers, Plus, Search, Swords, Users } from 'lucide-react'
+import { Plus, Search } from 'lucide-react'
 import { type DragEvent, type ReactNode, useEffect, useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
@@ -32,110 +33,18 @@ const dragging = (placing: Placing) => (event: DragEvent) => {
   event.dataTransfer.setData(PLACING_TYPE, JSON.stringify(placing))
 }
 
-type Tab = 'scenes' | 'encounters' | 'creatures' | 'characters' | 'images'
-
-const TABS: Array<{ key: Tab; icon: typeof Layers }> = [
-  { key: 'scenes', icon: Layers },
-  { key: 'encounters', icon: Swords },
-  { key: 'creatures', icon: BookOpen },
-  { key: 'characters', icon: Users },
-  { key: 'images', icon: ImageIcon }
-]
-
-export function TablePanel({
-  worldId,
-  campaignId,
-  systemId,
-  table,
-  selected,
-  onOpen,
-  onPlace,
-  onImage,
-  combatRound,
-  onCombat
-}: {
-  /** La ronda del combate, si hay uno: arriba, el botón para volver a él */
-  combatRound: number | null
-  onCombat: () => void
-  worldId: string
-  campaignId: string
-  systemId: string | null
-  table: CampaignTableView | null
-  /** Las fichas elegidas en el mapa */
-  selected: TokenView[]
-  onOpen: (sceneId: string) => void
-  onPlace: (placing: Placing) => void
-  /** Una imagen del mundo para la ficha elegida */
-  onImage: (fileId: string) => void
-}) {
+/** Los colores de las fichas: de qué bando es cada una */
+export function FactionLegend() {
   const { t } = useTranslation()
-  const [tab, setTab] = useState<Tab>('scenes')
-  const ids = useId()
-  const canPlace = Boolean(table?.open?.image?.tiles)
   return (
-    <aside className={styles.panel} aria-label={t('tabletop.panel')}>
-      {combatRound !== null && (
-        <button type="button" className={styles.backToCombat} onClick={onCombat}>
-          <Swords aria-hidden="true" size={15} />
-          {combatRound > 0 ? t('combat.back', { round: combatRound }) : t('combat.backNotStarted')}
-        </button>
-      )}
-      <div className={styles.panelTabs} role="tablist" aria-label={t('tabletop.panel')}>
-        {TABS.map(({ key, icon: Icon }) => (
-          <button
-            key={key}
-            type="button"
-            role="tab"
-            id={`${ids}-${key}`}
-            aria-selected={tab === key}
-            aria-controls={`${ids}-panel`}
-            tabIndex={tab === key ? 0 : -1}
-            data-tour={key === 'scenes' ? 'mesa-escenas' : undefined}
-            onClick={() => setTab(key)}
-            onKeyDown={(event) => {
-              const at = TABS.findIndex((each) => each.key === tab)
-              const step = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0
-              if (!step) return
-              const next = TABS[(at + step + TABS.length) % TABS.length]?.key ?? tab
-              setTab(next)
-              document.getElementById(`${ids}-${next}`)?.focus()
-            }}
-          >
-            <Icon aria-hidden="true" size={18} />
-            {t(`tabletop.tabs.${key}`)}
-          </button>
-        ))}
-      </div>
-      <div className={styles.panelBody} role="tabpanel" id={`${ids}-panel`} aria-labelledby={`${ids}-${tab}`}>
-        {tab === 'scenes' && <ScenesList worldId={worldId} table={table} onOpen={onOpen} />}
-        {tab === 'encounters' && (
-          <EncountersList
-            worldId={worldId}
-            campaignId={campaignId}
-            systemId={systemId}
-            table={table}
-            selected={selected}
-            canPlace={canPlace}
-            onPlace={onPlace}
-          />
-        )}
-        {tab === 'creatures' && (
-          <CreaturesList campaignId={campaignId} table={table} canPlace={canPlace} onPlace={onPlace} />
-        )}
-        {tab === 'characters' && (
-          <CharactersList campaignId={campaignId} table={table} canPlace={canPlace} onPlace={onPlace} />
-        )}
-        {tab === 'images' && <ImagesList worldId={worldId} selected={selected} onImage={onImage} />}
-      </div>
-      <div className={styles.legend} aria-hidden="true">
-        {(['group', 'hostile', 'neutral'] as const).map((faction) => (
-          <span key={faction}>
-            <i data-faction={faction} />
-            {t(`tokens.factions.${faction}`)}
-          </span>
-        ))}
-      </div>
-    </aside>
+    <div className={styles.legend} aria-hidden="true">
+      {(['group', 'hostile', 'neutral'] as const).map((faction) => (
+        <span key={faction}>
+          <i data-faction={faction} />
+          {t(`tokens.factions.${faction}`)}
+        </span>
+      ))}
+    </div>
   )
 }
 
@@ -211,7 +120,7 @@ const Avatar = ({ name, faction }: { name: string; faction: 'group' | 'hostile' 
 )
 
 /** Las escenas del mundo, con su miniatura y un buscador; la abierta y la que está en la tele, marcadas */
-function ScenesList({
+export function ScenesList({
   worldId,
   table,
   onOpen
@@ -275,7 +184,7 @@ function ScenesList({
 }
 
 /** Los personajes de la campaña: los que aún no están en esta escena se arrastran al mapa */
-function CharactersList({
+export function CharactersList({
   campaignId,
   table,
   canPlace,
@@ -323,7 +232,7 @@ function CharactersList({
 }
 
 /** Las criaturas: las que están en juego sin ficha aquí y el compendio de la campaña, con cuántas se ponen */
-function CreaturesList({
+export function CreaturesList({
   campaignId,
   table,
   canPlace,
@@ -414,7 +323,7 @@ function CreaturesList({
 }
 
 /** Los encuentros del mundo; con fichas elegidas, «Guardar como encuentro» (su formación, en casillas) */
-function EncountersList({
+export function EncountersList({
   worldId,
   campaignId,
   systemId,
@@ -516,7 +425,7 @@ function EncountersList({
 }
 
 /** Las imágenes del mundo: con una ficha elegida, una de ellas es su imagen (se encuadra en redondo) */
-function ImagesList({
+export function ImagesList({
   worldId,
   selected,
   onImage

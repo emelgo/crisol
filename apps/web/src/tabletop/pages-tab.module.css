@@ -1,0 +1,89 @@
+/* La pestaña Páginas de la Mesa: buscador y árbol */
+.search {
+  inline-size: 100%;
+  block-size: 2.25rem;
+  padding: 0 0.75rem;
+  border: 1px solid var(--color-frame);
+  border-radius: 3px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.875rem;
+}
+
+.search:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 1px;
+}
+
+.muted {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+.tree {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-block-size: 2rem;
+}
+
+.twisty {
+  display: grid;
+  flex: none;
+  place-items: center;
+  inline-size: 1.25rem;
+  block-size: 1.25rem;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: none;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+span.twisty {
+  cursor: default;
+}
+
+.twisty[aria-expanded="true"] svg {
+  transform: rotate(90deg);
+}
+
+.twisty:hover {
+  color: var(--color-text);
+}
+
+.title {
+  flex: 1;
+  min-inline-size: 0;
+  padding: 0.3rem 0.4rem;
+  overflow: hidden;
+  border: 0;
+  border-radius: 3px;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.875rem;
+  text-align: start;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.title:hover {
+  background: var(--color-raised);
+}
+
+.twisty:focus-visible,
+.title:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
+}
