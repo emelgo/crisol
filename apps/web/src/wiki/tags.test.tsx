@@ -1,6 +1,6 @@
 import type { World } from '@crisol/contracts'
 import { createMemoryHistory } from '@tanstack/react-router'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { fakeAccountClient } from '../account/fake.ts'
@@ -95,6 +95,48 @@ describe('las etiquetas de la cuenta', () => {
     await userEvent.type(name, 'sitio')
     await userEvent.click(within(settings).getByRole('button', { name: 'Guardar' }))
     await waitFor(() => expect(rows()).toEqual(['sitio1 página · 1 archivo', 'ciudad1 página']))
+  })
+
+  it('se crea dentro de otra eligiendo dónde va, y se cambia de sitio desde su engranaje', async () => {
+    renderAt('/etiquetas')
+    const list = await screen.findByRole('list', { name: 'Etiquetas' })
+    await userEvent.click(within(list).getByRole('button', { name: 'Nueva etiqueta' }))
+    const create = await screen.findByRole('dialog', { name: 'Nueva etiqueta' })
+    // Sin «/» en el nombre: dónde va se elige en «Dentro de»
+    await userEvent.type(within(create).getByLabelText('Nombre de la etiqueta'), 'puerto/viejo')
+    expect((within(create).getByLabelText('Nombre de la etiqueta') as HTMLInputElement).value).toBe('puertoviejo')
+    await userEvent.selectOptions(within(create).getByLabelText('Dentro de'), 'lugar')
+    await userEvent.click(within(create).getByRole('button', { name: 'Crear la etiqueta' }))
+    expect(await screen.findByRole('button', { name: 'Ajustes de lugar/puertoviejo' })).toBeDefined()
+
+    // A lo más alto, desde su ventana (sin ella misma ni sus hijas entre las opciones)
+    await userEvent.click(screen.getByRole('button', { name: 'Ajustes de lugar/ciudad' }))
+    const settings = await screen.findByRole('dialog', { name: 'Ajustes de lugar/ciudad' })
+    const where = within(settings).getByLabelText('Dentro de') as HTMLSelectElement
+    expect([...where.options].map((option) => option.value)).not.toContain('lugar/ciudad')
+    await userEvent.selectOptions(where, '')
+    await userEvent.click(within(settings).getByRole('button', { name: 'Guardar' }))
+    expect(await screen.findByRole('button', { name: 'Ajustes de ciudad' })).toBeDefined()
+  })
+
+  it('arrastrar una etiqueta sobre otra la mete dentro; sobre «Arriba del todo», la saca', async () => {
+    renderAt('/etiquetas')
+    await screen.findByRole('button', { name: 'Ajustes de lugar/ciudad' })
+    const row = (name: string) =>
+      screen.getByRole('button', { name: `Ajustes de ${name}` }).closest('li') as HTMLElement
+    const dataTransfer = { setData: () => {}, effectAllowed: '' }
+    fireEvent.dragStart(row('lugar/ciudad'), { dataTransfer })
+    const top = await screen.findByText('Arriba del todo')
+    fireEvent.dragOver(top, { dataTransfer })
+    expect(await screen.findByText('Mover aquí')).toBeDefined()
+    fireEvent.drop(top, { dataTransfer })
+    expect(await screen.findByRole('button', { name: 'Ajustes de ciudad' })).toBeDefined()
+
+    // Y otra vez dentro de «lugar», soltándola encima
+    fireEvent.dragStart(row('ciudad'), { dataTransfer })
+    fireEvent.dragOver(row('lugar'), { dataTransfer })
+    fireEvent.drop(row('lugar'), { dataTransfer })
+    expect(await screen.findByRole('button', { name: 'Ajustes de lugar/ciudad' })).toBeDefined()
   })
 
   it('en los archivos: se ponen desde su ventana y se filtra por ellas', async () => {

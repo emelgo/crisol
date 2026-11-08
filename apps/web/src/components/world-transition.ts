@@ -9,6 +9,29 @@ export const ENTER_WORLD = { types: ['entrar-mundo'] }
 export const LEAVE_WORLD = { types: ['salir-mundo'] }
 /** Cambiar de pestaña en la barra (dentro de una vista): rápido, sin fuego */
 export const SECTION = { types: ['seccion'] }
+/** Entrar en un elemento desde su tarjeta (una plantilla): su icono y su nombre van al título, sin fuego */
+export const ENTER_ITEM = { types: ['entrar-elemento'] }
+
+let currentItem: string | null = null
+
+/**
+ * Al pulsar la tarjeta de un elemento: su icono y su nombre llevan ya el nombre de transición antes de que se tome la
+ * foto de lo de antes (y ningún otro), para que viajen al título de lo que se abre
+ */
+export function enterItem(id: string, card: Element | null) {
+  currentItem = id
+  for (const part of ['icono', 'nombre']) {
+    for (const other of document.querySelectorAll<HTMLElement>(`[data-elemento="${part}"]`))
+      other.style.removeProperty('view-transition-name')
+    const mine = card?.querySelector<HTMLElement>(`[data-elemento="${part}"]`)
+    mine?.style.setProperty('view-transition-name', `elemento-${part}`)
+  }
+}
+
+/** Para el icono y el nombre del título del elemento abierto: su nombre de transición, si se entró desde su tarjeta */
+export function itemTransition(id: string, part: 'icono' | 'nombre'): CSSProperties | undefined {
+  return currentItem === id ? ({ viewTransitionName: `elemento-${part}` } as CSSProperties) : undefined
+}
 
 let current: string | null = null
 

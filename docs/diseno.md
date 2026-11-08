@@ -54,7 +54,10 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   Ajustes, no en el menú. Se abre al lado del botón y nunca se corta.
 - **Las etiquetas son de toda la cuenta** (ADR-0006): «Etiquetas» va en la barra de Mis mundos, no en la de un mundo;
   dentro, son filtros (al buscar en la wiki, en Archivos). Llevan un color opcional y se ven como un punto de color con
-  su nombre. Se eligen o se escriben: una nueva entra sola.
+  su nombre. Se eligen o se escriben: una nueva entra sola. **Una puede ir dentro de otra** (Enrique, 2026-11-08: «al crearla que te
+  deje poner donde debe ir y luego poder arrastrarlas»): al crearla se elige «Dentro de» (sin escribir «/»); en la lista
+  se arrastran sobre otra para meterlas dentro, como las carpetas de Archivos (se marcan los sitios donde se puede
+  soltar, con «Mover aquí»), o a «Arriba del todo» para sacarlas; también desde su ventana. Se llevan sus hijas.
 - **El móvil, solo para la jugadora** (Enrique, 2026-11-08: «la vista movil la vamos a descartar por completo excepto
   para la vista del jugador, el master siempre deberá trabajar desde PC»). Lo del máster (el mundo, sus páginas,
   Archivos, Plantillas, Sistemas, la Mesa…) se diseña y se revisa solo en el escritorio; lo de la jugadora (su campaña,
@@ -182,6 +185,9 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   a «Mundos», se apaga a latidos y echa tres bocanadas. Nada de manchas de humo por toda la página: «muy cutre».
   **En secuencia, sin verse las dos vistas a la vez**: lo de antes se va deprisa, la tarjeta que crece hace de puente
   y lo nuevo llega cuando ya no está.
+- **Entrar en una plantilla desde su tarjeta también es entrar**, sin fuego: su icono y su nombre viajan al título de
+  la plantilla abierta mientras lo demás se funde (Enrique, 2026-11-08: «falta transición al entrar en una
+  plantilla»). De una plantilla a otra, rápido, como entre pestañas.
 - **Las pestañas de la barra (dentro de una vista) también tienen transición, pero rápida y sin fuego**: lo que había
   se funde en un instante y lo nuevo sube un poco al llegar; se usan a menudo y no deben frenar.
 - **El menú de la cuenta sale del avatar** creciendo, con un pequeño rebote, y al cerrarse vuelve a él encogiendo.

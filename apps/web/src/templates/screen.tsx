@@ -21,6 +21,7 @@ import { failed, LoadError } from '../components/load-error.tsx'
 import { Modal } from '../components/modal.tsx'
 import { Screen } from '../components/screen.tsx'
 import { Tour } from '../components/tour.tsx'
+import { ENTER_ITEM, enterItem } from '../components/world-transition.ts'
 import cards from '../routes/world-card.module.css'
 import { TEMPLATE_ICON } from './icons.tsx'
 import { useTemplates } from './picker.tsx'
@@ -132,12 +133,19 @@ function TemplateCard({
       }}
     >
       {template.builtIn && <Lock className={styles.lock} size={14} aria-label={t('templates.locked')} />}
-      <span className={styles.icon} aria-hidden="true">
+      <span className={styles.icon} aria-hidden="true" data-elemento="icono">
         <Icon size={24} strokeWidth={1.5} />
       </span>
       <h3 className={styles.name}>
-        <Link to="/plantillas/$templateId" params={{ templateId: template.id }} className={styles.open}>
-          {template.name}
+        {/* Entrar es entrar: su icono y su nombre viajan al título de la plantilla abierta */}
+        <Link
+          to="/plantillas/$templateId"
+          params={{ templateId: template.id }}
+          className={styles.open}
+          viewTransition={ENTER_ITEM}
+          onClick={(event) => enterItem(template.id, event.currentTarget.closest('li'))}
+        >
+          <span data-elemento="nombre">{template.name}</span>
         </Link>
       </h3>
       <p className={styles.meta}>{origin(template)}</p>
