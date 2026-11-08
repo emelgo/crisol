@@ -3,6 +3,8 @@
  * su daño), sus usos, lo que cambia de quien lo lleva, cómo escala y cuánto lo calcula Crisol. Los nombres de los
  * campos, en el idioma de la campaña; las fórmulas, con esos nombres en vez de sus claves
  */
+import { actionsOf } from './actions.ts'
+import type { SystemDocument } from './evaluate.ts'
 import type { Field, System } from './format.ts'
 import { type Expr, parseFormula } from './formulas/parse.ts'
 import type { Mechanics } from './mechanics.ts'
@@ -34,7 +36,7 @@ const WORDS = {
   half: { es: 'mitad si la supera', en: 'half on a success' },
   none: { es: 'nada si la supera', en: 'none on a success' },
   saveSpecial: { es: 'si la supera, lo que diga el texto', en: 'on a success, see the text' },
-  damage: { es: '{x} de {y}', en: '{x} {y}' },
+  damage: { es: '{x} ({y})', en: '{x} {y}' },
   heal: { es: 'Cura {x}', en: 'Heals {x}' },
   range: { es: 'Alcance: {x}', en: 'Range: {x}' },
   uses: { es: 'Gasta: {x}', en: 'Uses: {x}' },
@@ -233,14 +235,26 @@ export function formulaText(formula: string, context: { system: System; type: st
   return visit(expr)
 }
 
-/** La mecánica de un documento de un tipo, en palabras; sin mecánica, null */
+/**
+ * La mecánica de un documento de un tipo, en palabras; sin mecánica, null. Con el documento (una criatura, que tira
+ * con lo suyo), sus acciones ya calculadas: «Ataque +4 · 1d6+2 (perforante)» en vez de las fórmulas con nombres
+ */
 export function mechanicsText(
   system: System,
   type: string,
   mechanics: Mechanics | undefined,
-  language: Language = 'es'
+  language: Language = 'es',
+  doc?: SystemDocument
 ): MechanicsText | null {
   if (!mechanics) return null
+  const computed = new Map<string, ReturnType<typeof actionsOf>[number]>()
+  if (doc)
+    try {
+      for (const a of actionsOf(system, type, { ...doc, mechanics }, { language }))
+        if (a.item === null && !a.error) computed.set(a.key, a)
+    } catch {
+      // Si no se puede calcular, se queda en palabras
+    }
   const context = { system, type, language }
   const names = namesOf(system, type, language)
   const f = (formula: string) => formulaText(formula, context)
@@ -255,13 +269,19 @@ export function mechanicsText(
   }))
   const actions = (mechanics.actions ?? []).map((a) => {
     const parts: string[] = []
+    const ready = computed.get(a.key)
     if (a.activation) parts.push(say(a.activation, language))
-    if (a.attack) parts.push(say('attack', language, { x: `+${f(a.attack)}` }))
+    if (a.attack)
+      parts.push(
+        say('attack', language, {
+          x: ready?.bonus != null ? `${ready.bonus < 0 ? '−' : '+'}${Math.abs(ready.bonus)}` : `+${f(a.attack)}`
+        })
+      )
     if (a.save) {
       const ability = names.elements.get(a.save.ability) ?? humanize(a.save.ability)
       const success = a.save.success === 'special' ? 'saveSpecial' : a.save.success
       // La CD: «CD 15» o, si ya lo dice su campo, «CD de salvación»
-      const dc = f(a.save.dc)
+      const dc = ready?.save ? String(ready.save.dc) : f(a.save.dc)
       const shown = /^(CD|DC)\b/.test(dc) ? dc : say('dc', language, { x: dc })
       parts.push(
         [say('save', language, { x: ability, y: shown }), ...(success ? [say(success, language)] : [])].join(', ')
@@ -270,12 +290,13 @@ export function mechanicsText(
     if (a.damage?.length)
       parts.push(
         a.damage
-          .map((d) =>
-            d.type ? say('damage', language, { x: f(d.formula), y: names.options.get(d.type) ?? d.type }) : f(d.formula)
-          )
+          .map((d, i) => {
+            const x = ready?.damage[i]?.formula ?? f(d.formula)
+            return d.type ? say('damage', language, { x, y: names.options.get(d.type) ?? d.type }) : x
+          })
           .join(' + ')
       )
-    if (a.heal) parts.push(say('heal', language, { x: f(a.heal) }))
+    if (a.heal) parts.push(say('heal', language, { x: ready?.heal?.formula ?? f(a.heal) }))
     if (a.range) parts.push(say('range', language, { x: textOf(a.range, language) }))
     if (a.uses) {
       const used = mechanics.resources?.find((r) => r.key === a.uses)

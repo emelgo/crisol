@@ -40,6 +40,7 @@ import { PageTree } from './tree.tsx'
 import { Versions } from './versions.tsx'
 import { WhoKnowsButton } from './who-knows.tsx'
 import styles from './wiki.module.css'
+import { WorldTour } from './world-tour.tsx'
 
 const homeRoute = getRouteApi('/mundos/$worldId/wiki')
 const pageRoute = getRouteApi('/mundos/$worldId/wiki/$pageId')
@@ -102,6 +103,7 @@ export function WikiLayout({
 
   return (
     <NewPageContext.Provider value={requestNewPage}>
+      <WorldTour master />
       <div ref={root} className={styles.wiki} data-collapsed={collapsed || undefined}>
         <aside
           id={asideId}

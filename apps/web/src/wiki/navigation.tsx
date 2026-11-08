@@ -95,7 +95,7 @@ export function OpenTabs({
   useEffect(() => {
     if (compact || !currentId) return
     strip.current?.querySelector('[data-current]')?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
-  }, [compact, currentId])
+  }, [compact, currentId, tabs?.length])
 
   if (!tabs || tabs.length === 0) return null
   const close = (pageId: string) => {

@@ -375,8 +375,49 @@ export function summaryOf(
         to: text(details.to ?? details.name),
         tag: text(details.tag)
       })
+    // El combate y lo que está en juego (docs/specs/combate.md)
+    case 'startCombat':
+    case 'endCombat':
+    case 'updateCombat':
+    case 'addCombatants':
+    case 'rollInitiative':
+    case 'setInitiative':
+    case 'orderCombatants':
+    case 'groupCombatants':
+    case 'nextTurn':
+    case 'previousTurn':
+      return say(action, {
+        campaign: text(details.campaign),
+        count: Number(details.count ?? 1),
+        round: text(details.round)
+      })
+    case 'removeCombatants':
+      return say(action, {
+        campaign: text(details.campaign),
+        names: listOf(Array.isArray(details.names) ? details.names.map(String) : [])
+      })
+    case 'putInPlay':
+    case 'playCreature':
+    case 'setCreatureHidden':
+    case 'spendRecharge':
+    case 'removeFromPlay':
+      return say(action, {
+        name: text(details.name),
+        action: text(details.action),
+        count: Number(details.count ?? 1),
+        campaign: text(details.campaign)
+      })
+    case 'createTemplate':
+    case 'updateTemplate':
+    case 'deleteTemplate':
+    case 'copyContent':
+    case 'pullContentOrigin':
+      return say(action, { name: textIn(details.name) })
+    case 'deleteFiles':
+    case 'deleteWorldContent':
+      return say(action, { count: Number(details.count ?? 1) })
     default:
-      return say('unknown', { action })
+      return say('unknown')
   }
 }
 

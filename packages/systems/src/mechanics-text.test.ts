@@ -17,7 +17,7 @@ describe('la mecánica en palabras', () => {
       actions: [
         {
           label: 'Bola de fuego',
-          parts: ['Acción', 'Salvación de Destreza (CD de salvación), mitad si la supera', '8d6 de fuego']
+          parts: ['Acción', 'Salvación de Destreza (CD de salvación), mitad si la supera', '8d6 (fuego)']
         }
       ],
       scaling: 'Con un espacio de más nivel que el 3: +1d6 por cada nivel de más',
@@ -50,6 +50,15 @@ describe('la mecánica en palabras', () => {
       label: 'Cargas',
       parts: ['Como mucho, 7', 'se recupera al amanecer', 'vuelven 1d6 + 1']
     })
+  })
+
+  it('una criatura, con lo suyo: su ataque y su daño ya calculados', () => {
+    const wolf = content.find((i) => i.key === 'lobo_2024')
+    if (!wolf) throw new Error('Falta el lobo')
+    const text = mechanicsText(fiveE, wolf.type, wolf.mechanics as Mechanics, 'es', { data: wolf.data })
+    const bite = text?.actions.find((a) => a.label === 'Mordisco')
+    expect(bite?.parts).toContain('Ataque +4')
+    expect(bite?.parts.join(' · ')).toMatch(/1d6 ?\+ ?2 \(perforante\)/)
   })
 
   it('sin mecánica, nada; en inglés, en inglés', () => {

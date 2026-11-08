@@ -821,6 +821,7 @@ function Entry({
   })
   // Al abrir otro, arriba; en lo estrecho (con «Volver a la lista»), el foco va a su título
   const narrow = Boolean(onBack)
+  const systemId = useContext(SystemIdContext)
   useEffect(() => {
     if (!item) return
     const title = document.getElementById(titleId)
@@ -851,7 +852,6 @@ function Entry({
   })
   const body = type?.text ? textOf(item.data[type.text] as Text, language) : ''
   const fromWorld = item.world ? { ...item, world: item.world } : null
-  const systemId = useContext(SystemIdContext)
   const target = fromWorld ? worldTarget : systemTarget
   const where = world ? { worldId: world.worldId, systemId: world.systemId } : null
   return (

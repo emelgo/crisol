@@ -12,6 +12,20 @@
   overflow-y: auto;
 }
 
+/* En la Mesa, fuera de su panel de la derecha (como el d20) */
+:global(body):has(:global([data-tour="mesa-zoom"])) .stack {
+  inset-inline-end: calc(18.75rem + var(--space-4));
+}
+
+/* Con la ficha de dados abierta, a su izquierda: no tapa la tirada */
+:global(body):has(:global([data-tour="ficha-dados"])) .stack {
+  inset-inline-end: calc(var(--space-4) + 2.25rem + var(--space-3) + 21rem + var(--space-3));
+}
+
+:global(body):has(:global([data-tour="mesa-zoom"])):has(:global([data-tour="ficha-dados"])) .stack {
+  inset-inline-end: calc(18.75rem + var(--space-4) + 2.25rem + var(--space-3) + 21rem + var(--space-3));
+}
+
 .hidden {
   position: absolute;
   inline-size: 1px;

@@ -104,7 +104,7 @@ describe('el historial', () => {
       expect.stringMatching(/^Enrique renombró el mundo «Eana» a «Eana \(Fateforge\)»/),
       expect.stringMatching(/^Pepe entró en La Marca/),
       expect.stringMatching(/^Crisol creó la organización «Fateforge».*Crisol$/),
-      expect.stringMatching(/^Una cuenta borrada hizo un cambio \(algoNuevo\)/),
+      expect.stringMatching(/^Una cuenta borrada hizo un cambio\d/),
       expect.stringMatching(/^Enrique borró la campaña «La Marca» de Eana/),
       expect.stringMatching(/^Enrique restauró el mundo «Eana»/),
       expect.stringMatching(/^Enrique borró el mundo «Otro»/),

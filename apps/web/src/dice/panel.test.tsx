@@ -117,8 +117,6 @@ describe('la ficha de dados', () => {
         .map((r) => r.closest('label')?.textContent)
     expect(names()).toEqual(['Todos', 'Oculta'])
     cleanup()
-    // La ficha se recuerda abierta: la jugadora, en otro navegador, la abre ella
-    localStorage.removeItem('crisol.dados')
     renderCampaign('player')
     dice = await openDice()
     expect(names()).toEqual(['Todos', 'Para mí', 'Al máster'])

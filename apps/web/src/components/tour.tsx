@@ -1,6 +1,6 @@
 import { autoUpdate, computePosition, flip, offset, type Placement, shift } from '@floating-ui/dom'
 import { CircleHelp } from 'lucide-react'
-import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import styles from './tour.module.css'
@@ -38,6 +38,24 @@ function markSeen(email: string, id: string) {
 }
 
 /**
+ * Los recorridos montados a la vez (el de la vista y, dentro, el de un mapa o el de los dados): sale uno solo cada vez
+ * (el siguiente espera a que acabe el que está en marcha) y un solo «?», el del último montado (el más concreto)
+ */
+const mounted: string[] = []
+let running: string | null = null
+let version = 0
+const listeners = new Set<() => void>()
+const changed = () => {
+  version++
+  for (const listener of listeners) listener()
+}
+const subscribe = (listener: () => void) => {
+  listeners.add(listener)
+  return () => listeners.delete(listener)
+}
+const snapshot = () => version
+
+/**
  * El recorrido de una pantalla: un globo junto a cada parte dice qué es («1 de 3», Atrás, Siguiente). Sale solo la
  * primera vez, hasta acabarlo; después, con el botón «?» que pinta este componente (va junto al título de la
  * pantalla). Los pasos cuyo elemento no está en la pantalla se saltan
@@ -61,8 +79,22 @@ export function Tour({ id, steps }: { id: string; steps: readonly TourStep[] }) 
   // Sale solo una vez por visita, y no con una ventana abierta encima (espera a que se cierre)
   const started = useRef(false)
   const opened = useWindow()?.opened ?? null
+  const key = useId()
+  useSyncExternalStore(subscribe, snapshot, snapshot)
+  useEffect(() => {
+    mounted.push(key)
+    changed()
+    return () => {
+      mounted.splice(mounted.indexOf(key), 1)
+      if (running === key) running = null
+      changed()
+    }
+  }, [key])
+  const top = mounted[mounted.length - 1] === key
+  const busy = running !== null && running !== key
 
   const start = () => {
+    if (busy) return
     // Solo lo que se ve: en el móvil, lo de la barra que va en «Más» no está
     const present = latest.current.filter((step) => {
       const element = document.querySelector(step.target)
@@ -70,17 +102,27 @@ export function Tour({ id, steps }: { id: string; steps: readonly TourStep[] }) 
     })
     if (present.length === 0) return
     started.current = true
+    running = key
+    changed()
     returnTo.current = document.activeElement
     setVisible(present)
     setIndex(0)
   }
+  // Se cierra (acabado o no) y deja salir al siguiente que espera
+  const stop = () => {
+    setIndex(null)
+    if (running === key) {
+      running = null
+      changed()
+    }
+  }
 
   // La primera vez: un momento después de entrar, cuando ya está pintado
   useEffect(() => {
-    if (!email || opened || started.current || readSeen(email).includes(id)) return
+    if (!email || opened || busy || started.current || readSeen(email).includes(id)) return
     const timer = window.setTimeout(start, 400)
     return () => window.clearTimeout(timer)
-  }, [email, id, opened])
+  }, [email, id, opened, busy])
 
   const step = index === null ? undefined : visible[index]
 
@@ -116,6 +158,14 @@ export function Tour({ id, steps }: { id: string; steps: readonly TourStep[] }) 
           middleware: [offset(14), flip({ padding: 12 }), shift({ padding: 12 })]
         }).then(({ x, y }) => Object.assign(note.style, { left: `${x}px`, top: `${y}px` }))
       })
+      // Lo que ocupa casi toda la pantalla (el mapa de la Mesa) no deja sitio fuera: el globo, en su centro
+      const rect = target.getBoundingClientRect()
+      if (rect.height > window.innerHeight * 0.6 && rect.width > window.innerWidth * 0.5) {
+        const top = Math.max(rect.top, 0) + Math.min(rect.height, window.innerHeight) / 2 - element.offsetHeight / 2
+        const left = rect.left + rect.width / 2 - element.offsetWidth / 2
+        Object.assign(element.style, { left: `${left}px`, top: `${top}px` })
+        return
+      }
       void computePosition(target, element, {
         strategy: 'fixed',
         placement: step.placement ?? 'bottom',
@@ -129,15 +179,15 @@ export function Tour({ id, steps }: { id: string; steps: readonly TourStep[] }) 
     if (index === null) return
     const onKey = (event: globalThis.KeyboardEvent) => {
       if (event.key !== 'Escape') return
-      setIndex(null)
+      stop()
       if (returnTo.current instanceof HTMLElement) returnTo.current.focus()
     }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
   }, [index])
 
-  // El «?»: vuelve a sacar el recorrido cuando se quiera
-  const help = (
+  // El «?»: vuelve a sacar el recorrido cuando se quiera (solo el del recorrido más concreto de los montados)
+  const help = top && (
     <button type="button" className={styles.help} aria-label={t('tour.again')} title={t('tour.again')} onClick={start}>
       <CircleHelp aria-hidden="true" size={18} />
     </button>
@@ -146,7 +196,7 @@ export function Tour({ id, steps }: { id: string; steps: readonly TourStep[] }) 
   // Con Escape se cierra sin acabarlo: volverá a salir la próxima vez
   const close = (finished: boolean) => {
     if (finished) markSeen(email, id)
-    setIndex(null)
+    stop()
     if (returnTo.current instanceof HTMLElement) returnTo.current.focus()
   }
   const last = index === visible.length - 1

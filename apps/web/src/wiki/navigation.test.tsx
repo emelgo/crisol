@@ -23,6 +23,8 @@ const WORLD: World = {
 const ids = { port: crypto.randomUUID(), velaria: crypto.randomUUID(), maela: crypto.randomUUID() }
 
 const renderAt = (pageId: string) => {
+  // El tutorial del mundo, ya visto (si no, sale y se lleva el foco)
+  localStorage.setItem('crisol.recorridos.enrique@crisol.test', JSON.stringify({ seen: ['mundo'] }))
   const api = fakeApi({
     organizations: [ORG],
     worlds: [WORLD],
