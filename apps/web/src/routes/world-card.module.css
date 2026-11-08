@@ -389,6 +389,14 @@
   background: color-mix(in srgb, var(--world-color, var(--color-raised)) 22%, var(--color-raised));
 }
 
+.noCover {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  color: var(--color-muted);
+  opacity: 0.6;
+}
+
 /* Con imagen, sin color: si tiene partes transparentes (un PNG), detrás no se ve el tinte */
 .picture:has(> img) {
   background: var(--color-raised);

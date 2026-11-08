@@ -223,5 +223,13 @@ describe('la hoja en partida', () => {
     expect(await screen.findByText('Thora · Suerte')).toBeDefined()
     const { rolls } = await api.client.call('listRolls', { campaignId: CAMPAIGN.id })
     expect(rolls[0]).toMatchObject({ formula: '3d6kh2', visibility: 'hidden', label: 'Thora · Suerte' })
+
+    // La papelera pide un segundo toque: el primero no quita nada, y salir de ella lo deja como estaba
+    await userEvent.click(screen.getByRole('button', { name: 'Quitar Escudo' }))
+    expect((await play()).items).toHaveLength(1)
+    fireEvent.blur(screen.getByRole('button', { name: '¿Quitar Escudo? Pulsa otra vez' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Quitar Escudo' }))
+    await userEvent.click(screen.getByRole('button', { name: '¿Quitar Escudo? Pulsa otra vez' }))
+    await waitFor(async () => expect((await play()).items).toEqual([]))
   })
 })

@@ -284,8 +284,8 @@ const goods = {
 const exhaustion = ' - (@ajustes.reglas == "e2024" ? 2 * @cansancio : 0)'
 
 const modes = [
-  { key: 'ventaja', label: t('Con ventaja', 'Advantage'), from: '1d20', to: '2d20kh1', gives: 'advantage' },
-  { key: 'desventaja', label: t('Con desventaja', 'Disadvantage'), from: '1d20', to: '2d20kl1', gives: 'disadvantage' }
+  { key: 'ventaja', label: t('Ventaja', 'Advantage'), from: '1d20', to: '2d20kh1', gives: 'advantage' },
+  { key: 'desventaja', label: t('Desventaja', 'Disadvantage'), from: '1d20', to: '2d20kl1', gives: 'disadvantage' }
 ]
 const checkBands = [
   { if: '@objetivo != null && @total >= @objetivo', label: t('Éxito', 'Success'), tone: 'success' },

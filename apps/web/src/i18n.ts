@@ -298,6 +298,8 @@ export const es = {
     sections: 'Partes de la hoja',
     equipped: 'Equipado',
     remove: 'Quitar {{what}}',
+    removeShort: '¿Quitar?',
+    removeSure: '¿Quitar {{what}}? Pulsa otra vez',
     nothing: 'Nada',
     actions: 'Acciones',
     uses: 'Usos',
@@ -667,6 +669,7 @@ export const es = {
     copied: 'Copiado',
     copyManually: 'No se ha podido copiar: está seleccionado, cópialo a mano.',
     issued: 'Enlace del {{date}}.',
+    joins_zero: 'Nadie ha entrado aún con este enlace',
     joins_one: 'Ha entrado {{count}} con este enlace',
     joins_other: 'Han entrado {{count}} con este enlace',
     none: 'Aún no hay enlace.',
@@ -855,7 +858,7 @@ export const es = {
     columnsTwo: 'Dos columnas',
     columnBreak: 'Salto de columna',
     sheetHint: 'En la vista de hoja',
-    statblock: 'Statblock',
+    statblock: 'Bloque de estadísticas',
     statblockHint: 'Marco que no se parte',
     sidenote: 'Nota lateral',
     sidenoteHint: 'Al margen en la hoja',
@@ -965,7 +968,7 @@ export const es = {
     toSheet: 'Ver la hoja',
     pageBreak: 'Salto de página',
     columnBreak: 'Salto de columna',
-    statblock: 'Statblock',
+    statblock: 'Bloque de estadísticas',
     sidenote: 'Nota lateral, a la {{side}}',
     sides: { left: 'izquierda', right: 'derecha' },
     toLeft: 'A la izquierda',
@@ -1056,6 +1059,7 @@ export const es = {
     title: 'Nuevo: {{title}}',
     read: 'Leerlo',
     close: 'Cerrar el aviso',
+    closeOne: 'Cerrar el aviso de «{{title}}»',
     kinds: {
       page: 'Una página',
       secret: 'Un secreto',
@@ -1116,8 +1120,8 @@ export const es = {
     worldChoice: 'Lo que sabe el mundo de esta página',
     campaignChoice: 'Lo que sabe «{{name}}» de esta página',
     characters: 'Quién de «{{name}}» la conoce',
-    asParent: 'Como su madre',
-    asWorld: 'Como diga el mundo o su madre',
+    asParent: 'Como la página de arriba',
+    asWorld: 'Como diga el mundo o la página de arriba',
     everyone: 'Lo sabe todo el mundo',
     nobody: 'No lo sabe nadie',
     campaignAll: 'Lo sabe toda la campaña',
@@ -1128,7 +1132,7 @@ export const es = {
       none: 'No la ve',
       some: 'La ven: {{names}}'
     },
-    here: 'Marcada aquí',
+    here: 'Decidido en esta página',
     by: 'Por «{{title}}»',
     byWorld: 'Lo sabe el mundo',
     fromScratch: 'Empezó de cero',
@@ -1304,6 +1308,7 @@ export const es = {
     copyOf: 'Copia de {{name}}',
     copyName: '{{name}} (copia)',
     copy: 'Copiar',
+    copyHint: 'Una tuya, igual, para cambiarla',
     locked: 'No se puede cambiar',
     name: 'Nombre',
     icon: 'Icono',
@@ -1454,7 +1459,7 @@ export const es = {
     none: 'Ninguna',
     noLicense: 'Sin licencia de fuera',
     content: 'Contenido',
-    loading: 'Cargando el sistema'
+    loading: 'Cargando el sistema…'
   },
   // El sistema de una campaña, en su ventana
   campaignSystem: {
@@ -1695,7 +1700,7 @@ export const es = {
     stamp: 'Sellos',
     pin: 'Pines',
     image: 'Imágenes',
-    widgets: 'Widgets',
+    widgets: 'Contadores',
     gm: 'Pantalla del máster',
     snapshots: 'Instantáneas',
     fog: 'Niebla',
@@ -1872,8 +1877,8 @@ export const es = {
     noImages: 'El mundo aún no tiene imágenes.',
     selectedImage: 'Imagen elegida',
     above: 'Encima de las fichas',
-    widgets: 'Widgets',
-    noWidgets: 'Ningún widget.',
+    widgets: 'Contadores',
+    noWidgets: 'Ningún contador.',
     kinds: { counter: 'Contador', clock: 'Reloj', timer: 'Temporizador' },
     less: 'Menos: {{name}}',
     more: 'Más: {{name}}',
@@ -1911,7 +1916,7 @@ export const es = {
     noCreatures: 'Ninguna criatura en la escena.',
     note: 'Nota de la escena',
     noNote: 'Sin nota',
-    statblocks: 'Statblocks de las criaturas de la escena'
+    statblocks: 'Estadísticas de las criaturas de la escena'
   },
   // Las fichas de la mesa (docs/specs/fichas.md)
   tokens: {
@@ -2219,7 +2224,7 @@ export const es = {
     deleteFolderWarning:
       'Se borra con lo que tiene dentro: sus archivos van a la papelera. Se puede deshacer desde el historial.',
     dropHere: 'Suéltalos para subirlos',
-    progress: 'Subiendo {{name}}',
+    progress: 'Subiendo {{name}}…',
     cancelUpload: 'Cancelar la subida de {{name}}',
     dismiss: 'Quitar {{name}}',
     uploadedAll_one: 'Subido {{count}} archivo',
@@ -2404,10 +2409,10 @@ export const es = {
       createPageTab: 'añadió el mapa «{{name}}» a «{{title}}»',
       createTableTab: 'añadió la tabla «{{name}}» a «{{title}}»',
       createSceneTab: 'añadió la escena «{{name}}» a «{{title}}»',
-      sceneGrid: 'cambió la rejilla de la escena «{{name}}» de «{{title}}»',
-      sceneView: 'cambió la vista inicial de la escena «{{name}}» de «{{title}}»',
-      setSceneImage: 'puso el mapa de la escena «{{name}}» de «{{title}}»',
-      drawScene: 'dibujó el mapa de la escena «{{name}}» de «{{title}}»',
+      sceneGrid: 'cambió la rejilla de la escena «{{name}}»{{of}}',
+      sceneView: 'cambió la vista inicial de la escena «{{name}}»{{of}}',
+      setSceneImage: 'puso el mapa de la escena «{{name}}»{{of}}',
+      drawScene: 'dibujó el mapa de la escena «{{name}}»{{of}}',
       openScene: 'abrió la escena «{{name}}» en la mesa de «{{campaign}}»',
       openSomeScene: 'abrió una escena en la mesa de «{{campaign}}»',
       presentScene: 'enseñó la escena «{{name}}» en la pantalla de «{{campaign}}»',
@@ -2444,9 +2449,9 @@ export const es = {
       setTileFit: 'cambió los bordes de la tele de «{{campaign}}»',
       changeMarks: 'cambió lo dejado en el mapa de «{{name}}» en la mesa de «{{campaign}}»',
       placeTemplate: 'dejó una plantilla en «{{name}}» en la mesa de «{{campaign}}»',
-      createWidget: 'creó el widget «{{label}}» en la mesa de «{{campaign}}»',
-      updateWidget: 'cambió el widget «{{label}}» en la mesa de «{{campaign}}»',
-      deleteWidget: 'quitó el widget «{{label}}» de la mesa de «{{campaign}}»',
+      createWidget: 'creó el contador «{{label}}» en la mesa de «{{campaign}}»',
+      updateWidget: 'cambió el contador «{{label}}» en la mesa de «{{campaign}}»',
+      deleteWidget: 'quitó el contador «{{label}}» de la mesa de «{{campaign}}»',
       saveSnapshot: 'guardó la instantánea «{{name}}» de «{{scene}}» en la mesa de «{{campaign}}»',
       restoreSnapshot: 'volvió a la instantánea «{{name}}» de «{{scene}}» en la mesa de «{{campaign}}»',
       deleteSnapshot: 'quitó la instantánea «{{name}}» de la mesa de «{{campaign}}»',
@@ -2655,9 +2660,9 @@ export const es = {
       setTileFit: 'cambiar los bordes de la tele',
       changeMarks: 'cambiar lo dejado en el mapa de la mesa',
       placeTemplate: 'dejar una plantilla en la mesa',
-      createWidget: 'crear el widget «{{label}}»',
-      updateWidget: 'cambiar un widget de la mesa',
-      deleteWidget: 'quitar un widget de la mesa',
+      createWidget: 'crear el contador «{{label}}»',
+      updateWidget: 'cambiar un contador de la mesa',
+      deleteWidget: 'quitar un contador de la mesa',
       saveSnapshot: 'guardar la instantánea «{{name}}»',
       restoreSnapshot: 'volver a una instantánea de la mesa',
       deleteSnapshot: 'quitar una instantánea de la mesa',
@@ -2703,12 +2708,12 @@ export const es = {
     }
   },
   ai: {
-    playerReads: 'Tu IA solo lee lo que sabe tu campaña.',
+    playerReads: 'Tu IA solo lee lo que sabes en tus campañas.',
     link: 'IA',
     title: 'Ajustes de IA',
     connectorTitle: 'Conectar una IA',
     connector: 'Dirección del conector',
-    connectorHint: 'En tu app de IA (claude.ai u otra), añade un conector MCP con esta dirección.',
+    connectorHint: 'En tu app de IA, añade un conector MCP con esta dirección.',
     modeTitle: 'Modo',
     modes: {
       readOnly: 'Solo lectura',
@@ -2804,14 +2809,14 @@ export const es = {
     done: 'Entendido',
     again: 'Tutorial guiado de esta vista',
     worlds: {
-      create: 'Un mundo guarda sus páginas, tus campañas y tus partidas.',
+      create: 'Cada mundo guarda todo lo suyo.',
       ribbon: 'Dentro de un mundo, esta barra cambiará y mostrará su contenido.',
       files: 'Aquí guardas las imágenes y documentos que comparten todos tus mundos.',
       tags: 'Para ordenar páginas y archivos de todos tus mundos.',
       templates: 'Para crear páginas con sus campos y su texto, en todos tus mundos.',
       systems: 'Las reglas de tus juegos, para tus campañas.',
       campaigns: 'Tus campañas, cada una en su mundo.',
-      history: 'Aquí queda todo lo que se hace, tanto por ti como por la IA, y desde aquí se puede deshacer y rehacer.',
+      history: 'Lo que se hace, por ti o por la IA, para deshacerlo si hace falta.',
       trash: 'Lo que se borra viene aquí, por si hay que recuperarlo, y se guarda durante {{days}} días.',
       account: 'Desde aquí podrás administrar la aplicación.'
     },
@@ -2826,7 +2831,7 @@ export const es = {
       history: 'Lo que se ha hecho en este mundo, para deshacerlo si hace falta.',
       trash: 'Lo borrado de este mundo, por si hay que recuperarlo.',
       settings: 'Aquí se ajusta el mundo: cómo se ve y lo demás.',
-      dice: 'Los dados de tus campañas.',
+      dice: 'Para tirar los dados.',
       back: 'El Crisol te devuelve a tus mundos.'
     },
     dice: {
@@ -2863,7 +2868,7 @@ export const es = {
       page: 'Cada página, con lo que sabe tu grupo.'
     },
     party: {
-      items: 'Lo del grupo, por contenedores. «Mover» lo pasa a un personaje sin duplicarlo.',
+      items: 'Lo que lleva el grupo.',
       moves: 'Quién ha movido qué.'
     },
     inPlay: {
@@ -2879,7 +2884,7 @@ export const es = {
       roll: 'Se tira en una campaña y queda en su registro de dados.'
     },
     files: {
-      upload: 'Desde aquí se suben imágenes, PDF, audio y textos; también puedes soltarlos en la pantalla.',
+      upload: 'Desde aquí se suben archivos; también puedes soltarlos en la pantalla.',
       folders: 'Tus carpetas, para ordenarlos: arrastra un archivo a una para moverlo.',
       search: 'Busca por nombre en todas las carpetas, o filtra por tipo.'
     },
@@ -2890,15 +2895,15 @@ export const es = {
       table: 'Para jugarla: se abre en la mesa de la campaña.'
     },
     tabletop: {
-      map: 'La escena abierta. Pulsa una ficha para ver su tarjeta y arrástrala para moverla (con Mayús, a su casilla). El mapa se mueve con el botón central o con espacio; la rueda acerca.',
-      scenes: 'Las escenas, los encuentros, las criaturas y los personajes: arrástralos al mapa.',
+      map: 'La escena abierta: las fichas se pulsan y se arrastran.',
+      scenes: 'Lo que se pone en la mesa: se arrastra al mapa.',
       present: 'Lo que ve el grupo: presentar la escena en la tele u ocultarla.',
       screen: 'Abre la tele en otra ventana; llévala a la pantalla del grupo.',
       camera: 'La tele sigue tu vista, se queda fija en su marco (que puedes mover) o encuadra al grupo.',
       zoom: 'Acerca, aleja o encuadra la escena entera.',
       combat: 'El combate: con las fichas elegidas o con todas las de la escena.',
-      tools: 'Las herramientas: medir, señalar y dibujar en el mapa, y la visión. Cada una tiene su tecla.',
-      panels: 'Los widgets, la pantalla del máster y las instantáneas de la escena.'
+      tools: 'Las herramientas para trabajar sobre el mapa.',
+      panels: 'Más cosas para llevar la partida.'
     },
     map: {
       tabs: 'Las pestañas de la página: su texto y sus mapas.',
@@ -2926,7 +2931,6 @@ export const es = {
     save: 'Guardar',
     saved: 'Guardado',
     you: 'Tus datos',
-    emailNote: 'Aún no se puede cambiar.',
     password: 'Contraseña',
     currentPassword: 'Contraseña actual',
     newPassword: 'Contraseña nueva',

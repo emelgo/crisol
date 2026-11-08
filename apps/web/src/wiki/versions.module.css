@@ -13,13 +13,16 @@
 }
 
 .toggle {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: var(--space-1);
+  inline-size: 100%;
 }
 
 /* Como los submenús (el «›» del árbol): al abrir, gira hacia abajo */
 .chevron {
+  /* Al borde, como la de «Imprimir y PDF» y las de los demás submenús */
+  margin-inline-start: auto;
   color: var(--color-muted);
   transition: transform 150ms ease-out;
 }

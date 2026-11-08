@@ -643,12 +643,20 @@ function MobileMenu({
     action()
   }
   const go = (to: string) => then(() => void navigate({ to, viewTransition: SECTION } as never))
-  type Entry = { key: string; icon: LucideIcon | typeof FlameIcon; text: string; current: boolean; run: () => void }
+  type Entry = {
+    key: string
+    icon: LucideIcon | typeof FlameIcon
+    text: string
+    current: boolean
+    href: string
+    run: () => void
+  }
   const leave: Entry = {
     key: 'mundos',
     icon: FlameIcon,
     text: t('ribbon.worlds'),
     current: false,
+    href: '/mundos',
     run: then(() => {
       leaveWorld()
       void navigate({ to: '/mundos', viewTransition: LEAVE_WORLD })
@@ -663,6 +671,7 @@ function MobileMenu({
             icon: Shield,
             text: campaign.name,
             current: path === `/mundos/${world.id}/campanas/${campaign.id}`,
+            href: `/mundos/${world.id}/campanas/${campaign.id}`,
             run: go(`/mundos/${world.id}/campanas/${campaign.id}`)
           },
           {
@@ -670,6 +679,7 @@ function MobileMenu({
             icon: Globe,
             text: world.name,
             current: path.startsWith(`/mundos/${world.id}/campanas/${campaign.id}/paginas`),
+            href: master ? `/mundos/${world.id}/wiki` : `/mundos/${world.id}/campanas/${campaign.id}/paginas`,
             run: go(master ? `/mundos/${world.id}/wiki` : `/mundos/${world.id}/campanas/${campaign.id}/paginas`)
           },
           {
@@ -677,6 +687,7 @@ function MobileMenu({
             icon: Users,
             text: t('ribbon.characters'),
             current: path.startsWith(`/mundos/${world.id}/campanas/${campaign.id}/personajes`),
+            href: `/mundos/${world.id}/campanas/${campaign.id}/personajes`,
             run: go(`/mundos/${world.id}/campanas/${campaign.id}/personajes`)
           },
           {
@@ -684,6 +695,7 @@ function MobileMenu({
             icon: BookOpen,
             text: t('ribbon.compendium'),
             current: path.startsWith(`/mundos/${world.id}/campanas/${campaign.id}/compendio`),
+            href: `/mundos/${world.id}/campanas/${campaign.id}/compendio`,
             run: go(`/mundos/${world.id}/campanas/${campaign.id}/compendio`)
           },
           {
@@ -691,6 +703,7 @@ function MobileMenu({
             icon: Backpack,
             text: t('ribbon.party'),
             current: path.startsWith(`/mundos/${world.id}/campanas/${campaign.id}/grupo`),
+            href: `/mundos/${world.id}/campanas/${campaign.id}/grupo`,
             run: go(`/mundos/${world.id}/campanas/${campaign.id}/grupo`)
           },
           // Las criaturas en juego: el máster, todas; un jugador, las que están a la vista
@@ -699,6 +712,7 @@ function MobileMenu({
             icon: Swords,
             text: t('ribbon.inPlay'),
             current: path.startsWith(`/mundos/${world.id}/campanas/${campaign.id}/en-juego`),
+            href: `/mundos/${world.id}/campanas/${campaign.id}/en-juego`,
             run: go(`/mundos/${world.id}/campanas/${campaign.id}/en-juego`)
           }
         ]
@@ -709,6 +723,7 @@ function MobileMenu({
               icon: FlameIcon,
               text: t('ribbon.worlds'),
               current: false,
+              href: '/mundos',
               run: then(() => {
                 leaveWorld()
                 void navigate({ to: '/mundos', viewTransition: LEAVE_WORLD })
@@ -723,6 +738,7 @@ function MobileMenu({
                     icon: House,
                     text: t('ribbon.home'),
                     current: path === `/mundos/${world.id}`,
+                    href: `/mundos/${world.id}`,
                     run: go(`/mundos/${world.id}`)
                   }
                 ])
@@ -733,6 +749,7 @@ function MobileMenu({
               icon: FlameIcon,
               text: t('ribbon.worlds'),
               current: path === '/mundos',
+              href: '/mundos',
               run: go('/mundos')
             }
           ]
@@ -763,15 +780,20 @@ function MobileMenu({
           <ul className={styles.menuGrid}>
             {entries.map((entry) => (
               <li key={entry.key}>
-                <button
-                  type="button"
+                {/* Un enlace (se abre en otra pestaña o con pulsación larga); al tocarlo, con su transición */}
+                <a
+                  href={entry.href}
                   className={styles.menuTile}
                   aria-current={entry.current ? 'page' : undefined}
-                  onClick={entry.run}
+                  onClick={(event) => {
+                    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+                    event.preventDefault()
+                    entry.run()
+                  }}
                 >
                   <entry.icon aria-hidden="true" size={22} strokeWidth={1.75} />
                   {entry.text}
-                </button>
+                </a>
               </li>
             ))}
           </ul>

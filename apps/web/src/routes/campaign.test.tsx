@@ -85,7 +85,7 @@ describe('una campaña y su enlace de invitación', () => {
     renderCampaign(c)
     const link = await screen.findByLabelText('Enlace de invitación')
     expect((link as HTMLInputElement).value).toMatch(/\/unirse\//)
-    expect(screen.getByText('Han entrado 0 con este enlace')).toBeDefined()
+    expect(screen.getByText('Nadie ha entrado aún con este enlace')).toBeDefined()
     await userEvent.click(screen.getByRole('button', { name: 'Copiar' }))
     expect(writeText).toHaveBeenCalledWith((link as HTMLInputElement).value)
     expect(await inMain().findByText('Copiado')).toBeDefined()
@@ -207,11 +207,11 @@ describe('una campaña y su enlace de invitación', () => {
     expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Nuevo enlace' }))
   })
 
-  it('el título, con su mundo encima (un enlace); sin cifras ni explicaciones repetidas', async () => {
+  it('el título, solo (el mundo ya está en la barra: no lo baja); sin cifras ni explicaciones repetidas', async () => {
     renderCampaign(campaign())
     expect(await screen.findByRole('heading', { level: 1, name: 'La Marca' })).toBeDefined()
     const heading = screen.getByRole('heading', { level: 1, name: 'La Marca' }).parentElement as HTMLElement
-    expect(within(heading).getByRole('link', { name: 'Eana' }).getAttribute('href')).toBe(`/mundos/${world.id}`)
+    expect(within(heading).queryByRole('link', { name: 'Eana' })).toBeNull()
     expect(screen.queryByText('Campaña de Eana. Eres su máster.')).toBeNull()
     expect(screen.queryByText('Jugadores', { selector: 'dt' })).toBeNull()
   })

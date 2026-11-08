@@ -8,12 +8,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  inline-size: 3.25rem;
-  block-size: 3.25rem;
+  /* Del alto de una línea del título: con icono, la cabecera no crece (las pestañas no se mueven) */
+  inline-size: 2.75rem;
+  block-size: 2.5rem;
   padding: 0;
   border: 1px dashed transparent;
   background: none;
-  font-size: 2.25rem;
+  font-size: 2rem;
   line-height: 1;
   cursor: pointer;
 }

@@ -104,3 +104,8 @@
     padding: var(--space-6) var(--space-4);
   }
 }
+
+/* Los enlaces sueltos de una pantalla («Volver al inicio»), en azul como los demás enlaces */
+.link {
+  color: var(--color-link);
+}

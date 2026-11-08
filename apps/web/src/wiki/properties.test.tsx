@@ -281,11 +281,13 @@ describe('las etiquetas de la cuenta', () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'Etiquetas' })).toBeDefined()
     const tags = within(screen.getByRole('list', { name: 'Etiquetas' }))
     await waitFor(() =>
-      expect(tags.getAllByRole('listitem').map((item) => item.textContent)).toEqual([
-        'costa1 página',
-        'lugar2 páginas',
-        'ciudad2 páginas'
-      ])
+      // La última fila es «Nueva etiqueta»
+      expect(
+        tags
+          .getAllByRole('listitem')
+          .map((item) => item.textContent)
+          .slice(0, -1)
+      ).toEqual(['costa1 página', 'lugar2 páginas', 'ciudad2 páginas'])
     )
   })
 })

@@ -31,13 +31,7 @@ export function presentWorld<T extends { icon: string | null; color: string | nu
 const welcome = (world: string) =>
   [
     `> [!nota] La portada de ${world}`,
-    '> Es la primera página del mundo y la que se abre al entrar en él. Cuenta aquí lo esencial y enlaza lo demás.',
-    '',
-    '## Por dónde empezar',
-    '',
-    '- Crea páginas con «Página nueva» o escribiendo `[[` y su nombre.',
-    '- Añade un mapa con «+», junto a «Texto».',
-    '- Pon etiquetas a las páginas y búscalas con `#etiqueta` en el árbol.'
+    '> La primera página del mundo, la que se abre al entrar. Cuenta aquí lo esencial y enlaza lo demás.'
   ].join('\n')
 
 /** La página de portada del mundo, si la tiene y sigue fuera de la papelera */

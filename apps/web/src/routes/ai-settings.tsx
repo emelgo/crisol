@@ -47,9 +47,9 @@ export function AiSettings({ player = false }: { player?: boolean }) {
             <h2 id="conector">{t('ai.connectorTitle')}</h2>
             <p>{t('ai.connectorHint')}</p>
             <CopyField label={t('ai.connector')} value={current.data.connectorUrl} />
+            {/* La jugadora: lo que su IA puede leer, dentro de su recuadro (no suelto debajo) */}
+            {player && <p>{t('ai.playerReads')}</p>}
           </section>
-
-          {player && <p>{t('ai.playerReads')}</p>}
           {!player && (
             <fieldset className={settings.modes}>
               <legend>{t('ai.modeTitle')}</legend>

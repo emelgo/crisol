@@ -1,6 +1,7 @@
 /**
- * Una plantilla abierta (/plantillas/:id), con la forma de una página (ADR-0009): su icono y su nombre arriba, sus
- * campos y los bloques de su panel a la derecha, y a la izquierda las demás plantillas. Todo se guarda solo. Las de
+ * Una plantilla abierta (/plantillas/:id), con el esqueleto común (Screen) y la forma de una página (ADR-0009): su
+ * icono y su nombre arriba, sus campos y los bloques de su panel en la ficha de la derecha, y en la de la izquierda las
+ * demás plantillas. Todo se guarda solo. Las de
  * serie se ven igual, sin poder cambiarlas, con «Copiar»
  */
 import type { PageProperty, PageTemplate, PanelBlock } from '@crisol/contracts'
@@ -13,6 +14,9 @@ import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { FormError } from '../components/field.tsx'
+import { PageTitle } from '../components/page-title.tsx'
+import layout from '../components/screen.module.css'
+import { Screen } from '../components/screen.tsx'
 import { blockOf, type Kind, kindOf, PANEL_GROUPS } from '../wiki/panel-blocks.tsx'
 import { RelatedOptions } from '../wiki/related-block.tsx'
 import styles from './editor.module.css'
@@ -76,21 +80,36 @@ function TemplateEditor({ template, all }: { template: PageTemplate; all: readon
   const mine = all.filter((each) => !each.builtIn)
   const builtIn = all.filter((each) => each.builtIn)
   return (
-    <section className={styles.page}>
-      <nav className={styles.list} aria-label={t('templates.title')}>
-        <p className={styles.listHead}>{t('templates.mine')}</p>
-        <TemplateLinks templates={mine} current={template.id} />
-        <p className={styles.listHead}>{t('templates.builtIn')}</p>
-        <TemplateLinks templates={builtIn} current={template.id} />
-      </nav>
-
-      <div className={styles.center}>
-        <header className={styles.band}>
+    <Screen
+      left={
+        <div className={styles.list}>
+          <p className={styles.listHead}>{t('templates.mine')}</p>
+          <TemplateLinks templates={mine} current={template.id} />
+          <p className={styles.listHead}>{t('templates.builtIn')}</p>
+          <TemplateLinks templates={builtIn} current={template.id} />
+        </div>
+      }
+      leftLabel={t('templates.title')}
+      right={
+        <div className={styles.panel}>
+          <FieldsEditor
+            fields={draft.fields}
+            readOnly={readOnly}
+            onChange={(fields: PageProperty[]) => change({ fields })}
+          />
+          <BlocksEditor blocks={draft.panel} readOnly={readOnly} onChange={(panel) => change({ panel })} />
+        </div>
+      }
+      rightLabel={t('templateEditor.panel')}
+    >
+      {/* El título, donde en las demás pantallas: su icono, su nombre y, junto a él, «Plantilla» */}
+      <div className={layout.top}>
+        <div className={styles.heading}>
           <span className={styles.icon} aria-hidden="true">
             <Icon size={22} strokeWidth={1.5} />
           </span>
           {readOnly ? (
-            <h1 className={styles.title}>{draft.name}</h1>
+            <PageTitle>{draft.name}</PageTitle>
           ) : (
             <TitleInput name={draft.name} onCommit={(name) => change({ name })} />
           )}
@@ -98,40 +117,31 @@ function TemplateEditor({ template, all }: { template: PageTemplate; all: readon
             <LayoutTemplate size={14} aria-hidden="true" />
             {t('templateEditor.kind')}
           </span>
-          <span className={styles.status} role="status">
-            {readOnly ? '' : t(state === 'saving' ? 'templateEditor.saving' : 'templateEditor.saved')}
-          </span>
-        </header>
-        {readOnly && (
-          <p className={styles.note}>
-            <Lock size={14} aria-hidden="true" />
-            {t('templateEditor.builtInNote')}
-            <button type="button" className={styles.copy} onClick={() => setCopying(true)}>
-              <Copy size={14} aria-hidden="true" />
-              {t('templates.copy')}
-            </button>
-          </p>
-        )}
-        <FormError message={save.error ? errorText(save.error) : null} />
-        <div className={styles.skeleton}>
-          <SkeletonEditor
-            skeleton={template.skeleton}
-            readOnly={readOnly}
-            onChange={(skeleton) => change({ skeleton })}
-          />
         </div>
+        <span className={styles.status} role="status">
+          {readOnly ? '' : t(state === 'saving' ? 'templateEditor.saving' : 'templateEditor.saved')}
+        </span>
       </div>
-
-      <aside className={styles.panel} aria-label={t('templateEditor.panel')}>
-        <FieldsEditor
-          fields={draft.fields}
+      {readOnly && (
+        <p className={styles.note}>
+          <Lock size={14} aria-hidden="true" />
+          {t('templateEditor.builtInNote')}
+          <button type="button" className={styles.copy} onClick={() => setCopying(true)}>
+            <Copy size={14} aria-hidden="true" />
+            {t('templates.copy')}
+          </button>
+        </p>
+      )}
+      <FormError message={save.error ? errorText(save.error) : null} />
+      <div className={styles.skeleton}>
+        <SkeletonEditor
+          skeleton={template.skeleton}
           readOnly={readOnly}
-          onChange={(fields: PageProperty[]) => change({ fields })}
+          onChange={(skeleton) => change({ skeleton })}
         />
-        <BlocksEditor blocks={draft.panel} readOnly={readOnly} onChange={(panel) => change({ panel })} />
-      </aside>
+      </div>
       {copying && <NewTemplateDialog copyOf={template.id} onClose={() => setCopying(false)} />}
-    </section>
+    </Screen>
   )
 }
 
@@ -163,13 +173,19 @@ function TitleInput({ name, onCommit }: { name: string; onCommit: (name: string)
   const { t } = useTranslation()
   const [value, setValue] = useState(name)
   useEffect(() => setValue(name), [name])
+  // Como PageTitle: el nombre, también en la pestaña del navegador
+  useEffect(() => {
+    document.title = t('app.pageTitle', { page: name })
+  }, [name, t])
   return (
     // El encabezado se llama como la plantilla: su nombre se escribe dentro
-    <h1 className={styles.title} aria-label={value || name}>
+    <h1 className={styles.title} tabIndex={-1} aria-label={value || name}>
       <input
         className={styles.titleInput}
         aria-label={t('templates.name')}
         value={value}
+        // Del ancho de su texto: «Plantilla» va siempre junto al nombre
+        size={Math.max(value.length, 4)}
         maxLength={60}
         onChange={(event) => setValue(event.currentTarget.value)}
         onBlur={() => {

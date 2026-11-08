@@ -7,13 +7,13 @@ import type { Page, PanelBlock } from '@crisol/contracts'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { getRouteApi, Link, Navigate, useNavigate } from '@tanstack/react-router'
 import { ChevronDown, ChevronRight, Eye, FileText } from 'lucide-react'
-import { type ReactNode, useEffect, useMemo, useState } from 'react'
+import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { ApiError } from '../api/client.ts'
 import { useApi } from '../api/context.tsx'
 import { Loading } from '../components/brand.tsx'
-import { failed, LoadError } from '../components/load-error.tsx'
+import { failed, LoadError, SectionError } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { Tour } from '../components/tour.tsx'
 import { Backlinks } from '../wiki/backlinks.tsx'
@@ -31,6 +31,7 @@ import { RelatedBody } from '../wiki/related-block.tsx'
 import { SheetPaper } from '../wiki/sheet/controls.tsx'
 import treeStyles from '../wiki/tree.module.css'
 import wiki from '../wiki/wiki.module.css'
+import { useSideTop } from '../wiki/wiki.tsx'
 import styles from './world-pages.module.css'
 
 const homeRoute = getRouteApi('/mundos/$worldId/campanas/$campaignId/paginas')
@@ -148,6 +149,9 @@ function PlayerWiki({
     queryFn: () => api.call('getCampaign', { campaignId: readAs.campaignId }),
     enabled: Boolean(account) && !readAs.asCharacterId
   })
+  // Las dos fichas de los lados, a la misma altura que en la página del máster (y que en Archivos)
+  const root = useRef<HTMLDivElement>(null)
+  useSideTop(root, !pending && Boolean(account))
   if (pending) return null
   if (!account) return <Navigate to="/entrar" replace />
   // El máster lo ve todo: sin «ver como», a la página en el mundo (donde se escribe), no a una lectura a medias
@@ -160,7 +164,7 @@ function PlayerWiki({
   return (
     <ReadAsProvider value={readAs}>
       {readAs.asCharacterId && <ViewingAs worldId={worldId} readAs={readAs} />}
-      <div className={wiki.wiki}>
+      <div ref={root} className={wiki.wiki}>
         <aside className={wiki.aside} aria-labelledby="paginas-jugador" data-tour="paginas-arbol">
           <div className={wiki.asideHeader}>
             <h2 id="paginas-jugador">{world ? t('wiki.title', { world: world.name }) : t('wiki.pages')}</h2>
@@ -366,7 +370,7 @@ function PlayerEntry({ page }: { page: Page }) {
                   <ContentView blocks={content.data.blocks} worldId={page.worldId} />
                 </NewSecretsContext.Provider>
               ) : failed(content) ? (
-                <LoadError error={content.error} onRetry={() => content.refetch()} />
+                <SectionError error={content.error} onRetry={() => content.refetch()} />
               ) : null}
             </div>
           )}

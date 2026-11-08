@@ -275,8 +275,8 @@ test('las herramientas: medir y dejar un cono, dañar a las de dentro, un reloj 
     .click()
 
   // Un reloj de progreso: se crea, se nombra y se llena hasta 4 de 6; la tele lo ve
-  await tools.getByRole('button', { name: 'Widgets' }).click()
-  const widgets = page.getByRole('complementary', { name: 'Widgets' })
+  await tools.getByRole('button', { name: 'Contadores' }).click()
+  const widgets = page.getByRole('complementary', { name: 'Contadores' })
   await widgets.getByRole('button', { name: 'Reloj' }).click()
   const name = widgets.getByRole('region', { name: 'Reloj' }).getByLabel('Nombre')
   await name.fill('La cripta despierta')
@@ -291,7 +291,7 @@ test('las herramientas: medir y dejar un cono, dañar a las de dentro, un reloj 
   }
   await expect(clock.getByRole('button', { name: 'La cripta despierta: 4 de 6' })).toBeVisible()
   await expect(
-    tv.getByRole('region', { name: 'Widgets' }).getByRole('img', { name: 'La cripta despierta: 4 de 6' })
+    tv.getByRole('region', { name: 'Contadores' }).getByRole('img', { name: 'La cripta despierta: 4 de 6' })
   ).toBeVisible()
   // El temporizador del máster, solo para él
   await expect(tv.getByRole('article', { name: 'Hasta que cierre el portal' })).toHaveCount(0)

@@ -68,6 +68,8 @@ describe('«Sistemas», en Mis mundos', () => {
     const blankItem = within(builtIn.getByRole('button', { name: 'En blanco' }).closest('li') as HTMLElement)
     expect(blankItem.getByLabelText('No se puede cambiar')).toBeDefined()
     expect(screen.queryByRole('button', { name: 'Copiar' })).toBeNull()
+    // La versión, siempre igual: la de serie («1.0») sin el «.0», como la de los tuyos
+    expect(blankItem.getByText('Versión 1')).toBeDefined()
     expect(mine.queryByRole('link')).toBeNull()
     fireEvent.pointerEnter(mine.getByRole('button', { name: 'Fronteras' }).closest('li') as HTMLElement)
     const preview = within(screen.getByRole('complementary', { name: 'Lo que trae' }))

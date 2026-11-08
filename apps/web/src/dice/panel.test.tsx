@@ -76,6 +76,33 @@ describe('la ficha de dados', () => {
     await waitFor(() => expect(screen.queryByRole('complementary', { name: 'Dados' })).toBeNull())
   })
 
+  it('la X la cierra y devuelve el foco al d20; con el menú del engranaje abierto, Escape cierra solo el menú', async () => {
+    renderCampaign('master')
+    const button = await screen.findByRole('button', { name: 'Dados' })
+    let dice = await openDice()
+    await userEvent.click(dice.getByRole('button', { name: 'Opciones de los dados' }))
+    expect(dice.getByRole('button', { name: 'Opciones de los dados' }).getAttribute('aria-expanded')).toBe('true')
+    await userEvent.keyboard('{Escape}')
+    expect(dice.getByRole('button', { name: 'Opciones de los dados' }).getAttribute('aria-expanded')).toBe('false')
+    expect(screen.getByRole('complementary', { name: 'Dados' })).toBeTruthy()
+    await userEvent.click(dice.getByRole('button', { name: 'Cerrar los dados' }))
+    await waitFor(() => expect(screen.queryByRole('complementary', { name: 'Dados' })).toBeNull())
+    expect(document.activeElement).toBe(button)
+    dice = await openDice()
+    expect(dice.getByRole('textbox', { name: 'Tirada' })).toBeTruthy()
+  })
+
+  it('bajo la tirada no se repite lo escrito («1d20» bajo «1d20»); sí lo que la explica', async () => {
+    renderCampaign('master')
+    const dice = await openDice()
+    const field = dice.getByRole('textbox', { name: 'Tirada' })
+    await userEvent.clear(field)
+    await userEvent.type(field, '1d20')
+    expect(dice.queryByText('1d20')).toBeNull()
+    await userEvent.type(field, ' # Sigilo')
+    expect(dice.getByText('1d20 · Sigilo')).toBeTruthy()
+  })
+
   it('la tirada se explica mientras se escribe; si no vale, dice por qué y no deja tirar', async () => {
     renderCampaign('master')
     const dice = await openDice()

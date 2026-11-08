@@ -551,6 +551,7 @@
   border-radius: 8px;
   background: none;
   color: var(--color-text);
+  text-decoration: none;
   font: inherit;
   font-size: 0.8125rem;
   font-weight: 600;

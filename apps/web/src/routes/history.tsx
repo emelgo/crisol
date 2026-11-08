@@ -183,7 +183,9 @@ function HistoryItem(props: {
       <span className={styles.role}>
         {/* En el de la cuenta, de qué mundo es (dentro de un mundo, sobra) */}
         {worldName && <>{worldName} · </>}
-        <time dateTime={entry.at}>{date.format(new Date(entry.at))}</time> · {viaOf(t, entry)}
+        <time dateTime={entry.at}>{date.format(new Date(entry.at))}</time>
+        {/* Desde la web es lo normal: solo se dice cuando fue la IA o Crisol */}
+        {entry.via !== 'ui' && ` · ${viaOf(t, entry)}`}
         {undone && ` · ${t('history.undone')}`}
       </span>
       {undoable && (

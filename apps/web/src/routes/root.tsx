@@ -150,7 +150,11 @@ function GroupKnowledgeWindow() {
 export function NotFound() {
   const { t } = useTranslation()
   const { account } = useAccounts().useAccount()
-  const back = <Link to="/">{t('notFound.back')}</Link>
+  const back = (
+    <Link to="/" className={styles.link}>
+      {t('notFound.back')}
+    </Link>
+  )
   // Con sesión, en el esqueleto de todas las pantallas (el título en su sitio)
   if (account) return <Screen title={t('notFound.title')}>{back}</Screen>
   return (

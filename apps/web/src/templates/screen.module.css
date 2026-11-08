@@ -176,24 +176,69 @@
   color: var(--color-text);
 }
 
-.copy {
-  display: inline-flex;
+/* La ventana de una de serie: que no se cambia y, en una fila, copiarla (como la ventana de un sistema) */
+.builtInNote {
+  display: flex;
   align-items: center;
-  gap: var(--space-1);
-  padding: 0.375rem 0.75rem;
+  gap: var(--space-2);
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+.rows {
+  margin: var(--space-2) 0 0;
+}
+
+.rows > div {
+  padding: var(--space-3) 0;
+}
+
+.rows dt {
+  font-size: 0.875rem;
+}
+
+.rows dd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+}
+
+.rowAction {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  padding: var(--space-2) var(--space-3);
   border: 1px solid var(--color-border);
-  border-radius: 999px;
-  background: var(--color-bg);
+  border-radius: 6px;
+  background: none;
   color: var(--color-text);
   font: inherit;
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
 }
 
-/* «Plantilla nueva»: un recuadro más, vacío y con el borde discontinuo */
-.newCard {
+.rowAction:hover {
+  background: var(--color-raised);
+}
+
+/* «Plantilla nueva» (y «Sistema nuevo»): un recuadro más, vacío y con el borde discontinuo, con las esquinas cortadas
+   como «Nuevo mundo» (routes/world-card.module.css): el borde se recorta con la forma y cada diagonal se dibuja aparte */
+/* Del alto de las demás tarjetas de su fila */
+.grid > li:has(> .newCard) {
   display: flex;
+}
+
+.newCard {
+  --line: var(--color-field-border);
+  display: flex;
+  flex: 1;
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -201,8 +246,17 @@
   inline-size: 100%;
   min-block-size: 11rem;
   clip-path: var(--cut);
-  border: 1px dashed var(--color-frame);
-  background: none;
+  border: 1px dashed var(--line);
+  background:
+    linear-gradient(to bottom right, transparent calc(50% - 0.6px), var(--line) 0 calc(50% + 0.6px), transparent 0) top
+    left / 12px 12px no-repeat,
+    linear-gradient(to bottom left, transparent calc(50% - 0.6px), var(--line) 0 calc(50% + 0.6px), transparent 0) top
+    right / 12px 12px no-repeat,
+    linear-gradient(to bottom right, transparent calc(50% - 0.6px), var(--line) 0 calc(50% + 0.6px), transparent 0)
+    bottom right / 12px 12px no-repeat,
+    linear-gradient(to bottom left, transparent calc(50% - 0.6px), var(--line) 0 calc(50% + 0.6px), transparent 0)
+    bottom left / 12px 12px no-repeat;
+  background-origin: border-box;
   color: var(--color-muted);
   font: inherit;
   font-weight: 600;
@@ -210,7 +264,7 @@
 }
 
 .newCard:hover {
-  border-color: var(--color-muted);
+  --line: var(--color-text);
   color: var(--color-text);
 }
 

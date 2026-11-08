@@ -1,6 +1,6 @@
 /**
- * «Plantillas», en la zona de Mis mundos (ADR-0009): las tuyas, con su engranaje, y las de serie, con su candado y
- * «Copiar». Al pasar por una, a la izquierda, lo que trae. «Plantilla nueva» va como un recuadro más, tras las tuyas
+ * «Plantillas», en la zona de Mis mundos (ADR-0009): las tuyas y las de serie (con su candado), cada una con su
+ * engranaje; el de las de serie, para copiarlas. Al pasar por una, a la izquierda, lo que trae. «Plantilla nueva» va como un recuadro más, tras las tuyas
  */
 import type { PageTemplate } from '@crisol/contracts'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
@@ -126,7 +126,10 @@ function TemplateCard({
       className={styles.card}
       onPointerEnter={() => onHover(template.id)}
       onPointerLeave={() => onHover(null)}
-      onFocus={() => onHover(template.id)}
+      onFocus={(event) => {
+        // El foco en su ventana no vuelve a sacar la vista previa
+        if (!(event.target as Element).closest('dialog')) onHover(template.id)
+      }}
     >
       {template.builtIn && <Lock className={styles.lock} size={14} aria-label={t('templates.locked')} />}
       <span className={styles.icon} aria-hidden="true">
@@ -139,35 +142,81 @@ function TemplateCard({
       </h3>
       <p className={styles.meta}>{origin(template)}</p>
       <div className={styles.foot}>
-        {template.builtIn ? (
-          <button type="button" className={styles.copy} onClick={onCopy}>
-            <Copy size={14} aria-hidden="true" />
-            {t('templates.copy')}
-          </button>
-        ) : (
-          <button
-            ref={gear}
-            type="button"
-            className={styles.gear}
-            aria-label={t('templates.settingsOf', { name: template.name })}
-            title={t('templates.settingsOf', { name: template.name })}
-            aria-haspopup="dialog"
-            onClick={() => setSettings(true)}
-          >
-            <Settings size={16} aria-hidden="true" />
-          </button>
-        )}
-      </div>
-      {settings && (
-        <TemplateSettings
-          template={template}
-          onClose={(gone) => {
-            setSettings(false)
-            if (!gone) gear.current?.focus()
+        {/* Sus acciones, en su engranaje, siempre a la vista (docs/diseno.md); en las de serie, «Copiar» */}
+        <button
+          ref={gear}
+          type="button"
+          className={styles.gear}
+          aria-label={t('templates.settingsOf', { name: template.name })}
+          title={t('templates.settingsOf', { name: template.name })}
+          aria-haspopup="dialog"
+          onClick={() => {
+            // Con su ventana encima, la vista previa de al lado se quita (docs/diseno.md)
+            onHover(null)
+            setSettings(true)
           }}
-        />
-      )}
+        >
+          <Settings size={16} aria-hidden="true" />
+        </button>
+      </div>
+      {settings &&
+        (template.builtIn ? (
+          <BuiltInWindow
+            template={template}
+            onClose={(copy) => {
+              setSettings(false)
+              if (copy) onCopy?.()
+              else gear.current?.focus()
+            }}
+          />
+        ) : (
+          <TemplateSettings
+            template={template}
+            onClose={(gone) => {
+              setSettings(false)
+              if (!gone) gear.current?.focus()
+            }}
+          />
+        ))}
     </li>
+  )
+}
+
+/** La ventana de una de serie: no se cambia, se copia. onClose(copy): si se pidió copiarla */
+function BuiltInWindow({ template, onClose }: { template: PageTemplate; onClose: (copy: boolean) => void }) {
+  const { t } = useTranslation()
+  const dialog = useRef<HTMLDialogElement>(null)
+  const titleId = useId()
+  const copy = useRef(false)
+  return (
+    <Modal ref={dialog} aria-labelledby={titleId} className={cards.dialog} onClose={() => onClose(copy.current)}>
+      <div className={cards.form}>
+        <h2 id={titleId}>{template.name}</h2>
+        <p className={styles.builtInNote}>
+          <Lock size={14} aria-hidden="true" />
+          {t('templateEditor.builtInNote')}
+        </p>
+        <dl className={styles.rows}>
+          <div>
+            <dt>{t('templates.copy')}</dt>
+            <dd>
+              {t('templates.copyHint')}
+              <button
+                type="button"
+                className={styles.rowAction}
+                onClick={() => {
+                  copy.current = true
+                  dialog.current?.close()
+                }}
+              >
+                <Copy size={14} aria-hidden="true" />
+                {t('templates.copy')}
+              </button>
+            </dd>
+          </div>
+        </dl>
+      </div>
+    </Modal>
   )
 }
 

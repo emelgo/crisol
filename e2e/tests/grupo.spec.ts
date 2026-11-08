@@ -69,7 +69,9 @@ test('el grupo: la jugadora coge una poción para su personaje y la usa; el más
   await expect(player.getByText('×2')).toBeVisible()
   await player.screenshot({ path: test.info().outputPath('grupo-hoja.png'), fullPage: false })
   await player.getByRole('button', { name: 'Mío' }).click()
+  // La papelera pide un segundo toque
   await player.getByRole('button', { name: 'Quitar Poción de curación' }).click()
+  await player.getByRole('button', { name: '¿Quitar Poción de curación? Pulsa otra vez' }).click()
   await expect
     .poll(async () => {
       const { character } = await (

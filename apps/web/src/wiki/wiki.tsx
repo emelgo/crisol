@@ -202,7 +202,7 @@ export function WikiLayout({
  * hueco del título), haya portada o no. La de la izquierda lo hace con su margen (CSS); la de la derecha va dentro de
  * la página, así que se mide cuánto tiene que subir o bajar (--panel-top)
  */
-function useSideTop(root: RefObject<HTMLDivElement | null>, ready: boolean) {
+export function useSideTop(root: RefObject<HTMLDivElement | null>, ready: boolean) {
   useLayoutEffect(() => {
     const element = root.current
     if (!element || typeof ResizeObserver === 'undefined') return

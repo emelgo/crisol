@@ -7,6 +7,39 @@
   background: var(--tag-color);
 }
 
+/* «Nueva etiqueta»: una fila más tras la última, con la forma de las demás, vacía y con el borde discontinuo; el «+» en
+   el hueco del punto */
+.newItem {
+  padding-block-start: var(--space-2);
+}
+
+.newRow {
+  display: grid;
+  grid-template-columns: 2.75rem 1fr;
+  align-items: center;
+  gap: var(--space-3);
+  inline-size: 100%;
+  min-block-size: 3.25rem;
+  padding: var(--space-1) var(--space-2);
+  border: 1px dashed var(--color-field-border);
+  border-radius: 4px;
+  background: none;
+  color: var(--color-muted);
+  font: inherit;
+  font-weight: 600;
+  text-align: start;
+  cursor: pointer;
+}
+
+.newRow svg {
+  justify-self: center;
+}
+
+.newRow:hover {
+  border-color: var(--color-text);
+  color: var(--color-text);
+}
+
 .name {
   font-weight: 600;
   overflow-wrap: anywhere;

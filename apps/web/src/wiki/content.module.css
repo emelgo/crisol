@@ -5,7 +5,13 @@
   font-size: 1rem;
 }
 
+/* El ritmo del texto, como en el editor: cada párrafo deja aire debajo y los títulos lo llevan encima */
+.content p {
+  margin-block: 0 0.6em;
+}
+
 /* Los títulos del texto, como en el editor (wiki/sheet/paged.module.css): el 1 con su raya, cada nivel en su color */
+.content .heading,
 .heading {
   margin: 0.6em 0 0.3em;
   font-family: var(--font-display);

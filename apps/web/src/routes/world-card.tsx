@@ -494,6 +494,8 @@ function CoverHeader({
               }}
             />
           )}
+          {/* En su ventana, sin portada: se ve que ahí va una (no un recuadro gris sin más) */}
+          {large && !url && <ImagePlus aria-hidden="true" size={28} strokeWidth={1.5} className={styles.noCover} />}
         </div>
       </div>
       {/* Fuera del marco: su recorte las dejaría debajo del enlace que cubre la tarjeta */}

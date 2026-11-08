@@ -51,7 +51,7 @@ import { ConfirmByName, DangerZone } from '../components/danger.tsx'
 import dialogStyles from '../components/dialog.module.css'
 import { Field, FormError } from '../components/field.tsx'
 import form from '../components/form.module.css'
-import { failed, LoadError } from '../components/load-error.tsx'
+import { failed, LoadError, SectionError } from '../components/load-error.tsx'
 import { Modal } from '../components/modal.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { Tour } from '../components/tour.tsx'
@@ -132,7 +132,7 @@ function FilesPage({ worldId, world, organizationId }: { worldId: string; world:
   )
   return (
     <section className={styles.page}>
-      {failed(files) && <LoadError error={files.error} onRetry={() => files.refetch()} />}
+      {failed(files) && <SectionError error={files.error} onRetry={() => files.refetch()} />}
       <FilesSection
         target={{ worldId }}
         data={own}
@@ -166,7 +166,7 @@ export function CommonFiles() {
   if (!account) return <Navigate to="/entrar" replace />
   return (
     <section className={styles.page}>
-      {failed(files) && <LoadError error={files.error} onRetry={() => files.refetch()} />}
+      {failed(files) && <SectionError error={files.error} onRetry={() => files.refetch()} />}
       {owned ? (
         <FilesSection
           target={{ organizationId: owned.id }}

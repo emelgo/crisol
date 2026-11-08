@@ -126,7 +126,7 @@ describe('los archivos del mundo', () => {
     const input = document.querySelector<HTMLInputElement>('input[type=file][multiple]')
     if (!input) throw new Error('sin campo de archivos')
     await userEvent.upload(input, [new File(['%PDF'], 'Lento.pdf', { type: 'application/pdf' })])
-    expect(await screen.findByRole('progressbar', { name: 'Subiendo Lento.pdf' })).toBeDefined()
+    expect(await screen.findByRole('progressbar', { name: 'Subiendo Lento.pdf…' })).toBeDefined()
     await userEvent.click(screen.getByRole('button', { name: 'Cancelar la subida de Lento.pdf' }))
     await waitFor(() => expect(screen.queryByText('Lento.pdf')).toBeNull())
     expect(cancelled).toBe(true)

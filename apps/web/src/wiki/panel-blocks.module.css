@@ -393,6 +393,11 @@
   outline: none;
 }
 
+/* Sin pie, «Pie» solo sale al acercarse al bloque (como lo demás alrededor de la página) */
+.block:not(:hover, :focus-within) .caption:placeholder-shown::placeholder {
+  color: transparent;
+}
+
 /* Un bloque de imagen vacío: un recuadro discontinuo y discreto, que se aviva al pasar */
 .imageEmpty {
   display: flex;

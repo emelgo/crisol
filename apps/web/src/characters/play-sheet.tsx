@@ -36,6 +36,14 @@ import { type Change, pickId } from './save.ts'
 const Grouped = createContext(false)
 export const SheetGroups = Grouped.Provider
 
+/** La pestaña en la que está un bloque: si su título dice lo mismo que ella, no se repite a la vista */
+const InTab = createContext<string | null>(null)
+function useTitleClass(label: string | undefined) {
+  const tab = useContext(InTab)
+  const same = tab !== null && label !== undefined && tab.trim().toLowerCase() === label.trim().toLowerCase()
+  return same ? styles.hidden : styles.blockTitle
+}
+
 function Part({
   className,
   labelledBy,
@@ -297,6 +305,7 @@ function ResourceBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 
   const [amount, setAmount] = useState('')
   const raw = (ctx.state.sheet[block.field] ?? {}) as { value?: number; max?: number; temp?: number }
   const current = { value: raw.value ?? raw.max ?? 0, max: raw.max ?? 0, temp: raw.temp ?? 0 }
+  const titleClass = useTitleClass(block.label)
   const n = Math.max(0, Math.floor(Number(amount) || 0))
   const apply = (change: { damage?: number; heal?: number; temp?: number }) => {
     if (n === 0) return
@@ -305,7 +314,7 @@ function ResourceBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 
   }
   return (
     <Part className={styles.resource} labelledBy={`${id}-t`}>
-      <h2 id={`${id}-t`} className={styles.blockTitle}>
+      <h2 id={`${id}-t`} className={titleClass}>
         {block.label}
       </h2>
       <p className={styles.resourceValue}>
@@ -344,9 +353,10 @@ function SetBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'set'
   const id = useId()
   const values = (ctx.state.sheet[block.field] ?? {}) as Record<string, Record<string, unknown>>
   const rollKey = block.roll
+  const titleClass = useTitleClass(block.label)
   return (
     <Part className={styles.block} labelledBy={id}>
-      <h2 id={id} className={styles.blockTitle}>
+      <h2 id={id} className={titleClass}>
         {block.label}
       </h2>
       <table className={styles.table}>
@@ -394,6 +404,7 @@ function GroupBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'gr
   const id = useId()
   const { t } = useTranslation()
   const values = (ctx.state.sheet[block.field] ?? {}) as Record<string, unknown>
+  const titleClass = useTitleClass(block.label)
   // De los recursos de dentro (los espacios), solo los que tienen máximo
   const fields = block.fields.filter((f) => {
     const v = values[f.key] as { max?: number } | undefined
@@ -402,7 +413,7 @@ function GroupBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'gr
   if (fields.length === 0) return null
   return (
     <Part className={styles.block} labelledBy={id}>
-      <h2 id={id} className={styles.blockTitle}>
+      <h2 id={id} className={titleClass}>
         {block.label}
       </h2>
       <ul className={styles.group}>
@@ -508,6 +519,9 @@ function ItemsBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'it
   const withParty =
     Boolean(characterId) && block.play && partyTypes.length > 0 && block.types.every((x) => partyTypes.includes(x))
   const [view, setView] = useState<'mine' | 'party'>('mine')
+  const titleClass = useTitleClass(block.label)
+  // La papelera pide un segundo toque para quitar (un toque desviado no borra): cuál está pidiéndolo
+  const [removing, setRemoving] = useState<string | null>(null)
   const granted = (ctx.state.items ?? []).filter((it) => block.types.includes(it.type) && it.from !== null)
   // Lo que lleva, tal como se acaba de guardar (equipar se ve al momento); su nombre y su tipo, del estado
   const known = new Map(ctx.state.carried.map((it) => [it.id, it]))
@@ -558,7 +572,7 @@ function ItemsBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'it
   return (
     <Part className={styles.block} labelledBy={id}>
       <div className={styles.blockHead}>
-        <h2 id={id} className={styles.blockTitle}>
+        <h2 id={id} className={titleClass}>
           {block.label}
         </h2>
         {withParty && (
@@ -632,11 +646,28 @@ function ItemsBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'it
                 )}
                 <button
                   type="button"
-                  className={styles.icon}
-                  aria-label={t('playSheet.remove', { what: it.name })}
-                  onClick={() => update(it.id, () => null)}
+                  className={`${styles.icon} ${styles.remove}`}
+                  data-armed={removing === it.id || undefined}
+                  aria-label={
+                    removing === it.id
+                      ? t('playSheet.removeSure', { what: it.name })
+                      : t('playSheet.remove', { what: it.name })
+                  }
+                  onClick={() => {
+                    if (removing !== it.id) return setRemoving(it.id)
+                    setRemoving(null)
+                    update(it.id, () => null)
+                  }}
+                  onBlur={() => setRemoving((current) => (current === it.id ? null : current))}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Escape' && removing === it.id) {
+                      event.preventDefault()
+                      setRemoving(null)
+                    }
+                  }}
                 >
                   <Trash2 size={14} aria-hidden="true" />
+                  {removing === it.id && <span aria-hidden="true">{t('playSheet.removeShort')}</span>}
                 </button>
               </span>
             )
@@ -742,10 +773,11 @@ function ActionsBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: '
   const { t } = useTranslation()
   const id = useId()
   const actions = ctx.state.actions.filter((a) => !a.error)
+  const titleClass = useTitleClass(block.label ?? t('playSheet.actions'))
   if (actions.length === 0) return null
   return (
     <Part className={styles.block} labelledBy={id}>
-      <h2 id={id} className={styles.blockTitle}>
+      <h2 id={id} className={titleClass}>
         {block.label ?? t('playSheet.actions')}
       </h2>
       <ul className={styles.items}>
@@ -803,10 +835,11 @@ function UsesBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'use
     ...(ctx.state.items ?? []).map((it) => [it.id, it.name] as const),
     ...ctx.state.carried.map((it) => [`p:${it.id}`, it.name] as const)
   ])
+  const titleClass = useTitleClass(block.label ?? t('playSheet.uses'))
   if (uses.length === 0) return null
   return (
     <Part className={styles.block} labelledBy={id}>
-      <h2 id={id} className={styles.blockTitle}>
+      <h2 id={id} className={titleClass}>
         {block.label ?? t('playSheet.uses')}
       </h2>
       <ul className={styles.items}>
@@ -850,10 +883,11 @@ function TextBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'tex
   const id = useId()
   const value = shown(get(ctx.state.sheet, block.field))
   const [text, setText] = useDraft(value)
+  const titleClass = useTitleClass(block.label)
   if (!block.play)
     return (
       <Part className={styles.text} labelledBy={id}>
-        <h2 id={id} className={styles.blockTitle}>
+        <h2 id={id} className={titleClass}>
           {block.label}
         </h2>
         <p className={styles.prose}>{value}</p>
@@ -861,7 +895,7 @@ function TextBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'tex
     )
   return (
     <div className={styles.text}>
-      <label htmlFor={id} className={styles.blockTitle}>
+      <label htmlFor={id} className={titleClass}>
         {block.label}
       </label>
       <textarea
@@ -987,15 +1021,17 @@ function Tabs({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'tabs' }>
         ))}
       </div>
       <div role="tabpanel" id={`${id}-panel`} aria-labelledby={`${id}-tab-${shownTab}`} className={styles.panel}>
-        {tab?.blocks.map((inner, i) => (
-          <Block key={`${shownTab}-${inner.kind}-${i.toString(36)}`} block={inner} ctx={ctx} />
-        ))}
+        <InTab.Provider value={tab?.label ?? null}>
+          {tab?.blocks.map((inner, i) => (
+            <Block key={`${shownTab}-${inner.kind}-${i.toString(36)}`} block={inner} ctx={ctx} />
+          ))}
+        </InTab.Provider>
       </div>
     </div>
   )
 }
 
-/** Descansar: el corto recupera lo de los descansos cortos; el largo, todo y los PG */
+/** Descansar: el corto recupera lo de los descansos cortos; el largo, todo y los PG. Discretos, sin borde */
 function Rests({ ctx, label }: { ctx: Ctx; label: string }) {
   const { t } = useTranslation()
   const restNow = (kind: 'short' | 'long') => void ctx.save({ rest: kind })

@@ -284,13 +284,10 @@ export function summaryOf(
     }
     // Las escenas de la mesa y la mesa de cada campaña (docs/specs/escenas.md)
     case 'updateScene':
-      return say(details.view && !details.grid ? 'sceneView' : 'sceneGrid', {
-        name: text(details.name),
-        title: text(details.title)
-      })
+      return say(details.view && !details.grid ? 'sceneView' : 'sceneGrid', sceneOf(details))
     case 'setSceneImage':
     case 'drawScene':
-      return say(action, { name: text(details.name), title: text(details.title) })
+      return say(action, sceneOf(details))
     case 'openScene':
     case 'presentScene':
       return details.name
@@ -450,6 +447,13 @@ function systemName(details: Record<string, unknown>) {
   if (typeof details.system === 'string') return details.system
   const document = asRecord(details.document).name ?? asRecord(asRecord(details.file).system).name
   return textIn(document)
+}
+
+/** La escena y su página («de «Cripta»»), sin repetir el nombre cuando la página se llama igual */
+function sceneOf(details: Record<string, unknown>) {
+  const name = String(details.name ?? '')
+  const title = String(details.title ?? '')
+  return { name, title, of: title && title !== name ? ` de «${title}»` : '' }
 }
 
 /** «a», «b» y «c» */

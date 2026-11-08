@@ -37,6 +37,13 @@ function markSeen(email: string, id: string) {
   }
 }
 
+/** Lo que señala un paso: lo primero que se vea de su selector (con varios, el de la barra o, en el móvil, otro) */
+function find(selector: string): Element | null {
+  for (const element of document.querySelectorAll(selector))
+    if (typeof element.checkVisibility !== 'function' || element.checkVisibility()) return element
+  return null
+}
+
 /**
  * Los recorridos montados a la vez (el de la vista y, dentro, el de un mapa o el de los dados): sale uno solo cada vez
  * (el siguiente espera a que acabe el que está en marcha) y un solo «?», el del último montado (el más concreto)
@@ -97,8 +104,7 @@ export function Tour({ id, steps }: { id: string; steps: readonly TourStep[] }) 
     if (busy) return
     // Solo lo que se ve: en el móvil, lo de la barra que va en «Más» no está
     const present = latest.current.filter((step) => {
-      const element = document.querySelector(step.target)
-      return element && (typeof element.checkVisibility !== 'function' || element.checkVisibility())
+      return find(step.target) !== null
     })
     if (present.length === 0) return
     started.current = true
@@ -128,7 +134,7 @@ export function Tour({ id, steps }: { id: string; steps: readonly TourStep[] }) 
 
   // El globo junto a su elemento y el aro alrededor; siguen al elemento si la pantalla se mueve
   useLayoutEffect(() => {
-    const target = step ? document.querySelector(step.target) : null
+    const target = step ? find(step.target) : null
     const element = bubble.current
     const halo = ring.current
     if (!step || !target || !element || !halo) return
@@ -146,7 +152,7 @@ export function Tour({ id, steps }: { id: string; steps: readonly TourStep[] }) 
     return autoUpdate(target, element, () => {
       around(halo, target)
       ;(step.also ?? []).forEach((also, i) => {
-        const other = document.querySelector(also.target)
+        const other = find(also.target)
         const box = extra.current[i]
         if (!other || !box) return
         around(box, other)

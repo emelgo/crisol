@@ -56,6 +56,15 @@
   font-weight: 400;
 }
 
+/* Lo que no se puede cambiar (el email del perfil) se lee como texto, no como un campo */
+.field input[readonly] {
+  min-block-size: auto;
+  padding: 0;
+  border-color: transparent;
+  background: none;
+  font-weight: 400;
+}
+
 .field textarea {
   padding-block: var(--space-2);
   resize: vertical;

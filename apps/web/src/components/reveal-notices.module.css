@@ -2,8 +2,9 @@
 .region {
   position: fixed;
   z-index: 40;
-  inset-block-end: var(--space-6);
-  inset-inline-end: var(--space-6);
+  /* Encima del d20 y del «?» de abajo a la derecha, sin taparlos */
+  inset-block-end: calc(var(--space-4) + 3.25rem + var(--space-3));
+  inset-inline-end: var(--space-4);
   display: grid;
   gap: var(--space-2);
   inline-size: min(22rem, calc(100vw - 2 * var(--space-4)));

@@ -15,7 +15,7 @@ import { FormError } from '../components/field.tsx'
 import { focusAfterRemoving, focusOnMount, useReturnFocus } from '../components/focus.ts'
 import form from '../components/form.module.css'
 import styles from '../components/list.module.css'
-import { failed, LoadError } from '../components/load-error.tsx'
+import { failed, LoadError, SectionError } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { RemovedMessage, RemoveMemberConfirm, useRemoveMember } from '../components/remove-member.tsx'
 import screen from '../components/screen.module.css'
@@ -62,14 +62,7 @@ export function CampaignPage() {
   }
 
   return (
-    <Screen
-      title={campaign.name}
-      eyebrow={
-        <Link to="/mundos/$worldId" params={{ worldId: campaign.worldId }}>
-          {world.name}
-        </Link>
-      }
-    >
+    <Screen title={campaign.name}>
       {/* Su portada (la de su tarjeta), como franja bajo el título: el título no se mueve */}
       {campaign.cover && (
         <div className={screen.cover}>
@@ -83,7 +76,12 @@ export function CampaignPage() {
         id="campana"
         // Un paso por cada botón de la barra de la campaña
         steps={[
-          { target: '[data-tour="barra-campana"]', text: t('tour.campaign.home'), placement: 'right' },
+          // En el móvil no hay barra: el paso señala la campaña en la página
+          {
+            target: '[data-tour="barra-campana"], [data-tour="campana-miembros"]',
+            text: t('tour.campaign.home'),
+            placement: 'right'
+          },
           { target: '[data-tour="barra-paginas"]', text: t('tour.campaign.pages'), placement: 'right' },
           { target: '[data-tour="barra-personajes"]', text: t('tour.campaign.characters'), placement: 'right' },
           { target: '[data-tour="barra-compendio"]', text: t('tour.campaign.compendium'), placement: 'right' },
@@ -133,7 +131,9 @@ function CharactersPanel({ campaign }: { campaign: Campaign }) {
     queryFn: () => api.call('listCharacters', { campaignId: campaign.id }),
     enabled: Boolean(campaign.system)
   })
-  if (!campaign.system || !characters.data) return null
+  if (!campaign.system) return null
+  if (!characters.data)
+    return failed(characters) ? <SectionError error={characters.error} onRetry={() => characters.refetch()} /> : null
   const own = characters.data.characters
   const allies = characters.data.allies ?? []
   if (own.length === 0 && allies.length === 0) return null
@@ -147,7 +147,7 @@ function CharactersPanel({ campaign }: { campaign: Campaign }) {
             <Link
               to="/mundos/$worldId/campanas/$campaignId/personajes/$characterId"
               params={{ worldId: campaign.worldId, campaignId: campaign.id, characterId: character.id }}
-              className={`${styles.name} ${styles.entity}`}
+              className={`${styles.name} ${styles.entity} ${styles.opens}`}
             >
               {character.name}
             </Link>
@@ -199,7 +199,7 @@ function MembersPanel({ campaign }: { campaign: Campaign }) {
 
   return (
     <>
-      <section aria-labelledby="miembros">
+      <section aria-labelledby="miembros" data-tour="campana-miembros">
         <h2 id="miembros">{t('members.title')}</h2>
         <ul className={styles.list} aria-labelledby="miembros">
           {members.data.members.map((member) => (
@@ -334,7 +334,9 @@ function InvitationPanel({ campaignId }: { campaignId: string }) {
   const queryClient = useQueryClient()
   const errorText = useErrorText()
   const [confirming, setConfirming] = useState(false)
-  const regenerateButton = useReturnFocus()
+  // El botón se queda a la vista mientras se confirma (la confirmación flota): al cerrarla, el foco vuelve a él
+  const regenerateButton = useRef<HTMLButtonElement>(null)
+  const backToButton = () => regenerateButton.current?.focus()
   const warningId = useId()
   const key = ['invitation', campaignId]
   const invitation = useQuery({ queryKey: key, queryFn: () => api.call('getInvitation', { campaignId }) })
@@ -344,7 +346,7 @@ function InvitationPanel({ campaignId }: { campaignId: string }) {
     onSuccess: (data) => {
       update(data)
       // Desde la confirmación: se cierra y el foco vuelve a «Nuevo enlace»
-      if (confirming) regenerateButton.back()
+      if (confirming) backToButton()
       setConfirming(false)
     }
   })
@@ -383,41 +385,54 @@ function InvitationPanel({ campaignId }: { campaignId: string }) {
         <p>{t('invitation.none')}</p>
       )}
 
-      {confirming ? (
-        <div>
-          <p id={warningId}>{t('invitation.warning')}</p>
-          <div className={styles.actions}>
-            <BusyButton
-              ref={focusOnMount}
-              className={form.button}
-              aria-describedby={warningId}
-              busy={regenerate.isPending}
-              onClick={() => regenerate.mutate()}
-            >
-              {t('invitation.confirm')}
-            </BusyButton>
-            <button
-              type="button"
-              className={styles.secondary}
-              onClick={() => {
-                regenerateButton.back()
-                setConfirming(false)
-              }}
-            >
-              {t('list.cancel')}
-            </button>
-          </div>
-        </div>
-      ) : (
+      {/* La confirmación flota bajo el botón, sin empujar la página (docs/diseno.md: los desplegables flotan) */}
+      <div className={styles.anchor}>
         <BusyButton
-          ref={regenerateButton.ref}
+          ref={regenerateButton}
           className={styles.secondary}
-          busy={regenerate.isPending}
-          onClick={() => (url ? setConfirming(true) : regenerate.mutate())}
+          busy={regenerate.isPending && !confirming}
+          aria-expanded={url ? confirming : undefined}
+          onClick={() => (url ? setConfirming(!confirming) : regenerate.mutate())}
         >
           {url ? t('invitation.regenerate') : t('invitation.create')}
         </BusyButton>
-      )}
+        {confirming && (
+          <div
+            role="dialog"
+            aria-labelledby={warningId}
+            className={styles.floating}
+            onKeyDown={(event) => {
+              if (event.key !== 'Escape') return
+              event.stopPropagation()
+              backToButton()
+              setConfirming(false)
+            }}
+          >
+            <p id={warningId}>{t('invitation.warning')}</p>
+            <div className={styles.actions}>
+              <BusyButton
+                ref={focusOnMount}
+                className={form.button}
+                aria-describedby={warningId}
+                busy={regenerate.isPending}
+                onClick={() => regenerate.mutate()}
+              >
+                {t('invitation.confirm')}
+              </BusyButton>
+              <button
+                type="button"
+                className={styles.secondary}
+                onClick={() => {
+                  backToButton()
+                  setConfirming(false)
+                }}
+              >
+                {t('list.cancel')}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
 
       {url && (
         <p>

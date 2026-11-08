@@ -527,3 +527,11 @@
   gap: var(--space-2);
   margin: 0;
 }
+
+/* En el táctil (la jugadora en el móvil), la X del panel del pin, del tamaño de un dedo */
+@media (pointer: coarse) {
+  .close {
+    inline-size: var(--target);
+    block-size: var(--target);
+  }
+}

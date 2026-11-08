@@ -17,7 +17,7 @@ import { PlaySheet } from '../characters/play-sheet.tsx'
 import { Loading } from '../components/brand.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
 import { FormError } from '../components/field.tsx'
-import { failed, LoadError } from '../components/load-error.tsx'
+import { failed, LoadError, SectionError } from '../components/load-error.tsx'
 import { Screen } from '../components/screen.tsx'
 import { SystemImage } from '../components/system-image.tsx'
 import { Tour } from '../components/tour.tsx'
@@ -308,7 +308,7 @@ export function CreatureSheet({
   if (!read.data)
     return (
       <div className={styles.reading}>
-        {failed(read) ? <LoadError error={read.error} onRetry={() => read.refetch()} /> : <Loading />}
+        {failed(read) ? <SectionError error={read.error} onRetry={() => read.refetch()} /> : <Loading />}
       </div>
     )
   const { creature, state } = read.data

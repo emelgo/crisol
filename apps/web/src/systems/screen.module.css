@@ -5,7 +5,11 @@
   border: 0;
   background: none;
   padding: 0;
+  /* Como el título de las tarjetas de Plantillas y de Mis mundos: condensado y en mayúsculas (el botón no lo hereda) */
+  color: inherit;
   font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
   text-align: start;
   cursor: pointer;
 }

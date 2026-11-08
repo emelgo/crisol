@@ -161,7 +161,7 @@ export function PartyInventory({ campaignId, me }: { campaignId: string; me?: st
               <h3 id={`grupo-${container.id}`} className={styles.small} tabIndex={-1}>
                 {name}
               </h3>
-              <span className={styles.count}>{items.reduce((n, i) => n + i.quantity, 0)}</span>
+              <span className={styles.count}>{items.length}</span>
               <button
                 type="button"
                 className={styles.icon}

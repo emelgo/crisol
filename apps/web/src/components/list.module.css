@@ -45,17 +45,28 @@ section[aria-labelledby] .list::before {
   overflow-wrap: break-word;
 }
 
+/* Lo que se abre, en azul (los enlaces); lo que solo se ve, en el color del texto */
+a.opens {
+  color: var(--color-link);
+}
+
+a.opens:hover {
+  text-decoration: underline;
+}
+
 .role {
   color: var(--color-muted);
   font-size: 0.9375rem;
 }
 
-/* El papel de alguien: un rótulo con marco, como en la hoja */
+/* El papel de alguien: una píldora, como las demás etiquetas de la app (la plantilla de una página, «Inicio») */
 .tag {
-  padding: 0.0625rem 0.5625rem;
-  border: 1px solid var(--color-field-border);
+  padding: 0.1875rem 0.625rem;
+  border: 1px solid color-mix(in srgb, var(--color-text) 14%, transparent);
+  border-radius: 999px;
+  color: var(--color-muted);
   font-family: var(--font-body);
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   font-weight: 600;
 }
 
@@ -202,4 +213,29 @@ section[aria-labelledby] .list::before {
     opacity: 0;
     transform: translateY(4px);
   }
+}
+
+/* Lo que se confirma junto a un botón: flota debajo de él y no mueve nada */
+.anchor {
+  position: relative;
+  display: inline-block;
+}
+
+.floating {
+  position: absolute;
+  inset-block-start: calc(100% + var(--space-2));
+  inset-inline-start: 0;
+  z-index: 10;
+  display: grid;
+  gap: var(--space-3);
+  inline-size: min(22rem, calc(100vw - 2rem));
+  padding: var(--space-4);
+  border: 1px solid var(--color-frame);
+  border-radius: 8px;
+  background: var(--color-surface);
+  box-shadow: 0 1rem 2.5rem rgb(0 0 0 / 0.35);
+}
+
+.floating p {
+  margin: 0;
 }

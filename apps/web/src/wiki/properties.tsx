@@ -261,11 +261,13 @@ export function PageProperties({
 }) {
   const { t } = useTranslation()
   if (page.locked) {
-    if (page.properties.length === 0) return null
+    // Solo se leen: lo vacío no se enseña (un título sin valor parece roto)
+    const filled = page.properties.filter((property) => !emptyValue(property))
+    if (filled.length === 0) return null
     return (
       <section aria-label={t('properties.title')} className={styles.properties} data-properties="">
         <dl className={styles.list}>
-          {page.properties.map((property) => (
+          {filled.map((property) => (
             <div key={property.name} className={styles.row}>
               <dt>
                 {property.name}
@@ -281,6 +283,15 @@ export function PageProperties({
     )
   }
   return <InlineProperties page={page} adders={adders} adderRef={adderRef} />
+}
+
+/** Si una propiedad no dice nada (sin texto, sin páginas, sin elementos) */
+function emptyValue(property: PageProperty): boolean {
+  const value: unknown = property.value
+  if (value === null || value === undefined) return true
+  if (typeof value === 'string') return value.trim() === ''
+  if (Array.isArray(value)) return value.length === 0
+  return false
 }
 
 const sameProperties = (a: readonly PageProperty[], b: readonly PageProperty[]) =>
@@ -586,6 +597,7 @@ function ValueField({
   const templates = useTemplates().data?.templates ?? []
   const [everyPage, setEveryPage] = useState(false)
   const [choice, setChoice] = useState('')
+  const [typing, setTyping] = useState(false)
   const valueId = `${id}-valor`
   const label = t('properties.value', { n })
   switch (row.type) {
@@ -644,7 +656,10 @@ function ValueField({
             list={`${id}-paginas`}
             value={choice}
             autoComplete="off"
-            placeholder={t('properties.pagesHint')}
+            // Sin nada, «Vacío» como los demás campos; al escribir en él, qué hace
+            placeholder={t(row.pages.length === 0 && !typing ? 'properties.empty' : 'properties.pagesHint')}
+            onFocus={() => setTyping(true)}
+            onBlur={() => setTyping(false)}
             onChange={(event) => {
               setChoice(event.target.value)
               pick(event.target.value)

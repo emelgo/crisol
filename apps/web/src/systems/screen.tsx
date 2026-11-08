@@ -46,6 +46,15 @@ function useOrigin() {
   }
 }
 
+/**
+ * Su versión, siempre igual: la de un sistema tuyo es un número que sube con cada cambio; la de uno de serie, la que le
+ * pone quien lo hace («1.0»), sin los «.0» del final
+ */
+function versionOf(system: Pick<SystemSummary, 'builtIn' | 'release' | 'version'>) {
+  if (!system.builtIn) return String(system.version)
+  return system.release.trim().replace(/(\.0+)+$/, '') || String(system.version)
+}
+
 export function SystemsScreen() {
   const { t } = useTranslation()
   const { account, pending } = useAccounts().useAccount()
@@ -116,7 +125,10 @@ function SystemCard({ system, onHover }: { system: SystemSummary; onHover: (id: 
       className={screen.card}
       onPointerEnter={() => onHover(system.id)}
       onPointerLeave={() => onHover(null)}
-      onFocus={() => onHover(system.id)}
+      onFocus={(event) => {
+        // El foco en su ventana no vuelve a sacar la vista previa
+        if (!(event.target as Element).closest('dialog')) onHover(system.id)
+      }}
       onBlur={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget)) onHover(null)
       }}
@@ -131,16 +143,18 @@ function SystemCard({ system, onHover }: { system: SystemSummary; onHover: (id: 
           type="button"
           className={`${screen.open} ${styles.opener}`}
           aria-haspopup="dialog"
-          onClick={() => setOpen(true)}
+          onClick={() => {
+            // Con su ventana encima, la vista previa de al lado se quita (docs/diseno.md)
+            onHover(null)
+            setOpen(true)
+          }}
         >
           {system.name}
         </button>
       </h3>
       <p className={screen.meta}>{origin(system)}</p>
       <div className={screen.foot}>
-        <span className={styles.version}>
-          {t('systems.version', { version: system.builtIn ? system.release : system.version })}
-        </span>
+        <span className={styles.version}>{t('systems.version', { version: versionOf(system) })}</span>
         {/* Sus acciones, en su engranaje, siempre a la vista (docs/diseno.md) */}
         <button
           type="button"
@@ -148,7 +162,11 @@ function SystemCard({ system, onHover }: { system: SystemSummary; onHover: (id: 
           aria-label={t('systems.settingsOf', { name: system.name })}
           title={t('systems.settingsOf', { name: system.name })}
           aria-haspopup="dialog"
-          onClick={() => setOpen(true)}
+          onClick={() => {
+            // Con su ventana encima, la vista previa de al lado se quita (docs/diseno.md)
+            onHover(null)
+            setOpen(true)
+          }}
         >
           <Settings size={16} aria-hidden="true" />
         </button>
@@ -549,7 +567,7 @@ function SystemWindow({ system, onClose }: { system: SystemSummary; onClose: (go
         <dl className={styles.rows}>
           <div>
             <dt>{t('systems.versionLong')}</dt>
-            <dd>{system.builtIn ? system.release : system.version}</dd>
+            <dd>{versionOf(system)}</dd>
           </div>
           <div>
             <dt>{t('systems.download')}</dt>

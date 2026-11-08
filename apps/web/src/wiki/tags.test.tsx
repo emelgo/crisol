@@ -50,9 +50,11 @@ const renderAt = (path: string, api = tagsApi()) => {
   return { api, router }
 }
 
-/** Las filas del catálogo, con su texto */
+/** Las filas del catálogo, con su texto (sin la última, la de «Nueva etiqueta») */
 const rows = () =>
-  [...screen.getByRole('list', { name: 'Etiquetas' }).querySelectorAll(':scope > li')].map((li) => li.textContent)
+  [...screen.getByRole('list', { name: 'Etiquetas' }).querySelectorAll(':scope > li')]
+    .map((li) => li.textContent)
+    .filter((text) => text !== 'Nueva etiqueta')
 
 beforeEach(() =>
   localStorage.setItem(
@@ -68,7 +70,9 @@ describe('las etiquetas de la cuenta', () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'Etiquetas' })).toBeDefined()
     await waitFor(() => expect(rows()).toEqual(['lugar1 página · 1 archivo', 'ciudad1 página']))
 
-    await userEvent.click(screen.getByRole('button', { name: 'Nueva etiqueta' }))
+    // «Nueva etiqueta», una fila más al final de la lista (no un botón arriba)
+    const last = screen.getByRole('list', { name: 'Etiquetas' }).querySelector(':scope > li:last-child') as HTMLElement
+    await userEvent.click(within(last).getByRole('button', { name: 'Nueva etiqueta' }))
     const create = await screen.findByRole('dialog', { name: 'Nueva etiqueta' })
     await userEvent.type(within(create).getByLabelText('Nombre de la etiqueta'), 'facción')
     await userEvent.click(within(create).getByRole('radio', { name: 'Vino' }))

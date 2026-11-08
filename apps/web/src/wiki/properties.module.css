@@ -88,8 +88,17 @@
 }
 
 .chips li {
-  padding: 0 var(--space-2);
-  border: 1px solid var(--color-field-border);
+  /* Como las pastillas de cuando se escribe (la misma forma al leer y al editar) */
+  padding: 0 0.5rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+  font-size: 0.875rem;
+}
+
+/* Las páginas enlazadas, en azul como los demás enlaces */
+.chips a,
+.pageChip a {
+  color: var(--color-link);
 }
 
 .chipRemove {
@@ -375,8 +384,14 @@ textarea.valueInput {
 
 /* Un campo de enlaces: «Enlazar una página…» y «Todas las páginas» solo al acercarse o al escribir (alrededor de la
    página, nada pesa) */
-.prop:not(:hover, :focus-within) .pageInput::placeholder {
-  color: transparent;
+/* Con páginas puestas, el campo para añadir otra no ocupa sitio hasta acercarse (no deja un hueco bajo ellas) */
+.prop:not(:hover, :focus-within) .chipField:has(.pageChip) .pageInput {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
 }
 
 .allPagesHere {

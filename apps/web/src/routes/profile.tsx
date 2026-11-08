@@ -106,14 +106,7 @@ function ProfileData() {
           maxLength={80}
         />
       </div>
-      <Field
-        label={t('account.email')}
-        name="email"
-        type="email"
-        value={account.email}
-        readOnly
-        hint={t('profile.emailNote')}
-      />
+      <Field label={t('account.email')} name="email" type="email" value={account.email} readOnly />
       <DiceColorField name="diceColor" value={account.diceColor} />
       <FormError
         message={status && !status.ok ? t(`errors.${status.code}`, { defaultValue: t('errors.UNKNOWN') }) : null}

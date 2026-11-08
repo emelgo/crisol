@@ -182,6 +182,18 @@
   background: var(--color-bg);
 }
 
+/* Con el dedo, del tamaño que se toca (en el PC no cambian) */
+@media (pointer: coarse) {
+  .older,
+  .more button {
+    min-height: var(--target);
+  }
+
+  .more button {
+    padding-inline: var(--space-2);
+  }
+}
+
 .detail {
   margin: var(--space-1) 0 0;
   font-size: 0.8125rem;

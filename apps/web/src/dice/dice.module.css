@@ -143,6 +143,15 @@
   background: var(--color-raised);
 }
 
+/* Con el dedo, del tamaño que se toca (en el PC no cambian) */
+@media (pointer: coarse) {
+  .gear,
+  .close {
+    min-width: var(--target);
+    min-height: var(--target);
+  }
+}
+
 .empty {
   margin: var(--space-2) var(--space-1);
   color: var(--color-muted);
@@ -312,9 +321,10 @@
     background: rgb(0 0 0 / 0.45);
   }
 
-  /* Encima de la llama de abajo, como el «?» */
+  /* En la esquina de abajo, a la altura de la llama del centro (el «?» va arriba en el móvil) */
   .launcher {
-    inset-block-end: calc(3.5rem + var(--space-3));
+    inset-block-end: var(--space-4);
+    inset-inline-end: var(--space-4);
   }
 
   .card {
@@ -339,10 +349,17 @@
     margin: 0 auto var(--space-2);
   }
 
+  /* Los siete dados, repartidos en la fila con la silueta encima del nombre (si no caben, bajan): ninguno se corta */
   .quick {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    scrollbar-width: none;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(2.25rem, 1fr));
+  }
+
+  .quickDie {
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+    padding: 2px 0;
   }
 
   .quickDie,

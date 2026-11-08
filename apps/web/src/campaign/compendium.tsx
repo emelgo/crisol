@@ -32,7 +32,7 @@ import { useAnnounce } from '../components/announcer.tsx'
 import { Loading } from '../components/brand.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
 import { FormError } from '../components/field.tsx'
-import { failed, LoadError } from '../components/load-error.tsx'
+import { failed, LoadError, SectionError } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { useSettled } from '../components/settled.ts'
 import { SystemImage } from '../components/system-image.tsx'
@@ -306,7 +306,7 @@ export function CompendiumScreen() {
                 ))}
                 {hits.data && items.length === 0 && <li className={styles.none}>{t('compendium.none')}</li>}
               </ul>
-              {hits.isError && <LoadError error={hits.error} onRetry={() => void hits.refetch()} />}
+              {hits.isError && <SectionError error={hits.error} onRetry={() => void hits.refetch()} />}
               {hits.hasNextPage && (
                 <BusyButton
                   className={styles.more}
@@ -632,7 +632,7 @@ function TypeShelf({
   })
   if (!browsed.data)
     return failed(browsed) ? (
-      <LoadError error={browsed.error} onRetry={() => void browsed.refetch()} />
+      <SectionError error={browsed.error} onRetry={() => void browsed.refetch()} />
     ) : (
       <p className={styles.none}>{t('compendium.loadingMore')}</p>
     )
@@ -831,7 +831,7 @@ function Entry({
   if (!read.data) {
     return (
       <div className={styles.reading}>
-        {failed(read) ? <LoadError error={read.error} onRetry={() => read.refetch()} /> : <Loading />}
+        {failed(read) ? <SectionError error={read.error} onRetry={() => read.refetch()} /> : <Loading />}
       </div>
     )
   }
