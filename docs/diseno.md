@@ -52,7 +52,10 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   se mueven, cambian de tamaño, varias a la vez), sin cambiar de vista. **La jugadora abre la campaña en su ficha**
   (la Mesa, a un clic). **El inventario del grupo va en la ficha**, como en D&D Beyond: una sección «Del grupo»
   compartida en la pestaña de equipo, sin «Grupo» en la barra. **Las campañas se abren en otra pestaña del navegador**,
-  como la partida en D&D Beyond (Enrique, 2026-11-09). Lo de abajo sobre la portada de la campaña queda hasta que esto
+  como la partida en D&D Beyond (Enrique, 2026-11-09). **Varias campañas por mundo, y lo que se comparte va a la
+  campaña desde la que se hace** (Enrique, 2026-11-09, para no liarse compartiendo con grupos distintos): «Enseñar» desde
+  la Mesa de una campaña solo llega a ella (se ve siempre en cuál se está); desde la wiki del mundo, «quién la conoce»
+  enseña cada campaña con su casilla; con una sola campaña no se pregunta a quién. Lo de abajo sobre la portada de la campaña queda hasta que esto
   se construya.
 - **La campaña se abre en su propia vista, como un mundo** (Enrique, 2026-11-05): al entrar, la barra cambia y enseña
   lo de la campaña (sus personajes, su compendio, los dados…), con la transición de entrar. **El compendio** (el

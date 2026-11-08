@@ -24,6 +24,10 @@ accesibilidad…) entra en la última tarea de este.
   (como la tele) con Tiradas, Combate, Personajes, Compendio y Páginas (las que conoce).
 - Fuera de su pestaña, cada tirada sale un momento sobre el d20 (las ocultas del máster, en morado, «solo tú»).
 
+- **Varias campañas por mundo** (Enrique, 2026-11-09): lo que se enseña desde la Mesa va solo a esa campaña; en la wiki
+  del mundo, «quién la conoce» por campaña; con una sola campaña, sin preguntar a quién.
+- **Cada campaña se abre en otra pestaña del navegador**, como en D&D Beyond (hecho).
+
 ## Cómo
 
 - **Rutas**: `/mundos/$w/campanas/$c` pasa a ser la Mesa (máster) o la ficha (jugadora); `?panel=<pestaña>` elige la
