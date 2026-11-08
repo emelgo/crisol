@@ -7,6 +7,20 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
+### Para retomar (2026-11-08, madrugada: lo siguiente, rehacer la campaña alrededor de la Mesa)
+
+- **Rama `docs/tras-revision`** (sin PR, sin subir): tras el PR #115, los cuadros unificados, la transición de entrar en
+  una plantilla y en una campaña, las etiquetas dentro de otras (arrastrar), el fondo de las pantallas de cuenta como en
+  LegendKeeper (24 imágenes, `components/backdrop.tsx`), sin sistemas de serie, «Invitar» discreto y los dados con
+  física nueva. Unitarias en verde; faltan e2e de invitar, sistemas y lo nuevo.
+- **Decidido por Enrique (2026-11-08)** y apuntado en `docs/diseno.md`: la campaña se abre en la Mesa a pantalla completa,
+  con barra de pestañas a la derecha como Foundry (Tiradas, Combate, Escenas, Personajes, Compendio, Páginas, Ajustes);
+  páginas del mundo en ventanas sobre la Mesa; la jugadora abre en su ficha; el inventario del grupo, en la ficha (como
+  D&D Beyond). **Siguiente paso**: el lienzo de esa campaña nueva (ciclo de módulo: prototipos que Enrique aprueba),
+  luego el plan y construirlo en porciones.
+- Dev: si una pantalla da «Ya no existe» o 500 con «relation … does not exist», faltan migraciones en la base de
+  desarrollo: `pnpm db:migrate`.
+
 ### Para retomar (2026-11-08, noche: las dos revisiones de la interfaz, en `main` y en staging)
 
 - **PR #115, fusionado y desplegado en staging** (2026-11-08): las dos revisiones globales de la interfaz con todo lo
