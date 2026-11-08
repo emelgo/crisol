@@ -174,10 +174,13 @@ tienen nombre, las ventanas son `<dialog>`, hay enlace de salto, el zoom no se b
   mundo acepta flechas).
 - [x] G10. **Sale «Foundry» en la interfaz** (Enrique: quitarlo; ahora «otra mesa virtual», «Traer el sistema») (`i18n.ts:1349`, `:1365`, `:1374`, `:2430`, `:2618`, `:2944`): CLAUDE.md lo
   prohíbe y el ADR-0015 lo usa para «Traer de Foundry». ¿Se queda o se dice de otra forma?
-- [ ] G11. Las pruebas de accesibilidad (`e2e/tests/a11y.spec.ts`) no pasan por la página y su editor, Archivos, la
+- [x] G11. (Hecho: ya pasaban axe por la página y su editor, Archivos, la ficha, el compendio, la mesa y los dados en sus propias e2e; añadida la del móvil de la jugadora en `a11y.spec.ts`, y arreglados los dos nombres accesibles que salieron: el d20 y las opciones del panel) Las pruebas de accesibilidad (`e2e/tests/a11y.spec.ts`) no pasan por la página y su editor, Archivos, la
   ficha, el compendio, la mesa ni los dados: ampliarlas al arreglar.
 
 ## Pruebas por poner al día al final
+
+**Hecho (2026-11-08, noche)**: todas al día; `pnpm e2e` en verde (116 e2e, 12 de fugas y 18 de accesibilidad). Las del
+móvil del máster se quitaron (F5) o pasaron a la jugadora (los dados).
 
 Las e2e no se pasan mientras se pule (se ponen al día al acabar, antes de la CI):
 

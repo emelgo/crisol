@@ -18,8 +18,12 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   oscura, pestañas legibles, el historial en palabras, las criaturas del compendio calculadas, la Papelera alineada,
   Plantillas/Sistemas/Etiquetas con el esqueleto común, el móvil de la jugadora (el «?» arriba, menú con enlaces,
   hoja de dados como ventana, toques de 44 px). Normas nuevas en `docs/diseno.md`.
-- **Pruebas**: unitarias de la web y de `systems` en verde. **Faltan** las e2e (lista ampliada en
-  `tasks/revision-interfaz.md`), G11, `pnpm test`, `pnpm e2e`, el PR y la CI: cuando Enrique lo diga. Sigue G1.
+- **Pruebas** (Enrique: «ponlas al día»): las e2e al día y `pnpm e2e` en verde (116 + 12 de fugas + 18 de
+  accesibilidad; G11 hecho); destaparon tres fallos, ya arreglados (la confirmación de «Nuevo enlace» recortada por
+  su caja, ahora en un portal: `components/floating.tsx`; el campo de páginas que saltaba al pulsar debajo; dos
+  nombres accesibles). `pnpm test`: 17 de 18 en verde; la de `systems` solo falla en `ritmo.test.ts` (tiempos de 20 ms)
+  cuando corren todos los paquetes a la vez con el servidor de desarrollo encendido; sola pasa siempre. **Falta** el PR (con esta rama) y la CI una vez: cuando Enrique lo diga.
+  Sigue G1. Las tandas largas, lanzadas con `setsid nohup` (la sesión se cortó dos veces y las paraba).
 
 ### Para retomar (2026-11-08, tarde: revisión global de la interfaz, arreglada en local)
 
