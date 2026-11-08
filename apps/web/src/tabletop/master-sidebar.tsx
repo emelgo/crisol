@@ -22,6 +22,7 @@ import {
   type Placing,
   ScenesList
 } from './panel.tsx'
+import { RollToasts } from './roll-toasts.tsx'
 import {
   PANEL_SLUGS,
   type SidebarItem,
@@ -192,5 +193,10 @@ export function MasterSidebar({
     },
     { key: 'settings', content: () => <CampaignSettings campaign={campaign} worldName={worldName} /> }
   ]
-  return <TableSidebar items={items} tab={tab} onTab={pick} folded={folded} onFold={setFolded} />
+  return (
+    <>
+      <TableSidebar items={items} tab={tab} onTab={pick} folded={folded} onFold={setFolded} />
+      <RollToasts campaignId={campaignId} enabled={folded || tab !== 'rolls'} />
+    </>
+  )
 }

@@ -1,0 +1,93 @@
+/* Las tiradas sobre el d20, fuera de la pestaña Tiradas: en su misma esquina, encima del botón */
+.toasts {
+  --toasts-end: calc(24rem + var(--space-4) + 2.25rem + var(--space-3));
+
+  position: fixed;
+  z-index: 25;
+  inset-block-end: calc(var(--space-4) + 3.25rem + var(--space-3));
+  inset-inline-end: var(--toasts-end);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  pointer-events: none;
+}
+
+/* Con la barra plegada, la esquina se acerca al borde (como el d20) */
+:global(body):has(:global([data-mesa-side="folded"])) .toasts {
+  --toasts-end: calc(3rem + var(--space-4) + 2.25rem + var(--space-3));
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-inline-size: 12rem;
+  max-inline-size: 18rem;
+  padding: 8px 12px;
+  border: 1px solid var(--color-frame);
+  border-radius: 4px;
+  background: var(--color-surface);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.3);
+}
+
+.toast[data-secret] {
+  border-color: var(--color-secret-rule);
+}
+
+.text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-inline-size: 0;
+  font-size: 0.8125rem;
+  line-height: 1.25;
+}
+
+.text b {
+  font-weight: 600;
+}
+
+.text span {
+  overflow: hidden;
+  color: var(--color-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.text .secret {
+  color: var(--color-secret-text);
+  font-weight: 600;
+}
+
+.total {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.total[data-critical="high"] {
+  color: var(--color-success, #4cb56a);
+}
+
+.total[data-critical="low"] {
+  color: var(--color-brand);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .toast {
+    animation: rise 0.18s ease-out;
+  }
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+  }
+}

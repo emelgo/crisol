@@ -26,7 +26,7 @@ Plan: `tasks/plan.md`. Lienzo: `out/lienzo-campana/`.
 
 ## Fase 2: las pestañas
 
-- [ ] 4. **Tiradas.** El registro de dados de la campaña en su pestaña; fuera de ella, cada tirada sale un momento sobre
+- [x] 4. **Tiradas.** El registro de dados de la campaña en su pestaña; fuera de ella, cada tirada sale un momento sobre
   el d20 (las ocultas, en morado, «solo tú»).
   - Acepta: tirar con la pestaña cerrada enseña el aviso y lo quita solo; con ella abierta, no sale.
   - Comprueba: pruebas del registro y del aviso (con tiempo falso).

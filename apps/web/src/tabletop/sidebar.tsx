@@ -139,7 +139,7 @@ export function TableSidebar({
   }
   if (folded) {
     return (
-      <aside className={`${styles.sidebar} ${styles.folded}`} aria-label={t('tabletop.panel')}>
+      <aside className={`${styles.sidebar} ${styles.folded}`} aria-label={t('tabletop.panel')} data-mesa-side="folded">
         <button
           type="button"
           className={styles.fold}
@@ -176,7 +176,7 @@ export function TableSidebar({
     )
   }
   return (
-    <aside className={styles.sidebar} aria-label={t('tabletop.panel')}>
+    <aside className={styles.sidebar} aria-label={t('tabletop.panel')} data-mesa-side="open">
       <div className={styles.tabs} role="tablist" aria-label={t('tabletop.panel')} data-tour="mesa-barra">
         {items.map((item) => {
           const Icon = ICONS[item.key]

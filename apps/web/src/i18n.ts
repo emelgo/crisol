@@ -1667,6 +1667,9 @@ export const es = {
       fold: 'Plegar la barra',
       unfold: 'Desplegar la barra'
     },
+    lastRolls: 'Últimas tiradas',
+    onlyYou: 'solo tú',
+    forYou: 'para ti',
     pages: {
       search: 'Buscar en las páginas',
       empty: 'El mundo aún no tiene páginas.',

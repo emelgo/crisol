@@ -944,3 +944,8 @@
   font-weight: 600;
   letter-spacing: 0.02em;
 }
+
+/* Con la barra plegada, el «?» del tutorial se acerca al borde */
+.mesa:has([data-mesa-side="folded"]) {
+  --tour-help-end: calc(3rem + var(--space-4));
+}
