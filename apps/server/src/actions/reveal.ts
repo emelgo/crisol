@@ -2,7 +2,15 @@
  * Revelar en partida (docs/specs/revelar.md, ADR-0017): marcar que una campaña conoce algo y avisar a quien le aparece;
  * ocultarlo otra vez; «Lo que sabe el grupo»; quién conoce cada secreto de una página; lo nuevo de cada jugador
  */
-import { getSecretsKnowledge, hide, listCampaignKnowledge, listNews, reveal, seeNews, showPage } from '@crisol/contracts'
+import {
+  getSecretsKnowledge,
+  hide,
+  listCampaignKnowledge,
+  listNews,
+  reveal,
+  seeNews,
+  showPage
+} from '@crisol/contracts'
 import { campaignsRepo, charactersRepo, documentsRepo, knowledgeRepo, pagesRepo } from '@crisol/db'
 import {
   explainPage,
