@@ -12,6 +12,7 @@ import { BusyButton } from '../components/busy-button.tsx'
 import { CopyField } from '../components/copy-field.tsx'
 import { DangerZone } from '../components/danger.tsx'
 import { FormError } from '../components/field.tsx'
+import { Floating } from '../components/floating.tsx'
 import { focusAfterRemoving, focusOnMount, useReturnFocus } from '../components/focus.ts'
 import form from '../components/form.module.css'
 import styles from '../components/list.module.css'
@@ -397,7 +398,8 @@ function InvitationPanel({ campaignId }: { campaignId: string }) {
           {url ? t('invitation.regenerate') : t('invitation.create')}
         </BusyButton>
         {confirming && (
-          <div
+          <Floating
+            anchor={regenerateButton}
             role="dialog"
             aria-labelledby={warningId}
             className={styles.floating}
@@ -430,7 +432,7 @@ function InvitationPanel({ campaignId }: { campaignId: string }) {
                 {t('list.cancel')}
               </button>
             </div>
-          </div>
+          </Floating>
         )}
       </div>
 

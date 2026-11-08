@@ -135,7 +135,7 @@ describe('las propiedades de una página', () => {
     }
     const { api } = renderPort([estado])
     const properties = within(await screen.findByRole('region', { name: 'Propiedades' }))
-    const button = properties.getByRole('button', { name: 'Valor de la propiedad 1' })
+    const button = properties.getByRole('button', { name: /^Valor de la propiedad 1:/ })
     expect(button.textContent).toContain('Vive')
     await userEvent.click(button)
     const list = properties.getByRole('listbox', { name: 'Valor de la propiedad 1' })
@@ -160,7 +160,7 @@ describe('las propiedades de una página', () => {
   it('un valor que no está entre las opciones se ve marcado y no se pierde', async () => {
     renderPort([{ name: 'Estado', type: 'choice', value: 'Prisionera', options: ['Vive', 'Ha muerto'] }])
     const properties = within(await screen.findByRole('region', { name: 'Propiedades' }))
-    const button = properties.getByRole('button', { name: 'Valor de la propiedad 1' })
+    const button = properties.getByRole('button', { name: /^Valor de la propiedad 1:/ })
     expect(button.textContent).toContain('Prisionera')
     expect(button.getAttribute('title')).toBe('No está entre las opciones')
   })
@@ -222,7 +222,7 @@ describe('las propiedades de una página', () => {
     await waitFor(async () =>
       expect(await saved(api)).toEqual([{ name: 'Estado', type: 'choice', value: 'Vive', options: ['Vive'] }])
     )
-    await userEvent.click(properties.getByRole('button', { name: 'Valor de la propiedad 1' }))
+    await userEvent.click(properties.getByRole('button', { name: /^Valor de la propiedad 1:/ }))
     await userEvent.type(properties.getByLabelText('Opciones de Estado'), 'Ha muerto{Enter}')
     await waitFor(async () =>
       expect(await saved(api)).toEqual([

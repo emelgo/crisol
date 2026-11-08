@@ -28,14 +28,14 @@ test('las etiquetas de la cuenta: un archivo lleva una, sale en Etiquetas y, ren
   // En Mis mundos, «Etiquetas»: en árbol, con su madre
   await page.goto('/etiquetas')
   const list = page.getByRole('list', { name: 'Etiquetas' })
-  await expect(list.getByRole('listitem')).toHaveText(['lugar1 archivo', 'costa1 archivo'])
+  await expect(list.getByRole('listitem')).toHaveText(['lugar1 archivo', 'costa1 archivo', 'Nueva etiqueta'])
 
   // Renombrar la madre cambia la del archivo
   await page.getByRole('button', { name: 'Ajustes de lugar', exact: true }).click()
   const tag = page.getByRole('dialog', { name: 'Ajustes de lugar' })
   await tag.getByLabel('Nombre de la etiqueta').fill('sitio')
   await tag.getByRole('button', { name: 'Guardar' }).click()
-  await expect(list.getByRole('listitem')).toHaveText(['sitio1 archivo', 'costa1 archivo'])
+  await expect(list.getByRole('listitem')).toHaveText(['sitio1 archivo', 'costa1 archivo', 'Nueva etiqueta'])
 
   for (const colorScheme of ['light', 'dark'] as const) {
     await page.emulateMedia({ colorScheme })

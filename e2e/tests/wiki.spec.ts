@@ -27,14 +27,6 @@ async function newPage(page: Page, title: string, button = 'Página nueva') {
   await expect(page).not.toHaveURL(/nuevo/)
 }
 
-/** En el móvil, la wiki se abre desde el menú de la llama */
-async function openMobileWiki(page: Page) {
-  await page.getByRole('button', { name: 'Menú' }).click()
-  await page.getByRole('dialog', { name: 'Eana' }).getByRole('button', { name: 'Eana', exact: true }).click()
-  // El menú se va del todo (su animación de salida) antes de seguir
-  await expect(page.getByRole('dialog', { name: 'Eana' })).toHaveCount(0)
-}
-
 const tree = (page: Page) => page.getByRole('tree', { name: 'Páginas' })
 const titles = (page: Page) => tree(page).getByRole('treeitem')
 
@@ -116,7 +108,8 @@ test('propiedades y etiquetas: se guardan, siguen al recargar y cuentan en el pa
   await expect(page.getByRole('list', { name: 'Etiquetas' }).getByRole('listitem')).toHaveText([
     'costa1 página',
     'lugar1 página',
-    'ciudad1 página'
+    'ciudad1 página',
+    'Nueva etiqueta'
   ])
 })
 
@@ -145,7 +138,7 @@ test('borrar una página con sus subpáginas, y restaurarla desde la papelera de
   await expect(tree(page).getByRole('treeitem', { name: 'Costa Gris' })).toBeVisible()
 })
 
-test('pestañas y marcadores siguen al recargar; en el móvil, las abiertas van en el cajón', async ({ page }) => {
+test('pestañas y marcadores siguen al recargar', async ({ page }) => {
   await eanaWiki(page)
   await newPage(page, 'Puerto Ceniza')
   await newPage(page, 'Maela Varn')
@@ -161,35 +154,9 @@ test('pestañas y marcadores siguen al recargar; en el móvil, las abiertas van 
   await page.reload()
   await expect(tabs.getByRole('link')).toHaveText(['Maela Varn', 'Eana', 'Puerto Ceniza'])
   await expect(page.getByRole('region', { name: 'Marcadores' }).getByRole('link', { name: 'Maela Varn' })).toBeVisible()
-
-  await page.setViewportSize({ width: 390, height: 844 })
-  await expect(tabs).toBeHidden()
-  await openMobileWiki(page)
-  await expect(page.getByRole('navigation', { name: 'Abiertas' }).getByRole('link')).toHaveText([
-    'Maela Varn',
-    'Eana',
-    'Puerto Ceniza'
-  ])
 })
 
-test('en el móvil el árbol va en un cajón, que se cierra al abrir una página', async ({ page }) => {
-  await eanaWiki(page)
-  await newPage(page, 'Lugares')
-  await newPage(page, 'Personajes')
-  await page.setViewportSize({ width: 390, height: 844 })
-  await expect(tree(page)).toBeHidden()
-  await openMobileWiki(page)
-  await expect(page.getByRole('button', { name: 'Cerrar' })).toBeFocused()
-  await page.keyboard.press('Escape')
-  await expect(tree(page)).toBeHidden()
-  await expect(page.getByRole('button', { name: 'Menú' })).toBeFocused()
-  await openMobileWiki(page)
-  await tree(page).getByRole('treeitem', { name: 'Lugares' }).click()
-  await expect(page.getByRole('heading', { level: 1, name: 'Lugares' })).toBeVisible()
-  await expect(tree(page)).toBeHidden()
-})
-
-test('la wiki, en los dos temas y en el móvil @a11y', async ({ page }) => {
+test('la wiki, en los dos temas @a11y', async ({ page }) => {
   test.slow()
   await eanaWiki(page)
   await newPage(page, 'Lugares')
@@ -235,8 +202,5 @@ test('la wiki, en los dos temas y en el móvil @a11y', async ({ page }) => {
   await check()
   await page.goto(wiki)
   await page.getByRole('tree').getByRole('treeitem', { name: 'Lugares' }).click()
-  await page.setViewportSize({ width: 390, height: 844 })
-  await openMobileWiki(page)
-  await expect(tree(page)).toBeVisible()
   await check()
 })

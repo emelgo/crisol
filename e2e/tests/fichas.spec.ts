@@ -103,7 +103,7 @@ test('fichas: Lía y tres goblins de un encuentro, moverlos, dañar a uno, ocult
     .filter({ hasText: 'Emboscada' })
     .dragTo(stage, { targetPosition: { x: ambush.x - stageBox.x, y: ambush.y - stageBox.y } })
   await expect(onTv.getByRole('listitem')).toHaveCount(4)
-  await expect(onTv.getByRole('listitem').filter({ hasText: 'Goblin 1' })).toHaveText('Goblin 1, Ilesa')
+  await expect(onTv.getByRole('listitem').filter({ hasText: 'Goblin 1' })).toHaveText('Goblin 1, Sin heridas')
 
   // Mover un goblin arrastrándolo: se guarda al soltarlo
   const goblin = (await tokens()).find((token) => token.actor.name === 'Goblin 1') as Token
@@ -129,7 +129,7 @@ test('fichas: Lía y tres goblins de un encuentro, moverlos, dañar a uno, ocult
     .poll(async () => ((await tokens()).find((token) => token.id === goblin.id) as Token).y)
     .toBe(goblin.y - 100)
 
-  // Pulsarlo abre su tarjeta: dañarlo lo deja «Herida» en la tele
+  // Pulsarlo abre su tarjeta: dañarlo lo deja «Con heridas» en la tele
   const moved = (await tokens()).find((token) => token.id === goblin.id) as Token
   const at = await onScreen(stage, moved)
   await page.mouse.click(at.x, at.y)
@@ -137,13 +137,15 @@ test('fichas: Lía y tres goblins de un encuentro, moverlos, dañar a uno, ocult
   await expect(card).toBeVisible()
   await card.getByLabel('Cuánto').fill('2')
   await card.getByRole('button', { name: 'Dañar' }).click()
-  await expect(onTv.getByRole('listitem').filter({ hasText: 'Goblin 1' })).toHaveText('Goblin 1, Herida')
+  await expect(onTv.getByRole('listitem').filter({ hasText: 'Goblin 1' })).toHaveText('Goblin 1, Con heridas')
   // Un estado escrito, con rondas
   await card.getByLabel('Estado', { exact: true }).fill('Derribado')
   await card.getByLabel('Rondas que dura').fill('2')
   await card.getByRole('button', { name: 'Poner' }).click()
   await expect(card.getByRole('list', { name: 'Estados' })).toContainText('Derribado')
-  await expect(onTv.getByRole('listitem').filter({ hasText: 'Goblin 1' })).toHaveText('Goblin 1, Herida, Derribado')
+  await expect(onTv.getByRole('listitem').filter({ hasText: 'Goblin 1' })).toHaveText(
+    'Goblin 1, Con heridas, Derribado'
+  )
   await axe(page, 'la mesa con la tarjeta')
   await page.screenshot({ path: '../out/capturas/fichas-tarjeta.png' })
 

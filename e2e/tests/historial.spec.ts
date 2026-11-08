@@ -17,7 +17,7 @@ test('el propietario ve en el historial lo que ha hecho, en el mundo y en toda l
   await expect(entries).toHaveText([
     /^Enrique cambió la página «Eana»/,
     /^Enrique creó la portada del mundo, «Eana»/,
-    /^Enrique renombró la campaña «La Marca» a «La Marca del Este».*· web/,
+    /^Enrique renombró la campaña «La Marca» a «La Marca del Este».*\d+:\d+Deshacer/,
     /^Enrique generó un enlace nuevo para La Marca/,
     /^Enrique creó la campaña «La Marca» en Eana/,
     /^Enrique creó el mundo «Eana»/

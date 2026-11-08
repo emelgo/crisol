@@ -71,12 +71,13 @@ function DiceLauncher() {
     <button
       type="button"
       className={styles.launcher}
-      aria-label={t('ribbon.dice')}
       aria-expanded={dice.open}
       title={t('ribbon.dice')}
       data-tour="dados"
       onClick={dice.toggle}
     >
+      {/* Su nombre, en texto (no aria-label): el «20» del dibujo se lee como texto visible (WCAG 2.5.3) */}
+      <span className={styles.hidden}>{t('ribbon.dice')}</span>
       <D20 />
     </button>
   )

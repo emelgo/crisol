@@ -4,11 +4,15 @@ import { campaignLink, newPlayer, settled } from './ayudas.ts'
 
 test('el máster abre los dados en su campaña y tira: la tirada se explica y se anuncia el total', async ({ page }) => {
   await campaignLink(page)
-  const dados = page.getByRole('navigation', { name: 'Secciones' }).getByRole('button', { name: 'Dados' })
+  // El d20 flotante (fuera de la barra), en la esquina
+  const dados = page.locator('[data-tour="dados"]')
+  await expect(page.getByRole('navigation', { name: 'Secciones' }).getByRole('button', { name: 'Dados' })).toHaveCount(
+    0
+  )
   await dados.click()
   const dice = page.getByRole('complementary', { name: 'Dados' })
   await expect(dice).toBeVisible()
-  await expect(dados).toHaveAttribute('aria-pressed', 'true')
+  await expect(dados).toHaveAttribute('aria-expanded', 'true')
   const field = dice.getByRole('textbox', { name: 'Tirada' })
   await field.fill('1d20+5 # Iniciativa')
   await expect(dice.getByText('1d20 + 5 · Iniciativa')).toBeVisible()
@@ -25,10 +29,11 @@ test('el máster abre los dados en su campaña y tira: la tirada se explica y se
     expect(serious, `${colorScheme}: ${JSON.stringify(serious.map((v) => [v.id, v.nodes[0]?.target]))}`).toEqual([])
   }
 
-  // Se cierra con su X, y la barra lo dice
+  // Se cierra con su X, el d20 lo dice y el foco vuelve a él
   await dice.getByRole('button', { name: 'Cerrar los dados' }).click()
   await expect(dice).toBeHidden()
-  await expect(dados).toHaveAttribute('aria-pressed', 'false')
+  await expect(dados).toHaveAttribute('aria-expanded', 'false')
+  await expect(dados).toBeFocused()
 })
 
 test('el máster y una jugadora en dos pestañas: la pública llega al momento; la «al máster», marcada para él', async ({
@@ -38,7 +43,7 @@ test('el máster y una jugadora en dos pestañas: la pública llega al momento; 
   const link = await campaignLink(page)
   const ana = await newPlayer(browser, link, 'Ana')
   const open = async (who: typeof page) => {
-    await who.getByRole('navigation', { name: 'Secciones' }).getByRole('button', { name: 'Dados' }).click()
+    await who.locator('[data-tour="dados"]').click()
     const dice = who.getByRole('complementary', { name: 'Dados' })
     await expect(dice).toBeVisible()
     return dice
@@ -77,12 +82,16 @@ test('el máster y una jugadora en dos pestañas: la pública llega al momento; 
   await ana.close()
 })
 
-test('en el móvil, los dados en una hoja que sube desde abajo, desde el menú de la llama', async ({ page }) => {
-  await campaignLink(page)
+test('en el móvil de la jugadora, el d20 abre los dados en una hoja que sube desde abajo, como una ventana', async ({
+  page,
+  browser
+}) => {
+  const link = await campaignLink(page)
+  const ana = await newPlayer(browser, link, 'Ana')
+  page = ana
   await page.setViewportSize({ width: 390, height: 844 })
-  await page.getByRole('button', { name: 'Menú' }).click()
-  await page.getByRole('dialog').getByRole('button', { name: 'Dados' }).click()
-  const dice = page.getByRole('complementary', { name: 'Dados' })
+  await page.locator('[data-tour="dados"]').click()
+  const dice = page.getByRole('dialog', { name: 'Dados' })
   await expect(dice).toBeVisible()
   // Abajo del todo y de lado a lado, cuando acaba de subir
   await expect
@@ -107,6 +116,11 @@ test('en el móvil, los dados en una hoja que sube desde abajo, desde el menú d
     const serious = violations.filter((v) => v.impact === 'critical' || v.impact === 'serious')
     expect(serious, `${colorScheme}: ${JSON.stringify(serious.map((v) => [v.id, v.nodes[0]?.target]))}`).toEqual([])
   }
+  // Escape la cierra y el foco vuelve al d20
+  await page.keyboard.press('Escape')
+  await expect(dice).toBeHidden()
+  await expect(page.locator('[data-tour="dados"]')).toBeFocused()
+  await ana.close()
 })
 
 test('los dados 3D caen al tirar: la escena se carga aparte, solo la primera vez que se tira', async ({ page }) => {
@@ -117,7 +131,7 @@ test('los dados 3D caen al tirar: la escena se carga aparte, solo la primera vez
   const workers: string[] = []
   page.on('worker', (worker) => workers.push(new URL(worker.url()).pathname))
   await campaignLink(page)
-  await page.getByRole('navigation', { name: 'Secciones' }).getByRole('button', { name: 'Dados' }).click()
+  await page.locator('[data-tour="dados"]').click()
   const dice = page.getByRole('complementary', { name: 'Dados' })
   await expect(dice).toBeVisible()
   expect(scripts.some((path) => /\/scene-[^/]+\.js$/.test(path))).toBe(false)
@@ -156,7 +170,7 @@ test('una tirada escrita en una página: con «/» se pone y se cambia, al pulsa
   await expect(box).toBeHidden()
 
   // Con la ficha de dados abierta, pulsarla tira en la campaña
-  await page.getByRole('navigation', { name: 'Secciones' }).getByRole('button', { name: 'Dados' }).click()
+  await page.locator('[data-tour="dados"]').click()
   await body.getByRole('button', { name: 'Tirar 2d6+3 · Trampa' }).click()
   const log = page.getByRole('list', { name: 'Tiradas de la campaña' })
   await expect(log.getByRole('listitem').last()).toContainText('Trampa')

@@ -67,15 +67,10 @@ export async function openWorld(page: Page, name: string) {
 
 /**
  * Desde Mis mundos, entra en un mundo: se abre su portada (una página que se crea sola, con el nombre del mundo) con el
- * árbol al lado; en el móvil, el árbol se abre con «Páginas» en el menú de la llama
+ * árbol al lado. El máster trabaja en el PC (docs/diseno.md): no hay versión del móvil
  */
 export async function openWiki(page: Page, name: string) {
   await openWorld(page, name)
-  const menu = page.getByRole('button', { name: 'Menú' })
-  if (await menu.isVisible()) {
-    await menu.click()
-    await page.getByRole('dialog', { name }).getByRole('button', { name, exact: true }).click()
-  }
   await expect(page.getByRole('tree', { name: 'Páginas' }).getByRole('treeitem', { name, exact: true })).toBeVisible()
 }
 
@@ -226,7 +221,9 @@ export async function campaignLink(page: Page) {
  * página antes de abrir nada (para escuchar lo que le llega)
  */
 export async function newPlayer(browser: Browser, link: string, name = 'Jugadora', onPage?: (page: Page) => void) {
-  const player = await browser.newPage()
+  // En su propio contexto (axe no mide una página abierta con browser.newPage)
+  const context = await browser.newContext()
+  const player = await context.newPage()
   onPage?.(player)
   const email = `${name.toLowerCase()}@crisol.test`
   await skipTours(player, email)
