@@ -34,8 +34,10 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   para una pantalla de referencia de 1920 px; «Subir» un mapa no lo guarda en Archivos; en combate, la ronda 0 es
   «antes de empezar» y la iniciativa escrita a uno de un grupo vale para todo el grupo; «Sentidos» en el creador del 5e
   de ejemplo; las criaturas preparadas de una escena de Foundry salen solas al abrirla una campaña; volver a una
-  instantánea no toca lo explorado; cada spec lista las suyas). Y **el máster de una campaña que no lo es del mundo**
-  no puede usar la mesa (escenas, encuentros y teselas piden `page.read`): decidirlo antes del módulo 7.
+  instantánea no toca lo explorado; cada spec lista las suyas).
+- **Decidido por Enrique (2026-11-08)**: el máster de una campaña es siempre máster de su mundo. Ya se cumple (solo el
+  máster del mundo crea campañas, `campaign.create`, y queda como su máster; ese papel no se traspasa), así que la mesa
+  no necesita un caso aparte.
 - **Lo siguiente**: que Enrique pruebe los módulos 5 y 6; luego, el módulo 7 (la sala de jugadores: presencia, chat, mostrar a jugadores,
   sonido; y lo que se dejó: que muevan sus fichas), empezando por su entrevista frente al inventario.
 
