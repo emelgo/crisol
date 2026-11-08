@@ -13,16 +13,9 @@ import { RollLog } from '../dice/log.tsx'
 import { CombatPanel } from './combat-panel.tsx'
 import styles from './mesa.module.css'
 import { PagesTab } from './pages-tab.tsx'
-import {
-  CharactersList,
-  CreaturesList,
-  EncountersList,
-  FactionLegend,
-  ImagesList,
-  type Placing,
-  ScenesList
-} from './panel.tsx'
+import { CharactersList, CreaturesList, EncountersList, FactionLegend, ImagesList, type Placing } from './panel.tsx'
 import { RollToasts } from './roll-toasts.tsx'
+import { InScene, ScenesGrid } from './scenes-tab.tsx'
 import {
   PANEL_SLUGS,
   type SidebarItem,
@@ -58,7 +51,8 @@ export function MasterSidebar({
   onOpen,
   onPlace,
   onImage,
-  onPickCombatant
+  onPickCombatant,
+  onPickToken
 }: {
   worldId: string
   worldName: string
@@ -75,6 +69,8 @@ export function MasterSidebar({
   onPlace: (placing: Placing) => void
   onImage: (fileId: string) => void
   onPickCombatant: (tokenId: string) => void
+  /** Una ficha de «En esta escena»: elegida, con su tarjeta, y la mesa se centra en ella */
+  onPickToken: (tokenId: string) => void
 }) {
   const { t } = useTranslation()
   const api = useApi()
@@ -145,7 +141,8 @@ export function MasterSidebar({
       key: 'scenes',
       content: () => (
         <>
-          <ScenesList worldId={worldId} table={table} onOpen={onOpen} />
+          <ScenesGrid worldId={worldId} table={table} onOpen={onOpen} />
+          <InScene campaignId={campaignId} table={table} tokens={tokens} onPick={onPickToken} />
           <h3 className={styles.tabSection}>{t('tabletop.tabs.encounters')}</h3>
           <EncountersList
             worldId={worldId}

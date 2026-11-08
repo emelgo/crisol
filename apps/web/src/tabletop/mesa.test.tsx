@@ -147,20 +147,19 @@ describe('la mesa del máster', () => {
     expect(await screen.findByText('Ninguna escena abierta.')).toBeDefined()
     const panel = within(screen.getByRole('complementary', { name: 'Panel de la mesa' }))
     const list = within(await panel.findByRole('list', { name: 'Escenas' }))
-    expect(list.getAllByRole('listitem').map((item) => item.querySelector('b')?.textContent)).toEqual([
+    // Sus tarjetas, en orden, y al final «Escena nueva» (con pocas, sin buscador)
+    expect(list.getAllByRole('button').map((button) => button.textContent)).toEqual([
       'Cripta de Varn',
-      'Faro de Brena'
+      'Faro de Brena',
+      'Escena nueva'
     ])
-    // El buscador filtra por nombre o por su página
-    await user.type(panel.getByRole('searchbox', { name: 'Buscar escenas' }), 'faro')
-    expect(list.getAllByRole('listitem')).toHaveLength(1)
-    await user.clear(panel.getByRole('searchbox', { name: 'Buscar escenas' }))
+    expect(panel.queryByRole('searchbox', { name: 'Buscar escenas' })).toBeNull()
     await user.click(list.getByRole('button', { name: 'Abrir Cripta de Varn' }))
     expect(await screen.findByRole('application', { name: 'Mesa: Cripta de Varn' })).toBeDefined()
     const table = await api.client.call('getCampaignTable', { campaignId: CAMPAIGN.id })
     expect(table.open?.name).toBe('Cripta de Varn')
     expect(table.presented).toBeNull()
-    expect(list.getAllByRole('listitem')[0]?.textContent).toContain('Abierta')
+    expect(await list.findByRole('button', { name: 'Cripta de Varn, Abierta' })).toBeDefined()
   })
 
   it('presentar, ocultar y destapar: lo que ve el grupo, marcado arriba y en el panel', async () => {

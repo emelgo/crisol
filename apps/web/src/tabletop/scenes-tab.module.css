@@ -1,0 +1,334 @@
+/* La pestaña Escenas de la Mesa: tarjetas de escenas y lo que hay en la abierta (lienzo «Campaña en la Mesa») */
+.search {
+  inline-size: 100%;
+  block-size: 2.25rem;
+  padding: 0 0.75rem;
+  border: 1px solid var(--color-frame);
+  border-radius: 3px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.875rem;
+}
+
+.muted {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+}
+
+.wide {
+  grid-column: 1 / -1;
+}
+
+.cardButton {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.cardButton:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.thumb {
+  position: relative;
+  display: grid;
+  place-items: center;
+  block-size: 5.5rem;
+  overflow: hidden;
+  background: #111114;
+  clip-path: var(--cut);
+}
+
+/* La miniatura de la escena llena la tarjeta (centrada) */
+.thumb > span {
+  inline-size: 100%;
+  block-size: 100%;
+  border-radius: 0;
+}
+
+.thumb img {
+  transition: transform 0.3s;
+}
+
+.cardButton:hover .thumb img {
+  transform: scale(1.04);
+}
+
+.card[data-open] .thumb::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  box-shadow: inset 0 0 0 2px var(--color-brand);
+  clip-path: var(--cut);
+}
+
+.name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.live {
+  align-self: flex-start;
+  margin-block-start: 4px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: rgb(76 181 106 / 0.16);
+  color: #6fd08c;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.live::before {
+  content: "";
+  display: inline-block;
+  inline-size: 6px;
+  block-size: 6px;
+  margin-inline-end: 5px;
+  border-radius: 50%;
+  background: currentcolor;
+  vertical-align: 1px;
+}
+
+.new .thumb {
+  border: 1px dashed var(--color-frame);
+  background: none;
+  color: var(--color-muted);
+  clip-path: none;
+}
+
+.new:hover .thumb {
+  border-color: var(--color-text);
+  color: var(--color-text);
+}
+
+.newForm {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  border: 1px dashed var(--color-frame);
+  font-size: 0.875rem;
+}
+
+.newForm input {
+  block-size: 2.125rem;
+  padding: 0 0.6rem;
+  border: 1px solid var(--color-field-border, var(--color-frame));
+  border-radius: 3px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+}
+
+.newActions {
+  display: flex;
+  gap: 8px;
+}
+
+.primary,
+.ghost {
+  padding: 6px 12px;
+  border-radius: 4px;
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.primary {
+  border: 0;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.primary:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.ghost {
+  border: 1px solid var(--color-border);
+  background: none;
+  color: var(--color-text);
+}
+
+.section {
+  margin: 1rem 0 0.25rem;
+  padding: 0;
+  border: 0;
+  text-transform: none;
+  color: var(--color-muted);
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.inScene {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  clip-path: none;
+}
+
+.rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-block-size: 2.75rem;
+  margin-inline: -8px;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.row:hover,
+.row:focus-within {
+  background: var(--color-raised);
+}
+
+.row[data-hidden] .avatar,
+.row[data-hidden] .who {
+  opacity: 0.55;
+}
+
+.avatar {
+  display: grid;
+  flex: none;
+  place-items: center;
+  inline-size: 1.875rem;
+  block-size: 1.875rem;
+  border: 2px solid #6fa8ff;
+  border-radius: 50%;
+  background: #2a2a30;
+  color: #ffffff;
+  font-family: var(--font-display);
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.avatar[data-faction="hostile"] {
+  border-color: #ff8a4c;
+}
+
+.avatar[data-faction="neutral"] {
+  border-color: #d8c27a;
+}
+
+.who {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-inline-size: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.who b {
+  overflow: hidden;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.who small {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+}
+
+.who:focus-visible,
+.icon:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.bar {
+  flex: none;
+  inline-size: 3.5rem;
+  block-size: 4px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: var(--color-raised);
+}
+
+.bar i {
+  display: block;
+  block-size: 100%;
+  background: #4cb56a;
+}
+
+.bar i[data-level="mid"] {
+  background: #d7a33b;
+}
+
+.bar i[data-level="low"] {
+  background: #d9534f;
+}
+
+.actions {
+  display: flex;
+  flex: none;
+}
+
+.icon {
+  display: grid;
+  place-items: center;
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: none;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.icon:hover {
+  color: var(--color-text);
+}
+
+.icon[aria-pressed="true"] {
+  color: var(--color-secret-text);
+}

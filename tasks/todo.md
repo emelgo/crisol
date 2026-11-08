@@ -30,7 +30,7 @@ Plan: `tasks/plan.md`. Lienzo: `out/lienzo-campana/`.
   el d20 (las ocultas, en morado, «solo tú»).
   - Acepta: tirar con la pestaña cerrada enseña el aviso y lo quita solo; con ella abierta, no sale.
   - Comprueba: pruebas del registro y del aviso (con tiempo falso).
-- [ ] 5. **Escenas con «En esta escena».** Tarjetas de escenas con miniatura y «En la tele»; «Escena nueva»; debajo, lo
+- [x] 5. **Escenas con «En esta escena».** Tarjetas de escenas con miniatura y «En la tele»; «Escena nueva»; debajo, lo
   que hay en la escena (personajes y criaturas, con PG, ocultar o mostrar, mandar al combate). Lo de En juego entra aquí.
   - Acepta: se abre y se presenta una escena; se oculta una criatura; se manda al combate.
   - Comprueba: pruebas del panel de escenas.

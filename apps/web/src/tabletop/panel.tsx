@@ -7,16 +7,13 @@
 import type { CampaignTableView, SceneGrid, TokenView } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Plus, Search } from 'lucide-react'
-import { type DragEvent, type ReactNode, useEffect, useId, useState } from 'react'
+import { type DragEvent, type ReactNode, useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { FormError } from '../components/field.tsx'
-import { failed, LoadError } from '../components/load-error.tsx'
 import { useWorldFiles } from '../wiki/cover-look.ts'
 import styles from './mesa.module.css'
-import { sceneListKey } from './queries.ts'
-import { SceneThumb } from './thumb.tsx'
 import { formationOf, initialOf } from './tokens.ts'
 
 /** Lo que se suelta en el mapa desde el panel */
@@ -118,70 +115,6 @@ const Avatar = ({ name, faction }: { name: string; faction: 'group' | 'hostile' 
     {initialOf(name)}
   </span>
 )
-
-/** Las escenas del mundo, con su miniatura y un buscador; la abierta y la que está en la tele, marcadas */
-export function ScenesList({
-  worldId,
-  table,
-  onOpen
-}: {
-  worldId: string
-  table: CampaignTableView | null
-  onOpen: (sceneId: string) => void
-}) {
-  const { t } = useTranslation()
-  const api = useApi()
-  const [query, setQuery] = useState('')
-  const scenes = useQuery({ queryKey: sceneListKey(worldId), queryFn: () => api.call('listScenes', { worldId }) })
-  // La mesa cambia (otra escena con mapa nuevo, por ejemplo): la lista, al día
-  const openId = table?.open?.id
-  const openVersion = table?.open?.image?.tiles?.version
-  const { refetch } = scenes
-  useEffect(() => {
-    if (openId) void refetch()
-  }, [openId, openVersion, refetch])
-  const all = scenes.data?.scenes ?? []
-  const shown = all.filter((scene) => matches(`${scene.name} ${scene.pageTitle}`, query))
-  const live = table?.presented && !table.screenHidden ? table.presented.id : null
-  return (
-    <>
-      <SearchBox value={query} onChange={setQuery} label={t('tabletop.searchScenes')} />
-      {!scenes.data ? (
-        failed(scenes) ? (
-          <LoadError error={scenes.error} onRetry={() => scenes.refetch()} />
-        ) : null
-      ) : shown.length === 0 ? (
-        <p className={styles.muted}>{all.length === 0 ? t('tabletop.noScenes') : t('tabletop.noMatches')}</p>
-      ) : (
-        <ul className={styles.scenes} aria-label={t('tabletop.scenes')}>
-          {shown.map((scene) => {
-            const isOpen = scene.id === openId
-            return (
-              <li key={scene.id} className={styles.sceneRow} data-open={isOpen || undefined}>
-                <SceneThumb scene={scene} />
-                <div className={styles.sceneName}>
-                  <b>{scene.name}</b>
-                  <span>{isOpen ? t('tabletop.opened') : scene.pageTitle}</span>
-                  {live === scene.id && <span className={`${styles.chip} ${styles.live}`}>{t('tabletop.live')}</span>}
-                </div>
-                {!isOpen && (
-                  <button
-                    type="button"
-                    className={styles.small}
-                    aria-label={`${t('tabletop.open')} ${scene.name}`}
-                    onClick={() => onOpen(scene.id)}
-                  >
-                    {t('tabletop.open')}
-                  </button>
-                )}
-              </li>
-            )
-          })}
-        </ul>
-      )}
-    </>
-  )
-}
 
 /** Los personajes de la campaña: los que aún no están en esta escena se arrastran al mapa */
 export function CharactersList({

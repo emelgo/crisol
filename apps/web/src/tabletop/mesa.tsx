@@ -536,6 +536,11 @@ export function Mesa({
             setSelected([tokenId])
             center.current?.(tokenId, true)
           }}
+          onPickToken={(tokenId) => {
+            setSelected([tokenId])
+            setCardFor(tokenId)
+            center.current?.(tokenId, true)
+          }}
         />
       )}
       <Tour

@@ -223,6 +223,49 @@ describe('las fichas en la mesa', () => {
   })
 })
 
+describe('la pestaña Escenas', () => {
+  it('«En esta escena»: quien está en el mapa, con su vida; se oculta al grupo y se mete en el combate', async () => {
+    const user = userEvent.setup()
+    const { api, scene, wolves, push } = await renderTable()
+    await api.client.call('placeTokens', {
+      campaignId: CAMPAIGN.id,
+      sceneId: scene.id,
+      tokens: wolves.map((wolf, i) => ({ creatureId: wolf.id, x: 100 + i * 100, y: 100 }))
+    })
+    await push()
+    const section = within(await panel().findByRole('region', { name: 'En esta escena' }))
+    expect(section.getAllByRole('listitem')).toHaveLength(2)
+    const [first] = await tokensOf(api)
+    const label = first?.label ?? ''
+    await user.click(section.getByRole('button', { name: `Ocultar ${label} al grupo` }))
+    await waitFor(async () => expect((await tokensOf(api)).find((t) => t.id === first?.id)?.hidden).toBe(true))
+    await push()
+    expect(section.getByRole('button', { name: `Ocultar ${label} al grupo` }).getAttribute('aria-pressed')).toBe('true')
+    // Sin combate no se mete a nadie; con uno, a quien aún no está
+    expect(section.queryByRole('button', { name: `Meter a ${label} en el combate` })).toBeNull()
+    await api.client.call('startCombat', { campaignId: CAMPAIGN.id, tokenIds: [(await tokensOf(api))[1]?.id ?? ''] })
+    await push()
+    await user.click(panel().getByRole('tab', { name: 'Escenas' }))
+    const again = within(await panel().findByRole('region', { name: 'En esta escena' }))
+    await user.click(again.getByRole('button', { name: `Meter a ${label} en el combate` }))
+    await waitFor(async () =>
+      expect((await api.client.call('getCombat', { campaignId: CAMPAIGN.id })).combat?.combatants).toHaveLength(2)
+    )
+  })
+
+  it('«Escena nueva» crea su página con la escena y la abre', async () => {
+    const user = userEvent.setup()
+    const { api } = await renderTable()
+    await user.click(await panel().findByRole('button', { name: 'Escena nueva' }))
+    await user.type(panel().getByLabelText('Nombre de la escena'), 'Puerto Gris')
+    await user.click(panel().getByRole('button', { name: 'Crear' }))
+    await waitFor(async () =>
+      expect((await api.client.call('getCampaignTable', { campaignId: CAMPAIGN.id })).open?.name).toBe('Puerto Gris')
+    )
+    expect(api.pages.map((page) => page.title)).toContain('Puerto Gris')
+  })
+})
+
 describe('las fichas en la tele', () => {
   const GRID = {
     type: 'square' as const,

@@ -1668,6 +1668,16 @@ export const es = {
       unfold: 'Desplegar la barra'
     },
     lastRolls: 'Últimas tiradas',
+    openScene: 'Abrir {{name}}',
+    newScene: 'Escena nueva',
+    newSceneName: 'Nombre de la escena',
+    createScene: 'Crear',
+    inScene: 'En esta escena',
+    inSceneEmpty: 'Nadie aún: arrastra personajes o criaturas al mapa.',
+    hiddenFromGroup: 'Oculta al grupo',
+    hideFromGroup: 'Ocultar {{name}} al grupo',
+    showToGroup: 'Enseñar {{name}} al grupo',
+    toCombat: 'Meter a {{name}} en el combate',
     onlyYou: 'solo tú',
     forYou: 'para ti',
     pages: {
