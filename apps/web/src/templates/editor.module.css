@@ -408,6 +408,10 @@
   outline: none;
 }
 
+.addOption:focus-visible {
+  box-shadow: inset 3px 0 0 var(--color-accent);
+}
+
 .muted {
   margin: var(--space-1) var(--space-1) 0;
   color: var(--color-muted);

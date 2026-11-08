@@ -363,6 +363,29 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
     else setSelected(null)
   }
 
+  // El menú del botón derecho (también con la tecla de menú o Mayús+F10): al abrirse, el foco en su primera opción
+  const menuRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (menu) menuRef.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus()
+  }, [menu])
+  const closeMenu = () => {
+    setMenu(null)
+    container.current?.focus()
+  }
+  const onMenuKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    const items = [...(menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? [])]
+    const at = items.indexOf(document.activeElement as HTMLElement)
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      event.stopPropagation()
+      closeMenu()
+    } else if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault()
+      const next = (at + (event.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length
+      items[next]?.focus()
+    } else if (event.key === 'Tab') closeMenu()
+  }
+
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.target !== event.currentTarget) return
     const step = 80
@@ -523,11 +546,13 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
         </div>
         {menu && (
           <div
+            ref={menuRef}
             role="menu"
             aria-label={t('map.contextMenu')}
             className={styles.contextMenu}
             style={{ insetInlineStart: menu.sx, insetBlockStart: menu.sy }}
             onPointerDown={(event) => event.stopPropagation()}
+            onKeyDown={onMenuKeyDown}
           >
             <button
               type="button"

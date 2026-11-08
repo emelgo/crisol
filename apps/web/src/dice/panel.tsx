@@ -6,7 +6,7 @@
 import type { Campaign } from '@crisol/contracts'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Settings, X } from 'lucide-react'
-import { useCallback, useId, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
@@ -96,11 +96,26 @@ function DiceCard({ worldId }: { worldId: string }) {
     gear
   )
   const { list, chosen, loading } = useDiceCampaign(worldId)
+  const card = useRef<HTMLElement>(null)
+  // Escape la cierra y el foco vuelve al d20; en el móvil (una hoja con la página oscurecida), el foco entra en ella
+  useEffect(() => {
+    const launcher = () => document.querySelector<HTMLElement>('[data-tour="dados"]')
+    if (window.matchMedia?.('(max-width: 48rem)').matches) card.current?.focus()
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || event.defaultPrevented) return
+      // Un menú o un cuadro abierto encima se cierra él antes
+      if ((event.target as HTMLElement | null)?.closest('dialog, [role="menu"], [role="listbox"]')) return
+      dice.close()
+      launcher()?.focus()
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [dice.close])
   return (
     <>
       {/* En el móvil, la hoja sube desde abajo con la página oscurecida detrás: pulsar fuera la cierra */}
       <button type="button" className={styles.backdrop} aria-hidden="true" tabIndex={-1} onClick={dice.close} />
-      <aside className={styles.card} aria-label={t('dice.title')} data-tour="ficha-dados">
+      <aside ref={card} tabIndex={-1} className={styles.card} aria-label={t('dice.title')} data-tour="ficha-dados">
         <span className={styles.grip} aria-hidden="true" />
         <header className={styles.head}>
           <h2 className={styles.title}>{t('dice.title')}</h2>

@@ -200,6 +200,7 @@ function SwitcherDialog({
       }}
     >
       <input
+        autoComplete="off"
         ref={input}
         className={styles.input}
         role="combobox"

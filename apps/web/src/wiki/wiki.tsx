@@ -27,6 +27,7 @@ import { MapTab } from './map/map-tab.tsx'
 import { BookmarkButton, Bookmarks, OpenTabs } from './navigation.tsx'
 import { NewPageContext, NewPageDialog, type NewPageRequest } from './new-page.tsx'
 import { useWikiPanel } from './panel.tsx'
+import panelStyles from './panel-blocks.module.css'
 import { PanelBlocks } from './panel-blocks.tsx'
 import { PageProperties, type PropertyAdder } from './properties.tsx'
 import { QuickSwitcher } from './quick-switcher.tsx'
@@ -250,12 +251,21 @@ function PageFilter({
   onSearch?: (query: string) => void
 }) {
   const { t } = useTranslation()
+  const hintId = useId()
   return (
     <div className={styles.filter} data-tour="buscador">
+      {/* La pista, también para el lector de pantalla y lo táctil (no solo en el title) */}
+      {onSearch && (
+        <span id={hintId} className={panelStyles.visuallyHidden}>
+          {t('wiki.filterHint')}
+        </span>
+      )}
       <input
+        autoComplete="off"
         type="search"
         value={value}
         aria-label={label}
+        aria-describedby={onSearch ? hintId : undefined}
         placeholder={label}
         title={onSearch ? t('wiki.filterHint') : undefined}
         onChange={(event) => onChange(event.currentTarget.value)}

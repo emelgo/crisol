@@ -75,9 +75,11 @@
   cursor: pointer;
 }
 
+/* Con el foco, también la raya de acento (como el menú del asa): solo el fondo apenas se ve en el tema claro */
 .option:focus {
   background: var(--color-raised);
   outline: none;
+  box-shadow: inset 3px 0 0 var(--color-accent);
 }
 
 .option[aria-selected="true"] {

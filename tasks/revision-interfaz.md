@@ -143,25 +143,25 @@ tienen nombre, las ventanas son `<dialog>`, hay enlace de salto, el zoom no se b
 
 - [ ] G1. **Mover un archivo de carpeta solo se puede arrastrando** (`wiki/files.tsx:495`): sin teclado (WCAG 2.1.1).
   Choca con la norma («Mover es arrastrar»): ¿«Mover a…» también en el engranaje o el botón derecho?
-- [ ] G2. **La ficha de dados en el móvil** (la de la jugadora) es una hoja con fondo oscurecido pero no se porta como
+- [x] G2. **La ficha de dados en el móvil** (la de la jugadora) es una hoja con fondo oscurecido pero no se porta como
   ventana: el foco no entra, Escape no la cierra, se tabula a lo de detrás (`dice/panel.tsx:64`).
-- [ ] G3. **Atajos de una letra en la Mesa** escuchados en toda la ventana, sin apagarse (`tabletop/mesa.tsx:298`):
+- [x] G3. **Atajos de una letra en la Mesa** escuchados en toda la ventana, sin apagarse (`tabletop/mesa.tsx:298`):
   que solo valgan con el foco en el lienzo.
-- [ ] G4. **El menú del botón derecho del mapa** no recibe el foco ni se mueve con flechas, y Escape dentro no lo
+- [x] G4. **El menú del botón derecho del mapa** no recibe el foco ni se mueve con flechas, y Escape dentro no lo
   cierra (`wiki/map/map-tab.tsx:367`, `:524`). Poner y mover pines, solo con el ratón.
-- [ ] G5. **Foco casi invisible** en opciones de menús y listas (solo cambia el fondo): `wiki/field-controls.module.css:78`,
+- [x] G5. **Foco casi invisible** en opciones de menús y listas (solo cambia el fondo): `wiki/field-controls.module.css:78`,
   `wiki/tree-menu.module.css:41`, `wiki/page-links.module.css:93`, `templates/editor.module.css:405`. Y el título de
   una página bloqueada no marca el foco (`wiki/wiki.module.css:610`).
-- [ ] G6. **Contraste**: la etiqueta «Nuevo» con `#e9b872` fijo (1,8:1 en el tema claro; `wiki/content.module.css:80`,
+- [x] G6. **Contraste**: la etiqueta «Nuevo» con `#e9b872` fijo (1,8:1 en el tema claro; `wiki/content.module.css:80`,
   `campaign/world-pages.module.css:140`); blanco sobre `--color-danger` en el tema oscuro (2,8:1;
   `characters/characters.module.css:51`); la estrella llena `#d39b22` (2,5:1; `wiki/panel-blocks.module.css:523`).
-- [ ] G7. **Pistas solo en `title`** (no las ven el táctil ni el lector): la del buscador del árbol (`wiki/wiki.tsx:260`),
+- [x] G7. **Pistas solo en `title`** (no las ven el táctil ni el lector): la del buscador del árbol (`wiki/wiki.tsx:260`),
   «No está entre las opciones», «Lo nuevo no se ve en la tele».
-- [ ] G8. **Para la jugadora en el móvil**: la X del aviso de revelado mide unos 24 px
+- [x] G8. **Para la jugadora en el móvil**: la X del aviso de revelado mide unos 24 px
   (`components/reveal-notices.module.css:59`), la casilla de 20 px de la ficha (`characters/play-sheet.module.css:384`),
   el menú de la llama navega con botones, no enlaces (`components/ribbon.tsx:670`), y el viewport sin
   `viewport-fit=cover` deja sin efecto los márgenes de la zona segura (`apps/web/index.html:5`).
-- [ ] G9. Menores: el tutorial solo se cierra con Escape si el foco está en el globo (`components/tour.tsx:171`); el
+- [x] G9. Menores: el tutorial solo se cierra con Escape si el foco está en el globo (`components/tour.tsx:171`); el
   pie de una imagen se lee dos veces (`campaign/world-pages.tsx:395`); buscadores sin `autoComplete="off"` (el
   autorrelleno tapa su lista); imágenes del texto sin dimensiones (el texto salta al cargar: `wiki/file-embed.tsx:159`,
   `wiki/panel-blocks.tsx:675`); la portada de página y la imagen de una ficha solo se encuadran arrastrando (la del

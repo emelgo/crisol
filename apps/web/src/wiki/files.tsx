@@ -567,6 +567,7 @@ function FilesSection({
       <label className={styles.search} data-tour="archivos-buscar">
         <Search aria-hidden="true" size={16} />
         <input
+          autoComplete="off"
           type="search"
           value={query}
           placeholder={t('files.search')}

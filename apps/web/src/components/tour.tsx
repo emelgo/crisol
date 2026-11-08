@@ -124,6 +124,18 @@ export function Tour({ id, steps }: { id: string; steps: readonly TourStep[] }) 
     })
   }, [step])
 
+  // Escape lo cierra (sin acabarlo) esté donde esté el foco: el globo no lo atrapa, y tras un Tab ya no está en él
+  useEffect(() => {
+    if (index === null) return
+    const onKey = (event: globalThis.KeyboardEvent) => {
+      if (event.key !== 'Escape') return
+      setIndex(null)
+      if (returnTo.current instanceof HTMLElement) returnTo.current.focus()
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [index])
+
   // El «?»: vuelve a sacar el recorrido cuando se quiera
   const help = (
     <button type="button" className={styles.help} aria-label={t('tour.again')} title={t('tour.again')} onClick={start}>
@@ -163,15 +175,7 @@ export function Tour({ id, steps }: { id: string; steps: readonly TourStep[] }) 
           )}
         </div>
       ))}
-      <div
-        ref={bubble}
-        role="dialog"
-        aria-labelledby={titleId}
-        className={styles.bubble}
-        onKeyDown={(event) => {
-          if (event.key === 'Escape') close(false)
-        }}
-      >
+      <div ref={bubble} role="dialog" aria-labelledby={titleId} className={styles.bubble}>
         <p id={titleId} className={styles.text}>
           {step.text}
         </p>

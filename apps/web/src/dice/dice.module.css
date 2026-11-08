@@ -70,6 +70,11 @@
   box-shadow: 0 16px 40px rgb(0 0 0 / 0.25);
 }
 
+/* Recibe el foco al abrirse en el móvil (para leerla): sin el recuadro de foco, no es un control */
+.card:focus {
+  outline: none;
+}
+
 /* En la mesa, fuera de su barra de la derecha */
 :global(body):has(:global([data-tour="mesa-zoom"])) .launcher,
 :global(body):has(:global([data-tour="mesa-zoom"])) .card {

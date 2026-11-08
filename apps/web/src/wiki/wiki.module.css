@@ -618,6 +618,12 @@
   cursor: default;
 }
 
+/* Cerrada, no hay cursor que diga dónde está el foco: se marca */
+.title[contenteditable="false"]:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
 /* Sin franja al pasar ni al escribir: el cursor ya dice que se escribe ahí */
 
 .title:empty::before {

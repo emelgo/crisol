@@ -404,7 +404,8 @@ function ReadBlock({ page, block }: { page: Page; block: PanelBlock }) {
     case 'image':
       return block.fileId ? (
         <figure className={styles.figure}>
-          <img src={`/api/files/${block.fileId}`} alt={block.caption} loading="lazy" />
+          {/* Con pie, ya lo dice el pie (no dos veces); sin él, de qué página es */}
+          <img src={`/api/files/${block.fileId}`} alt={block.caption ? '' : page.title} loading="lazy" />
           {block.caption && <figcaption>{block.caption}</figcaption>}
         </figure>
       ) : null

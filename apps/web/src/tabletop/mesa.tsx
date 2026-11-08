@@ -294,7 +294,8 @@ function Mesa({ worldId, campaignId, campaignName }: { worldId: string; campaign
     [asGroup, tokens, notSeen]
   )
   // Las teclas de la columna (V, R, A, X, D, T, S, P, I, N, M, L; W, G, F) y las de la herramienta (Escape, Supr,
-  // Intro), fuera de los campos
+  // Intro), fuera de los campos y solo con el foco en la mesa (WCAG 2.1.4: el control por voz no las dispara desde
+  // la barra ni desde otra ventana)
   const visionKey = vision.key
   const toolsKey = tools.key
   useEffect(() => {
@@ -302,6 +303,7 @@ function Mesa({ worldId, campaignId, campaignName }: { worldId: string; campaign
       const target = event.target as HTMLElement | null
       if (event.ctrlKey || event.metaKey || event.altKey) return
       if (target?.closest('input, textarea, select, dialog, [contenteditable]')) return
+      if (target !== document.body && !target?.closest('[data-mesa]')) return
       if (visionKey(event) || toolsKey(event)) {
         event.preventDefault()
         return
@@ -338,7 +340,7 @@ function Mesa({ worldId, campaignId, campaignName }: { worldId: string; campaign
   }, [open, start])
 
   return (
-    <div className={styles.mesa}>
+    <div className={styles.mesa} data-mesa="">
       <div className={styles.stageBox}>
         <Stage
           table={table}

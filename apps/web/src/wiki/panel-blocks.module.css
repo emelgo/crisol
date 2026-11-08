@@ -543,7 +543,7 @@
 }
 
 .stars button[data-fill="full"] {
-  color: #d39b22;
+  color: var(--color-h3);
 }
 
 .stars button[data-fill="full"] svg {
@@ -552,7 +552,7 @@
 
 /* Media: la mitad izquierda rellena */
 .stars button[data-fill="half"] {
-  color: #d39b22;
+  color: var(--color-h3);
 }
 
 .stars button[data-fill="half"]::after {

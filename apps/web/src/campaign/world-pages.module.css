@@ -135,9 +135,9 @@
 .newBadge {
   margin-inline: auto var(--space-2);
   padding: 0 0.4rem;
-  border: 1px solid color-mix(in srgb, #e9b872 70%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-h3) 70%, transparent);
   border-radius: 999px;
-  color: #e9b872;
+  color: var(--color-h3);
   font-size: 0.6875rem;
   font-weight: 600;
 }
