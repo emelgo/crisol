@@ -1,0 +1,96 @@
+/* El fondo de las pantallas de cuenta: las imágenes que van pasando, detrás de todo (como en LegendKeeper) */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  background: #0b0b0d;
+  pointer-events: none;
+}
+
+/* Cada imagen, con su velo: la nueva aparece encima de la de antes en algo más de un segundo */
+.layer {
+  position: absolute;
+  inset: 0;
+  animation: aparece-fondo 1300ms ease-in-out both;
+}
+
+.layer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  /* Un degradado teñido de su color desde abajo, y más oscuro donde van el título y el recuadro */
+  background:
+    radial-gradient(ellipse 70% 55% at 50% 32%, rgb(8 8 10 / 0.55), transparent 75%),
+    linear-gradient(to top, color-mix(in srgb, var(--tint) 92%, transparent) 0%, transparent 55%), rgb(8 8 10 / 0.3);
+}
+
+/* Se acerca despacio mientras se ve (y un poco más, durante el fundido); una de cada dos, hacia el otro lado */
+.image {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+  animation: acerca-fondo 10s linear both;
+}
+
+.layer[data-dir="b"] .image {
+  animation-name: acerca-fondo-otro;
+}
+
+@keyframes aparece-fondo {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes acerca-fondo {
+  from {
+    transform: scale(1.06) translate(1.2%, 0.8%);
+  }
+  to {
+    transform: scale(1.16) translate(-1.2%, -0.6%);
+  }
+}
+
+@keyframes acerca-fondo-otro {
+  from {
+    transform: scale(1.16) translate(-1%, 0.6%);
+  }
+  to {
+    transform: scale(1.06) translate(1%, -0.4%);
+  }
+}
+
+/* De quién es: abajo a la derecha, pequeño, y cambia con la imagen */
+.credit {
+  position: absolute;
+  inset-block-end: max(var(--space-3), env(safe-area-inset-bottom, 0px));
+  inset-inline-end: max(var(--space-4), env(safe-area-inset-right, 0px));
+  margin: 0;
+  max-inline-size: calc(100% - 2 * var(--space-4));
+  font-size: 0.75rem;
+  text-align: end;
+  pointer-events: auto;
+  animation: aparece-fondo 1300ms ease-in-out both;
+}
+
+.credit a {
+  color: rgb(255 255 255 / 0.72);
+  text-decoration: none;
+  text-shadow: 0 1px 3px rgb(0 0 0 / 0.8);
+}
+
+.credit a:hover,
+.credit a:focus-visible {
+  color: #ffffff;
+  text-decoration: underline;
+}
+
+/* En el tema claro, un velo claro: el título y el recuadro, del tema, se leen igual */
+:global(:root[data-theme="light"]) .layer::after {
+  background:
+    radial-gradient(ellipse 70% 55% at 50% 32%, rgb(244 244 245 / 0.6), transparent 75%),
+    linear-gradient(to top, rgb(244 244 245 / 0.55) 0%, transparent 55%), rgb(244 244 245 / 0.25);
+}

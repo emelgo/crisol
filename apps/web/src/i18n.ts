@@ -96,6 +96,10 @@ export const es = {
       copper: 'Cobre'
     }
   },
+  // El fondo de las pantallas de cuenta: de quién es la imagen que se ve
+  backdrop: {
+    credit: '{{title}} · {{author}}'
+  },
   account: {
     signIn: 'Entrar',
     signOut: 'Cerrar sesión',

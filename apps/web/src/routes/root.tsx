@@ -5,6 +5,7 @@ import { useAccounts } from '../account/context.tsx'
 import { GroupKnowledge } from '../campaign/group-knowledge.tsx'
 import { AccountMenu } from '../components/account-menu.tsx'
 import { ApprovalQueue } from '../components/approval-queue.tsx'
+import { Backdrop } from '../components/backdrop.tsx'
 import { CrisolMark, Loading } from '../components/brand.tsx'
 import { Notices } from '../components/notices.tsx'
 import { PageTitle, useFocusHeading } from '../components/page-title.tsx'
@@ -86,6 +87,9 @@ export function RootLayout() {
         <main id="contenido" className={styles.main}>
           <Outlet />
         </main>
+        {/* Detrás de todo (fijo), las imágenes que van pasando, como en LegendKeeper; al final, para que su crédito
+            no vaya antes que «Saltar al contenido» */}
+        <Backdrop />
       </div>
     )
   }

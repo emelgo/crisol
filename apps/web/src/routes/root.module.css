@@ -109,3 +109,15 @@
 .link {
   color: var(--color-link);
 }
+
+/* Sin sesión, encima del fondo de imágenes: la barra, translúcida, y lo demás por encima */
+.shell > header,
+.shell > main {
+  position: relative;
+  z-index: 1;
+}
+
+.shell > .header {
+  background: color-mix(in srgb, var(--color-chrome) 55%, transparent);
+  backdrop-filter: blur(6px);
+}
