@@ -19,29 +19,29 @@ export interface Thrown {
   settled: boolean
 }
 
-const STEP = 1 / 60
+/** Pasos de 1/120 s (más finos que los fotogramas: choques más limpios); se graba uno de cada dos */
+const STEP = 1 / 120
+const SUBSTEPS = 2
 /** Lo que se enseña: como mucho, 2,5 s de tirada */
 export const MAX_FRAMES = 150
 /** Lo que se simula: hasta que se paren (casi siempre antes de 2,5 s; si no, se enseña más deprisa) */
-const MAX_STEPS = 360
+const MAX_STEPS = 720
 /**
- * La física de la tirada (afinada a ojo y con pruebas de cientos de tiradas): poco freno para que rueden de verdad, algo
- * de rebote y un lanzamiento con fuerza y giro, como una mano que los tira
+ * La física de la tirada, como en el Crisol antiguo (packages/dice3d, que iba «perfecto»): dados macizos que salen bajos
+ * y con algo de arco, rodando hacia donde van (no girando como peonzas), que se agarran al tapete (vuelcan unas pocas
+ * veces en vez de patinar) y, ya casi parados, se asientan de golpe
  */
 export const PHYSICS = {
-  gravity: 90,
-  floorFriction: 0.6,
-  floorBounce: 0.3,
-  diceFriction: 0.3,
-  diceBounce: 0.3,
-  linearDamping: 0.3,
-  angularDamping: 0.15,
-  speed: [12, 4] as [number, number],
-  spin: 50,
-  sleepSpeed: 0.4,
-  /** Desde qué altura salen (y cuánto suben al salir): dan vueltas en el aire antes de tocar la mesa */
-  height: 6,
-  lift: [3, 3] as [number, number]
+  gravity: 62,
+  floor: { friction: 0.9, restitution: 0.1 },
+  walls: { friction: 0.14, restitution: 0.3 },
+  dice: { friction: 0.2, restitution: 0.24 },
+  linearDamping: 0.2,
+  /** Algo más de freno al giro que al avance (resistencia a rodar) */
+  angularDamping: 0.45,
+  /** Por debajo de estas velocidades se frena mucho más: se asienta sin temblar ni arrastrarse */
+  slow: { speed: 0.6, spin: 1.2, damping: 0.9 },
+  sleepSpeed: 0.1
 }
 
 /** Un azar con semilla (mulberry32): la misma tirada con la misma semilla, para las pruebas */
@@ -70,68 +70,90 @@ export function throwDice(
   { seed = Math.floor(Math.random() * 2 ** 31) }: { seed?: number } = {}
 ): Thrown[] {
   const random = seeded(seed)
-  // Valores probados con 30 tiradas de cada dado (180): todos se paran, casi siempre antes de 2,5 s, y siempre planos
+  const between = (min: number, max: number) => min + random() * (max - min)
+  // Probados con cientos de tiradas de cada dado: todos se paran, y siempre planos
   const world = new World({ gravity: new Vec3(0, -PHYSICS.gravity, 0), allowSleep: true })
   const floor = new Material('suelo')
+  const walls = new Material('pared')
   const plastic = new Material('dado')
-  world.addContactMaterial(
-    new ContactMaterial(floor, plastic, { friction: PHYSICS.floorFriction, restitution: PHYSICS.floorBounce })
-  )
-  world.addContactMaterial(
-    new ContactMaterial(plastic, plastic, { friction: PHYSICS.diceFriction, restitution: PHYSICS.diceBounce })
-  )
+  world.addContactMaterial(new ContactMaterial(floor, plastic, PHYSICS.floor))
+  world.addContactMaterial(new ContactMaterial(walls, plastic, PHYSICS.walls))
+  world.addContactMaterial(new ContactMaterial(plastic, plastic, PHYSICS.dice))
   const { halfWidth: w, halfDepth: d } = TRAY
   // El suelo mira hacia arriba; las paredes, hacia dentro
   wall(world, floor, new Vec3(0, 0, 0), around(new Vec3(1, 0, 0), -Math.PI / 2))
-  wall(world, floor, new Vec3(-w, 0, 0), around(new Vec3(0, 1, 0), Math.PI / 2))
-  wall(world, floor, new Vec3(w, 0, 0), around(new Vec3(0, 1, 0), -Math.PI / 2))
-  wall(world, floor, new Vec3(0, 0, -d), new Quaternion())
-  wall(world, floor, new Vec3(0, 0, d), around(new Vec3(0, 1, 0), Math.PI))
+  wall(world, walls, new Vec3(-w, 0, 0), around(new Vec3(0, 1, 0), Math.PI / 2))
+  wall(world, walls, new Vec3(w, 0, 0), around(new Vec3(0, 1, 0), -Math.PI / 2))
+  wall(world, walls, new Vec3(0, 0, -d), new Quaternion())
+  wall(world, walls, new Vec3(0, 0, d), around(new Vec3(0, 1, 0), Math.PI))
 
+  // Apuntan a un punto de la zona central (no siempre el centro); cada dado, por su carril
+  const targetX = between(-w * 0.35, w * 0.15)
+  const targetZ = between(-d * 0.3, d * 0.3)
   const bodies = dice.map((die, i) => {
     const shape = solidOf(die.kind)
     const size = sizeOf(die.kind)
+    const vertices = shape.verts.map((v) => new Vec3(v[0] * size, v[1] * size, v[2] * size))
+    const radius = Math.max(...vertices.map((v) => v.length()))
     const body = new Body({
       mass: 1,
       material: plastic,
-      shape: new ConvexPolyhedron({
-        vertices: shape.verts.map((v) => new Vec3(v[0] * size, v[1] * size, v[2] * size)),
-        faces: shape.faces
-      }),
+      shape: new ConvexPolyhedron({ vertices, faces: shape.faces }),
       linearDamping: PHYSICS.linearDamping,
       angularDamping: PHYSICS.angularDamping,
       allowSleep: true,
       sleepSpeedLimit: PHYSICS.sleepSpeed,
-      sleepTimeLimit: 0.15
+      sleepTimeLimit: 0.2
     })
-    // Lanzados desde la derecha hacia el centro, unos detrás de otros, girando
-    body.position.set(w - 1.5, PHYSICS.height + (i % 4) * 0.9, (random() - 0.5) * (2 * d - 3))
+    // Desde la derecha, bajos y con algo de arco, como desde la mano
+    const lane = (i - (dice.length - 1) / 2) * 1.6 + between(-0.3, 0.3)
+    const x = w - 1.6 - Math.floor(i / 4) * 1.2
+    const z = Math.max(-d + 1.2, Math.min(d - 1.2, lane * 0.6 + between(-0.4, 0.4)))
+    body.position.set(x, 1.4 + between(0, 1.5), z)
     body.quaternion.setFromEuler(random() * Math.PI * 2, random() * Math.PI * 2, random() * Math.PI * 2)
-    body.velocity.set(
-      -(PHYSICS.speed[0] + random() * PHYSICS.speed[1]),
-      PHYSICS.lift[0] + random() * PHYSICS.lift[1],
-      (random() - 0.5) * 4
-    )
-    body.angularVelocity.set(
-      (random() - 0.5) * PHYSICS.spin,
-      (random() - 0.5) * PHYSICS.spin,
-      (random() - 0.5) * PHYSICS.spin
-    )
+    const toX = targetX - x
+    const toZ = targetZ + lane * 0.5 - z
+    const length = Math.hypot(toX, toZ) || 1
+    const speed = between(11, 15)
+    const vx = (toX / length) * speed
+    const vz = (toZ / length) * speed
+    body.velocity.set(vx, between(4, 7), vz)
+    // Rodando hacia donde va (eje = arriba × dirección), casi al ritmo de rodar sin resbalar, con un poco de giro al
+    // azar: de lado o como una peonza patinaría sobre el tapete en vez de rodar
+    const axisLength = Math.hypot(vz, vx) || 1
+    const roll = Math.min(45, (speed / radius) * between(0.85, 1))
+    const extra = () => between(-1, 1) * between(2, 5)
+    body.angularVelocity.set((vz / axisLength) * roll + extra(), extra() * 0.5, (-vx / axisLength) * roll + extra())
     world.addBody(body)
     return body
   })
 
   const frames: Frame[][] = dice.map(() => [])
   let settled = false
+  // Quieto de verdad: un cuarto de segundo casi sin moverse (la física a veces no lo duerme, apoyado en una pared)
+  const still = bodies.map(() => 0)
   for (let step = 0; step < MAX_STEPS; step++) {
+    // Ya casi parado, se frena mucho más: se asienta de golpe, sin temblar ni arrastrarse
+    for (const body of bodies) {
+      const slow = body.velocity.length() < PHYSICS.slow.speed && body.angularVelocity.length() < PHYSICS.slow.spin
+      // Pasados 3 s, el que aún tiembla (apoyado en otro o en una pared) se frena del todo
+      const late = step * STEP > 3
+      body.linearDamping = slow || late ? PHYSICS.slow.damping : PHYSICS.linearDamping
+      body.angularDamping = slow || late ? PHYSICS.slow.damping : PHYSICS.angularDamping
+    }
     world.step(STEP)
+    if (step % SUBSTEPS !== SUBSTEPS - 1) continue
     bodies.forEach((body, i) => {
       frames[i]?.push({
         position: [body.position.x, body.position.y, body.position.z],
         quaternion: [body.quaternion.x, body.quaternion.y, body.quaternion.z, body.quaternion.w]
       })
     })
-    if (bodies.every((body) => body.sleepState === Body.SLEEPING)) {
+    bodies.forEach((body, i) => {
+      const resting = body.velocity.length() < 0.05 && body.angularVelocity.length() < 0.1
+      still[i] = resting || body.sleepState === Body.SLEEPING ? (still[i] ?? 0) + STEP * SUBSTEPS : 0
+    })
+    if (still.every((time) => time >= 0.25)) {
       settled = true
       break
     }
