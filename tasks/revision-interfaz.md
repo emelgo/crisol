@@ -37,22 +37,22 @@ que él decide de verdad (F, G1, G10) va con la opción por defecto apuntada en 
 
 ## B. Incoherencias entre módulos
 
-- [ ] B1. **El título de cada pantalla está en un sitio distinto** («el título no se mueve de una vista a otra»; la
+- [x] B1. **El título de cada pantalla está en un sitio distinto** («el título no se mueve de una vista a otra»; la
   referencia, Ajustes): Mis mundos, Archivos y Etiquetas a una altura y margen (010, 021, 022); Plantillas y Sistemas
   más abajo, en una columna estrecha de una sola tarjeta con todo vacío a los lados (023, 025); IA y «Página no
   encontrada» más a la izquierda (026, 027); Personajes en otra (061); la campaña, dentro de una cabecera gris (060);
   Compendio, Biblioteca, En juego y Grupo, sin título de pantalla (un título pequeño dentro de su ficha: 064, 068,
   066, 067). Propuesta: un solo esqueleto de pantalla (título y columna como Mis mundos/Archivos, paneles a los lados
   fuera de la columna) para todas.
-- [ ] B2. **Las páginas del mundo vistas desde la campaña son otra maqueta** (069, 070, 102–104): columna más
+- [x] B2. **Las páginas del mundo vistas desde la campaña son otra maqueta** (069, 070, 102–104): columna más
   estrecha, títulos de sección en blanco (sin el rojo y el ocre de cada nivel), enlaces blancos subrayados (no azules),
   el árbol y el panel a distinta altura, y para la jugadora las propiedades en tabla (no el nombre pequeño encima),
   «etiquetas» en minúscula y la portada desaparece dejando un hueco vacío arriba (103, 221).
 - [ ] B3. **Tres colores de título en las tarjetas**: blanco (mundos y campañas), ocre (plantillas y sistemas), rojo con
   raya (personajes).
-- [ ] B4. **Las ventanas no ponen el título en el mismo sitio**: Ajustes y Perfil más adentro que Historial y Papelera
+- [x] B4. **Las ventanas no ponen el título en el mismo sitio**: Ajustes y Perfil más adentro que Historial y Papelera
   (017–020).
-- [ ] B5. **Ajustes**: «Modo» con título grande y raya, el resto pequeños; cajas dentro de cajas (IA › Conectar, Modo)
+- [x] B5. **Ajustes**: «Modo» con título grande y raya, el resto pequeños; cajas dentro de cajas (IA › Conectar, Modo)
   (017). Y la pantalla `/ia` repite lo mismo con «Últimas peticiones» (026): ¿se quita?
 - [ ] B6. **Controles nativos mezclados con los propios**: desplegables del navegador (Mundo y Sistema al crear una
   campaña, Nivel en el creador, «Quién la ve», Etiqueta en Archivos y en Buscar, el bloque de imagen vacío del panel),
@@ -70,10 +70,10 @@ que él decide de verdad (F, G1, G10) va con la opción por defecto apuntada en 
 
 ## C. Normas de `docs/diseno.md` que no se cumplen
 
-- [ ] C1. **Perfil: «Guardar» siempre a la vista** (018); la norma: solo con cambios (`components/changes.tsx`).
-- [ ] C2. **Rojo en lo corriente**: «Deshacer» en cada fila del Historial, «Restaurar» en la Papelera, «Expulsar» por
+- [x] C1. **Perfil: «Guardar» siempre a la vista** (018); la norma: solo con cambios (`components/changes.tsx`).
+- [x] C2. **Rojo en lo corriente**: «Deshacer» en cada fila del Historial, «Restaurar» en la Papelera, «Expulsar» por
   jugador, las filas de ediciones del compendio en rojo oscuro (019, 020, 060, 064).
-- [ ] C3. **«Expulsar» y «Dejar la campaña» sueltos**, sin zona de peligro ni confirmación a la vista (060, 101).
+- [x] C3. **«Expulsar» y «Dejar la campaña» sueltos**, sin zona de peligro ni confirmación a la vista (060, 101).
 - [ ] C4. **Filas de botones con borde, todos con el mismo peso**: Daño / Curar / Temporales (062); Tirar PG / Volver
   al suyo / Quitar de juego, uno bajo otro (066); «Quitar las copias».
 - [ ] C5. **Textos de ayuda fijos**: los atajos al pie del menú «/» (042), «Pie (opcional)» bajo cada imagen (036),
@@ -85,7 +85,7 @@ que él decide de verdad (F, G1, G10) va con la opción por defecto apuntada en 
   imagen» (033). Que salgan al acercarse, como el tipo y la × de las propiedades.
 - [ ] C7. **Las tarjetas de Sistemas no tienen engranaje** (025): la norma pone las acciones en el engranaje, siempre a
   la vista (Plantillas sí lo tiene).
-- [ ] C8. **Los dados, en un botón flotante con forma de d20** (Enrique, 2026-11-08; norma nueva en `docs/diseno.md`):
+- [x] C8. **Los dados, en un botón flotante con forma de d20** (Enrique, 2026-11-08; norma nueva en `docs/diseno.md`):
   fuera de la barra, en una esquina, y la ficha se abre junto a él. Resuelve lo que se vio: **«Dados» tapa el contenido fuera de las páginas** (071, 072, 075): la cabecera de la campaña, «Quién la ve»
   y Versiones en la ficha, la barra de la Mesa. Y el «?» se monta encima de sus botones. La norma: en el sitio del
   panel, sin tapar.
@@ -167,6 +167,15 @@ tienen nombre, las ventanas son `<dialog>`, hay enlace de salto, el zoom no se b
   prohíbe y el ADR-0015 lo usa para «Traer de Foundry». ¿Se queda o se dice de otra forma?
 - [ ] G11. Las pruebas de accesibilidad (`e2e/tests/a11y.spec.ts`) no pasan por la página y su editor, Archivos, la
   ficha, el compendio, la mesa ni los dados: ampliarlas al arreglar.
+
+## Pruebas por poner al día al final
+
+Las e2e no se pasan mientras se pule (se ponen al día al acabar, antes de la CI):
+
+- `dados.spec.ts`, `compendio.spec.ts`: «Dados» ya no está en la barra («Secciones»); es el botón flotante (el d20,
+  `aria-expanded`), fuera de la barra y del menú de la llama.
+- Las que miraban la franja de la campaña («Jugadores», «Han entrado» como cifras) o «Eres su máster».
+- Las que abrían una ventana de la barra y medían su contenido (ahora, en la columna de Ajustes).
 
 ## Lo que va bien
 

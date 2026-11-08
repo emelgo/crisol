@@ -3,7 +3,6 @@ import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
 import {
   Backpack,
   BookOpen,
-  Dices,
   Eye,
   Folder,
   Globe,
@@ -394,7 +393,6 @@ function WorldPanels({ worldId, worldName, master }: { worldId: string; worldNam
       >
         <Label icon={House} text={t('ribbon.home')} />
       </Link>
-      <DiceButton />
     </>
   )
 }
@@ -510,7 +508,6 @@ function CampaignPanels({
           <Label icon={Library} text={t('ribbon.library')} />
         </Link>
       )}
-      <DiceButton />
     </>
   )
 }
@@ -554,23 +551,6 @@ function RevealedButton() {
       onClick={(event) => windows?.open('revelado', event.currentTarget)}
     >
       <Label icon={Eye} text={t('ribbon.revealed')} />
-    </button>
-  )
-}
-
-/** «Dados»: abre y cierra la ficha de dados del mundo (la excepción a una barra con solo el mundo y Archivos) */
-function DiceButton() {
-  const { t } = useTranslation()
-  const dice = useDice()
-  return (
-    <button
-      type="button"
-      className={styles.item}
-      aria-pressed={dice.open}
-      data-tour="barra-dados"
-      onClick={dice.toggle}
-    >
-      <Label icon={Dices} text={t('ribbon.dice')} />
     </button>
   )
 }
@@ -627,7 +607,6 @@ function WikiPanels({ worldId, worldName }: { worldId: string; worldName: string
       >
         <Label icon={Folder} text={t('ribbon.files')} />
       </Link>
-      <DiceButton />
     </>
   )
 }
@@ -658,7 +637,6 @@ function MobileMenu({
   const accounts = useAccounts()
   const windows = useWindow()
   const wikiPanel = useWikiPanel()
-  const dice = useDice()
   const path = useRouterState({ select: (state) => state.location.pathname })
   const trigger = useRef<HTMLButtonElement>(null)
   const dialog = useRef<HTMLDialogElement>(null)
@@ -679,15 +657,6 @@ function MobileMenu({
     run: then(() => {
       leaveWorld()
       void navigate({ to: '/mundos', viewTransition: LEAVE_WORLD })
-    })
-  }
-  const diceEntry: Entry = {
-    key: 'dados',
-    icon: Dices,
-    text: t('ribbon.dice'),
-    current: dice.open,
-    run: then(() => {
-      if (!dice.open) dice.toggle()
     })
   }
   const entries: Entry[] =
@@ -762,8 +731,7 @@ function MobileMenu({
                   run: go(`/mundos/${world.id}/campanas/${campaign.id}/biblioteca`)
                 }
               ]
-            : []),
-          diceEntry
+            : [])
         ]
       : world
         ? [
@@ -816,17 +784,7 @@ function MobileMenu({
                     run: go(`/mundos/${world.id}/archivos`)
                   }
                 ]
-              : []),
-            // Los dados: la hoja de dados sube desde abajo
-            {
-              key: 'dados',
-              icon: Dices,
-              text: t('ribbon.dice'),
-              current: dice.open,
-              run: then(() => {
-                if (!dice.open) dice.toggle()
-              })
-            }
+              : [])
           ]
         : [
             {

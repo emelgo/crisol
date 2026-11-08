@@ -64,13 +64,14 @@ describe('la ficha de dados', () => {
     )
   })
 
-  it('«Dados» en la barra la abre y la cierra', async () => {
+  it('el botón flotante (el d20, fuera de la barra) la abre y la cierra', async () => {
     renderCampaign('master')
     const button = await screen.findByRole('button', { name: 'Dados' })
-    expect(button.getAttribute('aria-pressed')).toBe('false')
+    expect(button.closest('nav')).toBeNull()
+    expect(button.getAttribute('aria-expanded')).toBe('false')
     await userEvent.click(button)
     expect(await screen.findByRole('complementary', { name: 'Dados' })).toBeTruthy()
-    expect(button.getAttribute('aria-pressed')).toBe('true')
+    expect(button.getAttribute('aria-expanded')).toBe('true')
     await userEvent.click(button)
     await waitFor(() => expect(screen.queryByRole('complementary', { name: 'Dados' })).toBeNull())
   })

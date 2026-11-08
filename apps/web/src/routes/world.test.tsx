@@ -144,8 +144,8 @@ describe('el Inicio de un mundo', () => {
       [...screen.getByRole('navigation', { name: 'Secciones' }).querySelectorAll('a, button')]
         .map((item) => item.textContent)
         .filter(Boolean)
-    // La llama no tiene texto (lleva su nombre como etiqueta); «Dados», la excepción de docs/diseno.md
-    expect(items()).toEqual(['Eana', 'Archivos', 'Dados'])
+    // La llama no tiene texto (lleva su nombre como etiqueta); los dados, en su botón flotante (docs/diseno.md)
+    expect(items()).toEqual(['Eana', 'Archivos'])
 
     // Los archivos, en su pantalla
     await userEvent.click(ribbon().getByRole('link', { name: 'Archivos' }))

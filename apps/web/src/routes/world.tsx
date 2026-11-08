@@ -76,7 +76,7 @@ export function WorldPage() {
               { target: '[data-tour="panel-bloques"]', text: t('tour.world.panel'), placement: 'left' },
               { target: '[data-tour="quien-la-conoce"]', text: t('tour.world.whoKnows'), placement: 'bottom' },
               { target: '[data-tour="barra-archivos-mundo"]', text: t('tour.world.files'), placement: 'right' },
-              { target: '[data-tour="barra-dados"]', text: t('tour.world.dice'), placement: 'right' },
+              { target: '[data-tour="dados"]', text: t('tour.world.dice'), placement: 'top' },
               { target: '[data-tour="barra-historial"]', text: t('tour.world.history'), placement: 'right' },
               { target: '[data-tour="barra-papelera"]', text: t('tour.world.trash'), placement: 'right' },
               { target: '[data-tour="engranaje"]', text: t('tour.world.settings') }
@@ -86,7 +86,7 @@ export function WorldPage() {
           ? []
           : ([
               { target: '[data-tour="barra-inicio"]', text: t('tour.world.home'), placement: 'right' },
-              { target: '[data-tour="barra-dados"]', text: t('tour.world.dice'), placement: 'right' }
+              { target: '[data-tour="dados"]', text: t('tour.world.dice'), placement: 'top' }
             ] as const)),
         { target: '[data-tour="barra-llama"]', text: t('tour.world.back'), placement: 'right' },
         { target: '[data-tour="menu-movil"]', text: t('tour.menu') }

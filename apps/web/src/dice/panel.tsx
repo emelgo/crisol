@@ -1,7 +1,7 @@
 /**
- * La ficha de dados de un mundo: a la derecha, en el sitio del panel de la página, sin tapar el texto. Se abre y se
- * cierra con «Dados» en la barra. Arriba, la campaña en la que se tira (con varias, se elige y se recuerda); abajo,
- * la tirada
+ * Los dados de un mundo (docs/diseno.md): un botón flotante con forma de d20, abajo a la derecha, que abre y cierra
+ * su ficha junto a él, en esa esquina (no es una pantalla ni va en la barra). En la ficha, arriba, la campaña en la
+ * que se tira (con varias, se elige y se recuerda); abajo, la tirada
  */
 import type { Campaign } from '@crisol/contracts'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
@@ -36,8 +36,46 @@ export function useDiceCampaign(worldId: string | undefined) {
 export function DicePanel() {
   const worldId = useWorldInPath()
   const dice = useDice()
-  if (!worldId || !dice.open) return null
-  return <DiceCard key={worldId} worldId={worldId} />
+  if (!worldId) return null
+  return (
+    <>
+      <DiceLauncher />
+      {dice.open && <DiceCard key={worldId} worldId={worldId} />}
+    </>
+  )
+}
+
+/** El botón flotante: un d20, como en las fichas de D&D Beyond */
+function DiceLauncher() {
+  const { t } = useTranslation()
+  const dice = useDice()
+  return (
+    <button
+      type="button"
+      className={styles.launcher}
+      aria-label={t('ribbon.dice')}
+      aria-expanded={dice.open}
+      title={t('ribbon.dice')}
+      data-tour="dados"
+      onClick={dice.toggle}
+    >
+      <D20 />
+    </button>
+  )
+}
+
+/** Un d20 de frente: el hexágono, su cara de arriba y las aristas que bajan a los lados */
+function D20() {
+  return (
+    <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true" className={styles.d20}>
+      <path d="M12 2 21 7v10l-9 5-9-5V7z" />
+      <path d="M12 7.5 17 16H7z" />
+      <path d="M12 2v5.5M21 7l-4 9M3 7l4 9M7 16l-4 1M17 16l4 1M7 16l5 6M17 16l-5 6" />
+      <text x="12" y="14.6" textAnchor="middle">
+        20
+      </text>
+    </svg>
+  )
 }
 
 function DiceCard({ worldId }: { worldId: string }) {

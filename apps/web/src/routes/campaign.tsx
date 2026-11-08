@@ -103,7 +103,7 @@ export function CampaignPage() {
                 }
               ]
             : []),
-          { target: '[data-tour="barra-dados"]', text: t('tour.world.dice'), placement: 'right' },
+          { target: '[data-tour="dados"]', text: t('tour.world.dice'), placement: 'top' },
           { target: '[data-tour="barra-llama"]', text: t('tour.world.back'), placement: 'right' },
           { target: '[data-tour="menu-movil"]', text: t('tour.menu') }
         ]}

@@ -133,4 +133,9 @@
   .help {
     inset-block-end: calc(3.5rem + var(--space-3));
   }
+
+  /* Con la hoja de dados abierta, no se monta encima de sus botones */
+  :global(body):has(:global([data-tour="ficha-dados"])) .help {
+    display: none;
+  }
 }
