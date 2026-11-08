@@ -61,18 +61,10 @@ describe('los sistemas de reglas', () => {
     await conn?.close()
   })
 
-  it('de serie solo «En blanco», entero y de solo lectura (ADR-0015)', async () => {
+  it('sin sistemas de serie en la lista; «En blanco», entero y de solo lectura, para empezar (ADR-0015)', async () => {
+    // Enrique, 2026-11-08: «no debemos tener sistemas de serie»: la lista, solo los de la cuenta
     const { systems } = await ok200('listSystems', {})
-    expect(systems).toEqual([
-      expect.objectContaining({
-        id: 'blank',
-        name: 'En blanco',
-        builtIn: true,
-        version: 1,
-        basedOn: null,
-        campaigns: []
-      })
-    ])
+    expect(systems).toEqual([])
     expect((await code('getSystem', { systemId: '5e' })).status).toBe(404)
     const blank = await ok200('getSystem', { systemId: 'blank' })
     expect(systemFull.safeParse(blank).success).toBe(true)
@@ -106,7 +98,7 @@ describe('los sistemas de reglas', () => {
     expect(copy.basedOn).toEqual({ id: created.id, name: 'Fronteras del norte', version: 3 })
     expect(copy.document.types).toEqual(system.document.types)
     const list = (await ok200('listSystems', {})).systems.map((s: { name: string }) => s.name)
-    expect(list).toEqual(['En blanco', 'Fronteras del norte', 'Fronteras de Eana'])
+    expect(list).toEqual(['Fronteras del norte', 'Fronteras de Eana'])
   })
 
   it('el contenido del 5e: buscarlo, leerlo, copiarlo con su mecánica y bajarlo', async () => {
@@ -479,7 +471,7 @@ describe('los sistemas de reglas', () => {
       404
     )
     expect((await code('deleteSystem', { systemId: created.id }, other.cookie)).status).toBe(404)
-    expect((await ok200('listSystems', {}, other.cookie)).systems.map((s: { id: string }) => s.id)).toEqual(['blank'])
+    expect((await ok200('listSystems', {}, other.cookie)).systems).toEqual([])
   })
 
   it(`como mucho ${MAX_SYSTEMS} por cuenta`, async () => {

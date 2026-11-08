@@ -131,6 +131,8 @@ describe('el canal en tiempo real en la web', () => {
   it('cada aviso vuelve a pedir lo que ha cambiado', async () => {
     const { realtime, callsFrom } = renderAt(campaignPath)
     await screen.findByRole('list', { name: 'Miembros' })
+    // La invitación se pide al abrir su ventana
+    await userEvent.click(screen.getByRole('button', { name: 'Invitar' }))
     const sequence = [
       [{ type: 'changed', what: 'members', campaignId: campaign.id }, 'listMembers'],
       [{ type: 'changed', what: 'invitation', campaignId: campaign.id }, 'getInvitation'],

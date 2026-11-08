@@ -539,11 +539,8 @@ export const systemActions = [
       const { document: _, ...summary } = own(row, counts.get(row.id) ?? 0, name)
       return { ...summary, campaigns: using.get(row.id) ?? [] }
     })
-    const serie = CATALOG.map((s) => {
-      const { document: _, ...summary } = builtIn(s)
-      return summary
-    })
-    return { systems: [...serie, ...mine] }
+    // Sin sistemas de serie a la vista (Enrique, 2026-11-08): solo los de la cuenta. El vacío se baja desde «Sistema nuevo»
+    return { systems: mine }
   }),
 
   implement(getSystem, async (ctx, { systemId, organizationId }) => {

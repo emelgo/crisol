@@ -343,15 +343,19 @@ export function CampaignCard({
     <LookCard
       kind={kind}
       look={campaign}
+      style={worldTransition(campaign.id)}
       place={place}
       fresh={fresh}
       burning={burning}
       {...(onBurnt ? { onBurnt } : {})}
       name={
+        // Entrar en una campaña es entrar, como en un mundo: la tarjeta se convierte en la franja de su portada
         <Link
           to="/mundos/$worldId/campanas/$campaignId"
           params={{ worldId, campaignId: campaign.id }}
           className={styles.name}
+          viewTransition={ENTER_WORLD}
+          onClick={(event) => enterWorld(campaign.id, event.currentTarget.closest('li'))}
         >
           {campaign.name}
         </Link>
@@ -935,7 +939,7 @@ function LookDialog({
 }
 
 /**
- * Lo que saben los jugadores (ADR-0017): al crear la campaña, «Lo que sabe el mundo», «Nada» o «Lo mismo que» otra del
+ * Lo que saben los jugadores (ADR-0017): al crear la campaña, «Las páginas que conoce todo el mundo», «Ninguna» o «Las mismas que» otra del
  * mundo; ya creada, si parte de lo que sabe el mundo
  */
 function CampaignKnowledgeField({

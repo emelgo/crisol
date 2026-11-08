@@ -1,6 +1,7 @@
 import type { Campaign, Member } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getRouteApi, Link, Navigate, useNavigate } from '@tanstack/react-router'
+import { UserPlus } from 'lucide-react'
 import { useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
@@ -17,12 +18,15 @@ import { focusAfterRemoving, focusOnMount, useReturnFocus } from '../components/
 import form from '../components/form.module.css'
 import styles from '../components/list.module.css'
 import { failed, LoadError, SectionError } from '../components/load-error.tsx'
+import { Modal } from '../components/modal.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { RemovedMessage, RemoveMemberConfirm, useRemoveMember } from '../components/remove-member.tsx'
 import screen from '../components/screen.module.css'
 import { Screen } from '../components/screen.tsx'
 import { Tour } from '../components/tour.tsx'
+import { worldTransition } from '../components/world-transition.ts'
 import { coverStyle } from '../wiki/cover-look.ts'
+import cards from './world-card.module.css'
 
 const route = getRouteApi('/mundos/$worldId/campanas/$campaignId')
 
@@ -63,16 +67,19 @@ export function CampaignPage() {
   }
 
   return (
-    <Screen title={campaign.name}>
+    <Screen
+      title={campaign.name}
+      // Invitar, discreto junto al título (Enrique, 2026-11-08: «la invitación, de forma más sutil»)
+      actions={campaign.role === 'master' ? <InviteButton campaignId={campaignId} /> : undefined}
+    >
       {/* Su portada (la de su tarjeta), como franja bajo el título: el título no se mueve */}
       {campaign.cover && (
-        <div className={screen.cover}>
+        <div className={screen.cover} style={worldTransition(campaign.id)}>
           <img src={`/api/files/${campaign.cover.fileId}`} alt="" style={coverStyle(campaign.cover)} />
         </div>
       )}
       <CharactersPanel campaign={campaign} />
       <MembersPanel campaign={campaign} />
-      {campaign.role === 'master' && <InvitationPanel campaignId={campaignId} />}
       <Tour
         id="campana"
         // Un paso por cada botón de la barra de la campaña
@@ -329,7 +336,43 @@ function MemberItem(props: {
   )
 }
 
-function InvitationPanel({ campaignId }: { campaignId: string }) {
+/** «Invitar»: un botón discreto que abre la ventana del enlace de invitación */
+function InviteButton({ campaignId }: { campaignId: string }) {
+  const { t } = useTranslation()
+  const [open, setOpen] = useState(false)
+  const trigger = useRef<HTMLButtonElement>(null)
+  const titleId = useId()
+  return (
+    <>
+      <button
+        ref={trigger}
+        type="button"
+        className={styles.secondary}
+        aria-haspopup="dialog"
+        onClick={() => setOpen(true)}
+      >
+        <UserPlus aria-hidden="true" size={16} />
+        {t('invitation.invite')}
+      </button>
+      {open && (
+        <Modal
+          aria-labelledby={titleId}
+          className={cards.dialog}
+          onClose={() => {
+            setOpen(false)
+            trigger.current?.focus()
+          }}
+        >
+          <div className={cards.form}>
+            <InvitationPanel campaignId={campaignId} titleId={titleId} />
+          </div>
+        </Modal>
+      )}
+    </>
+  )
+}
+
+function InvitationPanel({ campaignId, titleId }: { campaignId: string; titleId: string }) {
   const { t, i18n } = useTranslation()
   const api = useApi()
   const queryClient = useQueryClient()
@@ -368,8 +411,8 @@ function InvitationPanel({ campaignId }: { campaignId: string }) {
   const error = regenerate.error ?? setOpen.error
 
   return (
-    <section aria-labelledby="invitacion">
-      <h2 id="invitacion">{t('invitation.title')}</h2>
+    <div className={styles.invitation}>
+      <h2 id={titleId}>{t('invitation.title')}</h2>
       {url ? (
         <>
           <CopyField label={t('invitation.link')} value={url} />
@@ -456,6 +499,6 @@ function InvitationPanel({ campaignId }: { campaignId: string }) {
       )}
       {url && !open && <p>{t('invitation.closed')}</p>}
       <FormError message={error ? errorText(error) : null} />
-    </section>
+    </div>
   )
 }

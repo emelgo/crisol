@@ -153,18 +153,19 @@ describe('al cambiar de cuenta en la misma pestaña', () => {
   it('en la campaña, la jugadora no ve el enlace de invitación del máster', async () => {
     const path = `/mundos/${eana.id}/campanas/${marca.id}`
     const { router, signInAsPlayer, release } = setup(path)
-    await screen.findByLabelText('Enlace de invitación')
+    // El máster tiene «Invitar» (abre la ventana del enlace); la jugadora, no
+    await screen.findByRole('button', { name: 'Invitar' })
     await signOut()
     await signInAsPlayer()
     await act(() => router.navigate({ to: path }))
-    expect(screen.queryByLabelText('Enlace de invitación')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Invitar' })).toBeNull()
     expect(screen.queryByText('Enrique')).toBeNull()
 
     release()
     await screen.findByRole('heading', { level: 1, name: 'La Marca' })
     // Su nombre, en los miembros (y en su menú de la cuenta)
     expect((await screen.findAllByText('Jugadora')).length).toBeGreaterThan(0)
-    expect(screen.queryByLabelText('Enlace de invitación')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Invitar' })).toBeNull()
   })
 
   it('si sale desde otra pestaña, esta deja de enseñar lo suyo y lleva a entrar', async () => {

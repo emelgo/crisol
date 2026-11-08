@@ -43,13 +43,13 @@ describe('que caiga lo que dijo el servidor', () => {
     expect([...next].sort()).toEqual([...labels].sort())
   })
 
-  it('cada dado cae con física, se para en menos de 2 s y queda en su resultado', () => {
+  it('cada dado cae con física, se para en menos de 2,5 s y queda en su resultado', () => {
     for (const kind of KINDS) {
       const labels = labelsFor(kind)
       for (const wanted of [labels[0], labels.at(-1)]) {
         const [die] = throwDice([{ kind, label: wanted ?? '' }], { seed: 7 })
         if (!die) throw new Error('sin dado')
-        // Quieto de verdad y apoyado en una cara (la que se lee, plana arriba o abajo); en pantalla, 2 s como mucho
+        // Quieto de verdad y apoyado en una cara (la que se lee, plana arriba o abajo); en pantalla, 2,5 s como mucho
         expect(die.settled, String(kind)).toBe(true)
         expect(die.frames.length).toBeLessThanOrEqual(MAX_FRAMES)
         const last = die.frames.at(-1)
@@ -62,7 +62,7 @@ describe('que caiga lo que dijo el servidor', () => {
     }
   })
 
-  it('con muchas semillas, siempre se para y en pantalla dura 2 s como mucho', () => {
+  it('con muchas semillas, siempre se para y en pantalla dura 2,5 s como mucho', () => {
     for (let seed = 1; seed <= 30; seed++) {
       for (const kind of [12, 20] as const) {
         const [die] = throwDice([{ kind, label: '7' }], { seed })

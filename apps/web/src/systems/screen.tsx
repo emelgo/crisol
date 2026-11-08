@@ -65,7 +65,6 @@ export function SystemsScreen() {
   if (!account) return <Navigate to="/entrar" replace />
   const all = systems.data?.systems ?? []
   const mine = all.filter((s) => !s.builtIn)
-  const builtIn = all.filter((s) => s.builtIn)
   const preview = all.find((s) => s.id === hovered)
   return (
     <Screen
@@ -93,23 +92,11 @@ export function SystemsScreen() {
               </button>
             </li>
           </ul>
-          <h2 className={screen.section}>{t('systems.builtIn')}</h2>
-          <ul className={screen.grid} aria-label={t('systems.builtIn')} data-tour="sistemas-serie">
-            {builtIn.map((system) => (
-              <SystemCard key={system.id} system={system} onHover={setHovered} />
-            ))}
-          </ul>
         </>
       )}
       {creating && <NewSystemDialog onClose={() => setCreating(false)} />}
       {systems.data && (
-        <Tour
-          id="sistemas"
-          steps={[
-            { target: '[data-tour="sistemas-nuevo"]', text: t('tour.systems.create') },
-            { target: '[data-tour="sistemas-serie"]', text: t('tour.systems.builtIn') }
-          ]}
-        />
+        <Tour id="sistemas" steps={[{ target: '[data-tour="sistemas-nuevo"]', text: t('tour.systems.create') }]} />
       )}
     </Screen>
   )

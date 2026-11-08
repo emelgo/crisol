@@ -56,20 +56,15 @@ describe('«Sistemas», en Mis mundos', () => {
     localStorage.setItem('crisol.recorridos.enrique@crisol.test', JSON.stringify({ seen: ['sistemas'] }))
   )
 
-  it('los tuyos y los de serie; al pasar por uno, lo que trae', async () => {
+  it('solo los tuyos (sin sistemas de serie); al pasar por uno, lo que trae', async () => {
     renderSystems()
     const mine = within(await screen.findByRole('list', { name: 'Tuyos' }))
     expect(mine.getByRole('button', { name: 'Fronteras' })).toBeDefined()
     expect(mine.getByText('Subido de un archivo')).toBeDefined()
-    const builtIn = within(screen.getByRole('list', { name: 'De serie' }))
-    expect(builtIn.getAllByRole('button').map((a) => a.textContent)).toEqual(['En blanco', ''])
-    // Su engranaje, siempre a la vista
-    expect(builtIn.getByRole('button', { name: 'Ajustes de En blanco' })).toBeDefined()
-    const blankItem = within(builtIn.getByRole('button', { name: 'En blanco' }).closest('li') as HTMLElement)
-    expect(blankItem.getByLabelText('No se puede cambiar')).toBeDefined()
+    // Enrique, 2026-11-08: «no debemos tener sistemas de serie»
+    expect(screen.queryByRole('list', { name: 'De serie' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'En blanco' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Copiar' })).toBeNull()
-    // La versión, siempre igual: la de serie («1.0») sin el «.0», como la de los tuyos
-    expect(blankItem.getByText('Versión 1')).toBeDefined()
     expect(mine.queryByRole('link')).toBeNull()
     fireEvent.pointerEnter(mine.getByRole('button', { name: 'Fronteras' }).closest('li') as HTMLElement)
     const preview = within(screen.getByRole('complementary', { name: 'Lo que trae' }))
@@ -171,21 +166,6 @@ describe('«Sistemas», en Mis mundos', () => {
     await userEvent.type(name, 'Fronteras del norte')
     await userEvent.click(dialog.getByRole('button', { name: 'Guardar' }))
     await waitFor(() => expect(screen.getByRole('button', { name: 'Fronteras del norte' })).toBeDefined())
-    created.mockRestore()
-  })
-
-  it('la de uno de serie: bajarlo y sus campañas, sin cambiarle el nombre ni borrarlo', async () => {
-    const { api } = renderSystems()
-    const created = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:x')
-    const builtIn = within(await screen.findByRole('list', { name: 'De serie' }))
-    await userEvent.click(builtIn.getByRole('button', { name: 'En blanco' }))
-    const dialog = within(screen.getByRole('dialog', { name: 'En blanco' }))
-    expect(dialog.getByText('En campañas')).toBeDefined()
-    expect(dialog.queryByRole('textbox', { name: 'Nombre' })).toBeNull()
-    expect(dialog.queryByText('Zona de peligro')).toBeNull()
-    await userEvent.click(dialog.getByRole('button', { name: 'Bajar' }))
-    await waitFor(() => expect(created).toHaveBeenCalled())
-    expect(api.calls.includes('exportSystem')).toBe(true)
     created.mockRestore()
   })
 

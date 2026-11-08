@@ -150,6 +150,8 @@ describe('el foco en las confirmaciones', () => {
 
   it('«Nuevo enlace»: va a confirmar, con el aviso; al cancelar o generarlo, vuelve a «Nuevo enlace»', async () => {
     renderAt(campaignPath)
+    // La invitación, en su ventana («Invitar», junto al título)
+    await userEvent.click(await screen.findByRole('button', { name: 'Invitar' }))
     await userEvent.click(await screen.findByRole('button', { name: 'Nuevo enlace' }))
     expect(document.activeElement).toBe(button('Generar el nuevo'))
     expect(description(button('Generar el nuevo'))).toBe('Quien aún no haya entrado necesitará el nuevo.')

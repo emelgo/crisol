@@ -29,10 +29,12 @@ export function Floating({
       }).then(({ x, y }) => Object.assign(element.style, { left: `${x}px`, top: `${y}px` }))
     })
   }, [anchor])
+  // Dentro de una ventana (modal), en ella: fuera, lo de detrás está inerte y no se podría pulsar
+  const host = anchor.current?.closest('dialog') ?? document.body
   return createPortal(
     <div ref={box} className={className} {...props}>
       {children}
     </div>,
-    document.body
+    host
   )
 }

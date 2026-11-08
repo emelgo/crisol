@@ -1744,10 +1744,14 @@ export function fakeApi(
       return { rolls: page.map((r) => ({ ...r })), next: end > 50 ? (page[0]?.id ?? null) : null }
     },
     listSystems: () => ({
-      systems: [...CATALOG.map((c) => c.id), ...ownSystems.filter((s) => !s.deleted).map((s) => s.id)].map((id) => {
-        const { document: _, ...summary } = systemView(id)
-        return summary
-      })
+      // Como el servidor: sin sistemas de serie, solo los de la cuenta
+      systems: ownSystems
+        .filter((s) => !s.deleted)
+        .map((s) => s.id)
+        .map((id) => {
+          const { document: _, ...summary } = systemView(id)
+          return summary
+        })
     }),
     getSystem: ({ systemId }) => systemView(systemId),
     createSystem: ({ name, from = 'blank' }) => {

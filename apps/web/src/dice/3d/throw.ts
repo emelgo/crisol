@@ -20,10 +20,30 @@ export interface Thrown {
 }
 
 const STEP = 1 / 60
-/** Lo que se enseña: como mucho, 2 s de tirada */
-export const MAX_FRAMES = 120
-/** Lo que se simula: hasta que se paren (casi siempre antes de 2 s; si no, se enseña más deprisa) */
+/** Lo que se enseña: como mucho, 2,5 s de tirada */
+export const MAX_FRAMES = 150
+/** Lo que se simula: hasta que se paren (casi siempre antes de 2,5 s; si no, se enseña más deprisa) */
 const MAX_STEPS = 360
+/**
+ * La física de la tirada (afinada a ojo y con pruebas de cientos de tiradas): poco freno para que rueden de verdad, algo
+ * de rebote y un lanzamiento con fuerza y giro, como una mano que los tira
+ */
+export const PHYSICS = {
+  gravity: 90,
+  floorFriction: 0.6,
+  floorBounce: 0.3,
+  diceFriction: 0.3,
+  diceBounce: 0.3,
+  linearDamping: 0.3,
+  angularDamping: 0.15,
+  speed: [12, 4] as [number, number],
+  spin: 50,
+  sleepSpeed: 0.4,
+  /** Desde qué altura salen (y cuánto suben al salir): dan vueltas en el aire antes de tocar la mesa */
+  height: 6,
+  lift: [3, 3] as [number, number]
+}
+
 /** Un azar con semilla (mulberry32): la misma tirada con la misma semilla, para las pruebas */
 function seeded(seed: number) {
   let a = seed >>> 0
@@ -50,12 +70,16 @@ export function throwDice(
   { seed = Math.floor(Math.random() * 2 ** 31) }: { seed?: number } = {}
 ): Thrown[] {
   const random = seeded(seed)
-  // Valores probados con 30 tiradas de cada dado: casi todos se paran antes de 2 s, y siempre planos
-  const world = new World({ gravity: new Vec3(0, -70, 0), allowSleep: true })
+  // Valores probados con 30 tiradas de cada dado (180): todos se paran, casi siempre antes de 2,5 s, y siempre planos
+  const world = new World({ gravity: new Vec3(0, -PHYSICS.gravity, 0), allowSleep: true })
   const floor = new Material('suelo')
   const plastic = new Material('dado')
-  world.addContactMaterial(new ContactMaterial(floor, plastic, { friction: 0.6, restitution: 0.15 }))
-  world.addContactMaterial(new ContactMaterial(plastic, plastic, { friction: 0.3, restitution: 0.2 }))
+  world.addContactMaterial(
+    new ContactMaterial(floor, plastic, { friction: PHYSICS.floorFriction, restitution: PHYSICS.floorBounce })
+  )
+  world.addContactMaterial(
+    new ContactMaterial(plastic, plastic, { friction: PHYSICS.diceFriction, restitution: PHYSICS.diceBounce })
+  )
   const { halfWidth: w, halfDepth: d } = TRAY
   // El suelo mira hacia arriba; las paredes, hacia dentro
   wall(world, floor, new Vec3(0, 0, 0), around(new Vec3(1, 0, 0), -Math.PI / 2))
@@ -74,17 +98,25 @@ export function throwDice(
         vertices: shape.verts.map((v) => new Vec3(v[0] * size, v[1] * size, v[2] * size)),
         faces: shape.faces
       }),
-      linearDamping: 0.5,
-      angularDamping: 0.7,
+      linearDamping: PHYSICS.linearDamping,
+      angularDamping: PHYSICS.angularDamping,
       allowSleep: true,
-      sleepSpeedLimit: 0.08,
+      sleepSpeedLimit: PHYSICS.sleepSpeed,
       sleepTimeLimit: 0.15
     })
     // Lanzados desde la derecha hacia el centro, unos detrás de otros, girando
-    body.position.set(w - 1.5, 2.2 + (i % 4) * 0.9, (random() - 0.5) * (2 * d - 3))
+    body.position.set(w - 1.5, PHYSICS.height + (i % 4) * 0.9, (random() - 0.5) * (2 * d - 3))
     body.quaternion.setFromEuler(random() * Math.PI * 2, random() * Math.PI * 2, random() * Math.PI * 2)
-    body.velocity.set(-(9 + random() * 4), 1 + random() * 2, (random() - 0.5) * 4)
-    body.angularVelocity.set((random() - 0.5) * 20, (random() - 0.5) * 20, (random() - 0.5) * 20)
+    body.velocity.set(
+      -(PHYSICS.speed[0] + random() * PHYSICS.speed[1]),
+      PHYSICS.lift[0] + random() * PHYSICS.lift[1],
+      (random() - 0.5) * 4
+    )
+    body.angularVelocity.set(
+      (random() - 0.5) * PHYSICS.spin,
+      (random() - 0.5) * PHYSICS.spin,
+      (random() - 0.5) * PHYSICS.spin
+    )
     world.addBody(body)
     return body
   })
@@ -105,7 +137,7 @@ export function throwDice(
     }
   }
 
-  // Si tardaron más de 2 s, se enseña más deprisa: los mismos fotogramas para todos, para que no se descompasen
+  // Si tardaron más de 2,5 s, se enseña más deprisa: los mismos fotogramas para todos, para que no se descompasen
   const total = frames[0]?.length ?? 0
   const shown =
     total > MAX_FRAMES

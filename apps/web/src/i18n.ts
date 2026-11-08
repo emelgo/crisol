@@ -190,11 +190,11 @@ export const es = {
     yourCampaigns: 'Tus campañas'
   },
   campaigns: {
-    start: 'Al empezar, los jugadores saben…',
-    startWorld: 'Lo que sabe el mundo',
-    startNone: 'Nada',
-    startSame: 'Lo mismo que «{{name}}»',
-    knowsWorld: 'Parte de lo que sabe el mundo',
+    start: 'Al empezar, los jugadores conocen…',
+    startWorld: 'Las páginas que conoce todo el mundo',
+    startNone: 'Ninguna: se las irás revelando',
+    startSame: 'Las mismas que «{{name}}»',
+    knowsWorld: 'Parte de las páginas que conoce todo el mundo',
     title: 'Campañas',
     empty: 'Aún no hay campañas',
     emptyHint: 'Cada campaña es un grupo de jugadores que juega en este mundo.',
@@ -668,6 +668,7 @@ export const es = {
     }
   },
   invitation: {
+    invite: 'Invitar',
     title: 'Invitación',
     link: 'Enlace de invitación',
     copy: 'Copiar',
