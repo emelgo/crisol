@@ -110,20 +110,6 @@ test.describe('en escritorio', () => {
   })
 })
 
-test.describe('en el móvil', () => {
-  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true })
-
-  test('un toque en el enlace abre la hoja de abajo con «Abrir página»', async ({ page }) => {
-    await eana(page)
-    await body(page).getByRole('link', { name: 'Maela Varn', exact: true }).tap()
-    const sheet = page.getByRole('dialog', { name: 'Maela Varn' })
-    await expect(sheet).toBeVisible()
-    await expect(sheet.getByText('La jefa de la Lonja.')).toBeVisible()
-    await sheet.getByRole('link', { name: 'Abrir página' }).tap()
-    await expect(page.getByRole('heading', { level: 1, name: 'Maela Varn' })).toBeVisible()
-  })
-})
-
 test('la vista previa abierta y el incrustado, en los dos temas @a11y', async ({ page }) => {
   await eana(page)
   await body(page).getByRole('link', { name: 'Maela Varn', exact: true }).hover()

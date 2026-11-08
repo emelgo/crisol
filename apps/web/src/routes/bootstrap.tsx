@@ -25,9 +25,9 @@ export function Bootstrap() {
   if (info.isPending) return <Loading />
   if (!info.data) {
     return (
-      <section>
+      <section className={styles.centered}>
         <PageTitle>{t('bootstrap.invalidTitle')}</PageTitle>
-        <p>{t('bootstrap.invalidBody')}</p>
+        <p className={styles.intro}>{t('bootstrap.invalidBody')}</p>
       </section>
     )
   }

@@ -5,10 +5,40 @@
   font-size: 1rem;
 }
 
+/* El ritmo del texto, como en el editor: cada párrafo deja aire debajo y los títulos lo llevan encima */
+.content p {
+  margin-block: 0 0.6em;
+}
+
+/* Los títulos del texto, como en el editor (wiki/sheet/paged.module.css): el 1 con su raya, cada nivel en su color */
+.content .heading,
 .heading {
+  margin: 0.6em 0 0.3em;
   font-family: var(--font-display);
-  font-size: 1.125rem;
+  font-size: 1.15em;
   font-weight: 700;
+  line-height: 1.15;
+  color: var(--color-h4);
+}
+
+.heading[data-level="1"] {
+  padding-block-end: 0.15em;
+  border-block-end: 2px solid color-mix(in srgb, var(--color-h2) 45%, transparent);
+  color: var(--color-h2);
+  font-size: 1.9em;
+}
+
+.heading[data-level="2"] {
+  color: var(--color-h3);
+  font-size: 1.45em;
+}
+
+/* En lo pequeño (la vista previa de un enlace, un incrustado), más contenidos */
+.compact .heading {
+  margin-block: 0.4em 0.2em;
+  padding: 0;
+  border: 0;
+  font-size: 1.05em;
 }
 
 .missing {
@@ -36,9 +66,13 @@
   border-collapse: collapse;
 }
 
+.table th {
+  background: var(--color-raised);
+}
+
 .table th,
 .table td {
-  padding: var(--space-1) var(--space-2);
+  padding: var(--space-1) var(--space-3);
   border: 1px solid var(--color-border);
   text-align: start;
   vertical-align: top;
@@ -75,11 +109,25 @@
 .newBadge {
   margin-inline-start: var(--space-2);
   padding: 0 0.4rem;
-  border: 1px solid color-mix(in srgb, #e9b872 70%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-h3) 70%, transparent);
   border-radius: 999px;
-  color: #e9b872;
+  color: var(--color-h3);
   font-size: 0.6875rem;
   font-weight: 600;
   letter-spacing: 0;
   text-transform: none;
+}
+
+/* Los enlaces a páginas, en azul como en el editor */
+.pageLink {
+  color: var(--color-link);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--color-link) 45%, transparent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+}
+
+/* El enlace a una entrada del compendio, como en el editor */
+.contentLink {
+  color: var(--color-link);
 }

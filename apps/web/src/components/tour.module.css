@@ -83,9 +83,10 @@
 }
 
 .next {
+  /* El botón principal de la app (rojo), como los demás */
   border: 0;
-  background: var(--color-ai);
-  color: var(--color-bg);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
 }
 
 .bubble {
@@ -128,9 +129,15 @@
   transition: opacity 150ms ease-out;
 }
 
-/* En el móvil, la barra va abajo: encima de ella */
+/* En el móvil, abajo van la llama (en el centro) y el d20 (en la esquina): el «?», arriba a la derecha (Enrique,
+   2026-11-08, para que no se junten los tres) */
 @media (max-width: 48rem) {
   .help {
-    inset-block-end: calc(3.5rem + var(--space-3));
+    inset-block: var(--space-3) auto;
+  }
+
+  /* Con la hoja de dados abierta, no se monta encima de sus botones */
+  :global(body):has(:global([data-tour="ficha-dados"])) .help {
+    display: none;
   }
 }

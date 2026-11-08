@@ -69,6 +69,13 @@ export function buildApp(deps: AppDeps): FastifyInstance {
     serializers: { req: (request: FastifyRequest) => ({ method: request.method, url: redactSecrets(request.url) }) }
   }
   const app = Fastify({ logger: deps.logger ? logger : false })
+  // Un fallo inesperado va al registro, no a quien pidió: su mensaje puede llevar consultas o rutas internas
+  app.setErrorHandler((error, request, reply) => {
+    const status = (error as { statusCode?: number }).statusCode ?? 500
+    if (status < 500) return reply.send(error)
+    request.log.error(error)
+    return reply.code(status).send({ code: 'INTERNAL' })
+  })
   registerHealth(app, deps.checks, deps.healthTimeoutMs ?? 2000)
   if (deps.accounts) {
     const { auth, db, publicUrl, sealKey } = deps.accounts

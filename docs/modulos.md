@@ -7,9 +7,57 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
-### Para retomar (2026-11-07, noche: módulo 6 construido, PR y staging)
+### Para retomar (2026-11-08, noche: segunda revisión de la interfaz, arreglada en local)
 
-- **Rama `modulo-6/mesa` → PR a `main`** (migraciones hasta la 0062). El ciclo entero: entrevista (abajo, § «### 6.
+- **Hecho** (misma rama `docs/tras-modulo-6`, sin PR): una segunda pasada a todo con 137 capturas
+  (`e2e/.revision/capturar2.ts` → `out/revision-2/`; las de antes de arreglar, en `out/revision-2-antes/`), cuatro
+  revisores sobre las capturas y uno sobre el código. Lista y estado en `tasks/revision-interfaz.md` § «Segunda
+  revisión»; página https://claude.ai/artifact/VtLsEti4wrCNvya9RsEbNT. Enrique aceptó las propuestas («Vamos») y está
+  todo arreglado salvo tres menores anotados (2D13, 2D15, 2D16). Lo gordo: tutoriales uno a uno y en todas las páginas
+  del mundo, la ficha de dados sin recordarse abierta, la tarjeta de la IA al lado de los dados, la tele siempre
+  oscura, pestañas legibles, el historial en palabras, las criaturas del compendio calculadas, la Papelera alineada,
+  Plantillas/Sistemas/Etiquetas con el esqueleto común, el móvil de la jugadora (el «?» arriba, menú con enlaces,
+  hoja de dados como ventana, toques de 44 px). Normas nuevas en `docs/diseno.md`.
+- **Pruebas** (Enrique: «ponlas al día»): las e2e al día y `pnpm e2e` en verde (116 + 12 de fugas + 18 de
+  accesibilidad; G11 hecho); destaparon tres fallos, ya arreglados (la confirmación de «Nuevo enlace» recortada por
+  su caja, ahora en un portal: `components/floating.tsx`; el campo de páginas que saltaba al pulsar debajo; dos
+  nombres accesibles). `pnpm test`: 17 de 18 en verde; la de `systems` solo falla en `ritmo.test.ts` (tiempos de 20 ms)
+  cuando corren todos los paquetes a la vez con el servidor de desarrollo encendido; sola pasa siempre. **Falta** el PR (con esta rama) y la CI una vez: cuando Enrique lo diga.
+  Sigue G1. Las tandas largas, lanzadas con `setsid nohup` (la sesión se cortó dos veces y las paraba).
+
+### Para retomar (2026-11-08, tarde: revisión global de la interfaz, arreglada en local)
+
+- **Hecho** (rama `docs/tras-modulo-6`, sin PR; Enrique dijo «vamos»): la revisión de todas las pantallas y casi todos
+  sus arreglos, en commits pequeños; la lista y su estado, en `tasks/revision-interfaz.md`, y en la página «Revisión de
+  la interfaz» (https://claude.ai/artifact/GfPUrKjx5L2MbQbPYjbJv6) con capturas de antes y después. Lo gordo:
+  - Todas las pantallas comparten un esqueleto (`components/screen.tsx`): el título siempre en el mismo sitio. Con
+    sesión, toda vista va a lo ancho (`routes/root.tsx`).
+  - La página que lee la jugadora, como la del mundo.
+  - Los dados, en un botón flotante con forma de d20 (norma nueva de Enrique).
+  - Arreglados los fallos: el máster veía secretos como revelados, la jugadora en la Mesa, 500 con SQL, tiradas al
+    imprimir y el límite de peticiones que sacaba a «Entrar».
+  - Accesibilidad: teclado, foco, contraste y zonas de toque.
+- **Decidido por Enrique hoy**: el móvil solo para la vista de la jugadora; los dados, en el d20 flotante. Las dos, en
+  `docs/diseno.md`.
+- **Respondidas por Enrique** (F1–F5, G10, ya hechas): la jugadora ve a sus aliados en la campaña; el retrato,
+  arriba del panel; fuera `/ia`, el móvil del máster y «Foundry» en la interfaz; las peticiones de la IA, rehechas
+  como tarjetas sueltas. **Queda** G1 (mover archivos con teclado): propuesta, por ahora no.
+- **Pruebas**: las unitarias de lo tocado, al día y en verde (la web entera: 681). **Faltan**: poner al día las e2e
+  (lista en `tasks/revision-interfaz.md` § «Pruebas por poner al día»), ampliar `a11y.spec.ts` (G11), `pnpm test`
+  entero y `pnpm e2e`; luego el PR (con esta rama) y la CI una vez. Solo cuando Enrique lo diga.
+- **El entorno de la revisión** (para volver a capturar):
+  - `node e2e/.revision/servidor.ts` (API en 8132, base `crisol_revision`; `REVISION_NUEVA=1` la rehace y luego
+    `node e2e/.revision/sembrar.ts`).
+  - Vite en 5174: `npx vite --config .revision/vite.config.ts` desde `apps/web`.
+  - `node e2e/.revision/capturar.ts [filtro]` deja las capturas en `out/revision/`; las de antes de arreglar, en
+    `out/revision/antes/`.
+  - Esos archivos no van a git (`.git/info/exclude`). Las cuentas, en `tasks/revision-interfaz.md`.
+- **Después**: que Enrique pruebe los módulos 5 y 6; luego, el módulo 7 (la sala de jugadores), empezando por su
+  entrevista.
+
+### Para retomar (2026-11-07, noche: módulo 6 en `main` y en staging)
+
+- **PR #114, fusionado y desplegado en staging** (2026-11-07; migraciones hasta la 0062). El ciclo entero: entrevista (abajo, § «### 6.
   Mesa»), estudios, el mapa `docs/specs/modulo-6.md`, el ADR-0018 (propuesta), el lienzo «Crisol: la mesa»
   (https://claude.ai/artifact/N28X9vvVaqwXGUTKdZzDph) y las seis capacidades (`escenas`, `fichas`, `vision`, `combate`,
   `herramientas-mesa`, `escenas-foundry`), construidas de punta a punta; lo hecho y lo que queda de cada una, en su
@@ -22,14 +70,29 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   (justo). El rendimiento: al soltar una ficha, p50 ~33 ms y p95 50–60 ms con la máquina libre; seis fichas por 30
   casillas, p95 108–158 ms con la máquina muy cargada (casi todo es guardar el movimiento): si falla en la CI, se
   optimiza `moveTokens`, no se toca el umbral.
+- **La CI** pasó a la tercera: (1) la prueba de escenas al azar de la visión pasaba de 5 s con cobertura; al partirla
+  salió un fallo real (faltaba el vértice donde un muro cruza el borde del radio), arreglado; (2) la e2e de herramientas
+  se colgó 5 min en `networkidle` (no se reprodujo en local): las e2e de la mesa usan ahora `watchNetwork` de
+  `e2e/tests/ayudas.ts`, que dice qué petición no acaba; (3) el trabajo de e2e ya no cabía en 20 min (tarda ~25): topes
+  de 30 (e2e) y 25 (calidad) en `ci.yml`. Si vuelve a colgarse una e2e de la mesa, el error dice qué petición es.
+- **Esta rama `docs/tras-modulo-6`** (sin PR) solo lleva esta nota y el «en staging» de `tasks/probar.md`: que vaya con
+  el próximo PR.
 - **Ojo con las e2e**: comparten servidor y base de datos; dos agentes corriéndolas a la vez se pisan.
 - **Por decidir con Enrique**: confirmar el ADR-0018 y las decisiones tomadas sin él (un encuadre es centro y escala
   para una pantalla de referencia de 1920 px; «Subir» un mapa no lo guarda en Archivos; en combate, la ronda 0 es
   «antes de empezar» y la iniciativa escrita a uno de un grupo vale para todo el grupo; «Sentidos» en el creador del 5e
   de ejemplo; las criaturas preparadas de una escena de Foundry salen solas al abrirla una campaña; volver a una
-  instantánea no toca lo explorado; cada spec lista las suyas). Y **el máster de una campaña que no lo es del mundo**
-  no puede usar la mesa (escenas, encuentros y teselas piden `page.read`): decidirlo antes del módulo 7.
-- **Lo siguiente**: que Enrique pruebe los módulos 5 y 6; luego, el módulo 7 (la sala de jugadores: presencia, chat, mostrar a jugadores,
+  instantánea no toca lo explorado; cada spec lista las suyas).
+- **Decidido por Enrique (2026-11-08)**: el máster de una campaña es siempre máster de su mundo. Ya se cumple (solo el
+  máster del mundo crea campañas, `campaign.create`, y queda como su máster; ese papel no se traspasa), así que la mesa
+  no necesita un caso aparte.
+- **Lo siguiente (decidido por Enrique el 2026-11-08)**: parar y hacer una **revisión global de la interfaz** en un chat
+  nuevo, antes del módulo 7. Cómo: recorrer todas las pantallas en el servidor de desarrollo (máster, jugadora, tele y
+  móvil) con capturas; contrastarlas con `docs/diseno.md`, los lienzos aprobados y la skill `web-design-guidelines`;
+  sacar una lista de hallazgos por gravedad (incoherencias entre módulos, estados vacíos y de error, textos, móvil,
+  accesibilidad) y repasarla con Enrique antes de arreglar. Se pule en local para que lo vea al momento; pruebas, CI y
+  despliegue solo al final, en un PR que lleve también esta rama.
+- **Después**: que Enrique pruebe los módulos 5 y 6; luego, el módulo 7 (la sala de jugadores: presencia, chat, mostrar a jugadores,
   sonido; y lo que se dejó: que muevan sus fichas), empezando por su entrevista frente al inventario.
 
 ### Para retomar (2026-11-07: módulo 5 en `main` y en staging)
@@ -1399,7 +1462,7 @@ Estados: pendiente · en curso · hecho · descartado.
 | 3 | Sistemas de reglas, fichas de personaje (creación, subida de nivel), dados y dados 3D | **hecho** (2026-11-06, PR #95 a #108; Crisol vacío, ADR-0015); falta que Enrique lo pruebe (`tasks/probar.md`) | DDB: creador y hoja; Foundry: dnd5e, DataModel e instalar y crear sistemas |
 | 4 | Compendios (aparte de la wiki del mundo y **como los de Foundry**: antes, estudio a fondo con craft-anything), bestiario, statblocks, biblioteca; **las imágenes de lo traído de Foundry** (las de cada documento del zip); **buscar dentro de los PDF** (texto de cada página con pdf.js; el resultado abre el visor en esa página) **y por significado** (pgvector; antes, permiso para la imagen de Postgres y elegir quién calcula los embeddings) | **hecho** (2026-11-06, PR #110 y #111; `docs/specs/modulo-4.md`); falta que Enrique lo pruebe (`tasks/probar.md`) | Foundry: compendium packs; DDB: listados |
 | 5 | Visibilidad por campaña: conocimiento de los jugadores, revelar, compartir | **hecho** (2026-11-07, PR #112, en staging) | Foundry: ownership |
-| 6 | **Mesa**: escenas, rejilla, fichas, medir y plantillas, niebla, muros, puertas, luz, visión, iniciativa, instantáneas, encuentros, UVTT; **las escenas, mapas y tokens de un zip de Foundry** | construido (PR del módulo 6) | Foundry: canvas, visión y muros; DDB Maps |
+| 6 | **Mesa**: escenas, rejilla, fichas, medir y plantillas, niebla, muros, puertas, luz, visión, iniciativa, instantáneas, encuentros, UVTT; **las escenas, mapas y tokens de un zip de Foundry** | **hecho** (2026-11-07, PR #114, en staging) | Foundry: canvas, visión y muros; DDB Maps |
 | 7 | **Sala de jugadores**: presencia, chat y susurros, mostrar a jugadores, sonido (también **los de un zip de Foundry**), controles del máster | pendiente | Foundry: sockets y chat; DDB: game log |
 | 8 | Calendario, clima, viajes, líneas temporales | pendiente | — |
 | 9 | Mapas de mundo con pines y capas; pizarras | pendiente | DDB Maps |

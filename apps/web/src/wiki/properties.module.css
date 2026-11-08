@@ -52,38 +52,30 @@
 }
 
 .list {
-  composes: frame from "../components/frame.module.css";
   display: grid;
-  grid-template-columns: minmax(7rem, max-content) minmax(0, 1fr);
+  gap: var(--space-4);
   margin: 0 0 var(--space-2);
-  padding: var(--space-2) var(--space-6);
 }
 
+/* En lectura (una página cerrada, la de un jugador), como en el panel del mundo: el nombre pequeño en mayúsculas encima
+   y el valor debajo (docs/diseno.md) */
 .row {
-  display: contents;
-}
-
-.row dt,
-.row dd {
-  padding-block: var(--space-2);
-  border-block-end: 1px solid var(--color-border);
+  display: grid;
+  gap: var(--space-1);
 }
 
 .row dt {
-  padding-inline-end: var(--space-4);
   color: var(--color-muted);
   font-family: var(--font-body);
+  font-size: 0.75rem;
   font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .row dd {
   margin: 0;
   overflow-wrap: anywhere;
-}
-
-.row:last-child dt,
-.row:last-child dd {
-  border-block-end: 0;
 }
 
 .chips {
@@ -96,8 +88,17 @@
 }
 
 .chips li {
-  padding: 0 var(--space-2);
-  border: 1px solid var(--color-field-border);
+  /* Como las pastillas de cuando se escribe (la misma forma al leer y al editar) */
+  padding: 0 0.5rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+  font-size: 0.875rem;
+}
+
+/* Las páginas enlazadas, en azul como los demás enlaces */
+.chips a,
+.pageChip a {
+  color: var(--color-link);
 }
 
 .chipRemove {
@@ -379,4 +380,25 @@ textarea.valueInput {
 /* Sin la flecha de las sugerencias: salen al escribir */
 .valueInput::-webkit-calendar-picker-indicator {
   display: none !important;
+}
+
+/* Un campo de enlaces: «Enlazar una página…» y «Todas las páginas» solo al acercarse o al escribir (alrededor de la
+   página, nada pesa) */
+/* Con páginas puestas, el campo para añadir otra va en su misma fila (no deja un hueco debajo) y su texto solo sale al
+   acercarse. Sin recogerlo al salir: lo de debajo se movería justo al pulsarlo */
+.chipField:has(.pageChip) .pageInput {
+  flex: 1 1 5rem;
+  min-inline-size: 5rem;
+}
+
+.prop:not(:hover, :focus-within) .chipField:has(.pageChip) .pageInput::placeholder {
+  color: transparent;
+}
+
+.allPagesHere {
+  display: none;
+}
+
+.prop:focus-within .allPagesHere {
+  display: inline-block;
 }

@@ -115,6 +115,18 @@ describe('los personajes de una campaña', () => {
     // El máster ve a Lisandro entero
     expect((await ok200('getCharacter', { characterId: lisandro.id })).character.name).toBe('Lisandro')
 
+    // Sus aliados: de los demás, los ya hechos (Thora, en creación, aún no), en una línea y sin abrirlos
+    expect((await ok200('listCharacters', { campaignId }, bruno.cookie)).allies).toEqual([])
+    await ok200(
+      'updateCharacter',
+      { characterId: thora.id, version: 1, build: complete(), confirm: 'created' },
+      ana.cookie
+    )
+    expect((await ok200('listCharacters', { campaignId }, bruno.cookie)).allies).toEqual([
+      { id: thora.id, name: 'Thora', owner: { id: ana.userId, name: 'Ana' }, line: expect.stringContaining('Guerrero') }
+    ])
+    expect((await ok200('listCharacters', { campaignId })).allies).toBeUndefined()
+
     // Alguien de fuera: ni la lista
     const stranger = await signUpTestUser(auth, { name: 'Carla', email: 'carla@crisol.test' })
     expect((await fails('listCharacters', { campaignId }, stranger.cookie)).status).toBe(404)

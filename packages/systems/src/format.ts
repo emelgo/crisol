@@ -54,7 +54,7 @@ interface FieldBase {
 export type SimpleField = FieldBase &
   (
     | { kind: 'text'; default?: string; max?: number; lines?: number }
-    | { kind: 'number'; default?: number; min?: number; max?: number; integer?: boolean }
+    | { kind: 'number'; default?: number; min?: number; max?: number; integer?: boolean; fraction?: boolean }
     | { kind: 'boolean'; default?: boolean }
     | { kind: 'list'; default?: string[]; max?: number; options?: { value: string; label: Text }[] }
     | { kind: 'choice'; options: { value: string; label: Text }[]; default?: string }
@@ -108,7 +108,11 @@ function build(strict: boolean) {
       default: z.number().finite().optional(),
       min: z.number().finite().optional(),
       max: z.number().finite().optional(),
-      integer: z.boolean().optional().describe('Solo enteros')
+      integer: z.boolean().optional().describe('Solo enteros'),
+      fraction: z
+        .boolean()
+        .optional()
+        .describe('Se enseña en fracción: 0,5 como 1/2, 0,25 como 1/4, 0,125 como 1/8 (el valor de desafío del 5e)')
     }),
     obj({ ...base, kind: kind('boolean', 'Sí o no'), default: z.boolean().optional() }),
     obj({

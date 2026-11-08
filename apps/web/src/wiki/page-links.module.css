@@ -95,3 +95,7 @@
   background: var(--color-raised);
   outline: none;
 }
+
+.createOption:focus-visible {
+  box-shadow: inset 3px 0 0 var(--color-accent);
+}

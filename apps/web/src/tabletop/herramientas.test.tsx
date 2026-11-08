@@ -195,8 +195,8 @@ describe('las herramientas de la mesa', () => {
     press('p')
     expect(screen.getByRole('complementary', { name: 'Pines' })).toBeDefined()
     press('w')
-    expect(screen.getByRole('complementary', { name: 'Widgets' })).toBeDefined()
-    expect(tools.getByRole('button', { name: 'Widgets' }).getAttribute('aria-pressed')).toBe('true')
+    expect(screen.getByRole('complementary', { name: 'Contadores' })).toBeDefined()
+    expect(tools.getByRole('button', { name: 'Contadores' }).getAttribute('aria-pressed')).toBe('true')
     press('f')
     expect(screen.getByRole('complementary', { name: 'Instantáneas' })).toBeDefined()
     // Los de la visión siguen con las suyas
@@ -375,7 +375,7 @@ describe('las herramientas de la mesa', () => {
     const user = userEvent.setup()
     const { api, push } = await renderMesa()
     press('w')
-    const panel = within(screen.getByRole('complementary', { name: 'Widgets' }))
+    const panel = within(screen.getByRole('complementary', { name: 'Contadores' }))
     await user.click(panel.getByRole('button', { name: 'Reloj' }))
     await waitFor(async () =>
       expect((await api.client.call('listWidgets', { campaignId: CAMPAIGN.id })).widgets).toHaveLength(1)
@@ -428,7 +428,7 @@ describe('las herramientas de la mesa', () => {
     // Sin los statblocks
     await user.click(
       within(screen.getByRole('complementary', { name: 'Pantalla del máster' })).getByRole('switch', {
-        name: 'Statblocks de las criaturas de la escena'
+        name: 'Estadísticas de las criaturas de la escena'
       })
     )
     expect(drawer.queryByText('2 en la escena')).toBeNull()
@@ -512,7 +512,7 @@ describe('las herramientas en la tele', () => {
       expect((drawn.shapes.marks ?? []).filter((shape) => shape.kind === 'line').length).toBeGreaterThan(5)
     )
     expect(document.querySelector('[data-mark]')?.textContent).toBe('¡Ojo!')
-    const widgets = within(screen.getByRole('region', { name: 'Widgets' }))
+    const widgets = within(screen.getByRole('region', { name: 'Contadores' }))
     expect(widgets.getByRole('img', { name: 'La cripta despierta: 4 de 6' })).toBeDefined()
     expect(widgets.queryByRole('button')).toBeNull()
     act(() =>

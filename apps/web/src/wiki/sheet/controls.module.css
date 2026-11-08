@@ -48,12 +48,14 @@
   font-weight: 700;
 }
 
-.opener > span {
+/* Como los submenús (el «›» del árbol): al abrir, gira hacia abajo */
+.chevron {
   margin-inline-start: auto;
   color: var(--color-muted);
+  transition: transform 150ms ease-out;
 }
 
-.opener[aria-expanded="true"] > span {
+.opener[aria-expanded="true"] > .chevron {
   transform: rotate(90deg);
 }
 

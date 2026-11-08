@@ -411,8 +411,19 @@ export const characterActions = [
   implement(listCharacters, async (ctx, { campaignId }) => {
     const campaign = await authorizedCampaign(ctx, 'campaign.read', campaignId)
     const master = isMaster(ctx, campaignId, campaign.worldId)
-    const rows = await charactersRepo.listCharacters(ctx.db, campaignId, master ? undefined : ctx.actor.userId)
-    return { characters: rows.map(cardOf) }
+    if (master) return { characters: (await charactersRepo.listCharacters(ctx.db, campaignId)).map(cardOf) }
+    // Un jugador: los suyos enteros y, de los demás, los ya hechos en una línea (sus aliados, sin abrirlos)
+    const rows = await charactersRepo.listCharacters(ctx.db, campaignId)
+    const mine = rows.filter((row) => row.ownerId === ctx.actor.userId)
+    const allies = rows
+      .filter((row) => row.ownerId !== ctx.actor.userId && row.status === 'ready')
+      .map((row) => ({
+        id: row.id,
+        name: row.name,
+        owner: row.ownerId ? { id: row.ownerId, name: row.ownerName ?? '' } : null,
+        ...(row.summary.line ? { line: row.summary.line } : {})
+      }))
+    return { characters: mine.map(cardOf), allies }
   }),
 
   implement(getCharacter, async (ctx, { characterId }) => {

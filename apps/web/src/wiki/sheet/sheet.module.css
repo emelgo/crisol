@@ -134,6 +134,14 @@
   background: var(--sheet-box);
 }
 
+/* Sus títulos (el nombre de la criatura), con la letra y el color de la hoja, no con los de la app */
+.page [data-statblock] :is(h1, h2, h3, h4, h5, h6),
+.page :is(h4, h5, h6) {
+  color: var(--sheet-heading);
+  font-family: var(--sheet-heading-font);
+  text-transform: none;
+}
+
 .page aside {
   inline-size: 48%;
   margin: 0.2em 0 0.6em 0.8em;

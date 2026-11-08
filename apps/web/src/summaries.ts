@@ -284,13 +284,10 @@ export function summaryOf(
     }
     // Las escenas de la mesa y la mesa de cada campaña (docs/specs/escenas.md)
     case 'updateScene':
-      return say(details.view && !details.grid ? 'sceneView' : 'sceneGrid', {
-        name: text(details.name),
-        title: text(details.title)
-      })
+      return say(details.view && !details.grid ? 'sceneView' : 'sceneGrid', sceneOf(details))
     case 'setSceneImage':
     case 'drawScene':
-      return say(action, { name: text(details.name), title: text(details.title) })
+      return say(action, sceneOf(details))
     case 'openScene':
     case 'presentScene':
       return details.name
@@ -375,8 +372,49 @@ export function summaryOf(
         to: text(details.to ?? details.name),
         tag: text(details.tag)
       })
+    // El combate y lo que está en juego (docs/specs/combate.md)
+    case 'startCombat':
+    case 'endCombat':
+    case 'updateCombat':
+    case 'addCombatants':
+    case 'rollInitiative':
+    case 'setInitiative':
+    case 'orderCombatants':
+    case 'groupCombatants':
+    case 'nextTurn':
+    case 'previousTurn':
+      return say(action, {
+        campaign: text(details.campaign),
+        count: Number(details.count ?? 1),
+        round: text(details.round)
+      })
+    case 'removeCombatants':
+      return say(action, {
+        campaign: text(details.campaign),
+        names: listOf(Array.isArray(details.names) ? details.names.map(String) : [])
+      })
+    case 'putInPlay':
+    case 'playCreature':
+    case 'setCreatureHidden':
+    case 'spendRecharge':
+    case 'removeFromPlay':
+      return say(action, {
+        name: text(details.name),
+        action: text(details.action),
+        count: Number(details.count ?? 1),
+        campaign: text(details.campaign)
+      })
+    case 'createTemplate':
+    case 'updateTemplate':
+    case 'deleteTemplate':
+    case 'copyContent':
+    case 'pullContentOrigin':
+      return say(action, { name: textIn(details.name) })
+    case 'deleteFiles':
+    case 'deleteWorldContent':
+      return say(action, { count: Number(details.count ?? 1) })
     default:
-      return say('unknown', { action })
+      return say('unknown')
   }
 }
 
@@ -409,6 +447,13 @@ function systemName(details: Record<string, unknown>) {
   if (typeof details.system === 'string') return details.system
   const document = asRecord(details.document).name ?? asRecord(asRecord(details.file).system).name
   return textIn(document)
+}
+
+/** La escena y su página («de «Cripta»»), sin repetir el nombre cuando la página se llama igual */
+function sceneOf(details: Record<string, unknown>) {
+  const name = String(details.name ?? '')
+  const title = String(details.title ?? '')
+  return { name, title, of: title && title !== name ? ` de «${title}»` : '' }
 }
 
 /** «a», «b» y «c» */

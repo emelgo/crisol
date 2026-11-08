@@ -66,8 +66,9 @@ cambios**. La proyección de la pantalla está bien montada (campo a campo) y lo
   **Hecho** (e788f0c): se mira su huella entera. Pruebas en `marks.test.ts` y `tools.integration.test.ts`.
 - [x] El encuadre del máster se reenvía aunque la escena abierta no sea la presentada (`rooms.ts:164-170`).
   **Hecho** (4fcc8e5). Prueba en `rooms.test.ts`. La web enseña «Siguiendo» aunque la abierta no sea la presentada (`mesa.tsx`): conviene que lo mire.
-- [ ] Máster de campaña que no lo es del mundo: no puede usar la mesa (`page.read` en escenas, encuentros, teselas).
-  **Sin tocar**: es una decisión para Enrique antes del módulo 7 (apuntado).
+- [x] Máster de campaña que no lo es del mundo: no puede usar la mesa (`page.read` en escenas, encuentros, teselas).
+  **No hace falta**: Enrique decidió (2026-11-08) que el máster de una campaña es siempre máster de su mundo, y ya se
+  cumple (solo el máster del mundo crea campañas y queda como su máster).
 - [x] Restricción única en `scene_tokens` por (campaña, escena, personaje o criatura).
   **Ya estaba**: `unique()` en (campaña, escena, personaje) y (campaña, escena, criatura) en el esquema; además `store` no pide dos veces la misma.
 - [ ] `catch` solo con comentario (`vision-compute.ts:108`, `charactersContext(...).catch(() => null)`): al registro.

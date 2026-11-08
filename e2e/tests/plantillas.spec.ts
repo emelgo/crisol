@@ -111,7 +111,9 @@ test('«Plantillas» en Mis mundos: una desde cero y otra copiando PNJ', async (
   // Copiando PNJ
   await page.goBack()
   const pnj = page.getByRole('list', { name: 'De serie' }).getByRole('listitem').filter({ hasText: 'PNJ' })
-  await pnj.getByRole('button', { name: 'Copiar' }).click()
+  // «Copiar», en su engranaje
+  await pnj.getByRole('button', { name: 'Ajustes de PNJ' }).click()
+  await page.getByRole('dialog', { name: 'PNJ' }).getByRole('button', { name: 'Copiar' }).click()
   const copy = page.getByRole('dialog', { name: 'Plantilla nueva' })
   await copy.getByLabel('Nombre').fill('PNJ de Eana')
   await copy.getByRole('button', { name: 'Crear la plantilla' }).click()

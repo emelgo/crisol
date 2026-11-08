@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { addDie, explain } from './formula.ts'
+import { addDie, echoes, explain } from './formula.ts'
 
 describe('los dados rápidos', () => {
   it('añaden un dado: otro igual que el último suma uno, uno distinto se suma aparte, y el nombre se queda', () => {
@@ -17,5 +17,12 @@ describe('la tirada, explicada mientras se escribe', () => {
     expect(explain('2d20kh1+5 # Ataque')).toEqual({ ok: true, text: 'Ventaja (2d20, se queda el mayor) + 5 · Ataque' })
     expect(explain('1d20+')).toEqual({ ok: false, text: 'No se entiende «1d20+» al final' })
     expect(explain('')).toEqual({ ok: false, text: 'Escribe una tirada, como 1d20+5' })
+  })
+})
+
+describe('la explicación que repite lo escrito', () => {
+  it('no se enseña si dice lo mismo; sí si dice algo más', () => {
+    expect(echoes('1d20', explain('1d20').text)).toBe(true)
+    expect(echoes('2d20kh1', explain('2d20kh1').text)).toBe(false)
   })
 })

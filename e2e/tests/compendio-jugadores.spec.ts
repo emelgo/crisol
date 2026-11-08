@@ -26,8 +26,8 @@ test('el compendio y la partida para los jugadores: dos goblins a la vista y un 
   // La jugadora: los goblins con su estado en palabras; ni el jefe ni sus PG
   await ana.goto(`/mundos/${worldId}/campanas/${campaignId}/en-juego`)
   const group = ana.getByRole('region', { name: 'Goblin', exact: true })
-  await expect(group.getByRole('listitem').filter({ hasText: 'Goblin 1' })).toContainText('Herida')
-  await expect(group.getByRole('listitem').filter({ hasText: 'Goblin 2' })).toContainText('Ilesa')
+  await expect(group.getByRole('listitem').filter({ hasText: 'Goblin 1' })).toContainText('Con heridas')
+  await expect(group.getByRole('listitem').filter({ hasText: 'Goblin 2' })).toContainText('Sin heridas')
   await expect(ana.getByText('Jefe')).toHaveCount(0)
   await expect(ana.getByRole('main')).not.toContainText('/ 7')
   await ana.screenshot({ path: test.info().outputPath('en-juego-jugadora.png'), fullPage: false })

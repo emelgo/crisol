@@ -1,10 +1,60 @@
 /* La ficha de dados: a la derecha, en el sitio del panel de la página, del mismo ancho y con el mismo marco */
+/* El botón: abajo a la derecha, a la izquierda del «?» (en la mesa, fuera de su barra) */
+.launcher {
+  --dice-end: calc(var(--space-4) + 2.25rem + var(--space-3));
+
+  position: fixed;
+  z-index: 30;
+  inset-block-end: var(--space-4);
+  inset-inline-end: var(--dice-end);
+  display: grid;
+  place-items: center;
+  inline-size: 3.25rem;
+  block-size: 3.25rem;
+  padding: 0;
+  border: 1px solid var(--color-frame);
+  border-radius: 50%;
+  background: var(--color-surface);
+  color: var(--color-accent-text);
+  box-shadow: 0 6px 18px rgb(0 0 0 / 0.3);
+  cursor: pointer;
+  transition:
+    transform 150ms ease-out,
+    border-color 150ms ease-out;
+}
+
+.launcher:hover,
+.launcher[aria-expanded="true"] {
+  border-color: var(--color-accent);
+  transform: rotate(-12deg);
+}
+
+.launcher:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.d20 {
+  fill: none;
+  stroke: currentcolor;
+  stroke-width: 1.3;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.d20 .digits {
+  stroke-width: 0.85;
+}
+
+/* La ficha: en la misma esquina, encima del botón */
 .card {
+  --dice-end: calc(var(--space-4) + 2.25rem + var(--space-3));
+
   position: fixed;
   z-index: 20;
-  top: 6.5rem;
-  right: var(--space-6);
-  bottom: var(--space-4);
+  right: var(--dice-end);
+  bottom: calc(var(--space-4) + 3.25rem + var(--space-3));
+  height: min(38rem, calc(100dvh - 3.25rem - 3 * var(--space-4)));
   width: 21rem;
   display: flex;
   flex-direction: column;
@@ -14,6 +64,17 @@
   padding: var(--space-3);
   box-sizing: border-box;
   box-shadow: 0 16px 40px rgb(0 0 0 / 0.25);
+}
+
+/* Recibe el foco al abrirse en el móvil (para leerla): sin el recuadro de foco, no es un control */
+.card:focus {
+  outline: none;
+}
+
+/* En la mesa, fuera de su barra de la derecha */
+:global(body):has(:global([data-tour="mesa-zoom"])) .launcher,
+:global(body):has(:global([data-tour="mesa-zoom"])) .card {
+  --dice-end: calc(18.75rem + var(--space-4) + 2.25rem + var(--space-3));
 }
 
 .head {
@@ -76,6 +137,15 @@
 .close:hover {
   color: var(--color-text);
   background: var(--color-raised);
+}
+
+/* Con el dedo, del tamaño que se toca (en el PC no cambian) */
+@media (pointer: coarse) {
+  .gear,
+  .close {
+    min-width: var(--target);
+    min-height: var(--target);
+  }
 }
 
 .empty {
@@ -241,12 +311,20 @@
     display: block;
     position: fixed;
     inset: 0;
-    z-index: 19;
+    /* Por encima del botón y del «?», que quedan tapados mientras está abierta */
+    z-index: 31;
     border: 0;
     background: rgb(0 0 0 / 0.45);
   }
 
+  /* En la esquina de abajo, a la altura de la llama del centro (el «?» va arriba en el móvil) */
+  .launcher {
+    inset-block-end: var(--space-4);
+    inset-inline-end: var(--space-4);
+  }
+
   .card {
+    z-index: 32;
     top: auto;
     left: 0;
     right: 0;
@@ -267,10 +345,17 @@
     margin: 0 auto var(--space-2);
   }
 
+  /* Los siete dados, repartidos en la fila con la silueta encima del nombre (si no caben, bajan): ninguno se corta */
   .quick {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    scrollbar-width: none;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(2.25rem, 1fr));
+  }
+
+  .quickDie {
+    flex-direction: column;
+    justify-content: center;
+    gap: 2px;
+    padding: 2px 0;
   }
 
   .quickDie,

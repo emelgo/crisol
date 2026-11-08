@@ -363,6 +363,29 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
     else setSelected(null)
   }
 
+  // El menú del botón derecho (también con la tecla de menú o Mayús+F10): al abrirse, el foco en su primera opción
+  const menuRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (menu) menuRef.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus()
+  }, [menu])
+  const closeMenu = () => {
+    setMenu(null)
+    container.current?.focus()
+  }
+  const onMenuKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    const items = [...(menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? [])]
+    const at = items.indexOf(document.activeElement as HTMLElement)
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      event.stopPropagation()
+      closeMenu()
+    } else if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault()
+      const next = (at + (event.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length
+      items[next]?.focus()
+    } else if (event.key === 'Tab') closeMenu()
+  }
+
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.target !== event.currentTarget) return
     const step = 80
@@ -523,11 +546,13 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
         </div>
         {menu && (
           <div
+            ref={menuRef}
             role="menu"
             aria-label={t('map.contextMenu')}
             className={styles.contextMenu}
             style={{ insetInlineStart: menu.sx, insetBlockStart: menu.sy }}
             onPointerDown={(event) => event.stopPropagation()}
+            onKeyDown={onMenuKeyDown}
           >
             <button
               type="button"
@@ -588,14 +613,26 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
       </div>
 
       {/* Fuera de la barra: sus botones no son de herramientas */}
-      <Tour
-        id="mapa"
-        steps={[
-          { target: '[data-tour="mapa-pestanas"]', text: t('tour.map.tabs') },
-          { target: '[data-tour="mapa-herramientas"]', text: t('tour.map.tools'), placement: 'right' },
-          { target: '[data-tour="mapa-pin"]', text: t('tour.map.pin') }
-        ]}
-      />
+      {/* Quien solo lo lee (un jugador) ni pone ni mueve pines: su propio tutorial */}
+      {readAs || !editable ? (
+        <Tour
+          id="mapa-lectura"
+          steps={[
+            { target: '[data-tour="mapa-pestanas"]', text: t('tour.map.tabs') },
+            { target: '[data-tour="mapa-herramientas"]', text: t('tour.map.readTools'), placement: 'right' },
+            { target: '[data-tour="mapa-pin"]', text: t('tour.map.readPin') }
+          ]}
+        />
+      ) : (
+        <Tour
+          id="mapa"
+          steps={[
+            { target: '[data-tour="mapa-pestanas"]', text: t('tour.map.tabs') },
+            { target: '[data-tour="mapa-herramientas"]', text: t('tour.map.tools'), placement: 'right' },
+            { target: '[data-tour="mapa-pin"]', text: t('tour.map.pin') }
+          ]}
+        />
+      )}
 
       {changingImage && (
         <div className={styles.imagePanel}>

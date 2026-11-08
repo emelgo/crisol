@@ -2,12 +2,15 @@
 /* Las páginas abiertas: pestañas sin fondo, la abierta subrayada sobre la línea de abajo (como las de la página), y el
    texto de la primera en la misma vertical que el título de la hoja */
 .tabs ul {
+  /* Una sola fila, como las del navegador: encogen hasta su mínimo y luego la tira se desplaza (no empuja la página) */
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: thin;
   gap: 2px;
-  margin: 0 calc(-1 * var(--space-8)) var(--space-2);
-  /* Con el margen de dentro de la página (--space-6) */
-  padding: var(--space-1) var(--space-2) 0 calc(var(--space-8) + var(--space-6) - var(--space-3));
+  /* Del ancho de la columna, con el texto de la primera alineado con el título */
+  margin: 0 0 var(--space-2);
+  padding: var(--space-1) 0 0 calc(var(--space-6) - var(--space-3));
   list-style: none;
   background: transparent;
   border-block-end: 1px solid var(--color-border);
@@ -15,7 +18,9 @@
 
 .tabs li {
   display: flex;
+  flex: 0 1 auto;
   align-items: center;
+  min-inline-size: 5rem;
   max-inline-size: 13rem;
   margin-block-end: -1px;
   border-block-end: 2px solid transparent;
@@ -45,6 +50,8 @@
 }
 
 .tabs a {
+  flex: 1 1 auto;
+  min-inline-size: 0;
   overflow: hidden;
   padding: var(--space-2) var(--space-1) var(--space-2) var(--space-3);
   color: inherit;
@@ -57,7 +64,7 @@
 
 .tabButton {
   display: flex;
-  flex: 0 0 2rem;
+  flex: 0 0 1.5rem;
   align-items: center;
   justify-content: center;
   block-size: 2.5rem;
@@ -76,6 +83,11 @@
   stroke-width: 2.2;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+/* Como en el navegador: la chincheta y la × salen al acercarse (o en la abierta); fijada, su chincheta se queda */
+.tabs li:not(:hover, :focus-within, [data-current]) .tabButton:not([aria-pressed="true"]) {
+  display: none;
 }
 
 .tabButton[aria-pressed="true"] {

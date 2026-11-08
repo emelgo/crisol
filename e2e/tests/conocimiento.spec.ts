@@ -77,7 +77,7 @@ test('lo que sabe cada campaña: el máster da a conocer «Aldoria» a La Marca;
     .getByRole('combobox', { name: 'Lo que sabe «La Marca» de esta página' })
     .selectOption({ label: 'Lo sabe toda la campaña' })
   await expect(who.getByRole('region', { name: 'La Marca' })).toContainText('La ve toda la campaña')
-  await expect(who.getByRole('region', { name: 'La Marca' })).toContainText('Marcada aquí')
+  await expect(who.getByRole('region', { name: 'La Marca' })).toContainText('Decidido en esta página')
   await expect(who.getByRole('region', { name: 'Los del norte' })).toContainText('No la ve')
   await page.screenshot({ path: test.info().outputPath('quien-la-conoce.png'), fullPage: false })
   // El ojo en el árbol, en ella y en su subpágina

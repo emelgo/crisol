@@ -2,7 +2,7 @@ import type { Approval } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { TFunction } from 'i18next'
 import { Plug } from 'lucide-react'
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
@@ -13,7 +13,6 @@ import floating from './approval-queue.module.css'
 import { BusyButton } from './busy-button.tsx'
 import { FormError } from './field.tsx'
 import { focusAfterRemoving } from './focus.ts'
-import form from './form.module.css'
 import styles from './list.module.css'
 
 /** Lo que pidió la IA de la cuenta. El canal avisa de cada cambio (changed approvals) y la consulta se vuelve a pedir */
@@ -43,7 +42,6 @@ export function ApprovalQueue() {
   const approvals = useApprovals()
   const [outcome, setOutcome] = useState<string | null>(null)
   const pending = approvals.data?.pending ?? []
-  const titleId = useId()
 
   // Lo que llega nuevo se anuncia (la cola no es una región viva: se leería entera con sus botones)
   const seen = useRef(new Set<string>())
@@ -68,11 +66,10 @@ export function ApprovalQueue() {
     <>
       {/* Flotan abajo a la derecha, estés donde estés, como en el Crisol antiguo */}
       {pending.length > 0 && (
-        <section aria-labelledby={titleId} className={floating.stack}>
-          <h2 id={titleId} className={floating.title}>
-            <Plug aria-hidden="true" size={16} />
-            {t('approvals.title')}
-          </h2>
+        // Sin aria-labelledby: no es una caja de la hoja (base.css), son tarjetas sueltas que flotan
+        <section aria-label={t('approvals.title')} className={floating.stack}>
+          {/* El título, para el lector de pantalla: a la vista lo dice cada tarjeta */}
+          <h2 className={floating.hidden}>{t('approvals.title')}</h2>
           <ul className={floating.list} aria-label={t('approvals.listLabel')}>
             {pending.map((approval) => (
               <ApprovalItem key={approval.id} approval={approval} onDecided={decided} />
@@ -116,10 +113,14 @@ function ApprovalItem({ approval, onDecided }: { approval: Approval; onDecided: 
 
   return (
     <li ref={item} className={floating.card}>
+      <p className={floating.kicker}>
+        <Plug aria-hidden="true" size={14} />
+        {t('approvals.title')}
+      </p>
       <span className={floating.what}>{t('approvals.request', { what })}</span>
       <div className={floating.actions}>
         <BusyButton
-          className={form.button}
+          className={floating.approve}
           aria-label={t('approvals.approveButton', { what })}
           busy={decide.isPending}
           onClick={() => decide.mutate('approve')}
@@ -127,7 +128,7 @@ function ApprovalItem({ approval, onDecided }: { approval: Approval; onDecided: 
           {t('approvals.approve')}
         </BusyButton>
         <BusyButton
-          className={styles.secondary}
+          className={floating.reject}
           aria-label={t('approvals.rejectButton', { what })}
           busy={decide.isPending}
           onClick={() => decide.mutate('reject')}

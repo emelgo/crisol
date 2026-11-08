@@ -23,6 +23,7 @@ import { ColorChoices } from '../routes/world-card.tsx'
 import { colorHex } from '../routes/world-look.ts'
 import files from './files.module.css'
 import { useNarrow } from './panel.tsx'
+import { useReadAs } from './read-as.tsx'
 import styles from './tags.module.css'
 
 /** El color de una etiqueta, para su punto */
@@ -37,7 +38,8 @@ export function useAccountTags(enabled = true) {
 
 /** El color de una etiqueta puesta, por su nombre (sin mirar mayúsculas); sin catálogo aún, ninguno */
 export function useTagColor() {
-  const tags = useAccountTags()
+  // Las etiquetas son de la cuenta del máster: leyendo desde una campaña, sin colores
+  const tags = useAccountTags(!useReadAs())
   return (name: string) => tags.data?.tags.find((tag) => tagKey(tag.name) === tagKey(name))?.color ?? null
 }
 
@@ -165,8 +167,8 @@ export function WorldTagsRedirect() {
 
 /**
  * Las etiquetas de la cuenta, en la zona de Mis mundos: en árbol (las hijas, «lugar/ciudad», bajo su madre), con
- * cuántas páginas y archivos las llevan; al pasar el ratón, en qué mundos. Se crean aquí y, desde su engranaje, se
- * renombran, se les pone color y se borran
+ * cuántas páginas y archivos las llevan; al pasar el ratón, en qué mundos. Se crean con la fila discontinua del final
+ * y, desde su engranaje, se renombran, se les pone color y se borran
  */
 export function AccountTags() {
   const { t } = useTranslation()
@@ -189,7 +191,6 @@ export function AccountTags() {
         <div className={files.center}>
           <PageTitle>{t('tags.title')}</PageTitle>
           <div className={files.tools}>
-            <NewTag onCreated={refresh} />
             <label className={files.search} data-tour="etiquetas-buscar">
               <Search aria-hidden="true" size={16} />
               <input
@@ -202,12 +203,13 @@ export function AccountTags() {
             </label>
           </div>
           {failed(tags) && <LoadError error={tags.error} onRetry={() => tags.refetch()} />}
-          {tags.data &&
-            (all.length === 0 ? (
-              <p className={files.empty}>{t('tags.empty')}</p>
-            ) : shown.length === 0 ? (
-              <p className={files.empty}>{t('tags.noResults')}</p>
-            ) : (
+          {tags.data && (
+            <>
+              {all.length === 0 ? (
+                <p className={files.empty}>{t('tags.empty')}</p>
+              ) : (
+                shown.length === 0 && <p className={files.empty}>{t('tags.noResults')}</p>
+              )}
               <ul className={files.rows} aria-label={t('tags.title')} data-tour="etiquetas-lista">
                 {shown.map((tag) => (
                   <TagRow
@@ -218,8 +220,13 @@ export function AccountTags() {
                     onChanged={refresh}
                   />
                 ))}
+                {/* «Nueva etiqueta», una fila más tras la última: vacía y con el borde discontinuo (docs/diseno.md) */}
+                <li className={styles.newItem}>
+                  <NewTag onCreated={refresh} />
+                </li>
               </ul>
-            ))}
+            </>
+          )}
         </div>
         <aside className={files.detail} aria-label={t('tags.detail')}>
           {detail && <TagDetail key={detail.name} tag={detail} />}
@@ -372,7 +379,7 @@ function NewTag({ onCreated }: { onCreated: () => Promise<unknown> }) {
       <button
         ref={trigger}
         type="button"
-        className={`${form.button} ${files.uploadButton}`}
+        className={styles.newRow}
         aria-haspopup="dialog"
         data-tour="etiquetas-nueva"
         onClick={() => {

@@ -171,7 +171,8 @@
 
 .pageActions {
   display: flex;
-  flex-wrap: wrap;
+  flex: none;
+  flex-wrap: nowrap;
   align-items: center;
   gap: var(--space-1);
 }
@@ -354,7 +355,8 @@
   inset-block-start: 0;
   z-index: 5;
   display: flex;
-  flex-wrap: wrap;
+  /* Un título largo se parte en su sitio: los iconos no bajan de línea (la cabecera no cambia de forma) */
+  flex-wrap: nowrap;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
@@ -426,7 +428,8 @@
   overflow-y: auto;
   margin-block-start: var(--panel-top, 0);
   min-block-size: calc(100dvh - var(--side-top) - var(--space-4));
-  padding: var(--space-4);
+  /* Abajo, sitio para el d20 y el «?», que flotan en esa esquina: lo último del panel no queda debajo */
+  padding: var(--space-4) var(--space-4) calc(var(--space-4) + 3.25rem + var(--space-3));
   border: 1px solid var(--color-frame);
   border-radius: 6px;
   background: var(--color-surface);
@@ -461,7 +464,9 @@
   .entryPanel {
     position: static;
     grid-column: 1;
+    justify-self: stretch;
     inline-size: auto;
+    max-inline-size: none;
     min-block-size: 0;
     max-block-size: none;
     margin-block-start: var(--space-8);
@@ -543,9 +548,18 @@
 
 .heading {
   display: flex;
-  flex-wrap: wrap;
+  /* El distintivo (la plantilla, «Inicio») no baja de línea con un título largo: es el título el que se parte */
+  flex-wrap: nowrap;
   align-items: center;
   gap: var(--space-2) var(--space-3);
+  min-inline-size: 0;
+}
+
+.heading > :is(.templateBadge, .homeBadge, .locked) {
+  flex-shrink: 0;
+}
+
+.heading > .titleBox {
   min-inline-size: 0;
 }
 
@@ -614,6 +628,12 @@
 
 .title[contenteditable="false"] {
   cursor: default;
+}
+
+/* Cerrada, no hay cursor que diga dónde está el foco: se marca */
+.title[contenteditable="false"]:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }
 
 /* Sin franja al pasar ni al escribir: el cursor ya dice que se escribe ahí */

@@ -3,7 +3,6 @@ import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
 import {
   Backpack,
   BookOpen,
-  Dices,
   Eye,
   Folder,
   Globe,
@@ -210,7 +209,6 @@ export function Ribbon() {
             : null
         }
         master={master}
-        isOwner={isOwner}
       />
       <nav className={styles.sections} aria-label={t('app.sectionsNav')}>
         <Link
@@ -381,21 +379,18 @@ function WorldPanels({ worldId, worldName, master }: { worldId: string; worldNam
   if (master) return <WikiPanels worldId={worldId} worldName={worldName} />
   // Quien juega, sin páginas: su Inicio con sus campañas, y los dados
   return (
-    <>
-      <Link
-        to="/mundos/$worldId"
-        params={{ worldId }}
-        activeOptions={{ exact: true }}
-        className={styles.item}
-        viewTransition={SECTION}
-        onPointerEnter={prefetchHome}
-        onFocus={prefetchHome}
-        data-tour="barra-inicio"
-      >
-        <Label icon={House} text={t('ribbon.home')} />
-      </Link>
-      <DiceButton />
-    </>
+    <Link
+      to="/mundos/$worldId"
+      params={{ worldId }}
+      activeOptions={{ exact: true }}
+      className={styles.item}
+      viewTransition={SECTION}
+      onPointerEnter={prefetchHome}
+      onFocus={prefetchHome}
+      data-tour="barra-inicio"
+    >
+      <Label icon={House} text={t('ribbon.home')} />
+    </Link>
   )
 }
 
@@ -510,7 +505,6 @@ function CampaignPanels({
           <Label icon={Library} text={t('ribbon.library')} />
         </Link>
       )}
-      <DiceButton />
     </>
   )
 }
@@ -554,23 +548,6 @@ function RevealedButton() {
       onClick={(event) => windows?.open('revelado', event.currentTarget)}
     >
       <Label icon={Eye} text={t('ribbon.revealed')} />
-    </button>
-  )
-}
-
-/** «Dados»: abre y cierra la ficha de dados del mundo (la excepción a una barra con solo el mundo y Archivos) */
-function DiceButton() {
-  const { t } = useTranslation()
-  const dice = useDice()
-  return (
-    <button
-      type="button"
-      className={styles.item}
-      aria-pressed={dice.open}
-      data-tour="barra-dados"
-      onClick={dice.toggle}
-    >
-      <Label icon={Dices} text={t('ribbon.dice')} />
     </button>
   )
 }
@@ -627,7 +604,6 @@ function WikiPanels({ worldId, worldName }: { worldId: string; worldName: string
       >
         <Label icon={Folder} text={t('ribbon.files')} />
       </Link>
-      <DiceButton />
     </>
   )
 }
@@ -638,27 +614,24 @@ function FlameIcon(_: { 'aria-hidden'?: 'true'; size?: number; strokeWidth?: num
 }
 
 /**
- * En el móvil, en vez de la barra: la llama, sola, abajo en el centro. Al tocarla sube una hoja con todas las secciones
- * de donde se está (fuera de los mundos, Mis mundos, Archivos, Etiquetas, Historial y Papelera; dentro, las del mundo y
- * la vuelta a Mis mundos) y, debajo, la cuenta
+ * En el móvil, en vez de la barra: la llama, sola, abajo en el centro. Al tocarla sube una hoja con las secciones de
+ * donde se está y, debajo, la cuenta. El móvil es de la jugadora (docs/diseno.md: el máster trabaja en el PC): solo
+ * lo suyo (Mis mundos, su campaña, las páginas que conoce, sus personajes, el compendio, el grupo y lo que está en juego)
  */
 function MobileMenu({
   world,
   campaign,
-  master,
-  isOwner
+  master
 }: {
   world: { id: string; name: string } | null
   campaign: { id: string; name: string; master: boolean } | null
   master: boolean
-  isOwner: boolean
 }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const accounts = useAccounts()
   const windows = useWindow()
-  const wikiPanel = useWikiPanel()
-  const dice = useDice()
+  const _wikiPanel = useWikiPanel()
   const path = useRouterState({ select: (state) => state.location.pathname })
   const trigger = useRef<HTMLButtonElement>(null)
   const dialog = useRef<HTMLDialogElement>(null)
@@ -670,24 +643,23 @@ function MobileMenu({
     action()
   }
   const go = (to: string) => then(() => void navigate({ to, viewTransition: SECTION } as never))
-  type Entry = { key: string; icon: LucideIcon | typeof FlameIcon; text: string; current: boolean; run: () => void }
+  type Entry = {
+    key: string
+    icon: LucideIcon | typeof FlameIcon
+    text: string
+    current: boolean
+    href: string
+    run: () => void
+  }
   const leave: Entry = {
     key: 'mundos',
     icon: FlameIcon,
     text: t('ribbon.worlds'),
     current: false,
+    href: '/mundos',
     run: then(() => {
       leaveWorld()
       void navigate({ to: '/mundos', viewTransition: LEAVE_WORLD })
-    })
-  }
-  const diceEntry: Entry = {
-    key: 'dados',
-    icon: Dices,
-    text: t('ribbon.dice'),
-    current: dice.open,
-    run: then(() => {
-      if (!dice.open) dice.toggle()
     })
   }
   const entries: Entry[] =
@@ -699,6 +671,7 @@ function MobileMenu({
             icon: Shield,
             text: campaign.name,
             current: path === `/mundos/${world.id}/campanas/${campaign.id}`,
+            href: `/mundos/${world.id}/campanas/${campaign.id}`,
             run: go(`/mundos/${world.id}/campanas/${campaign.id}`)
           },
           {
@@ -706,6 +679,7 @@ function MobileMenu({
             icon: Globe,
             text: world.name,
             current: path.startsWith(`/mundos/${world.id}/campanas/${campaign.id}/paginas`),
+            href: master ? `/mundos/${world.id}/wiki` : `/mundos/${world.id}/campanas/${campaign.id}/paginas`,
             run: go(master ? `/mundos/${world.id}/wiki` : `/mundos/${world.id}/campanas/${campaign.id}/paginas`)
           },
           {
@@ -713,6 +687,7 @@ function MobileMenu({
             icon: Users,
             text: t('ribbon.characters'),
             current: path.startsWith(`/mundos/${world.id}/campanas/${campaign.id}/personajes`),
+            href: `/mundos/${world.id}/campanas/${campaign.id}/personajes`,
             run: go(`/mundos/${world.id}/campanas/${campaign.id}/personajes`)
           },
           {
@@ -720,6 +695,7 @@ function MobileMenu({
             icon: BookOpen,
             text: t('ribbon.compendium'),
             current: path.startsWith(`/mundos/${world.id}/campanas/${campaign.id}/compendio`),
+            href: `/mundos/${world.id}/campanas/${campaign.id}/compendio`,
             run: go(`/mundos/${world.id}/campanas/${campaign.id}/compendio`)
           },
           {
@@ -727,6 +703,7 @@ function MobileMenu({
             icon: Backpack,
             text: t('ribbon.party'),
             current: path.startsWith(`/mundos/${world.id}/campanas/${campaign.id}/grupo`),
+            href: `/mundos/${world.id}/campanas/${campaign.id}/grupo`,
             run: go(`/mundos/${world.id}/campanas/${campaign.id}/grupo`)
           },
           // Las criaturas en juego: el máster, todas; un jugador, las que están a la vista
@@ -735,35 +712,9 @@ function MobileMenu({
             icon: Swords,
             text: t('ribbon.inPlay'),
             current: path.startsWith(`/mundos/${world.id}/campanas/${campaign.id}/en-juego`),
+            href: `/mundos/${world.id}/campanas/${campaign.id}/en-juego`,
             run: go(`/mundos/${world.id}/campanas/${campaign.id}/en-juego`)
-          },
-          // La mesa, lo revelado y la biblioteca: del máster
-          ...(campaign.master
-            ? [
-                {
-                  key: 'mesa',
-                  icon: Layers,
-                  text: t('ribbon.table'),
-                  current: path.startsWith(`/mundos/${world.id}/campanas/${campaign.id}/mesa`),
-                  run: go(`/mundos/${world.id}/campanas/${campaign.id}/mesa`)
-                },
-                {
-                  key: 'revelado',
-                  icon: Eye,
-                  text: t('ribbon.revealed'),
-                  current: false,
-                  run: then(() => windows?.open('revelado', trigger.current))
-                },
-                {
-                  key: 'biblioteca',
-                  icon: Library,
-                  text: t('ribbon.library'),
-                  current: path.startsWith(`/mundos/${world.id}/campanas/${campaign.id}/biblioteca`),
-                  run: go(`/mundos/${world.id}/campanas/${campaign.id}/biblioteca`)
-                }
-              ]
-            : []),
-          diceEntry
+          }
         ]
       : world
         ? [
@@ -772,6 +723,7 @@ function MobileMenu({
               icon: FlameIcon,
               text: t('ribbon.worlds'),
               current: false,
+              href: '/mundos',
               run: then(() => {
                 leaveWorld()
                 void navigate({ to: '/mundos', viewTransition: LEAVE_WORLD })
@@ -786,47 +738,10 @@ function MobileMenu({
                     icon: House,
                     text: t('ribbon.home'),
                     current: path === `/mundos/${world.id}`,
+                    href: `/mundos/${world.id}`,
                     run: go(`/mundos/${world.id}`)
                   }
-                ]),
-            ...(master
-              ? [
-                  ...(['pages'] as const).map((panel) => ({
-                    key: panel,
-                    icon: Globe,
-                    text: world.name,
-                    current: wikiPanel.open && wikiPanel.panel === panel,
-                    // Abre el cajón con esa vista (y, si no se está en las páginas, la portada del mundo)
-                    run: then(() => {
-                      wikiPanel.show(panel, trigger.current)
-                      if (!/^\/mundos\/[^/]+(\/(wiki\/[^/]+|buscar))?\/?$/.test(path)) {
-                        void navigate({
-                          to: '/mundos/$worldId',
-                          params: { worldId: world.id },
-                          viewTransition: SECTION
-                        })
-                      }
-                    })
-                  })),
-                  {
-                    key: 'archivos',
-                    icon: Folder,
-                    text: t('ribbon.files'),
-                    current: path === `/mundos/${world.id}/archivos`,
-                    run: go(`/mundos/${world.id}/archivos`)
-                  }
-                ]
-              : []),
-            // Los dados: la hoja de dados sube desde abajo
-            {
-              key: 'dados',
-              icon: Dices,
-              text: t('ribbon.dice'),
-              current: dice.open,
-              run: then(() => {
-                if (!dice.open) dice.toggle()
-              })
-            }
+                ])
           ]
         : [
             {
@@ -834,59 +749,10 @@ function MobileMenu({
               icon: FlameIcon,
               text: t('ribbon.worlds'),
               current: path === '/mundos',
+              href: '/mundos',
               run: go('/mundos')
-            },
-            ...(isOwner
-              ? [
-                  {
-                    key: 'archivos',
-                    icon: Folder,
-                    text: t('ribbon.files'),
-                    current: path === '/archivos',
-                    run: go('/archivos')
-                  },
-                  {
-                    key: 'etiquetas',
-                    icon: Hash,
-                    text: t('ribbon.tags'),
-                    current: path === '/etiquetas',
-                    run: go('/etiquetas')
-                  },
-                  {
-                    key: 'plantillas',
-                    icon: LayoutTemplate,
-                    text: t('ribbon.templates'),
-                    current: path.startsWith('/plantillas'),
-                    run: go('/plantillas')
-                  },
-                  {
-                    key: 'sistemas',
-                    icon: ScrollText,
-                    text: t('ribbon.systems'),
-                    current: path.startsWith('/sistemas'),
-                    run: go('/sistemas')
-                  }
-                ]
-              : [])
+            }
           ]
-  if (isOwner) {
-    entries.push(
-      {
-        key: 'historial',
-        icon: History,
-        text: t('ribbon.history'),
-        current: false,
-        run: then(() => windows?.open('historial', trigger.current))
-      },
-      {
-        key: 'papelera',
-        icon: Trash2,
-        text: t('ribbon.trash'),
-        current: false,
-        run: then(() => windows?.open('papelera', trigger.current))
-      }
-    )
-  }
   return (
     <>
       <button
@@ -914,15 +780,20 @@ function MobileMenu({
           <ul className={styles.menuGrid}>
             {entries.map((entry) => (
               <li key={entry.key}>
-                <button
-                  type="button"
+                {/* Un enlace (se abre en otra pestaña o con pulsación larga); al tocarlo, con su transición */}
+                <a
+                  href={entry.href}
                   className={styles.menuTile}
                   aria-current={entry.current ? 'page' : undefined}
-                  onClick={entry.run}
+                  onClick={(event) => {
+                    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+                    event.preventDefault()
+                    entry.run()
+                  }}
                 >
                   <entry.icon aria-hidden="true" size={22} strokeWidth={1.75} />
                   {entry.text}
-                </button>
+                </a>
               </li>
             ))}
           </ul>

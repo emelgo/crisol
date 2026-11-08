@@ -90,7 +90,8 @@
 @media (max-width: 48rem) {
   .app {
     grid-template-columns: minmax(0, 1fr);
-    padding-block-end: 4.25rem;
+    /* La llama, los dados y el «?» flotan abajo: lo último de la página puede subir por encima de ellos */
+    padding-block-end: 8.5rem;
   }
 }
 
@@ -102,4 +103,9 @@
   .main {
     padding: var(--space-6) var(--space-4);
   }
+}
+
+/* Los enlaces sueltos de una pantalla («Volver al inicio»), en azul como los demás enlaces */
+.link {
+  color: var(--color-link);
 }

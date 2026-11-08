@@ -14,7 +14,7 @@ test('el máster ve y copia el enlace de su campaña, genera uno nuevo y cierra 
   const link = page.getByLabel('Enlace de invitación')
   await expect(link).toHaveValue(/^http:\/\/127\.0\.0\.1:8131\/unirse\/[\w-]{43}$/)
   const first = await link.inputValue()
-  await expect(page.getByText('Han entrado 0 con este enlace')).toBeVisible()
+  await expect(page.getByText('Nadie ha entrado aún con este enlace')).toBeVisible()
 
   await page.getByRole('button', { name: 'Copiar' }).click()
   await expect(page.getByRole('status')).toHaveText('Copiado')

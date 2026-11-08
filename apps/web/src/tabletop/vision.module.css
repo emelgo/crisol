@@ -43,7 +43,8 @@
   border: 0;
   border-radius: 6px;
   background: none;
-  color: #b9b9c2;
+  /* Del tema (con un gris fijo claro, en el tema claro parecían desactivados) */
+  color: var(--color-text);
   cursor: pointer;
 }
 

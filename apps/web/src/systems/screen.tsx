@@ -7,7 +7,7 @@ import type { SystemSummary } from '@crisol/contracts'
 import { type Problem, validateFile } from '@crisol/systems'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Navigate } from '@tanstack/react-router'
-import { CircleAlert, Download, FileUp, Info, Lock, Plus, ScrollText, Sparkles } from 'lucide-react'
+import { CircleAlert, Download, FileUp, Info, Lock, Plus, ScrollText, Settings, Sparkles } from 'lucide-react'
 import { useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
@@ -21,8 +21,8 @@ import { Field, FormError } from '../components/field.tsx'
 import form from '../components/form.module.css'
 import { failed, LoadError } from '../components/load-error.tsx'
 import { Modal } from '../components/modal.tsx'
-import { PageTitle } from '../components/page-title.tsx'
 import { saveFile } from '../components/save-file.ts'
+import { Screen } from '../components/screen.tsx'
 import { Tour } from '../components/tour.tsx'
 import cards from '../routes/world-card.module.css'
 import screen from '../templates/screen.module.css'
@@ -46,6 +46,15 @@ function useOrigin() {
   }
 }
 
+/**
+ * Su versión, siempre igual: la de un sistema tuyo es un número que sube con cada cambio; la de uno de serie, la que le
+ * pone quien lo hace («1.0»), sin los «.0» del final
+ */
+function versionOf(system: Pick<SystemSummary, 'builtIn' | 'release' | 'version'>) {
+  if (!system.builtIn) return String(system.version)
+  return system.release.trim().replace(/(\.0+)+$/, '') || String(system.version)
+}
+
 export function SystemsScreen() {
   const { t } = useTranslation()
   const { account, pending } = useAccounts().useAccount()
@@ -59,41 +68,39 @@ export function SystemsScreen() {
   const builtIn = all.filter((s) => s.builtIn)
   const preview = all.find((s) => s.id === hovered)
   return (
-    <section className={screen.page}>
-      <aside className={screen.side} aria-label={t('systems.preview')}>
-        {preview && <SystemPreview system={preview} />}
-      </aside>
-      <div className={screen.center}>
-        <PageTitle>{t('systems.title')}</PageTitle>
-        {failed(systems) && <LoadError error={systems.error} onRetry={() => systems.refetch()} />}
-        {systems.data && (
-          <>
-            <h2 className={screen.section}>{t('systems.mine')}</h2>
-            <ul className={screen.grid} aria-label={t('systems.mine')} data-tour="sistemas-tuyos">
-              {mine.map((system) => (
-                <SystemCard key={system.id} system={system} onHover={setHovered} />
-              ))}
-              <li>
-                <button
-                  type="button"
-                  className={screen.newCard}
-                  data-tour="sistemas-nuevo"
-                  onClick={() => setCreating(true)}
-                >
-                  <Plus aria-hidden="true" size={22} />
-                  {t('systems.new')}
-                </button>
-              </li>
-            </ul>
-            <h2 className={screen.section}>{t('systems.builtIn')}</h2>
-            <ul className={screen.grid} aria-label={t('systems.builtIn')} data-tour="sistemas-serie">
-              {builtIn.map((system) => (
-                <SystemCard key={system.id} system={system} onHover={setHovered} />
-              ))}
-            </ul>
-          </>
-        )}
-      </div>
+    <Screen
+      title={t('systems.title')}
+      left={preview && <SystemPreview system={preview} />}
+      leftLabel={t('systems.preview')}
+    >
+      {failed(systems) && <LoadError error={systems.error} onRetry={() => systems.refetch()} />}
+      {systems.data && (
+        <>
+          <h2 className={screen.section}>{t('systems.mine')}</h2>
+          <ul className={screen.grid} aria-label={t('systems.mine')} data-tour="sistemas-tuyos">
+            {mine.map((system) => (
+              <SystemCard key={system.id} system={system} onHover={setHovered} />
+            ))}
+            <li>
+              <button
+                type="button"
+                className={screen.newCard}
+                data-tour="sistemas-nuevo"
+                onClick={() => setCreating(true)}
+              >
+                <Plus aria-hidden="true" size={22} />
+                {t('systems.new')}
+              </button>
+            </li>
+          </ul>
+          <h2 className={screen.section}>{t('systems.builtIn')}</h2>
+          <ul className={screen.grid} aria-label={t('systems.builtIn')} data-tour="sistemas-serie">
+            {builtIn.map((system) => (
+              <SystemCard key={system.id} system={system} onHover={setHovered} />
+            ))}
+          </ul>
+        </>
+      )}
       {creating && <NewSystemDialog onClose={() => setCreating(false)} />}
       {systems.data && (
         <Tour
@@ -104,7 +111,7 @@ export function SystemsScreen() {
           ]}
         />
       )}
-    </section>
+    </Screen>
   )
 }
 
@@ -118,7 +125,10 @@ function SystemCard({ system, onHover }: { system: SystemSummary; onHover: (id: 
       className={screen.card}
       onPointerEnter={() => onHover(system.id)}
       onPointerLeave={() => onHover(null)}
-      onFocus={() => onHover(system.id)}
+      onFocus={(event) => {
+        // El foco en su ventana no vuelve a sacar la vista previa
+        if (!(event.target as Element).closest('dialog')) onHover(system.id)
+      }}
       onBlur={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget)) onHover(null)
       }}
@@ -133,16 +143,33 @@ function SystemCard({ system, onHover }: { system: SystemSummary; onHover: (id: 
           type="button"
           className={`${screen.open} ${styles.opener}`}
           aria-haspopup="dialog"
-          onClick={() => setOpen(true)}
+          onClick={() => {
+            // Con su ventana encima, la vista previa de al lado se quita (docs/diseno.md)
+            onHover(null)
+            setOpen(true)
+          }}
         >
           {system.name}
         </button>
       </h3>
       <p className={screen.meta}>{origin(system)}</p>
       <div className={screen.foot}>
-        <span className={styles.version}>
-          {t('systems.version', { version: system.builtIn ? system.release : system.version })}
-        </span>
+        <span className={styles.version}>{t('systems.version', { version: versionOf(system) })}</span>
+        {/* Sus acciones, en su engranaje, siempre a la vista (docs/diseno.md) */}
+        <button
+          type="button"
+          className={screen.gear}
+          aria-label={t('systems.settingsOf', { name: system.name })}
+          title={t('systems.settingsOf', { name: system.name })}
+          aria-haspopup="dialog"
+          onClick={() => {
+            // Con su ventana encima, la vista previa de al lado se quita (docs/diseno.md)
+            onHover(null)
+            setOpen(true)
+          }}
+        >
+          <Settings size={16} aria-hidden="true" />
+        </button>
       </div>
       {open && (
         <SystemWindow
@@ -540,7 +567,7 @@ function SystemWindow({ system, onClose }: { system: SystemSummary; onClose: (go
         <dl className={styles.rows}>
           <div>
             <dt>{t('systems.versionLong')}</dt>
-            <dd>{system.builtIn ? system.release : system.version}</dd>
+            <dd>{versionOf(system)}</dd>
           </div>
           <div>
             <dt>{t('systems.download')}</dt>

@@ -102,7 +102,7 @@
 }
 
 .state[data-known] {
-  color: var(--color-ok, #7cc4a4);
+  color: var(--color-tip);
 }
 
 .why {

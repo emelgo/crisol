@@ -118,10 +118,12 @@ async function mapView(ctx: ActionContext, tabId: string, pageId: string, view?:
 }
 
 /** La página de un pin: del mismo mundo y fuera de la papelera */
+/** La página de un pin, si lleva a una: del mismo mundo (si no, BAD_PIN_PAGE); su título, para el historial */
 async function checkPinPage(ctx: ActionContext, wiki: WikiTarget, pageId: string | null | undefined) {
-  if (!pageId) return
+  if (!pageId) return null
   const [found] = await mapsRepo.pagesInWorld(ctx.db, wiki.worldId, [pageId])
   if (!found) throw new InvalidRequestError('BAD_PIN_PAGE')
+  return found.title
 }
 
 /** El nombre de un pin para el historial */
@@ -252,10 +254,16 @@ export const mapActions = [
     if ((await mapsRepo.countPins(ctx.db, mapId)) >= MAX_MAP_PINS) {
       throw new InvalidRequestError('TOO_MANY_PINS', `como mucho ${MAX_MAP_PINS}`)
     }
-    await checkPinPage(ctx, wiki, input.pageId)
+    const pageTitle = await checkPinPage(ctx, wiki, input.pageId)
     const pin = await mapsRepo.createPin(
       ctx.db,
-      historyContext(ctx, 'createMapPin', { title: page.title, map: tab.name, pin: input.label ?? null }, wiki),
+      // Sin nombre propio, el de su página: «puso el pin «Puerto Gris»…», no «Pin sin nombre»
+      historyContext(
+        ctx,
+        'createMapPin',
+        { title: page.title, map: tab.name, pin: input.label ?? pageTitle ?? null },
+        wiki
+      ),
       { worldId: wiki.worldId, mapId, ...input }
     )
     ctx.realtime.publish(pagesChanged(wiki))

@@ -17,6 +17,7 @@ import list from '../components/list.module.css'
 import { CoverViewer } from '../routes/world-cover.tsx'
 import styles from './cover.module.css'
 import { coverStyle, useWorldFiles } from './cover-look.ts'
+import { useReadAs } from './read-as.tsx'
 
 /**
  * La imagen de cabecera, si la tiene (si su archivo ya no está, nada). Como la portada de un mundo: al pasar por
@@ -26,14 +27,22 @@ export function PageCoverImage({ page }: { page: Page }) {
   const { t } = useTranslation()
   const api = useApi()
   const queryClient = useQueryClient()
-  const files = useWorldFiles(page.worldId)
+  // Quien lee desde una campaña no ve los archivos del mundo: su portada, por su id (el servidor mira que la vea)
+  const readAs = useReadAs()
+  const files = useWorldFiles(page.worldId, !readAs)
   const [viewing, setViewing] = useState(false)
   // Mientras se arrastra: dónde empezó y el encuadre que lleva
   const drag = useRef<{ y: number; start: number; height: number } | null>(null)
   const [dragY, setDragY] = useState<number | null>(null)
-  const file = page.cover ? files.data?.files.find((f) => f.id === page.cover?.fileId) : undefined
+  const file = !page.cover
+    ? undefined
+    : readAs
+      ? { url: `/api/files/${page.cover.fileId}` }
+      : files.data?.files.find((f) => f.id === page.cover?.fileId)
   if (!page.cover || !file) return null
   const cover = page.cover
+  // Se encuadra y se cambia en el mundo, no leyendo desde una campaña
+  const fixed = page.locked || Boolean(readAs)
   const save = async (next: Cover | null) => {
     await api.call('updatePage', { pageId: page.id, cover: next })
     await queryClient.invalidateQueries({ queryKey: ['pages', page.worldId] })
@@ -48,7 +57,7 @@ export function PageCoverImage({ page }: { page: Page }) {
         style={coverStyle(shown)}
         draggable={false}
         onPointerDown={(event) => {
-          if (page.locked) return
+          if (fixed) return
           event.currentTarget.setPointerCapture(event.pointerId)
           drag.current = { y: event.clientY, start: cover.y, height: event.currentTarget.clientHeight }
           setDragY(cover.y)
@@ -68,12 +77,12 @@ export function PageCoverImage({ page }: { page: Page }) {
         }}
       />
       <div className={styles.coverActions}>
-        {!page.locked && <span className={styles.dragHint}>{t('cover.drag')}</span>}
+        {!fixed && <span className={styles.dragHint}>{t('cover.drag')}</span>}
         <button type="button" className={styles.coverButton} aria-haspopup="dialog" onClick={() => setViewing(true)}>
           <Maximize2 aria-hidden="true" size={14} />
           {t('cover.view')}
         </button>
-        {!page.locked && (
+        {!fixed && (
           <CoverPicker
             worldId={page.worldId}
             cover={cover}

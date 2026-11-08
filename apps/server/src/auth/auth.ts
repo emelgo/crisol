@@ -107,7 +107,10 @@ export function createAuth({ db, secret, baseURL, trustedOrigins = [] }: AuthOpt
       max: 100,
       customRules: {
         '/sign-in/email': { window: 60, max: 5 },
-        '/sign-up/email': { window: 60, max: 5 }
+        '/sign-up/email': { window: 60, max: 5 },
+        // Mirar la sesión no se limita: un 429 aquí el navegador lo toma por «sin sesión» y saca a «Entrar» (una
+        // mesa con el máster, las jugadoras y la tele en la misma red pasaba de 100 por minuto)
+        '/get-session': false
       }
     },
     advanced: { useSecureCookies: baseURL.startsWith('https://') },

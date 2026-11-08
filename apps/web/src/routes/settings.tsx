@@ -54,7 +54,7 @@ export function Settings() {
           ))}
         </fieldset>
       </section>
-      {isOwner ? <AiSettings embedded /> : plays && <AiSettings embedded player />}
+      {isOwner ? <AiSettings /> : plays && <AiSettings player />}
     </section>
   )
 }

@@ -1,12 +1,12 @@
 /**
- * Los dados de un mundo: si la ficha está abierta y en qué campaña se tira en cada mundo. Se recuerda en el navegador.
+ * Los dados de un mundo: si la ficha está abierta y en qué campaña se tira en cada mundo. La campaña se recuerda en el
+ * navegador; la ficha abierta, no (se abre y se cierra con el d20, y en el móvil se cierra al cambiar de pantalla).
  * Lo usan la barra (abrir y cerrar), la ficha y las tiradas escritas en las páginas (en qué campaña tiran)
  */
 import type { RollVisibility } from '@crisol/contracts'
 import { useRouterState } from '@tanstack/react-router'
-import { createContext, type ReactNode, useCallback, useContext, useMemo, useState } from 'react'
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 
-const OPEN = 'crisol.dados'
 const CAMPAIGNS = 'crisol.dados.campañas'
 
 const read = <T,>(key: string, fallback: T): T => {
@@ -41,19 +41,19 @@ interface Dice {
 const DiceContext = createContext<Dice | null>(null)
 
 export function DiceProvider({ children }: { children: ReactNode }) {
-  const [open, setOpen] = useState(() => read(OPEN, false))
+  const [open, setOpen] = useState(false)
   const [campaigns, setCampaigns] = useState(() => read<Record<string, string>>(CAMPAIGNS, {}))
   const [visibility, setVisibility] = useState<RollVisibility>('all')
-  const toggle = useCallback(() => {
-    setOpen((current) => {
-      write(OPEN, !current)
-      return !current
-    })
-  }, [])
-  const close = useCallback(() => {
-    write(OPEN, false)
-    setOpen(false)
-  }, [])
+  const toggle = useCallback(() => setOpen((current) => !current), [])
+  const close = useCallback(() => setOpen(false), [])
+  // En el móvil la ficha es una hoja que tapa la pantalla: al ir a otra, se cierra
+  const pathname = useRouterState({ select: (state) => state.location.pathname })
+  const last = useRef(pathname)
+  useEffect(() => {
+    if (last.current === pathname) return
+    last.current = pathname
+    if (window.matchMedia?.('(max-width: 48rem)').matches) setOpen(false)
+  }, [pathname])
   const setCampaign = useCallback((worldId: string, campaignId: string) => {
     setCampaigns((current) => {
       const next = { ...current, [worldId]: campaignId }
@@ -75,6 +75,9 @@ export function DiceProvider({ children }: { children: ReactNode }) {
   )
   return <DiceContext.Provider value={value}>{children}</DiceContext.Provider>
 }
+
+/** Si hay dónde tirar (fuera de la app, al imprimir, no) */
+export const useHasDice = () => useContext(DiceContext) !== null
 
 export function useDice() {
   const dice = useContext(DiceContext)

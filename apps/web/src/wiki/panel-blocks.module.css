@@ -393,6 +393,34 @@
   outline: none;
 }
 
+/* Sin pie, «Pie» solo sale al acercarse al bloque (como lo demás alrededor de la página) */
+.block:not(:hover, :focus-within) .caption:placeholder-shown::placeholder {
+  color: transparent;
+}
+
+/* Un bloque de imagen vacío: un recuadro discontinuo y discreto, que se aviva al pasar */
+.imageEmpty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  inline-size: 100%;
+  min-block-size: 4.5rem;
+  border: 1px dashed var(--color-border);
+  border-radius: 6px;
+  background: none;
+  color: var(--color-muted);
+  font: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.imageEmpty:hover,
+.imageEmpty:focus-visible {
+  border-color: var(--color-text);
+  color: var(--color-text);
+}
+
 .imagePick {
   display: flex;
   flex-wrap: wrap;
@@ -520,7 +548,7 @@
 }
 
 .stars button[data-fill="full"] {
-  color: #d39b22;
+  color: var(--color-h3);
 }
 
 .stars button[data-fill="full"] svg {
@@ -529,7 +557,7 @@
 
 /* Media: la mitad izquierda rellena */
 .stars button[data-fill="half"] {
-  color: #d39b22;
+  color: var(--color-h3);
 }
 
 .stars button[data-fill="half"]::after {

@@ -26,3 +26,9 @@ export function explain(formula: string): { ok: boolean; text: string } {
   const { comment } = splitComment(formula)
   return { ok: true, text: `${describeFormula(formula)}${comment ? ` · ${comment}` : ''}` }
 }
+
+/** Si la explicación no dice más que lo escrito («1d20» bajo «1d20»): entonces no se enseña */
+export function echoes(formula: string, text: string): boolean {
+  const bare = (value: string) => value.replace(/\s+/g, '').toLowerCase()
+  return bare(formula) === bare(text)
+}

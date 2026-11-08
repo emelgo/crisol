@@ -480,6 +480,8 @@ export class TableRenderer {
       node.label.position.set(0, r + ring + 3)
       const extra = [token.state?.text, ...(this.big ? token.conditions : [])].filter(Boolean).join(' · ')
       node.extra.text = extra
+      // Del ancho de la ficha (parte en líneas): los de fichas vecinas no se juntan («Sin heridasSin heridas»)
+      node.extra.style.wordWrapWidth = Math.max(2 * r, 48)
       node.extra.visible = extra.length > 0
       node.extra.style.fill = token.state ? STATE_COLORS[token.state.tone] : 0xd9c8ff
       node.extra.position.set(0, node.label.y + node.label.height + 2)
@@ -515,7 +517,15 @@ export class TableRenderer {
     label.anchor.set(0.5, 0)
     const extra = new pixi.Text({
       text: '',
-      style: { fontFamily: 'Barlow, sans-serif', fontWeight: '700', fontSize: this.big ? 14 : 10, fill: 0xd9c8ff }
+      style: {
+        fontFamily: 'Barlow, sans-serif',
+        fontWeight: '700',
+        fontSize: this.big ? 14 : 10,
+        fill: 0xd9c8ff,
+        align: 'center',
+        wordWrap: true,
+        wordWrapWidth: 80
+      }
     })
     extra.anchor.set(0.5, 0)
     root.addChild(disc, mask, initial, plate, label, extra)

@@ -144,6 +144,7 @@ function SearchBox({ value, onChange, label }: { value: string; onChange: (value
     <label className={styles.search}>
       <Search aria-hidden="true" size={15} />
       <input
+        autoComplete="off"
         type="search"
         value={value}
         placeholder={label}

@@ -5,6 +5,7 @@ import { issueBootstrap } from '@crisol/server/bootstrap'
 import { expect, test } from '@playwright/test'
 import { e2eDatabaseUrl } from '../servidor.ts'
 import {
+  campaignLink,
   closeWindow,
   createCampaign,
   createWorld,
@@ -134,4 +135,42 @@ test('arranque, perfil, mundos y sus ajustes, campañas, avisos, historial, pape
   } finally {
     await conn.close()
   }
+})
+
+test('el móvil de la jugadora (su campaña, el menú de la llama, sus páginas y el compendio), en los dos temas @a11y', async ({
+  page,
+  browser
+}) => {
+  test.slow()
+  const link = await campaignLink(page)
+  // En su propio contexto (axe lo necesita) y con el tamaño de un móvil
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true })
+  const ana = await context.newPage()
+  await skipTours(ana, 'ana@crisol.test')
+  await ana.goto(link)
+  await fillNewAccount(ana, { name: 'Ana', email: 'ana@crisol.test', password: 'una-clave-larga' })
+  await ana.getByRole('button', { name: 'Crear la cuenta y entrar' }).click()
+  await expect(ana.getByRole('heading', { level: 1, name: 'La Marca', exact: true })).toBeVisible()
+  const check = async () => {
+    for (const colorScheme of ['light', 'dark'] as const) {
+      await ana.emulateMedia({ colorScheme })
+      const { violations } = await new AxeBuilder({ page: ana }).withTags(WCAG).analyze()
+      const serious = violations.filter((v) => v.impact === 'critical' || v.impact === 'serious')
+      expect(serious.map((v) => `${colorScheme} ${v.id}: ${v.help}`)).toEqual([])
+    }
+  }
+  await check()
+  // El menú de la llama: enlaces a las secciones de su campaña
+  await ana.getByRole('button', { name: 'Menú' }).click()
+  const menu = ana.getByRole('dialog', { name: 'Eana' })
+  await expect(menu.getByRole('link', { name: 'Compendio' })).toBeVisible()
+  await check()
+  await menu.getByRole('link', { name: 'Eana', exact: true }).click()
+  await expect(menu).toHaveCount(0)
+  await check()
+  await ana.getByRole('button', { name: 'Menú' }).click()
+  await ana.getByRole('dialog', { name: 'Eana' }).getByRole('link', { name: 'Compendio' }).click()
+  await expect(ana.getByRole('heading', { level: 1, name: 'Compendio' })).toBeVisible()
+  await check()
+  await context.close()
 })

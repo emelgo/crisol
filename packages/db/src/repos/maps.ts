@@ -192,7 +192,7 @@ export function deletePin(db: Database, context: OperationContext, pinId: string
 export function pagesInWorld(db: Database, worldId: string, ids: readonly string[]) {
   if (ids.length === 0) return Promise.resolve([])
   return db
-    .select({ id: pages.id })
+    .select({ id: pages.id, title: pages.title })
     .from(pages)
     .where(and(eq(pages.worldId, worldId), inArray(pages.id, [...ids]), isNull(pages.deletedAt)))
 }

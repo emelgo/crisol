@@ -46,6 +46,17 @@
   background: var(--color-raised);
 }
 
+/* Su tabla (FUE … CAR) cabe en el recuadro: columnas iguales y sin desbordar por la derecha */
+.statblock table {
+  inline-size: 100%;
+  table-layout: fixed;
+}
+
+.statblock :is(td, th) {
+  padding-inline: 0.25em;
+  overflow-wrap: anywhere;
+}
+
 .sidenote {
   margin-block: var(--space-3);
   padding: var(--space-2) var(--space-4) var(--space-3);

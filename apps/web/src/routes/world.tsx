@@ -9,11 +9,11 @@ import { Loading } from '../components/brand.tsx'
 import { useCardList } from '../components/card-transition.ts'
 import { failed, LoadError, SectionError } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
-import { Tour } from '../components/tour.tsx'
 import { LEAVE_WORLD, worldTransition } from '../components/world-transition.ts'
 import { usePageTabs } from '../wiki/tabs/page-tabs.tsx'
 import wiki from '../wiki/wiki.module.css'
 import { EntryView, pageKey, WikiLayout } from '../wiki/wiki.tsx'
+import { WorldTour } from '../wiki/world-tour.tsx'
 import styles from './world-card.module.css'
 import { CampaignCard, LookHeader, useCampaignKind, useWorldKind, WorldBanner } from './world-card.tsx'
 
@@ -64,42 +64,13 @@ export function WorldPage() {
     afterDelete: () => void navigate({ to: '/mundos', viewTransition: LEAVE_WORLD })
   }
   const header = <LookHeader {...headerProps} />
-  const tour = (
-    <Tour
-      id="mundo"
-      // Un paso por cada botón de la barra (y lo que se añada a ella, también aquí)
-      steps={[
-        ...(master
-          ? ([
-              { target: '[data-tour="barra-wiki"]', text: t('tour.world.wiki'), placement: 'right' },
-              { target: '[data-tour="buscador"]', text: t('tour.world.search'), placement: 'right' },
-              { target: '[data-tour="panel-bloques"]', text: t('tour.world.panel'), placement: 'left' },
-              { target: '[data-tour="quien-la-conoce"]', text: t('tour.world.whoKnows'), placement: 'bottom' },
-              { target: '[data-tour="barra-archivos-mundo"]', text: t('tour.world.files'), placement: 'right' },
-              { target: '[data-tour="barra-dados"]', text: t('tour.world.dice'), placement: 'right' },
-              { target: '[data-tour="barra-historial"]', text: t('tour.world.history'), placement: 'right' },
-              { target: '[data-tour="barra-papelera"]', text: t('tour.world.trash'), placement: 'right' },
-              { target: '[data-tour="engranaje"]', text: t('tour.world.settings') }
-            ] as const)
-          : []),
-        ...(master
-          ? []
-          : ([
-              { target: '[data-tour="barra-inicio"]', text: t('tour.world.home'), placement: 'right' },
-              { target: '[data-tour="barra-dados"]', text: t('tour.world.dice'), placement: 'right' }
-            ] as const)),
-        { target: '[data-tour="barra-llama"]', text: t('tour.world.back'), placement: 'right' },
-        { target: '[data-tour="menu-movil"]', text: t('tour.menu') }
-      ]}
-    />
-  )
+  const tour = <WorldTour master={master} />
 
   // Quien lo dirige: su página de portada, como en Everlore (la cabecera del mundo hace de portada)
   if (master) {
     return (
       <>
         <WorldHome worldId={worldId} banner={<WorldBanner world={world} />} />
-        {tour}
       </>
     )
   }

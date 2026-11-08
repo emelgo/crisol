@@ -135,7 +135,7 @@ function Note({ worldId, pageId }: { worldId: string; pageId: string }) {
         </PageLink>
       )}
       {content.data ? (
-        <ContentView blocks={(content.data.blocks ?? []) as JSONContent[]} worldId={worldId} />
+        <ContentView blocks={(content.data.blocks ?? []) as JSONContent[]} worldId={worldId} compact />
       ) : (
         <Loading />
       )}

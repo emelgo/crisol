@@ -12,7 +12,7 @@ import { useErrorText } from '../api/errors.ts'
 import { useAnnounce } from '../components/announcer.tsx'
 import { useDice } from './context.tsx'
 import styles from './dice.module.css'
-import { addDie, explain } from './formula.ts'
+import { addDie, echoes, explain } from './formula.ts'
 
 /** Los dados rápidos, con su silueta */
 const QUICK: readonly { sides: number; path: string }[] = [
@@ -120,7 +120,7 @@ export function Composer({ campaign, onRolled }: { campaign: Campaign; onRolled?
         </button>
       </div>
       <p id={`${id}-explained`} className={explained.ok ? styles.explained : styles.wrong}>
-        {explained.text}
+        {explained.ok && echoes(formula, explained.text) ? '' : explained.text}
       </p>
       {roll.error && <p className={styles.wrong}>{errorText(roll.error)}</p>}
       <div className={styles.pills} role="radiogroup" aria-label={t('dice.who')}>

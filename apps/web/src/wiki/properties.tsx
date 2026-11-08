@@ -40,10 +40,12 @@ function usePageTitles(worldId: string) {
 /** Las páginas del mundo en la papelera, por su id: un enlace a una de ellas sale tachado (sin llevar a ningún sitio) */
 function useTrashedTitles(worldId: string, wanted: boolean) {
   const api = useApi()
+  const readAs = useReadAs()
   const trash = useQuery({
     queryKey: ['trash', worldId],
     queryFn: () => api.call('listTrash', { worldId }),
-    enabled: wanted
+    // Un jugador no ve la papelera: lo que no conoce sale como lo que no está
+    enabled: wanted && !readAs
   })
   return new Map((trash.data?.items ?? []).filter((item) => item.kind === 'page').map((item) => [item.id, item.name]))
 }
@@ -259,11 +261,13 @@ export function PageProperties({
 }) {
   const { t } = useTranslation()
   if (page.locked) {
-    if (page.properties.length === 0) return null
+    // Solo se leen: lo vacío no se enseña (un título sin valor parece roto)
+    const filled = page.properties.filter((property) => !emptyValue(property))
+    if (filled.length === 0) return null
     return (
       <section aria-label={t('properties.title')} className={styles.properties} data-properties="">
         <dl className={styles.list}>
-          {page.properties.map((property) => (
+          {filled.map((property) => (
             <div key={property.name} className={styles.row}>
               <dt>
                 {property.name}
@@ -279,6 +283,15 @@ export function PageProperties({
     )
   }
   return <InlineProperties page={page} adders={adders} adderRef={adderRef} />
+}
+
+/** Si una propiedad no dice nada (sin texto, sin páginas, sin elementos) */
+function emptyValue(property: PageProperty): boolean {
+  const value: unknown = property.value
+  if (value === null || value === undefined) return true
+  if (typeof value === 'string') return value.trim() === ''
+  if (Array.isArray(value)) return value.length === 0
+  return false
 }
 
 const sameProperties = (a: readonly PageProperty[], b: readonly PageProperty[]) =>
@@ -584,6 +597,7 @@ function ValueField({
   const templates = useTemplates().data?.templates ?? []
   const [everyPage, setEveryPage] = useState(false)
   const [choice, setChoice] = useState('')
+  const [typing, setTyping] = useState(false)
   const valueId = `${id}-valor`
   const label = t('properties.value', { n })
   switch (row.type) {
@@ -637,12 +651,15 @@ function ValueField({
           })}
           <input
             id={valueId}
-            className={styles.valueInput}
+            className={`${styles.valueInput} ${styles.pageInput}`}
             aria-label={label}
             list={`${id}-paginas`}
             value={choice}
             autoComplete="off"
-            placeholder={t('properties.pagesHint')}
+            // Sin nada, «Vacío» como los demás campos; al escribir en él, qué hace
+            placeholder={t(row.pages.length === 0 && !typing ? 'properties.empty' : 'properties.pagesHint')}
+            onFocus={() => setTyping(true)}
+            onBlur={() => setTyping(false)}
             onChange={(event) => {
               setChoice(event.target.value)
               pick(event.target.value)
@@ -660,7 +677,11 @@ function ValueField({
             ))}
           </datalist>
           {preferred && (
-            <button type="button" className={fieldStyles.allPages} onClick={() => setEveryPage(!everyPage)}>
+            <button
+              type="button"
+              className={`${fieldStyles.allPages} ${styles.allPagesHere}`}
+              onClick={() => setEveryPage(!everyPage)}
+            >
               {t(everyPage ? 'fields.onlyTargets' : 'fields.allPages')}
             </button>
           )}

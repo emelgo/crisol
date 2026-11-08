@@ -10,6 +10,7 @@ import { Dices, Pencil } from 'lucide-react'
 import { type KeyboardEvent, useCallback, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDismiss } from '../components/dismiss.ts'
+import { useHasDice } from '../dice/context.tsx'
 import { explain } from '../dice/formula.ts'
 import { useRollHere } from '../dice/roll-here.ts'
 import styles from './dice-roll.module.css'
@@ -141,5 +142,40 @@ function DiceRollView({ node, editor, getPos, selected, updateAttributes }: Node
         )}
       </span>
     </NodeViewWrapper>
+  )
+}
+
+/** La tirada en lo que se lee sin editor (la página del jugador, la vista previa, la impresión): la píldora, que tira */
+export function DiceChip({ formula, label }: { formula: string; label: string | null }) {
+  // Al imprimir no hay dónde tirar: la fórmula, como texto
+  if (!useHasDice()) return <span translate="no">{formula}</span>
+  return <RollableChip formula={formula} label={label} />
+}
+
+function RollableChip({ formula, label }: { formula: string; label: string | null }) {
+  const { t } = useTranslation()
+  const rollHere = useRollHere()
+  const written = label ? `${formula} # ${label}` : formula
+  const explained = explain(written)
+  return (
+    <button
+      type="button"
+      className={explained.ok ? styles.chip : styles.wrong}
+      aria-disabled={!explained.ok}
+      aria-label={
+        explained.ok
+          ? label
+            ? t('diceRoll.rollNamed', { formula, label })
+            : t('diceRoll.roll', { formula })
+          : `${formula}: ${t('diceRoll.wrong', { why: explained.text })}`
+      }
+      title={explained.ok ? (label ?? describeFormula(formula)) : explained.text}
+      onClick={() => {
+        if (explained.ok) void rollHere(written)
+      }}
+    >
+      <Dices size={14} aria-hidden="true" />
+      <span translate="no">{formula}</span>
+    </button>
   )
 }

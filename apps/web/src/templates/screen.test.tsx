@@ -63,11 +63,13 @@ describe('la pantalla «Plantillas»', () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'Frente' })).toBeDefined()
   })
 
-  it('«Copiar» una de serie: la nueva viene de ella, con sus campos', async () => {
+  it('«Copiar» una de serie, desde su engranaje: la nueva viene de ella, con sus campos', async () => {
     const { api } = renderTemplates()
-    const pnj = (await screen.findAllByRole('listitem')).find((li) => within(li).queryByRole('link', { name: 'PNJ' }))
-    if (!pnj) throw new Error('sin PNJ')
-    await userEvent.click(within(pnj).getByRole('button', { name: 'Copiar' }))
+    const builtIn = within(await screen.findByRole('list', { name: 'De serie' }))
+    // Sin «Copiar» suelto en la tarjeta: va en la ventana de su engranaje
+    expect(builtIn.queryByRole('button', { name: 'Copiar' })).toBeNull()
+    await userEvent.click(builtIn.getByRole('button', { name: 'Ajustes de PNJ' }))
+    await userEvent.click(within(screen.getByRole('dialog', { name: 'PNJ' })).getByRole('button', { name: 'Copiar' }))
     const dialog = within(screen.getByRole('dialog', { name: 'Plantilla nueva' }))
     expect(dialog.getByRole('radio', { name: 'Copiando otra' })).toHaveProperty('checked', true)
     expect(dialog.getByLabelText('Nombre')).toHaveProperty('value', 'PNJ (copia)')

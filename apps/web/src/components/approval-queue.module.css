@@ -1,34 +1,38 @@
-/* Lo que la IA espera que apruebes: una pila de tarjetas abajo a la derecha, encima de todo lo demás */
+/*
+ * Lo que la IA espera que apruebes: tarjetas sueltas que flotan abajo a la derecha, encima de todo lo demás y por
+ * encima del d20 y del «?» (docs/diseno.md: «tarjetas flotantes, estés donde estés»)
+ */
 .stack {
   position: fixed;
-  /* Encima del «?» de los recorridos */
-  inset-block-end: calc(var(--space-4) + 2.25rem + var(--space-2));
+  inset-block-end: calc(var(--space-4) + 3.25rem + var(--space-3));
   inset-inline-end: var(--space-4);
   z-index: 35;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  inline-size: min(24rem, calc(100vw - 2rem));
-  max-block-size: calc(100dvh - 2rem);
+  inline-size: min(22rem, calc(100vw - 2rem));
+  max-block-size: calc(100dvh - 8rem);
   overflow-y: auto;
 }
 
-.title {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  align-self: flex-end;
-  margin: 0;
-  padding: var(--space-1) var(--space-3);
-  border: 0;
-  border-radius: 1rem;
-  background: var(--color-ai);
-  color: var(--color-bg);
-  font-family: var(--font-body);
-  font-size: 0.8125rem;
-  font-weight: 700;
-  letter-spacing: 0;
-  text-transform: none;
+/* En la Mesa, fuera de su panel de la derecha (como el d20) */
+:global(body):has(:global([data-tour="mesa-zoom"])) .stack {
+  inset-inline-end: calc(18.75rem + var(--space-4));
+}
+
+/* Con la ficha de dados abierta, a su izquierda: no tapa la tirada */
+:global(body):has(:global([data-tour="ficha-dados"])) .stack {
+  inset-inline-end: calc(var(--space-4) + 2.25rem + var(--space-3) + 21rem + var(--space-3));
+}
+
+:global(body):has(:global([data-tour="mesa-zoom"])):has(:global([data-tour="ficha-dados"])) .stack {
+  inset-inline-end: calc(18.75rem + var(--space-4) + 2.25rem + var(--space-3) + 21rem + var(--space-3));
+}
+
+.hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .list {
@@ -40,34 +44,100 @@
   list-style: none;
 }
 
+/* Una tarjeta: su raya en el color de la IA, lo que pide y las dos decisiones */
 .card {
+  display: grid;
+  gap: var(--space-2);
   padding: var(--space-3) var(--space-4);
-  border: 1px solid var(--color-ai);
+  border: 1px solid var(--color-frame);
+  border-inline-start: 3px solid var(--color-ai);
   border-radius: 8px;
   background: var(--color-surface);
   box-shadow: 0 0.75rem 2rem rgb(0 0 0 / 0.35);
 }
 
+.kicker {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin: 0;
+  color: var(--color-ai);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 .what {
-  display: block;
-  margin-block-end: var(--space-3);
   font-weight: 600;
+  line-height: 1.35;
 }
 
 .actions {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2);
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* Aprobar, el botón de la marca, compacto; rechazar, en texto al lado */
+.approve,
+.reject {
+  min-block-size: 2.25rem;
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.approve {
+  padding: 0 var(--space-4);
+  border: 0;
+  border-radius: 6px;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.approve:hover {
+  filter: brightness(1.1);
+}
+
+.reject {
+  padding: 0 var(--space-2);
+  border: 0;
+  background: none;
+  color: var(--color-muted);
+}
+
+.reject:hover {
+  color: var(--color-text);
+  text-decoration: underline;
+}
+
+.approve:focus-visible,
+.reject:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.approve[aria-disabled="true"],
+.reject[aria-disabled="true"] {
+  opacity: 0.7;
+  cursor: progress;
 }
 
 .detail {
-  margin-block-start: var(--space-2);
   color: var(--color-muted);
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
 }
 
 .detail summary {
+  inline-size: fit-content;
   cursor: pointer;
+}
+
+.detail p {
+  margin: var(--space-1) 0 0;
 }
 
 .detail pre {
@@ -79,14 +149,23 @@
 /* Lo decidido: un momento, en el mismo sitio */
 .outcome {
   position: fixed;
-  inset-block-end: var(--space-4);
+  inset-block-end: calc(var(--space-4) + 3.25rem + var(--space-3));
   inset-inline-end: var(--space-4);
   z-index: 35;
-  max-inline-size: min(24rem, calc(100vw - 2rem));
+  max-inline-size: min(22rem, calc(100vw - 2rem));
   margin: 0;
   padding: var(--space-3) var(--space-4);
   border: 1px solid var(--color-frame);
+  border-inline-start: 3px solid var(--color-ai);
   border-radius: 8px;
   background: var(--color-surface);
   box-shadow: 0 0.75rem 2rem rgb(0 0 0 / 0.35);
+}
+
+/* En el móvil, encima de la llama, los dados y el «?» */
+@media (max-width: 48rem) {
+  .stack,
+  .outcome {
+    inset-block-end: calc(3.5rem + 3.25rem + 2 * var(--space-3));
+  }
 }

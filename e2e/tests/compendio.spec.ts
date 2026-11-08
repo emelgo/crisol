@@ -29,11 +29,11 @@ test('la campaña en su vista: la jugadora entra, abre el compendio, busca «fir
   })
   expect(chosen.status()).toBe(200)
 
-  // El máster, dentro de la campaña: su barra (su inicio, el compendio y los dados)
+  // El máster, dentro de la campaña: su barra (su inicio y el compendio); los dados, en el d20 flotante
   const sections = page.getByRole('navigation', { name: 'Secciones' })
   await expect(sections.getByRole('link', { name: 'La Marca' })).toBeVisible()
   await expect(sections.getByRole('link', { name: 'Compendio' })).toBeVisible()
-  await expect(sections.getByRole('button', { name: 'Dados' })).toBeVisible()
+  await expect(page.locator('[data-tour="dados"]')).toBeVisible()
 
   const player = await newPlayer(browser, link)
   const nav = player.getByRole('navigation', { name: 'Secciones' })
@@ -49,7 +49,7 @@ test('la campaña en su vista: la jugadora entra, abre el compendio, busca «fir
   const article = player.getByRole('article', { name: 'Bola de fuego' })
   await expect(article).toContainText('8d6')
   // Su mecánica, en palabras
-  await expect(article.getByRole('region', { name: 'En juego' })).toContainText('8d6 de fuego')
+  await expect(article.getByRole('region', { name: 'En juego' })).toContainText('8d6 (fuego)')
   const about = player.getByRole('complementary', { name: 'Sobre este documento' })
   await expect(about).toContainText('Fireball')
   await player.screenshot({ path: test.info().outputPath('compendio.png'), fullPage: false })

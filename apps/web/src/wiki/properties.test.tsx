@@ -2,11 +2,14 @@ import type { PageProperty, World } from '@crisol/contracts'
 import { createMemoryHistory } from '@tanstack/react-router'
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { fakeAccountClient } from '../account/fake.ts'
 import { fakeApi } from '../api/fake.ts'
 import { App } from '../app.tsx'
 import { createAppRouter } from '../router.tsx'
+
+// El tutorial del mundo, ya visto (si no, sale y se lleva el foco)
+beforeEach(() => localStorage.setItem('crisol.recorridos.enrique@crisol.test', JSON.stringify({ seen: ['mundo'] })))
 
 const ORG = { id: crypto.randomUUID(), name: 'Fateforge', role: 'owner' as const }
 const WORLD: World = {
@@ -132,7 +135,7 @@ describe('las propiedades de una página', () => {
     }
     const { api } = renderPort([estado])
     const properties = within(await screen.findByRole('region', { name: 'Propiedades' }))
-    const button = properties.getByRole('button', { name: 'Valor de la propiedad 1' })
+    const button = properties.getByRole('button', { name: /^Valor de la propiedad 1:/ })
     expect(button.textContent).toContain('Vive')
     await userEvent.click(button)
     const list = properties.getByRole('listbox', { name: 'Valor de la propiedad 1' })
@@ -157,7 +160,7 @@ describe('las propiedades de una página', () => {
   it('un valor que no está entre las opciones se ve marcado y no se pierde', async () => {
     renderPort([{ name: 'Estado', type: 'choice', value: 'Prisionera', options: ['Vive', 'Ha muerto'] }])
     const properties = within(await screen.findByRole('region', { name: 'Propiedades' }))
-    const button = properties.getByRole('button', { name: 'Valor de la propiedad 1' })
+    const button = properties.getByRole('button', { name: /^Valor de la propiedad 1:/ })
     expect(button.textContent).toContain('Prisionera')
     expect(button.getAttribute('title')).toBe('No está entre las opciones')
   })
@@ -219,7 +222,7 @@ describe('las propiedades de una página', () => {
     await waitFor(async () =>
       expect(await saved(api)).toEqual([{ name: 'Estado', type: 'choice', value: 'Vive', options: ['Vive'] }])
     )
-    await userEvent.click(properties.getByRole('button', { name: 'Valor de la propiedad 1' }))
+    await userEvent.click(properties.getByRole('button', { name: /^Valor de la propiedad 1:/ }))
     await userEvent.type(properties.getByLabelText('Opciones de Estado'), 'Ha muerto{Enter}')
     await waitFor(async () =>
       expect(await saved(api)).toEqual([
@@ -278,11 +281,13 @@ describe('las etiquetas de la cuenta', () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'Etiquetas' })).toBeDefined()
     const tags = within(screen.getByRole('list', { name: 'Etiquetas' }))
     await waitFor(() =>
-      expect(tags.getAllByRole('listitem').map((item) => item.textContent)).toEqual([
-        'costa1 página',
-        'lugar2 páginas',
-        'ciudad2 páginas'
-      ])
+      // La última fila es «Nueva etiqueta»
+      expect(
+        tags
+          .getAllByRole('listitem')
+          .map((item) => item.textContent)
+          .slice(0, -1)
+      ).toEqual(['costa1 página', 'lugar2 páginas', 'ciudad2 páginas'])
     )
   })
 })

@@ -8,6 +8,7 @@ import { createContext, type ReactNode, useContext } from 'react'
 import { useTranslation } from 'react-i18next'
 import callout from './callout.module.css'
 import styles from './content.module.css'
+import { DiceChip } from './dice-roll.tsx'
 import editor from './editor.module.css'
 import { FileEmbedBlock } from './file-embed.tsx'
 import { PageLink, useReadAs } from './read-as.tsx'
@@ -48,10 +49,25 @@ function Inline({ nodes, worldId }: { nodes: JSONContent[]; worldId: string }) {
         const key = String(i)
         if (node.type === 'text') return <span key={key}>{withMarks(node.text ?? '', node.marks ?? [], key)}</span>
         if (node.type === 'hardBreak') return <br key={key} />
+        if (node.type === 'diceRoll')
+          return (
+            <DiceChip
+              key={key}
+              formula={String(node.attrs?.formula ?? '')}
+              label={(node.attrs?.label as string | null) || null}
+            />
+          )
+        // El enlace a una entrada del compendio: su nombre (la tarjeta, en el editor)
+        if (node.type === 'contentLink')
+          return (
+            <span key={key} className={styles.contentLink}>
+              {String(node.attrs?.label || node.attrs?.name || '')}
+            </span>
+          )
         if (node.type === 'pageLink') {
           const text = String(node.attrs?.label || node.attrs?.title || '')
           return typeof node.attrs?.pageId === 'string' ? (
-            <PageLink key={key} worldId={worldId} pageId={node.attrs.pageId}>
+            <PageLink key={key} worldId={worldId} pageId={node.attrs.pageId} className={styles.pageLink}>
               {text}
             </PageLink>
           ) : (
@@ -74,7 +90,12 @@ export function Block({ node, worldId }: { node: JSONContent; worldId: string })
     case 'paragraph':
       return <p>{inline}</p>
     case 'heading':
-      return <p className={styles.heading}>{inline}</p>
+      // Cada nivel con su aspecto, como en el editor (sin ser encabezado: no entra en el índice de quien lo enseña)
+      return (
+        <p className={styles.heading} data-level={Math.min(Number(node.attrs?.level ?? 1), 3)}>
+          {inline}
+        </p>
+      )
     case 'bulletList':
       return <ul>{children}</ul>
     case 'orderedList':
@@ -208,9 +229,18 @@ export function EmbeddedFrame({ node, worldId }: { node: JSONContent; worldId: s
 }
 
 /** Unos bloques, en solo lectura */
-export function ContentView({ blocks, worldId }: { blocks: JSONContent[]; worldId: string }) {
+export function ContentView({
+  blocks,
+  worldId,
+  compact = false
+}: {
+  blocks: JSONContent[]
+  worldId: string
+  /** En lo pequeño (la vista previa de un enlace, un incrustado, la pantalla del máster): los títulos, contenidos */
+  compact?: boolean
+}) {
   return (
-    <div className={`${editor.prose} ${styles.content}`}>
+    <div className={`${editor.prose} ${styles.content}${compact ? ` ${styles.compact}` : ''}`}>
       {blocks.map((block, i) => (
         <Block key={String(i)} node={block} worldId={worldId} />
       ))}

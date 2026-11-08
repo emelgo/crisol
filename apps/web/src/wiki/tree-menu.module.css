@@ -44,6 +44,11 @@
   outline: none;
 }
 
+/* Con el foco, también la raya de acento (como el menú del asa) */
+.item:focus-visible {
+  box-shadow: inset 3px 0 0 var(--color-accent);
+}
+
 .item > svg {
   flex: none;
   color: var(--color-muted);

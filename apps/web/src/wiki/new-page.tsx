@@ -127,7 +127,7 @@ export function NewPageDialog({
           onChange={(event) => setTitle(event.currentTarget.value)}
         />
         <FormError message={create.error ? errorText(create.error) : null} />
-        <BusyButton type="submit" className={form.button} busy={create.isPending}>
+        <BusyButton type="submit" className={`${form.button} ${styles.submit}`} busy={create.isPending}>
           {t('newPage.create')}
         </BusyButton>
       </form>

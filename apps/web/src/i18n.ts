@@ -66,6 +66,7 @@ export const es = {
     formula: 'Tirada',
     roll: 'Tirar',
     who: 'Quién la ve',
+    whoRolls: 'Quién ve las tiradas',
     visibility: { all: 'Todos', self: 'Para mí', master: 'Al máster', hidden: 'Oculta' },
     rolled: '{{label}}: {{total}}',
     heard: '{{who}} · {{label}}: {{total}}',
@@ -298,6 +299,8 @@ export const es = {
     sections: 'Partes de la hoja',
     equipped: 'Equipado',
     remove: 'Quitar {{what}}',
+    removeShort: '¿Quitar?',
+    removeSure: '¿Quitar {{what}}? Pulsa otra vez',
     nothing: 'Nada',
     actions: 'Acciones',
     uses: 'Usos',
@@ -402,6 +405,7 @@ export const es = {
     and: ' y ',
     search: 'Buscar en el compendio',
     library: 'Biblioteca del compendio',
+    missing: 'No está en el compendio de esta campaña.',
     pick: 'Abre algo del compendio para leerlo.',
     noEdition: 'Sin edición',
     inPlay: 'En juego',
@@ -421,7 +425,7 @@ export const es = {
     rowNumber: 'la fila {{n}}',
     tableExhausted: 'Ya ha salido todo',
     rows: 'Filas',
-    searchHint: 'Un conjuro, una criatura…',
+    searchHint: 'Buscar…',
     otherVersion: 'Otra versión',
     clear: 'Borrar la búsqueda',
     types: 'Tipos',
@@ -501,7 +505,7 @@ export const es = {
     otherMax: 'Otro máximo',
     ownMax: 'Volver al suyo',
     remove: 'Quitar de juego',
-    condition: { bloodied: 'Malherida', down: 'Fuera de combate' },
+    condition: { bloodied: 'Con heridas graves', down: 'Fuera de combate' },
     // Lo que ven los jugadores (docs/specs/compendio-jugadores.md)
     players: 'Los jugadores',
     visible: 'A la vista',
@@ -513,9 +517,10 @@ export const es = {
     inSight_other: '{{count}} a la vista',
     nothingInSight: 'No hay nada a la vista.',
     state: {
-      unhurt: 'Ilesa',
-      hurt: 'Herida',
-      bloodied: 'Malherida',
+      // Sin género: valen para cualquier nombre que ponga el máster (docs/diseno.md)
+      unhurt: 'Sin heridas',
+      hurt: 'Con heridas',
+      bloodied: 'Con heridas graves',
       dying: 'A punto de caer',
       down: 'Fuera de combate'
     },
@@ -612,7 +617,6 @@ export const es = {
     toContainer: 'A {{name}}',
     toParty: 'Al grupo',
     you: 'tú',
-    handwritten: 'Escrito a mano: se queda en el grupo',
     remove: 'Quitar «{{name}}»',
     save: 'Guardar',
     cancel: 'Cancelar',
@@ -666,6 +670,7 @@ export const es = {
     copied: 'Copiado',
     copyManually: 'No se ha podido copiar: está seleccionado, cópialo a mano.',
     issued: 'Enlace del {{date}}.',
+    joins_zero: 'Nadie ha entrado aún con este enlace',
     joins_one: 'Ha entrado {{count}} con este enlace',
     joins_other: 'Han entrado {{count}} con este enlace',
     none: 'Aún no hay enlace.',
@@ -854,7 +859,7 @@ export const es = {
     columnsTwo: 'Dos columnas',
     columnBreak: 'Salto de columna',
     sheetHint: 'En la vista de hoja',
-    statblock: 'Statblock',
+    statblock: 'Bloque de estadísticas',
     statblockHint: 'Marco que no se parte',
     sidenote: 'Nota lateral',
     sidenoteHint: 'Al margen en la hoja',
@@ -867,7 +872,6 @@ export const es = {
     note: 'Nota oculta',
     noteHint: 'Solo al editar',
     none: 'Ningún bloque se llama así.',
-    help: '↑↓ para moverte · Intro para elegir · Esc para cerrar',
     inserted: 'Bloque insertado: {{block}}.'
   },
   summaries: {
@@ -965,7 +969,7 @@ export const es = {
     toSheet: 'Ver la hoja',
     pageBreak: 'Salto de página',
     columnBreak: 'Salto de columna',
-    statblock: 'Statblock',
+    statblock: 'Bloque de estadísticas',
     sidenote: 'Nota lateral, a la {{side}}',
     sides: { left: 'izquierda', right: 'derecha' },
     toLeft: 'A la izquierda',
@@ -992,7 +996,6 @@ export const es = {
     none: 'Ninguna página se llama así.',
     noRecent: 'Aún no hay páginas recientes.',
     noCommand: 'Ninguna orden se llama así.',
-    help: '↑ ↓ para moverse · Intro para abrir · Esc para cerrar',
     commands: {
       newPage: 'Página nueva',
       search: 'Buscar en las páginas',
@@ -1057,6 +1060,7 @@ export const es = {
     title: 'Nuevo: {{title}}',
     read: 'Leerlo',
     close: 'Cerrar el aviso',
+    closeOne: 'Cerrar el aviso de «{{title}}»',
     kinds: {
       page: 'Una página',
       secret: 'Un secreto',
@@ -1117,8 +1121,8 @@ export const es = {
     worldChoice: 'Lo que sabe el mundo de esta página',
     campaignChoice: 'Lo que sabe «{{name}}» de esta página',
     characters: 'Quién de «{{name}}» la conoce',
-    asParent: 'Como su madre',
-    asWorld: 'Como diga el mundo o su madre',
+    asParent: 'Como la página de arriba',
+    asWorld: 'Como diga el mundo o la página de arriba',
     everyone: 'Lo sabe todo el mundo',
     nobody: 'No lo sabe nadie',
     campaignAll: 'Lo sabe toda la campaña',
@@ -1129,7 +1133,7 @@ export const es = {
       none: 'No la ve',
       some: 'La ven: {{names}}'
     },
-    here: 'Marcada aquí',
+    here: 'Decidido en esta página',
     by: 'Por «{{title}}»',
     byWorld: 'Lo sabe el mundo',
     fromScratch: 'Empezó de cero',
@@ -1156,7 +1160,7 @@ export const es = {
   },
   panelBlocks: {
     empty: 'Panel vacío',
-    emptyHint: 'Añade datos de toda la página: medidores, estrellas, notas…',
+    emptyHint: 'Lo de esta página que quieras tener a la vista.',
     add: 'Añadir bloque',
     kinds: {
       text: 'Texto',
@@ -1190,6 +1194,7 @@ export const es = {
     token: 'Ficha {{count}} de {{max}}',
     chooseImage: 'Imagen',
     noImage: 'Sin imagen',
+    addImage: 'Añadir imagen',
     upload: 'Subir una imagen',
     caption: 'Pie',
     noSubpages: 'Aún no tiene subpáginas.',
@@ -1304,6 +1309,7 @@ export const es = {
     copyOf: 'Copia de {{name}}',
     copyName: '{{name}} (copia)',
     copy: 'Copiar',
+    copyHint: 'Una tuya, igual, para cambiarla',
     locked: 'No se puede cambiar',
     name: 'Nombre',
     icon: 'Icono',
@@ -1346,7 +1352,7 @@ export const es = {
       license: {
         'cc-by': 'con licencia CC BY',
         mit: 'con licencia MIT',
-        'foundry-only': 'solo para usar en Foundry (para tu uso)',
+        'foundry-only': 'solo para usar en la mesa virtual de la que viene (para tu uso)',
         'cc-by-nc-sa': 'CC BY-NC-SA (sin uso comercial; para tu uso)',
         unknown: 'sin licencia conocida'
       },
@@ -1362,7 +1368,7 @@ export const es = {
     preview: 'Lo que trae',
     new: 'Sistema nuevo',
     withAi:
-      'Los sistemas se hacen con la IA: pídele el tuyo y saldrá aquí. También puedes subir su archivo o traerlo de Foundry.',
+      'Los sistemas se hacen con la IA: pídele el tuyo y saldrá aquí. También puedes subir su archivo o el .zip de otra mesa virtual.',
     blank: 'Bajar uno vacío',
     blankHint: 'Para empezar uno a mano',
     copyOf: 'Copia de {{name}}',
@@ -1371,15 +1377,15 @@ export const es = {
     name: 'Nombre',
     file: 'Archivo',
     pickFile: 'Elegir el archivo',
-    dropFile: 'Suelta aquí el .json de un sistema o el .zip de uno de Foundry, o',
-    notFoundry: 'Este zip no es un sistema ni un módulo de Foundry',
+    dropFile: 'Suelta aquí el .json de un sistema o el .zip de uno de otra mesa virtual, o',
+    notFoundry: 'Este zip no es un sistema ni un módulo que se pueda traer',
     foundryOf: '{{title}} {{version}}',
-    foundrySystem: 'Sistema de Foundry',
-    foundryModule: 'Módulo de Foundry',
+    foundrySystem: 'Sistema',
+    foundryModule: 'Módulo',
     foundryPacks: 'Compendios que se traen',
     foundryNone: 'No trae compendios que se puedan traer',
     foundryLanguage: 'Idioma de sus textos',
-    foundryImport: 'Traer de Foundry',
+    foundryImport: 'Traer el sistema',
     // Las escenas y aventuras de un zip, a un mundo (docs/specs/escenas-foundry.md)
     scenes: {
       title: 'Escenas',
@@ -1454,13 +1460,13 @@ export const es = {
     none: 'Ninguna',
     noLicense: 'Sin licencia de fuera',
     content: 'Contenido',
-    loading: 'Cargando el sistema'
+    loading: 'Cargando el sistema…'
   },
   // El sistema de una campaña, en su ventana
   campaignSystem: {
     system: 'Sistema',
     none: 'Sin sistema',
-    noneHint: 'Los dados van como siempre: sin reglas de ningún juego.',
+    noneHint: 'Sin reglas de ningún juego.',
     sources: 'Fuentes',
     language: 'Idioma del contenido',
     languages: { es: 'Español', en: 'English' },
@@ -1695,7 +1701,7 @@ export const es = {
     stamp: 'Sellos',
     pin: 'Pines',
     image: 'Imágenes',
-    widgets: 'Widgets',
+    widgets: 'Contadores',
     gm: 'Pantalla del máster',
     snapshots: 'Instantáneas',
     fog: 'Niebla',
@@ -1872,8 +1878,8 @@ export const es = {
     noImages: 'El mundo aún no tiene imágenes.',
     selectedImage: 'Imagen elegida',
     above: 'Encima de las fichas',
-    widgets: 'Widgets',
-    noWidgets: 'Ningún widget.',
+    widgets: 'Contadores',
+    noWidgets: 'Ningún contador.',
     kinds: { counter: 'Contador', clock: 'Reloj', timer: 'Temporizador' },
     less: 'Menos: {{name}}',
     more: 'Más: {{name}}',
@@ -1911,7 +1917,7 @@ export const es = {
     noCreatures: 'Ninguna criatura en la escena.',
     note: 'Nota de la escena',
     noNote: 'Sin nota',
-    statblocks: 'Statblocks de las criaturas de la escena'
+    statblocks: 'Estadísticas de las criaturas de la escena'
   },
   // Las fichas de la mesa (docs/specs/fichas.md)
   tokens: {
@@ -2014,7 +2020,8 @@ export const es = {
     label: 'Lo que ve el grupo',
     fullscreen: 'Pantalla completa',
     tokens: 'Lo que hay en la mesa',
-    exitFullscreen: 'Salir de la pantalla completa'
+    exitFullscreen: 'Salir de la pantalla completa',
+    forbidden: 'La tele es del máster de la campaña.'
   },
   pdf: {
     show: 'Ver aquí',
@@ -2218,7 +2225,7 @@ export const es = {
     deleteFolderWarning:
       'Se borra con lo que tiene dentro: sus archivos van a la papelera. Se puede deshacer desde el historial.',
     dropHere: 'Suéltalos para subirlos',
-    progress: 'Subiendo {{name}}',
+    progress: 'Subiendo {{name}}…',
     cancelUpload: 'Cancelar la subida de {{name}}',
     dismiss: 'Quitar {{name}}',
     uploadedAll_one: 'Subido {{count}} archivo',
@@ -2403,10 +2410,10 @@ export const es = {
       createPageTab: 'añadió el mapa «{{name}}» a «{{title}}»',
       createTableTab: 'añadió la tabla «{{name}}» a «{{title}}»',
       createSceneTab: 'añadió la escena «{{name}}» a «{{title}}»',
-      sceneGrid: 'cambió la rejilla de la escena «{{name}}» de «{{title}}»',
-      sceneView: 'cambió la vista inicial de la escena «{{name}}» de «{{title}}»',
-      setSceneImage: 'puso el mapa de la escena «{{name}}» de «{{title}}»',
-      drawScene: 'dibujó el mapa de la escena «{{name}}» de «{{title}}»',
+      sceneGrid: 'cambió la rejilla de la escena «{{name}}»{{of}}',
+      sceneView: 'cambió la vista inicial de la escena «{{name}}»{{of}}',
+      setSceneImage: 'puso el mapa de la escena «{{name}}»{{of}}',
+      drawScene: 'dibujó el mapa de la escena «{{name}}»{{of}}',
       openScene: 'abrió la escena «{{name}}» en la mesa de «{{campaign}}»',
       openSomeScene: 'abrió una escena en la mesa de «{{campaign}}»',
       presentScene: 'enseñó la escena «{{name}}» en la pantalla de «{{campaign}}»',
@@ -2443,9 +2450,9 @@ export const es = {
       setTileFit: 'cambió los bordes de la tele de «{{campaign}}»',
       changeMarks: 'cambió lo dejado en el mapa de «{{name}}» en la mesa de «{{campaign}}»',
       placeTemplate: 'dejó una plantilla en «{{name}}» en la mesa de «{{campaign}}»',
-      createWidget: 'creó el widget «{{label}}» en la mesa de «{{campaign}}»',
-      updateWidget: 'cambió el widget «{{label}}» en la mesa de «{{campaign}}»',
-      deleteWidget: 'quitó el widget «{{label}}» de la mesa de «{{campaign}}»',
+      createWidget: 'creó el contador «{{label}}» en la mesa de «{{campaign}}»',
+      updateWidget: 'cambió el contador «{{label}}» en la mesa de «{{campaign}}»',
+      deleteWidget: 'quitó el contador «{{label}}» de la mesa de «{{campaign}}»',
       saveSnapshot: 'guardó la instantánea «{{name}}» de «{{scene}}» en la mesa de «{{campaign}}»',
       restoreSnapshot: 'volvió a la instantánea «{{name}}» de «{{scene}}» en la mesa de «{{campaign}}»',
       deleteSnapshot: 'quitó la instantánea «{{name}}» de la mesa de «{{campaign}}»',
@@ -2464,7 +2471,30 @@ export const es = {
       colorTag: 'cambió el color de la etiqueta «{{name}}»',
       deleteTag: 'borró la etiqueta «{{name}}»',
       setFileTags: 'cambió las etiquetas de «{{name}}»',
-      unknown: 'hizo un cambio ({{action}})'
+      startCombat: 'empezó un combate en la mesa de «{{campaign}}»',
+      endCombat: 'acabó el combate en la mesa de «{{campaign}}»',
+      updateCombat: 'cambió el combate de «{{campaign}}»',
+      addCombatants: 'añadió {{count}} fichas al combate de «{{campaign}}»',
+      removeCombatants: 'quitó a {{names}} del combate de «{{campaign}}»',
+      rollInitiative: 'tiró la iniciativa en el combate de «{{campaign}}»',
+      setInitiative: 'cambió la iniciativa en el combate de «{{campaign}}»',
+      orderCombatants: 'cambió el orden del combate de «{{campaign}}»',
+      groupCombatants: 'agrupó turnos en el combate de «{{campaign}}»',
+      nextTurn: 'pasó el turno en el combate de «{{campaign}}» (ronda {{round}})',
+      previousTurn: 'volvió al turno anterior en el combate de «{{campaign}}»',
+      putInPlay: 'puso en juego «{{name}}» en «{{campaign}}»',
+      playCreature: 'cambió «{{name}}» en juego en «{{campaign}}»',
+      removeFromPlay: 'quitó de juego {{count}} criaturas en «{{campaign}}»',
+      setCreatureHidden: 'cambió quién ve «{{name}}» en «{{campaign}}»',
+      spendRecharge: 'gastó «{{action}}» de «{{name}}» en «{{campaign}}»',
+      createTemplate: 'creó la plantilla «{{name}}»',
+      updateTemplate: 'cambió la plantilla «{{name}}»',
+      deleteTemplate: 'borró la plantilla «{{name}}»',
+      deleteFiles: 'borró {{count}} archivos',
+      copyContent: 'copió «{{name}}» al mundo',
+      pullContentOrigin: 'trajo del sistema lo nuevo de «{{name}}»',
+      deleteWorldContent: 'borró {{count}} entradas del contenido del mundo',
+      unknown: 'hizo un cambio'
     }
   },
   approvals: {
@@ -2631,9 +2661,9 @@ export const es = {
       setTileFit: 'cambiar los bordes de la tele',
       changeMarks: 'cambiar lo dejado en el mapa de la mesa',
       placeTemplate: 'dejar una plantilla en la mesa',
-      createWidget: 'crear el widget «{{label}}»',
-      updateWidget: 'cambiar un widget de la mesa',
-      deleteWidget: 'quitar un widget de la mesa',
+      createWidget: 'crear el contador «{{label}}»',
+      updateWidget: 'cambiar un contador de la mesa',
+      deleteWidget: 'quitar un contador de la mesa',
       saveSnapshot: 'guardar la instantánea «{{name}}»',
       restoreSnapshot: 'volver a una instantánea de la mesa',
       deleteSnapshot: 'quitar una instantánea de la mesa',
@@ -2652,16 +2682,39 @@ export const es = {
       colorTag: 'cambiar el color de la etiqueta «{{tag}}»',
       deleteTag: 'borrar la etiqueta «{{tag}}»',
       setFileTags: 'cambiar las etiquetas de un archivo',
-      unknown: 'hacer un cambio ({{action}})'
+      startCombat: 'empezar un combate',
+      endCombat: 'acabar el combate',
+      updateCombat: 'cambiar el combate',
+      addCombatants: 'añadir {{count}} fichas al combate',
+      removeCombatants: 'quitar a {{names}} del combate',
+      rollInitiative: 'tirar la iniciativa',
+      setInitiative: 'cambiar la iniciativa',
+      orderCombatants: 'cambiar el orden del combate',
+      groupCombatants: 'agrupar turnos del combate',
+      nextTurn: 'pasar el turno',
+      previousTurn: 'volver al turno anterior',
+      putInPlay: 'poner en juego «{{name}}»',
+      playCreature: 'cambiar «{{name}}» en juego',
+      removeFromPlay: 'quitar de juego {{count}} criaturas',
+      setCreatureHidden: 'cambiar quién ve «{{name}}»',
+      spendRecharge: 'gastar «{{action}}» de «{{name}}»',
+      createTemplate: 'crear la plantilla «{{name}}»',
+      updateTemplate: 'cambiar la plantilla «{{name}}»',
+      deleteTemplate: 'borrar la plantilla «{{name}}»',
+      deleteFiles: 'borrar {{count}} archivos',
+      copyContent: 'copiar «{{name}}» al mundo',
+      pullContentOrigin: 'traer del sistema lo nuevo de «{{name}}»',
+      deleteWorldContent: 'borrar {{count}} entradas del contenido del mundo',
+      unknown: 'hacer un cambio'
     }
   },
   ai: {
-    playerReads: 'Tu IA solo lee lo que sabe tu campaña.',
+    playerReads: 'Tu IA solo lee lo que sabes en tus campañas.',
     link: 'IA',
     title: 'Ajustes de IA',
     connectorTitle: 'Conectar una IA',
     connector: 'Dirección del conector',
-    connectorHint: 'En tu app de IA (claude.ai u otra), añade un conector MCP con esta dirección.',
+    connectorHint: 'En tu app de IA, añade un conector MCP con esta dirección.',
     modeTitle: 'Modo',
     modes: {
       readOnly: 'Solo lectura',
@@ -2757,14 +2810,14 @@ export const es = {
     done: 'Entendido',
     again: 'Tutorial guiado de esta vista',
     worlds: {
-      create: 'Un mundo guarda sus páginas, tus campañas y tus partidas.',
+      create: 'Cada mundo guarda todo lo suyo.',
       ribbon: 'Dentro de un mundo, esta barra cambiará y mostrará su contenido.',
       files: 'Aquí guardas las imágenes y documentos que comparten todos tus mundos.',
       tags: 'Para ordenar páginas y archivos de todos tus mundos.',
       templates: 'Para crear páginas con sus campos y su texto, en todos tus mundos.',
       systems: 'Las reglas de tus juegos, para tus campañas.',
       campaigns: 'Tus campañas, cada una en su mundo.',
-      history: 'Aquí queda todo lo que se hace, tanto por ti como por la IA, y desde aquí se puede deshacer y rehacer.',
+      history: 'Lo que se hace, por ti o por la IA, para deshacerlo si hace falta.',
       trash: 'Lo que se borra viene aquí, por si hay que recuperarlo, y se guarda durante {{days}} días.',
       account: 'Desde aquí podrás administrar la aplicación.'
     },
@@ -2772,14 +2825,14 @@ export const es = {
       home: 'El mundo: lo esencial y lo último que has tocado.',
       wiki: 'El mundo: se abre en su portada; aquí se esconde o se ve su árbol.',
       search: 'Filtra el árbol por nombre o #etiqueta; con Intro, busca en el texto de todas.',
-      panel: 'Datos de toda la página, a la vista: medidores, estrellas, notas…',
+      panel: 'Lo de la página que quieras tener a la vista.',
       whoKnows: 'Qué sabe de esta página cada campaña, y lo que ven sus jugadores.',
       bookmarks: 'Tus páginas marcadas, a mano.',
       files: 'Las imágenes y documentos del mundo.',
       history: 'Lo que se ha hecho en este mundo, para deshacerlo si hace falta.',
       trash: 'Lo borrado de este mundo, por si hay que recuperarlo.',
       settings: 'Aquí se ajusta el mundo: cómo se ve y lo demás.',
-      dice: 'Los dados de tus campañas.',
+      dice: 'Para tirar los dados.',
       back: 'El Crisol te devuelve a tus mundos.'
     },
     dice: {
@@ -2816,7 +2869,7 @@ export const es = {
       page: 'Cada página, con lo que sabe tu grupo.'
     },
     party: {
-      items: 'Lo del grupo, por contenedores. «Mover» lo pasa a un personaje sin duplicarlo.',
+      items: 'Lo que lleva el grupo.',
       moves: 'Quién ha movido qué.'
     },
     inPlay: {
@@ -2832,7 +2885,7 @@ export const es = {
       roll: 'Se tira en una campaña y queda en su registro de dados.'
     },
     files: {
-      upload: 'Desde aquí se suben imágenes, PDF, audio y textos; también puedes soltarlos en la pantalla.',
+      upload: 'Desde aquí se suben archivos; también puedes soltarlos en la pantalla.',
       folders: 'Tus carpetas, para ordenarlos: arrastra un archivo a una para moverlo.',
       search: 'Busca por nombre en todas las carpetas, o filtra por tipo.'
     },
@@ -2843,20 +2896,22 @@ export const es = {
       table: 'Para jugarla: se abre en la mesa de la campaña.'
     },
     tabletop: {
-      map: 'La escena abierta. Pulsa una ficha para ver su tarjeta y arrástrala para moverla (con Mayús, a su casilla). El mapa se mueve con el botón central o con espacio; la rueda acerca.',
-      scenes: 'Las escenas, los encuentros, las criaturas y los personajes: arrástralos al mapa.',
+      map: 'La escena abierta: las fichas se pulsan y se arrastran.',
+      scenes: 'Lo que se pone en la mesa: se arrastra al mapa.',
       present: 'Lo que ve el grupo: presentar la escena en la tele u ocultarla.',
       screen: 'Abre la tele en otra ventana; llévala a la pantalla del grupo.',
       camera: 'La tele sigue tu vista, se queda fija en su marco (que puedes mover) o encuadra al grupo.',
       zoom: 'Acerca, aleja o encuadra la escena entera.',
       combat: 'El combate: con las fichas elegidas o con todas las de la escena.',
-      tools: 'Las herramientas: medir, señalar y dibujar en el mapa, y la visión. Cada una tiene su tecla.',
-      panels: 'Los widgets, la pantalla del máster y las instantáneas de la escena.'
+      tools: 'Las herramientas para trabajar sobre el mapa.',
+      panels: 'Más cosas para llevar la partida.'
     },
     map: {
       tabs: 'Las pestañas de la página: su texto y sus mapas.',
       tools: 'Pon pines, acerca y encuadra. También con el botón derecho sobre el mapa.',
-      pin: 'Pulsa un pin para cambiarlo; arrástralo para moverlo. Con doble clic, abre su página.'
+      pin: 'Pulsa un pin para cambiarlo; arrástralo para moverlo. Con doble clic, abre su página.',
+      readTools: 'Acerca y encuadra el mapa.',
+      readPin: 'Pulsa un pin para ver qué es. Con doble clic, abre su página.'
     },
     systems: {
       create: 'Los sistemas se hacen con la IA. Aquí se suben y se bajan.',
@@ -2877,7 +2932,6 @@ export const es = {
     save: 'Guardar',
     saved: 'Guardado',
     you: 'Tus datos',
-    emailNote: 'Aún no se puede cambiar.',
     password: 'Contraseña',
     currentPassword: 'Contraseña actual',
     newPassword: 'Contraseña nueva',
@@ -2941,7 +2995,7 @@ export const es = {
     TOO_MANY_ROLLS: 'Demasiadas tiradas seguidas: espera un poco',
     SYSTEM_INVALID: 'El sistema tiene errores: no se ha guardado',
     SYSTEM_CHANGED: 'Lo ha cambiado alguien mientras tanto: vuelve a abrirlo',
-    FOUNDRY_INVALID: 'No se ha podido leer: no es un sistema o un módulo de Foundry, o le falta algo',
+    FOUNDRY_INVALID: 'No se ha podido leer: no es un sistema o un módulo que se pueda traer, o le falta algo',
     FOUNDRY_TOO_BIG: 'Trae demasiado: elige menos compendios',
     CHARACTER_CHANGED: 'Lo ha cambiado alguien mientras tanto: vuelve a abrirlo',
     BAD_CHOICE: 'Eso no se puede elegir',

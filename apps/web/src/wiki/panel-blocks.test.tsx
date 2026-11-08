@@ -2,13 +2,16 @@ import type { PanelBlock, World } from '@crisol/contracts'
 import { createMemoryHistory } from '@tanstack/react-router'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { fakeAccountClient } from '../account/fake.ts'
 import type { ApiClient } from '../api/client.ts'
 import { ApiError } from '../api/client.ts'
 import { fakeApi } from '../api/fake.ts'
 import { App } from '../app.tsx'
 import { createAppRouter } from '../router.tsx'
+
+// El tutorial del mundo, ya visto (si no, sale y se lleva el foco)
+beforeEach(() => localStorage.setItem('crisol.recorridos.enrique@crisol.test', JSON.stringify({ seen: ['mundo'] })))
 
 const ORG = { id: crypto.randomUUID(), name: 'Fateforge', role: 'owner' as const }
 const WORLD: World = {
@@ -237,6 +240,8 @@ describe('el panel de bloques de una página', () => {
     const { saved } = await renderPort()
     await add('Imagen')
     const image = await block('Imagen')
+    // Vacío, un recuadro discreto: al pulsarlo, se elige o se sube
+    await userEvent.click(image.getByRole('button', { name: 'Añadir imagen' }))
     const select = await image.findByRole('combobox', { name: 'Imagen' })
     await waitFor(() => expect(within(select).getByRole('option', { name: 'faro.png' })).toBeDefined())
     await userEvent.selectOptions(select, 'faro.png')
@@ -252,6 +257,7 @@ describe('el panel de bloques de una página', () => {
     const { api, saved } = await renderPort()
     await add('Imagen')
     const image = await block('Imagen')
+    await userEvent.click(image.getByRole('button', { name: 'Añadir imagen' }))
     const input = (await panel()).getByRole('region', { name: 'Imagen' }).querySelector('input[type="file"]')
     if (!(input instanceof HTMLInputElement)) throw new Error('sin campo de archivo')
     const click = vi.spyOn(input, 'click')
@@ -267,6 +273,7 @@ describe('el panel de bloques de una página', () => {
     const { api } = await renderPort()
     await add('Imagen')
     const region = (await panel()).getByRole('region', { name: 'Imagen' })
+    await userEvent.click(within(region).getByRole('button', { name: 'Añadir imagen' }))
     const input = region.querySelector('input[type="file"]')
     if (!(input instanceof HTMLInputElement)) throw new Error('sin campo de archivo')
     // El accept del campo no deja elegirlo con userEvent: se sube a mano

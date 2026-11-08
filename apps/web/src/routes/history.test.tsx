@@ -98,13 +98,13 @@ describe('el historial', () => {
     ])
     expect(await screen.findByRole('heading', { level: 1, name: 'Historial de Eana' })).toBeDefined()
     expect(lines()).toEqual([
-      expect.stringMatching(/^Enrique expulsó a Pepe de La Marca.*29 oct 2026.*· web/),
+      expect.stringMatching(/^Enrique expulsó a Pepe de La Marca.*29 oct 2026, \d+:\d+Deshacer/),
       expect.stringMatching(/^Enrique cerró las invitaciones de La Marca/),
       expect.stringMatching(/^Enrique creó la campaña «La Marca» en Eana.*· IA \(crear_campana\)/),
       expect.stringMatching(/^Enrique renombró el mundo «Eana» a «Eana \(Fateforge\)»/),
       expect.stringMatching(/^Pepe entró en La Marca/),
       expect.stringMatching(/^Crisol creó la organización «Fateforge».*Crisol$/),
-      expect.stringMatching(/^Una cuenta borrada hizo un cambio \(algoNuevo\)/),
+      expect.stringMatching(/^Una cuenta borrada hizo un cambio\d/),
       expect.stringMatching(/^Enrique borró la campaña «La Marca» de Eana/),
       expect.stringMatching(/^Enrique restauró el mundo «Eana»/),
       expect.stringMatching(/^Enrique borró el mundo «Otro»/),

@@ -17,8 +17,8 @@ import { PlaySheet } from '../characters/play-sheet.tsx'
 import { Loading } from '../components/brand.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
 import { FormError } from '../components/field.tsx'
-import { failed, LoadError } from '../components/load-error.tsx'
-import { PageTitle } from '../components/page-title.tsx'
+import { failed, LoadError, SectionError } from '../components/load-error.tsx'
+import { Screen } from '../components/screen.tsx'
 import { SystemImage } from '../components/system-image.tsx'
 import { Tour } from '../components/tour.tsx'
 import { RollLog } from '../dice/log.tsx'
@@ -88,60 +88,69 @@ function MasterInPlay({ campaign }: { campaign: CampaignData }) {
       onHidden={(hidden) => hiding.mutate({ creatureId: c.id, hidden })}
     />
   )
-  return (
-    <div className={styles.page}>
-      <aside className={styles.side} aria-label={t('inPlay.title')} data-tour="en-juego-lista">
-        <div className={styles.sideHead}>
-          <PageTitle className={styles.title}>{t('inPlay.title')}</PageTitle>
-          <span className={styles.count}>{t('inPlay.count', { count: creatures.length })}</span>
-          {groups.size > 0 && (
-            <BusyButton
-              className={styles.removeAll}
-              busy={removing.isPending}
-              onClick={() =>
-                void Promise.all([...groups.keys()].map((key) => removing.mutateAsync({ copiesOf: key }))).catch(
-                  () => undefined
-                )
-              }
-            >
-              {t('inPlay.removeCopies')}
-            </BusyButton>
-          )}
-        </div>
-        <FormError
-          message={removing.error ? errorText(removing.error) : hiding.error ? errorText(hiding.error) : null}
-        />
-        {creatures.length === 0 && <p className={styles.none}>{t('inPlay.empty')}</p>}
-        {[...groups.entries()].map(([key, copies]) => (
-          <section key={key} className={styles.group} aria-label={baseName(copies[0] as Creature)}>
-            <div className={styles.groupHead}>
-              <span>
-                {baseName(copies[0] as Creature)} · {copies.length}
-              </span>
-              <button type="button" className={styles.link} onClick={() => removing.mutate({ copiesOf: key })}>
-                {t('inPlay.removeGroup', { count: copies.length })}
-              </button>
-            </div>
-            <ul className={styles.list}>{copies.map(row)}</ul>
-          </section>
-        ))}
-        {uniques.length > 0 && (
-          <section className={styles.group} aria-label={t('inPlay.uniques')}>
-            <div className={styles.groupHead}>
-              <span>{t('inPlay.uniques')}</span>
-            </div>
-            <ul className={styles.list}>{uniques.map(row)}</ul>
-          </section>
+  const side = (
+    <div className={styles.side} data-tour="en-juego-lista">
+      <div className={styles.sideHead}>
+        <span className={styles.count}>{t('inPlay.count', { count: creatures.length })}</span>
+        {groups.size > 0 && (
+          <BusyButton
+            className={styles.removeAll}
+            busy={removing.isPending}
+            onClick={() =>
+              void Promise.all([...groups.keys()].map((key) => removing.mutateAsync({ copiesOf: key }))).catch(
+                () => undefined
+              )
+            }
+          >
+            {t('inPlay.removeCopies')}
+          </BusyButton>
         )}
-        <Link
-          to="/mundos/$worldId/campanas/$campaignId/compendio"
-          params={{ worldId, campaignId }}
-          className={styles.add}
-        >
-          <Plus size={16} aria-hidden="true" />
-          {t('inPlay.add')}
-        </Link>
-      </aside>
+      </div>
+      <FormError message={removing.error ? errorText(removing.error) : hiding.error ? errorText(hiding.error) : null} />
+      {creatures.length === 0 && <p className={styles.none}>{t('inPlay.empty')}</p>}
+      {[...groups.entries()].map(([key, copies]) => (
+        <section key={key} className={styles.group} aria-label={baseName(copies[0] as Creature)}>
+          <div className={styles.groupHead}>
+            <span>
+              {baseName(copies[0] as Creature)} · {copies.length}
+            </span>
+            <button type="button" className={styles.link} onClick={() => removing.mutate({ copiesOf: key })}>
+              {t('inPlay.removeGroup', { count: copies.length })}
+            </button>
+          </div>
+          <ul className={styles.list}>{copies.map(row)}</ul>
+        </section>
+      ))}
+      {uniques.length > 0 && (
+        <section className={styles.group} aria-label={t('inPlay.uniques')}>
+          <div className={styles.groupHead}>
+            <span>{t('inPlay.uniques')}</span>
+          </div>
+          <ul className={styles.list}>{uniques.map(row)}</ul>
+        </section>
+      )}
+      <Link
+        to="/mundos/$worldId/campanas/$campaignId/compendio"
+        params={{ worldId, campaignId }}
+        className={styles.add}
+      >
+        <Plus size={16} aria-hidden="true" />
+        {t('inPlay.add')}
+      </Link>
+    </div>
+  )
+  return (
+    <Screen
+      title={t('inPlay.title')}
+      left={side}
+      leftLabel={t('inPlay.title')}
+      right={
+        <div className={styles.log} data-tour="en-juego-registro">
+          <RollLog campaign={campaign} />
+        </div>
+      }
+      rightLabel={t('inPlay.log')}
+    >
       {shown ? (
         <CreatureSheet
           key={shown.id}
@@ -155,9 +164,6 @@ function MasterInPlay({ campaign }: { campaign: CampaignData }) {
           <p className={styles.none}>{t('inPlay.pick')}</p>
         </div>
       )}
-      <aside className={styles.log} aria-label={t('inPlay.log')} data-tour="en-juego-registro">
-        <RollLog campaign={campaign} />
-      </aside>
       <Tour
         id="en-juego"
         steps={[
@@ -165,7 +171,7 @@ function MasterInPlay({ campaign }: { campaign: CampaignData }) {
           { target: '[data-tour="en-juego-registro"]', text: t('tour.inPlay.log') }
         ]}
       />
-    </div>
+    </Screen>
   )
 }
 
@@ -302,7 +308,7 @@ export function CreatureSheet({
   if (!read.data)
     return (
       <div className={styles.reading}>
-        {failed(read) ? <LoadError error={read.error} onRetry={() => read.refetch()} /> : <Loading />}
+        {failed(read) ? <SectionError error={read.error} onRetry={() => read.refetch()} /> : <Loading />}
       </div>
     )
   const { creature, state } = read.data
@@ -377,12 +383,16 @@ export function CreatureSheet({
                     onChange={(event) => setMax(event.currentTarget.value)}
                   />
                 </form>
-                <button type="button" className={styles.action} onClick={() => change.mutate({ max: { value: null } })}>
+                <button type="button" className={styles.quiet} onClick={() => change.mutate({ max: { value: null } })}>
                   {t('inPlay.ownMax')}
                 </button>
               </>
             )}
-            <BusyButton className={styles.action} busy={remove.isPending} onClick={() => remove.mutate()}>
+            <BusyButton
+              className={`${styles.quiet} ${styles.quietDanger}`}
+              busy={remove.isPending}
+              onClick={() => remove.mutate()}
+            >
               <Trash2 size={14} aria-hidden="true" />
               {t('inPlay.remove')}
             </BusyButton>

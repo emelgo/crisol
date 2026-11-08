@@ -21,7 +21,9 @@ test('«Sistemas»: se hacen con la IA; subir un archivo roto y uno bueno, bajar
   await freshOwner(page)
   await page.getByRole('navigation', { name: 'Secciones' }).getByRole('link', { name: 'Sistemas' }).click()
   await expect(page.getByRole('heading', { level: 1, name: 'Sistemas' })).toBeVisible()
-  await expect(page.getByRole('list', { name: 'De serie' }).getByRole('button', { name: 'En blanco' })).toBeVisible()
+  await expect(
+    page.getByRole('list', { name: 'De serie' }).getByRole('button', { name: 'En blanco', exact: true })
+  ).toBeVisible()
   await accessible(page, 'main')
 
   // «Sistema nuevo»: se hacen con la IA; aquí, un archivo roto dice qué falla y no se sube nada
@@ -72,11 +74,11 @@ test('«Sistemas»: se hacen con la IA; subir un archivo roto y uno bueno, bajar
   await dialog.getByRole('button', { name: 'Subir el sistema' }).click()
   await expect(dialog).toBeHidden()
   const mine = page.getByRole('list', { name: 'Tuyos' })
-  await expect(mine.getByRole('button', { name: 'Fronteras' })).toBeVisible()
+  await expect(mine.getByRole('button', { name: 'Fronteras', exact: true })).toBeVisible()
   await expect(page).toHaveURL(/\/sistemas$/)
 
   // Uno de serie: su ventana, con bajarlo y sus campañas, sin cambiarlo ni borrarlo
-  await page.getByRole('list', { name: 'De serie' }).getByRole('button', { name: 'En blanco' }).click()
+  await page.getByRole('list', { name: 'De serie' }).getByRole('button', { name: 'En blanco', exact: true }).click()
   const builtIn = page.getByRole('dialog', { name: 'En blanco' })
   await expect(builtIn.getByRole('button', { name: 'Bajar' })).toBeVisible()
   await expect(builtIn.getByLabel('Nombre')).toHaveCount(0)
@@ -85,7 +87,7 @@ test('«Sistemas»: se hacen con la IA; subir un archivo roto y uno bueno, bajar
   await builtIn.getByRole('button', { name: 'Cerrar' }).click()
 
   // Borrar uno que no usa ninguna campaña
-  await mine.getByRole('button', { name: 'Fronteras' }).click()
+  await mine.getByRole('button', { name: 'Fronteras', exact: true }).click()
   const settings = page.getByRole('dialog', { name: 'Ajustes de Fronteras' })
   await settings.getByRole('button', { name: 'Borrar el sistema' }).click()
   const confirm = page.getByRole('dialog', { name: '¿Borrar el sistema Fronteras?' })
@@ -125,7 +127,7 @@ test('elegir el sistema de una campaña: la ficha de dados propone su tirada por
   await expect(dialog.getByRole('button', { name: 'Guardar' })).toBeHidden()
   await dialog.getByRole('button', { name: 'Cerrar' }).click()
   await page.getByRole('link', { name: 'Los páramos', exact: true }).click()
-  await page.getByRole('navigation', { name: 'Secciones' }).getByRole('button', { name: 'Dados' }).click()
+  await page.locator('[data-tour="dados"]').click()
   await expect(page.getByRole('complementary', { name: 'Dados' }).getByRole('textbox', { name: 'Tirada' })).toHaveValue(
     '2d6'
   )

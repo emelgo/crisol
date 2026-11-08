@@ -8,11 +8,17 @@
   border-block-start: 1px solid var(--color-border);
 }
 
+/* Como las etiquetas de los demás campos del cuadro (components/form.module.css: .field), no más pequeñas ni grises */
 .label,
 .group legend,
-.manyLabel,
+.manyLabel {
+  color: var(--color-text);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
 .number label {
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   font-weight: 600;
   color: var(--color-muted);
 }

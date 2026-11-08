@@ -395,7 +395,10 @@ export const compendiumActions = [
           {
             ...copy,
             ...entry,
-            play: mechanicsText(document, item.type, item.mechanics as Mechanics | undefined, choices.language),
+            // Con sus datos: una criatura tira con lo suyo (su ataque y su daño, ya calculados)
+            play: mechanicsText(document, item.type, item.mechanics as Mechanics | undefined, choices.language, {
+              data: item.data as Record<string, unknown>
+            }),
             ...(item.img && images.has(item.img)
               ? {
                   image: {

@@ -32,7 +32,7 @@ import { useAnnounce } from '../components/announcer.tsx'
 import { Loading } from '../components/brand.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
 import { FormError } from '../components/field.tsx'
-import { failed, LoadError } from '../components/load-error.tsx'
+import { failed, LoadError, SectionError } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { useSettled } from '../components/settled.ts'
 import { SystemImage } from '../components/system-image.tsx'
@@ -220,9 +220,12 @@ export function CompendiumScreen() {
   return (
     <SystemIdContext.Provider value={system.id}>
       <div className={styles.page} data-reading={narrow && shown ? '' : undefined}>
+        {/* El título, en el sitio de todas las pantallas (components/screen.tsx) */}
+        <div className={styles.top}>
+          <PageTitle>{t('compendium.title')}</PageTitle>
+        </div>
         <aside className={styles.side} aria-label={t('compendium.title')}>
           <div className={styles.sideHead}>
-            <PageTitle className={styles.title}>{t('compendium.title')}</PageTitle>
             <span className={styles.system}>
               {editions.length > 0
                 ? t('compendium.systemWith', { system: system.name, editions: editions.join(t('compendium.and')) })
@@ -303,7 +306,7 @@ export function CompendiumScreen() {
                 ))}
                 {hits.data && items.length === 0 && <li className={styles.none}>{t('compendium.none')}</li>}
               </ul>
-              {hits.isError && <LoadError error={hits.error} onRetry={() => void hits.refetch()} />}
+              {hits.isError && <SectionError error={hits.error} onRetry={() => void hits.refetch()} />}
               {hits.hasNextPage && (
                 <BusyButton
                   className={styles.more}
@@ -629,7 +632,7 @@ function TypeShelf({
   })
   if (!browsed.data)
     return failed(browsed) ? (
-      <LoadError error={browsed.error} onRetry={() => void browsed.refetch()} />
+      <SectionError error={browsed.error} onRetry={() => void browsed.refetch()} />
     ) : (
       <p className={styles.none}>{t('compendium.loadingMore')}</p>
     )
@@ -818,6 +821,7 @@ function Entry({
   })
   // Al abrir otro, arriba; en lo estrecho (con «Volver a la lista»), el foco va a su título
   const narrow = Boolean(onBack)
+  const systemId = useContext(SystemIdContext)
   useEffect(() => {
     if (!item) return
     const title = document.getElementById(titleId)
@@ -827,11 +831,17 @@ function Entry({
   if (!read.data) {
     return (
       <div className={styles.reading}>
-        {failed(read) ? <LoadError error={read.error} onRetry={() => read.refetch()} /> : <Loading />}
+        {failed(read) ? <SectionError error={read.error} onRetry={() => read.refetch()} /> : <Loading />}
       </div>
     )
   }
-  if (!item) return <div className={styles.reading} />
+  // Una entrada que ya no está (o que no ve la campaña): se dice, en vez de una ficha en blanco
+  if (!item)
+    return (
+      <div className={styles.reading}>
+        <p className={styles.pick}>{t('compendium.missing')}</p>
+      </div>
+    )
   const type = types.find((each) => each.key === item.type)
   const name = textOf(item.data.name as Text, language) || item.key
   const english = language === 'es' ? textOf(item.data.name as Text, 'en') : ''
@@ -842,7 +852,6 @@ function Entry({
   })
   const body = type?.text ? textOf(item.data[type.text] as Text, language) : ''
   const fromWorld = item.world ? { ...item, world: item.world } : null
-  const systemId = useContext(SystemIdContext)
   const target = fromWorld ? worldTarget : systemTarget
   const where = world ? { worldId: world.worldId, systemId: world.systemId } : null
   return (

@@ -90,6 +90,13 @@ export function OpenTabs({
     saveTabs(next.filter((tab) => !drop.has(tab.pageId)))
   }, [tabs, current, compact, saveTabs])
 
+  // La abierta, siempre a la vista en la tira (que se desplaza si no caben todas)
+  const strip = useRef<HTMLElement>(null)
+  useEffect(() => {
+    if (compact || !currentId) return
+    strip.current?.querySelector('[data-current]')?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+  }, [compact, currentId, tabs?.length])
+
   if (!tabs || tabs.length === 0) return null
   const close = (pageId: string) => {
     const rest = tabs.filter((tab) => tab.pageId !== pageId)
@@ -121,7 +128,11 @@ export function OpenTabs({
     saveTabs(ordered(tabs.map((tab) => (tab.pageId === pageId ? { ...tab, pinned: !tab.pinned } : tab))))
 
   return (
-    <nav aria-label={t(compact ? 'tabs.recent' : 'tabs.title')} className={compact ? styles.recent : styles.tabs}>
+    <nav
+      ref={strip}
+      aria-label={t(compact ? 'tabs.recent' : 'tabs.title')}
+      className={compact ? styles.recent : styles.tabs}
+    >
       {compact && <h3>{t('tabs.recent')}</h3>}
       <ul>
         {ordered(tabs).map((tab) => (

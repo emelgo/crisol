@@ -62,10 +62,14 @@ describe('«Sistemas», en Mis mundos', () => {
     expect(mine.getByRole('button', { name: 'Fronteras' })).toBeDefined()
     expect(mine.getByText('Subido de un archivo')).toBeDefined()
     const builtIn = within(screen.getByRole('list', { name: 'De serie' }))
-    expect(builtIn.getAllByRole('button').map((a) => a.textContent)).toEqual(['En blanco'])
+    expect(builtIn.getAllByRole('button').map((a) => a.textContent)).toEqual(['En blanco', ''])
+    // Su engranaje, siempre a la vista
+    expect(builtIn.getByRole('button', { name: 'Ajustes de En blanco' })).toBeDefined()
     const blankItem = within(builtIn.getByRole('button', { name: 'En blanco' }).closest('li') as HTMLElement)
     expect(blankItem.getByLabelText('No se puede cambiar')).toBeDefined()
     expect(screen.queryByRole('button', { name: 'Copiar' })).toBeNull()
+    // La versión, siempre igual: la de serie («1.0») sin el «.0», como la de los tuyos
+    expect(blankItem.getByText('Versión 1')).toBeDefined()
     expect(mine.queryByRole('link')).toBeNull()
     fireEvent.pointerEnter(mine.getByRole('button', { name: 'Fronteras' }).closest('li') as HTMLElement)
     const preview = within(screen.getByRole('complementary', { name: 'Lo que trae' }))
@@ -125,7 +129,7 @@ describe('«Sistemas», en Mis mundos', () => {
         dataTransfer: { files: [new File([bytes as BlobPart], name, { type: 'application/zip' })] }
       })
     drop(zipSync({ 'nada.txt': strToU8('x') }), 'nada.zip')
-    expect(await dialog.findByText('Este zip no es un sistema ni un módulo de Foundry')).toBeDefined()
+    expect(await dialog.findByText('Este zip no es un sistema ni un módulo que se pueda traer')).toBeDefined()
     const manifest = {
       id: 'mundo',
       title: 'Mundo Oscuro',
@@ -137,11 +141,11 @@ describe('«Sistemas», en Mis mundos', () => {
     }
     drop(zipSync({ 'mundo/system.json': strToU8(JSON.stringify(manifest)) }), 'mundo.zip')
     expect(await dialog.findByText('Mundo Oscuro 3.0')).toBeDefined()
-    expect(dialog.getByText('Sistema de Foundry')).toBeDefined()
+    expect(dialog.getByText('Sistema', { exact: true })).toBeDefined()
     const packs = within(dialog.getByRole('group', { name: 'Compendios que se traen' }))
     await userEvent.click(packs.getByRole('checkbox', { name: /Bestias/ }))
     await userEvent.selectOptions(dialog.getByRole('combobox', { name: 'Idioma de sus textos' }), 'es')
-    await userEvent.click(dialog.getByRole('button', { name: 'Traer de Foundry' }))
+    await userEvent.click(dialog.getByRole('button', { name: 'Traer el sistema' }))
     await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Sistema nuevo' })).toBeNull())
     expect(
       await within(screen.getByRole('list', { name: 'Tuyos' })).findByRole('button', { name: 'Mundo Oscuro' })

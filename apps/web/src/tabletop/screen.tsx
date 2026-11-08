@@ -17,7 +17,7 @@ import { useAccounts } from '../account/context.tsx'
 import { CrisolMark } from '../components/brand.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { canvasViewOf, sceneViewportOf, smoothToward } from './camera.ts'
-import { connectTable } from './channel.ts'
+import { connectTable, type TableStatus } from './channel.ts'
 import { cssDisc, screenDraw } from './draw.ts'
 import { decodeMask, type FogLight, fogImage, fogLayerOf, maskTileUrl } from './fog-paint.ts'
 import { MarksLayer, placeMarks } from './marks-layer.tsx'
@@ -93,6 +93,18 @@ export function TableScreen({ campaignId }: { campaignId: string }) {
   const [measure, setMeasure] = useState<LiveMeasure | null>(null)
   const laser = useRef<Array<Point & { t: number }>>([])
   const [laserTick, setLaserTick] = useState(0)
+  // Si se corta o no deja entrar, se dice en vez de quedarse en negro sin más
+  const [status, setStatus] = useState<TableStatus>('connecting')
+  // La tele, siempre oscura (con el tema claro, los relojes y los nombres no se leían sobre el mapa)
+  useEffect(() => {
+    const root = document.documentElement
+    const before = root.dataset.theme
+    root.dataset.theme = 'dark'
+    return () => {
+      if (before) root.dataset.theme = before
+      else delete root.dataset.theme
+    }
+  }, [])
   // La vista de ahora (para colocar los textos, sellos y pines) y su capa
   const shownView = useRef<Viewport>({ x: 0, y: 0, scale: 1 })
   const marksLayer = useRef<HTMLDivElement | null>(null)
@@ -121,7 +133,8 @@ export function TableScreen({ campaignId }: { campaignId: string }) {
             ].slice(-80)
             setLaserTick((n) => n + 1)
           }
-        }
+        },
+        onStatus: setStatus
       }
     )
     return () => connection.close()
@@ -302,6 +315,11 @@ export function TableScreen({ campaignId }: { campaignId: string }) {
         <div className={styles.dark} data-dark="">
           <CrisolMark size={44} className={styles.flame} />
           {screen && <b aria-hidden="true">{screen.campaignName}</b>}
+          {(status === 'reconnecting' || status === 'forbidden') && (
+            <p className={styles.status} role="status">
+              {t(status === 'forbidden' ? 'screen.forbidden' : 'tabletop.reconnecting')}
+            </p>
+          )}
         </div>
       )}
       <button

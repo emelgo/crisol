@@ -130,6 +130,21 @@ describe('las pestañas de página y los mapas (ADR-0007)', () => {
     expect((await json('getMap', { tabId: tab.id })).image).toBeNull()
   })
 
+  it('un mapa o un pin que no existe es NOT_FOUND (404), sin la consulta en la respuesta', async () => {
+    const tab = await json('createPageTab', { pageId: page, kind: 'map' })
+    // El id de la pestaña no es el de su mapa: antes llegaba a la base como '' y daba un 500 con el SQL
+    for (const [name, payload] of [
+      ['updateMap', { mapId: tab.id, scale: null }],
+      ['createMapPin', { mapId: tab.id, x: 0.5, y: 0.5 }],
+      ['updateMapPin', { pinId: tab.id, x: 0.5 }],
+      ['getMap', { tabId: page }]
+    ] as const) {
+      const response = await call(name, payload)
+      expect(response.statusCode, `${name}: ${response.body}`).toBe(404)
+      expect(response.json()).toEqual({ code: 'NOT_FOUND' })
+    }
+  })
+
   it('pines: con página del mismo mundo, se mueven y cambian, y se quitan; deshacer los devuelve', async () => {
     const tab = await json('createPageTab', { pageId: page, kind: 'map' })
     const map = await json('getMap', { tabId: tab.id })

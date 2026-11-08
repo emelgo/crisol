@@ -200,6 +200,7 @@ function SwitcherDialog({
       }}
     >
       <input
+        autoComplete="off"
         ref={input}
         className={styles.input}
         role="combobox"
@@ -248,7 +249,6 @@ function SwitcherDialog({
           {commandMode ? t('switcher.noCommand') : query.trim() === '' ? t('switcher.noRecent') : t('switcher.none')}
         </p>
       )}
-      <p className={styles.help}>{t('switcher.help')}</p>
     </dialog>
   )
 }

@@ -162,3 +162,17 @@ describe('las frases del grupo', () => {
     ).toBe('dejar 5 po de Thora en el grupo')
   })
 })
+
+describe('las frases del combate y de lo desconocido', () => {
+  const t = i18next.t.bind(i18next)
+  const say = (action: string, details: Record<string, unknown>) => summaryOf(t, { action, details })
+  it('el combate se cuenta en palabras, nunca con el nombre de la acción', () => {
+    expect(say('nextTurn', { campaign: 'La Marca', round: 2 })).toBe(
+      'pasó el turno en el combate de «La Marca» (ronda 2)'
+    )
+    expect(say('removeCombatants', { campaign: 'La Marca', names: ['Goblin 1', 'Goblin 2'] })).toBe(
+      'quitó a Goblin 1 y Goblin 2 del combate de «La Marca»'
+    )
+    expect(say('accionNueva', {})).toBe('hizo un cambio')
+  })
+})

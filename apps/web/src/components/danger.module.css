@@ -11,6 +11,18 @@
   background: color-mix(in srgb, var(--color-accent) 8%, var(--color-surface));
 }
 
+/* Dentro de una pantalla o una ventana, la regla de las secciones con título (caja con esquinas cortadas, base.css)
+   le quitaba el rojizo: su marco y su fondo, rojizos */
+:global(main) section.zone,
+:global(dialog) section.zone {
+  background: color-mix(in srgb, var(--color-accent) 55%, transparent);
+}
+
+:global(main) section.zone::before,
+:global(dialog) section.zone::before {
+  background: color-mix(in srgb, var(--color-accent) 10%, var(--color-surface));
+}
+
 .zone h3 {
   margin: 0;
   padding: 0;

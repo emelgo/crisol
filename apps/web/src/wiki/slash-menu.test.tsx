@@ -74,7 +74,8 @@ describe('el menú «/»', () => {
     expect(dom.getAttribute('aria-autocomplete')).toBe('list')
     expect(dom.getAttribute('aria-controls')).toBe((await menu()).id)
     expect(dom.getAttribute('aria-activedescendant')).toBe(selected()?.id)
-    expect(screen.getByText('↑↓ para moverte · Intro para elegir · Esc para cerrar')).toBeDefined()
+    // Sin textos de ayuda fijos (docs/diseno.md): los nombres bastan
+    expect(screen.queryByText(/para moverte/)).toBeNull()
   })
 
   it('sin opciones, filtra por la clave de cada bloque', async () => {

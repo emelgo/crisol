@@ -8,6 +8,7 @@ import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNotices } from '../realtime/context.tsx'
 import { useAnnounce } from './announcer.tsx'
+import { focusAfterRemoving } from './focus.ts'
 import styles from './reveal-notices.module.css'
 
 export function RevealNotices() {
@@ -54,8 +55,13 @@ export function RevealNotices() {
           <button
             type="button"
             className={styles.close}
-            aria-label={t('revealNotice.close')}
-            onClick={() => dismissRevealed(notice.id)}
+            aria-label={t('revealNotice.closeOne', { title: notice.title })}
+            onClick={(event) => {
+              // El foco, al aviso de al lado (o al título de la página): no se pierde en la nada
+              const after = focusAfterRemoving(event.currentTarget.closest('article'))
+              dismissRevealed(notice.id)
+              requestAnimationFrame(after)
+            }}
           >
             <X aria-hidden="true" size={16} />
           </button>

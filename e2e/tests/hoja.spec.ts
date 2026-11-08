@@ -48,7 +48,7 @@ test('los bloques de hoja con «/» (toda página es una hoja); salen en el Mark
   await page.keyboard.type('/statblock')
   await page.keyboard.press('Enter')
   await page.keyboard.type('CA 19')
-  await expect(body(page).getByRole('group', { name: 'Statblock' })).toContainText('CA 19')
+  await expect(body(page).getByRole('group', { name: 'Bloque de estadísticas' })).toContainText('CA 19')
   await expect
     .poll(
       async () => (await (await page.request.post('/api/actions/readPage', { data: { pageId } })).json()).markdown,

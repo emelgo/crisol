@@ -1,31 +1,26 @@
 /*
- * Una plantilla abierta, con la forma de una página: las plantillas a la izquierda, su cabecera y su texto en el centro,
- * y sus campos y su panel a la derecha (como las fichas de una página)
+ * Una plantilla abierta, con el esqueleto común (components/screen.tsx): el título donde en las demás pantallas y, a
+ * los lados, como las de Archivos y las de una página, una ficha con las plantillas y otra con sus campos y su panel
  */
-.page {
-  display: grid;
-  grid-template-columns: minmax(12rem, 15rem) minmax(0, 1fr) minmax(16rem, 20rem);
-  gap: var(--space-5);
-  align-items: start;
-  padding: var(--space-6);
+.list,
+.panel {
+  /* Hasta abajo de la ventana: una ficha alta, no una cajita (empiezan bajo el título, como en Screen) */
+  min-block-size: calc(100dvh - var(--space-8) - 5.45rem - var(--space-4));
+  max-block-size: calc(100dvh - 2 * var(--space-4));
+  overflow-y: auto;
+  padding: var(--space-3) var(--space-3) var(--space-4);
+  border: 1px solid var(--color-frame);
+  border-radius: 6px;
+  background: var(--color-surface);
+  scrollbar-width: thin;
 }
 
 @media (max-width: 64rem) {
-  .page {
-    grid-template-columns: minmax(0, 1fr);
+  .list,
+  .panel {
+    min-block-size: 0;
+    max-block-size: none;
   }
-
-  .list {
-    display: none;
-  }
-}
-
-.list,
-.panel {
-  padding: var(--space-4) var(--space-3);
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
-  margin-block-start: 5.5rem;
 }
 
 .listHead {
@@ -70,48 +65,42 @@
   color: var(--color-muted);
 }
 
-.center {
-  min-inline-size: 0;
-}
-
-.band {
+/* El icono, el nombre (el h1 de siempre) y, pegado a él, «Plantilla» */
+.heading {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-3);
-  padding: var(--space-8) var(--space-5) var(--space-4);
-  border-radius: 16px 16px 0 0;
-  background: var(--color-raised);
+  min-inline-size: 0;
 }
 
 .icon {
   display: grid;
+  flex: none;
   place-items: center;
   inline-size: 2.75rem;
   block-size: 2.75rem;
   border: 1px solid var(--color-border);
   border-radius: 8px;
-  background: var(--color-bg);
+  background: var(--color-surface);
   color: var(--color-h3);
 }
 
 .title {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: 2.5rem;
-  font-weight: 800;
-  line-height: 1;
-  text-transform: uppercase;
+  min-inline-size: 0;
 }
 
+/* Se escribe en el título: con su letra, del ancho de lo escrito */
 .titleInput {
-  inline-size: 100%;
-  min-inline-size: 8ch;
+  field-sizing: content;
+  min-inline-size: 4ch;
+  max-inline-size: 100%;
   padding: 0;
   border: 0;
   background: transparent;
   color: inherit;
   font: inherit;
+  letter-spacing: inherit;
   text-transform: inherit;
 }
 
@@ -122,6 +111,7 @@
 
 .kind {
   display: inline-flex;
+  flex: none;
   align-items: center;
   gap: 0.3125rem;
   padding: 0.1875rem 0.625rem;
@@ -133,7 +123,6 @@
 }
 
 .status {
-  margin-inline-start: auto;
   color: var(--color-muted);
   font-size: 0.75rem;
 }
@@ -143,7 +132,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2);
-  margin: var(--space-3) var(--space-5) 0;
+  margin: 0 0 var(--space-3);
   color: var(--color-muted);
   font-size: 0.875rem;
 }
@@ -163,7 +152,7 @@
 }
 
 .skeleton {
-  padding: var(--space-4) var(--space-5);
+  padding-block: var(--space-2) var(--space-4);
 }
 
 .section {
@@ -406,6 +395,10 @@
 .addOption:focus-visible {
   background: var(--color-raised);
   outline: none;
+}
+
+.addOption:focus-visible {
+  box-shadow: inset 3px 0 0 var(--color-accent);
 }
 
 .muted {

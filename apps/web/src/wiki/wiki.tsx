@@ -27,6 +27,7 @@ import { MapTab } from './map/map-tab.tsx'
 import { BookmarkButton, Bookmarks, OpenTabs } from './navigation.tsx'
 import { NewPageContext, NewPageDialog, type NewPageRequest } from './new-page.tsx'
 import { useWikiPanel } from './panel.tsx'
+import panelStyles from './panel-blocks.module.css'
 import { PanelBlocks } from './panel-blocks.tsx'
 import { PageProperties, type PropertyAdder } from './properties.tsx'
 import { QuickSwitcher } from './quick-switcher.tsx'
@@ -39,6 +40,7 @@ import { PageTree } from './tree.tsx'
 import { Versions } from './versions.tsx'
 import { WhoKnowsButton } from './who-knows.tsx'
 import styles from './wiki.module.css'
+import { WorldTour } from './world-tour.tsx'
 
 const homeRoute = getRouteApi('/mundos/$worldId/wiki')
 const pageRoute = getRouteApi('/mundos/$worldId/wiki/$pageId')
@@ -101,6 +103,7 @@ export function WikiLayout({
 
   return (
     <NewPageContext.Provider value={requestNewPage}>
+      <WorldTour master />
       <div ref={root} className={styles.wiki} data-collapsed={collapsed || undefined}>
         <aside
           id={asideId}
@@ -199,7 +202,7 @@ export function WikiLayout({
  * hueco del título), haya portada o no. La de la izquierda lo hace con su margen (CSS); la de la derecha va dentro de
  * la página, así que se mide cuánto tiene que subir o bajar (--panel-top)
  */
-function useSideTop(root: RefObject<HTMLDivElement | null>, ready: boolean) {
+export function useSideTop(root: RefObject<HTMLDivElement | null>, ready: boolean) {
   useLayoutEffect(() => {
     const element = root.current
     if (!element || typeof ResizeObserver === 'undefined') return
@@ -250,12 +253,21 @@ function PageFilter({
   onSearch?: (query: string) => void
 }) {
   const { t } = useTranslation()
+  const hintId = useId()
   return (
     <div className={styles.filter} data-tour="buscador">
+      {/* La pista, también para el lector de pantalla y lo táctil (no solo en el title) */}
+      {onSearch && (
+        <span id={hintId} className={panelStyles.visuallyHidden}>
+          {t('wiki.filterHint')}
+        </span>
+      )}
       <input
+        autoComplete="off"
         type="search"
         value={value}
         aria-label={label}
+        aria-describedby={onSearch ? hintId : undefined}
         placeholder={label}
         title={onSearch ? t('wiki.filterHint') : undefined}
         onChange={(event) => onChange(event.currentTarget.value)}
@@ -805,11 +817,11 @@ export function EntryView({
               <>
                 {/* «Mencionado en», arriba (como en Everlore); después, las propiedades y los bloques */}
                 <Backlinks key={`enlaces-${page.id}`} page={page} />
-                {/* Las propiedades, a un lado (como los bloques del panel de Everlore) */}
-                <PageProperties key={page.id} page={page} adders={false} adderRef={addProperty} />
+                {/* Las propiedades, a un lado (como los bloques del panel de Everlore): tras el retrato, si lo hay */}
                 <PanelBlocks
                   key={`bloques-${page.id}`}
                   page={page}
+                  properties={<PageProperties key={page.id} page={page} adders={false} adderRef={addProperty} />}
                   onAddProperty={page.locked ? undefined : (kind) => addProperty.current?.(kind)}
                 />
               </>

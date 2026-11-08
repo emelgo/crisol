@@ -5,7 +5,7 @@ import { FILE_BYTES } from '@crisol/systems'
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 import type { Auth } from '../auth/auth.ts'
 import { toHeaders } from '../http.ts'
-import { type ActionEnv, InvalidRequestError, TooManyRequestsError } from './context.ts'
+import { type ActionEnv, InvalidRequestError, malformedId, TooManyRequestsError } from './context.ts'
 import { implementationsByName } from './implementations.ts'
 
 export function registerActionRoutes(app: FastifyInstance, env: ActionEnv, auth: Auth) {
@@ -27,7 +27,7 @@ export function registerActionRoutes(app: FastifyInstance, env: ActionEnv, auth:
       // La salida pasa por el contrato: lo que no está en él no sale
       return impl.action.output.parse(output)
     } catch (error) {
-      if (error instanceof NotFoundError) return reply.code(404).send({ code: 'NOT_FOUND' })
+      if (error instanceof NotFoundError || malformedId(error)) return reply.code(404).send({ code: 'NOT_FOUND' })
       if (error instanceof ForbiddenError) return reply.code(403).send({ code: 'FORBIDDEN' })
       if (error instanceof TooManyRequestsError) return reply.code(429).send({ code: error.code })
       if (error instanceof InvalidRequestError) return reply.code(400).send({ code: error.code })

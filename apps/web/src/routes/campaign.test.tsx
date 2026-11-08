@@ -85,7 +85,7 @@ describe('una campaña y su enlace de invitación', () => {
     renderCampaign(c)
     const link = await screen.findByLabelText('Enlace de invitación')
     expect((link as HTMLInputElement).value).toMatch(/\/unirse\//)
-    expect(screen.getByText('Han entrado 0 con este enlace')).toBeDefined()
+    expect(screen.getByText('Nadie ha entrado aún con este enlace')).toBeDefined()
     await userEvent.click(screen.getByRole('button', { name: 'Copiar' }))
     expect(writeText).toHaveBeenCalledWith((link as HTMLInputElement).value)
     expect(await inMain().findByText('Copiado')).toBeDefined()
@@ -207,24 +207,13 @@ describe('una campaña y su enlace de invitación', () => {
     expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Nuevo enlace' }))
   })
 
-  // Una casilla de la franja: su número, por su rótulo
-  const stat = (label: string) => screen.queryByText(label, { selector: 'dt' })?.nextElementSibling?.textContent
-
-  it('la franja dice de qué mundo es, que eres su máster, cuántos juegan y cuántos han entrado con el enlace', async () => {
+  it('el título, solo (el mundo ya está en la barra: no lo baja); sin cifras ni explicaciones repetidas', async () => {
     renderCampaign(campaign())
-    expect(await screen.findByText('Campaña de Eana. Eres su máster.')).toBeDefined()
-    await screen.findByText('Jugadores', { selector: 'dt' })
-    expect(stat('Jugadores')).toBe('2')
-    expect(await screen.findByText('Han entrado', { selector: 'dt' })).toBeDefined()
-    expect(stat('Han entrado')).toBe('0')
-  })
-
-  it('a un jugador la franja le dice que juega en ella, sin lo del enlace', async () => {
-    renderCampaign(campaign('player'), { ...world, role: 'player' })
-    expect(await screen.findByText('Campaña de Eana. Juegas en ella.')).toBeDefined()
-    await screen.findByText('Jugadores', { selector: 'dt' })
-    expect(stat('Jugadores')).toBe('2')
-    expect(stat('Han entrado')).toBeUndefined()
+    expect(await screen.findByRole('heading', { level: 1, name: 'La Marca' })).toBeDefined()
+    const heading = screen.getByRole('heading', { level: 1, name: 'La Marca' }).parentElement as HTMLElement
+    expect(within(heading).queryByRole('link', { name: 'Eana' })).toBeNull()
+    expect(screen.queryByText('Campaña de Eana. Eres su máster.')).toBeNull()
+    expect(screen.queryByText('Jugadores', { selector: 'dt' })).toBeNull()
   })
 
   it('un jugador ve su campaña pero no el enlace', async () => {

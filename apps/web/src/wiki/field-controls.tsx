@@ -75,7 +75,8 @@ export function ChoiceSelect({
         id={id}
         type="button"
         className={styles.choiceButton}
-        aria-label={label}
+        // Con lo que enseña dentro (lo elegido): el nombre accesible contiene el texto visible (WCAG 2.5.3)
+        aria-label={`${label}: ${value || t('fields.choose')}`}
         aria-haspopup="listbox"
         aria-expanded={open}
         data-outside={outside ? '' : undefined}

@@ -250,9 +250,10 @@ describe('la mesa del máster', () => {
     await waitFor(() => expect(router.state.location.pathname).toBe(`/mundos/${WORLD.id}/wiki/${scenes[1]?.pageId}`))
   })
 
-  it('un jugador no tiene mesa', async () => {
-    await renderMesa({ ...CAMPAIGN, role: 'player' })
-    expect(await screen.findByRole('heading', { name: 'Esta campaña no existe' })).toBeDefined()
+  it('un jugador no tiene mesa: vuelve a su campaña (no «Esta campaña no existe»)', async () => {
+    const { router } = await renderMesa({ ...CAMPAIGN, role: 'player' })
+    await waitFor(() => expect(router.state.location.pathname).toBe(`/mundos/${WORLD.id}/campanas/${CAMPAIGN.id}`))
+    expect(screen.queryByRole('heading', { name: 'Esta campaña no existe' })).toBeNull()
     expect(channels).toHaveLength(0)
   })
 })

@@ -43,10 +43,10 @@ test('traer de Foundry con sus imágenes: el aviso de licencias, subirlas y el r
   await dialog
     .getByLabel('Elegir el archivo')
     .setInputFiles({ name: 'bestias.zip', mimeType: 'application/zip', buffer: Buffer.from(bestias()) })
-  await dialog.getByRole('button', { name: 'Traer de Foundry' }).click()
+  await dialog.getByRole('button', { name: 'Traer el sistema' }).click()
   // Sus imágenes: cuántas con cada licencia, y subirlas
   await expect(dialog.getByText('Trae 1 imagen:')).toBeVisible()
-  await expect(dialog).toContainText('solo para usar en Foundry')
+  await expect(dialog).toContainText('solo para usar en la mesa virtual de la que viene')
   await page.screenshot({ path: test.info().outputPath('imagenes-licencias.png'), fullPage: false })
   await dialog.getByRole('button', { name: 'Subir 1 imagen' }).click()
   await expect(dialog).toBeHidden()

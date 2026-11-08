@@ -1,16 +1,15 @@
-/* «Biblioteca»: buscar y los libros a la izquierda, el libro abierto en el centro (como el compendio) */
-.page {
-  display: grid;
-  grid-template-columns: minmax(17rem, 22rem) minmax(0, 1fr);
-  gap: var(--space-6);
-  align-items: start;
-  padding: var(--space-6);
+/* En la ficha estrecha, la lista de libros sin el relleno de las cajas de sección */
+.side section[aria-labelledby] {
+  margin-block: 0;
+  padding: var(--space-3) var(--space-4) var(--space-4);
 }
 
+/* «Biblioteca»: buscar y los libros a la izquierda, el libro abierto en el centro (como el compendio) */
 .side {
   position: sticky;
   inset-block-start: var(--space-6);
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-4);
   max-block-size: calc(100dvh - 2 * var(--space-6));
   padding: var(--space-4);
@@ -18,11 +17,6 @@
   border-radius: 8px;
   background: var(--color-surface);
   overflow: auto;
-}
-
-.title {
-  margin: 0;
-  font-size: 1.5rem;
 }
 
 .hidden {
@@ -239,12 +233,7 @@
   font-size: 0.875rem;
 }
 
-@media (max-width: 52rem) {
-  .page {
-    grid-template-columns: minmax(0, 1fr);
-    padding: var(--space-4);
-  }
-
+@media (max-width: 64rem) {
   .side {
     position: static;
     max-block-size: none;

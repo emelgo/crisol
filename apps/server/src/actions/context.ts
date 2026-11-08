@@ -74,10 +74,20 @@ export class TooManyRequestsError extends InvalidRequestError {
 
 /** El código de la API de un error esperado (no existe, sin permiso, petición que no se puede atender); si no, null */
 export function errorCode(error: unknown): string | null {
-  if (error instanceof NotFoundError) return 'NOT_FOUND'
+  if (error instanceof NotFoundError || malformedId(error)) return 'NOT_FOUND'
   if (error instanceof ForbiddenError) return 'FORBIDDEN'
   if (error instanceof InvalidRequestError) return error.code
   return null
+}
+
+/**
+ * Postgres no pudo leer un valor como su tipo (22P02: un id que no es un uuid, el '' de algo que no existe). Llega
+ * envuelto por Drizzle («Failed query…»), con la consulta en el mensaje: es un «no existe», nunca un 500 que la enseñe
+ */
+export function malformedId(error: unknown): boolean {
+  for (let e = error, depth = 0; e && typeof e === 'object' && depth < 4; e = (e as { cause?: unknown }).cause, depth++)
+    if ((e as { code?: unknown }).code === '22P02') return true
+  return false
 }
 
 /**
