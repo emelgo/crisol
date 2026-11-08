@@ -7,20 +7,34 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
-### Para retomar (2026-11-08: revisión global de la interfaz, hallazgos por repasar)
+### Para retomar (2026-11-08, noche: revisión global de la interfaz, arreglada en local)
 
-- **Hecho**: recorrido de todas las pantallas (máster, jugadora, tele, tema claro, móvil de la jugadora) con datos de
-  muestra; unos 60 hallazgos en `tasks/revision-interfaz.md` (fallos, incoherencias entre módulos, normas sin cumplir, accesibilidad del código,
-  menores y preguntas), también en la página «Revisión de la interfaz»
-  (https://claude.ai/artifact/GfPUrKjx5L2MbQbPYjbJv6) con sus capturas. Nada arreglado aún.
-- **Decidido por Enrique**: el móvil solo para la vista de la jugadora; el máster, siempre en el PC (`docs/diseno.md`).
-- **El entorno de la revisión** (para volver a capturar): `node e2e/.revision/servidor.ts` (API en 8132, base
-  `crisol_revision`; `REVISION_NUEVA=1` la rehace y luego `node e2e/.revision/sembrar.ts`), Vite en 5174 con
-  `npx vite --config .revision/vite.config.ts` desde `apps/web`, y `node e2e/.revision/capturar.ts [filtro]` (deja las
-  capturas en `out/revision/`). Esos archivos no van a git (`.git/info/exclude`). Cuentas en `tasks/revision-interfaz.md`.
-- **Lo siguiente**: repasar la lista con Enrique (qué sí, qué no, las preguntas de la sección F) y arreglar en local
-  (`pnpm dev` en 5173, que lo vea al momento), empezando por los fallos (A) y el esqueleto común de pantalla (B1, B2).
-  Pruebas, CI y despliegue al final, en un PR que lleve también esta rama.
+- **Hecho** (rama `docs/tras-modulo-6`, sin PR; Enrique dijo «vamos»): la revisión de todas las pantallas y casi todos
+  sus arreglos, en commits pequeños; la lista y su estado, en `tasks/revision-interfaz.md`, y en la página «Revisión de
+  la interfaz» (https://claude.ai/artifact/GfPUrKjx5L2MbQbPYjbJv6) con capturas de antes y después. Lo gordo:
+  - Todas las pantallas comparten un esqueleto (`components/screen.tsx`): el título siempre en el mismo sitio. Con
+    sesión, toda vista va a lo ancho (`routes/root.tsx`).
+  - La página que lee la jugadora, como la del mundo.
+  - Los dados, en un botón flotante con forma de d20 (norma nueva de Enrique).
+  - Arreglados los fallos: el máster veía secretos como revelados, la jugadora en la Mesa, 500 con SQL, tiradas al
+    imprimir y el límite de peticiones que sacaba a «Entrar».
+  - Accesibilidad: teclado, foco, contraste y zonas de toque.
+- **Decidido por Enrique hoy**: el móvil solo para la vista de la jugadora; los dados, en el d20 flotante. Las dos, en
+  `docs/diseno.md`.
+- **Quedan para Enrique** (mientras, como están): F1–F5, G1 (mover archivos con teclado, contra «mover es
+  arrastrar») y G10 («Foundry» en la interfaz).
+- **Pruebas**: las unitarias de lo tocado, al día y en verde (la web entera: 681). **Faltan**: poner al día las e2e
+  (lista en `tasks/revision-interfaz.md` § «Pruebas por poner al día»), ampliar `a11y.spec.ts` (G11), `pnpm test`
+  entero y `pnpm e2e`; luego el PR (con esta rama) y la CI una vez. Solo cuando Enrique lo diga.
+- **El entorno de la revisión** (para volver a capturar):
+  - `node e2e/.revision/servidor.ts` (API en 8132, base `crisol_revision`; `REVISION_NUEVA=1` la rehace y luego
+    `node e2e/.revision/sembrar.ts`).
+  - Vite en 5174: `npx vite --config .revision/vite.config.ts` desde `apps/web`.
+  - `node e2e/.revision/capturar.ts [filtro]` deja las capturas en `out/revision/`; las de antes de arreglar, en
+    `out/revision/antes/`.
+  - Esos archivos no van a git (`.git/info/exclude`). Las cuentas, en `tasks/revision-interfaz.md`.
+- **Después**: que Enrique pruebe los módulos 5 y 6; luego, el módulo 7 (la sala de jugadores), empezando por su
+  entrevista.
 
 ### Para retomar (2026-11-07, noche: módulo 6 en `main` y en staging)
 
