@@ -6,7 +6,6 @@ import { CharactersScreen } from './characters/characters.tsx'
 import { InPlayScreen } from './creatures/in-play.tsx'
 import { LibraryScreen } from './library/library.tsx'
 import { PartyScreen } from './party/route.tsx'
-import { AiSettings } from './routes/ai-settings.tsx'
 import { Bootstrap } from './routes/bootstrap.tsx'
 import { CampaignPage } from './routes/campaign.tsx'
 import { CampaignsPage } from './routes/campaigns.tsx'
@@ -176,7 +175,6 @@ const worldTrashRoute = createRoute({
   path: '/mundos/$worldId/papelera',
   component: WorldTrash
 })
-const aiRoute = createRoute({ getParentRoute: () => rootRoute, path: '/ia', component: AiSettings })
 const settingsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/ajustes', component: Settings })
 // Los archivos comunes de la cuenta, fuera de los mundos (ADR-0005)
 const commonFilesRoute = createRoute({ getParentRoute: () => rootRoute, path: '/archivos', component: CommonFiles })
@@ -224,7 +222,6 @@ const routeTree = rootRoute.addChildren([
   historyRoute,
   worldTrashRoute,
   trashRoute,
-  aiRoute,
   settingsRoute,
   commonFilesRoute,
   accountTagsRoute,

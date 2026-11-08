@@ -5,30 +5,25 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
-import { useCodeText, useErrorText } from '../api/errors.ts'
+import { useErrorText } from '../api/errors.ts'
 import { aiSettingsQuery } from '../api/queries.ts'
 import { useAnnounce } from '../components/announcer.tsx'
-import { outcomeText, useApprovals } from '../components/approval-queue.tsx'
 import { CopyField } from '../components/copy-field.tsx'
 import { FormError } from '../components/field.tsx'
 import styles from '../components/list.module.css'
-import { Screen } from '../components/screen.tsx'
 import settings from './ai-settings.module.css'
 
 const MODES: AiMode[] = ['readOnly', 'assistant', 'copilot']
 
-/** Los ajustes de IA de la cuenta: la dirección del conector, el modo y cómo acabaron sus últimas peticiones */
-/** Los ajustes de la IA: el conector, el modo y lo último que pidió. En «Ajustes» va dentro, con su título */
-export function AiSettings({ embedded = false, player = false }: { embedded?: boolean; player?: boolean }) {
-  const { t, i18n } = useTranslation()
+/** Los ajustes de la IA, dentro de «Ajustes» (docs/diseno.md: solo el conector y el modo): sus cajas, al lado de las demás */
+export function AiSettings({ player = false }: { player?: boolean }) {
+  const { t } = useTranslation()
   const api = useApi()
   const queryClient = useQueryClient()
   const errorText = useErrorText()
-  const codeText = useCodeText()
   const announce = useAnnounce()
   const { account, pending } = useAccounts().useAccount()
   const current = useQuery({ ...aiSettingsQuery(api), enabled: Boolean(account) })
-  const approvals = useApprovals()
   // Optimista: la opción cambia en el mismo clic y vuelve atrás si el servidor falla
   const [pendingMode, setPendingMode] = useState<AiMode | null>(null)
   const setMode = useMutation({
@@ -43,8 +38,6 @@ export function AiSettings({ embedded = false, player = false }: { embedded?: bo
   if (pending) return null
   if (!account) return <Navigate to="/entrar" replace />
   const mode = pendingMode ?? current.data?.mode
-  const recent = approvals.data?.recent ?? []
-  const date = new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium', timeStyle: 'short' })
 
   const body = (
     <>
@@ -86,31 +79,7 @@ export function AiSettings({ embedded = false, player = false }: { embedded?: bo
         </>
       )}
       <FormError message={current.error || setMode.error ? errorText(current.error ?? setMode.error) : null} />
-
-      {/* Las peticiones salen flotando en cualquier página; aquí, solo en su página propia */}
-      {!embedded && (
-        <section aria-labelledby="ultimas">
-          <h2 id="ultimas">{t('ai.recentTitle')}</h2>
-          {approvals.data &&
-            (recent.length === 0 ? (
-              <p>{t('ai.recentEmpty')}</p>
-            ) : (
-              <ul className={styles.list} aria-label={t('ai.recentTitle')}>
-                {recent.map((approval) => (
-                  <li key={approval.id} className={styles.item}>
-                    <span className={styles.name}>{outcomeText(t, codeText, approval)}</span>
-                    <span className={styles.role}>
-                      <time dateTime={approval.requestedAt}>{date.format(new Date(approval.requestedAt))}</time> ·{' '}
-                      {approval.tool}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            ))}
-        </section>
-      )}
     </>
   )
-  // En «Ajustes», sus cajas al lado de las demás (sin otra caja alrededor); por su dirección, en el esqueleto común
-  return embedded ? <div className={settings.embedded}>{body}</div> : <Screen title={t('ai.title')}>{body}</Screen>
+  return <div className={settings.embedded}>{body}</div>
 }

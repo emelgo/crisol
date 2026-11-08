@@ -252,9 +252,7 @@ describe('la mesa del máster', () => {
 
   it('un jugador no tiene mesa: vuelve a su campaña (no «Esta campaña no existe»)', async () => {
     const { router } = await renderMesa({ ...CAMPAIGN, role: 'player' })
-    await waitFor(() =>
-      expect(router.state.location.pathname).toBe(`/mundos/${WORLD.id}/campanas/${CAMPAIGN.id}`)
-    )
+    await waitFor(() => expect(router.state.location.pathname).toBe(`/mundos/${WORLD.id}/campanas/${CAMPAIGN.id}`))
     expect(screen.queryByRole('heading', { name: 'Esta campaña no existe' })).toBeNull()
     expect(channels).toHaveLength(0)
   })

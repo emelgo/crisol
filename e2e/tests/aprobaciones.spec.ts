@@ -65,11 +65,8 @@ test('rechazado, no se hace; en solo lectura, Claude ya no cambia nada', async (
   expect(rejected.text).toMatch(/^REJECTED/)
   expect((await claude.call('enlace_invitacion', { campaignId })).structuredContent).toMatchObject({ open: true })
 
-  // La página de la IA (por su dirección; el modo también está en Ajustes): las últimas peticiones y el modo
-  await page.goto('/ia')
-  await expect(page.getByRole('list', { name: 'Últimas peticiones' })).toContainText(
-    'Rechazado: cerrar las invitaciones de La Marca'
-  )
+  // El modo, en Ajustes (la pantalla /ia ya no está)
+  await page.goto('/ajustes')
   await page.getByRole('radio', { name: /^Solo lectura/ }).check()
   await expect(page.getByRole('status')).toHaveText('Guardado')
   const refused = await claude.call('crear_mundo', { name: 'Otro' })
@@ -91,8 +88,8 @@ test('la cola y los ajustes de IA, en los dos temas @a11y', async ({ page }) => 
       expect(serious.map((v) => `${colorScheme} ${v.id}: ${v.help}`)).toEqual([])
     }
   }
-  await gotoLive(page, '/ia')
-  await expect(page.getByRole('heading', { level: 1, name: 'Ajustes de IA' })).toBeVisible()
+  await gotoLive(page, '/ajustes')
+  await expect(page.getByRole('heading', { level: 2, name: 'Conectar una IA' })).toBeVisible()
   const asked = claude.call('enlace_invitacion', { campaignId, change: 'regenerate' })
   const queue = page.getByRole('region', { name: 'La IA espera tu aprobación' })
   await queue.getByText('Detalle').click()
@@ -100,6 +97,5 @@ test('la cola y los ajustes de IA, en los dos temas @a11y', async ({ page }) => 
   await check()
   await queue.getByRole('button', { name: 'Rechazar: generar un enlace nuevo para La Marca' }).click()
   await asked
-  await expect(page.getByRole('list', { name: 'Últimas peticiones' })).toBeVisible()
   await check()
 })

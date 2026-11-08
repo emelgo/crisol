@@ -19,7 +19,7 @@ const openSettings = async () => {
 
 const owner: Organization = { id: crypto.randomUUID(), name: 'Fateforge', role: 'owner' }
 
-const finished = (overrides: Partial<Approval>): Approval => ({
+const _finished = (overrides: Partial<Approval>): Approval => ({
   id: crypto.randomUUID(),
   tool: 'enlace_invitacion',
   action: 'regenerateInvitation',
@@ -72,7 +72,7 @@ describe('los ajustes de IA', () => {
   })
 
   it('cambiar el modo se guarda al momento', async () => {
-    const { api } = renderAt('/ia')
+    const { api } = renderAt('/ajustes')
     await userEvent.click(await screen.findByRole('radio', { name: /^Solo lectura/ }))
     expect(await inMain().findByText('Guardado')).toBeDefined()
     expect(announced()).toBe('Guardado')
@@ -82,7 +82,7 @@ describe('los ajustes de IA', () => {
   })
 
   it('mientras se guarda, las opciones siguen activas y con el foco; otro cambio entretanto se ignora', async () => {
-    const { api } = renderAt('/ia')
+    const { api } = renderAt('/ajustes')
     const original = api.client.call
     const saving: string[] = []
     let release = () => {}
@@ -105,28 +105,5 @@ describe('los ajustes de IA', () => {
     act(release)
     expect(await inMain().findByText('Guardado')).toBeDefined()
     expect(readOnly.checked).toBe(true)
-  })
-
-  it('cuenta cómo acabaron las últimas peticiones', async () => {
-    renderAt('/ia', {
-      approvals: [
-        finished({}),
-        finished({ status: 'failed', error: 'NOT_FOUND' }),
-        finished({ status: 'rejected', action: 'createWorld', input: { name: 'Otro' }, details: {} }),
-        finished({ status: 'expired', decidedAt: null })
-      ]
-    })
-    const list = await screen.findByRole('list', { name: 'Últimas peticiones' })
-    expect([...list.querySelectorAll('li')].map((li) => li.textContent)).toEqual([
-      expect.stringMatching(/^Hecho: generar un enlace nuevo para La Marca.*enlace_invitacion$/),
-      expect.stringMatching(/^No se pudo generar un enlace nuevo para La Marca: Ya no existe/),
-      expect.stringMatching(/^Rechazado: crear el mundo «Otro»/),
-      expect.stringMatching(/^La IA quiere generar un enlace nuevo para La Marca \(caducado\)/)
-    ])
-  })
-
-  it('sin peticiones aún, lo dice', async () => {
-    renderAt('/ia')
-    expect(await screen.findByText('Aún no ha pedido nada que esperase tu aprobación.')).toBeDefined()
   })
 })
