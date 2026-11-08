@@ -949,3 +949,8 @@
 .mesa:has([data-mesa-side="folded"]) {
   --tour-help-end: calc(3rem + var(--space-4));
 }
+
+/* Con ventanas minimizadas abajo a la izquierda, el zoom deja su sitio (sigue en la página: el d20 se coloca por él) */
+.stageBox:has([data-window-dock]) .zoom {
+  visibility: hidden;
+}

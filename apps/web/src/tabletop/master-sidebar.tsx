@@ -12,6 +12,7 @@ import { CampaignSettings } from '../campaign/settings.tsx'
 import { RollLog } from '../dice/log.tsx'
 import { CombatPanel } from './combat-panel.tsx'
 import styles from './mesa.module.css'
+import { pageWindow } from './page-window.tsx'
 import { PagesTab } from './pages-tab.tsx'
 import { CharactersList, CreaturesList, EncountersList, FactionLegend, ImagesList, type Placing } from './panel.tsx'
 import { RollToasts } from './roll-toasts.tsx'
@@ -25,6 +26,7 @@ import {
   useSidebarFolded,
   useSidebarTab
 } from './sidebar.tsx'
+import { useWindows } from './windows.tsx'
 
 const route = getRouteApi('/mundos/$worldId/campanas/$campaignId')
 
@@ -75,6 +77,7 @@ export function MasterSidebar({
   const { t } = useTranslation()
   const api = useApi()
   const navigate = useNavigate()
+  const windows = useWindows()
   const search = route.useSearch()
   const [tab, setTab] = useSidebarTab(MASTER_TABS, tabOfSlug(search.panel))
   const [folded, setFolded] = useSidebarFolded()
@@ -182,10 +185,7 @@ export function MasterSidebar({
     {
       key: 'pages',
       content: () => (
-        <PagesTab
-          worldId={worldId}
-          onOpen={(pageId) => void navigate({ to: '/mundos/$worldId/wiki/$pageId', params: { worldId, pageId } })}
-        />
+        <PagesTab worldId={worldId} onOpen={(pageId, title) => windows?.open(pageWindow(worldId, pageId, title))} />
       )
     },
     { key: 'settings', content: () => <CampaignSettings campaign={campaign} worldName={worldName} /> }

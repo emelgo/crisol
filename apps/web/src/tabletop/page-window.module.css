@@ -1,0 +1,53 @@
+/* Una página del mundo dentro de su ventana: la misma de la wiki, más apretada */
+.page {
+  container-type: inline-size;
+  min-block-size: 100%;
+  background: var(--color-bg);
+}
+
+.missing {
+  margin: 0;
+  padding: 1rem;
+  color: var(--color-muted);
+}
+
+/* La página y su panel, lado a lado mientras quepan; en una ventana estrecha, el panel debajo */
+.page :global([data-entry]) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(12rem, 16rem);
+  gap: var(--space-5);
+  align-items: start;
+  padding: var(--space-4) var(--space-5) var(--space-6);
+}
+
+.page :global([data-entry]) > article {
+  grid-column: 1;
+  padding-inline: 0;
+}
+
+.page :global([data-entry]) > aside {
+  position: static;
+  grid-column: 2;
+  max-inline-size: none;
+  max-block-size: none;
+  min-block-size: 0;
+  margin: 0;
+  padding-block-end: 0;
+}
+
+@container (max-width: 40rem) {
+  .page :global([data-entry]) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .page :global([data-entry]) > aside {
+    grid-column: 1;
+  }
+}
+
+/* La portada, más baja que en la wiki: la ventana es pequeña */
+.page :global([data-cover]) :global([data-cover-image]),
+.page :global([data-cover-image]) {
+  block-size: 8rem;
+  border-radius: 0;
+}

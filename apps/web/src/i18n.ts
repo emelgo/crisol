@@ -1629,6 +1629,16 @@ export const es = {
     }
   },
   // La mesa del máster (docs/specs/escenas.md, ADR-0018)
+  // Las ventanas sobre la Mesa (tabletop/windows.tsx)
+  windows: {
+    minimized: 'Ventanas minimizadas',
+    minimize: 'Minimizar {{title}}',
+    minimizeShort: 'Minimizar',
+    close: 'Cerrar {{title}}',
+    closeShort: 'Cerrar',
+    handle: 'ventana',
+    keys: 'Flechas para moverla; Mayúsculas y flechas para cambiar su tamaño'
+  },
   tabletop: {
     title: 'Mesa',
     label: 'Mesa: {{name}}',

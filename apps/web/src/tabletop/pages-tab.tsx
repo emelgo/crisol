@@ -37,7 +37,7 @@ export function visiblePages(pages: TreePage[], open: ReadonlySet<string>, query
   return shown
 }
 
-export function PagesTab({ worldId, onOpen }: { worldId: string; onOpen: (pageId: string) => void }) {
+export function PagesTab({ worldId, onOpen }: { worldId: string; onOpen: (pageId: string, title: string) => void }) {
   const { t } = useTranslation()
   const api = useApi()
   const [query, setQuery] = useState('')
@@ -99,7 +99,7 @@ export function PagesTab({ worldId, onOpen }: { worldId: string; onOpen: (pageId
                   {!page.hasChildren && <FileText size={13} />}
                 </span>
               )}
-              <button type="button" className={styles.title} onClick={() => onOpen(page.id)}>
+              <button type="button" className={styles.title} onClick={() => onOpen(page.id, page.title)}>
                 {page.icon && <span aria-hidden="true">{page.icon} </span>}
                 {page.title}
               </button>

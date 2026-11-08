@@ -45,7 +45,7 @@ Plan: `tasks/plan.md`. Lienzo: `out/lienzo-campana/`.
 
 ## Fase 3: las ventanas
 
-- [ ] 7. **El gestor de ventanas.** Abrir varias, mover por la cabecera, estirar por la esquina (puntero y teclado),
+- [x] 7. **El gestor de ventanas.** Abrir varias, mover por la cabecera, estirar por la esquina (puntero y teclado),
   traer delante, minimizar abajo a la izquierda, cerrar, recordar dónde estaban; el zoom se esconde si hay minimizadas.
   - Acepta: dos ventanas se mueven y se apilan; minimizada vuelve a su sitio; con teclado se mueve y se cierra.
   - Comprueba: pruebas del gestor.
