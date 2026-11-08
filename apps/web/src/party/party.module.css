@@ -359,15 +359,6 @@
 }
 
 /* La pantalla «Grupo»: el inventario en el centro y los movimientos a la derecha */
-.page {
-  display: grid;
-  grid-template-columns: minmax(0, 46rem) minmax(14rem, 19rem);
-  justify-content: center;
-  gap: var(--space-6);
-  align-items: start;
-  padding: var(--space-6);
-}
-
 .main,
 .side {
   padding: var(--space-5);
@@ -377,24 +368,6 @@
 }
 
 .side {
-  position: sticky;
-  inset-block-start: var(--space-6);
   display: grid;
   gap: var(--space-3);
-}
-
-.title {
-  margin: 0 0 var(--space-4);
-  font-size: 1.5rem;
-}
-
-@media (max-width: 52rem) {
-  .page {
-    grid-template-columns: minmax(0, 1fr);
-    padding: var(--space-4);
-  }
-
-  .side {
-    position: static;
-  }
 }

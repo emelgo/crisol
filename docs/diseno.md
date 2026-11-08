@@ -38,9 +38,11 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   de dentro la cierra y lleva a su sitio. **Sin enlace de vuelta** arriba («Mis mundos»): en una ventana no tiene
   sentido.
 - **Dentro de un mundo, la barra lleva el mundo (su nombre) y Archivos**; nada más (ni Plantillas, ni Campañas, ni
-  «Inicio»: el mundo se abre en su portada). Historial y Papelera enseñan los de ese mundo. **La excepción, «Dados»**
-  (2026-11-04, con el lienzo de dados): abre y cierra la ficha de dados a la derecha, en el sitio del panel de la
-  página, sin tapar el texto; también está en la página de una campaña.
+  «Inicio»: el mundo se abre en su portada). Historial y Papelera enseñan los de ese mundo. **Los dados no van en la barra**
+  (Enrique, 2026-11-08: «los dados deben estar en un icono con forma de d20 como en dndbeyond que al pulsarlo se abre
+  en una esquina, pero no una pagina propia»): un botón flotante con forma de d20, siempre en la misma esquina, que
+  abre la ficha de dados junto a él (y la cierra); no es una pantalla ni una sección de la barra. Sustituye a la ficha
+  de dados en el sitio del panel de la página (2026-11-04).
 - **La campaña se abre en su propia vista, como un mundo** (Enrique, 2026-11-05): al entrar, la barra cambia y enseña
   lo de la campaña (sus personajes, su compendio, los dados…), con la transición de entrar. **El compendio** (el
   contenido del sistema que usa la campaña: clases, conjuros, criaturas, reglas…, con sus ediciones) **se ve ahí**.

@@ -85,7 +85,8 @@ que él decide de verdad (F, G1, G10) va con la opción por defecto apuntada en 
   imagen» (033). Que salgan al acercarse, como el tipo y la × de las propiedades.
 - [ ] C7. **Las tarjetas de Sistemas no tienen engranaje** (025): la norma pone las acciones en el engranaje, siempre a
   la vista (Plantillas sí lo tiene).
-- [ ] C8. **«Dados» tapa el contenido fuera de las páginas** (071, 072, 075): la cabecera de la campaña, «Quién la ve»
+- [ ] C8. **Los dados, en un botón flotante con forma de d20** (Enrique, 2026-11-08; norma nueva en `docs/diseno.md`):
+  fuera de la barra, en una esquina, y la ficha se abre junto a él. Resuelve lo que se vio: **«Dados» tapa el contenido fuera de las páginas** (071, 072, 075): la cabecera de la campaña, «Quién la ve»
   y Versiones en la ficha, la barra de la Mesa. Y el «?» se monta encima de sus botones. La norma: en el sitio del
   panel, sin tapar.
 - [ ] C9. **Género en la tele**: «Ilesa» bajo criaturas que nombra el máster (073); mejor «Sin heridas» (y revisar el

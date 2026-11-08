@@ -10,6 +10,7 @@ import { Notices } from '../components/notices.tsx'
 import { PageTitle, useFocusHeading } from '../components/page-title.tsx'
 import { RevealNotices } from '../components/reveal-notices.tsx'
 import { Ribbon, useMasteredWorld } from '../components/ribbon.tsx'
+import { Screen } from '../components/screen.tsx'
 import { ThemeToggle } from '../components/theme-toggle.tsx'
 import { type WindowKind, WindowProvider } from '../components/window.tsx'
 import { DiceProvider } from '../dice/context.tsx'
@@ -29,14 +30,14 @@ export function RootLayout() {
   const { account, pending } = useAccounts().useAccount()
   // La wiki ocupa todo el ancho: el panel lateral y la página, uno al lado del otro; Mis mundos, los archivos comunes y
   // las etiquetas, con su columna en el centro y paneles a los lados
+  // Con sesión, toda vista ocupa el ancho y se pone su esqueleto (components/screen.tsx: el título siempre en el
+  // mismo sitio); solo las sueltas de cuenta (perfil, ajustes, historial y papelera abiertos por su dirección, el
+  // consentimiento) van en la columna de siempre
   const wide = useRouterState({
     select: (state) =>
-      /^\/mundos\/[^/]+\/(wiki|etiquetas|archivos|buscar)/.test(state.location.pathname) ||
-      /^\/mundos\/[^/]+\/campanas\/[^/]+\/(compendio|personajes|biblioteca|mesa)/.test(state.location.pathname) ||
-      /^\/mundos\/[^/]+\/?$/.test(state.location.pathname) ||
-      state.location.pathname === '/archivos' ||
-      state.location.pathname === '/etiquetas' ||
-      state.location.pathname === '/mundos'
+      !/^\/(perfil|ajustes|historial|papelera|oauth\/|mundos\/[^/]+\/(historial|papelera)$)/.test(
+        state.location.pathname
+      )
   })
   // Imprimir: solo la hoja, sin nada de la interfaz; la pantalla de la tele, igual: solo el mapa
   const printing = useRouterState({
@@ -133,10 +134,14 @@ function GroupKnowledgeWindow() {
 
 export function NotFound() {
   const { t } = useTranslation()
+  const { account } = useAccounts().useAccount()
+  const back = <Link to="/">{t('notFound.back')}</Link>
+  // Con sesión, en el esqueleto de todas las pantallas (el título en su sitio)
+  if (account) return <Screen title={t('notFound.title')}>{back}</Screen>
   return (
     <section>
       <PageTitle>{t('notFound.title')}</PageTitle>
-      <Link to="/">{t('notFound.back')}</Link>
+      {back}
     </section>
   )
 }

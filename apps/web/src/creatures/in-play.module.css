@@ -1,12 +1,4 @@
 /* «En juego»: la lista a la izquierda, la hoja en el centro y el registro a la derecha (como el compendio) */
-.page {
-  display: grid;
-  grid-template-columns: minmax(16rem, 19rem) minmax(0, 1fr) minmax(14rem, 19rem);
-  gap: var(--space-6);
-  align-items: start;
-  padding: var(--space-6);
-}
-
 .side,
 .log {
   position: sticky;
@@ -27,11 +19,6 @@
   align-items: baseline;
   gap: var(--space-2);
   margin-block-end: var(--space-3);
-}
-
-.title {
-  margin: 0;
-  font-size: 1.5rem;
 }
 
 .count {
@@ -273,23 +260,10 @@
   min-block-size: var(--target);
 }
 
-@media (max-width: 1100px) {
-  .page {
-    grid-template-columns: minmax(15rem, 18rem) minmax(0, 1fr);
-  }
-
+/* Sin sitio, las fichas bajan bajo la columna (components/screen.module.css) y no hace falta que se desplacen */
+@media (max-width: 64rem) {
+  .side,
   .log {
-    display: none;
-  }
-}
-
-@media (max-width: 720px) {
-  .page {
-    grid-template-columns: 1fr;
-    padding: var(--space-3);
-  }
-
-  .side {
     position: static;
     max-block-size: none;
   }

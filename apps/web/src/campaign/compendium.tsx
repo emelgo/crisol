@@ -220,9 +220,12 @@ export function CompendiumScreen() {
   return (
     <SystemIdContext.Provider value={system.id}>
       <div className={styles.page} data-reading={narrow && shown ? '' : undefined}>
+        {/* El título, en el sitio de todas las pantallas (components/screen.tsx) */}
+        <div className={styles.top}>
+          <PageTitle>{t('compendium.title')}</PageTitle>
+        </div>
         <aside className={styles.side} aria-label={t('compendium.title')}>
           <div className={styles.sideHead}>
-            <PageTitle className={styles.title}>{t('compendium.title')}</PageTitle>
             <span className={styles.system}>
               {editions.length > 0
                 ? t('compendium.systemWith', { system: system.name, editions: editions.join(t('compendium.and')) })

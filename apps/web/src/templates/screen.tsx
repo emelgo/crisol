@@ -19,7 +19,7 @@ import { Field, FormError } from '../components/field.tsx'
 import form from '../components/form.module.css'
 import { failed, LoadError } from '../components/load-error.tsx'
 import { Modal } from '../components/modal.tsx'
-import { PageTitle } from '../components/page-title.tsx'
+import { Screen } from '../components/screen.tsx'
 import { Tour } from '../components/tour.tsx'
 import cards from '../routes/world-card.module.css'
 import { TEMPLATE_ICON } from './icons.tsx'
@@ -55,46 +55,44 @@ export function TemplatesScreen() {
   const builtIn = all.filter((template) => template.builtIn)
   const preview = all.find((template) => template.id === hovered)
   return (
-    <section className={styles.page}>
-      <aside className={styles.side} aria-label={t('templates.preview')}>
-        {preview && <TemplatePreview template={preview} />}
-      </aside>
-      <div className={styles.center}>
-        <PageTitle>{t('templates.title')}</PageTitle>
-        {failed(templates) && <LoadError error={templates.error} onRetry={() => templates.refetch()} />}
-        {templates.data && (
-          <>
-            <h2 className={styles.section}>{t('templates.mine')}</h2>
-            <ul className={styles.grid} aria-label={t('templates.mine')} data-tour="plantillas-tuyas">
-              {mine.map((template) => (
-                <TemplateCard key={template.id} template={template} onHover={setHovered} />
-              ))}
-              <li>
-                <button
-                  type="button"
-                  className={styles.newCard}
-                  data-tour="plantillas-nueva"
-                  onClick={() => setCreating({ copyOf: null })}
-                >
-                  <Plus aria-hidden="true" size={22} />
-                  {t('templates.new')}
-                </button>
-              </li>
-            </ul>
-            <h2 className={styles.section}>{t('templates.builtIn')}</h2>
-            <ul className={styles.grid} aria-label={t('templates.builtIn')} data-tour="plantillas-serie">
-              {builtIn.map((template) => (
-                <TemplateCard
-                  key={template.id}
-                  template={template}
-                  onHover={setHovered}
-                  onCopy={() => setCreating({ copyOf: template.id })}
-                />
-              ))}
-            </ul>
-          </>
-        )}
-      </div>
+    <Screen
+      title={t('templates.title')}
+      left={preview && <TemplatePreview template={preview} />}
+      leftLabel={t('templates.preview')}
+    >
+      {failed(templates) && <LoadError error={templates.error} onRetry={() => templates.refetch()} />}
+      {templates.data && (
+        <>
+          <h2 className={styles.section}>{t('templates.mine')}</h2>
+          <ul className={styles.grid} aria-label={t('templates.mine')} data-tour="plantillas-tuyas">
+            {mine.map((template) => (
+              <TemplateCard key={template.id} template={template} onHover={setHovered} />
+            ))}
+            <li>
+              <button
+                type="button"
+                className={styles.newCard}
+                data-tour="plantillas-nueva"
+                onClick={() => setCreating({ copyOf: null })}
+              >
+                <Plus aria-hidden="true" size={22} />
+                {t('templates.new')}
+              </button>
+            </li>
+          </ul>
+          <h2 className={styles.section}>{t('templates.builtIn')}</h2>
+          <ul className={styles.grid} aria-label={t('templates.builtIn')} data-tour="plantillas-serie">
+            {builtIn.map((template) => (
+              <TemplateCard
+                key={template.id}
+                template={template}
+                onHover={setHovered}
+                onCopy={() => setCreating({ copyOf: template.id })}
+              />
+            ))}
+          </ul>
+        </>
+      )}
       {creating && <NewTemplateDialog copyOf={creating.copyOf} onClose={() => setCreating(null)} />}
       {templates.data && (
         <Tour
@@ -105,7 +103,7 @@ export function TemplatesScreen() {
           ]}
         />
       )}
-    </section>
+    </Screen>
   )
 }
 

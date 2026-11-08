@@ -7,7 +7,6 @@ import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { useAnnounce } from '../components/announcer.tsx'
-import { Banner, type Stat } from '../components/banner.tsx'
 import { Loading } from '../components/brand.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
 import { CopyField } from '../components/copy-field.tsx'
@@ -18,6 +17,7 @@ import styles from '../components/list.module.css'
 import { failed, LoadError } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { RemovedMessage, RemoveMemberConfirm, useRemoveMember } from '../components/remove-member.tsx'
+import { Screen } from '../components/screen.tsx'
 import { Tour } from '../components/tour.tsx'
 
 const route = getRouteApi('/mundos/$worldId/campanas/$campaignId')
@@ -59,8 +59,14 @@ export function CampaignPage() {
   }
 
   return (
-    <section>
-      <CampaignBanner campaign={campaign} worldName={world.name} />
+    <Screen
+      title={campaign.name}
+      eyebrow={
+        <Link to="/mundos/$worldId" params={{ worldId: campaign.worldId }}>
+          {world.name}
+        </Link>
+      }
+    >
       <MembersPanel campaign={campaign} />
       {campaign.role === 'master' && <InvitationPanel campaignId={campaignId} />}
       <Tour
@@ -101,43 +107,7 @@ export function CampaignPage() {
           { target: '[data-tour="menu-movil"]', text: t('tour.menu') }
         ]}
       />
-    </section>
-  )
-}
-
-/** La franja: de qué mundo es, tu papel, cuántos juegan y, para el máster, cuántos han entrado con el enlace */
-function CampaignBanner({ campaign, worldName }: { campaign: Campaign; worldName: string }) {
-  const { t } = useTranslation()
-  const api = useApi()
-  const campaignId = campaign.id
-  const master = campaign.role === 'master'
-  // Las mismas consultas que los paneles de abajo: comparten caché y se piden una vez
-  const members = useQuery({
-    queryKey: ['members', campaignId],
-    queryFn: () => api.call('listMembers', { campaignId })
-  })
-  const invitation = useQuery({
-    queryKey: ['invitation', campaignId],
-    queryFn: () => api.call('getInvitation', { campaignId }),
-    enabled: master
-  })
-  const stats: Stat[] = []
-  if (members.data) {
-    const players = members.data.members.filter((member) => member.role === 'player').length
-    stats.push({ label: t('campaign.players'), value: players })
-  }
-  if (master && invitation.data) stats.push({ label: t('campaign.joined'), value: invitation.data.joins })
-  return (
-    <Banner
-      crumb={
-        <Link to="/mundos/$worldId" params={{ worldId: campaign.worldId }}>
-          {worldName}
-        </Link>
-      }
-      title={campaign.name}
-      detail={t(master ? 'campaign.asMaster' : 'campaign.asPlayer', { world: worldName })}
-      stats={stats}
-    />
+    </Screen>
   )
 }
 

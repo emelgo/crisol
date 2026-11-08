@@ -53,7 +53,8 @@ describe('los ajustes de IA', () => {
   it('el propietario los tiene en Ajustes: la dirección del conector y el modo, copiloto por defecto', async () => {
     const { router } = renderAt('/mundos')
     const settings = await openSettings()
-    expect(await settings.findByRole('heading', { level: 2, name: 'IA' })).toBeDefined()
+    // Sus cajas, al lado de «Apariencia» (sin otra caja «IA» alrededor)
+    expect(await settings.findByRole('heading', { level: 2, name: 'Conectar una IA' })).toBeDefined()
     expect(router.state.location.pathname).toBe('/mundos')
     expect((await settings.findByLabelText<HTMLInputElement>('Dirección del conector')).value).toBe(
       'https://crisol.test/mcp'
@@ -66,7 +67,7 @@ describe('los ajustes de IA', () => {
     await screen.findByRole('heading', { level: 1, name: 'Mis mundos' })
     const settings = await openSettings()
     expect(settings.getByRole('heading', { level: 2, name: 'Apariencia' })).toBeDefined()
-    expect(settings.queryByRole('heading', { name: 'IA' })).toBeNull()
+    expect(settings.queryByRole('heading', { name: 'Conectar una IA' })).toBeNull()
     expect(settings.queryByLabelText('Dirección del conector')).toBeNull()
   })
 

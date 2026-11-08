@@ -21,8 +21,8 @@ import { Field, FormError } from '../components/field.tsx'
 import form from '../components/form.module.css'
 import { failed, LoadError } from '../components/load-error.tsx'
 import { Modal } from '../components/modal.tsx'
-import { PageTitle } from '../components/page-title.tsx'
 import { saveFile } from '../components/save-file.ts'
+import { Screen } from '../components/screen.tsx'
 import { Tour } from '../components/tour.tsx'
 import cards from '../routes/world-card.module.css'
 import screen from '../templates/screen.module.css'
@@ -59,41 +59,39 @@ export function SystemsScreen() {
   const builtIn = all.filter((s) => s.builtIn)
   const preview = all.find((s) => s.id === hovered)
   return (
-    <section className={screen.page}>
-      <aside className={screen.side} aria-label={t('systems.preview')}>
-        {preview && <SystemPreview system={preview} />}
-      </aside>
-      <div className={screen.center}>
-        <PageTitle>{t('systems.title')}</PageTitle>
-        {failed(systems) && <LoadError error={systems.error} onRetry={() => systems.refetch()} />}
-        {systems.data && (
-          <>
-            <h2 className={screen.section}>{t('systems.mine')}</h2>
-            <ul className={screen.grid} aria-label={t('systems.mine')} data-tour="sistemas-tuyos">
-              {mine.map((system) => (
-                <SystemCard key={system.id} system={system} onHover={setHovered} />
-              ))}
-              <li>
-                <button
-                  type="button"
-                  className={screen.newCard}
-                  data-tour="sistemas-nuevo"
-                  onClick={() => setCreating(true)}
-                >
-                  <Plus aria-hidden="true" size={22} />
-                  {t('systems.new')}
-                </button>
-              </li>
-            </ul>
-            <h2 className={screen.section}>{t('systems.builtIn')}</h2>
-            <ul className={screen.grid} aria-label={t('systems.builtIn')} data-tour="sistemas-serie">
-              {builtIn.map((system) => (
-                <SystemCard key={system.id} system={system} onHover={setHovered} />
-              ))}
-            </ul>
-          </>
-        )}
-      </div>
+    <Screen
+      title={t('systems.title')}
+      left={preview && <SystemPreview system={preview} />}
+      leftLabel={t('systems.preview')}
+    >
+      {failed(systems) && <LoadError error={systems.error} onRetry={() => systems.refetch()} />}
+      {systems.data && (
+        <>
+          <h2 className={screen.section}>{t('systems.mine')}</h2>
+          <ul className={screen.grid} aria-label={t('systems.mine')} data-tour="sistemas-tuyos">
+            {mine.map((system) => (
+              <SystemCard key={system.id} system={system} onHover={setHovered} />
+            ))}
+            <li>
+              <button
+                type="button"
+                className={screen.newCard}
+                data-tour="sistemas-nuevo"
+                onClick={() => setCreating(true)}
+              >
+                <Plus aria-hidden="true" size={22} />
+                {t('systems.new')}
+              </button>
+            </li>
+          </ul>
+          <h2 className={screen.section}>{t('systems.builtIn')}</h2>
+          <ul className={screen.grid} aria-label={t('systems.builtIn')} data-tour="sistemas-serie">
+            {builtIn.map((system) => (
+              <SystemCard key={system.id} system={system} onHover={setHovered} />
+            ))}
+          </ul>
+        </>
+      )}
       {creating && <NewSystemDialog onClose={() => setCreating(false)} />}
       {systems.data && (
         <Tour
@@ -104,7 +102,7 @@ export function SystemsScreen() {
           ]}
         />
       )}
-    </section>
+    </Screen>
   )
 }
 

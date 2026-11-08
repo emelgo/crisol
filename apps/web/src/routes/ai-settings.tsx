@@ -12,7 +12,7 @@ import { outcomeText, useApprovals } from '../components/approval-queue.tsx'
 import { CopyField } from '../components/copy-field.tsx'
 import { FormError } from '../components/field.tsx'
 import styles from '../components/list.module.css'
-import { PageTitle } from '../components/page-title.tsx'
+import { Screen } from '../components/screen.tsx'
 import settings from './ai-settings.module.css'
 
 const MODES: AiMode[] = ['readOnly', 'assistant', 'copilot']
@@ -46,9 +46,8 @@ export function AiSettings({ embedded = false, player = false }: { embedded?: bo
   const recent = approvals.data?.recent ?? []
   const date = new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium', timeStyle: 'short' })
 
-  return (
-    <section aria-labelledby={embedded ? 'ajustes-ia' : undefined} className={embedded ? settings.embedded : undefined}>
-      {embedded ? <h2 id="ajustes-ia">{t('ai.link')}</h2> : <PageTitle>{t('ai.title')}</PageTitle>}
+  const body = (
+    <>
       {current.data && (
         <>
           <section aria-labelledby="conector">
@@ -110,6 +109,8 @@ export function AiSettings({ embedded = false, player = false }: { embedded?: bo
             ))}
         </section>
       )}
-    </section>
+    </>
   )
+  // En «Ajustes», sus cajas al lado de las demás (sin otra caja alrededor); por su dirección, en el esqueleto común
+  return embedded ? <div className={settings.embedded}>{body}</div> : <Screen title={t('ai.title')}>{body}</Screen>
 }

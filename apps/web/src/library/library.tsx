@@ -15,7 +15,7 @@ import { useErrorText } from '../api/errors.ts'
 import { Loading } from '../components/brand.tsx'
 import { FormError } from '../components/field.tsx'
 import { failed, LoadError } from '../components/load-error.tsx'
-import { PageTitle } from '../components/page-title.tsx'
+import { Screen } from '../components/screen.tsx'
 import { useSettled } from '../components/settled.ts'
 import { Tour } from '../components/tour.tsx'
 import { PdfPages } from '../wiki/pdf-viewer.tsx'
@@ -83,119 +83,120 @@ export function LibraryScreen() {
       search: { libro: fileId, ...(page ? { pagina: page } : {}), ...(wanted ? { q: wanted } : {}) }
     })
   const scope = (common: boolean) => (common ? t('library.common') : t('library.world'))
-  return (
-    <div className={styles.page}>
-      <aside className={styles.side} aria-label={t('library.title')}>
-        <PageTitle className={styles.title}>{t('library.title')}</PageTitle>
-        <search className={styles.search} data-tour="biblioteca-buscar">
-          <label htmlFor={searchId} className={styles.hidden}>
-            {t('library.search')}
-          </label>
-          <Search size={16} aria-hidden="true" />
-          <input
-            id={searchId}
-            type="search"
-            autoComplete="off"
-            placeholder={t('library.search')}
-            value={query}
-            onChange={(event) => setQuery(event.currentTarget.value)}
-          />
-        </search>
-        {wanted ? (
-          <section aria-label={t('library.results')} aria-busy={found.isFetching}>
-            <p className={styles.hidden} role="status">
-              {found.data ? t('library.found', { count: found.data.books.length }) : ''}
-            </p>
-            {found.data?.books.length === 0 && found.data.pages.length === 0 && (
-              <p className={styles.muted}>{t('library.nothing')}</p>
-            )}
-            {found.data?.books.map((book) => (
-              <section key={book.fileId} className={styles.group} aria-label={book.name}>
-                <div className={styles.groupHead}>
-                  <span className={styles.bookName}>{book.name}</span>
-                  <span className={styles.scope}>{scope(book.common)}</span>
-                </div>
-                <ul className={styles.hits}>
-                  {book.pages.map((hit) => (
-                    <li key={hit.page}>
-                      <button
-                        type="button"
-                        className={styles.hit}
-                        aria-current={open?.fileId === book.fileId && search.pagina === hit.page ? 'true' : undefined}
-                        onClick={() => show(book.fileId, hit.page)}
-                      >
-                        <span className={styles.hitHead}>
-                          {t('library.page', { page: hit.page })}
-                          {hit.semantic && <span className={styles.semantic}>{t('library.semantic')}</span>}
-                        </span>
-                        <span className={styles.excerpt}>
-                          <Excerpt text={hit.excerpt} />
-                        </span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            ))}
-            {found.data && found.data.pages.length > 0 && (
-              <p className={styles.alsoIn}>
-                {t('library.alsoIn')}{' '}
-                {found.data.pages.map((page, i) => (
-                  <Fragment key={page.pageId}>
-                    {i > 0 && ', '}
-                    <Link to="/mundos/$worldId/wiki/$pageId" params={{ worldId, pageId: page.pageId }}>
-                      {page.title}
-                    </Link>
-                  </Fragment>
-                ))}
-              </p>
-            )}
-          </section>
-        ) : (
-          <section aria-labelledby={`${searchId}-books`} data-tour="biblioteca-libros">
-            <h2 id={`${searchId}-books`} className={styles.small}>
-              {t('library.books')}
-            </h2>
-            {books.data.books.length === 0 && <p className={styles.muted}>{t('library.empty')}</p>}
-            <ul className={styles.books}>
-              {books.data.books.map((book) => (
-                <li key={book.fileId}>
-                  <button
-                    type="button"
-                    className={styles.book}
-                    aria-current={open?.fileId === book.fileId ? 'true' : undefined}
-                    onClick={() => show(book.fileId)}
-                  >
-                    <BookOpen size={18} aria-hidden="true" />
-                    <span className={styles.bookText}>
-                      <span className={styles.bookName}>{book.name}</span>
-                      <span className={styles.meta}>
-                        {book.pages > 0
-                          ? t('library.meta', { count: book.pages, scope: scope(book.common) })
-                          : scope(book.common)}
-                        {' · '}
-                        <BookState book={book} />
-                      </span>
-                    </span>
-                  </button>
-                  {book.status === 'failed' && (
+  const side = (
+    <div className={styles.side}>
+      <search className={styles.search} data-tour="biblioteca-buscar">
+        <label htmlFor={searchId} className={styles.hidden}>
+          {t('library.search')}
+        </label>
+        <Search size={16} aria-hidden="true" />
+        <input
+          id={searchId}
+          type="search"
+          autoComplete="off"
+          placeholder={t('library.search')}
+          value={query}
+          onChange={(event) => setQuery(event.currentTarget.value)}
+        />
+      </search>
+      {wanted ? (
+        <section aria-label={t('library.results')} aria-busy={found.isFetching}>
+          <p className={styles.hidden} role="status">
+            {found.data ? t('library.found', { count: found.data.books.length }) : ''}
+          </p>
+          {found.data?.books.length === 0 && found.data.pages.length === 0 && (
+            <p className={styles.muted}>{t('library.nothing')}</p>
+          )}
+          {found.data?.books.map((book) => (
+            <section key={book.fileId} className={styles.group} aria-label={book.name}>
+              <div className={styles.groupHead}>
+                <span className={styles.bookName}>{book.name}</span>
+                <span className={styles.scope}>{scope(book.common)}</span>
+              </div>
+              <ul className={styles.hits}>
+                {book.pages.map((hit) => (
+                  <li key={hit.page}>
                     <button
                       type="button"
-                      className={styles.again}
-                      onClick={() => again.mutate(book.fileId)}
-                      aria-label={t('library.againOf', { name: book.name })}
+                      className={styles.hit}
+                      aria-current={open?.fileId === book.fileId && search.pagina === hit.page ? 'true' : undefined}
+                      onClick={() => show(book.fileId, hit.page)}
                     >
-                      <RotateCcw size={14} aria-hidden="true" />
-                      {t('library.again')}
+                      <span className={styles.hitHead}>
+                        {t('library.page', { page: hit.page })}
+                        {hit.semantic && <span className={styles.semantic}>{t('library.semantic')}</span>}
+                      </span>
+                      <span className={styles.excerpt}>
+                        <Excerpt text={hit.excerpt} />
+                      </span>
                     </button>
-                  )}
-                </li>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
+          {found.data && found.data.pages.length > 0 && (
+            <p className={styles.alsoIn}>
+              {t('library.alsoIn')}{' '}
+              {found.data.pages.map((page, i) => (
+                <Fragment key={page.pageId}>
+                  {i > 0 && ', '}
+                  <Link to="/mundos/$worldId/wiki/$pageId" params={{ worldId, pageId: page.pageId }}>
+                    {page.title}
+                  </Link>
+                </Fragment>
               ))}
-            </ul>
-            <FormError message={again.error ? errorText(again.error) : null} />
-          </section>
-        )}
-      </aside>
+            </p>
+          )}
+        </section>
+      ) : (
+        <section aria-labelledby={`${searchId}-books`} data-tour="biblioteca-libros">
+          <h2 id={`${searchId}-books`} className={styles.small}>
+            {t('library.books')}
+          </h2>
+          {books.data.books.length === 0 && <p className={styles.muted}>{t('library.empty')}</p>}
+          <ul className={styles.books}>
+            {books.data.books.map((book) => (
+              <li key={book.fileId}>
+                <button
+                  type="button"
+                  className={styles.book}
+                  aria-current={open?.fileId === book.fileId ? 'true' : undefined}
+                  onClick={() => show(book.fileId)}
+                >
+                  <BookOpen size={18} aria-hidden="true" />
+                  <span className={styles.bookText}>
+                    <span className={styles.bookName}>{book.name}</span>
+                    <span className={styles.meta}>
+                      {book.pages > 0
+                        ? t('library.meta', { count: book.pages, scope: scope(book.common) })
+                        : scope(book.common)}
+                      {' · '}
+                      <BookState book={book} />
+                    </span>
+                  </span>
+                </button>
+                {book.status === 'failed' && (
+                  <button
+                    type="button"
+                    className={styles.again}
+                    onClick={() => again.mutate(book.fileId)}
+                    aria-label={t('library.againOf', { name: book.name })}
+                  >
+                    <RotateCcw size={14} aria-hidden="true" />
+                    {t('library.again')}
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+          <FormError message={again.error ? errorText(again.error) : null} />
+        </section>
+      )}
+    </div>
+  )
+  return (
+    <Screen title={t('library.title')} left={side} leftLabel={t('library.books')}>
       <section className={styles.reader} aria-label={open ? open.name : t('library.title')}>
         {open ? (
           <>
@@ -225,6 +226,6 @@ export function LibraryScreen() {
           ...(wanted ? [] : [{ target: '[data-tour="biblioteca-libros"]', text: t('tour.library.books') }])
         ]}
       />
-    </div>
+    </Screen>
   )
 }

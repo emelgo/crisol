@@ -20,7 +20,7 @@ import { Field, FormError } from '../components/field.tsx'
 import form from '../components/form.module.css'
 import { failed, LoadError } from '../components/load-error.tsx'
 import { Modal } from '../components/modal.tsx'
-import { PageTitle } from '../components/page-title.tsx'
+import { Screen } from '../components/screen.tsx'
 import { Tour } from '../components/tour.tsx'
 import cards from '../routes/world-card.module.css'
 import screen from '../templates/screen.module.css'
@@ -70,55 +70,53 @@ export function CharactersScreen() {
   const preview = list.find((c) => c.id === hovered)
   const noSystem = !campaign.data.campaign.system
   return (
-    <section className={screen.page}>
-      <aside className={screen.side} aria-label={t('characters.preview')}>
-        {preview && <CharacterPreview character={preview} master={master} />}
-      </aside>
-      <div className={screen.center}>
-        <PageTitle>{t('characters.title')}</PageTitle>
-        {noSystem ? (
-          <p className={styles.note}>{t('characters.noSystem')}</p>
-        ) : list.length === 0 ? (
-          // Sin personajes: qué es uno y el botón grande para hacer el primero
-          <div className={cards.empty}>
-            <UserRound aria-hidden="true" size={44} strokeWidth={1.25} />
-            <h2>{t('characters.empty')}</h2>
-            <p>{t('characters.emptyHint')}</p>
+    <Screen
+      title={t('characters.title')}
+      left={preview && <CharacterPreview character={preview} master={master} />}
+      leftLabel={t('characters.preview')}
+    >
+      {noSystem ? (
+        <p className={styles.note}>{t('characters.noSystem')}</p>
+      ) : list.length === 0 ? (
+        // Sin personajes: qué es uno y el botón grande para hacer el primero
+        <div className={cards.empty}>
+          <UserRound aria-hidden="true" size={44} strokeWidth={1.25} />
+          <h2>{t('characters.empty')}</h2>
+          <p>{t('characters.emptyHint')}</p>
+          <button
+            type="button"
+            className={`${form.button} ${cards.big}`}
+            data-tour="personaje-nuevo"
+            onClick={() => setCreating(true)}
+          >
+            <Plus aria-hidden="true" size={18} />
+            {t('characters.new')}
+          </button>
+        </div>
+      ) : (
+        <ul className={screen.grid} aria-label={t('characters.title')}>
+          {list.map((character) => (
+            <CharacterTile
+              key={character.id}
+              character={character}
+              worldId={worldId}
+              master={master}
+              onHover={setHovered}
+            />
+          ))}
+          <li>
             <button
               type="button"
-              className={`${form.button} ${cards.big}`}
+              className={screen.newCard}
               data-tour="personaje-nuevo"
               onClick={() => setCreating(true)}
             >
-              <Plus aria-hidden="true" size={18} />
+              <Plus aria-hidden="true" size={22} />
               {t('characters.new')}
             </button>
-          </div>
-        ) : (
-          <ul className={screen.grid} aria-label={t('characters.title')}>
-            {list.map((character) => (
-              <CharacterTile
-                key={character.id}
-                character={character}
-                worldId={worldId}
-                master={master}
-                onHover={setHovered}
-              />
-            ))}
-            <li>
-              <button
-                type="button"
-                className={screen.newCard}
-                data-tour="personaje-nuevo"
-                onClick={() => setCreating(true)}
-              >
-                <Plus aria-hidden="true" size={22} />
-                {t('characters.new')}
-              </button>
-            </li>
-          </ul>
-        )}
-      </div>
+          </li>
+        </ul>
+      )}
       {!noSystem && (
         <Tour
           id="personajes"
@@ -133,7 +131,7 @@ export function CharactersScreen() {
           onClose={() => setCreating(false)}
         />
       )}
-    </section>
+    </Screen>
   )
 }
 

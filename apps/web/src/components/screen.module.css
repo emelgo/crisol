@@ -1,0 +1,90 @@
+/*
+ * El esqueleto de una pantalla (docs/diseno.md: «el título no se mueve de una vista a otra»): como Mis mundos y
+ * Archivos, la columna del centro con el título arriba y, fuera de ella, una ficha a cada lado (hasta 20rem). Con menos
+ * sitio la columna se estrecha; sin sitio, las fichas bajan debajo de la columna
+ */
+.layout {
+  display: grid;
+  grid-template-columns: minmax(14rem, 20rem) minmax(0, 1fr) minmax(14rem, 20rem);
+  gap: var(--space-6);
+  align-items: start;
+  padding: var(--space-8) var(--space-6);
+}
+
+.center {
+  grid-column: 2;
+  grid-row: 1;
+  min-inline-size: 0;
+}
+
+/* El título y, a su derecha, lo que acompaña (un botón, unas cifras) */
+.top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3) var(--space-6);
+  margin-block-end: var(--space-6);
+}
+
+.top h1 {
+  margin: 0;
+}
+
+/* Lo que va bajo el título, pequeño (de qué mundo es una campaña) */
+.eyebrow {
+  margin: 0 0 var(--space-1);
+  color: var(--color-muted);
+  font-weight: 600;
+}
+
+.left,
+.right {
+  grid-row: 1;
+  position: sticky;
+  inset-block-start: var(--space-4);
+  inline-size: 100%;
+  max-inline-size: 20rem;
+  /* Bajo el título, a la altura de lo primero de la columna */
+  margin-block-start: 5.45rem;
+}
+
+.left {
+  grid-column: 1;
+  justify-self: start;
+}
+
+.right {
+  grid-column: 3;
+  justify-self: end;
+}
+
+@media (max-width: 90rem) {
+  .layout {
+    grid-template-columns: minmax(11rem, 15rem) minmax(0, 1fr) minmax(11rem, 15rem);
+    gap: var(--space-5);
+  }
+}
+
+/* Sin sitio, una columna: el título y lo del centro, y debajo las fichas */
+@media (max-width: 64rem) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .center,
+  .left,
+  .right {
+    grid-column: 1;
+    grid-row: auto;
+    position: static;
+    max-inline-size: none;
+    margin-block-start: 0;
+  }
+}
+
+@media (max-width: 48rem) {
+  .layout {
+    padding: var(--space-6) var(--space-4);
+  }
+}

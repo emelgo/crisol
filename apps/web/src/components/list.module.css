@@ -135,11 +135,11 @@ section[aria-labelledby] .list::before {
   }
 }
 
-/* En la fila, las acciones son discretas: texto en rojo que no compite con el nombre */
+/* En la fila, las acciones son discretas: texto gris que no compite con el nombre (el rojo, solo en lo importante) */
 .item > .secondary {
   padding-inline: var(--space-2);
   border-color: transparent;
-  color: var(--color-accent-text);
+  color: var(--color-muted);
   font-family: var(--font-body);
   font-size: 1rem;
   letter-spacing: normal;
@@ -147,6 +147,8 @@ section[aria-labelledby] .list::before {
 }
 
 .item > .secondary:hover {
+  background: none;
+  color: var(--color-text);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
