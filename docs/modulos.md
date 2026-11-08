@@ -7,6 +7,19 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
+### Para retomar (2026-11-08, noche: las dos revisiones de la interfaz, en `main` y en staging)
+
+- **PR #115, fusionado y desplegado en staging** (2026-11-08): las dos revisiones globales de la interfaz con todo lo
+  arreglado, las normas nuevas en `docs/diseno.md` y las e2e al día. La CI pasó entera (la primera vez falló axe por
+  el «20» del d20, que era texto SVG: ahora va con trazos). Detalle de cada revisión, abajo y en
+  `tasks/revision-interfaz.md`.
+- **Queda para Enrique**: G1 (mover archivos con teclado; propuesta, por ahora no), probar a mano los módulos 5 y 6
+  (`tasks/probar.md`) y confirmar los ADR-0017 y ADR-0018.
+- **Después**: el módulo 7 (la sala de jugadores), empezando por su entrevista. Esta rama `docs/tras-revision` (sin PR)
+  solo lleva esta nota: que vaya con el PR siguiente.
+- Las tandas largas (e2e, despliegue), con `setsid nohup … &` y un Monitor sobre su log: la sesión se cortó varias
+  veces y paraba lo lanzado en segundo plano.
+
 ### Para retomar (2026-11-08, noche: segunda revisión de la interfaz, arreglada en local)
 
 - **Hecho** (misma rama `docs/tras-modulo-6`, sin PR): una segunda pasada a todo con 137 capturas
