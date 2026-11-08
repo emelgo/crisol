@@ -198,7 +198,7 @@ export function PlaySheet({
         )}
         {options.length > 1 && (
           <label className={styles.who}>
-            <span>{t('dice.who')}</span>
+            <span>{t('dice.whoRolls')}</span>
             <select
               value={visibility}
               onChange={(event) => {

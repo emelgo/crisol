@@ -20,7 +20,7 @@
   display: flex;
   flex: 0 1 auto;
   align-items: center;
-  min-inline-size: 8rem;
+  min-inline-size: 5rem;
   max-inline-size: 13rem;
   margin-block-end: -1px;
   border-block-end: 2px solid transparent;

@@ -7,7 +7,21 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
-### Para retomar (2026-11-08, noche: revisión global de la interfaz, arreglada en local)
+### Para retomar (2026-11-08, noche: segunda revisión de la interfaz, arreglada en local)
+
+- **Hecho** (misma rama `docs/tras-modulo-6`, sin PR): una segunda pasada a todo con 137 capturas
+  (`e2e/.revision/capturar2.ts` → `out/revision-2/`; las de antes de arreglar, en `out/revision-2-antes/`), cuatro
+  revisores sobre las capturas y uno sobre el código. Lista y estado en `tasks/revision-interfaz.md` § «Segunda
+  revisión»; página https://claude.ai/artifact/VtLsEti4wrCNvya9RsEbNT. Enrique aceptó las propuestas («Vamos») y está
+  todo arreglado salvo tres menores anotados (2D13, 2D15, 2D16). Lo gordo: tutoriales uno a uno y en todas las páginas
+  del mundo, la ficha de dados sin recordarse abierta, la tarjeta de la IA al lado de los dados, la tele siempre
+  oscura, pestañas legibles, el historial en palabras, las criaturas del compendio calculadas, la Papelera alineada,
+  Plantillas/Sistemas/Etiquetas con el esqueleto común, el móvil de la jugadora (el «?» arriba, menú con enlaces,
+  hoja de dados como ventana, toques de 44 px). Normas nuevas en `docs/diseno.md`.
+- **Pruebas**: unitarias de la web y de `systems` en verde. **Faltan** las e2e (lista ampliada en
+  `tasks/revision-interfaz.md`), G11, `pnpm test`, `pnpm e2e`, el PR y la CI: cuando Enrique lo diga. Sigue G1.
+
+### Para retomar (2026-11-08, tarde: revisión global de la interfaz, arreglada en local)
 
 - **Hecho** (rama `docs/tras-modulo-6`, sin PR; Enrique dijo «vamos»): la revisión de todas las pantallas y casi todos
   sus arreglos, en commits pequeños; la lista y su estado, en `tasks/revision-interfaz.md`, y en la página «Revisión de

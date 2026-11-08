@@ -66,6 +66,7 @@ export const es = {
     formula: 'Tirada',
     roll: 'Tirar',
     who: 'Quién la ve',
+    whoRolls: 'Quién ve las tiradas',
     visibility: { all: 'Todos', self: 'Para mí', master: 'Al máster', hidden: 'Oculta' },
     rolled: '{{label}}: {{total}}',
     heard: '{{who}} · {{label}}: {{total}}',

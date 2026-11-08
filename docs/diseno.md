@@ -42,7 +42,8 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   (Enrique, 2026-11-08: «los dados deben estar en un icono con forma de d20 como en dndbeyond que al pulsarlo se abre
   en una esquina, pero no una pagina propia»): un botón flotante con forma de d20, siempre en la misma esquina, que
   abre la ficha de dados junto a él (y la cierra); no es una pantalla ni una sección de la barra. Sustituye a la ficha
-  de dados en el sitio del panel de la página (2026-11-04).
+  de dados en el sitio del panel de la página (2026-11-04). **La ficha no se recuerda abierta** al volver a entrar, y en
+  el móvil se cierra al cambiar de pantalla (2026-11-08, segunda revisión).
 - **La campaña se abre en su propia vista, como un mundo** (Enrique, 2026-11-05): al entrar, la barra cambia y enseña
   lo de la campaña (sus personajes, su compendio, los dados…), con la transición de entrar. **El compendio** (el
   contenido del sistema que usa la campaña: clases, conjuros, criaturas, reglas…, con sus ediciones) **se ve ahí**.
@@ -63,7 +64,8 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   las secciones de donde se está, en mosaico (fuera de los mundos: Mundos, Archivos, Etiquetas, Historial y Papelera;
   dentro: Mundos para salir, Inicio, Campañas, Wiki, Archivos, Historial y Papelera), la actual marcada, y debajo la
   cuenta. «Me gusta crisol en el centro», pero no la barra con «Más». La guía se salta lo que no se ve y señala la
-  llama.
+  llama. **Abajo solo van la llama (en el centro) y el d20 (en la esquina)**; el «?» del tutorial, arriba a la derecha
+  (2026-11-08, para que no se junten los tres).
 - **En el móvil, las ventanas son hojas que suben desde abajo**, con su asa arriba y la página oscurecida detrás: «los
   popup no parecen popups». Al cerrarse bajan enteras, sin cambiar de forma. Una imagen en grande sigue en el centro.
 - **Archivos en el móvil**: en vez del árbol, un selector de carpeta; tocar un archivo o una carpeta sube su hoja
@@ -142,6 +144,8 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 - **Dentro de un mundo, la forma de Everlore (esquinas redondeadas, sin cortes) con nuestros colores y nuestras
   letras.** Las propiedades de una página van en el panel de la derecha, con su título pequeño como lo demás.
 - **Los mundos no tienen papel** (máster o jugador): eso es de las campañas.
+- **La tele, siempre oscura**, aunque la app esté en el tema claro: es una pantalla para el grupo, sobre el mapa
+  (2026-11-08).
 - **El mapa**: la imagen se arrastra y se acerca con la rueda hacia el cursor (y con dos dedos); las herramientas, una
   columna de iconos arriba a la izquierda; el botón derecho ofrece «Pin aquí» y «Pin con página nueva» (su nombre es
   el de la página, que nace como subpágina). Pulsar un pin abre su panel a la derecha (abajo en el móvil), donde todo
@@ -273,8 +277,10 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 - **Lo que se añada a la barra lateral entra en el tutorial de la vista donde sale** (un paso por cada botón de la
   barra, como en Mis mundos y dentro de un mundo), **y además tiene el suyo propio en su vista** (Archivos, por
   ejemplo).
-- **Un «?» abajo a la derecha lo vuelve a sacar**: casi transparente, pero que se vea, y con su color al pasar el
-  ratón. No hay casilla en Ajustes.
+- **Un «?» abajo a la derecha lo vuelve a sacar** (en el móvil, arriba a la derecha): casi transparente, pero que se
+  vea, y con su color al pasar el ratón. No hay casilla en Ajustes. **Un solo tutorial a la vez y un solo «?»**: con
+  varios en pantalla (el del mundo y el de un mapa, el de la campaña y el de los dados), salen uno tras otro y el «?» es
+  el del más concreto. El del mundo sale en cualquiera de sus páginas, no solo en la portada.
 - **Lo relacionado se resalta en el mismo paso**, sin un paso propio: «Mundo en la barra lateral se tiene que resaltar
   en el paso 1, no debe tener un paso propio porque es redundante». Si hace falta, lleva su propia nota corta junto a
   su recuadro (la de «Mundos»: «Dentro de un mundo, esta barra cambiará y mostrará su contenido»).
@@ -283,5 +289,6 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 
 - **Las peticiones que esperan aprobación salen como tarjetas flotantes**, estés donde estés, como en el Crisol
   antiguo. Ni en Ajustes ni encima de la página: «ahi en ajustes no aporta nada si tengo que entrar cada vez que
-  quiera verlo».
+  quiera verlo». Abajo a la derecha, encima del d20; **con la ficha de dados abierta, a su izquierda** (no
+  tapan la tirada), y en la Mesa, a la izquierda de su panel (2026-11-08).
 - **Los ajustes de la IA**, solo el conector y el modo.

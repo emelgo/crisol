@@ -218,7 +218,7 @@ describe('la hoja en partida', () => {
     // Con ventaja y oculta (es el máster)
     await userEvent.click(screen.getByRole('button', { name: 'Con ventaja' }))
     expect(screen.getByRole('button', { name: 'Con ventaja' }).getAttribute('aria-pressed')).toBe('true')
-    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Quién la ve' }), 'hidden')
+    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Quién ve las tiradas' }), 'hidden')
     await userEvent.click(screen.getByRole('button', { name: /^Tirar Defensa/ }))
     expect(await screen.findByText('Thora · Suerte')).toBeDefined()
     const { rolls } = await api.client.call('listRolls', { campaignId: CAMPAIGN.id })
