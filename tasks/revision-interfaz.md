@@ -146,7 +146,8 @@ con las e2e.
 Un agente revisor leyendo el código (rutas en `apps/web/src/`). Bien: todo pasa por i18n, los botones de solo icono
 tienen nombre, las ventanas son `<dialog>`, hay enlace de salto, el zoom no se bloquea.
 
-- [ ] G1. **Mover un archivo de carpeta solo se puede arrastrando** (`wiki/files.tsx:495`): sin teclado (WCAG 2.1.1).
+- [ ] G1. (Propuesta: por ahora no; si un día se vende, «Mover a…» en el engranaje del archivo) **Mover un archivo de
+  carpeta solo se puede arrastrando** (`wiki/files.tsx:495`): sin teclado (WCAG 2.1.1).
   Choca con la norma («Mover es arrastrar»): ¿«Mover a…» también en el engranaje o el botón derecho?
 - [x] G2. **La ficha de dados en el móvil** (la de la jugadora) es una hoja con fondo oscurecido pero no se porta como
   ventana: el foco no entra, Escape no la cierra, se tabula a lo de detrás (`dice/panel.tsx:64`).

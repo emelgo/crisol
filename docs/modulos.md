@@ -21,8 +21,9 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   - Accesibilidad: teclado, foco, contraste y zonas de toque.
 - **Decidido por Enrique hoy**: el móvil solo para la vista de la jugadora; los dados, en el d20 flotante. Las dos, en
   `docs/diseno.md`.
-- **Quedan para Enrique** (mientras, como están): F1–F5, G1 (mover archivos con teclado, contra «mover es
-  arrastrar») y G10 («Foundry» en la interfaz).
+- **Respondidas por Enrique** (F1–F5, G10, ya hechas): la jugadora ve a sus aliados en la campaña; el retrato,
+  arriba del panel; fuera `/ia`, el móvil del máster y «Foundry» en la interfaz; las peticiones de la IA, rehechas
+  como tarjetas sueltas. **Queda** G1 (mover archivos con teclado): propuesta, por ahora no.
 - **Pruebas**: las unitarias de lo tocado, al día y en verde (la web entera: 681). **Faltan**: poner al día las e2e
   (lista en `tasks/revision-interfaz.md` § «Pruebas por poner al día»), ampliar `a11y.spec.ts` (G11), `pnpm test`
   entero y `pnpm e2e`; luego el PR (con esta rama) y la CI una vez. Solo cuando Enrique lo diga.
