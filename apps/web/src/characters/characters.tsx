@@ -316,6 +316,9 @@ function NewCharacterDialog({
           value={name}
           maxLength={120}
           autoComplete="off"
+          data-1p-ignore
+          data-lpignore="true"
+          data-form-type="other"
           placeholder={t('characters.unnamed')}
           data-autofocus=""
           onChange={(event) => setName(event.currentTarget.value)}
@@ -401,6 +404,9 @@ function CharacterWindow({
           required
           maxLength={120}
           autoComplete="off"
+          data-1p-ignore
+          data-lpignore="true"
+          data-form-type="other"
           onChange={(event) => setName(event.currentTarget.value)}
         />
         {master && (

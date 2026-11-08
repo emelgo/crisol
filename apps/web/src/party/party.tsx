@@ -499,6 +499,9 @@ function AddDialog({
           value={name}
           maxLength={200}
           autoComplete="off"
+          data-1p-ignore
+          data-lpignore="true"
+          data-form-type="other"
           data-autofocus=""
           onChange={(event) => setName(event.currentTarget.value)}
         />
@@ -509,6 +512,9 @@ function AddDialog({
             id={searchId}
             type="search"
             autoComplete="off"
+            data-1p-ignore
+            data-lpignore="true"
+            data-form-type="other"
             data-autofocus=""
             value={query}
             onChange={(event) => setQuery(event.currentTarget.value)}
@@ -535,6 +541,9 @@ function AddDialog({
         value={note}
         maxLength={500}
         autoComplete="off"
+        data-1p-ignore
+        data-lpignore="true"
+        data-form-type="other"
         onChange={(event) => setNote(event.currentTarget.value)}
       />
       <div className={styles.pair}>
@@ -600,6 +609,9 @@ function ContainerDialog({
         required
         maxLength={100}
         autoComplete="off"
+        data-1p-ignore
+        data-lpignore="true"
+        data-form-type="other"
         data-autofocus=""
         onChange={(event) => setName(event.currentTarget.value)}
       />

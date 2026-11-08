@@ -110,6 +110,9 @@ export function Composer({ campaign, onRolled }: { campaign: Campaign; onRolled?
           value={formula}
           maxLength={300}
           autoComplete="off"
+          data-1p-ignore
+          data-lpignore="true"
+          data-form-type="other"
           spellCheck={false}
           aria-invalid={!explained.ok}
           aria-describedby={`${id}-explained`}

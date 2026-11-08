@@ -857,6 +857,9 @@ function LookDialog({
           required
           maxLength={120}
           autoComplete="off"
+          data-1p-ignore
+          data-lpignore="true"
+          data-form-type="other"
           data-autofocus={look ? undefined : ''}
           onChange={(event) => set({ name: event.currentTarget.value })}
         />

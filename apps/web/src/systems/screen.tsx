@@ -551,6 +551,9 @@ function SystemWindow({ system, onClose }: { system: SystemSummary; onClose: (go
               required
               maxLength={200}
               autoComplete="off"
+              data-1p-ignore
+              data-lpignore="true"
+              data-form-type="other"
               onChange={(event) => setName(event.currentTarget.value)}
             />
             <FormError message={save.error ? errorText(save.error) : null} />

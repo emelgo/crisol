@@ -584,6 +584,9 @@ function FieldInput({
           id={id}
           type={field.kind === 'number' ? 'number' : 'text'}
           autoComplete="off"
+          data-1p-ignore
+          data-lpignore="true"
+          data-form-type="other"
           placeholder={field.kind === 'list' ? t('creator.listHint') : undefined}
           aria-invalid={wrong || undefined}
           aria-describedby={wrong ? `${id}-error` : undefined}

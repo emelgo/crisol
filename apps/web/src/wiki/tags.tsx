@@ -132,6 +132,9 @@ export function TagsField({
         value={draft}
         placeholder={t('tags.add')}
         autoComplete="off"
+        data-1p-ignore
+        data-lpignore="true"
+        data-form-type="other"
         spellCheck={false}
         disabled={disabled}
         onChange={(event) => {
@@ -418,18 +421,21 @@ function NewTag({ onCreated }: { onCreated: () => Promise<unknown> }) {
               maxLength={100}
               pattern="[^\s]+"
               autoComplete="off"
+              data-1p-ignore
+              data-lpignore="true"
+              data-form-type="other"
               data-autofocus=""
               onChange={(event) => setName(event.currentTarget.value.replace(/\s/g, ''))}
             />
             <ColorChoices value={color} onChange={setColor} />
             <FormError message={create.error ? errorText(create.error) : null} />
             <div className={dialogStyles.actions}>
-              <button type="button" className={dialogStyles.cancel} onClick={() => dialog.current?.close()}>
-                {t('tags.cancel')}
-              </button>
               <BusyButton type="submit" className={form.button} busy={create.isPending}>
                 {t('tags.create')}
               </BusyButton>
+              <button type="button" className={dialogStyles.cancel} onClick={() => dialog.current?.close()}>
+                {t('tags.cancel')}
+              </button>
             </div>
           </form>
         </Modal>
@@ -526,6 +532,9 @@ function TagDialog({
           required
           maxLength={100}
           autoComplete="off"
+          data-1p-ignore
+          data-lpignore="true"
+          data-form-type="other"
           onChange={(event) => setName(event.currentTarget.value.replace(/\s/g, ''))}
         />
         <ColorChoices value={color} onChange={setColor} />

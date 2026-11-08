@@ -283,12 +283,12 @@ function ChosenBar({
             </p>
             <FormError message={remove.error ? errorText(remove.error) : null} />
             <div className={dialogStyles.actions}>
-              <button type="button" className={dialogStyles.cancel} onClick={() => dialog.current?.close()}>
-                {t('files.cancel')}
-              </button>
               <BusyButton className={dangerStyles.solid} busy={remove.isPending} onClick={() => remove.mutate()}>
                 {t('files.deleteChosen')}
               </BusyButton>
+              <button type="button" className={dialogStyles.cancel} onClick={() => dialog.current?.close()}>
+                {t('files.cancel')}
+              </button>
             </div>
           </div>
         </Modal>
@@ -523,6 +523,9 @@ function FilesSection({
         <Search aria-hidden="true" size={16} />
         <input
           autoComplete="off"
+          data-1p-ignore
+          data-lpignore="true"
+          data-form-type="other"
           type="search"
           value={query}
           placeholder={t('files.search')}
@@ -1321,17 +1324,20 @@ function NewFolderButton({
               required
               maxLength={120}
               autoComplete="off"
+              data-1p-ignore
+              data-lpignore="true"
+              data-form-type="other"
               data-autofocus=""
               onChange={(event) => setName(event.currentTarget.value)}
             />
             <FormError message={create.error ? errorText(create.error) : null} />
             <div className={dialogStyles.actions}>
-              <button type="button" className={dialogStyles.cancel} onClick={() => dialog.current?.close()}>
-                {t('files.cancel')}
-              </button>
               <BusyButton type="submit" className={form.button} busy={create.isPending}>
                 {t('files.createFolder')}
               </BusyButton>
+              <button type="button" className={dialogStyles.cancel} onClick={() => dialog.current?.close()}>
+                {t('files.cancel')}
+              </button>
             </div>
           </form>
         </Modal>
@@ -1515,6 +1521,9 @@ function FolderDialog({
           required
           maxLength={120}
           autoComplete="off"
+          data-1p-ignore
+          data-lpignore="true"
+          data-form-type="other"
           onChange={(event) => setName(event.currentTarget.value)}
         />
         <FormError message={rename.error ? errorText(rename.error) : null} />
@@ -1996,6 +2005,9 @@ function FileDialog({
           required
           maxLength={200}
           autoComplete="off"
+          data-1p-ignore
+          data-lpignore="true"
+          data-form-type="other"
           spellCheck={false}
           onChange={(event) => setName(event.currentTarget.value)}
         />

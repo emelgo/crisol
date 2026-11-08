@@ -262,6 +262,9 @@ export function CompendiumScreen() {
               placeholder={t('compendium.searchHint')}
               value={query}
               autoComplete="off"
+              data-1p-ignore
+              data-lpignore="true"
+              data-form-type="other"
               onChange={(event) => setQuery(event.currentTarget.value)}
             />
             {query && (

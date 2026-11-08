@@ -76,6 +76,9 @@ export function PutInPlay({
             id={manyId}
             value={many}
             autoComplete="off"
+            data-1p-ignore
+            data-lpignore="true"
+            data-form-type="other"
             spellCheck={false}
             onChange={(event) => setMany(event.currentTarget.value)}
           />

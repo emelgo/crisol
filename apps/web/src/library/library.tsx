@@ -94,6 +94,9 @@ export function LibraryScreen() {
           id={searchId}
           type="search"
           autoComplete="off"
+          data-1p-ignore
+          data-lpignore="true"
+          data-form-type="other"
           placeholder={t('library.search')}
           value={query}
           onChange={(event) => setQuery(event.currentTarget.value)}

@@ -277,6 +277,9 @@ export function FindBar({ editor }: { editor: Editor }) {
     <search className={styles.bar}>
       <input
         autoComplete="off"
+        data-1p-ignore
+        data-lpignore="true"
+        data-form-type="other"
         ref={input}
         type="search"
         className={styles.input}

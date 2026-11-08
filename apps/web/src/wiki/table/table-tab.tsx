@@ -114,6 +114,9 @@ export function TableTab({ page, tab }: { page: Page; tab: PageTabView }) {
           id={formulaId}
           className={styles.formula}
           autoComplete="off"
+          data-1p-ignore
+          data-lpignore="true"
+          data-form-type="other"
           spellCheck={false}
           value={current.formula}
           placeholder={top > 1 ? `1d${top}` : '1d6'}
@@ -147,6 +150,9 @@ export function TableTab({ page, tab }: { page: Page; tab: PageTabView }) {
                 <input
                   type="number"
                   autoComplete="off"
+                  data-1p-ignore
+                  data-lpignore="true"
+                  data-form-type="other"
                   aria-label={t('tableTab.fromOf', { text: r.text })}
                   value={Number.isNaN(r.from) ? '' : r.from}
                   onChange={(event) => setRow(r.id, { from: event.currentTarget.valueAsNumber })}
@@ -156,6 +162,9 @@ export function TableTab({ page, tab }: { page: Page; tab: PageTabView }) {
                 <input
                   type="number"
                   autoComplete="off"
+                  data-1p-ignore
+                  data-lpignore="true"
+                  data-form-type="other"
                   aria-label={t('tableTab.toOf', { text: r.text })}
                   value={Number.isNaN(r.to) ? '' : r.to}
                   onChange={(event) => setRow(r.id, { to: event.currentTarget.valueAsNumber })}
@@ -164,6 +173,9 @@ export function TableTab({ page, tab }: { page: Page; tab: PageTabView }) {
               <td className={styles.text}>
                 <input
                   autoComplete="off"
+                  data-1p-ignore
+                  data-lpignore="true"
+                  data-form-type="other"
                   aria-label={t('tableTab.textOf', { from: r.from, to: r.to })}
                   value={r.text}
                   onChange={(event) => setRow(r.id, { text: event.currentTarget.value })}

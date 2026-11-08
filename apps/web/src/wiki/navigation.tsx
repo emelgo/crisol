@@ -354,6 +354,9 @@ export function BookmarkButton({ page }: { page: Page }) {
               name="nuevo"
               maxLength={60}
               autoComplete="off"
+              data-1p-ignore
+              data-lpignore="true"
+              data-form-type="other"
               placeholder={t('bookmarks.newGroup')}
               aria-label={t('bookmarks.newGroup')}
             />

@@ -234,6 +234,9 @@ function LinkForm({ editor, href, onDone }: { editor: Editor; href: string; onDo
         id={id}
         inputMode="url"
         autoComplete="off"
+        data-1p-ignore
+        data-lpignore="true"
+        data-form-type="other"
         spellCheck={false}
         className={styles.input}
         value={value}

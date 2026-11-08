@@ -373,6 +373,9 @@ export function NewTemplateDialog({ copyOf, onClose }: { copyOf: string | null; 
           required
           maxLength={60}
           autoComplete="off"
+          data-1p-ignore
+          data-lpignore="true"
+          data-form-type="other"
           data-autofocus=""
           onChange={(event) => setName(event.currentTarget.value)}
         />
@@ -432,6 +435,9 @@ function TemplateSettings({ template, onClose }: { template: PageTemplate; onClo
           required
           maxLength={60}
           autoComplete="off"
+          data-1p-ignore
+          data-lpignore="true"
+          data-form-type="other"
           onChange={(event) => setName(event.currentTarget.value)}
         />
         <IconChoices value={icon} onChange={setIcon} />

@@ -331,6 +331,9 @@ function ResourceBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 
           min={0}
           inputMode="numeric"
           autoComplete="off"
+          data-1p-ignore
+          data-lpignore="true"
+          data-form-type="other"
           value={amount}
           onChange={(event) => setAmount(event.currentTarget.value)}
         />
@@ -751,6 +754,9 @@ function AddFromCompendium({
         id={id}
         type="search"
         autoComplete="off"
+        data-1p-ignore
+        data-lpignore="true"
+        data-form-type="other"
         value={query}
         onChange={(event) => setQuery(event.currentTarget.value)}
       />
@@ -963,6 +969,9 @@ function PlayValue({
       aria-label={field.label}
       inputMode={number ? 'numeric' : undefined}
       autoComplete="off"
+      data-1p-ignore
+      data-lpignore="true"
+      data-form-type="other"
       min={field.min}
       max={field.max}
       value={draft}

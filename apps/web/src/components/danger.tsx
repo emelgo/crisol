@@ -95,6 +95,9 @@ export function ConfirmByName({ name, action, title, warning, label, onConfirm, 
                   label={label}
                   value={typed}
                   autoComplete="off"
+                  data-1p-ignore
+                  data-lpignore="true"
+                  data-form-type="other"
                   spellCheck={false}
                   // El cursor, en el campo en cuanto se abre (lo pone Modal, ya abierto)
                   data-autofocus=""
@@ -104,6 +107,9 @@ export function ConfirmByName({ name, action, title, warning, label, onConfirm, 
             )}
             <FormError message={confirm.error ? errorText(confirm.error) : null} />
             <div className={dialogStyles.actions}>
+              <BusyButton type="submit" className={styles.solid} busy={confirm.isPending} disabled={!matches}>
+                {action}
+              </BusyButton>
               <button
                 type="button"
                 className={dialogStyles.cancel}
@@ -113,9 +119,6 @@ export function ConfirmByName({ name, action, title, warning, label, onConfirm, 
               >
                 {t('list.cancel')}
               </button>
-              <BusyButton type="submit" className={styles.solid} busy={confirm.isPending} disabled={!matches}>
-                {action}
-              </BusyButton>
             </div>
           </form>
         </Modal>
