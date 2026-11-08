@@ -21,7 +21,6 @@ import {
   List,
   Search,
   Settings,
-  SquareCheck,
   Trash2,
   Upload as UploadIcon,
   X
@@ -29,7 +28,6 @@ import {
 import {
   createContext,
   type DragEvent,
-  type MouseEvent,
   type ReactNode,
   useCallback,
   useContext,
@@ -61,7 +59,6 @@ import cards from '../routes/world-card.module.css'
 import { CoverViewer } from '../routes/world-cover.tsx'
 import styles from './files.module.css'
 import type { WorldFile } from './links-context.ts'
-import { useNarrow } from './panel.tsx'
 import tagStyles from './tags.module.css'
 import { TagChip, TagsField, useTagColor } from './tags.tsx'
 
@@ -205,26 +202,9 @@ function FilesTour() {
 interface Selection {
   has: (id: string) => boolean
   active: boolean
-  /** Eligiendo con «Elegir» (lo táctil): tocar algo lo elige en vez de abrirlo */
-  picking: boolean
   toggle: (id: string, what: 'file' | 'folder') => void
 }
 const SelectionContext = createContext<Selection | null>(null)
-
-/**
- * Para el clic (en captura) de una fila o una tarjeta: eligiendo, lo elige o lo suelta en vez de abrirlo (salvo en su
- * casilla, que ya lo hace). Devuelve si lo ha hecho
- */
-function usePickOnTap(id: string, what: 'file' | 'folder', enabled: boolean) {
-  const selection = useContext(SelectionContext)
-  return (event: MouseEvent) => {
-    if (!enabled || !selection?.picking || (event.target as Element).closest('input')) return false
-    event.preventDefault()
-    event.stopPropagation()
-    selection.toggle(id, what)
-    return true
-  }
-}
 
 /** La casilla para elegir un archivo o una carpeta (sobre su miniatura; se ve al pasar el ratón o al elegir) */
 function Pick({ id, what, name }: { id: string; what: 'file' | 'folder'; name: string }) {
@@ -408,8 +388,6 @@ function FilesSection({
   const [tag, setTag] = useState<string | null>(null)
   // Lo elegido para borrar de una vez: por id, si es un archivo o una carpeta
   const [chosen, setChosen] = useState<Map<string, 'file' | 'folder'>>(() => new Map())
-  // En lo táctil (sin ratón que pase por encima), las casillas salen al pulsar «Elegir»
-  const [picking, setPicking] = useState(false)
   const [view, setView] = useView()
   const [over, setOver] = useState(false)
   const [received, setReceived] = useState<string | null>(null)
@@ -422,10 +400,7 @@ function FilesSection({
   useEffect(() => setHovered(null), [folderId, query, kind, tag])
   // Al cambiar de carpeta, de búsqueda o de filtro, nada elegido
   useEffect(() => setChosen(new Map()), [folderId, query, kind, tag])
-  const stopChoosing = () => {
-    setChosen(new Map())
-    setPicking(false)
-  }
+  const stopChoosing = () => setChosen(new Map())
   const folders = data?.folders ?? []
   const byId = new Map(folders.map((folder) => [folder.id, folder]))
   // Si una carpeta es de los comunes (la suya, o una de dentro)
@@ -472,7 +447,6 @@ function FilesSection({
   const selection = {
     has: (id: string) => chosen.has(id),
     active: chosenNow.length > 0,
-    picking,
     toggle: (id: string, what: 'file' | 'folder') =>
       setChosen((current) => {
         const next = new Map(current)
@@ -521,25 +495,6 @@ function FilesSection({
   const rowProps = { folders, onChanged: refresh }
   const tools = (
     <div className={styles.tools}>
-      {/* En el móvil, en vez del árbol */}
-      <label className={styles.folderPick}>
-        <span>{t('files.folder')}</span>
-        <select
-          value={searching ? '' : (open ?? '')}
-          onChange={(event) => {
-            setQuery('')
-            setTag(null)
-            setFolderId(event.currentTarget.value || null)
-          }}
-        >
-          <option value="">{t('files.root')}</option>
-          {folderPaths(folders).map((folder) => (
-            <option key={folder.id} value={folder.id}>
-              {folder.label}
-            </option>
-          ))}
-        </select>
-      </label>
       {placeOf(open).canWrite && (
         <>
           <button
@@ -596,12 +551,6 @@ function FilesSection({
           </select>
         </label>
       )}
-      {!picking && (
-        <button type="button" className={styles.pickToggle} onClick={() => setPicking(true)}>
-          <SquareCheck aria-hidden="true" size={16} />
-          {t('files.pick')}
-        </button>
-      )}
       {/* biome-ignore lint/a11y/useSemanticElements: dos botones que eligen la vista */}
       <div className={styles.views} role="group" aria-label={t('files.view')}>
         <button
@@ -647,13 +596,9 @@ function FilesSection({
   )
   const contents = (
     <SelectionContext value={selection}>
-      <div
-        className={styles.contents}
-        data-selecting={selection.active || picking || undefined}
-        data-picking={picking || undefined}
-      >
+      <div className={styles.contents} data-selecting={selection.active || undefined}>
         {searching && <p className={styles.here}>{t('files.results', { count: shownFiles.length })}</p>}
-        {(chosenNow.length > 0 || picking) && (
+        {chosenNow.length > 0 && (
           <ChosenBar
             chosen={chosenNow}
             onDone={async () => {
@@ -985,7 +930,6 @@ function FileRow({
   onPreview?: ((shown: boolean) => void) | undefined
   onChanged: () => Promise<unknown>
 }) {
-  const pickOnTap = usePickOnTap(file.id, 'file', canWrite)
   const { i18n } = useTranslation()
   return (
     <li
@@ -998,7 +942,6 @@ function FileRow({
       onPointerLeave={() => onPreview?.(false)}
       // Al abrir algo suyo (su engranaje, la imagen en grande), el detalle se va
       onClickCapture={(event) => {
-        if (pickOnTap(event)) return
         if ((event.target as Element).closest('[aria-haspopup="dialog"]')) onPreview?.(false)
       }}
     >
@@ -1157,8 +1100,6 @@ function FolderDetail({ folder, files, folders }: { folder: FolderView; files: W
 function FolderRow({
   folder,
   count,
-  files,
-  folders,
   scope,
   canWrite,
   fixed = false,
@@ -1183,10 +1124,8 @@ function FolderRow({
   onMove: (fileId: string, folderId: string | null) => Promise<unknown>
   onChanged: () => Promise<unknown>
 }) {
-  const pickOnTap = usePickOnTap(folder.id, 'folder', canWrite && !fixed)
   const { t } = useTranslation()
   const [over, setOver] = useState(false)
-  const opener = useFolderOpen({ folder, files, folders, canWrite: canWrite && !fixed, onOpen, onChanged })
   return (
     <li
       className={[styles.row, fresh ? styles.appear : '', over ? styles.dropping : ''].filter(Boolean).join(' ')}
@@ -1195,7 +1134,6 @@ function FolderRow({
       onPointerLeave={() => onPreview?.(false)}
       // Al abrir algo suyo (su engranaje, la imagen en grande), el detalle se va
       onClickCapture={(event) => {
-        if (pickOnTap(event)) return
         if ((event.target as Element).closest('[aria-haspopup="dialog"]')) onPreview?.(false)
       }}
       onDragOver={(event) => {
@@ -1223,8 +1161,7 @@ function FolderRow({
           type="button"
           className={`${styles.rowName} ${styles.open}`}
           aria-label={t('files.openFolder', { name: folder.name })}
-          aria-haspopup={opener.sheet ? 'dialog' : undefined}
-          onClick={opener.open}
+          onClick={onOpen}
         >
           {folder.name}
         </button>
@@ -1233,7 +1170,6 @@ function FolderRow({
         {over ? t('files.moveHere') : count > 0 ? t('files.folderFiles', { count }) : t('files.folderEmpty')}
       </span>
       {canWrite && !fixed ? <FolderSettings folder={folder} onChanged={onChanged} small /> : <span />}
-      {opener.layers}
     </li>
   )
 }
@@ -1432,10 +1368,8 @@ function FolderCard({
   /** Al pasar el ratón (true) y al irse (false): para el panel de la derecha */
   onPreview?: ((shown: boolean) => void) | undefined
 }) {
-  const pickOnTap = usePickOnTap(folder.id, 'folder', canWrite)
   const { t } = useTranslation()
   const [over, setOver] = useState(false)
-  const opener = useFolderOpen({ folder, files, folders, canWrite, onOpen, onChanged })
   const inside = files.filter((file) => file.folderId === folder.id).length
   const subfolders = folders.filter((child) => child.parentId === folder.id).length
   const counts = [
@@ -1451,7 +1385,6 @@ function FolderCard({
       onPointerLeave={() => onPreview?.(false)}
       // Al abrir algo suyo (su engranaje, la imagen en grande), el detalle se va
       onClickCapture={(event) => {
-        if (pickOnTap(event)) return
         if ((event.target as Element).closest('[aria-haspopup="dialog"]')) onPreview?.(false)
       }}
       onDragOver={(event) => {
@@ -1479,8 +1412,7 @@ function FolderCard({
           type="button"
           className={`${cards.name} ${styles.fileName} ${styles.open}`}
           aria-label={t('files.openFolder', { name: folder.name })}
-          aria-haspopup={opener.sheet ? 'dialog' : undefined}
-          onClick={opener.open}
+          onClick={onOpen}
         >
           {folder.name}
         </button>
@@ -1489,7 +1421,6 @@ function FolderCard({
           {canWrite && <FolderSettings folder={folder} onChanged={onChanged} />}
         </div>
       </div>
-      {opener.layers}
     </li>
   )
 }
@@ -1611,86 +1542,6 @@ function FolderDialog({
       </div>
     </Modal>
   )
-}
-
-/** La hoja de una carpeta en el móvil: lo que tiene y, abajo, abrirla y sus ajustes */
-function FolderSheet({
-  folder,
-  files,
-  folders,
-  canWrite,
-  onOpen,
-  onSettings,
-  onClose
-}: {
-  folder: FolderView
-  files: WorldFile[]
-  folders: FolderView[]
-  canWrite: boolean
-  onOpen: () => void
-  onSettings: () => void
-  onClose: () => void
-}) {
-  const { t } = useTranslation()
-  return (
-    <Modal aria-label={folder.name} className={`${dialogStyles.dialog} ${styles.sheet}`} onClose={onClose}>
-      <FolderDetail folder={folder} files={files} folders={folders} />
-      <div className={styles.sheetActions}>
-        <button type="button" className={form.button} onClick={onOpen}>
-          {t('files.open')}
-        </button>
-        {canWrite && (
-          <button type="button" className={`${form.button} ${styles.sheetSecondary}`} onClick={onSettings}>
-            <Settings aria-hidden="true" size={16} />
-            {t('files.settings')}
-          </button>
-        )}
-      </div>
-    </Modal>
-  )
-}
-
-/**
- * Abrir una carpeta (su fila o su tarjeta): en lo ancho, entra; en el móvil, antes sube su hoja. Lo que hay que pintar
- * (la hoja y su ventana) va en `layers`
- */
-function useFolderOpen({
-  folder,
-  files,
-  folders,
-  canWrite,
-  onOpen,
-  onChanged
-}: {
-  folder: FolderView
-  files: WorldFile[]
-  folders: FolderView[]
-  canWrite: boolean
-  onOpen: () => void
-  onChanged: () => Promise<unknown>
-}) {
-  const narrow = useNarrow()
-  const [open, setOpen] = useState<'sheet' | 'settings' | null>(null)
-  const layers = (
-    <>
-      {open === 'sheet' && (
-        <FolderSheet
-          folder={folder}
-          files={files}
-          folders={folders}
-          canWrite={canWrite}
-          onOpen={() => {
-            setOpen(null)
-            onOpen()
-          }}
-          onSettings={() => setOpen('settings')}
-          onClose={() => setOpen((current) => (current === 'sheet' ? null : current))}
-        />
-      )}
-      {open === 'settings' && <FolderDialog folder={folder} onChanged={onChanged} onClose={() => setOpen(null)} />}
-    </>
-  )
-  return { open: () => (narrow ? setOpen('sheet') : onOpen()), sheet: narrow, layers }
 }
 
 /**
@@ -1940,7 +1791,6 @@ function FileCard({
   /** Al pasar el ratón (true) y al irse (false): para el panel de la derecha */
   onPreview?: ((shown: boolean) => void) | undefined
 }) {
-  const pickOnTap = usePickOnTap(file.id, 'file', canWrite)
   const { t, i18n } = useTranslation()
   const classes = [cards.card, fresh ? styles.appear : ''].filter(Boolean)
   return (
@@ -1951,7 +1801,6 @@ function FileCard({
       onPointerLeave={() => onPreview?.(false)}
       // Al abrir algo suyo (su engranaje, la imagen en grande), el detalle se va
       onClickCapture={(event) => {
-        if (pickOnTap(event)) return
         if ((event.target as Element).closest('[aria-haspopup="dialog"]')) onPreview?.(false)
       }}
       draggable={canWrite}
@@ -1991,8 +1840,6 @@ function FileCard({
 function FileName({
   file,
   className,
-  folders,
-  canWrite,
   onChanged
 }: {
   file: WorldFile
@@ -2001,22 +1848,21 @@ function FileName({
   canWrite: boolean
   onChanged: () => Promise<unknown>
 }) {
-  const narrow = useNarrow()
   const trigger = useRef<HTMLButtonElement>(null)
-  const [open, setOpen] = useState<'viewer' | 'sheet' | 'settings' | null>(null)
+  const [open, setOpen] = useState<'viewer' | 'settings' | null>(null)
   const close = (gone = false) => {
     setOpen(null)
     if (!gone) trigger.current?.focus()
   }
   return (
     <>
-      {narrow || file.kind === 'image' ? (
+      {file.kind === 'image' ? (
         <button
           ref={trigger}
           type="button"
           className={[className, styles.open].filter(Boolean).join(' ')}
           aria-haspopup="dialog"
-          onClick={() => setOpen(narrow ? 'sheet' : 'viewer')}
+          onClick={() => setOpen('viewer')}
         >
           {file.name}
         </button>
@@ -2032,74 +1878,8 @@ function FileName({
         </a>
       )}
       {open === 'viewer' && <CoverViewer url={file.url} label={file.name} onClose={() => close()} />}
-      {open === 'sheet' && (
-        <FileSheet
-          file={file}
-          folders={folders}
-          canWrite={canWrite}
-          onView={() => setOpen('viewer')}
-          onSettings={() => setOpen('settings')}
-          onClose={() => setOpen((current) => (current === 'sheet' ? null : current))}
-        />
-      )}
       {open === 'settings' && <FileDialog file={file} onChanged={onChanged} onClose={close} />}
     </>
-  )
-}
-
-/** La hoja de un archivo en el móvil: su detalle y, abajo, abrirlo y sus ajustes */
-function FileSheet({
-  file,
-  folders,
-  canWrite,
-  onView,
-  onSettings,
-  onClose
-}: {
-  file: WorldFile
-  folders: FolderView[]
-  canWrite: boolean
-  onView: () => void
-  onSettings: () => void
-  onClose: () => void
-}) {
-  const { t } = useTranslation()
-  const byId = new Map(folders.map((folder) => [folder.id, folder]))
-  const where: FolderView[] = []
-  for (
-    let at = file.folderId ? byId.get(file.folderId) : undefined;
-    at;
-    at = at.parentId ? byId.get(at.parentId) : undefined
-  ) {
-    where.unshift(at)
-  }
-  return (
-    <Modal aria-label={file.name} className={`${dialogStyles.dialog} ${styles.sheet}`} onClose={onClose}>
-      <FileDetail file={file} where={where} />
-      <div className={styles.sheetActions}>
-        {file.kind === 'image' ? (
-          <button type="button" className={form.button} onClick={onView}>
-            {t('files.open')}
-          </button>
-        ) : (
-          <a
-            href={file.url}
-            className={form.button}
-            target="_blank"
-            rel="noopener"
-            {...(file.kind === 'other' ? { download: file.name } : {})}
-          >
-            {file.kind === 'other' ? t('files.download') : t('files.open')}
-          </a>
-        )}
-        {canWrite && (
-          <button type="button" className={`${form.button} ${styles.sheetSecondary}`} onClick={onSettings}>
-            <Settings aria-hidden="true" size={16} />
-            {t('files.settings')}
-          </button>
-        )}
-      </div>
-    </Modal>
   )
 }
 
@@ -2145,7 +1925,7 @@ function FileSettings({
 }
 
 /** Las carpetas con su ruta («Mapas › Norte»), en el orden de la ruta */
-function folderPaths(folders: FolderView[]) {
+function _folderPaths(folders: FolderView[]) {
   const byId = new Map(folders.map((folder) => [folder.id, folder]))
   const pathOf = (folder: FolderView): string =>
     folder.parentId && byId.has(folder.parentId)

@@ -14,8 +14,8 @@ Cuentas: `enrique@revision.test`, `lucia@revision.test`, `marcos@revision.test` 
 siempre en el PC (norma en `docs/diseno.md`). Los hallazgos de móvil de pantallas del máster se descartan.
 
 Estado (2026-11-08, noche): arreglado todo lo de A a E y G2–G9, en local (servidor de desarrollo) y con sus pruebas
-unitarias; las e2e se ponen al día al final (abajo). **Quedan para Enrique** F1–F5, G1 y G10 (mientras, como están) y
-G11 (ampliar las pruebas de accesibilidad, con las e2e).
+unitarias; las e2e se ponen al día al final (abajo). **Queda para Enrique** G1; G11 (ampliar las pruebas de accesibilidad),
+con las e2e.
 
 ## A. Fallos (algo roto o que engaña)
 
@@ -129,13 +129,17 @@ G11 (ampliar las pruebas de accesibilidad, con las e2e).
 
 ## F. Para decidir con Enrique
 
-- [ ] F1. La portada de la campaña para la jugadora solo tiene los miembros (101). ¿Se deja para el módulo 7 (la sala
-  de jugadores)?
-- [ ] F2. En Personajes, la jugadora solo ve los suyos, no los del resto del grupo (111). ¿Así?
-- [ ] F3. En el panel de un PNJ, el retrato queda debajo de siete propiedades (031). ¿La imagen, arriba del todo?
-- [ ] F4. ¿Se quita `/ia` (B5)?
-- [ ] F5. Con el móvil solo para la jugadora, ¿se quita lo del móvil que es solo del máster (el menú de la llama
-  dentro de un mundo, Archivos en el móvil…) o se deja como está sin cuidarlo?
+- [x] F1. La portada de la campaña para la jugadora solo tiene los miembros (101). ¿Se deja para el módulo 7 (la sala
+  de jugadores)? **Enrique: sí** (ahora ya enseña los personajes del grupo, F2).
+- [x] F2. En Personajes, la jugadora solo ve los suyos, no los del resto del grupo (111). ¿Así? **Enrique: sí, pero en
+  la campaña ve a sus aliados aunque no pueda abrirlos**: hecho (`listCharacters.allies`, «Personajes» en la portada).
+- [x] F3. En el panel de un PNJ, el retrato queda debajo de siete propiedades (031). ¿La imagen, arriba del todo?
+  **Enrique: donde se vea mejor**: si el panel empieza por una imagen, va antes que las propiedades («Mencionado en»
+  sigue arriba del todo).
+- [x] F4. ¿Se quita `/ia` (B5)? **Enrique: sí**: quitada (el conector y el modo, en Ajustes).
+- [x] F5. Con el móvil solo para la jugadora, ¿se quita lo del móvil que es solo del máster (el menú de la llama
+  dentro de un mundo, Archivos en el móvil…) o se deja como está sin cuidarlo? **Enrique: quitarlo**: el menú de la
+  llama solo tiene lo de la jugadora; Archivos, sin su selector de carpeta, sus hojas ni «Elegir».
 
 ## G. Del código (accesibilidad, con `web-design-guidelines`)
 
@@ -167,7 +171,7 @@ tienen nombre, las ventanas son `<dialog>`, hay enlace de salto, el zoom no se b
   autorrelleno tapa su lista); imágenes del texto sin dimensiones (el texto salta al cargar: `wiki/file-embed.tsx:159`,
   `wiki/panel-blocks.tsx:675`); la portada de página y la imagen de una ficha solo se encuadran arrastrando (la del
   mundo acepta flechas).
-- [ ] G10. **Sale «Foundry» en la interfaz** (`i18n.ts:1349`, `:1365`, `:1374`, `:2430`, `:2618`, `:2944`): CLAUDE.md lo
+- [x] G10. **Sale «Foundry» en la interfaz** (Enrique: quitarlo; ahora «otra mesa virtual», «Traer el sistema») (`i18n.ts:1349`, `:1365`, `:1374`, `:2430`, `:2618`, `:2944`): CLAUDE.md lo
   prohíbe y el ADR-0015 lo usa para «Traer de Foundry». ¿Se queda o se dice de otra forma?
 - [ ] G11. Las pruebas de accesibilidad (`e2e/tests/a11y.spec.ts`) no pasan por la página y su editor, Archivos, la
   ficha, el compendio, la mesa ni los dados: ampliarlas al arreglar.
@@ -180,6 +184,10 @@ Las e2e no se pasan mientras se pule (se ponen al día al acabar, antes de la CI
   `aria-expanded`), fuera de la barra y del menú de la llama.
 - Las que miraban la franja de la campaña («Jugadores», «Han entrado» como cifras) o «Eres su máster».
 - Las que abrían una ventana de la barra y medían su contenido (ahora, en la columna de Ajustes).
+- Las del máster en el móvil (F5): `wiki.spec.ts` (el menú de la llama dentro de un mundo), `vista-previa.spec.ts`
+  (Archivos en el móvil), `dados.spec.ts` (los dados desde el menú): quitarlas o pasarlas a la jugadora.
+- `aprobaciones.spec.ts`, ya sin `/ia` (hecho); `imagenes.spec.ts` y `escenas-foundry.spec.ts`, ya sin «Foundry»
+  (hecho).
 
 ## Lo que va bien
 

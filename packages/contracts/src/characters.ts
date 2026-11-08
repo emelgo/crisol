@@ -219,13 +219,21 @@ const blob = z
   .record(z.string(), z.unknown())
   .refine((value) => JSON.stringify(value).length <= 256 * 1024, 'Demasiado grande: como mucho, 256 KB')
 
+/** Un personaje de otro jugador de la campaña, como lo ve un jugador: quién es y quién lo juega, sin abrirlo */
+export const allyCard = z.object({
+  id: z.uuid(),
+  name: z.string(),
+  owner: z.object({ id: z.string(), name: z.string() }).nullable(),
+  line: z.string().optional().describe('Su resumen en una línea (especie y clase, por ejemplo)')
+})
+
 export const listCharacters = defineAction({
   name: 'listCharacters',
   kind: 'read',
   description:
-    'Los personajes de una campaña: el máster ve todos; un jugador, los suyos. Con su dueño, su estado (en creación o listo) y su resumen',
+    'Los personajes de una campaña: el máster ve todos; un jugador, los suyos (y en allies, los ya hechos de los demás: su nombre, su resumen y quién lo juega, sin poder abrirlos). Con su dueño, su estado (en creación o listo) y su resumen',
   input: z.object({ campaignId: z.uuid() }),
-  output: z.object({ characters: z.array(characterCard) })
+  output: z.object({ characters: z.array(characterCard), allies: z.array(allyCard).optional() })
 })
 
 export const getCharacter = defineAction({

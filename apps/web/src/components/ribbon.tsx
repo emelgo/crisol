@@ -209,7 +209,6 @@ export function Ribbon() {
             : null
         }
         master={master}
-        isOwner={isOwner}
       />
       <nav className={styles.sections} aria-label={t('app.sectionsNav')}>
         <Link
@@ -380,20 +379,18 @@ function WorldPanels({ worldId, worldName, master }: { worldId: string; worldNam
   if (master) return <WikiPanels worldId={worldId} worldName={worldName} />
   // Quien juega, sin páginas: su Inicio con sus campañas, y los dados
   return (
-    <>
-      <Link
-        to="/mundos/$worldId"
-        params={{ worldId }}
-        activeOptions={{ exact: true }}
-        className={styles.item}
-        viewTransition={SECTION}
-        onPointerEnter={prefetchHome}
-        onFocus={prefetchHome}
-        data-tour="barra-inicio"
-      >
-        <Label icon={House} text={t('ribbon.home')} />
-      </Link>
-    </>
+    <Link
+      to="/mundos/$worldId"
+      params={{ worldId }}
+      activeOptions={{ exact: true }}
+      className={styles.item}
+      viewTransition={SECTION}
+      onPointerEnter={prefetchHome}
+      onFocus={prefetchHome}
+      data-tour="barra-inicio"
+    >
+      <Label icon={House} text={t('ribbon.home')} />
+    </Link>
   )
 }
 
@@ -617,26 +614,24 @@ function FlameIcon(_: { 'aria-hidden'?: 'true'; size?: number; strokeWidth?: num
 }
 
 /**
- * En el móvil, en vez de la barra: la llama, sola, abajo en el centro. Al tocarla sube una hoja con todas las secciones
- * de donde se está (fuera de los mundos, Mis mundos, Archivos, Etiquetas, Historial y Papelera; dentro, las del mundo y
- * la vuelta a Mis mundos) y, debajo, la cuenta
+ * En el móvil, en vez de la barra: la llama, sola, abajo en el centro. Al tocarla sube una hoja con las secciones de
+ * donde se está y, debajo, la cuenta. El móvil es de la jugadora (docs/diseno.md: el máster trabaja en el PC): solo
+ * lo suyo (Mis mundos, su campaña, las páginas que conoce, sus personajes, el compendio, el grupo y lo que está en juego)
  */
 function MobileMenu({
   world,
   campaign,
-  master,
-  isOwner
+  master
 }: {
   world: { id: string; name: string } | null
   campaign: { id: string; name: string; master: boolean } | null
   master: boolean
-  isOwner: boolean
 }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const accounts = useAccounts()
   const windows = useWindow()
-  const wikiPanel = useWikiPanel()
+  const _wikiPanel = useWikiPanel()
   const path = useRouterState({ select: (state) => state.location.pathname })
   const trigger = useRef<HTMLButtonElement>(null)
   const dialog = useRef<HTMLDialogElement>(null)
@@ -705,33 +700,7 @@ function MobileMenu({
             text: t('ribbon.inPlay'),
             current: path.startsWith(`/mundos/${world.id}/campanas/${campaign.id}/en-juego`),
             run: go(`/mundos/${world.id}/campanas/${campaign.id}/en-juego`)
-          },
-          // La mesa, lo revelado y la biblioteca: del máster
-          ...(campaign.master
-            ? [
-                {
-                  key: 'mesa',
-                  icon: Layers,
-                  text: t('ribbon.table'),
-                  current: path.startsWith(`/mundos/${world.id}/campanas/${campaign.id}/mesa`),
-                  run: go(`/mundos/${world.id}/campanas/${campaign.id}/mesa`)
-                },
-                {
-                  key: 'revelado',
-                  icon: Eye,
-                  text: t('ribbon.revealed'),
-                  current: false,
-                  run: then(() => windows?.open('revelado', trigger.current))
-                },
-                {
-                  key: 'biblioteca',
-                  icon: Library,
-                  text: t('ribbon.library'),
-                  current: path.startsWith(`/mundos/${world.id}/campanas/${campaign.id}/biblioteca`),
-                  run: go(`/mundos/${world.id}/campanas/${campaign.id}/biblioteca`)
-                }
-              ]
-            : [])
+          }
         ]
       : world
         ? [
@@ -756,35 +725,7 @@ function MobileMenu({
                     current: path === `/mundos/${world.id}`,
                     run: go(`/mundos/${world.id}`)
                   }
-                ]),
-            ...(master
-              ? [
-                  ...(['pages'] as const).map((panel) => ({
-                    key: panel,
-                    icon: Globe,
-                    text: world.name,
-                    current: wikiPanel.open && wikiPanel.panel === panel,
-                    // Abre el cajón con esa vista (y, si no se está en las páginas, la portada del mundo)
-                    run: then(() => {
-                      wikiPanel.show(panel, trigger.current)
-                      if (!/^\/mundos\/[^/]+(\/(wiki\/[^/]+|buscar))?\/?$/.test(path)) {
-                        void navigate({
-                          to: '/mundos/$worldId',
-                          params: { worldId: world.id },
-                          viewTransition: SECTION
-                        })
-                      }
-                    })
-                  })),
-                  {
-                    key: 'archivos',
-                    icon: Folder,
-                    text: t('ribbon.files'),
-                    current: path === `/mundos/${world.id}/archivos`,
-                    run: go(`/mundos/${world.id}/archivos`)
-                  }
-                ]
-              : [])
+                ])
           ]
         : [
             {
@@ -793,58 +734,8 @@ function MobileMenu({
               text: t('ribbon.worlds'),
               current: path === '/mundos',
               run: go('/mundos')
-            },
-            ...(isOwner
-              ? [
-                  {
-                    key: 'archivos',
-                    icon: Folder,
-                    text: t('ribbon.files'),
-                    current: path === '/archivos',
-                    run: go('/archivos')
-                  },
-                  {
-                    key: 'etiquetas',
-                    icon: Hash,
-                    text: t('ribbon.tags'),
-                    current: path === '/etiquetas',
-                    run: go('/etiquetas')
-                  },
-                  {
-                    key: 'plantillas',
-                    icon: LayoutTemplate,
-                    text: t('ribbon.templates'),
-                    current: path.startsWith('/plantillas'),
-                    run: go('/plantillas')
-                  },
-                  {
-                    key: 'sistemas',
-                    icon: ScrollText,
-                    text: t('ribbon.systems'),
-                    current: path.startsWith('/sistemas'),
-                    run: go('/sistemas')
-                  }
-                ]
-              : [])
+            }
           ]
-  if (isOwner) {
-    entries.push(
-      {
-        key: 'historial',
-        icon: History,
-        text: t('ribbon.history'),
-        current: false,
-        run: then(() => windows?.open('historial', trigger.current))
-      },
-      {
-        key: 'papelera',
-        icon: Trash2,
-        text: t('ribbon.trash'),
-        current: false,
-        run: then(() => windows?.open('papelera', trigger.current))
-      }
-    )
-  }
   return (
     <>
       <button

@@ -26,7 +26,7 @@ import {
   Trash2,
   Type
 } from 'lucide-react'
-import { type CSSProperties, type ReactNode, useEffect, useId, useRef, useState } from 'react'
+import { type CSSProperties, Fragment, type ReactNode, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
@@ -100,9 +100,12 @@ const same = (a: readonly PanelBlock[], b: readonly PanelBlock[]) => JSON.string
 
 export function PanelBlocks({
   page,
+  properties,
   onAddProperty
 }: {
   page: Page
+  /** Las propiedades de la página: tras la imagen si el panel empieza por una (el retrato), si no, arriba */
+  properties?: ReactNode
   /** Las etiquetas y las propiedades son de la página (no bloques): se añaden en su ficha, de arriba */
   onAddProperty?: (kind: 'tags' | 'property') => void
 }) {
@@ -181,8 +184,11 @@ export function PanelBlocks({
     setFocusId(block.id)
   }
 
+  // El retrato (o la imagen del lugar) va arriba del todo, antes que las propiedades: es lo primero que se mira
+  const leadImage = blocks[0]?.type === 'image'
   return (
     <div ref={root} className={styles.panel}>
+      {!leadImage && properties}
       {blocks.length === 0 && (
         <div className={styles.empty}>
           <p className={styles.emptyTitle}>{t('panelBlocks.empty')}</p>
@@ -190,24 +196,26 @@ export function PanelBlocks({
         </div>
       )}
       {blocks.map((block, index) => (
-        <BlockFrame
-          key={block.id}
-          page={page}
-          block={block}
-          index={index}
-          count={blocks.length}
-          autoFocus={focusId === block.id}
-          dragging={dragging === index}
-          onDragStart={() => setDragging(index)}
-          onDragEnd={() => setDragging(null)}
-          onDrop={() => {
-            if (dragging !== null) move(dragging, index)
-            setDragging(null)
-          }}
-          onMove={(to) => move(index, to)}
-          onRemove={() => commit(blocks.filter((b) => b.id !== block.id))}
-          onChange={(patch, soon) => update(block.id, patch, soon)}
-        />
+        <Fragment key={block.id}>
+          <BlockFrame
+            page={page}
+            block={block}
+            index={index}
+            count={blocks.length}
+            autoFocus={focusId === block.id}
+            dragging={dragging === index}
+            onDragStart={() => setDragging(index)}
+            onDragEnd={() => setDragging(null)}
+            onDrop={() => {
+              if (dragging !== null) move(dragging, index)
+              setDragging(null)
+            }}
+            onMove={(to) => move(index, to)}
+            onRemove={() => commit(blocks.filter((b) => b.id !== block.id))}
+            onChange={(patch, soon) => update(block.id, patch, soon)}
+          />
+          {leadImage && index === 0 && properties}
+        </Fragment>
       ))}
       <AddBlock onAdd={add} onAddProperty={onAddProperty} />
       <FormError message={error ? errorText(error) : null} />

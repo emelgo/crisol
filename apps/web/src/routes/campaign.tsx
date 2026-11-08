@@ -76,6 +76,7 @@ export function CampaignPage() {
           <img src={`/api/files/${campaign.cover.fileId}`} alt="" style={coverStyle(campaign.cover)} />
         </div>
       )}
+      <CharactersPanel campaign={campaign} />
       <MembersPanel campaign={campaign} />
       {campaign.role === 'master' && <InvitationPanel campaignId={campaignId} />}
       <Tour
@@ -117,6 +118,50 @@ export function CampaignPage() {
         ]}
       />
     </Screen>
+  )
+}
+
+/**
+ * Los personajes de la campaña: los tuyos (o todos, el máster), que se abren, y los de tus aliados, que se ven pero no
+ * se abren (Enrique, 2026-11-08: «puede ver a sus aliados aunque no pueda entrar en ellos»)
+ */
+function CharactersPanel({ campaign }: { campaign: Campaign }) {
+  const { t } = useTranslation()
+  const api = useApi()
+  const characters = useQuery({
+    queryKey: ['characters', campaign.id],
+    queryFn: () => api.call('listCharacters', { campaignId: campaign.id }),
+    enabled: Boolean(campaign.system)
+  })
+  if (!campaign.system || !characters.data) return null
+  const own = characters.data.characters
+  const allies = characters.data.allies ?? []
+  if (own.length === 0 && allies.length === 0) return null
+  const who = (owner: { name: string } | null, line?: string) => [line, owner?.name].filter(Boolean).join(' · ')
+  return (
+    <section aria-labelledby="personajes-campana">
+      <h2 id="personajes-campana">{t('characters.title')}</h2>
+      <ul className={styles.list} aria-labelledby="personajes-campana">
+        {own.map((character) => (
+          <li key={character.id} className={styles.item}>
+            <Link
+              to="/mundos/$worldId/campanas/$campaignId/personajes/$characterId"
+              params={{ worldId: campaign.worldId, campaignId: campaign.id, characterId: character.id }}
+              className={`${styles.name} ${styles.entity}`}
+            >
+              {character.name}
+            </Link>
+            <span className={styles.role}>{who(character.owner, character.summary.line)}</span>
+          </li>
+        ))}
+        {allies.map((ally) => (
+          <li key={ally.id} className={styles.item}>
+            <span className={`${styles.name} ${styles.entity}`}>{ally.name}</span>
+            <span className={styles.role}>{who(ally.owner, ally.line)}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
   )
 }
 

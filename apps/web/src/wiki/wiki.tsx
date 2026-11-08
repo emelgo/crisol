@@ -815,11 +815,11 @@ export function EntryView({
               <>
                 {/* «Mencionado en», arriba (como en Everlore); después, las propiedades y los bloques */}
                 <Backlinks key={`enlaces-${page.id}`} page={page} />
-                {/* Las propiedades, a un lado (como los bloques del panel de Everlore) */}
-                <PageProperties key={page.id} page={page} adders={false} adderRef={addProperty} />
+                {/* Las propiedades, a un lado (como los bloques del panel de Everlore): tras el retrato, si lo hay */}
                 <PanelBlocks
                   key={`bloques-${page.id}`}
                   page={page}
+                  properties={<PageProperties key={page.id} page={page} adders={false} adderRef={addProperty} />}
                   onAddProperty={page.locked ? undefined : (kind) => addProperty.current?.(kind)}
                 />
               </>

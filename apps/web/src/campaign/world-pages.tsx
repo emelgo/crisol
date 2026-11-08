@@ -373,8 +373,10 @@ function PlayerEntry({ page }: { page: Page }) {
         </article>
         <aside aria-label={t('wiki.pagePanel')} className={wiki.entryPanel}>
           <Backlinks page={page} />
+          {/* El retrato (si el panel empieza por una imagen), antes que las propiedades, como en el mundo */}
+          {page.panel[0]?.type === 'image' && <ReadPanel page={{ ...page, panel: page.panel.slice(0, 1) }} />}
           <PageProperties page={page} adders={false} />
-          <ReadPanel page={page} />
+          <ReadPanel page={page.panel[0]?.type === 'image' ? { ...page, panel: page.panel.slice(1) } : page} />
         </aside>
       </div>
     </>
