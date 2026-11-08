@@ -13,8 +13,9 @@ Cuentas: `enrique@revision.test`, `lucia@revision.test`, `marcos@revision.test` 
 **Decidido durante la revisión (Enrique)**: el móvil solo se cuida en la vista de la jugadora; el máster trabaja
 siempre en el PC (norma en `docs/diseno.md`). Los hallazgos de móvil de pantallas del máster se descartan.
 
-Estado: Enrique dijo «vamos» (2026-11-08) sin entrar en cada punto: se arregla todo con las propuestas de aquí, y lo
-que él decide de verdad (F, G1, G10) va con la opción por defecto apuntada en su sitio.
+Estado (2026-11-08, noche): arreglado todo lo de A a E y G2–G9, en local (servidor de desarrollo) y con sus pruebas
+unitarias; las e2e se ponen al día al final (abajo). **Quedan para Enrique** F1–F5, G1 y G10 (mientras, como están) y
+G11 (ampliar las pruebas de accesibilidad, con las e2e).
 
 ## A. Fallos (algo roto o que engaña)
 
@@ -114,7 +115,7 @@ que él decide de verdad (F, G1, G10) va con la opción por defecto apuntada en 
   como pide la norma; decir qué falta obligaría a poner género a cada campo.
 - [x] E4. Historial: un pin que lleva a una página sale como «Pin sin nombre» (019); en el de la cuenta no dice de qué
   mundo es cada cosa.
-- [ ] E5. La campaña dice lo mismo tres veces: «2 Jugadores», «2 Han entrado» y «Han entrado 2 con este enlace» (060).
+- [x] E5. La campaña dice lo mismo tres veces: «2 Jugadores», «2 Han entrado» y «Han entrado 2 con este enlace» (060).
 - [x] E6. Buscar: las casillas de una lista salen pegadas en el extracto («…Puerto Gris Encontrar la entrada…»), y los
   títulos de los resultados en blanco, no en azul (045).
 - [x] E7. Plantilla de serie: sus desplegables están desactivados pero parecen activos (024).
