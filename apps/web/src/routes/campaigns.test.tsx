@@ -71,9 +71,11 @@ describe('las campañas de un mundo', () => {
     const { router } = renderCampaigns(w, [campaign(w, 'La Marca'), torre, campaign(w, 'Las Islas')])
     expect(await screen.findByRole('heading', { level: 1, name: 'Campañas' })).toBeDefined()
     expect(await names()).toEqual(['La Marca', 'La Torre', 'Las Islas'])
-    await userEvent.click((await list()).getByRole('link', { name: 'La Torre' }))
-    expect(await screen.findByRole('heading', { level: 1, name: 'La Torre' })).toBeDefined()
-    expect(router.state.location.pathname).toBe(`/mundos/${w.id}/campanas/${torre.id}`)
+    // Cada una se abre en otra pestaña, como la partida en D&D Beyond
+    const link = (await list()).getByRole('link', { name: 'La Torre' })
+    expect(link.getAttribute('href')).toBe(`/mundos/${w.id}/campanas/${torre.id}`)
+    expect(link.getAttribute('target')).toBe('_blank')
+    expect(router.state.location.pathname).toBe(`/mundos/${w.id}/campanas`)
   })
 
   it('sin campañas lo dice y deja crear la primera en un cuadro', async () => {

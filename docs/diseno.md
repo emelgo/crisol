@@ -51,8 +51,9 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   de ser vistas sueltas. **Las páginas del mundo se abren en ventanas sobre la Mesa** (como los diarios de Foundry:
   se mueven, cambian de tamaño, varias a la vez), sin cambiar de vista. **La jugadora abre la campaña en su ficha**
   (la Mesa, a un clic). **El inventario del grupo va en la ficha**, como en D&D Beyond: una sección «Del grupo»
-  compartida en la pestaña de equipo, sin «Grupo» en la barra. Lo de abajo sobre la portada de la campaña queda hasta
-  que esto se construya.
+  compartida en la pestaña de equipo, sin «Grupo» en la barra. **Las campañas se abren en otra pestaña del navegador**,
+  como la partida en D&D Beyond (Enrique, 2026-11-09). Lo de abajo sobre la portada de la campaña queda hasta que esto
+  se construya.
 - **La campaña se abre en su propia vista, como un mundo** (Enrique, 2026-11-05): al entrar, la barra cambia y enseña
   lo de la campaña (sus personajes, su compendio, los dados…), con la transición de entrar. **El compendio** (el
   contenido del sistema que usa la campaña: clases, conjuros, criaturas, reglas…, con sus ediciones) **se ve ahí**.

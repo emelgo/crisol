@@ -349,13 +349,14 @@ export function CampaignCard({
       burning={burning}
       {...(onBurnt ? { onBurnt } : {})}
       name={
-        // Entrar en una campaña es entrar, como en un mundo: la tarjeta se convierte en la franja de su portada
+        // Una campaña se abre en otra pestaña, como la partida en D&D Beyond (Enrique, 2026-11-09): su Mesa ocupa la
+        // pantalla y la de los mundos se queda donde estaba
         <Link
           to="/mundos/$worldId/campanas/$campaignId"
           params={{ worldId, campaignId: campaign.id }}
           className={styles.name}
-          viewTransition={ENTER_WORLD}
-          onClick={(event) => enterWorld(campaign.id, event.currentTarget.closest('li'))}
+          target="_blank"
+          rel="noopener"
         >
           {campaign.name}
         </Link>

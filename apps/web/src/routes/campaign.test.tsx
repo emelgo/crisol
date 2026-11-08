@@ -87,9 +87,11 @@ describe('una campaña y su enlace de invitación', () => {
     // Las campañas, en Mis mundos con su mundo
     const list = within(await screen.findByRole('list', { name: 'Campañas' }))
     expect(list.getByText('Eana')).toBeDefined()
-    await userEvent.click(list.getByRole('link', { name: 'La Marca' }))
-    expect(await screen.findByRole('heading', { level: 1, name: 'La Marca' })).toBeDefined()
-    expect(router.state.location.pathname).toBe(`/mundos/${world.id}/campanas/${c.id}`)
+    // En otra pestaña, como la partida en D&D Beyond
+    const link = list.getByRole('link', { name: 'La Marca' })
+    expect(link.getAttribute('href')).toBe(`/mundos/${world.id}/campanas/${c.id}`)
+    expect(link.getAttribute('target')).toBe('_blank')
+    expect(router.state.location.pathname).toBe('/mundos')
   })
 
   it('el máster ve el enlace, la fecha y cuántos han entrado, y lo copia', async () => {
