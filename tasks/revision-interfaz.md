@@ -102,9 +102,9 @@ que él decide de verdad (F, G1, G10) va con la opción por defecto apuntada en 
 ## D. Móvil de la jugadora
 
 - [x] D1. **El «?» flota sobre el contenido junto a la llama** (220–222): tapa filas y botones.
-- [ ] D2. **La página de la jugadora sin portada deja un hueco vacío arriba** (221; es B2 en el móvil).
-- [ ] D3. Revisar en el móvil de la jugadora lo que no se capturó: el grupo, el compendio con una entrada abierta, lo
-  revelado y el diario escribiendo.
+- [x] D2. **La página de la jugadora sin portada deja un hueco vacío arriba** (221; es B2 en el móvil).
+- [x] D3. Revisar en el móvil de la jugadora lo que no se capturó: el grupo, el compendio con una entrada abierta, lo
+  revelado y el diario escribiendo. **Hecho**: el panel de la página bajaba a media anchura; ahora, a lo ancho.
 
 ## E. Menores (textos, formato, detalles)
 
