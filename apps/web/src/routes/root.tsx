@@ -20,6 +20,7 @@ import { WikiPanelProvider } from '../wiki/panel.tsx'
 import { OrganizationHistory, WorldHistoryWindow } from './history.tsx'
 import { Profile } from './profile.tsx'
 import styles from './root.module.css'
+import settingsStyles from './settings.module.css'
 import { Settings } from './settings.tsx'
 import { OrganizationTrash, WorldTrashWindow } from './trash.tsx'
 
@@ -116,13 +117,27 @@ export function RootLayout() {
  * Lo que se abre encima de la pantalla: las mismas páginas que tienen su dirección. Dentro de un mundo que se dirige,
  * su historial y su papelera; fuera, los de toda la cuenta
  */
+/** Lo de una ventana de la barra, en la misma columna que Ajustes: el título de todas en el mismo sitio */
 function WindowContent({ kind }: { kind: WindowKind }) {
-  const worldId = useMasteredWorld()
-  if (kind === 'historial') return worldId ? <WorldHistoryWindow worldId={worldId} /> : <OrganizationHistory />
-  if (kind === 'papelera') return worldId ? <WorldTrashWindow worldId={worldId} /> : <OrganizationTrash />
+  return <div className={settingsStyles.page}>{windowBody(kind)}</div>
+}
+
+function windowBody(kind: WindowKind) {
+  if (kind === 'historial') return <HistoryWindow />
+  if (kind === 'papelera') return <TrashWindow />
   if (kind === 'ajustes') return <Settings />
   if (kind === 'revelado') return <GroupKnowledgeWindow />
   return <Profile />
+}
+
+function HistoryWindow() {
+  const worldId = useMasteredWorld()
+  return worldId ? <WorldHistoryWindow worldId={worldId} /> : <OrganizationHistory />
+}
+
+function TrashWindow() {
+  const worldId = useMasteredWorld()
+  return worldId ? <WorldTrashWindow worldId={worldId} /> : <OrganizationTrash />
 }
 
 /** «Lo que sabe el grupo» de la campaña en la que se está (docs/specs/revelar.md) */

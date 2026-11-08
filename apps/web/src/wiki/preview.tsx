@@ -129,7 +129,7 @@ export function LinkPreview({ worldId, pageId, anchor, anchorElement, sheet, onC
         <p className={styles.summary}>{page.summary}</p>
       ) : (
         <div className={styles.body}>
-          <ContentView blocks={blocks} worldId={worldId} />
+          <ContentView blocks={blocks} worldId={worldId} compact />
           {content.data?.truncated && <p className={styles.more}>{t('preview.more')}</p>}
         </div>
       )}

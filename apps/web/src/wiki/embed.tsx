@@ -51,7 +51,7 @@ function EmbedView({ node, selected }: NodeViewProps) {
       {target.state === 'broken' && <p className={styles.note}>{t('embed.missing')}</p>}
       {target.state === 'ok' &&
         (content.data ? (
-          <ContentView blocks={content.data.blocks as JSONContent[]} worldId={worldId} />
+          <ContentView blocks={content.data.blocks as JSONContent[]} worldId={worldId} compact />
         ) : (
           <p className={styles.note}>{t('embed.loading')}</p>
         ))}

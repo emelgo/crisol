@@ -5,10 +5,34 @@
   font-size: 1rem;
 }
 
+/* Los títulos del texto, como en el editor (wiki/sheet/paged.module.css): el 1 con su raya, cada nivel en su color */
 .heading {
+  margin: 0.6em 0 0.3em;
   font-family: var(--font-display);
-  font-size: 1.125rem;
+  font-size: 1.15em;
   font-weight: 700;
+  line-height: 1.15;
+  color: var(--color-h4);
+}
+
+.heading[data-level="1"] {
+  padding-block-end: 0.15em;
+  border-block-end: 2px solid color-mix(in srgb, var(--color-h2) 45%, transparent);
+  color: var(--color-h2);
+  font-size: 1.9em;
+}
+
+.heading[data-level="2"] {
+  color: var(--color-h3);
+  font-size: 1.45em;
+}
+
+/* En lo pequeño (la vista previa de un enlace, un incrustado), más contenidos */
+.compact .heading {
+  margin-block: 0.4em 0.2em;
+  padding: 0;
+  border: 0;
+  font-size: 1.05em;
 }
 
 .missing {
@@ -82,6 +106,15 @@
   font-weight: 600;
   letter-spacing: 0;
   text-transform: none;
+}
+
+/* Los enlaces a páginas, en azul como en el editor */
+.pageLink {
+  color: var(--color-link);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--color-link) 45%, transparent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
 }
 
 /* El enlace a una entrada del compendio, como en el editor */

@@ -5,6 +5,8 @@ import { PasswordFields } from '../account/account-fields.tsx'
 import { useAccounts } from '../account/context.tsx'
 import { useAnnounce } from '../components/announcer.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
+import { ChangesBar } from '../components/changes.tsx'
+import dialogStyles from '../components/dialog.module.css'
 import { Field, FormError } from '../components/field.tsx'
 import styles from '../components/form.module.css'
 import { PageTitle } from '../components/page-title.tsx'
@@ -34,7 +36,19 @@ function ProfileData() {
   const { account } = accounts.useAccount()
   const [busy, setBusy] = useState(false)
   const [status, setStatus] = useState<{ ok: true } | { ok: false; code: string } | null>(null)
+  // «Guardar» y «Cancelar», solo con cambios (docs/diseno.md)
+  const [changed, setChanged] = useState(false)
   if (!account) return null
+  const differs = (form: HTMLFormElement) => {
+    const data = new FormData(form)
+    const dice = data.get('diceColor') === 'auto' ? null : String(data.get('diceColor'))
+    return (
+      String(data.get('name')) !== account.name ||
+      String(data.get('firstName')) !== (account.firstName ?? '') ||
+      String(data.get('lastName')) !== (account.lastName ?? '') ||
+      dice !== account.diceColor
+    )
+  }
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const form = new FormData(event.currentTarget)
@@ -47,10 +61,25 @@ function ProfileData() {
     })
     setBusy(false)
     setStatus(result)
-    if (result.ok) announce(t('profile.saved'))
+    if (result.ok) {
+      setChanged(false)
+      announce(t('profile.saved'))
+    }
   }
   return (
-    <form className={styles.form} aria-labelledby="perfil-datos" onSubmit={submit}>
+    <form
+      className={styles.form}
+      aria-labelledby="perfil-datos"
+      onSubmit={submit}
+      onChange={(event) => {
+        setStatus(null)
+        setChanged(differs(event.currentTarget))
+      }}
+      onReset={() => {
+        setStatus(null)
+        setChanged(false)
+      }}
+    >
       <h2 id="perfil-datos">{t('profile.you')}</h2>
       <Field
         label={t('account.username')}
@@ -90,9 +119,14 @@ function ProfileData() {
         message={status && !status.ok ? t(`errors.${status.code}`, { defaultValue: t('errors.UNKNOWN') }) : null}
       />
       {status?.ok && <p role="status">{t('profile.saved')}</p>}
-      <BusyButton type="submit" className={styles.button} busy={busy}>
-        {t('profile.save')}
-      </BusyButton>
+      <ChangesBar shown={changed}>
+        <BusyButton type="submit" className={styles.button} busy={busy}>
+          {t('profile.save')}
+        </BusyButton>
+        <button type="reset" className={dialogStyles.cancel}>
+          {t('list.cancel')}
+        </button>
+      </ChangesBar>
     </form>
   )
 }

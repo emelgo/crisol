@@ -10,6 +10,7 @@ import { useAnnounce } from '../components/announcer.tsx'
 import { Loading } from '../components/brand.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
 import { CopyField } from '../components/copy-field.tsx'
+import { DangerZone } from '../components/danger.tsx'
 import { FormError } from '../components/field.tsx'
 import { focusAfterRemoving, focusOnMount, useReturnFocus } from '../components/focus.ts'
 import form from '../components/form.module.css'
@@ -144,82 +145,88 @@ function MembersPanel({ campaign }: { campaign: Campaign }) {
   const error = remove.error ?? leave.error
 
   return (
-    <section aria-labelledby="miembros">
-      <h2 id="miembros">{t('members.title')}</h2>
-      <ul className={styles.list} aria-labelledby="miembros">
-        {members.data.members.map((member) => (
-          <MemberItem
-            key={member.userId}
-            member={member}
-            removable={canRemove && member.role === 'player'}
-            confirming={confirmingRemove === member.userId}
-            busy={remove.isPending}
-            onStart={() => {
-              setConfirmingRemove(member.userId)
-              setRemoved(null)
-            }}
-            onCancel={() => setConfirmingRemove(null)}
-            onRemove={(newLink, refocus) =>
-              remove.mutate(
-                { userId: member.userId, newLink },
-                {
-                  onSuccess: ({ linkFailed }) => {
-                    setConfirmingRemove(null)
-                    setRemoved({ name: member.name, linkFailed })
-                    // Si el enlace no cambió, lo dice el aviso (alert)
-                    if (!linkFailed) announce(t('members.removed', { name: member.name }))
-                    refocus()
+    <>
+      <section aria-labelledby="miembros">
+        <h2 id="miembros">{t('members.title')}</h2>
+        <ul className={styles.list} aria-labelledby="miembros">
+          {members.data.members.map((member) => (
+            <MemberItem
+              key={member.userId}
+              member={member}
+              removable={canRemove && member.role === 'player'}
+              confirming={confirmingRemove === member.userId}
+              busy={remove.isPending}
+              onStart={() => {
+                setConfirmingRemove(member.userId)
+                setRemoved(null)
+              }}
+              onCancel={() => setConfirmingRemove(null)}
+              onRemove={(newLink, refocus) =>
+                remove.mutate(
+                  { userId: member.userId, newLink },
+                  {
+                    onSuccess: ({ linkFailed }) => {
+                      setConfirmingRemove(null)
+                      setRemoved({ name: member.name, linkFailed })
+                      // Si el enlace no cambió, lo dice el aviso (alert)
+                      if (!linkFailed) announce(t('members.removed', { name: member.name }))
+                      refocus()
+                    }
                   }
-                }
-              )
-            }
-          />
-        ))}
-      </ul>
-      {removed && (
-        <p>
-          <RemovedMessage {...removed} />
-        </p>
-      )}
+                )
+              }
+            />
+          ))}
+        </ul>
+        {removed && (
+          <p>
+            <RemovedMessage {...removed} />
+          </p>
+        )}
 
-      {campaign.role === 'player' &&
-        (confirmingLeave ? (
-          <div>
-            <p id={leaveWarningId}>{t('members.leaveWarning')}</p>
-            <div className={styles.actions}>
-              <BusyButton
-                ref={focusOnMount}
-                className={form.button}
-                aria-describedby={leaveWarningId}
-                busy={leave.isPending}
-                onClick={() => leave.mutate()}
-              >
-                {t('members.leaveConfirm')}
-              </BusyButton>
-              <button
-                type="button"
-                className={styles.secondary}
-                onClick={() => {
-                  leaveButton.back()
-                  setConfirmingLeave(false)
-                }}
-              >
-                {t('list.cancel')}
-              </button>
+        <FormError message={error ? errorText(error) : null} />
+      </section>
+      {/* Dejarla, en su zona de peligro al final (docs/diseno.md) */}
+      {campaign.role === 'player' && (
+        <DangerZone>
+          {confirmingLeave ? (
+            <div>
+              <p id={leaveWarningId}>{t('members.leaveWarning')}</p>
+              <div className={styles.actions}>
+                <BusyButton
+                  ref={focusOnMount}
+                  className={form.button}
+                  aria-describedby={leaveWarningId}
+                  busy={leave.isPending}
+                  onClick={() => leave.mutate()}
+                >
+                  {t('members.leaveConfirm')}
+                </BusyButton>
+                <button
+                  type="button"
+                  className={styles.secondary}
+                  onClick={() => {
+                    leaveButton.back()
+                    setConfirmingLeave(false)
+                  }}
+                >
+                  {t('list.cancel')}
+                </button>
+              </div>
             </div>
-          </div>
-        ) : (
-          <button
-            type="button"
-            ref={leaveButton.ref}
-            className={styles.secondary}
-            onClick={() => setConfirmingLeave(true)}
-          >
-            {t('members.leave')}
-          </button>
-        ))}
-      <FormError message={error ? errorText(error) : null} />
-    </section>
+          ) : (
+            <button
+              type="button"
+              ref={leaveButton.ref}
+              className={styles.secondary}
+              onClick={() => setConfirmingLeave(true)}
+            >
+              {t('members.leave')}
+            </button>
+          )}
+        </DangerZone>
+      )}
+    </>
   )
 }
 
