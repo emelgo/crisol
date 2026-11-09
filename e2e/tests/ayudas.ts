@@ -139,7 +139,8 @@ export async function skipTours(page: Page, email: string) {
           'sistemas',
           'paginas-jugador',
           'escena',
-          'mesa'
+          'mesa',
+          'mesa-jugador'
         ]
       })
     )
@@ -207,12 +208,22 @@ export async function import5e(page: Page): Promise<string> {
   return (await response.json()).system.id
 }
 
-/** El propietario crea Eana y La Marca; devuelve el enlace de invitación (con `page` en la campaña) */
+/**
+ * Entra en una campaña desde su tarjeta. Se abre en otra pestaña (como en D&D Beyond): aquí, en la misma, con su
+ * dirección. panel: la pestaña de la Mesa que se quiere abierta (ajustes, compendio…)
+ */
+export async function openCampaign(page: Page, name: string, panel?: string) {
+  const href = await page.getByRole('link', { name, exact: true }).first().getAttribute('href')
+  expect(href).toBeTruthy()
+  await page.goto(panel ? `${href}?panel=${panel}` : (href as string))
+}
+
+/** El propietario crea Eana y La Marca; devuelve el enlace de invitación (con `page` en los Ajustes de su Mesa) */
 export async function campaignLink(page: Page) {
   await freshOwner(page)
   await createWorld(page, 'Eana')
   await createCampaign(page, 'La Marca')
-  await page.getByRole('link', { name: 'La Marca', exact: true }).click()
+  await openCampaign(page, 'La Marca', 'ajustes')
   return page.getByLabel('Enlace de invitación').inputValue()
 }
 

@@ -1663,7 +1663,6 @@ export const es = {
     minimizeShort: 'Minimizar',
     close: 'Cerrar {{title}}',
     closeShort: 'Cerrar',
-    handle: 'ventana',
     keys: 'Flechas para moverla; Mayúsculas y flechas para cambiar su tamaño'
   },
   tabletop: {

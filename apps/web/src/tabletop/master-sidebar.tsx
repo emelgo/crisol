@@ -5,7 +5,7 @@
 import type { Campaign, CampaignTableView, TokenView } from '@crisol/contracts'
 import { getRouteApi, useNavigate } from '@tanstack/react-router'
 import { Swords } from 'lucide-react'
-import { useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { CampaignSettings } from '../campaign/settings.tsx'
@@ -16,7 +16,6 @@ import styles from './mesa.module.css'
 import { pageWindow } from './page-window.tsx'
 import { PagesTab } from './pages-tab.tsx'
 import { CharactersList, EncountersList, FactionLegend, type Placing } from './panel.tsx'
-import { RollToasts } from './roll-toasts.tsx'
 import { InScene, ScenesGrid } from './scenes-tab.tsx'
 import {
   PANEL_SLUGS,
@@ -42,6 +41,40 @@ const MASTER_TABS: readonly SidebarTab[] = [
   'settings'
 ]
 
+export type MasterSidebarState = ReturnType<typeof useMasterSidebar>
+
+/**
+ * La pestaña de la barra del máster y si está plegada. Vive en la Mesa, no en la barra: una herramienta que la tapa no
+ * la olvida, y un combate nuevo abre la suya aunque esté tapada (el que ya estaba al entrar, no: manda la dirección o la
+ * última)
+ */
+export function useMasterSidebar(table: CampaignTableView | null) {
+  const navigate = useNavigate()
+  const search = route.useSearch()
+  const [tab, setTab] = useSidebarTab(MASTER_TABS, tabOfSlug(search.panel))
+  const [folded, setFolded] = useSidebarFolded()
+  const pick = useCallback(
+    (next: SidebarTab) => {
+      setTab(next)
+      // En la dirección, para recargar en la misma pestaña (sin llenar el historial)
+      void navigate({ to: '.', search: (prev) => ({ ...prev, panel: PANEL_SLUGS[next] }), replace: true })
+    },
+    [setTab, navigate]
+  )
+  const combatId = table?.combat?.id ?? null
+  const loaded = table !== null
+  const shownCombat = useRef<string | null | undefined>(undefined)
+  useEffect(() => {
+    if (!loaded) return
+    const before = shownCombat.current
+    shownCombat.current = combatId
+    if (before === undefined || combatId === before || !combatId) return
+    pick('combat')
+    setFolded(false)
+  }, [loaded, combatId, pick, setFolded])
+  return { tab, pick, folded, setFolded }
+}
+
 export function MasterSidebar({
   worldId,
   worldName,
@@ -56,7 +89,8 @@ export function MasterSidebar({
   onPlace,
   onImage,
   onPickCombatant,
-  onPickToken
+  onPickToken,
+  sidebar
 }: {
   worldId: string
   worldName: string
@@ -75,35 +109,17 @@ export function MasterSidebar({
   onPickCombatant: (tokenId: string) => void
   /** Una ficha de «En esta escena»: elegida, con su tarjeta, y la mesa se centra en ella */
   onPickToken: (tokenId: string) => void
+  /** La pestaña abierta y si está plegada: los guarda la Mesa (sigue al combate aunque la tape una herramienta) */
+  sidebar: MasterSidebarState
 }) {
   const { t } = useTranslation()
   const api = useApi()
-  const navigate = useNavigate()
   const windows = useWindows()
-  const search = route.useSearch()
-  const [tab, setTab] = useSidebarTab(MASTER_TABS, tabOfSlug(search.panel))
-  const [folded, setFolded] = useSidebarFolded()
+  const { tab, pick, folded, setFolded } = sidebar
   const campaignId = campaign.id
   const combat = table?.combat ?? null
   const canPlace = Boolean(table?.open?.image?.tiles)
   const chosen = tokens.filter((token) => selected.includes(token.id))
-  const pick = (next: SidebarTab) => {
-    setTab(next)
-    // En la dirección, para recargar en la misma pestaña (sin llenar el historial)
-    void navigate({ to: '.', search: (prev) => ({ ...prev, panel: PANEL_SLUGS[next] }), replace: true })
-  }
-  // Un combate nuevo: su pestaña, desplegada (el que ya estaba al entrar, no: manda la pestaña de la dirección o la última)
-  const combatId = combat?.id ?? null
-  const loaded = table !== null
-  const shownCombat = useRef<string | null | undefined>(undefined)
-  useEffect(() => {
-    if (!loaded) return
-    const before = shownCombat.current
-    shownCombat.current = combatId
-    if (before === undefined || combatId === before || !combatId) return
-    setTab('combat')
-    setFolded(false)
-  }, [loaded, combatId, setTab, setFolded])
   const startCombat = () =>
     onAct(() =>
       api
@@ -200,10 +216,5 @@ export function MasterSidebar({
     },
     { key: 'settings', content: () => <CampaignSettings campaign={campaign} worldName={worldName} /> }
   ]
-  return (
-    <>
-      <TableSidebar items={items} tab={tab} onTab={pick} folded={folded} onFold={setFolded} />
-      <RollToasts campaignId={campaignId} enabled={folded || tab !== 'rolls'} />
-    </>
-  )
+  return <TableSidebar items={items} tab={tab} onTab={pick} folded={folded} onFold={setFolded} />
 }

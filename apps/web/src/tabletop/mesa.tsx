@@ -53,7 +53,7 @@ import { decodeMask, fogImage, fogLayerOf } from './fog-paint.ts'
 import { GmPanel, GmScreen, useGmSettings } from './gm-screen.tsx'
 import { GroupDamage } from './group-damage.tsx'
 import { MarksLayer, placeMarks } from './marks-layer.tsx'
-import { MasterSidebar } from './master-sidebar.tsx'
+import { MasterSidebar, useMasterSidebar } from './master-sidebar.tsx'
 import styles from './mesa.module.css'
 import { openPageLinks, PageWindowsSocket } from './page-window.tsx'
 import { PLACING_TYPE, type Placing } from './panel.tsx'
@@ -61,6 +61,7 @@ import { PlayerMesa } from './player-mesa.tsx'
 import { Preparing } from './preparing.tsx'
 import { masterTileUrl, sceneListKey } from './queries.ts'
 import type { RendererScene } from './renderer.ts'
+import { RollToasts } from './roll-toasts.tsx'
 import { SnapshotsPanel, THUMBNAIL_BYTES, THUMBNAIL_SIDE } from './snapshots.tsx'
 import { TokenCard } from './token-card.tsx'
 import { TokenImageEditor } from './token-image.tsx'
@@ -118,6 +119,9 @@ export function MesaScreen() {
   return <PlayerMesa key={campaign.id} worldId={worldId} campaign={campaign} />
 }
 
+/** Lo que flota sobre la Mesa o va a su lado (las ventanas y la barra de pestañas): sus teclas no son las del mapa */
+const CHROME = '[role="dialog"], [data-window], [data-mesa-side]'
+
 type Gesture = {
   startX: number
   startY: number
@@ -149,6 +153,8 @@ export function Mesa({
   const preparation = useScenePreparation(worldId)
   // La caja del mapa: dentro de ella flotan las ventanas
   const stageBox = useRef<HTMLDivElement>(null)
+  // La barra de la derecha: su pestaña y si está plegada viven aquí (una herramienta la tapa sin olvidarla)
+  const sidebar = useMasterSidebar(table)
   // La vista del máster (dónde cae el mapa y a qué escala): es de su navegador
   const view = useRef<Viewport>({ x: 0, y: 0, scale: 1 })
   // Las fichas: las elegidas, la de la tarjeta, la de la hoja abierta y la de su imagen
@@ -309,10 +315,16 @@ export function Mesa({
   const visionKey = vision.key
   const toolsKey = tools.key
   useEffect(() => {
+    // Lo último que se pulsó: en una ventana o en la barra, las teclas son de ellas (aunque el foco caiga en el body)
+    let inChrome = false
+    const onPointer = (event: globalThis.PointerEvent) => {
+      inChrome = Boolean((event.target as HTMLElement | null)?.closest(CHROME))
+    }
     const onKey = (event: globalThis.KeyboardEvent) => {
       const target = event.target as HTMLElement | null
       if (event.ctrlKey || event.metaKey || event.altKey) return
-      if (target?.closest('input, textarea, select, dialog, [contenteditable]')) return
+      if (target?.closest(`input, textarea, select, dialog, [contenteditable], ${CHROME}`)) return
+      if (target === document.body && inChrome) return
       if (target !== document.body && !target?.closest('[data-mesa]')) return
       if (visionKey(event) || toolsKey(event)) {
         event.preventDefault()
@@ -325,7 +337,11 @@ export function Mesa({
       if (panel) toggleSide(panel.key)
     }
     window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+    window.addEventListener('pointerdown', onPointer, true)
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      window.removeEventListener('pointerdown', onPointer, true)
+    }
   }, [visionKey, toolsKey, pickTool, toggleSide])
   // La niebla en la mesa: atenuada (lo que no ve la tele) o, viendo como el grupo, como la tele; editando muros o
   // luces, sin ella
@@ -349,6 +365,13 @@ export function Mesa({
       void start(open, { kind: 'own', fileId: open.image.fileId })
   }, [open, start])
 
+  // Si se ve la barra de pestañas (una herramienta con panel la tapa)
+  const sidebarShown = !(
+    (side && open) ||
+    (isMarkTool(tool) && tool !== 'laser' && open) ||
+    isVisionTool(tool) ||
+    asGroup
+  )
   return (
     <CurrentCampaignContext.Provider value={campaignId}>
       <WindowsProvider area={stageBox} onLink={openPageLinks}>
@@ -573,6 +596,7 @@ export function Mesa({
                 setSelected([tokenId])
                 center.current?.(tokenId, true)
               }}
+              sidebar={sidebar}
               onPickToken={(tokenId) => {
                 setSelected([tokenId])
                 setCardFor(tokenId)
@@ -593,6 +617,8 @@ export function Mesa({
               { target: '[data-tour="mesa-zoom"]', text: t('tour.tabletop.zoom'), placement: 'top' }
             ]}
           />
+          {/* Las tiradas sobre el d20: siempre, salvo con el registro a la vista (la barra en Tiradas, sin tapar ni plegar) */}
+          <RollToasts campaignId={campaignId} enabled={!(sidebarShown && !sidebar.folded && sidebar.tab === 'rolls')} />
           <PageTitle className={styles.hidden}>{campaignName}</PageTitle>
         </div>
       </WindowsProvider>
@@ -841,7 +867,8 @@ function Stage({
   useEffect(() => {
     const down = (event: globalThis.KeyboardEvent) => {
       const target = event.target as HTMLElement | null
-      if (event.code !== 'Space' || target?.closest('input, textarea, select, button, [contenteditable]')) return
+      if (event.code !== 'Space' || target?.closest(`input, textarea, select, button, [contenteditable], ${CHROME}`))
+        return
       space.current = true
       setPanning(true)
       event.preventDefault()

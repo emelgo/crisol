@@ -28,18 +28,19 @@ export function CollabClientProvider({ client, children }: { client: CollabClien
  * Un WebSocket por pestaña mientras se está en la wiki: lleva todos los documentos abiertos (el cuerpo y sus secretos)
  * y se cierra al salir de ella o al cambiar de cuenta
  */
-export function CollabSocket({ children }: { children: ReactNode }) {
+export function CollabSocket({ children, enabled = true }: { children: ReactNode; enabled?: boolean }) {
   const client = useContext(ClientContext)
   const [socket, setSocket] = useState<HocuspocusProviderWebsocket | null>(null)
+  // enabled: abierto solo mientras haga falta (en la Mesa, con alguna página en ventana), sin cambiar el árbol de dentro
   useEffect(() => {
-    if (!client) return
+    if (!client || !enabled) return
     const opened = client.connect()
     setSocket(opened)
     return () => {
       opened.destroy()
       setSocket(null)
     }
-  }, [client])
+  }, [client, enabled])
   return <SocketContext.Provider value={socket}>{children}</SocketContext.Provider>
 }
 

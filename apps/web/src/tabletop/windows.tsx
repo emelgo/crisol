@@ -13,6 +13,7 @@ import {
   type RefObject,
   useCallback,
   useContext,
+  useEffect,
   useId,
   useMemo,
   useRef,
@@ -42,6 +43,10 @@ export interface Box {
 interface OpenWindow extends WindowSpec {
   box: Box
   minimized: boolean
+  /** Su altura en la pila: la mayor, delante. El orden en la página no cambia (moverlas quitaría el foco) */
+  z: number
+  /** Cambia al abrirla o al traerla de vuelta: entonces el foco va a ella */
+  focusAt: number
 }
 
 /** Un enlace pulsado dentro de una ventana: true si lo abre en otra (una página) en vez de cambiar de vista */
@@ -113,16 +118,23 @@ export function WindowsProvider({
   onLink?: LinkHandler
 }) {
   const [windows, setWindows] = useState<OpenWindow[]>([])
+  const counter = useRef(0)
+  // Quién la abrió (para devolverle el foco al cerrarla)
+  const openers = useRef(new Map<string, HTMLElement>())
   const sizeOfArea = useCallback(() => {
     const rect = area.current?.getBoundingClientRect()
     return { width: rect?.width || 1200, height: rect?.height || 800 }
   }, [area])
   const open = useCallback(
-    (spec: WindowSpec) =>
+    (spec: WindowSpec) => {
+      const from = document.activeElement
+      if (from instanceof HTMLElement && !from.closest('[data-window]')) openers.current.set(spec.id, from)
+      const z = ++counter.current
       setWindows((current) => {
         const there = current.find((w) => w.id === spec.id)
         // Ya abierta: delante, sin minimizar y con lo nuevo (su título puede haber cambiado)
-        if (there) return [...current.filter((w) => w.id !== spec.id), { ...there, ...spec, minimized: false }]
+        if (there)
+          return current.map((w) => (w.id === spec.id ? { ...w, ...spec, minimized: false, z, focusAt: z } : w))
         const remembered = readBoxes()[spec.id]
         const step = current.length % 8
         const box = clampBox(
@@ -135,33 +147,42 @@ export function WindowsProvider({
           },
           sizeOfArea()
         )
-        return [...current, { ...spec, box, minimized: false }]
-      }),
+        return [...current, { ...spec, box, minimized: false, z, focusAt: z }]
+      })
+    },
     [sizeOfArea]
   )
-  const close = useCallback((id: string) => setWindows((current) => current.filter((w) => w.id !== id)), [])
+  const close = useCallback((id: string) => {
+    setWindows((current) => current.filter((w) => w.id !== id))
+    // El foco, a lo que la abrió (si sigue ahí)
+    const back = openers.current.get(id)
+    openers.current.delete(id)
+    requestAnimationFrame(() => {
+      if (back?.isConnected) back.focus()
+    })
+  }, [])
   const focus = useCallback(
     (id: string) =>
       setWindows((current) => {
+        const top = Math.max(0, ...current.map((w) => w.z))
         const there = current.find((w) => w.id === id)
-        if (!there || current.at(-1)?.id === id) return current
-        return [...current.filter((w) => w.id !== id), there]
+        if (!there || there.z === top) return current
+        const z = ++counter.current
+        return current.map((w) => (w.id === id ? { ...w, z } : w))
       }),
     []
   )
-  const minimize = useCallback(
-    (id: string) => setWindows((current) => current.map((w) => (w.id === id ? { ...w, minimized: true } : w))),
-    []
-  )
-  const restore = useCallback(
-    (id: string) =>
-      setWindows((current) => {
-        const there = current.find((w) => w.id === id)
-        if (!there) return current
-        return [...current.filter((w) => w.id !== id), { ...there, minimized: false }]
-      }),
-    []
-  )
+  const minimize = useCallback((id: string) => {
+    setWindows((current) => current.map((w) => (w.id === id ? { ...w, minimized: true } : w)))
+    // El foco, a su pastilla de abajo (con ella se trae de vuelta)
+    requestAnimationFrame(() =>
+      document.querySelector<HTMLElement>(`[data-window-pill="${CSS.escape(id)}"] button`)?.focus()
+    )
+  }, [])
+  const restore = useCallback((id: string) => {
+    const z = ++counter.current
+    setWindows((current) => current.map((w) => (w.id === id ? { ...w, minimized: false, z, focusAt: z } : w)))
+  }, [])
   const move = useCallback(
     (id: string, box: Box) => {
       const fitted = clampBox(box, sizeOfArea())
@@ -184,15 +205,17 @@ export function WindowLayer() {
   if (!state) return null
   const shown = state.windows.filter((w) => !w.minimized)
   const minimized = state.windows.filter((w) => w.minimized)
+  // Su puesto en la pila (0, la de más atrás), sin reordenarlas en la página
+  const stack = [...shown].sort((a, b) => a.z - b.z).map((w) => w.id)
   return (
     <>
-      {shown.map((w, i) => (
-        <FloatingWindow key={w.id} window={w} top={i === shown.length - 1} z={i} state={state} />
+      {shown.map((w) => (
+        <FloatingWindow key={w.id} window={w} top={stack.at(-1) === w.id} z={stack.indexOf(w.id)} state={state} />
       ))}
       {minimized.length > 0 && (
         <ul className={styles.dock} aria-label={t('windows.minimized')} data-window-dock="">
           {minimized.map((w) => (
-            <li key={w.id} className={styles.pill}>
+            <li key={w.id} className={styles.pill} data-window-pill={w.id}>
               <button type="button" className={styles.pillName} onClick={() => state.restore(w.id)}>
                 {w.title}
               </button>
@@ -227,7 +250,12 @@ function FloatingWindow({
 }) {
   const { t } = useTranslation()
   const titleId = useId()
+  const title = useRef<HTMLHeadingElement>(null)
   const drag = useRef<Drag | null>(null)
+  // Al abrirla o traerla de vuelta, el foco a su título (desde él se mueve, se estira y se cierra con el teclado)
+  useEffect(() => {
+    if (w.focusAt) title.current?.focus({ preventScroll: true })
+  }, [w.focusAt])
   // Mientras se arrastra, la caja va en local (sin guardar en cada movimiento); al soltar, se guarda
   const [live, setLive] = useState<Box | null>(null)
   const box = live ?? w.box
@@ -291,6 +319,13 @@ function FloatingWindow({
       style={{ left: box.x, top: box.y, width: box.width, height: box.height, zIndex: 40 + z }}
       onPointerDownCapture={() => state.focus(w.id)}
       onFocusCapture={() => state.focus(w.id)}
+      onKeyDown={(event) => {
+        // Escape la cierra, salvo que lo use lo de dentro (un menú, un campo, el editor)
+        if (event.key !== 'Escape' || event.defaultPrevented) return
+        if ((event.target as HTMLElement).closest('input, textarea, select, [contenteditable]')) return
+        event.preventDefault()
+        state.close(w.id)
+      }}
     >
       <header
         className={styles.head}
@@ -298,14 +333,15 @@ function FloatingWindow({
         onPointerMove={onMove}
         onPointerUp={end}
         onPointerCancel={end}
+        onLostPointerCapture={end}
       >
         {/* El título, con el foco, se mueve y se estira con el teclado */}
         <h2
+          ref={title}
           id={titleId}
           className={styles.title}
           // biome-ignore lint/a11y/noNoninteractiveTabindex: es el asa de la ventana para el teclado
           tabIndex={0}
-          aria-roledescription={t('windows.handle')}
           aria-describedby={`${titleId}-help`}
           onKeyDown={onKey}
         >
@@ -358,6 +394,7 @@ function FloatingWindow({
         onPointerMove={onMove}
         onPointerUp={end}
         onPointerCancel={end}
+        onLostPointerCapture={end}
       />
     </div>
   )

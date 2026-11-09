@@ -63,7 +63,8 @@ function Opened({ page }: { page: Page }) {
 /** El WebSocket de la edición en vivo, mientras haya alguna página abierta en ventana (uno para todas) */
 export function PageWindowsSocket({ children }: { children: ReactNode }) {
   const pages = useWindows()?.windows.some((w) => w.id.startsWith('page:')) ?? false
-  return pages ? <CollabSocket>{children}</CollabSocket> : children
+  // Siempre el mismo árbol: cambiarlo volvería a montar todas las ventanas (y perderían lo que tenían)
+  return <CollabSocket enabled={pages}>{children}</CollabSocket>
 }
 
 /**

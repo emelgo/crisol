@@ -1,4 +1,4 @@
-import { act, render, screen, within } from '@testing-library/react'
+import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useRef } from 'react'
 import { describe, expect, it } from 'vitest'
@@ -74,6 +74,42 @@ describe('las ventanas de la Mesa', () => {
     render(<Harness />)
     act(() => api?.open(page('a', 'Aldric Varn')))
     expect(Number.parseFloat(box('Aldric Varn').style.left)).toBe(before.left + 24)
+  })
+
+  it('el foco va a la nueva; traer una delante no la mueve en la página; Escape la cierra y el foco vuelve', async () => {
+    const user = userEvent.setup()
+    render(
+      <>
+        <button type="button">Abrir</button>
+        <Harness />
+      </>
+    )
+    const opener = screen.getByRole('button', { name: 'Abrir' })
+    opener.focus()
+    act(() => api?.open(page('a', 'Aldric Varn')))
+    await waitFor(() =>
+      expect(document.activeElement).toBe(within(box('Aldric Varn')).getByRole('heading', { name: 'Aldric Varn' }))
+    )
+    act(() => api?.open(page('b', 'Puerto Gris')))
+    const order = () => screen.getAllByRole('dialog').map((d) => d.getAttribute('aria-labelledby'))
+    const before = order()
+    // Pasar a la de atrás con el teclado: delante, sin cambiar de sitio en la página (no pierde el foco)
+    const minimizeAldric = screen.getByRole('button', { name: 'Minimizar Aldric Varn' })
+    act(() => minimizeAldric.focus())
+    expect(order()).toEqual(before)
+    expect(document.activeElement).toBe(minimizeAldric)
+    expect(Number(box('Aldric Varn').style.zIndex)).toBeGreaterThan(Number(box('Puerto Gris').style.zIndex))
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('dialog', { name: 'Aldric Varn' })).toBeNull()
+    await waitFor(() => expect(document.activeElement).toBe(opener))
+  })
+
+  it('al minimizarla, el foco va a su pastilla', async () => {
+    const user = userEvent.setup()
+    render(<Harness />)
+    act(() => api?.open(page('a', 'Aldric Varn')))
+    await user.click(screen.getByRole('button', { name: 'Minimizar Aldric Varn' }))
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Aldric Varn' })))
   })
 
   it('no se sale de la Mesa ni baja de su tamaño mínimo', () => {
