@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, type Page, test } from '@playwright/test'
-import { campaignLink, import5e, newPlayer, settled } from './ayudas.ts'
+import { campaignLink, campaignPath, import5e, newPlayer, openCompendiumWindow, settled } from './ayudas.ts'
 
 /** Que axe no encuentre fallos críticos ni graves, en claro y en oscuro */
 async function accessible(page: Page) {
@@ -26,35 +26,36 @@ test('el compendio del mundo: el máster copia el Goblin al mundo, lo cambia y t
   })
   expect(chosen.status()).toBe(200)
 
-  await page.getByRole('navigation', { name: 'Secciones' }).getByRole('link', { name: 'Compendio' }).click()
-  await expect(page.getByRole('heading', { level: 1, name: 'Compendio' })).toBeVisible()
-  await page.getByRole('searchbox', { name: 'Buscar en el compendio' }).fill('goblin')
-  await page
+  // El compendio entero, en su ventana sobre la Mesa
+  const path = campaignPath(page)
+  let window = await openCompendiumWindow(page, path)
+  await window.getByRole('searchbox', { name: 'Buscar en el compendio' }).fill('goblin')
+  await window
     .getByRole('list', { name: 'Resultados' })
     .getByRole('button', { name: /^Goblin/ })
     .first()
     .click()
-  await expect(page.getByRole('article', { name: 'Goblin' })).toBeVisible()
+  await expect(window.getByRole('article', { name: 'Goblin' })).toBeVisible()
 
   // Copiar al mundo: se abre para cambiarla, con «(copia)» en el nombre
-  await page.getByRole('button', { name: 'Copiar al mundo' }).click()
+  await window.getByRole('button', { name: 'Copiar al mundo' }).click()
   await expect(page.getByRole('dialog', { name: /Editar «Goblin \(copia\)»/ })).toBeVisible()
   // Su título sigue al nombre que se escribe
-  const editor = page.getByRole('dialog')
+  const editor = page.getByRole('dialog', { name: /^Editar/ })
   await editor.getByLabel('Nombre').fill('Goblin jefe')
   await editor.getByRole('button', { name: 'Guardar' }).click()
   await expect(editor).toBeHidden()
-  const article = page.getByRole('article', { name: 'Goblin jefe' })
+  const article = window.getByRole('article', { name: 'Goblin jefe' })
   await expect(article).toBeVisible()
   await expect(article.getByText('Del mundo', { exact: true })).toBeVisible()
-  const about = page.getByRole('complementary', { name: 'Sobre este documento' })
+  const about = window.getByRole('complementary', { name: 'Sobre este documento' })
   await expect(about).toContainText('El compendio del mundo')
   await expect(about).toContainText('Copia de Goblin')
 
   // «Del mundo»: solo lo suyo
-  await page.getByRole('searchbox', { name: 'Buscar en el compendio' }).fill('')
-  await page.getByText('Del mundo', { exact: true }).first().click()
-  const library = page.getByRole('navigation', { name: 'Biblioteca del compendio' })
+  await window.getByRole('searchbox', { name: 'Buscar en el compendio' }).fill('')
+  await window.getByText('Del mundo', { exact: true }).first().click()
+  const library = window.getByRole('navigation', { name: 'Biblioteca del compendio' })
   await expect(library.getByRole('button', { name: /Criaturas/ })).toContainText('1')
   await page.screenshot({ path: test.info().outputPath('compendio-mundo.png'), fullPage: false })
   await accessible(page)
@@ -69,7 +70,13 @@ test('el compendio del mundo: el máster copia el Goblin al mundo, lo cambia y t
     data: { systemId, version: system.version, items: [{ ...original, data: { ...original.data, pg_max: 12 } }] }
   })
   expect(saved.status()).toBe(200)
-  await page.reload()
+  // Otra vez la ventana, en la copia
+  window = await openCompendiumWindow(page, path)
+  await window.getByRole('searchbox', { name: 'Buscar en el compendio' }).fill('goblin jefe')
+  await window
+    .getByRole('list', { name: 'Resultados' })
+    .getByRole('button', { name: /^Goblin jefe/ })
+    .click()
   await expect(page.getByRole('status').filter({ hasText: 'El original ha cambiado.' })).toBeVisible()
   await page.getByRole('button', { name: 'Ver cambios' }).click()
   const changes = page.getByRole('dialog', { name: 'Cambios del original' })
@@ -81,7 +88,7 @@ test('el compendio del mundo: el máster copia el Goblin al mundo, lo cambia y t
 
   // La jugadora no ve lo del mundo (hasta el módulo 5)
   const player = await newPlayer(browser, link)
-  await player.getByRole('navigation', { name: 'Secciones' }).getByRole('link', { name: 'Compendio' }).click()
+  await player.goto(`${path}/compendio`)
   await player.getByRole('searchbox', { name: 'Buscar en el compendio' }).fill('goblin jefe')
   await expect(player.getByText('Nada con ese nombre')).toBeVisible()
   await expect(player.getByText('Del mundo', { exact: true })).toHaveCount(0)

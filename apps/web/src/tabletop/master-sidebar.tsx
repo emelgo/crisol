@@ -15,6 +15,7 @@ import { RollLog } from '../dice/log.tsx'
 import { CampaignCreatures } from './campaign-creatures.tsx'
 import { CombatPanel } from './combat-panel.tsx'
 import { CompendiumTab } from './compendium-tab.tsx'
+import { compendiumWindow } from './compendium-window.tsx'
 import styles from './mesa.module.css'
 import { pageWindow } from './page-window.tsx'
 import pagesStyles from './pages-tab.module.css'
@@ -123,12 +124,18 @@ export function MasterSidebar({
   const campaignId = campaign.id
   // ?pagina=: una página que se abre en su ventana al entrar (y se quita de la dirección)
   const navigate = useNavigate()
-  const asked = route.useSearch().pagina
+  const { pagina: asked, entrada } = route.useSearch()
   useEffect(() => {
     if (!asked || !windows) return
     windows.open(pageWindow(worldId, asked, '…'))
     void navigate({ to: '.', search: ({ pagina: _, ...rest }) => rest, replace: true })
   }, [asked, windows, worldId, navigate])
+  // ?entrada=: una entrada del compendio (los enlaces de antes a /compendio?ver=), en su ventana
+  useEffect(() => {
+    if (!entrada || !windows) return
+    windows.open(compendiumWindow(worldId, campaignId, t('tabletop.sidebar.compendium'), entrada))
+    void navigate({ to: '.', search: ({ entrada: _, ...rest }) => rest, replace: true })
+  }, [entrada, windows, worldId, campaignId, navigate, t])
   // Las páginas que conoce el grupo (su ojo en Páginas): las marcadas para la campaña y, si parte de él, las del mundo
   const knowledge = useQuery({
     queryKey: ['pages', worldId, 'group', campaignId],

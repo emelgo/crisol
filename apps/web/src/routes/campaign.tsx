@@ -73,7 +73,8 @@ export function ToMesaIfMaster({ panel, children }: { panel: string; children: R
   })
   const role = campaigns.data?.campaigns.find((c) => c.id === campaignId)?.role
   // «Ver como» un personaje (?como=) sigue siendo una vista del máster
-  const viewingAs = Boolean((useSearch({ strict: false }) as { como?: string }).como)
+  const search = useSearch({ strict: false }) as { como?: string; ver?: string }
+  const viewingAs = Boolean(search.como)
   // Hasta saber quién es, nada (ni la vista vieja ni sus consultas)
   if (!campaigns.data && !failed(campaigns)) return null
   if (role === 'master' && !viewingAs)
@@ -81,8 +82,8 @@ export function ToMesaIfMaster({ panel, children }: { panel: string; children: R
       <Navigate
         to="/mundos/$worldId/campanas/$campaignId"
         params={{ worldId, campaignId }}
-        // Una página: se abre en su ventana sobre la Mesa
-        search={{ panel, ...(pageId ? { pagina: pageId } : {}) }}
+        // Una página o una entrada del compendio (?ver=): se abren en su ventana sobre la Mesa
+        search={{ panel, ...(pageId ? { pagina: pageId } : {}), ...(search.ver ? { entrada: search.ver } : {}) }}
         replace
       />
     )

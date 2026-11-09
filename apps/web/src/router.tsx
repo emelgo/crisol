@@ -50,9 +50,11 @@ const campaignRoute = createRoute({
   component: CampaignPage,
   // ?panel=<pestaña>: la pestaña abierta de la barra de la Mesa (tiradas, combate, escenas…)
   // ?pagina=<id>: una página del mundo que se abre en su ventana sobre la Mesa (los enlaces de antes a /paginas/$p)
-  validateSearch: (search: Record<string, unknown>): { panel?: string; pagina?: string } => ({
+  // ?entrada=<clave>: una entrada del compendio, en la ventana del compendio
+  validateSearch: (search: Record<string, unknown>): { panel?: string; pagina?: string; entrada?: string } => ({
     ...(typeof search.panel === 'string' && search.panel ? { panel: search.panel } : {}),
-    ...(typeof search.pagina === 'string' && search.pagina ? { pagina: search.pagina } : {})
+    ...(typeof search.pagina === 'string' && search.pagina ? { pagina: search.pagina } : {}),
+    ...(typeof search.entrada === 'string' && search.entrada ? { entrada: search.entrada } : {})
   })
 })
 const charactersRoute = createRoute({

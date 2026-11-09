@@ -218,6 +218,28 @@ export async function openCampaign(page: Page, name: string, panel?: string) {
   await page.goto(panel ? `${href}?panel=${panel}` : (href as string))
 }
 
+/** La dirección de la campaña abierta en `page` (sin ?panel=…) */
+export const campaignPath = (page: Page) => new URL(page.url()).pathname.replace(/\/(mesa|compendio|paginas.*)$/, '')
+
+/** Una pestaña de la barra de la Mesa */
+export async function mesaTab(page: Page, name: string) {
+  const panel = page.getByRole('complementary', { name: 'Panel de la mesa' })
+  await panel.getByRole('tab', { name: new RegExp(`^${name}`) }).click()
+  return panel
+}
+
+/** El compendio entero del máster (con sus ajustes y «Nueva entrada»), en su ventana sobre la Mesa */
+export async function openCompendiumWindow(page: Page, path = campaignPath(page)) {
+  await page.goto(`${path}?panel=compendio`)
+  await page
+    .getByRole('complementary', { name: 'Panel de la mesa' })
+    .getByRole('button', { name: 'Abrir el compendio' })
+    .click()
+  const window = page.getByRole('dialog', { name: 'Compendio' })
+  await expect(window).toBeVisible()
+  return window
+}
+
 /** El propietario crea Eana y La Marca; devuelve el enlace de invitación (con `page` en los Ajustes de su Mesa) */
 export async function campaignLink(page: Page) {
   await freshOwner(page)
