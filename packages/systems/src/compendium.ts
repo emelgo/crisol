@@ -49,7 +49,7 @@ export const textFieldOf = (system: System, type: string) => longText(system.typ
 export function compendiumTypes(
   system: System,
   content: readonly Versioned[],
-  choices: Pick<Choices, 'sources' | 'duplicates'>,
+  choices: Pick<Choices, 'sources' | 'duplicates' | 'excluded'>,
   /** También los que aún no tienen nada (para crear su primera entrada) */
   all = false
 ): CompendiumType[] {
@@ -199,8 +199,9 @@ export function browseContent<T extends Versioned & { data?: Record<string, unkn
     type,
     sources,
     duplicates,
+    excluded,
     language
-  }: { type: string } & Pick<Choices, 'sources' | 'duplicates'> & { language: Language }
+  }: { type: string } & Pick<Choices, 'sources' | 'duplicates' | 'excluded'> & { language: Language }
 ): { items: BrowseHit[]; folders: { key: string; label: string }[]; filters: BrowseFilter[] } {
   const spec = system.compendium?.types?.[type]?.folder
   const filterSpecs = (system.compendium?.types?.[type]?.filters ?? []).filter(
@@ -245,7 +246,7 @@ export function browseContent<T extends Versioned & { data?: Record<string, unkn
     if (!folders.has(key)) folders.set(key, { label, order })
     return key
   }
-  const items: BrowseHit[] = visibleContent(system, content, { sources, duplicates })
+  const items: BrowseHit[] = visibleContent(system, content, { sources, duplicates, excluded })
     .filter(({ item }) => item.type === type)
     .map(({ item, legacy }) => ({
       key: item.key,

@@ -329,7 +329,28 @@ function build(strict: boolean) {
       .optional()
       .describe('Su edición («2014», «2024»): la campaña elige cuáles valen'),
     publisher: text().optional().describe('Su editorial'),
-    released: z.iso.date().optional().describe('Cuándo salió (AAAA-MM-DD): de lo repetido, gana lo más nuevo')
+    released: z.iso.date().optional().describe('Cuándo salió (AAAA-MM-DD): de lo repetido, gana lo más nuevo'),
+    // Lo que hace de una fuente un libro (ADR-0021): cómo se ve y de dónde sale
+    description: text(600).optional().describe('De qué va, en una o dos frases'),
+    cover: obj({
+      fileId: z.uuid(),
+      x: z.number().min(0).max(100),
+      y: z.number().min(0).max(100),
+      zoom: z.number().min(1).max(3).optional()
+    })
+      .optional()
+      .describe('Su portada: una imagen de los archivos comunes de la cuenta, encuadrada'),
+    origin: z
+      .enum(['pdf', 'file', 'own'])
+      .optional()
+      .describe('De dónde sale: de un PDF (con la IA), de un archivo o hecho a mano'),
+    file: z.uuid().optional().describe('El PDF de la biblioteca del que sale'),
+    requires: z
+      .array(key)
+      .max(20)
+      .optional()
+      .describe('Las claves de los libros de este sistema a los que amplía (subclases, conjuros para sus listas…)'),
+    version: z.int().min(1).max(10_000).optional().describe('Su versión: sube al traer una nueva')
   })
   // Los bloques de la hoja: tipos neutros; cada uno dice qué campos lee y qué se tira desde él
   const label = text().optional().describe('Su título (sin él, el del campo)')
