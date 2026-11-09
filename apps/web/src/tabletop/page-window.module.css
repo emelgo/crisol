@@ -98,6 +98,7 @@
   block-size: 7px;
   border-radius: 50%;
   background: var(--color-brand);
+  box-shadow: 0 0 6px var(--color-brand);
 }
 
 .revealToo {

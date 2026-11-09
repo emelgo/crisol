@@ -102,6 +102,7 @@ function ShowToPlayers({ worldId, pageId }: { worldId: string; pageId: string })
         <button
           type="button"
           className={styles.showing}
+          data-showing=""
           title={t('pageWindow.showAgain')}
           disabled={show.isPending}
           onClick={() => show.mutate(false)}

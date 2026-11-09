@@ -58,6 +58,13 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   la Mesa de una campaña solo llega a ella (se ve siempre en cuál se está); desde la wiki del mundo, «quién la conoce»
   enseña cada campaña con su casilla; con una sola campaña no se pregunta a quién. Lo de abajo sobre la portada y la
   barra de la campaña ya no vale (la sustituye esto).
+- **Cristal en lo que flota sobre el mapa de la Mesa** (Enrique, 2026-11-10: «me parece una pasada»; lienzo «La Mesa,
+  con cristal», `out/lienzo-cristal/`): translúcido y con el mapa desenfocado detrás (tokens `--glass-*`) solo en piezas
+  pequeñas que flotan: la barra de la escena, las herramientas, el zoom, las tiradas sobre el d20, la tira de turnos de la
+  tele, las ventanas minimizadas y la cabecera de las ventanas. Lo que se lee (el cuerpo de páginas, hojas y compendio)
+  va casi opaco, y la barra de la derecha, opaca (va acoplada). **El brillo, solo en lo vivo** y en el rojo de la marca
+  (`--glow-live`): «En la tele» (en rojo, como «Enseñando»), la ventana que se enseña y un crítico. Al pasar por los
+  botones de las barras, suben un poco. Sin desenfoque en el navegador, el mismo tinte más tapado.
 - **La campaña se abre en su propia vista, como un mundo** (Enrique, 2026-11-05): al entrar, la barra cambia y enseña
   lo de la campaña (sus personajes, su compendio, los dados…), con la transición de entrar. **El compendio** (el
   contenido del sistema que usa la campaña: clases, conjuros, criaturas, reglas…, con sus ediciones) **se ve ahí**.
