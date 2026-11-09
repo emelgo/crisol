@@ -45,7 +45,8 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   de dados en el sitio del panel de la página (2026-11-04). **La ficha no se recuerda abierta** al volver a entrar, y en
   el móvil se cierra al cambiar de pantalla (2026-11-08, segunda revisión).
 - **La campaña se abre en la Mesa, como en Foundry VTT** (Enrique, 2026-11-08: «la mesa debería ser lo que se ve al
-  abrir la campaña como en foundryvtt»; «dentro de la mesa es donde deberíamos tener el compendio»), **en construcción**:
+  abrir la campaña como en foundryvtt»; «dentro de la mesa es donde deberíamos tener el compendio»; ADR-0019,
+  construida el 2026-11-09):
   el máster entra a la Mesa a pantalla completa con una barra de pestañas a la derecha (Tiradas, Combate, Escenas,
   Personajes, Compendio, Páginas y Ajustes de la campaña con miembros e invitar); En juego, Grupo y Biblioteca dejan
   de ser vistas sueltas. **Las páginas del mundo se abren en ventanas sobre la Mesa** (como los diarios de Foundry:
@@ -55,8 +56,8 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   como la partida en D&D Beyond (Enrique, 2026-11-09). **Varias campañas por mundo, y lo que se comparte va a la
   campaña desde la que se hace** (Enrique, 2026-11-09, para no liarse compartiendo con grupos distintos): «Enseñar» desde
   la Mesa de una campaña solo llega a ella (se ve siempre en cuál se está); desde la wiki del mundo, «quién la conoce»
-  enseña cada campaña con su casilla; con una sola campaña no se pregunta a quién. Lo de abajo sobre la portada de la campaña queda hasta que esto
-  se construya.
+  enseña cada campaña con su casilla; con una sola campaña no se pregunta a quién. Lo de abajo sobre la portada y la
+  barra de la campaña ya no vale (la sustituye esto).
 - **La campaña se abre en su propia vista, como un mundo** (Enrique, 2026-11-05): al entrar, la barra cambia y enseña
   lo de la campaña (sus personajes, su compendio, los dados…), con la transición de entrar. **El compendio** (el
   contenido del sistema que usa la campaña: clases, conjuros, criaturas, reglas…, con sus ediciones) **se ve ahí**.

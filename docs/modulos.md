@@ -7,6 +7,24 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
+### Para retomar (2026-11-09: la campaña alrededor de la Mesa, construida en local)
+
+- **Rama `docs/tras-revision`** (sin PR, sin subir), con lo de antes (cuadros unificados, transiciones, etiquetas
+  dentro de otras, fondos de las pantallas de cuenta, sin sistemas de serie, «Invitar», dados nuevos) y **la campaña
+  alrededor de la Mesa** (ADR-0019; plan y tareas en `tasks/plan.md` y `tasks/todo.md`, 12 de 13 hechas): el máster
+  abre en la Mesa con su barra de pestañas; páginas, compendio, libros y hojas en ventanas; «Enseñar a los jugadores»
+  (`showPage`, MCP `ensenar_pagina`); quien juega abre en su ficha y tiene su Mesa (espectador `player`); «Del grupo» en
+  la ficha con «Lo puso»; las campañas en otra pestaña; varias campañas por mundo y lo compartido, a la campaña desde
+  la que se hace. Unitarias de la web (706) y de integración de lo tocado en el servidor, en verde.
+- **Siguiente paso**: la tarea 13 (cierre): **actualizar los e2e** (muchos entran por las vistas viejas de la campaña,
+  por «Invitar» junto al título y por la barra de antes; también los pendientes de invitar, unirse y sistemas), la
+  revisión (`/agent-skills:review` y `web-design-guidelines`) y el PR con la CI una vez. Para mirarlo: el entorno de
+  revisión (servidor 8132, web 5174, `e2e/.revision/`, cuentas `enrique@` y `lucia@revision.test`).
+- Pendiente apuntado: «Archivar» la campaña; la escena en marcha bajo «Ir a la Mesa» en la ficha; la ficha rápida al
+  pasar por una criatura del compendio.
+- Dev: si una pantalla da «Ya no existe» o 500 con «relation … does not exist», faltan migraciones en la base de
+  desarrollo: `pnpm db:migrate`.
+
 ### Para retomar (2026-11-08, madrugada: lo siguiente, rehacer la campaña alrededor de la Mesa)
 
 - **Rama `docs/tras-revision`** (sin PR, sin subir): tras el PR #115, los cuadros unificados, la transición de entrar en

@@ -9,6 +9,25 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
+## La campaña alrededor de la Mesa (en local; ADR-0019)
+
+- [ ] **Entrar**: desde Mis mundos, una campaña se abre en otra pestaña, ya en la Mesa, con la barra a la derecha.
+- [ ] **La barra**: cada pestaña; al volver, la última; plegarla; un combate nuevo abre la suya y, fuera de Tiradas,
+  las tiradas salen un momento sobre el d20.
+- [ ] **Escenas**: las tarjetas, «Escena nueva» y «En esta escena» (ocultar al grupo, meter en el combate).
+- [ ] **Compendio**: buscar por apartados, poner criaturas en el mapa, el ojo de lo que está en juego, «Libros» y
+  «Abrir el compendio» (en su ventana).
+- [ ] **Ventanas**: abrir dos páginas desde Páginas, moverlas, estirarlas, minimizarlas y volver a abrirlas; un enlace
+  dentro abre otra; la hoja de un personaje (desde Personajes o una ficha del mapa).
+- [ ] **Enseñar**: «Enseñar a los jugadores» en una página; con alguno que no la conoce, «revelar y enseñar»; a la
+  jugadora se le abre (en su Mesa) o le sale «Te enseñan».
+- [ ] **Revelar desde la Mesa**: un secreto de una página abierta en ventana se revela a esa campaña sin preguntar.
+- [ ] **Ajustes**: miembros, el enlace de invitación y borrar la campaña.
+- [ ] **La jugadora**: entra en su ficha con «Ir a la Mesa»; su Mesa ve lo que el grupo (como la tele) y su barra
+  (Tiradas, Combate, Personajes, Compendio, Páginas); en el móvil, su ficha.
+- [ ] **Del grupo**: en el inventario de la ficha, debajo de lo suyo; pasar algo arrastrando (PC) o con «Mover»
+  (móvil); «Lo puso».
+
 ## Módulo 6: escenas, fichas, combate y escenas de Foundry (en staging, PR #114)
 
 - [ ] **Una escena**: en la página de un lugar, «Añadir pestaña» → «Escena»; subir un mapa (imagen o UVTT) o pedírselo
