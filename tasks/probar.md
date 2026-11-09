@@ -11,6 +11,9 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
 
 ## La campaña alrededor de la Mesa (en local; ADR-0019)
 
+- [ ] **Dados fluidos**: al pulsar «Tirar», los dados empiezan a caer al momento (no tras una pausa), van suaves y
+  paran en menos de 2 s con el número del registro; la primera tirada al entrar en la campaña tampoco espera.
+
 - [ ] **Entrar**: desde Mis mundos, una campaña se abre en otra pestaña, ya en la Mesa, con la barra a la derecha.
 - [ ] **La barra**: flota de cristal, plegada y desplegada; cada pestaña; al volver, la última; plegarla; un combate
   nuevo abre la suya. La campaña va sola, sin la barra de la izquierda.

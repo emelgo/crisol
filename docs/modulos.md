@@ -7,6 +7,20 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
+### Para retomar (2026-11-10, noche: dados fluidos; siguiente, el lienzo de libros y del espacio de la campaña)
+
+- **Estudio de Roliando y Nivel20** hecho (`research/roliando/`, `research/nivel20/`; informe en
+  https://claude.ai/artifact/4uPvHP5VgzGfPLPWKCCc4Y). Enrique decidió que la campaña vuelva a tener su espacio propio,
+  como el mundo, con la Mesa como una sección (`docs/diseno.md`); cambia parte del ADR-0019.
+- **Dados fluidos** (commit «Dados más fluidos…»): caen en el clic con los dados que predice la fórmula
+  (`dice/predict.ts`) y el resultado se les pone al llegar (`DiceScene.start` → `land`/`cancel`; `useTray().start`);
+  la escena se carga y calienta en un rato libre dentro del mundo (`warm`); sin tarjeta gráfica, sin sombras ni
+  antialias; 1,8 s como mucho en pantalla. Ojo: las e2e sirven `apps/web/dist`: tras tocar la web, `pnpm --filter
+  @crisol/web build` antes de pasarlas sueltas.
+- **Siguiente paso**: el lienzo «Sistemas y libros» con el espacio propio de la campaña (Inicio, Libros, Compendio,
+  Aventuras, Personajes, Diario, Mesa; la ficha de un libro y elegir los libros de la campaña; el importador); con él
+  aprobado, el ADR que sustituye esa parte del 0019, la spec y construir. Antes del PR: todas las e2e y la revisión.
+
 ### Para retomar (2026-11-10, tarde: escenas sueltas, ADR-0020)
 
 - **Tras probar Enrique la campaña** (misma rama `docs/tras-revision`): pestaña «Campaña» con una sola voz, Escenas
