@@ -12,6 +12,7 @@ import { useAccounts } from '../account/context.tsx'
 import { useAnnounce } from '../components/announcer.tsx'
 import { useRolled } from '../realtime/context.tsx'
 import { useDice } from './context.tsx'
+import { focusLauncher } from './floating.ts'
 import styles from './notices.module.css'
 import { DiceRow, RollTags, useRollAgain } from './roll-parts.tsx'
 import { isMine } from './rolls.ts'
@@ -24,6 +25,8 @@ const MAX = 3
 /** Lo que llega por el canal sin que caigan sus dados (otra pestaña, la IA, sin 3D): cuánto se espera a la bandeja */
 const WAIT_MINE_MS = 1500
 const WAIT_OTHERS_MS = 400
+/** Lo propio que llegó con los dados abiertos: si se cierran antes de esto, aún sale */
+const DEFER_MS = 8000
 
 export function RollNotices({ campaign }: { campaign: Campaign }) {
   const { t } = useTranslation()
@@ -59,14 +62,21 @@ export function RollNotices({ campaign }: { campaign: Campaign }) {
     },
     [forget]
   )
+  // Lo propio que llega con los dados aún abiertos (se cierran justo después de tirar): sale al cerrarse
+  const pending = useRef(new Map<string, { roll: DiceRoll; at: number }>())
+  const heard = useRef(new Set<string>())
   const show = useCallback(
     (roll: DiceRoll) => {
-      if (seen.current.has(roll.id) || !live.current) return
+      if (seen.current.has(roll.id)) return
+      if (!live.current) {
+        if (isMine(roll, account)) pending.current.set(roll.id, { roll, at: Date.now() })
+        return
+      }
       seen.current.add(roll.id)
       setShown((current) => [...current.filter((r) => r.id !== roll.id), roll].slice(-MAX))
       later(roll.id)
     },
-    [later]
+    [later, account]
   )
   // Cuando paran los dados que caen
   useEffect(() => tray.onSettled((roll) => relevant(roll) && show(roll)), [tray, relevant, show])
@@ -74,8 +84,10 @@ export function RollNotices({ campaign }: { campaign: Campaign }) {
   useRolled((roll) => {
     if (!relevant(roll)) return
     // Lo de los demás se lee al llegar (lo propio ya se dijo al tirarlo)
-    if (!isMine(roll, account))
+    if (!isMine(roll, account) && !heard.current.has(roll.id)) {
+      heard.current.add(roll.id)
       announce(t('dice.heard', { who: roll.by.name, label: roll.label ?? roll.formula, total: roll.total }))
+    }
     const wait = isMine(roll, account) && !roll.ai ? WAIT_MINE_MS : WAIT_OTHERS_MS
     const id = setTimeout(() => {
       timers.current.delete(`wait:${roll.id}`)
@@ -85,8 +97,19 @@ export function RollNotices({ campaign }: { campaign: Campaign }) {
   })
   // Al abrir los dados o el historial, fuera (ya están en el historial); al irse, sin temporizadores colgando
   useEffect(() => {
-    if (!enabled) setShown([])
-  }, [enabled])
+    if (!enabled) {
+      setShown([])
+      return
+    }
+    const fresh = [...pending.current.values()].filter(({ at }) => Date.now() - at < DEFER_MS)
+    pending.current.clear()
+    for (const { roll } of fresh) show(roll)
+  }, [enabled, show])
+  // Con el foco dentro, el aviso no se apaga (WCAG 2.2.1); al quitarlo con el foco dentro, el foco vuelve al d20
+  const dismiss = (id: string, focusInside: boolean) => {
+    forget(id)
+    if (focusInside) focusLauncher()
+  }
   useEffect(() => {
     const pending = timers.current
     return () => {
@@ -106,7 +129,13 @@ export function RollNotices({ campaign }: { campaign: Campaign }) {
             data-secret={secret || undefined}
             data-critical={roll.critical ?? undefined}
             onPointerEnter={() => clearTimeout(timers.current.get(roll.id))}
-            onPointerLeave={() => later(roll.id)}
+            onPointerLeave={(event) => {
+              if (!event.currentTarget.contains(document.activeElement)) later(roll.id)
+            }}
+            onFocus={() => clearTimeout(timers.current.get(roll.id))}
+            onBlur={(event) => {
+              if (!event.currentTarget.contains(event.relatedTarget as Node | null)) later(roll.id)
+            }}
           >
             <button type="button" className={styles.open} onClick={dice.openHistory}>
               <span className={styles.total}>{roll.total}</span>
@@ -136,7 +165,7 @@ export function RollNotices({ campaign }: { campaign: Campaign }) {
                 aria-label={t('dice.againOf', { what: roll.label ?? roll.formula })}
                 title={t('dice.again')}
                 onClick={() => {
-                  forget(roll.id)
+                  dismiss(roll.id, true)
                   again.mutate(roll)
                 }}
               >
@@ -146,7 +175,7 @@ export function RollNotices({ campaign }: { campaign: Campaign }) {
                 type="button"
                 aria-label={t('dice.dismiss')}
                 title={t('dice.dismiss')}
-                onClick={() => forget(roll.id)}
+                onClick={() => dismiss(roll.id, true)}
               >
                 <X size={14} aria-hidden="true" />
               </button>

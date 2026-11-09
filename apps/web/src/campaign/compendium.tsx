@@ -39,6 +39,7 @@ import { SystemImage } from '../components/system-image.tsx'
 import { Tour } from '../components/tour.tsx'
 import { PutInPlay } from '../creatures/put-in-play.tsx'
 import { useDice } from '../dice/context.tsx'
+import { visibilityIn } from '../dice/visibility.ts'
 import { useNarrow } from '../wiki/panel.tsx'
 import styles from './compendium.module.css'
 import { CompendiumSettings } from './compendium-settings.tsx'
@@ -852,9 +853,7 @@ function Entry({
     queryKey: ['campaign', campaignId],
     queryFn: () => api.call('getCampaign', { campaignId })
   })
-  const visibility = visibilitiesFor(campaign.data?.campaign.role ?? 'player').includes(dice.visibility)
-    ? dice.visibility
-    : 'all'
+  const visibility = visibilityIn(dice.visibility, campaign.data?.campaign.role ?? 'player')
   const rolling = useMutation({
     mutationFn: (table: number) => api.call('rollContentTable', { campaignId, key: entryKey, table, visibility }),
     onSuccess: (out) =>

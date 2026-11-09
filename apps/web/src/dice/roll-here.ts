@@ -12,6 +12,7 @@ import { useAnnounce } from '../components/announcer.tsx'
 import { useDice, useWorldInPath } from './context.tsx'
 import { appendRoll } from './rolls.ts'
 import { useTray } from './tray.tsx'
+import { visibilityIn } from './visibility.ts'
 
 export function useRollHere() {
   const { t } = useTranslation()
@@ -34,7 +35,7 @@ export function useRollHere() {
     const campaigns = data?.campaigns ?? []
     const chosen = campaigns.find((c) => c.id === (worldId && dice.campaignFor(worldId))) ?? campaigns[0]
     if (chosen) {
-      const visibility = visibilitiesFor(chosen.role).includes(dice.visibility) ? dice.visibility : 'all'
+      const visibility = visibilityIn(dice.visibility, chosen.role)
       const { roll: done } = await api.call('rollDice', { campaignId: chosen.id, formula, visibility })
       appendRoll(queryClient, done)
       tray.play(done)

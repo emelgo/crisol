@@ -7,30 +7,17 @@ import type { Campaign } from '@crisol/contracts'
 import { useQuery } from '@tanstack/react-query'
 import { useRouterState } from '@tanstack/react-router'
 import { X } from 'lucide-react'
-import { type ReactNode, useCallback, useEffect, useId, useReducer, useRef, useSyncExternalStore } from 'react'
+import { type ReactNode, useCallback, useEffect, useId, useReducer, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { Tour } from '../components/tour.tsx'
 import { useDice, useWorldInPath } from './context.tsx'
 import styles from './dice.module.css'
+import { CloseFloating, focusLauncher, useCloseFloating, useSheet } from './floating.ts'
 import { RollLog } from './log.tsx'
 import { RollNotices } from './notices.tsx'
 import { EMPTY, poolReducer } from './pool.ts'
 import { DiceRack } from './rack.tsx'
-
-/** En el móvil la ficha es una hoja con la página oscurecida: se porta como una ventana */
-const SHEET = '(max-width: 48rem)'
-function useSheet(): boolean {
-  return useSyncExternalStore(
-    (onChange) => {
-      const query = window.matchMedia?.(SHEET)
-      query?.addEventListener('change', onChange)
-      return () => query?.removeEventListener('change', onChange)
-    },
-    () => window.matchMedia?.(SHEET).matches ?? false,
-    () => false
-  )
-}
 
 /** Lo que se puede enfocar dentro de la hoja, para que el foco no salga de ella */
 const FOCUSABLE =
@@ -105,17 +92,7 @@ function WorldDice({ worldId }: { worldId: string }) {
           <header className={styles.head}>
             <h2 className={styles.title}>{t('dice.history')}</h2>
             {chooser ?? (chosen && <span className={styles.campaignName}>{chosen.name}</span>)}
-            <button
-              type="button"
-              className={styles.close}
-              aria-label={t('dice.closeHistory')}
-              onClick={() => {
-                dice.closeHistory()
-                document.querySelector<HTMLElement>('[data-tour="dados"]')?.focus()
-              }}
-            >
-              <X size={16} aria-hidden="true" />
-            </button>
+            <HistoryClose />
           </header>
           {chosen ? (
             <RollLog key={chosen.id} campaign={chosen} />
@@ -126,6 +103,24 @@ function WorldDice({ worldId }: { worldId: string }) {
       )}
       {chosen && <RollNotices key={chosen.id} campaign={chosen} />}
     </>
+  )
+}
+
+/** La × del historial: al abrirse, el foco va a ella (lo que lo abrió ya no está); al cerrar, vuelve al d20 */
+function HistoryClose() {
+  const { t } = useTranslation()
+  const close = useCloseFloating()
+  return (
+    <button
+      type="button"
+      className={styles.close}
+      aria-label={t('dice.closeHistory')}
+      // biome-ignore lint/a11y/noAutofocus: el botón que abrió el historial desaparece al abrirlo
+      autoFocus
+      onClick={close}
+    >
+      <X size={16} aria-hidden="true" />
+    </button>
   )
 }
 
@@ -220,7 +215,7 @@ function Floating({
   const close = useCallback(() => {
     release.current()
     onClose()
-    document.querySelector<HTMLElement>('[data-tour="dados"]')?.focus()
+    focusLauncher()
   }, [onClose])
   useEffect(() => {
     if (!sheet) return
@@ -235,7 +230,8 @@ function Floating({
       for (const el of frozen) el.inert = false
       frozen.length = 0
     }
-    own.focus()
+    // Si dentro ya tiene el foco algo (el campo de la tirada escrita, la × del historial), se queda ahí
+    if (!own.contains(document.activeElement)) own.focus()
     return () => release.current()
   }, [sheet])
   // Pulsar fuera lo cierra (sin mover el foco: va a lo que se pulsó). No cuentan el d20, que lo abre y lo cierra, ni un
@@ -256,7 +252,10 @@ function Floating({
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== 'Escape' || event.defaultPrevented) return
       // Un menú o un cuadro abierto encima se cierra él antes
-      if ((event.target as HTMLElement | null)?.closest('dialog, [role="menu"], [role="listbox"]')) return
+      const above = (event.target as HTMLElement | null)?.closest(
+        'dialog, [role="dialog"], [role="menu"], [role="listbox"], [data-popover]'
+      )
+      if (above && above !== card.current) return
       close()
     }
     document.addEventListener('keydown', onKey)
@@ -301,7 +300,7 @@ function Floating({
         {...(sheet ? { role: 'dialog', 'aria-modal': true } : {})}
         onKeyDown={trap}
       >
-        {children}
+        <CloseFloating.Provider value={close}>{children}</CloseFloating.Provider>
       </Card>
     </>
   )

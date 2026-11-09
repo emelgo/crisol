@@ -17,6 +17,9 @@ import styles from './tray.module.css'
 
 type Settled = (roll: DiceRoll) => void
 
+/** Lo más que se espera a que paren los dados: luego el resultado sale igual */
+const SETTLE_MAX_MS = 8000
+
 interface Tray {
   /** Hacer caer los dados de una tirada */
   play(roll: DiceRoll): void
@@ -55,6 +58,10 @@ export function DiceTray({ children }: { children: ReactNode }) {
         return
       }
       falling.current.add(roll.id)
+      // Si la escena falla a medias y no avisa, el resultado sale igual
+      window.setTimeout(() => {
+        if (falling.current.has(roll.id)) settle(roll)
+      }, SETTLE_MAX_MS)
       scene.current ??= import('./3d/scene.ts').then(({ createScene }) => createScene(target)).catch(() => null)
       const mine = isMine(roll, account)
       const color = colorOf(roll.by.userId, mine ? (account?.diceColor ?? roll.by.color) : roll.by.color)

@@ -25,6 +25,7 @@ import { useErrorText } from '../api/errors.ts'
 import { FormError } from '../components/field.tsx'
 import { useSettled } from '../components/settled.ts'
 import { useDice } from '../dice/context.tsx'
+import { visibilityIn } from '../dice/visibility.ts'
 import {
   CARRIABLE_DRAG,
   ITEM_DRAG,
@@ -159,7 +160,8 @@ export function PlaySheet({
   const options = visibilitiesFor(campaign.data?.campaign.role ?? 'player')
   // Quién la ve: lo elegido en los dados, si vale en esta campaña; o lo suyo, si la hoja lo trae (una criatura)
   const [own, setOwn] = useState(defaultVisibility)
-  const visibility = own && options.includes(own) ? own : options.includes(dice.visibility) ? dice.visibility : 'all'
+  const visibility =
+    own && options.includes(own) ? own : visibilityIn(dice.visibility, campaign.data?.campaign.role ?? 'player')
   // Los modos (ventaja, desventaja) de sus tiradas
   const modes = [...new Map(state.rolls.flatMap((r) => r.modes).map((m) => [m.key, m.label] as const)).entries()].map(
     ([key, label]) => ({ key, label })

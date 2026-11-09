@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next'
 import { useWindows, type WindowSpec } from '../tabletop/windows.tsx'
 import { useDice } from './context.tsx'
 import styles from './dice.module.css'
+import { useSheet } from './floating.ts'
 import { RollLog } from './log.tsx'
 
 export function historyWindow(campaign: Campaign, title: string): WindowSpec {
@@ -28,7 +29,9 @@ export function HistoryHost({ campaign }: { campaign: Campaign | undefined }) {
   const { t } = useTranslation()
   const windows = useWindows()
   const { setHistoryHost } = useDice()
-  const open = windows?.open
+  // En el móvil, la hoja desde abajo de siempre (las ventanas son para el PC)
+  const sheet = useSheet()
+  const open = sheet ? undefined : windows?.open
   useEffect(() => {
     if (!open || !campaign) return
     setHistoryHost(() => open(historyWindow(campaign, t('dice.history'))))

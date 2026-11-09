@@ -19,8 +19,8 @@ const MAX_BOXES = 12
 
 /** Si se tiró con ventaja o con desventaja (2d20kh1, 2d20kl1) */
 export function advantageOf(formula: string): 'advantage' | 'disadvantage' | null {
-  if (/2d20kh1/i.test(formula)) return 'advantage'
-  if (/2d20kl1/i.test(formula)) return 'disadvantage'
+  if (/(^|[^\d])2d20kh1/i.test(formula)) return 'advantage'
+  if (/(^|[^\d])2d20kl1/i.test(formula)) return 'disadvantage'
   return null
 }
 

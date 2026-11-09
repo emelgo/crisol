@@ -92,7 +92,7 @@ export function RollLog({ campaign }: { campaign: Campaign }) {
           />
         ))}
       </ol>
-      {shown.length === 0 && !rolls.isPending && <p className={styles.empty}>{t('dice.none')}</p>}
+      {shown.length === 0 && !rolls.isPending && !rolls.hasNextPage && <p className={styles.empty}>{t('dice.none')}</p>}
     </div>
   )
 }
@@ -125,7 +125,8 @@ function DiceOptions() {
         <Settings size={15} aria-hidden="true" />
       </button>
       {open && (
-        <div ref={root} className={styles.options}>
+        // data-popover: Escape cierra solo esto, no el historial
+        <div ref={root} className={styles.options} data-popover="">
           <label className={styles.check}>
             <input
               type="checkbox"

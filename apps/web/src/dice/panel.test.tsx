@@ -124,6 +124,23 @@ describe('los dados', () => {
     expect((await lastRolls(api, campaigns[0]?.id))[0]).toMatchObject({ formula: '1d8+1d4+1', visibility: 'all' })
   })
 
+  it('con el teclado: Retroceso quita uno del dado enfocado; en el menú de quién la ve, Escape cierra solo el menú', async () => {
+    renderCampaign('master')
+    const dice = await openDice()
+    const d6 = dice.getByRole('button', { name: 'Añadir un d6' })
+    d6.focus()
+    await userEvent.keyboard('{Enter}{Enter}')
+    expect(dice.getByRole('button', { name: 'Añadir un d6 (van 2)' })).toBe(document.activeElement)
+    await userEvent.keyboard('{Backspace}')
+    expect(dice.getByRole('button', { name: 'Añadir un d6 (van 1)' })).toBeTruthy()
+    await userEvent.click(dice.getByRole('button', { name: /^Quién la ve/ }))
+    expect(dice.getByRole('menuitemradio', { name: 'Todos' })).toBe(document.activeElement)
+    await userEvent.keyboard('{Escape}')
+    expect(dice.queryByRole('menu')).toBeNull()
+    expect(screen.getByRole('complementary', { name: 'Dados' })).toBeTruthy()
+    expect(dice.getByRole('button', { name: /^Quién la ve/ })).toBe(document.activeElement)
+  })
+
   it('la ventaja va en el d20 (si no lo hay, lo pone); al tirar, se vacía, se cierra y se anuncia el total', async () => {
     const { api, campaigns } = renderCampaign('master')
     let dice = await openDice()

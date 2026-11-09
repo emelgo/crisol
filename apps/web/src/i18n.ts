@@ -86,6 +86,7 @@ export const es = {
     openHistory: 'Abrir el historial',
     write: 'Escribir la tirada',
     addCount: 'Añadir un {{die}} (van {{count}})',
+    removeHint: 'Con el botón derecho o Retroceso, quita uno.',
     inRoll: 'En la tirada',
     drop: 'Quitar {{dice}}',
     modifier: 'Modificador',

@@ -76,8 +76,16 @@ export function DiceProvider({ children }: { children: ReactNode }) {
   }, [])
   const openHistory = useCallback(() => {
     setOpen(false)
-    if (host.current) host.current()
-    else setHistory(true)
+    const open = host.current
+    if (!open) {
+      setHistory(true)
+      return
+    }
+    // En la Mesa, la ventana recuerda quién la abrió para devolverle el foco al cerrarla: el d20 (el botón pulsado se va)
+    requestAnimationFrame(() => {
+      document.querySelector<HTMLElement>('[data-tour="dados"]')?.focus()
+      open()
+    })
   }, [])
   const closeHistory = useCallback(() => setHistory(false), [])
   const setHistoryHost = useCallback((open: (() => void) | null) => {

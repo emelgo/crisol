@@ -25,10 +25,12 @@ import { useAnnounce } from '../components/announcer.tsx'
 import { useDismiss } from '../components/dismiss.ts'
 import { useDice } from './context.tsx'
 import styles from './dice.module.css'
+import { useCloseFloating } from './floating.ts'
 import { echoes, explain } from './formula.ts'
 import { chipOf, dieName, isEmpty, type Pool, type PoolAction, poolFormula, SIDES, type Sides, signed } from './pool.ts'
 import { appendRoll } from './rolls.ts'
 import { useTray } from './tray.tsx'
+import { visibilityIn } from './visibility.ts'
 
 /** La silueta de cada dado */
 export const DIE_PATH: Record<Sides, string> = {
@@ -43,6 +45,10 @@ export const DIE_PATH: Record<Sides, string> = {
 
 /** Quién la ve, de más a menos gente */
 const ORDER: readonly RollVisibility[] = ['all', 'master', 'self', 'hidden']
+
+/** El foco, a un dado de la columna (tras quitar el control que lo tenía) */
+const focusDie = (sides: Sides) =>
+  requestAnimationFrame(() => document.querySelector<HTMLElement>(`[data-die="${sides}"]`)?.focus())
 
 /** Cuánto hay que mantener el dedo para quitar un dado */
 const HOLD_MS = 450
@@ -75,6 +81,8 @@ export function DiceRack({
   const writing = dice.mode === 'write'
   const showPool = writing || !isEmpty(pool)
   const count = (sides: Sides) => pool.dice.find((d) => d.sides === sides)?.count ?? 0
+  const close = useCloseFloating()
+  const hint = useId()
   return (
     <>
       <div className={styles.column} data-tour="dados-columna">
@@ -100,14 +108,29 @@ export function DiceRack({
           >
             <Keyboard size={17} aria-hidden="true" />
           </button>
+          {/* En el móvil, una hoja que se porta como una ventana: con su botón de cerrar */}
+          {sheet && (
+            <button
+              type="button"
+              className={styles.tool}
+              aria-label={t('dice.close')}
+              title={t('dice.close')}
+              onClick={close}
+            >
+              <X size={17} aria-hidden="true" />
+            </button>
+          )}
         </div>
         <ul className={styles.rackDice} aria-label={t('dice.addDie')}>
           {SIDES.map((sides) => (
             <li key={sides}>
-              <DieButton sides={sides} count={count(sides)} change={change} disabled={writing} />
+              <DieButton sides={sides} count={count(sides)} change={change} disabled={writing} hint={hint} />
             </li>
           ))}
         </ul>
+        <p id={hint} className={styles.hidden}>
+          {t('dice.removeHint')}
+        </p>
       </div>
       {showPool && <PoolTray campaign={campaign} pool={pool} change={change} writing={writing} chooser={chooser} />}
     </>
@@ -119,23 +142,28 @@ function DieButton({
   sides,
   count,
   change,
-  disabled
+  disabled,
+  hint
 }: {
   sides: Sides
   count: number
   change: Dispatch<PoolAction>
   disabled: boolean
+  /** Cómo se quita uno (el botón derecho, mantener el dedo o Retroceso) */
+  hint: string
 }) {
   const { t } = useTranslation()
   const hold = useRef<ReturnType<typeof setTimeout> | null>(null)
   const held = useRef(false)
+  const touch = useRef(false)
   const cancel = () => {
     if (hold.current) clearTimeout(hold.current)
     hold.current = null
   }
   const down = (event: PointerEvent) => {
     held.current = false
-    if (event.pointerType !== 'touch') return
+    touch.current = event.pointerType === 'touch'
+    if (!touch.current) return
     hold.current = setTimeout(() => {
       held.current = true
       change({ type: 'remove', sides })
@@ -148,7 +176,10 @@ function DieButton({
       type="button"
       className={styles.rackDie}
       aria-label={count ? t('dice.addCount', { die: name, count }) : t('dice.add', { die: name })}
+      aria-describedby={hint}
+      aria-keyshortcuts="Backspace Delete"
       data-count={count || undefined}
+      data-die={sides}
       disabled={disabled}
       onPointerDown={down}
       onPointerUp={cancel}
@@ -162,8 +193,15 @@ function DieButton({
         }
         change({ type: 'add', sides })
       }}
+      onKeyDown={(event) => {
+        if (event.key !== 'Backspace' && event.key !== 'Delete' && event.key !== '-') return
+        event.preventDefault()
+        change({ type: 'remove', sides })
+      }}
       onContextMenu={(event) => {
         event.preventDefault()
+        // Con el dedo ya lo quita mantener (Android manda además este menú: no se quita otro)
+        if (touch.current) return
         change({ type: 'remove', sides })
       }}
     >
@@ -199,6 +237,7 @@ function PoolTray({
   const queryClient = useQueryClient()
   const tray = useTray()
   const dice = useDice()
+  const close = useCloseFloating()
   const id = useId()
   // Escrita: empieza por la tirada por defecto del sistema de la campaña (sin sistema, 1d20)
   const fallback = campaign.system?.defaultRoll ?? '1d20'
@@ -211,16 +250,16 @@ function PoolTray({
   const formula = writing ? written : poolFormula(pool)
   const explained = explain(formula)
   const advantage = writing
-    ? /2d20kh1/i.test(written)
+    ? /(^|[^\d])2d20kh1/i.test(written)
       ? 'advantage'
-      : /2d20kl1/i.test(written)
+      : /(^|[^\d])2d20kl1/i.test(written)
         ? 'disadvantage'
         : 'none'
     : pool.advantage
   // De más a menos gente: todos, el máster, solo yo
   const options = [...visibilitiesFor(campaign.role)].sort((a, b) => ORDER.indexOf(a) - ORDER.indexOf(b))
-  // Si lo recordado no vale en esta campaña, todos
-  const visibility = options.includes(dice.visibility) ? dice.visibility : 'all'
+  // Si lo recordado no vale en esta campaña, lo más privado que tenga (nunca todos)
+  const visibility = visibilityIn(dice.visibility, campaign.role)
   const roll = useMutation({
     mutationFn: () => api.call('rollDice', { campaignId: campaign.id, formula, visibility }),
     onSuccess: ({ roll: done }) => {
@@ -229,8 +268,7 @@ function PoolTray({
       announce(t('dice.rolled', { label: done.label ?? done.formula, total: done.total }))
       // Se vacía y se cierra; la próxima vez se abre igual (escribiendo o con los dados)
       if (!writing) change({ type: 'clear' })
-      dice.close()
-      document.querySelector<HTMLElement>('[data-tour="dados"]')?.focus()
+      close()
     }
   })
   const toggle = (mode: 'advantage' | 'disadvantage') => {
@@ -282,7 +320,11 @@ function PoolTray({
                 <button
                   type="button"
                   aria-label={t('dice.drop', { dice: chipOf(d) })}
-                  onClick={() => change({ type: 'drop', sides: d.sides })}
+                  onClick={() => {
+                    change({ type: 'drop', sides: d.sides })
+                    // El chip se va: el foco, a su dado de la columna
+                    focusDie(d.sides)
+                  }}
                 >
                   <X size={12} aria-hidden="true" />
                 </button>
@@ -306,7 +348,10 @@ function PoolTray({
             className={styles.clear}
             aria-label={t('dice.clear')}
             title={t('dice.clear')}
-            onClick={() => change({ type: 'clear' })}
+            onClick={() => {
+              change({ type: 'clear' })
+              focusDie(SIDES[0])
+            }}
           >
             <Eraser size={16} aria-hidden="true" />
           </button>
@@ -395,11 +440,25 @@ function WhoSees({
               button.current?.focus()
               return
             }
-            if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return
-            event.preventDefault()
             const items = [...(menu.current?.querySelectorAll<HTMLElement>('[role="menuitemradio"]') ?? [])]
             const at = items.indexOf(document.activeElement as HTMLElement)
-            items[(at + (event.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length]?.focus()
+            const to =
+              event.key === 'ArrowDown'
+                ? (at + 1) % items.length
+                : event.key === 'ArrowUp'
+                  ? (at - 1 + items.length) % items.length
+                  : event.key === 'Home'
+                    ? 0
+                    : event.key === 'End'
+                      ? items.length - 1
+                      : -1
+            if (to < 0) return
+            event.preventDefault()
+            items[to]?.focus()
+          }}
+          // Con Tab (o pulsando fuera) se va el foco: se cierra
+          onBlur={(event) => {
+            if (!menu.current?.contains(event.relatedTarget as Node | null)) setOpen(false)
           }}
         >
           {options.map((option) => {
