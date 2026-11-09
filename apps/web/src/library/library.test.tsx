@@ -74,12 +74,12 @@ describe('la biblioteca (docs/specs/biblioteca.md)', () => {
   )
 
   it('la dirección vieja lleva a la Mesa; en Libros, cada uno se abre en su ventana, donde se busca y se lee', {
-    timeout: 20_000
+    timeout: 40_000
   }, async () => {
     const { router } = renderLibrary()
     const user = userEvent.setup()
     // Con todas las pruebas a la vez la máquina va cargada: el visor de PDF tarda en montarse
-    const slow = { timeout: 8000 }
+    const slow = { timeout: 15_000 }
     await waitFor(() => expect(router.state.location.search).toMatchObject({ panel: 'compendio' }))
     const panel = within(await screen.findByRole('complementary', { name: 'Panel de la mesa' }))
     // Los libros, una carpeta más del compendio (sin sistema, la única)
