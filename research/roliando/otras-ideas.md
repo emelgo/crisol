@@ -95,3 +95,24 @@ Visto dentro de la app con la cuenta de prueba (marca **[cuenta]**), al crear y 
    de la campaña de Crisol, que crecerá.
 2. Una frase bajo cada ajuste y el aviso de dependencias, en vez de ayudas aparte.
 3. Recorrer la configuración con «Siguiente: …» al pie de cada sección.
+
+## En la demo pública, 2026-11-10
+
+Visto en la demo sin cuenta (`/demo`), marca **[demo]**. La hoja, la Biblioteca, Buscar partida y el foro no se
+pudieron ver (piden cuenta, y esta vez no se pudo entrar).
+
+- **Campaña** con un menú en tres bloques: Jugar (Mesa, Canales), Mundo (Mundo, Mapa, Diario, **Tiendas**, Manual y
+  reglas) y Grupo (Jugadores, **Sala de espera**, Sesiones, Ajustes), más una «trastienda del máster» plegada [demo].
+- **Mundo**: vistas Entradas, Tabla, Grafo e Imágenes; filtros por tipo con recuento (Lugares, Saber, Notas,
+  **Precios**); cada entrada en tarjeta con tipo, nombre y las primeras líneas. Un tipo «Precios» para la lista de lo que
+  cuesta cada cosa en un pueblo es una idea sencilla y útil [demo].
+- **Jugadores y equipos**: quién está en la mesa, invitar, equipos, **roles para mencionar** y la lista de fichas con
+  «copiar todas» [demo].
+- **Barra de acciones del personaje** en la mesa: retrato, PG, CA, economía de acción (acción, adicional, reacción),
+  recursos, y acciones en ranuras numeradas (1–6) por pestañas; un hueco libre invita a «elegir qué poner» [demo].
+
+### Qué nos llevamos (añadido)
+
+1. Un tipo de página **«Precios»** (o una plantilla) en la wiki: lo pide cualquier campaña y no cuesta nada.
+2. **Roles para mencionar** en el chat de la campaña (los de primera fila, los magos…), además de personas.
+3. La barra de acciones con ranuras numeradas que elige el jugador, para la sala de jugadores.
