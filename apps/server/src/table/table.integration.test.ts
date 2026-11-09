@@ -412,9 +412,7 @@ describe('la mesa: escenas, teselas y la sala', () => {
     own.ws.send(JSON.stringify({ type: 'presence', active: false }))
     await expect.poll(async () => (await present()).find((p) => p.viewer === 'player')?.active).toBe(false)
     own.ws.terminate()
-    await expect
-      .poll(async () => (await present()).map((p) => p.viewer), { timeout: 5000 })
-      .toEqual(['master'])
+    await expect.poll(async () => (await present()).map((p) => p.viewer), { timeout: 5000 }).toEqual(['master'])
     // Quien no está en la campaña no lo ve
     const stranger = await signUpTestUser(auth, { name: 'Otro', email: 'otro@crisol.test' })
     expect((await call('getTablePresence', { campaignId }, stranger.cookie)).status).toBe(404)

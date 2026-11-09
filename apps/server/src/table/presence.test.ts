@@ -4,7 +4,10 @@ import { createTablePresence } from './presence.ts'
 describe('quién está en la Mesa', () => {
   it('cada persona y forma de mirar, una vez: sus pestañas juntas, desde la primera; activa si alguna está a la vista', () => {
     let t = Date.parse('2026-11-10T20:00:00Z')
-    const presence = createTablePresence(() => new Date((t += 60_000)))
+    const presence = createTablePresence(() => {
+      t += 60_000
+      return new Date(t)
+    })
     const [a, b, c, d] = [{}, {}, {}, {}]
     presence.add('marca', a, { userId: 'enrique', viewer: 'master' })
     presence.add('marca', b, { userId: 'lucia', viewer: 'player' })
