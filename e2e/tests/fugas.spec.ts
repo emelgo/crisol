@@ -63,7 +63,7 @@ test('@fugas una jugadora no recibe nada de lo que no puede ver: ni la campaña 
   await expect(page.getByLabel('Enlace de invitación')).not.toHaveValue(linkB)
   const newLinkB = await page.getByLabel('Enlace de invitación').inputValue()
 
-  await page.goto(campaignA)
+  await page.goto(`${campaignA}?panel=campana`)
   await page.getByRole('button', { name: 'Nuevo enlace' }).click()
   await page.getByRole('button', { name: 'Generar el nuevo' }).click()
   await expect(page.getByLabel('Enlace de invitación')).not.toHaveValue(firstLink)

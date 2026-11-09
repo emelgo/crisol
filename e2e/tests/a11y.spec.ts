@@ -6,6 +6,7 @@ import { expect, test } from '@playwright/test'
 import { e2eDatabaseUrl } from '../servidor.ts'
 import {
   campaignLink,
+  campaignPath,
   closeWindow,
   createCampaign,
   createWorld,

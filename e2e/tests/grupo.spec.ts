@@ -64,7 +64,7 @@ test('el grupo: la jugadora coge una poción para su personaje y la usa; el más
   // En su hoja la lleva; al usarla, se va
   await player.goto(`${campaignUrl}/personajes/${thora}?vista=ficha`)
   await player.getByRole('tab', { name: 'Inventario' }).click()
-  await expect(player.getByText('Poción de curación', { exact: true })).toBeVisible()
+  await expect(player.getByText('Poción de curación', { exact: true }).first()).toBeVisible()
   await player.getByRole('button', { name: 'Del grupo' }).click()
   await expect(player.getByText('×2')).toBeVisible()
   await player.screenshot({ path: test.info().outputPath('grupo-hoja.png'), fullPage: false })

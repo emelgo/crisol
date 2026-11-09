@@ -23,9 +23,10 @@ import {
   WebGLRenderer
 } from 'three'
 import type { FallingDie } from '../falling.ts'
+import { playbackRate } from './playback.ts'
 import { simulator } from './simulate.ts'
 import { type DieKind, faceNormal, type Solid, sizeOf, solidOf, TRAY, type Vec } from './solids.ts'
-import { playbackRate, type Thrown } from './throw.ts'
+import type { Thrown } from './throw.ts'
 
 export interface DiceScene {
   play(dice: readonly FallingDie[], color: string, onLanded: () => void): void
