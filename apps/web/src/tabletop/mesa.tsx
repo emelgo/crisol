@@ -23,7 +23,7 @@ import {
 } from '@crisol/tabletop'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getRouteApi, Link, Navigate } from '@tanstack/react-router'
-import { ChevronDown, ExternalLink, Eye, EyeOff, Frame, Maximize, Minus, Play, Plus, Tv, Users } from 'lucide-react'
+import { ChevronDown, ExternalLink, Eye, EyeOff, Frame, Maximize, Minus, Play, Plus, Tv, Users, X } from 'lucide-react'
 import {
   type KeyboardEvent,
   type PointerEvent,
@@ -336,6 +336,12 @@ export function Mesa({
     setTool('select')
     setSide((current) => (current === next ? null : next))
   }, [])
+  // Cerrar el panel de una herramienta: se deja la herramienta y vuelve la barra de pestañas
+  const backToBar = useCallback(() => {
+    setAsGroup(false)
+    setSide(null)
+    setTool('select')
+  }, [])
   const markers = useRef<HTMLDivElement | null>(null)
   const marksLayer = useRef<HTMLDivElement | null>(null)
   const vision = useVision({ campaignId, table, tool, asGroup, view, renderer, ready, onTable: setTable })
@@ -616,7 +622,20 @@ export function Mesa({
                 setAsGroup(true)
               }}
             />
-          ) : (
+          ) : null}
+          {/* Un panel de herramienta tapa la barra: su ×, para volver a ella (como Escape) */}
+          {!asGroup && ((open && (side || (isMarkTool(tool) && tool !== 'laser'))) || isVisionTool(tool)) && (
+            <button
+              type="button"
+              className={styles.panelBack}
+              aria-label={t('tabletop.backToBar')}
+              title={t('tabletop.backToBar')}
+              onClick={backToBar}
+            >
+              <X aria-hidden="true" size={16} />
+            </button>
+          )}
+          {(side && open) || (isMarkTool(tool) && tool !== 'laser' && open) || isVisionTool(tool) || asGroup ? null : (
             <MasterSidebar
               worldId={worldId}
               worldName={worldName}

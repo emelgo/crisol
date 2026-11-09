@@ -524,10 +524,12 @@
   flex-direction: column;
   inline-size: 24rem;
   min-block-size: 0;
-  /* Flota sobre el mapa, de cristal (el mapa ocupa todo el ancho, como en Foundry VTT) */
+  /* Flota sobre el mapa, de cristal (el mapa ocupa todo el ancho, como en Foundry VTT); solo lo alto que haga falta, para
+     que se vea el mapa debajo (y el cristal) */
   position: absolute;
   z-index: 13;
-  inset-block: 0.75rem;
+  inset-block-start: 0.75rem;
+  max-block-size: calc(100% - 1.5rem);
   inset-inline-end: 0.75rem;
   overflow: hidden;
   border: 1px solid var(--glass-edge);
@@ -1223,4 +1225,31 @@ button.pageLink {
    de una ficha lo tapaba): crea su propia capa y su menú no salía de ella */
 .topBar:has([aria-expanded="true"]) {
   z-index: 45;
+}
+
+/* La × de un panel de herramienta: arriba a la derecha, sobre él; vuelve a la barra de pestañas */
+.panelBack {
+  position: absolute;
+  z-index: 14;
+  inset-block-start: calc(0.75rem + 10px);
+  inset-inline-end: calc(0.75rem + 10px);
+  display: grid;
+  place-items: center;
+  inline-size: 2rem;
+  block-size: 2rem;
+  padding: 0;
+  border: 1px solid var(--glass-edge);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--color-text) 6%, transparent);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.panelBack:hover {
+  background: color-mix(in srgb, var(--color-text) 14%, transparent);
+}
+
+.panelBack:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }

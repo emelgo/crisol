@@ -1705,6 +1705,7 @@ export const es = {
     noMap: 'Esta escena aún no tiene mapa.',
     goToPage: 'Ir a su página',
     sceneSettings: 'Rejilla y ajustes de la escena',
+    backToBar: 'Cerrar y volver a la barra',
     sceneMenu: 'Más de {{name}}',
     renameScene: 'Cambiar el nombre',
     deleteScene: 'Borrar la escena',
