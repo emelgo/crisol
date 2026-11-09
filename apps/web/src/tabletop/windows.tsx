@@ -125,7 +125,10 @@ export function WindowsProvider({
   const openers = useRef(new Map<string, HTMLElement>())
   const sizeOfArea = useCallback(() => {
     const rect = area.current?.getBoundingClientRect()
-    return { width: rect?.width || 1200, height: rect?.height || 800 }
+    // La barra de la derecha flota sobre el mapa: las ventanas no se meten debajo de ella
+    const side = area.current?.parentElement?.querySelector('[data-mesa-side="open"]')?.getBoundingClientRect()
+    const width = (rect?.width || 1200) - (side && rect ? Math.max(0, rect.right - side.left) : 0)
+    return { width, height: rect?.height || 800 }
   }, [area])
   const open = useCallback(
     (spec: WindowSpec) => {

@@ -46,6 +46,7 @@ import { FormError } from '../components/field.tsx'
 import { failed, LoadError } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { Tour } from '../components/tour.tsx'
+import { useDice } from '../dice/context.tsx'
 import { canvasViewOf, framingOf, REFERENCE_ASPECT, sceneViewportOf, sceneViewportOfCanvas } from './camera.ts'
 import { connectTable, type DragMove, type TableChannel, type TableStatus } from './channel.ts'
 import { masterDraw } from './draw.ts'
@@ -155,6 +156,7 @@ export function Mesa({
   const stageBox = useRef<HTMLDivElement>(null)
   // La barra de la derecha: su pestaña y si está plegada viven aquí (una herramienta la tapa sin olvidarla)
   const sidebar = useMasterSidebar(table)
+  const dice = useDice()
   // La vista del máster (dónde cae el mapa y a qué escala): es de su navegador
   const view = useRef<Viewport>({ x: 0, y: 0, scale: 1 })
   // Las fichas: las elegidas, la de la tarjeta, la de la hoja abierta y la de su imagen
@@ -365,13 +367,6 @@ export function Mesa({
       void start(open, { kind: 'own', fileId: open.image.fileId })
   }, [open, start])
 
-  // Si se ve la barra de pestañas (una herramienta con panel la tapa)
-  const sidebarShown = !(
-    (side && open) ||
-    (isMarkTool(tool) && tool !== 'laser' && open) ||
-    isVisionTool(tool) ||
-    asGroup
-  )
   return (
     <CurrentCampaignContext.Provider value={campaignId}>
       <WindowsProvider area={stageBox} onLink={openPageLinks}>
@@ -617,8 +612,8 @@ export function Mesa({
               { target: '[data-tour="mesa-zoom"]', text: t('tour.tabletop.zoom'), placement: 'top' }
             ]}
           />
-          {/* Las tiradas sobre el d20: siempre, salvo con el registro a la vista (la barra en Tiradas, sin tapar ni plegar) */}
-          <RollToasts campaignId={campaignId} enabled={!(sidebarShown && !sidebar.folded && sidebar.tab === 'rolls')} />
+          {/* Las tiradas sobre el d20, mientras su ficha está cerrada (con ella abierta, ya se ven en su registro) */}
+          <RollToasts campaignId={campaignId} enabled={!dice.open} />
           <PageTitle className={styles.hidden}>{campaignName}</PageTitle>
         </div>
       </WindowsProvider>

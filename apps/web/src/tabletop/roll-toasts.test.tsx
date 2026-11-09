@@ -106,10 +106,10 @@ describe('las tiradas sobre el d20', () => {
     expect(toasts().queryByText('Bruno')).toBeNull()
   })
 
-  it('con la pestaña Tiradas abierta no salen: ya están en el registro', async () => {
+  it('con la ficha de dados abierta no salen: ya están en su registro', async () => {
     const user = userEvent.setup()
     const { realtime } = renderMesa()
-    await user.click(await screen.findByRole('tab', { name: 'Tiradas' }))
+    await user.click(await screen.findByRole('button', { name: 'Dados' }))
     act(() => realtime.emit({ type: 'rolled', campaignId: CAMPAIGN.id, roll: rollOf('Lucía', 'Sigilo', 17) }))
     expect(toasts().queryByText('17')).toBeNull()
   })

@@ -87,11 +87,11 @@ describe('quien juega', () => {
 
   it('su Mesa ve lo que el grupo, con su barra (sin Escenas ni Ajustes); la página que le enseñan se le abre', async () => {
     const user = userEvent.setup()
-    const { api, realtime } = await renderAt(`/mundos/${WORLD.id}/campanas/${CAMPAIGN.id}/mesa`)
+    const { realtime } = await renderAt(`/mundos/${WORLD.id}/campanas/${CAMPAIGN.id}/mesa`)
     await waitFor(() => expect(channels.map((c) => c.view)).toContain('player'))
     const panel = within(await screen.findByRole('complementary', { name: 'Panel de la mesa' }))
+    // Las tiradas, en el d20 (no hay pestaña de tiradas)
     expect(panel.getAllByRole('tab').map((tab) => tab.textContent)).toEqual([
-      'Tiradas',
       'Combate',
       'Personajes',
       'Compendio',

@@ -95,8 +95,8 @@ test('fichas: Lía y tres goblins de un encuentro, moverlos, dañar a uno, ocult
     .dragTo(stage, { targetPosition: { x: lia.x - stageBox.x, y: lia.y - stageBox.y } })
   await expect(onTv.getByRole('listitem')).toHaveText(['Lía'])
 
-  // La emboscada, desde «Encuentros»: tres goblins en su formación, ilesos en la tele
-  await panel.getByRole('tab', { name: 'Encuentros' }).click()
+  // La emboscada, desde los encuentros (en Escenas): tres goblins en su formación, ilesos en la tele
+  await panel.getByRole('tab', { name: 'Escenas' }).click()
   const ambush = await onScreen(stage, { x: 650, y: 250 })
   await panel
     .getByRole('listitem')
@@ -179,7 +179,8 @@ test('fichas: Lía y tres goblins de un encuentro, moverlos, dañar a uno, ocult
   const liaAt = await onScreen(stage, liaToken)
   await page.mouse.click(liaAt.x, liaAt.y)
   await expect(page.getByRole('region', { name: 'Lía' })).toBeVisible()
-  await panel.getByRole('tab', { name: 'Imágenes' }).click()
+  // Sus imágenes del mundo, en Personajes (con la ficha elegida)
+  await panel.getByRole('tab', { name: 'Personajes' }).click()
   await panel.getByRole('button', { name: 'lia.png' }).click()
   const editor = page.getByRole('dialog', { name: 'Imagen de Lía' })
   await expect(editor).toBeVisible()

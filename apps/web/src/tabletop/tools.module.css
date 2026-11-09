@@ -593,3 +593,10 @@
   color: var(--color-link);
   font-size: 0.75rem;
 }
+
+/* En la Mesa, a la izquierda de su barra de la derecha (que flota sobre el mapa) y encima del d20: siempre en el mismo
+   sitio, también con la barra plegada */
+:global([data-mesa]) .widgets {
+  inset-block-end: calc(var(--space-4) + 3.25rem + var(--space-3));
+  inset-inline-end: calc(24rem + 1.5rem);
+}

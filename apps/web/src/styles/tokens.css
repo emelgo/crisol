@@ -100,6 +100,8 @@
   --glass-tint: color-mix(in srgb, var(--color-surface) 70%, transparent);
   --glass-solid: color-mix(in srgb, var(--color-surface) 93%, transparent);
   --glass-body: color-mix(in srgb, var(--color-surface) 98.5%, transparent);
+  /* La barra de la derecha de la Mesa: de cristal, pero se lee (lleva texto) */
+  --glass-panel: color-mix(in srgb, var(--color-surface) 82%, transparent);
   --glass-edge: rgb(255 255 255 / 0.7);
   --glass-hi: rgb(255 255 255 / 0.95);
   --glass-line: rgb(0 0 0 / 0.14);
@@ -150,6 +152,7 @@
   --glass-tint: color-mix(in srgb, var(--color-surface) 46%, transparent);
   --glass-solid: color-mix(in srgb, var(--color-surface) 92%, transparent);
   --glass-body: color-mix(in srgb, var(--color-surface) 98%, transparent);
+  --glass-panel: color-mix(in srgb, var(--color-surface) 72%, transparent);
   --glass-edge: rgb(255 255 255 / 0.11);
   --glass-hi: rgb(255 255 255 / 0.12);
   --glass-line: rgb(0 0 0 / 0.5);

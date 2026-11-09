@@ -13,7 +13,7 @@ import { PlayerPage } from '../campaign/world-pages.tsx'
 import { failed, LoadError } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { Tour } from '../components/tour.tsx'
-import { RollLog } from '../dice/log.tsx'
+import { useDice } from '../dice/context.tsx'
 import { useShown } from '../realtime/context.tsx'
 import { ReadAsProvider } from '../wiki/read-as.tsx'
 import { CompendiumTab } from './compendium-tab.tsx'
@@ -26,7 +26,7 @@ import { type SidebarItem, type SidebarTab, TableSidebar, useSidebarFolded, useS
 import { sheetWindow } from './token-sheet.tsx'
 import { type LinkHandler, useWindows, WindowLayer, type WindowSpec, WindowsProvider } from './windows.tsx'
 
-const PLAYER_TABS: readonly SidebarTab[] = ['rolls', 'combat', 'characters', 'compendium', 'pages']
+const PLAYER_TABS: readonly SidebarTab[] = ['combat', 'characters', 'compendium', 'pages']
 
 /** Una página del mundo, leída desde la campaña, en su ventana */
 function playerPageWindow(worldId: string, pageId: string, title: string): WindowSpec {
@@ -93,6 +93,7 @@ function PlayerSidebar({
   const windows = useWindows()
   const [tab, setTab] = useSidebarTab(PLAYER_TABS, null)
   const [folded, setFolded] = useSidebarFolded()
+  const dice = useDice()
   const characters = useQuery({
     queryKey: ['characters', campaign.id],
     queryFn: () => api.call('listCharacters', { campaignId: campaign.id })
@@ -110,7 +111,6 @@ function PlayerSidebar({
   const combat = screen?.combat ?? null
   const systemId = campaign.system?.id ?? null
   const items: SidebarItem[] = [
-    { key: 'rolls', content: () => <RollLog campaign={campaign} /> },
     {
       key: 'combat',
       dot: Boolean(combat) && tab !== 'combat',
@@ -192,7 +192,8 @@ function PlayerSidebar({
   return (
     <>
       <TableSidebar items={items} tab={tab} onTab={setTab} folded={folded} onFold={setFolded} />
-      <RollToasts campaignId={campaign.id} enabled={folded || tab !== 'rolls'} master={false} />
+      {/* Las tiradas sobre el d20, mientras su ficha está cerrada (con ella abierta, ya se ven en su registro) */}
+      <RollToasts campaignId={campaign.id} enabled={!dice.open} master={false} />
     </>
   )
 }

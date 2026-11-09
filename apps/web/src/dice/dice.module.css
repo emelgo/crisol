@@ -71,17 +71,6 @@
   outline: none;
 }
 
-/* En la mesa, fuera de su barra de la derecha (plegada, una columna de iconos) */
-:global(body):has(:global([data-tour="mesa-zoom"])) .launcher,
-:global(body):has(:global([data-tour="mesa-zoom"])) .card {
-  --dice-end: calc(24rem + var(--space-4) + 2.25rem + var(--space-3));
-}
-
-:global(body):has(:global([data-mesa-side="folded"])) .launcher,
-:global(body):has(:global([data-mesa-side="folded"])) .card {
-  --dice-end: calc(var(--space-4) + 2.25rem + var(--space-3));
-}
-
 .head {
   display: flex;
   align-items: center;
@@ -395,4 +384,16 @@
   padding: var(--space-2);
   font-size: 0.875rem;
   cursor: pointer;
+}
+
+/* En la Mesa, el d20 queda encima de la barra de la derecha: tenue hasta que se pasa por él (o se abre) */
+:global(body):has(:global([data-mesa])) .launcher:not([aria-expanded="true"]):not(:hover):not(:focus-visible) {
+  opacity: 0.55;
+}
+
+.launcher {
+  transition:
+    opacity 160ms ease-out,
+    transform 160ms ease-out,
+    border-color 160ms ease-out;
 }

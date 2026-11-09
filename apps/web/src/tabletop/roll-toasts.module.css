@@ -1,6 +1,6 @@
 /* Las tiradas sobre el d20, fuera de la pestaña Tiradas: en su misma esquina, encima del botón */
 .toasts {
-  --toasts-end: calc(24rem + var(--space-4) + 2.25rem + var(--space-3));
+  --toasts-end: calc(var(--space-4) + 2.25rem + var(--space-3));
 
   position: fixed;
   z-index: 25;
@@ -14,11 +14,6 @@
   padding: 0;
   list-style: none;
   pointer-events: none;
-}
-
-/* Con la barra plegada, la esquina se acerca al borde (como el d20) */
-:global(body):has(:global([data-mesa-side="folded"])) .toasts {
-  --toasts-end: calc(var(--space-4) + 2.25rem + var(--space-3));
 }
 
 .toast {

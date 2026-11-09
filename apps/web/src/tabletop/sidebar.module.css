@@ -4,16 +4,32 @@
   flex-direction: column;
   inline-size: 24rem;
   min-block-size: 0;
-  border-inline-start: 1px solid var(--color-border);
-  background: var(--color-surface);
-}
-
-/* Plegada: una tira de iconos de cristal que flota sobre el mapa, arriba a la derecha (el mapa ocupa todo el ancho) */
-.folded {
+  /* Flota sobre el mapa, de cristal (el mapa ocupa todo el ancho, como en Foundry VTT) */
   position: absolute;
   z-index: 13;
-  inset-block-start: 0.75rem;
+  inset-block: 0.75rem;
   inset-inline-end: 0.75rem;
+  overflow: hidden;
+  border: 1px solid var(--glass-edge);
+  border-radius: 10px;
+  background: var(--glass-sheen), var(--glass-panel);
+  box-shadow:
+    inset 0 1px 0 var(--glass-hi),
+    0 0 0 1px var(--glass-line),
+    var(--glass-shadow);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .sidebar {
+    background: var(--glass-sheen), var(--glass-solid);
+  }
+}
+
+/* Plegada: una tira de iconos, arriba a la derecha */
+.folded {
+  inset-block-end: auto;
   inline-size: 3rem;
   align-items: center;
   gap: 0.25rem;
@@ -51,7 +67,7 @@
   grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
   grid-auto-flow: column;
   padding: 6px 4px 0;
-  border-block-end: 1px solid var(--color-border);
+  border-block-end: 1px solid var(--glass-edge);
 }
 
 .tab {
@@ -107,7 +123,7 @@
   block-size: 7px;
   border-radius: 50%;
   background: var(--color-brand);
-  box-shadow: 0 0 0 2px var(--color-surface);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-surface) 80%, transparent);
 }
 
 .head {

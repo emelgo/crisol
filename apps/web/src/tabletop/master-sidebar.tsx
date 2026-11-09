@@ -11,7 +11,6 @@ import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { GroupKnowledge } from '../campaign/group-knowledge.tsx'
 import { CampaignSettings } from '../campaign/settings.tsx'
-import { RollLog } from '../dice/log.tsx'
 import { CampaignCreatures } from './campaign-creatures.tsx'
 import { CombatPanel } from './combat-panel.tsx'
 import { CompendiumTab } from './compendium-tab.tsx'
@@ -36,15 +35,7 @@ import { useWindows } from './windows.tsx'
 
 const route = getRouteApi('/mundos/$worldId/campanas/$campaignId')
 
-const MASTER_TABS: readonly SidebarTab[] = [
-  'rolls',
-  'combat',
-  'scenes',
-  'characters',
-  'compendium',
-  'pages',
-  'settings'
-]
+const MASTER_TABS: readonly SidebarTab[] = ['combat', 'scenes', 'characters', 'compendium', 'pages', 'settings']
 
 export type MasterSidebarState = ReturnType<typeof useMasterSidebar>
 
@@ -157,7 +148,6 @@ export function MasterSidebar({
         .then(() => api.call('getCampaignTable', { campaignId }))
     )
   const items: SidebarItem[] = [
-    { key: 'rolls', content: () => <RollLog campaign={campaign} /> },
     {
       key: 'combat',
       dot: Boolean(combat) && tab !== 'combat',
