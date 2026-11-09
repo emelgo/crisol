@@ -614,3 +614,10 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Lo que hará al abrirla en la Mesa: una línea, bajo su título */
+.viewNow {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+}

@@ -19,7 +19,8 @@ export interface SceneTabState {
   editable: boolean
   /** Cambia la rejilla: se ve al momento y se guarda (con `later`, un poco después, al arrastrar un deslizador) */
   saveGrid(patch: GridPatch, later?: boolean): void
-  saveView(view: SceneViewport): Promise<unknown>
+  /** La vista con la que empieza al abrirla en la Mesa (null: el mapa entero) */
+  saveView(view: SceneViewport | null): Promise<unknown>
   /** Marcando las dos esquinas de una casilla */
   aligning: boolean
   setAligning(on: boolean): void

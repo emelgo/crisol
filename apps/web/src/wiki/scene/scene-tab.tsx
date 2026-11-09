@@ -363,6 +363,10 @@ export function SceneSide() {
     },
     onSuccess: () => announce(t('scene.grid.viewSaved'))
   })
+  const dropView = useMutation({
+    mutationFn: () => saveView(null),
+    onSuccess: () => announce(t('scene.grid.viewDropped'))
+  })
   if (!scene) return null
   const { grid } = scene
   const kind = grid.type === 'none' ? 'none' : grid.type === 'square' ? 'square' : 'hex'
@@ -557,17 +561,31 @@ export function SceneSide() {
           </div>
         </>
       )}
+      {/* Con qué vista empieza al abrirla en la Mesa: la que se deja aquí o, sin ella, el mapa entero */}
       <div className={styles.field}>
         <span>{t('scene.grid.initialView')}</span>
-        <BusyButton
-          className={styles.ghost}
-          busy={keepView.isPending}
-          disabled={!ready}
-          onClick={() => keepView.mutate()}
-        >
-          <Frame aria-hidden="true" size={16} />
-          {t('scene.grid.useView')}
-        </BusyButton>
+        <p className={styles.viewNow}>{t(scene.initialView ? 'scene.grid.viewKept' : 'scene.grid.viewWhole')}</p>
+        <div className={styles.row}>
+          <BusyButton
+            className={styles.ghost}
+            busy={keepView.isPending}
+            disabled={!ready || !editable}
+            onClick={() => keepView.mutate()}
+          >
+            <Frame aria-hidden="true" size={16} />
+            {t('scene.grid.useView')}
+          </BusyButton>
+          {scene.initialView && (
+            <BusyButton
+              className={styles.ghost}
+              busy={dropView.isPending}
+              disabled={!editable}
+              onClick={() => dropView.mutate()}
+            >
+              {t('scene.grid.dropView')}
+            </BusyButton>
+          )}
+        </div>
       </div>
     </section>
   )

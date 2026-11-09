@@ -1647,9 +1647,13 @@ export const es = {
       visible: 'Se ve en la mesa',
       color: 'Color',
       opacity: 'Opacidad',
-      initialView: 'Vista inicial',
-      useView: 'Usar este encuadre',
-      viewSaved: 'Vista inicial guardada'
+      initialView: 'Al abrirla en la Mesa',
+      viewWhole: 'Enseña el mapa entero.',
+      viewKept: 'Empieza con la vista guardada.',
+      useView: 'Empezar con esta vista',
+      dropView: 'Quitarla',
+      viewSaved: 'Al abrirla, empezará con esta vista',
+      viewDropped: 'Al abrirla, enseñará el mapa entero'
     }
   },
   // La mesa del máster (docs/specs/escenas.md, ADR-0018)
