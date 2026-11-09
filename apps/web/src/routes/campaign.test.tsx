@@ -273,6 +273,16 @@ describe('una campaña y su enlace de invitación', () => {
 })
 
 describe('los miembros de una campaña', () => {
+  it('la pestaña Campaña: su nombre y los jugadores de un vistazo (quién aún no tiene personaje)', async () => {
+    renderCampaign(campaign())
+    const players = within(await screen.findByRole('region', { name: 'Jugadores' }))
+    expect(await players.findByText('Ana')).toBeDefined()
+    expect(players.getByText('Jugadora')).toBeDefined()
+    expect(players.getAllByText('Sin personaje aún')).toHaveLength(2)
+    // El máster no sale como jugador
+    expect(players.queryByText('Enrique')).toBeNull()
+  })
+
   const memberNames = () =>
     within(screen.getByRole('list', { name: 'Miembros' }))
       .getAllByRole('listitem')

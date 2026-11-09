@@ -1632,6 +1632,13 @@ export const es = {
     }
   },
   // La mesa del máster (docs/specs/escenas.md, ADR-0018)
+  // La pestaña Campaña de la Mesa: los jugadores de un vistazo (campaign/settings.tsx)
+  campaignHome: {
+    players: 'Jugadores',
+    noPlayers: 'Aún no hay nadie: invítalos con el enlace.',
+    creating: 'en creación',
+    noCharacter: 'Sin personaje aún'
+  },
   // Lo que ve quien juega al abrir su campaña: su ficha (campaign/player-home.tsx)
   playerHome: {
     toMesa: 'Ir a la Mesa',
@@ -1699,7 +1706,7 @@ export const es = {
       characters: 'Personajes',
       compendium: 'Compendio',
       pages: 'Páginas',
-      settings: 'Ajustes',
+      settings: 'Campaña',
       fold: 'Plegar la barra',
       unfold: 'Desplegar la barra',
       attention: ' (hay algo nuevo)'

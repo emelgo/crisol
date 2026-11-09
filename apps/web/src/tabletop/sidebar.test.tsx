@@ -56,7 +56,7 @@ describe('la barra de la Mesa', () => {
     expect(document.activeElement).toBe(screen.getByRole('tab', { name: 'Personajes' }))
     expect(screen.getByRole('tabpanel').textContent).toBe('Panel de characters')
     await user.keyboard('{End}')
-    expect(document.activeElement).toBe(screen.getByRole('tab', { name: 'Ajustes' }))
+    expect(document.activeElement).toBe(screen.getByRole('tab', { name: 'Campaña' }))
     await user.keyboard('{ArrowRight}')
     expect(document.activeElement).toBe(screen.getByRole('tab', { name: 'Tiradas' }))
     await user.keyboard('{ArrowLeft}{Home}')
@@ -78,6 +78,8 @@ describe('la barra de la Mesa', () => {
   })
 
   it('cada pestaña tiene su nombre en la dirección', () => {
+    expect(tabOfSlug('campana')).toBe('settings')
+    // El nombre de antes, para los enlaces guardados
     expect(tabOfSlug('ajustes')).toBe('settings')
     expect(tabOfSlug('paginas')).toBe('pages')
     expect(tabOfSlug('otra')).toBeNull()

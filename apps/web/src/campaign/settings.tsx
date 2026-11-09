@@ -349,9 +349,10 @@ export function CampaignSettings({ campaign, worldName }: { campaign: Campaign; 
         )}
         <div className={settings.name}>
           <b>{campaign.name}</b>
-          <span>{worldName}</span>
+          <span>{[worldName, campaign.system?.name].filter(Boolean).join(' · ')}</span>
         </div>
       </section>
+      <PlayersSummary campaign={campaign} />
       <MembersPanel campaign={campaign} />
       {campaign.role === 'master' && (
         <section className={settings.invite}>
@@ -369,6 +370,90 @@ export function CampaignSettings({ campaign, worldName }: { campaign: Campaign; 
             onConfirm={remove}
           />
         </DangerZone>
+      )}
+    </div>
+  )
+}
+
+const SMALL = new Set(['de', 'del', 'la', 'el', 'los', 'las', 'y', 'a'])
+
+/** El nombre de una cifra, corto: una palabra, tal cual; varias, sus iniciales («Clase de armadura» → «CA») */
+export function shortLabel(label: string): string {
+  const words = label.split(/\s+/).filter((w) => w && !SMALL.has(w.toLocaleLowerCase('es')))
+  if (words.length <= 1) return label
+  return words.map((w) => w.charAt(0).toLocaleUpperCase('es')).join('')
+}
+
+/**
+ * Los jugadores de un vistazo (la pestaña Campaña): cada personaje con quién lo lleva, su clase y sus cifras; y quién
+ * aún no tiene personaje
+ */
+function PlayersSummary({ campaign }: { campaign: Campaign }) {
+  const { t } = useTranslation()
+  const api = useApi()
+  const headingId = useId()
+  const characters = useQuery({
+    queryKey: ['characters', campaign.id],
+    queryFn: () => api.call('listCharacters', { campaignId: campaign.id }),
+    enabled: Boolean(campaign.system)
+  })
+  const members = useQuery({
+    queryKey: ['members', campaign.id],
+    queryFn: () => api.call('listMembers', { campaignId: campaign.id })
+  })
+  const all = characters.data?.characters ?? []
+  const withCharacter = new Set(all.map((c) => c.owner?.id).filter(Boolean))
+  const without = (members.data?.members ?? []).filter((m) => m.role === 'player' && !withCharacter.has(m.userId))
+  return (
+    <div role="region" className={settings.players} aria-labelledby={headingId}>
+      <h2 id={headingId}>{t('campaignHome.players')}</h2>
+      {all.length === 0 && without.length === 0 ? (
+        <p className={settings.muted}>{t('campaignHome.noPlayers')}</p>
+      ) : (
+        <ul className={settings.playerList}>
+          {all.map((character) => (
+            <li key={character.id} className={settings.player}>
+              <span className={settings.initial} aria-hidden="true">
+                {character.name.charAt(0).toLocaleUpperCase('es')}
+              </span>
+              <div className={settings.who}>
+                <b>{character.name}</b>
+                <span>
+                  {[
+                    character.summary.line,
+                    character.owner?.name,
+                    character.status === 'creating' ? t('campaignHome.creating') : null
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </span>
+                {(character.summary.stats ?? []).length > 0 && (
+                  <dl className={settings.stats}>
+                    {(character.summary.stats ?? []).slice(0, 3).map((stat) => (
+                      <div key={stat.key} title={stat.label}>
+                        <dt>
+                          <abbr title={stat.label}>{shortLabel(stat.label)}</abbr>
+                        </dt>
+                        <dd>{stat.value}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                )}
+              </div>
+            </li>
+          ))}
+          {without.map((member) => (
+            <li key={member.userId} className={settings.player} data-empty="">
+              <span className={settings.initial} aria-hidden="true">
+                {member.name.charAt(0).toLocaleUpperCase('es')}
+              </span>
+              <div className={settings.who}>
+                <b>{member.name}</b>
+                <span>{t('campaignHome.noCharacter')}</span>
+              </div>
+            </li>
+          ))}
+        </ul>
       )}
     </div>
   )

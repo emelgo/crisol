@@ -11,7 +11,7 @@ import {
   PanelRightClose,
   PanelRightOpen,
   ScrollText,
-  Settings,
+  Shield,
   Swords,
   Users
 } from 'lucide-react'
@@ -30,7 +30,7 @@ export const PANEL_SLUGS: Record<SidebarTab, string> = {
   characters: 'personajes',
   compendium: 'compendio',
   pages: 'paginas',
-  settings: 'ajustes'
+  settings: 'campana'
 }
 
 export const ICONS: Record<SidebarTab, LucideIcon> = {
@@ -40,10 +40,12 @@ export const ICONS: Record<SidebarTab, LucideIcon> = {
   characters: Users,
   compendium: BookOpen,
   pages: ScrollText,
-  settings: Settings
+  settings: Shield
 }
 
 export function tabOfSlug(slug: string | undefined): SidebarTab | null {
+  // «ajustes», el nombre de antes de la pestaña Campaña (enlaces guardados)
+  if (slug === 'ajustes') return 'settings'
   return SIDEBAR_TABS.find((tab) => PANEL_SLUGS[tab] === slug) ?? null
 }
 
