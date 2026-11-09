@@ -12,6 +12,7 @@ import { CurrentCampaignContext } from '../campaign/current-campaign.ts'
 import { PlayerPage } from '../campaign/world-pages.tsx'
 import { failed, LoadError } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
+import { Tour } from '../components/tour.tsx'
 import { RollLog } from '../dice/log.tsx'
 import { useShown } from '../realtime/context.tsx'
 import { ReadAsProvider } from '../wiki/read-as.tsx'
@@ -53,6 +54,7 @@ const openPlayerPageLinks: LinkHandler = (url, text, open) => {
 }
 
 export function PlayerMesa({ worldId, campaign }: { worldId: string; campaign: Campaign }) {
+  const { t } = useTranslation()
   const stageBox = useRef<HTMLDivElement>(null)
   const [screen, setScreen] = useState<ScreenView | null>(null)
   return (
@@ -66,6 +68,10 @@ export function PlayerMesa({ worldId, campaign }: { worldId: string; campaign: C
             </div>
             <PlayerSidebar worldId={worldId} campaign={campaign} screen={screen} />
             <PageTitle className={styles.hidden}>{campaign.name}</PageTitle>
+            <Tour
+              id="mesa-jugador"
+              steps={[{ target: '[data-tour="mesa-barra"]', text: t('tour.tabletop.player'), placement: 'left' }]}
+            />
           </div>
         </WindowsProvider>
       </ReadAsProvider>

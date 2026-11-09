@@ -586,11 +586,10 @@ export function Mesa({
               { target: '[data-tour="mesa-mapa"]', text: t('tour.tabletop.map') },
               { target: '[data-tour="mesa-herramientas"]', text: t('tour.tabletop.tools'), placement: 'right' },
               { target: '[data-tour="mesa-paneles"]', text: t('tour.tabletop.panels'), placement: 'right' },
-              { target: '[data-tour="mesa-escenas"]', text: t('tour.tabletop.scenes'), placement: 'left' },
+              { target: '[data-tour="mesa-barra"]', text: t('tour.tabletop.sidebar'), placement: 'left' },
               { target: '[data-tour="mesa-presentar"]', text: t('tour.tabletop.present'), placement: 'bottom' },
               { target: '[data-tour="mesa-pantalla"]', text: t('tour.tabletop.screen'), placement: 'bottom' },
               { target: '[data-tour="mesa-camara"]', text: t('tour.tabletop.camera'), placement: 'bottom' },
-              { target: '[data-tour="mesa-combate"]', text: t('tour.tabletop.combat'), placement: 'bottom' },
               { target: '[data-tour="mesa-zoom"]', text: t('tour.tabletop.zoom'), placement: 'top' }
             ]}
           />

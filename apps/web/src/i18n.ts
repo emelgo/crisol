@@ -2981,12 +2981,12 @@ export const es = {
     },
     tabletop: {
       map: 'La escena abierta: las fichas se pulsan y se arrastran.',
-      scenes: 'Lo que se pone en la mesa: se arrastra al mapa.',
+      sidebar: 'Todo lo de la partida, a mano. Lo que abres sale en ventanas sobre el mapa.',
+      player: 'Lo de la partida, a mano. Lo que abres sale en ventanas sobre el mapa.',
       present: 'Lo que ve el grupo: presentar la escena en la tele u ocultarla.',
       screen: 'Abre la tele en otra ventana; llévala a la pantalla del grupo.',
       camera: 'La tele sigue tu vista, se queda fija en su marco (que puedes mover) o encuadra al grupo.',
       zoom: 'Acerca, aleja o encuadra la escena entera.',
-      combat: 'El combate: con las fichas elegidas o con todas las de la escena.',
       tools: 'Las herramientas para trabajar sobre el mapa.',
       panels: 'Más cosas para llevar la partida.'
     },
