@@ -172,47 +172,50 @@ function DieButton({
   useEffect(() => cancel, [])
   const name = dieName(sides)
   return (
-    <button
-      type="button"
-      className={styles.rackDie}
-      aria-label={count ? t('dice.addCount', { die: name, count }) : t('dice.add', { die: name })}
-      aria-describedby={hint}
-      aria-keyshortcuts="Backspace Delete"
-      data-count={count || undefined}
-      data-die={sides}
-      disabled={disabled}
-      onPointerDown={down}
-      onPointerUp={cancel}
-      onPointerLeave={cancel}
-      onPointerCancel={cancel}
-      onClick={() => {
-        // Tras mantener el dedo, el clic que llega no suma
-        if (held.current) {
-          held.current = false
-          return
-        }
-        change({ type: 'add', sides })
-      }}
-      onKeyDown={(event) => {
-        if (event.key !== 'Backspace' && event.key !== 'Delete' && event.key !== '-') return
-        event.preventDefault()
-        change({ type: 'remove', sides })
-      }}
-      onContextMenu={(event) => {
-        event.preventDefault()
-        // Con el dedo ya lo quita mantener (Android manda además este menú: no se quita otro)
-        if (touch.current) return
-        change({ type: 'remove', sides })
-      }}
-    >
-      <DieIcon sides={sides} />
-      <span className={styles.rackName}>{name}</span>
+    <>
+      <button
+        type="button"
+        className={styles.rackDie}
+        aria-label={count ? t('dice.addCount', { die: name, count }) : t('dice.add', { die: name })}
+        aria-describedby={hint}
+        aria-keyshortcuts="Backspace Delete"
+        data-count={count || undefined}
+        data-die={sides}
+        disabled={disabled}
+        onPointerDown={down}
+        onPointerUp={cancel}
+        onPointerLeave={cancel}
+        onPointerCancel={cancel}
+        onClick={() => {
+          // Tras mantener el dedo, el clic que llega no suma
+          if (held.current) {
+            held.current = false
+            return
+          }
+          change({ type: 'add', sides })
+        }}
+        onKeyDown={(event) => {
+          if (event.key !== 'Backspace' && event.key !== 'Delete' && event.key !== '-') return
+          event.preventDefault()
+          change({ type: 'remove', sides })
+        }}
+        onContextMenu={(event) => {
+          event.preventDefault()
+          // Con el dedo ya lo quita mantener (Android manda además este menú: no se quita otro)
+          if (touch.current) return
+          change({ type: 'remove', sides })
+        }}
+      >
+        <DieIcon sides={sides} />
+        <span className={styles.rackName}>{name}</span>
+      </button>
+      {/* Cuántos van, fuera del botón: su nombre ya lo dice («van 2») y así el texto visible casa con él */}
       {count > 0 && (
         <span className={styles.badge} aria-hidden="true">
           {count}
         </span>
       )}
-    </button>
+    </>
   )
 }
 

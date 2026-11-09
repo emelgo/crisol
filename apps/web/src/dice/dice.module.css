@@ -140,6 +140,10 @@
   font-size: 0.875rem;
 }
 
+.rackDice li {
+  position: relative;
+}
+
 .rackDice {
   display: flex;
   flex-direction: column;
@@ -219,6 +223,7 @@
   color: var(--color-bg);
   font-size: 0.6875rem;
   font-weight: 700;
+  pointer-events: none;
   animation: pops 0.18s ease-out;
 }
 

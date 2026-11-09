@@ -118,71 +118,74 @@ export function RollNotices({ campaign }: { campaign: Campaign }) {
   }, [])
   const master = campaign.role === 'master'
   return (
-    <ol className={styles.notices} aria-label={t('dice.lastRolls')}>
-      {shown.map((roll) => {
-        const mine = isMine(roll, account)
-        const secret = roll.visibility !== 'all'
-        return (
-          <li
-            key={roll.id}
-            className={styles.notice}
-            data-secret={secret || undefined}
-            data-critical={roll.critical ?? undefined}
-            onPointerEnter={() => clearTimeout(timers.current.get(roll.id))}
-            onPointerLeave={(event) => {
-              if (!event.currentTarget.contains(document.activeElement)) later(roll.id)
-            }}
-            onFocus={() => clearTimeout(timers.current.get(roll.id))}
-            onBlur={(event) => {
-              if (!event.currentTarget.contains(event.relatedTarget as Node | null)) later(roll.id)
-            }}
-          >
-            <button type="button" className={styles.open} onClick={dice.openHistory}>
-              <span className={styles.total}>{roll.total}</span>
-              <span className={styles.text}>
-                <span className={styles.line}>
-                  <b>{mine ? t('dice.me') : roll.by.name}</b>
-                  {' · '}
-                  {roll.label ?? roll.formula}
-                </span>
-                <DiceRow roll={roll} />
-                <RollTags roll={roll} />
-                {secret && (
-                  <span className={styles.secret}>
-                    {!mine
-                      ? t('dice.forYou')
-                      : roll.visibility === 'master' && !master
-                        ? t('dice.youAndMaster')
-                        : t('dice.onlyYou')}
+    // En su región (como todo lo de la página): axe pide que nada quede fuera de una
+    <section className={styles.notices} aria-label={t('dice.lastRolls')}>
+      <ol className={styles.list} aria-label={t('dice.lastRolls')}>
+        {shown.map((roll) => {
+          const mine = isMine(roll, account)
+          const secret = roll.visibility !== 'all'
+          return (
+            <li
+              key={roll.id}
+              className={styles.notice}
+              data-secret={secret || undefined}
+              data-critical={roll.critical ?? undefined}
+              onPointerEnter={() => clearTimeout(timers.current.get(roll.id))}
+              onPointerLeave={(event) => {
+                if (!event.currentTarget.contains(document.activeElement)) later(roll.id)
+              }}
+              onFocus={() => clearTimeout(timers.current.get(roll.id))}
+              onBlur={(event) => {
+                if (!event.currentTarget.contains(event.relatedTarget as Node | null)) later(roll.id)
+              }}
+            >
+              <button type="button" className={styles.open} onClick={dice.openHistory}>
+                <span className={styles.total}>{roll.total}</span>
+                <span className={styles.text}>
+                  <span className={styles.line}>
+                    <b>{mine ? t('dice.me') : roll.by.name}</b>
+                    {' · '}
+                    {roll.label ?? roll.formula}
                   </span>
-                )}
+                  <DiceRow roll={roll} />
+                  <RollTags roll={roll} />
+                  {secret && (
+                    <span className={styles.secret}>
+                      {!mine
+                        ? t('dice.forYou')
+                        : roll.visibility === 'master' && !master
+                          ? t('dice.youAndMaster')
+                          : t('dice.onlyYou')}
+                    </span>
+                  )}
+                </span>
+                <span className={styles.hidden}>{t('dice.openHistory')}</span>
+              </button>
+              <span className={styles.actions}>
+                <button
+                  type="button"
+                  aria-label={t('dice.againOf', { what: roll.label ?? roll.formula })}
+                  title={t('dice.again')}
+                  onClick={() => {
+                    dismiss(roll.id, true)
+                    again.mutate(roll)
+                  }}
+                >
+                  <Repeat size={14} aria-hidden="true" />
+                </button>
+                <button
+                  type="button"
+                  aria-label={t('dice.dismiss')}
+                  title={t('dice.dismiss')}
+                  onClick={() => dismiss(roll.id, true)}
+                >
+                  <X size={14} aria-hidden="true" />
+                </button>
               </span>
-              <span className={styles.hidden}>{t('dice.openHistory')}</span>
-            </button>
-            <span className={styles.actions}>
-              <button
-                type="button"
-                aria-label={t('dice.againOf', { what: roll.label ?? roll.formula })}
-                title={t('dice.again')}
-                onClick={() => {
-                  dismiss(roll.id, true)
-                  again.mutate(roll)
-                }}
-              >
-                <Repeat size={14} aria-hidden="true" />
-              </button>
-              <button
-                type="button"
-                aria-label={t('dice.dismiss')}
-                title={t('dice.dismiss')}
-                onClick={() => dismiss(roll.id, true)}
-              >
-                <X size={14} aria-hidden="true" />
-              </button>
-            </span>
-          </li>
-        )
-      })}
-    </ol>
+            </li>
+          )
+        })}
+      </ol>
+    </section>
   )
 }
