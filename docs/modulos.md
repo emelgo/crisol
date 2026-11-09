@@ -20,6 +20,9 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   por «Invitar» junto al título y por la barra de antes; también los pendientes de invitar, unirse y sistemas), la
   revisión (`/agent-skills:review` y `web-design-guidelines`) y el PR con la CI una vez. Para mirarlo: el entorno de
   revisión (servidor 8132, web 5174, `e2e/.revision/`, cuentas `enrique@` y `lucia@revision.test`).
+- **Lo siguiente que pidió Enrique (2026-11-10)**: el importador de sistemas por **libros**, como Roliando y Nivel20:
+  añadir a un sistema un libro (con sus criaturas, conjuros, objetos…) y que cada cosa sepa de qué libro viene, para
+  verlo así en el compendio y elegir libros en cada campaña. Antes, estudiarlos (craft-anything) y entrevista corta.
 - Pendiente apuntado: «Archivar» la campaña; la escena en marcha bajo «Ir a la Mesa» en la ficha; la ficha rápida al
   pasar por una criatura del compendio.
 - Dev: si una pantalla da «Ya no existe» o 500 con «relation … does not exist», faltan migraciones en la base de
