@@ -18,6 +18,10 @@
 
 .filters {
   display: flex;
+  margin: 0;
+  min-inline-size: 0;
+  border-inline: 0;
+  border-block-start: 0;
   flex-wrap: wrap;
   column-gap: 14px;
   padding: 0 2px;
@@ -204,4 +208,13 @@ button.name {
 
 .icon[aria-pressed="true"] {
   color: var(--color-secret-text);
+}
+
+.hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }

@@ -104,7 +104,8 @@ export function CompendiumTab({
         aria-label={t('tabletop.compendium.search')}
         onChange={(event) => setQuery(event.currentTarget.value)}
       />
-      <div className={styles.filters} role="group" aria-label={t('tabletop.compendium.sections')}>
+      <fieldset className={styles.filters}>
+        <legend className={styles.hidden}>{t('tabletop.compendium.sections')}</legend>
         {[
           { key: ALL, label: t('tabletop.compendium.all') },
           ...sections,
@@ -114,7 +115,7 @@ export function CompendiumTab({
             {each.label}
           </button>
         ))}
-      </div>
+      </fieldset>
       {section === BOOKS ? (
         bookList.length === 0 ? (
           <p className={styles.muted}>{t('library.empty')}</p>
