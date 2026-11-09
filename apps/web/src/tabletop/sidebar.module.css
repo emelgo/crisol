@@ -146,29 +146,28 @@
   scrollbar-width: thin;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .body {
-    animation: in 0.16s ease-out;
-  }
+/* Siempre, también con «menos movimiento» (docs/diseno.md) */
+.body {
+  animation: in 0.16s ease-out;
+}
 
-  @keyframes in {
-    from {
-      opacity: 0;
-      transform: translateY(4px);
-    }
+@keyframes in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
   }
+}
 }
 
 /* Lo de dentro no encoge para caber: el panel se desplaza */
 .body > * {
-  flex-shrink: 0;
+flex-shrink: 0;
 }
 
 .hidden {
-  position: absolute;
-  inline-size: 1px;
-  block-size: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
+position: absolute;
+inline-size: 1px;
+block-size: 1px;
+overflow: hidden;
+clip-path: inset(50%);
+white-space: nowrap;

@@ -79,15 +79,14 @@
   color: var(--color-brand);
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .toast {
-    animation: rise 0.18s ease-out;
-  }
+/* Siempre, también con «menos movimiento» (docs/diseno.md) */
+.toast {
+  animation: rise 0.18s ease-out;
+}
 
-  @keyframes rise {
-    from {
-      opacity: 0;
-      transform: translateY(6px);
-    }
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
   }
 }
