@@ -28,6 +28,7 @@ test('una tabla del máster: sus filas, tirar en una campaña y lo que salió, e
   await expect(page.getByText('Ahora')).toBeVisible()
   await page.screenshot({ path: test.info().outputPath('tabla.png') })
   await page.locator('[data-tour="dados"]').click()
-  const log = page.getByRole('complementary', { name: 'Dados' })
+  await page.getByRole('complementary', { name: 'Dados' }).getByRole('button', { name: 'Historial' }).click()
+  const log = page.getByRole('complementary', { name: 'Historial' })
   await expect(log.getByText(/^(Lobos|Bandidos|Nada)$/)).toBeVisible()
 })

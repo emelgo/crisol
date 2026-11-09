@@ -6,6 +6,7 @@ import {
   freshOwner,
   gotoLive,
   newPlayer,
+  openCampaign,
   signOut,
   skipTours
 } from './ayudas.ts'
@@ -81,8 +82,9 @@ test('al salir no queda nada del máster en la pestaña, tampoco para la jugador
   await expect(page.getByRole('button', { name: 'Ajustes de La Marca' })).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Historial', exact: true })).toHaveCount(0)
   await release()
-  await page.getByRole('link', { name: 'La Marca' }).click()
+  await openCampaign(page, 'La Marca')
   await expect(page.getByRole('heading', { level: 1, name: 'La Marca' })).toBeVisible()
+  await page.getByText('La campaña: La Marca').click()
   await expect(page.getByRole('list', { name: 'Miembros' }).getByRole('listitem')).toHaveCount(2)
   await expect(page.getByLabel('Enlace de invitación')).toHaveCount(0)
 })

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { campaignLink, import5e, newPlayer } from './ayudas.ts'
+import { campaignLink, import5e, newPlayer, openCompendiumWindow } from './ayudas.ts'
 
 test('el compendio y la partida para los jugadores: dos goblins a la vista y un jefe oculto; el máster lo enseña, oculta las criaturas del compendio y revela una espada del mundo (docs/specs/compendio-jugadores.md)', async ({
   page,
@@ -42,8 +42,8 @@ test('el compendio y la partida para los jugadores: dos goblins a la vista y un 
   await expect(ana.getByRole('region', { name: 'Únicas' })).toContainText('Jefe')
 
   // En los ajustes del compendio oculta las criaturas; a ella se le van del compendio
-  await page.goto(`/mundos/${worldId}/campanas/${campaignId}/compendio`)
-  await page.getByRole('button', { name: 'Ajustes del compendio' }).click()
+  const compendium = await openCompendiumWindow(page, `/mundos/${worldId}/campanas/${campaignId}`)
+  await compendium.getByRole('button', { name: 'Ajustes del compendio' }).click()
   const settings = page.getByRole('dialog', { name: 'Ajustes del compendio' })
   const creatures = settings.getByRole('switch', { name: 'Criaturas' })
   await creatures.click()

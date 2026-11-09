@@ -1,84 +1,106 @@
 import AxeBuilder from '@axe-core/playwright'
-import { expect, test } from '@playwright/test'
+import { expect, type Page, test } from '@playwright/test'
 import { campaignLink, newPlayer, settled } from './ayudas.ts'
 
-test('el máster abre los dados en su campaña y tira: la tirada se explica y se anuncia el total', async ({ page }) => {
-  await campaignLink(page)
-  // El d20 flotante (fuera de la barra), en la esquina
-  const dados = page.locator('[data-tour="dados"]')
-  await expect(page.getByRole('navigation', { name: 'Secciones' }).getByRole('button', { name: 'Dados' })).toHaveCount(
-    0
-  )
-  await dados.click()
-  const dice = page.getByRole('complementary', { name: 'Dados' })
-  await expect(dice).toBeVisible()
-  await expect(dados).toHaveAttribute('aria-expanded', 'true')
-  const field = dice.getByRole('textbox', { name: 'Tirada' })
-  await field.fill('1d20+5 # Iniciativa')
-  await expect(dice.getByText('1d20 + 5 · Iniciativa')).toBeVisible()
-  await field.press('Enter')
-  await expect(page.getByRole('status').filter({ hasText: 'Iniciativa' })).toHaveText(/^Iniciativa: \d+$/)
-
+/** Que axe no encuentre fallos críticos ni graves en lo que se indica, en claro y en oscuro */
+async function accessible(page: Page, include: string) {
   for (const colorScheme of ['light', 'dark'] as const) {
     await page.emulateMedia({ colorScheme })
     const { violations } = await new AxeBuilder({ page })
-      .include('[data-tour="ficha-dados"]')
+      .include(include)
       .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
       .analyze()
     const serious = violations.filter((v) => v.impact === 'critical' || v.impact === 'serious')
     expect(serious, `${colorScheme}: ${JSON.stringify(serious.map((v) => [v.id, v.nodes[0]?.target]))}`).toEqual([])
   }
+}
 
-  // Se cierra con su X, el d20 lo dice y el foco vuelve a él
-  await dice.getByRole('button', { name: 'Cerrar los dados' }).click()
+test('el máster abre los dados en su campaña, junta unos cuantos y tira: se vacían, se cierran y se anuncia el total', async ({
+  page
+}) => {
+  await campaignLink(page)
+  // El d20 flotante (fuera de la barra), en la esquina
+  const dados = page.locator('[data-tour="dados"]')
+  await dados.click()
+  const dice = page.getByRole('complementary', { name: 'Dados' })
+  await expect(dice).toBeVisible()
+  await expect(dados).toHaveAttribute('aria-expanded', 'true')
+  // Pulsar suma; el botón derecho quita
+  await dice.getByRole('button', { name: 'Añadir un d8' }).click()
+  await dice.getByRole('button', { name: 'Añadir un d8 (van 1)' }).click()
+  await dice.getByRole('button', { name: 'Añadir un d4' }).click()
+  await dice.getByRole('button', { name: 'Añadir un d8 (van 2)' }).click({ button: 'right' })
+  await dice.getByRole('button', { name: 'Sumar uno' }).click()
+  await dice.getByRole('button', { name: 'Ventaja', exact: true }).click()
+  await expect(dice.getByRole('list', { name: 'En la tirada' }).getByRole('listitem')).toHaveText([
+    '1d8',
+    '1d4',
+    '1d20'
+  ])
+  await page.screenshot({ path: test.info().outputPath('dados-juntados.png') })
+  await accessible(page, '[data-tour="ficha-dados"]')
+  await dice.getByRole('button', { name: 'Tirar' }).click()
+  await expect(dice).toBeHidden()
+  await expect(page.getByRole('status').filter({ hasText: '1d8+1d4+2d20kh1+1' })).toHaveText(
+    /^1d8\+1d4\+2d20kh1\+1: \d+$/
+  )
+  // El resultado, sobre el d20 cuando paran los dados
+  await expect(page.getByRole('list', { name: 'Últimas tiradas' })).toContainText('1d8+1d4+2d20kh1+1', {
+    timeout: 8000
+  })
+
+  // Escribirla: se explica mientras se escribe; Escape los cierra y el foco vuelve al d20
+  await dados.click()
+  await dice.getByRole('button', { name: 'Escribir la tirada' }).click()
+  const field = dice.getByRole('textbox', { name: 'Tirada' })
+  await field.fill('1d20+5 # Iniciativa')
+  await expect(dice.getByText('1d20 + 5 · Iniciativa')).toBeVisible()
+  await accessible(page, '[data-tour="ficha-dados"]')
+  await page.keyboard.press('Escape')
   await expect(dice).toBeHidden()
   await expect(dados).toHaveAttribute('aria-expanded', 'false')
   await expect(dados).toBeFocused()
 })
 
-test('el máster y una jugadora en dos pestañas: la pública llega al momento; la «al máster», marcada para él', async ({
+test('el máster y una jugadora en dos pestañas: la pública le sale al momento; la «al máster», marcada para él', async ({
   page,
   browser
 }) => {
   const link = await campaignLink(page)
   const ana = await newPlayer(browser, link, 'Ana')
-  const open = async (who: typeof page) => {
+  const write = async (who: Page, formula: string) => {
     await who.locator('[data-tour="dados"]').click()
     const dice = who.getByRole('complementary', { name: 'Dados' })
-    await expect(dice).toBeVisible()
+    await dice.getByRole('button', { name: 'Escribir la tirada' }).click()
+    await dice.getByRole('textbox', { name: 'Tirada' }).fill(formula)
     return dice
   }
-  const master = await open(page)
-  const player = await open(ana)
 
-  // Él tira para todos: a ella le llega sin recargar
-  await master.getByRole('textbox', { name: 'Tirada' }).fill('1d20+5 # Iniciativa')
-  await master.getByRole('button', { name: 'Tirar' }).click()
-  const forAna = player.getByRole('list', { name: 'Tiradas de la campaña' }).getByRole('listitem').last()
-  await expect(forAna).toContainText('Iniciativa')
-  await expect(forAna).toContainText(/Enrique|Ana/)
+  // Él tira para todos: a ella le sale sobre el d20 sin recargar
+  await (await write(page, '1d20+5 # Iniciativa')).getByRole('button', { name: 'Tirar' }).click()
+  await expect(ana.getByRole('list', { name: 'Últimas tiradas' })).toContainText(/Enrique · Iniciativa/, {
+    timeout: 8000
+  })
 
-  // Ella tira «al máster»: a él le llega marcada, y a ella también
-  await player.getByText('Al máster', { exact: true }).click()
-  await player.getByRole('textbox', { name: 'Tirada' }).fill('1d20+7 # Sigilo')
-  await player.getByRole('textbox', { name: 'Tirada' }).press('Enter')
-  const forMaster = master.getByRole('list', { name: 'Tiradas de la campaña' }).getByRole('listitem').last()
-  await expect(forMaster).toContainText('Sigilo')
-  await expect(forMaster).toContainText('Al máster')
-  await expect(player.getByRole('list', { name: 'Tiradas de la campaña' }).getByRole('listitem').last()).toContainText(
-    'Tú'
-  )
+  // Ella tira solo para el máster (se recuerda): a él le sale «para ti»
+  const hers = await write(ana, '1d20+7 # Sigilo')
+  await hers.getByRole('button', { name: /^Quién la ve/ }).click()
+  await hers.getByRole('menuitemradio', { name: 'Máster' }).click()
+  await hers.getByRole('textbox', { name: 'Tirada' }).press('Enter')
+  const forMaster = page
+    .getByRole('list', { name: 'Últimas tiradas' })
+    .getByRole('listitem')
+    .filter({ hasText: 'Sigilo' })
+  await expect(forMaster).toContainText('para ti', { timeout: 8000 })
 
-  // El desglose, al desplegar
-  await forMaster.getByRole('button', { name: 'Desglose' }).click()
-  await expect(forMaster).toContainText(/1d20\+7 → \[\d+\] \+ 7 = \d+/)
-
-  const { violations } = await new AxeBuilder({ page })
-    .include('[data-tour="ficha-dados"]')
-    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
-    .analyze()
-  const serious = violations.filter((v) => v.impact === 'critical' || v.impact === 'serious')
-  expect(serious, JSON.stringify(serious.map((v) => [v.id, v.nodes[0]?.target]))).toEqual([])
+  // En su historial (en la Mesa, una ventana), con su marca
+  await forMaster.getByRole('button', { name: /Abrir el historial/ }).click()
+  const history = page.getByRole('dialog', { name: 'Historial' })
+  const last = history.getByRole('list', { name: 'Tiradas de la campaña' }).getByRole('listitem').last()
+  await expect(last).toContainText('Sigilo')
+  await expect(last).toContainText('Al máster')
+  await expect(last).toContainText('Ana')
+  await accessible(page, '[data-window]')
   await ana.close()
 })
 
@@ -100,25 +122,24 @@ test('en el móvil de la jugadora, el d20 abre los dados en una hoja que sube de
       return [Math.round((box?.y ?? 0) + (box?.height ?? 0)), Math.round(box?.width ?? 0)]
     })
     .toEqual([844, 390])
-  await dice.getByRole('textbox', { name: 'Tirada' }).fill('2d6+3 # Daño')
-  await dice.getByRole('button', { name: 'Tirar' }).click()
-  await expect(dice.getByRole('list', { name: 'Tiradas de la campaña' }).getByRole('listitem').last()).toContainText(
-    'Daño'
-  )
-  // La tirada nueva entra con una animación (sube y aparece): el contraste se mide cuando acaba, no a medias
+  await dice.getByRole('button', { name: 'Añadir un d6' }).click()
+  await dice.getByRole('button', { name: 'Añadir un d6 (van 1)' }).click()
   await settled(page)
-  for (const colorScheme of ['light', 'dark'] as const) {
-    await page.emulateMedia({ colorScheme })
-    const { violations } = await new AxeBuilder({ page })
-      .include('[data-tour="ficha-dados"]')
-      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
-      .analyze()
-    const serious = violations.filter((v) => v.impact === 'critical' || v.impact === 'serious')
-    expect(serious, `${colorScheme}: ${JSON.stringify(serious.map((v) => [v.id, v.nodes[0]?.target]))}`).toEqual([])
-  }
-  // Escape la cierra y el foco vuelve al d20
-  await page.keyboard.press('Escape')
+  await accessible(page, '[data-tour="ficha-dados"]')
+  await dice.getByRole('button', { name: 'Tirar' }).click()
   await expect(dice).toBeHidden()
+  // El resultado sobre el d20; pulsarlo abre el historial, también en una hoja
+  const notice = page.getByRole('list', { name: 'Últimas tiradas' }).getByRole('listitem').filter({ hasText: '2d6' })
+  await notice.getByRole('button', { name: /Abrir el historial/ }).click({ timeout: 10_000 })
+  const history = page.getByRole('dialog', { name: 'Historial' })
+  await expect(history.getByRole('list', { name: 'Tiradas de la campaña' }).getByRole('listitem').last()).toContainText(
+    '2d6'
+  )
+  await settled(page)
+  await accessible(page, '[role="dialog"]')
+  // Escape lo cierra y el foco vuelve al d20
+  await page.keyboard.press('Escape')
+  await expect(history).toBeHidden()
   await expect(page.locator('[data-tour="dados"]')).toBeFocused()
   await ana.close()
 })
@@ -135,11 +156,12 @@ test('los dados 3D caen al tirar: la escena se carga aparte, solo la primera vez
   const dice = page.getByRole('complementary', { name: 'Dados' })
   await expect(dice).toBeVisible()
   expect(scripts.some((path) => /\/scene-[^/]+\.js$/.test(path))).toBe(false)
+  await dice.getByRole('button', { name: 'Escribir la tirada' }).click()
   await dice.getByRole('textbox', { name: 'Tirada' }).fill('1d20+2d6+1d8 # Golpe')
   await dice.getByRole('button', { name: 'Tirar' }).click()
   await expect.poll(() => scripts.some((path) => /\/scene-[^/]+\.js$/.test(path))).toBe(true)
-  // Al pararse, el total
-  await expect(page.getByTestId('total-tirada')).toBeVisible({ timeout: 6000 })
+  // Al pararse, el resultado sobre el d20
+  await expect(page.getByRole('list', { name: 'Últimas tiradas' })).toContainText('Golpe', { timeout: 8000 })
   // La física, en su worker: la página no tuvo que simularla (ni cargó la de respaldo)
   expect(workers.some((path) => /\/throw\.worker-[^/]+\.js$/.test(path))).toBe(true)
   expect(scripts.some((path) => /\/throw-[^/]+\.js$/.test(path))).toBe(false)
@@ -169,10 +191,14 @@ test('una tirada escrita en una página: con «/» se pone y se cambia, al pulsa
   await box.getByRole('button', { name: 'Listo' }).click()
   await expect(box).toBeHidden()
 
-  // Con la ficha de dados abierta, pulsarla tira en la campaña
-  await page.locator('[data-tour="dados"]').click()
+  // Pulsarla tira en la campaña: el resultado, sobre el d20; y en el historial
   await body.getByRole('button', { name: 'Tirar 2d6+3 · Trampa' }).click()
-  const log = page.getByRole('list', { name: 'Tiradas de la campaña' })
+  await expect(page.getByRole('list', { name: 'Últimas tiradas' })).toContainText('Trampa', { timeout: 8000 })
+  await page.locator('[data-tour="dados"]').click()
+  await page.getByRole('complementary', { name: 'Dados' }).getByRole('button', { name: 'Historial' }).click()
+  const log = page
+    .getByRole('complementary', { name: 'Historial' })
+    .getByRole('list', { name: 'Tiradas de la campaña' })
   await expect(log.getByRole('listitem').last()).toContainText('Trampa')
   await expect(log.getByRole('listitem').last()).toContainText('2d6+3')
 

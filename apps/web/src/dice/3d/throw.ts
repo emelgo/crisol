@@ -22,8 +22,14 @@ export interface Thrown {
 /** Pasos de 1/120 s (más finos que los fotogramas: choques más limpios); se graba uno de cada dos */
 const STEP = 1 / 120
 const SUBSTEPS = 2
-/** Lo que se enseña: como mucho, 2,5 s de tirada */
+/** Lo que se enseña: como mucho, 2,5 s de tirada (a 60 fotogramas por segundo) */
 export const MAX_FRAMES = 150
+
+/**
+ * A qué ritmo se reproduce una tirada de tantos fotogramas: la suya; si pasa de 2,5 s, algo más deprisa, entera y suave
+ * (la bandeja interpola entre fotogramas), en vez de saltarse fotogramas, que se veía a tirones
+ */
+export const playbackRate = (frames: number) => Math.max(1, (frames - 1) / (MAX_FRAMES - 1))
 /** Lo que se simula: hasta que se paren (casi siempre antes de 2,5 s; si no, se enseña más deprisa) */
 const MAX_STEPS = 720
 /**
@@ -159,16 +165,9 @@ export function throwDice(
     }
   }
 
-  // Si tardaron más de 2,5 s, se enseña más deprisa: los mismos fotogramas para todos, para que no se descompasen
-  const total = frames[0]?.length ?? 0
-  const shown =
-    total > MAX_FRAMES
-      ? Array.from({ length: MAX_FRAMES }, (_, k) => Math.round((k * (total - 1)) / (MAX_FRAMES - 1)))
-      : null
   // Con todos quietos, los números de cada uno para que arriba quede lo que dijo el servidor
   return dice.map((die, i) => {
-    const all = frames[i] ?? []
-    const path = shown ? shown.flatMap((k) => (all[k] ? [all[k]] : [])) : all
+    const path = frames[i] ?? []
     const last = path.at(-1)
     const labels = labelsFor(die.kind)
     return {

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { simulator } from './simulate.ts'
 import { type DieKind, faceNormal, labelsFor, readFace, relabel, rotate, SOLIDS, solidOf } from './solids.ts'
-import { MAX_FRAMES, throwDice } from './throw.ts'
+import { MAX_FRAMES, playbackRate, throwDice } from './throw.ts'
 
 const KINDS: DieKind[] = [4, 6, 8, 10, 12, 20, 'T', 'F']
 
@@ -51,7 +51,7 @@ describe('que caiga lo que dijo el servidor', () => {
         if (!die) throw new Error('sin dado')
         // Quieto de verdad y apoyado en una cara (la que se lee, plana arriba o abajo); en pantalla, 2,5 s como mucho
         expect(die.settled, String(kind)).toBe(true)
-        expect(die.frames.length).toBeLessThanOrEqual(MAX_FRAMES)
+        expect((die.frames.length - 1) / playbackRate(die.frames.length)).toBeLessThanOrEqual(MAX_FRAMES - 1)
         const last = die.frames.at(-1)
         if (!last) throw new Error('sin fotogramas')
         const face = readFace(kind, last.quaternion)
@@ -67,7 +67,9 @@ describe('que caiga lo que dijo el servidor', () => {
       for (const kind of [12, 20] as const) {
         const [die] = throwDice([{ kind, label: '7' }], { seed })
         expect(die?.settled, `d${kind}, semilla ${seed}`).toBe(true)
-        expect(die?.frames.length).toBeLessThanOrEqual(MAX_FRAMES)
+        expect(((die?.frames.length ?? 0) - 1) / playbackRate(die?.frames.length ?? 0)).toBeLessThanOrEqual(
+          MAX_FRAMES - 1
+        )
       }
     }
   })

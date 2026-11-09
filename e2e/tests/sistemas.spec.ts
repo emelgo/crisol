@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises'
 import AxeBuilder from '@axe-core/playwright'
 import { expect, type Page, test } from '@playwright/test'
-import { createCampaign, createWorld, freshOwner, import5e, settled, toWorlds } from './ayudas.ts'
+import { createCampaign, createWorld, freshOwner, import5e, openCampaign, settled, toWorlds } from './ayudas.ts'
 
 /** Que axe no encuentre fallos críticos ni graves, en claro y en oscuro */
 async function accessible(page: Page, include: string) {
@@ -14,16 +14,15 @@ async function accessible(page: Page, include: string) {
   }
 }
 
-test('«Sistemas»: se hacen con la IA; subir un archivo roto y uno bueno, bajar uno vacío, abrir uno de serie y borrar', async ({
+test('«Sistemas»: se hacen con la IA; subir un archivo roto y uno bueno, bajar uno vacío y borrar', async ({
   page
 }) => {
   test.slow()
   await freshOwner(page)
   await page.getByRole('navigation', { name: 'Secciones' }).getByRole('link', { name: 'Sistemas' }).click()
   await expect(page.getByRole('heading', { level: 1, name: 'Sistemas' })).toBeVisible()
-  await expect(
-    page.getByRole('list', { name: 'De serie' }).getByRole('button', { name: 'En blanco', exact: true })
-  ).toBeVisible()
+  // Crisol viene vacío (ADR-0015): ninguno de serie
+  await expect(page.getByRole('list', { name: 'De serie' })).toHaveCount(0)
   await accessible(page, 'main')
 
   // «Sistema nuevo»: se hacen con la IA; aquí, un archivo roto dice qué falla y no se sube nada
@@ -77,15 +76,6 @@ test('«Sistemas»: se hacen con la IA; subir un archivo roto y uno bueno, bajar
   await expect(mine.getByRole('button', { name: 'Fronteras', exact: true })).toBeVisible()
   await expect(page).toHaveURL(/\/sistemas$/)
 
-  // Uno de serie: su ventana, con bajarlo y sus campañas, sin cambiarlo ni borrarlo
-  await page.getByRole('list', { name: 'De serie' }).getByRole('button', { name: 'En blanco', exact: true }).click()
-  const builtIn = page.getByRole('dialog', { name: 'En blanco' })
-  await expect(builtIn.getByRole('button', { name: 'Bajar' })).toBeVisible()
-  await expect(builtIn.getByLabel('Nombre')).toHaveCount(0)
-  await expect(builtIn.getByRole('button', { name: 'Borrar el sistema' })).toHaveCount(0)
-  await accessible(page, 'dialog')
-  await builtIn.getByRole('button', { name: 'Cerrar' }).click()
-
   // Borrar uno que no usa ninguna campaña
   await mine.getByRole('button', { name: 'Fronteras', exact: true }).click()
   const settings = page.getByRole('dialog', { name: 'Ajustes de Fronteras' })
@@ -96,7 +86,7 @@ test('«Sistemas»: se hacen con la IA; subir un archivo roto y uno bueno, bajar
   await expect(mine.getByRole('button')).toHaveText(['Sistema nuevo'])
 })
 
-test('elegir el sistema de una campaña: la ficha de dados propone su tirada por defecto', async ({ page }) => {
+test('elegir el sistema de una campaña: los dados, al escribir, proponen su tirada por defecto', async ({ page }) => {
   test.slow()
   await freshOwner(page)
   // Un sistema de 2d6, subido por la API (se hacen con la IA o se suben)
@@ -126,11 +116,11 @@ test('elegir el sistema de una campaña: la ficha de dados propone su tirada por
   // Guardado, «Guardar» se va; la ventana se cierra con su X
   await expect(dialog.getByRole('button', { name: 'Guardar' })).toBeHidden()
   await dialog.getByRole('button', { name: 'Cerrar' }).click()
-  await page.getByRole('link', { name: 'Los páramos', exact: true }).click()
+  await openCampaign(page, 'Los páramos')
   await page.locator('[data-tour="dados"]').click()
-  await expect(page.getByRole('complementary', { name: 'Dados' }).getByRole('textbox', { name: 'Tirada' })).toHaveValue(
-    '2d6'
-  )
+  const dice = page.getByRole('complementary', { name: 'Dados' })
+  await dice.getByRole('button', { name: 'Escribir la tirada' }).click()
+  await expect(dice.getByRole('textbox', { name: 'Tirada' })).toHaveValue('2d6')
 })
 
 test('criterio 5: el 5e en una campaña, con sus ediciones, lo que está en las dos y sus reglas', async ({ page }) => {

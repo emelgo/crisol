@@ -4,6 +4,7 @@
  * cuando se tira por primera vez
  */
 import {
+  ACESFilmicToneMapping,
   AmbientLight,
   BufferGeometry,
   CanvasTexture,
@@ -13,14 +14,18 @@ import {
   Mesh,
   MeshStandardMaterial,
   OrthographicCamera,
+  PCFSoftShadowMap,
+  PlaneGeometry,
+  Quaternion,
   Scene,
+  ShadowMaterial,
   SRGBColorSpace,
   WebGLRenderer
 } from 'three'
 import type { FallingDie } from '../falling.ts'
 import { simulator } from './simulate.ts'
 import { type DieKind, faceNormal, type Solid, sizeOf, solidOf, TRAY, type Vec } from './solids.ts'
-import type { Thrown } from './throw.ts'
+import { playbackRate, type Thrown } from './throw.ts'
 
 export interface DiceScene {
   play(dice: readonly FallingDie[], color: string, onLanded: () => void): void
@@ -148,16 +153,42 @@ interface Throw {
   start: number
   /** Todos sus dados tienen los mismos fotogramas */
   frames: number
+  /** A qué ritmo se reproduce (1, o algo más si la tirada fue larga) y cuánto dura en pantalla, en ms */
+  rate: number
+  duration: number
 }
 
 export function createScene(canvas: HTMLCanvasElement): DiceScene {
-  const renderer = new WebGLRenderer({ canvas, alpha: true, antialias: true })
+  const renderer = new WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: 'high-performance' })
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+  // Como en el Crisol antiguo: tono de cine y sombras suaves bajo los dados (se ven apoyados, no flotando)
+  renderer.toneMapping = ACESFilmicToneMapping
+  renderer.toneMappingExposure = 1.05
+  renderer.shadowMap.enabled = true
+  renderer.shadowMap.type = PCFSoftShadowMap
   const scene = new Scene()
-  scene.add(new AmbientLight(0xffffff, 1.2))
-  const sun = new DirectionalLight(0xffffff, 1.8)
+  scene.add(new AmbientLight(0xffffff, 1.1))
+  const sun = new DirectionalLight(0xffffff, 1.9)
   sun.position.set(-4, 12, 6)
+  sun.castShadow = true
+  sun.shadow.mapSize.set(2048, 2048)
+  sun.shadow.bias = -0.0004
+  sun.shadow.normalBias = 0.02
+  Object.assign(sun.shadow.camera, {
+    left: -TRAY.halfWidth - 2,
+    right: TRAY.halfWidth + 2,
+    top: TRAY.halfDepth + 2,
+    bottom: -TRAY.halfDepth - 2,
+    near: 0.5,
+    far: 40
+  })
+  sun.shadow.camera.updateProjectionMatrix()
   scene.add(sun)
+  // El tapete: invisible, solo recoge las sombras
+  const floor = new Mesh(new PlaneGeometry(200, 200), new ShadowMaterial({ color: 0x000000, opacity: 0.38 }))
+  floor.rotation.x = -Math.PI / 2
+  floor.receiveShadow = true
+  scene.add(floor)
   // Desde arriba y un poco de lado, con toda la bandeja a la vista
   const camera = new OrthographicCamera(-1, 1, 1, -1, 0.1, 100)
   camera.position.set(0, 20, 7)
@@ -200,17 +231,31 @@ export function createScene(canvas: HTMLCanvasElement): DiceScene {
     for (const texture of t.textures) texture.dispose()
   }
 
+  // Entre dos fotogramas de la física, la posición y el giro se mezclan: en cada refresco de la pantalla (60, 120 o
+  // 144 por segundo), donde toca de verdad. Sin eso, saltaba de fotograma en fotograma y se veía a tirones
+  const qa = new Quaternion()
+  const qb = new Quaternion()
   const draw = (now: number) => {
     throws = throws.filter((t) => {
       const elapsed = now - t.start
-      const index = Math.min(t.frames - 1, Math.floor(elapsed / FRAME_MS))
-      const landedFor = elapsed - t.frames * FRAME_MS
+      const at = Math.min(t.frames - 1, (elapsed / FRAME_MS) * t.rate)
+      const a = Math.floor(at)
+      const b = Math.min(t.frames - 1, a + 1)
+      const k = at - a
+      const landedFor = elapsed - t.duration
       const fade = landedFor > STAY_MS ? 1 - (landedFor - STAY_MS) / FADE_MS : 1
       for (const { mesh, materials, thrown, die } of t.dice) {
-        const frame = thrown.frames[index]
-        if (frame) {
-          mesh.position.set(frame.position[0], frame.position[1], frame.position[2])
-          mesh.quaternion.set(frame.quaternion[0], frame.quaternion[1], frame.quaternion[2], frame.quaternion[3])
+        const from = thrown.frames[a]
+        const to = thrown.frames[b] ?? from
+        if (from && to) {
+          mesh.position.set(
+            from.position[0] + (to.position[0] - from.position[0]) * k,
+            from.position[1] + (to.position[1] - from.position[1]) * k,
+            from.position[2] + (to.position[2] - from.position[2]) * k
+          )
+          qa.set(from.quaternion[0], from.quaternion[1], from.quaternion[2], from.quaternion[3])
+          qb.set(to.quaternion[0], to.quaternion[1], to.quaternion[2], to.quaternion[3])
+          mesh.quaternion.slerpQuaternions(qa, qb, k)
         }
         for (const material of materials) {
           material.opacity = Math.max(0, fade) * (landedFor > 0 && !die.kept ? 0.45 : 1)
@@ -240,7 +285,16 @@ export function createScene(canvas: HTMLCanvasElement): DiceScene {
       }
       return found
     }
-    const t: Throw = { dice: [], textures: [], start: performance.now(), frames: thrown[0]?.frames.length ?? 0 }
+    const frames = thrown[0]?.frames.length ?? 0
+    const rate = playbackRate(frames)
+    const t: Throw = {
+      dice: [],
+      textures: [],
+      start: performance.now(),
+      frames,
+      rate,
+      duration: (Math.max(0, frames - 1) / rate) * FRAME_MS
+    }
     thrown.forEach((one, i) => {
       const die = dice[i]
       if (!die) return
@@ -260,6 +314,7 @@ export function createScene(canvas: HTMLCanvasElement): DiceScene {
           })
       )
       const mesh = new Mesh(geometry, materials)
+      mesh.castShadow = true
       scene.add(mesh)
       t.dice.push({ mesh, materials, thrown: one, die })
     })
@@ -275,7 +330,7 @@ export function createScene(canvas: HTMLCanvasElement): DiceScene {
     }
     throws.push(t)
     if (!raf) raf = requestAnimationFrame(draw)
-    return t.frames * FRAME_MS
+    return t.duration
   }
 
   return {
@@ -293,6 +348,8 @@ export function createScene(canvas: HTMLCanvasElement): DiceScene {
       for (const t of throws) free(t)
       throws = []
       for (const { geometry } of shapes.values()) geometry.dispose()
+      floor.geometry.dispose()
+      floor.material.dispose()
       shapes.clear()
       renderer.dispose()
     }

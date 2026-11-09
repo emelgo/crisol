@@ -61,9 +61,10 @@ test('las criaturas en juego: tres goblins desde el compendio, su hoja, tirar su
   await accessible(page)
 
   // Goblin 1 (entero) y Goblin 3 (mitad)
-  // Aplicar ese daño desde el registro (la ficha de dados del d20)
+  // Aplicar ese daño desde el historial de tiradas (en el d20; en la Mesa, una ventana)
   await page.getByRole('button', { name: 'Dados' }).click()
-  const rolls = page.getByRole('complementary', { name: 'Dados' })
+  await page.getByRole('complementary', { name: 'Dados' }).getByRole('button', { name: 'Historial' }).click()
+  const rolls = page.getByRole('dialog', { name: 'Historial' })
   await rolls.getByRole('button', { name: 'Aplicar' }).last().click()
   const apply = page.getByRole('dialog', { name: /^Aplicar \d+ de daño/ })
   await apply.getByRole('checkbox', { name: /Goblin 1/ }).check()

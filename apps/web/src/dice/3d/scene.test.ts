@@ -9,9 +9,16 @@ vi.mock('three', async (original) => {
   const three = await original<typeof import('three')>()
   class FakeRenderer {
     setPixelRatio() {}
+    shadowMap = { enabled: false, type: 0 }
+    toneMapping = 0
+    toneMappingExposure = 1
     setSize() {}
     render(scene: InstanceType<typeof three.Scene>) {
-      state.drawn.push(scene.children.filter((child) => child instanceof three.Mesh).length)
+      // Los dados (no el tapete, que solo recoge las sombras)
+      state.drawn.push(
+        scene.children.filter((child) => child instanceof three.Mesh && !(child.material instanceof three.ShadowMaterial))
+          .length
+      )
     }
     dispose() {}
   }
@@ -109,8 +116,8 @@ describe('la escena de los dados', () => {
     expect(state.stopped).toBe(1)
     // Las seis caras, compartidas por los tres
     expect(textures).toHaveBeenCalledTimes(6)
-    // La forma del d6, la misma para los tres
-    expect(geometries).toHaveBeenCalledTimes(1)
+    // La forma del d6, la misma para los tres, y el tapete de las sombras
+    expect(geometries).toHaveBeenCalledTimes(2)
     const renders = state.drawn.length
     scene.play(d6(2), '#3a7bd5', landed)
     await vi.advanceTimersByTimeAsync(GONE_MS)

@@ -29,6 +29,8 @@ test('el máster ve a la jugadora y la expulsa cambiando el enlace: ya no ve la 
 test('la jugadora ve a sus compañeros y deja la campaña; el máster ya no la ve', async ({ page, browser }) => {
   const link = await campaignLink(page)
   const player = await newPlayer(browser, link)
+  // Quién juega, en «La campaña», bajo su ficha
+  await player.getByText('La campaña: La Marca').click()
   const members = player.getByRole('list', { name: 'Miembros' })
   await expect(members.getByRole('listitem')).toHaveText([/Enrique.*Máster/, /Jugadora.*Jugador/])
   await expect(player.getByRole('button', { name: /^Expulsar/ })).toHaveCount(0)

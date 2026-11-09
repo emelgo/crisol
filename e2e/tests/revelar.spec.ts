@@ -69,8 +69,12 @@ test('revelar en partida: el máster revela un secreto a Lía; a su jugadora le 
   await expect(main.getByRole('region', { name: 'Secreto' })).toContainText('Nuevo')
 
   // «Lo que sabe el grupo»: lo enseña y lo oculta otra vez; a ella se le va
-  await page.goto(`/mundos/${worldId}/campanas/${campaignId}`)
-  await page.getByRole('navigation', { name: 'Secciones' }).getByRole('button', { name: 'Revelado' }).click()
+  // En la Mesa, su pestaña Páginas
+  await page.goto(`/mundos/${worldId}/campanas/${campaignId}?panel=paginas`)
+  await page
+    .getByRole('complementary', { name: 'Panel de la mesa' })
+    .getByRole('button', { name: 'Lo que sabe el grupo' })
+    .click()
   const group = page.getByRole('dialog', { name: 'Lo que sabe el grupo' })
   await expect(group).toContainText('El pacto de Varn')
   await expect(group).toContainText('Lía')

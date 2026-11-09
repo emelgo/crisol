@@ -10,8 +10,14 @@ import { e2eDatabaseUrl } from '../servidor.ts'
 export const owner = { name: 'Enrique', email: 'enrique@crisol.test', password: 'una-clave-larga' }
 
 /** Base de datos vacía y el propietario con su cuenta recién creada y la sesión abierta en `page` */
+/** La campaña va sola, sin la barra de la izquierda (como en Foundry): para lo de la barra, a Mis mundos */
+async function leaveCampaign(page: Page) {
+  if (/\/campanas\/[^/]+/.test(new URL(page.url()).pathname)) await page.goto('/mundos')
+}
+
 /** El menú de la cuenta: se abre con el nombre, en la barra */
 async function openAccountMenu(page: Page) {
+  await leaveCampaign(page)
   const account = page.getByRole('navigation', { name: 'Cuenta' })
   await account.locator('button[aria-expanded="false"]').click()
   return account
@@ -44,6 +50,7 @@ export function sections(page: Page) {
 
 /** Abre Historial o Papelera, desde abajo en la barra (del mundo en el que se esté); devuelve la ventana */
 export async function openWindow(page: Page, name: 'Historial' | 'Papelera') {
+  await leaveCampaign(page)
   await page.getByRole('button', { name, exact: true }).click()
   const window = page.getByRole('dialog', { name, exact: true })
   await expect(window).toBeVisible()
@@ -170,6 +177,7 @@ export async function createWorld(page: Page, name: string) {
 
 /** A Mis mundos con la llama, sin recargar (no corta el canal en tiempo real) */
 export async function toWorlds(page: Page) {
+  await leaveCampaign(page)
   if (new URL(page.url()).pathname !== '/mundos') await sections(page).getByRole('link', { name: 'Crisol' }).click()
   await expect(page.getByRole('heading', { level: 1, name: 'Mis mundos' })).toBeVisible()
 }

@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
-import { campaignLink, import5e, settled } from './ayudas.ts'
+import { campaignLink, import5e, openCompendiumWindow, settled } from './ayudas.ts'
 
 test('una tabla del mundo: el máster la crea con sus filas, tira dos veces sin que repita y la reinicia', async ({
   page
@@ -11,12 +11,12 @@ test('una tabla del mundo: el máster la crea con sus filas, tira dos veces sin 
   const systemId = await import5e(page)
   const chosen = await page.request.post('/api/actions/updateCampaign', { data: { campaignId, system: systemId } })
   expect(chosen.status()).toBe(200)
-  await page.getByRole('navigation', { name: 'Secciones' }).getByRole('link', { name: 'Compendio' }).click()
-  await expect(page.getByRole('heading', { level: 1, name: 'Compendio' })).toBeVisible()
+  // El compendio entero, en su ventana de la Mesa
+  const compendium = await openCompendiumWindow(page)
 
   // Crearla en el mundo: «Tabla» está aunque el sistema no la declare
-  await page.getByRole('button', { name: 'Nueva entrada' }).click()
-  const editor = page.getByRole('dialog')
+  await compendium.getByRole('button', { name: 'Nueva entrada' }).click()
+  const editor = page.getByRole('dialog', { name: 'Nueva entrada' })
   await editor.getByLabel('Dónde').selectOption({ label: 'En el mundo' })
   await editor.getByLabel('Tipo').selectOption({ label: 'Tabla' })
   await editor.getByLabel('Nombre').fill('Encuentros en el camino')
@@ -29,7 +29,7 @@ test('una tabla del mundo: el máster la crea con sus filas, tira dos veces sin 
   await editor.getByRole('button', { name: 'Guardar' }).click()
   await expect(editor).toBeHidden()
 
-  const article = page.getByRole('article', { name: 'Encuentros en el camino' })
+  const article = compendium.getByRole('article', { name: 'Encuentros en el camino' })
   const rows = article.getByRole('region', { name: 'Filas de «Encuentros en el camino»' })
   await expect(rows.getByRole('row')).toHaveCount(3)
   const roll = rows.getByRole('button', { name: 'Tirar 1d2 en «Encuentros en el camino»' })
@@ -58,7 +58,10 @@ test('una tabla del mundo: el máster la crea con sus filas, tira dos veces sin 
   for (const colorScheme of ['light', 'dark'] as const) {
     await page.emulateMedia({ colorScheme })
     await settled(page)
-    const { violations } = await new AxeBuilder({ page }).include('main').withTags(['wcag2a', 'wcag2aa']).analyze()
+    const { violations } = await new AxeBuilder({ page })
+      .include('[data-window]')
+      .withTags(['wcag2a', 'wcag2aa'])
+      .analyze()
     const serious = violations.filter((v) => v.impact === 'critical' || v.impact === 'serious')
     expect(serious.map((v) => `${colorScheme} ${v.id}: ${v.help} ${v.nodes[0]?.target}`)).toEqual([])
   }

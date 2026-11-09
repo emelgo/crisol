@@ -11,6 +11,7 @@ import {
   createWorld,
   fillNewAccount,
   newPlayer,
+  openCampaign,
   openProfile,
   openSettings,
   openWindow,
@@ -88,7 +89,7 @@ test('arranque, perfil, mundos y sus ajustes, campañas, avisos, historial, pape
     await check()
     await createCampaign(page, 'La Marca')
     await check()
-    await page.getByRole('link', { name: 'La Marca', exact: true }).click()
+    await openCampaign(page, 'La Marca', 'campana')
     await expect(page.getByLabel('Enlace de invitación')).toBeVisible()
     const invitationLink = await page.getByLabel('Enlace de invitación').inputValue()
     await page.getByRole('button', { name: 'Nuevo enlace' }).click()
@@ -163,16 +164,17 @@ test('el móvil de la jugadora (su campaña, el menú de la llama, sus páginas 
     }
   }
   await check()
-  // El menú de la llama: enlaces a las secciones de su campaña
-  await ana.getByRole('button', { name: 'Menú' }).click()
-  const menu = ana.getByRole('dialog', { name: 'Eana' })
-  await expect(menu.getByRole('link', { name: 'Compendio' })).toBeVisible()
+  // Los dados, en su hoja desde abajo
+  await ana.locator('[data-tour="dados"]').click()
+  await ana.getByRole('dialog', { name: 'Dados' }).getByRole('button', { name: 'Añadir un d20' }).click()
   await check()
-  await menu.getByRole('link', { name: 'Eana', exact: true }).click()
-  await expect(menu).toHaveCount(0)
+  await ana.getByRole('button', { name: 'Cerrar los dados' }).click()
+  // La campaña va sola (sin la barra ni el menú de la llama): sus páginas y el compendio, por su dirección
+  const path = campaignPath(ana)
+  await ana.goto(`${path}/paginas`)
+  await expect(ana.getByRole('heading', { level: 1 })).toBeVisible()
   await check()
-  await ana.getByRole('button', { name: 'Menú' }).click()
-  await ana.getByRole('dialog', { name: 'Eana' }).getByRole('link', { name: 'Compendio' }).click()
+  await ana.goto(`${path}/compendio`)
   await expect(ana.getByRole('heading', { level: 1, name: 'Compendio' })).toBeVisible()
   await check()
   await context.close()

@@ -10,6 +10,7 @@ import {
   gotoLive,
   import5e,
   newPlayer,
+  openCampaign,
   openWindow,
   rename,
   slash,
@@ -53,7 +54,7 @@ test('@fugas una jugadora no recibe nada de lo que no puede ver: ni la campaña 
 
   // El máster, mientras tanto: crea la campaña B, regenera los dos enlaces, cierra y abre las invitaciones y deshace
   await createCampaign(page, SECRET_CAMPAIGN)
-  await page.getByRole('link', { name: SECRET_CAMPAIGN, exact: true }).click()
+  await openCampaign(page, SECRET_CAMPAIGN, 'campana')
   const campaignB = new URL(page.url()).pathname
   const idB = campaignB.split('/').at(-1) ?? ''
   const linkB = await page.getByLabel('Enlace de invitación').inputValue()
@@ -189,7 +190,7 @@ test('@fugas lo que pide la IA del máster solo le llega a él: la cola, sus avi
   if (!seen) throw new Error('sin captura')
   const captured = seen
   await createCampaign(page, SECRET_CAMPAIGN)
-  await page.getByRole('link', { name: SECRET_CAMPAIGN, exact: true }).click()
+  await openCampaign(page, SECRET_CAMPAIGN, 'campana')
   const idB = new URL(page.url()).pathname.split('/').at(-1) ?? ''
   const linkB = await page.getByLabel('Enlace de invitación').inputValue()
 
@@ -1119,14 +1120,22 @@ test('@fugas la pantalla de la tele solo recibe lo que ve el grupo, y un jugador
   expect(denied).toBeGreaterThan(20)
   await tv.close()
 
-  // Un jugador: ni teselas (de la pantalla ni de la escena) ni la sala de la mesa, con ninguna vista
+  // Un jugador: su Mesa es la proyección del grupo (ADR-0019), así que de la pantalla solo lo que ve el grupo; de la
+  // escena, ninguna tesela; y en la sala de la mesa, ni la vista de la tele ni la del máster
   const player = await newPlayer(browser, link, 'Jugadora')
   const playerFrames: string[] = []
   const playerNet = watchNetwork(player)
   player.on('websocket', (ws) => ws.on('framereceived', ({ payload }) => playerFrames.push(String(payload))))
-  for (const path of [screenTile(0, 0, 1), `/api/scenes/${sceneId}/tiles/${tiles.version}/0/0/1`]) {
+  const outside = (() => {
+    for (let x = 0; x * TILE < 3000; x++) for (let y = 0; y * TILE < 2000; y++) if (!touchesRoom(0, x, y)) return { x, y }
+    throw new Error('sin tesela fuera de la sala')
+  })()
+  for (const [path, codes] of [
+    [screenTile(0, outside.x, outside.y), [404]],
+    [`/api/scenes/${sceneId}/tiles/${tiles.version}/0/0/1`, [403, 404]]
+  ] as const) {
     const response = await player.request.get(path)
-    expect([403, 404], path).toContain(response.status())
+    expect(codes as readonly number[], path).toContain(response.status())
     expect(response.headers()['content-type'] ?? '', path).not.toContain('image/webp')
   }
   for (const view of ['screen', 'master']) {

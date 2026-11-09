@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, type Page, test } from '@playwright/test'
-import { campaignLink, import5e, newPlayer, settled } from './ayudas.ts'
+import { campaignLink, campaignPath, import5e, newPlayer, settled } from './ayudas.ts'
 
 const POCION = 'pocion_de_curacion_2024'
 
@@ -47,9 +47,9 @@ test('el grupo: la jugadora coge una poción para su personaje y la usa; el más
     await page.request.post('/api/actions/createCharacter', { data: { campaignId, name } })
 
   // En «Grupo», la poción: una para Thora
-  await player.getByRole('navigation', { name: 'Secciones' }).getByRole('link', { name: 'Grupo' }).click()
+  await player.goto(`${campaignPath(player)}/grupo`)
   await expect(player.getByRole('heading', { level: 1, name: 'Grupo' })).toBeVisible()
-  await expect(player.getByText('Poción de curación', { exact: true })).toBeVisible()
+  await expect(player.getByText('Poción de curación', { exact: true }).first()).toBeVisible()
   await expect(player.getByText('×3')).toBeVisible()
   await player.getByRole('button', { name: 'Mover «Poción de curación»' }).click()
   const menu = player.getByRole('group', { name: 'Mover «Poción de curación»' })
