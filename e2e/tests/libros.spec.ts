@@ -37,7 +37,7 @@ test('la campaña abre en su Inicio, con su barra; desde ahí, sus libros y la M
   await expect(old).toHaveAttribute('aria-checked', 'true')
   await page.screenshot({ path: test.info().outputPath('libros.png') })
   await old.click()
-  await expect(old).toHaveAttribute('aria-checked', 'false')
+  await expect(old).not.toBeChecked()
   // El último que queda no se puede apagar
   await expect(page.getByRole('switch', { name: 'SRD 5.2.1 en la campaña' })).toBeDisabled()
   const { sources } = await act(page, 'getCampaignCompendium', { campaignId: campaigns[0].id })
@@ -132,7 +132,7 @@ test('un libro nuevo en un sistema: vacío, la IA le propone entradas, se revisa
 
   // La revisión: lo repetido, sin marcar; el texto del PDF al lado
   await expect(page.getByRole('heading', { level: 1, name: 'Revisar lo que trajo la IA' })).toBeVisible()
-  await expect(page.getByRole('checkbox', { name: 'Añadir Bola de fuego' })).toHaveAttribute('aria-checked', 'false')
+  await expect(page.getByRole('checkbox', { name: 'Añadir Bola de fuego' })).not.toBeChecked()
   await page.getByRole('button', { name: /^Velo de Eana/ }).click()
   await expect(page.getByRole('tabpanel')).toContainText('Evocación de nivel 2')
   await page.screenshot({ path: test.info().outputPath('revision.png') })

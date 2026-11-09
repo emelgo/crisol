@@ -6,7 +6,7 @@
 import type { PendingEntry } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getRouteApi, Link } from '@tanstack/react-router'
-import { Check, ChevronLeft, Sparkles, TriangleAlert } from 'lucide-react'
+import { ChevronLeft, Sparkles, TriangleAlert } from 'lucide-react'
 import { useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
@@ -170,16 +170,13 @@ export function ReviewScreen() {
                     className={styles.entry}
                     aria-current={open?.key === entry.key ? 'true' : undefined}
                   >
-                    <button
-                      type="button"
-                      role="checkbox"
-                      aria-checked={inIt}
+                    <input
+                      type="checkbox"
+                      checked={inIt}
                       aria-label={t('review.pick', { name: entry.name })}
                       className={styles.check}
-                      onClick={() => setUnchecked({ ...unchecked, [entry.key]: inIt })}
-                    >
-                      {inIt && <Check size={12} strokeWidth={3} />}
-                    </button>
+                      onChange={() => setUnchecked({ ...unchecked, [entry.key]: inIt })}
+                    />
                     <button type="button" className={styles.name} onClick={() => setCurrent(entry.key)}>
                       <b>{entry.name}</b>
                       {warnings.map((w) => (
@@ -230,13 +227,7 @@ export function ReviewScreen() {
                 {t('review.result')}
               </button>
             </div>
-            <div
-              id={`${tabsId}-panel`}
-              role="tabpanel"
-              aria-labelledby={`${tabsId}-${tab}`}
-              className={styles.panel}
-              tabIndex={0}
-            >
+            <div id={`${tabsId}-panel`} role="tabpanel" aria-labelledby={`${tabsId}-${tab}`} className={styles.panel}>
               {open &&
                 (tab === 'pdf' ? (
                   <div className={styles.paper}>
