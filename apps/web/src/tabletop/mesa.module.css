@@ -1218,3 +1218,9 @@ button.pageLink {
     transform: translateY(4px);
   }
 }
+
+/* Con un menú de la barra de arriba abierto (el de la tele), la barra va por encima de lo demás de la Mesa (la tarjeta
+   de una ficha lo tapaba): crea su propia capa y su menú no salía de ella */
+.topBar:has([aria-expanded="true"]) {
+  z-index: 45;
+}

@@ -123,7 +123,12 @@ test('una escena: su mapa en teselas, la rejilla alineada, la mesa y la tele que
   await table.focus()
   for (let i = 0; i < 3; i++) await page.keyboard.press('ArrowRight')
   await page.keyboard.press('+')
-  const master = centerOf(await viewOf(table))
+  // El centro de lo que ve el máster, sin lo que tapa la barra de la derecha (que flota encima)
+  const seenByMaster = await viewOf(table)
+  const side = await page.locator('[data-mesa-side="open"]').boundingBox()
+  const stage = await table.boundingBox()
+  const freeWidth = side && stage ? side.x - stage.x - 12 : seenByMaster.width
+  const master = centerOf({ ...seenByMaster, width: freeWidth })
   await expect
     .poll(async () => {
       const seen = centerOf(await viewOf(screen))
