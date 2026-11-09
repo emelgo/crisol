@@ -74,7 +74,8 @@ export function cameraTarget(
   if (screen.camera.mode === 'group') {
     const group = screen.tokens.filter((token) => token.faction === 'group').map((t) => ({ x: t.x, y: t.y }))
     const framing = frameGroup(group, cellSide(scene.grid), size.height / Math.max(1, size.width))
-    if (framing) return sceneViewportOf(framing)
+    // Sin nadie del grupo en la escena, el mapa entero (no la vista del máster)
+    return framing ? sceneViewportOf(framing) : null
   }
   return followed ?? scene.initialView
 }

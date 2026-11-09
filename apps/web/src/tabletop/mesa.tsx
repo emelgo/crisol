@@ -23,7 +23,7 @@ import {
 } from '@crisol/tabletop'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getRouteApi, Link, Navigate } from '@tanstack/react-router'
-import { ChevronDown, ExternalLink, EyeOff, Maximize, Minus, Play, Plus, Tv } from 'lucide-react'
+import { ChevronDown, ExternalLink, Eye, EyeOff, Frame, Maximize, Minus, Play, Plus, Tv, Users } from 'lucide-react'
 import {
   type KeyboardEvent,
   type PointerEvent,
@@ -126,6 +126,28 @@ export function MesaScreen() {
 /** Lo que flota sobre la Mesa o va a su lado (las ventanas y la barra de pestañas): sus teclas no son las del mapa */
 /** Cuánto se ve un fallo de la Mesa antes de irse solo */
 const ERROR_MS = 6000
+
+/**
+ * El marco de la tele al ponerla «Fija»: centrado en lo que se ve y dentro de ello (un 16:9 con algo de margen), para
+ * que se vea entero y se pueda mover y estirar desde sus esquinas
+ */
+function fixedFraming(view: Viewport, room: Size): SceneViewport {
+  const width = (Math.min(room.width, room.height / REFERENCE_ASPECT) * 0.86) / view.scale
+  const center = { x: (room.width / 2 - view.x) / view.scale, y: (room.height / 2 - view.y) / view.scale }
+  return sceneViewportOf({ center, width })
+}
+
+/**
+ * Lo que se ve del mapa: sin lo que tapa la barra de la derecha, que flota encima mientras está abierta (al encuadrar,
+ * centrar una ficha o decirle a la tele qué se ve, que no cuente lo de debajo de ella)
+ */
+function freeArea(room: Size, stageEl: HTMLElement | null): Size {
+  const side = document.querySelector<HTMLElement>('[data-mesa-side="open"]')
+  const stage = stageEl?.getBoundingClientRect()
+  if (!side || !stage) return room
+  const covered = stage.right - side.getBoundingClientRect().left + 12
+  return covered > 0 && covered < room.width - 240 ? { width: room.width - covered, height: room.height } : room
+}
 
 const CHROME = '[role="dialog"], [data-window], [data-mesa-side]'
 
@@ -510,7 +532,7 @@ export function Mesa({
               onOpen={openScene}
               onAct={(run) => act.mutate(run)}
               busy={act.isPending}
-              framing={() => (size.width > 0 ? sceneViewportOfCanvas(view.current, size) : null)}
+              framing={() => (size.width > 0 ? fixedFraming(view.current, freeArea(size, host.current)) : null)}
             />
             {(selected.length > 1 || (fromTemplate && selected.length > 0)) && (
               <GroupDamage
@@ -721,16 +743,7 @@ function Stage({
   sizeRef.current = size
   // Lo que se ve del mapa: sin lo que tapa la barra de la derecha, que flota encima mientras está abierta (al encuadrar
   // o centrar una ficha, que no quede debajo de ella)
-  const free = useCallback(
-    (room: Size): Size => {
-      const side = document.querySelector<HTMLElement>('[data-mesa-side="open"]')
-      const stage = host.current?.getBoundingClientRect()
-      if (!side || !stage) return room
-      const covered = stage.right - side.getBoundingClientRect().left + 12
-      return covered > 0 && covered < room.width - 240 ? { width: room.width - covered, height: room.height } : room
-    },
-    [host]
-  )
+  const free = useCallback((room: Size): Size => freeArea(room, host.current), [host])
   // La escena (y su versión del mapa) que ya se colocó: otra vuelve a su vista inicial
   const placed = useRef<string | null>(null)
   const zoomText = useRef<HTMLSpanElement>(null)
@@ -1356,7 +1369,10 @@ function TopBar({
   )
 }
 
-/** «Seguir | Fija | Grupo»: Fija se queda en lo que se ve ahora (su marco se mueve); Grupo encuadra sus fichas */
+/**
+ * Qué enseña la tele: un botón («Tele: Sigue tu vista») con su menú, cada opción con lo que hace. «Fija» se queda en
+ * lo que se ve ahora y lo dice: su marco dorado se mueve y se estira en el mapa. «Sigue al grupo» encuadra sus fichas
+ */
 function CameraChoice({
   campaignId,
   camera,
@@ -1372,44 +1388,101 @@ function CameraChoice({
 }) {
   const { t } = useTranslation()
   const api = useApi()
-  const name = useId()
-  const mode = camera.mode
-  const fixed = mode === 'fixed'
-  const fixHere = () => {
-    const view = framing()
-    if (!view) return
-    onAct(() => api.call('setScreenCamera', { campaignId, camera: { mode: 'fixed', view } }))
+  const [open, setOpen] = useState(false)
+  const [tip, setTip] = useState(false)
+  const button = useRef<HTMLButtonElement>(null)
+  const menu = useRef<HTMLDivElement>(null)
+  const close = useCallback(() => setOpen(false), [])
+  useDismiss(open, close, menu, button)
+  useEffect(() => {
+    if (open) menu.current?.querySelector<HTMLElement>('[aria-checked="true"]')?.focus()
+  }, [open])
+  useEffect(() => {
+    if (!tip) return
+    const timer = window.setTimeout(() => setTip(false), 7000)
+    return () => window.clearTimeout(timer)
+  }, [tip])
+  const options = [
+    { mode: 'follow', label: t('tabletop.follow'), hint: t('tabletop.followHint'), Icon: Eye },
+    { mode: 'fixed', label: t('tabletop.fixed'), hint: t('tabletop.fixedHint'), Icon: Frame },
+    { mode: 'group', label: t('tabletop.group'), hint: t('tabletop.groupHint'), Icon: Users }
+  ] as const
+  const current = options.find((o) => o.mode === camera.mode) ?? options[0]
+  const choose = (mode: (typeof options)[number]['mode']) => {
+    setOpen(false)
+    button.current?.focus()
+    if (mode === 'fixed') {
+      const view = framing()
+      if (!view) return
+      onAct(() => api.call('setScreenCamera', { campaignId, camera: { mode: 'fixed', view } }))
+      setTip(true)
+      return
+    }
+    setTip(false)
+    onAct(() => api.call('setScreenCamera', { campaignId, camera: { mode } }))
   }
   return (
-    <fieldset className={styles.segments} disabled={disabled} data-tour="mesa-camara">
-      <legend className={styles.hidden}>{t('tabletop.camera')}</legend>
-      {/* Qué enseña la tele: lo dice delante y, al pasar por cada opción, qué hace */}
-      <span className={styles.segmentsLabel} aria-hidden="true">
-        {t('tabletop.tv')}
-      </span>
-      <label className={styles.segment} title={t('tabletop.followHint')}>
-        <input
-          type="radio"
-          name={name}
-          checked={mode === 'follow'}
-          onChange={() => onAct(() => api.call('setScreenCamera', { campaignId, camera: { mode: 'follow' } }))}
-        />
-        {t('tabletop.follow')}
-      </label>
-      <label className={styles.segment} title={t('tabletop.fixedHint')}>
-        <input type="radio" name={name} checked={fixed} onChange={fixHere} />
-        {t('tabletop.fixed')}
-      </label>
-      <label className={styles.segment} title={t('tabletop.groupHint')}>
-        <input
-          type="radio"
-          name={name}
-          checked={mode === 'group'}
-          onChange={() => onAct(() => api.call('setScreenCamera', { campaignId, camera: { mode: 'group' } }))}
-        />
-        {t('tabletop.group')}
-      </label>
-    </fieldset>
+    <span className={styles.cameraWrap}>
+      <button
+        ref={button}
+        type="button"
+        className={styles.cameraButton}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        disabled={disabled}
+        data-tour="mesa-camara"
+        onClick={() => setOpen(!open)}
+      >
+        <Tv aria-hidden="true" size={15} />
+        <span className={styles.cameraLabel}>{t('tabletop.tv')}</span>
+        <b>{current.label}</b>
+        <ChevronDown aria-hidden="true" size={14} />
+      </button>
+      {open && (
+        <div
+          ref={menu}
+          role="menu"
+          aria-label={t('tabletop.camera')}
+          className={styles.cameraMenu}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') {
+              event.preventDefault()
+              event.stopPropagation()
+              close()
+              button.current?.focus()
+              return
+            }
+            if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return
+            event.preventDefault()
+            const items = [...(menu.current?.querySelectorAll<HTMLElement>('[role="menuitemradio"]') ?? [])]
+            const at = items.indexOf(document.activeElement as HTMLElement)
+            items[(at + (event.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length]?.focus()
+          }}
+        >
+          {options.map(({ mode, label, hint, Icon }) => (
+            <button
+              key={mode}
+              type="button"
+              role="menuitemradio"
+              aria-checked={camera.mode === mode}
+              tabIndex={camera.mode === mode ? 0 : -1}
+              onClick={() => choose(mode)}
+            >
+              <Icon aria-hidden="true" size={16} />
+              <span>
+                <b>{label}</b>
+                <small>{hint}</small>
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+      {tip && camera.mode === 'fixed' && (
+        <p className={styles.cameraTip} role="status">
+          {t('tabletop.fixedTip')}
+        </p>
+      )}
+    </span>
   )
 }
 

@@ -155,8 +155,9 @@ test('fichas: Lía y tres goblins de un encuentro, moverlos, dañar a uno, ocult
   await expect(onTv).not.toContainText('Goblin 1')
 
   // Encuadrar al grupo: la tele va a Lía
-  await page.getByRole('radio', { name: 'Al grupo' }).click()
-  await expect(page.getByRole('radio', { name: 'Al grupo' })).toBeChecked()
+  await page.getByRole('button', { name: /^Tele/ }).click()
+  await page.getByRole('menuitemradio', { name: /^Sigue al grupo/ }).click()
+  await expect(page.getByRole('button', { name: /^Tele/ })).toContainText('Sigue al grupo')
   const screen = tv.locator('[data-screen]')
   await expect
     .poll(async () => {

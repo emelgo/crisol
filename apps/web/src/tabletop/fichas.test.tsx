@@ -221,7 +221,8 @@ describe('las fichas en la mesa', () => {
     const [a, b] = await tokensOf(api)
     expect((b?.x ?? 0) - (a?.x ?? 0)).toBe(100)
     await push()
-    await user.click(screen.getByRole('radio', { name: 'Al grupo' }))
+    await user.click(screen.getByRole('button', { name: /^Tele/ }))
+    await user.click(screen.getByRole('menuitemradio', { name: /^Sigue al grupo/ }))
     await waitFor(async () =>
       expect((await api.client.call('getCampaignTable', { campaignId: CAMPAIGN.id })).camera).toEqual({ mode: 'group' })
     )
@@ -355,16 +356,12 @@ describe('las fichas en la tele', () => {
     combat: null
   })
 
-  it('«Encuadrar al grupo»: la cámara va a las fichas del grupo', () => {
+  it('«Sigue al grupo»: la cámara va a las fichas del grupo', () => {
     const lia = token({ faction: 'group', x: 1000, y: 600, state: null, name: 'Lía' })
     const view = cameraTarget(screenOf([token({}), lia], { mode: 'group' }), null, { width: 1600, height: 900 })
     expect(view).toMatchObject({ x: 1000, y: 600 })
-    // Sin fichas del grupo, lo de siempre
-    expect(cameraTarget(screenOf([token({})], { mode: 'group' }), { x: 1, y: 2, scale: 1 })).toEqual({
-      x: 1,
-      y: 2,
-      scale: 1
-    })
+    // Sin fichas del grupo, el mapa entero (null: la tele lo encuadra), no la vista del máster
+    expect(cameraTarget(screenOf([token({})], { mode: 'group' }), { x: 1, y: 2, scale: 1 })).toBeNull()
   })
 
   it('el nombre y el estado en palabras de cada ficha; el arrastre del máster, en vivo', async () => {

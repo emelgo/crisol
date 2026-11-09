@@ -192,7 +192,8 @@ describe('la mesa del máster', () => {
     fireEvent.keyDown(stage, { key: '+' })
     expect(channel.viewports.length).toBeGreaterThan(before)
     // Fija: en lo que se ve ahora
-    await user.click(screen.getByRole('radio', { name: 'Fija' }))
+    await user.click(screen.getByRole('button', { name: /^Tele/ }))
+    await user.click(screen.getByRole('menuitemradio', { name: /^Fija/ }))
     const frame = await screen.findByRole('region', { name: 'Lo que se ve en la tele' })
     const camera = async () => (await api.client.call('getCampaignTable', { campaignId: CAMPAIGN.id })).camera
     const first = await camera()
@@ -209,7 +210,8 @@ describe('la mesa del máster', () => {
     const sent = channel.viewports.length
     fireEvent.keyDown(stage, { key: 'ArrowLeft' })
     expect(channel.viewports.length).toBe(sent)
-    await user.click(screen.getByRole('radio', { name: 'Sigue tu vista' }))
+    await user.click(screen.getByRole('button', { name: /^Tele/ }))
+    await user.click(screen.getByRole('menuitemradio', { name: /^Sigue tu vista/ }))
     await waitFor(async () => expect((await camera()).mode).toBe('follow'))
   })
 

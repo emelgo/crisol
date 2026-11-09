@@ -133,8 +133,9 @@ test('una escena: su mapa en teselas, la rejilla alineada, la mesa y la tele que
 
   // Fija: el marco de la tele, que se arrastra; la tele se queda en él aunque el máster se mueva
   // La mesa la cambia el servidor: se ve marcada cuando contesta
-  await page.getByRole('radio', { name: 'Fija' }).click()
-  await expect(page.getByRole('radio', { name: 'Fija' })).toBeChecked()
+  await page.getByRole('button', { name: /^Tele/ }).click()
+  await page.getByRole('menuitemradio', { name: /^Fija/ }).click()
+  await expect(page.getByRole('button', { name: /^Tele/ })).toContainText('Fija')
   const frame = page.getByRole('region', { name: 'Lo que se ve en la tele' })
   await expect(frame).toBeVisible()
   // Alejada la mesa, el marco se ve entero; se arrastra por su etiqueta
