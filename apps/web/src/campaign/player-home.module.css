@@ -96,6 +96,7 @@
 
 @media (max-width: 48rem) {
   .actions {
+    grid-column: 1 / -1;
     inline-size: 100%;
     margin-inline-start: 0;
   }
