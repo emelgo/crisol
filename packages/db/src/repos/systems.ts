@@ -43,18 +43,24 @@ export async function listSystems(db: Database, organizationId: string) {
   return rows.map(read)
 }
 
+/**
+ * Los de la base tienen un uuid; los de serie (el catálogo: «blank», el 5e de ejemplo) no y no están aquí. Preguntar
+ * por uno de esos rompería la consulta (Postgres no lo admite como uuid): se responde que no hay
+ */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const stored = (ids: readonly string[]) => ids.filter((id) => UUID.test(id))
+
 export async function findSystem(db: Database, id: string) {
+  if (!UUID.test(id)) return null
   const [found] = await db.select().from(systems).where(eq(systems.id, id))
   return found ? read(found) : null
 }
 
 /** Varios por sus ids (los que existan) */
-export async function findSystems(db: Database, ids: readonly string[]) {
+export async function findSystems(db: Database, given: readonly string[]) {
+  const ids = stored(given)
   if (ids.length === 0) return []
-  const rows = await db
-    .select()
-    .from(systems)
-    .where(inArray(systems.id, [...ids]))
+  const rows = await db.select().from(systems).where(inArray(systems.id, ids))
   return rows.map(read)
 }
 
@@ -67,14 +73,15 @@ export async function countSystems(db: Database, organizationId: string) {
 }
 
 /** La versión de cada uno, sin leer su documento: para saber si lo que se tiene leído sigue valiendo */
-export function systemVersions(db: Database, ids: readonly string[]) {
+export function systemVersions(db: Database, given: readonly string[]) {
+  const ids = stored(given)
   if (ids.length === 0) return Promise.resolve([])
   // Uno solo (el de la campaña, en cada refresco de la mesa): preparada
   if (ids.length === 1) return versionOf(db).execute({ id: ids[0] })
   return db
     .select({ id: systems.id, version: systems.version, deletedAt: systems.deletedAt })
     .from(systems)
-    .where(inArray(systems.id, [...ids]))
+    .where(inArray(systems.id, ids))
 }
 
 const versionOf = prepared((db) =>

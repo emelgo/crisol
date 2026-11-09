@@ -180,6 +180,15 @@ describe('la mesa: escenas, teselas y la sala', () => {
     expect((await call('getScene', { sceneId: scene.id })).body).toMatchObject({ name: 'El pueblo' })
   })
 
+  it('una campaña con un sistema de serie («blank», sin fila en la base) abre escenas (y lo de en juego dice que no hay sistema)', async () => {
+    await conn.sql`update campaigns set system = 'blank' where id = ${campaignId}`
+    const scene = (await call('createScene', { worldId, name: 'Pueblo' })).body
+    const opened = await call('openScene', { campaignId, sceneId: scene.id })
+    expect(opened.status, JSON.stringify(opened.body)).toBe(200)
+    // Lo que está en juego necesita un sistema de la base: dice que no lo hay (antes, la consulta reventaba: 404)
+    expect((await call('listInPlay', { campaignId })).body).toEqual({ code: 'NO_SYSTEM' })
+  })
+
   it('la de una página se renombra (su pestaña) y se borra (su pestaña) con las mismas acciones', async () => {
     const tab = (await call('createPageTab', { pageId, kind: 'scene' })).body
     const scene = (await call('getScene', { tabId: tab.id })).body

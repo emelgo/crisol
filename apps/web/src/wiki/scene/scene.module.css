@@ -460,8 +460,15 @@
 
 .row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2);
+}
+
+/* Los botones de una fila se reparten el ancho; si no caben, bajan (en una ventana estrecha no se cortan) */
+.row > .ghost {
+  flex: 1 1 8rem;
+  min-inline-size: 0;
 }
 
 .row > .field {

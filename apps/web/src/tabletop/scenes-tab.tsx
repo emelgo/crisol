@@ -316,6 +316,7 @@ function NewScene({ worldId, onCreated }: { worldId: string; onCreated: (sceneId
   const inputId = useId()
   const [writing, setWriting] = useState(false)
   const [name, setName] = useState('')
+  const windows = useWindows()
   const create = useMutation({
     // Suelta, sin página (ADR-0020)
     mutationFn: (title: string) => api.call('createScene', { worldId, name: title }),
@@ -324,6 +325,8 @@ function NewScene({ worldId, onCreated }: { worldId: string; onCreated: (sceneId
       setName('')
       await client.invalidateQueries({ queryKey: sceneListKey(worldId) })
       onCreated(scene.id)
+      // Y su editor, para ponerle el mapa y la rejilla ya (Enrique: «mejor editar al crear»)
+      windows?.open(sceneWindow(worldId, scene))
     }
   })
   const submit = (event: FormEvent) => {

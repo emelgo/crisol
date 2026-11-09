@@ -56,6 +56,8 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   pasar por una criatura del compendio.
 - Dev: si una pantalla da «Ya no existe» o 500 con «relation … does not exist», faltan migraciones en la base de
   desarrollo: `pnpm db:migrate`.
+- Dev: `node --watch` deja de ver un archivo que Biome reescribe (lo sustituye por uno nuevo): si el servidor de
+  desarrollo no coge un cambio, `touch apps/server/src/main.ts` lo reinicia con todo lo último.
 
 ### Para retomar (2026-11-08, madrugada: lo siguiente, rehacer la campaña alrededor de la Mesa)
 

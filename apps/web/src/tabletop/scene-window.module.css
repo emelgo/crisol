@@ -2,7 +2,7 @@
 .editor {
   container-type: inline-size;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(14rem, 18rem);
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, 21rem);
   gap: var(--space-4);
   min-block-size: 100%;
   padding: var(--space-4);
@@ -17,10 +17,20 @@
 
 .side {
   min-inline-size: 0;
+}
+
+/* La rejilla trae su propia ficha: aquí, sin otra encima (se veía doble y apretada) */
+.side > section {
+  margin: 0;
   padding: var(--space-4);
   border: 1px solid var(--glass-edge);
   border-radius: 6px;
   background: color-mix(in srgb, var(--color-surface) 45%, transparent);
+  clip-path: none;
+}
+
+.side > section::before {
+  display: none;
 }
 
 @container (max-width: 44rem) {
