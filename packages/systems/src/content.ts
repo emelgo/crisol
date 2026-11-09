@@ -89,6 +89,8 @@ export function resolveConcept<T extends Versioned>(
 export interface ContentEntry extends Versioned {
   name: unknown
   automation?: string | null
+  /** Su página en su libro, si se sabe (ADR-0021) */
+  page?: number | null
 }
 
 export interface ContentHit {
@@ -100,6 +102,8 @@ export interface ContentHit {
   concept: string | null
   legacy: boolean
   automation: string | null
+  /** Su página en su libro, si se sabe */
+  page?: number | null
 }
 
 /** Para comparar nombres: sin mayúsculas ni tildes */
@@ -180,7 +184,8 @@ export function searchContent(
         edition: editionOf(system, item) ?? null,
         concept: item.concept ?? null,
         legacy,
-        automation: item.automation ?? null
+        automation: item.automation ?? null,
+        page: item.page ?? null
       }
     })
   }

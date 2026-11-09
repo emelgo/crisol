@@ -2516,13 +2516,18 @@ export function fakeApi(
       })
       return { ...result, items: result.items.map((i) => (worldKeys.has(i.key) ? { ...i, world: true } : i)) }
     },
-    searchCampaignContent: ({ campaignId, layer, ...options }) => {
+    searchCampaignContent: ({ campaignId, layer, source, ...options }) => {
       const found = compendiumOf(campaignId)
       if (!found) return { items: [], total: 0 }
       const { document, choices, content, worldKeys } = found
+      const pageOf = (item: ContentItem) => {
+        const pages = (item.ref as { pages?: { es?: number; en?: number } } | undefined)?.pages
+        return pages?.es ?? pages?.en ?? null
+      }
       const entries = content
         .filter((item) => !layer || worldKeys.has(item.key) === (layer === 'world'))
-        .map((item) => ({ ...item, concept: item.concept ?? null, name: item.data.name }))
+        .filter((item) => !source || item.source === source)
+        .map((item) => ({ ...item, concept: item.concept ?? null, name: item.data.name, page: pageOf(item) }))
       const result = searchContent(document, entries, {
         sources: choices.sources,
         excluded: choices.excluded ?? [],

@@ -35,7 +35,8 @@ export async function contentIndex(
   if (!world) return system
   const own = (await worldContentRepo.contentIndex(ctx.db, world.worldId, systemId)).map((e) => ({
     ...e,
-    review: null
+    review: null,
+    page: null
   }))
   return withWorld(system, seen(world, own))
 }

@@ -41,6 +41,7 @@ import { PutInPlay } from '../creatures/put-in-play.tsx'
 import { useDice } from '../dice/context.tsx'
 import { visibilityIn } from '../dice/visibility.ts'
 import { useNarrow } from '../wiki/panel.tsx'
+import { BookCover } from './book-cover.tsx'
 import styles from './compendium.module.css'
 import { CompendiumSettings } from './compendium-settings.tsx'
 import { ContentText } from './content-text.tsx'
@@ -128,14 +129,16 @@ function useSeenEntry(worldId: string, campaignId: string, key: string | null, p
 /** La ruta del compendio (de quien juega): lo abierto va en la dirección */
 export function CompendiumScreen() {
   const { worldId, campaignId } = route.useParams()
-  const { ver } = route.useSearch()
+  const { ver, libro, tipo } = route.useSearch()
   const navigate = route.useNavigate()
   return (
     <Compendium
       worldId={worldId}
       campaignId={campaignId}
       ver={ver ?? null}
-      onVer={(key) => void navigate({ search: key ? { ver: key } : {} })}
+      onVer={(key) => void navigate({ search: (prev) => ({ ...prev, ver: key ?? undefined }) })}
+      initialBook={libro ?? null}
+      initialType={tipo ?? null}
     />
   )
 }
@@ -149,7 +152,9 @@ export function Compendium({
   campaignId,
   ver,
   onVer,
-  embedded = false
+  embedded = false,
+  initialBook = null,
+  initialType = null
 }: {
   worldId: string
   campaignId: string
@@ -157,6 +162,9 @@ export function Compendium({
   ver: string | null
   onVer: (key: string | null) => void
   embedded?: boolean
+  /** Abrir ya en un libro (y un tipo): desde la ficha del libro (ADR-0021) */
+  initialBook?: string | null
+  initialType?: string | null
 }) {
   const { t } = useTranslation()
   const api = useApi()
@@ -172,23 +180,29 @@ export function Compendium({
   // Se busca al dejar de escribir, no con cada tecla
   const wanted = useSettled(query.trim())
   const [layer, setLayer] = useState<Layer>('all')
+  // Por tipo (sus estantes) o por libro (ADR-0021); el libro elegido filtra lo que se busca
+  const [view, setView] = useState<'type' | 'book'>(initialBook ? 'book' : 'type')
+  const [book, setBook] = useState<string | null>(initialBook)
+  const [bookType, setBookType] = useState<string | null>(initialType)
   const hits = useInfiniteQuery({
-    queryKey: ['compendium', campaignId, 'search', wanted, layer],
-    // Solo una capa, si se elige: la filtra el servidor (antes de paginar)
+    queryKey: ['compendium', campaignId, 'search', wanted, layer, book, bookType],
+    // Solo una capa o un libro, si se elige: lo filtra el servidor (antes de paginar)
     queryFn: ({ pageParam }) =>
       api.call('searchCampaignContent', {
         campaignId,
         query: wanted,
         limit: PAGE,
         offset: pageParam,
-        ...(layer === 'all' ? {} : { layer })
+        ...(layer === 'all' ? {} : { layer }),
+        ...(book ? { source: book } : {}),
+        ...(book && bookType ? { type: bookType } : {})
       }),
     initialPageParam: 0,
     getNextPageParam: (last, pages) => {
       const seen = pages.reduce((n, p) => n + p.items.length, 0)
       return seen < last.total ? seen : undefined
     },
-    enabled: Boolean(compendium.data?.system) && wanted !== ''
+    enabled: Boolean(compendium.data?.system) && (wanted !== '' || book !== null)
   })
   const items = hits.data?.pages.flatMap((p) => p.items) ?? []
   // Lo abierto va en la dirección: se enlaza y, en el móvil, «atrás» vuelve a la lista
@@ -331,7 +345,50 @@ export function Compendium({
               ))}
             </fieldset>
           )}
-          {wanted ? (
+          {sources.length > 0 && (
+            <fieldset className={styles.view}>
+              <legend className={styles.hidden}>{t('compendium.view')}</legend>
+              <button type="button" aria-pressed={view === 'type'} onClick={() => setView('type')}>
+                {t('compendium.byType')}
+              </button>
+              <button type="button" aria-pressed={view === 'book'} onClick={() => setView('book')}>
+                {t('compendium.byBook')}
+              </button>
+            </fieldset>
+          )}
+          {book && (
+            <p className={styles.bookFilter}>
+              <span>
+                {sources.find((s) => s.key === book)?.name ?? book}
+                {bookType ? ` · ${typeOf(bookType)?.label ?? bookType}` : ''}
+              </span>
+              <button
+                type="button"
+                aria-label={t('compendium.clearBook')}
+                onClick={() => {
+                  setBook(null)
+                  setBookType(null)
+                }}
+              >
+                <X size={13} aria-hidden="true" />
+              </button>
+            </p>
+          )}
+          {view === 'book' && !book && !wanted ? (
+            <ul className={styles.bookList} aria-label={t('compendium.byBook')} data-tour="compendio-libros">
+              {sources.map((s) => (
+                <li key={s.key}>
+                  <button type="button" className={styles.bookRow} onClick={() => setBook(s.key)}>
+                    <span className={styles.bookMini}>
+                      <BookCover book={s} size="spine" />
+                    </span>
+                    <span>{s.name}</span>
+                    <span className={styles.bookCount}>{s.count}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : wanted || book ? (
             <>
               <ul className={styles.list} aria-label={t('compendium.results')} aria-busy={hits.isFetching}>
                 {items.map((hit) => (
@@ -339,6 +396,7 @@ export function Compendium({
                     key={hit.key}
                     hit={hit}
                     typeLabel={typeOf(hit.type)?.label ?? hit.type}
+                    bookName={hit.source ? (sources.find((s) => s.key === hit.source)?.name ?? null) : null}
                     current={hit.key === shown}
                     onOpen={() => open(hit.key)}
                   />
@@ -786,25 +844,45 @@ function TypeShelf({
 function HitRow({
   hit,
   typeLabel,
+  bookName,
   current,
   onOpen
 }: {
   hit: ContentHit
   typeLabel: string
+  /** De qué libro sale (y su página): ADR-0021 */
+  bookName: string | null
   current: boolean
   onOpen: () => void
 }) {
+  const { t } = useTranslation()
   return (
     <li>
       <button type="button" className={styles.hit} aria-current={current ? 'true' : undefined} onClick={onOpen}>
         <span className={styles.hitText}>
           <span className={styles.hitName}>{hit.name}</span>
-          <span className={styles.hitType}>{typeLabel}</span>
+          <span className={styles.hitType}>
+            {typeLabel}
+            {bookName && (
+              <>
+                {' · '}
+                <span className={styles.hitBook}>
+                  {hit.page ? t('compendium.bookPage', { book: bookName, page: hit.page }) : bookName}
+                </span>
+              </>
+            )}
+          </span>
         </span>
         {hit.world ? <WorldTag /> : <EditionTag edition={hit.edition} legacy={hit.legacy} />}
       </button>
     </li>
   )
+}
+
+/** Su página en su libro, si se sabe (ref.pages, en español o en inglés) */
+function pageOf(item: { ref?: unknown }): number | null {
+  const pages = (item.ref as { pages?: { es?: number; en?: number } } | undefined)?.pages
+  return pages?.es ?? pages?.en ?? null
 }
 
 /** Un documento del compendio: su cabecera, sus datos, su texto, lo que concede por nivel y, al lado, su edición */
@@ -927,7 +1005,17 @@ function Entry({
         )}
         <header className={item.img ? `${styles.head} ${styles.withPortrait}` : styles.head}>
           {item.img && <SystemImage systemId={systemId} path={item.img} className={styles.portrait} />}
-          <p className={styles.kind}>{type?.label ?? item.type}</p>
+          <p className={styles.kind}>
+            {type?.label ?? item.type}
+            {source && (
+              <>
+                {' · '}
+                <span className={styles.hitBook}>
+                  {pageOf(item) ? t('compendium.bookPage', { book: source.name, page: pageOf(item) }) : source.name}
+                </span>
+              </>
+            )}
+          </p>
           <h2 id={titleId} className={styles.name} tabIndex={-1}>
             {name}
           </h2>

@@ -852,3 +852,108 @@
   margin-block-start: 0;
   overflow: visible;
 }
+
+/* Por tipo o por libro (ADR-0021) */
+.view {
+  margin-block-start: var(--space-2);
+  display: inline-flex;
+  gap: 2px;
+  margin: 0;
+  padding: 3px;
+  border: 0;
+  border-radius: 4px;
+  background: var(--color-raised);
+  align-self: flex-start;
+}
+
+.view button {
+  padding: 4px 10px;
+  border: 0;
+  border-radius: 3px;
+  background: none;
+  color: var(--color-muted);
+  font: 600 0.8rem var(--font-body);
+  cursor: pointer;
+}
+
+.view button[aria-pressed="true"] {
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: 0 0 0 1px var(--color-border);
+}
+
+.bookFilter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  margin: 0;
+  padding: 3px 4px 3px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-h4) 16%, transparent);
+  font-size: 0.82rem;
+}
+
+.bookFilter button {
+  display: inline-grid;
+  place-items: center;
+  inline-size: 1.25rem;
+  block-size: 1.25rem;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.bookFilter button:hover {
+  background: var(--color-raised);
+  color: var(--color-text);
+}
+
+.bookList {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bookRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  inline-size: 100%;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--color-text);
+  font: 0.9rem var(--font-body);
+  text-align: start;
+  cursor: pointer;
+}
+
+.bookRow:hover {
+  background: var(--color-raised);
+}
+
+.bookMini {
+  flex: none;
+  inline-size: 1.7rem;
+}
+
+.bookMini > span {
+  inline-size: 100%;
+}
+
+.bookCount {
+  margin-inline-start: auto;
+  font-size: 0.75rem;
+  color: var(--color-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.hitBook {
+  color: var(--color-h4);
+}

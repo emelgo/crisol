@@ -44,6 +44,8 @@ export interface BuildOption {
   available: boolean
   /** Por qué no vale */
   reason?: Text
+  /** De qué libro sale (su clave), si sale del contenido (ADR-0021) */
+  source?: string | null
 }
 
 /** Una decisión de lo concedido: elegir de un tipo (una subclase, un estilo) o de un conjunto (dos habilidades) */
@@ -351,6 +353,7 @@ export function buildCharacter(
           value: item.concept ?? item.key,
           label: labelOf(item),
           available: reason === null,
+          source: item.source,
           ...(reason ? { reason } : {})
         }
       })
@@ -477,7 +480,13 @@ export function stepOptions(
           reason = unmetRequirement(c, values)
           if (reason) break
         }
-      return { value: item.key, label: labelOf(item), available: reason === null, ...(reason ? { reason } : {}) }
+      return {
+        value: item.key,
+        label: labelOf(item),
+        available: reason === null,
+        source: item.source,
+        ...(reason ? { reason } : {})
+      }
     })
 }
 
@@ -547,12 +556,21 @@ export function characterView(
   const { byKey } = viewOf(system, content, choices)
   const fields = system.types[built.type]?.fields ?? {}
   const { played, values, sheetParts } = playedSheet(system, built.type, built.document, play, byKey, choices)
-  const option = (o: BuildOption) => ({
-    value: o.value,
-    label: say(o.label),
-    available: o.available,
-    ...(o.reason ? { reason: say(o.reason) } : {})
-  })
+  // Su libro, por su nombre (lo del mundo, sin libro)
+  const bookOf = (source: string | null | undefined) => {
+    const found = source ? system.sources?.find((s) => s.key === source) : undefined
+    return found ? say(found.name) : null
+  }
+  const option = (o: BuildOption) => {
+    const book = bookOf(o.source)
+    return {
+      value: o.value,
+      label: say(o.label),
+      available: o.available,
+      ...(o.reason ? { reason: say(o.reason) } : {}),
+      ...(book ? { book } : {})
+    }
+  }
   const steps = (system.creation ?? []).map((step, i) => {
     const base = {
       key: step.key,

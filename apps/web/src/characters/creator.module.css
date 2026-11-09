@@ -596,3 +596,48 @@
 .sideTitle:focus-visible {
   outline: none;
 }
+
+/* El libro de cada opción y el filtro por libro (ADR-0021) */
+.optionBook {
+  display: block;
+  margin-block-start: 2px;
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--color-h4);
+}
+
+.bookFilter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-3);
+  padding: 0;
+  border: 0;
+}
+
+.bookFilter button {
+  min-block-size: 1.75rem;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  box-shadow: inset 0 0 0 1px var(--color-border);
+  color: var(--color-muted);
+  font: 0.82rem var(--font-body);
+  cursor: pointer;
+}
+
+.bookFilter button[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--color-h4) 16%, transparent);
+  box-shadow: none;
+  color: var(--color-text);
+}
+
+.hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

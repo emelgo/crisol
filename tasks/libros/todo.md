@@ -8,5 +8,5 @@
 - [x] 6. Web: Libros de la campaña
 - [x] 7. Web: Sistemas → Libros (ficha, ajustes, libro nuevo)
 - [x] 8. Web: revisión
-- [ ] 9. Web: compendio por libro y creador con libros
+- [x] 9. Web: compendio por libro y creador con libros
 - [ ] 10. Cierre: tutoriales, e2e + axe, revisión, documentación

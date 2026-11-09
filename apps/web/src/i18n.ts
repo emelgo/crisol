@@ -342,6 +342,8 @@ export const es = {
   },
   // El creador de un personaje
   creator: {
+    byBook: 'Libro',
+    allBooks: 'Todos los libros',
     steps: 'Pasos',
     pendingCount: '{{count}} por elegir',
     pendingCount_one: 'Una cosa por elegir',
@@ -406,6 +408,11 @@ export const es = {
   },
   // El compendio de una campaña: el contenido de su sistema
   compendium: {
+    view: 'Ver',
+    byType: 'Por tipo',
+    byBook: 'Por libro',
+    clearBook: 'Quitar el filtro del libro',
+    bookPage: '{{book}}, pág. {{page}}',
     title: 'Compendio',
     settings: {
       title: 'Ajustes del compendio',

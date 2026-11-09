@@ -34,7 +34,8 @@ const buildOption = z.object({
   value: z.string(),
   label: z.string(),
   available: z.boolean(),
-  reason: z.string().optional()
+  reason: z.string().optional(),
+  book: z.string().optional().describe('De qué libro sale (ADR-0021)')
 })
 const stepBase = {
   key: z.string(),

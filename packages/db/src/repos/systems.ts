@@ -142,6 +142,9 @@ export function contentIndex(db: Database, systemId: string) {
       concept: systemContent.concept,
       name: sql<unknown>`${systemContent.data} -> 'name'`,
       automation: sql<string | null>`${systemContent.mechanics} ->> 'automation'`,
+      page: sql<
+        number | null
+      >`nullif(coalesce(${systemContent.ref} -> 'pages' ->> 'es', ${systemContent.ref} -> 'pages' ->> 'en'), '')::int`,
       review: systemContent.review
     })
     .from(systemContent)

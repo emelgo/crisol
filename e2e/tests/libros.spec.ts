@@ -146,4 +146,15 @@ test('un libro nuevo en un sistema: vacío, la IA le propone entradas, se revisa
   })
   const found = await act(page, 'searchCampaignContent', { campaignId: campaigns[0].id, query: 'lanza de ceniza' })
   expect(found.items.map((h: { key: string }) => h.key)).toEqual(['lanza_de_ceniza'])
+
+  // El compendio de la campaña, por libro: cada fila dice su libro y su página
+  await page.goto(`/mundos/${worlds[0].id}/campanas/${campaigns[0].id}/compendio`)
+  await page.getByRole('button', { name: 'Por libro' }).click()
+  await page
+    .getByRole('list', { name: 'Por libro' })
+    .getByRole('button', { name: /Grimorio/ })
+    .click()
+  const rows = page.getByRole('list', { name: 'Resultados' })
+  await expect(rows.getByRole('button', { name: /Lanza de ceniza/ })).toContainText('Grimorio, pág. 88')
+  await page.screenshot({ path: test.info().outputPath('compendio-por-libro.png') })
 })

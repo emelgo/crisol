@@ -247,13 +247,15 @@ export const compendiumActions = [
     }
   }),
 
-  implement(searchCampaignContent, async (ctx, { campaignId, layer, ...given }) => {
+  implement(searchCampaignContent, async (ctx, { campaignId, layer, source, ...given }) => {
     const found = await campaignSystem(ctx, campaignId)
     if (!found) return { items: [], total: 0 }
     const { document, choices, entries: all } = found
     const own = worldKeys(all)
-    // Solo una capa, si se pide: se filtra antes de paginar
-    const entries = layer ? all.filter((e) => own.has(e.key) === (layer === 'world')) : all
+    // Solo una capa o un libro, si se pide: se filtra antes de paginar
+    const entries = all.filter(
+      (e) => (!layer || own.has(e.key) === (layer === 'world')) && (!source || e.source === source)
+    )
     const result = searchContent(document, entries, {
       sources: choices.sources,
       excluded: choices.excluded ?? [],
