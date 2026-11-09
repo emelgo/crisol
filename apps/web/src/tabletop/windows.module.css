@@ -92,8 +92,10 @@
 
 .body {
   flex: 1;
-  /* Lo que se lee, casi opaco */
-  background: var(--glass-body);
+  /* De cristal, como el resto de la campaña (Enrique, 2026-11-10): se adivina el mapa detrás, desenfocado */
+  background: var(--glass-panel);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
   min-block-size: 0;
   overflow: auto;
   overscroll-behavior: contain;
@@ -193,5 +195,9 @@
 @supports not (backdrop-filter: blur(1px)) {
   .head {
     background: var(--glass-sheen), var(--glass-solid);
+  }
+
+  .body {
+    background: var(--glass-solid);
   }
 }

@@ -18,7 +18,7 @@ import { type KeyboardEvent, type ReactNode, useCallback, useId, useState } from
 import { useTranslation } from 'react-i18next'
 import styles from './sidebar.module.css'
 
-export const SIDEBAR_TABS = ['combat', 'scenes', 'characters', 'compendium', 'pages', 'settings'] as const
+export const SIDEBAR_TABS = ['scenes', 'combat', 'characters', 'compendium', 'pages', 'settings'] as const
 export type SidebarTab = (typeof SIDEBAR_TABS)[number]
 
 /** Cómo va cada pestaña en la dirección (?panel=), en español como las rutas */

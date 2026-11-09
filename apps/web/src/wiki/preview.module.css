@@ -1,7 +1,8 @@
 /* La vista previa de un enlace: junto a él, o en el móvil, una hoja abajo */
 .popover,
 .sheet {
-  z-index: 40;
+  /* Por encima de las ventanas de la Mesa (40 y más): va en el body, también si la página está en una */
+  z-index: 2002;
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
@@ -87,4 +88,15 @@
   inline-size: 100%;
   block-size: 5rem;
   object-fit: cover;
+}
+
+/* En la campaña (la Mesa), de cristal como lo demás */
+:global(body):has(:global([data-mesa])) .popover {
+  border-color: var(--glass-edge);
+  background: var(--glass-sheen), var(--glass-panel);
+  box-shadow:
+    inset 0 1px 0 var(--glass-hi),
+    var(--glass-shadow);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
 }

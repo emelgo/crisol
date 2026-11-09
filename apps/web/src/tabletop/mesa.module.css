@@ -87,12 +87,28 @@
   transform: translateX(-50%);
 }
 
+/* Lo que falla: arriba, a la izquierda de la barra de la derecha (abierta o plegada), en un recuadro que se lea */
 .errors {
   position: absolute;
   inset-block-start: 4.25rem;
-  inset-inline-end: var(--space-4);
+  inset-inline-end: calc(24rem + 1.5rem);
   z-index: 14;
   max-inline-size: 22rem;
+}
+
+.mesa:has([data-mesa-side="folded"]) .errors {
+  inset-inline-end: 4.5rem;
+}
+
+.errors > :not(:empty) {
+  margin: 0;
+  padding: 8px 12px;
+  border: 1px solid color-mix(in srgb, var(--color-brand) 55%, transparent);
+  border-radius: 6px;
+  background: var(--glass-sheen), var(--glass-panel);
+  box-shadow: var(--glass-shadow);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
 }
 
 /* El marco «Tele»: lo que se ve en la tele con la cámara fija, discontinuo y dorado */

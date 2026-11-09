@@ -16,8 +16,9 @@ vi.mock('three', async (original) => {
     render(scene: InstanceType<typeof three.Scene>) {
       // Los dados (no el tapete, que solo recoge las sombras)
       state.drawn.push(
-        scene.children.filter((child) => child instanceof three.Mesh && !(child.material instanceof three.ShadowMaterial))
-          .length
+        scene.children.filter(
+          (child) => child instanceof three.Mesh && !(child.material instanceof three.ShadowMaterial)
+        ).length
       )
     }
     dispose() {}

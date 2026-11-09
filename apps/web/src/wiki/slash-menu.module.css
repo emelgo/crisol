@@ -1,6 +1,6 @@
 /* El menú «/»: una lista flotante junto al cursor, por grupos */
 .menu {
-  z-index: 30;
+  z-index: 2000;
   inline-size: min(20rem, calc(100vw - 2rem));
   border: 1px solid var(--color-field-border);
   background: var(--color-surface);
@@ -72,4 +72,15 @@
   .help {
     display: none;
   }
+}
+
+/* En la campaña (la Mesa), de cristal como lo demás */
+:global(body):has(:global([data-mesa])) .menu {
+  border-color: var(--glass-edge);
+  background: var(--glass-sheen), var(--glass-panel);
+  box-shadow:
+    inset 0 1px 0 var(--glass-hi),
+    var(--glass-shadow);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
 }

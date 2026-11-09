@@ -94,3 +94,20 @@
     radial-gradient(ellipse 70% 55% at 50% 32%, rgb(244 244 245 / 0.6), transparent 75%),
     linear-gradient(to top, rgb(244 244 245 / 0.55) 0%, transparent 55%), rgb(244 244 245 / 0.25);
 }
+
+/* En la Mesa sin escena: dentro de ella (no sobre toda la página) y algo más apagado, para que se lea su aviso; el
+   crédito no (Enrique: «quita los títulos»; ni Pixabay ni el dominio público piden citar) */
+.contained {
+  position: absolute;
+  z-index: 0;
+}
+
+.contained .layer::after {
+  background:
+    radial-gradient(ellipse 60% 45% at 50% 50%, rgb(8 8 10 / 0.6), transparent 80%),
+    linear-gradient(to top, color-mix(in srgb, var(--tint) 85%, transparent) 0%, transparent 55%), rgb(8 8 10 / 0.35);
+}
+
+.contained .credit {
+  display: none;
+}

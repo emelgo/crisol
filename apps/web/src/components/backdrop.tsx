@@ -21,9 +21,9 @@ function shuffled(count: number) {
 /**
  * El fondo de las pantallas de cuenta, como en LegendKeeper (Enrique, 2026-11-08): las imágenes van pasando con un
  * fundido, cada una acercándose despacio, con un degradado teñido de su color y su autor abajo. De adorno: el lector de
- * pantalla solo lee el crédito
+ * pantalla solo lee el crédito. contained: dentro de la Mesa sin escena, que así no se queda en negro (y su cristal se ve)
  */
-export function Backdrop() {
+export function Backdrop({ contained = false }: { contained?: boolean } = {}) {
   const { t } = useTranslation()
   const [order] = useState(() => shuffled(BACKDROPS.length))
   const [step, setStep] = useState(0)
@@ -39,7 +39,7 @@ export function Backdrop() {
   // La de antes se queda debajo mientras la nueva aparece encima
   const layers = step > 0 ? [step - 1, step] : [step]
   return (
-    <div className={styles.backdrop} data-fondo="">
+    <div className={contained ? `${styles.backdrop} ${styles.contained}` : styles.backdrop} data-fondo="">
       {layers.map((n) => {
         const art = at(n)
         return (
@@ -54,6 +54,7 @@ export function Backdrop() {
           </div>
         )
       })}
+      {/* En la Mesa no sale (lo esconde el CSS de .contained) */}
       <p key={step} className={styles.credit}>
         <a href={current.source} target="_blank" rel="noopener noreferrer">
           {t('backdrop.credit', {

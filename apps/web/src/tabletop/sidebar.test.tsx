@@ -12,7 +12,7 @@ import {
   useSidebarTab
 } from './sidebar.tsx'
 
-const ALL: readonly SidebarTab[] = ['combat', 'scenes', 'characters', 'compendium', 'pages', 'settings']
+const ALL: readonly SidebarTab[] = ['scenes', 'combat', 'characters', 'compendium', 'pages', 'settings']
 
 function Harness({ asked = null, allowed = ALL }: { asked?: SidebarTab | null; allowed?: readonly SidebarTab[] }) {
   const [tab, setTab] = useSidebarTab(allowed, asked)
@@ -53,14 +53,14 @@ describe('la barra de la Mesa', () => {
     render(<Harness />)
     screen.getByRole('tab', { name: 'Escenas' }).focus()
     await user.keyboard('{ArrowRight}')
-    expect(document.activeElement).toBe(screen.getByRole('tab', { name: 'Personajes' }))
-    expect(screen.getByRole('tabpanel').textContent).toBe('Panel de characters')
+    expect(document.activeElement).toBe(screen.getByRole('tab', { name: /^Combate/ }))
+    expect(screen.getByRole('tabpanel').textContent).toBe('Panel de combat')
     await user.keyboard('{End}')
     expect(document.activeElement).toBe(screen.getByRole('tab', { name: 'Campaña' }))
     await user.keyboard('{ArrowRight}')
-    expect(document.activeElement).toBe(screen.getByRole('tab', { name: /^Combate/ }))
+    expect(document.activeElement).toBe(screen.getByRole('tab', { name: 'Escenas' }))
     await user.keyboard('{ArrowLeft}{Home}')
-    expect(document.activeElement).toBe(screen.getByRole('tab', { name: /^Combate/ }))
+    expect(document.activeElement).toBe(screen.getByRole('tab', { name: 'Escenas' }))
     // Solo la pestaña abierta está en el orden del tabulador
     expect(screen.getAllByRole('tab').filter((tab) => tab.tabIndex === 0)).toHaveLength(1)
   })

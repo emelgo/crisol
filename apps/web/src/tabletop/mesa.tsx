@@ -40,6 +40,7 @@ import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { CurrentCampaignContext } from '../campaign/current-campaign.ts'
+import { Backdrop } from '../components/backdrop.tsx'
 import { Loading } from '../components/brand.tsx'
 import { useDismiss } from '../components/dismiss.ts'
 import { FormError } from '../components/field.tsx'
@@ -121,6 +122,9 @@ export function MesaScreen() {
 }
 
 /** Lo que flota sobre la Mesa o va a su lado (las ventanas y la barra de pestañas): sus teclas no son las del mapa */
+/** Cuánto se ve un fallo de la Mesa antes de irse solo */
+const ERROR_MS = 6000
+
 const CHROME = '[role="dialog"], [data-window], [data-mesa-side]'
 
 type Gesture = {
@@ -254,6 +258,17 @@ export function Mesa({
     },
     onSuccess: () => client.invalidateQueries({ queryKey: ['creatures', campaignId] })
   })
+  // Lo que falla se dice un momento y se va solo (si no, se quedaba hasta la siguiente acción que saliera bien)
+  const { reset: resetAct } = act
+  const { reset: resetPlace } = place
+  useEffect(() => {
+    if (!act.error && !place.error) return
+    const timer = window.setTimeout(() => {
+      resetAct()
+      resetPlace()
+    }, ERROR_MS)
+    return () => window.clearTimeout(timer)
+  }, [act.error, place.error, resetAct, resetPlace])
   // Ctrl+Z: deshace el último movimiento de fichas hecho desde la mesa (el del historial del mundo)
   const undo = useMutation({
     mutationFn: async () => {
@@ -478,7 +493,11 @@ export function Mesa({
             ) : noCanvas ? (
               <p className={styles.notice}>{t('tabletop.noCanvas')}</p>
             ) : !open ? (
-              <p className={styles.notice}>{table ? t('tabletop.empty') : ''}</p>
+              <>
+                {/* Sin escena, el fondo de entrar: la Mesa no se queda en negro y su cristal se ve */}
+                <Backdrop contained />
+                <p className={styles.notice}>{table ? t('tabletop.empty') : ''}</p>
+              </>
             ) : !open.image ? (
               <div className={styles.notice}>
                 <p>{t('tabletop.noMap')}</p>

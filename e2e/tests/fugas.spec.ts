@@ -1127,7 +1127,8 @@ test('@fugas la pantalla de la tele solo recibe lo que ve el grupo, y un jugador
   const playerNet = watchNetwork(player)
   player.on('websocket', (ws) => ws.on('framereceived', ({ payload }) => playerFrames.push(String(payload))))
   const outside = (() => {
-    for (let x = 0; x * TILE < 3000; x++) for (let y = 0; y * TILE < 2000; y++) if (!touchesRoom(0, x, y)) return { x, y }
+    for (let x = 0; x * TILE < 3000; x++)
+      for (let y = 0; y * TILE < 2000; y++) if (!touchesRoom(0, x, y)) return { x, y }
     throw new Error('sin tesela fuera de la sala')
   })()
   for (const [path, codes] of [

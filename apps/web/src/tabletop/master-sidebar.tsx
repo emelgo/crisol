@@ -35,7 +35,7 @@ import { useWindows } from './windows.tsx'
 
 const route = getRouteApi('/mundos/$worldId/campanas/$campaignId')
 
-const MASTER_TABS: readonly SidebarTab[] = ['combat', 'scenes', 'characters', 'compendium', 'pages', 'settings']
+const MASTER_TABS: readonly SidebarTab[] = ['scenes', 'combat', 'characters', 'compendium', 'pages', 'settings']
 
 export type MasterSidebarState = ReturnType<typeof useMasterSidebar>
 
