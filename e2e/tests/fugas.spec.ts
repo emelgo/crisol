@@ -94,6 +94,8 @@ test('@fugas una jugadora no recibe nada de lo que no puede ver: ni la campaña 
   await player.getByRole('link', { name: 'Eana (Fateforge)' }).click()
   await expect(player.getByRole('list', { name: 'Tus campañas' }).getByRole('listitem')).toHaveCount(1)
   await player.goto(campaignA)
+  // Quién juega, en «La campaña», bajo su ficha
+  await player.getByText(/^La campaña: /).click()
   await expect(player.getByRole('list', { name: 'Miembros' })).toBeVisible()
   await player.goto(campaignB)
   await expect(player.getByRole('heading', { name: 'Esta campaña no existe' })).toBeVisible()

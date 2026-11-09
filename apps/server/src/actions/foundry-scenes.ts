@@ -219,7 +219,11 @@ function summaryOf(item: ZipScene, existing: scenesRepo.SceneWithPage | undefine
     lights: scene.lights.length,
     tokens: scene.tokens.length,
     notes: scene.notes.length,
-    existing: existing ? { sceneId: existing.id, pageId: existing.pageId, pageTitle: existing.pageTitle } : null
+    // Lo traído de Foundry vive siempre en una página (su pestaña «Escena»): si ya no la tiene, como si no estuviera
+    existing:
+      existing?.pageId && existing.pageTitle !== null
+        ? { sceneId: existing.id, pageId: existing.pageId, pageTitle: existing.pageTitle }
+        : null
   }
 }
 
@@ -462,8 +466,9 @@ export const foundrySceneActions = [
       out.push({
         id: scene.id,
         sceneId: target.id,
-        tabId: target.tabId,
-        pageId: target.pageId,
+        // Lo traído de Foundry va siempre en una página (su pestaña «Escena»)
+        tabId: target.tabId ?? '',
+        pageId: target.pageId ?? '',
         name: scene.name,
         background: scene.background,
         width: scene.width,

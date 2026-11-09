@@ -288,6 +288,12 @@ export function summaryOf(
     case 'setSceneImage':
     case 'drawScene':
       return say(action, sceneOf(details))
+    // Las escenas sueltas de la Mesa (ADR-0020)
+    case 'createScene':
+    case 'deleteScene':
+      return say(action, { name: text(details.name) })
+    case 'renameScene':
+      return say(action, { name: text(details.name), to: text(details.to) })
     case 'openScene':
     case 'presentScene':
       return details.name

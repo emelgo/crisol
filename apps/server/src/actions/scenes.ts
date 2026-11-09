@@ -6,6 +6,10 @@
 import type { Readable } from 'node:stream'
 import { Readable as ReadableStream } from 'node:stream'
 import {
+  type ActionDefinition,
+  createScene,
+  deletePageTab,
+  deleteScene,
   drawScene,
   getCampaignTable,
   getScene,
@@ -13,30 +17,25 @@ import {
   listScenes,
   openScene,
   presentScene,
+  renameScene,
   setSceneImage,
   setScreenCamera,
+  updatePageTab,
   updateScene
 } from '@crisol/contracts'
 import { filesRepo, scenesRepo } from '@crisol/db'
 import type { Capability } from '@crisol/domain'
 import { NotFoundError, sniff } from '@crisol/domain'
 import { imageSize, svgProblem, svgSize } from '@crisol/tabletop'
+import type { z } from 'zod'
 import { pagesChanged } from '../realtime/events.ts'
 import { campaignTableView, sceneView } from '../table/projection.ts'
-import { authorizedCampaign, authorizedPage, authorizedWiki, sceneOfCampaign } from './access.ts'
+import { authorizedCampaign, authorizedPage, authorizedScene, authorizedWiki, sceneOfCampaign } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
 import { filesTouched, scopeOf, withFreeName } from './files.ts'
 import { placePrepared } from './foundry-scenes.ts'
 import { implement } from './registry.ts'
 import { hasNoVision, placeImported } from './vision.ts'
-
-/** La escena, si la cuenta puede hacer eso en su página (404 si no existe o no la ve) */
-async function authorizedScene(ctx: ActionContext, capability: Capability, sceneId: string) {
-  const scene = await scenesRepo.findScene(ctx.db, sceneId)
-  const { page, wiki } = await authorizedPage(ctx, capability, scene?.pageId ?? '')
-  if (!scene) throw new NotFoundError('scene')
-  return { scene, page, wiki }
-}
 
 /** Los primeros bytes de un archivo, para leer su cabecera */
 async function readHead(stream: Readable) {
@@ -60,6 +59,17 @@ async function placeImportedIfEmpty(
   await placeImported(ctx, scene, historyContext(ctx, 'placeImportedWalls', details, wiki), false)
 }
 
+/** Llama a otra acción con su entrada ya validada (sus valores por defecto) */
+async function run<A extends ActionDefinition>(
+  ctx: ActionContext,
+  action: A,
+  input: z.input<A['input']>
+): Promise<z.output<A['output']>> {
+  const impl = ctx.actions.get(action.name)
+  if (!impl) throw new Error(`falta la acción ${action.name}`)
+  return (await impl.handler(ctx, action.input.parse(input))) as z.output<A['output']>
+}
+
 export const sceneActions = [
   implement(listScenes, async (ctx, { worldId }) => {
     await authorizedWiki(ctx, 'page.read', worldId)
@@ -70,9 +80,45 @@ export const sceneActions = [
     const found = sceneId
       ? await scenesRepo.findScene(ctx.db, sceneId)
       : await scenesRepo.sceneOfTab(ctx.db, tabId ?? '')
-    await authorizedPage(ctx, 'page.read', found?.pageId ?? '')
-    if (!found) throw new NotFoundError('scene')
-    return sceneView(found)
+    const { scene } = await authorizedScene(ctx, 'page.read', found?.id ?? '')
+    return sceneView(scene)
+  }),
+
+  // Las escenas sueltas, de la Mesa (ADR-0020): sin página
+  implement(createScene, async (ctx, { worldId, name }) => {
+    const wiki = await authorizedWiki(ctx, 'page.write', worldId)
+    const created = await scenesRepo.createScene(ctx.db, historyContext(ctx, 'createScene', { name }, wiki), {
+      worldId,
+      name
+    })
+    ctx.realtime.publish(pagesChanged(wiki))
+    return sceneView((await scenesRepo.findScene(ctx.db, created.id)) as scenesRepo.SceneWithPage)
+  }),
+
+  implement(renameScene, async (ctx, { sceneId, name }) => {
+    const { scene, wiki } = await authorizedScene(ctx, 'page.write', sceneId)
+    // La de una página es su pestaña: cambia el nombre de la pestaña
+    if (scene.tabId) await run(ctx, updatePageTab, { tabId: scene.tabId, name })
+    else
+      await scenesRepo.renameScene(
+        ctx.db,
+        historyContext(ctx, 'renameScene', { name: scene.name, to: name }, wiki),
+        sceneId,
+        name
+      )
+    ctx.table?.sceneChanged(sceneId)
+    ctx.realtime.publish(pagesChanged(wiki))
+    return sceneView((await scenesRepo.findScene(ctx.db, sceneId)) as scenesRepo.SceneWithPage)
+  }),
+
+  implement(deleteScene, async (ctx, { sceneId }) => {
+    const { scene, wiki } = await authorizedScene(ctx, 'page.write', sceneId)
+    // La de una página se va con su pestaña; la suelta, sola. Lo que había en ella, con ella (deshacer la devuelve)
+    if (scene.tabId) await run(ctx, deletePageTab, { tabId: scene.tabId })
+    else await scenesRepo.deleteScene(ctx.db, historyContext(ctx, 'deleteScene', { name: scene.name }, wiki), sceneId)
+    ctx.table?.sceneChanged(sceneId)
+    ctx.realtime.publish(pagesChanged(wiki))
+    return { ok: true as const }
   }),
 
   implement(updateScene, async (ctx, { sceneId, grid, initialView }) => {
@@ -202,7 +248,12 @@ export const sceneActions = [
     // La primera vez que la campaña la abre, nace su estado en ella (al historial: deshacer lo quita)
     const { created } = await scenesRepo.ensureSceneState(
       ctx.db,
-      historyContext(ctx, 'openScene', { campaign: campaign.name, name: scene.name, title: scene.pageTitle }, campaign),
+      historyContext(
+        ctx,
+        'openScene',
+        { campaign: campaign.name, name: scene.name, title: scene.pageTitle ?? scene.name },
+        campaign
+      ),
       { worldId: campaign.worldId, campaignId, sceneId }
     )
     // Y salen sus criaturas preparadas y sus pines (docs/specs/escenas-foundry.md), solo si esta llamada lo creó
@@ -219,7 +270,12 @@ export const sceneActions = [
     const scene = await sceneOfCampaign(ctx, campaign.worldId, target)
     const { created } = await scenesRepo.ensureSceneState(
       ctx.db,
-      historyContext(ctx, 'openScene', { campaign: campaign.name, name: scene.name, title: scene.pageTitle }, campaign),
+      historyContext(
+        ctx,
+        'openScene',
+        { campaign: campaign.name, name: scene.name, title: scene.pageTitle ?? scene.name },
+        campaign
+      ),
       { worldId: campaign.worldId, campaignId, sceneId: target }
     )
     if (created) await placePrepared(ctx, campaign, target)

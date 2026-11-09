@@ -5,14 +5,12 @@
 import { and, asc, count, eq, getTableColumns, inArray, isNull, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { type OperationContext, operation } from '../operation.ts'
-import { combats } from '../schema/combat.ts'
 import { files } from '../schema/files.ts'
 import { mapElements, mapPins, maps, pageTabs } from '../schema/maps.ts'
 import { pages } from '../schema/pages.ts'
-import { DEFAULT_SCENE_GRID, sceneStates, scenes, sceneTokens } from '../schema/scenes.ts'
-import { sceneMarks, sceneSnapshots } from '../schema/table-tools.ts'
+import { DEFAULT_SCENE_GRID, scenes } from '../schema/scenes.ts'
 import { randomTables } from '../schema/tables.ts'
-import { sceneFog, sceneLights, sceneWalls } from '../schema/vision.ts'
+import { removeSceneWith } from './scenes.ts'
 
 export type PageTabRow = typeof pageTabs.$inferSelect
 export type MapRow = typeof maps.$inferSelect
@@ -99,26 +97,7 @@ export function deleteTab(db: Database, context: OperationContext, tabId: string
     if (table) await w.remove(randomTables, table.id)
     // Su escena, con el estado de cada campaña en ella: deshacer devuelve las dos
     const [scene] = await w.read.select({ id: scenes.id }).from(scenes).where(eq(scenes.tabId, tabId))
-    if (scene) {
-      const states = await w.read
-        .select({ id: sceneStates.id })
-        .from(sceneStates)
-        .where(eq(sceneStates.sceneId, scene.id))
-      for (const state of states) await w.remove(sceneStates, state.id)
-      // Sus muros, sus luces y, de cada campaña, su niebla a mano, sus fichas, lo dejado en el mapa y sus instantáneas
-      // (sin historial se irían en cascada y deshacer devolvería la escena rota). Las teselas y lo explorado se quedan
-      for (const table of [sceneWalls, sceneLights, sceneFog, sceneTokens, sceneMarks, sceneSnapshots]) {
-        const rows = await w.read.select({ id: table.id }).from(table).where(eq(table.sceneId, scene.id))
-        await w.removeMany(
-          table,
-          rows.map((r) => r.id)
-        )
-      }
-      // El combate que se libraba en ella se queda sin escena (con historial: deshacer se la devuelve)
-      const fights = await w.read.select({ id: combats.id }).from(combats).where(eq(combats.sceneId, scene.id))
-      for (const fight of fights) await w.update(combats, fight.id, { sceneId: null })
-      await w.remove(scenes, scene.id)
-    }
+    if (scene) await removeSceneWith(w, scene.id)
     await w.remove(pageTabs, tabId)
   })
 }

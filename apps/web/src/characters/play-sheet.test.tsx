@@ -200,13 +200,15 @@ describe('la hoja en partida', () => {
   it('lo que lleva se añade del compendio y se equipa; se tira con ventaja y para quien se elija', async () => {
     const { api, play } = await renderSheet()
     const defense = screen.getByRole('button', { name: /^Tirar Defensa/ })
-    expect(defense.textContent).toBe('8')
+    expect(defense.textContent).toBe('Tirar Defensa 8')
     await userEvent.click(screen.getByRole('button', { name: 'Añadir' }))
     await userEvent.type(screen.getByRole('searchbox', { name: 'Buscar en el compendio' }), 'escudo')
     await userEvent.click(await screen.findByRole('button', { name: /^Escudo/ }))
     await userEvent.click(await screen.findByRole('checkbox', { name: 'Equipado' }))
     await waitFor(async () => expect((await play()).items).toMatchObject([{ key: 'escudo', equipped: true }]))
-    await waitFor(() => expect(screen.getByRole('button', { name: /^Tirar Defensa/ }).textContent).toBe('9'))
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /^Tirar Defensa/ }).textContent).toBe('Tirar Defensa 9')
+    )
 
     // Sus usos, con su nombre: gastar dos seguidos
     const less = screen.getByRole('button', { name: 'Uno menos de Escudo · Cargas' })

@@ -292,12 +292,9 @@ function Stats({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'stats' 
           <li key={f.key} className={styles.stat}>
             <span className={styles.statLabel}>{f.label}</span>
             {rollKey ? (
-              <button
-                type="button"
-                className={styles.statRoll}
-                aria-label={t('playSheet.rollOf', { what: f.label, value: shown(value, true) })}
-                onClick={() => ctx.roll({ roll: { key: rollKey } })}
-              >
+              <button type="button" className={styles.statRoll} onClick={() => ctx.roll({ roll: { key: rollKey } })}>
+                {/* Su nombre lleva lo que se ve tal cual («Tirar Iniciativa +2»): así lo encuentra quien dicta (WCAG 2.5.3) */}
+                <span className={styles.hidden}>{t('playSheet.rollStat', { what: f.label })} </span>
                 {shown(value, f.signed)}
               </button>
             ) : f.play ? (

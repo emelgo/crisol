@@ -50,7 +50,7 @@ type Gesture = { startX: number; startY: number; view: Viewport; travel: number;
 
 export function SceneViewer() {
   const { t } = useTranslation()
-  const { scene, tab, aligning, setAligning, alignCorners, viewer } = useSceneTab()
+  const { scene, name, aligning, setAligning, alignCorners, viewer } = useSceneTab()
   const image = scene?.image
   const tiles = image?.tiles
   const pyramid = useMemo(() => (image ? pyramidOf(image) : null), [image])
@@ -253,7 +253,7 @@ export function SceneViewer() {
         data-aligning={aligning || undefined}
         role="application"
         aria-roledescription={t('scene.roleDescription')}
-        aria-label={t('scene.label', { name: tab.name })}
+        aria-label={t('scene.label', { name })}
         aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown + - 0"
         // biome-ignore lint/a11y/noNoninteractiveTabindex: es un control propio (role application), no un contenedor
         tabIndex={0}

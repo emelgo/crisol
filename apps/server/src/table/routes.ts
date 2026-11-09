@@ -11,7 +11,7 @@ import { actorFrom, can } from '@crisol/domain'
 import { type FogGrid, hasTile, type TileRef, tilePyramid, tileWorldRect } from '@crisol/tabletop'
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 import { z } from 'zod'
-import { authorizedPage } from '../actions/access.ts'
+import { authorizedPage, authorizedScene } from '../actions/access.ts'
 import { type ActionContext, type ActionEnv, errorCode } from '../actions/context.ts'
 import type { Auth } from '../auth/auth.ts'
 import { TooLargeError } from '../files/storage.ts'
@@ -126,9 +126,7 @@ export function registerTableRoutes(
     if (!params.success || !env.storage) return reply.code(404).send({ code: 'NOT_FOUND' })
     const { sceneId, ...at } = params.data
     try {
-      const scene = await scenesRepo.findScene(ctx.db, sceneId)
-      await authorizedPage(ctx, 'page.write', scene?.pageId ?? '')
-      if (!scene) return reply.code(404).send({ code: 'NOT_FOUND' })
+      const { scene } = await authorizedScene(ctx, 'page.write', sceneId)
       if (Number(request.headers['content-length'] ?? 0) > MAX_TILE_BYTES) throw new TooLargeError()
       const stored = await env.storage.write(scene.worldId, request.body as Readable, MAX_TILE_BYTES)
       if (!isWebp(stored.head)) {
@@ -150,9 +148,8 @@ export function registerTableRoutes(
     if (!params.success) return reply.code(404).send({ code: 'NOT_FOUND' })
     const { sceneId, ...at } = params.data
     try {
-      const scene = await scenesRepo.findScene(ctx.db, sceneId)
-      await authorizedPage(ctx, 'page.read', scene?.pageId ?? '')
-      return sendTile(reply, scene ? await scenesRepo.findTile(ctx.db, { sceneId, ...at }) : null)
+      await authorizedScene(ctx, 'page.read', sceneId)
+      return sendTile(reply, await scenesRepo.findTile(ctx.db, { sceneId, ...at }))
     } catch (error) {
       return fail(reply, error)
     }

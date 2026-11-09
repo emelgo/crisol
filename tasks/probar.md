@@ -12,8 +12,8 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
 ## La campaña alrededor de la Mesa (en local; ADR-0019)
 
 - [ ] **Entrar**: desde Mis mundos, una campaña se abre en otra pestaña, ya en la Mesa, con la barra a la derecha.
-- [ ] **La barra**: cada pestaña; al volver, la última; plegarla; un combate nuevo abre la suya y, fuera de Tiradas,
-  las tiradas salen un momento sobre el d20.
+- [ ] **La barra**: flota de cristal, plegada y desplegada; cada pestaña; al volver, la última; plegarla; un combate
+  nuevo abre la suya. La campaña va sola, sin la barra de la izquierda.
 - [ ] **Escenas**: las tarjetas, «Escena nueva» y «En esta escena» (ocultar al grupo, meter en el combate).
 - [ ] **Compendio**: buscar por apartados, poner criaturas en el mapa, el ojo de lo que está en juego, «Libros» y
   «Abrir el compendio» (en su ventana).
@@ -22,11 +22,21 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
 - [ ] **Enseñar**: «Enseñar a los jugadores» en una página; con alguno que no la conoce, «revelar y enseñar»; a la
   jugadora se le abre (en su Mesa) o le sale «Te enseñan».
 - [ ] **Revelar desde la Mesa**: un secreto de una página abierta en ventana se revela a esa campaña sin preguntar.
-- [ ] **Ajustes**: miembros, el enlace de invitación y borrar la campaña.
+- [ ] **Campaña** (la pestaña del escudo): el nombre con su mundo y su sistema, los jugadores con sus personajes, quién
+  aún no tiene, los miembros, el enlace de invitación y borrar la campaña.
 - [ ] **La jugadora**: entra en su ficha con «Ir a la Mesa»; su Mesa ve lo que el grupo (como la tele) y su barra
-  (Tiradas, Combate, Personajes, Compendio, Páginas); en el móvil, su ficha.
+  (Combate, Personajes, Compendio, Páginas); en el móvil, su ficha.
 - [ ] **Del grupo**: en el inventario de la ficha, debajo de lo suyo; pasar algo arrastrando (PC) o con «Mover»
   (móvil); «Lo puso».
+- [ ] **Escenas sueltas** (ADR-0020): «Escena nueva» crea la escena sin página; sin mapa, se elige o se sube allí
+  mismo; botón derecho o «⋯» en una tarjeta: abrir, rejilla y ajustes (en una ventana), cambiar el nombre y borrar
+  (y deshacerlo desde el historial). Las que ya están en páginas siguen igual.
+- [ ] **Los dados nuevos** (lienzo «Tirar dados»): el d20 abre la columna de dados; pulsar suma, el botón derecho (o
+  mantener el dedo) quita; la bandeja con el modificador, Ventaja/Desventaja (pone un d20 si no lo hay) y quién la ve
+  (se recuerda); «Tirar» la vacía y la cierra; el resultado sale sobre el d20 al pararse los dados (crítico con brillo,
+  pifia en rojo), con «Otra vez» y, al pulsarlo, el historial. El teclado: escribir la tirada, y la próxima vez se abre
+  así. El historial, en una ventana de la Mesa (con «Aplicar»), y fuera de ella, en una ficha junto al d20; Todas/Mías.
+  El «?» se aparta mientras los dados están abiertos. En el móvil, una hoja desde abajo.
 
 ## Módulo 6: escenas, fichas, combate y escenas de Foundry (en staging, PR #114)
 

@@ -258,7 +258,7 @@ describe('la pestaña Escenas', () => {
     )
   })
 
-  it('«Escena nueva» crea su página con la escena y la abre', async () => {
+  it('«Escena nueva» crea una escena suelta (sin página, ADR-0020) y la abre', async () => {
     const user = userEvent.setup()
     const { api } = await renderTable()
     await user.click(await panel().findByRole('button', { name: 'Escena nueva' }))
@@ -267,7 +267,8 @@ describe('la pestaña Escenas', () => {
     await waitFor(async () =>
       expect((await api.client.call('getCampaignTable', { campaignId: CAMPAIGN.id })).open?.name).toBe('Puerto Gris')
     )
-    expect(api.pages.map((page) => page.title)).toContain('Puerto Gris')
+    expect(api.pages.map((page) => page.title)).not.toContain('Puerto Gris')
+    expect(api.calls).toContain('createScene')
   })
 })
 

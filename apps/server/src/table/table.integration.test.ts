@@ -150,6 +150,49 @@ describe('la mesa: escenas, teselas y la sala', () => {
     expect(changed.body.grid).toMatchObject({ size: 140, offsetX: 12, distance: 5 })
   })
 
+  it('una escena suelta (ADR-0020): sin página, con su nombre; se abre en la mesa, se renombra, se borra y se deshace', async () => {
+    const created = await call('createScene', { worldId, name: 'Pueblo' })
+    expect(created.status).toBe(200)
+    const scene = created.body
+    expect(scene).toMatchObject({ tabId: null, pageId: null, pageTitle: null, name: 'Pueblo', image: null })
+    // No crea ninguna página
+    const pages = await conn.db.select().from(schema.pages)
+    expect(pages.map((p) => p.title)).toEqual(['Cripta de Varn'])
+    expect((await call('listScenes', { worldId })).body.scenes.map((s: { name: string }) => s.name)).toEqual(['Pueblo'])
+    expect((await call('getScene', { sceneId: scene.id })).body).toMatchObject({ id: scene.id, name: 'Pueblo' })
+    // Sus teselas, como las de cualquiera (por el mundo, no por una página)
+    const version = crypto.randomUUID()
+    expect((await putTile(scene.id, version, '0/0/0')).statusCode).toBe(204)
+    expect((await getTile(`/api/scenes/${scene.id}/tiles/${version}/0/0/0`)).statusCode).toBe(200)
+    // Se abre en la mesa de una campaña y se le cambia el nombre
+    expect((await call('openScene', { campaignId, sceneId: scene.id })).body.open).toMatchObject({ id: scene.id })
+    expect((await call('renameScene', { sceneId: scene.id, name: 'El pueblo' })).body.name).toBe('El pueblo')
+    // La jugadora ni la crea ni la ve
+    expect((await call('createScene', { worldId, name: 'Mía' }, player.cookie)).status).toBeGreaterThanOrEqual(403)
+    expect((await call('getScene', { sceneId: scene.id }, player.cookie)).status).toBeGreaterThanOrEqual(403)
+    // Se borra (sale de la mesa) y deshacer la devuelve
+    expect((await call('deleteScene', { sceneId: scene.id })).status).toBe(200)
+    expect((await call('listScenes', { worldId })).body.scenes).toEqual([])
+    expect((await call('getScene', { sceneId: scene.id })).status).toBe(404)
+    const history = (await call('listHistory', { worldId })).body
+    const last = history.operations?.[0] ?? history.entries?.[0]
+    expect((await call('undoOperation', { operationId: last.id })).status).toBe(200)
+    expect((await call('getScene', { sceneId: scene.id })).body).toMatchObject({ name: 'El pueblo' })
+  })
+
+  it('la de una página se renombra (su pestaña) y se borra (su pestaña) con las mismas acciones', async () => {
+    const tab = (await call('createPageTab', { pageId, kind: 'scene' })).body
+    const scene = (await call('getScene', { tabId: tab.id })).body
+    expect((await call('renameScene', { sceneId: scene.id, name: 'La cripta' })).body).toMatchObject({
+      name: 'La cripta',
+      pageTitle: 'Cripta de Varn'
+    })
+    expect((await call('deleteScene', { sceneId: scene.id })).status).toBe(200)
+    expect((await call('listPageTabs', { pageId })).body.tabs.map((t: { kind: string }) => t.kind)).not.toContain(
+      'scene'
+    )
+  })
+
   it('las teselas: solo WebP, solo quien lleva la wiki; la imagen no se pone sin ellas', async () => {
     const tab = (await call('createPageTab', { pageId, kind: 'scene' })).body
     const scene = (await call('getScene', { tabId: tab.id })).body

@@ -162,7 +162,12 @@ async function sceneFor(ctx: ActionContext, campaign: Campaign, sceneId: string)
   const scene = await sceneOfCampaign(ctx, campaign.worldId, sceneId)
   await scenesRepo.ensureSceneState(
     ctx.db,
-    historyContext(ctx, 'openScene', { campaign: campaign.name, name: scene.name, title: scene.pageTitle }, campaign),
+    historyContext(
+      ctx,
+      'openScene',
+      { campaign: campaign.name, name: scene.name, title: scene.pageTitle ?? scene.name },
+      campaign
+    ),
     { worldId: campaign.worldId, campaignId: campaign.id, sceneId }
   )
   return { scene, cell: scene.grid.type === 'none' ? 100 : scene.grid.size }

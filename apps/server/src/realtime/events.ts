@@ -166,6 +166,8 @@ export function undoEvents(
       case 'maps':
       case 'map_pins':
       case 'map_elements':
+      // Las escenas sueltas (ADR-0020): sus listas cuelgan de las páginas en la web
+      case 'scenes':
         events.push(pagesChanged({ worldId, organizationId: context.organizationId }))
         break
       case 'tags':

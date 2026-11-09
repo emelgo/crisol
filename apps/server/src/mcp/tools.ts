@@ -445,9 +445,12 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   quitar_de_juego: { action: 'removeFromPlay' },
   origen_contenido: { action: 'getContentOrigin' },
   traer_original: { action: 'pullContentOrigin' },
-  // La mesa (docs/specs/escenas.md): las escenas del mundo (pestañas «Escena») y la mesa de cada campaña
+  // La mesa (docs/specs/escenas.md): las escenas del mundo (sueltas, ADR-0020, o pestañas «Escena») y la mesa de cada campaña
   ver_escenas: { action: 'listScenes' },
   ver_escena: { action: 'getScene' },
+  crear_escena: { action: 'createScene' },
+  renombrar_escena: { action: 'renameScene' },
+  borrar_escena: { action: 'deleteScene' },
   imagen_escena: { action: 'setSceneImage' },
   dibujar_escena: { action: 'drawScene' },
   cambiar_escena: { action: 'updateScene' },
@@ -574,7 +577,8 @@ const INSTRUCTIONS =
   'El inventario del grupo de una campaña (el botín, el carro) se ve con ver_grupo y se cambia con cambiar_grupo (con ' +
   'su versión): objetos del compendio por su clave o escritos a mano, contenedores y monedas; mover_en_grupo pasa un ' +
   'objeto entre el grupo y un personaje sin duplicarlo, y monedas_grupo pasa o reparte monedas. ' +
-  'La mesa: una escena es una pestaña de tipo scene (crear_pestana) en la página del lugar, con su imagen (un ' +
+  'La mesa: una escena se crea suelta con crear_escena (sin página, como en Foundry; si debe ir en la página de un ' +
+  'lugar, como pestaña de tipo scene con crear_pestana), con su imagen (un ' +
   'archivo del mundo por su id, con imagen_escena, o un mapa que dibujes tú en SVG con dibujar_escena: antes, lee ' +
   'la guía guia_mapas; el máster la trocea al abrirla) y su rejilla (cambiar_escena: ' +
   'cuadrada o hexagonal, el tamaño de la casilla en píxeles, lo que mide en pies). ver_escenas las lista; ver_escena ' +

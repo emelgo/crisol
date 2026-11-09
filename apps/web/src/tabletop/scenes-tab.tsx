@@ -13,8 +13,8 @@ import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { FormError } from '../components/field.tsx'
 import { failed, LoadError } from '../components/load-error.tsx'
-import { pageWindow } from './page-window.tsx'
 import { sceneListKey } from './queries.ts'
+import { sceneWindow } from './scene-window.tsx'
 import styles from './scenes-tab.module.css'
 import { SceneThumb } from './thumb.tsx'
 import { initialOf } from './tokens.ts'
@@ -40,7 +40,7 @@ export function ScenesGrid({
   const live = table?.presented && !table.screenHidden ? table.presented.id : null
   if (!scenes.data) return failed(scenes) ? <LoadError error={scenes.error} onRetry={() => scenes.refetch()} /> : null
   const all = scenes.data.scenes
-  const shown = all.filter((scene) => matches(`${scene.name} ${scene.pageTitle}`, query))
+  const shown = all.filter((scene) => matches(`${scene.name} ${scene.pageTitle ?? ''}`, query))
   return (
     <>
       {all.length > 4 && (
@@ -173,14 +173,14 @@ function SceneMenu({
   const [name, setName] = useState(scene.name)
   const refresh = () => client.invalidateQueries({ queryKey: ['pages', worldId] })
   const rename = useMutation({
-    mutationFn: (next: string) => api.call('updatePageTab', { tabId: scene.tabId, name: next }),
+    mutationFn: (next: string) => api.call('renameScene', { sceneId: scene.id, name: next }),
     onSuccess: async () => {
       await refresh()
       onClose()
     }
   })
   const remove = useMutation({
-    mutationFn: () => api.call('deletePageTab', { tabId: scene.tabId }),
+    mutationFn: () => api.call('deleteScene', { sceneId: scene.id }),
     onSuccess: async () => {
       await refresh()
       onClose()
@@ -241,7 +241,7 @@ function SceneMenu({
               type="button"
               role="menuitem"
               onClick={() => {
-                windows.open(pageWindow(worldId, scene.pageId, scene.pageTitle))
+                windows.open(sceneWindow(worldId, scene))
                 onClose()
               }}
             >
@@ -307,7 +307,7 @@ function SceneMenu({
   )
 }
 
-/** «Escena nueva»: una página con ese nombre y su pestaña de escena, que se abre en la Mesa */
+/** «Escena nueva»: una escena suelta con ese nombre (sin página, como en Foundry), que se abre en la Mesa */
 function NewScene({ worldId, onCreated }: { worldId: string; onCreated: (sceneId: string) => void }) {
   const { t } = useTranslation()
   const api = useApi()
@@ -317,11 +317,8 @@ function NewScene({ worldId, onCreated }: { worldId: string; onCreated: (sceneId
   const [writing, setWriting] = useState(false)
   const [name, setName] = useState('')
   const create = useMutation({
-    mutationFn: async (title: string) => {
-      const page = await api.call('createPage', { worldId, title })
-      const tab = await api.call('createPageTab', { pageId: page.id, kind: 'scene', name: title })
-      return api.call('getScene', { tabId: tab.id })
-    },
+    // Suelta, sin página (ADR-0020)
+    mutationFn: (title: string) => api.call('createScene', { worldId, name: title }),
     onSuccess: async (scene) => {
       setWriting(false)
       setName('')

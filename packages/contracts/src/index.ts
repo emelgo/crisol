@@ -120,6 +120,8 @@ import {
 } from './pages.ts'
 import { getParty, moveCoins, moveItem, splitCoins, updateParty } from './party.ts'
 import {
+  createScene,
+  deleteScene,
   drawScene,
   getCampaignTable,
   getScene,
@@ -127,6 +129,7 @@ import {
   listScenes,
   openScene,
   presentScene,
+  renameScene,
   setSceneImage,
   setScreenCamera,
   updateScene
@@ -431,6 +434,9 @@ export const ACTIONS = [
   importFoundryScenes,
   listScenes,
   getScene,
+  createScene,
+  renameScene,
+  deleteScene,
   updateScene,
   setSceneImage,
   getCampaignTable,
@@ -660,6 +666,9 @@ export type Actions = {
   importFoundryScenes: typeof importFoundryScenes
   listScenes: typeof listScenes
   getScene: typeof getScene
+  createScene: typeof createScene
+  renameScene: typeof renameScene
+  deleteScene: typeof deleteScene
   updateScene: typeof updateScene
   setSceneImage: typeof setSceneImage
   getCampaignTable: typeof getCampaignTable

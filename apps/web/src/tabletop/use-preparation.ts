@@ -9,7 +9,7 @@ import { ApiError } from '../api/client.ts'
 import { useApi } from '../api/context.tsx'
 import type { PrepareSource } from './prepare.ts'
 import { usePreparer } from './preparer.ts'
-import { sceneListKey, sceneTabKey } from './queries.ts'
+import { keyOfScene, sceneListKey } from './queries.ts'
 
 /** De dónde sale el mapa: una imagen del mundo, una que se elige, un UVTT, o el archivo que ya tiene (la IA) */
 export type SceneChoice =
@@ -126,7 +126,7 @@ export function useScenePreparation(worldId: string) {
           ...(choice.kind === 'own' ? {} : { imported: prepared.uvtt?.imported ?? null })
         })
         if (prepared.uvtt) placed = await api.call('updateScene', { sceneId: scene.id, grid: prepared.uvtt.grid })
-        queryClient.setQueryData(sceneTabKey(worldId, scene.tabId), placed)
+        queryClient.setQueryData(keyOfScene(worldId, scene), placed)
         void queryClient.invalidateQueries({ queryKey: sceneListKey(worldId) })
         release()
         setState({ status: 'idle' })

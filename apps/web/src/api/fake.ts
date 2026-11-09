@@ -502,11 +502,14 @@ export function fakeApi(
     throw new ApiError('NOT_FOUND', 404)
   }
   const copyMap = (map: MapView): MapView => ({ ...map, pins: map.pins.map((pin) => ({ ...pin })) })
-  // Las escenas (una por pestaña «Escena») y la mesa de cada campaña, como el servidor
+  // Las escenas (sueltas, ADR-0020, o una por pestaña «Escena») y la mesa de cada campaña, como el servidor
   type StoredScene = {
     id: string
-    tabId: string
-    pageId: string
+    worldId: string
+    /** La suelta, sin pestaña ni página y con su nombre */
+    tabId: string | null
+    pageId: string | null
+    name: string | null
     image: SceneView['image']
     grid: SceneGrid
     initialView: SceneViewport | null
@@ -522,8 +525,8 @@ export function fakeApi(
     id: scene.id,
     tabId: scene.tabId,
     pageId: scene.pageId,
-    pageTitle: pageById(scene.pageId).title,
-    name: tabById(scene.tabId).name,
+    pageTitle: scene.pageId ? pageById(scene.pageId).title : null,
+    name: scene.name ?? (scene.tabId ? tabById(scene.tabId).name : ''),
     image: scene.image ? { ...scene.image } : null,
     grid: { ...scene.grid },
     initialView: scene.initialView ? { ...scene.initialView } : null,
@@ -814,7 +817,7 @@ export function fakeApi(
   const sceneOfCampaign = (campaignId: string, sceneId: string) => {
     const { campaign } = campaignTableOf(campaignId)
     const scene = sceneById(sceneId)
-    if (pageById(scene.pageId).worldId !== campaign.worldId) throw new ApiError('NOT_FOUND', 404)
+    if (scene.worldId !== campaign.worldId) throw new ApiError('NOT_FOUND', 404)
     return scene
   }
 
@@ -3022,8 +3025,10 @@ export function fakeApi(
       if (kind === 'scene')
         scenes.push({
           id: crypto.randomUUID(),
+          worldId: pageById(pageId).worldId,
           tabId: tab.id,
           pageId,
+          name: null,
           image: null,
           grid: {
             type: 'square',
@@ -3069,8 +3074,49 @@ export function fakeApi(
       return { id: tabId }
     },
     listScenes: ({ worldId }) => ({
-      scenes: scenes.filter((s) => pageById(s.pageId).worldId === worldId).map(sceneView)
+      scenes: scenes.filter((s) => s.worldId === worldId).map(sceneView)
     }),
+    createScene: ({ worldId, name }) => {
+      const scene: StoredScene = {
+        id: crypto.randomUUID(),
+        worldId,
+        tabId: null,
+        pageId: null,
+        name,
+        image: null,
+        grid: {
+          type: 'square',
+          size: 100,
+          offsetX: 0,
+          offsetY: 0,
+          distance: 5,
+          units: 'pies',
+          diagonals: 'equal',
+          visible: true,
+          color: '#000000',
+          opacity: 0.3
+        },
+        initialView: null,
+        imported: null
+      }
+      scenes.push(scene)
+      return sceneView(scene)
+    },
+    renameScene: ({ sceneId, name }) => {
+      const scene = sceneById(sceneId)
+      if (scene.tabId) tabById(scene.tabId).name = name
+      else scene.name = name
+      return sceneView(scene)
+    },
+    deleteScene: ({ sceneId }) => {
+      const scene = sceneById(sceneId)
+      if (scene.tabId) {
+        const tab = tabById(scene.tabId)
+        pageTabs.splice(pageTabs.indexOf(tab), 1)
+      }
+      scenes.splice(scenes.indexOf(scene), 1)
+      return { ok: true as const }
+    },
     getScene: ({ sceneId, tabId }) => {
       const scene = sceneId ? scenes.find((s) => s.id === sceneId) : scenes.find((s) => s.tabId === tabId)
       if (!scene) throw new ApiError('NOT_FOUND', 404)
@@ -3098,7 +3144,7 @@ export function fakeApi(
     // Como el servidor: el SVG pasa a ser un archivo del mundo y la escena queda sin trocear
     drawScene: ({ sceneId, svg, name, walls, portals, lights }) => {
       const scene = sceneById(sceneId)
-      const worldId = pageById(scene.pageId).worldId
+      const worldId = scene.worldId
       const file = fileOf({ worldId, name: `${name ?? 'Mapa'}.svg`, mime: 'image/svg+xml', size: svg.length })
       files.push(file)
       const size = /width="(\d+)"[^>]*height="(\d+)"/.exec(svg)

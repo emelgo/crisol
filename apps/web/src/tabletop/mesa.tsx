@@ -59,12 +59,13 @@ import { GroupDamage } from './group-damage.tsx'
 import { MarksLayer, placeMarks } from './marks-layer.tsx'
 import { MasterSidebar, useMasterSidebar } from './master-sidebar.tsx'
 import styles from './mesa.module.css'
-import { openPageLinks, PageWindowsSocket, pageWindow } from './page-window.tsx'
+import { openPageLinks, PageWindowsSocket } from './page-window.tsx'
 import { PLACING_TYPE, type Placing } from './panel.tsx'
 import { PlayerMesa } from './player-mesa.tsx'
 import { Preparing } from './preparing.tsx'
 import { masterTileUrl, sceneListKey } from './queries.ts'
 import type { RendererScene } from './renderer.ts'
+import { sceneWindow } from './scene-window.tsx'
 import { SnapshotsPanel, THUMBNAIL_BYTES, THUMBNAIL_SIDE } from './snapshots.tsx'
 import { TokenCard } from './token-card.tsx'
 import { TokenImageEditor } from './token-image.tsx'
@@ -1449,7 +1450,7 @@ function SceneMenu({ worldId, open, onOpen }: { worldId: string; open: SceneView
                   }}
                 >
                   {scene.name}
-                  <span>{scene.pageTitle}</span>
+                  {scene.pageTitle && <span>{scene.pageTitle}</span>}
                 </button>
               </li>
             ))}
@@ -1462,28 +1463,27 @@ function SceneMenu({ worldId, open, onOpen }: { worldId: string; open: SceneView
   )
 }
 
-/** Su página: en una ventana de la Mesa (sin irse de la campaña) */
+/**
+ * Su página (la de una página) o su editor (la suelta, ADR-0020), en una ventana de la Mesa: sin irse de la campaña
+ */
 function PageLink({ worldId, scene }: { worldId: string; scene: SceneView }) {
   const { t } = useTranslation()
   const windows = useWindows()
+  const label = t(scene.pageId ? 'tabletop.goToPage' : 'tabletop.sceneSettings')
   if (!windows)
-    return (
+    return scene.pageId ? (
       <Link
         to="/mundos/$worldId/wiki/$pageId"
         params={{ worldId, pageId: scene.pageId }}
-        search={{ pestana: scene.tabId }}
+        search={scene.tabId ? { pestana: scene.tabId } : {}}
         className={styles.pageLink}
       >
-        {t('tabletop.goToPage')}
+        {label}
       </Link>
-    )
+    ) : null
   return (
-    <button
-      type="button"
-      className={styles.pageLink}
-      onClick={() => windows.open(pageWindow(worldId, scene.pageId, scene.pageTitle))}
-    >
-      {t('tabletop.goToPage')}
+    <button type="button" className={styles.pageLink} onClick={() => windows.open(sceneWindow(worldId, scene))}>
+      {label}
     </button>
   )
 }
@@ -1508,11 +1508,7 @@ function NoMap({
       <p>{t('tabletop.noMap')}</p>
       <SourcePicker worldId={worldId} value={null} onChange={onChoose} />
       {windows && (
-        <button
-          type="button"
-          className={styles.pageLink}
-          onClick={() => windows.open(pageWindow(worldId, scene.pageId, scene.pageTitle))}
-        >
+        <button type="button" className={styles.pageLink} onClick={() => windows.open(sceneWindow(worldId, scene))}>
           {t('tabletop.sceneSettings')}
         </button>
       )}

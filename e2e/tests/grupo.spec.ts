@@ -65,12 +65,11 @@ test('el grupo: la jugadora coge una poción para su personaje y la usa; el más
   await player.goto(`${campaignUrl}/personajes/${thora}?vista=ficha`)
   await player.getByRole('tab', { name: 'Inventario' }).click()
   await expect(player.getByText('Poción de curación', { exact: true }).first()).toBeVisible()
-  await player.getByRole('button', { name: 'Del grupo' }).click()
+  // «Lo mío» y, debajo, «Del grupo» (con las dos que quedan), a la vez
   await expect(player.getByText('×2')).toBeVisible()
   await player.screenshot({ path: test.info().outputPath('grupo-hoja.png'), fullPage: false })
-  await player.getByRole('button', { name: 'Mío' }).click()
-  // La papelera pide un segundo toque
-  await player.getByRole('button', { name: 'Quitar Poción de curación' }).click()
+  // La papelera pide un segundo toque (la suya, la primera: «Lo mío» va antes)
+  await player.getByRole('button', { name: 'Quitar Poción de curación' }).first().click()
   await player.getByRole('button', { name: '¿Quitar Poción de curación? Pulsa otra vez' }).click()
   await expect
     .poll(async () => {

@@ -1,0 +1,30 @@
+/* El editor de una escena suelta en su ventana: el mapa a la izquierda y la rejilla a la derecha (estrecha, debajo) */
+.editor {
+  container-type: inline-size;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(14rem, 18rem);
+  gap: var(--space-4);
+  min-block-size: 100%;
+  padding: var(--space-4);
+  box-sizing: border-box;
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+}
+
+.side {
+  min-inline-size: 0;
+  padding: var(--space-4);
+  border: 1px solid var(--glass-edge);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--color-surface) 45%, transparent);
+}
+
+@container (max-width: 44rem) {
+  .editor {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

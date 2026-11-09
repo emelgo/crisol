@@ -267,7 +267,7 @@ describe('la mesa del máster', () => {
     await user.click(await screen.findByRole('menuitem', { name: 'Borrar la escena' }))
     await user.click(screen.getByRole('button', { name: 'Borrar la escena' }))
     await waitFor(() => expect(list.queryByRole('button', { name: 'Abrir El faro' })).toBeNull())
-    expect(api.calls).toContain('deletePageTab')
+    expect(api.calls).toContain('deleteScene')
   })
 
   it('un jugador no tiene mesa: vuelve a su campaña (no «Esta campaña no existe»)', async () => {

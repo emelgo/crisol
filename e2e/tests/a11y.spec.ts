@@ -17,6 +17,7 @@ import {
   openSettings,
   openWindow,
   openWorld,
+  settled,
   skipTours
 } from './ayudas.ts'
 
@@ -173,7 +174,8 @@ test('el móvil de la jugadora (su campaña, el menú de la llama, sus páginas 
   // La campaña va sola (sin la barra ni el menú de la llama): sus páginas y el compendio, por su dirección
   const path = campaignPath(ana)
   await ana.goto(`${path}/paginas`)
-  await expect(ana.getByRole('heading', { level: 1 })).toBeVisible()
+  await expect(ana.getByRole('main')).toBeVisible()
+  await settled(ana)
   await check()
   await ana.goto(`${path}/compendio`)
   await expect(ana.getByRole('heading', { level: 1, name: 'Compendio' })).toBeVisible()

@@ -7,6 +7,31 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
+### Para retomar (2026-11-10, tarde: escenas sueltas, ADR-0020)
+
+- **Tras probar Enrique la campaña** (misma rama `docs/tras-revision`): pestaña «Campaña» con una sola voz, Escenas
+  antes que Combate, los menús del editor por encima de las ventanas, cristal en la página en ventana y en la Mesa
+  sin escena (el fondo de entrar), los fallos de la Mesa que se van solos, encuadrar sin lo que tapa la barra, los
+  dados 3D suaves (interpolando, como el Crisol antiguo) y el servidor que ya no se queda colgado al reiniciarse.
+- **Escenas sueltas (ADR-0020)**: Enrique eligió «como Foundry»: «Escena nueva» ya no crea página; `createScene`,
+  `renameScene`, `deleteScene` (MCP `crear_escena`, `renombrar_escena`, `borrar_escena`), migración 0063 (`tab_id`
+  opcional y `name`); permisos de la suelta por el mundo; su editor (mapa, rejilla) en una ventana de la Mesa
+  (`tabletop/scene-window.tsx`, `SceneProvider`); menú de cada tarjeta (botón derecho o «⋯»).
+- **Siguiente paso**: que pasen las e2e que quedan y la revisión; luego el PR con la CI una vez.
+
+
+- **Hecho en la rama `docs/tras-revision`** desde la nota de abajo: el cristal (lienzo «La Mesa, con cristal»), la barra
+  de la derecha flotando de cristal (plegada y desplegada, entera), la campaña sin la barra de la izquierda (como
+  Foundry), la pestaña «Campaña» (nombre, jugadores y sus personajes, miembros, invitación), fuera la pestaña Tiradas y
+  **los dados nuevos** (lienzo «Tirar dados», https://claude.ai/artifact/2foNpTU5ed1XGFkjTp2TAN, aprobado: «me
+  gusta»): columna de dados sobre el d20, bandeja con lo juntado (modificador, ventaja, quién la ve, que se recuerda),
+  escribir la tirada (se abre así la próxima vez), el resultado sobre el d20 cuando paran los dados, con «Otra vez», y
+  el historial en una ventana de la Mesa (fuera, en una ficha junto al d20). Código en `apps/web/src/dice/`
+  (`pool.ts`, `rack.tsx`, `notices.tsx`, `roll-parts.tsx`, `history.tsx`). Unitarias de la web en verde.
+- **Siguiente paso**: terminar la tarea 13: que pasen todas las e2e (adaptadas a la campaña sin barra, a que las
+  campañas se abren en otra pestaña y a los dados nuevos), la revisión y el PR con la CI una vez.
+- Lo de «sistemas y libros» y lo pendiente apuntado siguen como en la nota de abajo.
+
 ### Para retomar (2026-11-09: la campaña alrededor de la Mesa, construida en local)
 
 - **Rama `docs/tras-revision`** (sin PR, sin subir), con lo de antes (cuadros unificados, transiciones, etiquetas

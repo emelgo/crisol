@@ -43,7 +43,13 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   en una esquina, pero no una pagina propia»): un botón flotante con forma de d20, siempre en la misma esquina, que
   abre la ficha de dados junto a él (y la cierra); no es una pantalla ni una sección de la barra. Sustituye a la ficha
   de dados en el sitio del panel de la página (2026-11-04). **La ficha no se recuerda abierta** al volver a entrar, y en
-  el móvil se cierra al cambiar de pantalla (2026-11-08, segunda revisión).
+  el móvil se cierra al cambiar de pantalla (2026-11-08, segunda revisión). **Tirar, como en D&D Beyond** (Enrique,
+  2026-11-10: «es poco intuitivo lo de tirar dados, mira como se hace en dndbeyond»; lienzo «Tirar dados», «me
+  gusta»): el d20 abre una columna de dados encima (pulsar suma uno; el botón derecho o mantener el dedo, quita uno) y,
+  a su lado, la bandeja con lo juntado, el modificador, Ventaja/Desventaja, quién la ve (se recuerda) y «Tirar»; al
+  tirar se vacía y se cierra. El resultado sale sobre el d20 cuando paran los dados; el historial, en una ventana de la
+  Mesa (fuera, en una ficha junto al d20). Sin pestaña Tiradas. El d20 y el «?» no se mueven; el «?» se aparta
+  mientras los dados están abiertos.
 - **La campaña se abre en la Mesa, como en Foundry VTT** (Enrique, 2026-11-08: «la mesa debería ser lo que se ve al
   abrir la campaña como en foundryvtt»; «dentro de la mesa es donde deberíamos tener el compendio»; ADR-0019,
   construida el 2026-11-09):
