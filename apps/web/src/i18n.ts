@@ -3190,8 +3190,36 @@ export const es = {
       revealed: 'Lo que le has revelado al grupo, para repasarlo u ocultarlo otra vez.',
       table: 'La mesa: las escenas del mundo y la pantalla del grupo.'
     },
+    // El espacio de la campaña (ADR-0021)
+    campaignHome: {
+      table: 'La partida: los personajes, quién está y la Mesa, que se abre en otra pestaña.',
+      books: 'Los libros de la campaña: qué reglas y qué contenido usa.',
+      compendium: 'Todo lo de sus libros, para consultarlo.',
+      adventures: 'Las aventuras de la campaña.',
+      settings: 'Los ajustes de la campaña: los jugadores y cómo invitarlos.',
+      toMesa: 'Vuelve a la Mesa donde lo dejasteis.'
+    },
+    playerCampaign: {
+      table: 'La partida: los personajes y la Mesa.',
+      compendium: 'Las reglas y el contenido de la campaña.',
+      character: 'Tu personaje: su ficha, a un toque.',
+      toMesa: 'La Mesa, en otra pestaña.'
+    },
+    books: {
+      list: 'Enciende los libros que usa la campaña y elige qué entra de cada uno.'
+    },
+    system: {
+      books: 'Los libros del sistema: cada uno llena su compendio.',
+      create: 'Añade un libro: con la IA desde un PDF, desde un archivo o vacío.'
+    },
+    review: {
+      entries: 'Lo que propuso la IA: marca lo que entra.',
+      source: 'El texto del PDF del que sale, para comprobarlo.'
+    },
     characters: {
       create: 'Cada personaje se hace con las reglas de la campaña, paso a paso.',
+      open: 'Abre la Mesa en otra pestaña.',
+      present: 'Quién está ahora en la Mesa.',
       views: 'Su ficha, para jugar, y su creador, para hacerlo o subirlo de nivel.',
       roll: 'Se tira a un clic. Aquí, con ventaja o desventaja y quién lo ve.',
       versions: 'Al terminarlo y en cada nivel se guarda una versión, por si hay que volver atrás.'

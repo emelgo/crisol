@@ -124,7 +124,11 @@ export function CharactersScreen() {
       {!noSystem && (
         <Tour
           id="personajes"
-          steps={[{ target: '[data-tour="personaje-nuevo"]', text: t('tour.characters.create') }]}
+          steps={[
+            { target: '[data-tour="mesa-abrir"]', text: t('tour.characters.open') },
+            { target: '[data-tour="mesa-presentes"]', text: t('tour.characters.present') },
+            { target: '[data-tour="personaje-nuevo"]', text: t('tour.characters.create') }
+          ]}
         />
       )}
       {creating && (

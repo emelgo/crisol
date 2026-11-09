@@ -11,6 +11,7 @@ import { type ReactNode, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { PageTitle } from '../components/page-title.tsx'
+import { Tour } from '../components/tour.tsx'
 import { useWindow } from '../components/window.tsx'
 import { worldTransition } from '../components/world-transition.ts'
 import { useDice } from '../dice/context.tsx'
@@ -274,6 +275,17 @@ export function CampaignHome({ worldId, worldName, campaign }: Props) {
           <Adventure worldId={worldId} campaignId={campaign.id} />
         </div>
       </div>
+      <Tour
+        id="campana"
+        steps={[
+          { target: '[data-tour="barra-mesa"]', text: t('tour.campaignHome.table') },
+          { target: '[data-tour="barra-libros"]', text: t('tour.campaignHome.books') },
+          { target: '[data-tour="barra-compendio"]', text: t('tour.campaignHome.compendium') },
+          { target: '[data-tour="barra-aventuras"]', text: t('tour.campaignHome.adventures') },
+          { target: '[data-tour="barra-ajustes-campana"]', text: t('tour.campaignHome.settings') },
+          { target: '[data-tour="inicio-mesa"]', text: t('tour.campaignHome.toMesa') }
+        ]}
+      />
     </div>
   )
 }
@@ -355,6 +367,15 @@ export function PlayerCampaignHome({ worldId, worldName, campaign }: Props) {
           </Section>
         )}
         <Shelf worldId={worldId} worldName={worldName} campaign={campaign} editable={false} />
+        <Tour
+          id="campana"
+          steps={[
+            { target: '[data-tour="barra-mesa"]', text: t('tour.playerCampaign.table') },
+            { target: '[data-tour="barra-compendio"]', text: t('tour.playerCampaign.compendium') },
+            { target: '[data-tour="inicio-personaje"]', text: t('tour.playerCampaign.character') },
+            { target: '[data-tour="inicio-mesa"]', text: t('tour.playerCampaign.toMesa') }
+          ]}
+        />
         {/* La campaña: quién juega y, en su zona de peligro, dejarla */}
         <details className={styles.campaign}>
           <summary>{t('playerHome.campaign', { name: campaign.name })}</summary>

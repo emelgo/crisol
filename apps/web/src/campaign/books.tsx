@@ -20,6 +20,7 @@ import form from '../components/form.module.css'
 import { failed, LoadError } from '../components/load-error.tsx'
 import { Modal } from '../components/modal.tsx'
 import { PageTitle } from '../components/page-title.tsx'
+import { Tour } from '../components/tour.tsx'
 import { BookCover } from './book-cover.tsx'
 import { BookWindow, relayout, withTransition } from './book-window.tsx'
 import styles from './books.module.css'
@@ -186,6 +187,7 @@ export function CampaignBooks({ worldId, worldName, campaign }: Props) {
           )}
         </ul>
       </div>
+      <Tour id="libros" steps={[{ target: '[data-tour="libros-lista"]', text: t('tour.books.list') }]} />
       {choosing && (
         <ChooseContent
           systemId={system.id}

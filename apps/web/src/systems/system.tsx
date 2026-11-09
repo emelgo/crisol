@@ -26,6 +26,7 @@ import { failed, LoadError } from '../components/load-error.tsx'
 import { Modal } from '../components/modal.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { Screen } from '../components/screen.tsx'
+import { Tour } from '../components/tour.tsx'
 import { itemTransition } from '../components/world-transition.ts'
 import styles from './system.module.css'
 
@@ -115,6 +116,13 @@ export function SystemScreen() {
           </li>
         )}
       </ul>
+      <Tour
+        id="sistema"
+        steps={[
+          { target: '[data-tour="sistema-libros"]', text: t('tour.system.books') },
+          ...(editable ? [{ target: '[data-tour="libro-nuevo"]', text: t('tour.system.create') }] : [])
+        ]}
+      />
       {opened && (
         <BookWindow
           book={opened}

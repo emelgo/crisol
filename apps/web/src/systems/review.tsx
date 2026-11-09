@@ -17,6 +17,7 @@ import { FormError } from '../components/field.tsx'
 import form from '../components/form.module.css'
 import { failed, LoadError } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
+import { Tour } from '../components/tour.tsx'
 import styles from './review.module.css'
 
 const route = getRouteApi('/sistemas/$systemId/libros/$bookKey/revisar')
@@ -147,7 +148,7 @@ export function ReviewScreen() {
                 {t('review.none')}
               </button>
             </div>
-            <ul className={styles.list}>
+            <ul className={styles.list} data-tour="revisar-entradas">
               {items.map((entry) => {
                 const inIt = !isOut(entry)
                 const warnings = [
@@ -204,7 +205,7 @@ export function ReviewScreen() {
               })}
             </ul>
           </section>
-          <section className={styles.side}>
+          <section className={styles.side} data-tour="revisar-pdf">
             <div className={styles.tabs} role="tablist" aria-label={open?.name ?? ''}>
               <button
                 type="button"
@@ -252,6 +253,15 @@ export function ReviewScreen() {
             </div>
           </section>
         </div>
+      )}
+      {items.length > 0 && (
+        <Tour
+          id="revisar"
+          steps={[
+            { target: '[data-tour="revisar-entradas"]', text: t('tour.review.entries') },
+            { target: '[data-tour="revisar-pdf"]', text: t('tour.review.source') }
+          ]}
+        />
       )}
       {items.length > 0 && (
         <footer className={styles.bottom}>

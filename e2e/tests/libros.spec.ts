@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { createCampaign, createWorld, freshOwner, import5e, openCampaign } from './ayudas.ts'
+import { createCampaign, createWorld, freshOwner, import5e } from './ayudas.ts'
 
 /** Una acción de la API con la sesión de `page` */
 async function act(page: import('@playwright/test').Page, name: string, data: object) {
@@ -18,7 +18,8 @@ test('la campaña abre en su Inicio, con su barra; desde ahí, sus libros y la M
   const { worlds } = await act(page, 'listWorlds', {})
   const { campaigns } = await act(page, 'listCampaigns', { worldId: worlds[0].id })
   await act(page, 'updateCampaign', { campaignId: campaigns[0].id, system: five })
-  await openCampaign(page, 'La Marca')
+  // Desde Mis mundos, en la misma pestaña
+  await page.getByRole('link', { name: 'La Marca', exact: true }).first().click()
 
   // El Inicio: la campaña, ir a la Mesa, los jugadores y los libros
   await expect(page.getByRole('heading', { level: 1, name: 'La Marca' })).toBeVisible()

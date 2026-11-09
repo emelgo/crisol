@@ -147,7 +147,10 @@ export async function skipTours(page: Page, email: string) {
           'paginas-jugador',
           'escena',
           'mesa',
-          'mesa-jugador'
+          'mesa-jugador',
+          'libros',
+          'sistema',
+          'revisar'
         ]
       })
     )
@@ -217,13 +220,13 @@ export async function import5e(page: Page): Promise<string> {
 }
 
 /**
- * Entra en una campaña desde su tarjeta. Se abre en otra pestaña (como en D&D Beyond): aquí, en la misma, con su
- * dirección. panel: la pestaña de la Mesa que se quiere abierta (ajustes, compendio…)
+ * Entra en la Mesa de una campaña desde su tarjeta (ADR-0021: la campaña abre en su Inicio y la Mesa, en otra pestaña;
+ * aquí, en la misma, con su dirección). panel: la pestaña de la Mesa que se quiere abierta (ajustes, compendio…)
  */
 export async function openCampaign(page: Page, name: string, panel?: string) {
   const href = await page.getByRole('link', { name, exact: true }).first().getAttribute('href')
   expect(href).toBeTruthy()
-  await page.goto(panel ? `${href}?panel=${panel}` : (href as string))
+  await page.goto(`${href}/mesa${panel ? `?panel=${panel}` : ''}`)
 }
 
 /** La dirección de la campaña abierta en `page` (sin ?panel=…) */
