@@ -5,6 +5,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { getRouteApi, Link, Navigate } from '@tanstack/react-router'
 import { UserRound } from 'lucide-react'
+import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
@@ -22,10 +23,33 @@ import { Versions } from './versions.tsx'
 
 const route = getRouteApi('/mundos/$worldId/campanas/$campaignId/personajes/$characterId')
 
+/** La ruta de un personaje: la vista (ficha o creador) va en la dirección */
 export function CharacterScreen() {
-  const { t } = useTranslation()
   const { worldId, campaignId, characterId } = route.useParams()
   const { vista } = route.useSearch()
+  return <CharacterView worldId={worldId} campaignId={campaignId} characterId={characterId} vista={vista ?? null} />
+}
+
+/**
+ * Un personaje con su ficha o su creador. En su ruta, las dos vistas son enlaces; en la portada de la campaña de quien
+ * juega (su ficha al entrar), onView las cambia sin salir de ella, y actions va junto al nombre («Ir a la Mesa»)
+ */
+export function CharacterView({
+  worldId,
+  campaignId,
+  characterId,
+  vista,
+  onView,
+  actions
+}: {
+  worldId: string
+  campaignId: string
+  characterId: string
+  vista: 'ficha' | 'creador' | null
+  onView?: (vista: 'ficha' | 'creador') => void
+  actions?: ReactNode
+}) {
+  const { t } = useTranslation()
   const api = useApi()
   const errorText = useErrorText()
   const { account, pending } = useAccounts().useAccount()
@@ -67,20 +91,33 @@ export function CharacterScreen() {
         <span className={styles.saved} aria-live="polite">
           {busy ? t('characters.saving') : saved ? t('characters.saved') : ''}
         </span>
+        {actions}
         <nav className={styles.tabs} aria-label={t('characters.views')} data-tour="vistas-personaje">
-          {(['sheet', 'creator'] as const).map((each) => (
-            <Link
-              key={each}
-              to="/mundos/$worldId/campanas/$campaignId/personajes/$characterId"
-              params={{ worldId, campaignId, characterId }}
-              search={{ vista: each === 'sheet' ? 'ficha' : 'creador' }}
-              replace
-              className={styles.tab}
-              aria-current={shown === each ? 'page' : undefined}
-            >
-              {t(each === 'sheet' ? 'characters.sheet' : 'characters.creator')}
-            </Link>
-          ))}
+          {(['sheet', 'creator'] as const).map((each) =>
+            onView ? (
+              <button
+                key={each}
+                type="button"
+                className={styles.tab}
+                aria-current={shown === each ? 'page' : undefined}
+                onClick={() => onView(each === 'sheet' ? 'ficha' : 'creador')}
+              >
+                {t(each === 'sheet' ? 'characters.sheet' : 'characters.creator')}
+              </button>
+            ) : (
+              <Link
+                key={each}
+                to="/mundos/$worldId/campanas/$campaignId/personajes/$characterId"
+                params={{ worldId, campaignId, characterId }}
+                search={{ vista: each === 'sheet' ? 'ficha' : 'creador' }}
+                replace
+                className={styles.tab}
+                aria-current={shown === each ? 'page' : undefined}
+              >
+                {t(each === 'sheet' ? 'characters.sheet' : 'characters.creator')}
+              </Link>
+            )
+          )}
         </nav>
       </header>
       <FormError message={error ? errorText(error) : null} />

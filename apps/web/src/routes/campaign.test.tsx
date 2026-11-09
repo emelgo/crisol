@@ -1,6 +1,6 @@
 import type { Campaign, Member, World } from '@crisol/contracts'
 import { createMemoryHistory } from '@tanstack/react-router'
-import { act, render, screen, waitFor, within } from '@testing-library/react'
+import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { fakeAccountClient } from '../account/fake.ts'

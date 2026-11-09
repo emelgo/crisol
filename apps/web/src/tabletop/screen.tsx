@@ -79,7 +79,20 @@ export function cameraTarget(
   return followed ?? scene.initialView
 }
 
-export function TableScreen({ campaignId }: { campaignId: string }) {
+/**
+ * Lo que ve el grupo: la tele (a pantalla completa) o, con viewer «player», la Mesa de un jugador (en su caja, con la
+ * barra al lado: sin título propio, sin pantalla completa y con el tema de la app). onScreen: lo que llega, para la barra
+ */
+export function TableScreen({
+  campaignId,
+  viewer = 'screen',
+  onScreen
+}: {
+  campaignId: string
+  viewer?: 'screen' | 'player'
+  onScreen?: (screen: ScreenView | null) => void
+}) {
+  const inMesa = viewer === 'player'
   const { t } = useTranslation()
   const [screen, setScreen] = useState<ScreenView | null>(null)
   const [followed, setFollowed] = useState<SceneViewport | null>(null)
@@ -97,6 +110,7 @@ export function TableScreen({ campaignId }: { campaignId: string }) {
   const [status, setStatus] = useState<TableStatus>('connecting')
   // La tele, siempre oscura (con el tema claro, los relojes y los nombres no se leían sobre el mapa)
   useEffect(() => {
+    if (inMesa) return
     const root = document.documentElement
     const before = root.dataset.theme
     root.dataset.theme = 'dark'
@@ -111,7 +125,7 @@ export function TableScreen({ campaignId }: { campaignId: string }) {
 
   useEffect(() => {
     const connection = connectTable(
-      { campaignId, view: 'screen' },
+      { campaignId, view: viewer },
       {
         onMessage: (message) => {
           if (message.type === 'screen') {
@@ -138,7 +152,7 @@ export function TableScreen({ campaignId }: { campaignId: string }) {
       }
     )
     return () => connection.close()
-  }, [campaignId])
+  }, [campaignId, viewer])
 
   const presented = screen?.scene ?? null
   // La niebla: lo explorado y lo que ve el grupo (sin ella, la API de prueba, se ve todo)
@@ -291,10 +305,13 @@ export function TableScreen({ campaignId }: { campaignId: string }) {
     else void document.documentElement.requestFullscreen?.()
   }
 
+  const report = useRef(onScreen)
+  report.current = onScreen
+  useEffect(() => report.current?.(screen), [screen])
   const dark = !screen || screen.hidden || !presented
   return (
-    <div className={styles.screen}>
-      {screen && <PageTitle className={styles.hidden}>{screen.campaignName}</PageTitle>}
+    <div className={inMesa ? `${styles.screen} ${styles.inMesa}` : styles.screen}>
+      {screen && !inMesa && <PageTitle className={styles.hidden}>{screen.campaignName}</PageTitle>}
       <div ref={host} className={styles.canvas} role="img" aria-label={t('screen.label')} data-screen="" />
       {!dark && <MarksLayer layer={marksLayer} view={shownView} marks={marks} big />}
       {!dark && screen?.widgets && <WidgetCards widgets={screen.widgets} className={toolStyles.screenWidgets} />}
@@ -322,15 +339,17 @@ export function TableScreen({ campaignId }: { campaignId: string }) {
           )}
         </div>
       )}
-      <button
-        type="button"
-        className={styles.full}
-        aria-label={t(full ? 'screen.exitFullscreen' : 'screen.fullscreen')}
-        title={t(full ? 'screen.exitFullscreen' : 'screen.fullscreen')}
-        onClick={toggleFull}
-      >
-        {full ? <Minimize aria-hidden="true" size={18} /> : <Maximize aria-hidden="true" size={18} />}
-      </button>
+      {!inMesa && (
+        <button
+          type="button"
+          className={styles.full}
+          aria-label={t(full ? 'screen.exitFullscreen' : 'screen.fullscreen')}
+          title={t(full ? 'screen.exitFullscreen' : 'screen.fullscreen')}
+          onClick={toggleFull}
+        >
+          {full ? <Minimize aria-hidden="true" size={18} /> : <Maximize aria-hidden="true" size={18} />}
+        </button>
+      )}
     </div>
   )
 }

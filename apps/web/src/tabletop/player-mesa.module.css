@@ -1,0 +1,122 @@
+/* La barra de la Mesa de quien juega: el orden del combate, los personajes y abrir el compendio */
+.page {
+  min-block-size: 100%;
+  padding: var(--space-4) var(--space-5);
+  background: var(--color-bg);
+}
+
+.muted {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+.order {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.round {
+  align-self: flex-start;
+  margin-block-end: 0.5rem;
+  padding: 1px 9px;
+  border-radius: 999px;
+  background: var(--color-raised);
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.combatant {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-block-size: 2.25rem;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.combatant[data-active] {
+  outline: 1px solid var(--color-h2);
+  background: color-mix(in srgb, var(--color-brand) 12%, transparent);
+}
+
+.combatant[data-defeated] {
+  color: var(--color-muted);
+  text-decoration: line-through;
+}
+
+.combatant b {
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+}
+
+.people {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.person {
+  display: flex;
+  flex-direction: column;
+  inline-size: 100%;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  text-align: start;
+}
+
+button.person {
+  cursor: pointer;
+}
+
+button.person:hover {
+  background: var(--color-raised);
+}
+
+.person b {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.person small {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+}
+
+.person:focus-visible,
+.open:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.open {
+  align-self: flex-start;
+  padding: 8px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.open:hover {
+  border-color: var(--color-frame);
+  background: var(--color-raised);
+}

@@ -256,7 +256,7 @@ function PlayerTree({ worldId, currentId }: { worldId: string; currentId?: strin
 }
 
 /** La página: su portada, su título, su texto y, a la derecha, quién la menciona, sus propiedades y su panel */
-function PlayerPage({ worldId, pageId }: { worldId: string; pageId: string }) {
+export function PlayerPage({ worldId, pageId }: { worldId: string; pageId: string }) {
   const { t } = useTranslation()
   const api = useApi()
   const readAs = useReadAs() as ReadAs

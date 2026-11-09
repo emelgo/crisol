@@ -73,7 +73,9 @@ describe('la biblioteca (docs/specs/biblioteca.md)', () => {
     )
   )
 
-  it('la dirección vieja lleva a la Mesa; en Libros, cada uno se abre en su ventana, donde se busca y se lee', async () => {
+  it('la dirección vieja lleva a la Mesa; en Libros, cada uno se abre en su ventana, donde se busca y se lee', {
+    timeout: 20_000
+  }, async () => {
     const { router } = renderLibrary()
     const user = userEvent.setup()
     await waitFor(() => expect(router.state.location.search).toMatchObject({ panel: 'compendio' }))
@@ -82,7 +84,9 @@ describe('la biblioteca (docs/specs/biblioteca.md)', () => {
     const list = within(panel.getByRole('list', { name: 'Libros' }))
     expect(list.queryByText('Mapa.png')).toBeNull()
     await user.click(list.getByRole('button', { name: /Guía de Valdren\.pdf/ }))
-    const window = within(await screen.findByRole('dialog', { name: 'Guía de Valdren.pdf' }))
+    // Con todas las pruebas a la vez la máquina va cargada: el visor de PDF tarda en montarse
+    const slow = { timeout: 8000 }
+    const window = within(await screen.findByRole('dialog', { name: 'Guía de Valdren.pdf' }, slow))
     const books = within(window.getByRole('region', { name: 'Libros' }))
     expect(
       books.getByRole('button', { name: /Guía de Valdren\.pdf.*2 páginas · del mundo · Se puede buscar/ })
@@ -90,17 +94,17 @@ describe('la biblioteca (docs/specs/biblioteca.md)', () => {
     expect(books.getByRole('button', { name: /Reglas\.pdf.*comunes · En cola/ })).toBeDefined()
 
     await user.type(window.getByRole('searchbox', { name: 'Buscar en los libros' }), 'guardia')
-    const results = within(await window.findByRole('region', { name: 'Lo encontrado' }))
-    const hit = await results.findByRole('button', { name: /Página 2/ })
+    const results = within(await window.findByRole('region', { name: 'Lo encontrado' }, slow))
+    const hit = await results.findByRole('button', { name: /Página 2/ }, slow)
     // También en las páginas de la wiki, con su enlace
     expect(results.getByRole('link', { name: 'La guardia de Puertoceniza' })).toBeDefined()
     await user.click(hit)
     // El libro, abierto al lado (y su grupo de resultados)
-    await waitFor(() => expect(window.getAllByRole('region', { name: 'Guía de Valdren.pdf' })).toHaveLength(2))
+    await waitFor(() => expect(window.getAllByRole('region', { name: 'Guía de Valdren.pdf' })).toHaveLength(2), slow)
 
     // Lo que no está: lo dice
     await user.clear(window.getByRole('searchbox', { name: 'Buscar en los libros' }))
     await user.type(window.getByRole('searchbox', { name: 'Buscar en los libros' }), 'dragones')
-    expect(await window.findByText('Nada en los libros.')).toBeDefined()
+    expect(await window.findByText('Nada en los libros.', {}, slow)).toBeDefined()
   })
 })

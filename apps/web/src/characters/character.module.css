@@ -61,6 +61,7 @@
 
 .tab {
   padding: var(--space-3) var(--space-1);
+  font: inherit;
   border: 0;
   border-block-end: 2px solid transparent;
   background: none;

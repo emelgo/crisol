@@ -81,7 +81,7 @@ describe('la mesa: escenas, teselas y la sala', () => {
       headers: { origin: BASE_URL, cookie, 'content-type': 'image/webp' }
     })
   const getTile = (url: string, cookie = owner.cookie) => app.inject({ method: 'GET', url, headers: { cookie } })
-  const join = async (view: 'master' | 'screen', cookie = owner.cookie, campaign = campaignId) => {
+  const join = async (view: 'master' | 'screen' | 'player', cookie = owner.cookie, campaign = campaignId) => {
     const ws = await app.injectWS('/api/table', { headers: { origin: BASE_URL, cookie } })
     sockets.push(ws)
     const box = inbox(ws)
@@ -309,15 +309,22 @@ describe('la mesa: escenas, teselas y la sala', () => {
     await call('changeFog', { campaignId, mode: 'reveal', shape: 'rectangle', x: 0, y: 0, width: 100, height: 100 })
     expect((await getTile(url())).statusCode).toBe(200)
     expect((await getTile(url(crypto.randomUUID()))).statusCode).toBe(404)
-    expect((await getTile(url(), player.cookie)).statusCode).toBe(404)
+    // La Mesa de un jugador ve lo mismo que la tele
+    expect((await getTile(url(), player.cookie)).statusCode).toBe(200)
     await call('hideScreen', { campaignId, hidden: true })
     expect((await getTile(url())).statusCode).toBe(404)
+    expect((await getTile(url(), player.cookie)).statusCode).toBe(404)
   })
 
-  it('un jugador no entra en la mesa ni la mueve, ni alguien de otra campaña', async () => {
+  it('un jugador no entra como máster ni como tele, ni la mueve; a su Mesa sí, y ve lo que el grupo', async () => {
     const { scene } = await sceneWithImage()
     const intruder = await join('screen', player.cookie)
     expect(await intruder.next()).toEqual({ type: 'error', code: 'FORBIDDEN' })
+    const asMaster = await join('master', player.cookie)
+    expect(await asMaster.next()).toEqual({ type: 'error', code: 'FORBIDDEN' })
+    await call('presentScene', { campaignId, sceneId: scene.id })
+    const own = await join('player', player.cookie)
+    expect(await own.next()).toMatchObject({ type: 'screen', screen: { scene: { id: scene.id } } })
     expect((await call('getCampaignTable', { campaignId }, player.cookie)).status).toBe(403)
     expect((await call('presentScene', { campaignId, sceneId: scene.id }, player.cookie)).status).toBe(403)
     // Una escena de otro mundo no se abre en esta campaña

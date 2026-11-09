@@ -176,7 +176,8 @@ export function registerTableRoutes(
     return running
   }
 
-  // La pantalla de la tele: solo la escena presentada (sin ocultar), en su versión de ahora, y lo que su vista deja
+  // Lo que ve el grupo (la tele y la Mesa de cada jugador): solo la escena presentada (sin ocultar), en su versión de
+  // ahora, y lo que su vista deja
   app.get('/api/campaigns/:campaignId/screen/tiles/:version/:level/:x/:y', async (request, reply) => {
     const ctx = await contextOf(request)
     if (!ctx) return reply.code(401).send({ code: 'UNAUTHENTICATED' })
@@ -184,7 +185,7 @@ export function registerTableRoutes(
     if (!params.success) return reply.code(404).send({ code: 'NOT_FOUND' })
     const { campaignId, ...at } = params.data
     const campaign = await campaignsRepo.findCampaign(ctx.db, campaignId)
-    if (!campaign || !can(ctx.actor, 'table.manage', { campaignId, worldId: campaign.worldId }))
+    if (!campaign || !can(ctx.actor, 'campaign.read', { campaignId, worldId: campaign.worldId }))
       return reply.code(404).send({ code: 'NOT_FOUND' })
     const mesa = await scenesRepo.campaignTable(ctx.db, campaignId)
     const scene = mesa.presentedSceneId ? await scenesRepo.findScene(ctx.db, mesa.presentedSceneId) : null
@@ -255,9 +256,16 @@ export function registerTableRoutes(
       let closed = false
       let window = { start: 0, count: 0 }
 
-      /** Si la cuenta sigue pudiendo llevar la mesa de esa campaña (con sus pertenencias de ahora) */
-      const allowedNow = async (campaignId: string, worldId: string) =>
-        can(actorFrom(userId, await loadMemberships(env.db, userId)), 'table.manage', { campaignId, worldId })
+      /**
+       * Si la cuenta sigue pudiendo mirar la mesa de esa campaña así (con sus pertenencias de ahora): el máster y la tele,
+       * quien la lleva; la Mesa de un jugador, cualquiera de la campaña
+       */
+      const allowedNow = async (campaignId: string, worldId: string, viewer: TableViewer) =>
+        can(
+          actorFrom(userId, await loadMemberships(env.db, userId)),
+          viewer === 'player' ? 'campaign.read' : 'table.manage',
+          { campaignId, worldId }
+        )
 
       socket.on('message', async (data: Buffer) => {
         if (data.byteLength > MAX_TABLE_MESSAGE) return socket.close(1009, 'Demasiado grande')
@@ -273,8 +281,8 @@ export function registerTableRoutes(
           if (joined || joining) return say({ type: 'error', code: 'BAD_MESSAGE' })
           joining = true
           const campaign = await campaignsRepo.findCampaign(env.db, message.campaignId)
-          // Un jugador (o quien no está en ella) no entra: la sala de jugadores llega con el módulo 7
-          if (!campaign || !(await allowedNow(campaign.id, campaign.worldId))) {
+          // Quien no está en ella no entra; un jugador, solo a su Mesa (lo que ve el grupo)
+          if (!campaign || !(await allowedNow(campaign.id, campaign.worldId, message.view))) {
             say({ type: 'error', code: campaign ? 'FORBIDDEN' : 'NOT_FOUND' })
             return socket.close(4403, 'Sin permiso')
           }
@@ -300,7 +308,7 @@ export function registerTableRoutes(
       const sessionCheck = setInterval(async () => {
         const session = await auth.api.getSession({ headers }).catch(() => null)
         if (session?.user.id !== userId) return socket.close(CLOSE_SESSION_ENDED, 'Sin sesión')
-        if (joined && !(await allowedNow(joined.campaignId, joined.worldId).catch(() => false)))
+        if (joined && !(await allowedNow(joined.campaignId, joined.worldId, joined.viewer).catch(() => false)))
           socket.close(4403, 'Sin permiso')
       }, options.sessionCheckMs ?? 60_000)
       let alive = true

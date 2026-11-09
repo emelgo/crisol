@@ -127,9 +127,9 @@ export function createTableRooms(load: LoadTable, onError: (error: unknown) => v
     }
   }
 
-  /** A las pantallas de la sala */
+  /** A lo que ve el grupo: las pantallas de la sala y las Mesas de los jugadores */
   function toScreens(room: Room, message: TableServerMessage) {
-    for (const [socket, viewer] of room.sockets) if (viewer === 'screen') send(socket, message)
+    for (const [socket, viewer] of room.sockets) if (viewer !== 'master') send(socket, message)
   }
 
   /** A las otras pestañas del máster */
@@ -207,7 +207,7 @@ export function createTableRooms(load: LoadTable, onError: (error: unknown) => v
       if (!room) return
       room.viewport = view
       if (!room.follows) return
-      for (const [socket, viewer] of room.sockets) if (viewer === 'screen') send(socket, { type: 'viewport', view })
+      for (const [socket, viewer] of room.sockets) if (viewer !== 'master') send(socket, { type: 'viewport', view })
     },
     drag(campaignId, moves, from) {
       const room = rooms.get(campaignId)

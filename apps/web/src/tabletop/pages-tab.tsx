@@ -19,7 +19,13 @@ interface TreePage {
   hasChildren: boolean
 }
 
-export const pageTreeKey = (worldId: string) => ['pages', worldId, 'tree', 'mesa']
+export const pageTreeKey = (worldId: string, campaignId?: string) => [
+  'pages',
+  worldId,
+  'tree',
+  'mesa',
+  campaignId ?? null
+]
 
 const normal = (text: string) => text.normalize('NFD').replace(/\p{M}/gu, '').toLocaleLowerCase('es')
 
@@ -37,14 +43,23 @@ export function visiblePages(pages: TreePage[], open: ReadonlySet<string>, query
   return shown
 }
 
-export function PagesTab({ worldId, onOpen }: { worldId: string; onOpen: (pageId: string, title: string) => void }) {
+export function PagesTab({
+  worldId,
+  campaignId,
+  onOpen
+}: {
+  worldId: string
+  /** Quien juega: las que conoce su campaña */
+  campaignId?: string
+  onOpen: (pageId: string, title: string) => void
+}) {
   const { t } = useTranslation()
   const api = useApi()
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState<ReadonlySet<string>>(new Set())
   const tree = useQuery({
-    queryKey: pageTreeKey(worldId),
-    queryFn: () => api.call('listPageTree', { worldId, levels: 32 })
+    queryKey: pageTreeKey(worldId, campaignId),
+    queryFn: () => api.call('listPageTree', { worldId, levels: 32, ...(campaignId ? { campaignId } : {}) })
   })
   if (!tree.data) return failed(tree) ? <LoadError error={tree.error} onRetry={() => tree.refetch()} /> : null
   const pages = tree.data.pages

@@ -36,11 +36,14 @@ import {
   useState
 } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { CurrentCampaignContext } from '../campaign/current-campaign.ts'
+import { Loading } from '../components/brand.tsx'
 import { useDismiss } from '../components/dismiss.ts'
 import { FormError } from '../components/field.tsx'
+import { failed, LoadError } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { Tour } from '../components/tour.tsx'
 import { canvasViewOf, framingOf, REFERENCE_ASPECT, sceneViewportOf, sceneViewportOfCanvas } from './camera.ts'
@@ -54,6 +57,7 @@ import { MasterSidebar } from './master-sidebar.tsx'
 import styles from './mesa.module.css'
 import { openPageLinks, PageWindowsSocket } from './page-window.tsx'
 import { PLACING_TYPE, type Placing } from './panel.tsx'
+import { PlayerMesa } from './player-mesa.tsx'
 import { Preparing } from './preparing.tsx'
 import { masterTileUrl, sceneListKey } from './queries.ts'
 import type { RendererScene } from './renderer.ts'
@@ -86,10 +90,32 @@ import { useWindows, WindowLayer, WindowsProvider } from './windows.tsx'
 
 const route = getRouteApi('/mundos/$worldId/campanas/$campaignId/mesa')
 
-/** La dirección vieja de la mesa: la campaña ya se abre en ella */
+/** /mesa: la del máster es su campaña (se abre en ella); la de quien juega, lo que ve el grupo con su barra */
 export function MesaScreen() {
+  const { t } = useTranslation()
+  const api = useApi()
   const { worldId, campaignId } = route.useParams()
-  return <Navigate to="/mundos/$worldId/campanas/$campaignId" params={{ worldId, campaignId }} replace />
+  const { account, pending } = useAccounts().useAccount()
+  const campaigns = useQuery({
+    queryKey: ['campaigns', worldId],
+    queryFn: () => api.call('listCampaigns', { worldId }),
+    enabled: Boolean(account)
+  })
+  const campaign = campaigns.data?.campaigns.find((c) => c.id === campaignId)
+  if (pending) return null
+  if (!account) return <Navigate to="/entrar" replace />
+  if (!campaigns.data)
+    return failed(campaigns) ? <LoadError error={campaigns.error} onRetry={() => campaigns.refetch()} /> : <Loading />
+  if (!campaign)
+    return (
+      <section className={styles.missing}>
+        <PageTitle>{t('campaign.notFound')}</PageTitle>
+        <Link to="/mundos">{t('worlds.title')}</Link>
+      </section>
+    )
+  if (campaign.role === 'master')
+    return <Navigate to="/mundos/$worldId/campanas/$campaignId" params={{ worldId, campaignId }} replace />
+  return <PlayerMesa key={campaign.id} worldId={worldId} campaign={campaign} />
 }
 
 type Gesture = {

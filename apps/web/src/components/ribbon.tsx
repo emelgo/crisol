@@ -11,7 +11,6 @@ import {
   House,
   Layers,
   LayoutTemplate,
-  Library,
   LogOut,
   type LucideIcon,
   ScrollText,
@@ -20,6 +19,7 @@ import {
   Swords,
   Trash2,
   User,
+  UserRound,
   Users
 } from 'lucide-react'
 import { type CSSProperties, type MouseEvent, useEffect, useId, useRef, useState } from 'react'
@@ -439,6 +439,7 @@ function CampaignPanels({
         )}
       </>
     )
+  // Quien juega: su ficha (es la campaña) y su Mesa; lo demás va en la barra de la Mesa
   return (
     <>
       <Link
@@ -447,91 +448,25 @@ function CampaignPanels({
         activeOptions={{ exact: true }}
         className={styles.item}
         viewTransition={SECTION}
-        data-tour="barra-campana"
+        data-tour="barra-ficha"
       >
-        <Label icon={Shield} text={name} />
+        <Label icon={UserRound} text={t('ribbon.sheet')} />
       </Link>
-      {ownsWiki ? (
-        <Link to="/mundos/$worldId/wiki" params={{ worldId }} className={styles.item} data-tour="barra-paginas">
-          <Label icon={Globe} text={worldName} />
-        </Link>
-      ) : (
-        <Link
-          to="/mundos/$worldId/campanas/$campaignId/paginas"
-          params={{ worldId, campaignId }}
-          className={styles.item}
-          viewTransition={SECTION}
-          data-tour="barra-paginas"
-        >
-          <NewsLabel worldId={worldId} campaignId={campaignId} text={worldName} />
-        </Link>
-      )}
       <Link
-        to="/mundos/$worldId/campanas/$campaignId/personajes"
+        to="/mundos/$worldId/campanas/$campaignId/mesa"
         params={{ worldId, campaignId }}
         className={styles.item}
         viewTransition={SECTION}
-        data-tour="barra-personajes"
+        data-tour="barra-mesa"
       >
-        <Label icon={Users} text={t('ribbon.characters')} />
+        <Label icon={Layers} text={t('ribbon.table')} />
       </Link>
-      <Link
-        to="/mundos/$worldId/campanas/$campaignId/compendio"
-        params={{ worldId, campaignId }}
-        className={styles.item}
-        viewTransition={SECTION}
-        data-tour="barra-compendio"
-      >
-        <Label icon={BookOpen} text={t('ribbon.compendium')} />
-      </Link>
-      <Link
-        to="/mundos/$worldId/campanas/$campaignId/grupo"
-        params={{ worldId, campaignId }}
-        className={styles.item}
-        viewTransition={SECTION}
-        data-tour="barra-grupo"
-      >
-        <Label icon={Backpack} text={t('ribbon.party')} />
-      </Link>
-      <Link
-        to="/mundos/$worldId/campanas/$campaignId/en-juego"
-        params={{ worldId, campaignId }}
-        className={styles.item}
-        viewTransition={SECTION}
-        data-tour="barra-en-juego"
-      >
-        <Label icon={Swords} text={t('ribbon.inPlay')} />
-      </Link>
-      {/* La mesa (docs/specs/escenas.md): del máster */}
-      {master && (
-        <Link
-          to="/mundos/$worldId/campanas/$campaignId/mesa"
-          params={{ worldId, campaignId }}
-          className={styles.item}
-          viewTransition={SECTION}
-          data-tour="barra-mesa"
-        >
-          <Label icon={Layers} text={t('ribbon.table')} />
-        </Link>
-      )}
-      {master && <RevealedButton />}
-      {master && (
-        <Link
-          to="/mundos/$worldId/campanas/$campaignId/biblioteca"
-          params={{ worldId, campaignId }}
-          className={styles.item}
-          viewTransition={SECTION}
-          data-tour="barra-biblioteca"
-        >
-          <Label icon={Library} text={t('ribbon.library')} />
-        </Link>
-      )}
     </>
   )
 }
 
 /** Las páginas del mundo de quien juega, con cuántas novedades tiene (lo revelado que aún no ha abierto) */
-function NewsLabel({ worldId, campaignId, text }: { worldId: string; campaignId: string; text: string }) {
+function _NewsLabel({ worldId, campaignId, text }: { worldId: string; campaignId: string; text: string }) {
   const { t } = useTranslation()
   const api = useApi()
   const count =
@@ -556,7 +491,7 @@ function NewsLabel({ worldId, campaignId, text }: { worldId: string; campaignId:
 }
 
 /** «Revelado»: abre «Lo que sabe el grupo» de la campaña como ventana (docs/specs/revelar.md) */
-function RevealedButton() {
+function _RevealedButton() {
   const { t } = useTranslation()
   const windows = useWindow()
   return (

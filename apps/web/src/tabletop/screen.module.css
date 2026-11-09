@@ -184,3 +184,8 @@
 .disc[data-defeated] {
   filter: grayscale(1) brightness(0.6);
 }
+
+/* La Mesa de un jugador: en su caja, junto a su barra (no a toda la pantalla como la tele) */
+.inMesa {
+  position: absolute;
+}

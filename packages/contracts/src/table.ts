@@ -9,7 +9,8 @@ import { type campaignTableView, fogMask, sceneGrid, sceneTiles, sceneViewport, 
 import { type LiveMeasure, laserPoints, liveMeasure, screenMark, screenWidget } from './table-tools.ts'
 import { screenToken } from './tokens.ts'
 
-export const TABLE_VIEWS = ['master', 'screen'] as const
+/** master: todo; screen: la tele (lo que ve el grupo); player: la Mesa de un jugador, que ve lo mismo que la tele */
+export const TABLE_VIEWS = ['master', 'screen', 'player'] as const
 export type TableViewer = (typeof TABLE_VIEWS)[number]
 
 /** Lo que manda el cliente */

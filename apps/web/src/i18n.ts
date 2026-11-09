@@ -38,6 +38,7 @@ export const es = {
     party: 'Grupo',
     library: 'Biblioteca',
     table: 'Mesa',
+    sheet: 'Mi ficha',
     characters: 'Personajes',
     revealed: 'Revelado'
   },
@@ -1630,6 +1631,21 @@ export const es = {
     }
   },
   // La mesa del máster (docs/specs/escenas.md, ADR-0018)
+  // Lo que ve quien juega al abrir su campaña: su ficha (campaign/player-home.tsx)
+  playerHome: {
+    toMesa: 'Ir a la Mesa',
+    character: 'Personaje',
+    noCharacter: 'Aún no tienes personaje en esta campaña.',
+    create: 'Crear tu personaje',
+    campaign: 'La campaña: {{name}}'
+  },
+  // La Mesa de quien juega (tabletop/player-mesa.tsx)
+  playerMesa: {
+    toSheet: 'Mi ficha',
+    noCombat: 'No hay ningún combate.',
+    scene: 'En {{name}}',
+    noScene: 'Aún no hay nada en la mesa.'
+  },
   // Una página en su ventana sobre la Mesa (tabletop/page-window.tsx)
   pageWindow: {
     show: 'Enseñar a los jugadores',

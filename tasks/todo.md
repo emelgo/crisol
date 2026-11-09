@@ -65,7 +65,7 @@ Plan: `tasks/plan.md`. Lienzo: `out/lienzo-campana/`.
 
 ## Fase 4: la jugadora
 
-- [ ] 10. **Abre en su ficha.** La jugadora entra en la campaña y ve la ficha de su personaje (si tiene varios, el
+- [x] 10. **Abre en su ficha.** (La escena en marcha bajo «Ir a la Mesa», pendiente: la ficha no escucha la mesa.) La jugadora entra en la campaña y ve la ficha de su personaje (si tiene varios, el
   último; si ninguno, crear uno), con «Ir a la Mesa» y en qué escena está la partida.
   - Acepta: la jugadora entra y ve su ficha; en móvil, también.
   - Comprueba: pruebas de la ruta de la jugadora.
@@ -74,7 +74,7 @@ Plan: `tasks/plan.md`. Lienzo: `out/lienzo-campana/`.
   quedo», y «Lo mío» plegado.
   - Acepta: pasar una poción al grupo y recuperarla, en PC y en móvil.
   - Comprueba: pruebas de la sección, de la migración y de las acciones del grupo.
-- [ ] 12. **La Mesa de la jugadora.** Espectador `player` en el canal de la mesa (solo miembros; la proyección del grupo,
+- [x] 12. **La Mesa de la jugadora.** Espectador `player` en el canal de la mesa (solo miembros; la proyección del grupo,
   sin nada en vivo); su Mesa con Tiradas, Combate, Personajes, Compendio y Páginas.
   - Acepta: la jugadora va a la Mesa y ve lo que el grupo; no ve Escenas ni Ajustes; un ajeno no entra.
   - Comprueba: pruebas de integración de la sala y de la vista.
