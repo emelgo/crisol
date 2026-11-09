@@ -158,3 +158,8 @@
     }
   }
 }
+
+/* Lo de dentro no encoge para caber: el panel se desplaza */
+.body > * {
+  flex-shrink: 0;
+}
