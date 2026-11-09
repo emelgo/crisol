@@ -111,7 +111,7 @@ describe('unirse con el enlace', () => {
     const accounts = fakeAccountClient({ invitations: { abc: invitation() } })
     accounts.passwords.set('j@crisol.test', 'una-clave-larga')
     renderJoin(accounts)
-    await userEvent.click(await screen.findByRole('button', { name: 'Ya tengo cuenta' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Entrar con ella' }))
     await fill('Email', 'j@crisol.test')
     await fill('Contraseña', 'una-clave-larga')
     await userEvent.click(screen.getByRole('button', { name: 'Entrar' }))
@@ -132,14 +132,14 @@ describe('unirse con el enlace', () => {
     expect(accounts.calls).not.toContain('join abc')
   })
 
-  it('al pasar a «Ya tengo cuenta», el error del alta se va y el foco va al email del formulario nuevo', async () => {
+  it('al pasar a «Entrar con ella», el error del alta se va y el foco va al email del formulario nuevo', async () => {
     const accounts = fakeAccountClient({ invitations: { abc: invitation() } })
     accounts.passwords.set('j@crisol.test', 'una-clave-larga')
     renderJoin(accounts)
     await fillNewAccount('j@crisol.test', 'otra-clave-larga')
     await userEvent.click(screen.getByRole('button', { name: 'Crear la cuenta y entrar' }))
     await screen.findByRole('alert')
-    await userEvent.click(screen.getByRole('button', { name: 'Ya tengo cuenta' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Entrar con ella' }))
     expect(screen.queryByRole('alert')).toBeNull()
     expect(document.activeElement).toBe(screen.getByLabelText('Email'))
     expect(screen.getByRole('form', { name: 'Entra con tu cuenta' })).toBeDefined()
@@ -159,7 +159,7 @@ describe('unirse con el enlace', () => {
       return original(email, password)
     }
     renderJoin(accounts)
-    await userEvent.click(await screen.findByRole('button', { name: 'Ya tengo cuenta' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Entrar con ella' }))
     await fill('Email', 'j@crisol.test')
     await fill('Contraseña', 'una-clave-larga')
     const signIn = screen.getByRole('button', { name: 'Entrar' })

@@ -43,6 +43,6 @@ describe('las frases del historial: la visión de la mesa', () => {
     expect(ask('setDoor', { campaignId: 'c', wallId: 'w', open: false })).toBe('cerrar una puerta en la mesa')
     expect(ask('changeFog', { campaignId: 'c', mode: 'reveal', shape: 'cells' })).toBe('destapar parte de la niebla')
     expect(ask('changeWalls', { sceneId: 's', walls: { add: [] } })).toBe('cambiar los muros de una escena')
-    expect(ask('setTileFit', { campaignId: 'c', tileFit: 'cropped' })).toBe('cambiar los bordes de la tele')
+    expect(ask('setTileFit', { campaignId: 'c', tileFit: 'cropped' })).toBe('cambiar los bordes de la pantalla')
   })
 })

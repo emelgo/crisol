@@ -225,7 +225,7 @@ describe('las herramientas de la mesa', () => {
     const selected = within(await panel.findByRole('region', { name: 'Cono de 30 pies' }))
     expect(selected.getByText('Dentro: 2 fichas')).toBeDefined()
     // Sin enseñarla en la tele
-    await user.click(panel.getByRole('button', { name: 'En la tele: Cono de 30 pies' }))
+    await user.click(panel.getByRole('button', { name: 'En pantalla: Cono de 30 pies' }))
     await waitFor(async () => expect((await marks())[0]?.hidden).toBe(true))
     // Elegirlas: el daño a varias, con las dos
     await user.click(selected.getByRole('button', { name: 'Elegirlas' }))
@@ -291,16 +291,18 @@ describe('las herramientas de la mesa', () => {
     expect(sent.measures.at(-1)).toBeNull()
   })
 
-  it('«La tele ve lo que mides» y la regla de las diagonales', async () => {
+  it('«Los jugadores ven lo que mides» y la regla de las diagonales', async () => {
     const user = userEvent.setup()
     const { api, scene } = await renderMesa()
     press('r')
     const panel = within(screen.getByRole('complementary', { name: 'Plantillas' }))
-    await user.click(panel.getByRole('switch', { name: 'La tele ve lo que mides' }))
+    await user.click(panel.getByRole('switch', { name: 'Los jugadores ven lo que mides' }))
     await waitFor(async () =>
       expect((await api.client.call('getCampaignTable', { campaignId: CAMPAIGN.id })).measureOnScreen).toBe(true)
     )
-    expect(panel.getByRole('switch', { name: 'La tele ve lo que mides' }).getAttribute('aria-checked')).toBe('true')
+    expect(panel.getByRole('switch', { name: 'Los jugadores ven lo que mides' }).getAttribute('aria-checked')).toBe(
+      'true'
+    )
     await user.selectOptions(panel.getByLabelText('Diagonales'), 'alternate')
     await waitFor(async () =>
       expect((await api.client.call('getScene', { sceneId: scene.id })).grid.diagonals).toBe('alternate')
@@ -384,7 +386,7 @@ describe('las herramientas de la mesa', () => {
     const card = within(screen.getByRole('article', { name: 'Reloj' }))
     await user.click(card.getByRole('button', { name: 'Reloj: 0 de 6' }))
     expect(await card.findByRole('button', { name: 'Reloj: 1 de 6' })).toBeDefined()
-    await user.click(card.getByRole('button', { name: 'En la tele' }))
+    await user.click(card.getByRole('button', { name: 'En pantalla' }))
     await waitFor(async () =>
       expect((await api.client.call('listWidgets', { campaignId: CAMPAIGN.id })).widgets[0]).toMatchObject({
         value: 1,

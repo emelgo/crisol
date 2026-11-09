@@ -107,9 +107,9 @@ test('repaso visual: la mesa, la tele y el combate con la cripta del lienzo', as
   await settled()
   await page.screenshot({ path: '../out/capturas/repaso-mesa.png' })
   // Seguir
-  await page.getByRole('button', { name: /^Tele/ }).click()
+  await page.getByRole('button', { name: /^Cámara/ }).click()
   await page.getByRole('menuitemradio', { name: /^Sigue tu vista/ }).click()
-  await expect(page.getByText('La tele sigue tu vista')).toBeVisible()
+  await expect(page.getByText('Los jugadores ven lo mismo que tú')).toBeVisible()
   await settled()
   await page.screenshot({ path: '../out/capturas/repaso-mesa-seguir.png' })
   await page.getByRole('region', { name: 'Goblin 3' }).getByRole('button', { name: 'Cerrar' }).click()

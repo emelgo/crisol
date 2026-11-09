@@ -1,10 +1,11 @@
 /**
  * La sección Mesa de la campaña (ADR-0021, Enrique 2026-11-10: «al entrar en mesa … un abrir mesa que abre una nueva
- * pestaña … y ver quiénes están dentro, si está activo»): abrir la Mesa (y la tele) en otra pestaña, quién está en
+ * pestaña … y ver quiénes están dentro, si está activo»): abrir la Mesa en otra pestaña (la pantalla de los jugadores
+ * se abre desde dentro: tiene que estar activa), quién está en
  * ella ahora y, para el máster, cómo va la partida. Debajo, los personajes
  */
 import { useQuery } from '@tanstack/react-query'
-import { ExternalLink, Layers, Tv } from 'lucide-react'
+import { ExternalLink, Layers } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import styles from './table-lobby.module.css'
@@ -34,13 +35,6 @@ export function TableLobby({ worldId, campaignId, master }: { worldId: string; c
           <ExternalLink aria-hidden="true" size={15} />
           <span className={styles.hidden}>({t('lobby.newTab')})</span>
         </a>
-        {master && (
-          <a href={`${base}/pantalla`} target="_blank" rel="noopener" className={styles.openTv}>
-            <Tv aria-hidden="true" size={16} />
-            {t('lobby.openTv')}
-            <span className={styles.hidden}>({t('lobby.newTab')})</span>
-          </a>
-        )}
       </div>
       <div className={styles.columns}>
         <div>

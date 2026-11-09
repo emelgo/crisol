@@ -118,14 +118,25 @@ export function BookWindow({
 
 /** Abrir algo con una transición de vista (la portada de la tarjeta viaja a la de la ventana); sin ella, al momento */
 export function withTransition(card: HTMLElement | null, open: () => void) {
-  const start = (document as Document & { startViewTransition?: (update: () => void) => unknown }).startViewTransition
-  if (!start || !card) {
+  if (typeof document.startViewTransition !== 'function' || !card) {
     open()
     return
   }
   card.style.viewTransitionName = 'libro-abierto'
-  start.call(document, () => {
-    card.style.viewTransitionName = ''
-    open()
+  document.startViewTransition({
+    update: () => {
+      card.style.viewTransitionName = ''
+      open()
+    },
+    types: ['abrir-libro']
   })
+}
+
+/** Recolocar unas tarjetas (al filtrar): las que se quedan se deslizan a su sitio; las que se van, se funden */
+export function relayout(update: () => void) {
+  if (typeof document.startViewTransition !== 'function') {
+    update()
+    return
+  }
+  document.startViewTransition({ update, types: ['recolocar'] })
 }

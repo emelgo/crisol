@@ -12,6 +12,7 @@ import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { useWindow } from '../components/window.tsx'
+import { worldTransition } from '../components/world-transition.ts'
 import { useDice } from '../dice/context.tsx'
 import { coverStyle } from '../wiki/cover-look.ts'
 import { BookCover, useCampaignBooks } from './book-cover.tsx'
@@ -24,7 +25,7 @@ type Props = { worldId: string; worldName: string; campaign: Campaign }
 function Hero({ campaign, worldName, actions }: { campaign: Campaign; worldName: string; actions?: ReactNode }) {
   const { t } = useTranslation()
   return (
-    <>
+    <div className={styles.head} style={worldTransition(campaign.id)}>
       {campaign.cover && (
         <div className={styles.hero} aria-hidden="true">
           <img src={`/api/files/${campaign.cover.fileId}`} alt="" style={coverStyle(campaign.cover)} />
@@ -39,7 +40,7 @@ function Hero({ campaign, worldName, actions }: { campaign: Campaign; worldName:
         </div>
         {actions}
       </header>
-    </>
+    </div>
   )
 }
 
@@ -354,16 +355,6 @@ export function PlayerCampaignHome({ worldId, worldName, campaign }: Props) {
           </Section>
         )}
         <Shelf worldId={worldId} worldName={worldName} campaign={campaign} editable={false} />
-        <Section title={t('campaignHome.known')}>
-          <Link
-            to="/mundos/$worldId/campanas/$campaignId/paginas"
-            params={{ worldId, campaignId: campaign.id }}
-            className={styles.more}
-          >
-            {t('campaignHome.knownLink')}
-            <ChevronRight aria-hidden="true" size={15} />
-          </Link>
-        </Section>
         {/* La campaña: quién juega y, en su zona de peligro, dejarla */}
         <details className={styles.campaign}>
           <summary>{t('playerHome.campaign', { name: campaign.name })}</summary>

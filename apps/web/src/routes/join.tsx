@@ -111,9 +111,6 @@ export function Join() {
           busy={busy}
         />
       )}
-      <p>
-        <Link to="/">{t('app.name')}</Link>
-      </p>
     </section>
   )
 }
@@ -170,6 +167,13 @@ function WithoutSession(props: {
         <BusyButton type="submit" className={form.button} busy={signingIn}>
           {t('account.signIn')}
         </BusyButton>
+        {/* Volver a crearla, dentro del recuadro (no suelto sobre el fondo) */}
+        <p className={form.switch}>
+          {t('join.noAccountQuestion')}{' '}
+          <button type="button" onClick={() => setHasAccount(false)}>
+            {t('join.noAccount')}
+          </button>
+        </p>
       </form>
     )
   }
@@ -182,19 +186,20 @@ function WithoutSession(props: {
         <BusyButton type="submit" className={form.button} busy={props.busy}>
           {t('join.signUp')}
         </BusyButton>
+        {/* Entrar con la que ya tiene, dentro del recuadro (no suelto sobre el fondo) */}
+        <p className={form.switch}>
+          {t('join.hasAccountQuestion')}{' '}
+          <button
+            type="button"
+            onClick={() => {
+              props.onSignIn()
+              setHasAccount(true)
+            }}
+          >
+            {t('join.hasAccount')}
+          </button>
+        </p>
       </form>
-      <p>
-        <button
-          type="button"
-          className={list.secondary}
-          onClick={() => {
-            props.onSignIn()
-            setHasAccount(true)
-          }}
-        >
-          {t('join.hasAccount')}
-        </button>
-      </p>
     </>
   )
 }

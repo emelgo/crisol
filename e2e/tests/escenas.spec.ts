@@ -111,7 +111,7 @@ test('una escena: su mapa en teselas, la rejilla alineada, la mesa y la tele que
   ])
   await expect(tv.locator('[data-dark]')).toContainText('La Marca')
   await page.getByRole('button', { name: 'Presentar' }).click()
-  await expect(page.getByText('En la tele').first()).toBeVisible()
+  await expect(page.getByText('En pantalla').first()).toBeVisible()
   await expect(tv.locator('[data-dark]')).toHaveCount(0)
   const screen = tv.locator('[data-screen]')
   await expect.poll(async () => (await viewOf(screen))?.scale ?? 0).toBeGreaterThan(0)
@@ -138,10 +138,10 @@ test('una escena: su mapa en teselas, la rejilla alineada, la mesa y la tele que
 
   // Fija: el marco de la tele, que se arrastra; la tele se queda en él aunque el máster se mueva
   // La mesa la cambia el servidor: se ve marcada cuando contesta
-  await page.getByRole('button', { name: /^Tele/ }).click()
+  await page.getByRole('button', { name: /^Cámara/ }).click()
   await page.getByRole('menuitemradio', { name: /^Fija/ }).click()
-  await expect(page.getByRole('button', { name: /^Tele/ })).toContainText('Fija')
-  const frame = page.getByRole('region', { name: 'Lo que se ve en la tele' })
+  await expect(page.getByRole('button', { name: /^Cámara/ })).toContainText('Fija')
+  const frame = page.getByRole('region', { name: 'Lo que ven los jugadores' })
   await expect(frame).toBeVisible()
   // Alejada la mesa, el marco se ve entero; se arrastra por su etiqueta
   await table.focus()
@@ -150,7 +150,7 @@ test('una escena: su mapa en teselas, la rejilla alineada, la mesa y la tele que
   // La vista, un poco a la derecha: la etiqueta del marco, fuera de la columna de herramientas
   for (let i = 0; i < 3; i++) await page.keyboard.press('ArrowLeft')
   const box = await frame.boundingBox()
-  const tag = await frame.getByText('Tele').boundingBox()
+  const tag = await frame.getByText('Pantalla', { exact: true }).boundingBox()
   if (!box || !tag) throw new Error('sin marco')
   await page.mouse.move(tag.x + tag.width / 2, tag.y + tag.height / 2)
   await page.mouse.down()
@@ -181,7 +181,7 @@ test('una escena: su mapa en teselas, la rejilla alineada, la mesa y la tele que
   // Ocultar: la tele, a oscuras con el nombre de la campaña
   await page.getByRole('button', { name: 'Ocultar' }).click()
   await expect(tv.locator('[data-dark]')).toContainText('La Marca')
-  await expect(page.getByText('Tele a oscuras')).toBeVisible()
+  await expect(page.getByText('Pantalla a oscuras')).toBeVisible()
   await axe(tv, 'la tele')
   await tv.screenshot({ path: '../out/capturas/escenas-pantalla-oculta.png' })
 })

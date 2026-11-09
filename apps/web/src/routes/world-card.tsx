@@ -354,6 +354,9 @@ export function CampaignCard({
           to="/mundos/$worldId/campanas/$campaignId"
           params={{ worldId, campaignId: campaign.id }}
           className={styles.name}
+          // Entrar es entrar, como en un mundo: la tarjeta se convierte en la cabecera de su Inicio, al rojo
+          viewTransition={ENTER_WORLD}
+          onClick={(event) => enterWorld(campaign.id, event.currentTarget.closest('li'))}
         >
           {campaign.name}
         </Link>

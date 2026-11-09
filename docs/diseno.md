@@ -50,6 +50,10 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   tirar se vacía y se cierra. El resultado sale sobre el d20 cuando paran los dados; el historial, en una ventana de la
   Mesa (fuera, en una ficha junto al d20). Sin pestaña Tiradas. El d20 y el «?» no se mueven; el «?» se aparta
   mientras los dados están abiertos.
+- **En la barra de la campaña, ella con su nombre (su Inicio) y solo lo suyo** (Enrique, 2026-11-10: «páginas no lo
+  queremos en la campaña … solo gestionamos las cosas de la campaña»): Mesa, Libros, Compendio y Aventuras; las páginas
+  del mundo, en la Mesa. **No se dice «tele»** («muchas veces no usaré la tele para enseñarlo»): es la **pantalla de los
+  jugadores** («Pantalla»; su menú, «Cámara»), y se abre desde dentro de la Mesa, que tiene que estar activa.
 - **La campaña se abre en la misma pestaña; la Mesa, en otra** (Enrique, 2026-11-10: «al entrar en una campaña no se
   abre una nueva pestaña, eso ocurre al entrar en mesa»; «personajes y mesa podemos unirlo dentro de la campaña»): la
   sección **Mesa** de la campaña tiene «Abrir la Mesa» (otra pestaña, a pantalla completa y sin barra), quién está en

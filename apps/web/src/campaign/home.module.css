@@ -12,10 +12,14 @@
   margin-inline: auto;
 }
 
+.head {
+  position: relative;
+}
+
 .hero {
   position: absolute;
-  inset-inline: 0;
-  inset-block-start: 0;
+  inset-inline: calc(-1 * var(--space-6));
+  inset-block-start: calc(-1 * var(--space-8));
   block-size: 19rem;
   overflow: hidden;
   opacity: 0.5;

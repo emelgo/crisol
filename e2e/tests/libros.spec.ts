@@ -24,8 +24,10 @@ test('la campaña abre en su Inicio, con su barra; desde ahí, sus libros y la M
   await expect(page.getByRole('heading', { level: 1, name: 'La Marca' })).toBeVisible()
   await expect(page.getByText('Eana · 5e')).toBeVisible()
   const bar = page.getByRole('navigation', { name: 'Secciones' })
-  for (const section of ['Inicio', 'Mesa', 'Libros', 'Compendio', 'Aventuras', 'Páginas'])
+  // La campaña, con su nombre (su Inicio), y sus secciones; las páginas del mundo, en la Mesa
+  for (const section of ['La Marca', 'Mesa', 'Libros', 'Compendio', 'Aventuras'])
     await expect(bar.getByRole('link', { name: section, exact: true })).toBeVisible()
+  await expect(bar.getByRole('link', { name: 'Páginas', exact: true })).toHaveCount(0)
   await page.screenshot({ path: test.info().outputPath('inicio.png') })
 
   // Libros: apagar uno y que se vaya del compendio de la campaña

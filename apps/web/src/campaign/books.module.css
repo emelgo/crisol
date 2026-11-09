@@ -98,11 +98,17 @@
   border: 0;
   background: none;
   cursor: pointer;
-  transition: transform 0.25s;
 }
 
-.coverButton:hover {
-  transform: translateY(-3px);
+/* Como las portadas de los mundos: al pasar el ratón se acercan un poco */
+.coverButton :is(img, [aria-hidden="true"]) {
+  transition:
+    transform 0.4s cubic-bezier(0.33, 1, 0.68, 1),
+    filter 0.3s;
+}
+
+.coverButton:hover :is(img, [aria-hidden="true"]) {
+  transform: scale(1.05);
 }
 
 .coverStatic {
@@ -505,9 +511,27 @@
   font-size: 0.875rem;
 }
 
+/* Abrir un libro: su portada viaja de la tarjeta a la ventana, sin el viaje lento de entrar en un mundo; la página no se
+   mueve (la ventana entra con su propia animación) */
 ::view-transition-group(libro-abierto) {
-  animation-duration: 0.45s;
-  animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+  animation-duration: 460ms;
+  animation-timing-function: cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+:global(html:active-view-transition-type(abrir-libro))::view-transition-old(root),
+:global(html:active-view-transition-type(abrir-libro))::view-transition-new(root) {
+  animation: none;
+}
+
+/* Al filtrar, las tarjetas que se quedan se deslizan a su sitio, como las demás listas */
+:global(html:active-view-transition-type(recolocar))::view-transition-group(*) {
+  animation-duration: 380ms;
+  animation-timing-function: cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+:global(html:active-view-transition-type(recolocar))::view-transition-old(root),
+:global(html:active-view-transition-type(recolocar))::view-transition-new(root) {
+  animation: none;
 }
 
 @media (max-width: 40rem) {

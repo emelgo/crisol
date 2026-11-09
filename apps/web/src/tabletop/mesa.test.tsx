@@ -169,13 +169,13 @@ describe('la mesa del máster', () => {
     await api.client.call('openScene', { campaignId: CAMPAIGN.id, sceneId: scenes[0]?.id ?? '' })
     await push()
     await user.click(await screen.findByRole('button', { name: 'Presentar' }))
-    expect((await screen.findAllByText('En la tele')).length).toBe(2)
+    expect((await screen.findAllByText('En pantalla')).length).toBe(2)
     expect((await api.client.call('getCampaignTable', { campaignId: CAMPAIGN.id })).presented?.id).toBe(scenes[0]?.id)
     await user.click(screen.getByRole('button', { name: 'Ocultar' }))
-    expect(await screen.findByText('Tele a oscuras')).toBeDefined()
+    expect(await screen.findByText('Pantalla a oscuras')).toBeDefined()
     expect(screen.queryByRole('button', { name: 'Ocultar' })).toBeNull()
     await user.click(screen.getByRole('button', { name: 'Presentar' }))
-    await waitFor(() => expect(screen.queryByText('Tele a oscuras')).toBeNull())
+    await waitFor(() => expect(screen.queryByText('Pantalla a oscuras')).toBeNull())
   })
 
   it('con «Seguir» manda su encuadre al moverse; «Fija» deja el marco de la tele, que se mueve con las flechas', async () => {
@@ -185,16 +185,16 @@ describe('la mesa del máster', () => {
     await api.client.call('presentScene', { campaignId: CAMPAIGN.id })
     await push()
     const stage = await screen.findByRole('application', { name: 'Mesa: Cripta de Varn' })
-    expect(screen.getByText('La tele sigue tu vista')).toBeDefined()
+    expect(screen.getByText('Los jugadores ven lo mismo que tú')).toBeDefined()
     const channel = await master()
     const before = channel.viewports.length
     fireEvent.keyDown(stage, { key: 'ArrowRight' })
     fireEvent.keyDown(stage, { key: '+' })
     expect(channel.viewports.length).toBeGreaterThan(before)
     // Fija: en lo que se ve ahora
-    await user.click(screen.getByRole('button', { name: /^Tele/ }))
+    await user.click(screen.getByRole('button', { name: /^Cámara/ }))
     await user.click(screen.getByRole('menuitemradio', { name: /^Fija/ }))
-    const frame = await screen.findByRole('region', { name: 'Lo que se ve en la tele' })
+    const frame = await screen.findByRole('region', { name: 'Lo que ven los jugadores' })
     const camera = async () => (await api.client.call('getCampaignTable', { campaignId: CAMPAIGN.id })).camera
     const first = await camera()
     expect(first.mode).toBe('fixed')
@@ -210,7 +210,7 @@ describe('la mesa del máster', () => {
     const sent = channel.viewports.length
     fireEvent.keyDown(stage, { key: 'ArrowLeft' })
     expect(channel.viewports.length).toBe(sent)
-    await user.click(screen.getByRole('button', { name: /^Tele/ }))
+    await user.click(screen.getByRole('button', { name: /^Cámara/ }))
     await user.click(screen.getByRole('menuitemradio', { name: /^Sigue tu vista/ }))
     await waitFor(async () => expect((await camera()).mode).toBe('follow'))
   })
@@ -223,16 +223,16 @@ describe('la mesa del máster', () => {
     await api.client.call('openScene', { campaignId: CAMPAIGN.id, sceneId: scenes[1]?.id ?? '' })
     await push()
     const stage = await screen.findByRole('application', { name: 'Mesa: Faro de Brena' })
-    expect(screen.getByText('La tele enseña otra escena')).toBeDefined()
-    expect(screen.queryByText('La tele sigue tu vista')).toBeNull()
+    expect(screen.getByText('Los jugadores ven otra escena')).toBeDefined()
+    expect(screen.queryByText('Los jugadores ven lo mismo que tú')).toBeNull()
     const channel = await master()
     const before = channel.viewports.length
     fireEvent.keyDown(stage, { key: 'ArrowRight' })
     expect(channel.viewports.length).toBe(before)
     // Al presentarla, la sigue y le manda ya dónde mira
     await user.click(screen.getByRole('button', { name: 'Presentar' }))
-    expect(await screen.findByText('La tele sigue tu vista')).toBeDefined()
-    expect(screen.queryByText('La tele enseña otra escena')).toBeNull()
+    expect(await screen.findByText('Los jugadores ven lo mismo que tú')).toBeDefined()
+    expect(screen.queryByText('Los jugadores ven otra escena')).toBeNull()
     expect(channel.viewports.length).toBeGreaterThan(before)
   })
 

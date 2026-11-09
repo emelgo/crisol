@@ -32,18 +32,6 @@
   text-decoration: none;
 }
 
-.openTv {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--color-muted);
-  font-size: 0.9rem;
-}
-
-.openTv:hover {
-  color: var(--color-text);
-}
-
 .hidden {
   position: absolute;
   inline-size: 1px;
@@ -84,6 +72,7 @@
 }
 
 .who {
+  animation: llega-alguien 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
   display: flex;
   align-items: center;
   gap: var(--space-3);
@@ -135,4 +124,11 @@
 
 .game dd {
   margin: 0;
+}
+
+@keyframes llega-alguien {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
 }

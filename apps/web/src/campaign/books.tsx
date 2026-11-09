@@ -21,7 +21,7 @@ import { failed, LoadError } from '../components/load-error.tsx'
 import { Modal } from '../components/modal.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { BookCover } from './book-cover.tsx'
-import { BookWindow, withTransition } from './book-window.tsx'
+import { BookWindow, relayout, withTransition } from './book-window.tsx'
 import styles from './books.module.css'
 
 type Props = { worldId: string; worldName: string; campaign: Campaign }
@@ -93,10 +93,10 @@ export function CampaignBooks({ worldId, worldName, campaign }: Props) {
           </div>
           <fieldset className={styles.seg}>
             <legend className={styles.hidden}>{t('books.show')}</legend>
-            <button type="button" aria-pressed={!only} onClick={() => setOnly(false)}>
+            <button type="button" aria-pressed={!only} onClick={() => relayout(() => flushSync(() => setOnly(false)))}>
               {t('books.all')}
             </button>
-            <button type="button" aria-pressed={only} onClick={() => setOnly(true)}>
+            <button type="button" aria-pressed={only} onClick={() => relayout(() => flushSync(() => setOnly(true)))}>
               {t('books.inCampaignCount', { count: sources.length })}
             </button>
           </fieldset>
@@ -113,7 +113,12 @@ export function CampaignBooks({ worldId, worldName, campaign }: Props) {
                   .map((key) => all.find((b) => b.key === key)?.name ?? key)
               : []
             return (
-              <li key={book.key} className={styles.book} data-book={book.key}>
+              <li
+                key={book.key}
+                className={styles.book}
+                data-book={book.key}
+                style={{ viewTransitionName: `libro-${book.key}` }}
+              >
                 <button
                   type="button"
                   className={styles.coverButton}

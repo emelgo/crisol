@@ -319,7 +319,6 @@ export function Ribbon() {
                 worldId={panelsWorld}
                 campaignId={panelsCampaign}
                 name={campaign?.name ?? ''}
-                cover={campaign?.cover ?? null}
                 master={campaignRole === 'master'}
               />
             ) : (
@@ -410,20 +409,19 @@ function WorldPanels({ worldId, worldName, master }: { worldId: string; worldNam
 }
 
 /**
- * Lo de una campaña, en su propio espacio (ADR-0021): su portada (vuelve a su Inicio), Inicio, Mesa, Personajes,
- * Libros, Compendio, Aventuras y Páginas; quien juega, sin Libros ni Aventuras. Los dados tiran en ella
+ * Lo de una campaña, en su propio espacio (ADR-0021): ella, con su nombre (su Inicio), Mesa (con sus
+ * personajes), Libros, Compendio y Aventuras; quien juega, sin Libros ni Aventuras. Las páginas del mundo, en la Mesa
+ * (Enrique, 2026-11-10: «en la campaña solo gestionamos las cosas de la campaña»). Los dados tiran en ella
  */
 function CampaignPanels({
   worldId,
   campaignId,
   name,
-  cover,
   master
 }: {
   worldId: string
   campaignId: string
   name: string
-  cover: Campaign['cover'] | null
   master: boolean
 }) {
   const { t } = useTranslation()
@@ -437,7 +435,6 @@ function CampaignPanels({
       | '/mundos/$worldId/campanas/$campaignId/libros'
       | '/mundos/$worldId/campanas/$campaignId/compendio'
       | '/mundos/$worldId/campanas/$campaignId/aventuras'
-      | '/mundos/$worldId/campanas/$campaignId/paginas'
     icon: LucideIcon
     text: string
     tour: string
@@ -445,13 +442,8 @@ function CampaignPanels({
     master?: boolean
   }
   const sections: Section[] = [
-    {
-      to: '/mundos/$worldId/campanas/$campaignId',
-      icon: House,
-      text: t('ribbon.home'),
-      tour: 'barra-inicio',
-      exact: true
-    },
+    // La campaña, con su nombre (como el mundo en la suya): su Inicio
+    { to: '/mundos/$worldId/campanas/$campaignId', icon: Shield, text: name, tour: 'barra-inicio', exact: true },
     // La Mesa: sus personajes, quién está y abrirla en otra pestaña (Enrique, 2026-11-10: «personajes y mesa podemos
     // unirlo dentro de la campaña y luego se abre la mesa en otra pestaña»)
     {
@@ -479,29 +471,10 @@ function CampaignPanels({
       text: t('ribbon.adventures'),
       tour: 'barra-aventuras',
       master: true
-    },
-    {
-      to: '/mundos/$worldId/campanas/$campaignId/paginas',
-      icon: FileText,
-      text: t('ribbon.pages'),
-      tour: 'barra-paginas'
     }
   ]
   return (
     <>
-      <Link
-        to="/mundos/$worldId/campanas/$campaignId"
-        params={params}
-        className={styles.campaignCover}
-        aria-label={t('ribbon.campaignHome', { name })}
-        viewTransition={SECTION}
-      >
-        {cover ? (
-          <img src={`/api/files/${cover.fileId}`} alt="" style={coverStyle(cover)} />
-        ) : (
-          <span aria-hidden="true">{name.charAt(0).toUpperCase()}</span>
-        )}
-      </Link>
       {sections
         .filter((section) => master || !section.master)
         .map((section) => (
@@ -643,46 +616,22 @@ function MobileMenu({
             href: `/mundos/${world.id}/campanas/${campaign.id}`,
             run: go(`/mundos/${world.id}/campanas/${campaign.id}`)
           },
+          // Como en el escritorio (ADR-0021): la campaña, la Mesa (con sus personajes) y el compendio
           {
-            key: 'paginas',
-            icon: Globe,
-            text: world.name,
-            current: path.startsWith(`/mundos/${world.id}/campanas/${campaign.id}/paginas`),
-            href: master ? `/mundos/${world.id}/wiki` : `/mundos/${world.id}/campanas/${campaign.id}/paginas`,
-            run: go(master ? `/mundos/${world.id}/wiki` : `/mundos/${world.id}/campanas/${campaign.id}/paginas`)
-          },
-          {
-            key: 'personajes',
-            icon: Users,
-            text: t('ribbon.characters'),
+            key: 'mesa',
+            icon: Layers,
+            text: t('ribbon.table'),
             current: path.startsWith(`/mundos/${world.id}/campanas/${campaign.id}/personajes`),
             href: `/mundos/${world.id}/campanas/${campaign.id}/personajes`,
             run: go(`/mundos/${world.id}/campanas/${campaign.id}/personajes`)
           },
           {
             key: 'compendio',
-            icon: BookOpen,
+            icon: ScrollText,
             text: t('ribbon.compendium'),
             current: path.startsWith(`/mundos/${world.id}/campanas/${campaign.id}/compendio`),
             href: `/mundos/${world.id}/campanas/${campaign.id}/compendio`,
             run: go(`/mundos/${world.id}/campanas/${campaign.id}/compendio`)
-          },
-          {
-            key: 'grupo',
-            icon: Backpack,
-            text: t('ribbon.party'),
-            current: path.startsWith(`/mundos/${world.id}/campanas/${campaign.id}/grupo`),
-            href: `/mundos/${world.id}/campanas/${campaign.id}/grupo`,
-            run: go(`/mundos/${world.id}/campanas/${campaign.id}/grupo`)
-          },
-          // Las criaturas en juego: el máster, todas; un jugador, las que están a la vista
-          {
-            key: 'en-juego',
-            icon: Swords,
-            text: t('ribbon.inPlay'),
-            current: path.startsWith(`/mundos/${world.id}/campanas/${campaign.id}/en-juego`),
-            href: `/mundos/${world.id}/campanas/${campaign.id}/en-juego`,
-            run: go(`/mundos/${world.id}/campanas/${campaign.id}/en-juego`)
           }
         ]
       : world

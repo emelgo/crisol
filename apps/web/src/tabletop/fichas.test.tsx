@@ -223,7 +223,7 @@ describe('las fichas en la mesa', () => {
     const [a, b] = await tokensOf(api)
     expect((b?.x ?? 0) - (a?.x ?? 0)).toBe(100)
     await push()
-    await user.click(screen.getByRole('button', { name: /^Tele/ }))
+    await user.click(screen.getByRole('button', { name: /^Cámara/ }))
     await user.click(screen.getByRole('menuitemradio', { name: /^Sigue al grupo/ }))
     await waitFor(async () =>
       expect((await api.client.call('getCampaignTable', { campaignId: CAMPAIGN.id })).camera).toEqual({ mode: 'group' })
