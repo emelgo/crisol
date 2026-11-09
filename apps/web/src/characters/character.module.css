@@ -72,7 +72,8 @@
   cursor: pointer;
 }
 
-.tab[aria-current="page"] {
+.tab[aria-current="page"],
+.tab[aria-pressed="true"] {
   border-block-end-color: var(--color-accent);
   color: var(--color-text);
 }

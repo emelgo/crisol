@@ -184,6 +184,7 @@ export function InScene({
   const { t } = useTranslation()
   const api = useApi()
   const errorText = useErrorText()
+  const headingId = useId()
   const hide = useMutation({
     mutationFn: (token: TokenView) => api.call('updateToken', { tokenId: token.id, hidden: !token.hidden })
   })
@@ -201,8 +202,8 @@ export function InScene({
   const error = hide.error ?? fight.error
   return (
     // biome-ignore lint/a11y/useSemanticElements: una sección con título se enmarca como recuadro de hoja (base.css); aquí no
-    <div role="region" className={styles.inScene} aria-labelledby="en-esta-escena">
-      <h3 id="en-esta-escena" className={styles.section}>
+    <div role="region" className={styles.inScene} aria-labelledby={headingId}>
+      <h3 id={headingId} className={styles.section}>
         {t('tabletop.inScene')}
       </h3>
       {sorted.length === 0 ? (

@@ -99,7 +99,7 @@ export function CharacterView({
                 key={each}
                 type="button"
                 className={styles.tab}
-                aria-current={shown === each ? 'page' : undefined}
+                aria-pressed={shown === each}
                 onClick={() => onView(each === 'sheet' ? 'ficha' : 'creador')}
               >
                 {t(each === 'sheet' ? 'characters.sheet' : 'characters.creator')}

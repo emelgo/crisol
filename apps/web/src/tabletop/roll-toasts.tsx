@@ -16,7 +16,16 @@ export const TOAST_MS = 5000
 /** Cuántas a la vez, como mucho (las más nuevas) */
 const MAX = 3
 
-export function RollToasts({ campaignId, enabled }: { campaignId: string; enabled: boolean }) {
+export function RollToasts({
+  campaignId,
+  enabled,
+  master = true
+}: {
+  campaignId: string
+  enabled: boolean
+  /** Quien mira lleva la campaña (lo suyo «para el máster» es solo suyo) */
+  master?: boolean
+}) {
   const { t } = useTranslation()
   const { account } = useAccounts().useAccount()
   const [shown, setShown] = useState<DiceRoll[]>([])
@@ -26,6 +35,8 @@ export function RollToasts({ campaignId, enabled }: { campaignId: string; enable
     // Lo «para sí» de otro le llega sin aviso (como en el registro)
     if (roll.visibility === 'self' && !isMine(roll, account)) return
     setShown((current) => [...current.filter((r) => r.id !== roll.id), roll].slice(-MAX))
+    // La misma por los dos caminos: un solo temporizador
+    clearTimeout(timers.current.get(roll.id))
     timers.current.set(
       roll.id,
       setTimeout(() => {
@@ -55,7 +66,11 @@ export function RollToasts({ campaignId, enabled }: { campaignId: string; enable
               <span>{roll.label ?? roll.formula}</span>
               {secret && (
                 <span className={styles.secret}>
-                  {isMine(roll, account) ? t('tabletop.onlyYou') : t('tabletop.forYou')}
+                  {!isMine(roll, account)
+                    ? t('tabletop.forYou')
+                    : roll.visibility === 'master' && !master
+                      ? t('tabletop.youAndMaster')
+                      : t('tabletop.onlyYou')}
                 </span>
               )}
             </div>

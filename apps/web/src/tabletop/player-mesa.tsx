@@ -200,7 +200,7 @@ function PlayerSidebar({
   return (
     <>
       <TableSidebar items={items} tab={tab} onTab={setTab} folded={folded} onFold={setFolded} />
-      <RollToasts campaignId={campaign.id} enabled={folded || tab !== 'rolls'} />
+      <RollToasts campaignId={campaign.id} enabled={folded || tab !== 'rolls'} master={false} />
     </>
   )
 }

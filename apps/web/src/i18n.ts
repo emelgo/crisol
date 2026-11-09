@@ -1717,6 +1717,7 @@ export const es = {
     toCombat: 'Meter a {{name}} en el combate',
     onlyYou: 'solo tú',
     forYou: 'para ti',
+    youAndMaster: 'tú y el máster',
     compendium: {
       search: 'Buscar en el compendio',
       sections: 'Apartados',
