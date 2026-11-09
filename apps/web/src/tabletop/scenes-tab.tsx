@@ -5,17 +5,20 @@
  */
 import type { CampaignTableView, SceneView, TokenView } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Eye, EyeOff, Plus, Swords } from 'lucide-react'
-import { type FormEvent, useId, useState } from 'react'
+import { Eye, EyeOff, MoreHorizontal, Pencil, Play, Plus, Settings2, Swords, Trash2 } from 'lucide-react'
+import { type FormEvent, useEffect, useId, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { FormError } from '../components/field.tsx'
 import { failed, LoadError } from '../components/load-error.tsx'
+import { pageWindow } from './page-window.tsx'
 import { sceneListKey } from './queries.ts'
 import styles from './scenes-tab.module.css'
 import { SceneThumb } from './thumb.tsx'
 import { initialOf } from './tokens.ts'
+import { useWindows } from './windows.tsx'
 
 const matches = (text: string, query: string) =>
   !query.trim() || text.toLocaleLowerCase('es').includes(query.trim().toLocaleLowerCase('es'))
@@ -59,6 +62,7 @@ export function ScenesGrid({
         {shown.map((scene) => (
           <SceneCard
             key={scene.id}
+            worldId={worldId}
             scene={scene}
             open={scene.id === openId}
             live={scene.id === live}
@@ -71,20 +75,36 @@ export function ScenesGrid({
   )
 }
 
+/**
+ * Una escena: pulsarla la abre en la Mesa; con el botón derecho (o «⋯»), lo demás: abrirla, su rejilla y sus ajustes
+ * (su página, en una ventana), cambiarle el nombre y borrarla
+ */
 function SceneCard({
+  worldId,
   scene,
   open,
   live,
   onOpen
 }: {
+  worldId: string
   scene: SceneView
   open: boolean
   live: boolean
   onOpen: () => void
 }) {
   const { t } = useTranslation()
+  const [menu, setMenu] = useState<{ x: number; y: number } | null>(null)
+  const more = useRef<HTMLButtonElement>(null)
+  const openMenu = (x: number, y: number) => setMenu({ x, y })
   return (
-    <li className={styles.card} data-open={open || undefined}>
+    <li
+      className={styles.card}
+      data-open={open || undefined}
+      onContextMenu={(event) => {
+        event.preventDefault()
+        openMenu(event.clientX, event.clientY)
+      }}
+    >
       <button
         type="button"
         className={styles.cardButton}
@@ -97,8 +117,193 @@ function SceneCard({
         </span>
         <span className={styles.name}>{scene.name}</span>
       </button>
+      <button
+        ref={more}
+        type="button"
+        className={styles.more}
+        aria-label={t('tabletop.sceneMenu', { name: scene.name })}
+        title={t('tabletop.sceneMenu', { name: scene.name })}
+        aria-haspopup="menu"
+        aria-expanded={Boolean(menu)}
+        onClick={() => {
+          const box = more.current?.getBoundingClientRect()
+          if (box) openMenu(box.left, box.bottom + 4)
+        }}
+      >
+        <MoreHorizontal size={16} aria-hidden="true" />
+      </button>
       {live && <span className={styles.live}>{t('tabletop.live')}</span>}
+      {menu && (
+        <SceneMenu
+          worldId={worldId}
+          scene={scene}
+          at={menu}
+          onOpen={onOpen}
+          onClose={() => {
+            setMenu(null)
+            more.current?.focus()
+          }}
+        />
+      )}
     </li>
+  )
+}
+
+/** El menú de una escena, donde se pulsó (o bajo su «⋯»): Escape o pulsar fuera lo cierran */
+function SceneMenu({
+  worldId,
+  scene,
+  at,
+  onOpen,
+  onClose
+}: {
+  worldId: string
+  scene: SceneView
+  at: { x: number; y: number }
+  onOpen: () => void
+  onClose: () => void
+}) {
+  const { t } = useTranslation()
+  const api = useApi()
+  const client = useQueryClient()
+  const errorText = useErrorText()
+  const windows = useWindows()
+  const root = useRef<HTMLDivElement>(null)
+  const [step, setStep] = useState<'menu' | 'rename' | 'delete'>('menu')
+  const [name, setName] = useState(scene.name)
+  const refresh = () => client.invalidateQueries({ queryKey: ['pages', worldId] })
+  const rename = useMutation({
+    mutationFn: (next: string) => api.call('updatePageTab', { tabId: scene.tabId, name: next }),
+    onSuccess: async () => {
+      await refresh()
+      onClose()
+    }
+  })
+  const remove = useMutation({
+    mutationFn: () => api.call('deletePageTab', { tabId: scene.tabId }),
+    onSuccess: async () => {
+      await refresh()
+      onClose()
+    }
+  })
+  useEffect(() => {
+    root.current?.querySelector<HTMLElement>('[role="menuitem"], input, button')?.focus()
+  }, [step])
+  useEffect(() => {
+    const outside = (event: PointerEvent) => {
+      if (!root.current?.contains(event.target as Node)) onClose()
+    }
+    document.addEventListener('pointerdown', outside)
+    return () => document.removeEventListener('pointerdown', outside)
+  }, [onClose])
+  const error = rename.error ?? remove.error
+  // Que no se salga de la pantalla
+  const left = Math.min(at.x, window.innerWidth - 252)
+  const top = Math.min(at.y, window.innerHeight - 200)
+  return createPortal(
+    // biome-ignore lint/a11y/useSemanticElements: un fieldset pondría su marco; es el grupo del menú y sus pasos
+    <div
+      ref={root}
+      role="group"
+      aria-label={scene.name}
+      className={styles.sceneMenu}
+      style={{ left, top }}
+      data-popover=""
+      onKeyDown={(event) => {
+        if (event.key === 'Escape') {
+          event.preventDefault()
+          event.stopPropagation()
+          onClose()
+          return
+        }
+        if (step !== 'menu' || (event.key !== 'ArrowDown' && event.key !== 'ArrowUp')) return
+        event.preventDefault()
+        const items = [...(root.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? [])]
+        const i = items.indexOf(document.activeElement as HTMLElement)
+        items[(i + (event.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length]?.focus()
+      }}
+    >
+      {step === 'menu' && (
+        <div role="menu" aria-label={t('tabletop.sceneMenu', { name: scene.name })}>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              onOpen()
+              onClose()
+            }}
+          >
+            <Play size={14} aria-hidden="true" />
+            {t('tabletop.open')}
+          </button>
+          {windows && (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                windows.open(pageWindow(worldId, scene.pageId, scene.pageTitle))
+                onClose()
+              }}
+            >
+              <Settings2 size={14} aria-hidden="true" />
+              {t('tabletop.sceneSettings')}
+            </button>
+          )}
+          <button type="button" role="menuitem" onClick={() => setStep('rename')}>
+            <Pencil size={14} aria-hidden="true" />
+            {t('tabletop.renameScene')}
+          </button>
+          <button type="button" role="menuitem" className={styles.danger} onClick={() => setStep('delete')}>
+            <Trash2 size={14} aria-hidden="true" />
+            {t('tabletop.deleteScene')}
+          </button>
+        </div>
+      )}
+      {step === 'rename' && (
+        <form
+          className={styles.menuForm}
+          onSubmit={(event) => {
+            event.preventDefault()
+            const next = name.trim()
+            if (next && next !== scene.name) rename.mutate(next)
+            else onClose()
+          }}
+        >
+          <label>
+            {t('tabletop.newSceneName')}
+            <input value={name} maxLength={80} onChange={(event) => setName(event.currentTarget.value)} />
+          </label>
+          <div className={styles.newActions}>
+            <button type="submit" className={styles.primary} disabled={rename.isPending}>
+              {t('tabletop.renameScene')}
+            </button>
+            <button type="button" className={styles.ghost} onClick={onClose}>
+              {t('list.cancel')}
+            </button>
+          </div>
+        </form>
+      )}
+      {step === 'delete' && (
+        <div className={styles.menuForm}>
+          <p>{t('tabletop.deleteSceneWarning', { name: scene.name })}</p>
+          <div className={styles.newActions}>
+            <button
+              type="button"
+              className={styles.primary}
+              disabled={remove.isPending}
+              onClick={() => remove.mutate()}
+            >
+              {t('tabletop.deleteScene')}
+            </button>
+            <button type="button" className={styles.ghost} onClick={onClose}>
+              {t('list.cancel')}
+            </button>
+          </div>
+        </div>
+      )}
+      <FormError message={error ? errorText(error) : null} />
+    </div>,
+    document.body
   )
 }
 

@@ -49,6 +49,7 @@ import { PageTitle } from '../components/page-title.tsx'
 import { Tour } from '../components/tour.tsx'
 import { useDice } from '../dice/context.tsx'
 import { HistoryHost } from '../dice/history.tsx'
+import { SourcePicker } from '../wiki/scene/source-picker.tsx'
 import { canvasViewOf, framingOf, REFERENCE_ASPECT, sceneViewportOf, sceneViewportOfCanvas } from './camera.ts'
 import { connectTable, type DragMove, type TableChannel, type TableStatus } from './channel.ts'
 import { masterDraw } from './draw.ts'
@@ -58,7 +59,7 @@ import { GroupDamage } from './group-damage.tsx'
 import { MarksLayer, placeMarks } from './marks-layer.tsx'
 import { MasterSidebar, useMasterSidebar } from './master-sidebar.tsx'
 import styles from './mesa.module.css'
-import { openPageLinks, PageWindowsSocket } from './page-window.tsx'
+import { openPageLinks, PageWindowsSocket, pageWindow } from './page-window.tsx'
 import { PLACING_TYPE, type Placing } from './panel.tsx'
 import { PlayerMesa } from './player-mesa.tsx'
 import { Preparing } from './preparing.tsx'
@@ -70,7 +71,7 @@ import { TokenImageEditor } from './token-image.tsx'
 import { sheetWindow } from './token-sheet.tsx'
 import { arrowMoves, cellSide, dragMoves, dropAt, tokenAt, tokenRadius, tokensIn } from './tokens.ts'
 import { TextInput, ToolBar, ToolsPanel } from './tools-panel.tsx'
-import { useScenePreparation } from './use-preparation.ts'
+import { type SceneChoice, useScenePreparation } from './use-preparation.ts'
 import { useTableRenderer } from './use-renderer.ts'
 import { isMarkTool, useTableTools } from './use-table-tools.ts'
 import { fitCanvas } from './view.ts'
@@ -499,10 +500,7 @@ export function Mesa({
                 <p className={styles.notice}>{table ? t('tabletop.empty') : ''}</p>
               </>
             ) : !open.image ? (
-              <div className={styles.notice}>
-                <p>{t('tabletop.noMap')}</p>
-                <PageLink worldId={worldId} scene={open} />
-              </div>
+              <NoMap worldId={worldId} scene={open} onChoose={(choice) => void start(open, choice)} />
             ) : null}
             <TopBar
               worldId={worldId}
@@ -720,6 +718,18 @@ function Stage({
   const following = camera.mode !== 'fixed' && onScreen
   const sizeRef = useRef(size)
   sizeRef.current = size
+  // Lo que se ve del mapa: sin lo que tapa la barra de la derecha, que flota encima mientras está abierta (al encuadrar
+  // o centrar una ficha, que no quede debajo de ella)
+  const free = useCallback(
+    (room: Size): Size => {
+      const side = document.querySelector<HTMLElement>('[data-mesa-side="open"]')
+      const stage = host.current?.getBoundingClientRect()
+      if (!side || !stage) return room
+      const covered = stage.right - side.getBoundingClientRect().left + 12
+      return covered > 0 && covered < room.width - 240 ? { width: room.width - covered, height: room.height } : room
+    },
+    [host]
+  )
   // La escena (y su versión del mapa) que ya se colocó: otra vuelve a su vista inicial
   const placed = useRef<string | null>(null)
   const zoomText = useRef<HTMLSpanElement>(null)
@@ -768,11 +778,11 @@ function Stage({
     const r = tokenRadius(token, grid) * scale
     const width = card.offsetWidth || 300
     const height = card.offsetHeight || 240
-    const room = sizeRef.current
+    const room = free(sizeRef.current)
     const left = sx + r + 14 + width > room.width - 8 ? sx - r - 14 - width : sx + r + 14
     card.style.left = `${Math.max(8, left)}px`
     card.style.top = `${Math.max(64, Math.min(sy - 60, room.height - height - 12))}px`
-  }, [renderer, remote, cardRef, view])
+  }, [renderer, remote, cardRef, view, free])
 
   /** Coloca el marco «Tele» sobre el mapa con la vista de ahora */
   const placeFrame = useCallback(() => {
@@ -812,7 +822,7 @@ function Stage({
   useEffect(() => {
     center.current = (tokenId, always) => {
       const token = latest.current.tokens.find((each) => each.id === tokenId)
-      const room = sizeRef.current
+      const room = free(sizeRef.current)
       if (!token || room.width === 0) return
       const { x, y, scale } = view.current
       const sx = token.x * scale + x
@@ -825,13 +835,13 @@ function Stage({
     return () => {
       center.current = null
     }
-  }, [center, apply, view])
+  }, [center, apply, view, free])
 
   const fit = useCallback(() => {
     if (!scene || sizeRef.current.width === 0) return
-    view.current = fitCanvas(scene, sizeRef.current)
+    view.current = fitCanvas(scene, free(sizeRef.current))
     apply()
-  }, [scene, apply, view])
+  }, [scene, apply, view, free])
 
   // La primera vez que hay sitio: la vista inicial de la escena o encuadrada
   useEffect(() => {
@@ -839,10 +849,11 @@ function Stage({
     const key = `${scene.id}/${scene.tiles.version}`
     if (placed.current !== key) {
       placed.current = key
-      view.current = open?.initialView ? canvasViewOf(open.initialView, size) : fitCanvas(scene, size)
+      const room = free(size)
+      view.current = open?.initialView ? canvasViewOf(open.initialView, room) : fitCanvas(scene, room)
     }
     apply()
-  }, [ready, scene, size, open?.initialView, apply, view])
+  }, [ready, scene, size, open?.initialView, apply, view, free])
 
   // Al pasar a «Seguir», la tele recibe ya dónde mira el máster; el marco, al cambiar la cámara
   useEffect(() => {
@@ -1451,17 +1462,61 @@ function SceneMenu({ worldId, open, onOpen }: { worldId: string; open: SceneView
   )
 }
 
+/** Su página: en una ventana de la Mesa (sin irse de la campaña) */
 function PageLink({ worldId, scene }: { worldId: string; scene: SceneView }) {
   const { t } = useTranslation()
+  const windows = useWindows()
+  if (!windows)
+    return (
+      <Link
+        to="/mundos/$worldId/wiki/$pageId"
+        params={{ worldId, pageId: scene.pageId }}
+        search={{ pestana: scene.tabId }}
+        className={styles.pageLink}
+      >
+        {t('tabletop.goToPage')}
+      </Link>
+    )
   return (
-    <Link
-      to="/mundos/$worldId/wiki/$pageId"
-      params={{ worldId, pageId: scene.pageId }}
-      search={{ pestana: scene.tabId }}
+    <button
+      type="button"
       className={styles.pageLink}
+      onClick={() => windows.open(pageWindow(worldId, scene.pageId, scene.pageTitle))}
     >
       {t('tabletop.goToPage')}
-    </Link>
+    </button>
+  )
+}
+
+/**
+ * Una escena sin mapa, en la Mesa: se sube o se elige aquí mismo (sin irse a la página) y sus ajustes (la rejilla), en
+ * una ventana
+ */
+function NoMap({
+  worldId,
+  scene,
+  onChoose
+}: {
+  worldId: string
+  scene: SceneView
+  onChoose: (choice: SceneChoice) => void
+}) {
+  const { t } = useTranslation()
+  const windows = useWindows()
+  return (
+    <div className={`${styles.notice} ${styles.noMap}`}>
+      <p>{t('tabletop.noMap')}</p>
+      <SourcePicker worldId={worldId} value={null} onChange={onChoose} />
+      {windows && (
+        <button
+          type="button"
+          className={styles.pageLink}
+          onClick={() => windows.open(pageWindow(worldId, scene.pageId, scene.pageTitle))}
+        >
+          {t('tabletop.sceneSettings')}
+        </button>
+      )}
+    </div>
   )
 }
 

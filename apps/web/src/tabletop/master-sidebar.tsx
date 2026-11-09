@@ -149,6 +149,25 @@ export function MasterSidebar({
     )
   const items: SidebarItem[] = [
     {
+      key: 'scenes',
+      content: () => (
+        <>
+          <ScenesGrid worldId={worldId} table={table} onOpen={onOpen} />
+          <InScene campaignId={campaignId} table={table} tokens={tokens} onPick={onPickToken} />
+          <h3 className={styles.tabSection}>{t('tabletop.tabs.encounters')}</h3>
+          <EncountersList
+            worldId={worldId}
+            campaignId={campaignId}
+            systemId={systemId}
+            table={table}
+            selected={chosen}
+            canPlace={canPlace}
+            onPlace={onPlace}
+          />
+        </>
+      )
+    },
+    {
       key: 'combat',
       dot: Boolean(combat) && tab !== 'combat',
       content: () =>
@@ -177,25 +196,6 @@ export function MasterSidebar({
             )}
           </div>
         )
-    },
-    {
-      key: 'scenes',
-      content: () => (
-        <>
-          <ScenesGrid worldId={worldId} table={table} onOpen={onOpen} />
-          <InScene campaignId={campaignId} table={table} tokens={tokens} onPick={onPickToken} />
-          <h3 className={styles.tabSection}>{t('tabletop.tabs.encounters')}</h3>
-          <EncountersList
-            worldId={worldId}
-            campaignId={campaignId}
-            systemId={systemId}
-            table={table}
-            selected={chosen}
-            canPlace={canPlace}
-            onPlace={onPlace}
-          />
-        </>
-      )
     },
     {
       key: 'characters',

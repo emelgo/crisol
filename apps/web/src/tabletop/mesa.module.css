@@ -1048,3 +1048,23 @@
 .mesa:has([data-mesa-side="folded"]) .topBar {
   inset-inline-end: 4.5rem;
 }
+
+/* Una escena sin mapa: el selector del mapa, en un recuadro de cristal en medio (que se puede pulsar) */
+.noMap {
+  pointer-events: auto;
+  inline-size: min(30rem, calc(100% - 2rem));
+  padding: var(--space-5);
+  border: 1px solid var(--glass-edge);
+  border-radius: 10px;
+  background: var(--glass-sheen), var(--glass-panel);
+  box-shadow: var(--glass-shadow);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+}
+
+button.pageLink {
+  border: 0;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+}

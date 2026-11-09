@@ -1699,6 +1699,12 @@ export const es = {
     empty: 'Ninguna escena abierta.',
     noMap: 'Esta escena aún no tiene mapa.',
     goToPage: 'Ir a su página',
+    sceneSettings: 'Rejilla y ajustes de la escena',
+    sceneMenu: 'Más de {{name}}',
+    renameScene: 'Cambiar el nombre',
+    deleteScene: 'Borrar la escena',
+    deleteSceneWarning:
+      '¿Borrar la escena «{{name}}»? Sus fichas y lo dibujado en ella se van con ella; su página se queda.',
     changeScene: 'Cambiar de escena',
     live: 'En la tele',
     dark: 'Tele a oscuras',

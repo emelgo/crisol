@@ -147,12 +147,13 @@ describe('la mesa del máster', () => {
     expect(await screen.findByText('Ninguna escena abierta.')).toBeDefined()
     const panel = within(screen.getByRole('complementary', { name: 'Panel de la mesa' }))
     const list = within(await panel.findByRole('list', { name: 'Escenas' }))
-    // Sus tarjetas, en orden, y al final «Escena nueva» (con pocas, sin buscador)
-    expect(list.getAllByRole('button').map((button) => button.textContent)).toEqual([
-      'Cripta de Varn',
-      'Faro de Brena',
-      'Escena nueva'
-    ])
+    // Sus tarjetas, en orden, y al final «Escena nueva» (con pocas, sin buscador); cada una con su «⋯»
+    expect(
+      list
+        .getAllByRole('button')
+        .filter((button) => !button.getAttribute('aria-haspopup'))
+        .map((button) => button.textContent)
+    ).toEqual(['Cripta de Varn', 'Faro de Brena', 'Escena nueva'])
     expect(panel.queryByRole('searchbox', { name: 'Buscar escenas' })).toBeNull()
     await user.click(list.getByRole('button', { name: 'Abrir Cripta de Varn' }))
     expect(await screen.findByRole('application', { name: 'Mesa: Cripta de Varn' })).toBeDefined()
@@ -233,7 +234,7 @@ describe('la mesa del máster', () => {
     expect(channel.viewports.length).toBeGreaterThan(before)
   })
 
-  it('el nombre de la escena abre su menú: cambiar de escena o ir a su página', async () => {
+  it('el nombre de la escena abre su menú: cambiar de escena o abrir su página en una ventana', async () => {
     const user = userEvent.setup()
     const { api, scenes, push, router } = await renderMesa()
     await api.client.call('openScene', { campaignId: CAMPAIGN.id, sceneId: scenes[0]?.id ?? '' })
@@ -245,8 +246,28 @@ describe('la mesa del máster', () => {
       expect((await api.client.call('getCampaignTable', { campaignId: CAMPAIGN.id })).open?.id).toBe(scenes[1]?.id)
     )
     await user.click(await screen.findByRole('button', { name: 'Faro de Brena, Cambiar de escena' }))
-    await user.click(screen.getByRole('link', { name: 'Ir a su página' }))
-    await waitFor(() => expect(router.state.location.pathname).toBe(`/mundos/${WORLD.id}/wiki/${scenes[1]?.pageId}`))
+    // Su página, en una ventana de la Mesa (sin irse de la campaña)
+    await user.click(screen.getByRole('button', { name: 'Ir a su página' }))
+    expect(await screen.findByRole('dialog', { name: /Faro de Brena|Faro/ })).toBeTruthy()
+    expect(router.state.location.pathname).toBe(`/mundos/${WORLD.id}/campanas/${CAMPAIGN.id}`)
+  })
+
+  it('con el botón derecho (o «⋯»), una escena cambia de nombre y se borra', async () => {
+    const user = userEvent.setup()
+    const { api } = await renderMesa()
+    const panel = within(await screen.findByRole('complementary', { name: 'Panel de la mesa' }))
+    const list = within(await panel.findByRole('list', { name: 'Escenas' }))
+    fireEvent.contextMenu(list.getByRole('button', { name: 'Abrir Faro de Brena' }))
+    await user.click(await screen.findByRole('menuitem', { name: 'Cambiar el nombre' }))
+    const field = screen.getByRole('textbox', { name: 'Nombre de la escena' })
+    await user.clear(field)
+    await user.type(field, 'El faro{Enter}')
+    expect(await list.findByRole('button', { name: 'Abrir El faro' })).toBeTruthy()
+    await user.click(list.getByRole('button', { name: 'Más de El faro' }))
+    await user.click(await screen.findByRole('menuitem', { name: 'Borrar la escena' }))
+    await user.click(screen.getByRole('button', { name: 'Borrar la escena' }))
+    await waitFor(() => expect(list.queryByRole('button', { name: 'Abrir El faro' })).toBeNull())
+    expect(api.calls).toContain('deletePageTab')
   })
 
   it('un jugador no tiene mesa: vuelve a su campaña (no «Esta campaña no existe»)', async () => {
