@@ -7,13 +7,14 @@ import type { Campaign } from '@crisol/contracts'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { Layers, UserPlus } from 'lucide-react'
-import { useId, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { CharacterView } from '../characters/character.tsx'
 import { Loading } from '../components/brand.tsx'
 import { failed, LoadError } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
+import { useDice } from '../dice/context.tsx'
 import styles from './player-home.module.css'
 import { MembersPanel } from './settings.tsx'
 
@@ -44,6 +45,9 @@ export function PlayerHome({ worldId, campaign }: { worldId: string; campaign: C
     queryFn: () => api.call('listCharacters', { campaignId: campaign.id })
   })
   const [chosen, setChosen] = useState(() => readChosen(campaign.id))
+  // Los dados tiran en esta campaña (sin la barra de la izquierda, la campaña lo dice)
+  const { setCampaign } = useDice()
+  useEffect(() => setCampaign(worldId, campaign.id), [setCampaign, worldId, campaign.id])
   const [vista, setVista] = useState<'ficha' | 'creador' | null>(null)
   if (!characters.data)
     return failed(characters) ? (

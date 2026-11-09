@@ -74,6 +74,11 @@ describe('la ficha de dados', () => {
     expect(button.getAttribute('aria-expanded')).toBe('true')
     await userEvent.click(button)
     await waitFor(() => expect(screen.queryByRole('complementary', { name: 'Dados' })).toBeNull())
+    // Pulsar fuera también la cierra
+    await userEvent.click(button)
+    await screen.findByRole('complementary', { name: 'Dados' })
+    await userEvent.click(document.body)
+    await waitFor(() => expect(screen.queryByRole('complementary', { name: 'Dados' })).toBeNull())
   })
 
   it('la X la cierra y devuelve el foco al d20; con el menú del engranaje abierto, Escape cierra solo el menú', async () => {

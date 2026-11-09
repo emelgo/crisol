@@ -159,6 +159,8 @@ describe('al cambiar de cuenta en la misma pestaña', () => {
     const { router, signInAsPlayer, release } = setup(`${path}?panel=ajustes`)
     // El máster ve el enlace en los Ajustes de su Mesa; la jugadora, no
     await screen.findByLabelText('Enlace de invitación')
+    // La campaña va sola (sin la barra con la cuenta): se sale desde Mis mundos
+    await act(() => router.navigate({ to: '/mundos' }))
     await signOut()
     await signInAsPlayer()
     await act(() => router.navigate({ to: path }))

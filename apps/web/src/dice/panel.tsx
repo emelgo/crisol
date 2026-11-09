@@ -146,6 +146,19 @@ function DiceCard({ worldId }: { worldId: string }) {
     own.focus()
     return () => release.current()
   }, [sheet])
+  // Pulsar fuera la cierra (sin mover el foco: va a lo que se pulsó). No cuentan el d20, que la abre y la cierra, ni un
+  // cuadro que se abrió desde ella (aplicar el daño, el color de los dados)
+  useEffect(() => {
+    const outside = (event: PointerEvent) => {
+      const target = event.target as HTMLElement | null
+      if (!target || card.current?.contains(target)) return
+      if (target.closest('[data-tour="dados"], dialog[open]')) return
+      release.current()
+      dice.close()
+    }
+    document.addEventListener('pointerdown', outside)
+    return () => document.removeEventListener('pointerdown', outside)
+  }, [dice.close])
   // Escape la cierra y el foco vuelve al d20
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {

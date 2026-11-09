@@ -120,3 +120,26 @@ button.person:hover {
   border-color: var(--color-frame);
   background: var(--color-raised);
 }
+
+/* «Mi ficha», junto al título de la barra */
+.toSheet {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  color: var(--color-text);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.toSheet:hover {
+  background: var(--color-raised);
+}
+
+.toSheet:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}

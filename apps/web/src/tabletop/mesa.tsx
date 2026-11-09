@@ -157,6 +157,9 @@ export function Mesa({
   // La barra de la derecha: su pestaña y si está plegada viven aquí (una herramienta la tapa sin olvidarla)
   const sidebar = useMasterSidebar(table)
   const dice = useDice()
+  // Los dados tiran en esta campaña (antes lo decía la barra de la izquierda, que aquí no está)
+  const { setCampaign } = dice
+  useEffect(() => setCampaign(worldId, campaignId), [setCampaign, worldId, campaignId])
   // La vista del máster (dónde cae el mapa y a qué escala): es de su navegador
   const view = useRef<Viewport>({ x: 0, y: 0, scale: 1 })
   // Las fichas: las elegidas, la de la tarjeta, la de la hoja abierta y la de su imagen

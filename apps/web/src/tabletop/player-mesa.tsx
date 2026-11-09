@@ -5,7 +5,9 @@
  */
 import type { Campaign, ScreenView } from '@crisol/contracts'
 import { useQuery } from '@tanstack/react-query'
-import { useRef, useState } from 'react'
+import { Link } from '@tanstack/react-router'
+import { UserRound } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { CurrentCampaignContext } from '../campaign/current-campaign.ts'
@@ -94,6 +96,9 @@ function PlayerSidebar({
   const [tab, setTab] = useSidebarTab(PLAYER_TABS, null)
   const [folded, setFolded] = useSidebarFolded()
   const dice = useDice()
+  // Los dados tiran en esta campaña (antes lo decía la barra de la izquierda, que aquí no está)
+  const { setCampaign } = dice
+  useEffect(() => setCampaign(worldId, campaign.id), [setCampaign, worldId, campaign.id])
   const characters = useQuery({
     queryKey: ['characters', campaign.id],
     queryFn: () => api.call('listCharacters', { campaignId: campaign.id })
@@ -191,7 +196,24 @@ function PlayerSidebar({
   ]
   return (
     <>
-      <TableSidebar items={items} tab={tab} onTab={setTab} folded={folded} onFold={setFolded} />
+      <TableSidebar
+        items={items}
+        tab={tab}
+        onTab={setTab}
+        folded={folded}
+        onFold={setFolded}
+        // Sin la barra de la izquierda: su ficha, desde aquí
+        actions={
+          <Link
+            to="/mundos/$worldId/campanas/$campaignId"
+            params={{ worldId, campaignId: campaign.id }}
+            className={playerStyles.toSheet}
+          >
+            <UserRound aria-hidden="true" size={15} />
+            {t('playerMesa.toSheet')}
+          </Link>
+        }
+      />
       {/* Las tiradas sobre el d20, mientras su ficha está cerrada (con ella abierta, ya se ven en su registro) */}
       <RollToasts campaignId={campaign.id} enabled={!dice.open} master={false} />
     </>

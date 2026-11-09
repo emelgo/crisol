@@ -69,6 +69,13 @@
   min-block-size: 100dvh;
 }
 
+/* Una campaña, sola (su Mesa o la ficha de quien juega): sin la barra de la izquierda */
+.bare {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-block-size: 100dvh;
+}
+
 /* La wiki: de lado a lado, sin márgenes; el panel lateral y la página se los ponen ellos */
 .wide {
   min-inline-size: 0;

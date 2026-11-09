@@ -41,6 +41,10 @@ export function RootLayout() {
         state.location.pathname
       )
   })
+  // Una campaña (su Mesa, o la ficha de quien juega) va sola, como en Foundry VTT: sin la barra de la izquierda
+  const bare = useRouterState({
+    select: (state) => /^\/mundos\/[^/]+\/campanas\/[^/]+(\/mesa)?\/?$/.test(state.location.pathname)
+  })
   // Imprimir: solo la hoja, sin nada de la interfaz; la pantalla de la tele, igual: solo el mapa
   const printing = useRouterState({
     select: (state) =>
@@ -99,9 +103,9 @@ export function RootLayout() {
       <WikiPanelProvider>
         <DiceProvider>
           <DiceTray>
-            <div className={styles.app}>
+            <div className={bare ? styles.bare : styles.app}>
               {skip}
-              <Ribbon />
+              {!bare && <Ribbon />}
               <main id="contenido" className={wide ? styles.wide : styles.main}>
                 <ApprovalQueue />
                 <Notices />
