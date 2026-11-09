@@ -2,7 +2,7 @@
  * Tirar desde donde se está (una tirada escrita en una página): en la campaña elegida en la ficha de dados y con su
  * visibilidad (si vale en ella). Si el mundo no tiene campañas, sin apuntar, y se dice
  */
-import { type DiceRoll, visibilitiesFor } from '@crisol/contracts'
+import type { DiceRoll } from '@crisol/contracts'
 import { useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
@@ -36,9 +36,17 @@ export function useRollHere() {
     const chosen = campaigns.find((c) => c.id === (worldId && dice.campaignFor(worldId))) ?? campaigns[0]
     if (chosen) {
       const visibility = visibilityIn(dice.visibility, chosen.role)
-      const { roll: done } = await api.call('rollDice', { campaignId: chosen.id, formula, visibility })
+      // Los dados caen ya, mientras se pregunta; si falla, se van
+      const throwing = tray.start(formula)
+      const { roll: done } = await api
+        .call('rollDice', { campaignId: chosen.id, formula, visibility })
+        .catch((error: unknown) => {
+          throwing?.cancel()
+          throw error
+        })
       appendRoll(queryClient, done)
-      tray.play(done)
+      if (throwing) throwing.land(done)
+      else tray.play(done)
       announce(t('dice.rolled', { label: done.label ?? done.formula, total: done.total }))
       return
     }

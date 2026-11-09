@@ -12,10 +12,15 @@ import { App } from '../app.tsx'
 import { createAppRouter } from '../router.tsx'
 import type { CollabClient } from './collab.tsx'
 
-// Sin WebGL: la escena apunta lo que cae
+// Sin WebGL: la escena apunta lo que cae (en el clic o al llegar el resultado)
 const played: unknown[][] = []
 vi.mock('../dice/3d/scene.ts', () => ({
-  createScene: () => ({ play: (dice: unknown[]) => played.push([...dice]), dispose: () => {} })
+  createScene: () => ({
+    play: (dice: unknown[]) => played.push([...dice]),
+    start: () => ({ land: (dice: unknown[]) => played.push([...dice]), cancel: () => {} }),
+    warm: () => {},
+    dispose: () => {}
+  })
 }))
 
 const ORG = { id: crypto.randomUUID(), name: 'Fateforge', role: 'owner' as const }

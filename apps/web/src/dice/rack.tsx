@@ -29,7 +29,7 @@ import { useCloseFloating } from './floating.ts'
 import { echoes, explain } from './formula.ts'
 import { chipOf, dieName, isEmpty, type Pool, type PoolAction, poolFormula, SIDES, type Sides, signed } from './pool.ts'
 import { appendRoll } from './rolls.ts'
-import { useTray } from './tray.tsx'
+import { type Throwing, useTray } from './tray.tsx'
 import { visibilityIn } from './visibility.ts'
 
 /** La silueta de cada dado */
@@ -263,11 +263,14 @@ function PoolTray({
   const options = [...visibilitiesFor(campaign.role)].sort((a, b) => ORDER.indexOf(a) - ORDER.indexOf(b))
   // Si lo recordado no vale en esta campaña, lo más privado que tenga (nunca todos)
   const visibility = visibilityIn(dice.visibility, campaign.role)
+  // Los dados empiezan a caer en el clic (a la vez que se pregunta al servidor) y el resultado se les pone al llegar
   const roll = useMutation({
-    mutationFn: () => api.call('rollDice', { campaignId: campaign.id, formula, visibility }),
-    onSuccess: ({ roll: done }) => {
+    mutationFn: (_throwing: Throwing | null) => api.call('rollDice', { campaignId: campaign.id, formula, visibility }),
+    onError: (_error, throwing) => throwing?.cancel(),
+    onSuccess: ({ roll: done }, throwing) => {
       appendRoll(queryClient, done)
-      tray.play(done)
+      if (throwing) throwing.land(done)
+      else tray.play(done)
       announce(t('dice.rolled', { label: done.label ?? done.formula, total: done.total }))
       // Se vacía y se cierra; la próxima vez se abre igual (escribiendo o con los dados)
       if (!writing) change({ type: 'clear' })
@@ -284,7 +287,7 @@ function PoolTray({
   }
   const submit = (event: FormEvent) => {
     event.preventDefault()
-    if (explained.ok && !roll.isPending) roll.mutate()
+    if (explained.ok && !roll.isPending) roll.mutate(tray.start(formula))
   }
   return (
     <form className={styles.pool} onSubmit={submit} aria-label={t('dice.formula')}>

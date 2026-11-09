@@ -144,7 +144,9 @@ test('en el móvil de la jugadora, el d20 abre los dados en una hoja que sube de
   await ana.close()
 })
 
-test('los dados 3D caen al tirar: la escena se carga aparte, solo la primera vez que se tira', async ({ page }) => {
+test('los dados 3D: la escena se carga aparte, en un rato libre dentro del mundo, y caen al tirar', async ({
+  page
+}) => {
   const scripts: string[] = []
   page.on('request', (request) => {
     if (request.resourceType() === 'script') scripts.push(new URL(request.url()).pathname)
@@ -155,11 +157,11 @@ test('los dados 3D caen al tirar: la escena se carga aparte, solo la primera vez
   await page.locator('[data-tour="dados"]').click()
   const dice = page.getByRole('complementary', { name: 'Dados' })
   await expect(dice).toBeVisible()
-  expect(scripts.some((path) => /\/scene-[^/]+\.js$/.test(path))).toBe(false)
+  // Lista antes de tirar: la primera tirada no espera a cargarla
+  await expect.poll(() => scripts.some((path) => /\/scene-[^/]+\.js$/.test(path)), { timeout: 10_000 }).toBe(true)
   await dice.getByRole('button', { name: 'Escribir la tirada' }).click()
   await dice.getByRole('textbox', { name: 'Tirada' }).fill('1d20+2d6+1d8 # Golpe')
   await dice.getByRole('button', { name: 'Tirar' }).click()
-  await expect.poll(() => scripts.some((path) => /\/scene-[^/]+\.js$/.test(path))).toBe(true)
   // Al pararse, el resultado sobre el d20
   await expect(page.getByRole('list', { name: 'Últimas tiradas' })).toContainText('Golpe', { timeout: 8000 })
   // La física, en su worker: la página no tuvo que simularla (ni cargó la de respaldo)

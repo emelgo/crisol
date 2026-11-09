@@ -1,17 +1,19 @@
 /**
  * La bandeja de dados 3D: un lienzo sobre toda la pantalla, que no se puede pulsar, donde caen los dados con el
  * resultado que dio el servidor. Caen los tuyos al tirar y los de las tiradas públicas de los demás en el mundo en el que
- * estás (si no lo has apagado). La escena (three.js y la física) se carga aparte, la primera vez que se tira. Cuando
- * paran, avisa: el resultado sale entonces sobre el d20
+ * estás (si no lo has apagado). La escena (three.js y la física) se carga aparte, en cuanto hay un rato libre dentro de
+ * un mundo, para que la primera tirada no espere. Las tuyas empiezan a caer en el clic, mientras se pregunta al
+ * servidor; al llegar el resultado, se le ponen sus números. Cuando paran, avisa: el resultado sale entonces sobre el d20
  */
 import type { Campaign, DiceRoll } from '@crisol/contracts'
 import { useQueryClient } from '@tanstack/react-query'
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef } from 'react'
 import { useAccounts } from '../account/context.tsx'
 import { useRolled } from '../realtime/context.tsx'
-import type { DiceScene } from './3d/scene.ts'
+import type { DiceScene, PendingThrow } from './3d/scene.ts'
 import { useWorldInPath } from './context.tsx'
 import { fallingDice } from './falling.ts'
+import { predictFalling } from './predict.ts'
 import { colorOf, isMine } from './rolls.ts'
 import styles from './tray.module.css'
 
@@ -19,17 +21,34 @@ type Settled = (roll: DiceRoll) => void
 
 /** Lo más que se espera a que paren los dados: luego el resultado sale igual */
 const SETTLE_MAX_MS = 8000
+/** Lo más que caen unos dados esperando al servidor: si no contesta, se van */
+const WAIT_MAX_MS = 15000
+
+/** Una tirada tuya que ya cae, a falta del resultado */
+export interface Throwing {
+  /** El resultado: si son los dados que caen, se les ponen sus números; si no, caen los suyos */
+  land(roll: DiceRoll): void
+  /** La tirada falló: los dados se van */
+  cancel(): void
+}
 
 interface Tray {
   /** Hacer caer los dados de una tirada */
   play(roll: DiceRoll): void
+  /** Empezar a tirar en el clic, antes del resultado; null si no se sabe qué dados caerán (entonces, play al llegar) */
+  start(formula: string): Throwing | null
   /** Avisa cuando paran los dados de una tirada (o al momento, si no caen) */
   onSettled(listener: Settled): () => void
   /** Si los dados de esa tirada están cayendo */
   playing(rollId: string): boolean
 }
 
-const TrayContext = createContext<Tray>({ play: () => {}, onSettled: () => () => {}, playing: () => false })
+const TrayContext = createContext<Tray>({
+  play: () => {},
+  start: () => null,
+  onSettled: () => () => {},
+  playing: () => false
+})
 
 export const useTray = () => useContext(TrayContext)
 
@@ -45,6 +64,18 @@ export function DiceTray({ children }: { children: ReactNode }) {
   const settle = useCallback((roll: DiceRoll) => {
     falling.current.delete(roll.id)
     for (const listener of listeners.current) listener(roll)
+  }, [])
+  // La escena, una sola vez (y calentada una sola vez)
+  const warmed = useRef(false)
+  const load = useCallback((target: HTMLCanvasElement) => {
+    scene.current ??= import('./3d/scene.ts').then(({ createScene }) => createScene(target)).catch(() => null)
+    return scene.current.then((s) => {
+      if (s && !warmed.current) {
+        warmed.current = true
+        s.warm?.()
+      }
+      return s
+    })
   }, [])
 
   const play = useCallback(
@@ -62,16 +93,75 @@ export function DiceTray({ children }: { children: ReactNode }) {
       window.setTimeout(() => {
         if (falling.current.has(roll.id)) settle(roll)
       }, SETTLE_MAX_MS)
-      scene.current ??= import('./3d/scene.ts').then(({ createScene }) => createScene(target)).catch(() => null)
       const mine = isMine(roll, account)
       const color = colorOf(roll.by.userId, mine ? (account?.diceColor ?? roll.by.color) : roll.by.color)
-      void scene.current.then((s) => {
+      void load(target).then((s) => {
         if (s) s.play(dice, color, () => settle(roll))
         else settle(roll)
       })
     },
-    [account, settle]
+    [account, settle, load]
   )
+
+  const start = useCallback(
+    (formula: string): Throwing | null => {
+      const kinds = predictFalling(formula)
+      const target = canvas.current
+      if (!kinds || !target || document.hidden) return null
+      const color = colorOf(account?.id ?? account?.name ?? '', account?.diceColor)
+      const pending: Promise<PendingThrow | null> = load(target).then((s) => s?.start(kinds, color) ?? null)
+      let done = false
+      const cancel = () => {
+        done = true
+        void pending.then((p) => p?.cancel())
+      }
+      // Si nadie dice cómo acabó (no debería pasar), se van solos
+      window.setTimeout(() => {
+        if (!done) cancel()
+      }, WAIT_MAX_MS)
+      return {
+        land(roll) {
+          if (done) return
+          const dice = fallingDice(roll.dice)
+          // Cayeron otros (no debería pasar): se van y caen los de la tirada
+          if (dice.length !== kinds.length || dice.some((d, i) => d.kind !== kinds[i])) {
+            cancel()
+            play(roll)
+            return
+          }
+          done = true
+          if (falling.current.has(roll.id)) return
+          falling.current.add(roll.id)
+          window.setTimeout(() => {
+            if (falling.current.has(roll.id)) settle(roll)
+          }, SETTLE_MAX_MS)
+          void pending.then((p) => {
+            if (p) p.land(dice, () => settle(roll))
+            else settle(roll)
+          })
+        },
+        cancel() {
+          if (!done) cancel()
+        }
+      }
+    },
+    [account, settle, load, play]
+  )
+
+  // Dentro de un mundo, en un rato libre, se deja lista la escena: la primera tirada ya no espera a cargarla
+  useEffect(() => {
+    if (!worldId) return
+    const target = canvas.current
+    if (!target) return
+    const warm = () => void load(target)
+    // Safari aún no tiene requestIdleCallback
+    if (typeof window.requestIdleCallback === 'function') {
+      const id = window.requestIdleCallback(warm, { timeout: 4000 })
+      return () => window.cancelIdleCallback(id)
+    }
+    const id = setTimeout(warm, 1500)
+    return () => clearTimeout(id)
+  }, [worldId, load])
 
   // Las de los demás: en el mundo en el que se está y si no se ha apagado; las tuyas ya cayeron al tirarlas
   useRolled((roll) => {
@@ -93,13 +183,14 @@ export function DiceTray({ children }: { children: ReactNode }) {
   const value = useMemo<Tray>(
     () => ({
       play,
+      start,
       onSettled: (listener) => {
         listeners.current.add(listener)
         return () => listeners.current.delete(listener)
       },
       playing: (rollId) => falling.current.has(rollId)
     }),
-    [play]
+    [play, start]
   )
   return (
     <TrayContext.Provider value={value}>

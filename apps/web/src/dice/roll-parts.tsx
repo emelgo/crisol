@@ -12,7 +12,7 @@ import { useErrorText } from '../api/errors.ts'
 import { useAnnounce } from '../components/announcer.tsx'
 import styles from './roll-parts.module.css'
 import { appendRoll, isMine } from './rolls.ts'
-import { useTray } from './tray.tsx'
+import { type Throwing, useTray } from './tray.tsx'
 
 /** Como mucho, cajitas de dados en una tirada; el resto, en el desglose */
 const MAX_BOXES = 12
@@ -114,18 +114,24 @@ export function useRollAgain(campaign: Pick<Campaign, 'id' | 'role'>) {
   const errorText = useErrorText()
   const tray = useTray()
   const { account } = useAccounts().useAccount()
-  return useMutation({
-    mutationFn: (roll: DiceRoll) =>
+  const again = useMutation({
+    mutationFn: ({ roll }: { roll: DiceRoll; throwing: Throwing | null }) =>
       api.call('rollDice', {
         campaignId: campaign.id,
         formula: roll.label ? `${roll.formula} # ${roll.label}` : roll.formula,
         visibility: againVisibility(roll, isMine(roll, account), campaign.role)
       }),
-    onSuccess: ({ roll }) => {
+    onSuccess: ({ roll }, { throwing }) => {
       appendRoll(queryClient, roll)
-      tray.play(roll)
+      if (throwing) throwing.land(roll)
+      else tray.play(roll)
       announce(t('dice.rolled', { label: roll.label ?? roll.formula, total: roll.total }))
     },
-    onError: (error) => announce(errorText(error))
+    onError: (error, { throwing }) => {
+      throwing?.cancel()
+      announce(errorText(error))
+    }
   })
+  // Los dados caen ya en el clic
+  return { ...again, mutate: (roll: DiceRoll) => again.mutate({ roll, throwing: tray.start(roll.formula) }) }
 }

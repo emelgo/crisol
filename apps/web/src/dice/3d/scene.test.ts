@@ -13,6 +13,7 @@ vi.mock('three', async (original) => {
     toneMapping = 0
     toneMappingExposure = 1
     setSize() {}
+    compile() {}
     render(scene: InstanceType<typeof three.Scene>) {
       // Los dados (no el tapete, que solo recoge las sombras)
       state.drawn.push(
@@ -104,6 +105,59 @@ describe('la escena de los dados', () => {
     // La primera tirada ya se fue, con sus seis texturas (una por cara)
     expect(textures).toHaveBeenCalledTimes(6)
     scene.dispose()
+  })
+
+  it('en el clic ya caen; esperan quietos al resultado y, con él, se quedan su rato y se van', async () => {
+    const scene = createScene(document.createElement('canvas'))
+    const pending = scene.start([6, 20], '#3a7bd5')
+    await vi.advanceTimersByTimeAsync(20)
+    expect(state.drawn.at(-1)).toBe(2)
+    // El resultado tarda: no se van sin él
+    await vi.advanceTimersByTimeAsync(GONE_MS)
+    expect(state.drawn.at(-1)).toBe(2)
+    const landed = vi.fn()
+    pending.land(
+      [
+        { kind: 6, label: '4', kept: true, critical: false },
+        { kind: 20, label: '20', kept: true, critical: true }
+      ],
+      landed
+    )
+    await vi.advanceTimersByTimeAsync(0)
+    expect(landed).toHaveBeenCalledOnce()
+    await vi.advanceTimersByTimeAsync(1000)
+    expect(state.drawn.at(-1)).toBe(2)
+    await vi.advanceTimersByTimeAsync(GONE_MS)
+    expect(state.drawn.at(-1)).toBe(0)
+    scene.dispose()
+  })
+
+  it('con el resultado a tiempo, avisa cuando paran; si la tirada falla, se van enseguida', async () => {
+    const scene = createScene(document.createElement('canvas'))
+    const landed = vi.fn()
+    scene.start([6], '#3a7bd5').land([{ kind: 6, label: '2', kept: true, critical: false }], landed)
+    await vi.advanceTimersByTimeAsync(THROW_MS - 50)
+    expect(landed).not.toHaveBeenCalled()
+    await vi.advanceTimersByTimeAsync(100)
+    expect(landed).toHaveBeenCalledOnce()
+    await vi.advanceTimersByTimeAsync(GONE_MS)
+    const failed = scene.start([8, 8], '#3a7bd5')
+    await vi.advanceTimersByTimeAsync(20)
+    expect(state.drawn.at(-1)).toBe(2)
+    failed.cancel()
+    await vi.advanceTimersByTimeAsync(700)
+    expect(state.drawn.at(-1)).toBe(0)
+    scene.dispose()
+  })
+
+  it('calentarla prepara los dados y no deja nada a la vista', () => {
+    const geometries = vi.spyOn(BufferGeometry.prototype, 'dispose')
+    const scene = createScene(document.createElement('canvas'))
+    scene.warm()
+    expect(state.drawn).toHaveLength(0)
+    scene.dispose()
+    // Las ocho formas de dado y el tapete
+    expect(geometries).toHaveBeenCalledTimes(9)
   })
 
   it('al soltarla lo suelta todo, y lo que llegue después ya no se dibuja', async () => {
