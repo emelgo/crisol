@@ -95,7 +95,7 @@ import { useWindows, WindowLayer, WindowsProvider } from './windows.tsx'
 
 const route = getRouteApi('/mundos/$worldId/campanas/$campaignId/mesa')
 
-/** /mesa: la del máster es su campaña (se abre en ella); la de quien juega, lo que ve el grupo con su barra */
+/** /mesa (ADR-0021: una sección de la campaña): la del máster, su Mesa; la de quien juega, lo que ve el grupo */
 export function MesaScreen() {
   const { t } = useTranslation()
   const api = useApi()
@@ -107,6 +107,12 @@ export function MesaScreen() {
     enabled: Boolean(account)
   })
   const campaign = campaigns.data?.campaigns.find((c) => c.id === campaignId)
+  const worlds = useQuery({
+    queryKey: ['worlds'],
+    queryFn: () => api.call('listWorlds', {}),
+    enabled: Boolean(account) && campaign?.role === 'master'
+  })
+  const worldName = worlds.data?.worlds.find((w) => w.id === worldId)?.name
   if (pending) return null
   if (!account) return <Navigate to="/entrar" replace />
   if (!campaigns.data)
@@ -119,7 +125,11 @@ export function MesaScreen() {
       </section>
     )
   if (campaign.role === 'master')
-    return <Navigate to="/mundos/$worldId/campanas/$campaignId" params={{ worldId, campaignId }} replace />
+    return worldName === undefined ? (
+      <Loading />
+    ) : (
+      <Mesa key={campaign.id} worldId={worldId} worldName={worldName} campaign={campaign} />
+    )
   return <PlayerMesa key={campaign.id} worldId={worldId} campaign={campaign} />
 }
 

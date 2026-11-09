@@ -49,11 +49,13 @@ sección. Para quién: Enrique (máster, en PC) y sus jugadores (la jugadora, ta
 
 ### Web: el espacio de la campaña
 
-12. `/mundos/$w/campanas/$c` es el **Inicio**; la barra de la izquierda cambia a la de la campaña (decisión 1 del ADR).
-    Secciones: Inicio, Mesa (`/mesa`), Personajes (`/personajes`), Libros (`/libros`, solo el máster), Compendio
-    (`/compendio`), Aventuras (`/aventuras`, vacía por ahora), Páginas (`/paginas`); Ajustes, encima.
-13. La Mesa, con la barra de la izquierda a la vista. `?panel=`, `?pagina=` y `?entrada=` en la dirección de la campaña
-    llevan a la Mesa con eso.
+12. `/mundos/$w/campanas/$c` es el **Inicio** (se entra en la misma pestaña); la barra de la izquierda cambia a la de la
+    campaña. Secciones: Inicio, Mesa (`/personajes`: los personajes, quién está en la Mesa y abrirla), Libros
+    (`/libros`, solo el máster), Compendio (`/compendio`), Aventuras (`/aventuras`, vacía por ahora), Páginas
+    (`/paginas`); Ajustes, encima.
+13. La Mesa (`/mesa`) se abre en otra pestaña, a pantalla completa y sin la barra. `?panel=`, `?pagina=` y `?entrada=`
+    en la dirección de la campaña llevan a ella con eso. Quién está dentro (con su pestaña a la vista o no) lo cuenta el
+    canal de la mesa (`{ type: 'presence', active }`) y lo lee `getTablePresence`.
 14. Inicio del máster: «Ir a la Mesa» (la escena abierta, su sesión, si hay combate), jugadores y personajes (con quién
     está conectado), libros (sus portadas, «Cambiar»), aventura en curso (vacío por ahora). Inicio de la jugadora: su
     personaje, «Ir a la Mesa», el grupo, los libros, lo último que sabe; en el móvil, en una columna.

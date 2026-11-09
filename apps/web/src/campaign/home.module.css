@@ -1,0 +1,365 @@
+/* El Inicio de una campaña: una columna como la de Ajustes, con la portada de la campaña fundida por detrás */
+.home {
+  position: relative;
+  min-block-size: 100%;
+  padding-block: var(--space-8) var(--space-8);
+  padding-inline: var(--space-6);
+}
+
+.col {
+  position: relative;
+  inline-size: min(100%, 56rem);
+  margin-inline: auto;
+}
+
+.hero {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-start: 0;
+  block-size: 19rem;
+  overflow: hidden;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.hero img {
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+}
+
+.hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    color-mix(in srgb, var(--color-bg) 60%, transparent) 55%,
+    var(--color-bg) 100%
+  );
+}
+
+.titlebar {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-4);
+  min-block-size: 6rem;
+  padding-block-end: var(--space-3);
+  border-block-end: 2px solid var(--color-h2);
+}
+
+.grow {
+  flex: 1;
+  min-inline-size: 0;
+}
+
+.title {
+  margin: 0;
+  font: 800 2.75rem / 1 var(--font-display);
+  text-transform: uppercase;
+  color: var(--color-h2);
+  text-wrap: balance;
+}
+
+.sub {
+  margin: var(--space-2) 0 0;
+  color: var(--color-muted);
+}
+
+.ghost {
+  display: inline-flex;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  align-items: center;
+  gap: 6px;
+  min-block-size: 2rem;
+  padding-inline: var(--space-2);
+  border-radius: 3px;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+.ghost:hover {
+  color: var(--color-text);
+  background: var(--color-raised);
+}
+
+/* Ir a la Mesa: la escena abierta con su imagen */
+.go {
+  display: grid;
+  grid-template-columns: minmax(0, 18rem) minmax(0, 1fr);
+  margin-block-start: var(--space-6);
+  overflow: hidden;
+  border-radius: 6px;
+  background: var(--color-surface);
+  box-shadow: 0 0 0 1px var(--color-border);
+}
+
+.goImage {
+  position: relative;
+  min-block-size: 10rem;
+  background:
+    radial-gradient(90% 90% at 30% 20%, color-mix(in srgb, var(--color-h3) 22%, transparent), transparent 70%),
+    var(--color-raised);
+}
+
+.goImage img {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+}
+
+.goImage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right, transparent 60%, var(--color-surface));
+}
+
+.goText {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-5) var(--space-6);
+}
+
+.label,
+.meta {
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}
+
+.scene {
+  font: 700 1.6rem / 1 var(--font-display);
+  text-transform: uppercase;
+}
+
+.goRow {
+  margin-block-start: var(--space-2);
+}
+
+.toMesa {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-block-size: 2.875rem;
+  padding-inline: 1.375rem;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font-weight: 600;
+  font-size: 1.05rem;
+  clip-path: var(--cut-button);
+  text-decoration: none;
+}
+
+.toMesa:hover {
+  color: var(--color-on-accent);
+  filter: brightness(1.08);
+  text-decoration: none;
+}
+
+.wideButton {
+  display: flex;
+  margin-block-start: var(--space-5);
+}
+
+/* Las secciones: el título pequeño y gris, su enlace a la derecha */
+.section {
+  margin-block-start: var(--space-6);
+}
+
+.sectionHead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-block-end: var(--space-3);
+}
+
+.h {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font: 600 0.75rem / 1 var(--font-body);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.more {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-inline-start: auto;
+  font-size: 0.875rem;
+  color: var(--color-muted);
+  text-decoration: none;
+}
+
+.more:hover {
+  color: var(--color-text);
+}
+
+.section > .more {
+  margin-inline-start: 0;
+  color: var(--color-link);
+}
+
+.quiet {
+  margin: var(--space-2) 0 0;
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+
+.players,
+.party,
+.mine,
+.shelf {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.players {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  gap: var(--space-3);
+}
+
+.player,
+.ally {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: 5px;
+  background: var(--color-surface);
+  box-shadow: 0 0 0 1px var(--color-border);
+}
+
+.avatar,
+.portrait {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  inline-size: 1.9rem;
+  block-size: 1.9rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--color-h4) 40%, var(--color-raised));
+  color: #fff;
+  font: 700 0.9rem / 1 var(--font-display);
+}
+
+.portrait {
+  inline-size: 3.25rem;
+  block-size: 3.25rem;
+  background: color-mix(in srgb, var(--color-accent) 55%, var(--color-raised));
+  font-size: 1.4rem;
+}
+
+.who {
+  display: grid;
+  min-inline-size: 0;
+}
+
+.who b,
+.who a {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.who span {
+  font-size: 0.8rem;
+  color: var(--color-muted);
+}
+
+.party {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.mine {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border-radius: 6px;
+  background: var(--color-surface);
+  box-shadow: 0 0 0 1px var(--color-border);
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.card:hover {
+  text-decoration: none;
+  box-shadow: 0 0 0 1px var(--color-frame);
+}
+
+.card .who {
+  flex: 1;
+}
+
+.card .who b {
+  font: 700 1.35rem / 1 var(--font-display);
+  text-transform: uppercase;
+}
+
+.create {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-link);
+}
+
+.shelf {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: flex-end;
+}
+
+.two {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  gap: 0 var(--space-6);
+}
+
+.campaign {
+  margin-block-start: var(--space-8);
+  color: var(--color-muted);
+}
+
+.campaign summary {
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+@media (max-width: 40rem) {
+  .home {
+    padding-inline: var(--space-4);
+  }
+
+  .go {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .goImage::after {
+    background: linear-gradient(to bottom, transparent 60%, var(--color-surface));
+  }
+
+  .title {
+    font-size: 2rem;
+  }
+}

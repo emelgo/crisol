@@ -1,8 +1,11 @@
+import type { Campaign } from '@crisol/contracts'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
 import {
   Backpack,
   BookOpen,
+  FileText,
+  Flag,
   Folder,
   Globe,
   Hash,
@@ -27,6 +30,7 @@ import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { historyQuery, trashQuery } from '../api/queries.ts'
 import { useDice } from '../dice/context.tsx'
+import { coverStyle } from '../wiki/cover-look.ts'
 import { useNarrow, useWikiPanel, type WikiPanel } from '../wiki/panel.tsx'
 import { AccountMenu } from './account-menu.tsx'
 import { CrisolMark } from './brand.tsx'
@@ -315,9 +319,8 @@ export function Ribbon() {
                 worldId={panelsWorld}
                 campaignId={panelsCampaign}
                 name={campaign?.name ?? ''}
-                worldName={world?.name ?? ''}
+                cover={campaign?.cover ?? null}
                 master={campaignRole === 'master'}
-                ownsWiki={master}
               />
             ) : (
               <WorldPanels worldId={panelsWorld} worldName={world?.name ?? ''} master={panelsMaster} />
@@ -354,6 +357,18 @@ export function Ribbon() {
               <Label icon={Trash2} text={t('ribbon.trash')} />
             </button>
           </>
+        )}
+        {/* Los ajustes de la campaña: se abren encima (ADR-0021) */}
+        {panelsCampaign && campaignRole === 'master' && (
+          <button
+            type="button"
+            className={styles.item}
+            aria-haspopup="dialog"
+            data-tour="barra-ajustes-campana"
+            onClick={(event) => windows?.open('campana', event.currentTarget)}
+          >
+            <Label icon={Settings} text={t('ribbon.campaignSettings')} />
+          </button>
         )}
         <nav className={styles.account} aria-label={t('app.accountNav')}>
           <AccountMenu variant="ribbon" />
@@ -395,71 +410,113 @@ function WorldPanels({ worldId, worldName, master }: { worldId: string; worldNam
 }
 
 /**
- * Lo de una campaña, en su propia vista (como un mundo): su inicio (con su nombre), su compendio y los dados, que
- * tiran en ella
+ * Lo de una campaña, en su propio espacio (ADR-0021): su portada (vuelve a su Inicio), Inicio, Mesa, Personajes,
+ * Libros, Compendio, Aventuras y Páginas; quien juega, sin Libros ni Aventuras. Los dados tiran en ella
  */
 function CampaignPanels({
   worldId,
   campaignId,
   name,
-  worldName,
-  master,
-  ownsWiki
+  cover,
+  master
 }: {
   worldId: string
   campaignId: string
   name: string
-  /** Las páginas del mundo: quien lo lleva va a ellas; quien juega, a lo que sabe su campaña (ADR-0017) */
-  worldName: string
-  /** Quien la dirige: también lo que está en juego */
+  cover: Campaign['cover'] | null
   master: boolean
-  ownsWiki: boolean
 }) {
   const { t } = useTranslation()
   const { setCampaign } = useDice()
   useEffect(() => setCampaign(worldId, campaignId), [setCampaign, worldId, campaignId])
-  // El máster: la Mesa (es la campaña) y el mundo, para escribir con calma; lo demás está en la barra de la Mesa
-  if (master)
-    return (
-      <>
-        <Link
-          to="/mundos/$worldId/campanas/$campaignId"
-          params={{ worldId, campaignId }}
-          className={styles.item}
-          viewTransition={SECTION}
-          data-tour="barra-mesa"
-        >
-          <Label icon={Layers} text={t('ribbon.table')} />
-        </Link>
-        {ownsWiki && (
-          <Link to="/mundos/$worldId/wiki" params={{ worldId }} className={styles.item} data-tour="barra-paginas">
-            <Label icon={Globe} text={worldName} />
-          </Link>
-        )}
-      </>
-    )
-  // Quien juega: su ficha (es la campaña) y su Mesa; lo demás va en la barra de la Mesa
+  const params = { worldId, campaignId }
+  type Section = {
+    to:
+      | '/mundos/$worldId/campanas/$campaignId'
+      | '/mundos/$worldId/campanas/$campaignId/personajes'
+      | '/mundos/$worldId/campanas/$campaignId/libros'
+      | '/mundos/$worldId/campanas/$campaignId/compendio'
+      | '/mundos/$worldId/campanas/$campaignId/aventuras'
+      | '/mundos/$worldId/campanas/$campaignId/paginas'
+    icon: LucideIcon
+    text: string
+    tour: string
+    exact?: boolean
+    master?: boolean
+  }
+  const sections: Section[] = [
+    {
+      to: '/mundos/$worldId/campanas/$campaignId',
+      icon: House,
+      text: t('ribbon.home'),
+      tour: 'barra-inicio',
+      exact: true
+    },
+    // La Mesa: sus personajes, quién está y abrirla en otra pestaña (Enrique, 2026-11-10: «personajes y mesa podemos
+    // unirlo dentro de la campaña y luego se abre la mesa en otra pestaña»)
+    {
+      to: '/mundos/$worldId/campanas/$campaignId/personajes',
+      icon: Layers,
+      text: t('ribbon.table'),
+      tour: 'barra-mesa'
+    },
+    {
+      to: '/mundos/$worldId/campanas/$campaignId/libros',
+      icon: BookOpen,
+      text: t('ribbon.books'),
+      tour: 'barra-libros',
+      master: true
+    },
+    {
+      to: '/mundos/$worldId/campanas/$campaignId/compendio',
+      icon: ScrollText,
+      text: t('ribbon.compendium'),
+      tour: 'barra-compendio'
+    },
+    {
+      to: '/mundos/$worldId/campanas/$campaignId/aventuras',
+      icon: Flag,
+      text: t('ribbon.adventures'),
+      tour: 'barra-aventuras',
+      master: true
+    },
+    {
+      to: '/mundos/$worldId/campanas/$campaignId/paginas',
+      icon: FileText,
+      text: t('ribbon.pages'),
+      tour: 'barra-paginas'
+    }
+  ]
   return (
     <>
       <Link
         to="/mundos/$worldId/campanas/$campaignId"
-        params={{ worldId, campaignId }}
-        activeOptions={{ exact: true }}
-        className={styles.item}
+        params={params}
+        className={styles.campaignCover}
+        aria-label={t('ribbon.campaignHome', { name })}
         viewTransition={SECTION}
-        data-tour="barra-ficha"
       >
-        <Label icon={UserRound} text={t('ribbon.sheet')} />
+        {cover ? (
+          <img src={`/api/files/${cover.fileId}`} alt="" style={coverStyle(cover)} />
+        ) : (
+          <span aria-hidden="true">{name.charAt(0).toUpperCase()}</span>
+        )}
       </Link>
-      <Link
-        to="/mundos/$worldId/campanas/$campaignId/mesa"
-        params={{ worldId, campaignId }}
-        className={styles.item}
-        viewTransition={SECTION}
-        data-tour="barra-mesa"
-      >
-        <Label icon={Layers} text={t('ribbon.table')} />
-      </Link>
+      {sections
+        .filter((section) => master || !section.master)
+        .map((section) => (
+          <Link
+            key={section.to}
+            to={section.to}
+            params={params}
+            activeOptions={{ exact: section.exact ?? false }}
+            className={styles.item}
+            viewTransition={SECTION}
+            data-tour={section.tour}
+          >
+            <Label icon={section.icon} text={section.text} />
+          </Link>
+        ))}
     </>
   )
 }

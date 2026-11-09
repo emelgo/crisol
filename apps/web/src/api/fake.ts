@@ -30,6 +30,7 @@ import type {
   SceneViewport,
   ScreenCamera,
   SnapshotView,
+  TablePresenceEntry,
   TagView,
   TokenView,
   TrashItem,
@@ -143,6 +144,8 @@ export function fakeApi(
     systemContent?: Record<string, ContentItem[]>
     /** El texto de los PDF, por el id del archivo (una página por elemento); sin él, aún sin leer */
     bookPages?: Record<string, string[]>
+    /** Quién está en la Mesa de las campañas (ADR-0021) */
+    tablePresence?: TablePresenceEntry[]
     /** Las imágenes que nombra lo que se importa de Foundry */
     foundryImages?: Array<{ path: string; credit: string | null }>
     /** El compendio de los mundos: sus entradas, por mundo y sistema (copiadas, con el original del que salen) */
@@ -2799,6 +2802,8 @@ export function fakeApi(
       own.version++
       return { version: own.version, deleted, missing: keys.filter((k) => !deleted.includes(k)) }
     },
+    // Quién está en la Mesa (ADR-0021): en la API de prueba, lo que digan las pruebas
+    getTablePresence: () => ({ present: structuredClone(options.tablePresence ?? []) }),
     // Los libros de un sistema (ADR-0021)
     getSystemBooks: ({ systemId }) => {
       const document = systemById(systemId)

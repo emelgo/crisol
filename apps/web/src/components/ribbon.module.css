@@ -603,3 +603,29 @@
 .moreList svg {
   color: var(--color-muted);
 }
+
+/* La portada de la campaña, arriba de su barra: vuelve a su Inicio (ADR-0021) */
+.campaignCover {
+  display: grid;
+  place-items: center;
+  inline-size: 2.5rem;
+  block-size: 2.5rem;
+  margin-block: 0 0.5rem;
+  margin-inline: auto;
+  overflow: hidden;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--color-brand) 28%, var(--color-raised));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-brand) 45%, transparent);
+  color: var(--color-text);
+  font: 700 1rem / 1 var(--font-display);
+}
+
+.campaignCover img {
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+}
+
+.campaignCover:hover {
+  box-shadow: 0 0 0 2px var(--color-brand);
+}

@@ -166,7 +166,7 @@ describe('el foco en las confirmaciones', () => {
   })
 
   it('dejar la campaña: va a «Dejarla», con el aviso; cancelar lo devuelve', async () => {
-    renderAt(campaignPath, {}, 'player')
+    renderAt(campaignPath.replace('?panel=ajustes', ''), {}, 'player')
     await userEvent.click(await screen.findByRole('button', { name: 'Dejar la campaña' }))
     expect(document.activeElement).toBe(button('Dejarla'))
     expect(description(button('Dejarla'))).toBe('Para volver, el máster tendrá que pasarte el enlace.')

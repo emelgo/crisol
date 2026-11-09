@@ -349,14 +349,11 @@ export function CampaignCard({
       burning={burning}
       {...(onBurnt ? { onBurnt } : {})}
       name={
-        // Una campaña se abre en otra pestaña, como la partida en D&D Beyond (Enrique, 2026-11-09): su Mesa ocupa la
-        // pantalla y la de los mundos se queda donde estaba
+        // Una campaña se abre en su espacio, en la misma pestaña; la Mesa, en otra (Enrique, 2026-11-10)
         <Link
           to="/mundos/$worldId/campanas/$campaignId"
           params={{ worldId, campaignId: campaign.id }}
           className={styles.name}
-          target="_blank"
-          rel="noopener"
         >
           {campaign.name}
         </Link>

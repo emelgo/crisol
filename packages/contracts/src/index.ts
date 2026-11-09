@@ -170,6 +170,7 @@ import {
   trySystemRoll,
   updateSystem
 } from './systems.ts'
+import { getTablePresence } from './table.ts'
 import {
   changeMarks,
   createWidget,
@@ -506,7 +507,8 @@ export const ACTIONS = [
   proposeContent,
   listPending,
   settlePending,
-  getBookEntries
+  getBookEntries,
+  getTablePresence
 ]
 
 /** Las acciones por nombre, solo como tipo: la web las usa sin cargar zod */
@@ -747,4 +749,5 @@ export type Actions = {
   listPending: typeof listPending
   settlePending: typeof settlePending
   getBookEntries: typeof getBookEntries
+  getTablePresence: typeof getTablePresence
 }

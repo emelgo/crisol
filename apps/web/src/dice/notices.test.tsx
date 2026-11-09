@@ -58,7 +58,7 @@ function renderMesa() {
   const api = fakeApi({ organizations: [ORG], worlds: [WORLD], campaigns: [CAMPAIGN] })
   const realtime = fakeRealtime()
   const router = createAppRouter(
-    createMemoryHistory({ initialEntries: [`/mundos/${WORLD.id}/campanas/${CAMPAIGN.id}`] })
+    createMemoryHistory({ initialEntries: [`/mundos/${WORLD.id}/campanas/${CAMPAIGN.id}/mesa`] })
   )
   render(
     <App

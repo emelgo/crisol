@@ -33,7 +33,7 @@ import {
 import { sheetWindow } from './token-sheet.tsx'
 import { useWindows } from './windows.tsx'
 
-const route = getRouteApi('/mundos/$worldId/campanas/$campaignId')
+const route = getRouteApi('/mundos/$worldId/campanas/$campaignId/mesa')
 
 const MASTER_TABS: readonly SidebarTab[] = ['scenes', 'combat', 'characters', 'compendium', 'pages', 'settings']
 

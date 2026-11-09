@@ -74,7 +74,7 @@ function renderTable() {
     account: { name: 'Enrique', email: 'enrique@crisol.test', diceColor: '#5a7fd6' }
   })
   const router = createAppRouter(
-    createMemoryHistory({ initialEntries: [`/mundos/${WORLD.id}/campanas/${CAMPAIGN.id}`] })
+    createMemoryHistory({ initialEntries: [`/mundos/${WORLD.id}/campanas/${CAMPAIGN.id}/mesa`] })
   )
   render(<App router={router} accounts={accounts.client} api={api.client} realtime={realtime.client} />)
   return { realtime, accounts, api }

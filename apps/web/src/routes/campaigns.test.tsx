@@ -71,10 +71,10 @@ describe('las campañas de un mundo', () => {
     const { router } = renderCampaigns(w, [campaign(w, 'La Marca'), torre, campaign(w, 'Las Islas')])
     expect(await screen.findByRole('heading', { level: 1, name: 'Campañas' })).toBeDefined()
     expect(await names()).toEqual(['La Marca', 'La Torre', 'Las Islas'])
-    // Cada una se abre en otra pestaña, como la partida en D&D Beyond
+    // Cada una se abre en su espacio, en la misma pestaña (la Mesa, en otra)
     const link = (await list()).getByRole('link', { name: 'La Torre' })
     expect(link.getAttribute('href')).toBe(`/mundos/${w.id}/campanas/${torre.id}`)
-    expect(link.getAttribute('target')).toBe('_blank')
+    expect(link.getAttribute('target')).toBeNull()
     expect(router.state.location.pathname).toBe(`/mundos/${w.id}/campanas`)
   })
 

@@ -100,7 +100,9 @@ async function renderTable() {
   const wolves = (await api.client.call('putInPlay', { campaignId: CAMPAIGN.id, key: 'lobo', count: 2 })).creatures
   render(
     <App
-      router={createAppRouter(createMemoryHistory({ initialEntries: [`/mundos/${WORLD.id}/campanas/${CAMPAIGN.id}`] }))}
+      router={createAppRouter(
+        createMemoryHistory({ initialEntries: [`/mundos/${WORLD.id}/campanas/${CAMPAIGN.id}/mesa`] })
+      )}
       accounts={fakeAccountClient({ account: { name: 'Enrique', email: EMAIL } }).client}
       api={api.client}
     />

@@ -35,6 +35,8 @@ export type RealtimeMessage =
   | { type: 'changed'; what: 'members' | 'invitation'; campaignId: string }
   /** Las criaturas en juego de esa campaña (al máster) */
   | { type: 'changed'; what: 'creatures'; campaignId: string }
+  /** Quién está en la Mesa de esa campaña (entra, sale o cambia de pestaña) */
+  | { type: 'changed'; what: 'tablePresence'; campaignId: string }
   /** Se le reveló algo a quien lo recibe (solo a él): el aviso, con lo que ya ve (docs/specs/revelar.md) */
   | {
       type: 'revealed'

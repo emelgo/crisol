@@ -45,9 +45,11 @@ const members: Member[] = [
 
 const renderCampaign = (c: Campaign, w: World = world) => {
   const api = fakeApi({ organizations: [ORG], worlds: [w], campaigns: [c], members: { [c.id]: members } })
-  // El máster, en la pestaña Ajustes de la Mesa (quien juega no tiene Mesa aún: su portada)
+  // El máster, en la pestaña Ajustes de la Mesa; quien juega, en el Inicio de la campaña
   const router = createAppRouter(
-    createMemoryHistory({ initialEntries: [`/mundos/${w.id}/campanas/${c.id}?panel=ajustes`] })
+    createMemoryHistory({
+      initialEntries: [`/mundos/${w.id}/campanas/${c.id}${c.role === 'master' ? '?panel=ajustes' : ''}`]
+    })
   )
   render(
     <App
@@ -87,10 +89,10 @@ describe('una campaña y su enlace de invitación', () => {
     // Las campañas, en Mis mundos con su mundo
     const list = within(await screen.findByRole('list', { name: 'Campañas' }))
     expect(list.getByText('Eana')).toBeDefined()
-    // En otra pestaña, como la partida en D&D Beyond
+    // En la misma pestaña, en su espacio; la Mesa, en otra (Enrique, 2026-11-10)
     const link = list.getByRole('link', { name: 'La Marca' })
     expect(link.getAttribute('href')).toBe(`/mundos/${world.id}/campanas/${c.id}`)
-    expect(link.getAttribute('target')).toBe('_blank')
+    expect(link.getAttribute('target')).toBeNull()
     expect(router.state.location.pathname).toBe('/mundos')
   })
 

@@ -24,16 +24,20 @@ ocho tableros.
 
 ## Decisión
 
-1. **La campaña tiene su espacio, como el mundo.** Al abrirla (sigue siendo en otra pestaña) se ve su **Inicio**, con
-   su barra a la izquierda: su portada arriba (vuelve a Inicio), Inicio, Mesa, Personajes, Libros, Compendio, Aventuras
-   y Páginas; Ajustes, abajo, se abre encima. La llama sigue llevando a Mis mundos.
-2. **La Mesa es una sección** (`/mundos/$w/campanas/$c/mesa`): por dentro sigue igual (su barra de la derecha, sus
-   ventanas), y la barra de la izquierda se queda, estrecha, para saltar a otra sección sin salir de la partida. «Ir a
-   la Mesa» abre la escena donde se quedaron. Las direcciones de antes (`?panel=`, `?pagina=`, `?entrada=` sobre la
-   campaña) llevan a la Mesa con lo que pedían.
+1. **La campaña tiene su espacio, como el mundo.** Se abre **en la misma pestaña** (Enrique, 2026-11-10) y se ve su
+   **Inicio**, con su barra a la izquierda: su portada arriba (vuelve a Inicio), Inicio, Mesa, Libros, Compendio,
+   Aventuras y Páginas; Ajustes, abajo, se abre encima. La llama sigue llevando a Mis mundos.
+2. **La sección Mesa une los personajes y la Mesa** (Enrique, 2026-11-10: «personajes y mesa podemos unirlo dentro de
+   la campaña y luego se abre la mesa en otra pestaña»; «desde la pestaña mesa debemos ver quiénes están dentro, si
+   está activo»): «Abrir la Mesa» (y «Abrir la tele») en otra pestaña, **quién está en la Mesa ahora** (el máster, los
+   jugadores y la tele, desde cuándo y si tiene la pestaña a la vista: `getTablePresence`, MCP `quien_esta_en_la_mesa`,
+   en vivo por el canal de la mesa) y, para el máster, la escena abierta, lo que enseña la tele y el combate; debajo,
+   los personajes. **La Mesa** (`/mundos/$w/campanas/$c/mesa`) va a pantalla completa en su pestaña, sin la barra de la
+   izquierda, y por dentro sigue igual. «Ir a la Mesa» del Inicio también la abre en otra pestaña. Las direcciones de
+   antes (`?panel=`, `?pagina=`, `?entrada=` sobre la campaña) llevan a la Mesa con lo que pedían.
 3. **Inicio**: «Ir a la Mesa» con la escena en marcha, los jugadores con sus personajes, los libros que usa y la
    aventura en curso. La jugadora ve el suyo: su personaje, «Ir a la Mesa», el grupo, los libros (sin poder cambiarlos)
-   y lo último que sabe; sus secciones son Inicio, Mesa, Personajes, Compendio y Páginas.
+   y lo último que sabe; sus secciones son Inicio, Mesa, Compendio y Páginas.
 4. **Un libro es una fuente del sistema, con más datos**: descripción, portada, de dónde sale (un PDF de la biblioteca,
    un archivo o hecho a mano), los libros a los que amplía (`requires`) y su versión. Solo añade entradas; las reglas
    son del sistema. Lo de serie es un libro más («Reglas básicas»). Se añaden, cambian y borran libros de los sistemas

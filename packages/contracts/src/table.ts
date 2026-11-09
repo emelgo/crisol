@@ -4,6 +4,7 @@
  * aquí llega la proyección de cada uno y lo que va en vivo (el encuadre del máster, el arrastre, la medida y el láser)
  */
 import { z } from 'zod'
+import { defineAction } from './action.ts'
 import { screenCombat } from './combat.ts'
 import { type campaignTableView, fogMask, sceneGrid, sceneTiles, sceneViewport, screenCamera } from './scenes.ts'
 import { type LiveMeasure, laserPoints, liveMeasure, screenMark, screenWidget } from './table-tools.ts'
@@ -16,6 +17,8 @@ export type TableViewer = (typeof TABLE_VIEWS)[number]
 /** Lo que manda el cliente */
 export const tableClientMessage = z.discriminatedUnion('type', [
   z.object({ type: z.literal('join'), campaignId: z.uuid(), view: z.enum(TABLE_VIEWS) }),
+  /** Si quien mira tiene la pestaña a la vista (lo enseña la sección Mesa de la campaña: quién está y si está activo) */
+  z.object({ type: z.literal('presence'), active: z.boolean() }),
   /** El encuadre del máster en vivo: con «Seguir», la pantalla lo sigue (no se guarda) */
   z.object({ type: z.literal('viewport'), view: sceneViewport }),
   /** Unas fichas mientras el máster las arrastra (no se guarda: al soltar, moveTokens) */
@@ -113,3 +116,24 @@ export type TableServerMessage =
   /** La estela del láser (a la pantalla, solo sus puntos que ve o vio el grupo) */
   | { type: 'laser'; points: Array<{ x: number; y: number }> }
   | { type: 'error'; code: 'FORBIDDEN' | 'NOT_FOUND' | 'BAD_MESSAGE' | 'NOT_JOINED' }
+
+/** Quién está en la Mesa de una campaña ahora (ADR-0021) */
+export const tablePresence = z.object({
+  userId: z.string(),
+  name: z.string(),
+  viewer: z.enum(TABLE_VIEWS).describe('master: el máster; screen: la tele; player: la Mesa de un jugador'),
+  since: z.iso.datetime(),
+  active: z.boolean().describe('Con alguna de sus pestañas a la vista'),
+  tabs: z.int()
+})
+
+export type TablePresenceEntry = z.infer<typeof tablePresence>
+
+export const getTablePresence = defineAction({
+  name: 'getTablePresence',
+  kind: 'read',
+  description:
+    'Quién está ahora en la Mesa de una campaña: el máster, los jugadores y la tele, desde cuándo y si tienen la pestaña a la vista. Lo ve cualquiera de la campaña',
+  input: z.object({ campaignId: z.uuid() }),
+  output: z.object({ present: z.array(tablePresence) })
+})

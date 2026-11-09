@@ -50,6 +50,11 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   tirar se vacía y se cierra. El resultado sale sobre el d20 cuando paran los dados; el historial, en una ventana de la
   Mesa (fuera, en una ficha junto al d20). Sin pestaña Tiradas. El d20 y el «?» no se mueven; el «?» se aparta
   mientras los dados están abiertos.
+- **La campaña se abre en la misma pestaña; la Mesa, en otra** (Enrique, 2026-11-10: «al entrar en una campaña no se
+  abre una nueva pestaña, eso ocurre al entrar en mesa»; «personajes y mesa podemos unirlo dentro de la campaña»): la
+  sección **Mesa** de la campaña tiene «Abrir la Mesa» (otra pestaña, a pantalla completa y sin barra), quién está en
+  ella ahora (activo o en otra pestaña, desde cuándo) y cómo va la partida, y debajo los personajes. Sustituye a «las
+  campañas se abren en otra pestaña» (2026-11-09) y a «la Mesa con la barra de la izquierda» del ADR-0021.
 - **La campaña vuelve a tener su propio espacio, como el mundo** (Enrique, 2026-11-10: «al abrir una campaña volvemos a
   abrir una vista como la del mundo y ahí tendremos los libros, compendio, aventuras etc y además la mesa»): una barra
   con sus secciones (Inicio con el resumen y los jugadores, Libros, Compendio, Aventuras, Personajes, Páginas, Ajustes)

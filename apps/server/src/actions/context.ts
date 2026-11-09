@@ -6,6 +6,7 @@ import type { Storage } from '../files/storage.ts'
 import type { Embedder } from '../library/embedder.ts'
 import type { LibraryJobs } from '../library/jobs.ts'
 import type { Realtime } from '../realtime/hub.ts'
+import type { TablePresence } from '../table/presence.ts'
 import type { TableRooms } from '../table/rooms.ts'
 import type { Vision } from '../table/vision.ts'
 
@@ -36,6 +37,8 @@ export interface ActionEnv {
   embedder?: Embedder
   /** Las salas de la mesa abiertas (ADR-0018): se les avisa de lo que cambia en su campaña o en sus escenas */
   table?: TableRooms
+  /** Quién está ahora en la Mesa de cada campaña (ADR-0021) */
+  presence?: TablePresence
   /** La vista del grupo de cada campaña en sus escenas, calculada en un hilo aparte (docs/specs/vision.md) */
   vision?: Vision
 }

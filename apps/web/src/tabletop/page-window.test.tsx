@@ -93,8 +93,8 @@ describe('las páginas en ventanas sobre la Mesa', () => {
     expect(win.queryByRole('button', { name: /no la conocen/ })).toBeNull()
   })
 
-  it('un enlace de antes a una página de la campaña lleva al máster a su Mesa, con ella en su ventana', async () => {
-    renderAt(`/mundos/${WORLD_ID}/campanas/${CAMPAIGN_ID}/paginas/${ALDRIC_ID}`)
+  it('un enlace de antes a la Mesa con una página (?pagina=) la abre en su ventana, con la pestaña Páginas', async () => {
+    renderAt(`/mundos/${WORLD_ID}/campanas/${CAMPAIGN_ID}?panel=paginas&pagina=${ALDRIC_ID}`)
     expect(await screen.findByRole('dialog', { name: 'Aldric Varn' })).toBeDefined()
     expect(screen.getByRole('tab', { name: 'Páginas' }).getAttribute('aria-selected')).toBe('true')
   })

@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
+import { TableLobby } from '../campaign/table-lobby.tsx'
 import { Loading } from '../components/brand.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
 import { ChangesBar } from '../components/changes.tsx'
@@ -71,10 +72,13 @@ export function CharactersScreen() {
   const noSystem = !campaign.data.campaign.system
   return (
     <Screen
-      title={t('characters.title')}
+      title={t('ribbon.table')}
       left={preview && <CharacterPreview character={preview} master={master} />}
       leftLabel={t('characters.preview')}
     >
+      {/* La sección Mesa (ADR-0021): abrir la Mesa, quién está y cómo va; debajo, los personajes */}
+      <TableLobby worldId={worldId} campaignId={campaignId} master={master} />
+      <h2 className={styles.sectionTitle}>{t('characters.title')}</h2>
       {noSystem ? (
         <p className={styles.note}>{t('characters.noSystem')}</p>
       ) : list.length === 0 ? (

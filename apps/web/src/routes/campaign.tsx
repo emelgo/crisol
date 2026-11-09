@@ -1,21 +1,30 @@
+import type { Campaign } from '@crisol/contracts'
 import { useQuery } from '@tanstack/react-query'
 import { getRouteApi, Link, Navigate, useParams, useSearch } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
-import { PlayerHome } from '../campaign/player-home.tsx'
+import { CampaignBooks } from '../campaign/books.tsx'
+import { CampaignHome, PlayerCampaignHome } from '../campaign/home.tsx'
 import { Loading } from '../components/brand.tsx'
 import { failed, LoadError } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
-import { Mesa } from '../tabletop/mesa.tsx'
+import { Screen } from '../components/screen.tsx'
 
 const route = getRouteApi('/mundos/$worldId/campanas/$campaignId')
 
-/** Una campaña: el máster, en su Mesa; quien juega, en la ficha de su personaje */
-export function CampaignPage() {
+/**
+ * La campaña de la dirección, con su mundo: mientras llegan, la carga; si fallan, el error; si no existe, lo dice. Con
+ * ella, lo que se pinte
+ */
+export function WithCampaign({
+  children
+}: {
+  children: (found: { worldId: string; worldName: string; campaign: Campaign }) => ReactNode
+}) {
   const { t } = useTranslation()
-  const { worldId, campaignId } = route.useParams()
+  const { worldId, campaignId } = useParams({ strict: false }) as { worldId: string; campaignId: string }
   const api = useApi()
   const { account, pending } = useAccounts().useAccount()
   const worlds = useQuery({
@@ -30,35 +39,83 @@ export function CampaignPage() {
     enabled: Boolean(world)
   })
   const campaign = campaigns.data?.campaigns.find((c) => c.id === campaignId)
-
   if (pending) return null
   if (!account) return <Navigate to="/entrar" replace />
-  // Sin las listas no se sabe si existe: mientras llegan, la carga; si fallan, el error (no «no existe»)
   if (!worlds.data)
     return failed(worlds) ? <LoadError error={worlds.error} onRetry={() => worlds.refetch()} /> : <Loading />
-  if (world && !campaigns.data) {
+  if (world && !campaigns.data)
     return failed(campaigns) ? <LoadError error={campaigns.error} onRetry={() => campaigns.refetch()} /> : <Loading />
-  }
-  if (!world || !campaign) {
+  if (!world || !campaign)
     return (
       <section>
         <PageTitle>{t('campaign.notFound')}</PageTitle>
         <Link to="/mundos">{t('worlds.title')}</Link>
       </section>
     )
-  }
-
-  // El máster abre la campaña en la Mesa, como en Foundry VTT (docs/diseno.md)
-  if (campaign.role === 'master')
-    return <Mesa key={campaign.id} worldId={worldId} worldName={world.name} campaign={campaign} />
-
-  // Quien juega, en su ficha (la Mesa, a un clic)
-  return <PlayerHome worldId={worldId} campaign={campaign} />
+  return children({ worldId, worldName: world.name, campaign })
 }
 
 /**
- * Las vistas sueltas de antes (compendio, biblioteca, en juego, páginas): el máster las tiene en las pestañas de su
- * Mesa, así que su dirección le lleva a ella con la que toca; quien juega sigue viéndolas (hasta su Mesa)
+ * Una campaña abre en su Inicio, con su barra (ADR-0021). Lo de la Mesa en su dirección (los enlaces de antes:
+ * ?panel=, ?pagina=, ?entrada=) lleva a la Mesa con eso
+ */
+export function CampaignPage() {
+  const { worldId, campaignId } = route.useParams()
+  const search = route.useSearch()
+  if (search.panel || search.pagina || search.entrada)
+    return (
+      <Navigate
+        to="/mundos/$worldId/campanas/$campaignId/mesa"
+        params={{ worldId, campaignId }}
+        search={search}
+        replace
+      />
+    )
+  return (
+    <WithCampaign>
+      {({ worldName, campaign }) =>
+        campaign.role === 'master' ? (
+          <CampaignHome key={campaign.id} worldId={worldId} worldName={worldName} campaign={campaign} />
+        ) : (
+          <PlayerCampaignHome key={campaign.id} worldId={worldId} worldName={worldName} campaign={campaign} />
+        )
+      }
+    </WithCampaign>
+  )
+}
+
+/** Libros: los de la campaña, solo del máster (quien juega, a su Inicio) */
+export function CampaignBooksScreen() {
+  return (
+    <WithCampaign>
+      {({ worldId, worldName, campaign }) =>
+        campaign.role === 'master' ? (
+          <CampaignBooks key={campaign.id} worldId={worldId} worldName={worldName} campaign={campaign} />
+        ) : (
+          <Navigate to="/mundos/$worldId/campanas/$campaignId" params={{ worldId, campaignId: campaign.id }} replace />
+        )
+      }
+    </WithCampaign>
+  )
+}
+
+/** Aventuras: su pantalla llega con su propio lienzo */
+export function AdventuresScreen() {
+  const { t } = useTranslation()
+  return (
+    <WithCampaign>
+      {() => (
+        <Screen title={t('adventures.title')}>
+          <p>{t('adventures.soon')}</p>
+        </Screen>
+      )}
+    </WithCampaign>
+  )
+}
+
+/**
+ * Las vistas sueltas de antes que el máster tiene en las pestañas de su Mesa (en juego, biblioteca): su dirección le
+ * lleva a ella con la que toca; quien juega sigue viéndolas
  */
 export function ToMesaIfMaster({ panel, children }: { panel: string; children: ReactNode }) {
   const { worldId, campaignId, pageId } = useParams({ strict: false }) as {
@@ -80,9 +137,8 @@ export function ToMesaIfMaster({ panel, children }: { panel: string; children: R
   if (role === 'master' && !viewingAs)
     return (
       <Navigate
-        to="/mundos/$worldId/campanas/$campaignId"
+        to="/mundos/$worldId/campanas/$campaignId/mesa"
         params={{ worldId, campaignId }}
-        // Una página o una entrada del compendio (?ver=): se abren en su ventana sobre la Mesa
         search={{ panel, ...(pageId ? { pagina: pageId } : {}), ...(search.ver ? { entrada: search.ver } : {}) }}
         replace
       />

@@ -1,0 +1,517 @@
+/* Los libros de la campaña y la ficha de un libro (ADR-0021): una columna como la de Ajustes, con las portadas en rejilla */
+.screen {
+  padding-block: var(--space-8);
+  padding-inline: var(--space-6);
+}
+
+.col {
+  inline-size: min(100%, 68rem);
+  margin-inline: auto;
+}
+
+.titlebar {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-4);
+  min-block-size: 5rem;
+  padding-block-end: var(--space-3);
+  border-block-end: 2px solid var(--color-h2);
+}
+
+.grow {
+  flex: 1;
+  min-inline-size: 0;
+}
+
+.title {
+  margin: 0;
+  font: 800 2.1rem / 1 var(--font-display);
+  text-transform: uppercase;
+  color: var(--color-h2);
+}
+
+.sub {
+  margin: var(--space-2) 0 0;
+  color: var(--color-muted);
+}
+
+.hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.seg {
+  display: inline-flex;
+  gap: 2px;
+  margin: 0;
+  padding: 3px;
+  border: 0;
+  border-radius: 4px;
+  background: var(--color-raised);
+}
+
+.seg button {
+  padding: 5px 12px;
+  border: 0;
+  border-radius: 3px;
+  background: none;
+  color: var(--color-muted);
+  font: 600 0.8rem var(--font-body);
+  cursor: pointer;
+}
+
+.seg button[aria-pressed="true"] {
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: 0 0 0 1px var(--color-border);
+}
+
+.quiet {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+
+.books {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11.5rem, 1fr));
+  gap: var(--space-6) var(--space-4);
+  margin: var(--space-6) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.book {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-inline-size: 0;
+}
+
+.coverButton {
+  display: block;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  transition: transform 0.25s;
+}
+
+.coverButton:hover {
+  transform: translateY(-3px);
+}
+
+.coverStatic {
+  display: block;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: 1.5rem;
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+
+.chooser {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-link);
+  font: inherit;
+  cursor: pointer;
+}
+
+.chooser:hover {
+  text-decoration: underline;
+}
+
+.switch {
+  position: relative;
+  flex: none;
+  inline-size: 2.15rem;
+  block-size: 1.25rem;
+  margin-inline-start: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: var(--color-frame);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.switch::after {
+  content: "";
+  position: absolute;
+  inset-block-start: 2px;
+  inset-inline-start: 2px;
+  inline-size: 1rem;
+  block-size: 1rem;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.2s;
+}
+
+.switch[aria-checked="true"] {
+  background: var(--color-accent);
+}
+
+.switch[aria-checked="true"]::after {
+  transform: translateX(0.9rem);
+}
+
+.switch:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.always {
+  margin-inline-start: auto;
+  padding: 0 7px;
+  border-radius: 10px;
+  background: var(--color-raised);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  block-size: 1.25rem;
+  padding: 0 7px;
+  border-radius: 10px;
+  background: rgb(0 0 0 / 55%);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.warn {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--color-warning);
+}
+
+.newBook {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: var(--space-2);
+  aspect-ratio: 3 / 4;
+  border: 2px dashed var(--color-frame);
+  clip-path: var(--cut);
+  color: var(--color-muted);
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+}
+
+.newBook:hover {
+  border-color: var(--color-accent);
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+/* Elegir contenido */
+.chooseDialog {
+  inline-size: min(45rem, calc(100vw - 2rem));
+  padding: 0;
+  border: 1px solid var(--color-frame);
+  border-radius: 8px;
+  background: var(--color-surface);
+  box-shadow: 0 1.5rem 3.75rem rgb(0 0 0 / 0.45);
+  color: var(--color-text);
+}
+
+.chooseDialog::backdrop {
+  background: rgb(0 0 0 / 0.55);
+}
+
+.chooseHead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.searchField {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: 2.15rem;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-field-border);
+  border-radius: 3px;
+  background: var(--color-bg);
+  color: var(--color-muted);
+}
+
+.searchField input {
+  flex: 1;
+  min-inline-size: 0;
+  border: 0;
+  outline: 0;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+}
+
+.inside {
+  font-size: 0.875rem;
+  color: var(--color-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.types {
+  display: flex;
+  flex-direction: column;
+  max-block-size: min(26rem, 55vh);
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+}
+
+.type {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-2) var(--space-1);
+  border-block-end: 1px solid var(--color-border);
+}
+
+.check {
+  display: inline-grid;
+  place-items: center;
+  inline-size: 1rem;
+  block-size: 1rem;
+  padding: 0;
+  border: 1.5px solid var(--color-field-border);
+  border-radius: 3px;
+  background: var(--color-bg);
+  color: #fff;
+  cursor: pointer;
+}
+
+.check[aria-checked="true"],
+.check[aria-checked="mixed"] {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+}
+
+.typeName {
+  font-weight: 600;
+}
+
+.fraction {
+  font-size: 0.8rem;
+  color: var(--color-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.expand {
+  display: inline-grid;
+  place-items: center;
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
+  border: 0;
+  border-radius: 3px;
+  background: none;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.expand:hover {
+  background: var(--color-raised);
+  color: var(--color-text);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  grid-column: 2 / -1;
+  gap: 6px;
+  padding-block: var(--space-1) var(--space-2);
+}
+
+.chip {
+  min-block-size: 1.65rem;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--color-raised);
+  color: var(--color-text);
+  font: 0.8rem var(--font-body);
+  cursor: pointer;
+}
+
+.chipOut {
+  background: none;
+  box-shadow: inset 0 0 0 1px var(--color-border);
+  color: var(--color-muted);
+  text-decoration: line-through;
+}
+
+.bulk {
+  margin-inline-start: auto;
+  padding: 0 var(--space-2);
+  border: 0;
+  background: none;
+  color: var(--color-muted);
+  font: inherit;
+  cursor: pointer;
+}
+
+.bulk:hover {
+  color: var(--color-text);
+}
+
+/* La ficha de un libro */
+.window {
+  inline-size: min(56rem, calc(100vw - 2rem));
+  padding: 0;
+  border: 1px solid var(--color-frame);
+  border-radius: 8px;
+  background: var(--color-surface);
+  box-shadow: 0 1.5rem 3.75rem rgb(0 0 0 / 0.5);
+  color: var(--color-text);
+}
+
+.window::backdrop {
+  background: rgb(0 0 0 / 0.55);
+}
+
+.windowBody {
+  padding: var(--space-6);
+}
+
+.windowTitle {
+  margin: 0 0 var(--space-4);
+  padding-block-end: var(--space-3);
+  padding-inline-end: calc(var(--target) - var(--space-2));
+  border-block-end: 2px solid var(--color-h2);
+  font: 700 1.4rem / 1 var(--font-display);
+  text-transform: uppercase;
+  color: var(--color-h2);
+}
+
+.windowGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 15rem) minmax(0, 1fr);
+  gap: var(--space-6);
+}
+
+.bigCover {
+  display: block;
+}
+
+.kv {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 14px;
+  margin: var(--space-4) 0 0;
+  font-size: 0.875rem;
+}
+
+.kv dt {
+  color: var(--color-muted);
+}
+
+.kv dd {
+  margin: 0;
+}
+
+.windowMain {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-inline-size: 0;
+}
+
+.description {
+  margin: 0 0 var(--space-2);
+  max-inline-size: 62ch;
+}
+
+.h {
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  border: 0;
+  font: 600 0.75rem / 1 var(--font-body);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.counts {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.count {
+  display: grid;
+  grid-template-columns: 7rem 3.25rem minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: baseline;
+  padding-block: var(--space-2);
+  border-block-end: 1px solid var(--color-border);
+  font-size: 0.875rem;
+}
+
+.countName {
+  font-weight: 600;
+}
+
+.countNumber {
+  font: 700 1.2rem / 1 var(--font-display);
+  color: var(--color-h3);
+  font-variant-numeric: tabular-nums;
+}
+
+.examples {
+  overflow: hidden;
+  color: var(--color-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.extends {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-start;
+  margin: var(--space-1) 0 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--color-h4) 9%, transparent);
+  font-size: 0.875rem;
+}
+
+.extends svg {
+  flex: none;
+  margin-block-start: 2px;
+  color: var(--color-h4);
+}
+
+.campaigns {
+  margin: var(--space-1) 0 0;
+  font-size: 0.875rem;
+}
+
+::view-transition-group(libro-abierto) {
+  animation-duration: 0.45s;
+  animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@media (max-width: 40rem) {
+  .windowGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

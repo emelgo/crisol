@@ -390,6 +390,36 @@ describe('la mesa: escenas, teselas y la sala', () => {
     expect((await call('openScene', { campaignId, sceneId: otherScene.id })).status).toBe(404)
   })
 
+  it('quién está en la Mesa (ADR-0021): entra con la conexión, dice si tiene la pestaña a la vista y sale al cerrar', async () => {
+    const present = async (cookie = owner.cookie) =>
+      (await call('getTablePresence', { campaignId }, cookie)).body.present as {
+        name: string
+        viewer: string
+        active: boolean
+        tabs: number
+      }[]
+    expect(await present()).toEqual([])
+    const master = await join('master')
+    await master.next()
+    const own = await join('player', player.cookie)
+    await own.next()
+    await join('master')
+    await expect.poll(async () => (await present(player.cookie)).map((p) => p.tabs)).toEqual([2, 1])
+    expect((await present()).map(({ name, viewer, active, tabs }) => ({ name, viewer, active, tabs }))).toEqual([
+      { name: 'Enrique', viewer: 'master', active: true, tabs: 2 },
+      { name: 'Jugadora', viewer: 'player', active: true, tabs: 1 }
+    ])
+    own.ws.send(JSON.stringify({ type: 'presence', active: false }))
+    await expect.poll(async () => (await present()).find((p) => p.viewer === 'player')?.active).toBe(false)
+    own.ws.terminate()
+    await expect
+      .poll(async () => (await present()).map((p) => p.viewer), { timeout: 5000 })
+      .toEqual(['master'])
+    // Quien no está en la campaña no lo ve
+    const stranger = await signUpTestUser(auth, { name: 'Otro', email: 'otro@crisol.test' })
+    expect((await call('getTablePresence', { campaignId }, stranger.cookie)).status).toBe(404)
+  })
+
   it('las pestañas «Escena» no le llegan a un jugador aunque conozca la página', async () => {
     await call('createPageTab', { pageId, kind: 'scene' })
     await call('createPageTab', { pageId, kind: 'text' })

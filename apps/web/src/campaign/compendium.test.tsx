@@ -364,10 +364,8 @@ describe('el compendio de una campaña', () => {
   it('el máster oculta un tipo a los jugadores en los ajustes del compendio', async () => {
     const user = userEvent.setup()
     const { api } = renderCompendium({ ...CAMPAIGN, role: 'master' })
-    // El máster lo tiene en su Mesa: la pestaña Compendio y, desde ella, el compendio entero en su ventana
-    await user.click(await screen.findByRole('button', { name: 'Abrir el compendio' }))
-    const window = within(await screen.findByRole('dialog', { name: 'Compendio' }))
-    await user.click(await window.findByRole('button', { name: 'Ajustes del compendio' }))
+    // El máster lo tiene en la sección Compendio de la campaña (ADR-0021), con sus ajustes
+    await user.click(await screen.findByRole('button', { name: 'Ajustes del compendio' }))
     const settings = await screen.findByRole('dialog', { name: 'Ajustes del compendio' })
     expect(within(settings).getByText(/Quinta · Viejo y Nuevo/)).toBeDefined()
     const spells = within(settings).getByRole('switch', { name: 'Conjuros' })

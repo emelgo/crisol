@@ -174,7 +174,7 @@ describe('el canal en tiempo real en la web', () => {
   })
 
   it('si la expulsan con la campaña abierta, deja de verla', async () => {
-    const { api, realtime } = renderAt(campaignPath, { role: 'player' })
+    const { api, realtime } = renderAt(campaignPath.replace('?panel=ajustes', ''), { role: 'player' })
     await screen.findByRole('list', { name: 'Miembros' })
     api.campaigns.splice(0)
     act(() => realtime.emit({ type: 'revoked', worldId: world.id, campaignId: campaign.id }))

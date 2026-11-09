@@ -240,7 +240,8 @@ describe('Actions', () => {
       proposeContent: true,
       listPending: true,
       settlePending: true,
-      getBookEntries: true
+      getBookEntries: true,
+      getTablePresence: true
     }
     expect(Object.keys(names).sort()).toEqual(ACTIONS.map((a) => a.name).sort())
   })

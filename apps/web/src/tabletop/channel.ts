@@ -142,6 +142,9 @@ export function connectTable(
     socket = current
     current.onopen = () => {
       current.send(JSON.stringify({ type: 'join', campaignId: options.campaignId, view: options.view }))
+      // Quién está en la Mesa (ADR-0021): si se entra con la pestaña escondida, se dice
+      if (typeof document !== 'undefined' && document.hidden)
+        current.send(JSON.stringify({ type: 'presence', active: false }))
       // Al volver, la sala no sabe dónde mira el máster: se le repite
       if (options.view === 'master' && latest) flush()
     }
@@ -171,6 +174,12 @@ export function connectTable(
     }
   }
 
+  // Si la pestaña está a la vista o no: lo enseña la sección Mesa de la campaña («activo» o «en otra pestaña»)
+  const visibility = () => {
+    if (socket && joined) socket.send(JSON.stringify({ type: 'presence', active: !document.hidden }))
+  }
+  if (typeof document !== 'undefined') document.addEventListener('visibilitychange', visibility)
+
   open()
   return {
     sendViewport(view) {
@@ -197,6 +206,7 @@ export function connectTable(
     },
     close() {
       stopped = true
+      if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', visibility)
       clearTimeout(retry)
       clearTimeout(pending)
       clearTimeout(dragTimer)

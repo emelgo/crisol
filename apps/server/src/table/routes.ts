@@ -16,6 +16,7 @@ import { type ActionContext, type ActionEnv, errorCode } from '../actions/contex
 import type { Auth } from '../auth/auth.ts'
 import { TooLargeError } from '../files/storage.ts'
 import { clientIp, toHeaders } from '../http.ts'
+import { tablePresenceChanged } from '../realtime/events.ts'
 import { CLOSE_SESSION_ENDED } from '../realtime/routes.ts'
 import { visionOf } from './projection.ts'
 import type { TableRooms } from './rooms.ts'
@@ -283,13 +284,28 @@ export function registerTableRoutes(
             say({ type: 'error', code: campaign ? 'FORBIDDEN' : 'NOT_FOUND' })
             return socket.close(4403, 'Sin permiso')
           }
-          const leave = await table.join(campaign.id, message.view, socket)
+          const leaveRoom = await table.join(campaign.id, message.view, socket)
           // Se cerró mientras entraba: fuera ya
-          if (closed) return leave()
+          if (closed) return leaveRoom()
+          const scope = { campaignId: campaign.id, worldId: campaign.worldId }
+          // Quién está en la Mesa: entra (y sale con la conexión)
+          env.presence?.add(campaign.id, socket, { userId, viewer: message.view })
+          env.realtime.publish(tablePresenceChanged(scope))
+          const leave = () => {
+            leaveRoom()
+            env.presence?.remove(scope.campaignId, socket)
+            env.realtime.publish(tablePresenceChanged(scope))
+          }
           joined = { campaignId: campaign.id, worldId: campaign.worldId, viewer: message.view, leave }
           return
         }
         if (!joined) return say({ type: 'error', code: 'NOT_JOINED' })
+        // Si tiene la pestaña a la vista: cualquiera que mire
+        if (message.type === 'presence') {
+          if (env.presence?.setActive(joined.campaignId, socket, message.active))
+            env.realtime.publish(tablePresenceChanged({ campaignId: joined.campaignId, worldId: joined.worldId }))
+          return
+        }
         // Lo que va en vivo (el encuadre, el arrastre, la medida, el láser): solo del máster, y con un tope por segundo
         if (joined.viewer !== 'master') return say({ type: 'error', code: 'BAD_MESSAGE' })
         const now = Date.now()

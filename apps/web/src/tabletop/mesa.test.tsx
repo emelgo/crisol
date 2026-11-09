@@ -116,7 +116,7 @@ async function renderMesa(campaign: Campaign = CAMPAIGN) {
     )
   }
   const router = createAppRouter(
-    createMemoryHistory({ initialEntries: [`/mundos/${WORLD.id}/campanas/${campaign.id}`] })
+    createMemoryHistory({ initialEntries: [`/mundos/${WORLD.id}/campanas/${campaign.id}/mesa`] })
   )
   render(
     <App
@@ -251,7 +251,7 @@ describe('la mesa del máster', () => {
     // Su página, en una ventana de la Mesa (sin irse de la campaña)
     await user.click(screen.getByRole('button', { name: 'Ir a su página' }))
     expect(await screen.findByRole('dialog', { name: /Faro de Brena|Faro/ })).toBeTruthy()
-    expect(router.state.location.pathname).toBe(`/mundos/${WORLD.id}/campanas/${CAMPAIGN.id}`)
+    expect(router.state.location.pathname).toBe(`/mundos/${WORLD.id}/campanas/${CAMPAIGN.id}/mesa`)
   })
 
   it('con el botón derecho (o «⋯»), una escena cambia de nombre y se borra', async () => {
@@ -272,11 +272,12 @@ describe('la mesa del máster', () => {
     expect(api.calls).toContain('deleteScene')
   })
 
-  it('un jugador no tiene mesa: vuelve a su campaña (no «Esta campaña no existe»)', async () => {
+  it('un jugador en /mesa tiene la suya (lo que ve el grupo), no la del máster', async () => {
     const { router } = await renderMesa({ ...CAMPAIGN, role: 'player' })
-    await waitFor(() => expect(router.state.location.pathname).toBe(`/mundos/${WORLD.id}/campanas/${CAMPAIGN.id}`))
-    expect(screen.queryByRole('heading', { name: 'Esta campaña no existe' })).toBeNull()
-    expect(channels).toHaveLength(0)
+    await waitFor(() => expect(channels.length).toBeGreaterThan(0))
+    expect(channels.every((c) => c.view === 'player')).toBe(true)
+    expect(router.state.location.pathname).toBe(`/mundos/${WORLD.id}/campanas/${CAMPAIGN.id}/mesa`)
+    expect(screen.queryByRole('tab', { name: /Escenas/ })).toBeNull()
   })
 })
 

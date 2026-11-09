@@ -126,6 +126,7 @@ describe('herramientas MCP', () => {
       'probar_tirada',
       'proponer_contenido',
       'quien_conoce',
+      'quien_esta_en_la_mesa',
       'quitar_de_juego',
       'quitar_fichas',
       'quitar_pin',

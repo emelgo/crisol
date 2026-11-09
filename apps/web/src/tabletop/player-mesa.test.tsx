@@ -69,12 +69,15 @@ async function renderAt(path: string, withCharacter = true) {
 }
 
 describe('quien juega', () => {
-  it('abre la campaña en la ficha de su personaje, con «Ir a la Mesa»', async () => {
+  it('abre la campaña en su Inicio: su personaje (a su ficha) e «Ir a la Mesa», que se abre en otra pestaña', async () => {
     await renderAt(`/mundos/${WORLD.id}/campanas/${CAMPAIGN.id}`)
-    expect(await screen.findByRole('heading', { level: 1, name: 'Lía' })).toBeDefined()
-    expect(screen.getByRole('link', { name: 'Ir a la Mesa' }).getAttribute('href')).toBe(
-      `/mundos/${WORLD.id}/campanas/${CAMPAIGN.id}/mesa`
+    expect(await screen.findByRole('heading', { level: 1, name: 'La Marca' })).toBeDefined()
+    expect((await screen.findByRole('link', { name: /^Lía/ })).getAttribute('href')).toMatch(
+      new RegExp(`/campanas/${CAMPAIGN.id}/personajes/[^/?]+\\?vista=ficha$`)
     )
+    const toMesa = screen.getByRole('link', { name: 'Ir a la Mesa' })
+    expect(toMesa.getAttribute('href')).toBe(`/mundos/${WORLD.id}/campanas/${CAMPAIGN.id}/mesa`)
+    expect(toMesa.getAttribute('target')).toBe('_blank')
     // Su campaña y dejarla, abajo
     expect(screen.getByText('La campaña: La Marca')).toBeDefined()
   })

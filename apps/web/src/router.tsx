@@ -7,7 +7,7 @@ import { InPlayScreen } from './creatures/in-play.tsx'
 import { LibraryScreen } from './library/library.tsx'
 import { PartyScreen } from './party/route.tsx'
 import { Bootstrap } from './routes/bootstrap.tsx'
-import { CampaignPage, ToMesaIfMaster } from './routes/campaign.tsx'
+import { AdventuresScreen, CampaignBooksScreen, CampaignPage, ToMesaIfMaster } from './routes/campaign.tsx'
 import { CampaignsPage } from './routes/campaigns.tsx'
 import { Consent } from './routes/consent.tsx'
 import { OrganizationHistory, WorldHistory } from './routes/history.tsx'
@@ -44,18 +44,29 @@ const campaignsRoute = createRoute({
   path: '/mundos/$worldId/campanas',
   component: CampaignsPage
 })
+// Lo que se abre en la Mesa (ADR-0021): ?panel=<pestaña> de su barra (tiradas, combate, escenas…), ?pagina=<id> (una
+// página del mundo en su ventana) y ?entrada=<clave> (una entrada del compendio, en la suya)
+const mesaSearch = (search: Record<string, unknown>): { panel?: string; pagina?: string; entrada?: string } => ({
+  ...(typeof search.panel === 'string' && search.panel ? { panel: search.panel } : {}),
+  ...(typeof search.pagina === 'string' && search.pagina ? { pagina: search.pagina } : {}),
+  ...(typeof search.entrada === 'string' && search.entrada ? { entrada: search.entrada } : {})
+})
+// La campaña abre en su Inicio; con lo de la Mesa en la dirección (los enlaces de antes), lleva a la Mesa
 const campaignRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/mundos/$worldId/campanas/$campaignId',
   component: CampaignPage,
-  // ?panel=<pestaña>: la pestaña abierta de la barra de la Mesa (tiradas, combate, escenas…)
-  // ?pagina=<id>: una página del mundo que se abre en su ventana sobre la Mesa (los enlaces de antes a /paginas/$p)
-  // ?entrada=<clave>: una entrada del compendio, en la ventana del compendio
-  validateSearch: (search: Record<string, unknown>): { panel?: string; pagina?: string; entrada?: string } => ({
-    ...(typeof search.panel === 'string' && search.panel ? { panel: search.panel } : {}),
-    ...(typeof search.pagina === 'string' && search.pagina ? { pagina: search.pagina } : {}),
-    ...(typeof search.entrada === 'string' && search.entrada ? { entrada: search.entrada } : {})
-  })
+  validateSearch: mesaSearch
+})
+const booksRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/mundos/$worldId/campanas/$campaignId/libros',
+  component: CampaignBooksScreen
+})
+const adventuresRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/mundos/$worldId/campanas/$campaignId/aventuras',
+  component: AdventuresScreen
 })
 const charactersRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -73,14 +84,14 @@ const characterRoute = createRoute({
 const compendiumRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/mundos/$worldId/campanas/$campaignId/compendio',
-  component: () => (
-    <ToMesaIfMaster panel="compendio">
-      <CompendiumScreen />
-    </ToMesaIfMaster>
-  ),
-  // ?ver=<clave>: lo abierto, para enlazarlo y que «atrás» vuelva a la lista
-  validateSearch: (search: Record<string, unknown>): { ver?: string } =>
-    typeof search.ver === 'string' && search.ver ? { ver: search.ver } : {}
+  component: CompendiumScreen,
+  // ?ver=<clave>: lo abierto, para enlazarlo y que «atrás» vuelva a la lista; ?libro=<clave>&tipo=<tipo>: el compendio
+  // de un libro (y de un tipo), desde su ficha
+  validateSearch: (search: Record<string, unknown>): { ver?: string; libro?: string; tipo?: string } => ({
+    ...(typeof search.ver === 'string' && search.ver ? { ver: search.ver } : {}),
+    ...(typeof search.libro === 'string' && search.libro ? { libro: search.libro } : {}),
+    ...(typeof search.tipo === 'string' && search.tipo ? { tipo: search.tipo } : {})
+  })
 })
 const inPlayRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -103,7 +114,8 @@ const partyRoute = createRoute({
 const tableRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/mundos/$worldId/campanas/$campaignId/mesa',
-  component: MesaScreen
+  component: MesaScreen,
+  validateSearch: mesaSearch
 })
 const screenRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -137,21 +149,13 @@ const asSearch = (search: Record<string, unknown>): { como?: string; pestana?: s
 const worldPagesRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/mundos/$worldId/campanas/$campaignId/paginas',
-  component: () => (
-    <ToMesaIfMaster panel="paginas">
-      <WorldPagesHome />
-    </ToMesaIfMaster>
-  ),
+  component: WorldPagesHome,
   validateSearch: asSearch
 })
 const worldPageRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/mundos/$worldId/campanas/$campaignId/paginas/$pageId',
-  component: () => (
-    <ToMesaIfMaster panel="paginas">
-      <WorldPageView />
-    </ToMesaIfMaster>
-  ),
+  component: WorldPageView,
   validateSearch: asSearch
 })
 const wikiRoute = createRoute({ getParentRoute: () => rootRoute, path: '/mundos/$worldId/wiki', component: WikiHome })
@@ -230,6 +234,8 @@ const routeTree = rootRoute.addChildren([
   worldRoute,
   campaignsRoute,
   campaignRoute,
+  booksRoute,
+  adventuresRoute,
   compendiumRoute,
   inPlayRoute,
   partyRoute,

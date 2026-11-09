@@ -1661,7 +1661,6 @@ export const es = {
     }
   },
   // La mesa del máster (docs/specs/escenas.md, ADR-0018)
-  // Lo que ve quien juega al abrir su campaña: su ficha (campaign/player-home.tsx)
   // El Inicio de una campaña (ADR-0021, campaign/home.tsx); también la pestaña Campaña de la Mesa (campaign/settings.tsx)
   campaignHome: {
     players: 'Jugadores',
@@ -1696,15 +1695,88 @@ export const es = {
     known: 'Lo que sabéis',
     knownLink: 'Las páginas que conocéis'
   },
+  // Los libros (ADR-0021): los de la campaña (campaign/books.tsx), la ficha de uno (campaign/book-window.tsx)
+  books: {
+    title: 'Libros',
+    lead: 'Solo lo de estos libros sale en {{campaign}}.',
+    noSystem: 'La campaña aún no tiene sistema: elígelo en sus ajustes.',
+    show: 'Ver',
+    all: 'Todos',
+    inCampaign: 'En la campaña',
+    inCampaignCount: 'En la campaña ({{count}})',
+    switch: '{{name}} en la campaña',
+    lastOne: 'La campaña necesita al menos un libro',
+    choose: 'Elegir contenido',
+    removed_one: '{{count}} quitada',
+    removed_other: '{{count}} quitadas',
+    entries_one: '{{count}} entrada',
+    entries_other: '{{count}} entradas',
+    always: 'Siempre',
+    ofWorld: 'De {{world}}',
+    fromWorld: 'Del mundo',
+    needs: 'Amplía a {{books}}, que no está',
+    newBook: 'Libro nuevo',
+    inSystem: 'en el sistema {{system}}',
+    open: 'Abrir {{name}}',
+    origin: { pdf: 'De un PDF', file: 'De un archivo', own: 'Hecho a mano', builtIn: 'De serie' },
+    pending_one: '{{count}} para revisar',
+    pending_other: '{{count}} para revisar',
+    // Elegir contenido
+    chooseTitle: '{{name}}: qué entra',
+    search: 'Buscar en el libro',
+    inside: '{{in}} de {{total}} dentro',
+    later: 'Lo que el libro gane después entra.',
+    save: 'Guardar',
+    cancel: 'Cancelar',
+    removeAll: 'Quitar todo',
+    addAll: 'Poner todo',
+    typeAll: '{{type}}: todo',
+    showType: 'Ver {{type}}',
+    // La ficha
+    system: 'Sistema',
+    edition: 'Edición',
+    originLabel: 'Origen',
+    version: 'Versión',
+    license: 'Licencia',
+    brings: 'Qué trae',
+    inCompendium: 'En el compendio',
+    extends: 'Amplía a',
+    usedBy: 'En las campañas',
+    noCampaigns: 'Ninguna campaña lo usa.',
+    empty: 'Aún no trae nada.'
+  },
+  // La sección Mesa de la campaña (ADR-0021): abrir la Mesa en otra pestaña, quién está y cómo va la partida
+  lobby: {
+    open: 'Abrir la Mesa',
+    openTv: 'Abrir la tele',
+    newTab: 'se abre en otra pestaña',
+    present: 'En la Mesa ahora',
+    nobody: 'Nadie en la Mesa.',
+    master: 'Máster',
+    player: 'Jugadora',
+    screen: 'Tele',
+    active: 'Activo',
+    away: 'En otra pestaña',
+    since: 'desde las {{time}}',
+    tabs: '{{count}} pestañas',
+    game: 'La partida',
+    scene: 'Escena abierta',
+    noScene: 'ninguna',
+    tv: 'En la tele',
+    tvHidden: 'a oscuras',
+    tvNothing: 'nada',
+    combat: 'Combate',
+    combatRound: 'ronda {{round}}',
+    combatStart: 'a punto de empezar',
+    noCombat: 'no hay'
+  },
   // Aventuras: su pantalla llega con su propio lienzo
   adventures: {
     title: 'Aventuras',
     soon: 'Pronto: las aventuras de la campaña, con sus capítulos, escenas y criaturas.'
   },
+  // Lo de quien juega en el Inicio de su campaña (campaign/home.tsx)
   playerHome: {
-    toMesa: 'Ir a la Mesa',
-    character: 'Personaje',
-    noCharacter: 'Aún no tienes personaje en esta campaña.',
     create: 'Crear tu personaje',
     campaign: 'La campaña: {{name}}'
   },
@@ -2985,6 +3057,7 @@ export const es = {
     ajustes: 'Ajustes',
     perfil: 'Perfil',
     revelado: 'Lo que sabe el grupo',
+    campana: 'Ajustes de la campaña',
     close: 'Cerrar'
   },
   // El tutorial guiado de cada vista: la primera vez que se entra, qué es cada cosa

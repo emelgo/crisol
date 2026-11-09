@@ -72,7 +72,9 @@ describe('los personajes de una campaña', () => {
 
   it('«Personaje nuevo»: se crea y se abre en el creador; sus pasos con lo que falta y terminarlo', async () => {
     const { router } = renderAt(`/mundos/${WORLD.id}/campanas/${CAMPAIGN.id}/personajes`)
-    expect(await screen.findByRole('heading', { level: 1, name: 'Personajes' })).toBeDefined()
+    // La sección Mesa de la campaña (ADR-0021): sus personajes, debajo de lo de la Mesa
+    expect(await screen.findByRole('heading', { level: 1, name: 'Mesa' })).toBeDefined()
+    expect(screen.getByRole('heading', { level: 2, name: 'Personajes' })).toBeDefined()
     await userEvent.click(screen.getByRole('button', { name: 'Personaje nuevo' }))
     const dialog = within(screen.getByRole('dialog', { name: 'Personaje nuevo' }))
     await userEvent.type(dialog.getByRole('textbox', { name: 'Nombre' }), 'Brisa')

@@ -1,0 +1,86 @@
+/* La portada de un libro: con su imagen o una tapa de su color; las esquinas cortadas de los recuadros */
+.cover {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  aspect-ratio: 3 / 4;
+  clip-path: var(--cut);
+  background: hsl(var(--hue) 28% 22%);
+  color: #fff;
+}
+
+.cover img {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+}
+
+.plain {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(120% 80% at 20% 0%, hsl(var(--hue) 45% 38% / 0.9), transparent 60%),
+    radial-gradient(90% 70% at 100% 100%, hsl(calc(var(--hue) + 40) 40% 18%), transparent 70%),
+    repeating-linear-gradient(115deg, rgb(255 255 255 / 3%) 0 2px, transparent 2px 7px), hsl(var(--hue) 30% 16%);
+}
+
+.card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgb(0 0 0 / 82%) 0%, rgb(0 0 0 / 15%) 46%, transparent 70%);
+}
+
+.text {
+  position: absolute;
+  inset-inline: 14px;
+  inset-block-end: 12px;
+  z-index: 1;
+  display: grid;
+  gap: 2px;
+}
+
+.text b {
+  font: 800 1.35rem / 1 var(--font-display);
+  text-transform: uppercase;
+  text-wrap: balance;
+  text-shadow: 0 1px 8px rgb(0 0 0 / 60%);
+}
+
+.text span {
+  font-size: 0.75rem;
+  opacity: 0.85;
+}
+
+.badge {
+  position: absolute;
+  inset-inline-start: 10px;
+  inset-block-start: 10px;
+  z-index: 1;
+}
+
+.spine {
+  inline-size: 4.6rem;
+  border-radius: 3px;
+  clip-path: none;
+  box-shadow:
+    0 6px 14px -8px rgb(0 0 0 / 70%),
+    inset 3px 0 0 rgb(0 0 0 / 25%);
+}
+
+.spineName {
+  position: absolute;
+  inset: 8px 6px;
+  display: grid;
+  align-content: end;
+  font: 700 0.72rem / 1.05 var(--font-display);
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.dim img,
+.dim .plain {
+  filter: grayscale(0.85) brightness(0.55);
+}

@@ -463,6 +463,7 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   dibujar_escena: { action: 'drawScene' },
   cambiar_escena: { action: 'updateScene' },
   ver_mesa: { action: 'getCampaignTable' },
+  quien_esta_en_la_mesa: { action: 'getTablePresence' },
   abrir_escena: { action: 'openScene' },
   presentar_escena: { action: 'presentScene' },
   ocultar_pantalla: { action: 'hideScreen' },
