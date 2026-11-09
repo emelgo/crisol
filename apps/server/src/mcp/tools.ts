@@ -432,6 +432,14 @@ export const MCP_TOOLS: Record<string, McpTool> = {
     }
   },
   copiar_contenido: { action: 'copyContent' },
+  // Los libros de un sistema (ADR-0021): sus fuentes, con portada y de dónde salen; lo que la IA propone desde un PDF
+  ver_libros: { action: 'getSystemBooks' },
+  entradas_libro: { action: 'getBookEntries' },
+  crear_libro: { action: 'createBook' },
+  cambiar_libro: { action: 'updateBook' },
+  borrar_libro: { action: 'deleteBook' },
+  proponer_contenido: { action: 'proposeContent' },
+  ver_pendientes: { action: 'listPending' },
   // Las criaturas en juego de una campaña (del máster): ponerlas, su hoja, la partida, tirar, aplicar y quitarlas
   ver_en_juego: { action: 'listInPlay' },
   ver_criatura: { action: 'getInPlay' },
@@ -574,6 +582,13 @@ const INSTRUCTIONS =
   'Bolsa de trucos, Confusión) se tiran también con tirar_tabla_compendio, con el orden de la tabla. ' +
   'Los PDF de un mundo y los comunes (los libros del juego, los suplementos) se buscan por dentro con buscar_libros ' +
   '(con su página) y se leen con leer_libro; ver_biblioteca dice cuáles hay y si ya se pueden buscar. ' +
+  'Los libros de un sistema son las fuentes de su contenido (el de serie, los importados, los del máster): ver_libros ' +
+  'dice cuáles hay, qué trae cada uno y qué campañas lo usan; cada campaña elige los suyos (y lo que deja fuera de ' +
+  'ellos, excluded en cambiar_campana). Para pasar un libro desde su PDF: crear_libro (con file, el PDF de ' +
+  'ver_biblioteca, y origin pdf) si aún no existe, leer_libro por tandas de páginas y proponer_contenido con lo que ' +
+  'saques (cada entrada con su página, el texto del PDF del que sale y lo que falte o no esté claro en notes): queda ' +
+  'pendiente de que el máster lo revise en Crisol y no se ve hasta que lo acepte. ver_pendientes dice lo que ya ' +
+  'propusiste. Mete solo lo que dice el libro, en su idioma, sin inventar. ' +
   'El inventario del grupo de una campaña (el botín, el carro) se ve con ver_grupo y se cambia con cambiar_grupo (con ' +
   'su versión): objetos del compendio por su clave o escritos a mano, contenedores y monedas; mover_en_grupo pasa un ' +
   'objeto entre el grupo y un personaje sin duplicarlo, y monedas_grupo pasa o reparte monedas. ' +

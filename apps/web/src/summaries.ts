@@ -118,6 +118,22 @@ export function summaryOf(
     case 'updateSystem':
     case 'deleteSystem':
       return say(action, { name: typeof details.system === 'string' ? details.system : systemName(details) })
+    // Los libros de un sistema (ADR-0021): cuál y de qué sistema
+    case 'createBook':
+    case 'updateBook':
+    case 'deleteBook':
+    case 'proposeContent':
+      return say(action, {
+        book: text(details.book ?? details.name),
+        system: text(details.system),
+        count: typeof details.count === 'number' ? details.count : 0
+      })
+    case 'settlePending':
+      return say(action, {
+        system: text(details.system),
+        accepted: Number(details.accepted ?? 0),
+        discarded: Number(details.discarded ?? 0)
+      })
     // El contenido de un sistema: cuántos documentos y de cuál
     case 'putSystemContent':
     case 'deleteSystemContent': {

@@ -2,14 +2,14 @@
  * Los sistemas de reglas de una cuenta (ADR-0011). Todo lo que los escribe pasa por operation(): queda en el historial
  * y se deshace. Guardar pide la versión que se tenía: si cambió entre medias (otra pestaña, la IA), no se pisa nada
  */
-import { and, asc, count, eq, inArray, isNull, sql } from 'drizzle-orm'
+import { and, asc, count, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { type OperationContext, operation } from '../operation.ts'
 import { prepared } from '../prepared.ts'
 import { campaigns } from '../schema/campaigns.ts'
 import { characters } from '../schema/characters.ts'
 import { organizations } from '../schema/organizations.ts'
-import { systemContent, systems } from '../schema/systems.ts'
+import { type ContentReview, systemContent, systems } from '../schema/systems.ts'
 import { worlds } from '../schema/worlds.ts'
 
 /** Una fila, con el documento ya leído */
@@ -126,6 +126,7 @@ export interface ContentValues {
   ref?: Record<string, unknown> | null
   img?: string | null
   table?: Record<string, unknown> | null
+  review?: ContentReview | null
 }
 
 /**
@@ -140,7 +141,8 @@ export function contentIndex(db: Database, systemId: string) {
       source: systemContent.source,
       concept: systemContent.concept,
       name: sql<unknown>`${systemContent.data} -> 'name'`,
-      automation: sql<string | null>`${systemContent.mechanics} ->> 'automation'`
+      automation: sql<string | null>`${systemContent.mechanics} ->> 'automation'`,
+      review: systemContent.review
     })
     .from(systemContent)
     .where(eq(systemContent.systemId, systemId))
@@ -288,6 +290,140 @@ export function deleteContent(
       .where(and(eq(systemContent.systemId, systemId), inArray(systemContent.key, [...keys])))
     for (const row of found) await w.remove(systemContent, row.id)
     return { system: read(await w.update(systems, systemId, {})), deleted: found.map((r) => r.key) }
+  })
+}
+
+/**
+ * Quita un libro: su documento (ya sin él) y todo su contenido, aceptado o pendiente, si la versión es la que se tenía;
+ * el historial lo devuelve entero
+ */
+export function deleteBook(
+  db: Database,
+  context: OperationContext,
+  systemId: string,
+  version: number,
+  document: Record<string, unknown>,
+  source: string
+) {
+  return operation(db, context, async (w) => {
+    const [current] = await w.read
+      .select({ version: systems.version })
+      .from(systems)
+      .where(eq(systems.id, systemId))
+      .for('update')
+    if (!current || current.version !== version) throw new SystemChangedError()
+    const found = await w.read
+      .select({ id: systemContent.id })
+      .from(systemContent)
+      .where(and(eq(systemContent.systemId, systemId), eq(systemContent.source, source)))
+    await w.removeMany(
+      systemContent,
+      found.map((r) => r.id)
+    )
+    return {
+      system: read(await w.update(systems, systemId, { document: JSON.stringify(document) })),
+      deleted: found.length
+    }
+  })
+}
+
+/**
+ * Lo que propone la IA para un libro: entradas pendientes de revisar, por su clave (si ya hay una pendiente con esa
+ * clave, se cambia; una aceptada no se toca: `taken`). No cambia la versión del sistema: no se ve hasta aceptarlo
+ */
+export function proposeContent(
+  db: Database,
+  context: OperationContext,
+  systemId: string,
+  items: readonly (ContentValues & { review: ContentReview })[]
+) {
+  return operation(db, context, async (w) => {
+    const keys = items.map((i) => i.key)
+    const existing = await w.read
+      .select({ id: systemContent.id, key: systemContent.key, review: systemContent.review })
+      .from(systemContent)
+      .where(and(eq(systemContent.systemId, systemId), inArray(systemContent.key, keys)))
+    const byKey = new Map(existing.map((e) => [e.key, e]))
+    const proposed: string[] = []
+    const taken: string[] = []
+    for (const item of items) {
+      const found = byKey.get(item.key)
+      if (found && !found.review) taken.push(item.key)
+      else if (found) {
+        await w.update(systemContent, found.id, { ...item })
+        proposed.push(item.key)
+      } else {
+        await w.insert(systemContent, { ...item, systemId })
+        proposed.push(item.key)
+      }
+    }
+    return { proposed, taken }
+  })
+}
+
+/** Lo pendiente de revisar de un sistema (de un libro, si se dice), entero */
+export function listPending(db: Database, systemId: string, source?: string) {
+  return db
+    .select()
+    .from(systemContent)
+    .where(
+      and(
+        eq(systemContent.systemId, systemId),
+        isNotNull(systemContent.review),
+        ...(source === undefined ? [] : [eq(systemContent.source, source)])
+      )
+    )
+    .orderBy(asc(systemContent.type), asc(systemContent.key))
+}
+
+/** Cuánto hay pendiente de revisar en cada libro de un sistema */
+export async function pendingCounts(db: Database, systemId: string) {
+  const rows = await db
+    .select({ source: systemContent.source, n: count() })
+    .from(systemContent)
+    .where(and(eq(systemContent.systemId, systemId), isNotNull(systemContent.review)))
+    .groupBy(systemContent.source)
+  return new Map(rows.map((r) => [r.source, r.n]))
+}
+
+/**
+ * Acepta lo pendiente (con su tipo cambiado, si se cambió) o lo descarta (lo borra). Solo toca lo que sigue pendiente;
+ * el sistema sube de versión (lo aceptado ya se ve)
+ */
+export function settlePending(
+  db: Database,
+  context: OperationContext,
+  systemId: string,
+  {
+    accept = [],
+    discard = [],
+    types = {}
+  }: { accept?: readonly string[]; discard?: readonly string[]; types?: Record<string, string> }
+) {
+  return operation(db, context, async (w) => {
+    const keys = [...accept, ...discard]
+    const found = keys.length
+      ? await w.read
+          .select({ id: systemContent.id, key: systemContent.key })
+          .from(systemContent)
+          .where(
+            and(eq(systemContent.systemId, systemId), isNotNull(systemContent.review), inArray(systemContent.key, keys))
+          )
+      : []
+    const accepted: string[] = []
+    const discarded: string[] = []
+    const take = new Set(accept)
+    for (const row of found) {
+      if (take.has(row.key)) {
+        const type = types[row.key]
+        await w.update(systemContent, row.id, { review: null, ...(type ? { type } : {}) })
+        accepted.push(row.key)
+      } else {
+        await w.remove(systemContent, row.id)
+        discarded.push(row.key)
+      }
+    }
+    return { system: read(await w.update(systems, systemId, {})), accepted, discarded }
   })
 }
 

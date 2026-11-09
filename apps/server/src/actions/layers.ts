@@ -33,7 +33,11 @@ export async function contentIndex(
 ): Promise<Layered<ContentEntry>[]> {
   const system = await systemsRepo.contentIndex(ctx.db, systemId)
   if (!world) return system
-  return withWorld(system, seen(world, await worldContentRepo.contentIndex(ctx.db, world.worldId, systemId)))
+  const own = (await worldContentRepo.contentIndex(ctx.db, world.worldId, systemId)).map((e) => ({
+    ...e,
+    review: null
+  }))
+  return withWorld(system, seen(world, own))
 }
 
 /** Unas entradas por su clave: si están en las dos, la del mundo */

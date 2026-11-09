@@ -12,6 +12,7 @@ export const contentOf = (row: {
   ref: Record<string, unknown> | null
   img?: string | null
   table?: Record<string, unknown> | null
+  review?: unknown
 }): ContentItem =>
   ({
     type: row.type,
@@ -22,5 +23,7 @@ export const contentOf = (row: {
     ...(row.mechanics !== null ? { mechanics: row.mechanics } : {}),
     ...(row.ref !== null ? { ref: row.ref } : {}),
     ...(row.img ? { img: row.img } : {}),
-    ...(row.table ? { table: row.table } : {})
+    ...(row.table ? { table: row.table } : {}),
+    // Pendiente de revisar (ADR-0021): lo que lee el contenido se lo salta
+    ...(row.review ? { review: row.review } : {})
   }) as ContentItem

@@ -1,5 +1,15 @@
 import { approve, getAiSettings, listApprovals, reject, setAiMode } from './ai.ts'
 import {
+  createBook,
+  deleteBook,
+  getBookEntries,
+  getSystemBooks,
+  listPending,
+  proposeContent,
+  settlePending,
+  updateBook
+} from './books.ts'
+import {
   createCampaign,
   getCampaign,
   listCampaigns,
@@ -222,6 +232,7 @@ import { createWorld, ensureWorldHome, getWorldHome, listWorlds, renameWorld, up
 
 export * from './action.ts'
 export * from './ai.ts'
+export * from './books.ts'
 export * from './campaigns.ts'
 export * from './characters.ts'
 export * from './combat.ts'
@@ -487,7 +498,15 @@ export const ACTIONS = [
   listSnapshots,
   saveSnapshot,
   restoreSnapshot,
-  deleteSnapshot
+  deleteSnapshot,
+  getSystemBooks,
+  createBook,
+  updateBook,
+  deleteBook,
+  proposeContent,
+  listPending,
+  settlePending,
+  getBookEntries
 ]
 
 /** Las acciones por nombre, solo como tipo: la web las usa sin cargar zod */
@@ -720,4 +739,12 @@ export type Actions = {
   saveSnapshot: typeof saveSnapshot
   restoreSnapshot: typeof restoreSnapshot
   deleteSnapshot: typeof deleteSnapshot
+  getSystemBooks: typeof getSystemBooks
+  createBook: typeof createBook
+  updateBook: typeof updateBook
+  deleteBook: typeof deleteBook
+  proposeContent: typeof proposeContent
+  listPending: typeof listPending
+  settlePending: typeof settlePending
+  getBookEntries: typeof getBookEntries
 }

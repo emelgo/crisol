@@ -40,7 +40,11 @@ export const es = {
     table: 'Mesa',
     sheet: 'Mi ficha',
     characters: 'Personajes',
-    revealed: 'Revelado'
+    revealed: 'Revelado',
+    books: 'Libros',
+    adventures: 'Aventuras',
+    campaignSettings: 'Ajustes',
+    campaignHome: '{{name}}: inicio'
   },
   // Una tirada escrita en una página
   diceRoll: {
@@ -1657,14 +1661,46 @@ export const es = {
     }
   },
   // La mesa del máster (docs/specs/escenas.md, ADR-0018)
-  // La pestaña Campaña de la Mesa: los jugadores de un vistazo (campaign/settings.tsx)
+  // Lo que ve quien juega al abrir su campaña: su ficha (campaign/player-home.tsx)
+  // El Inicio de una campaña (ADR-0021, campaign/home.tsx); también la pestaña Campaña de la Mesa (campaign/settings.tsx)
   campaignHome: {
     players: 'Jugadores',
-    noPlayers: 'Aún no hay nadie: invítalos con el enlace.',
     creating: 'en creación',
-    noCharacter: 'Sin personaje aún'
+    sub: '{{world}} · {{system}}',
+    noSystem: 'sin sistema',
+    players_one: '{{count}} jugador',
+    players_other: '{{count}} jugadores',
+    invite: 'Invitar',
+    leftAt: 'Lo dejasteis en',
+    noScene: 'Aún no hay ninguna escena abierta',
+    combat: 'combate en la ronda {{round}}',
+    combatStart: 'combate a punto de empezar',
+    toMesa: 'Ir a la Mesa',
+    playersTitle: 'Jugadores',
+    characters: 'Personajes',
+    noCharacter: 'Sin personaje aún',
+    noPlayers: 'Aún no hay nadie: invítalos con el enlace.',
+    booksTitle: 'Libros',
+    change: 'Cambiar',
+    booksLine_one: '{{count}} libro',
+    booksLine_other: '{{count}} libros',
+    withWorld: ' y lo de {{world}}',
+    excluded_one: ' · {{count}} entrada quitada',
+    excluded_other: ' · {{count}} entradas quitadas',
+    noBooks: 'Sin libros: la campaña aún no tiene sistema.',
+    adventureTitle: 'Aventura en curso',
+    adventures: 'Aventuras',
+    noAdventure: 'Ninguna en curso.',
+    yours: 'Tu personaje',
+    party: 'El grupo',
+    known: 'Lo que sabéis',
+    knownLink: 'Las páginas que conocéis'
   },
-  // Lo que ve quien juega al abrir su campaña: su ficha (campaign/player-home.tsx)
+  // Aventuras: su pantalla llega con su propio lienzo
+  adventures: {
+    title: 'Aventuras',
+    soon: 'Pronto: las aventuras de la campaña, con sus capítulos, escenas y criaturas.'
+  },
   playerHome: {
     toMesa: 'Ir a la Mesa',
     character: 'Personaje',
@@ -2480,6 +2516,12 @@ export const es = {
       importSystem: 'subió el sistema «{{name}}»',
       putSystemContent: 'guardó {{count}} documentos del contenido de «{{name}}»',
       putSystemContent_one: 'guardó un documento del contenido de «{{name}}»',
+      createBook: 'añadió el libro «{{book}}» a «{{system}}»',
+      updateBook: 'cambió el libro «{{book}}» de «{{system}}»',
+      deleteBook: 'quitó el libro «{{book}}» de «{{system}}»',
+      proposeContent: 'propuso {{count}} entradas para «{{book}}»',
+      proposeContent_one: 'propuso una entrada para «{{book}}»',
+      settlePending: 'revisó lo propuesto para «{{system}}»: {{accepted}} aceptadas y {{discarded}} descartadas',
       deleteSystemContent: 'quitó {{count}} documentos del contenido de «{{name}}»',
       deleteSystemContent_one: 'quitó un documento del contenido de «{{name}}»',
       regenerateInvitation: 'generó un enlace nuevo para {{campaign}}',
@@ -2694,6 +2736,12 @@ export const es = {
       importSystem: 'subir el sistema «{{name}}»',
       putSystemContent: 'guardar {{count}} documentos del contenido de «{{name}}»',
       putSystemContent_one: 'guardar un documento del contenido de «{{name}}»',
+      createBook: 'añadir el libro «{{book}}» a «{{system}}»',
+      updateBook: 'cambiar el libro «{{book}}» de «{{system}}»',
+      deleteBook: 'quitar el libro «{{book}}» de «{{system}}»',
+      proposeContent: 'proponer {{count}} entradas para «{{book}}»',
+      proposeContent_one: 'proponer una entrada para «{{book}}»',
+      settlePending: 'revisar lo propuesto para «{{system}}»',
       deleteSystemContent: 'quitar {{count}} documentos del contenido de «{{name}}»',
       deleteSystemContent_one: 'quitar un documento del contenido de «{{name}}»',
       regenerateInvitation: 'generar un enlace nuevo para {{campaign}}',

@@ -232,7 +232,15 @@ describe('Actions', () => {
       listSnapshots: true,
       saveSnapshot: true,
       restoreSnapshot: true,
-      deleteSnapshot: true
+      deleteSnapshot: true,
+      getSystemBooks: true,
+      createBook: true,
+      updateBook: true,
+      deleteBook: true,
+      proposeContent: true,
+      listPending: true,
+      settlePending: true,
+      getBookEntries: true
     }
     expect(Object.keys(names).sort()).toEqual(ACTIONS.map((a) => a.name).sort())
   })
