@@ -1,19 +1,6 @@
 /* «Sistemas»: lo propio de su pantalla, sobre la de plantillas (templates/screen.module.css) */
 
 /* El nombre abre su ventana: un botón que se ve como el enlace de las otras tarjetas */
-.opener {
-  border: 0;
-  background: none;
-  padding: 0;
-  /* Como el título de las tarjetas de Plantillas y de Mis mundos: condensado y en mayúsculas (el botón no lo hereda) */
-  color: inherit;
-  font: inherit;
-  letter-spacing: inherit;
-  text-transform: inherit;
-  text-align: start;
-  cursor: pointer;
-}
-
 /* Se hacen con la IA: dicho arriba, en una línea */
 .withAi {
   display: flex;

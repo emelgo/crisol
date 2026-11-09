@@ -59,14 +59,15 @@ describe('«Sistemas», en Mis mundos', () => {
   it('solo los tuyos (sin sistemas de serie); al pasar por uno, lo que trae', async () => {
     renderSystems()
     const mine = within(await screen.findByRole('list', { name: 'Tuyos' }))
-    expect(mine.getByRole('button', { name: 'Fronteras' })).toBeDefined()
+    expect(mine.getByRole('link', { name: 'Fronteras' })).toBeDefined()
     expect(mine.getByText('Subido de un archivo')).toBeDefined()
     // Enrique, 2026-11-08: «no debemos tener sistemas de serie»
     expect(screen.queryByRole('list', { name: 'De serie' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'En blanco' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Copiar' })).toBeNull()
-    expect(mine.queryByRole('link')).toBeNull()
-    fireEvent.pointerEnter(mine.getByRole('button', { name: 'Fronteras' }).closest('li') as HTMLElement)
+    // Su único enlace, su nombre: entra en el sistema, con sus libros (ADR-0021)
+    expect(mine.getAllByRole('link').map((l) => l.textContent)).toEqual(['Fronteras'])
+    fireEvent.pointerEnter(mine.getByRole('link', { name: 'Fronteras' }).closest('li') as HTMLElement)
     const preview = within(screen.getByRole('complementary', { name: 'Lo que trae' }))
     expect(preview.getByText('Personaje')).toBeDefined()
     expect(preview.getByText('8 campos')).toBeDefined()
@@ -110,7 +111,7 @@ describe('«Sistemas», en Mis mundos', () => {
     await userEvent.click(dialog.getByRole('button', { name: 'Subir el sistema' }))
     await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Sistema nuevo' })).toBeNull())
     const mine = within(screen.getByRole('list', { name: 'Tuyos' }))
-    expect(await mine.findByRole('button', { name: '5e de prueba' })).toBeDefined()
+    expect(await mine.findByRole('link', { name: '5e de prueba' })).toBeDefined()
     expect(router.state.location.pathname).toBe('/sistemas')
     expect(api.calls.filter((c) => c === 'importSystem')).toHaveLength(1)
   })
@@ -143,7 +144,7 @@ describe('«Sistemas», en Mis mundos', () => {
     await userEvent.click(dialog.getByRole('button', { name: 'Traer el sistema' }))
     await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Sistema nuevo' })).toBeNull())
     expect(
-      await within(screen.getByRole('list', { name: 'Tuyos' })).findByRole('button', { name: 'Mundo Oscuro' })
+      await within(screen.getByRole('list', { name: 'Tuyos' })).findByRole('link', { name: 'Mundo Oscuro' })
     ).toBeDefined()
     expect(api.calls.filter((c) => c === 'importFoundry')).toHaveLength(1)
   })
@@ -151,7 +152,7 @@ describe('«Sistemas», en Mis mundos', () => {
   it('su ventana, si es tuyo: renombrarlo, bajarlo y borrarlo', async () => {
     const { api } = renderSystems()
     const created = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:x')
-    await userEvent.click(await screen.findByRole('button', { name: 'Fronteras' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Ajustes de Fronteras' }))
     const dialog = within(screen.getByRole('dialog', { name: 'Ajustes de Fronteras' }))
     expect(within(dialog.getByText('Versión').closest('div') as HTMLElement).getByText('1')).toBeDefined()
     expect(dialog.getByText('Ninguna')).toBeDefined()
@@ -165,7 +166,7 @@ describe('«Sistemas», en Mis mundos', () => {
     await userEvent.clear(name)
     await userEvent.type(name, 'Fronteras del norte')
     await userEvent.click(dialog.getByRole('button', { name: 'Guardar' }))
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Fronteras del norte' })).toBeDefined())
+    await waitFor(() => expect(screen.getByRole('link', { name: 'Fronteras del norte' })).toBeDefined())
     created.mockRestore()
   })
 
@@ -183,7 +184,7 @@ describe('«Sistemas», en Mis mundos', () => {
       systemChoices: { sources: [], language: 'es', settings: {} }
     }
     renderSystems('/sistemas', [campaign])
-    await userEvent.click(await screen.findByRole('button', { name: 'Fronteras' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Ajustes de Fronteras' }))
     const dialog = within(screen.getByRole('dialog', { name: 'Ajustes de Fronteras' }))
     expect(dialog.getByText('Lo usan «Los páramos»: cámbiales el sistema antes de borrarlo.')).toBeDefined()
     expect(dialog.queryByRole('button', { name: 'Borrar el sistema' })).toBeNull()

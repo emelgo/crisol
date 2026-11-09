@@ -1,0 +1,318 @@
+/* Revisar lo de la IA: arriba el título; en medio, tipos, entradas y el texto del PDF; abajo, lo que se hace */
+.review {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  min-block-size: 100dvh;
+}
+
+.top {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-4);
+  padding: var(--space-6) var(--space-8) var(--space-3);
+  border-block-end: 1px solid var(--color-border);
+}
+
+.grow {
+  flex: 1;
+  min-inline-size: 0;
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 0.85rem;
+  color: var(--color-muted);
+  text-decoration: none;
+}
+
+.back:hover {
+  color: var(--color-text);
+}
+
+.title {
+  margin: var(--space-2) 0 0;
+  font: 800 2rem / 1 var(--font-display);
+  text-transform: uppercase;
+  color: var(--color-h2);
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-ai) 14%, transparent);
+  color: var(--color-ai);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.nothing {
+  padding: var(--space-6) var(--space-8);
+  color: var(--color-muted);
+}
+
+.mid {
+  display: grid;
+  grid-template-columns: 14rem minmax(0, 1fr) minmax(0, 32rem);
+  min-block-size: 0;
+}
+
+.types {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-4) var(--space-3);
+  border-inline-end: 1px solid var(--color-border);
+}
+
+.types button {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--color-text);
+  font: 0.9rem var(--font-body);
+  text-align: start;
+  cursor: pointer;
+}
+
+.types button span {
+  margin-inline-start: auto;
+  font-size: 0.75rem;
+  color: var(--color-muted);
+}
+
+.types button:hover {
+  background: var(--color-raised);
+}
+
+.types button[aria-current="true"] {
+  background: var(--color-raised);
+  box-shadow: inset 2px 0 0 var(--color-brand);
+}
+
+.entries {
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+  padding: var(--space-3) var(--space-5);
+  overflow: auto;
+}
+
+.entriesHead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding-block-end: var(--space-2);
+  border-block-end: 1px solid var(--color-border);
+}
+
+.quiet {
+  font-size: 0.82rem;
+  color: var(--color-muted);
+}
+
+.bulk {
+  padding: 0 var(--space-1);
+  border: 0;
+  background: none;
+  color: var(--color-muted);
+  font: 0.85rem var(--font-body);
+  cursor: pointer;
+}
+
+.bulk:first-of-type {
+  margin-inline-start: auto;
+}
+
+.bulk:hover {
+  color: var(--color-text);
+}
+
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.entry {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) 9.5rem 3.5rem;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-2) var(--space-1);
+  border-block-end: 1px solid var(--color-border);
+}
+
+.entry[aria-current="true"] {
+  background: color-mix(in srgb, var(--color-text) 4%, transparent);
+  box-shadow: inset 2px 0 0 var(--color-brand);
+}
+
+.check {
+  display: inline-grid;
+  place-items: center;
+  inline-size: 1rem;
+  block-size: 1rem;
+  padding: 0;
+  border: 1.5px solid var(--color-field-border);
+  border-radius: 3px;
+  background: var(--color-bg);
+  color: #fff;
+  cursor: pointer;
+}
+
+.check[aria-checked="true"] {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+}
+
+.name {
+  display: grid;
+  gap: 2px;
+  min-inline-size: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.name b {
+  font-weight: 600;
+}
+
+.warn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: var(--color-warning);
+}
+
+.select {
+  block-size: 1.85rem;
+  padding: 0 var(--space-1);
+  border: 1px solid var(--color-border);
+  border-radius: 3px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: 0.82rem var(--font-body);
+}
+
+.page {
+  font-size: 0.8rem;
+  color: var(--color-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.side {
+  display: flex;
+  flex-direction: column;
+  min-block-size: 0;
+  border-inline-start: 1px solid var(--color-border);
+}
+
+.tabs {
+  display: flex;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-5) 0;
+  border-block-end: 1px solid var(--color-border);
+}
+
+.tabs button {
+  padding: 0 0 var(--space-2);
+  border: 0;
+  background: none;
+  color: var(--color-muted);
+  font: 600 0.875rem var(--font-body);
+  cursor: pointer;
+}
+
+.tabs button[aria-selected="true"] {
+  color: var(--color-text);
+  box-shadow: inset 0 -2px 0 var(--color-accent);
+}
+
+.panel {
+  flex: 1;
+  padding: var(--space-4) var(--space-5);
+  overflow: auto;
+}
+
+/* El trozo del PDF: como una hoja impresa */
+.paper {
+  position: relative;
+  padding: var(--space-5) var(--space-6);
+  border-radius: 2px;
+  background: #f3ecdc;
+  box-shadow: 0 8px 24px -12px rgb(0 0 0 / 60%);
+  color: #2b2318;
+  font:
+    0.9rem / 1.55 Georgia,
+    "Times New Roman",
+    serif;
+}
+
+.excerpt {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.pageNumber {
+  position: absolute;
+  inset-inline-end: 12px;
+  inset-block-end: 6px;
+  font-size: 0.7rem;
+  color: #7a6a52;
+}
+
+.result h3 {
+  margin: 0 0 var(--space-2);
+  font: 800 1.4rem / 1 var(--font-display);
+  text-transform: uppercase;
+}
+
+.result dl {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.result dt {
+  font-size: 0.75rem;
+  color: var(--color-muted);
+}
+
+.result dd {
+  margin: 0;
+  font-size: 0.9rem;
+  white-space: pre-wrap;
+}
+
+.bottom {
+  position: sticky;
+  inset-block-end: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-8);
+  border-block-start: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.hint {
+  margin-inline-start: auto;
+  font-size: 0.82rem;
+  color: var(--color-muted);
+}

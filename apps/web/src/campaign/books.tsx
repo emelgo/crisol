@@ -174,7 +174,7 @@ export function CampaignBooks({ worldId, worldName, campaign }: Props) {
           )}
           {books.data.editable && (
             <li className={styles.book}>
-              <Link to="/sistemas" className={styles.newBook}>
+              <Link to="/sistemas/$systemId" params={{ systemId: system.id }} className={styles.newBook}>
                 <Plus aria-hidden="true" size={22} />
                 <span>
                   {t('books.newBook')}

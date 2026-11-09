@@ -20,7 +20,9 @@ import { SignIn } from './routes/sign-in.tsx'
 import { OrganizationTrash, WorldTrash } from './routes/trash.tsx'
 import { WorldPage } from './routes/world.tsx'
 import { Worlds } from './routes/worlds.tsx'
+import { ReviewScreen } from './systems/review.tsx'
 import { SystemsScreen } from './systems/screen.tsx'
+import { SystemScreen } from './systems/system.tsx'
 import { MesaScreen } from './tabletop/mesa.tsx'
 import { ScreenRoute } from './tabletop/screen.tsx'
 import { TemplateView } from './templates/editor.tsx'
@@ -216,6 +218,17 @@ const accountTagsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/
 const systemsRoute = createRoute({ getParentRoute: () => rootRoute, path: '/sistemas', component: SystemsScreen })
 // Las plantillas de página de la cuenta, también en la zona de Mis mundos (ADR-0009)
 const templatesRoute = createRoute({ getParentRoute: () => rootRoute, path: '/plantillas', component: TemplatesScreen })
+// Un sistema por dentro: sus libros (ADR-0021); y la revisión de lo que la IA propuso para uno
+const systemRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/sistemas/$systemId',
+  component: SystemScreen
+})
+const reviewRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/sistemas/$systemId/libros/$bookKey/revisar',
+  component: ReviewScreen
+})
 const templateRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/plantillas/$templateId',
@@ -261,6 +274,8 @@ const routeTree = rootRoute.addChildren([
   accountTagsRoute,
   templatesRoute,
   systemsRoute,
+  systemRoute,
+  reviewRoute,
   templateRoute,
   consentRoute,
   bootstrapRoute,

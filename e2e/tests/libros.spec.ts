@@ -86,3 +86,64 @@ test('la campaña abre en su Inicio, con su barra; desde ahí, sus libros y la M
   await page.goto(`${path}?panel=compendio`)
   await expect(page).toHaveURL(/\/mesa\?panel=compendio$/)
 })
+
+test('un libro nuevo en un sistema: vacío, la IA le propone entradas, se revisan y salen en la campaña (ADR-0021)', async ({
+  page
+}) => {
+  await freshOwner(page)
+  const five = await import5e(page)
+  await createWorld(page, 'Eana')
+  await createCampaign(page, 'La Marca')
+  const { worlds } = await act(page, 'listWorlds', {})
+  const { campaigns } = await act(page, 'listCampaigns', { worldId: worlds[0].id })
+  await act(page, 'updateCampaign', { campaignId: campaigns[0].id, system: five })
+
+  // Sistemas → 5e → Libro nuevo, vacío
+  await page.getByRole('navigation', { name: 'Secciones' }).getByRole('link', { name: 'Sistemas' }).click()
+  await page.getByRole('link', { name: '5e', exact: true }).click()
+  await expect(page.getByRole('heading', { level: 1, name: '5e' })).toBeVisible()
+  await page.getByRole('button', { name: 'Libro nuevo' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Libro nuevo en 5e' })
+  await dialog.getByRole('button', { name: /^Vacío/ }).click()
+  await dialog.getByLabel('Nombre').fill('Grimorio')
+  await page.screenshot({ path: test.info().outputPath('libro-nuevo.png') })
+  await dialog.getByRole('button', { name: 'Crear' }).click()
+  await expect(dialog).toBeHidden()
+  await expect(page.getByRole('button', { name: 'Abrir Grimorio' })).toBeVisible()
+
+  // Lo que haría la IA desde el PDF: proponer entradas, con su página y el texto del que salen
+  const spell = (key: string, name: string, page: number, notes: string[] = []) => ({
+    type: 'conjuro',
+    key,
+    data: { name: { es: name }, nivel: 2, escuela: 'evocacion', descripcion: { es: `${name}: una lanza de brasas.` } },
+    review: { page, excerpt: `${name}\nEvocación de nivel 2\nArrojas una lanza de brasas…`, notes }
+  })
+  await act(page, 'proposeContent', {
+    systemId: five,
+    source: 'grimorio',
+    items: [
+      spell('lanza_de_ceniza', 'Lanza de ceniza', 88),
+      spell('velo_de_eana', 'Velo de Eana', 141, ['Sin tiempo de lanzamiento']),
+      spell('bola_de_fuego_eana', 'Bola de fuego', 64)
+    ]
+  })
+  await page.reload()
+  await page.getByRole('link', { name: '3 para revisar' }).click()
+
+  // La revisión: lo repetido, sin marcar; el texto del PDF al lado
+  await expect(page.getByRole('heading', { level: 1, name: 'Revisar lo que trajo la IA' })).toBeVisible()
+  await expect(page.getByRole('checkbox', { name: 'Añadir Bola de fuego' })).toHaveAttribute('aria-checked', 'false')
+  await page.getByRole('button', { name: /^Velo de Eana/ }).click()
+  await expect(page.getByRole('tabpanel')).toContainText('Evocación de nivel 2')
+  await page.screenshot({ path: test.info().outputPath('revision.png') })
+  await page.getByRole('button', { name: 'Añadir 2 entradas a Grimorio' }).click()
+  await expect(page.getByText('No queda nada por revisar en este libro.')).toBeVisible()
+
+  // En el compendio de la campaña, en cuanto se enciende el libro en ella (los libros nuevos no entran solos)
+  await act(page, 'updateCampaign', {
+    campaignId: campaigns[0].id,
+    systemChoices: { sources: ['srd51', 'srd521', 'grimorio'] }
+  })
+  const found = await act(page, 'searchCampaignContent', { campaignId: campaigns[0].id, query: 'lanza de ceniza' })
+  expect(found.items.map((h: { key: string }) => h.key)).toEqual(['lanza_de_ceniza'])
+})

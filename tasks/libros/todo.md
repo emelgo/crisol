@@ -6,7 +6,7 @@
 - [x] 4. Web: espacio de la campaña (rutas, barra, Mesa como sección, direcciones viejas)
 - [x] 5. Web: Inicio (máster y jugadora)
 - [x] 6. Web: Libros de la campaña
-- [ ] 7. Web: Sistemas → Libros (ficha, ajustes, libro nuevo)
-- [ ] 8. Web: revisión
+- [x] 7. Web: Sistemas → Libros (ficha, ajustes, libro nuevo)
+- [x] 8. Web: revisión
 - [ ] 9. Web: compendio por libro y creador con libros
 - [ ] 10. Cierre: tutoriales, e2e + axe, revisión, documentación
