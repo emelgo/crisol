@@ -131,7 +131,7 @@ describe('quien juega', () => {
       }
     } as unknown as ScreenView
     act(() => channels.find((c) => c.view === 'player')?.onMessage({ type: 'screen', screen: view }))
-    await user.click(panel.getByRole('tab', { name: 'Combate' }))
+    await user.click(panel.getByRole('tab', { name: /^Combate/ }))
     const order = within(panel.getByRole('list', { name: 'Combate' }))
     expect(order.getByText('Ronda 2')).toBeDefined()
     expect(order.getByText('Lía').closest('li')?.getAttribute('aria-current')).toBe('step')

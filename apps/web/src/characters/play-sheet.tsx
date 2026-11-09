@@ -26,6 +26,7 @@ import { FormError } from '../components/field.tsx'
 import { useSettled } from '../components/settled.ts'
 import { useDice } from '../dice/context.tsx'
 import {
+  CARRIABLE_DRAG,
   ITEM_DRAG,
   type ItemDrag,
   MoveMenu,
@@ -518,9 +519,10 @@ function ItemsBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'it
   const { t } = useTranslation()
   const id = useId()
   const [adding, setAdding] = useState(false)
-  // Lo que se cambia jugando de un personaje (su inventario) va junto a lo del grupo: «Mío | Del grupo»
+  // Lo que se cambia jugando de un personaje (su inventario) va junto a lo del grupo: «Lo mío» y «Del grupo»
   const characterId = ctx.subject.id
   const api = useApi()
+  const errorText = useErrorText()
   const party = useQuery({
     queryKey: partyKey(ctx.subject.campaignId),
     queryFn: () => api.call('getParty', { campaignId: ctx.subject.campaignId }),
@@ -531,7 +533,7 @@ function ItemsBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'it
   const withParty =
     Boolean(characterId) && block.play && partyTypes.length > 0 && block.types.every((x) => partyTypes.includes(x))
   // Arrastrar entre «Lo mío» y «Del grupo» (en el móvil, con «Mover»)
-  const { move } = useParty(ctx.subject.campaignId)
+  const { move } = useParty(ctx.subject.campaignId, Boolean(characterId) && block.play)
   const [dropping, setDropping] = useState(false)
   const titleClass = useTitleClass(block.label)
   // La papelera pide un segundo toque para quitar (un toque desviado no borra): cuál está pidiéndolo
@@ -629,7 +631,8 @@ function ItemsBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'it
           className={styles.items}
           data-over={dropping || undefined}
           onDragOver={(event) => {
-            if (!withParty || !event.dataTransfer.types.includes(ITEM_DRAG)) return
+            // Solo lo del grupo que puede llevar (lo suyo ya está aquí; lo escrito a mano se queda en el grupo)
+            if (!withParty || !event.dataTransfer.types.includes(CARRIABLE_DRAG)) return
             event.preventDefault()
             event.dataTransfer.dropEffect = 'move'
             setDropping(true)
@@ -642,7 +645,7 @@ function ItemsBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'it
             const from = readItemDrag(event.dataTransfer)
             if (!from || !('party' in from) || !characterId) return
             event.preventDefault()
-            move.mutate({ from, to: { character: characterId } })
+            move.mutate({ from, to: { character: characterId }, quantity: 1 })
           }}
         >
           {granted.map((it) => row(it.id, it.name))}
@@ -711,6 +714,11 @@ function ItemsBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'it
           {granted.length === 0 && carried.length === 0 && <li className={styles.none}>{t('playSheet.nothing')}</li>}
         </ul>
       }
+      {move.error && (
+        <p className={styles.moveError} role="alert">
+          {errorText(move.error)}
+        </p>
+      )}
       {/* «Del grupo», debajo de lo suyo (como en D&D Beyond): lo de todos, con sus monedas y quién lo puso */}
       {withParty && (
         <>

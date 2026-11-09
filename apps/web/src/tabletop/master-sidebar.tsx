@@ -3,17 +3,20 @@
  * Compendio, Páginas y Ajustes (lienzo «Campaña en la Mesa»). Al empezar un combate se abre la suya
  */
 import type { Campaign, CampaignTableView, TokenView } from '@crisol/contracts'
+import { useQuery } from '@tanstack/react-query'
 import { getRouteApi, useNavigate } from '@tanstack/react-router'
-import { Swords } from 'lucide-react'
+import { Eye, Swords } from 'lucide-react'
 import { useCallback, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
+import { GroupKnowledge } from '../campaign/group-knowledge.tsx'
 import { CampaignSettings } from '../campaign/settings.tsx'
 import { RollLog } from '../dice/log.tsx'
 import { CombatPanel } from './combat-panel.tsx'
 import { CompendiumTab } from './compendium-tab.tsx'
 import styles from './mesa.module.css'
 import { pageWindow } from './page-window.tsx'
+import pagesStyles from './pages-tab.module.css'
 import { PagesTab } from './pages-tab.tsx'
 import { CharactersList, EncountersList, FactionLegend, type Placing } from './panel.tsx'
 import { InScene, ScenesGrid } from './scenes-tab.tsx'
@@ -117,6 +120,25 @@ export function MasterSidebar({
   const windows = useWindows()
   const { tab, pick, folded, setFolded } = sidebar
   const campaignId = campaign.id
+  // ?pagina=: una página que se abre en su ventana al entrar (y se quita de la dirección)
+  const navigate = useNavigate()
+  const asked = route.useSearch().pagina
+  useEffect(() => {
+    if (!asked || !windows) return
+    windows.open(pageWindow(worldId, asked, '…'))
+    void navigate({ to: '.', search: ({ pagina: _, ...rest }) => rest, replace: true })
+  }, [asked, windows, worldId, navigate])
+  // Las páginas que conoce el grupo (su ojo en Páginas): las marcadas para la campaña y, si parte de él, las del mundo
+  const knowledge = useQuery({
+    queryKey: ['pages', worldId, 'group', campaignId],
+    queryFn: () => api.call('listCampaignKnowledge', { campaignId }),
+    enabled: tab === 'pages'
+  })
+  const knownPages = new Set(
+    [...(knowledge.data?.campaign ?? []), ...(knowledge.data?.knowsWorld ? (knowledge.data?.world ?? []) : [])]
+      .filter((item) => item.kind === 'page' && item.known)
+      .map((item) => item.targetId)
+  )
   const combat = table?.combat ?? null
   const canPlace = Boolean(table?.open?.image?.tiles)
   const chosen = tokens.filter((token) => selected.includes(token.id))
@@ -211,7 +233,33 @@ export function MasterSidebar({
     {
       key: 'pages',
       content: () => (
-        <PagesTab worldId={worldId} onOpen={(pageId, title) => windows?.open(pageWindow(worldId, pageId, title))} />
+        <PagesTab
+          worldId={worldId}
+          onOpen={(pageId, title) => windows?.open(pageWindow(worldId, pageId, title))}
+          known={knownPages}
+          extra={
+            <button
+              type="button"
+              className={pagesStyles.group}
+              onClick={() =>
+                windows?.open({
+                  id: 'group-knowledge',
+                  title: t('tabletop.pages.group'),
+                  width: 720,
+                  height: 620,
+                  render: () => (
+                    <div className={styles.windowPad}>
+                      <GroupKnowledge worldId={worldId} campaignId={campaignId} />
+                    </div>
+                  )
+                })
+              }
+            >
+              <Eye aria-hidden="true" size={15} />
+              {t('tabletop.pages.group')}
+            </button>
+          }
+        />
       )
     },
     { key: 'settings', content: () => <CampaignSettings campaign={campaign} worldName={worldName} /> }

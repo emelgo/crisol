@@ -101,6 +101,12 @@ function PlayerSidebar({
   useShown((shown) => {
     if (shown.campaignId === campaign.id) windows?.open(playerPageWindow(worldId, shown.pageId, shown.title))
   })
+  // Lo nuevo para ella (lo revelado que aún no ha abierto): un punto en sus páginas y en la pestaña
+  const news = useQuery({
+    queryKey: ['pages', worldId, 'player', campaign.id, null, 'news'],
+    queryFn: () => api.call('listNews', { campaignId: campaign.id })
+  })
+  const newPages = new Set((news.data?.news ?? []).flatMap((n) => (n.pageId ? [n.pageId] : [])))
   const combat = screen?.combat ?? null
   const systemId = campaign.system?.id ?? null
   const items: SidebarItem[] = [
@@ -180,11 +186,13 @@ function PlayerSidebar({
     },
     {
       key: 'pages',
+      dot: newPages.size > 0 && tab !== 'pages',
       content: () => (
         <PagesTab
           worldId={worldId}
           campaignId={campaign.id}
           onOpen={(pageId, title) => windows?.open(playerPageWindow(worldId, pageId, title))}
+          news={newPages}
         />
       )
     }

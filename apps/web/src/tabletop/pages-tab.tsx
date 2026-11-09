@@ -3,8 +3,8 @@
  * abre (en una ventana sobre la Mesa: docs/diseno.md)
  */
 import { useQuery } from '@tanstack/react-query'
-import { ChevronRight, FileText } from 'lucide-react'
-import { useState } from 'react'
+import { ChevronRight, Eye, FileText } from 'lucide-react'
+import { type ReactNode, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { failed, LoadError } from '../components/load-error.tsx'
@@ -46,12 +46,21 @@ export function visiblePages(pages: TreePage[], open: ReadonlySet<string>, query
 export function PagesTab({
   worldId,
   campaignId,
-  onOpen
+  onOpen,
+  known,
+  news,
+  extra
 }: {
   worldId: string
   /** Quien juega: las que conoce su campaña */
   campaignId?: string
   onOpen: (pageId: string, title: string) => void
+  /** El máster: las que conoce el grupo (con su ojo) */
+  known?: ReadonlySet<string>
+  /** Quien juega: las que tienen algo nuevo para ella (con su punto) */
+  news?: ReadonlySet<string>
+  /** Lo que va encima del buscador («Lo que sabe el grupo») */
+  extra?: ReactNode
 }) {
   const { t } = useTranslation()
   const api = useApi()
@@ -73,6 +82,7 @@ export function PagesTab({
   }
   return (
     <>
+      {extra}
       <input
         className={styles.search}
         type="search"
@@ -117,7 +127,19 @@ export function PagesTab({
               <button type="button" className={styles.title} onClick={() => onOpen(page.id, page.title)}>
                 {page.icon && <span aria-hidden="true">{page.icon} </span>}
                 {page.title}
+                {news?.has(page.id) && (
+                  <>
+                    <i className={styles.new} aria-hidden="true" />
+                    <span className={styles.hidden}>{t('tabletop.pages.new')}</span>
+                  </>
+                )}
               </button>
+              {known?.has(page.id) && (
+                <span className={styles.known} title={t('tabletop.pages.known')}>
+                  <Eye aria-hidden="true" size={14} />
+                  <span className={styles.hidden}>{t('tabletop.pages.known')}</span>
+                </span>
+              )}
             </li>
           ))}
         </ul>

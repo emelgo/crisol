@@ -61,7 +61,11 @@ export function CampaignPage() {
  * Mesa, así que su dirección le lleva a ella con la que toca; quien juega sigue viéndolas (hasta su Mesa)
  */
 export function ToMesaIfMaster({ panel, children }: { panel: string; children: ReactNode }) {
-  const { worldId, campaignId } = useParams({ strict: false }) as { worldId: string; campaignId: string }
+  const { worldId, campaignId, pageId } = useParams({ strict: false }) as {
+    worldId: string
+    campaignId: string
+    pageId?: string
+  }
   const api = useApi()
   const campaigns = useQuery({
     queryKey: ['campaigns', worldId],
@@ -70,12 +74,15 @@ export function ToMesaIfMaster({ panel, children }: { panel: string; children: R
   const role = campaigns.data?.campaigns.find((c) => c.id === campaignId)?.role
   // «Ver como» un personaje (?como=) sigue siendo una vista del máster
   const viewingAs = Boolean((useSearch({ strict: false }) as { como?: string }).como)
+  // Hasta saber quién es, nada (ni la vista vieja ni sus consultas)
+  if (!campaigns.data && !failed(campaigns)) return null
   if (role === 'master' && !viewingAs)
     return (
       <Navigate
         to="/mundos/$worldId/campanas/$campaignId"
         params={{ worldId, campaignId }}
-        search={{ panel }}
+        // Una página: se abre en su ventana sobre la Mesa
+        search={{ panel, ...(pageId ? { pagina: pageId } : {}) }}
         replace
       />
     )

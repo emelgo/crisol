@@ -1701,7 +1701,8 @@ export const es = {
       pages: 'Páginas',
       settings: 'Ajustes',
       fold: 'Plegar la barra',
-      unfold: 'Desplegar la barra'
+      unfold: 'Desplegar la barra',
+      attention: ' (hay algo nuevo)'
     },
     lastRolls: 'Últimas tiradas',
     openScene: 'Abrir {{name}}',
@@ -1731,7 +1732,10 @@ export const es = {
       search: 'Buscar en las páginas',
       empty: 'El mundo aún no tiene páginas.',
       expand: 'Abrir {{title}}',
-      collapse: 'Cerrar {{title}}'
+      collapse: 'Cerrar {{title}}',
+      known: 'La conoce el grupo',
+      new: 'Nueva',
+      group: 'Lo que sabe el grupo'
     },
     scenes: 'Escenas',
     searchScenes: 'Buscar escenas',

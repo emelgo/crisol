@@ -49,8 +49,11 @@ const campaignRoute = createRoute({
   path: '/mundos/$worldId/campanas/$campaignId',
   component: CampaignPage,
   // ?panel=<pestaña>: la pestaña abierta de la barra de la Mesa (tiradas, combate, escenas…)
-  validateSearch: (search: Record<string, unknown>): { panel?: string } =>
-    typeof search.panel === 'string' && search.panel ? { panel: search.panel } : {}
+  // ?pagina=<id>: una página del mundo que se abre en su ventana sobre la Mesa (los enlaces de antes a /paginas/$p)
+  validateSearch: (search: Record<string, unknown>): { panel?: string; pagina?: string } => ({
+    ...(typeof search.panel === 'string' && search.panel ? { panel: search.panel } : {}),
+    ...(typeof search.pagina === 'string' && search.pagina ? { pagina: search.pagina } : {})
+  })
 })
 const charactersRoute = createRoute({
   getParentRoute: () => rootRoute,

@@ -61,6 +61,8 @@ interface WindowsState {
   minimize: (id: string) => void
   restore: (id: string) => void
   move: (id: string, box: Box) => void
+  /** Su título, cuando llega (una página abierta por su id) */
+  rename: (id: string, title: string) => void
 }
 
 const WindowsContext = createContext<WindowsState | null>(null)
@@ -191,9 +193,18 @@ export function WindowsProvider({
     },
     [sizeOfArea]
   )
+  const rename = useCallback(
+    (id: string, title: string) =>
+      setWindows((current) =>
+        current.some((w) => w.id === id && w.title !== title)
+          ? current.map((w) => (w.id === id ? { ...w, title } : w))
+          : current
+      ),
+    []
+  )
   const value = useMemo(
-    () => ({ windows, onLink, open, close, focus, minimize, restore, move }),
-    [windows, onLink, open, close, focus, minimize, restore, move]
+    () => ({ windows, onLink, open, close, focus, minimize, restore, move, rename }),
+    [windows, onLink, open, close, focus, minimize, restore, move, rename]
   )
   return <WindowsContext.Provider value={value}>{children}</WindowsContext.Provider>
 }

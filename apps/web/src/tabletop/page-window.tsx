@@ -5,7 +5,7 @@
 import type { Page } from '@crisol/contracts'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { Eye } from 'lucide-react'
-import { type ReactNode, useState } from 'react'
+import { type ReactNode, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ApiError } from '../api/client.ts'
 import { useApi } from '../api/context.tsx'
@@ -53,6 +53,9 @@ function PageWindow({ worldId, pageId }: { worldId: string; pageId: string }) {
 
 function Opened({ page }: { page: Page }) {
   const tabs = usePageTabs(page)
+  // El título de la ventana, el de la página (abierta por su id, o renombrada)
+  const rename = useWindows()?.rename
+  useEffect(() => rename?.(`page:${page.id}`, page.title), [rename, page.id, page.title])
   return (
     <div className={styles.page} data-in-window="">
       <EntryView key={page.id} page={page} tabs={tabs.data ?? []} />

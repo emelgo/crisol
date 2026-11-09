@@ -29,8 +29,10 @@ type Changed = ActionOutput<'moveItem'>['characters'][number]
 type Item = Loaded['party']['items'][number]
 export const partyKey = (campaignId: string) => ['party', campaignId] as const
 
-/** Lo que se arrastra entre «Lo mío» (en la hoja) y «Del grupo»: de dónde sale */
+/** Lo que se arrastra entre «Lo mío» (en la hoja) y «Del grupo»: de dónde sale. Se pasa de uno en uno (para más, «Mover») */
 export const ITEM_DRAG = 'application/x-crisol-objeto'
+/** Además, lo del grupo que puede llevar un personaje (lo del compendio; lo escrito a mano se queda en el grupo) */
+export const CARRIABLE_DRAG = 'application/x-crisol-objeto-llevable'
 export type ItemDrag = { party: string } | { character: string; item: string }
 
 export function readItemDrag(data: DataTransfer): ItemDrag | null {
@@ -51,10 +53,14 @@ export interface MoveTarget {
 }
 
 /** El grupo de una campaña y lo que se hace con él: lo que sale de cada cambio pone al día también los personajes */
-export function useParty(campaignId: string) {
+export function useParty(campaignId: string, enabled = true) {
   const api = useApi()
   const client = useQueryClient()
-  const loaded = useQuery({ queryKey: partyKey(campaignId), queryFn: () => api.call('getParty', { campaignId }) })
+  const loaded = useQuery({
+    queryKey: partyKey(campaignId),
+    queryFn: () => api.call('getParty', { campaignId }),
+    enabled
+  })
   const done = async (out: { party: Loaded['party']; characters?: Changed[] }) => {
     client.setQueryData<Loaded>(partyKey(campaignId), (old) => (old ? { ...old, party: out.party } : old))
     // Los personajes que cambiaron, al momento (su versión nueva: la hoja sigue guardando sin chocar)
@@ -191,7 +197,7 @@ export function PartyInventory({ campaignId, me }: { campaignId: string; me?: st
               if (!from) return
               event.preventDefault()
               if ('party' in from && party.items.find((i) => i.id === from.party)?.container === container.id) return
-              move.mutate({ from, to: { container: container.id } })
+              move.mutate({ from, to: { container: container.id }, quantity: 1 })
             }}
           >
             <div className={styles.containerHead}>
@@ -232,6 +238,7 @@ export function PartyInventory({ campaignId, me }: { campaignId: string; me?: st
                     onDragStart={(event) => {
                       event.dataTransfer.effectAllowed = 'move'
                       event.dataTransfer.setData(ITEM_DRAG, JSON.stringify({ party: item.id }))
+                      if (item.key) event.dataTransfer.setData(CARRIABLE_DRAG, '1')
                     }}
                   >
                     <span className={styles.itemName}>

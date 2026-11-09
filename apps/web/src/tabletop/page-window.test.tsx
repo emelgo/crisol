@@ -36,6 +36,7 @@ const campaign = (role: Campaign['role'] = 'master'): Campaign => ({
   version: 1
 })
 const CAMPAIGN_ID = crypto.randomUUID()
+const ALDRIC_ID = crypto.randomUUID()
 
 function renderAt(path: string, role: Campaign['role'] = 'master') {
   const api = fakeApi({
@@ -43,7 +44,7 @@ function renderAt(path: string, role: Campaign['role'] = 'master') {
     worlds: [world(role === 'master' ? 'master' : 'player')],
     campaigns: [campaign(role)],
     pages: [
-      { id: crypto.randomUUID(), worldId: WORLD_ID, title: 'Aldric Varn' },
+      { id: ALDRIC_ID, worldId: WORLD_ID, title: 'Aldric Varn' },
       { id: crypto.randomUUID(), worldId: WORLD_ID, title: 'Puerto Gris' }
     ]
   })
@@ -72,6 +73,9 @@ describe('las páginas en ventanas sobre la Mesa', () => {
     expect(screen.getByRole('dialog', { name: 'Puerto Gris' })).toBeDefined()
     // La pestaña sigue abierta: no se ha cambiado de vista
     expect(panel().getByRole('tab', { name: 'Páginas' }).getAttribute('aria-selected')).toBe('true')
+    // «Lo que sabe el grupo», también en su ventana
+    await user.click(panel().getByRole('button', { name: 'Lo que sabe el grupo' }))
+    expect(await screen.findByRole('dialog', { name: 'Lo que sabe el grupo' })).toBeDefined()
   })
 
   it('«Enseñar a los jugadores»: a quien la conoce; si no la conoce nadie, deja revelarla y enseñarla', async () => {
@@ -87,6 +91,12 @@ describe('las páginas en ventanas sobre la Mesa', () => {
     expect(await win.findByRole('button', { name: 'Enseñando · la ven 2' })).toBeDefined()
     expect(api.calls).toContain('reveal')
     expect(win.queryByRole('button', { name: /no la conocen/ })).toBeNull()
+  })
+
+  it('un enlace de antes a una página de la campaña lleva al máster a su Mesa, con ella en su ventana', async () => {
+    renderAt(`/mundos/${WORLD_ID}/campanas/${CAMPAIGN_ID}/paginas/${ALDRIC_ID}`)
+    expect(await screen.findByRole('dialog', { name: 'Aldric Varn' })).toBeDefined()
+    expect(screen.getByRole('tab', { name: 'Páginas' }).getAttribute('aria-selected')).toBe('true')
   })
 
   it('a la jugadora le llega el aviso de la página que le enseñan', async () => {

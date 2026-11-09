@@ -72,8 +72,8 @@ describe('la barra de la Mesa', () => {
     expect(screen.queryByRole('tabpanel')).toBeNull()
     view.unmount()
     render(<Harness />)
-    await user.click(screen.getByRole('button', { name: 'Combate' }))
-    expect(screen.getByRole('tab', { name: 'Combate' }).getAttribute('aria-selected')).toBe('true')
+    await user.click(screen.getByRole('button', { name: /^Combate/ }))
+    expect(screen.getByRole('tab', { name: /^Combate/ }).getAttribute('aria-selected')).toBe('true')
     expect(screen.getByRole('tabpanel').textContent).toBe('Panel de combat')
   })
 

@@ -166,7 +166,12 @@ export function TableSidebar({
                   }}
                 >
                   <Icon aria-hidden="true" size={18} strokeWidth={1.75} />
-                  {item.dot && <i className={styles.dot} aria-hidden="true" />}
+                  {item.dot && (
+                    <>
+                      <i className={styles.dot} aria-hidden="true" />
+                      <span className={styles.hidden}>{t('tabletop.sidebar.attention')}</span>
+                    </>
+                  )}
                 </button>
               </li>
             )
@@ -197,7 +202,12 @@ export function TableSidebar({
             >
               <Icon aria-hidden="true" size={18} strokeWidth={1.75} />
               <span>{t(`tabletop.sidebar.${item.key}`)}</span>
-              {item.dot && <i className={styles.dot} aria-hidden="true" />}
+              {item.dot && (
+                <>
+                  <i className={styles.dot} aria-hidden="true" />
+                  <span className={styles.hidden}>{t('tabletop.sidebar.attention')}</span>
+                </>
+              )}
             </button>
           )
         })}

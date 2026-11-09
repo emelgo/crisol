@@ -3,7 +3,6 @@ import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
 import {
   Backpack,
   BookOpen,
-  Eye,
   Folder,
   Globe,
   Hash,
@@ -462,49 +461,6 @@ function CampaignPanels({
         <Label icon={Layers} text={t('ribbon.table')} />
       </Link>
     </>
-  )
-}
-
-/** Las páginas del mundo de quien juega, con cuántas novedades tiene (lo revelado que aún no ha abierto) */
-function _NewsLabel({ worldId, campaignId, text }: { worldId: string; campaignId: string; text: string }) {
-  const { t } = useTranslation()
-  const api = useApi()
-  const count =
-    useQuery({
-      queryKey: ['pages', worldId, 'player', campaignId, null, 'news'],
-      queryFn: () => api.call('listNews', { campaignId })
-    }).data?.news.length ?? 0
-  return (
-    <>
-      <span className={styles.badged}>
-        <Globe aria-hidden="true" size={20} strokeWidth={1.75} />
-        {count > 0 && (
-          <span aria-hidden="true" className={styles.badge}>
-            {count}
-          </span>
-        )}
-      </span>
-      <span className={styles.text}>{text}</span>
-      {count > 0 && <span className={styles.hidden}>{t('playerPages.newCount', { count })}</span>}
-    </>
-  )
-}
-
-/** «Revelado»: abre «Lo que sabe el grupo» de la campaña como ventana (docs/specs/revelar.md) */
-function _RevealedButton() {
-  const { t } = useTranslation()
-  const windows = useWindow()
-  return (
-    <button
-      type="button"
-      className={styles.item}
-      aria-haspopup="dialog"
-      aria-pressed={windows?.opened === 'revelado'}
-      data-tour="barra-revelado"
-      onClick={(event) => windows?.open('revelado', event.currentTarget)}
-    >
-      <Label icon={Eye} text={t('ribbon.revealed')} />
-    </button>
   )
 }
 
