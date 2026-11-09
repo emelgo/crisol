@@ -20,9 +20,13 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   por «Invitar» junto al título y por la barra de antes; también los pendientes de invitar, unirse y sistemas), la
   revisión (`/agent-skills:review` y `web-design-guidelines`) y el PR con la CI una vez. Para mirarlo: el entorno de
   revisión (servidor 8132, web 5174, `e2e/.revision/`, cuentas `enrique@` y `lucia@revision.test`).
-- **Lo siguiente que pidió Enrique (2026-11-10)**: el importador de sistemas por **libros**, como Roliando y Nivel20:
-  añadir a un sistema un libro (con sus criaturas, conjuros, objetos…) y que cada cosa sepa de qué libro viene, para
-  verlo así en el compendio y elegir libros en cada campaña. Antes, estudiarlos (craft-anything) y entrevista corta.
+- **Lo siguiente que pidió Enrique (2026-11-10)**: **sistemas y libros**, como Roliando y Nivel20. El sistema son las
+  reglas (fichas, campos, tiradas, tipos); los **libros** rellenan el compendio de su sistema (en el 5e, sus libros de
+  D&D comprados y Fateforge, que es compatible; Daggerheart, en otro sistema). Al crear una campaña se elige el sistema
+  y luego sus libros. Hoy los libros son las «fuentes» del sistema y la campaña ya las elige: falta **añadir un libro a
+  un sistema que ya existe** (archivo, módulo de Foundry o la IA leyendo un PDF) y elegirlos por su nombre (con portada)
+  al crear la campaña. Antes, estudiar Roliando y Nivel20 (craft-anything, con una cuenta de prueba en cada una: Enrique
+  dijo que sí) y entrevista corta.
 - Pendiente apuntado: «Archivar» la campaña; la escena en marcha bajo «Ir a la Mesa» en la ficha; la ficha rápida al
   pasar por una criatura del compendio.
 - Dev: si una pantalla da «Ya no existe» o 500 con «relation … does not exist», faltan migraciones en la base de
