@@ -16,6 +16,8 @@ export interface PartyItemRow {
   note?: string
   quantity: number
   container: string
+  /** Quién lo puso en el grupo (el personaje de quien vino) */
+  addedBy?: string
 }
 
 /**

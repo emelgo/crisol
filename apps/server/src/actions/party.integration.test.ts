@@ -138,6 +138,8 @@ describe('el inventario del grupo (docs/specs/grupo.md)', () => {
   it('mover sin duplicar: la jugadora coge del grupo para su personaje y lo devuelve; no con el de otro', async () => {
     const added = await ok200('updateParty', { campaignId, version: 0, add: { key: POCION, quantity: 3 } }, ana.cookie)
     const pocion = added.party.items[0].id
+    // «Lo puso»: el personaje de quien lo añade
+    expect(added.party.items[0].addedBy).toBe('Thora')
     let p = (
       await ok200(
         'moveItem',
@@ -178,9 +180,20 @@ describe('el inventario del grupo (docs/specs/grupo.md)', () => {
     expect((await ok200('undoOperation', { operationId: last.id })).status).toBe('undone')
     expect((await party()).items.find((i: { key: string }) => i.key === POCION).quantity).toBe(1)
     expect((await carried(thora))[0]?.quantity).toBe(2)
-    // Lo escrito a mano se queda en el grupo
+    // Lo escrito a mano se queda en el grupo (y quien lo pone sin personaje no sale como «Lo puso»)
     const llave = (await ok200('updateParty', { campaignId, version: (await party()).version, add: { name: 'Llave' } }))
       .party.items[1]
+    expect(llave.addedBy).toBeUndefined()
+    // Lo que sale de un personaje y no se junta con nada: lo puso él
+    const thoraNow = await carried(thora)
+    const solo = (
+      await ok200(
+        'moveItem',
+        { campaignId, from: { character: thora, item: thoraNow[0]?.id }, to: { container: 'grupo' }, quantity: 1 },
+        ana.cookie
+      )
+    ).party.items.find((i: { key: string }) => i.key === POCION)
+    expect(solo?.addedBy).toBe('Thora')
     expect(await code('moveItem', { campaignId, from: { party: llave.id }, to: { character: thora } })).toEqual({
       status: 400,
       code: 'HANDWRITTEN_STAYS'

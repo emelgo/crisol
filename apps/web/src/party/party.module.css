@@ -371,3 +371,20 @@
   display: grid;
   gap: var(--space-3);
 }
+
+/* Algo que se arrastra encima: se marca dónde caerá */
+.container[data-over] {
+  outline: 2px dashed var(--color-focus);
+  outline-offset: 2px;
+}
+
+.item[draggable="true"] {
+  cursor: grab;
+}
+
+/* «Lo puso»: quién lo dejó en el grupo */
+.addedBy {
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+  white-space: nowrap;
+}

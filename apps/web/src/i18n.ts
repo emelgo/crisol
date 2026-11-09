@@ -596,6 +596,7 @@ export const es = {
   party: {
     title: 'Grupo',
     common: 'Del grupo',
+    addedBy: 'Lo puso',
     coins: 'Monedas del grupo',
     noCoins: 'Su sistema no tiene monedas.',
     manageCoins: 'Gestionar',
@@ -638,7 +639,7 @@ export const es = {
     splitAmong: 'Entre quiénes',
     splitDo: 'Repartir',
     splitLeft: 'Lo que sobre se queda en el grupo.',
-    mine: 'Mío',
+    mine: 'Lo mío',
     theirs: 'Del grupo',
     inventoryOf: 'Inventario',
     noCharacters: 'Aún no tienes un personaje en esta campaña.'

@@ -25,7 +25,16 @@ import { useErrorText } from '../api/errors.ts'
 import { FormError } from '../components/field.tsx'
 import { useSettled } from '../components/settled.ts'
 import { useDice } from '../dice/context.tsx'
-import { MoveMenu, type MoveTarget, PartyInventory, partyKey, useParty } from '../party/party.tsx'
+import {
+  ITEM_DRAG,
+  type ItemDrag,
+  MoveMenu,
+  type MoveTarget,
+  PartyInventory,
+  partyKey,
+  readItemDrag,
+  useParty
+} from '../party/party.tsx'
 import styles from './play-sheet.module.css'
 import { type Change, pickId } from './save.ts'
 
@@ -521,7 +530,9 @@ function ItemsBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'it
   const partyTypes = party.data?.types ?? []
   const withParty =
     Boolean(characterId) && block.play && partyTypes.length > 0 && block.types.every((x) => partyTypes.includes(x))
-  const [view, setView] = useState<'mine' | 'party'>('mine')
+  // Arrastrar entre «Lo mío» y «Del grupo» (en el móvil, con «Mover»)
+  const { move } = useParty(ctx.subject.campaignId)
+  const [dropping, setDropping] = useState(false)
   const titleClass = useTitleClass(block.label)
   // La papelera pide un segundo toque para quitar (un toque desviado no borra): cuál está pidiéndolo
   const [removing, setRemoving] = useState<string | null>(null)
@@ -542,10 +553,22 @@ function ItemsBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'it
         })
       })
     })
-  const row = (itemId: string, name: string, extra?: React.ReactNode) => {
+  const row = (itemId: string, name: string, extra?: React.ReactNode, drag?: ItemDrag) => {
     const values = ctx.state.itemValues[itemId] ?? {}
     return (
-      <li key={itemId} className={styles.item}>
+      <li
+        key={itemId}
+        className={styles.item}
+        draggable={Boolean(drag)}
+        onDragStart={
+          drag
+            ? (event) => {
+                event.dataTransfer.effectAllowed = 'move'
+                event.dataTransfer.setData(ITEM_DRAG, JSON.stringify(drag))
+              }
+            : undefined
+        }
+      >
         <span className={styles.itemName}>{name}</span>
         {block.columns.map((c) => (
           <span key={c.key} className={styles.itemValue}>
@@ -578,26 +601,14 @@ function ItemsBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'it
         <h2 id={id} className={titleClass}>
           {block.label}
         </h2>
-        {withParty && (
-          <fieldset className={styles.views}>
-            <legend className={styles.hidden}>{block.label}</legend>
-            <button type="button" aria-pressed={view === 'mine'} onClick={() => setView('mine')}>
-              {t('party.mine')}
-            </button>
-            <button type="button" aria-pressed={view === 'party'} onClick={() => setView('party')}>
-              {t('party.theirs')}
-            </button>
-          </fieldset>
-        )}
-        {block.play && view === 'mine' && (
+        {block.play && (
           <button type="button" className={styles.add} onClick={() => setAdding(!adding)} aria-expanded={adding}>
             <Plus size={14} aria-hidden="true" />
             {t('playSheet.add')}
           </button>
         )}
       </div>
-      {withParty && view === 'party' && <PartyInventory campaignId={ctx.subject.campaignId} me={characterId} />}
-      {adding && block.play && view === 'mine' && (
+      {adding && block.play && (
         <AddFromCompendium
           campaignId={ctx.subject.campaignId}
           types={block.types}
@@ -611,8 +622,29 @@ function ItemsBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'it
           }}
         />
       )}
-      {view === 'mine' && (
-        <ul className={styles.items}>
+      {withParty && <h3 className={styles.partHead}>{t('party.mine')}</h3>}
+      {
+        // biome-ignore lint/a11y/noStaticElementInteractions: soltar lo del grupo aquí; con teclado, su «Mover»
+        <ul
+          className={styles.items}
+          data-over={dropping || undefined}
+          onDragOver={(event) => {
+            if (!withParty || !event.dataTransfer.types.includes(ITEM_DRAG)) return
+            event.preventDefault()
+            event.dataTransfer.dropEffect = 'move'
+            setDropping(true)
+          }}
+          onDragLeave={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDropping(false)
+          }}
+          onDrop={(event) => {
+            setDropping(false)
+            const from = readItemDrag(event.dataTransfer)
+            if (!from || !('party' in from) || !characterId) return
+            event.preventDefault()
+            move.mutate({ from, to: { character: characterId } })
+          }}
+        >
           {granted.map((it) => row(it.id, it.name))}
           {carried.map((it) =>
             row(
@@ -672,11 +704,19 @@ function ItemsBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'it
                   <Trash2 size={14} aria-hidden="true" />
                   {removing === it.id && <span aria-hidden="true">{t('playSheet.removeShort')}</span>}
                 </button>
-              </span>
+              </span>,
+              withParty && characterId ? { character: characterId, item: it.id } : undefined
             )
           )}
           {granted.length === 0 && carried.length === 0 && <li className={styles.none}>{t('playSheet.nothing')}</li>}
         </ul>
+      }
+      {/* «Del grupo», debajo de lo suyo (como en D&D Beyond): lo de todos, con sus monedas y quién lo puso */}
+      {withParty && (
+        <>
+          <h3 className={styles.partHead}>{t('party.theirs')}</h3>
+          <PartyInventory campaignId={ctx.subject.campaignId} me={characterId} />
+        </>
       )}
     </Part>
   )

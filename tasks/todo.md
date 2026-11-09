@@ -69,7 +69,7 @@ Plan: `tasks/plan.md`. Lienzo: `out/lienzo-campana/`.
   último; si ninguno, crear uno), con «Ir a la Mesa» y en qué escena está la partida.
   - Acepta: la jugadora entra y ve su ficha; en móvil, también.
   - Comprueba: pruebas de la ruta de la jugadora.
-- [ ] 11. **«Del grupo» en el Equipo.** Debajo de lo suyo, el inventario del grupo con sus monedas y «Lo puso»
+- [x] 11. **«Del grupo» en el Equipo.** (En móvil, con «Mover»; «Lo mío» sin plegar.) Debajo de lo suyo, el inventario del grupo con sus monedas y «Lo puso»
   (`addedBy`, migración); arrastrar entre «Lo mío» y «Del grupo» en PC; en móvil, «⋯» con «Pasar al grupo» y «Me lo
   quedo», y «Lo mío» plegado.
   - Acepta: pasar una poción al grupo y recuperarla, en PC y en móvil.

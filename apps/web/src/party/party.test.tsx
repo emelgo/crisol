@@ -2,7 +2,7 @@ import type { Campaign, World } from '@crisol/contracts'
 import type { ContentItem, System } from '@crisol/systems'
 import { fronteras } from '@crisol/systems/fixtures'
 import { createMemoryHistory } from '@tanstack/react-router'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { fakeAccountClient } from '../account/fake.ts'
@@ -223,16 +223,16 @@ describe('el inventario del grupo (docs/specs/grupo.md)', () => {
     expect((await party()).coins).toEqual({ oro: 0 })
   })
 
-  it('en la hoja: «Mío | Del grupo», y «Mover» devuelve al grupo lo que lleva', async () => {
+  it('en la hoja: «Lo mío» y, debajo, «Del grupo»; «Mover» (o arrastrar) devuelve al grupo lo que lleva', async () => {
     const { party, play } = await setUp((id) => `/mundos/${WORLD.id}/campanas/${CAMPAIGN.id}/personajes/${id}`, {
       items: [{ id: 'e1', key: 'escudo', quantity: 2 }]
     })
     expect(await screen.findByRole('heading', { level: 1, name: 'Thora' })).toBeDefined()
     await userEvent.click(await screen.findByRole('tab', { name: 'Lleva' }))
-    // Lo del grupo, en el mismo sitio
-    await userEvent.click(await screen.findByRole('button', { name: 'Del grupo' }))
+    // Lo suyo y, debajo, lo del grupo (como en D&D Beyond)
+    expect(await screen.findByRole('heading', { name: 'Lo mío' })).toBeDefined()
+    expect(screen.getByRole('heading', { name: 'Del grupo' })).toBeDefined()
     expect(await screen.findByText(/El grupo aún no tiene nada/)).toBeDefined()
-    await userEvent.click(screen.getByRole('button', { name: 'Mío' }))
     // Con el teclado: Escape lo cierra y el foco vuelve a «Mover»
     const trigger = await screen.findByRole('button', { name: 'Mover «Escudo»' })
     await userEvent.click(trigger)
@@ -247,5 +247,33 @@ describe('el inventario del grupo (docs/specs/grupo.md)', () => {
       expect((await party()).items).toEqual([expect.objectContaining({ key: 'escudo', quantity: 2 })])
     )
     expect((await play()).items).toEqual([])
+  })
+
+  it('arrastrando: lo del grupo, a «Lo mío»; y lo suyo, al grupo', async () => {
+    const { party, play, api } = await setUp((id) => `/mundos/${WORLD.id}/campanas/${CAMPAIGN.id}/personajes/${id}`, {
+      items: [{ id: 'e1', key: 'escudo', quantity: 1 }]
+    })
+    await api.client.call('updateParty', { campaignId: CAMPAIGN.id, version: 0, add: { key: 'escudo', quantity: 1 } })
+    await screen.findByRole('heading', { level: 1, name: 'Thora' })
+    await userEvent.click(await screen.findByRole('tab', { name: 'Lleva' }))
+    // Un DataTransfer de mentira (jsdom no lo tiene): lo que se pone al empezar, se lee al soltar
+    const store = new Map<string, string>()
+    const dataTransfer = {
+      get types() {
+        return [...store.keys()]
+      },
+      setData: (type: string, value: string) => store.set(type, value),
+      getData: (type: string) => store.get(type) ?? '',
+      effectAllowed: 'all',
+      dropEffect: 'none'
+    }
+    const groupSection = await screen.findByRole('region', { name: 'Del grupo' })
+    const fromParty = within(groupSection).getByText('Escudo').closest('li') as HTMLElement
+    fireEvent.dragStart(fromParty, { dataTransfer })
+    const mine = screen.getByRole('heading', { name: 'Lo mío' }).nextElementSibling as HTMLElement
+    fireEvent.dragOver(mine, { dataTransfer })
+    fireEvent.drop(mine, { dataTransfer })
+    await waitFor(async () => expect((await party()).items).toEqual([]))
+    expect((await play()).items).toEqual([expect.objectContaining({ key: 'escudo', quantity: 2 })])
   })
 })
