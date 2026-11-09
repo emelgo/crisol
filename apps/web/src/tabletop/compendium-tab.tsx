@@ -144,6 +144,7 @@ export function CompendiumTab({
           current={null}
           onOpen={openEntry}
           drag={drag}
+          inTab
         />
       )}
       {booksFolder}
@@ -199,7 +200,7 @@ function Found({
     )
   }
   return (
-    <nav className={compendiumStyles.library} aria-label={t('tabletop.compendium.results')}>
+    <nav className={compendiumStyles.library} aria-label={t('tabletop.compendium.results')} data-in-tab="">
       <ul className={compendiumStyles.shelf}>
         {groups.map(({ section, byType }) => (
           <li key={section.key}>

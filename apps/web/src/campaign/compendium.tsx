@@ -452,8 +452,11 @@ export function Library({
   byWorld,
   current,
   onOpen,
-  drag
+  drag,
+  inTab = false
 }: {
+  /** En la pestaña de la Mesa: sin su propio desplazamiento */
+  inTab?: boolean
   campaignId: string
   sections: Section[]
   types: CompendiumType[]
@@ -562,12 +565,22 @@ export function Library({
   )
   if (layer === 'world')
     return (
-      <nav className={styles.library} aria-label={t('compendium.library')} data-tour="compendio-estantes">
+      <nav
+        className={styles.library}
+        aria-label={t('compendium.library')}
+        data-tour="compendio-estantes"
+        data-in-tab={inTab || undefined}
+      >
         {worldCount === 0 ? <p className={styles.none}>{t('compendium.noWorld')}</p> : shelves(null, 'w:', 'world')}
       </nav>
     )
   return (
-    <nav className={styles.library} aria-label={t('compendium.library')} data-tour="compendio-estantes">
+    <nav
+      className={styles.library}
+      aria-label={t('compendium.library')}
+      data-tour="compendio-estantes"
+      data-in-tab={inTab || undefined}
+    >
       {layer === 'all' && worldCount > 0 && (
         <ul className={styles.shelf}>
           <li>

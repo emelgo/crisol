@@ -845,3 +845,10 @@
 .folder[data-static] {
   cursor: default;
 }
+
+/* En la pestaña Compendio de la Mesa: crece con lo que lleva (la pestaña ya se desplaza) */
+.library[data-in-tab] {
+  flex: none;
+  margin-block-start: 0;
+  overflow: visible;
+}
