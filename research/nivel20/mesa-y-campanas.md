@@ -81,3 +81,8 @@ Nivel20 que pueda servir a la Mesa y a la campaña de Crisol. Mismo método (sin
 7. Invitar con **QR** además del enlace, útil en mesa presencial.
 8. **Distinto**: nuestra Mesa guarda su estado en el servidor (ADR-0018) en vez de salas efímeras, y la campaña tiene
    mundo y conocimiento, no solo diario.
+
+## Con cuenta, 2026-11-10
+
+Sin novedades: el inicio de sesión pidió un reCAPTCHA de imágenes y no se resolvió (ver la misma sección en
+`sistemas-y-libros.md`). Lo de esta nota sigue siendo de la fase pública.

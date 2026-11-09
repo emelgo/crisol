@@ -177,3 +177,15 @@ un jugador el creador de personajes con los libros de la campaña; el editor de 
 cómo se amplía una clase o una lista de otro libro, visibilidad pública o privada, colaboración); la colección con sus
 interruptores; la lista de libros caseros visible con sesión; el bestiario de campaña y «Crear copia» hacia un libro;
 y si hay importación de algún formato.
+
+## Con cuenta, 2026-11-10
+
+**No se pudo entrar.** Con la cuenta de prueba de Enrique (usuario `crisol_estudio`), al pulsar «Iniciar sesión» el
+formulario lanzó un **reCAPTCHA con desafío de imágenes**. Por las reglas del estudio no se resolvió: se abandonó la
+página sin llegar a iniciar sesión, así que no hubo sesión que cerrar ni se creó nada en la cuenta. Todo lo de «Para la
+fase con cuenta de prueba» sigue pendiente: crear una campaña y elegir sus libros, la colección con sus interruptores,
+el editor de libros caseros, el creador de personajes dentro de la campaña y el bestiario de campaña.
+
+**Para reintentarlo**: que Enrique inicie sesión una vez a mano en el navegador del estudio (el desafío suele salir a
+navegadores sin historial) y deje la sesión abierta para el estudio. Mientras tanto, lo de Roliando con cuenta
+(`research/roliando/sistemas-y-libros.md`, «Con cuenta») cubre las cuatro prioridades desde el otro lado.

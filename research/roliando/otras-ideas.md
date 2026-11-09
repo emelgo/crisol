@@ -59,3 +59,39 @@ título y funciones que solo se nombran. La amplitud tiene coste en coherencia [
    mismo algún día (fuera del alcance actual).
 5. Los secretos que el servidor separa al guardar coinciden con lo que ya hace Crisol en el módulo 5: no hay nada
    nuevo que copiar ahí.
+
+## Con cuenta, 2026-11-10
+
+Visto dentro de la app con la cuenta de prueba (marca **[cuenta]**), al crear y configurar la campaña de prueba.
+
+### Ajustes de la campaña
+
+- **Tres niveles de detalle** (Novato, Estándar, Avanzado) que solo cambian **cuántos ajustes se ven**, no sus
+  valores; un aviso dice cuántos más hay en el nivel superior («45 más») con «Ver todos» [cuenta].
+- **Buscador de ajustes**, interruptor **«Solo lo cambiado»** con el recuento de cambiados, y un desplegable de grupo
+  (Contenido, Combate, Avisos, Mapa, Ambiente, Jugadores, Reglas de la casa, Personajes, La mesa, Dados,
+  Automatización, Registro y chat, ajustes propios, tokens, condiciones propias, contenido del sistema, módulos de
+  Foundry, «Para ti») [cuenta].
+- **Presets** (Novato, Estándar, Avanzado) con una frase de lo que suponen, el puesto marcado y «Ver qué cambia» antes
+  de aplicar [cuenta].
+- Cada ajuste es un interruptor o un grupo de opciones con **una frase debajo** de qué hace; los dependientes avisan
+  «depende de X: ajústalo primero» [cuenta].
+- **Ajustes propios del máster** («Tus reglas») que las fórmulas de la hoja pueden leer [cuenta].
+- Los cambios se guardan solos y se pueden deshacer unos segundos [cuenta].
+- La configuración se reparte en secciones (La mesa, Reglas y ajustes, Convivencia, Animaciones, Identidad del máster,
+  Co-másters, Mesas paralelas, Emojis, Avanzado), cada una con un «Siguiente: …» al pie para recorrerlas en orden
+  [cuenta].
+
+### Detalles sueltos
+
+- La entrada del compendio se abre en una **ventana flotante** que se minimiza o se ancla, y se puede «Mostrar» a la
+  mesa [cuenta].
+- Distancias siempre en **doble unidad** (pies / metros) en el texto de las entradas [cuenta].
+- Avisos con **deshacer** tras acciones como llevar un módulo a una campaña [cuenta].
+
+### Qué nos llevamos (añadido)
+
+1. Niveles de detalle que esconden sin cambiar valores, «solo lo cambiado» y buscador: muy útil para la configuración
+   de la campaña de Crisol, que crecerá.
+2. Una frase bajo cada ajuste y el aviso de dependencias, en vez de ayudas aparte.
+3. Recorrer la configuración con «Siguiente: …» al pie de cada sección.
