@@ -245,3 +245,12 @@
   color: var(--color-muted);
   font-size: 0.875rem;
 }
+
+/* En una ventana sobre la Mesa: los libros a la izquierda y el abierto a la derecha */
+.embedded {
+  display: grid;
+  grid-template-columns: minmax(12rem, 16rem) minmax(0, 1fr);
+  gap: var(--space-4);
+  min-block-size: 100%;
+  padding: var(--space-4);
+}

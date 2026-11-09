@@ -2,11 +2,15 @@ import type { Campaign, World } from '@crisol/contracts'
 import { createMemoryHistory } from '@tanstack/react-router'
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { fakeAccountClient } from '../account/fake.ts'
 import { fakeApi } from '../api/fake.ts'
 import { App } from '../app.tsx'
 import { createAppRouter } from '../router.tsx'
+
+// La biblioteca va en la Mesa (Compendio › Libros, y el libro en su ventana): su canal y su lienzo, de mentira
+vi.mock('../tabletop/channel.ts', async () => (await import('../tabletop/fakes.ts')).quietChannel())
+vi.mock('../tabletop/use-renderer.ts', async () => (await import('../tabletop/fakes.ts')).blindRenderer())
 
 const ORG = { id: crypto.randomUUID(), name: 'Fateforge', role: 'owner' as const }
 const WORLD: World = {
@@ -69,29 +73,34 @@ describe('la biblioteca (docs/specs/biblioteca.md)', () => {
     )
   )
 
-  it('los libros con su estado; buscar da el libro y su página, que se abre', async () => {
+  it('la dirección vieja lleva a la Mesa; en Libros, cada uno se abre en su ventana, donde se busca y se lee', async () => {
     const { router } = renderLibrary()
-    expect(await screen.findByRole('heading', { level: 1, name: 'Biblioteca' })).toBeDefined()
-    const books = within(screen.getByRole('region', { name: 'Libros' }))
+    const user = userEvent.setup()
+    await waitFor(() => expect(router.state.location.search).toMatchObject({ panel: 'compendio' }))
+    const panel = within(await screen.findByRole('complementary', { name: 'Panel de la mesa' }))
+    await user.click(await panel.findByRole('button', { name: 'Libros' }))
+    const list = within(panel.getByRole('list', { name: 'Libros' }))
+    expect(list.queryByText('Mapa.png')).toBeNull()
+    await user.click(list.getByRole('button', { name: /Guía de Valdren\.pdf/ }))
+    const window = within(await screen.findByRole('dialog', { name: 'Guía de Valdren.pdf' }))
+    const books = within(window.getByRole('region', { name: 'Libros' }))
     expect(
       books.getByRole('button', { name: /Guía de Valdren\.pdf.*2 páginas · del mundo · Se puede buscar/ })
     ).toBeDefined()
     expect(books.getByRole('button', { name: /Reglas\.pdf.*comunes · En cola/ })).toBeDefined()
-    expect(books.queryByText('Mapa.png')).toBeNull()
 
-    await userEvent.type(screen.getByRole('searchbox', { name: 'Buscar en los libros' }), 'guardia')
-    const results = within(await screen.findByRole('region', { name: 'Lo encontrado' }))
+    await user.type(window.getByRole('searchbox', { name: 'Buscar en los libros' }), 'guardia')
+    const results = within(await window.findByRole('region', { name: 'Lo encontrado' }))
     const hit = await results.findByRole('button', { name: /Página 2/ })
     // También en las páginas de la wiki, con su enlace
     expect(results.getByRole('link', { name: 'La guardia de Puertoceniza' })).toBeDefined()
-    await userEvent.click(hit)
-    await waitFor(() => expect(router.state.location.search).toMatchObject({ libro: GUIA, pagina: 2, q: 'guardia' }))
+    await user.click(hit)
     // El libro, abierto al lado (y su grupo de resultados)
-    expect(screen.getAllByRole('region', { name: 'Guía de Valdren.pdf' })).toHaveLength(2)
+    await waitFor(() => expect(window.getAllByRole('region', { name: 'Guía de Valdren.pdf' })).toHaveLength(2))
 
     // Lo que no está: lo dice
-    await userEvent.clear(screen.getByRole('searchbox', { name: 'Buscar en los libros' }))
-    await userEvent.type(screen.getByRole('searchbox', { name: 'Buscar en los libros' }), 'dragones')
-    expect(await screen.findByText('Nada en los libros.')).toBeDefined()
+    await user.clear(window.getByRole('searchbox', { name: 'Buscar en los libros' }))
+    await user.type(window.getByRole('searchbox', { name: 'Buscar en los libros' }), 'dragones')
+    expect(await window.findByText('Nada en los libros.')).toBeDefined()
   })
 })

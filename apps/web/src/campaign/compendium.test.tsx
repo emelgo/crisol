@@ -4,12 +4,16 @@ import { cinco } from '@crisol/systems/fixtures'
 import { createMemoryHistory } from '@tanstack/react-router'
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { fakeAccountClient } from '../account/fake.ts'
 import { fakeApi } from '../api/fake.ts'
 import { App } from '../app.tsx'
 import { createAppRouter } from '../router.tsx'
 import { announced } from '../testing.ts'
+
+// El máster abre el compendio desde su Mesa: su canal y su lienzo, de mentira
+vi.mock('../tabletop/channel.ts', async () => (await import('../tabletop/fakes.ts')).quietChannel())
+vi.mock('../tabletop/use-renderer.ts', async () => (await import('../tabletop/fakes.ts')).blindRenderer())
 
 const ORG = { id: crypto.randomUUID(), name: 'Fateforge', role: 'owner' as const }
 const WORLD: World = {
@@ -360,7 +364,10 @@ describe('el compendio de una campaña', () => {
   it('el máster oculta un tipo a los jugadores en los ajustes del compendio', async () => {
     const user = userEvent.setup()
     const { api } = renderCompendium({ ...CAMPAIGN, role: 'master' })
-    await user.click(await screen.findByRole('button', { name: 'Ajustes del compendio' }))
+    // El máster lo tiene en su Mesa: la pestaña Compendio y, desde ella, el compendio entero en su ventana
+    await user.click(await screen.findByRole('button', { name: 'Abrir el compendio' }))
+    const window = within(await screen.findByRole('dialog', { name: 'Compendio' }))
+    await user.click(await window.findByRole('button', { name: 'Ajustes del compendio' }))
     const settings = await screen.findByRole('dialog', { name: 'Ajustes del compendio' })
     expect(within(settings).getByText(/Quinta · Viejo y Nuevo/)).toBeDefined()
     const spells = within(settings).getByRole('switch', { name: 'Conjuros' })

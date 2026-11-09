@@ -1,6 +1,7 @@
 import type { Campaign } from '@crisol/contracts'
 import { useQuery } from '@tanstack/react-query'
-import { getRouteApi, Link, Navigate } from '@tanstack/react-router'
+import { getRouteApi, Link, Navigate, useParams, useSearch } from '@tanstack/react-router'
+import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
@@ -135,4 +136,30 @@ function CharactersPanel({ campaign }: { campaign: Campaign }) {
       </ul>
     </section>
   )
+}
+
+/**
+ * Las vistas sueltas de antes (compendio, biblioteca, en juego, páginas): el máster las tiene en las pestañas de su
+ * Mesa, así que su dirección le lleva a ella con la que toca; quien juega sigue viéndolas (hasta su Mesa)
+ */
+export function ToMesaIfMaster({ panel, children }: { panel: string; children: ReactNode }) {
+  const { worldId, campaignId } = useParams({ strict: false }) as { worldId: string; campaignId: string }
+  const api = useApi()
+  const campaigns = useQuery({
+    queryKey: ['campaigns', worldId],
+    queryFn: () => api.call('listCampaigns', { worldId })
+  })
+  const role = campaigns.data?.campaigns.find((c) => c.id === campaignId)?.role
+  // «Ver como» un personaje (?como=) sigue siendo una vista del máster
+  const viewingAs = Boolean((useSearch({ strict: false }) as { como?: string }).como)
+  if (role === 'master' && !viewingAs)
+    return (
+      <Navigate
+        to="/mundos/$worldId/campanas/$campaignId"
+        params={{ worldId, campaignId }}
+        search={{ panel }}
+        replace
+      />
+    )
+  return children
 }

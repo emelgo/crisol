@@ -7,7 +7,7 @@ import { InPlayScreen } from './creatures/in-play.tsx'
 import { LibraryScreen } from './library/library.tsx'
 import { PartyScreen } from './party/route.tsx'
 import { Bootstrap } from './routes/bootstrap.tsx'
-import { CampaignPage } from './routes/campaign.tsx'
+import { CampaignPage, ToMesaIfMaster } from './routes/campaign.tsx'
 import { CampaignsPage } from './routes/campaigns.tsx'
 import { Consent } from './routes/consent.tsx'
 import { OrganizationHistory, WorldHistory } from './routes/history.tsx'
@@ -68,7 +68,11 @@ const characterRoute = createRoute({
 const compendiumRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/mundos/$worldId/campanas/$campaignId/compendio',
-  component: CompendiumScreen,
+  component: () => (
+    <ToMesaIfMaster panel="compendio">
+      <CompendiumScreen />
+    </ToMesaIfMaster>
+  ),
   // ?ver=<clave>: lo abierto, para enlazarlo y que «atrás» vuelva a la lista
   validateSearch: (search: Record<string, unknown>): { ver?: string } =>
     typeof search.ver === 'string' && search.ver ? { ver: search.ver } : {}
@@ -76,7 +80,11 @@ const compendiumRoute = createRoute({
 const inPlayRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/mundos/$worldId/campanas/$campaignId/en-juego',
-  component: InPlayScreen,
+  component: () => (
+    <ToMesaIfMaster panel="compendio">
+      <InPlayScreen />
+    </ToMesaIfMaster>
+  ),
   // ?ver=<id>: la criatura abierta
   validateSearch: (search: Record<string, unknown>): { ver?: string } =>
     typeof search.ver === 'string' && search.ver ? { ver: search.ver } : {}
@@ -100,7 +108,11 @@ const screenRoute = createRoute({
 const libraryRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/mundos/$worldId/campanas/$campaignId/biblioteca',
-  component: LibraryScreen,
+  component: () => (
+    <ToMesaIfMaster panel="compendio">
+      <LibraryScreen />
+    </ToMesaIfMaster>
+  ),
   // ?libro=<id>&pagina=<n>&q=<lo buscado>: el libro abierto, en su página, con lo buscado marcado
   validateSearch: (search: Record<string, unknown>): { libro?: string; pagina?: number; q?: string } => {
     const page = Number(search.pagina)
@@ -120,13 +132,21 @@ const asSearch = (search: Record<string, unknown>): { como?: string; pestana?: s
 const worldPagesRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/mundos/$worldId/campanas/$campaignId/paginas',
-  component: WorldPagesHome,
+  component: () => (
+    <ToMesaIfMaster panel="paginas">
+      <WorldPagesHome />
+    </ToMesaIfMaster>
+  ),
   validateSearch: asSearch
 })
 const worldPageRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/mundos/$worldId/campanas/$campaignId/paginas/$pageId',
-  component: WorldPageView,
+  component: () => (
+    <ToMesaIfMaster panel="paginas">
+      <WorldPageView />
+    </ToMesaIfMaster>
+  ),
   validateSearch: asSearch
 })
 const wikiRoute = createRoute({ getParentRoute: () => rootRoute, path: '/mundos/$worldId/wiki', component: WikiHome })

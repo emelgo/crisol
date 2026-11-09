@@ -131,8 +131,11 @@ describe('las fichas en la mesa', () => {
     await push()
     await waitFor(() => expect(drawn.tokens).toHaveLength(1))
     expect(drawn.tokens[0]).toMatchObject({ label: 'L1', faction: 'hostile', life: 1, hidden: false })
-    // Con ficha ya en la escena, sale de «En juego»
-    expect(within(await panel().findByRole('list', { name: 'En juego' })).getAllByRole('listitem')).toHaveLength(1)
+    // Con ficha ya en la escena, sigue en «En juego» (con su ojo), pero ya no se pone otra vez
+    const after = within(await panel().findByRole('list', { name: 'En juego' }))
+    expect(after.getAllByRole('listitem')).toHaveLength(2)
+    expect(after.queryByRole('button', { name: 'Poner en la mesa: Lobo 1' })).toBeNull()
+    expect(after.getByText('En la escena')).toBeDefined()
   })
 
   it('su tarjeta: dañar, un estado con rondas, ocultarla, su rótulo; y «Guardar como encuentro»', async () => {
@@ -263,6 +266,23 @@ describe('la pestaña Escenas', () => {
       expect((await api.client.call('getCampaignTable', { campaignId: CAMPAIGN.id })).open?.name).toBe('Puerto Gris')
     )
     expect(api.pages.map((page) => page.title)).toContain('Puerto Gris')
+  })
+})
+
+describe('la pestaña Compendio', () => {
+  it('busca en el compendio de la campaña; una entrada se abre en la ventana del compendio, y los libros aparte', async () => {
+    const user = userEvent.setup()
+    await renderTable()
+    await user.click(panel().getByRole('tab', { name: 'Compendio' }))
+    const results = within(await panel().findByRole('list', { name: 'Entradas' }))
+    // Una criatura: se pone en la mesa con su «+» (o arrastrándola) y su nombre la abre
+    expect(results.getByRole('button', { name: 'Poner en la mesa: Lobo' })).toBeDefined()
+    await user.click(results.getByRole('button', { name: /^Lobo/ }))
+    expect(await screen.findByRole('dialog', { name: 'Compendio' })).toBeDefined()
+    // «Libros»: los del mundo (aquí, ninguno)
+    await user.click(panel().getByRole('button', { name: 'Libros' }))
+    expect(panel().queryByRole('list', { name: 'Entradas' })).toBeNull()
+    expect(panel().getByText('Aún no hay PDF en el mundo ni en los comunes.')).toBeDefined()
   })
 })
 

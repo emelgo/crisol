@@ -11,10 +11,11 @@ import { useApi } from '../api/context.tsx'
 import { CampaignSettings } from '../campaign/settings.tsx'
 import { RollLog } from '../dice/log.tsx'
 import { CombatPanel } from './combat-panel.tsx'
+import { CompendiumTab } from './compendium-tab.tsx'
 import styles from './mesa.module.css'
 import { pageWindow } from './page-window.tsx'
 import { PagesTab } from './pages-tab.tsx'
-import { CharactersList, CreaturesList, EncountersList, FactionLegend, ImagesList, type Placing } from './panel.tsx'
+import { CharactersList, EncountersList, FactionLegend, type Placing } from './panel.tsx'
 import { RollToasts } from './roll-toasts.tsx'
 import { InScene, ScenesGrid } from './scenes-tab.tsx'
 import {
@@ -171,15 +172,15 @@ export function MasterSidebar({
     {
       key: 'compendium',
       content: () => (
-        <>
-          <CreaturesList campaignId={campaignId} table={table} canPlace={canPlace} onPlace={onPlace} />
-          {chosen.length > 0 && (
-            <>
-              <h3 className={styles.tabSection}>{t('tabletop.tabs.images')}</h3>
-              <ImagesList worldId={worldId} selected={chosen} onImage={onImage} />
-            </>
-          )}
-        </>
+        <CompendiumTab
+          worldId={worldId}
+          campaignId={campaignId}
+          table={table}
+          selected={chosen}
+          canPlace={canPlace}
+          onPlace={onPlace}
+          onImage={onImage}
+        />
       )
     },
     {

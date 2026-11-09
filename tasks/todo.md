@@ -34,7 +34,7 @@ Plan: `tasks/plan.md`. Lienzo: `out/lienzo-campana/`.
   que hay en la escena (personajes y criaturas, con PG, ocultar o mostrar, mandar al combate). Lo de En juego entra aquí.
   - Acepta: se abre y se presenta una escena; se oculta una criatura; se manda al combate.
   - Comprueba: pruebas del panel de escenas.
-- [ ] 6. **Compendio con Libros.** Buscar con categorías (Criaturas, Objetos, Conjuros, Reglas, Libros); arrastrar
+- [x] 6. **Compendio con Libros.** Buscar con categorías (Criaturas, Objetos, Conjuros, Reglas, Libros); arrastrar
   criaturas y objetos al mapa; pasar el ratón por una criatura enseña su ficha rápida; Libros abre el lector de PDF en
   ventana o en el panel.
   - Acepta: se suelta un goblin en el mapa desde el compendio; se busca en un libro.

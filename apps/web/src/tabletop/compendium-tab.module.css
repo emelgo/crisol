@@ -1,0 +1,207 @@
+/* La pestaña Compendio de la Mesa: buscador, apartados como pestañas finas y filas que se arrastran al mapa */
+.search {
+  inline-size: 100%;
+  block-size: 2.25rem;
+  padding: 0 0.75rem;
+  border: 1px solid var(--color-frame);
+  border-radius: 3px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.875rem;
+}
+
+.search:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 1px;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 14px;
+  padding: 0 2px;
+  border-block-end: 1px solid var(--color-border);
+}
+
+.filters button {
+  position: relative;
+  padding: 6px 0 8px;
+  border: 0;
+  background: none;
+  color: var(--color-muted);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.filters button:hover,
+.filters button[aria-pressed="true"] {
+  color: var(--color-text);
+}
+
+.filters button[aria-pressed="true"]::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  inset-block-end: -1px;
+  block-size: 2px;
+  background: var(--color-brand);
+}
+
+.filters button:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.muted {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+.section {
+  margin: 0.5rem 0 0;
+  padding: 0;
+  border: 0;
+  color: var(--color-muted);
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+.rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-block-size: 2.5rem;
+  margin-inline: -8px;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.row:hover,
+.row:focus-within {
+  background: var(--color-raised);
+}
+
+.row[draggable="true"] {
+  cursor: grab;
+}
+
+.avatar {
+  display: grid;
+  flex: none;
+  place-items: center;
+  inline-size: 1.875rem;
+  block-size: 1.875rem;
+  border-radius: 50%;
+  background: var(--color-raised);
+  color: var(--color-muted);
+  font-family: var(--font-display);
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.avatar[data-actor] {
+  border: 2px solid #ff8a4c;
+  background: #2a2a30;
+  color: #ffffff;
+}
+
+.bookIcon {
+  flex: none;
+  color: var(--color-muted);
+}
+
+.name {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-inline-size: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  text-align: start;
+}
+
+button.name {
+  cursor: pointer;
+}
+
+.name b {
+  overflow: hidden;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.name small {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+}
+
+.icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: none;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.icon:hover:not(:disabled) {
+  color: var(--color-text);
+}
+
+.icon:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.name:focus-visible,
+.icon:focus-visible,
+.all:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.all {
+  align-self: flex-start;
+  margin-block-start: 0.5rem;
+  padding: 6px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.all:hover {
+  border-color: var(--color-frame);
+  background: var(--color-raised);
+}
+
+.icon[aria-pressed="true"] {
+  color: var(--color-secret-text);
+}

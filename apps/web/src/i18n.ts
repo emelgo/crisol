@@ -1700,6 +1700,17 @@ export const es = {
     toCombat: 'Meter a {{name}} en el combate',
     onlyYou: 'solo tú',
     forYou: 'para ti',
+    compendium: {
+      search: 'Buscar en el compendio',
+      sections: 'Apartados',
+      all: 'Todo',
+      books: 'Libros',
+      results: 'Entradas',
+      inPlay: 'En juego',
+      pages_one: '1 página',
+      pages_other: '{{count}} páginas',
+      openAll: 'Abrir el compendio'
+    },
     pages: {
       search: 'Buscar en las páginas',
       empty: 'El mundo aún no tiene páginas.',
@@ -1729,7 +1740,6 @@ export const es = {
     noCharacters: 'Ningún personaje.',
     searchCreatures: 'Buscar criaturas',
     inPlay: 'En juego',
-    compendium: 'Del compendio',
     count: 'Cuántas',
     noSystem: 'La campaña no tiene sistema.',
     ofWorld: 'Del mundo',

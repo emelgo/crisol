@@ -124,11 +124,40 @@ function useSeenEntry(worldId: string, campaignId: string, key: string | null, p
   }, [key, news.data, api, client, worldId, campaignId])
 }
 
+/** La ruta del compendio (de quien juega): lo abierto va en la dirección */
 export function CompendiumScreen() {
-  const { t } = useTranslation()
   const { worldId, campaignId } = route.useParams()
   const { ver } = route.useSearch()
   const navigate = route.useNavigate()
+  return (
+    <Compendium
+      worldId={worldId}
+      campaignId={campaignId}
+      ver={ver ?? null}
+      onVer={(key) => void navigate({ search: key ? { ver: key } : {} })}
+    />
+  )
+}
+
+/**
+ * El compendio de una campaña: en su ruta o en una ventana sobre la Mesa (embedded: sin el título de la pestaña del
+ * navegador, que es el de la Mesa)
+ */
+export function Compendium({
+  worldId,
+  campaignId,
+  ver,
+  onVer,
+  embedded = false
+}: {
+  worldId: string
+  campaignId: string
+  /** La entrada abierta */
+  ver: string | null
+  onVer: (key: string | null) => void
+  embedded?: boolean
+}) {
+  const { t } = useTranslation()
   const api = useApi()
   const { account, pending } = useAccounts().useAccount()
   const narrow = useNarrow()
@@ -163,8 +192,8 @@ export function CompendiumScreen() {
   const items = hits.data?.pages.flatMap((p) => p.items) ?? []
   // Lo abierto va en la dirección: se enlaza y, en el móvil, «atrás» vuelve a la lista
   const shown = ver ?? null
-  const open = (key: string) => void navigate({ search: { ver: key } })
-  const back = () => void navigate({ search: {} })
+  const open = (key: string) => onVer(key)
+  const back = () => onVer(null)
   // Al volver a la lista (en lo estrecho), el foco va a lo que estaba abierto
   const [lastShown, setLastShown] = useState<string | null>(null)
   if (shown && shown !== lastShown) setLastShown(shown)
@@ -199,7 +228,7 @@ export function CompendiumScreen() {
   if (!system) {
     return (
       <section className={styles.empty}>
-        <PageTitle>{t('compendium.title')}</PageTitle>
+        {embedded ? <h2>{t('compendium.title')}</h2> : <PageTitle>{t('compendium.title')}</PageTitle>}
         <p>{t('compendium.noSystem')}</p>
       </section>
     )
@@ -219,11 +248,17 @@ export function CompendiumScreen() {
 
   return (
     <SystemIdContext.Provider value={system.id}>
-      <div className={styles.page} data-reading={narrow && shown ? '' : undefined}>
+      <div
+        className={styles.page}
+        data-reading={narrow && shown ? '' : undefined}
+        data-embedded={embedded || undefined}
+      >
         {/* El título, en el sitio de todas las pantallas (components/screen.tsx) */}
-        <div className={styles.top}>
-          <PageTitle>{t('compendium.title')}</PageTitle>
-        </div>
+        {!embedded && (
+          <div className={styles.top}>
+            <PageTitle>{t('compendium.title')}</PageTitle>
+          </div>
+        )}
         <aside className={styles.side} aria-label={t('compendium.title')}>
           <div className={styles.sideHead}>
             <span className={styles.system}>
