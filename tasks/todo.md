@@ -49,12 +49,12 @@ Plan: `tasks/plan.md`. Lienzo: `out/lienzo-campana/`.
   traer delante, minimizar abajo a la izquierda, cerrar, recordar dónde estaban; el zoom se esconde si hay minimizadas.
   - Acepta: dos ventanas se mueven y se apilan; minimizada vuelve a su sitio; con teclado se mueve y se cierra.
   - Comprueba: pruebas del gestor.
-- [ ] 8. **Páginas en ventanas.** Pestaña Páginas: el árbol del mundo con buscador (el máster, todo, con un ojo en las
+- [x] 8. **Páginas en ventanas.** (Del máster; las de la jugadora, con su Mesa en la tarea 12.) Pestaña Páginas: el árbol del mundo con buscador (el máster, todo, con un ojo en las
   conocidas; la jugadora, solo las suyas); una página se abre en ventana (el máster puede escribir; la jugadora, leer);
   los enlaces de dentro abren otra ventana.
   - Acepta: abrir Aldric Varn y Puerto Gris a la vez sin dejar la Mesa; el ojo dice quién la conoce.
   - Comprueba: pruebas de la pestaña y de la ventana de página.
-- [ ] 9. **Enseñar a los jugadores y fichas en ventana.** Acción `showPage` (y su herramienta MCP): revela si hace falta y
+- [x] 9. **Enseñar a los jugadores y fichas en ventana.** Acción `showPage` (y su herramienta MCP): revela si hace falta y
   se la abre en ventana a los miembros conectados; la ventana dice «Enseñando» y quién la ve. Las fichas de personajes y
   criaturas, también en ventana.
   - Acepta: el máster enseña una página y a la jugadora se le abre; la hoja de una ficha del mapa abre en ventana.

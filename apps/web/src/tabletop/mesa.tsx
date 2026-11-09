@@ -60,7 +60,7 @@ import type { RendererScene } from './renderer.ts'
 import { SnapshotsPanel, THUMBNAIL_BYTES, THUMBNAIL_SIDE } from './snapshots.tsx'
 import { TokenCard } from './token-card.tsx'
 import { TokenImageEditor } from './token-image.tsx'
-import { TokenSheet } from './token-sheet.tsx'
+import { sheetWindow } from './token-sheet.tsx'
 import { arrowMoves, cellSide, dragMoves, dropAt, tokenAt, tokenRadius, tokensIn } from './tokens.ts'
 import { TextInput, ToolBar, ToolsPanel } from './tools-panel.tsx'
 import { useScenePreparation } from './use-preparation.ts'
@@ -82,7 +82,7 @@ import {
 } from './vision.tsx'
 import { AsGroupBanner, FogTools, VisionPanel } from './vision-panel.tsx'
 import { useWidgets, WidgetCards, WidgetsPanel } from './widgets.tsx'
-import { WindowLayer, WindowsProvider } from './windows.tsx'
+import { useWindows, WindowLayer, WindowsProvider } from './windows.tsx'
 
 const route = getRouteApi('/mundos/$worldId/campanas/$campaignId/mesa')
 
@@ -401,12 +401,11 @@ export function Mesa({
               />
             )}
             {byId(sheetFor) && (
-              <TokenSheet
-                key={`sheet-${sheetFor}`}
+              <SheetOpener
                 token={byId(sheetFor) as TokenView}
                 campaignId={campaignId}
                 systemId={systemId}
-                onClose={() => setSheetFor(null)}
+                onDone={() => setSheetFor(null)}
               />
             )}
             {imageFor && byId(imageFor.tokenId) && (
@@ -1432,4 +1431,26 @@ function TokenList({
       ))}
     </ul>
   )
+}
+
+/** Pedir la hoja de una ficha (doble clic, «Abrir hoja»): se abre en su ventana */
+function SheetOpener({
+  token,
+  campaignId,
+  systemId,
+  onDone
+}: {
+  token: TokenView
+  campaignId: string
+  systemId: string | null
+  onDone: () => void
+}) {
+  const windows = useWindows()
+  useEffect(() => {
+    windows?.open(
+      sheetWindow({ kind: token.actor.kind, id: token.actor.id, name: token.actor.name }, campaignId, systemId)
+    )
+    onDone()
+  }, [windows, token, campaignId, systemId, onDone])
+  return null
 }

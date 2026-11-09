@@ -954,3 +954,24 @@
 .stageBox:has([data-window-dock]) .zoom {
   visibility: hidden;
 }
+
+/* Un nombre que abre su hoja (en Personajes) */
+.opens {
+  flex: 1;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.opens:hover b {
+  text-decoration: underline;
+}
+
+.opens:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}

@@ -27,6 +27,7 @@ import {
   useSidebarFolded,
   useSidebarTab
 } from './sidebar.tsx'
+import { sheetWindow } from './token-sheet.tsx'
 import { useWindows } from './windows.tsx'
 
 const route = getRouteApi('/mundos/$worldId/campanas/$campaignId')
@@ -164,7 +165,15 @@ export function MasterSidebar({
       key: 'characters',
       content: () => (
         <>
-          <CharactersList campaignId={campaignId} table={table} canPlace={canPlace} onPlace={onPlace} />
+          <CharactersList
+            campaignId={campaignId}
+            table={table}
+            canPlace={canPlace}
+            onPlace={onPlace}
+            onOpen={(character) =>
+              windows?.open(sheetWindow({ kind: 'character', ...character }, campaignId, systemId))
+            }
+          />
           <FactionLegend />
         </>
       )

@@ -335,42 +335,12 @@
 }
 
 /* La hoja, en un panel a la derecha del mapa */
-.sheet {
-  position: absolute;
-  inset-block: 0;
-  inset-inline-end: 0;
-  z-index: 16;
-  inline-size: min(30rem, 100%);
-  overflow-y: auto;
+/* La hoja de una ficha, dentro de su ventana sobre la Mesa */
+.windowSheet {
+  min-block-size: 100%;
   padding: var(--space-4);
-  border-inline-start: 1px solid var(--color-border);
   background: var(--color-bg);
-  box-shadow: -18px 0 44px rgb(0 0 0 / 0.4);
   color: var(--color-text);
-  scrollbar-width: thin;
-  animation: entra 0.2s ease-out;
-}
-
-@keyframes entra {
-  from {
-    opacity: 0;
-    transform: translateX(16px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-.sheet:focus-visible {
-  outline: none;
-}
-
-.sheetClose {
-  position: sticky;
-  inset-block-start: 0;
-  z-index: 1;
-  margin-inline-start: auto;
 }
 
 .characterSheet h2 {

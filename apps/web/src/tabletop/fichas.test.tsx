@@ -166,12 +166,13 @@ describe('las fichas en la mesa', () => {
     expect(card.getByRole('list', { name: 'Estados' }).textContent).toContain('2 rondas')
     await user.click(card.getByRole('button', { name: 'Quitar Derribado' }))
     await waitFor(async () => expect((await tokensOf(api))[0]?.actor.conditions).toHaveLength(0))
-    // «Abrir hoja»: la de la criatura, al lado, sin salir de la mesa
+    // «Abrir hoja»: la de la criatura, en su ventana sobre la Mesa
     await user.click(card.getByRole('button', { name: 'Abrir hoja' }))
-    const sheet = await screen.findByRole('region', { name: 'Hoja de Lobo 1' })
-    expect(await within(sheet).findByRole('heading', { name: 'Lobo 1' })).toBeDefined()
-    await user.click(within(sheet).getByRole('button', { name: 'Cerrar la hoja' }))
-    expect(screen.queryByRole('region', { name: 'Hoja de Lobo 1' })).toBeNull()
+    const sheet = await screen.findByRole('dialog', { name: 'Lobo 1' })
+    // El título de la ventana y el de la hoja
+    expect(await within(sheet).findAllByRole('heading', { name: 'Lobo 1' })).toHaveLength(2)
+    await user.click(within(sheet).getByRole('button', { name: 'Cerrar Lobo 1' }))
+    expect(screen.queryByRole('dialog', { name: 'Lobo 1' })).toBeNull()
     await user.click(card.getByRole('button', { name: 'Ocultar' }))
     await waitFor(async () => expect((await tokensOf(api))[0]?.hidden).toBe(true))
     await user.click(card.getByRole('button', { name: 'Ajustes de la ficha' }))

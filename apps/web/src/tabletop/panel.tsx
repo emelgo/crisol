@@ -75,7 +75,8 @@ function PlaceRow({
   avatar,
   canPlace,
   onPlace,
-  done
+  done,
+  onOpen
 }: {
   placing: Placing
   name: string
@@ -85,15 +86,24 @@ function PlaceRow({
   onPlace: (placing: Placing) => void
   /** Ya está en el mapa */
   done?: boolean
+  /** Su nombre abre su hoja (en su ventana) */
+  onOpen?: () => void
 }) {
   const { t } = useTranslation()
   return (
     <li className={styles.sceneRow} draggable={canPlace && !done} onDragStart={dragging(placing)} data-place="">
       {avatar}
-      <div className={styles.sceneName}>
-        <b>{name}</b>
-        <span>{detail}</span>
-      </div>
+      {onOpen ? (
+        <button type="button" className={`${styles.sceneName} ${styles.opens}`} onClick={onOpen}>
+          <b>{name}</b>
+          <span>{detail}</span>
+        </button>
+      ) : (
+        <div className={styles.sceneName}>
+          <b>{name}</b>
+          <span>{detail}</span>
+        </div>
+      )}
       {!done && (
         <button
           type="button"
@@ -121,12 +131,15 @@ export function CharactersList({
   campaignId,
   table,
   canPlace,
-  onPlace
+  onPlace,
+  onOpen
 }: {
   campaignId: string
   table: CampaignTableView | null
   canPlace: boolean
   onPlace: (placing: Placing) => void
+  /** Abrir la hoja de uno */
+  onOpen?: (character: { id: string; name: string }) => void
 }) {
   const { t } = useTranslation()
   const api = useApi()
@@ -156,6 +169,7 @@ export function CharactersList({
               canPlace={canPlace}
               onPlace={onPlace}
               done={onMap.has(character.id)}
+              {...(onOpen ? { onOpen: () => onOpen(character) } : {})}
             />
           ))}
         </ul>
