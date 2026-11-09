@@ -3,9 +3,9 @@
 - [x] 1. Dominio: libro con más datos, `excluded`, lo pendiente fuera de `visibleContent`, recuentos por libro
 - [x] 2. Servidor: acciones de libros, MCP, compendio de la campaña con libros y página
 - [x] 3. Servidor: pendientes de revisar (migración, proponer, listar, aceptar, descartar)
-- [ ] 4. Web: espacio de la campaña (rutas, barra, Mesa como sección, direcciones viejas)
-- [ ] 5. Web: Inicio (máster y jugadora)
-- [ ] 6. Web: Libros de la campaña
+- [x] 4. Web: espacio de la campaña (rutas, barra, Mesa como sección, direcciones viejas)
+- [x] 5. Web: Inicio (máster y jugadora)
+- [x] 6. Web: Libros de la campaña
 - [ ] 7. Web: Sistemas → Libros (ficha, ajustes, libro nuevo)
 - [ ] 8. Web: revisión
 - [ ] 9. Web: compendio por libro y creador con libros

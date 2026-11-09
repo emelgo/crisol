@@ -17,10 +17,16 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   la escena se carga y calienta en un rato libre dentro del mundo (`warm`); sin tarjeta gráfica, sin sombras ni
   antialias; 1,8 s como mucho en pantalla. Ojo: las e2e sirven `apps/web/dist`: tras tocar la web, `pnpm --filter
   @crisol/web build` antes de pasarlas sueltas.
-- **Lienzo «Libros y campaña»** publicado (https://claude.ai/artifact/6RYct1c2kikxuTZyqkEpTb; fuentes en
-  `out/lienzo-libros/`): tableros A–H y 16 decisiones mías.
-- **Siguiente paso**: que Enrique lo apruebe o lo corrija; luego el ADR que sustituye esa parte del 0019, la spec y
-  construir. Antes del PR: todas las e2e y la revisión.
+- **Lienzo «Libros y campaña»** aprobado («está genial»): ADR-0021, spec `docs/specs/libros.md`, plan y tareas en
+  `tasks/libros/`. Hechas las tareas 1–6: dominio (libros con más datos, `excluded`, lo pendiente), servidor (acciones
+  de libros, pendientes de revisar, MCP, migración 0064, presencia en la Mesa) y web (el espacio de la campaña con su
+  Inicio, la sección Mesa con personajes, quién está y «Abrir la Mesa» en otra pestaña, Libros de la campaña con
+  «Elegir contenido» y la ficha de cada libro). Enrique cambió dos cosas por el camino (2026-11-10): la campaña se abre
+  en la misma pestaña y la Mesa en otra; Personajes y Mesa, una sola sección.
+- **Siguiente paso**: tareas 7–10 (Sistemas → Libros con «Libro nuevo» y ajustes del libro, la revisión de lo que trae
+  la IA, el compendio por libro y el creador con libros, y el cierre: tutoriales, e2e —`openCampaign` de las ayudas
+  de e2e aún entra por la dirección de la campaña, que ahora es el Inicio—, axe y revisión). Antes del PR: todas las
+  e2e.
 
 ### Para retomar (2026-11-10, tarde: escenas sueltas, ADR-0020)
 

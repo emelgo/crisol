@@ -9,6 +9,16 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
+## Libros y el espacio de la campaña (en local; ADR-0021)
+
+- [ ] **Entrar**: desde Mis mundos, la campaña se abre en la misma pestaña, en su Inicio (ir a la Mesa, jugadores,
+  libros, aventura en curso) con su barra; Ajustes se abre encima.
+- [ ] **Mesa**: la sección enseña los personajes, quién está en la Mesa (activo o en otra pestaña) y cómo va la
+  partida; «Abrir la Mesa» la abre en otra pestaña, a pantalla completa. Abre la Mesa desde otra cuenta (o la tele) y
+  mira que salga al momento.
+- [ ] **Libros**: apagar y encender libros; «Elegir contenido» quita entradas sueltas y desaparecen del compendio; la
+  ficha de un libro al pulsar su portada.
+
 ## La campaña alrededor de la Mesa (en local; ADR-0019)
 
 - [ ] **Dados fluidos**: al pulsar «Tirar», los dados empiezan a caer al momento (no tras una pausa), van suaves y
