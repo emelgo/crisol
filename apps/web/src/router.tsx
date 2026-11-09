@@ -84,7 +84,7 @@ const inPlayRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/mundos/$worldId/campanas/$campaignId/en-juego',
   component: () => (
-    <ToMesaIfMaster panel="compendio">
+    <ToMesaIfMaster panel="personajes">
       <InPlayScreen />
     </ToMesaIfMaster>
   ),

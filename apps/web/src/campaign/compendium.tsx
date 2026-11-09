@@ -22,7 +22,7 @@ import {
   Upload,
   X
 } from 'lucide-react'
-import { createContext, type ReactNode, useContext, useEffect, useId, useRef, useState } from 'react'
+import { createContext, type DragEvent, type ReactNode, useContext, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import type { ActionOutput } from '../api/client.ts'
@@ -49,7 +49,7 @@ import { OriginNotice, ToSystem } from './origin.tsx'
 
 const route = getRouteApi('/mundos/$worldId/campanas/$campaignId/compendio')
 /** El sistema del compendio abierto: de él salen sus imágenes */
-const SystemIdContext = createContext<string | null>(null)
+export const SystemIdContext = createContext<string | null>(null)
 const PAGE = 100
 
 type Language = 'es' | 'en'
@@ -441,14 +441,18 @@ type Browsed = ActionOutput<'browseCampaignContent'>
  * Clases, Conjuros…), en cada una sus tipos y, en cada tipo, sus carpetas (los conjuros por nivel); dentro, lo suyo.
  * Todo se abre y se cierra; cada tipo se pide al abrirlo
  */
-function Library({
+/** Lo que se hace al empezar a arrastrar una entrada (en la Mesa: al mapa, a la campaña, a una ficha); null, no se arrastra */
+export type EntryDrag = (item: { key: string; type: string; name: string }) => ((event: DragEvent) => void) | null
+
+export function Library({
   campaignId,
   sections,
   types: all,
   layer,
   byWorld,
   current,
-  onOpen
+  onOpen,
+  drag
 }: {
   campaignId: string
   sections: Section[]
@@ -458,6 +462,7 @@ function Library({
   byWorld: Record<string, number>
   current: string | null
   onOpen: (key: string) => void
+  drag?: EntryDrag
 }) {
   const { t } = useTranslation()
   const [opened, setOpened] = useState<ReadonlySet<string>>(new Set())
@@ -514,6 +519,7 @@ function Library({
                   current={current}
                   onOpen={onOpen}
                   filtering={filtering}
+                  drag={drag}
                 />
               ) : (
                 <ul className={styles.shelf}>
@@ -540,6 +546,7 @@ function Library({
                             current={current}
                             onOpen={onOpen}
                             filtering={filtering}
+                            drag={drag}
                           />
                         </Disclosure>
                       </li>
@@ -603,7 +610,7 @@ function Library({
 }
 
 /** Una carpeta que se abre y se cierra, con su nombre y cuántos lleva */
-function Disclosure({
+export function Disclosure({
   label,
   count,
   open,
@@ -646,8 +653,10 @@ function TypeShelf({
   onToggle,
   current,
   onOpen,
-  filtering
+  filtering,
+  drag
 }: {
+  drag?: EntryDrag | undefined
   campaignId: string
   type: string
   edition: string | null
@@ -683,21 +692,24 @@ function TypeShelf({
   const filters = browsed.data.filters.filter((f) => f.options.length > 1)
   const filtersOpen = opened.has(`${idPrefix}filtros`)
   const loose = items.filter((item) => item.folder === null)
-  const entry = (item: Browsed['items'][number]) => (
-    <li key={item.key}>
-      <button
-        type="button"
-        className={styles.entry}
-        data-entry={item.key}
-        aria-current={item.key === current ? 'true' : undefined}
-        onClick={() => onOpen(item.key)}
-      >
-        {item.img && <SystemImage systemId={systemId} path={item.img} className={styles.thumb} />}
-        <span className={styles.entryName}>{item.name}</span>
-        {edition === null && only === 'system' && <EditionTag edition={item.edition} legacy={item.legacy} />}
-      </button>
-    </li>
-  )
+  const entry = (item: Browsed['items'][number]) => {
+    const start = drag?.({ key: item.key, type, name: item.name }) ?? null
+    return (
+      <li key={item.key} draggable={Boolean(start)} onDragStart={start ?? undefined}>
+        <button
+          type="button"
+          className={styles.entry}
+          data-entry={item.key}
+          aria-current={item.key === current ? 'true' : undefined}
+          onClick={() => onOpen(item.key)}
+        >
+          {item.img && <SystemImage systemId={systemId} path={item.img} className={styles.thumb} />}
+          <span className={styles.entryName}>{item.name}</span>
+          {edition === null && only === 'system' && <EditionTag edition={item.edition} legacy={item.legacy} />}
+        </button>
+      </li>
+    )
+  }
   return (
     <ul className={styles.shelf}>
       {filters.length > 0 && (

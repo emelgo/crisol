@@ -36,6 +36,7 @@ import {
   readItemDrag,
   useParty
 } from '../party/party.tsx'
+import { CONTENT_DRAG, readContentDrag } from '../tabletop/drags.ts'
 import styles from './play-sheet.module.css'
 import { type Change, pickId } from './save.ts'
 
@@ -631,8 +632,10 @@ function ItemsBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'it
           className={styles.items}
           data-over={dropping || undefined}
           onDragOver={(event) => {
-            // Solo lo del grupo que puede llevar (lo suyo ya está aquí; lo escrito a mano se queda en el grupo)
-            if (!withParty || !event.dataTransfer.types.includes(CARRIABLE_DRAG)) return
+            // Lo del grupo que puede llevar (lo suyo ya está aquí; lo escrito a mano se queda en el grupo) o un objeto
+            // del compendio de la Mesa
+            const types = event.dataTransfer.types
+            if (!block.play || !(types.includes(CONTENT_DRAG) || (withParty && types.includes(CARRIABLE_DRAG)))) return
             event.preventDefault()
             event.dataTransfer.dropEffect = 'move'
             setDropping(true)
@@ -642,6 +645,20 @@ function ItemsBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'it
           }}
           onDrop={(event) => {
             setDropping(false)
+            // Un objeto del compendio: a lo que lleva (si es de los que van en este inventario)
+            const content = readContentDrag(event.dataTransfer)
+            if (content) {
+              event.preventDefault()
+              if (content.actor || !block.types.includes(content.type)) return
+              const itemId = pickId()
+              void ctx.save({
+                play: (play) => ({
+                  ...play,
+                  items: [...(play.items ?? []), { id: itemId, key: content.key, quantity: 1 }]
+                })
+              })
+              return
+            }
             const from = readItemDrag(event.dataTransfer)
             if (!from || !('party' in from) || !characterId) return
             event.preventDefault()

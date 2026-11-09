@@ -78,14 +78,14 @@ describe('la biblioteca (docs/specs/biblioteca.md)', () => {
   }, async () => {
     const { router } = renderLibrary()
     const user = userEvent.setup()
-    await waitFor(() => expect(router.state.location.search).toMatchObject({ panel: 'compendio' }))
-    const panel = within(await screen.findByRole('complementary', { name: 'Panel de la mesa' }))
-    await user.click(await panel.findByRole('button', { name: 'Libros' }))
-    const list = within(panel.getByRole('list', { name: 'Libros' }))
-    expect(list.queryByText('Mapa.png')).toBeNull()
-    await user.click(list.getByRole('button', { name: /Guía de Valdren\.pdf/ }))
     // Con todas las pruebas a la vez la máquina va cargada: el visor de PDF tarda en montarse
     const slow = { timeout: 8000 }
+    await waitFor(() => expect(router.state.location.search).toMatchObject({ panel: 'compendio' }))
+    const panel = within(await screen.findByRole('complementary', { name: 'Panel de la mesa' }))
+    // Los libros, una carpeta más del compendio (sin sistema, la única)
+    await user.click(await panel.findByRole('button', { name: /^Libros/ }, slow))
+    expect(panel.queryByText('Mapa.png')).toBeNull()
+    await user.click(panel.getByRole('button', { name: /Guía de Valdren\.pdf/ }))
     const window = within(await screen.findByRole('dialog', { name: 'Guía de Valdren.pdf' }, slow))
     const books = within(window.getByRole('region', { name: 'Libros' }))
     expect(

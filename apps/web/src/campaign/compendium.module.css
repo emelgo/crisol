@@ -840,3 +840,8 @@
   grid-column: 2;
   grid-row: 2;
 }
+
+/* Una carpeta que no se pliega (lo encontrado, en la Mesa): sin flecha ni cursor */
+.folder[data-static] {
+  cursor: default;
+}

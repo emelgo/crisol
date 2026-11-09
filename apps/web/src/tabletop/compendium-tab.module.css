@@ -218,3 +218,25 @@ button.name {
   clip-path: inset(50%);
   white-space: nowrap;
 }
+
+.hint {
+  margin: 0.25rem 0 0;
+  color: var(--color-muted);
+  font-size: 0.75rem;
+}
+
+/* Donde se suelta lo del compendio (las criaturas de la campaña) */
+.drop {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-block-size: 3rem;
+  margin-inline: -6px;
+  padding: 4px 6px;
+  border-radius: 4px;
+}
+
+.drop[data-over] {
+  outline: 2px dashed var(--color-focus);
+  outline-offset: -2px;
+}

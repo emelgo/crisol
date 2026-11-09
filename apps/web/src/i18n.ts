@@ -1718,6 +1718,10 @@ export const es = {
     onlyYou: 'solo tú',
     forYou: 'para ti',
     youAndMaster: 'tú y el máster',
+    campaignCreatures: {
+      title: 'Criaturas',
+      empty: 'Ninguna aún: arrástralas aquí desde el compendio.'
+    },
     compendium: {
       search: 'Buscar en el compendio',
       sections: 'Apartados',
@@ -1727,7 +1731,8 @@ export const es = {
       inPlay: 'En juego',
       pages_one: '1 página',
       pages_other: '{{count}} páginas',
-      openAll: 'Abrir el compendio'
+      openAll: 'Abrir el compendio',
+      dragHint: 'Arrastra al mapa o a Personajes para tenerlo en la campaña.'
     },
     pages: {
       search: 'Buscar en las páginas',

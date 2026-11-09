@@ -21,6 +21,7 @@ import { failed, LoadError } from '../components/load-error.tsx'
 import { Modal } from '../components/modal.tsx'
 import { useSettled } from '../components/settled.ts'
 import { summaryOf } from '../summaries.ts'
+import { CONTENT_DRAG, readContentDrag } from '../tabletop/drags.ts'
 import styles from './party.module.css'
 
 type Loaded = ActionOutput<'getParty'>
@@ -183,7 +184,8 @@ export function PartyInventory({ campaignId, me }: { campaignId: string; me?: st
             aria-label={name}
             data-over={over === container.id || undefined}
             onDragOver={(event) => {
-              if (!event.dataTransfer.types.includes(ITEM_DRAG)) return
+              const types = event.dataTransfer.types
+              if (!types.includes(ITEM_DRAG) && !types.includes(CONTENT_DRAG)) return
               event.preventDefault()
               event.dataTransfer.dropEffect = 'move'
               setOver(container.id)
@@ -193,6 +195,13 @@ export function PartyInventory({ campaignId, me }: { campaignId: string; me?: st
             }}
             onDrop={(event) => {
               setOver(null)
+              // Un objeto del compendio de la Mesa: al grupo, en este contenedor
+              const content = readContentDrag(event.dataTransfer)
+              if (content) {
+                event.preventDefault()
+                if (!content.actor) update.mutate({ add: { key: content.key, container: container.id } })
+                return
+              }
               const from = readItemDrag(event.dataTransfer)
               if (!from) return
               event.preventDefault()

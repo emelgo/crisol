@@ -2,7 +2,7 @@ import type { Campaign, ScreenView, TableServerMessage, World } from '@crisol/co
 import type { ContentItem, System } from '@crisol/systems'
 import { cinco } from '@crisol/systems/fixtures'
 import { createMemoryHistory } from '@tanstack/react-router'
-import { act, render, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { fakeAccountClient } from '../account/fake.ts'
@@ -124,18 +124,19 @@ describe('las fichas en la mesa', () => {
   it('las criaturas en juego se ponen desde el panel; la ficha se pinta con su rótulo y su vida', async () => {
     const user = userEvent.setup()
     const { api, push } = await renderTable()
-    await user.click(panel().getByRole('tab', { name: 'Compendio' }))
-    const inPlay = within(await panel().findByRole('list', { name: 'En juego' }))
+    // Las criaturas de la campaña, en Personajes (como los actores en Foundry)
+    await user.click(panel().getByRole('tab', { name: 'Personajes' }))
+    const inPlay = within(await panel().findByRole('list', { name: 'Criaturas' }))
     await user.click(inPlay.getByRole('button', { name: 'Poner en la mesa: Lobo 1' }))
     await waitFor(async () => expect(await tokensOf(api)).toHaveLength(1))
     await push()
     await waitFor(() => expect(drawn.tokens).toHaveLength(1))
     expect(drawn.tokens[0]).toMatchObject({ label: 'L1', faction: 'hostile', life: 1, hidden: false })
-    // Con ficha ya en la escena, sigue en «En juego» (con su ojo), pero ya no se pone otra vez
-    const after = within(await panel().findByRole('list', { name: 'En juego' }))
+    // Con ficha ya en la escena, sigue en la campaña (con su ojo), pero ya no se pone otra vez
+    const after = within(await panel().findByRole('list', { name: 'Criaturas' }))
     expect(after.getAllByRole('listitem')).toHaveLength(2)
     expect(after.queryByRole('button', { name: 'Poner en la mesa: Lobo 1' })).toBeNull()
-    expect(after.getByText('En la escena')).toBeDefined()
+    expect(after.getByText(/^En la escena/)).toBeDefined()
   })
 
   it('su tarjeta: dañar, un estado con rondas, ocultarla, su rótulo; y «Guardar como encuentro»', async () => {
@@ -271,19 +272,43 @@ describe('la pestaña Escenas', () => {
 })
 
 describe('la pestaña Compendio', () => {
-  it('busca en el compendio de la campaña; una entrada se abre en la ventana del compendio, y los libros aparte', async () => {
+  it('siempre en carpetas (sin «Todo»); al buscar, en sus carpetas; una entrada se abre en la ventana del compendio', async () => {
     const user = userEvent.setup()
     await renderTable()
     await user.click(panel().getByRole('tab', { name: 'Compendio' }))
-    const results = within(await panel().findByRole('list', { name: 'Entradas' }))
-    // Una criatura: se pone en la mesa con su «+» (o arrastrándola) y su nombre la abre
-    expect(results.getByRole('button', { name: 'Poner en la mesa: Lobo' })).toBeDefined()
-    await user.click(results.getByRole('button', { name: /^Lobo/ }))
+    // Las carpetas del compendio, sin una lista de todo
+    expect(await panel().findByRole('navigation', { name: 'Biblioteca del compendio' })).toBeDefined()
+    expect(panel().queryByRole('button', { name: 'Todo' })).toBeNull()
+    await user.type(panel().getByRole('searchbox', { name: 'Buscar en el compendio' }), 'lobo')
+    const found = within(await panel().findByRole('navigation', { name: 'Entradas' }))
+    await user.click(found.getByRole('button', { name: 'Lobo' }))
     expect(await screen.findByRole('dialog', { name: 'Compendio' })).toBeDefined()
-    // «Libros»: los del mundo (aquí, ninguno)
-    await user.click(panel().getByRole('button', { name: 'Libros' }))
-    expect(panel().queryByRole('list', { name: 'Entradas' })).toBeNull()
-    expect(panel().getByText('Aún no hay PDF en el mundo ni en los comunes.')).toBeDefined()
+  })
+
+  it('arrastrar una criatura del compendio a Personajes la pone en la campaña', async () => {
+    const user = userEvent.setup()
+    const { api } = await renderTable()
+    await user.click(panel().getByRole('tab', { name: 'Compendio' }))
+    await user.type(panel().getByRole('searchbox', { name: 'Buscar en el compendio' }), 'lobo')
+    const found = within(await panel().findByRole('navigation', { name: 'Entradas' }))
+    const store = new Map<string, string>()
+    const dataTransfer = {
+      get types() {
+        return [...store.keys()]
+      },
+      setData: (type: string, value: string) => store.set(type, value),
+      getData: (type: string) => store.get(type) ?? '',
+      effectAllowed: 'all',
+      dropEffect: 'none'
+    }
+    fireEvent.dragStart(found.getByRole('button', { name: 'Lobo' }).closest('li') as HTMLElement, { dataTransfer })
+    await user.click(panel().getByRole('tab', { name: 'Personajes' }))
+    const creatures = (await panel().findByRole('list', { name: 'Criaturas' })).parentElement as HTMLElement
+    fireEvent.dragOver(creatures, { dataTransfer })
+    fireEvent.drop(creatures, { dataTransfer })
+    await waitFor(async () =>
+      expect((await api.client.call('listInPlay', { campaignId: CAMPAIGN.id })).creatures).toHaveLength(3)
+    )
   })
 })
 

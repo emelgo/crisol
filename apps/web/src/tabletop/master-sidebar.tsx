@@ -12,13 +12,14 @@ import { useApi } from '../api/context.tsx'
 import { GroupKnowledge } from '../campaign/group-knowledge.tsx'
 import { CampaignSettings } from '../campaign/settings.tsx'
 import { RollLog } from '../dice/log.tsx'
+import { CampaignCreatures } from './campaign-creatures.tsx'
 import { CombatPanel } from './combat-panel.tsx'
 import { CompendiumTab } from './compendium-tab.tsx'
 import styles from './mesa.module.css'
 import { pageWindow } from './page-window.tsx'
 import pagesStyles from './pages-tab.module.css'
 import { PagesTab } from './pages-tab.tsx'
-import { CharactersList, EncountersList, FactionLegend, type Placing } from './panel.tsx'
+import { CharactersList, EncountersList, FactionLegend, ImagesList, type Placing } from './panel.tsx'
 import { InScene, ScenesGrid } from './scenes-tab.tsx'
 import {
   PANEL_SLUGS,
@@ -212,23 +213,27 @@ export function MasterSidebar({
               windows?.open(sheetWindow({ kind: 'character', ...character }, campaignId, systemId))
             }
           />
+          <h3 className={styles.tabSection}>{t('tabletop.campaignCreatures.title')}</h3>
+          <CampaignCreatures
+            campaignId={campaignId}
+            systemId={systemId}
+            table={table}
+            canPlace={canPlace}
+            onPlace={onPlace}
+          />
+          {chosen.length > 0 && (
+            <>
+              <h3 className={styles.tabSection}>{t('tabletop.tabs.images')}</h3>
+              <ImagesList worldId={worldId} selected={chosen} onImage={onImage} />
+            </>
+          )}
           <FactionLegend />
         </>
       )
     },
     {
       key: 'compendium',
-      content: () => (
-        <CompendiumTab
-          worldId={worldId}
-          campaignId={campaignId}
-          table={table}
-          selected={chosen}
-          canPlace={canPlace}
-          onPlace={onPlace}
-          onImage={onImage}
-        />
-      )
+      content: () => <CompendiumTab worldId={worldId} campaignId={campaignId} />
     },
     {
       key: 'pages',

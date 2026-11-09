@@ -16,7 +16,7 @@ import { Tour } from '../components/tour.tsx'
 import { RollLog } from '../dice/log.tsx'
 import { useShown } from '../realtime/context.tsx'
 import { ReadAsProvider } from '../wiki/read-as.tsx'
-import { compendiumWindow } from './compendium-window.tsx'
+import { CompendiumTab } from './compendium-tab.tsx'
 import styles from './mesa.module.css'
 import { PagesTab } from './pages-tab.tsx'
 import playerStyles from './player-mesa.module.css'
@@ -174,15 +174,7 @@ function PlayerSidebar({
     },
     {
       key: 'compendium',
-      content: () => (
-        <button
-          type="button"
-          className={playerStyles.open}
-          onClick={() => windows?.open(compendiumWindow(worldId, campaign.id, t('tabletop.sidebar.compendium')))}
-        >
-          {t('tabletop.compendium.openAll')}
-        </button>
-      )
+      content: () => <CompendiumTab worldId={worldId} campaignId={campaign.id} books={false} />
     },
     {
       key: 'pages',
