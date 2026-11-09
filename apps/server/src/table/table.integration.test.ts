@@ -356,7 +356,10 @@ describe('la mesa: escenas, teselas y la sala', () => {
     const url = (v = version) => `/api/campaigns/${campaignId}/screen/tiles/${v}/0/0/0`
     expect((await getTile(url())).statusCode).toBe(404)
     await call('presentScene', { campaignId, sceneId: scene.id })
-    // Sin muros, «sin visión automática»: nada hasta que se destapa a mano (docs/specs/vision.md)
+    // Sin muros, «sin visión automática»: se ve entera (como Foundry sin visión de fichas, docs/specs/vision.md)
+    expect((await getTile(url())).statusCode).toBe(200)
+    // Tapada a mano, ya no
+    await call('changeFog', { campaignId, mode: 'cover', shape: 'rectangle', x: 0, y: 0, width: 900, height: 600 })
     expect((await getTile(url())).statusCode).toBe(404)
     await call('changeFog', { campaignId, mode: 'reveal', shape: 'rectangle', x: 0, y: 0, width: 100, height: 100 })
     expect((await getTile(url())).statusCode).toBe(200)

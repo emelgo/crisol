@@ -107,7 +107,7 @@ test('repaso visual: la mesa, la tele y el combate con la cripta del lienzo', as
   await settled()
   await page.screenshot({ path: '../out/capturas/repaso-mesa.png' })
   // Seguir
-  await page.getByRole('radio', { name: 'Seguir' }).click()
+  await page.getByRole('radio', { name: 'Sigue tu vista' }).click()
   await expect(page.getByText('La tele sigue tu vista')).toBeVisible()
   await settled()
   await page.screenshot({ path: '../out/capturas/repaso-mesa-seguir.png' })

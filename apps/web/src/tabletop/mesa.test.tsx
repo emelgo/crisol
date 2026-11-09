@@ -209,7 +209,7 @@ describe('la mesa del máster', () => {
     const sent = channel.viewports.length
     fireEvent.keyDown(stage, { key: 'ArrowLeft' })
     expect(channel.viewports.length).toBe(sent)
-    await user.click(screen.getByRole('radio', { name: 'Seguir' }))
+    await user.click(screen.getByRole('radio', { name: 'Sigue tu vista' }))
     await waitFor(async () => expect((await camera()).mode).toBe('follow'))
   })
 

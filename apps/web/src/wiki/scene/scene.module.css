@@ -469,6 +469,11 @@
 .row > .ghost {
   flex: 1 1 8rem;
   min-inline-size: 0;
+  /* Un texto largo («Empezar con esta vista») baja de línea en vez de cortarse */
+  white-space: normal;
+  text-align: center;
+  line-height: 1.2;
+  padding-block: 0.4rem;
 }
 
 .row > .field {

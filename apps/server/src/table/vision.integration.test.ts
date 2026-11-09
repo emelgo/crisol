@@ -514,7 +514,7 @@ describe('la visión de la mesa (docs/specs/vision.md)', () => {
     expect(await screen.quiet()).toBe(true)
   })
 
-  it('sin muros (sin visión automática) las fichas del grupo se ven siempre; lo demás, solo lo destapado', async () => {
+  it('sin muros (sin visión automática) se ve todo, como Foundry sin visión de fichas; lo tapado a mano, no', async () => {
     const tab = await ok200('createPageTab', { pageId, kind: 'scene' })
     const plain = (await ok200('getScene', { tabId: tab.id })).id
     await ok200('openScene', { campaignId, sceneId: plain })
@@ -531,14 +531,13 @@ describe('la visión de la mesa (docs/specs/vision.md)', () => {
     ).tokens
     const screen = await join('screen')
     const first = (await screen.next('screen')).screen
-    expect(first.tokens.map((t) => t.id)).toEqual([placed[0].id])
+    expect(first.tokens.map((t) => t.id).sort()).toEqual(placed.map((t: { id: string }) => t.id).sort())
     const view = await ok200('viewAsParty', { campaignId })
     expect(view).toMatchObject({ sceneId: plain, automaticVision: false })
-    await ok200('changeFog', { campaignId, mode: 'reveal', shape: 'cells', cells: [{ column: 6, row: 2 }] })
+    // Tapar la casilla del goblin lo esconde (la ficha del grupo se sigue viendo)
+    await ok200('changeFog', { campaignId, mode: 'cover', shape: 'cells', cells: [{ column: 6, row: 2 }] })
     const after = await ok200('viewAsParty', { campaignId })
-    expect(after.screen.tokens.map((t: { id: string }) => t.id).sort()).toEqual(
-      placed.map((t: { id: string }) => t.id).sort()
-    )
+    expect(after.screen.tokens.map((t: { id: string }) => t.id)).toEqual([placed[0].id])
   })
 
   it('lo que trae el mapa se pone en juego: muros unidos, objetos, puertas, ventanas y luces horneadas apagadas', async () => {

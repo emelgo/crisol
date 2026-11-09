@@ -809,9 +809,10 @@ function Stage({
     drawTokens()
     // Para las pruebas del navegador: dónde cae el mapa en el lienzo, sin leer sus píxeles
     if (host.current) host.current.dataset.view = JSON.stringify({ ...view.current, ...sizeRef.current })
+    // La tele sigue el centro de lo que se ve (sin lo que tapa la barra de la derecha: si no, le salía desplazado)
     if (followingRef.current && sizeRef.current.width > 0)
-      channel.current?.sendViewport(sceneViewportOfCanvas(view.current, sizeRef.current))
-  }, [renderer, placeFrame, channel, host, view, drawTokens, markers, marksLayer])
+      channel.current?.sendViewport(sceneViewportOfCanvas(view.current, free(sizeRef.current)))
+  }, [renderer, placeFrame, channel, host, view, drawTokens, markers, marksLayer, free])
 
   // Llega la mesa (o cambia lo elegido): las fichas, otra vez; lo que se movía ya está en su sitio
   useEffect(() => {
@@ -1382,7 +1383,11 @@ function CameraChoice({
   return (
     <fieldset className={styles.segments} disabled={disabled} data-tour="mesa-camara">
       <legend className={styles.hidden}>{t('tabletop.camera')}</legend>
-      <label className={styles.segment}>
+      {/* Qué enseña la tele: lo dice delante y, al pasar por cada opción, qué hace */}
+      <span className={styles.segmentsLabel} aria-hidden="true">
+        {t('tabletop.tv')}
+      </span>
+      <label className={styles.segment} title={t('tabletop.followHint')}>
         <input
           type="radio"
           name={name}
@@ -1391,11 +1396,11 @@ function CameraChoice({
         />
         {t('tabletop.follow')}
       </label>
-      <label className={styles.segment}>
+      <label className={styles.segment} title={t('tabletop.fixedHint')}>
         <input type="radio" name={name} checked={fixed} onChange={fixHere} />
         {t('tabletop.fixed')}
       </label>
-      <label className={styles.segment}>
+      <label className={styles.segment} title={t('tabletop.groupHint')}>
         <input
           type="radio"
           name={name}
