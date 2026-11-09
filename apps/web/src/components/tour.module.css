@@ -141,3 +141,8 @@
     display: none;
   }
 }
+
+/* Con los dados abiertos, el «?» se aparta: su columna ocupa la esquina */
+:global(body):has(:global([data-dice-open])) .help {
+  visibility: hidden;
+}

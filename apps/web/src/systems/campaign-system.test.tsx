@@ -227,11 +227,12 @@ describe('el sistema de una campaña', () => {
     })
   })
 
-  it('la ficha de dados propone la tirada por defecto de su sistema', async () => {
+  it('los dados, al escribir, proponen la tirada por defecto de su sistema', async () => {
     const { api } = renderCampaigns(`/mundos/${WORLD.id}/campanas/${MARCA.id}`)
     await api.client.call('updateCampaign', { campaignId: MARCA.id, system: FRONTERAS.id })
     await userEvent.click(await screen.findByRole('button', { name: 'Dados' }))
     const dice = within(await screen.findByRole('complementary', { name: 'Dados' }))
+    await userEvent.click(dice.getByRole('button', { name: 'Escribir la tirada' }))
     expect(await dice.findByDisplayValue('2d6')).toBeDefined()
   })
 })

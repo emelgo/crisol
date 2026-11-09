@@ -1,6 +1,6 @@
 import type { Campaign, DiceRoll, World } from '@crisol/contracts'
 import { createMemoryHistory } from '@tanstack/react-router'
-import { act, render, screen, within } from '@testing-library/react'
+import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { fakeAccountClient } from '../account/fake.ts'
@@ -8,10 +8,12 @@ import { fakeApi } from '../api/fake.ts'
 import { App } from '../app.tsx'
 import { fakeRealtime } from '../realtime/fake.ts'
 import { createAppRouter } from '../router.tsx'
-import { TOAST_MS } from './roll-toasts.tsx'
+import { NOTICE_MS } from './notices.tsx'
 
-vi.mock('./channel.ts', async () => (await import('./fakes.ts')).quietChannel())
-vi.mock('./use-renderer.ts', async () => (await import('./fakes.ts')).blindRenderer())
+vi.mock('../tabletop/channel.ts', async () => (await import('../tabletop/fakes.ts')).quietChannel())
+vi.mock('../tabletop/use-renderer.ts', async () => (await import('../tabletop/fakes.ts')).blindRenderer())
+// Sin WebGL: los dados no caen y el resultado sale al momento
+vi.mock('./3d/scene.ts', () => ({ createScene: () => null }))
 
 const ORG = { id: crypto.randomUUID(), name: 'Fateforge', role: 'owner' as const }
 const WORLD: World = {
@@ -66,33 +68,37 @@ function renderMesa() {
       realtime={realtime.client}
     />
   )
-  return { realtime }
+  return { realtime, api }
 }
 
 const toasts = () => within(screen.getByRole('list', { name: 'Últimas tiradas' }))
+/** Lo que llega por el canal sin caer (otro jugador, sin 3D) sale tras esperar un poco a la bandeja */
+const arrive = () => act(() => vi.advanceTimersByTimeAsync(500))
 
 afterEach(() => {
   vi.useRealTimers()
 })
 
-describe('las tiradas sobre el d20', () => {
-  it('fuera de su pestaña, cada tirada sale un momento y se apaga sola; las que no ve el grupo, marcadas', async () => {
+describe('el resultado sobre el d20', () => {
+  it('cada tirada sale un momento y se apaga sola; las que no ve el grupo, marcadas; las de otra campaña, no', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true })
     const { realtime } = renderMesa()
     await screen.findByRole('tab', { name: 'Escenas' })
     act(() => realtime.emit({ type: 'rolled', campaignId: CAMPAIGN.id, roll: rollOf('Lucía', 'Sigilo', 17) }))
+    await arrive()
     expect(toasts().getByText('Lucía')).toBeDefined()
-    expect(toasts().getByText('Sigilo')).toBeDefined()
+    expect(toasts().getByText(/Sigilo/)).toBeDefined()
     expect(toasts().getByText('17')).toBeDefined()
     act(() =>
       realtime.emit({
         type: 'rolled',
         campaignId: CAMPAIGN.id,
-        roll: rollOf('Bruno', 'Engaño', 9, { visibility: 'master' })
+        roll: rollOf('Bruno', 'Engaño', 9, { visibility: 'master', critical: 'high' })
       })
     )
+    await arrive()
     expect(toasts().getByText('para ti')).toBeDefined()
-    // Otra campaña, nada
+    expect(toasts().getByText('Crítico')).toBeDefined()
     act(() =>
       realtime.emit({
         type: 'rolled',
@@ -100,17 +106,32 @@ describe('las tiradas sobre el d20', () => {
         roll: { ...rollOf('Otro', 'Fuera', 3), campaignId: crypto.randomUUID() }
       })
     )
+    await arrive()
     expect(toasts().queryByText('Otro')).toBeNull()
-    await act(() => vi.advanceTimersByTimeAsync(TOAST_MS + 50))
+    await act(() => vi.advanceTimersByTimeAsync(NOTICE_MS + 50))
     expect(toasts().queryByText('Lucía')).toBeNull()
     expect(toasts().queryByText('Bruno')).toBeNull()
   })
 
-  it('con la ficha de dados abierta no salen: ya están en su registro', async () => {
+  it('con los dados abiertos no sale; pulsarlo abre el historial; «Otra vez» la repite', async () => {
     const user = userEvent.setup()
-    const { realtime } = renderMesa()
+    const { realtime, api } = renderMesa()
     await user.click(await screen.findByRole('button', { name: 'Dados' }))
     act(() => realtime.emit({ type: 'rolled', campaignId: CAMPAIGN.id, roll: rollOf('Lucía', 'Sigilo', 17) }))
+    await new Promise((resolve) => setTimeout(resolve, 500))
     expect(toasts().queryByText('17')).toBeNull()
+    await user.click(screen.getByRole('button', { name: 'Dados' }))
+    act(() => realtime.emit({ type: 'rolled', campaignId: CAMPAIGN.id, roll: rollOf('Lucía', 'Percepción', 12) }))
+    const repeat = await toasts().findByRole('button', { name: 'Otra vez: Percepción' })
+    await user.click(repeat)
+    await waitFor(async () =>
+      expect((await api.client.call('listRolls', { campaignId: CAMPAIGN.id })).rolls.at(-1)).toMatchObject({
+        label: 'Percepción',
+        by: { name: 'Enrique' }
+      })
+    )
+    act(() => realtime.emit({ type: 'rolled', campaignId: CAMPAIGN.id, roll: rollOf('Lucía', 'Fuerza', 8) }))
+    await user.click(await toasts().findByRole('button', { name: /Fuerza.*Abrir el historial/ }))
+    expect(await screen.findByRole('list', { name: 'Tiradas de la campaña' })).toBeTruthy()
   })
 })

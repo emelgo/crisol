@@ -405,6 +405,7 @@ function PlayersSummary({ campaign }: { campaign: Campaign }) {
   const withCharacter = new Set(all.map((c) => c.owner?.id).filter(Boolean))
   const without = (members.data?.members ?? []).filter((m) => m.role === 'player' && !withCharacter.has(m.userId))
   return (
+    // biome-ignore lint/a11y/useSemanticElements: una <section> llevaría el marco de las secciones de la página
     <div role="region" className={settings.players} aria-labelledby={headingId}>
       <h2 id={headingId}>{t('campaignHome.players')}</h2>
       {all.length === 0 && without.length === 0 ? (

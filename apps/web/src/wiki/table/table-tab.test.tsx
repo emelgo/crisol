@@ -108,9 +108,9 @@ describe('la pestaña «Tabla» de una página', () => {
     const ask = within(await screen.findByRole('dialog', { name: '¿Reiniciar la tabla?' }))
     await userEvent.click(ask.getByRole('button', { name: 'Reiniciar' }))
     await waitFor(() => expect(screen.queryByText('Una sacada')).toBeNull())
-    // Quién la ve: oculta
+    // Quién la ve: solo el máster
     await userEvent.click(
-      within(screen.getByRole('group', { name: 'Quién la ve' })).getByRole('radio', { name: 'Oculta' })
+      within(screen.getByRole('group', { name: 'Quién la ve' })).getByRole('radio', { name: 'Solo yo' })
     )
     await userEvent.click(screen.getByRole('button', { name: 'Tirar' }))
     await waitFor(async () => {

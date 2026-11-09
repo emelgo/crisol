@@ -12,7 +12,7 @@ import {
   useSidebarTab
 } from './sidebar.tsx'
 
-const ALL: readonly SidebarTab[] = ['rolls', 'combat', 'scenes', 'characters', 'compendium', 'pages', 'settings']
+const ALL: readonly SidebarTab[] = ['combat', 'scenes', 'characters', 'compendium', 'pages', 'settings']
 
 function Harness({ asked = null, allowed = ALL }: { asked?: SidebarTab | null; allowed?: readonly SidebarTab[] }) {
   const [tab, setTab] = useSidebarTab(allowed, asked)
@@ -41,11 +41,11 @@ describe('la barra de la Mesa', () => {
 
   it('la dirección manda sobre la última; la que no puede ver quien mira, no', () => {
     localStorage.setItem('crisol.mesa.pestana', 'settings')
-    const view = render(<Harness asked="rolls" />)
-    expect(screen.getByRole('tabpanel').textContent).toBe('Panel de rolls')
+    const view = render(<Harness asked="combat" />)
+    expect(screen.getByRole('tabpanel').textContent).toBe('Panel de combat')
     view.unmount()
-    render(<Harness allowed={['rolls', 'combat', 'pages']} />)
-    expect(screen.getByRole('tabpanel').textContent).toBe('Panel de rolls')
+    render(<Harness allowed={['combat', 'pages']} />)
+    expect(screen.getByRole('tabpanel').textContent).toBe('Panel de combat')
   })
 
   it('con las flechas, Inicio y Fin se cambia de pestaña, y el foco va con ella', async () => {
@@ -58,9 +58,9 @@ describe('la barra de la Mesa', () => {
     await user.keyboard('{End}')
     expect(document.activeElement).toBe(screen.getByRole('tab', { name: 'Campaña' }))
     await user.keyboard('{ArrowRight}')
-    expect(document.activeElement).toBe(screen.getByRole('tab', { name: 'Tiradas' }))
+    expect(document.activeElement).toBe(screen.getByRole('tab', { name: /^Combate/ }))
     await user.keyboard('{ArrowLeft}{Home}')
-    expect(document.activeElement).toBe(screen.getByRole('tab', { name: 'Tiradas' }))
+    expect(document.activeElement).toBe(screen.getByRole('tab', { name: /^Combate/ }))
     // Solo la pestaña abierta está en el orden del tabulador
     expect(screen.getAllByRole('tab').filter((tab) => tab.tabIndex === 0)).toHaveLength(1)
   })

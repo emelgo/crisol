@@ -68,7 +68,7 @@ export const es = {
     roll: 'Tirar',
     who: 'Quién la ve',
     whoRolls: 'Quién ve las tiradas',
-    visibility: { all: 'Todos', self: 'Para mí', master: 'Al máster', hidden: 'Oculta' },
+    visibility: { all: 'Todos', self: 'Solo yo', master: 'Máster', hidden: 'Solo yo' },
     rolled: '{{label}}: {{total}}',
     heard: '{{who}} · {{label}}: {{total}}',
     whoCritical: '{{who}} · ¡Crítico!',
@@ -79,8 +79,27 @@ export const es = {
     older: 'Ver las anteriores',
     me: 'Tú',
     ai: 'IA',
-    breakdown: 'Desglose',
-    again: 'Repetir',
+    again: 'Otra vez',
+    againOf: 'Otra vez: {{what}}',
+    history: 'Historial',
+    closeHistory: 'Cerrar el historial',
+    openHistory: 'Abrir el historial',
+    write: 'Escribir la tirada',
+    addCount: 'Añadir un {{die}} (van {{count}})',
+    inRoll: 'En la tirada',
+    drop: 'Quitar {{dice}}',
+    modifier: 'Modificador',
+    less: 'Restar uno',
+    more: 'Sumar uno',
+    clear: 'Vaciar',
+    all: 'Todas',
+    mine: 'Mías',
+    none: 'Aún no hay tiradas.',
+    lastRolls: 'Últimas tiradas',
+    onlyYou: 'solo tú',
+    forYou: 'para ti',
+    youAndMaster: 'tú y el máster',
+    dismiss: 'Quitar el aviso',
     critical: 'Crítico',
     fumble: 'Pifia',
     flag: { master: 'Al máster', self: 'Para mí', selfOther: 'Para sí', hidden: 'Oculta' },
@@ -1700,7 +1719,6 @@ export const es = {
     panel: 'Panel de la mesa',
     // La barra de la derecha de la Mesa (sidebar.tsx)
     sidebar: {
-      rolls: 'Tiradas',
       combat: 'Combate',
       scenes: 'Escenas',
       characters: 'Personajes',
@@ -1711,7 +1729,6 @@ export const es = {
       unfold: 'Desplegar la barra',
       attention: ' (hay algo nuevo)'
     },
-    lastRolls: 'Últimas tiradas',
     openScene: 'Abrir {{name}}',
     newScene: 'Escena nueva',
     newSceneName: 'Nombre de la escena',
@@ -1722,9 +1739,6 @@ export const es = {
     hideFromGroup: 'Ocultar {{name}} al grupo',
     showToGroup: 'Enseñar {{name}} al grupo',
     toCombat: 'Meter a {{name}} en el combate',
-    onlyYou: 'solo tú',
-    forYou: 'para ti',
-    youAndMaster: 'tú y el máster',
     campaignCreatures: {
       title: 'Criaturas',
       empty: 'Ninguna aún: arrástralas aquí desde el compendio.'
@@ -2936,8 +2950,8 @@ export const es = {
       back: 'El Crisol te devuelve a tus mundos.'
     },
     dice: {
-      card: 'Aquí se tira y se ven las tiradas de la campaña, al momento.',
-      roll: 'Escribe la tirada o pulsa los dados, y elige quién la ve.'
+      card: 'Junta los dados que quieras y tíralos. Con el botón derecho, quitas uno.',
+      roll: 'Las tiradas de la campaña, aquí.'
     },
     campaigns: {
       create: 'Cada campaña reúne a un grupo de jugadores en este mundo.'

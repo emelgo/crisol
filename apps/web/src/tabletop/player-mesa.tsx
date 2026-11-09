@@ -16,13 +16,13 @@ import { failed, LoadError } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { Tour } from '../components/tour.tsx'
 import { useDice } from '../dice/context.tsx'
+import { HistoryHost } from '../dice/history.tsx'
 import { useShown } from '../realtime/context.tsx'
 import { ReadAsProvider } from '../wiki/read-as.tsx'
 import { CompendiumTab } from './compendium-tab.tsx'
 import styles from './mesa.module.css'
 import { PagesTab } from './pages-tab.tsx'
 import playerStyles from './player-mesa.module.css'
-import { RollToasts } from './roll-toasts.tsx'
 import { TableScreen } from './screen.tsx'
 import { type SidebarItem, type SidebarTab, TableSidebar, useSidebarFolded, useSidebarTab } from './sidebar.tsx'
 import { sheetWindow } from './token-sheet.tsx'
@@ -214,8 +214,8 @@ function PlayerSidebar({
           </Link>
         }
       />
-      {/* Las tiradas sobre el d20, mientras su ficha está cerrada (con ella abierta, ya se ven en su registro) */}
-      <RollToasts campaignId={campaign.id} enabled={!dice.open} master={false} />
+      {/* El historial de tiradas, en una ventana de la Mesa */}
+      <HistoryHost campaign={campaign} />
     </>
   )
 }

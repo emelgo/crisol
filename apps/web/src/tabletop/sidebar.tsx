@@ -5,7 +5,6 @@
  */
 import {
   BookOpen,
-  Dices,
   type LucideIcon,
   Map as MapIcon,
   PanelRightClose,
@@ -19,12 +18,11 @@ import { type KeyboardEvent, type ReactNode, useCallback, useId, useState } from
 import { useTranslation } from 'react-i18next'
 import styles from './sidebar.module.css'
 
-export const SIDEBAR_TABS = ['rolls', 'combat', 'scenes', 'characters', 'compendium', 'pages', 'settings'] as const
+export const SIDEBAR_TABS = ['combat', 'scenes', 'characters', 'compendium', 'pages', 'settings'] as const
 export type SidebarTab = (typeof SIDEBAR_TABS)[number]
 
 /** Cómo va cada pestaña en la dirección (?panel=), en español como las rutas */
 export const PANEL_SLUGS: Record<SidebarTab, string> = {
-  rolls: 'tiradas',
   combat: 'combate',
   scenes: 'escenas',
   characters: 'personajes',
@@ -34,7 +32,6 @@ export const PANEL_SLUGS: Record<SidebarTab, string> = {
 }
 
 export const ICONS: Record<SidebarTab, LucideIcon> = {
-  rolls: Dices,
   combat: Swords,
   scenes: MapIcon,
   characters: Users,
@@ -78,7 +75,7 @@ export function useSidebarTab(allowed: readonly SidebarTab[], asked: SidebarTab 
     const last = read(TAB_KEY) as SidebarTab | null
     if (asked && allowed.includes(asked)) return asked
     if (last && allowed.includes(last)) return last
-    return allowed.includes('scenes') ? 'scenes' : (allowed[0] ?? 'rolls')
+    return allowed.includes('scenes') ? 'scenes' : (allowed[0] ?? 'combat')
   })
   const setTab = useCallback((next: SidebarTab) => {
     write(TAB_KEY, next)

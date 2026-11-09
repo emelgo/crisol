@@ -47,6 +47,7 @@ import { failed, LoadError } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { Tour } from '../components/tour.tsx'
 import { useDice } from '../dice/context.tsx'
+import { HistoryHost } from '../dice/history.tsx'
 import { canvasViewOf, framingOf, REFERENCE_ASPECT, sceneViewportOf, sceneViewportOfCanvas } from './camera.ts'
 import { connectTable, type DragMove, type TableChannel, type TableStatus } from './channel.ts'
 import { masterDraw } from './draw.ts'
@@ -62,7 +63,6 @@ import { PlayerMesa } from './player-mesa.tsx'
 import { Preparing } from './preparing.tsx'
 import { masterTileUrl, sceneListKey } from './queries.ts'
 import type { RendererScene } from './renderer.ts'
-import { RollToasts } from './roll-toasts.tsx'
 import { SnapshotsPanel, THUMBNAIL_BYTES, THUMBNAIL_SIDE } from './snapshots.tsx'
 import { TokenCard } from './token-card.tsx'
 import { TokenImageEditor } from './token-image.tsx'
@@ -615,8 +615,8 @@ export function Mesa({
               { target: '[data-tour="mesa-zoom"]', text: t('tour.tabletop.zoom'), placement: 'top' }
             ]}
           />
-          {/* Las tiradas sobre el d20, mientras su ficha está cerrada (con ella abierta, ya se ven en su registro) */}
-          <RollToasts campaignId={campaignId} enabled={!dice.open} />
+          {/* El historial de tiradas, en una ventana de la Mesa */}
+          <HistoryHost campaign={campaign.data?.campaign} />
           <PageTitle className={styles.hidden}>{campaignName}</PageTitle>
         </div>
       </WindowsProvider>
