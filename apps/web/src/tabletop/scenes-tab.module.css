@@ -100,8 +100,9 @@
   margin-block-start: 4px;
   padding: 1px 8px;
   border-radius: 999px;
-  background: rgb(76 181 106 / 0.16);
-  color: #6fd08c;
+  /* Lo que ven los jugadores, en rojo (como «Enseñando») */
+  background: color-mix(in srgb, var(--color-brand) 9%, transparent);
+  color: var(--color-accent-text);
   font-size: 0.75rem;
   font-weight: 600;
 }
@@ -113,7 +114,8 @@
   block-size: 6px;
   margin-inline-end: 5px;
   border-radius: 50%;
-  background: currentcolor;
+  background: var(--color-brand);
+  box-shadow: 0 0 6px var(--color-brand);
   vertical-align: 1px;
 }
 

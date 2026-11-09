@@ -70,7 +70,7 @@ test('fichas: Lía y tres goblins de un encuentro, moverlos, dañar a uno, ocult
   await call('changeFog', { campaignId, mode: 'reveal', shape: 'rectangle', x: 0, y: 0, width: 1200, height: 800 })
   const tokens = async () => (await call('getCampaignTable', { campaignId })).tokens as Token[]
 
-  await page.goto(`/mundos/${worldId}/campanas/${campaignId}/mesa`)
+  await page.goto(`/mundos/${worldId}/campanas/${campaignId}`)
   const stage = page.getByRole('application', { name: 'Mesa: Escena' })
   await expect(stage).toBeVisible()
   // El mapa de la IA se trocea al abrirlo

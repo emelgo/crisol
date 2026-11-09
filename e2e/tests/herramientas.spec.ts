@@ -115,7 +115,7 @@ test('las herramientas: medir y dejar un cono, dañar a las de dentro, un reloj 
   })
   await call('setScreenCamera', { campaignId, camera: { mode: 'fixed', view: { x: 1800, y: 800, scale: 0.933 } } })
 
-  await page.goto(`/mundos/${worldId}/campanas/${campaignId}/mesa`)
+  await page.goto(`/mundos/${worldId}/campanas/${campaignId}`)
   const stage = page.getByRole('application', { name: 'Mesa: Cripta de Varn' })
   await expect(stage).toBeVisible()
   await expect

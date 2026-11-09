@@ -1032,7 +1032,7 @@ test('@fugas la pantalla de la tele solo recibe lo que ve el grupo, y un jugador
   const markId = (words: string) => marks.find((m) => m.text === words)?.id ?? ''
 
   // El máster abre la mesa: trocea el mapa y lo sube
-  await page.goto(`/mundos/${worldId}/campanas/${campaignId}/mesa`)
+  await page.goto(`/mundos/${worldId}/campanas/${campaignId}`)
   await expect(page.getByRole('application', { name: 'Mesa: Cripta de Varn' })).toBeVisible()
   await expect
     .poll(async () => (await call('getScene', { sceneId })).image.tiles?.levels ?? 0, { timeout: 60_000 })

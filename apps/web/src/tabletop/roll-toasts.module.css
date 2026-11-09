@@ -18,7 +18,7 @@
 
 /* Con la barra plegada, la esquina se acerca al borde (como el d20) */
 :global(body):has(:global([data-mesa-side="folded"])) .toasts {
-  --toasts-end: calc(3rem + var(--space-4) + 2.25rem + var(--space-3));
+  --toasts-end: calc(var(--space-4) + 2.25rem + var(--space-3));
 }
 
 .toast {

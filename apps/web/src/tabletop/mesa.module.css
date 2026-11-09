@@ -2,6 +2,7 @@
 .mesa {
   /* El «?» del tutorial, en el mapa, no encima del panel (como el lienzo) */
   --tour-help-end: calc(24rem + var(--space-4));
+  position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   block-size: 100dvh;
@@ -339,7 +340,7 @@
 .live {
   /* Lo que ven los jugadores va en rojo, con su brillo (como «Enseñando») */
   border-color: transparent;
-  background: color-mix(in srgb, var(--color-brand) 16%, transparent);
+  background: color-mix(in srgb, var(--color-brand) 9%, transparent);
   color: var(--color-accent-text);
 }
 
@@ -955,7 +956,7 @@
 
 /* Con la barra plegada, el «?» del tutorial se acerca al borde */
 .mesa:has([data-mesa-side="folded"]) {
-  --tour-help-end: calc(3rem + var(--space-4));
+  --tour-help-end: var(--space-4);
 }
 
 /* Con ventanas minimizadas abajo a la izquierda, el zoom deja su sitio (sigue en la página: el d20 se coloca por él) */
@@ -1008,4 +1009,9 @@
 .bar button:hover:not(:disabled),
 .zoom button:hover:not(:disabled) {
   transform: translateY(-1px);
+}
+
+/* Con la barra plegada (flota arriba a la derecha), la de arriba le deja sitio */
+.mesa:has([data-mesa-side="folded"]) .topBar {
+  inset-inline-end: 4.5rem;
 }

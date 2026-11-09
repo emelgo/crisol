@@ -96,11 +96,12 @@ test('una escena: su mapa en teselas, la rejilla alineada, la mesa y la tele que
 
   // Abrir en la mesa (la única campaña): la mesa con la escena abierta, sin presentar
   await page.getByRole('button', { name: 'Abrir en la mesa' }).click()
-  await expect(page).toHaveURL(/\/mesa$/)
+  // La campaña se abre en su Mesa
+  await expect(page).toHaveURL(/\/campanas\/[0-9a-f-]{36}(\?.*)?$/)
   const table = page.getByRole('application', { name: 'Mesa: Escena' })
   await expect(table).toBeVisible()
   const panel = page.getByRole('complementary', { name: 'Panel de la mesa' })
-  await expect(panel.getByRole('listitem').filter({ hasText: 'Escena' })).toContainText('Abierta')
+  await expect(panel.getByRole('button', { name: 'Escena, Abierta' })).toBeVisible()
   await expect.poll(async () => (await viewOf(table))?.scale ?? 0).toBeGreaterThan(0)
 
   // La tele, en otra ventana: a oscuras con el nombre de la campaña hasta que se presenta
@@ -140,6 +141,8 @@ test('una escena: su mapa en teselas, la rejilla alineada, la mesa y la tele que
   await table.focus()
   await page.keyboard.press('-')
   await page.keyboard.press('-')
+  // La vista, un poco a la derecha: la etiqueta del marco, fuera de la columna de herramientas
+  for (let i = 0; i < 3; i++) await page.keyboard.press('ArrowLeft')
   const box = await frame.boundingBox()
   const tag = await frame.getByText('Tele').boundingBox()
   if (!box || !tag) throw new Error('sin marco')
@@ -200,7 +203,7 @@ test('un mapa que dibuja la IA (SVG) se trocea al abrir su escena en la mesa', a
   expect(drawn.image).toMatchObject({ width: 1400, height: 900, tiles: null })
   await call('openScene', { campaignId, sceneId: scene.id })
 
-  await page.goto(`/mundos/${worldId}/campanas/${campaignId}/mesa`)
+  await page.goto(`/mundos/${worldId}/campanas/${campaignId}`)
   const table = page.getByRole('application', { name: 'Mesa: Escena' })
   await expect(table).toBeVisible()
   // Se prepara solo y queda con sus teselas

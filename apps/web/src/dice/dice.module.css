@@ -79,7 +79,7 @@
 
 :global(body):has(:global([data-mesa-side="folded"])) .launcher,
 :global(body):has(:global([data-mesa-side="folded"])) .card {
-  --dice-end: calc(3rem + var(--space-4) + 2.25rem + var(--space-3));
+  --dice-end: calc(var(--space-4) + 2.25rem + var(--space-3));
 }
 
 .head {
