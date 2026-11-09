@@ -50,6 +50,11 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   tirar se vacía y se cierra. El resultado sale sobre el d20 cuando paran los dados; el historial, en una ventana de la
   Mesa (fuera, en una ficha junto al d20). Sin pestaña Tiradas. El d20 y el «?» no se mueven; el «?» se aparta
   mientras los dados están abiertos.
+- **La campaña vuelve a tener su propio espacio, como el mundo** (Enrique, 2026-11-10: «al abrir una campaña volvemos a
+  abrir una vista como la del mundo y ahí tendremos los libros, compendio, aventuras etc y además la mesa»): una barra
+  con sus secciones (Inicio con el resumen y los jugadores, Libros, Compendio, Aventuras, Personajes, Páginas, Ajustes)
+  y la **Mesa** como una sección más, a pantalla completa al entrar en ella, con su barra de la derecha. Sustituye a lo
+  de abajo (la campaña abría directamente en la Mesa y sin barra lateral); pendiente de lienzo y de ADR.
 - **La campaña se abre en la Mesa, como en Foundry VTT** (Enrique, 2026-11-08: «la mesa debería ser lo que se ve al
   abrir la campaña como en foundryvtt»; «dentro de la mesa es donde deberíamos tener el compendio»; ADR-0019,
   construida el 2026-11-09):
