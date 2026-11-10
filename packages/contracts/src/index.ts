@@ -62,7 +62,7 @@ import {
   rollForCreature,
   setCreatureHidden
 } from './creatures.ts'
-import { listRolls, rollDice, tryDice } from './dice.ts'
+import { deleteRolls, listRolls, rollDice, tryDice } from './dice.ts'
 import {
   createFolder,
   deleteFile,
@@ -93,7 +93,7 @@ import {
   showPage
 } from './knowledge.ts'
 import { getBookPages, listLibrary, readBookAgain, searchLibrary } from './library.ts'
-import { deleteMessage, listLog, sendMessage } from './log.ts'
+import { clearLog, deleteMessage, listLog, sendMessage } from './log.ts'
 import {
   createMapPin,
   createPageTab,
@@ -531,7 +531,9 @@ export const ACTIONS = [
   createActorFolder,
   renameActorFolder,
   deleteActorFolder,
-  moveToActorFolder
+  moveToActorFolder,
+  clearLog,
+  deleteRolls
 ]
 
 /** Las acciones por nombre, solo como tipo: la web las usa sin cargar zod */
@@ -785,4 +787,6 @@ export type Actions = {
   renameActorFolder: typeof renameActorFolder
   deleteActorFolder: typeof deleteActorFolder
   moveToActorFolder: typeof moveToActorFolder
+  clearLog: typeof clearLog
+  deleteRolls: typeof deleteRolls
 }

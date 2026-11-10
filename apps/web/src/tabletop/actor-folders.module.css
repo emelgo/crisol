@@ -44,7 +44,6 @@
 
 .naming {
   display: flex;
-  flex: 1;
   align-items: center;
   gap: 8px;
   margin-block: 6px;
@@ -85,6 +84,11 @@
   display: flex;
   align-items: center;
   gap: 4px;
+}
+
+.head .naming {
+  flex: 1;
+  margin-block: 0;
 }
 
 .toggle {

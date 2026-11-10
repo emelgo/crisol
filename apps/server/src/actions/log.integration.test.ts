@@ -202,4 +202,23 @@ describe('el registro de la partida: mensajes, susurros y tiradas', () => {
     await call('deleteActorFolder', { campaignId, folderId: folder.id })
     expect((await call('listActorFolders', { campaignId })).body).toEqual({ folders: [], items: [] })
   })
+
+  it('la pestaña Chat sin tiradas; el máster vacía el registro y borra tiradas (unas o todas)', async () => {
+    await call('sendMessage', { campaignId, text: 'Hola' }, ana.cookie)
+    const first = (await call('rollDice', { campaignId, formula: '1d6' }, ana.cookie)).body.roll.id
+    await call('rollDice', { campaignId, formula: '1d8' }, bruno.cookie)
+    const chat = (await call('listLog', { campaignId, only: 'messages' })).body.entries
+    expect(chat.map((e: { kind: string }) => e.kind)).toEqual(['message'])
+
+    expect((await call('deleteRolls', { campaignId, ids: [first] }, ana.cookie)).status).toBe(403)
+    expect((await call('deleteRolls', { campaignId, ids: [first] })).body).toEqual({ deleted: 1 })
+    expect((await call('listRolls', { campaignId })).body.rolls.map((r: { formula: string }) => r.formula)).toEqual([
+      '1d8'
+    ])
+    expect((await call('deleteRolls', { campaignId })).body).toEqual({ deleted: 1 })
+
+    expect((await call('clearLog', { campaignId }, ana.cookie)).status).toBe(403)
+    expect((await call('clearLog', { campaignId })).body).toEqual({ deleted: 1 })
+    expect((await call('listLog', { campaignId })).body.entries).toEqual([])
+  })
 })

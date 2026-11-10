@@ -48,7 +48,6 @@ import { failed, LoadError } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { Tour } from '../components/tour.tsx'
 import { useDice } from '../dice/context.tsx'
-import { HistoryHost } from '../dice/history.tsx'
 import { LogStrip } from '../log/strip.tsx'
 import { SourcePicker } from '../wiki/scene/source-picker.tsx'
 import { canvasViewOf, framingOf, REFERENCE_ASPECT, sceneViewportOf, sceneViewportOfCanvas } from './camera.ts'
@@ -680,7 +679,6 @@ export function Mesa({ worldId, campaign: current }: { worldId: string; campaign
             ]}
           />
           {/* El historial de tiradas, en una ventana de la Mesa */}
-          <HistoryHost campaign={campaign.data?.campaign} />
           <PageTitle className={styles.hidden}>{campaignName}</PageTitle>
         </div>
       </WindowsProvider>

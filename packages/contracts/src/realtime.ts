@@ -38,6 +38,8 @@ export type RealtimeMessage =
   | { type: 'changed'; what: 'creatures'; campaignId: string }
   /** Quién está en la Mesa de esa campaña (entra, sale o cambia de pestaña) */
   | { type: 'changed'; what: 'tablePresence'; campaignId: string }
+  /** El máster vació el registro o borró tiradas: se vuelven a pedir */
+  | { type: 'changed'; what: 'log' | 'rolls'; campaignId: string }
   /** Las carpetas de la pestaña Actores (solo al máster) */
   | { type: 'changed'; what: 'actorFolders'; campaignId: string }
   /** Se le reveló algo a quien lo recibe (solo a él): el aviso, con lo que ya ve (docs/specs/revelar.md) */

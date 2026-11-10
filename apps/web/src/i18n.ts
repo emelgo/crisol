@@ -60,6 +60,9 @@ export const es = {
   },
   // Los dados de una campaña (docs/specs/dados.md)
   dice: {
+    clearRolls: 'Vaciar',
+    clearConfirm: '¿Borrar todas las tiradas de la campaña? Para todos, sin deshacer.',
+    deleteRoll: 'Borrar la tirada',
     title: 'Dados',
     campaign: 'Campaña',
     close: 'Cerrar los dados',
@@ -1762,9 +1765,9 @@ export const es = {
     nobody: 'Nadie en la Mesa.',
     master: 'Máster',
     player: 'Jugadora',
-    screen: 'Pantalla de los jugadores',
+    screen: 'Vista de jugadores',
     active: 'Activo',
-    away: 'En otra pestaña',
+    away: 'En otra ventana',
     since: 'desde las {{time}}',
     tabs: '{{count}} pestañas',
     game: 'La partida',
@@ -1781,6 +1784,9 @@ export const es = {
   // El registro de la partida (docs/specs/registro.md, log/strip.tsx)
   log: {
     title: 'Registro',
+    tabs: { chat: 'Chat', rolls: 'Tiradas', all: 'Todo' },
+    clear: 'Vaciar',
+    clearConfirm: '¿Vaciar el registro? Se borran todos los mensajes para todos, sin deshacer.',
     unread_one: '{{count}} nueva',
     unread_other: '{{count}} nuevas',
     older: 'Ver lo anterior',
@@ -1792,6 +1798,7 @@ export const es = {
     all: 'Todos',
     to: 'A {{names}}',
     whisperHead: 'Susurrar a',
+    nobodyToWhisper: 'Para susurrar hace falta alguien más en la campaña.',
     whisperTo: 'Susurro a {{names}}',
     whisperFrom: 'Susurro de {{name}}',
     whisperBetween: 'De {{from}} a {{to}}',
@@ -1832,9 +1839,9 @@ export const es = {
     free: 'Libre',
     turn: 'En su turno',
     locked: 'Bloqueado',
-    screen: 'Pantalla',
+    screen: 'Vista de jugadores',
     visible: 'A la vista',
-    away: 'En otra pestaña',
+    away: 'En otra ventana',
     actionsOf: 'Opciones de {{name}}',
     kick: 'Echar de la Mesa',
     kickConfirm: '¿Echar a {{name}} de la Mesa? No podrá volver hasta que le dejes.'

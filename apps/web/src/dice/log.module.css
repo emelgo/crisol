@@ -302,3 +302,80 @@
   color: var(--color-muted);
   font-weight: 500;
 }
+
+/* El máster limpia el historial */
+.clear {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-inline-start: auto;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--color-muted);
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.clear:hover {
+  color: var(--color-danger);
+}
+
+.confirm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  font-size: 0.8125rem;
+}
+
+.confirm span {
+  flex-basis: 100%;
+}
+
+.danger,
+.cancelClear {
+  padding: 4px 10px;
+  border: 0;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.danger {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.cancelClear {
+  background: none;
+  color: var(--color-text);
+}
+
+.deleteRoll {
+  display: grid;
+  place-items: center;
+  inline-size: 20px;
+  block-size: 20px;
+  margin-inline-start: 2px;
+  border: 0;
+  border-radius: 5px;
+  background: none;
+  color: var(--color-muted);
+  opacity: 0;
+  cursor: pointer;
+}
+
+li:hover .deleteRoll,
+.deleteRoll:focus-visible {
+  opacity: 1;
+}
+
+.deleteRoll:hover {
+  color: var(--color-danger);
+}

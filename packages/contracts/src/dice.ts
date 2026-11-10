@@ -97,3 +97,12 @@ export const tryDice = defineAction({
   }),
   output: diceRoll.pick({ formula: true, label: true, total: true, detail: true, critical: true, dice: true })
 })
+
+export const deleteRolls = defineAction({
+  name: 'deleteRolls',
+  kind: 'delete',
+  description:
+    'Borra tiradas del historial de una campaña (solo su máster): las de ids, o todas si no se dan. Sin deshacer',
+  input: z.object({ campaignId: z.uuid(), ids: z.array(z.uuid()).min(1).max(500).optional() }),
+  output: z.object({ deleted: z.number().int() })
+})

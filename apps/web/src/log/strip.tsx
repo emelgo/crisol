@@ -13,6 +13,8 @@ import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { useDismiss } from '../components/dismiss.ts'
+import { useDice } from '../dice/context.tsx'
+import { RollLog } from '../dice/log.tsx'
 import { colorOf } from '../dice/rolls.ts'
 import { useRolled } from '../realtime/context.tsx'
 import styles from './strip.module.css'
@@ -24,6 +26,7 @@ const clock = new Intl.DateTimeFormat('es', { hour: '2-digit', minute: '2-digit'
 export const logKey = (campaignId: string) => ['log', campaignId]
 
 type Page = { entries: LogEntry[]; next: string | null }
+type Tab = 'chat' | 'rolls' | 'all'
 
 /** Lo que escribe quien está en la caja: un susurro (/s nombre), una tirada (/t), una acción (/yo) o fuera de personaje (/ooc) */
 export function parseCommand(
@@ -81,15 +84,42 @@ export function LogStrip({
     }
   }
   const [seen, setSeen] = useState<number | null>(null)
+  // Chat (sin tiradas, limpio), Tiradas (el historial de los dados) o Todo (Enrique, 2026-11-10)
+  const [tab, setTab] = useState<Tab>(() => {
+    try {
+      const stored = localStorage.getItem(`${remembered}.pestana`)
+      return stored === 'rolls' || stored === 'all' ? stored : 'chat'
+    } catch {
+      return 'chat'
+    }
+  })
+  const pick = (next: Tab) => {
+    setTab(next)
+    try {
+      localStorage.setItem(`${remembered}.pestana`, next)
+    } catch {
+      // Sin almacenamiento, solo mientras dure la pestaña
+    }
+  }
+  // «Historial» en los dados abre el registro en sus tiradas
+  const { setHistoryHost } = useDice()
+  useEffect(() => {
+    setHistoryHost(() => {
+      setOpenState(true)
+      setTab('rolls')
+    })
+    return () => setHistoryHost(null)
+  }, [setHistoryHost])
   const [text, setText] = useState('')
   const [whisper, setWhisper] = useState<string[]>([])
   const [problem, setProblem] = useState<string | null>(null)
   const list = useRef<HTMLOListElement>(null)
   const key = logKey(campaign.id)
+  const only = tab === 'all' ? 'all' : 'messages'
   const log = useInfiniteQuery({
-    queryKey: key,
+    queryKey: [...key, only],
     queryFn: ({ pageParam }): Promise<Page> =>
-      api.call('listLog', { campaignId: campaign.id, ...(pageParam ? { before: pageParam } : {}) }),
+      api.call('listLog', { campaignId: campaign.id, only, ...(pageParam ? { before: pageParam } : {}) }),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (last) => last.next ?? undefined
   })
@@ -140,6 +170,14 @@ export function LogStrip({
       void refresh()
     }
   })
+  const clear = useMutation({
+    mutationFn: () => api.call('clearLog', { campaignId: campaign.id }),
+    onSuccess: () => {
+      setClearing(false)
+      void refresh()
+    }
+  })
+  const [clearing, setClearing] = useState(false)
   const remove = useMutation({
     mutationFn: (id: string) => api.call('deleteMessage', { campaignId: campaign.id, id }),
     onSuccess: () => void refresh()
@@ -176,7 +214,45 @@ export function LogStrip({
           {open ? <ChevronDown size={14} aria-hidden="true" /> : <ChevronUp size={14} aria-hidden="true" />}
         </button>
       </header>
-      {open && log.hasNextPage && (
+      {open && (
+        <div className={styles.tabs} role="tablist" aria-label={t('log.title')}>
+          {(['chat', 'rolls', 'all'] as const).map((each) => (
+            <button
+              key={each}
+              type="button"
+              role="tab"
+              aria-selected={tab === each}
+              className={styles.tab}
+              onClick={() => pick(each)}
+            >
+              {t(`log.tabs.${each}`)}
+            </button>
+          ))}
+          {master && tab !== 'rolls' && (
+            <button type="button" className={styles.clear} onClick={() => setClearing(true)}>
+              <Trash2 size={13} aria-hidden="true" />
+              {t('log.clear')}
+            </button>
+          )}
+        </div>
+      )}
+      {open && clearing && (
+        <div className={styles.confirm} role="alert">
+          <span>{t('log.clearConfirm')}</span>
+          <button type="button" className={styles.danger} disabled={clear.isPending} onClick={() => clear.mutate()}>
+            {t('log.clear')}
+          </button>
+          <button type="button" className={styles.cancel} onClick={() => setClearing(false)}>
+            {t('list.cancel')}
+          </button>
+        </div>
+      )}
+      {open && tab === 'rolls' && (
+        <div className={styles.rolls}>
+          <RollLog campaign={campaign} />
+        </div>
+      )}
+      {open && tab !== 'rolls' && log.hasNextPage && (
         <button
           type="button"
           className={styles.older}
@@ -186,7 +262,7 @@ export function LogStrip({
           {t('log.older')}
         </button>
       )}
-      {open && (
+      {open && tab !== 'rolls' && (
         <ol ref={list} className={styles.list} role="log" aria-label={t('log.title')}>
           {entries.map((entry) => (
             <Entry
@@ -283,7 +359,11 @@ function Recipients({
             {t('log.all')}
             {chosen.length === 0 && <Check size={14} aria-hidden="true" />}
           </button>
-          {recipients.length > 0 && <p className={styles.menuHead}>{t('log.whisperHead')}</p>}
+          {recipients.length > 0 ? (
+            <p className={styles.menuHead}>{t('log.whisperHead')}</p>
+          ) : (
+            <p className={styles.menuHint}>{t('log.nobodyToWhisper')}</p>
+          )}
           {recipients.map((r) => (
             <button
               key={r.id}
@@ -323,7 +403,7 @@ function Entry({
         <Avatar userId={roll.by.userId} name={roll.by.name} color={roll.by.color} />
         <div className={styles.body}>
           <p className={styles.line}>
-            <b>{roll.by.userId === me ? t('dice.me') : roll.by.name}</b> <span className={styles.muted}>{what}</span>
+            <b>{roll.by.name}</b> <span className={styles.muted}>{what}</span>
           </p>
           <p className={styles.detail} translate="no">
             {roll.detail}

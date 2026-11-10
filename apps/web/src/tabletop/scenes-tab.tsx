@@ -45,6 +45,13 @@ export function ScenesGrid({
   const { t } = useTranslation()
   const api = useApi()
   const [query, setQuery] = useState('')
+  // La recién creada entra animada (sube y crece, con el contorno iluminado un momento: docs/diseno.md)
+  const [fresh, setFresh] = useState<string | null>(null)
+  useEffect(() => {
+    if (!fresh) return
+    const timer = window.setTimeout(() => setFresh(null), 1400)
+    return () => window.clearTimeout(timer)
+  }, [fresh])
   const scenes = useQuery({ queryKey: sceneListKey(worldId), queryFn: () => api.call('listScenes', { worldId }) })
   const openId = table?.open?.id ?? null
   const live = table?.presented && !table.screenHidden ? table.presented.id : null
@@ -77,12 +84,17 @@ export function ScenesGrid({
             open={scene.id === openId}
             live={scene.id === live}
             onOpen={() => scene.id !== openId && onOpen(scene.id)}
+            fresh={scene.id === fresh}
           />
         ))}
         {!query && (
           <NewScene
             worldId={worldId}
-            onCreated={(scene, choice) => (onCreate ? onCreate(scene, choice) : onOpen(scene.id))}
+            onCreated={(scene, choice) => {
+              setFresh(scene.id)
+              if (onCreate) onCreate(scene, choice)
+              else onOpen(scene.id)
+            }}
           />
         )}
       </ul>
@@ -99,13 +111,16 @@ function SceneCard({
   scene,
   open,
   live,
-  onOpen
+  onOpen,
+  fresh = false
 }: {
   worldId: string
   scene: SceneView
   open: boolean
   live: boolean
   onOpen: () => void
+  /** Recién creada: entra animada */
+  fresh?: boolean
 }) {
   const { t } = useTranslation()
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null)
@@ -113,7 +128,7 @@ function SceneCard({
   const openMenu = (x: number, y: number) => setMenu({ x, y })
   return (
     <li
-      className={styles.card}
+      className={fresh ? `${styles.card} ${styles.fresh}` : styles.card}
       data-open={open || undefined}
       onContextMenu={(event) => {
         event.preventDefault()
@@ -343,6 +358,7 @@ function NewScene({
   const [name, setName] = useState('')
   const [choice, setChoice] = useState<SceneChoice | null>(null)
   const dialog = useRef<HTMLDialogElement>(null)
+  const windows = useWindows()
   const create = useMutation({
     mutationFn: (title: string) => api.call('createScene', { worldId, name: title }),
     onSuccess: async (scene) => {
@@ -350,6 +366,8 @@ function NewScene({
       const chosen = choice
       dialog.current?.close()
       onCreated(scene, chosen)
+      // Y sus ajustes, para colocar la rejilla sobre el mapa (Enrique: «falta el paso de la rejilla»)
+      windows?.open(sceneWindow(worldId, scene))
     }
   })
   const submit = (event: FormEvent) => {

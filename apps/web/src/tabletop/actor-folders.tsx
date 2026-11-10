@@ -162,6 +162,10 @@ export function ActorsTab({
             autoFocus
             value={name}
             maxLength={80}
+            autoComplete="off"
+            data-1p-ignore
+            data-lpignore="true"
+            data-form-type="other"
             placeholder={t('actorFolders.name')}
             aria-label={t('actorFolders.name')}
             onChange={(event) => setName(event.currentTarget.value)}
@@ -256,6 +260,10 @@ function FolderGroup({
               autoFocus
               value={name}
               maxLength={80}
+              autoComplete="off"
+              data-1p-ignore
+              data-lpignore="true"
+              data-form-type="other"
               aria-label={t('actorFolders.name')}
               onChange={(event) => setName(event.currentTarget.value)}
               onKeyDown={(event) => {

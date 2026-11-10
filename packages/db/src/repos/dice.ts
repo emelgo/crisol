@@ -2,7 +2,7 @@
  * Las tiradas de una campaña (ADR-0010): se guardan ya resueltas y se leen filtradas por quién las ve. No pasan por
  * operation(): una tirada no se deshace
  */
-import { and, desc, eq, lt, or, sql } from 'drizzle-orm'
+import { and, desc, eq, inArray, lt, or, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { user } from '../schema/auth.ts'
 import { diceRolls, type StoredRoll } from '../schema/dice.ts'
@@ -157,4 +157,13 @@ export async function listRollsByTime(
     )
     .orderBy(desc(diceRolls.createdAt), desc(diceRolls.n))
     .limit(input.limit)
+}
+
+/** Borra tiradas de una campaña (las de ids, o todas); cuántas */
+export async function deleteRolls(db: Database, campaignId: string, ids?: readonly string[]): Promise<number> {
+  const rows = await db
+    .delete(diceRolls)
+    .where(and(eq(diceRolls.campaignId, campaignId), ids ? inArray(diceRolls.id, [...ids]) : undefined))
+    .returning({ id: diceRolls.id })
+  return rows.length
 }

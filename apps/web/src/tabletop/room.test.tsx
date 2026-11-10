@@ -71,8 +71,8 @@ describe('la sala en la Mesa del máster', () => {
     const rows = within(panel).getAllByRole('listitem')
     expect(rows.map((row) => row.textContent?.split('desde')[0])).toEqual([
       'LLía · LucíaA la vista · ',
-      'AAnaEn otra pestaña · ',
-      'PantallaA la vista · '
+      'AAnaEn otra ventana · ',
+      'Vista de jugadoresA la vista · '
     ])
   })
 

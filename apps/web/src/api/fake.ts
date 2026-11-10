@@ -1767,6 +1767,19 @@ export function fakeApi(
         throw error
       }
     },
+    clearLog: ({ campaignId }) => {
+      const before = messages.length
+      for (let i = messages.length - 1; i >= 0; i--) if (messages[i]?.campaignId === campaignId) messages.splice(i, 1)
+      return { deleted: before - messages.length }
+    },
+    deleteRolls: ({ campaignId, ids }) => {
+      const before = rolls.length
+      for (let i = rolls.length - 1; i >= 0; i--) {
+        const roll = rolls[i]
+        if (roll?.campaignId === campaignId && (!ids || ids.includes(roll.id))) rolls.splice(i, 1)
+      }
+      return { deleted: before - rolls.length }
+    },
     listActorFolders: ({ campaignId }) => ({
       folders: actorFolders.filter((f) => f.campaignId === campaignId).map(({ id, name }) => ({ id, name })),
       items: actorFolderItems
@@ -1822,10 +1835,10 @@ export function fakeApi(
       found.text = ''
       return { ok: true as const }
     },
-    listLog: ({ campaignId }) => {
+    listLog: ({ campaignId, only }) => {
       const entries: LogEntry[] = [
         ...messages.filter((m) => m.campaignId === campaignId).map((m) => structuredClone(m)),
-        ...rolls
+        ...(only === 'messages' ? [] : rolls)
           .filter((r) => r.campaignId === campaignId)
           .map((r) => ({ kind: 'roll' as const, id: r.id, roll: { ...r }, createdAt: r.createdAt }))
       ].sort((a, b) => a.createdAt.localeCompare(b.createdAt))

@@ -468,6 +468,8 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   ver_registro: { action: 'listLog' },
   escribir_en_registro: { action: 'sendMessage' },
   borrar_mensaje: { action: 'deleteMessage' },
+  vaciar_registro: { action: 'clearLog' },
+  borrar_tiradas: { action: 'deleteRolls' },
   // Las carpetas de la pestaña Actores (agrupar personajes y criaturas en juego)
   ver_carpetas_actores: { action: 'listActorFolders' },
   crear_carpeta_actores: { action: 'createActorFolder' },

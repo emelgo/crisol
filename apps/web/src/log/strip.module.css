@@ -367,3 +367,102 @@
 .error {
   color: var(--color-danger);
 }
+
+/* Las pestañas: Chat, Tiradas y Todo */
+.tabs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 8px 4px;
+  border-block-end: 1px solid var(--glass-edge);
+}
+
+.tab {
+  padding: 4px 9px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--color-muted);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tab:hover {
+  color: var(--color-text);
+}
+
+.tab[aria-selected="true"] {
+  background: var(--color-raised);
+  color: var(--color-text);
+}
+
+.clear {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-inline-start: auto;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--color-muted);
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.clear:hover {
+  color: var(--color-danger);
+}
+
+.confirm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-block-end: 1px solid var(--glass-edge);
+  font-size: 0.8125rem;
+}
+
+.confirm span {
+  flex-basis: 100%;
+}
+
+.danger,
+.cancel {
+  padding: 4px 10px;
+  border: 0;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.danger {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.cancel {
+  background: none;
+  color: var(--color-text);
+}
+
+/* Las tiradas: el historial de los dados, dentro */
+.rolls {
+  display: flex;
+  flex-direction: column;
+  max-block-size: min(60vh, 34rem);
+  min-block-size: 12rem;
+}
+
+.menuHint {
+  max-inline-size: 14rem;
+  margin: 4px 9px 6px;
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+}

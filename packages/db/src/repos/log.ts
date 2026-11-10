@@ -134,3 +134,12 @@ export async function deleteMessage(db: Database, id: string): Promise<void> {
     .set({ deletedAt: new Date(), text: '', shown: null })
     .where(eq(campaignMessages.id, id))
 }
+
+/** Vacía el registro de una campaña (sus mensajes); cuántos */
+export async function clearMessages(db: Database, campaignId: string): Promise<number> {
+  const rows = await db
+    .delete(campaignMessages)
+    .where(eq(campaignMessages.campaignId, campaignId))
+    .returning({ id: campaignMessages.id })
+  return rows.length
+}

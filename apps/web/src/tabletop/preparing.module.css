@@ -6,7 +6,16 @@
   block-size: 100%;
   min-block-size: 18rem;
   overflow: hidden;
-  background: #0b0b0c;
+  /* Sobre el fondo de la Mesa (no negro) y entrando con un fundido: al crear una escena no es un corte */
+  background: transparent;
+  animation: preparar-entra 380ms ease-out both;
+}
+
+@keyframes preparar-entra {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
 }
 
 .image {

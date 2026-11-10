@@ -3,7 +3,7 @@
  * con sus tiradas al listar. A cada uno le llega (por tiempo real y por páginas) solo lo que puede ver: el máster, todo,
  * también los susurros entre jugadores (Enrique); los demás, lo de todos, lo suyo y lo que se les susurra
  */
-import { deleteMessage, type LogEntry, type LogMessage, listLog, sendMessage } from '@crisol/contracts'
+import { clearLog, deleteMessage, type LogEntry, type LogMessage, listLog, sendMessage } from '@crisol/contracts'
 import { charactersRepo, creaturesRepo, diceRepo, logRepo, membersRepo } from '@crisol/db'
 import { can, ForbiddenError, NotFoundError } from '@crisol/domain'
 import { authorizedCampaign } from './access.ts'
@@ -142,7 +142,7 @@ export const logActions = [
     }
     const [messages, rolls, names] = await Promise.all([
       logRepo.listMessages(ctx.db, query),
-      diceRepo.listRollsByTime(ctx.db, query),
+      input.only === 'messages' ? Promise.resolve([]) : diceRepo.listRollsByTime(ctx.db, query),
       namesOf(ctx, campaign.id)
     ])
     const merged = [
@@ -155,5 +155,15 @@ export const logActions = [
     const page = merged.slice(0, PAGE)
     const next = merged.length > PAGE ? (page.at(-1)?.at.toISOString() ?? null) : null
     return { entries: page.reverse().map((p) => p.entry), next }
+  }),
+
+  implement(clearLog, async (ctx, { campaignId }) => {
+    const campaign = await authorizedCampaign(ctx, 'dice.private', campaignId)
+    const deleted = await logRepo.clearMessages(ctx.db, campaign.id)
+    ctx.realtime.publish({
+      to: { capability: 'dice.read', target: { campaignId: campaign.id, worldId: campaign.worldId } },
+      message: { type: 'changed', what: 'log', campaignId: campaign.id }
+    })
+    return { deleted }
   })
 ]

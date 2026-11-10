@@ -253,7 +253,9 @@ describe('Actions', () => {
       createActorFolder: true,
       renameActorFolder: true,
       deleteActorFolder: true,
-      moveToActorFolder: true
+      moveToActorFolder: true,
+      clearLog: true,
+      deleteRolls: true
     }
     expect(Object.keys(names).sort()).toEqual(ACTIONS.map((a) => a.name).sort())
   })
