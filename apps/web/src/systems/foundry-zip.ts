@@ -22,7 +22,7 @@ export interface FoundryZip {
   title: string
   version: string
   packs: FoundryPack[]
-  /** Sus paquetes de escenas y de aventuras (docs/specs/escenas-foundry.md) */
+  /** Sus paquetes de escenas, de aventuras y de listas de sonido (docs/specs/escenas-foundry.md, sonido-foundry.md) */
   scenePacks: FoundryPack[]
   /** Dónde está el manifiesto dentro del zip (la carpeta del sistema), con su barra final o vacío */
   root: string
@@ -40,8 +40,8 @@ export interface ZipImage {
 
 /** Lo que Crisol sabe traer: objetos, actores, diarios y tablas */
 export const IMPORTED = new Set(['Item', 'Actor', 'JournalEntry', 'RollTable'])
-/** Y, a un mundo, sus escenas y aventuras */
-export const SCENES = new Set(['Scene', 'Adventure'])
+/** Y, a un mundo, sus escenas, aventuras y listas de sonido */
+export const SCENES = new Set(['Scene', 'Adventure', 'Playlist'])
 
 const MANIFESTS = ['system.json', 'module.json']
 

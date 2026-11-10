@@ -345,6 +345,8 @@ export function summaryOf(
     // Lo traído de un zip (docs/specs/escenas-foundry.md)
     case 'importFoundryScene':
       return say(action, { name: text(details.name), title: text(details.title) })
+    case 'importFoundryPlaylist':
+      return say(action, { name: text(details.name) })
     case 'placeScenePins':
       return say(action, { campaign: text(details.campaign) })
     // La visión de la mesa (docs/specs/vision.md): lo del mundo, con su escena; lo de la campaña, con ella

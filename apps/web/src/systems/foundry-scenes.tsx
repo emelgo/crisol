@@ -4,11 +4,11 @@
  * se saca la imagen de cada una del zip y se trocea, como la de una escena nueva. Sin su imagen en el zip, un mapa
  * liso de su tamaño, para que sus muros y sus fichas caigan en su sitio
  */
-import type { FoundryAdventureSummary, FoundrySceneSummary } from '@crisol/contracts'
+import type { FoundryAdventureSummary, FoundryPlaylistSummary, FoundrySceneSummary } from '@crisol/contracts'
 import { imageSize } from '@crisol/tabletop'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { BookOpen, Map as MapIcon } from 'lucide-react'
+import { BookOpen, Map as MapIcon, Music } from 'lucide-react'
 import { useEffect, useId, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { type ActionOutput, ApiError } from '../api/client.ts'
@@ -38,6 +38,79 @@ const MIME: Record<string, string> = {
 }
 
 type Imported = ActionOutput<'importFoundryScenes'>
+
+const AUDIO_MIME: Record<string, string> = {
+  ogg: 'audio/ogg',
+  oga: 'audio/ogg',
+  opus: 'audio/ogg',
+  mp3: 'audio/mpeg',
+  wav: 'audio/wav',
+  flac: 'audio/flac',
+  webm: 'audio/webm',
+  m4a: 'audio/mp4',
+  aac: 'audio/aac'
+}
+
+/** Lo que dura un audio (s), medido por el navegador; undefined si no se puede (en unos segundos) */
+function measureAudio(blob: Blob): Promise<number | undefined> {
+  return new Promise((resolve) => {
+    let url: string
+    try {
+      url = URL.createObjectURL(blob)
+    } catch {
+      return resolve(undefined)
+    }
+    const audio = new Audio()
+    const done = (value: number | undefined) => {
+      clearTimeout(timer)
+      URL.revokeObjectURL(url)
+      resolve(value)
+    }
+    const timer = setTimeout(() => done(undefined), 5000)
+    audio.preload = 'metadata'
+    audio.onloadedmetadata = () =>
+      done(Number.isFinite(audio.duration) && audio.duration > 0 ? audio.duration : undefined)
+    audio.onerror = () => done(undefined)
+    audio.src = url
+  })
+}
+
+/**
+ * Sube al mundo los audios del zip que usa lo elegido (los ya subidos no) y mide lo que dura cada uno: lo que el
+ * servidor necesita para las listas y los sonidos de las escenas (docs/specs/sonido-foundry.md)
+ */
+async function uploadAudio(
+  api: ReturnType<typeof useApi>,
+  input: {
+    bytes: Uint8Array
+    foundry: FoundryZip
+    worldId: string
+    audio: ReadonlyArray<{ path: string; usedBy: string[]; fileId: string | null }>
+    chosen: ReadonlySet<string>
+  },
+  onProgress: (index: number, total: number) => void
+) {
+  const needed = input.audio.filter((a) => a.usedBy.some((key) => input.chosen.has(key)))
+  if (needed.length === 0) return []
+  const files = filesFromZip(
+    input.bytes,
+    input.foundry,
+    needed.map((a) => a.path)
+  )
+  const out: Array<{ path: string; fileId?: string; duration?: number }> = []
+  for (const [index, item] of needed.entries()) {
+    onProgress(index + 1, needed.length)
+    const data = files.get(item.path)
+    // Lo que no viene en el zip lo dice el servidor
+    if (!data) continue
+    const name = decodeURIComponent(item.path.split('/').at(-1) ?? 'audio')
+    const blob = new Blob([data as BlobPart], { type: AUDIO_MIME[name.split('.').at(-1)?.toLowerCase() ?? ''] ?? '' })
+    const duration = await measureAudio(blob)
+    const fileId = item.fileId ?? (await api.uploadFile({ worldId: input.worldId, name }, blob)).id
+    out.push({ path: item.path, fileId, ...(duration ? { duration } : {}) })
+  }
+  return out
+}
 
 /** Lo que se le pasa al hilo que trocea: la imagen del zip (a las medidas de la escena) o un mapa liso */
 async function sourceFor(bytes: Uint8Array | undefined, path: string | null, width: number, height: number) {
@@ -108,26 +181,45 @@ export function FoundryScenes({
   })
   const adventures = read.data?.adventures ?? []
   const loose = (read.data?.scenes ?? []).filter((s) => !s.adventure)
+  // Las listas de sonido de sus paquetes de listas (las de una aventura van con ella)
+  const playlists = (read.data?.playlists ?? []).filter((p) => !p.adventure)
   const [unchecked, setUnchecked] = useState<ReadonlySet<string>>(new Set())
   const keyOf = (item: { pack: string; id: string }) => `${item.pack}/${item.id}`
   const chosenScenes = loose.filter((s) => !unchecked.has(keyOf(s)))
   const chosenAdventures = adventures.filter((a) => !unchecked.has(keyOf(a)))
+  const chosenPlaylists = playlists.filter((p) => !unchecked.has(keyOf(p)))
   const count =
     chosenScenes.length +
     (read.data?.scenes ?? []).filter((s) => s.adventure && chosenAdventures.some((a) => a.id === s.adventure)).length
   const thumbs = useThumbnails(bytes, foundry, read.data?.scenes ?? [], adventures)
   const [progress, setProgress] = useState<{ name: string; index: number; total: number; done: number } | null>(null)
+  const [uploading, setUploading] = useState<{ index: number; total: number } | null>(null)
   const [blank, setBlank] = useState<string[]>([])
 
   const run = useMutation({
     mutationFn: async () => {
       if (!world) throw new ApiError('NOT_FOUND', 404)
+      // Antes, los audios del zip que usa lo elegido, subidos al mundo
+      const audio = await uploadAudio(
+        api,
+        {
+          bytes,
+          foundry,
+          worldId: world,
+          audio: read.data?.audio ?? [],
+          chosen: new Set([...chosenScenes, ...chosenAdventures, ...chosenPlaylists].map(keyOf))
+        },
+        (index, total) => setUploading({ index, total })
+      )
+      setUploading(null)
       const imported = await api.call('importFoundryScenes', {
         worldId: world,
         zip,
         parentId: parentId || null,
         scenes: chosenScenes.map((s) => ({ pack: s.pack, id: s.id })),
         adventures: chosenAdventures.map((a) => ({ pack: a.pack, id: a.id })),
+        playlists: chosenPlaylists.map((p) => ({ pack: p.pack, id: p.id })),
+        audio,
         ...(systemId ? { systemId } : {})
       })
       // Las imágenes, del zip, una escena tras otra
@@ -163,7 +255,10 @@ export function FoundryScenes({
       await queryClient.invalidateQueries({ queryKey: ['pages', world] })
       return imported
     },
-    onError: () => setProgress(null)
+    onError: () => {
+      setProgress(null)
+      setUploading(null)
+    }
   })
 
   if (worlds.data && own.length === 0)
@@ -236,7 +331,25 @@ export function FoundryScenes({
               <SceneText scene={scene} />
             </label>
           ))}
+          {playlists.map((playlist) => (
+            <label key={keyOf(playlist)} className={styles.row}>
+              <input
+                type="checkbox"
+                checked={!unchecked.has(keyOf(playlist))}
+                onChange={(event) => setUnchecked(toggle(unchecked, keyOf(playlist), event.currentTarget.checked))}
+              />
+              <span className={styles.thumb} aria-hidden="true">
+                <Music size={18} />
+              </span>
+              <PlaylistText playlist={playlist} />
+            </label>
+          ))}
         </fieldset>
+      )}
+      {uploading && (
+        <p className={styles.progress} role="status">
+          {t('systems.scenes.uploadingAudio', uploading)}
+        </p>
       )}
       {progress && (
         <p className={styles.progress} role="status">
@@ -254,10 +367,12 @@ export function FoundryScenes({
           type="button"
           className={form.button}
           busy={run.isPending}
-          disabled={count === 0}
+          disabled={count === 0 && chosenPlaylists.length === 0}
           onClick={() => run.mutate()}
         >
-          {t('systems.scenes.import', { count })}
+          {count === 0 && chosenPlaylists.length > 0
+            ? t('systems.scenes.importLists', { count: chosenPlaylists.length })
+            : t('systems.scenes.import', { count })}
         </BusyButton>
       )}
     </section>
@@ -331,6 +446,25 @@ function SceneText({ scene }: { scene: FoundrySceneSummary }) {
         {scene.existing && <span className={styles.badge}>{t('systems.scenes.again')}</span>}
       </span>
       <span className={styles.meta}>{parts.join(' · ')}</span>
+    </span>
+  )
+}
+
+/** El nombre de una lista de sonido y lo que trae; si ya se trajo, se dice */
+function PlaylistText({ playlist }: { playlist: FoundryPlaylistSummary }) {
+  const { t } = useTranslation()
+  return (
+    <span className={styles.text}>
+      <span className={styles.name}>
+        {playlist.name}
+        {playlist.existing && <span className={styles.badge}>{t('systems.scenes.again')}</span>}
+      </span>
+      <span className={styles.meta}>
+        {[
+          t(`systems.scenes.playlistKind.${playlist.kind}`),
+          t('systems.scenes.tracks', { count: playlist.tracks })
+        ].join(' · ')}
+      </span>
     </span>
   )
 }
@@ -437,6 +571,22 @@ function ImportedScenes({
       </ul>
       {imported.pages.length > 0 && (
         <p className={styles.meta}>{t('systems.scenes.pages', { count: imported.pages.length })}</p>
+      )}
+      {imported.playlists.length > 0 && (
+        <p className={styles.meta}>{t('systems.scenes.playlistsDone', { count: imported.playlists.length })}</p>
+      )}
+      {imported.missingAudio.length > 0 && (
+        <div className={styles.meta}>
+          <span className={styles.warn}>{t('systems.scenes.missingAudio')}</span>
+          <ul className={styles.result}>
+            {imported.missingAudio.map((missing) => (
+              <li key={`${missing.name}|${missing.path}`}>
+                {missing.name}
+                <span className={styles.meta}>{t(`systems.scenes.missingReason.${missing.reason}`)}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
       {imported.notes.map((note) => (
         <p key={note} className={styles.meta}>
