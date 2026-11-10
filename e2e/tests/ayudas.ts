@@ -226,11 +226,18 @@ export async function import5e(page: Page): Promise<string> {
 export async function openCampaign(page: Page, name: string, panel?: string) {
   const href = await page.getByRole('link', { name, exact: true }).first().getAttribute('href')
   expect(href).toBeTruthy()
+  // Los ajustes de la campaña ya no son una pestaña de la Mesa: se abren encima, en su Inicio
+  if (panel === 'ajustes' || panel === 'campana') return void (await page.goto(`${href}?panel=ajustes`))
   await page.goto(`${href}/mesa${panel ? `?panel=${panel}` : ''}`)
 }
 
 /** La dirección de la campaña abierta en `page` (sin ?panel=…) */
 export const campaignPath = (page: Page) => new URL(page.url()).pathname.replace(/\/(mesa|compendio|paginas.*)$/, '')
+
+/** De la campaña abierta en `page` (en su Inicio o en otra vista suya) a su Mesa */
+export async function toMesa(page: Page) {
+  await page.goto(`${campaignPath(page)}/mesa`)
+}
 
 /** Una pestaña de la barra de la Mesa */
 export async function mesaTab(page: Page, name: string) {
@@ -251,7 +258,7 @@ export async function openCompendiumWindow(page: Page, path = campaignPath(page)
   return window
 }
 
-/** El propietario crea Eana y La Marca; devuelve el enlace de invitación (con `page` en los Ajustes de su Mesa) */
+/** El propietario crea Eana y La Marca; devuelve el enlace de invitación (con `page` en los ajustes de la campaña, abiertos sobre su Inicio) */
 export async function campaignLink(page: Page) {
   await freshOwner(page)
   await createWorld(page, 'Eana')

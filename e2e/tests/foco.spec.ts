@@ -43,6 +43,9 @@ test('con el teclado: el modo de IA con flechas y las invitaciones con espacio, 
 
 test('al navegar, el foco va al título de la página, y la pestaña lo dice', async ({ page }) => {
   await campaignLink(page)
+  // Con sus ajustes abiertos encima, la pestaña los nombra; al cerrarlos, vuelve la campaña
+  await expect(page).toHaveTitle('Ajustes de la campaña · Crisol')
+  await page.keyboard.press('Escape')
   await expect(page).toHaveTitle('La Marca · Crisol')
   // La campaña va sola, sin barra; fuera de ella, el mundo: su portada
   await page.goto('/mundos')

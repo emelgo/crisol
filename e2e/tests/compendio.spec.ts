@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, type Page, test } from '@playwright/test'
-import { campaignLink, campaignPath, import5e, newPlayer, openCompendiumWindow, settled } from './ayudas.ts'
+import { campaignLink, campaignPath, import5e, newPlayer, openCompendiumWindow, settled, toMesa } from './ayudas.ts'
 
 /** Que axe no encuentre fallos críticos ni graves, en claro y en oscuro */
 async function accessible(page: Page) {
@@ -31,6 +31,7 @@ test('la campaña en su vista: la jugadora entra, abre el compendio, busca «fir
 
   // El máster, en su Mesa: el compendio en su barra; los dados, en el d20 flotante
   const path = campaignPath(page)
+  await toMesa(page)
   await expect(
     page.getByRole('complementary', { name: 'Panel de la mesa' }).getByRole('tab', { name: 'Compendio' })
   ).toBeVisible()

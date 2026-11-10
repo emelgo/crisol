@@ -85,7 +85,7 @@ test('fichas: Lía y tres goblins de un encuentro, moverlos, dañar a uno, ocult
 
   // Lía, desde «Personajes», arrastrada al mapa
   const panel = page.getByRole('complementary', { name: 'Panel de la mesa' })
-  await panel.getByRole('tab', { name: 'Personajes' }).click()
+  await panel.getByRole('tab', { name: 'Actores' }).click()
   const lia = await onScreen(stage, { x: 350, y: 450 })
   const stageBox = await stage.boundingBox()
   if (!stageBox) throw new Error('sin mesa')
@@ -189,7 +189,7 @@ test('fichas: Lía y tres goblins de un encuentro, moverlos, dañar a uno, ocult
   await page.mouse.click(liaAt.x, liaAt.y)
   await expect(page.getByRole('region', { name: 'Lía' })).toBeVisible()
   // Sus imágenes del mundo, en Personajes (con la ficha elegida)
-  await panel.getByRole('tab', { name: 'Personajes' }).click()
+  await panel.getByRole('tab', { name: 'Actores' }).click()
   await panel.getByRole('button', { name: 'lia.png' }).click()
   const editor = page.getByRole('dialog', { name: 'Imagen de Lía' })
   await expect(editor).toBeVisible()
