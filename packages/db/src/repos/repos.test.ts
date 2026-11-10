@@ -385,9 +385,9 @@ describe('repositorios', () => {
       await join(c, 'u2')
       await join(c, 'u3')
       expect(await membersRepo.listCampaignMembers(conn.db, c)).toEqual([
-        { userId: 'u1', name: 'Enrique', role: 'master' },
-        { userId: 'u3', name: 'Ana', role: 'player' },
-        { userId: 'u2', name: 'Otra', role: 'player' }
+        { userId: 'u1', name: 'Enrique', role: 'master', color: null },
+        { userId: 'u3', name: 'Ana', role: 'player', color: null },
+        { userId: 'u2', name: 'Otra', role: 'player', color: null }
       ])
       expect(await membersRepo.findCampaignMember(conn.db, c, 'u2')).toEqual({ name: 'Otra', role: 'player' })
       expect(await membersRepo.findCampaignMember(conn.db, c, 'nadie')).toBeNull()
