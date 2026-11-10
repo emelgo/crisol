@@ -1,3 +1,10 @@
+import {
+  createActorFolder,
+  deleteActorFolder,
+  listActorFolders,
+  moveToActorFolder,
+  renameActorFolder
+} from './actor-folders.ts'
 import { approve, getAiSettings, listApprovals, reject, setAiMode } from './ai.ts'
 import {
   createBook,
@@ -55,7 +62,7 @@ import {
   rollForCreature,
   setCreatureHidden
 } from './creatures.ts'
-import { listRolls, rollDice, tryDice } from './dice.ts'
+import { deleteRolls, listRolls, rollDice, tryDice } from './dice.ts'
 import {
   createFolder,
   deleteFile,
@@ -73,6 +80,7 @@ import { importFoundryScenes, inspectFoundryScenes } from './foundry-scenes.ts'
 import { listHistory, undoOperation } from './history.ts'
 import { getInvitation, regenerateInvitation, setInvitationsOpen } from './invitations.ts'
 import {
+  clearScreenShow,
   getPageKnowledge,
   getSecretsKnowledge,
   hide,
@@ -83,9 +91,11 @@ import {
   seeNews,
   setKnowledge,
   setPageEditors,
+  showImage,
   showPage
 } from './knowledge.ts'
 import { getBookPages, listLibrary, readBookAgain, searchLibrary } from './library.ts'
+import { clearLog, deleteMessage, listLog, sendMessage } from './log.ts'
 import {
   createMapPin,
   createPageTab,
@@ -98,6 +108,15 @@ import {
   updatePageTab
 } from './maps.ts'
 import { leaveCampaign, listMembers, removeMember } from './members.ts'
+import {
+  createPlayerNote,
+  deletePlayerNote,
+  getPlayerNote,
+  listPlayerNotes,
+  listPlayerNoteVersions,
+  restorePlayerNote,
+  updatePlayerNote
+} from './notes.ts'
 import { listOrganizations } from './organizations.ts'
 import {
   createPage,
@@ -147,6 +166,18 @@ import {
 } from './scenes.ts'
 import { searchWiki } from './search.ts'
 import {
+  createSoundPlaylist,
+  deleteSoundPlaylist,
+  getSound,
+  listSoundPlaylists,
+  nextTrack,
+  pauseSound,
+  playSound,
+  setSoundVolume,
+  stopSound,
+  updateSoundPlaylist
+} from './sound.ts'
+import {
   browseCampaignContent,
   checkSystem,
   createSystem,
@@ -171,7 +202,7 @@ import {
   trySystemRoll,
   updateSystem
 } from './systems.ts'
-import { getTablePresence } from './table.ts'
+import { allowBackToTable, getTablePresence, kickFromTable, setTableControls } from './table.ts'
 import {
   changeMarks,
   createWidget,
@@ -192,6 +223,7 @@ import { getRandomTable, resetTableDraws, rollOnTable, updateRandomTable } from 
 import { createTag, deleteTag, listAccountTags, setFileTags, updateTag } from './tags.ts'
 import { createTemplate, deleteTemplate, getTemplate, listTemplates, updateTemplate } from './templates.ts'
 import {
+  assignToken,
   deleteEncounter,
   listEncounters,
   moveTokens,
@@ -212,9 +244,12 @@ import {
 } from './trash.ts'
 import {
   changeFog,
+  changeSceneSound,
   changeWalls,
   getSceneVision,
   placeImportedWalls,
+  placeSceneSound,
+  removeSceneSound,
   resetFog,
   setDoor,
   setTileFit,
@@ -233,6 +268,7 @@ import {
 import { createWorld, ensureWorldHome, getWorldHome, listWorlds, renameWorld, updateWorld } from './worlds.ts'
 
 export * from './action.ts'
+export * from './actor-folders.ts'
 export * from './ai.ts'
 export * from './books.ts'
 export * from './campaigns.ts'
@@ -248,8 +284,10 @@ export * from './history.ts'
 export * from './invitations.ts'
 export * from './knowledge.ts'
 export * from './library.ts'
+export * from './log.ts'
 export * from './maps.ts'
 export * from './members.ts'
+export * from './notes.ts'
 export * from './openapi.ts'
 export * from './organizations.ts'
 export * from './pages.ts'
@@ -259,6 +297,7 @@ export * from './read-as.ts'
 export type * from './realtime.ts'
 export * from './scenes.ts'
 export * from './search.ts'
+export * from './sound.ts'
 export * from './systems.ts'
 export * from './table.ts'
 export * from './table-tools.ts'
@@ -460,6 +499,7 @@ export const ACTIONS = [
   drawScene,
   placeTokens,
   moveTokens,
+  assignToken,
   updateToken,
   removeTokens,
   listEncounters,
@@ -487,6 +527,9 @@ export const ACTIONS = [
   resetFog,
   setTileFit,
   viewAsParty,
+  placeSceneSound,
+  changeSceneSound,
+  removeSceneSound,
   setMeasureOnScreen,
   listMarks,
   changeMarks,
@@ -510,7 +553,39 @@ export const ACTIONS = [
   settlePending,
   getBookEntries,
   getTablePresence,
-  importBook
+  importBook,
+  setTableControls,
+  kickFromTable,
+  allowBackToTable,
+  sendMessage,
+  deleteMessage,
+  listLog,
+  listActorFolders,
+  createActorFolder,
+  renameActorFolder,
+  deleteActorFolder,
+  moveToActorFolder,
+  clearLog,
+  deleteRolls,
+  showImage,
+  clearScreenShow,
+  listPlayerNotes,
+  getPlayerNote,
+  createPlayerNote,
+  updatePlayerNote,
+  deletePlayerNote,
+  restorePlayerNote,
+  listPlayerNoteVersions,
+  createSoundPlaylist,
+  deleteSoundPlaylist,
+  getSound,
+  listSoundPlaylists,
+  nextTrack,
+  pauseSound,
+  playSound,
+  setSoundVolume,
+  stopSound,
+  updateSoundPlaylist
 ]
 
 /** Las acciones por nombre, solo como tipo: la web las usa sin cargar zod */
@@ -702,6 +777,7 @@ export type Actions = {
   drawScene: typeof drawScene
   placeTokens: typeof placeTokens
   moveTokens: typeof moveTokens
+  assignToken: typeof assignToken
   updateToken: typeof updateToken
   removeTokens: typeof removeTokens
   listEncounters: typeof listEncounters
@@ -729,6 +805,9 @@ export type Actions = {
   resetFog: typeof resetFog
   setTileFit: typeof setTileFit
   viewAsParty: typeof viewAsParty
+  placeSceneSound: typeof placeSceneSound
+  changeSceneSound: typeof changeSceneSound
+  removeSceneSound: typeof removeSceneSound
   setMeasureOnScreen: typeof setMeasureOnScreen
   listMarks: typeof listMarks
   changeMarks: typeof changeMarks
@@ -753,4 +832,36 @@ export type Actions = {
   getBookEntries: typeof getBookEntries
   getTablePresence: typeof getTablePresence
   importBook: typeof importBook
+  setTableControls: typeof setTableControls
+  kickFromTable: typeof kickFromTable
+  allowBackToTable: typeof allowBackToTable
+  sendMessage: typeof sendMessage
+  deleteMessage: typeof deleteMessage
+  listLog: typeof listLog
+  listActorFolders: typeof listActorFolders
+  createActorFolder: typeof createActorFolder
+  renameActorFolder: typeof renameActorFolder
+  deleteActorFolder: typeof deleteActorFolder
+  moveToActorFolder: typeof moveToActorFolder
+  clearLog: typeof clearLog
+  deleteRolls: typeof deleteRolls
+  showImage: typeof showImage
+  clearScreenShow: typeof clearScreenShow
+  listPlayerNotes: typeof listPlayerNotes
+  getPlayerNote: typeof getPlayerNote
+  createPlayerNote: typeof createPlayerNote
+  updatePlayerNote: typeof updatePlayerNote
+  deletePlayerNote: typeof deletePlayerNote
+  restorePlayerNote: typeof restorePlayerNote
+  listPlayerNoteVersions: typeof listPlayerNoteVersions
+  createSoundPlaylist: typeof createSoundPlaylist
+  deleteSoundPlaylist: typeof deleteSoundPlaylist
+  getSound: typeof getSound
+  listSoundPlaylists: typeof listSoundPlaylists
+  nextTrack: typeof nextTrack
+  pauseSound: typeof pauseSound
+  playSound: typeof playSound
+  setSoundVolume: typeof setSoundVolume
+  stopSound: typeof stopSound
+  updateSoundPlaylist: typeof updateSoundPlaylist
 }

@@ -1,7 +1,7 @@
 import type { Campaign } from '@crisol/contracts'
 import { useQuery } from '@tanstack/react-query'
 import { getRouteApi, Link, Navigate, useParams, useSearch } from '@tanstack/react-router'
-import type { ReactNode } from 'react'
+import { type ReactNode, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
@@ -11,6 +11,7 @@ import { Loading } from '../components/brand.tsx'
 import { failed, LoadError } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { Screen } from '../components/screen.tsx'
+import { useWindow } from '../components/window.tsx'
 
 const route = getRouteApi('/mundos/$worldId/campanas/$campaignId')
 
@@ -62,7 +63,9 @@ export function WithCampaign({
 export function CampaignPage() {
   const { worldId, campaignId } = route.useParams()
   const search = route.useSearch()
-  if (search.panel || search.pagina || search.entrada)
+  // Los ajustes de la campaña ya no son una pestaña de la Mesa (Enrique, 2026-11-10): se abren encima, en su Inicio
+  const settings = search.panel === 'ajustes' && !search.pagina && !search.entrada
+  if (!settings && (search.panel || search.pagina || search.entrada))
     return (
       <Navigate
         to="/mundos/$worldId/campanas/$campaignId/mesa"
@@ -75,7 +78,10 @@ export function CampaignPage() {
     <WithCampaign>
       {({ worldName, campaign }) =>
         campaign.role === 'master' ? (
-          <CampaignHome key={campaign.id} worldId={worldId} worldName={worldName} campaign={campaign} />
+          <>
+            <CampaignHome key={campaign.id} worldId={worldId} worldName={worldName} campaign={campaign} />
+            {settings && <OpenSettings />}
+          </>
         ) : (
           <PlayerCampaignHome key={campaign.id} worldId={worldId} worldName={worldName} campaign={campaign} />
         )
@@ -144,4 +150,14 @@ export function ToMesaIfMaster({ panel, children }: { panel: string; children: R
       />
     )
   return children
+}
+
+/** Con ?panel=ajustes (los enlaces de antes a la pestaña de la Mesa), abre los ajustes de la campaña encima */
+function OpenSettings() {
+  const windows = useWindow()
+  const open = windows?.open
+  useEffect(() => {
+    open?.('campana')
+  }, [open])
+  return null
 }

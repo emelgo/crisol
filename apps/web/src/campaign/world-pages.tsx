@@ -302,6 +302,7 @@ function PlayerEntry({ page }: { page: Page }) {
       names,
       byId: new Map(names.map((row) => [row.id, row])),
       files: [],
+      canCreate: false,
       create: () => Promise.reject(new Error('Un jugador no crea páginas'))
     }
   }, [tree.data, page.worldId])

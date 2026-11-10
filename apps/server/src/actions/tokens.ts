@@ -3,6 +3,7 @@
  * máster. Los encuentros son del mundo: los prepara quien lleva la wiki. Lo que cambia se avisa a la sala abierta
  */
 import {
+  assignToken,
   deleteEncounter,
   type EncounterView,
   listEncounters,
@@ -13,11 +14,14 @@ import {
   saveEncounter,
   updateToken
 } from '@crisol/contracts'
-import { charactersRepo, creaturesRepo, filesRepo, scenesRepo, tokensRepo } from '@crisol/db'
-import { NotFoundError } from '@crisol/domain'
-import { cellCenter } from '@crisol/tabletop'
+import { charactersRepo, creaturesRepo, filesRepo, membersRepo, scenesRepo, tokensRepo, visionRepo } from '@crisol/db'
+import { ForbiddenError, NotFoundError } from '@crisol/domain'
+import { cellCenter, type DoorStates } from '@crisol/tabletop'
 import { creaturesChanged } from '../realtime/events.ts'
+import { assertTablePlay, type TablePlayContext, tablePlayOf } from '../table/play.ts'
 import { tokenViews, viewsOfTokens, visionOf } from '../table/projection.ts'
+import { moveAllowed } from '../table/rules.ts'
+import { visionSize, wallOf } from '../table/vision.ts'
 import { authorizedCampaign, authorizedWiki, sceneOfCampaign } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
 import { creaturesToPlay } from './creatures.ts'
@@ -199,6 +203,44 @@ async function ownTokens(ctx: ActionContext, campaignId: string, ids: readonly s
   return found
 }
 
+/**
+ * Lo que mueve un jugador (docs/specs/mover-jugadores.md): fichas de la escena que ve el grupo, que lleve él, con lo
+ * que dejen la pausa, el modo y el turno, en línea recta sin cruzar muros que paran el paso ni puertas cerradas (las
+ * secretas tampoco) y sin salirse del mapa
+ */
+async function assertPlayerMoves(
+  ctx: ActionContext,
+  campaign: Campaign,
+  play: TablePlayContext,
+  found: readonly tokensRepo.TokenRow[],
+  targets: ReadonlyMap<string, { x: number; y: number }>
+) {
+  const sceneId = play.table.screenHidden ? null : play.table.presentedSceneId
+  for (const token of found) {
+    if (token.sceneId !== sceneId) throw new ForbiddenError('table.play')
+    assertTablePlay(play, play.controllers.get(token.characterId ?? token.creatureId ?? '') ?? [])
+  }
+  if (!sceneId) return
+  const [scene, walls, state] = await Promise.all([
+    scenesRepo.findScene(ctx.db, sceneId),
+    visionRepo.listWalls(ctx.db, sceneId),
+    visionRepo.findSceneState(ctx.db, campaign.id, sceneId)
+  ])
+  if (!scene) throw new NotFoundError('scene')
+  const doors: Record<string, { open: boolean }> = {}
+  for (const wall of walls) if (wall.door) doors[wall.id] = { open: state?.doors[wall.id]?.open ?? wall.open }
+  const geometry = walls.map(wallOf)
+  const { width, height } = visionSize(scene)
+  for (const token of found) {
+    const to = targets.get(token.id)
+    if (!to) continue
+    if (to.x < 0 || to.y < 0 || to.x > width || to.y > height)
+      throw new InvalidRequestError('OUT_OF_MAP', 'fuera del mapa')
+    if (!moveAllowed(geometry, doors as DoorStates, { x: token.x, y: token.y }, to))
+      throw new InvalidRequestError('WALL', 'hay un muro o una puerta cerrada en medio')
+  }
+}
+
 export const tokenActions = [
   implement(placeTokens, async (ctx, { campaignId, sceneId, tokens, hidden }) => {
     const campaign = await authorizedCampaign(ctx, 'table.manage', campaignId)
@@ -252,13 +294,24 @@ export const tokenActions = [
       moves.map((m) => m.tokenId)
     )
     reading.catch(() => undefined)
-    const campaign = await authorizedCampaign(ctx, 'table.manage', campaignId)
+    // El máster mueve todas; un jugador, las suyas y las que le asignan, con las reglas de la Mesa
+    const campaign = await authorizedCampaign(ctx, 'campaign.read', campaignId)
+    const play = await tablePlayOf(ctx, campaign)
     const found = await reading
     const sceneIds = new Set(found.map((t) => t.sceneId))
     const grids = new Map<string, scenesRepo.SceneRow['grid']>()
     for (const sceneId of sceneIds) {
       const scene = await scenesRepo.findScene(ctx.db, sceneId)
       if (scene) grids.set(sceneId, scene.grid)
+    }
+    if (!play.master) {
+      const targets = new Map(
+        moves.map((m) => {
+          const grid = grids.get(found.find((t) => t.id === m.tokenId)?.sceneId ?? '')
+          return [m.tokenId, grid ? pointIn(grid, m) : { x: m.x ?? 0, y: m.y ?? 0 }] as const
+        })
+      )
+      await assertPlayerMoves(ctx, campaign, play, found, targets)
     }
     const sceneOf = new Map(found.map((t) => [t.id, t.sceneId]))
     const updated = await tokensRepo.updateTokens(
@@ -299,6 +352,35 @@ export const tokenActions = [
     const rows = [...new Map(updated.map((row) => [row.id, row])).values()].sort(placedOrder)
     const { views } = await viewsOfTokens(ctx, campaign, rows)
     return { tokens: views }
+  }),
+
+  implement(assignToken, async (ctx, { campaignId, creatureId, userIds }) => {
+    const campaign = await authorizedCampaign(ctx, 'table.manage', campaignId)
+    const creature = await creaturesRepo.findCreature(ctx.db, creatureId)
+    if (!creature || creature.campaignId !== campaignId) throw new NotFoundError('creature')
+    // Solo jugadores de la campaña
+    const players = new Set(
+      (await membersRepo.listCampaignMembers(ctx.db, campaignId))
+        .filter((m) => m.role !== 'master')
+        .map((m) => m.userId)
+    )
+    const wanted = [...new Set(userIds)]
+    if (wanted.some((id) => !players.has(id)))
+      throw new InvalidRequestError('NOT_A_PLAYER', 'solo se asigna a jugadores de la campaña')
+    await creaturesRepo.setCreatureControllers(
+      ctx.db,
+      historyContext(
+        ctx,
+        'assignToken',
+        { campaign: campaign.name, name: creature.name, count: wanted.length },
+        campaign
+      ),
+      creatureId,
+      wanted
+    )
+    ctx.realtime.publish(creaturesChanged({ campaignId, worldId: campaign.worldId }))
+    ctx.table?.changed(campaignId)
+    return { creatureId, controllers: wanted }
   }),
 
   implement(updateToken, async (ctx, { tokenId, label, faction, size, hidden, image }) => {

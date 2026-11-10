@@ -422,12 +422,13 @@ describe('el combate de la mesa (docs/specs/combate.md)', () => {
     const started: Combat = await ok200('startCombat', { campaignId })
     for (const [name, payload] of [
       ['getCombat', { campaignId }],
-      ['nextTurn', { campaignId }],
       ['rollInitiative', { campaignId }],
       ['setInitiative', { campaignId, values: [{ combatantId: started.combatants[0]?.id, initiative: 1 }] }],
       ['endCombat', { campaignId }]
     ] as const)
       expect((await code(name, payload, ana.cookie)).status, name).toBe(403)
+    // Pasar turno, solo en el suyo y sin pausa (docs/specs/mover-jugadores.md; la escena recién abierta, en pausa)
+    expect(await code('nextTurn', { campaignId }, ana.cookie)).toEqual({ status: 400, code: 'PAUSED' })
     expect((await combat()).round).toBe(0)
   })
 })

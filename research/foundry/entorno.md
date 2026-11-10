@@ -43,3 +43,10 @@ Instalado 2026-10-29 con la licencia de Enrique, solo para el REA (ver `research
   (las escenas «Mesa Zip Moderna» y «Mesa Zip Antigua») y «Mesa Zip Aventuras» (la aventura «Mesa Zip Aventura», con
   los actores «Mesa Zip Goblin» y «Mesa Zip Jefe», el diario «Mesa Zip Diario», la carpeta «Mesa Zip Carpeta», el
   efecto «Mesa Zip Apresado» y las regiones «Mesa Zip Cono» y «Mesa Zip Terreno»).
+- Datos de prueba (estudio del módulo 7, sala de jugadores, 2026-11-10): jugadores «Sala Ana» y «Sala Bruno» (rol
+  jugador; sus contraseñas no se guardan aquí); unos mensajes de chat de prueba (un susurro de Ana a Bruno y dos
+  públicos de Ana); la lista «Sala Música» (pistas «Tambores», «Dados» y «Tono»), con el archivo
+  `worlds/crisol-rea/audio/sala-tono.wav` (un tono de 90 s generado para la prueba); la escena «Sala Sonidos» (sin
+  activar, con la lista asociada y los sonidos del mapa «Sala Río» y «Sala Grillos») y los compendios del mundo «Sala
+  Zip Música» (la lista) y «Sala Zip Aventura» (la aventura con la escena y la lista). El turno del combate de «Vis
+  Mapa» se movió y se devolvió a su estado.

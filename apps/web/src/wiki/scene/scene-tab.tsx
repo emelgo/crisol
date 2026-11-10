@@ -338,6 +338,8 @@ const UNITS = ['pies', 'millas'] as const
 
 /** La rejilla de la escena, a la derecha: su tipo, su tamaño, lo que mide, alinearla y la vista inicial */
 export function SceneSide() {
+  // Lo que se escribe en la casilla mientras aún no es una medida que valga
+  const [sizeDraft, setSizeDraft] = useState<string | null>(null)
   const { t } = useTranslation()
   const preparer = usePreparer()
   const announce = useAnnounce()
@@ -433,9 +435,14 @@ export function SceneSide() {
                 min={10}
                 max={2000}
                 step={0.1}
-                value={Math.round(grid.size * 10) / 10}
+                // Mientras se escribe, lo escrito (aunque aún no valga: «6» camino de «60»); vale al llegar a una medida
+                value={sizeDraft ?? Math.round(grid.size * 10) / 10}
                 disabled={!editable}
-                onChange={(event) => setSize(Number(event.currentTarget.value), true)}
+                onChange={(event) => {
+                  setSizeDraft(event.currentTarget.value)
+                  setSize(Number(event.currentTarget.value), true)
+                }}
+                onBlur={() => setSizeDraft(null)}
               />
               <span className={styles.unit}>{t('scene.grid.px')}</span>
             </div>
@@ -490,7 +497,7 @@ export function SceneSide() {
           </div>
           <div className={styles.field}>
             <span>{t('scene.grid.align')}</span>
-            <div className={styles.row}>
+            <div className={styles.pair}>
               <BusyButton
                 className={styles.ghost}
                 busy={detect.isPending}

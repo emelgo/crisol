@@ -215,7 +215,12 @@ test('el espacio de la campaña y los libros (ADR-0021), en los dos temas @a11y'
       await page.emulateMedia({ colorScheme })
       const { violations } = await new AxeBuilder({ page }).withTags(WCAG).analyze()
       const serious = violations.filter((v) => v.impact === 'critical' || v.impact === 'serious')
-      expect(serious.map((v) => `${what} ${colorScheme} ${v.id}: ${v.help}`)).toEqual([])
+      expect(
+        serious.map(
+          (v) =>
+            `${what} ${colorScheme} ${v.id}: ${v.help} ${v.nodes.map((n) => `${n.target} ${n.any[0]?.message ?? ''}`).join(' | ')}`
+        )
+      ).toEqual([])
     }
   }
   await page.goto(path)

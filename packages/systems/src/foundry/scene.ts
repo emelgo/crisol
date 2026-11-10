@@ -67,6 +67,22 @@ export interface ConvertedNote {
   pageId: string | null
 }
 
+/** Un sonido de la escena (AmbientSound): en píxeles de la imagen, su radio en casillas */
+export interface ConvertedSceneSound {
+  id: string
+  x: number
+  y: number
+  radius: number
+  /** La ruta o la dirección de Foundry, tal cual */
+  path: string
+  volume: number
+  easing: boolean
+  /** Con «lo frenan los muros», block; sin ello (pasa amortiguado), muffle */
+  walls: 'block' | 'muffle'
+  /** Solo suena con la escena a oscuras (su franja de oscuridad empieza por encima de 0) */
+  darkOnly: boolean
+}
+
 export interface ConvertedGrid {
   type: 'square' | 'hex-rows' | 'hex-columns' | 'none'
   size: number
@@ -100,6 +116,10 @@ export interface ConvertedScene {
   lights: ConvertedLight[]
   tokens: ConvertedToken[]
   notes: ConvertedNote[]
+  /** Sus sonidos (los apagados no: se cuentan en skipped) */
+  sounds: ConvertedSceneSound[]
+  /** La lista (o la pista de una lista) que suena con la escena en Foundry */
+  playlist: { playlistId: string; soundId: string | null } | null
   /** Lo que no se trae, contado: regiones, tiles, dibujos, sonidos y plantillas */
   skipped: { regions: number; tiles: number; drawings: number; sounds: number; templates: number }
   /** La versión de Foundry con la que se guardó (su número grande), si lo dice */
@@ -312,6 +332,28 @@ function convertToken(
   }
 }
 
+function convertSound(
+  sound: Doc,
+  origin: { x: number; y: number },
+  grid: ReturnType<typeof gridOf>
+): ConvertedSceneSound | null {
+  const id = str(sound._id)
+  if (!id || sound.hidden === true) return null
+  // El radio, en la unidad de la escena (pies): a casillas
+  const radius = Math.max(0, num(sound.radius, 0)) / (grid.distance > 0 ? grid.distance : 1)
+  return {
+    id,
+    x: num(sound.x, 0) - origin.x,
+    y: num(sound.y, 0) - origin.y,
+    radius: Math.round(radius * 100) / 100,
+    path: str(sound.path) ?? '',
+    volume: clamp(num(sound.volume, 0.5), 0, 1),
+    easing: sound.easing !== false,
+    walls: sound.walls === false ? 'muffle' : 'block',
+    darkOnly: num(get(sound, 'darkness.min'), 0) > 0
+  }
+}
+
 function convertNote(note: Doc, origin: { x: number; y: number }): ConvertedNote {
   return {
     x: num(note.x, 0) - origin.x,
@@ -367,7 +409,8 @@ export function convertFoundryScene(doc: FoundryDocument): ConvertedScene[] {
     regions: regions.length - regions.filter((r) => get(r, 'flags.core.MeasuredTemplate')).length,
     tiles: list(doc.tiles).length,
     drawings: list(doc.drawings).length,
-    sounds: list(doc.sounds).length,
+    // Los apagados (o sin id) no se traen
+    sounds: list(doc.sounds).filter((sound) => sound.hidden === true || !str(sound._id)).length,
     templates
   }
   const coreVersion = Number.parseInt(String(get(doc, '_stats.coreVersion') ?? ''), 10)
@@ -403,6 +446,10 @@ export function convertFoundryScene(doc: FoundryDocument): ConvertedScene[] {
       notes: list(doc.notes)
         .filter(on)
         .map((n) => convertNote(n, origin)),
+      sounds: list(doc.sounds)
+        .filter(on)
+        .flatMap((sound) => convertSound(sound, origin, grid) ?? []),
+      playlist: str(doc.playlist) ? { playlistId: str(doc.playlist) as string, soundId: str(doc.playlistSound) } : null,
       skipped,
       coreVersion: Number.isFinite(coreVersion) ? coreVersion : null
     }
@@ -420,6 +467,8 @@ export interface FoundryAdventure {
   scenes: FoundryDocument[]
   actors: FoundryDocument[]
   journal: FoundryDocument[]
+  /** Sus listas de sonido, con sus pistas dentro */
+  playlists: FoundryDocument[]
   folders: Array<{ _id: string; name: string; type: string | null; folder: string | null }>
 }
 
@@ -436,6 +485,7 @@ export function readAdventure(doc: FoundryDocument): FoundryAdventure {
     scenes: docs(doc.scenes),
     actors: docs(doc.actors),
     journal: docs(doc.journal),
+    playlists: docs(doc.playlists),
     folders: list(doc.folders).flatMap((f) =>
       typeof f._id === 'string' && typeof f.name === 'string'
         ? [{ _id: f._id, name: f.name, type: str(f.type), folder: str(f.folder) }]

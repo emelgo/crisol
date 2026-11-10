@@ -312,6 +312,37 @@
   grid-column: 1 / -1;
 }
 
+/* Quién lleva la criatura: los jugadores, con su casilla (a todo lo ancho) */
+.carriers {
+  display: flex;
+  flex-wrap: wrap;
+  grid-column: 1 / -1;
+  gap: 4px 14px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.carriers legend {
+  margin-block-end: 3px;
+  padding: 0;
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.carriers label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.875rem;
+}
+
+.settings .carriers input {
+  min-block-size: auto;
+  accent-color: var(--color-accent);
+}
+
 .field {
   display: flex;
   flex-direction: column;

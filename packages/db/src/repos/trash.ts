@@ -6,6 +6,7 @@ import { approvals } from '../schema/ai.ts'
 import { campaignMembers, campaigns } from '../schema/campaigns.ts'
 import { files } from '../schema/files.ts'
 import { operations } from '../schema/history.ts'
+import { playerNotes } from '../schema/notes.ts'
 import { pages } from '../schema/pages.ts'
 import { worldMembers, worlds } from '../schema/worlds.ts'
 
@@ -198,6 +199,11 @@ export function purge(db: Database, now: Date) {
         tx,
         purgedPages.map((page) => page.id)
       )
+    // Las notas de los jugadores (se llevan sus subnotas)
+    const purgedNotes = await tx
+      .delete(playerNotes)
+      .where(lt(playerNotes.deletedAt, cutoff))
+      .returning({ id: playerNotes.id })
     // Los archivos: su fila (sus bytes se van cuando ya no los nombra nadie; lo hace la limpieza del almacenamiento)
     const purgedFiles = await tx.delete(files).where(lt(files.deletedAt, cutoff)).returning({ id: files.id })
     const memberships = await tx.execute<{ id: string }>(sql`
@@ -265,6 +271,7 @@ export function purge(db: Database, now: Date) {
       worlds: purgedWorlds.length,
       campaigns: purgedCampaigns.length,
       pages: purgedPages.length,
+      notes: purgedNotes.length,
       files: purgedFiles.length,
       memberships: memberships.length,
       operations: purgedOperations.length,

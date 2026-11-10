@@ -136,8 +136,9 @@ describe('la bandeja de dados 3D', () => {
     const dice = await openDice()
     await userEvent.click(dice.getByRole('button', { name: 'Historial' }))
     const history = within(
+      // El historial vive en el registro, en su pestaña Tiradas
       (await screen.findByRole('list', { name: 'Tiradas de la campaña' })).closest<HTMLElement>(
-        '[data-window]'
+        '[data-window], section'
       ) as HTMLElement
     )
     act(() => realtime.emit({ type: 'rolled', campaignId: CAMPAIGN.id, roll: fromBruno('Ataque') }))

@@ -3,9 +3,16 @@
  * recibe su proyección y se reconecta solo, esperando cada vez más. El máster manda por él su encuadre en vivo, que la
  * tele sigue con «Seguir», la medida en curso y el láser
  */
-import type { LiveMeasure, SceneViewport, TableServerMessage, TableViewer } from '@crisol/contracts'
+import {
+  type LiveMeasure,
+  type SceneViewport,
+  TABLE_CLOSE_KICKED,
+  type TableServerMessage,
+  type TableViewer
+} from '@crisol/contracts'
 
-export type TableStatus = 'connecting' | 'open' | 'reconnecting' | 'forbidden' | 'ended'
+/** kicked: el máster le sacó de la Mesa (docs/specs/sala.md): no se reintenta hasta que le deje volver */
+export type TableStatus = 'connecting' | 'open' | 'reconnecting' | 'forbidden' | 'ended' | 'kicked'
 
 export interface TableHandlers {
   onMessage(message: TableServerMessage): void
@@ -23,6 +30,8 @@ export interface TableChannel {
   sendMeasure(measure: LiveMeasure | null): void
   /** Los puntos nuevos de la estela del láser: se juntan y salen como mucho cada `LIVE_MS` */
   sendLaser(points: Array<{ x: number; y: number }>): void
+  /** Pide la hora al servidor, para medir el desfase del reloj (el sonido: docs/specs/sonido.md) */
+  sendTime(): void
   close(): void
 }
 
@@ -173,6 +182,7 @@ export function connectTable(
       socket = null
       if (event.code === SESSION_ENDED) return status('ended')
       if (event.code === FORBIDDEN) return status('forbidden')
+      if (event.code === TABLE_CLOSE_KICKED) return status('kicked')
       joined = true
       status('reconnecting')
       retry = setTimeout(open, wait)
@@ -209,6 +219,9 @@ export function connectTable(
     sendLaser(points) {
       laser.push(...points.map((p) => ({ x: Math.round(p.x), y: Math.round(p.y) })))
       laserTimer = throttle(laserAt, laserTimer, flushLaser)
+    },
+    sendTime() {
+      if (isOpen() && ready) socket?.send(JSON.stringify({ type: 'time', t: Date.now() }))
     },
     close() {
       stopped = true

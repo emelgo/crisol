@@ -53,7 +53,8 @@ export function DiceRow({ roll }: { roll: DiceRoll }) {
         // biome-ignore lint/suspicious/noArrayIndexKey: los grupos de una tirada son fijos
         <span key={i} className={styles.group}>
           {i > 0 && <span className={styles.plus}>+</span>}
-          <span className={styles.die}>{part.sides === 'F' ? 'dF' : `d${part.sides}`}</span>
+          {/* Con un solo tipo de dado ya lo dice la tirada (1d20, 3d20): solo los resultados */}
+          {parts.length > 1 && <span className={styles.die}>{part.sides === 'F' ? 'dF' : `d${part.sides}`}</span>}
           {part.values.map((d, j) => (
             <span
               // biome-ignore lint/suspicious/noArrayIndexKey: los dados de una tirada son fijos
@@ -80,7 +81,8 @@ export function DiceRow({ roll }: { roll: DiceRoll }) {
 /** Debajo de los dados: «Crítico» o «Pifia» y si fue con ventaja */
 export function RollTags({ roll }: { roll: DiceRoll }) {
   const { t } = useTranslation()
-  const advantage = advantageOf(roll.formula)
+  // Sin nombre propio, la tirada ya se llama «Ventaja»: no se repite debajo
+  const advantage = roll.label ? advantageOf(roll.formula) : null
   if (!roll.critical && !advantage) return null
   return (
     <span className={styles.tags}>

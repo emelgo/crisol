@@ -211,8 +211,12 @@
   aspect-ratio: 3 / 4;
   border: 2px dashed var(--color-frame);
   clip-path: var(--cut);
+  /* También es un botón (en la página del sistema): sin el fondo gris del navegador */
+  background: none;
   color: var(--color-muted);
+  font: inherit;
   font-weight: 600;
+  cursor: pointer;
   text-align: center;
   text-decoration: none;
 }

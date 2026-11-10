@@ -2,16 +2,16 @@
  * La barra de la derecha de la Mesa del máster, con sus siete pestañas: Tiradas, Combate, Escenas, Personajes,
  * Compendio, Páginas y Ajustes (lienzo «Campaña en la Mesa»). Al empezar un combate se abre la suya
  */
-import type { Campaign, CampaignTableView, TokenView } from '@crisol/contracts'
+import type { Campaign, CampaignTableView, SceneView, TokenView } from '@crisol/contracts'
 import { useQuery } from '@tanstack/react-query'
 import { getRouteApi, useNavigate } from '@tanstack/react-router'
 import { Eye, Swords } from 'lucide-react'
-import { useCallback, useEffect, useRef } from 'react'
+import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { GroupKnowledge } from '../campaign/group-knowledge.tsx'
-import { CampaignSettings } from '../campaign/settings.tsx'
-import { CampaignCreatures } from './campaign-creatures.tsx'
+import { SoundTab } from '../sound/sound-tab.tsx'
+import { ActorsTab } from './actor-folders.tsx'
 import { CombatPanel } from './combat-panel.tsx'
 import { CompendiumTab } from './compendium-tab.tsx'
 import { compendiumWindow } from './compendium-window.tsx'
@@ -19,7 +19,7 @@ import styles from './mesa.module.css'
 import { pageWindow } from './page-window.tsx'
 import pagesStyles from './pages-tab.module.css'
 import { PagesTab } from './pages-tab.tsx'
-import { CharactersList, EncountersList, FactionLegend, ImagesList, type Placing } from './panel.tsx'
+import { CharactersList, EncountersList, FactionLegend, ImagesList, type Placing, SearchBox } from './panel.tsx'
 import { InScene, ScenesGrid } from './scenes-tab.tsx'
 import {
   PANEL_SLUGS,
@@ -31,11 +31,12 @@ import {
   useSidebarTab
 } from './sidebar.tsx'
 import { sheetWindow } from './token-sheet.tsx'
+import type { SceneChoice } from './use-preparation.ts'
 import { useWindows } from './windows.tsx'
 
 const route = getRouteApi('/mundos/$worldId/campanas/$campaignId/mesa')
 
-const MASTER_TABS: readonly SidebarTab[] = ['scenes', 'combat', 'characters', 'compendium', 'pages', 'settings']
+const MASTER_TABS: readonly SidebarTab[] = ['scenes', 'combat', 'characters', 'compendium', 'pages', 'sound']
 
 export type MasterSidebarState = ReturnType<typeof useMasterSidebar>
 
@@ -73,7 +74,6 @@ export function useMasterSidebar(table: CampaignTableView | null) {
 
 export function MasterSidebar({
   worldId,
-  worldName,
   campaign,
   systemId,
   table,
@@ -82,6 +82,7 @@ export function MasterSidebar({
   busy,
   onAct,
   onOpen,
+  onCreateScene,
   onPlace,
   onImage,
   onPickCombatant,
@@ -89,7 +90,6 @@ export function MasterSidebar({
   sidebar
 }: {
   worldId: string
-  worldName: string
   campaign: Campaign
   systemId: string | null
   table: CampaignTableView | null
@@ -100,6 +100,8 @@ export function MasterSidebar({
   busy: boolean
   onAct: (run: () => Promise<CampaignTableView>) => void
   onOpen: (sceneId: string) => void
+  /** Una escena recién creada desde Escenas: abrirla y preparar su mapa */
+  onCreateScene?: (scene: SceneView, choice: SceneChoice | null) => void
   onPlace: (placing: Placing) => void
   onImage: (fileId: string) => void
   onPickCombatant: (tokenId: string) => void
@@ -152,18 +154,8 @@ export function MasterSidebar({
       key: 'scenes',
       content: () => (
         <>
-          <ScenesGrid worldId={worldId} table={table} onOpen={onOpen} />
+          <ScenesGrid worldId={worldId} table={table} onOpen={onOpen} onCreate={onCreateScene} />
           <InScene campaignId={campaignId} table={table} tokens={tokens} onPick={onPickToken} />
-          <h3 className={styles.tabSection}>{t('tabletop.tabs.encounters')}</h3>
-          <EncountersList
-            worldId={worldId}
-            campaignId={campaignId}
-            systemId={systemId}
-            table={table}
-            selected={chosen}
-            canPlace={canPlace}
-            onPlace={onPlace}
-          />
         </>
       )
     },
@@ -201,20 +193,24 @@ export function MasterSidebar({
       key: 'characters',
       content: () => (
         <>
-          <CharactersList
-            campaignId={campaignId}
-            table={table}
-            canPlace={canPlace}
-            onPlace={onPlace}
-            onOpen={(character) =>
-              windows?.open(sheetWindow({ kind: 'character', ...character }, campaignId, systemId))
-            }
-          />
-          <h3 className={styles.tabSection}>{t('tabletop.campaignCreatures.title')}</h3>
-          <CampaignCreatures
+          <ActorsTab
             campaignId={campaignId}
             systemId={systemId}
             table={table}
+            canPlace={canPlace}
+            onPlace={onPlace}
+            onOpenCharacter={(character) =>
+              windows?.open(sheetWindow({ kind: 'character', ...character }, campaignId, systemId))
+            }
+          />
+          {/* Los encuentros son grupos de criaturas con su formación: van con ellas, no con las escenas (Enrique) */}
+          <h3 className={styles.tabSection}>{t('tabletop.tabs.encounters')}</h3>
+          <EncountersList
+            worldId={worldId}
+            campaignId={campaignId}
+            systemId={systemId}
+            table={table}
+            selected={chosen}
             canPlace={canPlace}
             onPlace={onPlace}
           />
@@ -264,7 +260,10 @@ export function MasterSidebar({
         />
       )
     },
-    { key: 'settings', content: () => <CampaignSettings campaign={campaign} worldName={worldName} /> }
+    {
+      key: 'sound',
+      content: () => <SoundTab worldId={worldId} campaignId={campaignId} />
+    }
   ]
   return <TableSidebar items={items} tab={tab} onTab={pick} folded={folded} onFold={setFolded} />
 }

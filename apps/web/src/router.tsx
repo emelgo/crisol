@@ -5,6 +5,7 @@ import { CharacterScreen } from './characters/character.tsx'
 import { CharactersScreen } from './characters/characters.tsx'
 import { InPlayScreen } from './creatures/in-play.tsx'
 import { LibraryScreen } from './library/library.tsx'
+import { NotesScreen } from './notes/screen.tsx'
 import { PartyScreen } from './party/route.tsx'
 import { Bootstrap } from './routes/bootstrap.tsx'
 import { AdventuresScreen, CampaignBooksScreen, CampaignPage, ToMesaIfMaster } from './routes/campaign.tsx'
@@ -106,6 +107,17 @@ const inPlayRoute = createRoute({
   // ?ver=<id>: la criatura abierta
   validateSearch: (search: Record<string, unknown>): { ver?: string } =>
     typeof search.ver === 'string' && search.ver ? { ver: search.ver } : {}
+})
+// Las notas del jugador (docs/specs/notas-jugador.md): ?nota=<id>, la abierta; ?de=<cuenta>, el máster leyendo las de un
+// jugador
+const notesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/mundos/$worldId/campanas/$campaignId/notas',
+  component: NotesScreen,
+  validateSearch: (search: Record<string, unknown>): { nota?: string; de?: string } => ({
+    ...(typeof search.nota === 'string' && search.nota ? { nota: search.nota } : {}),
+    ...(typeof search.de === 'string' && search.de ? { de: search.de } : {})
+  })
 })
 const partyRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -261,6 +273,7 @@ const routeTree = rootRoute.addChildren([
   compendiumRoute,
   inPlayRoute,
   partyRoute,
+  notesRoute,
   tableRoute,
   screenRoute,
   libraryRoute,

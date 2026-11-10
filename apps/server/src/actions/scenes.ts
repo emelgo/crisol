@@ -28,7 +28,7 @@ import type { Capability } from '@crisol/domain'
 import { NotFoundError, sniff } from '@crisol/domain'
 import { imageSize, svgProblem, svgSize } from '@crisol/tabletop'
 import type { z } from 'zod'
-import { pagesChanged } from '../realtime/events.ts'
+import { pagesChanged, tablePresenceChanged } from '../realtime/events.ts'
 import { campaignTableView, sceneView } from '../table/projection.ts'
 import { authorizedCampaign, authorizedPage, authorizedScene, authorizedWiki, sceneOfCampaign } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
@@ -258,8 +258,14 @@ export const sceneActions = [
     )
     // Y salen sus criaturas preparadas y sus pines (docs/specs/escenas-foundry.md), solo si esta llamada lo creó
     if (created) await placePrepared(ctx, campaign, sceneId)
-    await scenesRepo.setCampaignTable(ctx.db, campaignId, { openSceneId: sceneId })
+    // Otra escena se abre en pausa (Enrique, 2026-11-10): nadie mueve hasta que el máster la quite
+    const before = (await scenesRepo.campaignTable(ctx.db, campaignId)).openSceneId
+    await scenesRepo.setCampaignTable(ctx.db, campaignId, {
+      openSceneId: sceneId,
+      ...(before === sceneId ? {} : { paused: true })
+    })
     ctx.table?.changed(campaignId)
+    if (before !== sceneId) ctx.realtime.publish(tablePresenceChanged({ campaignId, worldId: campaign.worldId }))
     return campaignTableView(ctx, campaignId)
   }),
 

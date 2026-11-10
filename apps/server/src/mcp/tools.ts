@@ -3,7 +3,7 @@
  * en español porque lo ve el máster en claude.ai. Lo que no es leer pasa por el modo de IA de la cuenta (approvals.ts).
  */
 
-import { changeFog, contentTable } from '@crisol/contracts'
+import { changeFog, contentTable, playSound, stopSound, updateSoundPlaylist } from '@crisol/contracts'
 import { APPROVAL_WAIT_MS } from '@crisol/domain'
 import { McpServer } from '@modelcontextprotocol/server'
 import { z } from 'zod'
@@ -62,7 +62,32 @@ const diceInput = z.object({
 
 const systemId = z.string().trim().min(1).max(100).describe('Uno de serie («blank») o uno de la cuenta, por su id')
 
+/** Escribir una nota del jugador: sin id, una nueva; con id (y la versión que se leyó), cambiarla */
+const noteInput = z.object({
+  id: z.uuid().optional().describe('La nota que se cambia; sin id, se crea una'),
+  version: z.int().min(1).optional().describe('Al cambiarla, la versión que se leyó con leer_nota'),
+  campaignId: z.uuid().optional().describe('Al crearla, su campaña'),
+  parentId: z.uuid().nullable().optional().describe('Dentro de otra nota suya; null, arriba del todo'),
+  title: z.string().trim().max(200).optional(),
+  icon: z.string().trim().min(1).max(16).nullable().optional(),
+  markdown: z
+    .string()
+    .max(200_000)
+    .optional()
+    .describe('El texto entero, en Markdown; [[Página]] enlaza una página del mundo que conoce su campaña')
+})
+
 /** La niebla de la mesa: destapar o tapar una zona, o reiniciarla (docs/specs/vision.md) */
+const soundViewInput = z.object({ campaignId: z.uuid().optional(), worldId: z.uuid().optional() })
+const soundPlayInput = playSound.input.extend({
+  next: z.boolean().optional().describe('Pasar a la pista siguiente en vez de lanzar')
+})
+const soundStopInput = stopSound.input.extend({
+  pause: z.boolean().optional().describe('true: pausa; false: sigue (en vez de parar)')
+})
+const soundEditInput = updateSoundPlaylist.input.extend({
+  delete: z.boolean().optional().describe('Borra la lista (se puede deshacer)')
+})
 const fogShape = changeFog.input.shape
 const fogInput = z.object({
   campaignId: z.uuid(),
@@ -463,7 +488,93 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   dibujar_escena: { action: 'drawScene' },
   cambiar_escena: { action: 'updateScene' },
   ver_mesa: { action: 'getCampaignTable' },
-  quien_esta_en_la_mesa: { action: 'getTablePresence' },
+  ver_sala: { action: 'getTablePresence' },
+  // El registro de la partida (docs/specs/registro.md): leerlo, escribir y susurrar
+  ver_registro: { action: 'listLog' },
+  escribir_en_registro: { action: 'sendMessage' },
+  borrar_mensaje: { action: 'deleteMessage' },
+  vaciar_registro: { action: 'clearLog' },
+  // Enseñar (docs/specs/ensenar.md): ensenar_pagina ya estaba
+  ensenar_imagen: { action: 'showImage' },
+  quitar_de_la_vista: { action: 'clearScreenShow' },
+  borrar_tiradas: { action: 'deleteRolls' },
+  // Las notas del jugador (docs/specs/notas-jugador.md): las escribe su autor; el máster las lee
+  ver_notas: { action: 'listPlayerNotes' },
+  leer_nota: { action: 'getPlayerNote' },
+  // El sonido (docs/specs/sonido.md): las listas del mundo y lo que suena en la Mesa de una campaña
+  ver_sonido: {
+    description:
+      'El sonido: con campaignId, lo que suena en su Mesa (listas, efectos, volumen, pausa) y las listas de su mundo; con worldId solo, las listas del mundo con sus pistas',
+    input: soundViewInput,
+    actions: ['getSound', 'listSoundPlaylists'],
+    route: (input) => {
+      const { campaignId, worldId } = soundViewInput.parse(input)
+      if (campaignId) return { action: 'getSound', input: { campaignId, withPlaylists: true } }
+      if (!worldId) throw new InvalidRequestError('BAD_INPUT', 'campaignId o worldId')
+      return { action: 'listSoundPlaylists', input: { worldId } }
+    }
+  },
+  poner_sonido: {
+    description:
+      'Pone sonido en la Mesa de una campaña (solo su máster): una lista (playlistId) o una pista (trackId; una de efectos suena una vez por encima, una de ambiente lanza su lista desde ella). Con next, pasa a la pista siguiente de la lista que suena',
+    input: soundPlayInput,
+    actions: ['playSound', 'nextTrack'],
+    route: (input) => {
+      const { next, ...rest } = soundPlayInput.parse(input)
+      if (next) return { action: 'nextTrack', input: { campaignId: rest.campaignId, playlistId: rest.playlistId } }
+      return { action: 'playSound', input: rest }
+    }
+  },
+  parar_sonido: {
+    description:
+      'Para el sonido de una campaña: todo, una lista (playlistId) o un efecto (effectId), con fundido (fade, segundos) si se quiere. Con pause true lo pausa todo por donde va; con pause false sigue',
+    input: soundStopInput,
+    actions: ['stopSound', 'pauseSound'],
+    route: (input) => {
+      const { pause, ...rest } = soundStopInput.parse(input)
+      if (pause !== undefined) return { action: 'pauseSound', input: { campaignId: rest.campaignId, paused: pause } }
+      return { action: 'stopSound', input: rest }
+    }
+  },
+  volumen_sonido: { action: 'setSoundVolume' },
+  crear_lista_sonido: { action: 'createSoundPlaylist' },
+  cambiar_lista_sonido: {
+    description:
+      'Cambia una lista de sonido del mundo (id): nombre, clase, modo, fundido y, con tracks, sus pistas enteras en orden (las que siguen, con su id). Con delete true, la borra',
+    input: soundEditInput,
+    actions: ['updateSoundPlaylist', 'deleteSoundPlaylist'],
+    route: (input) => {
+      const { delete: remove, ...rest } = soundEditInput.parse(input)
+      if (remove) return { action: 'deleteSoundPlaylist', input: { id: rest.id } }
+      return { action: 'updateSoundPlaylist', input: rest }
+    }
+  },
+  escribir_nota: {
+    description:
+      'Escribe una nota de quien te conecta (un jugador) en su campaña: sin id, crea una (campaignId, title, markdown y, si va dentro de otra, parentId); con id y la versión que leíste con leer_nota, la cambia (lo que se dé: title, icon, markdown entero, parentId). Solo su autor: el máster las lee, no las escribe',
+    input: noteInput,
+    actions: ['createPlayerNote', 'updatePlayerNote'],
+    route: (input) => {
+      const { id, version, campaignId, ...rest } = noteInput.parse(input)
+      if (id) {
+        if (version === undefined)
+          throw new InvalidRequestError('VERSION_REQUIRED', 'para cambiarla, la versión que se leyó')
+        return { action: 'updatePlayerNote', input: { id, version, ...rest } }
+      }
+      if (!campaignId) throw new InvalidRequestError('CAMPAIGN_REQUIRED', 'para crearla, su campaña')
+      return { action: 'createPlayerNote', input: { campaignId, ...rest } }
+    }
+  },
+  // Las carpetas de la pestaña Actores (agrupar personajes y criaturas en juego)
+  ver_carpetas_actores: { action: 'listActorFolders' },
+  crear_carpeta_actores: { action: 'createActorFolder' },
+  renombrar_carpeta_actores: { action: 'renameActorFolder' },
+  borrar_carpeta_actores: { action: 'deleteActorFolder' },
+  mover_a_carpeta: { action: 'moveToActorFolder' },
+  // La sala (docs/specs/sala.md): la pausa, cómo mueven los jugadores y echar de la Mesa
+  controles_sala: { action: 'setTableControls' },
+  echar_de_la_mesa: { action: 'kickFromTable' },
+  dejar_volver: { action: 'allowBackToTable' },
   abrir_escena: { action: 'openScene' },
   presentar_escena: { action: 'presentScene' },
   ocultar_pantalla: { action: 'hideScreen' },
@@ -471,6 +582,7 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   // Las fichas de la mesa y los encuentros (docs/specs/fichas.md); ver_mesa da las de la escena abierta
   poner_fichas: { action: 'placeTokens' },
   mover_fichas: { action: 'moveTokens' },
+  asignar_ficha: { action: 'assignToken' },
   cambiar_ficha: { action: 'updateToken' },
   quitar_fichas: { action: 'removeTokens' },
   ver_encuentros: { action: 'listEncounters' },
@@ -492,6 +604,10 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   cambiar_muros: { action: 'changeWalls' },
   abrir_puerta: { action: 'setDoor' },
   oscuridad: { action: 'updateSceneVision' },
+  // Los sonidos del mapa (docs/specs/sonido-mapa.md): del mundo; ver_muros los lista y cada campaña los enciende
+  poner_sonido_escena: { action: 'placeSceneSound' },
+  cambiar_sonido_escena: { action: 'changeSceneSound' },
+  quitar_sonido_escena: { action: 'removeSceneSound' },
   ver_como_grupo: { action: 'viewAsParty' },
   niebla: {
     description:
@@ -535,7 +651,8 @@ const INSTRUCTIONS =
   'a los jugadores escribir el texto de una página (el diario del grupo), que no puede llevar secretos. ' +
   'Un campo o un bloque del panel con hidden no les llega nunca. Si quien te conecta es un jugador, ' +
   'solo ves lo que sabe su campaña (las herramientas de leer, con campaignId si juega más de una del mundo) y solo ' +
-  'escribes, con editar_pagina, el texto de una página que su campaña puede editar. ' +
+  'escribes, con editar_pagina, el texto de una página que su campaña puede editar, y sus notas (ver_notas, leer_nota, ' +
+  'escribir_nota: suyas, con enlaces [[Página]] a lo que conoce; el máster las lee y no las escribe). ' +
   'Para pasar una wiki entera: crear_paginas de 50 en 50, en cualquier orden (los enlaces se resuelven solos), y al ' +
   'final enlaces_pagina con worldId para ver lo que quede sin resolver; los archivos los sube el máster y se enlazan ' +
   'por su nombre (listar_archivos). Las etiquetas son de toda la cuenta: míralas con listar_etiquetas y usa las que ' +
@@ -617,7 +734,11 @@ const INSTRUCTIONS =
   'una escena se ven con ver_muros y se cambian con cambiar_muros (en casillas con unit cell; una puerta secreta es ' +
   'muro para el grupo hasta que se abre); los mapas de dibujar_escena llevan los suyos. abrir_puerta abre o cierra ' +
   'una puerta en una campaña, oscuridad pone la de la escena (o la deja sin niebla automática: solo a mano), niebla ' +
-  'destapa, tapa o reinicia, y ver_como_grupo dice qué casillas y fichas ve el grupo. ' +
+  'destapa, tapa o reinicia, y ver_como_grupo dice qué casillas y fichas ve el grupo. Los sonidos del mapa (una ' +
+  'cascada, una fragua: en bucle, más fuertes cerca de las fichas) salen en ver_muros y se ponen con ' +
+  'poner_sonido_escena (un audio del mundo o una pista de sus listas, radio en casillas, si los muros lo frenan o lo ' +
+  'amortiguan), se cambian con cambiar_sonido_escena (con campaignId y enabled, se encienden o apagan en una campaña) ' +
+  'y se quitan con quitar_sonido_escena. ' +
   'medir dice lo que hay entre dos casillas (o un camino) con la regla de diagonales de la escena. poner_plantilla ' +
   'deja una plantilla de área (círculo, cono, línea o cuadrado, en pies desde una casilla) y dice qué fichas quedan ' +
   'dentro (fichas_en_plantilla lo vuelve a mirar): para dañarlas, aplicar_tirada o partida_criatura con su actorId. ' +

@@ -64,7 +64,7 @@ test('combate: tirar la iniciativa, dos rondas (un estado de una ronda se va sol
     .toBe(2)
   const [tv] = await Promise.all([
     page.waitForEvent('popup'),
-    page.getByRole('button', { name: 'Pantalla', exact: true }).click()
+    page.getByRole('button', { name: 'Vista de jugadores', exact: true }).click()
   ])
   await tv.emulateMedia({ colorScheme: 'dark' })
 

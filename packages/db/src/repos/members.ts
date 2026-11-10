@@ -10,7 +10,7 @@ import { lockMembership } from './invitations.ts'
 /** Quiénes están en la campaña: el máster primero y luego por nombre */
 export function listCampaignMembers(db: Database, campaignId: string) {
   return db
-    .select({ userId: campaignMembers.userId, name: user.name, role: campaignMembers.role })
+    .select({ userId: campaignMembers.userId, name: user.name, role: campaignMembers.role, color: user.diceColor })
     .from(campaignMembers)
     .innerJoin(user, eq(user.id, campaignMembers.userId))
     .where(eq(campaignMembers.campaignId, campaignId))

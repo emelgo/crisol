@@ -2,7 +2,7 @@
  * Las tiradas de una campaña (ADR-0010): se guardan ya resueltas y se leen filtradas por quién las ve. No pasan por
  * operation(): una tirada no se deshace
  */
-import { and, desc, eq, lt, or, sql } from 'drizzle-orm'
+import { and, desc, eq, inArray, lt, or, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { user } from '../schema/auth.ts'
 import { diceRolls, type StoredRoll } from '../schema/dice.ts'
@@ -137,4 +137,33 @@ export async function findRoll(db: Database, campaignId: string, rollId: string)
     .innerJoin(user, eq(user.id, diceRolls.userId))
     .where(and(eq(diceRolls.id, rollId), eq(diceRolls.campaignId, campaignId)))
   return found ?? null
+}
+
+/** Para el registro (docs/specs/registro.md): las que ve una cuenta, por la hora, de las más recientes hacia atrás */
+export async function listRollsByTime(
+  db: Database,
+  input: { campaignId: string; viewerId: string; master: boolean; before?: Date | undefined; limit: number }
+) {
+  return db
+    .select(view)
+    .from(diceRolls)
+    .innerJoin(user, eq(user.id, diceRolls.userId))
+    .where(
+      and(
+        eq(diceRolls.campaignId, input.campaignId),
+        input.before ? lt(diceRolls.createdAt, input.before) : undefined,
+        input.master ? undefined : or(eq(diceRolls.visibility, 'all'), eq(diceRolls.userId, input.viewerId))
+      )
+    )
+    .orderBy(desc(diceRolls.createdAt), desc(diceRolls.n))
+    .limit(input.limit)
+}
+
+/** Borra tiradas de una campaña (las de ids, o todas); cuántas */
+export async function deleteRolls(db: Database, campaignId: string, ids?: readonly string[]): Promise<number> {
+  const rows = await db
+    .delete(diceRolls)
+    .where(and(eq(diceRolls.campaignId, campaignId), ids ? inArray(diceRolls.id, [...ids]) : undefined))
+    .returning({ id: diceRolls.id })
+  return rows.length
 }

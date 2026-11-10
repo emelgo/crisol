@@ -5,11 +5,14 @@
  */
 import {
   changeFog,
+  changeSceneSound,
   changeWalls,
   getSceneVision,
   type LightView,
   type lightInput,
   placeImportedWalls,
+  placeSceneSound,
+  removeSceneSound,
   resetFog,
   type SceneVisionView,
   setDoor,
@@ -19,14 +22,27 @@ import {
   WALL_PRESETS,
   type WallView,
   type wallInput,
-  wallKindOf
+  wallKindOf,
+  youtubeVideoId
 } from '@crisol/contracts'
-import { type OperationContext, scenesRepo as scenes, type scenesRepo, tableToolsRepo, visionRepo } from '@crisol/db'
-import { NotFoundError } from '@crisol/domain'
+import {
+  filesRepo,
+  type OperationContext,
+  scenesRepo as scenes,
+  type scenesRepo,
+  soundRepo,
+  tableToolsRepo,
+  visionRepo
+} from '@crisol/db'
+import { ForbiddenError, NotFoundError } from '@crisol/domain'
 import { cellCenter, joinCollinear, type Point, type Wall } from '@crisol/tabletop'
 import type { z } from 'zod'
 import { pagesChanged } from '../realtime/events.ts'
+import { assertTablePlay, tablePlayOf } from '../table/play.ts'
 import { campaignTableView, sceneView, screenViewOf, tokensWithSenses, visionOf } from '../table/projection.ts'
+import { playerMayUseDoor } from '../table/rules.ts'
+import { campaignSceneSounds, loadSceneSounds, sceneSoundViewOf } from '../table/scene-sounds.ts'
+import { wallOf } from '../table/vision.ts'
 import { authorizedCampaign, authorizedPage, authorizedScene, sceneOfCampaign } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
 import { implement } from './registry.ts'
@@ -84,9 +100,10 @@ async function sceneVisionOf(
   scene: Pick<scenesRepo.SceneRow, 'id' | 'version' | 'darkness' | 'automaticVision'>,
   campaignId?: string
 ): Promise<SceneVisionView> {
-  const [walls, lights, state] = await Promise.all([
+  const [walls, lights, sounds, state] = await Promise.all([
     visionRepo.listWalls(ctx.db, scene.id),
     visionRepo.listLights(ctx.db, scene.id),
+    loadSceneSounds(ctx, scene.id),
     campaignId ? visionRepo.findSceneState(ctx.db, campaignId, scene.id) : Promise.resolve(null)
   ])
   return {
@@ -96,6 +113,9 @@ async function sceneVisionOf(
     automaticVision: scene.automaticVision,
     walls: walls.map(wallViewOf),
     lights: lights.map(lightViewOf),
+    sounds: sounds.rows.map((row) =>
+      sceneSoundViewOf(row, sounds.tracks, campaignId ? (state?.sounds ?? {}) : undefined)
+    ),
     ...(campaignId
       ? {
           doors: Object.fromEntries(
@@ -104,6 +124,64 @@ async function sceneVisionOf(
         }
       : {})
   }
+}
+
+type SoundInput = z.infer<typeof placeSceneSound.input>
+
+/** La pista de un sonido del mapa, comprobada: un audio del mundo (o común de su cuenta), una pista de sus listas que
+ * suene (no de YouTube) o una dirección que no sea de YouTube */
+async function soundSourceValues(
+  ctx: ActionContext,
+  wiki: { worldId: string; organizationId: string },
+  source: NonNullable<SoundInput['source']>
+): Promise<Pick<visionRepo.SceneSoundValues, 'fileId' | 'trackId' | 'url'>> {
+  if (source.type === 'none') return { fileId: null, trackId: null, url: null }
+  if (source.type === 'url') {
+    if (youtubeVideoId(source.url))
+      throw new InvalidRequestError('NOT_AUDIO', 'un vídeo de YouTube no suena en el mapa: usa un audio')
+    if (!/^https?:\/\//i.test(source.url))
+      throw new InvalidRequestError('BAD_URL', 'la dirección tiene que ser http(s)')
+    return { fileId: null, trackId: null, url: source.url }
+  }
+  if (source.type === 'track') {
+    const [track] = await soundRepo.tracksByIds(ctx.db, [source.trackId])
+    if (!track || track.worldId !== wiki.worldId) throw new NotFoundError('track')
+    if (!track.fileId && !track.url)
+      throw new InvalidRequestError('NOT_AUDIO', `«${track.name}» no es un audio: no suena en el mapa`)
+    return { fileId: null, trackId: track.id, url: null }
+  }
+  const file = await filesRepo.findFile(ctx.db, source.fileId)
+  const mine =
+    file && (file.worldId === wiki.worldId || (file.worldId === null && file.organizationId === wiki.organizationId))
+  if (!file || !mine) throw new NotFoundError('file')
+  if (!file.mime.startsWith('audio/'))
+    throw new InvalidRequestError('NOT_AUDIO', `«${file.name}» no es un archivo de audio`)
+  return { fileId: file.id, trackId: null, url: null }
+}
+
+/** Lo de un sonido del mapa que se pide (sin su sitio), listo para guardar */
+async function soundValues(
+  ctx: ActionContext,
+  wiki: { worldId: string; organizationId: string },
+  input: Omit<Partial<SoundInput>, 'sceneId' | 'x' | 'y' | 'unit'>
+): Promise<Partial<visionRepo.SceneSoundValues>> {
+  return {
+    ...(input.name !== undefined ? { name: input.name } : {}),
+    ...(input.source ? await soundSourceValues(ctx, wiki, input.source) : {}),
+    ...(input.radius !== undefined ? { radius: input.radius } : {}),
+    ...(input.volume !== undefined ? { volume: input.volume } : {}),
+    ...(input.easing !== undefined ? { easing: input.easing } : {}),
+    ...(input.walls !== undefined ? { walls: input.walls } : {}),
+    ...(input.darkOnly !== undefined ? { darkOnly: input.darkOnly } : {})
+  }
+}
+
+/** Un sonido del mapa que la cuenta puede preparar, con su escena */
+async function writableSound(ctx: ActionContext, id: string) {
+  const sound = await visionRepo.findSceneSound(ctx.db, id)
+  const authorized = await authorizedScene(ctx, 'page.write', sound?.sceneId ?? '')
+  if (!sound) throw new NotFoundError('sound')
+  return { sound, ...authorized }
 }
 
 /** Lo que para un muro: su tipo ya hecho (muro, por defecto), cambiado por lo que se diga aparte */
@@ -377,6 +455,70 @@ function visibleCellsOf(
 }
 
 export const visionActions = [
+  implement(placeSceneSound, async (ctx, { sceneId, unit, x, y, ...input }) => {
+    const { scene, page, wiki } = await authorizedScene(ctx, 'page.write', sceneId)
+    const at = toPixels(scene.grid, unit)({ x, y })
+    const values = await soundValues(ctx, wiki, input)
+    const details = { title: page.title, name: scene.name }
+    await visionRepo.changeVision(ctx.db, historyContext(ctx, 'placeSceneSound', details, wiki), sceneId, {
+      sounds: { add: [{ ...values, x: at.x, y: at.y }] }
+    })
+    ctx.table?.sceneChanged(sceneId)
+    ctx.realtime.publish(pagesChanged(wiki))
+    return sceneVisionOf(ctx, (await scenes.findScene(ctx.db, sceneId)) as SceneRow)
+  }),
+
+  implement(changeSceneSound, async (ctx, { id, unit, x, y, campaignId, enabled, ...input }) => {
+    const found = await visionRepo.findSceneSound(ctx.db, id)
+    if (!found) throw new NotFoundError('sound')
+    const world = Object.values(input).some((v) => v !== undefined) || x !== undefined || y !== undefined
+    if (world) {
+      const { sound, scene, page, wiki } = await writableSound(ctx, id)
+      const px = toPixels(scene.grid, unit)
+      const at = px({ x: x ?? 0, y: y ?? 0 })
+      const patch = {
+        ...(await soundValues(ctx, wiki, input)),
+        ...(x !== undefined ? { x: at.x } : {}),
+        ...(y !== undefined ? { y: at.y } : {})
+      }
+      const details = { title: page.title, name: scene.name }
+      await visionRepo.changeVision(ctx.db, historyContext(ctx, 'changeSceneSound', details, wiki), sound.sceneId, {
+        sounds: { update: [{ id, patch }] }
+      })
+      ctx.table?.sceneChanged(sound.sceneId)
+      ctx.realtime.publish(pagesChanged(wiki))
+    }
+    if (campaignId && enabled !== undefined) {
+      const campaign = await authorizedCampaign(ctx, 'table.manage', campaignId)
+      const { scene, state } = await campaignScene(ctx, campaign, found.sceneId)
+      await visionRepo.setSceneSounds(
+        ctx.db,
+        historyContext(
+          ctx,
+          enabled ? 'sceneSoundOn' : 'sceneSoundOff',
+          { campaign: campaign.name, name: scene.name },
+          campaign
+        ),
+        state.id,
+        { [id]: enabled }
+      )
+      ctx.table?.changed(campaignId)
+    }
+    const scene = (await scenes.findScene(ctx.db, found.sceneId)) as SceneRow
+    return sceneVisionOf(ctx, scene, campaignId)
+  }),
+
+  implement(removeSceneSound, async (ctx, { id }) => {
+    const { sound, scene, page, wiki } = await writableSound(ctx, id)
+    const details = { title: page.title, name: scene.name }
+    await visionRepo.changeVision(ctx.db, historyContext(ctx, 'removeSceneSound', details, wiki), sound.sceneId, {
+      sounds: { remove: [id] }
+    })
+    ctx.table?.sceneChanged(sound.sceneId)
+    ctx.realtime.publish(pagesChanged(wiki))
+    return sceneVisionOf(ctx, (await scenes.findScene(ctx.db, sound.sceneId)) as SceneRow)
+  }),
+
   implement(getSceneVision, async (ctx, { sceneId, campaignId }) => {
     if (campaignId) {
       const campaign = await authorizedCampaign(ctx, 'table.manage', campaignId)
@@ -446,11 +588,21 @@ export const visionActions = [
   }),
 
   implement(setDoor, async (ctx, { campaignId, wallId, open }) => {
-    const campaign = await authorizedCampaign(ctx, 'table.manage', campaignId)
+    const campaign = await authorizedCampaign(ctx, 'campaign.read', campaignId)
+    const play = await tablePlayOf(ctx, campaign)
     const wall = await visionRepo.findWall(ctx.db, wallId)
     if (!wall || wall.worldId !== campaign.worldId) throw new NotFoundError('wall')
+    // El máster abre y cierra todas (también las secretas y las que tienen llave); un jugador, las normales sin llave
+    // que ve su grupo en la escena presentada, si la pausa y el modo le dejan
+    if (!play.master) {
+      const presented = play.table.screenHidden ? null : play.table.presentedSceneId
+      if (wall.sceneId !== presented) throw new ForbiddenError('table.play')
+      assertTablePlay(play, null)
+      const scene = await scenes.findScene(ctx.db, wall.sceneId)
+      const vision = scene ? await visionOf(ctx, campaign, scene) : null
+      if (!vision || !playerMayUseDoor(wallOf(wall), vision.visible)) throw new ForbiddenError('table.play')
+    }
     if (!wall.door) throw new InvalidRequestError('NOT_A_DOOR', 'ese muro no es una puerta')
-    // El máster abre y cierra todas (también las secretas y las que tienen llave)
     const { scene, state } = await campaignScene(ctx, campaign, wall.sceneId)
     await visionRepo.setDoors(
       ctx.db,
@@ -512,7 +664,10 @@ export const visionActions = [
       combat: master.combat ?? null,
       vision,
       marks: await tableToolsRepo.listMarks(ctx.db, campaignId, scene.id),
-      widgets: master.widgets ?? []
+      widgets: master.widgets ?? [],
+      paused: table.paused,
+      movement: table.movement,
+      sounds: await campaignSceneSounds(ctx, campaignId, scene)
     })
     const cells = visibleCellsOf(scene.grid, vision.visible, vision)
     const seen = loaded.views.filter((t) => !t.hidden && vision.seen.has(t.id))

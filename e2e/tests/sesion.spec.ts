@@ -6,7 +6,6 @@ import {
   freshOwner,
   gotoLive,
   newPlayer,
-  openCampaign,
   signOut,
   skipTours
 } from './ayudas.ts'

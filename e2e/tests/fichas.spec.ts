@@ -79,13 +79,13 @@ test('fichas: Lía y tres goblins de un encuentro, moverlos, dañar a uno, ocult
     .toBe(2)
   const [tv] = await Promise.all([
     page.waitForEvent('popup'),
-    page.getByRole('button', { name: 'Pantalla', exact: true }).click()
+    page.getByRole('button', { name: 'Vista de jugadores', exact: true }).click()
   ])
   const onTv = tv.getByRole('list', { name: 'Lo que hay en la mesa' })
 
   // Lía, desde «Personajes», arrastrada al mapa
   const panel = page.getByRole('complementary', { name: 'Panel de la mesa' })
-  await panel.getByRole('tab', { name: 'Personajes' }).click()
+  await panel.getByRole('tab', { name: 'Actores' }).click()
   const lia = await onScreen(stage, { x: 350, y: 450 })
   const stageBox = await stage.boundingBox()
   if (!stageBox) throw new Error('sin mesa')
@@ -95,8 +95,8 @@ test('fichas: Lía y tres goblins de un encuentro, moverlos, dañar a uno, ocult
     .dragTo(stage, { targetPosition: { x: lia.x - stageBox.x, y: lia.y - stageBox.y } })
   await expect(onTv.getByRole('listitem')).toHaveText(['Lía'])
 
-  // La emboscada, desde los encuentros (en Escenas): tres goblins en su formación, ilesos en la tele
-  await panel.getByRole('tab', { name: 'Escenas' }).click()
+  // La emboscada, desde los encuentros (en Actores): tres goblins en su formación, ilesos en la tele
+  await panel.getByRole('tab', { name: 'Actores' }).click()
   const ambush = await onScreen(stage, { x: 650, y: 250 })
   await panel
     .getByRole('listitem')
@@ -189,7 +189,7 @@ test('fichas: Lía y tres goblins de un encuentro, moverlos, dañar a uno, ocult
   await page.mouse.click(liaAt.x, liaAt.y)
   await expect(page.getByRole('region', { name: 'Lía' })).toBeVisible()
   // Sus imágenes del mundo, en Personajes (con la ficha elegida)
-  await panel.getByRole('tab', { name: 'Personajes' }).click()
+  await panel.getByRole('tab', { name: 'Actores' }).click()
   await panel.getByRole('button', { name: 'lia.png' }).click()
   const editor = page.getByRole('dialog', { name: 'Imagen de Lía' })
   await expect(editor).toBeVisible()

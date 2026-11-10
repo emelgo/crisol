@@ -83,6 +83,43 @@ export const lightView = z.object({
 
 export type LightView = z.infer<typeof lightView>
 
+export const SCENE_SOUND_WALLS = ['block', 'muffle'] as const
+
+/** De dónde sale un sonido del mapa, listo para sonar (url null: no suena, como una pista de YouTube o sin archivo) */
+export const sceneSoundSource = z.discriminatedUnion('type', [
+  z.object({ type: z.literal('file'), fileId: z.uuid(), url: z.string() }),
+  z.object({
+    type: z.literal('track'),
+    trackId: z.uuid(),
+    playlistId: z.uuid(),
+    name: z.string(),
+    url: z.string().nullable()
+  }),
+  z.object({ type: z.literal('url'), url: z.string() }),
+  z.object({ type: z.literal('none') })
+])
+
+export type SceneSoundSource = z.infer<typeof sceneSoundSource>
+
+export const sceneSoundView = z.object({
+  id: z.uuid(),
+  name: z.string(),
+  x: z.number(),
+  y: z.number(),
+  source: sceneSoundSource,
+  radius: z.number().describe('En casillas'),
+  volume: z.number(),
+  easing: z.boolean().describe('Se apaga poco a poco hacia el borde; sin él, se oye igual hasta él'),
+  walls: z
+    .enum(SCENE_SOUND_WALLS)
+    .describe('Los muros que paran el sonido lo frenan (block: no pasa) o lo amortiguan (muffle: más bajo y apagado)'),
+  darkOnly: z.boolean().describe('Solo suena con la escena a oscuras'),
+  /** Con campaña: si suena en ella (cada campaña enciende y apaga los suyos) */
+  enabled: z.boolean().optional()
+})
+
+export type SceneSoundView = z.infer<typeof sceneSoundView>
+
 export const sceneVisionView = z.object({
   sceneId: z.uuid(),
   version: z.int().describe('La de la escena: sube con cada cambio de sus muros o sus luces'),
@@ -92,6 +129,8 @@ export const sceneVisionView = z.object({
     .describe('La niebla sale de lo que ven las fichas del grupo; sin ella, solo la de a mano'),
   walls: z.array(wallView),
   lights: z.array(lightView),
+  /** Los sonidos del mapa (opcional por la API de prueba de la web) */
+  sounds: z.array(sceneSoundView).optional(),
   /** Con campaña: si está abierta cada puerta en ella, por el id de su muro */
   doors: z.record(z.string(), z.boolean()).optional()
 })
@@ -308,4 +347,65 @@ export const viewAsParty = defineAction({
     ),
     secretDoors: z.array(z.object({ id: z.uuid(), open: z.boolean() }))
   })
+})
+
+const soundSourceInput = z.discriminatedUnion('type', [
+  z.object({ type: z.literal('file'), fileId: z.uuid().describe('Un audio del mundo (listar_archivos)') }),
+  z.object({ type: z.literal('track'), trackId: z.uuid().describe('Una pista de las listas del mundo (ver_sonido)') }),
+  z.object({ type: z.literal('url'), url: z.url().max(1000).describe('La dirección de un audio (no YouTube)') }),
+  z.object({ type: z.literal('none') })
+])
+
+const sceneSoundFields = {
+  name: z.string().trim().max(200).optional(),
+  source: soundSourceInput.optional().describe('Su pista; sin ella, no suena hasta que se elija'),
+  radius: z.number().positive().max(500).optional().describe('En casillas (6 por defecto)'),
+  volume: z.number().min(0).max(1).optional(),
+  easing: z.boolean().optional().describe('Se apaga poco a poco hacia el borde (por defecto); false: igual hasta él'),
+  walls: z
+    .enum(SCENE_SOUND_WALLS)
+    .optional()
+    .describe('block (por defecto): los muros que paran el sonido lo frenan; muffle: lo amortiguan'),
+  darkOnly: z.boolean().optional().describe('Solo suena con la escena a oscuras')
+}
+
+/** Sobre qué oscuridad (0–1) suena un sonido «solo a oscuras» */
+export const SOUND_DARK_FROM = 0.5
+
+export const placeSceneSound = defineAction({
+  name: 'placeSceneSound',
+  kind: 'write',
+  description:
+    'Pone un sonido en el mapa de una escena (una cascada, una fragua): su sitio, su pista (un audio del mundo, una pista de sus listas o una dirección), su radio en casillas, su volumen, si se apaga hacia el borde, si los muros lo frenan o lo amortiguan y si solo suena a oscuras. Siempre en bucle; se oye más fuerte cerca de las fichas',
+  input: z.object({ sceneId: z.uuid(), unit, x: coordinate, y: coordinate, ...sceneSoundFields }),
+  output: sceneVisionView
+})
+
+export const changeSceneSound = defineAction({
+  name: 'changeSceneSound',
+  kind: 'write',
+  description:
+    'Cambia un sonido del mapa (id): su sitio, su pista, su radio, su volumen, el suavizado, los muros y la oscuridad. Con campaignId y enabled, lo enciende o lo apaga solo en esa campaña',
+  input: z
+    .object({
+      id: z.uuid(),
+      unit,
+      x: coordinate.optional(),
+      y: coordinate.optional(),
+      ...sceneSoundFields,
+      campaignId: z.uuid().optional(),
+      enabled: z.boolean().optional().describe('Con campaignId: si suena en esa campaña')
+    })
+    .refine((input) => (input.enabled === undefined) === (input.campaignId === undefined), {
+      message: 'campaignId y enabled van juntos'
+    }),
+  output: sceneVisionView
+})
+
+export const removeSceneSound = defineAction({
+  name: 'removeSceneSound',
+  kind: 'write',
+  description: 'Quita un sonido del mapa (se deshace desde el historial)',
+  input: z.object({ id: z.uuid() }),
+  output: sceneVisionView
 })

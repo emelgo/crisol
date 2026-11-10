@@ -5,8 +5,8 @@
  */
 import type { Campaign, DiceRoll } from '@crisol/contracts'
 import { describeFormula } from '@crisol/dice'
-import { useInfiniteQuery } from '@tanstack/react-query'
-import { Crown, EyeOff, Repeat, Settings, Swords } from 'lucide-react'
+import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { Crown, EyeOff, Repeat, Settings, Swords, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
@@ -58,6 +58,18 @@ export function RollLog({ campaign }: { campaign: Campaign }) {
     }
   }, [last])
   const again = useRollAgain(campaign)
+  // El máster limpia el historial: una tirada o todas (Enrique, 2026-11-10)
+  const queryClient = useQueryClient()
+  const [clearing, setClearing] = useState(false)
+  const removeRolls = useMutation({
+    mutationFn: (ids?: string[]) => api.call('deleteRolls', { campaignId: campaign.id, ...(ids ? { ids } : {}) }),
+    onSuccess: () => {
+      setClearing(false)
+      void queryClient.invalidateQueries({ queryKey: rollsKey(campaign.id) })
+      void queryClient.invalidateQueries({ queryKey: ['log', campaign.id] })
+    }
+  })
+  const master = campaign.role === 'master'
   return (
     <div className={styles.wrap}>
       <div className={styles.toolbar}>
@@ -70,7 +82,29 @@ export function RollLog({ campaign }: { campaign: Campaign }) {
           </button>
         </div>
         <DiceOptions />
+        {master && all.length > 0 && (
+          <button type="button" className={styles.clear} onClick={() => setClearing(true)}>
+            <Trash2 size={13} aria-hidden="true" />
+            {t('dice.clearRolls')}
+          </button>
+        )}
       </div>
+      {clearing && (
+        <div className={styles.confirm} role="alert">
+          <span>{t('dice.clearConfirm')}</span>
+          <button
+            type="button"
+            className={styles.danger}
+            disabled={removeRolls.isPending}
+            onClick={() => removeRolls.mutate(undefined)}
+          >
+            {t('dice.clearRolls')}
+          </button>
+          <button type="button" className={styles.cancelClear} onClick={() => setClearing(false)}>
+            {t('list.cancel')}
+          </button>
+        </div>
+      )}
       {rolls.hasNextPage && (
         <button
           type="button"
@@ -83,12 +117,13 @@ export function RollLog({ campaign }: { campaign: Campaign }) {
       )}
       <ol ref={list} className={styles.log} aria-label={t('dice.log')}>
         {shown.map((roll) => (
-          <Entry
+          <RollEntry
             key={roll.id}
             roll={roll}
             mine={isMine(roll, account)}
             master={campaign.role === 'master'}
             onAgain={() => again.mutate(roll)}
+            onDelete={master ? () => removeRolls.mutate([roll.id]) : undefined}
           />
         ))}
       </ol>
@@ -141,17 +176,21 @@ function DiceOptions() {
   )
 }
 
-function Entry({
+/** Una tirada del historial (también en la pestaña Todo del registro) */
+export function RollEntry({
   roll,
   mine,
   master,
-  onAgain
+  onAgain,
+  onDelete
 }: {
   roll: DiceRoll
   mine: boolean
   /** El máster aplica el daño de una tirada a las criaturas en juego y a los personajes */
   master: boolean
   onAgain: () => void
+  /** El máster la borra del historial */
+  onDelete?: (() => void) | undefined
 }) {
   const { t } = useTranslation()
   const [applying, setApplying] = useState(false)
@@ -176,6 +215,17 @@ function Entry({
           <b>{who}</b>
           {roll.ai && <span>{t('dice.ai')}</span>}
           <time dateTime={roll.createdAt}>{clock.format(new Date(roll.createdAt))}</time>
+          {onDelete && (
+            <button
+              type="button"
+              className={styles.deleteRoll}
+              aria-label={t('dice.deleteRoll')}
+              title={t('dice.deleteRoll')}
+              onClick={onDelete}
+            >
+              <Trash2 size={12} aria-hidden="true" />
+            </button>
+          )}
           {flag && FlagIcon && (
             <span className={flag.cls}>
               <FlagIcon size={12} aria-hidden="true" />

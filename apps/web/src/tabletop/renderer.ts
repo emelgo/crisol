@@ -192,13 +192,18 @@ export class TableRenderer {
   private destroyed = false
 
   /** Crea el lienzo dentro de `host` (lo llena) */
-  static async create(host: HTMLElement, options: { big?: boolean } = {}): Promise<TableRenderer> {
+  /** transparent: sin fondo propio, para que se vea el de la Mesa del máster detrás del mapa (y su cristal se note) */
+  static async create(
+    host: HTMLElement,
+    options: { big?: boolean; transparent?: boolean } = {}
+  ): Promise<TableRenderer> {
     const pixi = await import('pixi.js')
     const app = new pixi.Application()
     await app.init({
       width: Math.max(1, host.clientWidth),
       height: Math.max(1, host.clientHeight),
       background: '#0b0b0c',
+      backgroundAlpha: options.transparent ? 0 : 1,
       antialias: true,
       autoDensity: true,
       resolution: window.devicePixelRatio || 1,

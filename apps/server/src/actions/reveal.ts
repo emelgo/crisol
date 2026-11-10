@@ -3,15 +3,27 @@
  * ocultarlo otra vez; «Lo que sabe el grupo»; quién conoce cada secreto de una página; lo nuevo de cada jugador
  */
 import {
+  clearScreenShow,
   getSecretsKnowledge,
   hide,
   listCampaignKnowledge,
   listNews,
   reveal,
   seeNews,
+  showImage,
   showPage
 } from '@crisol/contracts'
-import { campaignsRepo, charactersRepo, documentsRepo, knowledgeRepo, pagesRepo } from '@crisol/db'
+import {
+  campaignsRepo,
+  charactersRepo,
+  documentsRepo,
+  filesRepo,
+  knowledgeRepo,
+  logRepo,
+  membersRepo,
+  pagesRepo,
+  scenesRepo
+} from '@crisol/db'
 import {
   explainPage,
   type Knowledge,
@@ -27,6 +39,7 @@ import { documentJson } from '../wiki/content.ts'
 import { authorizedView, type WikiView } from '../wiki/reader.ts'
 import { authorizedCampaign, authorizedPage, authorizedWiki, type WikiTarget } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
+import { presentMessage, publishEntry } from './log.ts'
 import { implement } from './registry.ts'
 
 type Target = NonNullable<Awaited<ReturnType<typeof knowledgeRepo.findTarget>>>
@@ -273,16 +286,18 @@ export const revealActions = [
   }),
 
   // Enseñar una página (como un diario en la mesa): se abre al momento a los jugadores de la campaña que la conocen
-  implement(showPage, async (ctx, { campaignId, pageId }) => {
+  implement(showPage, async (ctx, { campaignId, pageId, to, screen }) => {
     const campaign = await authorizedCampaign(ctx, 'campaign.read', campaignId)
     const wiki = await authorizedWiki(ctx, 'page.write', campaign.worldId)
     const target = await knowledgeRepo.findTarget(ctx.db, wiki.worldId, 'page', pageId)
     if (!target) throw new NotFoundError('page')
-    const [tree, marks, players] = await Promise.all([
+    const [tree, marks, all] = await Promise.all([
       knowledgeRepo.worldTree(ctx.db, wiki.worldId),
       knowledgeRepo.listMarks(ctx.db, { worldId: wiki.worldId, campaignIds: [campaign.id] }),
       knowledgeRepo.campaignPlayers(ctx.db, campaign.id)
     ])
+    // A todos o a unos (docs/specs/ensenar.md)
+    const players = to ? all.filter((player) => to.includes(player.userId)) : all
     const knows = players.filter((player) =>
       knowledgeFor(
         { kind: 'player', campaignId: campaign.id, characterIds: player.characterIds, knowsWorld: campaign.knowsWorld },
@@ -302,7 +317,44 @@ export const revealActions = [
         }
       }))
     )
+    // En el registro, solo para quien la recibió (el título de una página que no conoce no le llega)
+    const everyone = !to && knows.length === all.length
+    const recipients = everyone ? null : knows.map((player) => player.userId)
+    // (sin nadie que la conozca, solo la ve el máster)
+    await shownInLog(ctx, campaign, { kind: 'page', id: pageId, title: target.name }, recipients, screen)
     return { shown: knows.length, unknown: players.length - knows.length }
+  }),
+
+  implement(showImage, async (ctx, { campaignId, fileId, to, screen }) => {
+    const campaign = await authorizedCampaign(ctx, 'campaign.read', campaignId)
+    await authorizedWiki(ctx, 'page.write', campaign.worldId)
+    const file = await filesRepo.findFile(ctx.db, fileId)
+    if (!file || file.kind !== 'image' || (file.worldId && file.worldId !== campaign.worldId))
+      throw new NotFoundError('file')
+    const all = await knowledgeRepo.campaignPlayers(ctx.db, campaign.id)
+    const players = to ? all.filter((player) => to.includes(player.userId)) : all
+    // Primero en el registro: es lo que le deja abrir el archivo (files/routes.ts)
+    await shownInLog(ctx, campaign, { kind: 'image', id: file.id, title: file.name }, to ?? null, screen)
+    ctx.realtime.publish(
+      ...players.map((player) => ({
+        to: { userId: player.userId },
+        message: {
+          type: 'shownImage' as const,
+          worldId: campaign.worldId,
+          campaignId: campaign.id,
+          fileId: file.id,
+          title: file.name
+        }
+      }))
+    )
+    return { shown: players.length }
+  }),
+
+  implement(clearScreenShow, async (ctx, { campaignId }) => {
+    await authorizedCampaign(ctx, 'table.manage', campaignId)
+    await scenesRepo.setCampaignTable(ctx.db, campaignId, { screenShow: null })
+    ctx.table?.changed(campaignId)
+    return { ok: true as const }
   }),
 
   implement(hide, async (ctx, { campaignId, kind, targetId }) => {
@@ -451,3 +503,33 @@ export const revealActions = [
     return { ok: true as const }
   })
 ]
+
+/** Lo enseñado queda en el registro (a quien se enseñó) y, si se pide, en la vista de jugadores */
+async function shownInLog(
+  ctx: ActionContext,
+  campaign: { id: string; worldId: string },
+  shown: { kind: 'page' | 'image'; id: string; title: string },
+  to: string[] | null,
+  screen: boolean | undefined
+) {
+  const row = await logRepo.insertMessage(ctx.db, {
+    campaignId: campaign.id,
+    worldId: campaign.worldId,
+    userId: ctx.actor.userId,
+    ai: ctx.via === 'ai',
+    kind: 'shown',
+    style: 'ooc',
+    speaker: { kind: 'user' },
+    text: '',
+    whisper: to,
+    shown
+  })
+  if (row) {
+    const names = new Map((await membersRepo.listCampaignMembers(ctx.db, campaign.id)).map((m) => [m.userId, m.name]))
+    publishEntry(ctx, campaign, presentMessage(row, names), to)
+  }
+  if (screen) {
+    await scenesRepo.setCampaignTable(ctx.db, campaign.id, { screenShow: shown })
+    ctx.table?.changed(campaign.id)
+  }
+}

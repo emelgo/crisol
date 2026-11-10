@@ -121,7 +121,7 @@ describe('el registro de la campaña', () => {
     const { api } = renderLog([rollOf('Ana', 'Percepción', 17)])
     const { log } = await openLog()
     const item = within((await log.findAllByRole('listitem'))[0] as HTMLElement)
-    expect(item.getByTitle('1d20+4 → [13] + 4 = 17').textContent).toBe('d2013+ 4')
+    expect(item.getByTitle('1d20+4 → [13] + 4 = 17').textContent).toBe('13+ 4')
     await userEvent.click(item.getByRole('button', { name: 'Otra vez: Percepción' }))
     await waitFor(() => expect(log.getAllByRole('listitem')).toHaveLength(2))
     const { rolls } = await api.client.call('listRolls', { campaignId: CAMPAIGN.id })

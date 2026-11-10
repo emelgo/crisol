@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 import { createTableRooms, type LoadTable, type TableSocket } from './rooms.ts'
 
 const CAMPAIGN = '00000000-0000-4000-8000-000000000001'
+const PLAYER = 'cuenta-jugadora'
 const grid: SceneView['grid'] = {
   type: 'square',
   size: 100,
@@ -37,7 +38,8 @@ const token = (id: string, sceneId: string): TokenView => ({
   faction: 'hostile',
   hidden: false,
   image: null,
-  actor: { kind: 'creature', id, name: 'Goblin', img: null, version: 1, life: null, stats: [], conditions: [] }
+  actor: { kind: 'creature', id, name: 'Goblin', img: null, version: 1, life: null, stats: [], conditions: [] },
+  controllers: [PLAYER]
 })
 
 /** Una mesa: la escena abierta, la presentada y si la pantalla ve la ficha (y todo el mapa) */
@@ -71,7 +73,8 @@ function tableOf(open: string, presented: string, seen: boolean) {
             img: null,
             image: null,
             state: null,
-            conditions: []
+            conditions: [],
+            controllers: [PLAYER]
           }
         ]
       : [],
@@ -115,6 +118,36 @@ describe('las salas de la mesa', () => {
     release()
     await rooms.idle()
     rooms.drag(CAMPAIGN, [{ tokenId: goblin, x: 30, y: 30 }], master)
+    expect(screen.got.filter((m) => m.type === 'drag')).toHaveLength(1)
+  })
+
+  it('el arrastre de un jugador: solo de las fichas que lleva y si la pausa le deja; a los demás, con quién arrastra', async () => {
+    const id = 'd0000000-0000-4000-8000-000000000001'
+    let next = tableOf(id, id, true)
+    const rooms = createTableRooms(async () => next)
+    const master = socket()
+    const screen = socket()
+    const mine = socket()
+    const other = socket()
+    await rooms.join(CAMPAIGN, 'master', master)
+    await rooms.join(CAMPAIGN, 'screen', screen)
+    await rooms.join(CAMPAIGN, 'player', mine)
+    await rooms.join(CAMPAIGN, 'player', other)
+    const goblin = next.master.tokens[0]?.id ?? ''
+    rooms.drag(CAMPAIGN, [{ tokenId: goblin, x: 10, y: 10 }], other, 'otra-cuenta')
+    expect(screen.got.filter((m) => m.type === 'drag')).toEqual([])
+    rooms.drag(CAMPAIGN, [{ tokenId: goblin, x: 10, y: 10 }], mine, PLAYER)
+    expect(screen.got.filter((m) => m.type === 'drag')).toEqual([
+      { type: 'drag', moves: [{ tokenId: goblin, x: 10, y: 10 }], by: PLAYER }
+    ])
+    expect(master.got.filter((m) => m.type === 'drag')).toHaveLength(1)
+    expect(other.got.filter((m) => m.type === 'drag')).toHaveLength(1)
+    expect(mine.got.filter((m) => m.type === 'drag')).toEqual([])
+    // Con pausa, nada
+    next = { ...next, master: { ...next.master, paused: true } }
+    rooms.changed(CAMPAIGN)
+    await rooms.idle()
+    rooms.drag(CAMPAIGN, [{ tokenId: goblin, x: 20, y: 20 }], mine, PLAYER)
     expect(screen.got.filter((m) => m.type === 'drag')).toHaveLength(1)
   })
 

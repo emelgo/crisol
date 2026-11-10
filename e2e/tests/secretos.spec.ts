@@ -48,6 +48,8 @@ test('un párrafo se hace secreto y su texto se guarda aparte, nunca en el cuerp
   await page.keyboard.type('Puerto Ceniza es la última ciudad libre.')
   await page.keyboard.press('Enter')
   await page.keyboard.type('La Hermandad quemó el faro.')
+  // Que el texto esté ya en el editor antes de elegirlo (en la CI, más lenta, la barrita no salía)
+  await expect(body(page)).toContainText('La Hermandad quemó el faro.')
   await page.keyboard.press('Shift+Home')
   await selectionToSecret(page)
   const secret = page.getByRole('region', { name: 'Secreto' })

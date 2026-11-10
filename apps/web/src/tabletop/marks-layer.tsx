@@ -60,10 +60,13 @@ export function placeMarks(layer: HTMLElement | null, view: Viewport) {
     const x = Number(mark.dataset.x) * view.scale + view.x
     const y = Number(mark.dataset.y) * view.scale + view.y
     const rotate = Number(mark.dataset.rotation ?? 0)
+    // Escalado con el mapa, centrado en su punto (data-center) o encima de él, como un pin
     mark.style.transform =
       mark.dataset.scaled !== undefined
         ? `translate(${x}px, ${y}px) translate(-50%, -50%) scale(${view.scale}) rotate(${rotate}deg)`
-        : `translate(${x}px, ${y}px) translate(-50%, -100%)`
+        : mark.dataset.center !== undefined
+          ? `translate(${x}px, ${y}px) translate(-50%, -50%)`
+          : `translate(${x}px, ${y}px) translate(-50%, -100%)`
   }
 }
 

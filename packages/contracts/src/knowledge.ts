@@ -130,12 +130,39 @@ export const showPage = defineAction({
   name: 'showPage',
   kind: 'players',
   description:
-    'Enseña una página a los jugadores conectados de una campaña, como quien enseña un diario en la mesa: se les abre al momento. Solo a quien ya la conoce (si no, revélala antes con reveal)',
-  input: z.object({ campaignId: z.uuid(), pageId: z.uuid() }),
+    'Enseña una página a los jugadores conectados de una campaña, como quien enseña un diario en la mesa: se les abre al momento y queda en el registro. A todos o a unos (to: sus ids de cuenta); con screen, también en la vista de jugadores (la tele), como la ve el grupo. Solo a quien ya la conoce (si no, revélala antes con reveal)',
+  input: z.object({
+    campaignId: z.uuid(),
+    pageId: z.uuid(),
+    to: z.array(z.string().min(1).max(100)).min(1).max(50).optional(),
+    screen: z.boolean().optional()
+  }),
   output: z.object({
     shown: z.number().int().describe('A cuántos jugadores que la conocen se les ha mandado'),
     unknown: z.number().int().describe('Cuántos no la conocen (a ellos no les llega)')
   })
+})
+
+export const showImage = defineAction({
+  name: 'showImage',
+  kind: 'players',
+  description:
+    'Enseña una imagen del mundo (un archivo) a los jugadores de una campaña, al momento y en grande; queda en el registro y desde allí la vuelven a abrir. A todos o a unos (to); con screen, también en la vista de jugadores',
+  input: z.object({
+    campaignId: z.uuid(),
+    fileId: z.uuid(),
+    to: z.array(z.string().min(1).max(100)).min(1).max(50).optional(),
+    screen: z.boolean().optional()
+  }),
+  output: z.object({ shown: z.number().int() })
+})
+
+export const clearScreenShow = defineAction({
+  name: 'clearScreenShow',
+  kind: 'write',
+  description: 'Quita de la vista de jugadores la página o la imagen que se está enseñando',
+  input: z.object({ campaignId: z.uuid() }),
+  output: z.object({ ok: z.literal(true) })
 })
 
 export const hide = defineAction({

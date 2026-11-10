@@ -30,9 +30,17 @@ export {
   type ConvertedLight,
   type ConvertedNote,
   type ConvertedScene,
+  type ConvertedSceneSound,
   type ConvertedToken,
   type ConvertedWall,
   convertFoundryScene,
   type FoundryAdventure,
   readAdventure
 } from './scene.ts'
+export {
+  type AudioSource,
+  audioSourceOf,
+  type ConvertedPlaylist,
+  type ConvertedTrack,
+  convertFoundryPlaylist
+} from './sound.ts'

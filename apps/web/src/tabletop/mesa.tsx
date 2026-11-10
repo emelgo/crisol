@@ -14,6 +14,7 @@ import {
   isTrackpadWheel,
   type Point,
   type Size,
+  soundEdges,
   toWorld,
   type Viewport,
   wheelZoomFactor,
@@ -48,7 +49,12 @@ import { failed, LoadError } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { Tour } from '../components/tour.tsx'
 import { useDice } from '../dice/context.tsx'
-import { HistoryHost } from '../dice/history.tsx'
+import { LogStrip } from '../log/strip.tsx'
+import { SoundBars, UnlockSound } from '../sound/controls.tsx'
+import { masterMapSounds, useMapHearing } from '../sound/map-sounds.ts'
+import soundStyles from '../sound/sound.module.css'
+import { SoundContext, useSound, useTableSound } from '../sound/use-table-sound.tsx'
+import { YoutubeDock } from '../sound/youtube.tsx'
 import { SourcePicker } from '../wiki/scene/source-picker.tsx'
 import { canvasViewOf, framingOf, REFERENCE_ASPECT, sceneViewportOf, sceneViewportOfCanvas } from './camera.ts'
 import { connectTable, type DragMove, type TableChannel, type TableStatus } from './channel.ts'
@@ -56,16 +62,20 @@ import { masterDraw } from './draw.ts'
 import { decodeMask, fogImage, fogLayerOf } from './fog-paint.ts'
 import { GmPanel, GmScreen, useGmSettings } from './gm-screen.tsx'
 import { GroupDamage } from './group-damage.tsx'
+import { ImageViewer, type ShownImage } from './image-viewer.tsx'
 import { MarksLayer, placeMarks } from './marks-layer.tsx'
 import { MasterSidebar, useMasterSidebar } from './master-sidebar.tsx'
 import styles from './mesa.module.css'
-import { openPageLinks, PageWindowsSocket } from './page-window.tsx'
+import { openPageLinks, PageWindowsSocket, pageWindow } from './page-window.tsx'
 import { PLACING_TYPE, type Placing } from './panel.tsx'
 import { PlayerMesa } from './player-mesa.tsx'
 import { Preparing } from './preparing.tsx'
 import { masterTileUrl, sceneListKey } from './queries.ts'
 import type { RendererScene } from './renderer.ts'
+import roomStyles from './room.module.css'
+import { PauseBanner, RoomBar } from './room.tsx'
 import { sceneWindow } from './scene-window.tsx'
+import { ShowImage } from './show-menu.tsx'
 import { SnapshotsPanel, THUMBNAIL_BYTES, THUMBNAIL_SIDE } from './snapshots.tsx'
 import { TokenCard } from './token-card.tsx'
 import { TokenImageEditor } from './token-image.tsx'
@@ -125,11 +135,7 @@ export function MesaScreen() {
       </section>
     )
   if (campaign.role === 'master')
-    return worldName === undefined ? (
-      <Loading />
-    ) : (
-      <Mesa key={campaign.id} worldId={worldId} worldName={worldName} campaign={campaign} />
-    )
+    return worldName === undefined ? <Loading /> : <Mesa key={campaign.id} worldId={worldId} campaign={campaign} />
   return <PlayerMesa key={campaign.id} worldId={worldId} campaign={campaign} />
 }
 
@@ -171,15 +177,7 @@ type Gesture = {
 type FrameDrag = { kind: 'move' | 'resize'; start: Point; center: Point; width: number }
 
 /** La mesa del máster: es lo que se ve al abrir su campaña (la ruta de la campaña comprueba quién es) */
-export function Mesa({
-  worldId,
-  worldName,
-  campaign: current
-}: {
-  worldId: string
-  worldName: string
-  campaign: Campaign
-}) {
+export function Mesa({ worldId, campaign: current }: { worldId: string; campaign: Campaign }) {
   const campaignId = current.id
   const campaignName = current.name
   const { t } = useTranslation()
@@ -194,6 +192,10 @@ export function Mesa({
   const stageBox = useRef<HTMLDivElement>(null)
   // La barra de la derecha: su pestaña y si está plegada viven aquí (una herramienta la tapa sin olvidarla)
   const sidebar = useMasterSidebar(table)
+  // El sonido: suena también en la Mesa del máster (docs/specs/sonido.md)
+  const sound = useTableSound()
+  const handleSound = sound.handle
+  const bindSound = sound.bind
   const dice = useDice()
   // Los dados tiran en esta campaña (antes lo decía la barra de la izquierda, que aquí no está)
   const { setCampaign } = dice
@@ -228,17 +230,19 @@ export function Mesa({
           } else if (message.type === 'drag') {
             for (const move of message.moves) remote.current.set(move.tokenId, { x: move.x, y: move.y })
             setRemoteTick((n) => n + 1)
-          }
+          } else if (message.type === 'sound' || message.type === 'time') handleSound(message)
         },
         onStatus: setStatus
       }
     )
     channel.current = connection
+    bindSound(() => connection.sendTime?.())
     return () => {
+      bindSound(null)
       connection.close()
       channel.current = null
     }
-  }, [campaignId])
+  }, [campaignId, handleSound, bindSound])
 
   // Lo que devuelven las acciones también es la mesa: se ve al momento, sin esperar al canal
   const act = useMutation({
@@ -328,7 +332,7 @@ export function Mesa({
         : null,
     [open]
   )
-  const { host, renderer, ready, failed: noCanvas, size } = useTableRenderer(scene)
+  const { host, renderer, ready, failed: noCanvas, size } = useTableRenderer(scene, { transparent: true })
 
   // La visión: la herramienta de la columna, «Ver como el grupo» y los muros, puertas y luces de la escena
   const [tool, setTool] = useState<TableTool>('select')
@@ -354,7 +358,22 @@ export function Mesa({
   }, [])
   const markers = useRef<HTMLDivElement | null>(null)
   const marksLayer = useRef<HTMLDivElement | null>(null)
-  const vision = useVision({ campaignId, table, tool, asGroup, view, renderer, ready, onTable: setTable })
+  const vision = useVision({ campaignId, worldId, table, tool, asGroup, view, renderer, ready, onTable: setTable })
+  // Los sonidos del mapa, desde el centro de la vista del máster (o callados, a su elección: docs/specs/sonido-mapa.md)
+  const soundWalls = useMemo(
+    () =>
+      soundEdges(
+        vision.walls,
+        Object.fromEntries(Object.entries(vision.doors).map(([id, isOpen]) => [id, { open: isOpen }]))
+      ),
+    [vision.walls, vision.doors]
+  )
+  useMapHearing(sound.setMap, () => {
+    if (!vision.grid || !sound.device.map || size.width === 0) return null
+    const sounds = masterMapSounds(vision.sounds, { cell: cellSide(vision.grid), darkness: vision.darkness })
+    if (sounds.length === 0) return null
+    return { sounds, walls: soundWalls, listeners: [toWorld(view.current, { x: size.width / 2, y: size.height / 2 })] }
+  })
   const tools = useTableTools({ campaignId, table, tool, view, renderer, ready, channel, tokens })
   const widgets = useWidgets(campaignId, table)
   const gm = useGmSettings(campaignId, open)
@@ -408,7 +427,7 @@ export function Mesa({
   const tableVision = table?.vision && table.vision.sceneId === open?.id ? table.vision : null
   useEffect(() => {
     if (!ready) return
-    if (!tableVision || tool === 'walls' || tool === 'lights') {
+    if (!tableVision || tool === 'walls' || tool === 'lights' || tool === 'sounds') {
       renderer.current?.setFog(null)
       return
     }
@@ -426,270 +445,291 @@ export function Mesa({
   }, [open, start])
 
   return (
-    <CurrentCampaignContext.Provider value={campaignId}>
-      <WindowsProvider area={stageBox} onLink={openPageLinks}>
-        <div className={styles.mesa} data-mesa="">
-          <div ref={stageBox} className={styles.stageBox}>
-            <Stage
-              table={table}
-              scene={scene}
-              host={host}
-              ready={ready}
-              size={size}
-              renderer={renderer}
-              channel={channel}
-              campaignId={campaignId}
-              onTable={setTable}
-              view={view}
-              tokens={shownTokens}
-              tool={vision.handlers ?? tools.handlers}
-              toolName={tool}
-              markers={markers}
-              marksLayer={marksLayer}
-              targets={tools.targets}
-              onDragPath={tools.showDrag}
-              remote={remote}
-              remoteTick={remoteTick}
-              selected={selected}
-              onSelect={(ids) => {
-                setSelected(ids)
-                setFromTemplate(false)
-                // Con varias elegidas, en lugar de la tarjeta, el daño a varias
-                if (ids.length > 1 || !ids.includes(cardFor ?? '')) setCardFor(null)
-              }}
-              cardFor={cardFor}
-              cardRef={cardRef}
-              onCard={setCardFor}
-              onSheet={setSheetFor}
-              onPlace={(placing, at) => place.mutate({ placing, at })}
-              onUndo={() => undo.mutate()}
-              turnTokens={turnTokens}
-              center={center}
-            />
-            {scene && <MarksLayer layer={marksLayer} view={view} marks={tools.marks} />}
-            {scene && <VisionMarkers layer={markers} view={view} vision={vision} tool={tool} />}
-            {scene && <ToolColumn tool={tool} onTool={pickTool} side={side} onSide={toggleSide} />}
-            {scene && tool === 'fog' && <FogTools vision={vision} />}
-            {scene && isMarkTool(tool) && <ToolBar tool={tool} tools={tools} />}
-            {scene && open && tools.writing && <TextInput tools={tools} view={view.current} scene={open} />}
-            {scene && <WidgetCards widgets={widgets.widgets} control={widgets} />}
-            {scene && side === 'gm' && (
-              <GmScreen
-                worldId={worldId}
+    <SoundContext.Provider value={sound}>
+      <CurrentCampaignContext.Provider value={campaignId}>
+        <WindowsProvider area={stageBox} onLink={openPageLinks}>
+          <div className={styles.mesa} data-mesa="">
+            <div ref={stageBox} className={styles.stageBox}>
+              <Stage
+                table={table}
+                scene={scene}
+                host={host}
+                ready={ready}
+                size={size}
+                renderer={renderer}
+                channel={channel}
                 campaignId={campaignId}
-                systemId={systemId}
-                tokens={tokens}
-                settings={gm.settings}
-                onClose={() => setSide(null)}
-              />
-            )}
-            {asGroup && (
-              <AsGroupBanner
-                onBack={() => {
-                  setAsGroup(false)
-                  setTool(returnTool.current)
-                }}
-              />
-            )}
-            {byId(cardFor) && (
-              <TokenCard
-                key={`card-${cardFor}`}
-                token={byId(cardFor) as TokenView}
-                campaignId={campaignId}
-                cardRef={cardRef}
-                onClose={() => setCardFor(null)}
-                onSheet={() => setSheetFor(cardFor)}
-                onImage={() => setImageFor({ tokenId: cardFor as string, fileId: null })}
-              />
-            )}
-            {byId(sheetFor) && (
-              <SheetOpener
-                token={byId(sheetFor) as TokenView}
-                campaignId={campaignId}
-                systemId={systemId}
-                onDone={() => setSheetFor(null)}
-              />
-            )}
-            {imageFor && byId(imageFor.tokenId) && (
-              <TokenImageEditor
-                token={byId(imageFor.tokenId) as TokenView}
-                worldId={worldId}
-                fileId={imageFor.fileId}
-                onClose={() => setImageFor(null)}
-              />
-            )}
-            <TokenList
-              tokens={shownTokens}
-              selected={selected}
-              onPick={(id) => {
-                setSelected([id])
-                setCardFor(id)
-              }}
-            />
-            {preparation.state.status === 'preparing' ? (
-              <div className={styles.overlay}>
-                <Preparing state={preparation.state} onCancel={preparation.cancel} />
-              </div>
-            ) : noCanvas ? (
-              <p className={styles.notice}>{t('tabletop.noCanvas')}</p>
-            ) : !open ? (
-              <>
-                {/* Sin escena, el fondo de entrar: la Mesa no se queda en negro y su cristal se ve */}
-                <Backdrop contained />
-                <p className={styles.notice}>{table ? t('tabletop.empty') : ''}</p>
-              </>
-            ) : !open.image ? (
-              <NoMap worldId={worldId} scene={open} onChoose={(choice) => void start(open, choice)} />
-            ) : null}
-            <TopBar
-              worldId={worldId}
-              campaignId={campaignId}
-              table={table}
-              onOpen={openScene}
-              onAct={(run) => act.mutate(run)}
-              busy={act.isPending}
-              framing={() => (size.width > 0 ? fixedFraming(view.current, freeArea(size, host.current)) : null)}
-            />
-            {(selected.length > 1 || (fromTemplate && selected.length > 0)) && (
-              <GroupDamage
-                key={selected.join()}
-                campaignId={campaignId}
-                tokens={tokens.filter((token) => selected.includes(token.id))}
-                title={fromTemplate ? t('tools.insideTemplate', { count: selected.length }) : undefined}
-                onClose={() => {
-                  setSelected([])
+                onTable={setTable}
+                view={view}
+                tokens={shownTokens}
+                tool={vision.handlers ?? tools.handlers}
+                toolName={tool}
+                markers={markers}
+                marksLayer={marksLayer}
+                targets={tools.targets}
+                onDragPath={tools.showDrag}
+                remote={remote}
+                remoteTick={remoteTick}
+                selected={selected}
+                onSelect={(ids) => {
+                  setSelected(ids)
                   setFromTemplate(false)
+                  // Con varias elegidas, en lugar de la tarjeta, el daño a varias
+                  if (ids.length > 1 || !ids.includes(cardFor ?? '')) setCardFor(null)
+                }}
+                cardFor={cardFor}
+                cardRef={cardRef}
+                onCard={setCardFor}
+                onSheet={setSheetFor}
+                onPlace={(placing, at) => place.mutate({ placing, at })}
+                onUndo={() => undo.mutate()}
+                turnTokens={turnTokens}
+                center={center}
+              />
+              {scene && <MarksLayer layer={marksLayer} view={view} marks={tools.marks} />}
+              {scene && <VisionMarkers layer={markers} view={view} vision={vision} tool={tool} />}
+              {scene && <ToolColumn tool={tool} onTool={pickTool} side={side} onSide={toggleSide} />}
+              {scene && tool === 'fog' && <FogTools vision={vision} />}
+              {scene && isMarkTool(tool) && <ToolBar tool={tool} tools={tools} />}
+              {scene && open && tools.writing && <TextInput tools={tools} view={view.current} scene={open} />}
+              {scene && <WidgetCards widgets={widgets.widgets} control={widgets} />}
+              {scene && side === 'gm' && (
+                <GmScreen
+                  worldId={worldId}
+                  campaignId={campaignId}
+                  systemId={systemId}
+                  tokens={tokens}
+                  settings={gm.settings}
+                  onClose={() => setSide(null)}
+                />
+              )}
+              {asGroup && (
+                <AsGroupBanner
+                  onBack={() => {
+                    setAsGroup(false)
+                    setTool(returnTool.current)
+                  }}
+                />
+              )}
+              {byId(cardFor) && (
+                <TokenCard
+                  key={`card-${cardFor}`}
+                  token={byId(cardFor) as TokenView}
+                  campaignId={campaignId}
+                  cardRef={cardRef}
+                  onClose={() => setCardFor(null)}
+                  onSheet={() => setSheetFor(cardFor)}
+                  onImage={() => setImageFor({ tokenId: cardFor as string, fileId: null })}
+                />
+              )}
+              {byId(sheetFor) && (
+                <SheetOpener
+                  token={byId(sheetFor) as TokenView}
+                  campaignId={campaignId}
+                  systemId={systemId}
+                  onDone={() => setSheetFor(null)}
+                />
+              )}
+              {imageFor && byId(imageFor.tokenId) && (
+                <TokenImageEditor
+                  token={byId(imageFor.tokenId) as TokenView}
+                  worldId={worldId}
+                  fileId={imageFor.fileId}
+                  onClose={() => setImageFor(null)}
+                />
+              )}
+              <TokenList
+                tokens={shownTokens}
+                selected={selected}
+                onPick={(id) => {
+                  setSelected([id])
+                  setCardFor(id)
                 }}
               />
-            )}
-            {status === 'reconnecting' && (
-              <p className={styles.reconnecting} role="status">
-                {t('tabletop.reconnecting')}
-              </p>
-            )}
-            <div className={styles.errors}>
-              <FormError
-                message={
-                  act.error
-                    ? errorText(act.error)
-                    : place.error
-                      ? errorText(place.error)
-                      : preparation.state.status === 'failed'
-                        ? errorText(preparation.state.error)
-                        : null
-                }
+              {preparation.state.status === 'preparing' ? (
+                <div className={styles.overlay}>
+                  <Preparing state={preparation.state} onCancel={preparation.cancel} />
+                </div>
+              ) : noCanvas ? (
+                <p className={styles.notice}>{t('tabletop.noCanvas')}</p>
+              ) : !open ? (
+                <>
+                  {/* Sin escena, el fondo de entrar: la Mesa no se queda en negro y su cristal se ve */}
+                  <Backdrop contained />
+                  <p className={styles.notice}>{table ? t('tabletop.empty') : ''}</p>
+                </>
+              ) : !open.image ? (
+                <NoMap worldId={worldId} scene={open} onChoose={(choice) => void start(open, choice)} />
+              ) : null}
+              <TopBar
+                worldId={worldId}
+                campaignId={campaignId}
+                table={table}
+                onOpen={openScene}
+                onAct={(run) => act.mutate(run)}
+                busy={act.isPending}
+                framing={() => (size.width > 0 ? fixedFraming(view.current, freeArea(size, host.current)) : null)}
+                onOpenSound={() => {
+                  sidebar.pick('sound')
+                  sidebar.setFolded(false)
+                  setSide(null)
+                }}
               />
-              {skipped.length > 0 && (
-                <p className={styles.skipped} role="status">
-                  {t('tabletop.skipped', { list: skipped.join(', ') })}
+              <YoutubeDock
+                view={sound.view}
+                clock={sound.clock}
+                device={sound.device}
+                onBlocked={sound.setYoutubeBlocked}
+                registerUnlock={sound.registerUnlock}
+                className={soundStyles.dockMaster}
+              />
+              <MasterLog worldId={worldId} campaign={current} edge={!scene} />
+              {(selected.length > 1 || (fromTemplate && selected.length > 0)) && (
+                <GroupDamage
+                  key={selected.join()}
+                  campaignId={campaignId}
+                  tokens={tokens.filter((token) => selected.includes(token.id))}
+                  title={fromTemplate ? t('tools.insideTemplate', { count: selected.length }) : undefined}
+                  onClose={() => {
+                    setSelected([])
+                    setFromTemplate(false)
+                  }}
+                />
+              )}
+              {status === 'reconnecting' && (
+                <p className={styles.reconnecting} role="status">
+                  {t('tabletop.reconnecting')}
                 </p>
               )}
-            </div>
-            <PageWindowsSocket>
-              <WindowLayer />
-            </PageWindowsSocket>
-          </div>
-          {side && open ? (
-            <aside className={styles.panel} aria-label={t(`vision.${side}`)}>
-              <div className={visionStyles.body}>
-                <h2 className={visionStyles.title}>{t(`vision.${side}`)}</h2>
-                {side === 'widgets' && <WidgetsPanel control={widgets} />}
-                {side === 'snapshots' && (
-                  <SnapshotsPanel
-                    key={open.id}
-                    campaignId={campaignId}
-                    sceneId={open.id}
-                    capture={async () => (await renderer.current?.snapshot(THUMBNAIL_SIDE, THUMBNAIL_BYTES)) ?? null}
-                  />
-                )}
-                {side === 'gm' && (
-                  <GmPanel worldId={worldId} scene={open} settings={gm.settings} onChange={gm.change} />
+              <div className={styles.errors}>
+                <FormError
+                  message={
+                    act.error
+                      ? errorText(act.error)
+                      : place.error
+                        ? errorText(place.error)
+                        : preparation.state.status === 'failed'
+                          ? errorText(preparation.state.error)
+                          : null
+                  }
+                />
+                {skipped.length > 0 && (
+                  <p className={styles.skipped} role="status">
+                    {t('tabletop.skipped', { list: skipped.join(', ') })}
+                  </p>
                 )}
               </div>
-            </aside>
-          ) : isMarkTool(tool) && tool !== 'laser' && open ? (
-            <ToolsPanel
-              tool={tool}
-              tools={tools}
-              scene={open}
-              worldId={worldId}
-              tokens={tokens}
-              onChoose={(ids) => {
-                setSelected(ids)
-                setCardFor(null)
-                setFromTemplate(true)
-              }}
+              <PageWindowsSocket>
+                <WindowLayer />
+              </PageWindowsSocket>
+            </div>
+            {side && open ? (
+              <aside className={styles.panel} aria-label={t(`vision.${side}`)}>
+                <div className={visionStyles.body}>
+                  <h2 className={visionStyles.title}>{t(`vision.${side}`)}</h2>
+                  {side === 'widgets' && <WidgetsPanel control={widgets} />}
+                  {side === 'snapshots' && (
+                    <SnapshotsPanel
+                      key={open.id}
+                      campaignId={campaignId}
+                      sceneId={open.id}
+                      capture={async () => (await renderer.current?.snapshot(THUMBNAIL_SIDE, THUMBNAIL_BYTES)) ?? null}
+                    />
+                  )}
+                  {side === 'gm' && (
+                    <GmPanel worldId={worldId} scene={open} settings={gm.settings} onChange={gm.change} />
+                  )}
+                </div>
+              </aside>
+            ) : isMarkTool(tool) && tool !== 'laser' && open ? (
+              <ToolsPanel
+                tool={tool}
+                tools={tools}
+                scene={open}
+                worldId={worldId}
+                tokens={tokens}
+                onChoose={(ids) => {
+                  setSelected(ids)
+                  setCardFor(null)
+                  setFromTemplate(true)
+                }}
+              />
+            ) : isVisionTool(tool) || asGroup ? (
+              <VisionPanel
+                mode={asGroup ? 'group' : (tool as 'walls' | 'lights' | 'sounds' | 'fog')}
+                vision={vision}
+                tokens={tokens}
+                notSeen={notSeen}
+                onAsGroup={() => {
+                  returnTool.current = tool
+                  setTool('select')
+                  setAsGroup(true)
+                }}
+              />
+            ) : null}
+            {/* Un panel de herramienta tapa la barra: su ×, para volver a ella (como Escape) */}
+            {!asGroup && ((open && (side || (isMarkTool(tool) && tool !== 'laser'))) || isVisionTool(tool)) && (
+              <button
+                type="button"
+                className={styles.panelBack}
+                aria-label={t('tabletop.backToBar')}
+                title={t('tabletop.backToBar')}
+                onClick={backToBar}
+              >
+                <X aria-hidden="true" size={16} />
+              </button>
+            )}
+            {(side && open) ||
+            (isMarkTool(tool) && tool !== 'laser' && open) ||
+            isVisionTool(tool) ||
+            asGroup ? null : (
+              <MasterSidebar
+                worldId={worldId}
+                campaign={current}
+                systemId={systemId}
+                table={table}
+                tokens={tokens}
+                selected={selected}
+                busy={act.isPending}
+                onAct={(run) => act.mutate(run)}
+                onOpen={openScene}
+                onCreateScene={(scene, choice) => {
+                  openScene(scene.id)
+                  if (choice) void start(scene, choice)
+                }}
+                onPlace={(placing) => place.mutate({ placing, at: null })}
+                onImage={(fileId) => selected[0] && setImageFor({ tokenId: selected[0], fileId })}
+                onPickCombatant={(tokenId) => {
+                  setSelected([tokenId])
+                  center.current?.(tokenId, true)
+                }}
+                sidebar={sidebar}
+                onPickToken={(tokenId) => {
+                  setSelected([tokenId])
+                  setCardFor(tokenId)
+                  center.current?.(tokenId, true)
+                }}
+              />
+            )}
+            <Tour
+              id="mesa"
+              steps={[
+                { target: '[data-tour="mesa-mapa"]', text: t('tour.tabletop.map') },
+                { target: '[data-tour="mesa-herramientas"]', text: t('tour.tabletop.tools'), placement: 'right' },
+                { target: '[data-tour="mesa-paneles"]', text: t('tour.tabletop.panels'), placement: 'right' },
+                { target: '[data-tour="mesa-barra"]', text: t('tour.tabletop.sidebar'), placement: 'left' },
+                { target: '[data-tour="mesa-presentar"]', text: t('tour.tabletop.present'), placement: 'bottom' },
+                { target: '[data-tour="mesa-pantalla"]', text: t('tour.tabletop.screen'), placement: 'bottom' },
+                { target: '[data-tour="mesa-camara"]', text: t('tour.tabletop.camera'), placement: 'bottom' },
+                { target: '[data-tour="mesa-zoom"]', text: t('tour.tabletop.zoom'), placement: 'top' }
+              ]}
             />
-          ) : isVisionTool(tool) || asGroup ? (
-            <VisionPanel
-              mode={asGroup ? 'group' : (tool as 'walls' | 'lights' | 'fog')}
-              vision={vision}
-              tokens={tokens}
-              notSeen={notSeen}
-              onAsGroup={() => {
-                returnTool.current = tool
-                setTool('select')
-                setAsGroup(true)
-              }}
-            />
-          ) : null}
-          {/* Un panel de herramienta tapa la barra: su ×, para volver a ella (como Escape) */}
-          {!asGroup && ((open && (side || (isMarkTool(tool) && tool !== 'laser'))) || isVisionTool(tool)) && (
-            <button
-              type="button"
-              className={styles.panelBack}
-              aria-label={t('tabletop.backToBar')}
-              title={t('tabletop.backToBar')}
-              onClick={backToBar}
-            >
-              <X aria-hidden="true" size={16} />
-            </button>
-          )}
-          {(side && open) || (isMarkTool(tool) && tool !== 'laser' && open) || isVisionTool(tool) || asGroup ? null : (
-            <MasterSidebar
-              worldId={worldId}
-              worldName={worldName}
-              campaign={current}
-              systemId={systemId}
-              table={table}
-              tokens={tokens}
-              selected={selected}
-              busy={act.isPending}
-              onAct={(run) => act.mutate(run)}
-              onOpen={openScene}
-              onPlace={(placing) => place.mutate({ placing, at: null })}
-              onImage={(fileId) => selected[0] && setImageFor({ tokenId: selected[0], fileId })}
-              onPickCombatant={(tokenId) => {
-                setSelected([tokenId])
-                center.current?.(tokenId, true)
-              }}
-              sidebar={sidebar}
-              onPickToken={(tokenId) => {
-                setSelected([tokenId])
-                setCardFor(tokenId)
-                center.current?.(tokenId, true)
-              }}
-            />
-          )}
-          <Tour
-            id="mesa"
-            steps={[
-              { target: '[data-tour="mesa-mapa"]', text: t('tour.tabletop.map') },
-              { target: '[data-tour="mesa-herramientas"]', text: t('tour.tabletop.tools'), placement: 'right' },
-              { target: '[data-tour="mesa-paneles"]', text: t('tour.tabletop.panels'), placement: 'right' },
-              { target: '[data-tour="mesa-barra"]', text: t('tour.tabletop.sidebar'), placement: 'left' },
-              { target: '[data-tour="mesa-presentar"]', text: t('tour.tabletop.present'), placement: 'bottom' },
-              { target: '[data-tour="mesa-pantalla"]', text: t('tour.tabletop.screen'), placement: 'bottom' },
-              { target: '[data-tour="mesa-camara"]', text: t('tour.tabletop.camera'), placement: 'bottom' },
-              { target: '[data-tour="mesa-zoom"]', text: t('tour.tabletop.zoom'), placement: 'top' }
-            ]}
-          />
-          {/* El historial de tiradas, en una ventana de la Mesa */}
-          <HistoryHost campaign={campaign.data?.campaign} />
-          <PageTitle className={styles.hidden}>{campaignName}</PageTitle>
-        </div>
-      </WindowsProvider>
-    </CurrentCampaignContext.Provider>
+            {/* El historial de tiradas, en una ventana de la Mesa */}
+            <PageTitle className={styles.hidden}>{campaignName}</PageTitle>
+          </div>
+        </WindowsProvider>
+      </CurrentCampaignContext.Provider>
+    </SoundContext.Provider>
   )
 }
 
@@ -842,6 +882,7 @@ function Stage({
     })
   }, [])
 
+  const rememberTimer = useRef(0)
   const apply = useCallback(() => {
     renderer.current?.setView(view.current)
     placeFrame()
@@ -854,7 +895,14 @@ function Stage({
     // La tele sigue el centro de lo que se ve (sin lo que tapa la barra de la derecha: si no, le salía desplazado)
     if (followingRef.current && sizeRef.current.width > 0)
       channel.current?.sendViewport(sceneViewportOfCanvas(view.current, free(sizeRef.current)))
-  }, [renderer, placeFrame, channel, host, view, drawTokens, markers, marksLayer, free])
+    // Lo que se ve de cada escena se recuerda (al volver a ella, igual): un poco después de dejar de moverse
+    const sceneId = placed.current?.split('/')[0]
+    if (sceneId && sizeRef.current.width > 0) {
+      window.clearTimeout(rememberTimer.current)
+      const seen = sceneViewportOfCanvas(view.current, free(sizeRef.current))
+      rememberTimer.current = window.setTimeout(() => rememberView(campaignId, sceneId, seen), 400)
+    }
+  }, [renderer, placeFrame, channel, host, view, drawTokens, markers, marksLayer, free, campaignId])
 
   // Llega la mesa (o cambia lo elegido): las fichas, otra vez; lo que se movía ya está en su sitio
   useEffect(() => {
@@ -894,10 +942,16 @@ function Stage({
     if (placed.current !== key) {
       placed.current = key
       const room = free(size)
-      view.current = open?.initialView ? canvasViewOf(open.initialView, room) : fitCanvas(scene, room)
+      // Como se dejó la última vez; si no, la vista inicial de la escena o encuadrada
+      const remembered = rememberedView(campaignId, scene.id)
+      view.current = remembered
+        ? canvasViewOf(remembered, room)
+        : open?.initialView
+          ? canvasViewOf(open.initialView, room)
+          : fitCanvas(scene, room)
     }
     apply()
-  }, [ready, scene, size, open?.initialView, apply, view, free])
+  }, [ready, scene, size, open?.initialView, apply, view, free, campaignId])
 
   // Al pasar a «Seguir», la tele recibe ya dónde mira el máster; el marco, al cambiar la cámara
   useEffect(() => {
@@ -1321,7 +1375,8 @@ function TopBar({
   onOpen,
   onAct,
   busy,
-  framing
+  framing,
+  onOpenSound
 }: {
   worldId: string
   campaignId: string
@@ -1331,9 +1386,12 @@ function TopBar({
   busy: boolean
   /** Lo que se ve ahora en la mesa, como encuadre (para «Fija») */
   framing: () => SceneViewport | null
+  /** Las barras de lo que suena: abren la pestaña Sonido */
+  onOpenSound: () => void
 }) {
   const { t } = useTranslation()
   const api = useApi()
+  const sound = useSound()
   const open = table?.open ?? null
   const presented = table?.presented ?? null
   const showing = Boolean(presented && !table?.screenHidden)
@@ -1346,15 +1404,50 @@ function TopBar({
       'popup=yes,width=1280,height=720'
     )
   return (
-    <div className={styles.topBar}>
-      {open && (
-        <div className={`${styles.bar} ${styles.sceneBar}`}>
-          <SceneMenu worldId={worldId} open={open} onOpen={onOpen} />
-          {live && <span className={`${styles.chip} ${styles.live}`}>{t('tabletop.live')}</span>}
-          {presented && table?.screenHidden && <span className={styles.chip}>{t('tabletop.dark')}</span>}
-          {showing && !live && <span className={styles.chip}>{t('tabletop.elsewhere')}</span>}
-        </div>
-      )}
+    // Sin escena no hay columna de herramientas: lo de arriba se pega al borde; al abrir una, su recuadro entra y
+    // desplaza a los demás (Enrique, 2026-11-10)
+    <div className={open ? styles.topBar : `${styles.topBar} ${styles.noTools}`} data-mesa-top="">
+      <div className={open ? `${styles.bar} ${styles.sceneBar}` : `${styles.bar} ${styles.sceneBar} ${styles.gone}`}>
+        {open && (
+          <>
+            <SceneMenu worldId={worldId} open={open} onOpen={onOpen} />
+            {live && <span className={`${styles.chip} ${styles.live}`}>{t('tabletop.live')}</span>}
+            {presented && table?.screenHidden && <span className={styles.chip}>{t('tabletop.dark')}</span>}
+            {showing && !live && <span className={styles.chip}>{t('tabletop.elsewhere')}</span>}
+            {table?.show && (
+              <span className={`${styles.chip} ${styles.live}`}>
+                {t('show.shownOnScreen', { title: table.show.title })}
+                <button
+                  type="button"
+                  className={styles.chipClose}
+                  aria-label={t('show.clearScreen')}
+                  title={t('show.clearScreen')}
+                  onClick={() =>
+                    onAct(() =>
+                      api
+                        .call('clearScreenShow', { campaignId })
+                        .then(() => api.call('getCampaignTable', { campaignId }))
+                    )
+                  }
+                >
+                  <X aria-hidden="true" size={12} />
+                </button>
+              </span>
+            )}
+          </>
+        )}
+      </div>
+      <RoomBar
+        campaignId={campaignId}
+        extra={
+          sound && (
+            <>
+              <SoundBars sound={sound} onOpen={onOpenSound} />
+              <UnlockSound sound={sound} />
+            </>
+          )
+        }
+      />
       <span className={styles.grow} />
       <div className={styles.bar}>
         <span className={styles.barGroup} data-tour="mesa-presentar">
@@ -1381,6 +1474,7 @@ function TopBar({
             </button>
           )}
         </span>
+        <ShowImage worldId={worldId} campaignId={campaignId} />
         <button type="button" className={styles.ghost} onClick={openScreen} data-tour="mesa-pantalla">
           <Tv aria-hidden="true" size={15} />
           {t('tabletop.screen')}
@@ -1393,6 +1487,10 @@ function TopBar({
           disabled={busy || !open?.image?.tiles}
           onAct={onAct}
         />
+      </div>
+      {/* La franja de la pausa, en su propia línea debajo de las barras (aunque se partan en dos): no tapa nada */}
+      <div className={styles.pauseRow}>
+        <PauseBanner campaignId={campaignId} className={roomStyles.inRow} />
       </div>
     </div>
   )
@@ -1680,4 +1778,46 @@ function SheetOpener({
     onDone()
   }, [windows, token, campaignId, systemId, onDone])
   return null
+}
+
+/** Lo que se veía de una escena en esta campaña, guardado en este aparato (Enrique, 2026-11-10) */
+const viewKey = (campaignId: string, sceneId: string) => `crisol.mesa.vista.${campaignId}.${sceneId}`
+
+function rememberView(campaignId: string, sceneId: string, seen: SceneViewport) {
+  try {
+    localStorage.setItem(viewKey(campaignId, sceneId), JSON.stringify(seen))
+  } catch {
+    // Sin almacenamiento, no se recuerda
+  }
+}
+
+function rememberedView(campaignId: string, sceneId: string): SceneViewport | null {
+  try {
+    const raw = localStorage.getItem(viewKey(campaignId, sceneId))
+    if (!raw) return null
+    const seen = JSON.parse(raw) as SceneViewport
+    return typeof seen?.x === 'number' && typeof seen.y === 'number' ? seen : null
+  } catch {
+    return null
+  }
+}
+
+/** Tu registro en la Mesa: lo enseñado se vuelve a abrir desde él (la página en su ventana, la imagen en grande) */
+function MasterLog({ worldId, campaign, edge }: { worldId: string; campaign: Campaign; edge: boolean }) {
+  const windows = useWindows()
+  const [image, setImage] = useState<ShownImage | null>(null)
+  return (
+    <>
+      <LogStrip
+        campaign={campaign}
+        edge={edge}
+        onOpenShown={(shown) =>
+          shown.kind === 'image'
+            ? setImage({ fileId: shown.id, title: shown.title })
+            : windows?.open(pageWindow(worldId, shown.id, shown.title))
+        }
+      />
+      {image && <ImageViewer image={image} onClose={() => setImage(null)} />}
+    </>
+  )
 }

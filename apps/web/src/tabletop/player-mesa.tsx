@@ -1,12 +1,13 @@
 /**
  * La Mesa de quien juega (lienzo «Campaña en la Mesa»): lo que ve el grupo (como la tele) y, a la derecha, su barra con
- * Tiradas, Combate, Personajes, Compendio y Páginas (las que conoce). Las páginas y su hoja se abren en ventanas; la
+ * Combate, Personajes, Compendio, Páginas (las que conoce) y sus Notas. Las páginas, su hoja y sus notas se abren en
+ * ventanas; la
  * página que el máster enseña se le abre sola. No tiene Escenas ni Ajustes (son del máster)
  */
 import type { Campaign, ScreenView } from '@crisol/contracts'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { UserRound } from 'lucide-react'
+import { Pause, UserRound } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
@@ -17,18 +18,23 @@ import { PageTitle } from '../components/page-title.tsx'
 import { Tour } from '../components/tour.tsx'
 import { useDice } from '../dice/context.tsx'
 import { HistoryHost } from '../dice/history.tsx'
-import { useShown } from '../realtime/context.tsx'
+import { LogStrip } from '../log/strip.tsx'
+import notesStyles from '../notes/notes.module.css'
+import { NotePane, NoteTree, useNoteTitle } from '../notes/notes.tsx'
+import { useShown, useShownImage } from '../realtime/context.tsx'
 import { ReadAsProvider } from '../wiki/read-as.tsx'
 import { CompendiumTab } from './compendium-tab.tsx'
+import { ImageViewer, type ShownImage } from './image-viewer.tsx'
 import styles from './mesa.module.css'
 import { PagesTab } from './pages-tab.tsx'
 import playerStyles from './player-mesa.module.css'
+import roomStyles from './room.module.css'
 import { TableScreen } from './screen.tsx'
 import { type SidebarItem, type SidebarTab, TableSidebar, useSidebarFolded, useSidebarTab } from './sidebar.tsx'
 import { sheetWindow } from './token-sheet.tsx'
 import { type LinkHandler, useWindows, WindowLayer, type WindowSpec, WindowsProvider } from './windows.tsx'
 
-const PLAYER_TABS: readonly SidebarTab[] = ['combat', 'characters', 'compendium', 'pages']
+const PLAYER_TABS: readonly SidebarTab[] = ['combat', 'characters', 'compendium', 'pages', 'notes']
 
 /** Una página del mundo, leída desde la campaña, en su ventana */
 function playerPageWindow(worldId: string, pageId: string, title: string): WindowSpec {
@@ -40,6 +46,21 @@ function playerPageWindow(worldId: string, pageId: string, title: string): Windo
     render: () => (
       <div className={playerStyles.page}>
         <PlayerPage worldId={worldId} pageId={pageId} />
+      </div>
+    )
+  }
+}
+
+/** Una nota suya, en su ventana */
+function noteWindow(worldId: string, campaignId: string, noteId: string, title: string): WindowSpec {
+  return {
+    id: `note:${noteId}`,
+    title,
+    width: 640,
+    height: 560,
+    render: () => (
+      <div className={playerStyles.page}>
+        <NotePane worldId={worldId} campaignId={campaignId} noteId={noteId} compact />
       </div>
     )
   }
@@ -59,6 +80,11 @@ export function PlayerMesa({ worldId, campaign }: { worldId: string; campaign: C
   const { t } = useTranslation()
   const stageBox = useRef<HTMLDivElement>(null)
   const [screen, setScreen] = useState<ScreenView | null>(null)
+  // La imagen que enseña el máster, en grande (docs/specs/ensenar.md)
+  const [image, setImage] = useState<ShownImage | null>(null)
+  useShownImage((shown) => {
+    if (shown.campaignId === campaign.id) setImage({ fileId: shown.fileId, title: shown.title })
+  })
   return (
     <CurrentCampaignContext.Provider value={campaign.id}>
       <ReadAsProvider value={{ campaignId: campaign.id }}>
@@ -66,6 +92,14 @@ export function PlayerMesa({ worldId, campaign }: { worldId: string; campaign: C
           <div className={styles.mesa} data-mesa="">
             <div ref={stageBox} className={styles.stageBox}>
               <TableScreen campaignId={campaign.id} viewer="player" onScreen={setScreen} />
+              {screen?.paused && (
+                <p className={roomStyles.banner} role="status">
+                  <Pause size={14} aria-hidden="true" />
+                  {t('room.paused')}
+                </p>
+              )}
+              <PlayerLog worldId={worldId} campaign={campaign} onImage={setImage} />
+              {image && <ImageViewer image={image} onClose={() => setImage(null)} />}
               <WindowLayer />
             </div>
             <PlayerSidebar worldId={worldId} campaign={campaign} screen={screen} />
@@ -78,6 +112,30 @@ export function PlayerMesa({ worldId, campaign }: { worldId: string; campaign: C
         </WindowsProvider>
       </ReadAsProvider>
     </CurrentCampaignContext.Provider>
+  )
+}
+
+/** Su registro: lo enseñado se vuelve a abrir desde él (la página en su ventana, la imagen en grande) */
+function PlayerLog({
+  worldId,
+  campaign,
+  onImage
+}: {
+  worldId: string
+  campaign: Campaign
+  onImage: (image: ShownImage) => void
+}) {
+  const windows = useWindows()
+  return (
+    <LogStrip
+      campaign={campaign}
+      edge
+      onOpenShown={(shown) =>
+        shown.kind === 'image'
+          ? onImage({ fileId: shown.id, title: shown.title })
+          : windows?.open(playerPageWindow(worldId, shown.id, shown.title))
+      }
+    />
   )
 }
 
@@ -113,6 +171,7 @@ function PlayerSidebar({
     queryFn: () => api.call('listNews', { campaignId: campaign.id })
   })
   const newPages = new Set((news.data?.news ?? []).flatMap((n) => (n.pageId ? [n.pageId] : [])))
+  const titleOf = useNoteTitle()
   const combat = screen?.combat ?? null
   const systemId = campaign.system?.id ?? null
   const items: SidebarItem[] = [
@@ -191,6 +250,20 @@ function PlayerSidebar({
           onOpen={(pageId, title) => windows?.open(playerPageWindow(worldId, pageId, title))}
           news={newPages}
         />
+      )
+    },
+    {
+      key: 'notes',
+      // Sus notas (docs/specs/notas-jugador.md): cada una se abre en su ventana
+      content: () => (
+        <div className={notesStyles.tab}>
+          <NoteTree
+            campaignId={campaign.id}
+            selected={null}
+            editable
+            onOpen={(note) => windows?.open(noteWindow(worldId, campaign.id, note.id, titleOf(note)))}
+          />
+        </div>
       )
     }
   ]

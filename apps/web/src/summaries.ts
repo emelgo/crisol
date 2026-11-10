@@ -16,6 +16,7 @@ export function summaryOf(
   const say = (key: ActionKey, values: Record<string, unknown> = {}) =>
     tense === 'done' ? t(`history.actions.${key}`, values) : t(`approvals.actions.${key}`, values)
   const text = (value: unknown) => String(value ?? '')
+  const noteTitle = (value: unknown) => text(value).trim() || t('notes.untitled')
   switch (action) {
     case 'undoOperation': {
       // Deshacer un deshacer es rehacer: se cuenta lo de debajo de todo, como quedó en el historial
@@ -51,6 +52,17 @@ export function summaryOf(
     // Los personajes: por su nombre
     case 'createCharacter':
       return say('createCharacter', { name: text(details.name), campaign: text(details.campaign) })
+    // Las notas de los jugadores: por su título
+    case 'createPlayerNote':
+      return say('createPlayerNote', { title: noteTitle(details.title), campaign: text(details.campaign) })
+    case 'updatePlayerNote':
+      return details.from !== undefined
+        ? say('renamePlayerNote', { from: noteTitle(details.from), title: noteTitle(details.title) })
+        : say('updatePlayerNote', { title: noteTitle(details.title) })
+    case 'deletePlayerNote':
+      return say('deletePlayerNote', { title: noteTitle(details.title) })
+    case 'restorePlayerNote':
+      return say('restorePlayerNote', { title: noteTitle(details.title) })
     case 'updateCharacter':
       if (details.confirm === 'created') return say('characterCreated', { name: text(details.name) })
       if (details.confirm === 'level') return say('characterLevel', { name: text(details.name) })
@@ -333,6 +345,8 @@ export function summaryOf(
     // Lo traído de un zip (docs/specs/escenas-foundry.md)
     case 'importFoundryScene':
       return say(action, { name: text(details.name), title: text(details.title) })
+    case 'importFoundryPlaylist':
+      return say(action, { name: text(details.name) })
     case 'placeScenePins':
       return say(action, { campaign: text(details.campaign) })
     // La visión de la mesa (docs/specs/vision.md): lo del mundo, con su escena; lo de la campaña, con ella
@@ -342,7 +356,13 @@ export function summaryOf(
         title: text(details.title)
       })
     case 'placeImportedWalls':
+    case 'placeSceneSound':
+    case 'changeSceneSound':
+    case 'removeSceneSound':
       return say(action, { name: text(details.name), title: text(details.title) })
+    case 'sceneSoundOn':
+    case 'sceneSoundOff':
+      return say(action, { name: text(details.name), campaign: text(details.campaign) })
     case 'updateSceneVision': {
       const key =
         details.automaticVision === undefined
@@ -418,6 +438,7 @@ export function summaryOf(
     case 'putInPlay':
     case 'playCreature':
     case 'setCreatureHidden':
+    case 'assignToken':
     case 'spendRecharge':
     case 'removeFromPlay':
       return say(action, {

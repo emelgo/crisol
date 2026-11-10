@@ -626,3 +626,16 @@
   color: var(--color-muted);
   font-size: 0.8125rem;
 }
+
+/* Los dos botones de alinear: del mismo ancho, en una línea y centrados (Enrique, 2026-11-10: «cuádralo») */
+.pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.pair > button {
+  justify-content: center;
+  min-inline-size: 0;
+  white-space: nowrap;
+}

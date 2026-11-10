@@ -1,5 +1,5 @@
 import { getTablePresence, leaveCampaign, listMembers, removeMember } from '@crisol/contracts'
-import { membersRepo } from '@crisol/db'
+import { charactersRepo, membersRepo, scenesRepo } from '@crisol/db'
 import { NotFoundError } from '@crisol/domain'
 import { membersChanged } from '../realtime/events.ts'
 import { authorizedCampaign } from './access.ts'
@@ -12,13 +12,34 @@ export const memberActions = [
     return { members: await membersRepo.listCampaignMembers(ctx.db, campaignId) }
   }),
 
-  // Quién está ahora en la Mesa (ADR-0021): con su nombre, el de la campaña (el máster va primero)
+  // La sala (ADR-0021, docs/specs/sala.md): quién está en la Mesa (con su personaje y su color), quién tiene abierta la
+  // campaña fuera de ella, a quién echó el máster, la pausa y el modo (el máster va primero)
   implement(getTablePresence, async (ctx, { campaignId }) => {
     await authorizedCampaign(ctx, 'campaign.read', campaignId)
-    const present = ctx.presence?.list(campaignId) ?? []
-    if (present.length === 0) return { present: [] }
-    const names = new Map((await membersRepo.listCampaignMembers(ctx.db, campaignId)).map((m) => [m.userId, m.name]))
-    return { present: present.map((entry) => ({ ...entry, name: names.get(entry.userId) ?? '' })) }
+    const [members, table, characters] = await Promise.all([
+      membersRepo.listCampaignMembers(ctx.db, campaignId),
+      scenesRepo.campaignTable(ctx.db, campaignId),
+      charactersRepo.listCharacters(ctx.db, campaignId)
+    ])
+    const byId = new Map(members.map((m) => [m.userId, m]))
+    const characterOf = (userId: string) => {
+      const found = characters.find((c) => c.ownerId === userId)
+      return found ? { id: found.id, name: found.name } : null
+    }
+    const present = (ctx.presence?.list(campaignId) ?? []).map((entry) => ({
+      ...entry,
+      name: byId.get(entry.userId)?.name ?? '',
+      color: byId.get(entry.userId)?.color ?? null,
+      character: entry.viewer === 'player' ? characterOf(entry.userId) : null
+    }))
+    const atTable = new Set(present.map((p) => p.userId))
+    const inCampaign = (ctx.presence?.inCampaign(campaignId) ?? [])
+      .filter((userId) => !atTable.has(userId) && byId.has(userId))
+      .map((userId) => ({ userId, name: byId.get(userId)?.name ?? '', color: byId.get(userId)?.color ?? null }))
+    const kicked = table.kicked
+      .filter((userId) => byId.has(userId))
+      .map((userId) => ({ userId, name: byId.get(userId)?.name ?? '' }))
+    return { present, inCampaign, kicked, paused: table.paused, movement: table.movement }
   }),
 
   implement(removeMember, async (ctx, { campaignId, userId }) => {

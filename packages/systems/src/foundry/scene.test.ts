@@ -103,7 +103,7 @@ describe('convertFoundryScene', () => {
       automaticVision: true,
       initialView: { x: 500, y: 400, scale: 0.8 },
       coreVersion: 14,
-      skipped: { regions: 1, tiles: 1, drawings: 1, sounds: 1, templates: 1 }
+      skipped: { regions: 1, tiles: 1, drawings: 1, sounds: 0, templates: 1 }
     })
     expect(scene.grid).toEqual({
       type: 'square',

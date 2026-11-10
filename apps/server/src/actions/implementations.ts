@@ -1,3 +1,4 @@
+import { actorFolderActions } from './actor-folders.ts'
 import { aiActions } from './ai.ts'
 import { bookActions } from './books.ts'
 import { campaignActions } from './campaigns.ts'
@@ -14,8 +15,10 @@ import { invitationActions } from './invitations.ts'
 import { knowledgeActions } from './knowledge.ts'
 import { libraryActions } from './library.ts'
 import { linkActions } from './links.ts'
+import { logActions } from './log.ts'
 import { mapActions } from './maps.ts'
 import { memberActions } from './members.ts'
+import { noteActions } from './notes.ts'
 import { organizationActions } from './organizations.ts'
 import { pageContentActions } from './page-content.ts'
 import { pageActions } from './pages.ts'
@@ -24,8 +27,10 @@ import { preferenceActions } from './preferences.ts'
 import { previewActions } from './preview.ts'
 import type { Implementation } from './registry.ts'
 import { revealActions } from './reveal.ts'
+import { roomActions } from './room.ts'
 import { sceneActions } from './scenes.ts'
 import { searchActions } from './search.ts'
+import { soundActions } from './sound.ts'
 import { systemActions } from './systems.ts'
 import { tableToolActions } from './table-tools.ts'
 import { tableActions } from './tables.ts'
@@ -44,8 +49,13 @@ export const IMPLEMENTATIONS: Implementation[] = [
   ...worldActions,
   ...campaignActions,
   ...diceActions,
+  ...logActions,
+  ...actorFolderActions,
   ...invitationActions,
   ...memberActions,
+  ...noteActions,
+  ...soundActions,
+  ...roomActions,
   ...historyActions,
   ...trashActions,
   ...aiActions,

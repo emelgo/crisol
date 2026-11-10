@@ -19,10 +19,15 @@ test('el máster ve entrar a la jugadora sin recargar, la expulsa desde el aviso
   await expect(members).toHaveCount(2)
   await expect(page.getByText('Ha entrado 1 con este enlace')).toBeVisible()
 
+  // Los ajustes se abren encima (su ventana tapa el resto): se cierran para usar el aviso
+  const settings = page.getByRole('dialog', { name: 'Ajustes de la campaña' })
+  await page.keyboard.press('Escape')
+  await expect(settings).toBeHidden()
   const notices = page.getByRole('region', { name: 'Avisos' })
   await notices.getByRole('button', { name: 'Expulsar a Jugadora' }).click()
   await notices.getByRole('button', { name: 'Expulsar y cambiar el enlace' }).click()
   await expect(notices.getByText('Jugadora ya no está en la campaña.')).toBeVisible()
+  await page.getByRole('button', { name: 'Ajustes', exact: true }).click()
   await expect(members).toHaveCount(1)
 
   // La jugadora tenía la campaña abierta: deja de verla sin recargar, y la API ya no le contesta

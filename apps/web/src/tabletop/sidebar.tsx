@@ -7,6 +7,8 @@ import {
   BookOpen,
   type LucideIcon,
   Map as MapIcon,
+  Music,
+  NotebookPen,
   PanelRightClose,
   PanelRightOpen,
   ScrollText,
@@ -18,7 +20,16 @@ import { type KeyboardEvent, type ReactNode, useCallback, useId, useState } from
 import { useTranslation } from 'react-i18next'
 import styles from './sidebar.module.css'
 
-export const SIDEBAR_TABS = ['scenes', 'combat', 'characters', 'compendium', 'pages', 'settings'] as const
+export const SIDEBAR_TABS = [
+  'scenes',
+  'combat',
+  'characters',
+  'compendium',
+  'pages',
+  'notes',
+  'sound',
+  'settings'
+] as const
 export type SidebarTab = (typeof SIDEBAR_TABS)[number]
 
 /** Cómo va cada pestaña en la dirección (?panel=), en español como las rutas */
@@ -28,6 +39,8 @@ export const PANEL_SLUGS: Record<SidebarTab, string> = {
   characters: 'personajes',
   compendium: 'compendio',
   pages: 'paginas',
+  notes: 'notas',
+  sound: 'sonido',
   settings: 'campana'
 }
 
@@ -37,6 +50,8 @@ export const ICONS: Record<SidebarTab, LucideIcon> = {
   characters: Users,
   compendium: BookOpen,
   pages: ScrollText,
+  notes: NotebookPen,
+  sound: Music,
   settings: Shield
 }
 

@@ -261,7 +261,8 @@ describe('la franja de turnos de la tele', () => {
                 img: null,
                 image: null,
                 state: null,
-                conditions: []
+                conditions: [],
+                controllers: []
               }
             ],
             combat: {

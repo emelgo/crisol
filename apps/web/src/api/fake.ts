@@ -13,6 +13,8 @@ import type {
   HistoryEntry,
   Invitation,
   LightView,
+  LogEntry,
+  LogMessage,
   MapPinView,
   MapView,
   MarkView,
@@ -23,13 +25,17 @@ import type {
   PageTables,
   PageTabView,
   PageTemplate,
+  PlayerNote,
   RandomTable,
   SceneGrid,
   SceneImported,
+  SceneSoundView,
   SceneView,
   SceneViewport,
   ScreenCamera,
   SnapshotView,
+  SoundPlaylistView,
+  SoundTrackInput,
   TablePresenceEntry,
   TagView,
   TokenView,
@@ -38,14 +44,25 @@ import type {
   WidgetView,
   World
 } from '@crisol/contracts'
+import { youtubeVideoId } from '@crisol/contracts'
 import { DiceSyntaxError, rollDice as rollFormula, rowFor, tableFormula, tableProblems } from '@crisol/dice'
 import {
+  advanceSound,
   applyTemplate,
   BUILT_IN_TEMPLATES,
   builtInTemplate,
+  EMPTY_SOUND,
   instantiate,
+  nextTrack as nextTrackOf,
+  pauseSound as pauseSoundOf,
   removeTagIn,
   renameTagIn,
+  resumeSound,
+  type SoundState,
+  setSoundVolume as setSoundVolumeOf,
+  startEffect,
+  startList,
+  stopSound as stopSoundOf,
   tagKey,
   tagTree,
   uniqueTags
@@ -120,6 +137,7 @@ import {
   withWorld
 } from '@crisol/systems'
 import { FogGrid, tokensInTemplate } from '@crisol/tabletop'
+import { buildSoundView, listInfo } from '../sound/view.ts'
 import { readFoundryZip } from '../systems/foundry-zip.ts'
 import { type ActionInput, type ActionName, type ActionOutput, type ApiClient, ApiError } from './client.ts'
 
@@ -167,6 +185,17 @@ export function fakeApi(
     folders?: FolderView[]
     /** Las tiradas de las campañas, en el orden en que se tiraron */
     rolls?: DiceRoll[]
+    /** Las notas de los jugadores (sin userId, de la cuenta «yo»), en su orden */
+    notes?: Array<{
+      id?: string
+      campaignId: string
+      userId?: string
+      parentId?: string | null
+      title: string
+      markdown?: string
+    }>
+    /** Las listas de sonido de los mundos (docs/specs/sonido.md) */
+    soundPlaylists?: SoundPlaylistView[]
   } = {}
 ) {
   const organizations = options.organizations ?? []
@@ -174,6 +203,67 @@ export function fakeApi(
   const campaigns = [...(options.campaigns ?? [])]
   const history = [...(options.history ?? [])]
   const rolls = [...(options.rolls ?? [])]
+  // El registro de la partida (docs/specs/registro.md): los mensajes; las tiradas, de rolls
+  const messages: LogMessage[] = []
+  // El sonido (docs/specs/sonido.md): las listas de los mundos y lo que suena en cada campaña
+  const soundPlaylists: SoundPlaylistView[] = structuredClone(options.soundPlaylists ?? [])
+  const sounds = new Map<string, SoundState>()
+  const soundLists = () => new Map(soundPlaylists.map((p) => [p.id, listInfo(p)]))
+  const changeSound = (campaignId: string, fn: (state: SoundState, now: number) => SoundState) => {
+    const now = Date.now()
+    const state = fn(advanceSound(sounds.get(campaignId) ?? EMPTY_SOUND, soundLists(), { now }), now)
+    sounds.set(campaignId, state)
+    return buildSoundView(campaignId, state, soundPlaylists)
+  }
+  const soundTracksOf = (worldId: string, tracks: SoundTrackInput[]): SoundPlaylistView['tracks'] =>
+    tracks.map((track) => {
+      let source: SoundPlaylistView['tracks'][number]['source']
+      if (track.source.type === 'youtube') {
+        const videoId = youtubeVideoId(track.source.url)
+        if (!videoId) throw new ApiError('BAD_YOUTUBE', 400)
+        source = { type: 'youtube', videoId }
+      } else if (track.source.type === 'url') {
+        source = { type: 'url', url: track.source.url }
+      } else {
+        const fileId = track.source.fileId
+        const file = files.find((f) => f.id === fileId && (f.worldId === worldId || f.worldId === null))
+        if (!file) throw new ApiError('NOT_FOUND', 404)
+        if (!file.mime.startsWith('audio/')) throw new ApiError('NOT_AUDIO', 400)
+        source = { type: 'file', fileId, url: `/api/files/${fileId}` }
+      }
+      return {
+        id: track.id ?? crypto.randomUUID(),
+        name: track.name,
+        source,
+        duration: track.duration,
+        volume: track.volume ?? 1,
+        loop: track.loop ?? false
+      }
+    })
+  const soundPlaylistById = (id: string) => {
+    const found = soundPlaylists.find((p) => p.id === id)
+    if (!found) throw new ApiError('NOT_FOUND', 404)
+    return found
+  }
+  // Las notas de los jugadores (docs/specs/notas-jugador.md)
+  type StoredNote = Omit<PlayerNote, 'links' | 'editable'>
+  const notes: StoredNote[] = (options.notes ?? []).map((n) => ({
+    id: n.id ?? crypto.randomUUID(),
+    campaignId: n.campaignId,
+    userId: n.userId ?? 'yo',
+    parentId: n.parentId ?? null,
+    title: n.title,
+    icon: null,
+    markdown: n.markdown ?? '',
+    version: 1,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    deletedAt: null
+  }))
+  // Las carpetas de la pestaña Actores, por campaña
+  const actorFolders: Array<{ campaignId: string; id: string; name: string }> = []
+  const actorFolderItems: Array<{ campaignId: string; kind: 'character' | 'creature'; id: string; folderId: string }> =
+    []
   // Lo borrado, con lo que hace falta para devolverlo
   const trash: Array<{ item: TrashItem; world?: World; campaign?: Campaign }> = []
   const DAY = 24 * 60 * 60 * 1000
@@ -279,6 +369,30 @@ export function fakeApi(
   }))
   // Las páginas borradas, cada una con las subpáginas que se fueron con ella (todas siguen en la lista, apartadas)
   const trashedPages: Array<{ root: StoredPage; below: StoredPage[] }> = []
+  // Una nota se esconde si ella o alguna antecesora está en la papelera
+  const noteHidden = (note: StoredNote): boolean => {
+    if (note.deletedAt) return true
+    const parent = note.parentId ? notes.find((n) => n.id === note.parentId) : undefined
+    return parent ? noteHidden(parent) : false
+  }
+  const noteById = (id: string) => {
+    const note = notes.find((n) => n.id === id && !noteHidden(n))
+    if (!note) throw new ApiError('NOT_FOUND', 404)
+    return note
+  }
+  // Sus enlaces, por el título de las páginas del mundo de su campaña
+  const noteView = (note: StoredNote): PlayerNote => {
+    const worldId = campaigns.find((c) => c.id === note.campaignId)?.worldId
+    const titles = [...note.markdown.matchAll(/\[\[([^[\]|#]+)/g)].map((m) => (m[1] ?? '').trim())
+    return {
+      ...structuredClone(note),
+      editable: note.userId === 'yo',
+      links: [...new Set(titles)].map((title) => ({
+        title,
+        pageId: pages.find((p) => p.worldId === worldId && p.title.toLowerCase() === title.toLowerCase())?.id ?? null
+      }))
+    }
+  }
   // Pestañas y marcadores de la cuenta, por mundo
   type Stored = {
     tabs: { pageId: string; pinned: boolean }[]
@@ -607,7 +721,7 @@ export function fakeApi(
     }
   }
   // Las fichas (de momento, solo de personajes de la campaña) y los encuentros de cada mundo
-  type TokenRow = Omit<TokenView, 'actor'> & {
+  type TokenRow = Omit<TokenView, 'actor' | 'controllers'> & {
     campaignId: string
     actor: { kind: 'character' | 'creature'; id: string }
   }
@@ -618,6 +732,7 @@ export function fakeApi(
       const found = characters.find((c) => c.id === actor.id)
       return structuredClone({
         ...token,
+        controllers: found?.owner ? [found.owner.id] : [],
         actor: {
           kind: 'character' as const,
           id: actor.id,
@@ -634,6 +749,7 @@ export function fakeApi(
     const { card } = creatureCard(row)
     return structuredClone({
       ...token,
+      controllers: [...(row.controlledBy ?? [])],
       actor: {
         kind: 'creature' as const,
         id: actor.id,
@@ -724,12 +840,28 @@ export function fakeApi(
   // La visión de cada escena (muros, puertas y luces) y las puertas abiertas en cada campaña; la niebla no se calcula
   const visions = new Map<
     string,
-    { version: number; darkness: number; automaticVision: boolean; walls: WallView[]; lights: LightView[] }
+    {
+      version: number
+      darkness: number
+      automaticVision: boolean
+      walls: WallView[]
+      lights: LightView[]
+      sounds: SceneSoundView[]
+    }
   >()
   const doors = new Map<string, boolean>()
+  // Los sonidos del mapa apagados en cada campaña («campaña|sonido»)
+  const soundsOff = new Set<string>()
   const visionOf = (sceneId: string) => {
     sceneById(sceneId)
-    const vision = visions.get(sceneId) ?? { version: 1, darkness: 0, automaticVision: true, walls: [], lights: [] }
+    const vision = visions.get(sceneId) ?? {
+      version: 1,
+      darkness: 0,
+      automaticVision: true,
+      walls: [],
+      lights: [],
+      sounds: []
+    }
     visions.set(sceneId, vision)
     return vision
   }
@@ -742,10 +874,34 @@ export function fakeApi(
         ? {
             doors: Object.fromEntries(
               vision.walls.filter((w) => w.door).map((w) => [w.id, doors.get(`${campaignId}|${w.id}`) ?? w.open])
-            )
+            ),
+            sounds: vision.sounds.map((s) => ({ ...s, enabled: !soundsOff.has(`${campaignId}|${s.id}`) }))
           }
         : {})
     }
+  }
+  /** La pista de un sonido del mapa, como la vería el servidor */
+  const sceneSoundSource = (source: { type: string; fileId?: string; trackId?: string; url?: string } | undefined) => {
+    if (!source || source.type === 'none') return { type: 'none' as const }
+    if (source.type === 'file')
+      return { type: 'file' as const, fileId: source.fileId ?? '', url: `/api/files/${source.fileId}` }
+    if (source.type === 'url') return { type: 'url' as const, url: source.url ?? '' }
+    for (const p of soundPlaylists) {
+      const track = p.tracks.find((t) => t.id === source.trackId)
+      if (track)
+        return {
+          type: 'track' as const,
+          trackId: track.id,
+          playlistId: p.id,
+          name: track.name,
+          url: track.source.type === 'file' ? track.source.url : null
+        }
+    }
+    throw new ApiError('NOT_FOUND', 404)
+  }
+  const sceneSoundOwner = (id: string) => {
+    for (const [sceneId, vision] of visions) if (vision.sounds.some((s) => s.id === id)) return sceneId
+    throw new ApiError('NOT_FOUND', 404)
   }
   const wallOf = (input: Partial<WallView> & { a: WallView['a']; b: WallView['b'] }): WallView => ({
     id: crypto.randomUUID(),
@@ -779,6 +935,14 @@ export function fakeApi(
   const widgets: Array<WidgetView & { campaignId: string }> = []
   const snapshots: Array<SnapshotView & { campaignId: string }> = []
   const measureOnScreen = new Set<string>()
+  // La sala de cada campaña (docs/specs/sala.md): pausa, modo y echados
+  const rooms = new Map<string, { paused: boolean; movement: 'free' | 'turn' | 'locked'; kicked: string[] }>()
+  const roomOf = (campaignId: string) => {
+    campaignTableOf(campaignId)
+    const found = rooms.get(campaignId) ?? { paused: false, movement: 'free' as const, kicked: [] }
+    rooms.set(campaignId, found)
+    return found
+  }
   const sceneFor = (campaignId: string, sceneId?: string) => {
     const target = sceneId ?? campaignTableOf(campaignId).table.open
     if (!target) throw new ApiError('NO_OPEN_SCENE', 400)
@@ -889,6 +1053,8 @@ export function fakeApi(
     overrides: Record<string, number>
     version: number
     hidden?: boolean
+    /** Los jugadores que la mueven en la Mesa */
+    controlledBy?: string[]
   }> = []
   const worldEntry = (worldId: string, systemId: string, key: string) => {
     const found = entriesOf(worldId, systemId).find((e) => e.item.key === key)
@@ -1750,6 +1916,208 @@ export function fakeApi(
         if (error instanceof DiceSyntaxError) throw new ApiError('BAD_FORMULA', 400)
         throw error
       }
+    },
+    showImage: ({ to }) => ({ shown: to?.length ?? 0 }),
+    clearScreenShow: () => ({ ok: true as const }),
+    clearLog: ({ campaignId }) => {
+      const before = messages.length
+      for (let i = messages.length - 1; i >= 0; i--) if (messages[i]?.campaignId === campaignId) messages.splice(i, 1)
+      return { deleted: before - messages.length }
+    },
+    deleteRolls: ({ campaignId, ids }) => {
+      const before = rolls.length
+      for (let i = rolls.length - 1; i >= 0; i--) {
+        const roll = rolls[i]
+        if (roll?.campaignId === campaignId && (!ids || ids.includes(roll.id))) rolls.splice(i, 1)
+      }
+      return { deleted: before - rolls.length }
+    },
+    listPlayerNotes: ({ campaignId, userId, trash }) => ({
+      notes: notes
+        .filter((n) => n.campaignId === campaignId && n.userId === (userId ?? 'yo'))
+        .filter((n) => (trash ? n.deletedAt !== null : !noteHidden(n)))
+        .map(({ campaignId: _c, userId: _u, markdown: _m, createdAt: _a, ...rest }) => ({ ...rest }))
+    }),
+    getPlayerNote: ({ id }) => ({ note: noteView(noteById(id)) }),
+    createPlayerNote: ({ campaignId, parentId, title, icon, markdown }) => {
+      const now = new Date().toISOString()
+      const note: StoredNote = {
+        id: crypto.randomUUID(),
+        campaignId,
+        userId: 'yo',
+        parentId: parentId ?? null,
+        title: title ?? '',
+        icon: icon ?? null,
+        markdown: markdown ?? '',
+        version: 1,
+        createdAt: now,
+        updatedAt: now,
+        deletedAt: null
+      }
+      notes.push(note)
+      return { note: noteView(note) }
+    },
+    updatePlayerNote: ({ id, version, ...patch }) => {
+      const note = noteById(id)
+      if (note.userId !== 'yo') throw new ApiError('FORBIDDEN', 403)
+      if (note.version !== version) throw new ApiError('NOTE_CHANGED', 400)
+      for (const [key, value] of Object.entries(patch)) if (value !== undefined) Object.assign(note, { [key]: value })
+      note.version++
+      note.updatedAt = new Date().toISOString()
+      return { note: noteView(note) }
+    },
+    deletePlayerNote: ({ id }) => {
+      const note = noteById(id)
+      if (note.userId !== 'yo') throw new ApiError('FORBIDDEN', 403)
+      note.deletedAt = new Date().toISOString()
+      return { ok: true as const }
+    },
+    restorePlayerNote: ({ id }) => {
+      const note = notes.find((n) => n.id === id && n.deletedAt)
+      if (!note) throw new ApiError('NOT_FOUND', 404)
+      note.deletedAt = null
+      return { note: noteView(note) }
+    },
+    listPlayerNoteVersions: ({ id }) => {
+      const note = noteById(id)
+      return {
+        versions: [
+          {
+            operationId: crypto.randomUUID(),
+            at: note.updatedAt,
+            by: { id: note.userId, name: note.userId },
+            title: note.title,
+            markdown: note.markdown
+          }
+        ]
+      }
+    },
+    listSoundPlaylists: ({ worldId, campaignId }) => {
+      const world = worldId ?? campaigns.find((c) => c.id === campaignId)?.worldId
+      return { playlists: structuredClone(soundPlaylists.filter((p) => p.worldId === world)) }
+    },
+    createSoundPlaylist: ({ worldId, name, kind, mode, fade, tracks }) => {
+      const playlist: SoundPlaylistView = {
+        id: crypto.randomUUID(),
+        worldId,
+        name,
+        kind,
+        mode: mode ?? 'sequential',
+        fade: fade ?? 0,
+        tracks: soundTracksOf(worldId, tracks ?? []),
+        version: 1,
+        updatedAt: new Date().toISOString()
+      }
+      soundPlaylists.push(playlist)
+      return { playlist: structuredClone(playlist) }
+    },
+    updateSoundPlaylist: ({ id, tracks, ...patch }) => {
+      const playlist = soundPlaylistById(id)
+      for (const [key, value] of Object.entries(patch))
+        if (value !== undefined) Object.assign(playlist, { [key]: value })
+      if (tracks) playlist.tracks = soundTracksOf(playlist.worldId, tracks)
+      playlist.version++
+      return { playlist: structuredClone(playlist) }
+    },
+    deleteSoundPlaylist: ({ id }) => {
+      soundPlaylists.splice(soundPlaylists.indexOf(soundPlaylistById(id)), 1)
+      return { ok: true as const }
+    },
+    getSound: ({ campaignId, withPlaylists }) => {
+      const view = changeSound(campaignId, (state) => state)
+      const world = campaigns.find((c) => c.id === campaignId)?.worldId
+      return withPlaylists
+        ? { ...view, playlists: structuredClone(soundPlaylists.filter((p) => p.worldId === world)) }
+        : view
+    },
+    playSound: ({ campaignId, playlistId, trackId }) => {
+      const owner = trackId ? soundPlaylists.find((p) => p.tracks.some((t) => t.id === trackId)) : undefined
+      const list = owner ?? soundPlaylistById(playlistId ?? '')
+      if (list.tracks.length === 0) throw new ApiError('EMPTY_PLAYLIST', 400)
+      if (!trackId && list.mode === 'soundboard') throw new ApiError('SOUNDBOARD_NEEDS_TRACK', 400)
+      const info = listInfo(list)
+      return changeSound(campaignId, (state, now) =>
+        trackId && info.kind === 'effects'
+          ? startEffect(state, info, trackId, { now, id: () => crypto.randomUUID() })
+          : startList(state, info, { now }, trackId)
+      )
+    },
+    stopSound: ({ campaignId, playlistId, effectId, fade }) =>
+      changeSound(campaignId, (state, now) =>
+        stopSoundOf(
+          state,
+          { now },
+          { ...(playlistId ? { playlistId } : {}), ...(effectId ? { effectId } : {}), fade: fade ?? 0 }
+        )
+      ),
+    pauseSound: ({ campaignId, paused }) =>
+      changeSound(campaignId, (state, now) => (paused ? pauseSoundOf(state, { now }) : resumeSound(state, { now }))),
+    setSoundVolume: ({ campaignId, volume }) => changeSound(campaignId, (state) => setSoundVolumeOf(state, volume)),
+    nextTrack: ({ campaignId, playlistId }) =>
+      changeSound(campaignId, (state, now) => nextTrackOf(state, soundLists(), { now }, playlistId)),
+    listActorFolders: ({ campaignId }) => ({
+      folders: actorFolders.filter((f) => f.campaignId === campaignId).map(({ id, name }) => ({ id, name })),
+      items: actorFolderItems
+        .filter((i) => i.campaignId === campaignId)
+        .map(({ kind, id, folderId }) => ({ kind, id, folderId }))
+    }),
+    createActorFolder: ({ campaignId, name }) => {
+      const folder = { campaignId, id: crypto.randomUUID(), name }
+      actorFolders.push(folder)
+      return { id: folder.id, name }
+    },
+    renameActorFolder: ({ folderId, name }) => {
+      const found = actorFolders.find((f) => f.id === folderId)
+      if (!found) throw new ApiError('NOT_FOUND', 404)
+      found.name = name
+      return { ok: true as const }
+    },
+    deleteActorFolder: ({ folderId }) => {
+      const at = actorFolders.findIndex((f) => f.id === folderId)
+      if (at < 0) throw new ApiError('NOT_FOUND', 404)
+      actorFolders.splice(at, 1)
+      for (let i = actorFolderItems.length - 1; i >= 0; i--)
+        if (actorFolderItems[i]?.folderId === folderId) actorFolderItems.splice(i, 1)
+      return { ok: true as const }
+    },
+    moveToActorFolder: ({ campaignId, kind, id, folderId }) => {
+      const at = actorFolderItems.findIndex((i) => i.campaignId === campaignId && i.kind === kind && i.id === id)
+      if (at >= 0) actorFolderItems.splice(at, 1)
+      if (folderId) actorFolderItems.push({ campaignId, kind, id, folderId })
+      return { ok: true as const }
+    },
+    sendMessage: ({ campaignId, text, style, whisper }) => {
+      const entry: LogMessage = {
+        kind: 'message',
+        id: crypto.randomUUID(),
+        campaignId,
+        by: { userId: 'yo', name: 'Yo', color: null },
+        ai: false,
+        style: style ?? 'ooc',
+        speaker: { kind: 'user' },
+        text,
+        whisper: whisper ? whisper.map((id) => ({ id, name: id === 'master' ? '' : id })) : null,
+        deleted: false,
+        createdAt: new Date().toISOString()
+      }
+      messages.push(entry)
+      return { entry: structuredClone(entry) }
+    },
+    deleteMessage: ({ id }) => {
+      const found = messages.find((m) => m.id === id)
+      if (!found) throw new ApiError('NOT_FOUND', 404)
+      found.deleted = true
+      found.text = ''
+      return { ok: true as const }
+    },
+    listLog: ({ campaignId, only }) => {
+      const entries: LogEntry[] = [
+        ...messages.filter((m) => m.campaignId === campaignId).map((m) => structuredClone(m)),
+        ...(only === 'messages' ? [] : rolls)
+          .filter((r) => r.campaignId === campaignId)
+          .map((r) => ({ kind: 'roll' as const, id: r.id, roll: { ...r }, createdAt: r.createdAt }))
+      ].sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+      return { entries: entries.slice(-50), next: null }
     },
     listRolls: ({ campaignId, before }) => {
       const all = rolls.filter((r) => r.campaignId === campaignId)
@@ -2808,7 +3176,17 @@ export function fakeApi(
       return { version: own.version, deleted, missing: keys.filter((k) => !deleted.includes(k)) }
     },
     // Quién está en la Mesa (ADR-0021): en la API de prueba, lo que digan las pruebas
-    getTablePresence: () => ({ present: structuredClone(options.tablePresence ?? []) }),
+    getTablePresence: ({ campaignId }) => {
+      const room = rooms.get(campaignId) ?? { paused: false, movement: 'free' as const, kicked: [] }
+      const names = new Map((options.members?.[campaignId] ?? []).map((m) => [m.userId, m.name]))
+      return {
+        present: structuredClone(options.tablePresence ?? []),
+        inCampaign: [],
+        kicked: room.kicked.map((userId) => ({ userId, name: names.get(userId) ?? '' })),
+        paused: room.paused,
+        movement: room.movement
+      }
+    },
     // Los libros de un sistema (ADR-0021)
     getSystemBooks: ({ systemId }) => {
       const document = systemById(systemId)
@@ -3502,6 +3880,13 @@ export function fakeApi(
         return tokenOf(Object.assign(token, pointOf(token.sceneId, move)))
       })
     }),
+    // Sin reglas de la Mesa en la API falsa: el máster asigna y cualquiera mueve
+    assignToken: ({ creatureId, userIds }) => {
+      const row = creatureById(creatureId)
+      row.controlledBy = [...new Set(userIds)]
+      row.version++
+      return { creatureId, controllers: [...row.controlledBy] }
+    },
     updateToken: ({ tokenId, ...patch }) => tokenOf(Object.assign(tokenById(tokenId), patch)),
     removeTokens: ({ tokenIds }) => {
       for (const id of tokenIds) tokens.splice(tokens.indexOf(tokenById(id)), 1)
@@ -3603,6 +3988,44 @@ export function fakeApi(
       vision.version++
       return visionView(sceneId)
     },
+    placeSceneSound: ({ sceneId, unit: _unit, x, y, source, ...rest }) => {
+      const vision = visionOf(sceneId)
+      vision.sounds.push({
+        id: crypto.randomUUID(),
+        name: rest.name ?? '',
+        x,
+        y,
+        source: sceneSoundSource(source),
+        radius: rest.radius ?? 6,
+        volume: rest.volume ?? 1,
+        easing: rest.easing ?? true,
+        walls: rest.walls ?? 'block',
+        darkOnly: rest.darkOnly ?? false
+      })
+      vision.version++
+      return visionView(sceneId)
+    },
+    changeSceneSound: ({ id, unit: _unit, campaignId, enabled, source, ...rest }) => {
+      const sceneId = sceneSoundOwner(id)
+      const vision = visionOf(sceneId)
+      const patch = Object.fromEntries(Object.entries(rest).filter(([, v]) => v !== undefined))
+      vision.sounds = vision.sounds.map((s) =>
+        s.id === id ? { ...s, ...patch, ...(source ? { source: sceneSoundSource(source) } : {}) } : s
+      )
+      if (campaignId && enabled !== undefined) {
+        if (enabled) soundsOff.delete(`${campaignId}|${id}`)
+        else soundsOff.add(`${campaignId}|${id}`)
+      }
+      vision.version++
+      return visionView(sceneId, campaignId)
+    },
+    removeSceneSound: ({ id }) => {
+      const sceneId = sceneSoundOwner(id)
+      const vision = visionOf(sceneId)
+      vision.sounds = vision.sounds.filter((s) => s.id !== id)
+      vision.version++
+      return visionView(sceneId)
+    },
     updateSceneVision: ({ sceneId, darkness, automaticVision }) => {
       const vision = visionOf(sceneId)
       if (darkness !== undefined) vision.darkness = darkness
@@ -3669,7 +4092,8 @@ export function fakeApi(
             img: t.actor.img,
             image: t.image,
             state: null,
-            conditions: t.actor.conditions.map((c) => ({ name: c.name }))
+            conditions: t.actor.conditions.map((c) => ({ name: c.name })),
+            controllers: t.controllers
           })),
           combat: null
         },
@@ -3864,6 +4288,22 @@ export function fakeApi(
       if (index < 0) throw new ApiError('NOT_FOUND', 404)
       snapshots.splice(index, 1)
       return { id: snapshotId }
+    },
+    setTableControls: ({ campaignId, paused, movement }) => {
+      const room = roomOf(campaignId)
+      if (paused !== undefined) room.paused = paused
+      if (movement !== undefined) room.movement = movement
+      return { paused: room.paused, movement: room.movement }
+    },
+    kickFromTable: ({ campaignId, userId }) => {
+      const room = roomOf(campaignId)
+      if (!room.kicked.includes(userId)) room.kicked.push(userId)
+      return { ok: true as const }
+    },
+    allowBackToTable: ({ campaignId, userId }) => {
+      const room = roomOf(campaignId)
+      room.kicked = room.kicked.filter((id) => id !== userId)
+      return { ok: true as const }
     },
     setMeasureOnScreen: ({ campaignId, on }) => {
       campaignTableOf(campaignId)

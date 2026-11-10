@@ -5,7 +5,13 @@
  * pide: docs/specs/vision.md)
  */
 import type { Readable } from 'node:stream'
-import { MAX_TILE_BYTES, type TableServerMessage, type TableViewer, tableClientMessage } from '@crisol/contracts'
+import {
+  MAX_TILE_BYTES,
+  TABLE_CLOSE_KICKED,
+  type TableServerMessage,
+  type TableViewer,
+  tableClientMessage
+} from '@crisol/contracts'
 import { campaignsRepo, loadMemberships, scenesRepo } from '@crisol/db'
 import { actorFrom, can } from '@crisol/domain'
 import { type FogGrid, hasTile, type TileRef, tilePyramid, tileWorldRect } from '@crisol/tabletop'
@@ -304,12 +310,27 @@ export function registerTableRoutes(
             say({ type: 'error', code: campaign ? 'FORBIDDEN' : 'NOT_FOUND' })
             return socket.close(4403, 'Sin permiso')
           }
+          // A quien echó el máster, su Mesa de jugador no le deja entrar hasta que le deje volver (docs/specs/sala.md)
+          if (
+            message.view === 'player' &&
+            (await scenesRepo.campaignTable(env.db, campaign.id)).kicked.includes(userId)
+          ) {
+            say({ type: 'error', code: 'KICKED' })
+            return socket.close(TABLE_CLOSE_KICKED, 'Fuera de la Mesa')
+          }
           const leaveRoom = await table.join(campaign.id, message.view, socket)
           // Se cerró mientras entraba: fuera ya
           if (closed) return leaveRoom()
           const scope = { campaignId: campaign.id, worldId: campaign.worldId }
           // Quién está en la Mesa: entra (y sale con la conexión)
-          env.presence?.add(campaign.id, socket, { userId, viewer: message.view })
+          env.presence?.add(campaign.id, socket, {
+            userId,
+            viewer: message.view,
+            close: () => {
+              say({ type: 'error', code: 'KICKED' })
+              socket.close(TABLE_CLOSE_KICKED, 'Fuera de la Mesa')
+            }
+          })
           announce(scope)
           const leave = () => {
             leaveRoom()
@@ -317,6 +338,13 @@ export function registerTableRoutes(
             announce(scope)
           }
           joined = { campaignId: campaign.id, worldId: campaign.worldId, viewer: message.view, leave }
+          // Lo que suena, puesto al día: quien entra tarde va por donde va (docs/specs/sonido.md)
+          if (env.sound) {
+            const sound = await env.sound.view(campaign.id).catch(() => null)
+            // Sin nada sonando no hace falta: el aparato empieza en silencio
+            if (sound && !closed && (sound.voices.length > 0 || sound.lists.length > 0))
+              say({ type: 'sound', sound, serverNow: Date.now() })
+          }
           return
         }
         if (!joined) return say({ type: 'error', code: 'NOT_JOINED' })
@@ -329,11 +357,21 @@ export function registerTableRoutes(
             announce({ campaignId: joined.campaignId, worldId: joined.worldId })
           return
         }
-        // Lo que va en vivo (el encuadre, el arrastre, la medida, el láser): solo del máster, y con un tope por segundo
-        if (joined.viewer !== 'master') return say({ type: 'error', code: 'BAD_MESSAGE' })
+        // La hora del servidor, para que cada aparato mida su desfase (cualquiera que mire, con el tope por segundo)
+        if (message.type === 'time') {
+          const at = Date.now()
+          if (at - window.start > 1000) window = { start: at, count: 0 }
+          if (++window.count > MAX_LIVE_PER_SECOND) return
+          return say({ type: 'time', t: message.t, serverNow: Date.now() })
+        }
+        // Lo que va en vivo (el encuadre, el arrastre, la medida, el láser): del máster, y con un tope por segundo; de la
+        // Mesa de un jugador, solo el arrastre de sus fichas (docs/specs/mover-jugadores.md)
+        const player = joined.viewer === 'player' && message.type === 'drag'
+        if (joined.viewer !== 'master' && !player) return say({ type: 'error', code: 'BAD_MESSAGE' })
         const now = Date.now()
         if (now - window.start > 1000) window = { start: now, count: 0 }
         if (++window.count > MAX_LIVE_PER_SECOND) return
+        if (player) return table.drag(joined.campaignId, message.moves, socket, userId)
         if (message.type === 'viewport') table.viewport(joined.campaignId, message.view)
         else if (message.type === 'drag') table.drag(joined.campaignId, message.moves, socket)
         else if (message.type === 'measure') table.measure(joined.campaignId, message.measure, socket)

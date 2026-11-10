@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, type Page, test } from '@playwright/test'
-import { campaignLink, newPlayer, settled } from './ayudas.ts'
+import { campaignLink, newPlayer, settled, toMesa } from './ayudas.ts'
 
 /** Que axe no encuentre fallos críticos ni graves en lo que se indica, en claro y en oscuro */
 async function accessible(page: Page, include: string) {
@@ -19,6 +19,7 @@ test('el máster abre los dados en su campaña, junta unos cuantos y tira: se va
   page
 }) => {
   await campaignLink(page)
+  await toMesa(page)
   // El d20 flotante (fuera de la barra), en la esquina
   const dados = page.locator('[data-tour="dados"]')
   await dados.click()
@@ -66,7 +67,10 @@ test('el máster y una jugadora en dos pestañas: la pública le sale al momento
   page,
   browser
 }) => {
+  // Dos navegadores y axe al final: en la máquina de la CI pasa del minuto
+  test.setTimeout(120_000)
   const link = await campaignLink(page)
+  await toMesa(page)
   const ana = await newPlayer(browser, link, 'Ana')
   const write = async (who: Page, formula: string) => {
     await who.locator('[data-tour="dados"]').click()
@@ -93,14 +97,14 @@ test('el máster y una jugadora en dos pestañas: la pública le sale al momento
     .filter({ hasText: 'Sigilo' })
   await expect(forMaster).toContainText('para ti', { timeout: 8000 })
 
-  // En su historial (en la Mesa, una ventana), con su marca
+  // En su historial (en la Mesa, el registro de la partida, en «Tiradas»), con su marca
   await forMaster.getByRole('button', { name: /Abrir el historial/ }).click()
-  const history = page.getByRole('dialog', { name: 'Historial' })
+  const history = page.getByRole('region', { name: 'Registro' })
   const last = history.getByRole('list', { name: 'Tiradas de la campaña' }).getByRole('listitem').last()
   await expect(last).toContainText('Sigilo')
   await expect(last).toContainText('Al máster')
   await expect(last).toContainText('Ana')
-  await accessible(page, '[data-window]')
+  await accessible(page, 'section[aria-label="Registro"]')
   await ana.close()
 })
 
@@ -154,6 +158,7 @@ test('los dados 3D: la escena se carga aparte, en un rato libre dentro del mundo
   const workers: string[] = []
   page.on('worker', (worker) => workers.push(new URL(worker.url()).pathname))
   await campaignLink(page)
+  await toMesa(page)
   await page.locator('[data-tour="dados"]').click()
   const dice = page.getByRole('complementary', { name: 'Dados' })
   await expect(dice).toBeVisible()

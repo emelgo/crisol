@@ -9,8 +9,11 @@ export function useDismiss(
 ) {
   useEffect(() => {
     if (!open) return
+    // Pulsar su propio botón no cuenta como fuera: lo cierra el clic del botón (si no, se cerraba y se volvía a abrir)
     const outside = (event: Event) => {
-      if (!root.current?.contains(event.target as Node)) close()
+      const target = event.target as Node
+      if (root.current?.contains(target) || trigger.current?.contains(target)) return
+      close()
     }
     const onEscape = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return

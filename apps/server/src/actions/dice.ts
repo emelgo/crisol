@@ -2,7 +2,7 @@
  * Las tiradas de una campaña (ADR-0010): el servidor pone el azar, guarda la tirada ya resuelta y la deja leer a quien
  * la puede ver. Las privadas, solo a quien tira y al máster
  */
-import { type DiceRoll, listRolls, rollDice, tryDice, visibilitiesFor } from '@crisol/contracts'
+import { type DiceRoll, deleteRolls, listRolls, rollDice, tryDice, visibilitiesFor } from '@crisol/contracts'
 import { diceRepo, type schema } from '@crisol/db'
 import { type CriticalRule, cryptoRoller, DiceSyntaxError, rollDice as roll } from '@crisol/dice'
 import { can } from '@crisol/domain'
@@ -93,6 +93,17 @@ export const storedOf = (result: ReturnType<typeof roll>): schema.StoredRoll => 
 export { rolled }
 
 export const diceActions = [
+  // El máster limpia el historial: unas tiradas o todas (Enrique, 2026-11-10)
+  implement(deleteRolls, async (ctx, { campaignId, ids }) => {
+    const campaign = await authorizedCampaign(ctx, 'dice.private', campaignId)
+    const deleted = await diceRepo.deleteRolls(ctx.db, campaign.id, ids)
+    ctx.realtime.publish({
+      to: { capability: 'dice.read', target: { campaignId: campaign.id, worldId: campaign.worldId } },
+      message: { type: 'changed', what: 'rolls', campaignId: campaign.id }
+    })
+    return { deleted }
+  }),
+
   implement(rollDice, async (ctx, input) => {
     const campaign = await authorizedCampaign(ctx, 'dice.roll', input.campaignId)
     const master = isMaster(ctx, campaign)

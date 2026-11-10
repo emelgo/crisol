@@ -8,6 +8,7 @@ import type { LibraryJobs } from '../library/jobs.ts'
 import type { Realtime } from '../realtime/hub.ts'
 import type { TablePresence } from '../table/presence.ts'
 import type { TableRooms } from '../table/rooms.ts'
+import type { SoundClock } from '../table/sound.ts'
 import type { Vision } from '../table/vision.ts'
 
 /** Una acción del contrato con su servicio */
@@ -41,6 +42,8 @@ export interface ActionEnv {
   presence?: TablePresence
   /** La vista del grupo de cada campaña en sus escenas, calculada en un hilo aparte (docs/specs/vision.md) */
   vision?: Vision
+  /** El reloj del sonido de cada campaña: lo manda a sus salas y pasa de pista (docs/specs/sonido.md) */
+  sound?: SoundClock
 }
 
 /** Con qué se ejecuta una acción: el servidor y quién la pide, por dónde */

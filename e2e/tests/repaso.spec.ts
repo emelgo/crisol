@@ -88,7 +88,7 @@ test('repaso visual: la mesa, la tele y el combate con la cripta del lienzo', as
   const net = watchNetwork(page)
   const [tv] = await Promise.all([
     page.waitForEvent('popup'),
-    page.getByRole('button', { name: 'Pantalla', exact: true }).click()
+    page.getByRole('button', { name: 'Vista de jugadores', exact: true }).click()
   ])
   const tvNet = watchNetwork(tv)
   await tv.setViewportSize(SIZE)

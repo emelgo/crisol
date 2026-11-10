@@ -11,13 +11,20 @@ import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
-import { FormError } from '../components/field.tsx'
+import { BusyButton } from '../components/busy-button.tsx'
+import dialogStyles from '../components/dialog.module.css'
+import { Field, FormError } from '../components/field.tsx'
+import form from '../components/form.module.css'
 import { failed, LoadError } from '../components/load-error.tsx'
+import { Modal } from '../components/modal.tsx'
+import cards from '../routes/world-card.module.css'
+import { SourcePicker } from '../wiki/scene/source-picker.tsx'
 import { sceneListKey } from './queries.ts'
 import { sceneWindow } from './scene-window.tsx'
 import styles from './scenes-tab.module.css'
 import { SceneThumb } from './thumb.tsx'
 import { initialOf } from './tokens.ts'
+import type { SceneChoice } from './use-preparation.ts'
 import { useWindows } from './windows.tsx'
 
 const matches = (text: string, query: string) =>
@@ -26,15 +33,25 @@ const matches = (text: string, query: string) =>
 export function ScenesGrid({
   worldId,
   table,
-  onOpen
+  onOpen,
+  onCreate
 }: {
   worldId: string
   table: CampaignTableView | null
   onOpen: (sceneId: string) => void
+  /** Una escena recién creada: abrirla y preparar su mapa, si se eligió */
+  onCreate?: (scene: SceneView, choice: SceneChoice | null) => void
 }) {
   const { t } = useTranslation()
   const api = useApi()
   const [query, setQuery] = useState('')
+  // La recién creada entra animada (sube y crece, con el contorno iluminado un momento: docs/diseno.md)
+  const [fresh, setFresh] = useState<string | null>(null)
+  useEffect(() => {
+    if (!fresh) return
+    const timer = window.setTimeout(() => setFresh(null), 1400)
+    return () => window.clearTimeout(timer)
+  }, [fresh])
   const scenes = useQuery({ queryKey: sceneListKey(worldId), queryFn: () => api.call('listScenes', { worldId }) })
   const openId = table?.open?.id ?? null
   const live = table?.presented && !table.screenHidden ? table.presented.id : null
@@ -67,9 +84,19 @@ export function ScenesGrid({
             open={scene.id === openId}
             live={scene.id === live}
             onOpen={() => scene.id !== openId && onOpen(scene.id)}
+            fresh={scene.id === fresh}
           />
         ))}
-        {!query && <NewScene worldId={worldId} onCreated={onOpen} />}
+        {!query && (
+          <NewScene
+            worldId={worldId}
+            onCreated={(scene, choice) => {
+              setFresh(scene.id)
+              if (onCreate) onCreate(scene, choice)
+              else onOpen(scene.id)
+            }}
+          />
+        )}
       </ul>
     </>
   )
@@ -84,13 +111,16 @@ function SceneCard({
   scene,
   open,
   live,
-  onOpen
+  onOpen,
+  fresh = false
 }: {
   worldId: string
   scene: SceneView
   open: boolean
   live: boolean
   onOpen: () => void
+  /** Recién creada: entra animada */
+  fresh?: boolean
 }) {
   const { t } = useTranslation()
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null)
@@ -98,7 +128,7 @@ function SceneCard({
   const openMenu = (x: number, y: number) => setMenu({ x, y })
   return (
     <li
-      className={styles.card}
+      className={fresh ? `${styles.card} ${styles.fresh}` : styles.card}
       data-open={open || undefined}
       onContextMenu={(event) => {
         event.preventDefault()
@@ -307,69 +337,89 @@ function SceneMenu({
   )
 }
 
-/** «Escena nueva»: una escena suelta con ese nombre (sin página, como en Foundry), que se abre en la Mesa */
-function NewScene({ worldId, onCreated }: { worldId: string; onCreated: (sceneId: string) => void }) {
+/**
+ * «Escena nueva»: un cuadro con todo lo que hace falta (su nombre y su mapa) y, al crearla, se cierra y la escena se abre
+ * en la Mesa con su mapa preparándose (Enrique, 2026-11-10: «así solo hacemos una transición»). Suelta, sin página
+ * (ADR-0020); la rejilla, después, en sus ajustes
+ */
+function NewScene({
+  worldId,
+  onCreated
+}: {
+  worldId: string
+  onCreated: (scene: SceneView, choice: SceneChoice | null) => void
+}) {
   const { t } = useTranslation()
   const api = useApi()
   const client = useQueryClient()
   const errorText = useErrorText()
-  const inputId = useId()
-  const [writing, setWriting] = useState(false)
+  const titleId = useId()
+  const [open, setOpen] = useState(false)
   const [name, setName] = useState('')
+  const [choice, setChoice] = useState<SceneChoice | null>(null)
+  const dialog = useRef<HTMLDialogElement>(null)
   const windows = useWindows()
   const create = useMutation({
-    // Suelta, sin página (ADR-0020)
     mutationFn: (title: string) => api.call('createScene', { worldId, name: title }),
     onSuccess: async (scene) => {
-      setWriting(false)
-      setName('')
       await client.invalidateQueries({ queryKey: sceneListKey(worldId) })
-      onCreated(scene.id)
-      // Y su editor, para ponerle el mapa y la rejilla ya (Enrique: «mejor editar al crear»)
+      const chosen = choice
+      dialog.current?.close()
+      onCreated(scene, chosen)
+      // Y sus ajustes, para colocar la rejilla sobre el mapa (Enrique: «falta el paso de la rejilla»)
       windows?.open(sceneWindow(worldId, scene))
     }
   })
   const submit = (event: FormEvent) => {
     event.preventDefault()
-    if (name.trim()) create.mutate(name.trim())
+    if (name.trim() && !create.isPending) create.mutate(name.trim())
   }
-  if (!writing)
-    return (
-      <li className={styles.card}>
-        <button type="button" className={`${styles.cardButton} ${styles.new}`} onClick={() => setWriting(true)}>
-          <span className={styles.thumb}>
-            <Plus aria-hidden="true" size={28} strokeWidth={1.5} />
-          </span>
-          <span className={styles.name}>{t('tabletop.newScene')}</span>
-        </button>
-      </li>
-    )
   return (
-    <li className={`${styles.card} ${styles.wide}`}>
-      <form className={styles.newForm} onSubmit={submit}>
-        <label htmlFor={inputId}>{t('tabletop.newSceneName')}</label>
-        <input
-          id={inputId}
-          // biome-ignore lint/a11y/noAutofocus: se acaba de pedir escribir su nombre
-          autoFocus
-          autoComplete="off"
-          value={name}
-          maxLength={200}
-          onChange={(event) => setName(event.currentTarget.value)}
-          onKeyDown={(event) => {
-            if (event.key === 'Escape') setWriting(false)
-          }}
-        />
-        <div className={styles.newActions}>
-          <button type="submit" className={styles.primary} disabled={!name.trim() || create.isPending}>
-            {t('tabletop.createScene')}
-          </button>
-          <button type="button" className={styles.ghost} onClick={() => setWriting(false)}>
-            {t('list.cancel')}
-          </button>
-        </div>
-        <FormError message={create.error ? errorText(create.error) : null} />
-      </form>
+    <li className={styles.card}>
+      <button
+        type="button"
+        className={`${styles.cardButton} ${styles.new}`}
+        onClick={() => {
+          create.reset()
+          setName('')
+          setChoice(null)
+          setOpen(true)
+        }}
+      >
+        <span className={styles.thumb}>
+          <Plus aria-hidden="true" size={28} strokeWidth={1.5} />
+        </span>
+        <span className={styles.name}>{t('tabletop.newScene')}</span>
+      </button>
+      {open && (
+        <Modal ref={dialog} aria-labelledby={titleId} className={cards.dialog} onClose={() => setOpen(false)}>
+          <form className={cards.form} onSubmit={submit}>
+            <h2 id={titleId}>{t('tabletop.newScene')}</h2>
+            <Field
+              label={t('tabletop.newSceneName')}
+              value={name}
+              required
+              maxLength={200}
+              autoComplete="off"
+              data-autofocus
+              data-1p-ignore
+              data-lpignore="true"
+              data-form-type="other"
+              onChange={(event) => setName(event.currentTarget.value)}
+            />
+            <SourcePicker worldId={worldId} value={choice} onChange={setChoice} />
+            <FormError message={create.error ? errorText(create.error) : null} />
+            <div className={dialogStyles.actions}>
+              <BusyButton type="submit" className={form.button} busy={create.isPending} disabled={!name.trim()}>
+                {t('tabletop.createScene')}
+              </BusyButton>
+              <button type="button" className={dialogStyles.cancel} onClick={() => dialog.current?.close()}>
+                {t('list.cancel')}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
     </li>
   )
 }

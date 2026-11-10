@@ -96,9 +96,10 @@ describe('quien juega', () => {
     // Las tiradas, en el d20 (no hay pestaña de tiradas)
     expect(panel.getAllByRole('tab').map((tab) => tab.textContent)).toEqual([
       'Combate',
-      'Personajes',
+      'Actores',
       'Compendio',
-      'Páginas'
+      'Páginas',
+      'Notas'
     ])
     // El combate, de lo que ve el grupo
     const view: ScreenView = {
@@ -139,7 +140,7 @@ describe('quien juega', () => {
     expect(order.getByText('Ronda 2')).toBeDefined()
     expect(order.getByText('Lía').closest('li')?.getAttribute('aria-current')).toBe('step')
     // Su hoja, en ventana
-    await user.click(panel.getByRole('tab', { name: 'Personajes' }))
+    await user.click(panel.getByRole('tab', { name: 'Actores' }))
     await user.click(await panel.findByRole('button', { name: /^Lía/ }))
     expect(await screen.findByRole('dialog', { name: 'Lía' })).toBeDefined()
     // Lo que enseña el máster

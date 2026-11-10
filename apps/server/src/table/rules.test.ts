@@ -44,4 +44,11 @@ describe('las reglas de las puertas y del paso (docs/specs/vision.md)', () => {
     expect(playerMayUseDoor(walls[3] as Wall, everywhere)).toBe(false)
     expect(playerMayUseDoor(walls[0] as Wall, everywhere)).toBe(false)
   })
+
+  it('una puerta se ve desde cualquiera de sus dos lados (su centro cae en la raya entre casillas)', () => {
+    const door = walls[1] as Wall
+    expect(playerMayUseDoor(door, { hasPoint: (p) => p.x < 200 })).toBe(true)
+    expect(playerMayUseDoor(door, { hasPoint: (p) => p.x > 200 })).toBe(true)
+    expect(playerMayUseDoor(door, { hasPoint: (p) => p.x < 150 })).toBe(false)
+  })
 })

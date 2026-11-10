@@ -7,12 +7,19 @@ import { z } from 'zod'
 import { defineAction } from './action.ts'
 import { screenCombat } from './combat.ts'
 import { type campaignTableView, fogMask, sceneGrid, sceneTiles, sceneViewport, screenCamera } from './scenes.ts'
+import type { SoundView } from './sound.ts'
 import { type LiveMeasure, laserPoints, liveMeasure, screenMark, screenWidget } from './table-tools.ts'
 import { screenToken } from './tokens.ts'
 
 /** master: todo; screen: la tele (lo que ve el grupo); player: la Mesa de un jugador, que ve lo mismo que la tele */
 export const TABLE_VIEWS = ['master', 'screen', 'player'] as const
 export type TableViewer = (typeof TABLE_VIEWS)[number]
+
+/** El canal de la mesa se cierra con este código cuando el máster echa a alguien (docs/specs/sala.md) */
+export const TABLE_CLOSE_KICKED = 4409
+
+/** Cómo mueven los jugadores sus fichas (docs/specs/sala.md): libre, solo en su turno (con combate) o bloqueado */
+export const tableMovement = z.enum(['free', 'turn', 'locked'])
 
 /** Lo que manda el cliente */
 export const tableClientMessage = z.discriminatedUnion('type', [
@@ -38,7 +45,9 @@ export const tableClientMessage = z.discriminatedUnion('type', [
   /** La medida en curso del máster (null: ya no mide): a la pantalla, solo con «la tele ve lo que mides» */
   z.object({ type: z.literal('measure'), measure: liveMeasure.nullable() }),
   /** La estela del láser: a la pantalla, lo que cae en lo que ve o vio el grupo */
-  z.object({ type: z.literal('laser'), points: laserPoints })
+  z.object({ type: z.literal('laser'), points: laserPoints }),
+  /** Para medir el desfase del reloj (docs/specs/sonido.md): la hora del aparato al mandarlo; vuelve con la del servidor */
+  z.object({ type: z.literal('time'), t: z.number() })
 ])
 
 export type TableClientMessage = z.infer<typeof tableClientMessage>
@@ -80,6 +89,29 @@ export const screenLight = z.object({
 
 export type ScreenLight = z.infer<typeof screenLight>
 
+/** Un sonido del mapa que suena en la escena (docs/specs/sonido-mapa.md): cada aparato calcula cuánto lo oye */
+export const screenSound = z.object({
+  id: z.uuid(),
+  x: z.number(),
+  y: z.number(),
+  /** En píxeles de la imagen */
+  radius: z.number(),
+  volume: z.number(),
+  easing: z.boolean(),
+  walls: z.enum(['block', 'muffle']),
+  url: z.string()
+})
+
+export type ScreenSound = z.infer<typeof screenSound>
+
+/** Un tramo de muro que para el sonido ahora (sin las puertas abiertas), cerca de algún sonido */
+export const soundWall = z.object({
+  a: z.object({ x: z.number(), y: z.number() }),
+  b: z.object({ x: z.number(), y: z.number() }),
+  limited: z.boolean(),
+  pass: z.enum(['left', 'right']).nullable()
+})
+
 export const screenView = z.object({
   campaignId: z.uuid(),
   campaignName: z.string(),
@@ -98,7 +130,33 @@ export const screenView = z.object({
   /** Lo dejado en el mapa que el grupo puede ver (docs/specs/herramientas-mesa.md) */
   marks: z.array(screenMark).optional(),
   /** Los widgets de la campaña con el ojo abierto */
-  widgets: z.array(screenWidget).optional()
+  widgets: z.array(screenWidget).optional(),
+  /** La sala (docs/specs/sala.md): en pausa y cómo mueven los jugadores (opcional por la API de prueba de la web) */
+  paused: z.boolean().optional(),
+  movement: tableMovement.optional(),
+  /**
+   * Las puertas normales que el grupo ve (docs/specs/mover-jugadores.md): sus jugadores las abren y las cierran si no
+   * tienen llave (opcional por la API de prueba de la web)
+   */
+  doors: z
+    .array(
+      z.object({
+        id: z.uuid(),
+        a: z.object({ x: z.number(), y: z.number() }),
+        b: z.object({ x: z.number(), y: z.number() }),
+        open: z.boolean(),
+        locked: z.boolean()
+      })
+    )
+    .optional(),
+  /** Los sonidos del mapa que suenan y los muros que los paran (opcional por la API de prueba de la web) */
+  sounds: z.array(screenSound).optional(),
+  soundWalls: z.array(soundWall).optional(),
+  /** Lo que enseña el máster encima de la escena (docs/specs/ensenar.md) */
+  show: z
+    .object({ kind: z.enum(['page', 'image']), id: z.string(), title: z.string(), worldId: z.uuid() })
+    .nullable()
+    .optional()
 })
 
 export type ScreenView = z.infer<typeof screenView>
@@ -110,12 +168,21 @@ export type TableServerMessage =
   /** El encuadre del máster, a la pantalla que lo sigue */
   | { type: 'viewport'; view: z.infer<typeof sceneViewport> }
   /** Unas fichas mientras se arrastran (a la pantalla, solo las que ve) */
-  | { type: 'drag'; moves: Array<{ tokenId: string; x: number; y: number }> }
+  | {
+      type: 'drag'
+      moves: Array<{ tokenId: string; x: number; y: number }>
+      /** La cuenta del jugador que las arrastra (sin ella, el máster) */
+      by?: string
+    }
   /** La medida en curso del máster (null: se acabó) */
   | { type: 'measure'; measure: LiveMeasure | null }
   /** La estela del láser (a la pantalla, solo sus puntos que ve o vio el grupo) */
   | { type: 'laser'; points: Array<{ x: number; y: number }> }
-  | { type: 'error'; code: 'FORBIDDEN' | 'NOT_FOUND' | 'BAD_MESSAGE' | 'NOT_JOINED' }
+  /** Lo que suena (docs/specs/sonido.md), al entrar y al cambiar, con la hora del servidor al mandarlo */
+  | { type: 'sound'; sound: SoundView; serverNow: number }
+  /** La respuesta a «time»: la hora del aparato que mandó y la del servidor */
+  | { type: 'time'; t: number; serverNow: number }
+  | { type: 'error'; code: 'FORBIDDEN' | 'NOT_FOUND' | 'BAD_MESSAGE' | 'NOT_JOINED' | 'KICKED' }
 
 /** Quién está en la Mesa de una campaña ahora (ADR-0021) */
 export const tablePresence = z.object({
@@ -124,16 +191,55 @@ export const tablePresence = z.object({
   viewer: z.enum(TABLE_VIEWS).describe('master: el máster; screen: la tele; player: la Mesa de un jugador'),
   since: z.iso.datetime(),
   active: z.boolean().describe('Con alguna de sus pestañas a la vista'),
-  tabs: z.int()
+  tabs: z.int(),
+  /** El color de sus dados (null: el que le toca por su id) */
+  color: z.string().nullable().optional(),
+  /** Su personaje en la campaña (el primero, si juega varios) */
+  character: z.object({ id: z.uuid(), name: z.string() }).nullable().optional()
 })
 
 export type TablePresenceEntry = z.infer<typeof tablePresence>
+
+export const setTableControls = defineAction({
+  name: 'setTableControls',
+  kind: 'write',
+  description:
+    'Los controles de la sala de una campaña (solo su máster): la pausa (paused: nadie más que el máster mueve fichas, abre puertas ni pone nada en la Mesa; sale «Pausa» en la pantalla de los jugadores) y cómo mueven los jugadores sus fichas (movement: free, libre; turn, con combate solo en su turno; locked, nadie). Lo que no se pasa no cambia',
+  input: z.object({ campaignId: z.uuid(), paused: z.boolean().optional(), movement: tableMovement.optional() }),
+  output: z.object({ paused: z.boolean(), movement: tableMovement })
+})
+
+export const kickFromTable = defineAction({
+  name: 'kickFromTable',
+  kind: 'players',
+  description:
+    'Echa a un jugador de la Mesa de una campaña: se le cierra al momento en todos sus aparatos y no puede volver a entrar en ella hasta dejarle volver (allowBackToTable). Sigue siendo de la campaña (quitarlo del todo es removeMember)',
+  input: z.object({ campaignId: z.uuid(), userId: z.string().min(1).max(100) }),
+  output: z.object({ ok: z.literal(true) })
+})
+
+export const allowBackToTable = defineAction({
+  name: 'allowBackToTable',
+  kind: 'players',
+  description: 'Deja volver a la Mesa a un jugador al que se echó (kickFromTable)',
+  input: z.object({ campaignId: z.uuid(), userId: z.string().min(1).max(100) }),
+  output: z.object({ ok: z.literal(true) })
+})
 
 export const getTablePresence = defineAction({
   name: 'getTablePresence',
   kind: 'read',
   description:
-    'Quién está ahora en la Mesa de una campaña: el máster, los jugadores y la tele, desde cuándo y si tienen la pestaña a la vista. Lo ve cualquiera de la campaña',
+    'La sala de una campaña: quién está ahora en la Mesa (el máster, los jugadores con su personaje y la pantalla de los jugadores; desde cuándo y si tienen la pestaña a la vista), quién la tiene abierta fuera de la Mesa (inCampaign), a quién echó el máster (kicked), si está en pausa y cómo mueven los jugadores. Lo ve cualquiera de la campaña',
   input: z.object({ campaignId: z.uuid() }),
-  output: z.object({ present: z.array(tablePresence) })
+  output: z.object({
+    present: z.array(tablePresence),
+    inCampaign: z
+      .array(z.object({ userId: z.string(), name: z.string(), color: z.string().nullable() }))
+      .optional()
+      .describe('En la campaña (su Inicio, sus libros…) sin la Mesa abierta'),
+    kicked: z.array(z.object({ userId: z.string(), name: z.string() })).optional(),
+    paused: z.boolean().optional(),
+    movement: tableMovement.optional()
+  })
 })

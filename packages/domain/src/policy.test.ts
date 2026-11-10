@@ -200,7 +200,13 @@ describe('authorize', () => {
     ['el máster del mundo también', owner, 'creatures.manage', campaign, 'permite'],
     ['una jugadora no (hasta el módulo 5)', player, 'creatures.manage', campaign, 'prohíbe'],
     ['un jugador no tira en otra campaña', player, 'dice.roll', otherCampaign, 'no lo ve'],
-    ['nadie de otra organización', outsider, 'dice.read', campaign, 'no lo ve']
+    ['nadie de otra organización', outsider, 'dice.read', campaign, 'no lo ve'],
+    // Las notas de los jugadores (docs/specs/notas-jugador.md)
+    ['un jugador escribe sus notas en su campaña', player, 'notes.write', campaign, 'permite'],
+    ['pero no lee las de otros', player, 'notes.read', campaign, 'prohíbe'],
+    ['el máster de la campaña las lee', master, 'notes.read', campaign, 'permite'],
+    ['el máster del mundo también', owner, 'notes.read', campaign, 'permite'],
+    ['ni las de otra campaña', player, 'notes.write', otherCampaign, 'no lo ve']
   ]
 
   it.each(cases)('%s', (_, who, capability, target, expected) => {

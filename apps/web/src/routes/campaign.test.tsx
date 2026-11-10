@@ -8,7 +8,7 @@ import { ApiError } from '../api/client.ts'
 import { fakeApi } from '../api/fake.ts'
 import { App } from '../app.tsx'
 import { createAppRouter } from '../router.tsx'
-import { announced, inMain } from '../testing.ts'
+import { announced } from '../testing.ts'
 
 // El máster abre la campaña en la Mesa: su canal y su lienzo, de mentira (los ajustes van en su barra)
 vi.mock('../tabletop/channel.ts', async () => (await import('../tabletop/fakes.ts')).quietChannel())
@@ -61,7 +61,9 @@ const renderCampaign = (c: Campaign, w: World = world) => {
   return { api, router }
 }
 
-/** La invitación, a la vista en la pestaña Ajustes de la Mesa */
+/** Los ajustes de la campaña se abren encima, en su ventana (fuera del contenido principal) */
+const inMain = () => within(screen.getByRole('dialog'))
+/** La invitación, a la vista en los ajustes de la campaña */
 const openInvite = async () => {
   await screen.findByRole('heading', { name: 'Invitación' })
 }

@@ -7,6 +7,73 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
+### Para retomar (2026-11-11: módulo 7 terminado, PR a `main` y staging)
+
+- **Módulo 7 construido entero** (rama `modulo-7/sala`, migraciones 0065–0073): sala, registro (Chat / Tiradas /
+  Todo), enseñar, mover fichas de la jugadora, notas del jugador, sonido sincronizado, sonidos del mapa y sonido de
+  Foundry. Revisión con impeccable aplicada (lo claro) y e2e al día.
+- **Queda para Enrique**: probar `tasks/probar.md`; decidir lo de la revisión que es suyo:
+  - el recuadro de YouTube en el móvil;
+  - borrar listas de sonido sin confirmación;
+  - «Sin carpeta» como título;
+  - los avisos y la cola de la IA quedan debajo de las ventanas modales (los ajustes de la campaña).
+- **Pendientes menores**:
+  - un solo buscador también para los encuentros en Actores;
+  - mover a carpeta con el teclado;
+  - el arrastre de la jugadora con su color en la Mesa del máster;
+  - zips de mundo de Foundry (`world.json`);
+  - el filtro de paso bajo al amortiguar.
+- **Siguiente**: el módulo 8 (calendario, clima, viajes, líneas temporales), empezando por su entrevista; antes, el
+  estudio de Roll20 y lo de los libros para leer, si Enrique quiere.
+
+### Para retomar (2026-11-10, tarde: módulo 7 en marcha, rama `modulo-7/sala`)
+
+- **Hecho**: entrevista (`docs/intent/sala-de-jugadores.md`), estudio (`research/foundry/sala-de-jugadores.md`,
+  `research/foundry/sonido.md`, `research/dndbeyond/registro-de-partida.md`), mapa aprobado (`docs/specs/modulo-7.md`)
+  con las specs de sus ocho capacidades, ADR-0022 (propuesta) y `apps/web/PRODUCT.md` para impeccable.
+- **Lienzo «Sala de jugadores»** (https://claude.ai/artifact/VVATCB3eBjG3SbPNC8yUKz, `out/lienzo-sala/`), **por
+  aprobar**, con 16 decisiones. Enrique ya cambió una: el zoom a la izquierda y el registro a su derecha.
+- **`sala`, el servidor hecho** (`tasks/sala/`, tareas 1–4): `tableActionAllowed` (dominio), pausa y modo
+  (migración 0065, `setTableControls`, en las vistas de la sala), echar y dejar volver (`kickFromTable`,
+  `allowBackToTable`, cierre 4409), presencia con personaje, color, «en la campaña» (mensaje `focus` del canal general)
+  y echados (`getTablePresence`, MCP `ver_sala`, `controles_sala`, `echar_de_la_mesa`, `dejar_volver`).
+- **Hecho después** (Enrique probando en local): la web de la sala (retratos y pausa junto a la escena, panel con
+  quién está, cómo mueven, echar e invitación), fuera la pestaña Campaña de la Mesa y borrar la campaña desde dentro,
+  pestaña «Actores» con un buscador, cristal con fondo tenue detrás del mapa; **el registro** entero (servidor,
+  migración 0066, MCP; la tira de cristal en la Mesa del máster y de la jugadora).
+- **Luego, más ajustes de Enrique probando**: registro minimizado de inicio; otra escena se abre en pausa; cada
+  escena recuerda su zoom y posición (en el aparato); «Vista de jugadores» en vez de «Pantalla»; anchos fijos arriba;
+  «Escena nueva» en un cuadro con nombre y mapa; **carpetas en Actores** (migración 0067). Tras crear una migración,
+  aplicarla en local; si el servidor de desarrollo no recarga, reiniciarlo (ver memoria `migrar-en-local`).
+- **Hecho también**: registro con pestañas Chat / Tiradas (el historial de los dados, ya fuera de ellos) / Todo, el
+  máster vacía y borra; encuentros en Actores; «te han sacado de la Mesa»; registro en el móvil; burbujas en la vista
+  de jugadores; **`ensenar` entero** (migración 0068: página o imagen a todos, a unos o en la vista; la jugadora abre
+  la imagen mientras siga en el registro; «Quitar»; «Abrir» desde el registro).
+- **`mover-jugadores` hecho** (migración 0069, commits 83c8db7 y 971e8da): la jugadora arrastra lo que lleva (pausa,
+  modo, turno, muros y puertas en el servidor; si no, vuelve con aviso), abre las puertas que ve, pasa su turno; el
+  máster asigna criaturas («Lo lleva…», `asignar_ficha`). Pendiente menor: pintar el arrastre de la jugadora con su
+  color en la Mesa del máster (el servidor ya manda `by`) y moverlas con el teclado.
+- **`notas-jugador` y `sonido` hechos** (migraciones 0070 y 0071). El sonido: listas del mundo (`sound_playlists`,
+  `sound_tracks`, con historial), lo que suena de cada campaña en `campaign_tables.sound`, el reloj del servidor que pasa
+  de pista sin nadie (`apps/server/src/table/sound.ts`), mensajes `sound` y `time` por el canal de la mesa, la pestaña
+  Sonido del máster, las barras junto a la pausa y la reproducción en la Mesa del máster, la de la jugadora y la vista de
+  jugadores (`apps/web/src/sound/`); MCP `ver_sonido`, `poner_sonido`, `parar_sonido`, `volumen_sonido`,
+  `crear_lista_sonido`, `cambiar_lista_sonido`. Falta probarlo en un navegador de verdad (`tasks/probar.md`).
+- **`sonido-mapa` y `sonido-foundry` hechos** (migraciones 0072 y 0073). Sonidos del mapa: `scene_sounds` (del mundo,
+  con historial) y su encendido por campaña en `scene_states.sounds`; la atenuación en `packages/tabletop/src/sound.ts`
+  (coseno, frenan o amortiguan, el limitado deja pasar uno); la vista de jugadores y la Mesa del jugador reciben en
+  `screen.sounds` los que suenan y en `soundWalls` los muros cerca; cada aparato calcula su volumen
+  (`apps/web/src/sound/map-sounds.ts`: grupo, sus fichas o el centro de la vista del máster); la herramienta «Sonidos
+  del mapa» (O); MCP `poner_sonido_escena`, `cambiar_sonido_escena`, `quitar_sonido_escena`. Foundry: listas de
+  paquetes de listas, de aventuras y las que enlaza una escena, y los sonidos de sus escenas
+  (`packages/systems/src/foundry/sound.ts`); la web sube antes los audios del zip y mide su duración; las pistas ganan
+  la fuente «dirección» (`sound_tracks.url`); lo que falta va a `missingAudio`. **Queda**: los zips de un mundo
+  (`world.json`, como en las escenas); el amortiguado es solo más bajo (sin filtro de paso bajo); la duración de las
+  pistas de YouTube o de una dirección traídas se supone (5 min); el test `repos.test.ts` de miembros (campo `color`)
+  ya fallaba antes.
+- **Siguiente**: critique y audit con impeccable (también la herramienta y el panel de sonidos del mapa), e2e y PR.
+  Capturas de la Mesa: `e2e/tests/zz-captura.spec.ts` (fuera de git).
+
 ### Para retomar (2026-11-10: tanda en `main` con el PR #116; se pasa al módulo 7)
 
 - **En `main`** (PR #116): la campaña alrededor de la Mesa (ADR-0019), escenas sueltas (ADR-0020), el cristal, los dados
@@ -19,6 +86,11 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   (`apps/server/src/table/presence.ts`, `getTablePresence`, la sección Mesa de la campaña) y «enseñar una página». Empezar
   por el ciclo de siempre (CLAUDE.md): `interview-me` con Enrique frente a `docs/inventario.md`, estudio con
   craft-anything (Foundry: sockets y chat; DDB: game log), `/spec`, lienzo, `/plan`, `/build`.
+- **Pendiente, un estudio de Roll20** (Enrique, 2026-11-10): para una revisión futura de la mesa y de todo lo que nos
+  pueda aportar (con craft-anything y su web pública, como Foundry y D&D Beyond; notas en `research/roll20/`).
+- **Pendiente, los libros para leer** (Enrique, 2026-11-10, para otro momento): añadir los libros de las fuentes que
+  queramos y, además de sacar de ellos el compendio, **ver el libro maquetado** para leerlo y buscar en él, con
+  **referencias cruzadas con el compendio** (de una entrada a su página del libro y del libro a la entrada).
 
 ### Para retomar (2026-11-10, noche: dados fluidos; siguiente, el lienzo de libros y del espacio de la campaña)
 

@@ -126,8 +126,8 @@ describe('las fichas en la mesa', () => {
   it('las criaturas en juego se ponen desde el panel; la ficha se pinta con su rótulo y su vida', async () => {
     const user = userEvent.setup()
     const { api, push } = await renderTable()
-    // Las criaturas de la campaña, en Personajes (como los actores en Foundry)
-    await user.click(panel().getByRole('tab', { name: 'Personajes' }))
+    // Las criaturas de la campaña, en Actores (como en Foundry)
+    await user.click(panel().getByRole('tab', { name: 'Actores' }))
     const inPlay = within(await panel().findByRole('list', { name: 'Criaturas' }))
     await user.click(inPlay.getByRole('button', { name: 'Poner en la mesa: Lobo 1' }))
     await waitFor(async () => expect(await tokensOf(api)).toHaveLength(1))
@@ -184,8 +184,8 @@ describe('las fichas en la mesa', () => {
     await user.type(label, 'Alfa')
     await user.tab()
     await waitFor(async () => expect((await tokensOf(api))[0]?.label).toBe('Alfa'))
-    // Con la ficha elegida, el panel guarda un encuentro con ella
-    await user.click(panel().getByRole('tab', { name: 'Escenas' }))
+    // Con la ficha elegida, el panel guarda un encuentro con ella (los encuentros, en Actores)
+    await user.click(panel().getByRole('tab', { name: 'Actores' }))
     await user.type(panel().getByLabelText('Guardar como encuentro (la elegida)'), 'Manada')
     await user.click(panel().getByRole('button', { name: 'Guardar' }))
     await waitFor(async () =>
@@ -215,9 +215,8 @@ describe('las fichas en la mesa', () => {
         }
       ]
     })
-    // Escenas ya está abierta (con los encuentros de antes): se vuelve a ella para verlo
-    await user.click(panel().getByRole('tab', { name: 'Compendio' }))
-    await user.click(panel().getByRole('tab', { name: 'Escenas' }))
+    // Los encuentros, en Actores
+    await user.click(panel().getByRole('tab', { name: 'Actores' }))
     await user.click(await panel().findByRole('button', { name: 'Poner en la mesa: Manada' }))
     await waitFor(async () => expect(await tokensOf(api)).toHaveLength(2))
     const [a, b] = await tokensOf(api)
@@ -289,7 +288,7 @@ describe('la pestaña Compendio', () => {
     expect(await screen.findByRole('dialog', { name: 'Compendio' })).toBeDefined()
   })
 
-  it('arrastrar una criatura del compendio a Personajes la pone en la campaña', async () => {
+  it('arrastrar una criatura del compendio a Actores la pone en la campaña', async () => {
     const user = userEvent.setup()
     const { api } = await renderTable()
     await user.click(panel().getByRole('tab', { name: 'Compendio' }))
@@ -306,7 +305,7 @@ describe('la pestaña Compendio', () => {
       dropEffect: 'none'
     }
     fireEvent.dragStart(found.getByRole('button', { name: 'Lobo' }).closest('li') as HTMLElement, { dataTransfer })
-    await user.click(panel().getByRole('tab', { name: 'Personajes' }))
+    await user.click(panel().getByRole('tab', { name: 'Actores' }))
     const creatures = (await panel().findByRole('list', { name: 'Criaturas' })).parentElement as HTMLElement
     fireEvent.dragOver(creatures, { dataTransfer })
     fireEvent.drop(creatures, { dataTransfer })
@@ -341,6 +340,7 @@ describe('las fichas en la tele', () => {
     image: null,
     state: 'hurt',
     conditions: [],
+    controllers: [],
     ...patch
   })
   const screenOf = (tokens: ScreenView['tokens'], camera: ScreenView['camera'] = { mode: 'follow' }): ScreenView => ({

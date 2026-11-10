@@ -43,7 +43,7 @@ test('las criaturas en juego: tres goblins desde el compendio, su hoja, tirar su
   await compendium.getByRole('button', { name: 'Cerrar Compendio' }).click()
 
   // Las criaturas de la campaña, en Personajes; su hoja, en su ventana
-  const panel = await mesaTab(page, 'Personajes')
+  const panel = await mesaTab(page, 'Actores')
   const list = panel.getByRole('list', { name: 'Criaturas' })
   await expect(list.getByRole('button', { name: /^Goblin 1/ })).toBeVisible()
   await list.getByRole('button', { name: /^Goblin 2/ }).click()
@@ -61,10 +61,13 @@ test('las criaturas en juego: tres goblins desde el compendio, su hoja, tirar su
   await accessible(page)
 
   // Goblin 1 (entero) y Goblin 3 (mitad)
-  // Aplicar ese daño desde el historial de tiradas (en el d20; en la Mesa, una ventana)
+  // Aplicar ese daño desde el historial de tiradas (en el d20; en la Mesa, el registro de la partida, abajo a la
+  // izquierda: la hoja se cierra antes para no taparlo)
+  await sheet.getByRole('button', { name: 'Cerrar Goblin 2' }).click()
+  await expect(sheet).toBeHidden()
   await page.getByRole('button', { name: 'Dados' }).click()
   await page.getByRole('complementary', { name: 'Dados' }).getByRole('button', { name: 'Historial' }).click()
-  const rolls = page.getByRole('dialog', { name: 'Historial' })
+  const rolls = page.getByRole('region', { name: 'Registro' })
   await rolls.getByRole('button', { name: 'Aplicar' }).last().click()
   const apply = page.getByRole('dialog', { name: /^Aplicar \d+ de daño/ })
   await apply.getByRole('checkbox', { name: /Goblin 1/ }).check()
@@ -73,7 +76,7 @@ test('las criaturas en juego: tres goblins desde el compendio, su hoja, tirar su
   await page.screenshot({ path: test.info().outputPath('aplicar.png'), fullPage: false })
   await apply.getByRole('button', { name: 'Aplicar a 2' }).click()
   await expect(apply).toBeHidden()
-  await mesaTab(page, 'Personajes')
+  await mesaTab(page, 'Actores')
   await expect(list.getByRole('button', { name: /^Goblin 1/ })).not.toContainText('7 / 7')
 
   // La jugadora tiene su «En juego»: solo lo que está a la vista, sin lo del máster

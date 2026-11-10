@@ -23,17 +23,19 @@ import { changes, operations } from './schema/history.ts'
 import { invitationLinks } from './schema/invitations.ts'
 import { knowledge, pageEditors } from './schema/knowledge.ts'
 import { mapElements, mapPins, maps, pageTabs } from './schema/maps.ts'
+import { playerNotes } from './schema/notes.ts'
 import { organizationMembers, organizations } from './schema/organizations.ts'
 import { pages } from './schema/pages.ts'
 import { campaignParty } from './schema/party.ts'
 import { encounters, sceneStates, scenes, sceneTokens } from './schema/scenes.ts'
+import { soundPlaylists, soundTracks } from './schema/sound.ts'
 import { systemContent, systems, worldContent } from './schema/systems.ts'
 import { campaignWidgets, sceneMarks, sceneSnapshots } from './schema/table-tools.ts'
 import { randomTables } from './schema/tables.ts'
 import { tags } from './schema/tags.ts'
 import { pageTemplates } from './schema/templates.ts'
 import { pageBodies } from './schema/versions.ts'
-import { sceneFog, sceneLights, sceneWalls } from './schema/vision.ts'
+import { sceneFog, sceneLights, sceneSounds, sceneWalls } from './schema/vision.ts'
 import { worldMembers, worlds } from './schema/worlds.ts'
 
 /** Tablas de dominio: las que pasan por el historial, por su nombre en SQL */
@@ -73,10 +75,14 @@ export const TRACKED_TABLES = {
   combatants,
   scene_walls: sceneWalls,
   scene_lights: sceneLights,
+  scene_sounds: sceneSounds,
   scene_fog: sceneFog,
   scene_marks: sceneMarks,
   campaign_widgets: campaignWidgets,
-  scene_snapshots: sceneSnapshots
+  scene_snapshots: sceneSnapshots,
+  player_notes: playerNotes,
+  sound_playlists: soundPlaylists,
+  sound_tracks: soundTracks
 }
 
 export type TrackedTable = (typeof TRACKED_TABLES)[keyof typeof TRACKED_TABLES]

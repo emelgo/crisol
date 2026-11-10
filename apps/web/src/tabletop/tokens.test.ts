@@ -6,7 +6,9 @@ import {
   dropAt,
   formationOf,
   initialOf,
+  isTurnOf,
   lifeState,
+  movableBy,
   tokenAt,
   tokenRadius,
   tokensIn
@@ -97,5 +99,28 @@ describe('las fichas en la mesa', () => {
     expect(lifeState({ value: 0, max: 7 })).toBe('down')
     expect(lifeState(null)).toBeNull()
     expect(initialOf('lía')).toBe('L')
+  })
+})
+
+describe('lo que lleva la jugadora (docs/specs/mover-jugadores.md)', () => {
+  it('mueve las fichas que lleva; sin cuenta, ninguna', () => {
+    const tokens = [
+      { id: 'a', controllers: ['lucia'] },
+      { id: 'b', controllers: ['ana', 'lucia'] },
+      { id: 'c', controllers: [] }
+    ]
+    expect(movableBy(tokens, 'lucia').map((t) => t.id)).toEqual(['a', 'b'])
+    expect(movableBy(tokens, null)).toEqual([])
+  })
+
+  it('es su turno si lleva al activo, ya empezado el combate', () => {
+    const combat = (round: number, active: boolean) => ({
+      round,
+      combatants: [{ active, controllers: ['lucia'] }, { active: !active }]
+    })
+    expect(isTurnOf(combat(1, true), 'lucia')).toBe(true)
+    expect(isTurnOf(combat(1, false), 'lucia')).toBe(false)
+    expect(isTurnOf(combat(0, true), 'lucia')).toBe(false)
+    expect(isTurnOf(null, 'lucia')).toBe(false)
   })
 })

@@ -218,9 +218,10 @@ describe('la visión de la mesa (docs/specs/vision.md)', () => {
     expect(share(visible, ...CORRIDOR)).toBe(0)
     const text = JSON.stringify(first)
     expect(text).not.toContain(far.id)
-    expect(text).not.toContain(doorId)
     expect(text).not.toContain(secretId)
-    expect(text).not.toMatch(/"walls"|"doors"|secret/)
+    expect(text).not.toMatch(/"walls"|secret/)
+    // De las puertas, solo la normal que ve (sus jugadores la abren: docs/specs/mover-jugadores.md)
+    expect(first.doors?.map((d) => d.id)).toEqual([doorId])
     // La tesela de la sala A sí (entera: es el ajuste por defecto; del borde, sin guardarse en el navegador); la de
     // la B, no
     const tile = await screenTile('0/0/0')
@@ -615,7 +616,6 @@ describe('la visión de la mesa (docs/specs/vision.md)', () => {
       ['changeWalls', { sceneId, walls: { remove: [doorId] } }],
       ['updateSceneVision', { sceneId, darkness: 1 }],
       ['placeImportedWalls', { sceneId }],
-      ['setDoor', { campaignId, wallId: doorId, open: true }],
       ['changeFog', { campaignId, mode: 'reveal', shape: 'area', column: 0, row: 0, columns: 8, rows: 4 }],
       ['resetFog', { campaignId }],
       ['setTileFit', { campaignId, tileFit: 'cropped' }],
@@ -626,6 +626,9 @@ describe('la visión de la mesa (docs/specs/vision.md)', () => {
       expect([403, 404], `${name}: ${response.body}`).toContain(response.statusCode)
     }
     expect((await screenTile('0/0/0', player.cookie)).statusCode).toBe(404)
+    // Las puertas que ve su grupo sí las abre (docs/specs/mover-jugadores.md), pero no con la partida en pausa
+    const door = await call('setDoor', { campaignId, wallId: doorId, open: true }, player.cookie)
+    expect([door.statusCode, door.json().code]).toEqual([400, 'PAUSED'])
     // Nada cambió
     expect((await ok200('getSceneVision', { sceneId, campaignId })).doors[doorId]).toBe(false)
   })
@@ -657,8 +660,10 @@ describe('la visión de la mesa (docs/specs/vision.md)', () => {
     await ok200('updateSceneVision', { sceneId, darkness: 0.5 })
     await screen.quiet()
     const text = JSON.stringify(screen.all)
-    for (const id of [...allWalls, off, hidden.id, far.id]) expect(text).not.toContain(id)
-    expect(text).not.toMatch(/secret|"walls"|"doors"|"locked"|"life"|"stats"/)
+    // De los muros, solo la puerta normal que ve el grupo (la abren sus jugadores: docs/specs/mover-jugadores.md)
+    const shown = allWalls.filter((id: string) => id !== doorId)
+    for (const id of [...shown, off, hidden.id, far.id]) expect(text).not.toContain(id)
+    expect(text).not.toMatch(/secret|"walls"|"life"|"stats"/)
     // Ni lo que no ha visto del mapa: recortada, la sala A sale transparente
     await ok200('setTileFit', { campaignId, tileFit: 'cropped' })
     const tile = await screenTile('0/0/0')

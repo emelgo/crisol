@@ -8,23 +8,31 @@
  * (docs/specs/herramientas-mesa.md). Si se corta, vuelve sola a lo que enseñaba
  */
 import type { LiveMeasure, SceneViewport, ScreenMark, ScreenToken, ScreenView } from '@crisol/contracts'
-import { frameGroup, liveTrail, type Point, type Size, type Viewport } from '@crisol/tabletop'
+import { frameGroup, liveTrail, type Point, type Size, toWorld, type Viewport } from '@crisol/tabletop'
 import { getRouteApi, Navigate } from '@tanstack/react-router'
-import { Maximize, Minimize } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { ChevronsRight, DoorClosed, DoorOpen, Lock, Maximize, Minimize } from 'lucide-react'
+import { type PointerEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
+import { useApi } from '../api/context.tsx'
+import { useErrorText } from '../api/errors.ts'
+import { PlayerPage } from '../campaign/world-pages.tsx'
 import { CrisolMark } from '../components/brand.tsx'
 import { PageTitle } from '../components/page-title.tsx'
+import { SoundStage } from '../sound/controls.tsx'
+import { useMapHearing } from '../sound/map-sounds.ts'
+import { useTableSound } from '../sound/use-table-sound.tsx'
+import { ReadAsProvider } from '../wiki/read-as.tsx'
+import { Bubbles, useBubbles } from './bubbles.tsx'
 import { canvasViewOf, sceneViewportOf, smoothToward } from './camera.ts'
-import { connectTable, type TableStatus } from './channel.ts'
+import { connectTable, type DragMove, type TableChannel, type TableStatus } from './channel.ts'
 import { cssDisc, screenDraw } from './draw.ts'
 import { decodeMask, type FogLight, fogImage, fogLayerOf, maskTileUrl } from './fog-paint.ts'
 import { MarksLayer, placeMarks } from './marks-layer.tsx'
 import { screenTileUrl } from './queries.ts'
 import type { MapImageDraw, OverlayShape, RendererScene } from './renderer.ts'
 import styles from './screen.module.css'
-import { cellSide, initialOf } from './tokens.ts'
+import { cellSide, dragMoves, initialOf, isTurnOf, movableBy, tokenAt } from './tokens.ts'
 import toolStyles from './tools.module.css'
 import { markShapes, measureLabels, measureShapes } from './tools.ts'
 import { useTableRenderer } from './use-renderer.ts'
@@ -32,6 +40,8 @@ import { fitCanvas, pyramidOf } from './view.ts'
 import { WidgetCards } from './widgets.tsx'
 
 const LASER_COLOR = 0xff3b3b
+/** Lo que dura a la vista el aviso de lo que no deja la Mesa */
+const NOTICE_MS = 2600
 
 /** Las imágenes sueltas que llegan, para el lienzo: las de debajo de las fichas primero */
 export function screenImages(marks: readonly ScreenMark[]): MapImageDraw[] {
@@ -95,6 +105,10 @@ export function TableScreen({
 }) {
   const inMesa = viewer === 'player'
   const { t } = useTranslation()
+  // El sonido de la partida: suena aquí también (docs/specs/sonido.md)
+  const sound = useTableSound()
+  const handleSound = sound.handle
+  const bindSound = sound.bind
   const [screen, setScreen] = useState<ScreenView | null>(null)
   const [followed, setFollowed] = useState<SceneViewport | null>(null)
   const [full, setFull] = useState(false)
@@ -109,6 +123,21 @@ export function TableScreen({
   const [laserTick, setLaserTick] = useState(0)
   // Si se corta o no deja entrar, se dice en vez de quedarse en negro sin más
   const [status, setStatus] = useState<TableStatus>('connecting')
+  // En la Mesa de un jugador: lo que arrastra él (hasta que llega la mesa con la ficha ya movida) y el aviso de lo que
+  // no le deja (docs/specs/mover-jugadores.md)
+  const api = useApi()
+  const errorText = useErrorText()
+  const me = useAccounts().useAccount().account?.id ?? null
+  const channel = useRef<TableChannel | null>(null)
+  const [own, setOwn] = useState<DragMove | null>(null)
+  const ownDrag = useRef<{ lead: ScreenToken; grab: Point; moved: boolean; move: DragMove | null } | null>(null)
+  const settled = useRef(false)
+  const [notice, setNotice] = useState<string | null>(null)
+  useEffect(() => {
+    if (!notice) return
+    const timer = setTimeout(() => setNotice(null), NOTICE_MS)
+    return () => clearTimeout(timer)
+  }, [notice])
   // La tele, siempre oscura (con el tema claro, los relojes y los nombres no se leían sobre el mapa)
   useEffect(() => {
     if (inMesa) return
@@ -123,6 +152,12 @@ export function TableScreen({
   // La vista de ahora (para colocar los textos, sellos y pines) y su capa
   const shownView = useRef<Viewport>({ x: 0, y: 0, scale: 1 })
   const marksLayer = useRef<HTMLDivElement | null>(null)
+  // Las burbujas de lo dicho en personaje, sobre las fichas
+  const bubblesLayer = useRef<HTMLDivElement | null>(null)
+  const bubbles = useBubbles(campaignId, screen)
+  useEffect(() => {
+    if (bubbles.length > 0) placeMarks(bubblesLayer.current, shownView.current)
+  }, [bubbles])
 
   useEffect(() => {
     const connection = connectTable(
@@ -132,6 +167,11 @@ export function TableScreen({
           if (message.type === 'screen') {
             setScreen(message.screen)
             setDragged(new Map())
+            // Lo que movió él ya viene en la mesa
+            if (settled.current) {
+              settled.current = false
+              setOwn(null)
+            }
           } else if (message.type === 'viewport') setFollowed(message.view)
           else if (message.type === 'drag')
             setDragged((current) => {
@@ -147,13 +187,19 @@ export function TableScreen({
               ...message.points.map((p) => ({ ...p, t: now }))
             ].slice(-80)
             setLaserTick((n) => n + 1)
-          }
+          } else if (message.type === 'sound' || message.type === 'time') handleSound(message)
         },
         onStatus: setStatus
       }
     )
-    return () => connection.close()
-  }, [campaignId, viewer])
+    channel.current = connection
+    bindSound(() => connection.sendTime?.())
+    return () => {
+      bindSound(null)
+      connection.close()
+      channel.current = null
+    }
+  }, [campaignId, viewer, handleSound, bindSound])
 
   const presented = screen?.scene ?? null
   // La niebla: lo explorado y lo que ve el grupo (sin ella, la API de prueba, se ve todo)
@@ -199,10 +245,84 @@ export function TableScreen({
     if (!ready) return
     const grid = presented?.grid
     const turns = new Set((screen?.combat?.combatants ?? []).filter((c) => c.active).map((c) => c.tokenId))
+    const moving = (id: string) => (own?.tokenId === id ? own : dragged.get(id))
     renderer.current?.setTokens(
-      grid ? visible.map((token) => screenDraw(token, grid, words, dragged.get(token.id), turns.has(token.id))) : []
+      grid ? visible.map((token) => screenDraw(token, grid, words, moving(token.id), turns.has(token.id))) : []
     )
   })
+
+  // La jugadora arrastra lo que lleva (con el ratón o el dedo): en vivo por el canal y, al soltar, a la API; si no le
+  // deja, la ficha vuelve y sale por qué
+  const mine = inMesa ? movableBy(visible, me) : []
+  // Los sonidos del mapa (docs/specs/sonido-mapa.md): en la vista de jugadores, desde las fichas del grupo; en la Mesa
+  // de un jugador, desde las suyas (con lo que se arrastra, donde va)
+  useMapHearing(sound.setMap, () => {
+    if (!presented || !screen?.sounds?.length) return null
+    const ears = inMesa ? mine : visible.filter((token) => token.faction === 'group')
+    const listeners = ears.map((token) => {
+      const moving = own?.tokenId === token.id ? own : dragged.get(token.id)
+      return moving ? { x: moving.x, y: moving.y } : { x: token.x, y: token.y }
+    })
+    return { sounds: screen.sounds, walls: screen.soundWalls ?? [], listeners }
+  })
+  const local = (event: { clientX: number; clientY: number }) => {
+    const rect = host.current?.getBoundingClientRect()
+    return { x: event.clientX - (rect?.left ?? 0), y: event.clientY - (rect?.top ?? 0) }
+  }
+  const onPointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    if (!presented || mine.length === 0 || (event.pointerType === 'mouse' && event.button !== 0)) return
+    const world = toWorld(shownView.current, local(event))
+    const hit = tokenAt(mine, world, presented.grid)
+    if (!hit) return
+    event.preventDefault()
+    event.currentTarget.setPointerCapture?.(event.pointerId)
+    ownDrag.current = { lead: hit, grab: { x: world.x - hit.x, y: world.y - hit.y }, moved: false, move: null }
+  }
+  const onPointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    const drag = ownDrag.current
+    if (!drag || !presented) return
+    const world = toWorld(shownView.current, local(event))
+    const to = { x: world.x - drag.grab.x, y: world.y - drag.grab.y }
+    if (!drag.moved && Math.hypot(to.x - drag.lead.x, to.y - drag.lead.y) * shownView.current.scale < 4) return
+    drag.moved = true
+    const [move] = dragMoves([drag.lead], drag.lead, to, presented.grid, event.shiftKey)
+    if (!move) return
+    drag.move = move
+    settled.current = false
+    setOwn(move)
+    channel.current?.sendDrag([move])
+  }
+  const onPointerUp = (event: PointerEvent<HTMLDivElement>) => {
+    const drag = ownDrag.current
+    ownDrag.current = null
+    if (!drag) return
+    const move = drag.move
+    if (!drag.moved || !move || event.type === 'pointercancel') {
+      setOwn(null)
+      return
+    }
+    api.call('moveTokens', { campaignId, moves: [move] }).then(
+      () => {
+        settled.current = true
+      },
+      (error: unknown) => {
+        setOwn(null)
+        setNotice(errorText(error))
+      }
+    )
+  }
+  // Las puertas que ve su grupo: pulsarlas las abre o las cierra
+  const doorsLayer = useRef<HTMLDivElement | null>(null)
+  const doors = inMesa && screen && presented && !screen.hidden ? (screen.doors ?? []) : []
+  useEffect(() => {
+    if (doors.length > 0) placeMarks(doorsLayer.current, shownView.current)
+  })
+  const toggleDoor = (door: (typeof doors)[number]) =>
+    api
+      .call('setDoor', { campaignId, wallId: door.id, open: !door.open })
+      .catch((error: unknown) => setNotice(errorText(error)))
+  // En su turno, «Pasar turno»
+  const passTurn = () => api.call('nextTurn', { campaignId }).catch((error: unknown) => setNotice(errorText(error)))
 
   // Lo dejado en el mapa (plantillas y dibujos; las imágenes, en su capa) y lo que va en vivo (la medida, el láser)
   const marks = screen && !screen.hidden && presented ? (screen.marks ?? []) : []
@@ -278,6 +398,8 @@ export function TableScreen({
         renderer.current?.setView(fitted)
         shownView.current = fitted
         placeMarks(marksLayer.current, fitted)
+        placeMarks(bubblesLayer.current, fitted)
+        placeMarks(doorsLayer.current, fitted)
         if (host.current) host.current.dataset.view = JSON.stringify({ ...fitted, ...size })
         return
       }
@@ -288,6 +410,8 @@ export function TableScreen({
       renderer.current?.setView(shown)
       shownView.current = shown
       placeMarks(marksLayer.current, shown)
+      placeMarks(bubblesLayer.current, shown)
+      placeMarks(doorsLayer.current, shown)
       // Para las pruebas del navegador: dónde cae el mapa en la tele, sin leer sus píxeles
       if (host.current) host.current.dataset.view = JSON.stringify({ ...shown, ...size })
       if (next !== view) frame = requestAnimationFrame(step)
@@ -313,8 +437,46 @@ export function TableScreen({
   return (
     <div className={inMesa ? `${styles.screen} ${styles.inMesa}` : styles.screen}>
       {screen && !inMesa && <PageTitle className={styles.hidden}>{screen.campaignName}</PageTitle>}
-      <div ref={host} className={styles.canvas} role="img" aria-label={t('screen.label')} data-screen="" />
+      <SoundStage sound={sound} variant={inMesa ? 'mesa' : 'screen'} />
+      <div
+        ref={host}
+        className={mine.length > 0 ? `${styles.canvas} ${styles.playable}` : styles.canvas}
+        role="img"
+        aria-label={t('screen.label')}
+        data-screen=""
+        data-dragging={own ? '' : undefined}
+        onPointerDown={inMesa ? onPointerDown : undefined}
+        onPointerMove={inMesa ? onPointerMove : undefined}
+        onPointerUp={inMesa ? onPointerUp : undefined}
+        onPointerCancel={inMesa ? onPointerUp : undefined}
+      />
       {!dark && <MarksLayer layer={marksLayer} view={shownView} marks={marks} big />}
+      {!dark && <Bubbles layer={bubblesLayer} bubbles={bubbles} />}
+      {!dark && doors.length > 0 && (
+        <div ref={doorsLayer} className={styles.doors}>
+          {doors.map((door) => {
+            const label = t(door.locked ? 'screen.lockedDoor' : door.open ? 'screen.closeDoor' : 'screen.openDoor')
+            const Icon = door.locked ? Lock : door.open ? DoorOpen : DoorClosed
+            return (
+              <button
+                key={door.id}
+                type="button"
+                className={styles.door}
+                data-x={(door.a.x + door.b.x) / 2}
+                data-y={(door.a.y + door.b.y) / 2}
+                data-center=""
+                data-open={door.open || undefined}
+                disabled={door.locked}
+                aria-label={label}
+                title={label}
+                onClick={() => toggleDoor(door)}
+              >
+                <Icon aria-hidden="true" size={16} />
+              </button>
+            )
+          })}
+        </div>
+      )}
       {!dark && screen?.widgets && <WidgetCards widgets={screen.widgets} className={toolStyles.screenWidgets} />}
       {visible.length > 0 && !screen?.hidden && (
         <ul className={styles.hidden} aria-label={t('screen.tokens')}>
@@ -328,6 +490,17 @@ export function TableScreen({
         </ul>
       )}
       {screen?.combat && !dark && <TurnStrip combat={screen.combat} />}
+      {inMesa && !dark && isTurnOf(screen?.combat ?? null, me) && (
+        <button type="button" className={styles.passTurn} onClick={passTurn}>
+          <ChevronsRight aria-hidden="true" size={18} />
+          {t('screen.passTurn')}
+        </button>
+      )}
+      {notice && (
+        <p className={styles.notice} role="status">
+          {notice}
+        </p>
+      )}
       {fade > 0 && !dark && <div key={fade} className={styles.fade} aria-hidden="true" />}
       {dark && (
         <div className={styles.dark} data-dark="">
@@ -338,6 +511,29 @@ export function TableScreen({
               {t(status === 'forbidden' ? 'screen.forbidden' : 'tabletop.reconnecting')}
             </p>
           )}
+        </div>
+      )}
+      {/* Lo que enseña el máster, encima de la escena (en la vista de jugadores; en la Mesa de cada uno le llega aparte) */}
+      {screen?.show && !inMesa && (
+        <div key={`${screen.show.kind}:${screen.show.id}`} className={styles.shown}>
+          {screen.show.kind === 'image' ? (
+            <img src={`/api/files/${screen.show.id}`} alt={screen.show.title} />
+          ) : (
+            <div className={styles.shownPage}>
+              <ReadAsProvider value={{ campaignId }}>
+                <PlayerPage worldId={screen.show.worldId} pageId={screen.show.id} />
+              </ReadAsProvider>
+            </div>
+          )}
+        </div>
+      )}
+      {status === 'kicked' && (
+        <div className={styles.kicked} role="alert">
+          <CrisolMark size={40} className={styles.flame} />
+          <p>{t('screen.kicked')}</p>
+          <button type="button" onClick={() => window.location.reload()}>
+            {t('screen.tryAgain')}
+          </button>
         </div>
       )}
       {!inMesa && (

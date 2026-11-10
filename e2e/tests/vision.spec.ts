@@ -86,6 +86,8 @@ test('la visión: la cripta con su puerta secreta, el grupo que entra, la secret
     characters[name] = (await call('createCharacter', { campaignId, name })).character.id
   await call('openScene', { campaignId, sceneId })
   await call('presentScene', { campaignId })
+  // Abrir y presentar la ponen en pausa: el grupo va a jugar (y su franja no tapa el mapa)
+  await call('setTableControls', { campaignId, paused: false })
   const party = (
     await call('placeTokens', {
       campaignId,
@@ -132,7 +134,7 @@ test('la visión: la cripta con su puerta secreta, el grupo que entra, la secret
   const net = watchNetwork(page)
   const [tv] = await Promise.all([
     page.waitForEvent('popup'),
-    page.getByRole('button', { name: 'Pantalla', exact: true }).click()
+    page.getByRole('button', { name: 'Vista de jugadores', exact: true }).click()
   ])
   const tvNet = watchNetwork(tv)
   await tv.setViewportSize(SIZE)

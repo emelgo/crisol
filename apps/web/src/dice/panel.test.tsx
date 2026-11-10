@@ -193,7 +193,7 @@ describe('los dados', () => {
     expect(dice.getByText('1d20 · Sigilo')).toBeTruthy()
     await userEvent.clear(field)
     await userEvent.type(field, '2d20kh1+5')
-    expect(dice.getByText('Ventaja (2d20, se queda el mayor) + 5')).toBeTruthy()
+    expect(dice.getByText('Ventaja + 5')).toBeTruthy()
     expect(dice.getByRole('button', { name: 'Ventaja' }).getAttribute('aria-pressed')).toBe('true')
     await userEvent.click(dice.getByRole('button', { name: 'Desventaja' }))
     expect(field.value).toBe('2d20kl1+5')

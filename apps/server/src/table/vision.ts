@@ -15,6 +15,7 @@ import {
   FogGrid,
   type Light,
   type PartyToken,
+  type Point,
   type Senses,
   type Wall
 } from '@crisol/tabletop'
@@ -95,6 +96,8 @@ export interface VisionResult {
   doors: Readonly<Record<string, boolean>>
   /** Las puertas secretas de la escena */
   secretDoors: ReadonlyArray<{ id: string; open: boolean }>
+  /** Las puertas normales de la escena (no las secretas): las que el grupo ve las abren sus jugadores */
+  plainDoors: ReadonlyArray<{ id: string; a: Point; b: Point; locked: boolean; open: boolean }>
 }
 
 export interface Vision {
@@ -179,13 +182,14 @@ function workerClient(onError: (error: unknown) => void) {
 }
 
 /** Los muros de la base, como los usa el núcleo */
-const wallOf = (row: visionRepo.WallRow): Wall => ({
+export const wallOf = (row: visionRepo.WallRow): Wall => ({
   id: row.id,
   a: { x: row.ax, y: row.ay },
   b: { x: row.bx, y: row.by },
   sight: row.sight,
   light: row.light,
   move: row.move,
+  sound: row.sound,
   direction: row.direction,
   door: row.door,
   locked: row.locked
@@ -377,7 +381,16 @@ export function createVision(db: Database, onError: (error: unknown) => void = (
       }),
       seen: new Set(response.seen),
       doors,
-      secretDoors: walls.filter((w) => w.door === 'secret').map((w) => ({ id: w.id, open: doors[w.id] ?? false }))
+      secretDoors: walls.filter((w) => w.door === 'secret').map((w) => ({ id: w.id, open: doors[w.id] ?? false })),
+      plainDoors: walls
+        .filter((w) => w.door === 'door')
+        .map((w) => ({
+          id: w.id,
+          a: { x: w.ax, y: w.ay },
+          b: { x: w.bx, y: w.by },
+          locked: w.locked,
+          open: doors[w.id] ?? false
+        }))
     }
     results.set(key, { hash, result })
     stillFresh()

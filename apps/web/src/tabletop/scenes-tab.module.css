@@ -120,9 +120,10 @@
 }
 
 .new .thumb {
-  border: 1px dashed var(--color-frame);
-  background: none;
-  color: var(--color-muted);
+  /* Sobre el cristal, el borde de siempre no se ve: más claro y con un fondo tenue */
+  border: 1.5px dashed color-mix(in srgb, var(--color-text) 38%, transparent);
+  background: color-mix(in srgb, var(--color-text) 5%, transparent);
+  color: var(--color-text);
   clip-path: none;
 }
 
@@ -445,4 +446,32 @@
   color: var(--color-text);
   font: inherit;
   font-weight: 400;
+}
+
+/* La recién creada: sube y crece, con el contorno iluminado un momento (docs/diseno.md: los cambios se notan) */
+.fresh {
+  animation: escena-nace 650ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.fresh .thumb {
+  animation: escena-brilla 1300ms ease-out both;
+}
+
+@keyframes escena-nace {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.92);
+  }
+}
+
+@keyframes escena-brilla {
+  0%,
+  35% {
+    box-shadow:
+      0 0 0 2px var(--color-brand),
+      0 0 18px var(--glow-live, var(--color-brand));
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
 }

@@ -11,17 +11,30 @@ import {
   createPageTab,
   editPage,
   type FoundryAdventureSummary,
+  type FoundryPlaylistSummary,
   type FoundrySceneSummary,
   importFoundryScenes,
   inspectFoundryScenes
 } from '@crisol/contracts'
-import { foundryRepo, pagesRepo, scenesRepo, systemsRepo, tokensRepo } from '@crisol/db'
+import {
+  filesRepo,
+  foundryRepo,
+  pagesRepo,
+  scenesRepo,
+  soundRepo,
+  systemsRepo,
+  tokensRepo,
+  type visionRepo
+} from '@crisol/db'
 import { NotFoundError } from '@crisol/domain'
 import type { System } from '@crisol/systems'
 import {
   actorOrigins,
+  audioSourceOf,
+  type ConvertedPlaylist,
   type ConvertedScene,
   contentKeyOf,
+  convertFoundryPlaylist,
   convertFoundryScene,
   type FoundryAdventure,
   type FoundryDocument,
@@ -36,6 +49,7 @@ import { authorizedWiki } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
 import * as layers from './layers.ts'
 import { implement } from './registry.ts'
+import { refreshWorld } from './sound.ts'
 import { type Joining, Newcomers, shortLabel } from './tokens.ts'
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -47,18 +61,35 @@ interface ZipScene {
   scene: ConvertedScene
 }
 
-/** Las escenas y aventuras de un zip: el manifiesto, sus paquetes de actores (para buscar sus criaturas) y lo leído */
+/** Una lista de sonido del zip: de qué paquete, en qué aventura y convertida */
+interface ZipPlaylist {
+  pack: string
+  adventure: FoundryAdventure | null
+  playlist: ConvertedPlaylist
+}
+
+/** Lo que dura una pista traída si el navegador no pudo medirla (un vídeo, una dirección que no deja), en segundos */
+const UNKNOWN_DURATION = 300
+
+/** Las escenas, aventuras y listas de un zip: el manifiesto, sus paquetes de actores (para sus criaturas) y lo leído */
 async function readScenes(zip: string) {
   let read: Awaited<ReturnType<typeof readFoundryZip>>
   try {
-    read = await readFoundryZip(Buffer.from(zip, 'base64'), { language: 'en', documents: ['Scene', 'Adventure'] })
+    read = await readFoundryZip(Buffer.from(zip, 'base64'), {
+      language: 'en',
+      documents: ['Scene', 'Adventure', 'Playlist']
+    })
   } catch (error) {
     if (error instanceof FoundryError) throw new InvalidRequestError(error.code, error.message)
     throw error
   }
   const scenes: ZipScene[] = []
   const adventures: Array<{ pack: string; adventure: FoundryAdventure }> = []
+  const playlists: ZipPlaylist[] = []
   for (const pack of read.packs) {
+    if (pack.type === 'Playlist')
+      for (const doc of pack.documents)
+        playlists.push({ pack: pack.name, adventure: null, playlist: convertFoundryPlaylist(doc) })
     if (pack.type === 'Scene')
       for (const doc of pack.documents)
         for (const scene of convertFoundryScene(doc)) scenes.push({ pack: pack.name, adventure: null, scene })
@@ -68,15 +99,103 @@ async function readScenes(zip: string) {
         adventures.push({ pack: pack.name, adventure })
         for (const sceneDoc of adventure.scenes)
           for (const scene of convertFoundryScene(sceneDoc)) scenes.push({ pack: pack.name, adventure, scene })
+        for (const playlistDoc of adventure.playlists)
+          playlists.push({ pack: pack.name, adventure, playlist: convertFoundryPlaylist(playlistDoc) })
       }
   }
-  if (scenes.length === 0 && adventures.length === 0)
-    throw new InvalidRequestError('FOUNDRY_INVALID', 'No trae escenas ni aventuras')
+  if (scenes.length === 0 && adventures.length === 0 && playlists.length === 0)
+    throw new InvalidRequestError('FOUNDRY_INVALID', 'No trae escenas, aventuras ni listas de sonido')
   return {
     manifest: read.manifest,
     actorPacks: read.manifest.packs.filter((p) => p.type === 'Actor').map((p) => p.name),
     scenes,
-    adventures
+    adventures,
+    playlists
+  }
+}
+
+type ReadZip = Awaited<ReturnType<typeof readScenes>>
+
+/** De dónde sale un audio del zip (las rutas del paquete van dentro del zip) */
+const sourceIn = (manifest: ReadZip['manifest']) => (path: string) =>
+  audioSourceOf(path, { id: manifest.id, kind: manifest.kind, root: '' })
+
+/** La lista que enlaza una escena: la de su aventura o, si no, la de un paquete de listas */
+function linkedPlaylist(read: ReadZip, item: ZipScene): ZipPlaylist | null {
+  const id = item.scene.playlist?.playlistId
+  if (!id) return null
+  return (
+    read.playlists.find((p) => p.playlist.id === id && p.adventure === item.adventure) ??
+    read.playlists.find((p) => p.playlist.id === id && !p.adventure) ??
+    null
+  )
+}
+
+/** Los audios del zip (sus rutas), con quién los usa: sus listas, sus escenas y sus aventuras («paquete/id») */
+function audioUse(read: ReadZip): Map<string, Set<string>> {
+  const source = sourceIn(read.manifest)
+  const out = new Map<string, Set<string>>()
+  const use = (path: string, keys: readonly string[]) => {
+    if (source(path).kind !== 'zip') return
+    const set = out.get(path) ?? new Set<string>()
+    for (const key of keys) set.add(key)
+    out.set(path, set)
+  }
+  const adventureKey = (pack: string, adventure: FoundryAdventure | null) =>
+    adventure ? [`${pack}/${adventure.id}`] : []
+  for (const item of read.playlists) {
+    const linking = read.scenes.filter((s) => linkedPlaylist(read, s) === item).map((s) => `${s.pack}/${s.scene.id}`)
+    for (const track of item.playlist.tracks)
+      use(track.path, [`${item.pack}/${item.playlist.id}`, ...adventureKey(item.pack, item.adventure), ...linking])
+  }
+  for (const item of read.scenes)
+    for (const sound of item.scene.sounds)
+      use(sound.path, [`${item.pack}/${item.scene.id}`, ...adventureKey(item.pack, item.adventure)])
+  return out
+}
+
+/** Los audios ya subidos a un mundo de un zip, por su ruta (si siguen fuera de la papelera) */
+async function uploadedAudio(ctx: ActionContext, worldId: string, moduleId: string, paths: readonly string[]) {
+  const out = new Map<string, string>()
+  for (const row of await foundryRepo.findOrigins(ctx.db, worldId, 'audio', moduleId, paths)) {
+    const file = row.fileId ? await filesRepo.findFile(ctx.db, row.fileId) : null
+    if (file && file.worldId === worldId) out.set(row.documentId, file.id)
+  }
+  return out
+}
+
+/** Las listas ya traídas, por «paquete/id»: su lista (si sigue) */
+async function existingPlaylists(ctx: ActionContext, worldId: string, moduleId: string, items: readonly ZipPlaylist[]) {
+  const out = new Map<string, soundRepo.PlaylistWithTracks>()
+  for (const [pack, list] of Map.groupBy(items, (p) => p.pack)) {
+    const rows = await foundryRepo.findOrigins(
+      ctx.db,
+      worldId,
+      'playlist',
+      packageOf(moduleId, pack),
+      list.map((p) => p.playlist.id)
+    )
+    for (const row of rows) {
+      const playlist = row.playlistId ? await soundRepo.findPlaylist(ctx.db, row.playlistId) : null
+      if (playlist && playlist.worldId === worldId) out.set(`${pack}/${row.documentId}`, playlist)
+    }
+  }
+  return out
+}
+
+function playlistSummary(
+  item: ZipPlaylist,
+  existing: soundRepo.PlaylistWithTracks | undefined
+): FoundryPlaylistSummary {
+  return {
+    pack: item.pack,
+    id: item.playlist.id,
+    name: item.playlist.name,
+    adventure: item.adventure?.id ?? null,
+    kind: item.playlist.kind,
+    mode: item.playlist.mode,
+    tracks: item.playlist.tracks.length,
+    existing: existing ? { playlistId: existing.id, name: existing.name } : null
   }
 }
 
@@ -241,7 +360,7 @@ function skippedNotes(scenes: readonly ConvertedScene[]): string[] {
     regions: ['región', 'regiones'],
     tiles: ['tile', 'tiles'],
     drawings: ['dibujo', 'dibujos'],
-    sounds: ['sonido', 'sonidos'],
+    sounds: ['sonido apagado', 'sonidos apagados'],
     templates: ['plantilla', 'plantillas']
   }
   const parts = (Object.keys(total) as (keyof typeof total)[])
@@ -255,8 +374,12 @@ function skippedNotes(scenes: readonly ConvertedScene[]): string[] {
 export const foundrySceneActions = [
   implement(inspectFoundryScenes, async (ctx, { worldId, zip }) => {
     await authorizedWiki(ctx, 'page.write', worldId)
-    const { manifest, scenes, adventures } = await readScenes(zip)
+    const read = await readScenes(zip)
+    const { manifest, scenes, adventures } = read
     const existing = await existingScenes(ctx, worldId, manifest.id, scenes)
+    const playlists = await existingPlaylists(ctx, worldId, manifest.id, read.playlists)
+    const use = audioUse(read)
+    const uploaded = await uploadedAudio(ctx, worldId, manifest.id, [...use.keys()])
     const adventurePages = new Map<string, Map<string, { id: string; title: string }>>()
     for (const [pack, list] of Map.groupBy(adventures, (a) => a.pack))
       adventurePages.set(
@@ -284,7 +407,9 @@ export const foundrySceneActions = [
           actors: adventure.actors.length,
           existing: page ? { sceneId: null, pageId: page.id, pageTitle: page.title } : null
         }
-      })
+      }),
+      playlists: read.playlists.map((item) => playlistSummary(item, playlists.get(`${item.pack}/${item.playlist.id}`))),
+      audio: [...use].map(([path, keys]) => ({ path, usedBy: [...keys].sort(), fileId: uploaded.get(path) ?? null }))
     }
   }),
 
@@ -299,6 +424,35 @@ export const foundrySceneActions = [
     const moduleId = read.manifest.id
     const wantedScenes = new Set(input.scenes.map((s) => `${s.pack}/${s.id}`))
     const wantedAdventures = new Set(input.adventures.map((a) => `${a.pack}/${a.id}`))
+    const wantedPlaylists = new Set(input.playlists.map((p) => `${p.pack}/${p.id}`))
+    for (const key of wantedPlaylists)
+      if (!read.playlists.some((p) => !p.adventure && `${p.pack}/${p.playlist.id}` === key))
+        throw new InvalidRequestError('FOUNDRY_INVALID', `No trae la lista ${key}`)
+    // Los audios ya subidos (del mundo o comunes de su cuenta, y de audio), por su ruta; y lo que dura cada uno
+    const audio = new Map<string, { fileId?: string; duration?: number }>()
+    for (const given of input.audio) {
+      if (given.fileId) {
+        const file = await filesRepo.findFile(ctx.db, given.fileId)
+        const mine =
+          file && (file.worldId === worldId || (file.worldId === null && file.organizationId === wiki.organizationId))
+        if (!file || !mine) throw new NotFoundError('file')
+        if (!file.mime.startsWith('audio/'))
+          throw new InvalidRequestError('NOT_AUDIO', `«${file.name}» no es un archivo de audio`)
+        await foundryRepo.saveOrigin(ctx.db, {
+          worldId,
+          kind: 'audio',
+          package: moduleId,
+          documentId: given.path,
+          fileId: file.id
+        })
+      }
+      audio.set(given.path, {
+        ...(given.fileId ? { fileId: given.fileId } : {}),
+        ...(given.duration ? { duration: given.duration } : {})
+      })
+    }
+    const source = sourceIn(read.manifest)
+    const missingAudio: z.output<typeof importFoundryScenes.output>['missingAudio'] = []
     for (const key of wantedScenes)
       if (!read.scenes.some((s) => !s.adventure && `${s.pack}/${s.scene.id}` === key))
         throw new InvalidRequestError('FOUNDRY_INVALID', `No trae la escena ${key}`)
@@ -389,6 +543,49 @@ export const foundrySceneActions = [
         if (page) journalPages.set(id, page.id)
       }
 
+    // Las listas: las elegidas, las de las aventuras elegidas y las que enlazan las escenas que se traen
+    const chosenPlaylists = read.playlists.filter(
+      (p) =>
+        wantedPlaylists.has(`${p.pack}/${p.playlist.id}`) ||
+        (p.adventure && wantedAdventures.has(`${p.pack}/${p.adventure.id}`)) ||
+        chosen.some((s) => linkedPlaylist(read, s) === p)
+    )
+    const knownPlaylists = await existingPlaylists(ctx, worldId, moduleId, chosenPlaylists)
+    const playlistsOut: z.output<typeof importFoundryScenes.output>['playlists'] = []
+    for (const item of chosenPlaylists) {
+      const { playlist } = item
+      const tracks: soundRepo.TrackInput[] = []
+      for (const track of playlist.tracks) {
+        const from = source(track.path)
+        const name = `${playlist.name} · ${track.name}`
+        const base = { name: track.name, volume: track.volume, loop: track.loop }
+        const duration = audio.get(from.kind === 'zip' ? from.path : track.path)?.duration ?? UNKNOWN_DURATION
+        if (from.kind === 'missing') missingAudio.push({ name, path: track.path, reason: from.reason })
+        else if (from.kind === 'youtube')
+          tracks.push({ ...base, duration, fileId: null, youtubeId: from.videoId, url: null })
+        else if (from.kind === 'url') tracks.push({ ...base, duration, fileId: null, youtubeId: null, url: from.url })
+        else {
+          const fileId = audio.get(from.path)?.fileId
+          if (fileId) tracks.push({ ...base, duration, fileId, youtubeId: null, url: null })
+          else missingAudio.push({ name, path: track.path, reason: 'not-in-zip' })
+        }
+      }
+      const values = { name: playlist.name, kind: playlist.kind, mode: playlist.mode, fade: playlist.fade }
+      const before = knownPlaylists.get(`${item.pack}/${playlist.id}`)
+      const context = historyContext(ctx, 'importFoundryPlaylist', { name: playlist.name }, wiki)
+      const saved = before
+        ? await soundRepo.updatePlaylist(ctx.db, context, before, { ...values, tracks })
+        : await soundRepo.createPlaylist(ctx.db, context, { ...values, worldId, tracks })
+      await foundryRepo.saveOrigin(ctx.db, {
+        worldId,
+        kind: 'playlist',
+        package: packageOf(moduleId, item.pack),
+        documentId: playlist.id,
+        playlistId: saved.id
+      })
+      playlistsOut.push({ playlistId: saved.id, name: saved.name, tracks: tracks.length, updated: Boolean(before) })
+    }
+
     const out: z.output<typeof importFoundryScenes.output>['scenes'] = []
     for (const item of chosen) {
       const { scene } = item
@@ -434,6 +631,29 @@ export const foundrySceneActions = [
           unique: token.unique
         })
       }
+      // Sus sonidos: los audios del zip (ya subidos) y las direcciones; los demás, al informe
+      const sounds: visionRepo.SceneSoundValues[] = []
+      for (const sound of scene.sounds) {
+        const from = source(sound.path)
+        const name = `${scene.name} · ${sound.path.split('/').at(-1) || sound.id}`
+        const base = {
+          x: sound.x,
+          y: sound.y,
+          radius: Math.max(0.5, sound.radius),
+          volume: sound.volume,
+          easing: sound.easing,
+          walls: sound.walls,
+          darkOnly: sound.darkOnly
+        }
+        if (from.kind === 'missing') missingAudio.push({ name, path: sound.path, reason: from.reason })
+        else if (from.kind === 'youtube') missingAudio.push({ name, path: sound.path, reason: 'youtube' })
+        else if (from.kind === 'url') sounds.push({ ...base, url: from.url })
+        else {
+          const fileId = audio.get(from.path)?.fileId
+          if (fileId) sounds.push({ ...base, fileId })
+          else missingAudio.push({ name, path: sound.path, reason: 'not-in-zip' })
+        }
+      }
       const pins = scene.notes.flatMap((note) => {
         const pageId = note.entryId ? journalPages.get(note.entryId) : undefined
         return pageId ? [{ x: note.x, y: note.y, label: note.label, pageId }] : []
@@ -452,7 +672,8 @@ export const foundrySceneActions = [
             pins
           },
           walls: scene.walls.map(({ a, b, ...wall }) => ({ ax: a.x, ay: a.y, bx: b.x, by: b.y, ...wall })),
-          lights: scene.lights
+          lights: scene.lights,
+          sounds
         }
       )
       await foundryRepo.saveOrigin(ctx.db, {
@@ -479,7 +700,24 @@ export const foundrySceneActions = [
       })
     }
     ctx.realtime.publish(pagesChanged(wiki))
-    return { scenes: out, pages, notes: skippedNotes(chosen.map((s) => s.scene)) }
+    if (playlistsOut.length > 0) await refreshWorld(ctx, worldId)
+    const unmeasured = chosenPlaylists.some((p) =>
+      p.playlist.tracks.some((t) => {
+        const from = source(t.path)
+        const known = audio.get(from.kind === 'zip' ? from.path : t.path)?.duration
+        return from.kind !== 'missing' && known === undefined
+      })
+    )
+    return {
+      scenes: out,
+      pages,
+      playlists: playlistsOut,
+      missingAudio,
+      notes: [
+        ...skippedNotes(chosen.map((s) => s.scene)),
+        ...(unmeasured ? ['Algunas pistas no se pudieron medir: duran 5 minutos hasta que se cambien'] : [])
+      ]
+    }
   })
 ]
 

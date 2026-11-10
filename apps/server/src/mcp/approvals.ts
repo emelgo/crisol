@@ -73,6 +73,9 @@ export interface AiCall {
   waitMs: number
 }
 
+/** Lo que la IA de un jugador escribe de sus notas */
+const NOTE_WRITES = new Set(['createPlayerNote', 'updatePlayerNote'])
+
 export async function callAsAi(env: ActionEnv, call: AiCall): Promise<ToolResult> {
   const { db } = env
   const { userId, tool, impl, input } = call
@@ -85,7 +88,9 @@ export async function callAsAi(env: ActionEnv, call: AiCall): Promise<ToolResult
       ownedOrganizations(ctx.actor).length === 0 && ![...ctx.actor.worlds.values()].some((w) => w.role === 'master')
     const ownPage =
       playerOnly && impl.action.name === 'editPage' && (await playerEdits(env, userId, String(input.pageId ?? '')))
-    if (playerOnly && impl.action.kind !== 'read' && !ownPage) return failure(PLAYER_READS)
+    // y sus notas (docs/specs/notas-jugador.md: que sean suyas lo comprueba la acción)
+    const ownNote = playerOnly && NOTE_WRITES.has(impl.action.name)
+    if (playerOnly && impl.action.kind !== 'read' && !ownPage && !ownNote) return failure(PLAYER_READS)
     const decision = aiDecision(await aiRepo.findAiMode(db, userId), impl.action.kind)
     if (decision === 'refuse') return failure(READ_ONLY)
     if (decision === 'run') {

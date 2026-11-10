@@ -31,6 +31,10 @@ test('Claude crea una campaña sin preguntar; regenerar el enlace aparece en la 
   // Regenerar el enlace afecta a los jugadores: espera, y la petición aparece en menos de 2 s
   await gotoLive(page, campaignPage)
   await expect(page.getByLabel('Enlace de invitación')).toHaveValue(link)
+  // Los ajustes de la campaña se abren encima y tapan lo demás: se cierran para llegar a la cola
+  const settings = page.getByRole('dialog', { name: 'Ajustes de la campaña' })
+  await page.keyboard.press('Escape')
+  await expect(settings).toBeHidden()
   const asked = claude.call('enlace_invitacion', { campaignId, change: 'regenerate' })
   const queue = page.getByRole('region', { name: 'La IA espera tu aprobación' })
   await expect(queue.getByText('La IA quiere generar un enlace nuevo para La Marca')).toBeVisible({ timeout: 2000 })
@@ -42,7 +46,8 @@ test('Claude crea una campaña sin preguntar; regenerar el enlace aparece en la 
   const result = await asked
   const url = String(result.structuredContent?.url)
   expect(url).not.toBe(link)
-  await expect(page.getByLabel('Enlace de invitación')).toHaveValue(url)
+  await page.getByRole('button', { name: 'Ajustes', exact: true }).click()
+  await expect(settings.getByLabel('Enlace de invitación')).toHaveValue(url)
   await expect(queue.getByRole('heading')).toHaveCount(0)
 
   // En el historial, como hecho por Claude con su herramienta
