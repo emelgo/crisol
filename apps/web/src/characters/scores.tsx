@@ -249,6 +249,9 @@ function ManualScore({
       type="number"
       inputMode="numeric"
       autoComplete="off"
+      data-1p-ignore
+      data-lpignore="true"
+      data-form-type="other"
       min={min}
       max={max}
       value={draft}

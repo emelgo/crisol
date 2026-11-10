@@ -22,6 +22,7 @@ export const partyItem = z.object({
   note: z.string().nullable(),
   quantity: z.int(),
   container: z.string().describe('El id de su contenedor («grupo», el de serie)'),
+  addedBy: z.string().optional().describe('Quién lo puso en el grupo: el personaje de quien vino'),
   uses: z
     .record(z.string(), z.number())
     .optional()

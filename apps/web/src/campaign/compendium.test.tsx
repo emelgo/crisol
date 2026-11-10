@@ -4,12 +4,16 @@ import { cinco } from '@crisol/systems/fixtures'
 import { createMemoryHistory } from '@tanstack/react-router'
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { fakeAccountClient } from '../account/fake.ts'
 import { fakeApi } from '../api/fake.ts'
 import { App } from '../app.tsx'
 import { createAppRouter } from '../router.tsx'
 import { announced } from '../testing.ts'
+
+// El máster abre el compendio desde su Mesa: su canal y su lienzo, de mentira
+vi.mock('../tabletop/channel.ts', async () => (await import('../tabletop/fakes.ts')).quietChannel())
+vi.mock('../tabletop/use-renderer.ts', async () => (await import('../tabletop/fakes.ts')).blindRenderer())
 
 const ORG = { id: crypto.randomUUID(), name: 'Fateforge', role: 'owner' as const }
 const WORLD: World = {
@@ -248,8 +252,9 @@ describe('el compendio de una campaña', () => {
     await userEvent.type(search, 'fireball')
     const list = within(await screen.findByRole('list', { name: 'Resultados' }))
     await waitFor(() => expect(list.getAllByRole('button')).toHaveLength(2))
-    expect(list.getAllByRole('button')[0]?.textContent).toBe('Bola de fuegoConjuro2024')
-    expect(list.getAllByRole('button')[1]?.textContent).toBe('Bola de fuegoConjuro2014 · Legado')
+    // Cada una dice su tipo y su libro (ADR-0021)
+    expect(list.getAllByRole('button')[0]?.textContent).toBe('Bola de fuegoConjuro · Nuevo2024')
+    expect(list.getAllByRole('button')[1]?.textContent).toMatch(/^Bola de fuegoConjuro · \S+2014 · Legado$/)
     await userEvent.type(search, 'xyz')
     expect(await list.findByText('Nada con ese nombre')).toBeDefined()
     await userEvent.click(screen.getByRole('button', { name: 'Borrar la búsqueda' }))
@@ -360,6 +365,7 @@ describe('el compendio de una campaña', () => {
   it('el máster oculta un tipo a los jugadores en los ajustes del compendio', async () => {
     const user = userEvent.setup()
     const { api } = renderCompendium({ ...CAMPAIGN, role: 'master' })
+    // El máster lo tiene en la sección Compendio de la campaña (ADR-0021), con sus ajustes
     await user.click(await screen.findByRole('button', { name: 'Ajustes del compendio' }))
     const settings = await screen.findByRole('dialog', { name: 'Ajustes del compendio' })
     expect(within(settings).getByText(/Quinta · Viejo y Nuevo/)).toBeDefined()

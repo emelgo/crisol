@@ -109,3 +109,14 @@
 .note {
   color: var(--color-muted);
 }
+
+/* «Personajes», debajo de lo de la Mesa (la sección Mesa de la campaña, ADR-0021) */
+.sectionTitle {
+  margin: 0 0 var(--space-3);
+  padding: 0;
+  border: 0;
+  font: 600 0.75rem / 1 var(--font-body);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}

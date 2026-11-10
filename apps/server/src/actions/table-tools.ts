@@ -74,7 +74,12 @@ async function sceneWithState(ctx: ActionContext, campaign: Campaign, sceneId: s
   const scene = await sceneFor(ctx, campaign, sceneId)
   await scenesRepo.ensureSceneState(
     ctx.db,
-    historyContext(ctx, 'openScene', { campaign: campaign.name, name: scene.name, title: scene.pageTitle }, campaign),
+    historyContext(
+      ctx,
+      'openScene',
+      { campaign: campaign.name, name: scene.name, title: scene.pageTitle ?? scene.name },
+      campaign
+    ),
     { worldId: campaign.worldId, campaignId: campaign.id, sceneId: scene.id }
   )
   return scene

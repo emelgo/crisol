@@ -22,11 +22,18 @@ español con Enrique.
 ## Ciclo de cada módulo
 
 Skills de agent-skills (plugin del proyecto): `interview-me` con Enrique frente al inventario → estudio con craft-anything dirigido a las
-preguntas del módulo → `/spec` → diseño de pantallas y flujos con la skill `frontend-design` de Anthropic (plugin
-`frontend-design@claude-plugins-official`): prototipos que Enrique abre, prueba y aprueba → `/plan` → `/build` en
-porciones verticales con TDD → `/agent-skills:review` (la interfaz, también con `web-design-guidelines` de Vercel, en
-`.claude/skills/` con las otras tres) →
-`/ship` a staging. Cada módulo nace con su API y sus herramientas MCP.
+preguntas del módulo → `/spec` → diseño de pantallas y flujos con la skill **impeccable** (`.claude/skills/impeccable`,
+Apache-2.0; `/impeccable shape` y prototipos que Enrique abre, prueba y aprueba) → `/plan` → `/build` en porciones
+verticales con TDD → `/agent-skills:review` → **revisión de la interfaz con impeccable, siempre** (Enrique, 2026-11-10):
+`/impeccable critique` y `/impeccable audit` de cada pantalla que toca el módulo, buscando mejoras, y aplicarlas
+(`polish`, `harden`, `layout`, `animate`…) antes de cerrar → `/ship` a staging. Cada módulo nace con su API y sus
+herramientas MCP.
+
+- impeccable lee `PRODUCT.md` y `DESIGN.md` (los crean `/impeccable init` y `/impeccable document`); **las normas de
+  Enrique de `docs/diseno.md` mandan** sobre lo que proponga.
+- Su vigilante (hooks en `.claude/settings.local.json`, solo en este VPS) revisa cada archivo de interfaz que se edita
+  y hace una pasada al acabar: sus avisos se atienden como los de Biome.
+- Su motor (~22 MB) no va a git: el lanzador lo descarga si falta.
 
 ## Normas
 

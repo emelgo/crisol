@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, type Page, test } from '@playwright/test'
-import { campaignLink, import5e, newPlayer, settled } from './ayudas.ts'
+import { campaignLink, campaignPath, import5e, newPlayer, openCompendiumWindow, settled } from './ayudas.ts'
 
 /** Que axe no encuentre fallos críticos ni graves, en claro y en oscuro */
 async function accessible(page: Page) {
@@ -19,7 +19,7 @@ test('la campaña en su vista: la jugadora entra, abre el compendio, busca «fir
 }) => {
   test.slow()
   const link = await campaignLink(page)
-  const campaignId = new URL(page.url()).pathname.split('/campanas/')[1] ?? ''
+  const campaignId = new URL(page.url()).pathname.split('/campanas/')[1]?.split('/')[0] ?? ''
   const chosen = await page.request.post('/api/actions/updateCampaign', {
     data: {
       campaignId,
@@ -29,22 +29,27 @@ test('la campaña en su vista: la jugadora entra, abre el compendio, busca «fir
   })
   expect(chosen.status()).toBe(200)
 
-  // El máster, dentro de la campaña: su barra (su inicio y el compendio); los dados, en el d20 flotante
-  const sections = page.getByRole('navigation', { name: 'Secciones' })
-  await expect(sections.getByRole('link', { name: 'La Marca' })).toBeVisible()
-  await expect(sections.getByRole('link', { name: 'Compendio' })).toBeVisible()
+  // El máster, en su Mesa: el compendio en su barra; los dados, en el d20 flotante
+  const path = campaignPath(page)
+  await expect(
+    page.getByRole('complementary', { name: 'Panel de la mesa' }).getByRole('tab', { name: 'Compendio' })
+  ).toBeVisible()
   await expect(page.locator('[data-tour="dados"]')).toBeVisible()
 
+  // La jugadora lo lee en su vista (también está en la barra de su Mesa)
   const player = await newPlayer(browser, link)
   const nav = player.getByRole('navigation', { name: 'Secciones' })
-  await nav.getByRole('link', { name: 'Compendio' }).click()
+  await player.goto(`${path}/compendio`)
   await expect(player.getByRole('heading', { level: 1, name: 'Compendio' })).toBeVisible()
   await expect(player.getByText('5e · 2014 y 2024')).toBeVisible()
   await player.getByRole('searchbox', { name: 'Buscar en el compendio' }).fill('fireball')
   const list = player.getByRole('list', { name: 'Resultados' })
   // Primero lo que se llama así: la de 2024 y la de 2014
-  await expect(list.getByRole('button').nth(0)).toHaveText('Bola de fuegoConjuro2024')
-  await expect(list.getByRole('button').nth(1)).toHaveText('Bola de fuegoConjuro2014 · Legado')
+  // Cada una con su tipo, su libro y su página (ADR-0021)
+  await expect(list.getByRole('button').nth(0)).toHaveText(/^Bola de fuegoConjuro · SRD 5\.2\.1, pág\. \d+2024$/)
+  await expect(list.getByRole('button').nth(1)).toHaveText(
+    /^Bola de fuegoConjuro · SRD 5\.1(, pág\. \d+)?2014 · Legado$/
+  )
   await list.getByRole('button').first().click()
   const article = player.getByRole('article', { name: 'Bola de fuego' })
   await expect(article).toContainText('8d6')
@@ -100,10 +105,10 @@ test('la campaña en su vista: la jugadora entra, abre el compendio, busca «fir
   await player.screenshot({ path: test.info().outputPath('compendio-tabla.png'), fullPage: false })
 
   // El máster también lo lee; axe, en claro y en oscuro
-  await sections.getByRole('link', { name: 'Compendio' }).click()
-  await page.getByRole('searchbox', { name: 'Buscar en el compendio' }).fill('aboleth')
-  await page.getByRole('list', { name: 'Resultados' }).getByRole('button').first().click()
-  await expect(page.getByRole('article', { name: 'Aboleth' })).toContainText('CA 17')
+  const window = await openCompendiumWindow(page, path)
+  await window.getByRole('searchbox', { name: 'Buscar en el compendio' }).fill('aboleth')
+  await window.getByRole('list', { name: 'Resultados' }).getByRole('button').first().click()
+  await expect(window.getByRole('article', { name: 'Aboleth' })).toContainText('CA 17')
   await accessible(page)
   await page.screenshot({ path: test.info().outputPath('compendio-criatura.png'), fullPage: false })
 

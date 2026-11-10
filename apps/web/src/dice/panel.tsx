@@ -1,37 +1,23 @@
 /**
- * Los dados de un mundo (docs/diseno.md): un botón flotante con forma de d20, abajo a la derecha, que abre y cierra
- * su ficha junto a él, en esa esquina (no es una pantalla ni va en la barra). En la ficha, arriba, la campaña en la
- * que se tira (con varias, se elige y se recuerda); abajo, la tirada
+ * Los dados de un mundo (docs/diseno.md, lienzo «Tirar dados»): un botón flotante con forma de d20, abajo a la
+ * derecha, que abre los dados junto a él (no es una pantalla ni va en la barra). Encima, el resultado de cada tirada;
+ * el historial, en una ficha junto al d20 (en la Mesa, en una de sus ventanas)
  */
 import type { Campaign } from '@crisol/contracts'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Settings, X } from 'lucide-react'
-import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { useRouterState } from '@tanstack/react-router'
+import { X } from 'lucide-react'
+import { type ReactNode, useCallback, useEffect, useId, useReducer, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
-import { useDismiss } from '../components/dismiss.ts'
 import { Tour } from '../components/tour.tsx'
-import { Composer } from './composer.tsx'
 import { useDice, useWorldInPath } from './context.tsx'
 import styles from './dice.module.css'
+import { CloseFloating, focusLauncher, useCloseFloating, useSheet } from './floating.ts'
 import { RollLog } from './log.tsx'
-import { appendRoll } from './rolls.ts'
-import { useTray } from './tray.tsx'
-
-/** En el móvil la ficha es una hoja con la página oscurecida: se porta como una ventana */
-const SHEET = '(max-width: 48rem)'
-function useSheet(): boolean {
-  return useSyncExternalStore(
-    (onChange) => {
-      const query = window.matchMedia?.(SHEET)
-      query?.addEventListener('change', onChange)
-      return () => query?.removeEventListener('change', onChange)
-    },
-    () => window.matchMedia?.(SHEET).matches ?? false,
-    () => false
-  )
-}
+import { RollNotices } from './notices.tsx'
+import { EMPTY, poolReducer } from './pool.ts'
+import { DiceRack } from './rack.tsx'
 
 /** Lo que se puede enfocar dentro de la hoja, para que el foco no salga de ella */
 const FOCUSABLE =
@@ -53,12 +39,113 @@ export function useDiceCampaign(worldId: string | undefined) {
 
 export function DicePanel() {
   const worldId = useWorldInPath()
-  const dice = useDice()
   if (!worldId) return null
+  return <WorldDice key={worldId} worldId={worldId} />
+}
+
+/** Dentro de una campaña se tira en ella; fuera, en la elegida (con varias, se elige junto a «Tirar») */
+const IN_CAMPAIGN = /^\/mundos\/[^/]+\/campanas\/[^/]+/
+
+function WorldDice({ worldId }: { worldId: string }) {
+  const { t } = useTranslation()
+  const dice = useDice()
+  // Las campañas, solo de un mundo que existe y se puede ver (el de una dirección cualquiera, no)
+  const api = useApi()
+  const worlds = useQuery({ queryKey: ['worlds'], queryFn: () => api.call('listWorlds', {}) })
+  const known = worlds.data?.worlds.some((w) => w.id === worldId) ?? false
+  const { list, chosen, loading } = useDiceCampaign(known ? worldId : undefined)
+  const [pool, change] = useReducer(poolReducer, EMPTY)
+  const sheet = useSheet()
+  const inCampaign = useRouterState({ select: (state) => IN_CAMPAIGN.test(state.location.pathname) })
+  const choose = list.length > 1 && !inCampaign
+  const chooser = choose && chosen ? <CampaignChooser worldId={worldId} list={list} chosen={chosen} /> : null
   return (
     <>
       <DiceLauncher />
-      {dice.open && <DiceCard key={worldId} worldId={worldId} />}
+      {dice.open && (
+        <Floating
+          label={t('dice.title')}
+          className={styles.dice}
+          sheet={sheet}
+          onClose={dice.close}
+          tour="ficha-dados"
+          open
+        >
+          {sheet && <span className={styles.grip} aria-hidden="true" />}
+          {chosen ? (
+            <DiceRack campaign={chosen} pool={pool} change={change} sheet={sheet} chooser={chooser} />
+          ) : (
+            !loading && <p className={styles.empty}>{t('dice.noCampaign')}</p>
+          )}
+          <Tour
+            id="dados"
+            steps={[
+              { target: '[data-tour="dados-columna"]', text: t('tour.dice.card'), placement: 'left' },
+              { target: '[data-tour="dados-historial"]', text: t('tour.dice.roll'), placement: 'left' }
+            ]}
+          />
+        </Floating>
+      )}
+      {dice.history && (
+        <Floating label={t('dice.history')} className={styles.card} sheet={sheet} onClose={dice.closeHistory}>
+          {sheet && <span className={styles.grip} aria-hidden="true" />}
+          <header className={styles.head}>
+            <h2 className={styles.title}>{t('dice.history')}</h2>
+            {chooser ?? (chosen && <span className={styles.campaignName}>{chosen.name}</span>)}
+            <HistoryClose />
+          </header>
+          {chosen ? (
+            <RollLog key={chosen.id} campaign={chosen} />
+          ) : (
+            !loading && <p className={styles.empty}>{t('dice.noCampaign')}</p>
+          )}
+        </Floating>
+      )}
+      {chosen && <RollNotices key={chosen.id} campaign={chosen} />}
+    </>
+  )
+}
+
+/** La × del historial: al abrirse, el foco va a ella (lo que lo abrió ya no está); al cerrar, vuelve al d20 */
+function HistoryClose() {
+  const { t } = useTranslation()
+  const close = useCloseFloating()
+  return (
+    <button
+      type="button"
+      className={styles.close}
+      aria-label={t('dice.closeHistory')}
+      // biome-ignore lint/a11y/noAutofocus: el botón que abrió el historial desaparece al abrirlo
+      autoFocus
+      onClick={close}
+    >
+      <X size={16} aria-hidden="true" />
+    </button>
+  )
+}
+
+/** En qué campaña se tira, con varias en el mundo (se recuerda) */
+function CampaignChooser({ worldId, list, chosen }: { worldId: string; list: Campaign[]; chosen: Campaign }) {
+  const { t } = useTranslation()
+  const dice = useDice()
+  const id = useId()
+  return (
+    <>
+      <label className={styles.hidden} htmlFor={`${id}-campaign`}>
+        {t('dice.campaign')}
+      </label>
+      <select
+        id={`${id}-campaign`}
+        className={styles.campaign}
+        value={chosen.id}
+        onChange={(event) => dice.setCampaign(worldId, event.currentTarget.value)}
+      >
+        {list.map((c) => (
+          <option key={c.id} value={c.id}>
+            {c.name}
+          </option>
+        ))}
+      </select>
     </>
   )
 }
@@ -100,36 +187,36 @@ function D20() {
   )
 }
 
-function DiceCard({ worldId }: { worldId: string }) {
-  const { t } = useTranslation()
-  const dice = useDice()
-  const id = useId()
-  const queryClient = useQueryClient()
-  const tray = useTray()
-  const accounts = useAccounts()
-  const { account } = accounts.useAccount()
-  const [options, setOptions] = useState(false)
-  const optionsRoot = useRef<HTMLDivElement>(null)
-  const gear = useRef<HTMLButtonElement>(null)
-  useDismiss(
-    options,
-    useCallback(() => setOptions(false), []),
-    optionsRoot,
-    gear
-  )
-  const { list, chosen, loading } = useDiceCampaign(worldId)
+/**
+ * Lo que flota junto al d20 (los dados abiertos, el historial): se cierra con Escape (el foco vuelve al d20) o al pulsar
+ * fuera. En el móvil es una hoja con la página oscurecida detrás, que se porta como una ventana
+ */
+function Floating({
+  label,
+  className,
+  sheet,
+  onClose,
+  tour,
+  open,
+  children
+}: {
+  label: string
+  className: string | undefined
+  sheet: boolean
+  onClose: () => void
+  tour?: string
+  /** Los dados abiertos: el «?» se esconde mientras */
+  open?: boolean
+  children: ReactNode
+}) {
   const card = useRef<HTMLElement>(null)
-  const sheet = useSheet()
-  // Con el menú del engranaje abierto, Escape cierra solo el menú
-  const optionsOpen = useRef(options)
-  optionsOpen.current = options
   // Lo de detrás, inerte mientras la hoja está abierta en el móvil; se suelta antes de devolver el foco al d20
   const release = useRef<() => void>(() => {})
-  const closeCard = useCallback(() => {
+  const close = useCallback(() => {
     release.current()
-    dice.close()
-    document.querySelector<HTMLElement>('[data-tour="dados"]')?.focus()
-  }, [dice.close])
+    onClose()
+    focusLauncher()
+  }, [onClose])
   useEffect(() => {
     if (!sheet) return
     const own = card.current
@@ -143,20 +230,37 @@ function DiceCard({ worldId }: { worldId: string }) {
       for (const el of frozen) el.inert = false
       frozen.length = 0
     }
-    own.focus()
+    // Si dentro ya tiene el foco algo (el campo de la tirada escrita, la × del historial), se queda ahí
+    if (!own.contains(document.activeElement)) own.focus()
     return () => release.current()
   }, [sheet])
-  // Escape la cierra y el foco vuelve al d20
+  // Pulsar fuera lo cierra (sin mover el foco: va a lo que se pulsó). No cuentan el d20, que lo abre y lo cierra, ni un
+  // cuadro que se abrió desde dentro (aplicar el daño, el color de los dados)
+  useEffect(() => {
+    const outside = (event: globalThis.PointerEvent) => {
+      const target = event.target as HTMLElement | null
+      if (!target || card.current?.contains(target)) return
+      if (target.closest('[data-tour="dados"], dialog[open]')) return
+      release.current()
+      onClose()
+    }
+    document.addEventListener('pointerdown', outside)
+    return () => document.removeEventListener('pointerdown', outside)
+  }, [onClose])
+  // Escape lo cierra y el foco vuelve al d20
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape' || event.defaultPrevented || optionsOpen.current) return
+      if (event.key !== 'Escape' || event.defaultPrevented) return
       // Un menú o un cuadro abierto encima se cierra él antes
-      if ((event.target as HTMLElement | null)?.closest('dialog, [role="menu"], [role="listbox"]')) return
-      closeCard()
+      const above = (event.target as HTMLElement | null)?.closest(
+        'dialog, [role="dialog"], [role="menu"], [role="listbox"], [data-popover]'
+      )
+      if (above && above !== card.current) return
+      close()
     }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
-  }, [closeCard])
+  }, [close])
   // En el móvil, Tab no sale de la hoja: del último control vuelve al primero, y al revés
   const trap = (event: React.KeyboardEvent) => {
     if (!sheet || event.key !== 'Tab' || !card.current) return
@@ -182,93 +286,21 @@ function DiceCard({ worldId }: { worldId: string }) {
         aria-hidden="true"
         tabIndex={-1}
         data-dice-backdrop="true"
-        onClick={closeCard}
+        onClick={close}
       />
       <Card
         ref={(element: HTMLElement | null) => {
           card.current = element
         }}
         tabIndex={-1}
-        className={styles.card}
-        aria-label={t('dice.title')}
-        data-tour="ficha-dados"
+        className={className}
+        aria-label={label}
+        data-tour={tour}
+        data-dice-open={open || undefined}
         {...(sheet ? { role: 'dialog', 'aria-modal': true } : {})}
         onKeyDown={trap}
       >
-        <span className={styles.grip} aria-hidden="true" />
-        <header className={styles.head}>
-          <h2 className={styles.title}>{t('dice.title')}</h2>
-          {list.length > 1 && chosen ? (
-            <>
-              <label className={styles.hidden} htmlFor={`${id}-campaign`}>
-                {t('dice.campaign')}
-              </label>
-              <select
-                id={`${id}-campaign`}
-                className={styles.campaign}
-                value={chosen.id}
-                onChange={(event) => dice.setCampaign(worldId, event.currentTarget.value)}
-              >
-                {list.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </>
-          ) : (
-            chosen && <span className={styles.campaignName}>{chosen.name}</span>
-          )}
-          <button
-            ref={gear}
-            type="button"
-            className={styles.gear}
-            aria-label={t('dice.options')}
-            aria-expanded={options}
-            onClick={() => setOptions(!options)}
-          >
-            <Settings size={16} aria-hidden="true" />
-          </button>
-          {options && (
-            <div ref={optionsRoot} className={styles.options}>
-              <label className={styles.check}>
-                <input
-                  type="checkbox"
-                  checked={account?.diceOthers !== false}
-                  onChange={(event) => void accounts.updateDice({ diceOthers: event.currentTarget.checked })}
-                />
-                {t('dice.others')}
-              </label>
-            </div>
-          )}
-          <button type="button" className={styles.close} aria-label={t('dice.close')} onClick={closeCard}>
-            <X size={16} aria-hidden="true" />
-          </button>
-        </header>
-        {chosen ? (
-          <>
-            <RollLog key={chosen.id} campaign={chosen} />
-            <div data-tour="tirada">
-              <Composer
-                key={chosen.id}
-                campaign={chosen}
-                onRolled={(roll) => {
-                  appendRoll(queryClient, roll)
-                  tray.play(roll)
-                }}
-              />
-            </div>
-          </>
-        ) : (
-          !loading && <p className={styles.empty}>{t('dice.noCampaign')}</p>
-        )}
-        <Tour
-          id="dados"
-          steps={[
-            { target: '[data-tour="ficha-dados"]', text: t('tour.dice.card'), placement: 'left' },
-            { target: '[data-tour="tirada"]', text: t('tour.dice.roll'), placement: 'left' }
-          ]}
-        />
+        <CloseFloating.Provider value={close}>{children}</CloseFloating.Provider>
       </Card>
     </>
   )

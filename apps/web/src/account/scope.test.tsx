@@ -2,7 +2,7 @@ import type { Approval, Campaign, World } from '@crisol/contracts'
 import { createMemoryHistory } from '@tanstack/react-router'
 import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ApiClient } from '../api/client.ts'
 import { fakeApi } from '../api/fake.ts'
 import { App } from '../app.tsx'
@@ -10,6 +10,10 @@ import { fakeRealtime } from '../realtime/fake.ts'
 import { createAppRouter } from '../router.tsx'
 import { signOut } from '../testing.ts'
 import { fakeAccountClient } from './fake.ts'
+
+// El máster abre la campaña en la Mesa: su canal y su lienzo, de mentira
+vi.mock('../tabletop/channel.ts', async () => (await import('../tabletop/fakes.ts')).quietChannel())
+vi.mock('../tabletop/use-renderer.ts', async () => (await import('../tabletop/fakes.ts')).blindRenderer())
 
 const ORG = { id: crypto.randomUUID(), name: 'Fateforge', role: 'owner' as const }
 const eana: World = {
@@ -152,8 +156,11 @@ describe('al cambiar de cuenta en la misma pestaña', () => {
 
   it('en la campaña, la jugadora no ve el enlace de invitación del máster', async () => {
     const path = `/mundos/${eana.id}/campanas/${marca.id}`
-    const { router, signInAsPlayer, release } = setup(path)
+    const { router, signInAsPlayer, release } = setup(`${path}?panel=ajustes`)
+    // El máster ve el enlace en los Ajustes de su Mesa; la jugadora, no
     await screen.findByLabelText('Enlace de invitación')
+    // La campaña va sola (sin la barra con la cuenta): se sale desde Mis mundos
+    await act(() => router.navigate({ to: '/mundos' }))
     await signOut()
     await signInAsPlayer()
     await act(() => router.navigate({ to: path }))

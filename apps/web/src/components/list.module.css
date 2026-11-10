@@ -237,3 +237,13 @@ a.opens:hover {
 .floating p {
   margin: 0;
 }
+
+/* La invitación, en su ventana: lo suyo, uno bajo otro */
+.invitation {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.invitation > h2 {
+  margin: 0;
+}

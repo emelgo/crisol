@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { defineAction } from './action.ts'
 import { diceRoll } from './dice.ts'
+import { worldCover } from './worlds.ts'
 
 /** Un sistema: uno de serie, por su id legible (`blank`), o uno de la cuenta, por su uuid */
 export const systemRef = z.string().trim().min(1).max(100)
@@ -403,6 +404,7 @@ export const contentHit = z.object({
   concept: z.string().nullable().describe('Lo que une sus versiones entre ediciones'),
   legacy: z.boolean().describe('De una edición vieja, con versión en una más nueva que también se ve'),
   automation: z.string().nullable().describe('full, partial o text: cuánto lo calcula Crisol'),
+  page: z.int().nullable().optional().describe('Su página en su libro, si se sabe'),
   world: z.boolean().optional().describe('Del compendio del mundo de la campaña')
 })
 
@@ -486,7 +488,13 @@ export const getCampaignCompendium = defineAction({
         name: z.string(),
         edition: z.string().nullable(),
         license: z.string(),
-        attribution: z.string()
+        attribution: z.string(),
+        // Lo de un libro (ADR-0021): su portada, de qué va, a qué amplía, cuánto trae y cuánto deja fuera la campaña
+        description: z.string().nullable(),
+        cover: worldCover.nullable(),
+        requires: z.array(z.string()),
+        count: z.int(),
+        excluded: z.int()
       })
     ),
     types: z.array(compendiumType),
@@ -557,6 +565,7 @@ export const searchCampaignContent = defineAction({
     query: z.string().trim().max(100).optional(),
     type: z.string().max(60).optional(),
     layer: z.enum(['system', 'world']).optional().describe('Solo lo del sistema o solo lo del mundo'),
+    source: z.string().max(60).optional().describe('Solo lo de un libro (su clave, de getCampaignCompendium)'),
     limit: z.int().min(1).max(200).optional(),
     offset: z.int().min(0).max(10_000).optional()
   }),

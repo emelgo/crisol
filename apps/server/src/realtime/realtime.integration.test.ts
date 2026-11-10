@@ -244,6 +244,41 @@ describe('el canal en tiempo real', () => {
     await expect(otherInbox.next()).rejects.toThrow('No llegó ningún mensaje')
   })
 
+  it('al enseñar una página, se le abre a quien la conoce y a nadie más (ensenar_pagina)', async () => {
+    const { world, campaign, player } = await worldWithPlayer()
+    const other = await signUpTestUser(auth, { name: 'Otro', email: 'otro@crisol.test' })
+    await conn.db
+      .insert(schema.campaignMembers)
+      .values({ campaignId: campaign.id, userId: other.userId, role: 'player' })
+    const [lia] = await conn.db
+      .insert(schema.characters)
+      .values({ campaignId: campaign.id, ownerId: player.userId, name: 'Lía', system: 'blank', build: {}, play: {} })
+      .returning()
+    const created = (
+      await call(
+        'createPages',
+        { worldId: world.id, parentId: null, pages: [{ key: 'a', title: 'Aldric Varn', markdown: 'El señor.' }] },
+        owner.cookie
+      )
+    ).body
+    const aldric = created.pages[0].id as string
+    await call('reveal', { worldId: world.id, kind: 'page', targetId: aldric, characters: [lia?.id] }, owner.cookie)
+    const playerInbox = inbox(await open(player.cookie))
+    const otherInbox = inbox(await open(other.cookie))
+    const shown = await call('showPage', { campaignId: campaign.id, pageId: aldric }, owner.cookie)
+    expect(shown.body).toEqual({ shown: 1, unknown: 1 })
+    expect(await playerInbox.next()).toEqual({
+      type: 'shown',
+      worldId: world.id,
+      campaignId: campaign.id,
+      pageId: aldric,
+      title: 'Aldric Varn'
+    })
+    await expect(otherInbox.next()).rejects.toThrow('No llegó ningún mensaje')
+    // Un jugador no enseña nada (para él, la wiki del mundo no existe)
+    expect((await call('showPage', { campaignId: campaign.id, pageId: aldric }, player.cookie)).status).toBe(404)
+  })
+
   it('el enlace solo le llega al máster', async () => {
     const { world, campaign, player } = await worldWithPlayer()
     const master = inbox(await open(owner.cookie))

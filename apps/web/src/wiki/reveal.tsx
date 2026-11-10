@@ -11,6 +11,7 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
+import { useCurrentCampaign } from '../campaign/current-campaign.ts'
 import { useAnnounce } from '../components/announcer.tsx'
 import list from '../components/list.module.css'
 import styles from './reveal.module.css'
@@ -19,13 +20,24 @@ export const secretsKey = (worldId: string, pageId: string) => ['pages', worldId
 
 type Audience = 'none' | 'all' | { id: string; name: string }[]
 
-/** Quién conoce los secretos de la página y qué campañas hay, para las cabeceras */
+/**
+ * Quién conoce los secretos de la página y qué campañas hay, para las cabeceras. Desde la Mesa de una campaña, solo
+ * ella: se revela a ella sin elegir y se dice quién lo sabe en ella
+ */
 export function useSecretsKnowledge(worldId: string, pageId: string, enabled = true) {
   const api = useApi()
+  const current = useCurrentCampaign()
   return useQuery({
     queryKey: secretsKey(worldId, pageId),
     queryFn: () => api.call('getSecretsKnowledge', { pageId }),
-    enabled: enabled && Boolean(worldId && pageId)
+    enabled: enabled && Boolean(worldId && pageId),
+    select: current
+      ? (data) => ({
+          ...data,
+          campaigns: data.campaigns.filter((c) => c.campaignId === current),
+          secrets: data.secrets.map((s) => ({ ...s, campaigns: s.campaigns.filter((c) => c.campaignId === current) }))
+        })
+      : undefined
   })
 }
 

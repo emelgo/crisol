@@ -8,7 +8,8 @@ import type { RealtimeClient } from './client.ts'
 /** Alguien ha entrado en una campaña del máster */
 export type JoinNotice = Extract<RealtimeMessage, { type: 'joined' }> & { id: string }
 /** Lo que se le acaba de revelar a quien juega (docs/specs/revelar.md) */
-export type RevealNotice = Extract<RealtimeMessage, { type: 'revealed' }> & { id: string }
+/** Lo revelado, o una página que el máster enseña (shown): su aviso */
+export type RevealNotice = Extract<RealtimeMessage, { type: 'revealed' }> & { id: string; shown?: boolean }
 
 const NoticesContext = createContext<{
   notices: JoinNotice[]
@@ -27,10 +28,23 @@ const NoticesContext = createContext<{
 /** Qué consultas de la web hay que volver a pedir con cada aviso. El historial y la papelera, con cualquier cambio */
 export function queriesFor(message: RealtimeMessage): QueryKey[] {
   // Las tiradas llegan enteras (ADR-0010) y no son del historial: no hay nada que volver a pedir
-  return message.type === 'hello' || message.type === 'rolled' ? [] : [...changedBy(message), ['history'], ['trash']]
+  return message.type === 'hello' || message.type === 'rolled' || message.type === 'shown'
+    ? []
+    : [...changedBy(message), ['history'], ['trash']]
 }
 
 type RollListener = (roll: DiceRoll) => void
+type ShownMessage = Extract<RealtimeMessage, { type: 'shown' }>
+type ShownListener = (shown: ShownMessage) => void
+const ShownContext = createContext<{ listen(listener: ShownListener): () => void }>({ listen: () => () => {} })
+
+/** Cada página que enseña el máster (para abrirla en ventana donde haya Mesa) */
+export function useShown(listener: ShownListener) {
+  const { listen } = useContext(ShownContext)
+  const current = useRef(listener)
+  current.current = listener
+  useEffect(() => listen((shown) => current.current(shown)), [listen])
+}
 const RollsContext = createContext<{ listen(listener: RollListener): () => void }>({ listen: () => () => {} })
 
 /** Hace algo con cada tirada que llega en vivo (anunciarla, hacer caer sus dados) */
@@ -57,7 +71,9 @@ function changedBy(message: RealtimeMessage): QueryKey[] {
       if (message.what === 'commonFiles') return [['files'], ['commonFiles'], ['tags']]
       if (message.what === 'tags') return [['tags']]
       if (message.what === 'templates') return [['templates']]
-      if (message.what === 'systems') return [['systems']]
+      // Los sistemas y sus libros: lo pendiente de revisar (lo que propone la IA) y los compendios que los usan
+      if (message.what === 'systems')
+        return [['systems'], ['systemBooks'], ['pending'], ['bookEntries'], ['compendium']]
       // Lo del mundo sale en el compendio de sus campañas y en lo que llevan sus personajes
       if (message.what === 'worldContent') return [['compendium'], ['characters'], ['character']]
       // El texto de una página: lo que la enseña en otra y los enlaces (sus trozos)
@@ -109,6 +125,18 @@ export function RealtimeProvider({ client, children }: { client: RealtimeClient;
   // Otra cuenta, otro canal (y los avisos de la anterior se van con AccountScope)
   const signedIn = account?.email ?? null
   const rollListeners = useRef(new Set<RollListener>())
+  const shownListeners = useRef(new Set<ShownListener>())
+  const shown = useMemo(
+    () => ({
+      listen: (listener: ShownListener) => {
+        shownListeners.current.add(listener)
+        return () => {
+          shownListeners.current.delete(listener)
+        }
+      }
+    }),
+    []
+  )
   const rolls = useMemo(
     () => ({
       listen: (listener: RollListener) => {
@@ -135,6 +163,24 @@ export function RealtimeProvider({ client, children }: { client: RealtimeClient;
         if (message.type === 'joined') setNotices((current) => [...current, { ...message, id: crypto.randomUUID() }])
         if (message.type === 'revealed')
           setRevealed((current) => [...current, { ...message, id: crypto.randomUUID() }].slice(-3))
+        // Una página que enseña el máster: su aviso, con «Leerlo» (la Mesa de la jugadora la abrirá en ventana)
+        if (message.type === 'shown') {
+          const notice: RevealNotice = {
+            type: 'revealed',
+            kind: 'page',
+            worldId: message.worldId,
+            campaignId: message.campaignId,
+            targetId: message.pageId,
+            pageId: message.pageId,
+            title: message.title,
+            shown: true,
+            id: crypto.randomUUID()
+          }
+          for (const listener of shownListeners.current) listener(message)
+          setRevealed((current) =>
+            [...current.filter((n) => !(n.shown && n.pageId === message.pageId)), notice].slice(-3)
+          )
+        }
         if (message.type === 'rolled') {
           appendRoll(queryClient, message.roll)
           for (const listener of rollListeners.current) listener(message.roll)
@@ -156,7 +202,9 @@ export function RealtimeProvider({ client, children }: { client: RealtimeClient;
   )
   return (
     <NoticesContext.Provider value={value}>
-      <RollsContext.Provider value={rolls}>{children}</RollsContext.Provider>
+      <RollsContext.Provider value={rolls}>
+        <ShownContext.Provider value={shown}>{children}</ShownContext.Provider>
+      </RollsContext.Provider>
     </NoticesContext.Provider>
   )
 }

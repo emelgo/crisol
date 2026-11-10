@@ -22,7 +22,7 @@ import {
   Upload,
   X
 } from 'lucide-react'
-import { createContext, type ReactNode, useContext, useEffect, useId, useRef, useState } from 'react'
+import { createContext, type DragEvent, type ReactNode, useContext, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import type { ActionOutput } from '../api/client.ts'
@@ -39,7 +39,9 @@ import { SystemImage } from '../components/system-image.tsx'
 import { Tour } from '../components/tour.tsx'
 import { PutInPlay } from '../creatures/put-in-play.tsx'
 import { useDice } from '../dice/context.tsx'
+import { visibilityIn } from '../dice/visibility.ts'
 import { useNarrow } from '../wiki/panel.tsx'
+import { BookCover } from './book-cover.tsx'
 import styles from './compendium.module.css'
 import { CompendiumSettings } from './compendium-settings.tsx'
 import { ContentText } from './content-text.tsx'
@@ -49,7 +51,7 @@ import { OriginNotice, ToSystem } from './origin.tsx'
 
 const route = getRouteApi('/mundos/$worldId/campanas/$campaignId/compendio')
 /** El sistema del compendio abierto: de él salen sus imágenes */
-const SystemIdContext = createContext<string | null>(null)
+export const SystemIdContext = createContext<string | null>(null)
 const PAGE = 100
 
 type Language = 'es' | 'en'
@@ -124,11 +126,47 @@ function useSeenEntry(worldId: string, campaignId: string, key: string | null, p
   }, [key, news.data, api, client, worldId, campaignId])
 }
 
+/** La ruta del compendio (de quien juega): lo abierto va en la dirección */
 export function CompendiumScreen() {
-  const { t } = useTranslation()
   const { worldId, campaignId } = route.useParams()
-  const { ver } = route.useSearch()
+  const { ver, libro, tipo } = route.useSearch()
   const navigate = route.useNavigate()
+  return (
+    <Compendium
+      worldId={worldId}
+      campaignId={campaignId}
+      ver={ver ?? null}
+      onVer={(key) => void navigate({ search: (prev) => ({ ...prev, ver: key ?? undefined }) })}
+      initialBook={libro ?? null}
+      initialType={tipo ?? null}
+    />
+  )
+}
+
+/**
+ * El compendio de una campaña: en su ruta o en una ventana sobre la Mesa (embedded: sin el título de la pestaña del
+ * navegador, que es el de la Mesa)
+ */
+export function Compendium({
+  worldId,
+  campaignId,
+  ver,
+  onVer,
+  embedded = false,
+  initialBook = null,
+  initialType = null
+}: {
+  worldId: string
+  campaignId: string
+  /** La entrada abierta */
+  ver: string | null
+  onVer: (key: string | null) => void
+  embedded?: boolean
+  /** Abrir ya en un libro (y un tipo): desde la ficha del libro (ADR-0021) */
+  initialBook?: string | null
+  initialType?: string | null
+}) {
+  const { t } = useTranslation()
   const api = useApi()
   const { account, pending } = useAccounts().useAccount()
   const narrow = useNarrow()
@@ -142,29 +180,35 @@ export function CompendiumScreen() {
   // Se busca al dejar de escribir, no con cada tecla
   const wanted = useSettled(query.trim())
   const [layer, setLayer] = useState<Layer>('all')
+  // Por tipo (sus estantes) o por libro (ADR-0021); el libro elegido filtra lo que se busca
+  const [view, setView] = useState<'type' | 'book'>(initialBook ? 'book' : 'type')
+  const [book, setBook] = useState<string | null>(initialBook)
+  const [bookType, setBookType] = useState<string | null>(initialType)
   const hits = useInfiniteQuery({
-    queryKey: ['compendium', campaignId, 'search', wanted, layer],
-    // Solo una capa, si se elige: la filtra el servidor (antes de paginar)
+    queryKey: ['compendium', campaignId, 'search', wanted, layer, book, bookType],
+    // Solo una capa o un libro, si se elige: lo filtra el servidor (antes de paginar)
     queryFn: ({ pageParam }) =>
       api.call('searchCampaignContent', {
         campaignId,
         query: wanted,
         limit: PAGE,
         offset: pageParam,
-        ...(layer === 'all' ? {} : { layer })
+        ...(layer === 'all' ? {} : { layer }),
+        ...(book ? { source: book } : {}),
+        ...(book && bookType ? { type: bookType } : {})
       }),
     initialPageParam: 0,
     getNextPageParam: (last, pages) => {
       const seen = pages.reduce((n, p) => n + p.items.length, 0)
       return seen < last.total ? seen : undefined
     },
-    enabled: Boolean(compendium.data?.system) && wanted !== ''
+    enabled: Boolean(compendium.data?.system) && (wanted !== '' || book !== null)
   })
   const items = hits.data?.pages.flatMap((p) => p.items) ?? []
   // Lo abierto va en la dirección: se enlaza y, en el móvil, «atrás» vuelve a la lista
   const shown = ver ?? null
-  const open = (key: string) => void navigate({ search: { ver: key } })
-  const back = () => void navigate({ search: {} })
+  const open = (key: string) => onVer(key)
+  const back = () => onVer(null)
   // Al volver a la lista (en lo estrecho), el foco va a lo que estaba abierto
   const [lastShown, setLastShown] = useState<string | null>(null)
   if (shown && shown !== lastShown) setLastShown(shown)
@@ -199,7 +243,7 @@ export function CompendiumScreen() {
   if (!system) {
     return (
       <section className={styles.empty}>
-        <PageTitle>{t('compendium.title')}</PageTitle>
+        {embedded ? <h2>{t('compendium.title')}</h2> : <PageTitle>{t('compendium.title')}</PageTitle>}
         <p>{t('compendium.noSystem')}</p>
       </section>
     )
@@ -219,11 +263,17 @@ export function CompendiumScreen() {
 
   return (
     <SystemIdContext.Provider value={system.id}>
-      <div className={styles.page} data-reading={narrow && shown ? '' : undefined}>
+      <div
+        className={styles.page}
+        data-reading={narrow && shown ? '' : undefined}
+        data-embedded={embedded || undefined}
+      >
         {/* El título, en el sitio de todas las pantallas (components/screen.tsx) */}
-        <div className={styles.top}>
-          <PageTitle>{t('compendium.title')}</PageTitle>
-        </div>
+        {!embedded && (
+          <div className={styles.top}>
+            <PageTitle>{t('compendium.title')}</PageTitle>
+          </div>
+        )}
         <aside className={styles.side} aria-label={t('compendium.title')}>
           <div className={styles.sideHead}>
             <span className={styles.system}>
@@ -262,6 +312,9 @@ export function CompendiumScreen() {
               placeholder={t('compendium.searchHint')}
               value={query}
               autoComplete="off"
+              data-1p-ignore
+              data-lpignore="true"
+              data-form-type="other"
               onChange={(event) => setQuery(event.currentTarget.value)}
             />
             {query && (
@@ -292,7 +345,50 @@ export function CompendiumScreen() {
               ))}
             </fieldset>
           )}
-          {wanted ? (
+          {sources.length > 0 && (
+            <fieldset className={styles.view}>
+              <legend className={styles.hidden}>{t('compendium.view')}</legend>
+              <button type="button" aria-pressed={view === 'type'} onClick={() => setView('type')}>
+                {t('compendium.byType')}
+              </button>
+              <button type="button" aria-pressed={view === 'book'} onClick={() => setView('book')}>
+                {t('compendium.byBook')}
+              </button>
+            </fieldset>
+          )}
+          {book && (
+            <p className={styles.bookFilter}>
+              <span>
+                {sources.find((s) => s.key === book)?.name ?? book}
+                {bookType ? ` · ${typeOf(bookType)?.label ?? bookType}` : ''}
+              </span>
+              <button
+                type="button"
+                aria-label={t('compendium.clearBook')}
+                onClick={() => {
+                  setBook(null)
+                  setBookType(null)
+                }}
+              >
+                <X size={13} aria-hidden="true" />
+              </button>
+            </p>
+          )}
+          {view === 'book' && !book && !wanted ? (
+            <ul className={styles.bookList} aria-label={t('compendium.byBook')} data-tour="compendio-libros">
+              {sources.map((s) => (
+                <li key={s.key}>
+                  <button type="button" className={styles.bookRow} onClick={() => setBook(s.key)}>
+                    <span className={styles.bookMini}>
+                      <BookCover book={s} size="spine" />
+                    </span>
+                    <span>{s.name}</span>
+                    <span className={styles.bookCount}>{s.count}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : wanted || book ? (
             <>
               <ul className={styles.list} aria-label={t('compendium.results')} aria-busy={hits.isFetching}>
                 {items.map((hit) => (
@@ -300,6 +396,7 @@ export function CompendiumScreen() {
                     key={hit.key}
                     hit={hit}
                     typeLabel={typeOf(hit.type)?.label ?? hit.type}
+                    bookName={hit.source ? (sources.find((s) => s.key === hit.source)?.name ?? null) : null}
                     current={hit.key === shown}
                     onOpen={() => open(hit.key)}
                   />
@@ -403,15 +500,22 @@ type Browsed = ActionOutput<'browseCampaignContent'>
  * Clases, Conjuros…), en cada una sus tipos y, en cada tipo, sus carpetas (los conjuros por nivel); dentro, lo suyo.
  * Todo se abre y se cierra; cada tipo se pide al abrirlo
  */
-function Library({
+/** Lo que se hace al empezar a arrastrar una entrada (en la Mesa: al mapa, a la campaña, a una ficha); null, no se arrastra */
+export type EntryDrag = (item: { key: string; type: string; name: string }) => ((event: DragEvent) => void) | null
+
+export function Library({
   campaignId,
   sections,
   types: all,
   layer,
   byWorld,
   current,
-  onOpen
+  onOpen,
+  drag,
+  inTab = false
 }: {
+  /** En la pestaña de la Mesa: sin su propio desplazamiento */
+  inTab?: boolean
   campaignId: string
   sections: Section[]
   types: CompendiumType[]
@@ -420,6 +524,7 @@ function Library({
   byWorld: Record<string, number>
   current: string | null
   onOpen: (key: string) => void
+  drag?: EntryDrag
 }) {
   const { t } = useTranslation()
   const [opened, setOpened] = useState<ReadonlySet<string>>(new Set())
@@ -476,6 +581,7 @@ function Library({
                   current={current}
                   onOpen={onOpen}
                   filtering={filtering}
+                  drag={drag}
                 />
               ) : (
                 <ul className={styles.shelf}>
@@ -502,6 +608,7 @@ function Library({
                             current={current}
                             onOpen={onOpen}
                             filtering={filtering}
+                            drag={drag}
                           />
                         </Disclosure>
                       </li>
@@ -517,12 +624,22 @@ function Library({
   )
   if (layer === 'world')
     return (
-      <nav className={styles.library} aria-label={t('compendium.library')} data-tour="compendio-estantes">
+      <nav
+        className={styles.library}
+        aria-label={t('compendium.library')}
+        data-tour="compendio-estantes"
+        data-in-tab={inTab || undefined}
+      >
         {worldCount === 0 ? <p className={styles.none}>{t('compendium.noWorld')}</p> : shelves(null, 'w:', 'world')}
       </nav>
     )
   return (
-    <nav className={styles.library} aria-label={t('compendium.library')} data-tour="compendio-estantes">
+    <nav
+      className={styles.library}
+      aria-label={t('compendium.library')}
+      data-tour="compendio-estantes"
+      data-in-tab={inTab || undefined}
+    >
       {layer === 'all' && worldCount > 0 && (
         <ul className={styles.shelf}>
           <li>
@@ -565,7 +682,7 @@ function Library({
 }
 
 /** Una carpeta que se abre y se cierra, con su nombre y cuántos lleva */
-function Disclosure({
+export function Disclosure({
   label,
   count,
   open,
@@ -608,8 +725,10 @@ function TypeShelf({
   onToggle,
   current,
   onOpen,
-  filtering
+  filtering,
+  drag
 }: {
+  drag?: EntryDrag | undefined
   campaignId: string
   type: string
   edition: string | null
@@ -645,21 +764,24 @@ function TypeShelf({
   const filters = browsed.data.filters.filter((f) => f.options.length > 1)
   const filtersOpen = opened.has(`${idPrefix}filtros`)
   const loose = items.filter((item) => item.folder === null)
-  const entry = (item: Browsed['items'][number]) => (
-    <li key={item.key}>
-      <button
-        type="button"
-        className={styles.entry}
-        data-entry={item.key}
-        aria-current={item.key === current ? 'true' : undefined}
-        onClick={() => onOpen(item.key)}
-      >
-        {item.img && <SystemImage systemId={systemId} path={item.img} className={styles.thumb} />}
-        <span className={styles.entryName}>{item.name}</span>
-        {edition === null && only === 'system' && <EditionTag edition={item.edition} legacy={item.legacy} />}
-      </button>
-    </li>
-  )
+  const entry = (item: Browsed['items'][number]) => {
+    const start = drag?.({ key: item.key, type, name: item.name }) ?? null
+    return (
+      <li key={item.key} draggable={Boolean(start)} onDragStart={start ?? undefined}>
+        <button
+          type="button"
+          className={styles.entry}
+          data-entry={item.key}
+          aria-current={item.key === current ? 'true' : undefined}
+          onClick={() => onOpen(item.key)}
+        >
+          {item.img && <SystemImage systemId={systemId} path={item.img} className={styles.thumb} />}
+          <span className={styles.entryName}>{item.name}</span>
+          {edition === null && only === 'system' && <EditionTag edition={item.edition} legacy={item.legacy} />}
+        </button>
+      </li>
+    )
+  }
   return (
     <ul className={styles.shelf}>
       {filters.length > 0 && (
@@ -722,25 +844,45 @@ function TypeShelf({
 function HitRow({
   hit,
   typeLabel,
+  bookName,
   current,
   onOpen
 }: {
   hit: ContentHit
   typeLabel: string
+  /** De qué libro sale (y su página): ADR-0021 */
+  bookName: string | null
   current: boolean
   onOpen: () => void
 }) {
+  const { t } = useTranslation()
   return (
     <li>
       <button type="button" className={styles.hit} aria-current={current ? 'true' : undefined} onClick={onOpen}>
         <span className={styles.hitText}>
           <span className={styles.hitName}>{hit.name}</span>
-          <span className={styles.hitType}>{typeLabel}</span>
+          <span className={styles.hitType}>
+            {typeLabel}
+            {bookName && (
+              <>
+                {' · '}
+                <span className={styles.hitBook}>
+                  {hit.page ? t('compendium.bookPage', { book: bookName, page: hit.page }) : bookName}
+                </span>
+              </>
+            )}
+          </span>
         </span>
         {hit.world ? <WorldTag /> : <EditionTag edition={hit.edition} legacy={hit.legacy} />}
       </button>
     </li>
   )
+}
+
+/** Su página en su libro, si se sabe (ref.pages, en español o en inglés) */
+function pageOf(item: { ref?: unknown }): number | null {
+  const pages = (item.ref as { pages?: { es?: number; en?: number } } | undefined)?.pages
+  return pages?.es ?? pages?.en ?? null
 }
 
 /** Un documento del compendio: su cabecera, sus datos, su texto, lo que concede por nivel y, al lado, su edición */
@@ -789,9 +931,7 @@ function Entry({
     queryKey: ['campaign', campaignId],
     queryFn: () => api.call('getCampaign', { campaignId })
   })
-  const visibility = visibilitiesFor(campaign.data?.campaign.role ?? 'player').includes(dice.visibility)
-    ? dice.visibility
-    : 'all'
+  const visibility = visibilityIn(dice.visibility, campaign.data?.campaign.role ?? 'player')
   const rolling = useMutation({
     mutationFn: (table: number) => api.call('rollContentTable', { campaignId, key: entryKey, table, visibility }),
     onSuccess: (out) =>
@@ -865,7 +1005,17 @@ function Entry({
         )}
         <header className={item.img ? `${styles.head} ${styles.withPortrait}` : styles.head}>
           {item.img && <SystemImage systemId={systemId} path={item.img} className={styles.portrait} />}
-          <p className={styles.kind}>{type?.label ?? item.type}</p>
+          <p className={styles.kind}>
+            {type?.label ?? item.type}
+            {source && (
+              <>
+                {' · '}
+                <span className={styles.hitBook}>
+                  {pageOf(item) ? t('compendium.bookPage', { book: source.name, page: pageOf(item) }) : source.name}
+                </span>
+              </>
+            )}
+          </p>
           <h2 id={titleId} className={styles.name} tabIndex={-1}>
             {name}
           </h2>

@@ -1,7 +1,8 @@
 /* El asa: a la izquierda del bloque, discreta hasta que se usa */
 /* El asa, como en Everlore: pequeña, gris y en el margen de la izquierda, separada del bloque */
 .handle {
-  z-index: 10;
+  /* Por encima de las ventanas de la Mesa (40 y más): va en el body, también si la página está en una */
+  z-index: 2000;
   padding-inline-end: var(--space-3);
 }
 
@@ -37,7 +38,8 @@
 /* En una línea vacía, siempre a la vista (fijo junto a ella) */
 .emptyGrip {
   position: fixed;
-  z-index: 25;
+  /* Por encima de las ventanas de la Mesa (40 y más): va en el body, también si la página está en una */
+  z-index: 2001;
   animation: aparece 160ms ease-out;
 }
 
@@ -81,7 +83,8 @@
 /* El menú del bloque */
 .menu {
   position: fixed;
-  z-index: 40;
+  /* Por encima de las ventanas de la Mesa (40 y más): va en el body, también si la página está en una */
+  z-index: 2003;
   inline-size: min(22rem, calc(100vw - 1rem));
   max-block-size: min(30rem, 70vh);
   padding-block: var(--space-1);
@@ -133,4 +136,15 @@
 
 .danger {
   color: var(--color-accent-text);
+}
+
+/* En la campaña (la Mesa), de cristal como lo demás */
+:global(body):has(:global([data-mesa])) .menu {
+  border-color: var(--glass-edge);
+  background: var(--glass-sheen), var(--glass-panel);
+  box-shadow:
+    inset 0 1px 0 var(--glass-hi),
+    var(--glass-shadow);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
 }

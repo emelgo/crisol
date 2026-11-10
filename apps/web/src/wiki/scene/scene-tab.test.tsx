@@ -264,12 +264,16 @@ describe('la pestaña «Escena»', () => {
       )
     })
 
-    it('«Usar este encuadre» guarda la vista inicial', async () => {
+    it('«Empezar con esta vista» la guarda para abrirla en la Mesa; «Quitarla» vuelve al mapa entero', async () => {
       const user = userEvent.setup()
       const { api, tab } = await withMap()
       await screen.findByRole('application', { name: 'Escena Escena' })
-      await user.click(screen.getByRole('button', { name: 'Usar este encuadre' }))
+      expect(screen.getByText('Enseña el mapa entero.')).toBeTruthy()
+      await user.click(screen.getByRole('button', { name: 'Empezar con esta vista' }))
       await waitFor(async () => expect((await stored(api, tab?.id ?? '')).initialView).not.toBeNull())
+      expect(await screen.findByText('Empieza con la vista guardada.')).toBeTruthy()
+      await user.click(screen.getByRole('button', { name: 'Quitarla' }))
+      await waitFor(async () => expect((await stored(api, tab?.id ?? '')).initialView).toBeNull())
     })
 
     it('«Abrir en la mesa» con la campaña elegida la abre en ella y lleva a su mesa', async () => {

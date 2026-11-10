@@ -9,6 +9,48 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
+## Libros y el espacio de la campaña (en local; ADR-0021)
+
+- [ ] **Entrar**: desde Mis mundos, la campaña se abre en la misma pestaña, en su Inicio (ir a la Mesa, jugadores,
+  libros, aventura en curso) con su barra; Ajustes se abre encima.
+- [ ] **Mesa**: la sección enseña los personajes, quién está en la Mesa (activo o en otra pestaña) y cómo va la
+  partida; «Abrir la Mesa» la abre en otra pestaña, a pantalla completa. Abre la Mesa desde otra cuenta (o la tele) y
+  mira que salga al momento.
+- [ ] **Libros**: apagar y encender libros; «Elegir contenido» quita entradas sueltas y desaparecen del compendio; la
+  ficha de un libro al pulsar su portada.
+
+## La campaña alrededor de la Mesa (en local; ADR-0019)
+
+- [ ] **Dados fluidos**: al pulsar «Tirar», los dados empiezan a caer al momento (no tras una pausa), van suaves y
+  paran en menos de 2 s con el número del registro; la primera tirada al entrar en la campaña tampoco espera.
+
+- [ ] **Entrar**: desde Mis mundos, una campaña se abre en otra pestaña, ya en la Mesa, con la barra a la derecha.
+- [ ] **La barra**: flota de cristal, plegada y desplegada; cada pestaña; al volver, la última; plegarla; un combate
+  nuevo abre la suya. La campaña va sola, sin la barra de la izquierda.
+- [ ] **Escenas**: las tarjetas, «Escena nueva» y «En esta escena» (ocultar al grupo, meter en el combate).
+- [ ] **Compendio**: buscar por apartados, poner criaturas en el mapa, el ojo de lo que está en juego, «Libros» y
+  «Abrir el compendio» (en su ventana).
+- [ ] **Ventanas**: abrir dos páginas desde Páginas, moverlas, estirarlas, minimizarlas y volver a abrirlas; un enlace
+  dentro abre otra; la hoja de un personaje (desde Personajes o una ficha del mapa).
+- [ ] **Enseñar**: «Enseñar a los jugadores» en una página; con alguno que no la conoce, «revelar y enseñar»; a la
+  jugadora se le abre (en su Mesa) o le sale «Te enseñan».
+- [ ] **Revelar desde la Mesa**: un secreto de una página abierta en ventana se revela a esa campaña sin preguntar.
+- [ ] **Campaña** (la pestaña del escudo): el nombre con su mundo y su sistema, los jugadores con sus personajes, quién
+  aún no tiene, los miembros, el enlace de invitación y borrar la campaña.
+- [ ] **La jugadora**: entra en su ficha con «Ir a la Mesa»; su Mesa ve lo que el grupo (como la tele) y su barra
+  (Combate, Personajes, Compendio, Páginas); en el móvil, su ficha.
+- [ ] **Del grupo**: en el inventario de la ficha, debajo de lo suyo; pasar algo arrastrando (PC) o con «Mover»
+  (móvil); «Lo puso».
+- [ ] **Escenas sueltas** (ADR-0020): «Escena nueva» crea la escena sin página; sin mapa, se elige o se sube allí
+  mismo; botón derecho o «⋯» en una tarjeta: abrir, rejilla y ajustes (en una ventana), cambiar el nombre y borrar
+  (y deshacerlo desde el historial). Las que ya están en páginas siguen igual.
+- [ ] **Los dados nuevos** (lienzo «Tirar dados»): el d20 abre la columna de dados; pulsar suma, el botón derecho (o
+  mantener el dedo) quita; la bandeja con el modificador, Ventaja/Desventaja (pone un d20 si no lo hay) y quién la ve
+  (se recuerda); «Tirar» la vacía y la cierra; el resultado sale sobre el d20 al pararse los dados (crítico con brillo,
+  pifia en rojo), con «Otra vez» y, al pulsarlo, el historial. El teclado: escribir la tirada, y la próxima vez se abre
+  así. El historial, en una ventana de la Mesa (con «Aplicar»), y fuera de ella, en una ficha junto al d20; Todas/Mías.
+  El «?» se aparta mientras los dados están abiertos. En el móvil, una hoja desde abajo.
+
 ## Módulo 6: escenas, fichas, combate y escenas de Foundry (en staging, PR #114)
 
 - [ ] **Una escena**: en la página de un lugar, «Añadir pestaña» → «Escena»; subir un mapa (imagen o UVTT) o pedírselo

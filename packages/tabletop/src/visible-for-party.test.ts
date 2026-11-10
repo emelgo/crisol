@@ -196,11 +196,14 @@ describe('la niebla a mano', () => {
     expect(blind.sighted.count()).toBe(0)
   })
 
-  it('sin visión automática, solo vale la niebla a mano', () => {
+  it('sin visión automática (como Foundry sin visión de fichas), se ve todo salvo lo tapado a mano', () => {
     const view = visibleForParty({ ...scene({ automatic: false }), tokens: [ana], manualFog: [reveal] })
-    expect(roomA(view.visible)).toBe(0)
-    expect(corridor(view.visible)).toBe(400)
+    // Entero: sus dos salas y el pasillo
+    expect(view.visible.count()).toBe(view.visible.empty().fill(true).count())
+    expect(roomB(view.visible)).toBeGreaterThan(0)
     expect(view.sights).toEqual([])
+    const covered = visibleForParty({ ...scene({ automatic: false }), tokens: [ana], manualFog: [cover] })
+    expect(covered.visible.count()).toBeLessThan(view.visible.count())
   })
 })
 

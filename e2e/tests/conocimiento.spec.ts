@@ -1,6 +1,15 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, type Page, test } from '@playwright/test'
-import { campaignLink, createCampaign, fillNewAccount, newPlayer, settled, skipTours, toWorlds } from './ayudas.ts'
+import {
+  campaignLink,
+  campaignPath,
+  createCampaign,
+  fillNewAccount,
+  newPlayer,
+  settled,
+  skipTours,
+  toWorlds
+} from './ayudas.ts'
 
 /** Que axe no encuentre fallos críticos ni graves, en claro y en oscuro */
 async function accessible(page: Page) {
@@ -19,7 +28,7 @@ test('lo que sabe cada campaña: el máster da a conocer «Aldoria» a La Marca;
 }) => {
   test.slow()
   const link = await campaignLink(page)
-  const campaignId = new URL(page.url()).pathname.split('/campanas/')[1] ?? ''
+  const campaignId = new URL(page.url()).pathname.split('/campanas/')[1]?.split('/')[0] ?? ''
   const worldId = new URL(page.url()).pathname.split('/')[2] ?? ''
   // Otra campaña del mundo, con su jugador
   await toWorlds(page)
@@ -88,7 +97,7 @@ test('lo que sabe cada campaña: el máster da a conocer «Aldoria» a La Marca;
 
   // La jugadora de La Marca: en su campaña, las páginas del mundo, con Aldoria y su capital
   const ana = await newPlayer(browser, link, 'Ana')
-  await ana.getByRole('navigation', { name: 'Secciones' }).getByRole('link', { name: 'Eana' }).click()
+  await ana.goto(`${campaignPath(ana)}/paginas`)
   await expect(ana.getByRole('heading', { level: 1, name: 'Aldoria' })).toBeVisible()
   const tree = ana.getByRole('navigation', { name: 'Páginas' })
   await expect(tree.getByRole('link', { name: 'Aldoria' })).toBeVisible()

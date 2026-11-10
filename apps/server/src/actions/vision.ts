@@ -27,7 +27,7 @@ import { cellCenter, joinCollinear, type Point, type Wall } from '@crisol/tablet
 import type { z } from 'zod'
 import { pagesChanged } from '../realtime/events.ts'
 import { campaignTableView, sceneView, screenViewOf, tokensWithSenses, visionOf } from '../table/projection.ts'
-import { authorizedCampaign, authorizedPage, sceneOfCampaign } from './access.ts'
+import { authorizedCampaign, authorizedPage, authorizedScene, sceneOfCampaign } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
 import { implement } from './registry.ts'
 
@@ -36,14 +36,6 @@ type Campaign = Awaited<ReturnType<typeof authorizedCampaign>>
 type WallInput = z.infer<typeof wallInput>
 type LightInput = z.infer<typeof lightInput>
 type Unit = 'px' | 'cell' | undefined
-
-/** La escena, si la cuenta puede hacer eso en su página (404 si no existe o no la ve) */
-async function authorizedScene(ctx: ActionContext, capability: 'page.read' | 'page.write', sceneId: string) {
-  const scene = await scenes.findScene(ctx.db, sceneId)
-  const { page, wiki } = await authorizedPage(ctx, capability, scene?.pageId ?? '')
-  if (!scene) throw new NotFoundError('scene')
-  return { scene, page, wiki }
-}
 
 /** Pasa un punto a píxeles: en casillas, con la rejilla cuadrada de la escena (sin rejilla, de 100 px desde 0) */
 function toPixels(grid: SceneRow['grid'], unit: Unit) {
@@ -279,7 +271,12 @@ async function campaignScene(ctx: ActionContext, campaign: Campaign, sceneId: st
   const scene = await sceneOfCampaign(ctx, campaign.worldId, target)
   const { state } = await scenes.ensureSceneState(
     ctx.db,
-    historyContext(ctx, 'openScene', { campaign: campaign.name, name: scene.name, title: scene.pageTitle }, campaign),
+    historyContext(
+      ctx,
+      'openScene',
+      { campaign: campaign.name, name: scene.name, title: scene.pageTitle ?? scene.name },
+      campaign
+    ),
     { worldId: campaign.worldId, campaignId: campaign.id, sceneId: target }
   )
   return { scene, state }

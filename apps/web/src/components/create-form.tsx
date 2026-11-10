@@ -26,7 +26,16 @@ export function CreateForm({ title, label, submit, onCreate }: Props) {
   return (
     <form className={form.form} onSubmit={send}>
       <h2>{title}</h2>
-      <Field label={label} name="name" autoComplete="off" maxLength={120} required />
+      <Field
+        label={label}
+        name="name"
+        autoComplete="off"
+        data-1p-ignore
+        data-lpignore="true"
+        data-form-type="other"
+        maxLength={120}
+        required
+      />
       <FormError message={create.error ? errorText(create.error) : null} />
       <BusyButton type="submit" className={form.button} busy={create.isPending}>
         {submit}

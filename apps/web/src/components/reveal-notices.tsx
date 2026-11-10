@@ -19,7 +19,14 @@ export function RevealNotices() {
   useEffect(() => {
     const fresh = revealed.filter((notice) => !seen.current.has(notice.id))
     for (const notice of fresh) seen.current.add(notice.id)
-    if (fresh.length > 0) announce(fresh.map((n) => t('revealNotice.title', { title: n.title })).join(' '))
+    if (fresh.length > 0)
+      announce(
+        fresh
+          .map((n) =>
+            n.shown ? t('revealNotice.shown', { title: n.title }) : t('revealNotice.title', { title: n.title })
+          )
+          .join(' ')
+      )
   }, [revealed, announce, t])
   if (revealed.length === 0) return null
   return (
@@ -28,8 +35,12 @@ export function RevealNotices() {
         <article key={notice.id} className={styles.card}>
           <Eye aria-hidden="true" size={18} className={styles.icon} />
           <div className={styles.text}>
-            <p className={styles.title}>{t('revealNotice.title', { title: notice.title })}</p>
-            <p className={styles.what}>{t(`revealNotice.kinds.${notice.kind}`)}</p>
+            <p className={styles.title}>
+              {notice.shown
+                ? t('revealNotice.shown', { title: notice.title })
+                : t('revealNotice.title', { title: notice.title })}
+            </p>
+            {!notice.shown && <p className={styles.what}>{t(`revealNotice.kinds.${notice.kind}`)}</p>}
             {notice.pageId && (
               <Link
                 to="/mundos/$worldId/campanas/$campaignId/paginas/$pageId"

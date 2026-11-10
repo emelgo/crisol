@@ -201,6 +201,9 @@ function SwitcherDialog({
     >
       <input
         autoComplete="off"
+        data-1p-ignore
+        data-lpignore="true"
+        data-form-type="other"
         ref={input}
         className={styles.input}
         role="combobox"

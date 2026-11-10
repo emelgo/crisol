@@ -1,4 +1,5 @@
 import { aiActions } from './ai.ts'
+import { bookActions } from './books.ts'
 import { campaignActions } from './campaigns.ts'
 import { characterActions } from './characters.ts'
 import { combatActions } from './combat.ts'
@@ -58,6 +59,7 @@ export const IMPLEMENTATIONS: Implementation[] = [
   ...tagActions,
   ...templateActions,
   ...systemActions,
+  ...bookActions,
   ...foundryActions,
   ...foundrySceneActions,
   ...compendiumActions,

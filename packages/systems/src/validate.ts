@@ -115,7 +115,8 @@ const PARTS: Record<string, string> = {
   from: 'Cambia',
   dice: 'Dados',
   critical: 'Críticos',
-  sources: 'Fuentes',
+  sources: 'Libros',
+  requires: 'Amplía a',
   packs: 'Contenido',
   settings: 'Ajustes de campaña',
   attribution: 'Atribución',
@@ -403,6 +404,13 @@ function checkReferences(
   if (system.dice?.default) diceFormula(system.dice.default, ['dice', 'default'], add)
   repeated(system.languages, (i, k) => add(['languages', i], `«${k}» está repetido`))
   repeated(system.sources?.map((s) => s.key) ?? [], (i, k) => add(['sources', i, 'key'], `«${k}» está repetida`))
+  const bookKeys = new Set(system.sources?.map((s) => s.key) ?? [])
+  system.sources?.forEach((book, i) => {
+    book.requires?.forEach((wanted, j) => {
+      if (wanted === book.key) add(['sources', i, 'requires', j], 'Un libro no se amplía a sí mismo')
+      else if (!bookKeys.has(wanted)) add(['sources', i, 'requires', j], `No existe el libro «${wanted}»`)
+    })
+  })
   repeated(system.packs?.map((p) => p.key) ?? [], (i, k) => add(['packs', i, 'key'], `«${k}» está repetido`))
   system.packs?.forEach((pack, i) => {
     pack.types?.forEach((type, j) => {

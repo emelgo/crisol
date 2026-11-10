@@ -17,6 +17,7 @@ import { FormError } from '../components/field.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import layout from '../components/screen.module.css'
 import { Screen } from '../components/screen.tsx'
+import { itemTransition, SECTION } from '../components/world-transition.ts'
 import { blockOf, type Kind, kindOf, PANEL_GROUPS } from '../wiki/panel-blocks.tsx'
 import { RelatedOptions } from '../wiki/related-block.tsx'
 import styles from './editor.module.css'
@@ -105,14 +106,16 @@ function TemplateEditor({ template, all }: { template: PageTemplate; all: readon
       {/* El título, donde en las demás pantallas: su icono, su nombre y, junto a él, «Plantilla» */}
       <div className={layout.top}>
         <div className={styles.heading}>
-          <span className={styles.icon} aria-hidden="true">
+          <span className={styles.icon} aria-hidden="true" style={itemTransition(template.id, 'icono')}>
             <Icon size={22} strokeWidth={1.5} />
           </span>
-          {readOnly ? (
-            <PageTitle>{draft.name}</PageTitle>
-          ) : (
-            <TitleInput name={draft.name} onCommit={(name) => change({ name })} />
-          )}
+          <div style={itemTransition(template.id, 'nombre')}>
+            {readOnly ? (
+              <PageTitle>{draft.name}</PageTitle>
+            ) : (
+              <TitleInput name={draft.name} onCommit={(name) => change({ name })} />
+            )}
+          </div>
           <span className={styles.kind}>
             <LayoutTemplate size={14} aria-hidden="true" />
             {t('templateEditor.kind')}
@@ -156,6 +159,8 @@ function TemplateLinks({ templates, current }: { templates: readonly PageTemplat
               to="/plantillas/$templateId"
               params={{ templateId: each.id }}
               aria-current={each.id === current ? 'page' : undefined}
+              // De una a otra, como entre pestañas: rápido
+              viewTransition={SECTION}
             >
               <Icon size={15} aria-hidden="true" />
               {each.name}

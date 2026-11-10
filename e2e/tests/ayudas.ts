@@ -10,8 +10,14 @@ import { e2eDatabaseUrl } from '../servidor.ts'
 export const owner = { name: 'Enrique', email: 'enrique@crisol.test', password: 'una-clave-larga' }
 
 /** Base de datos vacía y el propietario con su cuenta recién creada y la sesión abierta en `page` */
+/** La campaña va sola, sin la barra de la izquierda (como en Foundry): para lo de la barra, a Mis mundos */
+async function leaveCampaign(page: Page) {
+  if (/\/campanas\/[^/]+/.test(new URL(page.url()).pathname)) await page.goto('/mundos')
+}
+
 /** El menú de la cuenta: se abre con el nombre, en la barra */
 async function openAccountMenu(page: Page) {
+  await leaveCampaign(page)
   const account = page.getByRole('navigation', { name: 'Cuenta' })
   await account.locator('button[aria-expanded="false"]').click()
   return account
@@ -44,6 +50,7 @@ export function sections(page: Page) {
 
 /** Abre Historial o Papelera, desde abajo en la barra (del mundo en el que se esté); devuelve la ventana */
 export async function openWindow(page: Page, name: 'Historial' | 'Papelera') {
+  await leaveCampaign(page)
   await page.getByRole('button', { name, exact: true }).click()
   const window = page.getByRole('dialog', { name, exact: true })
   await expect(window).toBeVisible()
@@ -139,7 +146,11 @@ export async function skipTours(page: Page, email: string) {
           'sistemas',
           'paginas-jugador',
           'escena',
-          'mesa'
+          'mesa',
+          'mesa-jugador',
+          'libros',
+          'sistema',
+          'revisar'
         ]
       })
     )
@@ -169,6 +180,7 @@ export async function createWorld(page: Page, name: string) {
 
 /** A Mis mundos con la llama, sin recargar (no corta el canal en tiempo real) */
 export async function toWorlds(page: Page) {
+  await leaveCampaign(page)
   if (new URL(page.url()).pathname !== '/mundos') await sections(page).getByRole('link', { name: 'Crisol' }).click()
   await expect(page.getByRole('heading', { level: 1, name: 'Mis mundos' })).toBeVisible()
 }
@@ -207,12 +219,44 @@ export async function import5e(page: Page): Promise<string> {
   return (await response.json()).system.id
 }
 
-/** El propietario crea Eana y La Marca; devuelve el enlace de invitación (con `page` en la campaña) */
+/**
+ * Entra en la Mesa de una campaña desde su tarjeta (ADR-0021: la campaña abre en su Inicio y la Mesa, en otra pestaña;
+ * aquí, en la misma, con su dirección). panel: la pestaña de la Mesa que se quiere abierta (ajustes, compendio…)
+ */
+export async function openCampaign(page: Page, name: string, panel?: string) {
+  const href = await page.getByRole('link', { name, exact: true }).first().getAttribute('href')
+  expect(href).toBeTruthy()
+  await page.goto(`${href}/mesa${panel ? `?panel=${panel}` : ''}`)
+}
+
+/** La dirección de la campaña abierta en `page` (sin ?panel=…) */
+export const campaignPath = (page: Page) => new URL(page.url()).pathname.replace(/\/(mesa|compendio|paginas.*)$/, '')
+
+/** Una pestaña de la barra de la Mesa */
+export async function mesaTab(page: Page, name: string) {
+  const panel = page.getByRole('complementary', { name: 'Panel de la mesa' })
+  await panel.getByRole('tab', { name: new RegExp(`^${name}`) }).click()
+  return panel
+}
+
+/** El compendio entero del máster (con sus ajustes y «Nueva entrada»), en su ventana sobre la Mesa */
+export async function openCompendiumWindow(page: Page, path = campaignPath(page)) {
+  await page.goto(`${path}?panel=compendio`)
+  await page
+    .getByRole('complementary', { name: 'Panel de la mesa' })
+    .getByRole('button', { name: 'Abrir el compendio' })
+    .click()
+  const window = page.getByRole('dialog', { name: 'Compendio' })
+  await expect(window).toBeVisible()
+  return window
+}
+
+/** El propietario crea Eana y La Marca; devuelve el enlace de invitación (con `page` en los Ajustes de su Mesa) */
 export async function campaignLink(page: Page) {
   await freshOwner(page)
   await createWorld(page, 'Eana')
   await createCampaign(page, 'La Marca')
-  await page.getByRole('link', { name: 'La Marca', exact: true }).click()
+  await openCampaign(page, 'La Marca', 'ajustes')
   return page.getByLabel('Enlace de invitación').inputValue()
 }
 
@@ -347,10 +391,13 @@ export async function settled(page: Page) {
     .poll(() =>
       page.evaluate(
         () =>
-          document
-            .getAnimations()
-            .filter((a) => a.playState === 'running' && a.effect?.getTiming().iterations !== Number.POSITIVE_INFINITY)
-            .length
+          document.getAnimations().filter(
+            (a) =>
+              a.playState === 'running' &&
+              a.effect?.getTiming().iterations !== Number.POSITIVE_INFINITY &&
+              // El fondo de las pantallas de cuenta no para nunca (y es de adorno)
+              !((a.effect as KeyframeEffect | null)?.target as Element | null)?.closest('[data-fondo]')
+          ).length
       )
     )
     .toBe(0)

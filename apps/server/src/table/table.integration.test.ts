@@ -81,7 +81,7 @@ describe('la mesa: escenas, teselas y la sala', () => {
       headers: { origin: BASE_URL, cookie, 'content-type': 'image/webp' }
     })
   const getTile = (url: string, cookie = owner.cookie) => app.inject({ method: 'GET', url, headers: { cookie } })
-  const join = async (view: 'master' | 'screen', cookie = owner.cookie, campaign = campaignId) => {
+  const join = async (view: 'master' | 'screen' | 'player', cookie = owner.cookie, campaign = campaignId) => {
     const ws = await app.injectWS('/api/table', { headers: { origin: BASE_URL, cookie } })
     sockets.push(ws)
     const box = inbox(ws)
@@ -148,6 +148,58 @@ describe('la mesa: escenas, teselas y la sala', () => {
     // La rejilla se cambia por partes, y va al historial
     const changed = await call('updateScene', { sceneId: scene.id, grid: { size: 140, offsetX: 12 } })
     expect(changed.body.grid).toMatchObject({ size: 140, offsetX: 12, distance: 5 })
+  })
+
+  it('una escena suelta (ADR-0020): sin página, con su nombre; se abre en la mesa, se renombra, se borra y se deshace', async () => {
+    const created = await call('createScene', { worldId, name: 'Pueblo' })
+    expect(created.status).toBe(200)
+    const scene = created.body
+    expect(scene).toMatchObject({ tabId: null, pageId: null, pageTitle: null, name: 'Pueblo', image: null })
+    // No crea ninguna página
+    const pages = await conn.db.select().from(schema.pages)
+    expect(pages.map((p) => p.title)).toEqual(['Cripta de Varn'])
+    expect((await call('listScenes', { worldId })).body.scenes.map((s: { name: string }) => s.name)).toEqual(['Pueblo'])
+    expect((await call('getScene', { sceneId: scene.id })).body).toMatchObject({ id: scene.id, name: 'Pueblo' })
+    // Sus teselas, como las de cualquiera (por el mundo, no por una página)
+    const version = crypto.randomUUID()
+    expect((await putTile(scene.id, version, '0/0/0')).statusCode).toBe(204)
+    expect((await getTile(`/api/scenes/${scene.id}/tiles/${version}/0/0/0`)).statusCode).toBe(200)
+    // Se abre en la mesa de una campaña y se le cambia el nombre
+    expect((await call('openScene', { campaignId, sceneId: scene.id })).body.open).toMatchObject({ id: scene.id })
+    expect((await call('renameScene', { sceneId: scene.id, name: 'El pueblo' })).body.name).toBe('El pueblo')
+    // La jugadora ni la crea ni la ve
+    expect((await call('createScene', { worldId, name: 'Mía' }, player.cookie)).status).toBeGreaterThanOrEqual(403)
+    expect((await call('getScene', { sceneId: scene.id }, player.cookie)).status).toBeGreaterThanOrEqual(403)
+    // Se borra (sale de la mesa) y deshacer la devuelve
+    expect((await call('deleteScene', { sceneId: scene.id })).status).toBe(200)
+    expect((await call('listScenes', { worldId })).body.scenes).toEqual([])
+    expect((await call('getScene', { sceneId: scene.id })).status).toBe(404)
+    const history = (await call('listHistory', { worldId })).body
+    const last = history.operations?.[0] ?? history.entries?.[0]
+    expect((await call('undoOperation', { operationId: last.id })).status).toBe(200)
+    expect((await call('getScene', { sceneId: scene.id })).body).toMatchObject({ name: 'El pueblo' })
+  })
+
+  it('una campaña con un sistema de serie («blank», sin fila en la base) abre escenas (y lo de en juego dice que no hay sistema)', async () => {
+    await conn.sql`update campaigns set system = 'blank' where id = ${campaignId}`
+    const scene = (await call('createScene', { worldId, name: 'Pueblo' })).body
+    const opened = await call('openScene', { campaignId, sceneId: scene.id })
+    expect(opened.status, JSON.stringify(opened.body)).toBe(200)
+    // Lo que está en juego necesita un sistema de la base: dice que no lo hay (antes, la consulta reventaba: 404)
+    expect((await call('listInPlay', { campaignId })).body).toEqual({ code: 'NO_SYSTEM' })
+  })
+
+  it('la de una página se renombra (su pestaña) y se borra (su pestaña) con las mismas acciones', async () => {
+    const tab = (await call('createPageTab', { pageId, kind: 'scene' })).body
+    const scene = (await call('getScene', { tabId: tab.id })).body
+    expect((await call('renameScene', { sceneId: scene.id, name: 'La cripta' })).body).toMatchObject({
+      name: 'La cripta',
+      pageTitle: 'Cripta de Varn'
+    })
+    expect((await call('deleteScene', { sceneId: scene.id })).status).toBe(200)
+    expect((await call('listPageTabs', { pageId })).body.tabs.map((t: { kind: string }) => t.kind)).not.toContain(
+      'scene'
+    )
   })
 
   it('las teselas: solo WebP, solo quien lleva la wiki; la imagen no se pone sin ellas', async () => {
@@ -304,20 +356,30 @@ describe('la mesa: escenas, teselas y la sala', () => {
     const url = (v = version) => `/api/campaigns/${campaignId}/screen/tiles/${v}/0/0/0`
     expect((await getTile(url())).statusCode).toBe(404)
     await call('presentScene', { campaignId, sceneId: scene.id })
-    // Sin muros, «sin visión automática»: nada hasta que se destapa a mano (docs/specs/vision.md)
+    // Sin muros, «sin visión automática»: se ve entera (como Foundry sin visión de fichas, docs/specs/vision.md)
+    expect((await getTile(url())).statusCode).toBe(200)
+    // Tapada a mano, ya no
+    await call('changeFog', { campaignId, mode: 'cover', shape: 'rectangle', x: 0, y: 0, width: 900, height: 600 })
     expect((await getTile(url())).statusCode).toBe(404)
     await call('changeFog', { campaignId, mode: 'reveal', shape: 'rectangle', x: 0, y: 0, width: 100, height: 100 })
     expect((await getTile(url())).statusCode).toBe(200)
     expect((await getTile(url(crypto.randomUUID()))).statusCode).toBe(404)
-    expect((await getTile(url(), player.cookie)).statusCode).toBe(404)
+    // La Mesa de un jugador ve lo mismo que la tele
+    expect((await getTile(url(), player.cookie)).statusCode).toBe(200)
     await call('hideScreen', { campaignId, hidden: true })
     expect((await getTile(url())).statusCode).toBe(404)
+    expect((await getTile(url(), player.cookie)).statusCode).toBe(404)
   })
 
-  it('un jugador no entra en la mesa ni la mueve, ni alguien de otra campaña', async () => {
+  it('un jugador no entra como máster ni como tele, ni la mueve; a su Mesa sí, y ve lo que el grupo', async () => {
     const { scene } = await sceneWithImage()
     const intruder = await join('screen', player.cookie)
     expect(await intruder.next()).toEqual({ type: 'error', code: 'FORBIDDEN' })
+    const asMaster = await join('master', player.cookie)
+    expect(await asMaster.next()).toEqual({ type: 'error', code: 'FORBIDDEN' })
+    await call('presentScene', { campaignId, sceneId: scene.id })
+    const own = await join('player', player.cookie)
+    expect(await own.next()).toMatchObject({ type: 'screen', screen: { scene: { id: scene.id } } })
     expect((await call('getCampaignTable', { campaignId }, player.cookie)).status).toBe(403)
     expect((await call('presentScene', { campaignId, sceneId: scene.id }, player.cookie)).status).toBe(403)
     // Una escena de otro mundo no se abre en esta campaña
@@ -326,6 +388,34 @@ describe('la mesa: escenas, teselas y la sala', () => {
     const otherTab = (await call('createPageTab', { pageId: otherPage, kind: 'scene' })).body
     const otherScene = (await call('getScene', { tabId: otherTab.id })).body
     expect((await call('openScene', { campaignId, sceneId: otherScene.id })).status).toBe(404)
+  })
+
+  it('quién está en la Mesa (ADR-0021): entra con la conexión, dice si tiene la pestaña a la vista y sale al cerrar', async () => {
+    const present = async (cookie = owner.cookie) =>
+      (await call('getTablePresence', { campaignId }, cookie)).body.present as {
+        name: string
+        viewer: string
+        active: boolean
+        tabs: number
+      }[]
+    expect(await present()).toEqual([])
+    const master = await join('master')
+    await master.next()
+    const own = await join('player', player.cookie)
+    await own.next()
+    await join('master')
+    await expect.poll(async () => (await present(player.cookie)).map((p) => p.tabs)).toEqual([2, 1])
+    expect((await present()).map(({ name, viewer, active, tabs }) => ({ name, viewer, active, tabs }))).toEqual([
+      { name: 'Enrique', viewer: 'master', active: true, tabs: 2 },
+      { name: 'Jugadora', viewer: 'player', active: true, tabs: 1 }
+    ])
+    own.ws.send(JSON.stringify({ type: 'presence', active: false }))
+    await expect.poll(async () => (await present()).find((p) => p.viewer === 'player')?.active).toBe(false)
+    own.ws.terminate()
+    await expect.poll(async () => (await present()).map((p) => p.viewer), { timeout: 5000 }).toEqual(['master'])
+    // Quien no está en la campaña no lo ve
+    const stranger = await signUpTestUser(auth, { name: 'Otro', email: 'otro@crisol.test' })
+    expect((await call('getTablePresence', { campaignId }, stranger.cookie)).status).toBe(404)
   })
 
   it('las pestañas «Escena» no le llegan a un jugador aunque conozca la página', async () => {

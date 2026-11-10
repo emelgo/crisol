@@ -1,0 +1,144 @@
+/* La pestaña Páginas de la Mesa: buscador y árbol */
+.search {
+  inline-size: 100%;
+  block-size: 2.25rem;
+  padding: 0 0.75rem;
+  border: 1px solid var(--color-frame);
+  border-radius: 3px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.875rem;
+}
+
+.search:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 1px;
+}
+
+.muted {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+.tree {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-block-size: 2rem;
+}
+
+.twisty {
+  display: grid;
+  flex: none;
+  place-items: center;
+  inline-size: 1.25rem;
+  block-size: 1.25rem;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: none;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+span.twisty {
+  cursor: default;
+}
+
+.twisty[aria-expanded="true"] svg {
+  transform: rotate(90deg);
+}
+
+.twisty:hover {
+  color: var(--color-text);
+}
+
+.title {
+  flex: 1;
+  min-inline-size: 0;
+  padding: 0.3rem 0.4rem;
+  overflow: hidden;
+  border: 0;
+  border-radius: 3px;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.875rem;
+  text-align: start;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.title:hover {
+  background: var(--color-raised);
+}
+
+.twisty:focus-visible,
+.title:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
+}
+
+/* Lo conoce el grupo (el máster): un ojo a la derecha */
+.known {
+  display: grid;
+  flex: none;
+  place-items: center;
+  inline-size: 1.5rem;
+  color: var(--color-muted);
+}
+
+/* Algo nuevo para quien juega: un punto junto al título */
+.new {
+  display: inline-block;
+  inline-size: 7px;
+  block-size: 7px;
+  margin-inline-start: 6px;
+  border-radius: 50%;
+  background: var(--color-brand);
+  vertical-align: 2px;
+}
+
+.group {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.group:hover {
+  border-color: var(--color-frame);
+  background: var(--color-raised);
+}
+
+.group:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

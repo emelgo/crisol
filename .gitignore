@@ -18,3 +18,5 @@ playwright-report/
 
 # Worktrees de las sesiones de Claude Code
 .claude/worktrees/
+# El motor de impeccable (binario de ~22 MB): lo descarga su lanzador si falta
+.claude/skills/impeccable/scripts/bin/

@@ -1,4 +1,4 @@
-import { leaveCampaign, listMembers, removeMember } from '@crisol/contracts'
+import { getTablePresence, leaveCampaign, listMembers, removeMember } from '@crisol/contracts'
 import { membersRepo } from '@crisol/db'
 import { NotFoundError } from '@crisol/domain'
 import { membersChanged } from '../realtime/events.ts'
@@ -10,6 +10,15 @@ export const memberActions = [
   implement(listMembers, async (ctx, { campaignId }) => {
     await authorizedCampaign(ctx, 'campaign.read', campaignId)
     return { members: await membersRepo.listCampaignMembers(ctx.db, campaignId) }
+  }),
+
+  // Quién está ahora en la Mesa (ADR-0021): con su nombre, el de la campaña (el máster va primero)
+  implement(getTablePresence, async (ctx, { campaignId }) => {
+    await authorizedCampaign(ctx, 'campaign.read', campaignId)
+    const present = ctx.presence?.list(campaignId) ?? []
+    if (present.length === 0) return { present: [] }
+    const names = new Map((await membersRepo.listCampaignMembers(ctx.db, campaignId)).map((m) => [m.userId, m.name]))
+    return { present: present.map((entry) => ({ ...entry, name: names.get(entry.userId) ?? '' })) }
   }),
 
   implement(removeMember, async (ctx, { campaignId, userId }) => {

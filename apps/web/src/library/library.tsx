@@ -44,11 +44,33 @@ function BookState({ book }: { book: Book }) {
   return <span className={styles[book.status]}>{t(`library.status.${book.status}`)}</span>
 }
 
+export interface LibrarySearch {
+  libro?: string
+  pagina?: number
+  q?: string
+}
+
+/** La ruta de la biblioteca: el libro abierto, su página y lo buscado van en la dirección */
 export function LibraryScreen() {
-  const { t } = useTranslation()
   const { worldId } = route.useParams()
   const search = route.useSearch()
   const navigate = route.useNavigate()
+  return <Library worldId={worldId} search={search} onSearch={(next) => void navigate({ search: next })} />
+}
+
+/** La biblioteca: en su ruta o en una ventana sobre la Mesa (embedded: lado a lado, sin el armazón de pantalla) */
+export function Library({
+  worldId,
+  search,
+  onSearch,
+  embedded = false
+}: {
+  worldId: string
+  search: LibrarySearch
+  onSearch: (next: LibrarySearch) => void
+  embedded?: boolean
+}) {
+  const { t } = useTranslation()
   const api = useApi()
   const client = useQueryClient()
   const errorText = useErrorText()
@@ -79,9 +101,7 @@ export function LibraryScreen() {
     return failed(books) ? <LoadError error={books.error} onRetry={() => books.refetch()} /> : <Loading />
   const open = books.data.books.find((b) => b.fileId === search.libro)
   const show = (fileId: string, page?: number) =>
-    void navigate({
-      search: { libro: fileId, ...(page ? { pagina: page } : {}), ...(wanted ? { q: wanted } : {}) }
-    })
+    onSearch({ libro: fileId, ...(page ? { pagina: page } : {}), ...(wanted ? { q: wanted } : {}) })
   const scope = (common: boolean) => (common ? t('library.common') : t('library.world'))
   const side = (
     <div className={styles.side}>
@@ -94,6 +114,9 @@ export function LibraryScreen() {
           id={searchId}
           type="search"
           autoComplete="off"
+          data-1p-ignore
+          data-lpignore="true"
+          data-form-type="other"
           placeholder={t('library.search')}
           value={query}
           onChange={(event) => setQuery(event.currentTarget.value)}
@@ -195,30 +218,40 @@ export function LibraryScreen() {
       )}
     </div>
   )
+  const reader = (
+    <section className={styles.reader} aria-label={open ? open.name : t('library.title')}>
+      {open ? (
+        <>
+          <div className={styles.readerHead}>
+            <span className={styles.bookName}>{open.name}</span>
+            <span className={styles.scope}>{scope(open.common)}</span>
+            <a href={open.url} target="_blank" rel="noopener" className={styles.openApart}>
+              {t('pdf.open')}
+            </a>
+          </div>
+          <PdfPages
+            key={open.url}
+            url={open.url}
+            name={open.name}
+            first={search.pagina ?? 1}
+            highlight={search.q ? search.q.split(/\s+/) : []}
+          />
+        </>
+      ) : (
+        <p className={styles.pick}>{t('library.pick')}</p>
+      )}
+    </section>
+  )
+  if (embedded)
+    return (
+      <div className={styles.embedded}>
+        {side}
+        {reader}
+      </div>
+    )
   return (
     <Screen title={t('library.title')} left={side} leftLabel={t('library.books')}>
-      <section className={styles.reader} aria-label={open ? open.name : t('library.title')}>
-        {open ? (
-          <>
-            <div className={styles.readerHead}>
-              <span className={styles.bookName}>{open.name}</span>
-              <span className={styles.scope}>{scope(open.common)}</span>
-              <a href={open.url} target="_blank" rel="noopener" className={styles.openApart}>
-                {t('pdf.open')}
-              </a>
-            </div>
-            <PdfPages
-              key={open.url}
-              url={open.url}
-              name={open.name}
-              first={search.pagina ?? 1}
-              highlight={search.q ? search.q.split(/\s+/) : []}
-            />
-          </>
-        ) : (
-          <p className={styles.pick}>{t('library.pick')}</p>
-        )}
-      </section>
+      {reader}
       <Tour
         id="biblioteca"
         steps={[

@@ -137,8 +137,8 @@ test('las herramientas: medir y dejar un cono, dañar a las de dentro, un reloj 
   // Medir: un camino con un punto de paso, de Sela a Goblin 2, que la tele ve
   await tools.getByRole('button', { name: 'Medir' }).click()
   const plantillas = page.getByRole('complementary', { name: 'Plantillas' })
-  await plantillas.getByRole('switch', { name: 'La tele ve lo que mides' }).click()
-  await expect(plantillas.getByRole('switch', { name: 'La tele ve lo que mides' })).toHaveAttribute(
+  await plantillas.getByRole('switch', { name: 'Los jugadores ven lo que mides' }).click()
+  await expect(plantillas.getByRole('switch', { name: 'Los jugadores ven lo que mides' })).toHaveAttribute(
     'aria-checked',
     'true'
   )

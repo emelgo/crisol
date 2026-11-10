@@ -4,11 +4,15 @@ import { cinco } from '@crisol/systems/fixtures'
 import { createMemoryHistory } from '@tanstack/react-router'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { fakeAccountClient } from '../account/fake.ts'
 import { fakeApi } from '../api/fake.ts'
 import { App } from '../app.tsx'
 import { createAppRouter } from '../router.tsx'
+
+// El máster abre el compendio desde su Mesa: su canal y su lienzo, de mentira
+vi.mock('../tabletop/channel.ts', async () => (await import('../tabletop/fakes.ts')).quietChannel())
+vi.mock('../tabletop/use-renderer.ts', async () => (await import('../tabletop/fakes.ts')).blindRenderer())
 
 const ORG = { id: crypto.randomUUID(), name: 'Mesa', role: 'owner' as const }
 const WORLD: World = {
@@ -88,10 +92,10 @@ describe('«En juego» (docs/specs/compendio-jugadores.md)', () => {
 
   it('el máster ve cuál está oculta y la pone a la vista con el ojo', async () => {
     const user = userEvent.setup()
+    // El máster lo tiene en la pestaña Compendio de su Mesa («En juego»)
     const { api, campaign } = await renderInPlay('master')
     const boss = await screen.findByRole('button', { name: 'Oculta a los jugadores: Jefe' })
     expect(boss.getAttribute('aria-pressed')).toBe('true')
-    expect(screen.getAllByText('Oculta').length).toBeGreaterThan(0)
     await user.click(boss)
     expect(
       (await screen.findByRole('button', { name: 'Oculta a los jugadores: Jefe' })).getAttribute('aria-pressed')

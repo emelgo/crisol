@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { strToU8, zipSync } from 'fflate'
-import { freshOwner } from './ayudas.ts'
+import { freshOwner, openCompendiumWindow } from './ayudas.ts'
 
 /** Un PNG de 1×1 de verdad (para que el navegador lo pinte) */
 const PNG = Buffer.from(
@@ -60,13 +60,14 @@ test('traer de Foundry con sus imágenes: el aviso de licencias, subirlas y el r
       data: { worldId: world.id, name: 'La Marca', system: systemId }
     })
   ).json()
-  await page.goto(`/mundos/${world.id}/campanas/${campaign.id}/compendio`)
-  await page.getByRole('searchbox', { name: 'Buscar en el compendio' }).fill('lobo')
-  await page.getByRole('list', { name: 'Resultados' }).getByRole('button', { name: /^Lobo/ }).click()
-  const article = page.getByRole('article', { name: 'Lobo' })
+  // El compendio entero, en su ventana de la Mesa
+  const compendium = await openCompendiumWindow(page, `/mundos/${world.id}/campanas/${campaign.id}`)
+  await compendium.getByRole('searchbox', { name: 'Buscar en el compendio' }).fill('lobo')
+  await compendium.getByRole('list', { name: 'Resultados' }).getByRole('button', { name: /^Lobo/ }).click()
+  const article = compendium.getByRole('article', { name: 'Lobo' })
   const portrait = article.locator('img')
   await expect(portrait).toHaveAttribute('src', /\/api\/system-images\//)
   await expect.poll(() => portrait.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(1)
-  await expect(page.getByRole('complementary', { name: 'Sobre este documento' })).toContainText('Arte de Alguien')
+  await expect(compendium.getByRole('complementary', { name: 'Sobre este documento' })).toContainText('Arte de Alguien')
   await page.screenshot({ path: test.info().outputPath('imagenes-compendio.png'), fullPage: false })
 })

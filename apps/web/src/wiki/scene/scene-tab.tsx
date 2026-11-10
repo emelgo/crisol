@@ -22,7 +22,7 @@ import { Modal } from '../../components/modal.tsx'
 import { Tour } from '../../components/tour.tsx'
 import { usePreparer } from '../../tabletop/preparer.ts'
 import { Preparing } from '../../tabletop/preparing.tsx'
-import { sceneTabKey } from '../../tabletop/queries.ts'
+import { sceneKey, sceneTabKey } from '../../tabletop/queries.ts'
 import { type SceneChoice, useScenePreparation } from '../../tabletop/use-preparation.ts'
 import { takePendingChoice } from './pending.ts'
 import styles from './scene.module.css'
@@ -43,25 +43,59 @@ export function SceneTabProvider({
   tab: PageTabView | null
   children: ReactNode
 }) {
+  return (
+    <SceneProvider
+      worldId={page.worldId}
+      tabId={tab?.id ?? null}
+      sceneId={null}
+      name={tab?.name ?? ''}
+      editable={!page.locked}
+      inPage
+    >
+      {children}
+    </SceneProvider>
+  )
+}
+
+/**
+ * Lo de una escena para su editor: la de una pestaña (por su id) o una suelta de la Mesa (por el suyo, ADR-0020, en una
+ * ventana). Sin ninguna de las dos, nada
+ */
+export function SceneProvider({
+  worldId,
+  tabId,
+  sceneId,
+  name,
+  editable,
+  inPage,
+  children
+}: {
+  worldId: string
+  tabId: string | null
+  sceneId: string | null
+  name: string
+  editable: boolean
+  inPage: boolean
+  children: ReactNode
+}) {
   const api = useApi()
   const queryClient = useQueryClient()
-  const tabId = tab?.id ?? null
-  const key = sceneTabKey(page.worldId, tabId ?? '')
+  const which = tabId ?? sceneId
+  const key = tabId ? sceneTabKey(worldId, tabId) : sceneKey(worldId, sceneId ?? '')
   const query = useQuery({
     queryKey: key,
-    queryFn: () => api.call('getScene', { tabId: tabId ?? '' }),
-    enabled: tabId !== null
+    queryFn: () => api.call('getScene', tabId ? { tabId } : { sceneId: sceneId ?? '' }),
+    enabled: which !== null
   })
-  const scene = tabId ? query.data : undefined
-  const preparation = useScenePreparation(page.worldId)
-  const editable = !page.locked
+  const scene = which ? query.data : undefined
+  const preparation = useScenePreparation(worldId)
   const [aligning, setAligning] = useState(false)
   const [found, setFound] = useState<{ size: number } | 'none' | null>(null)
   const viewer = useRef<(() => SceneViewport | null) | null>(null)
   // Otra pestaña: lo de la anterior se olvida
-  const [shownTab, setShownTab] = useState(tabId)
-  if (shownTab !== tabId) {
-    setShownTab(tabId)
+  const [shownTab, setShownTab] = useState(which)
+  if (shownTab !== which) {
+    setShownTab(which)
     setAligning(false)
     setFound(null)
   }
@@ -117,7 +151,7 @@ export function SceneTabProvider({
   const { start, cancel } = preparation
   useEffect(() => {
     if (!scene || !editable || started.current === scene.id) return
-    const chosen = takePendingChoice(scene.tabId)
+    const chosen = scene.tabId ? takePendingChoice(scene.tabId) : null
     const own = scene.image && !scene.image.tiles && scene.image.fileId ? scene.image.fileId : null
     if (!chosen && !own) return
     started.current = scene.id
@@ -129,13 +163,14 @@ export function SceneTabProvider({
       flushRef.current()
       cancel()
     },
-    [tabId, cancel]
+    [which, cancel]
   )
 
-  const value: SceneTabState | null = tab
+  const value: SceneTabState | null = which
     ? {
-        page,
-        tab,
+        worldId,
+        name: scene?.name ?? name,
+        inPage,
         scene,
         query,
         preparation,
@@ -158,11 +193,12 @@ export function SceneTabProvider({
 export function SceneMain() {
   const { t } = useTranslation()
   const errorText = useErrorText()
-  const { page, tab, scene, query, preparation, editable } = useSceneTab()
+  const { worldId, name, inPage, scene, query, preparation, editable } = useSceneTab()
   if (!scene) return failed(query) ? <LoadError error={query.error} onRetry={() => query.refetch()} /> : <Loading />
   const { state } = preparation
   const start = (choice: SceneChoice) => void preparation.start(scene, choice)
-  const tour = (
+  // En una ventana de la Mesa no hay pestañas de página ni «Abrir en la mesa»: ni su recorrido
+  const tour = inPage && (
     <Tour
       id="escena"
       steps={[
@@ -175,10 +211,10 @@ export function SceneMain() {
   )
   if (state.status !== 'preparing' && !scene.image) {
     return (
-      <section className={styles.empty} aria-label={t('scene.label', { name: tab.name })} data-tour="escena-mapa">
+      <section className={styles.empty} aria-label={t('scene.label', { name })} data-tour="escena-mapa">
         <MapIcon aria-hidden="true" size={32} strokeWidth={1.5} />
         <p>{t('scene.empty')}</p>
-        {editable && <SourcePicker worldId={page.worldId} value={null} onChange={start} />}
+        {editable && <SourcePicker worldId={worldId} value={null} onChange={start} />}
         {state.status === 'failed' && <FormError message={errorText(state.error)} />}
         {tour}
       </section>
@@ -197,7 +233,7 @@ export function SceneMain() {
       </div>
       {state.status === 'failed' && <FormError message={errorText(state.error)} />}
       <div className={styles.actions}>
-        <OpenInTable scene={scene} />
+        {inPage && <OpenInTable scene={scene} />}
         <span className={styles.grow} />
         {editable && state.status !== 'preparing' && <ChangeImage onChoose={start} />}
       </div>
@@ -212,10 +248,10 @@ function OpenInTable({ scene }: { scene: SceneView }) {
   const api = useApi()
   const navigate = useNavigate()
   const errorText = useErrorText()
-  const { page } = useSceneTab()
+  const { worldId } = useSceneTab()
   const campaigns = useQuery({
-    queryKey: ['campaigns', page.worldId],
-    queryFn: () => api.call('listCampaigns', { worldId: page.worldId })
+    queryKey: ['campaigns', worldId],
+    queryFn: () => api.call('listCampaigns', { worldId })
   })
   const mine = campaigns.data?.campaigns.filter((campaign) => campaign.role === 'master') ?? []
   const [chosen, setChosen] = useState<string | null>(null)
@@ -223,7 +259,7 @@ function OpenInTable({ scene }: { scene: SceneView }) {
   const open = useMutation({
     mutationFn: (id: string) => api.call('openScene', { campaignId: id, sceneId: scene.id }),
     onSuccess: (_, id) =>
-      navigate({ to: '/mundos/$worldId/campanas/$campaignId/mesa', params: { worldId: page.worldId, campaignId: id } })
+      navigate({ to: '/mundos/$worldId/campanas/$campaignId/mesa', params: { worldId, campaignId: id } })
   })
   if (mine.length === 0 || !campaignId) return null
   return (
@@ -259,7 +295,7 @@ function OpenInTable({ scene }: { scene: SceneView }) {
 /** «Cambiar la imagen»: el mismo selector, en un cuadro; elegir una ya la prepara */
 function ChangeImage({ onChoose }: { onChoose: (choice: SceneChoice) => void }) {
   const { t } = useTranslation()
-  const { page } = useSceneTab()
+  const { worldId } = useSceneTab()
   const [open, setOpen] = useState(false)
   const dialog = useRef<HTMLDialogElement>(null)
   const trigger = useRef<HTMLButtonElement>(null)
@@ -283,7 +319,7 @@ function ChangeImage({ onChoose }: { onChoose: (choice: SceneChoice) => void }) 
           <div className={styles.dialogBody}>
             <h2 id={titleId}>{t('scene.changeImage')}</h2>
             <SourcePicker
-              worldId={page.worldId}
+              worldId={worldId}
               value={null}
               onChange={(choice) => {
                 dialog.current?.close()
@@ -327,6 +363,10 @@ export function SceneSide() {
       if (view) await saveView(view)
     },
     onSuccess: () => announce(t('scene.grid.viewSaved'))
+  })
+  const dropView = useMutation({
+    mutationFn: () => saveView(null),
+    onSuccess: () => announce(t('scene.grid.viewDropped'))
   })
   if (!scene) return null
   const { grid } = scene
@@ -522,17 +562,31 @@ export function SceneSide() {
           </div>
         </>
       )}
+      {/* Con qué vista empieza al abrirla en la Mesa: la que se deja aquí o, sin ella, el mapa entero */}
       <div className={styles.field}>
         <span>{t('scene.grid.initialView')}</span>
-        <BusyButton
-          className={styles.ghost}
-          busy={keepView.isPending}
-          disabled={!ready}
-          onClick={() => keepView.mutate()}
-        >
-          <Frame aria-hidden="true" size={16} />
-          {t('scene.grid.useView')}
-        </BusyButton>
+        <p className={styles.viewNow}>{t(scene.initialView ? 'scene.grid.viewKept' : 'scene.grid.viewWhole')}</p>
+        <div className={styles.row}>
+          <BusyButton
+            className={styles.ghost}
+            busy={keepView.isPending}
+            disabled={!ready || !editable}
+            onClick={() => keepView.mutate()}
+          >
+            <Frame aria-hidden="true" size={16} />
+            {t('scene.grid.useView')}
+          </BusyButton>
+          {scene.initialView && (
+            <BusyButton
+              className={styles.ghost}
+              busy={dropView.isPending}
+              disabled={!editable}
+              onClick={() => dropView.mutate()}
+            >
+              {t('scene.grid.dropView')}
+            </BusyButton>
+          )}
+        </div>
       </div>
     </section>
   )

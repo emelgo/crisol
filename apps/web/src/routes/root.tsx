@@ -3,8 +3,10 @@ import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { GroupKnowledge } from '../campaign/group-knowledge.tsx'
+import { CampaignSettings } from '../campaign/settings.tsx'
 import { AccountMenu } from '../components/account-menu.tsx'
 import { ApprovalQueue } from '../components/approval-queue.tsx'
+import { Backdrop } from '../components/backdrop.tsx'
 import { CrisolMark, Loading } from '../components/brand.tsx'
 import { Notices } from '../components/notices.tsx'
 import { PageTitle, useFocusHeading } from '../components/page-title.tsx'
@@ -17,6 +19,7 @@ import { DiceProvider } from '../dice/context.tsx'
 import { DicePanel } from '../dice/panel.tsx'
 import { DiceTray } from '../dice/tray.tsx'
 import { WikiPanelProvider } from '../wiki/panel.tsx'
+import { WithCampaign } from './campaign.tsx'
 import { OrganizationHistory, WorldHistoryWindow } from './history.tsx'
 import { Profile } from './profile.tsx'
 import styles from './root.module.css'
@@ -39,6 +42,10 @@ export function RootLayout() {
       !/^\/(perfil|ajustes|historial|papelera|oauth\/|mundos\/[^/]+\/(historial|papelera)$)/.test(
         state.location.pathname
       )
+  })
+  // La Mesa va sola, a pantalla completa y en su pestaña (ADR-0021): sin la barra de la izquierda
+  const bare = useRouterState({
+    select: (state) => /^\/mundos\/[^/]+\/campanas\/[^/]+\/mesa\/?$/.test(state.location.pathname)
   })
   // Imprimir: solo la hoja, sin nada de la interfaz; la pantalla de la tele, igual: solo el mapa
   const printing = useRouterState({
@@ -86,6 +93,9 @@ export function RootLayout() {
         <main id="contenido" className={styles.main}>
           <Outlet />
         </main>
+        {/* Detrás de todo (fijo), las imágenes que van pasando, como en LegendKeeper; al final, para que su crédito
+            no vaya antes que «Saltar al contenido» */}
+        <Backdrop />
       </div>
     )
   }
@@ -95,9 +105,9 @@ export function RootLayout() {
       <WikiPanelProvider>
         <DiceProvider>
           <DiceTray>
-            <div className={styles.app}>
+            <div className={bare ? styles.bare : styles.app}>
               {skip}
-              <Ribbon />
+              {!bare && <Ribbon />}
               <main id="contenido" className={wide ? styles.wide : styles.main}>
                 <ApprovalQueue />
                 <Notices />
@@ -127,6 +137,7 @@ function windowBody(kind: WindowKind) {
   if (kind === 'papelera') return <TrashWindow />
   if (kind === 'ajustes') return <Settings />
   if (kind === 'revelado') return <GroupKnowledgeWindow />
+  if (kind === 'campana') return <CampaignSettingsWindow />
   return <Profile />
 }
 
@@ -145,6 +156,23 @@ function GroupKnowledgeWindow() {
   const path = useRouterState({ select: (state) => state.location.pathname })
   const match = /^\/mundos\/([^/]+)\/campanas\/([^/]+)/.exec(path)
   return match?.[1] && match[2] ? <GroupKnowledge worldId={match[1]} campaignId={match[2]} /> : null
+}
+
+/** Los ajustes de la campaña en la que se está (ADR-0021: se abren encima desde su barra) */
+function CampaignSettingsWindow() {
+  const { t } = useTranslation()
+  return (
+    <WithCampaign>
+      {({ worldName, campaign }) =>
+        campaign.role === 'master' ? (
+          <>
+            <PageTitle>{t('window.campana')}</PageTitle>
+            <CampaignSettings campaign={campaign} worldName={worldName} />
+          </>
+        ) : null
+      }
+    </WithCampaign>
+  )
 }
 
 export function NotFound() {

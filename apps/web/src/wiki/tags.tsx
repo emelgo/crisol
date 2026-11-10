@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
+import { useAnnounce } from '../components/announcer.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
 import { ChangesBar } from '../components/changes.tsx'
 import { ConfirmByName, DangerZone } from '../components/danger.tsx'
@@ -29,6 +30,46 @@ import styles from './tags.module.css'
 /** El color de una etiqueta, para su punto */
 export const tagDot = (color: TagView['color']) =>
   ({ '--tag-color': colorHex(color) ?? 'var(--color-muted)' }) as CSSProperties
+
+/** El último tramo de una etiqueta («ciudad» de «lugar/ciudad») y la de arriba («lugar»; «» si no tiene) */
+const leafOf = (name: string) => name.split('/').at(-1) ?? name
+const parentOf = (name: string) => name.split('/').slice(0, -1).join('/')
+const joinTag = (parent: string, leaf: string) => (parent ? `${parent}/${leaf}` : leaf)
+const sameTag = (a: string, b: string) => tagKey(a) === tagKey(b)
+/** Si «tag» puede ir dentro de «into» («» es arriba del todo): ni dentro de sí misma, ni donde ya está */
+const canMove = (tag: string, into: string) =>
+  !sameTag(parentOf(tag), into) && !sameTag(tag, into) && !tagKey(into).startsWith(`${tagKey(tag)}/`)
+
+/** «Dentro de»: arriba del todo o una de las etiquetas (sin ella misma ni sus hijas, al cambiarla de sitio) */
+function ParentSelect({
+  value,
+  onChange,
+  moving
+}: {
+  value: string
+  onChange: (parent: string) => void
+  moving?: string
+}) {
+  const { t } = useTranslation()
+  const id = useId()
+  const tags = useAccountTags().data?.tags ?? []
+  const choices = tags.filter(
+    (tag) => !moving || (!sameTag(tag.name, moving) && !tagKey(tag.name).startsWith(`${tagKey(moving)}/`))
+  )
+  return (
+    <div className={form.field}>
+      <label htmlFor={id}>{t('tags.parent')}</label>
+      <select id={id} value={value} onChange={(event) => onChange(event.currentTarget.value)}>
+        <option value="">{t('tags.top')}</option>
+        {choices.map((tag) => (
+          <option key={tag.name} value={tag.name}>
+            {tag.name}
+          </option>
+        ))}
+      </select>
+    </div>
+  )
+}
 
 /** Las etiquetas de la cuenta (ADR-0006), para quien las ve: el catálogo, que también usan los filtros */
 export function useAccountTags(enabled = true) {
@@ -132,6 +173,9 @@ export function TagsField({
         value={draft}
         placeholder={t('tags.add')}
         autoComplete="off"
+        data-1p-ignore
+        data-lpignore="true"
+        data-form-type="other"
         spellCheck={false}
         disabled={disabled}
         onChange={(event) => {
@@ -178,6 +222,29 @@ export function AccountTags() {
   const [query, setQuery] = useState('')
   const [hovered, setHovered] = useState<string | null>(null)
   useEffect(() => setHovered(null), [query])
+  const api = useApi()
+  const announce = useAnnounce()
+  const errorText = useErrorText()
+  // Arrastrar una etiqueta sobre otra la mete dentro; sobre «Arriba del todo», la saca (como las carpetas de Archivos)
+  const [dragging, setDragging] = useState<string | null>(null)
+  const [over, setOver] = useState<string | null>(null)
+  const [received, setReceived] = useState<string | null>(null)
+  const move = useMutation({
+    mutationFn: async ({ from, to }: { from: string; to: string }) => {
+      await api.call('updateTag', { tag: from, name: to })
+      await queryClient.invalidateQueries({ queryKey: ['tags'] })
+    },
+    onSuccess: (_, { to }) => {
+      setReceived(parentOf(to) || to)
+      announce(t('tags.moved', { name: to }))
+    },
+    onError: (error) => announce(errorText(error))
+  })
+  const drop = (into: string) => {
+    if (dragging && canMove(dragging, into)) move.mutate({ from: dragging, to: joinTag(into, leafOf(dragging)) })
+    setDragging(null)
+    setOver(null)
+  }
   if (pending) return null
   if (!account) return <Navigate to="/entrar" replace />
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['tags'] })
@@ -210,12 +277,46 @@ export function AccountTags() {
               ) : (
                 shown.length === 0 && <p className={files.empty}>{t('tags.noResults')}</p>
               )}
-              <ul className={files.rows} aria-label={t('tags.title')} data-tour="etiquetas-lista">
+              <ul
+                className={`${files.rows} ${dragging ? styles.draggingTag : ''}`}
+                aria-label={t('tags.title')}
+                data-tour="etiquetas-lista"
+              >
+                {/* Mientras se arrastra una de dentro: «Arriba del todo», para sacarla */}
+                {dragging && parentOf(dragging) && (
+                  <li
+                    className={styles.topTarget}
+                    data-over={over === '' || undefined}
+                    onDragOver={(event) => {
+                      event.preventDefault()
+                      setOver('')
+                    }}
+                    onDragLeave={() => setOver((current) => (current === '' ? null : current))}
+                    onDrop={(event) => {
+                      event.preventDefault()
+                      drop('')
+                    }}
+                  >
+                    {t('tags.topHere')}
+                    {over === '' && <span className={styles.moveHere}>{t('tags.moveHere')}</span>}
+                  </li>
+                )}
                 {shown.map((tag) => (
                   <TagRow
                     key={tag.name}
                     tag={tag}
                     indent={!wanted}
+                    movable={!wanted}
+                    target={dragging !== null && canMove(dragging, tag.name)}
+                    over={over === tag.name}
+                    received={received !== null && sameTag(received, tag.name)}
+                    onDrag={(on) => {
+                      setDragging(on ? tag.name : null)
+                      setOver(null)
+                      setReceived(null)
+                    }}
+                    onOver={(on) => setOver((current) => (on ? tag.name : current === tag.name ? null : current))}
+                    onDropInto={() => drop(tag.name)}
                     onPreview={(on) => setHovered((current) => (on ? tag.name : current === tag.name ? null : current))}
                     onChanged={refresh}
                   />
@@ -261,12 +362,29 @@ function useUses() {
 function TagRow({
   tag,
   indent,
+  movable,
+  target,
+  over,
+  received,
+  onDrag,
+  onOver,
+  onDropInto,
   onPreview,
   onChanged
 }: {
   tag: TagView
   /** En árbol (sin buscar): la hija, con sangría y solo su último tramo */
   indent: boolean
+  /** Se puede arrastrar (en árbol, con ratón) */
+  movable: boolean
+  /** Mientras se arrastra otra: si puede soltarse aquí, y si está encima */
+  target: boolean
+  over: boolean
+  /** Acaba de recibir una: se ilumina un momento */
+  received: boolean
+  onDrag: (dragging: boolean) => void
+  onOver: (over: boolean) => void
+  onDropInto: () => void
   onPreview: (shown: boolean) => void
   onChanged: () => Promise<unknown>
 }) {
@@ -278,8 +396,30 @@ function TagRow({
   const [open, setOpen] = useState<'sheet' | 'settings' | null>(null)
   return (
     <li
-      className={`${files.row} ${styles.tagRow}`}
+      className={`${files.row} ${styles.tagRow} ${received ? files.received : ''}`}
       style={indent ? ({ paddingInlineStart: `calc(${tag.depth} * 1.5rem + var(--space-2))` } as CSSProperties) : {}}
+      data-target={target || undefined}
+      data-over={over || undefined}
+      draggable={movable && !narrow}
+      onDragStart={(event) => {
+        event.dataTransfer.effectAllowed = 'move'
+        event.dataTransfer.setData('text/plain', tag.name)
+        onDrag(true)
+      }}
+      onDragEnd={() => onDrag(false)}
+      onDragOver={(event) => {
+        if (!target) return
+        event.preventDefault()
+        onOver(true)
+      }}
+      onDragLeave={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) onOver(false)
+      }}
+      onDrop={(event) => {
+        if (!target) return
+        event.preventDefault()
+        onDropInto()
+      }}
       onPointerEnter={() => onPreview(true)}
       onPointerLeave={() => onPreview(false)}
       onClickCapture={(event) => {
@@ -300,6 +440,7 @@ function TagRow({
         ) : (
           <span className={styles.name}>{name}</span>
         )}
+        {over && <span className={styles.moveHere}>{t('tags.moveHere')}</span>}
       </span>
       <span className={`${files.rowMeta} ${styles.usesAside}`}>{uses(tag)}</span>
       <TagSettings tag={tag} onChanged={onChanged} />
@@ -366,10 +507,11 @@ function NewTag({ onCreated }: { onCreated: () => Promise<unknown> }) {
   const titleId = useId()
   const [open, setOpen] = useState(false)
   const [name, setName] = useState('')
+  const [parent, setParent] = useState('')
   const [color, setColor] = useState<TagView['color']>(null)
   const create = useMutation({
     mutationFn: async () => {
-      await api.call('createTag', { name: name.trim(), color })
+      await api.call('createTag', { name: joinTag(parent, name.trim()), color })
       await onCreated()
     },
     onSuccess: () => dialog.current?.close()
@@ -384,6 +526,7 @@ function NewTag({ onCreated }: { onCreated: () => Promise<unknown> }) {
         data-tour="etiquetas-nueva"
         onClick={() => {
           setName('')
+          setParent('')
           setColor(null)
           create.reset()
           setOpen(true)
@@ -410,26 +553,26 @@ function NewTag({ onCreated }: { onCreated: () => Promise<unknown> }) {
             }}
           >
             <h2 id={titleId}>{t('tags.new')}</h2>
+            {/* El nombre, sin espacios ni «/»: dónde va se elige en «Dentro de» */}
             <Field
               label={t('tags.name')}
-              hint={t('tags.nameHint')}
               value={name}
               required
               maxLength={100}
-              pattern="[^\s]+"
               autoComplete="off"
               data-autofocus=""
-              onChange={(event) => setName(event.currentTarget.value.replace(/\s/g, ''))}
+              onChange={(event) => setName(event.currentTarget.value.replace(/[\s/]/g, ''))}
             />
+            <ParentSelect value={parent} onChange={setParent} />
             <ColorChoices value={color} onChange={setColor} />
             <FormError message={create.error ? errorText(create.error) : null} />
             <div className={dialogStyles.actions}>
-              <button type="button" className={dialogStyles.cancel} onClick={() => dialog.current?.close()}>
-                {t('tags.cancel')}
-              </button>
               <BusyButton type="submit" className={form.button} busy={create.isPending}>
                 {t('tags.create')}
               </BusyButton>
+              <button type="button" className={dialogStyles.cancel} onClick={() => dialog.current?.close()}>
+                {t('tags.cancel')}
+              </button>
             </div>
           </form>
         </Modal>
@@ -486,14 +629,16 @@ function TagDialog({
   const dialog = useRef<HTMLDialogElement>(null)
   const titleId = useId()
   const gone = useRef(false)
-  const [name, setName] = useState(tag.name)
+  const [leaf, setLeaf] = useState(leafOf(tag.name))
+  const [parent, setParent] = useState(parentOf(tag.name))
   const [color, setColor] = useState(tag.color)
-  const changed = name.trim() !== tag.name || color !== tag.color
+  const name = joinTag(parent, leaf.trim())
+  const changed = name !== tag.name || color !== tag.color
   const save = useMutation({
     mutationFn: async () => {
       await api.call('updateTag', {
         tag: tag.name,
-        ...(name.trim() !== tag.name ? { name: name.trim() } : {}),
+        ...(name !== tag.name ? { name } : {}),
         ...(color !== tag.color ? { color } : {})
       })
       await onChanged()
@@ -521,13 +666,14 @@ function TagDialog({
         <h2 id={titleId}>{t('tags.settingsOf', { name: tag.name })}</h2>
         <Field
           label={t('tags.name')}
-          hint={t('tags.nameHint')}
-          value={name}
+          value={leaf}
           required
           maxLength={100}
           autoComplete="off"
-          onChange={(event) => setName(event.currentTarget.value.replace(/\s/g, ''))}
+          onChange={(event) => setLeaf(event.currentTarget.value.replace(/[\s/]/g, ''))}
         />
+        {/* Cambiarla de sitio, también con el teclado (en la lista, arrastrándola) */}
+        <ParentSelect value={parent} onChange={setParent} moving={tag.name} />
         <ColorChoices value={color} onChange={setColor} />
         <FormError message={save.error ? errorText(save.error) : null} />
         <ChangesBar shown={changed}>
@@ -538,7 +684,8 @@ function TagDialog({
             type="button"
             className={dialogStyles.cancel}
             onClick={() => {
-              setName(tag.name)
+              setLeaf(leafOf(tag.name))
+              setParent(parentOf(tag.name))
               setColor(tag.color)
             }}
           >

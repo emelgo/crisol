@@ -103,7 +103,15 @@ export function PageIcon({ page, ghost = false }: { page: Page; ghost?: boolean 
           >
             <div className={form.field}>
               <label htmlFor={inputId}>{t('icon.other')}</label>
-              <input id={inputId} name="icono" maxLength={16} autoComplete="off" />
+              <input
+                id={inputId}
+                name="icono"
+                maxLength={16}
+                autoComplete="off"
+                data-1p-ignore
+                data-lpignore="true"
+                data-form-type="other"
+              />
             </div>
             <button type="submit" className={list.secondary}>
               {t('icon.useOther')}

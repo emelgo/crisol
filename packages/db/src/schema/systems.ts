@@ -43,7 +43,9 @@ export const systemContent = pgTable(
     // Su imagen, por su ruta entre las del sistema (system_images): la de un zip de Foundry o una subida
     img: text(),
     // Si es una tabla (el tipo «Tabla» de Crisol): su fórmula, si repite y sus filas
-    table: jsonb().$type<Record<string, unknown>>()
+    table: jsonb().$type<Record<string, unknown>>(),
+    // Pendiente de revisar (la propuso la IA desde un PDF, ADR-0021): no se ve en ningún sitio hasta aceptarla
+    review: jsonb().$type<ContentReview>()
   },
   (t) => [uniqueIndex().on(t.systemId, t.key), index().on(t.systemId, t.type)]
 )
@@ -70,6 +72,15 @@ export const systemImages = pgTable(
   },
   (t) => [uniqueIndex().on(t.systemId, t.path)]
 )
+
+/** Lo de una entrada pendiente de revisar: su página del PDF, el trozo del que sale y lo que falta o choca */
+export interface ContentReview {
+  page?: number
+  excerpt?: string
+  notes?: string[]
+  /** La que ya existe con su nombre en otro libro del sistema: la clave y el libro */
+  repeats?: { key: string; source: string | null; name: string }
+}
 
 /** De dónde sale una entrada copiada: su capa, su sistema, su clave y cómo era al copiarla (para ver lo que cambió) */
 export interface ContentOrigin {

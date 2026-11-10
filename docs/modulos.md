@@ -7,6 +7,126 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
+### Para retomar (2026-11-10: tanda en `main` con el PR #116; se pasa al módulo 7)
+
+- **En `main`** (PR #116): la campaña alrededor de la Mesa (ADR-0019), escenas sueltas (ADR-0020), el cristal, los dados
+  nuevos y fluidos, el estudio de Roliando y Nivel20, y libros y el espacio de la campaña (ADR-0021). La CI de e2e tiene
+  ahora más margen (la batería pasa de 30 min).
+- **La interfaz, en pausa** por decisión de Enrique (2026-11-10: «dejamos la UI por ahora»). Lo que tiene que probar, en
+  `tasks/probar.md`; la cuenta de jugadora de prueba en local, en `.env` (`LOCAL_PLAYER_*`).
+- **Siguiente módulo: el 7, «Sala de jugadores»** (catálogo, abajo): presencia, chat y susurros, mostrar a jugadores,
+  sonido (también los de un zip de Foundry) y controles del máster. Ya hay una parte: **quién está en la Mesa**
+  (`apps/server/src/table/presence.ts`, `getTablePresence`, la sección Mesa de la campaña) y «enseñar una página». Empezar
+  por el ciclo de siempre (CLAUDE.md): `interview-me` con Enrique frente a `docs/inventario.md`, estudio con
+  craft-anything (Foundry: sockets y chat; DDB: game log), `/spec`, lienzo, `/plan`, `/build`.
+
+### Para retomar (2026-11-10, noche: dados fluidos; siguiente, el lienzo de libros y del espacio de la campaña)
+
+- **Estudio de Roliando y Nivel20** hecho (`research/roliando/`, `research/nivel20/`; informe en
+  https://claude.ai/artifact/4uPvHP5VgzGfPLPWKCCc4Y). Enrique decidió que la campaña vuelva a tener su espacio propio,
+  como el mundo, con la Mesa como una sección (`docs/diseno.md`); cambia parte del ADR-0019.
+- **Dados fluidos** (commit «Dados más fluidos…»): caen en el clic con los dados que predice la fórmula
+  (`dice/predict.ts`) y el resultado se les pone al llegar (`DiceScene.start` → `land`/`cancel`; `useTray().start`);
+  la escena se carga y calienta en un rato libre dentro del mundo (`warm`); sin tarjeta gráfica, sin sombras ni
+  antialias; 1,8 s como mucho en pantalla. Ojo: las e2e sirven `apps/web/dist`: tras tocar la web, `pnpm --filter
+  @crisol/web build` antes de pasarlas sueltas.
+- **Lienzo «Libros y campaña»** aprobado («está genial»): ADR-0021, spec `docs/specs/libros.md`, plan y tareas en
+  `tasks/libros/`. Hechas las tareas 1–6: dominio (libros con más datos, `excluded`, lo pendiente), servidor (acciones
+  de libros, pendientes de revisar, MCP, migración 0064, presencia en la Mesa) y web (el espacio de la campaña con su
+  Inicio, la sección Mesa con personajes, quién está y «Abrir la Mesa» en otra pestaña, Libros de la campaña con
+  «Elegir contenido» y la ficha de cada libro). Enrique cambió dos cosas por el camino (2026-11-10): la campaña se abre
+  en la misma pestaña y la Mesa en otra; Personajes y Mesa, una sola sección.
+- **Hechas las tareas 7–9 y casi toda la 10** (2026-11-10, noche): página de cada sistema con sus libros, «Libro
+  nuevo» (IA desde PDF, archivo con `importBook`, vacío), ajustes del libro, revisión de lo que trae la IA, compendio por
+  libro (con página) y creador con libros; tutoriales; la revisión de código (agente) y sus arreglos (commit e79cfa9).
+  Enrique cambió además: la barra de la campaña lleva su nombre y no tiene Páginas; la «tele» es la pantalla de los
+  jugadores («Pantalla»/«Cámara») y se abre desde la Mesa. Cuenta de jugadora de prueba en local: en `.env`
+  (`LOCAL_PLAYER_*`), dentro de la campaña «dfgdfgd».
+- **Siguiente paso**: volver a pasar las e2e que fallaban antes de los últimos arreglos (`libros`, `a11y`, `fugas`,
+  `sistemas`; la tanda se cortó al cerrar la sesión) y luego `pnpm e2e` entero; con todo en verde, el PR a `main` con la
+  CI una vez (cuando Enrique lo diga). Fuera de esto: el puerto 8132 lo ocupa otro proceso y tumba
+  `mcp.integration.test.ts`.
+
+### Para retomar (2026-11-10, tarde: escenas sueltas, ADR-0020)
+
+- **Tras probar Enrique la campaña** (misma rama `docs/tras-revision`): pestaña «Campaña» con una sola voz, Escenas
+  antes que Combate, los menús del editor por encima de las ventanas, cristal en la página en ventana y en la Mesa
+  sin escena (el fondo de entrar), los fallos de la Mesa que se van solos, encuadrar sin lo que tapa la barra, los
+  dados 3D suaves (interpolando, como el Crisol antiguo) y el servidor que ya no se queda colgado al reiniciarse.
+- **Escenas sueltas (ADR-0020)**: Enrique eligió «como Foundry»: «Escena nueva» ya no crea página; `createScene`,
+  `renameScene`, `deleteScene` (MCP `crear_escena`, `renombrar_escena`, `borrar_escena`), migración 0063 (`tab_id`
+  opcional y `name`); permisos de la suelta por el mundo; su editor (mapa, rejilla) en una ventana de la Mesa
+  (`tabletop/scene-window.tsx`, `SceneProvider`); menú de cada tarjeta (botón derecho o «⋯»).
+- **Siguiente paso**: que pasen las e2e que quedan y la revisión; luego el PR con la CI una vez.
+
+
+- **Hecho en la rama `docs/tras-revision`** desde la nota de abajo: el cristal (lienzo «La Mesa, con cristal»), la barra
+  de la derecha flotando de cristal (plegada y desplegada, entera), la campaña sin la barra de la izquierda (como
+  Foundry), la pestaña «Campaña» (nombre, jugadores y sus personajes, miembros, invitación), fuera la pestaña Tiradas y
+  **los dados nuevos** (lienzo «Tirar dados», https://claude.ai/artifact/2foNpTU5ed1XGFkjTp2TAN, aprobado: «me
+  gusta»): columna de dados sobre el d20, bandeja con lo juntado (modificador, ventaja, quién la ve, que se recuerda),
+  escribir la tirada (se abre así la próxima vez), el resultado sobre el d20 cuando paran los dados, con «Otra vez», y
+  el historial en una ventana de la Mesa (fuera, en una ficha junto al d20). Código en `apps/web/src/dice/`
+  (`pool.ts`, `rack.tsx`, `notices.tsx`, `roll-parts.tsx`, `history.tsx`). Unitarias de la web en verde.
+- **Siguiente paso**: terminar la tarea 13: que pasen todas las e2e (adaptadas a la campaña sin barra, a que las
+  campañas se abren en otra pestaña y a los dados nuevos), la revisión y el PR con la CI una vez.
+- Lo de «sistemas y libros» y lo pendiente apuntado siguen como en la nota de abajo.
+
+### Para retomar (2026-11-09: la campaña alrededor de la Mesa, construida en local)
+
+- **Rama `docs/tras-revision`** (sin PR, sin subir), con lo de antes (cuadros unificados, transiciones, etiquetas
+  dentro de otras, fondos de las pantallas de cuenta, sin sistemas de serie, «Invitar», dados nuevos) y **la campaña
+  alrededor de la Mesa** (ADR-0019; plan y tareas en `tasks/plan.md` y `tasks/todo.md`, 12 de 13 hechas): el máster
+  abre en la Mesa con su barra de pestañas; páginas, compendio, libros y hojas en ventanas; «Enseñar a los jugadores»
+  (`showPage`, MCP `ensenar_pagina`); quien juega abre en su ficha y tiene su Mesa (espectador `player`); «Del grupo» en
+  la ficha con «Lo puso»; las campañas en otra pestaña; varias campañas por mundo y lo compartido, a la campaña desde
+  la que se hace. Unitarias de la web (706) y de integración de lo tocado en el servidor, en verde.
+- **Siguiente paso**: la tarea 13 (cierre): **actualizar los e2e** (muchos entran por las vistas viejas de la campaña,
+  por «Invitar» junto al título y por la barra de antes; también los pendientes de invitar, unirse y sistemas), la
+  revisión (`/agent-skills:review` y `web-design-guidelines`) y el PR con la CI una vez. Para mirarlo: el entorno de
+  revisión (servidor 8132, web 5174, `e2e/.revision/`, cuentas `enrique@` y `lucia@revision.test`).
+- **Lo siguiente que pidió Enrique (2026-11-10)**: **sistemas y libros**, como Roliando y Nivel20. El sistema son las
+  reglas (fichas, campos, tiradas, tipos); los **libros** rellenan el compendio de su sistema (en el 5e, sus libros de
+  D&D comprados y Fateforge, que es compatible; Daggerheart, en otro sistema). Al crear una campaña se elige el sistema
+  y luego sus libros. Hoy los libros son las «fuentes» del sistema y la campaña ya las elige: falta **añadir un libro a
+  un sistema que ya existe** (archivo, módulo de Foundry o la IA leyendo un PDF) y elegirlos por su nombre (con portada)
+  al crear la campaña. Antes, estudiar Roliando y Nivel20 (craft-anything, con una cuenta de prueba en cada una: Enrique
+  dijo que sí) y entrevista corta.
+- Pendiente apuntado: «Archivar» la campaña; la escena en marcha bajo «Ir a la Mesa» en la ficha; la ficha rápida al
+  pasar por una criatura del compendio.
+- Dev: si una pantalla da «Ya no existe» o 500 con «relation … does not exist», faltan migraciones en la base de
+  desarrollo: `pnpm db:migrate`.
+- Dev: `node --watch` deja de ver un archivo que Biome reescribe (lo sustituye por uno nuevo): si el servidor de
+  desarrollo no coge un cambio, `touch apps/server/src/main.ts` lo reinicia con todo lo último.
+
+### Para retomar (2026-11-08, madrugada: lo siguiente, rehacer la campaña alrededor de la Mesa)
+
+- **Rama `docs/tras-revision`** (sin PR, sin subir): tras el PR #115, los cuadros unificados, la transición de entrar en
+  una plantilla y en una campaña, las etiquetas dentro de otras (arrastrar), el fondo de las pantallas de cuenta como en
+  LegendKeeper (24 imágenes, `components/backdrop.tsx`), sin sistemas de serie, «Invitar» discreto y los dados con
+  física nueva. Unitarias en verde; faltan e2e de invitar, sistemas y lo nuevo.
+- **Decidido por Enrique (2026-11-08)** y apuntado en `docs/diseno.md`: la campaña se abre en la Mesa a pantalla completa,
+  con barra de pestañas a la derecha como Foundry (Tiradas, Combate, Escenas, Personajes, Compendio, Páginas, Ajustes);
+  páginas del mundo en ventanas sobre la Mesa; la jugadora abre en su ficha; el inventario del grupo, en la ficha (como
+  D&D Beyond). El lienzo ya está («Campaña en la Mesa», https://claude.ai/artifact/1gY6Mun8KisrJ6d2fXGbLj;
+  fuentes en `out/lienzo-campana/`, fuera de git). **Siguiente paso**: que Enrique lo apruebe y confirme las 14
+  «Decisiones que tomé yo» del final; luego el plan y construirlo en porciones.
+- Dev: si una pantalla da «Ya no existe» o 500 con «relation … does not exist», faltan migraciones en la base de
+  desarrollo: `pnpm db:migrate`.
+
+### Para retomar (2026-11-08, noche: las dos revisiones de la interfaz, en `main` y en staging)
+
+- **PR #115, fusionado y desplegado en staging** (2026-11-08): las dos revisiones globales de la interfaz con todo lo
+  arreglado, las normas nuevas en `docs/diseno.md` y las e2e al día. La CI pasó entera (la primera vez falló axe por
+  el «20» del d20, que era texto SVG: ahora va con trazos). Detalle de cada revisión, abajo y en
+  `tasks/revision-interfaz.md`.
+- **Queda para Enrique**: G1 (mover archivos con teclado; propuesta, por ahora no), probar a mano los módulos 5 y 6
+  (`tasks/probar.md`) y confirmar los ADR-0017 y ADR-0018.
+- **Después**: el módulo 7 (la sala de jugadores), empezando por su entrevista. Esta rama `docs/tras-revision` (sin PR)
+  solo lleva esta nota: que vaya con el PR siguiente.
+- Las tandas largas (e2e, despliegue), con `setsid nohup … &` y un Monitor sobre su log: la sesión se cortó varias
+  veces y paraba lo lanzado en segundo plano.
+
 ### Para retomar (2026-11-08, noche: segunda revisión de la interfaz, arreglada en local)
 
 - **Hecho** (misma rama `docs/tras-modulo-6`, sin PR): una segunda pasada a todo con 137 capturas
@@ -1477,20 +1597,15 @@ accesible, pero no tiene un diseño visual pensado. Antes de la wiki, que es lo 
 - Kit de componentes.
 - Repaso de las pantallas del 0.
 
-Se hace con la skill `frontend-design` de Anthropic (Apache-2.0): plugin `frontend-design@claude-plugins-official`,
-activado en el proyecto (`.claude/settings.json`).
-
-De las de Vercel (`vercel-labs/agent-skills`, MIT) sirven cuatro, copiadas en `.claude/skills/` (origen y licencia en
-su `README.md`):
-- `web-design-guidelines`: revisar la interfaz contra sus Web Interface Guidelines.
-- `react-best-practices` y `composition-patterns`: rendimiento y forma de los componentes de React.
-- `react-view-transitions`: animaciones entre pantallas, más adelante.
+Se hizo con la skill `frontend-design` de Anthropic y con cuatro de Vercel (`web-design-guidelines`,
+`react-best-practices`, `composition-patterns`, `react-view-transitions`). **Desde el 2026-11-10 las sustituye
+impeccable** (`.claude/skills/impeccable`, Apache-2.0; ver `CLAUDE.md`), que además revisa la interfaz en cada módulo.
 
 Identidad elegida (2026-10-29): **Hoja**, la séptima del lienzo, pedida como «rollo dndbeyond». Del género se toma
 el aire (cajas de hoja de personaje, títulos condensados en mayúsculas, rojo fuerte), nunca colores, letras ni piezas
 de D&D Beyond. Oscuro o claro según el sistema, con el botón para cambiarlo.
 
-Las de desplegar en Vercel y React Native no aplican. Desde entonces, cada módulo lleva un paso de diseño entre la spec
+Desde entonces, cada módulo lleva un paso de diseño entre la spec
 y el plan (ver `CLAUDE.md`).
 
 ## Para el repaso final de la interfaz

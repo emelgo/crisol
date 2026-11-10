@@ -6,6 +6,12 @@ export interface CampaignScope {
   worldId: string
 }
 
+/** Quién está en la Mesa de una campaña: a quien la ve (la sección Mesa lo enseña en vivo, ADR-0021) */
+export const tablePresenceChanged = (scope: CampaignScope): RealtimeEvent => ({
+  to: { capability: 'campaign.read', target: scope },
+  message: { type: 'changed', what: 'tablePresence', campaignId: scope.campaignId }
+})
+
 /** El mundo (su nombre, sus campañas): a quien lo ve */
 export const worldsChanged = (worldId: string): RealtimeEvent => ({
   to: { capability: 'world.read', target: { worldId } },
@@ -166,6 +172,8 @@ export function undoEvents(
       case 'maps':
       case 'map_pins':
       case 'map_elements':
+      // Las escenas sueltas (ADR-0020): sus listas cuelgan de las páginas en la web
+      case 'scenes':
         events.push(pagesChanged({ worldId, organizationId: context.organizationId }))
         break
       case 'tags':

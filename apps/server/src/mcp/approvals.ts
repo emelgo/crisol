@@ -14,6 +14,7 @@ import {
   ownedOrganizations
 } from '@crisol/domain'
 import { authorizedCampaign, authorizedPage } from '../actions/access.ts'
+import { bookRequest } from '../actions/books.ts'
 import {
   type ActionContext,
   type ActionEnv,
@@ -134,6 +135,8 @@ async function describe(ctx: ActionContext, action: string, input: Record<string
   }
   // Un sistema: lo que se haría, comprobado ya; y el que elige una campaña
   Object.assign(details, await systemRequest(ctx, action, input))
+  // Los libros de un sistema: cuál, de qué sistema y cuántas entradas
+  Object.assign(details, await bookRequest(ctx, action, input))
   // El grupo: qué, cuánto y los nombres (como en el historial)
   Object.assign(details, await partyRequest(ctx, action, input))
   // Lo que sabe una campaña: qué se marca y a quién (como en el historial)

@@ -145,7 +145,8 @@ describe('el combate en la mesa', () => {
   it('empezar, escribir la iniciativa, pasar turnos (con su aviso y su aro), dañar a dos a la vez y acabar', async () => {
     const user = userEvent.setup()
     const { api, push } = await renderTable()
-    await user.click(await screen.findByRole('button', { name: 'Combate' }))
+    await user.click(await screen.findByRole('tab', { name: 'Combate' }))
+    await user.click(await screen.findByRole('button', { name: 'Empezar el combate' }))
     await waitFor(async () =>
       expect((await api.client.call('getCombat', { campaignId: CAMPAIGN.id })).combat?.combatants).toHaveLength(2)
     )

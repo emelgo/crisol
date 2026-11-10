@@ -739,6 +739,26 @@
   margin: 0;
 }
 
+/* Sin portada (las ventanas de plantillas, sistemas, personajes, archivos…): el título con aire arriba, a la altura
+   de la X y sin pasar por debajo de ella (Enrique: «la x se ve por encima, el título muy pegado») */
+.dialog > button:first-child + .form {
+  padding-block-start: var(--space-6);
+}
+
+.dialog > button:first-child:has(+ .form) {
+  inset-block-start: calc(var(--space-6) - (var(--target) - 1.7rem) / 2);
+  inset-inline-end: var(--space-3);
+}
+
+.dialog > button:first-child + .form > h2:first-child {
+  padding-inline-end: calc(var(--target) - var(--space-2));
+}
+
+/* El botón de crear, a la izquierda y de su tamaño (no a todo lo ancho), como en todas las ventanas */
+.form > button {
+  align-self: flex-start;
+}
+
 /* La zona de peligro, al final, con el mismo margen que el formulario */
 .dangerArea {
   padding: 0 var(--space-6) var(--space-6);

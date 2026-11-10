@@ -518,6 +518,22 @@ html:active-view-transition-type(seccion)::view-transition-new(root) {
   animation: sube-seccion 260ms cubic-bezier(0.16, 1, 0.3, 1) 90ms both;
 }
 
+/* Entrar en un elemento desde su tarjeta (una plantilla): su icono y su nombre viajan al título y lo demás se funde,
+   en secuencia y sin fuego (el fuego es solo de los mundos y las campañas) */
+html:active-view-transition-type(entrar-elemento)::view-transition-old(root) {
+  animation: deja-paso 160ms ease-in both;
+}
+
+html:active-view-transition-type(entrar-elemento)::view-transition-new(root) {
+  animation: sube-seccion 320ms cubic-bezier(0.16, 1, 0.3, 1) 180ms both;
+}
+
+::view-transition-group(elemento-icono),
+::view-transition-group(elemento-nombre) {
+  animation-duration: 460ms;
+  animation-timing-function: cubic-bezier(0.33, 1, 0.68, 1);
+}
+
 @keyframes sube-seccion {
   from {
     opacity: 0;

@@ -210,7 +210,7 @@ describe('cada problema dice dónde y por qué', () => {
     expect(whereOf(fronteras, ['rolls', 'atributo', 'bands', 1, 'if'])).toBe(
       'Tiradas › Atributo › Resultado, 2.ª franja › Si'
     )
-    expect(whereOf(cinco, ['sources', 0, 'attribution'])).toBe('Fuentes › SRD 5.1 › Atribución')
+    expect(whereOf(cinco, ['sources', 0, 'attribution'])).toBe('Libros › SRD 5.1 › Atribución')
     expect(whereOf(cinco, ['types', 'personaje', 'fields', 'caracteristicas', 'fields', 'mod', 'formula'])).toBe(
       'Personaje › Características › Modificador › Fórmula'
     )

@@ -21,6 +21,7 @@ import { failed, LoadError } from '../components/load-error.tsx'
 import { Modal } from '../components/modal.tsx'
 import { useSettled } from '../components/settled.ts'
 import { summaryOf } from '../summaries.ts'
+import { CONTENT_DRAG, readContentDrag } from '../tabletop/drags.ts'
 import styles from './party.module.css'
 
 type Loaded = ActionOutput<'getParty'>
@@ -28,6 +29,21 @@ type CharacterLoaded = ActionOutput<'getCharacter'>
 type Changed = ActionOutput<'moveItem'>['characters'][number]
 type Item = Loaded['party']['items'][number]
 export const partyKey = (campaignId: string) => ['party', campaignId] as const
+
+/** Lo que se arrastra entre «Lo mío» (en la hoja) y «Del grupo»: de dónde sale. Se pasa de uno en uno (para más, «Mover») */
+export const ITEM_DRAG = 'application/x-crisol-objeto'
+/** Además, lo del grupo que puede llevar un personaje (lo del compendio; lo escrito a mano se queda en el grupo) */
+export const CARRIABLE_DRAG = 'application/x-crisol-objeto-llevable'
+export type ItemDrag = { party: string } | { character: string; item: string }
+
+export function readItemDrag(data: DataTransfer): ItemDrag | null {
+  try {
+    const raw = data.getData(ITEM_DRAG)
+    return raw ? (JSON.parse(raw) as ItemDrag) : null
+  } catch {
+    return null
+  }
+}
 
 /** Un sitio al que mover: un personaje o un contenedor del grupo */
 export interface MoveTarget {
@@ -38,10 +54,14 @@ export interface MoveTarget {
 }
 
 /** El grupo de una campaña y lo que se hace con él: lo que sale de cada cambio pone al día también los personajes */
-export function useParty(campaignId: string) {
+export function useParty(campaignId: string, enabled = true) {
   const api = useApi()
   const client = useQueryClient()
-  const loaded = useQuery({ queryKey: partyKey(campaignId), queryFn: () => api.call('getParty', { campaignId }) })
+  const loaded = useQuery({
+    queryKey: partyKey(campaignId),
+    queryFn: () => api.call('getParty', { campaignId }),
+    enabled
+  })
   const done = async (out: { party: Loaded['party']; characters?: Changed[] }) => {
     client.setQueryData<Loaded>(partyKey(campaignId), (old) => (old ? { ...old, party: out.party } : old))
     // Los personajes que cambiaron, al momento (su versión nueva: la hoja sigue guardando sin chocar)
@@ -92,6 +112,8 @@ export function PartyInventory({ campaignId, me }: { campaignId: string; me?: st
   const { t } = useTranslation()
   const errorText = useErrorText()
   const { loaded, update, move, coins, split } = useParty(campaignId)
+  // El contenedor sobre el que se arrastra algo (de la hoja o de otro contenedor)
+  const [over, setOver] = useState<string | null>(null)
   const [dialog, setDialog] = useState<
     { kind: 'add' } | { kind: 'coins' } | { kind: 'container'; id?: string; name?: string } | null
   >(null)
@@ -156,7 +178,37 @@ export function PartyInventory({ campaignId, me }: { campaignId: string; me?: st
         if (items.length === 0 && container.id === 'grupo' && party.items.length === 0) return null
         const name = containerName(container)
         return (
-          <section key={container.id} className={styles.container} aria-label={name}>
+          <section
+            key={container.id}
+            className={styles.container}
+            aria-label={name}
+            data-over={over === container.id || undefined}
+            onDragOver={(event) => {
+              const types = event.dataTransfer.types
+              if (!types.includes(ITEM_DRAG) && !types.includes(CONTENT_DRAG)) return
+              event.preventDefault()
+              event.dataTransfer.dropEffect = 'move'
+              setOver(container.id)
+            }}
+            onDragLeave={(event) => {
+              if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOver(null)
+            }}
+            onDrop={(event) => {
+              setOver(null)
+              // Un objeto del compendio de la Mesa: al grupo, en este contenedor
+              const content = readContentDrag(event.dataTransfer)
+              if (content) {
+                event.preventDefault()
+                if (!content.actor) update.mutate({ add: { key: content.key, container: container.id } })
+                return
+              }
+              const from = readItemDrag(event.dataTransfer)
+              if (!from) return
+              event.preventDefault()
+              if ('party' in from && party.items.find((i) => i.id === from.party)?.container === container.id) return
+              move.mutate({ from, to: { container: container.id }, quantity: 1 })
+            }}
+          >
             <div className={styles.containerHead}>
               <h3 id={`grupo-${container.id}`} className={styles.small} tabIndex={-1}>
                 {name}
@@ -188,11 +240,26 @@ export function PartyInventory({ campaignId, me }: { campaignId: string; me?: st
             ) : (
               <ul className={styles.items}>
                 {items.map((item) => (
-                  <li key={item.id} className={styles.item}>
+                  <li
+                    key={item.id}
+                    className={styles.item}
+                    draggable={!busy}
+                    onDragStart={(event) => {
+                      event.dataTransfer.effectAllowed = 'move'
+                      event.dataTransfer.setData(ITEM_DRAG, JSON.stringify({ party: item.id }))
+                      if (item.key) event.dataTransfer.setData(CARRIABLE_DRAG, '1')
+                    }}
+                  >
                     <span className={styles.itemName}>
                       {item.name}
                       {item.note && <span className={styles.note}>{item.note}</span>}
                     </span>
+                    {item.addedBy && (
+                      <span className={styles.addedBy}>
+                        <span className={styles.hidden}>{t('party.addedBy')}: </span>
+                        {item.addedBy}
+                      </span>
+                    )}
                     <span className={styles.quantity}>
                       <span className={styles.hidden}>{t('party.quantity')}: </span>×{item.quantity}
                     </span>
@@ -499,6 +566,9 @@ function AddDialog({
           value={name}
           maxLength={200}
           autoComplete="off"
+          data-1p-ignore
+          data-lpignore="true"
+          data-form-type="other"
           data-autofocus=""
           onChange={(event) => setName(event.currentTarget.value)}
         />
@@ -509,6 +579,9 @@ function AddDialog({
             id={searchId}
             type="search"
             autoComplete="off"
+            data-1p-ignore
+            data-lpignore="true"
+            data-form-type="other"
             data-autofocus=""
             value={query}
             onChange={(event) => setQuery(event.currentTarget.value)}
@@ -535,6 +608,9 @@ function AddDialog({
         value={note}
         maxLength={500}
         autoComplete="off"
+        data-1p-ignore
+        data-lpignore="true"
+        data-form-type="other"
         onChange={(event) => setNote(event.currentTarget.value)}
       />
       <div className={styles.pair}>
@@ -600,6 +676,9 @@ function ContainerDialog({
         required
         maxLength={100}
         autoComplete="off"
+        data-1p-ignore
+        data-lpignore="true"
+        data-form-type="other"
         data-autofocus=""
         onChange={(event) => setName(event.currentTarget.value)}
       />

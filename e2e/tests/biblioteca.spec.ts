@@ -1,14 +1,14 @@
 import AxeBuilder from '@axe-core/playwright'
 import { textPdf } from '@crisol/server/pdf-de-prueba'
 import { expect, test } from '@playwright/test'
-import { campaignLink, settled } from './ayudas.ts'
+import { campaignLink, campaignPath, settled } from './ayudas.ts'
 
 test('la biblioteca: un PDF subido se lee solo; buscar una palabra de su página 3 abre el visor en la 3', async ({
   page
 }) => {
   test.slow()
   await campaignLink(page)
-  const campaignUrl = new URL(page.url()).pathname
+  const campaignUrl = campaignPath(page)
   const worldId = campaignUrl.split('/')[2] ?? ''
   const pdf = textPdf([
     'Guía de Valdren\nUn libro de prueba.',
@@ -24,10 +24,14 @@ test('la biblioteca: un PDF subido se lee solo; buscar una palabra de su página
   )
   expect(uploaded.status()).toBe(201)
 
-  await page.getByRole('navigation', { name: 'Secciones' }).getByRole('link', { name: 'Biblioteca' }).click()
-  await expect(page.getByRole('heading', { level: 1, name: 'Biblioteca' })).toBeVisible()
+  // Los libros, en la Mesa: Compendio › Libros, y cada uno en su ventana
+  await page.goto(`${campaignUrl}?panel=compendio`)
+  const panel = page.getByRole('complementary', { name: 'Panel de la mesa' })
+  await panel.getByRole('button', { name: /^Libros/ }).click()
+  await panel.getByRole('button', { name: /Guía de Valdren\.pdf/ }).click()
+  const window = page.getByRole('dialog', { name: 'Guía de Valdren.pdf' })
   // Se lee en segundo plano: el estado cambia solo
-  const books = page.getByRole('region', { name: 'Libros' })
+  const books = window.getByRole('region', { name: 'Libros' })
   await expect(books.getByRole('button', { name: /Guía de Valdren\.pdf/ })).toContainText('Se puede buscar', {
     timeout: 20_000
   })
@@ -35,13 +39,13 @@ test('la biblioteca: un PDF subido se lee solo; buscar una palabra de su página
   await page.screenshot({ path: test.info().outputPath('biblioteca-libros.png'), fullPage: false })
 
   // Buscar sin tilde: la página 3, con lo encontrado marcado
-  await page.getByRole('searchbox', { name: 'Buscar en los libros' }).fill('capitan')
-  const results = page.getByRole('region', { name: 'Lo encontrado' })
+  await window.getByRole('searchbox', { name: 'Buscar en los libros' }).fill('capitan')
+  const results = window.getByRole('region', { name: 'Lo encontrado' })
   const hit = results.getByRole('button', { name: /Página 3/ })
   await expect(hit).toBeVisible()
   await expect(hit.locator('mark')).toHaveText('capitán')
   await hit.click()
-  const viewer = page.getByRole('region', { name: 'Visor de «Guía de Valdren.pdf»' })
+  const viewer = window.getByRole('region', { name: 'Visor de «Guía de Valdren.pdf»' })
   await expect(viewer.getByRole('textbox', { name: 'Página' })).toHaveValue('3')
   await expect(viewer.getByRole('img', { name: /Página 3 de 3/ })).toBeVisible()
   // La capa de texto, con la línea buscada marcada

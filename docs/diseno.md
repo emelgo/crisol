@@ -43,7 +43,48 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   en una esquina, pero no una pagina propia»): un botón flotante con forma de d20, siempre en la misma esquina, que
   abre la ficha de dados junto a él (y la cierra); no es una pantalla ni una sección de la barra. Sustituye a la ficha
   de dados en el sitio del panel de la página (2026-11-04). **La ficha no se recuerda abierta** al volver a entrar, y en
-  el móvil se cierra al cambiar de pantalla (2026-11-08, segunda revisión).
+  el móvil se cierra al cambiar de pantalla (2026-11-08, segunda revisión). **Tirar, como en D&D Beyond** (Enrique,
+  2026-11-10: «es poco intuitivo lo de tirar dados, mira como se hace en dndbeyond»; lienzo «Tirar dados», «me
+  gusta»): el d20 abre una columna de dados encima (pulsar suma uno; el botón derecho o mantener el dedo, quita uno) y,
+  a su lado, la bandeja con lo juntado, el modificador, Ventaja/Desventaja, quién la ve (se recuerda) y «Tirar»; al
+  tirar se vacía y se cierra. El resultado sale sobre el d20 cuando paran los dados; el historial, en una ventana de la
+  Mesa (fuera, en una ficha junto al d20). Sin pestaña Tiradas. El d20 y el «?» no se mueven; el «?» se aparta
+  mientras los dados están abiertos.
+- **En la barra de la campaña, ella con su nombre (su Inicio) y solo lo suyo** (Enrique, 2026-11-10: «páginas no lo
+  queremos en la campaña … solo gestionamos las cosas de la campaña»): Mesa, Libros, Compendio y Aventuras; las páginas
+  del mundo, en la Mesa. **No se dice «tele»** («muchas veces no usaré la tele para enseñarlo»): es la **pantalla de los
+  jugadores** («Pantalla»; su menú, «Cámara»), y se abre desde dentro de la Mesa, que tiene que estar activa.
+- **La campaña se abre en la misma pestaña; la Mesa, en otra** (Enrique, 2026-11-10: «al entrar en una campaña no se
+  abre una nueva pestaña, eso ocurre al entrar en mesa»; «personajes y mesa podemos unirlo dentro de la campaña»): la
+  sección **Mesa** de la campaña tiene «Abrir la Mesa» (otra pestaña, a pantalla completa y sin barra), quién está en
+  ella ahora (activo o en otra pestaña, desde cuándo) y cómo va la partida, y debajo los personajes. Sustituye a «las
+  campañas se abren en otra pestaña» (2026-11-09) y a «la Mesa con la barra de la izquierda» del ADR-0021.
+- **La campaña vuelve a tener su propio espacio, como el mundo** (Enrique, 2026-11-10: «al abrir una campaña volvemos a
+  abrir una vista como la del mundo y ahí tendremos los libros, compendio, aventuras etc y además la mesa»): una barra
+  con sus secciones (Inicio con el resumen y los jugadores, Libros, Compendio, Aventuras, Personajes, Páginas, Ajustes)
+  y la **Mesa** como una sección más, a pantalla completa al entrar en ella, con su barra de la derecha. Sustituye a lo
+  de abajo (la campaña abría directamente en la Mesa y sin barra lateral); pendiente de lienzo y de ADR.
+- **La campaña se abre en la Mesa, como en Foundry VTT** (Enrique, 2026-11-08: «la mesa debería ser lo que se ve al
+  abrir la campaña como en foundryvtt»; «dentro de la mesa es donde deberíamos tener el compendio»; ADR-0019,
+  construida el 2026-11-09):
+  el máster entra a la Mesa a pantalla completa con una barra de pestañas a la derecha (Tiradas, Combate, Escenas,
+  Personajes, Compendio, Páginas y Ajustes de la campaña con miembros e invitar); En juego, Grupo y Biblioteca dejan
+  de ser vistas sueltas. **Las páginas del mundo se abren en ventanas sobre la Mesa** (como los diarios de Foundry:
+  se mueven, cambian de tamaño, varias a la vez), sin cambiar de vista. **La jugadora abre la campaña en su ficha**
+  (la Mesa, a un clic). **El inventario del grupo va en la ficha**, como en D&D Beyond: una sección «Del grupo»
+  compartida en la pestaña de equipo, sin «Grupo» en la barra. **Las campañas se abren en otra pestaña del navegador**,
+  como la partida en D&D Beyond (Enrique, 2026-11-09). **Varias campañas por mundo, y lo que se comparte va a la
+  campaña desde la que se hace** (Enrique, 2026-11-09, para no liarse compartiendo con grupos distintos): «Enseñar» desde
+  la Mesa de una campaña solo llega a ella (se ve siempre en cuál se está); desde la wiki del mundo, «quién la conoce»
+  enseña cada campaña con su casilla; con una sola campaña no se pregunta a quién. Lo de abajo sobre la portada y la
+  barra de la campaña ya no vale (la sustituye esto).
+- **Cristal en lo que flota sobre el mapa de la Mesa** (Enrique, 2026-11-10: «me parece una pasada»; lienzo «La Mesa,
+  con cristal», `out/lienzo-cristal/`): translúcido y con el mapa desenfocado detrás (tokens `--glass-*`) solo en piezas
+  pequeñas que flotan: la barra de la escena, las herramientas, el zoom, las tiradas sobre el d20, la tira de turnos de la
+  tele, las ventanas minimizadas y la cabecera de las ventanas. Lo que se lee (el cuerpo de páginas, hojas y compendio)
+  va casi opaco, y la barra de la derecha, opaca (va acoplada). **El brillo, solo en lo vivo** y en el rojo de la marca
+  (`--glow-live`): «En la tele» (en rojo, como «Enseñando»), la ventana que se enseña y un crítico. Al pasar por los
+  botones de las barras, suben un poco. Sin desenfoque en el navegador, el mismo tinte más tapado.
 - **La campaña se abre en su propia vista, como un mundo** (Enrique, 2026-11-05): al entrar, la barra cambia y enseña
   lo de la campaña (sus personajes, su compendio, los dados…), con la transición de entrar. **El compendio** (el
   contenido del sistema que usa la campaña: clases, conjuros, criaturas, reglas…, con sus ediciones) **se ve ahí**.
@@ -54,7 +95,10 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   Ajustes, no en el menú. Se abre al lado del botón y nunca se corta.
 - **Las etiquetas son de toda la cuenta** (ADR-0006): «Etiquetas» va en la barra de Mis mundos, no en la de un mundo;
   dentro, son filtros (al buscar en la wiki, en Archivos). Llevan un color opcional y se ven como un punto de color con
-  su nombre. Se eligen o se escriben: una nueva entra sola.
+  su nombre. Se eligen o se escriben: una nueva entra sola. **Una puede ir dentro de otra** (Enrique, 2026-11-08: «al crearla que te
+  deje poner donde debe ir y luego poder arrastrarlas»): al crearla se elige «Dentro de» (sin escribir «/»); en la lista
+  se arrastran sobre otra para meterlas dentro, como las carpetas de Archivos (se marcan los sitios donde se puede
+  soltar, con «Mover aquí»), o a «Arriba del todo» para sacarlas; también desde su ventana. Se llevan sus hijas.
 - **El móvil, solo para la jugadora** (Enrique, 2026-11-08: «la vista movil la vamos a descartar por completo excepto
   para la vista del jugador, el master siempre deberá trabajar desde PC»). Lo del máster (el mundo, sus páginas,
   Archivos, Plantillas, Sistemas, la Mesa…) se diseña y se revisa solo en el escritorio; lo de la jugadora (su campaña,
@@ -182,6 +226,9 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   a «Mundos», se apaga a latidos y echa tres bocanadas. Nada de manchas de humo por toda la página: «muy cutre».
   **En secuencia, sin verse las dos vistas a la vez**: lo de antes se va deprisa, la tarjeta que crece hace de puente
   y lo nuevo llega cuando ya no está.
+- **Entrar en una plantilla desde su tarjeta también es entrar**, sin fuego: su icono y su nombre viajan al título de
+  la plantilla abierta mientras lo demás se funde (Enrique, 2026-11-08: «falta transición al entrar en una
+  plantilla»). De una plantilla a otra, rápido, como entre pestañas.
 - **Las pestañas de la barra (dentro de una vista) también tienen transición, pero rápida y sin fuego**: lo que había
   se funde en un instante y lo nuevo sube un poco al llegar; se usan a menudo y no deben frenar.
 - **El menú de la cuenta sale del avatar** creciendo, con un pequeño rebote, y al cerrarse vuelve a él encogiendo.
@@ -199,7 +246,11 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   sin tener que entrar después en ajustes.
 - **«Nuevo …» va como un recuadro más de la lista**, con la misma forma (esquinas cortadas), vacío y con el borde
   discontinuo, tras el último (no un botón arriba). Sin ninguno, la pantalla vacía con su botón grande.
-- **Las pantallas de cuenta (entrar, crear la cuenta)** van centradas y con aspecto profesional.
+- **Las pantallas de cuenta (entrar, crear la cuenta)** van centradas y con aspecto profesional. **De fondo, imágenes de fantasía que van pasando, como en LegendKeeper**
+  (Enrique, 2026-11-08): a toda la pantalla, cada una unos 8 segundos acercándose despacio, con un fundido entre una y
+  otra, un degradado teñido de su color y su autor abajo a la derecha (enlaza a su origen). En orden al azar en cada
+  visita. Solo arte (nada de fotos reales): digital de fantasía de Pixabay y cuadros de dominio público, elegidos por
+  Enrique; la lista en `apps/web/src/account/backdrops.ts` y su origen en `docs/terceros.md`.
 - **Archivos, como un explorador**: árbol de carpetas (unas dentro de otras; se les arrastran archivos, y mientras se
   arrastra se marcan las carpetas donde se puede soltar, con «Mover aquí»; la que lo recibe se ilumina; soltado en la
   caja del árbol, fuera de una carpeta, va a lo más alto; un común no va a una carpeta del mundo ni al revés). **Sin
@@ -214,6 +265,11 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   mundo, la carpeta «Comunes» en sus archivos, la misma en todos. Donde se elige un archivo (la portada), «Del mundo»
   y «Comunes» por separado.
 - **Todo cuadro o ventana encima lleva la X arriba a la derecha y se cierra al pulsar fuera** (y con Escape).
+- **Todos los cuadros con la misma cabecera y los mismos botones** (Enrique, 2026-11-08: «la x se ve por encima, el
+  titulo muy pegado»): el título rojo con su raya, con aire arriba (haya portada o no) y a la altura de la X, que nunca
+  queda encima de la raya ni del título. La acción principal (Crear, Guardar, Borrar) a la izquierda y la primera,
+  de su tamaño (no a todo lo ancho); «Cancelar», a su lado. Los campos que no son de una cuenta (el nombre de un mundo,
+  de una plantilla) no sacan el icono de los gestores de contraseñas.
 - **Las acciones de un elemento van en su engranaje**, abajo a la derecha de su tarjeta, siempre a la vista: abre su
   ventana, donde se cambia todo (nombre incluido) y donde irá lo que se añada. Nada de «Renombrar» y «Borrar» sueltos.
 - **Los mundos no llevan icono**: «no aportan nada».

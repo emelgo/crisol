@@ -59,8 +59,8 @@ export const SlashMenu = Extension.create<SlashMenuOptions>({
           return {
             onStart: (props) => {
               renderer = new ReactRenderer(SlashList, { props, editor: props.editor })
-              // Va al final de la página: por encima de ella, que monta sobre su portada
-              renderer.element.style.zIndex = '30'
+              // Va al final de la página: por encima de ella (que monta sobre su portada) y de las ventanas de la Mesa
+              renderer.element.style.zIndex = '2000'
               unmount = props.mount(renderer.element)
             },
             onUpdate: (props) => renderer?.updateProps(props),

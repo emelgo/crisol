@@ -2,7 +2,15 @@
  * Revelar en partida (docs/specs/revelar.md, ADR-0017): marcar que una campaña conoce algo y avisar a quien le aparece;
  * ocultarlo otra vez; «Lo que sabe el grupo»; quién conoce cada secreto de una página; lo nuevo de cada jugador
  */
-import { getSecretsKnowledge, hide, listCampaignKnowledge, listNews, reveal, seeNews } from '@crisol/contracts'
+import {
+  getSecretsKnowledge,
+  hide,
+  listCampaignKnowledge,
+  listNews,
+  reveal,
+  seeNews,
+  showPage
+} from '@crisol/contracts'
 import { campaignsRepo, charactersRepo, documentsRepo, knowledgeRepo, pagesRepo } from '@crisol/db'
 import {
   explainPage,
@@ -262,6 +270,39 @@ export const revealActions = [
       }))
     )
     return { told: told.length, pageUnknown: Boolean(pageId) && !pageKnown && !alsoPage }
+  }),
+
+  // Enseñar una página (como un diario en la mesa): se abre al momento a los jugadores de la campaña que la conocen
+  implement(showPage, async (ctx, { campaignId, pageId }) => {
+    const campaign = await authorizedCampaign(ctx, 'campaign.read', campaignId)
+    const wiki = await authorizedWiki(ctx, 'page.write', campaign.worldId)
+    const target = await knowledgeRepo.findTarget(ctx.db, wiki.worldId, 'page', pageId)
+    if (!target) throw new NotFoundError('page')
+    const [tree, marks, players] = await Promise.all([
+      knowledgeRepo.worldTree(ctx.db, wiki.worldId),
+      knowledgeRepo.listMarks(ctx.db, { worldId: wiki.worldId, campaignIds: [campaign.id] }),
+      knowledgeRepo.campaignPlayers(ctx.db, campaign.id)
+    ])
+    const knows = players.filter((player) =>
+      knowledgeFor(
+        { kind: 'player', campaignId: campaign.id, characterIds: player.characterIds, knowsWorld: campaign.knowsWorld },
+        tree,
+        marks
+      ).seesPage(pageId)
+    )
+    ctx.realtime.publish(
+      ...knows.map((player) => ({
+        to: { userId: player.userId },
+        message: {
+          type: 'shown' as const,
+          worldId: wiki.worldId,
+          campaignId: campaign.id,
+          pageId,
+          title: target.name
+        }
+      }))
+    )
+    return { shown: knows.length, unknown: players.length - knows.length }
   }),
 
   implement(hide, async (ctx, { campaignId, kind, targetId }) => {

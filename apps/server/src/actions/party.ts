@@ -185,7 +185,7 @@ export const partyActions = [
     if (input.coins !== undefined && version === undefined)
       throw new InvalidRequestError('VERSION_REQUIRED', 'para poner las monedas, la versión que se leyó')
     // Lo que se añade del compendio: algo que se ve en la campaña y cabe en el inventario
-    let added: { key: string | null; name: string; note?: string } | null = null
+    let added: { key: string | null; name: string; note?: string; addedBy?: string } | null = null
     if (input.add) {
       if (input.add.key) {
         const { found } = c
@@ -203,6 +203,9 @@ export const partyActions = [
         }
       } else if (input.add.name) added = { key: null, name: input.add.name, note: input.add.note }
       else throw new InvalidRequestError('NOTHING_TO_ADD', 'falta su clave o su nombre')
+      // «Lo puso»: el personaje de quien lo añade (si tiene uno en la campaña)
+      const mine = await charactersRepo.listCharacters(ctx.db, campaignId, ctx.actor.userId)
+      if (mine[0]) added.addedBy = mine[0].name
     }
     const details: Record<string, unknown> = { change: given[0] }
     const { row } = await change(
@@ -299,7 +302,14 @@ export const partyActions = [
         throw new PartyError('SAME_PLACE', 'ya está ahí')
       // De dónde sale (con lo gastado de sus recursos, que viaja con él)
       let next = party
-      let thing: { key: string | null; name: string; note?: string; quantity: number; uses?: Record<string, number> }
+      let thing: {
+        key: string | null
+        name: string
+        note?: string
+        quantity: number
+        uses?: Record<string, number>
+        addedBy?: string
+      }
       let source: partyRepo.LockedCharacter | null = null
       let sourcePlay: Play | null = null
       if ('party' in from) {
@@ -319,7 +329,9 @@ export const partyActions = [
           key: taken.taken.key,
           name: nameIn(loaded, c, taken.taken.key),
           quantity: taken.taken.quantity ?? 1,
-          ...(taken.taken.uses ? { uses: taken.taken.uses } : {})
+          ...(taken.taken.uses ? { uses: taken.taken.uses } : {}),
+          // «Lo puso»: el personaje de quien sale
+          addedBy: source.name
         }
       }
       // A dónde va

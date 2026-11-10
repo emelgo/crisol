@@ -30,6 +30,7 @@ import type {
   SceneViewport,
   ScreenCamera,
   SnapshotView,
+  TablePresenceEntry,
   TagView,
   TokenView,
   TrashItem,
@@ -99,6 +100,7 @@ import {
   searchContent,
   splitCoins as splitEvenly,
   startingPlay,
+  summarizeBooks,
   systemOverview,
   type Text,
   tableRowOf,
@@ -142,6 +144,8 @@ export function fakeApi(
     systemContent?: Record<string, ContentItem[]>
     /** El texto de los PDF, por el id del archivo (una página por elemento); sin él, aún sin leer */
     bookPages?: Record<string, string[]>
+    /** Quién está en la Mesa de las campañas (ADR-0021) */
+    tablePresence?: TablePresenceEntry[]
     /** Las imágenes que nombra lo que se importa de Foundry */
     foundryImages?: Array<{ path: string; credit: string | null }>
     /** El compendio de los mundos: sus entradas, por mundo y sistema (copiadas, con el original del que salen) */
@@ -502,11 +506,14 @@ export function fakeApi(
     throw new ApiError('NOT_FOUND', 404)
   }
   const copyMap = (map: MapView): MapView => ({ ...map, pins: map.pins.map((pin) => ({ ...pin })) })
-  // Las escenas (una por pestaña «Escena») y la mesa de cada campaña, como el servidor
+  // Las escenas (sueltas, ADR-0020, o una por pestaña «Escena») y la mesa de cada campaña, como el servidor
   type StoredScene = {
     id: string
-    tabId: string
-    pageId: string
+    worldId: string
+    /** La suelta, sin pestaña ni página y con su nombre */
+    tabId: string | null
+    pageId: string | null
+    name: string | null
     image: SceneView['image']
     grid: SceneGrid
     initialView: SceneViewport | null
@@ -522,8 +529,8 @@ export function fakeApi(
     id: scene.id,
     tabId: scene.tabId,
     pageId: scene.pageId,
-    pageTitle: pageById(scene.pageId).title,
-    name: tabById(scene.tabId).name,
+    pageTitle: scene.pageId ? pageById(scene.pageId).title : null,
+    name: scene.name ?? (scene.tabId ? tabById(scene.tabId).name : ''),
     image: scene.image ? { ...scene.image } : null,
     grid: { ...scene.grid },
     initialView: scene.initialView ? { ...scene.initialView } : null,
@@ -814,7 +821,7 @@ export function fakeApi(
   const sceneOfCampaign = (campaignId: string, sceneId: string) => {
     const { campaign } = campaignTableOf(campaignId)
     const scene = sceneById(sceneId)
-    if (pageById(scene.pageId).worldId !== campaign.worldId) throw new ApiError('NOT_FOUND', 404)
+    if (scene.worldId !== campaign.worldId) throw new ApiError('NOT_FOUND', 404)
     return scene
   }
 
@@ -1184,6 +1191,8 @@ export function fakeApi(
     return (item && textOf(item.data.name as Text, found?.choices.language ?? 'es')) || key
   }
 
+  // Las páginas enseñadas (showPage), para las pruebas
+  const shownPages: { campaignId: string; pageId: string }[] = []
   const marks = new Map<string, { known: boolean; characters: string[] | null }>()
   // Quién de cada campaña escribe en cada página (docs/specs/pagina-de-jugadores.md): campaña|página → personajes o null
   const editors = new Map<string, string[] | null>()
@@ -1554,6 +1563,11 @@ export function fakeApi(
       marks.set(`${id}|${kind}|${targetId}`, { known: true, characters: characters ?? null })
       return { told: 1, pageUnknown: false }
     },
+    // Enseñar: lo conocen todos si la página está marcada para la campaña; si no, nadie
+    showPage: ({ campaignId, pageId }) => {
+      shownPages.push({ campaignId, pageId })
+      return marks.get(`${campaignId}|page|${pageId}`)?.known ? { shown: 2, unknown: 0 } : { shown: 0, unknown: 2 }
+    },
     hide: ({ campaignId, kind, targetId }) => {
       marks.delete(`${campaignId}|${kind}|${targetId}`)
       return { ok: true as const }
@@ -1744,10 +1758,14 @@ export function fakeApi(
       return { rolls: page.map((r) => ({ ...r })), next: end > 50 ? (page[0]?.id ?? null) : null }
     },
     listSystems: () => ({
-      systems: [...CATALOG.map((c) => c.id), ...ownSystems.filter((s) => !s.deleted).map((s) => s.id)].map((id) => {
-        const { document: _, ...summary } = systemView(id)
-        return summary
-      })
+      // Como el servidor: sin sistemas de serie, solo los de la cuenta
+      systems: ownSystems
+        .filter((s) => !s.deleted)
+        .map((s) => s.id)
+        .map((id) => {
+          const { document: _, ...summary } = systemView(id)
+          return summary
+        })
     }),
     getSystem: ({ systemId }) => systemView(systemId),
     createSystem: ({ name, from = 'blank' }) => {
@@ -2426,13 +2444,25 @@ export function fakeApi(
         language: choices.language,
         sources: (document.sources ?? [])
           .filter((each) => choices.sources.includes(each.key))
-          .map((each) => ({
-            key: each.key,
-            name: say(each.name),
-            edition: each.edition ?? null,
-            license: each.license,
-            attribution: say(each.attribution)
-          })),
+          .map((each) => {
+            const summary = summarizeBooks(
+              document,
+              content.map((c) => ({ ...c, name: c.data.name })),
+              { excluded: choices.excluded ?? [] }
+            ).find((b) => b.key === each.key)
+            return {
+              key: each.key,
+              name: say(each.name),
+              edition: each.edition ?? null,
+              license: each.license,
+              attribution: say(each.attribution),
+              description: each.description ? say(each.description) : null,
+              cover: each.cover ?? null,
+              requires: each.requires ?? [],
+              count: (summary?.count ?? 0) - (summary?.excluded ?? 0),
+              excluded: summary?.excluded ?? 0
+            }
+          }),
         sections: compendiumSections(document, types).map((section) => ({
           key: section.key,
           label: say(section.label),
@@ -2480,20 +2510,27 @@ export function fakeApi(
       const result = browseContent(document, content, {
         type,
         sources: choices.sources,
+        excluded: choices.excluded ?? [],
         duplicates: choices.duplicates,
         language: choices.language
       })
       return { ...result, items: result.items.map((i) => (worldKeys.has(i.key) ? { ...i, world: true } : i)) }
     },
-    searchCampaignContent: ({ campaignId, layer, ...options }) => {
+    searchCampaignContent: ({ campaignId, layer, source, ...options }) => {
       const found = compendiumOf(campaignId)
       if (!found) return { items: [], total: 0 }
       const { document, choices, content, worldKeys } = found
+      const pageOf = (item: ContentItem) => {
+        const pages = (item.ref as { pages?: { es?: number; en?: number } } | undefined)?.pages
+        return pages?.es ?? pages?.en ?? null
+      }
       const entries = content
         .filter((item) => !layer || worldKeys.has(item.key) === (layer === 'world'))
-        .map((item) => ({ ...item, concept: item.concept ?? null, name: item.data.name }))
+        .filter((item) => !source || item.source === source)
+        .map((item) => ({ ...item, concept: item.concept ?? null, name: item.data.name, page: pageOf(item) }))
       const result = searchContent(document, entries, {
         sources: choices.sources,
+        excluded: choices.excluded ?? [],
         duplicates: choices.duplicates,
         language: choices.language,
         ...options
@@ -2770,6 +2807,240 @@ export function fakeApi(
       own.version++
       return { version: own.version, deleted, missing: keys.filter((k) => !deleted.includes(k)) }
     },
+    // Quién está en la Mesa (ADR-0021): en la API de prueba, lo que digan las pruebas
+    getTablePresence: () => ({ present: structuredClone(options.tablePresence ?? []) }),
+    // Los libros de un sistema (ADR-0021)
+    getSystemBooks: ({ systemId }) => {
+      const document = systemById(systemId)
+      if (!document) throw new ApiError('NOT_FOUND', 404)
+      const own = ownSystems.find((s) => s.id === systemId && !s.deleted)
+      const content = own?.content ?? []
+      const summaries = new Map(
+        summarizeBooks(
+          document,
+          content.map((c) => ({ ...c, name: c.data.name }))
+        ).map((b) => [b.key, b])
+      )
+      return {
+        systemId,
+        name: textOf(document.name),
+        version: own?.version ?? 1,
+        editable: !!own,
+        books: (document.sources ?? []).map((source) => {
+          const summary = summaries.get(source.key)
+          const using = campaigns.filter((c) => {
+            if (c.system?.id !== systemId) return false
+            const { choices } = normalizeChoices(document, (c.systemChoices ?? {}) as Partial<Choices>)
+            return choices.sources.includes(source.key)
+          })
+          return {
+            key: source.key,
+            name: textOf(source.name),
+            description: source.description ? textOf(source.description) : null,
+            edition: source.edition ?? null,
+            license: source.license,
+            attribution: textOf(source.attribution),
+            publisher: source.publisher ? textOf(source.publisher) : null,
+            origin: source.origin ?? null,
+            file: source.file ?? null,
+            cover: source.cover ?? null,
+            requires: source.requires ?? [],
+            version: source.version ?? 1,
+            count: summary?.count ?? 0,
+            byType: summary?.byType ?? [],
+            pending: summary?.pending ?? 0,
+            campaigns: using.map((c) => ({ id: c.id, worldId: c.worldId, name: c.name }))
+          }
+        })
+      }
+    },
+    getBookEntries: ({ systemId, source }) => {
+      const document = systemById(systemId)
+      if (!document) throw new ApiError('NOT_FOUND', 404)
+      const content = (ownSystems.find((s) => s.id === systemId)?.content ?? []).filter(
+        (c) => c.source === source && !(c as { review?: unknown }).review
+      )
+      return {
+        types: Object.keys(document.types).flatMap((type) => {
+          const entries = content
+            .filter((c) => c.type === type)
+            .map((c) => ({ key: c.key, name: textOf(c.data.name as Parameters<typeof textOf>[0]) || c.key }))
+            .sort((a, b) => a.name.localeCompare(b.name, 'es'))
+          return entries.length > 0 ? [{ type, label: textOf(document.types[type]?.label) || type, entries }] : []
+        })
+      }
+    },
+    importBook: ({ systemId, version, items, ...fields }) => {
+      const own = ownSystems.find((s) => s.id === systemId && !s.deleted)
+      if (!own) throw new ApiError('NOT_FOUND', 404)
+      if (own.version !== version) throw new ApiError('SYSTEM_CHANGED', 400)
+      const taken = new Set((own.document.sources ?? []).map((s) => s.key))
+      const base =
+        fields.name
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '_')
+          .replace(/^_+|_+$/g, '') || 'libro'
+      let key = base
+      for (let n = 2; taken.has(key); n++) key = `${base}_${n}`
+      own.document = validSystem({
+        ...structuredClone(own.document),
+        sources: [
+          ...(own.document.sources ?? []),
+          { license: 'Uso privado', attribution: fields.name, ...fields, key, version: 1 }
+        ]
+      }).system
+      const used = new Set(own.content.map((c) => c.key))
+      let renamed = 0
+      for (const item of items) {
+        let k = item.key
+        if (used.has(k)) {
+          renamed++
+          k = `${key}_${item.key}`
+        }
+        used.add(k)
+        own.content.push({ ...structuredClone(item), key: k, source: key } as ContentItem)
+      }
+      own.version++
+      return { version: own.version, key, count: items.length, renamed }
+    },
+    createBook: ({ systemId, version, key, ...fields }) => {
+      const own = ownSystems.find((s) => s.id === systemId && !s.deleted)
+      if (!own) throw new ApiError('NOT_FOUND', 404)
+      if (own.version !== version) throw new ApiError('SYSTEM_CHANGED', 400)
+      const taken = new Set((own.document.sources ?? []).map((s) => s.key))
+      const base =
+        key ??
+        (fields.name
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '_')
+          .replace(/^_+|_+$/g, '') ||
+          'libro')
+      let chosen = base
+      for (let n = 2; taken.has(chosen); n++) chosen = `${base}_${n}`
+      const { system } = validSystem({
+        ...structuredClone(own.document),
+        sources: [
+          ...(own.document.sources ?? []),
+          { license: 'Uso privado', attribution: fields.name, ...fields, key: chosen, version: 1 }
+        ]
+      })
+      own.document = system
+      own.version++
+      return { version: own.version, key: chosen }
+    },
+    updateBook: ({ systemId, version, key, newVersion, ...changes }) => {
+      const own = ownSystems.find((s) => s.id === systemId && !s.deleted)
+      if (!own) throw new ApiError('NOT_FOUND', 404)
+      if (own.version !== version) throw new ApiError('SYSTEM_CHANGED', 400)
+      const sources = [...(own.document.sources ?? [])]
+      const at = sources.findIndex((s) => s.key === key)
+      const current = sources[at]
+      if (!current) throw new ApiError('BAD_BOOK', 400)
+      const next: Record<string, unknown> = { ...current }
+      for (const [field, value] of Object.entries(changes)) {
+        if (value === undefined) continue
+        if (value === null || (Array.isArray(value) && value.length === 0)) delete next[field]
+        else next[field] = value
+      }
+      if (newVersion) next.version = (current.version ?? 1) + 1
+      sources[at] = next as typeof current
+      own.document = validSystem({ ...structuredClone(own.document), sources }).system
+      own.version++
+      return { version: own.version }
+    },
+    deleteBook: ({ systemId, version, key }) => {
+      const own = ownSystems.find((s) => s.id === systemId && !s.deleted)
+      if (!own) throw new ApiError('NOT_FOUND', 404)
+      if (own.version !== version) throw new ApiError('SYSTEM_CHANGED', 400)
+      const used = campaigns.some((c) => {
+        if (c.system?.id !== systemId) return false
+        const { choices } = normalizeChoices(own.document, (c.systemChoices ?? {}) as Partial<Choices>)
+        return choices.sources.includes(key)
+      })
+      if (used) throw new ApiError('BOOK_IN_USE', 400)
+      const before = own.content.length
+      own.content = own.content.filter((c) => c.source !== key)
+      own.document = validSystem({
+        ...structuredClone(own.document),
+        sources: (own.document.sources ?? []).filter((s) => s.key !== key)
+      }).system
+      own.version++
+      return { version: own.version, deleted: before - own.content.length }
+    },
+    proposeContent: ({ systemId, source, items }) => {
+      const own = ownSystems.find((s) => s.id === systemId && !s.deleted)
+      if (!own) throw new ApiError('NOT_FOUND', 404)
+      const proposed: string[] = []
+      const taken: string[] = []
+      for (const { review, ...item } of items) {
+        const at = own.content.findIndex((c) => c.key === item.key)
+        const found = own.content[at] as (ContentItem & { review?: unknown }) | undefined
+        if (found && !found.review) {
+          taken.push(item.key)
+          continue
+        }
+        const next = { ...structuredClone(item), source, review: { notes: [], ...review } } as unknown as ContentItem
+        if (found) own.content[at] = next
+        else own.content.push(next)
+        proposed.push(item.key)
+      }
+      return { proposed, taken, repeated: [], warnings: [] }
+    },
+    listPending: ({ systemId, source, type }) => {
+      const own = ownSystems.find((s) => s.id === systemId && !s.deleted)
+      if (!own) throw new ApiError('NOT_FOUND', 404)
+      type Review = { page?: number; excerpt?: string; notes?: string[] }
+      const pending = own.content.filter(
+        (c): c is ContentItem & { review: Review } => !!(c as { review?: unknown }).review && c.source === source
+      )
+      const order = Object.keys(own.document.types)
+      const types = [...new Set(pending.map((c) => c.type))].sort((a, b) => order.indexOf(a) - order.indexOf(b))
+      const chosen = type && types.includes(type) ? type : (types[0] ?? null)
+      return {
+        counts: types.map((t) => ({
+          type: t,
+          label: textOf(own.document.types[t]?.label) || t,
+          count: pending.filter((c) => c.type === t).length
+        })),
+        type: chosen,
+        items: pending
+          .filter((c) => c.type === chosen)
+          .map(({ review, ...item }) => ({
+            key: item.key,
+            type: item.type,
+            name: textOf(item.data.name as Parameters<typeof textOf>[0]) || item.key,
+            source: item.source,
+            page: review.page ?? null,
+            excerpt: review.excerpt ?? null,
+            notes: review.notes ?? [],
+            repeats: null,
+            item: structuredClone(item) as never
+          }))
+      }
+    },
+    settlePending: ({ systemId, accept = [], discard = [], types = {} }) => {
+      const own = ownSystems.find((s) => s.id === systemId && !s.deleted)
+      if (!own) throw new ApiError('NOT_FOUND', 404)
+      const accepted: string[] = []
+      const discarded: string[] = []
+      own.content = own.content.flatMap((c) => {
+        if (!(c as { review?: unknown }).review) return [c]
+        if (accept.includes(c.key)) {
+          accepted.push(c.key)
+          const { review: _, ...rest } = c as ContentItem & { review?: unknown }
+          return [{ ...rest, type: types[c.key] ?? c.type } as ContentItem]
+        }
+        if (discard.includes(c.key)) {
+          discarded.push(c.key)
+          return []
+        }
+        return [c]
+      })
+      own.version++
+      return { version: own.version, accepted, discarded }
+    },
     trySystemRoll: (input) => {
       const system = input.draft ? (input.draft as unknown as System) : systemById(input.systemId ?? '')
       if (!system) throw new ApiError('NOT_FOUND', 404)
@@ -3011,8 +3282,10 @@ export function fakeApi(
       if (kind === 'scene')
         scenes.push({
           id: crypto.randomUUID(),
+          worldId: pageById(pageId).worldId,
           tabId: tab.id,
           pageId,
+          name: null,
           image: null,
           grid: {
             type: 'square',
@@ -3058,8 +3331,49 @@ export function fakeApi(
       return { id: tabId }
     },
     listScenes: ({ worldId }) => ({
-      scenes: scenes.filter((s) => pageById(s.pageId).worldId === worldId).map(sceneView)
+      scenes: scenes.filter((s) => s.worldId === worldId).map(sceneView)
     }),
+    createScene: ({ worldId, name }) => {
+      const scene: StoredScene = {
+        id: crypto.randomUUID(),
+        worldId,
+        tabId: null,
+        pageId: null,
+        name,
+        image: null,
+        grid: {
+          type: 'square',
+          size: 100,
+          offsetX: 0,
+          offsetY: 0,
+          distance: 5,
+          units: 'pies',
+          diagonals: 'equal',
+          visible: true,
+          color: '#000000',
+          opacity: 0.3
+        },
+        initialView: null,
+        imported: null
+      }
+      scenes.push(scene)
+      return sceneView(scene)
+    },
+    renameScene: ({ sceneId, name }) => {
+      const scene = sceneById(sceneId)
+      if (scene.tabId) tabById(scene.tabId).name = name
+      else scene.name = name
+      return sceneView(scene)
+    },
+    deleteScene: ({ sceneId }) => {
+      const scene = sceneById(sceneId)
+      if (scene.tabId) {
+        const tab = tabById(scene.tabId)
+        pageTabs.splice(pageTabs.indexOf(tab), 1)
+      }
+      scenes.splice(scenes.indexOf(scene), 1)
+      return { ok: true as const }
+    },
     getScene: ({ sceneId, tabId }) => {
       const scene = sceneId ? scenes.find((s) => s.id === sceneId) : scenes.find((s) => s.tabId === tabId)
       if (!scene) throw new ApiError('NOT_FOUND', 404)
@@ -3087,7 +3401,7 @@ export function fakeApi(
     // Como el servidor: el SVG pasa a ser un archivo del mundo y la escena queda sin trocear
     drawScene: ({ sceneId, svg, name, walls, portals, lights }) => {
       const scene = sceneById(sceneId)
-      const worldId = pageById(scene.pageId).worldId
+      const worldId = scene.worldId
       const file = fileOf({ worldId, name: `${name ?? 'Mapa'}.svg`, mime: 'image/svg+xml', size: svg.length })
       files.push(file)
       const size = /width="(\d+)"[^>]*height="(\d+)"/.exec(svg)
@@ -3892,5 +4206,5 @@ export function fakeApi(
       return { ...file }
     }
   }
-  return { client, calls, worlds, campaigns, history, approvals, pages, files }
+  return { client, calls, worlds, campaigns, history, approvals, pages, files, shownPages }
 }

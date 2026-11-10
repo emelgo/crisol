@@ -9,6 +9,10 @@ afterEach(cleanup)
 beforeEach(() => {
   try {
     localStorage.setItem('crisol.recorridos.enrique@crisol.test', JSON.stringify({ seen: ['mundo'] }))
+    // La barra de la Mesa recuerda su pestaña y si está plegada: cada prueba empieza como la primera vez
+    localStorage.removeItem('crisol.mesa.pestana')
+    localStorage.removeItem('crisol.mesa.plegada')
+    localStorage.removeItem('crisol.ventanas')
   } catch {
     // Sin almacenamiento (entorno sin DOM), no hay tutorial
   }

@@ -1,71 +1,167 @@
 /**
  * La bandeja de dados 3D: un lienzo sobre toda la pantalla, que no se puede pulsar, donde caen los dados con el
  * resultado que dio el servidor. Caen los tuyos al tirar y los de las tiradas públicas de los demás en el mundo en el que
- * estás (si no lo has apagado). La escena (three.js y la física) se carga aparte, la primera vez que se tira
+ * estás (si no lo has apagado). La escena (three.js y la física) se carga aparte, en cuanto hay un rato libre dentro de
+ * un mundo, para que la primera tirada no espere. Las tuyas empiezan a caer en el clic, mientras se pregunta al
+ * servidor; al llegar el resultado, se le ponen sus números. Cuando paran, avisa: el resultado sale entonces sobre el d20
  */
 import type { Campaign, DiceRoll } from '@crisol/contracts'
 import { useQueryClient } from '@tanstack/react-query'
-import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
-import { useTranslation } from 'react-i18next'
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef } from 'react'
 import { useAccounts } from '../account/context.tsx'
 import { useRolled } from '../realtime/context.tsx'
-import type { DiceScene } from './3d/scene.ts'
+import type { DiceScene, PendingThrow } from './3d/scene.ts'
 import { useWorldInPath } from './context.tsx'
 import { fallingDice } from './falling.ts'
+import { predictFalling } from './predict.ts'
 import { colorOf, isMine } from './rolls.ts'
 import styles from './tray.module.css'
 
-/** Cuánto se ve el total, desde que se paran los dados */
-const TOTAL_MS = 2600
+type Settled = (roll: DiceRoll) => void
 
-interface Shown {
-  id: string
-  total: number
-  who: string
-  color: string
-  critical: boolean
+/** Lo más que se espera a que paren los dados: luego el resultado sale igual */
+const SETTLE_MAX_MS = 8000
+/** Lo más que caen unos dados esperando al servidor: si no contesta, se van */
+const WAIT_MAX_MS = 15000
+
+/** Una tirada tuya que ya cae, a falta del resultado */
+export interface Throwing {
+  /** El resultado: si son los dados que caen, se les ponen sus números; si no, caen los suyos */
+  land(roll: DiceRoll): void
+  /** La tirada falló: los dados se van */
+  cancel(): void
 }
 
-const TrayContext = createContext<{ play(roll: DiceRoll): void }>({ play: () => {} })
+interface Tray {
+  /** Hacer caer los dados de una tirada */
+  play(roll: DiceRoll): void
+  /** Empezar a tirar en el clic, antes del resultado; null si no se sabe qué dados caerán (entonces, play al llegar) */
+  start(formula: string): Throwing | null
+  /** Avisa cuando paran los dados de una tirada (o al momento, si no caen) */
+  onSettled(listener: Settled): () => void
+  /** Si los dados de esa tirada están cayendo */
+  playing(rollId: string): boolean
+}
 
-/** Hacer caer los dados de una tirada */
+const TrayContext = createContext<Tray>({
+  play: () => {},
+  start: () => null,
+  onSettled: () => () => {},
+  playing: () => false
+})
+
 export const useTray = () => useContext(TrayContext)
 
 export function DiceTray({ children }: { children: ReactNode }) {
-  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const { account } = useAccounts().useAccount()
   const worldId = useWorldInPath()
   const canvas = useRef<HTMLCanvasElement>(null)
   // Sin WebGL (un navegador viejo, una máquina sin gráficos) no caen dados: las tiradas siguen en el registro
   const scene = useRef<Promise<DiceScene | null> | null>(null)
-  const [shown, setShown] = useState<Shown[]>([])
+  const listeners = useRef(new Set<Settled>())
+  const falling = useRef(new Set<string>())
+  const settle = useCallback((roll: DiceRoll) => {
+    falling.current.delete(roll.id)
+    for (const listener of listeners.current) listener(roll)
+  }, [])
+  // La escena, una sola vez (y calentada una sola vez)
+  const warmed = useRef(false)
+  const load = useCallback((target: HTMLCanvasElement) => {
+    scene.current ??= import('./3d/scene.ts').then(({ createScene }) => createScene(target)).catch(() => null)
+    return scene.current.then((s) => {
+      if (s && !warmed.current) {
+        warmed.current = true
+        s.warm?.()
+      }
+      return s
+    })
+  }, [])
 
   const play = useCallback(
     (roll: DiceRoll) => {
+      if (falling.current.has(roll.id)) return
       const dice = fallingDice(roll.dice)
       const target = canvas.current
-      // Con la pestaña escondida no se dibuja: la tirada sigue en el registro
-      if (dice.length === 0 || !target || document.hidden) return
-      scene.current ??= import('./3d/scene.ts').then(({ createScene }) => createScene(target)).catch(() => null)
+      // Con la pestaña escondida no se dibuja: el resultado sale al momento
+      if (dice.length === 0 || !target || document.hidden) {
+        settle(roll)
+        return
+      }
+      falling.current.add(roll.id)
+      // Si la escena falla a medias y no avisa, el resultado sale igual
+      window.setTimeout(() => {
+        if (falling.current.has(roll.id)) settle(roll)
+      }, SETTLE_MAX_MS)
       const mine = isMine(roll, account)
       const color = colorOf(roll.by.userId, mine ? (account?.diceColor ?? roll.by.color) : roll.by.color)
-      const total: Shown = {
-        id: roll.id,
-        total: roll.total,
-        who: mine ? t('dice.me') : roll.by.name,
-        color,
-        critical: roll.critical === 'high'
-      }
-      void scene.current.then((s) =>
-        s?.play(dice, color, () => {
-          setShown((current) => [...current, total])
-          window.setTimeout(() => setShown((current) => current.filter((x) => x.id !== total.id)), TOTAL_MS)
-        })
-      )
+      void load(target).then((s) => {
+        if (s) s.play(dice, color, () => settle(roll))
+        else settle(roll)
+      })
     },
-    [account, t]
+    [account, settle, load]
   )
+
+  const start = useCallback(
+    (formula: string): Throwing | null => {
+      const kinds = predictFalling(formula)
+      const target = canvas.current
+      if (!kinds || !target || document.hidden) return null
+      const color = colorOf(account?.id ?? account?.name ?? '', account?.diceColor)
+      const pending: Promise<PendingThrow | null> = load(target).then((s) => s?.start(kinds, color) ?? null)
+      let done = false
+      const cancel = () => {
+        done = true
+        void pending.then((p) => p?.cancel())
+      }
+      // Si nadie dice cómo acabó (no debería pasar), se van solos
+      window.setTimeout(() => {
+        if (!done) cancel()
+      }, WAIT_MAX_MS)
+      return {
+        land(roll) {
+          if (done) return
+          const dice = fallingDice(roll.dice)
+          // Cayeron otros (no debería pasar): se van y caen los de la tirada
+          if (dice.length !== kinds.length || dice.some((d, i) => d.kind !== kinds[i])) {
+            cancel()
+            play(roll)
+            return
+          }
+          done = true
+          if (falling.current.has(roll.id)) return
+          falling.current.add(roll.id)
+          window.setTimeout(() => {
+            if (falling.current.has(roll.id)) settle(roll)
+          }, SETTLE_MAX_MS)
+          void pending.then((p) => {
+            if (p) p.land(dice, () => settle(roll))
+            else settle(roll)
+          })
+        },
+        cancel() {
+          if (!done) cancel()
+        }
+      }
+    },
+    [account, settle, load, play]
+  )
+
+  // Dentro de un mundo, en un rato libre, se deja lista la escena: la primera tirada ya no espera a cargarla
+  useEffect(() => {
+    if (!worldId) return
+    const target = canvas.current
+    if (!target) return
+    const warm = () => void load(target)
+    // Safari aún no tiene requestIdleCallback
+    if (typeof window.requestIdleCallback === 'function') {
+      const id = window.requestIdleCallback(warm, { timeout: 4000 })
+      return () => window.cancelIdleCallback(id)
+    }
+    const id = setTimeout(warm, 1500)
+    return () => clearTimeout(id)
+  }, [worldId, load])
 
   // Las de los demás: en el mundo en el que se está y si no se ha apagado; las tuyas ya cayeron al tirarlas
   useRolled((roll) => {
@@ -84,23 +180,23 @@ export function DiceTray({ children }: { children: ReactNode }) {
     []
   )
 
-  const value = useMemo(() => ({ play }), [play])
+  const value = useMemo<Tray>(
+    () => ({
+      play,
+      start,
+      onSettled: (listener) => {
+        listeners.current.add(listener)
+        return () => listeners.current.delete(listener)
+      },
+      playing: (rollId) => falling.current.has(rollId)
+    }),
+    [play, start]
+  )
   return (
     <TrayContext.Provider value={value}>
       {children}
       <div className={styles.tray} aria-hidden="true">
         <canvas ref={canvas} className={styles.canvas} />
-      </div>
-      {/* El total, grande, al pararse: lo que se lee ya se anuncia desde el registro */}
-      <div className={styles.totals} aria-hidden="true">
-        {shown.map((s) => (
-          <p key={s.id} className={styles.total} data-testid="total-tirada">
-            <span className={s.critical ? styles.critical : styles.number}>{s.total}</span>
-            <span className={styles.who} style={{ color: s.color }}>
-              {s.critical ? t('dice.whoCritical', { who: s.who }) : s.who}
-            </span>
-          </p>
-        ))}
       </div>
     </TrayContext.Provider>
   )

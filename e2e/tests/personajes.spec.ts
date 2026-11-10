@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, type Page, test } from '@playwright/test'
-import { campaignLink, import5e, newPlayer, settled } from './ayudas.ts'
+import { campaignLink, campaignPath, import5e, newPlayer, settled } from './ayudas.ts'
 
 /** Que axe no encuentre fallos críticos ni graves, en claro y en oscuro */
 async function accessible(page: Page) {
@@ -22,16 +22,18 @@ test('una jugadora hace su personaje de 5e con el creador, lo termina y lo sube 
 }) => {
   test.slow()
   const link = await campaignLink(page)
-  const campaignId = new URL(page.url()).pathname.split('/campanas/')[1] ?? ''
+  const campaignId = new URL(page.url()).pathname.split('/campanas/')[1]?.split('/')[0] ?? ''
+  const path = campaignPath(page)
   const chosen = await page.request.post('/api/actions/updateCampaign', {
     data: { campaignId, system: await import5e(page), systemChoices: { sources: ['srd521'], duplicates: 'newest' } }
   })
   expect(chosen.status()).toBe(200)
 
   const player = await newPlayer(browser, link)
-  const nav = player.getByRole('navigation', { name: 'Secciones' })
-  await nav.getByRole('link', { name: 'Personajes' }).click()
-  await expect(player.getByRole('heading', { level: 1, name: 'Personajes' })).toBeVisible()
+  // Sin personaje aún, su página de la campaña le invita a hacerlo
+  await player.getByRole('link', { name: 'Crear tu personaje' }).click()
+  // La sección Mesa de la campaña: sus personajes (ADR-0021)
+  await expect(player.getByRole('heading', { level: 1, name: 'Mesa' })).toBeVisible()
   await player.getByRole('button', { name: 'Personaje nuevo' }).click()
   const dialog = player.getByRole('dialog', { name: 'Personaje nuevo' })
   await dialog.getByLabel('Nombre').fill('Thora')
@@ -97,8 +99,7 @@ test('una jugadora hace su personaje de 5e con el creador, lo termina y lo sube 
   await expect(versions.getByRole('listitem').first()).toContainText('Nivel 2Actual')
 
   // El máster ve a Thora, y la vuelve a su versión de nivel 1
-  const sections = page.getByRole('navigation', { name: 'Secciones' })
-  await sections.getByRole('link', { name: 'Personajes' }).click()
+  await page.goto(`${path}/personajes`)
   await expect(page.getByRole('link', { name: 'Thora' })).toBeVisible()
   await shot(page, 'personajes')
   await page.getByRole('link', { name: 'Thora' }).click()

@@ -1,12 +1,8 @@
 /**
- * La hoja de la ficha, en un panel al lado del mapa (sin salir de la mesa): la de la criatura en juego o la del
- * personaje, las mismas de «En juego» y de «Personajes», con todas sus tiradas
+ * La hoja de un personaje o de una criatura en juego, en su ventana sobre la Mesa (lienzo «Campaña en la Mesa»): la
+ * misma de «Personajes» y del compendio, con todas sus tiradas. Se abre desde una ficha del mapa o desde Personajes
  */
-import type { TokenView } from '@crisol/contracts'
 import { useQuery } from '@tanstack/react-query'
-import { X } from 'lucide-react'
-import { useEffect, useRef } from 'react'
-import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { PlaySheet } from '../characters/play-sheet.tsx'
@@ -16,48 +12,49 @@ import { FormError } from '../components/field.tsx'
 import { failed, LoadError } from '../components/load-error.tsx'
 import { CreatureSheet } from '../creatures/in-play.tsx'
 import styles from './fichas.module.css'
+import { useWindows, type WindowSpec } from './windows.tsx'
 
-export function TokenSheet({
-  token,
+export interface SheetActor {
+  kind: 'character' | 'creature'
+  id: string
+  name: string
+}
+
+/** La hoja de un personaje o una criatura, en su ventana (una por cada uno) */
+export function sheetWindow(actor: SheetActor, campaignId: string, systemId: string | null): WindowSpec {
+  return {
+    id: `sheet:${actor.id}`,
+    title: actor.name,
+    width: 760,
+    height: 680,
+    render: () => <ActorSheet actor={actor} campaignId={campaignId} systemId={systemId} />
+  }
+}
+
+function ActorSheet({
+  actor,
   campaignId,
-  systemId,
-  onClose
+  systemId
 }: {
-  token: TokenView
+  actor: SheetActor
   campaignId: string
   systemId: string | null
-  onClose: () => void
 }) {
-  const { t } = useTranslation()
-  const box = useRef<HTMLElement>(null)
-  // Escape la cierra y el foco vuelve a la mesa
-  useEffect(() => {
-    box.current?.focus()
-  }, [])
+  const windows = useWindows()
   return (
-    <section
-      ref={box}
-      className={styles.sheet}
-      aria-label={t('tokens.sheetOf', { name: token.actor.name })}
-      tabIndex={-1}
-      onKeyDown={(event) => {
-        if (event.key === 'Escape') onClose()
-      }}
-    >
-      <button
-        type="button"
-        className={`${styles.icon} ${styles.sheetClose}`}
-        aria-label={t('tokens.closeSheet')}
-        onClick={onClose}
-      >
-        <X aria-hidden="true" size={18} />
-      </button>
-      {token.actor.kind === 'creature' ? (
-        <CreatureSheet creatureId={token.actor.id} campaignId={campaignId} systemId={systemId} onRemoved={onClose} />
+    <div className={styles.windowSheet}>
+      {actor.kind === 'creature' ? (
+        <CreatureSheet
+          creatureId={actor.id}
+          campaignId={campaignId}
+          systemId={systemId}
+          // Quitada de juego: su ventana se cierra
+          onRemoved={() => windows?.close(`sheet:${actor.id}`)}
+        />
       ) : (
-        <CharacterSheet characterId={token.actor.id} campaignId={campaignId} />
+        <CharacterSheet characterId={actor.id} campaignId={campaignId} />
       )}
-    </section>
+    </div>
   )
 }
 

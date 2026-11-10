@@ -1,5 +1,16 @@
 import { approve, getAiSettings, listApprovals, reject, setAiMode } from './ai.ts'
 import {
+  createBook,
+  deleteBook,
+  getBookEntries,
+  getSystemBooks,
+  importBook,
+  listPending,
+  proposeContent,
+  settlePending,
+  updateBook
+} from './books.ts'
+import {
   createCampaign,
   getCampaign,
   listCampaigns,
@@ -71,7 +82,8 @@ import {
   reveal,
   seeNews,
   setKnowledge,
-  setPageEditors
+  setPageEditors,
+  showPage
 } from './knowledge.ts'
 import { getBookPages, listLibrary, readBookAgain, searchLibrary } from './library.ts'
 import {
@@ -119,6 +131,8 @@ import {
 } from './pages.ts'
 import { getParty, moveCoins, moveItem, splitCoins, updateParty } from './party.ts'
 import {
+  createScene,
+  deleteScene,
   drawScene,
   getCampaignTable,
   getScene,
@@ -126,6 +140,7 @@ import {
   listScenes,
   openScene,
   presentScene,
+  renameScene,
   setSceneImage,
   setScreenCamera,
   updateScene
@@ -156,6 +171,7 @@ import {
   trySystemRoll,
   updateSystem
 } from './systems.ts'
+import { getTablePresence } from './table.ts'
 import {
   changeMarks,
   createWidget,
@@ -218,6 +234,7 @@ import { createWorld, ensureWorldHome, getWorldHome, listWorlds, renameWorld, up
 
 export * from './action.ts'
 export * from './ai.ts'
+export * from './books.ts'
 export * from './campaigns.ts'
 export * from './characters.ts'
 export * from './combat.ts'
@@ -322,6 +339,7 @@ export const ACTIONS = [
   listVisibleInPlay,
   setCreatureHidden,
   reveal,
+  showPage,
   hide,
   listCampaignKnowledge,
   getSecretsKnowledge,
@@ -429,6 +447,9 @@ export const ACTIONS = [
   importFoundryScenes,
   listScenes,
   getScene,
+  createScene,
+  renameScene,
+  deleteScene,
   updateScene,
   setSceneImage,
   getCampaignTable,
@@ -479,7 +500,17 @@ export const ACTIONS = [
   listSnapshots,
   saveSnapshot,
   restoreSnapshot,
-  deleteSnapshot
+  deleteSnapshot,
+  getSystemBooks,
+  createBook,
+  updateBook,
+  deleteBook,
+  proposeContent,
+  listPending,
+  settlePending,
+  getBookEntries,
+  getTablePresence,
+  importBook
 ]
 
 /** Las acciones por nombre, solo como tipo: la web las usa sin cargar zod */
@@ -550,6 +581,7 @@ export type Actions = {
   listVisibleInPlay: typeof listVisibleInPlay
   setCreatureHidden: typeof setCreatureHidden
   reveal: typeof reveal
+  showPage: typeof showPage
   hide: typeof hide
   listCampaignKnowledge: typeof listCampaignKnowledge
   getSecretsKnowledge: typeof getSecretsKnowledge
@@ -657,6 +689,9 @@ export type Actions = {
   importFoundryScenes: typeof importFoundryScenes
   listScenes: typeof listScenes
   getScene: typeof getScene
+  createScene: typeof createScene
+  renameScene: typeof renameScene
+  deleteScene: typeof deleteScene
   updateScene: typeof updateScene
   setSceneImage: typeof setSceneImage
   getCampaignTable: typeof getCampaignTable
@@ -708,4 +743,14 @@ export type Actions = {
   saveSnapshot: typeof saveSnapshot
   restoreSnapshot: typeof restoreSnapshot
   deleteSnapshot: typeof deleteSnapshot
+  getSystemBooks: typeof getSystemBooks
+  createBook: typeof createBook
+  updateBook: typeof updateBook
+  deleteBook: typeof deleteBook
+  proposeContent: typeof proposeContent
+  listPending: typeof listPending
+  settlePending: typeof settlePending
+  getBookEntries: typeof getBookEntries
+  getTablePresence: typeof getTablePresence
+  importBook: typeof importBook
 }

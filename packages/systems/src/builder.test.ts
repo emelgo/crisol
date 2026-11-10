@@ -194,7 +194,9 @@ describe('el creador: montar un personaje de sus elecciones', () => {
       value: 'mago_2014',
       label: { es: 'Mago', en: 'Wizard' },
       available: false,
-      reason: { es: 'Necesitas Inteligencia 13', en: 'Requires Intelligence 13' }
+      reason: { es: 'Necesitas Inteligencia 13', en: 'Requires Intelligence 13' },
+      // De qué libro sale (ADR-0021)
+      source: 'srd51'
     })
     const high = { caracteristicas: { ...low.caracteristicas, int: { puntuacion: 13 } } }
     expect(

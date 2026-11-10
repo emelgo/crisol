@@ -78,6 +78,9 @@ export function RenamableItem({
             label={t('list.renameLabel', { name })}
             name="name"
             autoComplete="off"
+            data-1p-ignore
+            data-lpignore="true"
+            data-form-type="other"
             defaultValue={name}
             maxLength={maxLength}
             required

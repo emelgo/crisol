@@ -87,9 +87,10 @@ export const sceneImage = z.object({
 
 export const sceneView = z.object({
   id: z.uuid(),
-  tabId: z.uuid(),
-  pageId: z.uuid(),
-  pageTitle: z.string(),
+  /** La pestaña y la página en la que vive; null: una escena suelta de la Mesa (ADR-0020) */
+  tabId: z.uuid().nullable(),
+  pageId: z.uuid().nullable(),
+  pageTitle: z.string().nullable(),
   name: z.string(),
   image: sceneImage.nullable(),
   grid: sceneGrid,
@@ -112,7 +113,8 @@ export type SceneView = z.infer<typeof sceneView>
 export const listScenes = defineAction({
   name: 'listScenes',
   kind: 'read',
-  description: 'Las escenas de un mundo (las pestañas «Escena» de sus páginas), con su imagen y su rejilla',
+  description:
+    'Las escenas de un mundo (las sueltas de la Mesa y las pestañas «Escena» de sus páginas), con su imagen y su rejilla',
   input: z.object({ worldId: z.uuid() }),
   output: z.object({ scenes: z.array(sceneView) })
 })
@@ -128,6 +130,34 @@ export const getScene = defineAction({
       message: 'sceneId o tabId'
     }),
   output: sceneView
+})
+
+const sceneName = z.string().trim().min(1).max(80)
+
+export const createScene = defineAction({
+  name: 'createScene',
+  kind: 'write',
+  description:
+    'Crea una escena suelta en un mundo (sin página, como en Foundry): con su nombre, sin mapa (se le pone con setSceneImage) y la rejilla de siempre',
+  input: z.object({ worldId: z.uuid(), name: sceneName }),
+  output: sceneView
+})
+
+export const renameScene = defineAction({
+  name: 'renameScene',
+  kind: 'write',
+  description: 'Cambia el nombre de una escena (la de una página cambia el de su pestaña)',
+  input: z.object({ sceneId: z.uuid(), name: sceneName }),
+  output: sceneView
+})
+
+export const deleteScene = defineAction({
+  name: 'deleteScene',
+  kind: 'write',
+  description:
+    'Borra una escena con lo que hay en ella (fichas, dibujos, niebla). La de una página quita su pestaña. Se puede deshacer desde el historial del mundo',
+  input: z.object({ sceneId: z.uuid() }),
+  output: z.object({ ok: z.literal(true) })
 })
 
 export const updateScene = defineAction({

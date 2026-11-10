@@ -164,7 +164,8 @@ export function GmPanel({
   })
   const pages = names.data?.pages ?? []
   const current =
-    pages.find((page) => page.id === settings.note)?.title ?? (settings.note === scene.pageId ? scene.pageTitle : '')
+    pages.find((page) => page.id === settings.note)?.title ??
+    (settings.note && settings.note === scene.pageId ? (scene.pageTitle ?? '') : '')
   const [text, setText] = useState(current)
   useEffect(() => setText(current), [current])
   const commit = () => {

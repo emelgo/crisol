@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { createCampaign, createWorld, freshOwner, openWorld } from './ayudas.ts'
+import { createCampaign, createWorld, freshOwner, openCampaign, openWorld } from './ayudas.ts'
 
 test.use({ permissions: ['clipboard-read', 'clipboard-write'] })
 
@@ -8,8 +8,8 @@ test('el máster ve y copia el enlace de su campaña, genera uno nuevo y cierra 
   await createWorld(page, 'Eana')
   await openWorld(page, 'Eana')
   await createCampaign(page, 'La Marca')
-  await page.getByRole('link', { name: 'La Marca', exact: true }).click()
-  await expect(page.getByRole('heading', { level: 1, name: 'La Marca' })).toBeVisible()
+  // La campaña se abre en otra pestaña; aquí, en esta, en su pestaña «Campaña»
+  await openCampaign(page, 'La Marca', 'campana')
 
   const link = page.getByLabel('Enlace de invitación')
   await expect(link).toHaveValue(/^http:\/\/127\.0\.0\.1:8131\/unirse\/[\w-]{43}$/)

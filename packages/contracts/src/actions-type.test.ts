@@ -100,6 +100,7 @@ describe('Actions', () => {
       listVisibleInPlay: true,
       setCreatureHidden: true,
       reveal: true,
+      showPage: true,
       hide: true,
       listCampaignKnowledge: true,
       getSecretsKnowledge: true,
@@ -178,6 +179,9 @@ describe('Actions', () => {
       resetTableDraws: true,
       listScenes: true,
       getScene: true,
+      createScene: true,
+      renameScene: true,
+      deleteScene: true,
       updateScene: true,
       setSceneImage: true,
       getCampaignTable: true,
@@ -228,7 +232,17 @@ describe('Actions', () => {
       listSnapshots: true,
       saveSnapshot: true,
       restoreSnapshot: true,
-      deleteSnapshot: true
+      deleteSnapshot: true,
+      getSystemBooks: true,
+      createBook: true,
+      updateBook: true,
+      deleteBook: true,
+      proposeContent: true,
+      listPending: true,
+      settlePending: true,
+      getBookEntries: true,
+      getTablePresence: true,
+      importBook: true
     }
     expect(Object.keys(names).sort()).toEqual(ACTIONS.map((a) => a.name).sort())
   })

@@ -9,6 +9,10 @@ import { fakeApi } from '../api/fake.ts'
 import { App } from '../app.tsx'
 import { createAppRouter } from '../router.tsx'
 
+// El máster abre la campaña en la Mesa: su canal y su lienzo, de mentira
+vi.mock('../tabletop/channel.ts', async () => (await import('../tabletop/fakes.ts')).quietChannel())
+vi.mock('../tabletop/use-renderer.ts', async () => (await import('../tabletop/fakes.ts')).blindRenderer())
+
 const ORG = { id: crypto.randomUUID(), name: 'Fateforge', role: 'owner' as const }
 const world: World = {
   id: crypto.randomUUID(),
@@ -150,14 +154,14 @@ describe('si no llega lo que necesita una página', () => {
   })
 
   it('en la campaña, los miembros: el error, en vez de nada', async () => {
-    renderAt(`/mundos/${world.id}/campanas/${campaign.id}`, 'listMembers')
+    renderAt(`/mundos/${world.id}/campanas/${campaign.id}?panel=ajustes`, 'listMembers')
     await afterRetries()
     expect((await screen.findByRole('alert')).textContent).toBe('Algo ha fallado. Vuelve a intentarlo.')
     expect(screen.getByRole('heading', { level: 1, name: 'La Marca' })).toBeDefined()
   })
 
-  it('y el enlace de invitación: el error, bajo los miembros', async () => {
-    renderAt(`/mundos/${world.id}/campanas/${campaign.id}`, 'getInvitation')
+  it('y el enlace de invitación: el error, en su sitio', async () => {
+    renderAt(`/mundos/${world.id}/campanas/${campaign.id}?panel=ajustes`, 'getInvitation')
     await afterRetries()
     expect((await screen.findByRole('alert')).textContent).toBe('Algo ha fallado. Vuelve a intentarlo.')
     expect(screen.getByRole('list', { name: 'Miembros' })).toBeDefined()

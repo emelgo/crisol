@@ -107,8 +107,9 @@ test('repaso visual: la mesa, la tele y el combate con la cripta del lienzo', as
   await settled()
   await page.screenshot({ path: '../out/capturas/repaso-mesa.png' })
   // Seguir
-  await page.getByRole('radio', { name: 'Seguir' }).click()
-  await expect(page.getByText('La tele sigue tu vista')).toBeVisible()
+  await page.getByRole('button', { name: /^Cámara/ }).click()
+  await page.getByRole('menuitemradio', { name: /^Sigue tu vista/ }).click()
+  await expect(page.getByText('Los jugadores ven lo mismo que tú')).toBeVisible()
   await settled()
   await page.screenshot({ path: '../out/capturas/repaso-mesa-seguir.png' })
   await page.getByRole('region', { name: 'Goblin 3' }).getByRole('button', { name: 'Cerrar' }).click()
@@ -122,7 +123,11 @@ test('repaso visual: la mesa, la tele y el combate con la cripta del lienzo', as
   await tv.screenshot({ path: '../out/capturas/repaso-pantalla.png' })
 
   // El combate (como el tablero Combate): la iniciativa del lienzo, cada goblin aparte, ronda 2 y turno de Lía
-  await page.getByRole('button', { name: 'Combate', exact: true }).click()
+  await page
+    .getByRole('complementary', { name: 'Panel de la mesa' })
+    .getByRole('tab', { name: /^Combate/ })
+    .click()
+  await page.getByRole('button', { name: 'Empezar el combate' }).click()
   const panel = page.getByRole('complementary', { name: 'Combate' })
   await expect(panel).toBeVisible()
   const combat = (await call('getCombat', { campaignId })).combat as {
@@ -154,6 +159,10 @@ test('repaso visual: la mesa, la tele y el combate con la cripta del lienzo', as
   await tvNet.quiet()
   await tv.screenshot({ path: '../out/capturas/repaso-pantalla-combate.png' })
 
+  // Los resultados de las tiradas, sobre el d20, ya apagados (no tapan las fichas de esa esquina)
+  await expect(page.getByRole('list', { name: 'Últimas tiradas' }).getByRole('listitem')).toHaveCount(0, {
+    timeout: 15_000
+  })
   // Daño a varias: tres elegidas en el mapa (la primera abre su tarjeta: se cierra y siguen con Mayús)
   const tokens = (await call('getCampaignTable', { campaignId })).tokens as Array<{
     id: string

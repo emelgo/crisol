@@ -6,7 +6,7 @@
 import type { SystemSummary } from '@crisol/contracts'
 import { type Problem, validateFile } from '@crisol/systems'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Navigate } from '@tanstack/react-router'
+import { Link, Navigate } from '@tanstack/react-router'
 import { CircleAlert, Download, FileUp, Info, Lock, Plus, ScrollText, Settings, Sparkles } from 'lucide-react'
 import { useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -24,6 +24,7 @@ import { Modal } from '../components/modal.tsx'
 import { saveFile } from '../components/save-file.ts'
 import { Screen } from '../components/screen.tsx'
 import { Tour } from '../components/tour.tsx'
+import { ENTER_ITEM, enterItem } from '../components/world-transition.ts'
 import cards from '../routes/world-card.module.css'
 import screen from '../templates/screen.module.css'
 import { FoundryImages } from './foundry-images.tsx'
@@ -65,7 +66,6 @@ export function SystemsScreen() {
   if (!account) return <Navigate to="/entrar" replace />
   const all = systems.data?.systems ?? []
   const mine = all.filter((s) => !s.builtIn)
-  const builtIn = all.filter((s) => s.builtIn)
   const preview = all.find((s) => s.id === hovered)
   return (
     <Screen
@@ -93,23 +93,11 @@ export function SystemsScreen() {
               </button>
             </li>
           </ul>
-          <h2 className={screen.section}>{t('systems.builtIn')}</h2>
-          <ul className={screen.grid} aria-label={t('systems.builtIn')} data-tour="sistemas-serie">
-            {builtIn.map((system) => (
-              <SystemCard key={system.id} system={system} onHover={setHovered} />
-            ))}
-          </ul>
         </>
       )}
       {creating && <NewSystemDialog onClose={() => setCreating(false)} />}
       {systems.data && (
-        <Tour
-          id="sistemas"
-          steps={[
-            { target: '[data-tour="sistemas-nuevo"]', text: t('tour.systems.create') },
-            { target: '[data-tour="sistemas-serie"]', text: t('tour.systems.builtIn') }
-          ]}
-        />
+        <Tour id="sistemas" steps={[{ target: '[data-tour="sistemas-nuevo"]', text: t('tour.systems.create') }]} />
       )}
     </Screen>
   )
@@ -134,29 +122,27 @@ function SystemCard({ system, onHover }: { system: SystemSummary; onHover: (id: 
       }}
     >
       {system.builtIn && <Lock className={screen.lock} size={14} role="img" aria-label={t('systems.locked')} />}
-      <span className={screen.icon} aria-hidden="true">
+      <span className={screen.icon} aria-hidden="true" data-elemento="icono">
         <ScrollText size={24} strokeWidth={1.5} />
       </span>
       <h3 className={screen.name}>
-        <button
-          ref={opener}
-          type="button"
-          className={`${screen.open} ${styles.opener}`}
-          aria-haspopup="dialog"
-          onClick={() => {
-            // Con su ventana encima, la vista previa de al lado se quita (docs/diseno.md)
-            onHover(null)
-            setOpen(true)
-          }}
+        {/* Entrar es entrar: su icono y su nombre viajan al título del sistema, con sus libros (ADR-0021) */}
+        <Link
+          to="/sistemas/$systemId"
+          params={{ systemId: system.id }}
+          className={screen.open}
+          viewTransition={ENTER_ITEM}
+          onClick={(event) => enterItem(system.id, event.currentTarget.closest('li'))}
         >
-          {system.name}
-        </button>
+          <span data-elemento="nombre">{system.name}</span>
+        </Link>
       </h3>
       <p className={screen.meta}>{origin(system)}</p>
       <div className={screen.foot}>
         <span className={styles.version}>{t('systems.version', { version: versionOf(system) })}</span>
         {/* Sus acciones, en su engranaje, siempre a la vista (docs/diseno.md) */}
         <button
+          ref={opener}
           type="button"
           className={screen.gear}
           aria-label={t('systems.settingsOf', { name: system.name })}
@@ -551,6 +537,9 @@ function SystemWindow({ system, onClose }: { system: SystemSummary; onClose: (go
               required
               maxLength={200}
               autoComplete="off"
+              data-1p-ignore
+              data-lpignore="true"
+              data-form-type="other"
               onChange={(event) => setName(event.currentTarget.value)}
             />
             <FormError message={save.error ? errorText(save.error) : null} />

@@ -73,7 +73,7 @@ import { tooManyTries } from './tries.ts'
 /** Hasta tantos por cuenta */
 export const MAX_SYSTEMS = 50
 
-const isUuid = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
+export const isUuid = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
 
 /** Lo que se ve de un sistema en la lista, sacado de su documento */
 function summarize(
@@ -107,7 +107,7 @@ function own(row: systemsRepo.SystemRow, content: number, basedOnName: (id: stri
 }
 
 /** La organización de la que se ven los sistemas, si la cuenta puede verlos */
-function readableOrganization(ctx: ActionContext, organizationId: string | undefined) {
+export function readableOrganization(ctx: ActionContext, organizationId: string | undefined) {
   const target = targetOrganization(ctx, organizationId)
   authorize(ctx.actor, 'systems.read', { organizationId: target })
   return target
@@ -122,7 +122,7 @@ export async function ownWritable(ctx: ActionContext, systemId: string) {
 }
 
 /** Uno de serie o de la cuenta, por su id; de la cuenta, solo si es de esa organización */
-async function findReadable(ctx: ActionContext, organizationId: string, systemId: string) {
+export async function findReadable(ctx: ActionContext, organizationId: string, systemId: string) {
   const catalog = catalogSystem(systemId)
   if (catalog) return { document: catalog, row: null }
   if (!isUuid(systemId)) throw new NotFoundError('system')
@@ -133,6 +133,7 @@ async function findReadable(ctx: ActionContext, organizationId: string, systemId
 
 /** Todo el contenido de un sistema: el de la cuenta, de la base de datos (los de serie no traen) */
 async function allContent(ctx: ActionContext, found: { document: System; row: systemsRepo.SystemRow | null }) {
+  // Lo pendiente de revisar no se copia ni se baja: aún no es del sistema
   return found.row ? (await systemsRepo.listContent(ctx.db, found.row.id)).map(contentOf) : []
 }
 
@@ -146,7 +147,9 @@ const toValues = (item: ContentItem): systemsRepo.ContentValues => ({
   mechanics: (item.mechanics as Record<string, unknown> | undefined) ?? null,
   ref: (item.ref as Record<string, unknown> | undefined) ?? null,
   img: item.img ?? null,
-  table: (item.table as Record<string, unknown> | undefined) ?? null
+  table: (item.table as Record<string, unknown> | undefined) ?? null,
+  // Lo pendiente de revisar sigue pendiente; guardar una entrada a mano la da por buena
+  review: ((item as { review?: unknown }).review as systemsRepo.ContentValues['review']) ?? null
 })
 
 /**
@@ -346,13 +349,14 @@ export function invalid(problems: readonly Problem[]): never {
 }
 
 /** Validar entero */
-function validated(document: unknown): { system: System; warnings: Problem[] } {
+export function validated(document: unknown): { system: System; warnings: Problem[] } {
   const { system, problems } = validateSystem(document)
   if (!system) return invalid(problems)
   return { system, warnings: problems.filter((p) => p.severity === 'warning') }
 }
 
-const changed = () => new InvalidRequestError('SYSTEM_CHANGED', 'lo ha cambiado otro mientras tanto: vuelve a leerlo')
+export const changed = () =>
+  new InvalidRequestError('SYSTEM_CHANGED', 'lo ha cambiado otro mientras tanto: vuelve a leerlo')
 
 const tooMany = () => new InvalidRequestError('TOO_MANY_SYSTEMS', `como mucho, ${MAX_SYSTEMS} por cuenta`)
 
@@ -539,11 +543,8 @@ export const systemActions = [
       const { document: _, ...summary } = own(row, counts.get(row.id) ?? 0, name)
       return { ...summary, campaigns: using.get(row.id) ?? [] }
     })
-    const serie = CATALOG.map((s) => {
-      const { document: _, ...summary } = builtIn(s)
-      return summary
-    })
-    return { systems: [...serie, ...mine] }
+    // Sin sistemas de serie a la vista (Enrique, 2026-11-08): solo los de la cuenta. El vacío se baja desde «Sistema nuevo»
+    return { systems: mine }
   }),
 
   implement(getSystem, async (ctx, { systemId, organizationId }) => {
@@ -668,7 +669,13 @@ export const systemActions = [
       const campaign = await authorizedCampaign(ctx, 'campaign.read', campaignId)
       if (campaign.system !== systemId) throw new InvalidRequestError('BAD_CAMPAIGN', 'esa campaña no usa este sistema')
       const { choices } = normalizeChoices(found.document, (campaign.systemChoices ?? {}) as Record<string, unknown>)
-      options = { sources: choices.sources, duplicates: choices.duplicates, language: choices.language, ...given }
+      options = {
+        sources: choices.sources,
+        excluded: choices.excluded ?? [],
+        duplicates: choices.duplicates,
+        language: choices.language,
+        ...given
+      }
       // Con campaña, también el compendio de su mundo, si se puede ver
       const wiki = { worldId: campaign.worldId, organizationId: campaign.organizationId }
       if (found.row && can(ctx.actor, 'worldContent.read', wiki))

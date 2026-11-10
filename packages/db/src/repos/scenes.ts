@@ -2,28 +2,44 @@
  * Las escenas de la mesa (ADR-0018): lo del mundo (la escena de una pestaña, en operation() y el historial), el estado
  * de cada campaña en una escena y la mesa de cada campaña (estado de la sesión, fuera del historial)
  */
-import { and, asc, eq, getTableColumns, isNull, sql } from 'drizzle-orm'
+import { and, asc, eq, getTableColumns, isNotNull, isNull, or, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
-import { type OperationContext, operation } from '../operation.ts'
+import { type OperationContext, operation, type Writer } from '../operation.ts'
 import { prepared } from '../prepared.ts'
+import { combats } from '../schema/combat.ts'
 import { pageTabs } from '../schema/maps.ts'
 import { pages } from '../schema/pages.ts'
-import { campaignTables, type ScreenCameraData, sceneStates, scenes, sceneTiles } from '../schema/scenes.ts'
+import {
+  campaignTables,
+  DEFAULT_SCENE_GRID,
+  type ScreenCameraData,
+  sceneStates,
+  scenes,
+  sceneTiles,
+  sceneTokens
+} from '../schema/scenes.ts'
+import { sceneMarks, sceneSnapshots } from '../schema/table-tools.ts'
+import { sceneFog, sceneLights, sceneWalls } from '../schema/vision.ts'
 
 export type SceneRow = typeof scenes.$inferSelect
 export type CampaignTableRow = typeof campaignTables.$inferSelect
 type ScenePatch = Partial<Pick<SceneRow, 'fileId' | 'width' | 'height' | 'tiles' | 'grid' | 'initialView' | 'imported'>>
 
+// La suelta (ADR-0020) lleva su nombre; la de una pestaña, el de la pestaña
 const sceneColumns = {
   ...getTableColumns(scenes),
-  name: pageTabs.name,
+  name: sql<string>`coalesce(${scenes.name}, ${pageTabs.name}, '')`,
   pageId: pageTabs.pageId,
   pageTitle: pages.title
 }
 
-export type SceneWithPage = SceneRow & { name: string; pageId: string; pageTitle: string }
+/** Una escena con su pestaña y su página; la suelta, sin ellas (pageId y pageTitle, null) */
+export type SceneWithPage = Omit<SceneRow, 'name'> & { name: string; pageId: string | null; pageTitle: string | null }
 
-/** Una escena con su pestaña y su página, si la página sigue fuera de la papelera */
+/** La suelta, o la de una página que sigue fuera de la papelera */
+const alive = or(isNull(scenes.tabId), isNotNull(pages.id))
+
+/** Una escena (la de una pestaña, con su pestaña y su página, si la página sigue fuera de la papelera) */
 export async function findScene(db: Database, sceneId: string): Promise<SceneWithPage | null> {
   const [found] = await sceneById(db).execute({ sceneId })
   return found ?? null
@@ -33,9 +49,9 @@ const sceneById = prepared((db) =>
   db
     .select(sceneColumns)
     .from(scenes)
-    .innerJoin(pageTabs, eq(pageTabs.id, scenes.tabId))
-    .innerJoin(pages, and(eq(pages.id, pageTabs.pageId), isNull(pages.deletedAt)))
-    .where(eq(scenes.id, sql.placeholder('sceneId')))
+    .leftJoin(pageTabs, eq(pageTabs.id, scenes.tabId))
+    .leftJoin(pages, and(eq(pages.id, pageTabs.pageId), isNull(pages.deletedAt)))
+    .where(and(eq(scenes.id, sql.placeholder('sceneId')), alive))
     .prepare('find_scene')
 )
 
@@ -44,21 +60,64 @@ export async function sceneOfTab(db: Database, tabId: string): Promise<SceneWith
   const [found] = await db
     .select(sceneColumns)
     .from(scenes)
-    .innerJoin(pageTabs, eq(pageTabs.id, scenes.tabId))
-    .innerJoin(pages, and(eq(pages.id, pageTabs.pageId), isNull(pages.deletedAt)))
-    .where(eq(scenes.tabId, tabId))
+    .leftJoin(pageTabs, eq(pageTabs.id, scenes.tabId))
+    .leftJoin(pages, and(eq(pages.id, pageTabs.pageId), isNull(pages.deletedAt)))
+    .where(and(eq(scenes.tabId, tabId), isNotNull(pages.id)))
   return found ?? null
 }
 
-/** Las escenas de un mundo (las de páginas fuera de la papelera), por el título de su página y el nombre de la pestaña */
+/**
+ * Las escenas de un mundo: las sueltas y las de páginas fuera de la papelera, por su nombre (las de una página, por el
+ * título de la página y luego el de la pestaña)
+ */
 export function listScenes(db: Database, worldId: string): Promise<SceneWithPage[]> {
   return db
     .select(sceneColumns)
     .from(scenes)
-    .innerJoin(pageTabs, eq(pageTabs.id, scenes.tabId))
-    .innerJoin(pages, and(eq(pages.id, pageTabs.pageId), isNull(pages.deletedAt)))
-    .where(eq(scenes.worldId, worldId))
-    .orderBy(sql`lower(${pages.title})`, sql`lower(${pageTabs.name})`, asc(scenes.id))
+    .leftJoin(pageTabs, eq(pageTabs.id, scenes.tabId))
+    .leftJoin(pages, and(eq(pages.id, pageTabs.pageId), isNull(pages.deletedAt)))
+    .where(and(eq(scenes.worldId, worldId), alive))
+    .orderBy(
+      sql`lower(coalesce(${pages.title}, ${scenes.name}, ''))`,
+      sql`lower(coalesce(${pageTabs.name}, ''))`,
+      asc(scenes.id)
+    )
+}
+
+/** Una escena suelta, de la Mesa (ADR-0020): sin página, con su nombre y la rejilla de siempre */
+export function createScene(db: Database, context: OperationContext, values: { worldId: string; name: string }) {
+  return operation(db, context, (w) => w.insert(scenes, { ...values, grid: DEFAULT_SCENE_GRID }))
+}
+
+/** El nombre de una escena suelta */
+export function renameScene(db: Database, context: OperationContext, sceneId: string, name: string) {
+  return operation(db, context, (w) => w.update(scenes, sceneId, { name }))
+}
+
+/** Borrar una escena suelta (al historial: deshacer la devuelve entera; sus teselas se conservan, 0062) */
+export function deleteScene(db: Database, context: OperationContext, sceneId: string) {
+  return operation(db, context, (w) => removeSceneWith(w, sceneId))
+}
+
+/**
+ * Quitar una escena con todo lo suyo, al historial: el estado de cada campaña en ella, sus muros, sus luces y, de cada
+ * campaña, su niebla a mano, sus fichas, lo dejado en el mapa y sus instantáneas (sin historial se irían en cascada y
+ * deshacer devolvería la escena rota). Las teselas y lo explorado se quedan. Lo usa también quitar su pestaña
+ */
+export async function removeSceneWith(w: Writer, sceneId: string) {
+  const states = await w.read.select({ id: sceneStates.id }).from(sceneStates).where(eq(sceneStates.sceneId, sceneId))
+  for (const state of states) await w.remove(sceneStates, state.id)
+  for (const table of [sceneWalls, sceneLights, sceneFog, sceneTokens, sceneMarks, sceneSnapshots]) {
+    const rows = await w.read.select({ id: table.id }).from(table).where(eq(table.sceneId, sceneId))
+    await w.removeMany(
+      table,
+      rows.map((r) => r.id)
+    )
+  }
+  // El combate que se libraba en ella se queda sin escena (con historial: deshacer se la devuelve)
+  const fights = await w.read.select({ id: combats.id }).from(combats).where(eq(combats.sceneId, sceneId))
+  for (const fight of fights) await w.update(combats, fight.id, { sceneId: null })
+  await w.remove(scenes, sceneId)
 }
 
 export function updateScene(db: Database, context: OperationContext, sceneId: string, patch: ScenePatch) {

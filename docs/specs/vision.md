@@ -49,7 +49,9 @@ Para quién: el máster; la tele; la IA.
   cada escena. «Reiniciar la niebla», con aviso.
 - **A mano**: destapar o tapar con pincel, rectángulo o lazo. Destapar deja la zona a la vista (con sus fichas no
   ocultas); tapar la vuelve a cubrir aunque las fichas la vean. Se deshacen.
-- **Escena «sin visión automática»** (mapas sin muros): solo vale la de a mano. Una escena nueva sin muros nace así.
+- **Escena «sin visión automática»** (mapas sin muros): como Foundry sin la visión de las fichas, el grupo lo ve todo
+  salvo lo tapado a mano (antes era al revés: solo lo destapado; Enrique, 2026-11-10: «en la tele no se ve la imagen
+  que estoy compartiendo»). No suma a lo explorado. Una escena nueva sin muros nace así.
 - **«Ver como el grupo»**: la mesa del máster enseña lo que ve la tele (y una lista de lo que el grupo no ve: fichas
   ocultas por la niebla, puertas secretas).
 

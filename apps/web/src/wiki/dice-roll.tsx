@@ -113,6 +113,9 @@ function DiceRollView({ node, editor, getPos, selected, updateAttributes }: Node
               value={formula}
               maxLength={200}
               autoComplete="off"
+              data-1p-ignore
+              data-lpignore="true"
+              data-form-type="other"
               spellCheck={false}
               aria-invalid={!explained.ok}
               aria-describedby={`${id}-explained`}
@@ -131,6 +134,9 @@ function DiceRollView({ node, editor, getPos, selected, updateAttributes }: Node
               value={label ?? ''}
               maxLength={80}
               autoComplete="off"
+              data-1p-ignore
+              data-lpignore="true"
+              data-form-type="other"
               placeholder={t('diceRoll.optional')}
               onChange={(event) => updateAttributes({ label: event.currentTarget.value || null })}
               onKeyDown={onKeyDown}

@@ -25,7 +25,19 @@ import { useErrorText } from '../api/errors.ts'
 import { FormError } from '../components/field.tsx'
 import { useSettled } from '../components/settled.ts'
 import { useDice } from '../dice/context.tsx'
-import { MoveMenu, type MoveTarget, PartyInventory, partyKey, useParty } from '../party/party.tsx'
+import { visibilityIn } from '../dice/visibility.ts'
+import {
+  CARRIABLE_DRAG,
+  ITEM_DRAG,
+  type ItemDrag,
+  MoveMenu,
+  type MoveTarget,
+  PartyInventory,
+  partyKey,
+  readItemDrag,
+  useParty
+} from '../party/party.tsx'
+import { CONTENT_DRAG, readContentDrag } from '../tabletop/drags.ts'
 import styles from './play-sheet.module.css'
 import { type Change, pickId } from './save.ts'
 
@@ -148,7 +160,8 @@ export function PlaySheet({
   const options = visibilitiesFor(campaign.data?.campaign.role ?? 'player')
   // Quién la ve: lo elegido en los dados, si vale en esta campaña; o lo suyo, si la hoja lo trae (una criatura)
   const [own, setOwn] = useState(defaultVisibility)
-  const visibility = own && options.includes(own) ? own : options.includes(dice.visibility) ? dice.visibility : 'all'
+  const visibility =
+    own && options.includes(own) ? own : visibilityIn(dice.visibility, campaign.data?.campaign.role ?? 'player')
   // Los modos (ventaja, desventaja) de sus tiradas
   const modes = [...new Map(state.rolls.flatMap((r) => r.modes).map((m) => [m.key, m.label] as const)).entries()].map(
     ([key, label]) => ({ key, label })
@@ -279,12 +292,9 @@ function Stats({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'stats' 
           <li key={f.key} className={styles.stat}>
             <span className={styles.statLabel}>{f.label}</span>
             {rollKey ? (
-              <button
-                type="button"
-                className={styles.statRoll}
-                aria-label={t('playSheet.rollOf', { what: f.label, value: shown(value, true) })}
-                onClick={() => ctx.roll({ roll: { key: rollKey } })}
-              >
+              <button type="button" className={styles.statRoll} onClick={() => ctx.roll({ roll: { key: rollKey } })}>
+                {/* Su nombre lleva lo que se ve tal cual («Tirar Iniciativa +2»): así lo encuentra quien dicta (WCAG 2.5.3) */}
+                <span className={styles.hidden}>{t('playSheet.rollStat', { what: f.label })} </span>
                 {shown(value, f.signed)}
               </button>
             ) : f.play ? (
@@ -331,6 +341,9 @@ function ResourceBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 
           min={0}
           inputMode="numeric"
           autoComplete="off"
+          data-1p-ignore
+          data-lpignore="true"
+          data-form-type="other"
           value={amount}
           onChange={(event) => setAmount(event.currentTarget.value)}
         />
@@ -506,9 +519,10 @@ function ItemsBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'it
   const { t } = useTranslation()
   const id = useId()
   const [adding, setAdding] = useState(false)
-  // Lo que se cambia jugando de un personaje (su inventario) va junto a lo del grupo: «Mío | Del grupo»
+  // Lo que se cambia jugando de un personaje (su inventario) va junto a lo del grupo: «Lo mío» y «Del grupo»
   const characterId = ctx.subject.id
   const api = useApi()
+  const errorText = useErrorText()
   const party = useQuery({
     queryKey: partyKey(ctx.subject.campaignId),
     queryFn: () => api.call('getParty', { campaignId: ctx.subject.campaignId }),
@@ -518,7 +532,9 @@ function ItemsBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'it
   const partyTypes = party.data?.types ?? []
   const withParty =
     Boolean(characterId) && block.play && partyTypes.length > 0 && block.types.every((x) => partyTypes.includes(x))
-  const [view, setView] = useState<'mine' | 'party'>('mine')
+  // Arrastrar entre «Lo mío» y «Del grupo» (en el móvil, con «Mover»)
+  const { move } = useParty(ctx.subject.campaignId, Boolean(characterId) && block.play)
+  const [dropping, setDropping] = useState(false)
   const titleClass = useTitleClass(block.label)
   // La papelera pide un segundo toque para quitar (un toque desviado no borra): cuál está pidiéndolo
   const [removing, setRemoving] = useState<string | null>(null)
@@ -539,10 +555,22 @@ function ItemsBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'it
         })
       })
     })
-  const row = (itemId: string, name: string, extra?: React.ReactNode) => {
+  const row = (itemId: string, name: string, extra?: React.ReactNode, drag?: ItemDrag) => {
     const values = ctx.state.itemValues[itemId] ?? {}
     return (
-      <li key={itemId} className={styles.item}>
+      <li
+        key={itemId}
+        className={styles.item}
+        draggable={Boolean(drag)}
+        onDragStart={
+          drag
+            ? (event) => {
+                event.dataTransfer.effectAllowed = 'move'
+                event.dataTransfer.setData(ITEM_DRAG, JSON.stringify(drag))
+              }
+            : undefined
+        }
+      >
         <span className={styles.itemName}>{name}</span>
         {block.columns.map((c) => (
           <span key={c.key} className={styles.itemValue}>
@@ -575,26 +603,14 @@ function ItemsBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'it
         <h2 id={id} className={titleClass}>
           {block.label}
         </h2>
-        {withParty && (
-          <fieldset className={styles.views}>
-            <legend className={styles.hidden}>{block.label}</legend>
-            <button type="button" aria-pressed={view === 'mine'} onClick={() => setView('mine')}>
-              {t('party.mine')}
-            </button>
-            <button type="button" aria-pressed={view === 'party'} onClick={() => setView('party')}>
-              {t('party.theirs')}
-            </button>
-          </fieldset>
-        )}
-        {block.play && view === 'mine' && (
+        {block.play && (
           <button type="button" className={styles.add} onClick={() => setAdding(!adding)} aria-expanded={adding}>
             <Plus size={14} aria-hidden="true" />
             {t('playSheet.add')}
           </button>
         )}
       </div>
-      {withParty && view === 'party' && <PartyInventory campaignId={ctx.subject.campaignId} me={characterId} />}
-      {adding && block.play && view === 'mine' && (
+      {adding && block.play && (
         <AddFromCompendium
           campaignId={ctx.subject.campaignId}
           types={block.types}
@@ -608,8 +624,46 @@ function ItemsBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'it
           }}
         />
       )}
-      {view === 'mine' && (
-        <ul className={styles.items}>
+      {withParty && <h3 className={styles.partHead}>{t('party.mine')}</h3>}
+      {
+        // biome-ignore lint/a11y/noStaticElementInteractions: soltar lo del grupo aquí; con teclado, su «Mover»
+        <ul
+          className={styles.items}
+          data-over={dropping || undefined}
+          onDragOver={(event) => {
+            // Lo del grupo que puede llevar (lo suyo ya está aquí; lo escrito a mano se queda en el grupo) o un objeto
+            // del compendio de la Mesa
+            const types = event.dataTransfer.types
+            if (!block.play || !(types.includes(CONTENT_DRAG) || (withParty && types.includes(CARRIABLE_DRAG)))) return
+            event.preventDefault()
+            event.dataTransfer.dropEffect = 'move'
+            setDropping(true)
+          }}
+          onDragLeave={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDropping(false)
+          }}
+          onDrop={(event) => {
+            setDropping(false)
+            // Un objeto del compendio: a lo que lleva (si es de los que van en este inventario)
+            const content = readContentDrag(event.dataTransfer)
+            if (content) {
+              event.preventDefault()
+              if (content.actor || !block.types.includes(content.type)) return
+              const itemId = pickId()
+              void ctx.save({
+                play: (play) => ({
+                  ...play,
+                  items: [...(play.items ?? []), { id: itemId, key: content.key, quantity: 1 }]
+                })
+              })
+              return
+            }
+            const from = readItemDrag(event.dataTransfer)
+            if (!from || !('party' in from) || !characterId) return
+            event.preventDefault()
+            move.mutate({ from, to: { character: characterId }, quantity: 1 })
+          }}
+        >
           {granted.map((it) => row(it.id, it.name))}
           {carried.map((it) =>
             row(
@@ -669,11 +723,24 @@ function ItemsBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'it
                   <Trash2 size={14} aria-hidden="true" />
                   {removing === it.id && <span aria-hidden="true">{t('playSheet.removeShort')}</span>}
                 </button>
-              </span>
+              </span>,
+              withParty && characterId ? { character: characterId, item: it.id } : undefined
             )
           )}
           {granted.length === 0 && carried.length === 0 && <li className={styles.none}>{t('playSheet.nothing')}</li>}
         </ul>
+      }
+      {move.error && (
+        <p className={styles.moveError} role="alert">
+          {errorText(move.error)}
+        </p>
+      )}
+      {/* «Del grupo», debajo de lo suyo (como en D&D Beyond): lo de todos, con sus monedas y quién lo puso */}
+      {withParty && (
+        <>
+          <h3 className={styles.partHead}>{t('party.theirs')}</h3>
+          <PartyInventory campaignId={ctx.subject.campaignId} me={characterId} />
+        </>
       )}
     </Part>
   )
@@ -751,6 +818,9 @@ function AddFromCompendium({
         id={id}
         type="search"
         autoComplete="off"
+        data-1p-ignore
+        data-lpignore="true"
+        data-form-type="other"
         value={query}
         onChange={(event) => setQuery(event.currentTarget.value)}
       />
@@ -963,6 +1033,9 @@ function PlayValue({
       aria-label={field.label}
       inputMode={number ? 'numeric' : undefined}
       autoComplete="off"
+      data-1p-ignore
+      data-lpignore="true"
+      data-form-type="other"
       min={field.min}
       max={field.max}
       value={draft}

@@ -41,6 +41,14 @@ export function Field({
     setError((shown) => (shown === null ? null : node.validity.valid ? null : validationText(t, node)))
   }, [invalid, t])
   const describedBy = [hint ? `${id}-pista` : null, error ? `${id}-error` : null].filter(Boolean).join(' ')
+  // Lo que no es de una cuenta (el nombre de un mundo, de una plantilla…): los gestores de contraseñas no se meten
+  const credential =
+    input.type === 'password' ||
+    input.type === 'email' ||
+    ['username', 'email', 'current-password', 'new-password', 'given-name', 'family-name'].includes(
+      String(input.autoComplete ?? '')
+    )
+  const ignored = credential ? {} : { 'data-1p-ignore': true, 'data-lpignore': 'true', 'data-form-type': 'other' }
   return (
     <div className={styles.field}>
       <label htmlFor={id}>{label}</label>
@@ -48,6 +56,7 @@ export function Field({
       <input
         id={id}
         spellCheck={input.type === 'email' ? false : undefined}
+        {...ignored}
         {...input}
         ref={(node) => {
           element.current = node

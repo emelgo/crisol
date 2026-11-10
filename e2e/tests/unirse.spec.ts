@@ -63,7 +63,7 @@ test('con cuenta: entra y vuelve a la confirmación; con el enlace cerrado o cam
   await signOut(player)
 
   await player.goto(link)
-  await player.getByRole('button', { name: 'Ya tengo cuenta' }).click()
+  await player.getByRole('button', { name: 'Entrar con ella' }).click()
   await player.getByLabel('Email').fill('jugadora@crisol.test')
   await player.getByLabel('Contraseña', { exact: true }).fill('una-clave-larga')
   await player.getByRole('button', { name: 'Entrar', exact: true }).click()

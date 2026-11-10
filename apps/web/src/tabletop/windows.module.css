@@ -1,0 +1,203 @@
+/* Las ventanas sobre la Mesa: cabecera para moverla, cuerpo que se desplaza y la esquina para estirarla */
+.window {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+  overflow: hidden;
+  border: 1px solid var(--glass-edge);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-text);
+  box-shadow:
+    0 0 0 1px var(--glass-line),
+    0 24px 50px -16px rgb(0 0 0 / 0.75);
+}
+
+/* La que se está enseñando a los jugadores: con el brillo de lo vivo */
+.window:has([data-showing]) {
+  border-color: color-mix(in srgb, var(--color-brand) 70%, transparent);
+  box-shadow:
+    var(--glow-live),
+    0 24px 50px -16px rgb(0 0 0 / 0.75);
+}
+
+.window[data-top]:not(:has([data-showing])) {
+  border-color: color-mix(in srgb, var(--color-muted) 60%, transparent);
+}
+
+.head {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  min-block-size: 2.5rem;
+  padding: 0 6px 0 12px;
+  border-block-end: 1px solid var(--glass-edge);
+  background: var(--glass-sheen), var(--glass-tint);
+  box-shadow: inset 0 1px 0 var(--glass-hi);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.head:active {
+  cursor: grabbing;
+}
+
+.title {
+  flex: 1;
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+.title:focus-visible,
+.icon:focus-visible,
+.pillName:focus-visible,
+.pillClose:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  inline-size: 1.875rem;
+  block-size: 1.875rem;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: none;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.icon:hover {
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.body {
+  flex: 1;
+  /* De cristal, como el resto de la campaña (Enrique, 2026-11-10): se adivina el mapa detrás, desenfocado */
+  background: var(--glass-panel);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  min-block-size: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+
+.resize {
+  position: absolute;
+  inset-inline-end: 0;
+  inset-block-end: 0;
+  inline-size: 16px;
+  block-size: 16px;
+  cursor: nwse-resize;
+  touch-action: none;
+  background: linear-gradient(
+    135deg,
+    transparent 50%,
+    var(--color-frame) 50% 58%,
+    transparent 58% 70%,
+    var(--color-frame) 70% 78%,
+    transparent 78%
+  );
+}
+
+.dock {
+  position: absolute;
+  z-index: 90;
+  inset-inline-start: 12px;
+  inset-block-end: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pill {
+  display: flex;
+  align-items: center;
+  block-size: 2.25rem;
+  border: 1px solid var(--glass-edge);
+  border-radius: 6px;
+  background: var(--glass-sheen), var(--glass-tint);
+  box-shadow:
+    inset 0 1px 0 var(--glass-hi),
+    0 0 0 1px var(--glass-line),
+    var(--glass-shadow);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  transition:
+    transform 140ms ease-out,
+    box-shadow 140ms ease-out;
+}
+
+.pill:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    inset 0 1px 0 var(--glass-hi),
+    0 0 0 1px var(--glass-line),
+    var(--glass-lift);
+}
+
+.pillName {
+  max-inline-size: 12rem;
+  block-size: 100%;
+  padding: 0 6px 0 12px;
+  overflow: hidden;
+  border: 0;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.pillClose {
+  display: grid;
+  place-items: center;
+  inline-size: 1.75rem;
+  block-size: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.pillClose:hover {
+  color: var(--color-text);
+}
+
+/* Sin desenfoque (el navegador no lo sabe hacer): el mismo tinte, más tapado */
+@supports not (backdrop-filter: blur(1px)) {
+  .head {
+    background: var(--glass-sheen), var(--glass-solid);
+  }
+
+  .body {
+    background: var(--glass-solid);
+  }
+}

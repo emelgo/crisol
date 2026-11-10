@@ -4,6 +4,11 @@
  */
 export const sceneListKey = (worldId: string) => ['pages', worldId, 'scenes']
 export const sceneTabKey = (worldId: string, tabId: string) => ['pages', worldId, 'scenes', 'tab', tabId]
+/** Una escena suelta (ADR-0020), por su id */
+export const sceneKey = (worldId: string, sceneId: string) => ['pages', worldId, 'scenes', 'id', sceneId]
+/** La de una escena, sea de una pestaña o suelta */
+export const keyOfScene = (worldId: string, scene: { id: string; tabId: string | null }) =>
+  scene.tabId ? sceneTabKey(worldId, scene.tabId) : sceneKey(worldId, scene.id)
 
 /** La dirección de una tesela para quien prepara el mundo (la tele usa la suya, la de su campaña) */
 export const masterTileUrl = (sceneId: string, version: string) => (level: number, x: number, y: number) =>

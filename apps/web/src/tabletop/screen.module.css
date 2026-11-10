@@ -115,10 +115,22 @@
   gap: 0.625rem;
   max-inline-size: calc(100% - 6rem);
   padding: 0.5rem 1rem 0.5rem 0.625rem;
-  border: 1px solid rgb(255 255 255 / 0.08);
+  border: 1px solid var(--glass-edge);
   border-radius: 999px;
-  background: rgb(12 12 14 / 0.78);
+  background: var(--glass-sheen), var(--glass-tint);
+  box-shadow:
+    inset 0 1px 0 var(--glass-hi),
+    0 0 0 1px var(--glass-line),
+    var(--glass-shadow);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
   transform: translateX(-50%);
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .turns {
+    background: var(--glass-sheen), var(--glass-solid);
+  }
 }
 
 .roundLabel,
@@ -183,4 +195,9 @@
 
 .disc[data-defeated] {
   filter: grayscale(1) brightness(0.6);
+}
+
+/* La Mesa de un jugador: en su caja, junto a su barra (no a toda la pantalla como la tele) */
+.inMesa {
+  position: absolute;
 }

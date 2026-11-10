@@ -86,9 +86,7 @@ describe('el título de cada página', () => {
     // De vuelta a Mis mundos (la llama), donde están las campañas
     await userEvent.click(await screen.findByRole('link', { name: 'Crisol' }))
     await waitFor(async () => expect(document.activeElement).toBe(await h1('Mis mundos')))
-    // La campaña pinta su título cuando llegan sus datos: el foco va a él en cuanto aparece
-    await userEvent.click(await screen.findByRole('link', { name: 'La Marca' }))
-    await waitFor(async () => expect(document.activeElement).toBe(await h1('La Marca')))
+    // La campaña se abre en otra pestaña (como en D&D Beyond): el foco no se mueve de aquí
   })
 
   it('al salir, el foco va al título de «Entrar»', async () => {

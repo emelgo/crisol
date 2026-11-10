@@ -11,6 +11,10 @@ import { createAppRouter } from '../router.tsx'
 import { announced, inMain, signOut } from '../testing.ts'
 import { fakeRealtime } from './fake.ts'
 
+// El máster abre la campaña en la Mesa: su canal y su lienzo, de mentira
+vi.mock('../tabletop/channel.ts', async () => (await import('../tabletop/fakes.ts')).quietChannel())
+vi.mock('../tabletop/use-renderer.ts', async () => (await import('../tabletop/fakes.ts')).blindRenderer())
+
 const ORG = { id: crypto.randomUUID(), name: 'Fateforge', role: 'owner' as const }
 const world: World = {
   id: crypto.randomUUID(),
@@ -65,7 +69,8 @@ function renderAt(path: string, options: { role?: Campaign['role'] } = {}) {
   return { api, accounts, realtime, router, callsFrom }
 }
 
-const campaignPath = `/mundos/${world.id}/campanas/${campaign.id}`
+// El máster, en los Ajustes de la Mesa (miembros e invitación)
+const campaignPath = `/mundos/${world.id}/campanas/${campaign.id}?panel=ajustes`
 
 describe('el canal en tiempo real en la web', () => {
   // Los tutoriales, ya hechos: el de Mis mundos se llevaría el foco mientras se abre el menú de la cuenta
@@ -131,6 +136,7 @@ describe('el canal en tiempo real en la web', () => {
   it('cada aviso vuelve a pedir lo que ha cambiado', async () => {
     const { realtime, callsFrom } = renderAt(campaignPath)
     await screen.findByRole('list', { name: 'Miembros' })
+    await screen.findByLabelText('Enlace de invitación')
     const sequence = [
       [{ type: 'changed', what: 'members', campaignId: campaign.id }, 'listMembers'],
       [{ type: 'changed', what: 'invitation', campaignId: campaign.id }, 'getInvitation'],
@@ -168,7 +174,7 @@ describe('el canal en tiempo real en la web', () => {
   })
 
   it('si la expulsan con la campaña abierta, deja de verla', async () => {
-    const { api, realtime } = renderAt(campaignPath, { role: 'player' })
+    const { api, realtime } = renderAt(campaignPath.replace('?panel=ajustes', ''), { role: 'player' })
     await screen.findByRole('list', { name: 'Miembros' })
     api.campaigns.splice(0)
     act(() => realtime.emit({ type: 'revoked', worldId: world.id, campaignId: campaign.id }))

@@ -1,15 +1,11 @@
 /* El combate en la mesa: su panel (como el tablero Combate del lienzo), el aviso del turno y el daño a varias */
+/* Dentro de la pestaña Combate de la barra de la Mesa: ella pone el fondo, el borde y el desplazamiento */
 .panel {
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
   min-block-size: 0;
-  padding: 0.875rem;
-  overflow-y: auto;
-  border-inline-start: 1px solid var(--color-border);
-  background: var(--color-surface);
   color: var(--color-text);
-  scrollbar-width: thin;
 }
 
 .head {

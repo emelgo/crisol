@@ -72,15 +72,25 @@ export function CreateDialog({ trigger, triggerClassName, title, label, submit, 
           <form className={styles.body} onSubmit={send}>
             <h2 id={titleId}>{title}</h2>
             {description && <p className={styles.description}>{description}</p>}
-            <Field label={label} name="name" autoComplete="off" maxLength={120} required autoFocus />
+            <Field
+              label={label}
+              name="name"
+              autoComplete="off"
+              data-1p-ignore
+              data-lpignore="true"
+              data-form-type="other"
+              maxLength={120}
+              required
+              autoFocus
+            />
             <FormError message={create.error ? errorText(create.error) : null} />
             <div className={styles.actions}>
-              <button type="button" className={styles.cancel} onClick={() => dialog.current?.close()}>
-                {t('list.cancel')}
-              </button>
               <BusyButton type="submit" className={form.button} busy={create.isPending}>
                 {submit}
               </BusyButton>
+              <button type="button" className={styles.cancel} onClick={() => dialog.current?.close()}>
+                {t('list.cancel')}
+              </button>
             </div>
           </form>
         </dialog>

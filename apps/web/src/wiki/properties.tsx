@@ -495,6 +495,9 @@ function PropertyRow({
           value={row.name}
           maxLength={60}
           autoComplete="off"
+          data-1p-ignore
+          data-lpignore="true"
+          data-form-type="other"
           spellCheck={false}
           placeholder={t('properties.namePlaceholder')}
           onChange={(event) => onChange({ name: event.target.value })}
@@ -656,6 +659,9 @@ function ValueField({
             list={`${id}-paginas`}
             value={choice}
             autoComplete="off"
+            data-1p-ignore
+            data-lpignore="true"
+            data-form-type="other"
             // Sin nada, «Vacío» como los demás campos; al escribir en él, qué hace
             placeholder={t(row.pages.length === 0 && !typing ? 'properties.empty' : 'properties.pagesHint')}
             onFocus={() => setTyping(true)}
@@ -755,6 +761,9 @@ function ValueField({
           value={row.text}
           inputMode={row.type === 'number' ? 'decimal' : undefined}
           autoComplete="off"
+          data-1p-ignore
+          data-lpignore="true"
+          data-form-type="other"
           placeholder={t('properties.empty')}
           onChange={(event) => onChange({ text: event.target.value })}
           onBlur={onCommit}
@@ -808,6 +817,9 @@ function ChipsField({
         aria-label={label}
         value={draft}
         autoComplete="off"
+        data-1p-ignore
+        data-lpignore="true"
+        data-form-type="other"
         placeholder={t('properties.addItem')}
         onChange={(event) => setDraft(event.target.value)}
         onBlur={() => draft.trim() && add()}

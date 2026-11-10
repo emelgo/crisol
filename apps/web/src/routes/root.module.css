@@ -69,6 +69,13 @@
   min-block-size: 100dvh;
 }
 
+/* Una campaña, sola (su Mesa o la ficha de quien juega): sin la barra de la izquierda */
+.bare {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-block-size: 100dvh;
+}
+
 /* La wiki: de lado a lado, sin márgenes; el panel lateral y la página se los ponen ellos */
 .wide {
   min-inline-size: 0;
@@ -108,4 +115,16 @@
 /* Los enlaces sueltos de una pantalla («Volver al inicio»), en azul como los demás enlaces */
 .link {
   color: var(--color-link);
+}
+
+/* Sin sesión, encima del fondo de imágenes: la barra, translúcida, y lo demás por encima */
+.shell > header,
+.shell > main {
+  position: relative;
+  z-index: 1;
+}
+
+.shell > .header {
+  background: color-mix(in srgb, var(--color-chrome) 55%, transparent);
+  backdrop-filter: blur(6px);
 }

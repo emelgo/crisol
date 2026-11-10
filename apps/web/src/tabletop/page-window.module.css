@@ -1,0 +1,123 @@
+/* Una página del mundo dentro de su ventana: la misma de la wiki, más apretada */
+.page {
+  container-type: inline-size;
+  min-block-size: 100%;
+  /* Sin fondo propio: el cristal de la ventana */
+  background: transparent;
+}
+
+.missing {
+  margin: 0;
+  padding: 1rem;
+  color: var(--color-muted);
+}
+
+/* La página y su panel, lado a lado mientras quepan; en una ventana estrecha, el panel debajo */
+.page :global([data-entry]) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(12rem, 16rem);
+  gap: var(--space-5);
+  align-items: start;
+  padding: var(--space-4) var(--space-5) var(--space-6);
+}
+
+.page :global([data-entry]) > article {
+  grid-column: 1;
+  padding-inline: 0;
+}
+
+.page :global([data-entry]) > aside {
+  position: static;
+  grid-column: 2;
+  max-inline-size: none;
+  max-block-size: none;
+  min-block-size: 0;
+  margin: 0;
+  padding-block-end: 0;
+  /* El panel, un cristal algo más claro sobre el de la ventana */
+  border-color: var(--glass-edge);
+  background: color-mix(in srgb, var(--color-surface) 45%, transparent);
+}
+
+@container (max-width: 40rem) {
+  .page :global([data-entry]) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .page :global([data-entry]) > aside {
+    grid-column: 1;
+  }
+}
+
+/* La portada, más baja que en la wiki: la ventana es pequeña */
+.page :global([data-cover]) :global([data-cover-image]),
+.page :global([data-cover-image]) {
+  block-size: 8rem;
+  border-radius: 0;
+}
+
+/* «Enseñar a los jugadores», en la cabecera de la ventana */
+.show {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  margin-inline-end: 4px;
+}
+
+.showButton,
+.showing,
+.revealToo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  block-size: 1.75rem;
+  padding: 0 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.showButton:hover,
+.revealToo:hover {
+  border-color: var(--color-frame);
+  background: var(--color-surface);
+}
+
+/* Enseñándola: en rojo, como lo que está en la tele */
+.showing {
+  border-color: transparent;
+  background: color-mix(in srgb, var(--color-brand) 18%, transparent);
+  color: var(--color-h2);
+}
+
+.showing i {
+  inline-size: 7px;
+  block-size: 7px;
+  border-radius: 50%;
+  background: var(--color-brand);
+  box-shadow: 0 0 6px var(--color-brand);
+}
+
+.revealToo {
+  border-style: dashed;
+  color: var(--color-muted);
+}
+
+.showButton:focus-visible,
+.showing:focus-visible,
+.revealToo:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.error {
+  color: var(--color-danger);
+  font-size: 0.75rem;
+}

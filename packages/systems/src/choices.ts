@@ -7,6 +7,9 @@ import type { System } from './format.ts'
 import { own } from './own.ts'
 import { LANGUAGES, type Language, textOf } from './text.ts'
 
+/** Lo más que una campaña deja fuera de sus libros */
+export const MAX_EXCLUDED = 10_000
+
 export type SettingValue = boolean | number | string | string[]
 
 /** De lo que está en las dos ediciones: solo la versión más nueva o las dos (la vieja, marcada «Legado») */
@@ -14,6 +17,8 @@ export const DUPLICATES = ['newest', 'both'] as const
 
 export interface Choices {
   sources: string[]
+  /** Las claves de las entradas del sistema que la campaña deja fuera (lo que el libro gane después, entra) */
+  excluded?: string[]
   duplicates: (typeof DUPLICATES)[number]
   language: Language
   settings: Record<string, SettingValue>
@@ -80,5 +85,18 @@ export function normalizeChoices(
     if (!ok) problems.push(`«${name}» no vale así`)
     else settings[key] = value
   }
-  return { choices: { sources: chosen.filter((s) => sources.has(s)), duplicates, language, settings }, problems }
+  const excluded = given?.excluded ?? []
+  if (!Array.isArray(excluded) || excluded.some((k) => typeof k !== 'string')) problems.push('Lo excluido no vale así')
+  else if (excluded.length > MAX_EXCLUDED) problems.push(`Como mucho, ${MAX_EXCLUDED} entradas fuera`)
+  const kept = Array.isArray(excluded) ? [...new Set(excluded.filter((k) => typeof k === 'string'))] : []
+  return {
+    choices: {
+      sources: chosen.filter((s) => sources.has(s)),
+      ...(kept.length > 0 ? { excluded: kept.slice(0, MAX_EXCLUDED) } : {}),
+      duplicates,
+      language,
+      settings
+    },
+    problems
+  }
 }

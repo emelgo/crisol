@@ -255,6 +255,9 @@ export function EntryEditor({
           required
           maxLength={200}
           autoComplete="off"
+          data-1p-ignore
+          data-lpignore="true"
+          data-form-type="other"
           data-autofocus=""
           onChange={(event) => setName(event.currentTarget.value)}
         />
@@ -362,6 +365,9 @@ function FieldInput({
       value={String(value)}
       hint={field.kind === 'list' ? t('compendium.listHint') : undefined}
       autoComplete="off"
+      data-1p-ignore
+      data-lpignore="true"
+      data-form-type="other"
       onChange={(event) => onChange(event.currentTarget.value)}
     />
   )

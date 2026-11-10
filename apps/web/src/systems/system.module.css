@@ -1,0 +1,213 @@
+/* Un sistema por dentro: su título como el de una plantilla, sus libros en rejilla y «Libro nuevo» */
+.heading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.heading h1 {
+  margin: 0;
+}
+
+.icon {
+  display: inline-grid;
+  place-items: center;
+  inline-size: 2.5rem;
+  block-size: 2.5rem;
+  border-radius: 6px;
+  background: var(--color-raised);
+  color: var(--color-muted);
+}
+
+.kind {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8rem;
+  color: var(--color-muted);
+}
+
+.h {
+  margin: var(--space-6) 0 0;
+  padding: 0;
+  border: 0;
+  font: 600 0.75rem / 1 var(--font-body);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.note {
+  margin: var(--space-2) 0 0;
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}
+
+.pending {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--color-ai);
+  font-weight: 600;
+}
+
+.gear {
+  display: inline-grid;
+  place-items: center;
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
+  margin-inline-start: auto;
+  border: 0;
+  border-radius: 3px;
+  background: none;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.gear:hover {
+  background: var(--color-raised);
+  color: var(--color-text);
+}
+
+.newDialog {
+  inline-size: min(46rem, calc(100vw - 2rem));
+  padding: 0;
+  border: 1px solid var(--color-frame);
+  border-radius: 8px;
+  background: var(--color-surface);
+  box-shadow: 0 1.5rem 3.75rem rgb(0 0 0 / 0.45);
+  color: var(--color-text);
+}
+
+.newDialog::backdrop {
+  background: rgb(0 0 0 / 0.55);
+}
+
+.ways {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.way {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-block-size: 8rem;
+  padding: var(--space-4);
+  border: 0;
+  border-radius: 5px;
+  background: none;
+  box-shadow: inset 0 0 0 1px var(--color-border);
+  color: var(--color-text);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  transition:
+    box-shadow 0.2s,
+    background 0.2s;
+}
+
+.way svg {
+  color: var(--color-muted);
+}
+
+.way b {
+  font-weight: 600;
+}
+
+.way span {
+  font-size: 0.82rem;
+  color: var(--color-muted);
+}
+
+.way:hover {
+  box-shadow: inset 0 0 0 1px var(--color-frame);
+}
+
+.way[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--color-accent) 6%, transparent);
+  box-shadow: inset 0 0 0 2px var(--color-accent);
+}
+
+.way[aria-pressed="true"] svg {
+  color: var(--color-accent-text);
+}
+
+.pdfs {
+  display: grid;
+  gap: var(--space-2);
+  max-block-size: 14rem;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+}
+
+.pdf {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  inline-size: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  box-shadow: inset 0 0 0 1px var(--color-border);
+  color: var(--color-text);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.pdf > span {
+  display: grid;
+}
+
+.pdf b {
+  font-weight: 600;
+}
+
+.pdf span span {
+  font-size: 0.8rem;
+  color: var(--color-muted);
+}
+
+.pdf[aria-pressed="true"] {
+  box-shadow: inset 0 0 0 2px var(--color-accent);
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 10rem);
+  gap: var(--space-3);
+}
+
+.fileRow {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.fileBooks {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+}
+
+.fileBooks legend {
+  padding-inline: var(--space-1);
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+
+.done {
+  margin: 0;
+  color: var(--color-tip);
+  font-weight: 600;
+}

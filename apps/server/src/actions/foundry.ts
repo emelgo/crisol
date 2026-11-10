@@ -60,7 +60,8 @@ export const foundryActions = [
           mergeFoundry(
             {
               system: row.document as unknown as System,
-              content: (await systemsRepo.listContent(ctx.db, row.id)).map(contentOf)
+              // Con lo pendiente de revisar, que sigue pendiente tras fundir el archivo
+              content: (await systemsRepo.listContent(ctx.db, row.id, { pending: true })).map(contentOf)
             },
             converted.file
           )

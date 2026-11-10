@@ -68,8 +68,12 @@ test('combate: tirar la iniciativa, dos rondas (un estado de una ronda se va sol
   ])
   await tv.emulateMedia({ colorScheme: 'dark' })
 
-  // Empezar con todas las fichas de la escena: el panel del combate, sin empezar
-  await page.getByRole('button', { name: 'Combate', exact: true }).click()
+  // Empezar con todas las fichas de la escena, desde la pestaña Combate: su panel, sin empezar
+  await page
+    .getByRole('complementary', { name: 'Panel de la mesa' })
+    .getByRole('tab', { name: /^Combate/ })
+    .click()
+  await page.getByRole('button', { name: 'Empezar el combate' }).click()
   const panel = page.getByRole('complementary', { name: 'Combate' })
   await expect(panel).toBeVisible()
   await expect(panel.getByText('Sin empezar')).toBeVisible()

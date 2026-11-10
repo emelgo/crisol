@@ -2,11 +2,15 @@ import type { Campaign, World } from '@crisol/contracts'
 import { createMemoryHistory } from '@tanstack/react-router'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { fakeAccountClient } from '../account/fake.ts'
 import { fakeApi } from '../api/fake.ts'
 import { App } from '../app.tsx'
 import { createAppRouter } from '../router.tsx'
+
+// Entrar en una campaña es entrar en su Mesa: su canal y su lienzo, de mentira
+vi.mock('../tabletop/channel.ts', async () => (await import('../tabletop/fakes.ts')).quietChannel())
+vi.mock('../tabletop/use-renderer.ts', async () => (await import('../tabletop/fakes.ts')).blindRenderer())
 
 const ORG = { id: crypto.randomUUID(), name: 'Fateforge', role: 'owner' as const }
 const world = (role: World['role'] = 'master'): World => ({
@@ -67,9 +71,11 @@ describe('las campañas de un mundo', () => {
     const { router } = renderCampaigns(w, [campaign(w, 'La Marca'), torre, campaign(w, 'Las Islas')])
     expect(await screen.findByRole('heading', { level: 1, name: 'Campañas' })).toBeDefined()
     expect(await names()).toEqual(['La Marca', 'La Torre', 'Las Islas'])
-    await userEvent.click((await list()).getByRole('link', { name: 'La Torre' }))
-    expect(await screen.findByRole('heading', { level: 1, name: 'La Torre' })).toBeDefined()
-    expect(router.state.location.pathname).toBe(`/mundos/${w.id}/campanas/${torre.id}`)
+    // Cada una se abre en su espacio, en la misma pestaña (la Mesa, en otra)
+    const link = (await list()).getByRole('link', { name: 'La Torre' })
+    expect(link.getAttribute('href')).toBe(`/mundos/${w.id}/campanas/${torre.id}`)
+    expect(link.getAttribute('target')).toBeNull()
+    expect(router.state.location.pathname).toBe(`/mundos/${w.id}/campanas`)
   })
 
   it('sin campañas lo dice y deja crear la primera en un cuadro', async () => {

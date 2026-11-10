@@ -10,6 +10,10 @@ import { App } from '../app.tsx'
 import { createAppRouter } from '../router.tsx'
 import { announced, inMain } from '../testing.ts'
 
+// El máster abre la campaña en la Mesa: su canal y su lienzo, de mentira (los ajustes van en su barra)
+vi.mock('../tabletop/channel.ts', async () => (await import('../tabletop/fakes.ts')).quietChannel())
+vi.mock('../tabletop/use-renderer.ts', async () => (await import('../tabletop/fakes.ts')).blindRenderer())
+
 const ORG = { id: crypto.randomUUID(), name: 'Fateforge', role: 'owner' as const }
 const world: World = {
   id: crypto.randomUUID(),
@@ -41,7 +45,12 @@ const members: Member[] = [
 
 const renderCampaign = (c: Campaign, w: World = world) => {
   const api = fakeApi({ organizations: [ORG], worlds: [w], campaigns: [c], members: { [c.id]: members } })
-  const router = createAppRouter(createMemoryHistory({ initialEntries: [`/mundos/${w.id}/campanas/${c.id}`] }))
+  // El máster, en la pestaña Ajustes de la Mesa; quien juega, en el Inicio de la campaña
+  const router = createAppRouter(
+    createMemoryHistory({
+      initialEntries: [`/mundos/${w.id}/campanas/${c.id}${c.role === 'master' ? '?panel=ajustes' : ''}`]
+    })
+  )
   render(
     <App
       router={router}
@@ -51,6 +60,13 @@ const renderCampaign = (c: Campaign, w: World = world) => {
   )
   return { api, router }
 }
+
+/** La invitación, a la vista en la pestaña Ajustes de la Mesa */
+const openInvite = async () => {
+  await screen.findByRole('heading', { name: 'Invitación' })
+}
+/** El enlace de invitación que hay ahora */
+const currentLink = async () => ((await screen.findByLabelText('Enlace de invitación')) as HTMLInputElement).value
 
 describe('una campaña y su enlace de invitación', () => {
   it('desde Mis mundos se entra en la campaña, por su tarjeta', async () => {
@@ -73,9 +89,11 @@ describe('una campaña y su enlace de invitación', () => {
     // Las campañas, en Mis mundos con su mundo
     const list = within(await screen.findByRole('list', { name: 'Campañas' }))
     expect(list.getByText('Eana')).toBeDefined()
-    await userEvent.click(list.getByRole('link', { name: 'La Marca' }))
-    expect(await screen.findByRole('heading', { level: 1, name: 'La Marca' })).toBeDefined()
-    expect(router.state.location.pathname).toBe(`/mundos/${world.id}/campanas/${c.id}`)
+    // En la misma pestaña, en su espacio; la Mesa, en otra (Enrique, 2026-11-10)
+    const link = list.getByRole('link', { name: 'La Marca' })
+    expect(link.getAttribute('href')).toBe(`/mundos/${world.id}/campanas/${c.id}`)
+    expect(link.getAttribute('target')).toBeNull()
+    expect(router.state.location.pathname).toBe('/mundos')
   })
 
   it('el máster ve el enlace, la fecha y cuántos han entrado, y lo copia', async () => {
@@ -83,6 +101,8 @@ describe('una campaña y su enlace de invitación', () => {
     Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
     const c = campaign()
     renderCampaign(c)
+    // La invitación, en su ventana: «Invitar», junto al título
+    await openInvite()
     const link = await screen.findByLabelText('Enlace de invitación')
     expect((link as HTMLInputElement).value).toMatch(/\/unirse\//)
     expect(screen.getByText('Nadie ha entrado aún con este enlace')).toBeDefined()
@@ -103,6 +123,8 @@ describe('una campaña y su enlace de invitación', () => {
     })
     Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
     renderCampaign(campaign())
+    // La invitación, en su ventana: «Invitar», junto al título
+    await openInvite()
     const link = await screen.findByLabelText<HTMLInputElement>('Enlace de invitación')
     await userEvent.click(screen.getByRole('button', { name: 'Copiar' }))
     const text = 'No se ha podido copiar: está seleccionado, cópialo a mano.'
@@ -116,12 +138,16 @@ describe('una campaña y su enlace de invitación', () => {
   it('sin portapapeles (fuera de HTTPS), lo mismo', async () => {
     Object.defineProperty(navigator, 'clipboard', { value: undefined, configurable: true })
     renderCampaign(campaign())
+    // La invitación, en su ventana: «Invitar», junto al título
+    await openInvite()
     await userEvent.click(await screen.findByRole('button', { name: 'Copiar' }))
     expect(await inMain().findByText('No se ha podido copiar: está seleccionado, cópialo a mano.')).toBeDefined()
   })
 
   it('«Nuevo enlace» avisa antes y cambia el enlace', async () => {
     renderCampaign(campaign())
+    // La invitación, en su ventana: «Invitar», junto al título
+    await openInvite()
     const before = ((await screen.findByLabelText('Enlace de invitación')) as HTMLInputElement).value
     await userEvent.click(screen.getByRole('button', { name: 'Nuevo enlace' }))
     expect(screen.getByText('Quien aún no haya entrado necesitará el nuevo.')).toBeDefined()
@@ -133,6 +159,8 @@ describe('una campaña y su enlace de invitación', () => {
 
   it('se pueden cerrar y volver a abrir las invitaciones', async () => {
     renderCampaign(campaign())
+    // La invitación, en su ventana: «Invitar», junto al título
+    await openInvite()
     const toggle = await screen.findByRole('checkbox', { name: 'Invitaciones abiertas' })
     expect((toggle as HTMLInputElement).checked).toBe(true)
     await userEvent.click(toggle)
@@ -143,6 +171,8 @@ describe('una campaña y su enlace de invitación', () => {
   it('si el servidor no deja cerrar las invitaciones, la casilla vuelve a como estaba y lo dice', async () => {
     const c = campaign()
     const { api } = renderCampaign(c)
+    // La invitación, en su ventana: «Invitar», junto al título
+    await openInvite()
     const original = api.client.call
     api.client.call = async (name, input) => {
       if (name === 'setInvitationsOpen') throw new ApiError('FORBIDDEN', 403)
@@ -156,6 +186,8 @@ describe('una campaña y su enlace de invitación', () => {
 
   it('mientras se guarda, la casilla sigue activa y con el foco; otro clic entretanto se ignora', async () => {
     const { api } = renderCampaign(campaign())
+    // La invitación, en su ventana: «Invitar», junto al título
+    await openInvite()
     const original = api.client.call
     const saving: boolean[] = []
     let release = () => {}
@@ -196,6 +228,7 @@ describe('una campaña y su enlace de invitación', () => {
       }
       return original(name, input)
     }
+    await openInvite()
     const create = await screen.findByRole('button', { name: 'Generar enlace' })
     expect(screen.getByText('Aún no hay enlace.')).toBeDefined()
     await userEvent.click(create)
@@ -220,6 +253,7 @@ describe('una campaña y su enlace de invitación', () => {
     renderCampaign(campaign('player'), { ...world, role: 'player' })
     expect(await screen.findByRole('heading', { level: 1, name: 'La Marca' })).toBeDefined()
     expect(screen.queryByLabelText('Enlace de invitación')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Invitar' })).toBeNull()
   })
 
   it('una campaña que no está en el mundo no existe', async () => {
@@ -241,6 +275,16 @@ describe('una campaña y su enlace de invitación', () => {
 })
 
 describe('los miembros de una campaña', () => {
+  it('la pestaña Campaña: su nombre y los jugadores de un vistazo (quién aún no tiene personaje)', async () => {
+    renderCampaign(campaign())
+    const players = within(await screen.findByRole('region', { name: 'Jugadores' }))
+    expect(await players.findByText('Ana')).toBeDefined()
+    expect(players.getByText('Jugadora')).toBeDefined()
+    expect(players.getAllByText('Sin personaje aún')).toHaveLength(2)
+    // El máster no sale como jugador
+    expect(players.queryByText('Enrique')).toBeNull()
+  })
+
   const memberNames = () =>
     within(screen.getByRole('list', { name: 'Miembros' }))
       .getAllByRole('listitem')
@@ -264,12 +308,12 @@ describe('los miembros de una campaña', () => {
 
   it('el máster puede expulsar y cambiar el enlace a la vez', async () => {
     const { api } = renderCampaign(campaign())
-    const before = ((await screen.findByLabelText('Enlace de invitación')) as HTMLInputElement).value
+    const before = await currentLink()
     await userEvent.click(await screen.findByRole('button', { name: 'Expulsar a Ana' }))
     await userEvent.click(screen.getByRole('button', { name: 'Expulsar y cambiar el enlace' }))
     expect(await inMain().findByText('Ana ya no está en la campaña.')).toBeDefined()
     expect(api.calls).toContain('regenerateInvitation')
-    expect((screen.getByLabelText('Enlace de invitación') as HTMLInputElement).value).not.toBe(before)
+    expect(await currentLink()).not.toBe(before)
   })
 
   it('si la expulsa pero el enlace no cambia, lo dice: ya no está, pero el enlace es el de antes', async () => {
@@ -279,14 +323,14 @@ describe('los miembros de una campaña', () => {
       if (name === 'regenerateInvitation') throw new ApiError('UNKNOWN', 500)
       return original(name, input)
     }
-    const before = ((await screen.findByLabelText('Enlace de invitación')) as HTMLInputElement).value
+    const before = await currentLink()
     await userEvent.click(await screen.findByRole('button', { name: 'Expulsar a Ana' }))
     await userEvent.click(screen.getByRole('button', { name: 'Expulsar y cambiar el enlace' }))
     expect((await screen.findByRole('alert')).textContent).toBe(
       'Ana ya no está en la campaña, pero el enlace no ha cambiado. Genera uno nuevo.'
     )
     expect(memberNames()).toHaveLength(2)
-    expect((screen.getByLabelText('Enlace de invitación') as HTMLInputElement).value).toBe(before)
+    expect(await currentLink()).toBe(before)
   })
 
   it('cancelar no expulsa a nadie', async () => {

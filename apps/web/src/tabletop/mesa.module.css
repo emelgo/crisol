@@ -1,9 +1,8 @@
 /* La mesa del máster: el lienzo a toda la altura, sus barras encima y el panel de escenas a la derecha */
 .mesa {
-  /* El «?» del tutorial, en el mapa, no encima del panel (como el lienzo) */
-  --tour-help-end: calc(18.75rem + var(--space-4));
+  position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 18.75rem;
+  grid-template-columns: minmax(0, 1fr) auto;
   block-size: 100dvh;
   overflow: hidden;
 }
@@ -88,12 +87,28 @@
   transform: translateX(-50%);
 }
 
+/* Lo que falla: arriba, a la izquierda de la barra de la derecha (abierta o plegada), en un recuadro que se lea */
 .errors {
   position: absolute;
   inset-block-start: 4.25rem;
-  inset-inline-end: var(--space-4);
+  inset-inline-end: calc(24rem + 1.5rem);
   z-index: 14;
   max-inline-size: 22rem;
+}
+
+.mesa:has([data-mesa-side="folded"]) .errors {
+  inset-inline-end: 4.5rem;
+}
+
+.errors > :not(:empty) {
+  margin: 0;
+  padding: 8px 12px;
+  border: 1px solid color-mix(in srgb, var(--color-brand) 55%, transparent);
+  border-radius: 6px;
+  background: var(--glass-sheen), var(--glass-panel);
+  box-shadow: var(--glass-shadow);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
 }
 
 /* El marco «Tele»: lo que se ve en la tele con la cámara fija, discontinuo y dorado */
@@ -193,11 +208,16 @@
   align-items: center;
   gap: var(--space-2);
   padding: 5px 6px;
-  border: 1px solid var(--color-border);
+  border: 1px solid;
   border-radius: 10px;
-  background: color-mix(in srgb, var(--color-bg) 88%, transparent);
-  box-shadow: 0 8px 24px rgb(0 0 0 / 0.4);
-  backdrop-filter: blur(6px);
+  border-color: var(--glass-edge);
+  background: var(--glass-sheen), var(--glass-tint);
+  box-shadow:
+    inset 0 1px 0 var(--glass-hi),
+    0 0 0 1px var(--glass-line),
+    var(--glass-shadow);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
   color: var(--color-text);
 }
 
@@ -332,15 +352,18 @@
 }
 
 .live {
-  border-color: color-mix(in srgb, var(--color-tip) 55%, transparent);
-  color: var(--color-tip);
+  /* Lo que ven los jugadores va en rojo, con su brillo (como «Enseñando») */
+  border-color: transparent;
+  background: color-mix(in srgb, var(--color-brand) 9%, transparent);
+  color: var(--color-accent-text);
 }
 
 .live::before {
   inline-size: 7px;
   block-size: 7px;
   border-radius: 50%;
-  background: var(--color-tip);
+  background: var(--color-brand);
+  box-shadow: 0 0 6px var(--color-brand);
   content: "";
 }
 
@@ -405,13 +428,23 @@
 }
 
 .segments:disabled {
-  opacity: 0.5;
+  opacity: 0.6;
+}
+
+.segmentsLabel {
+  align-self: center;
+  padding: 0 4px 0 10px;
+  color: var(--color-muted);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .segment {
   position: relative;
   padding: 6px 11px;
-  color: var(--color-muted);
+  color: color-mix(in srgb, var(--color-text) 78%, transparent);
   font-size: 0.8125rem;
   white-space: nowrap;
   cursor: pointer;
@@ -489,9 +522,31 @@
 .panel {
   display: flex;
   flex-direction: column;
+  inline-size: 24rem;
   min-block-size: 0;
-  border-inline-start: 1px solid var(--color-border);
-  background: var(--color-surface);
+  /* Flota sobre el mapa, de cristal (el mapa ocupa todo el ancho, como en Foundry VTT); solo lo alto que haga falta, para
+     que se vea el mapa debajo (y el cristal) */
+  position: absolute;
+  z-index: 13;
+  inset-block-start: 0.75rem;
+  max-block-size: calc(100% - 1.5rem);
+  inset-inline-end: 0.75rem;
+  overflow: hidden;
+  border: 1px solid var(--glass-edge);
+  border-radius: 10px;
+  background: var(--glass-sheen), var(--glass-panel);
+  box-shadow:
+    inset 0 1px 0 var(--glass-hi),
+    0 0 0 1px var(--glass-line),
+    var(--glass-shadow);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .panel {
+    background: var(--glass-sheen), var(--glass-solid);
+  }
 }
 
 .panelBody {
@@ -918,4 +973,283 @@
   font-size: 0.875rem;
   font-weight: 700;
   cursor: pointer;
+}
+
+/* Una pestaña de la barra sin nada aún (Combate sin combate) */
+.emptyTab {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.75rem;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+.emptyTab p {
+  margin: 0;
+}
+
+/* Un apartado dentro de una pestaña (Encuentros bajo las escenas…) */
+.tabSection {
+  margin: 0.75rem 0 0;
+  color: var(--color-muted);
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* Con ventanas minimizadas abajo a la izquierda, el zoom deja su sitio (sigue en la página: el d20 se coloca por él) */
+.stageBox:has([data-window-dock]) .zoom {
+  visibility: hidden;
+}
+
+/* Un nombre que abre su hoja (en Personajes) */
+.opens {
+  flex: 1;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.opens:hover b {
+  text-decoration: underline;
+}
+
+.opens:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/* Lo que va en una ventana sin su propio margen («Lo que sabe el grupo») */
+.windowPad {
+  padding: var(--space-4) var(--space-5);
+}
+
+/* Sin desenfoque (el navegador no lo sabe hacer): el mismo tinte, más tapado */
+@supports not (backdrop-filter: blur(1px)) {
+  .bar,
+  .zoom {
+    background: var(--glass-sheen), var(--glass-solid);
+  }
+}
+
+/* Al pasar por los botones de las barras, suben un poco */
+.bar button,
+.zoom button {
+  transition:
+    transform 140ms ease-out,
+    background-color 140ms ease-out;
+}
+
+.bar button:hover:not(:disabled),
+.zoom button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+/* Con la barra plegada (flota arriba a la derecha), la de arriba le deja sitio */
+/* La barra de arriba deja sitio a la de la derecha, que flota: desplegada (o un panel) o plegada */
+.topBar {
+  inset-inline-end: calc(24rem + 1.5rem);
+}
+
+.mesa:has([data-mesa-side="folded"]) .topBar {
+  inset-inline-end: 4.5rem;
+}
+
+/* Una escena sin mapa: el selector del mapa, en un recuadro de cristal en medio (que se puede pulsar) */
+.noMap {
+  pointer-events: auto;
+  inline-size: min(30rem, calc(100% - 2rem));
+  padding: var(--space-5);
+  border: 1px solid var(--glass-edge);
+  border-radius: 10px;
+  background: var(--glass-sheen), var(--glass-panel);
+  box-shadow: var(--glass-shadow);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+}
+
+button.pageLink {
+  border: 0;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+}
+
+/* Qué enseña la tele: un botón de cristal con su menú (cada opción, con lo que hace) */
+.cameraWrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.cameraButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-block-size: 2.125rem;
+  padding: 0 10px;
+  border: 1px solid var(--glass-edge);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--color-text) 5%, transparent);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.cameraButton:hover:not(:disabled),
+.cameraButton[aria-expanded="true"] {
+  background: color-mix(in srgb, var(--color-text) 11%, transparent);
+}
+
+.cameraButton:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.cameraButton:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.cameraLabel {
+  color: var(--color-muted);
+}
+
+.cameraButton b {
+  font-weight: 600;
+}
+
+.cameraMenu {
+  position: absolute;
+  z-index: 30;
+  inset-block-start: calc(100% + 6px);
+  inset-inline-end: 0;
+  display: flex;
+  flex-direction: column;
+  inline-size: 19rem;
+  padding: 4px;
+  border: 1px solid var(--glass-edge);
+  border-radius: 10px;
+  background: var(--glass-sheen), var(--glass-panel);
+  box-shadow:
+    inset 0 1px 0 var(--glass-hi),
+    var(--glass-shadow);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+}
+
+.cameraMenu button {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: 7px;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.cameraMenu button svg {
+  flex: none;
+  margin-block-start: 2px;
+  color: var(--color-muted);
+}
+
+.cameraMenu button span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cameraMenu button b {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.cameraMenu button small {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  line-height: 1.3;
+}
+
+.cameraMenu button:hover,
+.cameraMenu button:focus-visible {
+  outline: none;
+  background: color-mix(in srgb, var(--color-text) 9%, transparent);
+}
+
+.cameraMenu button[aria-checked="true"] {
+  background: color-mix(in srgb, var(--color-brand) 14%, transparent);
+}
+
+.cameraMenu button[aria-checked="true"] svg {
+  color: var(--color-accent-text);
+}
+
+/* Al elegir «Fija»: cómo se cambia lo que ve la tele */
+.cameraTip {
+  position: absolute;
+  z-index: 29;
+  inset-block-start: calc(100% + 6px);
+  inset-inline-end: 0;
+  inline-size: 17rem;
+  margin: 0;
+  padding: 8px 12px;
+  border: 1px solid color-mix(in srgb, #f2c260 55%, transparent);
+  border-radius: 8px;
+  background: var(--glass-sheen), var(--glass-panel);
+  color: var(--color-text);
+  font-size: 0.8125rem;
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  animation: rise 0.2s ease-out;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+/* Con un menú de la barra de arriba abierto (el de la tele), la barra va por encima de lo demás de la Mesa (la tarjeta
+   de una ficha lo tapaba): crea su propia capa y su menú no salía de ella */
+.topBar:has([aria-expanded="true"]) {
+  z-index: 45;
+}
+
+/* La × de un panel de herramienta: arriba a la derecha, sobre él; vuelve a la barra de pestañas */
+.panelBack {
+  position: absolute;
+  z-index: 14;
+  inset-block-start: calc(0.75rem + 10px);
+  inset-inline-end: calc(0.75rem + 10px);
+  display: grid;
+  place-items: center;
+  inline-size: 2rem;
+  block-size: 2rem;
+  padding: 0;
+  border: 1px solid var(--glass-edge);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--color-text) 6%, transparent);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.panelBack:hover {
+  background: color-mix(in srgb, var(--color-text) 14%, transparent);
+}
+
+.panelBack:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }

@@ -2,7 +2,7 @@ import type { Campaign, DiceRoll, World } from '@crisol/contracts'
 import { createMemoryHistory } from '@tanstack/react-router'
 import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { fakeAccountClient } from '../account/fake.ts'
 import { fakeApi } from '../api/fake.ts'
 import { App } from '../app.tsx'
@@ -10,6 +10,10 @@ import { fakeRealtime } from '../realtime/fake.ts'
 import { createAppRouter } from '../router.tsx'
 import { announced } from '../testing.ts'
 import { againVisibility } from './log.tsx'
+
+// El máster abre la campaña en la Mesa: su canal y su lienzo, de mentira
+vi.mock('../tabletop/channel.ts', async () => (await import('../tabletop/fakes.ts')).quietChannel())
+vi.mock('../tabletop/use-renderer.ts', async () => (await import('../tabletop/fakes.ts')).blindRenderer())
 
 const ORG = { id: crypto.randomUUID(), name: 'Fateforge', role: 'owner' as const }
 const WORLD: World = {
@@ -54,7 +58,7 @@ function renderLog(rolls: DiceRoll[]) {
   const api = fakeApi({ organizations: [ORG], worlds: [WORLD], campaigns: [CAMPAIGN], rolls })
   const realtime = fakeRealtime()
   const router = createAppRouter(
-    createMemoryHistory({ initialEntries: [`/mundos/${WORLD.id}/campanas/${CAMPAIGN.id}`] })
+    createMemoryHistory({ initialEntries: [`/mundos/${WORLD.id}/campanas/${CAMPAIGN.id}/mesa`] })
   )
   render(
     <App
@@ -70,7 +74,10 @@ function renderLog(rolls: DiceRoll[]) {
 const openLog = async () => {
   await userEvent.click(await screen.findByRole('button', { name: 'Dados' }))
   const dice = within(await screen.findByRole('complementary', { name: 'Dados' }))
-  return { dice, log: within(await dice.findByRole('list', { name: 'Tiradas de la campaña' })) }
+  // En la Mesa, el historial sale en una ventana
+  await userEvent.click(dice.getByRole('button', { name: 'Historial' }))
+  const list = await screen.findByRole('list', { name: 'Tiradas de la campaña' })
+  return { log: within(list), history: within(list.closest<HTMLElement>('[data-window]') ?? document.body) }
 }
 
 const entries = (log: ReturnType<typeof within>) =>
@@ -81,7 +88,7 @@ describe('el registro de la campaña', () => {
     localStorage.clear()
     localStorage.setItem(
       'crisol.recorridos.enrique@crisol.test',
-      JSON.stringify({ seen: ['mundo', 'campaña', 'dados', 'campana'] })
+      JSON.stringify({ seen: ['mundo', 'campaña', 'dados', 'campana', 'mesa', 'mesa-jugador'] })
     )
     n = 0
   })
@@ -110,13 +117,12 @@ describe('el registro de la campaña', () => {
     expect(oyen?.getByText('Oculta')).toBeTruthy()
   })
 
-  it('el desglose al desplegar; «Repetir» tira otra vez lo mismo', async () => {
+  it('lo que salió en cada dado y lo que se sumó; «Otra vez» tira otra vez lo mismo', async () => {
     const { api } = renderLog([rollOf('Ana', 'Percepción', 17)])
     const { log } = await openLog()
     const item = within((await log.findAllByRole('listitem'))[0] as HTMLElement)
-    await userEvent.click(item.getByRole('button', { name: 'Desglose' }))
-    expect(item.getByText('1d20+4 → [13] + 4 = 17')).toBeTruthy()
-    await userEvent.click(item.getByRole('button', { name: 'Repetir' }))
+    expect(item.getByTitle('1d20+4 → [13] + 4 = 17').textContent).toBe('d2013+ 4')
+    await userEvent.click(item.getByRole('button', { name: 'Otra vez: Percepción' }))
     await waitFor(() => expect(log.getAllByRole('listitem')).toHaveLength(2))
     const { rolls } = await api.client.call('listRolls', { campaignId: CAMPAIGN.id })
     expect(rolls.at(-1)).toMatchObject({ formula: '1d20+4', label: 'Percepción', by: { name: 'Enrique' } })
@@ -124,15 +130,19 @@ describe('el registro de la campaña', () => {
 
   it('lo que tiro sale abajo; lo que tiran los demás llega en vivo y se anuncia', async () => {
     const { realtime } = renderLog([rollOf('Ana', 'Percepción', 17)])
-    const { dice, log } = await openLog()
+    const { log } = await openLog()
     await log.findAllByRole('listitem')
+    // Con el historial abierto en su ventana, se tira desde los dados
+    await userEvent.click(screen.getByRole('button', { name: 'Dados' }))
+    const dice = within(await screen.findByRole('complementary', { name: 'Dados' }))
+    await userEvent.click(dice.getByRole('button', { name: 'Escribir la tirada' }))
     const field = dice.getByRole('textbox', { name: 'Tirada' })
     await userEvent.clear(field)
     await userEvent.type(field, '1d6 # Daño{Enter}')
-    await waitFor(() => expect(entries(log).at(-1)).toMatch(/^Tú.*Daño/))
+    await waitFor(() => expect(entries(log).at(-1)).toMatch(/Tú.*Daño/))
     const bruno = rollOf('Bruno', 'Ataque', 21)
     act(() => realtime.emit({ type: 'rolled', campaignId: CAMPAIGN.id, roll: bruno }))
-    await waitFor(() => expect(entries(log).at(-1)).toMatch(/^Bruno.*Ataque.*21/))
+    await waitFor(() => expect(entries(log).at(-1)).toMatch(/Bruno.*Ataque.*21/))
     expect(announced()).toBe('Bruno · Ataque: 21')
     // La misma, otra vez (por el aviso y por la respuesta): una sola
     act(() => realtime.emit({ type: 'rolled', campaignId: CAMPAIGN.id, roll: bruno }))
@@ -141,13 +151,13 @@ describe('el registro de la campaña', () => {
 
   it('las anteriores, de 50 en 50, al pedirlas', async () => {
     renderLog(Array.from({ length: 55 }, (_, i) => rollOf('Ana', `Tirada ${i + 1}`, 10)))
-    const { dice, log } = await openLog()
+    const { history, log } = await openLog()
     await waitFor(() => expect(log.getAllByRole('listitem')).toHaveLength(50))
     expect(entries(log)[0]).toContain('Tirada 6')
-    await userEvent.click(dice.getByRole('button', { name: 'Ver las anteriores' }))
+    await userEvent.click(history.getByRole('button', { name: 'Ver las anteriores' }))
     await waitFor(() => expect(log.getAllByRole('listitem')).toHaveLength(55))
     expect(entries(log)[0]).toContain('Tirada 1')
-    expect(dice.queryByRole('button', { name: 'Ver las anteriores' })).toBeNull()
+    expect(history.queryByRole('button', { name: 'Ver las anteriores' })).toBeNull()
   })
 })
 

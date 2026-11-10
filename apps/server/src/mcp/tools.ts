@@ -248,6 +248,7 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   quien_conoce: { action: 'getPageKnowledge' },
   marcar_conocimiento: { action: 'setKnowledge' },
   revelar: { action: 'reveal' },
+  ensenar_pagina: { action: 'showPage' },
   ocultar: { action: 'hide' },
   dejar_editar: { action: 'setPageEditors' },
   lo_que_sabe: { action: 'listCampaignKnowledge' },
@@ -431,6 +432,14 @@ export const MCP_TOOLS: Record<string, McpTool> = {
     }
   },
   copiar_contenido: { action: 'copyContent' },
+  // Los libros de un sistema (ADR-0021): sus fuentes, con portada y de dónde salen; lo que la IA propone desde un PDF
+  ver_libros: { action: 'getSystemBooks' },
+  entradas_libro: { action: 'getBookEntries' },
+  crear_libro: { action: 'createBook' },
+  cambiar_libro: { action: 'updateBook' },
+  borrar_libro: { action: 'deleteBook' },
+  proponer_contenido: { action: 'proposeContent' },
+  ver_pendientes: { action: 'listPending' },
   // Las criaturas en juego de una campaña (del máster): ponerlas, su hoja, la partida, tirar, aplicar y quitarlas
   ver_en_juego: { action: 'listInPlay' },
   ver_criatura: { action: 'getInPlay' },
@@ -444,13 +453,17 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   quitar_de_juego: { action: 'removeFromPlay' },
   origen_contenido: { action: 'getContentOrigin' },
   traer_original: { action: 'pullContentOrigin' },
-  // La mesa (docs/specs/escenas.md): las escenas del mundo (pestañas «Escena») y la mesa de cada campaña
+  // La mesa (docs/specs/escenas.md): las escenas del mundo (sueltas, ADR-0020, o pestañas «Escena») y la mesa de cada campaña
   ver_escenas: { action: 'listScenes' },
   ver_escena: { action: 'getScene' },
+  crear_escena: { action: 'createScene' },
+  renombrar_escena: { action: 'renameScene' },
+  borrar_escena: { action: 'deleteScene' },
   imagen_escena: { action: 'setSceneImage' },
   dibujar_escena: { action: 'drawScene' },
   cambiar_escena: { action: 'updateScene' },
   ver_mesa: { action: 'getCampaignTable' },
+  quien_esta_en_la_mesa: { action: 'getTablePresence' },
   abrir_escena: { action: 'openScene' },
   presentar_escena: { action: 'presentScene' },
   ocultar_pantalla: { action: 'hideScreen' },
@@ -517,7 +530,8 @@ const INSTRUCTIONS =
   'campaña, unos personajes o todo el mundo; pide aprobación: lo que se revela no se puede «des-saber»); ' +
   'quien_conoce dice qué ve cada campaña de una página y por qué, y ver_como_jugador la enseña como la lee un ' +
   'personaje. En partida, revelar da a conocer algo con aviso a sus jugadores (con alsoPage, también su página), ' +
-  'ocultar lo quita (revelar solo suma: no le quita nada a nadie) y lo_que_sabe lista lo revelado. dejar_editar deja ' +
+  'ocultar lo quita (revelar solo suma: no le quita nada a nadie), ensenar_pagina se la abre al momento a los jugadores ' +
+  'conectados que ya la conocen (como enseñar un diario en la mesa) y lo_que_sabe lista lo revelado. dejar_editar deja ' +
   'a los jugadores escribir el texto de una página (el diario del grupo), que no puede llevar secretos. ' +
   'Un campo o un bloque del panel con hidden no les llega nunca. Si quien te conecta es un jugador, ' +
   'solo ves lo que sabe su campaña (las herramientas de leer, con campaignId si juega más de una del mundo) y solo ' +
@@ -569,10 +583,18 @@ const INSTRUCTIONS =
   'Bolsa de trucos, Confusión) se tiran también con tirar_tabla_compendio, con el orden de la tabla. ' +
   'Los PDF de un mundo y los comunes (los libros del juego, los suplementos) se buscan por dentro con buscar_libros ' +
   '(con su página) y se leen con leer_libro; ver_biblioteca dice cuáles hay y si ya se pueden buscar. ' +
+  'Los libros de un sistema son las fuentes de su contenido (el de serie, los importados, los del máster): ver_libros ' +
+  'dice cuáles hay, qué trae cada uno y qué campañas lo usan; cada campaña elige los suyos (y lo que deja fuera de ' +
+  'ellos, excluded en cambiar_campana). Para pasar un libro desde su PDF: crear_libro (con file, el PDF de ' +
+  'ver_biblioteca, y origin pdf) si aún no existe, leer_libro por tandas de páginas y proponer_contenido con lo que ' +
+  'saques (cada entrada con su página, el texto del PDF del que sale y lo que falte o no esté claro en notes): queda ' +
+  'pendiente de que el máster lo revise en Crisol y no se ve hasta que lo acepte. ver_pendientes dice lo que ya ' +
+  'propusiste. Mete solo lo que dice el libro, en su idioma, sin inventar. ' +
   'El inventario del grupo de una campaña (el botín, el carro) se ve con ver_grupo y se cambia con cambiar_grupo (con ' +
   'su versión): objetos del compendio por su clave o escritos a mano, contenedores y monedas; mover_en_grupo pasa un ' +
   'objeto entre el grupo y un personaje sin duplicarlo, y monedas_grupo pasa o reparte monedas. ' +
-  'La mesa: una escena es una pestaña de tipo scene (crear_pestana) en la página del lugar, con su imagen (un ' +
+  'La mesa: una escena se crea suelta con crear_escena (sin página, como en Foundry; si debe ir en la página de un ' +
+  'lugar, como pestaña de tipo scene con crear_pestana), con su imagen (un ' +
   'archivo del mundo por su id, con imagen_escena, o un mapa que dibujes tú en SVG con dibujar_escena: antes, lee ' +
   'la guía guia_mapas; el máster la trocea al abrirla) y su rejilla (cambiar_escena: ' +
   'cuadrada o hexagonal, el tamaño de la casilla en píxeles, lo que mide en pies). ver_escenas las lista; ver_escena ' +

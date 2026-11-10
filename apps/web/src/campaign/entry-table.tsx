@@ -184,6 +184,9 @@ export function TableRowsField({ table, onChange }: { table: TableEntry; onChang
           id={formulaId}
           className={styles.formula}
           autoComplete="off"
+          data-1p-ignore
+          data-lpignore="true"
+          data-form-type="other"
           spellCheck={false}
           translate="no"
           value={table.formula ?? ''}
@@ -217,6 +220,9 @@ export function TableRowsField({ table, onChange }: { table: TableEntry; onChang
                 <input
                   type="number"
                   autoComplete="off"
+                  data-1p-ignore
+                  data-lpignore="true"
+                  data-form-type="other"
                   aria-label={t('tableTab.fromOf', { text: r.text || t('compendium.rowNumber', { n: i + 1 }) })}
                   value={Number.isNaN(r.from) ? '' : r.from}
                   onChange={(event) => setRow(r.id, { from: event.currentTarget.valueAsNumber })}
@@ -226,6 +232,9 @@ export function TableRowsField({ table, onChange }: { table: TableEntry; onChang
                 <input
                   type="number"
                   autoComplete="off"
+                  data-1p-ignore
+                  data-lpignore="true"
+                  data-form-type="other"
                   aria-label={t('tableTab.toOf', { text: r.text || t('compendium.rowNumber', { n: i + 1 }) })}
                   value={Number.isNaN(r.to) ? '' : r.to}
                   onChange={(event) => setRow(r.id, { to: event.currentTarget.valueAsNumber })}
@@ -234,6 +243,9 @@ export function TableRowsField({ table, onChange }: { table: TableEntry; onChang
               <td className={styles.text}>
                 <input
                   autoComplete="off"
+                  data-1p-ignore
+                  data-lpignore="true"
+                  data-form-type="other"
                   maxLength={2000}
                   aria-label={t('tableTab.textOf', { from: r.from, to: r.to })}
                   value={r.text}

@@ -8,7 +8,7 @@
  * láser; abajo en la columna, los widgets, la pantalla del máster y las instantáneas. Lo de la campaña llega por el
  * canal de la mesa; lo que se cambia, por la API
  */
-import type { CampaignTableView, SceneView, SceneViewport, TokenView } from '@crisol/contracts'
+import type { Campaign, CampaignTableView, SceneView, SceneViewport, TokenView } from '@crisol/contracts'
 import {
   framingRect,
   isTrackpadWheel,
@@ -23,7 +23,7 @@ import {
 } from '@crisol/tabletop'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getRouteApi, Link, Navigate } from '@tanstack/react-router'
-import { ChevronDown, ExternalLink, EyeOff, Maximize, Minus, Play, Plus, Swords, Tv } from 'lucide-react'
+import { ChevronDown, ExternalLink, Eye, EyeOff, Frame, Maximize, Minus, Play, Plus, Tv, Users, X } from 'lucide-react'
 import {
   type KeyboardEvent,
   type PointerEvent,
@@ -39,32 +39,40 @@ import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
+import { CurrentCampaignContext } from '../campaign/current-campaign.ts'
+import { Backdrop } from '../components/backdrop.tsx'
 import { Loading } from '../components/brand.tsx'
 import { useDismiss } from '../components/dismiss.ts'
 import { FormError } from '../components/field.tsx'
 import { failed, LoadError } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { Tour } from '../components/tour.tsx'
+import { useDice } from '../dice/context.tsx'
+import { HistoryHost } from '../dice/history.tsx'
+import { SourcePicker } from '../wiki/scene/source-picker.tsx'
 import { canvasViewOf, framingOf, REFERENCE_ASPECT, sceneViewportOf, sceneViewportOfCanvas } from './camera.ts'
 import { connectTable, type DragMove, type TableChannel, type TableStatus } from './channel.ts'
-import { CombatPanel } from './combat-panel.tsx'
 import { masterDraw } from './draw.ts'
 import { decodeMask, fogImage, fogLayerOf } from './fog-paint.ts'
 import { GmPanel, GmScreen, useGmSettings } from './gm-screen.tsx'
 import { GroupDamage } from './group-damage.tsx'
 import { MarksLayer, placeMarks } from './marks-layer.tsx'
+import { MasterSidebar, useMasterSidebar } from './master-sidebar.tsx'
 import styles from './mesa.module.css'
-import { PLACING_TYPE, type Placing, TablePanel } from './panel.tsx'
+import { openPageLinks, PageWindowsSocket } from './page-window.tsx'
+import { PLACING_TYPE, type Placing } from './panel.tsx'
+import { PlayerMesa } from './player-mesa.tsx'
 import { Preparing } from './preparing.tsx'
 import { masterTileUrl, sceneListKey } from './queries.ts'
 import type { RendererScene } from './renderer.ts'
+import { sceneWindow } from './scene-window.tsx'
 import { SnapshotsPanel, THUMBNAIL_BYTES, THUMBNAIL_SIDE } from './snapshots.tsx'
 import { TokenCard } from './token-card.tsx'
 import { TokenImageEditor } from './token-image.tsx'
-import { TokenSheet } from './token-sheet.tsx'
+import { sheetWindow } from './token-sheet.tsx'
 import { arrowMoves, cellSide, dragMoves, dropAt, tokenAt, tokenRadius, tokensIn } from './tokens.ts'
 import { TextInput, ToolBar, ToolsPanel } from './tools-panel.tsx'
-import { useScenePreparation } from './use-preparation.ts'
+import { type SceneChoice, useScenePreparation } from './use-preparation.ts'
 import { useTableRenderer } from './use-renderer.ts'
 import { isMarkTool, useTableTools } from './use-table-tools.ts'
 import { fitCanvas } from './view.ts'
@@ -83,10 +91,11 @@ import {
 } from './vision.tsx'
 import { AsGroupBanner, FogTools, VisionPanel } from './vision-panel.tsx'
 import { useWidgets, WidgetCards, WidgetsPanel } from './widgets.tsx'
+import { useWindows, WindowLayer, WindowsProvider } from './windows.tsx'
 
 const route = getRouteApi('/mundos/$worldId/campanas/$campaignId/mesa')
 
-/** La ruta: la mesa solo es del máster de la campaña */
+/** /mesa (ADR-0021: una sección de la campaña): la del máster, su Mesa; la de quien juega, lo que ve el grupo */
 export function MesaScreen() {
   const { t } = useTranslation()
   const api = useApi()
@@ -98,6 +107,12 @@ export function MesaScreen() {
     enabled: Boolean(account)
   })
   const campaign = campaigns.data?.campaigns.find((c) => c.id === campaignId)
+  const worlds = useQuery({
+    queryKey: ['worlds'],
+    queryFn: () => api.call('listWorlds', {}),
+    enabled: Boolean(account) && campaign?.role === 'master'
+  })
+  const worldName = worlds.data?.worlds.find((w) => w.id === worldId)?.name
   if (pending) return null
   if (!account) return <Navigate to="/entrar" replace />
   if (!campaigns.data)
@@ -109,11 +124,42 @@ export function MesaScreen() {
         <Link to="/mundos">{t('worlds.title')}</Link>
       </section>
     )
-  // La mesa es del máster: un jugador vuelve a su campaña
-  if (campaign.role !== 'master')
-    return <Navigate to="/mundos/$worldId/campanas/$campaignId" params={{ worldId, campaignId }} replace />
-  return <Mesa key={campaignId} worldId={worldId} campaignId={campaignId} campaignName={campaign.name} />
+  if (campaign.role === 'master')
+    return worldName === undefined ? (
+      <Loading />
+    ) : (
+      <Mesa key={campaign.id} worldId={worldId} worldName={worldName} campaign={campaign} />
+    )
+  return <PlayerMesa key={campaign.id} worldId={worldId} campaign={campaign} />
 }
+
+/** Lo que flota sobre la Mesa o va a su lado (las ventanas y la barra de pestañas): sus teclas no son las del mapa */
+/** Cuánto se ve un fallo de la Mesa antes de irse solo */
+const ERROR_MS = 6000
+
+/**
+ * El marco de la tele al ponerla «Fija»: centrado en lo que se ve y dentro de ello (un 16:9 con algo de margen), para
+ * que se vea entero y se pueda mover y estirar desde sus esquinas
+ */
+function fixedFraming(view: Viewport, room: Size): SceneViewport {
+  const width = (Math.min(room.width, room.height / REFERENCE_ASPECT) * 0.86) / view.scale
+  const center = { x: (room.width / 2 - view.x) / view.scale, y: (room.height / 2 - view.y) / view.scale }
+  return sceneViewportOf({ center, width })
+}
+
+/**
+ * Lo que se ve del mapa: sin lo que tapa la barra de la derecha, que flota encima mientras está abierta (al encuadrar,
+ * centrar una ficha o decirle a la tele qué se ve, que no cuente lo de debajo de ella)
+ */
+function freeArea(room: Size, stageEl: HTMLElement | null): Size {
+  const side = document.querySelector<HTMLElement>('[data-mesa-side="open"]')
+  const stage = stageEl?.getBoundingClientRect()
+  if (!side || !stage) return room
+  const covered = stage.right - side.getBoundingClientRect().left + 12
+  return covered > 0 && covered < room.width - 240 ? { width: room.width - covered, height: room.height } : room
+}
+
+const CHROME = '[role="dialog"], [data-window], [data-mesa-side]'
 
 type Gesture = {
   startX: number
@@ -124,7 +170,18 @@ type Gesture = {
 
 type FrameDrag = { kind: 'move' | 'resize'; start: Point; center: Point; width: number }
 
-function Mesa({ worldId, campaignId, campaignName }: { worldId: string; campaignId: string; campaignName: string }) {
+/** La mesa del máster: es lo que se ve al abrir su campaña (la ruta de la campaña comprueba quién es) */
+export function Mesa({
+  worldId,
+  worldName,
+  campaign: current
+}: {
+  worldId: string
+  worldName: string
+  campaign: Campaign
+}) {
+  const campaignId = current.id
+  const campaignName = current.name
   const { t } = useTranslation()
   const api = useApi()
   const errorText = useErrorText()
@@ -133,6 +190,14 @@ function Mesa({ worldId, campaignId, campaignName }: { worldId: string; campaign
   const channel = useRef<TableChannel | null>(null)
   const open = table?.open ?? null
   const preparation = useScenePreparation(worldId)
+  // La caja del mapa: dentro de ella flotan las ventanas
+  const stageBox = useRef<HTMLDivElement>(null)
+  // La barra de la derecha: su pestaña y si está plegada viven aquí (una herramienta la tapa sin olvidarla)
+  const sidebar = useMasterSidebar(table)
+  const dice = useDice()
+  // Los dados tiran en esta campaña (antes lo decía la barra de la izquierda, que aquí no está)
+  const { setCampaign } = dice
+  useEffect(() => setCampaign(worldId, campaignId), [setCampaign, worldId, campaignId])
   // La vista del máster (dónde cae el mapa y a qué escala): es de su navegador
   const view = useRef<Viewport>({ x: 0, y: 0, scale: 1 })
   // Las fichas: las elegidas, la de la tarjeta, la de la hoja abierta y la de su imagen
@@ -186,14 +251,8 @@ function Mesa({ worldId, campaignId, campaignName }: { worldId: string; campaign
     act.mutate(() => api.call('openScene', { campaignId, sceneId }))
   }
   const tokens = useMemo(() => (table?.tokens ?? []).filter((token) => token.sceneId === table?.open?.id), [table])
-  // El combate: su panel en lugar del de la mesa (con un botón para ir y volver)
+  // El combate (su panel, en la pestaña Combate de la barra)
   const combat = table?.combat ?? null
-  const [panelView, setPanelView] = useState<'combat' | 'tabs'>('combat')
-  const [shownCombat, setShownCombat] = useState<string | null>(null)
-  if ((combat?.id ?? null) !== shownCombat) {
-    setShownCombat(combat?.id ?? null)
-    setPanelView('combat')
-  }
   // Quien tiene el turno: su ficha lleva el aro y la mesa se centra en ella (si no se ve)
   const turnTokens = useMemo(
     () => new Set((combat?.combatants ?? []).filter((c) => c.active && c.tokenId).map((c) => c.tokenId as string)),
@@ -233,6 +292,17 @@ function Mesa({ worldId, campaignId, campaignName }: { worldId: string; campaign
     },
     onSuccess: () => client.invalidateQueries({ queryKey: ['creatures', campaignId] })
   })
+  // Lo que falla se dice un momento y se va solo (si no, se quedaba hasta la siguiente acción que saliera bien)
+  const { reset: resetAct } = act
+  const { reset: resetPlace } = place
+  useEffect(() => {
+    if (!act.error && !place.error) return
+    const timer = window.setTimeout(() => {
+      resetAct()
+      resetPlace()
+    }, ERROR_MS)
+    return () => window.clearTimeout(timer)
+  }, [act.error, place.error, resetAct, resetPlace])
   // Ctrl+Z: deshace el último movimiento de fichas hecho desde la mesa (el del historial del mundo)
   const undo = useMutation({
     mutationFn: async () => {
@@ -276,6 +346,12 @@ function Mesa({ worldId, campaignId, campaignName }: { worldId: string; campaign
     setTool('select')
     setSide((current) => (current === next ? null : next))
   }, [])
+  // Cerrar el panel de una herramienta: se deja la herramienta y vuelve la barra de pestañas
+  const backToBar = useCallback(() => {
+    setAsGroup(false)
+    setSide(null)
+    setTool('select')
+  }, [])
   const markers = useRef<HTMLDivElement | null>(null)
   const marksLayer = useRef<HTMLDivElement | null>(null)
   const vision = useVision({ campaignId, table, tool, asGroup, view, renderer, ready, onTable: setTable })
@@ -299,10 +375,16 @@ function Mesa({ worldId, campaignId, campaignName }: { worldId: string; campaign
   const visionKey = vision.key
   const toolsKey = tools.key
   useEffect(() => {
+    // Lo último que se pulsó: en una ventana o en la barra, las teclas son de ellas (aunque el foco caiga en el body)
+    let inChrome = false
+    const onPointer = (event: globalThis.PointerEvent) => {
+      inChrome = Boolean((event.target as HTMLElement | null)?.closest(CHROME))
+    }
     const onKey = (event: globalThis.KeyboardEvent) => {
       const target = event.target as HTMLElement | null
       if (event.ctrlKey || event.metaKey || event.altKey) return
-      if (target?.closest('input, textarea, select, dialog, [contenteditable]')) return
+      if (target?.closest(`input, textarea, select, dialog, [contenteditable], ${CHROME}`)) return
+      if (target === document.body && inChrome) return
       if (target !== document.body && !target?.closest('[data-mesa]')) return
       if (visionKey(event) || toolsKey(event)) {
         event.preventDefault()
@@ -315,7 +397,11 @@ function Mesa({ worldId, campaignId, campaignName }: { worldId: string; campaign
       if (panel) toggleSide(panel.key)
     }
     window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+    window.addEventListener('pointerdown', onPointer, true)
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      window.removeEventListener('pointerdown', onPointer, true)
+    }
   }, [visionKey, toolsKey, pickTool, toggleSide])
   // La niebla en la mesa: atenuada (lo que no ve la tele) o, viendo como el grupo, como la tele; editando muros o
   // luces, sin ella
@@ -340,248 +426,270 @@ function Mesa({ worldId, campaignId, campaignName }: { worldId: string; campaign
   }, [open, start])
 
   return (
-    <div className={styles.mesa} data-mesa="">
-      <div className={styles.stageBox}>
-        <Stage
-          table={table}
-          scene={scene}
-          host={host}
-          ready={ready}
-          size={size}
-          renderer={renderer}
-          channel={channel}
-          campaignId={campaignId}
-          onTable={setTable}
-          view={view}
-          tokens={shownTokens}
-          tool={vision.handlers ?? tools.handlers}
-          toolName={tool}
-          markers={markers}
-          marksLayer={marksLayer}
-          targets={tools.targets}
-          onDragPath={tools.showDrag}
-          remote={remote}
-          remoteTick={remoteTick}
-          selected={selected}
-          onSelect={(ids) => {
-            setSelected(ids)
-            setFromTemplate(false)
-            // Con varias elegidas, en lugar de la tarjeta, el daño a varias
-            if (ids.length > 1 || !ids.includes(cardFor ?? '')) setCardFor(null)
-          }}
-          cardFor={cardFor}
-          cardRef={cardRef}
-          onCard={setCardFor}
-          onSheet={setSheetFor}
-          onPlace={(placing, at) => place.mutate({ placing, at })}
-          onUndo={() => undo.mutate()}
-          turnTokens={turnTokens}
-          center={center}
-        />
-        {scene && <MarksLayer layer={marksLayer} view={view} marks={tools.marks} />}
-        {scene && <VisionMarkers layer={markers} view={view} vision={vision} tool={tool} />}
-        {scene && <ToolColumn tool={tool} onTool={pickTool} side={side} onSide={toggleSide} />}
-        {scene && tool === 'fog' && <FogTools vision={vision} />}
-        {scene && isMarkTool(tool) && <ToolBar tool={tool} tools={tools} />}
-        {scene && open && tools.writing && <TextInput tools={tools} view={view.current} scene={open} />}
-        {scene && <WidgetCards widgets={widgets.widgets} control={widgets} />}
-        {scene && side === 'gm' && (
-          <GmScreen
-            worldId={worldId}
-            campaignId={campaignId}
-            systemId={systemId}
-            tokens={tokens}
-            settings={gm.settings}
-            onClose={() => setSide(null)}
-          />
-        )}
-        {asGroup && (
-          <AsGroupBanner
-            onBack={() => {
-              setAsGroup(false)
-              setTool(returnTool.current)
-            }}
-          />
-        )}
-        {byId(cardFor) && (
-          <TokenCard
-            key={`card-${cardFor}`}
-            token={byId(cardFor) as TokenView}
-            campaignId={campaignId}
-            cardRef={cardRef}
-            onClose={() => setCardFor(null)}
-            onSheet={() => setSheetFor(cardFor)}
-            onImage={() => setImageFor({ tokenId: cardFor as string, fileId: null })}
-          />
-        )}
-        {byId(sheetFor) && (
-          <TokenSheet
-            key={`sheet-${sheetFor}`}
-            token={byId(sheetFor) as TokenView}
-            campaignId={campaignId}
-            systemId={systemId}
-            onClose={() => setSheetFor(null)}
-          />
-        )}
-        {imageFor && byId(imageFor.tokenId) && (
-          <TokenImageEditor
-            token={byId(imageFor.tokenId) as TokenView}
-            worldId={worldId}
-            fileId={imageFor.fileId}
-            onClose={() => setImageFor(null)}
-          />
-        )}
-        <TokenList
-          tokens={shownTokens}
-          selected={selected}
-          onPick={(id) => {
-            setSelected([id])
-            setCardFor(id)
-          }}
-        />
-        {preparation.state.status === 'preparing' ? (
-          <div className={styles.overlay}>
-            <Preparing state={preparation.state} onCancel={preparation.cancel} />
-          </div>
-        ) : noCanvas ? (
-          <p className={styles.notice}>{t('tabletop.noCanvas')}</p>
-        ) : !open ? (
-          <p className={styles.notice}>{table ? t('tabletop.empty') : ''}</p>
-        ) : !open.image ? (
-          <div className={styles.notice}>
-            <p>{t('tabletop.noMap')}</p>
-            <PageLink worldId={worldId} scene={open} />
-          </div>
-        ) : null}
-        <TopBar
-          worldId={worldId}
-          campaignId={campaignId}
-          table={table}
-          onOpen={openScene}
-          onAct={(run) => act.mutate(run)}
-          busy={act.isPending}
-          framing={() => (size.width > 0 ? sceneViewportOfCanvas(view.current, size) : null)}
-          selected={selected}
-        />
-        {(selected.length > 1 || (fromTemplate && selected.length > 0)) && (
-          <GroupDamage
-            key={selected.join()}
-            campaignId={campaignId}
-            tokens={tokens.filter((token) => selected.includes(token.id))}
-            title={fromTemplate ? t('tools.insideTemplate', { count: selected.length }) : undefined}
-            onClose={() => {
-              setSelected([])
-              setFromTemplate(false)
-            }}
-          />
-        )}
-        {status === 'reconnecting' && (
-          <p className={styles.reconnecting} role="status">
-            {t('tabletop.reconnecting')}
-          </p>
-        )}
-        <div className={styles.errors}>
-          <FormError
-            message={
-              act.error
-                ? errorText(act.error)
-                : place.error
-                  ? errorText(place.error)
-                  : preparation.state.status === 'failed'
-                    ? errorText(preparation.state.error)
-                    : null
-            }
-          />
-          {skipped.length > 0 && (
-            <p className={styles.skipped} role="status">
-              {t('tabletop.skipped', { list: skipped.join(', ') })}
-            </p>
-          )}
-        </div>
-      </div>
-      {side && open ? (
-        <aside className={styles.panel} aria-label={t(`vision.${side}`)}>
-          <div className={visionStyles.body}>
-            <h2 className={visionStyles.title}>{t(`vision.${side}`)}</h2>
-            {side === 'widgets' && <WidgetsPanel control={widgets} />}
-            {side === 'snapshots' && (
-              <SnapshotsPanel
-                key={open.id}
+    <CurrentCampaignContext.Provider value={campaignId}>
+      <WindowsProvider area={stageBox} onLink={openPageLinks}>
+        <div className={styles.mesa} data-mesa="">
+          <div ref={stageBox} className={styles.stageBox}>
+            <Stage
+              table={table}
+              scene={scene}
+              host={host}
+              ready={ready}
+              size={size}
+              renderer={renderer}
+              channel={channel}
+              campaignId={campaignId}
+              onTable={setTable}
+              view={view}
+              tokens={shownTokens}
+              tool={vision.handlers ?? tools.handlers}
+              toolName={tool}
+              markers={markers}
+              marksLayer={marksLayer}
+              targets={tools.targets}
+              onDragPath={tools.showDrag}
+              remote={remote}
+              remoteTick={remoteTick}
+              selected={selected}
+              onSelect={(ids) => {
+                setSelected(ids)
+                setFromTemplate(false)
+                // Con varias elegidas, en lugar de la tarjeta, el daño a varias
+                if (ids.length > 1 || !ids.includes(cardFor ?? '')) setCardFor(null)
+              }}
+              cardFor={cardFor}
+              cardRef={cardRef}
+              onCard={setCardFor}
+              onSheet={setSheetFor}
+              onPlace={(placing, at) => place.mutate({ placing, at })}
+              onUndo={() => undo.mutate()}
+              turnTokens={turnTokens}
+              center={center}
+            />
+            {scene && <MarksLayer layer={marksLayer} view={view} marks={tools.marks} />}
+            {scene && <VisionMarkers layer={markers} view={view} vision={vision} tool={tool} />}
+            {scene && <ToolColumn tool={tool} onTool={pickTool} side={side} onSide={toggleSide} />}
+            {scene && tool === 'fog' && <FogTools vision={vision} />}
+            {scene && isMarkTool(tool) && <ToolBar tool={tool} tools={tools} />}
+            {scene && open && tools.writing && <TextInput tools={tools} view={view.current} scene={open} />}
+            {scene && <WidgetCards widgets={widgets.widgets} control={widgets} />}
+            {scene && side === 'gm' && (
+              <GmScreen
+                worldId={worldId}
                 campaignId={campaignId}
-                sceneId={open.id}
-                capture={async () => (await renderer.current?.snapshot(THUMBNAIL_SIDE, THUMBNAIL_BYTES)) ?? null}
+                systemId={systemId}
+                tokens={tokens}
+                settings={gm.settings}
+                onClose={() => setSide(null)}
               />
             )}
-            {side === 'gm' && <GmPanel worldId={worldId} scene={open} settings={gm.settings} onChange={gm.change} />}
+            {asGroup && (
+              <AsGroupBanner
+                onBack={() => {
+                  setAsGroup(false)
+                  setTool(returnTool.current)
+                }}
+              />
+            )}
+            {byId(cardFor) && (
+              <TokenCard
+                key={`card-${cardFor}`}
+                token={byId(cardFor) as TokenView}
+                campaignId={campaignId}
+                cardRef={cardRef}
+                onClose={() => setCardFor(null)}
+                onSheet={() => setSheetFor(cardFor)}
+                onImage={() => setImageFor({ tokenId: cardFor as string, fileId: null })}
+              />
+            )}
+            {byId(sheetFor) && (
+              <SheetOpener
+                token={byId(sheetFor) as TokenView}
+                campaignId={campaignId}
+                systemId={systemId}
+                onDone={() => setSheetFor(null)}
+              />
+            )}
+            {imageFor && byId(imageFor.tokenId) && (
+              <TokenImageEditor
+                token={byId(imageFor.tokenId) as TokenView}
+                worldId={worldId}
+                fileId={imageFor.fileId}
+                onClose={() => setImageFor(null)}
+              />
+            )}
+            <TokenList
+              tokens={shownTokens}
+              selected={selected}
+              onPick={(id) => {
+                setSelected([id])
+                setCardFor(id)
+              }}
+            />
+            {preparation.state.status === 'preparing' ? (
+              <div className={styles.overlay}>
+                <Preparing state={preparation.state} onCancel={preparation.cancel} />
+              </div>
+            ) : noCanvas ? (
+              <p className={styles.notice}>{t('tabletop.noCanvas')}</p>
+            ) : !open ? (
+              <>
+                {/* Sin escena, el fondo de entrar: la Mesa no se queda en negro y su cristal se ve */}
+                <Backdrop contained />
+                <p className={styles.notice}>{table ? t('tabletop.empty') : ''}</p>
+              </>
+            ) : !open.image ? (
+              <NoMap worldId={worldId} scene={open} onChoose={(choice) => void start(open, choice)} />
+            ) : null}
+            <TopBar
+              worldId={worldId}
+              campaignId={campaignId}
+              table={table}
+              onOpen={openScene}
+              onAct={(run) => act.mutate(run)}
+              busy={act.isPending}
+              framing={() => (size.width > 0 ? fixedFraming(view.current, freeArea(size, host.current)) : null)}
+            />
+            {(selected.length > 1 || (fromTemplate && selected.length > 0)) && (
+              <GroupDamage
+                key={selected.join()}
+                campaignId={campaignId}
+                tokens={tokens.filter((token) => selected.includes(token.id))}
+                title={fromTemplate ? t('tools.insideTemplate', { count: selected.length }) : undefined}
+                onClose={() => {
+                  setSelected([])
+                  setFromTemplate(false)
+                }}
+              />
+            )}
+            {status === 'reconnecting' && (
+              <p className={styles.reconnecting} role="status">
+                {t('tabletop.reconnecting')}
+              </p>
+            )}
+            <div className={styles.errors}>
+              <FormError
+                message={
+                  act.error
+                    ? errorText(act.error)
+                    : place.error
+                      ? errorText(place.error)
+                      : preparation.state.status === 'failed'
+                        ? errorText(preparation.state.error)
+                        : null
+                }
+              />
+              {skipped.length > 0 && (
+                <p className={styles.skipped} role="status">
+                  {t('tabletop.skipped', { list: skipped.join(', ') })}
+                </p>
+              )}
+            </div>
+            <PageWindowsSocket>
+              <WindowLayer />
+            </PageWindowsSocket>
           </div>
-        </aside>
-      ) : isMarkTool(tool) && tool !== 'laser' && open ? (
-        <ToolsPanel
-          tool={tool}
-          tools={tools}
-          scene={open}
-          worldId={worldId}
-          tokens={tokens}
-          onChoose={(ids) => {
-            setSelected(ids)
-            setCardFor(null)
-            setFromTemplate(true)
-          }}
-        />
-      ) : isVisionTool(tool) || asGroup ? (
-        <VisionPanel
-          mode={asGroup ? 'group' : (tool as 'walls' | 'lights' | 'fog')}
-          vision={vision}
-          tokens={tokens}
-          notSeen={notSeen}
-          onAsGroup={() => {
-            returnTool.current = tool
-            setTool('select')
-            setAsGroup(true)
-          }}
-        />
-      ) : combat && panelView === 'combat' ? (
-        <CombatPanel
-          campaignId={campaignId}
-          combat={combat}
-          tokens={tokens}
-          selected={selected}
-          onPick={(tokenId) => {
-            setSelected([tokenId])
-            center.current?.(tokenId, true)
-          }}
-          onShowPanel={() => setPanelView('tabs')}
-        />
-      ) : (
-        <TablePanel
-          combatRound={combat ? combat.round : null}
-          onCombat={() => setPanelView('combat')}
-          worldId={worldId}
-          campaignId={campaignId}
-          systemId={systemId}
-          table={table}
-          selected={tokens.filter((token) => selected.includes(token.id))}
-          onOpen={openScene}
-          onPlace={(placing) => place.mutate({ placing, at: null })}
-          onImage={(fileId) => selected[0] && setImageFor({ tokenId: selected[0], fileId })}
-        />
-      )}
-      <Tour
-        id="mesa"
-        steps={[
-          { target: '[data-tour="mesa-mapa"]', text: t('tour.tabletop.map') },
-          { target: '[data-tour="mesa-herramientas"]', text: t('tour.tabletop.tools'), placement: 'right' },
-          { target: '[data-tour="mesa-paneles"]', text: t('tour.tabletop.panels'), placement: 'right' },
-          { target: '[data-tour="mesa-escenas"]', text: t('tour.tabletop.scenes'), placement: 'left' },
-          { target: '[data-tour="mesa-presentar"]', text: t('tour.tabletop.present'), placement: 'bottom' },
-          { target: '[data-tour="mesa-pantalla"]', text: t('tour.tabletop.screen'), placement: 'bottom' },
-          { target: '[data-tour="mesa-camara"]', text: t('tour.tabletop.camera'), placement: 'bottom' },
-          { target: '[data-tour="mesa-combate"]', text: t('tour.tabletop.combat'), placement: 'bottom' },
-          { target: '[data-tour="mesa-zoom"]', text: t('tour.tabletop.zoom'), placement: 'top' }
-        ]}
-      />
-      <PageTitle className={styles.hidden}>{`${t('tabletop.title')} · ${campaignName}`}</PageTitle>
-    </div>
+          {side && open ? (
+            <aside className={styles.panel} aria-label={t(`vision.${side}`)}>
+              <div className={visionStyles.body}>
+                <h2 className={visionStyles.title}>{t(`vision.${side}`)}</h2>
+                {side === 'widgets' && <WidgetsPanel control={widgets} />}
+                {side === 'snapshots' && (
+                  <SnapshotsPanel
+                    key={open.id}
+                    campaignId={campaignId}
+                    sceneId={open.id}
+                    capture={async () => (await renderer.current?.snapshot(THUMBNAIL_SIDE, THUMBNAIL_BYTES)) ?? null}
+                  />
+                )}
+                {side === 'gm' && (
+                  <GmPanel worldId={worldId} scene={open} settings={gm.settings} onChange={gm.change} />
+                )}
+              </div>
+            </aside>
+          ) : isMarkTool(tool) && tool !== 'laser' && open ? (
+            <ToolsPanel
+              tool={tool}
+              tools={tools}
+              scene={open}
+              worldId={worldId}
+              tokens={tokens}
+              onChoose={(ids) => {
+                setSelected(ids)
+                setCardFor(null)
+                setFromTemplate(true)
+              }}
+            />
+          ) : isVisionTool(tool) || asGroup ? (
+            <VisionPanel
+              mode={asGroup ? 'group' : (tool as 'walls' | 'lights' | 'fog')}
+              vision={vision}
+              tokens={tokens}
+              notSeen={notSeen}
+              onAsGroup={() => {
+                returnTool.current = tool
+                setTool('select')
+                setAsGroup(true)
+              }}
+            />
+          ) : null}
+          {/* Un panel de herramienta tapa la barra: su ×, para volver a ella (como Escape) */}
+          {!asGroup && ((open && (side || (isMarkTool(tool) && tool !== 'laser'))) || isVisionTool(tool)) && (
+            <button
+              type="button"
+              className={styles.panelBack}
+              aria-label={t('tabletop.backToBar')}
+              title={t('tabletop.backToBar')}
+              onClick={backToBar}
+            >
+              <X aria-hidden="true" size={16} />
+            </button>
+          )}
+          {(side && open) || (isMarkTool(tool) && tool !== 'laser' && open) || isVisionTool(tool) || asGroup ? null : (
+            <MasterSidebar
+              worldId={worldId}
+              worldName={worldName}
+              campaign={current}
+              systemId={systemId}
+              table={table}
+              tokens={tokens}
+              selected={selected}
+              busy={act.isPending}
+              onAct={(run) => act.mutate(run)}
+              onOpen={openScene}
+              onPlace={(placing) => place.mutate({ placing, at: null })}
+              onImage={(fileId) => selected[0] && setImageFor({ tokenId: selected[0], fileId })}
+              onPickCombatant={(tokenId) => {
+                setSelected([tokenId])
+                center.current?.(tokenId, true)
+              }}
+              sidebar={sidebar}
+              onPickToken={(tokenId) => {
+                setSelected([tokenId])
+                setCardFor(tokenId)
+                center.current?.(tokenId, true)
+              }}
+            />
+          )}
+          <Tour
+            id="mesa"
+            steps={[
+              { target: '[data-tour="mesa-mapa"]', text: t('tour.tabletop.map') },
+              { target: '[data-tour="mesa-herramientas"]', text: t('tour.tabletop.tools'), placement: 'right' },
+              { target: '[data-tour="mesa-paneles"]', text: t('tour.tabletop.panels'), placement: 'right' },
+              { target: '[data-tour="mesa-barra"]', text: t('tour.tabletop.sidebar'), placement: 'left' },
+              { target: '[data-tour="mesa-presentar"]', text: t('tour.tabletop.present'), placement: 'bottom' },
+              { target: '[data-tour="mesa-pantalla"]', text: t('tour.tabletop.screen'), placement: 'bottom' },
+              { target: '[data-tour="mesa-camara"]', text: t('tour.tabletop.camera'), placement: 'bottom' },
+              { target: '[data-tour="mesa-zoom"]', text: t('tour.tabletop.zoom'), placement: 'top' }
+            ]}
+          />
+          {/* El historial de tiradas, en una ventana de la Mesa */}
+          <HistoryHost campaign={campaign.data?.campaign} />
+          <PageTitle className={styles.hidden}>{campaignName}</PageTitle>
+        </div>
+      </WindowsProvider>
+    </CurrentCampaignContext.Provider>
   )
 }
 
@@ -662,6 +770,9 @@ function Stage({
   const following = camera.mode !== 'fixed' && onScreen
   const sizeRef = useRef(size)
   sizeRef.current = size
+  // Lo que se ve del mapa: sin lo que tapa la barra de la derecha, que flota encima mientras está abierta (al encuadrar
+  // o centrar una ficha, que no quede debajo de ella)
+  const free = useCallback((room: Size): Size => freeArea(room, host.current), [host])
   // La escena (y su versión del mapa) que ya se colocó: otra vuelve a su vista inicial
   const placed = useRef<string | null>(null)
   const zoomText = useRef<HTMLSpanElement>(null)
@@ -710,11 +821,11 @@ function Stage({
     const r = tokenRadius(token, grid) * scale
     const width = card.offsetWidth || 300
     const height = card.offsetHeight || 240
-    const room = sizeRef.current
+    const room = free(sizeRef.current)
     const left = sx + r + 14 + width > room.width - 8 ? sx - r - 14 - width : sx + r + 14
     card.style.left = `${Math.max(8, left)}px`
     card.style.top = `${Math.max(64, Math.min(sy - 60, room.height - height - 12))}px`
-  }, [renderer, remote, cardRef, view])
+  }, [renderer, remote, cardRef, view, free])
 
   /** Coloca el marco «Tele» sobre el mapa con la vista de ahora */
   const placeFrame = useCallback(() => {
@@ -740,9 +851,10 @@ function Stage({
     drawTokens()
     // Para las pruebas del navegador: dónde cae el mapa en el lienzo, sin leer sus píxeles
     if (host.current) host.current.dataset.view = JSON.stringify({ ...view.current, ...sizeRef.current })
+    // La tele sigue el centro de lo que se ve (sin lo que tapa la barra de la derecha: si no, le salía desplazado)
     if (followingRef.current && sizeRef.current.width > 0)
-      channel.current?.sendViewport(sceneViewportOfCanvas(view.current, sizeRef.current))
-  }, [renderer, placeFrame, channel, host, view, drawTokens, markers, marksLayer])
+      channel.current?.sendViewport(sceneViewportOfCanvas(view.current, free(sizeRef.current)))
+  }, [renderer, placeFrame, channel, host, view, drawTokens, markers, marksLayer, free])
 
   // Llega la mesa (o cambia lo elegido): las fichas, otra vez; lo que se movía ya está en su sitio
   useEffect(() => {
@@ -754,7 +866,7 @@ function Stage({
   useEffect(() => {
     center.current = (tokenId, always) => {
       const token = latest.current.tokens.find((each) => each.id === tokenId)
-      const room = sizeRef.current
+      const room = free(sizeRef.current)
       if (!token || room.width === 0) return
       const { x, y, scale } = view.current
       const sx = token.x * scale + x
@@ -767,13 +879,13 @@ function Stage({
     return () => {
       center.current = null
     }
-  }, [center, apply, view])
+  }, [center, apply, view, free])
 
   const fit = useCallback(() => {
     if (!scene || sizeRef.current.width === 0) return
-    view.current = fitCanvas(scene, sizeRef.current)
+    view.current = fitCanvas(scene, free(sizeRef.current))
     apply()
-  }, [scene, apply, view])
+  }, [scene, apply, view, free])
 
   // La primera vez que hay sitio: la vista inicial de la escena o encuadrada
   useEffect(() => {
@@ -781,10 +893,11 @@ function Stage({
     const key = `${scene.id}/${scene.tiles.version}`
     if (placed.current !== key) {
       placed.current = key
-      view.current = open?.initialView ? canvasViewOf(open.initialView, size) : fitCanvas(scene, size)
+      const room = free(size)
+      view.current = open?.initialView ? canvasViewOf(open.initialView, room) : fitCanvas(scene, room)
     }
     apply()
-  }, [ready, scene, size, open?.initialView, apply, view])
+  }, [ready, scene, size, open?.initialView, apply, view, free])
 
   // Al pasar a «Seguir», la tele recibe ya dónde mira el máster; el marco, al cambiar la cámara
   useEffect(() => {
@@ -826,7 +939,8 @@ function Stage({
   useEffect(() => {
     const down = (event: globalThis.KeyboardEvent) => {
       const target = event.target as HTMLElement | null
-      if (event.code !== 'Space' || target?.closest('input, textarea, select, button, [contenteditable]')) return
+      if (event.code !== 'Space' || target?.closest(`input, textarea, select, button, [contenteditable], ${CHROME}`))
+        return
       space.current = true
       setPanning(true)
       event.preventDefault()
@@ -1207,11 +1321,8 @@ function TopBar({
   onOpen,
   onAct,
   busy,
-  framing,
-  selected
+  framing
 }: {
-  /** Las fichas elegidas: con ellas empieza el combate (sin ninguna, con todas) */
-  selected: string[]
   worldId: string
   campaignId: string
   table: CampaignTableView | null
@@ -1270,25 +1381,6 @@ function TopBar({
             </button>
           )}
         </span>
-        {open && !table?.combat && (table?.tokens.length ?? 0) > 0 && (
-          <button
-            type="button"
-            className={styles.ghost}
-            disabled={busy}
-            data-tour="mesa-combate"
-            title={selected.length > 0 ? t('combat.startChosen', { count: selected.length }) : t('combat.startAll')}
-            onClick={() =>
-              onAct(() =>
-                api
-                  .call('startCombat', { campaignId, ...(selected.length > 0 ? { tokenIds: selected } : {}) })
-                  .then(() => api.call('getCampaignTable', { campaignId }))
-              )
-            }
-          >
-            <Swords aria-hidden="true" size={15} />
-            {selected.length > 0 ? t('combat.startChosen', { count: selected.length }) : t('combat.start')}
-          </button>
-        )}
         <button type="button" className={styles.ghost} onClick={openScreen} data-tour="mesa-pantalla">
           <Tv aria-hidden="true" size={15} />
           {t('tabletop.screen')}
@@ -1306,7 +1398,10 @@ function TopBar({
   )
 }
 
-/** «Seguir | Fija | Grupo»: Fija se queda en lo que se ve ahora (su marco se mueve); Grupo encuadra sus fichas */
+/**
+ * Qué enseña la tele: un botón («Tele: Sigue tu vista») con su menú, cada opción con lo que hace. «Fija» se queda en
+ * lo que se ve ahora y lo dice: su marco dorado se mueve y se estira en el mapa. «Sigue al grupo» encuadra sus fichas
+ */
 function CameraChoice({
   campaignId,
   camera,
@@ -1322,40 +1417,101 @@ function CameraChoice({
 }) {
   const { t } = useTranslation()
   const api = useApi()
-  const name = useId()
-  const mode = camera.mode
-  const fixed = mode === 'fixed'
-  const fixHere = () => {
-    const view = framing()
-    if (!view) return
-    onAct(() => api.call('setScreenCamera', { campaignId, camera: { mode: 'fixed', view } }))
+  const [open, setOpen] = useState(false)
+  const [tip, setTip] = useState(false)
+  const button = useRef<HTMLButtonElement>(null)
+  const menu = useRef<HTMLDivElement>(null)
+  const close = useCallback(() => setOpen(false), [])
+  useDismiss(open, close, menu, button)
+  useEffect(() => {
+    if (open) menu.current?.querySelector<HTMLElement>('[aria-checked="true"]')?.focus()
+  }, [open])
+  useEffect(() => {
+    if (!tip) return
+    const timer = window.setTimeout(() => setTip(false), 7000)
+    return () => window.clearTimeout(timer)
+  }, [tip])
+  const options = [
+    { mode: 'follow', label: t('tabletop.follow'), hint: t('tabletop.followHint'), Icon: Eye },
+    { mode: 'fixed', label: t('tabletop.fixed'), hint: t('tabletop.fixedHint'), Icon: Frame },
+    { mode: 'group', label: t('tabletop.group'), hint: t('tabletop.groupHint'), Icon: Users }
+  ] as const
+  const current = options.find((o) => o.mode === camera.mode) ?? options[0]
+  const choose = (mode: (typeof options)[number]['mode']) => {
+    setOpen(false)
+    button.current?.focus()
+    if (mode === 'fixed') {
+      const view = framing()
+      if (!view) return
+      onAct(() => api.call('setScreenCamera', { campaignId, camera: { mode: 'fixed', view } }))
+      setTip(true)
+      return
+    }
+    setTip(false)
+    onAct(() => api.call('setScreenCamera', { campaignId, camera: { mode } }))
   }
   return (
-    <fieldset className={styles.segments} disabled={disabled} data-tour="mesa-camara">
-      <legend className={styles.hidden}>{t('tabletop.camera')}</legend>
-      <label className={styles.segment}>
-        <input
-          type="radio"
-          name={name}
-          checked={mode === 'follow'}
-          onChange={() => onAct(() => api.call('setScreenCamera', { campaignId, camera: { mode: 'follow' } }))}
-        />
-        {t('tabletop.follow')}
-      </label>
-      <label className={styles.segment}>
-        <input type="radio" name={name} checked={fixed} onChange={fixHere} />
-        {t('tabletop.fixed')}
-      </label>
-      <label className={styles.segment}>
-        <input
-          type="radio"
-          name={name}
-          checked={mode === 'group'}
-          onChange={() => onAct(() => api.call('setScreenCamera', { campaignId, camera: { mode: 'group' } }))}
-        />
-        {t('tabletop.group')}
-      </label>
-    </fieldset>
+    <span className={styles.cameraWrap}>
+      <button
+        ref={button}
+        type="button"
+        className={styles.cameraButton}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        disabled={disabled}
+        data-tour="mesa-camara"
+        onClick={() => setOpen(!open)}
+      >
+        <Tv aria-hidden="true" size={15} />
+        <span className={styles.cameraLabel}>{t('tabletop.tv')}</span>
+        <b>{current.label}</b>
+        <ChevronDown aria-hidden="true" size={14} />
+      </button>
+      {open && (
+        <div
+          ref={menu}
+          role="menu"
+          aria-label={t('tabletop.camera')}
+          className={styles.cameraMenu}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') {
+              event.preventDefault()
+              event.stopPropagation()
+              close()
+              button.current?.focus()
+              return
+            }
+            if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return
+            event.preventDefault()
+            const items = [...(menu.current?.querySelectorAll<HTMLElement>('[role="menuitemradio"]') ?? [])]
+            const at = items.indexOf(document.activeElement as HTMLElement)
+            items[(at + (event.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length]?.focus()
+          }}
+        >
+          {options.map(({ mode, label, hint, Icon }) => (
+            <button
+              key={mode}
+              type="button"
+              role="menuitemradio"
+              aria-checked={camera.mode === mode}
+              tabIndex={camera.mode === mode ? 0 : -1}
+              onClick={() => choose(mode)}
+            >
+              <Icon aria-hidden="true" size={16} />
+              <span>
+                <b>{label}</b>
+                <small>{hint}</small>
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+      {tip && camera.mode === 'fixed' && (
+        <p className={styles.cameraTip} role="status">
+          {t('tabletop.fixedTip')}
+        </p>
+      )}
+    </span>
   )
 }
 
@@ -1401,7 +1557,7 @@ function SceneMenu({ worldId, open, onOpen }: { worldId: string; open: SceneView
                   }}
                 >
                   {scene.name}
-                  <span>{scene.pageTitle}</span>
+                  {scene.pageTitle && <span>{scene.pageTitle}</span>}
                 </button>
               </li>
             ))}
@@ -1414,17 +1570,56 @@ function SceneMenu({ worldId, open, onOpen }: { worldId: string; open: SceneView
   )
 }
 
+/**
+ * Su página (la de una página) o su editor (la suelta, ADR-0020), en una ventana de la Mesa: sin irse de la campaña
+ */
 function PageLink({ worldId, scene }: { worldId: string; scene: SceneView }) {
   const { t } = useTranslation()
+  const windows = useWindows()
+  const label = t(scene.pageId ? 'tabletop.goToPage' : 'tabletop.sceneSettings')
+  if (!windows)
+    return scene.pageId ? (
+      <Link
+        to="/mundos/$worldId/wiki/$pageId"
+        params={{ worldId, pageId: scene.pageId }}
+        search={scene.tabId ? { pestana: scene.tabId } : {}}
+        className={styles.pageLink}
+      >
+        {label}
+      </Link>
+    ) : null
   return (
-    <Link
-      to="/mundos/$worldId/wiki/$pageId"
-      params={{ worldId, pageId: scene.pageId }}
-      search={{ pestana: scene.tabId }}
-      className={styles.pageLink}
-    >
-      {t('tabletop.goToPage')}
-    </Link>
+    <button type="button" className={styles.pageLink} onClick={() => windows.open(sceneWindow(worldId, scene))}>
+      {label}
+    </button>
+  )
+}
+
+/**
+ * Una escena sin mapa, en la Mesa: se sube o se elige aquí mismo (sin irse a la página) y sus ajustes (la rejilla), en
+ * una ventana
+ */
+function NoMap({
+  worldId,
+  scene,
+  onChoose
+}: {
+  worldId: string
+  scene: SceneView
+  onChoose: (choice: SceneChoice) => void
+}) {
+  const { t } = useTranslation()
+  const windows = useWindows()
+  return (
+    <div className={`${styles.notice} ${styles.noMap}`}>
+      <p>{t('tabletop.noMap')}</p>
+      <SourcePicker worldId={worldId} value={null} onChange={onChoose} />
+      {windows && (
+        <button type="button" className={styles.pageLink} onClick={() => windows.open(sceneWindow(worldId, scene))}>
+          {t('tabletop.sceneSettings')}
+        </button>
+      )}
+    </div>
   )
 }
 
@@ -1463,4 +1658,26 @@ function TokenList({
       ))}
     </ul>
   )
+}
+
+/** Pedir la hoja de una ficha (doble clic, «Abrir hoja»): se abre en su ventana */
+function SheetOpener({
+  token,
+  campaignId,
+  systemId,
+  onDone
+}: {
+  token: TokenView
+  campaignId: string
+  systemId: string | null
+  onDone: () => void
+}) {
+  const windows = useWindows()
+  useEffect(() => {
+    windows?.open(
+      sheetWindow({ kind: token.actor.kind, id: token.actor.id, name: token.actor.name }, campaignId, systemId)
+    )
+    onDone()
+  }, [windows, token, campaignId, systemId, onDone])
+  return null
 }

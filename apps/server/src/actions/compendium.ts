@@ -33,6 +33,7 @@ import {
   normalizeChoices,
   type System,
   searchContent,
+  summarizeBooks,
   TABLE_DEPTH,
   TABLE_TYPE,
   type TableEntry,
@@ -183,6 +184,10 @@ export const compendiumActions = [
     // Los tipos que la campaña oculta a sus jugadores no salen (ni en sus secciones)
     const shownTypes = (types: CompendiumType[]) => types.filter((type) => !hidden.includes(type.key))
     const say = (text: Text | undefined) => textOf(text, language)
+    // Cuánto trae cada libro (lo pendiente de revisar no cuenta) y cuánto deja fuera la campaña
+    const books = new Map(
+      summarizeBooks(document, entries, { excluded: choices.excluded ?? [], language }).map((b) => [b.key, b])
+    )
     const typeView = (type: CompendiumType) => ({
       ...type,
       label: say(type.label),
@@ -206,13 +211,21 @@ export const compendiumActions = [
       language,
       sources: (document.sources ?? [])
         .filter((s) => choices.sources.includes(s.key))
-        .map((s) => ({
-          key: s.key,
-          name: say(s.name),
-          edition: s.edition ?? null,
-          license: s.license,
-          attribution: say(s.attribution)
-        })),
+        .map((s) => {
+          const summary = books.get(s.key)
+          return {
+            key: s.key,
+            name: say(s.name),
+            edition: s.edition ?? null,
+            license: s.license,
+            attribution: say(s.attribution),
+            description: s.description ? say(s.description) : null,
+            cover: s.cover ?? null,
+            requires: s.requires ?? [],
+            count: (summary?.count ?? 0) - (summary?.excluded ?? 0),
+            excluded: summary?.excluded ?? 0
+          }
+        }),
       sections: compendiumSections(document, shownTypes(compendiumTypes(document, entries, choices)))
         .filter((section) => section.types.length > 0)
         .map((section) => ({
@@ -234,15 +247,18 @@ export const compendiumActions = [
     }
   }),
 
-  implement(searchCampaignContent, async (ctx, { campaignId, layer, ...given }) => {
+  implement(searchCampaignContent, async (ctx, { campaignId, layer, source, ...given }) => {
     const found = await campaignSystem(ctx, campaignId)
     if (!found) return { items: [], total: 0 }
     const { document, choices, entries: all } = found
     const own = worldKeys(all)
-    // Solo una capa, si se pide: se filtra antes de paginar
-    const entries = layer ? all.filter((e) => own.has(e.key) === (layer === 'world')) : all
+    // Solo una capa o un libro, si se pide: se filtra antes de paginar
+    const entries = all.filter(
+      (e) => (!layer || own.has(e.key) === (layer === 'world')) && (!source || e.source === source)
+    )
     const result = searchContent(document, entries, {
       sources: choices.sources,
+      excluded: choices.excluded ?? [],
       duplicates: choices.duplicates,
       language: choices.language,
       ...given
@@ -271,6 +287,7 @@ export const compendiumActions = [
     const result = browseContent(document, items, {
       type,
       sources: choices.sources,
+      excluded: choices.excluded ?? [],
       duplicates: choices.duplicates,
       language: choices.language
     })

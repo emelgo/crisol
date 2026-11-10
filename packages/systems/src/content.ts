@@ -12,6 +12,8 @@ export interface Versioned {
   key: string
   source: string | null
   concept?: string | null | undefined
+  /** Pendiente de revisar (lo propuso la IA): no se ve en ningún sitio hasta aceptarlo */
+  review?: unknown
 }
 
 export interface Seen<T> {
@@ -36,10 +38,14 @@ const groupOf = (item: Versioned) => (item.concept ? `${item.type}:${item.concep
 export function visibleContent<T extends Versioned>(
   system: System,
   content: readonly T[],
-  choices: Pick<Choices, 'sources' | 'duplicates'>
+  choices: Pick<Choices, 'sources' | 'duplicates' | 'excluded'>
 ): Seen<T>[] {
   const active = new Set(choices.sources)
-  const shown = content.filter((item) => item.source === null || active.has(item.source))
+  // Lo excluido solo cuenta para lo de un libro: lo del mundo (sin fuente) sale siempre
+  const excluded = new Set(choices.excluded ?? [])
+  const shown = content.filter(
+    (item) => !item.review && (item.source === null || (active.has(item.source) && !excluded.has(item.key)))
+  )
   const groups = new Map<string, T[]>()
   for (const item of shown) {
     const group = groups.get(groupOf(item)) ?? []
@@ -83,6 +89,8 @@ export function resolveConcept<T extends Versioned>(
 export interface ContentEntry extends Versioned {
   name: unknown
   automation?: string | null
+  /** Su página en su libro, si se sabe (ADR-0021) */
+  page?: number | null
 }
 
 export interface ContentHit {
@@ -94,6 +102,8 @@ export interface ContentHit {
   concept: string | null
   legacy: boolean
   automation: string | null
+  /** Su página en su libro, si se sabe */
+  page?: number | null
 }
 
 /** Para comparar nombres: sin mayúsculas ni tildes */
@@ -123,6 +133,7 @@ export function searchContent(
     query = '',
     type,
     sources: only,
+    excluded,
     editions,
     duplicates = 'both',
     language = 'es',
@@ -133,6 +144,8 @@ export function searchContent(
     type?: string
     /** Solo de estas fuentes (las que eligió una campaña) */
     sources?: readonly string[]
+    /** Lo que la campaña deja fuera de sus libros */
+    excluded?: readonly string[]
     editions?: readonly string[]
     duplicates?: Choices['duplicates']
     language?: 'es' | 'en'
@@ -144,7 +157,7 @@ export function searchContent(
     .filter((s) => !only || only.includes(s.key))
     .filter((s) => !editions || (s.edition !== undefined && editions.includes(s.edition)))
     .map((s) => s.key)
-  const seen = visibleContent(system, entries, { sources, duplicates })
+  const seen = visibleContent(system, entries, { sources, duplicates, excluded: excluded ? [...excluded] : [] })
   const wanted = fold(query)
   const ranked: { hit: ContentHit; rank: number }[] = []
   for (const { item, legacy } of seen) {
@@ -171,7 +184,8 @@ export function searchContent(
         edition: editionOf(system, item) ?? null,
         concept: item.concept ?? null,
         legacy,
-        automation: item.automation ?? null
+        automation: item.automation ?? null,
+        page: item.page ?? null
       }
     })
   }

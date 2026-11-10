@@ -22,6 +22,7 @@ import type { LibraryJobs } from './library/jobs.ts'
 import { registerMcpRoutes } from './mcp/routes.ts'
 import { createRealtime, type Realtime } from './realtime/hub.ts'
 import { type RealtimeRouteOptions, registerRealtimeRoutes } from './realtime/routes.ts'
+import { createTablePresence } from './table/presence.ts'
 import { loadTable } from './table/projection.ts'
 import { createTableRooms, type LoadTable, type TableRooms } from './table/rooms.ts'
 import { registerTableRoutes } from './table/routes.ts'
@@ -142,6 +143,7 @@ export function buildApp(deps: AppDeps): FastifyInstance {
       realtime,
       collab,
       table,
+      presence: createTablePresence(),
       vision,
       actions: implementationsByName,
       ...(deps.storage ? { storage: deps.storage } : {}),

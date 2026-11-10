@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, type Page, test } from '@playwright/test'
-import { campaignLink, import5e, newPlayer, settled } from './ayudas.ts'
+import { campaignLink, campaignPath, import5e, newPlayer, settled } from './ayudas.ts'
 
 const POCION = 'pocion_de_curacion_2024'
 
@@ -21,8 +21,8 @@ test('el grupo: la jugadora coge una poción para su personaje y la usa; el más
 }) => {
   test.slow()
   const link = await campaignLink(page)
-  const campaignUrl = new URL(page.url()).pathname
-  const campaignId = campaignUrl.split('/campanas/')[1] ?? ''
+  const campaignUrl = campaignPath(page)
+  const campaignId = campaignUrl.split('/campanas/')[1]?.split('/')[0] ?? ''
   const systemId = await import5e(page)
   expect(
     (await page.request.post('/api/actions/updateCampaign', { data: { campaignId, system: systemId } })).status()
@@ -47,9 +47,9 @@ test('el grupo: la jugadora coge una poción para su personaje y la usa; el más
     await page.request.post('/api/actions/createCharacter', { data: { campaignId, name } })
 
   // En «Grupo», la poción: una para Thora
-  await player.getByRole('navigation', { name: 'Secciones' }).getByRole('link', { name: 'Grupo' }).click()
+  await player.goto(`${campaignPath(player)}/grupo`)
   await expect(player.getByRole('heading', { level: 1, name: 'Grupo' })).toBeVisible()
-  await expect(player.getByText('Poción de curación', { exact: true })).toBeVisible()
+  await expect(player.getByText('Poción de curación', { exact: true }).first()).toBeVisible()
   await expect(player.getByText('×3')).toBeVisible()
   await player.getByRole('button', { name: 'Mover «Poción de curación»' }).click()
   const menu = player.getByRole('group', { name: 'Mover «Poción de curación»' })
@@ -64,13 +64,12 @@ test('el grupo: la jugadora coge una poción para su personaje y la usa; el más
   // En su hoja la lleva; al usarla, se va
   await player.goto(`${campaignUrl}/personajes/${thora}?vista=ficha`)
   await player.getByRole('tab', { name: 'Inventario' }).click()
-  await expect(player.getByText('Poción de curación', { exact: true })).toBeVisible()
-  await player.getByRole('button', { name: 'Del grupo' }).click()
+  await expect(player.getByText('Poción de curación', { exact: true }).first()).toBeVisible()
+  // «Lo mío» y, debajo, «Del grupo» (con las dos que quedan), a la vez
   await expect(player.getByText('×2')).toBeVisible()
   await player.screenshot({ path: test.info().outputPath('grupo-hoja.png'), fullPage: false })
-  await player.getByRole('button', { name: 'Mío' }).click()
-  // La papelera pide un segundo toque
-  await player.getByRole('button', { name: 'Quitar Poción de curación' }).click()
+  // La papelera pide un segundo toque (la suya, la primera: «Lo mío» va antes)
+  await player.getByRole('button', { name: 'Quitar Poción de curación' }).first().click()
   await player.getByRole('button', { name: '¿Quitar Poción de curación? Pulsa otra vez' }).click()
   await expect
     .poll(async () => {

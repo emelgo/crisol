@@ -442,6 +442,20 @@
       "when": 1794074703602,
       "tag": "0062_escena_quitada_conserva",
       "breakpoints": true
+    },
+    {
+      "idx": 63,
+      "version": "7",
+      "when": 1794241868196,
+      "tag": "0063_escenas_sueltas",
+      "breakpoints": true
+    },
+    {
+      "idx": 64,
+      "version": "7",
+      "when": 1794260205101,
+      "tag": "0064_revisar_contenido",
+      "breakpoints": true
     }
   ]
 }

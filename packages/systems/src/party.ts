@@ -29,6 +29,8 @@ export interface PartyItem {
   container: string
   /** Lo gastado de sus recursos (una varita con cargas gastadas), si vino así de un personaje: viaja con él */
   uses?: Record<string, number>
+  /** Quién lo puso en el grupo: el personaje de quien vino (o el de quien lo escribió) */
+  addedBy?: string
 }
 
 export interface Party {
@@ -113,7 +115,13 @@ export function takeFromParty(party: Party, itemId: string, quantity: number): {
 /** Pone en un contenedor del grupo: lo del compendio se junta con lo igual (misma clave, sin nota) */
 export function putInParty(
   party: Party,
-  thing: { key: string | null; name: string; note?: string | undefined; uses?: Record<string, number> | undefined },
+  thing: {
+    key: string | null
+    name: string
+    note?: string | undefined
+    uses?: Record<string, number> | undefined
+    addedBy?: string | undefined
+  },
   quantity: number,
   container: string,
   newId: () => string
@@ -142,7 +150,8 @@ export function putInParty(
     ...(thing.note?.trim() ? { note: thing.note.trim().slice(0, 500) } : {}),
     quantity,
     container,
-    ...(thing.uses && Object.keys(thing.uses).length > 0 ? { uses: thing.uses } : {})
+    ...(thing.uses && Object.keys(thing.uses).length > 0 ? { uses: thing.uses } : {}),
+    ...(thing.addedBy?.trim() ? { addedBy: thing.addedBy.trim().slice(0, 200) } : {})
   }
   return { ...party, items: [...party.items, item] }
 }

@@ -2,19 +2,23 @@ import AxeBuilder from '@axe-core/playwright'
 import { connect, schema } from '@crisol/db'
 import { resetDatabase } from '@crisol/db/testing'
 import { issueBootstrap } from '@crisol/server/bootstrap'
+import { exampleFile } from '@crisol/systems/examples'
 import { expect, test } from '@playwright/test'
 import { e2eDatabaseUrl } from '../servidor.ts'
 import {
   campaignLink,
+  campaignPath,
   closeWindow,
   createCampaign,
   createWorld,
   fillNewAccount,
   newPlayer,
+  openCampaign,
   openProfile,
   openSettings,
   openWindow,
   openWorld,
+  settled,
   skipTours
 } from './ayudas.ts'
 
@@ -45,13 +49,16 @@ test('arranque, perfil, mundos y sus ajustes, campañas, avisos, historial, pape
     await resetDatabase(conn.sql)
     const { secret } = await issueBootstrap(conn.db, { organizationName: 'Crisol de Enrique' })
     const check = async () => {
-      // Lo que esté a medio animar (entrar en un mundo) se mide ya quieto
+      // Lo que esté a medio animar (entrar en un mundo) se mide ya quieto; el fondo de las pantallas de cuenta, que no
+      // para nunca (y es de adorno), no cuenta
       await page.waitForFunction(() =>
         document
           .getAnimations()
           .every(
             (animation) =>
-              animation.playState !== 'running' || animation.effect?.getTiming().iterations === Number.POSITIVE_INFINITY
+              animation.playState !== 'running' ||
+              animation.effect?.getTiming().iterations === Number.POSITIVE_INFINITY ||
+              ((animation.effect as KeyframeEffect | null)?.target as Element | null)?.closest('[data-fondo]')
           )
       )
       for (const colorScheme of ['light', 'dark'] as const) {
@@ -85,7 +92,7 @@ test('arranque, perfil, mundos y sus ajustes, campañas, avisos, historial, pape
     await check()
     await createCampaign(page, 'La Marca')
     await check()
-    await page.getByRole('link', { name: 'La Marca', exact: true }).click()
+    await openCampaign(page, 'La Marca', 'campana')
     await expect(page.getByLabel('Enlace de invitación')).toBeVisible()
     const invitationLink = await page.getByLabel('Enlace de invitación').inputValue()
     await page.getByRole('button', { name: 'Nuevo enlace' }).click()
@@ -160,17 +167,85 @@ test('el móvil de la jugadora (su campaña, el menú de la llama, sus páginas 
     }
   }
   await check()
-  // El menú de la llama: enlaces a las secciones de su campaña
-  await ana.getByRole('button', { name: 'Menú' }).click()
-  const menu = ana.getByRole('dialog', { name: 'Eana' })
-  await expect(menu.getByRole('link', { name: 'Compendio' })).toBeVisible()
+  // Los dados, en su hoja desde abajo
+  await ana.locator('[data-tour="dados"]').click()
+  await ana.getByRole('dialog', { name: 'Dados' }).getByRole('button', { name: 'Añadir un d20' }).click()
   await check()
-  await menu.getByRole('link', { name: 'Eana', exact: true }).click()
-  await expect(menu).toHaveCount(0)
+  await ana.getByRole('button', { name: 'Cerrar los dados' }).click()
+  // La campaña va sola (sin la barra ni el menú de la llama): sus páginas y el compendio, por su dirección
+  const path = campaignPath(ana)
+  await ana.goto(`${path}/paginas`)
+  await expect(ana.getByRole('main')).toBeVisible()
+  await settled(ana)
   await check()
-  await ana.getByRole('button', { name: 'Menú' }).click()
-  await ana.getByRole('dialog', { name: 'Eana' }).getByRole('link', { name: 'Compendio' }).click()
+  await ana.goto(`${path}/compendio`)
   await expect(ana.getByRole('heading', { level: 1, name: 'Compendio' })).toBeVisible()
   await check()
   await context.close()
+})
+
+test('el espacio de la campaña y los libros (ADR-0021), en los dos temas @a11y', async ({ page }) => {
+  test.slow()
+  await campaignLink(page)
+  const path = campaignPath(page)
+  const campaignId = path.split('/campanas/')[1] ?? ''
+  const imported = await page.request.post('/api/actions/importSystem', { data: { file: exampleFile('5e') } })
+  const five = (await imported.json()).system.id as string
+  await page.request.post('/api/actions/updateCampaign', { data: { campaignId, system: five } })
+  const made = await page.request.post('/api/actions/createBook', {
+    data: { systemId: five, version: 1, name: 'Grimorio' }
+  })
+  expect(made.status()).toBe(200)
+  await page.request.post('/api/actions/proposeContent', {
+    data: {
+      systemId: five,
+      source: 'grimorio',
+      items: [
+        {
+          type: 'conjuro',
+          key: 'lanza_de_ceniza',
+          data: { name: { es: 'Lanza de ceniza' }, nivel: 2, escuela: 'evocacion', descripcion: { es: 'Brasas.' } },
+          review: { page: 88, excerpt: 'Lanza de ceniza\nEvocación de nivel 2', notes: ['Sin alcance'] }
+        }
+      ]
+    }
+  })
+  const check = async (what: string) => {
+    for (const colorScheme of ['light', 'dark'] as const) {
+      await page.emulateMedia({ colorScheme })
+      const { violations } = await new AxeBuilder({ page }).withTags(WCAG).analyze()
+      const serious = violations.filter((v) => v.impact === 'critical' || v.impact === 'serious')
+      expect(serious.map((v) => `${what} ${colorScheme} ${v.id}: ${v.help}`)).toEqual([])
+    }
+  }
+  await page.goto(path)
+  await expect(page.getByRole('heading', { level: 1, name: 'La Marca' })).toBeVisible()
+  await settled(page)
+  await check('el Inicio')
+  await page.goto(`${path}/libros`)
+  await expect(page.getByRole('heading', { level: 1, name: 'Libros' })).toBeVisible()
+  await check('los libros')
+  await page.getByRole('button', { name: 'Elegir contenido' }).first().click()
+  await expect(page.getByRole('dialog', { name: /qué entra/ })).toBeVisible()
+  await settled(page)
+  await check('elegir contenido')
+  await page.keyboard.press('Escape')
+  await page.goto(`${path}/personajes`)
+  await expect(page.getByRole('heading', { level: 1, name: 'Mesa' })).toBeVisible()
+  await check('la sección Mesa')
+  await page.goto(`/sistemas/${five}`)
+  await expect(page.getByRole('heading', { level: 1, name: '5e' })).toBeVisible()
+  await check('el sistema')
+  await page.getByRole('button', { name: 'Libro nuevo' }).click()
+  await expect(page.getByRole('dialog', { name: 'Libro nuevo en 5e' })).toBeVisible()
+  await settled(page)
+  await check('libro nuevo')
+  await page.keyboard.press('Escape')
+  await page.goto(`/sistemas/${five}/libros/grimorio/revisar`)
+  await expect(page.getByRole('heading', { level: 1, name: 'Revisar lo que trajo la IA' })).toBeVisible()
+  await check('la revisión')
+  await page.goto(`${path}/compendio?libro=srd521`)
+  await expect(page.getByRole('heading', { level: 1, name: 'Compendio' })).toBeVisible()
+  await settled(page)
+  await check('el compendio por libro')
 })

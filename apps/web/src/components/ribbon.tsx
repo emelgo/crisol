@@ -1,9 +1,8 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
 import {
-  Backpack,
   BookOpen,
-  Eye,
+  Flag,
   Folder,
   Globe,
   Hash,
@@ -11,16 +10,13 @@ import {
   House,
   Layers,
   LayoutTemplate,
-  Library,
   LogOut,
   type LucideIcon,
   ScrollText,
   Settings,
   Shield,
-  Swords,
   Trash2,
-  User,
-  Users
+  User
 } from 'lucide-react'
 import { type CSSProperties, type MouseEvent, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -316,9 +312,7 @@ export function Ribbon() {
                 worldId={panelsWorld}
                 campaignId={panelsCampaign}
                 name={campaign?.name ?? ''}
-                worldName={world?.name ?? ''}
                 master={campaignRole === 'master'}
-                ownsWiki={master}
               />
             ) : (
               <WorldPanels worldId={panelsWorld} worldName={world?.name ?? ''} master={panelsMaster} />
@@ -328,6 +322,7 @@ export function Ribbon() {
       </nav>
       {/* Abajo y fijo: lo de arriba puede crecer o no caber (al entrar en un mundo) sin moverlo */}
       <div className={styles.foot}>
+        {/* También en la campaña: el historial y la papelera de su mundo */}
         {isOwner && (
           <>
             {/* Se abren encima, sin dejar lo que se está viendo */}
@@ -354,6 +349,18 @@ export function Ribbon() {
               <Label icon={Trash2} text={t('ribbon.trash')} />
             </button>
           </>
+        )}
+        {/* Los ajustes de la campaña: se abren encima (ADR-0021) */}
+        {panelsCampaign && campaignRole === 'master' && (
+          <button
+            type="button"
+            className={styles.item}
+            aria-haspopup="dialog"
+            data-tour="barra-ajustes-campana"
+            onClick={(event) => windows?.open('campana', event.currentTarget)}
+          >
+            <Label icon={Settings} text={t('ribbon.campaignSettings')} />
+          </button>
         )}
         <nav className={styles.account} aria-label={t('app.accountNav')}>
           <AccountMenu variant="ribbon" />
@@ -395,160 +402,88 @@ function WorldPanels({ worldId, worldName, master }: { worldId: string; worldNam
 }
 
 /**
- * Lo de una campaña, en su propia vista (como un mundo): su inicio (con su nombre), su compendio y los dados, que
- * tiran en ella
+ * Lo de una campaña, en su propio espacio (ADR-0021): ella, con su nombre (su Inicio), Mesa (con sus
+ * personajes), Libros, Compendio y Aventuras; quien juega, sin Libros ni Aventuras. Las páginas del mundo, en la Mesa
+ * (Enrique, 2026-11-10: «en la campaña solo gestionamos las cosas de la campaña»). Los dados tiran en ella
  */
 function CampaignPanels({
   worldId,
   campaignId,
   name,
-  worldName,
-  master,
-  ownsWiki
+  master
 }: {
   worldId: string
   campaignId: string
   name: string
-  /** Las páginas del mundo: quien lo lleva va a ellas; quien juega, a lo que sabe su campaña (ADR-0017) */
-  worldName: string
-  /** Quien la dirige: también lo que está en juego */
   master: boolean
-  ownsWiki: boolean
 }) {
   const { t } = useTranslation()
   const { setCampaign } = useDice()
   useEffect(() => setCampaign(worldId, campaignId), [setCampaign, worldId, campaignId])
+  const params = { worldId, campaignId }
+  type Section = {
+    to:
+      | '/mundos/$worldId/campanas/$campaignId'
+      | '/mundos/$worldId/campanas/$campaignId/personajes'
+      | '/mundos/$worldId/campanas/$campaignId/libros'
+      | '/mundos/$worldId/campanas/$campaignId/compendio'
+      | '/mundos/$worldId/campanas/$campaignId/aventuras'
+    icon: LucideIcon
+    text: string
+    tour: string
+    exact?: boolean
+    master?: boolean
+  }
+  const sections: Section[] = [
+    // La campaña, con su nombre (como el mundo en la suya): su Inicio
+    { to: '/mundos/$worldId/campanas/$campaignId', icon: Shield, text: name, tour: 'barra-inicio', exact: true },
+    // La Mesa: sus personajes, quién está y abrirla en otra pestaña (Enrique, 2026-11-10: «personajes y mesa podemos
+    // unirlo dentro de la campaña y luego se abre la mesa en otra pestaña»)
+    {
+      to: '/mundos/$worldId/campanas/$campaignId/personajes',
+      icon: Layers,
+      text: t('ribbon.table'),
+      tour: 'barra-mesa'
+    },
+    {
+      to: '/mundos/$worldId/campanas/$campaignId/libros',
+      icon: BookOpen,
+      text: t('ribbon.books'),
+      tour: 'barra-libros',
+      master: true
+    },
+    {
+      to: '/mundos/$worldId/campanas/$campaignId/compendio',
+      icon: ScrollText,
+      text: t('ribbon.compendium'),
+      tour: 'barra-compendio'
+    },
+    {
+      to: '/mundos/$worldId/campanas/$campaignId/aventuras',
+      icon: Flag,
+      text: t('ribbon.adventures'),
+      tour: 'barra-aventuras',
+      master: true
+    }
+  ]
   return (
     <>
-      <Link
-        to="/mundos/$worldId/campanas/$campaignId"
-        params={{ worldId, campaignId }}
-        activeOptions={{ exact: true }}
-        className={styles.item}
-        viewTransition={SECTION}
-        data-tour="barra-campana"
-      >
-        <Label icon={Shield} text={name} />
-      </Link>
-      {ownsWiki ? (
-        <Link to="/mundos/$worldId/wiki" params={{ worldId }} className={styles.item} data-tour="barra-paginas">
-          <Label icon={Globe} text={worldName} />
-        </Link>
-      ) : (
-        <Link
-          to="/mundos/$worldId/campanas/$campaignId/paginas"
-          params={{ worldId, campaignId }}
-          className={styles.item}
-          viewTransition={SECTION}
-          data-tour="barra-paginas"
-        >
-          <NewsLabel worldId={worldId} campaignId={campaignId} text={worldName} />
-        </Link>
-      )}
-      <Link
-        to="/mundos/$worldId/campanas/$campaignId/personajes"
-        params={{ worldId, campaignId }}
-        className={styles.item}
-        viewTransition={SECTION}
-        data-tour="barra-personajes"
-      >
-        <Label icon={Users} text={t('ribbon.characters')} />
-      </Link>
-      <Link
-        to="/mundos/$worldId/campanas/$campaignId/compendio"
-        params={{ worldId, campaignId }}
-        className={styles.item}
-        viewTransition={SECTION}
-        data-tour="barra-compendio"
-      >
-        <Label icon={BookOpen} text={t('ribbon.compendium')} />
-      </Link>
-      <Link
-        to="/mundos/$worldId/campanas/$campaignId/grupo"
-        params={{ worldId, campaignId }}
-        className={styles.item}
-        viewTransition={SECTION}
-        data-tour="barra-grupo"
-      >
-        <Label icon={Backpack} text={t('ribbon.party')} />
-      </Link>
-      <Link
-        to="/mundos/$worldId/campanas/$campaignId/en-juego"
-        params={{ worldId, campaignId }}
-        className={styles.item}
-        viewTransition={SECTION}
-        data-tour="barra-en-juego"
-      >
-        <Label icon={Swords} text={t('ribbon.inPlay')} />
-      </Link>
-      {/* La mesa (docs/specs/escenas.md): del máster */}
-      {master && (
-        <Link
-          to="/mundos/$worldId/campanas/$campaignId/mesa"
-          params={{ worldId, campaignId }}
-          className={styles.item}
-          viewTransition={SECTION}
-          data-tour="barra-mesa"
-        >
-          <Label icon={Layers} text={t('ribbon.table')} />
-        </Link>
-      )}
-      {master && <RevealedButton />}
-      {master && (
-        <Link
-          to="/mundos/$worldId/campanas/$campaignId/biblioteca"
-          params={{ worldId, campaignId }}
-          className={styles.item}
-          viewTransition={SECTION}
-          data-tour="barra-biblioteca"
-        >
-          <Label icon={Library} text={t('ribbon.library')} />
-        </Link>
-      )}
+      {sections
+        .filter((section) => master || !section.master)
+        .map((section) => (
+          <Link
+            key={section.to}
+            to={section.to}
+            params={params}
+            activeOptions={{ exact: section.exact ?? false }}
+            className={styles.item}
+            viewTransition={SECTION}
+            data-tour={section.tour}
+          >
+            <Label icon={section.icon} text={section.text} />
+          </Link>
+        ))}
     </>
-  )
-}
-
-/** Las páginas del mundo de quien juega, con cuántas novedades tiene (lo revelado que aún no ha abierto) */
-function NewsLabel({ worldId, campaignId, text }: { worldId: string; campaignId: string; text: string }) {
-  const { t } = useTranslation()
-  const api = useApi()
-  const count =
-    useQuery({
-      queryKey: ['pages', worldId, 'player', campaignId, null, 'news'],
-      queryFn: () => api.call('listNews', { campaignId })
-    }).data?.news.length ?? 0
-  return (
-    <>
-      <span className={styles.badged}>
-        <Globe aria-hidden="true" size={20} strokeWidth={1.75} />
-        {count > 0 && (
-          <span aria-hidden="true" className={styles.badge}>
-            {count}
-          </span>
-        )}
-      </span>
-      <span className={styles.text}>{text}</span>
-      {count > 0 && <span className={styles.hidden}>{t('playerPages.newCount', { count })}</span>}
-    </>
-  )
-}
-
-/** «Revelado»: abre «Lo que sabe el grupo» de la campaña como ventana (docs/specs/revelar.md) */
-function RevealedButton() {
-  const { t } = useTranslation()
-  const windows = useWindow()
-  return (
-    <button
-      type="button"
-      className={styles.item}
-      aria-haspopup="dialog"
-      aria-pressed={windows?.opened === 'revelado'}
-      data-tour="barra-revelado"
-      onClick={(event) => windows?.open('revelado', event.currentTarget)}
-    >
-      <Label icon={Eye} text={t('ribbon.revealed')} />
-    </button>
   )
 }
 
@@ -674,46 +609,22 @@ function MobileMenu({
             href: `/mundos/${world.id}/campanas/${campaign.id}`,
             run: go(`/mundos/${world.id}/campanas/${campaign.id}`)
           },
+          // Como en el escritorio (ADR-0021): la campaña, la Mesa (con sus personajes) y el compendio
           {
-            key: 'paginas',
-            icon: Globe,
-            text: world.name,
-            current: path.startsWith(`/mundos/${world.id}/campanas/${campaign.id}/paginas`),
-            href: master ? `/mundos/${world.id}/wiki` : `/mundos/${world.id}/campanas/${campaign.id}/paginas`,
-            run: go(master ? `/mundos/${world.id}/wiki` : `/mundos/${world.id}/campanas/${campaign.id}/paginas`)
-          },
-          {
-            key: 'personajes',
-            icon: Users,
-            text: t('ribbon.characters'),
+            key: 'mesa',
+            icon: Layers,
+            text: t('ribbon.table'),
             current: path.startsWith(`/mundos/${world.id}/campanas/${campaign.id}/personajes`),
             href: `/mundos/${world.id}/campanas/${campaign.id}/personajes`,
             run: go(`/mundos/${world.id}/campanas/${campaign.id}/personajes`)
           },
           {
             key: 'compendio',
-            icon: BookOpen,
+            icon: ScrollText,
             text: t('ribbon.compendium'),
             current: path.startsWith(`/mundos/${world.id}/campanas/${campaign.id}/compendio`),
             href: `/mundos/${world.id}/campanas/${campaign.id}/compendio`,
             run: go(`/mundos/${world.id}/campanas/${campaign.id}/compendio`)
-          },
-          {
-            key: 'grupo',
-            icon: Backpack,
-            text: t('ribbon.party'),
-            current: path.startsWith(`/mundos/${world.id}/campanas/${campaign.id}/grupo`),
-            href: `/mundos/${world.id}/campanas/${campaign.id}/grupo`,
-            run: go(`/mundos/${world.id}/campanas/${campaign.id}/grupo`)
-          },
-          // Las criaturas en juego: el máster, todas; un jugador, las que están a la vista
-          {
-            key: 'en-juego',
-            icon: Swords,
-            text: t('ribbon.inPlay'),
-            current: path.startsWith(`/mundos/${world.id}/campanas/${campaign.id}/en-juego`),
-            href: `/mundos/${world.id}/campanas/${campaign.id}/en-juego`,
-            run: go(`/mundos/${world.id}/campanas/${campaign.id}/en-juego`)
           }
         ]
       : world

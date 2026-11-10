@@ -264,6 +264,9 @@ function PageFilter({
       )}
       <input
         autoComplete="off"
+        data-1p-ignore
+        data-lpignore="true"
+        data-form-type="other"
         type="search"
         value={value}
         aria-label={label}

@@ -7,7 +7,7 @@ export const MAPS_GUIDE_RESOURCE = 'crisol://mapas/guia'
 export const MAPS_GUIDE = `# Cómo dibujar un mapa de batalla en SVG para Crisol
 
 Un mapa es un SVG que se pinta como imagen (sin scripts, sin nada de fuera: solo referencias de dentro, \`url(#id)\` y
-\`href="#id"\`). Se manda con \`dibujar_escena\` a una escena (una pestaña de tipo scene; créala con \`crear_pestana\`),
+\`href="#id"\`). Se manda con \`dibujar_escena\` a una escena (créala con \`crear_escena\`; o una pestaña de tipo scene de una página, con \`crear_pestana\`),
 y Crisol lo guarda como archivo del mundo; el máster lo trocea al abrirlo en la mesa.
 
 ## El lienzo

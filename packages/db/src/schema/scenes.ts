@@ -113,10 +113,12 @@ export const scenes = pgTable(
     worldId: uuid()
       .notNull()
       .references(() => worlds.id, { onDelete: 'cascade' }),
+    /** La pestaña de la página en la que vive; sin ella, una escena suelta de la Mesa (ADR-0020) */
     tabId: uuid()
-      .notNull()
       .unique()
       .references(() => pageTabs.id, { onDelete: 'cascade' }),
+    /** El nombre de una escena suelta (la de una pestaña lleva el de la pestaña) */
+    name: text(),
     fileId: uuid().references(() => files.id, { onDelete: 'set null' }),
     width: integer(),
     height: integer(),

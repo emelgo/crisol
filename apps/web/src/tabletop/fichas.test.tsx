@@ -2,7 +2,7 @@ import type { Campaign, ScreenView, TableServerMessage, World } from '@crisol/co
 import type { ContentItem, System } from '@crisol/systems'
 import { cinco } from '@crisol/systems/fixtures'
 import { createMemoryHistory } from '@tanstack/react-router'
-import { act, render, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { fakeAccountClient } from '../account/fake.ts'
@@ -126,15 +126,19 @@ describe('las fichas en la mesa', () => {
   it('las criaturas en juego se ponen desde el panel; la ficha se pinta con su rótulo y su vida', async () => {
     const user = userEvent.setup()
     const { api, push } = await renderTable()
-    await user.click(panel().getByRole('tab', { name: 'Criaturas' }))
-    const inPlay = within(await panel().findByRole('list', { name: 'En juego' }))
+    // Las criaturas de la campaña, en Personajes (como los actores en Foundry)
+    await user.click(panel().getByRole('tab', { name: 'Personajes' }))
+    const inPlay = within(await panel().findByRole('list', { name: 'Criaturas' }))
     await user.click(inPlay.getByRole('button', { name: 'Poner en la mesa: Lobo 1' }))
     await waitFor(async () => expect(await tokensOf(api)).toHaveLength(1))
     await push()
     await waitFor(() => expect(drawn.tokens).toHaveLength(1))
     expect(drawn.tokens[0]).toMatchObject({ label: 'L1', faction: 'hostile', life: 1, hidden: false })
-    // Con ficha ya en la escena, sale de «En juego»
-    expect(within(await panel().findByRole('list', { name: 'En juego' })).getAllByRole('listitem')).toHaveLength(1)
+    // Con ficha ya en la escena, sigue en la campaña (con su ojo), pero ya no se pone otra vez
+    const after = within(await panel().findByRole('list', { name: 'Criaturas' }))
+    expect(after.getAllByRole('listitem')).toHaveLength(2)
+    expect(after.queryByRole('button', { name: 'Poner en la mesa: Lobo 1' })).toBeNull()
+    expect(after.getByText(/^En la escena/)).toBeDefined()
   })
 
   it('su tarjeta: dañar, un estado con rondas, ocultarla, su rótulo; y «Guardar como encuentro»', async () => {
@@ -165,12 +169,13 @@ describe('las fichas en la mesa', () => {
     expect(card.getByRole('list', { name: 'Estados' }).textContent).toContain('2 rondas')
     await user.click(card.getByRole('button', { name: 'Quitar Derribado' }))
     await waitFor(async () => expect((await tokensOf(api))[0]?.actor.conditions).toHaveLength(0))
-    // «Abrir hoja»: la de la criatura, al lado, sin salir de la mesa
+    // «Abrir hoja»: la de la criatura, en su ventana sobre la Mesa
     await user.click(card.getByRole('button', { name: 'Abrir hoja' }))
-    const sheet = await screen.findByRole('region', { name: 'Hoja de Lobo 1' })
-    expect(await within(sheet).findByRole('heading', { name: 'Lobo 1' })).toBeDefined()
-    await user.click(within(sheet).getByRole('button', { name: 'Cerrar la hoja' }))
-    expect(screen.queryByRole('region', { name: 'Hoja de Lobo 1' })).toBeNull()
+    const sheet = await screen.findByRole('dialog', { name: 'Lobo 1' })
+    // El título de la ventana y el de la hoja
+    expect(await within(sheet).findAllByRole('heading', { name: 'Lobo 1' })).toHaveLength(2)
+    await user.click(within(sheet).getByRole('button', { name: 'Cerrar Lobo 1' }))
+    expect(screen.queryByRole('dialog', { name: 'Lobo 1' })).toBeNull()
     await user.click(card.getByRole('button', { name: 'Ocultar' }))
     await waitFor(async () => expect((await tokensOf(api))[0]?.hidden).toBe(true))
     await user.click(card.getByRole('button', { name: 'Ajustes de la ficha' }))
@@ -180,7 +185,7 @@ describe('las fichas en la mesa', () => {
     await user.tab()
     await waitFor(async () => expect((await tokensOf(api))[0]?.label).toBe('Alfa'))
     // Con la ficha elegida, el panel guarda un encuentro con ella
-    await user.click(panel().getByRole('tab', { name: 'Encuentros' }))
+    await user.click(panel().getByRole('tab', { name: 'Escenas' }))
     await user.type(panel().getByLabelText('Guardar como encuentro (la elegida)'), 'Manada')
     await user.click(panel().getByRole('button', { name: 'Guardar' }))
     await waitFor(async () =>
@@ -210,15 +215,103 @@ describe('las fichas en la mesa', () => {
         }
       ]
     })
-    await user.click(panel().getByRole('tab', { name: 'Encuentros' }))
+    // Escenas ya está abierta (con los encuentros de antes): se vuelve a ella para verlo
+    await user.click(panel().getByRole('tab', { name: 'Compendio' }))
+    await user.click(panel().getByRole('tab', { name: 'Escenas' }))
     await user.click(await panel().findByRole('button', { name: 'Poner en la mesa: Manada' }))
     await waitFor(async () => expect(await tokensOf(api)).toHaveLength(2))
     const [a, b] = await tokensOf(api)
     expect((b?.x ?? 0) - (a?.x ?? 0)).toBe(100)
     await push()
-    await user.click(screen.getByRole('radio', { name: 'Grupo' }))
+    await user.click(screen.getByRole('button', { name: /^Cámara/ }))
+    await user.click(screen.getByRole('menuitemradio', { name: /^Sigue al grupo/ }))
     await waitFor(async () =>
       expect((await api.client.call('getCampaignTable', { campaignId: CAMPAIGN.id })).camera).toEqual({ mode: 'group' })
+    )
+  })
+})
+
+describe('la pestaña Escenas', () => {
+  it('«En esta escena»: quien está en el mapa, con su vida; se oculta al grupo y se mete en el combate', async () => {
+    const user = userEvent.setup()
+    const { api, scene, wolves, push } = await renderTable()
+    await api.client.call('placeTokens', {
+      campaignId: CAMPAIGN.id,
+      sceneId: scene.id,
+      tokens: wolves.map((wolf, i) => ({ creatureId: wolf.id, x: 100 + i * 100, y: 100 }))
+    })
+    await push()
+    const section = within(await panel().findByRole('region', { name: 'En esta escena' }))
+    expect(section.getAllByRole('listitem')).toHaveLength(2)
+    const [first] = await tokensOf(api)
+    const label = first?.label ?? ''
+    await user.click(section.getByRole('button', { name: `Ocultar ${label} al grupo` }))
+    await waitFor(async () => expect((await tokensOf(api)).find((t) => t.id === first?.id)?.hidden).toBe(true))
+    await push()
+    expect(section.getByRole('button', { name: `Ocultar ${label} al grupo` }).getAttribute('aria-pressed')).toBe('true')
+    // Sin combate no se mete a nadie; con uno, a quien aún no está
+    expect(section.queryByRole('button', { name: `Meter a ${label} en el combate` })).toBeNull()
+    await api.client.call('startCombat', { campaignId: CAMPAIGN.id, tokenIds: [(await tokensOf(api))[1]?.id ?? ''] })
+    await push()
+    await user.click(panel().getByRole('tab', { name: 'Escenas' }))
+    const again = within(await panel().findByRole('region', { name: 'En esta escena' }))
+    await user.click(again.getByRole('button', { name: `Meter a ${label} en el combate` }))
+    await waitFor(async () =>
+      expect((await api.client.call('getCombat', { campaignId: CAMPAIGN.id })).combat?.combatants).toHaveLength(2)
+    )
+  })
+
+  it('«Escena nueva» crea una escena suelta (sin página, ADR-0020) y la abre', async () => {
+    const user = userEvent.setup()
+    const { api } = await renderTable()
+    await user.click(await panel().findByRole('button', { name: 'Escena nueva' }))
+    await user.type(panel().getByLabelText('Nombre de la escena'), 'Puerto Gris')
+    await user.click(panel().getByRole('button', { name: 'Crear' }))
+    await waitFor(async () =>
+      expect((await api.client.call('getCampaignTable', { campaignId: CAMPAIGN.id })).open?.name).toBe('Puerto Gris')
+    )
+    expect(api.pages.map((page) => page.title)).not.toContain('Puerto Gris')
+    expect(api.calls).toContain('createScene')
+  })
+})
+
+describe('la pestaña Compendio', () => {
+  it('siempre en carpetas (sin «Todo»); al buscar, en sus carpetas; una entrada se abre en la ventana del compendio', async () => {
+    const user = userEvent.setup()
+    await renderTable()
+    await user.click(panel().getByRole('tab', { name: 'Compendio' }))
+    // Las carpetas del compendio, sin una lista de todo
+    expect(await panel().findByRole('navigation', { name: 'Biblioteca del compendio' })).toBeDefined()
+    expect(panel().queryByRole('button', { name: 'Todo' })).toBeNull()
+    await user.type(panel().getByRole('searchbox', { name: 'Buscar en el compendio' }), 'lobo')
+    const found = within(await panel().findByRole('navigation', { name: 'Entradas' }))
+    await user.click(found.getByRole('button', { name: 'Lobo' }))
+    expect(await screen.findByRole('dialog', { name: 'Compendio' })).toBeDefined()
+  })
+
+  it('arrastrar una criatura del compendio a Personajes la pone en la campaña', async () => {
+    const user = userEvent.setup()
+    const { api } = await renderTable()
+    await user.click(panel().getByRole('tab', { name: 'Compendio' }))
+    await user.type(panel().getByRole('searchbox', { name: 'Buscar en el compendio' }), 'lobo')
+    const found = within(await panel().findByRole('navigation', { name: 'Entradas' }))
+    const store = new Map<string, string>()
+    const dataTransfer = {
+      get types() {
+        return [...store.keys()]
+      },
+      setData: (type: string, value: string) => store.set(type, value),
+      getData: (type: string) => store.get(type) ?? '',
+      effectAllowed: 'all',
+      dropEffect: 'none'
+    }
+    fireEvent.dragStart(found.getByRole('button', { name: 'Lobo' }).closest('li') as HTMLElement, { dataTransfer })
+    await user.click(panel().getByRole('tab', { name: 'Personajes' }))
+    const creatures = (await panel().findByRole('list', { name: 'Criaturas' })).parentElement as HTMLElement
+    fireEvent.dragOver(creatures, { dataTransfer })
+    fireEvent.drop(creatures, { dataTransfer })
+    await waitFor(async () =>
+      expect((await api.client.call('listInPlay', { campaignId: CAMPAIGN.id })).creatures).toHaveLength(3)
     )
   })
 })
@@ -265,16 +358,12 @@ describe('las fichas en la tele', () => {
     combat: null
   })
 
-  it('«Encuadrar al grupo»: la cámara va a las fichas del grupo', () => {
+  it('«Sigue al grupo»: la cámara va a las fichas del grupo', () => {
     const lia = token({ faction: 'group', x: 1000, y: 600, state: null, name: 'Lía' })
     const view = cameraTarget(screenOf([token({}), lia], { mode: 'group' }), null, { width: 1600, height: 900 })
     expect(view).toMatchObject({ x: 1000, y: 600 })
-    // Sin fichas del grupo, lo de siempre
-    expect(cameraTarget(screenOf([token({})], { mode: 'group' }), { x: 1, y: 2, scale: 1 })).toEqual({
-      x: 1,
-      y: 2,
-      scale: 1
-    })
+    // Sin fichas del grupo, el mapa entero (null: la tele lo encuadra), no la vista del máster
+    expect(cameraTarget(screenOf([token({})], { mode: 'group' }), { x: 1, y: 2, scale: 1 })).toBeNull()
   })
 
   it('el nombre y el estado en palabras de cada ficha; el arrastre del máster, en vivo', async () => {

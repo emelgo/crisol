@@ -9,6 +9,8 @@ const campaignDescription = z.string().trim().max(280)
 /** Lo que una campaña elige de su sistema: sus fuentes, qué se ve de lo repetido, el idioma del contenido y sus ajustes */
 export const systemChoices = z.object({
   sources: z.array(z.string().max(60)).max(50),
+  // Las claves de las entradas de sus libros que deja fuera (ADR-0021); lo que el libro gane después, entra
+  excluded: z.array(z.string().max(100)).max(10_000).optional(),
   // De lo que está en las dos ediciones: solo lo más nuevo o las dos versiones (sin decirlo, solo lo más nuevo)
   duplicates: z.enum(['newest', 'both']).optional(),
   language: z.enum(['es', 'en']),
@@ -97,7 +99,7 @@ export const updateCampaign = defineAction({
   name: 'updateCampaign',
   kind: 'write',
   description:
-    'Cambia una campaña: cómo se ve en su tarjeta (nombre, descripción de una línea, color de los fijos o #rrggbb, que tiñe sutil el contorno, o portada: una imagen de su mundo o común), su sistema de reglas (system) y lo que elige de él (systemChoices: fuentes, idioma del contenido y ajustes). Solo lo que se pase; null quita el color, la portada o el sistema',
+    'Cambia una campaña: cómo se ve en su tarjeta (nombre, descripción de una línea, color de los fijos o #rrggbb, que tiñe sutil el contorno, o portada: una imagen de su mundo o común), su sistema de reglas (system) y lo que elige de él (systemChoices: sus libros —sources—, lo que deja fuera de ellos —excluded, por clave—, idioma del contenido y ajustes). Solo lo que se pase; null quita el color, la portada o el sistema',
   input: z
     .object({
       campaignId: z.uuid(),

@@ -156,7 +156,12 @@ export function partyView(
     }
   }
   visible.subtract(covered)
+  // Lo que ven sus fichas: es lo que se suma a lo explorado (sin visión automática, nada)
   const sighted = visible.clone()
+  // Sin visión automática (un mapa sin muros), como en Foundry sin la visión de las fichas: el grupo lo ve todo, salvo
+  // lo que el máster tape a mano (Enrique: «en la tele no se ve la imagen que estoy compartiendo»). No cuenta como
+  // explorado: lo que se tape luego no queda en gris en la tele
+  if (scene.automatic === false) visible.fill(true)
   visible.union(revealed).subtract(covered)
   const litPolygons = prepared.lit
     .filter((area) => area.cells.intersects(visible))

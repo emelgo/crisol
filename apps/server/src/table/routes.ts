@@ -11,11 +11,12 @@ import { actorFrom, can } from '@crisol/domain'
 import { type FogGrid, hasTile, type TileRef, tilePyramid, tileWorldRect } from '@crisol/tabletop'
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 import { z } from 'zod'
-import { authorizedPage } from '../actions/access.ts'
+import { authorizedPage, authorizedScene } from '../actions/access.ts'
 import { type ActionContext, type ActionEnv, errorCode } from '../actions/context.ts'
 import type { Auth } from '../auth/auth.ts'
 import { TooLargeError } from '../files/storage.ts'
 import { clientIp, toHeaders } from '../http.ts'
+import { tablePresenceChanged } from '../realtime/events.ts'
 import { CLOSE_SESSION_ENDED } from '../realtime/routes.ts'
 import { visionOf } from './projection.ts'
 import type { TableRooms } from './rooms.ts'
@@ -78,6 +79,9 @@ async function readAll(stream: Readable) {
   return new Uint8Array(Buffer.concat(chunks))
 }
 
+/** Lo que se espera para avisar de quién está en la Mesa (juntando los cambios de entre medias) */
+const PRESENCE_MS = 300
+
 export function registerTableRoutes(
   app: FastifyInstance,
   env: ActionEnv & { table: TableRooms },
@@ -126,9 +130,7 @@ export function registerTableRoutes(
     if (!params.success || !env.storage) return reply.code(404).send({ code: 'NOT_FOUND' })
     const { sceneId, ...at } = params.data
     try {
-      const scene = await scenesRepo.findScene(ctx.db, sceneId)
-      await authorizedPage(ctx, 'page.write', scene?.pageId ?? '')
-      if (!scene) return reply.code(404).send({ code: 'NOT_FOUND' })
+      const { scene } = await authorizedScene(ctx, 'page.write', sceneId)
       if (Number(request.headers['content-length'] ?? 0) > MAX_TILE_BYTES) throw new TooLargeError()
       const stored = await env.storage.write(scene.worldId, request.body as Readable, MAX_TILE_BYTES)
       if (!isWebp(stored.head)) {
@@ -150,9 +152,8 @@ export function registerTableRoutes(
     if (!params.success) return reply.code(404).send({ code: 'NOT_FOUND' })
     const { sceneId, ...at } = params.data
     try {
-      const scene = await scenesRepo.findScene(ctx.db, sceneId)
-      await authorizedPage(ctx, 'page.read', scene?.pageId ?? '')
-      return sendTile(reply, scene ? await scenesRepo.findTile(ctx.db, { sceneId, ...at }) : null)
+      await authorizedScene(ctx, 'page.read', sceneId)
+      return sendTile(reply, await scenesRepo.findTile(ctx.db, { sceneId, ...at }))
     } catch (error) {
       return fail(reply, error)
     }
@@ -176,7 +177,8 @@ export function registerTableRoutes(
     return running
   }
 
-  // La pantalla de la tele: solo la escena presentada (sin ocultar), en su versión de ahora, y lo que su vista deja
+  // Lo que ve el grupo (la tele y la Mesa de cada jugador): solo la escena presentada (sin ocultar), en su versión de
+  // ahora, y lo que su vista deja
   app.get('/api/campaigns/:campaignId/screen/tiles/:version/:level/:x/:y', async (request, reply) => {
     const ctx = await contextOf(request)
     if (!ctx) return reply.code(401).send({ code: 'UNAUTHENTICATED' })
@@ -184,7 +186,7 @@ export function registerTableRoutes(
     if (!params.success) return reply.code(404).send({ code: 'NOT_FOUND' })
     const { campaignId, ...at } = params.data
     const campaign = await campaignsRepo.findCampaign(ctx.db, campaignId)
-    if (!campaign || !can(ctx.actor, 'table.manage', { campaignId, worldId: campaign.worldId }))
+    if (!campaign || !can(ctx.actor, 'campaign.read', { campaignId, worldId: campaign.worldId }))
       return reply.code(404).send({ code: 'NOT_FOUND' })
     const mesa = await scenesRepo.campaignTable(ctx.db, campaignId)
     const scene = mesa.presentedSceneId ? await scenesRepo.findScene(ctx.db, mesa.presentedSceneId) : null
@@ -235,6 +237,23 @@ export function registerTableRoutes(
     for (const stop of stops) stop()
   })
   const users = new WeakMap<FastifyRequest, string>()
+  // Quién está en la Mesa: se avisa como mucho una vez por campaña cada poco (entrar, salir o cambiar de pestaña muchas
+  // veces seguidas no inunda a la campaña de avisos ni de lecturas)
+  const announcing = new Map<string, ReturnType<typeof setTimeout>>()
+  const announce = (scope: { campaignId: string; worldId: string }) => {
+    if (announcing.has(scope.campaignId)) return
+    announcing.set(
+      scope.campaignId,
+      setTimeout(() => {
+        announcing.delete(scope.campaignId)
+        env.realtime.publish(tablePresenceChanged(scope))
+      }, PRESENCE_MS)
+    )
+  }
+  app.addHook('onClose', async () => {
+    for (const timer of announcing.values()) clearTimeout(timer)
+    announcing.clear()
+  })
 
   app.get(
     '/api/table',
@@ -255,9 +274,16 @@ export function registerTableRoutes(
       let closed = false
       let window = { start: 0, count: 0 }
 
-      /** Si la cuenta sigue pudiendo llevar la mesa de esa campaña (con sus pertenencias de ahora) */
-      const allowedNow = async (campaignId: string, worldId: string) =>
-        can(actorFrom(userId, await loadMemberships(env.db, userId)), 'table.manage', { campaignId, worldId })
+      /**
+       * Si la cuenta sigue pudiendo mirar la mesa de esa campaña así (con sus pertenencias de ahora): el máster y la tele,
+       * quien la lleva; la Mesa de un jugador, cualquiera de la campaña
+       */
+      const allowedNow = async (campaignId: string, worldId: string, viewer: TableViewer) =>
+        can(
+          actorFrom(userId, await loadMemberships(env.db, userId)),
+          viewer === 'player' ? 'campaign.read' : 'table.manage',
+          { campaignId, worldId }
+        )
 
       socket.on('message', async (data: Buffer) => {
         if (data.byteLength > MAX_TABLE_MESSAGE) return socket.close(1009, 'Demasiado grande')
@@ -273,18 +299,36 @@ export function registerTableRoutes(
           if (joined || joining) return say({ type: 'error', code: 'BAD_MESSAGE' })
           joining = true
           const campaign = await campaignsRepo.findCampaign(env.db, message.campaignId)
-          // Un jugador (o quien no está en ella) no entra: la sala de jugadores llega con el módulo 7
-          if (!campaign || !(await allowedNow(campaign.id, campaign.worldId))) {
+          // Quien no está en ella no entra; un jugador, solo a su Mesa (lo que ve el grupo)
+          if (!campaign || !(await allowedNow(campaign.id, campaign.worldId, message.view))) {
             say({ type: 'error', code: campaign ? 'FORBIDDEN' : 'NOT_FOUND' })
             return socket.close(4403, 'Sin permiso')
           }
-          const leave = await table.join(campaign.id, message.view, socket)
+          const leaveRoom = await table.join(campaign.id, message.view, socket)
           // Se cerró mientras entraba: fuera ya
-          if (closed) return leave()
+          if (closed) return leaveRoom()
+          const scope = { campaignId: campaign.id, worldId: campaign.worldId }
+          // Quién está en la Mesa: entra (y sale con la conexión)
+          env.presence?.add(campaign.id, socket, { userId, viewer: message.view })
+          announce(scope)
+          const leave = () => {
+            leaveRoom()
+            env.presence?.remove(scope.campaignId, socket)
+            announce(scope)
+          }
           joined = { campaignId: campaign.id, worldId: campaign.worldId, viewer: message.view, leave }
           return
         }
         if (!joined) return say({ type: 'error', code: 'NOT_JOINED' })
+        // Si tiene la pestaña a la vista: cualquiera que mire, con el mismo tope por segundo que lo que va en vivo
+        if (message.type === 'presence') {
+          const at = Date.now()
+          if (at - window.start > 1000) window = { start: at, count: 0 }
+          if (++window.count > MAX_LIVE_PER_SECOND) return
+          if (env.presence?.setActive(joined.campaignId, socket, message.active))
+            announce({ campaignId: joined.campaignId, worldId: joined.worldId })
+          return
+        }
         // Lo que va en vivo (el encuadre, el arrastre, la medida, el láser): solo del máster, y con un tope por segundo
         if (joined.viewer !== 'master') return say({ type: 'error', code: 'BAD_MESSAGE' })
         const now = Date.now()
@@ -300,7 +344,7 @@ export function registerTableRoutes(
       const sessionCheck = setInterval(async () => {
         const session = await auth.api.getSession({ headers }).catch(() => null)
         if (session?.user.id !== userId) return socket.close(CLOSE_SESSION_ENDED, 'Sin sesión')
-        if (joined && !(await allowedNow(joined.campaignId, joined.worldId).catch(() => false)))
+        if (joined && !(await allowedNow(joined.campaignId, joined.worldId, joined.viewer).catch(() => false)))
           socket.close(4403, 'Sin permiso')
       }, options.sessionCheckMs ?? 60_000)
       let alive = true

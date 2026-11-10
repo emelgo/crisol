@@ -467,6 +467,9 @@ function Options({
     setSource(step)
     setPicked(null)
   }
+  // Los libros de lo que se puede elegir: para filtrar (con más de uno)
+  const books = [...new Set(step.options.flatMap((o) => (o.book ? [o.book] : [])))]
+  const [book, setBook] = useState<string | null>(null)
   return (
     <section className={styles.options} aria-labelledby={titleId} aria-busy={picked !== null}>
       <div className={styles.optionsHead}>
@@ -477,26 +480,58 @@ function Options({
           </button>
         )}
       </div>
-      <ul className={styles.optionList}>
-        {step.options.map((o) => (
-          <li key={o.value}>
-            <button
-              type="button"
-              className={styles.option}
-              disabled={!o.available}
-              aria-disabled={picked !== null && picked !== o.value ? true : undefined}
-              aria-pressed={picked === o.value ? true : undefined}
-              onClick={() => {
-                if (picked !== null) return
-                setPicked(o.value)
-                onPick(o.value)
-              }}
-            >
-              <span className={styles.optionName}>{o.label}</span>
-              {o.reason && <span className={styles.reason}>{o.reason}</span>}
+      {/* Por libro (ADR-0021): solo los de la campaña, y cada opción dice el suyo */}
+      {books.length > 1 && (
+        <fieldset className={styles.bookFilter}>
+          <legend className={styles.hidden}>{t('creator.byBook')}</legend>
+          <button type="button" aria-pressed={book === null} onClick={() => setBook(null)}>
+            {t('creator.allBooks')}
+          </button>
+          {books.map((b) => (
+            <button key={b} type="button" aria-pressed={book === b} onClick={() => setBook(b)}>
+              {b}
             </button>
-          </li>
-        ))}
+          ))}
+        </fieldset>
+      )}
+      <ul className={styles.optionList}>
+        {step.options
+          .filter((o) => book === null || o.book === book)
+          .map((o) => (
+            <li key={o.value}>
+              <button
+                type="button"
+                className={styles.option}
+                disabled={!o.available}
+                // Su nombre, el de la opción; su motivo y su libro, como descripción
+                aria-label={o.label}
+                aria-describedby={
+                  [o.reason ? `${titleId}-${o.value}-r` : '', o.book ? `${titleId}-${o.value}-b` : '']
+                    .filter(Boolean)
+                    .join(' ') || undefined
+                }
+                aria-disabled={picked !== null && picked !== o.value ? true : undefined}
+                aria-pressed={picked === o.value ? true : undefined}
+                onClick={() => {
+                  if (picked !== null) return
+                  setPicked(o.value)
+                  onPick(o.value)
+                }}
+              >
+                <span className={styles.optionName}>{o.label}</span>
+                {o.reason && (
+                  <span id={`${titleId}-${o.value}-r`} className={styles.reason}>
+                    {o.reason}
+                  </span>
+                )}
+                {o.book && (
+                  <span id={`${titleId}-${o.value}-b`} className={styles.optionBook}>
+                    {o.book}
+                  </span>
+                )}
+              </button>
+            </li>
+          ))}
       </ul>
     </section>
   )
@@ -584,6 +619,9 @@ function FieldInput({
           id={id}
           type={field.kind === 'number' ? 'number' : 'text'}
           autoComplete="off"
+          data-1p-ignore
+          data-lpignore="true"
+          data-form-type="other"
           placeholder={field.kind === 'list' ? t('creator.listHint') : undefined}
           aria-invalid={wrong || undefined}
           aria-describedby={wrong ? `${id}-error` : undefined}
@@ -807,6 +845,7 @@ function DecisionPanel({
               <span>
                 {o.label}
                 {o.reason && <span className={styles.reason}>{o.reason}</span>}
+                {o.book && <span className={styles.optionBook}>{o.book}</span>}
               </span>
             </label>
           ))}
