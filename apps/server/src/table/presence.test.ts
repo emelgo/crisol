@@ -38,4 +38,18 @@ describe('quién está en la Mesa', () => {
     expect(closed).toEqual(['lucia-1', 'lucia-2'])
     expect(presence.disconnect('marca', 'enrique')).toBe(0)
   })
+
+  it('quién tiene abierta la campaña fuera de la Mesa: cada persona una vez; al cambiar, las dos campañas cambian', () => {
+    const presence = createTablePresence()
+    const [a, b, c] = [{}, {}, {}]
+    expect(presence.focus(a, { userId: 'lucia', campaignId: 'marca' })).toEqual(['marca'])
+    expect(presence.focus(a, { userId: 'lucia', campaignId: 'marca' })).toEqual([])
+    presence.focus(b, { userId: 'lucia', campaignId: 'marca' })
+    presence.focus(c, { userId: 'bruno', campaignId: 'marca' })
+    expect(presence.inCampaign('marca')).toEqual(['lucia', 'bruno'])
+    expect(presence.focus(c, { userId: 'bruno', campaignId: 'otra' })).toEqual(['marca', 'otra'])
+    expect(presence.focus(a, { userId: 'lucia', campaignId: null })).toEqual(['marca'])
+    expect(presence.inCampaign('marca')).toEqual(['lucia'])
+    expect(presence.inCampaign('otra')).toEqual(['bruno'])
+  })
 })

@@ -1,6 +1,7 @@
 import { TABLE_CLOSE_KICKED, type TableServerMessage } from '@crisol/contracts'
 import { connect, schema } from '@crisol/db'
 import { freshTestDatabase, resetDatabase } from '@crisol/db/testing'
+import { exampleFile } from '@crisol/systems/examples'
 import type { FastifyInstance } from 'fastify'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { buildApp } from '../app.ts'
@@ -160,5 +161,44 @@ describe('la sala: pausa, modo de movimiento y echar de la Mesa', () => {
     expect(await back.next()).toMatchObject({ type: 'screen' })
     // Sigue siendo de la campaña todo el tiempo
     expect((await call('listMembers', { campaignId }, player.cookie)).status).toBe(200)
+  })
+
+  it('la sala dice quién está en la Mesa (con su personaje y su color), quién en la campaña y a quién se echó', async () => {
+    const five = (await call('importSystem', { file: exampleFile('5e') })).body.system.id
+    expect((await call('updateCampaign', { campaignId, system: five })).status).toBe(200)
+    const created = await call('createCharacter', { campaignId, name: 'Lía' }, player.cookie)
+    expect(created.status, JSON.stringify(created.body)).toBe(200)
+    const own = await join('player', player.cookie)
+    await own.next()
+    const room = async () => (await call('getTablePresence', { campaignId })).body
+    await expect.poll(async () => (await room()).present.length).toBe(1)
+    expect((await room()).present[0]).toMatchObject({ name: 'Jugadora', viewer: 'player', character: { name: 'Lía' } })
+    own.ws.terminate()
+    await expect.poll(async () => (await room()).present.length, { timeout: 5000 }).toBe(0)
+
+    // Fuera de la Mesa, con la campaña abierta en otra pestaña (canal general)
+    const general = await app.injectWS('/api/realtime', { headers: { origin: BASE_URL, cookie: player.cookie } })
+    sockets.push(general)
+    general.send(JSON.stringify({ type: 'focus', campaignId }))
+    await expect
+      .poll(async () => (await room()).inCampaign)
+      .toEqual([{ userId: player.userId, name: 'Jugadora', color: null }])
+    // Una campaña que no es suya no la apunta
+    const stranger = await signUpTestUser(auth, { name: 'Otro', email: 'otro@crisol.test' })
+    const theirs = await app.injectWS('/api/realtime', { headers: { origin: BASE_URL, cookie: stranger.cookie } })
+    sockets.push(theirs)
+    theirs.send(JSON.stringify({ type: 'focus', campaignId }))
+    await new Promise((resolve) => setTimeout(resolve, 150))
+    expect((await room()).inCampaign).toHaveLength(1)
+    general.send(JSON.stringify({ type: 'focus', campaignId: null }))
+    await expect.poll(async () => (await room()).inCampaign).toEqual([])
+
+    await call('kickFromTable', { campaignId, userId: player.userId })
+    await call('setTableControls', { campaignId, paused: true })
+    expect(await room()).toMatchObject({
+      kicked: [{ userId: player.userId, name: 'Jugadora' }],
+      paused: true,
+      movement: 'free'
+    })
   })
 })

@@ -779,6 +779,14 @@ export function fakeApi(
   const widgets: Array<WidgetView & { campaignId: string }> = []
   const snapshots: Array<SnapshotView & { campaignId: string }> = []
   const measureOnScreen = new Set<string>()
+  // La sala de cada campaña (docs/specs/sala.md): pausa, modo y echados
+  const rooms = new Map<string, { paused: boolean; movement: 'free' | 'turn' | 'locked'; kicked: string[] }>()
+  const roomOf = (campaignId: string) => {
+    campaignTableOf(campaignId)
+    const found = rooms.get(campaignId) ?? { paused: false, movement: 'free' as const, kicked: [] }
+    rooms.set(campaignId, found)
+    return found
+  }
   const sceneFor = (campaignId: string, sceneId?: string) => {
     const target = sceneId ?? campaignTableOf(campaignId).table.open
     if (!target) throw new ApiError('NO_OPEN_SCENE', 400)
@@ -3864,6 +3872,22 @@ export function fakeApi(
       if (index < 0) throw new ApiError('NOT_FOUND', 404)
       snapshots.splice(index, 1)
       return { id: snapshotId }
+    },
+    setTableControls: ({ campaignId, paused, movement }) => {
+      const room = roomOf(campaignId)
+      if (paused !== undefined) room.paused = paused
+      if (movement !== undefined) room.movement = movement
+      return { paused: room.paused, movement: room.movement }
+    },
+    kickFromTable: ({ campaignId, userId }) => {
+      const room = roomOf(campaignId)
+      if (!room.kicked.includes(userId)) room.kicked.push(userId)
+      return { ok: true as const }
+    },
+    allowBackToTable: ({ campaignId, userId }) => {
+      const room = roomOf(campaignId)
+      room.kicked = room.kicked.filter((id) => id !== userId)
+      return { ok: true as const }
     },
     setMeasureOnScreen: ({ campaignId, on }) => {
       campaignTableOf(campaignId)

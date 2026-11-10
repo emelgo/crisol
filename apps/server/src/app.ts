@@ -1,5 +1,5 @@
-import { type Database, loadMemberships } from '@crisol/db'
-import { actorFrom } from '@crisol/domain'
+import { campaignsRepo, type Database, loadMemberships } from '@crisol/db'
+import { actorFrom, can } from '@crisol/domain'
 import fastifyRateLimit from '@fastify/rate-limit'
 import fastifyWebsocket from '@fastify/websocket'
 import Fastify, { type FastifyInstance, type FastifyRequest } from 'fastify'
@@ -20,6 +20,7 @@ import { registerJoinRoutes } from './join.ts'
 import type { Embedder } from './library/embedder.ts'
 import type { LibraryJobs } from './library/jobs.ts'
 import { registerMcpRoutes } from './mcp/routes.ts'
+import { tablePresenceChanged } from './realtime/events.ts'
 import { createRealtime, type Realtime } from './realtime/hub.ts'
 import { type RealtimeRouteOptions, registerRealtimeRoutes } from './realtime/routes.ts'
 import { createTablePresence } from './table/presence.ts'
@@ -136,6 +137,7 @@ export function buildApp(deps: AppDeps): FastifyInstance {
             table.changed(message.campaignId)
       }
     }
+    const presence = createTablePresence()
     const env: ActionEnv = {
       db,
       publicUrl,
@@ -143,7 +145,7 @@ export function buildApp(deps: AppDeps): FastifyInstance {
       realtime,
       collab,
       table,
-      presence: createTablePresence(),
+      presence,
       vision,
       actions: implementationsByName,
       ...(deps.storage ? { storage: deps.storage } : {}),
@@ -167,7 +169,15 @@ export function buildApp(deps: AppDeps): FastifyInstance {
     )
     const build = deps.webDir ? webBuild(deps.webDir) : null
     app.register(async (scope) =>
-      registerRealtimeRoutes(scope, { auth, publicUrl, realtime, build, ...deps.realtimeTimers })
+      registerRealtimeRoutes(scope, {
+        auth,
+        publicUrl,
+        realtime,
+        build,
+        ...deps.realtimeTimers,
+        // Quién tiene abierta una campaña fuera de la Mesa (docs/specs/sala.md): solo si es de ella
+        onFocus: (key, userId, campaignId) => void campaignFocus(env, key, userId, campaignId)
+      })
     )
     app.register(async (scope) => registerCollabRoutes(scope, { auth, publicUrl, collab }))
     app.register(async (scope) =>
@@ -180,4 +190,18 @@ export function buildApp(deps: AppDeps): FastifyInstance {
   }
   if (deps.webDir) registerWeb(app, deps.webDir)
   return app
+}
+
+/** Apunta qué campaña tiene abierta una pestaña (si la cuenta es de ella) y avisa a las campañas cuya lista cambia */
+async function campaignFocus(env: ActionEnv, key: object, userId: string, campaignId: string | null) {
+  let target = campaignId
+  if (target) {
+    const campaign = await campaignsRepo.findCampaign(env.db, target)
+    const actor = actorFrom(userId, await loadMemberships(env.db, userId))
+    if (!campaign || !can(actor, 'campaign.read', { campaignId: target, worldId: campaign.worldId })) target = null
+  }
+  for (const changed of env.presence?.focus(key, { userId, campaignId: target }) ?? []) {
+    const campaign = await campaignsRepo.findCampaign(env.db, changed)
+    if (campaign) env.realtime.publish(tablePresenceChanged({ campaignId: changed, worldId: campaign.worldId }))
+  }
 }

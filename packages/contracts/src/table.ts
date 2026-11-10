@@ -133,7 +133,11 @@ export const tablePresence = z.object({
   viewer: z.enum(TABLE_VIEWS).describe('master: el máster; screen: la tele; player: la Mesa de un jugador'),
   since: z.iso.datetime(),
   active: z.boolean().describe('Con alguna de sus pestañas a la vista'),
-  tabs: z.int()
+  tabs: z.int(),
+  /** El color de sus dados (null: el que le toca por su id) */
+  color: z.string().nullable().optional(),
+  /** Su personaje en la campaña (el primero, si juega varios) */
+  character: z.object({ id: z.uuid(), name: z.string() }).nullable().optional()
 })
 
 export type TablePresenceEntry = z.infer<typeof tablePresence>
@@ -168,7 +172,16 @@ export const getTablePresence = defineAction({
   name: 'getTablePresence',
   kind: 'read',
   description:
-    'Quién está ahora en la Mesa de una campaña: el máster, los jugadores y la tele, desde cuándo y si tienen la pestaña a la vista. Lo ve cualquiera de la campaña',
+    'La sala de una campaña: quién está ahora en la Mesa (el máster, los jugadores con su personaje y la pantalla de los jugadores; desde cuándo y si tienen la pestaña a la vista), quién la tiene abierta fuera de la Mesa (inCampaign), a quién echó el máster (kicked), si está en pausa y cómo mueven los jugadores. Lo ve cualquiera de la campaña',
   input: z.object({ campaignId: z.uuid() }),
-  output: z.object({ present: z.array(tablePresence) })
+  output: z.object({
+    present: z.array(tablePresence),
+    inCampaign: z
+      .array(z.object({ userId: z.string(), name: z.string(), color: z.string().nullable() }))
+      .optional()
+      .describe('En la campaña (su Inicio, sus libros…) sin la Mesa abierta'),
+    kicked: z.array(z.object({ userId: z.string(), name: z.string() })).optional(),
+    paused: z.boolean().optional(),
+    movement: tableMovement.optional()
+  })
 })

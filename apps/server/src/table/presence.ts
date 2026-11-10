@@ -24,6 +24,13 @@ export interface TablePresence {
   list(campaignId: string): PresenceEntry[]
   /** Cierra las Mesas de jugador de esa persona en esa campaña (la echan); cuántas */
   disconnect(campaignId: string, userId: string): number
+  /**
+   * Qué campaña tiene abierta una pestaña fuera de la Mesa (su espacio: Inicio, Libros…), por el canal general; null al
+   * salir. Devuelve las campañas cuya lista cambia
+   */
+  focus(key: object, entry: { userId: string; campaignId: string | null }): string[]
+  /** Quiénes tienen abierta la campaña fuera de la Mesa (una vez cada uno, en el orden en que llegaron) */
+  inCampaign(campaignId: string): string[]
 }
 
 export function createTablePresence(now: () => Date = () => new Date()): TablePresence {
@@ -31,7 +38,20 @@ export function createTablePresence(now: () => Date = () => new Date()): TablePr
     string,
     Map<object, { userId: string; viewer: TableViewer; since: Date; active: boolean; close?: () => void }>
   >()
+  const focused = new Map<object, { userId: string; campaignId: string }>()
   return {
+    focus(key, { userId, campaignId }) {
+      const before = focused.get(key)?.campaignId ?? null
+      if (before === campaignId) return []
+      if (campaignId) focused.set(key, { userId, campaignId })
+      else focused.delete(key)
+      return [before, campaignId].filter((id): id is string => id !== null)
+    },
+    inCampaign(campaignId) {
+      const users = new Set<string>()
+      for (const entry of focused.values()) if (entry.campaignId === campaignId) users.add(entry.userId)
+      return [...users]
+    },
     add(campaignId, key, entry) {
       const room = rooms.get(campaignId) ?? new Map()
       room.set(key, { ...entry, since: now(), active: true })
