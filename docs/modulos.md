@@ -7,6 +7,19 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
+### Para retomar (2026-11-10, tarde: módulo 7 en marcha, rama `modulo-7/sala`)
+
+- **Hecho**: entrevista (`docs/intent/sala-de-jugadores.md`), estudio (`research/foundry/sala-de-jugadores.md`,
+  `research/foundry/sonido.md`, `research/dndbeyond/registro-de-partida.md`), mapa aprobado (`docs/specs/modulo-7.md`)
+  con las specs de sus ocho capacidades, ADR-0022 (propuesta) y `apps/web/PRODUCT.md` para impeccable.
+- **Lienzo «Sala de jugadores»** (https://claude.ai/artifact/VVATCB3eBjG3SbPNC8yUKz, `out/lienzo-sala/`), **por
+  aprobar**, con 16 decisiones. Enrique ya cambió una: el zoom a la izquierda y el registro a su derecha.
+- **`sala`, el servidor hecho** (`tasks/sala/`, tareas 1–4): `tableActionAllowed` (dominio), pausa y modo
+  (migración 0065, `setTableControls`, en las vistas de la sala), echar y dejar volver (`kickFromTable`,
+  `allowBackToTable`, cierre 4409), presencia con personaje, color, «en la campaña» (mensaje `focus` del canal general)
+  y echados (`getTablePresence`, MCP `ver_sala`, `controles_sala`, `echar_de_la_mesa`, `dejar_volver`).
+- **Siguiente**: con el lienzo aprobado, la web de `sala` (tareas 5–7); mientras, el servidor de `registro`.
+
 ### Para retomar (2026-11-10: tanda en `main` con el PR #116; se pasa al módulo 7)
 
 - **En `main`** (PR #116): la campaña alrededor de la Mesa (ADR-0019), escenas sueltas (ADR-0020), el cristal, los dados
