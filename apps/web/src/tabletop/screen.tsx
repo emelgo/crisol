@@ -14,8 +14,10 @@ import { Maximize, Minimize } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
+import { PlayerPage } from '../campaign/world-pages.tsx'
 import { CrisolMark } from '../components/brand.tsx'
 import { PageTitle } from '../components/page-title.tsx'
+import { ReadAsProvider } from '../wiki/read-as.tsx'
 import { Bubbles, useBubbles } from './bubbles.tsx'
 import { canvasViewOf, sceneViewportOf, smoothToward } from './camera.ts'
 import { connectTable, type TableStatus } from './channel.ts'
@@ -347,6 +349,20 @@ export function TableScreen({
             <p className={styles.status} role="status">
               {t(status === 'forbidden' ? 'screen.forbidden' : 'tabletop.reconnecting')}
             </p>
+          )}
+        </div>
+      )}
+      {/* Lo que enseña el máster, encima de la escena (en la vista de jugadores; en la Mesa de cada uno le llega aparte) */}
+      {screen?.show && !inMesa && (
+        <div key={`${screen.show.kind}:${screen.show.id}`} className={styles.shown}>
+          {screen.show.kind === 'image' ? (
+            <img src={`/api/files/${screen.show.id}`} alt={screen.show.title} />
+          ) : (
+            <div className={styles.shownPage}>
+              <ReadAsProvider value={{ campaignId }}>
+                <PlayerPage worldId={screen.show.worldId} pageId={screen.show.id} />
+              </ReadAsProvider>
+            </div>
           )}
         </div>
       )}

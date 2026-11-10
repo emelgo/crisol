@@ -1,0 +1,53 @@
+/* Una imagen enseñada, en grande */
+.viewer {
+  position: fixed;
+  z-index: 200;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: color-mix(in srgb, #0b0b0c 90%, transparent);
+  animation: visor-entra 260ms ease-out both;
+  touch-action: pinch-zoom;
+}
+
+.viewer img {
+  max-inline-size: 94vw;
+  max-block-size: 86vh;
+  border-radius: 6px;
+  box-shadow: 0 20px 60px -20px rgb(0 0 0 / 0.8);
+  transition: transform 120ms ease-out;
+}
+
+.title {
+  position: absolute;
+  inset-block-end: 16px;
+  margin: 0;
+  color: #e7e7ea;
+  font-size: 0.9rem;
+}
+
+.close {
+  position: absolute;
+  inset-block-start: 14px;
+  inset-inline-end: 14px;
+  display: grid;
+  place-items: center;
+  inline-size: 40px;
+  block-size: 40px;
+  border: 0;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.1);
+  color: #e7e7ea;
+  cursor: pointer;
+}
+
+.close:hover {
+  background: rgb(255 255 255 / 0.2);
+}
+
+@keyframes visor-entra {
+  from {
+    opacity: 0;
+  }
+}

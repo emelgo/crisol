@@ -18,9 +18,10 @@ import { Tour } from '../components/tour.tsx'
 import { useDice } from '../dice/context.tsx'
 import { HistoryHost } from '../dice/history.tsx'
 import { LogStrip } from '../log/strip.tsx'
-import { useShown } from '../realtime/context.tsx'
+import { useShown, useShownImage } from '../realtime/context.tsx'
 import { ReadAsProvider } from '../wiki/read-as.tsx'
 import { CompendiumTab } from './compendium-tab.tsx'
+import { ImageViewer, type ShownImage } from './image-viewer.tsx'
 import styles from './mesa.module.css'
 import { PagesTab } from './pages-tab.tsx'
 import playerStyles from './player-mesa.module.css'
@@ -61,6 +62,11 @@ export function PlayerMesa({ worldId, campaign }: { worldId: string; campaign: C
   const { t } = useTranslation()
   const stageBox = useRef<HTMLDivElement>(null)
   const [screen, setScreen] = useState<ScreenView | null>(null)
+  // La imagen que enseña el máster, en grande (docs/specs/ensenar.md)
+  const [image, setImage] = useState<ShownImage | null>(null)
+  useShownImage((shown) => {
+    if (shown.campaignId === campaign.id) setImage({ fileId: shown.fileId, title: shown.title })
+  })
   return (
     <CurrentCampaignContext.Provider value={campaign.id}>
       <ReadAsProvider value={{ campaignId: campaign.id }}>
@@ -74,7 +80,8 @@ export function PlayerMesa({ worldId, campaign }: { worldId: string; campaign: C
                   {t('room.paused')}
                 </p>
               )}
-              <LogStrip campaign={campaign} edge />
+              <PlayerLog worldId={worldId} campaign={campaign} onImage={setImage} />
+              {image && <ImageViewer image={image} onClose={() => setImage(null)} />}
               <WindowLayer />
             </div>
             <PlayerSidebar worldId={worldId} campaign={campaign} screen={screen} />
@@ -87,6 +94,30 @@ export function PlayerMesa({ worldId, campaign }: { worldId: string; campaign: C
         </WindowsProvider>
       </ReadAsProvider>
     </CurrentCampaignContext.Provider>
+  )
+}
+
+/** Su registro: lo enseñado se vuelve a abrir desde él (la página en su ventana, la imagen en grande) */
+function PlayerLog({
+  worldId,
+  campaign,
+  onImage
+}: {
+  worldId: string
+  campaign: Campaign
+  onImage: (image: ShownImage) => void
+}) {
+  const windows = useWindows()
+  return (
+    <LogStrip
+      campaign={campaign}
+      edge
+      onOpenShown={(shown) =>
+        shown.kind === 'image'
+          ? onImage({ fileId: shown.id, title: shown.title })
+          : windows?.open(playerPageWindow(worldId, shown.id, shown.title))
+      }
+    />
   )
 }
 

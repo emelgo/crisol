@@ -1809,6 +1809,22 @@ export const es = {
     noRecipient: 'No hay nadie con ese nombre en la campaña.',
     commands: '/s nombre: susurrar · /t 1d20+5: tirar · /yo: una acción · /ooc: fuera de personaje'
   },
+  // Enseñar a los jugadores (docs/specs/ensenar.md, tabletop/show-menu.tsx)
+  show: {
+    button: 'Enseñar',
+    toAll: 'A todos',
+    toSome: 'A unos',
+    onScreen: 'En la vista de jugadores',
+    noPlayers: 'Aún no hay jugadores en la campaña.',
+    image: 'Enseñar una imagen',
+    images: 'Imágenes del mundo',
+    noImages: 'No hay imágenes en el mundo: súbelas en Archivos.',
+    pickImage: 'Elige una imagen.',
+    clearScreen: 'Quitar de la vista de jugadores',
+    shownOnScreen: 'En la vista: {{title}}',
+    close: 'Cerrar',
+    open: 'Abrir'
+  },
   // Las carpetas de la pestaña Actores (tabletop/actor-folders.tsx)
   actorFolders: {
     new: 'Carpeta nueva',

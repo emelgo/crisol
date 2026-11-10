@@ -56,10 +56,11 @@ import { masterDraw } from './draw.ts'
 import { decodeMask, fogImage, fogLayerOf } from './fog-paint.ts'
 import { GmPanel, GmScreen, useGmSettings } from './gm-screen.tsx'
 import { GroupDamage } from './group-damage.tsx'
+import { ImageViewer, type ShownImage } from './image-viewer.tsx'
 import { MarksLayer, placeMarks } from './marks-layer.tsx'
 import { MasterSidebar, useMasterSidebar } from './master-sidebar.tsx'
 import styles from './mesa.module.css'
-import { openPageLinks, PageWindowsSocket } from './page-window.tsx'
+import { openPageLinks, PageWindowsSocket, pageWindow } from './page-window.tsx'
 import { PLACING_TYPE, type Placing } from './panel.tsx'
 import { PlayerMesa } from './player-mesa.tsx'
 import { Preparing } from './preparing.tsx'
@@ -67,6 +68,7 @@ import { masterTileUrl, sceneListKey } from './queries.ts'
 import type { RendererScene } from './renderer.ts'
 import { PauseBanner, RoomBar } from './room.tsx'
 import { sceneWindow } from './scene-window.tsx'
+import { ShowImage } from './show-menu.tsx'
 import { SnapshotsPanel, THUMBNAIL_BYTES, THUMBNAIL_SIDE } from './snapshots.tsx'
 import { TokenCard } from './token-card.tsx'
 import { TokenImageEditor } from './token-image.tsx'
@@ -540,7 +542,7 @@ export function Mesa({ worldId, campaign: current }: { worldId: string; campaign
               framing={() => (size.width > 0 ? fixedFraming(view.current, freeArea(size, host.current)) : null)}
             />
             <PauseBanner campaignId={campaignId} />
-            <LogStrip campaign={current} edge={!scene} />
+            <MasterLog worldId={worldId} campaign={current} edge={!scene} />
             {(selected.length > 1 || (fromTemplate && selected.length > 0)) && (
               <GroupDamage
                 key={selected.join()}
@@ -1363,6 +1365,26 @@ function TopBar({
             {live && <span className={`${styles.chip} ${styles.live}`}>{t('tabletop.live')}</span>}
             {presented && table?.screenHidden && <span className={styles.chip}>{t('tabletop.dark')}</span>}
             {showing && !live && <span className={styles.chip}>{t('tabletop.elsewhere')}</span>}
+            {table?.show && (
+              <span className={`${styles.chip} ${styles.live}`}>
+                {t('show.shownOnScreen', { title: table.show.title })}
+                <button
+                  type="button"
+                  className={styles.chipClose}
+                  aria-label={t('show.clearScreen')}
+                  title={t('show.clearScreen')}
+                  onClick={() =>
+                    onAct(() =>
+                      api
+                        .call('clearScreenShow', { campaignId })
+                        .then(() => api.call('getCampaignTable', { campaignId }))
+                    )
+                  }
+                >
+                  <X aria-hidden="true" size={12} />
+                </button>
+              </span>
+            )}
           </>
         )}
       </div>
@@ -1393,6 +1415,7 @@ function TopBar({
             </button>
           )}
         </span>
+        <ShowImage worldId={worldId} campaignId={campaignId} />
         <button type="button" className={styles.ghost} onClick={openScreen} data-tour="mesa-pantalla">
           <Tv aria-hidden="true" size={15} />
           {t('tabletop.screen')}
@@ -1714,4 +1737,24 @@ function rememberedView(campaignId: string, sceneId: string): SceneViewport | nu
   } catch {
     return null
   }
+}
+
+/** Tu registro en la Mesa: lo enseñado se vuelve a abrir desde él (la página en su ventana, la imagen en grande) */
+function MasterLog({ worldId, campaign, edge }: { worldId: string; campaign: Campaign; edge: boolean }) {
+  const windows = useWindows()
+  const [image, setImage] = useState<ShownImage | null>(null)
+  return (
+    <>
+      <LogStrip
+        campaign={campaign}
+        edge={edge}
+        onOpenShown={(shown) =>
+          shown.kind === 'image'
+            ? setImage({ fileId: shown.id, title: shown.title })
+            : windows?.open(pageWindow(worldId, shown.id, shown.title))
+        }
+      />
+      {image && <ImageViewer image={image} onClose={() => setImage(null)} />}
+    </>
+  )
 }

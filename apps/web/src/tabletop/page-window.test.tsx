@@ -85,6 +85,8 @@ describe('las páginas en ventanas sobre la Mesa', () => {
     await user.click(await panel().findByRole('button', { name: 'Aldric Varn' }))
     const win = within(await screen.findByRole('dialog', { name: 'Aldric Varn' }))
     await user.click(await win.findByRole('button', { name: 'Enseñar a los jugadores' }))
+    // Su menú: a todos, a unos o en la vista de jugadores
+    await user.click(win.getByRole('menuitem', { name: 'A todos' }))
     const aldric = api.pages.find((p) => p.title === 'Aldric Varn')?.id
     await waitFor(() => expect(api.shownPages).toEqual([{ campaignId: CAMPAIGN_ID, pageId: aldric }]))
     await user.click(await win.findByRole('button', { name: '2 no la conocen: revelar y enseñar' }))

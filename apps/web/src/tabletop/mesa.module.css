@@ -1319,3 +1319,21 @@ button.pageLink {
   outline: 2px solid var(--color-focus);
   outline-offset: 2px;
 }
+
+/* Quitar lo enseñado de la vista de jugadores, en su aviso */
+.chipClose {
+  display: grid;
+  place-items: center;
+  inline-size: 16px;
+  block-size: 16px;
+  margin-inline-end: -4px;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.chipClose:hover {
+  background: color-mix(in srgb, currentColor 18%, transparent);
+}

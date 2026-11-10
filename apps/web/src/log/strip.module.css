@@ -487,3 +487,16 @@
     block-size: min(65vh, 30rem);
   }
 }
+
+.open {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-link);
+  font: inherit;
+  cursor: pointer;
+}
+
+.open:hover {
+  text-decoration: underline;
+}

@@ -16,6 +16,7 @@ import { CollabSocket } from '../wiki/collab.tsx'
 import { usePageTabs } from '../wiki/tabs/page-tabs.tsx'
 import { EntryView, pageKey } from '../wiki/wiki.tsx'
 import styles from './page-window.module.css'
+import { ShowMenu, type ShowTarget } from './show-menu.tsx'
 import { type LinkHandler, useWindows, type WindowSpec } from './windows.tsx'
 
 /** Una página del mundo, en su ventana (una por página) */
@@ -86,11 +87,13 @@ function ShowToPlayers({ worldId, pageId }: { worldId: string; pageId: string })
   })
   const master = campaigns.data?.campaigns.find((c) => c.id === campaignId)?.role === 'master'
   const [result, setResult] = useState<{ shown: number; unknown: number } | null>(null)
+  const [target, setTarget] = useState<ShowTarget>({})
   const show = useMutation({
-    mutationFn: async (alsoReveal: boolean) => {
+    mutationFn: async ({ alsoReveal, to }: { alsoReveal: boolean; to: ShowTarget }) => {
       if (!campaignId) throw new Error('sin campaña')
       if (alsoReveal) await api.call('reveal', { worldId, campaignId, kind: 'page', targetId: pageId })
-      return api.call('showPage', { campaignId, pageId })
+      setTarget(to)
+      return api.call('showPage', { campaignId, pageId, ...to })
     },
     onSuccess: setResult
   })
@@ -105,24 +108,27 @@ function ShowToPlayers({ worldId, pageId }: { worldId: string; pageId: string })
           data-showing=""
           title={t('pageWindow.showAgain')}
           disabled={show.isPending}
-          onClick={() => show.mutate(false)}
+          onClick={() => show.mutate({ alsoReveal: false, to: target })}
         >
           <i aria-hidden="true" />
           {t('pageWindow.showing', { count: result.shown })}
         </button>
       ) : (
-        <button
-          type="button"
+        <ShowMenu
+          campaignId={campaignId}
+          busy={show.isPending}
           className={styles.showButton}
-          disabled={show.isPending}
-          onClick={() => show.mutate(false)}
-        >
-          <Eye aria-hidden="true" size={15} />
-          {t('pageWindow.show')}
-        </button>
+          label={t('pageWindow.show')}
+          onShow={(to) => show.mutate({ alsoReveal: false, to })}
+        />
       )}
       {result && result.unknown > 0 && (
-        <button type="button" className={styles.revealToo} disabled={show.isPending} onClick={() => show.mutate(true)}>
+        <button
+          type="button"
+          className={styles.revealToo}
+          disabled={show.isPending}
+          onClick={() => show.mutate({ alsoReveal: true, to: target })}
+        >
           {t('pageWindow.revealToo', { count: result.unknown })}
         </button>
       )}

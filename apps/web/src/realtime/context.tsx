@@ -30,7 +30,10 @@ export function queriesFor(message: RealtimeMessage): QueryKey[] {
   // Las tiradas llegan enteras (ADR-0010) y no son del historial: no hay nada que volver a pedir
   // El registro de la partida no es del historial: solo se vuelve a pedir él
   if (message.type === 'logged' || message.type === 'unlogged') return [['log', message.campaignId]]
-  return message.type === 'hello' || message.type === 'rolled' || message.type === 'shown'
+  return message.type === 'hello' ||
+    message.type === 'rolled' ||
+    message.type === 'shown' ||
+    message.type === 'shownImage'
     ? []
     : [...changedBy(message), ['history'], ['trash']]
 }
@@ -43,6 +46,19 @@ const ShownContext = createContext<{ listen(listener: ShownListener): () => void
 /** Cada página que enseña el máster (para abrirla en ventana donde haya Mesa) */
 export function useShown(listener: ShownListener) {
   const { listen } = useContext(ShownContext)
+  const current = useRef(listener)
+  current.current = listener
+  useEffect(() => listen((shown) => current.current(shown)), [listen])
+}
+type ShownImageMessage = Extract<RealtimeMessage, { type: 'shownImage' }>
+type ShownImageListener = (shown: ShownImageMessage) => void
+const ShownImageContext = createContext<{ listen(listener: ShownImageListener): () => void }>({
+  listen: () => () => {}
+})
+
+/** Cada imagen que enseña el máster (docs/specs/ensenar.md): la Mesa de la jugadora la abre en grande */
+export function useShownImage(listener: ShownImageListener) {
+  const { listen } = useContext(ShownImageContext)
   const current = useRef(listener)
   current.current = listener
   useEffect(() => listen((shown) => current.current(shown)), [listen])
@@ -128,6 +144,18 @@ export function RealtimeProvider({ client, children }: { client: RealtimeClient;
   const signedIn = account?.email ?? null
   const rollListeners = useRef(new Set<RollListener>())
   const shownListeners = useRef(new Set<ShownListener>())
+  const imageListeners = useRef(new Set<ShownImageListener>())
+  const shownImage = useMemo(
+    () => ({
+      listen: (listener: ShownImageListener) => {
+        imageListeners.current.add(listener)
+        return () => {
+          imageListeners.current.delete(listener)
+        }
+      }
+    }),
+    []
+  )
   const shown = useMemo(
     () => ({
       listen: (listener: ShownListener) => {
@@ -183,6 +211,7 @@ export function RealtimeProvider({ client, children }: { client: RealtimeClient;
             [...current.filter((n) => !(n.shown && n.pageId === message.pageId)), notice].slice(-3)
           )
         }
+        if (message.type === 'shownImage') for (const listener of imageListeners.current) listener(message)
         if (message.type === 'rolled') {
           appendRoll(queryClient, message.roll)
           for (const listener of rollListeners.current) listener(message.roll)
@@ -205,7 +234,9 @@ export function RealtimeProvider({ client, children }: { client: RealtimeClient;
   return (
     <NoticesContext.Provider value={value}>
       <RollsContext.Provider value={rolls}>
-        <ShownContext.Provider value={shown}>{children}</ShownContext.Provider>
+        <ShownContext.Provider value={shown}>
+          <ShownImageContext.Provider value={shownImage}>{children}</ShownImageContext.Provider>
+        </ShownContext.Provider>
       </RollsContext.Provider>
     </NoticesContext.Provider>
   )

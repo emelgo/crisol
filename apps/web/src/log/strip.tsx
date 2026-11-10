@@ -56,10 +56,14 @@ export function parseCommand(
 
 export function LogStrip({
   campaign,
-  edge = false
+  edge = false,
+  onOpenShown
 }: {
-  campaign: Campaign /** Sin zoom al lado: pegada al borde */
+  campaign: Campaign
+  /** Sin zoom al lado: pegada al borde */
   edge?: boolean
+  /** Volver a abrir lo enseñado (una página o una imagen) */
+  onOpenShown?: (shown: { kind: 'page' | 'image'; id: string; title: string }) => void
 }) {
   const { t } = useTranslation()
   const api = useApi()
@@ -397,11 +401,13 @@ function Entry({
   master,
   canDelete,
   onAgain,
-  onDeleteRoll
+  onDeleteRoll,
+  onOpenShown
 }: {
   entry: LogEntry
   me: string
   master: boolean
+  onOpenShown?: ((shown: { kind: 'page' | 'image'; id: string; title: string }) => void) | undefined
   onAgain: (roll: DiceRoll) => void
   onDeleteRoll: (id: string) => void
   canDelete: (id: string, at: string, by: string) => (() => void) | null
@@ -451,7 +457,14 @@ function Entry({
             {time}
             {flag}
           </div>
-          <p className={log.what}>{t('log.shown', { name: entry.by.name, title: entry.shown?.title ?? '' })}</p>
+          <p className={log.what}>
+            {t('log.shown', { name: entry.by.name, title: entry.shown?.title ?? '' })}{' '}
+            {entry.shown && onOpenShown && (
+              <button type="button" className={styles.open} onClick={() => entry.shown && onOpenShown(entry.shown)}>
+                {t('show.open')}
+              </button>
+            )}
+          </p>
         </div>
       </li>
     )
