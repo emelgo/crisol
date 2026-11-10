@@ -26,8 +26,12 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   escena recuerda su zoom y posición (en el aparato); «Vista de jugadores» en vez de «Pantalla»; anchos fijos arriba;
   «Escena nueva» en un cuadro con nombre y mapa; **carpetas en Actores** (migración 0067). Tras crear una migración,
   aplicarla en local; si el servidor de desarrollo no recarga, reiniciarlo (ver memoria `migrar-en-local`).
-- **Siguiente**: el registro en el móvil de la jugadora y las burbujas en la Pantalla; la pantalla «te han sacado de
-  la Mesa»; luego `ensenar`. Capturas de la Mesa: `e2e/tests/zz-captura.spec.ts` (fuera de git).
+- **Hecho también**: registro con pestañas Chat / Tiradas (el historial de los dados, ya fuera de ellos) / Todo, el
+  máster vacía y borra; encuentros en Actores; «te han sacado de la Mesa»; registro en el móvil; burbujas en la vista
+  de jugadores; **`ensenar` entero** (migración 0068: página o imagen a todos, a unos o en la vista; la jugadora abre
+  la imagen mientras siga en el registro; «Quitar»; «Abrir» desde el registro).
+- **Siguiente**: `mover-jugadores`, `notas-jugador`, `sonido`, `sonido-mapa`, `sonido-foundry`; luego critique y
+  audit con impeccable, e2e y PR. Capturas de la Mesa: `e2e/tests/zz-captura.spec.ts` (fuera de git).
 
 ### Para retomar (2026-11-10: tanda en `main` con el PR #116; se pasa al módulo 7)
 
