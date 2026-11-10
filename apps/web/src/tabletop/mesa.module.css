@@ -213,8 +213,11 @@
   transition: inset-inline-start 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-/* La línea de la franja de la pausa: debajo de las barras, centrada; solo la franja se puede pulsar */
+/* La línea de la franja de la pausa: debajo de las barras, centrada; solo la franja se puede pulsar. Por debajo de
+   las barras en la capa: el menú de la cámara, que baja sobre ella, va encima */
 .topBar > .pauseRow {
+  position: relative;
+  z-index: -1;
   display: flex;
   flex-basis: 100%;
   justify-content: center;
