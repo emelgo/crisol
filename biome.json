@@ -13,6 +13,7 @@
       "!**/.turbo",
       "!research",
       "!datos-locales",
+      "!.claude/skills/impeccable",
       "!packages/systems/src/examples/5e/content"
     ]
   },
