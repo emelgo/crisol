@@ -26,9 +26,11 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   - ni textos de ayuda fijos en pantalla.
 - **Se dice «IA», no «Claude»**: Crisol se conecta a cualquier IA. El nombre de la app conectada sale solo donde se ve
   qué está conectado.
-- **Las imágenes, con prompt** (Enrique, 2026-11-11, revisión de la app): donde convenga una imagen (fondos, la
-  portada pública, portadas por defecto, pantallas vacías), Claude escribe el prompt y Enrique la genera a mano con
-  ChatGPT, todas en un mismo estilo que elige él. Prompts y guía de estilo en `docs/imagenes.md`.
+- **Las imágenes de la app, con prompt** (Enrique, 2026-11-11, revisión de la app): donde convenga una imagen de la
+  app (los fondos de Entrar, la portada pública, el ambiente de Inicio, las pantallas vacías), Claude escribe el prompt
+  y Enrique la genera a mano con ChatGPT, todas en un mismo estilo que elige él, **al estilo de Foundry VTT, Roliando o
+  LegendKeeper** (fantasía épica pintada). Las portadas de mundos, campañas, sistemas y libros son del usuario: la app
+  no trae ninguna. Prompts y guía de estilo en `docs/imagenes.md`.
 
 ## Armazón y navegación
 

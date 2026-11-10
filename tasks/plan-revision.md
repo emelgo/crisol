@@ -71,13 +71,15 @@ Este archivo es el plan maestro. Al empezar a ejecutarlo se copia a `tasks/plan-
 
 ## Pista de imágenes (en paralelo desde el primer día)
 
-Norma nueva (a `docs/diseno.md`): **donde convenga una imagen, Claude da el prompt** y Enrique la genera fuera.
+Norma nueva (a `docs/diseno.md`): **donde convenga una imagen de la app, Claude da el prompt** y Enrique la genera con
+ChatGPT, al estilo de Foundry VTT, Roliando o LegendKeeper. Solo las de la app: las portadas de mundos, campañas,
+sistemas y libros son del usuario (Enrique, 2026-11-11).
 
-1. **Buscar el estilo.** Cinco o seis estilos candidatos, cada uno con las **mismas dos escenas de prueba** (un paisaje
-   para Entrar y una portada de tarjeta) para poder compararlos. Se entregan en `docs/imagenes.md` al empezar.
+1. **Buscar el estilo.** Seis variaciones de fantasía épica pintada, cada una con las **mismas dos escenas de prueba**
+   (un paisaje para Entrar y la ilustración de una pantalla vacía) para poder compararlas. En `docs/imagenes.md`.
 2. Enrique elige → **guía de estilo** (frase base, paleta, lo que nunca sale) y **el resto de prompts**: fondos de
    Entrar (unos 12–16, apaisados, con el centro tranquilo para el recuadro y un tinte anotado), la portada pública,
-   fondo de ambiente de Inicio, portadas por defecto (mundo, campaña, sistema, libro) y pantallas vacías.
+   fondo de ambiente de Inicio y pantallas vacías.
 3. Según lleguen: a `apps/web/public/`, fuera las 24 actuales (`account/backdrops.ts`, `public/fondos/`), y su origen
    en `docs/terceros.md`.
 

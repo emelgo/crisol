@@ -4,13 +4,13 @@ Plan: `tasks/plan-revision.md`. Una tanda cada vez: se enseña en local, Enrique
 
 ## Pista de imágenes (en paralelo)
 
-- [x] Prompts de estilo: `docs/imagenes.md` § «Buscar el estilo» (cinco o seis estilos, las mismas dos escenas en
-  cada uno). **Es lo primero**: Enrique genera las imágenes a mano con ChatGPT, en su cuenta, mientras avanza la
-  tanda 1 (prompts en lenguaje natural, sin parámetros de otras herramientas; el tamaño y la proporción, dichos en
-  la frase).
+- [x] Prompts de estilo: `docs/imagenes.md` § «Buscar el estilo» (seis variaciones de fantasía épica pintada, al estilo
+  de Foundry VTT, Roliando o LegendKeeper; las mismas dos escenas en cada una). **Es lo primero**: Enrique genera las
+  imágenes a mano con ChatGPT, en su cuenta, mientras avanza la tanda 1 (prompts en lenguaje natural, sin parámetros
+  de otras herramientas; el tamaño y la proporción, dichos en la frase).
 - [ ] Enrique elige el estilo.
-- [ ] Guía de estilo y el resto de prompts (fondos de Entrar, portada pública, ambiente de Inicio, portadas por defecto,
-  pantallas vacías).
+- [ ] Guía de estilo y el resto de prompts (fondos de Entrar, portada pública, ambiente de Inicio, pantallas vacías).
+  Solo las de la app: las portadas de mundos, campañas, sistemas y libros son del usuario (Enrique, 2026-11-11).
 - [ ] Imágenes en `apps/web/public/`, fuera las 24 de ahora, y su origen en `docs/terceros.md`.
 
 ## Documentos al empezar
