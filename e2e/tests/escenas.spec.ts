@@ -150,7 +150,7 @@ test('una escena: su mapa en teselas, la rejilla alineada, la mesa y la tele que
   // La vista, un poco a la derecha: la etiqueta del marco, fuera de la columna de herramientas
   for (let i = 0; i < 3; i++) await page.keyboard.press('ArrowLeft')
   const box = await frame.boundingBox()
-  const tag = await frame.getByText('Pantalla', { exact: true }).boundingBox()
+  const tag = await frame.getByText('Vista de jugadores', { exact: true }).boundingBox()
   if (!box || !tag) throw new Error('sin marco')
   await page.mouse.move(tag.x + tag.width / 2, tag.y + tag.height / 2)
   await page.mouse.down()
