@@ -118,3 +118,16 @@ export function lifeState(life: { value: number; max: number } | null) {
 
 /** La inicial de un rótulo (para el disco de una ficha sin imagen) */
 export const initialOf = (label: string) => (label.trim()[0] ?? '?').toLocaleUpperCase('es')
+
+/** Las fichas que mueve una cuenta en su Mesa: las que lleva (docs/specs/mover-jugadores.md) */
+export const movableBy = <T extends { controllers: readonly string[] }>(tokens: readonly T[], userId: string | null) =>
+  userId ? tokens.filter((token) => token.controllers.includes(userId)) : []
+
+/** Si es su turno: lleva al combatiente activo (o a uno de su grupo) */
+export function isTurnOf(
+  combat: { round: number; combatants: ReadonlyArray<{ active: boolean; controllers?: readonly string[] }> } | null,
+  userId: string | null
+) {
+  if (!combat || !userId || combat.round <= 0) return false
+  return combat.combatants.some((c) => c.active && (c.controllers ?? []).includes(userId))
+}

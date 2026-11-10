@@ -96,6 +96,16 @@ export function TokenCard({
     mutationFn: () => api.call('removeTokens', { campaignId, tokenIds: [token.id] }),
     onSuccess: onClose
   })
+  // Quién lleva una criatura (un familiar, una montura): la mueve en su Mesa como su personaje
+  const members = useQuery({
+    queryKey: ['members', campaignId],
+    queryFn: () => api.call('listMembers', { campaignId }),
+    enabled: settings && actor.kind === 'creature'
+  })
+  const players = (members.data?.members ?? []).filter((member) => member.role === 'player')
+  const assign = useMutation({
+    mutationFn: (userIds: string[]) => api.call('assignToken', { campaignId, creatureId: actor.id, userIds })
+  })
   // Su tirada principal: la primera de sus acciones con ataque
   const sheet = useQuery({
     queryKey: actor.kind === 'creature' ? creatureKey(actor.id) : characterKey(actor.id),
@@ -118,7 +128,7 @@ export function TokenCard({
   const valid = Number.isInteger(value) && value > 0
   const life = actor.life
   const ratio = life && life.max > 0 ? Math.max(0, Math.min(1, life.value / life.max)) : 0
-  const problem = play.error ?? update.error ?? remove.error ?? roll.error
+  const problem = play.error ?? update.error ?? remove.error ?? roll.error ?? assign.error
   const addCondition = () => {
     const name = condition.trim()
     if (!name) return
@@ -353,6 +363,31 @@ export function TokenCard({
               ))}
             </select>
           </div>
+          {actor.kind === 'creature' && players.length > 0 && (
+            <fieldset className={styles.carriers}>
+              <legend>{t('tokens.carriedBy')}</legend>
+              {players.map((player) => {
+                const carried = token.controllers.includes(player.userId)
+                return (
+                  <label key={player.userId}>
+                    <input
+                      type="checkbox"
+                      checked={carried}
+                      disabled={assign.isPending}
+                      onChange={() =>
+                        assign.mutate(
+                          carried
+                            ? token.controllers.filter((id) => id !== player.userId)
+                            : [...token.controllers, player.userId]
+                        )
+                      }
+                    />
+                    {player.name}
+                  </label>
+                )
+              })}
+            </fieldset>
+          )}
           <div className={styles.settingsActs}>
             <button type="button" className={styles.ghost} onClick={onImage}>
               <ImageIcon aria-hidden="true" size={14} />

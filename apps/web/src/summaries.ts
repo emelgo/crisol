@@ -418,6 +418,7 @@ export function summaryOf(
     case 'putInPlay':
     case 'playCreature':
     case 'setCreatureHidden':
+    case 'assignToken':
     case 'spendRecharge':
     case 'removeFromPlay':
       return say(action, {

@@ -2348,6 +2348,7 @@ export const es = {
     show: 'Mostrar',
     hide: 'Ocultar',
     settings: 'Ajustes de la ficha',
+    carriedBy: 'Lo lleva…',
     label: 'Rótulo',
     faction: 'Bando',
     size: 'Tamaño',
@@ -2425,7 +2426,12 @@ export const es = {
     fullscreen: 'Pantalla completa',
     tokens: 'Lo que hay en la mesa',
     exitFullscreen: 'Salir de la pantalla completa',
-    forbidden: 'La pantalla de los jugadores es del máster de la campaña.'
+    forbidden: 'La pantalla de los jugadores es del máster de la campaña.',
+    // Lo que hace un jugador en su Mesa (docs/specs/mover-jugadores.md)
+    openDoor: 'Abrir la puerta',
+    closeDoor: 'Cerrar la puerta',
+    lockedDoor: 'Puerta con llave',
+    passTurn: 'Pasar turno'
   },
   pdf: {
     show: 'Ver aquí',
@@ -2848,6 +2854,7 @@ export const es = {
       removeTokens_one: 'quitó una ficha de la mesa de «{{campaign}}»',
       removeTokens_other: 'quitó {{count}} fichas de la mesa de «{{campaign}}»',
       updateToken: 'cambió la ficha «{{label}}» de «{{campaign}}»',
+      assignToken: 'cambió quién lleva «{{name}}» en «{{campaign}}»',
       saveEncounter: 'guardó el encuentro «{{name}}»',
       deleteEncounter: 'borró el encuentro «{{name}}»',
       placeEncounter: 'puso el encuentro «{{name}}» en la mesa',
@@ -3068,6 +3075,7 @@ export const es = {
       removeTokens_one: 'quitar una ficha de la mesa',
       removeTokens_other: 'quitar {{count}} fichas de la mesa',
       updateToken: 'cambiar una ficha',
+      assignToken: 'cambiar quién lleva «{{name}}»',
       saveEncounter: 'guardar el encuentro «{{name}}»',
       deleteEncounter: 'borrar un encuentro',
       placeEncounter: 'poner un encuentro en la mesa',
@@ -3394,6 +3402,13 @@ export const es = {
     passwordChanged: 'Contraseña cambiada'
   },
   errors: {
+    // Lo que no deja la Mesa a un jugador (docs/specs/mover-jugadores.md)
+    WALL: 'Hay un muro',
+    NOT_YOUR_TURN: 'No es tu turno',
+    PAUSED: 'Partida en pausa',
+    LOCKED: 'Bloqueado',
+    OUT_OF_MAP: 'Fuera del mapa',
+    NOT_A_PLAYER: 'Solo a jugadores de la campaña',
     CYCLE: 'Una página no puede ir dentro de sí misma ni de sus subpáginas',
     TOO_DEEP: 'No caben más niveles de subpáginas',
     BAD_PLACEMENT: 'Ahí no se puede poner',
