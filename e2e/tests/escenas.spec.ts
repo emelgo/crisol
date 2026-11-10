@@ -97,7 +97,7 @@ test('una escena: su mapa en teselas, la rejilla alineada, la mesa y la tele que
   // Abrir en la mesa (la única campaña): la mesa con la escena abierta, sin presentar
   await page.getByRole('button', { name: 'Abrir en la mesa' }).click()
   // La campaña se abre en su Mesa
-  await expect(page).toHaveURL(/\/campanas\/[0-9a-f-]{36}(\?.*)?$/)
+  await expect(page).toHaveURL(/\/campanas\/[0-9a-f-]{36}\/mesa(\?.*)?$/)
   const table = page.getByRole('application', { name: 'Mesa: Escena' })
   await expect(table).toBeVisible()
   const panel = page.getByRole('complementary', { name: 'Panel de la mesa' })
@@ -209,7 +209,7 @@ test('un mapa que dibuja la IA (SVG) se trocea al abrir su escena en la mesa', a
   expect(drawn.image).toMatchObject({ width: 1400, height: 900, tiles: null })
   await call('openScene', { campaignId, sceneId: scene.id })
 
-  await page.goto(`/mundos/${worldId}/campanas/${campaignId}`)
+  await page.goto(`/mundos/${worldId}/campanas/${campaignId}/mesa`)
   const table = page.getByRole('application', { name: 'Mesa: Escena' })
   await expect(table).toBeVisible()
   // Se prepara solo y queda con sus teselas

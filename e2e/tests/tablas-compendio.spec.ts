@@ -7,7 +7,7 @@ test('una tabla del mundo: el máster la crea con sus filas, tira dos veces sin 
 }) => {
   test.slow()
   await campaignLink(page)
-  const campaignId = new URL(page.url()).pathname.split('/campanas/')[1] ?? ''
+  const campaignId = new URL(page.url()).pathname.split('/campanas/')[1]?.split('/')[0] ?? ''
   const systemId = await import5e(page)
   const chosen = await page.request.post('/api/actions/updateCampaign', { data: { campaignId, system: systemId } })
   expect(chosen.status()).toBe(200)

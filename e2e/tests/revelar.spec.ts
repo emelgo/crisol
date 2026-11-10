@@ -7,7 +7,7 @@ test('revelar en partida: el máster revela un secreto a Lía; a su jugadora le 
 }) => {
   test.slow()
   const link = await campaignLink(page)
-  const campaignId = new URL(page.url()).pathname.split('/campanas/')[1] ?? ''
+  const campaignId = new URL(page.url()).pathname.split('/campanas/')[1]?.split('/')[0] ?? ''
   const worldId = new URL(page.url()).pathname.split('/')[2] ?? ''
   const systemId = await import5e(page)
   await page.request.post('/api/actions/updateCampaign', { data: { campaignId, system: systemId } })

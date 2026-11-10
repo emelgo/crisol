@@ -38,7 +38,7 @@ test('al salir no queda nada del máster en la pestaña, tampoco para la jugador
 }) => {
   await skipTours(page, 'jugadora@crisol.test')
   await campaignLink(page)
-  const campaignId = new URL(page.url()).pathname.split('/').at(-1) ?? ''
+  const campaignId = new URL(page.url()).pathname.split('/campanas/')[1]?.split('/')[0] ?? ''
   const claude = await connectClaude(page)
   await gotoLive(page, '/mundos')
   await createWorld(page, 'Otro')
@@ -82,7 +82,8 @@ test('al salir no queda nada del máster en la pestaña, tampoco para la jugador
   await expect(page.getByRole('button', { name: 'Ajustes de La Marca' })).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Historial', exact: true })).toHaveCount(0)
   await release()
-  await openCampaign(page, 'La Marca')
+  // Su Inicio, desde la tarjeta (en la misma pestaña)
+  await page.getByRole('link', { name: 'La Marca', exact: true }).first().click()
   await expect(page.getByRole('heading', { level: 1, name: 'La Marca' })).toBeVisible()
   await page.getByText('La campaña: La Marca').click()
   await expect(page.getByRole('list', { name: 'Miembros' }).getByRole('listitem')).toHaveCount(2)

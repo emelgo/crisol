@@ -503,6 +503,13 @@ function Options({
                 type="button"
                 className={styles.option}
                 disabled={!o.available}
+                // Su nombre, el de la opción; su motivo y su libro, como descripción
+                aria-label={o.label}
+                aria-describedby={
+                  [o.reason ? `${titleId}-${o.value}-r` : '', o.book ? `${titleId}-${o.value}-b` : '']
+                    .filter(Boolean)
+                    .join(' ') || undefined
+                }
                 aria-disabled={picked !== null && picked !== o.value ? true : undefined}
                 aria-pressed={picked === o.value ? true : undefined}
                 onClick={() => {
@@ -512,8 +519,16 @@ function Options({
                 }}
               >
                 <span className={styles.optionName}>{o.label}</span>
-                {o.reason && <span className={styles.reason}>{o.reason}</span>}
-                {o.book && <span className={styles.optionBook}>{o.book}</span>}
+                {o.reason && (
+                  <span id={`${titleId}-${o.value}-r`} className={styles.reason}>
+                    {o.reason}
+                  </span>
+                )}
+                {o.book && (
+                  <span id={`${titleId}-${o.value}-b`} className={styles.optionBook}>
+                    {o.book}
+                  </span>
+                )}
               </button>
             </li>
           ))}

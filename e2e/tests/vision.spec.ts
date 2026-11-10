@@ -123,7 +123,7 @@ test('la visión: la cripta con su puerta secreta, el grupo que entra, la secret
     return seen.visibleCells.some((run) => run.row === row && run.from <= column && column <= run.to)
   }
 
-  await page.goto(`/mundos/${worldId}/campanas/${campaignId}`)
+  await page.goto(`/mundos/${worldId}/campanas/${campaignId}/mesa`)
   const stage = page.getByRole('application', { name: 'Mesa: Cripta de Varn' })
   await expect(stage).toBeVisible()
   await expect

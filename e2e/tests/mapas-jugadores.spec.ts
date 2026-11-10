@@ -14,7 +14,7 @@ test('los mapas para los jugadores: la jugadora ve lo que no está oculto; un pi
 }) => {
   test.slow()
   const link = await campaignLink(page)
-  const campaignId = new URL(page.url()).pathname.split('/campanas/')[1] ?? ''
+  const campaignId = new URL(page.url()).pathname.split('/campanas/')[1]?.split('/')[0] ?? ''
   const worldId = new URL(page.url()).pathname.split('/')[2] ?? ''
   const api = async (name: string, data: object) => {
     const response = await page.request.post(`/api/actions/${name}`, { data })

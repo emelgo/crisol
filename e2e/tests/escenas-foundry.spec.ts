@@ -149,7 +149,7 @@ test('traer las escenas de un zip: elegir dónde, su mapa troceado, y abrirla en
   // En la mesa: al abrirla la campaña por primera vez, el lobo sale en juego y en el mapa, donde estaba
   await page.getByRole('button', { name: 'Abrir en la mesa' }).click()
   // La campaña se abre en su Mesa
-  await expect(page).toHaveURL(/\/campanas\/[0-9a-f-]{36}(\?.*)?$/)
+  await expect(page).toHaveURL(/\/campanas\/[0-9a-f-]{36}\/mesa(\?.*)?$/)
   const table = page.getByRole('application', { name: 'Mesa: Escena' })
   await expect(table).toBeVisible()
   await expect.poll(async () => (await viewOf(table))?.scale ?? 0).toBeGreaterThan(0)

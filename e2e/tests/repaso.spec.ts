@@ -79,7 +79,7 @@ test('repaso visual: la mesa, la tele y el combate con la cripta del lienzo', as
   // La tele, fija donde la deja el tablero Pantalla
   await call('setScreenCamera', { campaignId, camera: { mode: 'fixed', view: { x: 1800, y: 800, scale: 0.933 } } })
 
-  await page.goto(`/mundos/${worldId}/campanas/${campaignId}`)
+  await page.goto(`/mundos/${worldId}/campanas/${campaignId}/mesa`)
   const stage = page.getByRole('application', { name: 'Mesa: Cripta de Varn' })
   await expect(stage).toBeVisible()
   await expect

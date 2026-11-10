@@ -79,6 +79,25 @@ sección. Para quién: Enrique (máster, en PC) y sus jugadores (la jugadora, ta
 20. **Creador**: bajo cada opción, su libro; filtros por libro arriba (solo los de la campaña).
 21. Textos de la interfaz en `i18n.ts`; cada pantalla nueva, con su tutorial guiado; nada nombra Foundry ni D&D Beyond.
 
+## Construido (2026-11-10)
+
+- **Dominio** (`packages/systems`): los campos nuevos del libro (`format.ts`), `requires` validado, `excluded` en las
+  elecciones, `visibleContent` sin lo excluido ni lo pendiente, `summarizeBooks` (`books.ts`), la página de cada entrada
+  en lo que se busca y el libro de cada opción del creador.
+- **Servidor**: `actions/books.ts` (`getSystemBooks`, `getBookEntries`, `createBook`, `updateBook`, `deleteBook`,
+  `proposeContent`, `listPending`, `settlePending`), migración 0064 (`system_content.review`), MCP (`ver_libros`,
+  `entradas_libro`, `crear_libro`, `cambiar_libro`, `borrar_libro`, `proponer_contenido`, `ver_pendientes`,
+  `quien_esta_en_la_mesa`), la presencia en la Mesa (`table/presence.ts`, `getTablePresence`) y el compendio de la
+  campaña con la portada, el recuento y lo excluido de cada libro y el filtro por libro.
+- **Web**: el espacio de la campaña (`campaign/home.tsx`, `routes/campaign.tsx`, la barra en `components/ribbon.tsx`),
+  la sección Mesa (`campaign/table-lobby.tsx`, sobre `characters/characters.tsx`), Libros (`campaign/books.tsx`,
+  `book-cover.tsx`, `book-window.tsx`), el sistema (`systems/system.tsx`) y la revisión (`systems/review.tsx`), el
+  compendio por libro (`campaign/compendium.tsx`) y el creador con libros (`characters/creator.tsx`).
+- **Cambios de Enrique por el camino**: la campaña se abre en la misma pestaña y la Mesa en otra; Personajes y Mesa,
+  una sección; sin Páginas en la campaña; la barra lleva su nombre; la «tele» es la pantalla de los jugadores.
+- Pendiente: «Desde un archivo» solo lee el archivo de un sistema de Crisol (no paquetes de Foundry); la portada de un
+  libro aún no se elige desde la pantalla (sí por la API y la IA).
+
 ## Pruebas
 
 - **Dominio** (`packages/systems`): los campos nuevos del libro validan; `requires` a un libro que no existe falla;

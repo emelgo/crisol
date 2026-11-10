@@ -22,7 +22,7 @@ test('una jugadora hace su personaje de 5e con el creador, lo termina y lo sube 
 }) => {
   test.slow()
   const link = await campaignLink(page)
-  const campaignId = new URL(page.url()).pathname.split('/campanas/')[1] ?? ''
+  const campaignId = new URL(page.url()).pathname.split('/campanas/')[1]?.split('/')[0] ?? ''
   const path = campaignPath(page)
   const chosen = await page.request.post('/api/actions/updateCampaign', {
     data: { campaignId, system: await import5e(page), systemChoices: { sources: ['srd521'], duplicates: 'newest' } }
@@ -32,7 +32,8 @@ test('una jugadora hace su personaje de 5e con el creador, lo termina y lo sube 
   const player = await newPlayer(browser, link)
   // Sin personaje aún, su página de la campaña le invita a hacerlo
   await player.getByRole('link', { name: 'Crear tu personaje' }).click()
-  await expect(player.getByRole('heading', { level: 1, name: 'Personajes' })).toBeVisible()
+  // La sección Mesa de la campaña: sus personajes (ADR-0021)
+  await expect(player.getByRole('heading', { level: 1, name: 'Mesa' })).toBeVisible()
   await player.getByRole('button', { name: 'Personaje nuevo' }).click()
   const dialog = player.getByRole('dialog', { name: 'Personaje nuevo' })
   await dialog.getByLabel('Nombre').fill('Thora')

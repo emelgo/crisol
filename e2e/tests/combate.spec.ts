@@ -56,7 +56,7 @@ test('combate: tirar la iniciativa, dos rondas (un estado de una ronda se va sol
   const tokens = async () => (await call('getCampaignTable', { campaignId })).tokens as Token[]
   const byName = async (name: string) => (await tokens()).find((t) => t.actor.name === name) as Token
 
-  await page.goto(`/mundos/${worldId}/campanas/${campaignId}`)
+  await page.goto(`/mundos/${worldId}/campanas/${campaignId}/mesa`)
   const stage = page.getByRole('application', { name: 'Mesa: Escena' })
   await expect(stage).toBeVisible()
   await expect

@@ -151,13 +151,22 @@ const asSearch = (search: Record<string, unknown>): { como?: string; pestana?: s
 const worldPagesRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/mundos/$worldId/campanas/$campaignId/paginas',
-  component: WorldPagesHome,
+  // El máster ve las páginas en su Mesa (ADR-0021: la campaña no tiene Páginas); quien juega, aquí
+  component: () => (
+    <ToMesaIfMaster panel="paginas">
+      <WorldPagesHome />
+    </ToMesaIfMaster>
+  ),
   validateSearch: asSearch
 })
 const worldPageRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/mundos/$worldId/campanas/$campaignId/paginas/$pageId',
-  component: WorldPageView,
+  component: () => (
+    <ToMesaIfMaster panel="paginas">
+      <WorldPageView />
+    </ToMesaIfMaster>
+  ),
   validateSearch: asSearch
 })
 const wikiRoute = createRoute({ getParentRoute: () => rootRoute, path: '/mundos/$worldId/wiki', component: WikiHome })

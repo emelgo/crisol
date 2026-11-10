@@ -19,7 +19,7 @@ test('la campaña en su vista: la jugadora entra, abre el compendio, busca «fir
 }) => {
   test.slow()
   const link = await campaignLink(page)
-  const campaignId = new URL(page.url()).pathname.split('/campanas/')[1] ?? ''
+  const campaignId = new URL(page.url()).pathname.split('/campanas/')[1]?.split('/')[0] ?? ''
   const chosen = await page.request.post('/api/actions/updateCampaign', {
     data: {
       campaignId,
@@ -45,8 +45,11 @@ test('la campaña en su vista: la jugadora entra, abre el compendio, busca «fir
   await player.getByRole('searchbox', { name: 'Buscar en el compendio' }).fill('fireball')
   const list = player.getByRole('list', { name: 'Resultados' })
   // Primero lo que se llama así: la de 2024 y la de 2014
-  await expect(list.getByRole('button').nth(0)).toHaveText('Bola de fuegoConjuro2024')
-  await expect(list.getByRole('button').nth(1)).toHaveText('Bola de fuegoConjuro2014 · Legado')
+  // Cada una con su tipo, su libro y su página (ADR-0021)
+  await expect(list.getByRole('button').nth(0)).toHaveText(/^Bola de fuegoConjuro · SRD 5\.2\.1, pág\. \d+2024$/)
+  await expect(list.getByRole('button').nth(1)).toHaveText(
+    /^Bola de fuegoConjuro · SRD 5\.1(, pág\. \d+)?2014 · Legado$/
+  )
   await list.getByRole('button').first().click()
   const article = player.getByRole('article', { name: 'Bola de fuego' })
   await expect(article).toContainText('8d6')

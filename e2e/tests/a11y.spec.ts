@@ -2,6 +2,7 @@ import AxeBuilder from '@axe-core/playwright'
 import { connect, schema } from '@crisol/db'
 import { resetDatabase } from '@crisol/db/testing'
 import { issueBootstrap } from '@crisol/server/bootstrap'
+import { exampleFile } from '@crisol/systems/examples'
 import { expect, test } from '@playwright/test'
 import { e2eDatabaseUrl } from '../servidor.ts'
 import {
@@ -181,4 +182,70 @@ test('el móvil de la jugadora (su campaña, el menú de la llama, sus páginas 
   await expect(ana.getByRole('heading', { level: 1, name: 'Compendio' })).toBeVisible()
   await check()
   await context.close()
+})
+
+test('el espacio de la campaña y los libros (ADR-0021), en los dos temas @a11y', async ({ page }) => {
+  test.slow()
+  await campaignLink(page)
+  const path = campaignPath(page)
+  const campaignId = path.split('/campanas/')[1] ?? ''
+  const imported = await page.request.post('/api/actions/importSystem', { data: { file: exampleFile('5e') } })
+  const five = (await imported.json()).system.id as string
+  await page.request.post('/api/actions/updateCampaign', { data: { campaignId, system: five } })
+  const made = await page.request.post('/api/actions/createBook', {
+    data: { systemId: five, version: 1, name: 'Grimorio' }
+  })
+  expect(made.status()).toBe(200)
+  await page.request.post('/api/actions/proposeContent', {
+    data: {
+      systemId: five,
+      source: 'grimorio',
+      items: [
+        {
+          type: 'conjuro',
+          key: 'lanza_de_ceniza',
+          data: { name: { es: 'Lanza de ceniza' }, nivel: 2, escuela: 'evocacion', descripcion: { es: 'Brasas.' } },
+          review: { page: 88, excerpt: 'Lanza de ceniza\nEvocación de nivel 2', notes: ['Sin alcance'] }
+        }
+      ]
+    }
+  })
+  const check = async (what: string) => {
+    for (const colorScheme of ['light', 'dark'] as const) {
+      await page.emulateMedia({ colorScheme })
+      const { violations } = await new AxeBuilder({ page }).withTags(WCAG).analyze()
+      const serious = violations.filter((v) => v.impact === 'critical' || v.impact === 'serious')
+      expect(serious.map((v) => `${what} ${colorScheme} ${v.id}: ${v.help}`)).toEqual([])
+    }
+  }
+  await page.goto(path)
+  await expect(page.getByRole('heading', { level: 1, name: 'La Marca' })).toBeVisible()
+  await settled(page)
+  await check('el Inicio')
+  await page.goto(`${path}/libros`)
+  await expect(page.getByRole('heading', { level: 1, name: 'Libros' })).toBeVisible()
+  await check('los libros')
+  await page.getByRole('button', { name: 'Elegir contenido' }).first().click()
+  await expect(page.getByRole('dialog', { name: /qué entra/ })).toBeVisible()
+  await settled(page)
+  await check('elegir contenido')
+  await page.keyboard.press('Escape')
+  await page.goto(`${path}/personajes`)
+  await expect(page.getByRole('heading', { level: 1, name: 'Mesa' })).toBeVisible()
+  await check('la sección Mesa')
+  await page.goto(`/sistemas/${five}`)
+  await expect(page.getByRole('heading', { level: 1, name: '5e' })).toBeVisible()
+  await check('el sistema')
+  await page.getByRole('button', { name: 'Libro nuevo' }).click()
+  await expect(page.getByRole('dialog', { name: 'Libro nuevo en 5e' })).toBeVisible()
+  await settled(page)
+  await check('libro nuevo')
+  await page.keyboard.press('Escape')
+  await page.goto(`/sistemas/${five}/libros/grimorio/revisar`)
+  await expect(page.getByRole('heading', { level: 1, name: 'Revisar lo que trajo la IA' })).toBeVisible()
+  await check('la revisión')
+  await page.goto(`${path}/compendio?libro=srd521`)
+  await expect(page.getByRole('heading', { level: 1, name: 'Compendio' })).toBeVisible()
+  await settled(page)
+  await check('el compendio por libro')
 })

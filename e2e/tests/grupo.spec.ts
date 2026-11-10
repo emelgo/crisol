@@ -21,8 +21,8 @@ test('el grupo: la jugadora coge una poción para su personaje y la usa; el más
 }) => {
   test.slow()
   const link = await campaignLink(page)
-  const campaignUrl = new URL(page.url()).pathname
-  const campaignId = campaignUrl.split('/campanas/')[1] ?? ''
+  const campaignUrl = campaignPath(page)
+  const campaignId = campaignUrl.split('/campanas/')[1]?.split('/')[0] ?? ''
   const systemId = await import5e(page)
   expect(
     (await page.request.post('/api/actions/updateCampaign', { data: { campaignId, system: systemId } })).status()

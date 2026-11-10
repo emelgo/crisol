@@ -28,7 +28,7 @@ test('lo que sabe cada campaña: el máster da a conocer «Aldoria» a La Marca;
 }) => {
   test.slow()
   const link = await campaignLink(page)
-  const campaignId = new URL(page.url()).pathname.split('/campanas/')[1] ?? ''
+  const campaignId = new URL(page.url()).pathname.split('/campanas/')[1]?.split('/')[0] ?? ''
   const worldId = new URL(page.url()).pathname.split('/')[2] ?? ''
   // Otra campaña del mundo, con su jugador
   await toWorlds(page)

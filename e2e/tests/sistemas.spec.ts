@@ -73,11 +73,11 @@ test('«Sistemas»: se hacen con la IA; subir un archivo roto y uno bueno, bajar
   await dialog.getByRole('button', { name: 'Subir el sistema' }).click()
   await expect(dialog).toBeHidden()
   const mine = page.getByRole('list', { name: 'Tuyos' })
-  await expect(mine.getByRole('button', { name: 'Fronteras', exact: true })).toBeVisible()
+  await expect(mine.getByRole('link', { name: 'Fronteras', exact: true })).toBeVisible()
   await expect(page).toHaveURL(/\/sistemas$/)
 
   // Borrar uno que no usa ninguna campaña
-  await mine.getByRole('button', { name: 'Fronteras', exact: true }).click()
+  await mine.getByRole('button', { name: 'Ajustes de Fronteras' }).click()
   const settings = page.getByRole('dialog', { name: 'Ajustes de Fronteras' })
   await settings.getByRole('button', { name: 'Borrar el sistema' }).click()
   const confirm = page.getByRole('dialog', { name: '¿Borrar el sistema Fronteras?' })

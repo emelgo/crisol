@@ -19,7 +19,7 @@ test('las criaturas en juego: tres goblins desde el compendio, su hoja, tirar su
 }) => {
   test.slow()
   const link = await campaignLink(page)
-  const campaignId = new URL(page.url()).pathname.split('/campanas/')[1] ?? ''
+  const campaignId = new URL(page.url()).pathname.split('/campanas/')[1]?.split('/')[0] ?? ''
   const systemId = await import5e(page)
   const chosen = await page.request.post('/api/actions/updateCampaign', {
     data: { campaignId, system: systemId, systemChoices: { sources: ['srd51'], duplicates: 'both' } }
@@ -87,7 +87,7 @@ test('enlazar una criatura desde la página de un PNJ: [[@ la sugiere, su tarjet
 }) => {
   test.slow()
   await campaignLink(page)
-  const campaignId = new URL(page.url()).pathname.split('/campanas/')[1] ?? ''
+  const campaignId = new URL(page.url()).pathname.split('/campanas/')[1]?.split('/')[0] ?? ''
   const worldId = new URL(page.url()).pathname.split('/')[2] ?? ''
   const systemId = await import5e(page)
   const chosen = await page.request.post('/api/actions/updateCampaign', {
@@ -115,9 +115,9 @@ test('enlazar una criatura desde la página de un PNJ: [[@ la sugiere, su tarjet
   await expect(card).toContainText('Criatura')
   await expect(card).toContainText('Clase de armadura 15')
   await page.screenshot({ path: test.info().outputPath('enlace-criatura.png'), fullPage: false })
-  // Al máster le abre su Mesa, con la entrada en la ventana del compendio
+  // Le abre el compendio de la campaña (ADR-0021: una sección suya), con la entrada
   await card.getByRole('button', { name: 'Abrir en el compendio' }).click()
-  await expect(page.getByRole('dialog', { name: 'Compendio' }).getByRole('article', { name: 'Goblin' })).toBeVisible()
+  await expect(page.getByRole('article', { name: 'Goblin' })).toBeVisible()
   // En su Markdown, [[@Goblin]]
   const read = await page.request.post('/api/actions/readPage', { data: { pageId } })
   expect(await read.text()).toContain('[[@Goblin]]')

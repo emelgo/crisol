@@ -19,7 +19,7 @@ test('el compendio del mundo: el máster copia el Goblin al mundo, lo cambia y t
 }) => {
   test.slow()
   const link = await campaignLink(page)
-  const campaignId = new URL(page.url()).pathname.split('/campanas/')[1] ?? ''
+  const campaignId = new URL(page.url()).pathname.split('/campanas/')[1]?.split('/')[0] ?? ''
   const systemId = await import5e(page)
   const chosen = await page.request.post('/api/actions/updateCampaign', {
     data: { campaignId, system: systemId, systemChoices: { sources: ['srd51'], duplicates: 'both' } }

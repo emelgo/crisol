@@ -258,7 +258,8 @@ function OpenInTable({ scene }: { scene: SceneView }) {
   const campaignId = chosen ?? mine[0]?.id ?? null
   const open = useMutation({
     mutationFn: (id: string) => api.call('openScene', { campaignId: id, sceneId: scene.id }),
-    onSuccess: (_, id) => navigate({ to: '/mundos/$worldId/campanas/$campaignId', params: { worldId, campaignId: id } })
+    onSuccess: (_, id) =>
+      navigate({ to: '/mundos/$worldId/campanas/$campaignId/mesa', params: { worldId, campaignId: id } })
   })
   if (mine.length === 0 || !campaignId) return null
   return (

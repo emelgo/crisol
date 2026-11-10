@@ -169,7 +169,7 @@ test('@fugas una jugadora conecta su IA (ADR-0017), y una cuenta sin campaña no
 
   // Ella misma, fuera de la campaña: ya no
   const outsider = await newPlayer(browser, link, 'Fuera')
-  const campaignId = new URL(outsider.url()).pathname.split('/campanas/')[1] ?? ''
+  const campaignId = new URL(outsider.url()).pathname.split('/campanas/')[1]?.split('/')[0] ?? ''
   expect((await outsider.request.post('/api/actions/leaveCampaign', { data: { campaignId } })).status()).toBe(200)
   await outsider.goto(authorize.toString())
   await expect(
@@ -193,7 +193,7 @@ test('@fugas lo que pide la IA del máster solo le llega a él: la cola, sus avi
   const captured = seen
   await createCampaign(page, SECRET_CAMPAIGN)
   await openCampaign(page, SECRET_CAMPAIGN, 'campana')
-  const idB = new URL(page.url()).pathname.split('/').at(-1) ?? ''
+  const idB = new URL(page.url()).pathname.split('/campanas/')[1]?.split('/')[0] ?? ''
   const linkB = await page.getByLabel('Enlace de invitación').inputValue()
 
   // Claude pide regenerar el enlace de B (el máster lo aprueba) y cerrar las invitaciones de A (lo rechaza)
@@ -353,7 +353,7 @@ test('@fugas lo que su campaña sabe, sin lo demás: ni secretos sin revelar, ni
 }) => {
   const link = await campaignLink(page)
   const worldId = new URL(page.url()).pathname.split('/')[2] ?? ''
-  const campaignId = new URL(page.url()).pathname.split('/campanas/')[1] ?? ''
+  const campaignId = new URL(page.url()).pathname.split('/campanas/')[1]?.split('/')[0] ?? ''
   let seen: ReturnType<typeof capture> | undefined
   const player = await newPlayer(browser, link, 'Jugadora', (p) => {
     seen = capture(p)
@@ -674,7 +674,7 @@ test('@fugas los personajes de otro y las tablas del máster: la jugadora no los
   browser
 }) => {
   const link = await campaignLink(page)
-  const campaignId = new URL(page.url()).pathname.split('/campanas/')[1] ?? ''
+  const campaignId = new URL(page.url()).pathname.split('/campanas/')[1]?.split('/')[0] ?? ''
   const worldId = new URL(page.url()).pathname.split('/')[2] ?? ''
   const chosen = await page.request.post('/api/actions/updateCampaign', {
     data: { campaignId, system: await import5e(page), systemChoices: { sources: ['srd521'], duplicates: 'newest' } }
@@ -771,7 +771,7 @@ test('@fugas el compendio del mundo es del máster: la jugadora ni lo ve ni sabe
   browser
 }) => {
   const link = await campaignLink(page)
-  const campaignId = new URL(page.url()).pathname.split('/campanas/')[1] ?? ''
+  const campaignId = new URL(page.url()).pathname.split('/campanas/')[1]?.split('/')[0] ?? ''
   const worldId = new URL(page.url()).pathname.split('/')[2] ?? ''
   const systemId = await import5e(page)
   const chosen = await page.request.post('/api/actions/updateCampaign', { data: { campaignId, system: systemId } })
@@ -843,7 +843,7 @@ test('@fugas las criaturas en juego: la jugadora solo ve las que están a la vis
   browser
 }) => {
   const link = await campaignLink(page)
-  const campaignId = new URL(page.url()).pathname.split('/campanas/')[1] ?? ''
+  const campaignId = new URL(page.url()).pathname.split('/campanas/')[1]?.split('/')[0] ?? ''
   const worldId = new URL(page.url()).pathname.split('/')[2] ?? ''
   const systemId = await import5e(page)
   const chosen = await page.request.post('/api/actions/updateCampaign', { data: { campaignId, system: systemId } })
@@ -965,7 +965,7 @@ test('@fugas la pantalla de la tele solo recibe lo que ve el grupo, y un jugador
 }) => {
   test.setTimeout(240_000)
   const link = await campaignLink(page)
-  const campaignId = new URL(page.url()).pathname.split('/campanas/')[1] ?? ''
+  const campaignId = new URL(page.url()).pathname.split('/campanas/')[1]?.split('/')[0] ?? ''
   const worldId = new URL(page.url()).pathname.split('/')[2] ?? ''
   const call = async (name: string, data: object) => {
     const response = await page.request.post(`/api/actions/${name}`, { data })
@@ -1035,7 +1035,7 @@ test('@fugas la pantalla de la tele solo recibe lo que ve el grupo, y un jugador
   const markId = (words: string) => marks.find((m) => m.text === words)?.id ?? ''
 
   // El máster abre la mesa: trocea el mapa y lo sube
-  await page.goto(`/mundos/${worldId}/campanas/${campaignId}`)
+  await page.goto(`/mundos/${worldId}/campanas/${campaignId}/mesa`)
   await expect(page.getByRole('application', { name: 'Mesa: Cripta de Varn' })).toBeVisible()
   await expect
     .poll(async () => (await call('getScene', { sceneId })).image.tiles?.levels ?? 0, { timeout: 60_000 })

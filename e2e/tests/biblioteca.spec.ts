@@ -1,14 +1,14 @@
 import AxeBuilder from '@axe-core/playwright'
 import { textPdf } from '@crisol/server/pdf-de-prueba'
 import { expect, test } from '@playwright/test'
-import { campaignLink, settled } from './ayudas.ts'
+import { campaignLink, campaignPath, settled } from './ayudas.ts'
 
 test('la biblioteca: un PDF subido se lee solo; buscar una palabra de su página 3 abre el visor en la 3', async ({
   page
 }) => {
   test.slow()
   await campaignLink(page)
-  const campaignUrl = new URL(page.url()).pathname
+  const campaignUrl = campaignPath(page)
   const worldId = campaignUrl.split('/')[2] ?? ''
   const pdf = textPdf([
     'Guía de Valdren\nUn libro de prueba.',
