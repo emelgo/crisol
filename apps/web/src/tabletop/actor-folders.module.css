@@ -71,7 +71,12 @@
 }
 
 .folder {
-  margin-block-start: 6px;
+  margin-block-start: 10px;
+}
+
+/* La primera sección, sin tanto hueco bajo el buscador */
+.loose > :first-child {
+  margin-block-start: 1rem;
 }
 
 /* Donde se va a soltar */
