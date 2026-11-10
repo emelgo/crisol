@@ -146,12 +146,12 @@ describe('la reproducción en cada aparato', () => {
   it('el volumen: el general, el de la pista, el del aparato, el fundido y silenciar', () => {
     const v = voice({ volume: 0.5, fade: 2 })
     expect(
-      voiceGain(v, view([v], { volume: 0.8 }), { ambient: 0.5, effects: 1, muted: false }, T0 + 10_000)
+      voiceGain(v, view([v], { volume: 0.8 }), { ...DEFAULT_DEVICE, ambient: 0.5, effects: 1 }, T0 + 10_000)
     ).toBeCloseTo(0.2)
     expect(voiceGain(v, view([v]), DEFAULT_DEVICE, T0 + 1000)).toBeCloseTo(0.5 * 0.8 * 0.5)
     expect(voiceGain(v, view([v]), { ...DEFAULT_DEVICE, muted: true }, T0 + 10_000)).toBe(0)
     const fx = voice({ kind: 'effects' })
-    expect(voiceGain(fx, view([fx]), { ambient: 0, effects: 0.3, muted: false }, T0 + 10_000)).toBeCloseTo(0.3)
+    expect(voiceGain(fx, view([fx]), { ...DEFAULT_DEVICE, ambient: 0, effects: 0.3 }, T0 + 10_000)).toBeCloseTo(0.3)
   })
 })
 

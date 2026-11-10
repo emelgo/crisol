@@ -14,6 +14,7 @@ import {
   isTrackpadWheel,
   type Point,
   type Size,
+  soundEdges,
   toWorld,
   type Viewport,
   wheelZoomFactor,
@@ -50,6 +51,7 @@ import { Tour } from '../components/tour.tsx'
 import { useDice } from '../dice/context.tsx'
 import { LogStrip } from '../log/strip.tsx'
 import { SoundBars, UnlockSound } from '../sound/controls.tsx'
+import { masterMapSounds, useMapHearing } from '../sound/map-sounds.ts'
 import soundStyles from '../sound/sound.module.css'
 import { SoundContext, useSound, useTableSound } from '../sound/use-table-sound.tsx'
 import { YoutubeDock } from '../sound/youtube.tsx'
@@ -355,7 +357,22 @@ export function Mesa({ worldId, campaign: current }: { worldId: string; campaign
   }, [])
   const markers = useRef<HTMLDivElement | null>(null)
   const marksLayer = useRef<HTMLDivElement | null>(null)
-  const vision = useVision({ campaignId, table, tool, asGroup, view, renderer, ready, onTable: setTable })
+  const vision = useVision({ campaignId, worldId, table, tool, asGroup, view, renderer, ready, onTable: setTable })
+  // Los sonidos del mapa, desde el centro de la vista del máster (o callados, a su elección: docs/specs/sonido-mapa.md)
+  const soundWalls = useMemo(
+    () =>
+      soundEdges(
+        vision.walls,
+        Object.fromEntries(Object.entries(vision.doors).map(([id, isOpen]) => [id, { open: isOpen }]))
+      ),
+    [vision.walls, vision.doors]
+  )
+  useMapHearing(sound.setMap, () => {
+    if (!vision.grid || !sound.device.map || size.width === 0) return null
+    const sounds = masterMapSounds(vision.sounds, { cell: cellSide(vision.grid), darkness: vision.darkness })
+    if (sounds.length === 0) return null
+    return { sounds, walls: soundWalls, listeners: [toWorld(view.current, { x: size.width / 2, y: size.height / 2 })] }
+  })
   const tools = useTableTools({ campaignId, table, tool, view, renderer, ready, channel, tokens })
   const widgets = useWidgets(campaignId, table)
   const gm = useGmSettings(campaignId, open)
@@ -409,7 +426,7 @@ export function Mesa({ worldId, campaign: current }: { worldId: string; campaign
   const tableVision = table?.vision && table.vision.sceneId === open?.id ? table.vision : null
   useEffect(() => {
     if (!ready) return
-    if (!tableVision || tool === 'walls' || tool === 'lights') {
+    if (!tableVision || tool === 'walls' || tool === 'lights' || tool === 'sounds') {
       renderer.current?.setFog(null)
       return
     }
@@ -639,7 +656,7 @@ export function Mesa({ worldId, campaign: current }: { worldId: string; campaign
               />
             ) : isVisionTool(tool) || asGroup ? (
               <VisionPanel
-                mode={asGroup ? 'group' : (tool as 'walls' | 'lights' | 'fog')}
+                mode={asGroup ? 'group' : (tool as 'walls' | 'lights' | 'sounds' | 'fog')}
                 vision={vision}
                 tokens={tokens}
                 notSeen={notSeen}

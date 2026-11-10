@@ -8,6 +8,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { createServerClock, type ServerClock } from './clock.ts'
 import { type DeviceSound, useDeviceSound } from './device.ts'
 import { createSoundEngine, type SoundEngine } from './engine.ts'
+import { createMapSoundEngine, type MapSoundEngine, type MapVoice } from './map-sounds.ts'
 
 export interface TableSound {
   view: SoundView | null
@@ -24,6 +25,8 @@ export interface TableSound {
   clock: ServerClock
   setYoutubeBlocked(blocked: boolean): void
   registerUnlock(unlock: () => void): () => void
+  /** Los sonidos del mapa que se oyen aquí ahora (docs/specs/sonido-mapa.md) */
+  setMap(voices: readonly MapVoice[]): void
 }
 
 /** Cuándo se vuelve a medir el desfase tras el primero (ms): unas pocas al empezar y luego de vez en cuando */
@@ -35,6 +38,9 @@ export function useTableSound(): TableSound {
   const [view, setViewState] = useState<SoundView | null>(null)
   const [fileBlocked, setFileBlocked] = useState(false)
   const [youtubeBlocked, setYoutubeBlocked] = useState(false)
+  const [mapBlocked, setMapBlocked] = useState(false)
+  const [mapPlaying, setMapPlaying] = useState(false)
+  const mapEngine = useRef<MapSoundEngine | null>(null)
   const [device, setDevice] = useDeviceSound()
   const engine = useRef<SoundEngine | null>(null)
   const sendTime = useRef<(() => void) | null>(null)
@@ -46,9 +52,13 @@ export function useTableSound(): TableSound {
   useEffect(() => {
     const created = createSoundEngine({ clock, device: deviceNow.current, onBlocked: setFileBlocked })
     engine.current = created
+    const map = createMapSoundEngine({ device: deviceNow.current, onBlocked: setMapBlocked })
+    mapEngine.current = map
     return () => {
       created.dispose()
       engine.current = null
+      map.dispose()
+      mapEngine.current = null
       for (const timer of sampling.current) clearTimeout(timer)
       sampling.current = []
     }
@@ -56,7 +66,13 @@ export function useTableSound(): TableSound {
 
   useEffect(() => {
     engine.current?.setDevice(device)
+    mapEngine.current?.setDevice(device)
   }, [device])
+
+  const setMap = useCallback((voices: readonly MapVoice[]) => {
+    mapEngine.current?.update(voices)
+    setMapPlaying(mapEngine.current?.playing() ?? false)
+  }, [])
 
   const setView = useCallback((next: SoundView) => {
     setViewState(next)
@@ -92,6 +108,7 @@ export function useTableSound(): TableSound {
 
   const unlock = useCallback(() => {
     engine.current?.unlock()
+    mapEngine.current?.unlock()
     setYoutubeBlocked(false)
     for (const run of unlocks.current) run()
   }, [])
@@ -110,13 +127,14 @@ export function useTableSound(): TableSound {
     setView,
     handle,
     bind,
-    blocked: playing && (fileBlocked || youtubeBlocked),
+    blocked: (playing && (fileBlocked || youtubeBlocked)) || (mapPlaying && mapBlocked),
     unlock,
     device,
     setDevice,
     clock,
     setYoutubeBlocked,
-    registerUnlock
+    registerUnlock,
+    setMap
   }
 }
 

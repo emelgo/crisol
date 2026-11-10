@@ -8,9 +8,11 @@ export interface DeviceSound {
   ambient: number
   effects: number
   muted: boolean
+  /** El máster: oír los sonidos del mapa desde el centro de su vista (docs/specs/sonido-mapa.md) */
+  map: boolean
 }
 
-export const DEFAULT_DEVICE: DeviceSound = { ambient: 0.8, effects: 1, muted: false }
+export const DEFAULT_DEVICE: DeviceSound = { ambient: 0.8, effects: 1, muted: false, map: true }
 
 const KEY = 'crisol.sonido.aparato'
 const EVENT = 'crisol-sonido-aparato'
@@ -25,7 +27,8 @@ export function readDevice(): DeviceSound {
     return {
       ambient: clamp01(raw.ambient, DEFAULT_DEVICE.ambient),
       effects: clamp01(raw.effects, DEFAULT_DEVICE.effects),
-      muted: raw.muted === true
+      muted: raw.muted === true,
+      map: raw.map !== false
     }
   } catch {
     return DEFAULT_DEVICE

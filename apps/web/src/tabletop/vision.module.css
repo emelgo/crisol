@@ -176,6 +176,11 @@
   color: #3a2600;
 }
 
+.light[data-sound-marker] {
+  background: #8fc7ff;
+  color: #0b2238;
+}
+
 .light[data-off] {
   background: #6b6b74;
   color: #1b1b1f;

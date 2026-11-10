@@ -8,6 +8,7 @@ import type { CampaignTableView, SceneGrid, SceneVisionView, TileFit, WallView }
 import type { Point, Viewport } from '@crisol/tabletop'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import {
+  AudioLines,
   BrickWall,
   Camera,
   Cloud,
@@ -74,11 +75,12 @@ export type TableTool =
   | 'fog'
   | 'walls'
   | 'lights'
+  | 'sounds'
 
 /** Lo que abre un panel sin cambiar de herramienta: los widgets, la pantalla del máster y las instantáneas */
 export type SidePanel = 'widgets' | 'gm' | 'snapshots'
 
-const VISION_TOOLS: ReadonlySet<TableTool> = new Set(['fog', 'walls', 'lights'])
+const VISION_TOOLS: ReadonlySet<TableTool> = new Set(['fog', 'walls', 'lights', 'sounds'])
 export const isVisionTool = (tool: TableTool) => VISION_TOOLS.has(tool)
 
 /**
@@ -97,7 +99,8 @@ export const TOOLS: ReadonlyArray<{ key: TableTool; shortcut: string; icon: type
   { key: 'image', shortcut: 'I', icon: ImageIcon, group: 1 },
   { key: 'fog', shortcut: 'N', icon: Cloud, group: 2 },
   { key: 'walls', shortcut: 'M', icon: BrickWall, group: 2 },
-  { key: 'lights', shortcut: 'L', icon: Lightbulb, group: 2 }
+  { key: 'lights', shortcut: 'L', icon: Lightbulb, group: 2 },
+  { key: 'sounds', shortcut: 'O', icon: AudioLines, group: 2 }
 ]
 
 export const SIDE_PANELS: ReadonlyArray<{ key: SidePanel; shortcut: string; icon: typeof Cloud }> = [
@@ -126,6 +129,7 @@ type Gesture =
   | { type: 'chain'; chain: Chain; cursor: Point | null }
   | { type: 'end'; from: Point; to: Point; moved: boolean }
   | { type: 'light'; id: string; to: Point; moved: boolean }
+  | { type: 'sound'; id: string; to: Point; moved: boolean }
   | { type: 'rectangle'; from: Point; to: Point }
   | { type: 'brush' | 'lasso'; points: Point[] }
 
@@ -133,6 +137,9 @@ const FOG_COLORS = { reveal: 0x7cc4a4, cover: 0xe8746f } as const
 /** Lo que se pasa de largo al pulsar un muro, un extremo o una luz, en píxeles de la pantalla */
 const HIT = 8
 const LIGHT_HIT = 14
+/** Los sonidos nuevos: 6 casillas de radio */
+const NEW_SOUND_RADIUS = 6
+const SOUND_COLOR = 0x8fc7ff
 /** Las luces nuevas: brillante 4 casillas, tenue 8 (20 y 40 pies en la de 5) */
 const NEW_LIGHT = { bright: 4, dim: 8, color: '#ffb04a' }
 /** Los puntos de un pincel o un lazo, como mucho (los que admite la API) */
@@ -249,6 +256,7 @@ export type Vision = ReturnType<typeof useVision>
  */
 export function useVision({
   campaignId,
+  worldId = '',
   table,
   tool,
   asGroup,
@@ -258,6 +266,8 @@ export function useVision({
   onTable
 }: {
   campaignId: string
+  /** El mundo de la campaña (los audios y las listas para los sonidos del mapa) */
+  worldId?: string
   table: CampaignTableView | null
   tool: TableTool
   asGroup: boolean
@@ -288,12 +298,14 @@ export function useVision({
   const doors = useMemo(() => ({ ...data?.doors, ...live?.doors, ...pressed }), [data, live, pressed])
   const walls = data?.walls ?? []
   const lights = data?.lights ?? []
+  const sounds = data?.sounds ?? []
   const grid: SceneGrid | null = open?.grid ?? null
 
   // Lo que se elige y cómo se dibuja
   const [kind, setKind] = useState<DrawKind>('wall')
   const [selectedWall, setSelectedWall] = useState<string | null>(null)
   const [selectedLight, setSelectedLight] = useState<string | null>(null)
+  const [selectedSound, setSelectedSound] = useState<string | null>(null)
   const [fogMode, setFogMode] = useState<FogMode>('reveal')
   const [fogShape, setFogShape] = useState<FogShape>('brush')
   const [brushCells, setBrushCells] = useState(2)
@@ -302,7 +314,29 @@ export function useVision({
   const sent = useRef<Gesture | null>(null)
   const hover = useRef<Point | null>(null)
 
-  const keep = (result: SceneVisionView) => setLatest({ ...result, doors: result.doors ?? data?.doors })
+  const keep = (result: SceneVisionView) =>
+    setLatest({
+      ...result,
+      doors: result.doors ?? data?.doors,
+      // Lo devuelto sin campaña no dice si suenan en ella: se queda lo que se sabía
+      sounds: (result.sounds ?? []).map((s) => ({
+        ...s,
+        enabled: s.enabled ?? data?.sounds?.find((d) => d.id === s.id)?.enabled ?? true
+      }))
+    })
+  const placeSound = useMutation({
+    mutationFn: (input: Omit<ActionInput<'placeSceneSound'>, 'sceneId'>) =>
+      api.call('placeSceneSound', { sceneId: sceneId as string, ...input }),
+    onSuccess: keep
+  })
+  const changeSound = useMutation({
+    mutationFn: (input: ActionInput<'changeSceneSound'>) => api.call('changeSceneSound', input),
+    onSuccess: keep
+  })
+  const removeSound = useMutation({
+    mutationFn: (id: string) => api.call('removeSceneSound', { id }),
+    onSuccess: keep
+  })
   const changeWalls = useMutation({
     mutationFn: (input: Omit<ActionInput<'changeWalls'>, 'sceneId'>) =>
       api.call('changeWalls', { sceneId: sceneId as string, ...input }),
@@ -343,6 +377,7 @@ export function useVision({
   const state = useRef({
     walls,
     lights,
+    sounds,
     grid,
     kind,
     tool,
@@ -350,6 +385,7 @@ export function useVision({
     doors,
     selectedWall,
     selectedLight,
+    selectedSound,
     fogMode,
     fogShape,
     brushCells
@@ -357,6 +393,7 @@ export function useVision({
   state.current = {
     walls,
     lights,
+    sounds,
     grid,
     kind,
     tool,
@@ -364,6 +401,7 @@ export function useVision({
     doors,
     selectedWall,
     selectedLight,
+    selectedSound,
     fogMode,
     fogShape,
     brushCells
@@ -375,7 +413,7 @@ export function useVision({
     const scale = view.current?.scale ?? 1
     const g = gesture.current
     const shapes: OverlayShape[] = []
-    if ((now.tool === 'walls' || now.asGroup) && now.grid) {
+    if ((now.tool === 'walls' || now.tool === 'sounds' || now.asGroup) && now.grid) {
       const shown =
         g?.type === 'end'
           ? now.walls.map((wall) => {
@@ -446,6 +484,23 @@ export function useVision({
         }
       }
     }
+    if (now.tool === 'sounds' && now.grid) {
+      // Cada sonido, su alcance; el elegido, más marcado
+      const side = cellSide(now.grid)
+      for (const sound of now.sounds) {
+        const chosen = sound.id === (g?.type === 'sound' ? g.id : now.selectedSound)
+        const at = g?.type === 'sound' && g.id === sound.id ? g.to : sound
+        shapes.push({
+          kind: 'circle',
+          at,
+          radius: sound.radius * side,
+          color: SOUND_COLOR,
+          width: chosen ? 3 : 1.5,
+          fill: chosen ? 0.1 : 0.03,
+          dash: chosen ? [12, 8] : [4, 8]
+        })
+      }
+    }
     if (now.tool === 'fog' && now.grid) {
       const radius = (now.brushCells * cellSide(now.grid)) / 2
       for (const shown of [sent.current, g]) {
@@ -481,7 +536,22 @@ export function useVision({
   // Al cambiar algo (los muros, la herramienta, lo elegido) o al estar listo el lienzo
   useEffect(() => {
     if (ready) redraw()
-  }, [ready, redraw, walls, lights, doors, tool, asGroup, selectedWall, selectedLight, fogMode, fogShape, brushCells])
+  }, [
+    ready,
+    redraw,
+    walls,
+    lights,
+    sounds,
+    doors,
+    tool,
+    asGroup,
+    selectedWall,
+    selectedLight,
+    selectedSound,
+    fogMode,
+    fogShape,
+    brushCells
+  ])
 
   // Otra herramienta u otra escena: sin gesto ni nada elegido
   useEffect(() => {
@@ -489,6 +559,7 @@ export function useVision({
     hover.current = null
     setSelectedWall(null)
     setSelectedLight(null)
+    setSelectedSound(null)
   }, [tool, sceneId])
 
   /** Acaba los muros encadenados: los manda si hay al menos un tramo */
@@ -620,6 +691,50 @@ export function useVision({
         },
         leave() {}
       }
+    if (tool === 'sounds')
+      return {
+        down(world, event) {
+          const hit = lightAt(state.current.sounds, world, tolerance(LIGHT_HIT))
+          if (hit) {
+            setSelectedSound(hit.id)
+            gesture.current = { type: 'sound', id: hit.id, to: { x: hit.x, y: hit.y }, moved: false }
+            return true
+          }
+          const at = snapPoint(world, { grid, shift: event.shiftKey, endpoints: [], tolerance: 0 })
+          const before = new Set(state.current.sounds.map((s) => s.id))
+          const centered =
+            event.shiftKey && grid.type !== 'none' ? { x: at.x + grid.size / 2, y: at.y + grid.size / 2 } : at
+          placeSound.mutate(
+            { x: Math.round(centered.x), y: Math.round(centered.y), radius: NEW_SOUND_RADIUS },
+            { onSuccess: (result) => setSelectedSound(result.sounds?.find((s) => !before.has(s.id))?.id ?? null) }
+          )
+          return true
+        },
+        move(world) {
+          const g = gesture.current
+          if (g?.type !== 'sound') return
+          const sound = state.current.sounds.find((s) => s.id === g.id)
+          if (sound && Math.hypot(world.x - sound.x, world.y - sound.y) * (view.current?.scale ?? 1) >= 3)
+            g.moved = true
+          if (!g.moved) return
+          g.to = { x: Math.round(world.x), y: Math.round(world.y) }
+          redrawRef.current()
+          const marker = document.querySelector<HTMLElement>(`[data-sound="${g.id}"]`)
+          if (marker) {
+            marker.dataset.x = String(g.to.x)
+            marker.dataset.y = String(g.to.y)
+            placeMarkers(marker.parentElement, view.current)
+          }
+        },
+        up() {
+          const g = gesture.current
+          if (g?.type !== 'sound') return
+          gesture.current = null
+          if (g.moved) changeSound.mutate({ id: g.id, x: g.to.x, y: g.to.y })
+          redrawRef.current()
+        },
+        leave() {}
+      }
     // La niebla a mano
     return {
       down(world) {
@@ -658,7 +773,7 @@ export function useVision({
         if (!gesture.current) redrawRef.current()
       }
     }
-  }, [tool, grid, view, changeWalls, changeFog, finishChain])
+  }, [tool, grid, view, changeWalls, changeFog, finishChain, placeSound, changeSound])
 
   /** Las teclas de la herramienta (Escape, Supr, Retroceso): true si las usó */
   const key = useCallback(
@@ -675,9 +790,10 @@ export function useVision({
           redrawRef.current()
           return true
         }
-        if (now.selectedWall || now.selectedLight) {
+        if (now.selectedWall || now.selectedLight || now.selectedSound) {
           setSelectedWall(null)
           setSelectedLight(null)
+          setSelectedSound(null)
           return true
         }
         return false
@@ -700,14 +816,32 @@ export function useVision({
         setSelectedLight(null)
         return true
       }
+      if (now.tool === 'sounds' && now.selectedSound) {
+        removeSound.mutate(now.selectedSound)
+        setSelectedSound(null)
+        return true
+      }
       return false
     },
-    [changeWalls, finishChain]
+    [changeWalls, finishChain, removeSound]
   )
 
-  const errors = [changeWalls, updateVision, placeImported, setDoor, changeFog, resetFog, setTileFit]
+  const errors = [
+    changeWalls,
+    updateVision,
+    placeImported,
+    setDoor,
+    changeFog,
+    resetFog,
+    setTileFit,
+    placeSound,
+    changeSound,
+    removeSound
+  ]
   const fresh = data && (!live || data.version > live.version) ? data : null
   return {
+    campaignId,
+    worldId,
     sceneId,
     scene: open,
     grid,
@@ -725,6 +859,12 @@ export function useVision({
     setSelectedWall,
     selectedLight: lights.find((l) => l.id === selectedLight) ?? null,
     setSelectedLight,
+    sounds,
+    selectedSound: sounds.find((s) => s.id === selectedSound) ?? null,
+    setSelectedSound,
+    placeSound,
+    changeSound,
+    removeSound,
     fogMode,
     setFogMode,
     fogShape,
@@ -768,11 +908,15 @@ export function VisionMarkers({
 }) {
   const { t } = useTranslation()
   const { walls, lights, doors } = vision
-  const showDoors = tool !== 'lights' && vision.grid
+  const showDoors = tool !== 'lights' && tool !== 'sounds' && vision.grid
   const editing = tool === 'walls'
   useLayoutEffect(() => placeMarkers(layer.current, view.current))
   return (
-    <div ref={layer} className={styles.markers} data-editing={editing || tool === 'lights' || undefined}>
+    <div
+      ref={layer}
+      className={styles.markers}
+      data-editing={editing || tool === 'lights' || tool === 'sounds' || undefined}
+    >
       {showDoors &&
         walls
           .filter((wall) => wall.door)
@@ -817,6 +961,25 @@ export function VisionMarkers({
             onClick={() => vision.setSelectedLight(light.id)}
           >
             <Sun aria-hidden="true" size={14} />
+          </button>
+        ))}
+      {tool === 'sounds' &&
+        vision.sounds.map((sound, i) => (
+          <button
+            key={sound.id}
+            type="button"
+            className={styles.light}
+            data-sound-marker
+            data-selected={vision.selectedSound?.id === sound.id || undefined}
+            data-off={sound.enabled === false || sound.source.type === 'none' || undefined}
+            data-x={sound.x}
+            data-y={sound.y}
+            data-sound={sound.id}
+            aria-pressed={vision.selectedSound?.id === sound.id}
+            aria-label={sound.name || t('vision.soundName', { n: i + 1 })}
+            onClick={() => vision.setSelectedSound(sound.id)}
+          >
+            <AudioLines aria-hidden="true" size={14} />
           </button>
         ))}
     </div>

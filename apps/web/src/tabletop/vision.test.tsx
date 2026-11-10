@@ -314,6 +314,29 @@ describe('la visión en la mesa del máster', () => {
     await waitFor(async () => expect((await vision()).lights).toHaveLength(0))
   })
 
+  it('los sonidos del mapa: un clic pone uno y se elige; su radio en casillas, los muros y la campaña; se quita', async () => {
+    const user = userEvent.setup()
+    const { click, vision } = await renderMesa()
+    press('o')
+    const panel = within(screen.getByRole('complementary', { name: 'Sonidos del mapa' }))
+    expect(panel.getByRole('switch', { name: 'Oírlos desde el centro de la vista' })).toBeDefined()
+    click(500, 300)
+    const sound = within(await panel.findByRole('region', { name: 'Sonido 1' }))
+    expect((await vision()).sounds?.[0]).toMatchObject({ x: 500, y: 300, radius: 6, walls: 'block', enabled: true })
+    // Su alcance, dibujado: 6 casillas de 100 px
+    await waitFor(() => expect(drawn.shapes.some((s) => s.kind === 'circle' && s.radius === 600)).toBe(true))
+    const radius = sound.getByLabelText('Radio (casillas)')
+    await user.clear(radius)
+    await user.type(radius, '3{Enter}')
+    await waitFor(async () => expect((await vision()).sounds?.[0]?.radius).toBe(3))
+    await user.click(sound.getByRole('radio', { name: 'Lo amortiguan' }))
+    await waitFor(async () => expect((await vision()).sounds?.[0]?.walls).toBe('muffle'))
+    await user.click(sound.getByRole('switch', { name: 'Suena en esta campaña' }))
+    await waitFor(async () => expect((await vision()).sounds?.[0]?.enabled).toBe(false))
+    await user.click(sound.getByRole('button', { name: 'Quitar el sonido' }))
+    await waitFor(async () => expect((await vision()).sounds).toHaveLength(0))
+  })
+
   it('«Ver como el grupo»: quién mira, lo que no ve y «Volver»', async () => {
     const user = userEvent.setup()
     const { api, scene, push } = await renderMesa()

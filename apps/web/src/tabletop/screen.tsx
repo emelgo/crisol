@@ -20,6 +20,7 @@ import { PlayerPage } from '../campaign/world-pages.tsx'
 import { CrisolMark } from '../components/brand.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { SoundStage } from '../sound/controls.tsx'
+import { useMapHearing } from '../sound/map-sounds.ts'
 import { useTableSound } from '../sound/use-table-sound.tsx'
 import { ReadAsProvider } from '../wiki/read-as.tsx'
 import { Bubbles, useBubbles } from './bubbles.tsx'
@@ -253,6 +254,17 @@ export function TableScreen({
   // La jugadora arrastra lo que lleva (con el ratón o el dedo): en vivo por el canal y, al soltar, a la API; si no le
   // deja, la ficha vuelve y sale por qué
   const mine = inMesa ? movableBy(visible, me) : []
+  // Los sonidos del mapa (docs/specs/sonido-mapa.md): en la vista de jugadores, desde las fichas del grupo; en la Mesa
+  // de un jugador, desde las suyas (con lo que se arrastra, donde va)
+  useMapHearing(sound.setMap, () => {
+    if (!presented || !screen?.sounds?.length) return null
+    const ears = inMesa ? mine : visible.filter((token) => token.faction === 'group')
+    const listeners = ears.map((token) => {
+      const moving = own?.tokenId === token.id ? own : dragged.get(token.id)
+      return moving ? { x: moving.x, y: moving.y } : { x: token.x, y: token.y }
+    })
+    return { sounds: screen.sounds, walls: screen.soundWalls ?? [], listeners }
+  })
   const local = (event: { clientX: number; clientY: number }) => {
     const rect = host.current?.getBoundingClientRect()
     return { x: event.clientX - (rect?.left ?? 0), y: event.clientY - (rect?.top ?? 0) }

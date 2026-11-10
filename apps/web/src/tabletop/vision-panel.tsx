@@ -4,15 +4,26 @@
  * automática, destapar o tapar todo, reiniciarla, ver como el grupo y los bordes de la tele) y lo que ve el grupo.
  * Encima del mapa, la barra de la niebla a mano y el aviso de «Viendo como el grupo»
  */
-import { type LightView, type Restriction, type TokenView, WALL_PRESETS, type WallView } from '@crisol/contracts'
+import {
+  type LightView,
+  type Restriction,
+  type SceneSoundView,
+  type TokenView,
+  WALL_PRESETS,
+  type WallView
+} from '@crisol/contracts'
+import { useQuery } from '@tanstack/react-query'
 import { Brush, Eye, EyeOff, Lasso, RotateCcw, Square, Trash2 } from 'lucide-react'
 import { type ReactNode, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ActionInput } from '../api/client.ts'
+import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import dialogStyles from '../components/dialog.module.css'
 import { FormError } from '../components/field.tsx'
 import { Modal } from '../components/modal.tsx'
+import { playlistsKey } from '../sound/sound-tab.tsx'
+import { useSound } from '../sound/use-table-sound.tsx'
 import { cssDisc } from './draw.ts'
 import mesaStyles from './mesa.module.css'
 import { initialOf } from './tokens.ts'
@@ -20,7 +31,7 @@ import styles from './vision.module.css'
 import type { FogMode, FogShape, Vision } from './vision.tsx'
 import { DRAW_KINDS, type DrawKind, drawKindOf, WALL_COLORS, wallInputFor, wallStats } from './walls.ts'
 
-export type VisionPanelMode = 'walls' | 'lights' | 'fog' | 'group'
+export type VisionPanelMode = 'walls' | 'lights' | 'sounds' | 'fog' | 'group'
 
 type ActionWallPatch = NonNullable<NonNullable<ActionInput<'changeWalls'>['walls']>['update']>[number]
 
@@ -68,15 +79,18 @@ export function VisionPanel({
       ? t('vision.walls')
       : mode === 'lights'
         ? t('vision.lights')
-        : mode === 'fog'
-          ? t('vision.fog')
-          : t('vision.groupTitle')
+        : mode === 'sounds'
+          ? t('vision.sounds')
+          : mode === 'fog'
+            ? t('vision.fog')
+            : t('vision.groupTitle')
   return (
     <aside className={mesaStyles.panel} aria-label={title}>
       <div className={styles.body}>
         <h2 className={styles.title}>{title}</h2>
         {mode === 'walls' && <WallsPanel vision={vision} />}
         {mode === 'lights' && <LightsPanel vision={vision} />}
+        {mode === 'sounds' && <SoundsPanel vision={vision} />}
         {mode === 'fog' && <FogPanel vision={vision} onAsGroup={onAsGroup} />}
         {mode === 'group' && <GroupPanel vision={vision} tokens={tokens} notSeen={notSeen} />}
         <FormError message={vision.error ? errorText(vision.error) : null} />
@@ -446,6 +460,163 @@ function SelectedLight({ light, index, vision }: { light: LightView; index: numb
       >
         <Trash2 aria-hidden="true" size={15} />
         {t('vision.removeLight')}
+      </button>
+    </section>
+  )
+}
+
+/** Los sonidos del mapa: oírlos desde la vista y el elegido (docs/specs/sonido-mapa.md) */
+function SoundsPanel({ vision }: { vision: Vision }) {
+  const { t } = useTranslation()
+  const sound = useSound()
+  const index = vision.sounds.findIndex((s) => s.id === vision.selectedSound?.id)
+  return (
+    <>
+      {!vision.selectedSound && <span className={styles.stat}>{t('vision.soundsHint')}</span>}
+      {sound && (
+        <Switch checked={sound.device.map} onChange={(map) => sound.setDevice({ map })}>
+          {t('vision.soundFromView')}
+        </Switch>
+      )}
+      {vision.selectedSound && (
+        <SelectedSound key={vision.selectedSound.id} sound={vision.selectedSound} index={index} vision={vision} />
+      )}
+    </>
+  )
+}
+
+/** El sonido elegido: su nombre, qué suena, su radio, su volumen, el suavizado, los muros y la oscuridad */
+function SelectedSound({ sound, index, vision }: { sound: SceneSoundView; index: number; vision: Vision }) {
+  const { t } = useTranslation()
+  const api = useApi()
+  const files = useQuery({
+    queryKey: ['files', vision.worldId],
+    queryFn: () => api.call('listFiles', { worldId: vision.worldId }),
+    enabled: Boolean(vision.worldId)
+  })
+  const playlists = useQuery({
+    queryKey: playlistsKey(vision.worldId),
+    queryFn: () => api.call('listSoundPlaylists', { worldId: vision.worldId }),
+    enabled: Boolean(vision.worldId)
+  })
+  const audios = (files.data?.files ?? []).filter((f) => f.mime.startsWith('audio/'))
+  const lists = (playlists.data?.playlists ?? [])
+    .map((p) => ({ ...p, tracks: p.tracks.filter((track) => track.source.type === 'file') }))
+    .filter((p) => p.tracks.length > 0)
+  const update = (patch: Omit<Parameters<typeof vision.changeSound.mutate>[0], 'id'>) =>
+    vision.changeSound.mutate({ id: sound.id, ...patch })
+  const [volume, setVolume] = useState(Math.round(sound.volume * 100))
+  useEffect(() => setVolume(Math.round(sound.volume * 100)), [sound.volume])
+  const [name, setName] = useState(sound.name)
+  const label = sound.name || t('vision.soundName', { n: index + 1 })
+  const chosen =
+    sound.source.type === 'file'
+      ? `file:${sound.source.fileId}`
+      : sound.source.type === 'track'
+        ? `track:${sound.source.trackId}`
+        : sound.source.type === 'url'
+          ? 'url'
+          : ''
+  const pick = (value: string) => {
+    const [kind, id] = value.split(':')
+    if (kind === 'file' && id) update({ source: { type: 'file', fileId: id } })
+    else if (kind === 'track' && id) update({ source: { type: 'track', trackId: id } })
+    else if (!value) update({ source: { type: 'none' } })
+  }
+  return (
+    <section className={styles.selected} aria-label={label}>
+      <b>{label}</b>
+      <label className={styles.field}>
+        <span>{t('vision.soundLabel')}</span>
+        <input
+          className={styles.input}
+          value={name}
+          maxLength={200}
+          onChange={(event) => setName(event.target.value)}
+          onBlur={() => name.trim() !== sound.name && update({ name: name.trim() })}
+          onKeyDown={(event) => event.key === 'Enter' && name.trim() !== sound.name && update({ name: name.trim() })}
+        />
+      </label>
+      <label className={styles.field}>
+        <span>{t('vision.soundSource')}</span>
+        <select className={styles.select} value={chosen} onChange={(event) => pick(event.target.value)}>
+          <option value="">{t('vision.soundNone')}</option>
+          {sound.source.type === 'url' && <option value="url">{sound.source.url}</option>}
+          {audios.length > 0 && (
+            <optgroup label={t('vision.soundFiles')}>
+              {audios.map((file) => (
+                <option key={file.id} value={`file:${file.id}`}>
+                  {file.name}
+                </option>
+              ))}
+            </optgroup>
+          )}
+          {lists.map((list) => (
+            <optgroup key={list.id} label={t('vision.soundTracks', { name: list.name })}>
+              {list.tracks.map((track) => (
+                <option key={track.id} value={`track:${track.id}`}>
+                  {track.name}
+                </option>
+              ))}
+            </optgroup>
+          ))}
+        </select>
+      </label>
+      <div className={styles.row}>
+        <NumberField
+          label={t('vision.soundRadius')}
+          value={sound.radius}
+          onCommit={(radius) => radius > 0 && update({ radius })}
+        />
+        <label className={styles.field}>
+          <span>{t('vision.soundVolume')}</span>
+          <input
+            type="range"
+            min={0}
+            max={100}
+            step={5}
+            value={volume}
+            className={styles.range}
+            onChange={(event) => setVolume(Number(event.target.value))}
+            onPointerUp={() => volume / 100 !== sound.volume && update({ volume: volume / 100 })}
+            onKeyUp={() => volume / 100 !== sound.volume && update({ volume: volume / 100 })}
+          />
+        </label>
+      </div>
+      <div className={styles.field}>
+        <span>{t('vision.soundWalls')}</span>
+        <Segments
+          label={t('vision.soundWalls')}
+          value={sound.walls}
+          options={[
+            { value: 'block' as const, label: t('vision.soundWallsBlock') },
+            { value: 'muffle' as const, label: t('vision.soundWallsMuffle') }
+          ]}
+          onChange={(walls) => update({ walls })}
+        />
+      </div>
+      <Switch checked={sound.easing} onChange={(easing) => update({ easing })}>
+        {t('vision.soundEasing')}
+      </Switch>
+      <Switch checked={sound.darkOnly} onChange={(darkOnly) => update({ darkOnly })}>
+        {t('vision.soundDarkOnly')}
+      </Switch>
+      <Switch
+        checked={sound.enabled !== false}
+        onChange={(enabled) => update({ campaignId: vision.campaignId, enabled })}
+      >
+        {t('vision.soundOn')}
+      </Switch>
+      <button
+        type="button"
+        className={`${styles.ghost} ${styles.start}`}
+        onClick={() => {
+          vision.removeSound.mutate(sound.id)
+          vision.setSelectedSound(null)
+        }}
+      >
+        <Trash2 aria-hidden="true" size={15} />
+        {t('vision.removeSound')}
       </button>
     </section>
   )
