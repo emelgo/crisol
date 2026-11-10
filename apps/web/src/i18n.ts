@@ -224,7 +224,7 @@ export const es = {
     deleteTitle: '¿Borrar «{{name}}»?',
     deleteWarning: 'Irá a la papelera, con sus campañas y sus páginas, y se podrá recuperar durante {{days}} días.',
     description: 'Descripción',
-    descriptionHint: 'Una línea que sale en su tarjeta.',
+    descriptionHint: 'Sale en su tarjeta.',
     color: 'Color',
     customColor: 'Color propio',
     noColor: 'Sin color',

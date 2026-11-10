@@ -228,44 +228,10 @@
   background: var(--color-raised);
 }
 
-/* «Plantilla nueva» (y «Sistema nuevo»): un recuadro más, vacío y con el borde discontinuo, con las esquinas cortadas
-   como «Nuevo mundo» (routes/world-card.module.css): el borde se recorta con la forma y cada diagonal se dibuja aparte */
-/* Del alto de las demás tarjetas de su fila */
-.grid > li:has(> .newCard) {
+/* «Plantilla nueva», «Sistema nuevo» y «Personaje nuevo» (components/new-card.tsx), del alto de las demás tarjetas de
+   su fila */
+.newItem {
   display: flex;
-}
-
-.newCard {
-  --line: var(--color-field-border);
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  inline-size: 100%;
-  min-block-size: 11rem;
-  clip-path: var(--cut);
-  border: 1px dashed var(--line);
-  background:
-    linear-gradient(to bottom right, transparent calc(50% - 0.6px), var(--line) 0 calc(50% + 0.6px), transparent 0) top
-    left / 12px 12px no-repeat,
-    linear-gradient(to bottom left, transparent calc(50% - 0.6px), var(--line) 0 calc(50% + 0.6px), transparent 0) top
-    right / 12px 12px no-repeat,
-    linear-gradient(to bottom right, transparent calc(50% - 0.6px), var(--line) 0 calc(50% + 0.6px), transparent 0)
-    bottom right / 12px 12px no-repeat,
-    linear-gradient(to bottom left, transparent calc(50% - 0.6px), var(--line) 0 calc(50% + 0.6px), transparent 0)
-    bottom left / 12px 12px no-repeat;
-  background-origin: border-box;
-  color: var(--color-muted);
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.newCard:hover {
-  --line: var(--color-text);
-  color: var(--color-text);
 }
 
 .preview {

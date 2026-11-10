@@ -23,11 +23,14 @@ Plan: `tasks/plan-revision.md`. Una tanda cada vez: se enseña en local, Enrique
 
 ## Tanda 1 — Inicio: arreglos rápidos (rama `revision/tanda-1`)
 
-- [ ] 1. Chispas y humo en el tema claro (colores como tokens con su versión clara).
-- [ ] 2. Los iconos de la barra se van al ritmo al que llegan.
-- [ ] 3. Recuadros «Nuevo…» con línea continua (mundo, campaña, plantilla, etiqueta).
-- [ ] 4. Descripción con límite y contador (mundos y campañas).
-- [ ] 5. Orden de la barra: Mundos, Plantillas, Etiquetas, Sistemas, Archivos; el tutorial, igual.
+- [x] 1. Chispas y humo en el tema claro (colores como tokens con su versión clara): `--fx-*` en `styles/tokens.css`,
+  con su prueba de contraste; brasas, humo, chispas de la barra y ceniza de las tarjetas.
+- [x] 2. Los iconos de la barra se van al ritmo al que llegan: al volver, el espejo de entrar (del último al primero,
+  460 ms y 70 ms de paso; «Mundos» baja de la llama en 1,1 s cuando ya han subido, y la llama lo expulsa entonces).
+- [x] 3. Recuadros «Nuevo…» con línea continua: `components/new-card.tsx` común (mundo, campaña, plantilla, sistema,
+  personaje y etiqueta).
+- [x] 4. Descripción con límite y contador (mundos y campañas): `Field` con `rows` (crece con lo escrito) y `counter`.
+- [x] 5. Orden de la barra: Mundos, Plantillas, Etiquetas, Sistemas, Archivos; el tutorial, igual.
 - [ ] Visto bueno de Enrique → impeccable (critique y audit) → pruebas → PR a `main` y staging.
 
 ## Tanda 2 — Árbol común, Archivos, Etiquetas y selector de archivos
@@ -96,7 +99,7 @@ Lo que sale sin estar en la lista: se avisa a Enrique y se arregla en su tanda.
 - [ ] Archivos comunes: no se mueve ningún archivo, y el aviso solo lo oye un lector de pantalla (tanda 2).
 - [ ] Cristal sin respaldo en seis piezas de la Mesa (tanda 5).
 - [ ] `docs/diseno.md` dice que la barra derecha de la Mesa es opaca y es de cristal (tanda 5).
-- [ ] Tutorial de Inicio: «Nueva campaña» colado entre Historial y Papelera (tanda 1).
+- [x] Tutorial de Inicio: «Nueva campaña» colado entre Historial y Papelera (tanda 1): ahora va tras «Nuevo mundo».
 - [ ] Menú móvil fuera de un mundo: solo «Mundos» (con la vista de la jugadora).
 - [ ] «Página N» no sale tras un salto a mano; la nota lateral, siempre a la derecha al imprimir (tanda 4).
 - [ ] «Duplicar» se deja portada, hoja y pestañas (tanda 3).
@@ -104,3 +107,7 @@ Lo que sale sin estar en la lista: se avisa a Enrique y se arregla en su tanda.
 - [ ] Mapas: regiones, rutas y textos se guardan y no se pintan (módulo 9).
 - [ ] Reemplazar un sistema subiendo otro: está en el servidor y no en la app (tanda 6).
 - [ ] No hay menú común (tanda 4).
+- [x] Con 280 letras, la descripción estiraba la tarjeta hasta ocho líneas: en la tarjeta, tres como mucho (entera, en
+  el panel de al lado); su pista ya no dice «una línea» (tanda 1).
+- [x] «Personaje nuevo» (en la campaña) compartía el recuadro de las plantillas: también pasa a línea continua
+  (tanda 1; si la campaña no debe cambiar aún, se deja como estaba).

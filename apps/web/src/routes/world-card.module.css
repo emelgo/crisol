@@ -308,42 +308,10 @@
   }
 }
 
-/* «Nuevo mundo»: un recuadro vacío con la forma de una tarjeta (esquinas cortadas) y el borde discontinuo, del alto
-   de las demás. El borde se recorta con la forma y la diagonal de cada esquina se dibuja aparte */
+/* «Nuevo mundo» (components/new-card.tsx), del alto de las demás tarjetas */
 .newItem {
   display: flex;
   min-block-size: 14rem;
-}
-
-.newCard {
-  --line: var(--color-field-border);
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  border: 1px dashed var(--line);
-  background:
-    linear-gradient(to bottom right, transparent calc(50% - 0.6px), var(--line) 0 calc(50% + 0.6px), transparent 0) top
-    left / 12px 12px no-repeat,
-    linear-gradient(to bottom left, transparent calc(50% - 0.6px), var(--line) 0 calc(50% + 0.6px), transparent 0) top
-    right / 12px 12px no-repeat,
-    linear-gradient(to bottom right, transparent calc(50% - 0.6px), var(--line) 0 calc(50% + 0.6px), transparent 0)
-    bottom right / 12px 12px no-repeat,
-    linear-gradient(to bottom left, transparent calc(50% - 0.6px), var(--line) 0 calc(50% + 0.6px), transparent 0)
-    bottom left / 12px 12px no-repeat;
-  background-origin: border-box;
-  color: var(--color-muted);
-  font: inherit;
-  font-weight: 600;
-  clip-path: var(--cut);
-  cursor: pointer;
-}
-
-.newCard:hover {
-  --line: var(--color-text);
-  color: var(--color-text);
 }
 
 .list {
@@ -509,6 +477,15 @@
   margin: 0;
   color: var(--color-muted);
   font-size: 0.9375rem;
+}
+
+/* En la tarjeta, tres líneas como mucho (la descripción llega a 280 letras); entera, en el panel de al lado */
+.body > .description {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
 }
 
 /* De qué mundo es una campaña (en Mis mundos): bajo su nombre, pequeño */

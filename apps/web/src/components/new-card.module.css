@@ -1,0 +1,60 @@
+/*
+ * «Nuevo …»: un recuadro más de la lista, tras el último, vacío y con el borde de línea continua (Enrique, 2026-11-11).
+ * card: con la forma de una tarjeta (esquinas cortadas): el borde se recorta con la forma y la diagonal de cada esquina
+ * se dibuja aparte. row: con la de una fila (las etiquetas)
+ */
+.card,
+.row {
+  --line: var(--color-field-border);
+  border: 1px solid var(--line);
+  color: var(--color-muted);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.card:hover,
+.row:hover {
+  --line: var(--color-text);
+  color: var(--color-text);
+}
+
+.card {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  inline-size: 100%;
+  min-block-size: 11rem;
+  background:
+    linear-gradient(to bottom right, transparent calc(50% - 0.6px), var(--line) 0 calc(50% + 0.6px), transparent 0) top
+    left / 12px 12px no-repeat,
+    linear-gradient(to bottom left, transparent calc(50% - 0.6px), var(--line) 0 calc(50% + 0.6px), transparent 0) top
+    right / 12px 12px no-repeat,
+    linear-gradient(to bottom right, transparent calc(50% - 0.6px), var(--line) 0 calc(50% + 0.6px), transparent 0)
+    bottom right / 12px 12px no-repeat,
+    linear-gradient(to bottom left, transparent calc(50% - 0.6px), var(--line) 0 calc(50% + 0.6px), transparent 0)
+    bottom left / 12px 12px no-repeat;
+  background-origin: border-box;
+  clip-path: var(--cut);
+}
+
+/* El «+» en el hueco del punto de color de las filas */
+.row {
+  display: grid;
+  grid-template-columns: 2.75rem 1fr;
+  align-items: center;
+  gap: var(--space-3);
+  inline-size: 100%;
+  min-block-size: 3.25rem;
+  padding: var(--space-1) var(--space-2);
+  border-radius: 4px;
+  background: none;
+  text-align: start;
+}
+
+.row svg {
+  justify-self: center;
+}

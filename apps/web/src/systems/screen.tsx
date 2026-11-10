@@ -7,7 +7,7 @@ import type { SystemSummary } from '@crisol/contracts'
 import { type Problem, validateFile } from '@crisol/systems'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, Navigate } from '@tanstack/react-router'
-import { CircleAlert, Download, FileUp, Info, Lock, Plus, ScrollText, Settings, Sparkles } from 'lucide-react'
+import { CircleAlert, Download, FileUp, Info, Lock, ScrollText, Settings, Sparkles } from 'lucide-react'
 import { useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
@@ -21,6 +21,7 @@ import { Field, FormError } from '../components/field.tsx'
 import form from '../components/form.module.css'
 import { failed, LoadError } from '../components/load-error.tsx'
 import { Modal } from '../components/modal.tsx'
+import { NewCard } from '../components/new-card.tsx'
 import { saveFile } from '../components/save-file.ts'
 import { Screen } from '../components/screen.tsx'
 import { Tour } from '../components/tour.tsx'
@@ -81,16 +82,8 @@ export function SystemsScreen() {
             {mine.map((system) => (
               <SystemCard key={system.id} system={system} onHover={setHovered} />
             ))}
-            <li>
-              <button
-                type="button"
-                className={screen.newCard}
-                data-tour="sistemas-nuevo"
-                onClick={() => setCreating(true)}
-              >
-                <Plus aria-hidden="true" size={22} />
-                {t('systems.new')}
-              </button>
+            <li className={screen.newItem}>
+              <NewCard label={t('systems.new')} data-tour="sistemas-nuevo" onClick={() => setCreating(true)} />
             </li>
           </ul>
         </>

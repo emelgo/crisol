@@ -345,6 +345,8 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 
 - **Los errores, con mensajes propios** bajo cada campo, nunca con el globo del navegador («ese popup tan cutre»). El
   foco va al primer campo que falla.
+- **Un texto con límite dice cuánto se lleva** («123 / 280», abajo a la derecha) mientras se escribe en él (Enrique,
+  2026-11-11, la descripción de mundos y campañas); el de varias líneas crece con lo escrito.
 
 ## Textos
 

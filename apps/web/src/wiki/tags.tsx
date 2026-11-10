@@ -2,7 +2,7 @@ import type { TagView } from '@crisol/contracts'
 import { tagKey } from '@crisol/domain'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Navigate } from '@tanstack/react-router'
-import { Hash, Plus, Search, Settings, X } from 'lucide-react'
+import { Hash, Search, Settings, X } from 'lucide-react'
 import { type CSSProperties, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
@@ -17,6 +17,7 @@ import { Field, FormError } from '../components/field.tsx'
 import form from '../components/form.module.css'
 import { failed, LoadError } from '../components/load-error.tsx'
 import { Modal } from '../components/modal.tsx'
+import { NewCard } from '../components/new-card.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { Tour } from '../components/tour.tsx'
 import cards from '../routes/world-card.module.css'
@@ -321,7 +322,7 @@ export function AccountTags() {
                     onChanged={refresh}
                   />
                 ))}
-                {/* «Nueva etiqueta», una fila más tras la última: vacía y con el borde discontinuo (docs/diseno.md) */}
+                {/* «Nueva etiqueta», una fila más tras la última, vacía (docs/diseno.md) */}
                 <li className={styles.newItem}>
                   <NewTag onCreated={refresh} />
                 </li>
@@ -518,10 +519,10 @@ function NewTag({ onCreated }: { onCreated: () => Promise<unknown> }) {
   })
   return (
     <>
-      <button
+      <NewCard
         ref={trigger}
-        type="button"
-        className={styles.newRow}
+        shape="row"
+        label={t('tags.new')}
         aria-haspopup="dialog"
         data-tour="etiquetas-nueva"
         onClick={() => {
@@ -531,10 +532,7 @@ function NewTag({ onCreated }: { onCreated: () => Promise<unknown> }) {
           create.reset()
           setOpen(true)
         }}
-      >
-        <Plus aria-hidden="true" size={16} />
-        {t('tags.new')}
-      </button>
+      />
       {open && (
         <Modal
           ref={dialog}

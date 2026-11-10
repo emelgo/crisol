@@ -71,9 +71,11 @@ describe('mis mundos', () => {
     await userEvent.type(dialog.getByLabelText('Descripción'), 'Ciudades libres en la niebla')
     await userEvent.click(dialog.getByRole('radio', { name: 'Vino' }))
     await userEvent.click(dialog.getByRole('button', { name: 'Guardar' }))
-    // En su tarjeta (el panel de al lado también lo enseña)
+    // En su tarjeta (el panel de al lado también lo enseña; el cuadro, que aún se está cerrando, lo lleva escrito)
     expect(
-      await within(screen.getByRole('list', { name: 'Mundos' })).findByText('Ciudades libres en la niebla')
+      await within(screen.getByRole('list', { name: 'Mundos' })).findByText('Ciudades libres en la niebla', {
+        selector: 'p'
+      })
     ).toBeDefined()
     expect(api.calls).toContain('updateWorld')
   })

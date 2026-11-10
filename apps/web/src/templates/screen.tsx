@@ -19,6 +19,7 @@ import { Field, FormError } from '../components/field.tsx'
 import form from '../components/form.module.css'
 import { failed, LoadError } from '../components/load-error.tsx'
 import { Modal } from '../components/modal.tsx'
+import { NewCard } from '../components/new-card.tsx'
 import { Screen } from '../components/screen.tsx'
 import { Tour } from '../components/tour.tsx'
 import { ENTER_ITEM, enterItem } from '../components/world-transition.ts'
@@ -69,16 +70,12 @@ export function TemplatesScreen() {
             {mine.map((template) => (
               <TemplateCard key={template.id} template={template} onHover={setHovered} />
             ))}
-            <li>
-              <button
-                type="button"
-                className={styles.newCard}
+            <li className={styles.newItem}>
+              <NewCard
+                label={t('templates.new')}
                 data-tour="plantillas-nueva"
                 onClick={() => setCreating({ copyOf: null })}
-              >
-                <Plus aria-hidden="true" size={22} />
-                {t('templates.new')}
-              </button>
+              />
             </li>
           </ul>
           <h2 className={styles.section}>{t('templates.builtIn')}</h2>

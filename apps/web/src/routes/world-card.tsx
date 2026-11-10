@@ -17,6 +17,7 @@ import { Field, FormError } from '../components/field.tsx'
 import { focusAfterRemoving } from '../components/focus.ts'
 import form from '../components/form.module.css'
 import { Modal } from '../components/modal.tsx'
+import { NewCard } from '../components/new-card.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { ENTER_WORLD, enterWorld, LEAVE_WORLD, worldTransition } from '../components/world-transition.ts'
 import { CampaignSystemFields, type SystemDraft } from '../systems/campaign-system.tsx'
@@ -510,26 +511,34 @@ function CoverHeader({
 }
 
 /**
- * «Nuevo …»: un recuadro como el de una tarjeta, con el borde discontinuo y vacío, tras la última. big: el botón grande
- * de cuando aún no hay ninguna
+ * «Nuevo …»: un recuadro como el de una tarjeta, vacío, tras la última (components/new-card.tsx). big: el botón grande de
+ * cuando aún no hay ninguna
  */
 export function NewLook({ kind, big = false, tour }: { kind: LookKind; big?: boolean; tour?: string }) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const trigger = useRef<HTMLButtonElement>(null)
   const [open, setOpen] = useState(false)
-  const button = (
+  const button = big ? (
     <button
       ref={trigger}
       type="button"
-      className={big ? `${form.button} ${styles.big}` : styles.newCard}
+      className={`${form.button} ${styles.big}`}
       data-tour={tour}
       aria-haspopup="dialog"
       onClick={() => setOpen(true)}
     >
-      <Plus aria-hidden="true" size={big ? 18 : 28} strokeWidth={big ? 2 : 1.5} />
-      {t(big ? `${kind.texts}.createFirst` : `${kind.texts}.newTitle`)}
+      <Plus aria-hidden="true" size={18} strokeWidth={2} />
+      {t(`${kind.texts}.createFirst`)}
     </button>
+  ) : (
+    <NewCard
+      ref={trigger}
+      label={t(`${kind.texts}.newTitle`)}
+      data-tour={tour}
+      aria-haspopup="dialog"
+      onClick={() => setOpen(true)}
+    />
   )
   const dialog = open && (
     <LookDialog
@@ -892,7 +901,9 @@ function LookDialog({
           label={t('worlds.description')}
           hint={t('worlds.descriptionHint')}
           value={draft.description}
+          rows={3}
           maxLength={280}
+          counter
           onChange={(event) => set({ description: event.currentTarget.value })}
         />
         <ColorChoices value={draft.color} onChange={(color) => set({ color })} />
