@@ -28,6 +28,8 @@ const NoticesContext = createContext<{
 /** Qué consultas de la web hay que volver a pedir con cada aviso. El historial y la papelera, con cualquier cambio */
 export function queriesFor(message: RealtimeMessage): QueryKey[] {
   // Las tiradas llegan enteras (ADR-0010) y no son del historial: no hay nada que volver a pedir
+  // El registro de la partida no es del historial: solo se vuelve a pedir él
+  if (message.type === 'logged' || message.type === 'unlogged') return [['log', message.campaignId]]
   return message.type === 'hello' || message.type === 'rolled' || message.type === 'shown'
     ? []
     : [...changedBy(message), ['history'], ['trash']]

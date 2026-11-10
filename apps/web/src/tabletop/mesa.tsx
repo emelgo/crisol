@@ -317,7 +317,7 @@ export function Mesa({ worldId, campaign: current }: { worldId: string; campaign
         : null,
     [open]
   )
-  const { host, renderer, ready, failed: noCanvas, size } = useTableRenderer(scene)
+  const { host, renderer, ready, failed: noCanvas, size } = useTableRenderer(scene, { transparent: true })
 
   // La visión: la herramienta de la columna, «Ver como el grupo» y los muros, puertas y luces de la escena
   const [tool, setTool] = useState<TableTool>('select')
@@ -1335,15 +1335,19 @@ function TopBar({
       'popup=yes,width=1280,height=720'
     )
   return (
-    <div className={styles.topBar}>
-      {open && (
-        <div className={`${styles.bar} ${styles.sceneBar}`}>
-          <SceneMenu worldId={worldId} open={open} onOpen={onOpen} />
-          {live && <span className={`${styles.chip} ${styles.live}`}>{t('tabletop.live')}</span>}
-          {presented && table?.screenHidden && <span className={styles.chip}>{t('tabletop.dark')}</span>}
-          {showing && !live && <span className={styles.chip}>{t('tabletop.elsewhere')}</span>}
-        </div>
-      )}
+    // Sin escena no hay columna de herramientas: lo de arriba se pega al borde; al abrir una, su recuadro entra y
+    // desplaza a los demás (Enrique, 2026-11-10)
+    <div className={open ? styles.topBar : `${styles.topBar} ${styles.noTools}`}>
+      <div className={open ? `${styles.bar} ${styles.sceneBar}` : `${styles.bar} ${styles.sceneBar} ${styles.gone}`}>
+        {open && (
+          <>
+            <SceneMenu worldId={worldId} open={open} onOpen={onOpen} />
+            {live && <span className={`${styles.chip} ${styles.live}`}>{t('tabletop.live')}</span>}
+            {presented && table?.screenHidden && <span className={styles.chip}>{t('tabletop.dark')}</span>}
+            {showing && !live && <span className={styles.chip}>{t('tabletop.elsewhere')}</span>}
+          </>
+        )}
+      </div>
       <RoomBar campaignId={campaignId} />
       <span className={styles.grow} />
       <div className={styles.bar}>

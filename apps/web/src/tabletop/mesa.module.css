@@ -12,7 +12,18 @@
   min-inline-size: 0;
   /* Sin desplazarse nunca (el marco de la tele o una tarjeta pueden salirse): al llevar el foco a algo, no se mueve */
   overflow: clip;
-  background: #0b0b0c;
+  /* Detrás del mapa, un fondo tenue (grano y dos manchas de color) en vez de negro liso: sobre negro el cristal de lo
+     que flota no se nota (Enrique, 2026-11-10). La Pantalla de los jugadores sigue en negro */
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+    radial-gradient(
+      ellipse 60% 55% at 18% 12%,
+      color-mix(in srgb, var(--color-brand) 22%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(ellipse 55% 60% at 88% 85%, color-mix(in srgb, var(--color-h4) 20%, transparent), transparent 70%),
+    radial-gradient(ellipse 45% 40% at 70% 20%, color-mix(in srgb, var(--color-h3) 12%, transparent), transparent 70%),
+    #121317;
 }
 
 .stage {
@@ -198,6 +209,15 @@
   pointer-events: auto;
 }
 
+.topBar {
+  transition: inset-inline-start 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Sin escena (y sin columna de herramientas), pegada al borde */
+.topBar.noTools {
+  inset-inline-start: 0.75rem;
+}
+
 .grow {
   flex: 1;
 }
@@ -227,6 +247,22 @@
 
 .sceneBar {
   max-inline-size: min(28rem, 100%);
+  transition:
+    max-inline-size 320ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 220ms ease-out,
+    padding 320ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    margin 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Sin escena: el recuadro de la escena se cierra y los de al lado se corren a su sitio */
+.sceneBar.gone {
+  max-inline-size: 0;
+  overflow: hidden;
+  margin-inline-end: -0.6rem;
+  padding-inline: 0;
+  border-width: 0;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .menuRoot {

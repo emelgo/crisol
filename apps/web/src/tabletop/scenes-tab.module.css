@@ -120,9 +120,10 @@
 }
 
 .new .thumb {
-  border: 1px dashed var(--color-frame);
-  background: none;
-  color: var(--color-muted);
+  /* Sobre el cristal, el borde de siempre no se ve: más claro y con un fondo tenue */
+  border: 1.5px dashed color-mix(in srgb, var(--color-text) 38%, transparent);
+  background: color-mix(in srgb, var(--color-text) 5%, transparent);
+  color: var(--color-text);
   clip-path: none;
 }
 
