@@ -648,6 +648,10 @@ export function Mesa({ worldId, campaign: current }: { worldId: string; campaign
               busy={act.isPending}
               onAct={(run) => act.mutate(run)}
               onOpen={openScene}
+              onCreateScene={(scene, choice) => {
+                openScene(scene.id)
+                if (choice) void start(scene, choice)
+              }}
               onPlace={(placing) => place.mutate({ placing, at: null })}
               onImage={(fileId) => selected[0] && setImageFor({ tokenId: selected[0], fileId })}
               onPickCombatant={(tokenId) => {

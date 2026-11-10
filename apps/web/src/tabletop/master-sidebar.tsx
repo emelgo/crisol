@@ -2,7 +2,7 @@
  * La barra de la derecha de la Mesa del máster, con sus siete pestañas: Tiradas, Combate, Escenas, Personajes,
  * Compendio, Páginas y Ajustes (lienzo «Campaña en la Mesa»). Al empezar un combate se abre la suya
  */
-import type { Campaign, CampaignTableView, TokenView } from '@crisol/contracts'
+import type { Campaign, CampaignTableView, SceneView, TokenView } from '@crisol/contracts'
 import { useQuery } from '@tanstack/react-query'
 import { getRouteApi, useNavigate } from '@tanstack/react-router'
 import { Eye, Swords } from 'lucide-react'
@@ -30,6 +30,7 @@ import {
   useSidebarTab
 } from './sidebar.tsx'
 import { sheetWindow } from './token-sheet.tsx'
+import type { SceneChoice } from './use-preparation.ts'
 import { useWindows } from './windows.tsx'
 
 const route = getRouteApi('/mundos/$worldId/campanas/$campaignId/mesa')
@@ -80,6 +81,7 @@ export function MasterSidebar({
   busy,
   onAct,
   onOpen,
+  onCreateScene,
   onPlace,
   onImage,
   onPickCombatant,
@@ -97,6 +99,8 @@ export function MasterSidebar({
   busy: boolean
   onAct: (run: () => Promise<CampaignTableView>) => void
   onOpen: (sceneId: string) => void
+  /** Una escena recién creada desde Escenas: abrirla y preparar su mapa */
+  onCreateScene?: (scene: SceneView, choice: SceneChoice | null) => void
   onPlace: (placing: Placing) => void
   onImage: (fileId: string) => void
   onPickCombatant: (tokenId: string) => void
@@ -149,7 +153,7 @@ export function MasterSidebar({
       key: 'scenes',
       content: () => (
         <>
-          <ScenesGrid worldId={worldId} table={table} onOpen={onOpen} />
+          <ScenesGrid worldId={worldId} table={table} onOpen={onOpen} onCreate={onCreateScene} />
           <InScene campaignId={campaignId} table={table} tokens={tokens} onPick={onPickToken} />
           <h3 className={styles.tabSection}>{t('tabletop.tabs.encounters')}</h3>
           <EncountersList
