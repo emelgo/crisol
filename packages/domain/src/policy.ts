@@ -112,6 +112,10 @@ const RULES = {
   'dice.roll': { sees: seesCampaign, allows: seesCampaign },
   'dice.read': { sees: seesCampaign, allows: seesCampaign },
   'dice.private': { sees: seesCampaign, allows: any(isWorldMaster, isCampaignMaster) },
+  // Las notas de los jugadores (docs/specs/notas-jugador.md): cada uno escribe las suyas en su campaña (la acción mira
+  // que sean suyas); las de otro, solo las leen los másteres de la campaña y del mundo
+  'notes.write': { sees: seesCampaign, allows: isCampaignMember },
+  'notes.read': { sees: seesCampaign, allows: any(isWorldMaster, isCampaignMaster) },
   // Las criaturas en juego de una campaña (docs/specs/criaturas.md): hasta el módulo 5, solo el máster
   'creatures.manage': { sees: seesCampaign, allows: any(isWorldMaster, isCampaignMaster) },
   // La mesa de una campaña (ADR-0018): la lleva su máster, y la pantalla de la tele mira con su sesión. Los jugadores

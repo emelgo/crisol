@@ -258,7 +258,14 @@ describe('Actions', () => {
       clearLog: true,
       deleteRolls: true,
       showImage: true,
-      clearScreenShow: true
+      clearScreenShow: true,
+      listPlayerNotes: true,
+      getPlayerNote: true,
+      createPlayerNote: true,
+      updatePlayerNote: true,
+      deletePlayerNote: true,
+      restorePlayerNote: true,
+      listPlayerNoteVersions: true
     }
     expect(Object.keys(names).sort()).toEqual(ACTIONS.map((a) => a.name).sort())
   })

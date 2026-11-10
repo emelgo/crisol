@@ -62,6 +62,21 @@ const diceInput = z.object({
 
 const systemId = z.string().trim().min(1).max(100).describe('Uno de serie («blank») o uno de la cuenta, por su id')
 
+/** Escribir una nota del jugador: sin id, una nueva; con id (y la versión que se leyó), cambiarla */
+const noteInput = z.object({
+  id: z.uuid().optional().describe('La nota que se cambia; sin id, se crea una'),
+  version: z.int().min(1).optional().describe('Al cambiarla, la versión que se leyó con leer_nota'),
+  campaignId: z.uuid().optional().describe('Al crearla, su campaña'),
+  parentId: z.uuid().nullable().optional().describe('Dentro de otra nota suya; null, arriba del todo'),
+  title: z.string().trim().max(200).optional(),
+  icon: z.string().trim().min(1).max(16).nullable().optional(),
+  markdown: z
+    .string()
+    .max(200_000)
+    .optional()
+    .describe('El texto entero, en Markdown; [[Página]] enlaza una página del mundo que conoce su campaña')
+})
+
 /** La niebla de la mesa: destapar o tapar una zona, o reiniciarla (docs/specs/vision.md) */
 const fogShape = changeFog.input.shape
 const fogInput = z.object({
@@ -473,6 +488,25 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   ensenar_imagen: { action: 'showImage' },
   quitar_de_la_vista: { action: 'clearScreenShow' },
   borrar_tiradas: { action: 'deleteRolls' },
+  // Las notas del jugador (docs/specs/notas-jugador.md): las escribe su autor; el máster las lee
+  ver_notas: { action: 'listPlayerNotes' },
+  leer_nota: { action: 'getPlayerNote' },
+  escribir_nota: {
+    description:
+      'Escribe una nota de quien te conecta (un jugador) en su campaña: sin id, crea una (campaignId, title, markdown y, si va dentro de otra, parentId); con id y la versión que leíste con leer_nota, la cambia (lo que se dé: title, icon, markdown entero, parentId). Solo su autor: el máster las lee, no las escribe',
+    input: noteInput,
+    actions: ['createPlayerNote', 'updatePlayerNote'],
+    route: (input) => {
+      const { id, version, campaignId, ...rest } = noteInput.parse(input)
+      if (id) {
+        if (version === undefined)
+          throw new InvalidRequestError('VERSION_REQUIRED', 'para cambiarla, la versión que se leyó')
+        return { action: 'updatePlayerNote', input: { id, version, ...rest } }
+      }
+      if (!campaignId) throw new InvalidRequestError('CAMPAIGN_REQUIRED', 'para crearla, su campaña')
+      return { action: 'createPlayerNote', input: { campaignId, ...rest } }
+    }
+  },
   // Las carpetas de la pestaña Actores (agrupar personajes y criaturas en juego)
   ver_carpetas_actores: { action: 'listActorFolders' },
   crear_carpeta_actores: { action: 'createActorFolder' },
@@ -555,7 +589,8 @@ const INSTRUCTIONS =
   'a los jugadores escribir el texto de una página (el diario del grupo), que no puede llevar secretos. ' +
   'Un campo o un bloque del panel con hidden no les llega nunca. Si quien te conecta es un jugador, ' +
   'solo ves lo que sabe su campaña (las herramientas de leer, con campaignId si juega más de una del mundo) y solo ' +
-  'escribes, con editar_pagina, el texto de una página que su campaña puede editar. ' +
+  'escribes, con editar_pagina, el texto de una página que su campaña puede editar, y sus notas (ver_notas, leer_nota, ' +
+  'escribir_nota: suyas, con enlaces [[Página]] a lo que conoce; el máster las lee y no las escribe). ' +
   'Para pasar una wiki entera: crear_paginas de 50 en 50, en cualquier orden (los enlaces se resuelven solos), y al ' +
   'final enlaces_pagina con worldId para ver lo que quede sin resolver; los archivos los sube el máster y se enlazan ' +
   'por su nombre (listar_archivos). Las etiquetas son de toda la cuenta: míralas con listar_etiquetas y usa las que ' +

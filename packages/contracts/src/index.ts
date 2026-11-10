@@ -108,6 +108,15 @@ import {
   updatePageTab
 } from './maps.ts'
 import { leaveCampaign, listMembers, removeMember } from './members.ts'
+import {
+  createPlayerNote,
+  deletePlayerNote,
+  getPlayerNote,
+  listPlayerNotes,
+  listPlayerNoteVersions,
+  restorePlayerNote,
+  updatePlayerNote
+} from './notes.ts'
 import { listOrganizations } from './organizations.ts'
 import {
   createPage,
@@ -263,6 +272,7 @@ export * from './library.ts'
 export * from './log.ts'
 export * from './maps.ts'
 export * from './members.ts'
+export * from './notes.ts'
 export * from './openapi.ts'
 export * from './organizations.ts'
 export * from './pages.ts'
@@ -539,7 +549,14 @@ export const ACTIONS = [
   clearLog,
   deleteRolls,
   showImage,
-  clearScreenShow
+  clearScreenShow,
+  listPlayerNotes,
+  getPlayerNote,
+  createPlayerNote,
+  updatePlayerNote,
+  deletePlayerNote,
+  restorePlayerNote,
+  listPlayerNoteVersions
 ]
 
 /** Las acciones por nombre, solo como tipo: la web las usa sin cargar zod */
@@ -798,4 +815,11 @@ export type Actions = {
   deleteRolls: typeof deleteRolls
   showImage: typeof showImage
   clearScreenShow: typeof clearScreenShow
+  listPlayerNotes: typeof listPlayerNotes
+  getPlayerNote: typeof getPlayerNote
+  createPlayerNote: typeof createPlayerNote
+  updatePlayerNote: typeof updatePlayerNote
+  deletePlayerNote: typeof deletePlayerNote
+  restorePlayerNote: typeof restorePlayerNote
+  listPlayerNoteVersions: typeof listPlayerNoteVersions
 }

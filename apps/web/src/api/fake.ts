@@ -25,6 +25,7 @@ import type {
   PageTables,
   PageTabView,
   PageTemplate,
+  PlayerNote,
   RandomTable,
   SceneGrid,
   SceneImported,
@@ -169,6 +170,15 @@ export function fakeApi(
     folders?: FolderView[]
     /** Las tiradas de las campañas, en el orden en que se tiraron */
     rolls?: DiceRoll[]
+    /** Las notas de los jugadores (sin userId, de la cuenta «yo»), en su orden */
+    notes?: Array<{
+      id?: string
+      campaignId: string
+      userId?: string
+      parentId?: string | null
+      title: string
+      markdown?: string
+    }>
   } = {}
 ) {
   const organizations = options.organizations ?? []
@@ -178,6 +188,21 @@ export function fakeApi(
   const rolls = [...(options.rolls ?? [])]
   // El registro de la partida (docs/specs/registro.md): los mensajes; las tiradas, de rolls
   const messages: LogMessage[] = []
+  // Las notas de los jugadores (docs/specs/notas-jugador.md)
+  type StoredNote = Omit<PlayerNote, 'links' | 'editable'>
+  const notes: StoredNote[] = (options.notes ?? []).map((n) => ({
+    id: n.id ?? crypto.randomUUID(),
+    campaignId: n.campaignId,
+    userId: n.userId ?? 'yo',
+    parentId: n.parentId ?? null,
+    title: n.title,
+    icon: null,
+    markdown: n.markdown ?? '',
+    version: 1,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    deletedAt: null
+  }))
   // Las carpetas de la pestaña Actores, por campaña
   const actorFolders: Array<{ campaignId: string; id: string; name: string }> = []
   const actorFolderItems: Array<{ campaignId: string; kind: 'character' | 'creature'; id: string; folderId: string }> =
@@ -287,6 +312,30 @@ export function fakeApi(
   }))
   // Las páginas borradas, cada una con las subpáginas que se fueron con ella (todas siguen en la lista, apartadas)
   const trashedPages: Array<{ root: StoredPage; below: StoredPage[] }> = []
+  // Una nota se esconde si ella o alguna antecesora está en la papelera
+  const noteHidden = (note: StoredNote): boolean => {
+    if (note.deletedAt) return true
+    const parent = note.parentId ? notes.find((n) => n.id === note.parentId) : undefined
+    return parent ? noteHidden(parent) : false
+  }
+  const noteById = (id: string) => {
+    const note = notes.find((n) => n.id === id && !noteHidden(n))
+    if (!note) throw new ApiError('NOT_FOUND', 404)
+    return note
+  }
+  // Sus enlaces, por el título de las páginas del mundo de su campaña
+  const noteView = (note: StoredNote): PlayerNote => {
+    const worldId = campaigns.find((c) => c.id === note.campaignId)?.worldId
+    const titles = [...note.markdown.matchAll(/\[\[([^[\]|#]+)/g)].map((m) => (m[1] ?? '').trim())
+    return {
+      ...structuredClone(note),
+      editable: note.userId === 'yo',
+      links: [...new Set(titles)].map((title) => ({
+        title,
+        pageId: pages.find((p) => p.worldId === worldId && p.title.toLowerCase() === title.toLowerCase())?.id ?? null
+      }))
+    }
+  }
   // Pestañas y marcadores de la cuenta, por mundo
   type Stored = {
     tabs: { pageId: string; pinned: boolean }[]
@@ -1785,6 +1834,66 @@ export function fakeApi(
         if (roll?.campaignId === campaignId && (!ids || ids.includes(roll.id))) rolls.splice(i, 1)
       }
       return { deleted: before - rolls.length }
+    },
+    listPlayerNotes: ({ campaignId, userId, trash }) => ({
+      notes: notes
+        .filter((n) => n.campaignId === campaignId && n.userId === (userId ?? 'yo'))
+        .filter((n) => (trash ? n.deletedAt !== null : !noteHidden(n)))
+        .map(({ campaignId: _c, userId: _u, markdown: _m, createdAt: _a, ...rest }) => ({ ...rest }))
+    }),
+    getPlayerNote: ({ id }) => ({ note: noteView(noteById(id)) }),
+    createPlayerNote: ({ campaignId, parentId, title, icon, markdown }) => {
+      const now = new Date().toISOString()
+      const note: StoredNote = {
+        id: crypto.randomUUID(),
+        campaignId,
+        userId: 'yo',
+        parentId: parentId ?? null,
+        title: title ?? '',
+        icon: icon ?? null,
+        markdown: markdown ?? '',
+        version: 1,
+        createdAt: now,
+        updatedAt: now,
+        deletedAt: null
+      }
+      notes.push(note)
+      return { note: noteView(note) }
+    },
+    updatePlayerNote: ({ id, version, ...patch }) => {
+      const note = noteById(id)
+      if (note.userId !== 'yo') throw new ApiError('FORBIDDEN', 403)
+      if (note.version !== version) throw new ApiError('NOTE_CHANGED', 400)
+      for (const [key, value] of Object.entries(patch)) if (value !== undefined) Object.assign(note, { [key]: value })
+      note.version++
+      note.updatedAt = new Date().toISOString()
+      return { note: noteView(note) }
+    },
+    deletePlayerNote: ({ id }) => {
+      const note = noteById(id)
+      if (note.userId !== 'yo') throw new ApiError('FORBIDDEN', 403)
+      note.deletedAt = new Date().toISOString()
+      return { ok: true as const }
+    },
+    restorePlayerNote: ({ id }) => {
+      const note = notes.find((n) => n.id === id && n.deletedAt)
+      if (!note) throw new ApiError('NOT_FOUND', 404)
+      note.deletedAt = null
+      return { note: noteView(note) }
+    },
+    listPlayerNoteVersions: ({ id }) => {
+      const note = noteById(id)
+      return {
+        versions: [
+          {
+            operationId: crypto.randomUUID(),
+            at: note.updatedAt,
+            by: { id: note.userId, name: note.userId },
+            title: note.title,
+            markdown: note.markdown
+          }
+        ]
+      }
     },
     listActorFolders: ({ campaignId }) => ({
       folders: actorFolders.filter((f) => f.campaignId === campaignId).map(({ id, name }) => ({ id, name })),

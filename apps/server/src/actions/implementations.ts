@@ -18,6 +18,7 @@ import { linkActions } from './links.ts'
 import { logActions } from './log.ts'
 import { mapActions } from './maps.ts'
 import { memberActions } from './members.ts'
+import { noteActions } from './notes.ts'
 import { organizationActions } from './organizations.ts'
 import { pageContentActions } from './page-content.ts'
 import { pageActions } from './pages.ts'
@@ -51,6 +52,7 @@ export const IMPLEMENTATIONS: Implementation[] = [
   ...actorFolderActions,
   ...invitationActions,
   ...memberActions,
+  ...noteActions,
   ...roomActions,
   ...historyActions,
   ...trashActions,

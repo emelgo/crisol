@@ -23,6 +23,7 @@ import { changes, operations } from './schema/history.ts'
 import { invitationLinks } from './schema/invitations.ts'
 import { knowledge, pageEditors } from './schema/knowledge.ts'
 import { mapElements, mapPins, maps, pageTabs } from './schema/maps.ts'
+import { playerNotes } from './schema/notes.ts'
 import { organizationMembers, organizations } from './schema/organizations.ts'
 import { pages } from './schema/pages.ts'
 import { campaignParty } from './schema/party.ts'
@@ -76,7 +77,8 @@ export const TRACKED_TABLES = {
   scene_fog: sceneFog,
   scene_marks: sceneMarks,
   campaign_widgets: campaignWidgets,
-  scene_snapshots: sceneSnapshots
+  scene_snapshots: sceneSnapshots,
+  player_notes: playerNotes
 }
 
 export type TrackedTable = (typeof TRACKED_TABLES)[keyof typeof TRACKED_TABLES]
