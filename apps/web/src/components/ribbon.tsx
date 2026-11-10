@@ -1,10 +1,7 @@
-import type { Campaign } from '@crisol/contracts'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
 import {
-  Backpack,
   BookOpen,
-  FileText,
   Flag,
   Folder,
   Globe,
@@ -18,11 +15,8 @@ import {
   ScrollText,
   Settings,
   Shield,
-  Swords,
   Trash2,
-  User,
-  UserRound,
-  Users
+  User
 } from 'lucide-react'
 import { type CSSProperties, type MouseEvent, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -30,7 +24,6 @@ import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { historyQuery, trashQuery } from '../api/queries.ts'
 import { useDice } from '../dice/context.tsx'
-import { coverStyle } from '../wiki/cover-look.ts'
 import { useNarrow, useWikiPanel, type WikiPanel } from '../wiki/panel.tsx'
 import { AccountMenu } from './account-menu.tsx'
 import { CrisolMark } from './brand.tsx'
