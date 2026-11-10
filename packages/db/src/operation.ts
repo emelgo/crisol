@@ -28,6 +28,7 @@ import { organizationMembers, organizations } from './schema/organizations.ts'
 import { pages } from './schema/pages.ts'
 import { campaignParty } from './schema/party.ts'
 import { encounters, sceneStates, scenes, sceneTokens } from './schema/scenes.ts'
+import { soundPlaylists, soundTracks } from './schema/sound.ts'
 import { systemContent, systems, worldContent } from './schema/systems.ts'
 import { campaignWidgets, sceneMarks, sceneSnapshots } from './schema/table-tools.ts'
 import { randomTables } from './schema/tables.ts'
@@ -78,7 +79,9 @@ export const TRACKED_TABLES = {
   scene_marks: sceneMarks,
   campaign_widgets: campaignWidgets,
   scene_snapshots: sceneSnapshots,
-  player_notes: playerNotes
+  player_notes: playerNotes,
+  sound_playlists: soundPlaylists,
+  sound_tracks: soundTracks
 }
 
 export type TrackedTable = (typeof TRACKED_TABLES)[keyof typeof TRACKED_TABLES]

@@ -1,3 +1,4 @@
+import type { SoundState } from '@crisol/domain'
 import { sql } from 'drizzle-orm'
 import {
   boolean,
@@ -195,6 +196,8 @@ export const campaignTables = pgTable('campaign_tables', {
   kicked: text().array().notNull().default(sql`'{}'::text[]`),
   /** Lo que enseña el máster en la vista de jugadores, encima de la escena (docs/specs/ensenar.md) */
   screenShow: jsonb().$type<{ kind: 'page' | 'image'; id: string; title: string } | null>(),
+  /** Lo que suena (docs/specs/sonido.md): las listas y los efectos con la hora del servidor en que empezaron */
+  sound: jsonb().$type<SoundState>(),
   updatedAt: timestamp({ withTimezone: true }).defaultNow().notNull()
 })
 

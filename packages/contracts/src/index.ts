@@ -166,6 +166,18 @@ import {
 } from './scenes.ts'
 import { searchWiki } from './search.ts'
 import {
+  createSoundPlaylist,
+  deleteSoundPlaylist,
+  getSound,
+  listSoundPlaylists,
+  nextTrack,
+  pauseSound,
+  playSound,
+  setSoundVolume,
+  stopSound,
+  updateSoundPlaylist
+} from './sound.ts'
+import {
   browseCampaignContent,
   checkSystem,
   createSystem,
@@ -282,6 +294,7 @@ export * from './read-as.ts'
 export type * from './realtime.ts'
 export * from './scenes.ts'
 export * from './search.ts'
+export * from './sound.ts'
 export * from './systems.ts'
 export * from './table.ts'
 export * from './table-tools.ts'
@@ -556,7 +569,17 @@ export const ACTIONS = [
   updatePlayerNote,
   deletePlayerNote,
   restorePlayerNote,
-  listPlayerNoteVersions
+  listPlayerNoteVersions,
+  createSoundPlaylist,
+  deleteSoundPlaylist,
+  getSound,
+  listSoundPlaylists,
+  nextTrack,
+  pauseSound,
+  playSound,
+  setSoundVolume,
+  stopSound,
+  updateSoundPlaylist
 ]
 
 /** Las acciones por nombre, solo como tipo: la web las usa sin cargar zod */
@@ -822,4 +845,14 @@ export type Actions = {
   deletePlayerNote: typeof deletePlayerNote
   restorePlayerNote: typeof restorePlayerNote
   listPlayerNoteVersions: typeof listPlayerNoteVersions
+  createSoundPlaylist: typeof createSoundPlaylist
+  deleteSoundPlaylist: typeof deleteSoundPlaylist
+  getSound: typeof getSound
+  listSoundPlaylists: typeof listSoundPlaylists
+  nextTrack: typeof nextTrack
+  pauseSound: typeof pauseSound
+  playSound: typeof playSound
+  setSoundVolume: typeof setSoundVolume
+  stopSound: typeof stopSound
+  updateSoundPlaylist: typeof updateSoundPlaylist
 }

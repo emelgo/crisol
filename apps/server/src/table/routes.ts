@@ -338,6 +338,13 @@ export function registerTableRoutes(
             announce(scope)
           }
           joined = { campaignId: campaign.id, worldId: campaign.worldId, viewer: message.view, leave }
+          // Lo que suena, puesto al día: quien entra tarde va por donde va (docs/specs/sonido.md)
+          if (env.sound) {
+            const sound = await env.sound.view(campaign.id).catch(() => null)
+            // Sin nada sonando no hace falta: el aparato empieza en silencio
+            if (sound && !closed && (sound.voices.length > 0 || sound.lists.length > 0))
+              say({ type: 'sound', sound, serverNow: Date.now() })
+          }
           return
         }
         if (!joined) return say({ type: 'error', code: 'NOT_JOINED' })
@@ -349,6 +356,13 @@ export function registerTableRoutes(
           if (env.presence?.setActive(joined.campaignId, socket, message.active))
             announce({ campaignId: joined.campaignId, worldId: joined.worldId })
           return
+        }
+        // La hora del servidor, para que cada aparato mida su desfase (cualquiera que mire, con el tope por segundo)
+        if (message.type === 'time') {
+          const at = Date.now()
+          if (at - window.start > 1000) window = { start: at, count: 0 }
+          if (++window.count > MAX_LIVE_PER_SECOND) return
+          return say({ type: 'time', t: message.t, serverNow: Date.now() })
         }
         // Lo que va en vivo (el encuadre, el arrastre, la medida, el láser): del máster, y con un tope por segundo; de la
         // Mesa de un jugador, solo el arrastre de sus fichas (docs/specs/mover-jugadores.md)

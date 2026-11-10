@@ -2,6 +2,7 @@
  * Las escenas de la mesa (ADR-0018): lo del mundo (la escena de una pestaña, en operation() y el historial), el estado
  * de cada campaña en una escena y la mesa de cada campaña (estado de la sesión, fuera del historial)
  */
+import type { SoundState } from '@crisol/domain'
 import { and, asc, eq, getTableColumns, isNotNull, isNull, or, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { type OperationContext, operation, type Writer } from '../operation.ts'
@@ -162,6 +163,7 @@ export async function campaignTable(db: Database, campaignId: string): Promise<C
       movement: 'free',
       kicked: [],
       screenShow: null,
+      sound: null,
       updatedAt: new Date(0)
     }
   )
@@ -190,6 +192,7 @@ export async function setCampaignTable(
     movement: 'free' | 'turn' | 'locked'
     kicked: string[]
     screenShow: { kind: 'page' | 'image'; id: string; title: string } | null
+    sound: SoundState | null
   }>
 ): Promise<CampaignTableRow> {
   const [row] = await db

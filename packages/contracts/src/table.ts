@@ -7,6 +7,7 @@ import { z } from 'zod'
 import { defineAction } from './action.ts'
 import { screenCombat } from './combat.ts'
 import { type campaignTableView, fogMask, sceneGrid, sceneTiles, sceneViewport, screenCamera } from './scenes.ts'
+import type { SoundView } from './sound.ts'
 import { type LiveMeasure, laserPoints, liveMeasure, screenMark, screenWidget } from './table-tools.ts'
 import { screenToken } from './tokens.ts'
 
@@ -44,7 +45,9 @@ export const tableClientMessage = z.discriminatedUnion('type', [
   /** La medida en curso del máster (null: ya no mide): a la pantalla, solo con «la tele ve lo que mides» */
   z.object({ type: z.literal('measure'), measure: liveMeasure.nullable() }),
   /** La estela del láser: a la pantalla, lo que cae en lo que ve o vio el grupo */
-  z.object({ type: z.literal('laser'), points: laserPoints })
+  z.object({ type: z.literal('laser'), points: laserPoints }),
+  /** Para medir el desfase del reloj (docs/specs/sonido.md): la hora del aparato al mandarlo; vuelve con la del servidor */
+  z.object({ type: z.literal('time'), t: z.number() })
 ])
 
 export type TableClientMessage = z.infer<typeof tableClientMessage>
@@ -149,6 +152,10 @@ export type TableServerMessage =
   | { type: 'measure'; measure: LiveMeasure | null }
   /** La estela del láser (a la pantalla, solo sus puntos que ve o vio el grupo) */
   | { type: 'laser'; points: Array<{ x: number; y: number }> }
+  /** Lo que suena (docs/specs/sonido.md), al entrar y al cambiar, con la hora del servidor al mandarlo */
+  | { type: 'sound'; sound: SoundView; serverNow: number }
+  /** La respuesta a «time»: la hora del aparato que mandó y la del servidor */
+  | { type: 'time'; t: number; serverNow: number }
   | { type: 'error'; code: 'FORBIDDEN' | 'NOT_FOUND' | 'BAD_MESSAGE' | 'NOT_JOINED' | 'KICKED' }
 
 /** Quién está en la Mesa de una campaña ahora (ADR-0021) */

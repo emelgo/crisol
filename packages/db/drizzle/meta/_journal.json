@@ -498,6 +498,13 @@
       "when": 1794324592843,
       "tag": "0070_notas_jugador",
       "breakpoints": true
+    },
+    {
+      "idx": 71,
+      "version": "7",
+      "when": 1794326595572,
+      "tag": "0071_sonido",
+      "breakpoints": true
     }
   ]
 }

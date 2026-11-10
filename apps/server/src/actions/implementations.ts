@@ -30,6 +30,7 @@ import { revealActions } from './reveal.ts'
 import { roomActions } from './room.ts'
 import { sceneActions } from './scenes.ts'
 import { searchActions } from './search.ts'
+import { soundActions } from './sound.ts'
 import { systemActions } from './systems.ts'
 import { tableToolActions } from './table-tools.ts'
 import { tableActions } from './tables.ts'
@@ -53,6 +54,7 @@ export const IMPLEMENTATIONS: Implementation[] = [
   ...invitationActions,
   ...memberActions,
   ...noteActions,
+  ...soundActions,
   ...roomActions,
   ...historyActions,
   ...trashActions,

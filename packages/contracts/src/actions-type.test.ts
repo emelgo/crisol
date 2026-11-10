@@ -265,7 +265,17 @@ describe('Actions', () => {
       updatePlayerNote: true,
       deletePlayerNote: true,
       restorePlayerNote: true,
-      listPlayerNoteVersions: true
+      listPlayerNoteVersions: true,
+      createSoundPlaylist: true,
+      deleteSoundPlaylist: true,
+      getSound: true,
+      listSoundPlaylists: true,
+      nextTrack: true,
+      pauseSound: true,
+      playSound: true,
+      setSoundVolume: true,
+      stopSound: true,
+      updateSoundPlaylist: true
     }
     expect(Object.keys(names).sort()).toEqual(ACTIONS.map((a) => a.name).sort())
   })

@@ -27,6 +27,7 @@ import { createTablePresence } from './table/presence.ts'
 import { loadTable } from './table/projection.ts'
 import { createTableRooms, type LoadTable, type TableRooms } from './table/rooms.ts'
 import { registerTableRoutes } from './table/routes.ts'
+import { createSoundClock } from './table/sound.ts'
 import { createVision } from './table/vision.ts'
 import { registerWeb, webBuild } from './web.ts'
 import { jsonOfDoc } from './wiki/content.ts'
@@ -138,6 +139,14 @@ export function buildApp(deps: AppDeps): FastifyInstance {
       }
     }
     const presence = createTablePresence()
+    // El reloj del sonido: retoma lo que sonaba al arrancar y se para al cerrar (docs/specs/sonido.md)
+    const sound = createSoundClock({ db, rooms: table, onError: (error) => app.log.error(error) })
+    app.addHook('onReady', async () => {
+      await sound.recover().catch((error) => app.log.error(error))
+    })
+    app.addHook('onClose', async () => {
+      sound.close()
+    })
     const env: ActionEnv = {
       db,
       publicUrl,
@@ -147,6 +156,7 @@ export function buildApp(deps: AppDeps): FastifyInstance {
       table,
       presence,
       vision,
+      sound,
       actions: implementationsByName,
       ...(deps.storage ? { storage: deps.storage } : {}),
       ...(deps.library ? { library: deps.library } : {}),

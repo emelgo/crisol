@@ -33,6 +33,8 @@ import type {
   SceneViewport,
   ScreenCamera,
   SnapshotView,
+  SoundPlaylistView,
+  SoundTrackInput,
   TablePresenceEntry,
   TagView,
   TokenView,
@@ -41,14 +43,25 @@ import type {
   WidgetView,
   World
 } from '@crisol/contracts'
+import { youtubeVideoId } from '@crisol/contracts'
 import { DiceSyntaxError, rollDice as rollFormula, rowFor, tableFormula, tableProblems } from '@crisol/dice'
 import {
+  advanceSound,
   applyTemplate,
   BUILT_IN_TEMPLATES,
   builtInTemplate,
+  EMPTY_SOUND,
   instantiate,
+  nextTrack as nextTrackOf,
+  pauseSound as pauseSoundOf,
   removeTagIn,
   renameTagIn,
+  resumeSound,
+  type SoundState,
+  setSoundVolume as setSoundVolumeOf,
+  startEffect,
+  startList,
+  stopSound as stopSoundOf,
   tagKey,
   tagTree,
   uniqueTags
@@ -123,6 +136,7 @@ import {
   withWorld
 } from '@crisol/systems'
 import { FogGrid, tokensInTemplate } from '@crisol/tabletop'
+import { buildSoundView, listInfo } from '../sound/view.ts'
 import { readFoundryZip } from '../systems/foundry-zip.ts'
 import { type ActionInput, type ActionName, type ActionOutput, type ApiClient, ApiError } from './client.ts'
 
@@ -179,6 +193,8 @@ export function fakeApi(
       title: string
       markdown?: string
     }>
+    /** Las listas de sonido de los mundos (docs/specs/sonido.md) */
+    soundPlaylists?: SoundPlaylistView[]
   } = {}
 ) {
   const organizations = options.organizations ?? []
@@ -188,6 +204,44 @@ export function fakeApi(
   const rolls = [...(options.rolls ?? [])]
   // El registro de la partida (docs/specs/registro.md): los mensajes; las tiradas, de rolls
   const messages: LogMessage[] = []
+  // El sonido (docs/specs/sonido.md): las listas de los mundos y lo que suena en cada campaña
+  const soundPlaylists: SoundPlaylistView[] = structuredClone(options.soundPlaylists ?? [])
+  const sounds = new Map<string, SoundState>()
+  const soundLists = () => new Map(soundPlaylists.map((p) => [p.id, listInfo(p)]))
+  const changeSound = (campaignId: string, fn: (state: SoundState, now: number) => SoundState) => {
+    const now = Date.now()
+    const state = fn(advanceSound(sounds.get(campaignId) ?? EMPTY_SOUND, soundLists(), { now }), now)
+    sounds.set(campaignId, state)
+    return buildSoundView(campaignId, state, soundPlaylists)
+  }
+  const soundTracksOf = (worldId: string, tracks: SoundTrackInput[]): SoundPlaylistView['tracks'] =>
+    tracks.map((track) => {
+      let source: SoundPlaylistView['tracks'][number]['source']
+      if (track.source.type === 'youtube') {
+        const videoId = youtubeVideoId(track.source.url)
+        if (!videoId) throw new ApiError('BAD_YOUTUBE', 400)
+        source = { type: 'youtube', videoId }
+      } else {
+        const fileId = track.source.fileId
+        const file = files.find((f) => f.id === fileId && (f.worldId === worldId || f.worldId === null))
+        if (!file) throw new ApiError('NOT_FOUND', 404)
+        if (!file.mime.startsWith('audio/')) throw new ApiError('NOT_AUDIO', 400)
+        source = { type: 'file', fileId, url: `/api/files/${fileId}` }
+      }
+      return {
+        id: track.id ?? crypto.randomUUID(),
+        name: track.name,
+        source,
+        duration: track.duration,
+        volume: track.volume ?? 1,
+        loop: track.loop ?? false
+      }
+    })
+  const soundPlaylistById = (id: string) => {
+    const found = soundPlaylists.find((p) => p.id === id)
+    if (!found) throw new ApiError('NOT_FOUND', 404)
+    return found
+  }
   // Las notas de los jugadores (docs/specs/notas-jugador.md)
   type StoredNote = Omit<PlayerNote, 'links' | 'editable'>
   const notes: StoredNote[] = (options.notes ?? []).map((n) => ({
@@ -1895,6 +1949,69 @@ export function fakeApi(
         ]
       }
     },
+    listSoundPlaylists: ({ worldId, campaignId }) => {
+      const world = worldId ?? campaigns.find((c) => c.id === campaignId)?.worldId
+      return { playlists: structuredClone(soundPlaylists.filter((p) => p.worldId === world)) }
+    },
+    createSoundPlaylist: ({ worldId, name, kind, mode, fade, tracks }) => {
+      const playlist: SoundPlaylistView = {
+        id: crypto.randomUUID(),
+        worldId,
+        name,
+        kind,
+        mode: mode ?? 'sequential',
+        fade: fade ?? 0,
+        tracks: soundTracksOf(worldId, tracks ?? []),
+        version: 1,
+        updatedAt: new Date().toISOString()
+      }
+      soundPlaylists.push(playlist)
+      return { playlist: structuredClone(playlist) }
+    },
+    updateSoundPlaylist: ({ id, tracks, ...patch }) => {
+      const playlist = soundPlaylistById(id)
+      for (const [key, value] of Object.entries(patch))
+        if (value !== undefined) Object.assign(playlist, { [key]: value })
+      if (tracks) playlist.tracks = soundTracksOf(playlist.worldId, tracks)
+      playlist.version++
+      return { playlist: structuredClone(playlist) }
+    },
+    deleteSoundPlaylist: ({ id }) => {
+      soundPlaylists.splice(soundPlaylists.indexOf(soundPlaylistById(id)), 1)
+      return { ok: true as const }
+    },
+    getSound: ({ campaignId, withPlaylists }) => {
+      const view = changeSound(campaignId, (state) => state)
+      const world = campaigns.find((c) => c.id === campaignId)?.worldId
+      return withPlaylists
+        ? { ...view, playlists: structuredClone(soundPlaylists.filter((p) => p.worldId === world)) }
+        : view
+    },
+    playSound: ({ campaignId, playlistId, trackId }) => {
+      const owner = trackId ? soundPlaylists.find((p) => p.tracks.some((t) => t.id === trackId)) : undefined
+      const list = owner ?? soundPlaylistById(playlistId ?? '')
+      if (list.tracks.length === 0) throw new ApiError('EMPTY_PLAYLIST', 400)
+      if (!trackId && list.mode === 'soundboard') throw new ApiError('SOUNDBOARD_NEEDS_TRACK', 400)
+      const info = listInfo(list)
+      return changeSound(campaignId, (state, now) =>
+        trackId && info.kind === 'effects'
+          ? startEffect(state, info, trackId, { now, id: () => crypto.randomUUID() })
+          : startList(state, info, { now }, trackId)
+      )
+    },
+    stopSound: ({ campaignId, playlistId, effectId, fade }) =>
+      changeSound(campaignId, (state, now) =>
+        stopSoundOf(
+          state,
+          { now },
+          { ...(playlistId ? { playlistId } : {}), ...(effectId ? { effectId } : {}), fade: fade ?? 0 }
+        )
+      ),
+    pauseSound: ({ campaignId, paused }) =>
+      changeSound(campaignId, (state, now) => (paused ? pauseSoundOf(state, { now }) : resumeSound(state, { now }))),
+    setSoundVolume: ({ campaignId, volume }) => changeSound(campaignId, (state) => setSoundVolumeOf(state, volume)),
+    nextTrack: ({ campaignId, playlistId }) =>
+      changeSound(campaignId, (state, now) => nextTrackOf(state, soundLists(), { now }, playlistId)),
     listActorFolders: ({ campaignId }) => ({
       folders: actorFolders.filter((f) => f.campaignId === campaignId).map(({ id, name }) => ({ id, name })),
       items: actorFolderItems

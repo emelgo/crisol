@@ -58,6 +58,8 @@ export interface TableRooms {
   measure(campaignId: string, measure: LiveMeasure | null, from: TableSocket): void
   /** La estela del láser: a las otras pestañas del máster, entera; a la pantalla, sus puntos en lo que ve o vio */
   laser(campaignId: string, points: Point[], from: TableSocket): void
+  /** Un mensaje a todas las conexiones de una campaña (lo que suena: docs/specs/sonido.md) */
+  broadcast(campaignId: string, message: TableServerMessage): void
   /** Cuántas conexiones mira cada campaña (para las pruebas y los registros) */
   size(campaignId: string): number
   /** Cuando ya se ha mandado todo lo pendiente (para las pruebas) */
@@ -279,6 +281,11 @@ export function createTableRooms(load: LoadTable, onError: (error: unknown) => v
       const mask = room.sameSceneMask
       const seen = mask ? points.filter((p) => mask.hasPoint(p)) : []
       if (seen.length > 0) toScreens(room, { type: 'laser', points: seen })
+    },
+    broadcast(campaignId, message) {
+      const room = rooms.get(campaignId)
+      if (!room) return
+      for (const socket of room.sockets.keys()) send(socket, message)
     },
     size(campaignId) {
       return rooms.get(campaignId)?.sockets.size ?? 0

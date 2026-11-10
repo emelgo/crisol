@@ -3,7 +3,7 @@
  * en español porque lo ve el máster en claude.ai. Lo que no es leer pasa por el modo de IA de la cuenta (approvals.ts).
  */
 
-import { changeFog, contentTable } from '@crisol/contracts'
+import { changeFog, contentTable, playSound, stopSound, updateSoundPlaylist } from '@crisol/contracts'
 import { APPROVAL_WAIT_MS } from '@crisol/domain'
 import { McpServer } from '@modelcontextprotocol/server'
 import { z } from 'zod'
@@ -78,6 +78,16 @@ const noteInput = z.object({
 })
 
 /** La niebla de la mesa: destapar o tapar una zona, o reiniciarla (docs/specs/vision.md) */
+const soundViewInput = z.object({ campaignId: z.uuid().optional(), worldId: z.uuid().optional() })
+const soundPlayInput = playSound.input.extend({
+  next: z.boolean().optional().describe('Pasar a la pista siguiente en vez de lanzar')
+})
+const soundStopInput = stopSound.input.extend({
+  pause: z.boolean().optional().describe('true: pausa; false: sigue (en vez de parar)')
+})
+const soundEditInput = updateSoundPlaylist.input.extend({
+  delete: z.boolean().optional().describe('Borra la lista (se puede deshacer)')
+})
 const fogShape = changeFog.input.shape
 const fogInput = z.object({
   campaignId: z.uuid(),
@@ -491,6 +501,54 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   // Las notas del jugador (docs/specs/notas-jugador.md): las escribe su autor; el máster las lee
   ver_notas: { action: 'listPlayerNotes' },
   leer_nota: { action: 'getPlayerNote' },
+  // El sonido (docs/specs/sonido.md): las listas del mundo y lo que suena en la Mesa de una campaña
+  ver_sonido: {
+    description:
+      'El sonido: con campaignId, lo que suena en su Mesa (listas, efectos, volumen, pausa) y las listas de su mundo; con worldId solo, las listas del mundo con sus pistas',
+    input: soundViewInput,
+    actions: ['getSound', 'listSoundPlaylists'],
+    route: (input) => {
+      const { campaignId, worldId } = soundViewInput.parse(input)
+      if (campaignId) return { action: 'getSound', input: { campaignId, withPlaylists: true } }
+      if (!worldId) throw new InvalidRequestError('BAD_INPUT', 'campaignId o worldId')
+      return { action: 'listSoundPlaylists', input: { worldId } }
+    }
+  },
+  poner_sonido: {
+    description:
+      'Pone sonido en la Mesa de una campaña (solo su máster): una lista (playlistId) o una pista (trackId; una de efectos suena una vez por encima, una de ambiente lanza su lista desde ella). Con next, pasa a la pista siguiente de la lista que suena',
+    input: soundPlayInput,
+    actions: ['playSound', 'nextTrack'],
+    route: (input) => {
+      const { next, ...rest } = soundPlayInput.parse(input)
+      if (next) return { action: 'nextTrack', input: { campaignId: rest.campaignId, playlistId: rest.playlistId } }
+      return { action: 'playSound', input: rest }
+    }
+  },
+  parar_sonido: {
+    description:
+      'Para el sonido de una campaña: todo, una lista (playlistId) o un efecto (effectId), con fundido (fade, segundos) si se quiere. Con pause true lo pausa todo por donde va; con pause false sigue',
+    input: soundStopInput,
+    actions: ['stopSound', 'pauseSound'],
+    route: (input) => {
+      const { pause, ...rest } = soundStopInput.parse(input)
+      if (pause !== undefined) return { action: 'pauseSound', input: { campaignId: rest.campaignId, paused: pause } }
+      return { action: 'stopSound', input: rest }
+    }
+  },
+  volumen_sonido: { action: 'setSoundVolume' },
+  crear_lista_sonido: { action: 'createSoundPlaylist' },
+  cambiar_lista_sonido: {
+    description:
+      'Cambia una lista de sonido del mundo (id): nombre, clase, modo, fundido y, con tracks, sus pistas enteras en orden (las que siguen, con su id). Con delete true, la borra',
+    input: soundEditInput,
+    actions: ['updateSoundPlaylist', 'deleteSoundPlaylist'],
+    route: (input) => {
+      const { delete: remove, ...rest } = soundEditInput.parse(input)
+      if (remove) return { action: 'deleteSoundPlaylist', input: { id: rest.id } }
+      return { action: 'updateSoundPlaylist', input: rest }
+    }
+  },
   escribir_nota: {
     description:
       'Escribe una nota de quien te conecta (un jugador) en su campaña: sin id, crea una (campaignId, title, markdown y, si va dentro de otra, parentId); con id y la versión que leíste con leer_nota, la cambia (lo que se dé: title, icon, markdown entero, parentId). Solo su autor: el máster las lee, no las escribe',
