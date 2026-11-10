@@ -19,7 +19,7 @@ import {
   Trash2,
   User
 } from 'lucide-react'
-import { type CSSProperties, type MouseEvent, useEffect, useId, useRef, useState } from 'react'
+import { type CSSProperties, type MouseEvent, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
@@ -33,6 +33,10 @@ import { Modal } from './modal.tsx'
 import styles from './ribbon.module.css'
 import { useWindow } from './window.tsx'
 import { LEAVE_WORLD, leaveWorld, SECTION } from './world-transition.ts'
+
+/** Lo que tarda cada icono del mundo en salir del crisol (o en subir a él) y el paso entre uno y otro (ribbon.module.css) */
+const ICON_TIME = 460
+const ICON_STEP = 70
 
 /** Si la cuenta es propietaria de alguna organización: solo ella ve su historial, su papelera y la IA */
 function useIsOwner() {
@@ -153,12 +157,12 @@ export function Ribbon() {
   // Por si la animación no acaba (en el móvil no la hay): se queda quieto al rato
   useEffect(() => {
     if (phase === 'still') return
-    const timer = window.setTimeout(() => setPhase('still'), 1300)
+    const timer = window.setTimeout(() => setPhase('still'), 2600)
     return () => window.clearTimeout(timer)
   }, [phase])
   useEffect(() => {
     if (flame === 'still') return
-    const timer = window.setTimeout(() => setFlame('still'), flame === 'fire' ? 3000 : 3400)
+    const timer = window.setTimeout(() => setFlame('still'), flame === 'fire' ? 3000 : 4500)
     return () => window.clearTimeout(timer)
   }, [flame])
   // Los iconos del mundo (Inicio, Campañas, Páginas… y los que vengan): al entrar, salen del crisol uno tras otro
@@ -181,11 +185,18 @@ export function Ribbon() {
   if (world && master !== panelsMaster) setPanelsMaster(master)
   if (!world && panelsWorld && panelsMotion !== 'leave') setPanelsMotion('leave')
   const panelsBox = useRef<HTMLDivElement>(null)
-  useEffect(() => {
+  const sections = useRef<HTMLElement>(null)
+  // Al volver, el espejo de entrar: los iconos suben al crisol del último al primero, al mismo paso y con la misma
+  // duración con que salieron, y después sale «Mundos» (--leave: cuánto tardan en subir todos). Antes de pintar, para
+  // que «Mundos» empiece ya esperando
+  useLayoutEffect(() => {
     if (panelsMotion !== 'leave') return
     // Sin animaciones (las pruebas), al momento; si no, cuando el último ya se ha ido
     if (typeof panelsBox.current?.getAnimations !== 'function') return setPanelsWorld(null)
-    const timer = window.setTimeout(() => setPanelsWorld(null), 650)
+    const icons = panelsBox.current.childElementCount
+    const leave = icons > 0 ? (icons - 1) * ICON_STEP + ICON_TIME : 0
+    sections.current?.style.setProperty('--leave', `${leave}ms`)
+    const timer = window.setTimeout(() => setPanelsWorld(null), leave)
     return () => window.clearTimeout(timer)
   }, [panelsMotion])
   const merged = inWorld && phase !== 'merging'
@@ -207,7 +218,7 @@ export function Ribbon() {
         }
         master={master}
       />
-      <nav className={styles.sections} aria-label={t('app.sectionsNav')}>
+      <nav ref={sections} className={styles.sections} aria-label={t('app.sectionsNav')}>
         <Link
           to="/mundos"
           activeOptions={{ exact: true }}
@@ -222,7 +233,7 @@ export function Ribbon() {
         >
           <CrisolMark size={26} />
         </Link>
-        {/* Ya fundidos con la llama (dentro de un mundo), «Mundos» y los archivos comunes no están */}
+        {/* Ya fundidos con la llama (dentro de un mundo), «Mundos» y lo demás de la cuenta no están */}
         {merged ? null : (
           <Link
             to="/mundos"
@@ -235,20 +246,18 @@ export function Ribbon() {
             <Label icon={Globe} text={t('ribbon.worlds')} />
           </Link>
         )}
-        {/* Los archivos comunes de la cuenta: fuera de los mundos; dentro, en los «Archivos» de cada uno (ADR-0005).
-            Al entrar en un mundo sube a la llama con «Mundos», desde más abajo */}
+        {/* Las plantillas de página de la cuenta (ADR-0009): fuera de los mundos, tras «Mundos» */}
         {isOwner && !merged && (
           <Link
-            to="/archivos"
+            to="/plantillas"
             viewTransition={SECTION}
             className={worldsItem.filter(Boolean).join(' ')}
             style={{ '--rise': '-7.4rem' } as CSSProperties}
-            data-tour="barra-archivos"
-            // Se piden al acercarse: al llegar, ya están
-            onPointerEnter={prefetchCommon}
-            onFocus={prefetchCommon}
+            data-tour="barra-plantillas"
+            onPointerEnter={prefetchTemplates}
+            onFocus={prefetchTemplates}
           >
-            <Label icon={Folder} text={t('ribbon.files')} />
+            <Label icon={LayoutTemplate} text={t('ribbon.templates')} />
           </Link>
         )}
         {/* Las etiquetas de la cuenta (ADR-0006): fuera de los mundos; dentro, se filtra por ellas en la wiki y los
@@ -266,32 +275,35 @@ export function Ribbon() {
             <Label icon={Hash} text={t('ribbon.tags')} />
           </Link>
         )}
-        {/* Las plantillas de página de la cuenta (ADR-0009): fuera de los mundos, como las etiquetas */}
-        {isOwner && !merged && (
-          <Link
-            to="/plantillas"
-            viewTransition={SECTION}
-            className={worldsItem.filter(Boolean).join(' ')}
-            style={{ '--rise': '-15rem' } as CSSProperties}
-            data-tour="barra-plantillas"
-            onPointerEnter={prefetchTemplates}
-            onFocus={prefetchTemplates}
-          >
-            <Label icon={LayoutTemplate} text={t('ribbon.templates')} />
-          </Link>
-        )}
-        {/* Los sistemas de reglas de la cuenta (ADR-0011), junto a las plantillas */}
+        {/* Los sistemas de reglas de la cuenta (ADR-0011), tras las etiquetas */}
         {isOwner && !merged && (
           <Link
             to="/sistemas"
             viewTransition={SECTION}
             className={worldsItem.filter(Boolean).join(' ')}
-            style={{ '--rise': '-18.8rem' } as CSSProperties}
+            style={{ '--rise': '-15rem' } as CSSProperties}
             data-tour="barra-sistemas"
             onPointerEnter={prefetchSystems}
             onFocus={prefetchSystems}
           >
             <Label icon={ScrollText} text={t('ribbon.systems')} />
+          </Link>
+        )}
+        {/* Los archivos comunes de la cuenta: fuera de los mundos; dentro, en los «Archivos» de cada uno (ADR-0005).
+            El último de la barra (Enrique, 2026-11-11). Al entrar en un mundo sube a la llama con «Mundos», desde más
+            abajo */}
+        {isOwner && !merged && (
+          <Link
+            to="/archivos"
+            viewTransition={SECTION}
+            className={worldsItem.filter(Boolean).join(' ')}
+            style={{ '--rise': '-18.8rem' } as CSSProperties}
+            data-tour="barra-archivos"
+            // Se piden al acercarse: al llegar, ya están
+            onPointerEnter={prefetchCommon}
+            onFocus={prefetchCommon}
+          >
+            <Label icon={Folder} text={t('ribbon.files')} />
           </Link>
         )}
         {panelsWorld && (
