@@ -1953,7 +1953,8 @@ export const es = {
     sidebar: {
       combat: 'Combate',
       scenes: 'Escenas',
-      characters: 'Personajes',
+      // Personajes y criaturas juntos, con un solo buscador (Enrique, 2026-11-10: «confunde»)
+      characters: 'Actores',
       compendium: 'Compendio',
       pages: 'Páginas',
       settings: 'Campaña',
@@ -2016,6 +2017,7 @@ export const es = {
     place: 'Poner en la mesa: {{name}}',
     onMap: 'En la escena',
     searchCharacters: 'Buscar personajes',
+    searchActors: 'Buscar personajes y criaturas',
     noCharacters: 'Ningún personaje.',
     searchCreatures: 'Buscar criaturas',
     inPlay: 'En juego',

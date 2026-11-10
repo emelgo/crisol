@@ -126,8 +126,8 @@ describe('las fichas en la mesa', () => {
   it('las criaturas en juego se ponen desde el panel; la ficha se pinta con su rótulo y su vida', async () => {
     const user = userEvent.setup()
     const { api, push } = await renderTable()
-    // Las criaturas de la campaña, en Personajes (como los actores en Foundry)
-    await user.click(panel().getByRole('tab', { name: 'Personajes' }))
+    // Las criaturas de la campaña, en Actores (como en Foundry)
+    await user.click(panel().getByRole('tab', { name: 'Actores' }))
     const inPlay = within(await panel().findByRole('list', { name: 'Criaturas' }))
     await user.click(inPlay.getByRole('button', { name: 'Poner en la mesa: Lobo 1' }))
     await waitFor(async () => expect(await tokensOf(api)).toHaveLength(1))
@@ -289,7 +289,7 @@ describe('la pestaña Compendio', () => {
     expect(await screen.findByRole('dialog', { name: 'Compendio' })).toBeDefined()
   })
 
-  it('arrastrar una criatura del compendio a Personajes la pone en la campaña', async () => {
+  it('arrastrar una criatura del compendio a Actores la pone en la campaña', async () => {
     const user = userEvent.setup()
     const { api } = await renderTable()
     await user.click(panel().getByRole('tab', { name: 'Compendio' }))
@@ -306,7 +306,7 @@ describe('la pestaña Compendio', () => {
       dropEffect: 'none'
     }
     fireEvent.dragStart(found.getByRole('button', { name: 'Lobo' }).closest('li') as HTMLElement, { dataTransfer })
-    await user.click(panel().getByRole('tab', { name: 'Personajes' }))
+    await user.click(panel().getByRole('tab', { name: 'Actores' }))
     const creatures = (await panel().findByRole('list', { name: 'Criaturas' })).parentElement as HTMLElement
     fireEvent.dragOver(creatures, { dataTransfer })
     fireEvent.drop(creatures, { dataTransfer })

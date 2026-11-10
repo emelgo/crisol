@@ -126,11 +126,7 @@ export function MesaScreen() {
       </section>
     )
   if (campaign.role === 'master')
-    return worldName === undefined ? (
-      <Loading />
-    ) : (
-      <Mesa key={campaign.id} worldId={worldId} campaign={campaign} />
-    )
+    return worldName === undefined ? <Loading /> : <Mesa key={campaign.id} worldId={worldId} campaign={campaign} />
   return <PlayerMesa key={campaign.id} worldId={worldId} campaign={campaign} />
 }
 

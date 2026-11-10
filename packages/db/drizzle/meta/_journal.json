@@ -463,6 +463,13 @@
       "when": 1794310821053,
       "tag": "0065_sala_controles",
       "breakpoints": true
+    },
+    {
+      "idx": 66,
+      "version": "7",
+      "when": 1794313395346,
+      "tag": "0066_registro",
+      "breakpoints": true
     }
   ]
 }

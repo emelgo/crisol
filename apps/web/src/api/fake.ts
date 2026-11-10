@@ -13,6 +13,8 @@ import type {
   HistoryEntry,
   Invitation,
   LightView,
+  LogEntry,
+  LogMessage,
   MapPinView,
   MapView,
   MarkView,
@@ -174,6 +176,8 @@ export function fakeApi(
   const campaigns = [...(options.campaigns ?? [])]
   const history = [...(options.history ?? [])]
   const rolls = [...(options.rolls ?? [])]
+  // El registro de la partida (docs/specs/registro.md): los mensajes; las tiradas, de rolls
+  const messages: LogMessage[] = []
   // Lo borrado, con lo que hace falta para devolverlo
   const trash: Array<{ item: TrashItem; world?: World; campaign?: Campaign }> = []
   const DAY = 24 * 60 * 60 * 1000
@@ -1758,6 +1762,39 @@ export function fakeApi(
         if (error instanceof DiceSyntaxError) throw new ApiError('BAD_FORMULA', 400)
         throw error
       }
+    },
+    sendMessage: ({ campaignId, text, style, whisper }) => {
+      const entry: LogMessage = {
+        kind: 'message',
+        id: crypto.randomUUID(),
+        campaignId,
+        by: { userId: 'yo', name: 'Yo', color: null },
+        ai: false,
+        style: style ?? 'ooc',
+        speaker: { kind: 'user' },
+        text,
+        whisper: whisper ? whisper.map((id) => ({ id, name: id === 'master' ? '' : id })) : null,
+        deleted: false,
+        createdAt: new Date().toISOString()
+      }
+      messages.push(entry)
+      return { entry: structuredClone(entry) }
+    },
+    deleteMessage: ({ id }) => {
+      const found = messages.find((m) => m.id === id)
+      if (!found) throw new ApiError('NOT_FOUND', 404)
+      found.deleted = true
+      found.text = ''
+      return { ok: true as const }
+    },
+    listLog: ({ campaignId }) => {
+      const entries: LogEntry[] = [
+        ...messages.filter((m) => m.campaignId === campaignId).map((m) => structuredClone(m)),
+        ...rolls
+          .filter((r) => r.campaignId === campaignId)
+          .map((r) => ({ kind: 'roll' as const, id: r.id, roll: { ...r }, createdAt: r.createdAt }))
+      ].sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+      return { entries: entries.slice(-50), next: null }
     },
     listRolls: ({ campaignId, before }) => {
       const all = rolls.filter((r) => r.campaignId === campaignId)

@@ -464,6 +464,10 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   cambiar_escena: { action: 'updateScene' },
   ver_mesa: { action: 'getCampaignTable' },
   ver_sala: { action: 'getTablePresence' },
+  // El registro de la partida (docs/specs/registro.md): leerlo, escribir y susurrar
+  ver_registro: { action: 'listLog' },
+  escribir_en_registro: { action: 'sendMessage' },
+  borrar_mensaje: { action: 'deleteMessage' },
   // La sala (docs/specs/sala.md): la pausa, cómo mueven los jugadores y echar de la Mesa
   controles_sala: { action: 'setTableControls' },
   echar_de_la_mesa: { action: 'kickFromTable' },

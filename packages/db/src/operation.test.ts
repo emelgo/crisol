@@ -192,6 +192,8 @@ describe('operation', () => {
     notTracked.add('scene_explored')
     // De dónde salió lo traído de un zip: se va en cascada con lo que se deshace o se purga (docs/specs/escenas-foundry.md)
     notTracked.add('foundry_origins')
+    // El registro de la partida: como las tiradas, no se deshace (docs/specs/registro.md)
+    notTracked.add('campaign_messages')
     const tables = await conn.sql<
       { name: string }[]
     >`select tablename as name from pg_tables where schemaname = 'public'`

@@ -6,7 +6,7 @@ import type { Campaign, CampaignTableView, TokenView } from '@crisol/contracts'
 import { useQuery } from '@tanstack/react-query'
 import { getRouteApi, useNavigate } from '@tanstack/react-router'
 import { Eye, Swords } from 'lucide-react'
-import { useCallback, useEffect, useRef } from 'react'
+import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { GroupKnowledge } from '../campaign/group-knowledge.tsx'
@@ -18,7 +18,7 @@ import styles from './mesa.module.css'
 import { pageWindow } from './page-window.tsx'
 import pagesStyles from './pages-tab.module.css'
 import { PagesTab } from './pages-tab.tsx'
-import { CharactersList, EncountersList, FactionLegend, ImagesList, type Placing } from './panel.tsx'
+import { CharactersList, EncountersList, FactionLegend, ImagesList, type Placing, SearchBox } from './panel.tsx'
 import { InScene, ScenesGrid } from './scenes-tab.tsx'
 import {
   PANEL_SLUGS,
@@ -198,23 +198,32 @@ export function MasterSidebar({
       key: 'characters',
       content: () => (
         <>
-          <CharactersList
-            campaignId={campaignId}
-            table={table}
-            canPlace={canPlace}
-            onPlace={onPlace}
-            onOpen={(character) =>
-              windows?.open(sheetWindow({ kind: 'character', ...character }, campaignId, systemId))
-            }
-          />
-          <h3 className={styles.tabSection}>{t('tabletop.campaignCreatures.title')}</h3>
-          <CampaignCreatures
-            campaignId={campaignId}
-            systemId={systemId}
-            table={table}
-            canPlace={canPlace}
-            onPlace={onPlace}
-          />
+          <ActorsSearch>
+            {(query) => (
+              <>
+                <h3 className={styles.tabSection}>{t('tabletop.tabs.characters')}</h3>
+                <CharactersList
+                  campaignId={campaignId}
+                  table={table}
+                  canPlace={canPlace}
+                  onPlace={onPlace}
+                  query={query}
+                  onOpen={(character) =>
+                    windows?.open(sheetWindow({ kind: 'character', ...character }, campaignId, systemId))
+                  }
+                />
+                <h3 className={styles.tabSection}>{t('tabletop.campaignCreatures.title')}</h3>
+                <CampaignCreatures
+                  campaignId={campaignId}
+                  systemId={systemId}
+                  table={table}
+                  canPlace={canPlace}
+                  onPlace={onPlace}
+                  query={query}
+                />
+              </>
+            )}
+          </ActorsSearch>
           {chosen.length > 0 && (
             <>
               <h3 className={styles.tabSection}>{t('tabletop.tabs.images')}</h3>
@@ -263,4 +272,16 @@ export function MasterSidebar({
     }
   ]
   return <TableSidebar items={items} tab={tab} onTab={pick} folded={folded} onFold={setFolded} />
+}
+
+/** Un solo buscador para los personajes y las criaturas de la pestaña Actores */
+function ActorsSearch({ children }: { children: (query: string) => ReactNode }) {
+  const { t } = useTranslation()
+  const [query, setQuery] = useState('')
+  return (
+    <>
+      <SearchBox value={query} onChange={setQuery} label={t('tabletop.searchActors')} />
+      {children(query)}
+    </>
+  )
 }

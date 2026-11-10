@@ -13,7 +13,7 @@ import { useErrorText } from '../api/errors.ts'
 import { FormError } from '../components/field.tsx'
 import styles from './compendium-tab.module.css'
 import { CONTENT_DRAG, readContentDrag } from './drags.ts'
-import { PLACING_TYPE, type Placing } from './panel.tsx'
+import { matches, PLACING_TYPE, type Placing } from './panel.tsx'
 import { sheetWindow } from './token-sheet.tsx'
 import { initialOf } from './tokens.ts'
 import { useWindows } from './windows.tsx'
@@ -23,13 +23,16 @@ export function CampaignCreatures({
   systemId,
   table,
   canPlace,
-  onPlace
+  onPlace,
+  query = ''
 }: {
   campaignId: string
   systemId: string | null
   table: CampaignTableView | null
   canPlace: boolean
   onPlace: (placing: Placing) => void
+  /** Lo que se busca en la pestaña */
+  query?: string
 }) {
   const { t } = useTranslation()
   const api = useApi()
@@ -52,7 +55,7 @@ export function CampaignCreatures({
     onSuccess: refresh
   })
   const onMap = new Set((table?.tokens ?? []).map((token) => token.actor.id))
-  const creatures = inPlay.data?.creatures ?? []
+  const creatures = (inPlay.data?.creatures ?? []).filter((c) => matches(c.name, query))
   const error = hiding.error ?? add.error
   const accepts = (event: DragEvent) => event.dataTransfer.types.includes(CONTENT_DRAG)
   return (

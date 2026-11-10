@@ -14,6 +14,7 @@ import { invitationActions } from './invitations.ts'
 import { knowledgeActions } from './knowledge.ts'
 import { libraryActions } from './library.ts'
 import { linkActions } from './links.ts'
+import { logActions } from './log.ts'
 import { mapActions } from './maps.ts'
 import { memberActions } from './members.ts'
 import { organizationActions } from './organizations.ts'
@@ -45,6 +46,7 @@ export const IMPLEMENTATIONS: Implementation[] = [
   ...worldActions,
   ...campaignActions,
   ...diceActions,
+  ...logActions,
   ...invitationActions,
   ...memberActions,
   ...roomActions,

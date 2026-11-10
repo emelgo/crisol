@@ -138,3 +138,23 @@ export async function findRoll(db: Database, campaignId: string, rollId: string)
     .where(and(eq(diceRolls.id, rollId), eq(diceRolls.campaignId, campaignId)))
   return found ?? null
 }
+
+/** Para el registro (docs/specs/registro.md): las que ve una cuenta, por la hora, de las más recientes hacia atrás */
+export async function listRollsByTime(
+  db: Database,
+  input: { campaignId: string; viewerId: string; master: boolean; before?: Date | undefined; limit: number }
+) {
+  return db
+    .select(view)
+    .from(diceRolls)
+    .innerJoin(user, eq(user.id, diceRolls.userId))
+    .where(
+      and(
+        eq(diceRolls.campaignId, input.campaignId),
+        input.before ? lt(diceRolls.createdAt, input.before) : undefined,
+        input.master ? undefined : or(eq(diceRolls.visibility, 'all'), eq(diceRolls.userId, input.viewerId))
+      )
+    )
+    .orderBy(desc(diceRolls.createdAt), desc(diceRolls.n))
+    .limit(input.limit)
+}

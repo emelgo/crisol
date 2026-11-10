@@ -225,18 +225,6 @@ function RoomPanel({ campaignId }: { campaignId: string }) {
         </>
       )}
       <div className={styles.controls}>
-        <label className={styles.control}>
-          <span>{t('room.pauseLabel')}</span>
-          <input
-            type="checkbox"
-            role="switch"
-            className={styles.switch}
-            checked={data.paused ?? false}
-            aria-checked={data.paused ?? false}
-            disabled={controls.isPending}
-            onChange={(event) => controls.mutate({ paused: event.currentTarget.checked })}
-          />
-        </label>
         <div className={styles.control}>
           <span id={`${invitationTitle}-moves`}>{t('room.moves')}</span>
           <div className={styles.seg}>

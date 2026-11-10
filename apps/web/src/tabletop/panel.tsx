@@ -45,7 +45,15 @@ export function FactionLegend() {
   )
 }
 
-function SearchBox({ value, onChange, label }: { value: string; onChange: (value: string) => void; label: string }) {
+export function SearchBox({
+  value,
+  onChange,
+  label
+}: {
+  value: string
+  onChange: (value: string) => void
+  label: string
+}) {
   return (
     <label className={styles.search}>
       <Search aria-hidden="true" size={15} />
@@ -64,7 +72,7 @@ function SearchBox({ value, onChange, label }: { value: string; onChange: (value
   )
 }
 
-const matches = (text: string, query: string) =>
+export const matches = (text: string, query: string) =>
   !query.trim() || text.toLocaleLowerCase('es').includes(query.trim().toLocaleLowerCase('es'))
 
 /** Una fila que se arrastra al mapa, con su «+» para el teclado */
@@ -132,7 +140,8 @@ export function CharactersList({
   table,
   canPlace,
   onPlace,
-  onOpen
+  onOpen,
+  query: shared
 }: {
   campaignId: string
   table: CampaignTableView | null
@@ -140,10 +149,13 @@ export function CharactersList({
   onPlace: (placing: Placing) => void
   /** Abrir la hoja de uno */
   onOpen?: (character: { id: string; name: string }) => void
+  /** Lo que se busca, si el buscador es de fuera (el de la pestaña, para personajes y criaturas a la vez) */
+  query?: string
 }) {
   const { t } = useTranslation()
   const api = useApi()
-  const [query, setQuery] = useState('')
+  const [own, setQuery] = useState('')
+  const query = shared ?? own
   const characters = useQuery({
     queryKey: ['characters', campaignId],
     queryFn: () => api.call('listCharacters', { campaignId })
@@ -152,7 +164,7 @@ export function CharactersList({
   const shown = (characters.data?.characters ?? []).filter((c) => matches(c.name, query))
   return (
     <>
-      <SearchBox value={query} onChange={setQuery} label={t('tabletop.searchCharacters')} />
+      {shared === undefined && <SearchBox value={query} onChange={setQuery} label={t('tabletop.searchCharacters')} />}
       {characters.data && shown.length === 0 ? (
         <p className={styles.muted}>{t('tabletop.noCharacters')}</p>
       ) : (

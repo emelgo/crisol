@@ -1,4 +1,5 @@
 import type { DiceRoll } from './dice.ts'
+import type { LogEntry } from './log.ts'
 
 /**
  * Lo que el servidor manda por el canal en tiempo real, ya proyectado para quien lo recibe. Casi todo solo avisa: los
@@ -60,3 +61,7 @@ export type RealtimeMessage =
   | { type: 'revoked'; worldId: string; campaignId: string }
   /** Una tirada nueva en el registro de la campaña */
   | { type: 'rolled'; campaignId: string; roll: DiceRoll }
+  /** Algo nuevo en el registro de la partida (docs/specs/registro.md), solo a quien lo puede ver */
+  | { type: 'logged'; campaignId: string; entry: LogEntry }
+  /** Un mensaje borrado del registro */
+  | { type: 'unlogged'; campaignId: string; id: string }

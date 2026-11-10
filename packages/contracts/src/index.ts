@@ -86,6 +86,7 @@ import {
   showPage
 } from './knowledge.ts'
 import { getBookPages, listLibrary, readBookAgain, searchLibrary } from './library.ts'
+import { deleteMessage, listLog, sendMessage } from './log.ts'
 import {
   createMapPin,
   createPageTab,
@@ -248,6 +249,7 @@ export * from './history.ts'
 export * from './invitations.ts'
 export * from './knowledge.ts'
 export * from './library.ts'
+export * from './log.ts'
 export * from './maps.ts'
 export * from './members.ts'
 export * from './openapi.ts'
@@ -513,7 +515,10 @@ export const ACTIONS = [
   importBook,
   setTableControls,
   kickFromTable,
-  allowBackToTable
+  allowBackToTable,
+  sendMessage,
+  deleteMessage,
+  listLog
 ]
 
 /** Las acciones por nombre, solo como tipo: la web las usa sin cargar zod */
@@ -759,4 +764,7 @@ export type Actions = {
   setTableControls: typeof setTableControls
   kickFromTable: typeof kickFromTable
   allowBackToTable: typeof allowBackToTable
+  sendMessage: typeof sendMessage
+  deleteMessage: typeof deleteMessage
+  listLog: typeof listLog
 }

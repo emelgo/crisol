@@ -76,13 +76,11 @@ describe('la sala en la Mesa del máster', () => {
     ])
   })
 
-  it('la pausa: el botón y el interruptor, la franja con «Quitar»', async () => {
+  it('la pausa: el botón de arriba (no se repite en el panel) y la franja con «Quitar»', async () => {
     const user = userEvent.setup()
     mount()
     await user.click(await screen.findByRole('button', { name: 'Pausar la partida' }))
     expect(await screen.findByRole('status')).toHaveProperty('textContent', 'Partida en pausa' + 'Quitar')
-    await user.click(screen.getByRole('button', { name: '2 jugadores en la Mesa' }))
-    expect(screen.getByRole('switch', { name: 'Pausa' })).toHaveProperty('checked', true)
     await user.click(screen.getByRole('button', { name: 'Quitar' }))
     await waitFor(() => expect(screen.queryByRole('status')).toBeNull())
     expect(screen.getByRole('button', { name: 'Pausar la partida' }).getAttribute('aria-pressed')).toBe('false')

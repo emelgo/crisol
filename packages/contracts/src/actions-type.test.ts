@@ -245,7 +245,10 @@ describe('Actions', () => {
       importBook: true,
       setTableControls: true,
       kickFromTable: true,
-      allowBackToTable: true
+      allowBackToTable: true,
+      sendMessage: true,
+      deleteMessage: true,
+      listLog: true
     }
     expect(Object.keys(names).sort()).toEqual(ACTIONS.map((a) => a.name).sort())
   })
