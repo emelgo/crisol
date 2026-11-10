@@ -329,8 +329,8 @@ export function Ribbon() {
       </nav>
       {/* Abajo y fijo: lo de arriba puede crecer o no caber (al entrar en un mundo) sin moverlo */}
       <div className={styles.foot}>
-        {/* En la Mesa del máster, el historial y la papelera van con el mundo */}
-        {isOwner && !(panelsCampaign && campaignRole === 'master') && (
+        {/* También en la campaña: el historial y la papelera de su mundo */}
+        {isOwner && (
           <>
             {/* Se abren encima, sin dejar lo que se está viendo */}
             <button
