@@ -67,6 +67,8 @@ test('el máster y una jugadora en dos pestañas: la pública le sale al momento
   page,
   browser
 }) => {
+  // Dos navegadores y axe al final: en la máquina de la CI pasa del minuto
+  test.setTimeout(120_000)
   const link = await campaignLink(page)
   await toMesa(page)
   const ana = await newPlayer(browser, link, 'Ana')
