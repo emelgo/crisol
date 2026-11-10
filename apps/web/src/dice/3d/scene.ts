@@ -214,7 +214,9 @@ export function createScene(canvas: HTMLCanvasElement): DiceScene {
   const light = softwareGraphics()
   const renderer = new WebGLRenderer({ canvas, alpha: true, antialias: !light, powerPreference: 'high-performance' })
   // Más de 1,5 píxeles por punto no se nota en unos dados que se mueven, y cuesta el doble
-  renderer.setPixelRatio(light ? 1 : Math.min(window.devicePixelRatio, 1.5))
+  // Sin tarjeta gráfica, a media resolución (y a 30 imágenes por segundo, abajo): se ve la tirada y la página no se
+  // queda sin responder mientras caen
+  renderer.setPixelRatio(light ? 0.5 : Math.min(window.devicePixelRatio, 1.5))
   // Como en el Crisol antiguo: tono de cine y sombras suaves bajo los dados (se ven apoyados, no flotando); sin
   // tarjeta gráfica, sin sombras
   renderer.toneMapping = ACESFilmicToneMapping
@@ -306,7 +308,13 @@ export function createScene(canvas: HTMLCanvasElement): DiceScene {
   // 144 por segundo), donde toca de verdad. Sin eso, saltaba de fotograma en fotograma y se veía a tirones
   const qa = new Quaternion()
   const qb = new Quaternion()
+  let lastFrame = 0
   const draw = (now: number) => {
+    if (light && now - lastFrame < 30) {
+      raf = requestAnimationFrame(draw)
+      return
+    }
+    lastFrame = now
     throws = throws.filter((t) => {
       const elapsed = now - t.start
       const at = Math.min(t.frames - 1, (elapsed / FRAME_MS) * t.rate)
