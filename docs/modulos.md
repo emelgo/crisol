@@ -7,6 +7,19 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
+### Para retomar (2026-11-10: tanda en `main` con el PR #116; se pasa al módulo 7)
+
+- **En `main`** (PR #116): la campaña alrededor de la Mesa (ADR-0019), escenas sueltas (ADR-0020), el cristal, los dados
+  nuevos y fluidos, el estudio de Roliando y Nivel20, y libros y el espacio de la campaña (ADR-0021). La CI de e2e tiene
+  ahora más margen (la batería pasa de 30 min).
+- **La interfaz, en pausa** por decisión de Enrique (2026-11-10: «dejamos la UI por ahora»). Lo que tiene que probar, en
+  `tasks/probar.md`; la cuenta de jugadora de prueba en local, en `.env` (`LOCAL_PLAYER_*`).
+- **Siguiente módulo: el 7, «Sala de jugadores»** (catálogo, abajo): presencia, chat y susurros, mostrar a jugadores,
+  sonido (también los de un zip de Foundry) y controles del máster. Ya hay una parte: **quién está en la Mesa**
+  (`apps/server/src/table/presence.ts`, `getTablePresence`, la sección Mesa de la campaña) y «enseñar una página». Empezar
+  por el ciclo de siempre (CLAUDE.md): `interview-me` con Enrique frente a `docs/inventario.md`, estudio con
+  craft-anything (Foundry: sockets y chat; DDB: game log), `/spec`, lienzo, `/plan`, `/build`.
+
 ### Para retomar (2026-11-10, noche: dados fluidos; siguiente, el lienzo de libros y del espacio de la campaña)
 
 - **Estudio de Roliando y Nivel20** hecho (`research/roliando/`, `research/nivel20/`; informe en

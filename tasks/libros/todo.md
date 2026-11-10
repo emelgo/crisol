@@ -9,4 +9,4 @@
 - [x] 7. Web: Sistemas → Libros (ficha, ajustes, libro nuevo)
 - [x] 8. Web: revisión
 - [x] 9. Web: compendio por libro y creador con libros
-- [~] 10. Cierre (faltan las e2e finales y el PR): tutoriales, e2e + axe, revisión, documentación
+- [x] 10. Cierre (PR #116): tutoriales, e2e + axe, revisión, documentación
