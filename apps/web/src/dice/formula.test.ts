@@ -14,7 +14,7 @@ describe('los dados rápidos', () => {
 
 describe('la tirada, explicada mientras se escribe', () => {
   it('dicha en español, con su nombre; si no vale, por qué', () => {
-    expect(explain('2d20kh1+5 # Ataque')).toEqual({ ok: true, text: 'Ventaja (2d20, se queda el mayor) + 5 · Ataque' })
+    expect(explain('2d20kh1+5 # Ataque')).toEqual({ ok: true, text: 'Ventaja + 5 · Ataque' })
     expect(explain('1d20+')).toEqual({ ok: false, text: 'No se entiende «1d20+» al final' })
     expect(explain('')).toEqual({ ok: false, text: 'Escribe una tirada, como 1d20+5' })
   })

@@ -98,13 +98,18 @@
 .list {
   display: flex;
   flex-direction: column;
-  gap: 2px;
   margin: 0;
-  padding: 2px 6px;
+  padding: 0;
   overflow-y: auto;
   list-style: none;
   /* Plegada, las últimas líneas se apagan hacia arriba */
-  max-block-size: min(60vh, 34rem);
+  flex: 1;
+  min-block-size: 0;
+}
+
+/* Abierto: de alto fijo, y lo de dentro se desplaza (Enrique, 2026-11-10) */
+.open {
+  block-size: min(70vh, 32rem);
 }
 
 .entry {
@@ -455,9 +460,9 @@
 /* Las tiradas: el historial de los dados, dentro */
 .rolls {
   display: flex;
+  flex: 1;
   flex-direction: column;
-  max-block-size: min(60vh, 34rem);
-  min-block-size: 12rem;
+  min-block-size: 0;
 }
 
 .menuHint {

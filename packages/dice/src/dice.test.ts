@@ -161,8 +161,8 @@ describe('la tirada', () => {
 
 describe('dicha en español', () => {
   it('para quien no lee notación', () => {
-    expect(describeFormula('2d20kh1')).toBe('Ventaja (2d20, se queda el mayor)')
-    expect(describeFormula('2d20kl1+5')).toBe('Desventaja (2d20, se queda el menor) + 5')
+    expect(describeFormula('2d20kh1')).toBe('Ventaja')
+    expect(describeFormula('2d20kl1+5')).toBe('Desventaja + 5')
     expect(describeFormula('4d6kh3')).toBe('4d6, se quedan los 3 mayores')
     expect(describeFormula('1d20-1')).toBe('1d20 − 1')
     expect(describeFormula('1d6!')).toBe('1d6 explosivo')

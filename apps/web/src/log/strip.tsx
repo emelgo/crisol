@@ -3,8 +3,7 @@
  * cristal abajo, a la derecha del zoom, con las últimas líneas y el cuadro para escribir; al desplegarla, el hilo entero.
  * Lo que llega lo decide el servidor (a cada uno, lo suyo); aquí se vuelve a pedir con cada aviso
  */
-import type { Campaign, LogEntry } from '@crisol/contracts'
-import { describeFormula } from '@crisol/dice'
+import type { Campaign, DiceRoll, LogEntry } from '@crisol/contracts'
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Check, ChevronDown, ChevronUp, Lock, MessageSquare, SendHorizontal, Trash2 } from 'lucide-react'
 import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react'
@@ -14,7 +13,9 @@ import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { useDismiss } from '../components/dismiss.ts'
 import { useDice } from '../dice/context.tsx'
-import { RollLog } from '../dice/log.tsx'
+import log from '../dice/log.module.css'
+import { RollEntry, RollLog } from '../dice/log.tsx'
+import { useRollAgain } from '../dice/roll-parts.tsx'
 import { colorOf } from '../dice/rolls.ts'
 import { useRolled } from '../realtime/context.tsx'
 import styles from './strip.module.css'
@@ -178,6 +179,11 @@ export function LogStrip({
     }
   })
   const [clearing, setClearing] = useState(false)
+  const again = useRollAgain(campaign)
+  const deleteRolls = useMutation({
+    mutationFn: (ids: string[]) => api.call('deleteRolls', { campaignId: campaign.id, ids }),
+    onSuccess: () => void refresh()
+  })
   const remove = useMutation({
     mutationFn: (id: string) => api.call('deleteMessage', { campaignId: campaign.id, id }),
     onSuccess: () => void refresh()
@@ -270,6 +276,8 @@ export function LogStrip({
               entry={entry}
               me={me}
               master={master}
+              onAgain={(roll) => again.mutate(roll)}
+              onDeleteRoll={(id) => deleteRolls.mutate([id])}
               canDelete={(id, at, by) =>
                 entry.kind !== 'roll' && (master || (by === me && Date.now() - Date.parse(at) < DELETE_WINDOW_MS))
                   ? () => remove.mutate(id)
@@ -387,32 +395,28 @@ function Entry({
   entry,
   me,
   master,
-  canDelete
+  canDelete,
+  onAgain,
+  onDeleteRoll
 }: {
   entry: LogEntry
   me: string
   master: boolean
+  onAgain: (roll: DiceRoll) => void
+  onDeleteRoll: (id: string) => void
   canDelete: (id: string, at: string, by: string) => (() => void) | null
 }) {
   const { t } = useTranslation()
-  if (entry.kind === 'roll') {
-    const roll = entry.roll
-    const what = roll.label ?? describeFormula(roll.formula)
+  if (entry.kind === 'roll')
     return (
-      <li className={roll.visibility === 'all' ? styles.entry : `${styles.entry} ${styles.private}`}>
-        <Avatar userId={roll.by.userId} name={roll.by.name} color={roll.by.color} />
-        <div className={styles.body}>
-          <p className={styles.line}>
-            <b>{roll.by.name}</b> <span className={styles.muted}>{what}</span>
-          </p>
-          <p className={styles.detail} translate="no">
-            {roll.detail}
-          </p>
-        </div>
-        <span className={roll.critical ? `${styles.total} ${styles[roll.critical]}` : styles.total}>{roll.total}</span>
-      </li>
+      <RollEntry
+        roll={entry.roll}
+        mine={entry.roll.by.userId === me}
+        master={master}
+        onAgain={() => onAgain(entry.roll)}
+        onDelete={master ? () => onDeleteRoll(entry.roll.id) : undefined}
+      />
     )
-  }
   const del = canDelete(entry.id, entry.createdAt, entry.by.userId)
   const names = (list: readonly { id: string; name: string }[]) =>
     list.map((w) => (w.id === MASTER ? t('log.master') : w.name)).join(', ')
@@ -426,67 +430,60 @@ function Entry({
         : t('log.whisperBetween', { from: entry.by.name, to: names(entry.whisper) })
     : null
   const time = <time dateTime={entry.createdAt}>{clock.format(new Date(entry.createdAt))}</time>
+  const remove = del && !entry.deleted && (
+    <button type="button" className={log.deleteRoll} aria-label={t('log.delete')} title={t('log.delete')} onClick={del}>
+      <Trash2 size={12} aria-hidden="true" />
+    </button>
+  )
+  const flag = whisperLabel && (
+    <span className={log.flag}>
+      <Lock size={12} aria-hidden="true" />
+      {whisperLabel}
+    </span>
+  )
   if (entry.kind === 'shown') {
     return (
-      <li className={styles.entry}>
+      <li className={log.entry}>
         <Avatar userId={entry.by.userId} name={entry.by.name} color={entry.by.color} />
-        <p className={styles.line}>
-          <span className={styles.muted}>
-            {t('log.shown', { name: entry.by.name, title: entry.shown?.title ?? '' })}
-          </span>
-        </p>
-        {time}
+        <div className={log.body}>
+          <div className={log.who}>
+            <b>{entry.by.name}</b>
+            {time}
+            {flag}
+          </div>
+          <p className={log.what}>{t('log.shown', { name: entry.by.name, title: entry.shown?.title ?? '' })}</p>
+        </div>
       </li>
     )
   }
+  // Como las tiradas (la misma tarjeta), para que en «Todo» no descuadre: quién y cuándo arriba, el texto debajo
   const speaker = entry.speaker.kind === 'user' ? entry.by.name : entry.speaker.name
   return (
-    <li className={whisperLabel ? `${styles.entry} ${styles.whisper}` : styles.entry}>
+    <li className={whisperLabel ? log.private : log.entry}>
       <Avatar userId={entry.by.userId} name={speaker} color={entry.by.color} />
-      <div className={styles.body}>
-        {whisperLabel && (
-          <p className={styles.whisperLabel}>
-            <Lock size={11} aria-hidden="true" />
-            {whisperLabel}
-          </p>
-        )}
+      <div className={log.body}>
+        <div className={log.who}>
+          <b>{speaker}</b>
+          {entry.speaker.kind !== 'user' && <span>{entry.by.name}</span>}
+          {time}
+          {flag}
+          {remove}
+        </div>
         {entry.deleted ? (
-          <p className={`${styles.line} ${styles.muted}`}>{t('log.deleted')}</p>
-        ) : entry.style === 'emote' ? (
-          <p className={`${styles.line} ${styles.emote}`}>
-            {speaker} {entry.text}
-          </p>
+          <p className={`${log.what} ${styles.muted}`}>{t('log.deleted')}</p>
         ) : (
-          <p className={styles.line}>
-            <b>{speaker}</b>
-            {entry.style === 'ic' && entry.speaker.kind !== 'user' && (
-              <span className={styles.muted}> · {entry.by.name}</span>
-            )}{' '}
-            {entry.text}
+          <p className={entry.style === 'emote' ? `${log.what} ${styles.emote}` : log.what}>
+            {entry.style === 'emote' ? `${speaker} ${entry.text}` : entry.text}
           </p>
         )}
       </div>
-      <span className={styles.side}>
-        {time}
-        {del && !entry.deleted && (
-          <button
-            type="button"
-            className={styles.delete}
-            aria-label={t('log.delete')}
-            title={t('log.delete')}
-            onClick={del}
-          >
-            <Trash2 size={12} aria-hidden="true" />
-          </button>
-        )}
-      </span>
     </li>
   )
 }
 
 function Avatar({ userId, name, color }: { userId: string; name: string; color: string | null }) {
   return (
-    <span className={styles.avatar} style={{ background: colorOf(userId, color) }} aria-hidden="true">
+    <span className={log.avatar} style={{ background: colorOf(userId, color) }} aria-hidden="true">
       {(name.trim()[0] ?? '?').toUpperCase()}
     </span>
   )

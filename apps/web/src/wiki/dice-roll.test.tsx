@@ -163,7 +163,7 @@ describe('la tirada escrita en una página', () => {
     const formula = dialog.getByRole('textbox', { name: 'Tirada' })
     await userEvent.clear(formula)
     await userEvent.type(formula, '2d20kh1+3')
-    expect(dialog.getByText('Ventaja (2d20, se queda el mayor) + 3')).toBeDefined()
+    expect(dialog.getByText('Ventaja + 3')).toBeDefined()
     await userEvent.type(dialog.getByRole('textbox', { name: 'Nombre' }), 'Sigilo')
     expect(rollOf(editor)).toMatchObject({ formula: '2d20kh1+3', label: 'Sigilo' })
     await userEvent.keyboard('{Enter}')

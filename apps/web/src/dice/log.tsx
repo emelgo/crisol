@@ -117,7 +117,7 @@ export function RollLog({ campaign }: { campaign: Campaign }) {
       )}
       <ol ref={list} className={styles.log} aria-label={t('dice.log')}>
         {shown.map((roll) => (
-          <Entry
+          <RollEntry
             key={roll.id}
             roll={roll}
             mine={isMine(roll, account)}
@@ -176,7 +176,8 @@ function DiceOptions() {
   )
 }
 
-function Entry({
+/** Una tirada del historial (también en la pestaña Todo del registro) */
+export function RollEntry({
   roll,
   mine,
   master,

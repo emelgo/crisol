@@ -1,5 +1,5 @@
 /**
- * Una fórmula dicha en español, para quien no lee notación: `2d20kh1` → «Ventaja (2d20, se queda el mayor)»,
+ * Una fórmula dicha en español, para quien no lee notación: `2d20kh1` → «Ventaja»,
  * `4d6kh3` → «4d6, se quedan los 3 mayores», `5d10>=8f1` → «5d10, éxitos con 8 o más, fallos con 1». Pura: la web la
  * enseña mientras se escribe
  */
@@ -71,10 +71,10 @@ function sayDice(term: DiceTerm): Said {
   if (term.sides === 'F') head += ' (Fate)'
   if (term.label) head += ` (${term.label})`
   const advantage = advantageOf(term)
+  // Ventaja o desventaja se entienden solas: el dado que no cuenta ya sale tachado (Enrique, 2026-11-10)
   if (advantage) {
-    const parts = [head, advantage === 'advantage' ? 'se queda el mayor' : 'se queda el menor']
-    if (term.reroll) parts.push(rerollText(term.reroll))
-    return { text: `${advantage === 'advantage' ? 'Ventaja' : 'Desventaja'} (${parts.join(', ')})`, loose: false }
+    const name = advantage === 'advantage' ? 'Ventaja' : 'Desventaja'
+    return { text: term.reroll ? `${name} (${rerollText(term.reroll)})` : name, loose: false }
   }
   const parts = [head]
   if (term.keep) parts.push(keepText(term.keep))
