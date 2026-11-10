@@ -131,13 +131,13 @@ function useControls(campaignId: string) {
 }
 
 /** La franja de la pausa, para que al máster no se le olvide quitarla */
-export function PauseBanner({ campaignId }: { campaignId: string }) {
+export function PauseBanner({ campaignId, className }: { campaignId: string; className?: string }) {
   const { t } = useTranslation()
   const room = useRoom(campaignId)
   const controls = useControls(campaignId)
   if (!room.data?.paused) return null
   return (
-    <div className={styles.banner} role="status">
+    <div className={className ? `${styles.banner} ${className}` : styles.banner} role="status">
       <Pause size={14} aria-hidden="true" />
       <span>{t('room.paused')}</span>
       <button type="button" disabled={controls.isPending} onClick={() => controls.mutate({ paused: false })}>

@@ -476,16 +476,23 @@
   transform: translateX(-50%);
 }
 
+/* En la Mesa del máster, en su línea bajo las barras de arriba (mesa.module.css, .pauseRow) */
+.banner.inRow {
+  position: static;
+  transform: none;
+}
+
 .banner button {
   padding: 3px 10px;
   border: 0;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--color-warning) 20%, transparent);
-  color: inherit;
+  /* Con su contraste: el texto de siempre sobre la superficie */
+  background: var(--color-surface);
+  color: var(--color-text);
   font: inherit;
   cursor: pointer;
 }
 
 .banner button:hover {
-  background: color-mix(in srgb, var(--color-warning) 32%, transparent);
+  background: var(--color-raised);
 }

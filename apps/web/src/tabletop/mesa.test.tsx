@@ -178,6 +178,19 @@ describe('la mesa del máster', () => {
     await waitFor(() => expect(screen.queryByText('Oculta a los jugadores')).toBeNull())
   })
 
+  it('la franja de la pausa va en la fila de las barras de arriba, debajo de ellas: no tapa sus botones', async () => {
+    const { api, scenes, push } = await renderMesa()
+    await api.client.call('openScene', { campaignId: CAMPAIGN.id, sceneId: scenes[0]?.id ?? '' })
+    await api.client.call('setTableControls', { campaignId: CAMPAIGN.id, paused: true })
+    await push()
+    const banner = (await screen.findByText('Partida en pausa')).closest('[role="status"]')
+    const top = screen.getByRole('button', { name: /^Cámara/ }).closest('[data-mesa-top]')
+    expect(top).not.toBeNull()
+    expect(top?.contains(banner)).toBe(true)
+    // La última de la fila (con las barras que se parten en dos líneas, queda debajo de todas)
+    expect(top?.lastElementChild?.contains(banner)).toBe(true)
+  })
+
   it('con «Seguir» manda su encuadre al moverse; «Fija» deja el marco de la tele, que se mueve con las flechas', async () => {
     const user = userEvent.setup()
     const { api, scenes, push, master } = await renderMesa()

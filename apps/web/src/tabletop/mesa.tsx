@@ -72,6 +72,7 @@ import { PlayerMesa } from './player-mesa.tsx'
 import { Preparing } from './preparing.tsx'
 import { masterTileUrl, sceneListKey } from './queries.ts'
 import type { RendererScene } from './renderer.ts'
+import roomStyles from './room.module.css'
 import { PauseBanner, RoomBar } from './room.tsx'
 import { sceneWindow } from './scene-window.tsx'
 import { ShowImage } from './show-menu.tsx'
@@ -574,7 +575,6 @@ export function Mesa({ worldId, campaign: current }: { worldId: string; campaign
                   setSide(null)
                 }}
               />
-              <PauseBanner campaignId={campaignId} />
               <YoutubeDock
                 view={sound.view}
                 clock={sound.clock}
@@ -1406,7 +1406,7 @@ function TopBar({
   return (
     // Sin escena no hay columna de herramientas: lo de arriba se pega al borde; al abrir una, su recuadro entra y
     // desplaza a los demás (Enrique, 2026-11-10)
-    <div className={open ? styles.topBar : `${styles.topBar} ${styles.noTools}`}>
+    <div className={open ? styles.topBar : `${styles.topBar} ${styles.noTools}`} data-mesa-top="">
       <div className={open ? `${styles.bar} ${styles.sceneBar}` : `${styles.bar} ${styles.sceneBar} ${styles.gone}`}>
         {open && (
           <>
@@ -1487,6 +1487,10 @@ function TopBar({
           disabled={busy || !open?.image?.tiles}
           onAct={onAct}
         />
+      </div>
+      {/* La franja de la pausa, en su propia línea debajo de las barras (aunque se partan en dos): no tapa nada */}
+      <div className={styles.pauseRow}>
+        <PauseBanner campaignId={campaignId} className={roomStyles.inRow} />
       </div>
     </div>
   )

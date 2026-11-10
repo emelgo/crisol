@@ -213,6 +213,22 @@
   transition: inset-inline-start 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
+/* La línea de la franja de la pausa: debajo de las barras, centrada; solo la franja se puede pulsar */
+.topBar > .pauseRow {
+  display: flex;
+  flex-basis: 100%;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.pauseRow:empty {
+  display: none;
+}
+
+.pauseRow > * {
+  pointer-events: auto;
+}
+
 /* Sin escena (y sin columna de herramientas), pegada al borde */
 .topBar.noTools {
   inset-inline-start: 0.75rem;
