@@ -68,6 +68,15 @@ async function withTracks(db: Database, playlists: PlaylistRow[]): Promise<Playl
   return playlists.map((p) => ({ ...p, tracks: tracks.filter((t) => t.playlistId === p.id) }))
 }
 
+/** Unas pistas por su id (las de los sonidos del mapa) */
+export function tracksByIds(db: Database, ids: readonly string[]): Promise<TrackRow[]> {
+  if (ids.length === 0) return Promise.resolve([])
+  return db
+    .select()
+    .from(soundTracks)
+    .where(inArray(soundTracks.id, [...ids]))
+}
+
 export async function findPlaylist(db: Database, id: string): Promise<PlaylistWithTracks | null> {
   const [found] = await playlistsByIds(db, [id])
   return found ?? null

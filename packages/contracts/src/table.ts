@@ -89,6 +89,29 @@ export const screenLight = z.object({
 
 export type ScreenLight = z.infer<typeof screenLight>
 
+/** Un sonido del mapa que suena en la escena (docs/specs/sonido-mapa.md): cada aparato calcula cuánto lo oye */
+export const screenSound = z.object({
+  id: z.uuid(),
+  x: z.number(),
+  y: z.number(),
+  /** En píxeles de la imagen */
+  radius: z.number(),
+  volume: z.number(),
+  easing: z.boolean(),
+  walls: z.enum(['block', 'muffle']),
+  url: z.string()
+})
+
+export type ScreenSound = z.infer<typeof screenSound>
+
+/** Un tramo de muro que para el sonido ahora (sin las puertas abiertas), cerca de algún sonido */
+export const soundWall = z.object({
+  a: z.object({ x: z.number(), y: z.number() }),
+  b: z.object({ x: z.number(), y: z.number() }),
+  limited: z.boolean(),
+  pass: z.enum(['left', 'right']).nullable()
+})
+
 export const screenView = z.object({
   campaignId: z.uuid(),
   campaignName: z.string(),
@@ -126,6 +149,9 @@ export const screenView = z.object({
       })
     )
     .optional(),
+  /** Los sonidos del mapa que suenan y los muros que los paran (opcional por la API de prueba de la web) */
+  sounds: z.array(screenSound).optional(),
+  soundWalls: z.array(soundWall).optional(),
   /** Lo que enseña el máster encima de la escena (docs/specs/ensenar.md) */
   show: z
     .object({ kind: z.enum(['page', 'image']), id: z.string(), title: z.string(), worldId: z.uuid() })

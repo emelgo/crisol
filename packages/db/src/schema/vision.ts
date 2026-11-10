@@ -1,7 +1,21 @@
-import { boolean, doublePrecision, index, jsonb, pgTable, primaryKey, text, timestamp, uuid } from 'drizzle-orm/pg-core'
+import { sql } from 'drizzle-orm'
+import {
+  boolean,
+  check,
+  doublePrecision,
+  index,
+  jsonb,
+  pgTable,
+  primaryKey,
+  text,
+  timestamp,
+  uuid
+} from 'drizzle-orm/pg-core'
 import { campaigns } from './campaigns.ts'
 import { bytea } from './documents.ts'
+import { files } from './files.ts'
 import { scenes } from './scenes.ts'
+import { soundTracks } from './sound.ts'
 import { trackedColumns } from './tracked.ts'
 import { worlds } from './worlds.ts'
 
@@ -70,6 +84,44 @@ export const sceneLights = pgTable(
     activeBelowAmbient: doublePrecision()
   },
   (t) => [index().on(t.sceneId)]
+)
+
+/**
+ * Un sonido del mapa de una escena (docs/specs/sonido-mapa.md): su sitio (en píxeles de la imagen), su pista (un audio
+ * del mundo, una pista de sus listas o una dirección), su radio en casillas, su volumen, si se apaga hacia el borde, si
+ * los muros que paran el sonido lo frenan o lo amortiguan y si solo suena con la escena a oscuras. Siempre en bucle.
+ * Lo del mundo, con su historial; encenderlo o apagarlo es de cada campaña (`scene_states.sounds`)
+ */
+export const sceneSounds = pgTable(
+  'scene_sounds',
+  {
+    ...trackedColumns(),
+    worldId: uuid()
+      .notNull()
+      .references(() => worlds.id, { onDelete: 'cascade' }),
+    sceneId: uuid()
+      .notNull()
+      .references(() => scenes.id, { onDelete: 'cascade' }),
+    name: text().notNull().default(''),
+    x: doublePrecision().notNull(),
+    y: doublePrecision().notNull(),
+    fileId: uuid().references(() => files.id, { onDelete: 'set null' }),
+    trackId: uuid().references(() => soundTracks.id, { onDelete: 'set null' }),
+    url: text(),
+    radius: doublePrecision().notNull().default(6),
+    volume: doublePrecision().notNull().default(1),
+    easing: boolean().notNull().default(true),
+    walls: text({ enum: ['block', 'muffle'] })
+      .notNull()
+      .default('block'),
+    darkOnly: boolean().notNull().default(false)
+  },
+  (t) => [
+    index().on(t.sceneId),
+    index().on(t.fileId),
+    index().on(t.trackId),
+    check('scene_sounds_one_source', sql`num_nonnulls(${t.fileId}, ${t.trackId}, ${t.url}) <= 1`)
+  ]
 )
 
 /** Una operación de la niebla a mano, sin su id (es el de la fila): la forma, destapar o tapar y su momento */

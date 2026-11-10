@@ -604,6 +604,10 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   cambiar_muros: { action: 'changeWalls' },
   abrir_puerta: { action: 'setDoor' },
   oscuridad: { action: 'updateSceneVision' },
+  // Los sonidos del mapa (docs/specs/sonido-mapa.md): del mundo; ver_muros los lista y cada campaña los enciende
+  poner_sonido_escena: { action: 'placeSceneSound' },
+  cambiar_sonido_escena: { action: 'changeSceneSound' },
+  quitar_sonido_escena: { action: 'removeSceneSound' },
   ver_como_grupo: { action: 'viewAsParty' },
   niebla: {
     description:
@@ -730,7 +734,11 @@ const INSTRUCTIONS =
   'una escena se ven con ver_muros y se cambian con cambiar_muros (en casillas con unit cell; una puerta secreta es ' +
   'muro para el grupo hasta que se abre); los mapas de dibujar_escena llevan los suyos. abrir_puerta abre o cierra ' +
   'una puerta en una campaña, oscuridad pone la de la escena (o la deja sin niebla automática: solo a mano), niebla ' +
-  'destapa, tapa o reinicia, y ver_como_grupo dice qué casillas y fichas ve el grupo. ' +
+  'destapa, tapa o reinicia, y ver_como_grupo dice qué casillas y fichas ve el grupo. Los sonidos del mapa (una ' +
+  'cascada, una fragua: en bucle, más fuertes cerca de las fichas) salen en ver_muros y se ponen con ' +
+  'poner_sonido_escena (un audio del mundo o una pista de sus listas, radio en casillas, si los muros lo frenan o lo ' +
+  'amortiguan), se cambian con cambiar_sonido_escena (con campaignId y enabled, se encienden o apagan en una campaña) ' +
+  'y se quitan con quitar_sonido_escena. ' +
   'medir dice lo que hay entre dos casillas (o un camino) con la regla de diagonales de la escena. poner_plantilla ' +
   'deja una plantilla de área (círculo, cono, línea o cuadrado, en pies desde una casilla) y dice qué fichas quedan ' +
   'dentro (fichas_en_plantilla lo vuelve a mirar): para dañarlas, aplicar_tirada o partida_criatura con su actorId. ' +

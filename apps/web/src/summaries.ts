@@ -354,7 +354,13 @@ export function summaryOf(
         title: text(details.title)
       })
     case 'placeImportedWalls':
+    case 'placeSceneSound':
+    case 'changeSceneSound':
+    case 'removeSceneSound':
       return say(action, { name: text(details.name), title: text(details.title) })
+    case 'sceneSoundOn':
+    case 'sceneSoundOff':
+      return say(action, { name: text(details.name), campaign: text(details.campaign) })
     case 'updateSceneVision': {
       const key =
         details.automaticVision === undefined

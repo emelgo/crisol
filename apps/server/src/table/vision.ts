@@ -189,6 +189,7 @@ export const wallOf = (row: visionRepo.WallRow): Wall => ({
   sight: row.sight,
   light: row.light,
   move: row.move,
+  sound: row.sound,
   direction: row.direction,
   door: row.door,
   locked: row.locked

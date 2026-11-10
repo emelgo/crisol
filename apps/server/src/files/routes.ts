@@ -11,7 +11,8 @@ import {
   logRepo,
   soundRepo,
   systemImagesRepo,
-  systemsRepo
+  systemsRepo,
+  visionRepo
 } from '@crisol/db'
 import { actorFrom, can, MAX_FILE_BYTES, sniff, uploadable } from '@crisol/domain'
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
@@ -86,6 +87,9 @@ async function playerFile(ctx: ActionContext, fileId: string) {
   if (await logRepo.wasShownFile(ctx.db, { userId: ctx.actor.userId, campaignIds, fileId: file.id })) return file
   // Un audio de una lista que suena en su campaña (docs/specs/sonido.md)
   if (file.mime.startsWith('audio/') && (await soundRepo.fileIsPlaying(ctx.db, campaignIds, file.id))) return file
+  // Un audio que suena en el mapa de la escena que enseña su campaña (docs/specs/sonido-mapa.md)
+  if (file.mime.startsWith('audio/') && (await visionRepo.fileInPresentedSounds(ctx.db, campaignIds, file.id)))
+    return file
   return null
 }
 

@@ -244,9 +244,12 @@ import {
 } from './trash.ts'
 import {
   changeFog,
+  changeSceneSound,
   changeWalls,
   getSceneVision,
   placeImportedWalls,
+  placeSceneSound,
+  removeSceneSound,
   resetFog,
   setDoor,
   setTileFit,
@@ -524,6 +527,9 @@ export const ACTIONS = [
   resetFog,
   setTileFit,
   viewAsParty,
+  placeSceneSound,
+  changeSceneSound,
+  removeSceneSound,
   setMeasureOnScreen,
   listMarks,
   changeMarks,
@@ -799,6 +805,9 @@ export type Actions = {
   resetFog: typeof resetFog
   setTileFit: typeof setTileFit
   viewAsParty: typeof viewAsParty
+  placeSceneSound: typeof placeSceneSound
+  changeSceneSound: typeof changeSceneSound
+  removeSceneSound: typeof removeSceneSound
   setMeasureOnScreen: typeof setMeasureOnScreen
   listMarks: typeof listMarks
   changeMarks: typeof changeMarks

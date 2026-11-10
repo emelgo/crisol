@@ -29,6 +29,7 @@ import type {
   RandomTable,
   SceneGrid,
   SceneImported,
+  SceneSoundView,
   SceneView,
   SceneViewport,
   ScreenCamera,
@@ -837,12 +838,28 @@ export function fakeApi(
   // La visión de cada escena (muros, puertas y luces) y las puertas abiertas en cada campaña; la niebla no se calcula
   const visions = new Map<
     string,
-    { version: number; darkness: number; automaticVision: boolean; walls: WallView[]; lights: LightView[] }
+    {
+      version: number
+      darkness: number
+      automaticVision: boolean
+      walls: WallView[]
+      lights: LightView[]
+      sounds: SceneSoundView[]
+    }
   >()
   const doors = new Map<string, boolean>()
+  // Los sonidos del mapa apagados en cada campaña («campaña|sonido»)
+  const soundsOff = new Set<string>()
   const visionOf = (sceneId: string) => {
     sceneById(sceneId)
-    const vision = visions.get(sceneId) ?? { version: 1, darkness: 0, automaticVision: true, walls: [], lights: [] }
+    const vision = visions.get(sceneId) ?? {
+      version: 1,
+      darkness: 0,
+      automaticVision: true,
+      walls: [],
+      lights: [],
+      sounds: []
+    }
     visions.set(sceneId, vision)
     return vision
   }
@@ -855,10 +872,34 @@ export function fakeApi(
         ? {
             doors: Object.fromEntries(
               vision.walls.filter((w) => w.door).map((w) => [w.id, doors.get(`${campaignId}|${w.id}`) ?? w.open])
-            )
+            ),
+            sounds: vision.sounds.map((s) => ({ ...s, enabled: !soundsOff.has(`${campaignId}|${s.id}`) }))
           }
         : {})
     }
+  }
+  /** La pista de un sonido del mapa, como la vería el servidor */
+  const sceneSoundSource = (source: { type: string; fileId?: string; trackId?: string; url?: string } | undefined) => {
+    if (!source || source.type === 'none') return { type: 'none' as const }
+    if (source.type === 'file')
+      return { type: 'file' as const, fileId: source.fileId ?? '', url: `/api/files/${source.fileId}` }
+    if (source.type === 'url') return { type: 'url' as const, url: source.url ?? '' }
+    for (const p of soundPlaylists) {
+      const track = p.tracks.find((t) => t.id === source.trackId)
+      if (track)
+        return {
+          type: 'track' as const,
+          trackId: track.id,
+          playlistId: p.id,
+          name: track.name,
+          url: track.source.type === 'file' ? track.source.url : null
+        }
+    }
+    throw new ApiError('NOT_FOUND', 404)
+  }
+  const sceneSoundOwner = (id: string) => {
+    for (const [sceneId, vision] of visions) if (vision.sounds.some((s) => s.id === id)) return sceneId
+    throw new ApiError('NOT_FOUND', 404)
   }
   const wallOf = (input: Partial<WallView> & { a: WallView['a']; b: WallView['b'] }): WallView => ({
     id: crypto.randomUUID(),
@@ -3942,6 +3983,44 @@ export function fakeApi(
         )
       for (const light of imported?.lights ?? [])
         vision.lights.push(lightOf({ x: light.x, y: light.y, color: light.color }))
+      vision.version++
+      return visionView(sceneId)
+    },
+    placeSceneSound: ({ sceneId, unit: _unit, x, y, source, ...rest }) => {
+      const vision = visionOf(sceneId)
+      vision.sounds.push({
+        id: crypto.randomUUID(),
+        name: rest.name ?? '',
+        x,
+        y,
+        source: sceneSoundSource(source),
+        radius: rest.radius ?? 6,
+        volume: rest.volume ?? 1,
+        easing: rest.easing ?? true,
+        walls: rest.walls ?? 'block',
+        darkOnly: rest.darkOnly ?? false
+      })
+      vision.version++
+      return visionView(sceneId)
+    },
+    changeSceneSound: ({ id, unit: _unit, campaignId, enabled, source, ...rest }) => {
+      const sceneId = sceneSoundOwner(id)
+      const vision = visionOf(sceneId)
+      const patch = Object.fromEntries(Object.entries(rest).filter(([, v]) => v !== undefined))
+      vision.sounds = vision.sounds.map((s) =>
+        s.id === id ? { ...s, ...patch, ...(source ? { source: sceneSoundSource(source) } : {}) } : s
+      )
+      if (campaignId && enabled !== undefined) {
+        if (enabled) soundsOff.delete(`${campaignId}|${id}`)
+        else soundsOff.add(`${campaignId}|${id}`)
+      }
+      vision.version++
+      return visionView(sceneId, campaignId)
+    },
+    removeSceneSound: ({ id }) => {
+      const sceneId = sceneSoundOwner(id)
+      const vision = visionOf(sceneId)
+      vision.sounds = vision.sounds.filter((s) => s.id !== id)
       vision.version++
       return visionView(sceneId)
     },

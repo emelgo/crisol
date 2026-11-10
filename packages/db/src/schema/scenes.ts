@@ -160,7 +160,9 @@ export const sceneStates = pgTable(
       .notNull()
       .references(() => scenes.id, { onDelete: 'cascade' }),
     /** Las puertas que la campaña tiene distinto de como se dibujaron (docs/specs/vision.md), por el id de su muro */
-    doors: jsonb().$type<SceneDoorStates>().notNull().default({})
+    doors: jsonb().$type<SceneDoorStates>().notNull().default({}),
+    /** Los sonidos del mapa que la campaña tiene apagados (o encendidos), por su id (docs/specs/sonido-mapa.md) */
+    sounds: jsonb().$type<Record<string, boolean>>().notNull().default({})
   },
   (t) => [unique().on(t.campaignId, t.sceneId), index().on(t.sceneId)]
 )

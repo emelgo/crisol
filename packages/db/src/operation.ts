@@ -35,7 +35,7 @@ import { randomTables } from './schema/tables.ts'
 import { tags } from './schema/tags.ts'
 import { pageTemplates } from './schema/templates.ts'
 import { pageBodies } from './schema/versions.ts'
-import { sceneFog, sceneLights, sceneWalls } from './schema/vision.ts'
+import { sceneFog, sceneLights, sceneSounds, sceneWalls } from './schema/vision.ts'
 import { worldMembers, worlds } from './schema/worlds.ts'
 
 /** Tablas de dominio: las que pasan por el historial, por su nombre en SQL */
@@ -75,6 +75,7 @@ export const TRACKED_TABLES = {
   combatants,
   scene_walls: sceneWalls,
   scene_lights: sceneLights,
+  scene_sounds: sceneSounds,
   scene_fog: sceneFog,
   scene_marks: sceneMarks,
   campaign_widgets: campaignWidgets,

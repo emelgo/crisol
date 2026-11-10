@@ -44,6 +44,7 @@ import { creatureCardsOf, lifeStateOf } from '../actions/creatures.ts'
 import { markViewOf, screenMarksOf, screenWidgetsOf, widgetViewOf } from './marks.ts'
 import type { LoadTable } from './rooms.ts'
 import { doorSeen } from './rules.ts'
+import { campaignSceneSounds } from './scene-sounds.ts'
 import type { VisionResult, VisionToken, WalkedMove } from './vision.ts'
 import type { WalkedPath } from './vision-compute.ts'
 
@@ -435,10 +436,13 @@ async function tableOf(ctx: ActionContext, campaign: Campaign, given?: scenesRep
   const shownLoaded = other ? otherTokens : presented ? openLoaded : none
   const shownMarks = other ? otherRows : presented ? openMarks : []
   const widgets = widgetRows.map(widgetViewOf)
-  const [openVision, otherVision, combatView] = await Promise.all([
+  const [openVision, otherVision, combatView, shownSounds] = await Promise.all([
     open ? visionOf(ctx, campaign, open, openLoaded) : null,
     other ? visionOf(ctx, campaign, other, shownLoaded) : null,
-    combat ? combatViewOf(ctx, campaign, combat) : null
+    combat ? combatViewOf(ctx, campaign, combat) : null,
+    presented && !table.screenHidden
+      ? campaignSceneSounds(ctx, campaign.id, presented)
+      : Promise.resolve({ sounds: [], soundWalls: [] })
   ])
   const shownVision = other ? otherVision : presented ? openVision : null
   const master: CampaignTableView = {
@@ -457,7 +461,7 @@ async function tableOf(ctx: ActionContext, campaign: Campaign, given?: scenesRep
     movement: table.movement,
     show: table.screenShow ? { ...table.screenShow, worldId: campaign.worldId } : null
   }
-  return { master, shownTokens: shownLoaded.views, shownVision, shownMarks, widgets }
+  return { master, shownTokens: shownLoaded.views, shownVision, shownMarks, widgets, shownSounds }
 }
 
 /** La mesa de una campaña para su máster (la campaña ya autorizada) */
@@ -488,6 +492,8 @@ export function screenViewOf(input: {
   movement?: TableMovement
   /** Lo que enseña el máster encima de la escena */
   show?: ScreenView['show']
+  /** Lo que suena en el mapa de la escena y los muros que lo paran */
+  sounds?: Pick<ScreenView, 'sounds' | 'soundWalls'>
 }): ScreenView {
   const { scene, vision } = input
   // Sin la vista del grupo no se enseña nada (no debería pasar: el servidor siempre la tiene)
@@ -536,6 +542,8 @@ export function screenViewOf(input: {
             .filter((d) => doorSeen(d, vision.visible))
             .map((d) => ({ id: d.id, a: d.a, b: d.b, open: d.open, locked: d.locked }))
         : [],
+    sounds: showing ? (input.sounds?.sounds ?? []) : [],
+    soundWalls: showing ? (input.sounds?.soundWalls ?? []) : [],
     // Aunque esté oculta la escena: lo enseñado va encima
     show: input.show ?? null
   }
@@ -550,6 +558,7 @@ function screenOfTable(
     vision: VisionResult | null
     marks: readonly tableToolsRepo.MarkRow[]
     widgets: readonly WidgetView[]
+    sounds: Pick<ScreenView, 'sounds' | 'soundWalls'>
   }
 ) {
   return screenViewOf({
@@ -565,7 +574,8 @@ function screenOfTable(
     widgets: shown.widgets,
     paused: master.paused,
     movement: master.movement,
-    show: master.show ?? null
+    show: master.show ?? null,
+    sounds: shown.sounds
   })
 }
 
@@ -585,12 +595,13 @@ export function loadTable(env: ActionEnv): LoadTable {
       scenesRepo.campaignTable(env.db, campaignId)
     ])
     if (!campaign) return null
-    const { master, shownTokens, shownVision, shownMarks, widgets } = await tableOf(ctx, campaign, table)
+    const { master, shownTokens, shownVision, shownMarks, widgets, shownSounds } = await tableOf(ctx, campaign, table)
     const screen = screenOfTable(master, campaign.name, {
       tokens: shownTokens,
       vision: shownVision,
       marks: shownMarks,
-      widgets
+      widgets,
+      sounds: shownSounds
     })
     const screenVisible: FogGrid | null = screen.scene && shownVision ? shownVision.visible : null
     const screenMask: FogGrid | null = screen.scene && shownVision ? shownVision.screenMask : null
