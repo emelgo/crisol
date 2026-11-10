@@ -317,7 +317,11 @@ export const revealActions = [
         }
       }))
     )
-    await shownInLog(ctx, campaign, { kind: 'page', id: pageId, title: target.name }, to ?? null, screen)
+    // En el registro, solo para quien la recibió (el título de una página que no conoce no le llega)
+    const everyone = !to && knows.length === all.length
+    const recipients = everyone ? null : knows.map((player) => player.userId)
+    // (sin nadie que la conozca, solo la ve el máster)
+    await shownInLog(ctx, campaign, { kind: 'page', id: pageId, title: target.name }, recipients, screen)
     return { shown: knows.length, unknown: players.length - knows.length }
   }),
 

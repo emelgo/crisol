@@ -30,7 +30,11 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   máster vacía y borra; encuentros en Actores; «te han sacado de la Mesa»; registro en el móvil; burbujas en la vista
   de jugadores; **`ensenar` entero** (migración 0068: página o imagen a todos, a unos o en la vista; la jugadora abre
   la imagen mientras siga en el registro; «Quitar»; «Abrir» desde el registro).
-- **Siguiente**: `mover-jugadores`, `notas-jugador`, `sonido`, `sonido-mapa`, `sonido-foundry`; luego critique y
+- **`mover-jugadores` hecho** (migración 0069, commits 83c8db7 y 971e8da): la jugadora arrastra lo que lleva (pausa,
+  modo, turno, muros y puertas en el servidor; si no, vuelve con aviso), abre las puertas que ve, pasa su turno; el
+  máster asigna criaturas («Lo lleva…», `asignar_ficha`). Pendiente menor: pintar el arrastre de la jugadora con su
+  color en la Mesa del máster (el servidor ya manda `by`) y moverlas con el teclado.
+- **Siguiente**: `notas-jugador`, `sonido`, `sonido-mapa`, `sonido-foundry`; luego critique y
   audit con impeccable, e2e y PR. Capturas de la Mesa: `e2e/tests/zz-captura.spec.ts` (fuera de git).
 
 ### Para retomar (2026-11-10: tanda en `main` con el PR #116; se pasa al módulo 7)
