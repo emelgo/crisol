@@ -1778,6 +1778,33 @@ export const es = {
     combatStart: 'a punto de empezar',
     noCombat: 'no hay'
   },
+  // La sala en la Mesa del máster (docs/specs/sala.md, tabletop/room.tsx)
+  room: {
+    title: 'Sala',
+    who_one: '{{count}} jugador en la Mesa',
+    who_other: '{{count}} jugadores en la Mesa',
+    nobody: 'Nadie aún',
+    pause: 'Pausar la partida',
+    resume: 'Seguir la partida',
+    paused: 'Partida en pausa',
+    unpause: 'Quitar',
+    atTable: 'En la Mesa',
+    inCampaign: 'En la campaña',
+    out: 'Fuera de la Mesa',
+    notAtTable: 'Sin la Mesa abierta',
+    allowBack: 'Dejar volver',
+    pauseLabel: 'Pausa',
+    moves: 'Mueven',
+    free: 'Libre',
+    turn: 'En su turno',
+    locked: 'Bloqueado',
+    screen: 'Pantalla',
+    visible: 'A la vista',
+    away: 'En otra pestaña',
+    actionsOf: 'Opciones de {{name}}',
+    kick: 'Echar de la Mesa',
+    kickConfirm: '¿Echar a {{name}} de la Mesa? No podrá volver hasta que le dejes.'
+  },
   // Los libros de un sistema (ADR-0021, systems/system.tsx)
   systemBooks: {
     kind: 'Sistema',

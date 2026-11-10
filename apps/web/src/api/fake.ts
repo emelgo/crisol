@@ -2816,7 +2816,17 @@ export function fakeApi(
       return { version: own.version, deleted, missing: keys.filter((k) => !deleted.includes(k)) }
     },
     // Quién está en la Mesa (ADR-0021): en la API de prueba, lo que digan las pruebas
-    getTablePresence: () => ({ present: structuredClone(options.tablePresence ?? []) }),
+    getTablePresence: ({ campaignId }) => {
+      const room = rooms.get(campaignId) ?? { paused: false, movement: 'free' as const, kicked: [] }
+      const names = new Map((options.members?.[campaignId] ?? []).map((m) => [m.userId, m.name]))
+      return {
+        present: structuredClone(options.tablePresence ?? []),
+        inCampaign: [],
+        kicked: room.kicked.map((userId) => ({ userId, name: names.get(userId) ?? '' })),
+        paused: room.paused,
+        movement: room.movement
+      }
+    },
     // Los libros de un sistema (ADR-0021)
     getSystemBooks: ({ systemId }) => {
       const document = systemById(systemId)

@@ -1,9 +1,8 @@
 /**
- * Los ajustes de una campaña, en su pestaña de la Mesa (lienzo «Campaña en la Mesa»): su tarjeta, quién juega en ella
- * (el máster expulsa), el enlace de invitación y, en la zona de peligro, dejarla (quien juega) o borrarla (el máster)
+ * Los ajustes de una campaña, en la ventana que abre su barra: su tarjeta, quién juega en ella (el máster expulsa), el
+ * enlace de invitación y, en la zona de peligro, dejarla (quien juega). Borrarla, solo desde Mis mundos
  */
 import type { Campaign, Member } from '@crisol/contracts'
-import { TRASH_DAYS } from '@crisol/domain'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { useId, useRef, useState } from 'react'
@@ -13,7 +12,7 @@ import { useErrorText } from '../api/errors.ts'
 import { useAnnounce } from '../components/announcer.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
 import { CopyField } from '../components/copy-field.tsx'
-import { ConfirmByName, DangerZone } from '../components/danger.tsx'
+import { DangerZone } from '../components/danger.tsx'
 import { FormError } from '../components/field.tsx'
 import { Floating } from '../components/floating.tsx'
 import { focusAfterRemoving, focusOnMount, useReturnFocus } from '../components/focus.ts'
@@ -319,21 +318,11 @@ export function InvitationPanel({ campaignId, titleId }: { campaignId: string; t
 }
 
 /**
- * La pestaña Ajustes de la Mesa: la campaña (su portada, de qué mundo y con qué sistema), quién juega, invitar (el
- * enlace, a la vista) y, para el máster, borrarla escribiendo su nombre
+ * Los ajustes de la campaña (se abren encima desde su barra): la campaña (su portada, de qué mundo y con qué sistema),
+ * quién juega e invitar (el enlace, a la vista). Borrarla, solo desde Mis mundos, no desde dentro (Enrique, 2026-11-10)
  */
 export function CampaignSettings({ campaign, worldName }: { campaign: Campaign; worldName: string }) {
-  const { t } = useTranslation()
-  const api = useApi()
-  const queryClient = useQueryClient()
-  const navigate = useNavigate()
   const inviteTitle = useId()
-  const remove = async () => {
-    await api.call('deleteCampaign', { campaignId: campaign.id })
-    await navigate({ to: '/mundos/$worldId', params: { worldId: campaign.worldId } })
-    queryClient.removeQueries({ queryKey: ['members', campaign.id] })
-    await queryClient.invalidateQueries({ queryKey: ['campaigns'] })
-  }
   return (
     <div className={settings.root}>
       <section className={settings.card} aria-label={campaign.name}>
@@ -358,18 +347,6 @@ export function CampaignSettings({ campaign, worldName }: { campaign: Campaign; 
         <section className={settings.invite}>
           <InvitationPanel campaignId={campaign.id} titleId={inviteTitle} />
         </section>
-      )}
-      {campaign.role === 'master' && (
-        <DangerZone>
-          <ConfirmByName
-            name={campaign.name}
-            action={t('campaigns.delete')}
-            title={t('campaigns.deleteTitle', { name: campaign.name })}
-            warning={t('campaigns.deleteWarning', { days: TRASH_DAYS })}
-            label={t('campaigns.name')}
-            onConfirm={remove}
-          />
-        </DangerZone>
       )}
     </div>
   )

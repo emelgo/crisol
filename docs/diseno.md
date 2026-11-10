@@ -78,6 +78,11 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   la Mesa de una campaña solo llega a ella (se ve siempre en cuál se está); desde la wiki del mundo, «quién la conoce»
   enseña cada campaña con su casilla; con una sola campaña no se pregunta a quién. Lo de abajo sobre la portada y la
   barra de la campaña ya no vale (la sustituye esto).
+- **La sala, arriba en la Mesa; sin pestaña «Campaña»** (Enrique, 2026-11-10: «si tenemos esto podemos quitarlo de la
+  barra lateral»): los retratos de quien está y la pausa van en un recuadro junto al de la escena, **de su misma
+  altura**; al pulsarlos, el panel de la sala (quién está, pausa, cómo mueven, echar e invitación). Los ajustes de la
+  campaña, encima desde su barra. **Borrar una campaña, solo desde Mis mundos** (su engranaje), nunca desde dentro de
+  ella.
 - **Cristal en lo que flota sobre el mapa de la Mesa** (Enrique, 2026-11-10: «me parece una pasada»; lienzo «La Mesa,
   con cristal», `out/lienzo-cristal/`): translúcido y con el mapa desenfocado detrás (tokens `--glass-*`) solo en piezas
   pequeñas que flotan: la barra de la escena, las herramientas, el zoom, las tiradas sobre el d20, la tira de turnos de la

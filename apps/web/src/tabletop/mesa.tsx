@@ -65,6 +65,7 @@ import { PlayerMesa } from './player-mesa.tsx'
 import { Preparing } from './preparing.tsx'
 import { masterTileUrl, sceneListKey } from './queries.ts'
 import type { RendererScene } from './renderer.ts'
+import { PauseBanner, RoomBar } from './room.tsx'
 import { sceneWindow } from './scene-window.tsx'
 import { SnapshotsPanel, THUMBNAIL_BYTES, THUMBNAIL_SIDE } from './snapshots.tsx'
 import { TokenCard } from './token-card.tsx'
@@ -128,7 +129,7 @@ export function MesaScreen() {
     return worldName === undefined ? (
       <Loading />
     ) : (
-      <Mesa key={campaign.id} worldId={worldId} worldName={worldName} campaign={campaign} />
+      <Mesa key={campaign.id} worldId={worldId} campaign={campaign} />
     )
   return <PlayerMesa key={campaign.id} worldId={worldId} campaign={campaign} />
 }
@@ -171,15 +172,7 @@ type Gesture = {
 type FrameDrag = { kind: 'move' | 'resize'; start: Point; center: Point; width: number }
 
 /** La mesa del máster: es lo que se ve al abrir su campaña (la ruta de la campaña comprueba quién es) */
-export function Mesa({
-  worldId,
-  worldName,
-  campaign: current
-}: {
-  worldId: string
-  worldName: string
-  campaign: Campaign
-}) {
+export function Mesa({ worldId, campaign: current }: { worldId: string; campaign: Campaign }) {
   const campaignId = current.id
   const campaignName = current.name
   const { t } = useTranslation()
@@ -550,6 +543,7 @@ export function Mesa({
               busy={act.isPending}
               framing={() => (size.width > 0 ? fixedFraming(view.current, freeArea(size, host.current)) : null)}
             />
+            <PauseBanner campaignId={campaignId} />
             {(selected.length > 1 || (fromTemplate && selected.length > 0)) && (
               <GroupDamage
                 key={selected.join()}
@@ -648,7 +642,6 @@ export function Mesa({
           {(side && open) || (isMarkTool(tool) && tool !== 'laser' && open) || isVisionTool(tool) || asGroup ? null : (
             <MasterSidebar
               worldId={worldId}
-              worldName={worldName}
               campaign={current}
               systemId={systemId}
               table={table}
@@ -1355,6 +1348,7 @@ function TopBar({
           {showing && !live && <span className={styles.chip}>{t('tabletop.elsewhere')}</span>}
         </div>
       )}
+      <RoomBar campaignId={campaignId} />
       <span className={styles.grow} />
       <div className={styles.bar}>
         <span className={styles.barGroup} data-tour="mesa-presentar">

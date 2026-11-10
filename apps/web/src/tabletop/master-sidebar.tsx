@@ -10,7 +10,6 @@ import { useCallback, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { GroupKnowledge } from '../campaign/group-knowledge.tsx'
-import { CampaignSettings } from '../campaign/settings.tsx'
 import { CampaignCreatures } from './campaign-creatures.tsx'
 import { CombatPanel } from './combat-panel.tsx'
 import { CompendiumTab } from './compendium-tab.tsx'
@@ -35,7 +34,7 @@ import { useWindows } from './windows.tsx'
 
 const route = getRouteApi('/mundos/$worldId/campanas/$campaignId/mesa')
 
-const MASTER_TABS: readonly SidebarTab[] = ['scenes', 'combat', 'characters', 'compendium', 'pages', 'settings']
+const MASTER_TABS: readonly SidebarTab[] = ['scenes', 'combat', 'characters', 'compendium', 'pages']
 
 export type MasterSidebarState = ReturnType<typeof useMasterSidebar>
 
@@ -73,7 +72,6 @@ export function useMasterSidebar(table: CampaignTableView | null) {
 
 export function MasterSidebar({
   worldId,
-  worldName,
   campaign,
   systemId,
   table,
@@ -89,7 +87,6 @@ export function MasterSidebar({
   sidebar
 }: {
   worldId: string
-  worldName: string
   campaign: Campaign
   systemId: string | null
   table: CampaignTableView | null
@@ -263,8 +260,7 @@ export function MasterSidebar({
           }
         />
       )
-    },
-    { key: 'settings', content: () => <CampaignSettings campaign={campaign} worldName={worldName} /> }
+    }
   ]
   return <TableSidebar items={items} tab={tab} onTab={pick} folded={folded} onFold={setFolded} />
 }
