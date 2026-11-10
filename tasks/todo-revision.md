@@ -4,7 +4,7 @@ Plan: `tasks/plan-revision.md`. Una tanda cada vez: se enseña en local, Enrique
 
 ## Pista de imágenes (en paralelo)
 
-- [ ] Prompts de estilo: `docs/imagenes.md` § «Buscar el estilo» (cinco o seis estilos, las mismas dos escenas en
+- [x] Prompts de estilo: `docs/imagenes.md` § «Buscar el estilo» (cinco o seis estilos, las mismas dos escenas en
   cada uno). **Es lo primero**: Enrique genera las imágenes a mano con ChatGPT, en su cuenta, mientras avanza la
   tanda 1 (prompts en lenguaje natural, sin parámetros de otras herramientas; el tamaño y la proporción, dichos en
   la frase).
