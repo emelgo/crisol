@@ -1,4 +1,5 @@
 // Tablas de Crisol: cada porción añade las suyas aquí
+export * from './actor-folders.ts'
 export * from './ai.ts'
 export * from './auth.ts'
 export * from './campaigns.ts'

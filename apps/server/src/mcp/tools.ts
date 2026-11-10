@@ -468,6 +468,12 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   ver_registro: { action: 'listLog' },
   escribir_en_registro: { action: 'sendMessage' },
   borrar_mensaje: { action: 'deleteMessage' },
+  // Las carpetas de la pestaña Actores (agrupar personajes y criaturas en juego)
+  ver_carpetas_actores: { action: 'listActorFolders' },
+  crear_carpeta_actores: { action: 'createActorFolder' },
+  renombrar_carpeta_actores: { action: 'renameActorFolder' },
+  borrar_carpeta_actores: { action: 'deleteActorFolder' },
+  mover_a_carpeta: { action: 'moveToActorFolder' },
   // La sala (docs/specs/sala.md): la pausa, cómo mueven los jugadores y echar de la Mesa
   controles_sala: { action: 'setTableControls' },
   echar_de_la_mesa: { action: 'kickFromTable' },

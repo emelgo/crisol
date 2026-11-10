@@ -24,7 +24,9 @@ export function CampaignCreatures({
   table,
   canPlace,
   onPlace,
-  query = ''
+  query = '',
+  include,
+  quiet = false
 }: {
   campaignId: string
   systemId: string | null
@@ -33,6 +35,10 @@ export function CampaignCreatures({
   onPlace: (placing: Placing) => void
   /** Lo que se busca en la pestaña */
   query?: string
+  /** Solo estas (las de una carpeta, o las que no están en ninguna) */
+  include?: (id: string) => boolean
+  /** Sin el aviso de vacía (dentro de una carpeta) */
+  quiet?: boolean
 }) {
   const { t } = useTranslation()
   const api = useApi()
@@ -55,8 +61,9 @@ export function CampaignCreatures({
     onSuccess: refresh
   })
   const onMap = new Set((table?.tokens ?? []).map((token) => token.actor.id))
-  const creatures = (inPlay.data?.creatures ?? []).filter((c) => matches(c.name, query))
+  const creatures = (inPlay.data?.creatures ?? []).filter((c) => matches(c.name, query) && (include?.(c.id) ?? true))
   const error = hiding.error ?? add.error
+  if (quiet && creatures.length === 0) return null
   const accepts = (event: DragEvent) => event.dataTransfer.types.includes(CONTENT_DRAG)
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: se suelta aquí lo del compendio; con teclado, el compendio pone en el mapa

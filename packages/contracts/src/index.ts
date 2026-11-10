@@ -1,3 +1,10 @@
+import {
+  createActorFolder,
+  deleteActorFolder,
+  listActorFolders,
+  moveToActorFolder,
+  renameActorFolder
+} from './actor-folders.ts'
 import { approve, getAiSettings, listApprovals, reject, setAiMode } from './ai.ts'
 import {
   createBook,
@@ -234,6 +241,7 @@ import {
 import { createWorld, ensureWorldHome, getWorldHome, listWorlds, renameWorld, updateWorld } from './worlds.ts'
 
 export * from './action.ts'
+export * from './actor-folders.ts'
 export * from './ai.ts'
 export * from './books.ts'
 export * from './campaigns.ts'
@@ -518,7 +526,12 @@ export const ACTIONS = [
   allowBackToTable,
   sendMessage,
   deleteMessage,
-  listLog
+  listLog,
+  listActorFolders,
+  createActorFolder,
+  renameActorFolder,
+  deleteActorFolder,
+  moveToActorFolder
 ]
 
 /** Las acciones por nombre, solo como tipo: la web las usa sin cargar zod */
@@ -767,4 +780,9 @@ export type Actions = {
   sendMessage: typeof sendMessage
   deleteMessage: typeof deleteMessage
   listLog: typeof listLog
+  listActorFolders: typeof listActorFolders
+  createActorFolder: typeof createActorFolder
+  renameActorFolder: typeof renameActorFolder
+  deleteActorFolder: typeof deleteActorFolder
+  moveToActorFolder: typeof moveToActorFolder
 }

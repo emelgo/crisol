@@ -178,6 +178,10 @@ export function fakeApi(
   const rolls = [...(options.rolls ?? [])]
   // El registro de la partida (docs/specs/registro.md): los mensajes; las tiradas, de rolls
   const messages: LogMessage[] = []
+  // Las carpetas de la pestaña Actores, por campaña
+  const actorFolders: Array<{ campaignId: string; id: string; name: string }> = []
+  const actorFolderItems: Array<{ campaignId: string; kind: 'character' | 'creature'; id: string; folderId: string }> =
+    []
   // Lo borrado, con lo que hace falta para devolverlo
   const trash: Array<{ item: TrashItem; world?: World; campaign?: Campaign }> = []
   const DAY = 24 * 60 * 60 * 1000
@@ -1762,6 +1766,37 @@ export function fakeApi(
         if (error instanceof DiceSyntaxError) throw new ApiError('BAD_FORMULA', 400)
         throw error
       }
+    },
+    listActorFolders: ({ campaignId }) => ({
+      folders: actorFolders.filter((f) => f.campaignId === campaignId).map(({ id, name }) => ({ id, name })),
+      items: actorFolderItems
+        .filter((i) => i.campaignId === campaignId)
+        .map(({ kind, id, folderId }) => ({ kind, id, folderId }))
+    }),
+    createActorFolder: ({ campaignId, name }) => {
+      const folder = { campaignId, id: crypto.randomUUID(), name }
+      actorFolders.push(folder)
+      return { id: folder.id, name }
+    },
+    renameActorFolder: ({ folderId, name }) => {
+      const found = actorFolders.find((f) => f.id === folderId)
+      if (!found) throw new ApiError('NOT_FOUND', 404)
+      found.name = name
+      return { ok: true as const }
+    },
+    deleteActorFolder: ({ folderId }) => {
+      const at = actorFolders.findIndex((f) => f.id === folderId)
+      if (at < 0) throw new ApiError('NOT_FOUND', 404)
+      actorFolders.splice(at, 1)
+      for (let i = actorFolderItems.length - 1; i >= 0; i--)
+        if (actorFolderItems[i]?.folderId === folderId) actorFolderItems.splice(i, 1)
+      return { ok: true as const }
+    },
+    moveToActorFolder: ({ campaignId, kind, id, folderId }) => {
+      const at = actorFolderItems.findIndex((i) => i.campaignId === campaignId && i.kind === kind && i.id === id)
+      if (at >= 0) actorFolderItems.splice(at, 1)
+      if (folderId) actorFolderItems.push({ campaignId, kind, id, folderId })
+      return { ok: true as const }
     },
     sendMessage: ({ campaignId, text, style, whisper }) => {
       const entry: LogMessage = {

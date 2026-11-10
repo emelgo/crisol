@@ -181,4 +181,25 @@ describe('el registro de la partida: mensajes, susurros y tiradas', () => {
     expect(second.next).toBeNull()
     expect(second.entries[0]).toMatchObject({ kind: 'message', text: 'm0' })
   })
+
+  it('las carpetas de Actores: crear, meter, sacar y quitar; solo el máster', async () => {
+    const lia = (await call('createCharacter', { campaignId, name: 'Lía' }, ana.cookie)).body.character.id
+    expect((await call('createActorFolder', { campaignId, name: 'Grupo' }, ana.cookie)).status).toBe(403)
+    const folder = (await call('createActorFolder', { campaignId, name: 'Grupo' })).body
+    expect((await call('moveToActorFolder', { campaignId, kind: 'character', id: lia, folderId: folder.id })).status).toBe(
+      200
+    )
+    expect((await call('listActorFolders', { campaignId })).body).toEqual({
+      folders: [{ id: folder.id, name: 'Grupo' }],
+      items: [{ kind: 'character', id: lia, folderId: folder.id }]
+    })
+    // Lo que no es de la campaña no entra
+    expect(
+      (await call('moveToActorFolder', { campaignId, kind: 'creature', id: crypto.randomUUID(), folderId: folder.id }))
+        .status
+    ).toBe(404)
+    await call('renameActorFolder', { campaignId, folderId: folder.id, name: 'Los nuestros' })
+    await call('deleteActorFolder', { campaignId, folderId: folder.id })
+    expect((await call('listActorFolders', { campaignId })).body).toEqual({ folders: [], items: [] })
+  })
 })

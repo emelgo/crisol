@@ -10,7 +10,7 @@ import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { GroupKnowledge } from '../campaign/group-knowledge.tsx'
-import { CampaignCreatures } from './campaign-creatures.tsx'
+import { ActorsTab } from './actor-folders.tsx'
 import { CombatPanel } from './combat-panel.tsx'
 import { CompendiumTab } from './compendium-tab.tsx'
 import { compendiumWindow } from './compendium-window.tsx'
@@ -202,32 +202,16 @@ export function MasterSidebar({
       key: 'characters',
       content: () => (
         <>
-          <ActorsSearch>
-            {(query) => (
-              <>
-                <h3 className={styles.tabSection}>{t('tabletop.tabs.characters')}</h3>
-                <CharactersList
-                  campaignId={campaignId}
-                  table={table}
-                  canPlace={canPlace}
-                  onPlace={onPlace}
-                  query={query}
-                  onOpen={(character) =>
-                    windows?.open(sheetWindow({ kind: 'character', ...character }, campaignId, systemId))
-                  }
-                />
-                <h3 className={styles.tabSection}>{t('tabletop.campaignCreatures.title')}</h3>
-                <CampaignCreatures
-                  campaignId={campaignId}
-                  systemId={systemId}
-                  table={table}
-                  canPlace={canPlace}
-                  onPlace={onPlace}
-                  query={query}
-                />
-              </>
-            )}
-          </ActorsSearch>
+          <ActorsTab
+            campaignId={campaignId}
+            systemId={systemId}
+            table={table}
+            canPlace={canPlace}
+            onPlace={onPlace}
+            onOpenCharacter={(character) =>
+              windows?.open(sheetWindow({ kind: 'character', ...character }, campaignId, systemId))
+            }
+          />
           {chosen.length > 0 && (
             <>
               <h3 className={styles.tabSection}>{t('tabletop.tabs.images')}</h3>
@@ -276,16 +260,4 @@ export function MasterSidebar({
     }
   ]
   return <TableSidebar items={items} tab={tab} onTab={pick} folded={folded} onFold={setFolded} />
-}
-
-/** Un solo buscador para los personajes y las criaturas de la pestaña Actores */
-function ActorsSearch({ children }: { children: (query: string) => ReactNode }) {
-  const { t } = useTranslation()
-  const [query, setQuery] = useState('')
-  return (
-    <>
-      <SearchBox value={query} onChange={setQuery} label={t('tabletop.searchActors')} />
-      {children(query)}
-    </>
-  )
 }

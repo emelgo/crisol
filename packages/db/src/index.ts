@@ -8,6 +8,7 @@ export {
   type Transaction,
   type Writer
 } from './operation.ts'
+export * as actorFoldersRepo from './repos/actor-folders.ts'
 export * as aiRepo from './repos/ai.ts'
 export * as bootstrapRepo from './repos/bootstrap.ts'
 export * as campaignsRepo from './repos/campaigns.ts'

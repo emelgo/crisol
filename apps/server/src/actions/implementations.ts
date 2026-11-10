@@ -1,3 +1,4 @@
+import { actorFolderActions } from './actor-folders.ts'
 import { aiActions } from './ai.ts'
 import { bookActions } from './books.ts'
 import { campaignActions } from './campaigns.ts'
@@ -47,6 +48,7 @@ export const IMPLEMENTATIONS: Implementation[] = [
   ...campaignActions,
   ...diceActions,
   ...logActions,
+  ...actorFolderActions,
   ...invitationActions,
   ...memberActions,
   ...roomActions,

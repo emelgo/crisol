@@ -1802,6 +1802,16 @@ export const es = {
     noRecipient: 'No hay nadie con ese nombre en la campaña.',
     commands: '/s nombre: susurrar · /t 1d20+5: tirar · /yo: una acción · /ooc: fuera de personaje'
   },
+  // Las carpetas de la pestaña Actores (tabletop/actor-folders.tsx)
+  actorFolders: {
+    new: 'Carpeta nueva',
+    name: 'Nombre de la carpeta',
+    loose: 'Sin carpeta',
+    empty: 'Arrastra aquí personajes o criaturas.',
+    actionsOf: 'Opciones de {{name}}',
+    rename: 'Cambiar el nombre',
+    delete: 'Quitar la carpeta'
+  },
   // La sala en la Mesa del máster (docs/specs/sala.md, tabletop/room.tsx)
   room: {
     title: 'Sala',

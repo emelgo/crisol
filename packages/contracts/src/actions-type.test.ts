@@ -248,7 +248,12 @@ describe('Actions', () => {
       allowBackToTable: true,
       sendMessage: true,
       deleteMessage: true,
-      listLog: true
+      listLog: true,
+      listActorFolders: true,
+      createActorFolder: true,
+      renameActorFolder: true,
+      deleteActorFolder: true,
+      moveToActorFolder: true
     }
     expect(Object.keys(names).sort()).toEqual(ACTIONS.map((a) => a.name).sort())
   })

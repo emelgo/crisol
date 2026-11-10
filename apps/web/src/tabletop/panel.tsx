@@ -141,7 +141,9 @@ export function CharactersList({
   canPlace,
   onPlace,
   onOpen,
-  query: shared
+  query: shared,
+  include,
+  quiet = false
 }: {
   campaignId: string
   table: CampaignTableView | null
@@ -151,6 +153,10 @@ export function CharactersList({
   onOpen?: (character: { id: string; name: string }) => void
   /** Lo que se busca, si el buscador es de fuera (el de la pestaña, para personajes y criaturas a la vez) */
   query?: string
+  /** Solo estos (los de una carpeta, o los que no están en ninguna) */
+  include?: (id: string) => boolean
+  /** Sin el «Ningún personaje» (dentro de una carpeta) */
+  quiet?: boolean
 }) {
   const { t } = useTranslation()
   const api = useApi()
@@ -161,7 +167,8 @@ export function CharactersList({
     queryFn: () => api.call('listCharacters', { campaignId })
   })
   const onMap = new Set((table?.tokens ?? []).map((token) => token.actor.id))
-  const shown = (characters.data?.characters ?? []).filter((c) => matches(c.name, query))
+  const shown = (characters.data?.characters ?? []).filter((c) => matches(c.name, query) && (include?.(c.id) ?? true))
+  if (quiet && shown.length === 0) return null
   return (
     <>
       {shared === undefined && <SearchBox value={query} onChange={setQuery} label={t('tabletop.searchCharacters')} />}
