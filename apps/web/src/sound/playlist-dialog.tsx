@@ -26,7 +26,7 @@ interface Draft {
   key: string
   id?: string
   name: string
-  source: { type: 'file'; fileId: string } | { type: 'youtube'; url: string }
+  source: { type: 'file'; fileId: string } | { type: 'youtube'; url: string } | { type: 'url'; url: string }
   duration: number
   loop: boolean
   volume: number
@@ -64,6 +64,8 @@ const draftOf = (playlist: SoundPlaylistView | null): Draft[] =>
       return [{ ...base, volume: track.volume, source: { type: 'file', fileId: track.source.fileId } }]
     if (track.source.type === 'youtube')
       return [{ ...base, volume: track.volume, source: { type: 'youtube', url: track.source.videoId } }]
+    if (track.source.type === 'url')
+      return [{ ...base, volume: track.volume, source: { type: 'url', url: track.source.url } }]
     return []
   })
 

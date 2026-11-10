@@ -21,6 +21,8 @@ export interface TrackInput {
   name: string
   fileId: string | null
   youtubeId: string | null
+  /** La dirección de un audio de fuera */
+  url?: string | null
   duration: number
   volume: number
   loop: boolean
@@ -123,11 +125,19 @@ async function writeTracks(w: Writer, playlist: PlaylistRow, before: TrackRow[],
         old.name !== track.name ||
         old.fileId !== track.fileId ||
         old.youtubeId !== track.youtubeId ||
+        old.url !== (track.url ?? null) ||
         old.duration !== track.duration ||
         old.volume !== track.volume ||
         old.loop !== track.loop
-      if (changed) await w.update(soundTracks, old.id, { ...track, position })
-    } else await w.insert(soundTracks, { ...track, position, worldId: playlist.worldId, playlistId: playlist.id })
+      if (changed) await w.update(soundTracks, old.id, { ...track, url: track.url ?? null, position })
+    } else
+      await w.insert(soundTracks, {
+        ...track,
+        url: track.url ?? null,
+        position,
+        worldId: playlist.worldId,
+        playlistId: playlist.id
+      })
   }
 }
 

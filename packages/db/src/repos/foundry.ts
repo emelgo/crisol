@@ -10,8 +10,8 @@ import { campaigns } from '../schema/campaigns.ts'
 import { foundryOrigins } from '../schema/foundry.ts'
 import { type PreparedCreatureData, type ScenePinData, scenes } from '../schema/scenes.ts'
 import { sceneMarks } from '../schema/table-tools.ts'
-import { sceneLights, sceneWalls } from '../schema/vision.ts'
-import type { LightValues, WallValues } from './vision.ts'
+import { sceneLights, sceneSounds, sceneWalls } from '../schema/vision.ts'
+import type { LightValues, SceneSoundValues, WallValues } from './vision.ts'
 
 export type OriginRow = typeof foundryOrigins.$inferSelect
 export type OriginKind = OriginRow['kind']
@@ -48,9 +48,16 @@ export async function saveOrigin(
     documentId: string
     sceneId?: string | null
     pageId?: string | null
+    playlistId?: string | null
+    fileId?: string | null
   }
 ) {
-  const target = { sceneId: values.sceneId ?? null, pageId: values.pageId ?? null }
+  const target = {
+    sceneId: values.sceneId ?? null,
+    pageId: values.pageId ?? null,
+    playlistId: values.playlistId ?? null,
+    fileId: values.fileId ?? null
+  }
   await db
     .insert(foundryOrigins)
     .values({ ...values, ...target })
@@ -60,7 +67,7 @@ export async function saveOrigin(
     })
 }
 
-/** Lo de una escena traída: lo suyo y sus muros y luces (en lugar de los que tuviera), en una operación */
+/** Lo de una escena traída: lo suyo y sus muros, luces y sonidos (en lugar de los que tuviera), en una operación */
 export function importScene(
   db: Database,
   context: OperationContext,
@@ -74,6 +81,8 @@ export function importScene(
     >
     walls: readonly WallValues[]
     lights: readonly LightValues[]
+    /** Sus sonidos (sin decirlo, se quedan los que tuviera) */
+    sounds?: readonly SceneSoundValues[]
   }
 ) {
   return operation(db, context, async (w) => {
@@ -98,6 +107,20 @@ export function importScene(
       sceneLights,
       values.lights.map((v) => ({ ...v, ...place }))
     )
+    if (values.sounds) {
+      const sounds = await w.read
+        .select({ id: sceneSounds.id })
+        .from(sceneSounds)
+        .where(eq(sceneSounds.sceneId, sceneId))
+      await w.removeMany(
+        sceneSounds,
+        sounds.map((r) => r.id)
+      )
+      await w.insertMany(
+        sceneSounds,
+        values.sounds.map((v) => ({ ...v, ...place }))
+      )
+    }
     return w.update(scenes, sceneId, values.scene)
   })
 }

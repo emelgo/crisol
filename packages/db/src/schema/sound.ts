@@ -24,7 +24,7 @@ export const soundPlaylists = pgTable(
 )
 
 /**
- * Una pista de una lista: un archivo de audio del mundo o un vídeo de YouTube (por su id), con su duración en segundos
+ * Una pista de una lista: un archivo de audio del mundo, un vídeo de YouTube (por su id) o una dirección, con su duración en segundos
  * (la mide el navegador de quien la añade). Si se purga su archivo, se queda sin fuente y no suena
  */
 export const soundTracks = pgTable(
@@ -41,6 +41,8 @@ export const soundTracks = pgTable(
     name: text().notNull(),
     fileId: uuid().references(() => files.id, { onDelete: 'set null' }),
     youtubeId: text(),
+    /** La dirección de un audio de fuera (lo traído de Foundry: docs/specs/sonido-foundry.md) */
+    url: text(),
     duration: doublePrecision().notNull(),
     volume: doublePrecision().notNull().default(1),
     loop: boolean().notNull().default(false)
@@ -48,6 +50,6 @@ export const soundTracks = pgTable(
   (t) => [
     index().on(t.playlistId),
     index().on(t.fileId),
-    check('sound_tracks_one_source', sql`num_nonnulls(${t.fileId}, ${t.youtubeId}) <= 1`)
+    check('sound_tracks_one_source', sql`num_nonnulls(${t.fileId}, ${t.youtubeId}, ${t.url}) <= 1`)
   ]
 )

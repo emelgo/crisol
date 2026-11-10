@@ -146,7 +146,8 @@ async function soundSourceValues(
   if (source.type === 'track') {
     const [track] = await soundRepo.tracksByIds(ctx.db, [source.trackId])
     if (!track || track.worldId !== wiki.worldId) throw new NotFoundError('track')
-    if (!track.fileId) throw new InvalidRequestError('NOT_AUDIO', `«${track.name}» no es un audio: no suena en el mapa`)
+    if (!track.fileId && !track.url)
+      throw new InvalidRequestError('NOT_AUDIO', `«${track.name}» no es un audio: no suena en el mapa`)
     return { fileId: null, trackId: track.id, url: null }
   }
   const file = await filesRepo.findFile(ctx.db, source.fileId)

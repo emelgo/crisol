@@ -56,7 +56,9 @@ export function playlistView(p: Playlist): SoundPlaylistView {
         ? { type: 'file' as const, fileId: t.fileId, url: `/api/files/${t.fileId}` }
         : t.youtubeId
           ? { type: 'youtube' as const, videoId: t.youtubeId }
-          : { type: 'none' as const },
+          : t.url
+            ? { type: 'url' as const, url: t.url }
+            : { type: 'none' as const },
       duration: t.duration,
       volume: t.volume,
       loop: t.loop
@@ -81,7 +83,14 @@ async function tracksOf(
       const videoId = youtubeVideoId(track.source.url)
       if (!videoId)
         throw new InvalidRequestError('BAD_YOUTUBE', `«${track.name}»: no es un enlace de un vídeo de YouTube`)
-      out.push({ ...(id ? { id } : {}), ...base, fileId: null, youtubeId: videoId })
+      out.push({ ...(id ? { id } : {}), ...base, fileId: null, youtubeId: videoId, url: null })
+      continue
+    }
+    if (track.source.type === 'url') {
+      const url = track.source.url
+      if (youtubeVideoId(url) || !/^https?:\/\//i.test(url))
+        throw new InvalidRequestError('BAD_URL', `«${track.name}»: no es la dirección de un audio`)
+      out.push({ ...(id ? { id } : {}), ...base, fileId: null, youtubeId: null, url })
       continue
     }
     const file = await filesRepo.findFile(ctx.db, track.source.fileId)
@@ -90,7 +99,7 @@ async function tracksOf(
     if (!file || !mine) throw new NotFoundError('file')
     if (!file.mime.startsWith('audio/'))
       throw new InvalidRequestError('NOT_AUDIO', `«${file.name}» no es un archivo de audio`)
-    out.push({ ...(id ? { id } : {}), ...base, fileId: file.id, youtubeId: null })
+    out.push({ ...(id ? { id } : {}), ...base, fileId: file.id, youtubeId: null, url: null })
   }
   return out
 }
@@ -104,7 +113,7 @@ async function writablePlaylist(ctx: ActionContext, id: string) {
 }
 
 /** Las campañas del mundo con algo sonando se ponen al día (se cambió o se borró una lista) */
-async function refreshWorld(ctx: ActionContext, worldId: string) {
+export async function refreshWorld(ctx: ActionContext, worldId: string) {
   for (const row of await soundRepo.campaignsWithSound(ctx.db))
     if (row.worldId === worldId) await ctx.sound?.refresh(row.campaignId)
 }

@@ -45,6 +45,10 @@ export const soundSourceInput = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('youtube'),
     url: z.string().trim().min(1).max(500).describe('El enlace del vídeo (o su id): solo los que dejan insertarse')
+  }),
+  z.object({
+    type: z.literal('url'),
+    url: z.url().max(1000).describe('La dirección de un audio de fuera (http o https; no YouTube)')
   })
 ])
 
@@ -66,6 +70,8 @@ export type SoundTrackInput = z.input<typeof soundTrackInput>
 export const soundSource = z.discriminatedUnion('type', [
   z.object({ type: z.literal('file'), fileId: z.uuid(), url: z.string() }),
   z.object({ type: z.literal('youtube'), videoId: z.string() }),
+  /** Un audio de fuera, por su dirección (lo traído de Foundry) */
+  z.object({ type: z.literal('url'), url: z.string() }),
   /** Su archivo se borró */
   z.object({ type: z.literal('none') })
 ])

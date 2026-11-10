@@ -42,6 +42,7 @@ const infoOf = (p: Playlist): SoundListInfo => ({
 const sourceOf = (track: soundRepo.TrackRow): SoundView['voices'][number]['source'] => {
   if (track.fileId) return { type: 'file', fileId: track.fileId, url: `/api/files/${track.fileId}` }
   if (track.youtubeId) return { type: 'youtube', videoId: track.youtubeId }
+  if (track.url) return { type: 'url', url: track.url }
   return { type: 'none' }
 }
 

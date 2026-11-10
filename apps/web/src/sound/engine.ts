@@ -134,7 +134,8 @@ export function createSoundEngine(options: {
   return {
     update(next) {
       view = next
-      const voices = (next?.voices ?? []).filter((v) => v.source.type === 'file')
+      // Los archivos del mundo y los audios de fuera (YouTube va aparte)
+      const voices = (next?.voices ?? []).filter((v) => v.source.type === 'file' || v.source.type === 'url')
       const keys = new Set(voices.map((v) => v.key))
       for (const [key, entry] of entries)
         if (!keys.has(key)) {
@@ -147,7 +148,7 @@ export function createSoundEngine(options: {
           current.voice = voice
           continue
         }
-        if (voice.source.type !== 'file') continue
+        if (voice.source.type !== 'file' && voice.source.type !== 'url') continue
         // Si ya estaba cargado (lo siguiente de la lista), se usa ese
         const url = voice.source.url
         const audio = preloaded.get(url) ?? createAudio(url)

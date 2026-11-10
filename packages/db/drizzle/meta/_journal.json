@@ -512,6 +512,13 @@
       "when": 1794328824692,
       "tag": "0072_sonidos_mapa",
       "breakpoints": true
+    },
+    {
+      "idx": 73,
+      "version": "7",
+      "when": 1794330120456,
+      "tag": "0073_sonido_foundry",
+      "breakpoints": true
     }
   ]
 }

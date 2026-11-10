@@ -222,6 +222,8 @@ export function fakeApi(
         const videoId = youtubeVideoId(track.source.url)
         if (!videoId) throw new ApiError('BAD_YOUTUBE', 400)
         source = { type: 'youtube', videoId }
+      } else if (track.source.type === 'url') {
+        source = { type: 'url', url: track.source.url }
       } else {
         const fileId = track.source.fileId
         const file = files.find((f) => f.id === fileId && (f.worldId === worldId || f.worldId === null))
