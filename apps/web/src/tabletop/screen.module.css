@@ -201,3 +201,39 @@
 .inMesa {
   position: absolute;
 }
+
+/* Le han sacado de la Mesa (docs/specs/sala.md): encima de todo, claro y corto */
+.kicked {
+  position: absolute;
+  z-index: 40;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 14px;
+  padding: 24px;
+  background: color-mix(in srgb, #0b0b0c 88%, transparent);
+  color: #e7e7ea;
+  text-align: center;
+}
+
+.kicked p {
+  max-inline-size: 22rem;
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.kicked button {
+  padding: 8px 16px;
+  border: 1px solid rgb(255 255 255 / 0.2);
+  border-radius: 8px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.kicked button:hover {
+  background: rgb(255 255 255 / 0.08);
+}

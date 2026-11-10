@@ -471,3 +471,19 @@
   color: var(--color-muted);
   font-size: 0.8125rem;
 }
+
+/* En el móvil (la jugadora): minimizado, encima de la llama y el d20; abierto, a lo ancho como una hoja */
+@media (max-width: 640px) {
+  .strip,
+  .edge {
+    inset-block-end: 4.75rem;
+    inset-inline-start: 0.5rem;
+    min-inline-size: 0;
+  }
+
+  .open {
+    inset-inline-end: 0.5rem;
+    inline-size: auto;
+    block-size: min(65vh, 30rem);
+  }
+}

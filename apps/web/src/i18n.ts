@@ -2403,6 +2403,8 @@ export const es = {
   },
   // La pantalla de los jugadores (la que se lleva a una tele, un proyector…)
   screen: {
+    kicked: 'El máster te ha sacado de la Mesa. Podrás volver cuando te deje.',
+    tryAgain: 'Volver a intentarlo',
     label: 'Lo que ve el grupo',
     fullscreen: 'Pantalla completa',
     tokens: 'Lo que hay en la mesa',

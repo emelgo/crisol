@@ -3,9 +3,16 @@
  * recibe su proyección y se reconecta solo, esperando cada vez más. El máster manda por él su encuadre en vivo, que la
  * tele sigue con «Seguir», la medida en curso y el láser
  */
-import type { LiveMeasure, SceneViewport, TableServerMessage, TableViewer } from '@crisol/contracts'
+import {
+  type LiveMeasure,
+  type SceneViewport,
+  TABLE_CLOSE_KICKED,
+  type TableServerMessage,
+  type TableViewer
+} from '@crisol/contracts'
 
-export type TableStatus = 'connecting' | 'open' | 'reconnecting' | 'forbidden' | 'ended'
+/** kicked: el máster le sacó de la Mesa (docs/specs/sala.md): no se reintenta hasta que le deje volver */
+export type TableStatus = 'connecting' | 'open' | 'reconnecting' | 'forbidden' | 'ended' | 'kicked'
 
 export interface TableHandlers {
   onMessage(message: TableServerMessage): void
@@ -173,6 +180,7 @@ export function connectTable(
       socket = null
       if (event.code === SESSION_ENDED) return status('ended')
       if (event.code === FORBIDDEN) return status('forbidden')
+      if (event.code === TABLE_CLOSE_KICKED) return status('kicked')
       joined = true
       status('reconnecting')
       retry = setTimeout(open, wait)

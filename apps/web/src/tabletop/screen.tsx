@@ -16,6 +16,7 @@ import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { CrisolMark } from '../components/brand.tsx'
 import { PageTitle } from '../components/page-title.tsx'
+import { Bubbles, useBubbles } from './bubbles.tsx'
 import { canvasViewOf, sceneViewportOf, smoothToward } from './camera.ts'
 import { connectTable, type TableStatus } from './channel.ts'
 import { cssDisc, screenDraw } from './draw.ts'
@@ -123,6 +124,12 @@ export function TableScreen({
   // La vista de ahora (para colocar los textos, sellos y pines) y su capa
   const shownView = useRef<Viewport>({ x: 0, y: 0, scale: 1 })
   const marksLayer = useRef<HTMLDivElement | null>(null)
+  // Las burbujas de lo dicho en personaje, sobre las fichas
+  const bubblesLayer = useRef<HTMLDivElement | null>(null)
+  const bubbles = useBubbles(campaignId, screen)
+  useEffect(() => {
+    if (bubbles.length > 0) placeMarks(bubblesLayer.current, shownView.current)
+  }, [bubbles])
 
   useEffect(() => {
     const connection = connectTable(
@@ -278,6 +285,7 @@ export function TableScreen({
         renderer.current?.setView(fitted)
         shownView.current = fitted
         placeMarks(marksLayer.current, fitted)
+        placeMarks(bubblesLayer.current, fitted)
         if (host.current) host.current.dataset.view = JSON.stringify({ ...fitted, ...size })
         return
       }
@@ -288,6 +296,7 @@ export function TableScreen({
       renderer.current?.setView(shown)
       shownView.current = shown
       placeMarks(marksLayer.current, shown)
+      placeMarks(bubblesLayer.current, shown)
       // Para las pruebas del navegador: dónde cae el mapa en la tele, sin leer sus píxeles
       if (host.current) host.current.dataset.view = JSON.stringify({ ...shown, ...size })
       if (next !== view) frame = requestAnimationFrame(step)
@@ -315,6 +324,7 @@ export function TableScreen({
       {screen && !inMesa && <PageTitle className={styles.hidden}>{screen.campaignName}</PageTitle>}
       <div ref={host} className={styles.canvas} role="img" aria-label={t('screen.label')} data-screen="" />
       {!dark && <MarksLayer layer={marksLayer} view={shownView} marks={marks} big />}
+      {!dark && <Bubbles layer={bubblesLayer} bubbles={bubbles} />}
       {!dark && screen?.widgets && <WidgetCards widgets={screen.widgets} className={toolStyles.screenWidgets} />}
       {visible.length > 0 && !screen?.hidden && (
         <ul className={styles.hidden} aria-label={t('screen.tokens')}>
@@ -338,6 +348,15 @@ export function TableScreen({
               {t(status === 'forbidden' ? 'screen.forbidden' : 'tabletop.reconnecting')}
             </p>
           )}
+        </div>
+      )}
+      {status === 'kicked' && (
+        <div className={styles.kicked} role="alert">
+          <CrisolMark size={40} className={styles.flame} />
+          <p>{t('screen.kicked')}</p>
+          <button type="button" onClick={() => window.location.reload()}>
+            {t('screen.tryAgain')}
+          </button>
         </div>
       )}
       {!inMesa && (
