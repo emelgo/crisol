@@ -464,6 +464,10 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   cambiar_escena: { action: 'updateScene' },
   ver_mesa: { action: 'getCampaignTable' },
   quien_esta_en_la_mesa: { action: 'getTablePresence' },
+  // La sala (docs/specs/sala.md): la pausa, cómo mueven los jugadores y echar de la Mesa
+  controles_sala: { action: 'setTableControls' },
+  echar_de_la_mesa: { action: 'kickFromTable' },
+  dejar_volver: { action: 'allowBackToTable' },
   abrir_escena: { action: 'openScene' },
   presentar_escena: { action: 'presentScene' },
   ocultar_pantalla: { action: 'hideScreen' },

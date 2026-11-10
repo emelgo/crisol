@@ -25,4 +25,17 @@ describe('quién está en la Mesa', () => {
     expect(presence.list('marca')).toEqual([])
     expect(presence.list('otra')).toEqual([])
   })
+
+  it('echar cierra las Mesas de jugador de esa persona en esa campaña, y nada más', () => {
+    const presence = createTablePresence()
+    const closed: string[] = []
+    presence.add('marca', {}, { userId: 'lucia', viewer: 'player', close: () => closed.push('lucia-1') })
+    presence.add('marca', {}, { userId: 'lucia', viewer: 'player', close: () => closed.push('lucia-2') })
+    presence.add('marca', {}, { userId: 'bruno', viewer: 'player', close: () => closed.push('bruno') })
+    presence.add('otra', {}, { userId: 'lucia', viewer: 'player', close: () => closed.push('otra') })
+    presence.add('marca', {}, { userId: 'enrique', viewer: 'master', close: () => closed.push('enrique') })
+    expect(presence.disconnect('marca', 'lucia')).toBe(2)
+    expect(closed).toEqual(['lucia-1', 'lucia-2'])
+    expect(presence.disconnect('marca', 'enrique')).toBe(0)
+  })
 })

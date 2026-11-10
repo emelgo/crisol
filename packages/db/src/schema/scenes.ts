@@ -185,6 +185,14 @@ export const campaignTables = pgTable('campaign_tables', {
     .default('whole'),
   /** «La tele ve lo que mides»: la medida en curso del máster va en vivo a la pantalla (docs/specs/herramientas-mesa.md) */
   measureOnScreen: boolean().notNull().default(false),
+  /** La sala (docs/specs/sala.md): en pausa, solo el máster hace algo en la Mesa */
+  paused: boolean().notNull().default(false),
+  /** Cómo mueven los jugadores sus fichas: libre, en su turno o bloqueado */
+  movement: text({ enum: ['free', 'turn', 'locked'] })
+    .notNull()
+    .default('free'),
+  /** A quiénes ha echado el máster de la Mesa (no vuelven a entrar hasta que los deje) */
+  kicked: text().array().notNull().default(sql`'{}'::text[]`),
   updatedAt: timestamp({ withTimezone: true }).defaultNow().notNull()
 })
 

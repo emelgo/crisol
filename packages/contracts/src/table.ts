@@ -14,6 +14,12 @@ import { screenToken } from './tokens.ts'
 export const TABLE_VIEWS = ['master', 'screen', 'player'] as const
 export type TableViewer = (typeof TABLE_VIEWS)[number]
 
+/** El canal de la mesa se cierra con este código cuando el máster echa a alguien (docs/specs/sala.md) */
+export const TABLE_CLOSE_KICKED = 4409
+
+/** Cómo mueven los jugadores sus fichas (docs/specs/sala.md): libre, solo en su turno (con combate) o bloqueado */
+export const tableMovement = z.enum(['free', 'turn', 'locked'])
+
 /** Lo que manda el cliente */
 export const tableClientMessage = z.discriminatedUnion('type', [
   z.object({ type: z.literal('join'), campaignId: z.uuid(), view: z.enum(TABLE_VIEWS) }),
@@ -98,7 +104,10 @@ export const screenView = z.object({
   /** Lo dejado en el mapa que el grupo puede ver (docs/specs/herramientas-mesa.md) */
   marks: z.array(screenMark).optional(),
   /** Los widgets de la campaña con el ojo abierto */
-  widgets: z.array(screenWidget).optional()
+  widgets: z.array(screenWidget).optional(),
+  /** La sala (docs/specs/sala.md): en pausa y cómo mueven los jugadores (opcional por la API de prueba de la web) */
+  paused: z.boolean().optional(),
+  movement: tableMovement.optional()
 })
 
 export type ScreenView = z.infer<typeof screenView>
@@ -115,7 +124,7 @@ export type TableServerMessage =
   | { type: 'measure'; measure: LiveMeasure | null }
   /** La estela del láser (a la pantalla, solo sus puntos que ve o vio el grupo) */
   | { type: 'laser'; points: Array<{ x: number; y: number }> }
-  | { type: 'error'; code: 'FORBIDDEN' | 'NOT_FOUND' | 'BAD_MESSAGE' | 'NOT_JOINED' }
+  | { type: 'error'; code: 'FORBIDDEN' | 'NOT_FOUND' | 'BAD_MESSAGE' | 'NOT_JOINED' | 'KICKED' }
 
 /** Quién está en la Mesa de una campaña ahora (ADR-0021) */
 export const tablePresence = z.object({
@@ -128,6 +137,32 @@ export const tablePresence = z.object({
 })
 
 export type TablePresenceEntry = z.infer<typeof tablePresence>
+
+export const setTableControls = defineAction({
+  name: 'setTableControls',
+  kind: 'write',
+  description:
+    'Los controles de la sala de una campaña (solo su máster): la pausa (paused: nadie más que el máster mueve fichas, abre puertas ni pone nada en la Mesa; sale «Pausa» en la pantalla de los jugadores) y cómo mueven los jugadores sus fichas (movement: free, libre; turn, con combate solo en su turno; locked, nadie). Lo que no se pasa no cambia',
+  input: z.object({ campaignId: z.uuid(), paused: z.boolean().optional(), movement: tableMovement.optional() }),
+  output: z.object({ paused: z.boolean(), movement: tableMovement })
+})
+
+export const kickFromTable = defineAction({
+  name: 'kickFromTable',
+  kind: 'players',
+  description:
+    'Echa a un jugador de la Mesa de una campaña: se le cierra al momento en todos sus aparatos y no puede volver a entrar en ella hasta dejarle volver (allowBackToTable). Sigue siendo de la campaña (quitarlo del todo es removeMember)',
+  input: z.object({ campaignId: z.uuid(), userId: z.string().min(1).max(100) }),
+  output: z.object({ ok: z.literal(true) })
+})
+
+export const allowBackToTable = defineAction({
+  name: 'allowBackToTable',
+  kind: 'players',
+  description: 'Deja volver a la Mesa a un jugador al que se echó (kickFromTable)',
+  input: z.object({ campaignId: z.uuid(), userId: z.string().min(1).max(100) }),
+  output: z.object({ ok: z.literal(true) })
+})
 
 export const getTablePresence = defineAction({
   name: 'getTablePresence',

@@ -271,7 +271,10 @@ export const campaignTableView = z.object({
   /** Los widgets de la campaña */
   widgets: z.array(widgetView).optional(),
   /** «La tele ve lo que mides» */
-  measureOnScreen: z.boolean().optional()
+  measureOnScreen: z.boolean().optional(),
+  /** La sala (docs/specs/sala.md): en pausa y cómo mueven los jugadores (opcional por la API de prueba de la web) */
+  paused: z.boolean().optional(),
+  movement: z.enum(['free', 'turn', 'locked']).optional()
 })
 
 export type CampaignTableView = z.infer<typeof campaignTableView>

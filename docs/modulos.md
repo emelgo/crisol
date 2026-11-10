@@ -21,6 +21,9 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   craft-anything (Foundry: sockets y chat; DDB: game log), `/spec`, lienzo, `/plan`, `/build`.
 - **Pendiente, un estudio de Roll20** (Enrique, 2026-11-10): para una revisión futura de la mesa y de todo lo que nos
   pueda aportar (con craft-anything y su web pública, como Foundry y D&D Beyond; notas en `research/roll20/`).
+- **Pendiente, los libros para leer** (Enrique, 2026-11-10, para otro momento): añadir los libros de las fuentes que
+  queramos y, además de sacar de ellos el compendio, **ver el libro maquetado** para leerlo y buscar en él, con
+  **referencias cruzadas con el compendio** (de una entrada a su página del libro y del libro a la entrada).
 
 ### Para retomar (2026-11-10, noche: dados fluidos; siguiente, el lienzo de libros y del espacio de la campaña)
 

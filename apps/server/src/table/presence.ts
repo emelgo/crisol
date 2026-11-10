@@ -17,14 +17,20 @@ export interface PresenceEntry {
 }
 
 export interface TablePresence {
-  add(campaignId: string, key: object, entry: { userId: string; viewer: TableViewer }): void
+  /** Entra una conexión; con `close`, para cortarla si echan a quien la tiene (docs/specs/sala.md) */
+  add(campaignId: string, key: object, entry: { userId: string; viewer: TableViewer; close?: () => void }): void
   setActive(campaignId: string, key: object, active: boolean): boolean
   remove(campaignId: string, key: object): void
   list(campaignId: string): PresenceEntry[]
+  /** Cierra las Mesas de jugador de esa persona en esa campaña (la echan); cuántas */
+  disconnect(campaignId: string, userId: string): number
 }
 
 export function createTablePresence(now: () => Date = () => new Date()): TablePresence {
-  const rooms = new Map<string, Map<object, { userId: string; viewer: TableViewer; since: Date; active: boolean }>>()
+  const rooms = new Map<
+    string,
+    Map<object, { userId: string; viewer: TableViewer; since: Date; active: boolean; close?: () => void }>
+  >()
   return {
     add(campaignId, key, entry) {
       const room = rooms.get(campaignId) ?? new Map()
@@ -41,6 +47,15 @@ export function createTablePresence(now: () => Date = () => new Date()): TablePr
       const room = rooms.get(campaignId)
       room?.delete(key)
       if (room && room.size === 0) rooms.delete(campaignId)
+    },
+    disconnect(campaignId, userId) {
+      let closed = 0
+      for (const entry of [...(rooms.get(campaignId)?.values() ?? [])]) {
+        if (entry.userId !== userId || entry.viewer !== 'player') continue
+        entry.close?.()
+        closed++
+      }
+      return closed
     },
     list(campaignId) {
       // Una entrada por persona y forma de mirar: sus pestañas, juntas

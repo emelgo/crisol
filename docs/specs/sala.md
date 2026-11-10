@@ -90,8 +90,7 @@ jugador y echar a alguien no le corta la conexión.
 | Herramienta | Qué hace |
 |---|---|
 | `ver_sala` | Quién está (en la Mesa, en la campaña, fuera), la pausa y el modo de movimiento |
-| `pausar` | Pone o quita la pausa (`paused`) |
-| `modo_movimiento` | Cambia el modo (`free`, `turn`, `locked`) |
+| `controles_sala` | Pone o quita la pausa (`paused`) y cambia el modo (`free`, `turn`, `locked`) |
 | `echar_de_la_mesa` | Echa a un jugador de la Mesa (pide aprobación) |
 | `dejar_volver` | Lo quita de los echados |
 
@@ -102,8 +101,9 @@ jugador y echar a alguien no le corta la conexión.
   `TablePresenceEntry` gana `color` y `character: { id, name, img } | null`.
 - `setTableControls({ campaignId, paused?, movement? })` → `{ paused, movement }`, `table.manage`.
 - `kickFromTable({ campaignId, userId })`, `allowBackToTable({ campaignId, userId })` → `{ ok: true }`, `table.manage`.
-- Canal de la mesa: mensaje del servidor `{ type: 'controls', paused, movement }` (al entrar y al cambiar) y cierre
-  con el código `4409` («echado»). Canal general: el cliente manda `{ type: 'campaignFocus', campaignId | null }`.
+- La pausa y el modo viajan en las vistas que ya proyecta la sala (`paused` y `movement` en la del máster y en la del
+  grupo), así que llegan al entrar y con cada cambio sin un mensaje aparte. Cierre del canal con `4409`
+  (`TABLE_CLOSE_KICKED`, «echado»). Canal general: el cliente manda `{ type: 'campaignFocus', campaignId | null }`.
 - Migración 0065: en `campaign_tables`, `paused boolean not null default false`, `movement text not null default
   'free'` (con su check) y `kicked text[] not null default '{}'`.
 - Dominio (`packages/domain`): `tableActionAllowed({ role, paused, movement, combat, userId, tokenOwnerIds })` →

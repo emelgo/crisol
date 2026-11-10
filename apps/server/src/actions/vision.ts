@@ -512,7 +512,9 @@ export const visionActions = [
       combat: master.combat ?? null,
       vision,
       marks: await tableToolsRepo.listMarks(ctx.db, campaignId, scene.id),
-      widgets: master.widgets ?? []
+      widgets: master.widgets ?? [],
+      paused: table.paused,
+      movement: table.movement
     })
     const cells = visibleCellsOf(scene.grid, vision.visible, vision)
     const seen = loaded.views.filter((t) => !t.hidden && vision.seen.has(t.id))

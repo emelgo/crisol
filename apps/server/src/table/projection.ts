@@ -27,7 +27,7 @@ import {
   tableToolsRepo,
   tokensRepo
 } from '@crisol/db'
-import { actorFrom } from '@crisol/domain'
+import { actorFrom, type TableMovement } from '@crisol/domain'
 import {
   type Choices,
   initiativeRoll,
@@ -445,7 +445,9 @@ async function tableOf(ctx: ActionContext, campaign: Campaign, given?: scenesRep
     vision: open && openVision ? tableVisionOf(open, openVision, openLoaded.views, table.tileFit) : null,
     marks: open ? openMarks.map((row) => markViewOf(row, openLoaded.views, open.grid)) : [],
     widgets,
-    measureOnScreen: table.measureOnScreen
+    measureOnScreen: table.measureOnScreen,
+    paused: table.paused,
+    movement: table.movement
   }
   return { master, shownTokens: shownLoaded.views, shownVision, shownMarks, widgets }
 }
@@ -473,6 +475,9 @@ export function screenViewOf(input: {
   /** Lo dejado en el mapa de la escena (todo: aquí se quita lo del máster y lo que cae en la niebla) */
   marks?: readonly tableToolsRepo.MarkRow[]
   widgets?: readonly WidgetView[]
+  /** La sala: en pausa y cómo mueven los jugadores */
+  paused?: boolean
+  movement?: TableMovement
 }): ScreenView {
   const { scene, vision } = input
   // Sin la vista del grupo no se enseña nada (no debería pasar: el servidor siempre la tiene)
@@ -511,7 +516,9 @@ export function screenViewOf(input: {
         : [],
     marks: showing && vision ? screenMarksOf(input.marks ?? [], vision.screenMask) : [],
     // Los widgets, mientras la pantalla no esté a oscuras (aunque no enseñe escena)
-    widgets: input.hidden ? [] : screenWidgetsOf(input.widgets ?? [])
+    widgets: input.hidden ? [] : screenWidgetsOf(input.widgets ?? []),
+    paused: input.paused ?? false,
+    movement: input.movement ?? 'free'
   }
 }
 
@@ -536,7 +543,9 @@ function screenOfTable(
     combat: master.combat,
     vision: shown.vision,
     marks: shown.marks,
-    widgets: shown.widgets
+    widgets: shown.widgets,
+    paused: master.paused,
+    movement: master.movement
   })
 }
 

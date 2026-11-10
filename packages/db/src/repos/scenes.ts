@@ -158,6 +158,9 @@ export async function campaignTable(db: Database, campaignId: string): Promise<C
       camera: { mode: 'follow' },
       tileFit: 'whole',
       measureOnScreen: false,
+      paused: false,
+      movement: 'free',
+      kicked: [],
       updatedAt: new Date(0)
     }
   )
@@ -182,6 +185,9 @@ export async function setCampaignTable(
     camera: ScreenCameraData
     tileFit: 'whole' | 'cropped'
     measureOnScreen: boolean
+    paused: boolean
+    movement: 'free' | 'turn' | 'locked'
+    kicked: string[]
   }>
 ): Promise<CampaignTableRow> {
   const [row] = await db
@@ -191,6 +197,28 @@ export async function setCampaignTable(
     .returning()
   if (!row) throw new Error('campaign_tables: sin fila tras guardar')
   return row
+}
+
+/** Echa a alguien de la Mesa de una campaña (sin repetirlo si ya estaba): la sala, docs/specs/sala.md */
+export async function kickFromTable(db: Database, campaignId: string, userId: string): Promise<void> {
+  await db
+    .insert(campaignTables)
+    .values({ campaignId, kicked: [userId] })
+    .onConflictDoUpdate({
+      target: campaignTables.campaignId,
+      set: {
+        kicked: sql`case when ${userId} = any(${campaignTables.kicked}) then ${campaignTables.kicked} else array_append(${campaignTables.kicked}, ${userId}) end`,
+        updatedAt: new Date()
+      }
+    })
+}
+
+/** Le deja volver a la Mesa */
+export async function allowBackToTable(db: Database, campaignId: string, userId: string): Promise<void> {
+  await db
+    .update(campaignTables)
+    .set({ kicked: sql`array_remove(${campaignTables.kicked}, ${userId})`, updatedAt: new Date() })
+    .where(eq(campaignTables.campaignId, campaignId))
 }
 
 type TileAt = { sceneId: string; version: string; level: number; x: number; y: number }

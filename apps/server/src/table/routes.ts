@@ -5,7 +5,13 @@
  * pide: docs/specs/vision.md)
  */
 import type { Readable } from 'node:stream'
-import { MAX_TILE_BYTES, type TableServerMessage, type TableViewer, tableClientMessage } from '@crisol/contracts'
+import {
+  MAX_TILE_BYTES,
+  TABLE_CLOSE_KICKED,
+  type TableServerMessage,
+  type TableViewer,
+  tableClientMessage
+} from '@crisol/contracts'
 import { campaignsRepo, loadMemberships, scenesRepo } from '@crisol/db'
 import { actorFrom, can } from '@crisol/domain'
 import { type FogGrid, hasTile, type TileRef, tilePyramid, tileWorldRect } from '@crisol/tabletop'
@@ -304,12 +310,27 @@ export function registerTableRoutes(
             say({ type: 'error', code: campaign ? 'FORBIDDEN' : 'NOT_FOUND' })
             return socket.close(4403, 'Sin permiso')
           }
+          // A quien echó el máster, su Mesa de jugador no le deja entrar hasta que le deje volver (docs/specs/sala.md)
+          if (
+            message.view === 'player' &&
+            (await scenesRepo.campaignTable(env.db, campaign.id)).kicked.includes(userId)
+          ) {
+            say({ type: 'error', code: 'KICKED' })
+            return socket.close(TABLE_CLOSE_KICKED, 'Fuera de la Mesa')
+          }
           const leaveRoom = await table.join(campaign.id, message.view, socket)
           // Se cerró mientras entraba: fuera ya
           if (closed) return leaveRoom()
           const scope = { campaignId: campaign.id, worldId: campaign.worldId }
           // Quién está en la Mesa: entra (y sale con la conexión)
-          env.presence?.add(campaign.id, socket, { userId, viewer: message.view })
+          env.presence?.add(campaign.id, socket, {
+            userId,
+            viewer: message.view,
+            close: () => {
+              say({ type: 'error', code: 'KICKED' })
+              socket.close(TABLE_CLOSE_KICKED, 'Fuera de la Mesa')
+            }
+          })
           announce(scope)
           const leave = () => {
             leaveRoom()
