@@ -497,7 +497,7 @@ export function SceneSide() {
           </div>
           <div className={styles.field}>
             <span>{t('scene.grid.align')}</span>
-            <div className={styles.row}>
+            <div className={styles.pair}>
               <BusyButton
                 className={styles.ghost}
                 busy={detect.isPending}
