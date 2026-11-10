@@ -1,6 +1,7 @@
 /**
  * La Mesa de quien juega (lienzo «Campaña en la Mesa»): lo que ve el grupo (como la tele) y, a la derecha, su barra con
- * Tiradas, Combate, Personajes, Compendio y Páginas (las que conoce). Las páginas y su hoja se abren en ventanas; la
+ * Combate, Personajes, Compendio, Páginas (las que conoce) y sus Notas. Las páginas, su hoja y sus notas se abren en
+ * ventanas; la
  * página que el máster enseña se le abre sola. No tiene Escenas ni Ajustes (son del máster)
  */
 import type { Campaign, ScreenView } from '@crisol/contracts'
@@ -18,6 +19,8 @@ import { Tour } from '../components/tour.tsx'
 import { useDice } from '../dice/context.tsx'
 import { HistoryHost } from '../dice/history.tsx'
 import { LogStrip } from '../log/strip.tsx'
+import notesStyles from '../notes/notes.module.css'
+import { NotePane, NoteTree, useNoteTitle } from '../notes/notes.tsx'
 import { useShown, useShownImage } from '../realtime/context.tsx'
 import { ReadAsProvider } from '../wiki/read-as.tsx'
 import { CompendiumTab } from './compendium-tab.tsx'
@@ -31,7 +34,7 @@ import { type SidebarItem, type SidebarTab, TableSidebar, useSidebarFolded, useS
 import { sheetWindow } from './token-sheet.tsx'
 import { type LinkHandler, useWindows, WindowLayer, type WindowSpec, WindowsProvider } from './windows.tsx'
 
-const PLAYER_TABS: readonly SidebarTab[] = ['combat', 'characters', 'compendium', 'pages']
+const PLAYER_TABS: readonly SidebarTab[] = ['combat', 'characters', 'compendium', 'pages', 'notes']
 
 /** Una página del mundo, leída desde la campaña, en su ventana */
 function playerPageWindow(worldId: string, pageId: string, title: string): WindowSpec {
@@ -43,6 +46,21 @@ function playerPageWindow(worldId: string, pageId: string, title: string): Windo
     render: () => (
       <div className={playerStyles.page}>
         <PlayerPage worldId={worldId} pageId={pageId} />
+      </div>
+    )
+  }
+}
+
+/** Una nota suya, en su ventana */
+function noteWindow(worldId: string, campaignId: string, noteId: string, title: string): WindowSpec {
+  return {
+    id: `note:${noteId}`,
+    title,
+    width: 640,
+    height: 560,
+    render: () => (
+      <div className={playerStyles.page}>
+        <NotePane worldId={worldId} campaignId={campaignId} noteId={noteId} compact />
       </div>
     )
   }
@@ -153,6 +171,7 @@ function PlayerSidebar({
     queryFn: () => api.call('listNews', { campaignId: campaign.id })
   })
   const newPages = new Set((news.data?.news ?? []).flatMap((n) => (n.pageId ? [n.pageId] : [])))
+  const titleOf = useNoteTitle()
   const combat = screen?.combat ?? null
   const systemId = campaign.system?.id ?? null
   const items: SidebarItem[] = [
@@ -231,6 +250,20 @@ function PlayerSidebar({
           onOpen={(pageId, title) => windows?.open(playerPageWindow(worldId, pageId, title))}
           news={newPages}
         />
+      )
+    },
+    {
+      key: 'notes',
+      // Sus notas (docs/specs/notas-jugador.md): cada una se abre en su ventana
+      content: () => (
+        <div className={notesStyles.tab}>
+          <NoteTree
+            campaignId={campaign.id}
+            selected={null}
+            editable
+            onOpen={(note) => windows?.open(noteWindow(worldId, campaign.id, note.id, titleOf(note)))}
+          />
+        </div>
       )
     }
   ]

@@ -16,6 +16,7 @@ export function summaryOf(
   const say = (key: ActionKey, values: Record<string, unknown> = {}) =>
     tense === 'done' ? t(`history.actions.${key}`, values) : t(`approvals.actions.${key}`, values)
   const text = (value: unknown) => String(value ?? '')
+  const noteTitle = (value: unknown) => text(value).trim() || t('notes.untitled')
   switch (action) {
     case 'undoOperation': {
       // Deshacer un deshacer es rehacer: se cuenta lo de debajo de todo, como quedó en el historial
@@ -51,6 +52,17 @@ export function summaryOf(
     // Los personajes: por su nombre
     case 'createCharacter':
       return say('createCharacter', { name: text(details.name), campaign: text(details.campaign) })
+    // Las notas de los jugadores: por su título
+    case 'createPlayerNote':
+      return say('createPlayerNote', { title: noteTitle(details.title), campaign: text(details.campaign) })
+    case 'updatePlayerNote':
+      return details.from !== undefined
+        ? say('renamePlayerNote', { from: noteTitle(details.from), title: noteTitle(details.title) })
+        : say('updatePlayerNote', { title: noteTitle(details.title) })
+    case 'deletePlayerNote':
+      return say('deletePlayerNote', { title: noteTitle(details.title) })
+    case 'restorePlayerNote':
+      return say('restorePlayerNote', { title: noteTitle(details.title) })
     case 'updateCharacter':
       if (details.confirm === 'created') return say('characterCreated', { name: text(details.name) })
       if (details.confirm === 'level') return say('characterLevel', { name: text(details.name) })

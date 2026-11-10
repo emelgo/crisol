@@ -367,3 +367,23 @@
     font-size: 2rem;
   }
 }
+
+/* Las notas de un jugador, a la derecha de su fila: discretas */
+.notes {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-inline-start: auto;
+  min-block-size: 2rem;
+  padding-inline: var(--space-2);
+  border-radius: 3px;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+  text-decoration: none;
+}
+
+.notes:hover {
+  color: var(--color-text);
+  background: var(--color-raised);
+  text-decoration: none;
+}

@@ -98,7 +98,8 @@ describe('quien juega', () => {
       'Combate',
       'Actores',
       'Compendio',
-      'Páginas'
+      'Páginas',
+      'Notas'
     ])
     // El combate, de lo que ve el grupo
     const view: ScreenView = {

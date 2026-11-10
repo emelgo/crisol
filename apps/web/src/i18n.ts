@@ -44,7 +44,39 @@ export const es = {
     books: 'Libros',
     adventures: 'Aventuras',
     campaignSettings: 'Ajustes',
-    campaignHome: '{{name}}: inicio'
+    campaignHome: '{{name}}: inicio',
+    notes: 'Mis notas'
+  },
+  // Las notas del jugador (docs/specs/notas-jugador.md)
+  notes: {
+    title: 'Mis notas',
+    ofPlayer: 'Notas de {{name}}',
+    players: 'Notas de los jugadores',
+    list: 'Notas',
+    new: 'Nueva nota',
+    newChild: 'Nueva subnota en «{{title}}»',
+    newChildShort: 'Nueva subnota',
+    delete: 'Borrar «{{title}}»',
+    deleteShort: 'Borrar',
+    deleted: '«{{title}}», a la papelera',
+    restore: 'Restaurar «{{title}}»',
+    restoreShort: 'Restaurar',
+    restored: '«{{title}}» restaurada',
+    trash_one: 'Papelera ({{count}})',
+    trash_other: 'Papelera ({{count}})',
+    untitled: 'Sin título',
+    titleField: 'Título',
+    body: 'Texto de «{{title}}»',
+    placeholder: 'Escribe, o «[[» para enlazar una página',
+    empty: 'Aún no tienes notas',
+    noneOther: 'Sin notas',
+    saving: 'Guardando…',
+    saved: 'Guardado',
+    failed: 'Sin guardar',
+    changed: 'La nota cambió en otro sitio: ya está al día',
+    backToList: 'Volver a las notas',
+    open: 'Notas',
+    openOf: 'Notas de {{name}}'
   },
   // Una tirada escrita en una página
   diceRoll: {
@@ -2016,6 +2048,7 @@ export const es = {
       compendium: 'Compendio',
       pages: 'Páginas',
       settings: 'Campaña',
+      notes: 'Notas',
       fold: 'Plegar la barra',
       unfold: 'Desplegar la barra',
       attention: ' (hay algo nuevo)'
@@ -2736,6 +2769,11 @@ export const es = {
       campaignNoSystem: 'quitó el sistema de la campaña «{{name}}»',
       campaignSystemChoices: 'cambió lo que elige la campaña «{{name}}» de su sistema',
       createCharacter: 'creó el personaje «{{name}}» en «{{campaign}}»',
+      createPlayerNote: 'creó la nota «{{title}}» en «{{campaign}}»',
+      updatePlayerNote: 'escribió en la nota «{{title}}»',
+      renamePlayerNote: 'renombró la nota «{{from}}» a «{{title}}»',
+      deletePlayerNote: 'borró la nota «{{title}}»',
+      restorePlayerNote: 'restauró la nota «{{title}}»',
       updateCharacter: 'cambió el personaje «{{name}}»',
       renameCharacter: 'renombró el personaje «{{from}}» a «{{name}}»',
       characterOwner: 'cambió quién juega el personaje «{{name}}»',
@@ -2957,6 +2995,11 @@ export const es = {
       campaignNoSystem: 'quitar el sistema de la campaña «{{name}}»',
       campaignSystemChoices: 'cambiar lo que elige la campaña «{{name}}» de su sistema',
       createCharacter: 'crear el personaje «{{name}}» en «{{campaign}}»',
+      createPlayerNote: 'crear la nota «{{title}}» en «{{campaign}}»',
+      updatePlayerNote: 'escribir en la nota «{{title}}»',
+      renamePlayerNote: 'renombrar la nota «{{from}}» a «{{title}}»',
+      deletePlayerNote: 'borrar la nota «{{title}}»',
+      restorePlayerNote: 'restaurar la nota «{{title}}»',
       updateCharacter: 'cambiar el personaje «{{name}}»',
       renameCharacter: 'renombrar el personaje «{{from}}» a «{{name}}»',
       characterOwner: 'cambiar quién juega el personaje «{{name}}»',
@@ -3300,11 +3343,16 @@ export const es = {
     playerCampaign: {
       table: 'La partida: los personajes y la Mesa.',
       compendium: 'Las reglas y el contenido de la campaña.',
+      notes: 'Tus notas de la campaña. Solo las lees tú y el máster.',
       character: 'Tu personaje: su ficha, a un toque.',
       toMesa: 'La Mesa, en otra pestaña.'
     },
     books: {
       list: 'Enciende los libros que usa la campaña y elige qué entra de cada uno.'
+    },
+    notes: {
+      list: 'Tus notas, con subpáginas si quieres. Solo las lees tú y el máster.',
+      text: 'Escribe aquí: se guarda solo. Con «[[» enlazas lo que conoces del mundo.'
     },
     system: {
       books: 'Los libros del sistema: cada uno llena su compendio.',

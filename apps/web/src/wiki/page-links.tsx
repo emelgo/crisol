@@ -18,6 +18,7 @@ import { useTemplates } from '../templates/picker.tsx'
 import { type LinkableContent, type PageLinks, PageLinksContext, type WorldFile } from './links-context.ts'
 import styles from './page-links.module.css'
 import { LinkPreview } from './preview.tsx'
+import { useReadAs } from './read-as.tsx'
 import menu from './slash-menu.module.css'
 
 export { type PageLinks, PageLinksContext, type WorldFile } from './links-context.ts'
@@ -147,7 +148,11 @@ function PageLinkView({ node, updateAttributes, selected, editor }: NodeViewProp
   const target = stateOf(links, pageId, title)
   const text = label ?? (target.state === 'ok' ? target.page.title : title)
   const worldId = links?.worldId ?? ''
-  const open = (id: string) => void navigate({ to: '/mundos/$worldId/wiki/$pageId', params: { worldId, pageId: id } })
+  // Leyendo desde una campaña (un jugador), a la página tal como la conoce ella
+  const readAs = useReadAs()
+  const pagePath = (id: string) =>
+    readAs ? `/mundos/${worldId}/campanas/${readAs.campaignId}/paginas/${id}` : `/mundos/${worldId}/wiki/${id}`
+  const open = (id: string) => void navigate({ to: pagePath(id) } as never)
 
   const restore = useMutation({
     mutationFn: () => api.call('restorePage', { pageId: pageId ?? '' }),
@@ -192,7 +197,7 @@ function PageLinkView({ node, updateAttributes, selected, editor }: NodeViewProp
     if (returnFocus) editor.commands.focus()
   }
 
-  const href = target.state === 'ok' ? `/mundos/${worldId}/wiki/${target.page.id}` : undefined
+  const href = target.state === 'ok' ? pagePath(target.page.id) : undefined
   const description =
     target.state === 'missing'
       ? t('links.missing', { title: text })
@@ -218,7 +223,7 @@ function PageLinkView({ node, updateAttributes, selected, editor }: NodeViewProp
             // En el móvil, primero la hoja con «Abrir página»
             if (coarsePointer()) setSheet(true)
             else open(target.page.id)
-          } else if (target.state === 'missing') setCreateOpen(!createOpen)
+          } else if (target.state === 'missing') setCreateOpen(links?.canCreate !== false && !createOpen)
           else setTrashOpen(!trashOpen)
         }}
       >
@@ -365,7 +370,8 @@ export const LinkSuggest = Extension.create<LinkSuggestOptions>({
                 .slice(0, 5)
                 .map((file) => ({ kind: 'file', file }))
             : []
-          return [...files, ...(text && !exact ? [...found, { kind: 'create', title: text } as const] : found)]
+          const creates = text && !exact && current?.canCreate !== false
+          return [...files, ...(creates ? [...found, { kind: 'create', title: text } as const] : found)]
         },
         command: ({ editor, range, props: choice }) => {
           const anchor = lastQuery.replace(/\]+$/, '').split('#').slice(1).join('#').trim() || null

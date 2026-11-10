@@ -6,7 +6,7 @@
 import type { Campaign } from '@crisol/contracts'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { ChevronRight, Layers, UserPlus } from 'lucide-react'
+import { ChevronRight, Layers, NotebookPen, UserPlus } from 'lucide-react'
 import { type ReactNode, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
@@ -170,6 +170,18 @@ function Players({ worldId, campaignId }: { worldId: string; campaignId: string 
                   )}
                   <span>{[first?.summary.line, player.name].filter(Boolean).join(' · ')}</span>
                 </span>
+                {/* Sus notas, de solo lectura (docs/specs/notas-jugador.md) */}
+                <Link
+                  to="/mundos/$worldId/campanas/$campaignId/notas"
+                  params={{ worldId, campaignId }}
+                  search={{ de: player.userId }}
+                  className={styles.notes}
+                  aria-label={t('notes.openOf', { name: player.name })}
+                  title={t('notes.openOf', { name: player.name })}
+                >
+                  <NotebookPen aria-hidden="true" size={16} />
+                  {t('notes.open')}
+                </Link>
               </li>
             )
           })}
@@ -372,6 +384,7 @@ export function PlayerCampaignHome({ worldId, worldName, campaign }: Props) {
           steps={[
             { target: '[data-tour="barra-mesa"]', text: t('tour.playerCampaign.table') },
             { target: '[data-tour="barra-compendio"]', text: t('tour.playerCampaign.compendium') },
+            { target: '[data-tour="barra-notas"]', text: t('tour.playerCampaign.notes') },
             { target: '[data-tour="inicio-personaje"]', text: t('tour.playerCampaign.character') },
             { target: '[data-tour="inicio-mesa"]', text: t('tour.playerCampaign.toMesa') }
           ]}

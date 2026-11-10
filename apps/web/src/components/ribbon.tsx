@@ -12,6 +12,7 @@ import {
   LayoutTemplate,
   LogOut,
   type LucideIcon,
+  NotebookPen,
   ScrollText,
   Settings,
   Shield,
@@ -428,11 +429,13 @@ function CampaignPanels({
       | '/mundos/$worldId/campanas/$campaignId/libros'
       | '/mundos/$worldId/campanas/$campaignId/compendio'
       | '/mundos/$worldId/campanas/$campaignId/aventuras'
+      | '/mundos/$worldId/campanas/$campaignId/notas'
     icon: LucideIcon
     text: string
     tour: string
     exact?: boolean
     master?: boolean
+    player?: boolean
   }
   const sections: Section[] = [
     // La campaña, con su nombre (como el mundo en la suya): su Inicio
@@ -464,12 +467,20 @@ function CampaignPanels({
       text: t('ribbon.adventures'),
       tour: 'barra-aventuras',
       master: true
+    },
+    // Las notas de quien juega (docs/specs/notas-jugador.md); el máster las lee desde el Inicio
+    {
+      to: '/mundos/$worldId/campanas/$campaignId/notas',
+      icon: NotebookPen,
+      text: t('ribbon.notes'),
+      tour: 'barra-notas',
+      player: true
     }
   ]
   return (
     <>
       {sections
-        .filter((section) => master || !section.master)
+        .filter((section) => (master ? !section.player : !section.master))
         .map((section) => (
           <Link
             key={section.to}
@@ -625,7 +636,20 @@ function MobileMenu({
             current: path.startsWith(`/mundos/${world.id}/campanas/${campaign.id}/compendio`),
             href: `/mundos/${world.id}/campanas/${campaign.id}/compendio`,
             run: go(`/mundos/${world.id}/campanas/${campaign.id}/compendio`)
-          }
+          },
+          // Sus notas (el móvil es de la jugadora)
+          ...(campaign.master
+            ? []
+            : [
+                {
+                  key: 'notas',
+                  icon: NotebookPen,
+                  text: t('ribbon.notes'),
+                  current: path.startsWith(`/mundos/${world.id}/campanas/${campaign.id}/notas`),
+                  href: `/mundos/${world.id}/campanas/${campaign.id}/notas`,
+                  run: go(`/mundos/${world.id}/campanas/${campaign.id}/notas`)
+                }
+              ])
         ]
       : world
         ? [

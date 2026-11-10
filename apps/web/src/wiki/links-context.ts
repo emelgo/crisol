@@ -11,6 +11,8 @@ export interface PageLinks {
   /** Crea la página que falta (con una plantilla, si se da) y da su id */
   create: (title: string, template?: string) => Promise<string>
   files: readonly WorldFile[]
+  /** false: no se crean páginas desde un enlace (un jugador escribe con lo que conoce) */
+  canCreate?: boolean
   /** Lo que se puede enlazar del compendio con `[[@`: del mundo y de los sistemas de sus campañas */
   searchContent?: (query: string) => Promise<LinkableContent[]>
 }
