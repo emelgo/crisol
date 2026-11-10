@@ -122,12 +122,6 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .bars i {
-    animation: none;
-  }
-}
-
 /* El recuadro de YouTube: cristal, pequeño y a la vista */
 .ytDock {
   position: absolute;
@@ -666,4 +660,42 @@
 
 .probe:empty {
   display: none;
+}
+
+/* El volumen de la jugadora en su aparato: un altavoz arriba a la izquierda de su Mesa */
+.deviceDock {
+  position: absolute;
+  z-index: 30;
+  inset-block-start: 12px;
+  inset-inline-start: 12px;
+}
+
+.deviceButton {
+  display: grid;
+  place-items: center;
+  inline-size: 44px;
+  block-size: 44px;
+  border: 1px solid var(--glass-edge);
+  border-radius: 10px;
+  background: var(--glass-sheen), var(--glass-tint);
+  box-shadow: var(--glass-shadow);
+  color: var(--color-text);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  cursor: pointer;
+}
+
+.devicePanel {
+  position: absolute;
+  inset-block-start: calc(100% + 6px);
+  inset-inline-start: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-inline-size: 15rem;
+  padding: 10px 12px;
+  border: 1px solid var(--glass-edge);
+  border-radius: 10px;
+  background: var(--glass-sheen), var(--glass-solid);
+  box-shadow: var(--glass-shadow);
 }

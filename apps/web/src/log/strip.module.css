@@ -488,7 +488,7 @@
   }
 }
 
-.open {
+.reopen {
   padding: 0;
   border: 0;
   background: none;
@@ -497,6 +497,25 @@
   cursor: pointer;
 }
 
-.open:hover {
+.reopen:hover {
   text-decoration: underline;
+}
+
+/* En lo táctil nada depende del hover, y los toques miden 44 px (lo de la jugadora en el móvil) */
+@media (pointer: coarse) {
+  .tab,
+  .toggle,
+  .send,
+  .mode,
+  .menu button {
+    min-block-size: 44px;
+  }
+
+  .send {
+    inline-size: 44px;
+  }
+}
+
+.strip:not(.open) {
+  min-block-size: 2.6rem;
 }

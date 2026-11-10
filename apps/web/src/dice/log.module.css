@@ -379,3 +379,9 @@ li:hover .deleteRoll,
 .deleteRoll:hover {
   color: var(--color-danger);
 }
+
+@media (hover: none) {
+  .deleteRoll {
+    opacity: 1;
+  }
+}

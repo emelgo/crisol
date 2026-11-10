@@ -40,7 +40,7 @@ function Avatar({
 }) {
   return (
     <span
-      className={small ? `${styles.avatar} ${styles.small}` : styles.avatar}
+      className={small ? `${styles.avatar} ${styles.avatarSmall}` : styles.avatar}
       style={{ background: colorOf(userId, color) }}
       aria-hidden="true"
     >
@@ -271,7 +271,7 @@ function Person({ who, onKick }: { who: TablePresenceEntry; onKick: () => void }
   return (
     <li className={styles.row}>
       {screen ? (
-        <span className={`${styles.avatar} ${styles.small} ${styles.screenFace}`} aria-hidden="true">
+        <span className={`${styles.avatar} ${styles.avatarSmall} ${styles.screenFace}`} aria-hidden="true">
           <Tv size={13} />
         </span>
       ) : (

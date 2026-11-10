@@ -1885,6 +1885,7 @@ export const es = {
   },
   // El sonido (docs/specs/sonido.md, sound/)
   sound: {
+    deviceVolume: 'Volumen de este aparato',
     playing: 'Suena',
     nothing: 'Nada suena',
     open: 'Sonido: abrir la pestaña',
@@ -1956,7 +1957,7 @@ export const es = {
     pause: 'Pausar la partida',
     resume: 'Seguir la partida',
     paused: 'Partida en pausa',
-    unpause: 'Quitar',
+    unpause: 'Reanudar',
     atTable: 'En la Mesa',
     inCampaign: 'En la campaña',
     out: 'Fuera de la Mesa',

@@ -280,6 +280,7 @@ export function LogStrip({
               entry={entry}
               me={me}
               master={master}
+              onOpenShown={onOpenShown}
               onAgain={(roll) => again.mutate(roll)}
               onDeleteRoll={(id) => deleteRolls.mutate([id])}
               canDelete={(id, at, by) =>
@@ -460,7 +461,7 @@ function Entry({
           <p className={log.what}>
             {t('log.shown', { name: entry.by.name, title: entry.shown?.title ?? '' })}{' '}
             {entry.shown && onOpenShown && (
-              <button type="button" className={styles.open} onClick={() => entry.shown && onOpenShown(entry.shown)}>
+              <button type="button" className={styles.reopen} onClick={() => entry.shown && onOpenShown(entry.shown)}>
                 {t('show.open')}
               </button>
             )}

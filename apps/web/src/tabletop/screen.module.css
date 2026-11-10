@@ -369,7 +369,8 @@
 @media (max-width: 48rem) {
   .passTurn {
     position: fixed;
-    inset-block-end: 6rem;
+    /* Por encima del registro minimizado, que va encima de la llama */
+    inset-block-end: 8.25rem;
     min-block-size: 3rem;
     padding: 0 1.75rem;
     font-size: 1.03rem;
@@ -390,9 +391,10 @@
   box-shadow: var(--glass-shadow);
   color: var(--color-text);
   font-weight: 600;
-  white-space: nowrap;
   transform: translateX(-50%);
   animation: aviso-entra 180ms ease-out both;
+  max-inline-size: calc(100% - 2rem);
+  text-align: center;
 }
 
 @keyframes aviso-entra {
@@ -402,8 +404,9 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .notice {
-    animation: none;
+@media (pointer: coarse) {
+  .door {
+    min-inline-size: 44px;
+    min-block-size: 44px;
   }
 }

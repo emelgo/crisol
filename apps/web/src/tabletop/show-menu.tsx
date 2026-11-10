@@ -3,7 +3,7 @@
  * página y el cuadro de enseñar una imagen. Lo comprueba el servidor; aquí solo se elige a quién
  */
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { Check, ChevronDown, Eye, ImageIcon, Tv, Users } from 'lucide-react'
+import { ChevronDown, Eye, ImageIcon, Tv, UserCheck, Users } from 'lucide-react'
 import { useCallback, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
@@ -106,7 +106,7 @@ export function ShowMenu({
                 {t('show.toAll')}
               </button>
               <button type="button" role="menuitem" onClick={() => setPicking(true)}>
-                <Check aria-hidden="true" size={15} />
+                <UserCheck aria-hidden="true" size={15} />
                 {t('show.toSome')}…
               </button>
               <button type="button" role="menuitem" onClick={() => pick({ screen: true })}>
