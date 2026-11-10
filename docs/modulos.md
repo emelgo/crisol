@@ -19,6 +19,8 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   (`apps/server/src/table/presence.ts`, `getTablePresence`, la sección Mesa de la campaña) y «enseñar una página». Empezar
   por el ciclo de siempre (CLAUDE.md): `interview-me` con Enrique frente a `docs/inventario.md`, estudio con
   craft-anything (Foundry: sockets y chat; DDB: game log), `/spec`, lienzo, `/plan`, `/build`.
+- **Pendiente, un estudio de Roll20** (Enrique, 2026-11-10): para una revisión futura de la mesa y de todo lo que nos
+  pueda aportar (con craft-anything y su web pública, como Foundry y D&D Beyond; notas en `research/roll20/`).
 
 ### Para retomar (2026-11-10, noche: dados fluidos; siguiente, el lienzo de libros y del espacio de la campaña)
 
