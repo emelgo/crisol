@@ -186,9 +186,9 @@ describe('el registro de la partida: mensajes, susurros y tiradas', () => {
     const lia = (await call('createCharacter', { campaignId, name: 'Lía' }, ana.cookie)).body.character.id
     expect((await call('createActorFolder', { campaignId, name: 'Grupo' }, ana.cookie)).status).toBe(403)
     const folder = (await call('createActorFolder', { campaignId, name: 'Grupo' })).body
-    expect((await call('moveToActorFolder', { campaignId, kind: 'character', id: lia, folderId: folder.id })).status).toBe(
-      200
-    )
+    expect(
+      (await call('moveToActorFolder', { campaignId, kind: 'character', id: lia, folderId: folder.id })).status
+    ).toBe(200)
     expect((await call('listActorFolders', { campaignId })).body).toEqual({
       folders: [{ id: folder.id, name: 'Grupo' }],
       items: [{ kind: 'character', id: lia, folderId: folder.id }]
