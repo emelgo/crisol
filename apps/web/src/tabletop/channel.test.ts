@@ -194,6 +194,17 @@ describe('el canal de la mesa', () => {
     expect(last().sent).toHaveLength(2)
   })
 
+  it('pide la hora al servidor solo ya dentro de la sala (el sonido mide su desfase)', () => {
+    const channel = open('screen', { onMessage: () => {} })
+    channel.sendTime()
+    last().open()
+    channel.sendTime()
+    expect(last().sent).toEqual([{ type: 'join', campaignId: CAMPAIGN, view: 'screen' }])
+    last().receive(SCREEN)
+    channel.sendTime()
+    expect(last().sent.at(-1)).toEqual({ type: 'time', t: Date.now() })
+  })
+
   it('el láser junta sus puntos nuevos y manda como mucho 30, redondeados', () => {
     const channel = open('master', { onMessage: () => {} })
     last().open()

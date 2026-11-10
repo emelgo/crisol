@@ -10,6 +10,7 @@ import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { GroupKnowledge } from '../campaign/group-knowledge.tsx'
+import { SoundTab } from '../sound/sound-tab.tsx'
 import { ActorsTab } from './actor-folders.tsx'
 import { CombatPanel } from './combat-panel.tsx'
 import { CompendiumTab } from './compendium-tab.tsx'
@@ -35,7 +36,7 @@ import { useWindows } from './windows.tsx'
 
 const route = getRouteApi('/mundos/$worldId/campanas/$campaignId/mesa')
 
-const MASTER_TABS: readonly SidebarTab[] = ['scenes', 'combat', 'characters', 'compendium', 'pages']
+const MASTER_TABS: readonly SidebarTab[] = ['scenes', 'combat', 'characters', 'compendium', 'pages', 'sound']
 
 export type MasterSidebarState = ReturnType<typeof useMasterSidebar>
 
@@ -258,6 +259,10 @@ export function MasterSidebar({
           }
         />
       )
+    },
+    {
+      key: 'sound',
+      content: () => <SoundTab worldId={worldId} campaignId={campaignId} />
     }
   ]
   return <TableSidebar items={items} tab={tab} onTab={pick} folded={folded} onFold={setFolded} />

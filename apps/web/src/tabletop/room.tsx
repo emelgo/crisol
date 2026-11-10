@@ -6,7 +6,7 @@
 import type { TablePresenceEntry } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Check, Copy, LogOut, MoreHorizontal, Pause, Play, RefreshCw, Tv } from 'lucide-react'
-import { useCallback, useId, useRef, useState } from 'react'
+import { type ReactNode, useCallback, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
@@ -50,7 +50,7 @@ function Avatar({
 }
 
 /** En la barra de la escena: los retratos (abren el panel) y la pausa */
-export function RoomBar({ campaignId }: { campaignId: string }) {
+export function RoomBar({ campaignId, extra }: { campaignId: string; extra?: ReactNode }) {
   const { t } = useTranslation()
   const room = useRoom(campaignId)
   const controls = useControls(campaignId)
@@ -109,6 +109,7 @@ export function RoomBar({ campaignId }: { campaignId: string }) {
       >
         {paused ? <Play size={15} aria-hidden="true" /> : <Pause size={15} aria-hidden="true" />}
       </button>
+      {extra}
     </div>
   )
 }

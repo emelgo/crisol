@@ -1867,6 +1867,70 @@ export const es = {
     rename: 'Cambiar el nombre',
     delete: 'Quitar la carpeta'
   },
+  // El sonido (docs/specs/sonido.md, sound/)
+  sound: {
+    playing: 'Suena',
+    nothing: 'Nada suena',
+    open: 'Sonido: abrir la pestaña',
+    unlock: 'Activar sonido',
+    ambient: 'Ambiente',
+    effects: 'Efectos',
+    ofList: '{{kind}} · lista «{{name}}»',
+    pause: 'Pausar',
+    resume: 'Seguir',
+    next: 'Siguiente',
+    fadeOut: 'Fundir y parar',
+    stop: 'Parar',
+    volume: 'Volumen',
+    play: 'Poner {{name}}',
+    stopList: 'Parar {{name}}',
+    moreOf: 'Más de {{name}}',
+    edit: 'Editar',
+    delete: 'Borrar',
+    deleteConfirm: '¿Borrar la lista «{{name}}»?',
+    newList: 'Lista nueva',
+    noLists: 'Sin listas aún.',
+    noEffects: 'Sin efectos aún.',
+    tracks_one: '{{count}} pista',
+    tracks_other: '{{count}} pistas',
+    modes: {
+      sequential: 'En orden',
+      random: 'Al azar',
+      simultaneous: 'Todas a la vez',
+      soundboard: 'Botonera'
+    },
+    device: 'En este aparato',
+    mute: 'Silenciar este aparato',
+    youtube: {
+      title: 'YouTube',
+      shrink: 'Plegar',
+      grow: 'Agrandar',
+      embed: 'Este vídeo no deja insertarse.',
+      missing: 'Este vídeo no está disponible.'
+    },
+    dialog: {
+      create: 'Lista nueva',
+      edit: 'Editar la lista',
+      name: 'Nombre',
+      kind: 'Clase',
+      mode: 'Modo',
+      fade: 'Fundido (s)',
+      tracks: 'Pistas',
+      noTracks: 'Añade archivos de audio o enlaces de YouTube.',
+      trackName: 'Nombre de la pista',
+      loop: 'Repetir',
+      remove: 'Quitar {{name}}',
+      fromWorld: 'Archivo del mundo',
+      pickFile: 'Elige un audio',
+      upload: 'Subir',
+      youtube: 'Enlace de YouTube',
+      addYoutube: 'Añadir',
+      measuring: 'Midiendo…',
+      save: 'Guardar',
+      createSubmit: 'Crear',
+      noAudio: 'No hay audios en el mundo.'
+    }
+  },
   // La sala en la Mesa del máster (docs/specs/sala.md, tabletop/room.tsx)
   room: {
     title: 'Sala',
@@ -2049,6 +2113,7 @@ export const es = {
       pages: 'Páginas',
       settings: 'Campaña',
       notes: 'Notas',
+      sound: 'Sonido',
       fold: 'Plegar la barra',
       unfold: 'Desplegar la barra',
       attention: ' (hay algo nuevo)'
@@ -3450,6 +3515,16 @@ export const es = {
     passwordChanged: 'Contraseña cambiada'
   },
   errors: {
+    // El sonido (docs/specs/sonido.md)
+    BAD_YOUTUBE: 'No es un enlace de un vídeo de YouTube',
+    NOT_AUDIO: 'No es un archivo de audio',
+    EMPTY_PLAYLIST: 'La lista no tiene pistas',
+    SOUNDBOARD_NEEDS_TRACK: 'En una botonera, cada pista es un botón',
+    YOUTUBE_EMBED: 'Este vídeo no deja insertarse',
+    YOUTUBE_MISSING: 'Ese vídeo no está disponible',
+    YOUTUBE_NO_DURATION: 'No se pudo saber cuánto dura',
+    YOUTUBE_UNAVAILABLE: 'No se pudo cargar YouTube',
+    AUDIO_UNREADABLE: 'No se pudo leer ese audio',
     // Lo que no deja la Mesa a un jugador (docs/specs/mover-jugadores.md)
     WALL: 'Hay un muro',
     NOT_YOUR_TURN: 'No es tu turno',

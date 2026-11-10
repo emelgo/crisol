@@ -30,6 +30,8 @@ export interface TableChannel {
   sendMeasure(measure: LiveMeasure | null): void
   /** Los puntos nuevos de la estela del láser: se juntan y salen como mucho cada `LIVE_MS` */
   sendLaser(points: Array<{ x: number; y: number }>): void
+  /** Pide la hora al servidor, para medir el desfase del reloj (el sonido: docs/specs/sonido.md) */
+  sendTime(): void
   close(): void
 }
 
@@ -217,6 +219,9 @@ export function connectTable(
     sendLaser(points) {
       laser.push(...points.map((p) => ({ x: Math.round(p.x), y: Math.round(p.y) })))
       laserTimer = throttle(laserAt, laserTimer, flushLaser)
+    },
+    sendTime() {
+      if (isOpen() && ready) socket?.send(JSON.stringify({ type: 'time', t: Date.now() }))
     },
     close() {
       stopped = true

@@ -19,6 +19,8 @@ import { useErrorText } from '../api/errors.ts'
 import { PlayerPage } from '../campaign/world-pages.tsx'
 import { CrisolMark } from '../components/brand.tsx'
 import { PageTitle } from '../components/page-title.tsx'
+import { SoundStage } from '../sound/controls.tsx'
+import { useTableSound } from '../sound/use-table-sound.tsx'
 import { ReadAsProvider } from '../wiki/read-as.tsx'
 import { Bubbles, useBubbles } from './bubbles.tsx'
 import { canvasViewOf, sceneViewportOf, smoothToward } from './camera.ts'
@@ -102,6 +104,10 @@ export function TableScreen({
 }) {
   const inMesa = viewer === 'player'
   const { t } = useTranslation()
+  // El sonido de la partida: suena aquí también (docs/specs/sonido.md)
+  const sound = useTableSound()
+  const handleSound = sound.handle
+  const bindSound = sound.bind
   const [screen, setScreen] = useState<ScreenView | null>(null)
   const [followed, setFollowed] = useState<SceneViewport | null>(null)
   const [full, setFull] = useState(false)
@@ -180,17 +186,19 @@ export function TableScreen({
               ...message.points.map((p) => ({ ...p, t: now }))
             ].slice(-80)
             setLaserTick((n) => n + 1)
-          }
+          } else if (message.type === 'sound' || message.type === 'time') handleSound(message)
         },
         onStatus: setStatus
       }
     )
     channel.current = connection
+    bindSound(() => connection.sendTime?.())
     return () => {
+      bindSound(null)
       connection.close()
       channel.current = null
     }
-  }, [campaignId, viewer])
+  }, [campaignId, viewer, handleSound, bindSound])
 
   const presented = screen?.scene ?? null
   // La niebla: lo explorado y lo que ve el grupo (sin ella, la API de prueba, se ve todo)
@@ -417,6 +425,7 @@ export function TableScreen({
   return (
     <div className={inMesa ? `${styles.screen} ${styles.inMesa}` : styles.screen}>
       {screen && !inMesa && <PageTitle className={styles.hidden}>{screen.campaignName}</PageTitle>}
+      <SoundStage sound={sound} variant={inMesa ? 'mesa' : 'screen'} />
       <div
         ref={host}
         className={mine.length > 0 ? `${styles.canvas} ${styles.playable}` : styles.canvas}
