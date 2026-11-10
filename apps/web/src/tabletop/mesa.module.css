@@ -787,8 +787,10 @@
   display: flex;
   gap: 0.75rem;
   /* Alineada con los textos de la pestaña (Enrique, 2026-11-10) */
-  margin-block-start: 1rem;
-  padding: 0 0 0.8rem;
+  /* Con su raya, pegada a lo de encima, y la leyenda debajo */
+  margin-block-start: 0.75rem;
+  padding: 0.6rem 0 0.8rem;
+  border-block-start: 1px solid var(--glass-edge);
   color: var(--color-muted);
   font-size: 0.75rem;
 }

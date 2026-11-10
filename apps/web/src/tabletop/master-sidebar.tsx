@@ -155,16 +155,6 @@ export function MasterSidebar({
         <>
           <ScenesGrid worldId={worldId} table={table} onOpen={onOpen} onCreate={onCreateScene} />
           <InScene campaignId={campaignId} table={table} tokens={tokens} onPick={onPickToken} />
-          <h3 className={styles.tabSection}>{t('tabletop.tabs.encounters')}</h3>
-          <EncountersList
-            worldId={worldId}
-            campaignId={campaignId}
-            systemId={systemId}
-            table={table}
-            selected={chosen}
-            canPlace={canPlace}
-            onPlace={onPlace}
-          />
         </>
       )
     },
@@ -211,6 +201,17 @@ export function MasterSidebar({
             onOpenCharacter={(character) =>
               windows?.open(sheetWindow({ kind: 'character', ...character }, campaignId, systemId))
             }
+          />
+          {/* Los encuentros son grupos de criaturas con su formación: van con ellas, no con las escenas (Enrique) */}
+          <h3 className={styles.tabSection}>{t('tabletop.tabs.encounters')}</h3>
+          <EncountersList
+            worldId={worldId}
+            campaignId={campaignId}
+            systemId={systemId}
+            table={table}
+            selected={chosen}
+            canPlace={canPlace}
+            onPlace={onPlace}
           />
           {chosen.length > 0 && (
             <>

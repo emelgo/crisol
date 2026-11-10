@@ -184,8 +184,8 @@ describe('las fichas en la mesa', () => {
     await user.type(label, 'Alfa')
     await user.tab()
     await waitFor(async () => expect((await tokensOf(api))[0]?.label).toBe('Alfa'))
-    // Con la ficha elegida, el panel guarda un encuentro con ella
-    await user.click(panel().getByRole('tab', { name: 'Escenas' }))
+    // Con la ficha elegida, el panel guarda un encuentro con ella (los encuentros, en Actores)
+    await user.click(panel().getByRole('tab', { name: 'Actores' }))
     await user.type(panel().getByLabelText('Guardar como encuentro (la elegida)'), 'Manada')
     await user.click(panel().getByRole('button', { name: 'Guardar' }))
     await waitFor(async () =>
@@ -215,9 +215,8 @@ describe('las fichas en la mesa', () => {
         }
       ]
     })
-    // Escenas ya está abierta (con los encuentros de antes): se vuelve a ella para verlo
-    await user.click(panel().getByRole('tab', { name: 'Compendio' }))
-    await user.click(panel().getByRole('tab', { name: 'Escenas' }))
+    // Los encuentros, en Actores
+    await user.click(panel().getByRole('tab', { name: 'Actores' }))
     await user.click(await panel().findByRole('button', { name: 'Poner en la mesa: Manada' }))
     await waitFor(async () => expect(await tokensOf(api)).toHaveLength(2))
     const [a, b] = await tokensOf(api)

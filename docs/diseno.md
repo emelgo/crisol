@@ -83,6 +83,8 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   altura**; al pulsarlos, el panel de la sala (quién está, pausa, cómo mueven, echar e invitación). Los ajustes de la
   campaña, encima desde su barra. **Borrar una campaña, solo desde Mis mundos** (su engranaje), nunca desde dentro de
   ella.
+- **Los encuentros, en Actores** (Enrique, 2026-11-10: «no me pegan» en Escenas): son grupos de criaturas con su
+  formación y van con ellas; en Escenas, solo lo de cada escena. Actores tiene un buscador para todo y carpetas.
 - **Cristal en lo que flota sobre el mapa de la Mesa** (Enrique, 2026-11-10: «me parece una pasada»; lienzo «La Mesa,
   con cristal», `out/lienzo-cristal/`): translúcido y con el mapa desenfocado detrás (tokens `--glass-*`) solo en piezas
   pequeñas que flotan: la barra de la escena, las herramientas, el zoom, las tiradas sobre el d20, la tira de turnos de la

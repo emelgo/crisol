@@ -95,8 +95,8 @@ test('fichas: Lía y tres goblins de un encuentro, moverlos, dañar a uno, ocult
     .dragTo(stage, { targetPosition: { x: lia.x - stageBox.x, y: lia.y - stageBox.y } })
   await expect(onTv.getByRole('listitem')).toHaveText(['Lía'])
 
-  // La emboscada, desde los encuentros (en Escenas): tres goblins en su formación, ilesos en la tele
-  await panel.getByRole('tab', { name: 'Escenas' }).click()
+  // La emboscada, desde los encuentros (en Actores): tres goblins en su formación, ilesos en la tele
+  await panel.getByRole('tab', { name: 'Actores' }).click()
   const ambush = await onScreen(stage, { x: 650, y: 250 })
   await panel
     .getByRole('listitem')
