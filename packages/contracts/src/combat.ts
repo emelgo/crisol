@@ -23,7 +23,8 @@ export const combatantView = z.object({
   hidden: z.boolean().describe('Oculto a los jugadores (él o su ficha)'),
   active: z.boolean().describe('Es su turno (o el de su grupo)'),
   life: z.object({ value: z.number(), max: z.number(), temp: z.number() }).nullable(),
-  conditions: z.array(tokenCondition)
+  conditions: z.array(tokenCondition),
+  controllers: z.array(z.string()).optional().describe('Las cuentas de los jugadores que lo llevan')
 })
 
 export type CombatantView = z.infer<typeof combatantView>
@@ -53,7 +54,9 @@ export const screenCombatant = z.object({
   img: z.string().nullable(),
   initiative: z.number().nullable().describe('La de los personajes; la de las criaturas, nunca'),
   active: z.boolean(),
-  defeated: z.boolean()
+  defeated: z.boolean(),
+  /** Las cuentas de los jugadores que lo llevan: en su turno, pasan turno (docs/specs/mover-jugadores.md) */
+  controllers: z.array(z.string()).optional()
 })
 
 /** La franja de turnos de la pantalla: la ronda y el orden, sin los ocultos */

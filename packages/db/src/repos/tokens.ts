@@ -6,6 +6,8 @@ import { and, asc, eq, inArray, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { type OperationContext, operation } from '../operation.ts'
 import { prepared } from '../prepared.ts'
+import { characters } from '../schema/characters.ts'
+import { campaignCreatures } from '../schema/creatures.ts'
 import { encounters, sceneTokens } from '../schema/scenes.ts'
 import { type CreatureValues, insertCreatures } from './creatures.ts'
 
@@ -119,4 +121,25 @@ export function saveEncounter(
 
 export function deleteEncounter(db: Database, context: OperationContext, id: string) {
   return operation(db, context, (w) => w.remove(encounters, id))
+}
+
+/**
+ * Quiénes llevan a cada uno en la Mesa de una campaña (docs/specs/mover-jugadores.md): el dueño de cada personaje y los
+ * jugadores a los que se asigna cada criatura en juego, por el id del personaje o de la criatura
+ */
+export async function controllersOf(db: Database, campaignId: string): Promise<Map<string, string[]>> {
+  const [owned, assigned] = await Promise.all([
+    db
+      .select({ id: characters.id, ownerId: characters.ownerId })
+      .from(characters)
+      .where(eq(characters.campaignId, campaignId)),
+    db
+      .select({ id: campaignCreatures.id, controlledBy: campaignCreatures.controlledBy })
+      .from(campaignCreatures)
+      .where(eq(campaignCreatures.campaignId, campaignId))
+  ])
+  const out = new Map<string, string[]>()
+  for (const row of owned) out.set(row.id, row.ownerId ? [row.ownerId] : [])
+  for (const row of assigned) out.set(row.id, row.controlledBy)
+  return out
 }

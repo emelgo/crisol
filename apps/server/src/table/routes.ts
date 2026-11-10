@@ -350,11 +350,14 @@ export function registerTableRoutes(
             announce({ campaignId: joined.campaignId, worldId: joined.worldId })
           return
         }
-        // Lo que va en vivo (el encuadre, el arrastre, la medida, el láser): solo del máster, y con un tope por segundo
-        if (joined.viewer !== 'master') return say({ type: 'error', code: 'BAD_MESSAGE' })
+        // Lo que va en vivo (el encuadre, el arrastre, la medida, el láser): del máster, y con un tope por segundo; de la
+        // Mesa de un jugador, solo el arrastre de sus fichas (docs/specs/mover-jugadores.md)
+        const player = joined.viewer === 'player' && message.type === 'drag'
+        if (joined.viewer !== 'master' && !player) return say({ type: 'error', code: 'BAD_MESSAGE' })
         const now = Date.now()
         if (now - window.start > 1000) window = { start: now, count: 0 }
         if (++window.count > MAX_LIVE_PER_SECOND) return
+        if (player) return table.drag(joined.campaignId, message.moves, socket, userId)
         if (message.type === 'viewport') table.viewport(joined.campaignId, message.view)
         else if (message.type === 'drag') table.drag(joined.campaignId, message.moves, socket)
         else if (message.type === 'measure') table.measure(joined.campaignId, message.measure, socket)

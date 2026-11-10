@@ -192,6 +192,7 @@ describe('Actions', () => {
       drawScene: true,
       placeTokens: true,
       moveTokens: true,
+      assignToken: true,
       updateToken: true,
       removeTokens: true,
       listEncounters: true,

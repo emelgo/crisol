@@ -108,6 +108,21 @@ export const screenView = z.object({
   /** La sala (docs/specs/sala.md): en pausa y cómo mueven los jugadores (opcional por la API de prueba de la web) */
   paused: z.boolean().optional(),
   movement: tableMovement.optional(),
+  /**
+   * Las puertas normales que el grupo ve (docs/specs/mover-jugadores.md): sus jugadores las abren y las cierran si no
+   * tienen llave (opcional por la API de prueba de la web)
+   */
+  doors: z
+    .array(
+      z.object({
+        id: z.uuid(),
+        a: z.object({ x: z.number(), y: z.number() }),
+        b: z.object({ x: z.number(), y: z.number() }),
+        open: z.boolean(),
+        locked: z.boolean()
+      })
+    )
+    .optional(),
   /** Lo que enseña el máster encima de la escena (docs/specs/ensenar.md) */
   show: z
     .object({ kind: z.enum(['page', 'image']), id: z.string(), title: z.string(), worldId: z.uuid() })
@@ -124,7 +139,12 @@ export type TableServerMessage =
   /** El encuadre del máster, a la pantalla que lo sigue */
   | { type: 'viewport'; view: z.infer<typeof sceneViewport> }
   /** Unas fichas mientras se arrastran (a la pantalla, solo las que ve) */
-  | { type: 'drag'; moves: Array<{ tokenId: string; x: number; y: number }> }
+  | {
+      type: 'drag'
+      moves: Array<{ tokenId: string; x: number; y: number }>
+      /** La cuenta del jugador que las arrastra (sin ella, el máster) */
+      by?: string
+    }
   /** La medida en curso del máster (null: se acabó) */
   | { type: 'measure'; measure: LiveMeasure | null }
   /** La estela del láser (a la pantalla, solo sus puntos que ve o vio el grupo) */

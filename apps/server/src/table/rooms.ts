@@ -4,6 +4,7 @@
  * encuadre del máster va en vivo a las pantallas que lo siguen, sin guardarse, y también la medida en curso (con «la
  * tele ve lo que mides») y el láser, solo en lo que el grupo ve o vio
  */
+
 import type {
   CampaignTableView,
   LiveMeasure,
@@ -12,6 +13,7 @@ import type {
   TableServerMessage,
   TableViewer
 } from '@crisol/contracts'
+import { type TableMovement, tableActionAllowed } from '@crisol/domain'
 
 /** Lo que la sala necesita de una conexión */
 export interface TableSocket {
@@ -45,9 +47,10 @@ export interface TableRooms {
   viewport(campaignId: string, view: SceneViewport): void
   /**
    * Unas fichas mientras el máster las arrastra: a las otras pestañas del máster, todas; a la pantalla, solo las que
-   * ve el grupo (de la escena presentada, sin ocultar) y mientras pasan por lo que ve
+   * ve el grupo (de la escena presentada, sin ocultar) y mientras pasan por lo que ve. Las de un jugador (`by`), solo
+   * las que lleva él y si la pausa, el modo y el turno le dejan (docs/specs/mover-jugadores.md)
    */
-  drag(campaignId: string, moves: TokenMove[], from: TableSocket): void
+  drag(campaignId: string, moves: TokenMove[], from: TableSocket, by?: string): void
   /**
    * La medida en curso del máster: a sus otras pestañas, siempre; a la pantalla, con «la tele ve lo que mides», si
    * mira la misma escena y la medida cae entera en lo que el grupo ve o vio (si no, se le quita la que tuviera)
@@ -72,6 +75,11 @@ interface Room {
   openTokens: Set<string>
   screenTokens: Set<string>
   screenVisible: ScreenSight | null
+  /** Quiénes llevan cada ficha que ve la pantalla, y lo que deja mover a los jugadores */
+  controllers: Map<string, readonly string[]>
+  paused: boolean
+  movement: TableMovement
+  activeControllers: readonly string[] | null
   /** Lo que el grupo ve o vio de la escena presentada, si es la abierta (la medida y el láser son de la abierta) */
   sameSceneMask: ScreenSight | null
   measureOnScreen: boolean
@@ -85,6 +93,12 @@ interface Room {
 
 type TokenMove = { tokenId: string; x: number; y: number }
 type Point = { x: number; y: number }
+
+/** Quiénes llevan al combatiente activo (null sin combate) */
+function activeOf(combat: CampaignTableView['combat']): string[] | null {
+  if (!combat) return null
+  return [...new Set(combat.combatants.filter((c) => c.active).flatMap((c) => c.controllers ?? []))]
+}
 
 const send = (socket: TableSocket, message: TableServerMessage) => socket.send(JSON.stringify(message))
 
@@ -109,6 +123,10 @@ export function createTableRooms(load: LoadTable, onError: (error: unknown) => v
     room.openTokens = new Set(table.master.tokens.map((t) => t.id))
     room.screenTokens = new Set(table.screen.tokens.map((t) => t.id))
     room.screenVisible = table.screenVisible ?? null
+    room.controllers = new Map(table.screen.tokens.map((t) => [t.id, t.controllers]))
+    room.paused = table.master.paused === true
+    room.movement = table.master.movement ?? 'free'
+    room.activeControllers = activeOf(table.master.combat)
     const same = table.master.open !== null && table.master.open.id === table.screen.scene?.id
     room.sameSceneMask = same ? (table.screenMask ?? null) : null
     room.measureOnScreen = table.master.measureOnScreen === true
@@ -144,6 +162,7 @@ export function createTableRooms(load: LoadTable, onError: (error: unknown) => v
   function stale(room: Room) {
     room.screenTokens = new Set()
     room.screenVisible = null
+    room.controllers = new Map()
   }
 
   /** En la cola de la sala, en orden y sin dejar que un fallo pare a los demás */
@@ -175,6 +194,10 @@ export function createTableRooms(load: LoadTable, onError: (error: unknown) => v
         openTokens: new Set<string>(),
         screenTokens: new Set<string>(),
         screenVisible: null,
+        controllers: new Map(),
+        paused: false,
+        movement: 'free',
+        activeControllers: null,
         sameSceneMask: null,
         measureOnScreen: false,
         measureShown: false,
@@ -209,16 +232,29 @@ export function createTableRooms(load: LoadTable, onError: (error: unknown) => v
       if (!room.follows) return
       for (const [socket, viewer] of room.sockets) if (viewer !== 'master') send(socket, { type: 'viewport', view })
     },
-    drag(campaignId, moves, from) {
+    drag(campaignId, moves, from, by) {
       const room = rooms.get(campaignId)
       if (!room) return
-      const own = moves.filter((m) => room.openTokens.has(m.tokenId))
+      const mayMove = (tokenId: string) =>
+        by === undefined
+          ? room.openTokens.has(tokenId)
+          : tableActionAllowed({
+              master: false,
+              userId: by,
+              paused: room.paused,
+              movement: room.movement,
+              combat: room.activeControllers === null ? null : { activeControllers: room.activeControllers },
+              controllers: room.controllers.get(tokenId) ?? []
+            }) === 'ok'
+      const own = moves.filter((m) => mayMove(m.tokenId))
       const sight = room.screenVisible
       const seen = own.filter((m) => room.screenTokens.has(m.tokenId) && sight?.hasPoint(m) === true)
+      // Al máster, las de su escena abierta (todas); a la pantalla y a las Mesas, las que ve el grupo
+      const toMaster = own.filter((m) => room.openTokens.has(m.tokenId))
       for (const [socket, viewer] of room.sockets) {
         if (socket === from) continue
-        const sent = viewer === 'master' ? own : seen
-        if (sent.length > 0) send(socket, { type: 'drag', moves: sent })
+        const sent = viewer === 'master' ? toMaster : seen
+        if (sent.length > 0) send(socket, { type: 'drag', moves: sent, ...(by ? { by } : {}) })
       }
     },
     measure(campaignId, measure, from) {

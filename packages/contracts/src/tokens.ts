@@ -47,7 +47,9 @@ export const tokenView = z.object({
   faction: z.enum(TOKEN_FACTIONS),
   hidden: z.boolean(),
   image: tokenImage.nullable(),
-  actor: tokenActor
+  actor: tokenActor,
+  /** Las cuentas que la mueven en la Mesa: el dueño de su personaje o a quienes se asigna su criatura */
+  controllers: z.array(z.string())
 })
 
 export type TokenView = z.infer<typeof tokenView>
@@ -68,7 +70,9 @@ export const screenToken = z.object({
   image: tokenImage.nullable(),
   /** De las criaturas; null en los personajes (los jugadores ya saben cómo están) */
   state: lifeWord.nullable(),
-  conditions: z.array(z.object({ name: z.string() }))
+  conditions: z.array(z.object({ name: z.string() })),
+  /** Las cuentas que pueden moverla (docs/specs/mover-jugadores.md) */
+  controllers: z.array(z.string())
 })
 
 export type ScreenToken = z.infer<typeof screenToken>
@@ -134,6 +138,19 @@ export const moveTokens = defineAction({
       .max(MAX_TOKENS_AT_ONCE)
   }),
   output: z.object({ tokens: z.array(tokenView) })
+})
+
+export const assignToken = defineAction({
+  name: 'assignToken',
+  kind: 'players',
+  description:
+    'Dice qué jugadores de la campaña llevan una criatura en juego (un familiar, una montura, una invocación): la mueven en su Mesa como su personaje. Sin nadie (userIds vacío), se la quita',
+  input: z.object({
+    campaignId: z.uuid(),
+    creatureId: z.uuid(),
+    userIds: z.array(z.string().min(1).max(100)).max(20).describe('Las cuentas de los jugadores')
+  }),
+  output: z.object({ creatureId: z.uuid(), controllers: z.array(z.string()) })
 })
 
 export const updateToken = defineAction({

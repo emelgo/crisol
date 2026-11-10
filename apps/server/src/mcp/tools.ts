@@ -490,6 +490,7 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   // Las fichas de la mesa y los encuentros (docs/specs/fichas.md); ver_mesa da las de la escena abierta
   poner_fichas: { action: 'placeTokens' },
   mover_fichas: { action: 'moveTokens' },
+  asignar_ficha: { action: 'assignToken' },
   cambiar_ficha: { action: 'updateToken' },
   quitar_fichas: { action: 'removeTokens' },
   ver_encuentros: { action: 'listEncounters' },

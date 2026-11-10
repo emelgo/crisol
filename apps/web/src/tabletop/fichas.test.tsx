@@ -340,6 +340,7 @@ describe('las fichas en la tele', () => {
     image: null,
     state: 'hurt',
     conditions: [],
+    controllers: [],
     ...patch
   })
   const screenOf = (tokens: ScreenView['tokens'], camera: ScreenView['camera'] = { mode: 'follow' }): ScreenView => ({

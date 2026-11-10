@@ -27,6 +27,7 @@ import { NotFoundError } from '@crisol/domain'
 import { type Play, startTurn } from '@crisol/systems'
 import { passTurn, type TurnState, turnAfterRemoval } from '@crisol/tabletop'
 import { creaturesChanged } from '../realtime/events.ts'
+import { tablePlayOf } from '../table/play.ts'
 import { combatViewOf, initiativeOf } from '../table/projection.ts'
 import { authorizedCampaign } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
@@ -95,6 +96,14 @@ const stateOf = (combat: Combat): TurnState => ({
 /** Lo que suma una tirada a sus dados (para deshacer empates): su total menos los dados que cuentan */
 const modifierOf = (roll: DiceRoll) =>
   roll.total - roll.dice.filter((d) => d.kept && typeof d.sides === 'number').reduce((n, d) => n + d.value, 0)
+
+/** El combate para un jugador: sin los ocultos ni la vida de las criaturas */
+const forPlayers = (view: CombatView): CombatView => ({
+  ...view,
+  combatants: view.combatants
+    .filter((c) => !c.hidden)
+    .map((c) => (c.kind === 'creature' ? { ...c, life: null, conditions: [] } : c))
+})
 
 /** El grupo de una criatura en juego: sus copias van juntas (un turno, como en dnd5e); la única, sola */
 const groupOf = (creature: { key: string; unique: boolean }) => (creature.unique ? null : creature.key)
@@ -342,7 +351,16 @@ export const combatActions = [
   }),
 
   implement(nextTurn, async (ctx, { campaignId }) => {
-    const { campaign, combat } = await combatOf(ctx, campaignId)
+    // El máster o, en su turno, quien lleva al combatiente activo (docs/specs/mover-jugadores.md)
+    const campaign = await authorizedCampaign(ctx, 'campaign.read', campaignId)
+    const play = await tablePlayOf(ctx, campaign)
+    const combat = await combatsRepo.findCombat(ctx.db, campaignId)
+    if (!play.master) {
+      if (play.table.paused) throw new InvalidRequestError('PAUSED', 'la partida está en pausa')
+      if (!combat || !play.activeControllers?.includes(play.userId))
+        throw new InvalidRequestError('NOT_YOUR_TURN', 'no es su turno')
+    }
+    if (!combat) throw new InvalidRequestError('NO_COMBAT', 'la campaña no tiene un combate empezado')
     const view = await combatViewOf(ctx, campaign, combat)
     if (view.combatants.length === 0) throw new InvalidRequestError('NO_COMBATANTS', 'el combate no tiene a nadie')
     const change = passTurn(view.combatants, stateOf(combat), 1)
@@ -358,6 +376,7 @@ export const combatActions = [
       { patch: { round: change.round, turnId: change.turn }, creatures, characters }
     )
     if (creatures.length > 0) ctx.realtime.publish(creaturesChanged({ campaignId, worldId: campaign.worldId }))
+    if (!play.master) return { combat: forPlayers(after), started: null }
     return { combat: after, started }
   }),
 

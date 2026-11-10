@@ -167,3 +167,13 @@ export async function removeCreaturesIn(w: Writer, campaignId: string, ids: read
 export function setCreatureHidden(db: Database, context: OperationContext, id: string, hidden: boolean) {
   return operation(db, context, (w) => w.update(campaignCreatures, id, { hidden }))
 }
+
+/** Los jugadores que la mueven en la Mesa (en su propia operación, con su historial) */
+export function setCreatureControllers(
+  db: Database,
+  context: OperationContext,
+  id: string,
+  userIds: readonly string[]
+) {
+  return operation(db, context, (w) => w.update(campaignCreatures, id, { controlledBy: [...new Set(userIds)] }))
+}

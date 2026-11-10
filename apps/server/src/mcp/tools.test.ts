@@ -21,6 +21,7 @@ describe('herramientas MCP', () => {
       'abrir_puerta',
       'acabar_combate',
       'aplicar_tirada',
+      'asignar_ficha',
       'borrar_carpeta_actores',
       'borrar_contenido',
       'borrar_encuentro',

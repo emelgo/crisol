@@ -484,6 +484,13 @@
       "when": 1794320608660,
       "tag": "0068_ensenar",
       "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "7",
+      "when": 1794321889823,
+      "tag": "0069_fichas_asignadas",
+      "breakpoints": true
     }
   ]
 }

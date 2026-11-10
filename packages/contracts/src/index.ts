@@ -202,6 +202,7 @@ import { getRandomTable, resetTableDraws, rollOnTable, updateRandomTable } from 
 import { createTag, deleteTag, listAccountTags, setFileTags, updateTag } from './tags.ts'
 import { createTemplate, deleteTemplate, getTemplate, listTemplates, updateTemplate } from './templates.ts'
 import {
+  assignToken,
   deleteEncounter,
   listEncounters,
   moveTokens,
@@ -472,6 +473,7 @@ export const ACTIONS = [
   drawScene,
   placeTokens,
   moveTokens,
+  assignToken,
   updateToken,
   removeTokens,
   listEncounters,
@@ -729,6 +731,7 @@ export type Actions = {
   drawScene: typeof drawScene
   placeTokens: typeof placeTokens
   moveTokens: typeof moveTokens
+  assignToken: typeof assignToken
   updateToken: typeof updateToken
   removeTokens: typeof removeTokens
   listEncounters: typeof listEncounters

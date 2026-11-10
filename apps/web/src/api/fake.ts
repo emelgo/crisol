@@ -615,7 +615,7 @@ export function fakeApi(
     }
   }
   // Las fichas (de momento, solo de personajes de la campaña) y los encuentros de cada mundo
-  type TokenRow = Omit<TokenView, 'actor'> & {
+  type TokenRow = Omit<TokenView, 'actor' | 'controllers'> & {
     campaignId: string
     actor: { kind: 'character' | 'creature'; id: string }
   }
@@ -626,6 +626,7 @@ export function fakeApi(
       const found = characters.find((c) => c.id === actor.id)
       return structuredClone({
         ...token,
+        controllers: found?.owner ? [found.owner.id] : [],
         actor: {
           kind: 'character' as const,
           id: actor.id,
@@ -642,6 +643,7 @@ export function fakeApi(
     const { card } = creatureCard(row)
     return structuredClone({
       ...token,
+      controllers: [...(row.controlledBy ?? [])],
       actor: {
         kind: 'creature' as const,
         id: actor.id,
@@ -905,6 +907,8 @@ export function fakeApi(
     overrides: Record<string, number>
     version: number
     hidden?: boolean
+    /** Los jugadores que la mueven en la Mesa */
+    controlledBy?: string[]
   }> = []
   const worldEntry = (worldId: string, systemId: string, key: string) => {
     const found = entriesOf(worldId, systemId).find((e) => e.item.key === key)
@@ -3607,6 +3611,13 @@ export function fakeApi(
         return tokenOf(Object.assign(token, pointOf(token.sceneId, move)))
       })
     }),
+    // Sin reglas de la Mesa en la API falsa: el máster asigna y cualquiera mueve
+    assignToken: ({ creatureId, userIds }) => {
+      const row = creatureById(creatureId)
+      row.controlledBy = [...new Set(userIds)]
+      row.version++
+      return { creatureId, controllers: [...row.controlledBy] }
+    },
     updateToken: ({ tokenId, ...patch }) => tokenOf(Object.assign(tokenById(tokenId), patch)),
     removeTokens: ({ tokenIds }) => {
       for (const id of tokenIds) tokens.splice(tokens.indexOf(tokenById(id)), 1)
@@ -3774,7 +3785,8 @@ export function fakeApi(
             img: t.actor.img,
             image: t.image,
             state: null,
-            conditions: t.actor.conditions.map((c) => ({ name: c.name }))
+            conditions: t.actor.conditions.map((c) => ({ name: c.name })),
+            controllers: t.controllers
           })),
           combat: null
         },

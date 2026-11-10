@@ -22,11 +22,14 @@ import {
   wallKindOf
 } from '@crisol/contracts'
 import { type OperationContext, scenesRepo as scenes, type scenesRepo, tableToolsRepo, visionRepo } from '@crisol/db'
-import { NotFoundError } from '@crisol/domain'
+import { ForbiddenError, NotFoundError } from '@crisol/domain'
 import { cellCenter, joinCollinear, type Point, type Wall } from '@crisol/tabletop'
 import type { z } from 'zod'
 import { pagesChanged } from '../realtime/events.ts'
+import { assertTablePlay, tablePlayOf } from '../table/play.ts'
 import { campaignTableView, sceneView, screenViewOf, tokensWithSenses, visionOf } from '../table/projection.ts'
+import { playerMayUseDoor } from '../table/rules.ts'
+import { wallOf } from '../table/vision.ts'
 import { authorizedCampaign, authorizedPage, authorizedScene, sceneOfCampaign } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
 import { implement } from './registry.ts'
@@ -446,11 +449,21 @@ export const visionActions = [
   }),
 
   implement(setDoor, async (ctx, { campaignId, wallId, open }) => {
-    const campaign = await authorizedCampaign(ctx, 'table.manage', campaignId)
+    const campaign = await authorizedCampaign(ctx, 'campaign.read', campaignId)
+    const play = await tablePlayOf(ctx, campaign)
     const wall = await visionRepo.findWall(ctx.db, wallId)
     if (!wall || wall.worldId !== campaign.worldId) throw new NotFoundError('wall')
+    // El máster abre y cierra todas (también las secretas y las que tienen llave); un jugador, las normales sin llave
+    // que ve su grupo en la escena presentada, si la pausa y el modo le dejan
+    if (!play.master) {
+      const presented = play.table.screenHidden ? null : play.table.presentedSceneId
+      if (wall.sceneId !== presented) throw new ForbiddenError('table.play')
+      assertTablePlay(play, null)
+      const scene = await scenes.findScene(ctx.db, wall.sceneId)
+      const vision = scene ? await visionOf(ctx, campaign, scene) : null
+      if (!vision || !playerMayUseDoor(wallOf(wall), vision.visible)) throw new ForbiddenError('table.play')
+    }
     if (!wall.door) throw new InvalidRequestError('NOT_A_DOOR', 'ese muro no es una puerta')
-    // El máster abre y cierra todas (también las secretas y las que tienen llave)
     const { scene, state } = await campaignScene(ctx, campaign, wall.sceneId)
     await visionRepo.setDoors(
       ctx.db,
