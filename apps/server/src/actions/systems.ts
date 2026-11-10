@@ -134,9 +134,7 @@ export async function findReadable(ctx: ActionContext, organizationId: string, s
 /** Todo el contenido de un sistema: el de la cuenta, de la base de datos (los de serie no traen) */
 async function allContent(ctx: ActionContext, found: { document: System; row: systemsRepo.SystemRow | null }) {
   // Lo pendiente de revisar no se copia ni se baja: aún no es del sistema
-  return found.row
-    ? (await systemsRepo.listContent(ctx.db, found.row.id)).filter((row) => !row.review).map(contentOf)
-    : []
+  return found.row ? (await systemsRepo.listContent(ctx.db, found.row.id)).map(contentOf) : []
 }
 
 /** Lo que se guarda de un documento del contenido */
@@ -149,7 +147,9 @@ const toValues = (item: ContentItem): systemsRepo.ContentValues => ({
   mechanics: (item.mechanics as Record<string, unknown> | undefined) ?? null,
   ref: (item.ref as Record<string, unknown> | undefined) ?? null,
   img: item.img ?? null,
-  table: (item.table as Record<string, unknown> | undefined) ?? null
+  table: (item.table as Record<string, unknown> | undefined) ?? null,
+  // Lo pendiente de revisar sigue pendiente; guardar una entrada a mano la da por buena
+  review: ((item as { review?: unknown }).review as systemsRepo.ContentValues['review']) ?? null
 })
 
 /**

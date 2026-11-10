@@ -257,6 +257,85 @@ describe('los libros de un sistema y lo pendiente de revisar (ADR-0021)', () => 
     ).toContain('bola_de_fuego_2024')
   })
 
+  it('lo pendiente no se lee por su clave ni se copia al mundo; cambiarle el tipo al aceptarlo se valida', async () => {
+    const five = await import5e()
+    await ok200('createBook', { systemId: five, version: 1, name: 'Grimorio' })
+    await ok200('proposeContent', {
+      systemId: five,
+      source: 'grimorio',
+      items: [spell('lanza_de_ceniza', 'Lanza de ceniza', 88)]
+    })
+    expect((await ok200('getSystemContent', { systemId: five, keys: ['lanza_de_ceniza'] })).items).toEqual([])
+    const world = await ok200('createWorld', { name: 'Eana' })
+    const copy = await code('copyContent', { worldId: world.id, systemId: five, key: 'lanza_de_ceniza', to: 'world' })
+    expect(copy.status).not.toBe(200)
+    // Una tabla que se quiere aceptar como conjuro no vale (un conjuro no lleva filas): no se acepta
+    await ok200('proposeContent', {
+      systemId: five,
+      source: 'grimorio',
+      items: [
+        {
+          type: 'tabla',
+          key: 'ecos_salvajes',
+          data: { name: { es: 'Ecos salvajes' } },
+          table: { rows: [{ id: 'a', from: 1, to: 2, text: 'Un eco' }] },
+          review: { page: 113 }
+        }
+      ]
+    })
+    expect(
+      (await code('settlePending', { systemId: five, accept: ['ecos_salvajes'], types: { ecos_salvajes: 'conjuro' } }))
+        .code
+    ).toBe('SYSTEM_INVALID')
+    // Claves repetidas en una tanda: no se proponen
+    expect(
+      (
+        await code('proposeContent', {
+          systemId: five,
+          source: 'grimorio',
+          items: [spell('velo', 'Velo', 1), spell('velo', 'Velo', 2)]
+        })
+      ).status
+    ).toBe(400)
+  })
+
+  it('un libro desde un archivo, de una vez: lo que ya usa otro libro se renombra, sin pisarlo', async () => {
+    const five = await import5e()
+    const done = await ok200('importBook', {
+      systemId: five,
+      version: 1,
+      name: 'Grimorio',
+      items: [
+        {
+          type: 'conjuro',
+          key: 'bola_de_fuego_2024',
+          data: { name: { es: 'Bola de fuego de Eana' }, nivel: 3, escuela: 'evocacion' }
+        },
+        { type: 'conjuro', key: 'velo_de_eana', data: { name: { es: 'Velo de Eana' }, nivel: 3, escuela: 'ilusion' } }
+      ]
+    })
+    expect(done).toMatchObject({ key: 'grimorio', count: 2, renamed: 1 })
+    // El de las reglas de serie sigue siendo suyo
+    const [original] = (await ok200('getSystemContent', { systemId: five, keys: ['bola_de_fuego_2024'] })).items
+    expect(original).toMatchObject({ source: 'srd521', data: { name: { es: 'Bola de fuego' } } })
+    expect((await books(five)).books.find((b: { key: string }) => b.key === 'grimorio')).toMatchObject({ count: 2 })
+  })
+
+  it('cambiar un libro en español no le quita sus otros idiomas', async () => {
+    const five = await import5e()
+    const before = (await books(five)).books.find((b: { key: string }) => b.key === 'srd521')
+    await ok200('updateBook', { systemId: five, version: 1, key: 'srd521', name: 'Reglas básicas' })
+    const system = await ok200('getSystem', { systemId: five })
+    const source = system.document.sources.find((s: { key: string }) => s.key === 'srd521')
+    expect(source.attribution).toEqual(
+      (await ok200('importSystem', { file: exampleFile('5e') })).system.document.sources.find(
+        (s: { key: string }) => s.key === 'srd521'
+      ).attribution
+    )
+    expect(typeof source.name === 'string' ? source.name : source.name.es).toBe('Reglas básicas')
+    expect(before.name).not.toBe('Reglas básicas')
+  })
+
   it('solo el propietario del sistema cambia sus libros y revisa lo pendiente', async () => {
     const five = await import5e()
     const other = await signUpTestUser(auth, { name: 'Bruno', email: 'bruno@crisol.test' })

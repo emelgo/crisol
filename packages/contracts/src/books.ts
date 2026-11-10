@@ -132,6 +132,7 @@ export const proposeContent = defineAction({
       .array(contentItem.omit({ source: true }).extend({ review: contentReview }))
       .min(1)
       .max(100)
+      .refine((items) => new Set(items.map((i) => i.key)).size === items.length, { message: 'Claves repetidas' })
   }),
   output: z.object({
     proposed: z.array(z.string()),
@@ -201,5 +202,24 @@ export const getBookEntries = defineAction({
         entries: z.array(z.object({ key: z.string(), name: z.string() }))
       })
     )
+  })
+})
+
+export const importBook = defineAction({
+  name: 'importBook',
+  kind: 'write',
+  description:
+    'Añade a un sistema de la cuenta un libro con su contenido, de una vez (el de otro sistema de Crisol, de su archivo). Las claves que ya usa otro libro del sistema se renombran (no se pisa nada); con un error de validación no se guarda nada',
+  input: z.object({
+    systemId: z.uuid(),
+    version: z.int().min(1),
+    ...bookFields,
+    items: z.array(contentItem.omit({ source: true })).max(5000)
+  }),
+  output: z.object({
+    version: z.int(),
+    key: z.string(),
+    count: z.int(),
+    renamed: z.int().describe('Cuántas claves se renombraron porque ya las usaba otro libro')
   })
 })

@@ -5,6 +5,7 @@ import { expect, type Page, test } from '@playwright/test'
 import { E2E_PORT } from '../servidor.ts'
 import {
   campaignLink,
+  campaignPath,
   connectClaude,
   createCampaign,
   gotoLive,
@@ -44,7 +45,7 @@ test('@fugas una jugadora no recibe nada de lo que no puede ver: ni la campaña 
   browser
 }) => {
   const firstLink = await campaignLink(page)
-  const campaignA = new URL(page.url()).pathname
+  const campaignA = campaignPath(page)
   let seen: ReturnType<typeof capture> | undefined
   const player = await newPlayer(browser, firstLink, 'Jugadora', (p) => {
     seen = capture(p)

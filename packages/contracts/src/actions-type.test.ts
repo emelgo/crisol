@@ -241,7 +241,8 @@ describe('Actions', () => {
       listPending: true,
       settlePending: true,
       getBookEntries: true,
-      getTablePresence: true
+      getTablePresence: true,
+      importBook: true
     }
     expect(Object.keys(names).sort()).toEqual(ACTIONS.map((a) => a.name).sort())
   })

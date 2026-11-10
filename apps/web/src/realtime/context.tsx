@@ -71,7 +71,9 @@ function changedBy(message: RealtimeMessage): QueryKey[] {
       if (message.what === 'commonFiles') return [['files'], ['commonFiles'], ['tags']]
       if (message.what === 'tags') return [['tags']]
       if (message.what === 'templates') return [['templates']]
-      if (message.what === 'systems') return [['systems']]
+      // Los sistemas y sus libros: lo pendiente de revisar (lo que propone la IA) y los compendios que los usan
+      if (message.what === 'systems')
+        return [['systems'], ['systemBooks'], ['pending'], ['bookEntries'], ['compendium']]
       // Lo del mundo sale en el compendio de sus campañas y en lo que llevan sus personajes
       if (message.what === 'worldContent') return [['compendium'], ['characters'], ['character']]
       // El texto de una página: lo que la enseña en otra y los enlaces (sus trozos)

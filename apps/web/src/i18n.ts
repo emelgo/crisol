@@ -1726,6 +1726,7 @@ export const es = {
     newBook: 'Libro nuevo',
     inSystem: 'en el sistema {{system}}',
     open: 'Abrir {{name}}',
+    openPrefix: 'Abrir',
     origin: { pdf: 'De un PDF', file: 'De un archivo', own: 'Hecho a mano', builtIn: 'De serie' },
     pending_one: '{{count}} para revisar',
     pending_other: '{{count}} para revisar',

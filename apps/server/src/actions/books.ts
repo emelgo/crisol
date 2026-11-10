@@ -8,6 +8,7 @@ import {
   deleteBook,
   getBookEntries,
   getSystemBooks,
+  importBook,
   listPending,
   type PendingEntry,
   proposeContent,
@@ -52,6 +53,13 @@ export function bookKeyOf(name: string, taken: ReadonlySet<string>) {
 const fold = (text: string) => text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim()
 
 const nameOf = (name: unknown) => textOf(name as Parameters<typeof textOf>[0])
+
+/** Los campos del libro que pueden ir en varios idiomas */
+const TEXTS = new Set(['name', 'description', 'attribution', 'publisher'])
+
+/** Un texto nuevo en español: si el de antes iba en varios idiomas, solo cambia el suyo */
+const withText = (current: unknown, value: string) =>
+  current && typeof current === 'object' ? { ...(current as Record<string, string>), es: value } : value
 
 /** Las campañas que usan cada libro del sistema (las que lo eligieron; sin elegir, todos) */
 async function usersOf(ctx: ActionContext, document: System, systemId: string, organizationId: string | null) {
@@ -135,6 +143,63 @@ export const bookActions = [
     }
   }),
 
+  implement(importBook, async (ctx, { systemId, version, items, ...fields }) => {
+    const row = await ownWritable(ctx, systemId)
+    const document = row.document as unknown as System
+    const key = bookKeyOf(fields.name, new Set((document.sources ?? []).map((s) => s.key)))
+    const source = {
+      key,
+      name: fields.name,
+      license: fields.license ?? 'Uso privado',
+      attribution: fields.attribution || fields.name,
+      ...(fields.edition ? { edition: fields.edition } : {}),
+      ...(fields.publisher ? { publisher: fields.publisher } : {}),
+      ...(fields.description ? { description: fields.description } : {}),
+      origin: fields.origin ?? 'file',
+      ...(fields.requires?.length ? { requires: fields.requires } : {}),
+      version: 1
+    }
+    const { system } = validated({ ...structuredClone(document), sources: [...(document.sources ?? []), source] })
+    const given = items.map((item) => ({ ...item, source: key }) as unknown as ContentItem)
+    const problems = validateContent(system, given)
+    if (problems.some((p) => p.severity === 'error')) invalid(problems)
+    const counts = await systemsRepo.contentCounts(ctx.db, [row.id])
+    if ((counts.get(row.id) ?? 0) + given.length > LIMITS.contentDocuments)
+      throw new InvalidRequestError('TOO_MUCH_CONTENT', `como mucho, ${LIMITS.contentDocuments} documentos`)
+    let done: Awaited<ReturnType<typeof systemsRepo.createBookWith>>
+    try {
+      done = await systemsRepo.createBookWith(
+        ctx.db,
+        historyContext(
+          ctx,
+          'createBook',
+          { name: fields.name, system: textOf(document.name), count: given.length },
+          { organizationId: row.organizationId }
+        ),
+        row.id,
+        version,
+        system as unknown as Record<string, unknown>,
+        key,
+        given.map((item) => ({
+          type: item.type,
+          key: item.key,
+          source: key,
+          data: item.data,
+          concept: item.concept ?? null,
+          mechanics: (item.mechanics as Record<string, unknown> | undefined) ?? null,
+          ref: (item.ref as Record<string, unknown> | undefined) ?? null,
+          img: item.img ?? null,
+          table: (item.table as Record<string, unknown> | undefined) ?? null
+        }))
+      )
+    } catch (error) {
+      if (error instanceof systemsRepo.SystemChangedError) throw changed()
+      throw error
+    }
+    ctx.realtime.publish(systemsChanged(row.organizationId))
+    return { version: done.system.version, key, count: done.count, renamed: done.renamed }
+  }),
+
   implement(createBook, async (ctx, { systemId, version, key, ...fields }) => {
     const row = await ownWritable(ctx, systemId)
     const document = row.document as unknown as System
@@ -173,6 +238,8 @@ export const bookActions = [
     for (const [field, value] of Object.entries(changes)) {
       if (value === undefined) continue
       if (value === null || (Array.isArray(value) && value.length === 0)) delete next[field]
+      // Un texto en varios idiomas cambia el suyo (el español) sin perder los otros
+      else if (typeof value === 'string' && TEXTS.has(field)) next[field] = withText(next[field], value)
       else next[field] = value
     }
     if (newVersion) next.version = (current.version ?? 1) + 1
@@ -334,6 +401,17 @@ export const bookActions = [
     const system = row.document as unknown as System
     for (const [key, type] of Object.entries(types))
       if (!system.types[type]) throw new InvalidRequestError('BAD_TYPE', `«${key}»: no existe el tipo «${type}»`)
+    // Lo que cambia de tipo tiene que valer con su tipo nuevo antes de verse
+    const retyped = Object.keys(types).filter((key) => accept.includes(key))
+    if (retyped.length > 0) {
+      const rows = (await systemsRepo.listPending(ctx.db, row.id)).filter((r) => retyped.includes(r.key))
+      const items = rows.map((r) => {
+        const { review: _, ...item } = contentOf(r) as ContentItem & { review?: unknown }
+        return { ...item, type: types[r.key] as string } as ContentItem
+      })
+      const problems = validateContent(system, items)
+      if (problems.some((p) => p.severity === 'error')) invalid(problems)
+    }
     const done = await systemsRepo.settlePending(
       ctx.db,
       historyContext(

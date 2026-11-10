@@ -2870,6 +2870,39 @@ export function fakeApi(
         })
       }
     },
+    importBook: ({ systemId, version, items, ...fields }) => {
+      const own = ownSystems.find((s) => s.id === systemId && !s.deleted)
+      if (!own) throw new ApiError('NOT_FOUND', 404)
+      if (own.version !== version) throw new ApiError('SYSTEM_CHANGED', 400)
+      const taken = new Set((own.document.sources ?? []).map((s) => s.key))
+      const base =
+        fields.name
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '_')
+          .replace(/^_+|_+$/g, '') || 'libro'
+      let key = base
+      for (let n = 2; taken.has(key); n++) key = `${base}_${n}`
+      own.document = validSystem({
+        ...structuredClone(own.document),
+        sources: [
+          ...(own.document.sources ?? []),
+          { license: 'Uso privado', attribution: fields.name, ...fields, key, version: 1 }
+        ]
+      }).system
+      const used = new Set(own.content.map((c) => c.key))
+      let renamed = 0
+      for (const item of items) {
+        let k = item.key
+        if (used.has(k)) {
+          renamed++
+          k = `${key}_${item.key}`
+        }
+        used.add(k)
+        own.content.push({ ...structuredClone(item), key: k, source: key } as ContentItem)
+      }
+      own.version++
+      return { version: own.version, key, count: items.length, renamed }
+    },
     createBook: ({ systemId, version, key, ...fields }) => {
       const own = ownSystems.find((s) => s.id === systemId && !s.deleted)
       if (!own) throw new ApiError('NOT_FOUND', 404)

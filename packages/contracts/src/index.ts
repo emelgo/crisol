@@ -4,6 +4,7 @@ import {
   deleteBook,
   getBookEntries,
   getSystemBooks,
+  importBook,
   listPending,
   proposeContent,
   settlePending,
@@ -508,7 +509,8 @@ export const ACTIONS = [
   listPending,
   settlePending,
   getBookEntries,
-  getTablePresence
+  getTablePresence,
+  importBook
 ]
 
 /** Las acciones por nombre, solo como tipo: la web las usa sin cargar zod */
@@ -750,4 +752,5 @@ export type Actions = {
   settlePending: typeof settlePending
   getBookEntries: typeof getBookEntries
   getTablePresence: typeof getTablePresence
+  importBook: typeof importBook
 }

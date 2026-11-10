@@ -103,8 +103,13 @@ export async function contentCounts(db: Database, ids: readonly string[]) {
   return new Map(rows.map((r) => [r.systemId, r.n]))
 }
 
-export function listContent(db: Database, systemId: string) {
-  return db.select().from(systemContent).where(eq(systemContent.systemId, systemId)).orderBy(asc(systemContent.key))
+/** Su contenido; lo pendiente de revisar (ADR-0021), solo si se pide (al fundir un archivo encima, que no se pierda) */
+export function listContent(db: Database, systemId: string, { pending = false }: { pending?: boolean } = {}) {
+  return db
+    .select()
+    .from(systemContent)
+    .where(and(eq(systemContent.systemId, systemId), pending ? undefined : isNull(systemContent.review)))
+    .orderBy(asc(systemContent.key))
 }
 
 /** Su contenido de un tipo (para repartirlo en las carpetas de su compendio) */
@@ -112,7 +117,7 @@ export function listContentOfType(db: Database, systemId: string, type: string) 
   return db
     .select()
     .from(systemContent)
-    .where(and(eq(systemContent.systemId, systemId), eq(systemContent.type, type)))
+    .where(and(eq(systemContent.systemId, systemId), eq(systemContent.type, type), isNull(systemContent.review)))
     .orderBy(asc(systemContent.key))
 }
 
@@ -158,7 +163,9 @@ export function contentByKeys(db: Database, systemId: string, keys: readonly str
   return db
     .select()
     .from(systemContent)
-    .where(and(eq(systemContent.systemId, systemId), inArray(systemContent.key, [...keys])))
+    .where(
+      and(eq(systemContent.systemId, systemId), inArray(systemContent.key, [...keys]), isNull(systemContent.review))
+    )
 }
 
 /** Uno nuevo, con su contenido (el de aquel del que se copia, o el del archivo que se sube) */
@@ -327,6 +334,49 @@ export function deleteBook(
       system: read(await w.update(systems, systemId, { document: JSON.stringify(document) })),
       deleted: found.length
     }
+  })
+}
+
+/**
+ * Un libro con su contenido, de una vez: el documento (ya con el libro) y sus entradas, si la versión es la que se
+ * tenía. Las claves ya usadas en el sistema se renombran con el prefijo del libro (`renamed`)
+ */
+export function createBookWith(
+  db: Database,
+  context: OperationContext,
+  systemId: string,
+  version: number,
+  document: Record<string, unknown>,
+  source: string,
+  items: readonly ContentValues[]
+) {
+  return operation(db, context, async (w) => {
+    const [current] = await w.read
+      .select({ version: systems.version })
+      .from(systems)
+      .where(eq(systems.id, systemId))
+      .for('update')
+    if (!current || current.version !== version) throw new SystemChangedError()
+    const taken = new Set(
+      (
+        await w.read.select({ key: systemContent.key }).from(systemContent).where(eq(systemContent.systemId, systemId))
+      ).map((r) => r.key)
+    )
+    let renamed = 0
+    const fresh = items.map((item) => {
+      let key = item.key
+      if (taken.has(key)) {
+        renamed++
+        const base = `${source}_${item.key}`.slice(0, 90)
+        key = base
+        for (let n = 2; taken.has(key); n++) key = `${base}_${n}`
+      }
+      taken.add(key)
+      return { ...item, key, source, systemId }
+    })
+    await w.insertMany(systemContent, fresh)
+    const row = read(await w.update(systems, systemId, { document: JSON.stringify(document) }))
+    return { system: row, count: fresh.length, renamed }
   })
 }
 

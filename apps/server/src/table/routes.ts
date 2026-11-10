@@ -79,6 +79,9 @@ async function readAll(stream: Readable) {
   return new Uint8Array(Buffer.concat(chunks))
 }
 
+/** Lo que se espera para avisar de quién está en la Mesa (juntando los cambios de entre medias) */
+const PRESENCE_MS = 300
+
 export function registerTableRoutes(
   app: FastifyInstance,
   env: ActionEnv & { table: TableRooms },
@@ -234,6 +237,23 @@ export function registerTableRoutes(
     for (const stop of stops) stop()
   })
   const users = new WeakMap<FastifyRequest, string>()
+  // Quién está en la Mesa: se avisa como mucho una vez por campaña cada poco (entrar, salir o cambiar de pestaña muchas
+  // veces seguidas no inunda a la campaña de avisos ni de lecturas)
+  const announcing = new Map<string, ReturnType<typeof setTimeout>>()
+  const announce = (scope: { campaignId: string; worldId: string }) => {
+    if (announcing.has(scope.campaignId)) return
+    announcing.set(
+      scope.campaignId,
+      setTimeout(() => {
+        announcing.delete(scope.campaignId)
+        env.realtime.publish(tablePresenceChanged(scope))
+      }, PRESENCE_MS)
+    )
+  }
+  app.addHook('onClose', async () => {
+    for (const timer of announcing.values()) clearTimeout(timer)
+    announcing.clear()
+  })
 
   app.get(
     '/api/table',
@@ -290,20 +310,23 @@ export function registerTableRoutes(
           const scope = { campaignId: campaign.id, worldId: campaign.worldId }
           // Quién está en la Mesa: entra (y sale con la conexión)
           env.presence?.add(campaign.id, socket, { userId, viewer: message.view })
-          env.realtime.publish(tablePresenceChanged(scope))
+          announce(scope)
           const leave = () => {
             leaveRoom()
             env.presence?.remove(scope.campaignId, socket)
-            env.realtime.publish(tablePresenceChanged(scope))
+            announce(scope)
           }
           joined = { campaignId: campaign.id, worldId: campaign.worldId, viewer: message.view, leave }
           return
         }
         if (!joined) return say({ type: 'error', code: 'NOT_JOINED' })
-        // Si tiene la pestaña a la vista: cualquiera que mire
+        // Si tiene la pestaña a la vista: cualquiera que mire, con el mismo tope por segundo que lo que va en vivo
         if (message.type === 'presence') {
+          const at = Date.now()
+          if (at - window.start > 1000) window = { start: at, count: 0 }
+          if (++window.count > MAX_LIVE_PER_SECOND) return
           if (env.presence?.setActive(joined.campaignId, socket, message.active))
-            env.realtime.publish(tablePresenceChanged({ campaignId: joined.campaignId, worldId: joined.worldId }))
+            announce({ campaignId: joined.campaignId, worldId: joined.worldId })
           return
         }
         // Lo que va en vivo (el encuadre, el arrastre, la medida, el láser): solo del máster, y con un tope por segundo

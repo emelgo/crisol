@@ -123,12 +123,12 @@ export function CampaignBooks({ worldId, worldName, campaign }: Props) {
                 <button
                   type="button"
                   className={styles.coverButton}
-                  aria-label={t('books.open', { name: book.name })}
                   onClick={(event) => {
                     const card = event.currentTarget
                     withTransition(card, () => flushSync(() => setOpened(book)))
                   }}
                 >
+                  <span className={styles.hidden}>{`${t('books.openPrefix')} `}</span>
                   <BookCover
                     book={book}
                     sub={subOf(t as (key: string) => string, book, books.data.editable)}

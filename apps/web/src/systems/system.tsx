@@ -68,12 +68,12 @@ export function SystemScreen() {
             <button
               type="button"
               className={books.coverButton}
-              aria-label={t('books.open', { name: book.name })}
               onClick={(event) => {
                 const card = event.currentTarget
                 withTransition(card, () => flushSync(() => setOpened(book)))
               }}
             >
+              <span className={books.hidden}>{`${t('books.openPrefix')} `}</span>
               <BookCover
                 book={book}
                 sub={[book.origin ? t(`books.origin.${book.origin}`) : '', book.edition].filter(Boolean).join(' · ')}
@@ -194,22 +194,25 @@ function NewBook({
   const create = useMutation({
     mutationFn: async () => {
       if (way === 'file' && fileBook) {
+        // De una vez: el libro y su contenido (lo que se llame como algo de otro libro, renombrado; no se pisa nada)
         const source = fileBook.source
-        const made = await api.call('createBook', {
+        const textOf = (value: unknown) =>
+          typeof value === 'string'
+            ? value
+            : value && typeof value === 'object'
+              ? String((value as Record<string, unknown>).es ?? Object.values(value as object)[0] ?? '')
+              : ''
+        const made = await api.call('importBook', {
           systemId,
           version,
-          name: name || String(source.name ?? ''),
+          name: name || textOf(source.name),
           origin: 'file',
           ...(typeof source.edition === 'string' ? { edition: source.edition } : {}),
           ...(typeof source.license === 'string' ? { license: source.license } : {}),
-          ...(typeof source.attribution === 'string' ? { attribution: source.attribution } : {})
+          ...(textOf(source.attribution) ? { attribution: textOf(source.attribution) } : {}),
+          items: fileBook.items.map(({ source: _, ...item }) => item) as never
         })
-        let current = made.version
-        for (let i = 0; i < fileBook.items.length; i += 100) {
-          const items = fileBook.items.slice(i, i + 100).map((item) => ({ ...item, source: made.key }))
-          current = (await api.call('putSystemContent', { systemId, version: current, items: items as never })).version
-        }
-        return { key: made.key, name: name || String(source.name ?? ''), pdf: null }
+        return { key: made.key, name: name || textOf(source.name), pdf: null }
       }
       const made = await api.call('createBook', {
         systemId,
@@ -443,12 +446,12 @@ function BookSettings({
         systemId,
         version,
         key: book.key,
-        name: draft.name,
-        description: draft.description.trim() || null,
-        edition: draft.edition.trim() || null,
-        license: draft.license,
-        attribution: draft.attribution,
-        requires: draft.requires,
+        ...(draft.name !== book.name ? { name: draft.name } : {}),
+        ...(draft.description !== (book.description ?? '') ? { description: draft.description.trim() || null } : {}),
+        ...(draft.edition !== (book.edition ?? '') ? { edition: draft.edition.trim() || null } : {}),
+        ...(draft.license !== book.license ? { license: draft.license } : {}),
+        ...(draft.attribution !== book.attribution ? { attribution: draft.attribution } : {}),
+        ...(draft.requires.join() !== book.requires.join() ? { requires: draft.requires } : {}),
         ...(draft.newVersion ? { newVersion: true as const } : {})
       }),
     onSuccess: async () => {

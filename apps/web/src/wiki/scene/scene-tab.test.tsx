@@ -283,7 +283,7 @@ describe('la pestaña «Escena»', () => {
       await screen.findByRole('application', { name: 'Escena Escena' })
       await user.selectOptions(await screen.findByLabelText('Campaña'), 'Los del norte')
       await user.click(screen.getByRole('button', { name: 'Abrir en la mesa' }))
-      await waitFor(() => expect(router.state.location.pathname).toBe(`/mundos/${WORLD.id}/campanas/${north.id}`))
+      await waitFor(() => expect(router.state.location.pathname).toBe(`/mundos/${WORLD.id}/campanas/${north.id}/mesa`))
       expect((await api.client.call('getCampaignTable', { campaignId: north.id })).open?.id).toBe(scene?.id)
     })
   })
