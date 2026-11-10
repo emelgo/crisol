@@ -22,6 +22,10 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   quién está, cómo mueven, echar e invitación), fuera la pestaña Campaña de la Mesa y borrar la campaña desde dentro,
   pestaña «Actores» con un buscador, cristal con fondo tenue detrás del mapa; **el registro** entero (servidor,
   migración 0066, MCP; la tira de cristal en la Mesa del máster y de la jugadora).
+- **Luego, más ajustes de Enrique probando**: registro minimizado de inicio; otra escena se abre en pausa; cada
+  escena recuerda su zoom y posición (en el aparato); «Vista de jugadores» en vez de «Pantalla»; anchos fijos arriba;
+  «Escena nueva» en un cuadro con nombre y mapa; **carpetas en Actores** (migración 0067). Tras crear una migración,
+  aplicarla en local; si el servidor de desarrollo no recarga, reiniciarlo (ver memoria `migrar-en-local`).
 - **Siguiente**: el registro en el móvil de la jugadora y las burbujas en la Pantalla; la pantalla «te han sacado de
   la Mesa»; luego `ensenar`. Capturas de la Mesa: `e2e/tests/zz-captura.spec.ts` (fuera de git).
 
