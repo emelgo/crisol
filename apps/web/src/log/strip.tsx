@@ -63,7 +63,24 @@ export function LogStrip({
   const queryClient = useQueryClient()
   const { account } = useAccounts().useAccount()
   const master = campaign.role === 'master'
-  const [open, setOpen] = useState(false)
+  // Minimizada (solo su cabecera, con cuántas nuevas) o abierta (el hilo y el cuadro); se recuerda en este aparato
+  const remembered = `crisol.registro.${campaign.id}`
+  const [open, setOpenState] = useState(() => {
+    try {
+      return localStorage.getItem(remembered) === 'abierto'
+    } catch {
+      return false
+    }
+  })
+  const setOpen = (next: boolean) => {
+    setOpenState(next)
+    try {
+      localStorage.setItem(remembered, next ? 'abierto' : 'cerrado')
+    } catch {
+      // Sin almacenamiento, solo mientras dure la pestaña
+    }
+  }
+  const [seen, setSeen] = useState<number | null>(null)
   const [text, setText] = useState('')
   const [whisper, setWhisper] = useState<string[]>([])
   const [problem, setProblem] = useState<string | null>(null)
@@ -92,8 +109,13 @@ export function LogStrip({
       .map((m) => ({ id: m.userId, name: m.name }))
   ]
   const entries = [...(log.data?.pages ?? [])].reverse().flatMap((page) => page.entries)
-  const shown = open ? entries : entries.slice(-3)
   const last = entries.at(-1)?.id
+  // Lo nuevo mientras está minimizada: cuántas han llegado desde que se cerró (o desde que se entró)
+  useEffect(() => {
+    if (open || !log.data) return
+    setSeen((before) => before ?? entries.length)
+  }, [open, log.data, entries.length])
+  const unread = !open && seen !== null ? Math.max(0, entries.length - seen) : 0
   useEffect(() => {
     const el = list.current
     if (!el || !last) return
@@ -139,9 +161,18 @@ export function LogStrip({
       aria-label={t('log.title')}
     >
       <header className={styles.head}>
-        <button type="button" className={styles.toggle} aria-expanded={open} onClick={() => setOpen(!open)}>
+        <button
+          type="button"
+          className={styles.toggle}
+          aria-expanded={open}
+          onClick={() => {
+            if (open) setSeen(entries.length)
+            setOpen(!open)
+          }}
+        >
           <MessageSquare size={14} aria-hidden="true" />
           <span>{t('log.title')}</span>
+          {unread > 0 && <b className={styles.unread}>{t('log.unread', { count: unread })}</b>}
           {open ? <ChevronDown size={14} aria-hidden="true" /> : <ChevronUp size={14} aria-hidden="true" />}
         </button>
       </header>
@@ -155,46 +186,50 @@ export function LogStrip({
           {t('log.older')}
         </button>
       )}
-      <ol ref={list} className={styles.list} role="log" aria-label={t('log.title')}>
-        {shown.map((entry) => (
-          <Entry
-            key={entry.id}
-            entry={entry}
-            me={me}
-            master={master}
-            canDelete={(id, at, by) =>
-              entry.kind !== 'roll' && (master || (by === me && Date.now() - Date.parse(at) < DELETE_WINDOW_MS))
-                ? () => remove.mutate(id)
-                : null
-            }
+      {open && (
+        <ol ref={list} className={styles.list} role="log" aria-label={t('log.title')}>
+          {entries.map((entry) => (
+            <Entry
+              key={entry.id}
+              entry={entry}
+              me={me}
+              master={master}
+              canDelete={(id, at, by) =>
+                entry.kind !== 'roll' && (master || (by === me && Date.now() - Date.parse(at) < DELETE_WINDOW_MS))
+                  ? () => remove.mutate(id)
+                  : null
+              }
+            />
+          ))}
+          {entries.length === 0 && !log.isPending && <li className={styles.empty}>{t('log.empty')}</li>}
+        </ol>
+      )}
+      {open && (
+        <form className={styles.compose} onSubmit={submit}>
+          <Recipients recipients={recipients} chosen={whisper} onChange={setWhisper} />
+          <input
+            className={styles.input}
+            value={text}
+            maxLength={2000}
+            placeholder={whisper.length > 0 ? t('log.whisperPlaceholder') : t('log.placeholder')}
+            aria-label={t('log.write')}
+            onChange={(event) => {
+              setText(event.currentTarget.value)
+              setProblem(null)
+            }}
           />
-        ))}
-        {entries.length === 0 && !log.isPending && <li className={styles.empty}>{t('log.empty')}</li>}
-      </ol>
-      <form className={styles.compose} onSubmit={submit}>
-        <Recipients recipients={recipients} chosen={whisper} onChange={setWhisper} />
-        <input
-          className={styles.input}
-          value={text}
-          maxLength={2000}
-          placeholder={whisper.length > 0 ? t('log.whisperPlaceholder') : t('log.placeholder')}
-          aria-label={t('log.write')}
-          onChange={(event) => {
-            setText(event.currentTarget.value)
-            setProblem(null)
-          }}
-        />
-        <button
-          type="submit"
-          className={styles.send}
-          aria-label={t('log.send')}
-          disabled={send.isPending || !text.trim()}
-        >
-          <SendHorizontal size={16} aria-hidden="true" />
-        </button>
-      </form>
-      {text.startsWith('/') && <p className={styles.hint}>{t('log.commands')}</p>}
-      {error && (
+          <button
+            type="submit"
+            className={styles.send}
+            aria-label={t('log.send')}
+            disabled={send.isPending || !text.trim()}
+          >
+            <SendHorizontal size={16} aria-hidden="true" />
+          </button>
+        </form>
+      )}
+      {open && text.startsWith('/') && <p className={styles.hint}>{t('log.commands')}</p>}
+      {open && error && (
         <p className={styles.error} role="alert">
           {error}
         </p>

@@ -453,6 +453,12 @@
   font-size: 0.8125rem;
 }
 
+/* Presentar y Ocultar, del mismo ancho */
+.bar [data-tour="mesa-presentar"] > button {
+  justify-content: center;
+  min-inline-size: 7.25rem;
+}
+
 /* En las barras de cristal, los botones sin borde: pesan como los de la sala (docs/diseno.md: nada de filas de
    botones con borde) */
 .bar .ghost {
@@ -779,7 +785,8 @@
 .legend {
   display: flex;
   gap: 0.75rem;
-  padding: 0.6rem 0.875rem 0.8rem;
+  /* Alineada con los textos de la pestaña (Enrique, 2026-11-10) */
+  padding: 0.6rem 0 0.8rem;
   color: var(--color-muted);
   font-size: 0.75rem;
 }
@@ -1138,6 +1145,8 @@ button.pageLink {
   display: inline-flex;
   align-items: center;
   gap: 7px;
+  /* De ancho fijo: no cambia con lo elegido (Enrique, 2026-11-10: «tamaño fijo de las cosas») */
+  inline-size: 13.25rem;
   min-block-size: 2.125rem;
   padding: 0 10px;
   border: 0;
@@ -1169,7 +1178,12 @@ button.pageLink {
 }
 
 .cameraButton b {
+  flex: 1;
+  overflow: hidden;
   font-weight: 600;
+  text-align: start;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .cameraMenu {

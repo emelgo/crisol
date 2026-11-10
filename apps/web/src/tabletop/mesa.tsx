@@ -541,7 +541,7 @@ export function Mesa({ worldId, campaign: current }: { worldId: string; campaign
               framing={() => (size.width > 0 ? fixedFraming(view.current, freeArea(size, host.current)) : null)}
             />
             <PauseBanner campaignId={campaignId} />
-            <LogStrip campaign={current} />
+            <LogStrip campaign={current} edge={!scene} />
             {(selected.length > 1 || (fromTemplate && selected.length > 0)) && (
               <GroupDamage
                 key={selected.join()}
@@ -833,6 +833,7 @@ function Stage({
     })
   }, [])
 
+  const rememberTimer = useRef(0)
   const apply = useCallback(() => {
     renderer.current?.setView(view.current)
     placeFrame()
@@ -845,7 +846,14 @@ function Stage({
     // La tele sigue el centro de lo que se ve (sin lo que tapa la barra de la derecha: si no, le salía desplazado)
     if (followingRef.current && sizeRef.current.width > 0)
       channel.current?.sendViewport(sceneViewportOfCanvas(view.current, free(sizeRef.current)))
-  }, [renderer, placeFrame, channel, host, view, drawTokens, markers, marksLayer, free])
+    // Lo que se ve de cada escena se recuerda (al volver a ella, igual): un poco después de dejar de moverse
+    const sceneId = placed.current?.split('/')[0]
+    if (sceneId && sizeRef.current.width > 0) {
+      window.clearTimeout(rememberTimer.current)
+      const seen = sceneViewportOfCanvas(view.current, free(sizeRef.current))
+      rememberTimer.current = window.setTimeout(() => rememberView(campaignId, sceneId, seen), 400)
+    }
+  }, [renderer, placeFrame, channel, host, view, drawTokens, markers, marksLayer, free, campaignId])
 
   // Llega la mesa (o cambia lo elegido): las fichas, otra vez; lo que se movía ya está en su sitio
   useEffect(() => {
@@ -885,10 +893,16 @@ function Stage({
     if (placed.current !== key) {
       placed.current = key
       const room = free(size)
-      view.current = open?.initialView ? canvasViewOf(open.initialView, room) : fitCanvas(scene, room)
+      // Como se dejó la última vez; si no, la vista inicial de la escena o encuadrada
+      const remembered = rememberedView(campaignId, scene.id)
+      view.current = remembered
+        ? canvasViewOf(remembered, room)
+        : open?.initialView
+          ? canvasViewOf(open.initialView, room)
+          : fitCanvas(scene, room)
     }
     apply()
-  }, [ready, scene, size, open?.initialView, apply, view, free])
+  }, [ready, scene, size, open?.initialView, apply, view, free, campaignId])
 
   // Al pasar a «Seguir», la tele recibe ya dónde mira el máster; el marco, al cambiar la cámara
   useEffect(() => {
@@ -1676,4 +1690,26 @@ function SheetOpener({
     onDone()
   }, [windows, token, campaignId, systemId, onDone])
   return null
+}
+
+/** Lo que se veía de una escena en esta campaña, guardado en este aparato (Enrique, 2026-11-10) */
+const viewKey = (campaignId: string, sceneId: string) => `crisol.mesa.vista.${campaignId}.${sceneId}`
+
+function rememberView(campaignId: string, sceneId: string, seen: SceneViewport) {
+  try {
+    localStorage.setItem(viewKey(campaignId, sceneId), JSON.stringify(seen))
+  } catch {
+    // Sin almacenamiento, no se recuerda
+  }
+}
+
+function rememberedView(campaignId: string, sceneId: string): SceneViewport | null {
+  try {
+    const raw = localStorage.getItem(viewKey(campaignId, sceneId))
+    if (!raw) return null
+    const seen = JSON.parse(raw) as SceneViewport
+    return typeof seen?.x === 'number' && typeof seen.y === 'number' ? seen : null
+  } catch {
+    return null
+  }
 }

@@ -79,7 +79,7 @@ test('fichas: Lía y tres goblins de un encuentro, moverlos, dañar a uno, ocult
     .toBe(2)
   const [tv] = await Promise.all([
     page.waitForEvent('popup'),
-    page.getByRole('button', { name: 'Pantalla', exact: true }).click()
+    page.getByRole('button', { name: 'Vista de jugadores', exact: true }).click()
   ])
   const onTv = tv.getByRole('list', { name: 'Lo que hay en la mesa' })
 

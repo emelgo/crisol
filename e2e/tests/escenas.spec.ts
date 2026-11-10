@@ -107,11 +107,11 @@ test('una escena: su mapa en teselas, la rejilla alineada, la mesa y la tele que
   // La tele, en otra ventana: a oscuras con el nombre de la campaña hasta que se presenta
   const [tv] = await Promise.all([
     page.waitForEvent('popup'),
-    page.getByRole('button', { name: 'Pantalla', exact: true }).click()
+    page.getByRole('button', { name: 'Vista de jugadores', exact: true }).click()
   ])
   await expect(tv.locator('[data-dark]')).toContainText('La Marca')
   await page.getByRole('button', { name: 'Presentar' }).click()
-  await expect(page.getByText('En pantalla').first()).toBeVisible()
+  await expect(page.getByText('Lo ven los jugadores').first()).toBeVisible()
   await expect(tv.locator('[data-dark]')).toHaveCount(0)
   const screen = tv.locator('[data-screen]')
   await expect.poll(async () => (await viewOf(screen))?.scale ?? 0).toBeGreaterThan(0)
@@ -181,7 +181,7 @@ test('una escena: su mapa en teselas, la rejilla alineada, la mesa y la tele que
   // Ocultar: la tele, a oscuras con el nombre de la campaña
   await page.getByRole('button', { name: 'Ocultar' }).click()
   await expect(tv.locator('[data-dark]')).toContainText('La Marca')
-  await expect(page.getByText('Pantalla a oscuras')).toBeVisible()
+  await expect(page.getByText('Oculta a los jugadores')).toBeVisible()
   await axe(tv, 'la tele')
   await tv.screenshot({ path: '../out/capturas/escenas-pantalla-oculta.png' })
 })

@@ -169,13 +169,13 @@ describe('la mesa del máster', () => {
     await api.client.call('openScene', { campaignId: CAMPAIGN.id, sceneId: scenes[0]?.id ?? '' })
     await push()
     await user.click(await screen.findByRole('button', { name: 'Presentar' }))
-    expect((await screen.findAllByText('En pantalla')).length).toBe(2)
+    expect((await screen.findAllByText('Lo ven los jugadores')).length).toBe(2)
     expect((await api.client.call('getCampaignTable', { campaignId: CAMPAIGN.id })).presented?.id).toBe(scenes[0]?.id)
     await user.click(screen.getByRole('button', { name: 'Ocultar' }))
-    expect(await screen.findByText('Pantalla a oscuras')).toBeDefined()
+    expect(await screen.findByText('Oculta a los jugadores')).toBeDefined()
     expect(screen.queryByRole('button', { name: 'Ocultar' })).toBeNull()
     await user.click(screen.getByRole('button', { name: 'Presentar' }))
-    await waitFor(() => expect(screen.queryByText('Pantalla a oscuras')).toBeNull())
+    await waitFor(() => expect(screen.queryByText('Oculta a los jugadores')).toBeNull())
   })
 
   it('con «Seguir» manda su encuadre al moverse; «Fija» deja el marco de la tele, que se mueve con las flechas', async () => {

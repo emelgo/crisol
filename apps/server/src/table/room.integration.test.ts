@@ -201,4 +201,22 @@ describe('la sala: pausa, modo de movimiento y echar de la Mesa', () => {
       movement: 'free'
     })
   })
+
+  it('abrir otra escena la pone en pausa; volver a abrir la misma, no', async () => {
+    const worldId = (await call('getCampaign', { campaignId })).body.campaign.worldId
+    const scene = async (title: string) => {
+      const pageId = (await call('createPage', { worldId, title })).body.id
+      const tab = (await call('createPageTab', { pageId, kind: 'scene' })).body
+      return (await call('getScene', { tabId: tab.id })).body.id as string
+    }
+    const [cripta, torre] = [await scene('Cripta'), await scene('Torre')]
+    await call('openScene', { campaignId, sceneId: cripta })
+    const room = async () => (await call('getTablePresence', { campaignId })).body.paused
+    expect(await room()).toBe(true)
+    await call('setTableControls', { campaignId, paused: false })
+    await call('openScene', { campaignId, sceneId: cripta })
+    expect(await room()).toBe(false)
+    await call('openScene', { campaignId, sceneId: torre })
+    expect(await room()).toBe(true)
+  })
 })
