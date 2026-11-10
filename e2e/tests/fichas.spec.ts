@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, type Locator, type Page, test } from '@playwright/test'
-import { freshOwner, import5e, png } from './ayudas.ts'
+import { freshOwner, import5e, png, settled } from './ayudas.ts'
 
 const GOBLIN = 'guerrero_goblin_2014'
 
@@ -123,7 +123,15 @@ test('fichas: Lía y tres goblins de un encuentro, moverlos, dañar a uno, ocult
   // Ctrl+Z deshace el movimiento; las flechas lo mueven una casilla (hacia arriba, donde no hay nadie)
   await stage.focus()
   await page.keyboard.press('Control+z')
-  await expect.poll(async () => ((await tokens()).find((token) => token.id === goblin.id) as Token).x).toBe(goblin.x)
+  // Del todo de vuelta (las dos coordenadas) y con la Mesa ya al día antes de moverla con las flechas
+  await expect
+    .poll(async () => {
+      const back = (await tokens()).find((token) => token.id === goblin.id) as Token
+      return [back.x, back.y]
+    })
+    .toEqual([goblin.x, goblin.y])
+  await settled(page)
+  await stage.focus()
   await page.keyboard.press('ArrowUp')
   await expect
     .poll(async () => ((await tokens()).find((token) => token.id === goblin.id) as Token).y)

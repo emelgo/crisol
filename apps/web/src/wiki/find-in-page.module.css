@@ -10,6 +10,9 @@
 }
 
 .bar {
+  /* Por encima de la barra de formato (z-index 20), que sale al resaltar lo encontrado y tapaba «Cerrar» */
+  position: relative;
+  z-index: 21;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
