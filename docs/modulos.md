@@ -7,6 +7,25 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
+### Para retomar (2026-11-11: módulo 7 terminado, PR a `main` y staging)
+
+- **Módulo 7 construido entero** (rama `modulo-7/sala`, migraciones 0065–0073): sala, registro (Chat / Tiradas /
+  Todo), enseñar, mover fichas de la jugadora, notas del jugador, sonido sincronizado, sonidos del mapa y sonido de
+  Foundry. Revisión con impeccable aplicada (lo claro) y e2e al día.
+- **Queda para Enrique**: probar `tasks/probar.md`; decidir lo de la revisión que es suyo:
+  - el recuadro de YouTube en el móvil;
+  - borrar listas de sonido sin confirmación;
+  - «Sin carpeta» como título;
+  - los avisos y la cola de la IA quedan debajo de las ventanas modales (los ajustes de la campaña).
+- **Pendientes menores**:
+  - un solo buscador también para los encuentros en Actores;
+  - mover a carpeta con el teclado;
+  - el arrastre de la jugadora con su color en la Mesa del máster;
+  - zips de mundo de Foundry (`world.json`);
+  - el filtro de paso bajo al amortiguar.
+- **Siguiente**: el módulo 8 (calendario, clima, viajes, líneas temporales), empezando por su entrevista; antes, el
+  estudio de Roll20 y lo de los libros para leer, si Enrique quiere.
+
 ### Para retomar (2026-11-10, tarde: módulo 7 en marcha, rama `modulo-7/sala`)
 
 - **Hecho**: entrevista (`docs/intent/sala-de-jugadores.md`), estudio (`research/foundry/sala-de-jugadores.md`,

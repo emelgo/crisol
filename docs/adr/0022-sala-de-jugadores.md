@@ -1,6 +1,6 @@
 # ADR-0022: La sala de jugadores, en el servidor
 
-Estado: propuesta (2026-11-10; mapa de capacidades aprobado por Enrique: «ok»; falta el lienzo «Sala de jugadores»)
+Estado: propuesta (2026-11-10; mapa aprobado por Enrique, «ok», y construido con él probando en local; falta que lo confirme tras probarlo)
 
 ## Contexto
 
