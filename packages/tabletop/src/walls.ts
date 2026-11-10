@@ -12,7 +12,7 @@ export type Restriction = 'none' | 'limited' | 'full'
 /** Por qué lado deja pasar un muro de un solo sentido: a la izquierda o a la derecha de a→b en pantalla (y hacia abajo) */
 export type WallDirection = 'both' | 'left' | 'right'
 export type DoorKind = 'door' | 'secret'
-export type Channel = 'sight' | 'light' | 'move'
+export type Channel = 'sight' | 'light' | 'move' | 'sound'
 
 export interface Wall {
   id: string
@@ -21,6 +21,8 @@ export interface Wall {
   sight: Restriction
   light: Restriction
   move: Restriction
+  /** Lo que para del sonido (docs/specs/sonido-mapa.md); sin decirlo, nada */
+  sound?: Restriction
   direction: WallDirection
   door: DoorKind | null
   locked: boolean
@@ -117,7 +119,7 @@ export const wallEdges = (walls: readonly Wall[], doors: DoorStates, channel: Ch
 export function gappedWallEdges(walls: readonly Wall[], doors: DoorStates, channel: Channel): Edge[] {
   const out: Edge[] = []
   for (const wall of walls) {
-    const restriction = wall[channel]
+    const restriction = wall[channel] ?? 'none'
     if (restriction === 'none' || isDoorOpen(wall, doors)) continue
     if (wall.a.x === wall.b.x && wall.a.y === wall.b.y) continue
     out.push({
