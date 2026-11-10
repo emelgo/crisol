@@ -7,6 +7,25 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
+### Para retomar (2026-11-11, tarde: plan de la revisión de Enrique, aprobado; sin empezar)
+
+- **Enrique revisó la app** (portada, Entrar, Inicio, Sistemas y el mundo) y trajo unos cuarenta puntos. El plan,
+  aprobado por él, está en **`tasks/plan-revision.md`** y sus casillas en **`tasks/todo-revision.md`**: nueve tandas
+  (Inicio; árbol común, Archivos y Etiquetas; Plantillas; la página y la hoja; cristal, Entrar y la portada; Sistemas;
+  libros de texto y compendio desde el mundo; editor de sistemas a mano; repaso del MCP) y, después, los módulos 9, 8
+  y 10.
+- **Cómo se trabaja**: una tanda cada vez, en local; Enrique da el visto bueno; pruebas y a `main`. Lo que se encuentre
+  de paso (fallos o mejoras) se le avisa y se arregla en su tanda.
+- **Decidido por Enrique**:
+  - la campaña queda fuera, para una revisión propia;
+  - **el módulo 11 (pagos) se descarta**: Crisol es una herramienta propia, gratuita y privada;
+  - donde convenga una imagen, se le da el prompt y él la genera fuera (primero hay que encontrar el estilo);
+  - el cristal de la Mesa se lleva a toda la app;
+  - fuera las plantillas de serie; vuelve el editor de sistemas a mano; los dados salen de la wiki y van al compendio.
+- **Sin empezar**: solo existe la rama `revision/tanda-1` con el plan y las casillas. Falta también lo de «Documentos
+  que se tocan al empezar» del plan (`docs/diseno.md`, la tabla de módulos entera y los ADR nuevos).
+- **Siguiente**: los prompts de estilo (`docs/imagenes.md`) y la tanda 1.
+
 ### Para retomar (2026-11-11: módulo 7 terminado, PR a `main` y staging)
 
 - **Módulo 7 construido entero** (rama `modulo-7/sala`, migraciones 0065–0073): sala, registro (Chat / Tiradas /
@@ -1659,7 +1678,7 @@ Estados: pendiente · en curso · hecho · descartado.
 | 8 | Calendario, clima, viajes, líneas temporales | pendiente | — |
 | 9 | Mapas de mundo con pines y capas; pizarras | pendiente | DDB Maps |
 | 10 | Otras herramientas: tableros, gráficos, grafo de relaciones, nombres, centro de actividad | pendiente | — |
-| 11 | Pagos y planes del SaaS | pendiente | — |
+| 11 | Pagos y planes del SaaS | **descartado** (Enrique, 2026-11-11: herramienta propia, gratuita y de uso privado) | — |
 
 Cada módulo nace con su API y sus herramientas MCP.
 
