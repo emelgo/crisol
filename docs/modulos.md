@@ -23,10 +23,16 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   Inicio, la sección Mesa con personajes, quién está y «Abrir la Mesa» en otra pestaña, Libros de la campaña con
   «Elegir contenido» y la ficha de cada libro). Enrique cambió dos cosas por el camino (2026-11-10): la campaña se abre
   en la misma pestaña y la Mesa en otra; Personajes y Mesa, una sola sección.
-- **Siguiente paso**: tareas 7–10 (Sistemas → Libros con «Libro nuevo» y ajustes del libro, la revisión de lo que trae
-  la IA, el compendio por libro y el creador con libros, y el cierre: tutoriales, e2e —`openCampaign` de las ayudas
-  de e2e aún entra por la dirección de la campaña, que ahora es el Inicio—, axe y revisión). Antes del PR: todas las
-  e2e.
+- **Hechas las tareas 7–9 y casi toda la 10** (2026-11-10, noche): página de cada sistema con sus libros, «Libro
+  nuevo» (IA desde PDF, archivo con `importBook`, vacío), ajustes del libro, revisión de lo que trae la IA, compendio por
+  libro (con página) y creador con libros; tutoriales; la revisión de código (agente) y sus arreglos (commit e79cfa9).
+  Enrique cambió además: la barra de la campaña lleva su nombre y no tiene Páginas; la «tele» es la pantalla de los
+  jugadores («Pantalla»/«Cámara») y se abre desde la Mesa. Cuenta de jugadora de prueba en local: en `.env`
+  (`LOCAL_PLAYER_*`), dentro de la campaña «dfgdfgd».
+- **Siguiente paso**: volver a pasar las e2e que fallaban antes de los últimos arreglos (`libros`, `a11y`, `fugas`,
+  `sistemas`; la tanda se cortó al cerrar la sesión) y luego `pnpm e2e` entero; con todo en verde, el PR a `main` con la
+  CI una vez (cuando Enrique lo diga). Fuera de esto: el puerto 8132 lo ocupa otro proceso y tumba
+  `mcp.integration.test.ts`.
 
 ### Para retomar (2026-11-10, tarde: escenas sueltas, ADR-0020)
 
