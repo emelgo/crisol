@@ -18,7 +18,12 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   (migración 0065, `setTableControls`, en las vistas de la sala), echar y dejar volver (`kickFromTable`,
   `allowBackToTable`, cierre 4409), presencia con personaje, color, «en la campaña» (mensaje `focus` del canal general)
   y echados (`getTablePresence`, MCP `ver_sala`, `controles_sala`, `echar_de_la_mesa`, `dejar_volver`).
-- **Siguiente**: con el lienzo aprobado, la web de `sala` (tareas 5–7); mientras, el servidor de `registro`.
+- **Hecho después** (Enrique probando en local): la web de la sala (retratos y pausa junto a la escena, panel con
+  quién está, cómo mueven, echar e invitación), fuera la pestaña Campaña de la Mesa y borrar la campaña desde dentro,
+  pestaña «Actores» con un buscador, cristal con fondo tenue detrás del mapa; **el registro** entero (servidor,
+  migración 0066, MCP; la tira de cristal en la Mesa del máster y de la jugadora).
+- **Siguiente**: el registro en el móvil de la jugadora y las burbujas en la Pantalla; la pantalla «te han sacado de
+  la Mesa»; luego `ensenar`. Capturas de la Mesa: `e2e/tests/zz-captura.spec.ts` (fuera de git).
 
 ### Para retomar (2026-11-10: tanda en `main` con el PR #116; se pasa al módulo 7)
 
