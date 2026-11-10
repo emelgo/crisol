@@ -81,8 +81,8 @@ jobs:
   e2e:
     name: Extremo a extremo y accesibilidad
     runs-on: ubuntu-24.04
-    # Un tope por si algo se cuelga, no un listón: con el módulo 6, ~23 min (e2e 16,5, fugas 2, accesibilidad)
-    timeout-minutes: 30
+    # Un tope por si algo se cuelga, no un listón: con libros y el espacio de la campaña pasa de 30 min
+    timeout-minutes: 50
     services:
       postgres:
         # Con pgvector (docs/specs/biblioteca.md); el texto, ordenado por bytes como en el Postgres de Alpine
