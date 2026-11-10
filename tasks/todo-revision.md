@@ -13,6 +13,14 @@ Plan: `tasks/plan-revision.md`. Una tanda cada vez: se enseña en local, Enrique
   pantallas vacías).
 - [ ] Imágenes en `apps/web/public/`, fuera las 24 de ahora, y su origen en `docs/terceros.md`.
 
+## Documentos al empezar
+
+- [x] `docs/diseno.md`: imágenes con prompt, cristal en toda la app, «Nuevo…» con línea continua, orden de la barra, el
+  sistema con su espacio, tres maneras de crear un sistema, plantillas-modelo sin las de serie, tiradas fuera del texto.
+- [x] `docs/modulos.md`: la tabla (7 hecho, la revisión en curso, 8 y 10 partidos en mundo y campaña) y el orden.
+- [x] ADR-0023 (sin pagos) y ADR-0024 (plantillas como páginas-modelo). El del cristal y el fondo de ambiente espera
+  al lienzo (tanda 5); el de los libros con capítulos, al estudio de 5etools (tanda 7).
+
 ## Tanda 1 — Inicio: arreglos rápidos (rama `revision/tanda-1`)
 
 - [ ] 1. Chispas y humo en el tema claro (colores como tokens con su versión clara).

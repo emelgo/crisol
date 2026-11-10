@@ -1674,13 +1674,21 @@ Estados: pendiente · en curso · hecho · descartado.
 | 4 | Compendios (aparte de la wiki del mundo y **como los de Foundry**: antes, estudio a fondo con craft-anything), bestiario, statblocks, biblioteca; **las imágenes de lo traído de Foundry** (las de cada documento del zip); **buscar dentro de los PDF** (texto de cada página con pdf.js; el resultado abre el visor en esa página) **y por significado** (pgvector; antes, permiso para la imagen de Postgres y elegir quién calcula los embeddings) | **hecho** (2026-11-06, PR #110 y #111; `docs/specs/modulo-4.md`); falta que Enrique lo pruebe (`tasks/probar.md`) | Foundry: compendium packs; DDB: listados |
 | 5 | Visibilidad por campaña: conocimiento de los jugadores, revelar, compartir | **hecho** (2026-11-07, PR #112, en staging) | Foundry: ownership |
 | 6 | **Mesa**: escenas, rejilla, fichas, medir y plantillas, niebla, muros, puertas, luz, visión, iniciativa, instantáneas, encuentros, UVTT; **las escenas, mapas y tokens de un zip de Foundry** | **hecho** (2026-11-07, PR #114, en staging) | Foundry: canvas, visión y muros; DDB Maps |
-| 7 | **Sala de jugadores**: presencia, chat y susurros, mostrar a jugadores, sonido (también **los de un zip de Foundry**), controles del máster | pendiente | Foundry: sockets y chat; DDB: game log |
-| 8 | Calendario, clima, viajes, líneas temporales | pendiente | — |
-| 9 | Mapas de mundo con pines y capas; pizarras | pendiente | DDB Maps |
-| 10 | Otras herramientas: tableros, gráficos, grafo de relaciones, nombres, centro de actividad | pendiente | — |
-| 11 | Pagos y planes del SaaS | **descartado** (Enrique, 2026-11-11: herramienta propia, gratuita y de uso privado) | — |
+| 7 | **Sala de jugadores**: presencia, chat y susurros, mostrar a jugadores, sonido (también **los de un zip de Foundry**), controles del máster | **hecho** (2026-11-11, PR #117, en staging); falta que Enrique lo pruebe y confirme el ADR-0022 | Foundry: sockets y chat; DDB: game log |
+| R | **Revisión de la app** (2026-11-11): nueve tandas (`tasks/plan-revision.md`); la campaña, aparte | **en curso** (tanda 1) | Roliando y Roll20 (editor de sistemas); 5etools (libros) |
+| 9 | **Pizarras y mapas con capas**: la pizarra como pestaña; regiones, rutas, textos y capas en los mapas, escala y medir | pendiente (el primero tras la revisión) | DDB Maps |
+| 8 · mundo | **Calendarios y líneas temporales**: calendarios del mundo con su editor, eventos y la línea temporal como pestaña | pendiente (tras el 9) | — |
+| 10 · mundo | **Herramientas del mundo**: grafo de relaciones y árbol familiar, tableros, gráficos, generador de nombres | pendiente (tras el 8) | — |
+| 8 · campaña | El «hoy» de cada campaña, el clima y los viajes | pendiente (con la revisión de la campaña) | — |
+| 10 · campaña | El centro de actividad y la pantalla del máster | pendiente (con la revisión de la campaña) | — |
+| 11 | Pagos y planes del SaaS | **descartado** (Enrique, 2026-11-11: herramienta propia, gratuita y de uso privado; ADR-0023) | — |
 
 Cada módulo nace con su API y sus herramientas MCP.
+
+**Orden desde el 2026-11-11** (Enrique): primero la revisión de la app (R), una tanda cada vez; después los módulos 9,
+8 y 10 en lo que es del mundo, que nacen sobre el registro de tipos de pestaña, las plantillas-modelo (ADR-0024) y el
+cristal. Lo de la campaña de los módulos 8 y 10 va con la revisión de la campaña, más adelante. El 11 se descarta
+(ADR-0023).
 
 **Entre el 0 y el 1, fase de diseño** (decidido con Enrique, 2026-10-29). La interfaz del módulo 0 funciona y es
 accesible, pero no tiene un diseño visual pensado. Antes de la wiki, que es lo más visual:

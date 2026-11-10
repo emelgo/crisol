@@ -26,11 +26,16 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   - ni textos de ayuda fijos en pantalla.
 - **Se dice «IA», no «Claude»**: Crisol se conecta a cualquier IA. El nombre de la app conectada sale solo donde se ve
   qué está conectado.
+- **Las imágenes, con prompt** (Enrique, 2026-11-11, revisión de la app): donde convenga una imagen (fondos, la
+  portada pública, portadas por defecto, pantallas vacías), Claude escribe el prompt y Enrique la genera a mano con
+  ChatGPT, todas en un mismo estilo que elige él. Prompts y guía de estilo en `docs/imagenes.md`.
 
 ## Armazón y navegación
 
 - **Con sesión no hay barra arriba**. A la izquierda, una barra con iconos y su nombre debajo. Dentro de un mundo
   cambia y enseña su contenido. **Sin barra de estado abajo**: «la barra que hay abajo sirve de algo? sino quitala».
+- **Fuera de un mundo, la barra va en este orden** (Enrique, 2026-11-11): Mundos, Plantillas, Etiquetas, Sistemas y
+  **Archivos el último**. El tutorial de Inicio sigue el mismo orden.
 - **Con sesión, la portada y Entrar llevan directos a Mis mundos**. Una portada que solo enlaza a Mis mundos es redundante.
 - **Lo de la barra lateral se abre encima**, como una ventana, sin quitar lo que se está viendo: Historial, Papelera,
   Ajustes, Perfil. «Ajustes y todo lo de la barra lateral debe ser como un popup, para no quitar la vista que se
@@ -64,6 +69,11 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   con sus secciones (Inicio con el resumen y los jugadores, Libros, Compendio, Aventuras, Personajes, Páginas, Ajustes)
   y la **Mesa** como una sección más, a pantalla completa al entrar en ella, con su barra de la derecha. Sustituye a lo
   de abajo (la campaña abría directamente en la Mesa y sin barra lateral); pendiente de lienzo y de ADR.
+- **El sistema también tiene su propio espacio, como el mundo y la campaña** (Enrique, 2026-11-11, revisión de la
+  app): al entrar, la barra cambia y enseña lo suyo (su Inicio con la portada y los libros, Compendio y Reglas; los
+  ajustes, en una ventana) y la llama vuelve a Sistemas, con la transición de salir. Un libro se abre dentro, con el
+  esqueleto de tres columnas (su árbol, la entrada y sus datos) y «← {sistema}» en la cabecera. Sin el icono fijo ni
+  la palabra «Sistema».
 - **La campaña se abre en la Mesa, como en Foundry VTT** (Enrique, 2026-11-08: «la mesa debería ser lo que se ve al
   abrir la campaña como en foundryvtt»; «dentro de la mesa es donde deberíamos tener el compendio»; ADR-0019,
   construida el 2026-11-09):
@@ -92,6 +102,11 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   va casi opaco, y la barra de la derecha, opaca (va acoplada). **El brillo, solo en lo vivo** y en el rojo de la marca
   (`--glow-live`): «En la tele» (en rojo, como «Enseñando»), la ventana que se enseña y un crítico. Al pasar por los
   botones de las barras, suben un poco. Sin desenfoque en el navegador, el mismo tinte más tapado.
+- **El cristal, en toda la app** (Enrique, 2026-11-11, revisión de la app), no solo en la Mesa. Fuera de ella hace
+  falta algo detrás, **un fondo de ambiente**: en Entrar, las imágenes; en Inicio, una de ambiente o la portada del
+  mundo sobre el que está el ratón; en un mundo o un sistema, su portada, muy difuminada y tenue. De cristal, lo que
+  enmarca (la barra, las fichas de los lados, cabeceras, tarjetas, cuadros); lo que se lee o se escribe, casi opaco.
+  «Sin desenfoque» en Ajustes. El cómo, en el lienzo «Crisol, con cristal» (tanda 5 de la revisión).
 - **La campaña se abre en su propia vista, como un mundo** (Enrique, 2026-11-05): al entrar, la barra cambia y enseña
   lo de la campaña (sus personajes, su compendio, los dados…), con la transición de entrar. **El compendio** (el
   contenido del sistema que usa la campaña: clases, conjuros, criaturas, reglas…, con sus ediciones) **se ve ahí**.
@@ -126,10 +141,18 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 - **Cada pantalla tiene su guía, aunque sea básica**: «debemos mantener el patrón siempre».
 
 ## Pantallas
-- **Los sistemas se hacen con la IA** (Enrique, 2026-11-04: crearlos con el editor «es poco intuitivo»). En «Sistemas»
-  no hay editor ni «Probar»: se ven los que hay (de serie y de la cuenta), se suben de un archivo y se bajan, cada uno
-  con su contenido, y también un sistema vacío para empezar. La pantalla dice que los nuevos se hacen con la IA; la IA
-  los prueba con `probar_formula` y `probar_tirada`. Se hace al acabar `srd-5e`.
+- **Un sistema se crea de tres maneras** (Enrique, 2026-11-11, revisión de la app: vuelve el editor a mano): **con la
+  IA** (por el conector; la IA lo prueba con `probar_formula` y `probar_tirada`), **con el esqueleto** (bajarlo,
+  rellenarlo y subirlo; la comprobación dice qué falta, dónde y con un ejemplo; también un zip de Foundry) o **a
+  mano**, con un editor por pasos y en palabras de mesa («¿Qué tiene un personaje?», «¿Cómo se tira?»), sin
+  tecnicismos: cada campo con su «?» y un ejemplo real, a un lado la ficha que va saliendo y «Probar», y la revisión
+  siempre a la vista. Las fórmulas y lo avanzado, al fondo. Sustituye a «los sistemas se hacen con la IA»
+  (2026-11-04: el editor de entonces «es poco intuitivo»).
+- **Las plantillas son páginas guardadas como modelo, y no hay plantillas de serie** (Enrique, 2026-11-11, revisión de
+  la app; ADR-0024): cada cuenta hace las suyas. Una plantilla lleva lo mismo que una página (portada, icono, campos,
+  panel, texto y sus pestañas) y se edita como una página; crear desde ella es duplicarla. Se ordenan en carpetas.
+- **Las tiradas no se escriben en las páginas** (Enrique, 2026-11-11, revisión de la app): los dados salen del texto y
+  van a las entradas del compendio, que se tiran con su botón y se enlazan o se incrustan en una página.
 - **La wiki se edita en el sitio, como en el Crisol antiguo** (`docs/specs/wiki-edicion.md`): «no me gusta que todo sea
   como con botones, debe ser más ágil, poder cambiar todo en edición, incluso el título». Se abre la página y se
   escribe: el título es el propio encabezado (Intro guarda, Escape deshace) y todo se guarda solo («Guardando…»,
@@ -251,13 +274,17 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 - **Crear algo se hace con un botón que abre un cuadro**, no con un formulario suelto en la pantalla. **El de crear es
   prácticamente el de sus ajustes** (para un mundo: portada, nombre, descripción y color), para dejarlo bien hecho
   sin tener que entrar después en ajustes.
-- **«Nuevo …» va como un recuadro más de la lista**, con la misma forma (esquinas cortadas), vacío y con el borde
-  discontinuo, tras el último (no un botón arriba). Sin ninguno, la pantalla vacía con su botón grande.
+- **«Nuevo …» va como un recuadro más de la lista**, con la misma forma (esquinas cortadas), vacío y con el borde de
+  **línea continua** (Enrique, 2026-11-11; antes, discontinuo), tras el último (no un botón arriba). El mismo recuadro
+  en todas las listas: mundos, campañas, plantillas, etiquetas, sistemas y libros. Sin ninguno, la pantalla vacía con
+  su botón grande.
 - **Las pantallas de cuenta (entrar, crear la cuenta)** van centradas y con aspecto profesional. **De fondo, imágenes de fantasía que van pasando, como en LegendKeeper**
   (Enrique, 2026-11-08): a toda la pantalla, cada una unos 8 segundos acercándose despacio, con un fundido entre una y
   otra, un degradado teñido de su color y su autor abajo a la derecha (enlaza a su origen). En orden al azar en cada
   visita. Solo arte (nada de fotos reales): digital de fantasía de Pixabay y cuadros de dominio público, elegidos por
-  Enrique; la lista en `apps/web/src/account/backdrops.ts` y su origen en `docs/terceros.md`.
+  Enrique; la lista en `apps/web/src/account/backdrops.ts` y su origen en `docs/terceros.md`. **Se cambiarán por
+  imágenes propias** en el estilo que elija Enrique (2026-11-11, `docs/imagenes.md`), con el centro tranquilo para el
+  recuadro.
 - **Archivos, como un explorador**: árbol de carpetas (unas dentro de otras; se les arrastran archivos, y mientras se
   arrastra se marcan las carpetas donde se puede soltar, con «Mover aquí»; la que lo recibe se ilumina; soltado en la
   caja del árbol, fuera de una carpeta, va a lo más alto; un común no va a una carpeta del mundo ni al revés). **Sin
@@ -281,7 +308,7 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   ventana, donde se cambia todo (nombre incluido) y donde irá lo que se añada. Nada de «Renombrar» y «Borrar» sueltos.
 - **Los mundos no llevan icono**: «no aportan nada».
 - **Las campañas se ven y se crean como los mundos**: tarjeta con portada, descripción y color, engranaje con su
-  ventana y zona de peligro, «Nueva campaña» discontinuo al final, y se forjan y arden igual. Su portada, una imagen
+  ventana y zona de peligro, «Nueva campaña» al final, y se forjan y arden igual. Su portada, una imagen
   de su mundo o común. **Viven en Mis mundos**, bajo los mundos, cada una con su mundo debajo del nombre; «Nueva
   campaña» pide el mundo. No están en la barra.
 - **La barra de la izquierda, estrecha y de iconos** (Enrique prefirió esta a una ancha al estilo Everlore). Dentro de
