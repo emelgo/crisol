@@ -9,6 +9,18 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
+## El sonido (en local; módulo 7, docs/specs/sonido.md)
+
+- [ ] **Listas**: en la Mesa, pestaña Sonido → «Lista nueva» con un audio del mundo, otro subido y un enlace de YouTube
+  (sale su reproductor mientras mide; uno que no deja insertarse se avisa y no se añade). Editar y borrar desde «…».
+- [ ] **Lanzar**: una lista de ambiente, un efecto de la botonera por encima, pausa, siguiente, «Fundir y parar» y el
+  volumen; las barras junto a la pausa abren la pestaña.
+- [ ] **A la vez**: con la vista de jugadores y la Mesa de la jugadora abiertas (en otro aparato si puede ser), suenan
+  en el mismo punto; quien entra tarde entra por donde va. Cerrar la Mesa del máster: la lista sigue pasando de pista.
+- [ ] **Activar sonido**: en la vista de jugadores recién abierta sale grande en el centro; en las Mesas, en la barra.
+- [ ] **YouTube**: el recuadro sale abajo a la derecha, se pliega a 200×200 y no se esconde.
+- [ ] **Este aparato**: bajar ambiente y efectos y silenciar; al recargar, sigue igual.
+
 ## Libros y el espacio de la campaña (en local; ADR-0021)
 
 - [ ] **Entrar**: desde Mis mundos, la campaña se abre en la misma pestaña, en su Inicio (ir a la Mesa, jugadores,

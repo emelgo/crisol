@@ -34,7 +34,13 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   modo, turno, muros y puertas en el servidor; si no, vuelve con aviso), abre las puertas que ve, pasa su turno; el
   máster asigna criaturas («Lo lleva…», `asignar_ficha`). Pendiente menor: pintar el arrastre de la jugadora con su
   color en la Mesa del máster (el servidor ya manda `by`) y moverlas con el teclado.
-- **Siguiente**: `notas-jugador`, `sonido`, `sonido-mapa`, `sonido-foundry`; luego critique y
+- **`notas-jugador` y `sonido` hechos** (migraciones 0070 y 0071). El sonido: listas del mundo (`sound_playlists`,
+  `sound_tracks`, con historial), lo que suena de cada campaña en `campaign_tables.sound`, el reloj del servidor que pasa
+  de pista sin nadie (`apps/server/src/table/sound.ts`), mensajes `sound` y `time` por el canal de la mesa, la pestaña
+  Sonido del máster, las barras junto a la pausa y la reproducción en la Mesa del máster, la de la jugadora y la vista de
+  jugadores (`apps/web/src/sound/`); MCP `ver_sonido`, `poner_sonido`, `parar_sonido`, `volumen_sonido`,
+  `crear_lista_sonido`, `cambiar_lista_sonido`. Falta probarlo en un navegador de verdad (`tasks/probar.md`).
+- **Siguiente**: `sonido-mapa`, `sonido-foundry`; luego critique y
   audit con impeccable, e2e y PR. Capturas de la Mesa: `e2e/tests/zz-captura.spec.ts` (fuera de git).
 
 ### Para retomar (2026-11-10: tanda en `main` con el PR #116; se pasa al módulo 7)
