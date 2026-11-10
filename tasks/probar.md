@@ -9,6 +9,27 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
+## Los sonidos del mapa (en local; módulo 7, docs/specs/sonido-mapa.md)
+
+- [ ] **Poner**: en la Mesa, herramienta «Sonidos del mapa» (O, junto a las luces): un clic pone uno y sale su
+  círculo; elegir qué suena (un audio del mundo o una pista de las listas), el radio, el volumen, «Se apaga hacia el
+  borde», «Lo frenan / Lo amortiguan», «Solo a oscuras»; arrastrarlo; Supr lo quita.
+- [ ] **Oírlo**: en la Mesa del máster, al mover la vista hacia él sube y al alejarla baja; «Oírlos desde el centro
+  de la vista» apagado, calla. Con la vista de jugadores: acercar una ficha del grupo sube el volumen; tras un muro que
+  lo frena, se corta; con «Lo amortiguan», se oye bajito. Abrir la puerta lo deja pasar.
+- [ ] **La jugadora**: en su Mesa lo oye desde su ficha (no desde las de los demás).
+- [ ] **Por campaña**: «Suena en esta campaña» apagado en una, sigue en otra del mismo mundo.
+- [ ] **Coste**: con unos diez sonidos y muchos muros, la Mesa va igual de suelta.
+
+## El sonido de un zip de Foundry (en local; módulo 7, docs/specs/sonido-foundry.md)
+
+- [ ] **Traer**: en «Sistema nuevo», un módulo de aventura con música: salen sus listas junto a escenas y aventuras;
+  al traer, «Subiendo sus audios…» y luego el resultado con las listas y los sonidos que no se pudieron traer (los de
+  serie del programa, los que no vienen en el zip). Las listas, en la pestaña Sonido, listas para lanzar; los sonidos
+  de sus escenas, en la herramienta del mapa.
+- [ ] **Reimportar**: el mismo zip otra vez no duplica listas ni sonidos ni vuelve a subir los audios.
+- [ ] **Duración**: las pistas del zip duran lo que dicen; las de YouTube o de una dirección, 5 min hasta cambiarlas.
+
 ## El sonido (en local; módulo 7, docs/specs/sonido.md)
 
 - [ ] **Listas**: en la Mesa, pestaña Sonido → «Lista nueva» con un audio del mundo, otro subido y un enlace de YouTube

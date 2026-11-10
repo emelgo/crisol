@@ -40,8 +40,20 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   Sonido del máster, las barras junto a la pausa y la reproducción en la Mesa del máster, la de la jugadora y la vista de
   jugadores (`apps/web/src/sound/`); MCP `ver_sonido`, `poner_sonido`, `parar_sonido`, `volumen_sonido`,
   `crear_lista_sonido`, `cambiar_lista_sonido`. Falta probarlo en un navegador de verdad (`tasks/probar.md`).
-- **Siguiente**: `sonido-mapa`, `sonido-foundry`; luego critique y
-  audit con impeccable, e2e y PR. Capturas de la Mesa: `e2e/tests/zz-captura.spec.ts` (fuera de git).
+- **`sonido-mapa` y `sonido-foundry` hechos** (migraciones 0072 y 0073). Sonidos del mapa: `scene_sounds` (del mundo,
+  con historial) y su encendido por campaña en `scene_states.sounds`; la atenuación en `packages/tabletop/src/sound.ts`
+  (coseno, frenan o amortiguan, el limitado deja pasar uno); la vista de jugadores y la Mesa del jugador reciben en
+  `screen.sounds` los que suenan y en `soundWalls` los muros cerca; cada aparato calcula su volumen
+  (`apps/web/src/sound/map-sounds.ts`: grupo, sus fichas o el centro de la vista del máster); la herramienta «Sonidos
+  del mapa» (O); MCP `poner_sonido_escena`, `cambiar_sonido_escena`, `quitar_sonido_escena`. Foundry: listas de
+  paquetes de listas, de aventuras y las que enlaza una escena, y los sonidos de sus escenas
+  (`packages/systems/src/foundry/sound.ts`); la web sube antes los audios del zip y mide su duración; las pistas ganan
+  la fuente «dirección» (`sound_tracks.url`); lo que falta va a `missingAudio`. **Queda**: los zips de un mundo
+  (`world.json`, como en las escenas); el amortiguado es solo más bajo (sin filtro de paso bajo); la duración de las
+  pistas de YouTube o de una dirección traídas se supone (5 min); el test `repos.test.ts` de miembros (campo `color`)
+  ya fallaba antes.
+- **Siguiente**: critique y audit con impeccable (también la herramienta y el panel de sonidos del mapa), e2e y PR.
+  Capturas de la Mesa: `e2e/tests/zz-captura.spec.ts` (fuera de git).
 
 ### Para retomar (2026-11-10: tanda en `main` con el PR #116; se pasa al módulo 7)
 
