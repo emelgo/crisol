@@ -50,6 +50,23 @@ export function visibleNotes(rows: readonly NoteRow[]): NoteRow[] {
   return rows.filter((row) => live(row))
 }
 
+/** En el orden del árbol: cada una y, debajo, las suyas (las que no tienen su madre en la lista, arriba) */
+export function inTreeOrder(rows: readonly NoteRow[]): NoteRow[] {
+  const ids = new Set(rows.map((row) => row.id))
+  const out: NoteRow[] = []
+  const walk = (parentId: string | null) => {
+    for (const row of rows) {
+      const parent = row.parentId && ids.has(row.parentId) ? row.parentId : null
+      if (parent === parentId && !out.includes(row)) {
+        out.push(row)
+        walk(row.id)
+      }
+    }
+  }
+  walk(null)
+  return out
+}
+
 /** Las que cuelgan de una (hijas, nietas…), de esa lista */
 export function below(rows: readonly NoteRow[], id: string): NoteRow[] {
   const out: NoteRow[] = []

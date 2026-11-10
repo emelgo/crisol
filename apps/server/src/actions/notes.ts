@@ -142,7 +142,7 @@ export const noteActions = [
       throw new NotFoundError('campaign')
     const rows = await notesRepo.notesOf(ctx.db, campaign.id, whose)
     const notes = trash ? rows.filter((row) => row.deletedAt) : notesRepo.visibleNotes(rows)
-    return { notes: notes.map(item) }
+    return { notes: notesRepo.inTreeOrder(notes).map(item) }
   }),
 
   implement(getPlayerNote, async (ctx, { id }) => {
