@@ -447,7 +447,8 @@ async function tableOf(ctx: ActionContext, campaign: Campaign, given?: scenesRep
     widgets,
     measureOnScreen: table.measureOnScreen,
     paused: table.paused,
-    movement: table.movement
+    movement: table.movement,
+    show: table.screenShow ? { ...table.screenShow, worldId: campaign.worldId } : null
   }
   return { master, shownTokens: shownLoaded.views, shownVision, shownMarks, widgets }
 }
@@ -478,6 +479,8 @@ export function screenViewOf(input: {
   /** La sala: en pausa y cómo mueven los jugadores */
   paused?: boolean
   movement?: TableMovement
+  /** Lo que enseña el máster encima de la escena */
+  show?: ScreenView['show']
 }): ScreenView {
   const { scene, vision } = input
   // Sin la vista del grupo no se enseña nada (no debería pasar: el servidor siempre la tiene)
@@ -518,7 +521,9 @@ export function screenViewOf(input: {
     // Los widgets, mientras la pantalla no esté a oscuras (aunque no enseñe escena)
     widgets: input.hidden ? [] : screenWidgetsOf(input.widgets ?? []),
     paused: input.paused ?? false,
-    movement: input.movement ?? 'free'
+    movement: input.movement ?? 'free',
+    // Aunque esté oculta la escena: lo enseñado va encima
+    show: input.show ?? null
   }
 }
 
@@ -545,7 +550,8 @@ function screenOfTable(
     marks: shown.marks,
     widgets: shown.widgets,
     paused: master.paused,
-    movement: master.movement
+    movement: master.movement,
+    show: master.show ?? null
   })
 }
 

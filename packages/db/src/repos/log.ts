@@ -3,7 +3,7 @@
  * quién los ve. El máster ve todo, también los susurros entre jugadores (Enrique); los demás, lo de todos, lo suyo y lo
  * que les susurran. No pasa por operation(): no se deshace
  */
-import { and, desc, eq, lt, or, sql } from 'drizzle-orm'
+import { and, desc, eq, inArray, isNull, lt, or, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { user } from '../schema/auth.ts'
 import { campaignMessages, type MessageSpeaker, type ShownData } from '../schema/log.ts'
@@ -142,4 +142,30 @@ export async function clearMessages(db: Database, campaignId: string): Promise<n
     .where(eq(campaignMessages.campaignId, campaignId))
     .returning({ id: campaignMessages.id })
   return rows.length
+}
+
+/**
+ * Si a una cuenta le enseñaron una imagen en alguna de sus campañas (a ella o a todos) y sigue en el registro: así la
+ * puede abrir (docs/specs/ensenar.md)
+ */
+export async function wasShownFile(
+  db: Database,
+  input: { userId: string; campaignIds: readonly string[]; fileId: string }
+): Promise<boolean> {
+  if (input.campaignIds.length === 0) return false
+  const [found] = await db
+    .select({ id: campaignMessages.id })
+    .from(campaignMessages)
+    .where(
+      and(
+        inArray(campaignMessages.campaignId, [...input.campaignIds]),
+        eq(campaignMessages.kind, 'shown'),
+        isNull(campaignMessages.deletedAt),
+        sql`${campaignMessages.shown}->>'kind' = 'image'`,
+        sql`${campaignMessages.shown}->>'id' = ${input.fileId}`,
+        or(sql`${campaignMessages.whisper} is null`, sql`${input.userId} = any(${campaignMessages.whisper})`)
+      )
+    )
+    .limit(1)
+  return Boolean(found)
 }

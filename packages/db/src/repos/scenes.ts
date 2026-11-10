@@ -161,6 +161,7 @@ export async function campaignTable(db: Database, campaignId: string): Promise<C
       paused: false,
       movement: 'free',
       kicked: [],
+      screenShow: null,
       updatedAt: new Date(0)
     }
   )
@@ -188,6 +189,7 @@ export async function setCampaignTable(
     paused: boolean
     movement: 'free' | 'turn' | 'locked'
     kicked: string[]
+    screenShow: { kind: 'page' | 'image'; id: string; title: string } | null
   }>
 ): Promise<CampaignTableRow> {
   const [row] = await db

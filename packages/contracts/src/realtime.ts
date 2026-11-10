@@ -55,6 +55,8 @@ export type RealtimeMessage =
     }
   /** El máster le enseña una página (que ya conoce): se le abre al momento */
   | { type: 'shown'; worldId: string; campaignId: string; pageId: string; title: string }
+  /** Una imagen que enseña el máster (docs/specs/ensenar.md): se abre en grande */
+  | { type: 'shownImage'; worldId: string; campaignId: string; fileId: string; title: string }
   /** Lo que sabe una campaña (o todo el mundo, sin campaña) cambió: cada uno vuelve a pedir lo que tenga abierto */
   | { type: 'changed'; what: 'knowledge'; worldId: string; campaignId: string | null }
   /** El inventario del grupo de esa campaña (y lo que llevan sus personajes, si se movió algo) */

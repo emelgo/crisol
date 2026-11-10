@@ -477,6 +477,13 @@
       "when": 1794316428027,
       "tag": "0067_carpetas_actores",
       "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "7",
+      "when": 1794320608660,
+      "tag": "0068_ensenar",
+      "breakpoints": true
     }
   ]
 }

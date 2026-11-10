@@ -274,7 +274,12 @@ export const campaignTableView = z.object({
   measureOnScreen: z.boolean().optional(),
   /** La sala (docs/specs/sala.md): en pausa y cómo mueven los jugadores (opcional por la API de prueba de la web) */
   paused: z.boolean().optional(),
-  movement: z.enum(['free', 'turn', 'locked']).optional()
+  movement: z.enum(['free', 'turn', 'locked']).optional(),
+  /** Lo que enseña el máster en la vista de jugadores (docs/specs/ensenar.md) */
+  show: z
+    .object({ kind: z.enum(['page', 'image']), id: z.string(), title: z.string(), worldId: z.uuid() })
+    .nullable()
+    .optional()
 })
 
 export type CampaignTableView = z.infer<typeof campaignTableView>

@@ -193,6 +193,8 @@ export const campaignTables = pgTable('campaign_tables', {
     .default('free'),
   /** A quiénes ha echado el máster de la Mesa (no vuelven a entrar hasta que los deje) */
   kicked: text().array().notNull().default(sql`'{}'::text[]`),
+  /** Lo que enseña el máster en la vista de jugadores, encima de la escena (docs/specs/ensenar.md) */
+  screenShow: jsonb().$type<{ kind: 'page' | 'image'; id: string; title: string } | null>(),
   updatedAt: timestamp({ withTimezone: true }).defaultNow().notNull()
 })
 

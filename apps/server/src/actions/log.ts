@@ -25,7 +25,7 @@ const isMaster = (ctx: ActionContext, campaign: Campaign) =>
 const colorOf = (color: string | null) => (color && /^#[0-9a-f]{6}$/i.test(color) ? color : null)
 
 /** Un mensaje tal como lo ve la web, con los nombres de sus destinatarios */
-function presentMessage(row: logRepo.MessageRow, names: ReadonlyMap<string, string>): LogEntry {
+export function presentMessage(row: logRepo.MessageRow, names: ReadonlyMap<string, string>): LogEntry {
   const by = { userId: row.userId, name: row.name, color: colorOf(row.color) }
   const whisper = row.whisper?.map((id) => ({ id, name: id === MASTER ? '' : (names.get(id) ?? '') })) ?? null
   const base = {

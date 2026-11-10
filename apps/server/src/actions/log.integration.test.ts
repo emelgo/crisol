@@ -221,4 +221,35 @@ describe('el registro de la partida: mensajes, susurros y tiradas', () => {
     expect((await call('clearLog', { campaignId })).body).toEqual({ deleted: 1 })
     expect((await call('listLog', { campaignId })).body.entries).toEqual([])
   })
+
+  it('enseñar una imagen: a quien se enseña la abre (desde el registro) y los demás no; en la vista y quitarla', async () => {
+    const worldId = (await call('getCampaign', { campaignId })).body.campaign.worldId
+    const png = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.from('mapa')])
+    const uploaded = await app.inject({
+      method: 'POST',
+      url: `/api/files?worldId=${worldId}&name=${encodeURIComponent('Carta.png')}`,
+      payload: png,
+      headers: { origin: BASE_URL, cookie: owner.cookie, 'content-type': 'application/octet-stream' }
+    })
+    const fileId = uploaded.json().id as string
+    const get = async (cookie: string) =>
+      (await app.inject({ method: 'GET', url: `/api/files/${fileId}`, headers: { cookie } })).statusCode
+    expect(await get(ana.cookie)).toBe(404)
+
+    expect((await call('showImage', { campaignId, fileId, to: [ana.userId] }, ana.cookie)).status).toBe(404)
+    expect((await call('showImage', { campaignId, fileId, to: [ana.userId], screen: true })).body).toEqual({ shown: 1 })
+    expect(await get(ana.cookie)).toBe(200)
+    expect(await get(bruno.cookie)).toBe(404)
+    // En su registro, como «Enseñado»
+    const entries = (await call('listLog', { campaignId }, ana.cookie)).body.entries
+    expect(entries.at(-1)).toMatchObject({ kind: 'shown', shown: { kind: 'image', id: fileId, title: 'Carta.png' } })
+    expect((await call('listLog', { campaignId }, bruno.cookie)).body.entries).toEqual([])
+    // En la vista de jugadores, hasta que se quita
+    expect((await call('getCampaignTable', { campaignId })).body.show).toMatchObject({ kind: 'image', id: fileId })
+    await call('clearScreenShow', { campaignId })
+    expect((await call('getCampaignTable', { campaignId })).body.show).toBeNull()
+    // Vaciado el registro, ya no la abre
+    await call('clearLog', { campaignId })
+    expect(await get(ana.cookie)).toBe(404)
+  })
 })

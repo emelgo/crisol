@@ -1767,6 +1767,8 @@ export function fakeApi(
         throw error
       }
     },
+    showImage: ({ to }) => ({ shown: to?.length ?? 0 }),
+    clearScreenShow: () => ({ ok: true as const }),
     clearLog: ({ campaignId }) => {
       const before = messages.length
       for (let i = messages.length - 1; i >= 0; i--) if (messages[i]?.campaignId === campaignId) messages.splice(i, 1)

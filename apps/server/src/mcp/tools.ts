@@ -469,6 +469,9 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   escribir_en_registro: { action: 'sendMessage' },
   borrar_mensaje: { action: 'deleteMessage' },
   vaciar_registro: { action: 'clearLog' },
+  // Enseñar (docs/specs/ensenar.md): ensenar_pagina ya estaba
+  ensenar_imagen: { action: 'showImage' },
+  quitar_de_la_vista: { action: 'clearScreenShow' },
   borrar_tiradas: { action: 'deleteRolls' },
   // Las carpetas de la pestaña Actores (agrupar personajes y criaturas en juego)
   ver_carpetas_actores: { action: 'listActorFolders' },

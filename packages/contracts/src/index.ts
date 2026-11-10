@@ -80,6 +80,7 @@ import { importFoundryScenes, inspectFoundryScenes } from './foundry-scenes.ts'
 import { listHistory, undoOperation } from './history.ts'
 import { getInvitation, regenerateInvitation, setInvitationsOpen } from './invitations.ts'
 import {
+  clearScreenShow,
   getPageKnowledge,
   getSecretsKnowledge,
   hide,
@@ -90,6 +91,7 @@ import {
   seeNews,
   setKnowledge,
   setPageEditors,
+  showImage,
   showPage
 } from './knowledge.ts'
 import { getBookPages, listLibrary, readBookAgain, searchLibrary } from './library.ts'
@@ -533,7 +535,9 @@ export const ACTIONS = [
   deleteActorFolder,
   moveToActorFolder,
   clearLog,
-  deleteRolls
+  deleteRolls,
+  showImage,
+  clearScreenShow
 ]
 
 /** Las acciones por nombre, solo como tipo: la web las usa sin cargar zod */
@@ -789,4 +793,6 @@ export type Actions = {
   moveToActorFolder: typeof moveToActorFolder
   clearLog: typeof clearLog
   deleteRolls: typeof deleteRolls
+  showImage: typeof showImage
+  clearScreenShow: typeof clearScreenShow
 }

@@ -255,7 +255,9 @@ describe('Actions', () => {
       deleteActorFolder: true,
       moveToActorFolder: true,
       clearLog: true,
-      deleteRolls: true
+      deleteRolls: true,
+      showImage: true,
+      clearScreenShow: true
     }
     expect(Object.keys(names).sort()).toEqual(ACTIONS.map((a) => a.name).sort())
   })

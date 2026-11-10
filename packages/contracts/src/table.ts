@@ -107,7 +107,12 @@ export const screenView = z.object({
   widgets: z.array(screenWidget).optional(),
   /** La sala (docs/specs/sala.md): en pausa y cómo mueven los jugadores (opcional por la API de prueba de la web) */
   paused: z.boolean().optional(),
-  movement: tableMovement.optional()
+  movement: tableMovement.optional(),
+  /** Lo que enseña el máster encima de la escena (docs/specs/ensenar.md) */
+  show: z
+    .object({ kind: z.enum(['page', 'image']), id: z.string(), title: z.string(), worldId: z.uuid() })
+    .nullable()
+    .optional()
 })
 
 export type ScreenView = z.infer<typeof screenView>
