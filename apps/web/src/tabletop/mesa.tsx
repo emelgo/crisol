@@ -49,6 +49,7 @@ import { PageTitle } from '../components/page-title.tsx'
 import { Tour } from '../components/tour.tsx'
 import { useDice } from '../dice/context.tsx'
 import { HistoryHost } from '../dice/history.tsx'
+import { LogStrip } from '../log/strip.tsx'
 import { SourcePicker } from '../wiki/scene/source-picker.tsx'
 import { canvasViewOf, framingOf, REFERENCE_ASPECT, sceneViewportOf, sceneViewportOfCanvas } from './camera.ts'
 import { connectTable, type DragMove, type TableChannel, type TableStatus } from './channel.ts'
@@ -540,6 +541,7 @@ export function Mesa({ worldId, campaign: current }: { worldId: string; campaign
               framing={() => (size.width > 0 ? fixedFraming(view.current, freeArea(size, host.current)) : null)}
             />
             <PauseBanner campaignId={campaignId} />
+            <LogStrip campaign={current} />
             {(selected.length > 1 || (fromTemplate && selected.length > 0)) && (
               <GroupDamage
                 key={selected.join()}

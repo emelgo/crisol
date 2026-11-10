@@ -1,0 +1,356 @@
+/* El registro en la Mesa: una tira de cristal abajo, a la derecha del zoom (lienzo «Sala de jugadores») */
+.strip {
+  position: absolute;
+  z-index: 12;
+  inset-block-end: 0.875rem;
+  /* A la derecha del zoom (Enrique: «el zoom a la izquierda y el chat a la derecha») */
+  inset-inline-start: 11.4rem;
+  display: flex;
+  flex-direction: column;
+  inline-size: min(25rem, calc(100% - 37rem));
+  min-inline-size: 18rem;
+  border: 1px solid var(--glass-edge);
+  border-radius: 10px;
+  background: var(--glass-sheen), var(--glass-panel);
+  box-shadow:
+    inset 0 1px 0 var(--glass-hi),
+    0 0 0 1px var(--glass-line),
+    var(--glass-shadow);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  color: var(--color-text);
+  font-size: 0.875rem;
+}
+
+.edge {
+  inset-inline-start: 0.75rem;
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .strip {
+    background: var(--glass-sheen), var(--glass-solid);
+  }
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  padding: 4px 6px 0;
+}
+
+.toggle {
+  display: inline-flex;
+  flex: 1;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--color-muted);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.toggle span {
+  flex: 1;
+  text-align: start;
+}
+
+.toggle:hover {
+  color: var(--color-text);
+}
+
+.older {
+  align-self: center;
+  margin: 2px 0;
+  padding: 3px 10px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--color-raised);
+  color: var(--color-muted);
+  font: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 2px 6px;
+  overflow-y: auto;
+  list-style: none;
+  /* Plegada, las últimas líneas se apagan hacia arriba */
+  mask-image: linear-gradient(to bottom, transparent, #000 1.5rem);
+  max-block-size: 9.5rem;
+}
+
+.open .list {
+  max-block-size: min(60vh, 34rem);
+  mask-image: none;
+}
+
+.entry {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 5px 6px;
+  border-radius: 7px;
+}
+
+.entry:hover {
+  background: color-mix(in srgb, var(--color-text) 5%, transparent);
+}
+
+.whisper {
+  background: color-mix(in srgb, var(--color-secret-rule) 14%, transparent);
+}
+
+.whisper:hover {
+  background: color-mix(in srgb, var(--color-secret-rule) 20%, transparent);
+}
+
+.private {
+  opacity: 0.85;
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  inline-size: 22px;
+  block-size: 22px;
+  flex: none;
+  margin-block-start: 1px;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 0.6875rem;
+  font-weight: 700;
+}
+
+.body {
+  flex: 1;
+  min-inline-size: 0;
+}
+
+.line {
+  margin: 0;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.muted {
+  color: var(--color-muted);
+}
+
+.emote {
+  font-style: italic;
+}
+
+.detail {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.75rem;
+}
+
+.whisperLabel {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0 0 1px;
+  color: var(--color-secret-text);
+  font-size: 0.6875rem;
+  font-weight: 700;
+}
+
+.total {
+  align-self: center;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.high {
+  color: var(--color-tip);
+}
+
+.low {
+  color: var(--color-danger);
+}
+
+.side {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--color-muted);
+  font-size: 0.6875rem;
+}
+
+.delete {
+  display: grid;
+  place-items: center;
+  inline-size: 20px;
+  block-size: 20px;
+  border: 0;
+  border-radius: 5px;
+  background: none;
+  color: var(--color-muted);
+  opacity: 0;
+  cursor: pointer;
+}
+
+.entry:hover .delete,
+.delete:focus-visible {
+  opacity: 1;
+}
+
+.delete:hover {
+  color: var(--color-danger);
+}
+
+.empty {
+  padding: 6px;
+  color: var(--color-muted);
+}
+
+.compose {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px;
+  border-block-start: 1px solid var(--glass-edge);
+}
+
+.modeWrap {
+  position: relative;
+}
+
+.mode {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-inline-size: 9rem;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mode span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mode:hover,
+.mode[aria-expanded="true"] {
+  background: var(--color-raised);
+}
+
+.whispering {
+  color: var(--color-secret-text);
+}
+
+.menu {
+  position: absolute;
+  z-index: 20;
+  inset-block-end: calc(100% + 8px);
+  inset-inline-start: 0;
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 12rem;
+  padding: 4px;
+  border: 1px solid var(--glass-edge);
+  border-radius: 9px;
+  background: var(--color-surface);
+  box-shadow: var(--glass-shadow);
+}
+
+.menu button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 9px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.menu button > svg:last-child:not(:first-child) {
+  margin-inline-start: auto;
+}
+
+.menu button:hover {
+  background: var(--color-raised);
+}
+
+.menuHead {
+  margin: 6px 9px 2px;
+  color: var(--color-muted);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.input {
+  flex: 1;
+  min-inline-size: 0;
+  padding: 6px 9px;
+  border: 1px solid var(--color-border);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--color-bg) 70%, transparent);
+  color: var(--color-text);
+  font: inherit;
+}
+
+.input:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 0;
+}
+
+.send {
+  display: grid;
+  place-items: center;
+  inline-size: 32px;
+  block-size: 32px;
+  border: 0;
+  border-radius: 7px;
+  background: none;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.send:hover:not(:disabled) {
+  background: var(--color-raised);
+}
+
+.send:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.hint,
+.error {
+  margin: 0;
+  padding: 0 10px 8px;
+  color: var(--color-muted);
+  font-size: 0.75rem;
+}
+
+.error {
+  color: var(--color-danger);
+}

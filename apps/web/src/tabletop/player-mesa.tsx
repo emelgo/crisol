@@ -6,7 +6,7 @@
 import type { Campaign, ScreenView } from '@crisol/contracts'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { UserRound } from 'lucide-react'
+import { Pause, UserRound } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
@@ -17,12 +17,14 @@ import { PageTitle } from '../components/page-title.tsx'
 import { Tour } from '../components/tour.tsx'
 import { useDice } from '../dice/context.tsx'
 import { HistoryHost } from '../dice/history.tsx'
+import { LogStrip } from '../log/strip.tsx'
 import { useShown } from '../realtime/context.tsx'
 import { ReadAsProvider } from '../wiki/read-as.tsx'
 import { CompendiumTab } from './compendium-tab.tsx'
 import styles from './mesa.module.css'
 import { PagesTab } from './pages-tab.tsx'
 import playerStyles from './player-mesa.module.css'
+import roomStyles from './room.module.css'
 import { TableScreen } from './screen.tsx'
 import { type SidebarItem, type SidebarTab, TableSidebar, useSidebarFolded, useSidebarTab } from './sidebar.tsx'
 import { sheetWindow } from './token-sheet.tsx'
@@ -66,6 +68,13 @@ export function PlayerMesa({ worldId, campaign }: { worldId: string; campaign: C
           <div className={styles.mesa} data-mesa="">
             <div ref={stageBox} className={styles.stageBox}>
               <TableScreen campaignId={campaign.id} viewer="player" onScreen={setScreen} />
+              {screen?.paused && (
+                <p className={roomStyles.banner} role="status">
+                  <Pause size={14} aria-hidden="true" />
+                  {t('room.paused')}
+                </p>
+              )}
+              <LogStrip campaign={campaign} edge />
               <WindowLayer />
             </div>
             <PlayerSidebar worldId={worldId} campaign={campaign} screen={screen} />

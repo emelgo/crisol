@@ -1778,6 +1778,28 @@ export const es = {
     combatStart: 'a punto de empezar',
     noCombat: 'no hay'
   },
+  // El registro de la partida (docs/specs/registro.md, log/strip.tsx)
+  log: {
+    title: 'Registro',
+    older: 'Ver lo anterior',
+    empty: 'Aún no hay nada.',
+    placeholder: 'Escribe…',
+    whisperPlaceholder: 'Susurra…',
+    write: 'Escribir en el registro',
+    send: 'Enviar',
+    all: 'Todos',
+    to: 'A {{names}}',
+    whisperHead: 'Susurrar a',
+    whisperTo: 'Susurro a {{names}}',
+    whisperFrom: 'Susurro de {{name}}',
+    whisperBetween: 'De {{from}} a {{to}}',
+    master: 'Máster',
+    deleted: 'Mensaje borrado',
+    delete: 'Borrar',
+    shown: '{{name}} enseñó {{title}}',
+    noRecipient: 'No hay nadie con ese nombre en la campaña.',
+    commands: '/s nombre: susurrar · /t 1d20+5: tirar · /yo: una acción · /ooc: fuera de personaje'
+  },
   // La sala en la Mesa del máster (docs/specs/sala.md, tabletop/room.tsx)
   room: {
     title: 'Sala',
