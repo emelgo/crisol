@@ -1,16 +1,11 @@
 # Skills del proyecto
 
-Copiadas de `vercel-labs/agent-skills` (commit `1a2c79d4e6c4a2283dc2c614b6538cbe1ed5ca62`, MIT; aviso de copyright en
-`LICENSE-vercel`), sin sus `README.md` ni `metadata.json`:
+- `impeccable` (https://github.com/pbakaus/impeccable, Paul Bakaus, Apache-2.0; skill 4.8.2, motor 0.1.21): diseñar y
+  revisar la interfaz (Enrique, 2026-11-10: en cada módulo, `critique` y `audit` de lo que se toca, y aplicar mejoras).
+  La instaló `npx impeccable install --providers=claude --scope=project` con sus agentes (`.claude/agents/impeccable-*`)
+  y su vigilante (hooks en `.claude/settings.local.json`, fuera de git). Su motor (`scripts/bin/`, ~22 MB) no va a
+  git: el lanzador lo descarga si falta. Para actualizarla: `npx impeccable update` y revisar el cambio.
 
-- `web-design-guidelines`: revisar la interfaz. Sus reglas van fijadas en `guidelines.md` (de
-  `vercel-labs/web-interface-guidelines`, commit `434b7f91364665f2f733b310ec54809bf8f37937`) en vez de descargarse en
-  cada revisión, con las convenciones del español por encima de las del inglés.
-- `react-best-practices` y `composition-patterns`: rendimiento y forma de los componentes de React. Lo de Next.js y
-  del servidor de React no aplica (la web es una SPA con Vite).
-- `react-view-transitions`: animaciones entre pantallas.
-
-`frontend-design` (Anthropic, Apache-2.0) no está aquí: es el plugin `frontend-design@claude-plugins-official`,
-activado en `.claude/settings.json`.
-
-Para actualizar una, se vuelve a copiar a mano y se revisa el cambio: nada se descarga solo.
+Antes estaban aquí las de Vercel (`web-design-guidelines`, `react-best-practices`, `composition-patterns`,
+`react-view-transitions`) y se usaba el plugin `frontend-design` de Anthropic: quitados el 2026-11-10, los sustituye
+impeccable.

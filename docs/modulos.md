@@ -1597,20 +1597,15 @@ accesible, pero no tiene un diseño visual pensado. Antes de la wiki, que es lo 
 - Kit de componentes.
 - Repaso de las pantallas del 0.
 
-Se hace con la skill `frontend-design` de Anthropic (Apache-2.0): plugin `frontend-design@claude-plugins-official`,
-activado en el proyecto (`.claude/settings.json`).
-
-De las de Vercel (`vercel-labs/agent-skills`, MIT) sirven cuatro, copiadas en `.claude/skills/` (origen y licencia en
-su `README.md`):
-- `web-design-guidelines`: revisar la interfaz contra sus Web Interface Guidelines.
-- `react-best-practices` y `composition-patterns`: rendimiento y forma de los componentes de React.
-- `react-view-transitions`: animaciones entre pantallas, más adelante.
+Se hizo con la skill `frontend-design` de Anthropic y con cuatro de Vercel (`web-design-guidelines`,
+`react-best-practices`, `composition-patterns`, `react-view-transitions`). **Desde el 2026-11-10 las sustituye
+impeccable** (`.claude/skills/impeccable`, Apache-2.0; ver `CLAUDE.md`), que además revisa la interfaz en cada módulo.
 
 Identidad elegida (2026-10-29): **Hoja**, la séptima del lienzo, pedida como «rollo dndbeyond». Del género se toma
 el aire (cajas de hoja de personaje, títulos condensados en mayúsculas, rojo fuerte), nunca colores, letras ni piezas
 de D&D Beyond. Oscuro o claro según el sistema, con el botón para cambiarlo.
 
-Las de desplegar en Vercel y React Native no aplican. Desde entonces, cada módulo lleva un paso de diseño entre la spec
+Desde entonces, cada módulo lleva un paso de diseño entre la spec
 y el plan (ver `CLAUDE.md`).
 
 ## Para el repaso final de la interfaz
