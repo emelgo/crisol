@@ -556,6 +556,9 @@
 }
 
 .rowActions {
+  /* Por delante del nombre, que cubre la fila para abrirla */
+  position: relative;
+  z-index: 1;
   display: flex;
   gap: var(--space-1);
   opacity: 0;
