@@ -342,7 +342,8 @@
   display: grid;
   flex: none;
   place-items: center;
-  inline-size: 1rem;
+  /* 24 px: el mínimo para pulsarlo bien (WCAG 2.5.8), pegado a su fila */
+  inline-size: 1.5rem;
   block-size: 1.5rem;
   padding: 0;
   border: 0;
