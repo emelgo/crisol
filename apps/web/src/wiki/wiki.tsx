@@ -419,7 +419,7 @@ function PageHead({
               {...(template ? { style: itemTransition(template, 'nombre'), iconFirst: true } : {})}
             />
             {template ? (
-              <span className={styles.templateBadge}>
+              <span className={styles.templateBadge} data-tour="plantilla-marca">
                 <LayoutTemplate aria-hidden="true" size={12} />
                 {t('templateEditor.kind')}
               </span>

@@ -44,6 +44,8 @@ export function NewPageDialog({
   const [kind, setKind] = useState<TabKind>('text')
   // El paso de la plantilla: se elige una de la lista
   const [fromTemplate, setFromTemplate] = useState(false)
+  // Vuelto del paso de la plantilla: el foco, a «Desde plantilla»
+  const [back, setBack] = useState(false)
   const [title, setTitle] = useState('')
   const [template, setTemplate] = useState<string | null>(null)
   const titleId = useId()
@@ -94,8 +96,13 @@ export function NewPageDialog({
         <h2 id={titleId}>{parent ? t('newPage.subTitle', { parent: parent.title }) : t('newPage.title')}</h2>
         {fromTemplate ? (
           <>
-            <StepBack onClick={() => setFromTemplate(false)} />
-            <TemplatePicker value={template} onChange={setTemplate} />
+            <StepBack
+              onClick={() => {
+                setFromTemplate(false)
+                setBack(true)
+              }}
+            />
+            <TemplatePicker value={template} onChange={setTemplate} autoFocus />
           </>
         ) : (
           <KindChoices
@@ -106,11 +113,12 @@ export function NewPageDialog({
             labelOf={(each) => (each === 'text' ? t('newPage.text') : t(`pageTabs.kinds.${each}`))}
             onChange={setKind}
             onTemplate={() => setFromTemplate(true)}
+            focusTemplate={back}
           />
         )}
         <input
           className={styles.nameInput}
-          data-autofocus=""
+          data-autofocus={fromTemplate || back ? undefined : ''}
           value={title}
           maxLength={200}
           placeholder={t('wiki.untitled')}
@@ -118,14 +126,19 @@ export function NewPageDialog({
           onChange={(event) => setTitle(event.currentTarget.value)}
         />
         <FormError message={create.error ? errorText(create.error) : null} />
-        <BusyButton
-          type="submit"
-          className={`${form.button} ${styles.submit}`}
-          busy={create.isPending}
-          disabled={fromTemplate && !template}
-        >
-          {t('newPage.create')}
-        </BusyButton>
+        <div className={dialogStyles.actions}>
+          <BusyButton
+            type="submit"
+            className={form.button}
+            busy={create.isPending}
+            disabled={fromTemplate && !template}
+          >
+            {t('newPage.create')}
+          </BusyButton>
+          <button type="button" className={dialogStyles.cancel} onClick={() => dialog.current?.close()}>
+            {t('newPage.cancel')}
+          </button>
+        </div>
       </form>
     </Modal>
   )

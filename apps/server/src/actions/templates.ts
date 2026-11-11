@@ -145,11 +145,15 @@ export const templateActions = [
   }),
 
   // Desde cero (una página vacía en el mundo de las plantillas) o copiando otra: su página entera, sin los enlaces
-  implement(createTemplate, async (ctx, { organizationId, name, icon, copyOf }) => {
+  implement(createTemplate, async (ctx, { organizationId, name, icon, copyOf, folderId }) => {
     const target = targetOrganization(ctx, organizationId)
     authorize(ctx.actor, 'templates.write', { organizationId: target })
     await checkName(ctx, target, name)
     const base = copyOf ? await findTemplate(ctx, target, copyOf) : null
+    const baseRow = base ? await ownWritable(ctx, base.id) : null
+    // En la carpeta que se diga; la copia, sin decirlo, en la de la original
+    const folder =
+      folderId === undefined ? (baseRow?.folderId ?? null) : ((await folderOf(ctx, target, folderId))?.id ?? null)
     const id = randomUUID()
     const world = await worldsRepo.templatesWorld(ctx.db, target)
     const context = historyContext(
@@ -168,11 +172,11 @@ export const templateActions = [
       line: lineOf(id, base?.line ?? null),
       fields: [],
       panel: [],
-      skeleton: ''
+      skeleton: '',
+      folderId: folder
     }
     const emoji = icon === undefined ? (base?.icon ?? null) : templateEmoji(icon ?? null)
-    if (base) {
-      const baseRow = await ownWritable(ctx, base.id)
+    if (baseRow) {
       const pageId = await templatePage(ctx, baseRow)
       await copyRepo.copyPage(ctx.db, context, {
         sourceId: pageId,

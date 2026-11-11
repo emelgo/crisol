@@ -25,7 +25,7 @@ function renderTemplates() {
 describe('la pantalla «Plantillas»', () => {
   // Su tutorial guiado ya visto: si no, sale y se lleva el foco
   beforeEach(() =>
-    localStorage.setItem('crisol.recorridos.enrique@crisol.test', JSON.stringify({ seen: ['plantillas'] }))
+    localStorage.setItem('crisol.recorridos.enrique@crisol.test', JSON.stringify({ seen: ['plantillas', 'plantilla'] }))
   )
 
   it('las tuyas en su árbol (por nombre, sin orden a mano), sin plantillas de serie; al pasar por una, lo que trae', async () => {

@@ -504,7 +504,7 @@ export function fakeApi(
     for (const copy of copies) if (copy.position !== null) save(copy.id, copy.position)
     return own
   }
-  const templateById = (id: string): PageTemplate | undefined => {
+  const templateById = (id: string): TemplateView | undefined => {
     const found = ownTemplates.find((t) => t.id === id && !t.deleted)
     return found ? templateView(found) : undefined
   }
@@ -2016,7 +2016,7 @@ export function fakeApi(
       templatePage(found)
       return templateView(found)
     },
-    createTemplate: ({ name, icon, copyOf }) => {
+    createTemplate: ({ name, icon, copyOf, folderId }) => {
       const base = copyOf
         ? (templateById(copyOf) ?? ownTemplates.find((t) => !t.deleted && t.name === copyOf))
         : undefined
@@ -2036,7 +2036,8 @@ export function fakeApi(
         panel: structuredClone(base?.panel ?? []),
         skeleton: base?.skeleton ?? '',
         deleted: false,
-        folderId: null,
+        // En la carpeta que se diga; la copia, sin decirlo, en la de la original
+        folderId: folderId !== undefined ? folderId : (base?.folderId ?? null),
         position: null
       }
       ownTemplates.push(template)

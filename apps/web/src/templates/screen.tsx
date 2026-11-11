@@ -7,8 +7,8 @@
 import type { PageTemplate, TemplateFolder, TemplateView } from '@crisol/contracts'
 import { bySiblingPlace, placeAmong } from '@crisol/domain'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Link, Navigate, useNavigate } from '@tanstack/react-router'
-import { ChevronRight, Plus, Search, Settings } from 'lucide-react'
+import { Link, Navigate } from '@tanstack/react-router'
+import { ChevronRight, FolderPlus, Plus, Search, Settings } from 'lucide-react'
 import {
   type CSSProperties,
   type DragEvent,
@@ -47,6 +47,7 @@ import files from '../wiki/files.module.css'
 import { FolderGlyph } from '../wiki/folder-glyph.tsx'
 import { IconChoices } from '../wiki/icon.tsx'
 import { TemplateIcon } from './icons.tsx'
+import { useNewTemplate } from './new-template.ts'
 import { useTemplates } from './picker.tsx'
 import styles from './screen.module.css'
 import { treeOf } from './tree.ts'
@@ -496,6 +497,10 @@ function TemplatesTree({ data }: { data: Listed }) {
               onToggle={() => toggle(folder.id)}
               onPreview={preview(item)}
               onMove={moveFromDialog(item)}
+              onChanged={async () => {
+                expand(folder.id)
+                await refresh()
+              }}
             />
             {open && <ul className={files.kids}>{level(folder.id, depth + 1)}</ul>}
           </li>
@@ -527,38 +532,51 @@ function TemplatesTree({ data }: { data: Listed }) {
     <div className={files.layout}>
       <div className={files.center}>
         <PageTitle>{t('templates.title')}</PageTitle>
-        <div className={files.toolbar}>
-          <div className={files.tools}>
-            <button
-              type="button"
-              className={`${form.button} ${files.uploadButton}`}
-              data-tour="plantillas-nueva"
-              disabled={create.isPending}
-              onClick={() => create.mutate()}
-            >
-              <Plus aria-hidden="true" size={16} />
-              <span className={files.uploadLabel}>{t('templates.new')}</span>
-            </button>
-            <label className={files.search}>
-              <Search aria-hidden="true" size={16} />
-              <input
-                autoComplete="off"
-                data-1p-ignore
-                data-lpignore="true"
-                data-form-type="other"
-                type="search"
-                value={query}
-                placeholder={t('templates.search')}
-                aria-label={t('templates.search')}
-                onChange={(event) => setQuery(event.currentTarget.value)}
-              />
-            </label>
+        {/* Sin ninguna, solo el botón grande de la pantalla vacía (y nada que buscar) */}
+        {!nothing && (
+          <div className={files.toolbar}>
+            <div className={files.tools}>
+              <button
+                type="button"
+                className={`${form.button} ${files.uploadButton}`}
+                data-tour="plantillas-nueva"
+                disabled={create.isPending}
+                onClick={() => create.mutate()}
+              >
+                <Plus aria-hidden="true" size={16} />
+                <span className={files.uploadLabel}>{t('templates.new')}</span>
+              </button>
+              <label className={files.search}>
+                <Search aria-hidden="true" size={16} />
+                <input
+                  autoComplete="off"
+                  data-1p-ignore
+                  data-lpignore="true"
+                  data-form-type="other"
+                  type="search"
+                  value={query}
+                  placeholder={t('templates.search')}
+                  aria-label={t('templates.search')}
+                  onChange={(event) => setQuery(event.currentTarget.value)}
+                />
+              </label>
+            </div>
           </div>
-        </div>
+        )}
         <div className={files.contents}>
           <FormError message={create.errorText ?? moveError} />
           {searching && found?.hits.length === 0 && <p className={files.empty}>{t('templates.noneFound')}</p>}
-          {!searching && nothing && <p className={files.empty}>{t('templates.empty')}</p>}
+          {!searching && nothing && (
+            <div className={styles.emptyState}>
+              <p className={files.empty}>{t('templates.emptyHint')}</p>
+              <NewCard
+                label={t('templates.new')}
+                data-tour="plantillas-nueva"
+                disabled={create.isPending}
+                onClick={() => create.mutate()}
+              />
+            </div>
+          )}
           <ul ref={listRef} className={files.rows} aria-label={t('templates.listLabel')} aria-describedby={keysHintId}>
             {level(null, 0)}
             {/* «Nueva carpeta», una fila más tras la última */}
@@ -718,7 +736,8 @@ function FolderRow({
   focus,
   onToggle,
   onPreview,
-  onMove
+  onMove,
+  onChanged
 }: {
   folder: TemplateFolder
   depth: number
@@ -730,8 +749,10 @@ function FolderRow({
   onToggle: () => void
   onPreview: (shown: boolean) => void
   onMove: (dest: string | null) => void
+  onChanged: () => Promise<unknown>
 }) {
   const { t } = useTranslation()
+  const create = useNewTemplate()
   const [settings, setSettings] = useState(false)
   const gear = useRef<HTMLButtonElement>(null)
   return (
@@ -769,7 +790,28 @@ function FolderRow({
           {folder.name}
         </button>
       </span>
-      <span className={files.rowMeta}>{counts}</span>
+      {/* Cuánto tiene; al pasar el ratón (o con el foco), en su sitio, crear dentro una plantilla o una carpeta */}
+      <span className={files.folderMeta}>
+        <span className={files.rowMeta}>{counts}</span>
+        <span className={files.rowActions}>
+          <button
+            type="button"
+            className={files.smallGear}
+            aria-label={t('templates.newIn', { folder: folder.name })}
+            title={t('templates.newHere')}
+            disabled={create.isPending}
+            onClick={() => create.mutate({ folderId: folder.id })}
+          >
+            <Plus aria-hidden="true" size={15} />
+          </button>
+          <NewTemplateFolder
+            shape="icon"
+            parentId={folder.id}
+            label={t('templates.newFolderIn', { folder: folder.name })}
+            onCreated={onChanged}
+          />
+        </span>
+      </span>
       <button
         ref={gear}
         type="button"
@@ -885,7 +927,18 @@ function FolderField({
 }
 
 /** «Nueva carpeta»: una fila más al final de la lista, y su cuadro con el nombre */
-function NewTemplateFolder({ label, onCreated }: { label: string; onCreated: () => Promise<unknown> }) {
+function NewTemplateFolder({
+  label,
+  parentId = null,
+  shape = 'row',
+  onCreated
+}: {
+  label: string
+  parentId?: string | null
+  /** row: la fila del final; icon: el botón pequeño de una carpeta */
+  shape?: 'row' | 'icon'
+  onCreated: () => Promise<unknown>
+}) {
   const { t } = useTranslation()
   const api = useApi()
   const errorText = useErrorText()
@@ -896,25 +949,43 @@ function NewTemplateFolder({ label, onCreated }: { label: string; onCreated: () 
   const [name, setName] = useState('')
   const create = useMutation({
     mutationFn: async () => {
-      await api.call('createTemplateFolder', { parentId: null, name: name.trim() })
+      await api.call('createTemplateFolder', { parentId, name: name.trim() })
       await onCreated()
     },
     onSuccess: () => dialog.current?.close()
   })
   return (
     <>
-      <NewCard
-        ref={trigger}
-        shape="row"
-        label={label}
-        className={files.newFolder}
-        aria-haspopup="dialog"
-        onClick={() => {
-          setName('')
-          create.reset()
-          setOpen(true)
-        }}
-      />
+      {shape === 'icon' ? (
+        <button
+          ref={trigger}
+          type="button"
+          className={files.smallGear}
+          aria-label={label}
+          title={t('templates.newFolderHere')}
+          aria-haspopup="dialog"
+          onClick={() => {
+            setName('')
+            create.reset()
+            setOpen(true)
+          }}
+        >
+          <FolderPlus aria-hidden="true" size={15} />
+        </button>
+      ) : (
+        <NewCard
+          ref={trigger}
+          shape="row"
+          label={label}
+          className={files.newFolder}
+          aria-haspopup="dialog"
+          onClick={() => {
+            setName('')
+            create.reset()
+            setOpen(true)
+          }}
+        />
+      )}
       {open && (
         <Modal
           ref={dialog}
@@ -1074,46 +1145,6 @@ function TemplateFolderDialog({
       </div>
     </Modal>
   )
-}
-
-/** Para comparar nombres como el servidor: sin mayúsculas, tildes ni espacios de más */
-const nameKey = (name: string) =>
-  name.normalize('NFD').replace(/\p{M}/gu, '').toLocaleLowerCase('es').replace(/\s+/g, ' ').trim()
-
-/**
- * «Plantilla nueva»: crea «Plantilla sin título» (con un número si ya hay una así) y la abre con el título listo para
- * escribir, como una página nueva. Con una plantilla, la duplica
- */
-export function useNewTemplate() {
-  const { t } = useTranslation()
-  const api = useApi()
-  const queryClient = useQueryClient()
-  const navigate = useNavigate()
-  const errorText = useErrorText()
-  const templates = useTemplates().data?.templates ?? []
-  const create = useMutation({
-    // copyOf: duplicar esa (su página entera, con los mismos campos y su linaje), como «{nombre} (copia)»
-    mutationFn: (copyOf?: PageTemplate) => {
-      const base = copyOf ? t('templates.copyName', { name: copyOf.name.slice(0, 50) }) : t('templates.untitled')
-      const taken = new Set(templates.map((each) => nameKey(each.name)))
-      let name = base
-      for (let n = 2; taken.has(nameKey(name)); n++) name = `${base} ${n}`
-      return api.call('createTemplate', { name, ...(copyOf ? { copyOf: copyOf.id } : {}) })
-    },
-    onSuccess: async (created) => {
-      // Ya en la lista, para que su página la encuentre al abrirse (la lista de verdad llega después)
-      queryClient.setQueryData<Listed>(['templates'], (old) =>
-        old ? { ...old, templates: [...old.templates.filter((each) => each.id !== created.id), created] } : old
-      )
-      void queryClient.invalidateQueries({ queryKey: ['templates'] })
-      await navigate({ to: '/plantillas/$templateId', params: { templateId: created.id }, search: { nuevo: true } })
-    }
-  })
-  return {
-    mutate: (copyOf?: PageTemplate) => create.mutate(copyOf),
-    isPending: create.isPending,
-    errorText: create.error ? errorText(create.error) : null
-  }
 }
 
 /**

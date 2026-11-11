@@ -48,6 +48,8 @@ export interface TemplateValues {
   fields: unknown[]
   panel: unknown[]
   skeleton: string
+  /** Su carpeta (sin ella, en lo más alto) */
+  folderId?: string | null
 }
 
 /** Una nueva: desde cero o copiando otra (basedOn y su linaje). El id se da de antemano: va en su propio linaje */

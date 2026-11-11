@@ -99,7 +99,7 @@ export const listTemplates = defineAction({
   })
 })
 
-const templateName = z.string().trim().min(1).max(60)
+const templateName = z.string().trim().min(1).max(200)
 
 export const createTemplate = defineAction({
   name: 'createTemplate',
@@ -110,7 +110,12 @@ export const createTemplate = defineAction({
     organizationId: z.uuid().optional(),
     name: templateName,
     icon: newTemplateIcon.nullable().optional(),
-    copyOf: z.string().trim().min(1).max(60).optional().describe('La plantilla que se copia: su id o su nombre')
+    copyOf: z.string().trim().min(1).max(200).optional().describe('La plantilla que se copia: su id o su nombre'),
+    folderId: z
+      .uuid()
+      .nullable()
+      .optional()
+      .describe('Su carpeta (null: en lo más alto); sin decirlo, la copia va en la de la original')
   }),
   output: templateView
 })

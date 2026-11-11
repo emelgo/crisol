@@ -28,7 +28,7 @@ const panel = async () => within(await screen.findByRole('complementary', { name
 
 describe('editar una plantilla', () => {
   beforeEach(() =>
-    localStorage.setItem('crisol.recorridos.enrique@crisol.test', JSON.stringify({ seen: ['plantillas'] }))
+    localStorage.setItem('crisol.recorridos.enrique@crisol.test', JSON.stringify({ seen: ['plantillas', 'plantilla'] }))
   )
 
   it('sus campos: uno de opciones con su lista y un reloj de 8; todo se guarda solo', async () => {

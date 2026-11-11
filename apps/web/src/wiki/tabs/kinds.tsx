@@ -43,7 +43,8 @@ export function KindChoices({
   value,
   labelOf,
   onChange,
-  onTemplate
+  onTemplate,
+  focusTemplate = false
 }: {
   name: string
   legend: string
@@ -52,6 +53,8 @@ export function KindChoices({
   labelOf: (kind: TabKind) => string
   onChange: (kind: TabKind) => void
   onTemplate: () => void
+  /** De vuelta del paso de la plantilla: el foco, en «Desde plantilla» */
+  focusTemplate?: boolean
 }) {
   const { t } = useTranslation()
   return (
@@ -76,7 +79,14 @@ export function KindChoices({
       <span className={styles.or} aria-hidden="true">
         {t('newPage.or')}
       </span>
-      <button type="button" className={`${styles.kindCard} ${styles.fromTemplate}`} data-ready="" onClick={onTemplate}>
+      <button
+        type="button"
+        className={`${styles.kindCard} ${styles.fromTemplate}`}
+        data-ready=""
+        // biome-ignore lint/a11y/noAutofocus: vuelve al botón de donde se salió, dentro de su cuadro
+        autoFocus={focusTemplate}
+        onClick={onTemplate}
+      >
         <LayoutTemplate aria-hidden="true" size={20} />
         {t('newPage.fromTemplate')}
       </button>

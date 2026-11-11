@@ -142,6 +142,7 @@ export async function skipTours(page: Page, email: string) {
           'archivos',
           'etiquetas',
           'plantillas',
+          'plantilla',
           'dados',
           'sistemas',
           'paginas-jugador',

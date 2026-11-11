@@ -210,6 +210,9 @@
 /* Su cuadro: un recuadro por tipo, el nombre y «Crear» */
 .newDialog {
   inline-size: min(28rem, calc(100vw - 2rem));
+  /* Anclado arriba, como las ventanas de ajustes: al cambiar de paso (la lista de plantillas) no salta */
+  max-block-size: calc(100dvh - var(--dialog-top) - 1rem);
+  margin-block: var(--dialog-top) auto;
 }
 
 /* Una escena elige también su mapa: más ancho */

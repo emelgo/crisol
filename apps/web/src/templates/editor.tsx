@@ -22,8 +22,10 @@ import { ApiError } from '../api/client.ts'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { Loading } from '../components/brand.tsx'
+import { useDismiss } from '../components/dismiss.ts'
 import { FormError } from '../components/field.tsx'
 import { failed, LoadError } from '../components/load-error.tsx'
+import { Tour } from '../components/tour.tsx'
 import { LEAVE_ITEM, leaveItem, SECTION } from '../components/world-transition.ts'
 import { CollabSocket } from '../wiki/collab.tsx'
 import { blockOf, type Kind, kindOf, PANEL_GROUPS } from '../wiki/panel-blocks.tsx'
@@ -34,8 +36,9 @@ import { EntryView, pageKey, useSideTop } from '../wiki/wiki.tsx'
 import styles from './editor.module.css'
 import { FieldsEditor } from './fields.tsx'
 import { TemplateIcon } from './icons.tsx'
+import { useNewTemplate } from './new-template.ts'
 import { useTemplates } from './picker.tsx'
-import { TemplateSettings, useNewTemplate } from './screen.tsx'
+import { TemplateSettings } from './screen.tsx'
 import { templateGroups } from './tree.ts'
 
 type Patch = Partial<Pick<PageTemplate, 'fields' | 'panel'>>
@@ -87,7 +90,14 @@ export function TemplateView() {
   return (
     <TemplateLayout current={template} all={templates.data?.templates ?? []} folders={templates.data?.folders ?? []}>
       {page.data && template ? (
-        <TemplatePage key={template.id} page={page.data} template={template} nuevo={nuevo === true} pestana={pestana} />
+        <TemplatePage
+          key={template.id}
+          page={page.data}
+          template={template}
+          folders={templates.data?.folders ?? []}
+          nuevo={nuevo === true}
+          pestana={pestana}
+        />
       ) : failed(opened) || failed(page) ? (
         <LoadError error={opened.error ?? page.error} onRetry={() => (opened.error ? opened : page).refetch()} />
       ) : (
@@ -104,7 +114,7 @@ function TemplateLayout({
   folders,
   children
 }: {
-  current: PageTemplate | undefined
+  current: Listed | undefined
   all: readonly Listed[]
   folders: readonly TemplateFolder[]
   children: ReactNode
@@ -128,14 +138,15 @@ function TemplateLayout({
       </Link>
       <aside className={wiki.aside} aria-labelledby={headingId}>
         <div className={wiki.asideHeader}>
-          <h2 id={headingId}>{t('templates.mine')}</h2>
+          <h2 id={headingId}>{t('templates.listLabel')}</h2>
           <button
             type="button"
             className={wiki.newPageIcon}
             aria-label={t('templates.new')}
             title={t('templates.new')}
             disabled={create.isPending}
-            onClick={() => create.mutate()}
+            // En la carpeta de la abierta
+            onClick={() => create.mutate({ folderId: current?.folderId ?? null })}
           >
             <Plus aria-hidden="true" size={16} />
           </button>
@@ -195,14 +206,17 @@ function TemplateLinks({
 function TemplatePage({
   page,
   template,
+  folders,
   nuevo,
   pestana
 }: {
   page: Page
-  template: PageTemplate
+  template: Listed
+  folders: readonly TemplateFolder[]
   nuevo: boolean
   pestana: string | undefined
 }) {
+  const { t } = useTranslation()
   const tabs = usePageTabs(page)
   const all = tabs.data ?? []
   const active = pestana ? (all.find((tab) => tab.id === pestana) ?? null) : null
@@ -219,6 +233,15 @@ function TemplatePage({
   if (pestana && !active) return null
   return (
     <TabTargetContext.Provider value={target}>
+      {!nuevo && (
+        <Tour
+          id="plantilla"
+          steps={[
+            { target: '[data-tour="plantilla-marca"]', text: t('tour.template.page') },
+            { target: '[data-tour="panel-bloques"]', text: t('tour.template.panel') }
+          ]}
+        />
+      )}
       <EntryView
         page={page}
         nuevo={nuevo}
@@ -226,7 +249,7 @@ function TemplatePage({
         active={active}
         template={{
           id: template.id,
-          more: <TemplateMore template={template} />,
+          more: <TemplateMore template={template} folders={folders} />,
           side: <TemplateSide template={template} page={page} />
         }}
       />
@@ -235,7 +258,9 @@ function TemplatePage({
 }
 
 /** «⋯» de una plantilla: sus ajustes (nombre, icono y borrarla); borrada, a la lista */
-function TemplateMore({ template }: { template: PageTemplate }) {
+function TemplateMore({ template, folders }: { template: Listed; folders: readonly TemplateFolder[] }) {
+  const api = useApi()
+  const queryClient = useQueryClient()
   const { t } = useTranslation()
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
@@ -243,7 +268,7 @@ function TemplateMore({ template }: { template: PageTemplate }) {
   const copy = useNewTemplate()
   return (
     <>
-      <button type="button" disabled={copy.isPending} onClick={() => copy.mutate(template)}>
+      <button type="button" disabled={copy.isPending} onClick={() => copy.mutate({ copyOf: template })}>
         <Copy aria-hidden="true" size={16} />
         {t('templates.duplicate')}
       </button>
@@ -255,6 +280,15 @@ function TemplateMore({ template }: { template: PageTemplate }) {
       {open && (
         <TemplateSettings
           template={template}
+          // Su carpeta, también desde aquí
+          folder={{
+            folders: [...folders],
+            value: template.folderId,
+            onMove: async (dest) => {
+              await api.call('moveTemplate', { templateId: template.id, folderId: dest })
+              await queryClient.invalidateQueries({ queryKey: ['templates'] })
+            }
+          }}
           onClose={(gone) => {
             setOpen(false)
             if (gone) void navigate({ to: '/plantillas' })
@@ -326,6 +360,10 @@ function BlocksEditor({
 }) {
   const { t } = useTranslation()
   const [adding, setAdding] = useState(false)
+  const addRoot = useRef<HTMLDivElement>(null)
+  const addTrigger = useRef<HTMLButtonElement>(null)
+  // Abierto, Escape o pulsar fuera lo cierran (como «⋯»)
+  useDismiss(adding, () => setAdding(false), addRoot, addTrigger)
   const update = (index: number, patch: Partial<PanelBlock>) =>
     onChange(blocks.map((block, i) => (i === index ? ({ ...block, ...patch } as PanelBlock) : block)))
   const move = (index: number, by: -1 | 1) => {
@@ -391,10 +429,16 @@ function BlocksEditor({
           )
         })}
       </ul>
-      {blocks.length === 0 && <p className={styles.muted}>{t('templates.none')}</p>}
+      {blocks.length === 0 && <p className={styles.muted}>{t('templateEditor.noBlocks')}</p>}
       {!readOnly && (
-        <div className={styles.addWrap}>
-          <button type="button" className={styles.add} aria-expanded={adding} onClick={() => setAdding(!adding)}>
+        <div ref={addRoot} className={styles.addWrap}>
+          <button
+            ref={addTrigger}
+            type="button"
+            className={styles.add}
+            aria-expanded={adding}
+            onClick={() => setAdding(!adding)}
+          >
             <Plus size={14} aria-hidden="true" />
             {t('panelBlocks.add')}
           </button>

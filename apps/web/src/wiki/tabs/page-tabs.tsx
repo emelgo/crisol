@@ -203,6 +203,7 @@ function NewTab({ page }: { page: Page }) {
   const [kind, setKind] = useState<'text' | 'map' | 'table' | 'scene'>('text')
   // Desde una plantilla: cuál y qué pestañas suyas (de entrada, todas)
   const [fromTemplate, setFromTemplate] = useState(false)
+  const [back, setBack] = useState(false)
   const [template, setTemplate] = useState<string | null>(null)
   const [left, setLeft] = useState<ReadonlySet<string>>(() => new Set())
   const templates = useTemplates().data?.templates ?? []
@@ -265,6 +266,7 @@ function NewTab({ page }: { page: Page }) {
             setKind('text')
             setChoice(null)
             setFromTemplate(false)
+            setBack(false)
             setTemplate(null)
             setLeft(new Set())
             // Se quita al acabar de irse: si ya se está en otro sitio (escribiendo en la nueva), el foco no se mueve
@@ -282,9 +284,18 @@ function NewTab({ page }: { page: Page }) {
             <h2 id={titleId}>{t('pageTabs.newTitle')}</h2>
             {fromTemplate ? (
               <>
-                <StepBack onClick={() => setFromTemplate(false)} />
+                <StepBack
+                  onClick={() => {
+                    setFromTemplate(false)
+                    setBack(true)
+                  }}
+                />
+                {/* Solo las que traen pestañas, y debajo de cada una, cuáles */}
                 <TemplatePicker
                   value={template}
+                  only={(each) => each.tabs.length > 0}
+                  hint={(each) => each.tabs.map((tab) => tab.name).join(', ')}
+                  autoFocus
                   onChange={(id) => {
                     setTemplate(id)
                     setLeft(new Set())
@@ -329,10 +340,11 @@ function NewTab({ page }: { page: Page }) {
                   labelOf={(each) => t(`pageTabs.kinds.${each}`)}
                   onChange={(each) => setKind(each as typeof kind)}
                   onTemplate={() => setFromTemplate(true)}
+                  focusTemplate={back}
                 />
                 <input
                   className={styles.nameInput}
-                  data-autofocus=""
+                  data-autofocus={back ? undefined : ''}
                   value={name}
                   maxLength={60}
                   placeholder={t('pageTabs.namePlaceholder')}
@@ -343,14 +355,19 @@ function NewTab({ page }: { page: Page }) {
               </>
             )}
             <FormError message={add.error ? errorText(add.error) : null} />
-            <BusyButton
-              type="submit"
-              className={`${form.button} ${styles.submit}`}
-              busy={add.isPending}
-              disabled={fromTemplate && adding.length === 0}
-            >
-              {t('pageTabs.create')}
-            </BusyButton>
+            <div className={dialogStyles.actions}>
+              <BusyButton
+                type="submit"
+                className={form.button}
+                busy={add.isPending}
+                disabled={fromTemplate && adding.length === 0}
+              >
+                {t('pageTabs.create')}
+              </BusyButton>
+              <button type="button" className={dialogStyles.cancel} onClick={() => dialog.current?.close()}>
+                {t('pageTabs.cancel')}
+              </button>
+            </div>
           </form>
         </Modal>
       )}

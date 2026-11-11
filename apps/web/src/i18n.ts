@@ -1313,7 +1313,8 @@ export const es = {
     or: 'o',
     otherKind: 'Otro tipo',
     name: 'Título',
-    create: 'Crear'
+    create: 'Crear',
+    cancel: 'Cancelar'
   },
   related: {
     page: 'Página',
@@ -1360,7 +1361,8 @@ export const es = {
     up: 'Subir',
     down: 'Bajar',
     removeField: 'Quitar el campo',
-    blockTitle: 'Título del bloque {{kind}}'
+    blockTitle: 'Título del bloque {{kind}}',
+    noBlocks: 'Aún no tiene bloques.'
   },
   templates: {
     title: 'Plantillas',
@@ -1379,6 +1381,12 @@ export const es = {
     duplicate: 'Duplicar',
     copyName: '{{name}} (copia)',
     empty: 'Aún no hay plantillas',
+    emptyHint:
+      'Aún no hay plantillas. Una plantilla es una página modelo: las que se crean con ella nacen como su copia.',
+    newIn: 'Plantilla nueva en {{folder}}',
+    newHere: 'Plantilla nueva aquí',
+    newFolderIn: 'Nueva carpeta en {{folder}}',
+    newFolderHere: 'Carpeta dentro',
     listLabel: 'Tus plantillas',
     keysHint: 'Flechas para moverte, Intro abre; Alt y las flechas recolocan.',
     newFolder: 'Nueva carpeta',
@@ -1391,6 +1399,7 @@ export const es = {
     folderTemplates_other: '{{count}} plantillas',
     inside: 'Dentro',
     loose: 'Sin carpeta',
+    noneWithTabs: 'Ninguna plantilla trae pestañas.',
     fieldsCount_one: '1 campo',
     fieldsCount_other: '{{count}} campos',
     tabs: 'Pestañas',
@@ -1598,6 +1607,7 @@ export const es = {
     added: 'Se añaden',
     namedKind: '{{kind}} «{{name}}»',
     templateHasNone: 'Esta plantilla no trae pestañas.',
+    cancel: 'Cancelar',
     kind: 'Tipo',
     kinds: {
       text: 'Texto',
@@ -3595,7 +3605,11 @@ export const es = {
       builtIn: 'Los que trae Crisol. Ábrelos para ver en qué campañas están o bajarlos.'
     },
     templates: {
-      create: 'Haz las tuyas desde cero o copiando otra.'
+      create: 'Una plantilla es una página modelo: lo que se crea con ella nace como su copia.'
+    },
+    template: {
+      page: 'Se edita como cualquier página. Las que hagas con ella nacen como su copia: cambiarla luego no toca las ya hechas.',
+      panel: 'Aquí defines sus campos y sus bloques.'
     },
     tags: {
       create: 'Crea etiquetas.',

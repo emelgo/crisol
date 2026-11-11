@@ -434,10 +434,17 @@ describe('las plantillas de la cuenta (sin plantillas de serie, ADR-0024)', () =
         'moveTemplate',
         'moveTemplate'
       ])
+      // Se crea ya dentro de una; y su copia, sin decirlo, en la misma
+      const noble = await ok200('createTemplate', { name: 'Noble', folderId: nobles.id })
+      expect(noble.folderId).toBe(nobles.id)
+      expect((await ok200('createTemplate', { name: 'Noble menor', copyOf: noble.id })).folderId).toBe(nobles.id)
+      expect((await call('createTemplate', { name: 'Otra', folderId: crypto.randomUUID() })).json()).toMatchObject({
+        code: 'BAD_FOLDER'
+      })
       // Borrarla se lleva sus carpetas y sus plantillas (sus páginas no cambian), de una vez
       expect(await ok200('deleteTemplateFolder', { folderId: gente.id })).toMatchObject({
         name: 'Personas',
-        templates: 2
+        templates: 4
       })
       const after = await ok200('listTemplates', {})
       expect(after.folders).toEqual([])

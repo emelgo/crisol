@@ -186,6 +186,10 @@ describe('el árbol de la wiki', () => {
       'pnj',
       'sesion'
     ])
+    // La elegida, siempre una de las que se ven: al buscar, la primera de lo encontrado
+    await userEvent.type(within(dialog).getByLabelText('Buscar plantilla'), 'pnj')
+    expect(list.getByRole('radio', { name: /^PNJ/ })).toHaveProperty('checked', true)
+    await userEvent.clear(within(dialog).getByLabelText('Buscar plantilla'))
     // El buscador, sin mirar tildes
     await userEvent.type(within(dialog).getByLabelText('Buscar plantilla'), 'faccion')
     expect(list.getAllByRole('radio').map((r) => r.getAttribute('value'))).toEqual(['faccion'])
