@@ -297,16 +297,18 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   despliega sola. La vista previa, a la izquierda. **Solo en lista** (Enrique, 2026-11-12: fuera las tarjetas). Lo que
   se sube o se crea va a la carpeta elegida (la última pulsada), y el botón lo dice. Se construye en la tanda 2 de la
   revisión (lienzo «Archivos sin árbol», aprobado); sustituye a lo del árbol y de las tarjetas de la norma de abajo.
-- **Archivos, como un explorador**: árbol de carpetas (unas dentro de otras; se les arrastran archivos, y mientras se
-  arrastra se marcan las carpetas donde se puede soltar, con «Mover aquí»; la que lo recibe se ilumina; soltado en la
-  caja del árbol, fuera de una carpeta, va a lo más alto; un común no va a una carpeta del mundo ni al revés). **Sin
-  ruta encima de la lista** («Todos › Carpeta»): el árbol ya dice dónde se está. **Toda la fila o tarjeta abre lo
-  suyo**, no solo el nombre. Mover es arrastrar y cambiar un archivo es subir otro y borrar el viejo: su ventana no
-  tiene «Carpeta» ni «Reemplazar». **Se eligen varios** con su casilla (al pasar el ratón) y se borran de una vez,
-  con aviso. **Borrar una carpeta se lleva lo que tiene dentro** (sus archivos, a la papelera), avisando. Lista
-  compacta o tarjetas, **buscador por nombre y filtro por tipo** siempre a la vista. Se suben varios a la vez (no
-  carpetas enteras), a la carpeta elegida; cada subida sale con su progreso y una X para cancelarla, y al acabar ya
-  es su archivo (sin lista de «Subidas»). **Solo imágenes, PDF, audio, vídeo y texto**: nada que se ejecute.
+- **Archivos, como un explorador**: carpetas unas dentro de otras, en la lista (ver la norma de arriba, «sin árbol a la
+  izquierda»). Se arrastran archivos y carpetas como las páginas del mundo: raya encima o debajo de una fila (a qué
+  nivel va) o la carpeta resaltada si va dentro; lo movido se ilumina; un común no va a una carpeta del mundo ni al
+  revés (mientras se arrastra, sale apagado). Carpetas primero y luego archivos, **por nombre** (en Archivos no vale
+  «lo nuevo, al final»). **Sin ruta encima de la lista** («Todos › Carpeta»): la lista ya dice dónde está cada cosa.
+  **Toda la fila abre lo suyo**, no solo el nombre. Mover es arrastrar y cambiar un archivo es subir otro y borrar el
+  viejo: su ventana no tiene «Carpeta» ni «Reemplazar». **Se eligen varios** con su casilla (al pasar el ratón) y se
+  borran de una vez, con aviso. **Borrar una carpeta se lleva lo que tiene dentro** (sus archivos, a la papelera),
+  avisando. **Buscador por nombre y filtro por tipo** siempre a la vista; al buscar o filtrar, una lista plana que dice
+  en qué carpeta está cada uno. Se suben varios a la vez (no carpetas enteras), a la carpeta elegida; cada subida sale
+  con su progreso y una X para cancelarla, y al acabar ya es su archivo (sin lista de «Subidas»). **Solo imágenes,
+  PDF, audio, vídeo y texto**: nada que se ejecute.
 - **Los archivos comunes de la cuenta** (ADR-0005): fuera de los mundos, «Archivos» en la barra; dentro de cada
   mundo, la carpeta «Comunes» en sus archivos, la misma en todos. Donde se elige un archivo (la portada), «Del mundo»
   y «Comunes» por separado.

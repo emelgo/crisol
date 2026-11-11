@@ -162,6 +162,57 @@ describe('las etiquetas de la cuenta', () => {
     box.mockRestore()
   })
 
+  it('con el teclado, como el árbol de páginas: flechas para moverse y Alt + flechas para recolocarla', async () => {
+    const api = tagsApi()
+    await api.client.call('createTag', { name: 'pnj' })
+    renderAt('/etiquetas', api)
+    await screen.findByRole('button', { name: 'Ajustes de pnj' })
+    const row = (name: string) =>
+      screen.getByRole('button', { name: `Ajustes de ${name}` }).closest('li') as HTMLElement
+    const names = () =>
+      screen
+        .getAllByRole('button', { name: /^Ajustes de / })
+        .map((button) => button.getAttribute('aria-label')?.replace('Ajustes de ', ''))
+    // Una sola parada del tabulador en la lista: la primera fila
+    expect(row('lugar').tabIndex).toBe(0)
+    expect(row('pnj').tabIndex).toBe(-1)
+    row('lugar').focus()
+    await userEvent.keyboard('{ArrowDown}')
+    expect(document.activeElement).toBe(row('lugar/ciudad'))
+    await userEvent.keyboard('{End}')
+    expect(document.activeElement).toBe(row('pnj'))
+    expect(row('pnj').tabIndex).toBe(0)
+    // Alt + arriba: delante de su hermana de encima; el foco va con ella
+    await userEvent.keyboard('{Alt>}{ArrowUp}{/Alt}')
+    await waitFor(() => expect(names()).toEqual(['pnj', 'lugar', 'lugar/ciudad']))
+    await waitFor(() => expect(document.activeElement).toBe(row('pnj')))
+    // Alt + abajo: detrás de la de debajo
+    await userEvent.keyboard('{Alt>}{ArrowDown}{/Alt}')
+    await waitFor(() => expect(names()).toEqual(['lugar', 'lugar/ciudad', 'pnj']))
+    // Alt + derecha: dentro de la de encima (al final), con su nombre nuevo
+    await waitFor(() => expect(document.activeElement).toBe(row('pnj')))
+    await userEvent.keyboard('{Alt>}{ArrowRight}{/Alt}')
+    await waitFor(() => expect(names()).toEqual(['lugar', 'lugar/ciudad', 'lugar/pnj']))
+    await waitFor(() => expect(document.activeElement).toBe(row('lugar/pnj')))
+    // Alt + izquierda: fuera de su madre, detrás de ella
+    await userEvent.keyboard('{Alt>}{ArrowLeft}{/Alt}')
+    await waitFor(() => expect(names()).toEqual(['lugar', 'lugar/ciudad', 'pnj']))
+    await waitFor(() => expect(document.activeElement).toBe(row('pnj')))
+    expect(await api.client.call('listAccountTags', {})).toMatchObject({
+      tags: [{ name: 'lugar' }, { name: 'lugar/ciudad' }, { name: 'pnj' }]
+    })
+  })
+
+  it('al pasar el ratón sale su vista previa, y al irse se quita', async () => {
+    renderAt('/etiquetas')
+    const row = (await screen.findByRole('button', { name: 'Ajustes de lugar' })).closest('li') as HTMLElement
+    fireEvent.pointerEnter(row)
+    const preview = await screen.findByRole('complementary', { name: 'Etiqueta elegida' })
+    expect(within(preview).getByRole('heading', { name: 'lugar' })).toBeDefined()
+    fireEvent.pointerLeave(row)
+    await waitFor(() => expect(within(preview).queryByRole('heading')).toBeNull())
+  })
+
   it('en los archivos: se ponen desde su ventana y se filtra por ellas', async () => {
     renderAt(`/mundos/${WORLD.id}/archivos`)
     const list = within((await screen.findAllByRole('list', { name: 'Archivos' }))[0] ?? document.body)

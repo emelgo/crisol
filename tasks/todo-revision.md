@@ -61,18 +61,19 @@ Plan: `tasks/plan-revision.md`. Una tanda cada vez: se enseña en local, Enrique
 
 - [x] Archivos comunes: mover (prueba que falla primero). La comprobación de ámbito de `moveInto` creía «del mundo»
   cualquier carpeta de los comunes de Inicio (allí no hay carpeta «Comunes»); ahora usa `scopeAt`.
-- [ ] El «no se puede» a la vista: con la Archivos nueva (las carpetas que no admiten lo arrastrado, apagadas).
+- [x] El «no se puede» a la vista: lo que no admite lo arrastrado sale apagado mientras se arrastra.
 - [x] Prototipo de Archivos sin árbol a la izquierda (lienzo «Archivos sin árbol»,
   https://claude.ai/artifact/SNQuCPM644JuprjWvatqBA, `out/lienzo-archivos/`): **aprobado** por Enrique (2026-11-12),
   con el arrastre de las páginas del mundo; los archivos, por nombre.
 - [x] `components/tree/moves.ts`: la lógica de mover, fuera del árbol de páginas y con sus pruebas (el árbol de
   páginas solo la importa).
-- [ ] Archivos con la lista que despliega, **solo en lista** (Enrique: «Archivos A»), arrastrar como las páginas,
-  vista previa a la izquierda (también en Etiquetas) y Etiquetas con el teclado: en marcha.
+- [x] Archivos con la lista que despliega, **solo en lista** (Enrique: «Archivos A»): pulsar despliega y elige, subir y
+  crear a la elegida, arrastrar como las páginas (raya, resalte, despliegue al mantener, otro ámbito apagado), mover al
+  momento, vista previa a la izquierda (también en Etiquetas). Fuera el árbol, las tarjetas y «Mover aquí».
+- [x] Etiquetas con el teclado: flechas para moverse y Alt + flechas para recolocar (`keyboardMove`).
 - [x] Etiquetas: `tags.position` (migración 0074, nota en el ADR-0006), `moveTag` y MCP `mover_etiqueta`; se
   arrastran como las páginas del mundo: raya delante o detrás para ordenar, la fila resaltada para meterla dentro, y
   llevada a la izquierda sale de su madre. Fuera «Arriba del todo» (Enrique, 2026-11-12).
-- [ ] Etiquetas con el teclado (Alt + flechas, como en el árbol de páginas).
 - [x] Mover sin retardo (Enrique, 2026-11-12: «hay un retardo de cuando lo muevo hasta que lo veo cambiado»):
   etiquetas, al momento en la lista cargada (`wiki/tag-order.ts`), con vuelta atrás si falla; páginas, también al
   meterla en una madre cuyas subpáginas no se tenían (se despliega ya con ella dentro).
@@ -150,3 +151,5 @@ Lo que sale sin estar en la lista: se avisa a Enrique y se arregla en su tanda.
   1; Enrique: «si algo se comparte lo cambias», y en la revisión de la campaña se verá).
 - [x] Una descripción sin espacios (una sola palabra larga) se salía de la tarjeta y del panel lateral (tanda 1).
 - [ ] Las X de las ventanas de la Mesa siguen con su estilo de botón de icono: con la revisión de la campaña.
+- [ ] La hoja móvil de una etiqueta (`tags.tsx`) usa clases que no existen en el CSS (`files.sheet`…): ya fallaba
+  antes; el móvil es solo de la jugadora y Etiquetas es del máster, así que es menor.

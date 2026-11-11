@@ -189,6 +189,12 @@ a.chipLink:hover {
   position: relative;
 }
 
+/* Con el teclado, la fila con el foco (dentro, que no lo corte la lista) */
+.tagRow:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
+}
+
 .tagRow[data-drop="before"]::before,
 .tagRow[data-drop="after"]::after {
   content: "";

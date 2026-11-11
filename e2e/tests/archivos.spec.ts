@@ -5,7 +5,7 @@ import { createWorld, freshOwner, openWiki, openWorldFiles } from './ayudas.ts'
 const PNG = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.from('un mapa')])
 const PDF = Buffer.from('%PDF-1.7\nun bestiario')
 
-/** Subir del mundo: el primero (después va el de los comunes) */
+/** Subir (a la carpeta elegida; sin ninguna, a lo más alto) */
 const worldUpload = (page: Page) => page.locator('input[type=file][multiple]').first()
 
 async function openFiles(page: Page) {
@@ -16,7 +16,7 @@ async function openFiles(page: Page) {
   await expect(page.getByRole('heading', { level: 1, name: 'Archivos de Eana' })).toBeVisible()
 }
 
-test('subir archivos: salen como tarjetas, se sirven tal cual, se ordenan en carpetas y van a la papelera y vuelven', async ({
+test('subir archivos: salen en la lista, se sirven tal cual, se ordenan en carpetas y van a la papelera y vuelven', async ({
   page
 }) => {
   await openFiles(page)
@@ -26,7 +26,7 @@ test('subir archivos: salen como tarjetas, se sirven tal cual, se ordenan en car
     { name: 'Bestiario.pdf', mimeType: 'application/pdf', buffer: PDF }
   ])
   await expect(page.getByRole('status').getByText('Subidos 2 archivos')).toBeAttached()
-  // Acabadas, ya son sus tarjetas: no queda ninguna subida
+  // Acabadas, ya son sus filas: no queda ninguna subida
   await expect(page.getByRole('button', { name: /Cancelar la subida/ })).toHaveCount(0)
   const files = page.getByRole('list', { name: 'Archivos' }).first()
   await expect(files.getByRole('button', { name: 'Mapa de Eana.png', exact: true })).toBeVisible()
@@ -43,23 +43,29 @@ test('subir archivos: salen como tarjetas, se sirven tal cual, se ordenan en car
   await worldUpload(page).setInputFiles([{ name: 'Mapa de Eana.png', mimeType: 'image/png', buffer: PNG }])
   await expect(files.getByRole('button', { name: 'Mapa de Eana (2).png', exact: true })).toBeVisible()
 
-  // Una carpeta, y el bestiario dentro, arrastrándolo
-  await page.getByRole('button', { name: 'Nueva carpeta' }).first().click()
+  // Una carpeta (la fila del final de la lista), y el bestiario dentro, arrastrándolo al centro de su fila
+  await page.getByRole('button', { name: 'Nueva carpeta' }).click()
   const create = page.getByRole('dialog', { name: 'Nueva carpeta' })
   await create.getByLabel('Nombre de la carpeta').fill('Bestias')
   await create.getByRole('button', { name: 'Crear la carpeta' }).click()
   await expect(create).toHaveCount(0)
-  // Al árbol: la fila del archivo, sobre su carpeta
-  const folder = page
-    .getByRole('navigation', { name: 'Carpetas' })
-    .first()
-    .getByRole('button', { name: /^Bestias/ })
+  // (has: se busca dentro de la fila: sin partir de la lista)
+  const folder = page.getByRole('button', { name: 'Bestias', exact: true })
+  const folderRow = page.locator('[data-file-card]').filter({ has: folder })
   await expect(folder).toBeVisible()
-  await page.locator('[data-file-card]').filter({ hasText: 'Bestiario.pdf' }).dragTo(folder)
+  await page.locator('[data-file-card]').filter({ hasText: 'Bestiario.pdf' }).dragTo(folderRow)
+  // Va dentro: la carpeta se queda abierta, con él debajo
+  await expect(folder).toHaveAttribute('aria-expanded', 'true')
+  await expect(folderRow.getByText('1 archivo')).toBeVisible()
+  await expect(
+    page.getByRole('listitem').filter({ has: folder }).getByRole('link', { name: 'Bestiario.pdf' })
+  ).toBeVisible()
+  await expect(page.getByRole('status').getByText('«Bestiario.pdf», ahora en «Bestias»')).toBeAttached()
+  // Pulsarla la pliega
+  await folder.click()
   await expect(bestiary).toHaveCount(0)
-  await expect(page.locator('[data-file-card]').filter({ hasText: 'Bestias' }).getByText('1 archivo')).toBeVisible()
-  await page.getByRole('button', { name: 'Abrir la carpeta Bestias' }).click()
-  await expect(files.getByRole('link', { name: 'Bestiario.pdf', exact: true })).toBeVisible()
+  await folder.click()
+  await expect(bestiary).toBeVisible()
 
   // A la papelera (desde su engranaje) y de vuelta
   await page.getByRole('button', { name: 'Ajustes de Bestiario.pdf' }).click()
@@ -76,7 +82,7 @@ test('subir archivos: salen como tarjetas, se sirven tal cual, se ordenan en car
   await page.getByRole('button', { name: 'Restaurar Bestiario.pdf' }).click()
   await expect(page.getByText('La papelera está vacía')).toBeVisible()
   await page.goBack()
-  await page.getByRole('button', { name: 'Abrir la carpeta Bestias' }).click()
+  await page.getByRole('button', { name: 'Bestias', exact: true }).click()
   await expect(page.getByRole('link', { name: 'Bestiario.pdf', exact: true })).toBeVisible()
 })
 

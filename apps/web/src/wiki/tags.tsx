@@ -3,7 +3,7 @@ import { tagKey } from '@crisol/domain'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Navigate } from '@tanstack/react-router'
 import { Hash, Search, Settings, X } from 'lucide-react'
-import { type CSSProperties, useEffect, useId, useRef, useState } from 'react'
+import { type CSSProperties, type KeyboardEvent, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
@@ -20,7 +20,15 @@ import { Modal } from '../components/modal.tsx'
 import { NewCard } from '../components/new-card.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { Tour } from '../components/tour.tsx'
-import { dropMove, type Move, outdentTarget, type TreeNode, type Zone, zoneAt } from '../components/tree/moves.ts'
+import {
+  dropMove,
+  keyboardMove,
+  type Move,
+  outdentTarget,
+  type TreeNode,
+  type Zone,
+  zoneAt
+} from '../components/tree/moves.ts'
 import cards from '../routes/world-card.module.css'
 import { ColorChoices } from '../routes/world-card.tsx'
 import { colorHex } from '../routes/world-look.ts'
@@ -235,6 +243,19 @@ export function AccountTags() {
   const dragStartX = useRef(0)
   const [drop, setDrop] = useState<{ name: string; zone: Zone; level?: number } | null>(null)
   const [received, setReceived] = useState<string | null>(null)
+  // Con el teclado, como el árbol de páginas: una sola parada del tabulador en la lista, flechas para moverse y Alt +
+  // flechas para recolocar. La fila con el foco (por su nombre) y la que lo recibirá al pintarse (tras moverla)
+  const items = useRef(new Map<string, HTMLLIElement>())
+  const [focused, setFocused] = useState<string | null>(null)
+  const pendingFocus = useRef<string | null>(null)
+  const hintId = useId()
+  useEffect(() => {
+    const wanted = pendingFocus.current
+    const element = wanted ? items.current.get(tagKey(wanted)) : undefined
+    if (!element) return
+    pendingFocus.current = null
+    element.focus()
+  })
   // Al soltarla se ve ya en su sitio (sin esperar al servidor); si falla, vuelve como estaba
   type Catalog = { organizationId: string; tags: TagView[] }
   const move = useMutation({
@@ -305,6 +326,40 @@ export function AccountTags() {
     if (to && !to.before && !to.after && sameTag(to.parentId ?? '', parentOf(dragging))) return null
     return to ? { to, level: out?.level } : null
   }
+  const tabStop = focused && shown.some((tag) => sameTag(tag.name, focused)) ? focused : shown[0]?.name
+  const focusAt = (index: number) => {
+    const tag = shown[Math.max(0, Math.min(shown.length - 1, index))]
+    if (tag) items.current.get(tagKey(tag.name))?.focus()
+  }
+  const onRowKey = (tag: TagView, event: KeyboardEvent<HTMLLIElement>) => {
+    // Las teclas de su engranaje son suyas
+    if (event.target !== event.currentTarget) return
+    const index = shown.indexOf(tag)
+    // Alt + flechas: arriba y abajo entre hermanas; derecha, dentro de la de encima; izquierda, fuera de su madre
+    if (event.altKey && event.key.startsWith('Arrow')) {
+      event.preventDefault()
+      if (wanted) return
+      const siblings = shown.filter((other) => sameTag(parentOf(other.name), parentOf(tag.name)))
+      const to = keyboardMove(
+        nodeOf(tag.name),
+        siblings.map((other) => nodeOf(other.name)),
+        nodeOf,
+        event.key
+      )
+      if (!to) return
+      // Sigue con el foco donde quede (con su nombre nuevo, si cambia de madre)
+      const moved = joinTag(to.parentId ?? '', leafOf(tag.name))
+      pendingFocus.current = moved
+      setFocused(moved)
+      move.mutate({ tag: tag.name, to })
+      return
+    }
+    const targets: Record<string, number> = { ArrowDown: index + 1, ArrowUp: index - 1, Home: 0, End: shown.length - 1 }
+    const next = targets[event.key]
+    if (next === undefined) return
+    event.preventDefault()
+    focusAt(next)
+  }
   return (
     <section className={files.page}>
       <div className={files.layout}>
@@ -330,7 +385,12 @@ export function AccountTags() {
               ) : (
                 shown.length === 0 && <p className={files.empty}>{t('tags.noResults')}</p>
               )}
-              <ul className={files.rows} aria-label={t('tags.title')} data-tour="etiquetas-lista">
+              <ul
+                className={files.rows}
+                aria-label={t('tags.title')}
+                aria-describedby={wanted ? undefined : hintId}
+                data-tour="etiquetas-lista"
+              >
                 {shown.map((tag) => (
                   <TagRow
                     key={tag.name}
@@ -339,6 +399,15 @@ export function AccountTags() {
                     movable={!wanted}
                     drop={drop && sameTag(drop.name, tag.name) ? drop : null}
                     received={received !== null && sameTag(received, tag.name)}
+                    focus={{
+                      ref: (element) => {
+                        if (element) items.current.set(tagKey(tag.name), element)
+                        else items.current.delete(tagKey(tag.name))
+                      },
+                      tabIndex: tabStop !== undefined && sameTag(tabStop, tag.name) ? 0 : -1,
+                      onFocus: () => setFocused(tag.name),
+                      onKeyDown: (event) => onRowKey(tag, event)
+                    }}
                     onDrag={(on, x) => {
                       setDragging(on ? tag.name : null)
                       dragStartX.current = x
@@ -373,6 +442,10 @@ export function AccountTags() {
                   <NewTag onCreated={refresh} />
                 </li>
               </ul>
+              {/* Cómo se recoloca: para los lectores de pantalla (con el ratón se ve al arrastrar) */}
+              <p id={hintId} className={styles.hidden}>
+                {t('tags.moveHint')}
+              </p>
             </>
           )}
         </div>
@@ -412,6 +485,7 @@ function TagRow({
   movable,
   drop,
   received,
+  focus,
   onDrag,
   onDragOver,
   onDrop,
@@ -427,6 +501,13 @@ function TagRow({
   drop: { zone: Zone; level?: number } | null
   /** Acaba de moverse: se ilumina un momento */
   received: boolean
+  /** Con el teclado: la fila enfocable (una sola parada del tabulador) y sus teclas */
+  focus: {
+    ref: (element: HTMLLIElement | null) => void
+    tabIndex: number
+    onFocus: () => void
+    onKeyDown: (event: KeyboardEvent<HTMLLIElement>) => void
+  }
   /** Empieza o acaba de arrastrarse (con dónde estaba el puntero al empezar) */
   onDrag: (dragging: boolean, x: number) => void
   /** Pasa otra por encima: devuelve si puede soltarse ahí */
@@ -443,6 +524,7 @@ function TagRow({
   const [open, setOpen] = useState<'sheet' | 'settings' | null>(null)
   return (
     <li
+      {...focus}
       className={`${files.row} ${styles.tagRow} ${received ? files.received : ''}`}
       style={
         {
