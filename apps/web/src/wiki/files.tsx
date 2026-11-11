@@ -8,7 +8,7 @@
  */
 
 import type { FolderView } from '@crisol/contracts'
-import { isTagOrChild, looksUploadable, MAX_FILE_BYTES, TRASH_DAYS, tagTree, UPLOAD_ACCEPT } from '@crisol/domain'
+import { looksUploadable, MAX_FILE_BYTES, TRASH_DAYS, UPLOAD_ACCEPT } from '@crisol/domain'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getRouteApi, Link, Navigate } from '@tanstack/react-router'
 import {
@@ -69,6 +69,8 @@ const route = getRouteApi('/mundos/$worldId/archivos')
 const KINDS = ['image', 'pdf', 'other'] as const
 /** La carpeta «Comunes» dentro de un mundo: no existe como tal, es la raíz de los comunes */
 const COMMON = 'comunes'
+/** Para buscar: sin tildes ni mayúsculas, como en las páginas */
+const plain = (text: string) => text.normalize('NFD').replace(/\p{M}/gu, '').toLocaleLowerCase('es')
 type Kind = (typeof KINDS)[number]
 /** Cuántas subidas a la vez */
 const PARALLEL = 3
@@ -400,8 +402,6 @@ function FilesSection({
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set())
   const [query, setQuery] = useState('')
   const [kind, setKind] = useState<Kind | 'all'>('all')
-  // Una etiqueta (con sus hijas): como al buscar, en todas las carpetas
-  const [tag, setTag] = useState<string | null>(null)
   // Lo elegido para borrar de una vez: por id, si es un archivo o una carpeta
   const [chosen, setChosen] = useState<Map<string, 'file' | 'folder'>>(() => new Map())
   // Archivos de fuera (del escritorio) sobre la pantalla, fuera de las filas: van a la elegida
@@ -427,8 +427,8 @@ function FilesSection({
     setHovered((current) => (shown ? { kind, id } : current?.id === id ? null : current))
   }
   // Al cambiar de búsqueda o de filtro, nada señalado ni elegido
-  useEffect(() => setHovered(null), [query, kind, tag])
-  useEffect(() => setChosen(new Map()), [query, kind, tag])
+  useEffect(() => setHovered(null), [query, kind])
+  useEffect(() => setChosen(new Map()), [query, kind])
   const stopChoosing = () => setChosen(new Map())
   // Escape, o pulsar fuera de la columna del centro (la lista, sus botones y sus ventanas), suelta la elegida
   useEffect(() => {
@@ -472,8 +472,6 @@ function FilesSection({
     }
     return map
   }, [data])
-  // Las etiquetas que llevan los archivos de aquí, con sus madres, para el filtro
-  const fileTags = useMemo(() => tagTree<null>({ rows: [], pages: [], files: data?.files ?? [] }), [data?.files])
   const ids = useMemo(() => data && [...data.files.map((f) => f.id), ...(data.folders ?? []).map((f) => f.id)], [data])
   const fresh = useFresh(ids)
   const refresh = () =>
@@ -539,29 +537,53 @@ function FilesSection({
     }
     return path
   }
-  const wanted = query.trim().toLocaleLowerCase('es')
-  // Buscando o filtrando: en todas las carpetas, en una lista plana que dice en cuál está cada uno
-  const searching = wanted !== '' || tag !== null || kind !== 'all'
+  // Buscar por nombre o #etiqueta (como en las páginas: sin tildes ni mayúsculas; la etiqueta, por su principio)
+  const wanted = plain(query.trim())
+  const byTag = wanted.startsWith('#')
+  const searching = wanted !== '' || kind !== 'all'
   const results = searching
     ? data.files.filter(
         (file) =>
-          file.name.toLocaleLowerCase('es').includes(wanted) &&
-          (kind === 'all' || file.kind === kind) &&
-          (tag === null || file.tags.some((t) => isTagOrChild(t, tag)))
+          (byTag
+            ? file.tags.some((each) => plain(each).startsWith(wanted.slice(1)))
+            : plain(file.name).includes(wanted)) &&
+          (kind === 'all' || file.kind === kind)
       )
     : []
+  // Lo encontrado, en su árbol: cada uno dentro de sus carpetas (desplegadas), sin lo demás
+  const found = (() => {
+    const map = new Map<string | null, { folders: FolderView[]; files: WorldFile[] }>()
+    const at = (id: string | null) => {
+      const entry = map.get(id) ?? { folders: [], files: [] }
+      map.set(id, entry)
+      return entry
+    }
+    const folderIds = new Set<string>()
+    for (const file of results) {
+      at(file.folderId ?? null).files.push(file)
+      for (let id = file.folderId ?? null; id; id = byId.get(id)?.parentId ?? null) folderIds.add(id)
+    }
+    for (const [parentId, entry] of kids) {
+      const folders = entry.folders.filter((folder) => folderIds.has(folder.id))
+      if (folders.length) at(parentId).folders.push(...folders)
+    }
+    const byName = (a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name, 'es')
+    for (const entry of map.values()) entry.files.sort(byName)
+    return map
+  })()
   // Lo que se ve, en orden: en el árbol, lo de lo más alto y lo de las carpetas desplegadas
   const visible: Item[] = []
+  const tree = searching ? found : kids
+  const isOpen = (id: string) => searching || expanded.has(id)
   const walk = (parentId: string | null) => {
-    const entry = kids.get(parentId)
+    const entry = tree.get(parentId)
     for (const folder of entry?.folders ?? []) {
       visible.push({ kind: 'folder', id: folder.id })
-      if (expanded.has(folder.id)) walk(folder.id)
+      if (isOpen(folder.id)) walk(folder.id)
     }
     for (const file of entry?.files ?? []) visible.push({ kind: 'file', id: file.id })
   }
-  if (searching) for (const file of results) visible.push({ kind: 'file', id: file.id })
-  else walk(null)
+  walk(null)
   const isShown = (id: string) => visible.some((item) => item.id === id)
   // Lo elegido que sigue a la vista
   const chosenNow = visible.filter((item) => chosen.has(item.id))
@@ -776,11 +798,13 @@ function FilesSection({
   const itemClass = (id: string) => (lifted?.id === id ? `${styles.item} ${styles.lifted}` : styles.item)
   // Un nivel del árbol: lo que se sube ahí, sus carpetas (con lo suyo debajo si están desplegadas) y sus archivos
   const level = (parentId: string | null, depth: number): ReactNode[] => {
-    const entry = kids.get(parentId)
+    const entry = tree.get(parentId)
     return [
-      ...uploads.items.filter((upload) => upload.place === parentId).map((upload) => uploadRow(upload, depth)),
+      ...(searching
+        ? []
+        : uploads.items.filter((upload) => upload.place === parentId).map((upload) => uploadRow(upload, depth))),
       ...(entry?.folders ?? []).map((folder) => {
-        const open = expanded.has(folder.id)
+        const open = isOpen(folder.id)
         const writable = placeOf(folder.id).canWrite && folder.id !== COMMON
         const inside = open ? level(folder.id, depth + 1) : []
         return (
@@ -793,11 +817,15 @@ function FilesSection({
               counts={countsOf(folder.id)}
               canWrite={writable}
               fresh={fresh(folder.id)}
-              drag={dragOf(
-                { id: folder.id, parentId: folder.parentId ?? null, kind: 'folder', name: folder.name, open },
-                writable,
-                scopeAt(folder.id)
-              )}
+              drag={
+                searching
+                  ? NO_DRAG
+                  : dragOf(
+                      { id: folder.id, parentId: folder.parentId ?? null, kind: 'folder', name: folder.name, open },
+                      writable,
+                      scopeAt(folder.id)
+                    )
+              }
               onToggle={() => toggle(folder)}
               onPreview={preview('folder', folder.id)}
               onChanged={refresh}
@@ -818,11 +846,15 @@ function FilesSection({
             where={[]}
             fresh={fresh(file.id)}
             canWrite={canWriteFile(file)}
-            drag={dragOf(
-              { id: file.id, parentId: file.folderId ?? null, kind: 'file', name: file.name },
-              canWriteFile(file),
-              file.worldId === null ? 'comun' : 'mundo'
-            )}
+            drag={
+              searching
+                ? NO_DRAG
+                : dragOf(
+                    { id: file.id, parentId: file.folderId ?? null, kind: 'file', name: file.name },
+                    canWriteFile(file),
+                    file.worldId === null ? 'comun' : 'mundo'
+                  )
+            }
             onPreview={preview('file', file.id)}
             {...rowProps}
           />
@@ -842,9 +874,7 @@ function FilesSection({
             onClick={() => several.current?.click()}
           >
             <UploadIcon aria-hidden="true" size={16} />
-            <span className={styles.uploadLabel}>
-              {active ? t('files.uploadTo', { folder: activeName }) : t('files.upload')}
-            </span>
+            <span className={styles.uploadLabel}>{t('files.upload')}</span>
           </button>
           <input
             ref={several}
@@ -882,19 +912,6 @@ function FilesSection({
           </button>
         ))}
       </div>
-      {fileTags.length > 0 && (
-        <label className={styles.tagPick}>
-          <span>{t('tags.filter')}</span>
-          <select value={tag ?? ''} onChange={(event) => setTag(event.currentTarget.value || null)}>
-            <option value="">{t('tags.any')}</option>
-            {fileTags.map((option) => (
-              <option key={option.name} value={option.name}>
-                {`${'  '.repeat(option.depth)}${option.depth > 0 ? option.name.split('/').at(-1) : option.name}`}
-              </option>
-            ))}
-          </select>
-        </label>
-      )}
     </div>
   )
   const newHere = placeOf(active)
@@ -913,31 +930,11 @@ function FilesSection({
           />
         )}
         {searching && results.length === 0 && (
-          <p className={styles.empty}>
-            {wanted ? t('files.noResults') : tag !== null ? t('files.noMatch') : t('files.noKind')}
-          </p>
+          <p className={styles.empty}>{wanted ? t('files.noResults') : t('files.noKind')}</p>
         )}
         {!searching && nothing && <p className={styles.empty}>{empty}</p>}
         <ul className={styles.rows} aria-label={t('files.listLabel')} data-tour="archivos-lista">
-          {searching
-            ? [
-                ...uploads.items.map((upload) => uploadRow(upload, 0)),
-                ...results.map((file) => (
-                  <li key={file.id} className={styles.item}>
-                    <FileRow
-                      file={file}
-                      depth={0}
-                      where={pathOf(file.folderId)}
-                      fresh={fresh(file.id)}
-                      canWrite={canWriteFile(file)}
-                      drag={NO_DRAG}
-                      onPreview={preview('file', file.id)}
-                      {...rowProps}
-                    />
-                  </li>
-                ))
-              ]
-            : level(null, 0)}
+          {level(null, 0)}
           {/* «Nueva carpeta», una fila más tras la última (docs/diseno.md): dentro de la elegida */}
           {!searching && newHere.canWrite && (
             <li className={styles.newItem}>

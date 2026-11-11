@@ -16,7 +16,7 @@ export function NewCard({
   return (
     <button type={type} {...props} className={[styles[shape], className].filter(Boolean).join(' ')}>
       <Plus aria-hidden="true" size={shape === 'card' ? 24 : 16} strokeWidth={shape === 'card' ? 1.5 : 2} />
-      {label}
+      <span className={styles.label}>{label}</span>
     </button>
   )
 }

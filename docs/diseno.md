@@ -295,7 +295,9 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   izquierda no tiene sentido, ya tenemos la visión del árbol en el centro»): pulsar una carpeta la despliega ahí mismo,
   con lo de dentro sangrado (no se entra en ella), y al arrastrar un archivo y mantenerlo sobre una carpeta cerrada, se
   despliega sola. La vista previa, a la izquierda. **Solo en lista** (Enrique, 2026-11-12: fuera las tarjetas). Lo que
-  se sube o se crea va a la carpeta elegida (la última pulsada), y el botón lo dice. Se construye en la tanda 2 de la
+  se sube o se crea va a la carpeta elegida (la última pulsada, que se ve marcada); **«Subir archivos» no cambia de
+  nombre** (un nombre de carpeta largo lo rompería). **Al buscar, por nombre o #etiqueta** (como en las páginas; sin
+  filtro aparte), lo encontrado sale dentro de sus carpetas, desplegadas: el árbol hasta él. Se construye en la tanda 2 de la
   revisión (lienzo «Archivos sin árbol», aprobado); sustituye a lo del árbol y de las tarjetas de la norma de abajo.
 - **Archivos, como un explorador**: carpetas unas dentro de otras, en la lista (ver la norma de arriba, «sin árbol a la
   izquierda»). Se arrastran archivos y carpetas como las páginas del mundo: raya encima o debajo de una fila (a qué
@@ -305,8 +307,7 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   **Toda la fila abre lo suyo**, no solo el nombre. Mover es arrastrar y cambiar un archivo es subir otro y borrar el
   viejo: su ventana no tiene «Carpeta» ni «Reemplazar». **Se eligen varios** con su casilla (al pasar el ratón) y se
   borran de una vez, con aviso. **Borrar una carpeta se lleva lo que tiene dentro** (sus archivos, a la papelera),
-  avisando. **Buscador por nombre y filtro por tipo** siempre a la vista; al buscar o filtrar, una lista plana que dice
-  en qué carpeta está cada uno. Se suben varios a la vez (no carpetas enteras), a la carpeta elegida; cada subida sale
+  avisando. **Buscador (por nombre o #etiqueta) y filtro por tipo** siempre a la vista. Se suben varios a la vez (no carpetas enteras), a la carpeta elegida; cada subida sale
   con su progreso y una X para cancelarla, y al acabar ya es su archivo (sin lista de «Subidas»). **Solo imágenes,
   PDF, audio, vídeo y texto**: nada que se ejecute.
 - **Los archivos comunes de la cuenta** (ADR-0005): fuera de los mundos, «Archivos» en la barra; dentro de cada

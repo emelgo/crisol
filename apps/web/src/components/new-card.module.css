@@ -58,6 +58,15 @@
   clip-path: var(--cut-inner);
 }
 
+/* El rótulo: si no cabe (el nombre de una carpeta muy largo), se corta con puntos suspensivos */
+.label {
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* El «+» en el hueco del punto de color de las filas */
 .row {
   border: 1px solid var(--line);

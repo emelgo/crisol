@@ -222,12 +222,12 @@ describe('las etiquetas de la cuenta', () => {
     expect(await within(dialog).findByRole('button', { name: 'Quitar lugar/costa' })).toBeDefined()
     await userEvent.keyboard('{Escape}')
 
-    // Filtrar por «lugar» trae las dos (la madre y la hija); por «costa», solo el bestiario
-    const filter = screen.getAllByRole('combobox', { name: 'Etiqueta' })[0] as HTMLSelectElement
-    await userEvent.selectOptions(filter, 'lugar')
+    // Buscar «#lugar» trae las dos (la madre y la hija); «#lugar/costa», solo el bestiario (como en las páginas)
+    const search = screen.getAllByRole('searchbox', { name: 'Buscar por nombre o #etiqueta' })[0] as HTMLElement
+    await userEvent.type(search, '#lugar')
     await waitFor(() => expect(list.getByRole('link', { name: 'Bestiario.pdf' })).toBeDefined())
     expect(list.getByRole('button', { name: 'Mapa.png' })).toBeDefined()
-    await userEvent.selectOptions(filter, 'lugar/costa')
+    await userEvent.type(search, '/costa')
     await waitFor(() => expect(list.queryByRole('button', { name: 'Mapa.png' })).toBeNull())
     expect(list.getByRole('link', { name: 'Bestiario.pdf' })).toBeDefined()
   })
