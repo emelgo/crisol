@@ -166,16 +166,24 @@ describe('el árbol de la wiki', () => {
     renderAt(`/mundos/${WORLD.id}/wiki`, api)
     await userEvent.click(await screen.findByRole('button', { name: 'Página nueva' }))
     const dialog = await screen.findByRole('dialog', { name: 'Página nueva' })
-    await userEvent.click(within(dialog).getByRole('radio', { name: 'Desde plantilla' }))
+    // «Desde plantilla», la última tras «o»: cambia el cuadro a la lista (y «Otro tipo» vuelve)
+    expect(
+      within(dialog)
+        .getAllByRole('radio')
+        .map((r) => r.getAttribute('aria-label') ?? r.closest('label')?.textContent)
+    ).not.toContain('Desde plantilla')
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Desde plantilla' }))
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Otro tipo' }))
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Desde plantilla' }))
     const list = within(await within(dialog).findByRole('group', { name: 'Plantilla' }))
-    // La primera, elegida; las de serie, todas
-    expect(list.getByRole('radio', { name: /^PNJ/ })).toHaveProperty('checked', true)
+    // La primera, elegida; todas las de la cuenta, por nombre
+    expect(list.getByRole('radio', { name: /^Facción/ })).toHaveProperty('checked', true)
     expect(list.getAllByRole('radio').map((r) => r.getAttribute('value'))).toEqual([
-      'pnj',
-      'lugar',
       'faccion',
-      'objeto',
+      'lugar',
       'mision',
+      'objeto',
+      'pnj',
       'sesion'
     ])
     // El buscador, sin mirar tildes

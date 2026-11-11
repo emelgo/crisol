@@ -1310,6 +1310,8 @@ export const es = {
     kind: 'Tipo',
     text: 'Texto',
     fromTemplate: 'Desde plantilla',
+    or: 'o',
+    otherKind: 'Otro tipo',
     name: 'Título',
     create: 'Crear'
   },
@@ -1328,15 +1330,7 @@ export const es = {
     sort: 'Orden',
     byTitle: 'Por título'
   },
-  applyTemplate: {
-    open: 'Aplicar plantilla…',
-    title: 'Aplicar plantilla',
-    apply: 'Aplicar {{name}}',
-    summary: 'Lo que añade {{name}}',
-    has: 'Ya está',
-    nothing: 'Nada que añadir',
-    atTheEnd: 'En el texto, al final'
-  },
+
   templateEditor: {
     kind: 'Plantilla',
     fields: 'Campos',
@@ -1395,6 +1389,8 @@ export const es = {
     folderTemplates_other: '{{count}} plantillas',
     inside: 'Dentro',
     loose: 'Sin carpeta',
+    fieldsCount_one: '1 campo',
+    fieldsCount_other: '{{count}} campos',
     tabs: 'Pestañas',
     usesLabel: 'Se usa',
     uses_one: 'En 1 página',
@@ -1597,6 +1593,9 @@ export const es = {
     text: 'Texto',
     add: 'Pestaña nueva',
     newTitle: 'Pestaña nueva',
+    added: 'Se añaden',
+    namedKind: '{{kind}} «{{name}}»',
+    templateHasNone: 'Esta plantilla no trae pestañas.',
     kind: 'Tipo',
     kinds: {
       text: 'Texto',
@@ -3090,6 +3089,7 @@ export const es = {
       orderTemplateFolder: 'cambió el orden de la carpeta de plantillas «{{name}}»',
       moveTemplate: 'movió la plantilla «{{name}}» a la carpeta «{{folder}}»',
       moveTemplateTop: 'sacó la plantilla «{{name}}» de su carpeta',
+      addTemplateTabs: 'añadió a «{{title}}» pestañas de la plantilla «{{name}}»',
       orderTemplate: 'cambió el orden de la plantilla «{{name}}»',
       deleteFiles: 'borró {{count}} archivos',
       copyPage: 'duplicó «{{title}}»',
@@ -3339,6 +3339,7 @@ export const es = {
       orderTemplateFolder: 'cambiar el orden de la carpeta de plantillas «{{name}}»',
       moveTemplate: 'mover la plantilla «{{name}}» a la carpeta «{{folder}}»',
       moveTemplateTop: 'sacar la plantilla «{{name}}» de su carpeta',
+      addTemplateTabs: 'añadir a «{{title}}» pestañas de la plantilla «{{name}}»',
       orderTemplate: 'cambiar el orden de la plantilla «{{name}}»',
       deleteFiles: 'borrar {{count}} archivos',
       copyPage: 'duplicar «{{title}}»',

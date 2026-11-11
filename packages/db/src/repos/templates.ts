@@ -269,16 +269,17 @@ export async function templateUses(db: Database, organizationId: string, templat
   return new Map(rows.map((row) => [row.template ?? '', row.uses]))
 }
 
-/** Las pestañas de unas páginas (las de unas plantillas), en su orden: su nombre y su tipo */
+/** Las pestañas de unas páginas (las de unas plantillas), en su orden: su id, su nombre y su tipo */
 export async function tabsOfPages(db: Database, pageIds: readonly string[]) {
-  const byPage = new Map<string, { name: string; kind: (typeof pageTabs.$inferSelect)['kind'] }[]>()
+  const byPage = new Map<string, { id: string; name: string; kind: (typeof pageTabs.$inferSelect)['kind'] }[]>()
   if (pageIds.length === 0) return byPage
   const rows = await db
-    .select({ pageId: pageTabs.pageId, name: pageTabs.name, kind: pageTabs.kind })
+    .select({ id: pageTabs.id, pageId: pageTabs.pageId, name: pageTabs.name, kind: pageTabs.kind })
     .from(pageTabs)
     .where(inArray(pageTabs.pageId, [...pageIds]))
-    .orderBy(asc(pageTabs.position))
-  for (const row of rows)
-    byPage.set(row.pageId, [...(byPage.get(row.pageId) ?? []), { name: row.name, kind: row.kind }])
+    .orderBy(sql`${pageTabs.position} collate "C"`)
+  for (const row of rows) {
+    byPage.set(row.pageId, [...(byPage.get(row.pageId) ?? []), { id: row.id, name: row.name, kind: row.kind }])
+  }
   return byPage
 }

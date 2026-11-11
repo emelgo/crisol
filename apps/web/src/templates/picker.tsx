@@ -1,8 +1,8 @@
 /**
- * Elegir una plantilla (al crear una página o desde un enlace sin resolver): las tuyas primero y luego las de serie,
- * con un buscador. Es un grupo de opciones: las flechas pasan de una a otra
+ * Elegir una plantilla (al crear una página o una pestaña, o desde un enlace sin resolver): por carpetas, con un
+ * buscador. Es un grupo de opciones: las flechas pasan de una a otra
  */
-import type { PageTemplate } from '@crisol/contracts'
+import type { TemplateView } from '@crisol/contracts'
 import { fieldKey } from '@crisol/domain'
 import { useQuery } from '@tanstack/react-query'
 import { Search } from 'lucide-react'
@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { TemplateIcon } from './icons.tsx'
 import styles from './picker.module.css'
+import { templateGroups } from './tree.ts'
 
 /** Las plantillas que se pueden usar */
 export function useTemplates() {
@@ -18,25 +19,29 @@ export function useTemplates() {
   return useQuery({ queryKey: ['templates'], queryFn: () => api.call('listTemplates', {}) })
 }
 
-/** Lo que la distingue a primera vista: sus primeros campos */
-const hintOf = (template: PageTemplate) =>
-  template.fields
-    .slice(0, 3)
-    .map((field) => field.name)
-    .join(', ')
-
+/**
+ * La lista de plantillas al crear una página o una pestaña (ADR-0024): un buscador y sus filas por carpetas (con su
+ * camino), que se eligen como opciones; cada una con sus pestañas y cuántos campos trae
+ */
 export function TemplatePicker({ value, onChange }: { value: string | null; onChange: (id: string) => void }) {
   const { t } = useTranslation()
   const name = useId()
-  const templates = useTemplates().data?.templates ?? []
+  const data = useTemplates().data
   const [query, setQuery] = useState('')
-  const shown = templates.filter((template) => !query.trim() || fieldKey(template.name).includes(fieldKey(query)))
-  const groups = [{ key: 'mine', label: t('templates.mine'), items: shown }].filter((group) => group.items.length > 0)
+  const shown = (data?.templates ?? []).filter(
+    (template) => !query.trim() || fieldKey(template.name).includes(fieldKey(query))
+  )
+  const groups = templateGroups(data?.folders ?? [], shown)
   // Sin elegir, la primera de la lista
-  const first = groups[0]?.items[0]?.id
+  const first = groups[0]?.templates[0]?.id
   useEffect(() => {
     if (!value && first) onChange(first)
   }, [value, first, onChange])
+  const hintOf = (template: TemplateView) =>
+    [
+      [t('pageTabs.text'), ...template.tabs.map((tab) => tab.name)].join(', '),
+      t('templates.fieldsCount', { count: template.fields.length })
+    ].join(' · ')
   return (
     <div className={styles.picker}>
       <label className={styles.search}>
@@ -51,11 +56,13 @@ export function TemplatePicker({ value, onChange }: { value: string | null; onCh
       <fieldset className={styles.list}>
         <legend className={styles.hidden}>{t('templates.label')}</legend>
         {groups.map((group) => (
-          <div key={group.key} className={styles.group}>
-            <p className={styles.groupLabel} aria-hidden="true">
-              {group.label}
-            </p>
-            {group.items.map((template) => {
+          <div key={group.id ?? 'arriba'} className={styles.group}>
+            {(group.label ?? (groups.length > 1 ? t('templates.loose') : null)) && (
+              <p className={styles.groupLabel} aria-hidden="true">
+                {group.label ?? t('templates.loose')}
+              </p>
+            )}
+            {group.templates.map((template) => {
               return (
                 <label key={template.id} className={styles.row}>
                   <input
@@ -77,7 +84,9 @@ export function TemplatePicker({ value, onChange }: { value: string | null; onCh
             })}
           </div>
         ))}
-        {groups.length === 0 && <p className={styles.none}>{t('templates.noneFound')}</p>}
+        {groups.length === 0 && (
+          <p className={styles.none}>{data?.templates.length ? t('templates.noneFound') : t('templates.empty')}</p>
+        )}
       </fieldset>
     </div>
   )

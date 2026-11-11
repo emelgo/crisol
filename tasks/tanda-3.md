@@ -45,9 +45,11 @@ Rama `revision/tanda-3`. Cada porción, con sus pruebas, en su commit; las casil
    cuántas páginas se usa), buscador; «Plantilla nueva» y «Nueva carpeta» fijos. Hecho (migración 0079): con las
    clases y los gestos de Archivos (sin elegir varias, que en plantillas no hace falta); en la ventana de una
    plantilla, «Carpeta»; la lista del editor, por carpetas («Sin carpeta» las sueltas).
-7. **«Desde plantilla», la última y centrada** (tras una raya con «o») en «Página nueva» y en «Pestaña nueva»; en
+7. [x] **«Desde plantilla», la última y centrada** (tras una raya con «o») en «Página nueva» y en «Pestaña nueva»; en
    «Pestaña nueva» se eligen qué pestañas de la plantilla se añaden (todas, de entrada). Fuera «Aplicar plantilla» de
    «⋯». Registro único de tipos de pestaña (nombre, icono, si admite plantilla) para página nueva, pestaña nueva y la
-   copia.
+   copia. Hecho: `wiki/tabs/kinds.tsx` (TAB_KINDS, KindChoices, StepBack); acción `addTemplateTabs` (copia las
+   elegidas detrás de las de la página, sin enlaces, en una operación); el selector de plantilla va por carpetas, con
+   sus pestañas y cuántos campos trae. La IA sigue pudiendo poner una plantilla a una página hecha (`poner_plantilla`).
 8. **Cerrar**: MCP de plantillas al día (sus instrucciones), e2e, impeccable (critique y audit), `tasks/probar.md`,
    «Dónde estamos».

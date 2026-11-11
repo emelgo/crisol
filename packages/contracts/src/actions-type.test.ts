@@ -117,6 +117,7 @@ describe('Actions', () => {
       updateTemplateFolder: true,
       deleteTemplateFolder: true,
       moveTemplate: true,
+      addTemplateTabs: true,
       rollDice: true,
       listRolls: true,
       tryDice: true,

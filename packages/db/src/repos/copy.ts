@@ -4,6 +4,7 @@
  * sus pestañas, cada tipo con su forma de copiarse. Lo que hay en cada tabla se copia entero (sin su id ni lo que pone
  * el historial), así una columna nueva viaja sola
  */
+import { keyBetween } from '@crisol/domain'
 import { asc, eq, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { type OperationContext, operation, type Writer } from '../operation.ts'
@@ -211,25 +212,104 @@ export function copyPage(db: Database, context: OperationContext, input: PageCop
       const via = context.via === 'ai' ? 'ai' : context.via === 'system' ? 'system' : 'ui'
       await recordVersion(w, { pageId: page.id, worldId, actorId: context.actorId, via, ...input.version })
     }
-    // Las pestañas, en su orden: primero todas (para saber sus ids), luego lo de cada una
-    const tabs = await w.read
-      .select()
-      .from(pageTabs)
-      .where(eq(pageTabs.pageId, source.id))
-      .orderBy(sql`${pageTabs.position} collate "C"`)
-    const made: { from: TabRow; to: TabRow }[] = []
-    for (const tab of tabs) {
-      const documentId = tab.documentId ? (input.tabDocuments.get(tab.documentId)?.id ?? null) : null
-      const to = await w.insert(pageTabs, {
-        ...copied(tab, worldId),
-        pageId: page.id,
-        documentId
-      } as typeof pageTabs.$inferInsert)
-      made.push({ from: tab, to })
-    }
-    const tabIds = new Map(made.map(({ from, to }) => [from.id, to.id]))
-    for (const { from, to } of made) await TAB_COPIES[from.kind](w, { from, to, worldId, tabIds, keep })
+    await copyTabs(w, { sourceId: source.id, pageId: page.id, worldId, keep, tabDocuments: input.tabDocuments })
     await input.alongside?.(w, page)
     return { id: page.id, title: page.title }
+  })
+}
+
+/**
+ * Las pestañas de una página (todas o las de `only`), copiadas a otra, en su orden y cada una con lo suyo: primero
+ * todas (para saber sus ids; una tabla que lleva a otra la encuentra), luego lo de cada una. Con `after`, detrás de esa
+ * clave (las que ya tenga la de destino); sin él, con sus puestos de la original. Devuelve las nuevas
+ */
+async function copyTabs(
+  w: Writer,
+  input: {
+    sourceId: string
+    pageId: string
+    worldId: string
+    keep: boolean
+    tabDocuments: ReadonlyMap<string, { id: string; state: Uint8Array }>
+    only?: ReadonlySet<string>
+    after?: string | null
+  }
+) {
+  const tabs = (
+    await w.read
+      .select()
+      .from(pageTabs)
+      .where(eq(pageTabs.pageId, input.sourceId))
+      .orderBy(sql`${pageTabs.position} collate "C"`)
+  ).filter((tab) => !input.only || input.only.has(tab.id))
+  const made: { from: TabRow; to: TabRow }[] = []
+  let last = input.after ?? null
+  for (const tab of tabs) {
+    const documentId = tab.documentId ? (input.tabDocuments.get(tab.documentId)?.id ?? null) : null
+    const position = input.after === undefined ? tab.position : keyBetween(last, null)
+    last = position
+    const to = await w.insert(pageTabs, {
+      ...copied(tab, input.worldId),
+      pageId: input.pageId,
+      documentId,
+      position
+    } as typeof pageTabs.$inferInsert)
+    made.push({ from: tab, to })
+  }
+  const tabIds = new Map(made.map(({ from, to }) => [from.id, to.id]))
+  for (const { from, to } of made) {
+    await TAB_COPIES[from.kind](w, { from, to, worldId: input.worldId, tabIds, keep: input.keep })
+  }
+  return made.map(({ to }) => to)
+}
+
+/**
+ * Añade a una página las pestañas elegidas de otra (las de una plantilla, ADR-0024), detrás de las suyas y sin lo que
+ * lleva a páginas concretas, en una sola operación; sus documentos de texto llegan ya hechos. Devuelve las nuevas
+ */
+export function addTabsFrom(
+  db: Database,
+  context: OperationContext,
+  input: {
+    sourceId: string
+    pageId: string
+    worldId: string
+    tabIds: readonly string[]
+    tabDocuments: ReadonlyMap<string, { id: string; state: Uint8Array }>
+  }
+) {
+  return operation(db, context, async (w) => {
+    const [last] = await w.read
+      .select({ position: pageTabs.position })
+      .from(pageTabs)
+      .where(eq(pageTabs.pageId, input.pageId))
+      .orderBy(sql`${pageTabs.position} collate "C" desc`)
+      .limit(1)
+    // Los documentos de sus pestañas de texto, sin historial (se van con ellas al deshacer)
+    const wanted = new Set(input.tabIds)
+    const sourceTabs = await w.read.select().from(pageTabs).where(eq(pageTabs.pageId, input.sourceId))
+    const docs = sourceTabs
+      .filter((tab) => wanted.has(tab.id) && tab.documentId && input.tabDocuments.has(tab.documentId))
+      .map((tab) => {
+        const doc = input.tabDocuments.get(tab.documentId as string) as { id: string; state: Uint8Array }
+        return {
+          id: doc.id,
+          worldId: input.worldId,
+          pageId: input.pageId,
+          kind: 'tab' as const,
+          state: doc.state,
+          updatedBy: context.actorId
+        }
+      })
+    if (docs.length > 0) await w.read.insert(documents).values(docs)
+    return copyTabs(w, {
+      sourceId: input.sourceId,
+      pageId: input.pageId,
+      worldId: input.worldId,
+      keep: false,
+      tabDocuments: input.tabDocuments,
+      only: wanted,
+      after: last?.position ?? null
+    })
   })
 }

@@ -468,6 +468,8 @@ export function summaryOf(
       return details.folder
         ? say('moveTemplate', { name: textIn(details.name), folder: textIn(details.folder) })
         : say('moveTemplateTop', { name: textIn(details.name) })
+    case 'addTemplateTabs':
+      return say('addTemplateTabs', { title: text(details.title), name: textIn(details.name) })
     case 'createTemplate':
     case 'updateTemplate':
     case 'deleteTemplate':

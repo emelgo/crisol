@@ -27,7 +27,6 @@ import { itemTransition } from '../components/world-transition.ts'
 import { WorldBanner } from '../routes/world-card.tsx'
 import { TemplateIcon } from '../templates/icons.tsx'
 import { useTemplates } from '../templates/picker.tsx'
-import { ApplyTemplate } from './apply-template.tsx'
 import { Backlinks } from './backlinks.tsx'
 import { CollabSocket } from './collab.tsx'
 import { CoverButton, PageCoverImage } from './cover.tsx'
@@ -614,7 +613,7 @@ const LEADING_EMOJI = /^(\p{Extended_Pictographic}(?:\p{Emoji_Modifier}|\uFE0F|\
 
 /**
  * «Más»: lo que se hace de vez en cuando con la página, fuera de la vista hasta que se pide. items: lo de una plantilla,
- * en lugar de aplicar una o exportar
+ * en lugar de exportar
  */
 function MoreActions({ page, items }: { page: Page; items?: ReactNode }) {
   const { t } = useTranslation()
@@ -656,13 +655,8 @@ function MoreActions({ page, items }: { page: Page; items?: ReactNode }) {
       {open && (
         <div id={panelId} className={styles.morePanel}>
           <SheetMenu page={page} />
-          {items ?? (
-            <>
-              {/* Lo demás (subpágina, renombrar, mover, borrar…), con el botón derecho en el árbol */}
-              <ApplyTemplate page={page} />
-              <ExportPage page={page} />
-            </>
-          )}
+          {/* Lo demás (subpágina, renombrar, mover, borrar…), con el botón derecho en el árbol */}
+          {items ?? <ExportPage page={page} />}
           <Versions page={page} />
         </div>
       )}

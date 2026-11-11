@@ -35,7 +35,8 @@ import styles from './editor.module.css'
 import { FieldsEditor } from './fields.tsx'
 import { TemplateIcon } from './icons.tsx'
 import { useTemplates } from './picker.tsx'
-import { TemplateSettings, templateGroups, useNewTemplate } from './screen.tsx'
+import { TemplateSettings, useNewTemplate } from './screen.tsx'
+import { templateGroups } from './tree.ts'
 
 type Patch = Partial<Pick<PageTemplate, 'fields' | 'panel'>>
 

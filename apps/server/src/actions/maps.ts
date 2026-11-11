@@ -29,7 +29,7 @@ import { authorizedPage, type WikiTarget } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
 import { implement } from './registry.ts'
 
-const tabView = (row: mapsRepo.PageTabRow): PageTabView => ({
+export const tabView = (row: mapsRepo.PageTabRow): PageTabView => ({
   id: row.id,
   pageId: row.pageId,
   kind: row.kind,
