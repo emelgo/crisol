@@ -117,6 +117,15 @@ const placement = {
 const onlyOneNeighbour = (input: { before?: string | undefined; after?: string | undefined }) =>
   !(input.before && input.after)
 
+export const copyPage = defineAction({
+  name: 'copyPage',
+  kind: 'write',
+  description:
+    'Duplica una página con todo lo suyo, justo detrás de ella: portada, hoja, propiedades, panel, su texto con sus secretos y notas, y sus pestañas (mapas con sus pines, tablas, escenas con sus muros, luces y sonidos). Sus subpáginas no, ni lo que sabe cada campaña. Una sola operación, que se deshace de una vez desde el historial. Sin título, «<título> (copia)»',
+  input: z.object({ pageId: z.uuid(), title: pageTitle.optional() }),
+  output: page
+})
+
 export const createPage = defineAction({
   name: 'createPage',
   kind: 'write',

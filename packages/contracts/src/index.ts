@@ -120,6 +120,7 @@ import {
 } from './notes.ts'
 import { listOrganizations } from './organizations.ts'
 import {
+  copyPage,
   createPage,
   createPageDocument,
   createPages,
@@ -342,6 +343,7 @@ export const ACTIONS = [
   listApprovals,
   approve,
   reject,
+  copyPage,
   createPage,
   updatePage,
   movePage,
@@ -623,6 +625,7 @@ export type Actions = {
   listApprovals: typeof listApprovals
   approve: typeof approve
   reject: typeof reject
+  copyPage: typeof copyPage
   createPage: typeof createPage
   updatePage: typeof updatePage
   movePage: typeof movePage

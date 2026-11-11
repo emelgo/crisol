@@ -461,6 +461,8 @@ export function summaryOf(
     case 'copyContent':
     case 'pullContentOrigin':
       return say(action, { name: textIn(details.name) })
+    case 'copyPage':
+      return say('copyPage', { title: text(details.title) })
     case 'deleteFiles':
     case 'deleteWorldContent':
       return say(action, { count: Number(details.count ?? 1) })

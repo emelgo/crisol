@@ -1702,6 +1702,24 @@ export function fakeApi(
       place(page, before, after)
       return pageView(page)
     },
+    // Como el servidor: una copia entera (fila y pestañas, con sus mapas y pines) detrás de la original
+    copyPage: ({ pageId, title }) => {
+      const source = pageById(pageId)
+      const page: StoredPage = {
+        ...structuredClone(source),
+        id: crypto.randomUUID(),
+        title: title ?? `${source.title} (copia)`,
+        version: 1
+      }
+      place(page, undefined, source.id)
+      for (const tab of pageTabs.filter((t) => t.pageId === source.id)) {
+        const copy = { ...tab, id: crypto.randomUUID(), pageId: page.id }
+        pageTabs.push(copy)
+        const map = maps.find((m) => m.tabId === tab.id)
+        if (map) maps.push({ ...structuredClone(map), id: crypto.randomUUID(), tabId: copy.id, pageId: page.id })
+      }
+      return pageView(page)
+    },
     updatePage: ({ pageId, title, icon, locked, cover, sheet }) => {
       const page = pageById(pageId)
       Object.assign(page, {

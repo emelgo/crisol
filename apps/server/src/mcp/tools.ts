@@ -255,6 +255,7 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   paginas_recientes: { action: 'listRecentPages' },
   leer_pagina: { action: 'readPage' },
   crear_paginas: { action: 'createPages' },
+  duplicar_pagina: { action: 'copyPage' },
   editar_pagina: { action: 'editPage' },
   versiones_pagina: { action: 'listPageVersions' },
   restaurar_version: { action: 'restorePageVersion' },

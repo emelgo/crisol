@@ -81,6 +81,7 @@ describe('herramientas MCP', () => {
       'dejar_volver',
       'deshacer',
       'dibujar_escena',
+      'duplicar_pagina',
       'echar_de_la_mesa',
       'editar_pagina',
       'elegir_personaje',

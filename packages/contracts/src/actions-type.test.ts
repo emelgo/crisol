@@ -34,6 +34,7 @@ describe('Actions', () => {
       listApprovals: true,
       approve: true,
       reject: true,
+      copyPage: true,
       createPage: true,
       updatePage: true,
       movePage: true,
