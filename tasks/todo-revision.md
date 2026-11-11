@@ -148,9 +148,10 @@ Plan: `tasks/plan-revision.md`. Una tanda cada vez: se enseña en local, Enrique
 
 ## Tanda 5 — Cristal, Entrar y la portada
 
-- [ ] Lienzo «Crisol, con cristal» (se prepara desde la tanda 1).
-- [ ] Superficies y fondo de ambiente; respaldo sin desenfoque donde falta; «Sin desenfoque» en Ajustes.
-- [ ] Entrar y crear la cuenta; la portada pública.
+- [x] «Crisol, con cristal»: en lugar de lienzo, construido con capturas de antes y después (Enrique revisa las tandas
+  juntas); plan en `tasks/tanda-5.md`.
+- [x] Superficies y fondo de ambiente; respaldo sin desenfoque donde falta; «Sin desenfoque» en Ajustes.
+- [x] Entrar (el recuadro de cristal) y la portada pública. Las imágenes nuevas de Entrar, cuando Enrique las genere.
 
 ## Tanda 6 — Sistemas: su espacio, sus portadas y sus libros
 
@@ -185,8 +186,8 @@ Plan: `tasks/plan-revision.md`. Una tanda cada vez: se enseña en local, Enrique
 Lo que sale sin estar en la lista: se avisa a Enrique y se arregla en su tanda.
 
 - [x] Archivos comunes: no se mueve ningún archivo (arreglado en la tanda 2); el aviso a la vista, con la Archivos nueva.
-- [ ] Cristal sin respaldo en seis piezas de la Mesa (tanda 5).
-- [ ] `docs/diseno.md` dice que la barra derecha de la Mesa es opaca y es de cristal (tanda 5).
+- [x] Cristal sin respaldo en seis piezas de la Mesa (tanda 5: los tokens del cristal, casi opacos sin desenfoque).
+- [x] `docs/diseno.md` dice que la barra derecha de la Mesa es opaca y es de cristal (tanda 5: corregido).
 - [x] Tutorial de Inicio: «Nueva campaña» colado entre Historial y Papelera (tanda 1): ahora va tras «Nuevo mundo».
 - [ ] Menú móvil fuera de un mundo: solo «Mundos» (con la vista de la jugadora).
 - [x] «Página N» no sale tras un salto a mano; la nota lateral, siempre a la derecha al imprimir (tanda 4).

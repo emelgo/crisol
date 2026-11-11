@@ -103,14 +103,25 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   con cristal», `out/lienzo-cristal/`): translúcido y con el mapa desenfocado detrás (tokens `--glass-*`) solo en piezas
   pequeñas que flotan: la barra de la escena, las herramientas, el zoom, las tiradas sobre el d20, la tira de turnos de la
   tele, las ventanas minimizadas y la cabecera de las ventanas. Lo que se lee (el cuerpo de páginas, hojas y compendio)
-  va casi opaco, y la barra de la derecha, opaca (va acoplada). **El brillo, solo en lo vivo** y en el rojo de la marca
+  va casi opaco, y la barra de la derecha, de cristal pero que se lee (`--glass-panel`). **El brillo, solo en lo vivo** y en el rojo de la marca
   (`--glow-live`): «En la tele» (en rojo, como «Enseñando»), la ventana que se enseña y un crítico. Al pasar por los
   botones de las barras, suben un poco. Sin desenfoque en el navegador, el mismo tinte más tapado.
 - **El cristal, en toda la app** (Enrique, 2026-11-11, revisión de la app), no solo en la Mesa. Fuera de ella hace
   falta algo detrás, **un fondo de ambiente**: en Entrar, las imágenes; en Inicio, una de ambiente o la portada del
   mundo sobre el que está el ratón; en un mundo o un sistema, su portada, muy difuminada y tenue. De cristal, lo que
   enmarca (la barra, las fichas de los lados, cabeceras, tarjetas, cuadros); lo que se lee o se escribe, casi opaco.
-  «Sin desenfoque» en Ajustes. El cómo, en el lienzo «Crisol, con cristal» (tanda 5 de la revisión).
+  «Sin desenfoque» en Ajustes. Cómo (tanda 5): el fondo de ambiente (`components/ambient.tsx`) va fijo detrás de
+  todo, ya difuminado, así que lo que enmarca es solo translúcido (`--surface-glass`, `--surface-glass-raised`) **sin
+  backdrop-filter** (no cuesta al bajar); el desenfoque de verdad, solo en lo que va sobre algo nítido (el recuadro de
+  Entrar, lo que flota en la Mesa). **La página es una hoja casi opaca** (`--surface-read`): la portada y el texto, una
+  sola pieza sobre el fondo. Lo que flota encima de otra cosa (menús, el selector de iconos, ventanas), opaco. Los
+  marcos de esquinas cortadas pintan su raya como un anillo (`--cut-ring`), para que su relleno pueda ser de cristal.
+  **«Sin desenfoque»** (Ajustes, «Este aparato»; se guarda en el navegador): sin fondo de ambiente ni desenfoque en
+  ninguna parte, también en la Mesa; todo opaco, como antes. Sin desenfoque en el navegador, el cristal de lo que flota
+  se tapa más (`--glass-solid`).
+- **La portada pública** (tanda 5): la imagen a toda pantalla (la barra de arriba, transparente encima), en el centro la
+  llama, el nombre, la frase, «Entrar» y «Tengo una invitación» (que pide el enlace y lleva a la campaña); debajo, tres
+  estampas de lo que hay dentro (el mundo, la mesa, la ficha), capturas de la app.
 - **La campaña se abre en su propia vista, como un mundo** (Enrique, 2026-11-05): al entrar, la barra cambia y enseña
   lo de la campaña (sus personajes, su compendio, los dados…), con la transición de entrar. **El compendio** (el
   contenido del sistema que usa la campaña: clases, conjuros, criaturas, reglas…, con sus ediciones) **se ve ahí**.

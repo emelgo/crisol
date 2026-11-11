@@ -9,6 +9,17 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
+## Revisión, tanda 5: cristal, Entrar y la portada (en local)
+
+- [ ] **El fondo de ambiente**: en Inicio, al pasar por un mundo con portada, detrás se ve su portada muy difuminada; en
+  un mundo, la suya; sin portada, la de ambiente. La barra, las fichas y las tarjetas, de cristal; la página, una hoja
+  casi opaca. Bajar una página larga va igual de suelto que antes.
+- [ ] **«Sin desenfoque»** (Ajustes → Este aparato): todo opaco como antes, también en la Mesa; se recuerda en este
+  navegador.
+- [ ] **Entrar**: el recuadro de cristal, con las imágenes desenfocadas detrás.
+- [ ] **La portada** (sin sesión): la imagen hasta arriba, «Entrar» y «Tengo una invitación» (pegar el enlace de una
+  campaña lleva a ella); debajo, las tres estampas.
+
 ## Revisión, tanda 4: la página del mundo y la hoja (en local)
 
 - [ ] **El árbol, fijo**: pulsar el mundo en la barra lleva a su portada y el árbol no se esconde nunca.

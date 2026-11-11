@@ -14,6 +14,17 @@ qué hay que repasar.
 | El modelo de la búsqueda por significado: `multilingual-e5-small` cuantizado a int8 (ONNX) y su tokenizador SentencePiece. No va en el repo: lo baja la imagen de Docker (comprobado por su huella) y, en desarrollo, va en `datos-locales/modelos/` | `Dockerfile` (etapa `model`), `apps/server/src/library/model-worker.ts` | `intfloat/multilingual-e5-small` (Liang Wang y otros, Microsoft); su versión ONNX, `Xenova/multilingual-e5-small` | intfloat 614241f, Xenova 761b726 | MIT |
 | La skill de diseño y revisión de interfaces **impeccable** (con sus agentes y su vigilante), solo una herramienta del desarrollo: no va en la app | `.claude/skills/impeccable`, `.claude/agents/impeccable-*.md` (su motor, fuera de git) | https://github.com/pbakaus/impeccable (Paul Bakaus) | skill 4.8.2, motor 0.1.21 | Apache-2.0 |
 
+## Imágenes propias de la app (tanda 5, 2026-11-12)
+
+Generadas por Enrique con ChatGPT en su cuenta, en el estilo elegido (F, `docs/imagenes.md`), o capturas de la propia
+app. Pasadas a WebP con el Chromium de Playwright.
+
+| Archivo | Qué | Origen |
+| --- | --- | --- |
+| `apps/web/public/ambiente/inicio.webp` | El fondo de ambiente (480 px: va muy difuminado) | El valle del ocaso, `datos-locales/estilos/f-entrar.png`, generada por Enrique con ChatGPT (2026-11-11). Provisional hasta la imagen «ambiente» |
+| `apps/web/public/portada/portada.webp` | La imagen de la portada pública | La misma del valle (provisional hasta la imagen «portada») |
+| `apps/web/public/portada/{mundo,mesa,ficha}.webp` | Las estampas de la portada | Capturas de Crisol (de sus pruebas) |
+
 ## Fondos de las pantallas de cuenta (2026-11-08)
 
 En `apps/web/public/fondos/` (lista en `apps/web/src/account/backdrops.ts`), recortados y pasados a WebP.
