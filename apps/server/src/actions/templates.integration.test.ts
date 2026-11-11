@@ -1,17 +1,17 @@
 import { TEMPLATE_ICONS as CONTRACT_ICONS, pageTemplate } from '@crisol/contracts'
 import { connect, schema } from '@crisol/db'
 import { freshTestDatabase, resetDatabase } from '@crisol/db/testing'
-import { BUILT_IN_TEMPLATES, TEMPLATE_ICONS } from '@crisol/domain'
+import { EXAMPLE_TEMPLATES, TEMPLATE_ICONS } from '@crisol/domain'
 import type { FastifyInstance } from 'fastify'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { buildApp } from '../app.ts'
 import type { Auth } from '../auth/auth.ts'
-import { createTestAuth, signUpTestUser, TEST_SEAL_KEY } from '../testing.ts'
+import { createTestAuth, seedExampleTemplates, signUpTestUser, TEST_SEAL_KEY } from '../testing.ts'
 
 const BASE_URL = 'http://localhost:5173'
 const ok = async () => undefined
 
-describe('las plantillas de serie', () => {
+describe('las plantillas de la cuenta (sin plantillas de serie, ADR-0024)', () => {
   let conn: ReturnType<typeof connect>
   let auth: Auth
   let app: FastifyInstance
@@ -44,25 +44,28 @@ describe('las plantillas de serie', () => {
     await conn?.close()
   })
 
-  it('cada una cumple el contrato de la API, también su panel, y los iconos son los mismos', () => {
+  it('las de ejemplo de las pruebas cumplen el contrato de la API, también su panel, y los iconos son los mismos', () => {
     expect([...CONTRACT_ICONS]).toEqual([...TEMPLATE_ICONS])
-    for (const template of BUILT_IN_TEMPLATES) expect(pageTemplate.safeParse(template).success, template.id).toBe(true)
+    for (const template of EXAMPLE_TEMPLATES) expect(pageTemplate.safeParse(template).success, template.id).toBe(true)
   })
 
-  it('se ven las seis, y una entera por su id', async () => {
-    const list = await call('listTemplates', {})
-    expect(list.statusCode, list.body).toBe(200)
-    expect(list.json().templates.map((t: { id: string }) => t.id)).toEqual([
-      'pnj',
-      'lugar',
-      'faccion',
-      'objeto',
-      'mision',
-      'sesion'
+  it('una cuenta nueva no tiene ninguna; las que hace se ven, y una entera por su id', async () => {
+    const empty = await call('listTemplates', {})
+    expect(empty.statusCode, empty.body).toBe(200)
+    expect(empty.json().templates).toEqual([])
+    const ids = await seedExampleTemplates(call)
+    const list = (await call('listTemplates', {})).json()
+    expect(list.templates.map((t: { name: string }) => t.name)).toEqual([
+      'PNJ',
+      'Lugar',
+      'Facción',
+      'Objeto',
+      'Misión',
+      'Sesión'
     ])
-    const pnj = await call('getTemplate', { templateId: 'pnj' })
+    const pnj = await call('getTemplate', { templateId: ids.pnj as string })
     expect(pnj.statusCode).toBe(200)
-    expect(pnj.json()).toMatchObject({ id: 'pnj', name: 'PNJ', builtIn: true, line: ['pnj'] })
+    expect(pnj.json()).toMatchObject({ id: ids.pnj, name: 'PNJ', line: [ids.pnj] })
     expect((await call('getTemplate', { templateId: 'frente' })).statusCode).toBe(404)
   })
 
@@ -78,6 +81,7 @@ describe('las plantillas de serie', () => {
 
   describe('las de la cuenta', () => {
     let worldId: string
+    let ids: Record<string, string>
     const ok200 = async (name: string, payload: object) => {
       const response = await call(name, payload)
       expect(response.statusCode, response.body).toBe(200)
@@ -86,11 +90,12 @@ describe('las plantillas de serie', () => {
 
     beforeEach(async () => {
       worldId = (await ok200('createWorld', { name: 'Eana' })).id
+      ids = await seedExampleTemplates(call)
     })
 
     it('copiar PNJ conserva los ids de sus campos y su linaje; sus páginas salen en «Miembros»', async () => {
       const copy = await ok200('createTemplate', { name: 'PNJ de Eana', icon: 'user', copyOf: 'PNJ' })
-      expect(copy).toMatchObject({ builtIn: false, basedOn: 'pnj', line: [copy.id, 'pnj'] })
+      expect(copy).toMatchObject({ basedOn: ids.pnj, line: [copy.id, ids.pnj] })
       expect(copy.fields.map((f: { field: string }) => f.field)).toEqual([
         'especie',
         'rol',
@@ -120,7 +125,7 @@ describe('las plantillas de serie', () => {
       })
       const { tables } = await ok200('getPageTables', { pageId: raqisa.id })
       expect(tables[0].rows.map((r: { title: string }) => r.title)).toEqual(['Mamá Gris'])
-      // Y sale en la lista, detrás de las de serie
+      // Y sale en la lista, la última
       const { templates } = await ok200('listTemplates', {})
       expect(templates.map((t: { name: string }) => t.name).slice(-1)).toEqual(['PNJ de Eana'])
     })
@@ -138,7 +143,7 @@ describe('las plantillas de serie', () => {
         fields: [
           { name: 'Nivel', type: 'choice', value: '', options: ['Local', 'Regional', 'Del mundo'] },
           { name: 'Reloj', type: 'clock', value: 0, segments: 8 },
-          { name: 'Regiones', type: 'pages', targets: ['lugar'], value: [] }
+          { name: 'Regiones', type: 'pages', targets: [ids.lugar], value: [] }
         ],
         panel: [
           {
@@ -204,7 +209,7 @@ describe('las plantillas de serie', () => {
       expect((await ok200('listTemplates', {})).templates.some((t: { id: string }) => t.id === frente.id)).toBe(true)
     })
 
-    it('lo que no vale: un nombre que ya está, un enlace a una página, cambiar una de serie', async () => {
+    it('lo que no vale: un nombre que ya está, un enlace a una página, una que no existe', async () => {
       expect((await call('createTemplate', { name: 'pnj' })).json()).toMatchObject({ code: 'TEMPLATE_TAKEN' })
       const frente = await ok200('createTemplate', { name: 'Frente' })
       const page = await ok200('createPage', { worldId, title: 'Ciudad Libre' })
@@ -216,7 +221,6 @@ describe('las plantillas de serie', () => {
           })
         ).json()
       ).toMatchObject({ code: 'BAD_FIELD' })
-      expect((await call('updateTemplate', { templateId: 'pnj', name: 'Otro' })).statusCode).toBe(400)
       expect((await call('deleteTemplate', { templateId: crypto.randomUUID() })).statusCode).toBe(404)
     })
 

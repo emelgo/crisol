@@ -1,4 +1,4 @@
-import { BUILT_IN_TEMPLATES } from '@crisol/domain'
+import { EXAMPLE_TEMPLATES as BUILT_IN_TEMPLATES } from '@crisol/domain'
 import { pageFromMarkdown } from '@crisol/editor/markdown'
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'

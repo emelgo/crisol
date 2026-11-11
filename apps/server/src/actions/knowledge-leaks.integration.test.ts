@@ -9,7 +9,7 @@ import { actorFrom } from '@crisol/domain'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { buildApp } from '../app.ts'
 import { errorText } from '../mcp/approvals.ts'
-import { createTestAuth, signUpTestUser, TEST_SEAL_KEY } from '../testing.ts'
+import { createTestAuth, seedExampleTemplates, signUpTestUser, TEST_SEAL_KEY } from '../testing.ts'
 import { implementationsByName } from './implementations.ts'
 
 const BASE_URL = 'http://localhost:5173'
@@ -75,6 +75,7 @@ describe('las fugas de la revisión de conocimiento (ADR-0017)', () => {
       .insert(schema.organizationMembers)
       .values({ organizationId: org.id, userId: master.userId, role: 'owner' })
     worldId = (await ok200('createWorld', { name: 'Valdren' })).id
+    await seedExampleTemplates(call)
     marca = (await ok200('createCampaign', { worldId, name: 'La Marca' })).id
     norte = (await ok200('createCampaign', { worldId, name: 'Los del norte' })).id
     ana = await signUpTestUser(auth, { name: 'Ana', email: 'ana@crisol.test' })

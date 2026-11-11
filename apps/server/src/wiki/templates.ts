@@ -1,34 +1,32 @@
 /**
- * Las plantillas con las que se crean páginas (ADR-0009): encontrarlas por su id o su nombre y dar sus copias a una
- * página nueva. Las de serie viven en el dominio; las de la cuenta llegan con la tarea 9
+ * Las plantillas con las que se crean páginas (ADR-0009, ADR-0024): las de la cuenta (no hay de serie); encontrarlas
+ * por su id o su nombre y dar sus copias a una página nueva
  */
 import { randomBytes } from 'node:crypto'
 import { pagePanel, TEMPLATE_ICONS } from '@crisol/contracts'
 import { templatesRepo } from '@crisol/db'
-import { BUILT_IN_TEMPLATES, fieldKey, type PageTemplate, type TemplateIcon } from '@crisol/domain'
+import { fieldKey, type PageTemplate, type TemplateIcon } from '@crisol/domain'
 import { type ActionContext, InvalidRequestError } from '../actions/context.ts'
 import { propertiesOf } from './properties.ts'
 
 const iconOf = (icon: string): TemplateIcon =>
   (TEMPLATE_ICONS as readonly string[]).includes(icon) ? (icon as TemplateIcon) : 'template'
 
-/** Una plantilla de la cuenta, como las de serie (lo guardado que no valga, fuera) */
+/** Una plantilla de la cuenta (lo guardado que no valga, fuera) */
 export const ownTemplate = (row: templatesRepo.TemplateRow): PageTemplate => ({
   id: row.id,
   name: row.name,
   icon: iconOf(row.icon),
   basedOn: row.basedOn,
   line: row.line,
-  builtIn: false,
   fields: propertiesOf(row.fields),
   panel: pagePanel.safeParse(row.panel).data ?? [],
   skeleton: row.skeleton
 })
 
-/** Las plantillas que se pueden usar en una organización: las de serie y las suyas, en el orden en que se hicieron */
+/** Las plantillas que se pueden usar en una organización: las suyas, en el orden en que se hicieron */
 export async function usableTemplates(ctx: ActionContext, organizationId: string): Promise<readonly PageTemplate[]> {
-  const own = await templatesRepo.listTemplates(ctx.db, organizationId)
-  return [...BUILT_IN_TEMPLATES, ...own.map(ownTemplate)]
+  return (await templatesRepo.listTemplates(ctx.db, organizationId)).map(ownTemplate)
 }
 
 /** Las de la cuenta que se borraron: su nombre, para las páginas que salieron de ellas */

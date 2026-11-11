@@ -83,16 +83,4 @@ describe('editar una plantilla', () => {
     await userEvent.type(title, 'Frentes{Enter}')
     await waitFor(async () => expect((await saved()).name).toBe('Frentes'))
   })
-
-  it('una de serie se ve igual pero no se cambia, y se copia', async () => {
-    await renderTemplate('pnj')
-    expect(await screen.findByRole('heading', { level: 1, name: 'PNJ' })).toBeDefined()
-    const fields = within((await panel()).getByRole('region', { name: 'Campos' }))
-    expect(fields.queryByRole('button', { name: 'Campo' })).toBeNull()
-    await userEvent.click(fields.getByRole('button', { name: /Facción/ }))
-    // Todo su grupo va desactivado
-    expect((fields.getByLabelText('Nombre').closest('fieldset') as HTMLFieldSetElement).disabled).toBe(true)
-    await userEvent.click(screen.getByRole('button', { name: 'Copiar' }))
-    expect(screen.getByRole('dialog', { name: 'Plantilla nueva' })).toBeDefined()
-  })
 })

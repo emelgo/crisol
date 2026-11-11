@@ -1379,7 +1379,6 @@ export const es = {
     label: 'Plantilla',
     search: 'Buscar plantilla',
     mine: 'Tuyas',
-    builtIn: 'De serie',
     none: 'Ninguno',
     noneFound: 'Ninguna plantilla se llama así',
     madeWith: 'Hecha con la plantilla {{name}}',
@@ -1395,7 +1394,6 @@ export const es = {
     copyName: '{{name}} (copia)',
     copy: 'Copiar',
     copyHint: 'Una tuya, igual, para cambiarla',
-    locked: 'No se puede cambiar',
     name: 'Nombre',
     icon: 'Icono',
     create: 'Crear la plantilla',
@@ -3569,8 +3567,7 @@ export const es = {
       builtIn: 'Los que trae Crisol. Ábrelos para ver en qué campañas están o bajarlos.'
     },
     templates: {
-      create: 'Haz las tuyas desde cero o copiando otra.',
-      builtIn: 'Las de serie no se cambian: cópialas para hacer las tuyas.'
+      create: 'Haz las tuyas desde cero o copiando otra.'
     },
     tags: {
       create: 'Crea etiquetas.',

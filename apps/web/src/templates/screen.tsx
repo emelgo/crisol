@@ -5,7 +5,7 @@
 import type { PageTemplate } from '@crisol/contracts'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link, Navigate, useNavigate } from '@tanstack/react-router'
-import { Copy, Lock, Plus, Settings } from 'lucide-react'
+import { Copy, Plus, Settings } from 'lucide-react'
 import { useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
@@ -33,12 +33,6 @@ function useOrigin() {
   const { t } = useTranslation()
   const templates = useTemplates().data?.templates ?? []
   return (template: PageTemplate) => {
-    if (template.builtIn) {
-      return template.fields
-        .slice(0, 3)
-        .map((field) => field.name)
-        .join(', ')
-    }
     const base = templates.find((each) => each.id === template.basedOn)
     return base ? t('templates.copyOf', { name: base.name }) : t('templates.fromScratch')
   }
@@ -53,8 +47,7 @@ export function TemplatesScreen() {
   if (pending) return null
   if (!account) return <Navigate to="/entrar" replace />
   const all = templates.data?.templates ?? []
-  const mine = all.filter((template) => !template.builtIn)
-  const builtIn = all.filter((template) => template.builtIn)
+  const mine = all
   const preview = all.find((template) => template.id === hovered)
   return (
     <Screen
@@ -78,42 +71,20 @@ export function TemplatesScreen() {
               />
             </li>
           </ul>
-          <h2 className={styles.section}>{t('templates.builtIn')}</h2>
-          <ul className={styles.grid} aria-label={t('templates.builtIn')} data-tour="plantillas-serie">
-            {builtIn.map((template) => (
-              <TemplateCard
-                key={template.id}
-                template={template}
-                onHover={setHovered}
-                onCopy={() => setCreating({ copyOf: template.id })}
-              />
-            ))}
-          </ul>
         </>
       )}
       {creating && <NewTemplateDialog copyOf={creating.copyOf} onClose={() => setCreating(null)} />}
       {templates.data && (
         <Tour
           id="plantillas"
-          steps={[
-            { target: '[data-tour="plantillas-nueva"]', text: t('tour.templates.create') },
-            { target: '[data-tour="plantillas-serie"]', text: t('tour.templates.builtIn') }
-          ]}
+          steps={[{ target: '[data-tour="plantillas-nueva"]', text: t('tour.templates.create') }]}
         />
       )}
     </Screen>
   )
 }
 
-function TemplateCard({
-  template,
-  onHover,
-  onCopy
-}: {
-  template: PageTemplate
-  onHover: (id: string | null) => void
-  onCopy?: () => void
-}) {
+function TemplateCard({ template, onHover }: { template: PageTemplate; onHover: (id: string | null) => void }) {
   const { t } = useTranslation()
   const origin = useOrigin()
   const [settings, setSettings] = useState(false)
@@ -129,7 +100,6 @@ function TemplateCard({
         if (!(event.target as Element).closest('dialog')) onHover(template.id)
       }}
     >
-      {template.builtIn && <Lock className={styles.lock} size={14} aria-label={t('templates.locked')} />}
       <span className={styles.icon} aria-hidden="true" data-elemento="icono">
         <Icon size={24} strokeWidth={1.5} />
       </span>
@@ -147,7 +117,7 @@ function TemplateCard({
       </h3>
       <p className={styles.meta}>{origin(template)}</p>
       <div className={styles.foot}>
-        {/* Sus acciones, en su engranaje, siempre a la vista (docs/diseno.md); en las de serie, «Copiar» */}
+        {/* Sus acciones, en su engranaje, siempre a la vista (docs/diseno.md) */}
         <button
           ref={gear}
           type="button"
@@ -164,68 +134,19 @@ function TemplateCard({
           <Settings size={16} aria-hidden="true" />
         </button>
       </div>
-      {settings &&
-        (template.builtIn ? (
-          <BuiltInWindow
-            template={template}
-            onClose={(copy) => {
-              setSettings(false)
-              if (copy) onCopy?.()
-              else gear.current?.focus()
-            }}
-          />
-        ) : (
-          <TemplateSettings
-            template={template}
-            onClose={(gone) => {
-              setSettings(false)
-              if (!gone) gear.current?.focus()
-            }}
-          />
-        ))}
+      {settings && (
+        <TemplateSettings
+          template={template}
+          onClose={(gone) => {
+            setSettings(false)
+            if (!gone) gear.current?.focus()
+          }}
+        />
+      )}
     </li>
   )
 }
 
-/** La ventana de una de serie: no se cambia, se copia. onClose(copy): si se pidió copiarla */
-function BuiltInWindow({ template, onClose }: { template: PageTemplate; onClose: (copy: boolean) => void }) {
-  const { t } = useTranslation()
-  const dialog = useRef<HTMLDialogElement>(null)
-  const titleId = useId()
-  const copy = useRef(false)
-  return (
-    <Modal ref={dialog} aria-labelledby={titleId} className={cards.dialog} onClose={() => onClose(copy.current)}>
-      <div className={cards.form}>
-        <h2 id={titleId}>{template.name}</h2>
-        <p className={styles.builtInNote}>
-          <Lock size={14} aria-hidden="true" />
-          {t('templateEditor.builtInNote')}
-        </p>
-        <dl className={styles.rows}>
-          <div>
-            <dt>{t('templates.copy')}</dt>
-            <dd>
-              {t('templates.copyHint')}
-              <button
-                type="button"
-                className={styles.rowAction}
-                onClick={() => {
-                  copy.current = true
-                  dialog.current?.close()
-                }}
-              >
-                <Copy size={14} aria-hidden="true" />
-                {t('templates.copy')}
-              </button>
-            </dd>
-          </div>
-        </dl>
-      </div>
-    </Modal>
-  )
-}
-
-/** Lo que trae una plantilla, a un lado: sus campos con su tipo, los bloques de su panel y los apartados del texto */
 function TemplatePreview({ template }: { template: PageTemplate }) {
   const { t } = useTranslation()
   const origin = useOrigin()

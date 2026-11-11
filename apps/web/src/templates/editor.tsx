@@ -47,7 +47,7 @@ function TemplateEditor({ template, all }: { template: PageTemplate; all: readon
   const api = useApi()
   const queryClient = useQueryClient()
   const errorText = useErrorText()
-  const readOnly = template.builtIn
+  const readOnly = false
   const [draft, setDraft] = useState(template)
   const [copying, setCopying] = useState(false)
   // Los guardados van en fila; mientras quede alguno, lo que llega de fuera no pisa lo de aquí
@@ -78,16 +78,13 @@ function TemplateEditor({ template, all }: { template: PageTemplate; all: readon
     save.mutate(patch)
   }
   const Icon = TEMPLATE_ICON[draft.icon]
-  const mine = all.filter((each) => !each.builtIn)
-  const builtIn = all.filter((each) => each.builtIn)
+  const mine = all
   return (
     <Screen
       left={
         <div className={styles.list}>
           <p className={styles.listHead}>{t('templates.mine')}</p>
           <TemplateLinks templates={mine} current={template.id} />
-          <p className={styles.listHead}>{t('templates.builtIn')}</p>
-          <TemplateLinks templates={builtIn} current={template.id} />
         </div>
       }
       leftLabel={t('templates.title')}
@@ -164,7 +161,6 @@ function TemplateLinks({ templates, current }: { templates: readonly PageTemplat
             >
               <Icon size={15} aria-hidden="true" />
               {each.name}
-              {each.builtIn && <Lock size={12} aria-hidden="true" className={styles.lock} />}
             </Link>
           </li>
         )

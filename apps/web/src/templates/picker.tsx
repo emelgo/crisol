@@ -31,11 +31,8 @@ export function TemplatePicker({ value, onChange }: { value: string | null; onCh
   const templates = useTemplates().data?.templates ?? []
   const [query, setQuery] = useState('')
   const shown = templates.filter((template) => !query.trim() || fieldKey(template.name).includes(fieldKey(query)))
-  const groups = [
-    { key: 'mine', label: t('templates.mine'), items: shown.filter((template) => !template.builtIn) },
-    { key: 'builtIn', label: t('templates.builtIn'), items: shown.filter((template) => template.builtIn) }
-  ].filter((group) => group.items.length > 0)
-  // Sin elegir, la primera de la lista (las tuyas van delante)
+  const groups = [{ key: 'mine', label: t('templates.mine'), items: shown }].filter((group) => group.items.length > 0)
+  // Sin elegir, la primera de la lista
   const first = groups[0]?.items[0]?.id
   useEffect(() => {
     if (!value && first) onChange(first)

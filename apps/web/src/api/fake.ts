@@ -49,10 +49,9 @@ import { DiceSyntaxError, rollDice as rollFormula, rowFor, tableFormula, tablePr
 import {
   advanceSound,
   applyTemplate,
-  BUILT_IN_TEMPLATES,
-  builtInTemplate,
   bySiblingPlace,
   EMPTY_SOUND,
+  EXAMPLE_TEMPLATES,
   instantiate,
   isTagOrChild,
   nextTrack as nextTrackOf,
@@ -187,6 +186,8 @@ export function fakeApi(
     /** Los archivos de los mundos (usedBy: cuántas páginas lo usan) */
     files?: Array<Pick<FileView, 'worldId' | 'name'> & Partial<FileView> & { usedBy?: number }>
     /** Las carpetas de los archivos (sin puesto: por nombre) */
+    /** Las plantillas de la cuenta; sin ellas, las de ejemplo (las que fueron de serie) */
+    templates?: readonly PageTemplate[]
     folders?: Array<
       Omit<FolderView, 'position' | 'color' | 'icon'> & Partial<Pick<FolderView, 'position' | 'color' | 'icon'>>
     >
@@ -449,16 +450,14 @@ export function fakeApi(
     hasChildren: childrenOf(page.worldId, page.id).length > 0,
     version: page.version
   })
-  // Las plantillas de la cuenta (las de serie, en el dominio)
-  const ownTemplates: Array<PageTemplate & { deleted: boolean }> = []
-  const templateById = (id: string): PageTemplate | undefined =>
-    (builtInTemplate(id) as PageTemplate | undefined) ?? ownTemplates.find((t) => t.id === id && !t.deleted)
+  // Las plantillas de la cuenta (no hay de serie): de entrada, las de ejemplo (las que fueron de serie)
+  const ownTemplates: Array<PageTemplate & { deleted: boolean }> = (options.templates ?? EXAMPLE_TEMPLATES).map(
+    (template) => ({ ...(structuredClone(template) as PageTemplate), deleted: false })
+  )
+  const templateById = (id: string): PageTemplate | undefined => ownTemplates.find((t) => t.id === id && !t.deleted)
   // Las tablas que se llenan solas, como el servidor: las de su plantilla (o sus copias) con el campo hacia esta página
   const lineOf = (page: StoredPage) =>
-    page.template
-      ? (builtInTemplate(page.template)?.line ??
-        ownTemplates.find((t) => t.id === page.template)?.line ?? [page.template])
-      : []
+    page.template ? (ownTemplates.find((t) => t.id === page.template)?.line ?? [page.template]) : []
   const tablesOf = (page: StoredPage): PageTables => {
     const blocks = (page.panel ?? []).filter((block) => block.type === 'related')
     const linked = new Map<string, string>()
@@ -1905,7 +1904,9 @@ export function fakeApi(
     // Por el título, sin tildes ni mayúsculas (la de verdad la prueban las del servidor)
     // Las plantillas: las de serie y las de la cuenta, como el servidor
     listTemplates: () => ({
-      templates: structuredClone([...BUILT_IN_TEMPLATES, ...ownTemplates.filter((t) => !t.deleted)]) as PageTemplate[],
+      templates: structuredClone(ownTemplates.filter((t) => !t.deleted)).map(
+        ({ deleted: _, ...t }) => t
+      ) as PageTemplate[],
       deleted: ownTemplates.filter((t) => t.deleted).map((t) => ({ id: t.id, name: t.name, icon: t.icon }))
     }),
     getTemplate: ({ templateId }) => {
@@ -1915,10 +1916,10 @@ export function fakeApi(
     },
     createTemplate: ({ name, icon, copyOf }) => {
       const base = copyOf
-        ? (templateById(copyOf) ?? [...BUILT_IN_TEMPLATES, ...ownTemplates].find((t) => t.name === copyOf))
+        ? (templateById(copyOf) ?? ownTemplates.find((t) => !t.deleted && t.name === copyOf))
         : undefined
       if (copyOf && !base) throw new ApiError('TEMPLATE_NOT_FOUND', 400)
-      if ([...BUILT_IN_TEMPLATES, ...ownTemplates].some((t) => !('deleted' in t && t.deleted) && t.name === name)) {
+      if (ownTemplates.some((t) => !t.deleted && t.name === name)) {
         throw new ApiError('TEMPLATE_TAKEN', 400)
       }
       const id = crypto.randomUUID()
@@ -1928,7 +1929,6 @@ export function fakeApi(
         icon: icon ?? 'template',
         basedOn: base?.id ?? null,
         line: [id, ...(base?.line ?? [])],
-        builtIn: false,
         fields: structuredClone(base?.fields ?? []),
         panel: structuredClone(base?.panel ?? []),
         skeleton: base?.skeleton ?? '',

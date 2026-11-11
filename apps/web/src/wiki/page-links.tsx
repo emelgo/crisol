@@ -276,24 +276,22 @@ function PageLinkView({ node, updateAttributes, selected, editor }: NodeViewProp
             <FileText size={14} aria-hidden="true" />
             {t('newPage.text')}
           </button>
-          {[...templates.filter((each) => !each.builtIn), ...templates.filter((each) => each.builtIn)].map(
-            (template) => {
-              const Icon = TEMPLATE_ICON[template.icon]
-              return (
-                <button
-                  key={template.id}
-                  type="button"
-                  role="menuitem"
-                  className={styles.createOption}
-                  onMouseDown={(event) => event.preventDefault()}
-                  onClick={() => create.mutate(template.id)}
-                >
-                  <Icon size={14} aria-hidden="true" />
-                  {template.name}
-                </button>
-              )
-            }
-          )}
+          {templates.map((template) => {
+            const Icon = TEMPLATE_ICON[template.icon]
+            return (
+              <button
+                key={template.id}
+                type="button"
+                role="menuitem"
+                className={styles.createOption}
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => create.mutate(template.id)}
+              >
+                <Icon size={14} aria-hidden="true" />
+                {template.name}
+              </button>
+            )
+          })}
         </span>
       )}
       {trashOpen && (

@@ -1,4 +1,5 @@
 export * from './ai-modes.ts'
+export * from './example-templates.ts'
 export * from './files.ts'
 export * from './knowledge.ts'
 export * from './links.ts'

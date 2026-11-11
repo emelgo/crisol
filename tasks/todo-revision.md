@@ -124,10 +124,14 @@ Plan: `tasks/plan-revision.md`. Una tanda cada vez: se enseña en local, Enrique
 
 ## Tanda 3 — Plantillas
 
-- [ ] `copyPage`: duplicar de una vez (portada, hoja, panel y pestañas).
+- [x] `copyPage`: duplicar de una vez (portada, hoja, panel, texto con sus secretos y pestañas; cada tipo de pestaña con
+  su forma de copiarse, `packages/db/src/repos/copy.ts`), MCP `duplicar_pagina`; «Duplicar» la usa.
+- [x] Prototipo «Plantillas como páginas» (https://claude.ai/artifact/HEiducM87Qe3zxcnvYZm6M,
+  `out/lienzo-plantillas/lienzo.html`): la lista (A1 como Archivos o A2 tarjetas), el editor como página, «Desde
+  plantilla» en página y pestaña nuevas. **Esperando a Enrique.**
 - [ ] La plantilla como página-modelo (espacio oculto de la cuenta, ADR).
 - [ ] Crear desde plantilla = duplicarla; «Desde plantilla» la última, también en «Pestaña nueva».
-- [ ] Fuera las de serie (barrido antes).
+- [x] Fuera las de serie (barrido antes): migración 0077, que convierte en propias las que estén en uso.
 - [ ] Carpetas de plantillas.
 - [ ] Volver en el editor; fuera «Aplicar plantilla»; registro de tipos de pestaña.
 

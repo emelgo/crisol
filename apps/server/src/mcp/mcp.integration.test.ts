@@ -9,7 +9,7 @@ import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/cli
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { startServer } from '../server.ts'
-import { signUpTestUser, TEST_AUTH_SECRET, testDataDir } from '../testing.ts'
+import { seedExampleTemplates, signUpTestUser, TEST_AUTH_SECRET, testDataDir } from '../testing.ts'
 import { mcpTestHelpers } from './test-client.ts'
 
 type History = { entries: HistoryEntry[] }
@@ -222,8 +222,8 @@ describe('conector MCP con OAuth', () => {
       ['listar_etiquetas', {}, 'read'],
       ['ver_pestanas', { pageId: page.id }, 'read'],
       ['listar_plantillas', {}, 'read'],
-      ['ver_plantilla', { templateId: 'pnj' }, 'read'],
-      ['crear_plantilla', { name: 'PNJ de Eana', copyOf: 'pnj' }, 'write'],
+      ['ver_plantilla', { templateId: own.id }, 'read'],
+      ['crear_plantilla', { name: 'Frente de Eana', copyOf: 'Frente' }, 'write'],
       ['cambiar_plantilla', { templateId: own.id, skeleton: '## En una frase' }, 'write'],
       ['borrar_plantilla', { templateId: own.id }, 'delete'],
       ['buscar_paginas', { worldId: world.id, query: 'lugares' }, 'read'],
@@ -818,7 +818,12 @@ describe('conector MCP con OAuth', () => {
   })
 
   it('Claude crea con plantilla; si un valor no cabe en su campo, el error le dice qué campos tiene', async () => {
-    const { call } = await connected()
+    const { cookie, call } = await connected()
+    // Las plantillas de ejemplo en su cuenta (no hay de serie)
+    const ids = await seedExampleTemplates(async (name, payload) => {
+      const data = await api(cookie, name, payload as Record<string, unknown>)
+      return { json: () => data }
+    })
     const world = (await call<World>('crear_mundo', { name: 'Eana' })).data
     const bad = await call('crear_paginas', {
       worldId: world.id,
@@ -834,7 +839,7 @@ describe('conector MCP con OAuth', () => {
       pages: [{ key: 'a', title: 'Mamá Gris', template: 'PNJ', markdown: '---\nRol: Jefa\n---\n' }]
     })
     const read = await call<{ page: { template: string } }>('leer_pagina', { pageId: made.data.pages[0]?.id })
-    expect(read.data.page.template).toBe('pnj')
+    expect(read.data.page.template).toBe(ids.pnj)
   })
 
   it('lo de otra organización no existe para Claude: ni se ve, ni se pide, ni se deshace', async () => {

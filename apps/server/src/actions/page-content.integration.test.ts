@@ -7,7 +7,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import * as Y from 'yjs'
 import { buildApp } from '../app.ts'
 import type { Auth } from '../auth/auth.ts'
-import { createTestAuth, signUpTestUser, TEST_SEAL_KEY } from '../testing.ts'
+import { createTestAuth, seedExampleTemplates, signUpTestUser, TEST_SEAL_KEY } from '../testing.ts'
 
 const BASE_URL = 'https://crisol.test'
 const ok = async () => undefined
@@ -44,6 +44,7 @@ describe('Claude lee y escribe páginas en Markdown', () => {
   let owner: { userId: string; cookie: string }
   let organizationId: string
   let worldId: string
+  let tpl: Record<string, string>
 
   const call = (name: string, payload: object, cookie = owner.cookie) =>
     app.inject({ method: 'POST', url: `/api/actions/${name}`, payload, headers: { origin: BASE_URL, cookie } })
@@ -80,6 +81,7 @@ describe('Claude lee y escribe páginas en Markdown', () => {
     organizationId = org.id
     await conn.db.insert(schema.organizationMembers).values({ organizationId, userId: owner.userId, role: 'owner' })
     worldId = (await call('createWorld', { name: 'Eana' })).json().id
+    tpl = await seedExampleTemplates(call)
   })
 
   afterAll(async () => {
@@ -412,7 +414,7 @@ describe('Claude lee y escribe páginas en Markdown', () => {
 
   it('crear desde plantilla: sus campos, su panel y su texto, en una sola operación que se deshace entera', async () => {
     const page = await ok200('createPage', { worldId, title: 'Mamá Gris', template: 'pnj' })
-    expect(page.template).toBe('pnj')
+    expect(page.template).toBe(tpl.pnj)
     expect(page.properties.map((p: { name: string; field?: string }) => [p.name, p.field])).toEqual([
       ['Especie', 'especie'],
       ['Rol', 'rol'],
@@ -428,7 +430,7 @@ describe('Claude lee y escribe páginas en Markdown', () => {
         id: expect.stringMatching(/^[a-z0-9]{12}$/),
         type: 'related',
         title: 'Lleva encima',
-        template: 'objeto',
+        template: tpl.objeto,
         field: 'portador',
         columns: ['tipo', 'rareza'],
         sort: 'title'
@@ -459,13 +461,13 @@ describe('Claude lee y escribe páginas en Markdown', () => {
     expect(created.pages).toHaveLength(50)
     const gris = await ok200('getPage', { pageId: created.pages[3].id })
     const faction = created.pages.find((p: { key: string }) => p.key === 'f3')
-    expect(gris.template).toBe('pnj')
+    expect(gris.template).toBe(tpl.pnj)
     expect(gris.properties.find((p: { field?: string }) => p.field === 'faccion')).toEqual({
       name: 'Facción',
       field: 'faccion',
       type: 'pages',
       single: true,
-      targets: ['faccion'],
+      targets: [tpl.faccion],
       value: [faction.id]
     })
     expect(gris.properties.find((p: { field?: string }) => p.field === 'estado')).toMatchObject({
@@ -517,7 +519,7 @@ describe('Claude lee y escribe páginas en Markdown', () => {
     })
     const pageId = pages[0].id
     const applied = await ok200('editPage', { pageId, template: 'Lugar' })
-    expect(applied.page.template).toBe('lugar')
+    expect(applied.page.template).toBe(tpl.lugar)
     expect(applied.page.properties.map((p: { name: string; field?: string }) => [p.name, p.field])).toEqual([
       ['Población', 'poblacion'],
       ['Clima', undefined],

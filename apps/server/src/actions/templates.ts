@@ -1,6 +1,6 @@
 /**
- * Las plantillas de página (ADR-0009): las de serie, que viven en el dominio y no se cambian, y las de la cuenta, que se
- * hacen desde cero o copiando otra, se cambian y se borran. Todo lo que escribe pasa por el historial
+ * Las plantillas de página de la cuenta (ADR-0009, ADR-0024): se hacen desde cero o copiando otra, se cambian y se
+ * borran. No hay de serie. Todo lo que escribe pasa por el historial
  */
 import { randomUUID } from 'node:crypto'
 import {
@@ -36,7 +36,7 @@ async function ownWritable(ctx: ActionContext, templateId: string) {
   return row
 }
 
-/** Que el nombre no lo tenga ya otra (tampoco una de serie): se buscan por nombre */
+/** Que el nombre no lo tenga ya otra: se buscan por nombre */
 async function checkName(ctx: ActionContext, organizationId: string, name: string, self?: string) {
   const taken = (await usableTemplates(ctx, organizationId)).find(
     (each) => each.id !== self && fieldKey(each.name) === fieldKey(name)
