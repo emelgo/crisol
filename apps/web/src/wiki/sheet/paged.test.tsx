@@ -265,7 +265,7 @@ describe('la hoja al escribir', () => {
     const [, , side, after] = placed().map(at)
     // La nota, estrecha y a su lado (aquí, el izquierdo de su columna); el texto, a su altura, con un hueco que la rodea
     expect(side?.top).toBe(0)
-    expect(side?.width).toBe(Math.round(327 * 0.48))
+    expect(side?.width).toBe(Math.round(327 * 0.42))
     expect(after?.left).toBe(side?.left)
     expect(after?.top).toBe(0)
     expect(placed()[3]).toContain('display:flow-root')
@@ -277,7 +277,7 @@ describe('la hoja al escribir', () => {
     const note: JSONContent = { type: 'sidenote', attrs: { side: 'right' }, content: [p('Al margen')] }
     render(<Harness content={[note, p('Uno')]} settings={SHEET} />)
     await waitFor(() => expect(placed()[0]).toContain('position:absolute'))
-    await waitFor(() => expect(at(placed()[0] ?? '').left).toBe(682 - Math.round(682 * 0.48)))
+    await waitFor(() => expect(at(placed()[0] ?? '').left).toBe(682 - Math.round(682 * 0.34)))
     expect(at(placed()[1] ?? '').left).toBe(0)
     const room = (current as unknown as Editor).view.dom.querySelector<HTMLElement>('[data-note-room]')
     expect(room?.style.float).toBe('right')

@@ -145,3 +145,10 @@
   color: var(--color-danger);
   font-size: 0.75rem;
 }
+
+/* La cabecera compacta, al bajar: opaca, dentro del cristal de la ventana (si no, se lee el texto de detrás) */
+.page :global(header[data-compact]) {
+  background: var(--color-surface);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}

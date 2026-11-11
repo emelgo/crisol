@@ -4,9 +4,23 @@
  * filas (MenuItem) y grupos que se despliegan en su sitio con su flecha (MenuGroup), como «Versiones»
  */
 import { ChevronRight } from 'lucide-react'
-import { type ButtonHTMLAttributes, type ReactNode, useCallback, useEffect, useId, useRef, useState } from 'react'
+import {
+  type ButtonHTMLAttributes,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState
+} from 'react'
 import { Floating } from './floating.tsx'
 import styles from './menu.module.css'
+
+/** Las filas que se recorren con las flechas: los botones del panel que se pueden pulsar, en su orden */
+const rows = (panel: HTMLElement | null) => [
+  ...(panel?.querySelectorAll<HTMLElement>('button:not(:disabled), a[href], input:not(:disabled)') ?? [])
+]
 
 export function Menu({
   label,
@@ -26,6 +40,10 @@ export function Menu({
   const panel = useRef<HTMLDivElement>(null)
   const id = useId()
   const close = useCallback(() => setOpen(false), [])
+  // Al abrir, el foco entra en el panel (en su primera fila): va al final de la página y el tabulador no llegaría
+  useLayoutEffect(() => {
+    if (open) rows(panel.current)[0]?.focus()
+  }, [open])
   // Abierto: pulsar fuera lo cierra; Escape también, y el foco vuelve al botón
   useEffect(() => {
     if (!open) return
@@ -61,7 +79,36 @@ export function Menu({
         {icon}
       </button>
       {open && (
-        <Floating anchor={trigger} boxRef={panel} placement="bottom-end" id={id} className={styles.panel}>
+        <Floating
+          anchor={trigger}
+          boxRef={panel}
+          placement="bottom-end"
+          id={id}
+          className={styles.panel}
+          // Con el teclado: las flechas, Inicio y Fin recorren sus filas; Tab sale y lo cierra, con el foco en su botón
+          onKeyDown={(event) => {
+            const all = rows(panel.current)
+            const at = all.indexOf(document.activeElement as HTMLElement)
+            const go = (index: number) => {
+              event.preventDefault()
+              all[(index + all.length) % all.length]?.focus()
+            }
+            if (event.key === 'ArrowDown') go(at + 1)
+            else if (event.key === 'ArrowUp') go(at - 1)
+            else if (event.key === 'Home') go(0)
+            else if (event.key === 'End') go(all.length - 1)
+            else if (event.key === 'Tab') {
+              event.preventDefault()
+              setOpen(false)
+              trigger.current?.focus()
+            }
+          }}
+          // Si el foco se va a otra parte (un clic fuera ya lo cierra), también
+          onBlur={(event) => {
+            const next = event.relatedTarget as Node | null
+            if (next && !panel.current?.contains(next) && !trigger.current?.contains(next)) setOpen(false)
+          }}
+        >
           {children(close)}
         </Floating>
       )}

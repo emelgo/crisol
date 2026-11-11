@@ -5,7 +5,7 @@
 import type { Page } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { JSONContent } from '@tiptap/core'
-import { ChevronRight } from 'lucide-react'
+import { ChevronRight, History } from 'lucide-react'
 import { useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
@@ -54,6 +54,8 @@ export function Versions({ page }: { page: Page }) {
     <section aria-labelledby={`${id}-title`} className={styles.panel}>
       <h2 id={`${id}-title`}>
         <button type="button" className={styles.toggle} aria-expanded={open} onClick={() => setOpen(!open)}>
+          {/* Con su icono, como las demás filas de «⋯» */}
+          <History aria-hidden="true" size={15} className={styles.icon} />
           {t('versions.title')}
           <ChevronRight aria-hidden="true" size={14} className={styles.chevron} />
         </button>

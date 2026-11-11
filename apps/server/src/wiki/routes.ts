@@ -66,8 +66,14 @@ export function registerWikiRoutes(app: FastifyInstance, env: ActionEnv, auth: A
         throw error
       }
       if (!pdf) return reply.code(503).send({ code: 'PDF_UNAVAILABLE' })
-      const secrets = (request.query as Record<string, unknown>).secretos === '1'
-      const path = `/mundos/${found.wiki.worldId}/imprimir/${found.page.id}${secrets ? '?secretos=1' : ''}`
+      const query = request.query as Record<string, unknown>
+      // Los secretos, si se piden; el aspecto de esta impresión (sin él, el de la página)
+      const look = ['color', 'neutro', 'pergamino'].includes(String(query.tema)) ? String(query.tema) : null
+      const search = new URLSearchParams({
+        ...(query.secretos === '1' ? { secretos: '1' } : {}),
+        ...(look ? { tema: look } : {})
+      })
+      const path = `/mundos/${found.wiki.worldId}/imprimir/${found.page.id}${search.size ? `?${search}` : ''}`
       let bytes: Buffer
       try {
         bytes = await pdf.render(path, request.headers.cookie ?? '')

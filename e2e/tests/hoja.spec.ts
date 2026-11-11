@@ -103,13 +103,13 @@ test('la página se escribe ya como hoja; «⋯» → «Imprimir o descargar» p
   const dialog = page.getByRole('dialog', { name: 'Imprimir o descargar' })
   await expect(dialog.getByRole('radio', { name: 'Con colores' })).toBeChecked()
   await dialog.getByRole('radio', { name: 'Pergamino' }).check()
-  const saved = page.waitForResponse((r) => r.url().endsWith('/api/actions/updatePage'))
+  // El aspecto va con el PDF (el servidor lo imprime así); la página se sigue escribiendo igual
+  const pdf = page.waitForRequest((r) => r.url().includes(`/api/pages/${pageId}/pdf`))
   const download = page.waitForEvent('download')
   await dialog.getByRole('button', { name: 'Descargar PDF' }).click()
-  await saved
+  expect(new URL((await pdf).url()).searchParams.get('tema')).toBe('pergamino')
   await download
-  // Se guarda en la página: se escribe ya con la letra del pergamino
-  await expect(paper).toHaveAttribute('data-theme', 'pergamino')
+  await expect(paper).toHaveAttribute('data-theme', 'neutro')
   for (const colorScheme of ['dark'] as const) {
     await page.emulateMedia({ colorScheme })
     const { violations } = await new AxeBuilder({ page })

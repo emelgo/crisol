@@ -11,7 +11,8 @@
 .break::before {
   content: "";
   flex: 1 1 auto;
-  border-block-start: 1px dashed var(--color-border);
+  /* Discontinua (puesta a mano) y con el contraste de las marcas de página */
+  border-block-start: 1px dashed color-mix(in srgb, var(--color-muted) 45%, transparent);
 }
 
 .break[data-selected],

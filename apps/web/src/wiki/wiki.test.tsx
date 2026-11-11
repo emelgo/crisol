@@ -99,7 +99,7 @@ describe('el árbol de la wiki', () => {
     await waitFor(() => expect(api.calls).toContain('exportWiki'))
   })
 
-  it('«Imprimir o descargar» pregunta cómo: con colores, en blanco y negro o en pergamino; lo guarda y lo recuerda', async () => {
+  it('«Imprimir o descargar» pregunta cómo: con colores, en blanco y negro o en pergamino; lo recuerda para la próxima (la página no cambia)', async () => {
     localStorage.setItem('crisol.recorridos.enrique@crisol.test', JSON.stringify({ seen: ['mundo'] }))
     localStorage.removeItem('crisol.aspecto-impresion')
     const api = wikiApi()
@@ -112,8 +112,9 @@ describe('el árbol de la wiki', () => {
     expect(dialog.getByRole('radio', { name: 'Con colores' })).toHaveProperty('checked', true)
     await userEvent.click(dialog.getByRole('radio', { name: 'Pergamino' }))
     await userEvent.click(dialog.getByRole('button', { name: 'Descargar PDF' }))
-    await waitFor(() => expect(api.calls).toContain('downloadPdf'))
-    expect((await api.client.call('getPage', { pageId: ids.people })).sheet?.theme).toBe('pergamino')
+    // El aspecto va con lo que se descarga: no se guarda en la página (se escribe igual), sino para la próxima vez
+    await waitFor(() => expect(api.calls).toContain('downloadPdf:pergamino'))
+    expect((await api.client.call('getPage', { pageId: ids.people })).sheet?.theme).not.toBe('pergamino')
     expect(localStorage.getItem('crisol.aspecto-impresion')).toBe('pergamino')
   })
 

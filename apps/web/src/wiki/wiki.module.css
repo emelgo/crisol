@@ -37,7 +37,8 @@
   inline-size: 100%;
   max-inline-size: 20rem;
   /* Hasta abajo de la ventana y de alto fijo (el mismo que la de la derecha): lo que no cabe, con su desplazamiento */
-  block-size: calc(100dvh - var(--side-top) - var(--space-4));
+  /* Al bajar la página crece lo que sube (--side-lift, lo mide useSideTop), hasta llegar abajo pegada arriba */
+  block-size: calc(100dvh - var(--side-top) - var(--space-4) + var(--side-lift, 0px));
   overflow-y: auto;
   margin-block-start: var(--side-top);
   padding: var(--space-3) var(--space-3) var(--space-4);
@@ -342,7 +343,8 @@
   max-inline-size: 20rem;
   /* Como la de la izquierda (Enrique, 2026-11-11): de alto fijo, el que cabe en la ventana, y lo demás con su
      desplazamiento dentro */
-  block-size: calc(100dvh - var(--side-top) - var(--space-4));
+  /* Al bajar la página crece lo que sube (--side-lift, lo mide useSideTop), hasta llegar abajo pegada arriba */
+  block-size: calc(100dvh - var(--side-top) - var(--space-4) + var(--side-lift, 0px));
   overflow-y: auto;
   margin-block-start: var(--panel-top, 0);
   /* Abajo, sitio para el d20 y el «?», que flotan en esa esquina: lo último del panel no queda debajo */

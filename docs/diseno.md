@@ -180,6 +180,17 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 - **El icono va en el propio título**, si se quiere: no hay botón para ponerlo. **La portada**, como en el Crisol antiguo
   y en los mundos: se pone desde «⋯»; puesta, al pasar por encima salen «Ver» y «Cambiar», y se arrastra para
   encuadrarla.
+- **Las columnas de los lados de una página, fijas y del mismo alto** (Enrique, 2026-11-11): pulsar el mundo en la
+  barra no recoge el árbol (lleva a su portada); la derecha mide lo que la izquierda (lo que cabe en la ventana) y lo que
+  no cabe se desplaza dentro. En la ventana de una página de la Mesa, cada columna con su desplazamiento.
+- **La hoja llena el ancho** de la columna del centro hasta un tope de letra (20 px) y, si sobra, va centrada; **las
+  rayas de salto de página van de lado a lado y dicen la página que se cierra** («Página 1»). **La nota lateral va a su
+  lado** (izquierdo o derecho) con el texto alrededor, igual al imprimir.
+- **Imprimir o descargar pregunta cómo**: con colores, en blanco y negro o en pergamino (con una muestra de cada uno),
+  el papel, la numeración, el pie y los secretos. El aspecto va con cada impresión (la página se sigue escribiendo
+  igual) y se recuerda para la próxima; el papel, la numeración y el pie se guardan en la página.
+- **El menú común** (`components/menu.tsx`): flota junto a su botón sin que lo recorte nada; Escape o pulsar fuera lo
+  cierran y el foco vuelve al botón; lo que se despliega dentro lleva su flecha (como «Exportar» o «Versiones»).
 - **Las propiedades, en una ficha a un lado** (a la derecha, con el texto alrededor, como en el Crisol antiguo); en la
   hoja, arriba a todo lo ancho. Solo «+ Propiedad» y «Etiquetas» a mano: «Alias» y «Resumen» sobran. El tipo de una
   propiedad sale junto a su × mientras se edita.
@@ -245,7 +256,7 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 - **La hoja es lo que hace única la wiki, y toda página es una hoja** (Enrique, 2026-11-03: «verlo directamente como
   se ve en la hoja pero sin las texturas»; aprobada la prueba «toda página es una hoja», «está quedando genial»): el
   texto se escribe seguido y cae en sus páginas como al imprimir (el mismo paginador y la misma letra y tamaño), con una
-  raya fina y «Página N» donde empieza cada una, y con los colores de la app; el papel y las texturas del tema, solo al
+  raya fina y «Página N» de la que acaba (desde el 2026-11-12; antes, de la que empezaba), y con los colores de la app; el papel y las texturas del tema, solo al
   imprimir y en el PDF. Una columna por defecto; «Columnas» (1 o 2 desde ese punto) y los demás bloques de maquetación
   (saltos, statblock, nota lateral, a lo ancho, índice) están en «/» → Maquetación en todas las páginas. En el móvil,
   una columna seguida. Los títulos del texto, igual con hoja y sin ella (en su letra, sin mayúsculas, cada nivel en su

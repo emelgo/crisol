@@ -97,6 +97,8 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   align-items: start;
+  /* A dos columnas, la nota lateral algo más ancha que a una (la columna ya es estrecha) */
+  --note-share: 42%;
 }
 
 /* Cada bloque contiene sus márgenes: así mide lo que ocupa */
@@ -154,7 +156,8 @@
 }
 
 .page aside {
-  inline-size: 48%;
+  /* Lo mismo que al escribir (paged.tsx, noteShare): un tercio a una columna; a dos, lo de .columns */
+  inline-size: var(--note-share, 34%);
   margin: 0.2em 0 0.6em 0.8em;
   padding: 0.5em 0.7em;
   float: right;

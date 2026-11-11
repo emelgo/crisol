@@ -5,6 +5,7 @@
  */
 import type { Page, SheetSettings } from '@crisol/contracts'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { Printer } from 'lucide-react'
 import { type ReactNode, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../../api/context.tsx'
@@ -46,19 +47,19 @@ export function SheetPaper({ page, children }: { page: Page; children: ReactNode
 const LOOK_KEY = 'crisol.aspecto-impresion'
 const LOOKS = ['color', 'neutro', 'pergamino'] as const
 
-function rememberedLook(): SheetSettings['theme'] {
+function rememberedLook(): SheetSettings['theme'] | null {
   try {
     const stored = localStorage.getItem(LOOK_KEY)
-    return LOOKS.find((look) => look === stored) ?? 'color'
+    return LOOKS.find((look) => look === stored) ?? null
   } catch {
-    return 'color'
+    return null
   }
 }
 
 /**
  * «Imprimir o descargar»: pregunta cómo (Enrique, 2026-11-11: «que pida versión con los colores o en blanco y negro»).
- * El aspecto y los ajustes se guardan en la página (así se escribe ya con la letra de su tema y cae donde al
- * imprimir) y el aspecto, además, como el de siempre para las demás
+ * El aspecto es de esta impresión (va en su dirección) y se recuerda como el de siempre; no cambia la página (ni su
+ * letra al escribir). El papel, la numeración y el pie, sí: son de la hoja de la página
  */
 export function PrintDialog({ page, onClose }: { page: Page; onClose: () => void }) {
   const { t } = useTranslation()
@@ -69,22 +70,26 @@ export function PrintDialog({ page, onClose }: { page: Page; onClose: () => void
   const dialog = useRef<HTMLDialogElement>(null)
   const titleId = useId()
   const ids = { paper: useId(), first: useId(), look: useId() }
-  const start = page.sheet ?? { ...DEFAULT_SHEET, theme: rememberedLook() }
-  const [settings, setSettings] = useState<SheetSettings>(start)
+  const current = sheetOf(page)
+  // De entrada: el de una página hecha para el pergamino; si no, el de la última vez, o con colores
+  const [look, setLook] = useState<SheetSettings['theme']>(
+    current.theme === 'pergamino' ? 'pergamino' : (rememberedLook() ?? 'color')
+  )
+  const [settings, setSettings] = useState<SheetSettings>(current)
   const [secrets, setSecrets] = useState(false)
   const change = (patch: Partial<SheetSettings>) => setSettings((current) => ({ ...current, ...patch }))
-  /** Lo elegido, guardado en la página (si cambió) y recordado */
+  /** El aspecto, recordado; el papel, la numeración y el pie, en la página (si cambiaron) */
   const keep = async () => {
     try {
-      localStorage.setItem(LOOK_KEY, settings.theme)
+      localStorage.setItem(LOOK_KEY, look)
     } catch {
       // Sin almacenamiento, la próxima vez vuelve «Con colores»
     }
-    if (JSON.stringify(settings) === JSON.stringify(page.sheet)) return
+    if (JSON.stringify(settings) === JSON.stringify(current)) return
     await api.call('updatePage', { pageId: page.id, sheet: settings })
     await queryClient.invalidateQueries({ queryKey: ['pages', page.worldId] })
   }
-  const printUrl = `/mundos/${page.worldId}/imprimir/${page.id}?imprimir=1${secrets ? '&secretos=1' : ''}`
+  const printUrl = `/mundos/${page.worldId}/imprimir/${page.id}?imprimir=1&tema=${look}${secrets ? '&secretos=1' : ''}`
   const print = useMutation({
     mutationFn: async () => {
       // La pestaña se abre ya (al pulsar): después de guardar, el navegador la bloquearía
@@ -103,7 +108,7 @@ export function PrintDialog({ page, onClose }: { page: Page; onClose: () => void
   const download = useMutation({
     mutationFn: async () => {
       await keep()
-      return api.downloadPdf(page.id, secrets)
+      return api.downloadPdf(page.id, secrets, look)
     },
     onSuccess: ({ name, data }) => {
       const url = URL.createObjectURL(data)
@@ -116,10 +121,10 @@ export function PrintDialog({ page, onClose }: { page: Page; onClose: () => void
       dialog.current?.close()
     }
   })
-  const saveFirst = (input: HTMLInputElement) => {
+  // «Desde», al escribirlo (con Intro se descarga ya con él); uno que no vale, al salir vuelve al de antes
+  const typeFirst = (input: HTMLInputElement) => {
     const value = Number(input.value)
     if (Number.isInteger(value) && value >= 1 && value <= 999) change({ firstNumber: value })
-    else input.value = String(settings.firstNumber)
   }
   const failure = print.error ?? download.error
   return (
@@ -140,20 +145,16 @@ export function PrintDialog({ page, onClose }: { page: Page; onClose: () => void
         {/* El aspecto, con una muestra de cada uno */}
         <fieldset className={styles.looks}>
           <legend>{t('sheet.look')}</legend>
-          {LOOKS.map((look) => (
-            <label key={look} className={styles.look}>
-              <input
-                type="radio"
-                name={ids.look}
-                checked={settings.theme === look}
-                onChange={() => change({ theme: look })}
-              />
-              <span className={styles.sample} data-look={look} aria-hidden="true">
-                <span />
+          {LOOKS.map((each) => (
+            <label key={each} className={styles.look}>
+              <input type="radio" name={ids.look} checked={look === each} onChange={() => setLook(each)} />
+              {/* Su muestra: la letra y los colores de verdad de ese aspecto */}
+              <span className={styles.sample} data-look={each} aria-hidden="true">
+                <b>Aa</b>
                 <span />
                 <span />
               </span>
-              {t(`sheet.themes.${look}`)}
+              {t(`sheet.themes.${each}`)}
             </label>
           ))}
         </fieldset>
@@ -188,7 +189,10 @@ export function PrintDialog({ page, onClose }: { page: Page; onClose: () => void
                   max={999}
                   className={styles.number}
                   defaultValue={settings.firstNumber}
-                  onBlur={(e) => saveFirst(e.currentTarget)}
+                  onChange={(e) => typeFirst(e.currentTarget)}
+                  onBlur={(e) => {
+                    e.currentTarget.value = String(settings.firstNumber)
+                  }}
                 />
               </span>
             )}
@@ -211,12 +215,9 @@ export function PrintDialog({ page, onClose }: { page: Page; onClose: () => void
           <BusyButton type="submit" className={form.button} busy={download.isPending}>
             {t('sheet.pdf')}
           </BusyButton>
-          <BusyButton
-            type="button"
-            className={dialogStyles.cancel}
-            busy={print.isPending}
-            onClick={() => print.mutate()}
-          >
+          {/* La otra acción: secundaria, con su icono (no se confunde con «Cancelar») */}
+          <BusyButton type="button" className={styles.secondary} busy={print.isPending} onClick={() => print.mutate()}>
+            <Printer aria-hidden="true" size={16} />
             {t('sheet.print')}
           </BusyButton>
           <button type="button" className={dialogStyles.cancel} onClick={() => dialog.current?.close()}>

@@ -237,10 +237,25 @@ export function useSideTop(root: RefObject<HTMLDivElement | null>, ready: boolea
     resized.observe(element)
     const changed = new MutationObserver(schedule)
     changed.observe(element, { childList: true, subtree: true })
+    // Al bajar la página, las fichas suben hasta pegarse arriba: crecen lo mismo (--side-lift), y siguen llegando abajo
+    let lifted = 0
+    const lift = () => {
+      lifted = 0
+      const rem = Number.parseFloat(getComputedStyle(document.documentElement).fontSize) || 16
+      const most = (SIDE_TOP_REM - 1) * rem
+      element.style.setProperty('--side-lift', `${Math.min(Math.max(window.scrollY, 0), most)}px`)
+    }
+    const onScroll = () => {
+      if (!lifted) lifted = requestAnimationFrame(lift)
+    }
+    lift()
+    window.addEventListener('scroll', onScroll, { passive: true })
     return () => {
       cancelAnimationFrame(frame)
+      cancelAnimationFrame(lifted)
       resized.disconnect()
       changed.disconnect()
+      window.removeEventListener('scroll', onScroll)
     }
   }, [root, ready])
 }

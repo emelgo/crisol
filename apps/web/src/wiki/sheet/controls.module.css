@@ -72,19 +72,21 @@
   box-shadow: 0 1px 4px rgb(0 0 0 / 0.35);
 }
 
+.sample > b {
+  color: var(--sample-heading);
+  font-family: var(--sample-font, var(--font-display));
+  font-size: 1.125rem;
+  line-height: 1;
+}
+
 .sample > span {
   block-size: 0.25rem;
   border-radius: 1px;
   background: var(--sample-line);
 }
 
-.sample > span:first-child {
-  inline-size: 75%;
-  block-size: 0.4375rem;
-  background: var(--sample-heading);
-}
-
-.sample > span:nth-child(2) {
+.sample > span:nth-of-type(1) {
+  inline-size: 80%;
   background: var(--sample-sub);
 }
 
@@ -103,6 +105,7 @@
 }
 
 .sample[data-look="pergamino"] {
+  --sample-font: "Alegreya", Georgia, serif;
   --sample-paper: #f4e8cf;
   --sample-heading: #5a1d10;
   --sample-sub: #8c3a1d;
@@ -165,4 +168,29 @@
   background: var(--color-surface);
   color: var(--color-text);
   font: inherit;
+}
+
+/* «Imprimir»: la otra acción, con su borde (no un enlace gris como «Cancelar») */
+.secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: var(--target);
+  padding: 0 var(--space-4);
+  border: 1px solid var(--color-frame);
+  border-radius: 6px;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.secondary:hover {
+  border-color: var(--color-text);
+}
+
+.secondary:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }

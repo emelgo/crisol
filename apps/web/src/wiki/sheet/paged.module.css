@@ -29,12 +29,14 @@
   color: var(--color-muted);
   font-family: var(--font-body);
   font-size: 0.6875rem;
+  font-weight: 600;
   letter-spacing: 0.02em;
 }
 
 .mark::before {
   flex: 1;
-  border-block-start: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
+  /* Que se vea (es el límite de la página): más clara que un borde */
+  border-block-start: 1px solid color-mix(in srgb, var(--color-muted) 45%, transparent);
   content: "";
 }
 
@@ -53,6 +55,9 @@
   block-size: 100%;
   min-block-size: 0;
   padding: 0;
+  /* Como al imprimir: el espacio del final de una línea cuelga fuera (con break-spaces, el de tiptap, bajaba al principio
+     de la siguiente y se veía, y además la línea se partía distinto que en el papel) */
+  white-space: pre-wrap;
 }
 
 /*

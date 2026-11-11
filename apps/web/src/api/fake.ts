@@ -4974,8 +4974,8 @@ export function fakeApi(
       const page = input.pageId ? pageById(input.pageId) : null
       return { name: `${page?.title ?? 'Eana'}.zip`, data: new Blob(['zip']) }
     },
-    async downloadPdf(pageId) {
-      calls.push('downloadPdf')
+    async downloadPdf(pageId, _secrets, look) {
+      calls.push(look ? `downloadPdf:${look}` : 'downloadPdf')
       return { name: `${pageById(pageId).title}.pdf`, data: new Blob(['%PDF']) }
     },
     // Sube al momento, en dos pasos de progreso; el tipo, por el que dice el Blob

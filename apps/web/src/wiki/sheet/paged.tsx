@@ -143,8 +143,11 @@ function noteRoom(room: NoteRoom) {
   return span
 }
 
-/** Lo que ocupa una nota lateral de su columna, como al imprimir (sheet.module.css: 48 %) */
-const NOTE_SHARE = 0.48
+/**
+ * Lo que ocupa una nota lateral de su columna, como al imprimir (sheet.module.css, --note-share): un tercio a una
+ * columna; a dos, algo más (la columna ya es estrecha y el texto de al lado se quedaría en nada)
+ */
+const noteShare = (columns: 1 | 2) => (columns === 1 ? 0.34 : 0.42)
 
 /** Lo que ocupa un bloque con sus márgenes (en px de la maqueta, sin el zoom) */
 function heightOf(dom: HTMLElement) {
@@ -205,8 +208,11 @@ function layOut(
   for (let i = 0; i < blocks.length; i++) {
     const block = blocks[i] as SheetBlock
     const next = blocks[i + 1]
+    // Como al imprimir: no con un cambio de columnas
     const pairs =
-      next && (next.kind === 'block' || next.kind === 'heading' || (next.kind === 'wide' && columnsAt[i + 1] === 1))
+      next &&
+      types[i + 1] !== 'columnsChange' &&
+      (next.kind === 'block' || next.kind === 'heading' || (next.kind === 'wide' && columnsAt[i + 1] === 1))
     if (types[i] === 'sidenote' && next && pairs) {
       // Alrededor: lo que mida el más alto de los dos (el bloque ya cuenta el hueco, cuando lo tiene); si no, uno encima
       const height = textblocks[i + 1] ? Math.max(block.height, next.height) : block.height + next.height
@@ -227,8 +233,12 @@ function layOut(
   // Dónde acaba cada bloque colocado (por su orden)
   const ends: ({ x: number; y: number; width: number } | undefined)[] = []
   const rooms: (NoteRoom | null)[] = blocks.map(() => null)
-  const place = (id: string, x: number, y: number, width: number, contains = false) => {
+  const place = (id: string, at: number, y: number, size: number, contains = false) => {
     const index = Number(id)
+    // Un cambio de columnas, como los saltos: su raya de lado a lado de la columna del centro
+    const across = types[index] === 'columnsChange'
+    const x = across ? -frame.bleed : at
+    const width = across ? g.content + 2 * frame.bleed : size
     // contains: lleva dentro el hueco flotante de una nota, y su alto lo cuenta
     placed[index] =
       `position:absolute;left:${x}px;top:${y}px;width:${width}px;margin-inline:0;box-sizing:border-box${contains ? ';display:flow-root' : ''}`
@@ -243,13 +253,14 @@ function layOut(
     const [note, next] = members.get(id) ?? [Number(id)]
     if (next !== undefined && note !== undefined && types[note] === 'sidenote') {
       const side = sides[note] ?? 'right'
-      const noteWidth = Math.round(width * NOTE_SHARE)
+      const noteWidth = Math.round(width * noteShare(columnsAt[note] ?? 1))
       const noteHeight = heights[note] ?? 0
       place(String(note), side === 'left' ? x : x + width - noteWidth, y, noteWidth)
       if (textblocks[next]) {
         // El aire entre la nota y el texto, como al imprimir (0,8 em al lado, 0,6 em debajo, con la letra de la hoja)
         const em = 16 * k
-        rooms[next] = { width: Math.round(noteWidth + 0.8 * em), height: Math.round(noteHeight + 0.6 * em), side }
+        // (su alto ya cuenta sus márgenes, como el aire de debajo)
+        rooms[next] = { width: Math.round(noteWidth + 0.8 * em), height: Math.round(noteHeight), side }
         place(String(next), x, y, width, true)
         return Math.max(noteHeight, heights[next] ?? 0)
       }

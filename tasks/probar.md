@@ -9,6 +9,22 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
+## Revisión, tanda 4: la página del mundo y la hoja (en local)
+
+- [ ] **El árbol, fijo**: pulsar el mundo en la barra lleva a su portada y el árbol no se esconde nunca.
+- [ ] **La columna derecha** mide lo mismo que la izquierda (cabe en la pantalla) y lo que no cabe se desplaza dentro;
+  en la Mesa, en la ventana de una página, el texto y el panel se desplazan cada uno por su cuenta.
+- [ ] **La hoja, a todo el ancho**: en una pantalla grande el texto crece hasta llenar la columna (la letra, hasta un
+  tope de 20 px) y queda centrado. Probar si el tope te parece bien.
+- [ ] **Saltos de página**: la raya va de lado a lado y dice la página que se cierra («Página 1»), también en uno puesto
+  a mano.
+- [ ] **Nota lateral**: a la izquierda o a la derecha (con su botón de flecha), con el texto alrededor; igual al
+  imprimir. También a una columna.
+- [ ] **«⋯» → «Imprimir o descargar…»**: elegir «Con colores», «Blanco y negro» o «Pergamino», el papel, la numeración
+  y el pie; «Descargar PDF» e «Imprimir». La próxima vez recuerda el aspecto (la página no cambia al elegirlo).
+  «Exportar», con subpáginas, se despliega con su flecha. Escape o pulsar fuera cierran «⋯»; con el teclado, las
+  flechas recorren sus filas.
+
 ## Revisión, tanda 3: las plantillas como páginas (en local)
 
 - [ ] **Tus plantillas de antes** (PNJ, Lugar…) siguen ahí como tuyas, con los mismos campos; tus páginas no cambian y
