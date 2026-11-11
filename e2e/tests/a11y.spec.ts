@@ -27,7 +27,7 @@ const WCAG = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']
 
 for (const colorScheme of ['dark'] as const) {
   for (const path of ['/', '/no-existe', '/entrar', '/arranque/no-vale', '/unirse/no-vale']) {
-    test(`${path} en tema ${colorScheme === 'light' ? 'claro' : 'oscuro'} @a11y`, async ({ page }) => {
+    test(`${path} @a11y`, async ({ page }) => {
       await page.emulateMedia({ colorScheme })
       await page.goto(path)
       await expect(page.getByRole('heading', { level: 1 })).toBeVisible()

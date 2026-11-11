@@ -66,7 +66,7 @@ describe('los ajustes de IA', () => {
     renderAt('/mundos', { organizations: [{ ...owner, role: 'member' }] })
     await screen.findByRole('heading', { level: 1, name: 'Mis mundos' })
     const settings = await openSettings()
-    expect(settings.getByRole('heading', { level: 2, name: 'Apariencia' })).toBeDefined()
+    expect(settings.getByRole('heading', { level: 1, name: 'Ajustes' })).toBeDefined()
     expect(settings.queryByRole('heading', { name: 'Conectar una IA' })).toBeNull()
     expect(settings.queryByLabelText('Dirección del conector')).toBeNull()
   })
