@@ -36,11 +36,10 @@
   justify-self: start;
   inline-size: 100%;
   max-inline-size: 20rem;
-  max-block-size: calc(100dvh - 2 * var(--space-4));
+  /* Hasta abajo de la ventana y de alto fijo (el mismo que la de la derecha): lo que no cabe, con su desplazamiento */
+  block-size: calc(100dvh - var(--side-top) - var(--space-4));
   overflow-y: auto;
   margin-block-start: var(--side-top);
-  /* Hasta abajo de la ventana: una ficha alta, no una cajita */
-  min-block-size: calc(100dvh - var(--side-top) - var(--space-4));
   padding: var(--space-3) var(--space-3) var(--space-4);
   border: 1px solid var(--color-frame);
   border-radius: 6px;
@@ -97,10 +96,6 @@
   gap: var(--space-2);
   min-block-size: 2.25rem;
   margin-block-end: var(--space-2);
-}
-
-.wiki[data-collapsed] .aside {
-  display: none;
 }
 
 /* El nombre del panel (Páginas, Buscar o Marcadores), siempre en el mismo sitio, arriba: un rótulo pequeño y gris,
@@ -424,10 +419,11 @@
   justify-self: end;
   inline-size: 100%;
   max-inline-size: 20rem;
-  max-block-size: calc(100dvh - 2 * var(--space-4));
+  /* Como la de la izquierda (Enrique, 2026-11-11): de alto fijo, el que cabe en la ventana, y lo demás con su
+     desplazamiento dentro */
+  block-size: calc(100dvh - var(--side-top) - var(--space-4));
   overflow-y: auto;
   margin-block-start: var(--panel-top, 0);
-  min-block-size: calc(100dvh - var(--side-top) - var(--space-4));
   /* Abajo, sitio para el d20 y el «?», que flotan en esa esquina: lo último del panel no queda debajo */
   padding: var(--space-4) var(--space-4) calc(var(--space-4) + 3.25rem + var(--space-3));
   border: 1px solid var(--color-frame);
@@ -467,6 +463,7 @@
     justify-self: stretch;
     inline-size: auto;
     max-inline-size: none;
+    block-size: auto;
     min-block-size: 0;
     max-block-size: none;
     margin-block-start: var(--space-8);
@@ -741,8 +738,7 @@
     display: none;
   }
 
-  .aside[data-open],
-  .wiki[data-collapsed] .aside[data-open] {
+  .aside[data-open] {
     position: fixed;
     inset: 0 auto 0 0;
     z-index: 40;

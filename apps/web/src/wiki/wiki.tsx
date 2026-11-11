@@ -74,7 +74,7 @@ export function WikiLayout({
   const { t } = useTranslation()
   const api = useApi()
   const { account, pending } = useAccounts().useAccount()
-  const { panel, collapsed, open, close } = useWikiPanel()
+  const { panel, open, close } = useWikiPanel()
   const closeButton = useRef<HTMLButtonElement>(null)
   // Al abrir el cajón (en lo estrecho), el foco entra en él; al cerrarlo, vuelve al botón de la barra que lo abrió
   useEffect(() => {
@@ -114,7 +114,7 @@ export function WikiLayout({
   return (
     <NewPageContext.Provider value={requestNewPage}>
       <WorldTour master />
-      <div ref={root} className={styles.wiki} data-collapsed={collapsed || undefined}>
+      <div ref={root} className={styles.wiki}>
         <aside
           id={asideId}
           className={styles.aside}

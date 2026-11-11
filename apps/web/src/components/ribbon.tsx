@@ -555,21 +555,23 @@ function WikiPanels({ worldId, worldName }: { worldId: string; worldName: string
     select: (state) =>
       new RegExp(`^/mundos/${worldId}(/(wiki/[^/]+|wiki|buscar|etiquetas))?/?$`).test(state.location.pathname)
   })
+  const atHome = useRouterState({
+    select: (state) => new RegExp(`^/mundos/${worldId}/?$`).test(state.location.pathname)
+  })
+  const narrow = useNarrow()
+  // El mundo lleva a su portada; su columna (el árbol) está siempre, fija: no se recoge (Enrique, 2026-11-11). En lo
+  // estrecho, donde es un cajón, lo abre
   const press = (panel: WikiPanel) => (event: MouseEvent<HTMLButtonElement>) => {
     const trigger = event.currentTarget
-    if (inWiki) {
+    if (inWiki && narrow) {
       wikiPanel.toggle(panel, trigger)
       return
     }
     wikiPanel.show(panel, trigger)
-    // Fuera de las páginas, la portada del mundo con esa vista
-    void navigate({ to: '/mundos/$worldId', params: { worldId }, viewTransition: SECTION })
+    if (!atHome) void navigate({ to: '/mundos/$worldId', params: { worldId }, viewTransition: SECTION })
   }
-  const narrow = useNarrow()
-  // Cada uno abre su panel (o lo recoge si ya está abierto); marcado si es el que se ve: en lo estrecho, con el cajón
-  // abierto; en lo ancho, si no está recogido
-  const shown = (panel: WikiPanel) =>
-    inWiki && wikiPanel.panel === panel && (narrow ? wikiPanel.open : !wikiPanel.collapsed)
+  // Marcado si se está en sus páginas (en lo estrecho, con el cajón abierto)
+  const shown = (panel: WikiPanel) => inWiki && wikiPanel.panel === panel && (narrow ? wikiPanel.open : true)
   const buttons: { panel: WikiPanel; icon: LucideIcon; text: string; tour: string }[] = [
     // El mundo (sus páginas, con su nombre), las plantillas y los archivos
     // El mundo, con su icono propio (no el globo de «Mundos», que es de donde se viene; Enrique, 2026-11-12)

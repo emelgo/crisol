@@ -78,6 +78,20 @@ describe('el árbol de la wiki', () => {
     expect(items[0]?.hasAttribute('aria-expanded')).toBe(false)
   })
 
+  it('pulsar el mundo en la barra no recoge el árbol: está fijo (lleva a su portada)', async () => {
+    localStorage.setItem('crisol.recorridos.enrique@crisol.test', JSON.stringify({ seen: ['mundo'] }))
+    const router = renderAt(`/mundos/${WORLD.id}/wiki/${ids.people}`)
+    await item('Personajes')
+    const world = screen.getByRole('navigation', { name: 'Secciones' }).querySelector('[data-tour="barra-wiki"]')
+    await userEvent.click(world as HTMLElement)
+    await waitFor(() => expect(router.state.location.pathname).toBe(`/mundos/${WORLD.id}`))
+    expect(await item('Personajes')).toBeDefined()
+    // Otra vez, igual
+    await userEvent.click(world as HTMLElement)
+    expect(await item('Personajes')).toBeDefined()
+    expect(screen.getByRole('tree', { name: 'Páginas' }).closest('[data-collapsed]')).toBeNull()
+  })
+
   it('una sola parada del tabulador; las flechas se mueven, despliegan y pliegan', async () => {
     renderAt(`/mundos/${WORLD.id}/wiki`)
     const places = await item('Lugares')

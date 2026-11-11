@@ -1,7 +1,11 @@
-/* Una página del mundo dentro de su ventana: la misma de la wiki, más apretada */
+/* Una página del mundo dentro de su ventana: la misma de la wiki, más apretada. Del alto de la ventana: cada columna
+   se desplaza por su cuenta (Enrique, 2026-11-11: «scroll solo dentro de la columna») */
 .page {
   container-type: inline-size;
-  min-block-size: 100%;
+  display: flex;
+  flex-direction: column;
+  block-size: 100%;
+  min-block-size: 0;
   /* Sin fondo propio: el cristal de la ventana */
   background: transparent;
 }
@@ -15,33 +19,53 @@
 /* La página y su panel, lado a lado mientras quepan; en una ventana estrecha, el panel debajo */
 .page :global([data-entry]) {
   display: grid;
+  flex: 1;
   grid-template-columns: minmax(0, 1fr) minmax(12rem, 16rem);
+  grid-template-rows: minmax(0, 1fr);
   gap: var(--space-5);
-  align-items: start;
-  padding: var(--space-4) var(--space-5) var(--space-6);
+  align-items: stretch;
+  min-block-size: 0;
+  padding: var(--space-4) var(--space-5) 0;
+}
+
+/* Las dos columnas, cada una con su desplazamiento (la ventana ya no se desplaza entera) */
+.page :global([data-entry]) > article,
+.page :global([data-entry]) > aside {
+  min-block-size: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
 }
 
 .page :global([data-entry]) > article {
   grid-column: 1;
   padding-inline: 0;
+  padding-block-end: var(--space-6);
 }
 
 .page :global([data-entry]) > aside {
   position: static;
   grid-column: 2;
   max-inline-size: none;
+  block-size: auto;
   max-block-size: none;
-  min-block-size: 0;
-  margin: 0;
-  padding-block-end: 0;
+  margin: 0 0 var(--space-4);
   /* El panel, un cristal algo más claro sobre el de la ventana */
   border-color: var(--glass-edge);
   background: color-mix(in srgb, var(--color-surface) 45%, transparent);
 }
 
+/* En una ventana estrecha, el panel debajo y todo seguido, con el desplazamiento de la ventana */
 @container (max-width: 40rem) {
   .page :global([data-entry]) {
+    flex: none;
     grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+  }
+
+  .page :global([data-entry]) > article,
+  .page :global([data-entry]) > aside {
+    overflow: visible;
   }
 
   .page :global([data-entry]) > aside {
