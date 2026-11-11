@@ -35,8 +35,8 @@
 
 .mark::before {
   flex: 1;
-  /* Que se vea (es el límite de la página): más clara que un borde */
-  border-block-start: 1px solid color-mix(in srgb, var(--color-muted) 45%, transparent);
+  /* Que se vea (es el límite de la página): 3:1 con el fondo, más clara que un borde */
+  border-block-start: 1px solid color-mix(in srgb, var(--color-muted) 60%, transparent);
   content: "";
 }
 

@@ -238,12 +238,16 @@ export function useSideTop(root: RefObject<HTMLDivElement | null>, ready: boolea
     const changed = new MutationObserver(schedule)
     changed.observe(element, { childList: true, subtree: true })
     // Al bajar la página, las fichas suben hasta pegarse arriba: crecen lo mismo (--side-lift), y siguen llegando abajo
+    // (sin leer estilos en cada fotograma, y sin tocar nada si no cambia: pasado el tope, bajar no cuesta)
     let lifted = 0
+    let shown = -1
+    const most = (SIDE_TOP_REM - 1) * (Number.parseFloat(getComputedStyle(document.documentElement).fontSize) || 16)
     const lift = () => {
       lifted = 0
-      const rem = Number.parseFloat(getComputedStyle(document.documentElement).fontSize) || 16
-      const most = (SIDE_TOP_REM - 1) * rem
-      element.style.setProperty('--side-lift', `${Math.min(Math.max(window.scrollY, 0), most)}px`)
+      const value = Math.round(Math.min(Math.max(window.scrollY, 0), most))
+      if (value === shown) return
+      shown = value
+      element.style.setProperty('--side-lift', `${value}px`)
     }
     const onScroll = () => {
       if (!lifted) lifted = requestAnimationFrame(lift)
