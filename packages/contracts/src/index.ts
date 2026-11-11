@@ -71,6 +71,7 @@ import {
   listCommonFiles,
   listFiles,
   moveFile,
+  moveFiles,
   renameFile,
   restoreFile,
   updateFolder
@@ -220,7 +221,7 @@ import {
   updateWidget
 } from './table-tools.ts'
 import { getRandomTable, resetTableDraws, rollOnTable, updateRandomTable } from './tables.ts'
-import { createTag, deleteTag, listAccountTags, moveTag, setFileTags, updateTag } from './tags.ts'
+import { addFileTags, createTag, deleteTag, listAccountTags, moveTag, setFileTags, updateTag } from './tags.ts'
 import { createTemplate, deleteTemplate, getTemplate, listTemplates, updateTemplate } from './templates.ts'
 import {
   assignToken,
@@ -393,6 +394,7 @@ export const ACTIONS = [
   updateFolder,
   deleteFolder,
   deleteFiles,
+  moveFiles,
   moveFile,
   searchWiki,
   listAccountTags,
@@ -401,6 +403,7 @@ export const ACTIONS = [
   moveTag,
   deleteTag,
   setFileTags,
+  addFileTags,
   listPageTabs,
   createPageTab,
   updatePageTab,
@@ -671,6 +674,7 @@ export type Actions = {
   createFolder: typeof createFolder
   updateFolder: typeof updateFolder
   deleteFiles: typeof deleteFiles
+  moveFiles: typeof moveFiles
   deleteFolder: typeof deleteFolder
   moveFile: typeof moveFile
   listAccountTags: typeof listAccountTags
@@ -679,6 +683,7 @@ export type Actions = {
   moveTag: typeof moveTag
   deleteTag: typeof deleteTag
   setFileTags: typeof setFileTags
+  addFileTags: typeof addFileTags
   listPageTabs: typeof listPageTabs
   createPageTab: typeof createPageTab
   updatePageTab: typeof updatePageTab

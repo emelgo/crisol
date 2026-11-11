@@ -102,18 +102,19 @@ export function foundTree(results: readonly WorldFile[], tree: Tree, folders: re
 
 /**
  * Las carpetas adonde puede ir algo de un ámbito (worldId; null, los comunes), en el orden del árbol y con su camino
- * («Lugares › Puertos»). Sin «Comunes» (es la raíz de los comunes) y, si se mueve una carpeta, sin ella ni las suyas
+ * («Lugares › Puertos»). Sin «Comunes» (es la raíz de los comunes) y, si se mueven carpetas, sin ellas ni las suyas
  */
 export function folderChoices(
   folders: readonly FolderView[],
   worldId: string | null,
-  moving?: string
+  moving: string | readonly string[] = []
 ): { id: string; label: string }[] {
   const tree = treeOf({ files: [], folders: [...folders] })
+  const skipped = new Set(typeof moving === 'string' ? [moving] : moving)
   const choices: { id: string; label: string }[] = []
   const walk = (parentId: string | null, path: string[]) => {
     for (const folder of tree.get(parentId)?.folders ?? []) {
-      if (folder.id === moving) continue
+      if (skipped.has(folder.id)) continue
       const next = folder.id === COMMON ? path : [...path, folder.name]
       if (folder.id !== COMMON && folder.worldId === worldId) choices.push({ id: folder.id, label: next.join(' › ') })
       walk(folder.id, next)

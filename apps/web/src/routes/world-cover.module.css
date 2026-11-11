@@ -61,8 +61,31 @@
   cursor: grabbing;
 }
 
-.preview:disabled {
-  cursor: default;
+/* Sin imagen: el hueco sube una al pulsarlo */
+.preview[aria-hidden="true"] {
+  cursor: pointer;
+}
+
+.preview[aria-hidden="true"]:hover {
+  border-color: var(--color-frame);
+}
+
+/* Una imagen del escritorio encima: se soltará aquí */
+.preview[data-over] {
+  border-color: var(--color-accent-text);
+  box-shadow: inset 0 0 0 1px var(--color-accent-text);
+}
+
+.emptyPreview {
+  display: grid;
+  place-items: center;
+  inline-size: 100%;
+  block-size: 100%;
+  color: var(--color-muted);
+}
+
+.preview[aria-hidden="true"]:hover .emptyPreview {
+  color: var(--color-text);
 }
 
 .image {

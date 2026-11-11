@@ -1,7 +1,7 @@
 import { createMemoryHistory } from '@tanstack/react-router'
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { fakeAccountClient } from '../account/fake.ts'
 import { ApiError } from '../api/client.ts'
 import { fakeApi } from '../api/fake.ts'
@@ -139,6 +139,13 @@ describe('mis mundos', () => {
     await userEvent.click(settings.getByRole('button', { name: 'Añadir portada' }))
     const cover = within(await screen.findByRole('dialog', { name: 'Portada de Eana' }))
     expect(cover.queryByRole('button', { name: 'Guardar' })).toBeNull()
+    // Sin imagen, pulsar el hueco sube una (el mismo campo que «Subir imagen»)
+    const dialogElement = screen.getByRole('dialog', { name: 'Portada de Eana' })
+    const input = dialogElement.querySelector('input[type="file"]') as HTMLInputElement
+    const picked = vi.spyOn(input, 'click').mockImplementation(() => undefined)
+    await userEvent.click(dialogElement.querySelector('button[aria-hidden="true"]') as HTMLElement)
+    expect(picked).toHaveBeenCalled()
+    picked.mockRestore()
     // «Elegir de tus archivos» abre el selector; elegir una la pone y lo cierra
     await userEvent.click(cover.getByRole('button', { name: 'Elegir de tus archivos' }))
     const picker = within(await screen.findByRole('dialog', { name: 'Elegir de tus archivos' }))

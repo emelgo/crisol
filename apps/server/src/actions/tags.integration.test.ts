@@ -88,6 +88,21 @@ describe('las etiquetas de la cuenta (ADR-0006)', () => {
       ['lugar/ciudad', 2, 0],
       ['mapa', 0, 1]
     ])
+    // A varios de una vez: se añaden a las que llevan (sin repetir, sin mirar mayúsculas), en una operación
+    const second = (
+      await app.inject({
+        method: 'POST',
+        url: `/api/files?organizationId=${organizationId}&name=costa.png`,
+        payload: PNG,
+        headers: { origin: BASE_URL, cookie: owner.cookie, 'content-type': 'application/octet-stream' }
+      })
+    ).json()
+    expect(await json('addFileTags', { fileIds: [file.id, second.id], tags: ['Mapa', 'pnj'] })).toEqual({ files: 2 })
+    const both = (await json('listCommonFiles', {})).files as { id: string; tags: string[] }[]
+    expect(both.find((f) => f.id === file.id)?.tags).toEqual(['costa', 'mapa', 'pnj'])
+    expect(both.find((f) => f.id === second.id)?.tags).toEqual(['Mapa', 'pnj'])
+    expect(await json('addFileTags', { fileIds: [file.id], tags: ['pnj'] })).toEqual({ files: 0 })
+    await json('setFileTags', { fileId: second.id, tags: [] })
     const city = (await json('listAccountTags', {})).tags.find((t: { name: string }) => t.name === 'lugar/ciudad')
     expect(city.worlds.map((w: { name: string; pages: number }) => [w.name, w.pages]).sort()).toEqual([
       ['Costa', 1],

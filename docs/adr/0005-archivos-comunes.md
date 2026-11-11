@@ -66,3 +66,10 @@ carpeta desde su ventana (no solo arrastrando). `file_folders` gana `color` (uno
 un mundo) e `icon` (un emoji, el mismo formato que el de una página), y `updateFolder` los acepta (null los quita); se
 deshacen desde el historial como el resto del cambio. Mover desde la ventana usa `moveFile` y `updateFolder` sin ancla.
 
+## Cambio (2026-11-12): mover y etiquetar varios de una vez
+
+Tras la crítica de la tanda 2, lo elegido en Archivos se lleva a una carpeta y se etiqueta de una vez: `moveFiles`
+(archivos y carpetas de un mismo ámbito a una carpeta de ese ámbito, sin meter una en sí misma; detrás, por nombre) y
+`addFileTags` (añade etiquetas a varios archivos, sin quitar las que llevan). Cada una es una sola operación del
+historial (por ámbito, la de etiquetar), como `deleteFiles`; la IA las tiene en `mover_archivos` y `etiquetar_archivos`.
+

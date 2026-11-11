@@ -2,7 +2,16 @@
  * Las etiquetas de la cuenta (ADR-0006): el catálogo en árbol, crear, renombrar, dar color y borrar, y las de un
  * archivo. Las de una página van en su propiedad `etiquetas` (setPageProperties)
  */
-import { createTag, deleteTag, listAccountTags, moveTag, setFileTags, type TagView, updateTag } from '@crisol/contracts'
+import {
+  addFileTags,
+  createTag,
+  deleteTag,
+  listAccountTags,
+  moveTag,
+  setFileTags,
+  type TagView,
+  updateTag
+} from '@crisol/contracts'
 import { tagsRepo } from '@crisol/db'
 import {
   authorize,
@@ -18,7 +27,7 @@ import {
 import { commonFilesChanged, filesChanged, pagesChanged, tagsChanged } from '../realtime/events.ts'
 import { targetOrganization } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
-import { authorizedFile, filesTouched, historyScopeOf } from './files.ts'
+import { authorizedFile, type FilePlace, filesTouched, historyScopeOf } from './files.ts'
 import { implement } from './registry.ts'
 
 type Color = TagView['color']
@@ -185,6 +194,34 @@ export const tagActions = [
     )
     tagsTouched(ctx, target, changed)
     return { name: current.name, pages: changed.pages, files: changed.files }
+  }),
+
+  implement(addFileTags, async (ctx, { fileIds, tags }) => {
+    const wanted = uniqueTags(tags.map((tag) => tag.trim()))
+    // Por ámbito (un mundo, o los comunes): cada uno, su operación; los que ya las llevan todas, sin tocar
+    const byPlace = new Map<string, { place: FilePlace; changes: { id: string; tags: string[] }[]; names: string[] }>()
+    for (const fileId of new Set(fileIds)) {
+      const { file, place } = await authorizedFile(ctx, 'page.write', fileId)
+      const next = uniqueTags([...file.tags, ...wanted])
+      if (next.length === file.tags.length) continue
+      const key = place.worldId ?? `org:${place.organizationId}`
+      const group = byPlace.get(key) ?? { place, changes: [], names: [] }
+      byPlace.set(key, group)
+      group.changes.push({ id: file.id, tags: next })
+      group.names.push(file.name)
+    }
+    let changed = 0
+    for (const { place, changes, names } of byPlace.values()) {
+      await tagsRepo.setManyFileTags(
+        ctx.db,
+        historyContext(ctx, 'addFileTags', { names, count: names.length, tags: wanted }, historyScopeOf(place)),
+        changes
+      )
+      changed += changes.length
+      await filesTouched(ctx, place)
+      ctx.realtime.publish(tagsChanged(place.organizationId))
+    }
+    return { files: changed }
   }),
 
   implement(setFileTags, async (ctx, { fileId, tags }) => {

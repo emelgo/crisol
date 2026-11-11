@@ -2,7 +2,7 @@ import type { TagView } from '@crisol/contracts'
 import { tagKey } from '@crisol/domain'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Navigate } from '@tanstack/react-router'
-import { Hash, Search, Settings, X } from 'lucide-react'
+import { ChevronRight, Hash, Search, Settings, X } from 'lucide-react'
 import { type CSSProperties, type KeyboardEvent, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
@@ -109,6 +109,20 @@ export function TagChip({ name, color }: { name: string; color: TagView['color']
 const TAG = /^[^\s/]+(\/[^\s/]+)*$/u
 
 /**
+ * Lo escrito en el campo de etiquetas, añadido a las que hay: una o varias, separadas por comas; con la forma del
+ * catálogo si ya están, y sin repetir. Para quien guarda lo escrito con lo demás (onPending)
+ */
+export function addTyped(value: readonly string[], raw: string, catalog: readonly string[]): string[] {
+  const next = [...value]
+  for (const part of raw.split(',')) {
+    const name = part.trim().replace(/\s/g, '').replace(/^#/, '')
+    if (!TAG.test(name) || next.some((tag) => tagKey(tag) === tagKey(name))) continue
+    next.push(catalog.find((tag) => tagKey(tag) === tagKey(name)) ?? name)
+  }
+  return next
+}
+
+/**
  * Las etiquetas de algo (un archivo): las puestas, que se quitan con su ×, y un campo para añadir otra, con las de la
  * cuenta como sugerencias; una que no está se crea sola (ADR-0006). Cada cambio se guarda al momento
  */
@@ -146,15 +160,13 @@ export function TagsField({
     setOwnDraft(text)
     onPending?.(text)
   }
-  // Una o varias, separadas por comas; con la forma del catálogo si ya están, y sin repetir
   const add = (raw: string) => {
     setDraft('')
-    const next = [...value]
-    for (const part of raw.split(',')) {
-      const name = part.trim().replace(/\s/g, '').replace(/^#/, '')
-      if (!TAG.test(name) || next.some((tag) => tagKey(tag) === tagKey(name))) continue
-      next.push(tags.data?.tags.find((tag) => tagKey(tag.name) === tagKey(name))?.name ?? name)
-    }
+    const next = addTyped(
+      value,
+      raw,
+      (tags.data?.tags ?? []).map((tag) => tag.name)
+    )
     if (next.length > value.length) onChange(next)
   }
   return (
@@ -244,6 +256,8 @@ export function AccountTags() {
   const dragStartX = useRef(0)
   const [drop, setDrop] = useState<{ name: string; zone: Zone; level?: number } | null>(null)
   const [received, setReceived] = useState<string | null>(null)
+  // Las plegadas (por su clave), como las carpetas de Archivos: sus hijas no se ven
+  const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(() => new Set())
   // Con el teclado, como el árbol de páginas: una sola parada del tabulador en la lista, flechas para moverse y Alt +
   // flechas para recolocar. La fila con el foco (por su nombre) y la que lo recibirá al pintarse (tras moverla)
   const items = useRef(new Map<string, HTMLLIElement>())
@@ -291,7 +305,23 @@ export function AccountTags() {
   // Sin tildes ni mayúsculas, como en Archivos y en las páginas
   const wanted = plain(query.trim())
   const all = tags.data?.tags ?? []
-  const shown = wanted ? all.filter((tag) => plain(tag.name).includes(wanted)) : all
+  const hasKids = (name: string) => all.some((other) => tagKey(other.name).startsWith(`${tagKey(name)}/`))
+  // Plegada una, sus hijas no se ven (al buscar, sí: todo lo encontrado)
+  const underCollapsed = (name: string) => {
+    for (let parent = parentOf(name); parent; parent = parentOf(parent)) if (collapsed.has(tagKey(parent))) return true
+    return false
+  }
+  const shown = wanted
+    ? all.filter((tag) => plain(tag.name).includes(wanted))
+    : all.filter((tag) => !underCollapsed(tag.name))
+  const isExpanded = (name: string) => Boolean(wanted) || !collapsed.has(tagKey(name))
+  const setExpandedTag = (name: string, open: boolean) =>
+    setCollapsed((current) => {
+      const next = new Set(current)
+      if (open) next.delete(tagKey(name))
+      else next.add(tagKey(name))
+      return next
+    })
   const detail = shown.find((tag) => tag.name === hovered)
   // Cada fila, con su nivel y su puesto entre sus hermanas: para saber adónde sale al llevarla a la izquierda
   const rows = shown.map((tag) => {
@@ -349,11 +379,32 @@ export function AccountTags() {
         event.key
       )
       if (!to) return
-      // Sigue con el foco donde quede (con su nombre nuevo, si cambia de madre)
+      // Sigue con el foco donde quede (con su nombre nuevo, si cambia de madre), con su madre desplegada
       const moved = joinTag(to.parentId ?? '', leafOf(tag.name))
       pendingFocus.current = moved
       setFocused(moved)
+      if (to.parentId) setExpandedTag(to.parentId, true)
       move.mutate({ tag: tag.name, to })
+      return
+    }
+    // Derecha e izquierda despliegan y pliegan (como las carpetas); desde una hija, la izquierda va a su madre. Intro
+    // abre su ventana
+    const kids = hasKids(tag.name)
+    if (event.key === 'ArrowRight' && kids && !wanted) {
+      event.preventDefault()
+      if (isExpanded(tag.name)) focusAt(index + 1)
+      else setExpandedTag(tag.name, true)
+      return
+    }
+    if (event.key === 'ArrowLeft' && !wanted) {
+      event.preventDefault()
+      if (kids && isExpanded(tag.name)) setExpandedTag(tag.name, false)
+      else if (parentOf(tag.name)) items.current.get(tagKey(parentOf(tag.name)))?.focus()
+      return
+    }
+    if (event.key === 'Enter') {
+      event.preventDefault()
+      event.currentTarget.querySelector<HTMLElement>('[data-row-open]')?.click()
       return
     }
     const targets: Record<string, number> = { ArrowDown: index + 1, ArrowUp: index - 1, Home: 0, End: shown.length - 1 }
@@ -405,6 +456,11 @@ export function AccountTags() {
                     movable={!wanted}
                     drop={drop && sameTag(drop.name, tag.name) ? drop : null}
                     received={received !== null && sameTag(received, tag.name)}
+                    kids={
+                      !wanted && hasKids(tag.name)
+                        ? { open: isExpanded(tag.name), onToggle: (open) => setExpandedTag(tag.name, open) }
+                        : null
+                    }
                     focus={{
                       ref: (element) => {
                         if (element) items.current.set(tagKey(tag.name), element)
@@ -435,7 +491,10 @@ export function AccountTags() {
                     }}
                     onDrop={(zone, clientX) => {
                       const at = dropAt(tag.name, zone, clientX)
-                      if (dragging && at) move.mutate({ tag: dragging, to: at.to })
+                      if (dragging && at) {
+                        if (at.to.parentId) setExpandedTag(at.to.parentId, true)
+                        move.mutate({ tag: dragging, to: at.to })
+                      }
                       setDragging(null)
                       setDrop(null)
                     }}
@@ -491,6 +550,7 @@ function TagRow({
   movable,
   drop,
   received,
+  kids,
   focus,
   onDrag,
   onDragOver,
@@ -507,6 +567,8 @@ function TagRow({
   drop: { zone: Zone; level?: number } | null
   /** Acaba de moverse: se ilumina un momento */
   received: boolean
+  /** Si tiene hijas (en árbol): si están a la vista y su flecha para plegarlas o desplegarlas */
+  kids: { open: boolean; onToggle: (open: boolean) => void } | null
   /** Con el teclado: la fila enfocable (una sola parada del tabulador) y sus teclas */
   focus: {
     ref: (element: HTMLLIElement | null) => void
@@ -528,6 +590,7 @@ function TagRow({
   // En el móvil (sin ratón que pase por encima), tocarla sube su hoja: lo que es y sus ajustes
   const narrow = useNarrow()
   const [open, setOpen] = useState<'sheet' | 'settings' | null>(null)
+  const nameButton = useRef<HTMLButtonElement>(null)
   return (
     <li
       {...focus}
@@ -563,20 +626,38 @@ function TagRow({
         if ((event.target as Element).closest('[aria-haspopup="dialog"]')) onPreview(false)
       }}
     >
-      <span className={styles.dot} style={tagDot(tag.color)} aria-hidden="true" />
-      <span className={files.rowText}>
-        {narrow ? (
+      {/* Su flecha, si tiene hijas (las pliega y despliega, como una carpeta), y su punto de color */}
+      <span className={styles.lead}>
+        {kids ? (
           <button
             type="button"
-            className={`${files.rowName} ${files.open} ${styles.name}`}
-            aria-haspopup="dialog"
-            onClick={() => setOpen('sheet')}
+            className={styles.toggle}
+            data-open={kids.open}
+            aria-expanded={kids.open}
+            aria-label={t(kids.open ? 'tags.collapse' : 'tags.expand', { name: tag.name })}
+            tabIndex={-1}
+            onClick={() => kids.onToggle(!kids.open)}
           >
-            {name}
+            <ChevronRight aria-hidden="true" size={14} />
           </button>
         ) : (
-          <span className={styles.name}>{name}</span>
+          <span className={styles.toggle} aria-hidden="true" />
         )}
+        <span className={styles.dot} style={tagDot(tag.color)} aria-hidden="true" />
+      </span>
+      <span className={files.rowText}>
+        {/* Toda la fila abre lo suyo (como en Archivos): su ventana; en el móvil, su hoja */}
+        <button
+          ref={nameButton}
+          type="button"
+          className={`${files.rowName} ${files.open} ${styles.name}`}
+          aria-haspopup="dialog"
+          data-row-open=""
+          tabIndex={-1}
+          onClick={() => setOpen(narrow ? 'sheet' : 'settings')}
+        >
+          {name}
+        </button>
       </span>
       <span className={`${files.rowMeta} ${styles.usesAside}`}>{uses(tag)}</span>
       <TagSettings tag={tag} onChanged={onChanged} />
@@ -599,7 +680,17 @@ function TagRow({
           </div>
         </Modal>
       )}
-      {open === 'settings' && <TagDialog tag={tag} onChanged={onChanged} onClose={() => setOpen(null)} />}
+      {open === 'settings' && (
+        <TagDialog
+          tag={tag}
+          onChanged={onChanged}
+          onClose={(gone) => {
+            setOpen(null)
+            // El foco vuelve a la fila (en el escritorio, desde ella se abrió)
+            if (!gone && !narrow) nameButton.current?.closest('li')?.focus()
+          }}
+        />
+      )}
     </li>
   )
 }

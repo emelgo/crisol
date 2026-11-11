@@ -23,6 +23,12 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   archivos» (el selector: buscar, desplegar, la elegida marcada), encuadrar arrastrando o con las flechas, acercar y
   quitar.
 - [ ] **Las ventanas de ajustes**, más compactas: caben sin desplazarse en el portátil.
+- [ ] **Archivos con el teclado**: Tab llega a la lista (una sola fila), flechas para recorrer y abrir carpetas, Intro
+  abre, Espacio elige, Alt + flechas recolocan; la vista previa sale con el foco.
+- [ ] **Lo elegido**: Mayús+clic elige un tramo; «Mover a…» y «Etiquetar» de una vez (y se deshacen de una vez desde el
+  historial); la lista no se mueve al empezar a elegir; borrar dice qué se borra.
+- [ ] **Etiquetas**: plegar con su flecha o con izquierda y derecha; pulsar una (o Intro) abre su ventana.
+- [ ] **Portada vacía**: pulsar el hueco sube una imagen; soltar una del escritorio encima, también.
 
 ## Los sonidos del mapa (en local; módulo 7, docs/specs/sonido-mapa.md)
 

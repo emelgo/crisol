@@ -15,9 +15,11 @@ import {
   ChevronRight,
   File as FileIcon,
   FileText,
+  FolderInput,
   FolderPlus,
   Search,
   Settings,
+  Tag,
   Trash2,
   Upload as UploadIcon,
   X
@@ -26,7 +28,9 @@ import {
   type CSSProperties,
   createContext,
   type DragEvent,
+  type FocusEvent,
   type HTMLAttributes,
+  type KeyboardEvent,
   type ReactNode,
   useCallback,
   useContext,
@@ -66,7 +70,7 @@ import { FolderGlyph } from './folder-glyph.tsx'
 import { IconChoices } from './icon.tsx'
 import type { WorldFile } from './links-context.ts'
 import tagStyles from './tags.module.css'
-import { TagChip, TagsField, useTagColor } from './tags.tsx'
+import { addTyped, TagChip, TagsField, useAccountTags, useTagColor } from './tags.tsx'
 
 const route = getRouteApi('/mundos/$worldId/archivos')
 
@@ -76,8 +80,6 @@ type Kind = (typeof KINDS)[number]
 const PARALLEL = 3
 /** Cuánto hay que mantener lo arrastrado sobre una carpeta cerrada para que se despliegue sola */
 const EXPAND_AFTER = 650
-/** Cuántos nombres dice la confirmación de borrar lo elegido */
-const SHOWN_NAMES = 5
 /** Cuánto se ilumina lo recién movido */
 const LANDED_FOR = 1400
 
@@ -195,11 +197,11 @@ function FilesTour() {
   )
 }
 
-/** Lo elegido para borrar de una vez (en la lista de la pantalla) */
+/** Lo elegido para hacer algo de una vez (en la lista de la pantalla); range: con Mayúsculas, el tramo hasta el último */
 interface Selection {
   has: (id: string) => boolean
   active: boolean
-  toggle: (id: string, what: 'file' | 'folder') => void
+  toggle: (id: string, what: 'file' | 'folder', range?: boolean) => void
 }
 const SelectionContext = createContext<Selection | null>(null)
 
@@ -214,93 +216,274 @@ function Pick({ id, what, name }: { id: string; what: 'file' | 'folder'; name: s
       className={styles.pick}
       checked={selection.has(id)}
       aria-label={t('files.choose', { name })}
-      onChange={() => selection.toggle(id, what)}
+      onChange={(event) => {
+        const native = event.nativeEvent as Partial<MouseEvent>
+        selection.toggle(id, what, Boolean(native.shiftKey))
+      }}
     />
   )
 }
 
-/** Lo elegido: cuántos y, para todo a la vez, borrar (con su aviso) o dejar de elegir */
+/**
+ * Lo elegido: cuántos y, para todo a la vez, llevarlo a una carpeta, etiquetar los archivos, borrar (con su aviso) o
+ * dejar de elegir. Cada cosa, una sola operación (se deshace de una vez)
+ */
 function ChosenBar({
-  chosen,
-  names,
+  items,
+  folders,
+  onMoved,
   onDone,
   onClear
 }: {
-  chosen: { kind: 'file' | 'folder'; id: string }[]
-  /** Sus nombres, para decir qué se borra */
-  names: string[]
+  /** Lo elegido, con su nombre y su ámbito */
+  items: { kind: 'file' | 'folder'; id: string; name: string; worldId: string | null }[]
+  /** Todas las carpetas (para elegir adónde se lleva) */
+  folders: FolderView[]
+  /** Llevado a una carpeta (null: lo más alto): para dejarla abierta */
+  onMoved: (folderId: string | null) => void
   onDone: () => Promise<unknown>
   onClear: () => void
 }) {
   const { t } = useTranslation()
-  const api = useApi()
-  const errorText = useErrorText()
   const announce = useAnnounce()
-  const dialog = useRef<HTMLDialogElement>(null)
-  const titleId = useId()
-  const [confirming, setConfirming] = useState(false)
-  const folders = chosen.filter((item) => item.kind === 'folder').length
-  const remove = useMutation({
-    mutationFn: async () => {
-      const ids = (kind: 'file' | 'folder') => chosen.filter((item) => item.kind === kind).map((item) => item.id)
-      const { files } = await api.call('deleteFiles', { fileIds: ids('file'), folderIds: ids('folder') })
-      dialog.current?.close()
-      announce(t('files.deletedMany', { count: files }))
-      await onDone()
-    }
-  })
+  const [open, setOpen] = useState<'move' | 'tag' | 'delete' | null>(null)
+  const files = items.filter((item) => item.kind === 'file')
+  const folderIds = items.filter((item) => item.kind === 'folder').map((item) => item.id)
+  // Lo del mundo y lo común no van juntos a ninguna carpeta
+  const scope = items[0]?.worldId ?? null
+  const oneScope = items.every((item) => item.worldId === scope)
+  const close = () => setOpen(null)
+  const finish = async (said: string) => {
+    announce(said)
+    close()
+    await onDone()
+  }
   return (
     // biome-ignore lint/a11y/useSemanticElements: una barra de acciones sobre lo elegido
     <div className={styles.chosenBar} role="group" aria-label={t('files.chosenLabel')}>
-      <span className={styles.chosenCount}>{t('files.chosen', { count: chosen.length })}</span>
+      <span className={styles.chosenCount}>{t('files.chosen', { count: items.length })}</span>
       <button
         type="button"
-        className={styles.chosenDelete}
+        className={styles.chosenAction}
         aria-haspopup="dialog"
-        disabled={chosen.length === 0}
-        onClick={() => setConfirming(true)}
+        disabled={!oneScope}
+        title={oneScope ? undefined : t('files.mixedScope')}
+        onClick={() => setOpen('move')}
       >
+        <FolderInput aria-hidden="true" size={16} />
+        {t('files.moveChosen')}
+      </button>
+      <button
+        type="button"
+        className={styles.chosenAction}
+        aria-haspopup="dialog"
+        disabled={files.length === 0}
+        title={files.length === 0 ? t('files.onlyFilesTag') : undefined}
+        onClick={() => setOpen('tag')}
+      >
+        <Tag aria-hidden="true" size={16} />
+        {t('files.tagChosen')}
+      </button>
+      <button type="button" className={styles.chosenDelete} aria-haspopup="dialog" onClick={() => setOpen('delete')}>
         <Trash2 aria-hidden="true" size={16} />
         {t('files.deleteChosen')}
       </button>
       <button type="button" className={dialogStyles.cancel} onClick={onClear}>
         {t('files.cancel')}
       </button>
-      {confirming && (
-        <Modal
-          ref={dialog}
-          aria-labelledby={titleId}
-          className={dialogStyles.dialog}
-          onClose={() => {
-            setConfirming(false)
-            remove.reset()
+      {open === 'move' && (
+        <MoveChosen
+          files={files.map((item) => item.id)}
+          folderIds={folderIds}
+          scope={scope}
+          folders={folders}
+          onMoved={async (dest) => {
+            onMoved(dest)
+            await finish(t('files.movedMany', { count: items.length }))
           }}
-        >
-          <div className={dialogStyles.body}>
-            <h2 id={titleId}>{t('files.deleteChosenTitle', { count: chosen.length })}</h2>
-            {/* Qué se borra: hasta cinco por su nombre y, si hay más, cuántos */}
-            <ul className={styles.chosenNames}>
-              {names.slice(0, SHOWN_NAMES).map((name, index) => (
-                <li key={chosen[index]?.id ?? name}>{name}</li>
-              ))}
-              {names.length > SHOWN_NAMES && <li>{t('files.andMore', { count: names.length - SHOWN_NAMES })}</li>}
-            </ul>
-            <p className={dialogStyles.description}>
-              {folders > 0 ? t('files.deleteChosenFolders') : t('files.deleteChosenWarning')}
-            </p>
-            <FormError message={remove.error ? errorText(remove.error) : null} />
-            <div className={dialogStyles.actions}>
-              <BusyButton className={dangerStyles.solid} busy={remove.isPending} onClick={() => remove.mutate()}>
-                {t('files.deleteChosen')}
-              </BusyButton>
-              <button type="button" className={dialogStyles.cancel} onClick={() => dialog.current?.close()}>
-                {t('files.cancel')}
-              </button>
-            </div>
-          </div>
-        </Modal>
+          onClose={close}
+        />
+      )}
+      {open === 'tag' && (
+        <TagChosen
+          fileIds={files.map((item) => item.id)}
+          onTagged={(count) => finish(t('files.taggedMany', { count }))}
+          onClose={close}
+        />
+      )}
+      {open === 'delete' && (
+        <DeleteChosen items={items} onDeleted={(count) => finish(t('files.deletedMany', { count }))} onClose={close} />
       )}
     </div>
+  )
+}
+
+/** Cuántos nombres dice la confirmación de borrar lo elegido */
+const SHOWN_NAMES = 5
+
+/** Borrar lo elegido: dice qué (hasta cinco por su nombre) y, si hay carpetas, que se van con lo que tienen */
+function DeleteChosen({
+  items,
+  onDeleted,
+  onClose
+}: {
+  items: { kind: 'file' | 'folder'; id: string; name: string }[]
+  onDeleted: (files: number) => Promise<unknown>
+  onClose: () => void
+}) {
+  const { t } = useTranslation()
+  const api = useApi()
+  const errorText = useErrorText()
+  const dialog = useRef<HTMLDialogElement>(null)
+  const titleId = useId()
+  const folders = items.filter((item) => item.kind === 'folder').length
+  const remove = useMutation({
+    mutationFn: async () => {
+      const ids = (kind: 'file' | 'folder') => items.filter((item) => item.kind === kind).map((item) => item.id)
+      const { files } = await api.call('deleteFiles', { fileIds: ids('file'), folderIds: ids('folder') })
+      dialog.current?.close()
+      await onDeleted(files)
+    }
+  })
+  return (
+    <Modal ref={dialog} aria-labelledby={titleId} className={dialogStyles.dialog} onClose={onClose}>
+      <div className={dialogStyles.body}>
+        <h2 id={titleId}>{t('files.deleteChosenTitle', { count: items.length })}</h2>
+        {/* Qué se borra: hasta cinco por su nombre y, si hay más, cuántos */}
+        <ul className={styles.chosenNames}>
+          {items.slice(0, SHOWN_NAMES).map((item) => (
+            <li key={item.id}>{item.name}</li>
+          ))}
+          {items.length > SHOWN_NAMES && <li>{t('files.andMore', { count: items.length - SHOWN_NAMES })}</li>}
+        </ul>
+        <p className={dialogStyles.description}>
+          {folders > 0 ? t('files.deleteChosenFolders') : t('files.deleteChosenWarning')}
+        </p>
+        <FormError message={remove.error ? errorText(remove.error) : null} />
+        <div className={dialogStyles.actions}>
+          <BusyButton className={dangerStyles.solid} busy={remove.isPending} onClick={() => remove.mutate()}>
+            {t('files.deleteChosen')}
+          </BusyButton>
+          <button type="button" className={dialogStyles.cancel} onClick={() => dialog.current?.close()}>
+            {t('files.cancel')}
+          </button>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
+/** Llevar lo elegido a una carpeta de su ámbito (o a ninguna): una sola operación */
+function MoveChosen({
+  files,
+  folderIds,
+  scope,
+  folders,
+  onMoved,
+  onClose
+}: {
+  files: string[]
+  folderIds: string[]
+  /** De qué ámbito es lo elegido (null: los comunes) */
+  scope: string | null
+  folders: FolderView[]
+  onMoved: (folderId: string | null) => Promise<unknown>
+  onClose: () => void
+}) {
+  const { t } = useTranslation()
+  const api = useApi()
+  const errorText = useErrorText()
+  const dialog = useRef<HTMLDialogElement>(null)
+  const titleId = useId()
+  // Lo más alto: para lo común en un mundo, «Comunes» (FolderField); al servidor, sin carpeta
+  const [dest, setDest] = useState<string | null>(null)
+  const move = useMutation({
+    mutationFn: async () => {
+      const folderId = dest === COMMON ? null : dest
+      await api.call('moveFiles', { fileIds: files, folderIds, folderId })
+      dialog.current?.close()
+      await onMoved(dest)
+    }
+  })
+  return (
+    <Modal ref={dialog} aria-labelledby={titleId} className={dialogStyles.dialog} onClose={onClose}>
+      <form
+        className={dialogStyles.body}
+        onSubmit={(event) => {
+          event.preventDefault()
+          move.mutate()
+        }}
+      >
+        <h2 id={titleId}>{t('files.moveChosenTitle', { count: files.length + folderIds.length })}</h2>
+        <FolderField folders={folders} of={{ worldId: scope }} moving={folderIds} value={dest} onChange={setDest} />
+        <FormError message={move.error ? errorText(move.error) : null} />
+        <div className={dialogStyles.actions}>
+          <BusyButton type="submit" className={form.button} busy={move.isPending}>
+            {t('files.moveChosenDo')}
+          </BusyButton>
+          <button type="button" className={dialogStyles.cancel} onClick={() => dialog.current?.close()}>
+            {t('files.cancel')}
+          </button>
+        </div>
+      </form>
+    </Modal>
+  )
+}
+
+/** Etiquetar los archivos elegidos: se añaden a las que ya llevan, en una sola operación */
+function TagChosen({
+  fileIds,
+  onTagged,
+  onClose
+}: {
+  fileIds: string[]
+  onTagged: (files: number) => Promise<unknown>
+  onClose: () => void
+}) {
+  const { t } = useTranslation()
+  const api = useApi()
+  const errorText = useErrorText()
+  const dialog = useRef<HTMLDialogElement>(null)
+  const titleId = useId()
+  const catalog = useAccountTags().data?.tags.map((tag) => tag.name) ?? []
+  const [tags, setTags] = useState<string[]>([])
+  // Lo que esté a medio escribir también cuenta (así el campo no cambia justo al pulsar «Etiquetar»)
+  const [typed, setTyped] = useState('')
+  const wanted = addTyped(tags, typed, catalog)
+  const tag = useMutation({
+    mutationFn: async () => {
+      const { files } = await api.call('addFileTags', { fileIds, tags: wanted })
+      dialog.current?.close()
+      await onTagged(files)
+    }
+  })
+  return (
+    <Modal ref={dialog} aria-labelledby={titleId} className={dialogStyles.dialog} onClose={onClose}>
+      <form
+        className={dialogStyles.body}
+        onSubmit={(event) => {
+          event.preventDefault()
+          if (wanted.length > 0) tag.mutate()
+        }}
+      >
+        <h2 id={titleId}>{t('files.tagChosenTitle', { count: fileIds.length })}</h2>
+        <TagsField value={tags} onChange={setTags} onPending={setTyped} />
+        <FormError message={tag.error ? errorText(tag.error) : null} />
+        <div className={dialogStyles.actions}>
+          <BusyButton
+            type="submit"
+            className={form.button}
+            busy={tag.isPending}
+            aria-disabled={wanted.length === 0 || undefined}
+          >
+            {t('files.tagChosenDo')}
+          </BusyButton>
+          <button type="button" className={dialogStyles.cancel} onClick={() => dialog.current?.close()}>
+            {t('files.cancel')}
+          </button>
+        </div>
+      </form>
+    </Modal>
   )
 }
 
@@ -309,6 +492,17 @@ function ChosenBar({
 type Beside = Pick<FilesMove, 'before' | 'after'>
 /** De qué ámbito es algo: los del mundo y los comunes no se mezclan */
 type Realm = 'mundo' | 'comun'
+
+/**
+ * El teclado de una fila (como en Etiquetas): una sola parada del tabulador en la lista (la fila con el foco), flechas
+ * para recorrerla y abrir o cerrar carpetas, Alt + flechas para recolocar, Intro para abrir y Espacio para elegir
+ */
+type RowFocus = {
+  ref: (element: HTMLDivElement | null) => void
+  tabIndex: number
+  onFocus: (event: FocusEvent<HTMLDivElement>) => void
+  onKeyDown: (event: KeyboardEvent<HTMLDivElement>) => void
+}
 
 /** Lo de arrastrar de una fila: sus manejadores y cómo se ve (dónde caería lo arrastrado, apagada, a punto de abrirse…) */
 type RowDrag = { attrs: HTMLAttributes<HTMLDivElement> & { 'data-drop'?: Zone | undefined }; className: string }
@@ -396,6 +590,37 @@ function FilesSection({
   const [landed, setLanded] = useState<string | null>(null)
   // Lo movido desde su ventana, cuyo engranaje recibe el foco cuando su fila ya está en su carpeta nueva
   const refocus = useRef<(Item & { dest: string | null }) | null>(null)
+  // El teclado de la lista (RowFocus): la fila con el foco, la que lo recibirá al pintarse (tras moverla) y sus elementos
+  const rowElements = useRef(new Map<string, HTMLDivElement>())
+  const listRef = useRef<HTMLUListElement>(null)
+  const [focusedRow, setFocusedRow] = useState<string | null>(null)
+  // Lo recolocado con el teclado recibe el foco cuando ya está en su carpeta de destino (al cambiar de carpeta, su fila
+  // es otra: la de antes se va)
+  const pendingFocus = useRef<(Item & { dest: string | null }) | null>(null)
+  const latest = useRef(data)
+  latest.current = data
+  const keysHintId = useId()
+  useEffect(() => {
+    // Solo los botones de la fila con el foco entran en el tabulador; a los de las demás se llega con las flechas
+    for (const row of listRef.current?.querySelectorAll<HTMLElement>('[data-file-card][tabindex]') ?? []) {
+      const active = row.tabIndex === 0
+      for (const control of row.querySelectorAll<HTMLElement>('button, a[href], input')) {
+        control.tabIndex = active ? 0 : -1
+      }
+    }
+    const wanted = pendingFocus.current
+    if (!wanted) return
+    const now =
+      wanted.kind === 'file'
+        ? latest.current?.files.find((file) => file.id === wanted.id)?.folderId
+        : latest.current?.folders.find((folder) => folder.id === wanted.id)?.parentId
+    const element = rowElements.current.get(wanted.id)
+    if ((now ?? null) !== wanted.dest || !element) return
+    pendingFocus.current = null
+    element.focus()
+  })
+  // El último que se eligió o se dejó de elegir: con Mayúsculas, se elige el tramo hasta él
+  const lastPicked = useRef<string | null>(null)
   // Por qué no se pudo mover lo último (se ve sobre la lista)
   const [moveError, setMoveError] = useState<string | null>(null)
   useEffect(() => {
@@ -530,17 +755,35 @@ function FilesSection({
   const isShown = (id: string) => visible.some((item) => item.id === id)
   // Lo elegido que sigue a la vista
   const chosenNow = visible.filter((item) => chosen.has(item.id))
+  // Con Mayúsculas, del último que se eligió a este, todo lo que se ve entre medias (lo que se puede elegir)
+  const pickable = (item: Item) =>
+    item.kind === 'file'
+      ? Boolean(fileById.get(item.id) && canWriteFile(fileById.get(item.id) as WorldFile))
+      : item.id !== COMMON && placeOf(item.id).canWrite
   const selection = {
     has: (id: string) => chosen.has(id),
     active: chosenNow.length > 0,
-    toggle: (id: string, what: 'file' | 'folder') =>
+    toggle: (id: string, what: 'file' | 'folder', range = false) => {
+      const from = range && lastPicked.current ? visible.findIndex((item) => item.id === lastPicked.current) : -1
+      const to = visible.findIndex((item) => item.id === id)
+      lastPicked.current = id
       setChosen((current) => {
         const next = new Map(current)
-        if (next.has(id)) next.delete(id)
-        else next.set(id, what)
+        const on = !next.has(id)
+        const span =
+          from >= 0 && to >= 0
+            ? visible.slice(Math.min(from, to), Math.max(from, to) + 1).filter(pickable)
+            : [{ kind: what, id }]
+        for (const item of span) {
+          if (on) next.set(item.id, item.kind)
+          else next.delete(item.id)
+        }
         return next
       })
+    }
   }
+  // La parada del tabulador: la fila con el foco, si sigue a la vista; si no, la primera
+  const tabStop = focusedRow && isShown(focusedRow) ? focusedRow : visible[0]?.id
   const nothing = data.files.length === 0 && folders.length === 0 && uploads.items.length === 0
   if (nothing && !canWrite && !common?.canWrite) return <p className={styles.empty}>{empty}</p>
 
@@ -774,6 +1017,79 @@ function FilesSection({
     setExpanded((current) => new Set([...current, ...pathOf(dest).map((folder) => folder.id)]))
     moveTo(item, dest)
   }
+  // El teclado de la lista: flechas para recorrer, abrir y cerrar; Alt + flechas para recolocar (arriba y abajo entre
+  // los de su tipo; derecha, dentro de la carpeta de encima; izquierda, fuera de la suya); Intro abre y Espacio elige
+  const focusRow = (index: number) => {
+    const item = visible[Math.max(0, Math.min(visible.length - 1, index))]
+    if (item) rowElements.current.get(item.id)?.focus()
+  }
+  const keyMove = (item: Item, key: string): { dest: string | null; beside?: Beside } | null => {
+    const parent = parentOfItem(item)
+    const ids = siblingIds(item.kind, parent)
+    const at = ids.indexOf(item.id)
+    if (key === 'ArrowUp' && at > 0) return { dest: parent, beside: { before: ids[at - 1] as string } }
+    if (key === 'ArrowDown' && at >= 0 && at < ids.length - 1) {
+      return { dest: parent, beside: { after: ids[at + 1] as string } }
+    }
+    if (key === 'ArrowRight') {
+      // La carpeta de encima, en su misma carpeta: para una carpeta, la anterior; para un archivo, la última (los
+      // archivos van tras las carpetas). «Comunes» no cuenta, y ha de ser de su ámbito
+      const there = (kids.get(parent)?.folders ?? []).filter((folder) => folder.id !== COMMON)
+      const target = there[item.kind === 'folder' ? there.findIndex((f) => f.id === item.id) - 1 : there.length - 1]
+      if (!target || scopeAt(target.id) !== realmOf(item)) return null
+      return { dest: target.id }
+    }
+    if (key === 'ArrowLeft' && parent && parent !== COMMON) {
+      const grandparent = byId.get(parent)?.parentId ?? null
+      return item.kind === 'folder' ? { dest: grandparent, beside: { after: parent } } : { dest: grandparent }
+    }
+    return null
+  }
+  const onRowKey = (item: Item, event: KeyboardEvent<HTMLDivElement>) => {
+    // Las teclas de sus botones son suyas
+    if (event.target !== event.currentTarget) return
+    const index = visible.findIndex((each) => each.id === item.id)
+    const folder = item.kind === 'folder' ? byId.get(item.id) : undefined
+    if (event.altKey && event.key.startsWith('Arrow')) {
+      event.preventDefault()
+      if (searching || !pickable(item)) return
+      const to = keyMove(item, event.key)
+      if (!to) return
+      pendingFocus.current = { ...item, dest: to.dest }
+      moveTo(item, to.dest, to.beside)
+      return
+    }
+    if (event.key === 'ArrowDown') focusRow(index + 1)
+    else if (event.key === 'ArrowUp') focusRow(index - 1)
+    else if (event.key === 'Home') focusRow(0)
+    else if (event.key === 'End') focusRow(visible.length - 1)
+    else if (event.key === 'ArrowRight' && folder) {
+      if (isOpen(folder.id)) focusRow(index + 1)
+      else toggle(folder)
+    } else if (event.key === 'ArrowLeft') {
+      const parent = parentOfItem(item)
+      if (folder && isOpen(folder.id) && !searching) toggle(folder)
+      else if (parent) rowElements.current.get(parent)?.focus()
+    } else if (event.key === 'Enter') {
+      if (folder) toggle(folder)
+      else event.currentTarget.querySelector<HTMLElement>('[data-row-open]')?.click()
+    } else if (event.key === ' ' && pickable(item)) selection.toggle(item.id, item.kind, event.shiftKey)
+    else return
+    event.preventDefault()
+  }
+  const focusOf = (item: Item): RowFocus => ({
+    ref: (element) => {
+      if (element) rowElements.current.set(item.id, element)
+      else rowElements.current.delete(item.id)
+    },
+    tabIndex: tabStop === item.id ? 0 : -1,
+    // Con el foco en la fila, su vista previa a la izquierda (como al pasar el ratón)
+    onFocus: (event) => {
+      setFocusedRow(item.id)
+      if (event.target === event.currentTarget && !dragged.current) setHovered(item)
+    },
+    onKeyDown: (event) => onRowKey(item, event)
+  })
   const rowProps = { folders, onChanged: refresh }
   const uploadRow = (upload: Upload, depth: number) => (
     <UploadRow key={`subida-${upload.key}`} upload={upload} depth={depth} onCancel={() => uploads.cancel(upload.key)} />
@@ -814,6 +1130,7 @@ function FilesSection({
                     newFolder: { target: placeOf(folder.id).target, parentId: placeOf(folder.id).folderId }
                   }
                 : {})}
+              focus={focusOf({ kind: 'folder', id: folder.id })}
               onToggle={() => toggle(folder)}
               onPreview={preview('folder', folder.id)}
               folders={folders}
@@ -845,6 +1162,7 @@ function FilesSection({
                     file.worldId === null ? 'comun' : 'mundo'
                   )
             }
+            focus={focusOf({ kind: 'file', id: file.id })}
             onPreview={preview('file', file.id)}
             onMove={moveFromDialog({ kind: 'file', id: file.id })}
             {...rowProps}
@@ -931,7 +1249,13 @@ function FilesSection({
           </p>
         )}
         {!searching && nothing && <p className={styles.empty}>{empty}</p>}
-        <ul className={styles.rows} aria-label={t('files.listLabel')} data-tour="archivos-lista">
+        <ul
+          ref={listRef}
+          className={styles.rows}
+          aria-label={t('files.listLabel')}
+          aria-describedby={keysHintId}
+          data-tour="archivos-lista"
+        >
           {level(null, 0)}
           {/* «Nueva carpeta», una fila más tras la última (docs/diseno.md): dentro de la elegida */}
           {!searching && newHere.canWrite && (
@@ -945,6 +1269,9 @@ function FilesSection({
             </li>
           )}
         </ul>
+        <p id={keysHintId} className={styles.hidden}>
+          {t('files.keysHint')}
+        </p>
       </div>
     </SelectionContext>
   )
@@ -975,10 +1302,14 @@ function FilesSection({
             {tools}
             {choosing && (
               <ChosenBar
-                chosen={chosenNow}
-                names={chosenNow.map(
-                  (item) => (item.kind === 'file' ? fileById.get(item.id)?.name : byId.get(item.id)?.name) ?? ''
-                )}
+                items={chosenNow.map((item) => {
+                  const entry = item.kind === 'file' ? fileById.get(item.id) : byId.get(item.id)
+                  return { ...item, name: entry?.name ?? '', worldId: entry?.worldId ?? null }
+                })}
+                folders={folders}
+                onMoved={(dest) => {
+                  setExpanded((current) => new Set([...current, ...pathOf(dest).map((folder) => folder.id)]))
+                }}
                 onDone={async () => {
                   stopChoosing()
                   await refresh()
@@ -1011,6 +1342,7 @@ function FileRow({
   canWrite,
   fresh,
   drag,
+  focus,
   onPreview,
   onMove,
   onChanged
@@ -1023,6 +1355,7 @@ function FileRow({
   canWrite: boolean
   fresh: boolean
   drag: RowDrag
+  focus: RowFocus
   /** Llevarlo a otra carpeta desde su ventana (null: lo más alto) */
   onMove: (dest: string | null) => void
   /** Al pasar el ratón (true) y al irse (false): para la vista previa */
@@ -1033,6 +1366,7 @@ function FileRow({
   return (
     <div
       {...drag.attrs}
+      {...focus}
       className={[styles.row, styles.treeRow, fresh ? styles.appear : '', drag.className].filter(Boolean).join(' ')}
       style={{ '--depth': depth } as CSSProperties}
       data-file-card={file.id}
@@ -1223,6 +1557,7 @@ function FolderRow({
   canWrite,
   fresh,
   drag,
+  focus,
   onUpload,
   newFolder,
   onToggle,
@@ -1245,6 +1580,7 @@ function FolderRow({
   canWrite: boolean
   fresh: boolean
   drag: RowDrag
+  focus: RowFocus
   onToggle: () => void
   /** Al pasar el ratón (true) y al irse (false): para la vista previa */
   onPreview: (shown: boolean) => void
@@ -1255,6 +1591,7 @@ function FolderRow({
   return (
     <div
       {...drag.attrs}
+      {...focus}
       className={classes.filter(Boolean).join(' ')}
       style={{ '--depth': depth } as CSSProperties}
       data-file-card={folder.id}
@@ -1488,8 +1825,8 @@ function FolderField({
   folders: FolderView[]
   /** Lo que se cambia de sitio: su ámbito */
   of: { worldId: string | null }
-  /** Si es una carpeta: ella y las suyas no salen */
-  moving?: string
+  /** Las carpetas que se mueven: ellas y las suyas no salen */
+  moving?: string | readonly string[]
   value: string | null
   onChange: (folderId: string | null) => void
 }) {
@@ -1882,6 +2219,7 @@ function FileName({ file, className }: { file: WorldFile; className: string | un
           type="button"
           className={[className, styles.open].filter(Boolean).join(' ')}
           aria-haspopup="dialog"
+          data-row-open=""
           onClick={() => setViewing(true)}
         >
           {file.name}
@@ -1890,6 +2228,7 @@ function FileName({ file, className }: { file: WorldFile; className: string | un
         <a
           href={file.url}
           className={className}
+          data-row-open=""
           target="_blank"
           rel="noopener"
           {...(file.kind === 'other' ? { download: file.name } : {})}
@@ -1982,19 +2321,31 @@ function FileDialog({
   const [name, setName] = useState(file.name)
   const startFolder = file.folderId ?? null
   const [folderId, setFolderId] = useState(startFolder)
-  // Las etiquetas también esperan a «Guardar», como el nombre y la carpeta (antes se guardaban al momento)
+  // Las etiquetas también esperan a «Guardar», como el nombre y la carpeta, con lo que esté a medio escribir (así el
+  // campo no cambia justo al pulsar «Guardar»); `round` lo vacía al guardar o cancelar
+  const catalog = useAccountTags().data?.tags.map((tag) => tag.name) ?? []
   const [tags, setTags] = useState<string[]>(file.tags)
+  const [typed, setTyped] = useState('')
+  const [round, setRound] = useState(0)
+  const nextTags = addTyped(tags, typed, catalog)
   const renamed = name.trim() !== file.name
   const moved = folderId !== startFolder
-  const retagged = tags.length !== file.tags.length || tags.some((tag, index) => tag !== file.tags[index])
+  const retagged = nextTags.length !== file.tags.length || nextTags.some((tag, index) => tag !== file.tags[index])
+  const resetTags = (to: string[]) => {
+    setTags(to)
+    setTyped('')
+    setRound((n) => n + 1)
+  }
   const rename = useMutation({
     mutationFn: async () => {
       if (renamed) await api.call('renameFile', { fileId: file.id, name: name.trim() })
-      if (retagged) await api.call('setFileTags', { fileId: file.id, tags })
+      if (retagged) await api.call('setFileTags', { fileId: file.id, tags: nextTags })
       if (renamed || retagged) await onChanged()
+      return nextTags
     },
     // A otra carpeta: la ventana se cierra y se ve ya en su sitio
-    onSuccess: () => {
+    onSuccess: (saved) => {
+      resetTags(saved)
       if (!moved) return
       dialog.current?.close()
       onMove(folderId)
@@ -2034,7 +2385,7 @@ function FileDialog({
           onChange={(event) => setName(event.currentTarget.value)}
         />
         <FolderField folders={folders} of={file} value={folderId} onChange={setFolderId} />
-        <TagsField value={tags} onChange={setTags} />
+        <TagsField key={round} value={tags} onChange={setTags} onPending={setTyped} />
         <FormError message={rename.error ? errorText(rename.error) : null} />
         {/* Al final, como en las demás ventanas */}
         <ChangesBar shown={changed}>
@@ -2047,7 +2398,7 @@ function FileDialog({
             onClick={() => {
               setName(file.name)
               setFolderId(startFolder)
-              setTags(file.tags)
+              resetTags(file.tags)
             }}
           >
             {t('files.cancel')}

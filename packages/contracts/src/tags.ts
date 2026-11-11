@@ -92,6 +92,15 @@ export const deleteTag = defineAction({
   output: z.object({ name: z.string(), pages: z.number().int(), files: z.number().int() })
 })
 
+export const addFileTags = defineAction({
+  name: 'addFileTags',
+  kind: 'write',
+  description:
+    'Añade unas etiquetas a varios archivos de una vez (las que ya llevan se quedan; las que no estén en la cuenta, se crean). Una sola operación por ámbito, que se deshace de una vez desde el historial',
+  input: z.object({ fileIds: z.array(z.uuid()).min(1).max(500), tags: z.array(tagName).min(1).max(50) }),
+  output: z.object({ files: z.number().int().describe('Cuántos archivos cambiaron') })
+})
+
 export const setFileTags = defineAction({
   name: 'setFileTags',
   kind: 'write',

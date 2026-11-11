@@ -165,6 +165,23 @@ export const deleteFiles = defineAction({
   output: z.object({ files: z.number().int().describe('Cuántos archivos fueron a la papelera') })
 })
 
+export const moveFiles = defineAction({
+  name: 'moveFiles',
+  kind: 'write',
+  description:
+    'Mete de una vez varios archivos y carpetas de un mismo ámbito (un mundo, o los comunes) en una carpeta de ese ámbito (folderId; null: a lo más alto), detrás y por nombre. Una carpeta no va dentro de sí misma ni de las suyas. Una sola operación, que se deshace de una vez desde el historial',
+  input: z
+    .object({
+      fileIds: z.array(z.uuid()).max(500).default([]),
+      folderIds: z.array(z.uuid()).max(200).default([]),
+      folderId: z.uuid().nullable()
+    })
+    .refine((input) => input.fileIds.length + input.folderIds.length > 0, { message: 'fileIds o folderIds' }),
+  output: z.object({
+    moved: z.number().int().describe('Cuántos cambiaron de carpeta (los que ya estaban, no cuentan)')
+  })
+})
+
 export const moveFile = defineAction({
   name: 'moveFile',
   kind: 'write',

@@ -7,6 +7,15 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
+### Para retomar (2026-11-12, tarde: tanda 2 con la crítica de impeccable y lo que eligió Enrique; falta el audit)
+
+- **Crítica** (27/40, dual-agent, `.impeccable/critique/`): lo claro, arreglado y en commit (`7e423af`). De lo que se
+  preguntó, Enrique eligió las tres recomendadas y está hecho (sin commit aún al escribir esto): teclado de Archivos y
+  Mayús+clic; mover y etiquetar lo elegido de una vez (`moveFiles`, `addFileTags`, MCP `mover_archivos` y
+  `etiquetar_archivos`); el hueco de la portada que sube o recibe una imagen; Etiquetas plegables y la fila que abre su
+  ventana. Normas en `docs/diseno.md`, nota en el ADR-0005, pruebas para Enrique en `tasks/probar.md`.
+- **Siguiente**: e2e de lo tocado → commit → `/impeccable audit` de las mismas pantallas → cerrar la tanda 2 → tanda 3.
+
 ### Para retomar (2026-11-12, mediodía: tanda 2 construida, en local; falta su visto bueno, impeccable y las e2e)
 
 - **Tanda 2 entera en local** (rama `revision/tanda-2`): además de lo de abajo, el orden a mano de Archivos (migración

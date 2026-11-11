@@ -379,6 +379,37 @@ describe('los archivos del mundo', () => {
     expect((await filesIn(null)).find((f) => f.id === shield.id)).toMatchObject({ folderId: null, position: null })
   })
 
+  it('mover varios de una vez: a una carpeta de su ámbito, sin meter una en sí misma, en una operación que se deshace', async () => {
+    const a = (await upload('A.png', PNG)).json()
+    const b = (await upload('B.png', PNG)).json()
+    const maps = await call('createFolder', { worldId, name: 'Mapas' })
+    const north = await call('createFolder', { worldId, parentId: maps.id, name: 'Norte' })
+    const portraits = await call('createFolder', { worldId, name: 'Retratos' })
+    expect(await call('moveFiles', { fileIds: [a.id, b.id], folderIds: [portraits.id], folderId: north.id })).toEqual({
+      moved: 3
+    })
+    const listed = await call('listFiles', { worldId })
+    expect(listed.files.filter((f: { folderId: string }) => f.folderId === north.id)).toHaveLength(2)
+    expect(listed.folders.find((f: { id: string }) => f.id === portraits.id)).toMatchObject({ parentId: north.id })
+    const [last] = (await call('listHistory', { worldId })).entries
+    expect(last).toMatchObject({ action: 'moveFiles', details: { count: 3, folder: 'Norte' } })
+    // Los que ya están ahí no cuentan; Mapas no va dentro de Norte (una de las suyas); nada de los comunes
+    expect(await call('moveFiles', { fileIds: [a.id], folderId: north.id })).toEqual({ moved: 0 })
+    expect(await call('moveFiles', { folderIds: [maps.id], folderId: north.id })).toMatchObject({ code: 'CYCLE' })
+    const common = await call('createFolder', { organizationId, name: 'Sellos' })
+    expect(await call('moveFiles', { fileIds: [a.id], folderId: common.id })).toMatchObject({ code: 'BAD_FOLDER' })
+    // Deshacer lo deja todo donde estaba, de una vez
+    expect((await call('undoOperation', { operationId: last.id })).status).toBe('undone')
+    const back = await call('listFiles', { worldId })
+    expect(
+      back.files
+        .filter((f: { folderId: string | null }) => f.folderId === null)
+        .map((f: { name: string }) => f.name)
+        .sort()
+    ).toEqual(['A.png', 'B.png'])
+    expect(back.folders.find((f: { id: string }) => f.id === portraits.id)).toMatchObject({ parentId: null })
+  })
+
   it('borrar varios de una vez: archivos y carpetas, en una operación que se deshace', async () => {
     const a = (await upload('A.png', PNG)).json()
     const b = (await upload('B.pdf', PDF)).json()

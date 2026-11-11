@@ -107,8 +107,13 @@ Plan: `tasks/plan-revision.md`. Una tanda cada vez: se enseña en local, Enrique
   la ventana de archivo con un solo «Guardar», al final (también las etiquetas); la almohadilla de la etiqueta con su
   color; botones de carpeta solo al pasar o con el teclado; «#etiqueta» sin resultados con su texto; Etiquetas busca sin
   tildes; buscadores sin autocompletar; el selector sin quitar animaciones; «Se usa» en la vista previa; textos sin uso.
-- [ ] Pendiente de Enrique (de la crítica): teclado de Archivos y acciones con lo elegido; el hueco vacío de la portada;
-  Etiquetas plegable y que la fila abra su ventana, como Archivos.
+- [x] De la crítica, lo que eligió Enrique (las tres recomendadas, 2026-11-12):
+  - **Archivos con el teclado**, como Etiquetas (una parada del tabulador, flechas, Intro, Espacio, Alt + flechas, la
+    vista previa con el foco) y **Mayús+clic** para elegir un tramo;
+  - **lo elegido se mueve y se etiqueta** de una vez: acciones `moveFiles` y `addFileTags` (una operación cada una, se
+    deshacen de una vez), con sus herramientas MCP `mover_archivos` y `etiquetar_archivos`;
+  - **el hueco de la portada** sube una imagen al pulsarlo y admite soltar una;
+  - **Etiquetas como Archivos**: plegables con su flecha (o derecha e izquierda) y la fila abre su ventana.
 - [x] Ventanas de ajustes compactas (Enrique, 2026-11-12: «no cabe y hay que hacer scroll»): letra 15 px, campos de 40 px,
   casillas de 36 px, «Otro emoji» como una casilla más; la de una carpeta cabe en 850 px de alto.
 

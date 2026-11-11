@@ -7,6 +7,39 @@
   background: var(--tag-color);
 }
 
+/* Lo primero de la fila: su flecha (si tiene hijas) y su punto de color */
+.lead {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+}
+
+/* La flecha de una etiqueta con hijas, por encima del nombre (que cubre la fila): las pliega y despliega */
+.toggle {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  inline-size: 1.25rem;
+  block-size: 1.25rem;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: none;
+  color: var(--color-muted);
+  cursor: pointer;
+  transition: transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+button.toggle:hover {
+  color: var(--color-text);
+}
+
+.toggle[data-open="true"] {
+  transform: rotate(90deg);
+}
+
 /* «Nueva etiqueta» (components/new-card.tsx, en forma de fila): una fila más tras la última */
 .newItem {
   padding-block-start: var(--space-2);

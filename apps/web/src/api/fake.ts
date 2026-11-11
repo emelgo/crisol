@@ -3692,6 +3692,36 @@ export function fakeApi(
       return { id: folder.id, name: folder.name }
     },
     deleteFiles: ({ fileIds = [], folderIds = [] }) => ({ files: trashItems(fileIds, folderIds) }),
+    // Como el servidor: todo de un ámbito, el de su destino, y ninguna carpeta dentro de sí misma; detrás, por nombre
+    moveFiles: ({ fileIds = [], folderIds = [], folderId }) => {
+      const moving = [...fileIds.map(fileById), ...folderIds.map(folderById)]
+      const first = moving[0]
+      const dest = folderId ? folderById(folderId) : null
+      const scopeOf = (entry: { worldId: string | null; organizationId: string }) =>
+        `${entry.worldId}:${entry.organizationId}`
+      if (first && moving.some((entry) => scopeOf(entry) !== scopeOf(first))) throw new ApiError('BAD_FOLDER', 400)
+      if (first && dest && scopeOf(dest) !== scopeOf(first)) throw new ApiError('BAD_FOLDER', 400)
+      for (let at: string | null = folderId; at; at = folderById(at).parentId) {
+        if (folderIds.includes(at)) throw new ApiError('CYCLE', 400)
+      }
+      let moved = 0
+      for (const id of fileIds) {
+        const file = fileById(id)
+        if (file.folderId === folderId) continue
+        file.folderId = folderId
+        file.position = null
+        file.version++
+        moved++
+      }
+      for (const id of folderIds) {
+        const folder = folderById(id)
+        if (folder.parentId === folderId) continue
+        folder.parentId = folderId
+        folder.position = null
+        moved++
+      }
+      return { moved }
+    },
     moveFile: ({ fileId, folderId, before, after }) => {
       const file = fileById(fileId)
       if (folderId) folderById(folderId)
@@ -4621,6 +4651,18 @@ export function fakeApi(
       const target = ownOrganization(organizationId)
       const current = tagIn(target, tag)
       return { name: current.name, ...retag(target, current.name, null) }
+    },
+    addFileTags: ({ fileIds, tags }) => {
+      let changed = 0
+      for (const id of new Set(fileIds)) {
+        const file = fileById(id)
+        const next = uniqueTags([...file.tags, ...tags])
+        if (next.length === file.tags.length) continue
+        file.tags = next
+        file.version++
+        changed++
+      }
+      return { files: changed }
     },
     setFileTags: ({ fileId, tags }) => {
       const file = fileById(fileId)

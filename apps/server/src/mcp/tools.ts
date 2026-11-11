@@ -291,6 +291,7 @@ export const MCP_TOOLS: Record<string, McpTool> = {
     }
   },
   listar_archivos: { action: 'listFiles' },
+  mover_archivos: { action: 'moveFiles' },
   buscar_paginas: { action: 'searchWiki' },
   mover_pagina: { action: 'movePage' },
   ordenar_subpaginas: { action: 'sortPageChildren' },
@@ -302,6 +303,7 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   mover_etiqueta: { action: 'moveTag' },
   borrar_etiqueta: { action: 'deleteTag' },
   etiquetar_archivo: { action: 'setFileTags' },
+  etiquetar_archivos: { action: 'addFileTags' },
   // Las pestañas de una página y sus mapas con pines (ADR-0007)
   ver_pestanas: { action: 'listPageTabs' },
   crear_pestana: { action: 'createPageTab' },

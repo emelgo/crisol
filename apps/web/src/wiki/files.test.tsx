@@ -633,6 +633,98 @@ describe('la ventana de una carpeta o de un archivo', () => {
   })
 })
 
+describe('el teclado y lo elegido', () => {
+  const api3 = () => {
+    const maps = folderOf('Mapas')
+    const portraits = folderOf('Retratos')
+    return {
+      maps,
+      portraits,
+      api: fakeApi({
+        organizations: [ORG],
+        worlds: [WORLD],
+        folders: [maps, portraits],
+        files: [
+          { worldId: WORLD.id, name: 'A.png', kind: 'image' },
+          { worldId: WORLD.id, name: 'B.png', kind: 'image' },
+          { worldId: WORLD.id, name: 'C.png', kind: 'image' }
+        ]
+      })
+    }
+  }
+
+  it('una sola parada del tabulador; flechas para recorrer, abrir y cerrar; Espacio elige; Alt+flechas recolocan', async () => {
+    const { api, maps, portraits } = api3()
+    renderAt(`/mundos/${WORLD.id}/archivos`, api)
+    await screen.findByRole('button', { name: 'Mapas' })
+    // Solo una fila con el tabulador: la primera
+    const stops = [...document.querySelectorAll<HTMLElement>('[data-file-card][tabindex="0"]')]
+    expect(stops.map((row) => row.dataset.fileCard)).toEqual([maps.id])
+    rowOf('Mapas').focus()
+    await userEvent.keyboard('{ArrowDown}')
+    expect(document.activeElement).toBe(rowOf('Retratos'))
+    await userEvent.keyboard('{ArrowUp}{ArrowRight}')
+    expect(screen.getByRole('button', { name: 'Mapas' }).getAttribute('aria-expanded')).toBe('true')
+    await userEvent.keyboard('{ArrowLeft}')
+    expect(screen.getByRole('button', { name: 'Mapas' }).getAttribute('aria-expanded')).toBe('false')
+    // Espacio elige
+    rowOf('A.png').focus()
+    await userEvent.keyboard(' ')
+    expect(screen.getByRole('group', { name: 'Lo elegido' })).toBeDefined()
+    await userEvent.keyboard(' ')
+    expect(screen.queryByRole('group', { name: 'Lo elegido' })).toBeNull()
+    // Alt+→: dentro de la carpeta de encima (la última, Retratos), y el foco sigue con él
+    await userEvent.keyboard('{Alt>}{ArrowRight}{/Alt}')
+    await waitFor(() => expect(api.files.find((f) => f.name === 'A.png')?.folderId).toBe(portraits.id))
+    await waitFor(() => expect(document.activeElement).toBe(rowOf('A.png')))
+    // Alt+←: fuera de ella
+    await userEvent.keyboard('{Alt>}{ArrowLeft}{/Alt}')
+    await waitFor(() => expect(api.files.find((f) => f.name === 'A.png')?.folderId).toBeNull())
+  })
+
+  it('con Mayúsculas se elige el tramo; «Mover a…» y «Etiquetar», cada uno de una vez', async () => {
+    const { api, maps } = api3()
+    renderAt(`/mundos/${WORLD.id}/archivos`, api)
+    const list = await cardsIn()
+    const user = userEvent.setup()
+    await user.click(await list.findByRole('checkbox', { name: 'Elegir A.png' }))
+    await user.keyboard('{Shift>}')
+    await user.click(list.getByRole('checkbox', { name: 'Elegir C.png' }))
+    await user.keyboard('{/Shift}')
+    const bar = within(screen.getByRole('group', { name: 'Lo elegido' }))
+    expect(bar.getByText('3 elegidos')).toBeDefined()
+    // Etiquetar: se añade a las que llevan
+    await userEvent.click(bar.getByRole('button', { name: 'Etiquetar' }))
+    const tag = within(await screen.findByRole('dialog', { name: 'Etiquetar los 3 archivos' }))
+    await userEvent.type(tag.getByLabelText('Etiquetas'), 'lugar')
+    await userEvent.click(tag.getByRole('button', { name: 'Etiquetar' }))
+    await waitFor(() => expect(api.files.every((f) => f.tags.includes('lugar'))).toBe(true))
+    expect(api.calls.filter((call) => call === 'addFileTags')).toHaveLength(1)
+    // Mover a…: a Mapas, de una vez
+    await userEvent.click(await list.findByRole('checkbox', { name: 'Elegir A.png' }))
+    await userEvent.click(list.getByRole('checkbox', { name: 'Elegir B.png' }))
+    await userEvent.click(
+      within(screen.getByRole('group', { name: 'Lo elegido' })).getByRole('button', { name: 'Mover a…' })
+    )
+    const move = within(await screen.findByRole('dialog', { name: 'Mover los 2 elegidos' }))
+    await userEvent.selectOptions(move.getByLabelText('Carpeta'), 'Mapas')
+    await userEvent.click(move.getByRole('button', { name: 'Mover' }))
+    await waitFor(() =>
+      expect(
+        api.files
+          .filter((f) => f.folderId === maps.id)
+          .map((f) => f.name)
+          .sort()
+      ).toEqual(['A.png', 'B.png'])
+    )
+    expect(api.calls.filter((call) => call === 'moveFiles')).toHaveLength(1)
+    // Mapas queda abierta, con ellos dentro
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Mapas' }).getAttribute('aria-expanded')).toBe('true')
+    )
+  })
+})
+
 describe('los archivos en lo estrecho (la misma lista)', () => {
   // Una pantalla estrecha
   beforeEach(() => {

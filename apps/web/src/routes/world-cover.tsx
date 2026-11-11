@@ -4,7 +4,7 @@
  */
 import type { PageCover as Cover } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { FolderOpen, Move, Upload, ZoomIn, ZoomOut } from 'lucide-react'
+import { FolderOpen, ImagePlus, Move, Upload, ZoomIn, ZoomOut } from 'lucide-react'
 import { type CSSProperties, type KeyboardEvent, type PointerEvent, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ApiError } from '../api/client.ts'
@@ -152,6 +152,10 @@ export function CoverDialog({
   }
   // La rueda del ratón sobre la vista previa acerca y aleja (sin mover la página: por eso no es pasiva)
   const preview = useRef<HTMLButtonElement>(null)
+  const hasImage = useRef(false)
+  hasImage.current = Boolean(image)
+  // Una imagen del escritorio encima de la vista previa
+  const [over, setOver] = useState(false)
   const zoomRef = useRef(setZoom)
   zoomRef.current = setZoom
   const zoomNow = useRef(zoom)
@@ -160,7 +164,7 @@ export function CoverDialog({
     const element = preview.current
     if (!element) return
     const wheel = (event: WheelEvent) => {
-      if (element.disabled) return
+      if (!hasImage.current) return
       event.preventDefault()
       zoomRef.current(zoomNow.current + (event.deltaY < 0 ? ZOOM.step : -ZOOM.step))
     }
@@ -172,15 +176,33 @@ export function CoverDialog({
     <Modal ref={dialog} className={styles.dialog} aria-labelledby={titleId} onClose={onClose}>
       <div className={dialogStyles.body}>
         <h2 id={titleId}>{title}</h2>
+        {/* Con imagen, se encuadra (su nombre es lo que se lee en ella, «Arrastra para encuadrar», y su descripción, las
+            teclas). Sin ella, el hueco sube una al pulsarlo: un atajo del ratón, fuera del tabulador (con el teclado,
+            «Subir imagen»). En los dos casos admite soltar una del escritorio */}
         <button
           ref={preview}
           type="button"
           className={styles.preview}
           style={aspect ? ({ '--cover-aspect': aspect } as CSSProperties) : undefined}
-          disabled={!image}
-          // Con imagen, su nombre es lo que se lee en ella («Arrastra para encuadrar») y su descripción, las teclas
-          aria-label={image ? undefined : t('cover.framing')}
+          data-over={over || undefined}
+          tabIndex={image ? undefined : -1}
+          aria-hidden={image ? undefined : true}
           aria-describedby={image ? keysId : undefined}
+          onClick={() => {
+            if (!image) upload.current?.click()
+          }}
+          onDragOver={(event) => {
+            if (!event.dataTransfer.types.includes('Files')) return
+            event.preventDefault()
+            setOver(true)
+          }}
+          onDragLeave={() => setOver(false)}
+          onDrop={(event) => {
+            event.preventDefault()
+            setOver(false)
+            const file = event.dataTransfer.files[0]
+            if (file) uploadImage.mutate(file)
+          }}
           onPointerDown={startDrag}
           onPointerMove={moveDrag}
           onPointerUp={() => {
@@ -191,6 +213,11 @@ export function CoverDialog({
           }}
           onKeyDown={nudge}
         >
+          {!image && (
+            <span className={styles.emptyPreview}>
+              <ImagePlus aria-hidden="true" size={28} strokeWidth={1.5} />
+            </span>
+          )}
           {image && chosen && (
             <>
               <img src={image.url} alt="" draggable={false} className={styles.image} style={coverStyle(chosen)} />

@@ -203,6 +203,33 @@ describe('las etiquetas de la cuenta', () => {
     })
   })
 
+  it('como las carpetas: su flecha (o derecha e izquierda) pliega y despliega sus hijas; pulsar la fila abre su ventana', async () => {
+    renderAt('/etiquetas')
+    await screen.findByRole('button', { name: 'Ajustes de lugar/ciudad' })
+    const row = (name: string) =>
+      screen.getByRole('button', { name: `Ajustes de ${name}` }).closest('li') as HTMLElement
+    // Con la flecha: plegada, su hija no se ve
+    await userEvent.click(screen.getByRole('button', { name: 'Plegar lugar' }))
+    expect(screen.queryByRole('button', { name: 'Ajustes de lugar/ciudad' })).toBeNull()
+    await userEvent.click(screen.getByRole('button', { name: 'Desplegar lugar' }))
+    expect(screen.getByRole('button', { name: 'Ajustes de lugar/ciudad' })).toBeDefined()
+    // Con el teclado: izquierda la pliega; derecha la despliega y, otra vez, baja a su hija; desde ella, izquierda sube
+    row('lugar').focus()
+    await userEvent.keyboard('{ArrowLeft}')
+    expect(screen.queryByRole('button', { name: 'Ajustes de lugar/ciudad' })).toBeNull()
+    await userEvent.keyboard('{ArrowRight}{ArrowRight}')
+    expect(document.activeElement).toBe(row('lugar/ciudad'))
+    await userEvent.keyboard('{ArrowLeft}')
+    expect(document.activeElement).toBe(row('lugar'))
+    // Intro (o pulsar su nombre) abre su ventana
+    await userEvent.keyboard('{Enter}')
+    const dialog = await screen.findByRole('dialog', { name: 'Ajustes de lugar' })
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Cerrar' }))
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Ajustes de lugar' })).toBeNull())
+    await userEvent.click(screen.getByRole('button', { name: 'ciudad' }))
+    expect(await screen.findByRole('dialog', { name: 'Ajustes de lugar/ciudad' })).toBeDefined()
+  })
+
   it('al pasar el ratón sale su vista previa, y al irse se quita', async () => {
     renderAt('/etiquetas')
     const row = (await screen.findByRole('button', { name: 'Ajustes de lugar' })).closest('li') as HTMLElement

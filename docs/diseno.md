@@ -125,7 +125,9 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   deje poner donde debe ir y luego poder arrastrarlas»): al crearla se elige «Dentro de» (sin escribir «/»); en la lista
   se arrastran como las páginas del mundo (Enrique, 2026-11-12: «nada de arriba del todo, debe funcionar como las hojas
   de un mundo»): una raya delante o detrás de una fila para ordenarlas a mano, la fila resaltada si va dentro, y
-  llevada a la izquierda sale de su madre; también desde su ventana («Dentro de»). Se llevan sus hijas.
+  llevada a la izquierda sale de su madre; también desde su ventana («Dentro de»). Se llevan sus hijas. **Como las
+  carpetas de Archivos** (Enrique, 2026-11-12): las que tienen hijas llevan su flecha para plegarlas (o derecha e
+  izquierda con el teclado), y pulsar la fila (o Intro) abre su ventana.
 - **El móvil, solo para la jugadora** (Enrique, 2026-11-08: «la vista movil la vamos a descartar por completo excepto
   para la vista del jugador, el master siempre deberá trabajar desde PC»). Lo del máster (el mundo, sus páginas,
   Archivos, Plantillas, Sistemas, la Mesa…) se diseña y se revisa solo en el escritorio; lo de la jugadora (su campaña,
@@ -309,7 +311,7 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   2026-11-12: como «Dentro de» en las etiquetas; «Ninguna», lo más alto); cambiar un archivo es subir otro y borrar el
   viejo: sin «Reemplazar». **Las carpetas llevan color e icono** (Enrique, 2026-11-12), desde su ventana: el color,
   como el de un mundo o una etiqueta; el icono, un emoji como el de una página. El color tiñe el dibujo de la carpeta o,
-  con icono, su fondo; se ve en la lista, en la vista previa y en el selector de archivos. **Se eligen varios** con su casilla (al pasar el ratón; en su columna, a la izquierda de las filas y sin tapar la miniatura) y se
+  con icono, su fondo; se ve en la lista, en la vista previa y en el selector de archivos. **Se eligen varios** con su casilla (al pasar el ratón; en su columna, a la izquierda de las filas y sin tapar la miniatura; con Mayúsculas, el tramo), y lo elegido se lleva a una carpeta («Mover a…»), se etiqueta («Etiquetar») o se borra de una vez (Enrique, 2026-11-12); mientras se elige, su barra ocupa el sitio de la de herramientas y la lista no se mueve. **Con el teclado, como Etiquetas**: una parada del tabulador, flechas para recorrer, abrir y cerrar, Intro abre, Espacio elige y Alt + flechas recolocan; con el foco en una fila sale su vista previa y se
   borran de una vez, con aviso. **Borrar una carpeta se lleva lo que tiene dentro** (sus archivos, a la papelera),
   avisando. **Buscador (por nombre o #etiqueta) y filtro por tipo** siempre a la vista. Se suben varios a la vez (no carpetas enteras), a la carpeta elegida; cada subida sale
   con su progreso y una X para cancelarla, y al acabar ya es su archivo (sin lista de «Subidas»). **Solo imágenes,
@@ -319,7 +321,8 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 - **Donde se elige un archivo, el selector de archivos**: la lista de Archivos en una ventana (las carpetas se despliegan
   al pulsarlas), solo con el tipo que se pide y con su buscador por nombre o #etiqueta; en un mundo, los comunes dentro
   de «Comunes». **La portada** (de un mundo, una campaña o una página, el mismo cuadro) se pone con dos botones con su
-  texto debajo: «Subir imagen» y «Elegir de tus archivos»; sin miniaturas sueltas.
+  texto debajo: «Subir imagen» y «Elegir de tus archivos»; sin miniaturas sueltas. Sin imagen, el hueco de la vista
+  previa sube una al pulsarlo y admite soltar una del escritorio (Enrique, 2026-11-12).
 - **Las ventanas de ajustes, compactas** (Enrique, 2026-11-12: «son tan grandes… que no cabe y hay que hacer
   scroll»): letra algo menor que la de la página, campos de una línea más bajos, poco aire entre ellos y casillas de
   color e icono pequeñas; han de caber enteras en la pantalla de un portátil siempre que se pueda.

@@ -12,6 +12,7 @@ import {
   listCommonFiles,
   listFiles,
   moveFile,
+  moveFiles,
   renameFile,
   restoreFile,
   updateFolder
@@ -326,6 +327,62 @@ export const fileActions = [
       await filesTouched(ctx, place)
     }
     return { files: trashed }
+  }),
+
+  implement(moveFiles, async (ctx, { fileIds, folderIds, folderId }) => {
+    // Todo de un mismo ámbito, el de la carpeta de destino
+    let place: FilePlace | null = null
+    const sameScope = (next: FilePlace) => {
+      if (!place) place = next
+      else if (place.worldId !== next.worldId || place.organizationId !== next.organizationId) {
+        throw new InvalidRequestError('BAD_FOLDER')
+      }
+    }
+    const moving: { fileIds: string[]; folderIds: string[]; names: string[] } = {
+      fileIds: [],
+      folderIds: [],
+      names: []
+    }
+    for (const id of new Set(fileIds)) {
+      const { file, place: at } = await authorizedFile(ctx, 'page.write', id)
+      sameScope(at)
+      if (file.folderId === folderId) continue
+      moving.fileIds.push(file.id)
+      moving.names.push(file.name)
+    }
+    const folderSet = new Set(folderIds)
+    for (const id of folderSet) {
+      const { folder, place: at } = await authorizedFolder(ctx, true, id)
+      sameScope(at)
+      if (folder.parentId === folderId) continue
+      moving.folderIds.push(folder.id)
+      moving.names.push(folder.name)
+    }
+    const scope = place as FilePlace | null
+    if (!scope) throw new InvalidRequestError('BAD_FOLDER')
+    const folder = await folderIn(ctx, scope, folderId)
+    // Ni una carpeta dentro de sí misma ni de una de las suyas
+    for (let at: string | null = folderId; at; at = (await filesRepo.findFolder(ctx.db, at))?.parentId ?? null) {
+      if (folderSet.has(at)) throw new InvalidRequestError('CYCLE')
+    }
+    if (moving.names.length === 0) return { moved: 0 }
+    try {
+      await filesRepo.moveItems(
+        ctx.db,
+        historyContext(
+          ctx,
+          'moveFiles',
+          { names: moving.names, count: moving.names.length, folder: folder?.name ?? null },
+          historyScopeOf(scope)
+        ),
+        { fileIds: moving.fileIds, folderIds: moving.folderIds, folderId }
+      )
+    } catch (error) {
+      if (nameTaken(error)) throw new InvalidRequestError('NAME_TAKEN', 'Ya hay una carpeta con ese nombre ahí')
+      throw error
+    }
+    await filesTouched(ctx, scope)
+    return { moved: moving.names.length }
   }),
 
   implement(moveFile, async (ctx, { fileId, folderId, before, after }) => {

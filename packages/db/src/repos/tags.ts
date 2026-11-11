@@ -167,6 +167,13 @@ export function retag(
   })
 }
 
+/** Deja las etiquetas de varios archivos (cada uno, las suyas), en una sola operación */
+export function setManyFileTags(db: Database, context: OperationContext, changes: { id: string; tags: string[] }[]) {
+  return operation(db, context, async (w) => {
+    for (const { id, tags: next } of changes) await w.update(files, id, { tags: next })
+  })
+}
+
 /** Deja las etiquetas de un archivo */
 export function setFileTags(db: Database, context: OperationContext, fileId: string, next: string[]) {
   return operation(db, context, (w) => w.update(files, fileId, { tags: next }))

@@ -464,6 +464,14 @@ export function summaryOf(
     case 'deleteFiles':
     case 'deleteWorldContent':
       return say(action, { count: Number(details.count ?? 1) })
+    case 'moveFiles':
+      return details.folder
+        ? say('moveFiles', { count: Number(details.count ?? 1), folder: text(details.folder) })
+        : say('moveFilesTop', { count: Number(details.count ?? 1) })
+    case 'addFileTags': {
+      const tags = Array.isArray(details.tags) ? details.tags.map((tag) => `#${String(tag)}`) : []
+      return say('addFileTags', { count: Number(details.count ?? 1), tags: listOf(tags) })
+    }
     default:
       return say('unknown')
   }

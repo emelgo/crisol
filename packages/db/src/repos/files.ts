@@ -88,6 +88,21 @@ export function moveFile(
   })
 }
 
+/**
+ * Mete varios archivos y carpetas de un ámbito en una carpeta (null: lo más alto), detrás y por nombre (sin puesto), en
+ * una sola operación
+ */
+export function moveItems(
+  db: Database,
+  context: OperationContext,
+  items: { fileIds: readonly string[]; folderIds: readonly string[]; folderId: string | null }
+) {
+  return operation(db, context, async (w) => {
+    for (const id of items.fileIds) await w.update(files, id, { folderId: items.folderId, position: null })
+    for (const id of items.folderIds) await w.update(fileFolders, id, { parentId: items.folderId, position: null })
+  })
+}
+
 /** Los archivos de una carpeta de un ámbito (null: los de lo más alto), fuera de la papelera */
 export function filesIn(db: Database, scope: FileScope, folderId: string | null) {
   return db
