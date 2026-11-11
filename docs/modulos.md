@@ -7,6 +7,25 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
+### Para retomar (2026-11-12, madrugada: tanda 5, cristal, Entrar y la portada, terminada en local; falta su visto bueno)
+
+- Rama `revision/tanda-5` (sobre la 4, sin subir), plan en `tasks/tanda-5.md` (7 porciones hechas). Sin migraciones.
+- Hecho: el fondo de ambiente (`components/ambient.tsx`: la portada del mundo, o la del que uno se para en Inicio,
+  como miniatura ya difuminada y con tope de luz; quieto en las transiciones de vista); lo que enmarca de cristal sin
+  backdrop-filter (`--surface-glass*`, rayas `--line-*`, el marco con `--cut-ring`); la página, una hoja casi opaca;
+  ventanas y cuadros opacos por dentro; «Sin desenfoque» en Ajustes («Este aparato», `components/plain.ts`); el
+  respaldo del cristal de la Mesa; Entrar con su recuadro de cristal; la portada nueva (imagen, «Entrar», «Tengo una
+  invitación», tres estampas). Imágenes provisionales: el valle del ocaso (ambiente y portada); Entrar, las 24 de antes
+  hasta que Enrique genere las suyas (`docs/imagenes.md`). Crítica 28/40 y audit 16/20 con sus arreglos.
+- Pruebas: web 817; e2e de portada, accesibilidad, Archivos, mundos, Inicio, sesión, wiki, plantillas, sistemas,
+  etiquetas, hoja e imágenes en verde. `personajes.spec.ts` falla a veces con la máquina cargada (también en `main`: una
+  carrera del creador, apuntada para la revisión de la campaña).
+- **Página de revisión** (tandas 3, 4 y 5): https://claude.ai/artifact/EVbQg5qCzBztdNv3U1WYht. Pruebas en
+  `tasks/probar.md`.
+- **Siguiente**: tanda 6 (sistemas: su espacio, portadas y libros). Primero, el paquete de iconos de fantasía
+  (game-icons.net, CC BY 3.0: comprobar la licencia y apuntarlo en `docs/terceros.md`). Subir a `main` y staging con
+  más tandas.
+
 ### Para retomar (2026-11-12, madrugada: tanda 4, la página y la hoja, terminada en local; falta su visto bueno)
 
 - Rama `revision/tanda-4` (sobre la 3, sin subir), plan en `tasks/tanda-4.md` (las 7 porciones hechas, cada una en su
