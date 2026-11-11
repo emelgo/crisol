@@ -88,13 +88,6 @@
   text-decoration: underline;
 }
 
-/* En el tema claro, un velo claro: el título y el recuadro, del tema, se leen igual */
-:global(:root[data-theme="light"]) .layer::after {
-  background:
-    radial-gradient(ellipse 70% 55% at 50% 32%, rgb(244 244 245 / 0.6), transparent 75%),
-    linear-gradient(to top, rgb(244 244 245 / 0.55) 0%, transparent 55%), rgb(244 244 245 / 0.25);
-}
-
 /* En la Mesa sin escena: dentro de ella (no sobre toda la página) y algo más apagado, para que se lea su aviso; el
    crédito no (Enrique: «quita los títulos»; ni Pixabay ni el dominio público piden citar) */
 .contained {

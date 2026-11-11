@@ -37,7 +37,7 @@ test('las etiquetas de la cuenta: un archivo lleva una, sale en Etiquetas y, ren
   await tag.getByRole('button', { name: 'Guardar' }).click()
   await expect(list.getByRole('listitem')).toHaveText(['sitio1 archivo', 'costa1 archivo', 'Nueva etiqueta'])
 
-  for (const colorScheme of ['light', 'dark'] as const) {
+  for (const colorScheme of ['dark'] as const) {
     await page.emulateMedia({ colorScheme })
     const { violations } = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])

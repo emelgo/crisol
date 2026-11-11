@@ -22,7 +22,7 @@ test('desde plantilla: una facción y un PNJ que nace con sus campos, su texto y
   await openWiki(page, 'Eana')
 
   await fromTemplate(page, 'Facción', 'La Raqisa', async () => {
-    for (const colorScheme of ['light', 'dark'] as const) {
+    for (const colorScheme of ['dark'] as const) {
       await page.emulateMedia({ colorScheme })
       const { violations } = await new AxeBuilder({ page }).include('dialog').withTags(['wcag2a', 'wcag2aa']).analyze()
       const serious = violations.filter((v) => v.impact === 'critical' || v.impact === 'serious')
@@ -55,7 +55,7 @@ test('desde plantilla: una facción y un PNJ que nace con sus campos, su texto y
     .getByRole('complementary', { name: 'Panel de la página' })
     .getByRole('region', { name: 'Miembros' })
   await expect(members.getByRole('link', { name: 'Mamá Gris' })).toBeVisible()
-  for (const colorScheme of ['light', 'dark'] as const) {
+  for (const colorScheme of ['dark'] as const) {
     await page.emulateMedia({ colorScheme })
     const { violations } = await new AxeBuilder({ page }).include('aside').withTags(['wcag2a', 'wcag2aa']).analyze()
     const serious = violations.filter((v) => v.impact === 'critical' || v.impact === 'serious')
@@ -95,7 +95,7 @@ test('«Plantillas» en Mis mundos: una desde cero y otra copiando PNJ', async (
   await page.getByRole('navigation', { name: 'Secciones' }).getByRole('link', { name: 'Plantillas' }).click()
   await expect(page.getByRole('heading', { level: 1, name: 'Plantillas' })).toBeVisible()
   await expect(page.getByRole('list', { name: 'De serie' }).getByRole('link', { name: 'Facción' })).toBeVisible()
-  for (const colorScheme of ['light', 'dark'] as const) {
+  for (const colorScheme of ['dark'] as const) {
     await page.emulateMedia({ colorScheme })
     const { violations } = await new AxeBuilder({ page }).include('main').withTags(['wcag2a', 'wcag2aa']).analyze()
     const serious = violations.filter((v) => v.impact === 'critical' || v.impact === 'serious')
@@ -157,7 +157,7 @@ test('editar una plantilla tuya: «Frente» con un reloj de 8, y una página hec
   await page.keyboard.press('Enter')
   await page.keyboard.type('## La verdad')
   await written
-  for (const colorScheme of ['light', 'dark'] as const) {
+  for (const colorScheme of ['dark'] as const) {
     await page.emulateMedia({ colorScheme })
     const { violations } = await new AxeBuilder({ page }).include('main').withTags(['wcag2a', 'wcag2aa']).analyze()
     const serious = violations.filter((v) => v.impact === 'critical' || v.impact === 'serious')
@@ -200,7 +200,7 @@ test('aplicar una plantilla a una página ya hecha, desde «⋯»: añade lo que
   const dialog = page.getByRole('dialog', { name: 'Aplicar plantilla' })
   await dialog.getByRole('radio', { name: /^Lugar/ }).check()
   await expect(dialog.getByRole('region', { name: 'Lo que añade Lugar' }).getByText('Ganchos')).toBeVisible()
-  for (const colorScheme of ['light', 'dark'] as const) {
+  for (const colorScheme of ['dark'] as const) {
     await page.emulateMedia({ colorScheme })
     const { violations } = await new AxeBuilder({ page }).include('dialog').withTags(['wcag2a', 'wcag2aa']).analyze()
     const serious = violations.filter((v) => v.impact === 'critical' || v.impact === 'serious')

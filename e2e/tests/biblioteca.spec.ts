@@ -52,7 +52,7 @@ test('la biblioteca: un PDF subido se lee solo; buscar una palabra de su página
   await expect(viewer.locator('span[class*="hit"]').first()).toBeAttached()
   await page.screenshot({ path: test.info().outputPath('biblioteca-visor.png'), fullPage: false })
 
-  for (const colorScheme of ['light', 'dark'] as const) {
+  for (const colorScheme of ['dark'] as const) {
     await page.emulateMedia({ colorScheme })
     await settled(page)
     const { violations } = await new AxeBuilder({ page }).include('main').withTags(['wcag2a', 'wcag2aa']).analyze()

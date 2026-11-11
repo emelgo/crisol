@@ -13,7 +13,6 @@ import { PageTitle, useFocusHeading } from '../components/page-title.tsx'
 import { RevealNotices } from '../components/reveal-notices.tsx'
 import { Ribbon, useMasteredWorld } from '../components/ribbon.tsx'
 import { Screen } from '../components/screen.tsx'
-import { ThemeToggle } from '../components/theme-toggle.tsx'
 import { type WindowKind, WindowProvider } from '../components/window.tsx'
 import { DiceProvider } from '../dice/context.tsx'
 import { DicePanel } from '../dice/panel.tsx'
@@ -87,7 +86,6 @@ export function RootLayout() {
           </Link>
           <nav className={styles.nav} aria-label={t('app.accountNav')}>
             <AccountMenu />
-            <ThemeToggle />
           </nav>
         </header>
         <main id="contenido" className={styles.main}>

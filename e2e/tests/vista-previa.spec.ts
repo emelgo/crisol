@@ -114,7 +114,7 @@ test('la vista previa abierta y el incrustado, en los dos temas @a11y', async ({
   await eana(page)
   await body(page).getByRole('link', { name: 'Maela Varn', exact: true }).hover()
   await expect(page.getByRole('dialog', { name: 'Maela Varn' })).toBeVisible()
-  for (const colorScheme of ['light', 'dark'] as const) {
+  for (const colorScheme of ['dark'] as const) {
     await page.emulateMedia({ colorScheme })
     const { violations } = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])

@@ -32,7 +32,7 @@ async function onTabMap(page: Page, x: number, y: number) {
 }
 
 async function axe(page: Page, what: string) {
-  for (const colorScheme of ['light', 'dark'] as const) {
+  for (const colorScheme of ['dark'] as const) {
     await page.emulateMedia({ colorScheme })
     const results = await new AxeBuilder({ page }).analyze()
     expect(results.violations, `${what}, ${colorScheme}: ${JSON.stringify(results.violations, null, 2)}`).toEqual([])

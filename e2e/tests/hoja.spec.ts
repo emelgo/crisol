@@ -101,7 +101,7 @@ test('la página se escribe ya como hoja; el tema, en «⋯» → «Imprimir y P
   await page.getByLabel('Tema', { exact: true }).selectOption({ label: 'Pergamino' })
   await expect(paper).toHaveAttribute('data-theme', 'pergamino')
   await page.keyboard.press('Escape')
-  for (const colorScheme of ['light', 'dark'] as const) {
+  for (const colorScheme of ['dark'] as const) {
     await page.emulateMedia({ colorScheme })
     const { violations } = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])

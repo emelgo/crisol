@@ -1,11 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
 import { Navigate } from '@tanstack/react-router'
-import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { PageTitle } from '../components/page-title.tsx'
-import { currentTheme, setTheme, type Theme } from '../theme.ts'
 import { AiSettings } from './ai-settings.tsx'
 import styles from './settings.module.css'
 
@@ -25,7 +23,6 @@ export function Settings() {
     queryFn: () => api.call('listWorldsWithCampaigns', {}),
     enabled: Boolean(account)
   })
-  const [theme, setThemeState] = useState<Theme>(currentTheme)
   if (pending) return null
   if (!account) return <Navigate to="/entrar" replace />
   const isOwner = organizations.data?.organizations.some((o) => o.role === 'owner') ?? false
@@ -33,27 +30,6 @@ export function Settings() {
   return (
     <section className={styles.page}>
       <PageTitle>{t('settings.title')}</PageTitle>
-      <section aria-labelledby="ajustes-apariencia">
-        <h2 id="ajustes-apariencia">{t('settings.appearance')}</h2>
-        <fieldset className={styles.themes}>
-          <legend>{t('settings.theme')}</legend>
-          {(['light', 'dark'] as const).map((option) => (
-            <label key={option} className={styles.theme} data-theme-option={option}>
-              <input
-                type="radio"
-                name="tema"
-                checked={theme === option}
-                onChange={() => {
-                  setTheme(option)
-                  setThemeState(option)
-                }}
-              />
-              <span aria-hidden="true" className={styles.swatch} />
-              {t(option === 'light' ? 'settings.light' : 'settings.dark')}
-            </label>
-          ))}
-        </fieldset>
-      </section>
       {isOwner ? <AiSettings /> : plays && <AiSettings player />}
     </section>
   )

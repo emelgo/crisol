@@ -329,7 +329,7 @@ test('pegar HTML de fuera: solo entra lo que el esquema conoce', async ({ page }
 test('el editor con sus bloques y sus menús, en los dos temas @a11y', async ({ page }) => {
   await openPage(page)
   const check = async () => {
-    for (const colorScheme of ['light', 'dark'] as const) {
+    for (const colorScheme of ['dark'] as const) {
       await page.emulateMedia({ colorScheme })
       const { violations } = await new AxeBuilder({ page })
         .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])

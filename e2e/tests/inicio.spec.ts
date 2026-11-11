@@ -7,14 +7,12 @@ test('la portada sale en español', async ({ page }) => {
   await expect(page.locator('html')).toHaveAttribute('lang', 'es')
 })
 
-test('el tema elegido se mantiene al recargar', async ({ page }) => {
+test('solo hay tema oscuro, aunque el sistema pida el claro, y nada para cambiarlo', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'light' })
   await page.goto('/')
-  await page.getByRole('button', { name: 'Cambiar a tema oscuro' }).click()
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
-  await page.reload()
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
-  await expect(page.getByRole('button', { name: 'Cambiar a tema claro' })).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1, name: 'Crisol' })).toBeVisible()
+  expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe('rgb(23, 24, 27)')
+  await expect(page.getByRole('button', { name: /tema/i })).toHaveCount(0)
 })
 
 test('una dirección de la app que no existe lo dice y deja volver', async ({ page }) => {

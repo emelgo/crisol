@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import tokens from './tokens.css?raw'
 
-/** Los colores de un bloque de tokens (el claro, :root; el oscuro, :root[data-theme="dark"]) */
+/** Los colores de un bloque de tokens (solo hay uno, :root: el tema oscuro) */
 function colors(selector: string) {
   const block = tokens.slice(tokens.indexOf(`${selector} {`)).split('}')[0] ?? ''
   return Object.fromEntries([...block.matchAll(/--(color-[\w-]+):\s*(#[0-9a-f]{6})/g)].map((m) => [m[1], m[2]]))
@@ -34,10 +34,7 @@ function contrast(a = '', b = '') {
 }
 
 describe('los tokens de color', () => {
-  for (const [theme, selector] of [
-    ['claro', ':root'],
-    ['oscuro', ':root[data-theme="dark"]']
-  ] as const) {
+  for (const [theme, selector] of [['oscuro', ':root']] as const) {
     it(`en el tema ${theme}, el texto, el atenuado y el acento llegan a 4,5:1 con el fondo y la superficie`, () => {
       const c = colors(selector)
       for (const text of ['color-text', 'color-muted', 'color-accent-text', 'color-ai']) {

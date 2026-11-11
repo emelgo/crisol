@@ -31,7 +31,6 @@ export const es = {
     ai: 'IA',
     aiPending_one: ', {{count}} petición esperando',
     aiPending_other: ', {{count}} peticiones esperando',
-    theme: 'Tema',
     dice: 'Dados',
     compendium: 'Compendio',
     inPlay: 'En juego',
@@ -224,7 +223,6 @@ export const es = {
     deleteTitle: '¿Borrar «{{name}}»?',
     deleteWarning: 'Irá a la papelera, con sus campañas y sus páginas, y se podrá recuperar durante {{days}} días.',
     description: 'Descripción',
-    descriptionHint: 'Sale en su tarjeta.',
     color: 'Color',
     customColor: 'Color propio',
     noColor: 'Sin color',
@@ -3375,10 +3373,6 @@ export const es = {
   },
   settings: {
     title: 'Ajustes',
-    appearance: 'Apariencia',
-    theme: 'Tema',
-    light: 'Claro',
-    dark: 'Oscuro',
     aiWaiting_one: '{{count}} petición',
     aiWaiting_other: '{{count}} peticiones'
   },
@@ -3688,12 +3682,6 @@ export const es = {
   load: {
     title: 'No se ha podido cargar',
     retry: 'Reintentar'
-  },
-  theme: {
-    toDark: 'Cambiar a tema oscuro',
-    toLight: 'Cambiar a tema claro',
-    dark: 'Oscuro',
-    light: 'Claro'
   },
   notFound: {
     title: 'Página no encontrada',

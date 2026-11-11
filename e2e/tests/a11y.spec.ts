@@ -25,7 +25,7 @@ import {
 // WCAG 2.1 AA: cero fallos críticos o graves (CONSTRAINTS.md)
 const WCAG = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']
 
-for (const colorScheme of ['light', 'dark'] as const) {
+for (const colorScheme of ['dark'] as const) {
   for (const path of ['/', '/no-existe', '/entrar', '/arranque/no-vale', '/unirse/no-vale']) {
     test(`${path} en tema ${colorScheme === 'light' ? 'claro' : 'oscuro'} @a11y`, async ({ page }) => {
       await page.emulateMedia({ colorScheme })
@@ -61,7 +61,7 @@ test('arranque, perfil, mundos y sus ajustes, campañas, avisos, historial, pape
               ((animation.effect as KeyframeEffect | null)?.target as Element | null)?.closest('[data-fondo]')
           )
       )
-      for (const colorScheme of ['light', 'dark'] as const) {
+      for (const colorScheme of ['dark'] as const) {
         await page.emulateMedia({ colorScheme })
         const { violations } = await new AxeBuilder({ page }).withTags(WCAG).analyze()
         const serious = violations.filter((v) => v.impact === 'critical' || v.impact === 'serious')
@@ -159,7 +159,7 @@ test('el móvil de la jugadora (su campaña, el menú de la llama, sus páginas 
   await ana.getByRole('button', { name: 'Crear la cuenta y entrar' }).click()
   await expect(ana.getByRole('heading', { level: 1, name: 'La Marca', exact: true })).toBeVisible()
   const check = async () => {
-    for (const colorScheme of ['light', 'dark'] as const) {
+    for (const colorScheme of ['dark'] as const) {
       await ana.emulateMedia({ colorScheme })
       const { violations } = await new AxeBuilder({ page: ana }).withTags(WCAG).analyze()
       const serious = violations.filter((v) => v.impact === 'critical' || v.impact === 'serious')
@@ -211,7 +211,7 @@ test('el espacio de la campaña y los libros (ADR-0021), en los dos temas @a11y'
     }
   })
   const check = async (what: string) => {
-    for (const colorScheme of ['light', 'dark'] as const) {
+    for (const colorScheme of ['dark'] as const) {
       await page.emulateMedia({ colorScheme })
       const { violations } = await new AxeBuilder({ page }).withTags(WCAG).analyze()
       const serious = violations.filter((v) => v.impact === 'critical' || v.impact === 'serious')

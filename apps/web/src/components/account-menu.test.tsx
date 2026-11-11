@@ -72,14 +72,13 @@ describe('el menú de la cuenta', () => {
     expect(signOutButton()).toBeNull()
   })
 
-  it('«Ajustes» abre su ventana, con el tema, y la X la cierra; el foco vuelve a la cuenta', async () => {
+  it('«Ajustes» abre su ventana y la X la cierra; el foco vuelve a la cuenta', async () => {
     const router = renderAt('/mundos')
     const nav = await accountNav()
     await userEvent.click(await nav.findByRole('button', { name: 'Enrique' }))
     await userEvent.click(nav.getByRole('button', { name: 'Ajustes' }))
     const settings = await screen.findByRole('dialog', { name: 'Ajustes' })
     expect(within(settings).getByRole('heading', { level: 1, name: 'Ajustes' })).toBeDefined()
-    expect(within(settings).getByRole('group', { name: 'Tema' })).toBeDefined()
     await userEvent.click(within(settings).getByRole('button', { name: 'Cerrar' }))
     expect(screen.queryByRole('dialog', { name: 'Ajustes' })).toBeNull()
     expect(router.state.location.pathname).toBe('/mundos')

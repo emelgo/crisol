@@ -67,7 +67,7 @@ test('una imagen con «/»: se sube, lleva su pie, se abre en grande y sale en e
     .click()
   await expect(body(page).getByRole('figure', { name: 'Archivo: escudo.png' })).toHaveCount(2)
 
-  for (const colorScheme of ['light', 'dark'] as const) {
+  for (const colorScheme of ['dark'] as const) {
     await page.emulateMedia({ colorScheme })
     const { violations } = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
@@ -199,7 +199,7 @@ test('la portada: se sube desde la página, se encuadra con el teclado y se quit
   await expect.poll(current).toMatchObject({ x: 55, y: 50 })
   await expect(banner).toHaveCSS('object-position', '55% 50%')
 
-  for (const colorScheme of ['light', 'dark'] as const) {
+  for (const colorScheme of ['dark'] as const) {
     await page.emulateMedia({ colorScheme })
     const { violations } = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
