@@ -30,12 +30,16 @@ capturas de antes y después (en `out/tanda-4/` y en una página para él al aca
    una columna (lo normal) ni siquiera se emparejaba con su bloque; ahora sí, al escribir (un hueco flotante al principio
    del bloque) y al imprimir (`data-side`); su cabecera, compacta (el lado con un botón de flecha).
 4. [x] **Imprimir o descargar, preguntando cómo**: un cuadro con el aspecto («Con colores», nuevo; «Blanco y negro»;
-   «Pergamino»), el papel, la numeración, el pie y los secretos, y «Imprimir» o «Descargar PDF». Recuerda lo elegido
-   (en la página y como el de siempre para las demás).
+   «Pergamino»), el papel, la numeración, el pie y los secretos, y «Imprimir» o «Descargar PDF». Tras la crítica: el
+   aspecto va con cada impresión (`tema` en la ruta y en el PDF) y se recuerda para la próxima, sin cambiar la página;
+   el papel, la numeración y el pie sí se guardan en ella. Ctrl+P abre el cuadro.
 5. [x] **Un menú común** (flota sin que lo recorte nada, se cierra con Escape o pulsando fuera, devuelve el foco): «⋯»
    lo usa, y «Exportar» pasa a ser un desplegable de verdad, con su flecha, como «Versiones». Hecho:
    `components/menu.tsx` (Menu, MenuItem, MenuGroup) sobre `Floating`; el tema nuevo `color` en el contrato y en la hoja
    impresa (títulos en el rojo y el dorado de la app, más oscuros); «Imprimir y PDF» de «⋯» pasa al cuadro.
 6. [x] **Repaso**: Archivos del mundo (ya con el árbol común) y «Página nueva» / «Pestaña nueva» (tanda 3).
-7. [ ] **Cerrar**: crítica y audit de impeccable, e2e de lo tocado, `tasks/probar.md`, las normas en `docs/diseno.md`,
-   capturas de antes y después para Enrique y «Dónde estamos».
+7. [x] **Cerrar**: crítica (29/40, P1 el teclado en «⋯») y audit de impeccable con sus arreglos, e2e de lo tocado,
+   `tasks/probar.md`, las normas en `docs/diseno.md`, capturas de antes y después (`out/tanda-4/`) y «Dónde estamos».
+   Decisiones sin Enrique, para que las mire: letra hasta 20 px (a una columna, ~97 letras por línea); la nota lateral
+   al 34 % a una columna y al 42 % a dos (flota dentro de su columna); el aspecto de impresión no se guarda en la
+   página.

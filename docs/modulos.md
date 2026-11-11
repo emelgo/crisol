@@ -7,6 +7,24 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
+### Para retomar (2026-11-12, madrugada: tanda 4, la página y la hoja, terminada en local; falta su visto bueno)
+
+- Rama `revision/tanda-4` (sobre la 3, sin subir), plan en `tasks/tanda-4.md` (las 7 porciones hechas, cada una en su
+  commit). Sin migraciones.
+- Hecho: el árbol fijo (pulsar el mundo lleva a su portada) y la columna derecha del alto de la ventana con su
+  desplazamiento (crece al bajar; en la ventana de la Mesa, cada columna con el suyo y la cabecera opaca); la hoja a
+  todo el ancho (letra hasta 20 px) con las rayas de página, de salto y de cambio de columnas de lado a lado y «Página
+  N» de la que se cierra; la nota lateral a su lado con el texto alrededor, igual al imprimir (34 % / 42 %); «Imprimir
+  o descargar» que pregunta el aspecto (con colores, nuevo; blanco y negro; pergamino), que va con cada impresión
+  (`tema`) y se recuerda sin cambiar la página; Ctrl+P lo abre; el menú común (`components/menu.tsx`) con teclado, y
+  «Exportar» como desplegable. Crítica 29/40 (`.impeccable/critique/`) y audit con sus arreglos; los títulos con
+  `aria-level` sin saltos (encontrado de paso). Web 810, e2e de lo tocado en verde (hoja, wiki, exportar, editor,
+  plantillas, versiones, imágenes, tablas del compendio, archivos en páginas).
+- **Página de revisión para Enrique** con las capturas de las tandas 3 y 4 y las decisiones tomadas sin él:
+  https://claude.ai/artifact/EVbQg5qCzBztdNv3U1WYht (capturas en `out/tanda-4/`). Pruebas en `tasks/probar.md`.
+- **Siguiente**: tanda 5 (cristal, Entrar y la portada): empieza por su lienzo; las imágenes de la app (estilo F) las
+  genera Enrique. Subir a `main` y staging con más tandas.
+
 ### Para retomar (2026-11-12, noche: tanda 3, las plantillas como páginas, terminada en local; falta su visto bueno)
 
 - Rama `revision/tanda-3`, plan en `tasks/tanda-3.md` (las 8 porciones hechas, cada una en su commit). ADR-0024 con sus

@@ -138,12 +138,13 @@ Plan: `tasks/plan-revision.md`. Una tanda cada vez: se enseña en local, Enrique
 
 ## Tanda 4 — El mundo: la página y la hoja
 
-- [ ] La columna izquierda no se esconde.
-- [ ] El panel derecho, fijo y con su desplazamiento (también en la ventana de la Mesa).
-- [ ] Ancho del texto, rayas de salto de lado a lado y «Página N» de la que se cierra.
-- [ ] Nota lateral izquierda / derecha.
-- [ ] Descargar e imprimir: con colores, blanco y negro o pergamino.
-- [ ] Menú común; «Exportar» y «⋯» con él.
+- [x] La columna izquierda no se esconde.
+- [x] El panel derecho, fijo y con su desplazamiento (también en la ventana de la Mesa).
+- [x] Ancho del texto, rayas de salto de lado a lado y «Página N» de la que se cierra.
+- [x] Nota lateral izquierda / derecha.
+- [x] Descargar e imprimir: con colores, blanco y negro o pergamino.
+- [x] Menú común; «Exportar» y «⋯» con él.
+- [x] Crítica (29/40) y audit de impeccable, con sus arreglos (plan y decisiones en `tasks/tanda-4.md`).
 
 ## Tanda 5 — Cristal, Entrar y la portada
 
@@ -188,12 +189,12 @@ Lo que sale sin estar en la lista: se avisa a Enrique y se arregla en su tanda.
 - [ ] `docs/diseno.md` dice que la barra derecha de la Mesa es opaca y es de cristal (tanda 5).
 - [x] Tutorial de Inicio: «Nueva campaña» colado entre Historial y Papelera (tanda 1): ahora va tras «Nuevo mundo».
 - [ ] Menú móvil fuera de un mundo: solo «Mundos» (con la vista de la jugadora).
-- [ ] «Página N» no sale tras un salto a mano; la nota lateral, siempre a la derecha al imprimir (tanda 4).
+- [x] «Página N» no sale tras un salto a mano; la nota lateral, siempre a la derecha al imprimir (tanda 4).
 - [x] «Duplicar» se deja portada, hoja y pestañas (tanda 3: `copyPage`).
 - [ ] Las acciones de una entrada del compendio no se tiran (tanda 7).
 - [ ] Mapas: regiones, rutas y textos se guardan y no se pintan (módulo 9).
 - [ ] Reemplazar un sistema subiendo otro: está en el servidor y no en la app (tanda 6).
-- [ ] No hay menú común (tanda 4).
+- [x] No hay menú común (tanda 4).
 - [x] Con 280 letras, la descripción estiraba la tarjeta hasta ocho líneas: en la tarjeta, tres como mucho (entera, en
   el panel de al lado); su pista ya no dice «una línea» (tanda 1).
 - [x] «Personaje nuevo» (en la campaña) compartía el recuadro de las plantillas: también pasa a línea continua (tanda
@@ -210,7 +211,18 @@ Lo que sale sin estar en la lista: se avisa a Enrique y se arregla en su tanda.
   ahora «⋯» → «Duplicar» en el editor (tanda 3).
 - [ ] Los guiones locales de `e2e/.revision/` (fuera de git) siembran con las de serie (`template: 'pnj'`): si se usan,
   que creen antes sus plantillas.
-- [ ] El editor pinta «##» como h3 a propósito (el título es el h1): quien escriba sus apartados con «##» deja un hueco
-  de títulos para los lectores de pantalla (lo vio el detector; con la revisión de la wiki, tanda 4).
+- [x] El editor pinta «##» como h3 a propósito (el título es el h1): quien escriba sus apartados con «##» deja un hueco
+  de títulos para los lectores de pantalla (tanda 4: cada título lleva su `aria-level` sin saltos; a la vista, igual).
+- [x] A una columna, la nota lateral ni se emparejaba con su bloque (iba a lo ancho); y la app y la impresión emparejaban
+  distinto una nota seguida de un cambio de columnas (tanda 4).
+- [x] Algunas líneas del texto empezaban con un espacio (el `break-spaces` que trae el editor): ahora `pre-wrap`
+  (tanda 4, crítica).
+- [x] «⋯» no se alcanzaba con el teclado al pasar al menú flotante: el foco entra, las flechas recorren y Tab sale
+  (tanda 4, crítica).
+- [x] Imprimir una vez en «Pergamino» dejaba la página en esa letra (también para los jugadores) y una entrada en el
+  Historial: el aspecto va ahora con cada impresión (tanda 4, crítica).
+- [x] En la ventana de una página de la Mesa, la cabecera compacta dejaba leer el texto de detrás: opaca (tanda 4).
+- [x] Las rayas de página estaban a 2,4:1 con el fondo y «Incluir secretos» en un rojo a 3:1: a 3:1 y en el rojo
+  legible (tanda 4, audit).
 - [ ] La hoja móvil de una etiqueta (`tags.tsx`) usa clases que no existen en el CSS (`files.sheet`…): ya fallaba
   antes; el móvil es solo de la jugadora y Etiquetas es del máster, así que es menor.
