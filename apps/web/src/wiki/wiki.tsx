@@ -635,6 +635,16 @@ const LEADING_EMOJI = /^(\p{Extended_Pictographic}(?:\p{Emoji_Modifier}|\uFE0F|\
 function MoreActions({ page, items }: { page: Page; items?: ReactNode }) {
   const { t } = useTranslation()
   const [printing, setPrinting] = useState(false)
+  // Ctrl+P (⌘P) imprime la hoja, no la pantalla: abre el cuadro con lo último elegido (y con Intro, se imprime)
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (!(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey || event.key.toLowerCase() !== 'p') return
+      event.preventDefault()
+      setPrinting(true)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
   return (
     <div className={styles.moreMenu}>
       <Menu label={t('wiki.moreActions')} icon={<Ellipsis aria-hidden="true" size={18} />}>

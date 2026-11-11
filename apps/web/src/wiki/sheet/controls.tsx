@@ -205,7 +205,7 @@ export function PrintDialog({ page, onClose }: { page: Page; onClose: () => void
             />
             {t('sheet.footer')}
           </label>
-          <label className={styles.check}>
+          <label className={`${styles.check} ${styles.secrets}`}>
             <input type="checkbox" checked={secrets} onChange={(e) => setSecrets(e.currentTarget.checked)} />
             {t('sheet.includeSecrets')}
           </label>

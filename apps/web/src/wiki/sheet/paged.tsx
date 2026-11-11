@@ -280,7 +280,10 @@ function layOut(
    */
   const placeBreak = (id: string, y: number, closes: number | null) => {
     const index = Number(id)
-    const label = closes === null ? '' : `;--sheet-page:${JSON.stringify(frame.pageLabel(closes))};--break-label:none`
+    const label =
+      closes === null
+        ? ''
+        : `;--sheet-page:${JSON.stringify(frame.pageLabel(closes))};--break-label-position:absolute;--break-label-size:1px;--break-label-clip:inset(50%)`
     placed[index] =
       `position:absolute;left:${-frame.bleed}px;top:${y}px;width:${g.content + 2 * frame.bleed}px;margin-inline:0;box-sizing:border-box${label}`
     ends[index] = { x: 0, y: y + (heights[index] ?? 0), width: g.content }

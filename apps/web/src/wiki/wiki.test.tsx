@@ -118,6 +118,14 @@ describe('el árbol de la wiki', () => {
     expect(localStorage.getItem('crisol.aspecto-impresion')).toBe('pergamino')
   })
 
+  it('Ctrl+P en una página abre «Imprimir o descargar» (no imprime la pantalla)', async () => {
+    localStorage.setItem('crisol.recorridos.enrique@crisol.test', JSON.stringify({ seen: ['mundo'] }))
+    renderAt(`/mundos/${WORLD.id}/wiki/${ids.people}`, wikiApi())
+    await item('Personajes')
+    await userEvent.keyboard('{Control>}p{/Control}')
+    expect(await screen.findByRole('dialog', { name: 'Imprimir o descargar' })).toBeTruthy()
+  })
+
   it('pulsar el mundo en la barra no recoge el árbol: está fijo (lleva a su portada)', async () => {
     localStorage.setItem('crisol.recorridos.enrique@crisol.test', JSON.stringify({ seen: ['mundo'] }))
     const router = renderAt(`/mundos/${WORLD.id}/wiki/${ids.people}`)

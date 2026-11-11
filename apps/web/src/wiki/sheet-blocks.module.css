@@ -28,8 +28,14 @@
   font-weight: 700;
 }
 
+/* En la hoja, el salto a mano dice la página que cierra (::after); su nombre sigue para el lector de pantalla */
 .break .breakLabel {
-  display: var(--break-label, inline);
+  position: var(--break-label-position, static);
+  inline-size: var(--break-label-size, auto);
+  block-size: var(--break-label-size, auto);
+  overflow: hidden;
+  clip-path: var(--break-label-clip, none);
+  white-space: nowrap;
   font-size: 0.6875rem;
   font-weight: 600;
   letter-spacing: 0.02em;

@@ -125,7 +125,7 @@ describe('la hoja al escribir', () => {
   it('un salto puesto a mano dice también la página que cierra, y va de lado a lado', async () => {
     render(<Harness content={[p('Uno'), pageBreak, p('Dos')]} settings={SHEET} />)
     await waitFor(() => expect(placed()[1]).toContain('--sheet-page:"Página 1"'))
-    expect(placed()[1]).toContain('--break-label:none')
+    expect(placed()[1]).toContain('--break-label-clip:inset(50%)')
     expect(at(placed()[1] ?? '').width).toBe(682)
   })
 
