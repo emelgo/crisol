@@ -29,11 +29,13 @@ capturas de antes y después (en `out/tanda-4/` y en una página para él al aca
    el texto siguiente alrededor, igual al escribir que al imprimir (hoy al imprimir va siempre a la derecha). Hecho: a
    una columna (lo normal) ni siquiera se emparejaba con su bloque; ahora sí, al escribir (un hueco flotante al principio
    del bloque) y al imprimir (`data-side`); su cabecera, compacta (el lado con un botón de flecha).
-4. [ ] **Imprimir o descargar, preguntando cómo**: un cuadro con el aspecto («Con colores», nuevo; «Blanco y negro»;
+4. [x] **Imprimir o descargar, preguntando cómo**: un cuadro con el aspecto («Con colores», nuevo; «Blanco y negro»;
    «Pergamino»), el papel, la numeración, el pie y los secretos, y «Imprimir» o «Descargar PDF». Recuerda lo elegido
    (en la página y como el de siempre para las demás).
-5. [ ] **Un menú común** (flota sin que lo recorte nada, se cierra con Escape o pulsando fuera, devuelve el foco): «⋯»
-   lo usa, y «Exportar» pasa a ser un desplegable de verdad, con su flecha, como «Versiones».
+5. [x] **Un menú común** (flota sin que lo recorte nada, se cierra con Escape o pulsando fuera, devuelve el foco): «⋯»
+   lo usa, y «Exportar» pasa a ser un desplegable de verdad, con su flecha, como «Versiones». Hecho:
+   `components/menu.tsx` (Menu, MenuItem, MenuGroup) sobre `Floating`; el tema nuevo `color` en el contrato y en la hoja
+   impresa (títulos en el rojo y el dorado de la app, más oscuros); «Imprimir y PDF» de «⋯» pasa al cuadro.
 6. [ ] **Repaso**: Archivos del mundo (ya con el árbol común) y «Página nueva» / «Pestaña nueva» (tanda 3).
 7. [ ] **Cerrar**: crítica y audit de impeccable, e2e de lo tocado, `tasks/probar.md`, las normas en `docs/diseno.md`,
    capturas de antes y después para Enrique y «Dónde estamos».

@@ -5,13 +5,13 @@
 import type { ExportInput, Page } from '@crisol/contracts'
 import { useMutation } from '@tanstack/react-query'
 import { Download } from 'lucide-react'
-import { useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { useAnnounce } from '../components/announcer.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
 import list from '../components/list.module.css'
+import { MenuGroup, MenuItem } from '../components/menu.tsx'
 import { saveFile as save } from '../components/save-file.ts'
 
 export function useExport() {
@@ -29,58 +29,35 @@ export function useExport() {
   })
 }
 
-/** «Exportar» de una página: con subpáginas, se elige si solas o con ellas */
+/**
+ * «Exportar» de una página, en el menú común: con subpáginas, un desplegable de verdad (con su flecha) para elegir si
+ * sola o con ellas; sin ellas, una fila que exporta ya
+ */
 export function ExportPage({ page }: { page: Page }) {
   const { t } = useTranslation()
   const run = useExport()
-  const [open, setOpen] = useState(false)
-  const id = useId()
+  const exportIt = (children: boolean) =>
+    run.mutate({ worldId: page.worldId, pageId: page.id, ...(children ? { children: true } : {}) })
   if (!page.hasChildren) {
     return (
-      <BusyButton
-        className={list.secondary}
-        busy={run.isPending}
-        onClick={() => run.mutate({ worldId: page.worldId, pageId: page.id })}
-      >
+      <MenuItem disabled={run.isPending} onClick={() => exportIt(false)}>
+        <Download aria-hidden="true" size={15} />
         {t('export.page')}
-      </BusyButton>
+      </MenuItem>
     )
   }
   return (
-    <>
-      <button
-        type="button"
-        className={list.secondary}
-        aria-expanded={open}
-        aria-controls={id}
-        onClick={() => setOpen(!open)}
-      >
-        {t('export.page')}
-      </button>
-      {open && (
-        // biome-ignore lint/a11y/useSemanticElements: dos botones juntos, no un grupo de campos de un formulario
-        <div id={id} role="group" aria-label={t('export.page')} className={list.actions}>
-          <BusyButton
-            className={list.secondary}
-            busy={run.isPending}
-            onClick={() => run.mutate({ worldId: page.worldId, pageId: page.id })}
-          >
-            {t('export.only')}
-          </BusyButton>
-          <BusyButton
-            className={list.secondary}
-            busy={run.isPending}
-            onClick={() => run.mutate({ worldId: page.worldId, pageId: page.id, children: true })}
-          >
-            {t('export.withChildren')}
-          </BusyButton>
-        </div>
-      )}
-    </>
+    <MenuGroup label={t('export.page')} icon={<Download aria-hidden="true" size={15} />}>
+      <MenuItem disabled={run.isPending} onClick={() => exportIt(false)}>
+        {t('export.only')}
+      </MenuItem>
+      <MenuItem disabled={run.isPending} onClick={() => exportIt(true)}>
+        {t('export.withChildren')}
+      </MenuItem>
+    </MenuGroup>
   )
 }
 
-/** «Exportar la wiki»: el mundo entero */
 /** «Exportar todas las páginas»: un icono en la esquina de la ficha del árbol */
 export function ExportWiki({ worldId, className }: { worldId: string; className?: string | undefined }) {
   const { t } = useTranslation()

@@ -78,7 +78,7 @@ test('lo que llega en Markdown: nota lateral a la izquierda, a lo ancho y salto 
   await expect(body(page).getByText('Todo a lo ancho.')).toBeVisible()
 })
 
-test('la página se escribe ya como hoja; el tema, en «⋯» → «Imprimir y PDF»; al imprimir, pagina sin partir bloques', async ({
+test('la página se escribe ya como hoja; «⋯» → «Imprimir o descargar» pregunta el aspecto; al imprimir, pagina sin partir bloques', async ({
   page
 }) => {
   test.slow()
@@ -90,19 +90,26 @@ test('la página se escribe ya como hoja; el tema, en «⋯» → «Imprimir y P
   // El papel, sin botón: toda página lo es (el texto encima; la cabecera, como en Everlore, va fuera)
   const paper = page.locator('[data-sheet-paper]')
   await expect(paper).toHaveAttribute('data-theme', 'neutro')
-  // Con varias páginas, donde empieza cada una, su marca
-  await expect(page.getByText('Página 2', { exact: true })).toBeAttached()
+  // Con varias páginas, donde acaba cada una, su marca (con la que se cierra)
+  await expect(page.getByText('Página 1', { exact: true })).toBeAttached()
   await expect(page.getByRole('heading', { level: 1, name: 'El Dragón Rojo' })).toBeVisible()
   await paper.getByText('Fin.').click()
   await page.keyboard.press('End')
   await page.keyboard.type(' Y más allá.')
   await expect(body(page)).toContainText('Fin. Y más allá.')
-  // El tema, en «⋯» → «Imprimir y PDF»
+  // «⋯» → «Imprimir o descargar»: un cuadro que pregunta el aspecto (de entrada, con colores)
   await page.getByRole('button', { name: 'Más acciones' }).click()
-  await page.getByRole('button', { name: 'Imprimir y PDF' }).click()
-  await page.getByLabel('Tema', { exact: true }).selectOption({ label: 'Pergamino' })
+  await page.getByRole('button', { name: 'Imprimir o descargar…' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Imprimir o descargar' })
+  await expect(dialog.getByRole('radio', { name: 'Con colores' })).toBeChecked()
+  await dialog.getByRole('radio', { name: 'Pergamino' }).check()
+  const saved = page.waitForResponse((r) => r.url().endsWith('/api/actions/updatePage'))
+  const download = page.waitForEvent('download')
+  await dialog.getByRole('button', { name: 'Descargar PDF' }).click()
+  await saved
+  await download
+  // Se guarda en la página: se escribe ya con la letra del pergamino
   await expect(paper).toHaveAttribute('data-theme', 'pergamino')
-  await page.keyboard.press('Escape')
   for (const colorScheme of ['dark'] as const) {
     await page.emulateMedia({ colorScheme })
     const { violations } = await new AxeBuilder({ page })

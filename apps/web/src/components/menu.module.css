@@ -1,0 +1,130 @@
+/* El menú común: su panel flota junto al botón (Floating lo coloca, fijo en la ventana), con las filas una debajo de
+   otra; los grupos se despliegan en su sitio con su flecha */
+.panel {
+  position: fixed;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  /* Ancho fijo: lo que se despliega dentro (las versiones) no lo deforma */
+  inline-size: 18rem;
+  max-inline-size: min(22rem, calc(100vw - 2rem));
+  max-block-size: calc(100dvh - 2rem);
+  overflow-y: auto;
+  padding: var(--space-2);
+  border: 1px solid var(--color-frame);
+  border-radius: 6px;
+  background: var(--color-surface);
+  box-shadow: 0 0.75rem 2rem rgb(0 0 0 / 0.35);
+  scrollbar-width: thin;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  inline-size: 100%;
+  min-block-size: 2.25rem;
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.875rem;
+  text-align: start;
+  cursor: pointer;
+}
+
+.item:hover,
+.item[aria-expanded="true"] {
+  background: var(--color-raised);
+}
+
+.item:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
+}
+
+.item:disabled {
+  color: var(--color-muted);
+  cursor: default;
+}
+
+.item > svg {
+  flex: none;
+  color: var(--color-muted);
+}
+
+/* Como los submenús del árbol: al abrir, la flecha gira hacia abajo */
+.chevron {
+  margin-inline-start: auto;
+  transition: transform 150ms ease-out;
+}
+
+.item[aria-expanded="true"] > .chevron {
+  transform: rotate(90deg);
+}
+
+.sub {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  padding-block: 0.125rem;
+  padding-inline-start: var(--space-4);
+}
+
+/* «Versiones» (una sección que se despliega igual): su título es una fila más, con su flecha */
+.panel section[aria-labelledby] {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  clip-path: none;
+}
+
+.panel section[aria-labelledby]::before {
+  display: none;
+}
+
+.panel section[aria-labelledby] > h2 {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font: inherit;
+}
+
+.panel section[aria-labelledby] > h2 > button {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  inline-size: 100%;
+  min-block-size: 2.25rem;
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  cursor: pointer;
+}
+
+.panel section[aria-labelledby] > h2 > button:hover,
+.panel section[aria-labelledby] > h2 > button[aria-expanded="true"] {
+  background: var(--color-raised);
+}
+
+.panel section[aria-labelledby] > h2 > button:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chevron {
+    transition: none;
+  }
+}

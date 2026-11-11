@@ -81,7 +81,9 @@ export type PageCover = z.infer<typeof pageCover>
  */
 export const sheetSettings = z.object({
   paper: z.enum(['a4', 'letter']),
-  theme: z.enum(['pergamino', 'neutro']),
+  theme: z
+    .enum(['color', 'neutro', 'pergamino'])
+    .describe('Al imprimir: con los colores de la app, en blanco y negro (neutro) o en pergamino'),
   numbers: z.boolean(),
   firstNumber: z.number().int().min(1).max(999),
   footer: z.boolean(),

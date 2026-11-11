@@ -1,7 +1,7 @@
 import type { Page, PageTabView } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getRouteApi, Link, Navigate, useNavigate, useRouter } from '@tanstack/react-router'
-import { Ellipsis, FileText, House, LayoutTemplate, ListFilter, Lock, LockOpen, Plus } from 'lucide-react'
+import { Ellipsis, FileText, House, LayoutTemplate, ListFilter, Lock, LockOpen, Plus, Printer } from 'lucide-react'
 import {
   type CSSProperties,
   type ReactNode,
@@ -22,6 +22,7 @@ import { Loading } from '../components/brand.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
 import list from '../components/list.module.css'
 import { failed, LoadError } from '../components/load-error.tsx'
+import { Menu, MenuItem } from '../components/menu.tsx'
 import { headingMayTakeFocus, PageTitle, useHeadingFocusRequest } from '../components/page-title.tsx'
 import { itemTransition } from '../components/world-transition.ts'
 import { WorldBanner } from '../routes/world-card.tsx'
@@ -43,7 +44,7 @@ import { PageProperties, type PropertyAdder } from './properties.tsx'
 import { QuickSwitcher } from './quick-switcher.tsx'
 import { PageRevealButton } from './reveal.tsx'
 import { SceneMain, SceneSide, SceneTabProvider } from './scene/scene-tab.tsx'
-import { SheetMenu, SheetPaper } from './sheet/controls.tsx'
+import { PrintDialog, SheetPaper } from './sheet/controls.tsx'
 import { TableTab } from './table/table-tab.tsx'
 import { PageTabs, usePageTabs, useTabTarget } from './tabs/page-tabs.tsx'
 import { PageTree } from './tree.tsx'
@@ -612,54 +613,35 @@ function InlineTitle({
 const LEADING_EMOJI = /^(\p{Extended_Pictographic}(?:\p{Emoji_Modifier}|\uFE0F|\u200D\p{Extended_Pictographic})*)\s*/u
 
 /**
- * «Más»: lo que se hace de vez en cuando con la página, fuera de la vista hasta que se pide. items: lo de una plantilla,
- * en lugar de exportar
+ * «Más»: lo que se hace de vez en cuando con la página, en el menú común (flota junto a su botón; Escape o pulsar fuera
+ * lo cierran): imprimir o descargar (un cuadro que pregunta cómo), exportar y sus versiones. items: lo de una
+ * plantilla, en lugar de exportar
  */
 function MoreActions({ page, items }: { page: Page; items?: ReactNode }) {
   const { t } = useTranslation()
-  const [open, setOpen] = useState(false)
-  const root = useRef<HTMLDivElement>(null)
-  const trigger = useRef<HTMLButtonElement | null>(null)
-  const panelId = useId()
-  // Abierto: pulsar fuera lo cierra; Escape también, y el foco vuelve a «Más»
-  useEffect(() => {
-    if (!open) return
-    const outside = (event: Event) => {
-      if (!root.current?.contains(event.target as Node)) setOpen(false)
-    }
-    const onEscape = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return
-      setOpen(false)
-      trigger.current?.focus()
-    }
-    document.addEventListener('pointerdown', outside)
-    document.addEventListener('keydown', onEscape)
-    return () => {
-      document.removeEventListener('pointerdown', outside)
-      document.removeEventListener('keydown', onEscape)
-    }
-  }, [open])
+  const [printing, setPrinting] = useState(false)
   return (
-    <div ref={root} className={styles.moreMenu}>
-      <button
-        type="button"
-        ref={trigger}
-        aria-label={t('wiki.moreActions')}
-        title={t('wiki.moreActions')}
-        aria-expanded={open}
-        aria-controls={panelId}
-        onClick={() => setOpen((value) => !value)}
-      >
-        <Ellipsis aria-hidden="true" size={18} />
-      </button>
-      {open && (
-        <div id={panelId} className={styles.morePanel}>
-          <SheetMenu page={page} />
-          {/* Lo demás (subpágina, renombrar, mover, borrar…), con el botón derecho en el árbol */}
-          {items ?? <ExportPage page={page} />}
-          <Versions page={page} />
-        </div>
-      )}
+    <div className={styles.moreMenu}>
+      <Menu label={t('wiki.moreActions')} icon={<Ellipsis aria-hidden="true" size={18} />}>
+        {(close) => (
+          <>
+            <MenuItem
+              aria-haspopup="dialog"
+              onClick={() => {
+                close()
+                setPrinting(true)
+              }}
+            >
+              <Printer aria-hidden="true" size={15} />
+              {t('sheet.printOrDownload')}
+            </MenuItem>
+            {/* Lo demás (subpágina, renombrar, mover, borrar…), con el botón derecho en el árbol */}
+            {items ?? <ExportPage page={page} />}
+            <Versions page={page} />
+          </>
+        )}
+      </Menu>
+      {printing && <PrintDialog page={page} onClose={() => setPrinting(false)} />}
     </div>
   )
 }

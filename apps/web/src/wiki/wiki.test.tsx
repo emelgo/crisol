@@ -78,6 +78,45 @@ describe('el árbol de la wiki', () => {
     expect(items[0]?.hasAttribute('aria-expanded')).toBe(false)
   })
 
+  it('«⋯» flota junto a su botón; Escape lo cierra y el foco vuelve; «Exportar» con subpáginas se despliega', async () => {
+    localStorage.setItem('crisol.recorridos.enrique@crisol.test', JSON.stringify({ seen: ['mundo'] }))
+    const api = wikiApi()
+    // Lugares, que tiene subpáginas
+    renderAt(`/mundos/${WORLD.id}/wiki/${ids.places}`, api)
+    await item('Lugares')
+    const more = screen.getByRole('button', { name: 'Más acciones' })
+    await userEvent.click(more)
+    expect(more.getAttribute('aria-expanded')).toBe('true')
+    await userEvent.keyboard('{Escape}')
+    expect(more.getAttribute('aria-expanded')).toBe('false')
+    expect(document.activeElement).toBe(more)
+    // «Exportar», un desplegable de verdad: su flecha, y dentro las dos formas
+    await userEvent.click(more)
+    const exporting = screen.getByRole('button', { name: 'Exportar' })
+    expect(exporting.getAttribute('aria-expanded')).toBe('false')
+    await userEvent.click(exporting)
+    await userEvent.click(screen.getByRole('button', { name: 'Con sus subpáginas' }))
+    await waitFor(() => expect(api.calls).toContain('exportWiki'))
+  })
+
+  it('«Imprimir o descargar» pregunta cómo: con colores, en blanco y negro o en pergamino; lo guarda y lo recuerda', async () => {
+    localStorage.setItem('crisol.recorridos.enrique@crisol.test', JSON.stringify({ seen: ['mundo'] }))
+    localStorage.removeItem('crisol.aspecto-impresion')
+    const api = wikiApi()
+    renderAt(`/mundos/${WORLD.id}/wiki/${ids.people}`, api)
+    await item('Personajes')
+    await userEvent.click(screen.getByRole('button', { name: 'Más acciones' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Imprimir o descargar…' }))
+    const dialog = within(await screen.findByRole('dialog', { name: 'Imprimir o descargar' }))
+    // De entrada, con colores
+    expect(dialog.getByRole('radio', { name: 'Con colores' })).toHaveProperty('checked', true)
+    await userEvent.click(dialog.getByRole('radio', { name: 'Pergamino' }))
+    await userEvent.click(dialog.getByRole('button', { name: 'Descargar PDF' }))
+    await waitFor(() => expect(api.calls).toContain('downloadPdf'))
+    expect((await api.client.call('getPage', { pageId: ids.people })).sheet?.theme).toBe('pergamino')
+    expect(localStorage.getItem('crisol.aspecto-impresion')).toBe('pergamino')
+  })
+
   it('pulsar el mundo en la barra no recoge el árbol: está fijo (lleva a su portada)', async () => {
     localStorage.setItem('crisol.recorridos.enrique@crisol.test', JSON.stringify({ seen: ['mundo'] }))
     const router = renderAt(`/mundos/${WORLD.id}/wiki/${ids.people}`)
