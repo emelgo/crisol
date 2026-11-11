@@ -51,5 +51,9 @@ Rama `revision/tanda-3`. Cada porción, con sus pruebas, en su commit; las casil
    copia. Hecho: `wiki/tabs/kinds.tsx` (TAB_KINDS, KindChoices, StepBack); acción `addTemplateTabs` (copia las
    elegidas detrás de las de la página, sin enlaces, en una operación); el selector de plantilla va por carpetas, con
    sus pestañas y cuántos campos trae. La IA sigue pudiendo poner una plantilla a una página hecha (`poner_plantilla`).
-8. **Cerrar**: MCP de plantillas al día (sus instrucciones), e2e, impeccable (critique y audit), `tasks/probar.md`,
-   «Dónde estamos».
+8. [x] **Cerrar**: MCP de plantillas al día (sus instrucciones), e2e, impeccable (critique y audit), `tasks/probar.md`,
+   «Dónde estamos». Hecho: MCP (`crear_carpeta_plantillas`, `cambiar_carpeta_plantillas`, `borrar_carpeta_plantillas`,
+   `mover_plantilla`, `pestanas_desde_plantilla` e instrucciones); e2e de plantillas rehecha (5) y las cercanas en
+   verde; crítica 28/40 con sus arreglos y lo que eligió Enrique (bloques plegados con seis puntos, marca con color,
+   campos como subtítulo); audit con el asa a 24 px y el movimiento reducido en las transiciones; «Duplicar» en el
+   editor.
