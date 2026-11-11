@@ -547,6 +547,13 @@
       "when": 1794411642231,
       "tag": "0077_plantillas_de_serie_propias",
       "breakpoints": true
+    },
+    {
+      "idx": 78,
+      "version": "7",
+      "when": 1794413231527,
+      "tag": "0078_mundo_de_plantillas",
+      "breakpoints": true
     }
   ]
 }

@@ -9,7 +9,7 @@ import { Search } from 'lucide-react'
 import { useEffect, useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
-import { TEMPLATE_ICON } from './icons.tsx'
+import { TemplateIcon } from './icons.tsx'
 import styles from './picker.module.css'
 
 /** Las plantillas que se pueden usar */
@@ -56,7 +56,6 @@ export function TemplatePicker({ value, onChange }: { value: string | null; onCh
               {group.label}
             </p>
             {group.items.map((template) => {
-              const Icon = TEMPLATE_ICON[template.icon]
               return (
                 <label key={template.id} className={styles.row}>
                   <input
@@ -67,7 +66,7 @@ export function TemplatePicker({ value, onChange }: { value: string | null; onCh
                     onChange={() => onChange(template.id)}
                   />
                   <span className={styles.icon} aria-hidden="true">
-                    <Icon size={16} />
+                    <TemplateIcon icon={template.icon} size={16} />
                   </span>
                   <span className={styles.text}>
                     <span className={styles.name}>{template.name}</span>

@@ -56,7 +56,7 @@ describe('la pantalla «Plantillas»', () => {
     const dialog = within(screen.getByRole('dialog', { name: 'Plantilla nueva' }))
     expect(dialog.getByRole('radio', { name: 'Desde cero' })).toHaveProperty('checked', true)
     await userEvent.type(dialog.getByLabelText('Nombre'), 'Frente')
-    await userEvent.click(dialog.getByRole('radio', { name: 'Reloj de arena' }))
+    await userEvent.click(dialog.getByRole('radio', { name: '🐉' }))
     await userEvent.click(dialog.getByRole('button', { name: 'Crear la plantilla' }))
     await waitFor(() => expect(router.state.location.pathname).toMatch(/^\/plantillas\/[0-9a-f-]{36}$/))
     expect(await screen.findByRole('heading', { level: 1, name: 'Frente' })).toBeDefined()

@@ -40,23 +40,34 @@ export interface PageCopy {
   version?: { fingerprint: string; documents: DocumentState[] }
   /** Nace oculta a los jugadores (bajo una página que alguna campaña conoce) */
   hidden: boolean
+  /** Adónde (otro mundo o rama: crear desde una plantilla); sin ello, justo detrás de la original */
+  place?: { worldId: string; parentId: string | null; before?: string; after?: string }
+  /** Lo que cambia en su fila (al crear desde una plantilla: su plantilla y su linaje) */
+  overrides?: { template?: string | null; templateLine?: string[]; icon?: string | null; panel?: unknown[] }
+  /** Lo que apunta a páginas concretas (pines, filas de tabla, campos): se queda (duplicar) o se suelta (plantilla) */
+  links?: 'keep' | 'drop'
+  /** Algo más en la misma operación, con la página ya hecha (la ficha de una plantilla) */
+  alongside?: (w: Writer, page: { id: string }) => Promise<void>
 }
 
 type TabRow = typeof pageTabs.$inferSelect
 /** Los tipos de pestaña (los de su columna): un tipo nuevo tiene que decir cómo se copia */
 type TabKind = TabRow['kind']
 
-/** Cómo se copia lo de cada tipo de pestaña: de la original (from) a la nueva (to). tabIds, de las de la página */
+/**
+ * Cómo se copia lo de cada tipo de pestaña: de la original (from) a la nueva (to). tabIds, de las de la página; keep,
+ * si lo que lleva a una página concreta se queda
+ */
 type TabCopy = (
   w: Writer,
-  input: { from: TabRow; to: TabRow; worldId: string; tabIds: ReadonlyMap<string, string> }
+  input: { from: TabRow; to: TabRow; worldId: string; tabIds: ReadonlyMap<string, string>; keep: boolean }
 ) => Promise<void>
 
 const TAB_COPIES: Record<TabKind, TabCopy> = {
   // Su documento ya va con la pestaña
   text: async () => undefined,
   // El mapa (imagen y escala) con sus pines y sus elementos
-  map: async (w, { from, to, worldId }) => {
+  map: async (w, { from, to, worldId, keep }) => {
     const [map] = await w.read.select().from(maps).where(eq(maps.tabId, from.id))
     if (!map) return
     const copy = await w.insert(maps, { ...copied(map, worldId), tabId: to.id } as typeof maps.$inferInsert)
@@ -68,7 +79,14 @@ const TAB_COPIES: Record<TabKind, TabCopy> = {
     if (pins.length > 0) {
       await w.insertMany(
         mapPins,
-        pins.map((pin) => ({ ...copied(pin, worldId), mapId: copy.id }) as typeof mapPins.$inferInsert)
+        pins.map(
+          (pin) =>
+            ({
+              ...copied(pin, worldId),
+              mapId: copy.id,
+              ...(keep ? {} : { pageId: null })
+            }) as typeof mapPins.$inferInsert
+        )
       )
     }
     const elements = await w.read
@@ -79,24 +97,39 @@ const TAB_COPIES: Record<TabKind, TabCopy> = {
     if (elements.length > 0) {
       await w.insertMany(
         mapElements,
-        elements.map((element) => ({ ...copied(element, worldId), mapId: copy.id }) as typeof mapElements.$inferInsert)
+        elements.map(
+          (element) =>
+            ({
+              ...copied(element, worldId),
+              mapId: copy.id,
+              ...(keep ? {} : { pageId: null })
+            }) as typeof mapElements.$inferInsert
+        )
       )
     }
   },
   // La tabla aleatoria: sus filas, y las que llevan a otra tabla de la misma página, a su copia
-  table: async (w, { from, to, worldId, tabIds }) => {
+  table: async (w, { from, to, worldId, tabIds, keep }) => {
     const [table] = await w.read.select().from(randomTables).where(eq(randomTables.tabId, from.id))
     if (!table) return
-    const rows = table.rows.map((row) =>
-      row.table && tabIds.has(row.table) ? { ...row, table: tabIds.get(row.table) } : row
-    )
+    const rows = table.rows.map((row) => {
+      const linked = row.table && tabIds.has(row.table) ? { ...row, table: tabIds.get(row.table) } : row
+      // Sin enlaces: la página a la que lleva se suelta; la otra tabla, si no es de esta página, también
+      if (keep) return linked
+      const { page: _page, ...rest } = linked
+      return rest.table && !tabIds.has(row.table ?? '') ? { ...rest, table: null } : rest
+    })
     await w.insert(randomTables, { ...copied(table, worldId), tabId: to.id, rows } as typeof randomTables.$inferInsert)
   },
   // La escena: su imagen (con sus teselas, que se comparten), muros, luces y sonidos. Lo de cada campaña no
-  scene: async (w, { from, to, worldId }) => {
+  scene: async (w, { from, to, worldId, keep }) => {
     const [scene] = await w.read.select().from(scenes).where(eq(scenes.tabId, from.id))
     if (!scene) return
-    const copy = await w.insert(scenes, { ...copied(scene, worldId), tabId: to.id } as typeof scenes.$inferInsert)
+    // Sus pines (los que salen en la mesa al abrirla): sin enlaces, sin su página
+    const pins = keep
+      ? scene.pins
+      : (scene.pins as { pageId?: string | null }[]).map((pin) => ({ ...pin, pageId: null }))
+    const copy = await w.insert(scenes, { ...copied(scene, worldId), tabId: to.id, pins } as typeof scenes.$inferInsert)
     for (const table of [sceneWalls, sceneLights, sceneSounds] as const) {
       const rows = await w.read
         .select()
@@ -121,15 +154,43 @@ const TAB_COPIES: Record<TabKind, TabCopy> = {
   }
 }
 
-/** Duplica una página con todo lo suyo, detrás de ella; devuelve la nueva */
+/** Los campos de enlace, vacíos: una plantilla no apunta a páginas de un mundo */
+const withoutLinks = (properties: unknown) =>
+  Array.isArray(properties)
+    ? properties.map((property) =>
+        property && typeof property === 'object' && (property as { type?: string }).type === 'pages'
+          ? { ...property, value: [] }
+          : property
+      )
+    : properties
+
+/** Duplica una página con todo lo suyo (detrás de ella, o donde se diga); devuelve la nueva */
 export function copyPage(db: Database, context: OperationContext, input: PageCopy) {
   return operation(db, context, async (w) => {
     const [source] = await w.read.select().from(pages).where(eq(pages.id, input.sourceId))
     if (!source) throw new Error(`${input.sourceId} no existe`)
-    const worldId = source.worldId
-    const position = await placeKey(w.read, worldId, { parentId: source.parentId, after: source.id })
+    const worldId = input.place?.worldId ?? source.worldId
+    const keep = (input.links ?? 'keep') === 'keep'
+    const position = await placeKey(
+      w.read,
+      worldId,
+      input.place
+        ? {
+            parentId: input.place.parentId,
+            ...(input.place.before ? { before: input.place.before } : {}),
+            ...(input.place.after ? { after: input.place.after } : {})
+          }
+        : { parentId: source.parentId, after: source.id }
+    )
     const { searchTsv: _generated, deletedAt: _trashed, ...row } = copied(source, worldId) as typeof source
-    const page = await w.insert(pages, { ...row, title: input.title, position } as typeof pages.$inferInsert)
+    const page = await w.insert(pages, {
+      ...row,
+      parentId: input.place ? input.place.parentId : source.parentId,
+      title: input.title,
+      position,
+      ...(keep ? {} : { properties: withoutLinks(source.properties) }),
+      ...input.overrides
+    } as typeof pages.$inferInsert)
     if (input.hidden) {
       await writeMark(w, { worldId, campaignId: null, kind: 'page', targetId: page.id, known: false, characters: null })
     }
@@ -167,7 +228,8 @@ export function copyPage(db: Database, context: OperationContext, input: PageCop
       made.push({ from: tab, to })
     }
     const tabIds = new Map(made.map(({ from, to }) => [from.id, to.id]))
-    for (const { from, to } of made) await TAB_COPIES[from.kind](w, { from, to, worldId, tabIds })
+    for (const { from, to } of made) await TAB_COPIES[from.kind](w, { from, to, worldId, tabIds, keep })
+    await input.alongside?.(w, page)
     return { id: page.id, title: page.title }
   })
 }

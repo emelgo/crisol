@@ -24,7 +24,8 @@ import { Screen } from '../components/screen.tsx'
 import { Tour } from '../components/tour.tsx'
 import { ENTER_ITEM, enterItem } from '../components/world-transition.ts'
 import cards from '../routes/world-card.module.css'
-import { TEMPLATE_ICON } from './icons.tsx'
+import { IconChoices } from '../wiki/icon.tsx'
+import { TemplateIcon } from './icons.tsx'
 import { useTemplates } from './picker.tsx'
 import styles from './screen.module.css'
 
@@ -89,7 +90,6 @@ function TemplateCard({ template, onHover }: { template: PageTemplate; onHover: 
   const origin = useOrigin()
   const [settings, setSettings] = useState(false)
   const gear = useRef<HTMLButtonElement>(null)
-  const Icon = TEMPLATE_ICON[template.icon]
   return (
     <li
       className={styles.card}
@@ -101,7 +101,7 @@ function TemplateCard({ template, onHover }: { template: PageTemplate; onHover: 
       }}
     >
       <span className={styles.icon} aria-hidden="true" data-elemento="icono">
-        <Icon size={24} strokeWidth={1.5} />
+        <TemplateIcon icon={template.icon} size={24} />
       </span>
       <h3 className={styles.name}>
         {/* Entrar es entrar: su icono y su nombre viajan al título de la plantilla abierta */}
@@ -150,7 +150,6 @@ function TemplateCard({ template, onHover }: { template: PageTemplate; onHover: 
 function TemplatePreview({ template }: { template: PageTemplate }) {
   const { t } = useTranslation()
   const origin = useOrigin()
-  const Icon = TEMPLATE_ICON[template.icon]
   const sections = [...template.skeleton.matchAll(/^#{1,6}\s+(.+)$/gm)].map((match) => match[1] ?? '')
   const blocks = template.panel.map((block) =>
     'title' in block && block.title
@@ -161,7 +160,7 @@ function TemplatePreview({ template }: { template: PageTemplate }) {
     <div className={styles.preview}>
       <div className={styles.previewTop}>
         <span className={styles.icon} aria-hidden="true">
-          <Icon size={20} strokeWidth={1.5} />
+          <TemplateIcon icon={template.icon} size={20} />
         </span>
         <div>
           <p className={styles.previewName}>{template.name}</p>
@@ -196,38 +195,6 @@ function TemplatePreview({ template }: { template: PageTemplate }) {
   )
 }
 
-/** Elegir el icono de una plantilla: un grupo de opciones */
-export function IconChoices({
-  value,
-  onChange
-}: {
-  value: PageTemplate['icon']
-  onChange: (icon: PageTemplate['icon']) => void
-}) {
-  const { t } = useTranslation()
-  const name = useId()
-  return (
-    <fieldset className={styles.icons}>
-      <legend>{t('templates.icon')}</legend>
-      {(Object.keys(TEMPLATE_ICON) as PageTemplate['icon'][]).map((icon) => {
-        const Icon = TEMPLATE_ICON[icon]
-        return (
-          <label key={icon} className={styles.iconChoice} title={t(`templates.icons.${icon}`)}>
-            <input
-              type="radio"
-              name={name}
-              checked={value === icon}
-              aria-label={t(`templates.icons.${icon}`)}
-              onChange={() => onChange(icon)}
-            />
-            <Icon size={18} aria-hidden="true" />
-          </label>
-        )
-      })}
-    </fieldset>
-  )
-}
-
 /** «Plantilla nueva»: desde cero o copiando otra, con su nombre y su icono. Creada, se abre para cambiarla */
 export function NewTemplateDialog({ copyOf, onClose }: { copyOf: string | null; onClose: () => void }) {
   const { t } = useTranslation()
@@ -243,7 +210,7 @@ export function NewTemplateDialog({ copyOf, onClose }: { copyOf: string | null; 
   const [base, setBase] = useState(copyOf ?? templates[0]?.id ?? 'pnj')
   const chosen = templates.find((each) => each.id === base)
   const [name, setName] = useState(chosen && copyOf ? t('templates.copyName', { name: chosen.name }) : '')
-  const [icon, setIcon] = useState<PageTemplate['icon']>(chosen && copyOf ? chosen.icon : 'template')
+  const [icon, setIcon] = useState<PageTemplate['icon']>(chosen && copyOf ? chosen.icon : null)
   useEffect(() => {
     if (mode === 'copy' && chosen) setIcon(chosen.icon)
   }, [mode, chosen])

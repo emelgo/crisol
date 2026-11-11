@@ -13,7 +13,7 @@ import { FileText } from 'lucide-react'
 import { forwardRef, useContext, useEffect, useId, useImperativeHandle, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
-import { TEMPLATE_ICON } from '../templates/icons.tsx'
+import { TemplateIcon } from '../templates/icons.tsx'
 import { useTemplates } from '../templates/picker.tsx'
 import { type LinkableContent, type PageLinks, PageLinksContext, type WorldFile } from './links-context.ts'
 import styles from './page-links.module.css'
@@ -277,7 +277,6 @@ function PageLinkView({ node, updateAttributes, selected, editor }: NodeViewProp
             {t('newPage.text')}
           </button>
           {templates.map((template) => {
-            const Icon = TEMPLATE_ICON[template.icon]
             return (
               <button
                 key={template.id}
@@ -287,7 +286,7 @@ function PageLinkView({ node, updateAttributes, selected, editor }: NodeViewProp
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => create.mutate(template.id)}
               >
-                <Icon size={14} aria-hidden="true" />
+                <TemplateIcon icon={template.icon} size={14} />
                 {template.name}
               </button>
             )

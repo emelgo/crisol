@@ -16,7 +16,7 @@ import {
   type Zone,
   zoneAt
 } from '../components/tree/moves.ts'
-import { TEMPLATE_ICON } from '../templates/icons.tsx'
+import { TemplateIcon } from '../templates/icons.tsx'
 import { useTemplates } from '../templates/picker.tsx'
 import styles from './tree.module.css'
 import { TreeMenu } from './tree-menu.tsx'
@@ -457,8 +457,7 @@ export function PageTree({ worldId, currentId, path, onNavigate }: Props) {
 function PageKindIcon({ template, hasChildren }: { template: string | null; hasChildren: boolean }) {
   const found = useTemplates().data?.templates.find((each) => each.id === template)
   if (found) {
-    const Icon = TEMPLATE_ICON[found.icon]
-    return <Icon size={15} />
+    return <TemplateIcon icon={found.icon} size={15} />
   }
   return hasChildren ? <BookCopy size={15} /> : <FileText size={15} />
 }

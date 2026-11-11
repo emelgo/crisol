@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm'
-import { check, index, jsonb, pgTable, text, timestamp, unique, uuid } from 'drizzle-orm/pg-core'
+import { check, index, jsonb, pgTable, text, timestamp, unique, uniqueIndex, uuid } from 'drizzle-orm/pg-core'
 import { user } from './auth.ts'
 import { organizations } from './organizations.ts'
 import { trackedColumns } from './tracked.ts'
@@ -23,9 +23,18 @@ export const worlds = pgTable(
     /** Su página de portada, en la que se abre el mundo (sin ella o borrada, la primera del árbol) */
     homePageId: uuid(),
     /** En la papelera desde entonces: no sale en ninguna vista y a los 30 días se purga */
-    deletedAt: timestamp({ withTimezone: true })
+    deletedAt: timestamp({ withTimezone: true }),
+    /**
+     * Un mundo que no es para jugar (ADR-0024): «templates», el oculto de la cuenta donde viven sus plantillas, como
+     * páginas. Sin máster ni campañas, no sale en Mis mundos. Uno por cuenta
+     */
+    purpose: text({ enum: ['templates'] })
   },
-  (t) => [index().on(t.organizationId), index().on(t.deletedAt)]
+  (t) => [
+    index().on(t.organizationId),
+    index().on(t.deletedAt),
+    uniqueIndex('worlds_templates').on(t.organizationId).where(sql`${t.purpose} = 'templates'`)
+  ]
 )
 
 /** master: lo administra. Reservado para más adelante: comaster */

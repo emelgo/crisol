@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import { EXAMPLE_TEMPLATES } from './example-templates.ts'
 import { propertiesProblem } from './properties.ts'
-import { applyTemplate, fieldKey, fillTemplate, instantiate, lineOf, TEMPLATE_ICONS } from './templates.ts'
+import {
+  applyTemplate,
+  fieldKey,
+  fillTemplate,
+  instantiate,
+  lineOf,
+  TEMPLATE_ICONS,
+  templateEmoji
+} from './templates.ts'
 
 /** Una de las de ejemplo (las que fueron de serie), por su id legible */
 const builtInTemplate = (id: string) => EXAMPLE_TEMPLATES.find((t) => t.id === id)
@@ -16,7 +24,8 @@ describe('las plantillas de ejemplo de las pruebas (las que fueron de serie)', (
     const ids = new Set(EXAMPLE_TEMPLATES.map((t) => t.id))
     for (const template of EXAMPLE_TEMPLATES) {
       expect(propertiesProblem(template.fields), template.id).toBeNull()
-      expect(TEMPLATE_ICONS).toContain(template.icon)
+      // Un emoji, como el de una página
+      expect(template.icon).toMatch(/^\p{Extended_Pictographic}/u)
       expect(template.basedOn).toBeNull()
       expect(template.line).toEqual([template.id])
       for (const field of template.fields) {
@@ -187,5 +196,16 @@ describe('aplicar una plantilla a una página ya hecha', () => {
     expect(applied.properties.filter((p) => p.name === 'Población')).toEqual([
       { name: 'Población', type: 'list', value: ['muchos'] }
     ])
+  })
+})
+
+describe('el icono de una plantilla de antes', () => {
+  it('pasa a emoji (los dibujos con nombre de antes); lo que ya es un emoji se queda; sin icono, ninguno', () => {
+    expect(templateEmoji('user')).toBe('🧙')
+    expect(templateEmoji('hourglass')).toBe('⏳')
+    expect(templateEmoji('template')).toBeNull()
+    expect(templateEmoji('🐉')).toBe('🐉')
+    expect(templateEmoji(null)).toBeNull()
+    for (const icon of TEMPLATE_ICONS) expect(icon === 'template' || templateEmoji(icon) !== icon).toBe(true)
   })
 })

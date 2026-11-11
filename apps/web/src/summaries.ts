@@ -463,6 +463,8 @@ export function summaryOf(
       return say(action, { name: textIn(details.name) })
     case 'copyPage':
       return say('copyPage', { title: text(details.title) })
+    case 'templatePage':
+      return say('templatePage', { name: text(details.name) })
     case 'deleteFiles':
     case 'deleteWorldContent':
       return say(action, { count: Number(details.count ?? 1) })

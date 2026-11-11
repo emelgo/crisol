@@ -52,7 +52,7 @@ export const EXAMPLE_TEMPLATES: readonly PageTemplate[] = [
   example({
     id: 'pnj',
     name: 'PNJ',
-    icon: 'user',
+    icon: '🧙',
     fields: [
       text('especie', 'Especie'),
       text('rol', 'Rol'),
@@ -69,7 +69,7 @@ export const EXAMPLE_TEMPLATES: readonly PageTemplate[] = [
   example({
     id: 'lugar',
     name: 'Lugar',
-    icon: 'castle',
+    icon: '🏰',
     fields: [
       // De lo más grande a lo más pequeño
       choice('tipo', 'Tipo', [
@@ -99,7 +99,7 @@ export const EXAMPLE_TEMPLATES: readonly PageTemplate[] = [
   example({
     id: 'faccion',
     name: 'Facción',
-    icon: 'shield',
+    icon: '🛡️',
     fields: [
       choice('tipo', 'Tipo', ['Reino', 'Casa noble', 'Gremio', 'Orden', 'Culto', 'Compañía', 'Banda', 'Tribu']),
       link('lider', 'Líder', ['pnj']),
@@ -112,7 +112,7 @@ export const EXAMPLE_TEMPLATES: readonly PageTemplate[] = [
   example({
     id: 'objeto',
     name: 'Objeto',
-    icon: 'gem',
+    icon: '💎',
     fields: [
       choice('tipo', 'Tipo', [
         'Arma',
@@ -141,7 +141,7 @@ export const EXAMPLE_TEMPLATES: readonly PageTemplate[] = [
   example({
     id: 'mision',
     name: 'Misión',
-    icon: 'scroll',
+    icon: '📜',
     fields: [
       choice('estado', 'Estado', ['Pendiente', 'En curso', 'Completada', 'Fallida']),
       link('la-da', 'La da', ['pnj', 'faccion']),
@@ -154,7 +154,7 @@ export const EXAMPLE_TEMPLATES: readonly PageTemplate[] = [
   example({
     id: 'sesion',
     name: 'Sesión',
-    icon: 'calendar',
+    icon: '📅',
     fields: [
       number('numero', 'Número'),
       // Como texto hasta el calendario del mundo (módulo 8)

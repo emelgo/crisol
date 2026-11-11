@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { defineAction } from './action.ts'
-import { pageProperty, templateRef } from './pages.ts'
+import { pageIcon, pageProperty, templateRef } from './pages.ts'
 import { pagePanel } from './panel.ts'
 
 /** Los iconos de una plantilla (los mismos que TEMPLATE_ICONS del dominio; lo comprueba una prueba del servidor) */
@@ -27,14 +27,21 @@ export const TEMPLATE_ICONS = [
 
 export const templateIcon = z.enum(TEMPLATE_ICONS)
 
+/** El icono que se pide para una plantilla: un emoji (como el de una página) o, como antes, uno de los de nombre */
+const newTemplateIcon = z.union([pageIcon, templateIcon]).describe('Un emoji, como el de una página')
+
 /**
  * Una plantilla de página de la cuenta (ADR-0009, ADR-0024): sus campos (propiedades con el id de su campo, su forma y
  * su valor inicial), los bloques de su panel y el esqueleto de su texto en Markdown. No hay plantillas de serie
  */
 export const pageTemplate = z.object({
   id: templateRef,
-  name: z.string().trim().min(1).max(60),
-  icon: templateIcon,
+  name: z.string().trim().min(1).max(200),
+  icon: z.string().nullable().describe('Un emoji, como el de una página (o ninguno)'),
+  pageId: z
+    .uuid()
+    .nullable()
+    .describe('Su página (ADR-0024): una plantilla es una página guardada como modelo; se edita como una página'),
   basedOn: templateRef.nullable().describe('De cuál se copió'),
   line: z.array(templateRef).min(1).max(20).describe('Ella y todas de las que viene: las tablas casan con cualquiera'),
   fields: z.array(pageProperty).max(50),
@@ -53,7 +60,7 @@ export const listTemplates = defineAction({
   output: z.object({
     templates: z.array(pageTemplate),
     deleted: z
-      .array(z.object({ id: z.uuid(), name: z.string(), icon: templateIcon }))
+      .array(z.object({ id: z.uuid(), name: z.string(), icon: z.string().nullable() }))
       .describe('Las de la cuenta que se borraron: sus páginas aún dicen de cuál salieron')
   })
 })
@@ -68,7 +75,7 @@ export const createTemplate = defineAction({
   input: z.object({
     organizationId: z.uuid().optional(),
     name: templateName,
-    icon: templateIcon.default('template'),
+    icon: newTemplateIcon.nullable().optional(),
     copyOf: z.string().trim().min(1).max(60).optional().describe('La plantilla que se copia: su id o su nombre')
   }),
   output: pageTemplate
@@ -82,7 +89,7 @@ export const updateTemplate = defineAction({
   input: z.object({
     templateId: z.uuid(),
     name: templateName.optional(),
-    icon: templateIcon.optional(),
+    icon: newTemplateIcon.nullable().optional(),
     fields: z.array(pageProperty).max(50).optional(),
     panel: pagePanel.optional(),
     skeleton: z.string().max(20_000).optional()

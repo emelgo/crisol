@@ -14,7 +14,7 @@ import list from '../components/list.module.css'
 import { failed, LoadError } from '../components/load-error.tsx'
 import { headingMayTakeFocus, PageTitle, useHeadingFocusRequest } from '../components/page-title.tsx'
 import { WorldBanner } from '../routes/world-card.tsx'
-import { TEMPLATE_ICON } from '../templates/icons.tsx'
+import { TemplateIcon } from '../templates/icons.tsx'
 import { useTemplates } from '../templates/picker.tsx'
 import { ApplyTemplate } from './apply-template.tsx'
 import { Backlinks } from './backlinks.tsx'
@@ -423,11 +423,10 @@ function TemplateBadge({ templateId }: { templateId: string }) {
   const deleted = list?.deleted.find((each) => each.id === templateId)
   const shown = template ?? deleted
   if (!shown) return null
-  const Icon = TEMPLATE_ICON[shown.icon]
   if (!template) {
     return (
       <span className={styles.templateBadge} title={t('templates.madeWithDeleted', { name: shown.name })}>
-        <Icon aria-hidden="true" size={12} />
+        <TemplateIcon icon={shown.icon} size={12} />
         {t('templates.deletedName', { name: shown.name })}
       </span>
     )
@@ -439,7 +438,7 @@ function TemplateBadge({ templateId }: { templateId: string }) {
       className={styles.templateBadge}
       title={t('templates.madeWith', { name: template.name })}
     >
-      <Icon aria-hidden="true" size={12} />
+      <TemplateIcon icon={shown.icon} size={12} />
       {template.name}
     </Link>
   )

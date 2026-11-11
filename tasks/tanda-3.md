@@ -20,15 +20,19 @@ Rama `revision/tanda-3`. Cada porción, con sus pruebas, en su commit; las casil
    0077 con su prueba; las de serie quedan como `EXAMPLE_TEMPLATES`, solo para las pruebas y la API falsa, y el
    servidor las siembra con `seedExampleTemplates`). `templateRef` sigue admitiendo un id legible (la API falsa los
    usa). Queda en el editor un `readOnly` muerto, que se va al rehacerlo (porción 5); las e2e de plantillas, en la 8.
-2. **El mundo oculto de cada cuenta** (`worlds.purpose = 'templates'`): se crea solo, la primera vez; no sale en Mis
+2. [x] **El mundo oculto de cada cuenta** (`worlds.purpose = 'templates'`): se crea solo, la primera vez; no sale en Mis
    mundos, no admite campañas ni lo que sabe una campaña, y lo que se hace por mundo (búsqueda, papelera, exportar,
    historial del mundo) se lo salta, con su prueba.
-3. **Cada plantilla, una página de ese mundo** (`page_templates.page_id`): las que hay se convierten al abrirlas por
+3. [x] **Cada plantilla, una página de ese mundo** (`page_templates.page_id`): las que hay se convierten al abrirlas por
    primera vez (su esqueleto pasa a ser su texto; sus campos, las propiedades de la página; su panel, el de la página;
    su icono, un emoji). La plantilla se lee de su página (campos, panel, texto, pestañas); `page_templates` queda como
    su ficha (página, carpeta, orden, linaje). Lo que se suba al editarla va a los archivos comunes.
-4. **Crear desde una plantilla = copiarla** (`copyPage` a otro mundo, soltando lo que apunta a páginas concretas):
+4. [x] **Crear desde una plantilla = copiarla** (`copyPage` a otro mundo, soltando lo que apunta a páginas concretas):
    `createPage`/`createPages` con `template` y las tablas que se llenan solas siguen igual (linaje en la página).
+   Hecho (migración 0078): `createPage` con plantilla copia su página entera (con ids nuevos en el panel); `createPages`
+   (la IA, en tanda) sigue con sus campos, panel y esqueleto, leídos de su página, sin sus pestañas. El icono de una
+   plantilla es ya un emoji (los dibujos de antes se traducen, `templateEmoji`). La conversión de una de antes la hace el
+   sistema al abrirla (`getTemplate`) o al escribir en ella; no se deshace.
 5. **El editor es la página** (`EntryView` en modo plantilla): portada, icono en el título, pestañas, panel con los
    campos que se definen (nombre y tipo), texto; sin «Quién la conoce», «Marcar» ni «Mencionado en»; «Plantillas»
    arriba a la izquierda para volver (con la transición al revés) y la marca «Plantilla» junto al título. A la

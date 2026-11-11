@@ -28,13 +28,41 @@ export const TEMPLATE_ICONS = [
 
 export type TemplateIcon = (typeof TEMPLATE_ICONS)[number]
 
+/**
+ * El emoji de un icono de antes (ADR-0024): las plantillas llevaban un dibujo con nombre; ahora, un emoji como una
+ * página. Lo que ya es un emoji se queda; «template» (el de sin elegir), ninguno
+ */
+const LEGACY_EMOJI: Record<TemplateIcon, string | null> = {
+  user: '🧙',
+  castle: '🏰',
+  shield: '🛡️',
+  gem: '💎',
+  scroll: '📜',
+  calendar: '📅',
+  hourglass: '⏳',
+  flag: '🚩',
+  swords: '⚔️',
+  crown: '👑',
+  skull: '💀',
+  map: '🗺️',
+  book: '📖',
+  flame: '🔥',
+  tree: '🌲',
+  ship: '⛵',
+  sparkles: '✨',
+  template: null
+}
+export const templateEmoji = (icon: string | null): string | null =>
+  icon === null ? null : icon in LEGACY_EMOJI ? LEGACY_EMOJI[icon as TemplateIcon] : icon
+
 /** Un bloque del panel de la plantilla (su forma la comprueba el contrato del panel) */
 export type TemplateBlock = { id: string; type: string } & Record<string, unknown>
 
 export interface PageTemplate {
   id: string
   name: string
-  icon: TemplateIcon
+  /** Un emoji, como el de una página (o ninguno) */
+  icon: string | null
   /** De cuál se copió */
   basedOn: string | null
   /** Ella y todas de las que viene, de la más cercana a la primera: las tablas casan con cualquiera */

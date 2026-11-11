@@ -43,7 +43,10 @@ export async function findRow(db: Database, organizationId: string, name: string
   return found ?? null
 }
 
-/** Las páginas con etiquetas de los mundos de una organización (fuera de la papelera), con su mundo */
+/**
+ * Las páginas con etiquetas de los mundos de una organización (fuera de la papelera), con su mundo. Las de sus
+ * plantillas (su mundo oculto, ADR-0024) no cuentan: son modelos, no páginas de un mundo
+ */
 export function taggedPages(db: Database, organizationId: string) {
   return db
     .select({ id: pages.id, worldId: pages.worldId, worldName: worlds.name, properties: pages.properties })
@@ -53,6 +56,7 @@ export function taggedPages(db: Database, organizationId: string) {
       and(
         eq(worlds.organizationId, organizationId),
         isNull(worlds.deletedAt),
+        isNull(worlds.purpose),
         isNull(pages.deletedAt),
         sql`exists (select 1 from jsonb_array_elements(${pages.properties}) p
           where lower(trim(p->>'name')) = 'etiquetas' and p->>'type' = 'list')`

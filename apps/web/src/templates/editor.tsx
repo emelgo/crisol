@@ -22,7 +22,7 @@ import { blockOf, type Kind, kindOf, PANEL_GROUPS } from '../wiki/panel-blocks.t
 import { RelatedOptions } from '../wiki/related-block.tsx'
 import styles from './editor.module.css'
 import { FieldsEditor } from './fields.tsx'
-import { TEMPLATE_ICON } from './icons.tsx'
+import { TemplateIcon } from './icons.tsx'
 import { useTemplates } from './picker.tsx'
 import { NewTemplateDialog } from './screen.tsx'
 import { SkeletonEditor } from './skeleton.tsx'
@@ -77,7 +77,6 @@ function TemplateEditor({ template, all }: { template: PageTemplate; all: readon
     setDraft((current) => ({ ...current, ...patch }))
     save.mutate(patch)
   }
-  const Icon = TEMPLATE_ICON[draft.icon]
   const mine = all
   return (
     <Screen
@@ -104,7 +103,7 @@ function TemplateEditor({ template, all }: { template: PageTemplate; all: readon
       <div className={layout.top}>
         <div className={styles.heading}>
           <span className={styles.icon} aria-hidden="true" style={itemTransition(template.id, 'icono')}>
-            <Icon size={22} strokeWidth={1.5} />
+            <TemplateIcon icon={draft.icon} size={22} />
           </span>
           <div style={itemTransition(template.id, 'nombre')}>
             {readOnly ? (
@@ -149,7 +148,6 @@ function TemplateLinks({ templates, current }: { templates: readonly PageTemplat
   return (
     <ul className={styles.links}>
       {templates.map((each) => {
-        const Icon = TEMPLATE_ICON[each.icon]
         return (
           <li key={each.id}>
             <Link
@@ -159,7 +157,7 @@ function TemplateLinks({ templates, current }: { templates: readonly PageTemplat
               // De una a otra, como entre pestañas: rápido
               viewTransition={SECTION}
             >
-              <Icon size={15} aria-hidden="true" />
+              <TemplateIcon icon={each.icon} size={15} />
               {each.name}
             </Link>
           </li>

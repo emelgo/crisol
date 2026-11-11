@@ -12,7 +12,9 @@ const worldColumns = {
   icon: worlds.icon,
   color: worlds.color,
   cover: worlds.cover,
-  version: worlds.version
+  version: worlds.version,
+  /** El de las plantillas (ADR-0024): no se juega ni sale en Mis mundos */
+  purpose: worlds.purpose
 }
 
 /**
@@ -96,4 +98,26 @@ export function updateWorld(db: Database, context: OperationContext, worldId: st
 export async function homePageOf(db: Database, worldId: string) {
   const [found] = await db.select({ homePageId: worlds.homePageId }).from(worlds).where(eq(worlds.id, worldId))
   return found?.homePageId ?? null
+}
+
+/**
+ * El mundo oculto de una organización donde viven sus plantillas, como páginas (ADR-0024): el que hay o uno nuevo. Sin
+ * máster ni campañas (no sale en Mis mundos); se crea sin pasar por el historial: es de la cuenta, no algo que se deshace
+ */
+export async function templatesWorld(db: Database, organizationId: string): Promise<{ id: string }> {
+  const find = () =>
+    db
+      .select({ id: worlds.id })
+      .from(worlds)
+      .where(and(eq(worlds.organizationId, organizationId), eq(worlds.purpose, 'templates')))
+  const [found] = await find()
+  if (found) return found
+  // Dos a la vez: el índice único deja crear uno solo, y la otra lo lee
+  await db
+    .insert(worlds)
+    .values({ organizationId, name: 'Plantillas', purpose: 'templates' })
+    .onConflictDoNothing({ target: worlds.organizationId, where: sql`${worlds.purpose} = 'templates'` })
+  const [made] = await find()
+  if (!made) throw new Error('No se pudo crear el mundo de las plantillas')
+  return made
 }

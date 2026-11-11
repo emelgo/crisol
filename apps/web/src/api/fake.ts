@@ -70,6 +70,7 @@ import {
   tagLeaf,
   tagParent,
   tagTree,
+  templateEmoji,
   uniqueTags
 } from '@crisol/domain'
 import {
@@ -452,7 +453,7 @@ export function fakeApi(
   })
   // Las plantillas de la cuenta (no hay de serie): de entrada, las de ejemplo (las que fueron de serie)
   const ownTemplates: Array<PageTemplate & { deleted: boolean }> = (options.templates ?? EXAMPLE_TEMPLATES).map(
-    (template) => ({ ...(structuredClone(template) as PageTemplate), deleted: false })
+    (template) => ({ ...(structuredClone(template) as PageTemplate), pageId: null, deleted: false })
   )
   const templateById = (id: string): PageTemplate | undefined => ownTemplates.find((t) => t.id === id && !t.deleted)
   // Las tablas que se llenan solas, como el servidor: las de su plantilla (o sus copias) con el campo hacia esta página
@@ -1926,7 +1927,8 @@ export function fakeApi(
       const template = {
         id,
         name,
-        icon: icon ?? 'template',
+        icon: templateEmoji(icon ?? null),
+        pageId: null,
         basedOn: base?.id ?? null,
         line: [id, ...(base?.line ?? [])],
         fields: structuredClone(base?.fields ?? []),
