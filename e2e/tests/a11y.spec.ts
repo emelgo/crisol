@@ -52,14 +52,14 @@ test('arranque, perfil, mundos y sus ajustes, campañas, avisos, historial, pape
       // Lo que esté a medio animar (entrar en un mundo) se mide ya quieto; el fondo de las pantallas de cuenta, que no
       // para nunca (y es de adorno), no cuenta
       await page.waitForFunction(() =>
-        document
-          .getAnimations()
-          .every(
-            (animation) =>
-              animation.playState !== 'running' ||
-              animation.effect?.getTiming().iterations === Number.POSITIVE_INFINITY ||
-              ((animation.effect as KeyframeEffect | null)?.target as Element | null)?.closest('[data-fondo]')
-          )
+        document.getAnimations().every(
+          (animation) =>
+            animation.playState !== 'running' ||
+            animation.effect?.getTiming().iterations === Number.POSITIVE_INFINITY ||
+            // Las que van con el desplazamiento (el pie de la barra) no acaban nunca: no son de tiempo
+            !(animation.timeline instanceof DocumentTimeline) ||
+            ((animation.effect as KeyframeEffect | null)?.target as Element | null)?.closest('[data-fondo]')
+        )
       )
       for (const colorScheme of ['dark'] as const) {
         await page.emulateMedia({ colorScheme })

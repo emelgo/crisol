@@ -1,22 +1,29 @@
-/* El fondo de ambiente: detrás de todo (z-index -1: bajo el contenido, sobre el color del body), sin recibir el ratón */
+/* El fondo de ambiente: detrás de todo (z-index -1: bajo el contenido, sobre el color del body), sin recibir el ratón.
+   Con su color debajo: en las transiciones de vista el body va transparente (base.css) y lo pone él. Del
+   alto de la pantalla entera (lvh): en el móvil, plegar la barra del navegador no lo cambia de tamaño ni lo repinta */
 .ambient {
   position: fixed;
-  inset: 0;
+  inset-block-start: 0;
+  inset-inline-start: 0;
   z-index: -1;
+  inline-size: 100vw;
+  block-size: 100lvh;
   overflow: hidden;
+  background: var(--color-bg);
   pointer-events: none;
+  contain: strict;
+  view-transition-name: ambiente;
 }
 
-/* La imagen, muy difuminada y tenue: solo su color y su luz. Más grande que la ventana, que el difuminado no deje
-   bordes claros */
+/* La miniatura ya difuminada (ambient.tsx), estirada y tenue: solo su color y su luz. --alpha, su tope. Sin filter y
+   con el fundido solo al llegar (backwards: acabado, no queda activo ni en una capa aparte) */
 .layer {
   position: absolute;
-  inset: -8%;
+  inset: 0;
   background-position: center;
   background-size: cover;
-  filter: blur(48px) saturate(1.1);
-  opacity: 0.4;
-  animation: aparecer 700ms ease-out both;
+  opacity: var(--alpha, 0.25);
+  animation: aparecer 700ms ease-out backwards;
 }
 
 /* Encima, una viñeta: los bordes y lo de arriba (los títulos), más oscuros */
@@ -35,8 +42,9 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .layer {
-    animation-duration: 200ms;
+/* Con los colores forzados del sistema, nada detrás */
+@media (forced-colors: active) {
+  .ambient {
+    display: none;
   }
 }

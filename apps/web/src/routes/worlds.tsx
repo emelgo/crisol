@@ -3,7 +3,7 @@ import { TRASH_DAYS } from '@crisol/domain'
 import { useQueries, useQuery } from '@tanstack/react-query'
 import { Navigate } from '@tanstack/react-router'
 import { Globe } from 'lucide-react'
-import { useId, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
@@ -37,8 +37,16 @@ export function Worlds() {
   // El mundo sobre el que está el ratón (o el foco), para el panel de la izquierda; al irse, nada
   const [previewId, setPreviewId] = useState<string | null>(null)
   const preview = worlds.data?.worlds.find((w) => w.id === previewId)
-  // Detrás, la portada del mundo que se señala (si no tiene, la de ambiente)
-  useAmbient(preview?.cover ? `/api/files/${preview.cover.fileId}` : null)
+  // Detrás, la portada del mundo en el que uno se para (un momento: pasar por encima no mueve el fondo); al salir de la
+  // lista, la de ambiente
+  const [ambientId, setAmbientId] = useState<string | null>(null)
+  useEffect(() => {
+    if (!previewId) return
+    const timer = window.setTimeout(() => setAmbientId(previewId), 300)
+    return () => window.clearTimeout(timer)
+  }, [previewId])
+  const ambientWorld = worlds.data?.worlds.find((w) => w.id === ambientId)
+  useAmbient(ambientWorld?.cover ? `/api/files/${ambientWorld.cover.fileId}` : null)
 
   if (pending) return null
   if (!account) return <Navigate to="/entrar" replace />
@@ -67,7 +75,15 @@ export function Worlds() {
               {canCreate && <NewWorld big />}
             </div>
           ) : (
-            <ul className={styles.list} aria-label={t('worlds.listLabel')} data-card-list>
+            <ul
+              className={styles.list}
+              aria-label={t('worlds.listLabel')}
+              data-card-list
+              onPointerLeave={() => setAmbientId(null)}
+              onBlur={(event) => {
+                if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setAmbientId(null)
+              }}
+            >
               {cards.map(({ item, fresh, burning, burnt }) => (
                 <WorldCard
                   key={item.id}

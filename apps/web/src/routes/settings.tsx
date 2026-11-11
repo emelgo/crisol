@@ -33,8 +33,8 @@ export function Settings() {
   return (
     <section className={styles.page}>
       <PageTitle>{t('settings.title')}</PageTitle>
-      <DeviceSettings />
       {isOwner ? <AiSettings /> : plays && <AiSettings player />}
+      <DeviceSettings />
     </section>
   )
 }
@@ -45,7 +45,7 @@ function DeviceSettings() {
   const plain = usePlain()
   const id = useId()
   return (
-    <section aria-labelledby={id}>
+    <section aria-labelledby={id} className={styles.device}>
       <h2 id={id}>{t('settings.device')}</h2>
       <label className={form.check}>
         <input type="checkbox" checked={plain} onChange={(event) => setPlain(event.currentTarget.checked)} />

@@ -1,5 +1,12 @@
 /* Un cuadro (dialog) en el centro, con el fondo oscurecido: el título, lo que se pide y las acciones abajo a la derecha */
 .dialog {
+  /* Encima de todo y opaco: lo de dentro, con las superficies y rayas de siempre (no de cristal sobre opaco) */
+  --surface-glass: var(--color-surface);
+  --surface-glass-raised: var(--color-raised);
+  --surface-read: var(--color-bg);
+  --line-frame: var(--color-frame);
+  --line-soft: var(--color-border);
+  --row-hover: var(--color-raised);
   inline-size: min(30rem, calc(100vw - 2rem));
   padding: 0;
   border: 1px solid var(--color-frame);

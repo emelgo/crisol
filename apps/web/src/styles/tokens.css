@@ -160,6 +160,12 @@
   --surface-glass: color-mix(in srgb, var(--color-surface) 64%, transparent);
   --surface-glass-raised: color-mix(in srgb, var(--color-raised) 70%, transparent);
   --surface-read: color-mix(in srgb, var(--color-bg) 86%, transparent);
+  /* Las rayas, relativas a lo que tienen detrás (un gris fijo se pierde sobre el ambiente): sobre --color-bg dan casi
+     los grises de siempre (--color-frame y --color-border) */
+  --line-frame: rgb(255 255 255 / 0.14);
+  --line-soft: rgb(255 255 255 / 0.07);
+  /* Pasar por una fila: un velo, no un gris opaco (sobre el ambiente quedaría más oscura que sus vecinas) */
+  --row-hover: rgb(255 255 255 / 0.05);
   /* El brillo de lo vivo (el turno, la tele, lo que se enseña, un crítico), en el rojo de la marca */
   --glow-live:
     0 0 0 1px color-mix(in srgb, var(--color-brand) 80%, transparent),
@@ -206,6 +212,9 @@
   --surface-glass: var(--color-surface);
   --surface-glass-raised: var(--color-raised);
   --surface-read: var(--color-bg);
+  --line-frame: var(--color-frame);
+  --line-soft: var(--color-border);
+  --row-hover: var(--color-raised);
   --glass-tint: var(--glass-solid);
   --glass-panel: var(--glass-solid);
   --glass-blur: none;

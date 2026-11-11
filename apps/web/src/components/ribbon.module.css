@@ -41,6 +41,32 @@
   background: var(--color-raised);
 }
 
+/* Si lo de arriba no cabe (pantalla baja, zoom) y pasa por debajo, el pie y su fundido sí lo tapan: la animación va
+   ligada al desplazamiento de la barra, que solo existe cuando se desborda (si no, no hace nada) */
+.foot,
+.foot::before {
+  animation: pie-tapa linear both;
+  animation-timeline: scroll(nearest block);
+}
+
+.foot::before {
+  animation-name: pie-funde;
+}
+
+@keyframes pie-tapa {
+  from,
+  to {
+    background-color: var(--color-raised);
+  }
+}
+
+@keyframes pie-funde {
+  from,
+  to {
+    background-image: linear-gradient(to top, var(--color-raised), transparent);
+  }
+}
+
 /* Lo que no cabe y pasa por debajo del pie se funde al llegar a él: la señal de que hay más (sin nada detrás, no se
    ve) */
 .foot::before {

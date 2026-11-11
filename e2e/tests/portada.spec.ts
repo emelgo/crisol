@@ -13,7 +13,7 @@ test('la portada: la imagen, «Entrar», «Tengo una invitación» (pegar el enl
   await expect(guest.getByRole('heading', { level: 1, name: 'Crisol' })).toBeVisible()
   await expect(guest.getByRole('region', { name: 'Lo que hay dentro' }).getByRole('heading')).toHaveText([
     'El mundo',
-    'La mesa',
+    'La Mesa',
     'La ficha'
   ])
   await expect(guest.getByRole('link', { name: 'Entrar' }).last()).toHaveAttribute('href', '/entrar')

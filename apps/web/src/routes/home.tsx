@@ -1,5 +1,5 @@
 import { Link, Navigate, useNavigate } from '@tanstack/react-router'
-import { type FormEvent, useId, useState } from 'react'
+import { type FormEvent, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { CrisolMark } from '../components/brand.tsx'
@@ -30,24 +30,30 @@ export function Home() {
   const { t } = useTranslation()
   const { account, pending } = useAccounts().useAccount()
   const [inviting, setInviting] = useState(false)
+  // Al volver de pegar el enlace, el foco vuelve a su botón
+  const inviteButton = useRef<HTMLButtonElement>(null)
+  const back = () => {
+    setInviting(false)
+    requestAnimationFrame(() => inviteButton.current?.focus())
+  }
   if (pending) return null
   if (account) return <Navigate to="/mundos" replace />
   return (
     <div className={styles.home}>
       <div className={styles.hero}>
-        <img className={styles.heroImage} src="/portada/portada.webp" alt="" />
+        <img className={styles.heroImage} src="/portada/portada.webp" alt="" fetchPriority="high" />
         <div className={styles.heroText}>
           <CrisolMark size={72} className={styles.mark} />
           <PageTitle>{t('app.name')}</PageTitle>
           <p className={styles.tagline}>{t('app.tagline')}</p>
           {inviting ? (
-            <InviteForm onCancel={() => setInviting(false)} />
+            <InviteForm onCancel={back} />
           ) : (
             <div className={styles.actions}>
               <Link to="/entrar" className={form.button}>
                 {t('account.signIn')}
               </Link>
-              <button type="button" className={styles.secondary} onClick={() => setInviting(true)}>
+              <button ref={inviteButton} type="button" className={styles.secondary} onClick={() => setInviting(true)}>
                 {t('home.invite')}
               </button>
             </div>
@@ -58,7 +64,9 @@ export function Home() {
         <ul className={styles.stamps}>
           {STAMPS.map((stamp) => (
             <li key={stamp.key} className={styles.stamp}>
-              <img src={stamp.image} alt="" loading="lazy" decoding="async" />
+              <div className={styles.shot}>
+                <img src={stamp.image} alt="" loading="lazy" decoding="async" />
+              </div>
               <h2>{t(`home.${stamp.key}`)}</h2>
               <p>{t(`home.${stamp.key}Text`)}</p>
             </li>
@@ -90,6 +98,11 @@ function InviteForm({ onCancel }: { onCancel: () => void }) {
           id={id}
           // biome-ignore lint/a11y/noAutofocus: se abre al pulsar «Tengo una invitación»: lo siguiente es pegar el enlace
           autoFocus
+          inputMode="url"
+          autoComplete="off"
+          autoCapitalize="off"
+          spellCheck={false}
+          enterKeyHint="go"
           value={text}
           aria-invalid={wrong || undefined}
           aria-describedby={wrong ? `${id}-error` : undefined}

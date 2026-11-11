@@ -111,10 +111,14 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   mundo sobre el que está el ratón; en un mundo o un sistema, su portada, muy difuminada y tenue. De cristal, lo que
   enmarca (la barra, las fichas de los lados, cabeceras, tarjetas, cuadros); lo que se lee o se escribe, casi opaco.
   «Sin desenfoque» en Ajustes. Cómo (tanda 5): el fondo de ambiente (`components/ambient.tsx`) va fijo detrás de
-  todo, ya difuminado, así que lo que enmarca es solo translúcido (`--surface-glass`, `--surface-glass-raised`) **sin
-  backdrop-filter** (no cuesta al bajar); el desenfoque de verdad, solo en lo que va sobre algo nítido (el recuadro de
+  todo, una miniatura ya difuminada (sin filtro en directo) **con tope de luz**: con una portada clara va más tenue,
+  para que el texto apagado de encima siga a 5:1 y los títulos rojos a 3:1. No viaja con las transiciones de vista (se
+  queda quieto debajo). En Inicio cambia al pararse en un mundo, no al pasar por encima. Lo que enmarca es solo
+  translúcido (`--surface-glass`, `--surface-glass-raised`) **sin backdrop-filter** (no cuesta al bajar), con rayas
+  blancas translúcidas (`--line-frame`, `--line-soft`: un gris fijo se pierde sobre el fondo); el desenfoque de verdad, solo en lo que va sobre algo nítido (el recuadro de
   Entrar, lo que flota en la Mesa). **La página es una hoja casi opaca** (`--surface-read`): la portada y el texto, una
-  sola pieza sobre el fondo. Lo que flota encima de otra cosa (menús, el selector de iconos, ventanas), opaco. Los
+  sola pieza sobre el fondo. Lo que flota encima de otra cosa (menús, el selector de iconos, ventanas y cuadros, con
+  todo lo de dentro), opaco. Los
   marcos de esquinas cortadas pintan su raya como un anillo (`--cut-ring`), para que su relleno pueda ser de cristal.
   **«Sin desenfoque»** (Ajustes, «Este aparato»; se guarda en el navegador): sin fondo de ambiente ni desenfoque en
   ninguna parte, también en la Mesa; todo opaco, como antes. Sin desenfoque en el navegador, el cristal de lo que flota

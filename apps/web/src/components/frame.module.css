@@ -16,7 +16,7 @@
   position: absolute;
   inset: 0;
   z-index: -1;
-  background: var(--frame-line, var(--color-frame));
+  background: var(--frame-line, var(--line-frame));
   clip-path: var(--cut-ring);
   pointer-events: none;
 }

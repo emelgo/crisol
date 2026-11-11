@@ -6,7 +6,9 @@
 .hero {
   position: relative;
   display: grid;
-  place-items: center;
+  /* Arriba y no centrado: al abrir «Tengo una invitación» el título no se mueve */
+  justify-items: center;
+  align-items: start;
   min-block-size: 100dvh;
   overflow: hidden;
   isolation: isolate;
@@ -38,6 +40,7 @@
   justify-items: center;
   gap: var(--space-3);
   max-inline-size: 36rem;
+  margin-block-start: max(4rem, 26dvh);
   text-align: center;
 }
 
@@ -95,16 +98,40 @@
 
 /* Pegar el enlace de la invitación: en el sitio de los botones */
 .invite {
+  position: relative;
+  isolation: isolate;
   display: grid;
   gap: var(--space-2);
   inline-size: min(100%, 28rem);
-  padding: var(--space-4);
-  border: 1px solid var(--glass-edge);
-  border-radius: 8px;
+  padding: var(--space-4) var(--space-5);
   background: var(--glass-sheen), var(--glass-tint);
+  clip-path: var(--cut);
   text-align: start;
   -webkit-backdrop-filter: var(--glass-blur);
   backdrop-filter: var(--glass-blur);
+  transition:
+    opacity 220ms ease-out,
+    translate 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Aparece en el sitio de los botones, sin saltar */
+@starting-style {
+  .invite {
+    opacity: 0;
+    translate: 0 8px;
+  }
+}
+
+/* Su raya, con las esquinas cortadas (como los recuadros) */
+.invite::before,
+.shot::before {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--glass-edge);
+  clip-path: var(--cut-ring);
+  content: "";
+  pointer-events: none;
 }
 
 .invite label {
@@ -171,16 +198,24 @@
   align-content: start;
 }
 
-.stamp img {
+/* La captura, recortada con las esquinas de la casa y su raya encima */
+.shot {
+  position: relative;
+  isolation: isolate;
+  margin-block-end: var(--space-2);
+  clip-path: var(--cut);
+}
+
+.shot::before {
+  z-index: 1;
+  background: var(--color-frame);
+}
+
+.shot img {
   display: block;
   inline-size: 100%;
   aspect-ratio: 16 / 10;
   object-fit: cover;
-  object-position: top left;
-  margin-block-end: var(--space-2);
-  border: 1px solid var(--color-frame);
-  border-radius: 6px;
-  box-shadow: 0 12px 30px -16px rgb(0 0 0 / 0.8);
 }
 
 .stamp h2 {

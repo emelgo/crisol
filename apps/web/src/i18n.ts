@@ -3456,8 +3456,8 @@ export const es = {
     badInvite: 'Ese enlace no es una invitación.',
     inside: 'Lo que hay dentro',
     world: 'El mundo',
-    worldText: 'Sus lugares, sus gentes y su historia, en páginas enlazadas.',
-    table: 'La mesa',
+    worldText: 'Sus lugares y sus gentes, en páginas enlazadas.',
+    table: 'La Mesa',
     tableText: 'La partida en directo, con el mapa a la vista de todos.',
     sheet: 'La ficha',
     sheetText: 'Cada personaje, con sus tiradas a mano.'

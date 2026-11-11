@@ -1,7 +1,7 @@
 import { act, render, screen } from '@testing-library/react'
 import { userEvent } from '@testing-library/user-event'
 import { afterEach, describe, expect, it } from 'vitest'
-import { Ambient, DEFAULT_AMBIENT, useAmbient } from './ambient.tsx'
+import { Ambient, ambientAlpha, DEFAULT_AMBIENT, useAmbient } from './ambient.tsx'
 import { setPlain, usePlain } from './plain.ts'
 
 function Wants({ url }: { url: string | null }) {
@@ -79,5 +79,16 @@ describe('el fondo de ambiente', () => {
     await userEvent.click(screen.getByRole('checkbox', { name: 'Sin desenfoque' }))
     expect(screen.getByRole('checkbox', { name: 'Sin desenfoque' })).toHaveProperty('checked', true)
     expect(document.documentElement.hasAttribute('data-plain')).toBe(true)
+  })
+})
+
+describe('el tope del fondo de ambiente', () => {
+  it('una imagen oscura se ve lo más; una clara (nieve, pergamino), mucho menos', () => {
+    expect(ambientAlpha(90, 70, 60)).toBe(0.32)
+    const snow = ambientAlpha(245, 245, 250)
+    const parchment = ambientAlpha(230, 215, 180)
+    expect(snow).toBeLessThan(0.15)
+    expect(parchment).toBeLessThan(0.18)
+    expect(snow).toBeGreaterThanOrEqual(0.08)
   })
 })

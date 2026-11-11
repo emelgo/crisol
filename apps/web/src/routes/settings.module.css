@@ -7,3 +7,11 @@
 .page > form {
   max-inline-size: none;
 }
+
+/* «Este aparato»: la casilla, del tamaño de las opciones de la IA */
+.device input[type="checkbox"] {
+  inline-size: 1.125rem;
+  block-size: 1.125rem;
+  margin: 0;
+  accent-color: var(--color-accent);
+}

@@ -7,7 +7,7 @@
  */
 .card,
 .row {
-  --line: var(--color-frame);
+  --line: var(--line-frame);
   color: var(--color-muted);
   font: inherit;
   font-weight: 600;

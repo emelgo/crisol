@@ -403,6 +403,8 @@ export async function settled(page: Page) {
             (a) =>
               a.playState === 'running' &&
               a.effect?.getTiming().iterations !== Number.POSITIVE_INFINITY &&
+              // Las que van con el desplazamiento (el pie de la barra) no acaban nunca: no son de tiempo
+              a.timeline instanceof DocumentTimeline &&
               // El fondo de las pantallas de cuenta no para nunca (y es de adorno)
               !((a.effect as KeyframeEffect | null)?.target as Element | null)?.closest('[data-fondo]')
           ).length

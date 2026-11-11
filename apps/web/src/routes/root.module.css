@@ -71,7 +71,26 @@
   inset-block-start: 0;
   inset-inline: 0;
   z-index: 2;
-  background: linear-gradient(to bottom, rgb(0 0 0 / 0.55), transparent);
+  background: none;
+  /* Sobre la imagen grande no desenfoca (se vería una franja con costura) */
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+/* Su sombra baja más que ella, sin borde: de 0,7 a nada en 7rem */
+.shell[data-home] .header::before {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: -1;
+  block-size: 7rem;
+  background: linear-gradient(to bottom, rgb(0 0 0 / 0.7), transparent);
+  content: "";
+  pointer-events: none;
+}
+
+/* Sobre las nubes claras de la imagen: con su sombra, que se lea */
+.shell[data-home] .header a {
+  text-shadow: 0 1px 8px rgb(0 0 0 / 0.7);
 }
 
 .main {
@@ -140,6 +159,10 @@
 .shell > main {
   position: relative;
   z-index: 1;
+}
+
+:root[data-plain] .shell > .header {
+  background: var(--color-chrome);
 }
 
 .shell > .header {

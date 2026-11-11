@@ -21,6 +21,28 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Con el fondo de ambiente (components/ambient.tsx), durante una transición de vista el color lo pone él: si no, la
+   captura de la página (con el color del body) taparía al fondo, que se queda quieto debajo */
+html:active-view-transition:has([data-ambiente]) body {
+  background: transparent;
+}
+
+/* El fondo de ambiente no viaja con las transiciones de vista (entrar en un mundo, cambiar de sección): se queda quieto
+   debajo, y lo nuevo llega encima; el suyo propio (el fundido de una imagen a otra) sigue. (:root:root, para ganar a
+   las de cada tipo de transición, que van con (*)) */
+:root:root::view-transition-group(ambiente) {
+  z-index: -1;
+  animation: none;
+}
+
+:root:root::view-transition-old(ambiente) {
+  display: none;
+}
+
+:root:root::view-transition-new(ambiente) {
+  animation: none;
+}
+
 /* Los títulos, condensados y en mayúsculas; cada nivel con su color, como en el Crisol antiguo */
 h1,
 h2,
@@ -162,7 +184,7 @@ dialog section[aria-labelledby]::before {
   position: absolute;
   inset: 0;
   z-index: -1;
-  background: var(--color-frame);
+  background: var(--line-frame);
   clip-path: var(--cut-ring);
   pointer-events: none;
 }
