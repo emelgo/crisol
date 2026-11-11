@@ -7,35 +7,25 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
-### Para retomar (2026-11-11, noche: tanda 1 hecha en local, esperando el visto bueno de Enrique)
+### Para retomar (2026-11-12, madrugada: tanda 1 con visto bueno y revisada con impeccable; faltan e2e, PR y staging)
 
-- **Rama `revision/tanda-1`** (sin subir). Hecho:
-  - **Imágenes**: `docs/imagenes.md` con seis variaciones de fantasía épica pintada (al estilo de Foundry VTT, Roliando o
-    LegendKeeper, como pidió Enrique) y dos escenas: el fondo de Entrar y la ilustración de una pantalla vacía. **Solo
-    las de la app**: las portadas de mundos, campañas, sistemas y libros son del usuario. Enrique las genera con
-    ChatGPT. **Eligió la F** (pintura estilizada; orden F > A > C > D > B > E): guía de estilo y los 22 prompts que
-    faltan (fondos, portada, ambiente, pantallas vacías) en `docs/imagenes.md`; las entrega en `datos-locales/imagenes/`.
-  - **Documentos al empezar**: normas nuevas en `docs/diseno.md`, la tabla de módulos (7 hecho, la revisión en curso, 8
-    y 10 partidos en mundo y campaña, y el orden), ADR-0023 (sin pagos; toca el 0004) y ADR-0024 (plantillas como
-    páginas-modelo; toca el 0009). El del cristal espera al lienzo (tanda 5); el de los capítulos, a 5etools (tanda 7).
-  - **Tanda 1 entera** (`tasks/todo-revision.md`): efectos con tokens `--fx-*` y su versión clara (con prueba de
-    contraste); la barra en su orden nuevo y la salida espejo de la entrada (`--leave` en `ribbon.tsx`); `NewCard`
-    común de línea continua; `Field` con `rows` (crece) y `counter`; el tutorial de Inicio en orden. De paso: la
-    descripción, a tres líneas en la tarjeta; «Personaje nuevo» (campaña) también cambia, por compartir el recuadro.
-- **Revisión de Enrique en local** (aplicada): fuera la pista de la descripción; descripción que se parte sin espacios;
-  esquinas de «Nuevo…» como el marco de las tarjetas; **solo tema oscuro** (fuera el claro entero); X de cerrar con
-  círculo; el nombre se resalta con el color del mundo mientras el ratón está en la tarjeta. Para la tanda 2 decidió
-  **Archivos sin árbol a la izquierda** (la lista del centro despliega las carpetas, se despliegan solas al mantener
-  un archivo encima; vista previa a la izquierda, también en Etiquetas): antes, prototipo.
-- **Falta**: el visto bueno de Enrique en local → impeccable (critique y audit) → `pnpm lint`, `pnpm typecheck`,
-  `pnpm test` y las e2e de lo tocado (`mundos`, `campanas`, `plantillas`, `archivos`, `a11y`…) → PR a `main` con
-  `[skip ci]` y staging.
-- **Local**: Enrique revisa por un túnel a `localhost:5173` (staging, solo al final). La API (8130) estaba caída y el
-  Vite (5173) servía módulos viejos (página negra): los dos, arrancados de nuevo desligados de la sesión (`setsid
-  nohup`, registros en `datos-locales/*.log`). `scripts/desplegar-staging.sh [rama]` puede desplegar una rama local. Capturas de la
-  tanda con un script temporal de e2e (`zz-tanda1.spec.ts`, fuera de git). Ojo: el screencast de Chrome no refresca la
-  barra durante las transiciones de vista; para medir una animación, mejor leer `getAnimations()` en la página.
-- **Siguiente**: cerrar la tanda 1 y pasar a la 2 (árbol común, Archivos, Etiquetas y selector de archivos).
+- **Rama `revision/tanda-1`** (sin subir). Casillas al día en `tasks/todo-revision.md`.
+- **Imágenes**: Enrique eligió la **F** (pintura estilizada). Guía y los 22 prompts que faltan en `docs/imagenes.md`;
+  las entrega en `datos-locales/imagenes/`. Solo las de la app (las portadas son del usuario).
+- **Hecho**: documentos de arranque (normas, tabla de módulos, ADR-0023 sin pagos y ADR-0024 plantillas-modelo) y la
+  **tanda 1** entera con lo que pidió Enrique al revisarla: **solo tema oscuro**, X de cerrar con círculo, nombre
+  resaltado con el color del mundo, «Nuevo…» común de línea continua, descripción con cuenta y sin pista.
+- **impeccable**: critique 29/40 y audit 15/20; lo claro, arreglado (ver las casillas). **Quedan dos preguntas para
+  Enrique** (la línea de «Nuevo…» y el icono del mundo en la barra) y unos cuantos puntos del audit.
+- **Siguiente**: lo que conteste Enrique y lo del audit → `pnpm e2e` entero → repetir `ritmo.test.ts` y el MCP con
+  OAuth → PR a `main` con `[skip ci]` → staging (al final, dijo). Después, la tanda 2 empieza con un **prototipo de
+  Archivos sin árbol a la izquierda** (decidido por Enrique; ver `docs/diseno.md` y el plan).
+- **Local**: Enrique revisa por un túnel a `localhost:5173`; la API (8130) y el Vite (5173), desligados de la sesión
+  (`setsid nohup`, registros en `datos-locales/*.log`). Parados los servidores viejos de la revisión global (5174 y
+  8132). Ojo al parar procesos: el PID con `ss -ltnp` y su cwd (staging va en Docker con el mismo comando).
+  `scripts/desplegar-staging.sh [rama]` despliega una rama local. Los subagentes pueden revisar la app con el
+  servidor de las e2e (`node e2e/servidor.ts`, 8131; se siembra con una prueba que usa `freshOwner`); ojo: tras
+  recompilar la web hay que reiniciarlo (sirve el `index.html` viejo).
 
 ### Para retomar (2026-11-11, tarde: plan de la revisión de Enrique, aprobado; sin empezar)
 
