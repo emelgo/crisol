@@ -36,6 +36,6 @@ capturas de antes y después (en `out/tanda-4/` y en una página para él al aca
    lo usa, y «Exportar» pasa a ser un desplegable de verdad, con su flecha, como «Versiones». Hecho:
    `components/menu.tsx` (Menu, MenuItem, MenuGroup) sobre `Floating`; el tema nuevo `color` en el contrato y en la hoja
    impresa (títulos en el rojo y el dorado de la app, más oscuros); «Imprimir y PDF» de «⋯» pasa al cuadro.
-6. [ ] **Repaso**: Archivos del mundo (ya con el árbol común) y «Página nueva» / «Pestaña nueva» (tanda 3).
+6. [x] **Repaso**: Archivos del mundo (ya con el árbol común) y «Página nueva» / «Pestaña nueva» (tanda 3).
 7. [ ] **Cerrar**: crítica y audit de impeccable, e2e de lo tocado, `tasks/probar.md`, las normas en `docs/diseno.md`,
    capturas de antes y después para Enrique y «Dónde estamos».
