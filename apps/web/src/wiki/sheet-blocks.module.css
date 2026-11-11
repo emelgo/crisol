@@ -28,6 +28,16 @@
 }
 
 .break .breakLabel {
+  display: var(--break-label, inline);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* En la hoja, el salto que cierra una página lleva su número («Página 1»), como las marcas de página */
+.break::after {
+  content: var(--sheet-page, none);
+  font-family: var(--font-body);
   font-size: 0.6875rem;
   font-weight: 600;
   letter-spacing: 0.02em;

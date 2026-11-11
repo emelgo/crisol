@@ -21,9 +21,10 @@ capturas de antes y después (en `out/tanda-4/` y en una página para él al aca
 1. [x] **Las columnas de los lados, fijas.** Pulsar el mundo en la barra ya no recoge la izquierda (lleva a su portada;
    en lo estrecho abre el cajón). La derecha, del mismo alto que la izquierda (el que cabe en la ventana) y con su
    desplazamiento dentro. En la ventana de una página de la Mesa, cada columna con el suyo.
-2. [ ] **La hoja a todo el ancho**: centrada, crece hasta llenar la columna del centro (con un tope para que la letra no
+2. [x] **La hoja a todo el ancho**: centrada, crece hasta llenar la columna del centro (con un tope para que la letra no
    pase de un tamaño cómodo). Las rayas de salto de página (y las marcas de página) de lado a lado de la columna, y su
-   rótulo dice la página que se cierra («Página 1»), también en un salto puesto a mano.
+   rótulo dice la página que se cierra («Página 1»), también en un salto puesto a mano. Hecho: la letra crece hasta
+   20 px (`MAX_SCALE`); a probar con Enrique si el tope le parece bien (con más, la letra se hace grande).
 3. [ ] **La nota lateral, a su lado**: en la hoja, un recuadro estrecho a la izquierda o a la derecha de su columna con
    el texto siguiente alrededor, igual al escribir que al imprimir (hoy al imprimir va siempre a la derecha).
 4. [ ] **Imprimir o descargar, preguntando cómo**: un cuadro con el aspecto («Con colores», nuevo; «Blanco y negro»;

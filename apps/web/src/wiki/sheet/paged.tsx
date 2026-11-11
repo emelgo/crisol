@@ -126,7 +126,12 @@ export interface PageMark {
  * columnas), pero van seguidas, sin el hueco de lo que no se llena: se escribe sin saltar. Devuelve el alto y las
  * marcas de cada página
  */
-function layOut(editor: Editor, settings: SheetSettings, k: number) {
+function layOut(
+  editor: Editor,
+  settings: SheetSettings,
+  k: number,
+  frame: { bleed: number; pageLabel: (number: number) => string }
+) {
   const g = geometry(settings, k)
   const { view, state } = editor
   const blocks: SheetBlock[] = []
@@ -186,6 +191,17 @@ function layOut(editor: Editor, settings: SheetSettings, k: number) {
     }
     return at - y
   }
+  /**
+   * Un salto de página, de lado a lado de la columna del centro (no solo del texto) y, si cierra una, con su número:
+   * «Página 1» al acabar la 1 (su raya la pinta sheet-blocks; el rótulo llega en el estilo)
+   */
+  const placeBreak = (id: string, y: number, closes: number | null) => {
+    const index = Number(id)
+    const label = closes === null ? '' : `;--sheet-page:${JSON.stringify(frame.pageLabel(closes))};--break-label:none`
+    placed[index] =
+      `position:absolute;left:${-frame.bleed}px;top:${y}px;width:${g.content + 2 * frame.bleed}px;margin-inline:0;box-sizing:border-box${label}`
+    ends[index] = { x: 0, y: y + (heights[index] ?? 0), width: g.content }
+  }
   const marks: PageMark[] = []
   const idsOf = (page: (typeof pages)[number]) =>
     page.rows
@@ -205,13 +221,15 @@ function layOut(editor: Editor, settings: SheetSettings, k: number) {
       const before = Math.max(-1, ...idsOf(pages[p - 1] as (typeof pages)[number]))
       const after = Math.min(blocks.length, ...idsOf(page))
       const breaks = blocks.slice(before + 1, after).filter((block) => block.kind === 'pageBreak')
+      // La página que se cierra: la de antes (el rótulo dice la que acaba, no la que empieza)
+      const closes = settings.firstNumber + p - 1
       if (breaks.length > 0) {
-        for (const block of breaks) {
-          place(block.id, 0, top, g.content)
+        breaks.forEach((block, i) => {
+          placeBreak(block.id, top, i === 0 ? closes : null)
           top += heights[Number(block.id)] ?? 0
-        }
+        })
       } else {
-        marks.push({ y: top + MARKER * k * 0.5, number: settings.firstNumber + p })
+        marks.push({ y: top + MARKER * k * 0.5, number: closes })
         top += MARKER * k
       }
     }
@@ -229,11 +247,13 @@ function layOut(editor: Editor, settings: SheetSettings, k: number) {
     }
     top = y
   })
-  // Los demás saltos (de columna, o uno al final) no van en ninguna fila: su raya, justo debajo del bloque de antes
+  // Los demás saltos (de columna, o uno al final) no van en ninguna fila: su raya, justo debajo del bloque de antes. Un
+  // salto de página al final cierra la última
   blocks.forEach((block, index) => {
     if (ends[index]) return
     const before = ends[index - 1] ?? { x: 0, y: 0, width: g.content }
-    place(block.id, before.x, before.y, before.width)
+    if (block.kind === 'pageBreak') placeBreak(block.id, before.y, settings.firstNumber + pages.length - 1)
+    else place(block.id, before.x, before.y, before.width)
     if (before.y + (heights[index] ?? 0) > top) top = before.y + (heights[index] ?? 0)
   })
   const last = ends.at(-1) ?? null
@@ -268,23 +288,27 @@ function clear(editor: Editor) {
   editor.view.dom.querySelector<HTMLElement>(`[${GHOST_LINE}]`)?.removeAttribute('style')
 }
 
-/** Cuánto escalar las páginas para que quepan a lo ancho de su sitio, sin pasar del tamaño de letra de siempre */
+/**
+ * Cuánto escalar las páginas para llenar a lo ancho su sitio (Enrique, 2026-11-11: «debe ocupar todo el ancho
+ * disponible»), hasta que la letra llega a un tamaño cómodo; lo que sobre, a los lados (la hoja va centrada). Con el
+ * ancho de su sitio, para que las rayas de salto vayan de lado a lado
+ */
 function useFit(container: HTMLElement | null, width: number) {
-  const [scale, setScale] = useState(1)
+  const [fit, setFit] = useState({ scale: 1, room: width })
   useEffect(() => {
     if (!container || typeof ResizeObserver === 'undefined') return
     const observer = new ResizeObserver(([entry]) => {
-      // Como mucho, la letra del tamaño de siempre (12 pt de la hoja = 16 px; el texto de la app, 17 px)
-      setScale(Math.min(MAX_SCALE, Math.max(0.4, (entry?.contentRect.width ?? width) / width)))
+      const room = entry?.contentRect.width ?? width
+      setFit({ scale: Math.min(MAX_SCALE, Math.max(0.4, room / width)), room })
     })
     observer.observe(container)
     return () => observer.disconnect()
   }, [container, width])
-  return scale
+  return fit
 }
 
-/** La escala más grande: la letra de la hoja, del tamaño del texto de siempre */
-const MAX_SCALE = 17 / 16
+/** La escala más grande: la letra de la hoja (12 pt = 16 px) hasta 20 px, cómoda en una pantalla grande */
+const MAX_SCALE = 20 / 16
 
 /** Para medir antes de tener ajustes */
 const DEFAULT_GEOMETRY: SheetSettings = {
@@ -315,8 +339,10 @@ export function PagedSheet({
   const [layout, setLayout] = useState<{ height: number; marks: readonly PageMark[] }>({ height: 0, marks: [] })
   const [narrow, setNarrow] = useState(() => typeof window !== 'undefined' && window.matchMedia?.(NARROW).matches)
   const [frame, setFrame] = useState<HTMLDivElement | null>(null)
-  // El texto llena la columna (alineado con el título); el margen del papel queda fuera, sin verse
-  const scale = useFit(frame, contentWidth(settings ?? DEFAULT_GEOMETRY))
+  // El texto llena la columna (con un tope); el margen del papel queda fuera, sin verse
+  const { scale, room } = useFit(frame, contentWidth(settings ?? DEFAULT_GEOMETRY))
+  // Lo que sobra a cada lado de la hoja centrada: las rayas de salto llegan hasta ahí
+  const bleed = Math.max(0, (room - contentWidth(settings ?? DEFAULT_GEOMETRY) * scale) / 2)
   const paged = Boolean(settings) && !narrow
 
   useEffect(() => {
@@ -341,7 +367,10 @@ export function PagedSheet({
     const run = () => {
       frameId = 0
       if (disposed || editor.isDestroyed) return
-      const result = layOut(editor, settings, scale)
+      const result = layOut(editor, settings, scale, {
+        bleed,
+        pageLabel: (number) => t('sheet.pageLabel', { number })
+      })
       setLayout((current) =>
         current.height === result.height && JSON.stringify(current.marks) === JSON.stringify(result.marks)
           ? current
@@ -395,7 +424,7 @@ export function PagedSheet({
       resized?.disconnect()
       if (!editor.isDestroyed) clear(editor)
     }
-  }, [editor, paged, settings, ready, scale])
+  }, [editor, paged, settings, ready, scale, bleed, t])
 
   if (!paged || !settings) return <>{children}</>
   const g = geometry(settings, scale)
@@ -403,6 +432,13 @@ export function PagedSheet({
   const height = layout.height + 32 * scale
   return (
     <div ref={setFrame} className={styles.fit}>
+      {/* Dónde acaba cada página (se calculan por detrás, como al imprimir): una raya fina de lado a lado de la columna
+          con el número de la que se cierra */}
+      {layout.marks.map((mark) => (
+        <div key={mark.number} className={styles.mark} style={{ insetBlockStart: mark.y }} aria-hidden="true">
+          <span>{t('sheet.pageLabel', { number: mark.number })}</span>
+        </div>
+      ))}
       <div
         className={styles.paged}
         // Sin el texto aún (sin conexión), sin colocar: a su alto, con el texto en el flujo
@@ -410,12 +446,6 @@ export function PagedSheet({
         data-sheet-paged=""
         data-placed={ready || undefined}
       >
-        {/* Dónde empieza cada página (se calculan por detrás, como al imprimir): una raya fina con su número */}
-        {layout.marks.map((mark) => (
-          <div key={mark.number} className={styles.mark} style={{ insetBlockStart: mark.y }} aria-hidden="true">
-            <span>{t('sheet.pageLabel', { number: mark.number })}</span>
-          </div>
-        ))}
         <div className={styles.text} style={ready ? { inset: 0 } : { position: 'static' }}>
           {children}
         </div>
