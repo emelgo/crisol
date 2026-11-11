@@ -22,8 +22,10 @@ subir). Enrique revisa las tandas juntas: capturas de antes y después en `out/t
 6. [x] **La portada pública** (`routes/home.tsx`): la imagen a toda pantalla con la barra transparente encima, la llama,
    el nombre, la frase, «Entrar» y «Tengo una invitación» (pide el enlace o el código y lleva a la campaña); debajo,
    tres estampas (capturas de la app: el mundo, la mesa, la ficha). La imagen, provisional (el valle).
-7. [ ] **Cerrar**: crítica y audit de impeccable, e2e, `tasks/probar.md`, normas en `docs/diseno.md` (hecho), capturas
-   para Enrique y «Dónde estamos».
+7. [x] **Cerrar**: crítica (28/40; tres P1: el ambiente sin tope de luz, las rayas que se perdían y el ambiente dentro
+   de las transiciones de vista) y audit (16/20) con sus arreglos, e2e (portada, accesibilidad, Archivos, mundos,
+   Inicio, sesión, wiki, plantillas, sistemas, etiquetas, hoja, imágenes), `tasks/probar.md`, normas en
+   `docs/diseno.md`, capturas en `out/tanda-5/` y la página de revisión.
 
 ## Sin tocar, a propósito
 

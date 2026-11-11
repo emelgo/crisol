@@ -18,8 +18,15 @@ const MOST = 0.32
 const LEAST = 0.08
 /** La luz que puede tener el fondo en su parte más clara: el texto apagado encima, a 5:1; los títulos rojos, a 3:1 */
 const BRIGHTEST = 0.03
-/** El color de debajo (--color-bg), en sRGB */
-const BASE = [0x17, 0x18, 0x1b] as const
+/** El color de debajo: el de --color-bg (si no se puede leer, el de siempre), en sRGB */
+const baseColor = (): readonly [number, number, number] => {
+  const value =
+    typeof document === 'undefined' ? '' : getComputedStyle(document.documentElement).getPropertyValue('--color-bg')
+  const hex = value.trim().match(/^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i)
+  return hex
+    ? [Number.parseInt(hex[1] ?? '17', 16), Number.parseInt(hex[2] ?? '18', 16), Number.parseInt(hex[3] ?? '1b', 16)]
+    : [0x17, 0x18, 0x1b]
+}
 
 // Quien pide un fondo (una pantalla, un mundo), en el orden en que se montan: manda el último
 const wanted: { key: symbol; url: string | null }[] = []
@@ -60,9 +67,10 @@ const luminance = (r: number, g: number, b: number) => 0.2126 * channel(r) + 0.7
 
 /** Cuánto se puede ver una imagen cuyo punto claro es (r, g, b) para que, sobre el fondo, no pase de BRIGHTEST */
 export function ambientAlpha(r: number, g: number, b: number) {
+  const base = baseColor()
   for (let alpha = MOST; alpha > LEAST; alpha -= 0.01) {
     const mix = (from: number, to: number) => from * (1 - alpha) + to * alpha
-    if (luminance(mix(BASE[0], r), mix(BASE[1], g), mix(BASE[2], b)) <= BRIGHTEST) return Math.round(alpha * 100) / 100
+    if (luminance(mix(base[0], r), mix(base[1], g), mix(base[2], b)) <= BRIGHTEST) return Math.round(alpha * 100) / 100
   }
   return LEAST
 }

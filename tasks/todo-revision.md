@@ -152,6 +152,7 @@ Plan: `tasks/plan-revision.md`. Una tanda cada vez: se enseña en local, Enrique
   juntas); plan en `tasks/tanda-5.md`.
 - [x] Superficies y fondo de ambiente; respaldo sin desenfoque donde falta; «Sin desenfoque» en Ajustes.
 - [x] Entrar (el recuadro de cristal) y la portada pública. Las imágenes nuevas de Entrar, cuando Enrique las genere.
+- [x] Crítica (28/40) y audit (16/20) de impeccable, con sus arreglos.
 
 ## Tanda 6 — Sistemas: su espacio, sus portadas y sus libros
 
@@ -225,5 +226,9 @@ Lo que sale sin estar en la lista: se avisa a Enrique y se arregla en su tanda.
 - [x] En la ventana de una página de la Mesa, la cabecera compacta dejaba leer el texto de detrás: opaca (tanda 4).
 - [x] Las rayas de página estaban a 2,4:1 con el fondo y «Incluir secretos» en un rojo a 3:1: a 3:1 y en el rojo
   legible (tanda 4, audit).
+- [ ] El creador de personajes, con la máquina cargada, se queda en «Guardando…» y no aplica las características (la
+  e2e `personajes.spec.ts` falla así; también en `main`): una carrera que ya existía. Con la revisión de la campaña.
+- [x] Las esperas de las e2e a que acaben las animaciones no contaban con las que van ligadas al desplazamiento (el pie
+  de la barra, tanda 5), que no acaban nunca: ahora se las saltan.
 - [ ] La hoja móvil de una etiqueta (`tags.tsx`) usa clases que no existen en el CSS (`files.sheet`…): ya fallaba
   antes; el móvil es solo de la jugadora y Etiquetas es del máster, así que es menor.
