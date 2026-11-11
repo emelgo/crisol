@@ -20,6 +20,7 @@ import { Modal } from '../components/modal.tsx'
 import { NewCard } from '../components/new-card.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { Tour } from '../components/tour.tsx'
+import { dropMove, type Move, outdentTarget, type TreeNode, type Zone, zoneAt } from '../components/tree/moves.ts'
 import cards from '../routes/world-card.module.css'
 import { ColorChoices } from '../routes/world-card.tsx'
 import { colorHex } from '../routes/world-look.ts'
@@ -37,9 +38,10 @@ const leafOf = (name: string) => name.split('/').at(-1) ?? name
 const parentOf = (name: string) => name.split('/').slice(0, -1).join('/')
 const joinTag = (parent: string, leaf: string) => (parent ? `${parent}/${leaf}` : leaf)
 const sameTag = (a: string, b: string) => tagKey(a) === tagKey(b)
-/** Si «tag» puede ir dentro de «into» («» es arriba del todo): ni dentro de sí misma, ni donde ya está */
-const canMove = (tag: string, into: string) =>
-  !sameTag(parentOf(tag), into) && !sameTag(tag, into) && !tagKey(into).startsWith(`${tagKey(tag)}/`)
+/** Una etiqueta como elemento del árbol (components/tree): su id es su nombre y su madre, la de arriba */
+const nodeOf = (name: string): TreeNode => ({ id: name, parentId: parentOf(name) || null })
+/** Cuánto hay que llevarla a la izquierda para sacarla un nivel (como en el árbol de páginas) */
+const OUTDENT_STEP = 24
 
 /** «Dentro de»: arriba del todo o una de las etiquetas (sin ella misma ni sus hijas, al cambiarla de sitio) */
 function ParentSelect({
@@ -226,26 +228,29 @@ export function AccountTags() {
   const api = useApi()
   const announce = useAnnounce()
   const errorText = useErrorText()
-  // Arrastrar una etiqueta sobre otra la mete dentro; sobre «Arriba del todo», la saca (como las carpetas de Archivos)
+  // Arrastrar, como en el árbol de páginas: una raya delante o detrás de una fila, o la fila resaltada si va dentro;
+  // llevada a la izquierda, sale de su madre
   const [dragging, setDragging] = useState<string | null>(null)
-  const [over, setOver] = useState<string | null>(null)
+  const dragStartX = useRef(0)
+  const [drop, setDrop] = useState<{ name: string; zone: Zone; level?: number } | null>(null)
   const [received, setReceived] = useState<string | null>(null)
   const move = useMutation({
-    mutationFn: async ({ from, to }: { from: string; to: string }) => {
-      await api.call('updateTag', { tag: from, name: to })
+    mutationFn: async ({ tag, to }: { tag: string; to: Move }) => {
+      const moved = await api.call('moveTag', {
+        tag,
+        parent: to.parentId,
+        ...(to.before ? { before: to.before } : {}),
+        ...(to.after ? { after: to.after } : {})
+      })
       await queryClient.invalidateQueries({ queryKey: ['tags'] })
+      return moved
     },
-    onSuccess: (_, { to }) => {
-      setReceived(parentOf(to) || to)
-      announce(t('tags.moved', { name: to }))
+    onSuccess: (moved) => {
+      setReceived(moved.name)
+      announce(t('tags.moved', { name: moved.name }))
     },
     onError: (error) => announce(errorText(error))
   })
-  const drop = (into: string) => {
-    if (dragging && canMove(dragging, into)) move.mutate({ from: dragging, to: joinTag(into, leafOf(dragging)) })
-    setDragging(null)
-    setOver(null)
-  }
   if (pending) return null
   if (!account) return <Navigate to="/entrar" replace />
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['tags'] })
@@ -253,6 +258,41 @@ export function AccountTags() {
   const all = tags.data?.tags ?? []
   const shown = wanted ? all.filter((tag) => tag.name.toLocaleLowerCase('es').includes(wanted)) : all
   const detail = shown.find((tag) => tag.name === hovered)
+  // Cada fila, con su nivel y su puesto entre sus hermanas: para saber adónde sale al llevarla a la izquierda
+  const rows = shown.map((tag) => {
+    const siblings = shown.filter((other) => sameTag(parentOf(other.name), parentOf(tag.name)))
+    return {
+      tag,
+      level: tag.depth + 1,
+      posinset: siblings.indexOf(tag) + 1,
+      setsize: siblings.length,
+      expanded: shown.some((other) => sameTag(parentOf(other.name), tag.name))
+    }
+  })
+  const rowOf = (name: string) => rows.find((row) => sameTag(row.tag.name, name))
+  /** Adónde iría la que se arrastra al soltarla en esa fila (y la fila a la que sale, si se lleva a la izquierda) */
+  const dropAt = (name: string, zone: Zone, clientX: number) => {
+    const row = rowOf(name)
+    if (!dragging || !row) return null
+    const out = outdentTarget(
+      row,
+      (r) => nodeOf(r.tag.name),
+      rowOf,
+      zone,
+      Math.floor((dragStartX.current - clientX) / OUTDENT_STEP),
+      dragging
+    )
+    const to = dropMove(
+      nodeOf(dragging),
+      nodeOf(name),
+      zone,
+      (id) => parentOf(id) || null,
+      out ? nodeOf(out.tag.name) : null
+    )
+    // Dentro de su propia madre (sin delante ni detrás): ya está ahí
+    if (to && !to.before && !to.after && sameTag(to.parentId ?? '', parentOf(dragging))) return null
+    return to ? { to, level: out?.level } : null
+  }
   return (
     <section className={files.page}>
       <div className={files.layout}>
@@ -278,46 +318,40 @@ export function AccountTags() {
               ) : (
                 shown.length === 0 && <p className={files.empty}>{t('tags.noResults')}</p>
               )}
-              <ul
-                className={`${files.rows} ${dragging ? styles.draggingTag : ''}`}
-                aria-label={t('tags.title')}
-                data-tour="etiquetas-lista"
-              >
-                {/* Mientras se arrastra una de dentro: «Arriba del todo», para sacarla */}
-                {dragging && parentOf(dragging) && (
-                  <li
-                    className={styles.topTarget}
-                    data-over={over === '' || undefined}
-                    onDragOver={(event) => {
-                      event.preventDefault()
-                      setOver('')
-                    }}
-                    onDragLeave={() => setOver((current) => (current === '' ? null : current))}
-                    onDrop={(event) => {
-                      event.preventDefault()
-                      drop('')
-                    }}
-                  >
-                    {t('tags.topHere')}
-                    {over === '' && <span className={styles.moveHere}>{t('tags.moveHere')}</span>}
-                  </li>
-                )}
+              <ul className={files.rows} aria-label={t('tags.title')} data-tour="etiquetas-lista">
                 {shown.map((tag) => (
                   <TagRow
                     key={tag.name}
                     tag={tag}
                     indent={!wanted}
                     movable={!wanted}
-                    target={dragging !== null && canMove(dragging, tag.name)}
-                    over={over === tag.name}
+                    drop={drop && sameTag(drop.name, tag.name) ? drop : null}
                     received={received !== null && sameTag(received, tag.name)}
-                    onDrag={(on) => {
+                    onDrag={(on, x) => {
                       setDragging(on ? tag.name : null)
-                      setOver(null)
+                      dragStartX.current = x
+                      setDrop(null)
                       setReceived(null)
                     }}
-                    onOver={(on) => setOver((current) => (on ? tag.name : current === tag.name ? null : current))}
-                    onDropInto={() => drop(tag.name)}
+                    onDragOver={(zone, clientX) => {
+                      const at = dropAt(tag.name, zone, clientX)
+                      setDrop(
+                        at
+                          ? {
+                              name: tag.name,
+                              zone: at.level ? 'after' : zone,
+                              ...(at.level ? { level: at.level } : {})
+                            }
+                          : null
+                      )
+                      return at !== null
+                    }}
+                    onDrop={(zone, clientX) => {
+                      const at = dropAt(tag.name, zone, clientX)
+                      if (dragging && at) move.mutate({ tag: dragging, to: at.to })
+                      setDragging(null)
+                      setDrop(null)
+                    }}
                     onPreview={(on) => setHovered((current) => (on ? tag.name : current === tag.name ? null : current))}
                     onChanged={refresh}
                   />
@@ -364,12 +398,11 @@ function TagRow({
   tag,
   indent,
   movable,
-  target,
-  over,
+  drop,
   received,
   onDrag,
-  onOver,
-  onDropInto,
+  onDragOver,
+  onDrop,
   onPreview,
   onChanged
 }: {
@@ -378,14 +411,15 @@ function TagRow({
   indent: boolean
   /** Se puede arrastrar (en árbol, con ratón) */
   movable: boolean
-  /** Mientras se arrastra otra: si puede soltarse aquí, y si está encima */
-  target: boolean
-  over: boolean
-  /** Acaba de recibir una: se ilumina un momento */
+  /** Mientras se arrastra otra encima: dónde caería (delante, dentro o detrás) y, si sale de su madre, a qué nivel */
+  drop: { zone: Zone; level?: number } | null
+  /** Acaba de moverse: se ilumina un momento */
   received: boolean
-  onDrag: (dragging: boolean) => void
-  onOver: (over: boolean) => void
-  onDropInto: () => void
+  /** Empieza o acaba de arrastrarse (con dónde estaba el puntero al empezar) */
+  onDrag: (dragging: boolean, x: number) => void
+  /** Pasa otra por encima: devuelve si puede soltarse ahí */
+  onDragOver: (zone: Zone, clientX: number) => boolean
+  onDrop: (zone: Zone, clientX: number) => void
   onPreview: (shown: boolean) => void
   onChanged: () => Promise<unknown>
 }) {
@@ -398,28 +432,30 @@ function TagRow({
   return (
     <li
       className={`${files.row} ${styles.tagRow} ${received ? files.received : ''}`}
-      style={indent ? ({ paddingInlineStart: `calc(${tag.depth} * 1.5rem + var(--space-2))` } as CSSProperties) : {}}
-      data-target={target || undefined}
-      data-over={over || undefined}
+      style={
+        {
+          ...(indent ? { paddingInlineStart: `calc(${tag.depth} * 1.5rem + var(--space-2))` } : {}),
+          // La raya empieza en el nivel donde cae: el de la fila o, si sale de su madre, el de fuera
+          '--drop-indent': `calc(${drop?.level ? drop.level - 1 : indent ? tag.depth : 0} * 1.5rem)`
+        } as CSSProperties
+      }
+      data-drop={drop?.zone}
       draggable={movable && !narrow}
       onDragStart={(event) => {
         event.dataTransfer.effectAllowed = 'move'
         event.dataTransfer.setData('text/plain', tag.name)
-        onDrag(true)
+        onDrag(true, event.clientX)
       }}
-      onDragEnd={() => onDrag(false)}
+      onDragEnd={(event) => onDrag(false, event.clientX)}
       onDragOver={(event) => {
-        if (!target) return
+        const box = event.currentTarget.getBoundingClientRect()
+        if (!onDragOver(zoneAt((event.clientY - box.top) / (box.height || 1)), event.clientX)) return
         event.preventDefault()
-        onOver(true)
-      }}
-      onDragLeave={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) onOver(false)
       }}
       onDrop={(event) => {
-        if (!target) return
         event.preventDefault()
-        onDropInto()
+        const box = event.currentTarget.getBoundingClientRect()
+        onDrop(zoneAt((event.clientY - box.top) / (box.height || 1)), event.clientX)
       }}
       onPointerEnter={() => onPreview(true)}
       onPointerLeave={() => onPreview(false)}
@@ -441,7 +477,6 @@ function TagRow({
         ) : (
           <span className={styles.name}>{name}</span>
         )}
-        {over && <span className={styles.moveHere}>{t('tags.moveHere')}</span>}
       </span>
       <span className={`${files.rowMeta} ${styles.usesAside}`}>{uses(tag)}</span>
       <TagSettings tag={tag} onChanged={onChanged} />

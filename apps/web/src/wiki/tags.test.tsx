@@ -1,8 +1,8 @@
 import type { World } from '@crisol/contracts'
 import { createMemoryHistory } from '@tanstack/react-router'
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { createEvent, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { fakeAccountClient } from '../account/fake.ts'
 import { fakeApi } from '../api/fake.ts'
 import { App } from '../app.tsx'
@@ -119,24 +119,47 @@ describe('las etiquetas de la cuenta', () => {
     expect(await screen.findByRole('button', { name: 'Ajustes de ciudad' })).toBeDefined()
   })
 
-  it('arrastrar una etiqueta sobre otra la mete dentro; sobre «Arriba del todo», la saca', async () => {
-    renderAt('/etiquetas')
-    await screen.findByRole('button', { name: 'Ajustes de lugar/ciudad' })
+  it('se arrastran como las páginas: una raya delante o detrás para ordenarlas, la fila resaltada para meterla dentro', async () => {
+    const api = tagsApi()
+    await api.client.call('createTag', { name: 'pnj' })
+    renderAt('/etiquetas', api)
+    await screen.findByRole('button', { name: 'Ajustes de pnj' })
     const row = (name: string) =>
       screen.getByRole('button', { name: `Ajustes de ${name}` }).closest('li') as HTMLElement
+    // Cada fila mide 100 de alto (jsdom no mide): arriba del todo, delante; abajo, detrás; en medio, dentro
+    const box = vi
+      .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+      .mockReturnValue({ top: 0, height: 100, left: 0, width: 400, bottom: 100, right: 400, x: 0, y: 0 } as DOMRect)
     const dataTransfer = { setData: () => {}, effectAllowed: '' }
-    fireEvent.dragStart(row('lugar/ciudad'), { dataTransfer })
-    const top = await screen.findByText('Arriba del todo')
-    fireEvent.dragOver(top, { dataTransfer })
-    expect(await screen.findByText('Mover aquí')).toBeDefined()
-    fireEvent.drop(top, { dataTransfer })
-    expect(await screen.findByRole('button', { name: 'Ajustes de ciudad' })).toBeDefined()
+    const at = (target: HTMLElement, type: 'dragOver' | 'drop', y: number) => {
+      const event = createEvent[type](target, { dataTransfer })
+      Object.defineProperty(event, 'clientY', { value: y })
+      Object.defineProperty(event, 'clientX', { value: 200 })
+      fireEvent(target, event)
+    }
+    const drag = (from: string, to: string, y: number) => {
+      fireEvent.dragStart(row(from), { dataTransfer, clientX: 200 })
+      at(row(to), 'dragOver', y)
+      at(row(to), 'drop', y)
+    }
+    expect(rows()).toEqual(['lugar1 página · 1 archivo', 'ciudad1 página', 'pnjSin usar'])
 
-    // Y otra vez dentro de «lugar», soltándola encima
-    fireEvent.dragStart(row('ciudad'), { dataTransfer })
-    fireEvent.dragOver(row('lugar'), { dataTransfer })
-    fireEvent.drop(row('lugar'), { dataTransfer })
+    // pnj, por encima de lugar: la raya, delante; al soltar, ahí queda
+    fireEvent.dragStart(row('pnj'), { dataTransfer, clientX: 200 })
+    at(row('lugar'), 'dragOver', 10)
+    expect(row('lugar').dataset.drop).toBe('before')
+    at(row('lugar'), 'drop', 10)
+    await waitFor(() => expect(rows()[0]).toContain('pnj'))
+    // ciudad, por debajo de pnj (que está arriba del todo): sale de lugar y queda detrás de pnj
+    drag('lugar/ciudad', 'pnj', 90)
+    await waitFor(() => expect(rows().map((text) => text?.split(/\d|Sin/)[0])).toEqual(['pnj', 'ciudad', 'lugar']))
+    // Y en medio de lugar: dentro, con la fila resaltada
+    fireEvent.dragStart(row('ciudad'), { dataTransfer, clientX: 200 })
+    at(row('lugar'), 'dragOver', 50)
+    expect(row('lugar').dataset.drop).toBe('inside')
+    at(row('lugar'), 'drop', 50)
     expect(await screen.findByRole('button', { name: 'Ajustes de lugar/ciudad' })).toBeDefined()
+    box.mockRestore()
   })
 
   it('en los archivos: se ponen desde su ventana y se filtra por ellas', async () => {

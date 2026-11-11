@@ -123,8 +123,9 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   dentro, son filtros (al buscar en la wiki, en Archivos). Llevan un color opcional y se ven como un punto de color con
   su nombre. Se eligen o se escriben: una nueva entra sola. **Una puede ir dentro de otra** (Enrique, 2026-11-08: «al crearla que te
   deje poner donde debe ir y luego poder arrastrarlas»): al crearla se elige «Dentro de» (sin escribir «/»); en la lista
-  se arrastran sobre otra para meterlas dentro, como las carpetas de Archivos (se marcan los sitios donde se puede
-  soltar, con «Mover aquí»), o a «Arriba del todo» para sacarlas; también desde su ventana. Se llevan sus hijas.
+  se arrastran como las páginas del mundo (Enrique, 2026-11-12: «nada de arriba del todo, debe funcionar como las hojas
+  de un mundo»): una raya delante o detrás de una fila para ordenarlas a mano, la fila resaltada si va dentro, y
+  llevada a la izquierda sale de su madre; también desde su ventana («Dentro de»). Se llevan sus hijas.
 - **El móvil, solo para la jugadora** (Enrique, 2026-11-08: «la vista movil la vamos a descartar por completo excepto
   para la vista del jugador, el master siempre deberá trabajar desde PC»). Lo del máster (el mundo, sus páginas,
   Archivos, Plantillas, Sistemas, la Mesa…) se diseña y se revisa solo en el escritorio; lo de la jugadora (su campaña,

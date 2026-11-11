@@ -179,40 +179,36 @@ a.chipLink:hover {
   display: none !important;
 }
 
-/* Arrastrar una etiqueta sobre otra la mete dentro (como las carpetas de Archivos): mientras se arrastra, las filas
-   donde se puede soltar, marcadas; la de debajo, resaltada con «Mover aquí» */
+/* Arrastrar, como en el árbol de páginas: una raya delante o detrás (desde el nivel donde cae), o la fila resaltada
+   si va dentro */
 .tagRow[draggable="true"] {
   cursor: grab;
 }
 
-.draggingTag .tagRow[data-target] {
-  outline: 1px dashed var(--color-field-border);
-  outline-offset: -1px;
+.tagRow {
+  position: relative;
 }
 
-.draggingTag .tagRow[data-over],
-.topTarget[data-over] {
+.tagRow[data-drop="before"]::before,
+.tagRow[data-drop="after"]::after {
+  content: "";
+  position: absolute;
+  inset-inline: var(--drop-indent, 0) 0;
+  block-size: 2px;
+  background: var(--color-accent);
+  pointer-events: none;
+}
+
+.tagRow[data-drop="before"]::before {
+  inset-block-start: -1px;
+}
+
+.tagRow[data-drop="after"]::after {
+  inset-block-end: -1px;
+}
+
+.tagRow[data-drop="inside"] {
   outline: 2px solid var(--color-accent);
   outline-offset: -2px;
-  background: color-mix(in srgb, var(--color-accent) 18%, transparent);
-}
-
-.moveHere {
-  margin-inline-start: var(--space-2);
-  color: var(--color-accent-text);
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-
-/* «Arriba del todo»: sale arriba mientras se arrastra una de dentro, para sacarla */
-.topTarget {
-  display: flex;
-  align-items: center;
-  min-block-size: 2.75rem;
-  margin-block-end: var(--space-2);
-  padding-inline: var(--space-3);
-  border: 1px dashed var(--color-field-border);
-  border-radius: 4px;
-  color: var(--color-muted);
-  font-weight: 600;
+  background: color-mix(in srgb, var(--color-accent) 14%, transparent);
 }

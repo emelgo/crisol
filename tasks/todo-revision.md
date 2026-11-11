@@ -67,7 +67,10 @@ Plan: `tasks/plan-revision.md`. Una tanda cada vez: se enseña en local, Enrique
 - [x] `components/tree/moves.ts`: la lógica de mover, fuera del árbol de páginas y con sus pruebas (el árbol de
   páginas solo la importa).
 - [ ] Archivos con la lista que despliega (y fila «Todos» para lo más alto).
-- [ ] Etiquetas: `tags.position` y reordenar.
+- [x] Etiquetas: `tags.position` (migración 0074, nota en el ADR-0006), `moveTag` y MCP `mover_etiqueta`; se
+  arrastran como las páginas del mundo: raya delante o detrás para ordenar, la fila resaltada para meterla dentro, y
+  llevada a la izquierda sale de su madre. Fuera «Arriba del todo» (Enrique, 2026-11-12).
+- [ ] Etiquetas con el teclado (Alt + flechas, como en el árbol de páginas).
 - [ ] Selector de archivos y la portada al crear un mundo.
 
 ## Tanda 3 — Plantillas

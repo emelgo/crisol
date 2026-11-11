@@ -2812,8 +2812,6 @@ export const es = {
     name: 'Nombre de la etiqueta',
     parent: 'Dentro de',
     top: 'Ninguna (arriba del todo)',
-    topHere: 'Arriba del todo',
-    moveHere: 'Mover aquí',
     moved: '«{{name}}», movida',
     create: 'Crear la etiqueta',
     search: 'Buscar etiquetas',
