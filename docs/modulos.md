@@ -7,6 +7,24 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
+### Para retomar (2026-11-12, mañana: tanda 1 cerrada salvo subirla; tanda 2 en marcha, rama `revision/tanda-2`)
+
+- **Tanda 1**: Enrique contestó las dos preguntas (sí a la línea de «Nuevo…» como las tarjetas; icono propio del
+  mundo, `MountainSnow`) y se hizo todo lo del audit (X común `components/close.module.css`, la barra en pantallas
+  bajas, cuenta en palabras, colores forzados, forja y ceniza a tokens, la subida de los iconos medida). `ritmo.test.ts`
+  y el MCP con OAuth, en verde al repetirlos. La batería de e2e se lanzó (resultado, en el log de la sesión). **Subir a
+  `main` y staging, cuando haya más tandas hechas** (Enrique).
+- **Tanda 2** (rama `revision/tanda-2`, sobre la 1):
+  - Archivos comunes ya mueve (fallaba la comprobación de ámbito fuera de los mundos).
+  - `components/tree/moves.ts`: la lógica de mover, común y con pruebas; el árbol de páginas la importa.
+  - Etiquetas ordenadas a mano: `tags.position` (migración 0074, aplicada en local), `moveTag`, MCP `mover_etiqueta`,
+    y se arrastran **como las páginas del mundo** (raya delante o detrás, resalte dentro; sin «Arriba del todo», lo
+    pidió Enrique).
+  - Prototipo «Archivos sin árbol» (https://claude.ai/artifact/SNQuCPM644JuprjWvatqBA), ya con el arrastre de las
+    páginas; **sin aprobar**. Pregunta abierta: ¿los archivos, también en orden a mano?
+- **Siguiente**: lo que diga Enrique del prototipo → la Archivos nueva, el selector de archivos y la portada al crear
+  un mundo; Etiquetas con el teclado.
+
 ### Para retomar (2026-11-12, madrugada: tanda 1 con visto bueno y revisada con impeccable; faltan e2e, PR y staging)
 
 - **Rama `revision/tanda-1`** (sin subir). Casillas al día en `tasks/todo-revision.md`.
