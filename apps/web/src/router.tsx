@@ -182,16 +182,17 @@ const worldPageRoute = createRoute({
   validateSearch: asSearch
 })
 const wikiRoute = createRoute({ getParentRoute: () => rootRoute, path: '/mundos/$worldId/wiki', component: WikiHome })
+// ?nuevo=true: la página se acaba de crear y se abre con su título por poner; ?pestana=<id>: una pestaña que no es el
+// texto (un mapa)
+const pageSearch = (search: Record<string, unknown>): { nuevo?: true; pestana?: string } => ({
+  ...(search.nuevo === true || search.nuevo === 'true' ? { nuevo: true as const } : {}),
+  ...(typeof search.pestana === 'string' && search.pestana ? { pestana: search.pestana } : {})
+})
 const wikiPageRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/mundos/$worldId/wiki/$pageId',
   component: WikiPage,
-  // ?nuevo=true: la página se acaba de crear y se abre con su título por poner; ?pestana=<id>: una pestaña que no es
-  // el texto (un mapa)
-  validateSearch: (search: Record<string, unknown>): { nuevo?: true; pestana?: string } => ({
-    ...(search.nuevo === true || search.nuevo === 'true' ? { nuevo: true as const } : {}),
-    ...(typeof search.pestana === 'string' && search.pestana ? { pestana: search.pestana } : {})
-  })
+  validateSearch: pageSearch
 })
 const tagsRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -250,10 +251,12 @@ const reviewRoute = createRoute({
   path: '/sistemas/$systemId/libros/$bookKey/revisar',
   component: ReviewScreen
 })
+// Una plantilla abierta, como una página (ADR-0024): ?nuevo y ?pestana, como en la wiki
 const templateRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/plantillas/$templateId',
-  component: TemplateView
+  component: TemplateView,
+  validateSearch: pageSearch
 })
 const trashRoute = createRoute({ getParentRoute: () => rootRoute, path: '/papelera', component: OrganizationTrash })
 const consentRoute = createRoute({ getParentRoute: () => rootRoute, path: '/oauth/consentimiento', component: Consent })

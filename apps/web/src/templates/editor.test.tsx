@@ -24,7 +24,7 @@ async function renderTemplate(id?: string) {
   return { api, own, saved }
 }
 
-const panel = async () => within(await screen.findByRole('complementary', { name: 'Campos y panel de la plantilla' }))
+const panel = async () => within(await screen.findByRole('complementary', { name: 'Panel de la página' }))
 
 describe('editar una plantilla', () => {
   beforeEach(() =>
@@ -59,7 +59,6 @@ describe('editar una plantilla', () => {
     await userEvent.type(segments, '8{Enter}')
     await waitFor(async () => expect((await saved()).fields[1]).toMatchObject({ type: 'clock', segments: 8 }))
     expect(fields.getByRole('button', { name: /Reloj de 8/ })).toBeDefined()
-    expect(screen.getByText('Guardado')).toBeDefined()
   })
 
   it('su panel: una tabla de páginas con sus desplegables, con título', async () => {
@@ -76,11 +75,28 @@ describe('editar una plantilla', () => {
     )
   })
 
-  it('su nombre se cambia en el sitio, como el título de una página', async () => {
+  it('es su página: «Plantilla» junto al título, «Plantillas» para volver y sin lo de las páginas de un mundo', async () => {
+    const { own } = await renderTemplate()
+    const title = await screen.findByRole('textbox', { name: 'Título de la página' })
+    expect(title.textContent).toBe('Frente')
+    expect(screen.getByRole('heading', { level: 1 }).parentElement?.parentElement?.textContent).toContain('Plantilla')
+    // «Plantillas» para volver, fuera de la barra (que también la lleva)
+    const back = screen.getAllByRole('link', { name: 'Plantillas' }).filter((link) => !link.closest('nav'))
+    expect(back.map((link) => link.getAttribute('href'))).toEqual(['/plantillas'])
+    // A la izquierda, las demás (con ella marcada)
+    expect(screen.getByRole('link', { name: /Frente/, current: 'page' }).getAttribute('href')).toBe(
+      `/plantillas/${own.id}`
+    )
+    expect(screen.queryByRole('button', { name: /Quién la conoce/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: /Marcar/ })).toBeNull()
+    expect(screen.queryByText('Mencionado en')).toBeNull()
+  })
+
+  it('su nombre se cambia en su título, como el de una página; un emoji delante pasa a ser su icono', async () => {
     const { saved } = await renderTemplate()
-    const title = await screen.findByLabelText('Nombre', { selector: 'input' })
-    await userEvent.clear(title)
-    await userEvent.type(title, 'Frentes{Enter}')
-    await waitFor(async () => expect((await saved()).name).toBe('Frentes'))
+    const title = await screen.findByRole('textbox', { name: 'Título de la página' })
+    await userEvent.click(title)
+    await userEvent.keyboard('{Control>}a{/Control}🗡️ Frentes{Enter}')
+    await waitFor(async () => expect(await saved()).toMatchObject({ name: 'Frentes', icon: '🗡️' }))
   })
 })

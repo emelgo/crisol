@@ -1,8 +1,18 @@
 import type { Page, PageTabView } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getRouteApi, Link, Navigate, useNavigate, useRouter } from '@tanstack/react-router'
-import { Ellipsis, FileText, House, ListFilter, Lock, LockOpen, Plus } from 'lucide-react'
-import { type ReactNode, type RefObject, useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
+import { Ellipsis, FileText, House, LayoutTemplate, ListFilter, Lock, LockOpen, Plus } from 'lucide-react'
+import {
+  type CSSProperties,
+  type ReactNode,
+  type RefObject,
+  useCallback,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState
+} from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { ApiError } from '../api/client.ts'
@@ -13,6 +23,7 @@ import { BusyButton } from '../components/busy-button.tsx'
 import list from '../components/list.module.css'
 import { failed, LoadError } from '../components/load-error.tsx'
 import { headingMayTakeFocus, PageTitle, useHeadingFocusRequest } from '../components/page-title.tsx'
+import { itemTransition } from '../components/world-transition.ts'
 import { WorldBanner } from '../routes/world-card.tsx'
 import { TemplateIcon } from '../templates/icons.tsx'
 import { useTemplates } from '../templates/picker.tsx'
@@ -35,7 +46,7 @@ import { PageRevealButton } from './reveal.tsx'
 import { SceneMain, SceneSide, SceneTabProvider } from './scene/scene-tab.tsx'
 import { SheetMenu, SheetPaper } from './sheet/controls.tsx'
 import { TableTab } from './table/table-tab.tsx'
-import { PageTabs, usePageTabs } from './tabs/page-tabs.tsx'
+import { PageTabs, usePageTabs, useTabTarget } from './tabs/page-tabs.tsx'
 import { PageTree } from './tree.tsx'
 import { Versions } from './versions.tsx'
 import { WhoKnowsButton } from './who-knows.tsx'
@@ -359,27 +370,26 @@ function PageHead({
   page,
   startEditing,
   home = false,
+  template,
   actions
 }: {
   page: Page
   startEditing: boolean
   /** La portada del mundo: lleva su etiqueta junto al título */
   home?: boolean
+  /** La página de una plantilla (su id): «Plantilla» junto al título, y su icono y su nombre viajan desde su tarjeta */
+  template?: string | undefined
   actions: ReactNode
 }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const router = useRouter()
+  const target = useTabTarget(page)
   // Recién creada: ya con su nombre puesto, la dirección deja de decir «nuevo» (si aún se está en ella: al salir del
   // título pulsando otra página, se guarda sin volver aquí)
   const named = () => {
-    if (!startEditing || !router.state.location.pathname.endsWith(`/wiki/${page.id}`)) return
-    void navigate({
-      to: '/mundos/$worldId/wiki/$pageId',
-      params: { worldId: page.worldId, pageId: page.id },
-      search: {},
-      replace: true
-    })
+    if (!startEditing || router.state.location.pathname !== router.buildLocation(target(null)).pathname) return
+    void navigate({ ...target(null), replace: true })
   }
   // Pegada y pequeña en cuanto lo de encima de ella se va de la vista
   const sentinel = useRef<HTMLDivElement>(null)
@@ -397,9 +407,26 @@ function PageHead({
       <header className={styles.entryHeader} data-compact={compact || undefined}>
         <div className={styles.entryTitle}>
           <div className={styles.heading}>
-            {page.icon && <PageIcon page={page} />}
-            <InlineTitle page={page} autoFocus={startEditing} onDone={named} />
-            {page.template && <TemplateBadge templateId={page.template} />}
+            {page.icon && (
+              <PageIcon
+                page={page}
+                {...(template ? { style: itemTransition(template, 'icono'), elemento: 'icono' } : {})}
+              />
+            )}
+            <InlineTitle
+              page={page}
+              autoFocus={startEditing}
+              onDone={named}
+              {...(template ? { style: itemTransition(template, 'nombre'), iconFirst: true } : {})}
+            />
+            {template ? (
+              <span className={styles.templateBadge}>
+                <LayoutTemplate aria-hidden="true" size={12} />
+                {t('templateEditor.kind')}
+              </span>
+            ) : (
+              page.template && <TemplateBadge templateId={page.template} />
+            )}
             {home && (
               <span className={styles.homeBadge}>
                 <House aria-hidden="true" size={12} />
@@ -450,7 +477,21 @@ function TemplateBadge({ templateId }: { templateId: string }) {
  * Vacío o igual, vuelve el de antes sin más; un error (del servidor) sale debajo y el foco se queda. Con la página
  * bloqueada, solo se lee
  */
-function InlineTitle({ page, autoFocus, onDone }: { page: Page; autoFocus: boolean; onDone: () => void }) {
+function InlineTitle({
+  page,
+  autoFocus,
+  onDone,
+  style,
+  iconFirst = false
+}: {
+  page: Page
+  autoFocus: boolean
+  onDone: () => void
+  /** Su nombre de transición (el título de una plantilla, desde su tarjeta) */
+  style?: CSSProperties | undefined
+  /** Un emoji al principio pasa a ser su icono (el de una plantilla, que sale en las listas y en sus páginas) */
+  iconFirst?: boolean
+}) {
   const { t } = useTranslation()
   const api = useApi()
   const queryClient = useQueryClient()
@@ -460,7 +501,7 @@ function InlineTitle({ page, autoFocus, onDone }: { page: Page; autoFocus: boole
   const errorId = useId()
   const [error, setError] = useState<string | null>(null)
   const rename = useMutation({
-    mutationFn: (title: string) => api.call('updatePage', { pageId: page.id, title }),
+    mutationFn: (change: { title: string; icon?: string }) => api.call('updatePage', { pageId: page.id, ...change }),
     onSuccess: async () => {
       setError(null)
       await queryClient.invalidateQueries({ queryKey: ['pages', page.worldId] })
@@ -489,15 +530,18 @@ function InlineTitle({ page, autoFocus, onDone }: { page: Page; autoFocus: boole
     body?.focus()
   }
   const commit = () => {
-    const text = (box.current?.textContent ?? '').replace(/\s+/g, ' ').trim()
-    if (!text || text === page.title) {
+    let text = (box.current?.textContent ?? '').replace(/\s+/g, ' ').trim()
+    const emoji = iconFirst ? text.match(LEADING_EMOJI) : null
+    const icon = emoji?.[1]
+    if (emoji) text = text.slice(emoji[0].length).trim() || page.title
+    if (!text || (text === page.title && !icon)) {
       if (box.current) box.current.textContent = page.title
       setError(null)
       onDone()
       return
     }
     if (box.current) box.current.textContent = text
-    rename.mutate(text)
+    rename.mutate({ title: text, ...(icon ? { icon } : {}) })
   }
   const atEnd = () => {
     const selection = getSelection()
@@ -507,7 +551,7 @@ function InlineTitle({ page, autoFocus, onDone }: { page: Page; autoFocus: boole
     return range.toString() === ''
   }
   return (
-    <div className={styles.titleBox}>
+    <div className={styles.titleBox} style={style} data-elemento={style ? 'nombre' : undefined}>
       <h1
         tabIndex={-1}
         ref={(heading) => {
@@ -565,8 +609,14 @@ function InlineTitle({ page, autoFocus, onDone }: { page: Page; autoFocus: boole
   )
 }
 
-/** «Más»: lo que se hace de vez en cuando con la página, fuera de la vista hasta que se pide */
-function MoreActions({ page }: { page: Page }) {
+/** Un emoji al principio de un texto (con su tono, su variante y sus uniones), y el espacio que lo sigue */
+const LEADING_EMOJI = /^(\p{Extended_Pictographic}(?:\p{Emoji_Modifier}|\uFE0F|\u200D\p{Extended_Pictographic})*)\s*/u
+
+/**
+ * «Más»: lo que se hace de vez en cuando con la página, fuera de la vista hasta que se pide. items: lo de una plantilla,
+ * en lugar de aplicar una o exportar
+ */
+function MoreActions({ page, items }: { page: Page; items?: ReactNode }) {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const root = useRef<HTMLDivElement>(null)
@@ -606,9 +656,13 @@ function MoreActions({ page }: { page: Page }) {
       {open && (
         <div id={panelId} className={styles.morePanel}>
           <SheetMenu page={page} />
-          {/* Lo demás (subpágina, renombrar, mover, borrar…), con el botón derecho en el árbol */}
-          <ApplyTemplate page={page} />
-          <ExportPage page={page} />
+          {items ?? (
+            <>
+              {/* Lo demás (subpágina, renombrar, mover, borrar…), con el botón derecho en el árbol */}
+              <ApplyTemplate page={page} />
+              <ExportPage page={page} />
+            </>
+          )}
           <Versions page={page} />
         </div>
       )}
@@ -732,6 +786,16 @@ function OpenPage({ page, nuevo, pestana }: { page: Page; nuevo: boolean; pestan
 }
 
 /**
+ * La página de una plantilla (ADR-0024), abierta en su editor: su id, lo suyo en «⋯» y, a la derecha, sus campos y sus
+ * bloques, que se definen en vez de rellenarse
+ */
+export interface TemplateMode {
+  id: string
+  more: ReactNode
+  side: ReactNode
+}
+
+/**
  * Una página, como en Everlore: la cabecera, sus pestañas, lo de la elegida (el texto en una columna ancha, con su
  * hoja; un mapa, a todo lo ancho) y, a la derecha, el panel fijo a toda altura (sus propiedades, quién la menciona,
  * su índice y sus versiones), que se esconde con su botón. banner: en lugar de la portada (la cabecera del mundo)
@@ -742,7 +806,8 @@ export function EntryView({
   tabs,
   active = null,
   banner,
-  home = false
+  home = false,
+  template
 }: {
   page: Page
   nuevo?: boolean
@@ -750,6 +815,7 @@ export function EntryView({
   active?: PageTabView | null
   banner?: ReactNode
   home?: boolean
+  template?: TemplateMode
 }) {
   const { t } = useTranslation()
   const main = useRef<HTMLElement>(null)
@@ -764,14 +830,23 @@ export function EntryView({
           page={page}
           startEditing={nuevo}
           home={home}
+          template={template?.id}
           actions={
-            <>
-              <WhoKnowsButton page={page} />
-              <PageRevealButton page={page} />
-              <BookmarkButton page={page} />
-              <LockButton page={page} />
-              <MoreActions page={page} />
-            </>
+            template ? (
+              // Una plantilla no la conoce nadie ni se marca: el candado y «⋯», con lo suyo
+              <>
+                <LockButton page={page} />
+                <MoreActions page={page} items={template.more} />
+              </>
+            ) : (
+              <>
+                <WhoKnowsButton page={page} />
+                <PageRevealButton page={page} />
+                <BookmarkButton page={page} />
+                <LockButton page={page} />
+                <MoreActions page={page} />
+              </>
+            )
           }
         />
         <PageTabs page={page} tabs={tabs} active={active?.id ?? null} />
@@ -816,17 +891,19 @@ export function EntryView({
                   </SheetPaper>
                 </div>
               ),
-              <>
-                {/* «Mencionado en», arriba (como en Everlore); después, las propiedades y los bloques */}
-                <Backlinks key={`enlaces-${page.id}`} page={page} />
-                {/* Las propiedades, a un lado (como los bloques del panel de Everlore): tras el retrato, si lo hay */}
-                <PanelBlocks
-                  key={`bloques-${page.id}`}
-                  page={page}
-                  properties={<PageProperties key={page.id} page={page} adders={false} adderRef={addProperty} />}
-                  onAddProperty={page.locked ? undefined : (kind) => addProperty.current?.(kind)}
-                />
-              </>
+              template?.side ?? (
+                <>
+                  {/* «Mencionado en», arriba (como en Everlore); después, las propiedades y los bloques */}
+                  <Backlinks key={`enlaces-${page.id}`} page={page} />
+                  {/* Las propiedades, a un lado (como los bloques del panel de Everlore): tras el retrato, si lo hay */}
+                  <PanelBlocks
+                    key={`bloques-${page.id}`}
+                    page={page}
+                    properties={<PageProperties key={page.id} page={page} adders={false} adderRef={addProperty} />}
+                    onAddProperty={page.locked ? undefined : (kind) => addProperty.current?.(kind)}
+                  />
+                </>
+              )
             )}
       </SceneTabProvider>
     </>

@@ -50,16 +50,25 @@ describe('la pantalla «Plantillas»', () => {
     expect(preview.getByText('Quiénes son')).toBeDefined()
   })
 
-  it('«Plantilla nueva» desde cero: nombre e icono, y se abre', async () => {
-    const { router } = renderTemplates()
+  it('«Plantilla nueva» crea «Plantilla sin título» y la abre con el título listo para escribir', async () => {
+    const { api, router } = renderTemplates()
     await userEvent.click(await screen.findByRole('button', { name: 'Plantilla nueva' }))
-    const dialog = within(screen.getByRole('dialog', { name: 'Plantilla nueva' }))
-    expect(dialog.getByRole('radio', { name: 'Desde cero' })).toHaveProperty('checked', true)
-    await userEvent.type(dialog.getByLabelText('Nombre'), 'Frente')
-    await userEvent.click(dialog.getByRole('radio', { name: '🐉' }))
-    await userEvent.click(dialog.getByRole('button', { name: 'Crear la plantilla' }))
     await waitFor(() => expect(router.state.location.pathname).toMatch(/^\/plantillas\/[0-9a-f-]{36}$/))
-    expect(await screen.findByRole('heading', { level: 1, name: 'Frente' })).toBeDefined()
+    const title = await screen.findByRole('textbox', { name: 'Título de la página' })
+    await waitFor(() => expect(document.activeElement).toBe(title))
+    expect(title.textContent).toBe('Plantilla sin título')
+    await userEvent.keyboard('Frente{Enter}')
+    await waitFor(async () =>
+      expect((await api.client.call('listTemplates', {})).templates.map((t) => t.name)).toContain('Frente')
+    )
+    // Otra más: no se repite el nombre
+    await userEvent.click(screen.getByRole('button', { name: 'Plantilla nueva' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Plantilla nueva' }))
+    await waitFor(async () =>
+      expect((await api.client.call('listTemplates', {})).templates.map((t) => t.name)).toEqual(
+        expect.arrayContaining(['Plantilla sin título', 'Plantilla sin título 2'])
+      )
+    )
   })
 
   it('el engranaje de una tuya: cambiarla de nombre y borrarla escribiendo su nombre', async () => {

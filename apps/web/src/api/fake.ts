@@ -452,10 +452,51 @@ export function fakeApi(
     version: page.version
   })
   // Las plantillas de la cuenta (no hay de serie): de entrada, las de ejemplo (las que fueron de serie)
-  const ownTemplates: Array<PageTemplate & { deleted: boolean }> = (options.templates ?? EXAMPLE_TEMPLATES).map(
-    (template) => ({ ...(structuredClone(template) as PageTemplate), pageId: null, deleted: false })
-  )
-  const templateById = (id: string): PageTemplate | undefined => ownTemplates.find((t) => t.id === id && !t.deleted)
+  // Como en el servidor (ADR-0024), cada una es una página de un mundo oculto (que no sale en Mis mundos) y se lee de
+  // ella; las de ejemplo, como las de antes, pasan a su página al abrirlas (getTemplate)
+  type StoredTemplate = PageTemplate & { deleted: boolean }
+  const templatesWorld = crypto.randomUUID()
+  const ownTemplates: StoredTemplate[] = (options.templates ?? EXAMPLE_TEMPLATES).map((template) => ({
+    ...(structuredClone(template) as PageTemplate),
+    pageId: null,
+    deleted: false
+  }))
+  const templatePageOf = (template: StoredTemplate) =>
+    template.pageId ? pages.find((page) => page.id === template.pageId) : undefined
+  const templateView = (template: StoredTemplate): PageTemplate => {
+    const { deleted: _, ...row } = structuredClone(template)
+    const page = templatePageOf(template)
+    if (!page) return row
+    return {
+      ...row,
+      name: page.title,
+      icon: page.icon,
+      fields: structuredClone(page.properties),
+      panel: structuredClone(page.panel ?? []) as PageTemplate['panel']
+    }
+  }
+  const templateById = (id: string): PageTemplate | undefined => {
+    const found = ownTemplates.find((t) => t.id === id && !t.deleted)
+    return found ? templateView(found) : undefined
+  }
+  /** Su página: la que tiene o, si aún no, una nueva en el mundo oculto con lo que guardaba */
+  const templatePage = (template: StoredTemplate) => {
+    const existing = templatePageOf(template)
+    if (existing) return existing
+    const page: StoredPage = {
+      id: crypto.randomUUID(),
+      worldId: templatesWorld,
+      parentId: null,
+      title: template.name,
+      icon: template.icon,
+      properties: structuredClone(template.fields),
+      panel: structuredClone(template.panel) as Page['panel'],
+      version: 1
+    }
+    pages.push(page)
+    template.pageId = page.id
+    return page
+  }
   // Las tablas que se llenan solas, como el servidor: las de su plantilla (o sus copias) con el campo hacia esta página
   const lineOf = (page: StoredPage) =>
     page.template ? (ownTemplates.find((t) => t.id === page.template)?.line ?? [page.template]) : []
@@ -1905,29 +1946,31 @@ export function fakeApi(
     // Por el título, sin tildes ni mayúsculas (la de verdad la prueban las del servidor)
     // Las plantillas: las de serie y las de la cuenta, como el servidor
     listTemplates: () => ({
-      templates: structuredClone(ownTemplates.filter((t) => !t.deleted)).map(
-        ({ deleted: _, ...t }) => t
-      ) as PageTemplate[],
-      deleted: ownTemplates.filter((t) => t.deleted).map((t) => ({ id: t.id, name: t.name, icon: t.icon }))
+      templates: ownTemplates.filter((t) => !t.deleted).map(templateView),
+      deleted: ownTemplates
+        .filter((t) => t.deleted)
+        .map(templateView)
+        .map((t) => ({ id: t.id, name: t.name, icon: t.icon }))
     }),
     getTemplate: ({ templateId }) => {
-      const found = templateById(templateId)
+      const found = ownTemplates.find((t) => t.id === templateId && !t.deleted)
       if (!found) throw new ApiError('NOT_FOUND', 404)
-      return structuredClone(found) as PageTemplate
+      templatePage(found)
+      return templateView(found)
     },
     createTemplate: ({ name, icon, copyOf }) => {
       const base = copyOf
         ? (templateById(copyOf) ?? ownTemplates.find((t) => !t.deleted && t.name === copyOf))
         : undefined
       if (copyOf && !base) throw new ApiError('TEMPLATE_NOT_FOUND', 400)
-      if (ownTemplates.some((t) => !t.deleted && t.name === name)) {
+      if (ownTemplates.some((t) => !t.deleted && templateView(t).name === name)) {
         throw new ApiError('TEMPLATE_TAKEN', 400)
       }
       const id = crypto.randomUUID()
-      const template = {
+      const template: StoredTemplate = {
         id,
         name,
-        icon: templateEmoji(icon ?? null),
+        icon: templateEmoji(icon ?? base?.icon ?? null),
         pageId: null,
         basedOn: base?.id ?? null,
         line: [id, ...(base?.line ?? [])],
@@ -1935,16 +1978,28 @@ export function fakeApi(
         panel: structuredClone(base?.panel ?? []),
         skeleton: base?.skeleton ?? '',
         deleted: false
-      } as PageTemplate & { deleted: boolean }
+      }
       ownTemplates.push(template)
-      return structuredClone(template) as PageTemplate
+      templatePage(template)
+      return templateView(template)
     },
     updateTemplate: ({ templateId, ...patch }) => {
       const found = ownTemplates.find((t) => t.id === templateId && !t.deleted)
       if (!found) throw new ApiError('NOT_FOUND', 404)
       const fields = patch.fields?.map((f) => (f.field ? f : { ...f, field: crypto.randomUUID().slice(0, 8) }))
-      Object.assign(found, { ...patch, ...(fields ? { fields } : {}) })
-      return structuredClone(found) as PageTemplate
+      const icon = patch.icon === undefined ? {} : { icon: templateEmoji(patch.icon) }
+      Object.assign(found, { ...patch, ...icon, ...(fields ? { fields } : {}) })
+      // Lo de su página es lo que vale: su título es su nombre; sus propiedades, sus campos
+      const page = templatePageOf(found)
+      if (page) {
+        Object.assign(page, {
+          ...(patch.name !== undefined ? { title: patch.name } : {}),
+          ...icon,
+          ...(fields ? { properties: fields } : {}),
+          ...(patch.panel ? { panel: patch.panel } : {})
+        })
+      }
+      return templateView(found)
     },
     // Las tiradas: aquí las tira la web de pruebas; la de verdad, el servidor
     rollDice: ({ campaignId, formula, visibility = 'all' }) => {
@@ -3558,7 +3613,7 @@ export function fakeApi(
       const found = ownTemplates.find((t) => t.id === templateId && !t.deleted)
       if (!found) throw new ApiError('NOT_FOUND', 404)
       found.deleted = true
-      return { id: found.id, name: found.name }
+      return { id: found.id, name: templateView(found).name }
     },
     searchWiki: ({ worldId, query, page = 1 }) => {
       const fold = (text: string) => text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()

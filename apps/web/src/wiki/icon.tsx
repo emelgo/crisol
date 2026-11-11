@@ -1,7 +1,7 @@
 import { type Page, pageIcon } from '@crisol/contracts'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { CircleOff, SmilePlus } from 'lucide-react'
-import { type ReactNode, useEffect, useId, useRef, useState } from 'react'
+import { type CSSProperties, type ReactNode, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
@@ -18,7 +18,18 @@ const COMMON = ['📜', '🏰', '🏘️', '⚓', '🌲', '⛰️', '🐉', '⚔
  * El icono de la página: un botón que abre una caja (patrón de despliegue, como el menú de la cuenta) con los más
  * habituales, un campo para cualquier otro y quitarlo. Escape, pulsar fuera o salir con el tabulador la cierran
  */
-export function PageIcon({ page, ghost = false }: { page: Page; ghost?: boolean }) {
+export function PageIcon({
+  page,
+  ghost = false,
+  style,
+  elemento
+}: {
+  page: Page
+  ghost?: boolean
+  /** Su nombre de transición (el icono de una plantilla, desde su tarjeta) */
+  style?: CSSProperties | undefined
+  elemento?: 'icono'
+}) {
   const { t } = useTranslation()
   const api = useApi()
   const queryClient = useQueryClient()
@@ -58,7 +69,7 @@ export function PageIcon({ page, ghost = false }: { page: Page; ghost?: boolean 
   }, [open])
 
   return (
-    <div ref={wrapper} className={styles.wrapper}>
+    <div ref={wrapper} className={styles.wrapper} style={style} data-elemento={elemento}>
       <button
         ref={trigger}
         type="button"

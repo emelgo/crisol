@@ -47,6 +47,17 @@ async function ownWritable(ctx: ActionContext, templateId: string) {
   return row
 }
 
+/**
+ * El título de la página de una plantilla es su nombre (ADR-0024): al cambiarlo, que no lo tenga ya otra. Devuelve su
+ * organización (para avisar a sus listas) o null si la página no es de ninguna plantilla
+ */
+export async function checkTemplateTitle(ctx: ActionContext, pageId: string, title: string | undefined) {
+  const row = await templatesRepo.templateOfPage(ctx.db, pageId)
+  if (!row) return null
+  if (title !== undefined) await checkName(ctx, row.organizationId, title, row.id)
+  return row.organizationId
+}
+
 /** Que el nombre no lo tenga ya otra: se buscan por nombre */
 async function checkName(ctx: ActionContext, organizationId: string, name: string, self?: string) {
   const taken = (await usableTemplates(ctx, organizationId)).find(

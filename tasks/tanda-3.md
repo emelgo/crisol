@@ -33,10 +33,13 @@ Rama `revision/tanda-3`. Cada porción, con sus pruebas, en su commit; las casil
    (la IA, en tanda) sigue con sus campos, panel y esqueleto, leídos de su página, sin sus pestañas. El icono de una
    plantilla es ya un emoji (los dibujos de antes se traducen, `templateEmoji`). La conversión de una de antes la hace el
    sistema al abrirla (`getTemplate`) o al escribir en ella; no se deshace.
-5. **El editor es la página** (`EntryView` en modo plantilla): portada, icono en el título, pestañas, panel con los
+5. [x] **El editor es la página** (`EntryView` en modo plantilla): portada, icono en el título, pestañas, panel con los
    campos que se definen (nombre y tipo), texto; sin «Quién la conoce», «Marcar» ni «Mencionado en»; «Plantillas»
    arriba a la izquierda para volver (con la transición al revés) y la marca «Plantilla» junto al título. A la
    izquierda, tus plantillas para saltar de una a otra. «Plantilla nueva» crea «Plantilla sin título» y la abre.
+   Hecho: las pestañas llevan a la ruta de la plantilla (`TabTargetContext`); un emoji al principio del título pasa a
+   ser su icono; «⋯» lleva sus ajustes (nombre, icono, borrarla); lo subido a su mundo va a los archivos comunes; su
+   título no se repite con el de otra (`updatePage` lo comprueba) y avisa a las listas. Fuera el editor de esqueleto.
 6. **La lista como Archivos (A1)**: carpetas (`template_folders`, con color e icono como las de archivos), el árbol
    común (arrastrar, teclado, orden a mano), la vista previa a la izquierda (portada, icono, campos, pestañas, en
    cuántas páginas se usa), buscador; «Plantilla nueva» y «Nueva carpeta» fijos.

@@ -12,7 +12,8 @@ import {
   soundRepo,
   systemImagesRepo,
   systemsRepo,
-  visionRepo
+  visionRepo,
+  worldsRepo
 } from '@crisol/db'
 import { actorFrom, can, MAX_FILE_BYTES, sniff, uploadable } from '@crisol/domain'
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
@@ -40,6 +41,16 @@ const uploadQuery = z.union([
   z.object({ organizationId: z.uuid(), name: fileName, folderId: z.uuid().optional() })
 ])
 const fileParams = z.object({ id: z.uuid() })
+
+/**
+ * Adónde va lo que se sube a un mundo: a él o, si es el de las plantillas (ADR-0024), a los archivos comunes de su
+ * cuenta (lo que se pone al editar una plantilla tiene que verse en las páginas que se hagan con ella, en cualquier mundo)
+ */
+async function uploadPlace(ctx: ActionContext, worldId: string): Promise<FilePlace> {
+  const place = await authorizedWiki(ctx, 'page.write', worldId)
+  const world = await worldsRepo.findWorld(ctx.db, worldId)
+  return world?.purpose === 'templates' ? authorizedCommon(ctx, true, place.organizationId) : place
+}
 
 /** Lo subido no es de lo que se admite */
 class BadTypeError extends Error {}
@@ -149,7 +160,7 @@ export function registerFileRoutes(
     try {
       const place: FilePlace =
         'worldId' in query.data
-          ? await authorizedWiki(ctx, 'page.write', query.data.worldId)
+          ? await uploadPlace(ctx, query.data.worldId)
           : authorizedCommon(ctx, true, query.data.organizationId)
       const folder = await folderIn(ctx, place, query.data.folderId)
       const content = await store(env.storage, request, place, query.data.name)

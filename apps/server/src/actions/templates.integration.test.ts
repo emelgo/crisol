@@ -272,6 +272,10 @@ describe('las plantillas de la cuenta (sin plantillas de serie, ADR-0024)', () =
       await ok200('updatePage', { pageId: frente.pageId, title: 'Frentes' })
       const names = (await ok200('listTemplates', {})).templates.map((t: { name: string }) => t.name)
       expect(names).toEqual(['Frentes', 'PNJ'])
+      // Y no se repite: se buscan por nombre
+      expect((await call('updatePage', { pageId: frente.pageId, title: 'pnj' })).json()).toMatchObject({
+        code: 'TEMPLATE_TAKEN'
+      })
       // Sus etiquetas no cuentan en las de la cuenta (es un modelo, no una página de un mundo)
       await ok200('setPageProperties', {
         pageId: pnj.pageId,

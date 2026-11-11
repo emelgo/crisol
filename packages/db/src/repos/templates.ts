@@ -31,6 +31,15 @@ export async function findTemplate(db: Database, id: string) {
   return found ?? null
 }
 
+/** La plantilla (sin borrar) cuya página es esa (ADR-0024); undefined si la página no es de ninguna */
+export async function templateOfPage(db: Database, pageId: string) {
+  const [row] = await db
+    .select()
+    .from(pageTemplates)
+    .where(and(eq(pageTemplates.pageId, pageId), isNull(pageTemplates.deletedAt)))
+  return row
+}
+
 export interface TemplateValues {
   name: string
   icon: string

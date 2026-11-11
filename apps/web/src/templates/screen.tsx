@@ -1,12 +1,12 @@
 /**
- * «Plantillas», en la zona de Mis mundos (ADR-0009): las tuyas y las de serie (con su candado), cada una con su
- * engranaje; el de las de serie, para copiarlas. Al pasar por una, a la izquierda, lo que trae. «Plantilla nueva» va como un recuadro más, tras las tuyas
+ * «Plantillas», en la zona de Mis mundos (ADR-0009, ADR-0024): las de la cuenta, cada una con su engranaje. Al pasar
+ * por una, a la izquierda, lo que trae. «Plantilla nueva» va como un recuadro más, tras ellas: crea una y la abre
  */
 import type { PageTemplate } from '@crisol/contracts'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link, Navigate, useNavigate } from '@tanstack/react-router'
-import { Copy, Plus, Settings } from 'lucide-react'
-import { useEffect, useId, useRef, useState } from 'react'
+import { Settings } from 'lucide-react'
+import { useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
@@ -22,7 +22,7 @@ import { Modal } from '../components/modal.tsx'
 import { NewCard } from '../components/new-card.tsx'
 import { Screen } from '../components/screen.tsx'
 import { Tour } from '../components/tour.tsx'
-import { ENTER_ITEM, enterItem } from '../components/world-transition.ts'
+import { ENTER_ITEM, enterItem, itemTransition } from '../components/world-transition.ts'
 import cards from '../routes/world-card.module.css'
 import { IconChoices } from '../wiki/icon.tsx'
 import { TemplateIcon } from './icons.tsx'
@@ -44,7 +44,7 @@ export function TemplatesScreen() {
   const { account, pending } = useAccounts().useAccount()
   const templates = useTemplates()
   const [hovered, setHovered] = useState<string | null>(null)
-  const [creating, setCreating] = useState<{ copyOf: string | null } | null>(null)
+  const create = useNewTemplate()
   if (pending) return null
   if (!account) return <Navigate to="/entrar" replace />
   const all = templates.data?.templates ?? []
@@ -68,13 +68,14 @@ export function TemplatesScreen() {
               <NewCard
                 label={t('templates.new')}
                 data-tour="plantillas-nueva"
-                onClick={() => setCreating({ copyOf: null })}
+                disabled={create.isPending}
+                onClick={() => create.mutate()}
               />
             </li>
           </ul>
+          <FormError message={create.errorText} />
         </>
       )}
-      {creating && <NewTemplateDialog copyOf={creating.copyOf} onClose={() => setCreating(null)} />}
       {templates.data && (
         <Tour
           id="plantillas"
@@ -100,7 +101,13 @@ function TemplateCard({ template, onHover }: { template: PageTemplate; onHover: 
         if (!(event.target as Element).closest('dialog')) onHover(template.id)
       }}
     >
-      <span className={styles.icon} aria-hidden="true" data-elemento="icono">
+      {/* Al volver de ella, su icono y su nombre vuelven aquí desde el título */}
+      <span
+        className={styles.icon}
+        aria-hidden="true"
+        data-elemento="icono"
+        style={itemTransition(template.id, 'icono')}
+      >
         <TemplateIcon icon={template.icon} size={24} />
       </span>
       <h3 className={styles.name}>
@@ -112,7 +119,9 @@ function TemplateCard({ template, onHover }: { template: PageTemplate; onHover: 
           viewTransition={ENTER_ITEM}
           onClick={(event) => enterItem(template.id, event.currentTarget.closest('li'))}
         >
-          <span data-elemento="nombre">{template.name}</span>
+          <span data-elemento="nombre" style={itemTransition(template.id, 'nombre')}>
+            {template.name}
+          </span>
         </Link>
       </h3>
       <p className={styles.meta}>{origin(template)}</p>
@@ -195,95 +204,47 @@ function TemplatePreview({ template }: { template: PageTemplate }) {
   )
 }
 
-/** «Plantilla nueva»: desde cero o copiando otra, con su nombre y su icono. Creada, se abre para cambiarla */
-export function NewTemplateDialog({ copyOf, onClose }: { copyOf: string | null; onClose: () => void }) {
+/** Para comparar nombres como el servidor: sin mayúsculas, tildes ni espacios de más */
+const nameKey = (name: string) =>
+  name.normalize('NFD').replace(/\p{M}/gu, '').toLocaleLowerCase('es').replace(/\s+/g, ' ').trim()
+
+/**
+ * «Plantilla nueva»: crea «Plantilla sin título» (con un número si ya hay una así) y la abre con el título listo para
+ * escribir, como una página nueva
+ */
+export function useNewTemplate() {
   const { t } = useTranslation()
   const api = useApi()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const errorText = useErrorText()
-  const dialog = useRef<HTMLDialogElement>(null)
-  const titleId = useId()
-  const baseId = useId()
   const templates = useTemplates().data?.templates ?? []
-  const [mode, setMode] = useState<'scratch' | 'copy'>(copyOf ? 'copy' : 'scratch')
-  const [base, setBase] = useState(copyOf ?? templates[0]?.id ?? 'pnj')
-  const chosen = templates.find((each) => each.id === base)
-  const [name, setName] = useState(chosen && copyOf ? t('templates.copyName', { name: chosen.name }) : '')
-  const [icon, setIcon] = useState<PageTemplate['icon']>(chosen && copyOf ? chosen.icon : null)
-  useEffect(() => {
-    if (mode === 'copy' && chosen) setIcon(chosen.icon)
-  }, [mode, chosen])
   const create = useMutation({
-    mutationFn: () =>
-      api.call('createTemplate', { name: name.trim(), icon, ...(mode === 'copy' ? { copyOf: base } : {}) }),
+    mutationFn: () => {
+      const base = t('templates.untitled')
+      const taken = new Set(templates.map((each) => nameKey(each.name)))
+      let name = base
+      for (let n = 2; taken.has(nameKey(name)); n++) name = `${base} ${n}`
+      return api.call('createTemplate', { name })
+    },
     onSuccess: async (created) => {
       // Ya en la lista, para que su página la encuentre al abrirse (la lista de verdad llega después)
       queryClient.setQueryData(['templates'], (old: { templates: PageTemplate[]; deleted: unknown[] } | undefined) =>
         old ? { ...old, templates: [...old.templates.filter((each) => each.id !== created.id), created] } : old
       )
       void queryClient.invalidateQueries({ queryKey: ['templates'] })
-      dialog.current?.close()
-      onClose()
-      await navigate({ to: '/plantillas/$templateId', params: { templateId: created.id } })
+      await navigate({ to: '/plantillas/$templateId', params: { templateId: created.id }, search: { nuevo: true } })
     }
   })
-  return (
-    <Modal ref={dialog} aria-labelledby={titleId} className={cards.dialog} onClose={onClose}>
-      <form
-        className={cards.form}
-        onSubmit={(event) => {
-          event.preventDefault()
-          if (name.trim()) create.mutate()
-        }}
-      >
-        <h2 id={titleId}>{t('templates.new')}</h2>
-        <fieldset className={styles.modes}>
-          <legend className={styles.hidden}>{t('templates.how')}</legend>
-          {(['scratch', 'copy'] as const).map((each) => (
-            <label key={each} className={styles.mode}>
-              <input type="radio" name={`${titleId}-modo`} checked={mode === each} onChange={() => setMode(each)} />
-              {each === 'scratch' ? <Plus size={18} aria-hidden="true" /> : <Copy size={18} aria-hidden="true" />}
-              {t(each === 'scratch' ? 'templates.fromScratch' : 'templates.copying')}
-            </label>
-          ))}
-        </fieldset>
-        {mode === 'copy' && (
-          <div className={styles.baseField}>
-            <label htmlFor={baseId}>{t('templates.copyWhich')}</label>
-            <select id={baseId} value={base} onChange={(event) => setBase(event.currentTarget.value)}>
-              {templates.map((each) => (
-                <option key={each.id} value={each.id}>
-                  {each.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-        <Field
-          label={t('templates.name')}
-          value={name}
-          required
-          maxLength={60}
-          autoComplete="off"
-          data-1p-ignore
-          data-lpignore="true"
-          data-form-type="other"
-          data-autofocus=""
-          onChange={(event) => setName(event.currentTarget.value)}
-        />
-        <IconChoices value={icon} onChange={setIcon} />
-        <FormError message={create.error ? errorText(create.error) : null} />
-        <BusyButton type="submit" className={form.button} busy={create.isPending}>
-          {t('templates.create')}
-        </BusyButton>
-      </form>
-    </Modal>
-  )
+  return {
+    mutate: () => create.mutate(),
+    isPending: create.isPending,
+    errorText: create.error ? errorText(create.error) : null
+  }
 }
 
 /** La ventana de una plantilla tuya: su nombre, su icono y borrarla. onClose(gone): si se borró */
-function TemplateSettings({ template, onClose }: { template: PageTemplate; onClose: (gone: boolean) => void }) {
+export function TemplateSettings({ template, onClose }: { template: PageTemplate; onClose: (gone: boolean) => void }) {
   const { t } = useTranslation()
   const api = useApi()
   const queryClient = useQueryClient()

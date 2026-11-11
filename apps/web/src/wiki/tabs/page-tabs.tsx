@@ -4,7 +4,7 @@
  */
 import type { Page, PageTabView } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link, useNavigate } from '@tanstack/react-router'
+import { Link, type ToOptions, useNavigate } from '@tanstack/react-router'
 import {
   ChevronDown,
   Clock,
@@ -17,7 +17,7 @@ import {
   Plus,
   Trash2
 } from 'lucide-react'
-import { type CSSProperties, useEffect, useId, useRef, useState } from 'react'
+import { type CSSProperties, createContext, useContext, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../../api/context.tsx'
 import { useErrorText } from '../../api/errors.ts'
@@ -39,6 +39,24 @@ import styles from './page-tabs.module.css'
 
 export const tabsKey = (worldId: string, pageId: string) => ['pages', worldId, 'tabs', pageId]
 
+/**
+ * Adónde lleva cada pestaña (null, su texto): a la página en la wiki de su mundo o, en el editor de una plantilla, a la
+ * plantilla (ADR-0024), que lo dice con TabTargetContext
+ */
+export type TabTarget = (pestana: string | null) => ToOptions
+export const TabTargetContext = createContext<TabTarget | null>(null)
+export function useTabTarget(page: Page): TabTarget {
+  const target = useContext(TabTargetContext)
+  return (
+    target ??
+    ((pestana) => ({
+      to: '/mundos/$worldId/wiki/$pageId',
+      params: { worldId: page.worldId, pageId: page.id },
+      search: pestana ? { pestana } : {}
+    }))
+  )
+}
+
 /** Las pestañas añadidas de una página, en orden */
 export function usePageTabs(page: Page) {
   const api = useApi()
@@ -58,7 +76,7 @@ export function PageTabs({ page, tabs, active }: { page: Page; tabs: PageTabView
   const api = useApi()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
-  const params = { worldId: page.worldId, pageId: page.id }
+  const target = useTabTarget(page)
   // El botón derecho sobre una pestaña: se elige y se abre su menú
   const [menuFor, setMenuFor] = useState<string | null>(null)
   // Recolocar arrastrando: la que se lleva y sobre cuál va (se pone delante de ella)
@@ -80,9 +98,7 @@ export function PageTabs({ page, tabs, active }: { page: Page; tabs: PageTabView
       <ul>
         <li>
           <Link
-            to="/mundos/$worldId/wiki/$pageId"
-            params={params}
-            search={{}}
+            {...target(null)}
             activeOptions={{ exact: true, includeSearch: true }}
             className={styles.tab}
             aria-current={active === null ? 'page' : undefined}
@@ -121,15 +137,12 @@ export function PageTabs({ page, tabs, active }: { page: Page; tabs: PageTabView
               if (page.locked) return
               event.preventDefault()
               setMenuFor(tab.id)
-              if (active !== tab.id)
-                void navigate({ to: '/mundos/$worldId/wiki/$pageId', params, search: { pestana: tab.id } })
+              if (active !== tab.id) void navigate(target(tab.id))
             }}
           >
             <Link
               draggable={false}
-              to="/mundos/$worldId/wiki/$pageId"
-              params={params}
-              search={{ pestana: tab.id }}
+              {...target(tab.id)}
               activeOptions={{ exact: true, includeSearch: true }}
               className={styles.tab}
               aria-current={active === tab.id ? 'page' : undefined}
@@ -199,6 +212,7 @@ function NewTab({ page }: { page: Page }) {
   const api = useApi()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
+  const target = useTabTarget(page)
   const errorText = useErrorText()
   const [open, setOpen] = useState(false)
   const [name, setName] = useState('')
@@ -217,11 +231,7 @@ function NewTab({ page }: { page: Page }) {
       queryClient.setQueryData<PageTabView[]>(tabsKey(page.worldId, page.id), (tabs) => [...(tabs ?? []), tab])
       void queryClient.invalidateQueries({ queryKey: tabsKey(page.worldId, page.id) })
       dialog.current?.close()
-      await navigate({
-        to: '/mundos/$worldId/wiki/$pageId',
-        params: { worldId: page.worldId, pageId: page.id },
-        search: { pestana: tab.id }
-      })
+      await navigate(target(tab.id))
     }
   })
   return (
@@ -319,6 +329,7 @@ function TabMenu({
   const api = useApi()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
+  const target = useTabTarget(page)
   const announce = useAnnounce()
   const errorText = useErrorText()
   const tab = tabs[index] as PageTabView
@@ -357,11 +368,7 @@ function TabMenu({
     onSuccess: async () => {
       await refresh()
       announce(t('pageTabs.deleted', { name: tab.name }))
-      await navigate({
-        to: '/mundos/$worldId/wiki/$pageId',
-        params: { worldId: page.worldId, pageId: page.id },
-        search: {}
-      })
+      await navigate(target(null))
     }
   })
   const rename = () => {

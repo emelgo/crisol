@@ -635,6 +635,17 @@ describe('los archivos del mundo', () => {
     })
   })
 
+  it('lo que se sube al editar una plantilla (a su mundo oculto) va a los archivos comunes (ADR-0024)', async () => {
+    const template = await call('createTemplate', { name: 'PNJ' })
+    const page = await call('getPage', { pageId: template.pageId })
+    expect(page.worldId).not.toBe(worldId)
+    const uploaded = await upload('retrato.png', PNG, owner.cookie, page.worldId)
+    expect(uploaded.statusCode).toBe(201)
+    expect(uploaded.json().worldId).toBeNull()
+    const { files } = await call('listCommonFiles', { organizationId })
+    expect(files.map((f: { name: string }) => f.name)).toContain('retrato.png')
+  })
+
   it('el nombre que viene del disco con lo que rompe `![[…]]` se sube con «-»', async () => {
     expect((await upload('mapa [v2] #1.png', PNG)).json().name).toBe('mapa -v2- -1.png')
   })
