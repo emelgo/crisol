@@ -1,13 +1,14 @@
-import type { Page } from '@crisol/contracts'
+import { type Page, pageIcon } from '@crisol/contracts'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { SmilePlus } from 'lucide-react'
-import { useEffect, useId, useRef, useState } from 'react'
+import { CircleOff, SmilePlus } from 'lucide-react'
+import { type ReactNode, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { FormError } from '../components/field.tsx'
 import form from '../components/form.module.css'
 import list from '../components/list.module.css'
+import cards from '../routes/world-card.module.css'
 import styles from './icon.module.css'
 
 /** Los de un mundo de rol, para elegir de un clic; cualquier otro se escribe o se pega */
@@ -126,5 +127,55 @@ export function PageIcon({ page, ghost = false }: { page: Page; ghost?: boolean 
         </div>
       )}
     </div>
+  )
+}
+
+/**
+ * El icono en un formulario (el de una carpeta), como el color al lado: ninguno, uno de los habituales o cualquier otro
+ * emoji, escrito o pegado (lo que no es un emoji no se pone)
+ */
+export function IconChoices({ value, onChange }: { value: string | null; onChange: (icon: string | null) => void }) {
+  const { t } = useTranslation()
+  const name = useId()
+  const [typed, setTyped] = useState(value && !COMMON.includes(value) ? value : '')
+  const choice = (icon: string | null, label: string, content: ReactNode) => (
+    <label key={icon ?? ''} className={cards.colorChoice} title={label}>
+      <input type="radio" name={name} checked={value === icon} onChange={() => onChange(icon)} />
+      {content}
+      <span className={cards.hidden}>{label}</span>
+    </label>
+  )
+  return (
+    <fieldset className={cards.choices}>
+      <legend>{t('icon.short')}</legend>
+      {choice(null, t('icon.none'), <CircleOff aria-hidden="true" size={18} strokeWidth={1.5} />)}
+      {COMMON.map((icon) =>
+        choice(
+          icon,
+          icon,
+          <span className={styles.emojiChoice} aria-hidden="true">
+            {icon}
+          </span>
+        )
+      )}
+      {/* Cualquier otro: una casilla más, donde se escribe o se pega */}
+      <input
+        className={styles.otherIcon}
+        data-chosen={typed !== '' && value === typed.trim() ? '' : undefined}
+        aria-label={t('icon.other')}
+        placeholder={t('icon.otherShort')}
+        value={typed}
+        maxLength={16}
+        autoComplete="off"
+        data-1p-ignore
+        data-lpignore="true"
+        data-form-type="other"
+        onChange={(event) => {
+          const text = event.currentTarget.value
+          setTyped(text)
+          if (pageIcon.safeParse(text.trim()).success) onChange(text.trim())
+        }}
+      />
+    </fieldset>
   )
 }

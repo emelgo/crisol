@@ -199,14 +199,20 @@ export function createFolder(
 }
 
 /**
- * Cambia una carpeta (su nombre, su madre o su puesto entre sus hermanas) y, si se dan, los puestos de sus hermanas (la
+ * Cambia una carpeta (su nombre, su color, su icono, su madre o su puesto entre sus hermanas) y, si se dan, los puestos de sus hermanas (la
  * primera vez que se ordenan, todas), en una sola operación
  */
 export function updateFolder(
   db: Database,
   context: OperationContext,
   folderId: string,
-  patch: Partial<{ name: string; parentId: string | null; position: string | null }>,
+  patch: Partial<{
+    name: string
+    parentId: string | null
+    position: string | null
+    color: string | null
+    icon: string | null
+  }>,
   siblings: readonly Place[] = []
 ) {
   return operation(db, context, async (w) => {

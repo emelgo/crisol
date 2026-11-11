@@ -13,6 +13,12 @@ Plan: `tasks/plan-revision.md`. Una tanda cada vez: se enseña en local, Enrique
 - [x] Guía de estilo y el resto de prompts (fondos de Entrar, portada pública, ambiente de Inicio, pantallas vacías).
   Solo las de la app: las portadas de mundos, campañas, sistemas y libros son del usuario (Enrique, 2026-11-11).
 - [ ] Imágenes en `apps/web/public/`, fuera las 24 de ahora, y su origen en `docs/terceros.md`.
+- [ ] **Un paquete de iconos de fantasía de calidad** (Enrique, 2026-11-12: «cuando creas más oportuno»), para elegir
+  icono en vez de solo emoji: carpetas, páginas, sistemas y mundos. Momento: al empezar la tanda 6 (el icono del
+  sistema), para que todos salgan del mismo paquete y del mismo selector (`IconChoices`, `wiki/icon.tsx`). Candidato:
+  game-icons.net (SVG, miles de iconos de rol; CC BY 3.0, que pide atribución pero no es copyleft): comprobar la
+  licencia antes, origen en `docs/terceros.md` y descargarlo en el repo (sin pedirlo a un servidor ajeno). Los emojis
+  ya guardados siguen valiendo.
 
 ## Documentos al empezar
 
@@ -84,7 +90,19 @@ Plan: `tasks/plan-revision.md`. Una tanda cada vez: se enseña en local, Enrique
 - [x] Mover sin retardo (Enrique, 2026-11-12: «hay un retardo de cuando lo muevo hasta que lo veo cambiado»):
   etiquetas, al momento en la lista cargada (`wiki/tag-order.ts`), con vuelta atrás si falla; páginas, también al
   meterla en una madre cuyas subpáginas no se tenían (se despliega ya con ella dentro).
-- [ ] Selector de archivos y la portada al crear un mundo.
+- [x] Selector de archivos (`components/file-picker.tsx`): la lista de Archivos en una ventana, solo con el tipo pedido,
+  con su buscador (nombre o #etiqueta) y lo encontrado dentro de sus carpetas; la lógica del árbol, común con Archivos
+  (`wiki/file-tree.ts`). La portada (mundo, campaña y página, el mismo cuadro) con «Subir imagen» y «Elegir de tus
+  archivos»; fuera las miniaturas sueltas y el desplegable viejo de la portada de página.
+- [x] «Carpeta» en la ventana de un archivo y de una carpeta (Enrique, 2026-11-12: «pues hazlo»), con el movimiento al
+  momento del arrastre (abre el camino hasta el destino y el foco vuelve a su engranaje). En Etiquetas, «Ninguna» en vez
+  de «Ninguna (arriba del todo)».
+- [x] Carpetas con color e icono (Enrique, 2026-11-12), migración 0076: color como el de un mundo, icono un emoji como el
+  de una página; se ven en la lista, la vista previa, su ventana y el selector.
+- [x] La casilla de elegir, en su propia columna a la izquierda de las filas (alineadas todas, sin sangría): no tapa el
+  icono de una carpeta ni la imagen (Enrique, 2026-11-12; la esquina de la miniatura, probada antes, «horrible»).
+- [x] Ventanas de ajustes compactas (Enrique, 2026-11-12: «no cabe y hay que hacer scroll»): letra 15 px, campos de 40 px,
+  casillas de 36 px, «Otro emoji» como una casilla más; la de una carpeta cabe en 850 px de alto.
 
 ## Tanda 3 — Plantillas
 
@@ -112,6 +130,7 @@ Plan: `tasks/plan-revision.md`. Una tanda cada vez: se enseña en local, Enrique
 
 ## Tanda 6 — Sistemas: su espacio, sus portadas y sus libros
 
+- [ ] Antes: el paquete de iconos de fantasía (ver «Pista de imágenes»).
 - [ ] Espacios de la barra declarados; el espacio del sistema y su vuelta.
 - [ ] Icono y portada del sistema; libros con portada o color.
 - [ ] El libro por dentro (tres columnas) y «Entrada nueva».
@@ -158,5 +177,9 @@ Lo que sale sin estar en la lista: se avisa a Enrique y se arregla en su tanda.
   1; Enrique: «si algo se comparte lo cambias», y en la revisión de la campaña se verá).
 - [x] Una descripción sin espacios (una sola palabra larga) se salía de la tarjeta y del panel lateral (tanda 1).
 - [ ] Las X de las ventanas de la Mesa siguen con su estilo de botón de icono: con la revisión de la campaña.
+- [x] Al quitar el selector viejo de la portada de página, tres pruebas (mapa y escena) dependían de que él ya hubiera
+  pedido los archivos del mundo: ahora esperan a que lleguen.
+- [x] Mover a una carpeta dentro de otra cerrada (desde la ventana) no abría las de encima: no se veía adónde iba.
+- [x] `FileName` tenía una ventana de ajustes que nadie abría (código muerto), fuera; y un import sin usar en el falso API.
 - [ ] La hoja móvil de una etiqueta (`tags.tsx`) usa clases que no existen en el CSS (`files.sheet`…): ya fallaba
   antes; el móvil es solo de la jugadora y Etiquetas es del máster, así que es menor.

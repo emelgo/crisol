@@ -7,6 +7,21 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
+### Para retomar (2026-11-12, mediodía: tanda 2 construida, en local; falta su visto bueno, impeccable y las e2e)
+
+- **Tanda 2 entera en local** (rama `revision/tanda-2`): además de lo de abajo, el orden a mano de Archivos (migración
+  0075), el **selector de archivos** (`components/file-picker.tsx`, con la lógica del árbol común en
+  `wiki/file-tree.ts`) y **la portada** con «Subir imagen» y «Elegir de tus archivos» (el mismo cuadro para mundo,
+  campaña y página; fuera el desplegable viejo de la portada de página).
+- **Pedido por Enrique al probar** (2026-11-12): «Carpeta» en la ventana de un archivo y de una carpeta (en Etiquetas,
+  «Dentro de: Ninguna»); **carpetas con color e icono** (migración 0076, aplicada en local; ADR-0005 con su nota);
+  **ventanas de ajustes compactas** (letra 15 px, campos de 40 px, casillas de 36 px). Normas en `docs/diseno.md`.
+- Pruebas: unitarias del selector, del árbol y de las ventanas; integración del color y el icono; e2e de la portada de
+  página reescrita (en verde). Para Enrique, en `tasks/probar.md` («Revisión, tanda 2»).
+- **Siguiente**: su visto bueno → impeccable (critique y audit) de Archivos, Etiquetas, el selector y la portada → e2e
+  de lo tocado (archivos, etiquetas, mundos, imágenes, archivos-en-paginas) → commit. Opcionales sin respuesta:
+  Alt+flechas en Archivos y herramientas MCP para mover archivos y carpetas. Subir a `main` y staging, con más tandas.
+
 ### Para retomar (2026-11-12, mañana: tanda 1 cerrada salvo subirla; tanda 2 en marcha, rama `revision/tanda-2`)
 
 - **Tanda 1**: Enrique contestó las dos preguntas (sí a la línea de «Nuevo…» como las tarjetas; icono propio del

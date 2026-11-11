@@ -1,5 +1,7 @@
 import { z } from 'zod'
 import { defineAction } from './action.ts'
+import { pageIcon } from './pages.ts'
+import { worldColor } from './worlds.ts'
 
 /** Lo que no puede llevar el nombre de un archivo: barras (las carpetas son por tipo) ni lo que rompe `![[…]]` */
 export const FILE_NAME_FORBIDDEN = /[\\/\0[\]|#^]/g
@@ -57,7 +59,9 @@ export const folderView = z.object({
   organizationId: z.uuid(),
   parentId: z.uuid().nullable().describe('Sin madre: en lo más alto'),
   name: z.string(),
-  position: placeInFolder
+  position: placeInFolder,
+  color: worldColor.nullable().describe('Su color (uno de los fijos o #rrggbb): tiñe su icono'),
+  icon: z.string().nullable().describe('Su icono, un emoji; sin él, el de una carpeta')
 })
 
 export type FolderView = z.infer<typeof folderView>
@@ -114,18 +118,27 @@ export const updateFolder = defineAction({
   name: 'updateFolder',
   kind: 'write',
   description:
-    'Cambia el nombre de una carpeta, la mete en otra (parentId; null: a lo más alto) o la ordena a mano delante (before) o detrás (after) de otra carpeta de su carpeta de destino (sin parentId, la de ahora). Al cambiar de carpeta sin before ni after, va detrás, por nombre. Se deshace desde el historial',
+    'Cambia el nombre de una carpeta, su color o su icono (un emoji; null quita uno u otro), la mete en otra (parentId; null: a lo más alto) o la ordena a mano delante (before) o detrás (after) de otra carpeta de su carpeta de destino (sin parentId, la de ahora). Al cambiar de carpeta sin before ni after, va detrás, por nombre. Se deshace desde el historial',
   input: z
     .object({
       folderId: z.uuid(),
       name: folderName.optional(),
+      color: worldColor.nullable().optional(),
+      icon: pageIcon.nullable().optional(),
       parentId: z.uuid().nullable().optional(),
       ...besides('esta carpeta')
     })
     .refine((input) => !(input.before && input.after), oneSide)
-    .refine((input) => input.name !== undefined || input.parentId !== undefined || input.before || input.after, {
-      message: 'name, parentId, before o after'
-    }),
+    .refine(
+      (input) =>
+        input.name !== undefined ||
+        input.color !== undefined ||
+        input.icon !== undefined ||
+        input.parentId !== undefined ||
+        input.before ||
+        input.after,
+      { message: 'name, color, icon, parentId, before o after' }
+    ),
   output: folderView
 })
 

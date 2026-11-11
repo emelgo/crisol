@@ -79,7 +79,6 @@ import {
   applyChoices,
   type Build,
   browseContent,
-  CATALOG,
   ChangeError,
   type Choices,
   type ContentItem,
@@ -188,7 +187,9 @@ export function fakeApi(
     /** Los archivos de los mundos (usedBy: cuántas páginas lo usan) */
     files?: Array<Pick<FileView, 'worldId' | 'name'> & Partial<FileView> & { usedBy?: number }>
     /** Las carpetas de los archivos (sin puesto: por nombre) */
-    folders?: Array<Omit<FolderView, 'position'> & Partial<Pick<FolderView, 'position'>>>
+    folders?: Array<
+      Omit<FolderView, 'position' | 'color' | 'icon'> & Partial<Pick<FolderView, 'position' | 'color' | 'icon'>>
+    >
     /** Las tiradas de las campañas, en el orden en que se tiraron */
     rolls?: DiceRoll[]
     /** Las notas de los jugadores (sin userId, de la cuenta «yo»), en su orden */
@@ -309,7 +310,12 @@ export function fakeApi(
   const files = (options.files ?? []).map(({ usedBy: _, ...file }) => fileOf(file))
   const fileUses = new Map((options.files ?? []).map((file, i) => [files[i]?.id ?? '', file.usedBy ?? 0]))
   const trashedFiles: FileView[] = []
-  const folders: FolderView[] = (options.folders ?? []).map((folder) => ({ position: null, ...folder }))
+  const folders: FolderView[] = (options.folders ?? []).map((folder) => ({
+    position: null,
+    color: null,
+    icon: null,
+    ...folder
+  }))
   const folderById = (folderId: string) => {
     const folder = folders.find((f) => f.id === folderId)
     if (!folder) throw new ApiError('NOT_FOUND', 404)
@@ -3657,12 +3663,14 @@ export function fakeApi(
         ...scope,
         parentId: parentId ?? null,
         name: name.trim(),
-        position: null
+        position: null,
+        color: null,
+        icon: null
       }
       folders.push(folder)
       return { ...folder }
     },
-    updateFolder: ({ folderId, name, parentId, before, after }) => {
+    updateFolder: ({ folderId, name, color, icon, parentId, before, after }) => {
       const folder = folderById(folderId)
       const destination = parentId === undefined ? folder.parentId : parentId
       // Como el servidor: su puesto entre las carpetas de su destino; al cambiar de carpeta sin él, ninguno
@@ -3671,6 +3679,8 @@ export function fakeApi(
       )
       const placed = placeBeside(siblings, folderId, before, after)
       if (name !== undefined) folder.name = name.trim()
+      if (color !== undefined) folder.color = color
+      if (icon !== undefined) folder.icon = icon
       if (placed) folder.position = placed
       else if (destination !== folder.parentId) folder.position = null
       folder.parentId = destination

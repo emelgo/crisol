@@ -51,7 +51,9 @@ const folderView = (row: FolderRow): FolderView => ({
   organizationId: row.organizationId,
   parentId: row.parentId,
   name: row.name,
-  position: row.position
+  position: row.position,
+  color: row.color as FolderView['color'],
+  icon: row.icon
 })
 
 /** Dónde está un archivo: en un mundo (con su organización) o, sin mundo, entre los comunes de una organización */
@@ -234,7 +236,7 @@ export const fileActions = [
     }
   }),
 
-  implement(updateFolder, async (ctx, { folderId, name, parentId, before, after }) => {
+  implement(updateFolder, async (ctx, { folderId, name, color, icon, parentId, before, after }) => {
     const { folder, place } = await authorizedFolder(ctx, true, folderId)
     if (parentId !== undefined && parentId !== null) {
       await folderIn(ctx, place, parentId)
@@ -264,6 +266,8 @@ export const fileActions = [
         folderId,
         {
           ...(name !== undefined ? { name } : {}),
+          ...(color !== undefined ? { color } : {}),
+          ...(icon !== undefined ? { icon } : {}),
           ...(parentId !== undefined ? { parentId } : {}),
           ...(placed ? { position: placed.own } : moves ? { position: null } : {})
         },

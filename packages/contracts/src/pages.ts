@@ -4,8 +4,8 @@ import { pagePanel } from './panel.ts'
 import { readAs } from './read-as.ts'
 
 const pageTitle = z.string().trim().min(1).max(200)
-/** Un emoji (con sus modificadores y uniones), o una bandera */
-const pageIcon = z
+/** Un emoji (con sus modificadores y uniones), o una bandera: el icono de una página o de una carpeta */
+export const pageIcon = z
   .string()
   .max(16)
   .regex(

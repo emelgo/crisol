@@ -9,6 +9,21 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
+## Revisión, tanda 2: Archivos, Etiquetas y el selector de archivos (en local)
+
+- [ ] **Archivos sin árbol**: pulsar una carpeta la despliega; arrastrar con raya o resalte; recolocar dentro de una
+  carpeta; mantener sobre una cerrada la abre sola; «Subir aquí» y «Carpeta dentro» en cada carpeta; buscar por nombre
+  o #etiqueta enseña el árbol hasta lo encontrado; todo se ve movido al momento.
+- [ ] **«Carpeta» en la ventana** de un archivo y de una carpeta: llevarlo a una carpeta dentro de otra cerrada (se abre
+  el camino y sale iluminado); una carpeta no ofrece ni a sí misma ni a las suyas.
+- [ ] **Color e icono de una carpeta**: ponerlos, verlos en la lista, la vista previa y el selector; quitarlos;
+  deshacer desde el historial. Un emoji escrito en «Otro».
+- [ ] **Etiquetas**: arrastrar y Alt+flechas; la vista previa a la izquierda; «Dentro de: Ninguna».
+- [ ] **La portada** de un mundo (también al crearlo), de una campaña y de una página: «Subir imagen» y «Elegir de tus
+  archivos» (el selector: buscar, desplegar, la elegida marcada), encuadrar arrastrando o con las flechas, acercar y
+  quitar.
+- [ ] **Las ventanas de ajustes**, más compactas: caben sin desplazarse en el portátil.
+
 ## Los sonidos del mapa (en local; módulo 7, docs/specs/sonido-mapa.md)
 
 - [ ] **Poner**: en la Mesa, herramienta «Sonidos del mapa» (O, junto a las luces): un clic pone uno y sale su

@@ -1,5 +1,5 @@
 import { createMemoryHistory } from '@tanstack/react-router'
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { fakeAccountClient } from '../account/fake.ts'
@@ -139,7 +139,11 @@ describe('mis mundos', () => {
     await userEvent.click(settings.getByRole('button', { name: 'Añadir portada' }))
     const cover = within(await screen.findByRole('dialog', { name: 'Portada de Eana' }))
     expect(cover.queryByRole('button', { name: 'Guardar' })).toBeNull()
-    await userEvent.click(await cover.findByRole('button', { name: 'mapa.png' }))
+    // «Elegir de tus archivos» abre el selector; elegir una la pone y lo cierra
+    await userEvent.click(cover.getByRole('button', { name: 'Elegir de tus archivos' }))
+    const picker = within(await screen.findByRole('dialog', { name: 'Elegir de tus archivos' }))
+    await userEvent.click(await picker.findByRole('button', { name: 'mapa.png' }))
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Elegir de tus archivos' })).toBeNull())
     await userEvent.click(cover.getByRole('button', { name: 'Acercar más' }))
     await userEvent.click(cover.getByRole('button', { name: 'Guardar' }))
     // Cerrar la portada no cierra la ventana del mundo

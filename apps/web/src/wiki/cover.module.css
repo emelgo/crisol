@@ -7,9 +7,11 @@
   background: var(--color-raised);
 }
 
-/* Con «Cambiar» abierto, su caja no se recorta */
-.cover:has([aria-expanded="true"]) {
-  overflow: visible;
+.image {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
 }
 
 /* Se arrastra arriba o abajo para encuadrarla */
@@ -79,41 +81,4 @@
   background: color-mix(in srgb, var(--color-bg) 82%, transparent);
   color: var(--color-text);
   font-size: 0.75rem;
-}
-
-.image {
-  display: block;
-  inline-size: 100%;
-  block-size: 100%;
-  object-fit: cover;
-}
-
-.wrapper {
-  position: relative;
-}
-
-.panel {
-  position: absolute;
-  z-index: 10;
-  inset-block-start: calc(100% + var(--space-1));
-  inset-inline-end: 0;
-  display: grid;
-  gap: var(--space-2);
-  inline-size: min(20rem, 90vw);
-  padding: var(--space-3);
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
-  box-shadow: 0 4px 16px rgb(0 0 0 / 0.15);
-}
-
-.panel[hidden] {
-  display: none;
-}
-
-.framing {
-  display: grid;
-  gap: var(--space-1);
-  margin: 0;
-  padding: var(--space-2);
-  border: 1px solid var(--color-border);
 }

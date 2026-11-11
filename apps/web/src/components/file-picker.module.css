@@ -1,0 +1,201 @@
+/* La ventana del selector: arriba a la misma altura (no salta al buscar) y solo la lista se desplaza */
+.picker {
+  inline-size: min(34rem, calc(100vw - 2rem));
+  max-block-size: min(80dvh, 44rem);
+  margin-block: calc((100dvh - min(80dvh, 44rem)) / 2) auto;
+  padding: 0;
+  border: 1px solid var(--color-frame);
+  border-radius: 8px;
+  background: var(--color-surface);
+  box-shadow: 0 1.5rem 3.75rem rgb(0 0 0 / 0.45);
+  color: var(--color-text);
+}
+
+.picker[open] {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.picker::backdrop {
+  background: rgb(0 0 0 / 0.55);
+}
+
+.body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-block-size: 0;
+  padding: var(--space-6);
+}
+
+.body h2 {
+  margin: 0;
+  padding-inline-end: calc(var(--target) - var(--space-2));
+}
+
+.search {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: 2.25rem;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-field-border);
+  border-radius: 4px;
+  background: var(--color-field, var(--color-bg));
+  color: var(--color-muted);
+}
+
+.search:focus-within {
+  border-color: var(--color-focus);
+}
+
+.search input {
+  flex: 1;
+  min-inline-size: 0;
+  border: 0;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  outline: none;
+}
+
+.rows {
+  --indent: 1.5rem;
+  flex: 1;
+  min-block-size: 0;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+  scrollbar-width: thin;
+}
+
+.item {
+  margin: 0;
+  padding: 0;
+}
+
+/* Una fila: la flecha (las carpetas), la miniatura y el nombre, sangrada según lo honda que esté (--depth) */
+.row {
+  display: grid;
+  grid-template-columns: 1rem 3rem minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-3);
+  inline-size: 100%;
+  min-block-size: 3rem;
+  padding: var(--space-1) var(--space-2);
+  padding-inline-start: calc(var(--space-2) + var(--depth, 0) * var(--indent));
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  transition: background-color 120ms ease-out;
+}
+
+.row:hover {
+  background: var(--color-raised);
+}
+
+.row:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
+}
+
+/* La que ya es la elegida */
+.row[aria-current="true"] {
+  background: color-mix(in srgb, var(--color-accent-text) 14%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-accent-text) 55%, transparent);
+}
+
+.chevron {
+  display: grid;
+  place-items: center;
+  color: var(--color-muted);
+  transition: transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.chevron[data-open="true"] {
+  transform: rotate(90deg);
+}
+
+.thumb,
+.folderThumb {
+  display: grid;
+  place-items: center;
+  inline-size: 3rem;
+  block-size: 2.25rem;
+  overflow: hidden;
+  border-radius: 3px;
+  color: var(--color-muted);
+}
+
+.thumb {
+  background: var(--color-raised);
+}
+
+.thumb img {
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+}
+
+.name {
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Lo de una carpeta abierta, con una línea fina que lo une a ella (bajo su flecha) */
+.kids {
+  position: relative;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  animation: despliega 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.kids::before {
+  content: "";
+  position: absolute;
+  inset-block: 0 0.75rem;
+  inset-inline-start: calc(var(--space-2) + 0.5rem + var(--depth, 0) * var(--indent));
+  inline-size: 1px;
+  background: var(--color-frame);
+  pointer-events: none;
+}
+
+@keyframes despliega {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kids {
+    animation: none;
+  }
+
+  .chevron {
+    transition: none;
+  }
+}
+
+.empty {
+  margin: 0;
+  padding: var(--space-6) 0;
+  color: var(--color-muted);
+  text-align: center;
+}
+
+@media (forced-colors: active) {
+  .row[aria-current="true"] {
+    outline: 2px solid Highlight;
+  }
+}

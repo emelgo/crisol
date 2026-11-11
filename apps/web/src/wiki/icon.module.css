@@ -99,3 +99,41 @@
   background: color-mix(in srgb, var(--color-text) 8%, transparent);
   color: var(--color-text);
 }
+
+/* En un formulario (IconChoices): cada emoji en su casilla, como los colores */
+.emojiChoice {
+  display: grid;
+  place-items: center;
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+/* «Otro»: una casilla más, algo más ancha, donde se escribe o se pega un emoji */
+.otherIcon {
+  inline-size: 4.75rem;
+  block-size: 2.25rem;
+  padding: 0 var(--space-2);
+  border: 1px dashed var(--color-border);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 1.125rem;
+  text-align: center;
+}
+
+.otherIcon::placeholder {
+  font-size: 0.8125rem;
+}
+
+.otherIcon:focus-visible {
+  border-style: solid;
+  border-color: var(--color-focus);
+  outline: none;
+}
+
+.otherIcon[data-chosen] {
+  border-style: solid;
+  border-color: var(--color-text);
+  background: color-mix(in srgb, var(--color-text) 10%, transparent);
+}

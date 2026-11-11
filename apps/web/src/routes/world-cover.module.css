@@ -39,7 +39,7 @@
   position: relative;
   display: block;
   inline-size: 100%;
-  aspect-ratio: 16 / 6;
+  aspect-ratio: var(--cover-aspect, 16 / 6);
   padding: 0;
   overflow: hidden;
   border: 1px solid var(--color-border);
@@ -116,55 +116,48 @@
   color: var(--color-text);
 }
 
-/* El nombre de cada grupo de miniaturas (del mundo, comunes), en su propia línea */
-.groupLabel {
-  flex-basis: 100%;
-  color: var(--color-muted);
-  font-size: 0.8125rem;
-  font-weight: 600;
-}
-
-/* Las imágenes del mundo, en miniatura; la elegida, marcada */
-.thumbs {
-  display: flex;
-  flex-wrap: wrap;
+/* Subir una imagen o elegirla de tus archivos: dos botones iguales, el icono y su texto debajo */
+.sources {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-2);
 }
 
-.thumb,
-.upload {
-  display: grid;
-  place-items: center;
-  inline-size: 4.5rem;
-  block-size: 3rem;
-  padding: 0;
-  overflow: hidden;
+.source {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.375rem;
+  padding: var(--space-3) var(--space-2);
   border: 1px solid var(--color-border);
-  border-radius: 4px;
-  background: var(--color-raised);
+  border-radius: 8px;
+  background: transparent;
   color: var(--color-muted);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-align: center;
   cursor: pointer;
+  transition:
+    border-color 120ms ease-out,
+    color 120ms ease-out,
+    background-color 120ms ease-out;
 }
 
-.thumb img {
-  inline-size: 100%;
-  block-size: 100%;
-  object-fit: cover;
-}
-
-.thumb[aria-pressed="true"] {
-  outline: 2px solid var(--color-text);
-  outline-offset: 1px;
-}
-
-.upload {
-  border-style: dashed;
-}
-
-.upload:hover,
-.thumb:hover {
-  border-color: var(--color-text);
+.source:hover {
+  border-color: var(--color-frame);
+  background: var(--color-raised);
   color: var(--color-text);
+}
+
+.source:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.source[aria-disabled="true"] {
+  cursor: progress;
+  opacity: 0.6;
 }
 
 /* Guardar y Cancelar a la izquierda; quitarla, a la derecha */

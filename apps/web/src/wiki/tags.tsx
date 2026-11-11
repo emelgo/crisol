@@ -52,7 +52,7 @@ const nodeOf = (name: string): TreeNode => ({ id: name, parentId: parentOf(name)
 /** Cuánto hay que llevarla a la izquierda para sacarla un nivel (como en el árbol de páginas) */
 const OUTDENT_STEP = 24
 
-/** «Dentro de»: arriba del todo o una de las etiquetas (sin ella misma ni sus hijas, al cambiarla de sitio) */
+/** «Dentro de»: ninguna (lo más alto) o una de las etiquetas (sin ella misma ni sus hijas, al cambiarla de sitio) */
 function ParentSelect({
   value,
   onChange,

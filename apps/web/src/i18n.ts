@@ -869,8 +869,10 @@ export const es = {
     common: 'Iconos',
     use: 'Usar {{icon}}',
     other: 'Otro emoji',
+    otherShort: 'Otro',
     useOther: 'Usar',
-    remove: 'Quitar el icono'
+    remove: 'Quitar el icono',
+    none: 'Sin icono'
   },
   editor: {
     body: 'Texto de la página',
@@ -1105,15 +1107,11 @@ export const es = {
   },
   cover: {
     button: 'Portada',
-    image: 'Imagen de portada',
-    none: 'Sin portada',
-    upload: 'Subir una imagen',
+    upload: 'Subir imagen',
+    pick: 'Elegir de tus archivos',
     framing: 'Encuadre',
-    horizontal: 'Horizontal',
-    vertical: 'Vertical',
     remove: 'Quitar la portada',
     title: 'Portada',
-    fromWorld: 'Del mundo',
     of: 'Portada de {{name}}',
     view: 'Ver',
     change: 'Cambiar',
@@ -1122,6 +1120,14 @@ export const es = {
     zoom: 'Acercar',
     zoomIn: 'Acercar más',
     zoomOut: 'Alejar'
+  },
+  // Elegir uno de tus archivos en una ventana (components/file-picker.tsx)
+  filePicker: {
+    none: {
+      image: 'Aún no tienes imágenes.',
+      pdf: 'Aún no tienes PDF.',
+      other: 'Aún no tienes archivos.'
+    }
   },
   // Lo que se marca en lo que sabe una campaña, en una frase (el historial y la cola de la IA)
   knowledgeTargets: {
@@ -2755,7 +2761,7 @@ export const es = {
     deletedMany_one: '1 archivo a la papelera',
     deletedMany_other: '{{count}} archivos a la papelera',
     folder: 'Carpeta',
-    noFolder: 'Ninguna (en lo más alto)',
+    noFolder: 'Ninguna',
     folderEmpty: 'Vacía',
     folderFiles_one: '1 archivo',
     folderFiles_other: '{{count}} archivos',
@@ -2808,7 +2814,7 @@ export const es = {
     new: 'Nueva etiqueta',
     name: 'Nombre de la etiqueta',
     parent: 'Dentro de',
-    top: 'Ninguna (arriba del todo)',
+    top: 'Ninguna',
     moved: '«{{name}}», movida',
     moveHint: 'Arrastra para recolocar, o usa Alt y las flechas.',
     create: 'Crear la etiqueta',

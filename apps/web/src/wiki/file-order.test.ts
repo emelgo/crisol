@@ -32,7 +32,9 @@ const folder = (id: string, parentId: string | null = null, position: string | n
   worldId: WORLD,
   organizationId: ORG,
   parentId,
-  position
+  position,
+  color: null,
+  icon: null
 })
 /** Los de una carpeta, en el orden en que se ven */
 const filesIn = (list: Listed, folderId: string | null, worldId: string | null = WORLD) =>

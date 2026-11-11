@@ -1,11 +1,11 @@
 /**
- * La portada de un mundo vista grande, y su cuadro para cambiarla: las imágenes del mundo en miniatura, subir otra,
- * quitarla y encuadrarla arrastrando sobre la vista previa (o con las flechas)
+ * La portada vista grande, y su cuadro para cambiarla (la de un mundo, una campaña o una página): subir una imagen o
+ * elegirla de tus archivos, quitarla y encuadrarla arrastrando sobre la vista previa (o con las flechas)
  */
 import type { PageCover as Cover } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Move, Upload, ZoomIn, ZoomOut } from 'lucide-react'
-import { type KeyboardEvent, type PointerEvent, useEffect, useId, useRef, useState } from 'react'
+import { FolderOpen, Move, Upload, ZoomIn, ZoomOut } from 'lucide-react'
+import { type CSSProperties, type KeyboardEvent, type PointerEvent, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ApiError } from '../api/client.ts'
 import { useApi } from '../api/context.tsx'
@@ -14,6 +14,7 @@ import { BusyButton } from '../components/busy-button.tsx'
 import { ChangesBar } from '../components/changes.tsx'
 import dialogStyles from '../components/dialog.module.css'
 import { FormError } from '../components/field.tsx'
+import { FilePicker } from '../components/file-picker.tsx'
 import form from '../components/form.module.css'
 import { Modal } from '../components/modal.tsx'
 import { coverStyle, useWorldFiles } from '../wiki/cover-look.ts'
@@ -47,21 +48,25 @@ export interface LocalImage {
 export const LOCAL_FILE = '00000000-0000-0000-0000-000000000000'
 
 /**
- * Cambiar la portada: elegirla, subirla o quitarla, encuadrarla y acercarla. Con cambios salen «Cancelar» (los deshace)
- * y «Guardar». Sin worldId (al crear el mundo, que aún no tiene archivos): solo una imagen propia, sin subir aún
+ * Cambiar la portada: subirla o elegirla de tus archivos, quitarla, encuadrarla y acercarla. Con cambios salen
+ * «Cancelar» (los deshace) y «Guardar». Sin worldId (al crear el mundo, que aún no tiene archivos): una imagen propia,
+ * sin subir aún, o una de los comunes
  */
 export function CoverDialog({
   worldId,
   title,
   cover,
   local,
+  aspect,
   onSave,
   onClose
 }: {
-  worldId?: string
+  worldId?: string | undefined
   title: string
   cover: Cover | null
   local?: LocalImage | null
+  /** La forma de la vista previa, la de donde sale la portada (de serie, la de la tarjeta de un mundo) */
+  aspect?: string
   onSave: (cover: Cover | null, local: LocalImage | null) => Promise<unknown>
   onClose: () => void
 }) {
@@ -72,7 +77,7 @@ export function CoverDialog({
   const dialog = useRef<HTMLDialogElement>(null)
   const upload = useRef<HTMLInputElement>(null)
   const titleId = useId()
-  // Al ajustar un mundo, los suyos y los comunes; al crearlo (aún sin archivos), los comunes
+  // Al ajustar un mundo, los suyos y los comunes; al crearlo (aún sin archivos), los comunes (los mismos del selector)
   const files = useWorldFiles(worldId ?? '', Boolean(worldId))
   const common = useQuery({
     queryKey: ['commonFiles'],
@@ -80,8 +85,7 @@ export function CoverDialog({
     enabled: !worldId
   })
   const images = (worldId ? files.data?.files : common.data?.files)?.filter((file) => file.kind === 'image') ?? []
-  const ownImages = images.filter((file) => file.worldId !== null)
-  const commonImages = images.filter((file) => file.worldId === null)
+  const [picking, setPicking] = useState(false)
   const [chosen, setChosen] = useState<Cover | null>(cover)
   const [pending, setPending] = useState<LocalImage | null>(local ?? null)
   const image = !chosen
@@ -171,6 +175,7 @@ export function CoverDialog({
           ref={preview}
           type="button"
           className={styles.preview}
+          style={aspect ? ({ '--cover-aspect': aspect } as CSSProperties) : undefined}
           disabled={!image}
           aria-label={t('cover.framing')}
           onPointerDown={startDrag}
@@ -212,44 +217,16 @@ export function CoverDialog({
             </button>
           </div>
         )}
-        {/* Las del mundo (con la propia aún sin subir y el botón de subir otra) y, aparte, las comunes */}
-        {/* biome-ignore lint/a11y/useSemanticElements: una fila de botones que se marcan (aria-pressed), no un formulario */}
-        <div className={styles.thumbs} role="group" aria-label={worldId ? t('cover.fromWorld') : t('cover.image')}>
-          {worldId && <span className={styles.groupLabel}>{t('cover.fromWorld')}</span>}
-          {ownImages.map((file) => (
-            <button
-              key={file.id}
-              type="button"
-              className={styles.thumb}
-              aria-pressed={chosen?.fileId === file.id}
-              aria-label={file.name}
-              title={file.name}
-              onClick={() => setChosen({ fileId: file.id, x: 50, y: 50 })}
-            >
-              <img src={file.url} alt="" />
-            </button>
-          ))}
-          {pending && (
-            <button
-              type="button"
-              className={styles.thumb}
-              aria-pressed={chosen?.fileId === LOCAL_FILE}
-              aria-label={pending.file.name}
-              title={pending.file.name}
-              onClick={() => setChosen({ fileId: LOCAL_FILE, x: 50, y: 50 })}
-            >
-              <img src={pending.url} alt="" />
-            </button>
-          )}
-          <BusyButton
-            className={styles.upload}
-            busy={uploadImage.isPending}
-            aria-label={t('cover.upload')}
-            title={t('cover.upload')}
-            onClick={() => upload.current?.click()}
-          >
-            <Upload aria-hidden="true" size={18} />
+        {/* De dónde sale: subirla o elegirla de tus archivos (docs/diseno.md: dos botones con su texto debajo) */}
+        <div className={styles.sources}>
+          <BusyButton className={styles.source} busy={uploadImage.isPending} onClick={() => upload.current?.click()}>
+            <Upload aria-hidden="true" size={22} strokeWidth={1.75} />
+            {t('cover.upload')}
           </BusyButton>
+          <button type="button" className={styles.source} aria-haspopup="dialog" onClick={() => setPicking(true)}>
+            <FolderOpen aria-hidden="true" size={22} strokeWidth={1.75} />
+            {t('cover.pick')}
+          </button>
           <input
             ref={upload}
             type="file"
@@ -262,24 +239,15 @@ export function CoverDialog({
             }}
           />
         </div>
-        {commonImages.length > 0 && (
-          // biome-ignore lint/a11y/useSemanticElements: una fila de botones que se marcan (aria-pressed), no un formulario
-          <div className={styles.thumbs} role="group" aria-label={t('files.common')}>
-            <span className={styles.groupLabel}>{t('files.common')}</span>
-            {commonImages.map((file) => (
-              <button
-                key={file.id}
-                type="button"
-                className={styles.thumb}
-                aria-pressed={chosen?.fileId === file.id}
-                aria-label={file.name}
-                title={file.name}
-                onClick={() => setChosen({ fileId: file.id, x: 50, y: 50 })}
-              >
-                <img src={file.url} alt="" />
-              </button>
-            ))}
-          </div>
+        {picking && (
+          <FilePicker
+            worldId={worldId}
+            kind="image"
+            title={t('cover.pick')}
+            chosenId={chosen?.fileId}
+            onPick={(file) => setChosen({ fileId: file.id, x: 50, y: 50 })}
+            onClose={() => setPicking(false)}
+          />
         )}
         <FormError message={save.error || uploadImage.error ? errorText(save.error ?? uploadImage.error) : null} />
         <div className={styles.footer}>

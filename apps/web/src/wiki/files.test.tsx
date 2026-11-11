@@ -193,9 +193,9 @@ describe('los archivos del mundo', () => {
     await userEvent.click(dialog.getByRole('button', { name: 'Guardar' }))
     expect(await screen.findByRole('button', { name: 'Mapa del norte.png' })).toBeDefined()
 
-    // Sin reemplazar ni mover desde aquí: se sube otro y se arrastra
+    // Sin reemplazar desde aquí (se sube otro); su carpeta, sí: ninguna, de momento
     expect(dialogElement.querySelector('input[type=file]')).toBeNull()
-    expect(dialog.queryByLabelText('Carpeta')).toBeNull()
+    expect(dialog.getByLabelText<HTMLSelectElement>('Carpeta').value).toBe('')
     await userEvent.click(dialog.getByRole('button', { name: 'Cerrar' }))
 
     await userEvent.click(screen.getByRole('button', { name: 'Ajustes de Bestiario.pdf' }))
@@ -577,6 +577,56 @@ describe('las carpetas, en la misma lista (su árbol)', () => {
     } finally {
       drag.restore()
     }
+  })
+})
+
+describe('la ventana de una carpeta o de un archivo', () => {
+  it('«Carpeta» lo lleva a otra (no a sí misma ni a las suyas): se cierra, se ve ya dentro y el foco vuelve a su engranaje', async () => {
+    const maps = folderOf('Mapas')
+    const north = folderOf('Norte', maps.id)
+    const portraits = folderOf('Retratos')
+    const api = fakeApi({
+      organizations: [ORG],
+      worlds: [WORLD],
+      folders: [maps, north, portraits],
+      files: [{ worldId: WORLD.id, name: 'Faro.png', kind: 'image' }]
+    })
+    renderAt(`/mundos/${WORLD.id}/archivos`, api)
+    // Una carpeta: entre las suyas no salen ella ni las de dentro
+    await userEvent.click(await screen.findByRole('button', { name: 'Ajustes de la carpeta Mapas' }))
+    const folderDialog = within(await screen.findByRole('dialog', { name: 'Ajustes de la carpeta Mapas' }))
+    const options = Array.from(folderDialog.getByLabelText<HTMLSelectElement>('Carpeta').options, (o) => o.textContent)
+    expect(options).toEqual(['Ninguna', 'Retratos'])
+    await userEvent.click(folderDialog.getByRole('button', { name: 'Cerrar' }))
+    // Un archivo, a «Mapas › Norte»
+    await userEvent.click(await screen.findByRole('button', { name: 'Ajustes de Faro.png' }))
+    const dialog = within(await screen.findByRole('dialog', { name: 'Ajustes de Faro.png' }))
+    await userEvent.selectOptions(dialog.getByLabelText('Carpeta'), 'Mapas › Norte')
+    await userEvent.click(dialog.getByRole('button', { name: 'Guardar' }))
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Ajustes de Faro.png' })).toBeNull())
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Norte' }).closest('li')?.contains(rowOf('Faro.png'))).toBe(true)
+    )
+    await waitFor(() => expect(document.activeElement?.getAttribute('aria-label')).toBe('Ajustes de Faro.png'))
+    expect(api.files.find((f) => f.name === 'Faro.png')?.folderId).toBe(north.id)
+  })
+
+  it('una carpeta lleva icono y color, que se ven en su fila', async () => {
+    const maps = folderOf('Mapas')
+    const api = fakeApi({ organizations: [ORG], worlds: [WORLD], folders: [maps], files: [] })
+    renderAt(`/mundos/${WORLD.id}/archivos`, api)
+    await userEvent.click(await screen.findByRole('button', { name: 'Ajustes de la carpeta Mapas' }))
+    const dialog = within(await screen.findByRole('dialog', { name: 'Ajustes de la carpeta Mapas' }))
+    await userEvent.click(dialog.getByRole('radio', { name: '🗺️' }))
+    await userEvent.click(dialog.getByRole('radio', { name: 'Musgo' }))
+    await userEvent.click(dialog.getByRole('button', { name: 'Guardar' }))
+    await waitFor(async () =>
+      expect((await api.client.call('listFiles', { worldId: WORLD.id })).folders[0]).toMatchObject({
+        icon: '🗺️',
+        color: 'moss'
+      })
+    )
+    await waitFor(() => expect(rowOf('Mapas').textContent).toContain('🗺️'))
   })
 })
 

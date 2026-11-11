@@ -305,15 +305,24 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   nivel va) o la carpeta resaltada si va dentro; lo movido se ilumina; un común no va a una carpeta del mundo ni al
   revés (mientras se arrastra, sale apagado). Carpetas primero y luego archivos, **en el orden que se quiera** (se
   recolocan arrastrando); sin ordenar, por nombre. **Sin ruta encima de la lista** («Todos › Carpeta»): la lista ya dice dónde está cada cosa.
-  **Toda la fila abre lo suyo**, no solo el nombre. Mover es arrastrar y cambiar un archivo es subir otro y borrar el
-  viejo: su ventana no tiene «Carpeta» ni «Reemplazar». **Se eligen varios** con su casilla (al pasar el ratón) y se
+  **Toda la fila abre lo suyo**, no solo el nombre. Mover es arrastrar o, desde su ventana, **«Carpeta»** (Enrique,
+  2026-11-12: como «Dentro de» en las etiquetas; «Ninguna», lo más alto); cambiar un archivo es subir otro y borrar el
+  viejo: sin «Reemplazar». **Las carpetas llevan color e icono** (Enrique, 2026-11-12), desde su ventana: el color,
+  como el de un mundo o una etiqueta; el icono, un emoji como el de una página. El color tiñe el dibujo de la carpeta o,
+  con icono, su fondo; se ve en la lista, en la vista previa y en el selector de archivos. **Se eligen varios** con su casilla (al pasar el ratón; en su columna, a la izquierda de las filas y sin tapar la miniatura) y se
   borran de una vez, con aviso. **Borrar una carpeta se lleva lo que tiene dentro** (sus archivos, a la papelera),
   avisando. **Buscador (por nombre o #etiqueta) y filtro por tipo** siempre a la vista. Se suben varios a la vez (no carpetas enteras), a la carpeta elegida; cada subida sale
   con su progreso y una X para cancelarla, y al acabar ya es su archivo (sin lista de «Subidas»). **Solo imágenes,
   PDF, audio, vídeo y texto**: nada que se ejecute.
 - **Los archivos comunes de la cuenta** (ADR-0005): fuera de los mundos, «Archivos» en la barra; dentro de cada
-  mundo, la carpeta «Comunes» en sus archivos, la misma en todos. Donde se elige un archivo (la portada), «Del mundo»
-  y «Comunes» por separado.
+  mundo, la carpeta «Comunes» en sus archivos, la misma en todos.
+- **Donde se elige un archivo, el selector de archivos**: la lista de Archivos en una ventana (las carpetas se despliegan
+  al pulsarlas), solo con el tipo que se pide y con su buscador por nombre o #etiqueta; en un mundo, los comunes dentro
+  de «Comunes». **La portada** (de un mundo, una campaña o una página, el mismo cuadro) se pone con dos botones con su
+  texto debajo: «Subir imagen» y «Elegir de tus archivos»; sin miniaturas sueltas.
+- **Las ventanas de ajustes, compactas** (Enrique, 2026-11-12: «son tan grandes… que no cabe y hay que hacer
+  scroll»): letra algo menor que la de la página, campos de una línea más bajos, poco aire entre ellos y casillas de
+  color e icono pequeñas; han de caber enteras en la pantalla de un portátil siempre que se pueda.
 - **Todo cuadro o ventana encima lleva la X arriba a la derecha y se cierra al pulsar fuera** (y con Escape). **Las X
   de cerrar, al pasar el ratón, un círculo suave alrededor del icono** (Enrique, 2026-11-11: «la x se ve mal al pasar
   el ratón por encima»; antes, un cuadrado que tapaba la esquina), en todas.

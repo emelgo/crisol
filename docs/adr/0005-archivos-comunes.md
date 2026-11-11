@@ -58,3 +58,11 @@ se reordenan unas hermanas se guardan los puestos de todas. `moveFile` y `update
 cambiar de carpeta y recolocar es una sola operación del historial (`moveFile`/`updateFolder`, u `orderFile`/
 `orderFolder` si solo cambia el puesto). Cambiar de carpeta sin ancla, o ir a la papelera con su carpeta o con `deleteFiles`,
 deja el puesto en null. La IA sigue solo con `listar_archivos`, que ya trae el puesto.
+
+## Cambio (2026-11-12): color, icono y «Carpeta»
+
+También en la tanda 2, Enrique pidió que las carpetas lleven color e icono, y poder cambiar de carpeta un archivo o una
+carpeta desde su ventana (no solo arrastrando). `file_folders` gana `color` (uno de los fijos o `#rrggbb`, como el de
+un mundo) e `icon` (un emoji, el mismo formato que el de una página), y `updateFolder` los acepta (null los quita); se
+deshacen desde el historial como el resto del cambio. Mover desde la ventana usa `moveFile` y `updateFolder` sin ancla.
+

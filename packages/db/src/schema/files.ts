@@ -35,7 +35,11 @@ export const fileFolders = pgTable(
      * Su puesto entre sus hermanas: una clave de orden fraccionaria (collation "C"), como la de las páginas. Sin ella,
      * por nombre detrás de las que la tienen; se rellena al reordenar por primera vez
      */
-    position: text()
+    position: text(),
+    /** Su color (uno de los fijos o #rrggbb, como el de un mundo o una etiqueta): tiñe su icono */
+    color: text(),
+    /** Su icono, un emoji como el de una página; sin él, el de una carpeta */
+    icon: text()
   },
   (t) => [
     index().on(t.worldId),

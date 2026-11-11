@@ -8,15 +8,13 @@
  */
 
 import type { FolderView } from '@crisol/contracts'
-import { bySiblingPlace, looksUploadable, MAX_FILE_BYTES, TRASH_DAYS, UPLOAD_ACCEPT } from '@crisol/domain'
+import { looksUploadable, MAX_FILE_BYTES, TRASH_DAYS, UPLOAD_ACCEPT } from '@crisol/domain'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getRouteApi, Link, Navigate } from '@tanstack/react-router'
 import {
   ChevronRight,
   File as FileIcon,
   FileText,
-  Folder,
-  FolderOpen,
   FolderPlus,
   Search,
   Settings,
@@ -59,9 +57,13 @@ import { PageTitle } from '../components/page-title.tsx'
 import { Tour } from '../components/tour.tsx'
 import { isInside, type Zone, zoneAt } from '../components/tree/moves.ts'
 import cards from '../routes/world-card.module.css'
+import { ColorChoices } from '../routes/world-card.tsx'
 import { CoverViewer } from '../routes/world-cover.tsx'
 import { type FilesMove, type Item, type Listed, movedIn } from './file-order.ts'
+import { COMMON, folderChoices, foundTree, matches, type Scope, splitScopes, treeOf, withCommon } from './file-tree.ts'
 import styles from './files.module.css'
+import { FolderGlyph } from './folder-glyph.tsx'
+import { IconChoices } from './icon.tsx'
 import type { WorldFile } from './links-context.ts'
 import tagStyles from './tags.module.css'
 import { TagChip, TagsField, useTagColor } from './tags.tsx'
@@ -69,10 +71,6 @@ import { TagChip, TagsField, useTagColor } from './tags.tsx'
 const route = getRouteApi('/mundos/$worldId/archivos')
 
 const KINDS = ['image', 'pdf', 'other'] as const
-/** La carpeta «Comunes» dentro de un mundo: no existe como tal, es la raíz de los comunes */
-const COMMON = 'comunes'
-/** Para buscar: sin tildes ni mayúsculas, como en las páginas */
-const plain = (text: string) => text.normalize('NFD').replace(/\p{M}/gu, '').toLocaleLowerCase('es')
 type Kind = (typeof KINDS)[number]
 /** Cuántas subidas a la vez */
 const PARALLEL = 3
@@ -124,33 +122,18 @@ function FilesPage({ worldId, world, organizationId }: { worldId: string; world:
   const files = useQuery({ queryKey: ['files', worldId], queryFn: () => api.call('listFiles', { worldId }) })
   const ownsCommon = useOwns(organizationId)
   // Las mismas listas mientras no cambien los datos
-  const own = useMemo(
-    () =>
-      files.data && {
-        files: files.data.files.filter((f) => f.worldId !== null),
-        folders: (files.data.folders ?? []).filter((f) => f.worldId !== null)
-      },
-    [files.data]
-  )
-  const common = useMemo(
-    () =>
-      files.data && {
-        files: files.data.files.filter((f) => f.worldId === null),
-        folders: (files.data.folders ?? []).filter((f) => f.worldId === null)
-      },
-    [files.data]
-  )
+  const scopes = useMemo(() => files.data && splitScopes(files.data), [files.data])
   return (
     <section className={styles.page}>
       {failed(files) && <SectionError error={files.error} onRetry={() => files.refetch()} />}
       <FilesSection
         target={{ worldId }}
-        data={own}
+        data={scopes?.own}
         cacheKey={['files', worldId]}
         canWrite
         empty={t('files.empty')}
         title={<PageTitle>{t('files.worldTitle', { world })}</PageTitle>}
-        common={{ target: { organizationId }, data: common, canWrite: ownsCommon }}
+        common={{ target: { organizationId }, data: scopes?.common, canWrite: ownsCommon }}
       />
       {files.data && <FilesTour />}
     </section>
@@ -310,7 +293,6 @@ function ChosenBar({
 }
 
 /** Los archivos y las carpetas de un ámbito */
-type Scope = { files: WorldFile[]; folders: FolderView[] }
 /** Delante o detrás de qué hermano de su tipo queda lo que se recoloca */
 type Beside = Pick<FilesMove, 'before' | 'after'>
 /** De qué ámbito es algo: los del mundo y los comunes no se mezclan */
@@ -366,25 +348,13 @@ function FilesSection({
   const uploads = useUploads()
   const commonLabel = t('files.common')
   // Lo de los comunes cuelga de su carpeta, «Comunes»: lo que en ellos está en lo más alto, dentro de ella
-  const data = useMemo<Scope | undefined>(() => {
-    if (!ownData || !common?.data) return ownData
-    const folder: FolderView = {
-      id: COMMON,
-      worldId: null,
-      organizationId: common.target.organizationId,
-      parentId: null,
-      name: commonLabel,
-      position: null
-    }
-    return {
-      files: [...ownData.files, ...common.data.files.map((f) => ({ ...f, folderId: f.folderId ?? COMMON }))],
-      folders: [
-        ...(ownData.folders ?? []),
-        folder,
-        ...(common.data.folders ?? []).map((f) => ({ ...f, parentId: f.parentId ?? COMMON }))
-      ]
-    }
-  }, [ownData, common?.data, common?.target.organizationId, commonLabel])
+  const data = useMemo<Scope | undefined>(
+    () =>
+      ownData && common?.data
+        ? withCommon(ownData, common.data, { name: commonLabel, organizationId: common.target.organizationId })
+        : ownData,
+    [ownData, common?.data, common?.target.organizationId, commonLabel]
+  )
   const several = useRef<HTMLInputElement>(null)
   // Adónde va lo que se elige en el campo de archivos: lo más alto (null) o la carpeta de cuyo botón se subió
   const uploadPlace = useRef<string | null>(null)
@@ -412,6 +382,21 @@ function FilesSection({
   const refusedSaid = useRef(false)
   // Lo recién movido, que se ilumina un momento
   const [landed, setLanded] = useState<string | null>(null)
+  // Lo movido desde su ventana, cuyo engranaje recibe el foco cuando su fila ya está en su carpeta nueva
+  const refocus = useRef<(Item & { dest: string | null }) | null>(null)
+  useEffect(() => {
+    const wanted = refocus.current
+    if (!wanted || !data) return
+    const entry =
+      wanted.kind === 'file'
+        ? data.files.find((file) => file.id === wanted.id)?.folderId
+        : data.folders.find((folder) => folder.id === wanted.id)?.parentId
+    if ((entry ?? null) !== wanted.dest) return
+    const gear = document.querySelector<HTMLElement>(`[data-file-card="${CSS.escape(wanted.id)}"] [data-settings]`)
+    if (!gear) return
+    refocus.current = null
+    gear.focus()
+  })
   const landedTimer = useRef<number | undefined>(undefined)
   const preview = (kind: 'file' | 'folder', id: string) => (shown: boolean) => {
     if (dragged.current) return
@@ -430,21 +415,7 @@ function FilesSection({
   )
   // Lo de cada carpeta (null: lo más alto): las carpetas primero y luego los archivos, en su orden (por su puesto y, sin
   // él, detrás y por nombre); «Comunes», tras las del mundo
-  const kids = useMemo(() => {
-    const map = new Map<string | null, { folders: FolderView[]; files: WorldFile[] }>()
-    const at = (id: string | null) => {
-      const entry = map.get(id) ?? { folders: [], files: [] }
-      map.set(id, entry)
-      return entry
-    }
-    for (const folder of data?.folders ?? []) at(folder.parentId ?? null).folders.push(folder)
-    for (const file of data?.files ?? []) at(file.folderId ?? null).files.push(file)
-    for (const entry of map.values()) {
-      entry.folders.sort((a, b) => Number(a.id === COMMON) - Number(b.id === COMMON) || bySiblingPlace(a, b))
-      entry.files.sort(bySiblingPlace)
-    }
-    return map
-  }, [data])
+  const kids = useMemo(() => treeOf(data ?? { files: [], folders: [] }), [data])
   const ids = useMemo(() => data && [...data.files.map((f) => f.id), ...(data.folders ?? []).map((f) => f.id)], [data])
   const fresh = useFresh(ids)
   const refresh = () =>
@@ -520,38 +491,12 @@ function FilesSection({
     return path
   }
   // Buscar por nombre o #etiqueta (como en las páginas: sin tildes ni mayúsculas; la etiqueta, por su principio)
-  const wanted = plain(query.trim())
-  const byTag = wanted.startsWith('#')
-  const searching = wanted !== '' || kind !== 'all'
+  const searching = query.trim() !== '' || kind !== 'all'
   const results = searching
-    ? data.files.filter(
-        (file) =>
-          (byTag
-            ? file.tags.some((each) => plain(each).startsWith(wanted.slice(1)))
-            : plain(file.name).includes(wanted)) &&
-          (kind === 'all' || file.kind === kind)
-      )
+    ? data.files.filter((file) => matches(file, query) && (kind === 'all' || file.kind === kind))
     : []
   // Lo encontrado, en su árbol: cada uno dentro de sus carpetas (desplegadas), sin lo demás
-  const found = (() => {
-    const map = new Map<string | null, { folders: FolderView[]; files: WorldFile[] }>()
-    const at = (id: string | null) => {
-      const entry = map.get(id) ?? { folders: [], files: [] }
-      map.set(id, entry)
-      return entry
-    }
-    const folderIds = new Set<string>()
-    for (const file of results) {
-      at(file.folderId ?? null).files.push(file)
-      for (let id = file.folderId ?? null; id; id = byId.get(id)?.parentId ?? null) folderIds.add(id)
-    }
-    for (const [parentId, entry] of kids) {
-      const folders = entry.folders.filter((folder) => folderIds.has(folder.id))
-      if (folders.length) at(parentId).folders.push(...folders)
-    }
-    for (const entry of map.values()) entry.files.sort(bySiblingPlace)
-    return map
-  })()
+  const found = foundTree(results, kids, folders)
   // Lo que se ve, en orden: en el árbol, lo de lo más alto y lo de las carpetas desplegadas
   const visible: Item[] = []
   const tree = searching ? found : kids
@@ -805,6 +750,13 @@ function FilesSection({
     if (here.canWrite) uploads.add(await droppedFiles(event.dataTransfer), here.target, here.folderId, null)
   }
 
+  // Mover desde su ventana («Carpeta»): como al soltarlo y, ya en su carpeta nueva, el foco vuelve a su engranaje
+  const moveFromDialog = (item: Item) => (dest: string | null) => {
+    refocus.current = { ...item, dest }
+    // Abierto todo el camino hasta ella, para verlo dentro
+    setExpanded((current) => new Set([...current, ...pathOf(dest).map((folder) => folder.id)]))
+    moveTo(item, dest)
+  }
   const rowProps = { folders, onChanged: refresh }
   const uploadRow = (upload: Upload, depth: number) => (
     <UploadRow key={`subida-${upload.key}`} upload={upload} depth={depth} onCancel={() => uploads.cancel(upload.key)} />
@@ -847,6 +799,8 @@ function FilesSection({
                 : {})}
               onToggle={() => toggle(folder)}
               onPreview={preview('folder', folder.id)}
+              folders={folders}
+              onMove={moveFromDialog({ kind: 'folder', id: folder.id })}
               onChanged={refresh}
             />
             {inside.length > 0 && (
@@ -875,6 +829,7 @@ function FilesSection({
                   )
             }
             onPreview={preview('file', file.id)}
+            onMove={moveFromDialog({ kind: 'file', id: file.id })}
             {...rowProps}
           />
         </li>
@@ -956,7 +911,7 @@ function FilesSection({
           />
         )}
         {searching && results.length === 0 && (
-          <p className={styles.empty}>{wanted ? t('files.noResults') : t('files.noKind')}</p>
+          <p className={styles.empty}>{query.trim() ? t('files.noResults') : t('files.noKind')}</p>
         )}
         {!searching && nothing && <p className={styles.empty}>{empty}</p>}
         <ul className={styles.rows} aria-label={t('files.listLabel')} data-tour="archivos-lista">
@@ -1025,6 +980,7 @@ function FileRow({
   fresh,
   drag,
   onPreview,
+  onMove,
   onChanged
 }: {
   file: WorldFile
@@ -1035,6 +991,8 @@ function FileRow({
   canWrite: boolean
   fresh: boolean
   drag: RowDrag
+  /** Llevarlo a otra carpeta desde su ventana (null: lo más alto) */
+  onMove: (dest: string | null) => void
   /** Al pasar el ratón (true) y al irse (false): para la vista previa */
   onPreview: (shown: boolean) => void
   onChanged: () => Promise<unknown>
@@ -1053,18 +1011,18 @@ function FileRow({
         if ((event.target as Element).closest('[aria-haspopup="dialog"]')) onPreview(false)
       }}
     >
+      {canWrite && <Pick id={file.id} what="file" name={file.name} />}
       <span className={styles.chevron} aria-hidden="true" />
       <span className={styles.rowThumb}>
         <Thumb file={file} small />
-        {canWrite && <Pick id={file.id} what="file" name={file.name} />}
       </span>
       <span className={styles.rowText}>
-        <FileName file={file} className={styles.rowName} folders={folders} canWrite={canWrite} onChanged={onChanged} />
+        <FileName file={file} className={styles.rowName} />
         {where.length > 0 && <span className={styles.where}>{where.map((folder) => folder.name).join(' › ')}</span>}
         <FileTags tags={file.tags} />
       </span>
       <span className={styles.rowMeta}>{sizeText(file.size, i18n.language)}</span>
-      {canWrite ? <FileSettings file={file} onChanged={onChanged} /> : <span />}
+      {canWrite ? <FileSettings file={file} folders={folders} onMove={onMove} onChanged={onChanged} /> : <span />}
     </div>
   )
 }
@@ -1175,7 +1133,7 @@ function FolderDetail({ folder, files, folders }: { folder: FolderView; files: W
   return (
     <div className={styles.detailBody}>
       <div className={`${styles.preview} ${styles.folderPreview}`}>
-        <FolderOpen aria-hidden="true" size={56} strokeWidth={1.25} />
+        <FolderGlyph folder={folder} open size={56} strokeWidth={1.25} />
       </div>
       <h2 className={styles.detailName}>{folder.name}</h2>
       <dl className={styles.facts}>
@@ -1230,12 +1188,17 @@ function FolderRow({
   newFolder,
   onToggle,
   onPreview,
+  folders,
+  onMove,
   onChanged
 }: {
   folder: FolderView
   depth: number
   open: boolean
   counts: string
+  /** Todas las carpetas, para llevarla a otra desde su ventana (onMove; null: lo más alto) */
+  folders: FolderView[]
+  onMove: (dest: string | null) => void
   /** Subir a ella y crear una dentro: dos botones que salen al pasar el ratón (si se puede escribir en ella) */
   onUpload?: () => void
   newFolder?: { target: Target; parentId: string | null }
@@ -1263,16 +1226,12 @@ function FolderRow({
         if ((event.target as Element).closest('[aria-haspopup="dialog"]')) onPreview(false)
       }}
     >
+      {canWrite && <Pick id={folder.id} what="folder" name={folder.name} />}
       <span className={styles.chevron} data-open={open} aria-hidden="true">
         <ChevronRight size={16} />
       </span>
       <span className={`${styles.rowThumb} ${styles.folderThumb}`}>
-        {open ? (
-          <FolderOpen aria-hidden="true" size={20} strokeWidth={1.75} />
-        ) : (
-          <Folder aria-hidden="true" size={20} strokeWidth={1.75} />
-        )}
-        {canWrite && <Pick id={folder.id} what="folder" name={folder.name} />}
+        <FolderGlyph folder={folder} open={open} />
       </span>
       <span className={styles.rowText}>
         <button
@@ -1318,7 +1277,7 @@ function FolderRow({
           </span>
         )}
       </span>
-      {canWrite ? <FolderSettings folder={folder} onChanged={onChanged} /> : <span />}
+      {canWrite ? <FolderSettings folder={folder} folders={folders} onMove={onMove} onChanged={onChanged} /> : <span />}
     </div>
   )
 }
@@ -1476,7 +1435,59 @@ function NewFolder({
 }
 
 /** El engranaje de una carpeta: abre su ventana */
-function FolderSettings({ folder, onChanged }: { folder: FolderView; onChanged: () => Promise<unknown> }) {
+/**
+ * «Carpeta»: en cuál está un archivo o una carpeta (las de su ámbito, con su camino) o en ninguna. Los valores son los
+ * del árbol de la pantalla: lo común que no está en ninguna, en un mundo, cuelga de «Comunes»
+ */
+function FolderField({
+  folders,
+  of,
+  moving,
+  value,
+  onChange
+}: {
+  folders: FolderView[]
+  /** Lo que se cambia de sitio: su ámbito */
+  of: { worldId: string | null }
+  /** Si es una carpeta: ella y las suyas no salen */
+  moving?: string
+  value: string | null
+  onChange: (folderId: string | null) => void
+}) {
+  const { t } = useTranslation()
+  const id = useId()
+  // Lo más alto: para lo común en un mundo, «Comunes»
+  const top = of.worldId === null && folders.some((folder) => folder.id === COMMON) ? COMMON : null
+  return (
+    <div className={form.field}>
+      <label htmlFor={id}>{t('files.folder')}</label>
+      <select
+        id={id}
+        value={value === top ? '' : (value ?? '')}
+        onChange={(event) => onChange(event.currentTarget.value || top)}
+      >
+        <option value="">{t('files.noFolder')}</option>
+        {folderChoices(folders, of.worldId, moving).map((choice) => (
+          <option key={choice.id} value={choice.id}>
+            {choice.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  )
+}
+
+function FolderSettings({
+  folder,
+  folders,
+  onMove,
+  onChanged
+}: {
+  folder: FolderView
+  folders: FolderView[]
+  onMove: (dest: string | null) => void
+  onChanged: () => Promise<unknown>
+}) {
   const { t } = useTranslation()
   const trigger = useRef<HTMLButtonElement>(null)
   const [open, setOpen] = useState(false)
@@ -1486,6 +1497,7 @@ function FolderSettings({ folder, onChanged }: { folder: FolderView; onChanged: 
         ref={trigger}
         type="button"
         className={styles.smallGear}
+        data-settings=""
         aria-label={t('files.folderSettingsOf', { name: folder.name })}
         title={t('files.folderSettingsOf', { name: folder.name })}
         aria-haspopup="dialog"
@@ -1496,6 +1508,8 @@ function FolderSettings({ folder, onChanged }: { folder: FolderView; onChanged: 
       {open && (
         <FolderDialog
           folder={folder}
+          folders={folders}
+          onMove={onMove}
           onChanged={onChanged}
           onClose={(gone) => {
             setOpen(false)
@@ -1507,13 +1521,20 @@ function FolderSettings({ folder, onChanged }: { folder: FolderView; onChanged: 
   )
 }
 
-/** La ventana de una carpeta: su nombre y, en la zona de peligro, borrarla con lo que tiene. onClose(gone): si se borró */
+/**
+ * La ventana de una carpeta: su nombre, en qué carpeta está y, en la zona de peligro, borrarla con lo que tiene.
+ * onClose(gone): si se borró
+ */
 function FolderDialog({
   folder,
+  folders,
+  onMove,
   onChanged,
   onClose
 }: {
   folder: FolderView
+  folders: FolderView[]
+  onMove: (dest: string | null) => void
   onChanged: () => Promise<unknown>
   onClose: (gone: boolean) => void
 }) {
@@ -1524,13 +1545,33 @@ function FolderDialog({
   const titleId = useId()
   const gone = useRef(false)
   const [name, setName] = useState(folder.name)
+  const [color, setColor] = useState(folder.color)
+  const [icon, setIcon] = useState(folder.icon)
+  const startParent = folder.parentId ?? null
+  const [parent, setParent] = useState(startParent)
+  const renamed = name.trim() !== folder.name
+  const restyled = color !== folder.color || icon !== folder.icon
+  const moved = parent !== startParent
   const rename = useMutation({
     mutationFn: async () => {
-      await api.call('updateFolder', { folderId: folder.id, name: name.trim() })
-      await onChanged()
+      if (renamed || restyled) {
+        await api.call('updateFolder', {
+          folderId: folder.id,
+          ...(renamed ? { name: name.trim() } : {}),
+          ...(color !== folder.color ? { color } : {}),
+          ...(icon !== folder.icon ? { icon } : {})
+        })
+        await onChanged()
+      }
+    },
+    // A otra carpeta: la ventana se cierra y se ve ya en su sitio
+    onSuccess: () => {
+      if (!moved) return
+      dialog.current?.close()
+      onMove(parent)
     }
   })
-  const changed = name.trim() !== folder.name
+  const changed = renamed || restyled || moved
   const remove = async () => {
     await api.call('deleteFolder', { folderId: folder.id })
     gone.current = true
@@ -1539,8 +1580,8 @@ function FolderDialog({
   }
   return (
     <Modal ref={dialog} aria-labelledby={titleId} className={cards.dialog} onClose={() => onClose(gone.current)}>
-      <div className={styles.preview}>
-        <Folder aria-hidden="true" size={56} strokeWidth={1.25} />
+      <div className={`${styles.preview} ${styles.iconPreview}`}>
+        <FolderGlyph folder={{ color, icon }} size={44} strokeWidth={1.25} />
       </div>
       <form
         className={cards.form}
@@ -1561,12 +1602,24 @@ function FolderDialog({
           data-form-type="other"
           onChange={(event) => setName(event.currentTarget.value)}
         />
+        <FolderField folders={folders} of={folder} moving={folder.id} value={parent} onChange={setParent} />
+        <IconChoices value={icon} onChange={setIcon} />
+        <ColorChoices value={color} onChange={setColor} />
         <FormError message={rename.error ? errorText(rename.error) : null} />
         <ChangesBar shown={changed}>
           <BusyButton type="submit" className={form.button} busy={rename.isPending}>
             {t('files.save')}
           </BusyButton>
-          <button type="button" className={dialogStyles.cancel} onClick={() => setName(folder.name)}>
+          <button
+            type="button"
+            className={dialogStyles.cancel}
+            onClick={() => {
+              setName(folder.name)
+              setColor(folder.color)
+              setIcon(folder.icon)
+              setParent(startParent)
+            }}
+          >
             {t('files.cancel')}
           </button>
         </ChangesBar>
@@ -1779,23 +1832,9 @@ function Thumb({ file, small = false }: { file: WorldFile; small?: boolean }) {
 }
 
 /** El nombre de un archivo, que lo abre (toda su fila): una imagen, en grande; lo demás, en otra pestaña */
-function FileName({
-  file,
-  className,
-  onChanged
-}: {
-  file: WorldFile
-  className: string | undefined
-  folders: FolderView[]
-  canWrite: boolean
-  onChanged: () => Promise<unknown>
-}) {
+function FileName({ file, className }: { file: WorldFile; className: string | undefined }) {
   const trigger = useRef<HTMLButtonElement>(null)
-  const [open, setOpen] = useState<'viewer' | 'settings' | null>(null)
-  const close = (gone = false) => {
-    setOpen(null)
-    if (!gone) trigger.current?.focus()
-  }
+  const [viewing, setViewing] = useState(false)
   return (
     <>
       {file.kind === 'image' ? (
@@ -1804,7 +1843,7 @@ function FileName({
           type="button"
           className={[className, styles.open].filter(Boolean).join(' ')}
           aria-haspopup="dialog"
-          onClick={() => setOpen('viewer')}
+          onClick={() => setViewing(true)}
         >
           {file.name}
         </button>
@@ -1819,14 +1858,32 @@ function FileName({
           {file.name}
         </a>
       )}
-      {open === 'viewer' && <CoverViewer url={file.url} label={file.name} onClose={() => close()} />}
-      {open === 'settings' && <FileDialog file={file} onChanged={onChanged} onClose={close} />}
+      {viewing && (
+        <CoverViewer
+          url={file.url}
+          label={file.name}
+          onClose={() => {
+            setViewing(false)
+            trigger.current?.focus()
+          }}
+        />
+      )}
     </>
   )
 }
 
 /** El engranaje de un archivo: abre su ventana */
-function FileSettings({ file, onChanged }: { file: WorldFile; onChanged: () => Promise<unknown> }) {
+function FileSettings({
+  file,
+  folders,
+  onMove,
+  onChanged
+}: {
+  file: WorldFile
+  folders: FolderView[]
+  onMove: (dest: string | null) => void
+  onChanged: () => Promise<unknown>
+}) {
   const { t } = useTranslation()
   const trigger = useRef<HTMLButtonElement>(null)
   const [open, setOpen] = useState(false)
@@ -1836,6 +1893,7 @@ function FileSettings({ file, onChanged }: { file: WorldFile; onChanged: () => P
         ref={trigger}
         type="button"
         className={styles.smallGear}
+        data-settings=""
         aria-label={t('files.settingsOf', { name: file.name })}
         title={t('files.settingsOf', { name: file.name })}
         aria-haspopup="dialog"
@@ -1846,6 +1904,8 @@ function FileSettings({ file, onChanged }: { file: WorldFile; onChanged: () => P
       {open && (
         <FileDialog
           file={file}
+          folders={folders}
+          onMove={onMove}
           onChanged={onChanged}
           onClose={(gone) => {
             setOpen(false)
@@ -1858,15 +1918,19 @@ function FileSettings({ file, onChanged }: { file: WorldFile; onChanged: () => P
 }
 
 /**
- * La ventana de un archivo: su vista previa, el nombre («Guardar» y «Cancelar» solo con cambios), sus etiquetas y, al
- * final, la zona de peligro. onClose(gone): si se ha borrado
+ * La ventana de un archivo: su vista previa, el nombre y su carpeta («Guardar» y «Cancelar» solo con cambios), sus
+ * etiquetas y, al final, la zona de peligro. onClose(gone): si se ha borrado
  */
 function FileDialog({
   file,
+  folders,
+  onMove,
   onChanged,
   onClose
 }: {
   file: WorldFile
+  folders: FolderView[]
+  onMove: (dest: string | null) => void
   onChanged: () => Promise<unknown>
   onClose: (gone: boolean) => void
 }) {
@@ -1877,10 +1941,22 @@ function FileDialog({
   const titleId = useId()
   const gone = useRef(false)
   const [name, setName] = useState(file.name)
+  const startFolder = file.folderId ?? null
+  const [folderId, setFolderId] = useState(startFolder)
+  const renamed = name.trim() !== file.name
+  const moved = folderId !== startFolder
   const rename = useMutation({
     mutationFn: async () => {
-      await api.call('renameFile', { fileId: file.id, name: name.trim() })
-      await onChanged()
+      if (renamed) {
+        await api.call('renameFile', { fileId: file.id, name: name.trim() })
+        await onChanged()
+      }
+    },
+    // A otra carpeta: la ventana se cierra y se ve ya en su sitio
+    onSuccess: () => {
+      if (!moved) return
+      dialog.current?.close()
+      onMove(folderId)
     }
   })
   const retag = useMutation({
@@ -1896,7 +1972,7 @@ function FileDialog({
     await vanish(file.id, dialog.current)
     await onChanged()
   }
-  const changed = name.trim() !== file.name
+  const changed = renamed || moved
   return (
     <Modal ref={dialog} aria-labelledby={titleId} className={cards.dialog} onClose={() => onClose(gone.current)}>
       <div className={styles.preview}>
@@ -1922,12 +1998,20 @@ function FileDialog({
           spellCheck={false}
           onChange={(event) => setName(event.currentTarget.value)}
         />
+        <FolderField folders={folders} of={file} value={folderId} onChange={setFolderId} />
         <FormError message={rename.error ? errorText(rename.error) : null} />
         <ChangesBar shown={changed}>
           <BusyButton type="submit" className={form.button} busy={rename.isPending}>
             {t('files.save')}
           </BusyButton>
-          <button type="button" className={dialogStyles.cancel} onClick={() => setName(file.name)}>
+          <button
+            type="button"
+            className={dialogStyles.cancel}
+            onClick={() => {
+              setName(file.name)
+              setFolderId(startFolder)
+            }}
+          >
             {t('files.cancel')}
           </button>
         </ChangesBar>

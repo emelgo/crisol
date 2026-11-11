@@ -261,6 +261,26 @@ describe('los archivos del mundo', () => {
     expect(undone.files.find((f: { name: string }) => f.name === 'Costa.png')).toMatchObject({ folderId: north.id })
   })
 
+  it('una carpeta lleva color e icono (un emoji): se ponen, se quitan con null y se deshacen', async () => {
+    const maps = await call('createFolder', { worldId, name: 'Mapas' })
+    expect(maps).toMatchObject({ color: null, icon: null })
+    expect(await call('updateFolder', { folderId: maps.id, color: 'moss', icon: '🗺️' })).toMatchObject({
+      color: 'moss',
+      icon: '🗺️'
+    })
+    expect(await call('updateFolder', { folderId: maps.id, color: '#3a7bd5' })).toMatchObject({ color: '#3a7bd5' })
+    // Ni un icono que no es un emoji ni un color que no es de los fijos o #rrggbb
+    expect(await call('updateFolder', { folderId: maps.id, icon: 'ab' })).toMatchObject({ code: 'INVALID_INPUT' })
+    expect(await call('updateFolder', { folderId: maps.id, color: 'rojo' })).toMatchObject({ code: 'INVALID_INPUT' })
+    expect(await call('updateFolder', { folderId: maps.id, icon: null })).toMatchObject({ icon: null })
+    expect((await call('listFiles', { worldId })).folders).toMatchObject([
+      { name: 'Mapas', color: '#3a7bd5', icon: null }
+    ])
+    const [last] = (await call('listHistory', { worldId })).entries
+    expect((await call('undoOperation', { operationId: last.id })).status).toBe('undone')
+    expect((await call('listFiles', { worldId })).folders).toMatchObject([{ icon: '🗺️' }])
+  })
+
   it('orden a mano dentro de su carpeta: la primera vez se guardan todos; solo junto a uno de su tipo y su carpeta; se deshace de una vez', async () => {
     type Listed = {
       id: string
