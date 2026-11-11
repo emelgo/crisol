@@ -8,6 +8,14 @@ import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { useAnnounce } from '../components/announcer.tsx'
+import {
+  dropMove as dropMoveIn,
+  keyboardMove as keyboardMoveIn,
+  type Move,
+  outdentTarget as outdentTargetIn,
+  type Zone,
+  zoneAt
+} from '../components/tree/moves.ts'
 import { TEMPLATE_ICON } from '../templates/icons.tsx'
 import { useTemplates } from '../templates/picker.tsx'
 import styles from './tree.module.css'
@@ -35,9 +43,7 @@ interface Row {
   expanded: boolean
 }
 
-type Zone = 'before' | 'inside' | 'after'
 /** Cómo se recoloca una página: lo que se pide a movePage */
-type Move = { parentId: string | null; before?: string; after?: string }
 
 interface Props {
   worldId: string
@@ -214,20 +220,8 @@ export function PageTree({ worldId, currentId, path, onNavigate }: Props) {
   }
 
   // Alt + flechas: arriba y abajo entre hermanas; derecha, dentro de la de encima; izquierda, detrás de su madre
-  const keyboardMove = (row: Row, key: string): Move | null => {
-    const siblings = siblingsOf(row.page)
-    const at = siblings.findIndex((p) => p.id === row.page.id)
-    const previous = siblings[at - 1]
-    const next = siblings[at + 1]
-    if (key === 'ArrowUp' && previous) return { parentId: row.page.parentId, before: previous.id }
-    if (key === 'ArrowDown' && next) return { parentId: row.page.parentId, after: next.id }
-    if (key === 'ArrowRight' && previous) return { parentId: previous.id }
-    if (key === 'ArrowLeft' && row.page.parentId) {
-      const parent = rows.find((r) => r.page.id === row.page.parentId)?.page
-      return { parentId: parent?.parentId ?? null, after: row.page.parentId }
-    }
-    return null
-  }
+  const keyboardMove = (row: Row, key: string): Move | null =>
+    keyboardMoveIn(row.page, siblingsOf(row.page), (id) => rows.find((r) => r.page.id === id)?.page, key)
 
   const onKeyDown = (row: Row, event: KeyboardEvent<HTMLAnchorElement>) => {
     const index = indexOf(row.page.id)
@@ -264,50 +258,26 @@ export function PageTree({ worldId, currentId, path, onNavigate }: Props) {
     event.preventDefault()
   }
 
-  // Arrastrar: el cuarto de arriba de una fila, delante; el de abajo, detrás; el resto, dentro
+  // Arrastrar (components/tree/moves.ts): el cuarto de arriba de una fila, delante; el de abajo, detrás; el resto, dentro
   const zoneOf = (event: DragEvent<HTMLElement>): Zone => {
     const box = event.currentTarget.getBoundingClientRect()
-    const y = (event.clientY - box.top) / (box.height || 1)
-    return y < 0.25 ? 'before' : y > 0.75 ? 'after' : 'inside'
+    return zoneAt((event.clientY - box.top) / (box.height || 1))
   }
-  /**
-   * Llevarlo a la izquierda lo saca de su madre: sobre su propia fila, un nivel por cada paso; sobre la última de una
-   * rama (cayendo detrás), detrás de la de ese nivel. Devuelve la de ese nivel, o null si no se lleva a la izquierda
-   */
-  const outdentTarget = (row: Row, zone: Zone, clientX: number): Row | null => {
-    const steps = Math.floor((dragStartX.current - clientX) / OUTDENT_STEP)
-    if (steps <= 0) return null
-    const self = row.page.id === dragged.current
-    if (!self && (zone !== 'after' || row.expanded)) return null
-    const level = Math.max(1, row.level - steps)
-    let current: Row | undefined = row
-    while (current && current.level > level) {
-      // Solo desde la última de cada rama: si no, caería lejos de donde se suelta
-      if (!self && current.posinset !== current.setsize) return null
-      const parentId: string | null = current.page.parentId
-      current = rows.find((r) => r.page.id === parentId)
-    }
-    return current && current !== row ? current : null
-  }
-
-  /** Si una página está dentro de otra (o es ella): no se puede soltar ahí, se metería en sí misma */
-  const isInside = (id: string, ancestorId: string) => {
-    for (let at: string | null | undefined = id; at; at = rows.find((r) => r.page.id === at)?.page.parentId) {
-      if (at === ancestorId) return true
-    }
-    return false
-  }
+  const rowOf = (id: string) => rows.find((r) => r.page.id === id)
+  const parentOf = (id: string) => rowOf(id)?.page.parentId
+  /** Llevarlo a la izquierda lo saca de su madre: la fila del nivel al que va, o null si no se lleva a la izquierda */
+  const outdentTarget = (row: Row, zone: Zone, clientX: number): Row | null =>
+    outdentTargetIn(
+      row,
+      (r) => r.page,
+      rowOf,
+      zone,
+      Math.floor((dragStartX.current - clientX) / OUTDENT_STEP),
+      dragged.current
+    )
   /** Adónde iría al soltar, o null si no se puede (dentro de sí misma) */
-  const dropMove = (page: PageSummary, row: Row, zone: Zone, clientX: number): Move | null => {
-    const out = outdentTarget(row, zone, clientX)
-    if (out) return out.page.id === page.id ? null : { parentId: out.page.parentId, after: out.page.id }
-    if (page.id === row.page.id) return null
-    const to: Move =
-      zone === 'inside'
-        ? { parentId: row.page.id }
-        : { parentId: row.page.parentId, ...(zone === 'before' ? { before: row.page.id } : { after: row.page.id }) }
-    return to.parentId && isInside(to.parentId, page.id) ? null : to
-  }
+  const dropMove = (page: PageSummary, row: Row, zone: Zone, clientX: number): Move | null =>
+    dropMoveIn(page, row.page, zone, parentOf, outdentTarget(row, zone, clientX)?.page ?? null)
 
   const onDrop = (row: Row, zone: Zone, clientX: number) => {
     const page = rows.find((r) => r.page.id === dragged.current)?.page

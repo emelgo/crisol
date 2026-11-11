@@ -64,7 +64,8 @@ Plan: `tasks/plan-revision.md`. Una tanda cada vez: se enseña en local, Enrique
   al mantener un archivo encima y la vista previa va a la izquierda (también en Etiquetas). **Hecho y publicado**
   (lienzo «Archivos sin árbol», https://claude.ai/artifact/SNQuCPM644JuprjWvatqBA, `out/lienzo-archivos/`); falta que
   Enrique lo apruebe.
-- [ ] `components/tree/` (lógica de mover fuera del árbol de páginas, con pruebas).
+- [x] `components/tree/moves.ts`: la lógica de mover, fuera del árbol de páginas y con sus pruebas (el árbol de
+  páginas solo la importa).
 - [ ] Archivos con la lista que despliega (y fila «Todos» para lo más alto).
 - [ ] Etiquetas: `tags.position` y reordenar.
 - [ ] Selector de archivos y la portada al crear un mundo.
