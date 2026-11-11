@@ -1376,6 +1376,8 @@ export const es = {
     new: 'Plantilla nueva',
     untitled: 'Plantilla sin título',
     settings: 'Ajustes de la plantilla',
+    duplicate: 'Duplicar',
+    copyName: '{{name}} (copia)',
     empty: 'Aún no hay plantillas',
     listLabel: 'Tus plantillas',
     keysHint: 'Flechas para moverte, Intro abre; Alt y las flechas recolocan.',

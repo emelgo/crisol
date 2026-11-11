@@ -14,7 +14,7 @@ import type {
 } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, Navigate, useNavigate, useParams, useSearch } from '@tanstack/react-router'
-import { ChevronDown, ChevronLeft, ChevronUp, Plus, Settings, Trash2 } from 'lucide-react'
+import { ChevronDown, ChevronLeft, ChevronUp, Copy, Plus, Settings, Trash2 } from 'lucide-react'
 import { type ReactNode, useCallback, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
@@ -239,8 +239,15 @@ function TemplateMore({ template }: { template: PageTemplate }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const [open, setOpen] = useState(false)
+  // Duplicarla: su página entera, con los mismos campos (sus páginas salen en las mismas tablas), y se abre
+  const copy = useNewTemplate()
   return (
     <>
+      <button type="button" disabled={copy.isPending} onClick={() => copy.mutate(template)}>
+        <Copy aria-hidden="true" size={16} />
+        {t('templates.duplicate')}
+      </button>
+      <FormError message={copy.errorText} />
       <button type="button" aria-haspopup="dialog" onClick={() => setOpen(true)}>
         <Settings aria-hidden="true" size={16} />
         {t('templates.settings')}

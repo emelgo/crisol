@@ -92,6 +92,25 @@ describe('editar una plantilla', () => {
     expect(screen.queryByText('Mencionado en')).toBeNull()
   })
 
+  it('«⋯» → «Duplicar»: una copia con los mismos campos (y su linaje), que se abre', async () => {
+    const { api, own } = await renderTemplate()
+    await api.client.call('updateTemplate', {
+      templateId: own.id,
+      fields: [{ name: 'Nivel', type: 'text', value: '' }]
+    })
+    await screen.findByRole('textbox', { name: 'Título de la página' })
+    await userEvent.click(screen.getByRole('button', { name: 'Más acciones' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Duplicar' }))
+    await waitFor(() =>
+      expect(screen.getByRole('textbox', { name: 'Título de la página' }).textContent).toBe('Frente (copia)')
+    )
+    const { templates } = await api.client.call('listTemplates', {})
+    const copy = templates.find((t) => t.name === 'Frente (copia)')
+    const original = templates.find((t) => t.id === own.id)
+    expect(copy).toMatchObject({ basedOn: own.id, line: [copy?.id, own.id] })
+    expect(copy?.fields.map((f) => f.field)).toEqual(original?.fields.map((f) => f.field))
+  })
+
   it('su nombre se cambia en su título, como el de una página; un emoji delante pasa a ser su icono', async () => {
     const { saved } = await renderTemplate()
     const title = await screen.findByRole('textbox', { name: 'Título de la página' })

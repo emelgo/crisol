@@ -9,6 +9,26 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
+## Revisión, tanda 3: las plantillas como páginas (en local)
+
+- [ ] **Tus plantillas de antes** (PNJ, Lugar…) siguen ahí como tuyas, con los mismos campos; tus páginas no cambian y
+  las tablas que se llenan solas («Miembros»…) siguen igual. Al abrir una por primera vez pasa a ser una página.
+- [ ] **«Plantillas», como Archivos**: carpetas con color e icono, arrastrar para meter o recolocar, Alt + flechas, la
+  vista previa a la izquierda (portada, campos, pestañas y en cuántas páginas se usa), buscar; «Nueva carpeta»;
+  «Carpeta» en la ventana de una plantilla; borrar una carpeta se lleva lo suyo y se deshace de una vez.
+- [ ] **«Plantilla nueva»** crea «Plantilla sin título» y la abre con el título elegido; escribir «🧙 PNJ» pone el
+  emoji como icono. Un nombre que ya tiene otra no se deja.
+- [ ] **El editor es la página**: «‹ Plantillas» arriba a la izquierda (vuelve con la transición al revés), la marca
+  «Plantilla», portada, pestañas (mapa, tabla, escena, texto), texto con «/», y en el panel sus campos y bloques; las
+  demás a la izquierda, por carpetas. «⋯» → «Ajustes de la plantilla» y «Duplicar» (la copia, con los mismos campos:
+  sus páginas salen en las mismas tablas). Una imagen subida al editarla sale en Archivos comunes.
+- [ ] **Crear desde una plantilla** («Página nueva» → «Desde plantilla», tras la raya con «o»): la página nace con su
+  portada, icono, campos, panel, texto y pestañas (los pines del mapa, sin enlazar).
+- [ ] **«Pestaña nueva» → «Desde plantilla»**: elegir una y dejar marcadas las pestañas que se quieran; se añaden
+  detrás de las de la página y se deshacen de una vez. Ya no hay «Aplicar plantilla» en «⋯».
+- [ ] **«Duplicar»** una página (botón derecho en el árbol): copia portada, hoja, panel y pestañas, y se deshace de
+  una vez.
+
 ## Revisión, tanda 2: Archivos, Etiquetas y el selector de archivos (en local)
 
 - [ ] **Archivos sin árbol**: pulsar una carpeta la despliega; arrastrar con raya o resalte; recolocar dentro de una
@@ -481,19 +501,21 @@ Los criterios de éxito de `docs/specs/plantillas.md`, en el orden en que se usa
 - [ ] Desde un enlace `[[…]]` a una página que aún no existe: crearla eligiendo plantilla.
 - [ ] **Criterio 1**: ponerle Facción al PNJ, abrir la facción y verlo en «Miembros». Lo mismo con Lugar →
   «Habitantes», y con un Objeto cuyo Portador es el PNJ → «Lleva encima».
-- [ ] «⋯» → «Aplicar plantilla…» en una página ya hecha: añade lo que falta sin borrar nada.
+- ~~«⋯» → «Aplicar plantilla…» en una página ya hecha~~ (ya no está: tanda 3, ADR-0024; ahora «Pestaña nueva» →
+  «Desde plantilla» añade sus pestañas).
 
 ### Plantillas propias (Mis mundos → Plantillas)
 
 - [ ] **Criterio 2**, en este orden (Frentes apunta a Frente, así que Frente va primero):
   1. «Frente» desde cero, con Nivel, Estado, un reloj de 8 y Regiones (→ Lugar);
-  2. copiar PNJ como «PNJ de Eana» y añadirle Frentes (→ Frente);
+  2. copiar PNJ como «PNJ de Eana» (ahora: abrir PNJ, «⋯» → «Duplicar» y cambiarle el nombre) y añadirle Frentes
+     (→ Frente);
   3. en Frente, la tabla «PNJ del frente» (PNJ de Eana · Frentes);
   4. crear un frente y dos PNJ de Eana con él: salen en su tabla.
 - [ ] Escribir el texto de una plantilla (sus apartados) y crear una página con ella.
 - [ ] **Criterio 3**: quitar un campo de «Frente»; los frentes ya hechos no cambian.
 - [ ] Borrar una plantilla propia: sus páginas dicen «(borrada)» junto al título y sus tablas siguen.
-- [ ] Las de serie no se cambian: candado y «Copiar».
+- ~~Las de serie no se cambian: candado y «Copiar»~~ (ya no hay de serie: tanda 3, ADR-0024).
 
 ### Deshacer
 

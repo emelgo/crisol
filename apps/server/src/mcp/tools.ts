@@ -323,6 +323,12 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   crear_plantilla: { action: 'createTemplate' },
   cambiar_plantilla: { action: 'updateTemplate' },
   borrar_plantilla: { action: 'deleteTemplate' },
+  // Sus carpetas (ADR-0024) y sus pestañas en una página ya hecha
+  crear_carpeta_plantillas: { action: 'createTemplateFolder' },
+  cambiar_carpeta_plantillas: { action: 'updateTemplateFolder' },
+  borrar_carpeta_plantillas: { action: 'deleteTemplateFolder' },
+  mover_plantilla: { action: 'moveTemplate' },
+  pestanas_desde_plantilla: { action: 'addTemplateTabs' },
   // Los dados (ADR-0010): el servidor tira; con campaña queda en su registro
   tirar_dados: {
     description:
@@ -666,7 +672,11 @@ const INSTRUCTIONS =
   'Las páginas de un tipo (PNJ, Lugar, Facción…: las plantillas que haya hecho la cuenta) se crean con su plantilla (listar_plantillas; ' +
   'template en crear_paginas): sus propiedades del YAML van a los campos que se llamen igual, y las tablas del panel ' +
   '(«Miembros», «Habitantes»…) se llenan solas con las páginas cuyo campo apunta a esta; para buscarlas, ' +
-  'buscar_paginas con template y field. Los dados los tira el servidor: tirar_dados (con campaignId, en su ' +
+  'buscar_paginas con template y field. Una plantilla es una página guardada como modelo (en un mundo oculto de la ' +
+  'cuenta): su texto, su portada, su panel y sus pestañas pasan a las páginas que se hacen con ella; su texto se lee y ' +
+  'se cambia como el de una página (su pageId sale en ver_plantilla) y sus campos, con cambiar_plantilla. Se ordenan en ' +
+  'carpetas (crear_carpeta_plantillas, mover_plantilla), y pestanas_desde_plantilla añade a una página hecha las ' +
+  'pestañas de una plantilla. Los dados los tira el servidor: tirar_dados (con campaignId, en su ' +
   'registro, oculta salvo que te pidan que la vean todos) y ver_tiradas; en una página, una tirada se escribe ' +
   '`dice: 2d6+3 # Nombre` y en partida se pulsa. Las reglas de cada juego son un sistema (listar_sistemas) y cada ' +
   'campaña elige el suyo con cambiar_campana. Crisol viene sin ninguno: «blank» es empezar de cero, y el máster puede ' +

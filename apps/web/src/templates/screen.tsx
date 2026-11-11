@@ -1082,7 +1082,7 @@ const nameKey = (name: string) =>
 
 /**
  * «Plantilla nueva»: crea «Plantilla sin título» (con un número si ya hay una así) y la abre con el título listo para
- * escribir, como una página nueva
+ * escribir, como una página nueva. Con una plantilla, la duplica
  */
 export function useNewTemplate() {
   const { t } = useTranslation()
@@ -1092,12 +1092,13 @@ export function useNewTemplate() {
   const errorText = useErrorText()
   const templates = useTemplates().data?.templates ?? []
   const create = useMutation({
-    mutationFn: () => {
-      const base = t('templates.untitled')
+    // copyOf: duplicar esa (su página entera, con los mismos campos y su linaje), como «{nombre} (copia)»
+    mutationFn: (copyOf?: PageTemplate) => {
+      const base = copyOf ? t('templates.copyName', { name: copyOf.name.slice(0, 50) }) : t('templates.untitled')
       const taken = new Set(templates.map((each) => nameKey(each.name)))
       let name = base
       for (let n = 2; taken.has(nameKey(name)); n++) name = `${base} ${n}`
-      return api.call('createTemplate', { name })
+      return api.call('createTemplate', { name, ...(copyOf ? { copyOf: copyOf.id } : {}) })
     },
     onSuccess: async (created) => {
       // Ya en la lista, para que su página la encuentre al abrirse (la lista de verdad llega después)
@@ -1109,7 +1110,7 @@ export function useNewTemplate() {
     }
   })
   return {
-    mutate: () => create.mutate(),
+    mutate: (copyOf?: PageTemplate) => create.mutate(copyOf),
     isPending: create.isPending,
     errorText: create.error ? errorText(create.error) : null
   }

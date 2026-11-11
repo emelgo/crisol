@@ -7,6 +7,20 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
+### Para retomar (2026-11-12, noche: tanda 3, las plantillas como páginas, construida en local; falta impeccable)
+
+- Rama `revision/tanda-3`, plan en `tasks/tanda-3.md` (porciones 1–7 hechas, cada una en su commit; la 8 en curso).
+  ADR-0024 con sus notas. Migraciones 0077 (las de serie en uso pasan a propias), 0078 (mundo oculto de plantillas) y
+  0079 (carpetas), aplicadas en local.
+- Hecho: el editor es la página (`EntryView` en modo plantilla, `TabTargetContext`); «Plantillas» como Archivos (árbol,
+  carpetas con color e icono, arrastre y teclado, vista previa); «Plantilla nueva» crea y abre; «⋯» → «Duplicar» y
+  «Ajustes»; «Desde plantilla» tras «o» en «Página nueva» y «Pestaña nueva» (`addTemplateTabs`); fuera «Aplicar
+  plantilla»; MCP al día (carpetas, `mover_plantilla`, `pestanas_desde_plantilla` e instrucciones); e2e de plantillas
+  rehecha (5 en verde) y fugas, campos, mapas, escenas, wiki, panel y exportar en verde.
+- **Siguiente**: critique y audit de impeccable de las pantallas de la tanda (lista, editor, cuadros nuevos), sus
+  arreglos, y enseñársela a Enrique en local. Los guiones locales de `e2e/.revision/` (fuera de git) aún usan las de
+  serie (`template: 'pnj'`): si se vuelven a usar, que creen antes sus plantillas.
+
 ### Para retomar (2026-11-12, tarde: tanda 2 con la crítica de impeccable y lo que eligió Enrique; falta el audit)
 
 - **Crítica** (27/40, dual-agent, `.impeccable/critique/`): lo claro, arreglado y en commit (`7e423af`). De lo que se
