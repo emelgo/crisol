@@ -77,6 +77,7 @@ describe('Actions', () => {
       listAccountTags: true,
       createTag: true,
       updateTag: true,
+  moveTag: true,
       deleteTag: true,
       setFileTags: true,
       listPageTabs: true,

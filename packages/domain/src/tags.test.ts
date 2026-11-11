@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isTagOrChild, removeTagIn, renameTagIn, tagTree, uniqueTags } from './tags.ts'
+import { isTagOrChild, placeAmongSiblings, removeTagIn, renameTagIn, tagTree, uniqueTags } from './tags.ts'
 
 describe('las etiquetas de la cuenta', () => {
   it('una hija está dentro de su madre, sin mirar mayúsculas; un nombre que empieza igual, no', () => {
@@ -55,5 +55,45 @@ describe('las etiquetas de la cuenta', () => {
       ['otro', 1]
     ])
     expect(tree.find((t) => t.name === 'facción')?.color).toBe('wine')
+  })
+  it('entre hermanas manda su puesto; sin él, detrás y por nombre, y cada una sigue justo tras su madre', () => {
+    const tree = tagTree<string>({
+      rows: [
+        { id: '1', name: 'lugar', color: null, position: 'a1' },
+        { id: '2', name: 'pnj', color: null, position: 'a0' },
+        { id: '3', name: 'lugar/puerto', color: null, position: 'a0' },
+        { id: '4', name: 'lugar/ciudad', color: null, position: 'a1' },
+        { id: '5', name: 'facción', color: null }
+      ],
+      pages: [],
+      files: []
+    })
+    expect(tree.map((t) => t.name)).toEqual(['pnj', 'lugar', 'lugar/puerto', 'lugar/ciudad', 'facción'])
+  })
+
+  it('al poner una entre sus hermanas: si todas tenían puesto, solo el suyo; si no, se rellenan todas en el orden nuevo', () => {
+    const placed = [
+      { name: 'pnj', position: 'a0' },
+      { name: 'lugar', position: 'a1' },
+      { name: 'facción', position: 'a2' }
+    ]
+    const [only] = placeAmongSiblings(placed, 'facción', { before: 'lugar' })
+    expect(only?.name).toBe('facción')
+    expect((only?.position ?? '') > 'a0' && (only?.position ?? '') < 'a1').toBe(true)
+    const filled = placeAmongSiblings(
+      [
+        { name: 'lugar', position: null },
+        { name: 'pnj', position: null },
+        { name: 'facción', position: null }
+      ],
+      'facción',
+      { after: 'lugar' }
+    )
+    expect(filled.map((f) => f.name)).toEqual(['lugar', 'facción', 'pnj'])
+    expect([...filled].sort((a, b) => (a.position < b.position ? -1 : 1)).map((f) => f.name)).toEqual([
+      'lugar',
+      'facción',
+      'pnj'
+    ])
   })
 })

@@ -17,7 +17,12 @@ export const tags = pgTable(
       .references(() => organizations.id, { onDelete: 'cascade' }),
     name: text().notNull(),
     /** Uno de la paleta de los mundos; sin él, gris */
-    color: text()
+    color: text(),
+    /**
+     * Su puesto entre sus hermanas: una clave de orden fraccionaria (collation "C"), como la de las páginas. Sin ella, por
+     * nombre detrás de las que la tienen; se rellena al reordenar por primera vez
+     */
+    position: text()
   },
   (t) => [index().on(t.organizationId), uniqueIndex('tags_name').on(t.organizationId, sql`lower(${t.name})`)]
 )

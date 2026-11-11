@@ -53,8 +53,10 @@ import {
   builtInTemplate,
   EMPTY_SOUND,
   instantiate,
+  isTagOrChild,
   nextTrack as nextTrackOf,
   pauseSound as pauseSoundOf,
+  placeAmongSiblings,
   removeTagIn,
   renameTagIn,
   resumeSound,
@@ -64,6 +66,8 @@ import {
   startList,
   stopSound as stopSoundOf,
   tagKey,
+  tagLeaf,
+  tagParent,
   tagTree,
   uniqueTags
 } from '@crisol/domain'
@@ -511,21 +515,29 @@ export function fakeApi(
   }
 
   // Las etiquetas de la cuenta (ADR-0006): las guardadas y las que llevan páginas y archivos
-  const tagRows: { id: string; organizationId: string; name: string; color: TagView['color'] }[] = []
+  const tagRows: {
+    id: string
+    organizationId: string
+    name: string
+    color: TagView['color']
+    position?: string | null
+  }[] = []
   const tagsOfPage = (page: StoredPage) => {
     const found = page.properties.find((p) => p.name.toLowerCase() === 'etiquetas')
     return found?.type === 'list' ? found.value : []
   }
   const ownOrganization = (organizationId?: string) =>
     organizationId ?? organizations.find((o) => o.role === 'owner')?.id ?? ''
-  const catalogOf = (organizationId: string): TagView[] =>
+  const tagNodesOf = (organizationId: string) =>
     tagTree<TagView['color']>({
       rows: tagRows.filter((row) => row.organizationId === organizationId),
       pages: pages
         .filter((page) => worlds.find((w) => w.id === page.worldId)?.organizationId === organizationId)
         .map((page) => ({ worldId: page.worldId, tags: tagsOfPage(page) })),
       files: files.filter((file) => file.organizationId === organizationId)
-    }).map((node) => ({
+    })
+  const catalogOf = (organizationId: string): TagView[] =>
+    tagNodesOf(organizationId).map((node) => ({
       id: node.id,
       name: node.name,
       depth: node.depth,
@@ -570,8 +582,15 @@ export function fakeApi(
       if (row.organizationId !== organizationId) continue
       const next = change([row.name])
       if (!next) continue
-      if (next[0]) row.name = next[0]
-      else tagRows.splice(tagRows.indexOf(row), 1)
+      const name = next[0]
+      if (!name) {
+        tagRows.splice(tagRows.indexOf(row), 1)
+        continue
+      }
+      // Si cambia de madre, pierde su puesto entre las hermanas de antes (como en el servidor)
+      const parentOf = (tag: string) => tagKey(tagParent(tag) ?? '')
+      if (tagKey(row.name) === tagKey(from) && parentOf(from) !== parentOf(name)) row.position = null
+      row.name = name
     }
     return { pages: changedPages, files: changedFiles }
   }
@@ -4503,6 +4522,34 @@ export function fakeApi(
         const row = tagRows.find((r) => r.organizationId === target && tagKey(r.name) === tagKey(now))
         if (row) row.color = color
         else tagRows.push({ id: crypto.randomUUID(), organizationId: target, name: now, color })
+      }
+      return tagIn(target, now)
+    },
+    moveTag: ({ organizationId, tag, parent, before, after }) => {
+      const target = ownOrganization(organizationId)
+      const current = tagIn(target, tag)
+      if (parent !== null && isTagOrChild(parent, current.name)) throw new ApiError('TAG_CYCLE', 400)
+      const mother = parent === null ? null : tagIn(target, parent).name
+      const destination = mother === null ? tagLeaf(current.name) : `${mother}/${tagLeaf(current.name)}`
+      let now = current.name
+      if (tagKey(destination) !== tagKey(current.name)) {
+        retag(target, current.name, destination)
+        now = destination
+      }
+      const anchor = before ?? after
+      if (anchor !== undefined) {
+        const motherKey = mother === null ? null : tagKey(mother)
+        const siblings = tagNodesOf(target).filter((node) => {
+          const of = tagParent(node.name)
+          return (of === null ? null : tagKey(of)) === motherKey
+        })
+        if (!siblings.some((node) => tagKey(node.name) === tagKey(anchor))) throw new ApiError('TAG_NOT_SIBLING', 400)
+        const places = placeAmongSiblings(siblings, now, before !== undefined ? { before } : { after: anchor })
+        for (const { name, position } of places) {
+          const row = tagRows.find((r) => r.organizationId === target && tagKey(r.name) === tagKey(name))
+          if (row) row.position = position
+          else tagRows.push({ id: crypto.randomUUID(), organizationId: target, name, color: null, position })
+        }
       }
       return tagIn(target, now)
     },

@@ -125,6 +125,35 @@ describe('las etiquetas de la cuenta (ADR-0006)', () => {
     expect(await tagsOf(lighthouse)).toEqual(['lugar'])
   })
 
+  it('se ordenan a mano entre hermanas y se meten unas en otras (con sus hijas); el orden se deshace', async () => {
+    const port = await tagged(eana, 'Puerto Ceniza', ['lugar/ciudad', 'costa'])
+    await json('createTag', { name: 'pnj' })
+    const names = async () => (await catalog()).map(([name]: [string]) => name)
+    expect(await names()).toEqual(['costa', 'lugar', 'lugar/ciudad', 'pnj'])
+    // pnj, delante de costa: la primera vez se guardan los puestos de todas las hermanas (también las sin guardar)
+    expect(await json('moveTag', { tag: 'pnj', parent: null, before: 'costa' })).toMatchObject({ name: 'pnj' })
+    expect(await names()).toEqual(['pnj', 'costa', 'lugar', 'lugar/ciudad'])
+    // lugar, detrás de pnj: sus hijas van con ella
+    await json('moveTag', { tag: 'lugar', parent: null, after: 'pnj' })
+    expect(await names()).toEqual(['pnj', 'lugar', 'lugar/ciudad', 'costa'])
+    // costa, dentro de lugar y delante de ciudad: se renombra en lo que la lleva
+    expect(await json('moveTag', { tag: 'costa', parent: 'lugar', before: 'lugar/ciudad' })).toMatchObject({
+      name: 'lugar/costa'
+    })
+    expect(await names()).toEqual(['pnj', 'lugar', 'lugar/costa', 'lugar/ciudad'])
+    expect(await tagsOf(port)).toEqual(['lugar/ciudad', 'lugar/costa'])
+    // Ni dentro de sí misma, ni junto a una que no es su hermana
+    expect(await json('moveTag', { tag: 'lugar', parent: 'lugar/ciudad' })).toMatchObject({ code: 'TAG_CYCLE' })
+    expect(await json('moveTag', { tag: 'pnj', parent: null, before: 'lugar/ciudad' })).toMatchObject({
+      code: 'TAG_NOT_SIBLING'
+    })
+    // Deshacer el último orden lo devuelve
+    const orders = await conn.db.select().from(schema.operations).where(sqlAction('orderTag'))
+    const last = orders.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))[0]
+    expect((await json('undoOperation', { operationId: last?.id })).status).toBe('undone')
+    expect(await names()).toEqual(['pnj', 'lugar', 'lugar/ciudad', 'lugar/costa'])
+  })
+
   it('borrar la quita de todo, con sus hijas', async () => {
     const port = await tagged(eana, 'Puerto Ceniza', ['lugar/ciudad', 'costa'])
     expect(await json('deleteTag', { tag: 'lugar' })).toEqual({ name: 'lugar', pages: 1, files: 0 })

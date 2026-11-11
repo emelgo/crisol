@@ -66,6 +66,23 @@ export const updateTag = defineAction({
   output: tagView
 })
 
+export const moveTag = defineAction({
+  name: 'moveTag',
+  kind: 'write',
+  description:
+    'Mueve una etiqueta de la cuenta en su árbol, con sus hijas: dentro de otra (parent; null, a lo más alto: la renombra, de «lugar/ciudad» a «sitio/ciudad», en todo lo que la lleva) y, si se da, delante (before) o detrás (after) de una de sus nuevas hermanas, para ordenarlas a mano. Se deshace desde el historial',
+  input: z
+    .object({
+      organizationId: z.uuid().optional(),
+      tag: tagName.describe('La etiqueta, por su nombre'),
+      parent: tagName.nullable().describe('Dentro de cuál queda (por su nombre); null, en lo más alto'),
+      before: tagName.optional().describe('Delante de esta hermana (por su nombre completo)'),
+      after: tagName.optional().describe('Detrás de esta hermana (por su nombre completo)')
+    })
+    .refine((input) => !(input.before && input.after), { message: 'before o after, no los dos' }),
+  output: tagView
+})
+
 export const deleteTag = defineAction({
   name: 'deleteTag',
   kind: 'delete',

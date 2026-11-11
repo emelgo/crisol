@@ -39,3 +39,12 @@ en la barra del mundo. Eana trae 2.165 páginas con etiquetas, muchas con jerarq
   que trae Eana.
 - **Una tabla de unión página–etiqueta**: más normalizada, pero el contenido de la página dejaría de llevar sus
   etiquetas y la exportación, el MCP y el importador tendrían que reconstruirlas.
+
+## Cambio (2026-11-12): orden a mano
+
+En la revisión de la app (tanda 2), Enrique pidió ordenar las etiquetas, no solo anidarlas. La jerarquía sigue en el
+nombre; el orden entre hermanas va en `tags.position`, una clave fraccionaria con la collation "C", como la de las
+páginas. Sin puesto, detrás y por nombre; los puestos de unas hermanas se rellenan la primera vez que se reordenan
+(también las madres sin fila, que entonces se guardan). Cambiar de madre deja a la etiqueta sin puesto entre sus nuevas
+hermanas. `moveTag` (MCP `mover_etiqueta`) hace las dos cosas: meterla en otra (renombra, como `updateTag`) y ponerla
+delante o detrás de una hermana; cada parte es una operación que se deshace.

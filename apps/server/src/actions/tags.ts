@@ -2,9 +2,19 @@
  * Las etiquetas de la cuenta (ADR-0006): el catálogo en árbol, crear, renombrar, dar color y borrar, y las de un
  * archivo. Las de una página van en su propiedad `etiquetas` (setPageProperties)
  */
-import { createTag, deleteTag, listAccountTags, setFileTags, type TagView, updateTag } from '@crisol/contracts'
+import { createTag, deleteTag, listAccountTags, moveTag, setFileTags, type TagView, updateTag } from '@crisol/contracts'
 import { tagsRepo } from '@crisol/db'
-import { authorize, can, tagKey, tagTree, uniqueTags } from '@crisol/domain'
+import {
+  authorize,
+  can,
+  isTagOrChild,
+  placeAmongSiblings,
+  tagKey,
+  tagLeaf,
+  tagParent,
+  tagTree,
+  uniqueTags
+} from '@crisol/domain'
 import { commonFilesChanged, filesChanged, pagesChanged, tagsChanged } from '../realtime/events.ts'
 import { targetOrganization } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
@@ -13,20 +23,26 @@ import { implement } from './registry.ts'
 
 type Color = TagView['color']
 
-/** El catálogo de una organización en árbol; los mundos de cada una, solo para quien la administra */
-async function catalog(ctx: ActionContext, organizationId: string): Promise<TagView[]> {
+/** El árbol de una organización, en su orden (cada una tras su madre; entre hermanas, por su puesto) */
+async function tree(ctx: ActionContext, organizationId: string) {
   const [rows, pages, files] = await Promise.all([
     tagsRepo.listRows(ctx.db, organizationId),
     tagsRepo.taggedPages(ctx.db, organizationId),
     tagsRepo.taggedFiles(ctx.db, organizationId)
   ])
-  const owner = can(ctx.actor, 'tags.write', { organizationId })
-  const worldNames = new Map(pages.map((page) => [page.worldId, page.worldName]))
-  return tagTree<Color>({
-    rows: rows.map((row) => ({ id: row.id, name: row.name, color: row.color as Color })),
+  const nodes = tagTree<Color>({
+    rows: rows.map((row) => ({ id: row.id, name: row.name, color: row.color as Color, position: row.position })),
     pages: pages.map((page) => ({ worldId: page.worldId, tags: tagsRepo.tagsOfProperties(page.properties) })),
     files
-  }).map((node) => ({
+  })
+  return { nodes, worldNames: new Map(pages.map((page) => [page.worldId, page.worldName])) }
+}
+
+/** El catálogo de una organización en árbol; los mundos de cada una, solo para quien la administra */
+async function catalog(ctx: ActionContext, organizationId: string): Promise<TagView[]> {
+  const { nodes, worldNames } = await tree(ctx, organizationId)
+  const owner = can(ctx.actor, 'tags.write', { organizationId })
+  return nodes.map((node) => ({
     id: node.id,
     name: node.name,
     depth: node.depth,
@@ -106,6 +122,50 @@ export const tagActions = [
         target,
         now,
         color
+      )
+      tagsTouched(ctx, target)
+    }
+    return inCatalog(ctx, target, now)
+  }),
+
+  implement(moveTag, async (ctx, { organizationId, tag, parent, before, after }) => {
+    const target = targetOrganization(ctx, organizationId)
+    authorize(ctx.actor, 'tags.write', { organizationId: target })
+    const current = await inCatalog(ctx, target, tag)
+    // Dentro de otra: se renombra con sus hijas (ni dentro de sí misma)
+    let now = current.name
+    if (parent !== null && isTagOrChild(parent, current.name)) throw new InvalidRequestError('TAG_CYCLE')
+    const mother = parent === null ? null : (await inCatalog(ctx, target, parent)).name
+    const destination = mother === null ? tagLeaf(current.name) : `${mother}/${tagLeaf(current.name)}`
+    if (tagKey(destination) !== tagKey(current.name)) {
+      const changed = await tagsRepo.retag(
+        ctx.db,
+        historyContext(ctx, 'moveTag', { from: current.name, to: destination }, { organizationId: target }),
+        target,
+        current.name,
+        destination
+      )
+      tagsTouched(ctx, target, changed)
+      now = destination
+    }
+    // Delante o detrás de una hermana: su puesto (y, la primera vez, el de todas)
+    const anchor = before ?? after
+    if (anchor !== undefined) {
+      const { nodes } = await tree(ctx, target)
+      const motherKey = mother === null ? null : tagKey(mother)
+      const siblings = nodes.filter((node) => {
+        const of = tagParent(node.name)
+        return (of === null ? null : tagKey(of)) === motherKey
+      })
+      if (!siblings.some((node) => tagKey(node.name) === tagKey(anchor))) {
+        throw new InvalidRequestError('TAG_NOT_SIBLING', `«${anchor}» no está junto a «${now}»`)
+      }
+      const places = placeAmongSiblings(siblings, now, before !== undefined ? { before } : { after: anchor })
+      await tagsRepo.setPositions(
+        ctx.db,
+        historyContext(ctx, 'orderTag', { name: now }, { organizationId: target }),
+        target,
+        places
       )
       tagsTouched(ctx, target)
     }

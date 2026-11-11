@@ -299,6 +299,7 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   listar_etiquetas: { action: 'listAccountTags' },
   crear_etiqueta: { action: 'createTag' },
   cambiar_etiqueta: { action: 'updateTag' },
+  mover_etiqueta: { action: 'moveTag' },
   borrar_etiqueta: { action: 'deleteTag' },
   etiquetar_archivo: { action: 'setFileTags' },
   // Las pestañas de una página y sus mapas con pines (ADR-0007)

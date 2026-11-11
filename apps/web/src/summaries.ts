@@ -407,6 +407,12 @@ export function summaryOf(
     case 'deleteTag':
     case 'setFileTags':
       return say(action, { name: text(details.name ?? details.tag), tag: text(details.tag ?? details.name) })
+    case 'orderTag':
+      return say(action, { name: text(details.name) })
+    case 'moveTag':
+      return details.from
+        ? say('moveTag', { from: text(details.from), to: text(details.to) })
+        : say('moveTag', { tag: text(details.tag) })
     case 'renameTag':
     case 'updateTag':
       return say('renameTag', {

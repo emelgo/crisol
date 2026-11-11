@@ -220,7 +220,7 @@ import {
   updateWidget
 } from './table-tools.ts'
 import { getRandomTable, resetTableDraws, rollOnTable, updateRandomTable } from './tables.ts'
-import { createTag, deleteTag, listAccountTags, setFileTags, updateTag } from './tags.ts'
+import { createTag, deleteTag, listAccountTags, moveTag, setFileTags, updateTag } from './tags.ts'
 import { createTemplate, deleteTemplate, getTemplate, listTemplates, updateTemplate } from './templates.ts'
 import {
   assignToken,
@@ -398,6 +398,7 @@ export const ACTIONS = [
   listAccountTags,
   createTag,
   updateTag,
+  moveTag,
   deleteTag,
   setFileTags,
   listPageTabs,
@@ -675,6 +676,7 @@ export type Actions = {
   listAccountTags: typeof listAccountTags
   createTag: typeof createTag
   updateTag: typeof updateTag
+  moveTag: typeof moveTag
   deleteTag: typeof deleteTag
   setFileTags: typeof setFileTags
   listPageTabs: typeof listPageTabs

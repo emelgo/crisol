@@ -118,6 +118,7 @@ describe('herramientas MCP', () => {
       'monedas_grupo',
       'mover_a_carpeta',
       'mover_en_grupo',
+      'mover_etiqueta',
       'mover_fichas',
       'mover_pagina',
       'niebla',
