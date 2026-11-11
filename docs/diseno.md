@@ -45,7 +45,8 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   tiene en el momento». Se cierra con la X, con Escape o pulsando fuera, y se vuelve a donde se estaba; un enlace
   de dentro la cierra y lleva a su sitio. **Sin enlace de vuelta** arriba («Mis mundos»): en una ventana no tiene
   sentido.
-- **Dentro de un mundo, la barra lleva el mundo (su nombre) y Archivos**; nada más (ni Plantillas, ni Campañas, ni
+- **Dentro de un mundo, la barra lleva el mundo (su nombre, con su icono propio: un paisaje de montaña, no el globo de
+  «Mundos», Enrique, 2026-11-12) y Archivos**; nada más (ni Plantillas, ni Campañas, ni
   «Inicio»: el mundo se abre en su portada). Historial y Papelera enseñan los de ese mundo. **Los dados no van en la barra**
   (Enrique, 2026-11-08: «los dados deben estar en un icono con forma de d20 como en dndbeyond que al pulsarlo se abre
   en una esquina, pero no una pagina propia»): un botón flotante con forma de d20, siempre en la misma esquina, que
@@ -278,8 +279,9 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   prácticamente el de sus ajustes** (para un mundo: portada, nombre, descripción y color), para dejarlo bien hecho
   sin tener que entrar después en ajustes.
 - **«Nuevo …» va como un recuadro más de la lista**, con la misma forma (esquinas cortadas), vacío y con el borde de
-  **línea continua** (Enrique, 2026-11-11; antes, discontinuo), tras el último (no un botón arriba). El mismo recuadro
-  en todas las listas: mundos, campañas, plantillas, etiquetas, sistemas y libros. Sin ninguno, la pantalla vacía con
+  **línea continua** (Enrique, 2026-11-11; antes, discontinuo), **la misma que la de las tarjetas** (2026-11-12: el
+  recuadro vacío no debe pesar más que lo que hay), que se aviva al pasar el ratón; tras el último (no un botón
+  arriba). El mismo recuadro en todas las listas: mundos, campañas, plantillas, etiquetas, sistemas y libros. Sin ninguno, la pantalla vacía con
   su botón grande.
 - **Las pantallas de cuenta (entrar, crear la cuenta)** van centradas y con aspecto profesional. **De fondo, imágenes de fantasía que van pasando, como en LegendKeeper**
   (Enrique, 2026-11-08): a toda la pantalla, cada una unos 8 segundos acercándose despacio, con un fundido entre una y

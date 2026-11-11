@@ -2,11 +2,12 @@
  * «Nuevo …»: un recuadro más de la lista, tras el último, vacío y con el borde de línea continua (Enrique, 2026-11-11).
  * card: con la forma de una tarjeta (esquinas cortadas), dibujada como su marco (frame.module.css): el fondo es la
  * línea y el ::before, 1px dentro y con el mismo corte, el hueco; así las diagonales casan con los lados. row: con la de
- * una fila (las etiquetas). --new-fill: el color de detrás (el fondo de la pantalla)
+ * una fila (las etiquetas). --new-fill: el color de detrás (el fondo de la pantalla). La línea, la misma que la de las
+ * tarjetas (Enrique, 2026-11-12: el recuadro vacío no debe pesar más que lo que hay); se aviva al pasar el ratón
  */
 .card,
 .row {
-  --line: var(--color-field-border);
+  --line: var(--color-frame);
   color: var(--color-muted);
   font: inherit;
   font-weight: 600;
@@ -15,7 +16,7 @@
 
 .card:hover,
 .row:hover {
-  --line: var(--color-text);
+  --line: var(--color-field-border);
   color: var(--color-text);
 }
 
@@ -74,4 +75,16 @@
 
 .row svg {
   justify-self: center;
+}
+
+/* Con colores forzados (el alto contraste del sistema) el fondo no se pinta y la línea desaparecería: un borde */
+@media (forced-colors: active) {
+  .card {
+    border: 1px solid ButtonText;
+    clip-path: none;
+  }
+
+  .card::before {
+    display: none;
+  }
 }

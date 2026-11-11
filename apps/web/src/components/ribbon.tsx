@@ -12,6 +12,7 @@ import {
   LayoutTemplate,
   LogOut,
   type LucideIcon,
+  MountainSnow,
   NotebookPen,
   ScrollText,
   Settings,
@@ -34,7 +35,8 @@ import styles from './ribbon.module.css'
 import { useWindow } from './window.tsx'
 import { LEAVE_WORLD, leaveWorld, SECTION } from './world-transition.ts'
 
-/** Lo que tarda cada icono del mundo en salir del crisol (o en subir a él) y el paso entre uno y otro (ribbon.module.css) */
+/** Lo que tarda cada icono del mundo en salir del crisol (o en subir a él) y el paso entre uno y otro: aquí y solo aquí
+ * (el nav se los pasa al CSS como --icon-time y --icon-step) */
 const ICON_TIME = 460
 const ICON_STEP = 70
 
@@ -146,6 +148,7 @@ export function Ribbon() {
   // Recién entrado (en este mismo pintado aún no se ve en phase)
   const justEntered = inWorld && !wasInWorld
   const [phase, setPhase] = useState<'still' | 'merging' | 'emerging'>('still')
+  const sections = useRef<HTMLElement>(null)
   // La llama: al entrar, se aviva y suelta chispas; al salir, se aplaca y echa humo. Con su propio tiempo, más largo
   // que el de «Mundos»
   const [flame, setFlame] = useState<'still' | 'fire' | 'smoke'>('still')
@@ -162,7 +165,13 @@ export function Ribbon() {
   }, [phase])
   useEffect(() => {
     if (flame === 'still') return
-    const timer = window.setTimeout(() => setFlame('still'), flame === 'fire' ? 3000 : 4500)
+    const timer = window.setTimeout(
+      () => {
+        setFlame('still')
+        sections.current?.style.removeProperty('--leave')
+      },
+      flame === 'fire' ? 3000 : 4500
+    )
     return () => window.clearTimeout(timer)
   }, [flame])
   // Los iconos del mundo (Inicio, Campañas, Páginas… y los que vengan): al entrar, salen del crisol uno tras otro
@@ -185,7 +194,6 @@ export function Ribbon() {
   if (world && master !== panelsMaster) setPanelsMaster(master)
   if (!world && panelsWorld && panelsMotion !== 'leave') setPanelsMotion('leave')
   const panelsBox = useRef<HTMLDivElement>(null)
-  const sections = useRef<HTMLElement>(null)
   // Al volver, el espejo de entrar: los iconos suben al crisol del último al primero, al mismo paso y con la misma
   // duración con que salieron, y después sale «Mundos» (--leave: cuánto tardan en subir todos). Antes de pintar, para
   // que «Mundos» empiece ya esperando
@@ -199,6 +207,24 @@ export function Ribbon() {
     const timer = window.setTimeout(() => setPanelsWorld(null), leave)
     return () => window.clearTimeout(timer)
   }, [panelsMotion])
+  // Cuánto sube cada uno («Mundos» y lo de la cuenta) hasta el centro de la llama: se mide al fundirse (aún en su
+  // sitio) y se guarda para cuando vuelvan a salir de ella, que llegan cerrados; sin medida, la que lleva escrita
+  const rises = useRef(new Map<string, string>())
+  useLayoutEffect(() => {
+    if (phase === 'still') return
+    const brand = sections.current?.querySelector('[data-tour="barra-llama"]')?.getBoundingClientRect()
+    if (!brand) return
+    const flame = brand.top + brand.height / 2
+    for (const item of sections.current?.querySelectorAll<HTMLElement>('[data-rise]') ?? []) {
+      const key = item.dataset.tour ?? ''
+      if (phase === 'merging') {
+        const at = item.getBoundingClientRect()
+        rises.current.set(key, `${Math.round(flame - (at.top + at.height / 2))}px`)
+      }
+      const rise = rises.current.get(key)
+      if (rise) item.style.setProperty('--rise', rise)
+    }
+  }, [phase])
   const merged = inWorld && phase !== 'merging'
   const worldsItem = [
     styles.item,
@@ -218,7 +244,12 @@ export function Ribbon() {
         }
         master={master}
       />
-      <nav ref={sections} className={styles.sections} aria-label={t('app.sectionsNav')}>
+      <nav
+        ref={sections}
+        className={styles.sections}
+        aria-label={t('app.sectionsNav')}
+        style={{ '--icon-time': `${ICON_TIME}ms`, '--icon-step': `${ICON_STEP}ms` } as CSSProperties}
+      >
         <Link
           to="/mundos"
           activeOptions={{ exact: true }}
@@ -241,6 +272,7 @@ export function Ribbon() {
             viewTransition={SECTION}
             className={worldsItem.filter(Boolean).join(' ')}
             data-tour="barra-mundos"
+            data-rise=""
             onAnimationEnd={() => setPhase('still')}
           >
             <Label icon={Globe} text={t('ribbon.worlds')} />
@@ -254,6 +286,7 @@ export function Ribbon() {
             className={worldsItem.filter(Boolean).join(' ')}
             style={{ '--rise': '-7.4rem' } as CSSProperties}
             data-tour="barra-plantillas"
+            data-rise=""
             onPointerEnter={prefetchTemplates}
             onFocus={prefetchTemplates}
           >
@@ -269,6 +302,7 @@ export function Ribbon() {
             className={worldsItem.filter(Boolean).join(' ')}
             style={{ '--rise': '-11.2rem' } as CSSProperties}
             data-tour="barra-etiquetas"
+            data-rise=""
             onPointerEnter={prefetchTags}
             onFocus={prefetchTags}
           >
@@ -283,6 +317,7 @@ export function Ribbon() {
             className={worldsItem.filter(Boolean).join(' ')}
             style={{ '--rise': '-15rem' } as CSSProperties}
             data-tour="barra-sistemas"
+            data-rise=""
             onPointerEnter={prefetchSystems}
             onFocus={prefetchSystems}
           >
@@ -299,6 +334,7 @@ export function Ribbon() {
             className={worldsItem.filter(Boolean).join(' ')}
             style={{ '--rise': '-18.8rem' } as CSSProperties}
             data-tour="barra-archivos"
+            data-rise=""
             // Se piden al acercarse: al llegar, ya están
             onPointerEnter={prefetchCommon}
             onFocus={prefetchCommon}
@@ -536,7 +572,8 @@ function WikiPanels({ worldId, worldName }: { worldId: string; worldName: string
     inWiki && wikiPanel.panel === panel && (narrow ? wikiPanel.open : !wikiPanel.collapsed)
   const buttons: { panel: WikiPanel; icon: LucideIcon; text: string; tour: string }[] = [
     // El mundo (sus páginas, con su nombre), las plantillas y los archivos
-    { panel: 'pages', icon: Globe, text: worldName, tour: 'barra-wiki' }
+    // El mundo, con su icono propio (no el globo de «Mundos», que es de donde se viene; Enrique, 2026-11-12)
+    { panel: 'pages', icon: MountainSnow, text: worldName, tour: 'barra-wiki' }
   ]
   return (
     <>
