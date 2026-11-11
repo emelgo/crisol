@@ -92,6 +92,28 @@ describe('editar una plantilla', () => {
     expect(screen.queryByText('Mencionado en')).toBeNull()
   })
 
+  it('los bloques, plegados como los campos; con sus seis puntos y Alt + flechas se recolocan', async () => {
+    const { api, own, saved } = await renderTemplate()
+    await api.client.call('updateTemplate', {
+      templateId: own.id,
+      panel: [
+        { id: 'notas', type: 'text', title: 'Notas', text: '' },
+        { id: 'fama', type: 'rating', title: 'Fama', value: 0, max: 5 }
+      ]
+    })
+    const blocks = within((await panel()).getByRole('region', { name: 'En el panel' }))
+    // Plegados: su nombre y su tipo, sin sus botones a la vista
+    expect((await blocks.findByRole('button', { name: /^Notas/ })).getAttribute('aria-expanded')).toBe('false')
+    expect(blocks.queryByRole('button', { name: 'Quitar el bloque' })).toBeNull()
+    blocks.getByRole('button', { name: 'Opciones de Fama' }).focus()
+    await userEvent.keyboard('{Alt>}{ArrowUp}{/Alt}')
+    await waitFor(async () => expect((await saved()).panel.map((b) => b.id)).toEqual(['fama', 'notas']))
+    expect(document.activeElement).toBe(blocks.getByRole('button', { name: 'Opciones de Fama' }))
+    // Al pulsarlo, sus opciones
+    await userEvent.click(blocks.getByRole('button', { name: /^Notas/ }))
+    expect(blocks.getByRole('button', { name: 'Quitar el bloque' })).toBeDefined()
+  })
+
   it('«⋯» → «Duplicar»: una copia con los mismos campos (y su linaje), que se abre', async () => {
     const { api, own } = await renderTemplate()
     await api.client.call('updateTemplate', {

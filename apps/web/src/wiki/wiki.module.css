@@ -881,6 +881,18 @@
   text-decoration: none;
 }
 
+/* La marca de una plantilla abierta (ADR-0024): con el color de acento, para que no se confunda con la píldora que
+   lleva a su plantilla en una página hecha con ella */
+.templateMark {
+  border-color: color-mix(in srgb, var(--color-accent) 55%, transparent);
+  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+  color: var(--color-text);
+}
+
+.templateMark svg {
+  color: var(--color-accent);
+}
+
 a.templateBadge:hover {
   border-color: var(--color-frame);
   color: var(--color-text);

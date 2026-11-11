@@ -38,6 +38,7 @@ import { FieldsEditor } from './fields.tsx'
 import { TemplateIcon } from './icons.tsx'
 import { useNewTemplate } from './new-template.ts'
 import { useTemplates } from './picker.tsx'
+import { Grip, moved, useReorder } from './reorder.tsx'
 import { TemplateSettings } from './screen.tsx'
 import { templateGroups } from './tree.ts'
 
@@ -360,18 +361,16 @@ function BlocksEditor({
 }) {
   const { t } = useTranslation()
   const [adding, setAdding] = useState(false)
+  // El bloque desplegado (sus opciones), como un campo
+  const [open, setOpen] = useState<string | null>(null)
   const addRoot = useRef<HTMLDivElement>(null)
   const addTrigger = useRef<HTMLButtonElement>(null)
   // Abierto, Escape o pulsar fuera lo cierran (como «⋯»)
   useDismiss(adding, () => setAdding(false), addRoot, addTrigger)
   const update = (index: number, patch: Partial<PanelBlock>) =>
     onChange(blocks.map((block, i) => (i === index ? ({ ...block, ...patch } as PanelBlock) : block)))
-  const move = (index: number, by: -1 | 1) => {
-    const next = [...blocks]
-    const [moved] = next.splice(index, 1)
-    if (moved) next.splice(index + by, 0, moved)
-    onChange(next)
-  }
+  const reorder = (from: number, to: number) => onChange(moved(blocks, from, to))
+  const drag = useReorder(reorder)
   return (
     <section className={styles.block} aria-label={t('templates.inPanel')}>
       <h2 className={styles.blockTitle}>{t('templates.inPanel')}</h2>
@@ -379,52 +378,78 @@ function BlocksEditor({
         {blocks.map((block, index) => {
           const kind = kindOf(block)
           const label = t(`panelBlocks.kinds.${kind}`)
+          const name = ('title' in block && block.title) || label
+          const expanded = open === block.id
+          const toggle = () => setOpen(expanded ? null : block.id)
           return (
-            <li key={block.id} className={styles.field}>
-              <fieldset className={styles.blockShape} disabled={readOnly}>
-                <legend className={styles.hidden}>{('title' in block && block.title) || label}</legend>
-                {'title' in block ? (
-                  <input
-                    className={styles.blockName}
-                    aria-label={t('templateEditor.blockTitle', { kind: label })}
-                    defaultValue={block.title}
-                    placeholder={label}
-                    maxLength={80}
-                    onBlur={(event) => {
-                      const title = event.currentTarget.value.trim()
-                      if (title !== block.title) update(index, { title } as Partial<PanelBlock>)
-                    }}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter') event.currentTarget.blur()
-                    }}
-                  />
-                ) : (
-                  <span className={styles.blockName}>{label}</span>
-                )}
-                {block.type === 'related' && (
-                  <RelatedOptions block={block} onChange={(patch) => update(index, patch as Partial<PanelBlock>)} />
-                )}
+            <li key={block.id} className={styles.field} data-open={expanded || undefined} {...drag.row(index)}>
+              {/* Plegado: sus seis puntos, su nombre y su tipo; al pulsarlo, sus opciones */}
+              <div className={styles.fieldLine}>
                 {!readOnly && (
-                  <div className={styles.shapeActions}>
-                    <button type="button" disabled={index === 0} onClick={() => move(index, -1)}>
-                      <ChevronUp size={14} aria-hidden="true" />
-                      {t('templateEditor.up')}
-                    </button>
-                    <button type="button" disabled={index === blocks.length - 1} onClick={() => move(index, 1)}>
-                      <ChevronDown size={14} aria-hidden="true" />
-                      {t('templateEditor.down')}
-                    </button>
-                    <button
-                      type="button"
-                      className={styles.danger}
-                      onClick={() => onChange(blocks.filter((_, i) => i !== index))}
-                    >
-                      <Trash2 size={14} aria-hidden="true" />
-                      {t('panelBlocks.remove')}
-                    </button>
-                  </div>
+                  <Grip
+                    name={name}
+                    index={index}
+                    count={blocks.length}
+                    open={expanded}
+                    onToggle={toggle}
+                    onMove={reorder}
+                    onDragStart={drag.start}
+                    onDragEnd={drag.end}
+                  />
                 )}
-              </fieldset>
+                <button type="button" className={styles.fieldRow} aria-expanded={expanded} onClick={toggle}>
+                  <span className={styles.fieldName}>{name}</span>
+                  <span className={styles.fieldType}>{label}</span>
+                </button>
+              </div>
+              {expanded && (
+                <fieldset className={styles.blockShape} disabled={readOnly}>
+                  <legend className={styles.hidden}>{name}</legend>
+                  {'title' in block && (
+                    <input
+                      className={styles.blockName}
+                      aria-label={t('templateEditor.blockTitle', { kind: label })}
+                      defaultValue={block.title}
+                      placeholder={label}
+                      maxLength={80}
+                      onBlur={(event) => {
+                        const title = event.currentTarget.value.trim()
+                        if (title !== block.title) update(index, { title } as Partial<PanelBlock>)
+                      }}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') event.currentTarget.blur()
+                      }}
+                    />
+                  )}
+                  {block.type === 'related' && (
+                    <RelatedOptions block={block} onChange={(patch) => update(index, patch as Partial<PanelBlock>)} />
+                  )}
+                  {!readOnly && (
+                    <div className={styles.shapeActions}>
+                      <button type="button" disabled={index === 0} onClick={() => reorder(index, index - 1)}>
+                        <ChevronUp size={14} aria-hidden="true" />
+                        {t('templateEditor.up')}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={index === blocks.length - 1}
+                        onClick={() => reorder(index, index + 1)}
+                      >
+                        <ChevronDown size={14} aria-hidden="true" />
+                        {t('templateEditor.down')}
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.danger}
+                        onClick={() => onChange(blocks.filter((_, i) => i !== index))}
+                      >
+                        <Trash2 size={14} aria-hidden="true" />
+                        {t('panelBlocks.remove')}
+                      </button>
+                    </div>
+                  )}
+                </fieldset>
+              )}
             </li>
           )
         })}
@@ -454,7 +479,9 @@ function BlocksEditor({
                       className={styles.addOption}
                       onClick={() => {
                         setAdding(false)
-                        onChange([...blocks, blockOf(kind as Kind)])
+                        const block = blockOf(kind as Kind)
+                        onChange([...blocks, block])
+                        setOpen(block.id)
                       }}
                     >
                       {icon}

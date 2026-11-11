@@ -1362,6 +1362,8 @@ export const es = {
     down: 'Bajar',
     removeField: 'Quitar el campo',
     blockTitle: 'Título del bloque {{kind}}',
+    gripOf: 'Opciones de {{name}}',
+    gripHint: 'Arrástralo para moverlo (o Alt y las flechas); púlsalo para sus opciones',
     noBlocks: 'Aún no tiene bloques.'
   },
   templates: {
@@ -1400,8 +1402,7 @@ export const es = {
     inside: 'Dentro',
     loose: 'Sin carpeta',
     noneWithTabs: 'Ninguna plantilla trae pestañas.',
-    fieldsCount_one: '1 campo',
-    fieldsCount_other: '{{count}} campos',
+    noFields: 'Sin campos',
     tabs: 'Pestañas',
     usesLabel: 'Se usa',
     uses_one: 'En 1 página',

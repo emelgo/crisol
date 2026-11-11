@@ -50,7 +50,7 @@ import { TemplateIcon } from './icons.tsx'
 import { useNewTemplate } from './new-template.ts'
 import { useTemplates } from './picker.tsx'
 import styles from './screen.module.css'
-import { treeOf } from './tree.ts'
+import { fieldsLine, treeOf } from './tree.ts'
 
 type Listed = ActionOutput<'listTemplates'>
 /** Algo de la lista: una plantilla o una carpeta */
@@ -652,7 +652,6 @@ function TemplateRow({
   onMove: (dest: string | null) => void
 }) {
   const { t } = useTranslation()
-  const tabsLine = useTabsLine()
   const [settings, setSettings] = useState(false)
   const gear = useRef<HTMLButtonElement>(null)
   return (
@@ -692,8 +691,11 @@ function TemplateRow({
             {template.name}
           </span>
         </Link>
+        {/* Lo que la distingue: sus primeros campos (al buscar, dónde está) */}
         <span className={files.where}>
-          {where.length > 0 ? where.map((folder) => folder.name).join(' › ') : tabsLine(template)}
+          {where.length > 0
+            ? where.map((folder) => folder.name).join(' › ')
+            : (fieldsLine(template) ?? t('templates.noFields'))}
         </span>
       </span>
       <span className={files.rowMeta}>

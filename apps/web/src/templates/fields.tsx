@@ -8,6 +8,7 @@ import { useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import styles from './editor.module.css'
 import { useTemplates } from './picker.tsx'
+import { Grip, moved, useReorder } from './reorder.tsx'
 
 /** Cómo se elige el tipo de un campo: los de las propiedades, con el enlace a una sola página aparte */
 type FieldKind = 'text' | 'number' | 'boolean' | 'list' | 'page' | 'pages' | 'choice' | 'clock'
@@ -61,12 +62,9 @@ export function FieldsEditor({
   const { t } = useTranslation()
   const [open, setOpen] = useState<string | null>(null)
   const update = (index: number, field: PageProperty) => onChange(fields.map((each, i) => (i === index ? field : each)))
-  const move = (index: number, by: -1 | 1) => {
-    const next = [...fields]
-    const [moved] = next.splice(index, 1)
-    if (moved) next.splice(index + by, 0, moved)
-    onChange(next)
-  }
+  const reorder = (from: number, to: number) => onChange(moved(fields, from, to))
+  const move = (index: number, by: -1 | 1) => reorder(index, index + by)
+  const drag = useReorder(reorder)
   return (
     <section className={styles.block} aria-label={t('templateEditor.fields')}>
       <h2 className={styles.blockTitle}>{t('templateEditor.fields')}</h2>
@@ -75,20 +73,35 @@ export function FieldsEditor({
           const key = field.field ?? field.name
           const expanded = open === key
           return (
-            <li key={key} className={styles.field} data-open={expanded || undefined}>
-              <button
-                type="button"
-                className={styles.fieldRow}
-                aria-expanded={expanded}
-                onClick={() => setOpen(expanded ? null : key)}
-              >
-                <span className={styles.fieldName}>{field.name}</span>
-                <span className={styles.fieldType}>
-                  {field.type === 'clock'
-                    ? t('templateEditor.clockOf', { segments: field.segments })
-                    : t(`templateEditor.kinds.${kindOf(field)}`)}
-                </span>
-              </button>
+            <li key={key} className={styles.field} data-open={expanded || undefined} {...drag.row(index)}>
+              {/* Sus seis puntos (arrastrar o Alt y las flechas), su nombre y su tipo; al pulsarlo, su forma */}
+              <div className={styles.fieldLine}>
+                {!readOnly && (
+                  <Grip
+                    name={field.name}
+                    index={index}
+                    count={fields.length}
+                    open={expanded}
+                    onToggle={() => setOpen(expanded ? null : key)}
+                    onMove={reorder}
+                    onDragStart={drag.start}
+                    onDragEnd={drag.end}
+                  />
+                )}
+                <button
+                  type="button"
+                  className={styles.fieldRow}
+                  aria-expanded={expanded}
+                  onClick={() => setOpen(expanded ? null : key)}
+                >
+                  <span className={styles.fieldName}>{field.name}</span>
+                  <span className={styles.fieldType}>
+                    {field.type === 'clock'
+                      ? t('templateEditor.clockOf', { segments: field.segments })
+                      : t(`templateEditor.kinds.${kindOf(field)}`)}
+                  </span>
+                </button>
+              </div>
               {expanded && (
                 <FieldShape
                   field={field}

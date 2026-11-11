@@ -164,7 +164,11 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   la izquierda (por carpetas) y en el panel sus campos y bloques, que se definen; un emoji delante del nombre es su
   icono. **«Desde plantilla» va la última y centrada, tras una raya con «o»**, en «Página nueva» y en «Pestaña nueva»:
   cambia el cuadro a la lista de plantillas («‹ Otro tipo» vuelve); en «Pestaña nueva» se marcan las pestañas de la
-  plantilla que se añaden (todas, de entrada). Ya no hay «Aplicar plantilla» en «⋯».
+  plantilla que se añaden (todas, de entrada). Ya no hay «Aplicar plantilla» en «⋯». Tras la crítica (Enrique,
+  2026-11-12): **los campos y bloques del panel de una plantilla van plegados** (nombre y tipo; al pulsarlos, sus
+  opciones) **y se recolocan con sus seis puntos**, arrastrando o con Alt y las flechas, como los de una página; **la
+  marca «Plantilla» lleva el color de acento**, para no confundirse con la píldora que lleva a una plantilla; **bajo
+  cada plantilla, sus primeros campos** (en la lista y al elegir una), no sus pestañas.
 - **Las tiradas no se escriben en las páginas** (Enrique, 2026-11-11, revisión de la app): los dados salen del texto y
   van a las entradas del compendio, que se tiran con su botón y se enlazan o se incrustan en una página.
 - **La wiki se edita en el sitio, como en el Crisol antiguo** (`docs/specs/wiki-edicion.md`): «no me gusta que todo sea

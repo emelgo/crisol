@@ -11,7 +11,7 @@ import { useTemplates } from './data.ts'
 import { TemplateIcon } from './icons.tsx'
 import { useNewTemplate } from './new-template.ts'
 import styles from './picker.module.css'
-import { templateGroups } from './tree.ts'
+import { fieldsLine, templateGroups } from './tree.ts'
 
 export { useTemplates } from './data.ts'
 
@@ -49,13 +49,8 @@ export function TemplatePicker({
   useEffect(() => {
     if (first && !visible) onChange(first)
   }, [first, visible, onChange])
-  const hintOf =
-    hint ??
-    ((template: TemplateView) =>
-      [
-        [t('pageTabs.text'), ...template.tabs.map((tab) => tab.name)].join(', '),
-        ...(template.fields.length > 0 ? [t('templates.fieldsCount', { count: template.fields.length })] : [])
-      ].join(' · '))
+  // Debajo de cada una, lo que la distingue: sus primeros campos (como en la lista)
+  const hintOf = hint ?? ((template: TemplateView) => fieldsLine(template) ?? t('templates.noFields'))
   if (data && usable.length === 0) {
     // Ninguna que sirva aquí: crear la primera (se abre para hacerla)
     return (

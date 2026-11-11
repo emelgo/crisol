@@ -44,3 +44,10 @@ export function templateGroups(folders: readonly TemplateFolder[], templates: re
   if (top.length) groups.push({ id: null, label: null, templates: top })
   return groups
 }
+
+/** Lo que distingue a una plantilla, en una línea: sus primeros campos (null, sin ninguno) */
+export function fieldsLine(template: Pick<TemplateView, 'fields'>, count = 3): string | null {
+  if (template.fields.length === 0) return null
+  const shown = template.fields.slice(0, count).map((field) => field.name)
+  return template.fields.length > count ? `${shown.join(', ')}…` : shown.join(', ')
+}
