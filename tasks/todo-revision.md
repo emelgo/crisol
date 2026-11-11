@@ -8,8 +8,9 @@ Plan: `tasks/plan-revision.md`. Una tanda cada vez: se enseña en local, Enrique
   de Foundry VTT, Roliando o LegendKeeper; las mismas dos escenas en cada una). **Es lo primero**: Enrique genera las
   imágenes a mano con ChatGPT, en su cuenta, mientras avanza la tanda 1 (prompts en lenguaje natural, sin parámetros
   de otras herramientas; el tamaño y la proporción, dichos en la frase).
-- [ ] Enrique elige el estilo.
-- [ ] Guía de estilo y el resto de prompts (fondos de Entrar, portada pública, ambiente de Inicio, pantallas vacías).
+- [x] Enrique elige el estilo: **F**, pintura estilizada (su orden: F > A > C > D > B > E). Las de prueba, en
+  `datos-locales/estilos/`.
+- [x] Guía de estilo y el resto de prompts (fondos de Entrar, portada pública, ambiente de Inicio, pantallas vacías).
   Solo las de la app: las portadas de mundos, campañas, sistemas y libros son del usuario (Enrique, 2026-11-11).
 - [ ] Imágenes en `apps/web/public/`, fuera las 24 de ahora, y su origen en `docs/terceros.md`.
 
