@@ -134,6 +134,10 @@ export function FilePicker({
           <input
             type="search"
             data-autofocus=""
+            autoComplete="off"
+            data-1p-ignore
+            data-lpignore="true"
+            data-form-type="other"
             aria-label={t('files.search')}
             placeholder={t('files.search')}
             value={query}
@@ -145,7 +149,13 @@ export function FilePicker({
             {rows}
           </ul>
         ) : (
-          <p className={styles.empty}>{searching ? t('files.noResults') : t(`filePicker.none.${kind}`)}</p>
+          <p className={styles.empty} role="status">
+            {!searching
+              ? t(`filePicker.none.${kind}`)
+              : query.trim().startsWith('#')
+                ? t('files.noMatch')
+                : t('files.noResults')}
+          </p>
         )}
       </div>
     </Modal>

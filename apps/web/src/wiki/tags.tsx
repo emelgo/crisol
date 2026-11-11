@@ -32,6 +32,7 @@ import {
 import cards from '../routes/world-card.module.css'
 import { ColorChoices } from '../routes/world-card.tsx'
 import { colorHex } from '../routes/world-look.ts'
+import { plain } from './file-tree.ts'
 import files from './files.module.css'
 import { useNarrow } from './panel.tsx'
 import { useReadAs } from './read-as.tsx'
@@ -287,9 +288,10 @@ export function AccountTags() {
   if (pending) return null
   if (!account) return <Navigate to="/entrar" replace />
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['tags'] })
-  const wanted = query.trim().toLocaleLowerCase('es')
+  // Sin tildes ni mayúsculas, como en Archivos y en las páginas
+  const wanted = plain(query.trim())
   const all = tags.data?.tags ?? []
-  const shown = wanted ? all.filter((tag) => tag.name.toLocaleLowerCase('es').includes(wanted)) : all
+  const shown = wanted ? all.filter((tag) => plain(tag.name).includes(wanted)) : all
   const detail = shown.find((tag) => tag.name === hovered)
   // Cada fila, con su nivel y su puesto entre sus hermanas: para saber adónde sale al llevarla a la izquierda
   const rows = shown.map((tag) => {
@@ -373,6 +375,10 @@ export function AccountTags() {
                 value={query}
                 placeholder={t('tags.search')}
                 aria-label={t('tags.search')}
+                autoComplete="off"
+                data-1p-ignore
+                data-lpignore="true"
+                data-form-type="other"
                 onChange={(event) => setQuery(event.currentTarget.value)}
               />
             </label>

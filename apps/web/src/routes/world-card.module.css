@@ -700,9 +700,10 @@
 /* La ventana del mundo: la portada arriba, de lado a lado, y debajo lo demás */
 .dialog {
   inline-size: min(38rem, calc(100vw - 2rem));
-  max-block-size: calc(100dvh - 2rem);
-  /* Anclado arriba: al crecer (la descripción, Guardar y Cancelar) baja, y nada se mueve bajo el cursor */
-  margin-block: min(12dvh, 6rem) auto;
+  /* Anclado arriba: al crecer (la descripción, Guardar y Cancelar) baja, y nada se mueve bajo el cursor. Su alto
+     descuenta ese margen, para que su final no quede fuera de la pantalla (en 1280×720 se cortaba) */
+  max-block-size: calc(100dvh - var(--dialog-top) - 1rem);
+  margin-block: var(--dialog-top) auto;
   padding: 0;
   /* El contorno, con el color del mundo, como su tarjeta */
   border: 1px solid color-mix(in srgb, var(--world-color, var(--color-frame)) 55%, var(--color-frame));

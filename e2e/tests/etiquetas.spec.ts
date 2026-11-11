@@ -17,12 +17,15 @@ test('las etiquetas de la cuenta: un archivo lleva una, sale en Etiquetas y, ren
     .setInputFiles([{ name: 'Mapa.png', mimeType: 'image/png', buffer: PNG }])
   await expect(page.getByRole('status').getByText('Subido 1 archivo')).toBeAttached()
 
-  // Desde su engranaje, una etiqueta nueva: se crea sola
+  // Desde su engranaje, una etiqueta nueva: se crea sola al guardar
   await page.getByRole('button', { name: 'Ajustes de Mapa.png' }).click()
   const settings = page.getByRole('dialog', { name: 'Ajustes de Mapa.png' })
   await settings.getByLabel('Etiquetas').fill('lugar/costa')
   await settings.getByLabel('Etiquetas').press('Enter')
   await expect(settings.getByRole('button', { name: 'Quitar lugar/costa' })).toBeVisible()
+  // Se guarda con «Guardar», como el nombre y la carpeta
+  await settings.getByRole('button', { name: 'Guardar' }).click()
+  await expect(settings.getByRole('button', { name: 'Guardar' })).toHaveCount(0)
   await settings.getByRole('button', { name: 'Cerrar' }).click()
 
   // En Mis mundos, «Etiquetas»: en árbol, con su madre

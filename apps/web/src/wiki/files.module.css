@@ -236,7 +236,9 @@
 }
 
 /* La vista previa (la de la izquierda y la de la ventana de un archivo): la imagen entera, o su icono */
-.preview {
+/* La vista previa, sin peso propio (:where): sus variantes (la de una carpeta, la almohadilla de una etiqueta con su
+   color) le ganan sin depender del orden en que se cargan las hojas */
+:where(.preview) {
   position: relative;
   display: grid;
   place-items: center;
@@ -574,14 +576,15 @@
   transition: opacity 120ms ease-out;
 }
 
+/* Con el teclado (no al pulsar la carpeta con el ratón, que dejaba sus botones puestos) */
 .treeRow:hover .rowActions,
-.treeRow:focus-within .rowActions {
+.treeRow:has(:focus-visible) .rowActions {
   opacity: 1;
   pointer-events: auto;
 }
 
 .treeRow:hover .folderMeta:has(.rowActions) > .rowMeta,
-.treeRow:focus-within .folderMeta:has(.rowActions) > .rowMeta {
+.treeRow:has(:focus-visible) .folderMeta:has(.rowActions) > .rowMeta {
   opacity: 0;
 }
 
@@ -686,11 +689,35 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2);
-  margin-block-end: var(--space-3);
-  padding: var(--space-2) var(--space-3);
+  padding: 0 var(--space-3);
   border: 1px solid var(--color-border);
   border-radius: 6px;
   background: var(--color-raised);
+}
+
+/* La barra de herramientas y, eligiendo, la de lo elegido encima, en la misma celda: tiene su alto y nada se mueve */
+.toolbar {
+  display: grid;
+  margin-block-end: var(--space-4);
+}
+
+.toolbar > * {
+  grid-area: 1 / 1;
+}
+
+.toolbar > .tools {
+  margin-block-end: 0;
+}
+
+.tools[data-covered] {
+  visibility: hidden;
+}
+
+/* En la confirmación de borrar lo elegido: qué se borra */
+.chosenNames {
+  margin: 0;
+  padding-inline-start: var(--space-5);
+  overflow-wrap: anywhere;
 }
 
 .chosenCount {

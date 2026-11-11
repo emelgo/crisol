@@ -77,6 +77,7 @@ export function CoverDialog({
   const dialog = useRef<HTMLDialogElement>(null)
   const upload = useRef<HTMLInputElement>(null)
   const titleId = useId()
+  const keysId = useId()
   // Al ajustar un mundo, los suyos y los comunes; al crearlo (aún sin archivos), los comunes (los mismos del selector)
   const files = useWorldFiles(worldId ?? '', Boolean(worldId))
   const common = useQuery({
@@ -177,7 +178,9 @@ export function CoverDialog({
           className={styles.preview}
           style={aspect ? ({ '--cover-aspect': aspect } as CSSProperties) : undefined}
           disabled={!image}
-          aria-label={t('cover.framing')}
+          // Con imagen, su nombre es lo que se lee en ella («Arrastra para encuadrar») y su descripción, las teclas
+          aria-label={image ? undefined : t('cover.framing')}
+          aria-describedby={image ? keysId : undefined}
           onPointerDown={startDrag}
           onPointerMove={moveDrag}
           onPointerUp={() => {
@@ -191,9 +194,12 @@ export function CoverDialog({
           {image && chosen && (
             <>
               <img src={image.url} alt="" draggable={false} className={styles.image} style={coverStyle(chosen)} />
-              <span className={styles.hint} aria-hidden="true">
-                <Move size={14} />
+              <span className={styles.hint}>
+                <Move aria-hidden="true" size={14} />
                 {t('cover.drag')}
+              </span>
+              <span id={keysId} hidden>
+                {t('cover.keys')}
               </span>
             </>
           )}

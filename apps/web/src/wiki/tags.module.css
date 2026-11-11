@@ -41,7 +41,7 @@
   }
 }
 
-/* En el detalle: la almohadilla grande, de su color */
+/* En el detalle: la almohadilla grande, de su color (le gana a la vista previa de Archivos, que no pesa) */
 .big {
   display: grid;
   place-items: center;

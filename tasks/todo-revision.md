@@ -101,6 +101,14 @@ Plan: `tasks/plan-revision.md`. Una tanda cada vez: se enseña en local, Enrique
   de una página; se ven en la lista, la vista previa, su ventana y el selector.
 - [x] La casilla de elegir, en su propia columna a la izquierda de las filas (alineadas todas, sin sangría): no tapa el
   icono de una carpeta ni la imagen (Enrique, 2026-11-12; la esquina de la miniatura, probada antes, «horrible»).
+- [x] **impeccable critique** (27/40, dual-agent; `.impeccable/critique/`). Arreglado: ventanas ancladas igual
+  (`--dialog-top`) y sin cortarse en 1280×720; la barra de lo elegido tapa la de herramientas (la lista no se mueve) y
+  borrar nombra lo que se borra; el fallo al mover se ve; el encuadre con su nombre visible y las teclas descritas (axe);
+  la ventana de archivo con un solo «Guardar», al final (también las etiquetas); la almohadilla de la etiqueta con su
+  color; botones de carpeta solo al pasar o con el teclado; «#etiqueta» sin resultados con su texto; Etiquetas busca sin
+  tildes; buscadores sin autocompletar; el selector sin quitar animaciones; «Se usa» en la vista previa; textos sin uso.
+- [ ] Pendiente de Enrique (de la crítica): teclado de Archivos y acciones con lo elegido; el hueco vacío de la portada;
+  Etiquetas plegable y que la fila abra su ventana, como Archivos.
 - [x] Ventanas de ajustes compactas (Enrique, 2026-11-12: «no cabe y hay que hacer scroll»): letra 15 px, campos de 40 px,
   casillas de 36 px, «Otro emoji» como una casilla más; la de una carpeta cabe en 850 px de alto.
 

@@ -494,7 +494,10 @@ describe('las carpetas, en la misma lista (su árbol)', () => {
       await waitFor(() => expect(namesIn(listOf('B.png'))).toEqual(['B.png', 'A.png']))
       fail()
       await waitFor(() => expect(namesIn(listOf('B.png'))).toEqual(['A.png', 'B.png']))
-      expect(await screen.findByText('Solo se ordena junto a otro de su tipo en su carpeta')).toBeDefined()
+      // Se dice, también a la vista, sobre la lista
+      expect((await screen.findByRole('alert')).textContent).toBe(
+        'Solo se ordena junto a otro de su tipo en su carpeta'
+      )
       expect(api.files.every((f) => f.position === null)).toBe(true)
     } finally {
       drag.restore()
@@ -703,8 +706,14 @@ describe('los archivos en lo estrecho (la misma lista)', () => {
     await userEvent.click(list.getByRole('checkbox', { name: 'Elegir Notas.txt' }))
     const bar = within(screen.getByRole('group', { name: 'Lo elegido' }))
     expect(bar.getByText('2 elegidos')).toBeDefined()
+    // La barra tapa la de herramientas (en su sitio: la lista no se mueve), que no se puede usar mientras
+    expect(
+      screen.getByRole('searchbox', { name: 'Buscar por nombre o #etiqueta' }).closest('[data-covered]')
+    ).not.toBeNull()
     await userEvent.click(bar.getByRole('button', { name: 'Borrar' }))
     const confirm = within(await screen.findByRole('dialog', { name: '¿Borrar los 2 elegidos?' }))
+    // Dice qué se borra
+    expect(confirm.getAllByRole('listitem').map((item) => item.textContent)).toEqual(['Bestiario.pdf', 'Notas.txt'])
     await userEvent.click(confirm.getByRole('button', { name: 'Borrar' }))
     await waitFor(() => expect(list.queryByRole('link', { name: 'Bestiario.pdf' })).toBeNull())
     expect(api.files.map((f) => f.name)).toEqual(['Mapa de Eana.png'])

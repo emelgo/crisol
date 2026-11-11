@@ -220,6 +220,9 @@ describe('las etiquetas de la cuenta', () => {
     const dialog = await screen.findByRole('dialog', { name: 'Ajustes de Bestiario.pdf' })
     await userEvent.type(within(dialog).getByLabelText('Etiquetas'), 'lugar/costa{Enter}')
     expect(await within(dialog).findByRole('button', { name: 'Quitar lugar/costa' })).toBeDefined()
+    // Con «Guardar», como el nombre y la carpeta
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Guardar' }))
+    await waitFor(() => expect(within(dialog).queryByRole('button', { name: 'Guardar' })).toBeNull())
     await userEvent.keyboard('{Escape}')
 
     // Buscar «#lugar» trae las dos (la madre y la hija); «#lugar/costa», solo el bestiario (como en las páginas)

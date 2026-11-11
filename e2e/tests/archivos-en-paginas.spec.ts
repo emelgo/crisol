@@ -188,7 +188,10 @@ test('la portada: se sube desde la página, se elige de tus archivos, se encuadr
   const chooser = page.waitForEvent('filechooser')
   await cover.getByRole('button', { name: 'Subir imagen' }).click()
   await (await chooser).setFiles({ name: 'puerto.png', mimeType: 'image/png', buffer: PNG })
-  await expect(cover.getByRole('button', { name: 'Encuadre' }).locator('img')).toHaveAttribute('src', /^\/api\/files\//)
+  await expect(cover.getByRole('button', { name: 'Arrastra para encuadrar' }).locator('img')).toHaveAttribute(
+    'src',
+    /^\/api\/files\//
+  )
   await cover.getByRole('button', { name: 'Guardar' }).click()
   await expect(cover).toHaveCount(0)
   const banner = page.locator('[data-cover-image] img').first()
@@ -214,7 +217,7 @@ test('la portada: se sube desde la página, se elige de tus archivos, se encuadr
   await expect(picker).toHaveCount(0)
 
   // El encuadre, con el teclado sobre la vista previa; se guarda con «Guardar»
-  await cover.getByRole('button', { name: 'Encuadre' }).press('ArrowRight')
+  await cover.getByRole('button', { name: 'Arrastra para encuadrar' }).press('ArrowRight')
   await cover.getByRole('button', { name: 'Guardar' }).click()
   await expect.poll(current).toMatchObject({ x: 55, y: 50 })
   await expect(banner).toHaveCSS('object-position', '55% 50%')

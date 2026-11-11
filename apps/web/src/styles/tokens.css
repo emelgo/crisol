@@ -94,6 +94,8 @@
   --space-8: 2rem;
   /* Lo mínimo que se toca con el dedo */
   --target: 2.75rem;
+  /* Dónde empiezan las ventanas encima (ajustes, portada, selector): todas a la misma altura, cada una tapa la de debajo */
+  --dialog-top: min(12dvh, 6rem);
   /* El cristal de lo que flota sobre el mapa de la Mesa (lienzo «La Mesa, con cristal»): el tinte sale de la superficie,
      nada de azul; con --glass-solid, el mismo sin desenfoque (navegadores sin backdrop-filter) */
   --glass-tint: color-mix(in srgb, var(--color-surface) 46%, transparent);

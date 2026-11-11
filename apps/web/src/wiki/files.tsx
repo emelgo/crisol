@@ -76,6 +76,8 @@ type Kind = (typeof KINDS)[number]
 const PARALLEL = 3
 /** Cuánto hay que mantener lo arrastrado sobre una carpeta cerrada para que se despliegue sola */
 const EXPAND_AFTER = 650
+/** Cuántos nombres dice la confirmación de borrar lo elegido */
+const SHOWN_NAMES = 5
 /** Cuánto se ilumina lo recién movido */
 const LANDED_FOR = 1400
 
@@ -220,10 +222,13 @@ function Pick({ id, what, name }: { id: string; what: 'file' | 'folder'; name: s
 /** Lo elegido: cuántos y, para todo a la vez, borrar (con su aviso) o dejar de elegir */
 function ChosenBar({
   chosen,
+  names,
   onDone,
   onClear
 }: {
   chosen: { kind: 'file' | 'folder'; id: string }[]
+  /** Sus nombres, para decir qué se borra */
+  names: string[]
   onDone: () => Promise<unknown>
   onClear: () => void
 }) {
@@ -273,6 +278,13 @@ function ChosenBar({
         >
           <div className={dialogStyles.body}>
             <h2 id={titleId}>{t('files.deleteChosenTitle', { count: chosen.length })}</h2>
+            {/* Qué se borra: hasta cinco por su nombre y, si hay más, cuántos */}
+            <ul className={styles.chosenNames}>
+              {names.slice(0, SHOWN_NAMES).map((name, index) => (
+                <li key={chosen[index]?.id ?? name}>{name}</li>
+              ))}
+              {names.length > SHOWN_NAMES && <li>{t('files.andMore', { count: names.length - SHOWN_NAMES })}</li>}
+            </ul>
             <p className={dialogStyles.description}>
               {folders > 0 ? t('files.deleteChosenFolders') : t('files.deleteChosenWarning')}
             </p>
@@ -384,6 +396,8 @@ function FilesSection({
   const [landed, setLanded] = useState<string | null>(null)
   // Lo movido desde su ventana, cuyo engranaje recibe el foco cuando su fila ya está en su carpeta nueva
   const refocus = useRef<(Item & { dest: string | null }) | null>(null)
+  // Por qué no se pudo mover lo último (se ve sobre la lista)
+  const [moveError, setMoveError] = useState<string | null>(null)
   useEffect(() => {
     const wanted = refocus.current
     if (!wanted || !data) return
@@ -442,6 +456,7 @@ function FilesSection({
       else await api.call('updateFolder', { folderId: item.id, parentId: to.folderId, ...beside })
     },
     onMutate: async ({ item, to }) => {
+      setMoveError(null)
       await queryClient.cancelQueries({ queryKey: cacheKey })
       const before = queryClient.getQueryData<Listed>(cacheKey)
       if (before) queryClient.setQueryData<Listed>(cacheKey, movedIn(before, item, to))
@@ -456,9 +471,11 @@ function FilesSection({
             ? t('files.moved', { name, folder: into })
             : t('files.movedToTop', { name })
       ),
+    // Si falla, vuelve donde estaba y lo dice, también a la vista (sobre la lista) hasta el siguiente movimiento
     onError: (error, _, context) => {
       if (context?.before) queryClient.setQueryData(cacheKey, context.before)
       setLanded(null)
+      setMoveError(errorText(error))
       announce(errorText(error))
     },
     onSettled: () => refresh()
@@ -841,8 +858,11 @@ function FilesSection({
     uploadPlace.current = folderId
     several.current?.click()
   }
+  // Eligiendo, la barra de lo elegido tapa la de herramientas, en su mismo sitio y con su alto: la lista no se mueve bajo
+  // el cursor (Enrique no lo pidió: salió en la crítica de la tanda 2)
+  const choosing = chosenNow.length > 0
   const tools = (
-    <div className={styles.tools}>
+    <div className={styles.tools} data-covered={choosing || undefined}>
       {placeOf(null).canWrite && (
         <>
           <button
@@ -900,18 +920,15 @@ function FilesSection({
     <SelectionContext value={selection}>
       <div className={styles.contents} data-selecting={selection.active || undefined}>
         {searching && <p className={styles.here}>{t('files.results', { count: results.length })}</p>}
-        {chosenNow.length > 0 && (
-          <ChosenBar
-            chosen={chosenNow}
-            onDone={async () => {
-              stopChoosing()
-              await refresh()
-            }}
-            onClear={stopChoosing}
-          />
-        )}
+        {moveError && <FormError message={moveError} />}
         {searching && results.length === 0 && (
-          <p className={styles.empty}>{query.trim() ? t('files.noResults') : t('files.noKind')}</p>
+          <p className={styles.empty}>
+            {!query.trim()
+              ? t('files.noKind')
+              : query.trim().startsWith('#')
+                ? t('files.noMatch')
+                : t('files.noResults')}
+          </p>
         )}
         {!searching && nothing && <p className={styles.empty}>{empty}</p>}
         <ul className={styles.rows} aria-label={t('files.listLabel')} data-tour="archivos-lista">
@@ -954,7 +971,22 @@ function FilesSection({
       <div className={styles.layout}>
         <div ref={center} className={styles.center}>
           {title}
-          {tools}
+          <div className={styles.toolbar}>
+            {tools}
+            {choosing && (
+              <ChosenBar
+                chosen={chosenNow}
+                names={chosenNow.map(
+                  (item) => (item.kind === 'file' ? fileById.get(item.id)?.name : byId.get(item.id)?.name) ?? ''
+                )}
+                onDone={async () => {
+                  stopChoosing()
+                  await refresh()
+                }}
+                onClear={stopChoosing}
+              />
+            )}
+          </div>
           {contents}
         </div>
         <aside className={styles.detail} aria-label={t('files.detail')}>
@@ -1093,6 +1125,13 @@ function FileDetail({ file, where }: { file: WorldFile; where: FolderView[] }) {
           <>
             <dt>{t('files.folder')}</dt>
             <dd>{where.map((folder) => folder.name).join(' › ')}</dd>
+          </>
+        )}
+        {/* Dónde se usa, antes de pensar en borrarlo */}
+        {file.usedBy > 0 && (
+          <>
+            <dt>{t('files.usedLabel')}</dt>
+            <dd>{t('files.usedBy', { count: file.usedBy })}</dd>
           </>
         )}
         <dt>{t('files.updatedLabel')}</dt>
@@ -1943,26 +1982,22 @@ function FileDialog({
   const [name, setName] = useState(file.name)
   const startFolder = file.folderId ?? null
   const [folderId, setFolderId] = useState(startFolder)
+  // Las etiquetas también esperan a «Guardar», como el nombre y la carpeta (antes se guardaban al momento)
+  const [tags, setTags] = useState<string[]>(file.tags)
   const renamed = name.trim() !== file.name
   const moved = folderId !== startFolder
+  const retagged = tags.length !== file.tags.length || tags.some((tag, index) => tag !== file.tags[index])
   const rename = useMutation({
     mutationFn: async () => {
-      if (renamed) {
-        await api.call('renameFile', { fileId: file.id, name: name.trim() })
-        await onChanged()
-      }
+      if (renamed) await api.call('renameFile', { fileId: file.id, name: name.trim() })
+      if (retagged) await api.call('setFileTags', { fileId: file.id, tags })
+      if (renamed || retagged) await onChanged()
     },
     // A otra carpeta: la ventana se cierra y se ve ya en su sitio
     onSuccess: () => {
       if (!moved) return
       dialog.current?.close()
       onMove(folderId)
-    }
-  })
-  const retag = useMutation({
-    mutationFn: async (tags: string[]) => {
-      await api.call('setFileTags', { fileId: file.id, tags })
-      await onChanged()
     }
   })
   // Borrado, su fila se desvanece y la lista se pone al día
@@ -1972,7 +2007,7 @@ function FileDialog({
     await vanish(file.id, dialog.current)
     await onChanged()
   }
-  const changed = renamed || moved
+  const changed = renamed || moved || retagged
   return (
     <Modal ref={dialog} aria-labelledby={titleId} className={cards.dialog} onClose={() => onClose(gone.current)}>
       <div className={styles.preview}>
@@ -1999,7 +2034,9 @@ function FileDialog({
           onChange={(event) => setName(event.currentTarget.value)}
         />
         <FolderField folders={folders} of={file} value={folderId} onChange={setFolderId} />
+        <TagsField value={tags} onChange={setTags} />
         <FormError message={rename.error ? errorText(rename.error) : null} />
+        {/* Al final, como en las demás ventanas */}
         <ChangesBar shown={changed}>
           <BusyButton type="submit" className={form.button} busy={rename.isPending}>
             {t('files.save')}
@@ -2010,18 +2047,12 @@ function FileDialog({
             onClick={() => {
               setName(file.name)
               setFolderId(startFolder)
+              setTags(file.tags)
             }}
           >
             {t('files.cancel')}
           </button>
         </ChangesBar>
-        <div>
-          <TagsField
-            value={retag.isPending && retag.variables ? retag.variables : file.tags}
-            onChange={(tags) => retag.mutate(tags)}
-          />
-          <FormError message={retag.error ? errorText(retag.error) : null} />
-        </div>
       </form>
       <div className={cards.dangerArea}>
         <DangerZone>

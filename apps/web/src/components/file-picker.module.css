@@ -1,8 +1,9 @@
-/* La ventana del selector: arriba a la misma altura (no salta al buscar) y solo la lista se desplaza */
+/* La ventana del selector: anclada arriba como las demás (no salta al buscar y tapa justo la de debajo); solo la lista
+   se desplaza */
 .picker {
   inline-size: min(34rem, calc(100vw - 2rem));
-  max-block-size: min(80dvh, 44rem);
-  margin-block: calc((100dvh - min(80dvh, 44rem)) / 2) auto;
+  max-block-size: min(calc(100dvh - var(--dialog-top) - 1rem), 44rem);
+  margin-block: var(--dialog-top) auto;
   padding: 0;
   border: 1px solid var(--color-frame);
   border-radius: 8px;
@@ -174,16 +175,6 @@
   from {
     opacity: 0;
     transform: translateY(-4px);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .kids {
-    animation: none;
-  }
-
-  .chevron {
-    transition: none;
   }
 }
 
