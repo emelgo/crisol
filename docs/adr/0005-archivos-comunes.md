@@ -47,3 +47,14 @@ común de la cuenta que se comparte entre todos los mundos».
   cualquier mundo de la organización. Los usos de un común se cuentan en todos sus mundos.
 - El aviso en tiempo real de archivos tiene también ámbito de organización.
 - La cuota de espacio (módulo 11) cuenta los comunes una vez, en la organización.
+
+## Cambio (2026-11-12): orden a mano dentro de cada carpeta
+
+En la revisión de la app (tanda 2), Enrique pidió recolocar archivos y carpetas dentro de su carpeta, como las páginas y
+las etiquetas. `files.position` y `file_folders.position` son claves fraccionarias con la collation "C" (como
+`pages.position`): dentro de cada carpeta van primero las carpetas y luego los archivos, cada grupo por su puesto y,
+sin él, detrás y por nombre. Solo se ordena entre los del mismo tipo y ámbito (`NOT_SIBLING` si no); la primera vez que
+se reordenan unas hermanas se guardan los puestos de todas. `moveFile` y `updateFolder` ganan `before`/`after`, y
+cambiar de carpeta y recolocar es una sola operación del historial (`moveFile`/`updateFolder`, u `orderFile`/
+`orderFolder` si solo cambia el puesto). Cambiar de carpeta sin ancla, o ir a la papelera con su carpeta o con `deleteFiles`,
+deja el puesto en null. La IA sigue solo con `listar_archivos`, que ya trae el puesto.

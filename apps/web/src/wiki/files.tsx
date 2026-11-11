@@ -8,7 +8,7 @@
  */
 
 import type { FolderView } from '@crisol/contracts'
-import { looksUploadable, MAX_FILE_BYTES, TRASH_DAYS, UPLOAD_ACCEPT } from '@crisol/domain'
+import { bySiblingPlace, looksUploadable, MAX_FILE_BYTES, TRASH_DAYS, UPLOAD_ACCEPT } from '@crisol/domain'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getRouteApi, Link, Navigate } from '@tanstack/react-router'
 import {
@@ -40,7 +40,7 @@ import {
 } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
-import { type ActionOutput, ApiError, type UploadTarget } from '../api/client.ts'
+import { ApiError, type UploadTarget } from '../api/client.ts'
 import { useApi } from '../api/context.tsx'
 import { useCodeText, useErrorText } from '../api/errors.ts'
 import { useAnnounce } from '../components/announcer.tsx'
@@ -60,6 +60,7 @@ import { Tour } from '../components/tour.tsx'
 import { isInside, type Zone, zoneAt } from '../components/tree/moves.ts'
 import cards from '../routes/world-card.module.css'
 import { CoverViewer } from '../routes/world-cover.tsx'
+import { type FilesMove, type Item, type Listed, movedIn } from './file-order.ts'
 import styles from './files.module.css'
 import type { WorldFile } from './links-context.ts'
 import tagStyles from './tags.module.css'
@@ -310,26 +311,14 @@ function ChosenBar({
 
 /** Los archivos y las carpetas de un ámbito */
 type Scope = { files: WorldFile[]; folders: FolderView[] }
-/** La lista tal como llega del servidor (la de un mundo o la de los comunes) */
-type Listed = ActionOutput<'listFiles'>
-/** Algo de la lista: un archivo o una carpeta */
-type Item = { kind: 'file' | 'folder'; id: string }
+/** Delante o detrás de qué hermano de su tipo queda lo que se recoloca */
+type Beside = Pick<FilesMove, 'before' | 'after'>
 /** De qué ámbito es algo: los del mundo y los comunes no se mezclan */
 type Realm = 'mundo' | 'comun'
 
 /** Lo de arrastrar de una fila: sus manejadores y cómo se ve (dónde caería lo arrastrado, apagada, a punto de abrirse…) */
 type RowDrag = { attrs: HTMLAttributes<HTMLDivElement> & { 'data-drop'?: Zone | undefined }; className: string }
 const NO_DRAG: RowDrag = { attrs: {}, className: '' }
-
-/** La lista ya cargada con algo movido a una carpeta (null: lo más alto), para verlo ahí sin esperar al servidor */
-function movedIn(list: Listed, item: Item, folderId: string | null): Listed {
-  return item.kind === 'file'
-    ? { ...list, files: list.files.map((file) => (file.id === item.id ? { ...file, folderId } : file)) }
-    : {
-        ...list,
-        folders: list.folders.map((folder) => (folder.id === item.id ? { ...folder, parentId: folderId } : folder))
-      }
-}
 
 /** Las ya vistas: las que lleguen después (recién subidas o creadas) entran con su animación; al cargar, ninguna */
 function useFresh(ids: readonly string[] | undefined) {
@@ -345,8 +334,8 @@ function useFresh(ids: readonly string[] | undefined) {
  * Los archivos de un ámbito, en una lista que es su árbol: cada carpeta se despliega en su sitio, con lo suyo sangrado
  * debajo, y la última pulsada es la elegida (adonde va lo que se sube o se crea). Arriba, buscar y filtrar (en todas,
  * en una lista plana) y subir; también se sueltan encima. Se arrastran como las páginas del mundo: una raya encima o
- * debajo de una fila (va a su carpeta) o la carpeta resaltada (va dentro). A la izquierda, la vista previa de lo que
- * está bajo el ratón
+ * debajo de una fila (va a su carpeta y, si es de su tipo, ahí se recoloca: en el orden que se quiera) o la carpeta
+ * resaltada (va dentro). A la izquierda, la vista previa de lo que está bajo el ratón
  */
 function FilesSection({
   target,
@@ -384,7 +373,8 @@ function FilesSection({
       worldId: null,
       organizationId: common.target.organizationId,
       parentId: null,
-      name: commonLabel
+      name: commonLabel,
+      position: null
     }
     return {
       files: [...ownData.files, ...common.data.files.map((f) => ({ ...f, folderId: f.folderId ?? COMMON }))],
@@ -438,8 +428,8 @@ function FilesSection({
     },
     []
   )
-  // Lo de cada carpeta (null: lo más alto): las carpetas primero y luego los archivos, por nombre; «Comunes», tras las
-  // del mundo
+  // Lo de cada carpeta (null: lo más alto): las carpetas primero y luego los archivos, en su orden (por su puesto y, sin
+  // él, detrás y por nombre); «Comunes», tras las del mundo
   const kids = useMemo(() => {
     const map = new Map<string | null, { folders: FolderView[]; files: WorldFile[] }>()
     const at = (id: string | null) => {
@@ -449,10 +439,9 @@ function FilesSection({
     }
     for (const folder of data?.folders ?? []) at(folder.parentId ?? null).folders.push(folder)
     for (const file of data?.files ?? []) at(file.folderId ?? null).files.push(file)
-    const byName = (a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name, 'es')
     for (const entry of map.values()) {
-      entry.folders.sort((a, b) => Number(a.id === COMMON) - Number(b.id === COMMON) || byName(a, b))
-      entry.files.sort(byName)
+      entry.folders.sort((a, b) => Number(a.id === COMMON) - Number(b.id === COMMON) || bySiblingPlace(a, b))
+      entry.files.sort(bySiblingPlace)
     }
     return map
   }, [data])
@@ -463,29 +452,39 @@ function FilesSection({
       queryClient.invalidateQueries({ queryKey: ['files'] }),
       queryClient.invalidateQueries({ queryKey: ['commonFiles'] })
     ])
-  // Mover: se ve ya en su sitio (sin esperar al servidor); si falla, vuelve como estaba. Luego, la lista de verdad
+  // Mover (y recolocar): se ve ya en su sitio (sin esperar al servidor); si falla, vuelve como estaba. Luego, la lista
+  // de verdad
   const move = useMutation({
     mutationFn: async ({
       item,
-      folderId
+      to
     }: {
       item: Item
-      folderId: string | null
+      to: FilesMove
       name: string
       into: string | null
+      /** En su misma carpeta: solo cambia su puesto */
+      reorder: boolean
     }) => {
-      if (item.kind === 'file') await api.call('moveFile', { fileId: item.id, folderId })
-      else await api.call('updateFolder', { folderId: item.id, parentId: folderId })
+      const beside = to.before ? { before: to.before } : to.after ? { after: to.after } : {}
+      if (item.kind === 'file') await api.call('moveFile', { fileId: item.id, folderId: to.folderId, ...beside })
+      else await api.call('updateFolder', { folderId: item.id, parentId: to.folderId, ...beside })
     },
-    onMutate: async ({ item, folderId }) => {
+    onMutate: async ({ item, to }) => {
       await queryClient.cancelQueries({ queryKey: cacheKey })
       const before = queryClient.getQueryData<Listed>(cacheKey)
-      if (before) queryClient.setQueryData<Listed>(cacheKey, movedIn(before, item, folderId))
+      if (before) queryClient.setQueryData<Listed>(cacheKey, movedIn(before, item, to))
       return { before }
     },
     // Dice adónde ha ido
-    onSuccess: (_, { name, into }) =>
-      announce(into ? t('files.moved', { name, folder: into }) : t('files.movedToTop', { name })),
+    onSuccess: (_, { name, into, reorder }) =>
+      announce(
+        reorder
+          ? t('files.reordered', { name })
+          : into
+            ? t('files.moved', { name, folder: into })
+            : t('files.movedToTop', { name })
+      ),
     onError: (error, _, context) => {
       if (context?.before) queryClient.setQueryData(cacheKey, context.before)
       setLanded(null)
@@ -550,8 +549,7 @@ function FilesSection({
       const folders = entry.folders.filter((folder) => folderIds.has(folder.id))
       if (folders.length) at(parentId).folders.push(...folders)
     }
-    const byName = (a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name, 'es')
-    for (const entry of map.values()) entry.files.sort(byName)
+    for (const entry of map.values()) entry.files.sort(bySiblingPlace)
     return map
   })()
   // Lo que se ve, en orden: en el árbol, lo de lo más alto y lo de las carpetas desplegadas
@@ -608,19 +606,49 @@ function FilesSection({
   }
 
   // Arrastrar (components/tree/moves.ts). De qué ámbito es lo arrastrado, dónde está y si puede ir a una carpeta
-  // (null: lo más alto): de su ámbito, donde se pueda escribir, a otro sitio y, una carpeta, no dentro de sí misma
+  // (null: lo más alto): de su ámbito, donde se pueda escribir y, una carpeta, no dentro de sí misma. A su misma
+  // carpeta, solo para recolocarlo (junto a uno de su tipo) en otro puesto
   const realmOf = (item: Item): Realm =>
     (item.kind === 'file' ? fileById.get(item.id) : byId.get(item.id))?.worldId === null ? 'comun' : 'mundo'
   const parentOfItem = (item: Item) =>
     (item.kind === 'file' ? fileById.get(item.id)?.folderId : byId.get(item.id)?.parentId) ?? null
-  const canDropIn = (item: Item | 'files', dest: string | null) => {
+  // Los de su tipo en una carpeta, en su orden («Comunes» no cuenta: no es una carpeta de verdad)
+  const siblingIds = (kind: Item['kind'], dest: string | null) =>
+    (kind === 'file'
+      ? (kids.get(dest)?.files ?? [])
+      : (kids.get(dest)?.folders ?? []).filter((f) => f.id !== COMMON)
+    ).map((entry) => entry.id)
+  // Delante o detrás de una fila de su tipo, ahí se recoloca; sobre una del otro tipo, solo dice a qué carpeta va
+  const besideOf = (item: Item, row: { id: string; kind: Item['kind'] }, zone: Zone): Beside | undefined => {
+    if (zone === 'inside' || row.id === item.id) return undefined
+    if (row.id === COMMON) {
+      // Delante de «Comunes» (siempre tras las del mundo): detrás de la última del mundo
+      const last =
+        item.kind === 'folder' && zone === 'before'
+          ? siblingIds('folder', null)
+              .filter((id) => id !== item.id)
+              .at(-1)
+          : undefined
+      return last ? { after: last } : undefined
+    }
+    if (row.kind !== item.kind) return undefined
+    return zone === 'before' ? { before: row.id } : { after: row.id }
+  }
+  // Si recolocarlo ahí lo deja donde ya estaba
+  const stays = (item: Item, dest: string | null, beside: Beside) => {
+    const ids = siblingIds(item.kind, dest)
+    const rest = ids.filter((id) => id !== item.id)
+    const at = rest.indexOf(beside.before ?? beside.after ?? '')
+    if (at < 0) return false
+    rest.splice(beside.before ? at : at + 1, 0, item.id)
+    return rest.join() === ids.join()
+  }
+  const canDropIn = (item: Item | 'files', dest: string | null, beside?: Beside) => {
     if (!placeOf(dest).canWrite) return false
     if (item === 'files') return true
-    return (
-      realmOf(item) === scopeAt(dest) &&
-      parentOfItem(item) !== dest &&
-      !(item.kind === 'folder' && dest !== null && isInside((id) => byId.get(id)?.parentId, dest, item.id))
-    )
+    if (realmOf(item) !== scopeAt(dest)) return false
+    if (item.kind === 'folder' && dest !== null && isInside((id) => byId.get(id)?.parentId, dest, item.id)) return false
+    return parentOfItem(item) !== dest || (beside !== undefined && !stays(item, dest, beside))
   }
   // Archivos de fuera (del escritorio), no una fila de la lista
   const external = (event: DragEvent) =>
@@ -649,17 +677,18 @@ function FilesSection({
     setDrop(null)
     disarm()
   }
-  // Soltado: la carpeta de destino queda abierta, con lo movido iluminado un momento
-  const moveTo = (item: Item, dest: string | null) => {
+  // Soltado: la carpeta de destino queda abierta, con lo movido (en su puesto, si se recoloca) iluminado un momento
+  const moveTo = (item: Item, dest: string | null, beside?: Beside) => {
     expand(dest)
     window.clearTimeout(landedTimer.current)
     setLanded(item.id)
     landedTimer.current = window.setTimeout(() => setLanded(null), LANDED_FOR)
     move.mutate({
       item,
-      folderId: placeOf(dest).folderId,
+      to: { folderId: placeOf(dest).folderId, ...beside },
       name: (item.kind === 'file' ? fileById.get(item.id)?.name : byId.get(item.id)?.name) ?? '',
-      into: dest ? (byId.get(dest)?.name ?? null) : null
+      into: dest ? (byId.get(dest)?.name ?? null) : null,
+      reorder: parentOfItem(item) === dest
     })
   }
   /** Lo de arrastrar de una fila: la suya (id, madre, si es una carpeta y si está abierta) y su ámbito */
@@ -668,11 +697,13 @@ function FilesSection({
     movable: boolean,
     realm: Realm
   ): RowDrag => {
-    // Dónde caería: en el centro de una carpeta, dentro; si no, en su carpeta (encima o debajo de la fila)
-    const landing = (event: DragEvent<HTMLElement>) => {
+    // Dónde caería: en el centro de una carpeta, dentro; si no, en su carpeta (encima o debajo de la fila) y, si la fila
+    // es de su tipo, junto a ella
+    const landing = (event: DragEvent<HTMLElement>, item: Item | 'files') => {
       const box = event.currentTarget.getBoundingClientRect()
       const zone = zoneAt((event.clientY - box.top) / (box.height || 1), row.kind === 'folder')
-      return { zone, dest: zone === 'inside' ? row.id : row.parentId }
+      const beside = item === 'files' ? undefined : besideOf(item, row, zone)
+      return { zone, dest: zone === 'inside' ? row.id : row.parentId, beside }
     }
     const here = drop?.id === row.id ? drop.zone : undefined
     // Lo que no admite lo arrastrado (los comunes, para lo del mundo, y al revés), apagado: «no se puede»
@@ -682,8 +713,8 @@ function FilesSection({
     const hover = (event: DragEvent<HTMLElement>) => {
       const item = external(event) ? 'files' : dragged.current
       if (!item) return
-      const { zone, dest } = landing(event)
-      if (!canDropIn(item, dest)) {
+      const { zone, dest, beside } = landing(event, item)
+      if (!canDropIn(item, dest, beside)) {
         // Para los lectores de pantalla, una vez: de otro ámbito no se puede
         if (item !== 'files' && realmOf(item) !== scopeAt(dest) && !refusedSaid.current) {
           refusedSaid.current = true
@@ -733,12 +764,13 @@ function FilesSection({
         },
         onDrop: (event) => {
           const item = external(event) ? 'files' : dragged.current
-          const { dest } = landing(event)
-          if (!item || !canDropIn(item, dest)) return
+          if (!item) return
+          const { dest, beside } = landing(event, item)
+          if (!canDropIn(item, dest, beside)) return
           event.preventDefault()
           event.stopPropagation()
           endDrag()
-          if (item !== 'files') moveTo(item, dest)
+          if (item !== 'files') moveTo(item, dest, beside)
           else {
             // Del escritorio: se suben ahí
             setOver(false)

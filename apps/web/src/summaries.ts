@@ -256,6 +256,8 @@ export function summaryOf(
       return say(action, { name: text(details.name ?? details.file) })
     case 'createFolder':
     case 'deleteFolder':
+    case 'orderFile':
+    case 'orderFolder':
       return say(action, { name: text(details.name) })
     case 'updateFolder':
       return details.from !== undefined

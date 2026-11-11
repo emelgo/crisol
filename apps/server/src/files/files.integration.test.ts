@@ -261,6 +261,104 @@ describe('los archivos del mundo', () => {
     expect(undone.files.find((f: { name: string }) => f.name === 'Costa.png')).toMatchObject({ folderId: north.id })
   })
 
+  it('orden a mano dentro de su carpeta: la primera vez se guardan todos; solo junto a uno de su tipo y su carpeta; se deshace de una vez', async () => {
+    type Listed = {
+      id: string
+      name: string
+      folderId?: string | null
+      parentId?: string | null
+      position: string | null
+    }
+    const maps = await call('createFolder', { worldId, name: 'Mapas' })
+    const into = async (name: string, folderId: string) =>
+      (
+        await app.inject({
+          method: 'POST',
+          url: `/api/files?worldId=${worldId}&folderId=${folderId}&name=${name}`,
+          payload: PNG,
+          headers: { origin: BASE_URL, cookie: owner.cookie, 'content-type': 'application/octet-stream' }
+        })
+      ).json()
+    const a = await into('A.png', maps.id)
+    const b = await into('B.png', maps.id)
+    const c = await into('C.png', maps.id)
+    const filesIn = async (folderId: string | null) =>
+      ((await call('listFiles', { worldId })).files as Listed[]).filter((f) => f.folderId === folderId)
+    const foldersIn = async (parentId: string | null) =>
+      ((await call('listFiles', { worldId })).folders as Listed[]).filter((f) => f.parentId === parentId)
+    const names = (list: Listed[]) => list.map((item) => item.name)
+    expect(names(await filesIn(maps.id))).toEqual(['A.png', 'B.png', 'C.png'])
+    // C, delante de A: la primera vez se guardan los puestos de todos los de la carpeta
+    expect(await call('moveFile', { fileId: c.id, folderId: maps.id, before: a.id })).toMatchObject({
+      folderId: maps.id,
+      position: expect.any(String)
+    })
+    expect(names(await filesIn(maps.id))).toEqual(['C.png', 'A.png', 'B.png'])
+    expect((await filesIn(maps.id)).every((f) => f.position !== null)).toBe(true)
+    const [ordered] = (await call('listHistory', { worldId })).entries
+    expect(ordered).toMatchObject({ action: 'orderFile', details: { name: 'C.png' } })
+    // A, detrás de B: ya solo cambia el suyo
+    const placed = new Map((await filesIn(maps.id)).map((f) => [f.id, f.position]))
+    await call('moveFile', { fileId: a.id, folderId: maps.id, after: b.id })
+    const now = await filesIn(maps.id)
+    expect(names(now)).toEqual(['C.png', 'B.png', 'A.png'])
+    expect(now.filter((f) => f.position !== placed.get(f.id)).map((f) => f.name)).toEqual(['A.png'])
+    // Uno de fuera, en su puesto; otro sin ancla, detrás (aunque por nombre fuera delante)
+    const shield = (await upload('Escudo.png', PNG)).json()
+    const first = (await upload('0.png', PNG)).json()
+    await call('moveFile', { fileId: shield.id, folderId: maps.id, before: b.id })
+    expect(await call('moveFile', { fileId: first.id, folderId: maps.id })).toMatchObject({ position: null })
+    expect(names(await filesIn(maps.id))).toEqual(['C.png', 'Escudo.png', 'B.png', 'A.png', '0.png'])
+
+    // Las carpetas, igual: Sellos delante de Mapas, y Retratos dentro de Mapas, delante de Norte
+    const north = await call('createFolder', { worldId, parentId: maps.id, name: 'Norte' })
+    const portraits = await call('createFolder', { worldId, name: 'Retratos' })
+    const seals = await call('createFolder', { worldId, name: 'Sellos' })
+    expect(await call('updateFolder', { folderId: seals.id, before: maps.id })).toMatchObject({
+      parentId: null,
+      position: expect.any(String)
+    })
+    expect(names(await foldersIn(null))).toEqual(['Sellos', 'Mapas', 'Retratos'])
+    expect((await call('listHistory', { worldId })).entries[0]).toMatchObject({ action: 'orderFolder' })
+    await call('updateFolder', { folderId: portraits.id, parentId: maps.id, before: north.id })
+    expect(names(await foldersIn(maps.id))).toEqual(['Retratos', 'Norte'])
+    expect(names(await foldersIn(null))).toEqual(['Sellos', 'Mapas'])
+
+    // Solo junto a uno de su tipo, en esa carpeta y de su ámbito; ni junto a sí mismo, ni delante y detrás a la vez
+    const common = (await uploadCommon('Lema.png', PNG)).json()
+    for (const wrong of [
+      { fileId: a.id, folderId: maps.id, before: north.id },
+      { fileId: a.id, folderId: null, before: b.id },
+      { fileId: a.id, folderId: maps.id, after: a.id },
+      { fileId: a.id, folderId: null, before: common.id }
+    ]) {
+      expect(await call('moveFile', wrong)).toMatchObject({ code: 'NOT_SIBLING' })
+    }
+    expect(await call('updateFolder', { folderId: seals.id, before: north.id })).toMatchObject({ code: 'NOT_SIBLING' })
+    expect(await call('updateFolder', { folderId: seals.id, after: a.id })).toMatchObject({ code: 'NOT_SIBLING' })
+    expect(await call('moveFile', { fileId: a.id, folderId: maps.id, before: b.id, after: c.id })).toMatchObject({
+      code: 'INVALID_INPUT'
+    })
+    expect(names(await filesIn(maps.id))).toEqual(['C.png', 'Escudo.png', 'B.png', 'A.png', '0.png'])
+
+    // Deshacer lo último (meter Retratos en Mapas, con el puesto de Norte guardado por primera vez) lo deja todo como
+    // estaba, de una vez
+    const [last] = (await call('listHistory', { worldId })).entries
+    expect(last).toMatchObject({ action: 'updateFolder', details: { name: 'Retratos' } })
+    expect((await call('undoOperation', { operationId: last.id })).status).toBe('undone')
+    expect(names(await foldersIn(null))).toEqual(['Sellos', 'Mapas', 'Retratos'])
+    expect(await foldersIn(maps.id)).toMatchObject([{ name: 'Norte', position: null }])
+
+    // Los comunes se ordenan entre ellos
+    const motto = (await uploadCommon('Divisa.png', PNG)).json()
+    await call('moveFile', { fileId: common.id, folderId: null, before: motto.id })
+    expect(names((await call('listCommonFiles', {})).files)).toEqual(['Lema.png', 'Divisa.png'])
+    // Un archivo que va a la papelera con su carpeta vuelve a lo más alto, sin su puesto
+    await call('deleteFiles', { fileIds: [shield.id] })
+    await call('restoreFile', { fileId: shield.id })
+    expect((await filesIn(null)).find((f) => f.id === shield.id)).toMatchObject({ folderId: null, position: null })
+  })
+
   it('borrar varios de una vez: archivos y carpetas, en una operación que se deshace', async () => {
     const a = (await upload('A.png', PNG)).json()
     const b = (await upload('B.pdf', PDF)).json()

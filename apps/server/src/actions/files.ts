@@ -17,7 +17,7 @@ import {
   updateFolder
 } from '@crisol/contracts'
 import { type FileScope, filesRepo, linksRepo, type OperationContext, worldsRepo } from '@crisol/db'
-import { authorize, NotFoundError } from '@crisol/domain'
+import { authorize, bySiblingPlace, NotFoundError, placeAmong } from '@crisol/domain'
 import { commonFilesChanged, filesChanged } from '../realtime/events.ts'
 import { resolvePendingFiles } from '../wiki/file-embeds.ts'
 import { authorizedWiki, targetOrganization } from './access.ts'
@@ -37,6 +37,7 @@ export const fileView = (row: FileRow): FileView => ({
   size: row.size,
   // Con su versión: el navegador la guarda sin volver a preguntar (al reemplazarla, cambia)
   url: `/api/files/${row.id}?v=${row.version}`,
+  position: row.position,
   tags: row.tags,
   version: row.version,
   updatedAt: row.updatedAt.toISOString()
@@ -49,7 +50,8 @@ const folderView = (row: FolderRow): FolderView => ({
   worldId: row.worldId,
   organizationId: row.organizationId,
   parentId: row.parentId,
-  name: row.name
+  name: row.name,
+  position: row.position
 })
 
 /** Dónde está un archivo: en un mundo (con su organización) o, sin mundo, entre los comunes de una organización */
@@ -150,6 +152,31 @@ export async function folderIn(ctx: ActionContext, place: FilePlace, folderId: s
 
 const folderTaken = (name: string) => new InvalidRequestError('NAME_TAKEN', `Ya hay una carpeta «${name}» ahí`)
 
+/**
+ * Los puestos que hay que guardar para poner algo delante o detrás de un hermano de su tipo en su carpeta de destino
+ * (`siblingsThere`: los de allí): el suyo y, la primera vez que se ordenan, los de los demás que cambian. Sin ancla,
+ * null. Si el ancla no es de allí (otra carpeta, otro ámbito u otro tipo) o es él mismo, NOT_SIBLING
+ */
+async function placeBeside(
+  siblingsThere: () => Promise<{ id: string; name: string; position: string | null }[]>,
+  movedId: string,
+  anchor: { before?: string | undefined; after?: string | undefined }
+) {
+  const by = anchor.before ?? anchor.after
+  if (by === undefined) return null
+  const siblings = await siblingsThere()
+  if (by === movedId || !siblings.some((sibling) => sibling.id === by)) {
+    throw new InvalidRequestError('NOT_SIBLING', 'Solo se ordena junto a otro de su tipo en su carpeta')
+  }
+  const ordered = [...siblings].sort(bySiblingPlace)
+  const places = placeAmong(ordered, movedId, anchor.before !== undefined ? { before: by } : { after: by })
+  const before = new Map(siblings.map((sibling) => [sibling.id, sibling.position]))
+  return {
+    own: places.find((place) => place.id === movedId)?.position ?? null,
+    others: places.filter((place) => place.id !== movedId && before.get(place.id) !== place.position)
+  }
+}
+
 /** Para el historial: el mundo o, con un común, solo su organización */
 export const historyScopeOf = (place: FilePlace) => (place.worldId ? place : { organizationId: place.organizationId })
 
@@ -171,19 +198,20 @@ const notFree = (name: string, place: FilePlace) =>
   )
 
 export const fileActions = [
+  // Cada uno en el orden de su carpeta: por su puesto y, sin él, detrás y por nombre
   implement(listFiles, async (ctx, { worldId }) => {
     await authorizedWiki(ctx, 'page.read', worldId)
     return {
-      files: await withUses(ctx, await filesRepo.usableFiles(ctx.db, worldId), worldId),
-      folders: (await filesRepo.usableFolders(ctx.db, worldId)).map(folderView)
+      files: (await withUses(ctx, await filesRepo.usableFiles(ctx.db, worldId), worldId)).sort(bySiblingPlace),
+      folders: (await filesRepo.usableFolders(ctx.db, worldId)).map(folderView).sort(bySiblingPlace)
     }
   }),
 
   implement(listCommonFiles, async (ctx, { organizationId }) => {
     const place = authorizedCommon(ctx, false, organizationId ?? targetOrganization(ctx, undefined))
     return {
-      files: await withUses(ctx, await filesRepo.listFiles(ctx.db, scopeOf(place))),
-      folders: (await filesRepo.listFolders(ctx.db, scopeOf(place))).map(folderView)
+      files: (await withUses(ctx, await filesRepo.listFiles(ctx.db, scopeOf(place)))).sort(bySiblingPlace),
+      folders: (await filesRepo.listFolders(ctx.db, scopeOf(place))).map(folderView).sort(bySiblingPlace)
     }
   }),
 
@@ -206,7 +234,7 @@ export const fileActions = [
     }
   }),
 
-  implement(updateFolder, async (ctx, { folderId, name, parentId }) => {
+  implement(updateFolder, async (ctx, { folderId, name, parentId, before, after }) => {
     const { folder, place } = await authorizedFolder(ctx, true, folderId)
     if (parentId !== undefined && parentId !== null) {
       await folderIn(ctx, place, parentId)
@@ -215,13 +243,31 @@ export const fileActions = [
         if (at === folderId) throw new InvalidRequestError('CYCLE')
       }
     }
-    const details = name !== undefined && name !== folder.name ? { from: folder.name, to: name } : { name: folder.name }
+    // Su puesto entre las carpetas de su destino (sin parentId, la de ahora); al cambiar de carpeta sin él, ninguno
+    const destination = parentId === undefined ? folder.parentId : parentId
+    const moves = destination !== folder.parentId
+    const placed = await placeBeside(() => filesRepo.foldersIn(ctx.db, scopeOf(place), destination), folderId, {
+      before,
+      after
+    })
+    const renamed = name !== undefined && name !== folder.name
+    // Solo reordenada: así lo dice el historial
+    const [action, details] = renamed
+      ? ['updateFolder', { from: folder.name, to: name }]
+      : placed && !moves
+        ? ['orderFolder', { name: folder.name }]
+        : ['updateFolder', { name: folder.name }]
     try {
       const updated = await filesRepo.updateFolder(
         ctx.db,
-        historyContext(ctx, 'updateFolder', details, historyScopeOf(place)),
+        historyContext(ctx, action, details, historyScopeOf(place)),
         folderId,
-        { ...(name !== undefined ? { name } : {}), ...(parentId !== undefined ? { parentId } : {}) }
+        {
+          ...(name !== undefined ? { name } : {}),
+          ...(parentId !== undefined ? { parentId } : {}),
+          ...(placed ? { position: placed.own } : moves ? { position: null } : {})
+        },
+        placed?.others
       )
       await filesTouched(ctx, place)
       return folderView(updated)
@@ -278,15 +324,24 @@ export const fileActions = [
     return { files: trashed }
   }),
 
-  implement(moveFile, async (ctx, { fileId, folderId }) => {
+  implement(moveFile, async (ctx, { fileId, folderId, before, after }) => {
     const { file, place } = await authorizedFile(ctx, 'page.write', fileId)
     const folder = await folderIn(ctx, place, folderId)
-    if (file.folderId === folderId) return fileView(file)
-    await filesRepo.updateFile(
+    const moves = file.folderId !== folderId
+    // Su puesto entre los archivos de esa carpeta; al cambiar de carpeta sin él, ninguno (detrás, por nombre)
+    const placed = await placeBeside(() => filesRepo.filesIn(ctx.db, scopeOf(place), folderId), fileId, {
+      before,
+      after
+    })
+    if (!moves && !placed) return fileView(file)
+    await filesRepo.moveFile(
       ctx.db,
-      historyContext(ctx, 'moveFile', { name: file.name, folder: folder?.name ?? null }, historyScopeOf(place)),
+      moves
+        ? historyContext(ctx, 'moveFile', { name: file.name, folder: folder?.name ?? null }, historyScopeOf(place))
+        : historyContext(ctx, 'orderFile', { name: file.name }, historyScopeOf(place)),
       fileId,
-      { folderId }
+      { folderId, position: placed?.own ?? null },
+      placed?.others
     )
     await filesTouched(ctx, place)
     const moved = await filesRepo.findFile(ctx.db, fileId)

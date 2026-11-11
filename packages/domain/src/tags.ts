@@ -1,4 +1,4 @@
-import { keyBetween } from './order.ts'
+import { placeAmong } from './order.ts'
 
 /**
  * Las etiquetas de la cuenta (ADR-0006): la jerarquía va en el nombre, con «/» («lugar/ciudad» está dentro de «lugar»),
@@ -68,29 +68,19 @@ const bySiblingOrder = (a: { name: string; position: string | null }, b: { name:
 /**
  * Los puestos que hay que guardar al poner `moved` delante o detrás de una de sus hermanas (`siblings`: todas, ya en su
  * orden, con ella o sin ella). Si todas tenían puesto, solo cambia el suyo; si no, se rellenan todas en el orden nuevo
+ * (placeAmong, por su nombre sin mayúsculas)
  */
 export function placeAmongSiblings(
   siblings: readonly { name: string; position: string | null }[],
   moved: string,
   to: { before?: string; after?: string }
 ): { name: string; position: string }[] {
-  const others = siblings.filter((s) => tagKey(s.name) !== tagKey(moved))
-  const anchor = to.before ?? to.after
-  const at = anchor ? others.findIndex((s) => tagKey(s.name) === tagKey(anchor)) : -1
-  const index = at < 0 ? others.length : to.before !== undefined ? at : at + 1
-  if (others.every((s) => s.position !== null)) {
-    const previous = others[index - 1]?.position ?? null
-    const next = others[index]?.position ?? null
-    return [{ name: moved, position: keyBetween(previous, next) }]
-  }
-  const order = [...others.slice(0, index).map((s) => s.name), moved, ...others.slice(index).map((s) => s.name)]
-  const result: { name: string; position: string }[] = []
-  let last: string | null = null
-  for (const name of order) {
-    last = keyBetween(last, null)
-    result.push({ name, position: last })
-  }
-  return result
+  const names = new Map(siblings.map((s) => [tagKey(s.name), s.name]))
+  names.set(tagKey(moved), moved)
+  const keyed = siblings.map((s) => ({ id: tagKey(s.name), position: s.position }))
+  const anchor =
+    to.before !== undefined ? { before: tagKey(to.before) } : to.after !== undefined ? { after: tagKey(to.after) } : {}
+  return placeAmong(keyed, tagKey(moved), anchor).map(({ id, position }) => ({ name: names.get(id) ?? id, position }))
 }
 
 export interface TagNode<Color> {

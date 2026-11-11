@@ -13,6 +13,14 @@ export const fileName = z
   .refine((name) => !new RegExp(FILE_NAME_FORBIDDEN.source).test(name), 'Sin barras, corchetes, |, # ni ^')
 
 /**
+ * Su puesto entre los de su tipo en su carpeta: se ordenan por él (comparando caracteres) y, sin él, detrás y por nombre
+ */
+const placeInFolder = z
+  .string()
+  .nullable()
+  .describe('Su puesto en su carpeta (orden a mano: se compara carácter a carácter); null, detrás y por nombre')
+
+/**
  * Un archivo de un mundo o común a los mundos de la cuenta (sin mundo, ADR-0005): los bytes se piden aparte, en
  * /api/files/:id, con la sesión
  */
@@ -22,6 +30,7 @@ export const fileView = z.object({
   organizationId: z.uuid(),
   name: z.string(),
   folderId: z.uuid().nullable().describe('Su carpeta; sin ella, en lo más alto'),
+  position: placeInFolder,
   kind: z.enum(['image', 'pdf', 'other']),
   mime: z.string(),
   size: z.number().int(),
@@ -47,7 +56,8 @@ export const folderView = z.object({
   worldId: z.uuid().nullable().describe('Sin mundo: es de los comunes de la cuenta'),
   organizationId: z.uuid(),
   parentId: z.uuid().nullable().describe('Sin madre: en lo más alto'),
-  name: z.string()
+  name: z.string(),
+  position: placeInFolder
 })
 
 export type FolderView = z.infer<typeof folderView>
@@ -61,7 +71,7 @@ export const listFiles = defineAction({
   name: 'listFiles',
   kind: 'read',
   description:
-    'Los archivos que puede usar el mundo (imágenes, PDF y otros), por nombre y tipo: los suyos y los comunes de la cuenta (worldId null), que comparten todos sus mundos. En una página se usan con ![[nombre]] (una imagen con ![[nombre|300]] de ancho, un PDF en una página con ![[nombre#page=12]]); si un nombre está en los dos, ![[nombre]] usa el del mundo',
+    'Los archivos que puede usar el mundo (imágenes, PDF y otros) y sus carpetas, cada uno en el orden de su carpeta (position; sin él, por nombre): los suyos y los comunes de la cuenta (worldId null), que comparten todos sus mundos. En una página se usan con ![[nombre]] (una imagen con ![[nombre|300]] de ancho, un PDF en una página con ![[nombre#page=12]]); si un nombre está en los dos, ![[nombre]] usa el del mundo',
   input: z.object({ worldId: z.uuid() }),
   output: listed
 })
@@ -93,13 +103,29 @@ export const createFolder = defineAction({
   output: folderView
 })
 
+/** Delante o detrás de cuál queda, entre los de su tipo en su carpeta de destino */
+const besides = (what: string) => ({
+  before: z.uuid().optional().describe(`Delante de ${what} (de la carpeta de destino)`),
+  after: z.uuid().optional().describe(`Detrás de ${what} (de la carpeta de destino)`)
+})
+const oneSide = { message: 'before o after, no los dos' }
+
 export const updateFolder = defineAction({
   name: 'updateFolder',
   kind: 'write',
-  description: 'Cambia el nombre de una carpeta o la mete en otra (parentId; null: a lo más alto)',
+  description:
+    'Cambia el nombre de una carpeta, la mete en otra (parentId; null: a lo más alto) o la ordena a mano delante (before) o detrás (after) de otra carpeta de su carpeta de destino (sin parentId, la de ahora). Al cambiar de carpeta sin before ni after, va detrás, por nombre. Se deshace desde el historial',
   input: z
-    .object({ folderId: z.uuid(), name: folderName.optional(), parentId: z.uuid().nullable().optional() })
-    .refine((input) => input.name !== undefined || input.parentId !== undefined, { message: 'name o parentId' }),
+    .object({
+      folderId: z.uuid(),
+      name: folderName.optional(),
+      parentId: z.uuid().nullable().optional(),
+      ...besides('esta carpeta')
+    })
+    .refine((input) => !(input.before && input.after), oneSide)
+    .refine((input) => input.name !== undefined || input.parentId !== undefined || input.before || input.after, {
+      message: 'name, parentId, before o after'
+    }),
   output: folderView
 })
 
@@ -129,8 +155,11 @@ export const deleteFiles = defineAction({
 export const moveFile = defineAction({
   name: 'moveFile',
   kind: 'write',
-  description: 'Mete un archivo en una carpeta de su ámbito (folderId; null: a lo más alto)',
-  input: z.object({ fileId: z.uuid(), folderId: z.uuid().nullable() }),
+  description:
+    'Mete un archivo en una carpeta de su ámbito (folderId; null: a lo más alto) y, si se da, lo ordena a mano delante (before) o detrás (after) de otro archivo de esa carpeta (también sin cambiar de carpeta). Sin before ni after, va detrás, por nombre. Se deshace desde el historial',
+  input: z
+    .object({ fileId: z.uuid(), folderId: z.uuid().nullable(), ...besides('este archivo') })
+    .refine((input) => !(input.before && input.after), oneSide),
   output: fileView
 })
 

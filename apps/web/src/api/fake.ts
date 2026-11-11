@@ -51,11 +51,13 @@ import {
   applyTemplate,
   BUILT_IN_TEMPLATES,
   builtInTemplate,
+  bySiblingPlace,
   EMPTY_SOUND,
   instantiate,
   isTagOrChild,
   nextTrack as nextTrackOf,
   pauseSound as pauseSoundOf,
+  placeAmong,
   placeAmongSiblings,
   removeTagIn,
   renameTagIn,
@@ -185,8 +187,8 @@ export function fakeApi(
     }>
     /** Los archivos de los mundos (usedBy: cuántas páginas lo usan) */
     files?: Array<Pick<FileView, 'worldId' | 'name'> & Partial<FileView> & { usedBy?: number }>
-    /** Las carpetas de los archivos */
-    folders?: FolderView[]
+    /** Las carpetas de los archivos (sin puesto: por nombre) */
+    folders?: Array<Omit<FolderView, 'position'> & Partial<Pick<FolderView, 'position'>>>
     /** Las tiradas de las campañas, en el orden en que se tiraron */
     rolls?: DiceRoll[]
     /** Las notas de los jugadores (sin userId, de la cuenta «yo»), en su orden */
@@ -297,6 +299,7 @@ export function fakeApi(
       url: `/api/files/${id}`,
       tags: [],
       folderId: null,
+      position: null,
       version: 1,
       updatedAt: new Date().toISOString(),
       ...file,
@@ -306,7 +309,7 @@ export function fakeApi(
   const files = (options.files ?? []).map(({ usedBy: _, ...file }) => fileOf(file))
   const fileUses = new Map((options.files ?? []).map((file, i) => [files[i]?.id ?? '', file.usedBy ?? 0]))
   const trashedFiles: FileView[] = []
-  const folders: FolderView[] = [...(options.folders ?? [])]
+  const folders: FolderView[] = (options.folders ?? []).map((folder) => ({ position: null, ...folder }))
   const folderById = (folderId: string) => {
     const folder = folders.find((f) => f.id === folderId)
     if (!folder) throw new ApiError('NOT_FOUND', 404)
@@ -595,6 +598,31 @@ export function fakeApi(
     return { pages: changedPages, files: changedFiles }
   }
 
+  /**
+   * Como el servidor: lo movido, delante o detrás de un hermano de su tipo en su carpeta (`siblings`: los de allí), con
+   * los puestos de todos la primera vez; devuelve el suyo (sin ancla, null). Si el ancla no es de allí, NOT_SIBLING
+   */
+  const placeBeside = <T extends { id: string; name: string; position: string | null }>(
+    siblings: T[],
+    movedId: string,
+    before: string | undefined,
+    after: string | undefined
+  ) => {
+    const anchor = before ?? after
+    if (anchor === undefined) return null
+    if (anchor === movedId || !siblings.some((s) => s.id === anchor)) throw new ApiError('NOT_SIBLING', 400)
+    const places = placeAmong(
+      [...siblings].sort(bySiblingPlace),
+      movedId,
+      before !== undefined ? { before } : { after }
+    )
+    for (const { id, position } of places) {
+      const sibling = siblings.find((s) => s.id === id)
+      if (sibling) sibling.position = position
+    }
+    return places.find((place) => place.id === movedId)?.position ?? null
+  }
+
   /** Archivos a la papelera y carpetas quitadas con lo que tienen dentro; devuelve cuántos archivos */
   const trashItems = (fileIds: readonly string[], folderIds: readonly string[]) => {
     const gone = new Set<string>()
@@ -606,7 +634,7 @@ export function fakeApi(
     const doomed = files.filter((file) => fileIds.includes(file.id) || (file.folderId && gone.has(file.folderId)))
     for (const file of doomed) {
       files.splice(files.indexOf(file), 1)
-      trashedFiles.unshift({ ...file, folderId: null })
+      trashedFiles.unshift({ ...file, folderId: null, position: null })
     }
     for (const id of gone)
       folders.splice(
@@ -3592,9 +3620,12 @@ export function fakeApi(
       return {
         files: files
           .filter(usable)
-          .sort((a, b) => a.name.localeCompare(b.name, 'es'))
+          .sort(bySiblingPlace)
           .map((f) => ({ ...f, usedBy: fileUses.get(f.id) ?? 0 })),
-        folders: folders.filter(usable).map((f) => ({ ...f }))
+        folders: folders
+          .filter(usable)
+          .sort(bySiblingPlace)
+          .map((f) => ({ ...f }))
       }
     },
     listCommonFiles: ({ organizationId }) => {
@@ -3603,9 +3634,12 @@ export function fakeApi(
       return {
         files: files
           .filter(common)
-          .sort((a, b) => a.name.localeCompare(b.name, 'es'))
+          .sort(bySiblingPlace)
           .map((f) => ({ ...f, usedBy: fileUses.get(f.id) ?? 0 })),
-        folders: folders.filter(common).map((f) => ({ ...f }))
+        folders: folders
+          .filter(common)
+          .sort(bySiblingPlace)
+          .map((f) => ({ ...f }))
       }
     },
     createFolder: ({ worldId, organizationId, parentId, name }) => {
@@ -3618,14 +3652,28 @@ export function fakeApi(
           f.name.toLowerCase() === name.trim().toLowerCase()
       )
       if (sibling) throw new ApiError('NAME_TAKEN', 400)
-      const folder: FolderView = { id: crypto.randomUUID(), ...scope, parentId: parentId ?? null, name: name.trim() }
+      const folder: FolderView = {
+        id: crypto.randomUUID(),
+        ...scope,
+        parentId: parentId ?? null,
+        name: name.trim(),
+        position: null
+      }
       folders.push(folder)
       return { ...folder }
     },
-    updateFolder: ({ folderId, name, parentId }) => {
+    updateFolder: ({ folderId, name, parentId, before, after }) => {
       const folder = folderById(folderId)
+      const destination = parentId === undefined ? folder.parentId : parentId
+      // Como el servidor: su puesto entre las carpetas de su destino; al cambiar de carpeta sin él, ninguno
+      const siblings = folders.filter(
+        (f) => f.worldId === folder.worldId && f.organizationId === folder.organizationId && f.parentId === destination
+      )
+      const placed = placeBeside(siblings, folderId, before, after)
       if (name !== undefined) folder.name = name.trim()
-      if (parentId !== undefined) folder.parentId = parentId
+      if (placed) folder.position = placed
+      else if (destination !== folder.parentId) folder.position = null
+      folder.parentId = destination
       return { ...folder }
     },
     deleteFolder: ({ folderId }) => {
@@ -3634,9 +3682,15 @@ export function fakeApi(
       return { id: folder.id, name: folder.name }
     },
     deleteFiles: ({ fileIds = [], folderIds = [] }) => ({ files: trashItems(fileIds, folderIds) }),
-    moveFile: ({ fileId, folderId }) => {
+    moveFile: ({ fileId, folderId, before, after }) => {
       const file = fileById(fileId)
       if (folderId) folderById(folderId)
+      const siblings = files.filter(
+        (f) => f.worldId === file.worldId && f.organizationId === file.organizationId && f.folderId === folderId
+      )
+      const placed = placeBeside(siblings, fileId, before, after)
+      if (!placed && file.folderId === folderId) return { ...file }
+      file.position = placed ?? null
       file.folderId = folderId
       file.version++
       return { ...file }

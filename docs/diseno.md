@@ -303,8 +303,8 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 - **Archivos, como un explorador**: carpetas unas dentro de otras, en la lista (ver la norma de arriba, «sin árbol a la
   izquierda»). Se arrastran archivos y carpetas como las páginas del mundo: raya encima o debajo de una fila (a qué
   nivel va) o la carpeta resaltada si va dentro; lo movido se ilumina; un común no va a una carpeta del mundo ni al
-  revés (mientras se arrastra, sale apagado). Carpetas primero y luego archivos, **por nombre** (en Archivos no vale
-  «lo nuevo, al final»). **Sin ruta encima de la lista** («Todos › Carpeta»): la lista ya dice dónde está cada cosa.
+  revés (mientras se arrastra, sale apagado). Carpetas primero y luego archivos, **en el orden que se quiera** (se
+  recolocan arrastrando); sin ordenar, por nombre. **Sin ruta encima de la lista** («Todos › Carpeta»): la lista ya dice dónde está cada cosa.
   **Toda la fila abre lo suyo**, no solo el nombre. Mover es arrastrar y cambiar un archivo es subir otro y borrar el
   viejo: su ventana no tiene «Carpeta» ni «Reemplazar». **Se eligen varios** con su casilla (al pasar el ratón) y se
   borran de una vez, con aviso. **Borrar una carpeta se lleva lo que tiene dentro** (sus archivos, a la papelera),

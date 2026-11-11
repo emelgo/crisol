@@ -59,6 +59,11 @@ describe('las frases de la wiki', () => {
       'renombró el archivo «a.png» a «b.png»'
     )
     expect(summaryOf(t, { action: 'deleteFile', details: { name: 'Mapa.png' } })).toBe('borró el archivo «Mapa.png»')
+    // Recolocar en su carpeta no es sacarlo de ella
+    expect(summaryOf(t, { action: 'orderFile', details: { name: 'Mapa.png' } })).toBe('cambió el orden de «Mapa.png»')
+    expect(summaryOf(t, { action: 'orderFolder', details: { name: 'Mapas' } }, 'requested')).toBe(
+      'cambiar el orden de la carpeta «Mapas»'
+    )
   })
 
   it('lo que pide la IA con un sistema: el nombre sale de su entrada, del que toca o de su documento', () => {

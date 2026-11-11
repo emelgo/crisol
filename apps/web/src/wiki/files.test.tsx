@@ -75,6 +75,12 @@ const rowOf = (name: string) =>
 /** La lista donde está una fila: la de lo más alto o la de lo de dentro de una carpeta */
 const listOf = (name: string) => rowOf(name).closest('ul') as HTMLElement
 
+/** Lo que hay en una lista (sin lo de sus carpetas), en el orden en que se ve: por el nombre de cada fila */
+const namesIn = (list: HTMLElement) =>
+  [...list.querySelectorAll(':scope > li > [data-file-card]')].map(
+    (card) => card.querySelector('[aria-expanded], a, button')?.textContent?.trim() ?? ''
+  )
+
 /**
  * Arrastrar con el ratón. jsdom no mide: cada fila mide 100 de alto, así que la altura del puntero (y) dice la zona (el
  * cuarto de arriba, encima; el de abajo, debajo; en medio de una carpeta, dentro)
@@ -366,6 +372,135 @@ describe('las carpetas, en la misma lista (su árbol)', () => {
     }
   })
 
+  it('recolocar dentro de una carpeta: encima o debajo de uno de su tipo cambia su puesto, sin salir de ella; se ve al momento', async () => {
+    const maps = folderOf('Mapas')
+    const north = folderOf('Norte', maps.id)
+    const south = folderOf('Sur', maps.id)
+    const api = fakeApi({
+      organizations: [ORG],
+      worlds: [WORLD],
+      folders: [maps, north, south],
+      files: [
+        { worldId: WORLD.id, name: 'A.png', kind: 'image', folderId: maps.id },
+        { worldId: WORLD.id, name: 'B.png', kind: 'image', folderId: maps.id },
+        { worldId: WORLD.id, name: 'C.png', kind: 'image', folderId: maps.id },
+        { worldId: WORLD.id, name: 'Fuera.png', kind: 'image' }
+      ]
+    })
+    // El servidor tarda: lo recolocado ya se ve en su puesto
+    let release = () => {}
+    let slow = true
+    const call = api.client.call
+    api.client.call = (async (name, input) => {
+      if (name === 'moveFile' && slow) {
+        slow = false
+        await new Promise<void>((resolve) => {
+          release = resolve
+        })
+      }
+      return call(name, input)
+    }) as typeof call
+    renderAt(`/mundos/${WORLD.id}/archivos`, api)
+    await userEvent.click(await screen.findByRole('button', { name: 'Mapas' }))
+    await screen.findByRole('button', { name: 'C.png' })
+    const inside = listOf('A.png')
+    expect(namesIn(inside)).toEqual(['Norte', 'Sur', 'A.png', 'B.png', 'C.png'])
+    const drag = dragKit()
+    try {
+      // C, encima de A: la raya, y al soltar, delante de A y dentro de Mapas
+      drag.start(rowOf('C.png'))
+      drag.over(rowOf('A.png'), 10)
+      expect(rowOf('A.png').dataset.drop).toBe('before')
+      drag.drop(rowOf('A.png'), 10)
+      await waitFor(() => expect(namesIn(listOf('C.png'))).toEqual(['Norte', 'Sur', 'C.png', 'A.png', 'B.png']))
+      expect(listOf('C.png')).toBe(inside)
+      expect(rowOf('C.png').classList.contains('received')).toBe(true)
+      expect(api.files.find((f) => f.name === 'C.png')?.position).toBeNull()
+      release()
+      // En el servidor, la primera vez, con los puestos de los tres
+      await waitFor(() => expect(api.files.filter((f) => f.folderId === maps.id).every((f) => f.position)).toBe(true))
+      expect(await screen.findByText('«C.png», en su nuevo sitio')).toBeDefined()
+      expect(namesIn(listOf('C.png'))).toEqual(['Norte', 'Sur', 'C.png', 'A.png', 'B.png'])
+      // Donde ya está (debajo de la de encima) no se marca: no cambiaría nada
+      drag.start(rowOf('A.png'))
+      drag.over(rowOf('C.png'), 90)
+      expect(rowOf('C.png').dataset.drop).toBeUndefined()
+      // Junto a una carpeta de su misma carpeta, tampoco: allí solo se ordena entre archivos
+      drag.over(rowOf('Sur'), 90)
+      expect(rowOf('Sur').dataset.drop).toBeUndefined()
+      // Debajo de B, sí
+      drag.over(rowOf('B.png'), 90)
+      expect(rowOf('B.png').dataset.drop).toBe('after')
+      drag.drop(rowOf('B.png'), 90)
+      await waitFor(() => expect(namesIn(listOf('A.png'))).toEqual(['Norte', 'Sur', 'C.png', 'B.png', 'A.png']))
+      // Las carpetas, entre ellas: Sur, encima de Norte
+      drag.start(rowOf('Sur'))
+      drag.over(rowOf('Norte'), 10)
+      expect(rowOf('Norte').dataset.drop).toBe('before')
+      drag.drop(rowOf('Norte'), 10)
+      await waitFor(() => expect(namesIn(listOf('Sur'))).toEqual(['Sur', 'Norte', 'C.png', 'B.png', 'A.png']))
+      await waitFor(async () =>
+        expect(
+          (await api.client.call('listFiles', { worldId: WORLD.id })).folders
+            .filter((f) => f.parentId === maps.id)
+            .map((f) => f.name)
+        ).toEqual(['Sur', 'Norte'])
+      )
+      // Uno de fuera, dentro y en su puesto: encima de B
+      drag.start(rowOf('Fuera.png'))
+      drag.over(rowOf('B.png'), 10)
+      expect(rowOf('B.png').dataset.drop).toBe('before')
+      drag.drop(rowOf('B.png'), 10)
+      await waitFor(() =>
+        expect(namesIn(listOf('B.png'))).toEqual(['Sur', 'Norte', 'C.png', 'Fuera.png', 'B.png', 'A.png'])
+      )
+      await waitFor(() => expect(api.files.find((f) => f.name === 'Fuera.png')?.folderId).toBe(maps.id))
+    } finally {
+      drag.restore()
+    }
+  })
+
+  it('si el servidor no deja recolocarlo, vuelve a su puesto', async () => {
+    const maps = folderOf('Mapas')
+    const api = fakeApi({
+      organizations: [ORG],
+      worlds: [WORLD],
+      folders: [maps],
+      files: [
+        { worldId: WORLD.id, name: 'A.png', kind: 'image', folderId: maps.id },
+        { worldId: WORLD.id, name: 'B.png', kind: 'image', folderId: maps.id }
+      ]
+    })
+    const call = api.client.call
+    let fail = () => {}
+    api.client.call = (async (name, input) => {
+      if (name === 'moveFile') {
+        // Falla cuando ya se ve recolocado
+        await new Promise<void>((resolve) => {
+          fail = resolve
+        })
+        throw new ApiError('NOT_SIBLING', 400)
+      }
+      return call(name, input)
+    }) as typeof call
+    renderAt(`/mundos/${WORLD.id}/archivos`, api)
+    await userEvent.click(await screen.findByRole('button', { name: 'Mapas' }))
+    await screen.findByRole('button', { name: 'B.png' })
+    const drag = dragKit()
+    try {
+      drag.start(rowOf('B.png'))
+      drag.over(rowOf('A.png'), 10)
+      drag.drop(rowOf('A.png'), 10)
+      await waitFor(() => expect(namesIn(listOf('B.png'))).toEqual(['B.png', 'A.png']))
+      fail()
+      await waitFor(() => expect(namesIn(listOf('B.png'))).toEqual(['A.png', 'B.png']))
+      expect(await screen.findByText('Solo se ordena junto a otro de su tipo en su carpeta')).toBeDefined()
+      expect(api.files.every((f) => f.position === null)).toBe(true)
+    } finally {
+      drag.restore()
+    }
+  })
+
   it('mantener lo arrastrado sobre una carpeta cerrada la despliega sola', async () => {
     const maps = folderOf('Mapas')
     const api = fakeApi({
@@ -588,6 +723,58 @@ describe('los archivos comunes de la cuenta (ADR-0005)', () => {
       drag.over(rowOf('Mapa de Eana.png'), 10)
       expect(rowOf('Mapa de Eana.png').dataset.drop).toBeUndefined()
       drag.end(rowOf('Escudo.png'))
+    } finally {
+      drag.restore()
+    }
+  })
+
+  it('en un mundo, sus carpetas se recolocan hasta justo antes de «Comunes» (siempre tras ellas), y los comunes, entre ellos', async () => {
+    const api = fakeApi({
+      organizations: [ORG],
+      worlds: [WORLD],
+      folders: [folderOf('Mapas'), folderOf('Retratos')],
+      files: [
+        { worldId: null, organizationId: ORG.id, name: 'Escudo.png', kind: 'image' },
+        { worldId: null, organizationId: ORG.id, name: 'Lema.png', kind: 'image' }
+      ]
+    })
+    renderAt(`/mundos/${WORLD.id}/archivos`, api)
+    await screen.findByRole('button', { name: 'Comunes' })
+    const root = screen.getByRole('list', { name: 'Archivos' })
+    expect(namesIn(root)).toEqual(['Mapas', 'Retratos', 'Comunes'])
+    const drag = dragKit()
+    try {
+      // Mapas, encima de «Comunes»: detrás de la última del mundo
+      drag.start(rowOf('Mapas'))
+      drag.over(rowOf('Comunes'), 10)
+      expect(rowOf('Comunes').dataset.drop).toBe('before')
+      drag.drop(rowOf('Comunes'), 10)
+      await waitFor(() => expect(namesIn(root)).toEqual(['Retratos', 'Mapas', 'Comunes']))
+      await waitFor(async () =>
+        expect((await api.client.call('listFiles', { worldId: WORLD.id })).folders.map((f) => f.name)).toEqual([
+          'Retratos',
+          'Mapas'
+        ])
+      )
+      // Ahí ya está: no se marca
+      drag.start(rowOf('Mapas'))
+      drag.over(rowOf('Comunes'), 10)
+      expect(rowOf('Comunes').dataset.drop).toBeUndefined()
+      drag.end(rowOf('Mapas'))
+      // Dentro de «Comunes», Lema delante de Escudo
+      await userEvent.click(screen.getByRole('button', { name: 'Comunes' }))
+      await screen.findByRole('button', { name: 'Lema.png' })
+      drag.start(rowOf('Lema.png'))
+      drag.over(rowOf('Escudo.png'), 10)
+      expect(rowOf('Escudo.png').dataset.drop).toBe('before')
+      drag.drop(rowOf('Escudo.png'), 10)
+      await waitFor(() => expect(namesIn(listOf('Lema.png'))).toEqual(['Lema.png', 'Escudo.png']))
+      await waitFor(async () =>
+        expect((await api.client.call('listCommonFiles', {})).files.map((f) => f.name)).toEqual([
+          'Lema.png',
+          'Escudo.png'
+        ])
+      )
     } finally {
       drag.restore()
     }

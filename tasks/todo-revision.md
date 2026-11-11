@@ -74,6 +74,10 @@ Plan: `tasks/plan-revision.md`. Una tanda cada vez: se enseña en local, Enrique
 - [x] Archivos, tras probarla Enrique: al buscar, lo encontrado dentro de sus carpetas (el árbol hasta él); buscar por
   #etiqueta en el mismo buscador (fuera el desplegable); «Subir archivos» y «Nueva carpeta» con nombre fijo, en lo
   más alto, y en cada carpeta, al pasar el ratón, «Subir aquí» y «Carpeta dentro» (fuera la carpeta elegida).
+- [x] Archivos en el orden que se quiera (Enrique: «no puedo recolocar dentro de una carpeta»): `position` en
+  `files` y `file_folders` (migración 0075, aplicada en local), `moveFile`/`updateFolder` con `before`/`after`,
+  `placeAmong` genérico (las etiquetas lo usan), al momento en la caché (`wiki/file-order.ts`); nota en el ADR-0005.
+- [ ] Archivos con el teclado (Alt + flechas) y herramientas MCP para mover archivos y carpetas: si Enrique quiere.
 - [x] Etiquetas: `tags.position` (migración 0074, nota en el ADR-0006), `moveTag` y MCP `mover_etiqueta`; se
   arrastran como las páginas del mundo: raya delante o detrás para ordenar, la fila resaltada para meterla dentro, y
   llevada a la izquierda sale de su madre. Fuera «Arriba del todo» (Enrique, 2026-11-12).

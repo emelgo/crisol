@@ -86,6 +86,54 @@ test('subir archivos: salen en la lista, se sirven tal cual, se ordenan en carpe
   await expect(page.getByRole('link', { name: 'Bestiario.pdf', exact: true })).toBeVisible()
 })
 
+test('recolocar dentro de una carpeta: soltado encima o debajo de otro archivo de ella, cambia de puesto sin salir', async ({
+  page
+}) => {
+  await openFiles(page)
+  const worldId = new URL(page.url()).pathname.split('/')[2] ?? ''
+  const origin = new URL(page.url()).origin
+  const folder = await (
+    await page.request.post('/api/actions/createFolder', { data: { worldId, name: 'Mapas' } })
+  ).json()
+  for (const name of ['A.png', 'B.png', 'C.png']) {
+    const uploaded = await page.request.post(`/api/files?worldId=${worldId}&folderId=${folder.id}&name=${name}`, {
+      data: PNG,
+      headers: { origin, 'content-type': 'application/octet-stream' }
+    })
+    expect(uploaded.status()).toBe(201)
+  }
+  await page.reload()
+  const mapas = page.getByRole('button', { name: 'Mapas', exact: true })
+  await mapas.click()
+  // Lo de dentro de Mapas, en el orden en que se ve
+  const inside = page
+    .getByRole('listitem')
+    .filter({ has: mapas })
+    .getByRole('list')
+    .locator(':scope > li > [data-file-card]')
+  const row = (name: string) =>
+    page.locator('[data-file-card]').filter({ has: page.getByRole('button', { name, exact: true }) })
+  await expect(inside).toHaveText([/A\.png/, /B\.png/, /C\.png/])
+  // C, a lo alto de la fila de A: delante de A, y sigue en Mapas
+  await row('C.png').dragTo(row('A.png'), { targetPosition: { x: 60, y: 3 } })
+  await expect(inside).toHaveText([/C\.png/, /A\.png/, /B\.png/])
+  await expect(page.getByRole('status').getByText('«C.png», en su nuevo sitio')).toBeAttached()
+  // B, a lo bajo de la fila de C: detrás de C
+  const height = (await row('C.png').boundingBox())?.height ?? 40
+  await row('B.png').dragTo(row('C.png'), { targetPosition: { x: 60, y: height - 3 } })
+  await expect(inside).toHaveText([/C\.png/, /B\.png/, /A\.png/])
+  // Así queda en el servidor, todos en Mapas; y al volver, igual
+  await expect
+    .poll(async () => {
+      const { files } = await (await page.request.post('/api/actions/listFiles', { data: { worldId } })).json()
+      return files.map((f: { name: string; folderId: string }) => `${f.name}:${f.folderId === folder.id}`)
+    })
+    .toEqual(['C.png:true', 'B.png:true', 'A.png:true'])
+  await page.reload()
+  await mapas.click()
+  await expect(inside).toHaveText([/C\.png/, /B\.png/, /A\.png/])
+})
+
 test('los archivos, en los dos temas @a11y', async ({ page }) => {
   await openFiles(page)
   await worldUpload(page).setInputFiles([
