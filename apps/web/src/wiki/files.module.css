@@ -422,17 +422,6 @@
   }
 }
 
-/* La carpeta elegida (adonde va lo que se sube o se crea): un poco teñida, con su icono en color */
-.picked {
-  background: color-mix(in srgb, var(--color-accent-text) 9%, transparent);
-}
-
-@media (hover: hover) {
-  .picked:hover {
-    background: color-mix(in srgb, var(--color-accent-text) 13%, transparent);
-  }
-}
-
 /* Arrastrar, como las páginas del mundo: una raya encima o debajo (desde el nivel donde cae, que dice a qué carpeta
    va), o la carpeta resaltada si va dentro, con «Mover aquí» */
 .treeRow[data-drop="before"]::before,
@@ -511,10 +500,6 @@
   background: none;
 }
 
-.picked .folderThumb {
-  color: var(--color-accent-text);
-}
-
 .rowText {
   display: flex;
   flex-direction: column;
@@ -558,10 +543,35 @@
   white-space: nowrap;
 }
 
-/* Con lo arrastrado encima, «Mover aquí» */
-.treeRow[data-drop="inside"] .rowMeta {
-  color: var(--color-accent-text);
-  font-weight: 700;
+/* Cuánto tiene una carpeta y, en su mismo sitio, sus dos botones (subir a ella, crear una dentro), que salen al pasar
+   el ratón o con el foco: nada se mueve ni se descuadra con las filas de archivo */
+.folderMeta {
+  display: grid;
+  align-items: center;
+  justify-items: end;
+}
+
+.folderMeta > * {
+  grid-area: 1 / 1;
+}
+
+.rowActions {
+  display: flex;
+  gap: var(--space-1);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease-out;
+}
+
+.treeRow:hover .rowActions,
+.treeRow:focus-within .rowActions {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.treeRow:hover .folderMeta:has(.rowActions) > .rowMeta,
+.treeRow:focus-within .folderMeta:has(.rowActions) > .rowMeta {
+  opacity: 0;
 }
 
 .rowProgress {
@@ -629,8 +639,6 @@
     transform: translateX(-12px);
   }
 }
-
-
 
 /* La casilla para elegir, sobre la miniatura: se ve al pasar el ratón, con el foco, elegida o mientras se elige */
 .pick {

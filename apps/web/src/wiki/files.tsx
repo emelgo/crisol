@@ -17,6 +17,7 @@ import {
   FileText,
   Folder,
   FolderOpen,
+  FolderPlus,
   Search,
   Settings,
   Trash2,
@@ -395,9 +396,9 @@ function FilesSection({
     }
   }, [ownData, common?.data, common?.target.organizationId, commonLabel])
   const several = useRef<HTMLInputElement>(null)
+  // Adónde va lo que se elige en el campo de archivos: lo más alto (null) o la carpeta de cuyo botón se subió
+  const uploadPlace = useRef<string | null>(null)
   const center = useRef<HTMLDivElement>(null)
-  // La carpeta elegida (la última pulsada): adonde va lo que se sube o se crea; null, a lo más alto
-  const [picked, setPicked] = useState<string | null>(null)
   // Las carpetas desplegadas
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set())
   const [query, setQuery] = useState('')
@@ -430,23 +431,6 @@ function FilesSection({
   useEffect(() => setHovered(null), [query, kind])
   useEffect(() => setChosen(new Map()), [query, kind])
   const stopChoosing = () => setChosen(new Map())
-  // Escape, o pulsar fuera de la columna del centro (la lista, sus botones y sus ventanas), suelta la elegida
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && !(event.target instanceof Element && event.target.closest('dialog')))
-        setPicked(null)
-    }
-    const onClick = (event: MouseEvent) => {
-      const at = event.target
-      if (at instanceof Node && at.isConnected && !center.current?.contains(at)) setPicked(null)
-    }
-    document.addEventListener('keydown', onKey)
-    document.addEventListener('click', onClick)
-    return () => {
-      document.removeEventListener('keydown', onKey)
-      document.removeEventListener('click', onClick)
-    }
-  }, [])
   useEffect(
     () => () => {
       window.clearTimeout(armTimer.current)
@@ -529,7 +513,6 @@ function FilesSection({
   // De qué ámbito es una carpeta, para lo que se le suelta (en los comunes de Inicio no hay «Comunes» y todo es común)
   const scopeAt = (folderId: string | null): Realm => ('worldId' in placeOf(folderId).target ? 'mundo' : 'comun')
   // Si la elegida deja de existir (borrada aquí o en otra pestaña), a lo más alto
-  const active = picked && byId.has(picked) ? picked : null
   const pathOf = (id: string | null): FolderView[] => {
     const path: FolderView[] = []
     for (let at = id ? byId.get(id) : undefined; at; at = at.parentId ? byId.get(at.parentId) : undefined) {
@@ -610,7 +593,6 @@ function FilesSection({
       else next.delete(folder.id)
       return next
     })
-    setPicked(open ? folder.id : (folder.parentId ?? null))
   }
   const expand = (id: string | null) => {
     if (id) setExpanded((current) => (current.has(id) ? current : new Set(current).add(id)))
@@ -776,19 +758,19 @@ function FilesSection({
       if (over) setOver(false)
       return
     }
-    if (!placeOf(active).canWrite) return
+    if (!placeOf(null).canWrite) return
     event.preventDefault()
     setOver(true)
   }
-  // Soltados en la pantalla, fuera de las filas: a la elegida
+  // Soltados en la pantalla, fuera de las filas: a lo más alto
   const dropOnZone = async (event: DragEvent) => {
     if (!external(event)) return
     event.preventDefault()
     setOver(false)
     setDrop(null)
     disarm()
-    const here = placeOf(active)
-    if (here.canWrite) uploads.add(await droppedFiles(event.dataTransfer), here.target, here.folderId, active)
+    const here = placeOf(null)
+    if (here.canWrite) uploads.add(await droppedFiles(event.dataTransfer), here.target, here.folderId, null)
   }
 
   const rowProps = { folders, onChanged: refresh }
@@ -813,7 +795,6 @@ function FilesSection({
               folder={folder}
               depth={depth}
               open={open}
-              picked={active === folder.id}
               counts={countsOf(folder.id)}
               canWrite={writable}
               fresh={fresh(folder.id)}
@@ -826,6 +807,12 @@ function FilesSection({
                       scopeAt(folder.id)
                     )
               }
+              {...(placeOf(folder.id).canWrite && !searching
+                ? {
+                    onUpload: () => uploadInto(folder.id),
+                    newFolder: { target: placeOf(folder.id).target, parentId: placeOf(folder.id).folderId }
+                  }
+                : {})}
               onToggle={() => toggle(folder)}
               onPreview={preview('folder', folder.id)}
               onChanged={refresh}
@@ -862,16 +849,20 @@ function FilesSection({
       ))
     ]
   }
-  const activeName = active ? (byId.get(active)?.name ?? '') : ''
+  // Subir: el botón de arriba, a lo más alto; el de cada carpeta, a ella (el mismo campo de archivos)
+  const uploadInto = (folderId: string | null) => {
+    uploadPlace.current = folderId
+    several.current?.click()
+  }
   const tools = (
     <div className={styles.tools}>
-      {placeOf(active).canWrite && (
+      {placeOf(null).canWrite && (
         <>
           <button
             type="button"
             className={`${form.button} ${styles.uploadButton}`}
             data-tour="archivos-subir"
-            onClick={() => several.current?.click()}
+            onClick={() => uploadInto(null)}
           >
             <UploadIcon aria-hidden="true" size={16} />
             <span className={styles.uploadLabel}>{t('files.upload')}</span>
@@ -883,8 +874,11 @@ function FilesSection({
             accept={UPLOAD_ACCEPT}
             hidden
             onChange={(event) => {
-              const here = placeOf(active)
-              uploads.add([...(event.currentTarget.files ?? [])], here.target, here.folderId, active)
+              const place = uploadPlace.current
+              const here = placeOf(place)
+              uploads.add([...(event.currentTarget.files ?? [])], here.target, here.folderId, place)
+              // Lo que sube a una carpeta, a la vista en ella
+              expand(place)
               event.currentTarget.value = ''
             }}
           />
@@ -914,7 +908,7 @@ function FilesSection({
       </div>
     </div>
   )
-  const newHere = placeOf(active)
+  const newHere = placeOf(null)
   const contents = (
     <SelectionContext value={selection}>
       <div className={styles.contents} data-selecting={selection.active || undefined}>
@@ -941,7 +935,7 @@ function FilesSection({
               <NewFolder
                 target={newHere.target}
                 parentId={newHere.folderId}
-                label={active ? t('files.newFolderIn', { folder: activeName }) : t('files.newFolder')}
+                label={t('files.newFolder')}
                 onCreated={refresh}
               />
             </li>
@@ -1196,11 +1190,12 @@ function FolderRow({
   folder,
   depth,
   open,
-  picked,
   counts,
   canWrite,
   fresh,
   drag,
+  onUpload,
+  newFolder,
   onToggle,
   onPreview,
   onChanged
@@ -1208,9 +1203,10 @@ function FolderRow({
   folder: FolderView
   depth: number
   open: boolean
-  /** La elegida: adonde va lo que se sube o se crea */
-  picked: boolean
   counts: string
+  /** Subir a ella y crear una dentro: dos botones que salen al pasar el ratón (si se puede escribir en ella) */
+  onUpload?: () => void
+  newFolder?: { target: Target; parentId: string | null }
   /** Se puede cambiar (la de «Comunes» en un mundo, no: ni se renombra ni se borra) */
   canWrite: boolean
   fresh: boolean
@@ -1220,7 +1216,8 @@ function FolderRow({
   onPreview: (shown: boolean) => void
   onChanged: () => Promise<unknown>
 }) {
-  const classes = [styles.row, styles.treeRow, picked ? styles.picked : '', fresh ? styles.appear : '', drag.className]
+  const { t } = useTranslation()
+  const classes = [styles.row, styles.treeRow, fresh ? styles.appear : '', drag.className]
   return (
     <div
       {...drag.attrs}
@@ -1250,7 +1247,6 @@ function FolderRow({
           type="button"
           className={`${styles.rowName} ${styles.open}`}
           aria-expanded={open}
-          aria-current={picked ? 'true' : undefined}
           onClick={onToggle}
           onKeyDown={(event) => {
             if ((event.key === 'ArrowRight' && !open) || (event.key === 'ArrowLeft' && open)) {
@@ -1262,7 +1258,34 @@ function FolderRow({
           {folder.name}
         </button>
       </span>
-      <span className={styles.rowMeta}>{counts}</span>
+      {/* Cuánto tiene; al pasar el ratón (o con el foco), en su sitio, subir a ella y crear una dentro */}
+      <span className={styles.folderMeta}>
+        <span className={styles.rowMeta}>{counts}</span>
+        {(onUpload || newFolder) && (
+          <span className={styles.rowActions}>
+            {onUpload && (
+              <button
+                type="button"
+                className={styles.smallGear}
+                aria-label={t('files.uploadInto', { folder: folder.name })}
+                title={t('files.uploadHere')}
+                onClick={onUpload}
+              >
+                <UploadIcon aria-hidden="true" size={15} />
+              </button>
+            )}
+            {newFolder && (
+              <NewFolder
+                shape="icon"
+                target={newFolder.target}
+                parentId={newFolder.parentId}
+                label={t('files.newFolderIn', { folder: folder.name })}
+                onCreated={onChanged}
+              />
+            )}
+          </span>
+        )}
+      </span>
       {canWrite ? <FolderSettings folder={folder} onChanged={onChanged} /> : <span />}
     </div>
   )
@@ -1316,12 +1339,15 @@ function NewFolder({
   target,
   parentId,
   label,
+  shape = 'row',
   onCreated
 }: {
   target: Target
   parentId: string | null
-  /** «Nueva carpeta» o, con una elegida, «Nueva carpeta en …» */
+  /** «Nueva carpeta» (al final de la lista, en lo más alto) o «Nueva carpeta en …» (el icono de una carpeta) */
   label: string
+  /** row: la fila del final; icon: el botón pequeño de una carpeta */
+  shape?: 'row' | 'icon'
   onCreated: () => Promise<unknown>
 }) {
   const { t } = useTranslation()
@@ -1341,18 +1367,36 @@ function NewFolder({
   })
   return (
     <>
-      <NewCard
-        ref={trigger}
-        shape="row"
-        label={label}
-        className={styles.newFolder}
-        aria-haspopup="dialog"
-        onClick={() => {
-          setName('')
-          create.reset()
-          setOpen(true)
-        }}
-      />
+      {shape === 'icon' ? (
+        <button
+          ref={trigger}
+          type="button"
+          className={styles.smallGear}
+          aria-label={label}
+          title={t('files.newFolderHere')}
+          aria-haspopup="dialog"
+          onClick={() => {
+            setName('')
+            create.reset()
+            setOpen(true)
+          }}
+        >
+          <FolderPlus aria-hidden="true" size={15} />
+        </button>
+      ) : (
+        <NewCard
+          ref={trigger}
+          shape="row"
+          label={label}
+          className={styles.newFolder}
+          aria-haspopup="dialog"
+          onClick={() => {
+            setName('')
+            create.reset()
+            setOpen(true)
+          }}
+        />
+      )}
       {open && (
         <Modal
           ref={dialog}

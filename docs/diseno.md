@@ -294,9 +294,10 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 - **Archivos, sin árbol a la izquierda: la lista del centro es el árbol** (Enrique, 2026-11-11: «el árbol de la
   izquierda no tiene sentido, ya tenemos la visión del árbol en el centro»): pulsar una carpeta la despliega ahí mismo,
   con lo de dentro sangrado (no se entra en ella), y al arrastrar un archivo y mantenerlo sobre una carpeta cerrada, se
-  despliega sola. La vista previa, a la izquierda. **Solo en lista** (Enrique, 2026-11-12: fuera las tarjetas). Lo que
-  se sube o se crea va a la carpeta elegida (la última pulsada, que se ve marcada); **«Subir archivos» no cambia de
-  nombre** (un nombre de carpeta largo lo rompería). **Al buscar, por nombre o #etiqueta** (como en las páginas; sin
+  despliega sola. La vista previa, a la izquierda. **Solo en lista** (Enrique, 2026-11-12: fuera las tarjetas). **«Subir
+  archivos» y «Nueva carpeta» no cambian de nombre** (un nombre de carpeta largo los rompería) y suben y crean en lo
+  más alto; **cada carpeta, al pasar el ratón, lleva sus botones «Subir aquí» y «Carpeta dentro»** en el sitio de lo
+  que tiene (Enrique, 2026-11-12: «al subir un archivo también debe permitir dónde se sube»). **Al buscar, por nombre o #etiqueta** (como en las páginas; sin
   filtro aparte), lo encontrado sale dentro de sus carpetas, desplegadas: el árbol hasta él. Se construye en la tanda 2 de la
   revisión (lienzo «Archivos sin árbol», aprobado); sustituye a lo del árbol y de las tarjetas de la norma de abajo.
 - **Archivos, como un explorador**: carpetas unas dentro de otras, en la lista (ver la norma de arriba, «sin árbol a la

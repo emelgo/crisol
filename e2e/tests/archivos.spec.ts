@@ -44,7 +44,7 @@ test('subir archivos: salen en la lista, se sirven tal cual, se ordenan en carpe
   await expect(files.getByRole('button', { name: 'Mapa de Eana (2).png', exact: true })).toBeVisible()
 
   // Una carpeta (la fila del final de la lista), y el bestiario dentro, arrastrándolo al centro de su fila
-  await page.getByRole('button', { name: 'Nueva carpeta' }).click()
+  await page.getByRole('button', { name: 'Nueva carpeta', exact: true }).click()
   const create = page.getByRole('dialog', { name: 'Nueva carpeta' })
   await create.getByLabel('Nombre de la carpeta').fill('Bestias')
   await create.getByRole('button', { name: 'Crear la carpeta' }).click()

@@ -210,30 +210,31 @@ describe('los archivos del mundo', () => {
 })
 
 describe('las carpetas, en la misma lista (su árbol)', () => {
-  it('pulsar una carpeta la despliega en su sitio y la elige: lo que se sube o se crea va a ella; otra vez, se pliega', async () => {
+  it('pulsar una carpeta la despliega en su sitio; sus botones suben a ella y crean dentro; los de fuera, en lo más alto', async () => {
     const api = renderAt(`/mundos/${WORLD.id}/archivos`)
+    // «Nueva carpeta», con su nombre fijo, en lo más alto
     await userEvent.click(await screen.findByRole('button', { name: 'Nueva carpeta' }))
     const create = within(await screen.findByRole('dialog', { name: 'Nueva carpeta' }))
     await userEvent.type(create.getByLabelText('Nombre de la carpeta'), 'Mapas')
     await userEvent.click(create.getByRole('button', { name: 'Crear la carpeta' }))
     const maps = await screen.findByRole('button', { name: 'Mapas' })
+    const [folder] = (await api.client.call('listFiles', { worldId: WORLD.id })).folders
+    expect(folder?.parentId).toBeNull()
     expect(maps.getAttribute('aria-expanded')).toBe('false')
     await userEvent.click(maps)
-    // Desplegada y elegida, sin entrar en ella: lo de fuera sigue a la vista
+    // Desplegada, sin entrar en ella: lo de fuera sigue a la vista
     expect(maps.getAttribute('aria-expanded')).toBe('true')
-    expect(maps.getAttribute('aria-current')).toBe('true')
     expect(screen.getByRole('button', { name: 'Mapa de Eana.png' })).toBeDefined()
-    // El botón no cambia de nombre (Enrique: con un nombre de carpeta largo daría problemas): va a la elegida
-    expect(screen.getByRole('button', { name: 'Subir archivos' })).toBeDefined()
+    // Su botón de subir: a ella, y sale dentro, sangrada debajo
     const input = document.querySelector<HTMLInputElement>('input[type=file][multiple]')
     if (!input) throw new Error('sin campo de archivos')
+    await userEvent.click(screen.getByRole('button', { name: 'Subir archivos a Mapas' }))
     await userEvent.upload(input, [new File(['png'], 'Costa.png', { type: 'image/png' })])
     expect(await screen.findByRole('button', { name: 'Costa.png' })).toBeDefined()
-    const [folder] = (await api.client.call('listFiles', { worldId: WORLD.id })).folders
     expect(api.files.find((f) => f.name === 'Costa.png')?.folderId).toBe(folder?.id)
-    // Sale dentro de ella, sangrada debajo
     await waitFor(() => expect(listOf('Costa.png')).not.toBe(listOf('Mapas')))
     expect(maps.closest('li')?.contains(rowOf('Costa.png'))).toBe(true)
+    // Su botón de carpeta: una dentro (el cuadro dice dónde)
     await userEvent.click(screen.getByRole('button', { name: 'Nueva carpeta en Mapas' }))
     const inside = within(await screen.findByRole('dialog', { name: 'Nueva carpeta en Mapas' }))
     await userEvent.type(inside.getByLabelText('Nombre de la carpeta'), 'Norte')
@@ -241,15 +242,18 @@ describe('las carpetas, en la misma lista (su árbol)', () => {
     expect(await screen.findByRole('button', { name: 'Norte' })).toBeDefined()
     const folders = (await api.client.call('listFiles', { worldId: WORLD.id })).folders
     expect(folders.find((f) => f.name === 'Norte')?.parentId).toBe(folder?.id)
-    // Otra vez: se pliega y queda elegida su madre (lo más alto)
+    // «Subir archivos» de arriba, con su nombre fijo: a lo más alto
+    await userEvent.click(screen.getByRole('button', { name: 'Subir archivos' }))
+    await userEvent.upload(input, [new File(['png'], 'Faro.png', { type: 'image/png' })])
+    expect(await screen.findByRole('button', { name: 'Faro.png' })).toBeDefined()
+    expect(api.files.find((f) => f.name === 'Faro.png')?.folderId).toBeNull()
+    // Otra vez: se pliega
     await userEvent.click(maps)
     expect(maps.getAttribute('aria-expanded')).toBe('false')
     expect(screen.queryByRole('button', { name: 'Costa.png' })).toBeNull()
-    expect(screen.getByRole('button', { name: 'Subir archivos' })).toBeDefined()
-    expect(screen.getByRole('button', { name: 'Nueva carpeta' })).toBeDefined()
   })
 
-  it('con el teclado: Intro, la flecha derecha la abre y la izquierda la cierra; Escape o pulsar fuera la suelta', async () => {
+  it('con el teclado: Intro, la flecha derecha la abre y la izquierda la cierra', async () => {
     const maps = folderOf('Mapas')
     const api = fakeApi({
       organizations: [ORG],
@@ -267,17 +271,6 @@ describe('las carpetas, en la misma lista (su árbol)', () => {
     expect(button.getAttribute('aria-expanded')).toBe('false')
     await userEvent.keyboard('{Enter}')
     expect(button.getAttribute('aria-expanded')).toBe('true')
-    expect(button.getAttribute('aria-current')).toBe('true')
-    // Escape la suelta (sigue desplegada)
-    await userEvent.keyboard('{Escape}')
-    expect(button.getAttribute('aria-current')).not.toBe('true')
-    expect(button.getAttribute('aria-expanded')).toBe('true')
-    // Y pulsar fuera de la columna, también
-    await userEvent.click(button)
-    await userEvent.click(button)
-    expect(button.getAttribute('aria-current')).toBe('true')
-    await userEvent.click(document.body)
-    expect(button.getAttribute('aria-current')).not.toBe('true')
   })
 
   it('arrastrar, como las páginas: en medio de una carpeta, dentro; encima o debajo de una fila, a su carpeta; se ve al momento', async () => {
@@ -559,7 +552,7 @@ describe('los archivos comunes de la cuenta (ADR-0005)', () => {
     expect(screen.queryByRole('checkbox', { name: 'Elegir Comunes' })).toBeNull()
     const input = document.querySelector<HTMLInputElement>('input[type=file][multiple]')
     if (!input) throw new Error('sin campo de archivos')
-    expect(screen.getByRole('button', { name: 'Comunes' }).getAttribute('aria-current')).toBe('true')
+    await userEvent.click(screen.getByRole('button', { name: 'Subir archivos a Comunes' }))
     await userEvent.upload(input, [new File(['png'], 'Sello.png', { type: 'image/png' })])
     expect(await screen.findByRole('button', { name: 'Sello.png' })).toBeDefined()
     expect(api.files.find((f) => f.name === 'Sello.png')).toMatchObject({

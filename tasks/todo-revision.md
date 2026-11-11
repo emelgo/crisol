@@ -72,8 +72,8 @@ Plan: `tasks/plan-revision.md`. Una tanda cada vez: se enseña en local, Enrique
   momento, vista previa a la izquierda (también en Etiquetas). Fuera el árbol, las tarjetas y «Mover aquí».
 - [x] Etiquetas con el teclado: flechas para moverse y Alt + flechas para recolocar (`keyboardMove`).
 - [x] Archivos, tras probarla Enrique: al buscar, lo encontrado dentro de sus carpetas (el árbol hasta él); buscar por
-  #etiqueta en el mismo buscador (fuera el desplegable); «Subir archivos» con nombre fijo; «Nueva carpeta en…»,
-  cortado con puntos suspensivos si no cabe.
+  #etiqueta en el mismo buscador (fuera el desplegable); «Subir archivos» y «Nueva carpeta» con nombre fijo, en lo
+  más alto, y en cada carpeta, al pasar el ratón, «Subir aquí» y «Carpeta dentro» (fuera la carpeta elegida).
 - [x] Etiquetas: `tags.position` (migración 0074, nota en el ADR-0006), `moveTag` y MCP `mover_etiqueta`; se
   arrastran como las páginas del mundo: raya delante o detrás para ordenar, la fila resaltada para meterla dentro, y
   llevada a la izquierda sale de su madre. Fuera «Arriba del todo» (Enrique, 2026-11-12).
