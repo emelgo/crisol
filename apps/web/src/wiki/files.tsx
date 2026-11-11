@@ -210,17 +210,19 @@ function Pick({ id, what, name }: { id: string; what: 'file' | 'folder'; name: s
   const { t } = useTranslation()
   const selection = useContext(SelectionContext)
   if (!selection) return null
+  // La casilla, en una zona de 24 px que también la marca (el tamaño mínimo que se pulsa, WCAG 2.5.8)
   return (
-    <input
-      type="checkbox"
-      className={styles.pick}
-      checked={selection.has(id)}
-      aria-label={t('files.choose', { name })}
-      onChange={(event) => {
-        const native = event.nativeEvent as Partial<MouseEvent>
-        selection.toggle(id, what, Boolean(native.shiftKey))
-      }}
-    />
+    <label className={styles.pick}>
+      <input
+        type="checkbox"
+        checked={selection.has(id)}
+        aria-label={t('files.choose', { name })}
+        onChange={(event) => {
+          const native = event.nativeEvent as Partial<MouseEvent>
+          selection.toggle(id, what, Boolean(native.shiftKey))
+        }}
+      />
+    </label>
   )
 }
 
@@ -605,7 +607,8 @@ function FilesSection({
     for (const row of listRef.current?.querySelectorAll<HTMLElement>('[data-file-card][tabindex]') ?? []) {
       const active = row.tabIndex === 0
       for (const control of row.querySelectorAll<HTMLElement>('button, a[href], input')) {
-        control.tabIndex = active ? 0 : -1
+        const wanted = active ? 0 : -1
+        if (control.tabIndex !== wanted) control.tabIndex = wanted
       }
     }
     const wanted = pendingFocus.current

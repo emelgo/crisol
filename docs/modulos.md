@@ -14,7 +14,9 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   Mayús+clic; mover y etiquetar lo elegido de una vez (`moveFiles`, `addFileTags`, MCP `mover_archivos` y
   `etiquetar_archivos`); el hueco de la portada que sube o recibe una imagen; Etiquetas plegables y la fila que abre su
   ventana. Normas en `docs/diseno.md`, nota en el ADR-0005, pruebas para Enrique en `tasks/probar.md`.
-- **Siguiente**: e2e de lo tocado → commit → `/impeccable audit` de las mismas pantallas → cerrar la tanda 2 → tanda 3.
+- Hecho y en commit: e2e de lo tocado (12 en verde), audit (15/20) con sus arreglos (tamaños de 24 px). **Siguiente**:
+  el visto bueno de Enrique a la tanda 2 entera en local → tanda 3 (plantillas). Subir a `main` y staging, con más
+  tandas (sin pasar la CI en cada PR).
 
 ### Para retomar (2026-11-12, mediodía: tanda 2 construida, en local; falta su visto bueno, impeccable y las e2e)
 

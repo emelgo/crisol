@@ -114,6 +114,11 @@ Plan: `tasks/plan-revision.md`. Una tanda cada vez: se enseña en local, Enrique
     deshacen de una vez), con sus herramientas MCP `mover_archivos` y `etiquetar_archivos`;
   - **el hueco de la portada** sube una imagen al pulsarlo y admite soltar una;
   - **Etiquetas como Archivos**: plegables con su flecha (o derecha e izquierda) y la fila abre su ventana.
+- [x] **impeccable audit** (15/20, Bueno): detector a cero en los seis archivos; axe sin fallos en Archivos con el foco,
+  «Mover a…», «Etiquetar», la portada vacía y Etiquetas; sin desplazamiento lateral a 1024 px; en la lista solo entran
+  en el tabulador los botones de la fila con el foco. Arreglado: la flecha de Etiquetas y la zona de la casilla de
+  elegir, a 24 px (WCAG 2.5.8); el efecto del tabulador solo escribe lo que cambia. Queda (menor): las ventanas sueltas
+  (confirmar, mover, etiquetar) siguen centradas, no ancladas arriba como las de ajustes.
 - [x] Ventanas de ajustes compactas (Enrique, 2026-11-12: «no cabe y hay que hacer scroll»): letra 15 px, campos de 40 px,
   casillas de 36 px, «Otro emoji» como una casilla más; la de una carpeta cabe en 850 px de alto.
 

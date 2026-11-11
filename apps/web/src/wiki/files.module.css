@@ -656,18 +656,27 @@
 
 /* La casilla para elegir, sobre la miniatura: se ve al pasar el ratón, con el foco, elegida o mientras se elige */
 /* En su columna, a la izquierda de la fila y sin sangría: alineadas todas, sin tapar el icono ni la imagen (Enrique,
-   2026-11-12: «ese cuadro de selección habría que moverlo para que no tape») */
+   2026-11-12: «ese cuadro de selección habría que moverlo para que no tape»). La zona que se pulsa, de 24 px */
 .pick {
   position: absolute;
   inset-block: 0;
-  inset-inline-start: var(--space-2);
+  inset-inline-start: 0.25rem;
   z-index: 2;
-  inline-size: 1rem;
-  block-size: 1rem;
+  display: grid;
+  place-items: center;
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
   margin: auto 0;
-  accent-color: var(--color-accent);
   cursor: pointer;
   opacity: 0;
+}
+
+.pick input {
+  inline-size: 1rem;
+  block-size: 1rem;
+  margin: 0;
+  accent-color: var(--color-accent);
+  cursor: pointer;
 }
 
 /* Al pasar el ratón (no en lo táctil: ahí un toque deja el «hover» puesto) */
@@ -677,8 +686,8 @@
   }
 }
 
-.pick:focus-visible,
-.pick:checked,
+.pick:has(input:focus-visible),
+.pick:has(input:checked),
 [data-selecting] .pick {
   opacity: 1;
 }
