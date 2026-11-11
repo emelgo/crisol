@@ -19,6 +19,18 @@
   color: var(--color-text);
 }
 
+/* Con el teclado: el anillo del navegador quedaría fuera del corte, así que la línea toma el color del foco y crece
+   a 2px (el hueco, 2px dentro) */
+.card:focus-visible {
+  --line: var(--color-focus);
+  outline: none;
+  color: var(--color-text);
+}
+
+.card:focus-visible::before {
+  inset: 2px;
+}
+
 .card {
   position: relative;
   isolation: isolate;

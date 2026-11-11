@@ -68,7 +68,7 @@
   display: flex;
   flex-direction: column;
   animation: asoma 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
-  background: color-mix(in srgb, var(--world-color, var(--color-frame)) 55%, var(--color-frame));
+  --frame-line: color-mix(in srgb, var(--world-color, var(--color-frame)) 55%, var(--color-frame));
 }
 
 .detailBody .header {
@@ -175,14 +175,14 @@
 /* El contorno (el fondo del marco), teñido sutilmente con el color del mundo (--world-color), si lo tiene */
 .card {
   composes: frame from "../components/frame.module.css";
+  --frame-line: color-mix(in srgb, var(--world-color, var(--color-frame)) 55%, var(--color-frame));
   display: flex;
   flex-direction: column;
-  background: color-mix(in srgb, var(--world-color, var(--color-frame)) 55%, var(--color-frame));
   transition: background-color 150ms ease-out;
 }
 
 .card:hover {
-  background: color-mix(in srgb, var(--world-color, var(--color-field-border)) 70%, var(--color-field-border));
+  --frame-line: color-mix(in srgb, var(--world-color, var(--color-field-border)) 70%, var(--color-field-border));
 }
 
 /*
@@ -317,6 +317,8 @@
 .list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  /* Todas las filas del mismo alto: el «Nuevo…» que queda solo en una fila, como las tarjetas */
+  grid-auto-rows: 1fr;
   gap: var(--space-5, 1.25rem);
   margin: 0 0 var(--space-8);
   padding: 0;
@@ -462,6 +464,7 @@
    el color del mundo, aclarado lo justo para que se lea sobre lo oscuro; sin color, con el rojo de los enlaces
    (Enrique, 2026-11-11: «si selecciono color verde, debe resaltarse el color»; «debe mantenerse por coherencia») */
 .name:hover,
+.name:focus-visible,
 .card:hover .name {
   color: oklch(from var(--world-color, var(--color-accent-text)) max(l, 0.78) c h);
 }
@@ -568,7 +571,7 @@
   display: flex;
   flex-direction: column;
   margin-block-end: var(--space-8);
-  background: color-mix(in srgb, var(--world-color, var(--color-frame)) 55%, var(--color-frame));
+  --frame-line: color-mix(in srgb, var(--world-color, var(--color-frame)) 55%, var(--color-frame));
 }
 
 .hero .header {
@@ -693,6 +696,8 @@
 .dialog {
   inline-size: min(38rem, calc(100vw - 2rem));
   max-block-size: calc(100dvh - 2rem);
+  /* Anclado arriba: al crecer (la descripción, Guardar y Cancelar) baja, y nada se mueve bajo el cursor */
+  margin-block: min(12dvh, 6rem) auto;
   padding: 0;
   /* El contorno, con el color del mundo, como su tarjeta */
   border: 1px solid color-mix(in srgb, var(--world-color, var(--color-frame)) 55%, var(--color-frame));

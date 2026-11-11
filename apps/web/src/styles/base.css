@@ -113,6 +113,12 @@ textarea {
   font: inherit;
 }
 
+/* El texto de ejemplo de los campos (los buscadores), atenuado pero legible: el gris del navegador no llegaba a 4,5:1 */
+::placeholder {
+  color: var(--color-muted);
+  opacity: 1;
+}
+
 /* Sin la espera del doble toque para hacer zoom */
 a,
 button,

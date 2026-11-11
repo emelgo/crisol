@@ -1,12 +1,13 @@
 /*
  * El marco de la hoja: 1px con las esquinas cortadas. Se usa con `composes: frame from "…/frame.module.css"`.
- * El fondo del elemento es el color del marco; el ::before, 1px dentro, pone la superficie.
+ * El fondo del elemento es el color del marco (--frame-line, para teñirlo sin depender del orden de las hojas de estilo);
+ * el ::before, 1px dentro, pone la superficie.
  * (Las secciones con título lo llevan en base.css, con el mismo dibujo, porque se eligen por su marcado.)
  */
 .frame {
   position: relative;
   isolation: isolate;
-  background: var(--color-frame);
+  background: var(--frame-line, var(--color-frame));
   clip-path: var(--cut);
 }
 
