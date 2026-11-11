@@ -60,10 +60,9 @@ Plan: `tasks/plan-revision.md`. Una tanda cada vez: se enseña en local, Enrique
 - [x] Archivos comunes: mover (prueba que falla primero). La comprobación de ámbito de `moveInto` creía «del mundo»
   cualquier carpeta de los comunes de Inicio (allí no hay carpeta «Comunes»); ahora usa `scopeAt`.
 - [ ] El «no se puede» a la vista: con la Archivos nueva (las carpetas que no admiten lo arrastrado, apagadas).
-- [ ] Prototipo de Archivos sin árbol a la izquierda: la lista del centro despliega las carpetas, se despliegan solas
-  al mantener un archivo encima y la vista previa va a la izquierda (también en Etiquetas). **Hecho y publicado**
-  (lienzo «Archivos sin árbol», https://claude.ai/artifact/SNQuCPM644JuprjWvatqBA, `out/lienzo-archivos/`); falta que
-  Enrique lo apruebe.
+- [x] Prototipo de Archivos sin árbol a la izquierda (lienzo «Archivos sin árbol»,
+  https://claude.ai/artifact/SNQuCPM644JuprjWvatqBA, `out/lienzo-archivos/`): **aprobado** por Enrique (2026-11-12),
+  con el arrastre de las páginas del mundo; los archivos, por nombre.
 - [x] `components/tree/moves.ts`: la lógica de mover, fuera del árbol de páginas y con sus pruebas (el árbol de
   páginas solo la importa).
 - [ ] Archivos con la lista que despliega (y fila «Todos» para lo más alto).
@@ -71,6 +70,9 @@ Plan: `tasks/plan-revision.md`. Una tanda cada vez: se enseña en local, Enrique
   arrastran como las páginas del mundo: raya delante o detrás para ordenar, la fila resaltada para meterla dentro, y
   llevada a la izquierda sale de su madre. Fuera «Arriba del todo» (Enrique, 2026-11-12).
 - [ ] Etiquetas con el teclado (Alt + flechas, como en el árbol de páginas).
+- [x] Mover sin retardo (Enrique, 2026-11-12: «hay un retardo de cuando lo muevo hasta que lo veo cambiado»):
+  etiquetas, al momento en la lista cargada (`wiki/tag-order.ts`), con vuelta atrás si falla; páginas, también al
+  meterla en una madre cuyas subpáginas no se tenían (se despliega ya con ella dentro).
 - [ ] Selector de archivos y la portada al crear un mundo.
 
 ## Tanda 3 — Plantillas

@@ -88,7 +88,10 @@ export function PageTree({ worldId, currentId, path, onNavigate }: Props) {
   const lists = useQueries({
     queries: parents.map((parentId) => ({
       queryKey: childrenKey(worldId, parentId),
-      queryFn: () => api.call('listPageChildren', { worldId, parentId })
+      queryFn: () => api.call('listPageChildren', { worldId, parentId }),
+      // Recién puestas (al mover, sin esperar al servidor), no se vuelven a pedir al desplegar: llegarían sin lo movido.
+      // Lo que cambia en el servidor las invalida igual
+      staleTime: 2_000
     }))
   })
   // La portada del mundo (como la «Home» de Everlore): la primera de lo más alto, con su casa, y no se arrastra
@@ -175,8 +178,9 @@ export function PageTree({ worldId, currentId, path, onNavigate }: Props) {
       emptied = pages.length === 0
       return { ...data, pages }
     })
+    // A una madre cuyas subpáginas aún no se tenían: ya, con ella sola (las demás llegan al confirmar el servidor)
     queryClient.setQueryData<Children>(childrenKey(worldId, to.parentId), (data) => {
-      if (!data) return data
+      if (!data) return { pages: [moved] }
       const pages = data.pages.filter((p) => p.id !== page.id)
       const anchor = to.before ?? to.after
       let at = anchor ? pages.findIndex((p) => p.id === anchor) : -1
@@ -199,15 +203,13 @@ export function PageTree({ worldId, currentId, path, onNavigate }: Props) {
     })
   }
   const move = async (page: PageSummary, to: Move) => {
-    const cached = to.parentId === null || queryClient.getQueryData(childrenKey(worldId, to.parentId)) !== undefined
     moveInCache(page, to)
-    // Si sus subpáginas ya se tenían, se despliega ya; si no, al acabar (pedirlas antes no la traería aún)
-    if (to.parentId && cached) setOpen(to.parentId, true)
+    // La madre nueva se despliega ya, con lo movido dentro (sin esperar al servidor)
+    if (to.parentId) setOpen(to.parentId, true)
     pendingFocus.current = true
     setFocusedId(page.id)
     try {
       await api.call('movePage', { pageId: page.id, ...to })
-      if (to.parentId && !cached) setOpen(to.parentId, true)
       const parent = titleOf(to.parentId)
       announce(
         parent ? t('wiki.movedInto', { title: page.title, parent }) : t('wiki.movedToTop', { title: page.title })

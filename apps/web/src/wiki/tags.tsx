@@ -27,6 +27,7 @@ import { colorHex } from '../routes/world-look.ts'
 import files from './files.module.css'
 import { useNarrow } from './panel.tsx'
 import { useReadAs } from './read-as.tsx'
+import { moveInTagList } from './tag-order.ts'
 import styles from './tags.module.css'
 
 /** El color de una etiqueta, para su punto */
@@ -234,22 +235,33 @@ export function AccountTags() {
   const dragStartX = useRef(0)
   const [drop, setDrop] = useState<{ name: string; zone: Zone; level?: number } | null>(null)
   const [received, setReceived] = useState<string | null>(null)
+  // Al soltarla se ve ya en su sitio (sin esperar al servidor); si falla, vuelve como estaba
+  type Catalog = { organizationId: string; tags: TagView[] }
   const move = useMutation({
-    mutationFn: async ({ tag, to }: { tag: string; to: Move }) => {
-      const moved = await api.call('moveTag', {
+    mutationFn: ({ tag, to }: { tag: string; to: Move }) =>
+      api.call('moveTag', {
         tag,
         parent: to.parentId,
         ...(to.before ? { before: to.before } : {}),
         ...(to.after ? { after: to.after } : {})
-      })
-      await queryClient.invalidateQueries({ queryKey: ['tags'] })
-      return moved
+      }),
+    onMutate: async ({ tag, to }) => {
+      await queryClient.cancelQueries({ queryKey: ['tags'] })
+      const before = queryClient.getQueryData<Catalog>(['tags'])
+      if (before) queryClient.setQueryData<Catalog>(['tags'], { ...before, tags: moveInTagList(before.tags, tag, to) })
+      setReceived(to.parentId ? `${to.parentId}/${leafOf(tag)}` : leafOf(tag))
+      return { before }
     },
     onSuccess: (moved) => {
       setReceived(moved.name)
       announce(t('tags.moved', { name: moved.name }))
     },
-    onError: (error) => announce(errorText(error))
+    onError: (error, _, context) => {
+      if (context?.before) queryClient.setQueryData(['tags'], context.before)
+      setReceived(null)
+      announce(errorText(error))
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['tags'] })
   })
   if (pending) return null
   if (!account) return <Navigate to="/entrar" replace />
