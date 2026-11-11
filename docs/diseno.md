@@ -294,8 +294,9 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 - **Archivos, sin árbol a la izquierda: la lista del centro es el árbol** (Enrique, 2026-11-11: «el árbol de la
   izquierda no tiene sentido, ya tenemos la visión del árbol en el centro»): pulsar una carpeta la despliega ahí mismo,
   con lo de dentro sangrado (no se entra en ella), y al arrastrar un archivo y mantenerlo sobre una carpeta cerrada, se
-  despliega sola. La vista previa, a la izquierda. Se construye en la tanda 2 de la revisión; sustituye a lo del árbol
-  de la norma de abajo.
+  despliega sola. La vista previa, a la izquierda. **Solo en lista** (Enrique, 2026-11-12: fuera las tarjetas). Lo que
+  se sube o se crea va a la carpeta elegida (la última pulsada), y el botón lo dice. Se construye en la tanda 2 de la
+  revisión (lienzo «Archivos sin árbol», aprobado); sustituye a lo del árbol y de las tarjetas de la norma de abajo.
 - **Archivos, como un explorador**: árbol de carpetas (unas dentro de otras; se les arrastran archivos, y mientras se
   arrastra se marcan las carpetas donde se puede soltar, con «Mover aquí»; la que lo recibe se ilumina; soltado en la
   caja del árbol, fuera de una carpeta, va a lo más alto; un común no va a una carpeta del mundo ni al revés). **Sin

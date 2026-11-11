@@ -50,7 +50,9 @@ Plan: `tasks/plan-revision.md`. Una tanda cada vez: se enseña en local, Enrique
   «Nuevo…»; `resize` donde no hay `field-sizing`; forja y ceniza de las tarjetas a tokens; los tiempos de la barra en
   un solo sitio, `--leave` que se limpia y la subida de cada icono medida (antes, a mano: «Archivos» acababa 17 px por
   encima de la llama).
-- [ ] `pnpm e2e` entero (al quitar el tema claro cambiaron muchas) → PR a `main` con `[skip ci]` → staging.
+- [x] `pnpm e2e` entero (2026-11-12): 116 de la batería (las 2 que fallaron con la máquina cargada, etiquetas y
+  rendimiento, pasan al repetirlas), 12 de fugas y 14 de accesibilidad.
+- [ ] PR a `main` con `[skip ci]` y staging: cuando haya más tandas hechas (Enrique).
   `pnpm lint`, `typecheck` y `test` ya en verde salvo: `systems/ritmo.test.ts` (tiempos con la máquina cargada; repetir
   en calma) y `mcp.integration.test.ts` (el puerto 8132 lo ocupaba el servidor viejo de la revisión global, ya
   parado; repetir).
@@ -65,7 +67,8 @@ Plan: `tasks/plan-revision.md`. Una tanda cada vez: se enseña en local, Enrique
   con el arrastre de las páginas del mundo; los archivos, por nombre.
 - [x] `components/tree/moves.ts`: la lógica de mover, fuera del árbol de páginas y con sus pruebas (el árbol de
   páginas solo la importa).
-- [ ] Archivos con la lista que despliega (y fila «Todos» para lo más alto).
+- [ ] Archivos con la lista que despliega, **solo en lista** (Enrique: «Archivos A»), arrastrar como las páginas,
+  vista previa a la izquierda (también en Etiquetas) y Etiquetas con el teclado: en marcha.
 - [x] Etiquetas: `tags.position` (migración 0074, nota en el ADR-0006), `moveTag` y MCP `mover_etiqueta`; se
   arrastran como las páginas del mundo: raya delante o detrás para ordenar, la fila resaltada para meterla dentro, y
   llevada a la izquierda sale de su madre. Fuera «Arriba del todo» (Enrique, 2026-11-12).
