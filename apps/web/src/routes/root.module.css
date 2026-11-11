@@ -56,6 +56,11 @@
   text-decoration: none;
 }
 
+/* La portada: de lado a lado y sin márgenes (su imagen llega a los bordes) */
+.full {
+  min-inline-size: 0;
+}
+
 .main {
   inline-size: min(100%, 72rem);
   margin-inline: auto;

@@ -22,6 +22,22 @@
 
 .centered .form {
   max-inline-size: none;
+  /* De cristal sobre las imágenes de detrás, que van nítidas: con su desenfoque */
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+}
+
+/* Sin desenfoque (el navegador no lo sabe hacer, o «Sin desenfoque» en Ajustes): casi opaco, que se lea */
+@supports not (backdrop-filter: blur(1px)) {
+  .centered .form {
+    --frame-fill: var(--glass-solid);
+  }
+}
+
+:root[data-plain] .centered .form {
+  --frame-fill: var(--color-surface);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 
 .intro {

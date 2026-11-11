@@ -44,7 +44,8 @@
   padding: var(--space-3) var(--space-3) var(--space-4);
   border: 1px solid var(--color-frame);
   border-radius: 6px;
-  background: var(--color-surface);
+  /* De cristal sobre la portada del mundo, difuminada detrás (components/ambient.tsx) */
+  background: var(--surface-glass);
   scrollbar-width: thin;
 }
 
@@ -230,6 +231,10 @@
   min-inline-size: 0;
   /* Separado del borde de la portada: el título no va pegado a ella */
   padding-inline: var(--space-6);
+  /* Lo que se lee, casi opaco: la portada y el texto, una hoja sobre el fondo de ambiente */
+  padding-block-end: var(--space-8);
+  border-radius: 1rem;
+  background: var(--surface-read);
 }
 
 @media (max-width: 48rem) {
@@ -351,7 +356,7 @@
   padding: var(--space-4) var(--space-4) calc(var(--space-4) + 3.25rem + var(--space-3));
   border: 1px solid var(--color-frame);
   border-radius: 6px;
-  background: var(--color-surface);
+  background: var(--surface-glass);
   font-size: 0.9375rem;
   scrollbar-width: thin;
 }
@@ -918,7 +923,8 @@ a.templateBadge:hover {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: linear-gradient(to bottom, transparent 35%, var(--color-bg));
+  /* Se funde con la hoja de debajo (casi opaca, sobre el fondo de ambiente) */
+  background: linear-gradient(to bottom, transparent 35%, var(--surface-read));
   pointer-events: none;
 }
 
@@ -937,7 +943,7 @@ a.templateBadge:hover {
   inset: 0;
   border-radius: 0.75rem 0.75rem 0 0;
   z-index: 1;
-  background: linear-gradient(to bottom, transparent 45%, var(--color-bg));
+  background: linear-gradient(to bottom, transparent 45%, var(--surface-read));
   pointer-events: none;
 }
 
@@ -955,6 +961,14 @@ a.templateBadge:hover {
   position: relative;
   z-index: 2;
   margin-block-start: -5rem;
+}
+
+/* Con la portada encima, la hoja empieza donde acaba ella (sobre su parte de abajo ya está su fundido) y sin esquinas
+   arriba: portada y hoja, una sola pieza */
+.content > .entryBanner + .entry .entryMain {
+  border-start-start-radius: 0;
+  border-start-end-radius: 0;
+  background: linear-gradient(to bottom, transparent 5rem, var(--surface-read) 5rem);
 }
 
 /* «Añadir portada», al pasar por la cabecera o al llegar con el teclado */

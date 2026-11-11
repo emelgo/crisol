@@ -18,6 +18,7 @@ import { useAccounts } from '../account/context.tsx'
 import { ApiError } from '../api/client.ts'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
+import { useAmbient } from '../components/ambient.tsx'
 import { Loading } from '../components/brand.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
 import list from '../components/list.module.css'
@@ -96,6 +97,8 @@ export function WikiLayout({
     enabled: Boolean(account)
   })
   const world = worlds.data?.worlds.find((w) => w.id === worldId && w.role === 'master')
+  // Detrás de todo el mundo, su portada, muy difuminada (sin portada, la de ambiente)
+  useAmbient(world?.cover ? `/api/files/${world.cover.fileId}` : null)
   const root = useRef<HTMLDivElement>(null)
   useSideTop(root, Boolean(world))
 

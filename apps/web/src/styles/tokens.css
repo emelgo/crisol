@@ -75,6 +75,50 @@
     0 calc(100% - 11px),
     0 11px
   );
+  /* Solo la raya del marco, de 1px (o 2px, con el foco), con sus diagonales: el marco sin relleno, para que lo de
+     dentro pueda ser de cristal. Dos contornos con evenodd: el de dentro hace el hueco */
+  --cut-ring: polygon(
+    evenodd,
+    12px 0,
+    calc(100% - 12px) 0,
+    100% 12px,
+    100% calc(100% - 12px),
+    calc(100% - 12px) 100%,
+    12px 100%,
+    0 calc(100% - 12px),
+    0 12px,
+    12px 0,
+    12.41px 1px,
+    1px 12.41px,
+    1px calc(100% - 12.41px),
+    12.41px calc(100% - 1px),
+    calc(100% - 12.41px) calc(100% - 1px),
+    calc(100% - 1px) calc(100% - 12.41px),
+    calc(100% - 1px) 12.41px,
+    calc(100% - 12.41px) 1px,
+    12.41px 1px
+  );
+  --cut-ring-2: polygon(
+    evenodd,
+    12px 0,
+    calc(100% - 12px) 0,
+    100% 12px,
+    100% calc(100% - 12px),
+    calc(100% - 12px) 100%,
+    12px 100%,
+    0 calc(100% - 12px),
+    0 12px,
+    12px 0,
+    12.83px 2px,
+    2px 12.83px,
+    2px calc(100% - 12.83px),
+    12.83px calc(100% - 2px),
+    calc(100% - 12.83px) calc(100% - 2px),
+    calc(100% - 2px) calc(100% - 12.83px),
+    calc(100% - 2px) 12.83px,
+    calc(100% - 12.83px) 2px,
+    12.83px 2px
+  );
   --cut-button: polygon(
     6px 0,
     calc(100% - 6px) 0,
@@ -110,6 +154,12 @@
   --glass-blur: blur(14px) saturate(1.5) brightness(1.08);
   --glass-shadow: 0 10px 28px -12px rgb(0 0 0 / 0.6);
   --glass-lift: 0 18px 34px -14px rgb(0 0 0 / 0.7);
+  /* Fuera de la Mesa (tanda 5, «Crisol, con cristal»), sobre el fondo de ambiente (components/ambient.tsx): lo que
+     enmarca, de cristal (la barra, las fichas de los lados, las tarjetas y los recuadros); lo que se lee o se escribe,
+     casi opaco. Sin backdrop-filter: el ambiente ya viene difuminado. Con «Sin desenfoque» (html[data-plain]), opacos */
+  --surface-glass: color-mix(in srgb, var(--color-surface) 64%, transparent);
+  --surface-glass-raised: color-mix(in srgb, var(--color-raised) 70%, transparent);
+  --surface-read: color-mix(in srgb, var(--color-bg) 86%, transparent);
   /* El brillo de lo vivo (el turno, la tele, lo que se enseña, un crítico), en el rojo de la marca */
   --glow-live:
     0 0 0 1px color-mix(in srgb, var(--color-brand) 80%, transparent),
@@ -139,4 +189,29 @@
   --fx-soot-rgb: 28 26 25;
   --fx-cinder-rgb: 60 57 54;
   --fx-cinder-light-rgb: 120 116 110;
+}
+
+/* Un navegador sin desenfoque: el cristal de lo que flota (la Mesa, los menús del editor), casi opaco, que se lea
+   (antes, seis piezas se quedaban translúcidas sin él) */
+@supports not (backdrop-filter: blur(1px)) {
+  :root {
+    --glass-tint: var(--glass-solid);
+    --glass-panel: var(--glass-solid);
+  }
+}
+
+/* «Sin desenfoque» (Ajustes): sin fondo de ambiente ni desenfoque, todo opaco como antes del cristal (también en la
+   Mesa: es lo que más cuesta) */
+:root[data-plain] {
+  --surface-glass: var(--color-surface);
+  --surface-glass-raised: var(--color-raised);
+  --surface-read: var(--color-bg);
+  --glass-tint: var(--glass-solid);
+  --glass-panel: var(--glass-solid);
+  --glass-blur: none;
+}
+
+:root[data-plain] * {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
 }

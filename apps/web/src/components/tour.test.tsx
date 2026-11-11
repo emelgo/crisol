@@ -73,13 +73,17 @@ describe('el tutorial guiado', () => {
     expect(await screen.findByRole('dialog', { name: FIRST })).toBeDefined()
   })
 
-  it('Ajustes ya no tiene la casilla', async () => {
+  it('Ajustes ya no tiene la casilla del tutorial (solo la de «Sin desenfoque»)', async () => {
     renderWorlds()
     await screen.findByRole('dialog', { name: FIRST })
     await finish()
     await userEvent.click(screen.getByRole('button', { name: 'Enrique' }))
     await userEvent.click(screen.getByRole('button', { name: 'Ajustes' }))
     const settings = within(await screen.findByRole('dialog', { name: 'Ajustes' }))
-    expect(settings.queryByRole('checkbox')).toBeNull()
+    expect(
+      settings
+        .getAllByRole('checkbox')
+        .map((box) => box.getAttribute('aria-label') ?? box.closest('label')?.textContent)
+    ).toEqual(['Sin desenfoque'])
   })
 })

@@ -3447,8 +3447,25 @@ export const es = {
     owner: 'Propietario',
     member: 'Miembro'
   },
+  // La portada (sin sesión)
+  home: {
+    invite: 'Tengo una invitación',
+    inviteLabel: 'El enlace de la invitación',
+    go: 'Seguir',
+    back: 'Volver',
+    badInvite: 'Ese enlace no es una invitación.',
+    inside: 'Lo que hay dentro',
+    world: 'El mundo',
+    worldText: 'Sus lugares, sus gentes y su historia, en páginas enlazadas.',
+    table: 'La mesa',
+    tableText: 'La partida en directo, con el mapa a la vista de todos.',
+    sheet: 'La ficha',
+    sheetText: 'Cada personaje, con sus tiradas a mano.'
+  },
   settings: {
     title: 'Ajustes',
+    device: 'Este aparato',
+    plain: 'Sin desenfoque',
     aiWaiting_one: '{{count}} petición',
     aiWaiting_other: '{{count}} peticiones'
   },

@@ -151,7 +151,8 @@ dialog section[aria-labelledby] {
   isolation: isolate;
   margin-block: var(--space-6);
   padding: var(--space-4) var(--space-6) var(--space-6);
-  background: var(--color-frame);
+  /* De cristal sobre el fondo de ambiente; la raya, el ::before (como components/frame.module.css) */
+  background: var(--surface-glass);
   clip-path: var(--cut);
 }
 
@@ -159,10 +160,11 @@ main section[aria-labelledby]::before,
 dialog section[aria-labelledby]::before {
   content: "";
   position: absolute;
-  inset: 1px;
+  inset: 0;
   z-index: -1;
-  background: var(--color-surface);
-  clip-path: var(--cut-inner);
+  background: var(--color-frame);
+  clip-path: var(--cut-ring);
+  pointer-events: none;
 }
 
 /* El título de un recuadro: más pequeño y sin raya, el recuadro ya lo separa */

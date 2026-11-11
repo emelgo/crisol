@@ -5,6 +5,7 @@ import { useAccounts } from '../account/context.tsx'
 import { GroupKnowledge } from '../campaign/group-knowledge.tsx'
 import { CampaignSettings } from '../campaign/settings.tsx'
 import { AccountMenu } from '../components/account-menu.tsx'
+import { Ambient } from '../components/ambient.tsx'
 import { ApprovalQueue } from '../components/approval-queue.tsx'
 import { Backdrop } from '../components/backdrop.tsx'
 import { CrisolMark, Loading } from '../components/brand.tsx'
@@ -46,6 +47,8 @@ export function RootLayout() {
   const bare = useRouterState({
     select: (state) => /^\/mundos\/[^/]+\/campanas\/[^/]+\/mesa\/?$/.test(state.location.pathname)
   })
+  // La portada (sin sesión): a toda pantalla, con su imagen (sin las que van pasando detrás)
+  const home = useRouterState({ select: (state) => state.location.pathname === '/' })
   // Imprimir: solo la hoja, sin nada de la interfaz; la pantalla de la tele, igual: solo el mapa
   const printing = useRouterState({
     select: (state) =>
@@ -88,12 +91,12 @@ export function RootLayout() {
             <AccountMenu />
           </nav>
         </header>
-        <main id="contenido" className={styles.main}>
+        <main id="contenido" className={home ? styles.full : styles.main}>
           <Outlet />
         </main>
         {/* Detrás de todo (fijo), las imágenes que van pasando, como en LegendKeeper; al final, para que su crédito
             no vaya antes que «Saltar al contenido» */}
-        <Backdrop />
+        {!home && <Backdrop />}
       </div>
     )
   }
@@ -105,6 +108,8 @@ export function RootLayout() {
           <DiceTray>
             <div className={bare ? styles.bare : styles.app}>
               {skip}
+              {/* Detrás de todo, el fondo de ambiente para el cristal (la Mesa tiene su mapa) */}
+              {!bare && <Ambient />}
               {!bare && <Ribbon />}
               <main id="contenido" className={wide ? styles.wide : styles.main}>
                 <ApprovalQueue />

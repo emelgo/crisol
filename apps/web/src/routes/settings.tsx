@@ -1,13 +1,16 @@
 import { useQuery } from '@tanstack/react-query'
 import { Navigate } from '@tanstack/react-router'
+import { useId } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
+import form from '../components/form.module.css'
 import { PageTitle } from '../components/page-title.tsx'
+import { setPlain, usePlain } from '../components/plain.ts'
 import { AiSettings } from './ai-settings.tsx'
 import styles from './settings.module.css'
 
-/** Ajustes: cómo se ve Crisol y, para el propietario, la IA. Aquí irá lo que venga */
+/** Ajustes: cómo se ve Crisol en este aparato y, para el propietario, la IA. Aquí irá lo que venga */
 export function Settings() {
   const { t } = useTranslation()
   const api = useApi()
@@ -30,7 +33,24 @@ export function Settings() {
   return (
     <section className={styles.page}>
       <PageTitle>{t('settings.title')}</PageTitle>
+      <DeviceSettings />
       {isOwner ? <AiSettings /> : plays && <AiSettings player />}
+    </section>
+  )
+}
+
+/** Lo de este aparato (se guarda en el navegador): sin desenfoque, todo opaco, para un ordenador justo de fuerzas */
+function DeviceSettings() {
+  const { t } = useTranslation()
+  const plain = usePlain()
+  const id = useId()
+  return (
+    <section aria-labelledby={id}>
+      <h2 id={id}>{t('settings.device')}</h2>
+      <label className={form.check}>
+        <input type="checkbox" checked={plain} onChange={(event) => setPlain(event.currentTarget.checked)} />
+        {t('settings.plain')}
+      </label>
     </section>
   )
 }

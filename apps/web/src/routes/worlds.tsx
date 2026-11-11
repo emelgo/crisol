@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
+import { useAmbient } from '../components/ambient.tsx'
 import { Loading } from '../components/brand.tsx'
 import { useCardList } from '../components/card-transition.ts'
 import { FormError } from '../components/field.tsx'
@@ -36,6 +37,8 @@ export function Worlds() {
   // El mundo sobre el que está el ratón (o el foco), para el panel de la izquierda; al irse, nada
   const [previewId, setPreviewId] = useState<string | null>(null)
   const preview = worlds.data?.worlds.find((w) => w.id === previewId)
+  // Detrás, la portada del mundo que se señala (si no tiene, la de ambiente)
+  useAmbient(preview?.cover ? `/api/files/${preview.cover.fileId}` : null)
 
   if (pending) return null
   if (!account) return <Navigate to="/entrar" replace />

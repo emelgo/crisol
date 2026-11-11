@@ -73,7 +73,8 @@
   padding: var(--space-3);
   border: 1px solid var(--color-frame);
   border-radius: 6px;
-  background: var(--color-surface);
+  /* La ficha de al lado, de cristal */
+  background: var(--surface-glass);
 }
 
 .detailName {

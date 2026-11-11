@@ -34,6 +34,8 @@
 
 .panel {
   composes: frame from "../components/frame.module.css";
+  /* Flota sobre la página: opaco */
+  --frame-fill: var(--color-surface);
   position: absolute;
   inset-block-start: calc(100% + var(--space-1));
   inset-inline-start: 0;

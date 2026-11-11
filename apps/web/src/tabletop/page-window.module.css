@@ -41,6 +41,9 @@
   grid-column: 1;
   padding-inline: 0;
   padding-block-end: var(--space-6);
+  /* Sin la hoja casi opaca de la wiki: el cristal de la ventana */
+  border-radius: 0;
+  background: none;
 }
 
 .page :global([data-entry]) > aside {

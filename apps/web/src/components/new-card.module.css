@@ -1,8 +1,8 @@
 /*
  * «Nuevo …»: un recuadro más de la lista, tras el último, vacío y con el borde de línea continua (Enrique, 2026-11-11).
- * card: con la forma de una tarjeta (esquinas cortadas), dibujada como su marco (frame.module.css): el fondo es la
- * línea y el ::before, 1px dentro y con el mismo corte, el hueco; así las diagonales casan con los lados. row: con la de
- * una fila (las etiquetas). --new-fill: el color de detrás (el fondo de la pantalla). La línea, la misma que la de las
+ * card: con la forma de una tarjeta (esquinas cortadas), dibujada como su marco (frame.module.css): sin relleno y la
+ * raya en el ::before (--cut-ring), así se ve el fondo de detrás. row: con la de una fila (las etiquetas). La línea, la
+ * misma que la de las
  * tarjetas (Enrique, 2026-11-12: el recuadro vacío no debe pesar más que lo que hay); se aviva al pasar el ratón
  */
 .card,
@@ -29,7 +29,7 @@
 }
 
 .card:focus-visible::before {
-  inset: 2px;
+  clip-path: var(--cut-ring-2);
 }
 
 .card {
@@ -44,18 +44,19 @@
   inline-size: 100%;
   min-block-size: 11rem;
   border: 0;
-  background: var(--line);
+  /* Vacío: deja ver el fondo de ambiente; solo la raya (el ::before) */
+  background: none;
   clip-path: var(--cut);
-  transition: background-color 150ms ease-out;
 }
 
 .card::before {
   content: "";
   position: absolute;
-  inset: 1px;
+  inset: 0;
   z-index: -1;
-  background: var(--new-fill, var(--color-bg));
-  clip-path: var(--cut-inner);
+  background: var(--line);
+  clip-path: var(--cut-ring);
+  transition: background-color 150ms ease-out;
 }
 
 /* El rótulo: si no cabe (el nombre de una carpeta muy largo), se corta con puntos suspensivos */

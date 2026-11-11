@@ -361,7 +361,8 @@
 .picture {
   position: absolute;
   inset: 0;
-  background: color-mix(in srgb, var(--world-color, var(--color-raised)) 22%, var(--color-raised));
+  /* De cristal, como la tarjeta (el fondo de ambiente se ve un poco) */
+  background: color-mix(in srgb, var(--world-color, var(--color-raised)) 22%, var(--surface-glass-raised));
 }
 
 .noCover {
