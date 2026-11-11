@@ -7,7 +7,7 @@
   position: relative;
   display: grid;
   place-items: center;
-  min-block-size: calc(100dvh - 3.75rem);
+  min-block-size: 100dvh;
   overflow: hidden;
   isolation: isolate;
   padding: var(--space-8) var(--space-6);

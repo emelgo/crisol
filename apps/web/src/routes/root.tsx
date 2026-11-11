@@ -80,7 +80,7 @@ export function RootLayout() {
   // Sin sesión (entrar, unirse a una campaña): una barra sencilla arriba, con la marca, entrar y el tema
   if (!account) {
     return (
-      <div className={styles.shell}>
+      <div className={styles.shell} data-home={home || undefined}>
         {skip}
         <header className={styles.header}>
           <Link to="/" className={styles.brand} translate="no">

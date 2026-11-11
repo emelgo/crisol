@@ -56,9 +56,22 @@
   text-decoration: none;
 }
 
-/* La portada: de lado a lado y sin márgenes (su imagen llega a los bordes) */
+/* La portada: de lado a lado y sin márgenes (su imagen llega a los bordes, también arriba: la barra va encima) */
 .full {
   min-inline-size: 0;
+}
+
+.shell[data-home] {
+  position: relative;
+  grid-template-rows: 1fr;
+}
+
+.shell[data-home] .header {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
+  z-index: 2;
+  background: linear-gradient(to bottom, rgb(0 0 0 / 0.55), transparent);
 }
 
 .main {
