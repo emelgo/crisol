@@ -1051,6 +1051,7 @@ export const es = {
     columnBreak: 'Salto de columna',
     statblock: 'Bloque de estadísticas',
     sidenote: 'Nota lateral, a la {{side}}',
+    sidenoteShort: 'Nota lateral',
     sides: { left: 'izquierda', right: 'derecha' },
     toLeft: 'A la izquierda',
     toRight: 'A la derecha',

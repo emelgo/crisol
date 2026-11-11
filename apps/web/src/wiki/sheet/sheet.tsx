@@ -64,7 +64,12 @@ function unitsOf(blocks: readonly JSONContent[], start: 1 | 2): Unit[] {
     }
     const next = blocks[i + 1]
     const nextKind = next ? kindOf(next, columns) : null
-    if (block.type === 'sidenote' && next && (nextKind === 'block' || nextKind === 'heading')) {
+    // A dos columnas, con un bloque de su columna; a una, con el que sea (todo va a lo ancho), salvo un salto
+    const pairs =
+      nextKind === 'block' ||
+      nextKind === 'heading' ||
+      (columns === 1 && nextKind === 'wide' && next?.type !== 'columnsChange')
+    if (block.type === 'sidenote' && next && pairs) {
       units.push({
         id,
         kind: nextKind,

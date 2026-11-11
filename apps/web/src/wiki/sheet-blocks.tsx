@@ -6,6 +6,7 @@
 import type { Node } from '@tiptap/core'
 import type { Node as PMNode } from '@tiptap/pm/model'
 import { NodeViewContent, type NodeViewProps, NodeViewWrapper, ReactNodeViewRenderer } from '@tiptap/react'
+import { ArrowLeftToLine, ArrowRightToLine } from 'lucide-react'
 import { useEffect, useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import styles from './sheet-blocks.module.css'
@@ -81,19 +82,26 @@ function SidenoteView({ node, editor, updateAttributes }: NodeViewProps) {
   const { t } = useTranslation()
   const id = useId()
   const side = node.attrs.side === 'left' ? 'left' : 'right'
+  const move = t(side === 'left' ? 'sheet.toRight' : 'sheet.toLeft')
+  // Pequeña: en la hoja va a un lado de su columna, estrecha. Su nombre dice el lado (para el lector de pantalla); el
+  // botón, una flecha hacia el otro
+  const Arrow = side === 'left' ? ArrowRightToLine : ArrowLeftToLine
   return (
-    <NodeViewWrapper as="aside" aria-labelledby={id} className={styles.sidenote}>
+    <NodeViewWrapper as="aside" aria-labelledby={id} className={styles.sidenote} data-side={side}>
       <div className={styles.head} contentEditable={false}>
         <span id={id} className={styles.label}>
-          {t('sheet.sidenote', { side: t(`sheet.sides.${side}`) })}
+          <span aria-hidden="true">{t('sheet.sidenoteShort')}</span>
+          <span className={styles.hidden}>{t('sheet.sidenote', { side: t(`sheet.sides.${side}`) })}</span>
         </span>
         {editor.isEditable && (
           <button
             type="button"
             className={styles.side}
+            aria-label={move}
+            title={move}
             onClick={() => updateAttributes({ side: side === 'left' ? 'right' : 'left' })}
           >
-            {t(side === 'left' ? 'sheet.toRight' : 'sheet.toLeft')}
+            <Arrow aria-hidden="true" size={14} />
           </button>
         )}
       </div>

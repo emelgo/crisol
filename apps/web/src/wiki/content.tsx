@@ -163,6 +163,8 @@ export function Block({ node, worldId }: { node: JSONContent; worldId: string })
         <aside
           aria-label={t('sheet.sidenote', { side: t(`sheet.sides.${node.attrs?.side === 'left' ? 'left' : 'right'}`) })}
           className={sheet.sidenote}
+          // Su lado, para la hoja impresa (flota a la izquierda o a la derecha)
+          data-side={node.attrs?.side === 'left' ? 'left' : 'right'}
         >
           {children}
         </aside>

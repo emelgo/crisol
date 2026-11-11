@@ -41,7 +41,8 @@ test('los bloques de hoja con «/» (toda página es una hoja); salen en el Mark
       .getByRole('option', { name: new RegExp(name) })
       .click()
   }
-  await expect(body(page).getByText('Salto de página')).toBeVisible()
+  // El salto, con la página que cierra («Página 1») en vez de su nombre
+  await expect(body(page).locator('[data-break="page"]')).toBeVisible()
   const toc = body(page).getByRole('navigation', { name: 'Índice' })
   await expect(toc.getByRole('link', { name: 'Guarida' })).toBeVisible()
   // Un statblock, y dentro lo suyo (tras el índice ya hay un párrafo vacío)
@@ -71,7 +72,8 @@ test('lo que llega en Markdown: nota lateral a la izquierda, a lo ancho y salto 
   await expect(note).toContainText('Al margen.')
   await note.getByRole('button', { name: 'A la derecha' }).click()
   await expect(body(page).getByRole('complementary', { name: 'Nota lateral, a la derecha' })).toBeVisible()
-  await expect(body(page).getByText('Salto de columna')).toBeVisible()
+  // A una columna, un salto de columna pasa de página (y dice la que cierra)
+  await expect(body(page).locator('[data-break="column"]')).toBeVisible()
   await expect(body(page).getByText('A lo ancho', { exact: true })).toBeVisible()
   await expect(body(page).getByText('Todo a lo ancho.')).toBeVisible()
 })

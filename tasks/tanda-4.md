@@ -25,8 +25,10 @@ capturas de antes y después (en `out/tanda-4/` y en una página para él al aca
    pase de un tamaño cómodo). Las rayas de salto de página (y las marcas de página) de lado a lado de la columna, y su
    rótulo dice la página que se cierra («Página 1»), también en un salto puesto a mano. Hecho: la letra crece hasta
    20 px (`MAX_SCALE`); a probar con Enrique si el tope le parece bien (con más, la letra se hace grande).
-3. [ ] **La nota lateral, a su lado**: en la hoja, un recuadro estrecho a la izquierda o a la derecha de su columna con
-   el texto siguiente alrededor, igual al escribir que al imprimir (hoy al imprimir va siempre a la derecha).
+3. [x] **La nota lateral, a su lado**: en la hoja, un recuadro estrecho a la izquierda o a la derecha de su columna con
+   el texto siguiente alrededor, igual al escribir que al imprimir (hoy al imprimir va siempre a la derecha). Hecho: a
+   una columna (lo normal) ni siquiera se emparejaba con su bloque; ahora sí, al escribir (un hueco flotante al principio
+   del bloque) y al imprimir (`data-side`); su cabecera, compacta (el lado con un botón de flecha).
 4. [ ] **Imprimir o descargar, preguntando cómo**: un cuadro con el aspecto («Con colores», nuevo; «Blanco y negro»;
    «Pergamino»), el papel, la numeración, el pie y los secretos, y «Imprimir» o «Descargar PDF». Recuerda lo elegido
    (en la página y como el de siempre para las demás).

@@ -152,6 +152,12 @@
   font-size: 0.9em;
 }
 
+/* A la izquierda, si se eligió (antes salía siempre a la derecha) */
+.page aside[data-side="left"] {
+  margin: 0.2em 0.8em 0.6em 0;
+  float: left;
+}
+
 .page table {
   inline-size: 100%;
   border-collapse: collapse;
