@@ -458,9 +458,11 @@
   overflow-wrap: break-word;
 }
 
-/* Al pasar el ratón, el nombre se resalta con el color del mundo, aclarado lo justo para que se lea sobre lo oscuro;
-   sin color, con el rojo de los enlaces (Enrique, 2026-11-11: «si selecciono color verde, debe resaltarse el color») */
-.name:hover {
+/* Al pasar el ratón por la tarjeta (también por su engranaje o por «Ver», como el contorno), el nombre se resalta con
+   el color del mundo, aclarado lo justo para que se lea sobre lo oscuro; sin color, con el rojo de los enlaces
+   (Enrique, 2026-11-11: «si selecciono color verde, debe resaltarse el color»; «debe mantenerse por coherencia») */
+.name:hover,
+.card:hover .name {
   color: oklch(from var(--world-color, var(--color-accent-text)) max(l, 0.78) c h);
 }
 

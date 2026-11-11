@@ -22,6 +22,11 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
     contraste); la barra en su orden nuevo y la salida espejo de la entrada (`--leave` en `ribbon.tsx`); `NewCard`
     común de línea continua; `Field` con `rows` (crece) y `counter`; el tutorial de Inicio en orden. De paso: la
     descripción, a tres líneas en la tarjeta; «Personaje nuevo» (campaña) también cambia, por compartir el recuadro.
+- **Revisión de Enrique en local** (aplicada): fuera la pista de la descripción; descripción que se parte sin espacios;
+  esquinas de «Nuevo…» como el marco de las tarjetas; **solo tema oscuro** (fuera el claro entero); X de cerrar con
+  círculo; el nombre se resalta con el color del mundo mientras el ratón está en la tarjeta. Para la tanda 2 decidió
+  **Archivos sin árbol a la izquierda** (la lista del centro despliega las carpetas, se despliegan solas al mantener
+  un archivo encima; vista previa a la izquierda, también en Etiquetas): antes, prototipo.
 - **Falta**: el visto bueno de Enrique en local → impeccable (critique y audit) → `pnpm lint`, `pnpm typecheck`,
   `pnpm test` y las e2e de lo tocado (`mundos`, `campanas`, `plantillas`, `archivos`, `a11y`…) → PR a `main` con
   `[skip ci]` y staging.
