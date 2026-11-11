@@ -128,12 +128,13 @@ Plan: `tasks/plan-revision.md`. Una tanda cada vez: se enseña en local, Enrique
   su forma de copiarse, `packages/db/src/repos/copy.ts`), MCP `duplicar_pagina`; «Duplicar» la usa.
 - [x] Prototipo «Plantillas como páginas» (https://claude.ai/artifact/HEiducM87Qe3zxcnvYZm6M,
   `out/lienzo-plantillas/lienzo.html`): la lista (A1 como Archivos o A2 tarjetas), el editor como página, «Desde
-  plantilla» en página y pestaña nuevas. **Esperando a Enrique.**
-- [ ] La plantilla como página-modelo (espacio oculto de la cuenta, ADR).
-- [ ] Crear desde plantilla = duplicarla; «Desde plantilla» la última, también en «Pestaña nueva».
+  plantilla» en página y pestaña nuevas. Aprobado con la A1 («Me gusta», 2026-11-12).
+- [x] La plantilla como página-modelo (mundo oculto de la cuenta, ADR-0024; migración 0078); el editor es la página.
+- [x] Crear desde plantilla = duplicarla; «Desde plantilla» la última, también en «Pestaña nueva» (`addTemplateTabs`).
 - [x] Fuera las de serie (barrido antes): migración 0077, que convierte en propias las que estén en uso.
-- [ ] Carpetas de plantillas.
-- [ ] Volver en el editor; fuera «Aplicar plantilla»; registro de tipos de pestaña.
+- [x] Carpetas de plantillas (migración 0079), con la lista como Archivos.
+- [x] Volver en el editor; fuera «Aplicar plantilla»; registro de tipos de pestaña.
+- [x] Crítica (28/40) y audit de impeccable, con sus arreglos y lo que eligió Enrique.
 
 ## Tanda 4 — El mundo: la página y la hoja
 
@@ -188,7 +189,7 @@ Lo que sale sin estar en la lista: se avisa a Enrique y se arregla en su tanda.
 - [x] Tutorial de Inicio: «Nueva campaña» colado entre Historial y Papelera (tanda 1): ahora va tras «Nuevo mundo».
 - [ ] Menú móvil fuera de un mundo: solo «Mundos» (con la vista de la jugadora).
 - [ ] «Página N» no sale tras un salto a mano; la nota lateral, siempre a la derecha al imprimir (tanda 4).
-- [ ] «Duplicar» se deja portada, hoja y pestañas (tanda 3).
+- [x] «Duplicar» se deja portada, hoja y pestañas (tanda 3: `copyPage`).
 - [ ] Las acciones de una entrada del compendio no se tiran (tanda 7).
 - [ ] Mapas: regiones, rutas y textos se guardan y no se pintan (módulo 9).
 - [ ] Reemplazar un sistema subiendo otro: está en el servidor y no en la app (tanda 6).
@@ -203,5 +204,13 @@ Lo que sale sin estar en la lista: se avisa a Enrique y se arregla en su tanda.
   pedido los archivos del mundo: ahora esperan a que lleguen.
 - [x] Mover a una carpeta dentro de otra cerrada (desde la ventana) no abría las de encima: no se veía adónde iba.
 - [x] `FileName` tenía una ventana de ajustes que nadie abría (código muerto), fuera; y un import sin usar en el falso API.
+- [x] Las transiciones de vista (entrar en un mundo o en una plantilla, cambiar de sección) no respetaban «movimiento
+  reducido»: ahora, con él, un fundido breve sin desplazarse ni brasas (tanda 3, audit).
+- [x] Al quitar el cuadro viejo de «Plantilla nueva», la web perdía copiar una plantilla (criterio 2 del módulo 2):
+  ahora «⋯» → «Duplicar» en el editor (tanda 3).
+- [ ] Los guiones locales de `e2e/.revision/` (fuera de git) siembran con las de serie (`template: 'pnj'`): si se usan,
+  que creen antes sus plantillas.
+- [ ] El editor pinta «##» como h3 a propósito (el título es el h1): quien escriba sus apartados con «##» deja un hueco
+  de títulos para los lectores de pantalla (lo vio el detector; con la revisión de la wiki, tanda 4).
 - [ ] La hoja móvil de una etiqueta (`tags.tsx`) usa clases que no existen en el CSS (`files.sheet`…): ya fallaba
   antes; el móvil es solo de la jugadora y Etiquetas es del máster, así que es menor.
