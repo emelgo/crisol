@@ -5,12 +5,16 @@
 import { randomUUID } from 'node:crypto'
 import {
   createTemplate,
+  createTemplateFolder,
   deleteTemplate,
+  deleteTemplateFolder,
   getTemplate,
   listTemplates,
+  moveTemplate,
   type PageProperty,
-  type PageTemplate,
-  updateTemplate
+  type TemplateFolder,
+  updateTemplate,
+  updateTemplateFolder
 } from '@crisol/contracts'
 import { copyRepo, templatesRepo, worldsRepo } from '@crisol/db'
 import { authorize, fieldKey, lineOf, NotFoundError, propertiesProblem, templateEmoji } from '@crisol/domain'
@@ -26,10 +30,13 @@ import {
   newFieldId,
   ownTemplate,
   templatePage,
+  templateView,
+  templateViews,
   usableTemplates
 } from '../wiki/templates.ts'
 import { targetOrganization } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
+import { nameTaken, placeBeside } from './files.ts'
 import { implement } from './registry.ts'
 
 /** La organización de la que se ven las plantillas, si la cuenta puede verlas */
@@ -80,11 +87,44 @@ function checkFields(fields: readonly PageProperty[]): PageProperty[] {
   return withIds
 }
 
+/** Una carpeta de plantillas, como la da la API */
+const folderView = (row: templatesRepo.TemplateFolderRow): TemplateFolder => ({
+  id: row.id,
+  parentId: row.parentId,
+  name: row.name,
+  position: row.position,
+  color: row.color as TemplateFolder['color'],
+  icon: row.icon
+})
+
+/** Una carpeta de plantillas que la cuenta puede cambiar */
+async function writableFolder(ctx: ActionContext, folderId: string) {
+  const folder = await templatesRepo.findTemplateFolder(ctx.db, folderId)
+  if (!folder) throw new NotFoundError('folder')
+  authorize(ctx.actor, 'templates.write', { organizationId: folder.organizationId })
+  return folder
+}
+
+/** Una carpeta de destino: de la misma cuenta (null: lo más alto, siempre vale) */
+async function folderOf(ctx: ActionContext, organizationId: string, folderId: string | null | undefined) {
+  if (!folderId) return null
+  const folder = await templatesRepo.findTemplateFolder(ctx.db, folderId)
+  if (!folder || folder.organizationId !== organizationId) throw new InvalidRequestError('BAD_FOLDER')
+  return folder
+}
+
+const folderTaken = (name: string) => new InvalidRequestError('NAME_TAKEN', `Ya hay una carpeta «${name}» ahí`)
+
 export const templateActions = [
   implement(listTemplates, async (ctx, { organizationId }) => {
     const target = readableOrganization(ctx, organizationId)
+    const [rows, folders] = await Promise.all([
+      templatesRepo.listTemplates(ctx.db, target),
+      templatesRepo.listTemplateFolders(ctx.db, target)
+    ])
     return {
-      templates: structuredClone([...(await usableTemplates(ctx, target))]) as PageTemplate[],
+      templates: await templateViews(ctx, target, rows),
+      folders: folders.map(folderView),
       deleted: await deletedTemplates(ctx, target)
     }
   }),
@@ -97,7 +137,7 @@ export const templateActions = [
     const writable = ctx.actor.organizations.get(target) === 'owner'
     if (writable && !row.pageId) await templatePage(ctx, row)
     const fresh = (await templatesRepo.findTemplate(ctx.db, templateId)) ?? row
-    return structuredClone(await ownTemplate(ctx, fresh)) as PageTemplate
+    return templateView(ctx, fresh)
   }),
 
   // Desde cero (una página vacía en el mundo de las plantillas) o copiando otra: su página entera, sin los enlaces
@@ -152,7 +192,7 @@ export const templateActions = [
     ctx.realtime.publish(templatesChanged(target), pagesChanged({ worldId: world.id, organizationId: target }))
     const row = await templatesRepo.findTemplate(ctx.db, id)
     if (!row) throw new NotFoundError('template')
-    return (await ownTemplate(ctx, row)) as PageTemplate
+    return templateView(ctx, row)
   }),
 
   // En su página: nombre (su título), icono, campos (sus propiedades), panel y esqueleto (su texto)
@@ -192,7 +232,7 @@ export const templateActions = [
     }
     ctx.realtime.publish(templatesChanged(row.organizationId), pagesChanged(scope))
     const updated = (await templatesRepo.findTemplate(ctx.db, row.id)) ?? row
-    return (await ownTemplate(ctx, updated)) as PageTemplate
+    return templateView(ctx, updated)
   }),
 
   implement(deleteTemplate, async (ctx, { templateId }) => {
@@ -205,5 +245,116 @@ export const templateActions = [
     )
     ctx.realtime.publish(templatesChanged(row.organizationId))
     return { id: row.id, name }
+  }),
+
+  // Las carpetas, como las de archivos: solo ordenan
+  implement(createTemplateFolder, async (ctx, { organizationId, parentId, name }) => {
+    const target = targetOrganization(ctx, organizationId)
+    authorize(ctx.actor, 'templates.write', { organizationId: target })
+    await folderOf(ctx, target, parentId)
+    try {
+      const folder = await templatesRepo.createTemplateFolder(
+        ctx.db,
+        historyContext(ctx, 'createTemplateFolder', { name }, { organizationId: target }),
+        { organizationId: target, parentId, name }
+      )
+      ctx.realtime.publish(templatesChanged(target))
+      return folderView(folder)
+    } catch (error) {
+      if (nameTaken(error)) throw folderTaken(name)
+      throw error
+    }
+  }),
+
+  implement(updateTemplateFolder, async (ctx, { folderId, name, color, icon, parentId, before, after }) => {
+    const folder = await writableFolder(ctx, folderId)
+    const organizationId = folder.organizationId
+    if (parentId) {
+      await folderOf(ctx, organizationId, parentId)
+      // Ni dentro de sí misma ni de una de las suyas
+      for (
+        let at: string | null = parentId;
+        at;
+        at = (await templatesRepo.findTemplateFolder(ctx.db, at))?.parentId ?? null
+      ) {
+        if (at === folderId) throw new InvalidRequestError('CYCLE')
+      }
+    }
+    // Su puesto entre las carpetas de su destino (sin parentId, la de ahora); al cambiar de carpeta sin él, ninguno
+    const destination = parentId === undefined ? folder.parentId : parentId
+    const moves = destination !== folder.parentId
+    const placed = await placeBeside(
+      () => templatesRepo.templateFoldersIn(ctx.db, organizationId, destination),
+      folderId,
+      { before, after }
+    )
+    const renamed = name !== undefined && name !== folder.name
+    const [action, details] = renamed
+      ? ['updateTemplateFolder', { from: folder.name, to: name }]
+      : placed && !moves
+        ? ['orderTemplateFolder', { name: folder.name }]
+        : ['updateTemplateFolder', { name: folder.name }]
+    try {
+      const updated = await templatesRepo.updateTemplateFolder(
+        ctx.db,
+        historyContext(ctx, action, details, { organizationId }),
+        folderId,
+        {
+          ...(name !== undefined ? { name } : {}),
+          ...(color !== undefined ? { color } : {}),
+          ...(icon !== undefined ? { icon } : {}),
+          ...(parentId !== undefined ? { parentId } : {}),
+          ...(placed ? { position: placed.own } : moves ? { position: null } : {})
+        },
+        placed?.others
+      )
+      ctx.realtime.publish(templatesChanged(organizationId))
+      return folderView(updated)
+    } catch (error) {
+      if (nameTaken(error)) throw folderTaken(name ?? folder.name)
+      throw error
+    }
+  }),
+
+  implement(deleteTemplateFolder, async (ctx, { folderId }) => {
+    const folder = await writableFolder(ctx, folderId)
+    const templates = await templatesRepo.deleteTemplateFolder(
+      ctx.db,
+      historyContext(ctx, 'deleteTemplateFolder', { name: folder.name }, { organizationId: folder.organizationId }),
+      folderId
+    )
+    ctx.realtime.publish(templatesChanged(folder.organizationId))
+    return { id: folder.id, name: folder.name, templates }
+  }),
+
+  implement(moveTemplate, async (ctx, { templateId, folderId, before, after }) => {
+    const row = await ownWritable(ctx, templateId)
+    const folder = await folderOf(ctx, row.organizationId, folderId)
+    const moves = row.folderId !== folderId
+    // Su puesto entre las plantillas de esa carpeta; al cambiar de carpeta sin él, ninguno (detrás, por nombre)
+    const placed = await placeBeside(
+      () => templatesRepo.templatesIn(ctx.db, row.organizationId, folderId),
+      templateId,
+      { before, after }
+    )
+    if (moves || placed) {
+      const { name } = await ownTemplate(ctx, row)
+      await templatesRepo.moveTemplate(
+        ctx.db,
+        moves
+          ? historyContext(
+              ctx,
+              'moveTemplate',
+              { name, folder: folder?.name ?? null },
+              { organizationId: row.organizationId }
+            )
+          : historyContext(ctx, 'orderTemplate', { name }, { organizationId: row.organizationId }),
+        templateId,
+        { folderId, position: placed?.own ?? null },
+        placed?.others
+      )
+      ctx.realtime.publish(templatesChanged(row.organizationId))
+    }
+    return templateView(ctx, (await templatesRepo.findTemplate(ctx.db, templateId)) ?? row)
   })
 ]

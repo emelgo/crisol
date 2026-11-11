@@ -28,26 +28,59 @@ describe('la pantalla «Plantillas»', () => {
     localStorage.setItem('crisol.recorridos.enrique@crisol.test', JSON.stringify({ seen: ['plantillas'] }))
   )
 
-  it('las tuyas (con «Plantilla nueva»), sin plantillas de serie; al pasar por una, lo que trae', async () => {
+  it('las tuyas en su árbol (por nombre, sin orden a mano), sin plantillas de serie; al pasar por una, lo que trae', async () => {
     renderTemplates()
     expect(await screen.findByRole('heading', { level: 1, name: 'Plantillas' })).toBeDefined()
     // La API falsa trae de entrada las de ejemplo, como propias
-    const mine = within(await screen.findByRole('list', { name: 'Tuyas' }))
-    expect(mine.getAllByRole('heading', { level: 3 }).map((h) => h.textContent)).toEqual([
-      'PNJ',
-      'Lugar',
+    const list = within(await screen.findByRole('list', { name: 'Tus plantillas' }))
+    expect(list.getAllByRole('link').map((link) => link.textContent)).toEqual([
       'Facción',
-      'Objeto',
+      'Lugar',
       'Misión',
+      'Objeto',
+      'PNJ',
       'Sesión'
     ])
-    expect(screen.queryByRole('list', { name: 'De serie' })).toBeNull()
-    expect(mine.getByRole('button', { name: 'Plantilla nueva' })).toBeDefined()
-    await userEvent.hover(mine.getByRole('link', { name: 'Facción' }))
+    expect(screen.queryByText('De serie')).toBeNull()
+    expect(screen.getByRole('button', { name: 'Plantilla nueva' })).toBeDefined()
+    await userEvent.hover(list.getByRole('link', { name: 'Facción' }))
     const preview = within(screen.getByRole('complementary', { name: 'Lo que trae' }))
-    expect(preview.getByText('Líder')).toBeDefined()
-    expect(preview.getByText('Miembros')).toBeDefined()
-    expect(preview.getByText('Quiénes son')).toBeDefined()
+    expect(preview.getByText(/Líder/)).toBeDefined()
+    expect(preview.getByText('Sin usar')).toBeDefined()
+  })
+
+  it('carpetas: «Nueva carpeta», meter una desde su ventana, desplegarla y recolocar con Alt y las flechas', async () => {
+    const { api } = renderTemplates()
+    await userEvent.click(await screen.findByRole('button', { name: 'Nueva carpeta' }))
+    const dialog = within(screen.getByRole('dialog', { name: 'Nueva carpeta' }))
+    await userEvent.type(dialog.getByLabelText('Nombre'), 'Gente{Enter}')
+    const list = within(screen.getByRole('list', { name: 'Tus plantillas' }))
+    const folder = await list.findByRole('button', { name: 'Gente' })
+    expect(folder.getAttribute('aria-expanded')).toBe('false')
+    // PNJ, a «Gente» desde su ventana
+    await userEvent.click(list.getByRole('button', { name: 'Ajustes de PNJ' }))
+    const settings = within(screen.getByRole('dialog', { name: 'Ajustes de PNJ' }))
+    await userEvent.selectOptions(settings.getByLabelText('Carpeta'), 'Gente')
+    await userEvent.click(settings.getByRole('button', { name: 'Guardar' }))
+    await waitFor(async () => {
+      const { templates, folders } = await api.client.call('listTemplates', {})
+      expect(templates.find((t) => t.name === 'PNJ')?.folderId).toBe(folders[0]?.id)
+    })
+    // Se abre sola para verla dentro
+    expect(await list.findByRole('link', { name: 'PNJ' })).toBeDefined()
+    expect(list.getByRole('button', { name: 'Gente' }).getAttribute('aria-expanded')).toBe('true')
+    // Con el teclado: Lugar, encima de Facción (Alt + flecha arriba)
+    const row = list.getByRole('link', { name: 'Lugar' }).closest('[data-file-card]') as HTMLElement
+    row.focus()
+    await userEvent.keyboard('{Alt>}{ArrowUp}{/Alt}')
+    await waitFor(() =>
+      expect(
+        list
+          .getAllByRole('link')
+          .map((link) => link.textContent)
+          .slice(1, 3)
+      ).toEqual(['Lugar', 'Facción'])
+    )
   })
 
   it('«Plantilla nueva» crea «Plantilla sin título» y la abre con el título listo para escribir', async () => {
@@ -74,7 +107,7 @@ describe('la pantalla «Plantillas»', () => {
   it('el engranaje de una tuya: cambiarla de nombre y borrarla escribiendo su nombre', async () => {
     const { api } = renderTemplates()
     await api.client.call('createTemplate', { name: 'Frente', icon: 'hourglass' })
-    const mine = within(await screen.findByRole('list', { name: 'Tuyas' }))
+    const mine = within(await screen.findByRole('list', { name: 'Tus plantillas' }))
     await userEvent.click(await mine.findByRole('button', { name: 'Ajustes de Frente' }))
     const dialog = within(screen.getByRole('dialog', { name: 'Ajustes de Frente' }))
     await userEvent.clear(dialog.getByLabelText('Nombre'))

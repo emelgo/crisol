@@ -4,7 +4,7 @@
  * que aún no la tiene (de antes), de lo que guardaba su ficha, hasta que se abre y pasa a su página
  */
 import { randomBytes } from 'node:crypto'
-import { type PageTemplate, pagePanel } from '@crisol/contracts'
+import { type PageTemplate, pageCover, pagePanel, type TemplateView } from '@crisol/contracts'
 import { pagesRepo, templatesRepo, worldsRepo } from '@crisol/db'
 import { fieldKey, templateEmoji } from '@crisol/domain'
 import { fillJsonIds } from '@crisol/editor'
@@ -15,10 +15,50 @@ import { propertiesOf } from './properties.ts'
 
 /** Una plantilla de la cuenta, de su página si la tiene (lo guardado que no valga, fuera) */
 export async function ownTemplate(ctx: ActionContext, row: templatesRepo.TemplateRow): Promise<PageTemplate> {
+  return (await withPage(ctx, row)).template
+}
+
+/**
+ * Las plantillas como las da la API (ADR-0024): con su carpeta, su puesto y lo que enseña su vista previa (la portada
+ * de su página, sus pestañas y en cuántas páginas se usa)
+ */
+export async function templateViews(
+  ctx: ActionContext,
+  organizationId: string,
+  rows: readonly templatesRepo.TemplateRow[]
+): Promise<TemplateView[]> {
+  const loaded = await Promise.all(rows.map((row) => withPage(ctx, row)))
+  const uses = await templatesRepo.templateUses(
+    ctx.db,
+    organizationId,
+    rows.map((row) => row.id)
+  )
+  const tabs = await templatesRepo.tabsOfPages(
+    ctx.db,
+    loaded.flatMap(({ page }) => (page ? [page.id] : []))
+  )
+  return loaded.map(({ template, page }, index) => ({
+    ...structuredClone(template),
+    folderId: rows[index]?.folderId ?? null,
+    position: rows[index]?.position ?? null,
+    cover: page ? (pageCover.safeParse(page.cover).data ?? null) : null,
+    tabs: page ? (tabs.get(page.id) ?? []) : [],
+    uses: uses.get(template.id) ?? 0
+  }))
+}
+
+/** Una, como la da la API */
+export async function templateView(ctx: ActionContext, row: templatesRepo.TemplateRow): Promise<TemplateView> {
+  const [view] = await templateViews(ctx, row.organizationId, [row])
+  if (!view) throw new Error(`No se pudo leer la plantilla ${row.id}`)
+  return view
+}
+
+async function withPage(ctx: ActionContext, row: templatesRepo.TemplateRow) {
   const page = row.pageId ? await pagesRepo.findPage(ctx.db, row.pageId) : null
   const lineage = { id: row.id, basedOn: row.basedOn, line: row.line }
   if (!page) {
-    return {
+    const template: PageTemplate = {
       ...lineage,
       name: row.name,
       icon: templateEmoji(row.icon),
@@ -27,11 +67,12 @@ export async function ownTemplate(ctx: ActionContext, row: templatesRepo.Templat
       panel: pagePanel.safeParse(row.panel).data ?? [],
       skeleton: row.skeleton
     }
+    return { template, page: null }
   }
   // Su texto, como esqueleto en Markdown (sin propiedades: esas son sus campos); sin texto, vacío
   const body = await readDocument(ctx, { kind: 'body', pageId: page.id })
   const skeleton = pageToMarkdown({ properties: [], body, separate: () => null })
-  return {
+  const template: PageTemplate = {
     ...lineage,
     name: page.title,
     icon: page.icon,
@@ -40,6 +81,7 @@ export async function ownTemplate(ctx: ActionContext, row: templatesRepo.Templat
     panel: pagePanel.safeParse(page.panel).data ?? [],
     skeleton: skeleton.trim() === '' ? '' : skeleton
   }
+  return { template, page }
 }
 
 /** Las plantillas que se pueden usar en una organización: las suyas, en el orden en que se hicieron */

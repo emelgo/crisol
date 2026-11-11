@@ -223,7 +223,17 @@ import {
 } from './table-tools.ts'
 import { getRandomTable, resetTableDraws, rollOnTable, updateRandomTable } from './tables.ts'
 import { addFileTags, createTag, deleteTag, listAccountTags, moveTag, setFileTags, updateTag } from './tags.ts'
-import { createTemplate, deleteTemplate, getTemplate, listTemplates, updateTemplate } from './templates.ts'
+import {
+  createTemplate,
+  createTemplateFolder,
+  deleteTemplate,
+  deleteTemplateFolder,
+  getTemplate,
+  listTemplates,
+  moveTemplate,
+  updateTemplate,
+  updateTemplateFolder
+} from './templates.ts'
 import {
   assignToken,
   deleteEncounter,
@@ -422,6 +432,10 @@ export const ACTIONS = [
   createTemplate,
   updateTemplate,
   deleteTemplate,
+  createTemplateFolder,
+  updateTemplateFolder,
+  deleteTemplateFolder,
+  moveTemplate,
   rollDice,
   listRolls,
   tryDice,
@@ -704,6 +718,10 @@ export type Actions = {
   createTemplate: typeof createTemplate
   updateTemplate: typeof updateTemplate
   deleteTemplate: typeof deleteTemplate
+  createTemplateFolder: typeof createTemplateFolder
+  updateTemplateFolder: typeof updateTemplateFolder
+  deleteTemplateFolder: typeof deleteTemplateFolder
+  moveTemplate: typeof moveTemplate
   rollDice: typeof rollDice
   listRolls: typeof listRolls
   tryDice: typeof tryDice

@@ -4,7 +4,14 @@
  * izquierda para volver, la marca «Plantilla» junto al título, sin «Quién la conoce», «Marcar» ni «Mencionado en», y
  * en el panel sus campos y sus bloques, que se definen en vez de rellenarse. A la izquierda, las demás, para saltar
  */
-import type { Page, PageProperty, PageTemplate, PanelBlock } from '@crisol/contracts'
+import type {
+  TemplateView as Listed,
+  Page,
+  PageProperty,
+  PageTemplate,
+  PanelBlock,
+  TemplateFolder
+} from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, Navigate, useNavigate, useParams, useSearch } from '@tanstack/react-router'
 import { ChevronDown, ChevronLeft, ChevronUp, Plus, Settings, Trash2 } from 'lucide-react'
@@ -28,7 +35,7 @@ import styles from './editor.module.css'
 import { FieldsEditor } from './fields.tsx'
 import { TemplateIcon } from './icons.tsx'
 import { useTemplates } from './picker.tsx'
-import { TemplateSettings, useNewTemplate } from './screen.tsx'
+import { TemplateSettings, templateGroups, useNewTemplate } from './screen.tsx'
 
 type Patch = Partial<Pick<PageTemplate, 'fields' | 'panel'>>
 
@@ -77,7 +84,7 @@ export function TemplateView() {
   // Una que no está (o que se borró) lleva a la lista
   if (gone) return <Navigate to="/plantillas" replace />
   return (
-    <TemplateLayout current={template} all={templates.data?.templates ?? []}>
+    <TemplateLayout current={template} all={templates.data?.templates ?? []} folders={templates.data?.folders ?? []}>
       {page.data && template ? (
         <TemplatePage key={template.id} page={page.data} template={template} nuevo={nuevo === true} pestana={pestana} />
       ) : failed(opened) || failed(page) ? (
@@ -93,10 +100,12 @@ export function TemplateView() {
 function TemplateLayout({
   current,
   all,
+  folders,
   children
 }: {
   current: PageTemplate | undefined
-  all: readonly PageTemplate[]
+  all: readonly Listed[]
+  folders: readonly TemplateFolder[]
   children: ReactNode
 }) {
   const { t } = useTranslation()
@@ -131,7 +140,7 @@ function TemplateLayout({
           </button>
         </div>
         <FormError message={create.errorText} />
-        <TemplateLinks templates={all} current={current?.id} />
+        <TemplateLinks folders={folders} templates={all} current={current?.id} />
       </aside>
       <div className={wiki.content}>
         <CollabSocket>{children}</CollabSocket>
@@ -140,21 +149,41 @@ function TemplateLayout({
   )
 }
 
-function TemplateLinks({ templates, current }: { templates: readonly PageTemplate[]; current: string | undefined }) {
+function TemplateLinks({
+  folders,
+  templates,
+  current
+}: {
+  folders: readonly TemplateFolder[]
+  templates: readonly Listed[]
+  current: string | undefined
+}) {
+  const { t } = useTranslation()
+  const groups = templateGroups(folders, templates)
   return (
     <ul className={styles.links}>
-      {templates.map((each) => (
-        <li key={each.id}>
-          <Link
-            to="/plantillas/$templateId"
-            params={{ templateId: each.id }}
-            aria-current={each.id === current ? 'page' : undefined}
-            // De una a otra, como entre pestañas: rápido
-            viewTransition={SECTION}
-          >
-            <TemplateIcon icon={each.icon} size={15} />
-            {each.name}
-          </Link>
+      {groups.map((group) => (
+        <li key={group.id ?? 'arriba'}>
+          {/* Las de lo más alto, detrás de las carpetas: con su rótulo, si hay carpetas */}
+          {(group.label ?? (groups.length > 1 ? t('templates.loose') : null)) && (
+            <p className={styles.listHead}>{group.label ?? t('templates.loose')}</p>
+          )}
+          <ul className={styles.links}>
+            {group.templates.map((each) => (
+              <li key={each.id}>
+                <Link
+                  to="/plantillas/$templateId"
+                  params={{ templateId: each.id }}
+                  aria-current={each.id === current ? 'page' : undefined}
+                  // De una a otra, como entre pestañas: rápido
+                  viewTransition={SECTION}
+                >
+                  <TemplateIcon icon={each.icon} size={15} />
+                  {each.name}
+                </Link>
+              </li>
+            ))}
+          </ul>
         </li>
       ))}
     </ul>

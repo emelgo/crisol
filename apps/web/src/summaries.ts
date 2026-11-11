@@ -455,6 +455,19 @@ export function summaryOf(
         count: Number(details.count ?? 1),
         campaign: text(details.campaign)
       })
+    case 'createTemplateFolder':
+    case 'deleteTemplateFolder':
+    case 'orderTemplateFolder':
+    case 'orderTemplate':
+      return say(action, { name: textIn(details.name) })
+    case 'updateTemplateFolder':
+      return details.from !== undefined
+        ? say('renameTemplateFolder', { from: textIn(details.from), to: textIn(details.to) })
+        : say('moveTemplateFolder', { name: textIn(details.name) })
+    case 'moveTemplate':
+      return details.folder
+        ? say('moveTemplate', { name: textIn(details.name), folder: textIn(details.folder) })
+        : say('moveTemplateTop', { name: textIn(details.name) })
     case 'createTemplate':
     case 'updateTemplate':
     case 'deleteTemplate':

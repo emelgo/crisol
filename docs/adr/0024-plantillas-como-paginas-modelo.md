@@ -62,3 +62,13 @@ calculadas en el servidor.
 - Lo que el servidor haga por mundo (búsqueda, papelera, historial, exportar, lo que sabe una campaña) tiene que
   saltarse el mundo oculto, con su prueba.
 - Las pestañas nuevas (pizarra, línea temporal, árbol: módulos 8–10) nacen en el registro y con su forma de copiarse.
+
+## Notas de la construcción (2026-11-12)
+
+- Las carpetas (`template_folders`, migración 0079) son como las de archivos: color, icono, puesto a mano y nombre que
+  no se repite entre hermanas. Borrar una se lleva lo que tiene (sus plantillas, borradas; sus páginas no cambian), de
+  una vez. Acciones `createTemplateFolder`, `updateTemplateFolder`, `deleteTemplateFolder` y `moveTemplate`.
+- La plantilla, como la da la API (`templateView`), lleva su carpeta, su puesto y lo de su vista previa: la portada de
+  su página, sus pestañas y en cuántas páginas se usa.
+- Su nombre es el título de su página: `updatePage` comprueba que no se repita. Lo que se sube a su mundo oculto va a
+  los archivos comunes.

@@ -554,6 +554,13 @@
       "when": 1794413231527,
       "tag": "0078_mundo_de_plantillas",
       "breakpoints": true
+    },
+    {
+      "idx": 79,
+      "version": "7",
+      "when": 1794415994045,
+      "tag": "0079_carpetas_de_plantillas",
+      "breakpoints": true
     }
   ]
 }

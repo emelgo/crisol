@@ -38,6 +38,8 @@ import type {
   SoundTrackInput,
   TablePresenceEntry,
   TagView,
+  TemplateFolder,
+  TemplateView,
   TokenView,
   TrashItem,
   WallView,
@@ -454,26 +456,51 @@ export function fakeApi(
   // Las plantillas de la cuenta (no hay de serie): de entrada, las de ejemplo (las que fueron de serie)
   // Como en el servidor (ADR-0024), cada una es una página de un mundo oculto (que no sale en Mis mundos) y se lee de
   // ella; las de ejemplo, como las de antes, pasan a su página al abrirlas (getTemplate)
-  type StoredTemplate = PageTemplate & { deleted: boolean }
+  type StoredTemplate = PageTemplate & { deleted: boolean; folderId: string | null; position: string | null }
   const templatesWorld = crypto.randomUUID()
   const ownTemplates: StoredTemplate[] = (options.templates ?? EXAMPLE_TEMPLATES).map((template) => ({
     ...(structuredClone(template) as PageTemplate),
     pageId: null,
-    deleted: false
+    deleted: false,
+    folderId: null,
+    position: null
   }))
+  const templateFolders: TemplateFolder[] = []
   const templatePageOf = (template: StoredTemplate) =>
     template.pageId ? pages.find((page) => page.id === template.pageId) : undefined
-  const templateView = (template: StoredTemplate): PageTemplate => {
+  const templateView = (template: StoredTemplate): TemplateView => {
     const { deleted: _, ...row } = structuredClone(template)
     const page = templatePageOf(template)
-    if (!page) return row
+    // Lo que enseña su vista previa: su portada, sus pestañas y en cuántas páginas se usa
+    const extra = {
+      cover: page?.cover ?? null,
+      tabs: page
+        ? pageTabs.filter((tab) => tab.pageId === page.id).map((tab) => ({ name: tab.name, kind: tab.kind }))
+        : [],
+      uses: pages.filter((other) => other.template === template.id && other.worldId !== templatesWorld).length
+    }
+    if (!page) return { ...row, ...extra }
     return {
       ...row,
+      ...extra,
       name: page.title,
       icon: page.icon,
       fields: structuredClone(page.properties),
       panel: structuredClone(page.panel ?? []) as PageTemplate['panel']
     }
+  }
+  /** Su puesto entre sus hermanas (las de su tipo en la carpeta de destino), como placeBeside */
+  const placeAmongTemplates = (
+    siblings: { id: string; name: string; position: string | null }[],
+    movedId: string,
+    before: string | undefined,
+    after: string | undefined,
+    save: (id: string, position: string) => void
+  ) => {
+    const copies = siblings.map((each) => ({ ...each }))
+    const own = placeBeside(copies, movedId, before, after)
+    for (const copy of copies) if (copy.position !== null) save(copy.id, copy.position)
+    return own
   }
   const templateById = (id: string): PageTemplate | undefined => {
     const found = ownTemplates.find((t) => t.id === id && !t.deleted)
@@ -1947,6 +1974,7 @@ export function fakeApi(
     // Las plantillas: las de serie y las de la cuenta, como el servidor
     listTemplates: () => ({
       templates: ownTemplates.filter((t) => !t.deleted).map(templateView),
+      folders: structuredClone(templateFolders),
       deleted: ownTemplates
         .filter((t) => t.deleted)
         .map(templateView)
@@ -1977,11 +2005,83 @@ export function fakeApi(
         fields: structuredClone(base?.fields ?? []),
         panel: structuredClone(base?.panel ?? []),
         skeleton: base?.skeleton ?? '',
-        deleted: false
+        deleted: false,
+        folderId: null,
+        position: null
       }
       ownTemplates.push(template)
       templatePage(template)
       return templateView(template)
+    },
+    // Las carpetas de plantillas, como las de archivos
+    createTemplateFolder: ({ parentId: parent, name }) => {
+      const parentId = parent ?? null
+      if (parentId && !templateFolders.some((f) => f.id === parentId)) throw new ApiError('BAD_FOLDER', 400)
+      if (templateFolders.some((f) => f.parentId === parentId && f.name.toLowerCase() === name.toLowerCase())) {
+        throw new ApiError('NAME_TAKEN', 400)
+      }
+      const folder: TemplateFolder = {
+        id: crypto.randomUUID(),
+        parentId,
+        name,
+        position: null,
+        color: null,
+        icon: null
+      }
+      templateFolders.push(folder)
+      return structuredClone(folder)
+    },
+    updateTemplateFolder: ({ folderId, name, color, icon, parentId, before, after }) => {
+      const folder = templateFolders.find((f) => f.id === folderId)
+      if (!folder) throw new ApiError('NOT_FOUND', 404)
+      for (let at = parentId ?? null; at; at = templateFolders.find((f) => f.id === at)?.parentId ?? null) {
+        if (at === folderId) throw new ApiError('CYCLE', 400)
+      }
+      const destination = parentId === undefined ? folder.parentId : parentId
+      const moves = destination !== folder.parentId
+      const siblings = templateFolders.filter((f) => f.parentId === destination)
+      const position = placeBeside(siblings, folderId, before, after)
+      Object.assign(folder, {
+        ...(name !== undefined ? { name } : {}),
+        ...(color !== undefined ? { color } : {}),
+        ...(icon !== undefined ? { icon } : {}),
+        parentId: destination,
+        ...(position !== null ? { position } : moves ? { position: null } : {})
+      })
+      return structuredClone(folder)
+    },
+    deleteTemplateFolder: ({ folderId }) => {
+      const folder = templateFolders.find((f) => f.id === folderId)
+      if (!folder) throw new ApiError('NOT_FOUND', 404)
+      const gone = new Set<string>()
+      let level = [folderId]
+      while (level.length > 0) {
+        for (const id of level) gone.add(id)
+        level = templateFolders.filter((f) => f.parentId && level.includes(f.parentId)).map((f) => f.id)
+      }
+      const inside = ownTemplates.filter((t) => !t.deleted && t.folderId && gone.has(t.folderId))
+      for (const template of inside) Object.assign(template, { deleted: true, folderId: null, position: null })
+      for (let i = templateFolders.length - 1; i >= 0; i--) {
+        if (gone.has(templateFolders[i]?.id ?? '')) templateFolders.splice(i, 1)
+      }
+      return { id: folder.id, name: folder.name, templates: inside.length }
+    },
+    moveTemplate: ({ templateId, folderId, before, after }) => {
+      const found = ownTemplates.find((t) => t.id === templateId && !t.deleted)
+      if (!found) throw new ApiError('NOT_FOUND', 404)
+      if (folderId && !templateFolders.some((f) => f.id === folderId)) throw new ApiError('BAD_FOLDER', 400)
+      const moves = found.folderId !== folderId
+      const siblings = ownTemplates
+        .filter((t) => !t.deleted && t.folderId === folderId)
+        .map((t) => ({ id: t.id, name: templateView(t).name, position: t.position }))
+      const position = placeAmongTemplates(siblings, templateId, before, after, (id, at) => {
+        const sibling = ownTemplates.find((t) => t.id === id)
+        if (sibling) sibling.position = at
+      })
+      found.folderId = folderId
+      if (position !== null) found.position = position
+      else if (moves) found.position = null
+      return templateView(found)
     },
     updateTemplate: ({ templateId, ...patch }) => {
       const found = ownTemplates.find((t) => t.id === templateId && !t.deleted)

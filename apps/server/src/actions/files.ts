@@ -160,7 +160,7 @@ const folderTaken = (name: string) => new InvalidRequestError('NAME_TAKEN', `Ya 
  * (`siblingsThere`: los de allí): el suyo y, la primera vez que se ordenan, los de los demás que cambian. Sin ancla,
  * null. Si el ancla no es de allí (otra carpeta, otro ámbito u otro tipo) o es él mismo, NOT_SIBLING
  */
-async function placeBeside(
+export async function placeBeside(
   siblingsThere: () => Promise<{ id: string; name: string; position: string | null }[]>,
   movedId: string,
   anchor: { before?: string | undefined; after?: string | undefined }

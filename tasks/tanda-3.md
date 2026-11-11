@@ -40,9 +40,11 @@ Rama `revision/tanda-3`. Cada porción, con sus pruebas, en su commit; las casil
    Hecho: las pestañas llevan a la ruta de la plantilla (`TabTargetContext`); un emoji al principio del título pasa a
    ser su icono; «⋯» lleva sus ajustes (nombre, icono, borrarla); lo subido a su mundo va a los archivos comunes; su
    título no se repite con el de otra (`updatePage` lo comprueba) y avisa a las listas. Fuera el editor de esqueleto.
-6. **La lista como Archivos (A1)**: carpetas (`template_folders`, con color e icono como las de archivos), el árbol
+6. [x] **La lista como Archivos (A1)**: carpetas (`template_folders`, con color e icono como las de archivos), el árbol
    común (arrastrar, teclado, orden a mano), la vista previa a la izquierda (portada, icono, campos, pestañas, en
-   cuántas páginas se usa), buscador; «Plantilla nueva» y «Nueva carpeta» fijos.
+   cuántas páginas se usa), buscador; «Plantilla nueva» y «Nueva carpeta» fijos. Hecho (migración 0079): con las
+   clases y los gestos de Archivos (sin elegir varias, que en plantillas no hace falta); en la ventana de una
+   plantilla, «Carpeta»; la lista del editor, por carpetas («Sin carpeta» las sueltas).
 7. **«Desde plantilla», la última y centrada** (tras una raya con «o») en «Página nueva» y en «Pestaña nueva»; en
    «Pestaña nueva» se eligen qué pestañas de la plantilla se añaden (todas, de entrada). Fuera «Aplicar plantilla» de
    «⋯». Registro único de tipos de pestaña (nombre, icono, si admite plantilla) para página nueva, pestaña nueva y la

@@ -158,6 +158,11 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 - **Las plantillas son páginas guardadas como modelo, y no hay plantillas de serie** (Enrique, 2026-11-11, revisión de
   la app; ADR-0024): cada cuenta hace las suyas. Una plantilla lleva lo mismo que una página (portada, icono, campos,
   panel, texto y sus pestañas) y se edita como una página; crear desde ella es duplicarla. Se ordenan en carpetas.
+  **Su lista es como Archivos** (prototipo aprobado, 2026-11-12): el árbol con carpetas de color e icono, arrastre y
+  teclado, la vista previa a la izquierda y «Plantilla nueva» (crea «Plantilla sin título» y la abre) y «Nueva
+  carpeta» fijos. **Abierta, es su página** con «‹ Plantillas» arriba a la izquierda, la marca «Plantilla», las demás a
+  la izquierda (por carpetas) y en el panel sus campos y bloques, que se definen; un emoji delante del nombre es su
+  icono.
 - **Las tiradas no se escriben en las páginas** (Enrique, 2026-11-11, revisión de la app): los dados salen del texto y
   van a las entradas del compendio, que se tiran con su botón y se enlazan o se incrustan en una página.
 - **La wiki se edita en el sitio, como en el Crisol antiguo** (`docs/specs/wiki-edicion.md`): «no me gusta que todo sea

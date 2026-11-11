@@ -348,6 +348,58 @@ describe('las plantillas de la cuenta (sin plantillas de serie, ADR-0024)', () =
       expect((await ok200('listPageTabs', { pageId: copy.pageId })).tabs.map((t: { name: string }) => t.name)).toEqual([
         'Plano'
       ])
+      // En la lista, lo que enseña su vista previa: sus pestañas y en cuántas páginas se usa
+      const listed = (await ok200('listTemplates', {})).templates.find((t: { id: string }) => t.id === lugar.id)
+      expect(listed).toMatchObject({ tabs: [{ name: 'Plano', kind: 'map' }], uses: 1, folderId: null, cover: null })
+    })
+
+    it('carpetas, como las de archivos: dentro de otra, ordenadas a mano y con color e icono; borrar una se lleva lo suyo y se deshace', async () => {
+      const ids = await seedExampleTemplates(call)
+      const gente = await ok200('createTemplateFolder', { name: 'Gente' })
+      const nobles = await ok200('createTemplateFolder', { name: 'Nobles', parentId: gente.id })
+      expect(nobles).toMatchObject({ name: 'Nobles', parentId: gente.id, color: null, icon: null })
+      expect((await call('createTemplateFolder', { name: 'gente' })).json()).toMatchObject({ code: 'NAME_TAKEN' })
+      // Ni dentro de sí misma ni de una de las suyas
+      expect((await call('updateTemplateFolder', { folderId: gente.id, parentId: nobles.id })).json()).toMatchObject({
+        code: 'CYCLE'
+      })
+      expect(
+        await ok200('updateTemplateFolder', { folderId: gente.id, color: 'moss', icon: '🧑‍🤝‍🧑', name: 'Personas' })
+      ).toMatchObject({ name: 'Personas', color: 'moss', icon: '🧑‍🤝‍🧑' })
+      // PNJ y Facción a «Personas»; Facción delante de PNJ
+      await ok200('moveTemplate', { templateId: ids.pnj, folderId: gente.id })
+      await ok200('moveTemplate', { templateId: ids.faccion, folderId: gente.id })
+      expect(
+        (await call('moveTemplate', { templateId: ids.lugar, folderId: null, before: ids.pnj })).json()
+      ).toMatchObject({ code: 'NOT_SIBLING' })
+      await ok200('moveTemplate', { templateId: ids.pnj, folderId: gente.id, before: ids.faccion })
+      const list = await ok200('listTemplates', {})
+      const inside = list.templates
+        .filter((t: { folderId: string | null }) => t.folderId === gente.id)
+        .sort((a: { position: string }, b: { position: string }) => (a.position < b.position ? -1 : 1))
+      expect(inside.map((t: { id: string }) => t.id)).toEqual([ids.pnj, ids.faccion])
+      expect(list.folders.map((f: { name: string }) => f.name).sort()).toEqual(['Nobles', 'Personas'])
+      const { entries } = await ok200('listHistory', {})
+      expect(entries.slice(0, 3).map((e: { action: string }) => e.action)).toEqual([
+        'orderTemplate',
+        'moveTemplate',
+        'moveTemplate'
+      ])
+      // Borrarla se lleva sus carpetas y sus plantillas (sus páginas no cambian), de una vez
+      expect(await ok200('deleteTemplateFolder', { folderId: gente.id })).toMatchObject({
+        name: 'Personas',
+        templates: 2
+      })
+      const after = await ok200('listTemplates', {})
+      expect(after.folders).toEqual([])
+      expect(after.templates.map((t: { id: string }) => t.id)).not.toContain(ids.pnj)
+      expect(after.deleted.map((t: { id: string }) => t.id)).toEqual(expect.arrayContaining([ids.pnj, ids.faccion]))
+      const deletion = (await ok200('listHistory', {})).entries[0]
+      expect(deletion.action).toBe('deleteTemplateFolder')
+      expect((await ok200('undoOperation', { operationId: deletion.id })).status).toBe('undone')
+      const back = await ok200('listTemplates', {})
+      expect(back.folders.map((f: { name: string }) => f.name).sort()).toEqual(['Nobles', 'Personas'])
+      expect(back.templates.find((t: { id: string }) => t.id === ids.pnj)).toMatchObject({ folderId: gente.id })
     })
   })
 })
