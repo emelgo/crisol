@@ -59,7 +59,9 @@ Plan: `tasks/plan-revision.md`. Una tanda cada vez: se enseña en local, Enrique
 
 - [ ] Archivos comunes: mover (prueba que falla primero) y el aviso a la vista.
 - [ ] Prototipo de Archivos sin árbol a la izquierda: la lista del centro despliega las carpetas, se despliegan solas
-  al mantener un archivo encima y la vista previa va a la izquierda (también en Etiquetas).
+  al mantener un archivo encima y la vista previa va a la izquierda (también en Etiquetas). **Hecho y publicado**
+  (lienzo «Archivos sin árbol», https://claude.ai/artifact/SNQuCPM644JuprjWvatqBA, `out/lienzo-archivos/`); falta que
+  Enrique lo apruebe.
 - [ ] `components/tree/` (lógica de mover fuera del árbol de páginas, con pruebas).
 - [ ] Archivos con la lista que despliega (y fila «Todos» para lo más alto).
 - [ ] Etiquetas: `tags.position` y reordenar.
