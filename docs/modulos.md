@@ -13,7 +13,8 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   - **Imágenes**: `docs/imagenes.md` con seis variaciones de fantasía épica pintada (al estilo de Foundry VTT, Roliando o
     LegendKeeper, como pidió Enrique) y dos escenas: el fondo de Entrar y la ilustración de una pantalla vacía. **Solo
     las de la app**: las portadas de mundos, campañas, sistemas y libros son del usuario. Enrique las genera con
-    ChatGPT y las deja en `datos-locales/estilos/`; con ellas, una lámina para compararlas sobre la app.
+    ChatGPT. **Eligió la F** (pintura estilizada; orden F > A > C > D > B > E): guía de estilo y los 22 prompts que
+    faltan (fondos, portada, ambiente, pantallas vacías) en `docs/imagenes.md`; las entrega en `datos-locales/imagenes/`.
   - **Documentos al empezar**: normas nuevas en `docs/diseno.md`, la tabla de módulos (7 hecho, la revisión en curso, 8
     y 10 partidos en mundo y campaña, y el orden), ADR-0023 (sin pagos; toca el 0004) y ADR-0024 (plantillas como
     páginas-modelo; toca el 0009). El del cristal espera al lienzo (tanda 5); el de los capítulos, a 5etools (tanda 7).
@@ -24,7 +25,9 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
 - **Falta**: el visto bueno de Enrique en local → impeccable (critique y audit) → `pnpm lint`, `pnpm typecheck`,
   `pnpm test` y las e2e de lo tocado (`mundos`, `campanas`, `plantillas`, `archivos`, `a11y`…) → PR a `main` con
   `[skip ci]` y staging.
-- **Local**: la API de desarrollo (8130) estaba caída; se arrancó con `pnpm dev` en `apps/server`. Capturas de la
+- **Local**: Enrique revisa por un túnel a `localhost:5173` (staging, solo al final). La API (8130) estaba caída y el
+  Vite (5173) servía módulos viejos (página negra): los dos, arrancados de nuevo desligados de la sesión (`setsid
+  nohup`, registros en `datos-locales/*.log`). `scripts/desplegar-staging.sh [rama]` puede desplegar una rama local. Capturas de la
   tanda con un script temporal de e2e (`zz-tanda1.spec.ts`, fuera de git). Ojo: el screencast de Chrome no refresca la
   barra durante las transiciones de vista; para medir una animación, mejor leer `getAnimations()` en la página.
 - **Siguiente**: cerrar la tanda 1 y pasar a la 2 (árbol común, Archivos, Etiquetas y selector de archivos).
