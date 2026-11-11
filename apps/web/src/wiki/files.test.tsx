@@ -330,6 +330,35 @@ describe('los archivos comunes de la cuenta (ADR-0005)', () => {
     })
   })
 
+  it('en los comunes (fuera de los mundos) se mueven: a una carpeta y, soltado en el árbol, otra vez arriba', async () => {
+    const folder = { id: crypto.randomUUID(), worldId: null, organizationId: ORG.id, parentId: null, name: 'Sellos' }
+    const api = fakeApi({
+      organizations: [ORG],
+      worlds: [WORLD],
+      folders: [folder],
+      files: [{ worldId: null, organizationId: ORG.id, name: 'Escudo.png', kind: 'image' }]
+    })
+    renderAt('/archivos', api)
+    await screen.findByRole('button', { name: 'Escudo.png' })
+    const shield = api.files.find((f) => f.name === 'Escudo.png')
+    const dragged = {
+      dataTransfer: {
+        types: ['application/x-crisol-archivo', 'application/x-crisol-archivo-comun'],
+        getData: (type: string) => (type === 'application/x-crisol-archivo' ? (shield?.id ?? '') : '')
+      }
+    }
+    const row = (await screen.findByRole('button', { name: 'Abrir la carpeta Sellos' })).closest('li') as HTMLElement
+    fireEvent.dragOver(row, dragged)
+    fireEvent.drop(row, dragged)
+    await waitFor(() => expect(shield?.folderId).toBe(folder.id))
+    // Ya no está arriba (la lista se ha puesto al día): ahora, soltado en el árbol, vuelve
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Escudo.png' })).toBeNull())
+    const tree = screen.getByRole('navigation', { name: 'Carpetas' })
+    fireEvent.dragOver(tree, dragged)
+    fireEvent.drop(tree, dragged)
+    await waitFor(() => expect(shield?.folderId).toBeNull())
+  })
+
   it('fuera de los mundos, «Archivos» en la barra lleva a los comunes', async () => {
     renderAt('/mundos', withCommon())
     await userEvent.click(await screen.findByRole('link', { name: 'Archivos' }))

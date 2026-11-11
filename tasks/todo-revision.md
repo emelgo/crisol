@@ -57,7 +57,9 @@ Plan: `tasks/plan-revision.md`. Una tanda cada vez: se enseña en local, Enrique
 
 ## Tanda 2 — Árbol común, Archivos, Etiquetas y selector de archivos
 
-- [ ] Archivos comunes: mover (prueba que falla primero) y el aviso a la vista.
+- [x] Archivos comunes: mover (prueba que falla primero). La comprobación de ámbito de `moveInto` creía «del mundo»
+  cualquier carpeta de los comunes de Inicio (allí no hay carpeta «Comunes»); ahora usa `scopeAt`.
+- [ ] El «no se puede» a la vista: con la Archivos nueva (las carpetas que no admiten lo arrastrado, apagadas).
 - [ ] Prototipo de Archivos sin árbol a la izquierda: la lista del centro despliega las carpetas, se despliegan solas
   al mantener un archivo encima y la vista previa va a la izquierda (también en Etiquetas). **Hecho y publicado**
   (lienzo «Archivos sin árbol», https://claude.ai/artifact/SNQuCPM644JuprjWvatqBA, `out/lienzo-archivos/`); falta que
@@ -122,7 +124,7 @@ Plan: `tasks/plan-revision.md`. Una tanda cada vez: se enseña en local, Enrique
 
 Lo que sale sin estar en la lista: se avisa a Enrique y se arregla en su tanda.
 
-- [ ] Archivos comunes: no se mueve ningún archivo, y el aviso solo lo oye un lector de pantalla (tanda 2).
+- [x] Archivos comunes: no se mueve ningún archivo (arreglado en la tanda 2); el aviso a la vista, con la Archivos nueva.
 - [ ] Cristal sin respaldo en seis piezas de la Mesa (tanda 5).
 - [ ] `docs/diseno.md` dice que la barra derecha de la Mesa es opaca y es de cristal (tanda 5).
 - [x] Tutorial de Inicio: «Nueva campaña» colado entre Historial y Papelera (tanda 1): ahora va tras «Nuevo mundo».

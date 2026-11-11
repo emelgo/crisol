@@ -469,8 +469,9 @@ function FilesSection({
   const moveInto = async (fileId: string, to: string | null) => {
     const file = data?.files.find((f) => f.id === fileId)
     if (!file || (file.folderId ?? null) === to) return
-    // Un archivo no pasa del mundo a los comunes ni al revés (son de ámbitos distintos)
-    if ((file.worldId === null) !== (Boolean(common) && inCommon(to))) {
+    // Un archivo no pasa del mundo a los comunes ni al revés (son de ámbitos distintos). El ámbito de la carpeta sale
+    // de adónde va lo suyo: en los comunes de Inicio no hay carpeta «Comunes» y todo es común
+    if ((file.worldId === null ? 'comun' : 'mundo') !== scopeAt(to)) {
       announce(t('files.otherScope'))
       return
     }
