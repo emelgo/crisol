@@ -899,7 +899,6 @@ function LookDialog({
         )}
         <Field
           label={t('worlds.description')}
-          hint={t('worlds.descriptionHint')}
           value={draft.description}
           rows={3}
           maxLength={280}

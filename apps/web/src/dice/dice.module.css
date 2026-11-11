@@ -589,7 +589,7 @@
   margin-inline-start: auto;
   padding: var(--space-1);
   border: 0;
-  border-radius: 6px;
+  border-radius: 50%;
   background: none;
   color: var(--color-muted);
   cursor: pointer;
@@ -597,7 +597,7 @@
 
 .close:hover {
   color: var(--color-text);
-  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+  background: color-mix(in srgb, var(--color-text) 10%, transparent);
 }
 
 /* En una ventana de la Mesa, el historial la llena */

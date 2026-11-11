@@ -41,22 +41,37 @@
   inline-size: var(--target);
   block-size: var(--target);
   border: 0;
-  border-radius: 6px;
+  border-radius: 50%;
   background: transparent;
   color: var(--color-muted);
   cursor: pointer;
 }
 
+/* Al pasar el ratón, un círculo suave alrededor del icono (no todo el hueco que se toca, que tapaba la esquina) */
+.close::before {
+  content: "";
+  position: absolute;
+  inset: 0.375rem;
+  border-radius: 50%;
+  transition: background-color 120ms ease-out;
+}
+
+.close svg {
+  position: relative;
+}
+
 .close:hover {
-  background: color-mix(in srgb, var(--color-text) 10%, transparent);
   color: var(--color-text);
 }
 
-/* Con el teclado, un anillo fino (sin el fondo de pasar el ratón, que parecía un botón pulsado) */
+.close:hover::before {
+  background: color-mix(in srgb, var(--color-text) 10%, transparent);
+}
+
+/* Con el teclado, un anillo fino en el mismo círculo (sin el fondo de pasar el ratón, que parecía pulsado) */
 .close:focus-visible {
   outline: 2px solid var(--color-focus);
-  outline-offset: -2px;
-  background: transparent;
+  outline-offset: -0.375rem;
 }
 
 @media (max-width: 48rem) {

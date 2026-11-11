@@ -40,7 +40,7 @@ Este archivo es el plan maestro. Al empezar a ejecutarlo se copia a `tasks/plan-
 | **Menú desplegable común** (`floating` + `useDismiss`) | «Exportar» que no parece desplegable | «⋯» de la página y demás menús |
 | **Ficha de una entrada del compendio**, una sola | Libro del sistema | Compendio de la campaña, incrustada en una página, ventana flotante en el mundo; lleva las tiradas |
 | **Validación con mensajes** (`validateFile` + `ProblemList`) | Subir el esqueleto relleno | Editor manual, en vivo |
-| **Efectos por tema** (colores de brasas, humo y chispas como tokens) | No se ven en claro | Cualquier efecto nuevo |
+| **Efectos como tokens** (colores de brasas, humo y chispas) | Se tocan en un sitio | Cualquier efecto nuevo |
 | **Cristal fuera de la Mesa** (superficies + fondo de ambiente + «sin desenfoque») | Entrar, Inicio, Sistemas, Mundo | Todo lo que venga |
 
 ## Lo que preguntas
@@ -104,15 +104,21 @@ sistemas y libros son del usuario (Enrique, 2026-11-11).
 - **Archivos comunes no deja mover nada.** `moveInto` (`wiki/files.tsx:473`) compara mal el ámbito cuando no hay
   carpeta «Comunes» (la pantalla de Inicio) y corta todos los movimientos. Prueba que falla primero (unitaria y e2e en
   comunes: hoy solo se prueba en un mundo), luego el arreglo. El aviso de «no se puede» se verá, no solo se oirá.
-- **Árbol común** (`components/tree/`): pulsar una carpeta la elige y no vuelve a la raíz al repetir
-  (`files.tsx:842`); la flecha despliega y pliega siempre (hoy la elegida y sus madres se quedan abiertas a la fuerza:
-  `:815`); una fila raíz visible («Todos») que se elige y recibe lo que se suelta; zonas antes / dentro / después y
-  teclado (flechas, Alt + flechas). La lógica de mover se saca del árbol de páginas (`wiki/tree.tsx:215-310`) a
-  funciones con sus pruebas; **el árbol de páginas no se reescribe**, solo las importa. `FolderTree` pasa al común:
-  arregla a la vez Archivos de Inicio y del mundo. En el móvil, Archivos sigue con su selector.
+- **Archivos sin árbol a la izquierda: la lista del centro es el árbol** (Enrique, 2026-11-11, al revisar la
+  tanda 1). Pulsar una carpeta la despliega ahí mismo con lo de dentro sangrado, en vez de entrar en ella; al arrastrar
+  un archivo y mantenerlo sobre una carpeta cerrada, se despliega sola (como en un explorador). La vista previa del
+  archivo o la carpeta, **a la izquierda**, donde estaba el árbol. Antes, prototipo: queda por ver la vista de
+  tarjetas (si se queda y cómo se despliega en ella) y dónde se suelta para llevar algo a lo más alto (una fila
+  «Todos» arriba). Con ello se van los fallos del árbol de ahora (`files.tsx:815`, `:842`).
+- **Árbol común** (`components/tree/`): la lista con despliegue de Archivos, con zonas antes / dentro / después y
+  teclado (flechas, Alt + flechas), y el despliegue solo al mantener encima al arrastrar. La lógica de mover se saca
+  del árbol de páginas (`wiki/tree.tsx:215-310`) a funciones con sus pruebas; **el árbol de páginas no se reescribe**,
+  solo las importa. Sirve después para Etiquetas, las carpetas de plantillas y el árbol del libro. En el móvil, Archivos
+  sigue con su selector.
 - **Etiquetas: ordenar.** Hoy solo se anidan (el orden es alfabético y no hay campo). Migración: `tags.position`
   (clave fraccionaria, `packages/domain/src/order.ts`; se rellena al primer reordenar), la jerarquía sigue en el nombre
-  y la lista pasa al árbol común. Nota en un ADR (retoca el 0006).
+  y la lista pasa al árbol común. Nota en un ADR (retoca el 0006). **Su vista previa, a la izquierda**, como en
+  Archivos (Enrique, 2026-11-11).
 - **Selector de archivos** (`components/file-picker`): el explorador con su árbol, filtrado por tipo, en una ventana.
   En el cuadro del mundo, dos botones con su texto debajo: «Subir imagen» y «Elegir de tus archivos»; fuera las
   miniaturas sueltas (`routes/world-cover.tsx`). Sustituye también al selector viejo de la portada de página
@@ -172,8 +178,8 @@ El lienzo se prepara desde la tanda 1 (necesita su visto bueno y el estilo de la
   ambiente**: en Entrar, las imágenes; en Inicio, una imagen de ambiente o la portada del mundo sobre el que está el
   ratón; en un mundo, su portada, muy difuminada y tenue; en un sistema, la suya. Encima, de cristal lo que enmarca
   (barra lateral, fichas de los lados, cabeceras, tarjetas, cuadros); **lo que se lee o se escribe, casi opaco**, como
-  en la Mesa. Hay que resolver el tema claro (hoy queda lechoso) y el rendimiento.
-- **Lienzo «Crisol, con cristal»**: Entrar, Inicio, una página del mundo y Sistemas, en oscuro y en claro, antes y
+  en la Mesa. Hay que resolver el rendimiento (el tema claro ya no existe: solo oscuro desde la tanda 1).
+- **Lienzo «Crisol, con cristal»**: Entrar, Inicio, una página del mundo y Sistemas, antes y
   después.
 - **Construcción**: superficies como tokens (`--surface-glass`, `--surface-read`) sobre los `--glass-*` que ya hay
   (`styles/tokens.css:98-116`); componente de ambiente a partir de `components/backdrop.tsx`; el respaldo sin
@@ -294,7 +300,7 @@ Ya entran en su tanda:
 - Por tanda: pruebas unitarias de lo tocado, `pnpm lint`, `pnpm typecheck`, `pnpm test`, las e2e afectadas
   (`archivos`, `plantillas`, `hoja`, `exportar`, `wiki`, `editor`, `bloques`, `sistemas`, `dados`, `fugas`) y, donde
   haya migración, aplicada en local al crearla.
-- Lo visible: capturas en oscuro y en claro con el navegador de pruebas, y Enrique en `localhost`.
+- Lo visible: capturas con el navegador de pruebas (solo hay tema oscuro), y Enrique en `localhost`.
 - Efectos y transiciones: grabados con Playwright en los dos temas.
 - MCP: `tools.test.ts` y una pasada real con el conector.
 - Al cerrar un bloque: `pnpm e2e` entero, una CI y staging.

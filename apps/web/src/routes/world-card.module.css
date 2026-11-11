@@ -458,6 +458,12 @@
   overflow-wrap: break-word;
 }
 
+/* Al pasar el ratón, el nombre se resalta con el color del mundo, aclarado lo justo para que se lea sobre lo oscuro;
+   sin color, con el rojo de los enlaces (Enrique, 2026-11-11: «si selecciono color verde, debe resaltarse el color») */
+.name:hover {
+  color: oklch(from var(--world-color, var(--color-accent-text)) max(l, 0.78) c h);
+}
+
 .name::after {
   content: "";
   position: absolute;
@@ -477,6 +483,7 @@
   margin: 0;
   color: var(--color-muted);
   font-size: 0.9375rem;
+  overflow-wrap: anywhere;
 }
 
 /* En la tarjeta, tres líneas como mucho (la descripción llega a 280 letras); entera, en el panel de al lado */

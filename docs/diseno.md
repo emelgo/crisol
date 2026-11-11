@@ -6,7 +6,8 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 ## Identidad
 
 - **Mezcla del Crisol antiguo y del nuevo** (2026-10-30). Del antiguo:
-  - grises neutros, con el oscuro por defecto;
+  - grises neutros, **solo en oscuro** (Enrique, 2026-11-11: «el modo blanco no me convence»; el claro se quita del
+    todo y, si un día hace falta, se hará entero; la hoja impresa y el PDF siguen con sus papeles);
   - cada nivel de título con su color;
   - enlaces en azul;
   - el rojo solo en lo importante.
@@ -115,8 +116,8 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 - **El mundo se abre en su portada**, como la Home de LegendKeeper: una página más, que se crea sola con un texto de
   bienvenida, va la primera del árbol con su casa, no se borra ni se mete en otra, y lleva «Inicio» junto al título.
   Por detrás, la portada del mundo (su tarjeta al entrar: **esa transición no se toca**).
-- **El menú de la cuenta** (la inicial, abajo en la barra): quién eres, Perfil, Ajustes y Cerrar sesión. El tema va en
-  Ajustes, no en el menú. Se abre al lado del botón y nunca se corta.
+- **El menú de la cuenta** (la inicial, abajo en la barra): quién eres, Perfil, Ajustes y Cerrar sesión. Sin elegir
+  tema (solo hay oscuro). Se abre al lado del botón y nunca se corta.
 - **Las etiquetas son de toda la cuenta** (ADR-0006): «Etiquetas» va en la barra de Mis mundos, no en la de un mundo;
   dentro, son filtros (al buscar en la wiki, en Archivos). Llevan un color opcional y se ven como un punto de color con
   su nombre. Se eligen o se escriben: una nueva entra sola. **Una puede ir dentro de otra** (Enrique, 2026-11-08: «al crearla que te
@@ -220,7 +221,7 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 - **Dentro de un mundo, la forma de Everlore (esquinas redondeadas, sin cortes) con nuestros colores y nuestras
   letras.** Las propiedades de una página van en el panel de la derecha, con su título pequeño como lo demás.
 - **Los mundos no tienen papel** (máster o jugador): eso es de las campañas.
-- **La tele, siempre oscura**, aunque la app esté en el tema claro: es una pantalla para el grupo, sobre el mapa
+- **La tele, siempre oscura**: es una pantalla para el grupo, sobre el mapa
   (2026-11-08).
 - **El mapa**: la imagen se arrastra y se acerca con la rueda hacia el cursor (y con dos dedos); las herramientas, una
   columna de iconos arriba a la izquierda; el botón derecho ofrece «Pin aquí» y «Pin con página nueva» (su nombre es
@@ -268,9 +269,9 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 
 - **La colocación de Ajustes es la referencia**: una columna en el centro, con el título y el contenido alineados.
   Nada suelto «en medio sin sentido». **El título no se mueve de una vista a otra**; si hace falta más sitio, se usan
-  los lados con **paneles fuera de la columna** («a cada lado puede haber como pestañas extras»): en Archivos, el
-  árbol de carpetas a la izquierda y, a la derecha, el archivo o la carpeta **sobre la que está el ratón** (solo
-  mientras lo está); en Mis mundos, a la izquierda, el mundo sobre el que está el ratón (portada, descripción,
+  los lados con **paneles fuera de la columna** («a cada lado puede haber como pestañas extras»): en Archivos y en
+  Etiquetas, a la izquierda, el archivo, la carpeta o la etiqueta **sobre la que está el ratón** (solo mientras lo
+  está; Enrique, 2026-11-11, antes a la derecha); en Mis mundos, a la izquierda, el mundo sobre el que está el ratón (portada, descripción,
   campañas y archivos). Archivos de un mundo es la misma pantalla que la de los comunes, con «Comunes» como una carpeta
   más. Con menos sitio (o con zoom) la columna del centro se estrecha; sin sitio, el panel se quita.
 - **Crear algo se hace con un botón que abre un cuadro**, no con un formulario suelto en la pantalla. **El de crear es
@@ -287,6 +288,11 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   Enrique; la lista en `apps/web/src/account/backdrops.ts` y su origen en `docs/terceros.md`. **Se cambiarán por
   imágenes propias** en el estilo que elija Enrique (2026-11-11, `docs/imagenes.md`), con el centro tranquilo para el
   recuadro.
+- **Archivos, sin árbol a la izquierda: la lista del centro es el árbol** (Enrique, 2026-11-11: «el árbol de la
+  izquierda no tiene sentido, ya tenemos la visión del árbol en el centro»): pulsar una carpeta la despliega ahí mismo,
+  con lo de dentro sangrado (no se entra en ella), y al arrastrar un archivo y mantenerlo sobre una carpeta cerrada, se
+  despliega sola. La vista previa, a la izquierda. Se construye en la tanda 2 de la revisión; sustituye a lo del árbol
+  de la norma de abajo.
 - **Archivos, como un explorador**: árbol de carpetas (unas dentro de otras; se les arrastran archivos, y mientras se
   arrastra se marcan las carpetas donde se puede soltar, con «Mover aquí»; la que lo recibe se ilumina; soltado en la
   caja del árbol, fuera de una carpeta, va a lo más alto; un común no va a una carpeta del mundo ni al revés). **Sin
@@ -300,7 +306,9 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 - **Los archivos comunes de la cuenta** (ADR-0005): fuera de los mundos, «Archivos» en la barra; dentro de cada
   mundo, la carpeta «Comunes» en sus archivos, la misma en todos. Donde se elige un archivo (la portada), «Del mundo»
   y «Comunes» por separado.
-- **Todo cuadro o ventana encima lleva la X arriba a la derecha y se cierra al pulsar fuera** (y con Escape).
+- **Todo cuadro o ventana encima lleva la X arriba a la derecha y se cierra al pulsar fuera** (y con Escape). **Las X
+  de cerrar, al pasar el ratón, un círculo suave alrededor del icono** (Enrique, 2026-11-11: «la x se ve mal al pasar
+  el ratón por encima»; antes, un cuadrado que tapaba la esquina), en todas.
 - **Todos los cuadros con la misma cabecera y los mismos botones** (Enrique, 2026-11-08: «la x se ve por encima, el
   titulo muy pegado»): el título rojo con su raya, con aire arriba (haya portada o no) y a la altura de la X, que nunca
   queda encima de la raya ni del título. La acción principal (Crear, Guardar, Borrar) a la izquierda y la primera,
@@ -321,7 +329,8 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   que el ratón entra otra vez en la tarjeta.
 - **El color de un mundo**: sin color, uno de los fijos o uno propio con el selector de color; los propios se
   recuerdan para usarlos otra vez. **Solo tiñe, sutil, el contorno de su tarjeta** (y el de su ventana); la portada no
-  se colorea. **El contorno sale siempre**, entero, también alrededor de la portada. Sin imagen, el hueco de la portada lleva un tinte muy oscuro de ese color.
+  se colorea. **Al pasar el ratón, su nombre se resalta con ese color** (Enrique, 2026-11-11: «si selecciono color
+  verde, debe resaltarse el color, no de rojo siempre»), aclarado para que se lea; sin color, en rojo. **El contorno sale siempre**, entero, también alrededor de la portada. Sin imagen, el hueco de la portada lleva un tinte muy oscuro de ese color.
 - **Toda la tarjeta es clicable** y lleva al elemento, no solo su nombre (salvo sus botones).
 - **«Guardar» y «Cancelar» solo salen si hay cambios**, a la izquierda (Guardar primero), y se abren y se cierran
   suavemente al aparecer y al irse, sin saltos (`components/changes.tsx`); «Cancelar» los deshace.

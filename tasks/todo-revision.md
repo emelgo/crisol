@@ -24,21 +24,28 @@ Plan: `tasks/plan-revision.md`. Una tanda cada vez: se enseña en local, Enrique
 
 ## Tanda 1 — Inicio: arreglos rápidos (rama `revision/tanda-1`)
 
-- [x] 1. Chispas y humo en el tema claro (colores como tokens con su versión clara): `--fx-*` en `styles/tokens.css`,
-  con su prueba de contraste; brasas, humo, chispas de la barra y ceniza de las tarjetas.
+- [x] 1. Chispas y humo en el tema claro: colores como tokens `--fx-*` en `styles/tokens.css`, con su prueba de
+  contraste (al quitar el tema claro, se quedan los del oscuro).
 - [x] 2. Los iconos de la barra se van al ritmo al que llegan: al volver, el espejo de entrar (del último al primero,
   460 ms y 70 ms de paso; «Mundos» baja de la llama en 1,1 s cuando ya han subido, y la llama lo expulsa entonces).
 - [x] 3. Recuadros «Nuevo…» con línea continua: `components/new-card.tsx` común (mundo, campaña, plantilla, sistema,
   personaje y etiqueta).
 - [x] 4. Descripción con límite y contador (mundos y campañas): `Field` con `rows` (crece con lo escrito) y `counter`.
 - [x] 5. Orden de la barra: Mundos, Plantillas, Etiquetas, Sistemas, Archivos; el tutorial, igual.
+- [x] Revisión de Enrique en local (2026-11-11): fuera la pista «Sale en su tarjeta» (sobreexplica); la descripción
+  se parte aunque no lleve espacios (se salía del panel lateral); las esquinas de «Nuevo…», dibujadas como el marco
+  de las tarjetas (las diagonales no casaban); **solo tema oscuro** (fuera el claro, su botón, su elección en Ajustes y
+  sus pruebas); las X de cerrar, con un círculo al pasar el ratón (en todas; las de la Mesa, con la campaña); el nombre
+  de un mundo o una campaña se resalta con su color.
 - [ ] Visto bueno de Enrique → impeccable (critique y audit) → pruebas → PR a `main` y staging.
 
 ## Tanda 2 — Árbol común, Archivos, Etiquetas y selector de archivos
 
 - [ ] Archivos comunes: mover (prueba que falla primero) y el aviso a la vista.
+- [ ] Prototipo de Archivos sin árbol a la izquierda: la lista del centro despliega las carpetas, se despliegan solas
+  al mantener un archivo encima y la vista previa va a la izquierda (también en Etiquetas).
 - [ ] `components/tree/` (lógica de mover fuera del árbol de páginas, con pruebas).
-- [ ] Archivos con el árbol común: fila raíz, clic que elige, flecha que pliega siempre.
+- [ ] Archivos con la lista que despliega (y fila «Todos» para lo más alto).
 - [ ] Etiquetas: `tags.position` y reordenar.
 - [ ] Selector de archivos y la portada al crear un mundo.
 
@@ -110,5 +117,7 @@ Lo que sale sin estar en la lista: se avisa a Enrique y se arregla en su tanda.
 - [ ] No hay menú común (tanda 4).
 - [x] Con 280 letras, la descripción estiraba la tarjeta hasta ocho líneas: en la tarjeta, tres como mucho (entera, en
   el panel de al lado); su pista ya no dice «una línea» (tanda 1).
-- [x] «Personaje nuevo» (en la campaña) compartía el recuadro de las plantillas: también pasa a línea continua
-  (tanda 1; si la campaña no debe cambiar aún, se deja como estaba).
+- [x] «Personaje nuevo» (en la campaña) compartía el recuadro de las plantillas: también pasa a línea continua (tanda
+  1; Enrique: «si algo se comparte lo cambias», y en la revisión de la campaña se verá).
+- [x] Una descripción sin espacios (una sola palabra larga) se salía de la tarjeta y del panel lateral (tanda 1).
+- [ ] Las X de las ventanas de la Mesa siguen con su estilo de botón de icono: con la revisión de la campaña.
