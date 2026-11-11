@@ -27,6 +27,7 @@ import { FileDrop, type FileDropOptions } from './file-embed.tsx'
 import find from './find-in-page.module.css'
 import { FindBar, FindInPage } from './find-in-page.tsx'
 import { GhostLine } from './ghost-line.ts'
+import { HeadingOutline } from './heading-outline.ts'
 import { LinkSuggest, type PageLinks, PageLinksContext, useLinksRef, usePageLinks } from './page-links.tsx'
 import { usePageContent } from './preview.tsx'
 import {
@@ -278,6 +279,7 @@ function BodyEditor({
         }),
         EmptyHint.configure({ text: t('editor.placeholder') }),
         GhostLine.configure({ className: styles.ghostLine ?? '' }),
+        HeadingOutline,
         ...(nested
           ? []
           : [CalloutShortcut.configure({ makeSecret: (editor) => void context.makeSeparate(editor, 'secret') })]),
