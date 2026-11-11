@@ -20,10 +20,16 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   - Etiquetas ordenadas a mano: `tags.position` (migración 0074, aplicada en local), `moveTag`, MCP `mover_etiqueta`,
     y se arrastran **como las páginas del mundo** (raya delante o detrás, resalte dentro; sin «Arriba del todo», lo
     pidió Enrique).
-  - Prototipo «Archivos sin árbol» (https://claude.ai/artifact/SNQuCPM644JuprjWvatqBA), ya con el arrastre de las
-    páginas; **sin aprobar**. Pregunta abierta: ¿los archivos, también en orden a mano?
-- **Siguiente**: lo que diga Enrique del prototipo → la Archivos nueva, el selector de archivos y la portada al crear
-  un mundo; Etiquetas con el teclado.
+  - **Archivos sin árbol**, aprobado y construido (solo lista): pulsar despliega; arrastrar como las páginas; mover al
+    momento; vista previa a la izquierda (también en Etiquetas, que ya se ordena con el teclado); al buscar, lo
+    encontrado dentro de sus carpetas; `#etiqueta` en el buscador; «Subir archivos» y «Nueva carpeta» fijos (en lo más
+    alto) y, en cada carpeta, «Subir aquí» y «Carpeta dentro» al pasar el ratón.
+  - Mover sin retardo (etiquetas y páginas, como pidió Enrique). Lo que parecía retardo tras eso era código viejo en
+    su navegador: con Ctrl+Mayús+R, «se ve al instante».
+  - **En marcha**: el orden a mano de archivos y carpetas dentro de su carpeta (Enrique: «no puedo recolocar dentro de
+    una carpeta»), migración 0075, como el de las etiquetas.
+- **Siguiente**: revisar y subir a la rama el orden de Archivos; luego el selector de archivos y la portada al crear un
+  mundo (preguntado a Enrique si con prototipo o directo), y cerrar la tanda 2 (impeccable y pruebas).
 
 ### Para retomar (2026-11-12, madrugada: tanda 1 con visto bueno y revisada con impeccable; faltan e2e, PR y staging)
 
