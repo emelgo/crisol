@@ -128,4 +128,13 @@
   --fx-ash-4: #77736f;
   --fx-ash-5: #c2bdb6;
   --fx-ash-rgb: 150 150 160;
+  /* La forja y la ceniza de las tarjetas: el metal fundido (y su borde más frío) al nacer; el carbón y el hollín al
+     arder */
+  --fx-molten-rgb: 255 138 92;
+  --fx-molten-cool-rgb: 255 180 120;
+  --fx-charcoal: #2a2826;
+  --fx-charcoal-hot: #6b6763;
+  --fx-soot-rgb: 28 26 25;
+  --fx-cinder-rgb: 60 57 54;
+  --fx-cinder-light-rgb: 120 116 110;
 }

@@ -1,6 +1,7 @@
 import type { TFunction } from 'i18next'
 import { type ComponentProps, type FormEvent, type InputEvent, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useAnnounce } from './announcer.tsx'
 import styles from './form.module.css'
 
 type Control = HTMLInputElement | HTMLTextAreaElement
@@ -41,6 +42,7 @@ export function Field({
   counter?: boolean
 }) {
   const { t } = useTranslation()
+  const announce = useAnnounce()
   const id = useId()
   const element = useRef<Control | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -80,6 +82,8 @@ export function Field({
     onInput: (event: InputEvent<Control>) => {
       // Mientras se corrige, el mensaje sigue a lo escrito
       const node = event.currentTarget
+      // Al llegar al límite (también al pegar de más, que se corta), se dice una vez: el navegador no avisa
+      if (max && node.value.length >= max && length < max) announce(t('validation.atLimit', { max }))
       setTyped(node.value.length)
       if (error !== null) setError(node.validity.valid ? null : validationText(t, node))
       input.onInput?.(event as InputEvent<HTMLInputElement>)
@@ -113,8 +117,13 @@ export function Field({
         // La pista a la izquierda y la cuenta a la derecha, en su sitio aunque no se vea: al salir, nada se mueve
         <div className={styles.fieldFoot}>
           {pista}
-          <small id={`${id}-cuenta`} className={styles.counter} data-full={length >= max || undefined}>
-            {length} / {max}
+          <small className={styles.counter} data-full={length >= max || undefined}>
+            <span aria-hidden="true">
+              {length} / {max}
+            </span>
+            <span id={`${id}-cuenta`} className={styles.srOnly}>
+              {t('validation.count', { count: length, max })}
+            </span>
           </small>
         </div>
       ) : (

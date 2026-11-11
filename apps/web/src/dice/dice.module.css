@@ -584,20 +584,11 @@
 }
 
 .close {
-  display: grid;
-  place-items: center;
+  composes: close from "../components/close.module.css";
+  --close-size: 2rem;
+  --close-inset: 0;
+  position: relative;
   margin-inline-start: auto;
-  padding: var(--space-1);
-  border: 0;
-  border-radius: 50%;
-  background: none;
-  color: var(--color-muted);
-  cursor: pointer;
-}
-
-.close:hover {
-  color: var(--color-text);
-  background: color-mix(in srgb, var(--color-text) 10%, transparent);
 }
 
 /* En una ventana de la Mesa, el historial la llena */
@@ -642,7 +633,11 @@
 
 /* Con el dedo, del tamaño que se toca (en el PC no cambian) */
 @media (pointer: coarse) {
-  .close,
+  .close {
+    --close-size: var(--target);
+    --close-inset: 0.375rem;
+  }
+
   .chip button,
   .stepper button,
   .clear {

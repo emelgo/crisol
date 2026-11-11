@@ -41,12 +41,15 @@ Plan: `tasks/plan-revision.md`. Una tanda cada vez: se enseña en local, Enrique
 - [x] impeccable: critique 29/40 y audit 15/20 (ficha en `.impeccable/critique/`). Arreglado: contorno con el color
   del mundo también en reposo (fallaba en la compilación por el orden del CSS: `--frame-line`), foco de «Nuevo…»,
   nombre resaltado con el teclado, filas del mismo alto, cuadro anclado arriba, `::placeholder` legible.
-- [ ] Decide Enrique: ¿«Nuevo…» con la misma línea que las tarjetas (ahora es el contorno que más pesa)? ¿Un icono
-  propio para el mundo en la barra (hoy es el mismo globo que «Mundos»)?
-- [ ] Del audit, por hacer: la barra en pantallas bajas («Archivos» queda bajo el pie: `scroll-padding` y señal de que
-  hay más); una X común en todas las de cerrar (fuera de la Mesa); el contador para lector de pantalla («n de 280
-  caracteres» y aviso al llegar); el marco con colores forzados; `resize` donde no hay `field-sizing`; forja y ceniza
-  de las tarjetas a tokens; la temporización de la salida en un solo sitio.
+- [x] Enrique (2026-11-12): «Nuevo…» con la misma línea que las tarjetas; el mundo, con icono propio en la barra
+  (`MountainSnow`).
+- [x] Del audit: la barra en pantallas bajas (`scroll-padding` y fundido sobre el pie); una X común
+  (`components/close.module.css`) en cuadros, ventanas, dados, «quién la conoce», el pin del mapa y los avisos (las de
+  la Mesa, con la campaña; la de la columna de dados y los avisos de tirada siguen con sus grupos de botones); la
+  cuenta en palabras para el lector de pantalla y el aviso al llegar al límite; colores forzados en el marco y en
+  «Nuevo…»; `resize` donde no hay `field-sizing`; forja y ceniza de las tarjetas a tokens; los tiempos de la barra en
+  un solo sitio, `--leave` que se limpia y la subida de cada icono medida (antes, a mano: «Archivos» acababa 17 px por
+  encima de la llama).
 - [ ] `pnpm e2e` entero (al quitar el tema claro cambiaron muchas) → PR a `main` con `[skip ci]` → staging.
   `pnpm lint`, `typecheck` y `test` ya en verde salvo: `systems/ritmo.test.ts` (tiempos con la máquina cargada; repetir
   en calma) y `mcp.integration.test.ts` (el puerto 8132 lo ocupaba el servidor viejo de la revisión global, ya

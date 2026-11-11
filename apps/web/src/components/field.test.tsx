@@ -2,6 +2,8 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { describe, expect, it } from 'vitest'
+import '../i18n.ts'
+import { Announcer } from './announcer.tsx'
 import { Field } from './field.tsx'
 
 function Description() {
@@ -26,9 +28,21 @@ describe('un campo', () => {
     expect(field.tagName).toBe('TEXTAREA')
     expect(screen.getByText('0 / 280')).toBeDefined()
     await userEvent.type(field, 'Niebla')
-    const count = screen.getByText('6 / 280')
-    expect(field.getAttribute('aria-describedby')?.split(' ')).toContain(count.id)
-    expect(count.hasAttribute('data-full')).toBe(false)
+    expect(screen.getByText('6 / 280')).toBeDefined()
+    // El lector de pantalla la lee en palabras (y no cada vez que se teclea: va en la descripción, no en una región viva)
+    const words = screen.getByText('6 de 280 caracteres')
+    expect(field.getAttribute('aria-describedby')?.split(' ')).toContain(words.id)
+  })
+
+  it('al llegar al límite, lo dice una vez a los lectores de pantalla', async () => {
+    render(
+      <Announcer>
+        <Field label="Lema" maxLength={5} counter />
+      </Announcer>
+    )
+    await userEvent.type(screen.getByLabelText('Lema'), 'Hierro')
+    expect(screen.getByRole('status').textContent).toBe('Al límite: 5 caracteres')
+    expect(screen.getByText('5 / 5').closest('[data-full]')).not.toBeNull()
   })
 
   it('sin cuenta, no la enseña', () => {

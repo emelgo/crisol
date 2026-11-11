@@ -192,7 +192,10 @@ export const es = {
     tooLong_one: 'Como mucho {{count}} carácter.',
     tooLong_other: 'Como mucho {{count}} caracteres.',
     min: 'Desde {{min}}.',
-    max: 'Hasta {{max}}.'
+    max: 'Hasta {{max}}.',
+    // La cuenta de un campo con límite, para los lectores de pantalla (a la vista, «123 / 280»)
+    count: '{{count}} de {{max}} caracteres',
+    atLimit: 'Al límite: {{max}} caracteres'
   },
   bootstrap: {
     title: 'Cuenta del propietario',

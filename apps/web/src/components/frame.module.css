@@ -20,6 +20,18 @@
   clip-path: var(--cut-inner);
 }
 
+/* Con colores forzados (el alto contraste del sistema) el fondo no se pinta y el marco desaparecería: un borde */
+@media (forced-colors: active) {
+  .frame {
+    border: 1px solid CanvasText;
+    clip-path: none;
+  }
+
+  .frame::before {
+    display: none;
+  }
+}
+
 /* Una caja con el marco y su relleno, para texto suelto */
 .box {
   composes: frame;

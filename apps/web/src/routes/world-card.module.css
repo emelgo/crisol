@@ -206,7 +206,12 @@
 }
 
 .entering::after {
-  background: linear-gradient(to top, rgb(255 138 92 / 0.6), rgb(229 72 77 / 0.3) 55%, rgb(255 180 120 / 0.15));
+  background: linear-gradient(
+    to top,
+    rgb(var(--fx-molten-rgb) / 0.6),
+    color-mix(in srgb, var(--color-brand) 30%, transparent) 55%,
+    rgb(var(--fx-molten-cool-rgb) / 0.15)
+  );
   mix-blend-mode: screen;
   animation: metal 1500ms ease-out;
 }
@@ -225,9 +230,9 @@
   background:
     linear-gradient(
       to bottom,
-      rgb(28 26 25 / 0.95) 0%,
-      rgb(60 57 54 / 0.85) 34%,
-      rgb(120 116 110 / 0.35) 40%,
+      rgb(var(--fx-soot-rgb) / 0.95) 0%,
+      rgb(var(--fx-cinder-rgb) / 0.85) 34%,
+      rgb(var(--fx-cinder-light-rgb) / 0.35) 40%,
       transparent 47%
     )
     0 100% / 100% 300% no-repeat;
@@ -281,19 +286,19 @@
 @keyframes arde {
   0%,
   30% {
-    background: #6b6763;
+    background: var(--fx-charcoal-hot);
   }
 
   65% {
     opacity: 1;
     transform: none;
-    background: #2a2826;
+    background: var(--fx-charcoal);
   }
 
   100% {
     opacity: 0;
     transform: translateY(-12px) scale(0.96);
-    background: #2a2826;
+    background: var(--fx-charcoal);
   }
 }
 

@@ -44,19 +44,10 @@
 }
 
 .close {
-  display: grid;
-  place-items: center;
-  padding: var(--space-1);
-  border: 0;
-  border-radius: 50%;
-  background: none;
-  color: var(--color-muted);
-  cursor: pointer;
-}
-
-.close:hover {
-  background: color-mix(in srgb, var(--color-text) 10%, transparent);
-  color: var(--color-text);
+  composes: close from "../components/close.module.css";
+  --close-size: 2rem;
+  --close-inset: 0;
+  position: relative;
 }
 
 .row {
