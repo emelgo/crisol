@@ -5,11 +5,10 @@
 import type { TemplateView } from '@crisol/contracts'
 import { fieldKey } from '@crisol/domain'
 import { Plus, Search } from 'lucide-react'
-import { useEffect, useId, useState } from 'react'
+import { type ReactNode, useEffect, useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useTemplates } from './data.ts'
 import { TemplateIcon } from './icons.tsx'
-import { NewTemplateDialog } from './new-template-dialog.tsx'
 import styles from './picker.module.css'
 import { fieldsLine, templateGroups } from './tree.ts'
 
@@ -18,7 +17,7 @@ export { useTemplates } from './data.ts'
 /**
  * La lista de plantillas al crear una página o una pestaña (ADR-0024): un buscador y sus filas por carpetas (con su
  * camino), que se eligen como opciones. La elegida es siempre una de las que se ven (al buscar, la primera). Sin
- * ninguna, «Plantilla nueva» abre su cuadro (sin él, con creatable false: desde el propio cuadro). only: las que valen
+ * ninguna, «Plantilla nueva» abre su cuadro (newTemplate; sin él, no sale: desde el propio cuadro). only: las que valen
  * aquí; hint: lo que dice cada una debajo de su nombre
  */
 export function TemplatePicker({
@@ -27,14 +26,15 @@ export function TemplatePicker({
   only,
   hint,
   autoFocus = false,
-  creatable = true
+  newTemplate
 }: {
   value: string | null
   onChange: (id: string) => void
   only?: (template: TemplateView) => boolean
   hint?: (template: TemplateView) => string
   autoFocus?: boolean
-  creatable?: boolean
+  /** El cuadro de «Plantilla nueva» (lo pasa quien lo tiene: así no hay un ciclo entre los dos) */
+  newTemplate?: (close: () => void) => ReactNode
 }) {
   const { t } = useTranslation()
   const name = useId()
@@ -58,13 +58,13 @@ export function TemplatePicker({
     return (
       <div className={`${styles.picker} ${styles.emptyPicker}`}>
         <p className={styles.none}>{t('templates.empty')}</p>
-        {creatable && (
+        {newTemplate && (
           <button type="button" className={styles.create} aria-haspopup="dialog" onClick={() => setCreating(true)}>
             <Plus aria-hidden="true" size={16} />
             {t('templates.new')}
           </button>
         )}
-        {creating && <NewTemplateDialog folderId={null} onClose={() => setCreating(false)} />}
+        {creating && newTemplate?.(() => setCreating(false))}
       </div>
     )
   }

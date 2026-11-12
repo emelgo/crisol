@@ -326,7 +326,10 @@ function build(strict: boolean) {
     y: z.number().min(0).max(100),
     zoom: z.number().min(1).max(3).optional()
   })
-  const color = z.union([z.enum(['wine', 'moss', 'slate', 'ochre', 'sea', 'plum']), z.string().regex(/^#[0-9a-f]{6}$/i)])
+  const color = z.union([
+    z.enum(['wine', 'moss', 'slate', 'ochre', 'sea', 'plum']),
+    z.string().regex(/^#[0-9a-f]{6}$/i)
+  ])
   const source = obj({
     key,
     name: text().describe('Su nombre (SRD 5.1)'),

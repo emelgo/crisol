@@ -14,6 +14,7 @@ import dialogStyles from '../components/dialog.module.css'
 import { FormError } from '../components/field.tsx'
 import form from '../components/form.module.css'
 import { Modal } from '../components/modal.tsx'
+import { NewTemplateDialog } from '../templates/new-template-dialog.tsx'
 import { TemplatePicker } from '../templates/picker.tsx'
 import { KindChoices, StepBack, TAB_KINDS, type TabKind } from './tabs/kinds.tsx'
 import styles from './tabs/page-tabs.module.css'
@@ -102,7 +103,12 @@ export function NewPageDialog({
                 setBack(true)
               }}
             />
-            <TemplatePicker value={template} onChange={setTemplate} autoFocus />
+            <TemplatePicker
+              value={template}
+              onChange={setTemplate}
+              autoFocus
+              newTemplate={(close) => <NewTemplateDialog folderId={null} onClose={close} />}
+            />
           </>
         ) : (
           <KindChoices

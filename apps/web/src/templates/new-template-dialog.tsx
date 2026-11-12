@@ -66,7 +66,7 @@ export function NewTemplateDialog({ folderId, onClose }: { folderId: string | nu
                 setBack(true)
               }}
             />
-            <TemplatePicker value={source} onChange={setSource} autoFocus creatable={false} />
+            <TemplatePicker value={source} onChange={setSource} autoFocus />
           </>
         ) : (
           <KindChoices

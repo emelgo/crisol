@@ -14,7 +14,8 @@
       "!research",
       "!datos-locales",
       "!.claude/skills/impeccable",
-      "!packages/systems/src/examples/5e/content"
+      "!packages/systems/src/examples/5e/content",
+      "!apps/web/public/iconos"
     ]
   },
   "formatter": {
