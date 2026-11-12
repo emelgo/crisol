@@ -39,6 +39,7 @@ export function SystemBook() {
     queryKey: ['systemBooks', systemId],
     queryFn: () => api.call('getSystemBooks', { systemId })
   })
+  const book = system.data?.books.find((each) => each.key === bookKey)
   return (
     <>
       {/* La vuelta al Inicio del sistema, arriba a la izquierda (como «‹ Plantillas») */}
@@ -53,6 +54,7 @@ export function SystemBook() {
         ver={ver ?? null}
         onVer={(key) => void navigate({ search: (prev) => ({ ...prev, ver: key ?? undefined }) })}
         initialBook={bookKey}
+        {...(book ? { title: book.name } : {})}
       />
     </>
   )

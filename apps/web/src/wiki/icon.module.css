@@ -45,6 +45,11 @@
   padding: var(--space-3) var(--space-4) var(--space-4);
 }
 
+/* Flota (la regla del marco, que va después en la hoja, le ponía «relative» y empujaba el título) */
+.wrapper .panel {
+  position: absolute;
+}
+
 /* «Emoji», tras los iconos de rol: el mismo rótulo pequeño que los grupos */
 .emojiHead {
   margin: var(--space-3) 0 var(--space-1);

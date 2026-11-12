@@ -162,7 +162,8 @@ export function Compendium({
   onVer,
   embedded = false,
   initialBook = null,
-  initialType = null
+  initialType = null,
+  title
 }: {
   worldId: string
   campaignId: string
@@ -173,6 +174,8 @@ export function Compendium({
   /** Abrir ya en un libro (y un tipo): desde la ficha del libro (ADR-0021) */
   initialBook?: string | null
   initialType?: string | null
+  /** Su título (sin él, «Compendio»): el nombre del libro, dentro de él */
+  title?: string
 }) {
   const { t } = useTranslation()
   const api = useApi()
@@ -287,7 +290,7 @@ export function Compendium({
         {/* El título, en el sitio de todas las pantallas (components/screen.tsx) */}
         {!embedded && (
           <div className={styles.top}>
-            <PageTitle>{t('compendium.title')}</PageTitle>
+            <PageTitle>{title ?? t('compendium.title')}</PageTitle>
           </div>
         )}
         <aside className={styles.side} aria-label={t('compendium.title')}>
