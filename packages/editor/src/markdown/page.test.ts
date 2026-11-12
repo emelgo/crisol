@@ -47,7 +47,7 @@ const body: JSONContent = {
       text(', su criatura '),
       { type: 'contentLink', attrs: { name: 'Goblin jefe', label: 'el jefe' } },
       text('. La trampa: '),
-      { type: 'diceRoll', attrs: { formula: '2d6+3', label: 'Trampa' } },
+      text('dice: 2d6+3 # Trampa', [{ type: 'code' }]),
       text('.')
     ),
     { type: 'heading', attrs: { id: 'h2aaaaaa', level: 2 }, content: [text('Barrios')] },

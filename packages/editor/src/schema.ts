@@ -12,7 +12,6 @@ import { isExternalUrl } from './links.ts'
 import { Box } from './nodes/box.ts'
 import { Callout } from './nodes/callout.ts'
 import { ContentLink } from './nodes/content-link.ts'
-import { DiceRoll } from './nodes/dice-roll.ts'
 import { FileEmbed } from './nodes/file-embed.ts'
 import { PageEmbed } from './nodes/page-embed.ts'
 import { PageLink } from './nodes/page-link.ts'
@@ -91,7 +90,6 @@ export function editorExtensions(options: EditorOptions = {}): Extensions {
     Box,
     view(ContentLink),
     view(PageLink),
-    view(DiceRoll),
     view(PageEmbed),
     view(FileEmbed),
     view(PageBreak),

@@ -175,58 +175,35 @@ test('los dados 3D: la escena se carga aparte, en un rato libre dentro del mundo
   await page.screenshot({ path: test.info().outputPath('dados-3d.png') })
 })
 
-test('una tirada escrita en una página: con «/» se pone y se cambia, al pulsarla tira en la campaña y se guarda como `dice:`', async ({
+test('los dados salieron de la wiki: una tirada escrita en una página (`dice:`) es texto en código y «/» ya no la ofrece (revisión, tanda 7)', async ({
   page
 }) => {
   test.slow()
   await campaignLink(page)
   const worldId = new URL(page.url()).pathname.split('/')[2] ?? ''
+  // La portada del mundo se crea al entrar en él
   await page.goto(`/mundos/${worldId}`)
+  await expect(page.getByRole('textbox', { name: 'Texto de la página' })).toBeVisible()
+  const home = await page.request.post('/api/actions/getWorldHome', { data: { worldId } })
+  const homeId = ((await home.json()) as { pageId: string }).pageId
+  const edited = await page.request.post('/api/actions/editPage', {
+    data: { pageId: homeId, body: { mode: 'append', markdown: 'La trampa hace `dice: 2d6+3 # Trampa`.' } }
+  })
+  expect(edited.status(), await edited.text()).toBe(200)
+  await page.reload()
   const body = page.getByRole('textbox', { name: 'Texto de la página' })
+  await expect(body.locator('code', { hasText: 'dice: 2d6+3 # Trampa' })).toBeVisible()
+  await expect(body.getByRole('button', { name: /Tirar 2d6\+3/ })).toHaveCount(0)
+  // Y en el Markdown, igual que antes
+  const read = await page.request.post('/api/actions/readPage', { data: { pageId: homeId } })
+  expect(((await read.json()) as { markdown: string }).markdown).toContain('`dice: 2d6+3 # Trampa`')
+  // «/» no tiene «Tirada»
   await body.click()
   await page.keyboard.press('ControlOrMeta+End')
   await page.keyboard.press('Enter')
-  await page.keyboard.type('La trampa hace ')
   await page.keyboard.type('/tirada')
-  await page.keyboard.press('Enter')
-  // Recién puesta, su cuadro abierto
-  const box = page.getByRole('dialog', { name: 'La tirada' })
-  await expect(box).toBeVisible()
-  await box.getByLabel('Tirada').fill('2d6+3')
-  await expect(box.getByText('2d6 + 3')).toBeVisible()
-  await box.getByLabel('Nombre').fill('Trampa')
-  await box.getByRole('button', { name: 'Listo' }).click()
-  await expect(box).toBeHidden()
-
-  // Pulsarla tira en la campaña: el resultado, sobre el d20; y en el historial
-  await body.getByRole('button', { name: 'Tirar 2d6+3 · Trampa' }).click()
-  await expect(page.getByRole('list', { name: 'Últimas tiradas' })).toContainText('Trampa', { timeout: 8000 })
-  await page.locator('[data-tour="dados"]').click()
-  await page.getByRole('complementary', { name: 'Dados' }).getByRole('button', { name: 'Historial' }).click()
-  const log = page
-    .getByRole('complementary', { name: 'Historial' })
-    .getByRole('list', { name: 'Tiradas de la campaña' })
-  await expect(log.getByRole('listitem').last()).toContainText('Trampa')
-  await expect(log.getByRole('listitem').last()).toContainText('2d6+3')
-
-  // Y en el Markdown, como en Obsidian
-  const homeId = await page.evaluate(async (id) => {
-    const response = await fetch('/api/actions/getWorldHome', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ worldId: id })
-    })
-    return ((await response.json()) as { pageId: string }).pageId
-  }, worldId)
-  await expect
-    .poll(
-      async () =>
-        (await (await page.request.post('/api/actions/readPage', { data: { pageId: homeId } })).json()).markdown,
-      {
-        timeout: 10_000
-      }
-    )
-    .toContain('`dice: 2d6+3 # Trampa`')
+  await expect(page.getByRole('listbox', { name: 'Bloques' }).getByRole('option', { name: /^Tirada/ })).toHaveCount(0)
+  await page.keyboard.press('Escape')
 
   const { violations } = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()
   const serious = violations.filter((v) => v.impact === 'critical' || v.impact === 'serious')

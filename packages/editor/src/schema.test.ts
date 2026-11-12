@@ -21,7 +21,6 @@ describe('el esquema del editor', () => {
         'columnBreak',
         'columnsChange',
         'contentLink',
-        'diceRoll',
         'doc',
         'fileEmbed',
         'hardBreak',

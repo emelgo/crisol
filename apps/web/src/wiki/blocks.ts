@@ -4,7 +4,6 @@
  */
 import type { CalloutKind, SeparateKind } from '@crisol/editor'
 import type { Editor } from '@tiptap/core'
-import { NodeSelection } from '@tiptap/pm/state'
 import type { es } from '../i18n.ts'
 
 /** Los textos de los bloques en i18n (blocks.<clave>) */
@@ -175,25 +174,6 @@ export const BLOCKS: readonly BlockChoice[] = [
     convert: false,
     run: (editor, context) => {
       context.pickFile?.(editor)
-    }
-  },
-  // Una tirada que se pulsa en partida: se pone elegida, y así se abre su cuadro para escribirla
-  {
-    id: 'diceRoll',
-    group: 'wiki',
-    label: 'diceRoll',
-    hint: 'diceRollHint',
-    keywords: 'tirada dados dado tirar',
-    convert: false,
-    run: (editor) => {
-      const at = editor.state.selection.from
-      editor
-        .chain()
-        .focus()
-        .insertContent({ type: 'diceRoll', attrs: { formula: '1d20', label: null } })
-        .run()
-      const { tr } = editor.state
-      editor.view.dispatch(tr.setSelection(NodeSelection.create(tr.doc, at)))
     }
   },
   callout('note', 'calloutNote', 'calloutHint', 'nota'),

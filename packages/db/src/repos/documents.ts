@@ -1,4 +1,4 @@
-import { and, desc, eq, ilike, inArray, isNull, or, sql } from 'drizzle-orm'
+import { and, asc, desc, eq, gt, ilike, inArray, isNull, or, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { documents } from '../schema/documents.ts'
 import { pages } from '../schema/pages.ts'
@@ -213,4 +213,25 @@ export async function saveStates(db: Database, userId: string, items: readonly {
       )}) as v(id, state)
       where d.id = v.id`)
   }
+}
+
+/** Todos los documentos, de doscientos en doscientos por su id, con su estado: para un barrido (`crisol quitar-dados`) */
+export async function* allStates(db: Database, batch = 200) {
+  let after = '00000000-0000-0000-0000-000000000000'
+  for (;;) {
+    const rows = await db
+      .select({ id: documents.id, state: documents.state })
+      .from(documents)
+      .where(gt(documents.id, after))
+      .orderBy(asc(documents.id))
+      .limit(batch)
+    if (rows.length === 0) return
+    yield rows
+    after = rows.at(-1)?.id ?? after
+  }
+}
+
+/** Cambia el estado de un documento (en un barrido): sin cuenta, que no lo escribió nadie */
+export async function replaceState(db: Database, id: string, state: Uint8Array) {
+  await db.update(documents).set({ state, updatedAt: new Date() }).where(eq(documents.id, id))
 }

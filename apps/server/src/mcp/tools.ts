@@ -682,10 +682,10 @@ const INSTRUCTIONS =
   'buscar_paginas con template y field. Una plantilla es una página guardada como modelo (en un mundo oculto de la ' +
   'cuenta): su texto, su portada, su panel y sus pestañas pasan a las páginas que se hacen con ella; su texto se lee y ' +
   'se cambia como el de una página (su pageId sale en ver_plantilla) y sus campos, con cambiar_plantilla. Se ordenan en ' +
-  'carpetas (crear_carpeta_plantillas, mover_plantilla), y pestanas_desde_plantilla añade a una página hecha las ' +
-  'pestañas de una plantilla. Los dados los tira el servidor: tirar_dados (con campaignId, en su ' +
-  'registro, oculta salvo que te pidan que la vean todos) y ver_tiradas; en una página, una tirada se escribe ' +
-  '`dice: 2d6+3 # Nombre` y en partida se pulsa. Las reglas de cada juego son un sistema (listar_sistemas) y cada ' +
+  'carpetas (crear_carpeta_plantillas, mover_plantilla). Los dados los tira el servidor: tirar_dados (con ' +
+  'campaignId, en su registro, oculta salvo que te pidan que la vean todos) y ver_tiradas. Lo que se tira en partida ' +
+  '(una trampa, un ataque) va en una entrada del compendio, con su mecánica, y se tira con tirar_accion_compendio; en ' +
+  'una página, `dice: …` ya no se pulsa: es texto en código. Las reglas de cada juego son un sistema (listar_sistemas) y cada ' +
   'campaña elige el suyo con cambiar_campana. Crisol viene sin ninguno: «blank» es empezar de cero, y el máster puede ' +
   'subir el archivo de uno o importarlo de Foundry. No tiene editor de sistemas: se hacen y se cambian contigo, ' +
   'enteros: sus tipos y campos, sus tiradas, su hoja (sheet), su creador de personajes (creation: los pasos, elegir del ' +

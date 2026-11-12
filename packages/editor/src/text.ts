@@ -12,7 +12,6 @@ function inlineText(node: JSONContent): string {
   if (node.type === 'hardBreak') return ' '
   if (node.type === 'pageLink') return String(node.attrs?.label || node.attrs?.title || '')
   if (node.type === 'contentLink') return String(node.attrs?.label || node.attrs?.name || '')
-  if (node.type === 'diceRoll') return [node.attrs?.label, node.attrs?.formula].filter(Boolean).join(' ')
   return (node.content ?? []).map(inlineText).join('')
 }
 
