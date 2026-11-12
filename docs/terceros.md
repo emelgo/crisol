@@ -15,44 +15,15 @@ qué hay que repasar.
 | La skill de diseño y revisión de interfaces **impeccable** (con sus agentes y su vigilante), solo una herramienta del desarrollo: no va en la app | `.claude/skills/impeccable`, `.claude/agents/impeccable-*.md` (su motor, fuera de git) | https://github.com/pbakaus/impeccable (Paul Bakaus) | skill 4.8.2, motor 0.1.21 | Apache-2.0 |
 | Los iconos de rol que se eligen en lugar de un emoji (337, elegidos para rol: gente, criaturas, lugares, naturaleza, objetos, armas, magia y símbolos), sin su fondo negro y con un solo trazo. Crédito en la app, al pie del buscador de iconos (CC BY lo pide) | `apps/web/public/iconos/*.svg`, su lista en `packages/contracts/src/game-icons.ts` | game-icons.net (https://github.com/game-icons/icons): Lorc (177), Delapouite (131), Skoll, Sbed, Carl Olsen, Willdabeast, DarkZaitzev, Cathelineau, Kier Heyl, Caro Asercion, Faithtoken, HeavenlyDog y Zeromancer | master del 2026-11-12 | CC BY 3.0 (Zeromancer, CC0); se dejan fuera los de la carpeta «badges», sin autor en su licencia |
 
-## Imágenes propias de la app (tanda 5, 2026-11-12)
+## Imágenes propias de la app (2026-11-12)
 
 Generadas por Enrique con ChatGPT en su cuenta, en el estilo elegido (F, `docs/imagenes.md`), o capturas de la propia
-app. Pasadas a WebP con el Chromium de Playwright.
+app. Pasadas a WebP con el Chromium de Playwright; los originales, en `datos-locales/imagenes/` (fuera de git). Son de
+Crisol: no llevan crédito.
 
 | Archivo | Qué | Origen |
 | --- | --- | --- |
-| `apps/web/public/ambiente/inicio.webp` | El fondo de ambiente (480 px: va muy difuminado) | El valle del ocaso, `datos-locales/estilos/f-entrar.png`, generada por Enrique con ChatGPT (2026-11-11). Provisional hasta la imagen «ambiente» |
-| `apps/web/public/portada/portada.webp` | La imagen de la portada pública | La misma del valle (provisional hasta la imagen «portada») |
+| `apps/web/public/fondos/*.webp` (12) | Los fondos de Entrar, que van pasando (lista en `apps/web/src/account/backdrops.ts`): archipiélago, bahía, campamento, ciervo, ciudad, forja, pantano, puente, cascada, desierto, aurora y valle | Generadas por Enrique con ChatGPT (2026-11-12), con los prompts de `docs/imagenes.md` § «Fondos de Entrar». Sustituyen a las 24 de antes (de Pixabay y Wikimedia Commons, guardadas en `datos-locales/fondos-viejos/`) |
+| `apps/web/public/portada/portada.webp` | La imagen de la portada pública | «Aventureros ante el valle crepuscular», generada por Enrique con ChatGPT (2026-11-12) |
+| `apps/web/public/ambiente/inicio.webp` | El fondo de ambiente (Mis mundos y lo de la cuenta) | «Ciudadela al atardecer en el valle neblinoso», generada por Enrique con ChatGPT (2026-11-12) |
 | `apps/web/public/portada/{mundo,mesa,ficha}.webp` | Las estampas de la portada | Capturas de Crisol (de sus pruebas) |
-
-## Fondos de las pantallas de cuenta (2026-11-08)
-
-En `apps/web/public/fondos/` (lista en `apps/web/src/account/backdrops.ts`), recortados y pasados a WebP.
-
-| Archivo | Obra | Autor | Origen | Licencia |
-| --- | --- | --- | --- | --- |
-| `jinete-de-dragon.webp` | Jinete de dragón | GBTaylor | https://pixabay.com/illustrations/dragon-dragon-rider-ai-generated-8029890/ | Licencia de Pixabay (uso libre, sin atribución obligatoria) · hecha con IA por su autor |
-| `dragon-ciudad-en-llamas.webp` | Dragón sobre la ciudad en llamas | MythologyArt | https://pixabay.com/illustrations/dragon-fire-pagan-epic-fantasy-8780168/ | Licencia de Pixabay (uso libre, sin atribución obligatoria) |
-| `arbol-de-luz.webp` | El árbol de la luz | Alan_Frijns | https://pixabay.com/illustrations/ai-generated-tree-magical-mystical-8167332/ | Licencia de Pixabay (uso libre, sin atribución obligatoria) · hecha con IA por su autor |
-| `reino-dorado.webp` | El reino dorado | artandmusic909 | https://pixabay.com/illustrations/golden-kingdom-elven-kingdom-fantasy-8164867/ | Licencia de Pixabay (uso libre, sin atribución obligatoria) |
-| `castillo-nubes-doradas.webp` | Castillo entre nubes doradas | TheDigitalArtist | https://pixabay.com/illustrations/dragon-castle-fantasy-magic-4767447/ | Licencia de Pixabay (uso libre, sin atribución obligatoria) |
-| `dragon-en-el-bosque.webp` | Dragón en el bosque | Artie_Navarre | https://pixabay.com/illustrations/painting-the-framework-dragon-3564055/ | Licencia de Pixabay (uso libre, sin atribución obligatoria) |
-| `rios-de-fuego.webp` | Ríos de fuego entre montañas | NickyPe | https://pixabay.com/illustrations/ai-generated-mountains-night-8699087/ | Licencia de Pixabay (uso libre, sin atribución obligatoria) · hecha con IA por su autor |
-| `ciudad-purpura.webp` | Ciudad púrpura bajo la luna | Eynoxart | https://pixabay.com/illustrations/dark-academia-city-fantasy-art-7471412/ | Licencia de Pixabay (uso libre, sin atribución obligatoria) · hecha con IA por su autor |
-| `dragon-negro.webp` | Dragón negro | MythologyArt | https://pixabay.com/illustrations/black-dragon-dragon-fantasy-art-8808267/ | Licencia de Pixabay (uso libre, sin atribución obligatoria) |
-| `ciudad-de-torres.webp` | Ciudad de torres entre nubes | bojanboyss | https://pixabay.com/illustrations/ai-generated-towers-skyscrapers-8907200/ | Licencia de Pixabay (uso libre, sin atribución obligatoria) · hecha con IA por su autor |
-| `arbol-antiguo.webp` | El árbol antiguo en la niebla | JuliusH | https://pixabay.com/illustrations/ai-generated-tree-fog-forest-8487767/ | Licencia de Pixabay (uso libre, sin atribución obligatoria) · hecha con IA por su autor |
-| `vasnetsov-encrucijada.webp` | El caballero en la encrucijada (1882) | Víktor Vasnetsov | https://commons.wikimedia.org/wiki/File:Victor_Vasnetsov_-_Knight_at_the_Crossroads_-_Google_Art_Project.jpg | Dominio público |
-| `vasnetsov-bogatyres.webp` | Los bogatyres (1898) | Víktor Vasnetsov | https://commons.wikimedia.org/wiki/File:Viktor_Vasnetsov_-_%D0%91%D0%BE%D0%B3%D0%B0%D1%82%D1%8B%D1%80%D0%B8_-_Google_Art_Project.jpg | Dominio público |
-| `arbo-caceria-salvaje.webp` | La cacería salvaje de Odín (1872) | Peter Nicolai Arbo | https://commons.wikimedia.org/wiki/File:Peter_Nicolai_Arbo_-_The_wild_Hunt_of_Odin_-_NG.M.00258_-_National_Museum_of_Art,_Architecture_and_Design.jpg | Dominio público |
-| `aivazovski-novena-ola.webp` | La novena ola (1850) | Iván Aivazovski | https://commons.wikimedia.org/wiki/File:Aivazovsky,_Ivan_-_The_Ninth_Wave.jpg | Dominio público |
-| `bierstadt-sierra-nevada.webp` | Entre las montañas de Sierra Nevada (1868) | Albert Bierstadt | https://commons.wikimedia.org/wiki/File:Bierstadt_-_Among_the_Sierra_Nevada_Mountains_-_1868.jpg | Dominio público |
-| `bocklin-isla-de-los-muertos.webp` | La isla de los muertos (1880) | Arnold Böcklin | https://commons.wikimedia.org/wiki/File:Arnold_B%C3%B6cklin_-_Die_Toteninsel_I_(Basel,_Kunstmuseum).jpg | Dominio público |
-| `church-cotopaxi.webp` | Cotopaxi (1862) | Frederic Edwin Church | https://commons.wikimedia.org/wiki/File:Cotopaxi_church.jpg | Dominio público |
-| `cole-viaje-de-la-vida.webp` | El viaje de la vida: la infancia (1842) | Thomas Cole | https://commons.wikimedia.org/wiki/File:Thomas_Cole_-_The_Voyage_of_Life_Childhood,_1842_(National_Gallery_of_Art).jpg | Dominio público |
-| `friedrich-mar-de-hielo.webp` | El mar de hielo (1823) | Caspar David Friedrich | https://commons.wikimedia.org/wiki/File:Caspar_David_Friedrich_-_Das_Eismeer_-_Hamburger_Kunsthalle_-_02.jpg | Dominio público |
-| `martin-el-bardo.webp` | El bardo (1817) | John Martin | https://commons.wikimedia.org/wiki/File:JohnMartin_The_Bard_RTNX.jpg | Dominio público |
-| `martin-gran-dia-de-su-ira.webp` | El gran día de su ira (1853) | John Martin | https://commons.wikimedia.org/wiki/File:John_Martin_-_The_Great_Day_of_His_Wrath_-_Google_Art_Project.jpg | Dominio público |
-| `martin-pandemonium.webp` | Pandemónium (1841) | John Martin | https://commons.wikimedia.org/wiki/File:John_Martin_Le_Pandemonium_Louvre.JPG | Dominio público |
-| `turner-anibal-alpes.webp` | Tormenta de nieve: Aníbal cruzando los Alpes (1812) | J. M. W. Turner | https://commons.wikimedia.org/wiki/File:Turner,_Snow_Storm,_50508403226_b272cf84c3_o.jpg | Dominio público |

@@ -63,31 +63,6 @@
   }
 }
 
-/* De quién es: abajo a la derecha, pequeño, y cambia con la imagen */
-.credit {
-  position: absolute;
-  inset-block-end: max(var(--space-3), env(safe-area-inset-bottom, 0px));
-  inset-inline-end: max(var(--space-4), env(safe-area-inset-right, 0px));
-  margin: 0;
-  max-inline-size: calc(100% - 2 * var(--space-4));
-  font-size: 0.75rem;
-  text-align: end;
-  pointer-events: auto;
-  animation: aparece-fondo 1300ms ease-in-out both;
-}
-
-.credit a {
-  color: rgb(255 255 255 / 0.72);
-  text-decoration: none;
-  text-shadow: 0 1px 3px rgb(0 0 0 / 0.8);
-}
-
-.credit a:hover,
-.credit a:focus-visible {
-  color: #ffffff;
-  text-decoration: underline;
-}
-
 /* En la Mesa sin escena: dentro de ella (no sobre toda la página) y algo más apagado, para que se lea su aviso; el
    crédito no (Enrique: «quita los títulos»; ni Pixabay ni el dominio público piden citar) */
 .contained {
@@ -101,6 +76,4 @@
     linear-gradient(to top, color-mix(in srgb, var(--tint) 85%, transparent) 0%, transparent 55%), rgb(8 8 10 / 0.35);
 }
 
-.contained .credit {
-  display: none;
-}
+.contained 

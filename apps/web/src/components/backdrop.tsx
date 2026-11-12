@@ -1,5 +1,4 @@
 import { type CSSProperties, useEffect, useState } from 'react'
-import { useTranslation } from 'react-i18next'
 import { type Backdrop as Art, BACKDROPS } from '../account/backdrops.ts'
 import styles from './backdrop.module.css'
 
@@ -20,11 +19,10 @@ function shuffled(count: number) {
 
 /**
  * El fondo de las pantallas de cuenta, como en LegendKeeper (Enrique, 2026-11-08): las imágenes van pasando con un
- * fundido, cada una acercándose despacio, con un degradado teñido de su color y su autor abajo. De adorno: el lector de
- * pantalla solo lee el crédito. contained: dentro de la Mesa sin escena, que así no se queda en negro (y su cristal se ve)
+ * fundido, cada una acercándose despacio, con un degradado teñido de su color. Son de Crisol (sin crédito) y de adorno:
+ * el lector de pantalla no las lee. contained: dentro de la Mesa sin escena, que así no se queda en negro (y su cristal se ve)
  */
 export function Backdrop({ contained = false }: { contained?: boolean } = {}) {
-  const { t } = useTranslation()
   const [order] = useState(() => shuffled(BACKDROPS.length))
   const [step, setStep] = useState(0)
   const at = (n: number) => BACKDROPS[order[n % order.length] as number] as Art
@@ -35,7 +33,6 @@ export function Backdrop({ contained = false }: { contained?: boolean } = {}) {
     const timer = window.setTimeout(() => setStep((current) => current + 1), SHOWN_MS)
     return () => window.clearTimeout(timer)
   }, [step])
-  const current = at(step)
   // La de antes se queda debajo mientras la nueva aparece encima
   const layers = step > 0 ? [step - 1, step] : [step]
   return (
@@ -54,15 +51,6 @@ export function Backdrop({ contained = false }: { contained?: boolean } = {}) {
           </div>
         )
       })}
-      {/* En la Mesa no sale (lo esconde el CSS de .contained) */}
-      <p key={step} className={styles.credit}>
-        <a href={current.source} target="_blank" rel="noopener noreferrer">
-          {t('backdrop.credit', {
-            title: current.title,
-            author: current.year ? `${current.author}, ${current.year}` : current.author
-          })}
-        </a>
-      </p>
     </div>
   )
 }
