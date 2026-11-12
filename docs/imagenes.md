@@ -223,7 +223,10 @@ videojuego de fantasía de estilo pintado. Envejece mejor y se repite sin cansar
 **Elegido por Enrique (2026-11-11)**: F. Su orden: F > A > C > D > B > E («todas me gustan si sabemos usarlas bien
 según el contexto»). Todas las imágenes de la app van en F, para que se vean de la misma familia.
 
-- **La frase base**, igual en todos los prompts:
+- **Las que faltan por hacer, en `docs/imagenes-por-hacer.md`** (Enrique, 2026-11-12: «para no liarme»); aquí queda la
+  guía y el historial. **La frase base cambió el 2026-11-12**: la de abajo ponía la misma luz de atardecer (y hojas
+  rojas) en todas; la nueva, en `imagenes-por-hacer.md`, deja que cada escena diga su luz.
+- **La frase base** (la primera; ya no se usa):
 
 > Una pintura digital de fantasía épica estilizada, como el arte de un videojuego de fantasía de estilo pintado: formas
 > simplificadas, grandes masas de color, pinceladas amplias y seguras, poco detalle menudo, luz cálida de atardecer o de
