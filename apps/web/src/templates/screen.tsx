@@ -568,27 +568,33 @@ function TemplatesTree({ data }: { data: Listed }) {
         <div className={files.contents}>
           <FormError message={moveError} />
           {searching && found?.hits.length === 0 && (
-            <EmptyState kind="sin-resultados">
+            <EmptyState kind="sin-resultados" small>
               <p className={files.empty}>{t('templates.noneFound')}</p>
             </EmptyState>
           )}
           {!searching && nothing && (
-            <div className={styles.emptyState}>
-              <EmptyState kind="plantillas">
-                <p className={files.empty}>{t('templates.emptyHint')}</p>
-              </EmptyState>
-              <NewCard
-                label={t('templates.new')}
-                data-tour="plantillas-nueva"
-                aria-haspopup="dialog"
-                onClick={() => setCreating({ folderId: null })}
-              />
-            </div>
+            <EmptyState
+              kind="plantillas"
+              action={
+                <button
+                  type="button"
+                  className={form.button}
+                  data-tour="plantillas-nueva"
+                  aria-haspopup="dialog"
+                  onClick={() => setCreating({ folderId: null })}
+                >
+                  <Plus aria-hidden="true" size={16} />
+                  {t('templates.new')}
+                </button>
+              }
+            >
+              <p>{t('templates.emptyHint')}</p>
+            </EmptyState>
           )}
           <ul ref={listRef} className={files.rows} aria-label={t('templates.listLabel')} aria-describedby={keysHintId}>
             {level(null, 0)}
-            {/* «Nueva carpeta», una fila más tras la última */}
-            {!searching && (
+            {/* «Nueva carpeta», una fila más tras la última (sin nada, solo la pieza de la pantalla vacía) */}
+            {!searching && !nothing && (
               <li className={files.newItem}>
                 <NewTemplateFolder label={t('templates.newFolder')} onCreated={refresh} />
               </li>

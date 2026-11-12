@@ -72,7 +72,7 @@ function TrashPage({ title, back, scope }: { title: string; back?: ReactNode; sc
       {!trash.data && !trash.error && <Loading />}
       {trash.data &&
         (trash.data.items.length === 0 ? (
-          <EmptyState kind="papelera">
+          <EmptyState kind="papelera" small>
             <p className={styles.appear}>{t('trash.empty')}</p>
           </EmptyState>
         ) : (

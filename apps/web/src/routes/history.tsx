@@ -88,7 +88,7 @@ function HistoryPage({ title, back, scope }: { title: string; back?: ReactNode; 
       {!history.data && !history.error && <Loading />}
       {history.data &&
         (entries.length === 0 ? (
-          <EmptyState kind="historial">
+          <EmptyState kind="historial" small>
             <p className={styles.appear}>{t('history.empty')}</p>
           </EmptyState>
         ) : (

@@ -7,7 +7,7 @@ import type { SystemSummary } from '@crisol/contracts'
 import { type Problem, validateFile } from '@crisol/systems'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, Navigate } from '@tanstack/react-router'
-import { CircleAlert, Download, FileUp, Image as ImageIcon, Info, Lock, Settings, Sparkles } from 'lucide-react'
+import { CircleAlert, Download, FileUp, Image as ImageIcon, Info, Lock, Plus, Settings, Sparkles } from 'lucide-react'
 import { useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
@@ -80,11 +80,19 @@ export function SystemsScreen() {
     >
       {failed(systems) && <LoadError error={systems.error} onRetry={() => systems.refetch()} />}
       {systems.data && mine.length === 0 && (
-        <EmptyState kind="sistemas">
-          <p className={styles.summary}>{t('systems.empty')}</p>
+        <EmptyState
+          kind="sistemas"
+          action={
+            <button type="button" className={form.button} data-tour="sistemas-nuevo" onClick={() => setCreating(true)}>
+              <Plus aria-hidden="true" size={16} />
+              {t('systems.new')}
+            </button>
+          }
+        >
+          <p>{t('systems.empty')}</p>
         </EmptyState>
       )}
-      {systems.data && (
+      {systems.data && mine.length > 0 && (
         // Sin rótulo «Tuyos»: todos son de la cuenta (Enrique, 2026-11-12: «lo de tuyos sobra, porque todos son míos»)
         <ul className={screen.grid} aria-label={t('systems.title')} data-tour="sistemas-tuyos">
           {mine.map((system) => (

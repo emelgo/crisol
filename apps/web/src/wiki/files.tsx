@@ -1244,7 +1244,7 @@ function FilesSection({
         {searching && <p className={styles.here}>{t('files.results', { count: results.length })}</p>}
         {moveError && <FormError message={moveError} />}
         {searching && results.length === 0 && (
-          <EmptyState kind="sin-resultados">
+          <EmptyState kind="sin-resultados" small>
             <p className={styles.empty}>
               {!query.trim()
                 ? t('files.noKind')
@@ -1268,7 +1268,7 @@ function FilesSection({
         >
           {level(null, 0)}
           {/* «Nueva carpeta», una fila más tras la última (docs/diseno.md): dentro de la elegida */}
-          {!searching && newHere.canWrite && (
+          {!searching && newHere.canWrite && !nothing && (
             <li className={styles.newItem}>
               <NewFolder
                 target={newHere.target}

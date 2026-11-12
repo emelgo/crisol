@@ -72,13 +72,10 @@ export function Worlds() {
         {worlds.data &&
           (empty ? (
             // Sin mundos: qué es un mundo y el botón grande para crear el primero
-            <div className={styles.empty}>
-              <EmptyState kind="mundos">
-                <h2>{t('worlds.empty')}</h2>
-                {!canCreate && <p>{t('worlds.emptyPlayer')}</p>}
-              </EmptyState>
-              {canCreate && <NewWorld big />}
-            </div>
+            <EmptyState kind="mundos" action={canCreate ? <NewWorld big /> : undefined}>
+              <h2>{t('worlds.empty')}</h2>
+              {!canCreate && <p>{t('worlds.emptyPlayer')}</p>}
+            </EmptyState>
           ) : (
             <ul
               className={styles.list}

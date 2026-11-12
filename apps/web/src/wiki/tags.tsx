@@ -2,7 +2,7 @@ import type { TagView } from '@crisol/contracts'
 import { tagKey } from '@crisol/domain'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Navigate } from '@tanstack/react-router'
-import { ChevronRight, Hash, Search, Settings, X } from 'lucide-react'
+import { ChevronRight, Hash, Plus, Search, Settings, X } from 'lucide-react'
 import { type CSSProperties, type KeyboardEvent, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
@@ -439,13 +439,13 @@ export function AccountTags() {
           {tags.data && (
             <>
               {all.length === 0 ? (
-                <EmptyState kind="etiquetas">
-                  <p className={files.empty}>{t('tags.empty')}</p>
+                <EmptyState kind="etiquetas" action={<NewTag onCreated={refresh} primary />}>
+                  <p>{t('tags.empty')}</p>
                 </EmptyState>
               ) : (
                 shown.length === 0 && (
-                  <EmptyState kind="sin-resultados">
-                    <p className={files.empty}>{t('tags.noResults')}</p>
+                  <EmptyState kind="sin-resultados" small>
+                    <p>{t('tags.noResults')}</p>
                   </EmptyState>
                 )
               )}
@@ -509,10 +509,12 @@ export function AccountTags() {
                     onChanged={refresh}
                   />
                 ))}
-                {/* «Nueva etiqueta», una fila más tras la última, vacía (docs/diseno.md) */}
-                <li className={styles.newItem}>
-                  <NewTag onCreated={refresh} />
-                </li>
+                {/* «Nueva etiqueta», una fila más tras la última, vacía (docs/diseno.md); sin ninguna, en la pieza vacía */}
+                {all.length > 0 && (
+                  <li className={styles.newItem}>
+                    <NewTag onCreated={refresh} />
+                  </li>
+                )}
               </ul>
               {/* Cómo se recoloca: para los lectores de pantalla (con el ratón se ve al arrastrar) */}
               <p id={hintId} className={styles.hidden}>
@@ -732,7 +734,7 @@ function TagDetail({ tag }: { tag: TagView }) {
   )
 }
 
-function NewTag({ onCreated }: { onCreated: () => Promise<unknown> }) {
+function NewTag({ onCreated, primary = false }: { onCreated: () => Promise<unknown>; primary?: boolean }) {
   const { t } = useTranslation()
   const api = useApi()
   const errorText = useErrorText()
@@ -752,20 +754,40 @@ function NewTag({ onCreated }: { onCreated: () => Promise<unknown> }) {
   })
   return (
     <>
-      <NewCard
-        ref={trigger}
-        shape="row"
-        label={t('tags.new')}
-        aria-haspopup="dialog"
-        data-tour="etiquetas-nueva"
-        onClick={() => {
-          setName('')
-          setParent('')
-          setColor(null)
-          create.reset()
-          setOpen(true)
-        }}
-      />
+      {primary ? (
+        <button
+          ref={trigger}
+          type="button"
+          className={form.button}
+          aria-haspopup="dialog"
+          data-tour="etiquetas-nueva"
+          onClick={() => {
+            setName('')
+            setParent('')
+            setColor(null)
+            create.reset()
+            setOpen(true)
+          }}
+        >
+          <Plus aria-hidden="true" size={16} />
+          {t('tags.new')}
+        </button>
+      ) : (
+        <NewCard
+          ref={trigger}
+          shape="row"
+          label={t('tags.new')}
+          aria-haspopup="dialog"
+          data-tour="etiquetas-nueva"
+          onClick={() => {
+            setName('')
+            setParent('')
+            setColor(null)
+            create.reset()
+            setOpen(true)
+          }}
+        />
+      )}
       {open && (
         <Modal
           ref={dialog}
