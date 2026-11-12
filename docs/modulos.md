@@ -18,7 +18,7 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
 - Crítica y audit de impeccable (P0–P3) con sus arreglos: la revisión siempre a la vista, nada de fórmulas en crudo,
   errores bajo su campo, foco y anuncios al añadir, quitar, mover y cambiar de paso, «Deshacer» sin perder lo de
   después. Quedan, menores: la ficha de ejemplo no sigue aún la maqueta del paso 4; arrastrar para ordenar.
-- Pruebas: web 827, e2e `editor-sistemas` en verde.
+- Pruebas: web 827, e2e `editor-sistemas` en verde. **Página de revisión**: https://claude.ai/artifact/EH91XXhfXA4xdgeoTF2DUj
 - Tanda 7: la cobertura de lo cambiado sube a ~95 % (commit `c144b1b6`); e2e sin desenfoque salvo portada y
   accesibilidad, y la CI con 60 min. Falta pasar la CI del PR #118, fusionar y desplegar.
 - **Siguiente**: PR #118 en verde → `main` y staging; luego la tanda 8 a `main` con su visto bueno.

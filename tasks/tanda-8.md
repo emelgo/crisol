@@ -21,4 +21,4 @@ Rama `revision/tanda-8` (sale de `revision/tanda-7`). Plan general en `tasks/pla
   libros (enlace a él).
 - [x] 5. **Lo avanzado**: claves, idiomas, ajustes de campaña, bajar y subir el archivo. «Sistema nuevo → A mano»
   deja de decir «Pronto». docs/diseno.md y una nota al ADR-0015 (a mano también).
-- [ ] 6. Pruebas (unitarias y e2e), crítica y audit de impeccable, arreglos y la página de revisión.
+- [x] 6. Pruebas (unitarias y e2e), crítica y audit de impeccable, arreglos y la página de revisión.
