@@ -1,4 +1,6 @@
 import { createRootRoute, createRoute, createRouter, type RouterHistory } from '@tanstack/react-router'
+import type { BookSearch } from './books/book-tabs.tsx'
+import { CampaignBookScreen } from './books/campaign-book.tsx'
 import { CompendiumScreen } from './campaign/compendium.tsx'
 import { WorldPagesHome, WorldPageView } from './campaign/world-pages.tsx'
 import { CharacterScreen } from './characters/character.tsx'
@@ -66,6 +68,14 @@ const booksRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/mundos/$worldId/campanas/$campaignId/libros',
   component: CampaignBooksScreen
+})
+// Un libro de la campaña, para leer sus capítulos (ADR-0025): también quien juega
+const campaignBookRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/mundos/$worldId/campanas/$campaignId/libros/$bookKey',
+  component: CampaignBookScreen,
+  validateSearch: (search: Record<string, unknown>): { capitulo?: string } =>
+    typeof search.capitulo === 'string' && search.capitulo ? { capitulo: search.capitulo } : {}
 })
 const adventuresRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -256,11 +266,17 @@ const systemCompendiumRoute = createRoute({
   component: SystemCompendium,
   validateSearch: verSearch
 })
+// Un libro por dentro: sus capítulos (?capitulo, el abierto) o su índice de entradas (?vista=entradas); ADR-0025
+const bookSearch = (search: Record<string, unknown>): BookSearch => ({
+  ...verSearch(search),
+  ...(typeof search.capitulo === 'string' && search.capitulo ? { capitulo: search.capitulo } : {}),
+  ...(search.vista === 'capitulos' || search.vista === 'entradas' ? { vista: search.vista } : {})
+})
 const systemBookRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/sistemas/$systemId/libros/$bookKey',
   component: SystemBook,
-  validateSearch: verSearch
+  validateSearch: bookSearch
 })
 // Sus reglas: el editor a mano llega en la tanda 8
 const systemRulesRoute = createRoute({
@@ -294,6 +310,7 @@ const routeTree = rootRoute.addChildren([
   campaignsRoute,
   campaignRoute,
   booksRoute,
+  campaignBookRoute,
   adventuresRoute,
   compendiumRoute,
   inPlayRoute,

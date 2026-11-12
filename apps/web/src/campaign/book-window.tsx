@@ -4,7 +4,7 @@
  */
 import type { Book } from '@crisol/contracts'
 import { Link } from '@tanstack/react-router'
-import { Layers } from 'lucide-react'
+import { BookOpen, Layers } from 'lucide-react'
 import { useId, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Modal } from '../components/modal.tsx'
@@ -62,6 +62,17 @@ export function BookWindow({
           </div>
           <div className={styles.windowMain}>
             {book.description && <p className={styles.description}>{book.description}</p>}
+            {/* Sus capítulos (ADR-0025), en el lector de la campaña */}
+            {compendium && book.chapters > 0 && (
+              <Link
+                to="/mundos/$worldId/campanas/$campaignId/libros/$bookKey"
+                params={{ ...compendium, bookKey: book.key }}
+                className={styles.read}
+              >
+                <BookOpen aria-hidden="true" size={16} />
+                {t('chapters.read')} · {t('chapters.count', { count: book.chapters })}
+              </Link>
+            )}
             <h3 className={styles.h}>{t('books.brings')}</h3>
             {book.byType.length === 0 ? (
               <p className={styles.quiet}>{t('books.empty')}</p>

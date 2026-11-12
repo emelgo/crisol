@@ -3080,7 +3080,8 @@ export function fakeApi(
               cover: each.cover ?? null,
               requires: each.requires ?? [],
               count: (summary?.count ?? 0) - (summary?.excluded ?? 0),
-              excluded: summary?.excluded ?? 0
+              excluded: summary?.excluded ?? 0,
+              chapters: chapters.filter((c) => c.systemId === document.id && c.source === each.key).length
             }
           }),
         sections: compendiumSections(document, types).map((section) => ({
@@ -3487,6 +3488,7 @@ export function fakeApi(
             count: summary?.count ?? 0,
             byType: summary?.byType ?? [],
             pending: summary?.pending ?? 0,
+            chapters: chapters.filter((c) => c.systemId === systemId && c.source === source.key).length,
             campaigns: using.map((c) => ({ id: c.id, worldId: c.worldId, name: c.name }))
           }
         })

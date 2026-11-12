@@ -101,7 +101,10 @@ export function SystemScreen() {
                   {t('systemBooks.review', { count: book.pending })}
                 </Link>
               ) : (
-                <span>{t('books.entries', { count: book.count })}</span>
+                <span>
+                  {t('books.entries', { count: book.count })}
+                  {book.chapters > 0 && ` · ${t('chapters.count', { count: book.chapters })}`}
+                </span>
               )}
               {editable && (
                 <button

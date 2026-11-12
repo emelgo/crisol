@@ -7,9 +7,10 @@
 import { visibilitiesFor } from '@crisol/contracts'
 import { type Text, textOf } from '@crisol/systems'
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { getRouteApi, Navigate } from '@tanstack/react-router'
+import { getRouteApi, Link, Navigate } from '@tanstack/react-router'
 import {
   ArrowLeft,
+  BookOpen,
   ChevronRight,
   Copy,
   Globe,
@@ -151,6 +152,45 @@ export function CompendiumScreen() {
   )
 }
 
+/** «Leer · N capítulos»: los capítulos del libro elegido (ADR-0025), en su lector; en el sistema, en el libro por dentro */
+function ReadBook({
+  worldId,
+  campaignId,
+  source
+}: {
+  worldId: string
+  campaignId: string
+  source: { key: string; chapters: number } | undefined
+}) {
+  const { t } = useTranslation()
+  if (!source || source.chapters === 0) return null
+  const systemId = systemOfScope(campaignId)
+  const text = (
+    <>
+      <BookOpen size={14} aria-hidden="true" />
+      {t('chapters.read')} · {t('chapters.count', { count: source.chapters })}
+    </>
+  )
+  return systemId ? (
+    <Link
+      to="/sistemas/$systemId/libros/$bookKey"
+      params={{ systemId, bookKey: source.key }}
+      search={{ vista: 'capitulos' }}
+      className={styles.readBook}
+    >
+      {text}
+    </Link>
+  ) : (
+    <Link
+      to="/mundos/$worldId/campanas/$campaignId/libros/$bookKey"
+      params={{ worldId, campaignId, bookKey: source.key }}
+      className={styles.readBook}
+    >
+      {text}
+    </Link>
+  )
+}
+
 /**
  * El compendio de una campaña: en su ruta o en una ventana sobre la Mesa (embedded: sin el título de la pestaña del
  * navegador, que es el de la Mesa)
@@ -163,7 +203,8 @@ export function Compendium({
   embedded = false,
   initialBook = null,
   initialType = null,
-  title
+  title,
+  tabs
 }: {
   worldId: string
   campaignId: string
@@ -176,6 +217,8 @@ export function Compendium({
   initialType?: string | null
   /** Su título (sin él, «Compendio»): el nombre del libro, dentro de él */
   title?: string
+  /** Bajo el título: las pestañas de un libro por dentro (Capítulos y Entradas, ADR-0025) */
+  tabs?: ReactNode
 }) {
   const { t } = useTranslation()
   const api = useApi()
@@ -298,6 +341,7 @@ export function Compendium({
         {!embedded && (
           <div className={styles.top}>
             <PageTitle>{title ?? t('compendium.title')}</PageTitle>
+            {tabs}
           </div>
         )}
         <aside className={styles.side} aria-label={t('compendium.title')}>
@@ -410,6 +454,9 @@ export function Compendium({
                 <X size={13} aria-hidden="true" />
               </button>
             </p>
+          )}
+          {book && !fixedBook && (
+            <ReadBook worldId={worldId} campaignId={campaignId} source={sources.find((s) => s.key === book)} />
           )}
           {fixedBook && !wanted && !bookType ? (
             <ul className={styles.bookList} aria-label={t('compendium.bookIndex')} data-tour="compendio-estantes">

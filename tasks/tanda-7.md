@@ -8,7 +8,7 @@ capturas de antes y después; Enrique revisa las tandas juntas.
 - [x] 1. **Capítulos, por dentro** (ADR-0025): la tabla `system_chapters` (migración aplicada también a la base
   local), su repositorio, sus acciones (listar, leer, guardar con su versión, ordenar, borrar; deshacer), sus
   herramientas MCP, el archivo del sistema (exportar, importar, copiar) y sus pruebas.
-- [ ] 2. **El lector y el editor de capítulos**: la pestaña «Capítulos» en el libro por dentro; el índice que sigue la
+- [x] 2. **El lector y el editor de capítulos**: la pestaña «Capítulos» en el libro por dentro; el índice que sigue la
   lectura, anterior y siguiente, el «Ir a…» del móvil; escribir con el editor de bloques; en la campaña, sus jugadores
   leen los capítulos de sus libros (sin los secretos).
 - [ ] 3. **Tirar las acciones de una entrada**: hoy se pintan como texto (`campaign/compendium.tsx`, «En juego»);

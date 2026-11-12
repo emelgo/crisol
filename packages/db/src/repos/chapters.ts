@@ -2,7 +2,7 @@
  * Los capítulos de los libros de un sistema propio (ADR-0025). Todo lo que los escribe pasa por operation(): queda en
  * el historial y se deshace. Cambiar uno pide la versión que se tenía: si cambió entre medias, no se pisa
  */
-import { and, asc, eq, max } from 'drizzle-orm'
+import { and, asc, count, eq, max } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { type OperationContext, operation } from '../operation.ts'
 import { systemChapters } from '../schema/systems.ts'
@@ -40,6 +40,16 @@ export function listChapters(db: Database, systemId: string, source?: string) {
 }
 
 /** Los de un sistema con su texto (para exportarlo o copiarlo) */
+/** Cuántos capítulos tiene cada libro de un sistema */
+export async function chapterCounts(db: Database, systemId: string): Promise<Map<string, number>> {
+  const rows = await db
+    .select({ source: systemChapters.source, count: count() })
+    .from(systemChapters)
+    .where(eq(systemChapters.systemId, systemId))
+    .groupBy(systemChapters.source)
+  return new Map(rows.map((row) => [row.source, row.count]))
+}
+
 export function chaptersWithText(db: Database, systemId: string) {
   return db
     .select()

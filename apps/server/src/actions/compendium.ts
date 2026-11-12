@@ -17,7 +17,7 @@ import {
   searchSystemCompendium,
   visibilitiesFor
 } from '@crisol/contracts'
-import { systemImagesRepo, systemsRepo, tablesRepo, worldContentRepo } from '@crisol/db'
+import { chaptersRepo, systemImagesRepo, systemsRepo, tablesRepo, worldContentRepo } from '@crisol/db'
 import { authorize, can, NotFoundError } from '@crisol/domain'
 import {
   browseContent,
@@ -341,6 +341,7 @@ async function compendiumView(ctx: ActionContext, found: Scope) {
   const books = new Map(
     summarizeBooks(document, entries, { excluded: choices.excluded ?? [], language }).map((b) => [b.key, b])
   )
+  const chapters = row ? await chaptersRepo.chapterCounts(ctx.db, row.id) : new Map<string, number>()
   const typeView = (type: CompendiumType) => ({
     ...type,
     label: say(type.label),
@@ -376,7 +377,8 @@ async function compendiumView(ctx: ActionContext, found: Scope) {
           cover: s.cover ?? null,
           requires: s.requires ?? [],
           count: (summary?.count ?? 0) - (summary?.excluded ?? 0),
-          excluded: summary?.excluded ?? 0
+          excluded: summary?.excluded ?? 0,
+          chapters: chapters.get(s.key) ?? 0
         }
       }),
     sections: compendiumSections(document, shownTypes(compendiumTypes(document, entries, choices)))

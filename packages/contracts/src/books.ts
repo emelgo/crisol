@@ -45,6 +45,7 @@ export const book = z.object({
   count: z.int().describe('Cuántas entradas aceptadas trae'),
   byType: z.array(z.object({ type: z.string(), label: z.string(), count: z.int(), examples: z.array(z.string()) })),
   pending: z.int().describe('Cuántas esperan a que se revisen'),
+  chapters: z.int().describe('Cuántos capítulos tiene (ADR-0025)'),
   campaigns: z.array(z.object({ id: z.uuid(), worldId: z.uuid(), name: z.string() })).describe('Las que lo usan')
 })
 

@@ -1,0 +1,290 @@
+/* El lector de capítulos: el encaje es el del compendio (campaign/compendium.module.css); aquí, lo de dentro */
+.loading,
+.none {
+  grid-column: 1 / -1;
+  grid-row: 2;
+}
+
+.none {
+  display: grid;
+  place-items: center;
+  padding-block: var(--space-8);
+}
+
+/* El índice: los capítulos y, dentro del abierto, sus secciones */
+.index {
+  gap: var(--space-3);
+  overflow-y: auto;
+}
+
+.chapters,
+.sections {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chapter,
+.section {
+  display: block;
+  padding: 6px 8px;
+  border-radius: 4px;
+  color: var(--color-text);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.chapter {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.chapter:hover,
+.section:hover {
+  background: var(--color-raised);
+}
+
+.chapter[aria-current="page"] {
+  background: var(--color-raised);
+  box-shadow: inset 2px 0 0 var(--color-accent);
+}
+
+.sections {
+  margin-block: 2px var(--space-2);
+  padding-inline-start: var(--space-3);
+}
+
+.section {
+  color: var(--color-muted);
+  font-size: 0.85rem;
+  line-height: 1.35;
+}
+
+.sections li[data-level="2"] .section {
+  padding-inline-start: calc(8px + var(--space-3));
+}
+
+.sections li[data-level="3"] .section {
+  padding-inline-start: calc(8px + 2 * var(--space-3));
+  font-size: 0.8rem;
+}
+
+/* La que se está leyendo */
+.section[aria-current="location"] {
+  color: var(--color-text);
+  box-shadow: inset 2px 0 0 var(--color-accent);
+}
+
+.chapter:focus-visible,
+.section:focus-visible,
+.pager a:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 1px;
+}
+
+.newChapter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-block-size: 2.25rem;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: none;
+  color: var(--color-text);
+  font: 600 0.875rem var(--font-body);
+  cursor: pointer;
+}
+
+.newChapter:hover {
+  border-color: var(--color-accent);
+}
+
+.newBig {
+  composes: newChapter;
+  min-block-size: 2.5rem;
+  padding-inline: var(--space-5);
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+/* Lo que se lee */
+.reading {
+  padding-block-start: var(--space-6);
+}
+
+.open {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.chapterHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.chapterTitle {
+  flex: 1;
+  min-inline-size: 0;
+  margin: 0;
+  /* Como los títulos del texto: sin mayúsculas, igual al leerlo que al escribirlo */
+  text-transform: none;
+  font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem);
+  line-height: 1.2;
+}
+
+.titleInput {
+  inline-size: 100%;
+  margin: 0;
+  padding: 2px 4px;
+  margin-inline-start: -4px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: none;
+  color: inherit;
+  font: inherit;
+}
+
+.titleInput:hover {
+  border-color: var(--color-border);
+}
+
+.titleInput:focus-visible {
+  border-color: var(--color-accent);
+  outline: none;
+}
+
+.tools {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding-block-start: var(--space-2);
+}
+
+.status {
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+  white-space: nowrap;
+}
+
+.problem {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-danger);
+  border-radius: 6px;
+  color: var(--color-text);
+}
+
+.problem button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-link);
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+/* El texto, a lo que se lee bien (unos 70 caracteres), pegado a su título */
+.text {
+  max-inline-size: 70ch;
+}
+
+.text > :first-child {
+  margin-block-start: 0;
+}
+
+.text :is(h2, h3, h4) {
+  scroll-margin-block-start: var(--space-6);
+}
+
+/* Anterior y siguiente, al final */
+.pager {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+  margin-block-start: var(--space-8);
+  padding-block-start: var(--space-5);
+  border-block-start: 1px solid var(--color-border);
+}
+
+.previous,
+.next {
+  display: grid;
+  gap: 2px;
+  padding: var(--space-2) var(--space-3);
+  border-radius: 6px;
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.next {
+  grid-column: 2;
+  justify-items: end;
+  text-align: end;
+}
+
+.previous:hover,
+.next:hover {
+  background: var(--color-raised);
+}
+
+.pagerLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+}
+
+.pagerTitle {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+/* En el móvil, «Ir a…» en lugar del índice */
+.goTo {
+  display: grid;
+  gap: var(--space-1);
+  margin-block-end: var(--space-4);
+  font-size: 0.875rem;
+}
+
+.goTo label {
+  color: var(--color-muted);
+  font-weight: 600;
+}
+
+.goTo select {
+  min-block-size: 2.75rem;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--field-fill, var(--color-surface));
+  color: var(--color-text);
+  font: inherit;
+}
+
+@media (max-width: 48rem) {
+  .reading {
+    padding-inline: var(--space-4);
+  }
+
+  .pager {
+    grid-template-columns: 1fr;
+  }
+
+  .next {
+    grid-column: 1;
+  }
+}

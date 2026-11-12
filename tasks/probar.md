@@ -9,6 +9,17 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
+## Revisión, tanda 7: libros de texto (en local)
+
+- [ ] **Capítulos de un libro** (un sistema tuyo → pulsa la portada de un libro → «Capítulos»): «Capítulo nuevo», escribir
+  con el editor de bloques (se guarda solo: «Guardado»), un secreto con «/», cambiar el título; en «⋯», subir, bajar
+  y borrar (se deshace desde el Historial).
+- [ ] **Leer**: el índice de la izquierda sigue lo que lees (sus secciones se marcan al bajar); «Siguiente» al final.
+- [ ] **La jugadora**: en el compendio de su campaña → «Por libro» → el libro → «Leer · N capítulos»; no ve los
+  secretos. En el móvil, «Ir a…» en lugar del índice.
+- [ ] **El máster**: en Libros de la campaña, la ficha de un libro con capítulos tiene «Leer».
+- [ ] **La IA**: «pásame el capítulo de combate del PDF a capítulos del libro» (capitulos_libro, guardar_capitulo…).
+
 ## Revisión, tanda 6: sistemas (en local)
 
 - [ ] **Iconos de rol**: en el icono de una página, el buscador de iconos (por nombre en español); en Ajustes de una

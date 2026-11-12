@@ -140,7 +140,10 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   buscador de iconos flota y se recorre con una parada del tabulador y las flechas.
 - **El espacio del sistema** (tanda 6): en la barra, su nombre con su icono, Compendio y Reglas; abajo, Ajustes. Su
   portada, arriba en su Inicio y detrás en todo su espacio. **Un libro se abre por dentro**: su tapa y su nombre arriba,
-  su índice por tipos (con cuántos trae cada uno) y, al pulsar uno, su lista; «← {sistema}» para volver. Reglas, hasta
+  su índice por tipos (con cuántos trae cada uno) y, al pulsar uno, su lista; «← {sistema}» para volver. **Sus
+  capítulos se leen como en D&D Beyond** (ADR-0025, tanda 7): «Capítulos · Entradas» bajo su título; a la izquierda los
+  capítulos y, dentro del abierto, sus secciones, que siguen la lectura; anterior y siguiente al final; en el móvil, «Ir
+  a…». Quien juega los lee desde el compendio de su campaña («Leer · N capítulos»), sin los secretos. Reglas, hasta
   el editor a mano, enseña lo que trae el sistema y deja bajarlo. **«Sistema nuevo», tres caminos que se eligen**: con
   tu IA (la frase para pedírselo), con el esqueleto (bajarlo y subirlo) y a mano («Pronto», hasta la tanda 8).
 - **La campaña se abre en su propia vista, como un mundo** (Enrique, 2026-11-05): al entrar, la barra cambia y enseña

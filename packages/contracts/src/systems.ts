@@ -499,7 +499,8 @@ export const getCampaignCompendium = defineAction({
         cover: worldCover.nullable(),
         requires: z.array(z.string()),
         count: z.int(),
-        excluded: z.int()
+        excluded: z.int(),
+        chapters: z.int().describe('Cuántos capítulos tiene (ADR-0025)')
       })
     ),
     types: z.array(compendiumType),

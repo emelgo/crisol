@@ -253,4 +253,21 @@ test('el espacio de la campaña y los libros (ADR-0021), en los dos temas @a11y'
   await expect(page.getByRole('heading', { level: 1, name: 'Compendio' })).toBeVisible()
   await settled(page)
   await check('el compendio por libro')
+  // Los capítulos de un libro (ADR-0025): el lector del dueño, con su editor, y el de la campaña
+  await page.request.post('/api/actions/saveChapter', {
+    data: {
+      systemId: five,
+      source: 'srd521',
+      title: 'El combate',
+      markdown: 'Seis segundos.\n\n## La iniciativa\n\nTira 1d20.\n\n> [!secreto]\n> Huyen.'
+    }
+  })
+  await page.goto(`/sistemas/${five}/libros/srd521`)
+  await expect(page.getByLabel('Título del capítulo')).toHaveValue('El combate')
+  await settled(page)
+  await check('los capítulos del sistema')
+  await page.goto(`${path}/libros/srd521`)
+  await expect(page.getByRole('heading', { level: 2, name: 'El combate' })).toBeVisible()
+  await settled(page)
+  await check('los capítulos en la campaña')
 })
