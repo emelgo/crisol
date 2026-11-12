@@ -34,4 +34,40 @@ describe('los iconos', () => {
     await userEvent.type(screen.getByRole('searchbox', { name: 'Buscar un icono' }), 'zzzz')
     expect(screen.getByText('Ningún icono se llama así.')).toBeDefined()
   })
+
+  it('el buscador, con el teclado: una sola parada; flechas por la rejilla (abajo, una fila), Inicio y Fin', async () => {
+    // jsdom no maqueta: la rejilla dice tener 3 columnas
+    const real = window.getComputedStyle
+    const computed = vi
+      .spyOn(window, 'getComputedStyle')
+      .mockImplementation((element) =>
+        element.tagName === 'UL' ? ({ gridTemplateColumns: '1fr 1fr 1fr' } as CSSStyleDeclaration) : real(element)
+      )
+    try {
+      render(<IconBrowser value={null} onPick={() => {}} />)
+      const buttons = () => [...document.querySelectorAll<HTMLElement>('[data-icono]')]
+      const stops = () => buttons().filter((button) => button.tabIndex === 0)
+      expect(stops()).toEqual([buttons()[0]])
+      buttons()[0]?.focus()
+      await userEvent.keyboard('{ArrowRight}')
+      expect(document.activeElement).toBe(buttons()[1])
+      await userEvent.keyboard('{ArrowDown}')
+      expect(document.activeElement).toBe(buttons()[4])
+      await userEvent.keyboard('{ArrowUp}{ArrowLeft}')
+      expect(document.activeElement).toBe(buttons()[0])
+      // Sin salirse por el principio
+      await userEvent.keyboard('{ArrowLeft}')
+      expect(document.activeElement).toBe(buttons()[0])
+      await userEvent.keyboard('{End}')
+      expect(document.activeElement).toBe(buttons().at(-1))
+      expect(stops()).toEqual([buttons().at(-1)])
+      await userEvent.keyboard('{Home}')
+      expect(document.activeElement).toBe(buttons()[0])
+      // Otra tecla no hace nada
+      await userEvent.keyboard('a')
+      expect(document.activeElement).toBe(buttons()[0])
+    } finally {
+      computed.mockRestore()
+    }
+  })
 })

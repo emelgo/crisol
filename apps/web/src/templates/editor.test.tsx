@@ -1,5 +1,5 @@
 import { createMemoryHistory } from '@tanstack/react-router'
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { fakeAccountClient } from '../account/fake.ts'
@@ -112,6 +112,39 @@ describe('editar una plantilla', () => {
     // Al pulsarlo, sus opciones
     await userEvent.click(blocks.getByRole('button', { name: /^Notas/ }))
     expect(blocks.getByRole('button', { name: 'Quitar el bloque' })).toBeDefined()
+  })
+
+  it('los bloques se recolocan arrastrando sus seis puntos; soltarlo en su sitio no cambia nada', async () => {
+    const { api, own, saved } = await renderTemplate()
+    await api.client.call('updateTemplate', {
+      templateId: own.id,
+      panel: [
+        { id: 'notas', type: 'text', title: 'Notas', text: '' },
+        { id: 'fama', type: 'rating', title: 'Fama', value: 0, max: 5 },
+        { id: 'oro', type: 'text', title: 'Oro', text: '' }
+      ]
+    })
+    const blocks = within((await panel()).getByRole('region', { name: 'En el panel' }))
+    const grip = await blocks.findByRole('button', { name: 'Opciones de Oro' })
+    const rowOf = (name: string) =>
+      blocks.getByRole('button', { name: `Opciones de ${name}` }).closest('li') as HTMLElement
+    const transfer = { dataTransfer: { setData: () => undefined, effectAllowed: '', dropEffect: '' } }
+    // Sin arrastrar nada, pasar por encima no marca dónde caería
+    fireEvent.dragOver(rowOf('Notas'), transfer)
+    expect(rowOf('Notas').getAttribute('data-over')).toBeNull()
+    fireEvent.dragStart(grip, transfer)
+    expect(rowOf('Oro').getAttribute('data-dragging')).toBe('true')
+    fireEvent.dragOver(rowOf('Notas'), transfer)
+    expect(rowOf('Notas').getAttribute('data-over')).toBe('true')
+    fireEvent.drop(rowOf('Notas'), transfer)
+    await waitFor(async () => expect((await saved()).panel.map((b) => b.id)).toEqual(['oro', 'notas', 'fama']))
+    expect(rowOf('Notas').getAttribute('data-over')).toBeNull()
+    // Soltarlo sobre sí mismo, o soltar sin arrastrar, lo deja igual
+    fireEvent.dragStart(blocks.getByRole('button', { name: 'Opciones de Fama' }), transfer)
+    fireEvent.drop(rowOf('Fama'), transfer)
+    fireEvent.drop(rowOf('Notas'), transfer)
+    fireEvent.dragEnd(blocks.getByRole('button', { name: 'Opciones de Fama' }), transfer)
+    expect((await saved()).panel.map((b) => b.id)).toEqual(['oro', 'notas', 'fama'])
   })
 
   it('«⋯» → «Duplicar»: una copia con los mismos campos (y su linaje), que se abre', async () => {

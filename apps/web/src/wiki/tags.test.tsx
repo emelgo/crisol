@@ -4,6 +4,7 @@ import { createEvent, fireEvent, render, screen, waitFor, within } from '@testin
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { fakeAccountClient } from '../account/fake.ts'
+import { ApiError } from '../api/client.ts'
 import { fakeApi } from '../api/fake.ts'
 import { App } from '../app.tsx'
 import { createAppRouter } from '../router.tsx'
@@ -260,5 +261,85 @@ describe('las etiquetas de la cuenta', () => {
     await userEvent.type(search, '/costa')
     await waitFor(() => expect(list.queryByRole('button', { name: 'Mapa.png' })).toBeNull())
     expect(list.getByRole('link', { name: 'Bestiario.pdf' })).toBeDefined()
+  })
+
+  it('buscar encuentra también las hijas de una plegada, sin tildes; si ninguna se llama así, lo dice', async () => {
+    renderAt('/etiquetas')
+    await screen.findByRole('button', { name: 'Ajustes de lugar' })
+    await userEvent.click(screen.getByRole('button', { name: 'Plegar lugar' }))
+    await waitFor(() => expect(rows()).toEqual(['lugar1 página · 1 archivo']))
+    await userEvent.type(screen.getByRole('searchbox', { name: 'Buscar etiquetas' }), 'CIUDÁD')
+    // Con su camino entero, para saber de quién es hija
+    await waitFor(() => expect(rows()).toEqual(['lugar/ciudad1 página']))
+    await userEvent.clear(screen.getByRole('searchbox', { name: 'Buscar etiquetas' }))
+    await userEvent.type(screen.getByRole('searchbox', { name: 'Buscar etiquetas' }), 'zzz')
+    expect(await screen.findByText('Ninguna etiqueta se llama así.')).toBeDefined()
+  })
+
+  it('borrar una desde su engranaje, avisando: se quita del catálogo', async () => {
+    const api = tagsApi()
+    await api.client.call('createTag', { name: 'pnj' })
+    renderAt('/etiquetas', api)
+    await userEvent.click(await screen.findByRole('button', { name: 'Ajustes de pnj' }))
+    const settings = within(await screen.findByRole('dialog', { name: 'Ajustes de pnj' }))
+    await userEvent.click(settings.getByRole('button', { name: 'Borrar la etiqueta' }))
+    const confirm = within(await screen.findByRole('dialog', { name: '¿Borrar «pnj»?' }))
+    await userEvent.click(confirm.getByRole('button', { name: 'Borrar la etiqueta' }))
+    await waitFor(() => expect(rows()).toEqual(['lugar1 página · 1 archivo', 'ciudad1 página']))
+    expect((await api.client.call('listAccountTags', {})).tags.map((tag) => tag.name)).toEqual([
+      'lugar',
+      'lugar/ciudad'
+    ])
+  })
+
+  it('sin ninguna, su pantalla vacía crea la primera', async () => {
+    const api = fakeApi({ organizations: [ORG], worlds: [WORLD] })
+    renderAt('/etiquetas', api)
+    expect(await screen.findByText(/Aún no hay etiquetas/)).toBeDefined()
+    await userEvent.click(screen.getByRole('button', { name: 'Nueva etiqueta' }))
+    const create = await screen.findByRole('dialog', { name: 'Nueva etiqueta' })
+    await userEvent.type(within(create).getByLabelText('Nombre de la etiqueta'), 'pnj')
+    await userEvent.click(within(create).getByRole('button', { name: 'Crear la etiqueta' }))
+    await waitFor(() => expect(rows()).toEqual(['pnjSin usar']))
+  })
+
+  it('arrastrar y soltar fuera: la raya se va; si el servidor no deja moverla, vuelve a su sitio y se dice por qué', async () => {
+    const api = tagsApi()
+    await api.client.call('createTag', { name: 'pnj' })
+    const call = api.client.call.bind(api.client)
+    api.client.call = ((name: string, input: unknown) =>
+      name === 'moveTag'
+        ? Promise.reject(new ApiError('FORBIDDEN', 403))
+        : call(name as never, input as never)) as typeof api.client.call
+    renderAt('/etiquetas', api)
+    await screen.findByRole('button', { name: 'Ajustes de pnj' })
+    const row = (name: string) =>
+      screen.getByRole('button', { name: `Ajustes de ${name}` }).closest('li') as HTMLElement
+    const box = vi
+      .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+      .mockReturnValue({ top: 0, height: 100, left: 0, width: 400, bottom: 100, right: 400, x: 0, y: 0 } as DOMRect)
+    try {
+      const dataTransfer = { setData: () => {}, effectAllowed: '' }
+      const at = (target: HTMLElement, type: 'dragOver' | 'drop', y: number) => {
+        const event = createEvent[type](target, { dataTransfer })
+        Object.defineProperty(event, 'clientY', { value: y })
+        Object.defineProperty(event, 'clientX', { value: 200 })
+        fireEvent(target, event)
+      }
+      // Soltada fuera de la lista: nada cambia y la raya se va
+      fireEvent.dragStart(row('pnj'), { dataTransfer, clientX: 200 })
+      at(row('lugar'), 'dragOver', 10)
+      expect(row('lugar').dataset.drop).toBe('before')
+      fireEvent.dragEnd(row('pnj'), { dataTransfer, clientX: 200 })
+      expect(row('lugar').dataset.drop).toBeUndefined()
+      // Soltada delante de lugar: se ve ahí al momento, pero el servidor no deja y vuelve detrás
+      fireEvent.dragStart(row('pnj'), { dataTransfer, clientX: 200 })
+      at(row('lugar'), 'dragOver', 10)
+      at(row('lugar'), 'drop', 10)
+      await waitFor(() => expect(rows()).toEqual(['lugar1 página · 1 archivo', 'ciudad1 página', 'pnjSin usar']))
+      expect(await screen.findByText(/No tienes permiso/)).toBeDefined()
+    } finally {
+      box.mockRestore()
+    }
   })
 })

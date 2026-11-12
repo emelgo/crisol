@@ -974,3 +974,254 @@ describe('los archivos comunes de la cuenta (ADR-0005)', () => {
     expect(screen.queryByRole('button', { name: 'Mapa de Eana.png' })).toBeNull()
   })
 })
+
+describe('lo que falta de la lista: soltar del escritorio, más teclado y deshacer en las ventanas', () => {
+  /** Archivos del escritorio: un DataTransfer con «Files» y sin entradas (van tal cual) */
+  const desktop = (files: File[]) => ({ types: ['Files'], items: [], files, dropEffect: '' })
+  const fire = (
+    target: Element,
+    type: 'dragEnter' | 'dragOver' | 'drop' | 'dragLeave',
+    dataTransfer: object,
+    y = 50
+  ) => {
+    const event = createEvent[type](target, { dataTransfer })
+    Object.defineProperty(event, 'clientY', { value: y })
+    fireEvent(target, event)
+  }
+
+  it('archivos del escritorio sobre la pantalla: el aviso sale, se va al salir y, soltados fuera de las filas, suben arriba', async () => {
+    const maps = folderOf('Mapas')
+    const api = fakeApi({ organizations: [ORG], worlds: [WORLD], folders: [maps], files: [] })
+    renderAt(`/mundos/${WORLD.id}/archivos`, api)
+    await screen.findByRole('button', { name: 'Mapas' })
+    const list = (await screen.findAllByRole('list', { name: 'Archivos' }))[0] as HTMLElement
+    const data = desktop([new File(['png'], 'Costa.png', { type: 'image/png' })])
+    fire(list, 'dragOver', data)
+    expect(await screen.findByText('Suéltalos para subirlos')).toBeDefined()
+    // Al salir de la pantalla, el aviso se va
+    fire(list, 'dragLeave', data)
+    await waitFor(() => expect(screen.queryByText('Suéltalos para subirlos')).toBeNull())
+    fire(list, 'dragEnter', data)
+    expect(await screen.findByText('Suéltalos para subirlos')).toBeDefined()
+    fire(list, 'drop', data)
+    await waitFor(() => expect(screen.queryByText('Suéltalos para subirlos')).toBeNull())
+    expect(await screen.findByRole('button', { name: 'Costa.png' })).toBeDefined()
+    expect(api.files.find((f) => f.name === 'Costa.png')?.folderId).toBeNull()
+  })
+
+  it('archivos del escritorio soltados en medio de una carpeta: suben a ella, que se abre; sobre una fila, sin el aviso de la pantalla', async () => {
+    const maps = folderOf('Mapas')
+    const api = fakeApi({ organizations: [ORG], worlds: [WORLD], folders: [maps], files: [] })
+    renderAt(`/mundos/${WORLD.id}/archivos`, api)
+    await screen.findByRole('button', { name: 'Mapas' })
+    const box = vi
+      .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+      .mockReturnValue({ top: 0, height: 100, left: 0, width: 400, bottom: 100, right: 400, x: 0, y: 0 } as DOMRect)
+    try {
+      const list = (await screen.findAllByRole('list', { name: 'Archivos' }))[0] as HTMLElement
+      const data = desktop([new File(['png'], 'Norte.png', { type: 'image/png' })])
+      fire(list, 'dragOver', data)
+      expect(await screen.findByText('Suéltalos para subirlos')).toBeDefined()
+      // Sobre la fila: ella dice dónde caen (resaltada) y el aviso de la pantalla se va
+      fire(rowOf('Mapas'), 'dragOver', data)
+      await waitFor(() => expect(screen.queryByText('Suéltalos para subirlos')).toBeNull())
+      expect(rowOf('Mapas').getAttribute('data-drop')).toBe('inside')
+      // Al salir de la fila, ya no
+      fire(rowOf('Mapas'), 'dragLeave', data)
+      await waitFor(() => expect(rowOf('Mapas').getAttribute('data-drop')).toBeNull())
+      fire(rowOf('Mapas'), 'dragOver', data)
+      fire(rowOf('Mapas'), 'drop', data)
+      expect(await screen.findByRole('button', { name: 'Norte.png' })).toBeDefined()
+      expect(api.files.find((f) => f.name === 'Norte.png')?.folderId).toBe(maps.id)
+      expect(screen.getByRole('button', { name: 'Mapas' }).getAttribute('aria-expanded')).toBe('true')
+    } finally {
+      box.mockRestore()
+    }
+  })
+
+  it('el teclado: Fin, Intro en una carpeta y en un archivo, la izquierda sube a su carpeta y Alt+↓ lo baja un puesto', async () => {
+    const maps = folderOf('Mapas')
+    const portraits = folderOf('Retratos')
+    const api = fakeApi({
+      organizations: [ORG],
+      worlds: [WORLD],
+      folders: [maps, portraits],
+      files: [
+        { worldId: WORLD.id, name: 'Dentro.png', kind: 'image', folderId: maps.id },
+        { worldId: WORLD.id, name: 'A.png', kind: 'image' },
+        { worldId: WORLD.id, name: 'B.png', kind: 'image' }
+      ]
+    })
+    renderAt(`/mundos/${WORLD.id}/archivos`, api)
+    await screen.findByRole('button', { name: 'Mapas' })
+    rowOf('Mapas').focus()
+    // Fin: a la última fila
+    await userEvent.keyboard('{End}')
+    expect(document.activeElement).toBe(rowOf('B.png'))
+    // Inicio y, con Intro, la carpeta se abre
+    await userEvent.keyboard('{Home}{Enter}')
+    expect(screen.getByRole('button', { name: 'Mapas' }).getAttribute('aria-expanded')).toBe('true')
+    // La derecha en una abierta baja a lo suyo; la izquierda, desde dentro, vuelve a ella
+    await userEvent.keyboard('{ArrowRight}')
+    expect(document.activeElement).toBe(rowOf('Dentro.png'))
+    await userEvent.keyboard('{ArrowLeft}')
+    expect(document.activeElement).toBe(rowOf('Mapas'))
+    // Intro en una imagen la abre en grande; al cerrarla, el foco vuelve a su nombre
+    rowOf('Dentro.png').focus()
+    await userEvent.keyboard('{Enter}')
+    expect(await screen.findByRole('dialog', { name: 'Dentro.png' })).toBeDefined()
+    await userEvent.click(
+      within(screen.getByRole('dialog', { name: 'Dentro.png' })).getByRole('button', { name: 'Cerrar' })
+    )
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Dentro.png' })).toBeNull())
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Dentro.png' }))
+    // Alt+← con algo de lo más alto: no hay adónde, no se mueve
+    rowOf('A.png').focus()
+    await userEvent.keyboard('{Alt>}{ArrowLeft}{/Alt}')
+    expect(api.calls).not.toContain('moveFiles')
+    // Alt+↓: tras B, y el foco sigue con él
+    await userEvent.keyboard('{Alt>}{ArrowDown}{/Alt}')
+    await waitFor(() => expect(namesIn(listOf('A.png')).slice(-2)).toEqual(['B.png', 'A.png']))
+    await waitFor(() => expect(document.activeElement).toBe(rowOf('A.png')))
+  })
+
+  it('Alt+→ en una carpeta la mete en la de encima, y el foco sigue con ella', async () => {
+    const maps = folderOf('Mapas')
+    const portraits = folderOf('Retratos')
+    const api = fakeApi({ organizations: [ORG], worlds: [WORLD], folders: [maps, portraits], files: [] })
+    renderAt(`/mundos/${WORLD.id}/archivos`, api)
+    await screen.findByRole('button', { name: 'Retratos' })
+    rowOf('Retratos').focus()
+    await userEvent.keyboard('{Alt>}{ArrowRight}{/Alt}')
+    await waitFor(async () =>
+      expect(
+        (await api.client.call('listFiles', { worldId: WORLD.id })).folders.find((f) => f.name === 'Retratos')?.parentId
+      ).toBe(maps.id)
+    )
+    await waitFor(() => expect(document.activeElement).toBe(rowOf('Retratos')))
+  })
+
+  it('con el ratón encima, una carpeta se ve en la vista previa; al salir, se va', async () => {
+    const maps = folderOf('Mapas')
+    const api = fakeApi({
+      organizations: [ORG],
+      worlds: [WORLD],
+      folders: [maps],
+      files: [{ worldId: WORLD.id, name: 'Dentro.png', kind: 'image', folderId: maps.id }]
+    })
+    renderAt(`/mundos/${WORLD.id}/archivos`, api)
+    await screen.findByRole('button', { name: 'Mapas' })
+    const preview = within(screen.getByRole('complementary', { name: 'Vista previa' }))
+    await userEvent.hover(rowOf('Mapas'))
+    expect(await preview.findByRole('heading', { name: 'Mapas' })).toBeDefined()
+    expect(preview.getByText('1 archivo')).toBeDefined()
+    await userEvent.unhover(rowOf('Mapas'))
+    await waitFor(() => expect(preview.queryByRole('heading', { name: 'Mapas' })).toBeNull())
+  })
+
+  it('una carpeta, desde su ventana, a otra: se cierra, se ve dentro y el foco vuelve a su engranaje', async () => {
+    const maps = folderOf('Mapas')
+    const portraits = folderOf('Retratos')
+    const api = fakeApi({ organizations: [ORG], worlds: [WORLD], folders: [maps, portraits], files: [] })
+    renderAt(`/mundos/${WORLD.id}/archivos`, api)
+    await userEvent.click(await screen.findByRole('button', { name: 'Ajustes de la carpeta Retratos' }))
+    const dialog = within(await screen.findByRole('dialog', { name: 'Ajustes de la carpeta Retratos' }))
+    await userEvent.selectOptions(dialog.getByLabelText('Carpeta'), 'Mapas')
+    await userEvent.click(dialog.getByRole('button', { name: 'Guardar' }))
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Ajustes de la carpeta Retratos' })).toBeNull())
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Mapas' }).closest('li')?.contains(rowOf('Retratos'))).toBe(true)
+    )
+    await waitFor(() =>
+      expect(document.activeElement?.getAttribute('aria-label')).toBe('Ajustes de la carpeta Retratos')
+    )
+    expect(
+      (await api.client.call('listFiles', { worldId: WORLD.id })).folders.find((f) => f.name === 'Retratos')?.parentId
+    ).toBe(maps.id)
+  })
+
+  it('«Cancelar» en la ventana de una carpeta y en la de un archivo deja lo de antes, sin guardar', async () => {
+    const maps = folderOf('Mapas')
+    const portraits = folderOf('Retratos')
+    const api = fakeApi({
+      organizations: [ORG],
+      worlds: [WORLD],
+      folders: [maps, portraits],
+      files: [{ worldId: WORLD.id, name: 'Faro.png', kind: 'image', tags: ['costa'] }]
+    })
+    renderAt(`/mundos/${WORLD.id}/archivos`, api)
+    await userEvent.click(await screen.findByRole('button', { name: 'Ajustes de la carpeta Retratos' }))
+    const folderDialog = within(await screen.findByRole('dialog', { name: 'Ajustes de la carpeta Retratos' }))
+    const folderName = folderDialog.getByLabelText<HTMLInputElement>('Nombre de la carpeta')
+    await userEvent.clear(folderName)
+    await userEvent.type(folderName, 'Caras')
+    await userEvent.selectOptions(folderDialog.getByLabelText('Carpeta'), 'Mapas')
+    await userEvent.click(folderDialog.getByRole('button', { name: 'Cancelar' }))
+    expect(folderName.value).toBe('Retratos')
+    expect(folderDialog.getByLabelText<HTMLSelectElement>('Carpeta').value).toBe('')
+    await userEvent.click(folderDialog.getByRole('button', { name: 'Cerrar' }))
+
+    await userEvent.click(screen.getByRole('button', { name: 'Ajustes de Faro.png' }))
+    const fileDialog = within(await screen.findByRole('dialog', { name: 'Ajustes de Faro.png' }))
+    const fileName = fileDialog.getByLabelText<HTMLInputElement>('Nombre del archivo')
+    await userEvent.clear(fileName)
+    await userEvent.type(fileName, 'Otro.png')
+    await userEvent.selectOptions(fileDialog.getByLabelText('Carpeta'), 'Mapas')
+    await userEvent.click(fileDialog.getByRole('button', { name: 'Cancelar' }))
+    expect(fileName.value).toBe('Faro.png')
+    expect(fileDialog.getByLabelText<HTMLSelectElement>('Carpeta').value).toBe('')
+    expect(api.calls).not.toContain('updateFile')
+    expect(api.calls).not.toContain('updateFolder')
+  })
+
+  it('«Mover a…» con carpetas elegidas: van dentro de la de destino (la que ya está allí no se toca)', async () => {
+    const maps = folderOf('Mapas')
+    const north = folderOf('Norte')
+    const south = folderOf('Sur', maps.id)
+    const api = fakeApi({
+      organizations: [ORG],
+      worlds: [WORLD],
+      folders: [maps, north, south],
+      files: [{ worldId: WORLD.id, name: 'Faro.png', kind: 'image' }]
+    })
+    renderAt(`/mundos/${WORLD.id}/archivos`, api)
+    const list = await cardsIn()
+    await userEvent.click(await list.findByRole('checkbox', { name: 'Elegir Norte' }))
+    await userEvent.click(list.getByRole('checkbox', { name: 'Elegir Faro.png' }))
+    await userEvent.click(
+      within(screen.getByRole('group', { name: 'Lo elegido' })).getByRole('button', { name: 'Mover a…' })
+    )
+    const move = within(await screen.findByRole('dialog', { name: 'Mover los 2 elegidos' }))
+    await userEvent.selectOptions(move.getByLabelText('Carpeta'), 'Mapas')
+    await userEvent.click(move.getByRole('button', { name: 'Mover' }))
+    await waitFor(async () => {
+      const { folders, files } = await api.client.call('listFiles', { worldId: WORLD.id })
+      expect(folders.find((f) => f.name === 'Norte')?.parentId).toBe(maps.id)
+      expect(files.find((f) => f.name === 'Faro.png')?.folderId).toBe(maps.id)
+    })
+    // Por la API, una que ya está en el destino no cuenta como movida
+    const { moved } = await api.client.call('moveFiles', { fileIds: [], folderIds: [south.id], folderId: maps.id })
+    expect(moved).toBe(0)
+  })
+
+  it('las ventanas de lo elegido se cierran con «Cancelar» sin hacer nada', async () => {
+    const api = renderAt(`/mundos/${WORLD.id}/archivos`)
+    const list = await cardsIn()
+    await userEvent.click(await list.findByRole('checkbox', { name: 'Elegir Bestiario.pdf' }))
+    await userEvent.click(list.getByRole('checkbox', { name: 'Elegir Notas.txt' }))
+    const bar = () => within(screen.getByRole('group', { name: 'Lo elegido' }))
+    for (const [button, title] of [
+      ['Borrar', '¿Borrar los 2 elegidos?'],
+      ['Mover a…', 'Mover los 2 elegidos'],
+      ['Etiquetar', 'Etiquetar los 2 archivos']
+    ] as const) {
+      await userEvent.click(bar().getByRole('button', { name: button }))
+      const dialog = await screen.findByRole('dialog', { name: title })
+      await userEvent.click(within(dialog).getByRole('button', { name: 'Cancelar' }))
+      await waitFor(() => expect(screen.queryByRole('dialog', { name: title })).toBeNull())
+    }
+    expect(bar().getByText('2 elegidos')).toBeDefined()
+    expect(api.files).toHaveLength(3)
+    expect(api.calls.filter((call) => ['deleteFiles', 'moveFiles', 'addFileTags'].includes(call))).toEqual([])
+  })
+})
