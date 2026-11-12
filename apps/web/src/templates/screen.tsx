@@ -47,7 +47,7 @@ import files from '../wiki/files.module.css'
 import { FolderGlyph } from '../wiki/folder-glyph.tsx'
 import { IconChoices } from '../wiki/icon.tsx'
 import { TemplateIcon } from './icons.tsx'
-import { useNewTemplate } from './new-template.ts'
+import { NewTemplateDialog } from './new-template-dialog.tsx'
 import { useTemplates } from './picker.tsx'
 import styles from './screen.module.css'
 import { fieldsLine, treeOf } from './tree.ts'
@@ -131,7 +131,8 @@ function TemplatesTree({ data }: { data: Listed }) {
   const queryClient = useQueryClient()
   const announce = useAnnounce()
   const errorText = useErrorText()
-  const create = useNewTemplate()
+  // «Plantilla nueva»: su cuadro, como el de «Página nueva» (null: en lo más alto)
+  const [creating, setCreating] = useState<{ folderId: string | null } | null>(null)
   const keysHintId = useId()
   const [query, setQuery] = useState('')
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set())
@@ -540,8 +541,8 @@ function TemplatesTree({ data }: { data: Listed }) {
                 type="button"
                 className={`${form.button} ${files.uploadButton}`}
                 data-tour="plantillas-nueva"
-                disabled={create.isPending}
-                onClick={() => create.mutate()}
+                aria-haspopup="dialog"
+                onClick={() => setCreating({ folderId: null })}
               >
                 <Plus aria-hidden="true" size={16} />
                 <span className={files.uploadLabel}>{t('templates.new')}</span>
@@ -564,7 +565,7 @@ function TemplatesTree({ data }: { data: Listed }) {
           </div>
         )}
         <div className={files.contents}>
-          <FormError message={create.errorText ?? moveError} />
+          <FormError message={moveError} />
           {searching && found?.hits.length === 0 && <p className={files.empty}>{t('templates.noneFound')}</p>}
           {!searching && nothing && (
             <div className={styles.emptyState}>
@@ -572,8 +573,8 @@ function TemplatesTree({ data }: { data: Listed }) {
               <NewCard
                 label={t('templates.new')}
                 data-tour="plantillas-nueva"
-                disabled={create.isPending}
-                onClick={() => create.mutate()}
+                aria-haspopup="dialog"
+                onClick={() => setCreating({ folderId: null })}
               />
             </div>
           )}
@@ -591,6 +592,7 @@ function TemplatesTree({ data }: { data: Listed }) {
           </p>
         </div>
       </div>
+      {creating && <NewTemplateDialog folderId={creating.folderId} onClose={() => setCreating(null)} />}
       <aside className={files.detail} aria-label={t('templates.preview')}>
         {hoveredTemplate ? (
           <TemplatePreview template={hoveredTemplate} where={pathOf(hoveredTemplate.folderId)} />
@@ -754,7 +756,7 @@ function FolderRow({
   onChanged: () => Promise<unknown>
 }) {
   const { t } = useTranslation()
-  const create = useNewTemplate()
+  const [creating, setCreating] = useState(false)
   const [settings, setSettings] = useState(false)
   const gear = useRef<HTMLButtonElement>(null)
   return (
@@ -801,11 +803,12 @@ function FolderRow({
             className={files.smallGear}
             aria-label={t('templates.newIn', { folder: folder.name })}
             title={t('templates.newHere')}
-            disabled={create.isPending}
-            onClick={() => create.mutate({ folderId: folder.id })}
+            aria-haspopup="dialog"
+            onClick={() => setCreating(true)}
           >
             <Plus aria-hidden="true" size={15} />
           </button>
+          {creating && <NewTemplateDialog folderId={folder.id} onClose={() => setCreating(false)} />}
           <NewTemplateFolder
             shape="icon"
             parentId={folder.id}
@@ -942,20 +945,8 @@ function NewTemplateFolder({
   onCreated: () => Promise<unknown>
 }) {
   const { t } = useTranslation()
-  const api = useApi()
-  const errorText = useErrorText()
   const trigger = useRef<HTMLButtonElement>(null)
-  const dialog = useRef<HTMLDialogElement>(null)
-  const titleId = useId()
   const [open, setOpen] = useState(false)
-  const [name, setName] = useState('')
-  const create = useMutation({
-    mutationFn: async () => {
-      await api.call('createTemplateFolder', { parentId, name: name.trim() })
-      await onCreated()
-    },
-    onSuccess: () => dialog.current?.close()
-  })
   return (
     <>
       {shape === 'icon' ? (
@@ -966,11 +957,7 @@ function NewTemplateFolder({
           aria-label={label}
           title={t('templates.newFolderHere')}
           aria-haspopup="dialog"
-          onClick={() => {
-            setName('')
-            create.reset()
-            setOpen(true)
-          }}
+          onClick={() => setOpen(true)}
         >
           <FolderPlus aria-hidden="true" size={15} />
         </button>
@@ -981,61 +968,88 @@ function NewTemplateFolder({
           label={label}
           className={files.newFolder}
           aria-haspopup="dialog"
-          onClick={() => {
-            setName('')
-            create.reset()
-            setOpen(true)
-          }}
+          onClick={() => setOpen(true)}
         />
       )}
       {open && (
-        <Modal
-          ref={dialog}
-          aria-labelledby={titleId}
-          className={dialogStyles.dialog}
+        <NewFolderDialog
+          label={label}
+          parentId={parentId}
+          onCreated={onCreated}
           onClose={() => {
             setOpen(false)
             trigger.current?.focus()
           }}
-        >
-          <form
-            className={dialogStyles.body}
-            onSubmit={(event) => {
-              event.preventDefault()
-              create.mutate()
-            }}
-          >
-            <h2 id={titleId}>{label}</h2>
-            <Field
-              label={t('templates.name')}
-              value={name}
-              required
-              maxLength={120}
-              autoComplete="off"
-              data-1p-ignore
-              data-lpignore="true"
-              data-form-type="other"
-              data-autofocus=""
-              onChange={(event) => setName(event.currentTarget.value)}
-            />
-            <FormError message={create.error ? errorText(create.error) : null} />
-            <div className={dialogStyles.actions}>
-              <BusyButton type="submit" className={form.button} busy={create.isPending}>
-                {t('templates.createFolder')}
-              </BusyButton>
-              <button type="button" className={dialogStyles.cancel} onClick={() => dialog.current?.close()}>
-                {t('templates.cancel')}
-              </button>
-            </div>
-          </form>
-        </Modal>
+        />
       )}
     </>
   )
 }
 
+/** El cuadro de una carpeta nueva: su nombre (en parentId, o en lo más alto) */
+export function NewFolderDialog({
+  label,
+  parentId,
+  onCreated,
+  onClose
+}: {
+  label: string
+  parentId: string | null
+  onCreated?: () => Promise<unknown>
+  onClose: () => void
+}) {
+  const { t } = useTranslation()
+  const api = useApi()
+  const queryClient = useQueryClient()
+  const errorText = useErrorText()
+  const dialog = useRef<HTMLDialogElement>(null)
+  const titleId = useId()
+  const [name, setName] = useState('')
+  const create = useMutation({
+    mutationFn: async () => {
+      await api.call('createTemplateFolder', { parentId, name: name.trim() })
+      await (onCreated?.() ?? queryClient.invalidateQueries({ queryKey: ['templates'] }))
+    },
+    onSuccess: () => dialog.current?.close()
+  })
+  return (
+    <Modal ref={dialog} aria-labelledby={titleId} className={dialogStyles.dialog} onClose={onClose}>
+      <form
+        className={dialogStyles.body}
+        onSubmit={(event) => {
+          event.preventDefault()
+          create.mutate()
+        }}
+      >
+        <h2 id={titleId}>{label}</h2>
+        <Field
+          label={t('templates.name')}
+          value={name}
+          required
+          maxLength={120}
+          autoComplete="off"
+          data-1p-ignore
+          data-lpignore="true"
+          data-form-type="other"
+          data-autofocus=""
+          onChange={(event) => setName(event.currentTarget.value)}
+        />
+        <FormError message={create.error ? errorText(create.error) : null} />
+        <div className={dialogStyles.actions}>
+          <BusyButton type="submit" className={form.button} busy={create.isPending}>
+            {t('templates.createFolder')}
+          </BusyButton>
+          <button type="button" className={dialogStyles.cancel} onClick={() => dialog.current?.close()}>
+            {t('templates.cancel')}
+          </button>
+        </div>
+      </form>
+    </Modal>
+  )
+}
+
 /** La ventana de una carpeta: su nombre, en qué carpeta está, su icono y su color, y borrarla con lo que tiene */
-function TemplateFolderDialog({
+export function TemplateFolderDialog({
   folder,
   folders,
   onMove,

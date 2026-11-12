@@ -73,6 +73,82 @@
   box-shadow: inset 2px 0 0 var(--color-accent);
 }
 
+/* El árbol de «Tus plantillas»: ocupa lo que queda de la ficha (el botón derecho en el hueco también vale) */
+.sideTree {
+  min-block-size: calc(100% - 3rem);
+}
+
+.treeRoot {
+  margin: 0;
+}
+
+/* Lo de dentro de una carpeta, un poco hacia dentro, con su raya (como el árbol de páginas) */
+.links .links {
+  margin: 0.125rem 0 0.125rem 0.9rem;
+  padding-inline-start: 0.375rem;
+  border-inline-start: 1px solid var(--line-soft);
+}
+
+.links a > span,
+.folderRow > span {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Una carpeta: se pliega al pulsarla */
+.folderRow {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  inline-size: 100%;
+  padding: 0.375rem var(--space-2) 0.375rem 0.125rem;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--color-muted);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-align: start;
+  cursor: pointer;
+}
+
+.folderRow:hover {
+  background: var(--row-hover);
+  color: var(--color-text);
+}
+
+.links a:focus-visible,
+.folderRow:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
+}
+
+.chevron {
+  flex: none;
+  color: var(--color-muted);
+  transition: transform 160ms ease-out;
+}
+
+.folderRow[aria-expanded="true"] .chevron {
+  transform: rotate(90deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chevron {
+    transition: none;
+  }
+}
+
+/* «Nueva carpeta» y «Plantilla nueva», juntos a la derecha del rótulo */
+.headTools {
+  display: flex;
+  gap: 0.125rem;
+}
+
 .block + .block {
   margin-block-start: var(--space-5);
 }

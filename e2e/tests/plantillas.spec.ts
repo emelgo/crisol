@@ -129,8 +129,13 @@ test('«Plantillas», como Archivos: «Plantilla nueva» la abre como página, y
   await expect(page.getByRole('heading', { level: 1, name: 'Plantillas' })).toBeVisible()
   // Sin ninguna de serie
   await expect(page.getByText('Aún no hay plantillas')).toBeVisible()
-  // «Plantilla nueva»: la abre con su título elegido para escribir encima; un emoji delante es su icono
+  // «Plantilla nueva»: su cuadro (como el de «Página nueva»); sin nombre, la abre con su título elegido para escribir
+  // encima; un emoji delante es su icono
   await page.getByRole('button', { name: 'Plantilla nueva' }).click()
+  const created = page.getByRole('dialog', { name: 'Plantilla nueva' })
+  await expect(created.getByRole('radio', { name: 'Texto' })).toBeChecked()
+  await axe(page, 'dialog')
+  await created.getByRole('button', { name: 'Crear' }).click()
   const title = page.getByRole('textbox', { name: 'Título de la página' })
   await expect(title).toBeFocused()
   await expect(title).toHaveText('Plantilla sin título')
@@ -171,6 +176,7 @@ test('editar una plantilla como una página: «Frente» con un reloj de 8 y su t
   await createWorld(page, 'Eana')
   await page.goto('/plantillas')
   await page.getByRole('button', { name: 'Plantilla nueva' }).click()
+  await page.getByRole('dialog', { name: 'Plantilla nueva' }).getByRole('button', { name: 'Crear' }).click()
   await expect(page.getByRole('textbox', { name: 'Título de la página' })).toBeFocused()
   await page.keyboard.type('Frente')
   await page.keyboard.press('Enter')
@@ -209,13 +215,41 @@ test('editar una plantilla como una página: «Frente» con un reloj de 8 y su t
   await expect(body.getByRole('heading', { level: 3, name: 'La verdad' })).toBeVisible()
 })
 
-test('«Pestaña nueva» desde una plantilla: se añaden las pestañas que se dejen marcadas', async ({ page }) => {
+test('el árbol del editor: carpeta nueva, plantilla nueva con un mapa y, con el botón derecho, borrarla; «Pestaña nueva» sin plantillas', async ({
+  page
+}) => {
   test.slow()
   await freshOwner(page)
   const { call } = await seedTemplates(page)
   const puerto = await call('createTemplate', { name: 'Puerto', icon: '⚓' })
-  await call('createPageTab', { pageId: puerto.pageId, kind: 'map', name: 'Plano' })
-  await call('createPageTab', { pageId: puerto.pageId, kind: 'table', name: 'Encuentros' })
+  await page.goto(`/plantillas/${puerto.id}`)
+  const side = page.getByRole('complementary', { name: 'Tus plantillas' })
+  await side.getByRole('button', { name: 'Nueva carpeta' }).click()
+  const folder = page.getByRole('dialog', { name: 'Nueva carpeta' })
+  await folder.getByLabel('Nombre').fill('Lugares')
+  await folder.getByRole('button', { name: 'Crear la carpeta' }).click()
+  await expect(side.getByRole('button', { name: 'Lugares' })).toBeVisible()
+  // Con el botón derecho en la carpeta, una plantilla nueva dentro, con un mapa
+  await side.getByRole('button', { name: 'Lugares' }).click({ button: 'right' })
+  await page
+    .getByRole('menu', { name: 'Opciones de «Lugares»' })
+    .getByRole('menuitem', { name: 'Plantilla nueva aquí' })
+    .click()
+  const created = page.getByRole('dialog', { name: 'Plantilla nueva' })
+  await created.getByRole('radio', { name: 'Mapa' }).check()
+  await created.getByRole('textbox', { name: 'Nombre' }).fill('Ciudad')
+  await created.getByRole('button', { name: 'Crear' }).click()
+  await expect(page.getByRole('heading', { level: 1, name: 'Ciudad' })).toBeVisible()
+  const tabs = page.getByRole('navigation', { name: 'Pestañas de la página' })
+  await expect(tabs.getByRole('link', { name: 'Mapa' })).toHaveAttribute('aria-current', 'page')
+  await axe(page, 'main')
+  // Con el botón derecho en «Puerto»: borrarla
+  await side.getByRole('link', { name: 'Puerto' }).click({ button: 'right' })
+  const menu = page.getByRole('menu', { name: 'Opciones de «Puerto»' })
+  await menu.getByRole('menuitem', { name: 'Borrar' }).click()
+  await menu.getByRole('menuitem', { name: 'Borrar la plantilla' }).click()
+  await expect(side.getByRole('link', { name: 'Puerto' })).toHaveCount(0)
+  // «Pestaña nueva», en una página, ya no ofrece plantillas
   await createWorld(page, 'Eana')
   await openWiki(page, 'Eana')
   await page.getByRole('button', { name: 'Página nueva' }).click()
@@ -224,17 +258,6 @@ test('«Pestaña nueva» desde una plantilla: se añaden las pestañas que se de
   await expect(page.getByRole('heading', { level: 1, name: 'Ciudad Libre' })).toBeVisible()
   await page.getByRole('button', { name: 'Pestaña nueva' }).click()
   const dialog = page.getByRole('dialog', { name: 'Pestaña nueva' })
-  await dialog.getByRole('button', { name: 'Desde plantilla' }).click()
-  await dialog.getByRole('radio', { name: /^Puerto/ }).check()
-  const added = dialog.getByRole('group', { name: 'Se añaden' })
-  await expect(added.getByRole('checkbox', { name: 'Mapa «Plano»' })).toBeChecked()
-  await axe(page, 'dialog')
-  await added.getByRole('checkbox', { name: 'Tabla «Encuentros»' }).uncheck()
-  await dialog.getByRole('button', { name: 'Crear' }).click()
-  const tabs = page.getByRole('navigation', { name: 'Pestañas de la página' })
-  await expect(tabs.getByRole('link', { name: 'Plano' })).toHaveAttribute('aria-current', 'page')
-  await expect(tabs.getByRole('link', { name: 'Encuentros' })).toHaveCount(0)
-  // Ya no hay «Aplicar plantilla» en «⋯»
-  await page.getByRole('button', { name: 'Más acciones' }).click()
-  await expect(page.getByRole('button', { name: /Aplicar plantilla/ })).toHaveCount(0)
+  await expect(dialog.getByRole('radio', { name: 'Texto' })).toBeVisible()
+  await expect(dialog.getByRole('button', { name: 'Desde plantilla' })).toHaveCount(0)
 })

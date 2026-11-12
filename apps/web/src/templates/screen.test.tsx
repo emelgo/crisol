@@ -83,9 +83,13 @@ describe('la pantalla «Plantillas»', () => {
     )
   })
 
-  it('«Plantilla nueva» crea «Plantilla sin título» y la abre con el título listo para escribir', async () => {
+  it('«Plantilla nueva» abre el cuadro de «Página nueva» (tipo y nombre); sin nombre, «Plantilla sin título», que se abre para escribirlo', async () => {
     const { api, router } = renderTemplates()
     await userEvent.click(await screen.findByRole('button', { name: 'Plantilla nueva' }))
+    const dialog = within(await screen.findByRole('dialog', { name: 'Plantilla nueva' }))
+    expect(dialog.getByRole('radio', { name: 'Texto' })).toHaveProperty('checked', true)
+    expect(dialog.getByRole('radio', { name: 'Mapa' })).toBeDefined()
+    await userEvent.click(dialog.getByRole('button', { name: 'Crear' }))
     await waitFor(() => expect(router.state.location.pathname).toMatch(/^\/plantillas\/[0-9a-f-]{36}$/))
     const title = await screen.findByRole('textbox', { name: 'Título de la página' })
     await waitFor(() => expect(document.activeElement).toBe(title))
@@ -94,14 +98,19 @@ describe('la pantalla «Plantillas»', () => {
     await waitFor(async () =>
       expect((await api.client.call('listTemplates', {})).templates.map((t) => t.name)).toContain('Frente')
     )
-    // Otra más: no se repite el nombre
+    // Otra, desde la ficha de la izquierda: con su nombre y un mapa, que se abre en su pestaña
     await userEvent.click(screen.getByRole('button', { name: 'Plantilla nueva' }))
-    await userEvent.click(screen.getByRole('button', { name: 'Plantilla nueva' }))
+    const again = within(await screen.findByRole('dialog', { name: 'Plantilla nueva' }))
+    await userEvent.click(again.getByRole('radio', { name: 'Mapa' }))
+    await userEvent.type(again.getByRole('textbox', { name: 'Nombre' }), 'Puerto')
+    await userEvent.click(again.getByRole('button', { name: 'Crear' }))
     await waitFor(async () =>
-      expect((await api.client.call('listTemplates', {})).templates.map((t) => t.name)).toEqual(
-        expect.arrayContaining(['Plantilla sin título', 'Plantilla sin título 2'])
-      )
+      expect((await api.client.call('listTemplates', {})).templates.map((t) => t.name)).toContain('Puerto')
     )
+    const puerto = (await api.client.call('listTemplates', {})).templates.find((t) => t.name === 'Puerto')
+    await waitFor(() => expect(router.state.location.search).toMatchObject({ pestana: expect.any(String) }))
+    const tabs = (await api.client.call('listPageTabs', { pageId: puerto?.pageId ?? '' })).tabs
+    expect(tabs.map((tab) => tab.kind)).toEqual(['map'])
   })
 
   it('el engranaje de una tuya: cambiarla de nombre y borrarla escribiendo su nombre', async () => {

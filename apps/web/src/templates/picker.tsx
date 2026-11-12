@@ -9,7 +9,7 @@ import { useEffect, useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useTemplates } from './data.ts'
 import { TemplateIcon } from './icons.tsx'
-import { useNewTemplate } from './new-template.ts'
+import { NewTemplateDialog } from './new-template-dialog.tsx'
 import styles from './picker.module.css'
 import { fieldsLine, templateGroups } from './tree.ts'
 
@@ -18,27 +18,29 @@ export { useTemplates } from './data.ts'
 /**
  * La lista de plantillas al crear una página o una pestaña (ADR-0024): un buscador y sus filas por carpetas (con su
  * camino), que se eligen como opciones. La elegida es siempre una de las que se ven (al buscar, la primera). Sin
- * ninguna, «Plantilla nueva» crea una y la abre. only: las que valen aquí (con pestañas, en «Pestaña nueva»); hint:
- * lo que dice cada una debajo de su nombre
+ * ninguna, «Plantilla nueva» abre su cuadro (sin él, con creatable false: desde el propio cuadro). only: las que valen
+ * aquí; hint: lo que dice cada una debajo de su nombre
  */
 export function TemplatePicker({
   value,
   onChange,
   only,
   hint,
-  autoFocus = false
+  autoFocus = false,
+  creatable = true
 }: {
   value: string | null
   onChange: (id: string) => void
   only?: (template: TemplateView) => boolean
   hint?: (template: TemplateView) => string
   autoFocus?: boolean
+  creatable?: boolean
 }) {
   const { t } = useTranslation()
   const name = useId()
   const labels = useId()
   const data = useTemplates().data
-  const create = useNewTemplate()
+  const [creating, setCreating] = useState(false)
   const [query, setQuery] = useState('')
   const usable = (data?.templates ?? []).filter((template) => !only || only(template))
   const shown = usable.filter((template) => !query.trim() || fieldKey(template.name).includes(fieldKey(query)))
@@ -55,13 +57,14 @@ export function TemplatePicker({
     // Ninguna que sirva aquí: crear la primera (se abre para hacerla)
     return (
       <div className={`${styles.picker} ${styles.emptyPicker}`}>
-        <p className={styles.none}>
-          {only && data.templates.length > 0 ? t('templates.noneWithTabs') : t('templates.empty')}
-        </p>
-        <button type="button" className={styles.create} disabled={create.isPending} onClick={() => create.mutate()}>
-          <Plus aria-hidden="true" size={16} />
-          {t('templates.new')}
-        </button>
+        <p className={styles.none}>{t('templates.empty')}</p>
+        {creatable && (
+          <button type="button" className={styles.create} aria-haspopup="dialog" onClick={() => setCreating(true)}>
+            <Plus aria-hidden="true" size={16} />
+            {t('templates.new')}
+          </button>
+        )}
+        {creating && <NewTemplateDialog folderId={null} onClose={() => setCreating(false)} />}
       </div>
     )
   }

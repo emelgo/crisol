@@ -353,7 +353,7 @@ describe('las plantillas de la cuenta (sin plantillas de serie, ADR-0024)', () =
       expect(listed).toMatchObject({ tabs: [{ name: 'Plano', kind: 'map' }], uses: 1, folderId: null, cover: null })
     })
 
-    it('«Pestaña nueva» desde una plantilla: sus pestañas (las elegidas) detrás de las de la página, sin enlaces, de una vez', async () => {
+    it('la lista de plantillas trae sus pestañas, con su id y su tipo', async () => {
       const lugar = await ok200('createTemplate', { name: 'Lugar', icon: '🏰' })
       const plano = await ok200('createPageTab', { pageId: lugar.pageId, kind: 'map', name: 'Plano' })
       const map = await ok200('getMap', { tabId: plano.id })
@@ -375,31 +375,6 @@ describe('las plantillas de la cuenta (sin plantillas de serie, ADR-0024)', () =
         { id: encuentros.id, name: 'Encuentros', kind: 'table' },
         expect.objectContaining({ name: 'Rumores', kind: 'text' })
       ])
-      const page = await ok200('createPage', { worldId, title: 'Puerto Ceniza' })
-      await ok200('createPageTab', { pageId: page.id, kind: 'text', name: 'Notas' })
-      const added = await ok200('addTemplateTabs', {
-        pageId: page.id,
-        templateId: lugar.id,
-        tabIds: [plano.id, encuentros.id]
-      })
-      expect(added.tabs.map((t: { name: string }) => t.name)).toEqual(['Plano', 'Encuentros'])
-      const tabs = (await ok200('listPageTabs', { pageId: page.id })).tabs
-      expect(tabs.map((t: { name: string }) => t.name)).toEqual(['Notas', 'Plano', 'Encuentros'])
-      expect((await ok200('getMap', { tabId: tabs[1].id })).pins).toMatchObject([{ label: 'Puerta', pageId: null }])
-      // Lo que no es suyo, no
-      expect(
-        (await call('addTemplateTabs', { pageId: page.id, templateId: lugar.id, tabIds: [tabs[0].id] })).json()
-      ).toMatchObject({ code: 'BAD_TAB' })
-      // Una sola operación, que se deshace de una vez
-      const entry = (await ok200('listHistory', { worldId })).entries[0]
-      expect(entry).toMatchObject({ action: 'addTemplateTabs', details: { name: 'Lugar', count: 2 } })
-      expect((await ok200('undoOperation', { operationId: entry.id })).status).toBe('undone')
-      expect((await ok200('listPageTabs', { pageId: page.id })).tabs.map((t: { name: string }) => t.name)).toEqual([
-        'Notas'
-      ])
-      // Sin decir cuáles, todas
-      const all = await ok200('addTemplateTabs', { pageId: page.id, templateId: lugar.id })
-      expect(all.tabs.map((t: { name: string }) => t.name)).toEqual(['Plano', 'Encuentros', 'Rumores'])
     })
 
     it('carpetas, como las de archivos: dentro de otra, ordenadas a mano y con color e icono; borrar una se lleva lo suyo y se deshace', async () => {

@@ -639,7 +639,7 @@ const LEADING_EMOJI = /^(\p{Extended_Pictographic}(?:\p{Emoji_Modifier}|\uFE0F|\
  * lo cierran): imprimir o descargar (un cuadro que pregunta cómo), exportar y sus versiones. items: lo de una
  * plantilla, en lugar de exportar
  */
-function MoreActions({ page, items }: { page: Page; items?: ReactNode }) {
+function MoreActions({ page, items }: { page: Page; items?: (close: () => void) => ReactNode }) {
   const { t } = useTranslation()
   const [printing, setPrinting] = useState(false)
   // Ctrl+P (⌘P) imprime la hoja, no la pantalla: abre el cuadro con lo último elegido (y con Intro, se imprime)
@@ -668,7 +668,7 @@ function MoreActions({ page, items }: { page: Page; items?: ReactNode }) {
               {t('sheet.printOrDownload')}
             </MenuItem>
             {/* Lo demás (subpágina, renombrar, mover, borrar…), con el botón derecho en el árbol */}
-            {items ?? <ExportPage page={page} />}
+            {items ? items(close) : <ExportPage page={page} />}
             <Versions page={page} />
           </>
         )}
@@ -799,7 +799,8 @@ function OpenPage({ page, nuevo, pestana }: { page: Page; nuevo: boolean; pestan
  */
 export interface TemplateMode {
   id: string
-  more: ReactNode
+  /** Sus filas en «⋯» (close cierra el menú antes de abrir un cuadro) */
+  more: (close: () => void) => ReactNode
   side: ReactNode
 }
 

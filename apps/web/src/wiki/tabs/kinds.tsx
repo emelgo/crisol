@@ -33,8 +33,9 @@ export type TabKind = (typeof TAB_KINDS)[number]['kind']
 export const tabIcon = (kind: string) => TAB_KINDS.find((each) => each.kind === kind)?.icon ?? FileText
 
 /**
- * Elegir el tipo: un recuadro por tipo (los que aún no, «Pronto») y, tras una raya con «o», «Desde plantilla», la
- * última y centrada, que abre su paso (onTemplate)
+ * Elegir el tipo: un recuadro por tipo (los que aún no, «Pronto») y, al crear una página o una plantilla, tras una raya
+ * con «o», «Desde plantilla», la última y centrada, que abre su paso (onTemplate). Una pestaña no la lleva: la
+ * plantilla, solo al crear una página (Enrique, 2026-11-12)
  */
 export function KindChoices({
   name,
@@ -52,7 +53,7 @@ export function KindChoices({
   value: string
   labelOf: (kind: TabKind) => string
   onChange: (kind: TabKind) => void
-  onTemplate: () => void
+  onTemplate?: () => void
   /** De vuelta del paso de la plantilla: el foco, en «Desde plantilla» */
   focusTemplate?: boolean
 }) {
@@ -76,20 +77,24 @@ export function KindChoices({
           {!ready && <span className={styles.soon}>{t('pageTabs.soon')}</span>}
         </label>
       ))}
-      <span className={styles.or} aria-hidden="true">
-        {t('newPage.or')}
-      </span>
-      <button
-        type="button"
-        className={`${styles.kindCard} ${styles.fromTemplate}`}
-        data-ready=""
-        // biome-ignore lint/a11y/noAutofocus: vuelve al botón de donde se salió, dentro de su cuadro
-        autoFocus={focusTemplate}
-        onClick={onTemplate}
-      >
-        <LayoutTemplate aria-hidden="true" size={20} />
-        {t('newPage.fromTemplate')}
-      </button>
+      {onTemplate && (
+        <>
+          <span className={styles.or} aria-hidden="true">
+            {t('newPage.or')}
+          </span>
+          <button
+            type="button"
+            className={`${styles.kindCard} ${styles.fromTemplate}`}
+            data-ready=""
+            // biome-ignore lint/a11y/noAutofocus: vuelve al botón de donde se salió, dentro de su cuadro
+            autoFocus={focusTemplate}
+            onClick={onTemplate}
+          >
+            <LayoutTemplate aria-hidden="true" size={20} />
+            {t('newPage.fromTemplate')}
+          </button>
+        </>
+      )}
     </fieldset>
   )
 }

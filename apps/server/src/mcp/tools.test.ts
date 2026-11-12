@@ -140,7 +140,6 @@ describe('herramientas MCP', () => {
       'partida_criatura',
       'partida_personaje',
       'pendientes',
-      'pestanas_desde_plantilla',
       'poner_en_juego',
       'poner_encuentro',
       'poner_fichas',

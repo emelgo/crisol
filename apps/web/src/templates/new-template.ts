@@ -17,9 +17,19 @@ type Listed = ActionOutput<'listTemplates'>
 const nameKey = (name: string) =>
   name.normalize('NFD').replace(/\p{M}/gu, '').toLocaleLowerCase('es').replace(/\s+/g, ' ').trim()
 
+type Options = {
+  /** Duplicar esa (su página entera, con los mismos campos y su linaje) */
+  copyOf?: PageTemplate
+  folderId?: string | null
+  /** Su nombre; sin él, «Plantilla sin título» (o «{nombre} (copia)»), con un número si ya hay una así */
+  name?: string
+  /** Su página nace con un mapa, como una página nueva (el cuadro de «Plantilla nueva») */
+  kind?: 'text' | 'map'
+}
+
 /**
- * «Plantilla nueva»: crea «Plantilla sin título» (con un número si ya hay una así) y la abre con el título listo para
- * escribir, como una página nueva. Con una plantilla, la duplica
+ * Crear una plantilla: sin nombre, «Plantilla sin título» (con un número si ya hay una así), que se abre con el título
+ * listo para escribir, como una página nueva. Con una plantilla, la duplica
  */
 export function useNewTemplate() {
   const { t } = useTranslation()
@@ -30,28 +40,43 @@ export function useNewTemplate() {
   const templates = useTemplates().data?.templates ?? []
   const create = useMutation({
     // copyOf: duplicar esa (su página entera, con los mismos campos y su linaje), como «{nombre} (copia)»
-    mutationFn: ({ copyOf, folderId }: { copyOf?: PageTemplate; folderId?: string | null }) => {
-      const base = copyOf ? t('templates.copyName', { name: copyOf.name.slice(0, 50) }) : t('templates.untitled')
-      const taken = new Set(templates.map((each) => nameKey(each.name)))
-      let name = base
-      for (let n = 2; taken.has(nameKey(name)); n++) name = `${base} ${n}`
-      return api.call('createTemplate', {
+    mutationFn: async ({ copyOf, folderId, name: wanted, kind }: Options) => {
+      const named = wanted?.trim() ?? ''
+      let name = named
+      if (!named) {
+        const base = copyOf ? t('templates.copyName', { name: copyOf.name.slice(0, 50) }) : t('templates.untitled')
+        const taken = new Set(templates.map((each) => nameKey(each.name)))
+        name = base
+        for (let n = 2; taken.has(nameKey(name)); n++) name = `${base} ${n}`
+      }
+      const created = await api.call('createTemplate', {
         name,
         ...(copyOf ? { copyOf: copyOf.id } : {}),
         ...(folderId !== undefined ? { folderId } : {})
       })
+      // Si el mapa falla, la plantilla ya está: se abre igual (sin él)
+      const tab =
+        kind === 'map' && created.pageId
+          ? await api.call('createPageTab', { pageId: created.pageId, kind: 'map' }).catch(() => null)
+          : null
+      return { created, tab, named: Boolean(named) }
     },
-    onSuccess: async (created) => {
+    onSuccess: async ({ created, tab, named }) => {
       // Ya en la lista, para que su página la encuentre al abrirse (la lista de verdad llega después)
       queryClient.setQueryData<Listed>(['templates'], (old) =>
         old ? { ...old, templates: [...old.templates.filter((each) => each.id !== created.id), created] } : old
       )
       void queryClient.invalidateQueries({ queryKey: ['templates'] })
-      await navigate({ to: '/plantillas/$templateId', params: { templateId: created.id }, search: { nuevo: true } })
+      await navigate({
+        to: '/plantillas/$templateId',
+        params: { templateId: created.id },
+        // Sin nombre, se abre para escribirlo; con un mapa, en su pestaña
+        search: { ...(named ? {} : { nuevo: true as const }), ...(tab ? { pestana: tab.id } : {}) }
+      })
     }
   })
   return {
-    mutate: (options: { copyOf?: PageTemplate; folderId?: string | null } = {}) => create.mutate(options),
+    mutate: (options: Options = {}, then?: { onSuccess?: () => void }) => create.mutate(options, then),
     isPending: create.isPending,
     errorText: create.error ? errorText(create.error) : null
   }

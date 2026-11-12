@@ -66,28 +66,14 @@ describe('las pestañas de una página', () => {
     expect((await bar()).queryByRole('button', { name: 'Opciones de la pestaña Notas' })).toBeNull()
   })
 
-  it('«Desde plantilla» añade sus pestañas (las que se dejen marcadas) detrás de las suyas, y abre la primera', async () => {
+  it('«Pestaña nueva» no ofrece «Desde plantilla»: la plantilla, solo al crear una página', async () => {
     const { api } = await setup(['Notas'])
-    // Una plantilla con un mapa y una tabla
-    const lugar = await api.client.call('createTemplate', { name: 'Puerto' })
-    const plano = await api.client.call('createPageTab', { pageId: lugar.pageId ?? '', kind: 'map', name: 'Plano' })
-    await api.client.call('createPageTab', { pageId: lugar.pageId ?? '', kind: 'table', name: 'Encuentros' })
-    const router = renderAt(api)
+    await api.client.call('createTemplate', { name: 'Puerto' })
+    renderAt(api)
     await userEvent.click((await bar()).getByRole('button', { name: 'Pestaña nueva' }))
     const dialog = within(await screen.findByRole('dialog', { name: 'Pestaña nueva' }))
-    await userEvent.click(dialog.getByRole('button', { name: 'Desde plantilla' }))
-    await userEvent.type(dialog.getByLabelText('Buscar plantilla'), 'puerto')
-    await userEvent.click(dialog.getByRole('radio', { name: /^Puerto/ }))
-    const added = within(dialog.getByRole('group', { name: 'Se añaden' }))
-    expect(added.getByRole('checkbox', { name: 'Mapa «Plano»' })).toHaveProperty('checked', true)
-    // Sin la tabla
-    await userEvent.click(added.getByRole('checkbox', { name: 'Tabla «Encuentros»' }))
-    await userEvent.click(dialog.getByRole('button', { name: 'Crear' }))
-    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
-    expect(await listed(api)).toEqual(['Notas', 'Plano'])
-    const tabs = (await api.client.call('listPageTabs', { pageId: PORT })).tabs
-    await waitFor(() => expect(router.state.location.search).toEqual({ pestana: tabs[1]?.id }))
-    expect(tabs[1]?.id).not.toBe(plano.id)
+    expect(dialog.getByRole('radio', { name: 'Texto' })).toBeDefined()
+    expect(dialog.queryByRole('button', { name: 'Desde plantilla' })).toBeNull()
   })
 
   it('una pestaña nueva de texto, sin nombre: se llama como su tipo, va al final y se abre', async () => {

@@ -323,12 +323,11 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   crear_plantilla: { action: 'createTemplate' },
   cambiar_plantilla: { action: 'updateTemplate' },
   borrar_plantilla: { action: 'deleteTemplate' },
-  // Sus carpetas (ADR-0024) y sus pestañas en una página ya hecha
+  // Sus carpetas (ADR-0024)
   crear_carpeta_plantillas: { action: 'createTemplateFolder' },
   cambiar_carpeta_plantillas: { action: 'updateTemplateFolder' },
   borrar_carpeta_plantillas: { action: 'deleteTemplateFolder' },
   mover_plantilla: { action: 'moveTemplate' },
-  pestanas_desde_plantilla: { action: 'addTemplateTabs' },
   // Los dados (ADR-0010): el servidor tira; con campaña queda en su registro
   tirar_dados: {
     description:

@@ -1,6 +1,5 @@
 import { z } from 'zod'
 import { defineAction } from './action.ts'
-import { pageTabView } from './maps.ts'
 import { pageCover, pageIcon, pageProperty, templateRef } from './pages.ts'
 import { pagePanel } from './panel.ts'
 import { worldColor } from './worlds.ts'
@@ -231,22 +230,4 @@ export const moveTemplate = defineAction({
     .object({ templateId: z.uuid(), folderId: z.uuid().nullable(), ...besides('esta plantilla') })
     .refine((input) => !(input.before && input.after), oneSide),
   output: templateView
-})
-
-export const addTemplateTabs = defineAction({
-  name: 'addTemplateTabs',
-  kind: 'write',
-  description:
-    'Añade a una página las pestañas de una plantilla (todas o las de tabIds, de las suyas): cada una con lo suyo (un mapa, con su imagen, su escala y sus pines sin enlazar; una tabla, con sus filas; una escena, con sus muros y luces; una de texto, con su texto), detrás de las que ya tiene. Una sola operación, que se deshace de una vez',
-  input: z.object({
-    pageId: z.uuid(),
-    templateId: templateRef,
-    tabIds: z
-      .array(z.uuid())
-      .min(1)
-      .max(50)
-      .optional()
-      .describe('Las pestañas de la plantilla que se añaden; sin ello, todas')
-  }),
-  output: z.object({ tabs: z.array(pageTabView) })
 })

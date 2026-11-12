@@ -13,8 +13,8 @@ import type {
   TemplateFolder
 } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link, Navigate, useNavigate, useParams, useSearch } from '@tanstack/react-router'
-import { ChevronDown, ChevronLeft, ChevronUp, Copy, Plus, Settings, Trash2 } from 'lucide-react'
+import { Link, Navigate, useParams, useSearch } from '@tanstack/react-router'
+import { ChevronDown, ChevronLeft, ChevronUp, Copy, FolderPlus, Plus, Settings, Trash2 } from 'lucide-react'
 import { type ReactNode, useCallback, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
@@ -25,8 +25,9 @@ import { Loading } from '../components/brand.tsx'
 import { useDismiss } from '../components/dismiss.ts'
 import { FormError } from '../components/field.tsx'
 import { failed, LoadError } from '../components/load-error.tsx'
+import { MenuItem } from '../components/menu.tsx'
 import { Tour } from '../components/tour.tsx'
-import { LEAVE_ITEM, leaveItem, SECTION } from '../components/world-transition.ts'
+import { LEAVE_ITEM, leaveItem } from '../components/world-transition.ts'
 import { CollabSocket } from '../wiki/collab.tsx'
 import { blockOf, type Kind, kindOf, PANEL_GROUPS } from '../wiki/panel-blocks.tsx'
 import { RelatedOptions } from '../wiki/related-block.tsx'
@@ -35,12 +36,10 @@ import wiki from '../wiki/wiki.module.css'
 import { EntryView, pageKey, useSideTop } from '../wiki/wiki.tsx'
 import styles from './editor.module.css'
 import { FieldsEditor } from './fields.tsx'
-import { TemplateIcon } from './icons.tsx'
 import { useNewTemplate } from './new-template.ts'
 import { useTemplates } from './picker.tsx'
 import { Grip, moved, useReorder } from './reorder.tsx'
-import { TemplateSettings } from './screen.tsx'
-import { templateGroups } from './tree.ts'
+import { type SideDialog, SideDialogView, TemplateSideTree } from './side-tree.tsx'
 
 type Patch = Partial<Pick<PageTemplate, 'fields' | 'panel'>>
 
@@ -123,7 +122,14 @@ function TemplateLayout({
   const { t } = useTranslation()
   const root = useRef<HTMLDivElement>(null)
   const headingId = useId()
-  const create = useNewTemplate()
+  // Un cuadro cada vez, con su número: el que se va (tras su salida) solo se cierra a sí mismo, no al que se abrió
+  // mientras tanto
+  const [dialog, setOpenDialog] = useState<{ which: SideDialog; n: number } | null>(null)
+  const opened = useRef(0)
+  const setDialog = (which: SideDialog) => {
+    opened.current += 1
+    setOpenDialog({ which, n: opened.current })
+  }
   useSideTop(root, true)
   return (
     <div ref={root} className={wiki.wiki}>
@@ -140,66 +146,44 @@ function TemplateLayout({
       <aside className={wiki.aside} aria-labelledby={headingId}>
         <div className={wiki.asideHeader}>
           <h2 id={headingId}>{t('templates.listLabel')}</h2>
-          <button
-            type="button"
-            className={wiki.newPageIcon}
-            aria-label={t('templates.new')}
-            title={t('templates.new')}
-            disabled={create.isPending}
-            // En la carpeta de la abierta
-            onClick={() => create.mutate({ folderId: current?.folderId ?? null })}
-          >
-            <Plus aria-hidden="true" size={16} />
-          </button>
+          <div className={styles.headTools}>
+            <button
+              type="button"
+              className={wiki.newPageIcon}
+              aria-label={t('templates.newFolder')}
+              title={t('templates.newFolder')}
+              aria-haspopup="dialog"
+              onClick={() => setDialog({ kind: 'new-folder', parentId: null, label: t('templates.newFolder') })}
+            >
+              <FolderPlus aria-hidden="true" size={16} />
+            </button>
+            <button
+              type="button"
+              className={wiki.newPageIcon}
+              aria-label={t('templates.new')}
+              title={t('templates.new')}
+              aria-haspopup="dialog"
+              // En la carpeta de la abierta
+              onClick={() => setDialog({ kind: 'new-template', folderId: current?.folderId ?? null })}
+            >
+              <Plus aria-hidden="true" size={16} />
+            </button>
+          </div>
         </div>
-        <FormError message={create.errorText} />
-        <TemplateLinks folders={folders} templates={all} current={current?.id} />
+        <TemplateSideTree folders={folders} templates={all} current={current?.id} onDialog={setDialog} />
       </aside>
+      {dialog && (
+        <SideDialogView
+          key={dialog.n}
+          dialog={dialog.which}
+          folders={folders}
+          onClose={() => setOpenDialog((now) => (now?.n === dialog.n ? null : now))}
+        />
+      )}
       <div className={wiki.content}>
         <CollabSocket>{children}</CollabSocket>
       </div>
     </div>
-  )
-}
-
-function TemplateLinks({
-  folders,
-  templates,
-  current
-}: {
-  folders: readonly TemplateFolder[]
-  templates: readonly Listed[]
-  current: string | undefined
-}) {
-  const { t } = useTranslation()
-  const groups = templateGroups(folders, templates)
-  return (
-    <ul className={styles.links}>
-      {groups.map((group) => (
-        <li key={group.id ?? 'arriba'}>
-          {/* Las de lo más alto, detrás de las carpetas: con su rótulo, si hay carpetas */}
-          {(group.label ?? (groups.length > 1 ? t('templates.loose') : null)) && (
-            <p className={styles.listHead}>{group.label ?? t('templates.loose')}</p>
-          )}
-          <ul className={styles.links}>
-            {group.templates.map((each) => (
-              <li key={each.id}>
-                <Link
-                  to="/plantillas/$templateId"
-                  params={{ templateId: each.id }}
-                  aria-current={each.id === current ? 'page' : undefined}
-                  // De una a otra, como entre pestañas: rápido
-                  viewTransition={SECTION}
-                >
-                  <TemplateIcon icon={each.icon} size={15} />
-                  {each.name}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </li>
-      ))}
-    </ul>
   )
 }
 
@@ -219,6 +203,7 @@ function TemplatePage({
 }) {
   const { t } = useTranslation()
   const tabs = usePageTabs(page)
+  const [settings, setSettings] = useState(false)
   const all = tabs.data ?? []
   const active = pestana ? (all.find((tab) => tab.id === pestana) ?? null) : null
   const target = useCallback<TabTarget>(
@@ -250,52 +235,47 @@ function TemplatePage({
         active={active}
         template={{
           id: template.id,
-          more: <TemplateMore template={template} folders={folders} />,
+          more: (close) => <TemplateMore template={template} close={close} onSettings={() => setSettings(true)} />,
           side: <TemplateSide template={template} page={page} />
         }}
       />
+      {settings && (
+        <SideDialogView dialog={{ kind: 'template', template }} folders={folders} onClose={() => setSettings(false)} />
+      )}
     </TabTargetContext.Provider>
   )
 }
 
-/** «⋯» de una plantilla: sus ajustes (nombre, icono y borrarla); borrada, a la lista */
-function TemplateMore({ template, folders }: { template: Listed; folders: readonly TemplateFolder[] }) {
-  const api = useApi()
-  const queryClient = useQueryClient()
+/** «⋯» de una plantilla: duplicarla y sus ajustes (nombre, carpeta, icono y borrarla), en las filas del menú */
+function TemplateMore({
+  template,
+  close,
+  onSettings
+}: {
+  template: Listed
+  close: () => void
+  onSettings: () => void
+}) {
   const { t } = useTranslation()
-  const navigate = useNavigate()
-  const [open, setOpen] = useState(false)
   // Duplicarla: su página entera, con los mismos campos (sus páginas salen en las mismas tablas), y se abre
   const copy = useNewTemplate()
   return (
     <>
-      <button type="button" disabled={copy.isPending} onClick={() => copy.mutate({ copyOf: template })}>
-        <Copy aria-hidden="true" size={16} />
+      <MenuItem disabled={copy.isPending} onClick={() => copy.mutate({ copyOf: template })}>
+        <Copy aria-hidden="true" size={15} />
         {t('templates.duplicate')}
-      </button>
+      </MenuItem>
       <FormError message={copy.errorText} />
-      <button type="button" aria-haspopup="dialog" onClick={() => setOpen(true)}>
-        <Settings aria-hidden="true" size={16} />
+      <MenuItem
+        aria-haspopup="dialog"
+        onClick={() => {
+          close()
+          onSettings()
+        }}
+      >
+        <Settings aria-hidden="true" size={15} />
         {t('templates.settings')}
-      </button>
-      {open && (
-        <TemplateSettings
-          template={template}
-          // Su carpeta, también desde aquí
-          folder={{
-            folders: [...folders],
-            value: template.folderId,
-            onMove: async (dest) => {
-              await api.call('moveTemplate', { templateId: template.id, folderId: dest })
-              await queryClient.invalidateQueries({ queryKey: ['templates'] })
-            }
-          }}
-          onClose={(gone) => {
-            setOpen(false)
-            if (gone) void navigate({ to: '/plantillas' })
-          }}
-        />
-      )}
+      </MenuItem>
     </>
   )
 }

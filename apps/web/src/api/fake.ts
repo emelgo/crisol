@@ -1790,34 +1790,6 @@ export function fakeApi(
       }
       return pageView(page)
     },
-    // Como el servidor: las pestañas elegidas de la plantilla (con sus mapas), detrás de las de la página
-    addTemplateTabs: ({ pageId, templateId, tabIds }) => {
-      const page = pageById(pageId)
-      const template = ownTemplates.find((t) => t.id === templateId && !t.deleted)
-      if (!template) throw new ApiError('TEMPLATE_NOT_FOUND', 400)
-      const source = templatePage(template)
-      const theirs = pageTabs.filter((tab) => tab.pageId === source.id)
-      const chosen = tabIds ?? theirs.map((tab) => tab.id)
-      if (chosen.some((id) => !theirs.some((tab) => tab.id === id))) throw new ApiError('BAD_TAB', 400)
-      const made = theirs
-        .filter((tab) => chosen.includes(tab.id))
-        .map((tab) => {
-          const copy = { ...tab, id: crypto.randomUUID(), pageId: page.id }
-          pageTabs.push(copy)
-          const map = maps.find((m) => m.tabId === tab.id)
-          if (map) {
-            maps.push({
-              ...structuredClone(map),
-              id: crypto.randomUUID(),
-              tabId: copy.id,
-              pageId: page.id,
-              pins: map.pins.map((pin) => ({ ...pin, id: crypto.randomUUID(), pageId: null }))
-            })
-          }
-          return copy
-        })
-      return { tabs: made }
-    },
     updatePage: ({ pageId, title, icon, locked, cover, sheet }) => {
       const page = pageById(pageId)
       Object.assign(page, {

@@ -21,11 +21,10 @@ import { Modal } from '../../components/modal.tsx'
 import { ColorChoices } from '../../routes/world-card.tsx'
 import { colorHex } from '../../routes/world-look.ts'
 import type { SceneChoice } from '../../tabletop/use-preparation.ts'
-import { TemplatePicker, useTemplates } from '../../templates/picker.tsx'
 import { TargetReveal } from '../reveal.tsx'
 import { setPendingChoice } from '../scene/pending.ts'
 import { SourcePicker } from '../scene/source-picker.tsx'
-import { KindChoices, StepBack, TAB_KINDS, tabIcon } from './kinds.tsx'
+import { KindChoices, TAB_KINDS } from './kinds.tsx'
 import styles from './page-tabs.module.css'
 
 export const tabsKey = (worldId: string, pageId: string) => ['pages', worldId, 'tabs', pageId]
@@ -188,8 +187,8 @@ export function PageTabs({ page, tabs, active }: { page: Page; tabs: PageTabView
 
 /** Los tipos de pestaña: texto, mapa, tabla y escena ya; los demás, en las fases que vienen (ADR-0007) */
 /**
- * «+»: un cuadro con un recuadro por tipo y el nombre (sin él, el del tipo); la nueva va al final y se abre. «Desde
- * plantilla», la última tras una raya con «o», añade las pestañas de una plantilla (las que se dejen marcadas)
+ * «+»: un cuadro con un recuadro por tipo y el nombre (sin él, el del tipo); la nueva va al final y se abre. Sin
+ * plantillas: una plantilla se elige solo al crear la página
  */
 function NewTab({ page }: { page: Page }) {
   const { t } = useTranslation()
@@ -201,14 +200,6 @@ function NewTab({ page }: { page: Page }) {
   const [open, setOpen] = useState(false)
   const [name, setName] = useState('')
   const [kind, setKind] = useState<'text' | 'map' | 'table' | 'scene'>('text')
-  // Desde una plantilla: cuál y qué pestañas suyas (de entrada, todas)
-  const [fromTemplate, setFromTemplate] = useState(false)
-  const [back, setBack] = useState(false)
-  const [template, setTemplate] = useState<string | null>(null)
-  const [left, setLeft] = useState<ReadonlySet<string>>(() => new Set())
-  const templates = useTemplates().data?.templates ?? []
-  const chosen = templates.find((each) => each.id === template)
-  const adding = (chosen?.tabs ?? []).filter((tab) => !left.has(tab.id))
   // Una escena puede nacer ya con su mapa: se prepara al abrirla
   const [choice, setChoice] = useState<SceneChoice | null>(null)
   const titleId = useId()
@@ -223,15 +214,6 @@ function NewTab({ page }: { page: Page }) {
   }
   const add = useMutation({
     mutationFn: async () => {
-      if (fromTemplate && chosen) {
-        return (
-          await api.call('addTemplateTabs', {
-            pageId: page.id,
-            templateId: chosen.id,
-            tabIds: adding.map((tab) => tab.id)
-          })
-        ).tabs
-      }
       const tab = await api.call('createPageTab', {
         pageId: page.id,
         kind,
@@ -259,16 +241,12 @@ function NewTab({ page }: { page: Page }) {
         <Modal
           ref={dialog}
           aria-labelledby={titleId}
-          className={`${dialogStyles.dialog} ${styles.newDialog}${!fromTemplate && kind === 'scene' ? ` ${styles.wideDialog}` : ''}`}
+          className={`${dialogStyles.dialog} ${styles.newDialog}${kind === 'scene' ? ` ${styles.wideDialog}` : ''}`}
           onClose={() => {
             setOpen(false)
             setName('')
             setKind('text')
             setChoice(null)
-            setFromTemplate(false)
-            setBack(false)
-            setTemplate(null)
-            setLeft(new Set())
             // Se quita al acabar de irse: si ya se está en otro sitio (escribiendo en la nueva), el foco no se mueve
             const at = document.activeElement
             if (focusIsLost() || at === trigger.current || dialog.current?.contains(at)) trigger.current?.focus()
@@ -282,86 +260,27 @@ function NewTab({ page }: { page: Page }) {
             }}
           >
             <h2 id={titleId}>{t('pageTabs.newTitle')}</h2>
-            {fromTemplate ? (
-              <>
-                <StepBack
-                  onClick={() => {
-                    setFromTemplate(false)
-                    setBack(true)
-                  }}
-                />
-                {/* Solo las que traen pestañas, y debajo de cada una, cuáles */}
-                <TemplatePicker
-                  value={template}
-                  only={(each) => each.tabs.length > 0}
-                  hint={(each) => each.tabs.map((tab) => tab.name).join(', ')}
-                  autoFocus
-                  onChange={(id) => {
-                    setTemplate(id)
-                    setLeft(new Set())
-                  }}
-                />
-                {chosen && (
-                  <fieldset className={styles.chosenTabs}>
-                    <legend>{t('pageTabs.added')}</legend>
-                    {chosen.tabs.map((tab) => {
-                      const Icon = tabIcon(tab.kind)
-                      return (
-                        <label key={tab.id}>
-                          <input
-                            type="checkbox"
-                            checked={!left.has(tab.id)}
-                            onChange={(event) => {
-                              const checked = event.currentTarget.checked
-                              setLeft((current) => {
-                                const next = new Set(current)
-                                if (checked) next.delete(tab.id)
-                                else next.add(tab.id)
-                                return next
-                              })
-                            }}
-                          />
-                          <Icon aria-hidden="true" size={16} />
-                          {t('pageTabs.namedKind', { kind: t(`pageTabs.kinds.${tab.kind}`), name: tab.name })}
-                        </label>
-                      )
-                    })}
-                    {chosen.tabs.length === 0 && <p className={styles.noTabs}>{t('pageTabs.templateHasNone')}</p>}
-                  </fieldset>
-                )}
-              </>
-            ) : (
-              <>
-                <KindChoices
-                  name={`${titleId}-kind`}
-                  legend={t('pageTabs.kind')}
-                  kinds={TAB_KINDS}
-                  value={kind}
-                  labelOf={(each) => t(`pageTabs.kinds.${each}`)}
-                  onChange={(each) => setKind(each as typeof kind)}
-                  onTemplate={() => setFromTemplate(true)}
-                  focusTemplate={back}
-                />
-                <input
-                  className={styles.nameInput}
-                  data-autofocus={back ? undefined : ''}
-                  value={name}
-                  maxLength={60}
-                  placeholder={t('pageTabs.namePlaceholder')}
-                  aria-label={t('pageTabs.name')}
-                  onChange={(event) => setName(event.currentTarget.value)}
-                />
-                {kind === 'scene' && <SourcePicker worldId={page.worldId} value={choice} onChange={setChoice} />}
-              </>
-            )}
+            <KindChoices
+              name={`${titleId}-kind`}
+              legend={t('pageTabs.kind')}
+              kinds={TAB_KINDS}
+              value={kind}
+              labelOf={(each) => t(`pageTabs.kinds.${each}`)}
+              onChange={(each) => setKind(each as typeof kind)}
+            />
+            <input
+              className={styles.nameInput}
+              data-autofocus=""
+              value={name}
+              maxLength={60}
+              placeholder={t('pageTabs.namePlaceholder')}
+              aria-label={t('pageTabs.name')}
+              onChange={(event) => setName(event.currentTarget.value)}
+            />
+            {kind === 'scene' && <SourcePicker worldId={page.worldId} value={choice} onChange={setChoice} />}
             <FormError message={add.error ? errorText(add.error) : null} />
             <div className={dialogStyles.actions}>
-              <BusyButton
-                type="submit"
-                className={form.button}
-                busy={add.isPending}
-                disabled={fromTemplate && adding.length === 0}
-              >
+              <BusyButton type="submit" className={form.button} busy={add.isPending}>
                 {t('pageTabs.create')}
               </BusyButton>
               <button type="button" className={dialogStyles.cancel} onClick={() => dialog.current?.close()}>

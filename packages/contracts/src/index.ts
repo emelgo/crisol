@@ -224,7 +224,6 @@ import {
 import { getRandomTable, resetTableDraws, rollOnTable, updateRandomTable } from './tables.ts'
 import { addFileTags, createTag, deleteTag, listAccountTags, moveTag, setFileTags, updateTag } from './tags.ts'
 import {
-  addTemplateTabs,
   createTemplate,
   createTemplateFolder,
   deleteTemplate,
@@ -437,7 +436,6 @@ export const ACTIONS = [
   updateTemplateFolder,
   deleteTemplateFolder,
   moveTemplate,
-  addTemplateTabs,
   rollDice,
   listRolls,
   tryDice,
@@ -724,7 +722,6 @@ export type Actions = {
   updateTemplateFolder: typeof updateTemplateFolder
   deleteTemplateFolder: typeof deleteTemplateFolder
   moveTemplate: typeof moveTemplate
-  addTemplateTabs: typeof addTemplateTabs
   rollDice: typeof rollDice
   listRolls: typeof listRolls
   tryDice: typeof tryDice

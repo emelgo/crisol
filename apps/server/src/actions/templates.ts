@@ -4,28 +4,25 @@
  */
 import { randomUUID } from 'node:crypto'
 import {
-  addTemplateTabs,
   createTemplate,
   createTemplateFolder,
   deleteTemplate,
   deleteTemplateFolder,
   getTemplate,
   listTemplates,
-  MAX_PAGE_TABS,
   moveTemplate,
   type PageProperty,
   type TemplateFolder,
   updateTemplate,
   updateTemplateFolder
 } from '@crisol/contracts'
-import { copyRepo, mapsRepo, pagesRepo, templatesRepo, worldsRepo } from '@crisol/db'
+import { copyRepo, templatesRepo, worldsRepo } from '@crisol/db'
 import { authorize, fieldKey, lineOf, NotFoundError, propertiesProblem, templateEmoji } from '@crisol/domain'
 import { fillJsonIds } from '@crisol/editor'
 import { pageFromMarkdown } from '@crisol/editor/markdown'
 import { pagesChanged, templatesChanged } from '../realtime/events.ts'
 import { writeDocument } from '../wiki/content.ts'
 import { copyDocuments } from '../wiki/copy.ts'
-import { linksOfNewPages } from '../wiki/links.ts'
 import { checkTables } from '../wiki/tables.ts'
 import {
   deletedTemplates,
@@ -37,10 +34,9 @@ import {
   templateViews,
   usableTemplates
 } from '../wiki/templates.ts'
-import { authorizedPage, targetOrganization } from './access.ts'
+import { targetOrganization } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
 import { nameTaken, placeBeside } from './files.ts'
-import { tabView } from './maps.ts'
 import { implement } from './registry.ts'
 
 /** La organización de la que se ven las plantillas, si la cuenta puede verlas */
@@ -364,37 +360,5 @@ export const templateActions = [
       ctx.realtime.publish(templatesChanged(row.organizationId))
     }
     return templateView(ctx, (await templatesRepo.findTemplate(ctx.db, templateId)) ?? row)
-  }),
-
-  // «Pestaña nueva» desde una plantilla: sus pestañas (las elegidas), copiadas detrás de las de la página
-  implement(addTemplateTabs, async (ctx, { pageId, templateId, tabIds }) => {
-    const { page, wiki } = await authorizedPage(ctx, 'page.write', pageId)
-    const template = await findTemplate(ctx, wiki.organizationId, templateId)
-    const row = await templatesRepo.findTemplate(ctx.db, template.id)
-    if (!row) throw new NotFoundError('template')
-    const sourceId = await templatePage(ctx, row)
-    const source = await pagesRepo.findPage(ctx.db, sourceId)
-    if (!source) throw new NotFoundError('template')
-    const theirs = await mapsRepo.listTabs(ctx.db, sourceId)
-    const chosen = tabIds ?? theirs.map((tab) => tab.id)
-    if (chosen.length === 0)
-      throw new InvalidRequestError('NO_TABS', `la plantilla «${template.name}» no trae pestañas`)
-    if (chosen.some((id) => !theirs.some((tab) => tab.id === id))) {
-      throw new InvalidRequestError('BAD_TAB', 'esas pestañas no son de la plantilla: mira ver_plantilla')
-    }
-    const mine = await mapsRepo.listTabs(ctx.db, pageId)
-    if (mine.length + chosen.length > MAX_PAGE_TABS) {
-      throw new InvalidRequestError('TOO_MANY_TABS', `como mucho ${MAX_PAGE_TABS}`)
-    }
-    const { tabDocuments } = await copyDocuments(ctx, sourceId, source.worldId)
-    const made = await copyRepo.addTabsFrom(
-      ctx.db,
-      historyContext(ctx, 'addTemplateTabs', { title: page.title, name: template.name, count: chosen.length }, wiki),
-      { sourceId, pageId, worldId: wiki.worldId, tabIds: chosen, tabDocuments }
-    )
-    ctx.realtime.publish(pagesChanged(wiki))
-    // Lo que enlazan sus textos, como al crear una página
-    await linksOfNewPages(ctx, wiki.worldId, [{ id: page.id, names: [page.title] }], ctx.actor.userId)
-    return { tabs: made.map(tabView) }
   })
 ]
