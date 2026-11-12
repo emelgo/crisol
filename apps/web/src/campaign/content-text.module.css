@@ -1,5 +1,7 @@
 /* El texto de un documento del contenido: como el de una página, algo más apretado */
 .text {
+  /* Líneas de lectura cómoda (unos 70 caracteres), aunque la columna sea ancha */
+  max-inline-size: 70ch;
   font-size: 0.9375rem;
   line-height: 1.6;
 }

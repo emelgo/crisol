@@ -171,7 +171,7 @@ Plan: `tasks/plan-revision.md`. Una tanda cada vez: se enseña en local, Enrique
 - [x] Icono y portada del sistema; libros con portada o color.
 - [x] El libro por dentro y «Entrada nueva» (con el compendio de dos columnas; las tres, tras la revisión si hacen falta).
 - [x] Crear un sistema: con la IA, con el esqueleto, a mano (el editor, en la tanda 8).
-- [ ] Crítica y audit de impeccable, capturas y página de revisión.
+- [x] Crítica (24/40) y audit (15/20) de impeccable, con sus arreglos; capturas y página de revisión.
 
 ## Tanda 7 — Libros de texto y el compendio desde el mundo
 

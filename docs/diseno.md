@@ -132,6 +132,17 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 - **La portada pública** (tanda 5): la imagen a toda pantalla (la barra de arriba, transparente encima), en el centro la
   llama, el nombre, la frase, «Entrar» y «Tengo una invitación» (que pide el enlace y lleva a la campaña); debajo, tres
   estampas de lo que hay dentro (el mundo, la mesa, la ficha), capturas de la app.
+- **Las pantallas vacías, una sola pieza en el centro** (Enrique, 2026-11-12: «una pieza central»): el bodegón pintado
+  (public/vacios/), una frase corta y debajo el botón de crear; nada suelto alrededor. **Con contenido, el bodegón es el
+  emblema** de la pantalla: pequeño, a la derecha del título (no en el hueco de la vista previa: «no me gusta el icono
+  ahí a la izquierda»).
+- **Los iconos: un emoji o uno de rol** (game-icons.net, «gi:<id>»), en páginas, carpetas, plantillas y sistemas; el
+  buscador de iconos flota y se recorre con una parada del tabulador y las flechas.
+- **El espacio del sistema** (tanda 6): en la barra, su nombre con su icono, Compendio y Reglas; abajo, Ajustes. Su
+  portada, arriba en su Inicio y detrás en todo su espacio. **Un libro se abre por dentro**: su tapa y su nombre arriba,
+  su índice por tipos (con cuántos trae cada uno) y, al pulsar uno, su lista; «← {sistema}» para volver. Reglas, hasta
+  el editor a mano, enseña lo que trae el sistema y deja bajarlo. **«Sistema nuevo», tres caminos que se eligen**: con
+  tu IA (la frase para pedírselo), con el esqueleto (bajarlo y subirlo) y a mano («Pronto», hasta la tanda 8).
 - **La campaña se abre en su propia vista, como un mundo** (Enrique, 2026-11-05): al entrar, la barra cambia y enseña
   lo de la campaña (sus personajes, su compendio, los dados…), con la transición de entrar. **El compendio** (el
   contenido del sistema que usa la campaña: clases, conjuros, criaturas, reglas…, con sus ediciones) **se ve ahí**.

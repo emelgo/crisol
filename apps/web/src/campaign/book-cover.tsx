@@ -2,7 +2,7 @@
  * La portada de un libro (ADR-0021): su imagen de los comunes, encuadrada, con su nombre encima; sin imagen, una tapa
  * de su color (el elegido; sin él, uno que sale de su clave, siempre el mismo) con su nombre. En tarjeta (Libros) o de lomo (el Inicio)
  */
-import type { Campaign, World } from '@crisol/contracts'
+import { type Campaign, WORLD_COLORS, type World } from '@crisol/contracts'
 import { useQuery } from '@tanstack/react-query'
 import type { CSSProperties, ReactNode } from 'react'
 import { useApi } from '../api/context.tsx'
@@ -31,10 +31,14 @@ function hueOfHex(hex: string) {
   return Math.round((h * 60 + 360) % 360)
 }
 
-/** Un tono por libro: el de su color elegido o, sin él, el de su clave */
+/** Un tono por libro: el de su color elegido o, sin él, uno de los fijos (wine, moss…) que sale de su clave */
 function hueOf(key: string, color?: string | null) {
   const hex = color ? colorHex(color as World['color']) : null
   if (hex) return hueOfHex(hex)
+  let seed = 0
+  for (const char of key) seed = (seed * 31 + char.charCodeAt(0)) >>> 0
+  const fixed = colorHex(WORLD_COLORS[seed % WORLD_COLORS.length] as World['color'])
+  if (fixed) return hueOfHex(fixed)
   let hash = 0
   for (const char of key) hash = (hash * 31 + char.charCodeAt(0)) >>> 0
   return hash % 360

@@ -24,4 +24,9 @@ construye con capturas de antes y después (como la 5): Enrique revisa las tanda
 - [x] 6. **Crear un sistema: tres caminos** en el cuadro: con tu IA (no se pulsa: conecta el MCP), con el esqueleto
   (la comprobación dice qué falta, dónde y un ejemplo; también un zip de Foundry) y a mano (tanda 8). (Pendiente: el
   ejemplo en cada problema de la comprobación, que hoy dice qué y dónde.)
-- [ ] 7. Crítica y audit de impeccable, arreglos, capturas y la página de revisión.
+- [x] 7. Crítica (24/40, `.impeccable/critique/2026-11-12T11-42-48Z__apps-web-src-systems.md`) y audit (15/20) de
+  impeccable, con sus arreglos: el libro por dentro con su índice por tipos; «Sistema nuevo» con caminos que se eligen;
+  el fondo y el icono del sistema en todo su espacio; la portada en los ajustes, con lo demás; «Más iconos» flotante;
+  Reglas con lo que trae; «Libro nuevo» con línea continua; los iconos con flechas; los tutoriales; h2 en las tarjetas
+  de Sistemas; el texto de una entrada a 70 caracteres; las tapas sin color, de la paleta fija. Audit: accesibilidad 3,
+  rendimiento 3, temas 3, adaptable 3 (el máster, en PC), integridad 3.

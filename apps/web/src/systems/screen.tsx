@@ -148,7 +148,8 @@ function SystemCard({ system, onHover }: { system: SystemSummary; onHover: (id: 
       <span className={screen.icon} aria-hidden="true" data-elemento="icono">
         <SystemIcon icon={system.icon} size={24} />
       </span>
-      <h3 className={screen.name}>
+      {/* h2: van bajo el h1 de la pantalla (sin saltar a h3) */}
+      <h2 className={screen.name}>
         {/* Entrar es entrar: su icono y su nombre viajan al título del sistema, con sus libros (ADR-0021) */}
         <Link
           to="/sistemas/$systemId"
@@ -159,7 +160,7 @@ function SystemCard({ system, onHover }: { system: SystemSummary; onHover: (id: 
         >
           <span data-elemento="nombre">{system.name}</span>
         </Link>
-      </h3>
+      </h2>
       <p className={screen.meta}>{origin(system)}</p>
       <div className={screen.foot}>
         <span className={styles.version}>{t('systems.version', { version: versionOf(system) })}</span>
