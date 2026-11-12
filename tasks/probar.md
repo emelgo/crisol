@@ -9,6 +9,19 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
+## Revisión, tanda 6: sistemas (en local)
+
+- [ ] **Iconos de rol**: en el icono de una página, el buscador de iconos (por nombre en español); en Ajustes de una
+  carpeta, plantilla o sistema, «Más iconos». Salen en el árbol, en la búsqueda y en las tarjetas.
+- [ ] **El espacio de un sistema**: al entrar, la barra cambia (su nombre, Compendio, Reglas y, abajo, Ajustes del
+  sistema); la llama vuelve a Sistemas. Su Inicio, con su portada arriba (y detrás, como fondo) y su icono.
+- [ ] **Icono y portada del sistema**, en sus ajustes; **color o portada de un libro**, en los ajustes del libro.
+- [ ] **El compendio del sistema** (todos sus libros) y **un libro por dentro** (pulsa su portada): «← {sistema}» para
+  volver; con un sistema tuyo, «Entrada nueva» guarda en ese libro.
+- [ ] **Sistema nuevo**: los tres caminos (con tu IA y a mano, apagados; con el esqueleto, el de verdad).
+- [ ] **Tus imágenes**: Entrar con sus 12 fondos (sin crédito), la portada nueva, el fondo de Mis mundos; las pantallas
+  vacías con su bodegón en el centro y su botón; con contenido, el bodegón pequeño junto al título.
+
 ## Revisión, lo que viste el 2026-11-12 (en local)
 
 - [ ] **El cristal, ahora sí**: el fondo se reconoce detrás (en Mundos, Plantillas, Sistemas…) y la barra, las fichas

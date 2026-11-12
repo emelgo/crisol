@@ -7,7 +7,18 @@ import type { SystemSummary } from '@crisol/contracts'
 import { type Problem, validateFile } from '@crisol/systems'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, Navigate } from '@tanstack/react-router'
-import { CircleAlert, Download, FileUp, Image as ImageIcon, Info, Lock, Plus, Settings, Sparkles } from 'lucide-react'
+import {
+  CircleAlert,
+  Download,
+  FileUp,
+  Image as ImageIcon,
+  Info,
+  Lock,
+  Pencil,
+  Plus,
+  Settings,
+  Sparkles
+} from 'lucide-react'
 import { useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
@@ -248,7 +259,10 @@ export function ProblemList({ problems }: { problems: readonly Problem[] }) {
   )
 }
 
-/** «Sistema nuevo»: se hacen con la IA; aquí se sube su archivo (que se valida antes de subirlo) o se baja uno vacío */
+/**
+ * «Sistema nuevo»: sus tres caminos (con tu IA, con el esqueleto y a mano); aquí, el del esqueleto: bajarlo y subir su
+ * archivo (que se valida antes de subirlo), o el zip de otra mesa virtual
+ */
 export function NewSystemDialog({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation()
   const api = useApi()
@@ -340,10 +354,34 @@ export function NewSystemDialog({ onClose }: { onClose: () => void }) {
         }}
       >
         <h2 id={titleId}>{t('systems.new')}</h2>
-        <p className={styles.withAi}>
-          <Sparkles size={16} aria-hidden="true" />
-          {t('systems.withAi')}
+        {/* Tres caminos (docs/diseno.md): con tu IA (por el conector; aquí no se pulsa), con el esqueleto (lo de abajo) y
+            a mano (el editor, en la tanda 8) */}
+        <ul className={styles.paths} aria-label={t('systems.paths.label')}>
+          <li className={styles.way} data-off="">
+            <Sparkles size={18} aria-hidden="true" />
+            <strong>{t('systems.paths.ai')}</strong>
+            <span>{t('systems.paths.aiText')}</span>
+          </li>
+          <li className={styles.way} data-current="">
+            <FileUp size={18} aria-hidden="true" />
+            <strong>{t('systems.paths.skeleton')}</strong>
+            <span>{t('systems.paths.skeletonText')}</span>
+          </li>
+          <li className={styles.way} data-off="">
+            <Pencil size={18} aria-hidden="true" />
+            <strong>{t('systems.paths.hand')}</strong>
+            <span>{t('systems.paths.handText')}</span>
+          </li>
+        </ul>
+        {/* El esqueleto: bajarlo, rellenarlo y subirlo */}
+        <p className={styles.blank} data-first="">
+          <BusyButton type="button" className={styles.rowAction} busy={blank.isPending} onClick={() => blank.mutate()}>
+            <Download size={14} aria-hidden="true" />
+            {t('systems.blank')}
+          </BusyButton>
+          {t('systems.blankHint')}
         </p>
+        <FormError message={blank.error ? errorText(blank.error) : null} />
         <fieldset
           className={styles.drop}
           onDragOver={(event) => event.preventDefault()}
@@ -416,14 +454,6 @@ export function NewSystemDialog({ onClose }: { onClose: () => void }) {
             onDone={() => dialog.current?.close()}
           />
         )}
-        <p className={styles.blank}>
-          <BusyButton type="button" className={styles.rowAction} busy={blank.isPending} onClick={() => blank.mutate()}>
-            <Download size={14} aria-hidden="true" />
-            {t('systems.blank')}
-          </BusyButton>
-          {t('systems.blankHint')}
-        </p>
-        <FormError message={blank.error ? errorText(blank.error) : null} />
       </form>
     </Modal>
   )

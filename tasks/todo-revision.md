@@ -167,10 +167,11 @@ Plan: `tasks/plan-revision.md`. Una tanda cada vez: se enseña en local, Enrique
 
 - [x] Antes: el paquete de iconos de fantasía (ver «Pista de imágenes»): 337 de game-icons.net (CC BY 3.0), «gi:<id>»,
   con su buscador en el icono de una página y en los formularios, y `listar_iconos` en el MCP.
-- [ ] Espacios de la barra declarados; el espacio del sistema y su vuelta.
-- [ ] Icono y portada del sistema; libros con portada o color.
-- [ ] El libro por dentro (tres columnas) y «Entrada nueva».
-- [ ] Crear un sistema: con la IA, con el esqueleto, a mano.
+- [x] Espacios de la barra declarados; el espacio del sistema y su vuelta.
+- [x] Icono y portada del sistema; libros con portada o color.
+- [x] El libro por dentro y «Entrada nueva» (con el compendio de dos columnas; las tres, tras la revisión si hacen falta).
+- [x] Crear un sistema: con la IA, con el esqueleto, a mano (el editor, en la tanda 8).
+- [ ] Crítica y audit de impeccable, capturas y página de revisión.
 
 ## Tanda 7 — Libros de texto y el compendio desde el mundo
 

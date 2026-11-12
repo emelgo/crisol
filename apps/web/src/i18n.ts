@@ -1496,10 +1496,17 @@ export const es = {
     builtIn: 'De serie',
     preview: 'Lo que trae',
     new: 'Sistema nuevo',
-    withAi:
-      'Los sistemas se hacen con la IA: pídele el tuyo y saldrá aquí. También puedes subir su archivo o el .zip de otra mesa virtual.',
-    blank: 'Bajar uno vacío',
-    blankHint: 'Para empezar uno a mano',
+    blank: 'Bajar el esqueleto',
+    blankHint: 'Rellénalo y súbelo aquí debajo: si falta algo, se dice qué, dónde y cómo.',
+    paths: {
+      label: 'Cómo hacer un sistema',
+      ai: 'Con tu IA',
+      aiText: 'Conecta tu IA a Crisol y pídele el sistema: lo escribe y lo prueba.',
+      skeleton: 'Con el esqueleto',
+      skeletonText: 'Bájalo, rellénalo y súbelo (o el zip de otra mesa virtual).',
+      hand: 'A mano',
+      handText: 'Paso a paso, en palabras de mesa. Pronto.'
+    },
     copyOf: 'Copia de {{name}}',
     uploaded: 'Subido de un archivo',
     locked: 'No se puede cambiar',

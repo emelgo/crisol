@@ -21,6 +21,7 @@ construye con capturas de antes y después (como la 5): Enrique revisa las tanda
   El compendio deja de depender de una campaña; en el servidor, las lecturas del compendio de un sistema por libro.
   (Hecho con el compendio de dos columnas que ya había: su lista y la entrada con sus datos; las tres columnas, si
   hace falta, tras la revisión.)
-- [ ] 6. **Crear un sistema: tres caminos** en el cuadro: con tu IA (no se pulsa: conecta el MCP), con el esqueleto
-  (la comprobación dice qué falta, dónde y un ejemplo; también un zip de Foundry) y a mano (tanda 8).
+- [x] 6. **Crear un sistema: tres caminos** en el cuadro: con tu IA (no se pulsa: conecta el MCP), con el esqueleto
+  (la comprobación dice qué falta, dónde y un ejemplo; también un zip de Foundry) y a mano (tanda 8). (Pendiente: el
+  ejemplo en cada problema de la comprobación, que hoy dice qué y dónde.)
 - [ ] 7. Crítica y audit de impeccable, arreglos, capturas y la página de revisión.
