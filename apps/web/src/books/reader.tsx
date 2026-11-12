@@ -189,7 +189,7 @@ export function BookReader({
         <div className={frame.top}>{head}</div>
         <div className={styles.none}>
           <EmptyState
-            kind="sistemas"
+            kind="capitulos"
             action={
               editable ? (
                 <CreateDialog

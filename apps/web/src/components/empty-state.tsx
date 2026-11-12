@@ -16,6 +16,7 @@ export type EmptyKind =
   | 'historial'
   | 'papelera'
   | 'sin-resultados'
+  | 'capitulos'
 
 export function EmptyState({
   kind,

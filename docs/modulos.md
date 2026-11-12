@@ -23,7 +23,7 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
 - Crítica dual 25/36, detector sin hallazgos; arreglos aplicados.
 - **Página de revisión**: https://claude.ai/artifact/LmGxerrRfELT7hqas2RfaW
 - **Siguiente**: su visto bueno de las tandas 3 a 7 → subir a `main` y staging; luego la tanda 8 (el editor de
-  sistemas a mano). Pendientes menores en `tasks/todo-revision.md` y la imagen `vacio-capitulos`.
+  sistemas a mano). Pendientes menores en `tasks/todo-revision.md`.
 
 ### Para retomar (2026-11-12, tarde: tanda 6, sistemas, terminada en local; falta su visto bueno)
 
