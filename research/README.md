@@ -17,6 +17,11 @@ Para el módulo 2 se estudian además **Kanka**, **LegendKeeper** y **World Anvi
 Para el módulo 6 se estudia además el formato **Universal VTT** (`.dd2vtt`, `.uvtt`, `.df2vtt`), por su
 documentación pública y unos mapas de ejemplo que no entran en el repo (ver `research/uvtt/formato.md`).
 
+Para el módulo 9 (mapas con capas y pizarras) se estudian, también solo por su web pública, los mapas de LegendKeeper,
+World Anvil, Kanka, Inkarnate y Obsidian Leaflet, lo que dice Anthropic de las coordenadas en imágenes
+(`research/ia-dibuja/`) y Excalidraw como pizarra (`research/excalidraw/`). La síntesis está en
+`research/mapas-y-pizarras.md`.
+
 ## Desde el ADR-0014 (2026-11-05)
 
 Crisol es, de momento, de uso privado: el código, los textos y los datos de lo estudiado se pueden llevar a `apps/` y
