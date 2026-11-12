@@ -11,13 +11,17 @@ import type { Transaction } from '@tiptap/pm/state'
 import { EditorContent, type NodeViewProps, NodeViewWrapper, ReactNodeViewRenderer, useEditor } from '@tiptap/react'
 import { createContext, useContext, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useApi } from '../api/context.tsx'
 import { useAnnounce } from '../components/announcer.tsx'
 import { FormatMenu, TableMenu } from '../wiki/bubble-menu.tsx'
 import { withCalloutView } from '../wiki/callout.tsx'
+import { withContentEmbedView } from '../wiki/content-embed.tsx'
 import { withContentLinkView } from '../wiki/content-link.tsx'
 import editorStyles from '../wiki/editor.module.css'
 import { EmptyHint } from '../wiki/editor.tsx'
 import { GhostLine } from '../wiki/ghost-line.ts'
+import type { PageLinks } from '../wiki/links-context.ts'
+import { LinkSuggest } from '../wiki/page-links.tsx'
 import separateStyles from '../wiki/separate.module.css'
 import { withSheetView } from '../wiki/sheet-blocks.tsx'
 import { SlashMenu } from '../wiki/slash-menu.tsx'
@@ -67,6 +71,7 @@ function chapterView(node: Node) {
   if (node.name === 'secret' || node.name === 'note') return withLocalSeparateView(node)
   if (node.name === 'callout') return withCalloutView(node)
   if (node.name === 'contentLink') return withContentLinkView(node)
+  if (node.name === 'contentEmbed') return withContentEmbedView(node)
   return withSheetView(node)
 }
 
@@ -77,7 +82,8 @@ export function ChapterText({
   onChange,
   onDirty,
   onClean,
-  onEditor
+  onEditor,
+  systemId
 }: {
   markdown: string
   editable: boolean
@@ -90,9 +96,34 @@ export function ChapterText({
   onClean?: () => void
   /** El editor, para sacar sus títulos (el índice que sigue la lectura) */
   onEditor?: (editor: Editor | null) => void
+  /** Su sistema: lo que se enlaza o se incrusta con `[[@` y `![[@` sale de su compendio */
+  systemId?: string
 }) {
   const { t } = useTranslation()
   const announce = useAnnounce()
+  const api = useApi()
+  // Para `[[@`: el compendio de su sistema (sin páginas: un capítulo no es de ningún mundo)
+  const links = useRef<PageLinks | null>(null)
+  links.current = systemId
+    ? {
+        worldId: '',
+        names: [],
+        byId: new Map(),
+        create: async () => '',
+        files: [],
+        canCreate: false,
+        searchContent: async (query) =>
+          (await api.call('searchSystemCompendium', { systemId, query, limit: 8 })).items.map((hit) => ({
+            key: hit.key,
+            name: hit.name,
+            type: hit.type,
+            typeLabel: hit.type,
+            world: false,
+            systemId,
+            systemName: ''
+          }))
+      }
+    : null
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const save = useRef(onChange)
   save.current = onChange
@@ -145,6 +176,10 @@ export function ChapterText({
         }),
         EmptyHint.configure({ text: t('chapters.placeholder') }),
         GhostLine.configure({ className: editorStyles.ghostLine ?? '' }),
+        LinkSuggest.configure({
+          links: () => links.current,
+          announce: (title) => announce(t('links.inserted', { title }))
+        }),
         SlashMenu.configure({
           sheet: () => false,
           context: {

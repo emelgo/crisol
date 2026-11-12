@@ -558,6 +558,7 @@ export const es = {
   contentLink: {
     world: '{{type}} del mundo',
     open: 'Abrir en el compendio',
+    openShort: 'Abrir',
     missing: '{{name}}: no está en el compendio'
   },
   inPlay: {
@@ -936,6 +937,8 @@ export const es = {
     pageLinkHint: 'O escribe [[',
     pageEmbed: 'Incrustar página',
     pageEmbedHint: 'O una sección',
+    contentEmbed: 'Ficha del compendio',
+    contentEmbedHint: 'Una criatura, un conjuro…',
     fileEmbed: 'Imagen o archivo',
     fileEmbedHint: 'Súbelo; los del mundo, con ![[',
     calloutNote: 'Nota',

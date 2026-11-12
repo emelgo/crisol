@@ -124,7 +124,8 @@ const linkable = z.object({
   type: z.string(),
   typeLabel: z.string(),
   world: z.boolean().describe('Del compendio del mundo'),
-  systemId: z.uuid()
+  systemId: z.uuid(),
+  systemName: z.string().describe('Para elegir, si el mundo tiene varios')
 })
 
 export const searchLinkableContent = defineAction({
@@ -140,8 +141,20 @@ export const getLinkedContent = defineAction({
   name: 'getLinkedContent',
   kind: 'read',
   description:
-    'Lo que enlaza [[@Nombre]] desde una página de un mundo: la entrada con ese nombre (del compendio del mundo, si hay; si no, de un sistema de sus campañas), con unas cifras suyas y una campaña donde abrirla',
-  input: z.object({ worldId: z.uuid(), name: z.string().trim().min(1).max(200) }),
+    'Lo que enlaza [[@Nombre]] o incrusta ![[@Nombre]]: la entrada con ese nombre, con unas cifras suyas y una campaña donde abrirla. Desde una página de un mundo (worldId, quien lo lleva): del compendio del mundo, si hay; si no, de un sistema de sus campañas (o del elegido, systemId). Desde una campaña (campaignId): lo que ve ella (quien juega, solo lo que su campaña ve). Desde un sistema (systemId solo: sus capítulos): su compendio',
+  input: z
+    .object({
+      name: z.string().trim().min(1).max(200),
+      worldId: z.uuid().optional(),
+      campaignId: z.uuid().optional(),
+      systemId: z
+        .uuid()
+        .optional()
+        .describe('El sistema elegido al ponerla (con worldId o campaignId) o, solo, el del capítulo')
+    })
+    .refine((input) => Boolean(input.worldId || input.campaignId || input.systemId), {
+      message: 'worldId, campaignId o systemId'
+    }),
   output: z.object({
     entry: linkable
       .extend({

@@ -142,6 +142,7 @@ const body: JSONContent = {
     { type: 'wideBlock', attrs: { id: 'wbaaaaaa' }, content: [paragraph(null, text('Todo a lo ancho.'))] },
     { type: 'tableOfContents', attrs: { id: 'tcaaaaaa' } },
     { type: 'pageEmbed', attrs: { id: 'emaaaaaa', pageId: null, title: 'Costa Gris', anchor: 'Historia' } },
+    { type: 'contentEmbed', attrs: { id: 'ceaaaaaa', name: 'Goblin jefe', system: null } },
     {
       type: 'fileEmbed',
       attrs: {

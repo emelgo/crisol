@@ -1342,7 +1342,7 @@ type PlayText = NonNullable<ActionOutput<'getCampaignContent'>['items'][number][
 type ActionPart = PlayText['actions'][number]['rolls'][number]
 
 /** Tirar sus acciones en la campaña (revisión, tanda 7): una criatura, con lo suyo; lo demás, con un personaje */
-interface Rolling {
+export interface Rolling {
   campaignId: string
   entryKey: string
   /** Si tiene hoja propia (una criatura): tira con ella; si no, con la de un personaje */
@@ -1351,7 +1351,7 @@ interface Rolling {
 }
 
 /** Su mecánica, en palabras: sus acciones (con sus botones de tirar), sus usos, lo que cambia, cómo escala y cuánto lo calcula Crisol */
-function InPlay({ play, titleId, rolling }: { play: PlayText; titleId: string; rolling?: Rolling }) {
+export function InPlay({ play, titleId, rolling }: { play: PlayText; titleId: string; rolling?: Rolling }) {
   const { t } = useTranslation()
   const api = useApi()
   const announce = useAnnounce()

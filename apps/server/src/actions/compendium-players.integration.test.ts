@@ -188,6 +188,30 @@ describe('el compendio y la partida para los jugadores (docs/specs/compendio-jug
       expect(await sees()).toEqual({ found: [], browsed: [], read: [] })
     })
 
+    it('su ficha incrustada (![[@Nombre]]): la jugadora solo la ve si su campaña ve la entrada (prueba de fugas)', async () => {
+      await putWorld([espada])
+      const card = async (cookie = ana.cookie, extra: object = {}) =>
+        (await ok200('getLinkedContent', { campaignId, name: 'Espada de Valdren', ...extra }, cookie)).entry
+      // Sin revelar: nada para ella; el máster, desde la campaña, sí
+      expect(await card()).toBeNull()
+      expect(await card(master.cookie)).toMatchObject({ key: 'espada_de_valdren', world: true, campaignId })
+      // Desde el mundo, quien juega no busca (es de quien lo lleva)
+      const fromWorld = await call('getLinkedContent', { worldId, name: 'Espada de Valdren' }, ana.cookie)
+      expect(fromWorld.statusCode).toBe(404)
+      // Revelada, sí; con otro sistema elegido al ponerla, no
+      await ok200('reveal', { worldId, campaignId, kind: 'content', targetId: 'espada_de_valdren' })
+      expect(await card()).toMatchObject({ key: 'espada_de_valdren', name: 'Espada de Valdren' })
+      expect(await card(ana.cookie, { systemId: crypto.randomUUID() })).toBeNull()
+      // Oculta otra vez, y un tipo que la campaña oculta: nada
+      await ok200('hide', { campaignId, kind: 'content', targetId: 'espada_de_valdren' })
+      expect(await card()).toBeNull()
+      const goblin = (await ok200('searchCampaignContent', { campaignId, query: 'goblin' }, ana.cookie)).items[0]
+      const linked = async () => (await ok200('getLinkedContent', { campaignId, name: goblin.name }, ana.cookie)).entry
+      expect((await linked())?.type).toBe('criatura')
+      await ok200('updateCampaign', { campaignId, hiddenTypes: ['criatura'] })
+      expect(await linked()).toBeNull()
+    })
+
     it('revelada, la puede llevar su personaje', async () => {
       await putWorld([espada])
       const thora = (await ok200('createCharacter', { campaignId, name: 'Thora' }, ana.cookie)).character

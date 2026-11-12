@@ -20,7 +20,7 @@ import {
 } from '@crisol/contracts'
 import { chaptersRepo, systemImagesRepo, systemsRepo, tablesRepo, worldContentRepo } from '@crisol/db'
 import { cryptoRoller, DiceSyntaxError } from '@crisol/dice'
-import { authorize, can, NotFoundError } from '@crisol/domain'
+import { authorize, can, foldName, NotFoundError } from '@crisol/domain'
 import {
   browseContent,
   type Choices,
@@ -410,6 +410,55 @@ type Scope = NonNullable<Awaited<ReturnType<typeof campaignSystem>>>
  * El compendio de un sistema, sin campaña (su espacio y sus libros): todos sus libros, las dos ediciones de lo repetido
  * y nada del mundo. Lo lee quien puede leer los sistemas de su cuenta (y cualquiera, uno de serie)
  */
+/** Unas cifras de una entrada, para su tarjeta y su ficha: sus primeros campos de número con valor (la CA, los PG, el VD) */
+export function linesOf(system: System | undefined, item: ContentItem | undefined, language: Language = 'es') {
+  const fields = (item && system?.types[item.type]?.fields) || {}
+  return Object.entries(fields)
+    .filter(([key, f]) => f.kind === 'number' && typeof item?.data[key] === 'number')
+    .slice(0, 4)
+    .map(([key, f]) => ({ label: textOf(f.label as Text, language) || key, value: String(item?.data[key]) }))
+}
+
+/**
+ * Lo que enlaza o incrusta `[[@Nombre]]` desde una campaña (lo que ve ella: quien juega, solo lo suyo) o desde un
+ * sistema (sus capítulos): la entrada con ese nombre, lo del mundo antes. Con `system` (el elegido al ponerla), solo
+ * si es el suyo
+ */
+export async function linkedIn(
+  ctx: ActionContext,
+  scope: { campaignId: string } | { systemId: string },
+  name: string,
+  system?: string | null
+) {
+  const found =
+    'campaignId' in scope
+      ? await campaignSystem(ctx, scope.campaignId)
+      : await systemScope(ctx, scope.systemId, undefined)
+  if (!found?.row || (system && system !== found.row.id)) return null
+  const { document, row, choices, entries, layer } = found
+  const wanted = foldName(name)
+  const named = (entry: ContentEntry) => foldName(textOf(entry.name as Text | undefined, choices.language) || entry.key)
+  // Lo del mundo lleva su marca (layers.ts)
+  const ofWorld = (entry: ContentEntry) => Boolean((entry as ContentEntry & { world?: boolean }).world)
+  const seen = visibleContent(document, entries, choices).map((s) => s.item)
+  const match =
+    seen.find((entry) => ofWorld(entry) && named(entry) === wanted) ?? seen.find((entry) => named(entry) === wanted)
+  if (!match) return null
+  const [item] = await layers.contentByKeys(ctx, row.id, layer, [match.key])
+  const label = document.types[match.type]?.label
+  return {
+    key: match.key,
+    name: textOf(match.name as Text | undefined, choices.language) || match.key,
+    type: match.type,
+    typeLabel: label ? textOf(label as Text, choices.language) : match.type,
+    world: ofWorld(match),
+    systemId: row.id,
+    systemName: textOf(document.name, choices.language),
+    lines: linesOf(document, item, choices.language),
+    campaignId: 'campaignId' in scope ? scope.campaignId : null
+  }
+}
+
 async function systemScope(ctx: ActionContext, systemId: string, organizationId: string | undefined): Promise<Scope> {
   const catalog = catalogSystem(systemId)
   const row = catalog ? null : await systemsRepo.findSystem(ctx.db, systemId)

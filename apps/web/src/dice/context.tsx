@@ -149,6 +149,9 @@ export function DiceProvider({ children }: { children: ReactNode }) {
 /** Si hay dónde tirar (fuera de la app, al imprimir, no) */
 export const useHasDice = () => useContext(DiceContext) !== null
 
+/** Los dados, si los hay (lo que se pinta también fuera de la app, como una ficha impresa, no los necesita) */
+export const useOptionalDice = () => useContext(DiceContext)
+
 export function useDice() {
   const dice = useContext(DiceContext)
   if (!dice) throw new Error('useDice fuera de DiceProvider')

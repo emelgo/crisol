@@ -71,6 +71,7 @@ function CampaignBook({ worldId, campaignId }: { worldId: string; campaignId: st
         systemId={system.id}
         source={bookKey}
         campaignId={campaignId}
+        worldId={worldId}
         chapterId={capitulo ?? null}
         onChapter={(id) => void navigate({ search: { ...(id ? { capitulo: id } : {}) } })}
         chapterHref={(id) => `/mundos/${worldId}/campanas/${campaignId}/libros/${bookKey}?capitulo=${id}`}

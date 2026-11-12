@@ -1,0 +1,141 @@
+/* La ficha de una entrada incrustada: una línea, como una mención de página; lo que hace en juego, al desplegarla */
+.wrapper {
+  margin-block: var(--space-2);
+}
+
+.wrapper[data-selected] .card {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.card {
+  max-inline-size: 40rem;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--color-raised) 60%, transparent);
+  color: var(--color-text);
+  font-size: 0.9375rem;
+}
+
+.line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px var(--space-2);
+  min-block-size: 2.25rem;
+  padding: 4px var(--space-3);
+}
+
+.icon {
+  flex: none;
+  color: var(--color-h4);
+}
+
+.name {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-text);
+  font: 600 0.9375rem var(--font-body);
+  cursor: pointer;
+}
+
+span.name {
+  cursor: auto;
+}
+
+.name:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.chevron {
+  color: var(--color-muted);
+  transition: transform 150ms ease-out;
+}
+
+.card[data-open] .chevron {
+  transform: rotate(180deg);
+}
+
+.kind,
+.lines {
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+}
+
+.lines {
+  /* En su línea: lo que no cabe, con puntos suspensivos (entero, al pasar) */
+  flex: 1 1 8rem;
+  min-inline-size: 0;
+  overflow: hidden;
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.open {
+  flex: none;
+  margin-inline-start: auto;
+  color: var(--color-link);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-underline-offset: 3px;
+}
+
+.open:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.more {
+  padding: var(--space-2) var(--space-3) var(--space-3);
+  border-block-start: 1px solid var(--color-border);
+}
+
+/* «En juego» del compendio, sin su caja: aquí ya va dentro de la ficha */
+.more > section[aria-labelledby] {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  clip-path: none;
+  backdrop-filter: none;
+}
+
+.more > section[aria-labelledby]::before {
+  display: none;
+}
+
+.more > section[aria-labelledby] h3 {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  color: var(--color-muted);
+  font: 600 0.75rem var(--font-body);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* La que no está (solo la ve quien escribe) */
+.missing {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: var(--space-2) 0;
+  padding: 4px var(--space-3);
+  border: 1px dashed var(--color-border);
+  border-radius: 6px;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chevron {
+    transition: none;
+  }
+}

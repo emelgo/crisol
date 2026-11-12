@@ -13,7 +13,7 @@ capturas de antes y después; Enrique revisa las tandas juntas.
   leen los capítulos de sus libros (sin los secretos).
 - [x] 3. **Tirar las acciones de una entrada**: hoy se pintan como texto (`campaign/compendium.tsx`, «En juego»);
   ganan su botón y su acción en el servidor, al registro de la campaña.
-- [ ] 4. **Incrustar una entrada** en una página o un capítulo (`![[@Nombre]]`: su ficha), además del enlace; si el
+- [x] 4. **Incrustar una entrada** en una página o un capítulo (`![[@Nombre]]`: su ficha), además del enlace; si el
   mundo tiene campañas con sistemas distintos, o ninguna, pregunta de cuál y lo recuerda. **Prueba de fugas**: una
   jugadora solo ve la ficha si su campaña ve esa entrada.
 - [ ] 5. **«Entrada nueva del compendio» desde el mundo** («/» y al final de las sugerencias de `[[@`), en ventana

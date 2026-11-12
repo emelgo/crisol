@@ -25,6 +25,7 @@ import { FormError } from '../components/field.tsx'
 import { failed, LoadError } from '../components/load-error.tsx'
 import { Menu, MenuItem } from '../components/menu.tsx'
 import { Modal } from '../components/modal.tsx'
+import { type ContentScope, ContentScopeProvider } from '../wiki/content-scope.tsx'
 import { useNarrow } from '../wiki/panel.tsx'
 import { ChapterText } from './chapter-text.tsx'
 import styles from './reader.module.css'
@@ -55,7 +56,8 @@ export function BookReader({
   chapterId,
   onChapter,
   chapterHref,
-  head
+  head,
+  worldId
 }: {
   systemId: string
   source: string
@@ -68,12 +70,18 @@ export function BookReader({
   chapterHref: (id: string) => string
   /** El título del libro y sus pestañas, en el sitio del título de todas las pantallas */
   head: ReactNode
+  /** El mundo de la campaña (para abrir en su compendio lo que se enlaza) */
+  worldId?: string
 }) {
   const { t } = useTranslation()
   const api = useApi()
   const queryClient = useQueryClient()
   const narrow = useNarrow()
   const listKey = ['chapters', systemId, source, campaignId ?? null]
+  // Lo que se enlaza o se incrusta en un capítulo, desde la campaña (lo que ve ella) o desde su sistema
+  const scope: ContentScope = campaignId
+    ? { kind: 'campaign', campaignId, ...(worldId ? { worldId } : {}) }
+    : { kind: 'system', systemId }
   const list = useQuery({
     queryKey: listKey,
     queryFn: () => api.call('listBookChapters', { systemId, source, ...(campaignId ? { campaignId } : {}) })
@@ -203,111 +211,113 @@ export function BookReader({
   }
 
   return (
-    <div className={frame.page} data-reading={narrow ? '' : undefined}>
-      <div className={frame.top}>{head}</div>
-      <nav className={`${frame.side} ${styles.index}`} aria-label={t('chapters.index')}>
-        <ol className={styles.chapters}>
-          {chapters.map((chapter) => {
-            const open = chapter.id === currentId
-            return (
-              <li key={chapter.id}>
-                <a
-                  href={chapterHref(chapter.id)}
-                  className={styles.chapter}
-                  aria-current={open ? 'page' : undefined}
-                  onClick={follow(chapter.id)}
-                >
-                  {chapter.title}
+    <ContentScopeProvider value={scope}>
+      <div className={frame.page} data-reading={narrow ? '' : undefined}>
+        <div className={frame.top}>{head}</div>
+        <nav className={`${frame.side} ${styles.index}`} aria-label={t('chapters.index')}>
+          <ol className={styles.chapters}>
+            {chapters.map((chapter) => {
+              const open = chapter.id === currentId
+              return (
+                <li key={chapter.id}>
+                  <a
+                    href={chapterHref(chapter.id)}
+                    className={styles.chapter}
+                    aria-current={open ? 'page' : undefined}
+                    onClick={follow(chapter.id)}
+                  >
+                    {chapter.title}
+                  </a>
+                  {open && sections.length > 0 && (
+                    <ol className={styles.sections}>
+                      {sections.map((section, index) => (
+                        <li key={`${section.pos}-${section.text}`} data-level={section.level}>
+                          <a
+                            href={`${chapterHref(chapter.id)}#${index}`}
+                            className={styles.section}
+                            aria-current={index === active ? 'location' : undefined}
+                            onClick={(event) => {
+                              event.preventDefault()
+                              goToSection(index)
+                            }}
+                          >
+                            {section.text}
+                          </a>
+                        </li>
+                      ))}
+                    </ol>
+                  )}
+                </li>
+              )
+            })}
+          </ol>
+          {editable && (
+            <CreateDialog
+              trigger={t('chapters.new')}
+              triggerClassName={styles.newChapter}
+              title={t('chapters.newTitle')}
+              label={t('chapters.name')}
+              submit={t('chapters.create')}
+              onCreate={create}
+            />
+          )}
+        </nav>
+        <article className={`${frame.reading} ${styles.reading}`} aria-busy={!currentId}>
+          {narrow && (
+            <GoTo
+              chapters={chapters}
+              currentId={currentId}
+              sections={sections}
+              onChapter={onChapter}
+              onSection={goToSection}
+            />
+          )}
+          {currentId && (
+            <OpenChapter
+              key={currentId}
+              systemId={systemId}
+              source={source}
+              campaignId={campaignId}
+              chapterId={currentId}
+              editable={editable}
+              position={at}
+              count={chapters.length}
+              chapterIds={chapters.map((c) => c.id)}
+              onEditor={setEditor}
+              onChanged={refresh}
+              onDeleted={() => {
+                void refresh()
+                onChapter(next?.id ?? previous?.id ?? null)
+              }}
+            />
+          )}
+          {(previous || next) && (
+            <nav className={styles.pager} aria-label={t('chapters.pager')}>
+              {previous ? (
+                <a href={chapterHref(previous.id)} className={styles.previous} onClick={follow(previous.id)}>
+                  <span className={styles.pagerLabel}>
+                    <ArrowLeft size={14} aria-hidden="true" />
+                    {t('chapters.previous')}
+                  </span>
+                  <span className={styles.pagerTitle}>{previous.title}</span>
                 </a>
-                {open && sections.length > 0 && (
-                  <ol className={styles.sections}>
-                    {sections.map((section, index) => (
-                      <li key={`${section.pos}-${section.text}`} data-level={section.level}>
-                        <a
-                          href={`${chapterHref(chapter.id)}#${index}`}
-                          className={styles.section}
-                          aria-current={index === active ? 'location' : undefined}
-                          onClick={(event) => {
-                            event.preventDefault()
-                            goToSection(index)
-                          }}
-                        >
-                          {section.text}
-                        </a>
-                      </li>
-                    ))}
-                  </ol>
-                )}
-              </li>
-            )
-          })}
-        </ol>
-        {editable && (
-          <CreateDialog
-            trigger={t('chapters.new')}
-            triggerClassName={styles.newChapter}
-            title={t('chapters.newTitle')}
-            label={t('chapters.name')}
-            submit={t('chapters.create')}
-            onCreate={create}
-          />
-        )}
-      </nav>
-      <article className={`${frame.reading} ${styles.reading}`} aria-busy={!currentId}>
-        {narrow && (
-          <GoTo
-            chapters={chapters}
-            currentId={currentId}
-            sections={sections}
-            onChapter={onChapter}
-            onSection={goToSection}
-          />
-        )}
-        {currentId && (
-          <OpenChapter
-            key={currentId}
-            systemId={systemId}
-            source={source}
-            campaignId={campaignId}
-            chapterId={currentId}
-            editable={editable}
-            position={at}
-            count={chapters.length}
-            chapterIds={chapters.map((c) => c.id)}
-            onEditor={setEditor}
-            onChanged={refresh}
-            onDeleted={() => {
-              void refresh()
-              onChapter(next?.id ?? previous?.id ?? null)
-            }}
-          />
-        )}
-        {(previous || next) && (
-          <nav className={styles.pager} aria-label={t('chapters.pager')}>
-            {previous ? (
-              <a href={chapterHref(previous.id)} className={styles.previous} onClick={follow(previous.id)}>
-                <span className={styles.pagerLabel}>
-                  <ArrowLeft size={14} aria-hidden="true" />
-                  {t('chapters.previous')}
-                </span>
-                <span className={styles.pagerTitle}>{previous.title}</span>
-              </a>
-            ) : (
-              <span />
-            )}
-            {next && (
-              <a href={chapterHref(next.id)} className={styles.next} onClick={follow(next.id)}>
-                <span className={styles.pagerLabel}>
-                  {t('chapters.next')}
-                  <ArrowRight size={14} aria-hidden="true" />
-                </span>
-                <span className={styles.pagerTitle}>{next.title}</span>
-              </a>
-            )}
-          </nav>
-        )}
-      </article>
-    </div>
+              ) : (
+                <span />
+              )}
+              {next && (
+                <a href={chapterHref(next.id)} className={styles.next} onClick={follow(next.id)}>
+                  <span className={styles.pagerLabel}>
+                    {t('chapters.next')}
+                    <ArrowRight size={14} aria-hidden="true" />
+                  </span>
+                  <span className={styles.pagerTitle}>{next.title}</span>
+                </a>
+              )}
+            </nav>
+          )}
+        </article>
+      </div>
+    </ContentScopeProvider>
   )
 }
 
@@ -554,6 +564,7 @@ function OpenChapter({
           onClean={() => setState((now) => (now === 'dirty' ? (saved.current ? 'saved' : 'idle') : now))}
           onChange={(markdown) => save({ markdown })}
           onEditor={onEditor}
+          {...(editable ? { systemId } : {})}
         />
       </div>
       {deleting && (

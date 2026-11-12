@@ -390,13 +390,19 @@ export const LinkSuggest = Extension.create<LinkSuggestOptions>({
             announce(title)
           }
           if (choice.kind === 'content') {
+            // Con «!» delante, su ficha (sin el «!», que se quedaba suelto), con el sistema de donde se eligió; si no, el enlace
             editor
               .chain()
               .focus()
-              .insertContentAt(range, [
-                { type: 'contentLink', attrs: { name: choice.content.name } },
-                { type: 'text', text: ' ' }
-              ])
+              .insertContentAt(
+                embed ? { from: range.from - 1, to: range.to } : range,
+                embed
+                  ? [{ type: 'contentEmbed', attrs: { name: choice.content.name, system: choice.content.systemId } }]
+                  : [
+                      { type: 'contentLink', attrs: { name: choice.content.name } },
+                      { type: 'text', text: ' ' }
+                    ]
+              )
               .run()
             announce(choice.content.name)
           } else if (choice.kind === 'file') {
@@ -458,6 +464,8 @@ const LinkList = forwardRef<ListHandle, LinkListProps>(function LinkList({ items
   const { t } = useTranslation()
   const id = useId()
   const [activeKey, setActiveKey] = useState<string | null>(null)
+  const manySystems =
+    new Set(items.flatMap((choice) => (choice.kind === 'content' ? [choice.content.systemId] : []))).size > 1
   const current = items.find((item) => keyOf(item) === activeKey) ?? items[0]
   // Los títulos repetidos llevan su ruta
   const repeated = new Set(
@@ -527,6 +535,8 @@ const LinkList = forwardRef<ListHandle, LinkListProps>(function LinkList({ items
                   {choice.content.world
                     ? t('links.contentWorld', { type: choice.content.typeLabel })
                     : choice.content.typeLabel}
+                  {/* Con varios sistemas (campañas con sistemas distintos, o ninguna), de cuál es: se elige con ella */}
+                  {manySystems && ` · ${choice.content.systemName}`}
                 </span>
               </>
             ) : choice.kind === 'file' ? (

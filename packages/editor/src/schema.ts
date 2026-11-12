@@ -11,6 +11,7 @@ import { BlockIds } from './ids.ts'
 import { isExternalUrl } from './links.ts'
 import { Box } from './nodes/box.ts'
 import { Callout } from './nodes/callout.ts'
+import { ContentEmbed } from './nodes/content-embed.ts'
 import { ContentLink } from './nodes/content-link.ts'
 import { FileEmbed } from './nodes/file-embed.ts'
 import { PageEmbed } from './nodes/page-embed.ts'
@@ -92,6 +93,8 @@ export function editorExtensions(options: EditorOptions = {}): Extensions {
     view(PageLink),
     view(PageEmbed),
     view(FileEmbed),
+    // Después de la página incrustada: así `![[@Nombre]]` es una ficha y no una página «@Nombre»
+    view(ContentEmbed),
     view(PageBreak),
     view(ColumnBreak),
     view(ColumnsChange),

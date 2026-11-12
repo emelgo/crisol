@@ -1404,6 +1404,7 @@ export function fakeApi(
           typeLabel: textOf(found.document.types[item.type]?.label as Text, 'es') || item.type,
           world: found.worldKeys.has(item.key),
           systemId: found.document.id,
+          systemName: textOf(found.document.name, 'es'),
           campaignId: c.id
         }))
       })
@@ -2868,12 +2869,33 @@ export function fakeApi(
         .slice(0, limit ?? 20)
         .map(({ campaignId: _, ...each }) => each)
     }),
-    getLinkedContent: ({ worldId, name }) => {
+    getLinkedContent: ({ worldId, campaignId, systemId, name }) => {
+      // Desde una campaña o un sistema (sus capítulos): lo de su compendio, por su nombre
+      if (campaignId || !worldId) {
+        const found = compendiumOf(campaignId ?? `sistema:${systemId ?? ''}`)
+        if (!found || (campaignId && systemId && found.document.id !== systemId)) return { entry: null }
+        const item = found.content.find((c) => (textOf(c.data.name as Text, found.choices.language) || c.key) === name)
+        if (!item) return { entry: null }
+        const label = found.document.types[item.type]?.label
+        return {
+          entry: {
+            key: item.key,
+            name,
+            type: item.type,
+            typeLabel: label ? textOf(label as Text, found.choices.language) : item.type,
+            world: false,
+            systemId: found.document.id,
+            systemName: textOf(found.document.name, found.choices.language),
+            lines: [],
+            campaignId: campaignId ?? null
+          }
+        }
+      }
       const all = linkablesOf(worldId)
       const found = all.find((e) => e.world && e.name === name) ?? all.find((e) => e.name === name)
       if (!found) return { entry: null }
-      const { campaignId, ...entry } = found
-      return { entry: { ...entry, lines: [], campaignId } }
+      const { campaignId: openIn, ...entry } = found
+      return { entry: { ...entry, lines: [], campaignId: openIn ?? null } }
     },
     applyRoll: ({ campaignId, rollId, targets }) => {
       const roll = rolls.find((r) => r.id === rollId && r.campaignId === campaignId)

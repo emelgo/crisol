@@ -26,6 +26,7 @@ export const BLOCK_TYPES = [
   'secret',
   'note',
   'pageEmbed',
+  'contentEmbed',
   'fileEmbed',
   'pageBreak',
   'columnBreak',

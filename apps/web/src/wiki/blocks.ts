@@ -164,6 +164,18 @@ export const BLOCKS: readonly BlockChoice[] = [
       editor.chain().focus().insertContent('![[').run()
     }
   },
+  // La ficha de una entrada del compendio (revisión, tanda 7): escribe `![[@`, que abre la lista del compendio
+  {
+    id: 'contentEmbed',
+    group: 'wiki',
+    label: 'contentEmbed',
+    hint: 'contentEmbedHint',
+    keywords: 'ficha compendio entrada criatura conjuro objeto incrustar',
+    convert: false,
+    run: (editor) => {
+      editor.chain().focus().insertContent('![[@').run()
+    }
+  },
   // Una imagen o un archivo: uno del equipo (se sube); los del mundo, con `![[`
   {
     id: 'fileEmbed',
