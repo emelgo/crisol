@@ -120,7 +120,7 @@ test('arranque, perfil, mundos y sus ajustes, campañas, avisos, historial, pape
     await check()
     await closeWindow(history)
     const trash = await openWindow(page, 'Papelera')
-    await expect(trash.getByText('La papelera está vacía')).toBeVisible()
+    await expect(trash.getByText('La papelera está vacía.')).toBeVisible()
     await check()
     await closeWindow(trash)
     // La página de consentimiento sin consulta firmada: se ve igual, aunque permitir fallaría. El cliente no es una

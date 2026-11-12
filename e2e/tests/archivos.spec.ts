@@ -80,7 +80,7 @@ test('subir archivos: salen en la lista, se sirven tal cual, se ordenan en carpe
   await expect(page.getByRole('link', { name: 'Bestiario.pdf', exact: true })).toHaveCount(0)
   await page.goto(page.url().replace('/archivos', '/papelera'))
   await page.getByRole('button', { name: 'Restaurar Bestiario.pdf' }).click()
-  await expect(page.getByText('La papelera está vacía')).toBeVisible()
+  await expect(page.getByText('La papelera está vacía.')).toBeVisible()
   await page.goBack()
   await page.getByRole('button', { name: 'Bestias', exact: true }).click()
   await expect(page.getByRole('link', { name: 'Bestiario.pdf', exact: true })).toBeVisible()

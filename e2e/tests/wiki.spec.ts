@@ -131,7 +131,7 @@ test('borrar una página con sus subpáginas, y restaurarla desde la papelera de
   const trash = page.getByRole('list', { name: 'En la papelera' })
   await expect(trash.getByText('Página de Eana, con 2 subpáginas', { exact: false })).toBeVisible()
   await trash.getByRole('button', { name: 'Restaurar Lugares' }).click()
-  await expect(page.getByText('La papelera está vacía')).toBeVisible()
+  await expect(page.getByText('La papelera está vacía.')).toBeVisible()
   await page.goBack()
   await tree(page).getByRole('treeitem', { name: 'Lugares' }).focus()
   await page.keyboard.press('ArrowRight')
