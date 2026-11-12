@@ -7,6 +7,16 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
+### Para retomar (2026-11-13, madrugada: módulo 9 empezado; PR #119 en la CI)
+
+- **PR #119** (tandas 8 y 9, con su visto bueno): la cobertura de lo cambiado subió del 52 % al 99,5 % con pruebas del
+  editor de sistemas (y dos fallos de escritura arreglados: los espacios en «Cuánto hay como mucho» y «El dado de
+  siempre», y vaciar «Líneas»). CI repetida; si solo fallan las e2e inestables de siempre, fusionar con su visto bueno.
+- **Módulo 9** (rama `modulo-9/mapas`): entrevista confirmada (`docs/intent/mapas-pizarras.md`), estudio
+  (`research/mapas-y-pizarras.md` y sus notas), capacidades (`docs/specs/modulo-9.md`) y la spec de los mapas con
+  capas (`docs/specs/mapas-capas.md`), con cinco decisiones tomadas sin él. **Siguiente**: su visto bueno de la spec →
+  el lienzo con impeccable (mapa con capas, dibujar, la regla, lo que ve la jugadora) → plan → construir.
+
 ### Para retomar (2026-11-12, noche: tanda 9, repaso del MCP)
 
 - Rama `revision/tanda-9` (sobre la 8), **desplegada en staging** para probar el conector (con la 8 dentro).
