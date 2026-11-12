@@ -5,6 +5,7 @@ import { issueBootstrap } from '@crisol/server/bootstrap'
 import { exampleFile } from '@crisol/systems/examples'
 import { expect, test } from '@playwright/test'
 import { e2eDatabaseUrl } from '../servidor.ts'
+import { CON_DESENFOQUE } from '../sin-desenfoque.ts'
 import {
   campaignLink,
   campaignPath,
@@ -21,6 +22,9 @@ import {
   settled,
   skipTours
 } from './ayudas.ts'
+
+// La accesibilidad (el contraste), con el cristal de verdad
+test.use({ storageState: CON_DESENFOQUE })
 
 // WCAG 2.1 AA: cero fallos críticos o graves (CONSTRAINTS.md)
 const WCAG = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']

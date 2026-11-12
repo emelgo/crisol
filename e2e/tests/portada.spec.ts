@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
+import { CON_DESENFOQUE } from '../sin-desenfoque.ts'
 import { campaignLink, freshOwner, openAccountWindow } from './ayudas.ts'
 
 test('la portada: la imagen, «Entrar», «Tengo una invitación» (pegar el enlace lleva a la campaña) y lo que hay dentro', async ({
@@ -35,14 +36,21 @@ test('la portada: la imagen, «Entrar», «Tengo una invitación» (pegar el enl
   await context.close()
 })
 
-test('«Sin desenfoque» en Ajustes: sin fondo de ambiente, en este aparato y para la próxima vez', async ({ page }) => {
-  await freshOwner(page)
-  await expect(page.locator('[data-ambiente]')).toBeAttached()
-  const settings = await openAccountWindow(page, 'Ajustes')
-  await settings.getByRole('checkbox', { name: 'Sin desenfoque' }).check()
-  await expect(page.locator('html')).toHaveAttribute('data-plain', '')
-  await expect(page.locator('[data-ambiente]')).toHaveCount(0)
-  await page.reload()
-  await expect(page.locator('html')).toHaveAttribute('data-plain', '')
-  await expect(page.locator('[data-ambiente]')).toHaveCount(0)
+test.describe('con el cristal', () => {
+  // Esta mira el fondo de ambiente: empieza con él (las demás pruebas van sin desenfoque)
+  test.use({ storageState: CON_DESENFOQUE })
+
+  test('«Sin desenfoque» en Ajustes: sin fondo de ambiente, en este aparato y para la próxima vez', async ({
+    page
+  }) => {
+    await freshOwner(page)
+    await expect(page.locator('[data-ambiente]')).toBeAttached()
+    const settings = await openAccountWindow(page, 'Ajustes')
+    await settings.getByRole('checkbox', { name: 'Sin desenfoque' }).check()
+    await expect(page.locator('html')).toHaveAttribute('data-plain', '')
+    await expect(page.locator('[data-ambiente]')).toHaveCount(0)
+    await page.reload()
+    await expect(page.locator('html')).toHaveAttribute('data-plain', '')
+    await expect(page.locator('[data-ambiente]')).toHaveCount(0)
+  })
 })
