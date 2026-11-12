@@ -265,3 +265,7 @@ Lo que sale sin estar en la lista: se avisa a Enrique y se arregla en su tanda.
 - [x] «Plantillas» en la barra, con una plantilla abierta, vuelve con la misma animación que «‹ Plantillas».
 - [x] Al quitar el crédito de los fondos se rompió el CSS de `backdrop.module.css` (Biome no lo vio; la compilación sí):
   arreglado el mismo día.
+- [ ] Mover un capítulo con el libro abierto sin `?capitulo=`: el abierto pasa a ser el nuevo primero y el movido «se
+  va». Que mover un capítulo lleve a él (lo vio el agente de pruebas, tanda 7).
+- [ ] Editor de sistemas: la ficha de ejemplo, con la maqueta del paso 4 (cabecera, columnas, pestañas); ordenar
+  arrastrando (seis puntos y Alt+flechas) como en las plantillas; el «?» con `useDismiss` (audit, tanda 8).

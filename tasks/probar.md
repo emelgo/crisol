@@ -9,6 +9,20 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
+## Revisión, tanda 8: el editor de sistemas a mano (en local)
+
+- [ ] **A mano** (Sistemas → «Sistema nuevo» → «A mano»): con su nombre se crea y abre «Reglas» por pasos.
+- [ ] **¿Qué tiene un personaje?**: añade «Varias a la vez» y «Algo que se gasta»: salen al momento en la ficha de
+  ejemplo y arriba pone «Guardado» solo. Abre una fila, cambia nombres, súbela, bájala y quítala («Deshacer»). Lo que se
+  calcula está en «Más» y se lee en palabras.
+- [ ] **¿Cómo se tira?**: el dado de siempre y una tirada con «Añadir de la ficha»; «Se lee:» debajo y «Tirar una vez».
+  Escribe algo que no existe (`@nada`): el aviso sale bajo el campo y en «Revisión», «Sin guardar» arriba, e «Ir a…» lleva
+  a él.
+- [ ] **Los demás pasos**: tipos de objeto con sus campos, los bloques de la ficha (ordenar, «Rehacer desde los
+  campos»), los pasos del creador (lo que no se puede añadir dice por qué), los libros, y en «Lo avanzado» la
+  iniciativa, los idiomas y bajar el archivo.
+- [ ] **Un sistema de serie o importado de Foundry** se edita igual; si otro lo cambia a la vez, sale «Volver a cargar».
+
 ## Revisión, tanda 7: libros de texto (en local)
 
 - [ ] **Capítulos de un libro** (un sistema tuyo → pulsa la portada de un libro → «Capítulos»): «Capítulo nuevo», escribir

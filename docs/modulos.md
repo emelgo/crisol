@@ -7,6 +7,22 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
+### Para retomar (2026-11-12, noche: tanda 8, el editor de sistemas a mano, terminada en local)
+
+- Rama `revision/tanda-8` (sobre la 7, sin subir), plan en `tasks/tanda-8.md`. Sin migraciones. Lienzo aprobado
+  («me fío de tu criterio»): https://claude.ai/artifact/RNhfpKmxY2iQ2Z7GfbcNAp.
+- Hecho: «Reglas» de un sistema abre el editor por pasos con preguntas de mesa (`apps/web/src/systems/editor/`): qué
+  tiene un personaje, cómo se tira (con «Se lee:» y «Tirar una vez»), qué se lleva, la ficha, el creador, el compendio
+  y lo avanzado; la ficha de ejemplo y la revisión a la derecha; se guarda solo (de uno en uno, con su versión, y al
+  salir) si no hay errores; «Sistema nuevo → A mano».
+- Crítica y audit de impeccable (P0–P3) con sus arreglos: la revisión siempre a la vista, nada de fórmulas en crudo,
+  errores bajo su campo, foco y anuncios al añadir, quitar, mover y cambiar de paso, «Deshacer» sin perder lo de
+  después. Quedan, menores: la ficha de ejemplo no sigue aún la maqueta del paso 4; arrastrar para ordenar.
+- Pruebas: web 827, e2e `editor-sistemas` en verde.
+- Tanda 7: la cobertura de lo cambiado sube a ~95 % (commit `c144b1b6`); e2e sin desenfoque salvo portada y
+  accesibilidad, y la CI con 60 min. Falta pasar la CI del PR #118, fusionar y desplegar.
+- **Siguiente**: PR #118 en verde → `main` y staging; luego la tanda 8 a `main` con su visto bueno.
+
 ### Para retomar (2026-11-12, noche: tanda 7, libros de texto, terminada en local; falta su visto bueno)
 
 - Rama `revision/tanda-7` (sobre la 6, sin subir), plan en `tasks/tanda-7.md` (7 porciones hechas). **Migración 0080**
