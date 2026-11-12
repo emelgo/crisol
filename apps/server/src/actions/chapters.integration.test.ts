@@ -1,0 +1,239 @@
+import { connect, schema } from '@crisol/db'
+import { freshTestDatabase, resetDatabase } from '@crisol/db/testing'
+import { exampleFile } from '@crisol/systems/examples'
+import type { FastifyInstance } from 'fastify'
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { buildApp } from '../app.ts'
+import type { Auth } from '../auth/auth.ts'
+import { createTestAuth, signUpTestUser, TEST_SEAL_KEY } from '../testing.ts'
+import { withoutSecrets } from './chapters.ts'
+
+const BASE_URL = 'http://localhost:5173'
+const ok = async () => undefined
+
+const COMBATE = `# El combate
+
+Cada asalto dura seis segundos.
+
+> [!secreto] Para el máster
+> Los goblins huyen al caer la mitad.
+
+## La iniciativa
+
+Tira 1d20 y suma tu Destreza.`
+
+describe('los capítulos de los libros (ADR-0025)', () => {
+  let conn: ReturnType<typeof connect>
+  let auth: Auth
+  let app: FastifyInstance
+  let owner: { userId: string; cookie: string }
+
+  const call = (name: string, payload: object, cookie = owner.cookie) =>
+    app.inject({ method: 'POST', url: `/api/actions/${name}`, payload, headers: { origin: BASE_URL, cookie } })
+  const ok200 = async (name: string, payload: object, cookie = owner.cookie) => {
+    const response = await call(name, payload, cookie)
+    expect(response.statusCode, response.body).toBe(200)
+    return response.json()
+  }
+  const code = async (name: string, payload: object, cookie = owner.cookie) => {
+    const response = await call(name, payload, cookie)
+    return { status: response.statusCode, code: response.json().code as string }
+  }
+  const import5e = async (): Promise<string> => (await ok200('importSystem', { file: exampleFile('5e') })).system.id
+  const titles = async (systemId: string, source: string, extra: object = {}, cookie = owner.cookie) =>
+    (await ok200('listBookChapters', { systemId, source, ...extra }, cookie)).chapters.map(
+      (c: { title: string }) => c.title
+    )
+  const history = async () => (await ok200('listHistory', {})).entries as { id: string; action: string }[]
+
+  beforeAll(async () => {
+    conn = connect(await freshTestDatabase('crisol_test_chapters'), { max: 4 })
+  })
+
+  beforeEach(async () => {
+    await resetDatabase(conn.sql)
+    auth = createTestAuth(conn.db, BASE_URL)
+    app = buildApp({
+      checks: { postgres: ok, valkey: ok },
+      accounts: { auth, db: conn.db, publicUrl: BASE_URL, sealKey: TEST_SEAL_KEY }
+    })
+    owner = await signUpTestUser(auth, { name: 'Enrique', email: 'enrique@crisol.test' })
+    const [org] = await conn.db.insert(schema.organizations).values({ name: 'Mesa' }).returning()
+    if (!org) throw new Error('sin organización')
+    await conn.db
+      .insert(schema.organizationMembers)
+      .values({ organizationId: org.id, userId: owner.userId, role: 'owner' })
+  })
+
+  afterAll(async () => {
+    await app?.close()
+    await conn?.close()
+  })
+
+  it('quitar los secretos se lleva el bloque entero y nada más', () => {
+    expect(withoutSecrets(COMBATE)).toBe(
+      '# El combate\n\nCada asalto dura seis segundos.\n\n## La iniciativa\n\nTira 1d20 y suma tu Destreza.'
+    )
+    expect(withoutSecrets('> [!nota] Ojo\n> Se queda')).toBe('> [!nota] Ojo\n> Se queda')
+    expect(withoutSecrets('> [!SECRETO]\n> fuera\nsigue')).toBe('sigue')
+  })
+
+  it('crear, cambiar con su versión, ordenar, borrar y deshacer', async () => {
+    const five = await import5e()
+    const first = await ok200('saveChapter', {
+      systemId: five,
+      source: 'srd51',
+      title: 'El combate',
+      markdown: COMBATE
+    })
+    expect(first).toMatchObject({ title: 'El combate', position: 0, version: 1, markdown: COMBATE })
+    const second = await ok200('saveChapter', { systemId: five, source: 'srd51', title: 'La magia' })
+    expect(second).toMatchObject({ position: 1, markdown: '' })
+    expect(await titles(five, 'srd51')).toEqual(['El combate', 'La magia'])
+    expect((await ok200('listBookChapters', { systemId: five, source: 'srd51' })).editable).toBe(true)
+
+    // Cambiarlo: con la versión que se tenía; con una vieja, CHAPTER_CHANGED
+    const changed = await ok200('saveChapter', {
+      systemId: five,
+      source: 'srd51',
+      chapterId: second.id,
+      version: 1,
+      markdown: 'Los conjuros gastan espacios.'
+    })
+    expect(changed).toMatchObject({ title: 'La magia', version: 2, markdown: 'Los conjuros gastan espacios.' })
+    expect(
+      await code('saveChapter', { systemId: five, source: 'srd51', chapterId: second.id, version: 1, title: 'Otra' })
+    ).toEqual({ status: 400, code: 'CHAPTER_CHANGED' })
+    expect(await code('saveChapter', { systemId: five, source: 'srd51', chapterId: second.id, title: 'Otra' })).toEqual(
+      { status: 400, code: 'VERSION_REQUIRED' }
+    )
+    // Un libro que no existe, o uno nuevo sin título
+    expect(await code('saveChapter', { systemId: five, source: 'nada', title: 'X' })).toEqual({
+      status: 400,
+      code: 'BAD_BOOK'
+    })
+    expect(await code('saveChapter', { systemId: five, source: 'srd51' })).toEqual({
+      status: 400,
+      code: 'TITLE_REQUIRED'
+    })
+
+    // Ordenar: los nombrados delante
+    expect(
+      (await ok200('orderChapters', { systemId: five, source: 'srd51', chapterIds: [second.id] })).chapterIds
+    ).toEqual([second.id, first.id])
+    expect(await titles(five, 'srd51')).toEqual(['La magia', 'El combate'])
+
+    // Borrar y deshacer desde el historial
+    await ok200('deleteChapter', { chapterId: first.id })
+    expect(await titles(five, 'srd51')).toEqual(['La magia'])
+    expect(await code('getChapter', { chapterId: first.id })).toEqual({ status: 404, code: 'NOT_FOUND' })
+    const entries = await history()
+    expect(entries.slice(0, 5).map((e) => e.action)).toEqual([
+      'deleteChapter',
+      'orderChapters',
+      'updateChapter',
+      'createChapter',
+      'createChapter'
+    ])
+    await ok200('undoOperation', { operationId: entries[0]?.id })
+    expect((await ok200('getChapter', { chapterId: first.id })).markdown).toBe(COMBATE)
+
+    // Borrar el libro se lleva sus capítulos
+    const { version } = await ok200('getSystem', { systemId: five })
+    await ok200('deleteBook', { systemId: five, version, key: 'srd51' })
+    expect(await code('getChapter', { chapterId: second.id })).toEqual({ status: 404, code: 'NOT_FOUND' })
+  })
+
+  it('los de serie no traen capítulos ni se escriben', async () => {
+    expect((await ok200('listBookChapters', { systemId: 'blank', source: 'x' })).chapters).toEqual([])
+    expect((await code('saveChapter', { systemId: crypto.randomUUID(), source: 'x', title: 'X' })).status).toBe(404)
+  })
+
+  it('en la campaña: sus jugadores leen los de sus libros, sin los secretos; el máster, enteros', async () => {
+    const five = await import5e()
+    const combat = await ok200('saveChapter', {
+      systemId: five,
+      source: 'srd51',
+      title: 'El combate',
+      markdown: COMBATE
+    })
+    const newer = await ok200('saveChapter', {
+      systemId: five,
+      source: 'srd521',
+      title: 'Novedades',
+      markdown: 'Nuevo.'
+    })
+    const worldId = (await ok200('createWorld', { name: 'Valdren' })).id
+    const campaignId = (await ok200('createCampaign', { worldId, name: 'La Marca', system: five })).id
+    await ok200('updateCampaign', { campaignId, systemChoices: { sources: ['srd51'], duplicates: 'both' } })
+    const ana = await signUpTestUser(auth, { name: 'Ana', email: 'ana@crisol.test' })
+    const url = (await ok200('getInvitation', { campaignId })).url as string
+    await app.inject({
+      method: 'POST',
+      url: '/api/join',
+      payload: { secret: url.split('/unirse/')[1] },
+      headers: { origin: BASE_URL, cookie: ana.cookie }
+    })
+
+    // La jugadora: los capítulos de su libro, sin poder escribirlos y sin el secreto
+    const listed = await ok200('listBookChapters', { systemId: five, source: 'srd51', campaignId }, ana.cookie)
+    expect(listed).toMatchObject({ editable: false, chapters: [{ title: 'El combate' }] })
+    const read = await ok200('getChapter', { chapterId: combat.id, campaignId }, ana.cookie)
+    expect(read.markdown).not.toContain('goblins')
+    expect(read.markdown).toContain('La iniciativa')
+    // El máster, desde la campaña, lo lee entero
+    expect((await ok200('getChapter', { chapterId: combat.id, campaignId })).markdown).toContain('goblins')
+
+    // Un libro que la campaña no eligió, ni la lista ni el capítulo
+    expect((await code('listBookChapters', { systemId: five, source: 'srd521', campaignId }, ana.cookie)).status).toBe(
+      404
+    )
+    expect((await code('getChapter', { chapterId: newer.id, campaignId }, ana.cookie)).status).toBe(404)
+    // Sin campaña, la jugadora no lee los del sistema; ni escribe ni borra
+    expect((await code('getChapter', { chapterId: combat.id }, ana.cookie)).status).toBe(404)
+    expect(
+      (await code('saveChapter', { systemId: five, source: 'srd51', title: 'Mío' }, ana.cookie)).status
+    ).toBeGreaterThanOrEqual(403)
+    expect((await code('deleteChapter', { chapterId: combat.id }, ana.cookie)).status).toBeGreaterThanOrEqual(403)
+    // Ni desde una campaña ajena
+    expect(
+      (await code('getChapter', { chapterId: combat.id, campaignId: crypto.randomUUID() }, ana.cookie)).status
+    ).toBe(404)
+  })
+
+  it('viajan con el sistema: exportar, importar, copiar y reemplazar', async () => {
+    const five = await import5e()
+    await ok200('saveChapter', { systemId: five, source: 'srd51', title: 'Uno', markdown: 'Primero.' })
+    await ok200('saveChapter', { systemId: five, source: 'srd51', title: 'Dos', markdown: 'Segundo.' })
+    await ok200('saveChapter', { systemId: five, source: 'srd521', title: 'Tres', markdown: 'Tercero.' })
+
+    const exported = await ok200('exportSystem', { systemId: five })
+    expect(exported.file.chapters).toEqual([
+      { source: 'srd51', title: 'Uno', markdown: 'Primero.' },
+      { source: 'srd51', title: 'Dos', markdown: 'Segundo.' },
+      { source: 'srd521', title: 'Tres', markdown: 'Tercero.' }
+    ])
+
+    const imported = (await ok200('importSystem', { file: exported.file })).system.id
+    expect(await titles(imported, 'srd51')).toEqual(['Uno', 'Dos'])
+    expect(await titles(imported, 'srd521')).toEqual(['Tres'])
+
+    const copy = (await ok200('createSystem', { name: 'Copia', from: five })).id
+    expect(await titles(copy, 'srd51')).toEqual(['Uno', 'Dos'])
+
+    // Importar encima de uno: sus capítulos pasan a ser los del archivo
+    await ok200('importSystem', {
+      file: { ...exported.file, chapters: [{ source: 'srd51', title: 'Solo', markdown: '' }] },
+      into: { systemId: imported, version: (await ok200('getSystem', { systemId: imported })).version }
+    })
+    expect(await titles(imported, 'srd51')).toEqual(['Solo'])
+    expect(await titles(imported, 'srd521')).toEqual([])
+
+    // Un capítulo de un libro que no está en el archivo no vale
+    expect(
+      await code('importSystem', {
+        file: { ...exported.file, chapters: [{ source: 'nada', title: 'X', markdown: '' }] }
+      })
+    ).toEqual({ status: 400, code: 'SYSTEM_INVALID' })
+  }, 90_000)
+})

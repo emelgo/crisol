@@ -1408,6 +1408,15 @@ export function fakeApi(
       })
 
   /** El sistema de una campaña, con lo que eligió y su contenido (en la falsa, el de los de la cuenta) */
+  const chapters: {
+    id: string
+    systemId: string
+    source: string
+    title: string
+    markdown: string
+    position: number
+    version: number
+  }[] = []
   const compendiumOf = (campaignId: string) => {
     // El compendio de un sistema sin campaña (su espacio): todos sus libros, las dos ediciones y nada del mundo
     if (campaignId.startsWith('sistema:')) {
@@ -3481,6 +3490,60 @@ export function fakeApi(
           }
         })
       }
+    },
+    // Los capítulos de un libro (ADR-0025), en memoria; a los jugadores no les llegan sus secretos
+    listBookChapters: ({ systemId, source, campaignId }) => ({
+      chapters: chapters
+        .filter((c) => c.systemId === systemId && c.source === source)
+        .sort((a, b) => a.position - b.position)
+        .map(({ id, source: book, title, position, version }) => ({ id, source: book, title, position, version })),
+      editable: !campaignId && ownSystems.some((s) => s.id === systemId && !s.deleted)
+    }),
+    getChapter: ({ chapterId, campaignId }) => {
+      const found = chapters.find((c) => c.id === chapterId)
+      if (!found) throw new ApiError('NOT_FOUND', 404)
+      const player = campaignId ? campaigns.find((c) => c.id === campaignId)?.role === 'player' : false
+      const markdown = player ? found.markdown.replace(/^>\s*\[!secreto\][^\n]*(\n>[^\n]*)*\n?/gim, '') : found.markdown
+      const { systemId: _, ...rest } = found
+      return { ...rest, markdown }
+    },
+    saveChapter: ({ systemId, source, chapterId, version, title, markdown }) => {
+      if (chapterId) {
+        const found = chapters.find((c) => c.id === chapterId)
+        if (!found) throw new ApiError('NOT_FOUND', 404)
+        if (found.version !== version) throw new ApiError('CHAPTER_CHANGED', 400)
+        Object.assign(found, {
+          ...(title !== undefined ? { title } : {}),
+          ...(markdown !== undefined ? { markdown } : {}),
+          version: found.version + 1
+        })
+        const { systemId: _, ...rest } = found
+        return rest
+      }
+      if (!title) throw new ApiError('TITLE_REQUIRED', 400)
+      const position = chapters.filter((c) => c.systemId === systemId && c.source === source).length
+      const made = { id: crypto.randomUUID(), systemId, source, title, markdown: markdown ?? '', position, version: 1 }
+      chapters.push(made)
+      const { systemId: _, ...rest } = made
+      return rest
+    },
+    orderChapters: ({ systemId, source, chapterIds }) => {
+      const own = chapters.filter((c) => c.systemId === systemId && c.source === source)
+      const order = [
+        ...chapterIds.filter((id) => own.some((c) => c.id === id)),
+        ...own.map((c) => c.id).filter((id) => !chapterIds.includes(id))
+      ]
+      for (const [position, id] of order.entries()) {
+        const found = chapters.find((c) => c.id === id)
+        if (found) found.position = position
+      }
+      return { chapterIds: order }
+    },
+    deleteChapter: ({ chapterId }) => {
+      const at = chapters.findIndex((c) => c.id === chapterId)
+      if (at < 0) throw new ApiError('NOT_FOUND', 404)
+      chapters.splice(at, 1)
+      return { ok: true as const }
     },
     getBookEntries: ({ systemId, source }) => {
       const document = systemById(systemId)

@@ -9,11 +9,16 @@ import { approve, getAiSettings, listApprovals, reject, setAiMode } from './ai.t
 import {
   createBook,
   deleteBook,
+  deleteChapter,
   getBookEntries,
+  getChapter,
   getSystemBooks,
   importBook,
+  listBookChapters,
   listPending,
+  orderChapters,
   proposeContent,
+  saveChapter,
   settlePending,
   updateBook
 } from './books.ts'
@@ -583,6 +588,11 @@ export const ACTIONS = [
   listPending,
   settlePending,
   getBookEntries,
+  listBookChapters,
+  getChapter,
+  saveChapter,
+  orderChapters,
+  deleteChapter,
   getTablePresence,
   importBook,
   setTableControls,
@@ -874,6 +884,11 @@ export type Actions = {
   listPending: typeof listPending
   settlePending: typeof settlePending
   getBookEntries: typeof getBookEntries
+  listBookChapters: typeof listBookChapters
+  getChapter: typeof getChapter
+  saveChapter: typeof saveChapter
+  orderChapters: typeof orderChapters
+  deleteChapter: typeof deleteChapter
   getTablePresence: typeof getTablePresence
   importBook: typeof importBook
   setTableControls: typeof setTableControls

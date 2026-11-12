@@ -475,6 +475,12 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   borrar_libro: { action: 'deleteBook' },
   proponer_contenido: { action: 'proposeContent' },
   ver_pendientes: { action: 'listPending' },
+  // Sus capítulos (ADR-0025): texto corrido en Markdown, en su orden
+  capitulos_libro: { action: 'listBookChapters' },
+  leer_capitulo: { action: 'getChapter' },
+  guardar_capitulo: { action: 'saveChapter' },
+  ordenar_capitulos: { action: 'orderChapters' },
+  borrar_capitulo: { action: 'deleteChapter' },
   // Las criaturas en juego de una campaña (del máster): ponerlas, su hoja, la partida, tirar, aplicar y quitarlas
   ver_en_juego: { action: 'listInPlay' },
   ver_criatura: { action: 'getInPlay' },

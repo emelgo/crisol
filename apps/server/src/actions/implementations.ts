@@ -2,6 +2,7 @@ import { actorFolderActions } from './actor-folders.ts'
 import { aiActions } from './ai.ts'
 import { bookActions } from './books.ts'
 import { campaignActions } from './campaigns.ts'
+import { chapterActions } from './chapters.ts'
 import { characterActions } from './characters.ts'
 import { combatActions } from './combat.ts'
 import { compendiumActions } from './compendium.ts'
@@ -77,6 +78,7 @@ export const IMPLEMENTATIONS: Implementation[] = [
   ...foundryActions,
   ...foundrySceneActions,
   ...compendiumActions,
+  ...chapterActions,
   ...worldContentActions,
   ...characterActions,
   ...creatureActions,

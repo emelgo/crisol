@@ -140,6 +140,12 @@ export function summaryOf(
         system: text(details.system),
         count: typeof details.count === 'number' ? details.count : 0
       })
+    // Los capítulos de un libro (ADR-0025)
+    case 'createChapter':
+    case 'updateChapter':
+    case 'deleteChapter':
+    case 'orderChapters':
+      return say(action, { title: text(details.title), book: text(details.book) })
     case 'settlePending':
       return say(action, {
         system: text(details.system),
