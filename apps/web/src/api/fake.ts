@@ -75,6 +75,7 @@ import {
   templateEmoji,
   uniqueTags
 } from '@crisol/domain'
+import { markdownWithoutSecrets } from '@crisol/editor/markdown'
 import {
   addCondition,
   applyChanges,
@@ -3503,7 +3504,7 @@ export function fakeApi(
       const found = chapters.find((c) => c.id === chapterId)
       if (!found) throw new ApiError('NOT_FOUND', 404)
       const player = campaignId ? campaigns.find((c) => c.id === campaignId)?.role === 'player' : false
-      const markdown = player ? found.markdown.replace(/^>\s*\[!secreto\][^\n]*(\n>[^\n]*)*\n?/gim, '') : found.markdown
+      const markdown = player ? markdownWithoutSecrets(found.markdown) : found.markdown
       const { systemId: _, ...rest } = found
       return { ...rest, markdown }
     },

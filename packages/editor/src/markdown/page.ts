@@ -172,3 +172,19 @@ export function pageFromMarkdown(text: string): ReadPage {
     separates: separates.map((found) => ({ ...found, content: found.content.map(safeLinks) }))
   }
 }
+
+/** Quita los secretos y las notas ocultas de un cuerpo, a cualquier profundidad */
+const withoutSeparates = (node: JSONContent): JSONContent =>
+  node.content
+    ? { ...node, content: node.content.filter((child) => !SEPARATE.has(child.type ?? '')).map(withoutSeparates) }
+    : node
+
+/**
+ * Un texto sin sus secretos (`> [!secreto]`) ni sus notas ocultas (`%%`): lo que lee quien no dirige (los capítulos de
+ * los libros, ADR-0025). Con el mismo analizador que el editor, no con una expresión regular, para que no se escape
+ * ninguno
+ */
+export function markdownWithoutSecrets(text: string): string {
+  const { body } = pageFromMarkdown(text)
+  return pageToMarkdown({ properties: [], body: withoutSeparates(body), separate: () => null }).trimEnd()
+}

@@ -1,12 +1,12 @@
 import { connect, schema } from '@crisol/db'
 import { freshTestDatabase, resetDatabase } from '@crisol/db/testing'
+import { markdownWithoutSecrets as withoutSecrets } from '@crisol/editor/markdown'
 import { exampleFile } from '@crisol/systems/examples'
 import type { FastifyInstance } from 'fastify'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { buildApp } from '../app.ts'
 import type { Auth } from '../auth/auth.ts'
 import { createTestAuth, signUpTestUser, TEST_SEAL_KEY } from '../testing.ts'
-import { withoutSecrets } from './chapters.ts'
 
 const BASE_URL = 'http://localhost:5173'
 const ok = async () => undefined
@@ -74,8 +74,10 @@ describe('los capítulos de los libros (ADR-0025)', () => {
     expect(withoutSecrets(COMBATE)).toBe(
       '# El combate\n\nCada asalto dura seis segundos.\n\n## La iniciativa\n\nTira 1d20 y suma tu Destreza.'
     )
-    expect(withoutSecrets('> [!nota] Ojo\n> Se queda')).toBe('> [!nota] Ojo\n> Se queda')
-    expect(withoutSecrets('> [!SECRETO]\n> fuera\nsigue')).toBe('sigue')
+    expect(withoutSecrets('> [!nota]\n> Se queda')).toBe('> [!nota]\n> Se queda')
+    expect(withoutSecrets('Antes\n\n%%\nSolo el máster\n%%\n\nDespués')).toBe('Antes\n\nDespués')
+    // Dentro de un recuadro, también
+    expect(withoutSecrets('> [!nota]\n> Visible\n>\n> > [!secreto]\n> > Oculto')).not.toContain('Oculto')
   })
 
   it('crear, cambiar con su versión, ordenar, borrar y deshacer', async () => {

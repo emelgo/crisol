@@ -12,28 +12,13 @@ import {
 } from '@crisol/contracts'
 import { chaptersRepo, systemsRepo } from '@crisol/db'
 import { can, NotFoundError } from '@crisol/domain'
+import { markdownWithoutSecrets } from '@crisol/editor/markdown'
 import { normalizeChoices, type System, textOf } from '@crisol/systems'
 import { systemsChanged } from '../realtime/events.ts'
 import { authorizedCampaign } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
 import { implement } from './registry.ts'
 import { findReadable, ownWritable, readableOrganization } from './systems.ts'
-
-/** Sin los bloques de llamada `> [!secreto]` (con sus líneas de dentro): lo que lee quien no dirige la campaña */
-export function withoutSecrets(markdown: string) {
-  const out: string[] = []
-  let hiding = false
-  for (const line of markdown.split('\n')) {
-    if (/^>\s*\[!secreto\]/i.test(line)) {
-      hiding = true
-      continue
-    }
-    if (hiding && line.startsWith('>')) continue
-    hiding = false
-    out.push(line)
-  }
-  return out.join('\n').replace(/\n{3,}/g, '\n\n')
-}
 
 const view = (row: chaptersRepo.ChapterRow, markdown = row.markdown): Chapter => ({
   id: row.id,
@@ -99,7 +84,7 @@ export const chapterActions = [
     // Sin campaña, desde su sistema: con la organización de este (quien tiene varias no tiene que decirla)
     const organizationId = campaignId ? undefined : (await systemsRepo.findSystem(ctx.db, row.systemId))?.organizationId
     const { master } = await readingScope(ctx, row.systemId, row.source, campaignId, organizationId)
-    return view(row, master ? row.markdown : withoutSecrets(row.markdown))
+    return view(row, master ? row.markdown : markdownWithoutSecrets(row.markdown))
   }),
 
   implement(saveChapter, async (ctx, { systemId, source, chapterId, version, title, markdown }) => {
