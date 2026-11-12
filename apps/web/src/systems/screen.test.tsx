@@ -310,12 +310,13 @@ describe('«Sistemas», en Mis mundos', () => {
     expect(after.find((book) => book.name === bookName)?.cover?.fileId).toBe(stored?.id)
   })
 
-  it('sus reglas: mientras no hay editor, se baja su archivo', async () => {
+  it('sus reglas: en «Lo avanzado» del editor se baja su archivo', async () => {
     localStorage.setItem('crisol.recorridos.enrique@crisol.test', JSON.stringify({ seen: ['sistemas', 'sistema'] }))
     const { api } = renderSystems(`/sistemas/${OWN.id}/reglas`)
     const created = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:x')
     expect(await screen.findByRole('heading', { level: 1, name: 'Reglas' })).toBeDefined()
-    await userEvent.click(screen.getByRole('button', { name: 'Bajar' }))
+    await userEvent.click(await screen.findByRole('button', { name: /Lo avanzado/ }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Bajar' }))
     await waitFor(() => expect(api.calls).toContain('exportSystem'))
     created.mockRestore()
   })
