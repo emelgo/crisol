@@ -107,6 +107,17 @@ describe('«Sistemas», en Mis mundos', () => {
     expect(await screen.findByRole('heading', { level: 2, name: '¿Qué tiene un personaje?' })).toBeDefined()
   })
 
+  it('a mano: «Cancelar» cierra sin crear nada', async () => {
+    const { api } = renderSystems()
+    await userEvent.click(await screen.findByRole('button', { name: 'Sistema nuevo' }))
+    const dialog = within(screen.getByRole('dialog', { name: 'Sistema nuevo' }))
+    await userEvent.click(dialog.getByRole('button', { name: /A mano/ }))
+    await userEvent.type(dialog.getByLabelText('Cómo se llama el juego'), 'Mazmorras de bolsillo')
+    await userEvent.click(dialog.getByRole('button', { name: 'Cancelar' }))
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Sistema nuevo' })).toBeNull())
+    expect(api.calls.includes('createSystem')).toBe(false)
+  })
+
   it('de un archivo: el roto dice qué falla y no se sube; el bueno, sí, y sale en los tuyos', async () => {
     const { api, router } = renderSystems()
     await userEvent.click(await screen.findByRole('button', { name: 'Sistema nuevo' }))
