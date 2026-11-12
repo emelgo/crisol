@@ -264,6 +264,20 @@ function BodyEditor({
       pickFile: (editor) => {
         pickingFor.current = editor
         filePicker.current?.click()
+      },
+      canNewEntry: () => Boolean(links.current?.newEntry),
+      newEntry: (editor) => {
+        const at = editor.state.selection.from
+        links.current?.newEntry?.('', (saved) =>
+          editor
+            .chain()
+            .focus()
+            .insertContentAt(at, [
+              { type: 'contentLink', attrs: { name: saved } },
+              { type: 'text', text: ' ' }
+            ])
+            .run()
+        )
       }
     }),
     [api, pageId]

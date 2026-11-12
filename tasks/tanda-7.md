@@ -16,7 +16,7 @@ capturas de antes y después; Enrique revisa las tandas juntas.
 - [x] 4. **Incrustar una entrada** en una página o un capítulo (`![[@Nombre]]`: su ficha), además del enlace; si el
   mundo tiene campañas con sistemas distintos, o ninguna, pregunta de cuál y lo recuerda. **Prueba de fugas**: una
   jugadora solo ve la ficha si su campaña ve esa entrada.
-- [ ] 5. **«Entrada nueva del compendio» desde el mundo** («/» y al final de las sugerencias de `[[@`), en ventana
+- [x] 5. **«Entrada nueva del compendio» desde el mundo** («/» y al final de las sugerencias de `[[@`), en ventana
   flotante: el gestor de ventanas de la Mesa (`tabletop/windows.tsx`) pasa a `components/` y se monta en el mundo.
 - [x] 6. **Los dados salen de la wiki**: dejar de ofrecer `dice:` → convertir los que haya a texto en código (al cargar
   y al restaurar versiones) → barrido → quitar el nodo (`packages/editor/src/nodes/dice-roll.ts`, su vista, i18n, MCP,

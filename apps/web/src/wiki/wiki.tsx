@@ -37,6 +37,7 @@ import { ExportPage, ExportWiki } from './export.tsx'
 import { PageIcon } from './icon.tsx'
 import { MapTab } from './map/map-tab.tsx'
 import { BookmarkButton, Bookmarks, OpenTabs } from './navigation.tsx'
+import { WorldWindows } from './new-entry.tsx'
 import { NewPageContext, NewPageDialog, type NewPageRequest } from './new-page.tsx'
 import { useWikiPanel } from './panel.tsx'
 import panelStyles from './panel-blocks.module.css'
@@ -116,98 +117,101 @@ export function WikiLayout({
   }
 
   return (
-    <NewPageContext.Provider value={requestNewPage}>
-      <WorldTour master />
-      <div ref={root} className={styles.wiki}>
-        <aside
-          id={asideId}
-          className={styles.aside}
-          data-open={open || undefined}
-          aria-labelledby={headingId}
-          onKeyDown={(event) => {
-            if (event.key === 'Escape' && open) close(true)
-          }}
-        >
-          <div className={styles.asideHeader}>
-            {/* Lo de la vista elegida en la barra: el mundo (sus páginas), las plantillas o los archivos */}
-            <h2 id={headingId}>{world.name}</h2>
-            {panel === 'pages' && <ExportWiki worldId={worldId} className={styles.newPageIcon} />}
-            {panel === 'pages' && (
+    // Sus ventanas flotantes (una entrada nueva del compendio, revisión tanda 7), por encima de la página
+    <WorldWindows worldId={worldId}>
+      <NewPageContext.Provider value={requestNewPage}>
+        <WorldTour master />
+        <div ref={root} className={styles.wiki}>
+          <aside
+            id={asideId}
+            className={styles.aside}
+            data-open={open || undefined}
+            aria-labelledby={headingId}
+            onKeyDown={(event) => {
+              if (event.key === 'Escape' && open) close(true)
+            }}
+          >
+            <div className={styles.asideHeader}>
+              {/* Lo de la vista elegida en la barra: el mundo (sus páginas), las plantillas o los archivos */}
+              <h2 id={headingId}>{world.name}</h2>
+              {panel === 'pages' && <ExportWiki worldId={worldId} className={styles.newPageIcon} />}
+              {panel === 'pages' && (
+                <button
+                  type="button"
+                  className={styles.newPageIcon}
+                  aria-label={t('wiki.newPage')}
+                  title={t('wiki.newPage')}
+                  aria-haspopup="dialog"
+                  onClick={() => requestNewPage(null)}
+                >
+                  <Plus aria-hidden="true" size={16} />
+                </button>
+              )}
               <button
                 type="button"
-                className={styles.newPageIcon}
-                aria-label={t('wiki.newPage')}
-                title={t('wiki.newPage')}
-                aria-haspopup="dialog"
-                onClick={() => requestNewPage(null)}
+                ref={closeButton}
+                className={`${list.secondary} ${styles.close}`}
+                onClick={() => close(true)}
               >
-                <Plus aria-hidden="true" size={16} />
+                {t('wiki.closePages')}
               </button>
-            )}
-            <button
-              type="button"
-              ref={closeButton}
-              className={`${list.secondary} ${styles.close}`}
-              onClick={() => close(true)}
-            >
-              {t('wiki.closePages')}
-            </button>
-          </div>
-          {/* El buscador, fijo en su sitio en cada vista, con lo suyo */}
-          <PageFilter
-            label={t('wiki.filter')}
-            value={filter}
-            onChange={setFilter}
-            // En las páginas, Intro busca dentro del texto de todas
-            {...(panel === 'pages'
-              ? {
-                  onSearch: (q: string) => {
-                    close(false)
-                    void navigate({ to: '/mundos/$worldId/buscar', params: { worldId }, search: { q } })
+            </div>
+            {/* El buscador, fijo en su sitio en cada vista, con lo suyo */}
+            <PageFilter
+              label={t('wiki.filter')}
+              value={filter}
+              onChange={setFilter}
+              // En las páginas, Intro busca dentro del texto de todas
+              {...(panel === 'pages'
+                ? {
+                    onSearch: (q: string) => {
+                      close(false)
+                      void navigate({ to: '/mundos/$worldId/buscar', params: { worldId }, search: { q } })
+                    }
                   }
-                }
-              : {})}
-          />
-          {panel === 'pages' && (
-            <>
-              {filter.trim() ? (
-                <FilteredPages
-                  worldId={worldId}
-                  query={filter}
-                  currentId={current?.id}
-                  onNavigate={() => close(false)}
-                />
-              ) : (
-                <PageTree
-                  worldId={worldId}
-                  currentId={current?.id}
-                  path={current?.path}
-                  onNavigate={() => close(false)}
-                />
-              )}
-              <OpenTabs worldId={worldId} current={current} compact />
-              {/* Los marcadores, debajo del árbol */}
-              <div className={styles.asideBookmarks}>
-                <Bookmarks worldId={worldId} onNavigate={() => close(false)} />
-              </div>
-            </>
+                : {})}
+            />
+            {panel === 'pages' && (
+              <>
+                {filter.trim() ? (
+                  <FilteredPages
+                    worldId={worldId}
+                    query={filter}
+                    currentId={current?.id}
+                    onNavigate={() => close(false)}
+                  />
+                ) : (
+                  <PageTree
+                    worldId={worldId}
+                    currentId={current?.id}
+                    path={current?.path}
+                    onNavigate={() => close(false)}
+                  />
+                )}
+                <OpenTabs worldId={worldId} current={current} compact />
+                {/* Los marcadores, debajo del árbol */}
+                <div className={styles.asideBookmarks}>
+                  <Bookmarks worldId={worldId} onNavigate={() => close(false)} />
+                </div>
+              </>
+            )}
+          </aside>
+          <QuickSwitcher worldId={worldId} onCreatePage={() => requestNewPage(null)} />
+          <div className={styles.content}>
+            <OpenTabs worldId={worldId} current={current} />
+            <CollabSocket>{children(world)}</CollabSocket>
+          </div>
+          {creating && (
+            <NewPageDialog
+              key={creating.n}
+              worldId={worldId}
+              parent={creating.parent}
+              onClose={() => setCreating(null)}
+            />
           )}
-        </aside>
-        <QuickSwitcher worldId={worldId} onCreatePage={() => requestNewPage(null)} />
-        <div className={styles.content}>
-          <OpenTabs worldId={worldId} current={current} />
-          <CollabSocket>{children(world)}</CollabSocket>
         </div>
-        {creating && (
-          <NewPageDialog
-            key={creating.n}
-            worldId={worldId}
-            parent={creating.parent}
-            onClose={() => setCreating(null)}
-          />
-        )}
-      </div>
-    </NewPageContext.Provider>
+      </NewPageContext.Provider>
+    </WorldWindows>
   )
 }
 

@@ -16,6 +16,7 @@ import { useApi } from '../api/context.tsx'
 import { TemplateIcon } from '../templates/icons.tsx'
 import { useTemplates } from '../templates/picker.tsx'
 import { type LinkableContent, type PageLinks, PageLinksContext, type WorldFile } from './links-context.ts'
+import { useNewEntry } from './new-entry.tsx'
 import styles from './page-links.module.css'
 import { LinkPreview } from './preview.tsx'
 import { useReadAs } from './read-as.tsx'
@@ -27,6 +28,8 @@ export { type PageLinks, PageLinksContext, type WorldFile } from './links-contex
 export function usePageLinks(worldId: string, enabled = true): PageLinks {
   const api = useApi()
   const queryClient = useQueryClient()
+  // «Entrada nueva del compendio», en su ventana (solo en la wiki del mundo, donde están sus ventanas)
+  const newEntry = useNewEntry()
   const { data } = useQuery({
     queryKey: ['pages', worldId, 'names'],
     queryFn: () => api.call('listPageNames', { worldId }),
@@ -43,6 +46,7 @@ export function usePageLinks(worldId: string, enabled = true): PageLinks {
     names,
     files: files.data?.files ?? [],
     byId: new Map(names.map((page) => [page.id, page])),
+    ...(newEntry ? { newEntry } : {}),
     searchContent: (query) =>
       api
         .call('searchLinkableContent', { worldId, query, limit: 8 })
@@ -316,6 +320,7 @@ type LinkChoice =
   | { kind: 'create'; title: string }
   | { kind: 'file'; file: WorldFile }
   | { kind: 'content'; content: LinkableContent }
+  | { kind: 'newEntry'; name: string }
 
 export interface LinkSuggestOptions {
   /** Las páginas de ahora (cambian mientras el editor sigue abierto) */
@@ -347,7 +352,13 @@ export const LinkSuggest = Extension.create<LinkSuggestOptions>({
           // `[[@`: lo del compendio (del mundo y de los sistemas de sus campañas), que busca el servidor
           if (char === '[[' && query.startsWith('@'))
             return (current?.searchContent?.(query.slice(1).replace(/\]+$/, '').trim()) ?? Promise.resolve([])).then(
-              (found) => found.map((content): LinkChoice => ({ kind: 'content', content }))
+              (found): LinkChoice[] => [
+                ...found.map((content): LinkChoice => ({ kind: 'content', content })),
+                // Al final, crearla (con lo escrito) en una ventana, sin dejar la página
+                ...(current?.newEntry
+                  ? [{ kind: 'newEntry', name: query.slice(1).replace(/\]+$/, '').trim() } as const]
+                  : [])
+              ]
             )
           // `![[`: el «!» va justo antes de los corchetes
           const start = editor.state.selection.from - query.length - 2
@@ -414,6 +425,26 @@ export const LinkSuggest = Extension.create<LinkSuggestOptions>({
               ])
               .run()
             announce(choice.file.name)
+          } else if (choice.kind === 'newEntry') {
+            // Se quita lo escrito y, al guardarla, su enlace (o su ficha, con «!») va donde estaba
+            const at = embed ? range.from - 1 : range.from
+            editor.chain().focus().deleteRange({ from: at, to: range.to }).run()
+            links()?.newEntry?.(choice.name, (saved) => {
+              editor
+                .chain()
+                .focus()
+                .insertContentAt(
+                  at,
+                  embed
+                    ? [{ type: 'contentEmbed', attrs: { name: saved, system: null } }]
+                    : [
+                        { type: 'contentLink', attrs: { name: saved } },
+                        { type: 'text', text: ' ' }
+                      ]
+                )
+                .run()
+              announce(saved)
+            })
           } else if (choice.kind === 'page') insert(choice.page.id, choice.page.title)
           else
             void links()
@@ -458,7 +489,9 @@ const keyOf = (choice: LinkChoice) =>
       ? `archivo:${choice.file.id}`
       : choice.kind === 'content'
         ? `contenido:${choice.content.systemId}:${choice.content.key}`
-        : `crear:${choice.title}`
+        : choice.kind === 'newEntry'
+          ? `entrada-nueva:${choice.name}`
+          : `crear:${choice.title}`
 
 const LinkList = forwardRef<ListHandle, LinkListProps>(function LinkList({ items, command, editor }, ref) {
   const { t } = useTranslation()
@@ -554,6 +587,11 @@ const LinkList = forwardRef<ListHandle, LinkListProps>(function LinkList({ items
                       ? choice.page.path.slice(0, -1).join(' / ')
                       : ''}
                 </span>
+              </>
+            ) : choice.kind === 'newEntry' ? (
+              <>
+                <span>{choice.name ? t('links.newEntryNamed', { name: choice.name }) : t('links.newEntry')}</span>
+                <span className={menu.hint}>{t('links.newEntryHint')}</span>
               </>
             ) : (
               <span>{t('links.create', { title: choice.title })}</span>

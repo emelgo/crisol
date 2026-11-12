@@ -1,0 +1,25 @@
+/* Las ventanas del mundo: una capa fija sobre todo, que solo recoge el ratón en las ventanas */
+.layer {
+  position: fixed;
+  inset: 0;
+  /* Por encima de lo que flota en la página (el asa del bloque, los menús del editor) */
+  z-index: 2050;
+  pointer-events: none;
+}
+
+.layer > * {
+  pointer-events: auto;
+}
+
+.note {
+  margin: 0;
+  padding: var(--space-4);
+  color: var(--color-muted);
+}
+
+/* Sobre la página, de cristal tapado como un cuadro (en la Mesa, sobre el mapa, son más transparentes) */
+.layer [data-window] {
+  background: var(--frame-sheen), var(--popup-glass);
+  -webkit-backdrop-filter: var(--popup-blur);
+  backdrop-filter: var(--popup-blur);
+}

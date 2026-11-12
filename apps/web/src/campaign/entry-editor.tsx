@@ -98,6 +98,8 @@ export function EntryEditor({
   language,
   item,
   source = null,
+  initialName = '',
+  inWindow = false,
   onSaved,
   onClose
 }: {
@@ -109,6 +111,10 @@ export function EntryEditor({
   language: Language
   /** La que se cambia; sin ella, una nueva */
   item: Item | null
+  /** El nombre de una nueva, ya escrito (lo que se buscaba con `[[@`) */
+  initialName?: string
+  /** En una ventana flotante (desde el mundo, revisión tanda 7), no en un cuadro: se sigue escribiendo la página */
+  inWindow?: boolean
   onSaved: (key: string) => void
   onClose: () => void
 }) {
@@ -126,7 +132,7 @@ export function EntryEditor({
   const types = target?.types ?? []
   const [typeKey, setTypeKey] = useState(item?.type ?? types[0]?.key ?? '')
   const type = types.find((each) => each.key === typeKey)
-  const [name, setName] = useState(item ? textOf(item.data.name as Text, language) : '')
+  const [name, setName] = useState(item ? textOf(item.data.name as Text, language) : initialName)
   const [values, setValues] = useState<Record<string, Value>>(() =>
     Object.fromEntries(
       (types.find((each) => each.key === item?.type)?.fields ?? []).map((field) => [
@@ -195,10 +201,120 @@ export function EntryEditor({
           : [])
       ])
       onSaved(key)
-      dialog.current?.close()
+      if (inWindow) onClose()
+      else dialog.current?.close()
     }
   })
   const set = (key: string, value: Value) => setValues((all) => ({ ...all, [key]: value }))
+  const form = (
+    <form
+      className={dialogStyles.body}
+      onSubmit={(event) => {
+        event.preventDefault()
+        save.mutate()
+      }}
+    >
+      {/* En una ventana, el título ya va en su cabecera */}
+      <h2 id={titleId} className={inWindow ? styles.hiddenTitle : undefined}>
+        {item ? t('compendium.editTitle', { name }) : t('compendium.newTitle')}
+      </h2>
+      {!item && targets.length > 1 && (
+        <div className={formStyles.field}>
+          <label htmlFor={whereId}>{t('compendium.where')}</label>
+          <select
+            id={whereId}
+            value={where}
+            onChange={(event) => {
+              const next = Number(event.currentTarget.value)
+              setWhere(next)
+              // El tipo, si el otro sitio no lo tiene, el primero suyo
+              const kinds = targets[next]?.types ?? []
+              if (!kinds.some((each) => each.key === typeKey)) {
+                setTypeKey(kinds[0]?.key ?? '')
+                setValues({})
+              }
+            }}
+          >
+            {targets.map((each, i) => (
+              <option key={each.layer} value={i}>
+                {each.layer === 'world' ? t('compendium.whereWorld') : t('compendium.whereSystem')}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+      {!item && (
+        <div className={formStyles.field}>
+          <label htmlFor={typeId}>{t('compendium.type')}</label>
+          <select
+            id={typeId}
+            value={typeKey}
+            onChange={(event) => {
+              setTypeKey(event.currentTarget.value)
+              setValues({})
+            }}
+          >
+            {types.map((each) => (
+              <option key={each.key} value={each.key}>
+                {each.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+      <Field
+        label={t('compendium.name')}
+        value={name}
+        required
+        maxLength={200}
+        autoComplete="off"
+        data-1p-ignore
+        data-lpignore="true"
+        data-form-type="other"
+        data-autofocus=""
+        onChange={(event) => setName(event.currentTarget.value)}
+      />
+      {type && type.fields.length > 0 && (
+        <div className={styles.fields}>
+          {type.fields.map((field) => (
+            <FieldInput
+              key={`${type.key}-${field.key}`}
+              field={field}
+              value={values[field.key] ?? initialValue(field, undefined, language)}
+              onChange={(value) => set(field.key, value)}
+            />
+          ))}
+        </div>
+      )}
+      {type?.text && (
+        <div className={formStyles.field}>
+          <label htmlFor={textId}>{t('compendium.text')}</label>
+          <textarea
+            id={textId}
+            className={styles.text}
+            rows={type.key === TABLE_TYPE ? 4 : 12}
+            value={text}
+            onChange={(event) => setText(event.currentTarget.value)}
+          />
+        </div>
+      )}
+      {type?.key === TABLE_TYPE && <TableRowsField table={table} onChange={setTable} />}
+      <FormError message={save.error ? errorText(save.error) : null} />
+      <div className={dialogStyles.actions}>
+        <BusyButton type="submit" className={formStyles.button} busy={save.isPending} disabled={blocked}>
+          {t('compendium.save')}
+        </BusyButton>
+        <button
+          type="button"
+          className={dialogStyles.cancel}
+          onClick={() => (inWindow ? onClose() : dialog.current?.close())}
+        >
+          {t('compendium.cancel')}
+        </button>
+      </div>
+    </form>
+  )
+  if (inWindow) return <div className={styles.inWindow}>{form}</div>
   return (
     <Modal
       ref={dialog}
@@ -206,105 +322,7 @@ export function EntryEditor({
       className={`${dialogStyles.dialog} ${styles.dialog}`}
       onClose={onClose}
     >
-      <form
-        className={dialogStyles.body}
-        onSubmit={(event) => {
-          event.preventDefault()
-          save.mutate()
-        }}
-      >
-        <h2 id={titleId}>{item ? t('compendium.editTitle', { name }) : t('compendium.newTitle')}</h2>
-        {!item && targets.length > 1 && (
-          <div className={formStyles.field}>
-            <label htmlFor={whereId}>{t('compendium.where')}</label>
-            <select
-              id={whereId}
-              value={where}
-              onChange={(event) => {
-                const next = Number(event.currentTarget.value)
-                setWhere(next)
-                // El tipo, si el otro sitio no lo tiene, el primero suyo
-                const kinds = targets[next]?.types ?? []
-                if (!kinds.some((each) => each.key === typeKey)) {
-                  setTypeKey(kinds[0]?.key ?? '')
-                  setValues({})
-                }
-              }}
-            >
-              {targets.map((each, i) => (
-                <option key={each.layer} value={i}>
-                  {each.layer === 'world' ? t('compendium.whereWorld') : t('compendium.whereSystem')}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-        {!item && (
-          <div className={formStyles.field}>
-            <label htmlFor={typeId}>{t('compendium.type')}</label>
-            <select
-              id={typeId}
-              value={typeKey}
-              onChange={(event) => {
-                setTypeKey(event.currentTarget.value)
-                setValues({})
-              }}
-            >
-              {types.map((each) => (
-                <option key={each.key} value={each.key}>
-                  {each.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-        <Field
-          label={t('compendium.name')}
-          value={name}
-          required
-          maxLength={200}
-          autoComplete="off"
-          data-1p-ignore
-          data-lpignore="true"
-          data-form-type="other"
-          data-autofocus=""
-          onChange={(event) => setName(event.currentTarget.value)}
-        />
-        {type && type.fields.length > 0 && (
-          <div className={styles.fields}>
-            {type.fields.map((field) => (
-              <FieldInput
-                key={`${type.key}-${field.key}`}
-                field={field}
-                value={values[field.key] ?? initialValue(field, undefined, language)}
-                onChange={(value) => set(field.key, value)}
-              />
-            ))}
-          </div>
-        )}
-        {type?.text && (
-          <div className={formStyles.field}>
-            <label htmlFor={textId}>{t('compendium.text')}</label>
-            <textarea
-              id={textId}
-              className={styles.text}
-              rows={type.key === TABLE_TYPE ? 4 : 12}
-              value={text}
-              onChange={(event) => setText(event.currentTarget.value)}
-            />
-          </div>
-        )}
-        {type?.key === TABLE_TYPE && <TableRowsField table={table} onChange={setTable} />}
-        <FormError message={save.error ? errorText(save.error) : null} />
-        <div className={dialogStyles.actions}>
-          <BusyButton type="submit" className={formStyles.button} busy={save.isPending} disabled={blocked}>
-            {t('compendium.save')}
-          </BusyButton>
-          <button type="button" className={dialogStyles.cancel} onClick={() => dialog.current?.close()}>
-            {t('compendium.cancel')}
-          </button>
-        </div>
-      </form>
+      {form}
     </Modal>
   )
 }

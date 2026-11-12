@@ -31,6 +31,10 @@ export interface BlockContext {
   makeSeparate: (editor: Editor, kind: SeparateKind) => Promise<void>
   /** Elige un archivo del equipo, lo sube y lo pone donde está el cursor */
   pickFile?: (editor: Editor) => void
+  /** «Entrada nueva del compendio», en una ventana; al guardarla, su enlace donde está el cursor (solo en el mundo) */
+  newEntry?: (editor: Editor) => void
+  /** Si se puede ahora (sus ventanas están montadas) */
+  canNewEntry?: () => boolean
 }
 
 const callout = (kind: CalloutKind, label: BlockText, hint: BlockText, keywords: string): BlockChoice => ({
@@ -175,6 +179,17 @@ export const BLOCKS: readonly BlockChoice[] = [
     run: (editor) => {
       editor.chain().focus().insertContent('![[@').run()
     }
+  },
+  // Una entrada nueva del compendio del mundo, en una ventana, sin dejar la página (revisión, tanda 7)
+  {
+    id: 'newEntry',
+    group: 'wiki',
+    label: 'newEntry',
+    hint: 'newEntryHint',
+    keywords: 'entrada compendio nueva crear criatura objeto conjuro',
+    convert: false,
+    bodyOnly: true,
+    run: (editor, context) => context.newEntry?.(editor)
   },
   // Una imagen o un archivo: uno del equipo (se sube); los del mundo, con `![[`
   {
