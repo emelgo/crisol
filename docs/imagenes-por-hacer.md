@@ -103,3 +103,20 @@ dorado). Cada una sustituye a la de su nombre sin tocar código.
 > que ser tranquilo (cielo o bruma con pocas pinceladas), porque encima irá un recuadro de texto; lo interesante va a
 > los lados y en el tercio de abajo. Sin texto, letras, firmas ni marcas de agua, y sin marco: la pintura llega hasta
 > los bordes.
+
+## Pantalla vacía de los capítulos (tanda 7)
+
+Sale cuando un libro aún no tiene capítulos (hoy, provisionalmente, la de Sistemas). Va en
+`datos-locales/imagenes/vacio-capitulos.png`.
+
+**vacio-capitulos · Un libro abierto, sin escribir**
+
+> Haz una imagen cuadrada de 1024 × 1024 píxeles, en PNG con fondo transparente: una pintura digital de fantasía épica
+> estilizada, como el arte de un videojuego de fantasía de estilo pintado: formas simplificadas, grandes masas de color,
+> pinceladas amplias y seguras, poco detalle menudo, una paleta armoniosa y contenida, sin colores chillones ni neón;
+> nada realista ni fotográfico. Sin hojas rojas ni ramas que enmarquen la imagen por las esquinas. La luz: la de una
+> mañana nublada que entra de lado, fría y suave, con sombras grises azuladas. La escena: sobre un atril de madera
+> oscura, un libro grande abierto con las páginas en blanco, dos cintas de marcapáginas colgando, una pluma apoyada en
+> el pliegue y un tintero de cristal verde a su lado. Es una ilustración pequeña y aislada, sin escenario detrás: todo
+> agrupado en el centro, visto un poco desde arriba, y los bordes del dibujo se deshacen en pinceladas sueltas hacia la
+> transparencia, sin rectángulo ni sombra de fondo. Sin texto, letras, firmas ni marcas de agua.

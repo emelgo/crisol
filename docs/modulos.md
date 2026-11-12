@@ -7,6 +7,25 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
+### Para retomar (2026-11-12, noche: tanda 7, libros de texto, a medias en local)
+
+- Rama `revision/tanda-7` (sobre la 6, sin subir), plan en `tasks/tanda-7.md`. **Migración 0080** (`system_chapters`),
+  ya aplicada a la base local.
+- Hecho (porciones 1 a 3): los capítulos de los libros (ADR-0025): tabla, acciones, MCP (`capitulos_libro`,
+  `leer_capitulo`, `guardar_capitulo`, `ordenar_capitulos`, `borrar_capitulo`), viajan con el archivo del sistema; a
+  quien no dirige no le llegan los secretos ni las notas ocultas (`markdownWithoutSecrets`, con el analizador del
+  editor). El lector (`apps/web/src/books/`): «Capítulos · Entradas» en el libro por dentro, índice que sigue la
+  lectura, anterior y siguiente, «Ir a…» en el móvil; el dueño escribe en el sitio con el editor de bloques (secretos
+  en memoria, abrirlo no lo cambia); en la campaña, «Leer · N capítulos» desde el compendio y la ficha del libro. Las
+  acciones de una entrada se tiran (`rollContentAction`, `tirar_accion_compendio`): una criatura con su hoja, lo demás
+  con un personaje. Las ventanas flotantes, ya en `components/windows.tsx`.
+- Pruebas: web 827; servidor (capítulos, tiradas de entradas, libros, compendio) en verde; e2e `capitulos`,
+  `acciones-compendio`, libros, sistemas, compendio y accesibilidad en verde.
+- **Siguiente**: porciones 4 (incrustar una entrada `![[@Nombre]]`, con su prueba de fugas; los enlaces `[[@…]]` de un
+  capítulo, que hoy se buscan en el mundo), 5 («Entrada nueva del compendio» desde el mundo, en ventana flotante), 6
+  (los dados fuera de la wiki) y 7 (crítica, audit y página de revisión). Hace falta la imagen `vacio-capitulos`
+  (hoy, la de Sistemas).
+
 ### Para retomar (2026-11-12, tarde: tanda 6, sistemas, terminada en local; falta su visto bueno)
 
 - Rama `revision/tanda-6` (sobre la 5, sin subir), plan en `tasks/tanda-6.md` (7 porciones hechas). Sin migraciones.
