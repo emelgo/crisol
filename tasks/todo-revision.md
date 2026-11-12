@@ -269,3 +269,7 @@ Lo que sale sin estar en la lista: se avisa a Enrique y se arregla en su tanda.
   va». Que mover un capítulo lleve a él (lo vio el agente de pruebas, tanda 7).
 - [ ] Editor de sistemas: la ficha de ejemplo, con la maqueta del paso 4 (cabecera, columnas, pestañas); ordenar
   arrastrando (seis puntos y Alt+flechas) como en las plantillas; el «?» con `useDismiss` (audit, tanda 8).
+- [ ] **Las e2e en la CI** (PR #118, 2026-11-12, fusionado así con el visto bueno de Enrique): pasan 120 y fallan 4
+  por tiempo agotado solo allí (bloques: el menú «Borrar»; dados:18 y herramientas: la página se queda bloqueada en
+  la Mesa, axe no acaba y un botón nunca está «estable»; visión: tras reiniciar la niebla, el grupo sigue viendo).
+  Ya iban sin desenfoque. Fallan a ratos desde el 2026-11-10. Trazas en el artefacto `trazas-e2e` de la CI.
