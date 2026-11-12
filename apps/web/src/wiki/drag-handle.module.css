@@ -148,3 +148,9 @@
   -webkit-backdrop-filter: var(--glass-blur);
   backdrop-filter: var(--glass-blur);
 }
+
+/* Con una ventana abierta sobre la página (una entrada nueva del compendio), el asa no se asoma por encima de ella */
+:global(body:has([data-ventanas-mundo] [data-window])) .handle,
+:global(body:has([data-ventanas-mundo] [data-window])) .grip {
+  visibility: hidden;
+}

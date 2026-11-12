@@ -118,7 +118,9 @@ export function ContentCard({
           {entry.world ? t('contentLink.world', { type: entry.typeLabel }) : entry.typeLabel}
         </span>
         {entry.lines.length > 0 && (
-          <span className={styles.lines}>{entry.lines.map((line) => `${line.label} ${line.value}`).join(' · ')}</span>
+          <span className={styles.lines}>
+            {entry.lines.map((line) => `${line.label} ${line.value.replace('.', ',')}`).join(' · ')}
+          </span>
         )}
         {href && (
           <Link to={href} className={styles.open}>

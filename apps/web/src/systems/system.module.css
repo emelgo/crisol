@@ -320,3 +320,11 @@
   -webkit-backdrop-filter: var(--frame-blur);
   backdrop-filter: var(--frame-blur);
 }
+
+/* En el móvil, la vuelta va encima del título, no pegada a él */
+@media (max-width: 48rem) {
+  .back {
+    position: static;
+    margin: var(--space-3) var(--space-4) 0;
+  }
+}

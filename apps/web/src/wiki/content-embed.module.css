@@ -80,10 +80,14 @@ span.name {
 .open {
   flex: none;
   margin-inline-start: auto;
-  color: var(--color-link);
+  padding-block: 4px;
+  color: var(--color-muted);
   font-size: 0.8125rem;
-  font-weight: 600;
   text-underline-offset: 3px;
+}
+
+.open:hover {
+  color: var(--color-link);
 }
 
 .open:focus-visible {

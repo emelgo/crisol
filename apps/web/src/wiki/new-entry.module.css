@@ -17,7 +17,7 @@
   color: var(--color-muted);
 }
 
-/* Sobre la página, de cristal tapado como un cuadro (en la Mesa, sobre el mapa, son más transparentes) */
+/* Sobre la página, de cristal tapado, como los cuadros (Enrique: «recuerda el estilo cristal») */
 .layer [data-window] {
   background: var(--frame-sheen), var(--popup-glass);
   -webkit-backdrop-filter: var(--popup-blur);

@@ -13,7 +13,7 @@ import {
   BookOpen,
   ChevronRight,
   Copy,
-  Dices,
+  Dice5,
   Globe,
   Pencil,
   Plus,
@@ -1447,7 +1447,7 @@ export function InPlay({ play, titleId, rolling }: { play: PlayText; titleId: st
                           if (!roll.isPending && row.action) roll.mutate({ key: row.action, part })
                         }}
                       >
-                        <Dices size={14} aria-hidden="true" />
+                        <Dice5 size={14} aria-hidden="true" />
                         {t(`compendium.roll.${part}`)}
                       </button>
                     ))}

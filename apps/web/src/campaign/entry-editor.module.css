@@ -47,7 +47,7 @@
 
 /* En una ventana flotante (desde el mundo): sin el marco del cuadro, a lo ancho de la ventana */
 .inWindow {
-  padding: var(--space-4);
+  padding: var(--space-4) var(--space-4) var(--space-6);
 }
 
 .inWindow form {

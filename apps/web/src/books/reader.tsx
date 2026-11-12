@@ -268,6 +268,7 @@ export function BookReader({
               chapters={chapters}
               currentId={currentId}
               sections={sections}
+              active={active}
               onChapter={onChapter}
               onSection={goToSection}
             />
@@ -326,12 +327,15 @@ function GoTo({
   chapters,
   currentId,
   sections,
+  active,
   onChapter,
   onSection
 }: {
   chapters: readonly ChapterSummary[]
   currentId: string | null
   sections: readonly Section[]
+  /** La sección que se está leyendo (−1, ninguna): el desplegable dice dónde se está */
+  active: number
   onChapter: (id: string) => void
   onSection: (index: number) => void
 }) {
@@ -339,10 +343,12 @@ function GoTo({
   const id = useId()
   return (
     <div className={styles.goTo}>
-      <label htmlFor={id}>{t('chapters.goTo')}</label>
+      <label htmlFor={id} className={styles.hidden}>
+        {t('chapters.goTo')}
+      </label>
       <select
         id={id}
-        value=""
+        value={active >= 0 ? `s:${active}` : currentId ? `c:${currentId}` : ''}
         onChange={(event) => {
           const [kind, value] = event.currentTarget.value.split(':')
           if (kind === 'c' && value) onChapter(value)

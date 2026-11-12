@@ -31,7 +31,7 @@ export function WorldWindows({ worldId, children }: { worldId: string; children:
   return (
     <WindowsProvider area={layer}>
       <NewEntryProvider worldId={worldId}>{children}</NewEntryProvider>
-      <div ref={layer} className={styles.layer}>
+      <div ref={layer} className={styles.layer} data-ventanas-mundo="">
         <WindowLayer />
       </div>
     </WindowsProvider>
@@ -47,7 +47,7 @@ function NewEntryProvider({ worldId, children }: { worldId: string; children: Re
         id: WINDOW,
         title: t('compendium.newTitle'),
         width: 460,
-        height: 640,
+        height: 500,
         render: () => <NewEntryWindow worldId={worldId} name={name} done={done} />
       }),
     [windows, worldId, t]

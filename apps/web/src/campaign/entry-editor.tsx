@@ -5,7 +5,7 @@
  */
 import { type Language, TABLE_TYPE, type TableEntry, type Text, textOf } from '@crisol/systems'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useId, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ActionOutput } from '../api/client.ts'
 import { useApi } from '../api/context.tsx'
@@ -206,8 +206,16 @@ export function EntryEditor({
     }
   })
   const set = (key: string, value: Value) => setValues((all) => ({ ...all, [key]: value }))
+  // En una ventana, el foco va al nombre (en un cuadro lo pone Modal); después de que la ventana se lo dé a su título
+  const formRef = useRef<HTMLFormElement>(null)
+  useEffect(() => {
+    if (!inWindow) return
+    const timer = setTimeout(() => formRef.current?.querySelector<HTMLElement>('[data-autofocus]')?.focus(), 0)
+    return () => clearTimeout(timer)
+  }, [inWindow])
   const form = (
     <form
+      ref={formRef}
       className={dialogStyles.body}
       onSubmit={(event) => {
         event.preventDefault()
@@ -292,7 +300,7 @@ export function EntryEditor({
           <textarea
             id={textId}
             className={styles.text}
-            rows={type.key === TABLE_TYPE ? 4 : 12}
+            rows={type.key === TABLE_TYPE ? 4 : inWindow ? 6 : 12}
             value={text}
             onChange={(event) => setText(event.currentTarget.value)}
           />
