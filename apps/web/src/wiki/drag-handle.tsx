@@ -39,6 +39,10 @@ const CONVERTIBLE = [
 
 /** El bloque de primer nivel en el que está el cursor (o el elegido entero) */
 export function blockAtCursor(editor: Editor): BlockTarget | null {
+  // Lo último que se hizo en el navegador (un clic que movió el cursor) aún puede no haber llegado al editor, que lo
+  // lee en un momento: se lee ya, para que el menú sea el del bloque donde está el cursor ahora
+  const observer = (editor.view as unknown as { domObserver?: { flush: () => void } }).domObserver
+  observer?.flush()
   const { selection, doc } = editor.state
   if (selection instanceof NodeSelection && selection.$from.depth === 0) {
     return { pos: selection.from, node: selection.node }

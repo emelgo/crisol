@@ -22,3 +22,13 @@ capturas de antes y después; Enrique revisa las tandas juntas.
   y al restaurar versiones) → barrido → quitar el nodo (`packages/editor/src/nodes/dice-roll.ts`, su vista, i18n, MCP,
   pruebas).
 - [ ] 7. Crítica y audit de impeccable, arreglos, capturas y la página de revisión.
+
+## Encontrado de paso
+
+- **Las barras del editor, tapadas** (desde el cristal del 12, `8ac298dc`; dos pruebas de `bloques.spec.ts` fallaban): la
+  columna de la página desenfocaba lo de detrás en ella misma, y la barra de la tabla, al ensancharse, quedaba debajo
+  del panel de la derecha. Ahora el cristal va en un `::before` y las barras de formato y de tabla flotan en el body,
+  por encima de todo (z-index 2000, como el menú «/»). El menú del bloque (Ctrl+Alt+B) lee antes la selección del
+  navegador, por si un clic aún no le había llegado al editor. Esa prueba va con «Sin desenfoque»: en Chromium sin GPU
+  el cristal es tan caro que los menús nunca se quedan quietos.
+- Las instrucciones del MCP nombraban `pestanas_desde_plantilla`, que se quitó en la tanda 3.

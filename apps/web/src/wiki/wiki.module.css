@@ -238,9 +238,22 @@
   padding-block-end: var(--space-8);
   /* El mismo radio que la portada encima */
   border-radius: 0.75rem;
+  /* El cristal, en una capa por detrás (::before) y no en ella: un backdrop-filter la haría la caja de lo que flota con
+     position: fixed dentro (los menús del editor, la barra de la tabla), que saldría descolocado */
+  position: relative;
+  isolation: isolate;
+}
+
+.entryMain::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
   background: var(--surface-read);
   -webkit-backdrop-filter: var(--frame-blur);
   backdrop-filter: var(--frame-blur);
+  pointer-events: none;
 }
 
 @media (max-width: 48rem) {

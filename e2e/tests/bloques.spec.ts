@@ -26,6 +26,11 @@ async function caretIn(page: Page, text: string) {
     expect(await page.evaluate(() => window.getSelection()?.anchorNode?.textContent ?? '')).toBe(text)
   }).toPass({ timeout: 10_000 })
 }
+// Sin desenfoque (Ajustes → «Sin desenfoque»): aquí se mide el teclado del editor, no su aspecto, y en Chromium sin GPU
+// el cristal (backdrop-filter) es tan caro que cada fotograma llega tarde y el foco vuelve a destiempo
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('crisol.sin-desenfoque', '1'))
+})
 const slashMenu = (page: Page) => page.getByRole('listbox', { name: 'Bloques' })
 const announced = (page: Page) => page.getByRole('status').filter({ hasText: /\S/ }).last()
 

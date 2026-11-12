@@ -1,6 +1,7 @@
 /* Las barras flotantes: pequeñas, sobre el texto */
 .bubble {
-  z-index: 20;
+  /* En el body (como el menú «/» y el del bloque): por encima de las ventanas y de los paneles */
+  z-index: 2000;
   border: 1px solid var(--color-field-border);
   background: var(--color-surface);
   box-shadow: 0 4px 16px rgb(0 0 0 / 0.2);
