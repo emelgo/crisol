@@ -78,6 +78,7 @@ import {
 } from './files.ts'
 import { importFoundry, inspectFoundry, putSystemImages } from './foundry.ts'
 import { importFoundryScenes, inspectFoundryScenes } from './foundry-scenes.ts'
+import { listGameIcons } from './game-icons.ts'
 import { listHistory, undoOperation } from './history.ts'
 import { getInvitation, regenerateInvitation, setInvitationsOpen } from './invitations.ts'
 import {
@@ -292,6 +293,7 @@ export * from './dice.ts'
 export * from './files.ts'
 export * from './foundry.ts'
 export * from './foundry-scenes.ts'
+export * from './game-icons.ts'
 export * from './history.ts'
 export * from './invitations.ts'
 export * from './knowledge.ts'
@@ -410,6 +412,7 @@ export const ACTIONS = [
   moveFile,
   searchWiki,
   listAccountTags,
+  listGameIcons,
   createTag,
   updateTag,
   moveTag,
@@ -695,6 +698,7 @@ export type Actions = {
   deleteFolder: typeof deleteFolder
   moveFile: typeof moveFile
   listAccountTags: typeof listAccountTags
+  listGameIcons: typeof listGameIcons
   createTag: typeof createTag
   updateTag: typeof updateTag
   moveTag: typeof moveTag

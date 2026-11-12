@@ -31,6 +31,7 @@ import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { FormError } from '../components/field.tsx'
+import { Icon } from '../components/icon.tsx'
 import { colorHex, PRESET_COLORS } from '../routes/world-look.ts'
 import { useWorldFiles } from './cover-look.ts'
 import styles from './panel-blocks.module.css'
@@ -899,7 +900,11 @@ function SubpagesBody({ page }: { page: Page }) {
       {list.map((child) => (
         <li key={child.id}>
           <Link to="/mundos/$worldId/wiki/$pageId" params={{ worldId: page.worldId, pageId: child.id }}>
-            {child.icon && <span aria-hidden="true">{child.icon} </span>}
+            {child.icon && (
+              <>
+                <Icon value={child.icon} />{' '}
+              </>
+            )}
             {child.title}
           </Link>
         </li>

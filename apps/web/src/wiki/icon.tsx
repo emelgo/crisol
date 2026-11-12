@@ -1,12 +1,14 @@
-import { type Page, pageIcon } from '@crisol/contracts'
+import { gameIcon, type Page, pageIcon } from '@crisol/contracts'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { CircleOff, SmilePlus } from 'lucide-react'
+import { CircleOff, SmilePlus, Swords } from 'lucide-react'
 import { type CSSProperties, type ReactNode, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { FormError } from '../components/field.tsx'
 import form from '../components/form.module.css'
+import { Icon, iconLabel } from '../components/icon.tsx'
+import { IconBrowser } from '../components/icon-browser.tsx'
 import list from '../components/list.module.css'
 import cards from '../routes/world-card.module.css'
 import styles from './icon.module.css'
@@ -15,8 +17,9 @@ import styles from './icon.module.css'
 const COMMON = ['📜', '🏰', '🏘️', '⚓', '🌲', '⛰️', '🐉', '⚔️', '🛡️', '🧙', '👑', '💀', '🗝️', '🗺️', '📖', '🎲']
 
 /**
- * El icono de la página: un botón que abre una caja (patrón de despliegue, como el menú de la cuenta) con los más
- * habituales, un campo para cualquier otro y quitarlo. Escape, pulsar fuera o salir con el tabulador la cierran
+ * El icono de la página: un botón que abre una caja (patrón de despliegue, como el menú de la cuenta) con los iconos de
+ * rol (buscador y grupos), los emojis más habituales, un campo para cualquier otro y quitarlo. Escape, pulsar fuera o
+ * salir con el tabulador la cierran
  */
 export function PageIcon({
   page,
@@ -76,7 +79,7 @@ export function PageIcon({
         className={ghost ? styles.ghost : styles.trigger}
         aria-expanded={open}
         aria-controls={panelId}
-        aria-label={page.icon ? t('icon.change', { icon: page.icon }) : t('icon.add')}
+        aria-label={page.icon ? t('icon.change', { icon: iconLabel(page.icon) }) : t('icon.add')}
         onClick={() => setOpen(!open)}
       >
         {ghost ? (
@@ -84,13 +87,17 @@ export function PageIcon({
             <SmilePlus aria-hidden="true" size={16} />
             {t('icon.short')}
           </>
+        ) : page.icon ? (
+          <Icon value={page.icon} />
         ) : (
-          (page.icon ?? <span className={styles.placeholder} aria-hidden="true" />)
+          <span className={styles.placeholder} aria-hidden="true" />
         )}
       </button>
       {open && (
         <div id={panelId} className={styles.panel}>
-          <ul className={styles.grid} aria-label={t('icon.common')}>
+          <IconBrowser value={page.icon} onPick={(icon) => save.mutate(icon)} autoFocus />
+          <p className={styles.emojiHead}>{t('icon.emoji')}</p>
+          <ul className={styles.grid} aria-label={t('icon.emoji')}>
             {COMMON.map((icon) => (
               <li key={icon}>
                 <button
@@ -142,13 +149,16 @@ export function PageIcon({
 }
 
 /**
- * El icono en un formulario (el de una carpeta), como el color al lado: ninguno, uno de los habituales o cualquier otro
- * emoji, escrito o pegado (lo que no es un emoji no se pone)
+ * El icono en un formulario (el de una carpeta, una plantilla…), como el color al lado: ninguno, uno de los emojis
+ * habituales, cualquier otro emoji (escrito o pegado: lo que no es un emoji no se pone) o, con «Más iconos», uno de los
+ * de rol, que sale como una casilla más
  */
 export function IconChoices({ value, onChange }: { value: string | null; onChange: (icon: string | null) => void }) {
   const { t } = useTranslation()
   const name = useId()
-  const [typed, setTyped] = useState(value && !COMMON.includes(value) ? value : '')
+  const game = gameIcon(value)
+  const [browsing, setBrowsing] = useState(false)
+  const [typed, setTyped] = useState(value && !game && !COMMON.includes(value) ? value : '')
   const choice = (icon: string | null, label: string, content: ReactNode) => (
     <label key={icon ?? ''} className={cards.colorChoice} title={label}>
       <input type="radio" name={name} checked={value === icon} onChange={() => onChange(icon)} />
@@ -169,6 +179,7 @@ export function IconChoices({ value, onChange }: { value: string | null; onChang
           </span>
         )
       )}
+      {game && choice(value, game.label, <Icon value={value as string} size={20} />)}
       {/* Cualquier otro: una casilla más, donde se escribe o se pega */}
       <input
         className={styles.otherIcon}
@@ -187,6 +198,27 @@ export function IconChoices({ value, onChange }: { value: string | null; onChang
           if (pageIcon.safeParse(text.trim()).success) onChange(text.trim())
         }}
       />
+      <button
+        type="button"
+        className={styles.moreIcons}
+        aria-expanded={browsing}
+        onClick={() => setBrowsing(!browsing)}
+      >
+        <Swords aria-hidden="true" size={15} />
+        {t('icon.moreIcons')}
+      </button>
+      {browsing && (
+        <div className={styles.inlineBrowser}>
+          <IconBrowser
+            value={value}
+            autoFocus
+            onPick={(icon) => {
+              onChange(icon)
+              setBrowsing(false)
+            }}
+          />
+        </div>
+      )}
     </fieldset>
   )
 }

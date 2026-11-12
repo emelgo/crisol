@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { useAnnounce } from '../components/announcer.tsx'
+import { Icon } from '../components/icon.tsx'
 import {
   dropMove as dropMoveIn,
   keyboardMove as keyboardMoveIn,
@@ -393,7 +394,11 @@ export function PageTree({ worldId, currentId, path, onNavigate }: Props) {
         </span>
         {/* Su icono, si tiene; si no, el de su plantilla, o el de página (las que tienen dentro, el de varias) */}
         <span aria-hidden="true" className={styles.icon}>
-          {page.icon ?? <PageKindIcon template={page.template ?? null} hasChildren={page.hasChildren} />}
+          {page.icon ? (
+            <Icon value={page.icon} />
+          ) : (
+            <PageKindIcon template={page.template ?? null} hasChildren={page.hasChildren} />
+          )}
         </span>
         <span className={styles.title} data-untitled={page.title === t('wiki.untitled') || undefined}>
           {page.title}

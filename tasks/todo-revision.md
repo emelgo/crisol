@@ -13,7 +13,7 @@ Plan: `tasks/plan-revision.md`. Una tanda cada vez: se enseña en local, Enrique
 - [x] Guía de estilo y el resto de prompts (fondos de Entrar, portada pública, ambiente de Inicio, pantallas vacías).
   Solo las de la app: las portadas de mundos, campañas, sistemas y libros son del usuario (Enrique, 2026-11-11).
 - [ ] Imágenes en `apps/web/public/`, fuera las 24 de ahora, y su origen en `docs/terceros.md`.
-- [ ] **Un paquete de iconos de fantasía de calidad** (Enrique, 2026-11-12: «cuando creas más oportuno»), para elegir
+- [x] **Un paquete de iconos de fantasía de calidad** (Enrique, 2026-11-12: «cuando creas más oportuno»), para elegir
   icono en vez de solo emoji: carpetas, páginas, sistemas y mundos. Momento: al empezar la tanda 6 (el icono del
   sistema), para que todos salgan del mismo paquete y del mismo selector (`IconChoices`, `wiki/icon.tsx`). Candidato:
   game-icons.net (SVG, miles de iconos de rol; CC BY 3.0, que pide atribución pero no es copyleft): comprobar la
@@ -163,7 +163,8 @@ Plan: `tasks/plan-revision.md`. Una tanda cada vez: se enseña en local, Enrique
 
 ## Tanda 6 — Sistemas: su espacio, sus portadas y sus libros
 
-- [ ] Antes: el paquete de iconos de fantasía (ver «Pista de imágenes»).
+- [x] Antes: el paquete de iconos de fantasía (ver «Pista de imágenes»): 337 de game-icons.net (CC BY 3.0), «gi:<id>»,
+  con su buscador en el icono de una página y en los formularios, y `listar_iconos` en el MCP.
 - [ ] Espacios de la barra declarados; el espacio del sistema y su vuelta.
 - [ ] Icono y portada del sistema; libros con portada o color.
 - [ ] El libro por dentro (tres columnas) y «Entrada nueva».

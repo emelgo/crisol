@@ -12,6 +12,7 @@ import { fileActions } from './files.ts'
 import { foundryActions } from './foundry.ts'
 import { foundrySceneActions } from './foundry-scenes.ts'
 import { historyActions } from './history.ts'
+import { iconActions } from './icons.ts'
 import { invitationActions } from './invitations.ts'
 import { knowledgeActions } from './knowledge.ts'
 import { libraryActions } from './library.ts'
@@ -69,6 +70,7 @@ export const IMPLEMENTATIONS: Implementation[] = [
   ...fileActions,
   ...searchActions,
   ...tagActions,
+  ...iconActions,
   ...templateActions,
   ...systemActions,
   ...bookActions,

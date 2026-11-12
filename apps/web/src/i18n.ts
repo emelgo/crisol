@@ -872,7 +872,23 @@ export const es = {
     otherShort: 'Otro',
     useOther: 'Usar',
     remove: 'Quitar el icono',
-    none: 'Sin icono'
+    none: 'Sin icono',
+    emoji: 'Emoji',
+    moreIcons: 'Más iconos',
+    search: 'Buscar un icono',
+    noneFound: 'Ningún icono se llama así.',
+    creditBefore: 'Iconos de',
+    creditAfter: ', de Lorc, Delapouite y otros (CC BY 3.0).',
+    groups: {
+      gente: 'Gente',
+      criaturas: 'Criaturas',
+      lugares: 'Lugares',
+      naturaleza: 'Naturaleza',
+      objetos: 'Objetos',
+      armas: 'Armas y armaduras',
+      magia: 'Magia',
+      simbolos: 'Símbolos'
+    }
   },
   editor: {
     body: 'Texto de la página',

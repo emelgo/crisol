@@ -1,0 +1,22 @@
+/* Un icono de rol: su dibujo como máscara, del color del texto y del tamaño de la letra (como un emoji) */
+.game {
+  display: inline-block;
+  flex: none;
+  inline-size: 1em;
+  block-size: 1em;
+  vertical-align: -0.125em;
+  background-color: currentColor;
+  mask: var(--icono) center / contain no-repeat;
+}
+
+.emoji {
+  line-height: 1;
+}
+
+/* Con colores forzados (el alto contraste del sistema), la máscara se pinta con el color del texto del sistema */
+@media (forced-colors: active) {
+  .game {
+    background-color: CanvasText;
+    forced-color-adjust: none;
+  }
+}

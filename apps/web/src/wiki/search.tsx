@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
 import form from '../components/form.module.css'
+import { Icon } from '../components/icon.tsx'
 import list from '../components/list.module.css'
 import { failed, LoadError } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
@@ -166,7 +167,11 @@ function ResultItem({ worldId, result }: { worldId: string; result: SearchResult
   return (
     <li className={styles.result}>
       <Link to="/mundos/$worldId/wiki/$pageId" params={{ worldId, pageId: result.id }} className={styles.title}>
-        {result.icon ? `${result.icon} ` : ''}
+        {result.icon ? (
+          <>
+            <Icon value={result.icon} />{' '}
+          </>
+        ) : null}
         {result.title}
       </Link>
       {above.length > 0 && <p className={styles.path}>{above.map((step) => step.title).join(' / ')}</p>}

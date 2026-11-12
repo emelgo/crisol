@@ -112,6 +112,7 @@ describe('herramientas MCP', () => {
       'leer_pagina',
       'listar_archivos',
       'listar_etiquetas',
+      'listar_iconos',
       'listar_mundos',
       'listar_personajes',
       'listar_plantillas',

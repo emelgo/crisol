@@ -61,7 +61,7 @@ export const folderView = z.object({
   name: z.string(),
   position: placeInFolder,
   color: worldColor.nullable().describe('Su color (uno de los fijos o #rrggbb): tiñe su icono'),
-  icon: z.string().nullable().describe('Su icono, un emoji; sin él, el de una carpeta')
+  icon: z.string().nullable().describe('Su icono, un emoji o un icono de rol «gi:<id>»; sin él, el de una carpeta')
 })
 
 export type FolderView = z.infer<typeof folderView>
@@ -118,7 +118,7 @@ export const updateFolder = defineAction({
   name: 'updateFolder',
   kind: 'write',
   description:
-    'Cambia el nombre de una carpeta, su color o su icono (un emoji; null quita uno u otro), la mete en otra (parentId; null: a lo más alto) o la ordena a mano delante (before) o detrás (after) de otra carpeta de su carpeta de destino (sin parentId, la de ahora). Al cambiar de carpeta sin before ni after, va detrás, por nombre. Se deshace desde el historial',
+    'Cambia el nombre de una carpeta, su color o su icono (un emoji o un icono de rol «gi:<id>», listar_iconos; null quita uno u otro), la mete en otra (parentId; null: a lo más alto) o la ordena a mano delante (before) o detrás (after) de otra carpeta de su carpeta de destino (sin parentId, la de ahora). Al cambiar de carpeta sin before ni after, va detrás, por nombre. Se deshace desde el historial',
   input: z
     .object({
       folderId: z.uuid(),

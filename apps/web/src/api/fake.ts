@@ -46,7 +46,7 @@ import type {
   WidgetView,
   World
 } from '@crisol/contracts'
-import { youtubeVideoId } from '@crisol/contracts'
+import { GAME_ICONS, youtubeVideoId } from '@crisol/contracts'
 import { DiceSyntaxError, rollDice as rollFormula, rowFor, tableFormula, tableProblems } from '@crisol/dice'
 import {
   advanceSound,
@@ -4766,6 +4766,11 @@ export function fakeApi(
       map.pins.splice(map.pins.indexOf(pin), 1)
       return { id: pinId }
     },
+    listGameIcons: ({ query }) => ({
+      icons: GAME_ICONS.filter(
+        (icon) => !query || icon.label.toLocaleLowerCase('es').includes(query.toLocaleLowerCase('es'))
+      ).map((icon) => ({ icon: `gi:${icon.id}`, label: icon.label, group: icon.group }))
+    }),
     listAccountTags: ({ organizationId }) => {
       const target = ownOrganization(organizationId)
       return { organizationId: target, tags: catalogOf(target) }

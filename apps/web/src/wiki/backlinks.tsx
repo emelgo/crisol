@@ -11,6 +11,7 @@ import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { useAnnounce } from '../components/announcer.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
+import { Icon } from '../components/icon.tsx'
 import styles from './backlinks.module.css'
 import { PageLink, readAsInput, readAsKey, useReadAs } from './read-as.tsx'
 
@@ -41,7 +42,7 @@ export function Backlinks({ page }: { page: Page }) {
   const data = links.data
   const pageIcon = (icon: string | null | undefined) => (
     <span aria-hidden="true" className={styles.icon}>
-      {icon ?? <FileText size={14} />}
+      {icon ? <Icon value={icon} /> : <FileText size={14} />}
     </span>
   )
   // Como en Everlore: «Mencionado en», arriba del panel, una lista corta de páginas; las que la nombran sin enlazarla,

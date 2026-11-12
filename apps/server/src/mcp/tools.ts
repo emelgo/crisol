@@ -299,6 +299,7 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   borrar_pagina: { action: 'deletePage' },
   // Las etiquetas de la cuenta (ADR-0006); las de una página van en sus propiedades
   listar_etiquetas: { action: 'listAccountTags' },
+  listar_iconos: { action: 'listGameIcons' },
   crear_etiqueta: { action: 'createTag' },
   cambiar_etiqueta: { action: 'updateTag' },
   mover_etiqueta: { action: 'moveTag' },

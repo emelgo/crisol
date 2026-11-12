@@ -6,6 +6,7 @@
 import type { FolderView } from '@crisol/contracts'
 import { Folder, FolderOpen } from 'lucide-react'
 import type { CSSProperties } from 'react'
+import { Icon as Glyph } from '../components/icon.tsx'
 import { colorHex } from '../routes/world-look.ts'
 import styles from './folder-glyph.module.css'
 
@@ -30,7 +31,7 @@ export function FolderGlyph({
         style={{ ...tint, '--glyph-size': `${size}px` } as CSSProperties}
         aria-hidden="true"
       >
-        {folder.icon}
+        <Glyph value={folder.icon} />
       </span>
     )
   }

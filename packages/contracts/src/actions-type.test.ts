@@ -77,6 +77,7 @@ describe('Actions', () => {
       moveFile: true,
       searchWiki: true,
       listAccountTags: true,
+      listGameIcons: true,
       createTag: true,
       updateTag: true,
       moveTag: true,
