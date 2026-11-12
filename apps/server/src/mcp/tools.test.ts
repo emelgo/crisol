@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest'
 import { UI_ONLY } from '../actions/ai.ts'
 import { InvalidRequestError } from '../actions/context.ts'
 import { errorText } from './approvals.ts'
-import { MCP_TOOLS, type McpTool, routeCall, toolActions, toolConfig } from './tools.ts'
+import { INSTRUCTIONS, MCP_TOOLS, type McpTool, routeCall, toolActions, toolConfig } from './tools.ts'
 
 describe('herramientas MCP', () => {
   it('cada herramienta lleva a acciones que existen, con nombre en español', () => {
@@ -222,6 +222,15 @@ describe('herramientas MCP', () => {
       'volumen_sonido',
       'volver_a_instantanea'
     ])
+  })
+
+  it('las instrucciones solo nombran herramientas (o la guía de mapas) que existen, y nada de lo quitado', () => {
+    const named = [...INSTRUCTIONS.matchAll(/\b([a-z]+(?:_[a-z]+)+)\b/g)].map((m) => m[1] ?? '')
+    const known = new Set([...Object.keys(MCP_TOOLS), 'guia_mapas'])
+    expect(named.filter((name) => !known.has(name))).toEqual([])
+    // Lo que ya no es verdad: sin editor de sistemas, sistemas o plantillas de serie, tiradas que se pulsan en la wiki
+    for (const gone of ['No tiene editor', 'de serie', 'plantillas que trae', 'dice: se pulsa'])
+      expect(INSTRUCTIONS).not.toContain(gone)
   })
 
   it('la IA no puede aprobar lo suyo ni cambiar su modo: no hay herramienta para eso', () => {

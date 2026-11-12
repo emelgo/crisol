@@ -25,9 +25,9 @@ export const pageIcon = z.union([
 ])
 
 const propertyName = z.string().trim().min(1).max(60)
-/** El id de un campo de plantilla: legible en las de serie («faccion»), corto y aleatorio en las propias (ADR-0009) */
+/** El id de un campo de plantilla: corto y aleatorio (ADR-0009); los de antes, legibles («faccion»), siguen valiendo */
 export const fieldId = z.string().regex(/^[a-z0-9][a-z0-9-]{0,39}$/)
-/** Una plantilla: el id legible de una de serie o el de una propia */
+/** Una plantilla de la cuenta, por su id (las de id legible de antes siguen valiendo) */
 export const templateRef = z.union([z.uuid(), z.string().regex(/^[a-z][a-z0-9-]{0,39}$/)])
 // hidden: «Oculto», no les llega a los jugadores aunque vean la página (ADR-0017)
 const field = { name: propertyName, field: fieldId.optional(), hidden: z.literal(true).optional() }
