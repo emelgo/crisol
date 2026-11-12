@@ -30,7 +30,11 @@ export function CharacterStep({
   if (!type) return <p className={styles.muted}>{t('rules.character.noType')}</p>
   return (
     <>
-      <p className={styles.enough}>{t('rules.character.enough')}</p>
+      {/* Con unas características y algo que se gasta (la vida), ya se juega: se dice cuando es verdad */}
+      {Object.values(system.types[type]?.fields ?? {}).some((f) => f.kind === 'set') &&
+        Object.values(system.types[type]?.fields ?? {}).some((f) => f.kind === 'resource') && (
+          <p className={styles.enough}>{t('rules.character.enough')}</p>
+        )}
       <FieldsList system={system} typeKey={type} language={language} change={change} onAdded={onAdded} />
     </>
   )
@@ -324,6 +328,7 @@ export function FieldForm({
         </div>
       )}
       {field.kind === 'set' && <NamedList field={field} kind="elements" language={language} onChange={onChange} />}
+      {field.kind === 'set' && <SetInside field={field} language={language} onChange={onChange} />}
       {field.kind === 'choice' && <NamedList field={field} kind="options" language={language} onChange={onChange} />}
     </div>
   )
@@ -410,6 +415,92 @@ function NamedList({
         <Plus size={14} aria-hidden="true" />
         {t(kind === 'elements' ? 'rules.field.addElement' : 'rules.field.addOption')}
       </button>
+    </fieldset>
+  )
+}
+
+/**
+ * Lo que tiene cada uno de un conjunto (su valor y, si se quiere, su modificador): sus nombres y quitarlos; añadir
+ * una cifra o lo que se calcula de ella, con el modificador típico ya escrito
+ */
+function SetInside({
+  field,
+  language,
+  onChange
+}: {
+  field: Extract<Field, { kind: 'set' }>
+  language: Language
+  onChange: (next: Field) => void
+}) {
+  const { t } = useTranslation()
+  const inside = Object.entries(field.fields)
+  const number = inside.find(([, f]) => f.kind === 'number')?.[0]
+  const write = (fields: typeof field.fields) => onChange({ ...field, fields })
+  return (
+    <fieldset className={styles.named}>
+      <legend>{t('rules.field.inside')}</legend>
+      <ul>
+        {inside.map(([key, sub]) => (
+          <li key={key}>
+            <input
+              aria-label={t('rules.field.insideName', { kind: t(`rules.kinds.${sub.kind}.name`) })}
+              value={textOf(sub.label, language)}
+              autoComplete="off"
+              onChange={(event) =>
+                write({
+                  ...field.fields,
+                  [key]: { ...sub, label: withText(sub.label, event.currentTarget.value, language) }
+                })
+              }
+            />
+            <span className={styles.insideKind}>{t(`rules.kinds.${sub.kind}.name`)}</span>
+            <button
+              type="button"
+              aria-label={t('rules.field.removeItem', { name: textOf(sub.label, language) })}
+              disabled={inside.length <= 1}
+              onClick={() => write(Object.fromEntries(inside.filter(([k]) => k !== key)))}
+            >
+              <Trash2 size={14} aria-hidden="true" />
+            </button>
+          </li>
+        ))}
+      </ul>
+      <div className={styles.add}>
+        <button
+          type="button"
+          className={styles.addButton}
+          onClick={() => {
+            const label = t('rules.kinds.number.new')
+            write({
+              ...field.fields,
+              [keyFor(label, Object.keys(field.fields))]: { kind: 'number', label, default: 10 }
+            })
+          }}
+        >
+          <Plus size={14} aria-hidden="true" />
+          {t('rules.kinds.number.name')}
+        </button>
+        {number && !inside.some(([, f]) => f.kind === 'derived') && (
+          <button
+            type="button"
+            className={styles.addButton}
+            onClick={() =>
+              write({
+                ...field.fields,
+                [keyFor('mod', Object.keys(field.fields))]: {
+                  kind: 'derived',
+                  label: t('rules.field.modifier'),
+                  formula: `floor((@este.${number} - 10) / 2)`,
+                  signed: true
+                }
+              })
+            }
+          >
+            <Plus size={14} aria-hidden="true" />
+            {t('rules.field.addModifier')}
+          </button>
+        )}
+      </div>
     </fieldset>
   )
 }

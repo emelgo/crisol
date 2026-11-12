@@ -1552,7 +1552,7 @@ export const es = {
     },
     character: {
       noType: 'Este sistema aún no tiene personajes.',
-      enough: 'Con unas características y la vida ya se juega. Lo demás se añade cuando haga falta.'
+      enough: 'Con esto ya se juega. Lo demás se añade cuando haga falta.'
     },
     field: {
       name: 'Nombre',
@@ -1570,7 +1570,11 @@ export const es = {
       removeItem: 'Quitar «{{name}}»',
       newItem: 'Nuevo',
       addElement: 'Añadir otra',
-      addOption: 'Añadir otra opción'
+      addOption: 'Añadir otra opción',
+      inside: 'Lo que tiene cada una',
+      insideName: 'Nombre ({{kind}})',
+      modifier: 'Modificador',
+      addModifier: 'Su modificador: (valor − 10) ÷ 2'
     },
     rolls: {
       dice: 'El dado de siempre',
