@@ -1,9 +1,9 @@
 /**
  * El fondo de ambiente (tanda 5, «Crisol, con cristal»): el cristal solo luce con algo detrás, y fuera de la Mesa no
- * hay mapa. Detrás de todo, fija, una imagen muy difuminada y tenue: en un mundo, su portada; en Inicio, la del mundo
- * en el que uno se para; si no, la de ambiente. Lo que enmarca va encima de cristal (sin backdrop-filter: el fondo ya
- * viene difuminado, así que no cuesta nada al bajar). Con «Sin desenfoque» (Ajustes) no sale: todo opaco, como antes.
- * De cada imagen se usa una miniatura ya difuminada (pesa poco y apenas hay que pintar) y su luz pone el tope: con una
+ * hay mapa. Detrás de todo, fija, una imagen suave y tenue: en un mundo, su portada; en Inicio, la del mundo en el que
+ * uno se para; si no, la de ambiente. Lo que enmarca va encima, de cristal (desenfoca lo de detrás). Con «Sin
+ * desenfoque» (Ajustes) no sale: todo opaco, como antes. De cada imagen se hace una copia pequeña, suavizada y ya
+ * mezclada con el color de fondo (opaca: al pasar de una a otra se funden sin sumar luz), y su luz pone el tope: con una
  * portada clara (nieve, un desierto a mediodía) va más tenue, para que el texto de encima se siga leyendo
  */
 import { type CSSProperties, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
@@ -14,10 +14,10 @@ import { usePlain } from './plain.ts'
 export const DEFAULT_AMBIENT = '/ambiente/inicio.webp'
 
 /** Lo más que se ve la imagen, y lo menos (con una muy clara) */
-const MOST = 0.32
-const LEAST = 0.08
-/** La luz que puede tener el fondo en su parte más clara: el texto apagado encima, a 5:1; los títulos rojos, a 3:1 */
-const BRIGHTEST = 0.03
+const MOST = 0.62
+const LEAST = 0.16
+/** La luz que puede tener el fondo en su parte más clara (el texto va sobre el cristal, que lo oscurece y lo desenfoca) */
+const BRIGHTEST = 0.09
 /** El color de debajo: el de --color-bg (si no se puede leer, el de siempre), en sRGB */
 const baseColor = (): readonly [number, number, number] => {
   const value =
@@ -77,8 +77,12 @@ export function ambientAlpha(r: number, g: number, b: number) {
 
 type Prepared = { src: string; alpha: number }
 const prepared = new Map<string, Promise<Prepared>>()
+/** Las ya hechas, para ponerlas sin esperar (al volver a una vista, la misma de antes, sin fundido) */
+const ready = new Map<string, Prepared>()
+/** La última que se vio: al volver a montarse (tras la Mesa, por ejemplo), sale ya puesta */
+let lastShown: Prepared | null = null
 
-/** La miniatura difuminada de una imagen y su tope (si no se puede, la imagen tal cual y el tope de una oscura) */
+/** La copia suave de una imagen, ya mezclada con el fondo (si no se puede, la imagen tal cual con su tope) */
 function prepare(url: string): Promise<Prepared> {
   const known = prepared.get(url)
   if (known) return known
@@ -87,47 +91,66 @@ function prepare(url: string): Promise<Prepared> {
     image.decoding = 'async'
     image.src = url
     await image.decode()
-    // Pequeña y ya difuminada: estirada se ve suave sin filtro en directo (el compositor no desenfoca nada al bajar)
-    const width = 64
+    // Pequeña y suavizada: estirada se ve suave sin filtro en directo; el cristal de encima la desenfoca del todo
+    const width = 480
     const height = Math.max(1, Math.round((image.naturalHeight * width) / image.naturalWidth))
     const canvas = document.createElement('canvas')
     canvas.width = width
     canvas.height = height
     const context = canvas.getContext('2d', { willReadFrequently: true })
     if (!context) throw new Error('sin lienzo')
-    context.filter = 'blur(2px)'
+    context.filter = 'blur(4px)'
     context.drawImage(image, -3, -3, width + 6, height + 6)
     // El punto claro: el del 97 % (un brillo suelto no cuenta)
     const { data } = context.getImageData(0, 0, width, height)
     const points: [number, number, number, number][] = []
-    for (let i = 0; i < data.length; i += 4) {
+    for (let i = 0; i < data.length; i += 16) {
       const [r, g, b] = [data[i] ?? 0, data[i + 1] ?? 0, data[i + 2] ?? 0]
       points.push([luminance(r, g, b), r, g, b])
     }
     points.sort((a, b) => a[0] - b[0])
     const [, r, g, b] = points[Math.floor(points.length * 0.97)] ?? [0, 0, 0, 0]
-    return { src: canvas.toDataURL('image/webp', 0.85), alpha: ambientAlpha(r, g, b) }
+    const alpha = ambientAlpha(r, g, b)
+    // Mezclada con el color de fondo: opaca
+    const mixed = document.createElement('canvas')
+    mixed.width = width
+    mixed.height = height
+    const out = mixed.getContext('2d')
+    if (!out) throw new Error('sin lienzo')
+    const [br, bg, bb] = baseColor()
+    out.fillStyle = `rgb(${br} ${bg} ${bb})`
+    out.fillRect(0, 0, width, height)
+    out.globalAlpha = alpha
+    out.drawImage(canvas, 0, 0)
+    return { src: mixed.toDataURL('image/webp', 0.86), alpha: 1 }
   })().catch(() => ({ src: url, alpha: ambientAlpha(140, 110, 90) }))
   prepared.set(url, work)
+  void work.then((done) => ready.set(url, done))
   return work
 }
+
+type Layer = Prepared & { n: number; still?: boolean }
 
 export function Ambient() {
   const url = useSyncExternalStore(subscribe, current, current)
   const plain = usePlain()
-  // La nueva aparece encima de la de antes, que se va al acabar el fundido; si llega otra en pleno fundido, sustituye
-  // a la de encima (la de debajo, entera, se queda: el fondo no da un bajón)
-  const [layers, setLayers] = useState<(Prepared & { n: number })[]>([])
+  // La nueva aparece encima de la de antes (opacas las dos: un fundido limpio) y la de antes se va al acabar; si llega
+  // otra en pleno fundido, sustituye a la de encima. Al montarse, la última que se vio, ya puesta (sin fundido)
+  const [layers, setLayers] = useState<Layer[]>(() => (lastShown ? [{ ...lastShown, n: 0, still: true }] : []))
   useEffect(() => {
     let live = true
-    void prepare(url).then((next) => {
+    const show = (next: Prepared) => {
       if (!live) return
+      lastShown = next
       setLayers((all) => {
-        const n = (all.at(-1)?.n ?? 0) + 1
         if (all.at(-1)?.src === next.src) return all
-        return all.length > 1 ? [all[0] as Prepared & { n: number }, { ...next, n }] : [...all, { ...next, n }]
+        const n = (all.at(-1)?.n ?? 0) + 1
+        return all.length > 1 ? [all[0] as Layer, { ...next, n }] : [...all, { ...next, n }]
       })
-    })
+    }
+    const known = ready.get(url)
+    if (known) show(known)
+    else void prepare(url).then(show)
     return () => {
       live = false
     }
@@ -139,6 +162,7 @@ export function Ambient() {
         <div
           key={layer.n}
           className={styles.layer}
+          data-still={layer.still || undefined}
           style={{ backgroundImage: `url("${layer.src}")`, '--alpha': layer.alpha } as CSSProperties}
           onAnimationEnd={() => {
             if (index === layers.length - 1 && layers.length > 1) setLayers((all) => all.slice(-1))

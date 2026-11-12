@@ -79,13 +79,15 @@
   padding: var(--space-5) var(--space-4) var(--space-4);
   clip-path: var(--cut);
   /* De cristal sobre el fondo de ambiente */
-  background: var(--surface-glass);
+  background: var(--frame-sheen), var(--surface-glass);
   box-shadow: inset 0 0 0 1px var(--line-soft);
+  -webkit-backdrop-filter: var(--frame-blur);
+  backdrop-filter: var(--frame-blur);
 }
 
 .card:hover,
 .card:focus-within {
-  background: var(--surface-glass-raised);
+  background: var(--frame-sheen), var(--surface-glass-raised);
 }
 
 .icon {
@@ -239,7 +241,9 @@
   padding: var(--space-4);
   border: 1px solid var(--line-soft);
   border-radius: 10px;
-  background: var(--surface-glass);
+  background: var(--frame-sheen), var(--surface-glass);
+  -webkit-backdrop-filter: var(--frame-blur);
+  backdrop-filter: var(--frame-blur);
 }
 
 .previewTop {

@@ -12,9 +12,11 @@
   max-block-size: calc(100dvh - 2rem);
   overflow-y: auto;
   padding: var(--space-2);
-  border: 1px solid var(--color-frame);
+  border: 1px solid var(--glass-edge);
   border-radius: 6px;
-  background: var(--color-surface);
+  background: var(--frame-sheen), var(--popup-glass);
+  -webkit-backdrop-filter: var(--popup-blur);
+  backdrop-filter: var(--popup-blur);
   box-shadow: 0 0.75rem 2rem rgb(0 0 0 / 0.35);
   scrollbar-width: thin;
 }

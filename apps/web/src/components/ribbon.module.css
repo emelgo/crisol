@@ -11,8 +11,10 @@
   padding: var(--space-2) 0;
   overflow-y: auto;
   /* De cristal sobre el fondo de ambiente, con su canto */
-  background: var(--surface-glass-raised);
+  background: var(--frame-sheen), var(--surface-glass-raised);
   border-inline-end: 1px solid var(--glass-edge);
+  -webkit-backdrop-filter: var(--frame-blur);
+  backdrop-filter: var(--frame-blur);
   /* Si lo de arriba no cabe, se desplaza sin barra: una barra que aparece y desaparece movería los iconos de lado */
   scrollbar-width: none;
   /* Lo que llega con el teclado se desplaza hasta quedar por encima del pie (en pantallas bajas o con zoom) */

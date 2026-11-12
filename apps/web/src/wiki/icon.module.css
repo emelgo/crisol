@@ -34,8 +34,9 @@
 
 .panel {
   composes: frame from "../components/frame.module.css";
-  /* Flota sobre la página: opaco */
-  --frame-fill: var(--color-surface);
+  /* Flota sobre la página: cristal más tapado, con lo de debajo desenfocado */
+  --frame-fill: var(--popup-glass);
+  --frame-blur: var(--popup-blur);
   position: absolute;
   inset-block-start: calc(100% + var(--space-1));
   inset-inline-start: 0;

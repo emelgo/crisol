@@ -44,8 +44,11 @@
   padding: var(--space-3) var(--space-3) var(--space-4);
   border: 1px solid var(--line-frame);
   border-radius: 6px;
-  /* De cristal sobre la portada del mundo, difuminada detrás (components/ambient.tsx) */
-  background: var(--surface-glass);
+  /* De cristal sobre el fondo de ambiente (components/ambient.tsx): lo de detrás, desenfocado */
+  background: var(--frame-sheen), var(--surface-glass);
+  box-shadow: inset 0 1px 0 var(--glass-hi);
+  -webkit-backdrop-filter: var(--frame-blur);
+  backdrop-filter: var(--frame-blur);
   scrollbar-width: thin;
 }
 
@@ -236,6 +239,8 @@
   /* El mismo radio que la portada encima */
   border-radius: 0.75rem;
   background: var(--surface-read);
+  -webkit-backdrop-filter: var(--frame-blur);
+  backdrop-filter: var(--frame-blur);
 }
 
 @media (max-width: 48rem) {
@@ -356,7 +361,10 @@
   padding: var(--space-4) var(--space-4) calc(var(--space-4) + 3.25rem + var(--space-3));
   border: 1px solid var(--line-frame);
   border-radius: 6px;
-  background: var(--surface-glass);
+  background: var(--frame-sheen), var(--surface-glass);
+  box-shadow: inset 0 1px 0 var(--glass-hi);
+  -webkit-backdrop-filter: var(--frame-blur);
+  backdrop-filter: var(--frame-blur);
   font-size: 0.9375rem;
   scrollbar-width: thin;
 }

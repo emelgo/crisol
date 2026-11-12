@@ -111,7 +111,7 @@ export function RootLayout() {
               {/* Detrás de todo, el fondo de ambiente para el cristal (la Mesa tiene su mapa) */}
               {!bare && <Ambient />}
               {!bare && <Ribbon />}
-              <main id="contenido" className={wide ? styles.wide : styles.main}>
+              <main id="contenido" className={wide ? styles.wide : styles.main} data-contenido="">
                 <ApprovalQueue />
                 <Notices />
                 <RevealNotices />

@@ -7,8 +7,10 @@
 .frame {
   position: relative;
   isolation: isolate;
-  background: var(--frame-fill, var(--surface-glass));
+  background: var(--frame-sheen), var(--frame-fill, var(--surface-glass));
   clip-path: var(--cut);
+  -webkit-backdrop-filter: var(--frame-blur);
+  backdrop-filter: var(--frame-blur);
 }
 
 .frame::before {

@@ -84,11 +84,11 @@ describe('el fondo de ambiente', () => {
 
 describe('el tope del fondo de ambiente', () => {
   it('una imagen oscura se ve lo más; una clara (nieve, pergamino), mucho menos', () => {
-    expect(ambientAlpha(90, 70, 60)).toBe(0.32)
+    expect(ambientAlpha(90, 70, 60)).toBe(0.62)
     const snow = ambientAlpha(245, 245, 250)
     const parchment = ambientAlpha(230, 215, 180)
-    expect(snow).toBeLessThan(0.15)
-    expect(parchment).toBeLessThan(0.18)
-    expect(snow).toBeGreaterThanOrEqual(0.08)
+    expect(snow).toBeLessThan(0.35)
+    expect(parchment).toBeLessThan(0.4)
+    expect(snow).toBeGreaterThanOrEqual(0.16)
   })
 })

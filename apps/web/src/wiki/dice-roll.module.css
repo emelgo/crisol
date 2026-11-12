@@ -85,7 +85,7 @@
 }
 
 .input {
-  background: var(--color-bg);
+  background: var(--field-fill);
   border: 1px solid var(--color-field-border);
   border-radius: 6px;
   padding: var(--space-2);

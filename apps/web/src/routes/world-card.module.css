@@ -363,6 +363,8 @@
   inset: 0;
   /* De cristal, como la tarjeta (el fondo de ambiente se ve un poco) */
   background: color-mix(in srgb, var(--world-color, var(--color-raised)) 22%, var(--surface-glass-raised));
+  -webkit-backdrop-filter: var(--frame-blur);
+  backdrop-filter: var(--frame-blur);
 }
 
 .noCover {
