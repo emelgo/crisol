@@ -1468,6 +1468,168 @@ export const es = {
       template: 'Plantilla'
     }
   },
+  // El editor de un sistema, a mano (tanda 8)
+  rules: {
+    steps: 'Pasos',
+    aside: 'Ficha de ejemplo y revisión',
+    soon: 'Este paso llega en una porción siguiente de esta tanda.',
+    next: 'Siguiente: {{step}}',
+    add: 'Añadir:',
+    more: 'Más',
+    up: 'Subir',
+    down: 'Bajar',
+    remove: 'Quitar',
+    removed: '«{{name}}» quitado.',
+    undo: 'Deshacer',
+    reload: 'Volver a cargar',
+    saved: 'Guardado',
+    saving: 'Guardando…',
+    unsaved_one: 'Sin guardar: hay {{count}} error',
+    unsaved_other: 'Sin guardar: hay {{count}} errores',
+    stepHasProblems: 'Tiene errores',
+    step: {
+      personaje: {
+        question: '¿Qué tiene un personaje?',
+        short: 'Qué tiene un personaje',
+        lead: 'Lo que se apunta en su ficha. Empieza por lo que más se usa: con unas características y la vida ya se puede jugar.'
+      },
+      tiradas: {
+        question: '¿Cómo se tira?',
+        short: 'Cómo se tira',
+        lead: 'El dado de siempre y las tiradas que se repiten en la mesa: una prueba, un ataque, la iniciativa.'
+      },
+      objetos: {
+        question: '¿Qué se lleva? Armas, conjuros…',
+        short: 'Qué se lleva',
+        lead: 'Las clases de cosas que se llevan o se aprenden, cada una con lo suyo.'
+      },
+      ficha: {
+        question: '¿Cómo se ve la ficha?',
+        short: 'Cómo se ve la ficha',
+        lead: 'Dónde va cada cosa en la ficha del personaje.'
+      },
+      creacion: {
+        question: '¿Cómo se crea un personaje?',
+        short: 'Cómo se crea',
+        lead: 'Los pasos para hacer un personaje nuevo.'
+      },
+      compendio: {
+        question: '¿Qué trae el compendio?',
+        short: 'Qué trae el compendio',
+        lead: 'Los libros del sistema y lo que trae cada uno.'
+      },
+      avanzado: {
+        question: 'Lo avanzado',
+        short: 'Lo avanzado',
+        lead: 'Lo que casi nunca hace falta tocar.'
+      }
+    },
+    kinds: {
+      number: { name: 'Una cifra', new: 'Cifra nueva' },
+      set: { name: 'Varias a la vez', new: 'Características' },
+      resource: { name: 'Algo que se gasta', new: 'Vida' },
+      choice: { name: 'Una opción', new: 'Opción nueva' },
+      text: { name: 'Un texto', new: 'Texto nuevo' },
+      derived: { name: 'Algo que se calcula', new: 'Cálculo nuevo' },
+      boolean: { name: 'Sí o no', new: 'Marca nueva' },
+      dice: { name: 'Unos dados', new: 'Dados nuevos' },
+      list: { name: 'Una lista', new: 'Lista nueva' },
+      clock: { name: 'Un reloj', new: 'Reloj nuevo' },
+      group: { name: 'Un apartado', new: 'Apartado nuevo' },
+      table: { name: 'Una tabla', new: 'Tabla nueva' },
+      link: { name: 'Un enlace', new: 'Enlace nuevo' },
+      items: { name: 'Lo que lleva', new: 'Equipo' }
+    },
+    summary: {
+      range: 'de {{min}} a {{max}}',
+      starts: 'empieza en {{value}}',
+      max: 'máx. {{value}}',
+      segments_one: '{{count}} parte',
+      segments_other: '{{count}} partes',
+      inside_one: '{{count}} cosa dentro',
+      inside_other: '{{count}} cosas dentro',
+      columns_one: '{{count}} columna',
+      columns_other: '{{count}} columnas'
+    },
+    character: {
+      noType: 'Este sistema aún no tiene personajes.',
+      enough: 'Con unas características y la vida ya se juega. Lo demás se añade cuando haga falta.'
+    },
+    field: {
+      name: 'Nombre',
+      help: 'Ayuda',
+      helpHint: 'Opcional: lo que ve quien rellena la ficha',
+      start: 'Empieza en',
+      min: 'Como poco',
+      max: 'Como mucho',
+      resourceMax: 'Cuánto hay como mucho',
+      formula: 'Cómo se calcula',
+      lines: 'Líneas',
+      elements: 'Cuáles',
+      options: 'Las opciones',
+      itemName: 'Nombre {{n}}',
+      removeItem: 'Quitar «{{name}}»',
+      newItem: 'Nuevo',
+      addElement: 'Añadir otra',
+      addOption: 'Añadir otra opción'
+    },
+    rolls: {
+      dice: 'El dado de siempre',
+      critical: 'Cuándo es crítico',
+      criticalRule: {
+        none: 'Nunca',
+        d20: 'Un 20 natural (un 1, pifia)',
+        doubles: 'Dados iguales',
+        under: 'Tirando por debajo, un 1'
+      },
+      add: 'Una tirada',
+      new: 'Tirada nueva',
+      formula: 'Se tira',
+      reads: 'Se lee:',
+      suggestions: 'Añadir de la ficha:',
+      forEach: 'Una por cada una',
+      try: 'Tirar una vez'
+    },
+    help: {
+      label: 'Qué es: {{what}}',
+      help: {
+        title: 'La ayuda',
+        text: 'Una frase corta que sale en la ficha, para quien la rellena.',
+        example: 'En «Brío»: «Para aguantar golpes y cansancio».'
+      },
+      formula: {
+        title: 'Cómo se escribe una tirada',
+        text: 'Los dados y lo que se suma. Lo de la ficha se nombra con @ y su nombre interno; debajo se lee en palabras, y hay botones para añadirlo.',
+        example: '1d20 + @fuerza · 2d6 + @nivel · con ventaja: 2d20kh1 (tira dos y se queda el mejor).'
+      },
+      derived: {
+        title: 'Algo que se calcula',
+        text: 'Una cifra que sale de otras y no se escribe a mano.',
+        example: 'El modificador de una característica: floor((@este.valor - 10) / 2). Con 14, +2.'
+      },
+      dice: {
+        title: 'El dado de siempre',
+        text: 'Con el que empieza la ficha de dados y las tiradas nuevas.',
+        example: '1d20 en un juego como 5e; 2d6 en uno como Fronteras.'
+      }
+    },
+    example: {
+      title: 'Ficha de ejemplo',
+      hint: 'Se rellena sola',
+      none: 'Cuando tenga un personaje, aquí saldrá su ficha.',
+      empty: 'Añade lo que tiene un personaje y aparecerá aquí.',
+      more_one: 'Y {{count}} cosa más.',
+      more_other: 'Y {{count}} cosas más.'
+    },
+    review: {
+      title: 'Revisión',
+      ok: 'Todo bien',
+      count_one: '{{count}} aviso',
+      count_other: '{{count}} avisos',
+      allGood: 'Se puede usar en una campaña.',
+      goTo: 'Ir a {{step}}'
+    }
+  },
   systemRules: {
     title: 'Reglas',
     soon: 'Lo que trae, para leer. Pronto se cambiará aquí a mano; de momento, con tu IA o con su archivo.'

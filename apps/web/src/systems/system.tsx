@@ -29,6 +29,7 @@ import { itemTransition, SECTION } from '../components/world-transition.ts'
 import { ColorChoices } from '../routes/world-card.tsx'
 import { CoverDialog, LOCAL_FILE, type LocalImage } from '../routes/world-cover.tsx'
 import { coverStyle } from '../wiki/cover-look.ts'
+import { RulesEditor } from './editor/rules-editor.tsx'
 import { SystemPreview, useDownload } from './screen.tsx'
 import styles from './system.module.css'
 import { SystemIcon, systemCoverUrl } from './system-look.tsx'
@@ -626,6 +627,8 @@ export function SystemRules() {
   const download = useDownload(systemId)
   if (!systems.data)
     return failed(systems) ? <LoadError error={systems.error} onRetry={() => systems.refetch()} /> : <Loading />
+  // Uno propio se cambia aquí, a mano (tanda 8); uno de serie, para leer y bajar
+  if (summary && !summary.builtIn) return <RulesEditor systemId={systemId} />
   return (
     <Screen>
       <PageTitle>{t('systemRules.title')}</PageTitle>
