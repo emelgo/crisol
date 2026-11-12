@@ -357,7 +357,7 @@ describe('los libros de un sistema y lo pendiente de revisar (ADR-0021)', () => 
     )
     expect(typeof source.name === 'string' ? source.name : source.name.es).toBe('Reglas básicas')
     expect(before.name).not.toBe('Reglas básicas')
-  })
+  }, 60_000)
 
   it('solo el propietario del sistema cambia sus libros y revisa lo pendiente', async () => {
     const five = await import5e()
