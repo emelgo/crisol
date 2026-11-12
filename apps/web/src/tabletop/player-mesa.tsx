@@ -16,6 +16,7 @@ import { PlayerPage } from '../campaign/world-pages.tsx'
 import { failed, LoadError } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { Tour } from '../components/tour.tsx'
+import { type LinkHandler, useWindows, WindowLayer, type WindowSpec, WindowsProvider } from '../components/windows.tsx'
 import { useDice } from '../dice/context.tsx'
 import { HistoryHost } from '../dice/history.tsx'
 import { LogStrip } from '../log/strip.tsx'
@@ -32,7 +33,6 @@ import roomStyles from './room.module.css'
 import { TableScreen } from './screen.tsx'
 import { type SidebarItem, type SidebarTab, TableSidebar, useSidebarFolded, useSidebarTab } from './sidebar.tsx'
 import { sheetWindow } from './token-sheet.tsx'
-import { type LinkHandler, useWindows, WindowLayer, type WindowSpec, WindowsProvider } from './windows.tsx'
 
 const PLAYER_TABS: readonly SidebarTab[] = ['combat', 'characters', 'compendium', 'pages', 'notes']
 

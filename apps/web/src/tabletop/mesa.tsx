@@ -48,6 +48,7 @@ import { FormError } from '../components/field.tsx'
 import { failed, LoadError } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { Tour } from '../components/tour.tsx'
+import { useWindows, WindowLayer, WindowsProvider } from '../components/windows.tsx'
 import { useDice } from '../dice/context.tsx'
 import { LogStrip } from '../log/strip.tsx'
 import { SoundBars, UnlockSound } from '../sound/controls.tsx'
@@ -101,7 +102,6 @@ import {
 } from './vision.tsx'
 import { AsGroupBanner, FogTools, VisionPanel } from './vision-panel.tsx'
 import { useWidgets, WidgetCards, WidgetsPanel } from './widgets.tsx'
-import { useWindows, WindowLayer, WindowsProvider } from './windows.tsx'
 
 const route = getRouteApi('/mundos/$worldId/campanas/$campaignId/mesa')
 

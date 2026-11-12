@@ -5,8 +5,8 @@ import { describe, expect, it } from 'vitest'
 import { ApiProvider } from '../api/context.tsx'
 import { fakeApi } from '../api/fake.ts'
 import '../i18n.ts'
+import { WindowsProvider } from '../components/windows.tsx'
 import { ActorsTab } from './actor-folders.tsx'
-import { WindowsProvider } from './windows.tsx'
 
 const CAMPAIGN = crypto.randomUUID()
 

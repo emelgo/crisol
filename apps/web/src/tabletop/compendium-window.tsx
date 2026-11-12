@@ -4,7 +4,7 @@
  */
 import { useEffect, useState } from 'react'
 import { Compendium } from '../campaign/compendium.tsx'
-import type { WindowSpec } from './windows.tsx'
+import type { WindowSpec } from '../components/windows.tsx'
 
 export function compendiumWindow(
   worldId: string,

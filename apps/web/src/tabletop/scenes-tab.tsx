@@ -17,6 +17,7 @@ import { Field, FormError } from '../components/field.tsx'
 import form from '../components/form.module.css'
 import { failed, LoadError } from '../components/load-error.tsx'
 import { Modal } from '../components/modal.tsx'
+import { useWindows } from '../components/windows.tsx'
 import cards from '../routes/world-card.module.css'
 import { SourcePicker } from '../wiki/scene/source-picker.tsx'
 import { sceneListKey } from './queries.ts'
@@ -25,7 +26,6 @@ import styles from './scenes-tab.module.css'
 import { SceneThumb } from './thumb.tsx'
 import { initialOf } from './tokens.ts'
 import type { SceneChoice } from './use-preparation.ts'
-import { useWindows } from './windows.tsx'
 
 const matches = (text: string, query: string) =>
   !query.trim() || text.toLocaleLowerCase('es').includes(query.trim().toLocaleLowerCase('es'))

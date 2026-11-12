@@ -15,12 +15,12 @@ import compendiumStyles from '../campaign/compendium.module.css'
 import { Disclosure, type EntryDrag, Library, SystemIdContext } from '../campaign/compendium.tsx'
 import { failed, LoadError } from '../components/load-error.tsx'
 import { useSettled } from '../components/settled.ts'
+import { useWindows } from '../components/windows.tsx'
 import styles from './compendium-tab.module.css'
 import { compendiumWindow } from './compendium-window.tsx'
 import { CONTENT_DRAG, type ContentDrag } from './drags.ts'
 import { libraryWindow } from './library-window.tsx'
 import { PLACING_TYPE } from './panel.tsx'
-import { useWindows } from './windows.tsx'
 
 type ContentHit = ActionOutput<'searchCampaignContent'>['items'][number]
 

@@ -10,9 +10,9 @@ import { characterKey, useCharacterSave } from '../characters/save.ts'
 import { Loading } from '../components/brand.tsx'
 import { FormError } from '../components/field.tsx'
 import { failed, LoadError } from '../components/load-error.tsx'
+import { useWindows, type WindowSpec } from '../components/windows.tsx'
 import { CreatureSheet } from '../creatures/in-play.tsx'
 import styles from './fichas.module.css'
-import { useWindows, type WindowSpec } from './windows.tsx'
 
 export interface SheetActor {
   kind: 'character' | 'creature'

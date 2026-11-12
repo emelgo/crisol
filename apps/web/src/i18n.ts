@@ -2188,7 +2188,7 @@ export const es = {
     revealToo_one: '1 no la conoce: revelar y enseñar',
     revealToo_other: '{{count}} no la conocen: revelar y enseñar'
   },
-  // Las ventanas sobre la Mesa (tabletop/windows.tsx)
+  // Las ventanas flotantes, en la Mesa y en el mundo (components/windows.tsx)
   windows: {
     minimized: 'Ventanas minimizadas',
     minimize: 'Minimizar {{title}}',
