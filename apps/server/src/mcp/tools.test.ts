@@ -173,6 +173,7 @@ describe('herramientas MCP', () => {
       'revelar',
       'sacar_de_combate',
       'siguiente_turno',
+      'tirar_accion_compendio',
       'tirar_dados',
       'tirar_en_tabla',
       'tirar_iniciativa',

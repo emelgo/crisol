@@ -4,7 +4,7 @@
  * idiomas, sin tildes), los tipos y la lista; en el centro, lo elegido; a la derecha, su edición, su nombre en inglés,
  * su otra versión, de dónde sale y la atribución de su fuente
  */
-import { visibilitiesFor } from '@crisol/contracts'
+import type { RollVisibility } from '@crisol/contracts'
 import { type Text, textOf } from '@crisol/systems'
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getRouteApi, Link, Navigate } from '@tanstack/react-router'
@@ -13,6 +13,7 @@ import {
   BookOpen,
   ChevronRight,
   Copy,
+  Dices,
   Globe,
   Pencil,
   Plus,
@@ -40,6 +41,8 @@ import { SystemImage } from '../components/system-image.tsx'
 import { Tour } from '../components/tour.tsx'
 import { PutInPlay } from '../creatures/put-in-play.tsx'
 import { useDice } from '../dice/context.tsx'
+import { appendRoll } from '../dice/rolls.ts'
+import { useTray } from '../dice/tray.tsx'
 import { visibilityIn } from '../dice/visibility.ts'
 import { useNarrow } from '../wiki/panel.tsx'
 import { BookCover } from './book-cover.tsx'
@@ -1186,7 +1189,22 @@ function Entry({
             ))}
           </dl>
         )}
-        {item.play && <InPlay play={item.play} titleId={titleId} />}
+        {item.play && (
+          <InPlay
+            play={item.play}
+            titleId={titleId}
+            {...(inSystem
+              ? {}
+              : {
+                  rolling: {
+                    campaignId,
+                    entryKey,
+                    actor: types.find((type) => type.key === item.type)?.document === 'actor',
+                    visibility
+                  }
+                })}
+          />
+        )}
         <FormError message={rolling.error ? errorText(rolling.error) : null} />
         {body && <ContentText text={body} {...(inSystem ? {} : { onRoll: roll })} />}
         {item.table && (
@@ -1321,13 +1339,68 @@ function Entry({
 }
 
 type PlayText = NonNullable<ActionOutput<'getCampaignContent'>['items'][number]['play']>
+type ActionPart = PlayText['actions'][number]['rolls'][number]
 
-/** Su mecánica, en palabras: sus acciones, sus usos, lo que cambia, cómo escala y cuánto lo calcula Crisol */
-function InPlay({ play, titleId }: { play: PlayText; titleId: string }) {
+/** Tirar sus acciones en la campaña (revisión, tanda 7): una criatura, con lo suyo; lo demás, con un personaje */
+interface Rolling {
+  campaignId: string
+  entryKey: string
+  /** Si tiene hoja propia (una criatura): tira con ella; si no, con la de un personaje */
+  actor: boolean
+  visibility: RollVisibility
+}
+
+/** Su mecánica, en palabras: sus acciones (con sus botones de tirar), sus usos, lo que cambia, cómo escala y cuánto lo calcula Crisol */
+function InPlay({ play, titleId, rolling }: { play: PlayText; titleId: string; rolling?: Rolling }) {
   const { t } = useTranslation()
+  const api = useApi()
+  const announce = useAnnounce()
+  const errorText = useErrorText()
+  const characterId = useId()
+  const queryClient = useQueryClient()
+  const tray = useTray()
+  const rollable = Boolean(rolling) && play.actions.some((a) => a.rolls.length > 0)
+  // Con qué personaje se tira lo que no tiene hoja propia: los suyos (el máster, todos)
+  const characters = useQuery({
+    queryKey: ['characters', rolling?.campaignId],
+    queryFn: () => api.call('listCharacters', { campaignId: rolling?.campaignId ?? '' }),
+    enabled: rollable && rolling?.actor === false
+  })
+  const mine = characters.data?.characters ?? []
+  const [chosen, setChosen] = useState<string | null>(null)
+  const withWho = chosen && mine.some((c) => c.id === chosen) ? chosen : (mine[0]?.id ?? null)
+  const roll = useMutation({
+    mutationFn: ({ key, part }: { key: string; part: ActionPart }) =>
+      api.call('rollContentAction', {
+        campaignId: rolling?.campaignId ?? '',
+        key: rolling?.entryKey ?? '',
+        action: { key, part },
+        ...(rolling?.actor || !withWho ? {} : { characterId: withWho }),
+        visibility: rolling?.visibility ?? 'all'
+      }),
+    // Como las demás tiradas: al historial, los dados caen y, al parar, su aviso con el resultado
+    onSuccess: ({ roll: done }) => {
+      appendRoll(queryClient, done)
+      tray.play(done)
+      announce(t('dice.rolled', { label: done.label ?? done.formula, total: done.total }))
+    }
+  })
+  const canRoll = rollable && (rolling?.actor || withWho !== null)
   const rows = [
-    ...play.actions.map((a) => ({ key: `a-${a.label}`, label: a.label, text: a.parts.join(' · ') })),
-    ...play.resources.map((r) => ({ key: `r-${r.label}`, label: r.label, text: r.parts.join(' · ') }))
+    ...play.actions.map((a) => ({
+      key: `a-${a.key}`,
+      action: a.key,
+      label: a.label,
+      text: a.parts.join(' · '),
+      rolls: a.rolls
+    })),
+    ...play.resources.map((r) => ({
+      key: `r-${r.label}`,
+      action: null,
+      label: r.label,
+      text: r.parts.join(' · '),
+      rolls: [] as ActionPart[]
+    }))
   ]
   const lines = [...play.effects, ...(play.scaling ? [play.scaling] : []), ...(play.toggle ? [play.toggle] : [])]
   if (rows.length === 0 && lines.length === 0 && !play.manual && !play.automation) return null
@@ -1341,16 +1414,54 @@ function InPlay({ play, titleId }: { play: PlayText; titleId: string }) {
           </span>
         )}
       </div>
+      {/* Lo que no tiene hoja propia se tira con un personaje: si hay más de uno, se elige */}
+      {rollable && !rolling?.actor && mine.length > 1 && (
+        <div className={styles.rollWith}>
+          <label htmlFor={characterId}>{t('compendium.rollWith')}</label>
+          <select id={characterId} value={withWho ?? ''} onChange={(event) => setChosen(event.currentTarget.value)}>
+            {mine.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name || t('characters.unnamed')}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
       {rows.length > 0 && (
         <dl className={styles.playRows}>
           {rows.map((row) => (
             <div key={row.key}>
               <dt>{row.label}</dt>
-              <dd>{row.text}</dd>
+              <dd>
+                {row.text}
+                {canRoll && row.action && row.rolls.length > 0 && (
+                  <span className={styles.rolls}>
+                    {row.rolls.map((part) => (
+                      <button
+                        key={part}
+                        type="button"
+                        className={styles.rollPart}
+                        aria-label={t(`compendium.roll.${part}Of`, { action: row.label })}
+                        aria-disabled={roll.isPending || undefined}
+                        onClick={() => {
+                          if (!roll.isPending && row.action) roll.mutate({ key: row.action, part })
+                        }}
+                      >
+                        <Dices size={14} aria-hidden="true" />
+                        {t(`compendium.roll.${part}`)}
+                      </button>
+                    ))}
+                  </span>
+                )}
+              </dd>
             </div>
           ))}
         </dl>
       )}
+      {rollable && !rolling?.actor && characters.data && mine.length === 0 && (
+        <p className={styles.manual}>{t('compendium.rollNeedsCharacter')}</p>
+      )}
+      <FormError message={roll.error ? errorText(roll.error) : null} />
       {lines.length > 0 && (
         <ul className={styles.playLines}>
           {lines.map((line) => (

@@ -590,6 +590,63 @@
   margin: 0;
 }
 
+/* Los botones de tirar de una acción, tras su texto */
+.rolls {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-inline-start: var(--space-2);
+  vertical-align: middle;
+}
+
+.rollPart {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-block-size: 1.75rem;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: 600 0.78rem var(--font-body);
+  cursor: pointer;
+}
+
+.rollPart:hover {
+  border-color: var(--color-accent);
+}
+
+.rollPart:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.rollPart[aria-disabled="true"] {
+  cursor: progress;
+  opacity: 0.6;
+}
+
+/* «Tirar con»: el personaje con el que se tira lo que no tiene hoja propia */
+.rollWith {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-block-start: var(--space-2);
+  font-size: 0.875rem;
+}
+
+.rollWith select {
+  min-block-size: 2rem;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--field-fill, var(--color-surface));
+  color: var(--color-text);
+  font: inherit;
+}
+
 .playLines {
   margin: var(--space-2) 0 0;
   padding-inline-start: var(--space-4);

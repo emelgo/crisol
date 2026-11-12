@@ -147,6 +147,7 @@ describe('Actions', () => {
       searchCampaignContent: true,
       browseCampaignContent: true,
       rollContentTable: true,
+      rollContentAction: true,
       resetContentTable: true,
       putWorldContent: true,
       deleteWorldContent: true,

@@ -12,12 +12,14 @@ import {
   getSystemCompendium,
   readSystemCompendium,
   resetContentTable,
+  rollContentAction,
   rollContentTable,
   searchCampaignContent,
   searchSystemCompendium,
   visibilitiesFor
 } from '@crisol/contracts'
 import { chaptersRepo, systemImagesRepo, systemsRepo, tablesRepo, worldContentRepo } from '@crisol/db'
+import { cryptoRoller, DiceSyntaxError } from '@crisol/dice'
 import { authorize, can, NotFoundError } from '@crisol/domain'
 import {
   browseContent,
@@ -31,10 +33,13 @@ import {
   compendiumTypes,
   contentFingerprint,
   contentTables,
+  creatureView,
   type Language,
   type Mechanics,
   mechanicsText,
   normalizeChoices,
+  type Play,
+  RollError,
   type System,
   searchContent,
   summarizeBooks,
@@ -45,11 +50,13 @@ import {
   tableRowOf,
   textFieldOf,
   textOf,
+  tryAction,
   visibleContent,
   withTables
 } from '@crisol/systems'
 import { contentSeen } from '../wiki/reader.ts'
 import { authorizedCampaign } from './access.ts'
+import { characterSheet } from './characters.ts'
 import { type ActionContext, InvalidRequestError } from './context.ts'
 import { rolled, saveRoll, storedOf } from './dice.ts'
 import * as layers from './layers.ts'
@@ -90,6 +97,9 @@ export async function campaignSystem(ctx: ActionContext, campaignId: string) {
   // `layer`: lo que se lee del mundo; `world`: el compendio del mundo como tal (su id, sus copias), solo del máster
   return { document, row, choices, entries, layer, world: master ? layer : null, wiki, hidden }
 }
+
+/** El id del objeto de la entrada en la hoja del personaje con el que se tira, mientras se tira */
+const ENTRY_ITEM = 'entrada-del-compendio'
 
 /** Lo que sale de una tirada, como mucho: las filas que se pisan y las tablas anidadas no la disparan */
 const TABLE_RESULTS = 100
@@ -197,6 +207,97 @@ export const compendiumActions = [
     const found = await campaignSystem(ctx, campaignId)
     if (!found) return { items: [], folders: [], filters: [] }
     return browseView(ctx, found, type)
+  }),
+
+  // Una acción de una entrada (revisión, tanda 7): una criatura, con su hoja; un objeto o un conjuro, con la de un
+  // personaje, como si lo llevara. A su registro, como las tiradas de las criaturas en juego
+  implement(rollContentAction, async (ctx, { campaignId, key, action, characterId, visibility }) => {
+    const campaign = await authorizedCampaign(ctx, 'dice.roll', campaignId)
+    const master = can(ctx.actor, 'dice.private', { campaignId, worldId: campaign.worldId })
+    if (!master && !visibilitiesFor('player').includes(visibility))
+      throw new InvalidRequestError('VISIBILITY_NOT_ALLOWED')
+    const found = await campaignSystem(ctx, campaignId)
+    if (!found?.row) throw new NotFoundError('content')
+    const { document, row, choices, entries, layer } = found
+    if (!visibleContent(document, entries, choices).some((s) => s.item.key === key)) throw new NotFoundError('content')
+    const [item] = await layers.contentByKeys(ctx, row.id, layer, [key])
+    const kind = item ? document.types[item.type] : undefined
+    if (!item || !kind) throw new NotFoundError('content')
+    const name = textOf(item.data.name as Text | undefined, choices.language) || item.key
+    const options = {
+      roller: cryptoRoller,
+      settings: choices.settings,
+      language: choices.language,
+      ...(action.level !== undefined ? { level: action.level } : {}),
+      ...(action.mode !== undefined ? { mode: action.mode } : {}),
+      ...(action.critical ? { critical: true } : {})
+    }
+    try {
+      let rolledAction: ReturnType<typeof tryAction>
+      let who = name
+      if (kind.document === 'actor') {
+        // Lo que tiene hoja propia (una criatura): con la suya, como si estuviera en juego sin nada gastado
+        const played = creatureView(document, [item], choices, item, {} as Play)
+        rolledAction = tryAction(document, item.type, played.document, null, action.key, options)
+      } else {
+        if (!characterId) throw new InvalidRequestError('CHARACTER_REQUIRED', 'di con qué personaje')
+        const sheet = await characterSheet(ctx, characterId, campaignId)
+        const carried = {
+          ...sheet.doc,
+          items: [
+            ...(sheet.doc.items ?? []),
+            {
+              id: ENTRY_ITEM,
+              type: item.type,
+              name,
+              data: item.data,
+              ...(item.mechanics ? { mechanics: item.mechanics } : {})
+            }
+          ]
+        }
+        rolledAction = tryAction(document, sheet.type, carried, ENTRY_ITEM, action.key, options)
+        who = `${sheet.name} · ${name}`
+      }
+      const parts =
+        action.part === 'attack'
+          ? rolledAction.attack
+            ? [{ result: rolledAction.attack, type: undefined as string | undefined }]
+            : []
+          : action.part === 'heal'
+            ? rolledAction.heal
+              ? [{ result: rolledAction.heal.result, type: undefined }]
+              : []
+            : rolledAction.damage.map((d) => ({ result: d.result, type: d.type }))
+      if (parts.length === 0) throw new InvalidRequestError('BAD_ROLL', 'esa acción no tiene eso')
+      const stored = parts.map((p) => storedOf(p.result))
+      const suffix = action.part === 'attack' ? '' : action.part === 'heal' ? ' · curación' : ' · daño'
+      const view = await saveRoll(ctx, campaign, {
+        formula: parts.map((p) => p.result.formula).join(' + '),
+        // Sin repetir el nombre si la acción se llama como la entrada (un conjuro: «Thora · Flecha ácida · daño»)
+        label: `${who}${rolledAction.label === name ? '' : ` · ${rolledAction.label}`}${suffix}`,
+        visibility,
+        result: {
+          total: stored.reduce((n, p) => n + p.total, 0),
+          detail: stored.map((p) => p.detail).join(' + '),
+          critical: action.part === 'attack' ? (stored[0]?.critical ?? null) : null,
+          dice: stored.flatMap((p) => p.dice),
+          // Lo que se aplica después a quien lo recibe, como el de una criatura en juego
+          ...(action.part === 'attack'
+            ? {}
+            : {
+                apply: {
+                  kind: action.part === 'heal' ? ('heal' as const) : ('damage' as const),
+                  parts: parts.map((p, i) => ({ amount: stored[i]?.total ?? 0, type: p.type ?? null }))
+                }
+              })
+        }
+      })
+      return { roll: view }
+    } catch (error) {
+      if (error instanceof RollError || error instanceof DiceSyntaxError)
+        throw new InvalidRequestError('BAD_ROLL', error.message)
+      throw error
+    }
   }),
 
   implement(rollContentTable, async (ctx, { campaignId, key, table, visibility }) => {

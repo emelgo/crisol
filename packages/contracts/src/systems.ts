@@ -586,7 +586,14 @@ const granted = z.union([
 
 /** Su mecánica en palabras (sus acciones, sus usos, lo que cambia, cómo escala), en el idioma de la campaña */
 const mechanicsText = z.object({
-  actions: z.array(z.object({ label: z.string(), parts: z.array(z.string()) })),
+  actions: z.array(
+    z.object({
+      key: z.string(),
+      label: z.string(),
+      parts: z.array(z.string()),
+      rolls: z.array(z.enum(['attack', 'damage', 'heal'])).describe('Lo que se tira de ella (rollContentAction)')
+    })
+  ),
   resources: z.array(z.object({ label: z.string(), parts: z.array(z.string()) })),
   effects: z.array(z.string()),
   scaling: z.string().nullable(),
@@ -709,6 +716,27 @@ export const rollContentTable = defineAction({
     row: z.int().nullable().describe('La fila que salió, por su orden en la tabla; si ninguna abarca el total, null'),
     drawn: z.array(z.string()).describe('En una entrada «tabla» sin reemplazo, las filas ya sacadas (por su id)')
   })
+})
+
+export const rollContentAction = defineAction({
+  name: 'rollContentAction',
+  kind: 'write',
+  description:
+    'Tira una parte (attack, damage o heal) de una acción de una entrada del compendio de una campaña, en el servidor y a su registro, como lo ve quien tira: una criatura (o lo que es un personaje en el sistema), con su propia hoja; un objeto o un conjuro, con la hoja de un personaje de la campaña (characterId), como si lo llevara. Sus acciones, con su clave y lo que se tira de cada una, salen en «play» al leer la entrada',
+  input: z.object({
+    campaignId: z.uuid(),
+    key: z.string().max(100).describe('La entrada'),
+    action: z.object({
+      key: z.string().max(60),
+      part: z.enum(['attack', 'damage', 'heal']),
+      level: z.int().min(0).max(30).optional().describe('A qué nivel (el del espacio de un conjuro)'),
+      mode: z.string().max(60).optional().describe('Un modo del sistema para el ataque (ventaja)'),
+      critical: z.boolean().optional().describe('Si el ataque fue crítico: los dados del daño, dobles')
+    }),
+    characterId: z.uuid().optional().describe('Con la hoja de quién (un objeto o un conjuro)'),
+    visibility: z.enum(['all', 'self', 'master', 'hidden']).default('all')
+  }),
+  output: z.object({ roll: diceRoll })
 })
 
 export const resetContentTable = defineAction({

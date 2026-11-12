@@ -11,7 +11,7 @@ capturas de antes y después; Enrique revisa las tandas juntas.
 - [x] 2. **El lector y el editor de capítulos**: la pestaña «Capítulos» en el libro por dentro; el índice que sigue la
   lectura, anterior y siguiente, el «Ir a…» del móvil; escribir con el editor de bloques; en la campaña, sus jugadores
   leen los capítulos de sus libros (sin los secretos).
-- [ ] 3. **Tirar las acciones de una entrada**: hoy se pintan como texto (`campaign/compendium.tsx`, «En juego»);
+- [x] 3. **Tirar las acciones de una entrada**: hoy se pintan como texto (`campaign/compendium.tsx`, «En juego»);
   ganan su botón y su acción en el servidor, al registro de la campaña.
 - [ ] 4. **Incrustar una entrada** en una página o un capítulo (`![[@Nombre]]`: su ficha), además del enlace; si el
   mundo tiene campañas con sistemas distintos, o ninguna, pregunta de cuál y lo recuerda. **Prueba de fugas**: una

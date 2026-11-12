@@ -3092,6 +3092,36 @@ export function fakeApi(
         types: types.map(typeView)
       }
     },
+    // Una acción de una entrada, a su registro: aquí, sus dados sin lo que sale de la hoja (`+ @…`)
+    rollContentAction: ({ campaignId, key, action, characterId, visibility = 'all' }) => {
+      const found = compendiumOf(campaignId)
+      const item = found?.content.find((each) => each.key === key)
+      if (!found || !item) throw new ApiError('NOT_FOUND', 404)
+      const spec = item.mechanics?.actions?.find((a) => a.key === action.key)
+      if (!spec) throw new ApiError('BAD_ROLL', 400)
+      const actor = found.document.types[item.type]?.document === 'actor'
+      if (!actor && !characterId) throw new ApiError('CHARACTER_REQUIRED', 400)
+      const bare = (formula: string) => formula.replace(/\s*[+-]\s*@[\w.]+/g, '').trim() || '0'
+      const formulas =
+        action.part === 'attack'
+          ? spec.attack
+            ? ['1d20']
+            : []
+          : action.part === 'heal'
+            ? spec.heal
+              ? [bare(spec.heal)]
+              : []
+            : (spec.damage ?? []).map((d) => bare(d.formula))
+      if (formulas.length === 0) throw new ApiError('BAD_ROLL', 400)
+      const name = textOf(item.data.name as Text, found.choices.language) || item.key
+      const label = textOf(spec.label, found.choices.language) || spec.key
+      const out = handlers.rollDice({ campaignId, formula: formulas.join(' + '), visibility })
+      const suffix = action.part === 'attack' ? '' : action.part === 'heal' ? ' · curación' : ' · daño'
+      const stored = rolls.find((r) => r.id === out.roll.id)
+      for (const each of stored ? [out.roll, stored] : [out.roll])
+        each.label = `${name}${label === name ? '' : ` · ${label}`}${suffix}`
+      return { roll: out.roll }
+    },
     rollContentTable: ({ campaignId, key, table, visibility = 'all' }) => {
       const found = compendiumOf(campaignId)
       const item = found?.content.find((each) => each.key === key)

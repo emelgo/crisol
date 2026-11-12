@@ -19,6 +19,8 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   secretos. En el móvil, «Ir a…» en lugar del índice.
 - [ ] **El máster**: en Libros de la campaña, la ficha de un libro con capítulos tiene «Leer».
 - [ ] **La IA**: «pásame el capítulo de combate del PDF a capítulos del libro» (capitulos_libro, guardar_capitulo…).
+- [ ] **Tirar desde una entrada** (compendio de la campaña → una criatura): en «En juego», «Ataque» y «Daño» de cada
+  acción; caen los dados y sale el aviso. Un conjuro o un arma se tira con un personaje («Tirar con», si tienes varios).
 
 ## Revisión, tanda 6: sistemas (en local)
 

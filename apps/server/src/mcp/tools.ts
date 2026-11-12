@@ -407,6 +407,7 @@ export const MCP_TOOLS: Record<string, McpTool> = {
     }
   },
   reiniciar_tabla_compendio: { action: 'resetContentTable' },
+  tirar_accion_compendio: { action: 'rollContentAction' },
   // La biblioteca: los PDF del mundo y los comunes, con su texto por página
   ver_biblioteca: { action: 'listLibrary' },
   buscar_libros: { action: 'searchLibrary' },
