@@ -19,9 +19,11 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   errores bajo su campo, foco y anuncios al añadir, quitar, mover y cambiar de paso, «Deshacer» sin perder lo de
   después. Quedan, menores: la ficha de ejemplo no sigue aún la maqueta del paso 4; arrastrar para ordenar.
 - Pruebas: web 827, e2e `editor-sistemas` en verde. **Página de revisión**: https://claude.ai/artifact/EH91XXhfXA4xdgeoTF2DUj
-- Tanda 7: la cobertura de lo cambiado sube a ~95 % (commit `c144b1b6`); e2e sin desenfoque salvo portada y
-  accesibilidad, y la CI con 60 min. Falta pasar la CI del PR #118, fusionar y desplegar.
-- **Siguiente**: PR #118 en verde → `main` y staging; luego la tanda 8 a `main` con su visto bueno.
+- **Tandas 3 a 7 en `main` y en staging** (PR #118, 2026-11-12; migraciones hasta la 0080). La cobertura de lo
+  cambiado subió a ~95 %; e2e sin desenfoque salvo portada y accesibilidad. En la CI fallan 4 e2e por tiempo agotado
+  (solo allí); Enrique dijo fusionar igual: arreglo apuntado en `tasks/todo-revision.md`. `pnpm crisol quitar-dados`
+  no se ha pasado en staging (las páginas se convierten solas al abrirlas).
+- **Siguiente**: la tanda 9 del plan; la 8 irá a `main` con su visto bueno (o con la siguiente subida).
 
 ### Para retomar (2026-11-12, noche: tanda 7, libros de texto, terminada en local; falta su visto bueno)
 

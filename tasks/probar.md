@@ -3,7 +3,7 @@
 Lista viva: todo lo que haya que probar se apunta aquí y se marca cuando lo pruebe. Lo que diga va a «Lo que dijo» (al
 final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interfaz.
 
-- **Staging**: https://neo.crisol.144-91-122-245.sslip.io, con los módulos 1 a 6: el 6 (la mesa) desde el 2026-11-07, PR #114; el 5 (lo que ven los jugadores)
+- **Staging**: https://neo.crisol.144-91-122-245.sslip.io, con las tandas 3 a 7 de la revisión desde el 2026-11-12 (PR #118) y los módulos 1 a 7: el 6 (la mesa) desde el 2026-11-07, PR #114; el 5 (lo que ven los jugadores)
   desde el 2026-11-07, PR #112; el 4 (compendio, criaturas, imágenes, tablas, grupo y biblioteca), PR #110 y #111.
 - **La IA**: el conector «Neo Crisol» de claude.ai (`https://neo.crisol.144-91-122-245.sslip.io/mcp`), con la cuenta
   de propietario.
