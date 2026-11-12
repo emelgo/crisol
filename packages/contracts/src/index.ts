@@ -182,6 +182,7 @@ import {
 } from './sound.ts'
 import {
   browseCampaignContent,
+  browseSystemCompendium,
   checkSystem,
   createSystem,
   deleteSystem,
@@ -190,15 +191,18 @@ import {
   getCampaignCompendium,
   getCampaignContent,
   getSystem,
+  getSystemCompendium,
   getSystemContent,
   getSystemFormat,
   getSystemParts,
   importSystem,
   listSystems,
   putSystemContent,
+  readSystemCompendium,
   resetContentTable,
   rollContentTable,
   searchCampaignContent,
+  searchSystemCompendium,
   searchSystemContent,
   tryFormula,
   trySystemAction,
@@ -453,6 +457,10 @@ export const ACTIONS = [
   trySystemAction,
   getCampaignCompendium,
   getCampaignContent,
+  getSystemCompendium,
+  searchSystemCompendium,
+  browseSystemCompendium,
+  readSystemCompendium,
   searchCampaignContent,
   browseCampaignContent,
   rollContentTable,
@@ -741,6 +749,10 @@ export type Actions = {
   getSystemContent: typeof getSystemContent
   getCampaignCompendium: typeof getCampaignCompendium
   getCampaignContent: typeof getCampaignContent
+  getSystemCompendium: typeof getSystemCompendium
+  searchSystemCompendium: typeof searchSystemCompendium
+  browseSystemCompendium: typeof browseSystemCompendium
+  readSystemCompendium: typeof readSystemCompendium
   searchCampaignContent: typeof searchCampaignContent
   browseCampaignContent: typeof browseCampaignContent
   rollContentTable: typeof rollContentTable

@@ -6,15 +6,19 @@
  */
 import {
   browseCampaignContent,
+  browseSystemCompendium,
   getCampaignCompendium,
   getCampaignContent,
+  getSystemCompendium,
+  readSystemCompendium,
   resetContentTable,
   rollContentTable,
   searchCampaignContent,
+  searchSystemCompendium,
   visibilitiesFor
 } from '@crisol/contracts'
 import { systemImagesRepo, systemsRepo, tablesRepo, worldContentRepo } from '@crisol/db'
-import { can, NotFoundError } from '@crisol/domain'
+import { authorize, can, NotFoundError } from '@crisol/domain'
 import {
   browseContent,
   type Choices,
@@ -50,6 +54,7 @@ import { type ActionContext, InvalidRequestError } from './context.ts'
 import { rolled, saveRoll, storedOf } from './dice.ts'
 import * as layers from './layers.ts'
 import { implement } from './registry.ts'
+import { readableOrganization } from './systems.ts'
 import { type Drawn, pickRows } from './tables.ts'
 
 /**
@@ -179,126 +184,19 @@ export const compendiumActions = [
         editable: null,
         world: null
       }
-    const { document, row, choices, entries, world, wiki, hidden } = found
-    const language = choices.language
-    // Los tipos que la campaña oculta a sus jugadores no salen (ni en sus secciones)
-    const shownTypes = (types: CompendiumType[]) => types.filter((type) => !hidden.includes(type.key))
-    const say = (text: Text | undefined) => textOf(text, language)
-    // Cuánto trae cada libro (lo pendiente de revisar no cuenta) y cuánto deja fuera la campaña
-    const books = new Map(
-      summarizeBooks(document, entries, { excluded: choices.excluded ?? [], language }).map((b) => [b.key, b])
-    )
-    const typeView = (type: CompendiumType) => ({
-      ...type,
-      label: say(type.label),
-      fields: type.fields.map(({ options, ...f }) => ({
-        ...f,
-        label: say(f.label),
-        ...(options ? { options: options.map((o) => ({ value: o.value, label: say(o.label) })) } : {})
-      }))
-    })
-    const editable =
-      row && can(ctx.actor, 'systems.write', { organizationId: row.organizationId })
-        ? {
-            systemId: row.id,
-            version: row.version,
-            types: compendiumTypes(document, entries, choices, true).map(typeView)
-          }
-        : null
-    return {
-      system: { id: document.id, name: say(document.name) },
-      editable,
-      language,
-      sources: (document.sources ?? [])
-        .filter((s) => choices.sources.includes(s.key))
-        .map((s) => {
-          const summary = books.get(s.key)
-          return {
-            key: s.key,
-            name: say(s.name),
-            edition: s.edition ?? null,
-            license: s.license,
-            attribution: say(s.attribution),
-            description: s.description ? say(s.description) : null,
-            cover: s.cover ?? null,
-            requires: s.requires ?? [],
-            count: (summary?.count ?? 0) - (summary?.excluded ?? 0),
-            excluded: summary?.excluded ?? 0
-          }
-        }),
-      sections: compendiumSections(document, shownTypes(compendiumTypes(document, entries, choices)))
-        .filter((section) => section.types.length > 0)
-        .map((section) => ({
-          key: section.key,
-          label: say(section.label),
-          types: section.types.map((type) => ({ key: type.key, label: say(type.label) }))
-        })),
-      types: shownTypes(compendiumTypes(document, entries, choices)).map(typeView),
-      world: world
-        ? {
-            worldId: world.worldId,
-            systemId: world.systemId,
-            writable: can(ctx.actor, 'worldContent.write', wiki),
-            count: worldKeys(entries).size,
-            byType: countByType(entries.filter((e) => (e as { world?: true }).world)),
-            types: compendiumTypes(document, entries, choices, true).map(typeView)
-          }
-        : null
-    }
+    return compendiumView(ctx, found)
   }),
 
   implement(searchCampaignContent, async (ctx, { campaignId, layer, source, ...given }) => {
     const found = await campaignSystem(ctx, campaignId)
     if (!found) return { items: [], total: 0 }
-    const { document, choices, entries: all } = found
-    const own = worldKeys(all)
-    // Solo una capa o un libro, si se pide: se filtra antes de paginar
-    const entries = all.filter(
-      (e) => (!layer || own.has(e.key) === (layer === 'world')) && (!source || e.source === source)
-    )
-    const result = searchContent(document, entries, {
-      sources: choices.sources,
-      excluded: choices.excluded ?? [],
-      duplicates: choices.duplicates,
-      language: choices.language,
-      ...given
-    })
-    return { ...result, items: result.items.map((hit) => (own.has(hit.key) ? { ...hit, world: true } : hit)) }
+    return searchView(found, { layer, source, ...given })
   }),
 
   implement(browseCampaignContent, async (ctx, { campaignId, type }) => {
     const found = await campaignSystem(ctx, campaignId)
     if (!found) return { items: [], folders: [], filters: [] }
-    const { document, row, choices, hidden } = found
-    if (hidden.includes(type)) return { items: [], folders: [], filters: [] }
-    // Las carpetas salen de sus valores: de un sistema de la cuenta, el contenido de ese tipo entero (con lo del mundo
-    // que se ve: un jugador, lo revelado)
-    const items = row ? await layers.contentOfType(ctx, row.id, found.layer, type) : []
-    const own = new Set(items.filter((i) => i.world).map((i) => i.key))
-    // Su imagen, si el sistema la tiene
-    const images = row
-      ? await systemImagesRepo.existingPaths(
-          ctx.db,
-          row.id,
-          items.flatMap((i) => (i.img ? [i.img] : []))
-        )
-      : new Map()
-    const imgOf = new Map(items.flatMap((i) => (i.img && images.has(i.img) ? [[i.key, i.img] as const] : [])))
-    const result = browseContent(document, items, {
-      type,
-      sources: choices.sources,
-      excluded: choices.excluded ?? [],
-      duplicates: choices.duplicates,
-      language: choices.language
-    })
-    return {
-      ...result,
-      items: result.items.map((item) => ({
-        ...item,
-        ...(own.has(item.key) ? { world: true } : {}),
-        ...(imgOf.has(item.key) ? { img: imgOf.get(item.key) } : {})
-      }))
-    }
+    return browseView(ctx, found, type)
   }),
 
   implement(rollContentTable, async (ctx, { campaignId, key, table, visibility }) => {
@@ -382,62 +280,242 @@ export const compendiumActions = [
     const wanted = [...new Set(keys)]
     const found = await campaignSystem(ctx, campaignId)
     if (!found) return { items: [], missing: wanted }
-    const { document, row, choices, entries, layer, world } = found
-    const seen = visibleContent(document, entries, choices)
-    const shown = new Set(seen.map((s) => s.item.key))
-    const visible = wanted.filter((k) => shown.has(k))
-    const items: ContentItem[] = row ? await layers.contentByKeys(ctx, row.id, layer, visible) : []
-    const byKey = new Map(items.map((item) => [item.key, item]))
-    const own = world ? await worldEntries(ctx, world, choices.language, visible) : new Map<string, WorldView>()
-    const images = row
-      ? await systemImagesRepo.existingPaths(
-          ctx.db,
-          row.id,
-          items.flatMap((i) => (i.img ? [i.img] : []))
-        )
-      : new Map()
-    const name = (value: unknown) =>
-      typeof value === 'string' ? value : textOf(value as Text | undefined, choices.language)
-    // Las tablas sin reemplazo: lo ya sacado en esta campaña
-    const once = items.filter((i) => i.table?.replacement === false).map((i) => i.key)
-    const draws = await tablesRepo.contentDrawsByKeys(ctx.db, campaignId, once)
-    return {
-      items: visible.flatMap((k) => {
-        const item = byKey.get(k)
-        if (!item) return []
-        const entry = compendiumEntry(document, seen, item)
-        // Lo del mundo como tal (su id, su origen) va en `world`, solo para el máster
-        const { world: _, ...copy } = structuredClone(item) as ContentItem & { world?: unknown }
-        return [
-          {
-            ...copy,
-            ...entry,
-            // Con sus datos: una criatura tira con lo suyo (su ataque y su daño, ya calculados)
-            play: mechanicsText(document, item.type, item.mechanics as Mechanics | undefined, choices.language, {
-              data: item.data as Record<string, unknown>
-            }),
-            ...(item.img && images.has(item.img)
-              ? {
-                  image: {
-                    credit: images.get(item.img)?.credit ?? null,
-                    license: images.get(item.img)?.license ?? 'unknown'
-                  }
-                }
-              : {}),
-            ...(own.has(k) ? { world: own.get(k) } : {}),
-            ...(once.includes(k) ? { drawn: draws.get(k) ?? [] } : {}),
-            granted: entry.granted.map((g) =>
-              'choose' in g
-                ? { level: g.level, choose: textOf(g.choose, choices.language), count: g.count }
-                : { level: g.level, key: g.key, type: g.type, name: name(g.name) }
-            )
-          }
-        ]
-      }),
-      missing: wanted.filter((k) => !byKey.has(k))
-    }
-  })
+    return contentView(ctx, found, wanted, campaignId)
+  }),
+
+  // El compendio de un sistema (su espacio y sus libros, revisión tanda 6): lo mismo que el de una campaña, con todos
+  // sus libros y sin lo de la partida (el mundo, lo que ven los jugadores, lo sacado de las tablas)
+  implement(getSystemCompendium, async (ctx, { systemId, organizationId }) =>
+    compendiumView(ctx, await systemScope(ctx, systemId, organizationId))
+  ),
+
+  implement(searchSystemCompendium, async (ctx, { systemId, organizationId, source, ...given }) =>
+    searchView(await systemScope(ctx, systemId, organizationId), { source, ...given })
+  ),
+
+  implement(browseSystemCompendium, async (ctx, { systemId, organizationId, type }) =>
+    browseView(ctx, await systemScope(ctx, systemId, organizationId), type)
+  ),
+
+  implement(readSystemCompendium, async (ctx, { systemId, organizationId, keys }) =>
+    contentView(ctx, await systemScope(ctx, systemId, organizationId), [...new Set<string>(keys)], null)
+  )
 ]
+
+/** Lo que se lee del compendio: el de una campaña (campaignSystem) o el de un sistema entero (systemScope) */
+type Scope = NonNullable<Awaited<ReturnType<typeof campaignSystem>>>
+
+/**
+ * El compendio de un sistema, sin campaña (su espacio y sus libros): todos sus libros, las dos ediciones de lo repetido
+ * y nada del mundo. Lo lee quien puede leer los sistemas de su cuenta (y cualquiera, uno de serie)
+ */
+async function systemScope(ctx: ActionContext, systemId: string, organizationId: string | undefined): Promise<Scope> {
+  const catalog = catalogSystem(systemId)
+  const row = catalog ? null : await systemsRepo.findSystem(ctx.db, systemId)
+  if (!catalog && (!row || row.deletedAt)) throw new NotFoundError('system')
+  if (row) authorize(ctx.actor, 'systems.read', { organizationId: row.organizationId })
+  else readableOrganization(ctx, organizationId)
+  const document = withTables(catalog ?? (row?.document as unknown as System))
+  const { choices: base } = normalizeChoices(document, {})
+  const choices = { ...base, sources: (document.sources ?? []).map((s) => s.key), duplicates: 'both' as const }
+  const entries: ContentEntry[] = row ? await layers.contentIndex(ctx, row.id, null) : []
+  return {
+    document,
+    row,
+    choices,
+    entries,
+    layer: null,
+    world: null,
+    wiki: { worldId: '', organizationId: row?.organizationId ?? '' },
+    hidden: []
+  }
+}
+
+async function compendiumView(ctx: ActionContext, found: Scope) {
+  const { document, row, choices, entries, world, wiki, hidden } = found
+  const language = choices.language
+  // Los tipos que la campaña oculta a sus jugadores no salen (ni en sus secciones)
+  const shownTypes = (types: CompendiumType[]) => types.filter((type) => !hidden.includes(type.key))
+  const say = (text: Text | undefined) => textOf(text, language)
+  // Cuánto trae cada libro (lo pendiente de revisar no cuenta) y cuánto deja fuera la campaña
+  const books = new Map(
+    summarizeBooks(document, entries, { excluded: choices.excluded ?? [], language }).map((b) => [b.key, b])
+  )
+  const typeView = (type: CompendiumType) => ({
+    ...type,
+    label: say(type.label),
+    fields: type.fields.map(({ options, ...f }) => ({
+      ...f,
+      label: say(f.label),
+      ...(options ? { options: options.map((o) => ({ value: o.value, label: say(o.label) })) } : {})
+    }))
+  })
+  const editable =
+    row && can(ctx.actor, 'systems.write', { organizationId: row.organizationId })
+      ? {
+          systemId: row.id,
+          version: row.version,
+          types: compendiumTypes(document, entries, choices, true).map(typeView)
+        }
+      : null
+  return {
+    system: { id: document.id, name: say(document.name) },
+    editable,
+    language,
+    sources: (document.sources ?? [])
+      .filter((s) => choices.sources.includes(s.key))
+      .map((s) => {
+        const summary = books.get(s.key)
+        return {
+          key: s.key,
+          name: say(s.name),
+          edition: s.edition ?? null,
+          license: s.license,
+          attribution: say(s.attribution),
+          description: s.description ? say(s.description) : null,
+          cover: s.cover ?? null,
+          requires: s.requires ?? [],
+          count: (summary?.count ?? 0) - (summary?.excluded ?? 0),
+          excluded: summary?.excluded ?? 0
+        }
+      }),
+    sections: compendiumSections(document, shownTypes(compendiumTypes(document, entries, choices)))
+      .filter((section) => section.types.length > 0)
+      .map((section) => ({
+        key: section.key,
+        label: say(section.label),
+        types: section.types.map((type) => ({ key: type.key, label: say(type.label) }))
+      })),
+    types: shownTypes(compendiumTypes(document, entries, choices)).map(typeView),
+    world: world
+      ? {
+          worldId: world.worldId,
+          systemId: world.systemId,
+          writable: can(ctx.actor, 'worldContent.write', wiki),
+          count: worldKeys(entries).size,
+          byType: countByType(entries.filter((e) => (e as { world?: true }).world)),
+          types: compendiumTypes(document, entries, choices, true).map(typeView)
+        }
+      : null
+  }
+}
+
+function searchView(
+  found: Scope,
+  {
+    layer,
+    source,
+    ...given
+  }: { layer?: 'system' | 'world' | undefined; source?: string | undefined } & Partial<
+    Parameters<typeof searchContent>[2]
+  >
+) {
+  const { document, choices, entries: all } = found
+  const own = worldKeys(all)
+  // Solo una capa o un libro, si se pide: se filtra antes de paginar
+  const entries = all.filter(
+    (e) => (!layer || own.has(e.key) === (layer === 'world')) && (!source || e.source === source)
+  )
+  const result = searchContent(document, entries, {
+    sources: choices.sources,
+    excluded: choices.excluded ?? [],
+    duplicates: choices.duplicates,
+    language: choices.language,
+    ...given
+  })
+  return { ...result, items: result.items.map((hit) => (own.has(hit.key) ? { ...hit, world: true } : hit)) }
+}
+
+async function browseView(ctx: ActionContext, found: Scope, type: string) {
+  const { document, row, choices, hidden } = found
+  if (hidden.includes(type)) return { items: [], folders: [], filters: [] }
+  // Las carpetas salen de sus valores: de un sistema de la cuenta, el contenido de ese tipo entero (con lo del mundo
+  // que se ve: un jugador, lo revelado)
+  const items = row ? await layers.contentOfType(ctx, row.id, found.layer, type) : []
+  const own = new Set(items.filter((i) => i.world).map((i) => i.key))
+  // Su imagen, si el sistema la tiene
+  const images = row
+    ? await systemImagesRepo.existingPaths(
+        ctx.db,
+        row.id,
+        items.flatMap((i) => (i.img ? [i.img] : []))
+      )
+    : new Map()
+  const imgOf = new Map(items.flatMap((i) => (i.img && images.has(i.img) ? [[i.key, i.img] as const] : [])))
+  const result = browseContent(document, items, {
+    type,
+    sources: choices.sources,
+    excluded: choices.excluded ?? [],
+    duplicates: choices.duplicates,
+    language: choices.language
+  })
+  return {
+    ...result,
+    items: result.items.map((item) => ({
+      ...item,
+      ...(own.has(item.key) ? { world: true } : {}),
+      ...(imgOf.has(item.key) ? { img: imgOf.get(item.key) } : {})
+    }))
+  }
+}
+
+/** Leer unas entradas; con campaignId, también lo ya sacado de sus tablas sin reemplazo */
+async function contentView(ctx: ActionContext, found: Scope, wanted: string[], campaignId: string | null) {
+  const { document, row, choices, entries, layer, world } = found
+  const seen = visibleContent(document, entries, choices)
+  const shown = new Set(seen.map((s) => s.item.key))
+  const visible = wanted.filter((k) => shown.has(k))
+  const items: ContentItem[] = row ? await layers.contentByKeys(ctx, row.id, layer, visible) : []
+  const byKey = new Map(items.map((item) => [item.key, item]))
+  const own = world ? await worldEntries(ctx, world, choices.language, visible) : new Map<string, WorldView>()
+  const images = row
+    ? await systemImagesRepo.existingPaths(
+        ctx.db,
+        row.id,
+        items.flatMap((i) => (i.img ? [i.img] : []))
+      )
+    : new Map()
+  const name = (value: unknown) =>
+    typeof value === 'string' ? value : textOf(value as Text | undefined, choices.language)
+  // Las tablas sin reemplazo: lo ya sacado en esta campaña
+  const once = items.filter((i) => i.table?.replacement === false).map((i) => i.key)
+  const draws = campaignId ? await tablesRepo.contentDrawsByKeys(ctx.db, campaignId, once) : new Map<string, string[]>()
+  return {
+    items: visible.flatMap((k) => {
+      const item = byKey.get(k)
+      if (!item) return []
+      const entry = compendiumEntry(document, seen, item)
+      // Lo del mundo como tal (su id, su origen) va en `world`, solo para el máster
+      const { world: _, ...copy } = structuredClone(item) as ContentItem & { world?: unknown }
+      return [
+        {
+          ...copy,
+          ...entry,
+          // Con sus datos: una criatura tira con lo suyo (su ataque y su daño, ya calculados)
+          play: mechanicsText(document, item.type, item.mechanics as Mechanics | undefined, choices.language, {
+            data: item.data as Record<string, unknown>
+          }),
+          ...(item.img && images.has(item.img)
+            ? {
+                image: {
+                  credit: images.get(item.img)?.credit ?? null,
+                  license: images.get(item.img)?.license ?? 'unknown'
+                }
+              }
+            : {}),
+          ...(own.has(k) ? { world: own.get(k) } : {}),
+          ...(once.includes(k) ? { drawn: draws.get(k) ?? [] } : {}),
+          granted: entry.granted.map((g) =>
+            'choose' in g
+              ? { level: g.level, choose: textOf(g.choose, choices.language), count: g.count }
+              : { level: g.level, key: g.key, type: g.type, name: name(g.name) }
+          )
+        }
+      ]
+    }),
+    missing: wanted.filter((k) => !byKey.has(k))
+  }
+}
 
 /** Lo que se dice de una entrada del mundo al leerla */
 interface WorldView {

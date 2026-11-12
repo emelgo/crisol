@@ -1409,6 +1409,15 @@ export function fakeApi(
 
   /** El sistema de una campaña, con lo que eligió y su contenido (en la falsa, el de los de la cuenta) */
   const compendiumOf = (campaignId: string) => {
+    // El compendio de un sistema sin campaña (su espacio): todos sus libros, las dos ediciones y nada del mundo
+    if (campaignId.startsWith('sistema:')) {
+      const document = systemById(campaignId.slice('sistema:'.length))
+      if (!document) throw new ApiError('NOT_FOUND', 404)
+      const { choices: base } = normalizeChoices(document, {})
+      const choices = { ...base, sources: (document.sources ?? []).map((s) => s.key), duplicates: 'both' as const }
+      const own = ownSystems.find((s) => s.id === document.id && !s.deleted)
+      return { document, choices, content: own?.content ?? [], world: null, worldKeys: new Set<string>() }
+    }
     const campaign = campaigns.find((c) => c.id === campaignId)
     if (!campaign) throw new ApiError('NOT_FOUND', 404)
     const document = campaign.system ? systemById(campaign.system.id) : null
@@ -3187,6 +3196,13 @@ export function fakeApi(
       })
       return { items, missing: wanted.filter((k) => !items.some((item) => item.key === k)) }
     },
+    getSystemCompendium: ({ systemId }) => handlers.getCampaignCompendium({ campaignId: `sistema:${systemId}` }),
+    searchSystemCompendium: ({ systemId, organizationId: _, ...options }) =>
+      handlers.searchCampaignContent({ campaignId: `sistema:${systemId}`, ...options }),
+    browseSystemCompendium: ({ systemId, type }) =>
+      handlers.browseCampaignContent({ campaignId: `sistema:${systemId}`, type }),
+    readSystemCompendium: ({ systemId, keys }) =>
+      handlers.getCampaignContent({ campaignId: `sistema:${systemId}`, keys }),
     putWorldContent: ({ worldId, systemId, items }) => {
       const own = ownSystems.find((s) => s.id === systemId && !s.deleted)
       if (!own || !leadsWorlds()) throw new ApiError('NOT_FOUND', 404)
