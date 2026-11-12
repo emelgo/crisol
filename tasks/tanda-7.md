@@ -21,7 +21,7 @@ capturas de antes y después; Enrique revisa las tandas juntas.
 - [x] 6. **Los dados salen de la wiki**: dejar de ofrecer `dice:` → convertir los que haya a texto en código (al cargar
   y al restaurar versiones) → barrido → quitar el nodo (`packages/editor/src/nodes/dice-roll.ts`, su vista, i18n, MCP,
   pruebas).
-- [ ] 7. Crítica y audit de impeccable, arreglos, capturas y la página de revisión.
+- [x] 7. Crítica y audit de impeccable, arreglos, capturas y la página de revisión.
 
 ## Encontrado de paso
 
