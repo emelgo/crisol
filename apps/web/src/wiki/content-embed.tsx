@@ -55,8 +55,17 @@ export function ContentCard({
   const dice = useOptionalDice()
   const [open, setOpen] = useState(false)
   const { scope, entry, missing } = useLinkedEntry(name, system)
-  // Su campaña, para leerla entera y tirar: la de quien lee o, desde el mundo, una con su sistema
-  const campaignId = scope?.kind === 'campaign' ? scope.campaignId : (entry?.campaignId ?? null)
+  // Desde el mundo, las campañas que dirige: se tira en la elegida en los dados si es de su sistema
+  const worldId = scope?.kind === 'world' ? scope.worldId : null
+  const campaigns = useQuery({
+    queryKey: ['campaigns', worldId],
+    queryFn: () => api.call('listCampaigns', { worldId: worldId ?? '' }),
+    enabled: Boolean(worldId && entry)
+  })
+  const chosenId = worldId ? (dice?.campaignFor(worldId) ?? null) : null
+  const chosen = campaigns.data?.campaigns.find((c) => c.id === chosenId && c.system?.id === entry?.systemId)
+  // Su campaña, para leerla entera y tirar: la de quien lee; desde el mundo, la elegida en los dados o una con su sistema
+  const campaignId = scope?.kind === 'campaign' ? scope.campaignId : (chosen?.id ?? entry?.campaignId ?? null)
   const full = useQuery({
     queryKey: ['compendium', campaignId ?? `sistema:${entry?.systemId}`, 'entry', entry?.key],
     queryFn: () =>

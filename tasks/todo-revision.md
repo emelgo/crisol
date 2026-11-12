@@ -187,6 +187,7 @@ Plan: `tasks/plan-revision.md`. Una tanda cada vez: se enseña en local, Enrique
 ## Tanda 9 — Repaso del MCP
 
 ## Después
+- [ ] **Registro de tiradas a la vista fuera de la Mesa** (Enrique, 2026-11-12: dirigir la sesión desde la página, sin la Mesa): un botón «Registro» en la barra mientras se está en una campaña o en su mundo, que abre el historial al lado de la página (hoy, desde el d20 → Historial).
 
 - [ ] Módulo 9: pizarras y mapas con capas.
 - [ ] Módulo 8 (mundo): calendarios y líneas temporales.
