@@ -84,7 +84,7 @@ test('rechazado, no se hace; en solo lectura, Claude ya no cambia nada', async (
 test('la cola y los ajustes de IA, en los dos temas @a11y', async ({ page }) => {
   const { claude, campaignId } = await withClaude(page)
   const check = async () => {
-    for (const colorScheme of ['light', 'dark'] as const) {
+    for (const colorScheme of ['dark'] as const) {
       await page.emulateMedia({ colorScheme })
       const { violations } = await new AxeBuilder({ page })
         .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])

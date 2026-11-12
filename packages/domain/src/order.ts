@@ -113,3 +113,50 @@ export function keyBetween(a: string | null, b: string | null): string {
 
 /** Compara dos claves como lo hace la collation "C": por sus caracteres, sin mirar mayúsculas ni idioma */
 export const compareKeys = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0)
+
+/** Algo con puesto entre sus hermanas (null o sin él: aún no lo tiene) */
+export interface Placed {
+  position?: string | null
+}
+
+/**
+ * El orden de unas hermanas: las que tienen puesto, por él (como la collation "C"); detrás, las que no, por nombre. Lo
+ * usan las carpetas y los archivos, en el servidor y en la web, para que se vean igual
+ */
+export const bySiblingPlace = (a: Placed & { name: string }, b: Placed & { name: string }) => {
+  const left = a.position ?? null
+  const right = b.position ?? null
+  if (left !== null && right !== null) return compareKeys(left, right)
+  if (left !== null) return -1
+  if (right !== null) return 1
+  return a.name.localeCompare(b.name, 'es')
+}
+
+/**
+ * Los puestos que hay que guardar al poner `moved` delante o detrás de una de sus hermanas (`siblings`: todas, ya en su
+ * orden, con ella o sin ella; sin ancla o con una que no está, al final). Si todas las demás tenían puesto, solo cambia
+ * el suyo; si no, se rellenan todas en el orden nuevo, para que las que iban por nombre se queden donde se veían
+ */
+export function placeAmong(
+  siblings: readonly (Placed & { id: string })[],
+  moved: string,
+  to: { before?: string; after?: string }
+): { id: string; position: string }[] {
+  const others = siblings.filter((s) => s.id !== moved)
+  const anchor = to.before ?? to.after
+  const at = anchor === undefined ? -1 : others.findIndex((s) => s.id === anchor)
+  const index = at < 0 ? others.length : to.before !== undefined ? at : at + 1
+  if (others.every((s) => (s.position ?? null) !== null)) {
+    const previous = others[index - 1]?.position ?? null
+    const next = others[index]?.position ?? null
+    return [{ id: moved, position: keyBetween(previous, next) }]
+  }
+  const order = [...others.slice(0, index).map((s) => s.id), moved, ...others.slice(index).map((s) => s.id)]
+  const result: { id: string; position: string }[] = []
+  let last: string | null = null
+  for (const id of order) {
+    last = keyBetween(last, null)
+    result.push({ id, position: last })
+  }
+  return result
+}

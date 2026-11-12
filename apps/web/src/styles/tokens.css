@@ -1,8 +1,8 @@
 /*
  * Tokens de diseño: la mezcla del Crisol antiguo y del nuevo (Enrique, 2026-10-30). Del antiguo, los grises neutros,
  * un color por nivel de título, los enlaces en azul y el rojo solo en lo importante; del nuevo, Barlow, los títulos
- * condensados y las esquinas cortadas. Lo de la IA, en azul claro. Oscuro o claro según el sistema; los contrastes los
- * comprueba tokens.test.ts
+ * condensados y las esquinas cortadas. Lo de la IA, en azul claro. Solo el tema oscuro (Enrique, 2026-11-11: el claro
+ * se quita; si un día hace falta, se hará entero); los contrastes los comprueba tokens.test.ts
  */
 @import "@fontsource/barlow/400.css";
 @import "@fontsource/barlow/600.css";
@@ -12,45 +12,44 @@
 @import "@fontsource/barlow-condensed/800.css";
 
 :root {
-  color-scheme: light;
-  /* La barra de arriba es oscura en los dos temas */
-  --color-chrome: #1b1d22;
+  color-scheme: dark;
+  --color-chrome: #111317;
   --color-chrome-text: #edebe7;
   --color-chrome-muted: #a9adb5;
   --color-chrome-accent: #f27470;
-  --color-bg: #ffffff;
-  --color-surface: #fafafa;
-  --color-raised: #f4f4f5;
-  --color-frame: #cdcdd4;
-  --color-text: #1c1c1f;
-  --color-muted: #5b5b65;
-  --color-border: #e1e1e6;
+  --color-bg: #17181b;
+  --color-surface: #1e1f23;
+  --color-raised: #25262b;
+  --color-frame: #3b3c44;
+  --color-text: #e7e7ea;
+  --color-muted: #a1a1aa;
+  --color-border: #2c2d33;
   /* El borde de los campos: 3:1 con el fondo y la superficie (WCAG 1.4.11). --color-border es solo decorativo */
-  --color-field-border: #7a7f89;
+  --color-field-border: #80858f;
   /* El acento de fondo (botones) y el de texto no son el mismo: el de fondo no siempre llega a 4,5:1 como texto */
-  --color-accent: #b8282a;
+  --color-accent: #c9302c;
   --color-on-accent: #ffffff;
-  --color-accent-text: #c42b31;
+  --color-accent-text: #f08b8e;
   /* Un color por nivel de título (h2, h3, h4) y el de los enlaces, como en el Crisol antiguo */
-  --color-h2: #a8201a;
-  --color-h3: #85540f;
-  --color-h4: #1d7466;
-  --color-link: #1a62c4;
+  --color-h2: #f07167;
+  --color-h3: #e9b872;
+  --color-h4: #6fc3b2;
+  --color-link: #8ab4f8;
   /* La marca: la llama (de brand abajo a glow arriba) y la señal de lo activo. Solo adorno, nunca texto */
-  --color-brand: #d63a40;
-  --color-brand-glow: #f0703f;
-  --color-ai: #1f6e99;
-  --color-focus: #c42b31;
+  --color-brand: #e5484d;
+  --color-brand-glow: #ff8a5c;
+  --color-ai: #7cc4e8;
+  --color-focus: #f08b8e;
   /* Los secretos y las notas ocultas: aparte, en morado, con su borde de rayas */
-  --color-secret: #f3eff9;
-  --color-secret-rule: #6b5494;
-  --color-secret-text: #553f7a;
+  --color-secret: #2a2530;
+  --color-secret-rule: #8e7bb0;
+  --color-secret-text: #c9b8e8;
   /* Los recuadros: su raya y su rótulo (4,5:1 sobre --color-raised); leer en voz alta, como un pergamino */
-  --color-tip: #2d6a39;
-  --color-warning: #80520a;
-  --color-danger: #a82326;
-  --color-read-aloud: #f6efdf;
-  --color-read-aloud-rule: #7a5a28;
+  --color-tip: #84cc92;
+  --color-warning: #e2b35a;
+  --color-danger: #f27470;
+  --color-read-aloud: #2e2a22;
+  --color-read-aloud-rule: #d2b077;
 
   --font-body: "Barlow", system-ui, sans-serif;
   --font-display: "Barlow Condensed", "Arial Narrow", sans-serif;
@@ -76,6 +75,50 @@
     0 calc(100% - 11px),
     0 11px
   );
+  /* Solo la raya del marco, de 1px (o 2px, con el foco), con sus diagonales: el marco sin relleno, para que lo de
+     dentro pueda ser de cristal. Dos contornos con evenodd: el de dentro hace el hueco */
+  --cut-ring: polygon(
+    evenodd,
+    12px 0,
+    calc(100% - 12px) 0,
+    100% 12px,
+    100% calc(100% - 12px),
+    calc(100% - 12px) 100%,
+    12px 100%,
+    0 calc(100% - 12px),
+    0 12px,
+    12px 0,
+    12.41px 1px,
+    1px 12.41px,
+    1px calc(100% - 12.41px),
+    12.41px calc(100% - 1px),
+    calc(100% - 12.41px) calc(100% - 1px),
+    calc(100% - 1px) calc(100% - 12.41px),
+    calc(100% - 1px) 12.41px,
+    calc(100% - 12.41px) 1px,
+    12.41px 1px
+  );
+  --cut-ring-2: polygon(
+    evenodd,
+    12px 0,
+    calc(100% - 12px) 0,
+    100% 12px,
+    100% calc(100% - 12px),
+    calc(100% - 12px) 100%,
+    12px 100%,
+    0 calc(100% - 12px),
+    0 12px,
+    12px 0,
+    12.83px 2px,
+    2px 12.83px,
+    2px calc(100% - 12.83px),
+    12.83px calc(100% - 2px),
+    calc(100% - 12.83px) calc(100% - 2px),
+    calc(100% - 2px) calc(100% - 12.83px),
+    calc(100% - 2px) 12.83px,
+    calc(100% - 12.83px) 2px,
+    12.83px 2px
+  );
   --cut-button: polygon(
     6px 0,
     calc(100% - 6px) 0,
@@ -95,66 +138,111 @@
   --space-8: 2rem;
   /* Lo mínimo que se toca con el dedo */
   --target: 2.75rem;
+  /* Dónde empiezan las ventanas encima (ajustes, portada, selector): todas a la misma altura, cada una tapa la de debajo */
+  --dialog-top: min(12dvh, 6rem);
   /* El cristal de lo que flota sobre el mapa de la Mesa (lienzo «La Mesa, con cristal»): el tinte sale de la superficie,
      nada de azul; con --glass-solid, el mismo sin desenfoque (navegadores sin backdrop-filter) */
-  --glass-tint: color-mix(in srgb, var(--color-surface) 70%, transparent);
-  --glass-solid: color-mix(in srgb, var(--color-surface) 93%, transparent);
-  --glass-body: color-mix(in srgb, var(--color-surface) 98.5%, transparent);
-  /* La barra de la derecha de la Mesa: de cristal, pero se lee (lleva texto) */
-  --glass-panel: color-mix(in srgb, var(--color-surface) 82%, transparent);
-  --glass-edge: rgb(255 255 255 / 0.7);
-  --glass-hi: rgb(255 255 255 / 0.95);
-  --glass-line: rgb(0 0 0 / 0.14);
-  --glass-sheen: linear-gradient(180deg, rgb(255 255 255 / 0.5), rgb(255 255 255 / 0) 65%);
-  --glass-blur: blur(14px) saturate(1.5) brightness(1.08);
-  --glass-shadow: 0 10px 28px -12px rgb(0 0 0 / 0.6);
-  --glass-lift: 0 18px 34px -14px rgb(0 0 0 / 0.7);
-  /* El brillo de lo vivo (el turno, la tele, lo que se enseña, un crítico), en el rojo de la marca */
-  --glow-live:
-    0 0 0 1px color-mix(in srgb, var(--color-brand) 80%, transparent),
-    0 0 14px 0 color-mix(in srgb, var(--color-brand) 50%, transparent),
-    0 0 34px 2px color-mix(in srgb, var(--color-brand-glow) 24%, transparent);
-}
-
-:root[data-theme="dark"] {
-  color-scheme: dark;
-  --color-chrome: #111317;
-  --color-chrome-text: #edebe7;
-  --color-chrome-muted: #a9adb5;
-  --color-chrome-accent: #f27470;
-  --color-bg: #17181b;
-  --color-surface: #1e1f23;
-  --color-raised: #25262b;
-  --color-frame: #3b3c44;
-  --color-text: #e7e7ea;
-  --color-muted: #a1a1aa;
-  --color-border: #2c2d33;
-  --color-field-border: #80858f;
-  --color-accent: #c9302c;
-  --color-on-accent: #ffffff;
-  --color-accent-text: #f08b8e;
-  --color-h2: #f07167;
-  --color-h3: #e9b872;
-  --color-h4: #6fc3b2;
-  --color-link: #8ab4f8;
-  --color-brand: #e5484d;
-  --color-brand-glow: #ff8a5c;
-  --color-ai: #7cc4e8;
-  --color-focus: #f08b8e;
-  --color-secret: #2a2530;
-  --color-secret-rule: #8e7bb0;
-  --color-secret-text: #c9b8e8;
-  --color-tip: #84cc92;
-  --color-warning: #e2b35a;
-  --color-danger: #f27470;
-  --color-read-aloud: #2e2a22;
-  --color-read-aloud-rule: #d2b077;
   --glass-tint: color-mix(in srgb, var(--color-surface) 46%, transparent);
   --glass-solid: color-mix(in srgb, var(--color-surface) 92%, transparent);
   --glass-body: color-mix(in srgb, var(--color-surface) 98%, transparent);
+  /* La barra de la derecha de la Mesa: de cristal, pero se lee (lleva texto) */
   --glass-panel: color-mix(in srgb, var(--color-surface) 72%, transparent);
   --glass-edge: rgb(255 255 255 / 0.11);
   --glass-hi: rgb(255 255 255 / 0.12);
   --glass-line: rgb(0 0 0 / 0.5);
   --glass-sheen: linear-gradient(180deg, rgb(255 255 255 / 0.08), rgb(255 255 255 / 0) 60%);
+  --glass-blur: blur(14px) saturate(1.5) brightness(1.08);
+  --glass-shadow: 0 10px 28px -12px rgb(0 0 0 / 0.6);
+  --glass-lift: 0 18px 34px -14px rgb(0 0 0 / 0.7);
+  /* Fuera de la Mesa (tanda 5, «Crisol, con cristal»), sobre el fondo de ambiente (components/ambient.tsx): lo que
+     enmarca, de cristal de verdad (la barra, las fichas de los lados, las tarjetas y los recuadros): translúcido, con lo
+     de detrás desenfocado (--frame-blur) y un brillo en el canto (--frame-sheen); lo que se lee o se escribe, casi
+     opaco. Con «Sin desenfoque» (html[data-plain]), opacos */
+  --surface-glass: color-mix(in srgb, var(--color-surface) 58%, transparent);
+  --surface-glass-raised: color-mix(in srgb, var(--color-raised) 62%, transparent);
+  --surface-read: color-mix(in srgb, var(--color-bg) 86%, transparent);
+  --frame-blur: blur(14px);
+  --frame-sheen: linear-gradient(180deg, rgb(255 255 255 / 0.05), rgb(255 255 255 / 0) 40%);
+  /* Lo que flota encima de otra cosa (cuadros, ventanas, menús, el selector de iconos): cristal más tapado, que se lea
+     con lo que sea debajo, y más desenfoque */
+  --popup-glass: color-mix(in srgb, var(--color-surface) 78%, transparent);
+  --popup-blur: blur(24px) saturate(1.6);
+  /* Los campos (buscadores, cajas de texto, desplegables), de cristal oscuro: se lee lo escrito y se ve lo de detrás */
+  --field-fill: color-mix(in srgb, var(--color-bg) 62%, transparent);
+  /* La acción principal (el botón rojo), de cristal rojo: el blanco encima, sobre algo oscuro, se lee aún mejor */
+  --accent-glass: color-mix(in srgb, var(--color-accent) 82%, transparent);
+  /* Las rayas, relativas a lo que tienen detrás (un gris fijo se pierde sobre el ambiente): sobre --color-bg dan casi
+     los grises de siempre (--color-frame y --color-border) */
+  --line-frame: rgb(255 255 255 / 0.14);
+  --line-soft: rgb(255 255 255 / 0.07);
+  /* Pasar por una fila: un velo, no un gris opaco (sobre el ambiente quedaría más oscura que sus vecinas) */
+  --row-hover: rgb(255 255 255 / 0.05);
+  /* El brillo de lo vivo (el turno, la tele, lo que se enseña, un crítico), en el rojo de la marca */
+  --glow-live:
+    0 0 0 1px color-mix(in srgb, var(--color-brand) 80%, transparent),
+    0 0 14px 0 color-mix(in srgb, var(--color-brand) 50%, transparent),
+    0 0 34px 2px color-mix(in srgb, var(--color-brand-glow) 24%, transparent);
+  /* Los efectos (brasas, chispas, humo y ceniza), que van sobre el fondo o la barra (a 3:1, tokens.test.ts). Los -rgb,
+     solo los canales: su transparencia, donde se usan */
+  --fx-ember-1: #ffc04d;
+  --fx-ember-2: #ff8a5c;
+  --fx-ember-3: #ffb347;
+  --fx-ember-4: #ff6a2a;
+  --fx-ember-5: #ffd27a;
+  --fx-heat-rgb: 255 110 40;
+  --fx-smoke-rgb: 175 175 183;
+  --fx-ash-1: #b8b4ae;
+  --fx-ash-2: #8e8a85;
+  --fx-ash-3: #a9a49e;
+  --fx-ash-4: #77736f;
+  --fx-ash-5: #c2bdb6;
+  --fx-ash-rgb: 150 150 160;
+  /* La forja y la ceniza de las tarjetas: el metal fundido (y su borde más frío) al nacer; el carbón y el hollín al
+     arder */
+  --fx-molten-rgb: 255 138 92;
+  --fx-molten-cool-rgb: 255 180 120;
+  --fx-charcoal: #2a2826;
+  --fx-charcoal-hot: #6b6763;
+  --fx-soot-rgb: 28 26 25;
+  --fx-cinder-rgb: 60 57 54;
+  --fx-cinder-light-rgb: 120 116 110;
+}
+
+/* Un navegador sin desenfoque: el cristal de lo que flota (la Mesa, los menús del editor), casi opaco, que se lea
+   (antes, seis piezas se quedaban translúcidas sin él) */
+@supports not (backdrop-filter: blur(1px)) {
+  :root {
+    --glass-tint: var(--glass-solid);
+    --glass-panel: var(--glass-solid);
+    --surface-glass: color-mix(in srgb, var(--color-surface) 88%, transparent);
+    --surface-glass-raised: color-mix(in srgb, var(--color-raised) 90%, transparent);
+    --popup-glass: var(--color-surface);
+    --field-fill: var(--color-bg);
+    --accent-glass: var(--color-accent);
+  }
+}
+
+/* «Sin desenfoque» (Ajustes): sin fondo de ambiente ni desenfoque, todo opaco como antes del cristal (también en la
+   Mesa: es lo que más cuesta) */
+:root[data-plain] {
+  --surface-glass: var(--color-surface);
+  --surface-glass-raised: var(--color-raised);
+  --surface-read: var(--color-bg);
+  --line-frame: var(--color-frame);
+  --line-soft: var(--color-border);
+  --row-hover: var(--color-raised);
+  --glass-tint: var(--glass-solid);
+  --glass-panel: var(--glass-solid);
+  --glass-blur: none;
+  --frame-blur: none;
+  --frame-sheen: none;
+  --popup-glass: var(--color-surface);
+  --popup-blur: none;
+  --field-fill: var(--color-bg);
+  --accent-glass: var(--color-accent);
+}
+
+:root[data-plain] * {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
 }

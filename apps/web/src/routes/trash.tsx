@@ -9,6 +9,7 @@ import { useErrorText } from '../api/errors.ts'
 import { trashQuery } from '../api/queries.ts'
 import { Loading } from '../components/brand.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
+import { EmptyState } from '../components/empty-state.tsx'
 import { FormError } from '../components/field.tsx'
 import { focusAfterRemoving } from '../components/focus.ts'
 import styles from '../components/list.module.css'
@@ -71,7 +72,9 @@ function TrashPage({ title, back, scope }: { title: string; back?: ReactNode; sc
       {!trash.data && !trash.error && <Loading />}
       {trash.data &&
         (trash.data.items.length === 0 ? (
-          <p className={styles.appear}>{t('trash.empty')}</p>
+          <EmptyState kind="papelera" small>
+            <p className={styles.appear}>{t('trash.empty')}</p>
+          </EmptyState>
         ) : (
           <ul className={`${styles.list} ${styles.appear}`} aria-label={t('trash.listLabel')}>
             {trash.data.items.map((item) => (

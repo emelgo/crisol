@@ -22,12 +22,16 @@ export class ApiError extends Error {
   }
 }
 
+/** El aspecto de una hoja impresa */
+export type SheetLook = 'color' | 'neutro' | 'pergamino'
+
 export interface ApiClient {
   call<N extends ActionName>(name: N, input: ActionInput<N>): Promise<ActionOutput<N>>
   /** Exporta la wiki (o una página) en un .zip: sus bytes y su nombre */
   exportWiki(input: ExportInput): Promise<{ name: string; data: Blob }>
   /** El PDF de la hoja de una página (lo saca el servidor), con o sin secretos */
-  downloadPdf(pageId: string, secrets: boolean): Promise<{ name: string; data: Blob }>
+  /** look: el aspecto de esta impresión (sin él, el de la página) */
+  downloadPdf(pageId: string, secrets: boolean, look?: SheetLook): Promise<{ name: string; data: Blob }>
   /**
    * Sube un archivo al mundo, o reemplaza los bytes de uno, diciendo cuánto lleva (de 0 a 1). Con signal se puede
    * cancelar: falla con CANCELLED
@@ -78,8 +82,9 @@ export function createApiClient(): ApiClient {
       }
       return { name: attachmentName(response.headers.get('content-disposition')), data: await response.blob() }
     },
-    async downloadPdf(pageId, secrets) {
-      const response = await fetch(`/api/pages/${pageId}/pdf${secrets ? '?secretos=1' : ''}`)
+    async downloadPdf(pageId, secrets, look) {
+      const query = new URLSearchParams({ ...(secrets ? { secretos: '1' } : {}), ...(look ? { tema: look } : {}) })
+      const response = await fetch(`/api/pages/${pageId}/pdf${query.size ? `?${query}` : ''}`)
       if (!response.ok) {
         const body = (await response.json().catch(() => ({}))) as { code?: string }
         throw new ApiError(body.code ?? 'UNKNOWN', response.status)

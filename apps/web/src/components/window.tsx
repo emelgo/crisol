@@ -2,6 +2,7 @@ import { useRouterState } from '@tanstack/react-router'
 import { X } from 'lucide-react'
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { shownPath } from '../shown-path.ts'
 import { afterExit } from './modal.tsx'
 import styles from './window.module.css'
 
@@ -49,7 +50,7 @@ export function WindowProvider({
     if (kind && !dialog.current?.open) dialog.current?.showModal()
   }, [kind])
   // Si desde la ventana se va a otra página (un enlace del historial…), se cierra y se queda allí
-  const path = useRouterState({ select: (state) => state.location.pathname })
+  const path = useRouterState({ select: (state) => shownPath(state) })
   const openedAt = useRef(path)
   useEffect(() => {
     if (kind) openedAt.current = path

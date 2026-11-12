@@ -209,7 +209,7 @@ describe('el foco cuando desaparece un elemento', () => {
 
   it('en la papelera: al restaurar, al siguiente; con el último, al título de la página', async () => {
     const { api } = renderAt('/papelera')
-    await screen.findByText('La papelera está vacía')
+    await screen.findByText('La papelera está vacía.')
     await api.client.call('deleteCampaign', { campaignId: marca.id })
     await api.client.call('deleteWorld', { worldId: otro.id })
     window.dispatchEvent(new Event('focus'))

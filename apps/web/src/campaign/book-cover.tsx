@@ -1,11 +1,12 @@
 /**
  * La portada de un libro (ADR-0021): su imagen de los comunes, encuadrada, con su nombre encima; sin imagen, una tapa
- * de su color (sale de su clave, siempre el mismo) con su nombre. En tarjeta (Libros) o de lomo (el Inicio)
+ * de su color (el elegido; sin él, uno que sale de su clave, siempre el mismo) con su nombre. En tarjeta (Libros) o de lomo (el Inicio)
  */
-import type { Campaign } from '@crisol/contracts'
+import { type Campaign, WORLD_COLORS, type World } from '@crisol/contracts'
 import { useQuery } from '@tanstack/react-query'
 import type { CSSProperties, ReactNode } from 'react'
 import { useApi } from '../api/context.tsx'
+import { colorHex } from '../routes/world-look.ts'
 import { coverStyle } from '../wiki/cover-look.ts'
 import styles from './book-cover.module.css'
 
@@ -16,10 +17,28 @@ export interface CoverBook {
   name: string
   edition?: string | null
   cover: Cover | null
+  color?: string | null
 }
 
-/** Un tono por libro: el de su clave */
-function hueOf(key: string) {
+/** El tono de un color (#rrggbb), para la tapa */
+function hueOfHex(hex: string) {
+  const [r, g, b] = [1, 3, 5].map((at) => Number.parseInt(hex.slice(at, at + 2), 16) / 255) as [number, number, number]
+  const max = Math.max(r, g, b)
+  const min = Math.min(r, g, b)
+  if (max === min) return 0
+  const d = max - min
+  const h = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4
+  return Math.round((h * 60 + 360) % 360)
+}
+
+/** Un tono por libro: el de su color elegido o, sin él, uno de los fijos (wine, moss…) que sale de su clave */
+function hueOf(key: string, color?: string | null) {
+  const hex = color ? colorHex(color as World['color']) : null
+  if (hex) return hueOfHex(hex)
+  let seed = 0
+  for (const char of key) seed = (seed * 31 + char.charCodeAt(0)) >>> 0
+  const fixed = colorHex(WORLD_COLORS[seed % WORLD_COLORS.length] as World['color'])
+  if (fixed) return hueOfHex(fixed)
   let hash = 0
   for (const char of key) hash = (hash * 31 + char.charCodeAt(0)) >>> 0
   return hash % 360
@@ -41,7 +60,7 @@ export function BookCover({
   /** Apagado (no está en la campaña) */
   dim?: boolean
 }) {
-  const style = { '--hue': hueOf(book.key) } as CSSProperties
+  const style = { '--hue': hueOf(book.key, book.color) } as CSSProperties
   return (
     <span
       className={[styles.cover, size === 'spine' ? styles.spine : styles.card, dim ? styles.dim : '']

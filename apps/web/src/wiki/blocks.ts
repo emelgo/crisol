@@ -4,7 +4,6 @@
  */
 import type { CalloutKind, SeparateKind } from '@crisol/editor'
 import type { Editor } from '@tiptap/core'
-import { NodeSelection } from '@tiptap/pm/state'
 import type { es } from '../i18n.ts'
 
 /** Los textos de los bloques en i18n (blocks.<clave>) */
@@ -32,6 +31,10 @@ export interface BlockContext {
   makeSeparate: (editor: Editor, kind: SeparateKind) => Promise<void>
   /** Elige un archivo del equipo, lo sube y lo pone donde está el cursor */
   pickFile?: (editor: Editor) => void
+  /** «Entrada nueva del compendio», en una ventana; al guardarla, su enlace donde está el cursor (solo en el mundo) */
+  newEntry?: (editor: Editor) => void
+  /** Si se puede ahora (sus ventanas están montadas) */
+  canNewEntry?: () => boolean
 }
 
 const callout = (kind: CalloutKind, label: BlockText, hint: BlockText, keywords: string): BlockChoice => ({
@@ -165,6 +168,29 @@ export const BLOCKS: readonly BlockChoice[] = [
       editor.chain().focus().insertContent('![[').run()
     }
   },
+  // La ficha de una entrada del compendio (revisión, tanda 7): escribe `![[@`, que abre la lista del compendio
+  {
+    id: 'contentEmbed',
+    group: 'wiki',
+    label: 'contentEmbed',
+    hint: 'contentEmbedHint',
+    keywords: 'ficha compendio entrada criatura conjuro objeto incrustar',
+    convert: false,
+    run: (editor) => {
+      editor.chain().focus().insertContent('![[@').run()
+    }
+  },
+  // Una entrada nueva del compendio del mundo, en una ventana, sin dejar la página (revisión, tanda 7)
+  {
+    id: 'newEntry',
+    group: 'wiki',
+    label: 'newEntry',
+    hint: 'newEntryHint',
+    keywords: 'entrada compendio nueva crear criatura objeto conjuro',
+    convert: false,
+    bodyOnly: true,
+    run: (editor, context) => context.newEntry?.(editor)
+  },
   // Una imagen o un archivo: uno del equipo (se sube); los del mundo, con `![[`
   {
     id: 'fileEmbed',
@@ -175,25 +201,6 @@ export const BLOCKS: readonly BlockChoice[] = [
     convert: false,
     run: (editor, context) => {
       context.pickFile?.(editor)
-    }
-  },
-  // Una tirada que se pulsa en partida: se pone elegida, y así se abre su cuadro para escribirla
-  {
-    id: 'diceRoll',
-    group: 'wiki',
-    label: 'diceRoll',
-    hint: 'diceRollHint',
-    keywords: 'tirada dados dado tirar',
-    convert: false,
-    run: (editor) => {
-      const at = editor.state.selection.from
-      editor
-        .chain()
-        .focus()
-        .insertContent({ type: 'diceRoll', attrs: { formula: '1d20', label: null } })
-        .run()
-      const { tr } = editor.state
-      editor.view.dispatch(tr.setSelection(NodeSelection.create(tr.doc, at)))
     }
   },
   callout('note', 'calloutNote', 'calloutHint', 'nota'),

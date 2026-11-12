@@ -519,6 +519,55 @@
       "when": 1794330120456,
       "tag": "0073_sonido_foundry",
       "breakpoints": true
+    },
+    {
+      "idx": 74,
+      "version": "7",
+      "when": 1794386708684,
+      "tag": "0074_orden_etiquetas",
+      "breakpoints": true
+    },
+    {
+      "idx": 75,
+      "version": "7",
+      "when": 1794394957519,
+      "tag": "0075_orden_archivos",
+      "breakpoints": true
+    },
+    {
+      "idx": 76,
+      "version": "7",
+      "when": 1794398841295,
+      "tag": "0076_color_icono_carpetas",
+      "breakpoints": true
+    },
+    {
+      "idx": 77,
+      "version": "7",
+      "when": 1794411642231,
+      "tag": "0077_plantillas_de_serie_propias",
+      "breakpoints": true
+    },
+    {
+      "idx": 78,
+      "version": "7",
+      "when": 1794413231527,
+      "tag": "0078_mundo_de_plantillas",
+      "breakpoints": true
+    },
+    {
+      "idx": 79,
+      "version": "7",
+      "when": 1794415994045,
+      "tag": "0079_carpetas_de_plantillas",
+      "breakpoints": true
+    },
+    {
+      "idx": 80,
+      "version": "7",
+      "when": 1794485833221,
+      "tag": "0080_capitulos",
+      "breakpoints": true
     }
   ]
 }

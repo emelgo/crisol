@@ -25,7 +25,7 @@ import {
   trySystemRoll,
   updateSystem
 } from '@crisol/contracts'
-import { campaignsRepo, systemsRepo } from '@crisol/db'
+import { campaignsRepo, chaptersRepo, systemsRepo } from '@crisol/db'
 import { type CriticalRule, cryptoRoller, DiceSyntaxError } from '@crisol/dice'
 import { authorize, can, NotFoundError } from '@crisol/domain'
 import {
@@ -83,7 +83,7 @@ function summarize(
   const { defaultRoll: _, critical: __, ...overview } = systemOverview(document)
   // En la lista, el resumen corto: el entero está en el sistema (y la lista la lee la IA de cualquier sistema subido)
   const summary = overview.summary.length > 300 ? `${overview.summary.slice(0, 299)}…` : overview.summary
-  return { ...extra, ...overview, summary, campaigns: [] }
+  return { ...extra, ...overview, summary, icon: document.icon ?? null, cover: document.cover ?? null, campaigns: [] }
 }
 
 const builtIn = (document: System): SystemFull => ({
@@ -499,6 +499,7 @@ export async function saveFile(
       if (error instanceof systemsRepo.SystemChangedError) throw changed()
       throw error
     }
+    if (valid.chapters) await replaceChapters(ctx, row.id, row.organizationId, name, valid.chapters)
     ctx.realtime.publish(systemsChanged(row.organizationId))
     return { system: own(updated, valid.content.length, await namer(ctx, [updated])), warnings }
   }
@@ -521,8 +522,29 @@ export async function saveFile(
       MAX_SYSTEMS
     )
   )
+  if (valid.chapters)
+    await chaptersRepo.insertChapters(
+      ctx.db,
+      historyContext(ctx, 'importSystem', { name }, { organizationId: target }),
+      row.id,
+      valid.chapters
+    )
   ctx.realtime.publish(systemsChanged(target))
   return { system: own(row, valid.content.length, await namer(ctx, [row])), warnings }
+}
+
+/** Al subir un archivo sobre un sistema: sus capítulos, los del archivo (en una operación del historial) */
+async function replaceChapters(
+  ctx: ActionContext,
+  systemId: string,
+  organizationId: string,
+  name: string,
+  chapters: readonly { source: string; title: string; markdown: string }[]
+) {
+  const context = historyContext(ctx, 'importSystem', { name }, { organizationId })
+  for (const old of await chaptersRepo.listChapters(ctx.db, systemId))
+    await chaptersRepo.deleteChapter(ctx.db, context, old.id)
+  await chaptersRepo.insertChapters(ctx.db, context, systemId, chapters)
 }
 
 export const systemActions = [
@@ -591,6 +613,16 @@ export const systemActions = [
         MAX_SYSTEMS
       )
     )
+    // Y los capítulos de sus libros (ADR-0025)
+    if (!source.fresh && source.row) {
+      const chapters = await chaptersRepo.chaptersWithText(ctx.db, source.row.id)
+      await chaptersRepo.insertChapters(
+        ctx.db,
+        historyContext(ctx, 'createSystem', { name: textOf(system.name) }, { organizationId: target }),
+        row.id,
+        chapters.map(({ source: book, title, markdown }) => ({ source: book, title, markdown }))
+      )
+    }
     ctx.realtime.publish(systemsChanged(target))
     return own(row, content.length, await namer(ctx, [row]))
   }),
@@ -653,9 +685,17 @@ export const systemActions = [
     const target = readableOrganization(ctx, organizationId)
     const found = await findReadable(ctx, target, systemId)
     const content = await allContent(ctx, found)
+    // Con los capítulos de sus libros (ADR-0025)
+    const chapters = found.row
+      ? (await chaptersRepo.chaptersWithText(ctx.db, found.row.id)).map(({ source, title, markdown }) => ({
+          source,
+          title,
+          markdown
+        }))
+      : []
     return {
       name: fileName(found.document),
-      file: toFile(found.document, content) as unknown as Record<string, unknown>
+      file: toFile(found.document, content, chapters) as unknown as Record<string, unknown>
     }
   }),
 

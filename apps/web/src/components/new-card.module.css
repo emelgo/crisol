@@ -1,0 +1,100 @@
+/*
+ * «Nuevo …»: un recuadro más de la lista, tras el último, vacío y con el borde de línea continua (Enrique, 2026-11-11).
+ * card: con la forma de una tarjeta (esquinas cortadas), dibujada como su marco (frame.module.css): sin relleno y la
+ * raya en el ::before (--cut-ring), así se ve el fondo de detrás. row: con la de una fila (las etiquetas). La línea, la
+ * misma que la de las
+ * tarjetas (Enrique, 2026-11-12: el recuadro vacío no debe pesar más que lo que hay); se aviva al pasar el ratón
+ */
+.card,
+.row {
+  --line: var(--line-frame);
+  color: var(--color-muted);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.card:hover,
+.row:hover {
+  --line: var(--color-field-border);
+  color: var(--color-text);
+}
+
+/* Con el teclado: el anillo del navegador quedaría fuera del corte, así que la línea toma el color del foco y crece
+   a 2px (el hueco, 2px dentro) */
+.card:focus-visible {
+  --line: var(--color-focus);
+  outline: none;
+  color: var(--color-text);
+}
+
+.card:focus-visible::before {
+  clip-path: var(--cut-ring-2);
+}
+
+.card {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  inline-size: 100%;
+  min-block-size: 11rem;
+  border: 0;
+  /* Vacío: deja ver el fondo de ambiente; solo la raya (el ::before) */
+  background: none;
+  clip-path: var(--cut);
+}
+
+.card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--line);
+  clip-path: var(--cut-ring);
+  transition: background-color 150ms ease-out;
+}
+
+/* El rótulo: si no cabe (el nombre de una carpeta muy largo), se corta con puntos suspensivos */
+.label {
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* El «+» en el hueco del punto de color de las filas */
+.row {
+  border: 1px solid var(--line);
+  display: grid;
+  grid-template-columns: 2.75rem 1fr;
+  align-items: center;
+  gap: var(--space-3);
+  inline-size: 100%;
+  min-block-size: 3.25rem;
+  padding: var(--space-1) var(--space-2);
+  border-radius: 4px;
+  background: none;
+  text-align: start;
+}
+
+.row svg {
+  justify-self: center;
+}
+
+/* Con colores forzados (el alto contraste del sistema) el fondo no se pinta y la línea desaparecería: un borde */
+@media (forced-colors: active) {
+  .card {
+    border: 1px solid ButtonText;
+    clip-path: none;
+  }
+
+  .card::before {
+    display: none;
+  }
+}

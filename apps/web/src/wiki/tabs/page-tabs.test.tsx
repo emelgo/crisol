@@ -66,6 +66,16 @@ describe('las pestañas de una página', () => {
     expect((await bar()).queryByRole('button', { name: 'Opciones de la pestaña Notas' })).toBeNull()
   })
 
+  it('«Pestaña nueva» no ofrece «Desde plantilla»: la plantilla, solo al crear una página', async () => {
+    const { api } = await setup(['Notas'])
+    await api.client.call('createTemplate', { name: 'Puerto' })
+    renderAt(api)
+    await userEvent.click((await bar()).getByRole('button', { name: 'Pestaña nueva' }))
+    const dialog = within(await screen.findByRole('dialog', { name: 'Pestaña nueva' }))
+    expect(dialog.getByRole('radio', { name: 'Texto' })).toBeDefined()
+    expect(dialog.queryByRole('button', { name: 'Desde plantilla' })).toBeNull()
+  })
+
   it('una pestaña nueva de texto, sin nombre: se llama como su tipo, va al final y se abre', async () => {
     const { api } = await setup()
     const router = renderAt(api)

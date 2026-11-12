@@ -26,8 +26,8 @@ describe('los bloques del menú «/»', () => {
       'callout-danger',
       'callout-read-aloud'
     ])
-    expect(ids('tir')).toEqual(['diceRoll'])
-    expect(ids('dados')).toEqual(['diceRoll'])
+    // Los dados salieron de la wiki (revisión, tanda 7): lo que se tira va a una entrada del compendio
+    expect(ids('dados')).toEqual([])
     expect(ids('xyz')).toEqual([])
   })
 

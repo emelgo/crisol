@@ -101,9 +101,9 @@ describe('la hoja al escribir', () => {
     expect(placed()).toEqual(['', ''])
   })
 
-  it('a una columna: cada bloque en su sitio, seguidos, y donde empieza cada página una raya con su número', async () => {
+  it('a una columna: cada bloque en su sitio, seguidos, y donde acaba cada página una raya con la que se cierra', async () => {
     render(<Harness content={[p('Uno'), p('Dos'), p('Tres'), p('Cuatro'), p('Cinco')]} settings={SHEET} />)
-    await waitFor(() => expect(marks()).toEqual(['Página 2', 'Página 3']))
+    await waitFor(() => expect(marks()).toEqual(['Página 1', 'Página 2']))
     // A4: 995 px de texto por página; caben dos párrafos de 400
     const boxes = placed().map(at)
     expect(boxes.map((box) => box.top)).toEqual([0, 400, 828, 1228, 1656])
@@ -119,7 +119,14 @@ describe('la hoja al escribir', () => {
 
   it('numera desde el primer número de la hoja', async () => {
     render(<Harness content={[p('Uno'), p('Dos'), p('Tres')]} settings={{ ...SHEET, firstNumber: 7 }} />)
-    await waitFor(() => expect(marks()).toEqual(['Página 8']))
+    await waitFor(() => expect(marks()).toEqual(['Página 7']))
+  })
+
+  it('un salto puesto a mano dice también la página que cierra, y va de lado a lado', async () => {
+    render(<Harness content={[p('Uno'), pageBreak, p('Dos')]} settings={SHEET} />)
+    await waitFor(() => expect(placed()[1]).toContain('--sheet-page:"Página 1"'))
+    expect(placed()[1]).toContain('--break-label-clip:inset(50%)')
+    expect(at(placed()[1] ?? '').width).toBe(682)
   })
 
   it('un salto de página hace de marca: lo que sigue va justo debajo', async () => {
@@ -207,7 +214,7 @@ describe('la hoja al escribir', () => {
           .map((box) => box.top)
       ).toEqual([0, 400, 828])
     )
-    await waitFor(() => expect(marks()).toEqual(['Página 2']))
+    await waitFor(() => expect(marks()).toEqual(['Página 1']))
   })
 
   it('al quitar la hoja se deshace lo colocado', async () => {
@@ -243,7 +250,10 @@ describe('la hoja al escribir', () => {
     await waitFor(() => expect(at(placed()[1] ?? '').width).toBe(341))
     expect(at(placed()[1] ?? '').top).toBe(400 + 28 / 2)
     // Las rayas de página las pinta React al recibir lo colocado: pueden llegar un momento después
-    await waitFor(() => expect(marks()).toEqual(['Página 2']))
+    await waitFor(() => expect(marks()).toEqual(['Página 1']))
+    // Mucho sitio: crece hasta el tope (la letra a 20 px) y lo que sobra queda a los lados (va centrada)
+    act(() => fire(2000))
+    await waitFor(() => expect(at(placed()[1] ?? '').width).toBe(682 * 1.25))
     vi.unstubAllGlobals()
   })
 
@@ -253,9 +263,24 @@ describe('la hoja al escribir', () => {
     // Dos párrafos (800) llenan casi la primera columna: la nota (20) cabría, pero con «Tres» no; van a la segunda
     await waitFor(() => expect(placed().map(at)[2]?.left).toBeGreaterThan(0))
     const [, , side, after] = placed().map(at)
+    // La nota, estrecha y a su lado (aquí, el izquierdo de su columna); el texto, a su altura, con un hueco que la rodea
     expect(side?.top).toBe(0)
+    expect(side?.width).toBe(Math.round(327 * 0.42))
     expect(after?.left).toBe(side?.left)
-    expect(after?.top).toBe(20)
+    expect(after?.top).toBe(0)
+    expect(placed()[3]).toContain('display:flow-root')
+    const room = (current as unknown as Editor).view.dom.querySelector<HTMLElement>('[data-note-room]')
+    expect(room?.style.float).toBe('left')
+  })
+
+  it('una nota lateral a la derecha va al borde derecho de su columna, y su hueco flota a la derecha', async () => {
+    const note: JSONContent = { type: 'sidenote', attrs: { side: 'right' }, content: [p('Al margen')] }
+    render(<Harness content={[note, p('Uno')]} settings={SHEET} />)
+    await waitFor(() => expect(placed()[0]).toContain('position:absolute'))
+    await waitFor(() => expect(at(placed()[0] ?? '').left).toBe(682 - Math.round(682 * 0.34)))
+    expect(at(placed()[1] ?? '').left).toBe(0)
+    const room = (current as unknown as Editor).view.dom.querySelector<HTMLElement>('[data-note-room]')
+    expect(room?.style.float).toBe('right')
   })
 })
 

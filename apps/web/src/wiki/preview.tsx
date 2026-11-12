@@ -11,6 +11,7 @@ import { type KeyboardEvent, type Ref, useEffect, useId, useLayoutEffect, useRef
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
+import { Icon } from '../components/icon.tsx'
 import { ContentView } from './content.tsx'
 import { coverStyle } from './cover-look.ts'
 import styles from './preview.module.css'
@@ -120,7 +121,11 @@ export function LinkPreview({ worldId, pageId, anchor, anchorElement, sheet, onC
       {page?.cover && <PreviewCover cover={page.cover} worldId={worldId} />}
       <div className={styles.header}>
         <p id={`${id}-title`} className={styles.title}>
-          {page?.icon ? `${page.icon} ` : ''}
+          {page?.icon ? (
+            <>
+              <Icon value={page.icon} />{' '}
+            </>
+          ) : null}
           {title || t('embed.loading')}
         </p>
         {where && <p className={styles.path}>{where}</p>}

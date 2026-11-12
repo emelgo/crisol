@@ -1,11 +1,19 @@
 /* Una ventana encima de la pantalla: grande, con el fondo oscurecido, y la pantalla de debajo sigue ahí */
 .window {
+  /* De cristal, sobre lo de debajo desenfocado (Enrique, 2026-11-12: «el tono cristal no se aplica a los popup»); lo
+     de dentro, translúcido sobre él, sin desenfocar otra vez */
+  --frame-blur: none;
+  --surface-glass: color-mix(in srgb, var(--color-raised) 40%, transparent);
+  --surface-glass-raised: color-mix(in srgb, var(--color-raised) 70%, transparent);
+  --surface-read: color-mix(in srgb, var(--color-bg) 60%, transparent);
   inline-size: min(60rem, calc(100vw - 2rem));
   max-block-size: min(88dvh, 60rem);
   padding: 0;
-  border: 1px solid var(--color-frame);
+  border: 1px solid var(--glass-edge);
   border-radius: 10px;
-  background: var(--color-bg);
+  background: var(--frame-sheen), var(--popup-glass);
+  -webkit-backdrop-filter: var(--popup-blur);
+  backdrop-filter: var(--popup-blur);
   box-shadow: 0 2rem 5rem rgb(0 0 0 / 0.5);
   color: var(--color-text);
   /* Arriba a la misma altura tenga lo que tenga (corta, no se centra): el título no se mueve de una ventana a otra */
@@ -20,7 +28,7 @@
 }
 
 .window::backdrop {
-  background: rgb(0 0 0 / 0.6);
+  background: rgb(0 0 0 / 0.45);
 }
 
 .body {
@@ -32,31 +40,11 @@
 }
 
 .close {
+  composes: close from "./close.module.css";
   position: absolute;
   inset-block-start: var(--space-3);
   inset-inline-end: var(--space-4);
   z-index: 1;
-  display: grid;
-  place-items: center;
-  inline-size: var(--target);
-  block-size: var(--target);
-  border: 0;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--color-muted);
-  cursor: pointer;
-}
-
-.close:hover {
-  background: color-mix(in srgb, var(--color-text) 10%, transparent);
-  color: var(--color-text);
-}
-
-/* Con el teclado, un anillo fino (sin el fondo de pasar el ratón, que parecía un botón pulsado) */
-.close:focus-visible {
-  outline: 2px solid var(--color-focus);
-  outline-offset: -2px;
-  background: transparent;
 }
 
 @media (max-width: 48rem) {

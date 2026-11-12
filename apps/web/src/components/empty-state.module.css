@@ -1,0 +1,78 @@
+/* La pantalla vacía: una sola pieza en el centro de lo que queda de pantalla: el bodegón, la frase y el botón */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  min-block-size: min(60dvh, 34rem);
+  padding-block: var(--space-6);
+  text-align: center;
+}
+
+.art {
+  inline-size: 15rem;
+  block-size: auto;
+  max-inline-size: 70%;
+  animation: llega 500ms ease-out both;
+}
+
+.text {
+  display: grid;
+  gap: var(--space-1);
+  max-inline-size: 34rem;
+  color: var(--color-muted);
+}
+
+.text > * {
+  margin: 0;
+}
+
+.text h2 {
+  color: var(--color-text);
+}
+
+.action {
+  margin-block-start: var(--space-2);
+}
+
+/* Dentro de una ventana o en una búsqueda sin nada: más pequeño y sin ocupar la pantalla */
+.empty[data-small] {
+  min-block-size: 0;
+  padding-block: var(--space-4);
+}
+
+.empty[data-small] .art {
+  inline-size: 9rem;
+}
+
+@keyframes llega {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+/* El título con su emblema a la derecha, alineados por el centro */
+.titled {
+  flex: 1;
+  inline-size: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.emblem {
+  flex: none;
+  inline-size: 5.5rem;
+  block-size: auto;
+  margin-block: calc(-1 * var(--space-3));
+  animation: llega 500ms ease-out both;
+}
+
+@media (max-width: 40rem) {
+  .emblem {
+    display: none;
+  }
+}

@@ -180,6 +180,7 @@ export function undoEvents(
         events.push(tagsChanged(String(row.organization_id ?? context.organizationId)))
         break
       case 'page_templates':
+      case 'template_folders':
         events.push(templatesChanged(String(row.organization_id ?? context.organizationId)))
         break
       case 'systems':

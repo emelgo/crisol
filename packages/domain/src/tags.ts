@@ -1,3 +1,5 @@
+import { placeAmong } from './order.ts'
+
 /**
  * Las etiquetas de la cuenta (ADR-0006): la jerarquía va en el nombre, con «/» («lugar/ciudad» está dentro de «lugar»),
  * y se comparan sin mirar mayúsculas
@@ -43,19 +45,48 @@ const withParents = (tag: string) => {
   return parts.map((_, i) => parts.slice(0, i + 1).join('/'))
 }
 
-/** Por tramos: así las hijas van justo detrás de su madre */
-const byPath = (a: string, b: string) => {
-  const left = a.split('/')
-  const right = b.split('/')
-  for (let i = 0; i < Math.min(left.length, right.length); i++) {
-    const order = (left[i] ?? '').localeCompare(right[i] ?? '', 'es')
-    if (order !== 0) return order
-  }
-  return left.length - right.length
+/** La madre de una etiqueta («lugar» de «lugar/ciudad»), o null si va en lo más alto */
+export const tagParent = (tag: string) => {
+  const parts = tag.trim().split('/')
+  return parts.length > 1 ? parts.slice(0, -1).join('/') : null
+}
+
+/** Su último tramo, el que se ve en el árbol («ciudad» de «lugar/ciudad») */
+export const tagLeaf = (tag: string) => tag.trim().split('/').at(-1) ?? tag.trim()
+
+/**
+ * El orden de las hermanas: las que tienen puesto, por él (comparando caracteres, como la collation "C"); detrás, las
+ * que no, por nombre
+ */
+const bySiblingOrder = (a: { name: string; position: string | null }, b: { name: string; position: string | null }) => {
+  if (a.position !== null && b.position !== null) return a.position < b.position ? -1 : a.position > b.position ? 1 : 0
+  if (a.position !== null) return -1
+  if (b.position !== null) return 1
+  return tagLeaf(a.name).localeCompare(tagLeaf(b.name), 'es')
+}
+
+/**
+ * Los puestos que hay que guardar al poner `moved` delante o detrás de una de sus hermanas (`siblings`: todas, ya en su
+ * orden, con ella o sin ella). Si todas tenían puesto, solo cambia el suyo; si no, se rellenan todas en el orden nuevo
+ * (placeAmong, por su nombre sin mayúsculas)
+ */
+export function placeAmongSiblings(
+  siblings: readonly { name: string; position: string | null }[],
+  moved: string,
+  to: { before?: string; after?: string }
+): { name: string; position: string }[] {
+  const names = new Map(siblings.map((s) => [tagKey(s.name), s.name]))
+  names.set(tagKey(moved), moved)
+  const keyed = siblings.map((s) => ({ id: tagKey(s.name), position: s.position }))
+  const anchor =
+    to.before !== undefined ? { before: tagKey(to.before) } : to.after !== undefined ? { after: tagKey(to.after) } : {}
+  return placeAmong(keyed, tagKey(moved), anchor).map(({ id, position }) => ({ name: names.get(id) ?? id, position }))
 }
 
 export interface TagNode<Color> {
   id: string | null
+  /** Su puesto entre sus hermanas (null: por nombre, detrás) */
+  position: string | null
   name: string
   depth: number
   color: Color | null
@@ -71,7 +102,7 @@ export interface TagNode<Color> {
  * lleve «lugar/ciudad» y «lugar/puerto»). El nombre, como sale la primera vez: guardada, en una página o en un archivo
  */
 export function tagTree<Color>(input: {
-  rows: readonly { id: string; name: string; color: Color | null }[]
+  rows: readonly { id: string; name: string; color: Color | null; position?: string | null }[]
   pages: readonly { worldId: string; tags: readonly string[] }[]
   files: readonly { tags: readonly string[] }[]
 }): TagNode<Color>[] {
@@ -80,7 +111,16 @@ export function tagTree<Color>(input: {
     const key = tagKey(name)
     let found = nodes.get(key)
     if (!found) {
-      found = { id: null, name, depth: name.split('/').length - 1, color: null, pages: 0, files: 0, worlds: new Map() }
+      found = {
+        id: null,
+        position: null,
+        name,
+        depth: name.split('/').length - 1,
+        color: null,
+        pages: 0,
+        files: 0,
+        worlds: new Map()
+      }
       nodes.set(key, found)
     }
     return found
@@ -90,6 +130,7 @@ export function tagTree<Color>(input: {
     const saved = node(row.name.trim())
     saved.id = row.id
     saved.color = row.color
+    saved.position = row.position ?? null
   }
   // Las de cada cosa, con sus madres, una vez
   const keysOf = (tags: readonly string[]) => {
@@ -106,5 +147,20 @@ export function tagTree<Color>(input: {
     }
   }
   for (const file of input.files) for (const name of keysOf(file.tags)) node(name).files++
-  return [...nodes.values()].sort((a, b) => byPath(tagKey(a.name), tagKey(b.name)))
+  // Cada una justo detrás de su madre; entre hermanas, por su puesto (y sin él, por nombre)
+  const children = new Map<string | null, TagNode<Color>[]>()
+  for (const at of nodes.values()) {
+    const parent = tagParent(at.name)
+    const key = parent === null ? null : tagKey(parent)
+    children.set(key, [...(children.get(key) ?? []), at])
+  }
+  const ordered: TagNode<Color>[] = []
+  const walk = (key: string | null) => {
+    for (const at of (children.get(key) ?? []).sort(bySiblingOrder)) {
+      ordered.push(at)
+      walk(tagKey(at.name))
+    }
+  }
+  walk(null)
+  return ordered
 }

@@ -5,6 +5,7 @@ import { issueBootstrap } from '@crisol/server/bootstrap'
 import { exampleFile } from '@crisol/systems/examples'
 import { expect, test } from '@playwright/test'
 import { e2eDatabaseUrl } from '../servidor.ts'
+import { CON_DESENFOQUE } from '../sin-desenfoque.ts'
 import {
   campaignLink,
   campaignPath,
@@ -22,12 +23,15 @@ import {
   skipTours
 } from './ayudas.ts'
 
+// La accesibilidad (el contraste), con el cristal de verdad
+test.use({ storageState: CON_DESENFOQUE })
+
 // WCAG 2.1 AA: cero fallos críticos o graves (CONSTRAINTS.md)
 const WCAG = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']
 
-for (const colorScheme of ['light', 'dark'] as const) {
+for (const colorScheme of ['dark'] as const) {
   for (const path of ['/', '/no-existe', '/entrar', '/arranque/no-vale', '/unirse/no-vale']) {
-    test(`${path} en tema ${colorScheme === 'light' ? 'claro' : 'oscuro'} @a11y`, async ({ page }) => {
+    test(`${path} @a11y`, async ({ page }) => {
       await page.emulateMedia({ colorScheme })
       await page.goto(path)
       await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
@@ -52,16 +56,16 @@ test('arranque, perfil, mundos y sus ajustes, campañas, avisos, historial, pape
       // Lo que esté a medio animar (entrar en un mundo) se mide ya quieto; el fondo de las pantallas de cuenta, que no
       // para nunca (y es de adorno), no cuenta
       await page.waitForFunction(() =>
-        document
-          .getAnimations()
-          .every(
-            (animation) =>
-              animation.playState !== 'running' ||
-              animation.effect?.getTiming().iterations === Number.POSITIVE_INFINITY ||
-              ((animation.effect as KeyframeEffect | null)?.target as Element | null)?.closest('[data-fondo]')
-          )
+        document.getAnimations().every(
+          (animation) =>
+            animation.playState !== 'running' ||
+            animation.effect?.getTiming().iterations === Number.POSITIVE_INFINITY ||
+            // Las que van con el desplazamiento (el pie de la barra) no acaban nunca: no son de tiempo
+            !(animation.timeline instanceof DocumentTimeline) ||
+            ((animation.effect as KeyframeEffect | null)?.target as Element | null)?.closest('[data-fondo]')
+        )
       )
-      for (const colorScheme of ['light', 'dark'] as const) {
+      for (const colorScheme of ['dark'] as const) {
         await page.emulateMedia({ colorScheme })
         const { violations } = await new AxeBuilder({ page }).withTags(WCAG).analyze()
         const serious = violations.filter((v) => v.impact === 'critical' || v.impact === 'serious')
@@ -120,7 +124,7 @@ test('arranque, perfil, mundos y sus ajustes, campañas, avisos, historial, pape
     await check()
     await closeWindow(history)
     const trash = await openWindow(page, 'Papelera')
-    await expect(trash.getByText('La papelera está vacía')).toBeVisible()
+    await expect(trash.getByText('La papelera está vacía.')).toBeVisible()
     await check()
     await closeWindow(trash)
     // La página de consentimiento sin consulta firmada: se ve igual, aunque permitir fallaría. El cliente no es una
@@ -159,7 +163,7 @@ test('el móvil de la jugadora (su campaña, el menú de la llama, sus páginas 
   await ana.getByRole('button', { name: 'Crear la cuenta y entrar' }).click()
   await expect(ana.getByRole('heading', { level: 1, name: 'La Marca', exact: true })).toBeVisible()
   const check = async () => {
-    for (const colorScheme of ['light', 'dark'] as const) {
+    for (const colorScheme of ['dark'] as const) {
       await ana.emulateMedia({ colorScheme })
       const { violations } = await new AxeBuilder({ page: ana }).withTags(WCAG).analyze()
       const serious = violations.filter((v) => v.impact === 'critical' || v.impact === 'serious')
@@ -211,7 +215,7 @@ test('el espacio de la campaña y los libros (ADR-0021), en los dos temas @a11y'
     }
   })
   const check = async (what: string) => {
-    for (const colorScheme of ['light', 'dark'] as const) {
+    for (const colorScheme of ['dark'] as const) {
       await page.emulateMedia({ colorScheme })
       const { violations } = await new AxeBuilder({ page }).withTags(WCAG).analyze()
       const serious = violations.filter((v) => v.impact === 'critical' || v.impact === 'serious')
@@ -253,4 +257,21 @@ test('el espacio de la campaña y los libros (ADR-0021), en los dos temas @a11y'
   await expect(page.getByRole('heading', { level: 1, name: 'Compendio' })).toBeVisible()
   await settled(page)
   await check('el compendio por libro')
+  // Los capítulos de un libro (ADR-0025): el lector del dueño, con su editor, y el de la campaña
+  await page.request.post('/api/actions/saveChapter', {
+    data: {
+      systemId: five,
+      source: 'srd521',
+      title: 'El combate',
+      markdown: 'Seis segundos.\n\n## La iniciativa\n\nTira 1d20.\n\n> [!secreto]\n> Huyen.'
+    }
+  })
+  await page.goto(`/sistemas/${five}/libros/srd521`)
+  await expect(page.getByLabel('Título del capítulo')).toHaveValue('El combate')
+  await settled(page)
+  await check('los capítulos del sistema')
+  await page.goto(`${path}/libros/srd521`)
+  await expect(page.getByRole('heading', { level: 2, name: 'El combate' })).toBeVisible()
+  await settled(page)
+  await check('los capítulos en la campaña')
 })

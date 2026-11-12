@@ -56,6 +56,43 @@
   text-decoration: none;
 }
 
+/* La portada: de lado a lado y sin márgenes (su imagen llega a los bordes, también arriba: la barra va encima) */
+.full {
+  min-inline-size: 0;
+}
+
+.shell[data-home] {
+  position: relative;
+  grid-template-rows: 1fr;
+}
+
+.shell[data-home] .header {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
+  z-index: 2;
+  background: none;
+  /* Sobre la imagen grande no desenfoca (se vería una franja con costura) */
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+/* Su sombra baja más que ella, sin borde: de 0,7 a nada en 7rem */
+.shell[data-home] .header::before {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: -1;
+  block-size: 7rem;
+  background: linear-gradient(to bottom, rgb(0 0 0 / 0.7), transparent);
+  content: "";
+  pointer-events: none;
+}
+
+/* Sobre las nubes claras de la imagen: con su sombra, que se lea */
+.shell[data-home] .header a {
+  text-shadow: 0 1px 8px rgb(0 0 0 / 0.7);
+}
+
 .main {
   inline-size: min(100%, 72rem);
   margin-inline: auto;
@@ -122,6 +159,10 @@
 .shell > main {
   position: relative;
   z-index: 1;
+}
+
+:root[data-plain] .shell > .header {
+  background: var(--color-chrome);
 }
 
 .shell > .header {

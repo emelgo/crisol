@@ -5,7 +5,7 @@
 import type { Campaign } from '@crisol/contracts'
 import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useWindows, type WindowSpec } from '../tabletop/windows.tsx'
+import { useWindows, type WindowSpec } from '../components/windows.tsx'
 import { useDice } from './context.tsx'
 import styles from './dice.module.css'
 import { useSheet } from './floating.ts'

@@ -6,7 +6,7 @@ import { strFromU8, unzipSync } from 'fflate'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { buildApp } from '../app.ts'
 import type { Auth } from '../auth/auth.ts'
-import { createTestAuth, signUpTestUser, TEST_SEAL_KEY } from '../testing.ts'
+import { createTestAuth, seedExampleTemplates, signUpTestUser, TEST_SEAL_KEY } from '../testing.ts'
 
 const BASE_URL = 'https://crisol.test'
 const ok = async () => undefined
@@ -50,6 +50,7 @@ describe('exportar la wiki en Markdown', () => {
     organizationId = org.id
     await conn.db.insert(schema.organizationMembers).values({ organizationId, userId: owner.userId, role: 'owner' })
     worldId = (await call('createWorld', { name: 'Eana' })).json().id
+    await seedExampleTemplates(call)
   })
 
   afterAll(async () => {

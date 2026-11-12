@@ -1,0 +1,35 @@
+/* Las pestañas de un libro, como las de una página (wiki/tabs/page-tabs.module.css): texto plano, la elegida subrayada */
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-block-start: var(--space-3);
+  border-block-end: 1px solid var(--color-border);
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: var(--target);
+  padding: 0 var(--space-3);
+  border-block-end: 2px solid transparent;
+  margin-block-end: -1px;
+  color: var(--color-muted);
+  font-size: 0.9375rem;
+  text-decoration: none;
+}
+
+.tab:hover {
+  color: var(--color-text);
+}
+
+.tab[aria-current="page"] {
+  border-block-end-color: var(--color-accent-text);
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
+}

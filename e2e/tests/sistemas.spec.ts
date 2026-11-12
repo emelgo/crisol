@@ -5,7 +5,7 @@ import { createCampaign, createWorld, freshOwner, import5e, openCampaign, settle
 
 /** Que axe no encuentre fallos críticos ni graves, en claro y en oscuro */
 async function accessible(page: Page, include: string) {
-  for (const colorScheme of ['light', 'dark'] as const) {
+  for (const colorScheme of ['dark'] as const) {
     await page.emulateMedia({ colorScheme })
     await settled(page)
     const { violations } = await new AxeBuilder({ page }).include(include).withTags(['wcag2a', 'wcag2aa']).analyze()
@@ -28,7 +28,8 @@ test('«Sistemas»: se hacen con la IA; subir un archivo roto y uno bueno, bajar
   // «Sistema nuevo»: se hacen con la IA; aquí, un archivo roto dice qué falla y no se sube nada
   await page.getByRole('button', { name: 'Sistema nuevo' }).click()
   const dialog = page.getByRole('dialog', { name: 'Sistema nuevo' })
-  await expect(dialog).toContainText('Los sistemas se hacen con la IA')
+  // Tres caminos: con tu IA, con el esqueleto y a mano
+  await expect(dialog.getByRole('group', { name: 'Cómo hacer un sistema' }).getByRole('button')).toHaveCount(3)
   await accessible(page, 'dialog')
   const file = (name: string, formula: string) => ({
     kind: 'crisol-system',
@@ -64,7 +65,7 @@ test('«Sistemas»: se hacen con la IA; subir un archivo roto y uno bueno, bajar
 
   // Bajar uno vacío, para empezar a mano
   const download = page.waitForEvent('download')
-  await dialog.getByRole('button', { name: 'Bajar uno vacío' }).click()
+  await dialog.getByRole('button', { name: 'Bajar el esqueleto' }).click()
   const blank = JSON.parse(await readFile(await (await download).path(), 'utf8'))
   expect(blank).toMatchObject({ kind: 'crisol-system', system: { id: 'blank' } })
 
@@ -72,7 +73,7 @@ test('«Sistemas»: se hacen con la IA; subir un archivo roto y uno bueno, bajar
   await upload(file('Fronteras', '10 + @des'), 'fronteras.json')
   await dialog.getByRole('button', { name: 'Subir el sistema' }).click()
   await expect(dialog).toBeHidden()
-  const mine = page.getByRole('list', { name: 'Tuyos' })
+  const mine = page.getByRole('list', { name: 'Sistemas' })
   await expect(mine.getByRole('link', { name: 'Fronteras', exact: true })).toBeVisible()
   await expect(page).toHaveURL(/\/sistemas$/)
 
@@ -83,7 +84,9 @@ test('«Sistemas»: se hacen con la IA; subir un archivo roto y uno bueno, bajar
   const confirm = page.getByRole('dialog', { name: '¿Borrar el sistema Fronteras?' })
   await confirm.getByLabel('Nombre').fill('Fronteras')
   await confirm.getByRole('button', { name: 'Borrar el sistema' }).click()
-  await expect(mine.getByRole('button')).toHaveText(['Sistema nuevo'])
+  // Sin ninguno, la pantalla vacía con su botón
+  await expect(mine).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Sistema nuevo' })).toBeVisible()
 })
 
 test('elegir el sistema de una campaña: los dados, al escribir, proponen su tirada por defecto', async ({ page }) => {

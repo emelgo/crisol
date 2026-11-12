@@ -13,7 +13,7 @@ import {
 
 /** Que axe no encuentre fallos críticos ni graves, en claro y en oscuro */
 async function accessible(page: Page) {
-  for (const colorScheme of ['light', 'dark'] as const) {
+  for (const colorScheme of ['dark'] as const) {
     await page.emulateMedia({ colorScheme })
     await settled(page)
     const { violations } = await new AxeBuilder({ page }).include('main').withTags(['wcag2a', 'wcag2aa']).analyze()

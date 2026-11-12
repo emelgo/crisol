@@ -1,3 +1,4 @@
+import type { SystemSummary } from '@crisol/contracts'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
 import {
@@ -12,27 +13,48 @@ import {
   LayoutTemplate,
   LogOut,
   type LucideIcon,
+  MountainSnow,
   NotebookPen,
+  Scale,
   ScrollText,
   Settings,
   Shield,
   Trash2,
   User
 } from 'lucide-react'
-import { type CSSProperties, type MouseEvent, useEffect, useId, useRef, useState } from 'react'
+import {
+  type CSSProperties,
+  type MouseEvent,
+  type ReactNode,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState
+} from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { historyQuery, trashQuery } from '../api/queries.ts'
 import { useDice } from '../dice/context.tsx'
+import { shownPath } from '../shown-path.ts'
+import { SystemWindow } from '../systems/screen.tsx'
+import { SystemIcon, systemCoverUrl } from '../systems/system-look.tsx'
 import { useNarrow, useWikiPanel, type WikiPanel } from '../wiki/panel.tsx'
 import { AccountMenu } from './account-menu.tsx'
+import { useAmbient } from './ambient.tsx'
 import { CrisolMark } from './brand.tsx'
 import dialogStyles from './dialog.module.css'
 import { Modal } from './modal.tsx'
 import styles from './ribbon.module.css'
+import { spaceOf } from './spaces.ts'
 import { useWindow } from './window.tsx'
-import { LEAVE_WORLD, leaveWorld, SECTION } from './world-transition.ts'
+import { LEAVE_ITEM, LEAVE_WORLD, leaveItem, leaveWorld, SECTION } from './world-transition.ts'
+
+/** Lo que tarda cada icono del mundo en salir del crisol (o en subir a él) y el paso entre uno y otro: aquí y solo aquí
+ * (el nav se los pasa al CSS como --icon-time y --icon-step) */
+const ICON_TIME = 460
+const ICON_STEP = 70
 
 /** Si la cuenta es propietaria de alguna organización: solo ella ve su historial, su papelera y la IA */
 function useIsOwner() {
@@ -50,7 +72,7 @@ function useIsOwner() {
 export function useMasteredWorld() {
   const api = useApi()
   const { account } = useAccounts().useAccount()
-  const worldId = useRouterState({ select: (state) => /^\/mundos\/([^/]+)/.exec(state.location.pathname)?.[1] })
+  const worldId = useRouterState({ select: (state) => /^\/mundos\/([^/]+)/.exec(shownPath(state))?.[1] })
   const worlds = useQuery({
     queryKey: ['worlds'],
     queryFn: () => api.call('listWorlds', {}),
@@ -60,10 +82,10 @@ export function useMasteredWorld() {
 }
 
 /** Lo que va dentro de cada botón: el icono y su nombre debajo, que se entienda sin pasar el ratón */
-function Label({ icon: Icon, text }: { icon: LucideIcon; text: string }) {
+function Label({ icon: Icon, glyph, text }: { icon: LucideIcon; glyph?: ReactNode; text: string }) {
   return (
     <>
-      <Icon aria-hidden="true" size={20} strokeWidth={1.75} />
+      {glyph ?? <Icon aria-hidden="true" size={20} strokeWidth={1.75} />}
       <span className={styles.text}>{text}</span>
     </>
   )
@@ -80,16 +102,35 @@ export function Ribbon() {
   const { account } = useAccounts().useAccount()
   const isOwner = useIsOwner()
   const windows = useWindow()
-  const worldId = useRouterState({ select: (state) => /^\/mundos\/([^/]+)/.exec(state.location.pathname)?.[1] })
+  const worldId = useRouterState({ select: (state) => /^\/mundos\/([^/]+)/.exec(shownPath(state))?.[1] })
   const worlds = useQuery({
     queryKey: ['worlds'],
     queryFn: () => api.call('listWorlds', {}),
     enabled: Boolean(account && worldId)
   })
   const world = worlds.data?.worlds.find((w) => w.id === worldId)
+  // Un sistema abierto: la barra es la suya, como la de un mundo (components/spaces.ts)
+  const systemId = useRouterState({
+    select: (state) => {
+      const space = spaceOf(shownPath(state))
+      return space?.kind === 'system' ? space.id : undefined
+    }
+  })
+  const systems = useQuery({
+    queryKey: ['systems'],
+    queryFn: () => api.call('listSystems', {}),
+    enabled: Boolean(account && systemId)
+  })
+  const system = systems.data?.systems.find((each) => each.id === systemId)
+  const [systemSettings, setSystemSettings] = useState(false)
+  const navigate = useNavigate()
+  // Una plantilla abierta: «Plantillas» vuelve a la lista como «‹ Plantillas» (su icono y su nombre, a su tarjeta)
+  const openTemplate = useRouterState({
+    select: (state) => /^\/plantillas\/([^/]+)/.exec(shownPath(state))?.[1]
+  })
   // Dentro de una campaña, la barra es la suya (como la de un mundo): su inicio, su compendio y los dados
   const campaignId = useRouterState({
-    select: (state) => /^\/mundos\/[^/]+\/campanas\/([^/]+)/.exec(state.location.pathname)?.[1]
+    select: (state) => /^\/mundos\/[^/]+\/campanas\/([^/]+)/.exec(shownPath(state))?.[1]
   })
   const campaigns = useQuery({
     queryKey: ['campaigns', worldId],
@@ -137,11 +178,13 @@ export function Ribbon() {
     })
   // Al entrar en un mundo, «Mundos» sube a la llama y se funde con ella, que se aviva (el mundo se cocina en el crisol);
   // dentro, la llama es la vuelta. Al volver, «Mundos» sale de la llama, sin fuego
-  const inWorld = Boolean(worldId)
+  // En un espacio (un mundo o un sistema): lo de la cuenta sube a la llama y salen sus iconos
+  const inWorld = Boolean(worldId || systemId)
   const [wasInWorld, setWasInWorld] = useState(inWorld)
   // Recién entrado (en este mismo pintado aún no se ve en phase)
   const justEntered = inWorld && !wasInWorld
   const [phase, setPhase] = useState<'still' | 'merging' | 'emerging'>('still')
+  const sections = useRef<HTMLElement>(null)
   // La llama: al entrar, se aviva y suelta chispas; al salir, se aplaca y echa humo. Con su propio tiempo, más largo
   // que el de «Mundos»
   const [flame, setFlame] = useState<'still' | 'fire' | 'smoke'>('still')
@@ -153,12 +196,18 @@ export function Ribbon() {
   // Por si la animación no acaba (en el móvil no la hay): se queda quieto al rato
   useEffect(() => {
     if (phase === 'still') return
-    const timer = window.setTimeout(() => setPhase('still'), 1300)
+    const timer = window.setTimeout(() => setPhase('still'), 2600)
     return () => window.clearTimeout(timer)
   }, [phase])
   useEffect(() => {
     if (flame === 'still') return
-    const timer = window.setTimeout(() => setFlame('still'), flame === 'fire' ? 3000 : 3400)
+    const timer = window.setTimeout(
+      () => {
+        setFlame('still')
+        sections.current?.style.removeProperty('--leave')
+      },
+      flame === 'fire' ? 3000 : 4500
+    )
     return () => window.clearTimeout(timer)
   }, [flame])
   // Los iconos del mundo (Inicio, Campañas, Páginas… y los que vengan): al entrar, salen del crisol uno tras otro
@@ -179,15 +228,50 @@ export function Ribbon() {
     if (campaignId) setFlame('fire')
   }
   if (world && master !== panelsMaster) setPanelsMaster(master)
+  // Los del sistema, igual
+  const [panelsSystem, setPanelsSystem] = useState(systemId ?? null)
+  if (systemId && systemId !== panelsSystem) {
+    setPanelsSystem(systemId)
+    setPanelsMotion(justEntered || phase === 'merging' ? 'enter' : 'none')
+  }
   if (!world && panelsWorld && panelsMotion !== 'leave') setPanelsMotion('leave')
+  if (!systemId && panelsSystem && panelsMotion !== 'leave') setPanelsMotion('leave')
   const panelsBox = useRef<HTMLDivElement>(null)
-  useEffect(() => {
+  // Al volver, el espejo de entrar: los iconos suben al crisol del último al primero, al mismo paso y con la misma
+  // duración con que salieron, y después sale «Mundos» (--leave: cuánto tardan en subir todos). Antes de pintar, para
+  // que «Mundos» empiece ya esperando
+  useLayoutEffect(() => {
     if (panelsMotion !== 'leave') return
     // Sin animaciones (las pruebas), al momento; si no, cuando el último ya se ha ido
-    if (typeof panelsBox.current?.getAnimations !== 'function') return setPanelsWorld(null)
-    const timer = window.setTimeout(() => setPanelsWorld(null), 650)
+    const gone = () => {
+      setPanelsWorld(null)
+      setPanelsSystem(null)
+    }
+    if (typeof panelsBox.current?.getAnimations !== 'function') return gone()
+    const icons = panelsBox.current.childElementCount
+    const leave = icons > 0 ? (icons - 1) * ICON_STEP + ICON_TIME : 0
+    sections.current?.style.setProperty('--leave', `${leave}ms`)
+    const timer = window.setTimeout(gone, leave)
     return () => window.clearTimeout(timer)
   }, [panelsMotion])
+  // Cuánto sube cada uno («Mundos» y lo de la cuenta) hasta el centro de la llama: se mide al fundirse (aún en su
+  // sitio) y se guarda para cuando vuelvan a salir de ella, que llegan cerrados; sin medida, la que lleva escrita
+  const rises = useRef(new Map<string, string>())
+  useLayoutEffect(() => {
+    if (phase === 'still') return
+    const brand = sections.current?.querySelector('[data-tour="barra-llama"]')?.getBoundingClientRect()
+    if (!brand) return
+    const flame = brand.top + brand.height / 2
+    for (const item of sections.current?.querySelectorAll<HTMLElement>('[data-rise]') ?? []) {
+      const key = item.dataset.tour ?? ''
+      if (phase === 'merging') {
+        const at = item.getBoundingClientRect()
+        rises.current.set(key, `${Math.round(flame - (at.top + at.height / 2))}px`)
+      }
+      const rise = rises.current.get(key)
+      if (rise) item.style.setProperty('--rise', rise)
+    }
+  }, [phase])
   const merged = inWorld && phase !== 'merging'
   const worldsItem = [
     styles.item,
@@ -207,9 +291,15 @@ export function Ribbon() {
         }
         master={master}
       />
-      <nav className={styles.sections} aria-label={t('app.sectionsNav')}>
+      <nav
+        ref={sections}
+        className={styles.sections}
+        aria-label={t('app.sectionsNav')}
+        style={{ '--icon-time': `${ICON_TIME}ms`, '--icon-step': `${ICON_STEP}ms` } as CSSProperties}
+      >
         <Link
-          to="/mundos"
+          // Dentro de un sistema, la llama vuelve a Sistemas; si no, a Mis mundos
+          to={systemId ? '/sistemas' : '/mundos'}
           activeOptions={{ exact: true }}
           className={[styles.brand, flame === 'fire' ? styles.cooking : '', flame === 'smoke' ? styles.smoking : '']
             .filter(Boolean)
@@ -222,7 +312,7 @@ export function Ribbon() {
         >
           <CrisolMark size={26} />
         </Link>
-        {/* Ya fundidos con la llama (dentro de un mundo), «Mundos» y los archivos comunes no están */}
+        {/* Ya fundidos con la llama (dentro de un mundo), «Mundos» y lo demás de la cuenta no están */}
         {merged ? null : (
           <Link
             to="/mundos"
@@ -230,25 +320,28 @@ export function Ribbon() {
             viewTransition={SECTION}
             className={worldsItem.filter(Boolean).join(' ')}
             data-tour="barra-mundos"
+            data-rise=""
             onAnimationEnd={() => setPhase('still')}
           >
             <Label icon={Globe} text={t('ribbon.worlds')} />
           </Link>
         )}
-        {/* Los archivos comunes de la cuenta: fuera de los mundos; dentro, en los «Archivos» de cada uno (ADR-0005).
-            Al entrar en un mundo sube a la llama con «Mundos», desde más abajo */}
+        {/* Las plantillas de página de la cuenta (ADR-0009): fuera de los mundos, tras «Mundos» */}
         {isOwner && !merged && (
           <Link
-            to="/archivos"
-            viewTransition={SECTION}
+            to="/plantillas"
+            viewTransition={openTemplate ? LEAVE_ITEM : SECTION}
+            onClick={() => {
+              if (openTemplate) leaveItem(openTemplate, document.getElementById('contenido'))
+            }}
             className={worldsItem.filter(Boolean).join(' ')}
             style={{ '--rise': '-7.4rem' } as CSSProperties}
-            data-tour="barra-archivos"
-            // Se piden al acercarse: al llegar, ya están
-            onPointerEnter={prefetchCommon}
-            onFocus={prefetchCommon}
+            data-tour="barra-plantillas"
+            data-rise=""
+            onPointerEnter={prefetchTemplates}
+            onFocus={prefetchTemplates}
           >
-            <Label icon={Folder} text={t('ribbon.files')} />
+            <Label icon={LayoutTemplate} text={t('ribbon.templates')} />
           </Link>
         )}
         {/* Las etiquetas de la cuenta (ADR-0006): fuera de los mundos; dentro, se filtra por ellas en la wiki y los
@@ -260,43 +353,49 @@ export function Ribbon() {
             className={worldsItem.filter(Boolean).join(' ')}
             style={{ '--rise': '-11.2rem' } as CSSProperties}
             data-tour="barra-etiquetas"
+            data-rise=""
             onPointerEnter={prefetchTags}
             onFocus={prefetchTags}
           >
             <Label icon={Hash} text={t('ribbon.tags')} />
           </Link>
         )}
-        {/* Las plantillas de página de la cuenta (ADR-0009): fuera de los mundos, como las etiquetas */}
-        {isOwner && !merged && (
-          <Link
-            to="/plantillas"
-            viewTransition={SECTION}
-            className={worldsItem.filter(Boolean).join(' ')}
-            style={{ '--rise': '-15rem' } as CSSProperties}
-            data-tour="barra-plantillas"
-            onPointerEnter={prefetchTemplates}
-            onFocus={prefetchTemplates}
-          >
-            <Label icon={LayoutTemplate} text={t('ribbon.templates')} />
-          </Link>
-        )}
-        {/* Los sistemas de reglas de la cuenta (ADR-0011), junto a las plantillas */}
+        {/* Los sistemas de reglas de la cuenta (ADR-0011), tras las etiquetas */}
         {isOwner && !merged && (
           <Link
             to="/sistemas"
             viewTransition={SECTION}
             className={worldsItem.filter(Boolean).join(' ')}
-            style={{ '--rise': '-18.8rem' } as CSSProperties}
+            style={{ '--rise': '-15rem' } as CSSProperties}
             data-tour="barra-sistemas"
+            data-rise=""
             onPointerEnter={prefetchSystems}
             onFocus={prefetchSystems}
           >
             <Label icon={ScrollText} text={t('ribbon.systems')} />
           </Link>
         )}
-        {panelsWorld && (
+        {/* Los archivos comunes de la cuenta: fuera de los mundos; dentro, en los «Archivos» de cada uno (ADR-0005).
+            El último de la barra (Enrique, 2026-11-11). Al entrar en un mundo sube a la llama con «Mundos», desde más
+            abajo */}
+        {isOwner && !merged && (
+          <Link
+            to="/archivos"
+            viewTransition={SECTION}
+            className={worldsItem.filter(Boolean).join(' ')}
+            style={{ '--rise': '-18.8rem' } as CSSProperties}
+            data-tour="barra-archivos"
+            data-rise=""
+            // Se piden al acercarse: al llegar, ya están
+            onPointerEnter={prefetchCommon}
+            onFocus={prefetchCommon}
+          >
+            <Label icon={Folder} text={t('ribbon.files')} />
+          </Link>
+        )}
+        {(panelsWorld || panelsSystem) && (
           <div
-            key={panelsCampaign ?? panelsWorld}
+            key={panelsSystem ?? panelsCampaign ?? panelsWorld ?? ''}
             ref={panelsBox}
             className={[
               styles.panels,
@@ -308,16 +407,23 @@ export function Ribbon() {
             inert={panelsMotion === 'leave'}
             data-tour="barra-mundo"
           >
-            {panelsCampaign ? (
+            {panelsSystem ? (
+              <SystemPanels
+                systemId={panelsSystem}
+                name={system?.name ?? ''}
+                icon={system?.icon ?? null}
+                cover={system ?? null}
+              />
+            ) : panelsCampaign && panelsWorld ? (
               <CampaignPanels
                 worldId={panelsWorld}
                 campaignId={panelsCampaign}
                 name={campaign?.name ?? ''}
                 master={campaignRole === 'master'}
               />
-            ) : (
+            ) : panelsWorld ? (
               <WorldPanels worldId={panelsWorld} worldName={world?.name ?? ''} master={panelsMaster} />
-            )}
+            ) : null}
           </div>
         )}
       </nav>
@@ -351,6 +457,27 @@ export function Ribbon() {
             </button>
           </>
         )}
+        {/* Los ajustes del sistema: su ventana, encima (los de serie no se cambian) */}
+        {panelsSystem && system && !system.builtIn && (
+          <button
+            type="button"
+            className={styles.item}
+            aria-haspopup="dialog"
+            data-tour="barra-ajustes-sistema"
+            onClick={() => setSystemSettings(true)}
+          >
+            <Label icon={Settings} text={t('ribbon.systemSettings')} />
+          </button>
+        )}
+        {systemSettings && system && (
+          <SystemWindow
+            system={system}
+            onClose={(gone) => {
+              setSystemSettings(false)
+              if (gone) void navigate({ to: '/sistemas', viewTransition: LEAVE_WORLD })
+            }}
+          />
+        )}
         {/* Los ajustes de la campaña: se abren encima (ADR-0021) */}
         {panelsCampaign && campaignRole === 'master' && (
           <button
@@ -368,6 +495,61 @@ export function Ribbon() {
         </nav>
       </div>
     </div>
+  )
+}
+
+/**
+ * Lo de un sistema (su espacio, revisión tanda 6): su Inicio (la portada y los libros) y sus Reglas (el editor a mano,
+ * tanda 8). El compendio, con el libro por dentro
+ */
+function SystemPanels({
+  systemId,
+  name,
+  icon,
+  cover
+}: {
+  systemId: string
+  name: string
+  icon: string | null
+  cover: Pick<SystemSummary, 'cover'> | null
+}) {
+  const { t } = useTranslation()
+  // Su portada, detrás, en todo su espacio (no solo en su Inicio): la barra vive mientras se está en él
+  useAmbient(cover ? systemCoverUrl(cover) : null)
+  // Dentro de un libro, también se está en su compendio
+  const inBook = useRouterState({ select: (state) => shownPath(state).startsWith(`/sistemas/${systemId}/libros/`) })
+  return (
+    <>
+      <Link
+        to="/sistemas/$systemId"
+        params={{ systemId }}
+        activeOptions={{ exact: true }}
+        className={styles.item}
+        viewTransition={SECTION}
+        data-tour="barra-inicio"
+      >
+        <Label icon={ScrollText} glyph={<SystemIcon icon={icon} size={20} />} text={name || t('ribbon.home')} />
+      </Link>
+      <Link
+        to="/sistemas/$systemId/compendio"
+        params={{ systemId }}
+        className={styles.item}
+        viewTransition={SECTION}
+        data-tour="barra-compendio"
+        {...(inBook ? { 'aria-current': 'page' as const } : {})}
+      >
+        <Label icon={BookOpen} text={t('ribbon.compendium')} />
+      </Link>
+      <Link
+        to="/sistemas/$systemId/reglas"
+        params={{ systemId }}
+        className={styles.item}
+        viewTransition={SECTION}
+        data-tour="barra-reglas"
+      >
+        <Label icon={Scale} text={t('ribbon.rules')} />
+      </Link>
+    </>
   )
 }
 
@@ -504,27 +686,29 @@ function WikiPanels({ worldId, worldName }: { worldId: string; worldName: string
   const navigate = useNavigate()
   const wikiPanel = useWikiPanel()
   const inWiki = useRouterState({
-    select: (state) =>
-      new RegExp(`^/mundos/${worldId}(/(wiki/[^/]+|wiki|buscar|etiquetas))?/?$`).test(state.location.pathname)
+    select: (state) => new RegExp(`^/mundos/${worldId}(/(wiki/[^/]+|wiki|buscar|etiquetas))?/?$`).test(shownPath(state))
   })
+  const atHome = useRouterState({
+    select: (state) => new RegExp(`^/mundos/${worldId}/?$`).test(shownPath(state))
+  })
+  const narrow = useNarrow()
+  // El mundo lleva a su portada; su columna (el árbol) está siempre, fija: no se recoge (Enrique, 2026-11-11). En lo
+  // estrecho, donde es un cajón, lo abre
   const press = (panel: WikiPanel) => (event: MouseEvent<HTMLButtonElement>) => {
     const trigger = event.currentTarget
-    if (inWiki) {
+    if (inWiki && narrow) {
       wikiPanel.toggle(panel, trigger)
       return
     }
     wikiPanel.show(panel, trigger)
-    // Fuera de las páginas, la portada del mundo con esa vista
-    void navigate({ to: '/mundos/$worldId', params: { worldId }, viewTransition: SECTION })
+    if (!atHome) void navigate({ to: '/mundos/$worldId', params: { worldId }, viewTransition: SECTION })
   }
-  const narrow = useNarrow()
-  // Cada uno abre su panel (o lo recoge si ya está abierto); marcado si es el que se ve: en lo estrecho, con el cajón
-  // abierto; en lo ancho, si no está recogido
-  const shown = (panel: WikiPanel) =>
-    inWiki && wikiPanel.panel === panel && (narrow ? wikiPanel.open : !wikiPanel.collapsed)
+  // Marcado si se está en sus páginas (en lo estrecho, con el cajón abierto)
+  const shown = (panel: WikiPanel) => inWiki && wikiPanel.panel === panel && (narrow ? wikiPanel.open : true)
   const buttons: { panel: WikiPanel; icon: LucideIcon; text: string; tour: string }[] = [
     // El mundo (sus páginas, con su nombre), las plantillas y los archivos
-    { panel: 'pages', icon: Globe, text: worldName, tour: 'barra-wiki' }
+    // El mundo, con su icono propio (no el globo de «Mundos», que es de donde se viene; Enrique, 2026-11-12)
+    { panel: 'pages', icon: MountainSnow, text: worldName, tour: 'barra-wiki' }
   ]
   return (
     <>
@@ -578,7 +762,7 @@ function MobileMenu({
   const accounts = useAccounts()
   const windows = useWindow()
   const _wikiPanel = useWikiPanel()
-  const path = useRouterState({ select: (state) => state.location.pathname })
+  const path = useRouterState({ select: (state) => shownPath(state) })
   const trigger = useRef<HTMLButtonElement>(null)
   const dialog = useRef<HTMLDialogElement>(null)
   const titleId = useId()

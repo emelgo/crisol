@@ -278,13 +278,14 @@ test('@fugas lo que su campaña no conoce de la wiki no le llega a la jugadora: 
   await page.keyboard.type('La Hermandad paga a los guardias.')
   await page.waitForTimeout(2500)
 
-  // Las listas, vacías: su campaña no conoce nada (ADR-0017)
+  // Las listas, vacías: su campaña no conoce nada (ADR-0017). La plantilla, una de la cuenta (no hay de serie)
+  const pnj = await (await page.request.post('/api/actions/createTemplate', { data: { name: 'PNJ' } })).json()
   for (const [name, data] of [
     ['listPageChildren', { worldId }],
     ['listPageTree', { worldId }],
     ['listRecentPages', { worldId }],
     ['searchWiki', { worldId, query: 'torre' }],
-    ['searchWiki', { worldId, template: 'pnj' }]
+    ['searchWiki', { worldId, template: pnj.id }]
   ] as const) {
     const response = await player.request.post(`/api/actions/${name}`, { data })
     expect(response.status(), name).toBe(200)

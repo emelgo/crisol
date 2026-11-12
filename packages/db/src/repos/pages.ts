@@ -146,7 +146,7 @@ export async function listBranch(db: Database, worldId: string, parentId: string
  * La clave de orden para ponerla donde se pide, dentro de la transacción. Cuentan también las hermanas de la
  * papelera, para que al volver no repitan clave. moving: la que se mueve, que no cuenta como vecina
  */
-async function placeKey(tx: Transaction, worldId: string, placement: Placement, moving?: string) {
+export async function placeKey(tx: Transaction, worldId: string, placement: Placement, moving?: string) {
   const conditions: SQL[] = []
   const branch = inBranch(worldId, placement.parentId)
   if (branch) conditions.push(branch)

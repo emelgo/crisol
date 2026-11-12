@@ -5,7 +5,7 @@ import type { FastifyInstance } from 'fastify'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { buildApp } from '../app.ts'
 import type { Auth } from '../auth/auth.ts'
-import { createTestAuth, signUpTestUser, TEST_SEAL_KEY } from '../testing.ts'
+import { createTestAuth, seedExampleTemplates, signUpTestUser, TEST_SEAL_KEY } from '../testing.ts'
 
 const BASE_URL = 'http://localhost:5173'
 const ok = async () => undefined
@@ -16,6 +16,7 @@ describe('las tablas que se llenan solas', () => {
   let app: FastifyInstance
   let owner: { userId: string; cookie: string }
   let worldId: string
+  let tpl: Record<string, string>
 
   const call = (name: string, payload: object) =>
     app.inject({
@@ -66,6 +67,8 @@ describe('las tablas que se llenan solas', () => {
       .insert(schema.organizationMembers)
       .values({ organizationId: org.id, userId: owner.userId, role: 'owner' })
     worldId = (await call('createWorld', { name: 'Eana' })).json().id
+    // Las plantillas de ejemplo (las que fueron de serie): se nombran por su nombre, o aquí por su id
+    tpl = await seedExampleTemplates(call)
   })
 
   afterAll(async () => {
@@ -104,7 +107,7 @@ describe('las tablas que se llenan solas', () => {
     // Una página hecha con una copia de PNJ («PNJ de Eana»): su linaje lleva a PNJ
     await conn.db
       .update(schema.pages)
-      .set({ template: crypto.randomUUID(), templateLine: ['pnj-de-eana', 'pnj'] })
+      .set({ template: crypto.randomUUID(), templateLine: ['pnj-de-eana', tpl.pnj as string] })
       .where(eq(schema.pages.id, ids.gyles as string))
     // A Mamá Gris le cambian el nombre al campo: sigue siendo el mismo
     const gris = await ok200('getPage', { pageId: ids.gris })
@@ -121,7 +124,7 @@ describe('las tablas que se llenan solas', () => {
     const ids = await raqisa()
     const lugar = await ok200('createPage', { worldId, title: 'Ciudad Libre', template: 'lugar' })
     const panel = (block: object) => call('setPagePanel', { pageId: ids.raqisa, blocks: [block] })
-    const table = { id: 'estados', type: 'related', title: 'Por estado', template: 'pnj', field: 'faccion' }
+    const table = { id: 'estados', type: 'related', title: 'Por estado', template: tpl.pnj, field: 'faccion' }
     // Un campo que no es de enlace, una columna que no es de la plantilla, un orden que no es columna
     expect((await panel({ ...table, field: 'rol', columns: [], sort: 'title' })).json()).toMatchObject({
       code: 'BAD_TABLE'
@@ -152,7 +155,7 @@ describe('las tablas que se llenan solas', () => {
   it('una tabla cuyo campo ya no está en su plantilla lo dice, en vez de salir vacía', async () => {
     const ids = await raqisa()
     const broken = [
-      { id: 'rota01', type: 'related', title: 'Rota', template: 'pnj', field: 'frentes', columns: [], sort: 'title' }
+      { id: 'rota01', type: 'related', title: 'Rota', template: tpl.pnj, field: 'frentes', columns: [], sort: 'title' }
     ]
     await conn.db
       .update(schema.pages)

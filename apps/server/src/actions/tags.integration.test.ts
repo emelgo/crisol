@@ -88,6 +88,21 @@ describe('las etiquetas de la cuenta (ADR-0006)', () => {
       ['lugar/ciudad', 2, 0],
       ['mapa', 0, 1]
     ])
+    // A varios de una vez: se añaden a las que llevan (sin repetir, sin mirar mayúsculas), en una operación
+    const second = (
+      await app.inject({
+        method: 'POST',
+        url: `/api/files?organizationId=${organizationId}&name=costa.png`,
+        payload: PNG,
+        headers: { origin: BASE_URL, cookie: owner.cookie, 'content-type': 'application/octet-stream' }
+      })
+    ).json()
+    expect(await json('addFileTags', { fileIds: [file.id, second.id], tags: ['Mapa', 'pnj'] })).toEqual({ files: 2 })
+    const both = (await json('listCommonFiles', {})).files as { id: string; tags: string[] }[]
+    expect(both.find((f) => f.id === file.id)?.tags).toEqual(['costa', 'mapa', 'pnj'])
+    expect(both.find((f) => f.id === second.id)?.tags).toEqual(['Mapa', 'pnj'])
+    expect(await json('addFileTags', { fileIds: [file.id], tags: ['pnj'] })).toEqual({ files: 0 })
+    await json('setFileTags', { fileId: second.id, tags: [] })
     const city = (await json('listAccountTags', {})).tags.find((t: { name: string }) => t.name === 'lugar/ciudad')
     expect(city.worlds.map((w: { name: string; pages: number }) => [w.name, w.pages]).sort()).toEqual([
       ['Costa', 1],
@@ -123,6 +138,35 @@ describe('las etiquetas de la cuenta (ADR-0006)', () => {
     expect((await json('undoOperation', { operationId: op?.id })).status).toBe('undone')
     expect(await tagsOf(port)).toEqual(['lugar/ciudad', 'costa'])
     expect(await tagsOf(lighthouse)).toEqual(['lugar'])
+  })
+
+  it('se ordenan a mano entre hermanas y se meten unas en otras (con sus hijas); el orden se deshace', async () => {
+    const port = await tagged(eana, 'Puerto Ceniza', ['lugar/ciudad', 'costa'])
+    await json('createTag', { name: 'pnj' })
+    const names = async () => (await catalog()).map(([name]: [string]) => name)
+    expect(await names()).toEqual(['costa', 'lugar', 'lugar/ciudad', 'pnj'])
+    // pnj, delante de costa: la primera vez se guardan los puestos de todas las hermanas (también las sin guardar)
+    expect(await json('moveTag', { tag: 'pnj', parent: null, before: 'costa' })).toMatchObject({ name: 'pnj' })
+    expect(await names()).toEqual(['pnj', 'costa', 'lugar', 'lugar/ciudad'])
+    // lugar, detrás de pnj: sus hijas van con ella
+    await json('moveTag', { tag: 'lugar', parent: null, after: 'pnj' })
+    expect(await names()).toEqual(['pnj', 'lugar', 'lugar/ciudad', 'costa'])
+    // costa, dentro de lugar y delante de ciudad: se renombra en lo que la lleva
+    expect(await json('moveTag', { tag: 'costa', parent: 'lugar', before: 'lugar/ciudad' })).toMatchObject({
+      name: 'lugar/costa'
+    })
+    expect(await names()).toEqual(['pnj', 'lugar', 'lugar/costa', 'lugar/ciudad'])
+    expect(await tagsOf(port)).toEqual(['lugar/ciudad', 'lugar/costa'])
+    // Ni dentro de sí misma, ni junto a una que no es su hermana
+    expect(await json('moveTag', { tag: 'lugar', parent: 'lugar/ciudad' })).toMatchObject({ code: 'TAG_CYCLE' })
+    expect(await json('moveTag', { tag: 'pnj', parent: null, before: 'lugar/ciudad' })).toMatchObject({
+      code: 'TAG_NOT_SIBLING'
+    })
+    // Deshacer el último orden lo devuelve
+    const orders = await conn.db.select().from(schema.operations).where(sqlAction('orderTag'))
+    const last = orders.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))[0]
+    expect((await json('undoOperation', { operationId: last?.id })).status).toBe('undone')
+    expect(await names()).toEqual(['pnj', 'lugar', 'lugar/ciudad', 'lugar/costa'])
   })
 
   it('borrar la quita de todo, con sus hijas', async () => {

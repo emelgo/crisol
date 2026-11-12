@@ -68,7 +68,7 @@
   display: flex;
   flex-direction: column;
   animation: asoma 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
-  background: color-mix(in srgb, var(--world-color, var(--color-frame)) 55%, var(--color-frame));
+  --frame-line: color-mix(in srgb, var(--world-color, var(--color-frame)) 55%, var(--color-frame));
 }
 
 .detailBody .header {
@@ -175,14 +175,14 @@
 /* El contorno (el fondo del marco), teñido sutilmente con el color del mundo (--world-color), si lo tiene */
 .card {
   composes: frame from "../components/frame.module.css";
+  --frame-line: color-mix(in srgb, var(--world-color, var(--color-frame)) 55%, var(--color-frame));
   display: flex;
   flex-direction: column;
-  background: color-mix(in srgb, var(--world-color, var(--color-frame)) 55%, var(--color-frame));
   transition: background-color 150ms ease-out;
 }
 
 .card:hover {
-  background: color-mix(in srgb, var(--world-color, var(--color-field-border)) 70%, var(--color-field-border));
+  --frame-line: color-mix(in srgb, var(--world-color, var(--color-field-border)) 70%, var(--color-field-border));
 }
 
 /*
@@ -206,7 +206,12 @@
 }
 
 .entering::after {
-  background: linear-gradient(to top, rgb(255 138 92 / 0.6), rgb(229 72 77 / 0.3) 55%, rgb(255 180 120 / 0.15));
+  background: linear-gradient(
+    to top,
+    rgb(var(--fx-molten-rgb) / 0.6),
+    color-mix(in srgb, var(--color-brand) 30%, transparent) 55%,
+    rgb(var(--fx-molten-cool-rgb) / 0.15)
+  );
   mix-blend-mode: screen;
   animation: metal 1500ms ease-out;
 }
@@ -225,9 +230,9 @@
   background:
     linear-gradient(
       to bottom,
-      rgb(28 26 25 / 0.95) 0%,
-      rgb(60 57 54 / 0.85) 34%,
-      rgb(120 116 110 / 0.35) 40%,
+      rgb(var(--fx-soot-rgb) / 0.95) 0%,
+      rgb(var(--fx-cinder-rgb) / 0.85) 34%,
+      rgb(var(--fx-cinder-light-rgb) / 0.35) 40%,
       transparent 47%
     )
     0 100% / 100% 300% no-repeat;
@@ -281,19 +286,19 @@
 @keyframes arde {
   0%,
   30% {
-    background: #6b6763;
+    background: var(--fx-charcoal-hot);
   }
 
   65% {
     opacity: 1;
     transform: none;
-    background: #2a2826;
+    background: var(--fx-charcoal);
   }
 
   100% {
     opacity: 0;
     transform: translateY(-12px) scale(0.96);
-    background: #2a2826;
+    background: var(--fx-charcoal);
   }
 }
 
@@ -308,47 +313,17 @@
   }
 }
 
-/* «Nuevo mundo»: un recuadro vacío con la forma de una tarjeta (esquinas cortadas) y el borde discontinuo, del alto
-   de las demás. El borde se recorta con la forma y la diagonal de cada esquina se dibuja aparte */
+/* «Nuevo mundo» (components/new-card.tsx), del alto de las demás tarjetas */
 .newItem {
   display: flex;
   min-block-size: 14rem;
 }
 
-.newCard {
-  --line: var(--color-field-border);
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  border: 1px dashed var(--line);
-  background:
-    linear-gradient(to bottom right, transparent calc(50% - 0.6px), var(--line) 0 calc(50% + 0.6px), transparent 0) top
-    left / 12px 12px no-repeat,
-    linear-gradient(to bottom left, transparent calc(50% - 0.6px), var(--line) 0 calc(50% + 0.6px), transparent 0) top
-    right / 12px 12px no-repeat,
-    linear-gradient(to bottom right, transparent calc(50% - 0.6px), var(--line) 0 calc(50% + 0.6px), transparent 0)
-    bottom right / 12px 12px no-repeat,
-    linear-gradient(to bottom left, transparent calc(50% - 0.6px), var(--line) 0 calc(50% + 0.6px), transparent 0)
-    bottom left / 12px 12px no-repeat;
-  background-origin: border-box;
-  color: var(--color-muted);
-  font: inherit;
-  font-weight: 600;
-  clip-path: var(--cut);
-  cursor: pointer;
-}
-
-.newCard:hover {
-  --line: var(--color-text);
-  color: var(--color-text);
-}
-
 .list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  /* Todas las filas del mismo alto: el «Nuevo…» que queda solo en una fila, como las tarjetas */
+  grid-auto-rows: 1fr;
   gap: var(--space-5, 1.25rem);
   margin: 0 0 var(--space-8);
   padding: 0;
@@ -386,7 +361,10 @@
 .picture {
   position: absolute;
   inset: 0;
-  background: color-mix(in srgb, var(--world-color, var(--color-raised)) 22%, var(--color-raised));
+  /* De cristal, como la tarjeta (el fondo de ambiente se ve un poco) */
+  background: color-mix(in srgb, var(--world-color, var(--color-raised)) 22%, var(--surface-glass-raised));
+  -webkit-backdrop-filter: var(--frame-blur);
+  backdrop-filter: var(--frame-blur);
 }
 
 .noCover {
@@ -490,6 +468,15 @@
   overflow-wrap: break-word;
 }
 
+/* Al pasar el ratón por la tarjeta (también por su engranaje o por «Ver», como el contorno), el nombre se resalta con
+   el color del mundo, aclarado lo justo para que se lea sobre lo oscuro; sin color, con el rojo de los enlaces
+   (Enrique, 2026-11-11: «si selecciono color verde, debe resaltarse el color»; «debe mantenerse por coherencia») */
+.name:hover,
+.name:focus-visible,
+.card:hover .name {
+  color: oklch(from var(--world-color, var(--color-accent-text)) max(l, 0.78) c h);
+}
+
 .name::after {
   content: "";
   position: absolute;
@@ -509,6 +496,16 @@
   margin: 0;
   color: var(--color-muted);
   font-size: 0.9375rem;
+  overflow-wrap: anywhere;
+}
+
+/* En la tarjeta, tres líneas como mucho (la descripción llega a 280 letras); entera, en el panel de al lado */
+.body > .description {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
 }
 
 /* De qué mundo es una campaña (en Mis mundos): bajo su nombre, pequeño */
@@ -582,7 +579,7 @@
   display: flex;
   flex-direction: column;
   margin-block-end: var(--space-8);
-  background: color-mix(in srgb, var(--world-color, var(--color-frame)) 55%, var(--color-frame));
+  --frame-line: color-mix(in srgb, var(--world-color, var(--color-frame)) 55%, var(--color-frame));
 }
 
 .hero .header {
@@ -706,7 +703,10 @@
 /* La ventana del mundo: la portada arriba, de lado a lado, y debajo lo demás */
 .dialog {
   inline-size: min(38rem, calc(100vw - 2rem));
-  max-block-size: calc(100dvh - 2rem);
+  /* Anclado arriba: al crecer (la descripción, Guardar y Cancelar) baja, y nada se mueve bajo el cursor. Su alto
+     descuenta ese margen, para que su final no quede fuera de la pantalla (en 1280×720 se cortaba) */
+  max-block-size: calc(100dvh - var(--dialog-top) - 1rem);
+  margin-block: var(--dialog-top) auto;
   padding: 0;
   /* El contorno, con el color del mundo, como su tarjeta */
   border: 1px solid color-mix(in srgb, var(--world-color, var(--color-frame)) 55%, var(--color-frame));
@@ -714,6 +714,8 @@
   background: var(--color-surface);
   box-shadow: 0 1.5rem 3.75rem rgb(0 0 0 / 0.45);
   color: var(--color-text);
+  /* Compacta (Enrique, 2026-11-12: «son tan grandes… no cabe y hay que hacer scroll»): letra y campos algo menores */
+  font-size: 0.9375rem;
   scrollbar-width: thin;
 }
 
@@ -730,13 +732,20 @@
 .form {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-3);
   padding: 0 var(--space-6) var(--space-6);
 }
 
 /* La X de cerrar va arriba, sobre la portada: la raya del título llega al borde, como los campos */
 .form h2 {
   margin: 0;
+  font-size: 1.375rem;
+}
+
+/* Los campos de una línea, más bajos que en una página (el máster trabaja en el ordenador) */
+.dialog .form input:not([type="radio"], [type="checkbox"], [type="color"], [type="range"]),
+.dialog .form select {
+  min-block-size: 2.5rem;
 }
 
 /* Sin portada (las ventanas de plantillas, sistemas, personajes, archivos…): el título con aire arriba, a la altura
@@ -775,24 +784,25 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-2);
+  gap: 0.375rem;
   margin: 0;
   padding: 0;
   border: 0;
 }
 
 .choices legend {
-  margin-block-end: var(--space-2);
+  margin-block-end: var(--space-1);
   font-weight: 600;
 }
 
 /* Cada color es una radio de verdad, escondida: se ve su color, y el elegido, marcado */
+/* Del tamaño de un campo de la ventana: el máster elige con el ratón */
 .colorChoice {
   position: relative;
   display: grid;
   place-items: center;
-  inline-size: var(--target);
-  block-size: var(--target);
+  inline-size: 2.25rem;
+  block-size: 2.25rem;
   border: 1px solid var(--color-border);
   border-radius: 4px;
   color: var(--color-muted);
@@ -808,8 +818,8 @@
 }
 
 .colorChoice > span:not(.hidden) {
-  inline-size: 1.75rem;
-  block-size: 1.75rem;
+  inline-size: 1.375rem;
+  block-size: 1.375rem;
   border-radius: 50%;
 }
 

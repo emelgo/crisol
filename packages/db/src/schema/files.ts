@@ -30,7 +30,16 @@ export const fileFolders = pgTable(
     worldId: uuid().references(() => worlds.id, { onDelete: 'cascade' }),
     /** Sin madre, en lo más alto */
     parentId: uuid().references((): AnyPgColumn => fileFolders.id, { onDelete: 'cascade' }),
-    name: text().notNull()
+    name: text().notNull(),
+    /**
+     * Su puesto entre sus hermanas: una clave de orden fraccionaria (collation "C"), como la de las páginas. Sin ella,
+     * por nombre detrás de las que la tienen; se rellena al reordenar por primera vez
+     */
+    position: text(),
+    /** Su color (uno de los fijos o #rrggbb, como el de un mundo o una etiqueta): tiñe su icono */
+    color: text(),
+    /** Su icono, un emoji como el de una página; sin él, el de una carpeta */
+    icon: text()
   },
   (t) => [
     index().on(t.worldId),
@@ -63,6 +72,8 @@ export const files = pgTable(
     name: text().notNull(),
     /** Su carpeta; sin ella, en lo más alto */
     folderId: uuid().references(() => fileFolders.id, { onDelete: 'set null' }),
+    /** Su puesto entre los archivos de su carpeta, como el de las carpetas (sin él, por nombre, detrás) */
+    position: text(),
     kind: text({ enum: ['image', 'pdf', 'other'] }).notNull(),
     mime: text().notNull(),
     size: bigint({ mode: 'number' }).notNull(),

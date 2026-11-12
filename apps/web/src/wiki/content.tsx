@@ -8,7 +8,7 @@ import { createContext, type ReactNode, useContext } from 'react'
 import { useTranslation } from 'react-i18next'
 import callout from './callout.module.css'
 import styles from './content.module.css'
-import { DiceChip } from './dice-roll.tsx'
+import { ContentCard } from './content-embed.tsx'
 import editor from './editor.module.css'
 import { FileEmbedBlock } from './file-embed.tsx'
 import { PageLink, useReadAs } from './read-as.tsx'
@@ -49,14 +49,6 @@ function Inline({ nodes, worldId }: { nodes: JSONContent[]; worldId: string }) {
         const key = String(i)
         if (node.type === 'text') return <span key={key}>{withMarks(node.text ?? '', node.marks ?? [], key)}</span>
         if (node.type === 'hardBreak') return <br key={key} />
-        if (node.type === 'diceRoll')
-          return (
-            <DiceChip
-              key={key}
-              formula={String(node.attrs?.formula ?? '')}
-              label={(node.attrs?.label as string | null) || null}
-            />
-          )
         // El enlace a una entrada del compendio: su nombre (la tarjeta, en el editor)
         if (node.type === 'contentLink')
           return (
@@ -151,6 +143,11 @@ export function Block({ node, worldId }: { node: JSONContent; worldId: string })
       return <EmbeddedFrame node={node} worldId={worldId} />
     case 'fileEmbed':
       return <FileEmbedBlock node={node} />
+    // La ficha de una entrada: solo si quien lee la ve (su campaña)
+    case 'contentEmbed':
+      return (
+        <ContentCard name={String(node.attrs?.name ?? '')} system={(node.attrs?.system as string | null) ?? null} />
+      )
     // Los de hoja, como en la vista sencilla sin editar: los saltos y el índice no se ven
     case 'statblock':
       return (
@@ -163,6 +160,8 @@ export function Block({ node, worldId }: { node: JSONContent; worldId: string })
         <aside
           aria-label={t('sheet.sidenote', { side: t(`sheet.sides.${node.attrs?.side === 'left' ? 'left' : 'right'}`) })}
           className={sheet.sidenote}
+          // Su lado, para la hoja impresa (flota a la izquierda o a la derecha)
+          data-side={node.attrs?.side === 'left' ? 'left' : 'right'}
         >
           {children}
         </aside>

@@ -1,0 +1,57 @@
+/* El fondo de ambiente: detrás de todo (z-index -1: bajo el contenido, sobre el color del body), sin recibir el ratón.
+   En las transiciones de vista va aparte y quieto, y se funde de un fondo a otro (base.css). Del
+   alto de la pantalla entera (lvh): en el móvil, plegar la barra del navegador no lo cambia de tamaño ni lo repinta */
+.ambient {
+  position: fixed;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  z-index: -1;
+  inline-size: 100vw;
+  block-size: 100lvh;
+  overflow: hidden;
+  background: var(--color-bg);
+  pointer-events: none;
+  contain: strict;
+  /* En las transiciones de vista, aparte: encima de la raíz (cuya foto es opaca) y debajo del contenido; se funde de un
+     fondo a otro y no se mueve (base.css) */
+  view-transition-name: ambiente;
+}
+
+/* La copia suave (ambient.tsx), estirada y ya mezclada con el fondo (opaca: --alpha es 1 salvo si no se pudo hacer).
+   Sin filter y con el fundido solo al llegar (backwards: acabado, no queda activo ni en una capa aparte) */
+.layer {
+  position: absolute;
+  inset: 0;
+  background-position: center;
+  background-size: cover;
+  opacity: var(--alpha, 1);
+  animation: aparecer 600ms ease-out backwards;
+}
+
+/* La que ya estaba al montarse (volver de la Mesa, recargar una vista): sin fundido */
+.layer[data-still] {
+  animation: none;
+}
+
+/* Encima, una viñeta: los bordes y lo de arriba (los títulos), más oscuros */
+.ambient::after {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 85% 75% at 50% 45%, transparent 0%, rgb(0 0 0 / 0.3) 100%),
+    linear-gradient(180deg, rgb(0 0 0 / 0.18), transparent 30%);
+  content: "";
+}
+
+@keyframes aparecer {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Con los colores forzados del sistema, nada detrás */
+@media (forced-colors: active) {
+  .ambient {
+    display: none;
+  }
+}

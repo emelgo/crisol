@@ -187,6 +187,18 @@ async function stateOf(
 }
 
 /**
+ * La hoja de un personaje para tirar con ella (lo de una entrada del compendio, como si lo llevara: rollContentAction):
+ * el suyo, o cualquiera de la campaña para su máster
+ */
+export async function characterSheet(ctx: ActionContext, characterId: string, campaignId: string) {
+  const { row } = await readable(ctx, characterId)
+  if (row.campaignId !== campaignId) throw new NotFoundError('character')
+  const { document, content, choices } = await contextOf(ctx, row.campaignId, row.system, row)
+  const { type, document: doc } = playedDocument(document, content, choices, row.build as Build, row.play as Play)
+  return { name: row.name, type, doc }
+}
+
+/**
  * Lo que hace falta para montar los personajes de una campaña con su sistema (todo su contenido, con lo del mundo, y
  * lo que elige la campaña): se carga una vez, antes de bloquear nada (al mover algo con el grupo)
  */

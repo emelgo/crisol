@@ -3,10 +3,10 @@
  * la pestaña «Escena» de una página); la de una página, su página
  */
 import type { SceneView } from '@crisol/contracts'
+import type { WindowSpec } from '../components/windows.tsx'
 import { SceneMain, SceneProvider, SceneSide } from '../wiki/scene/scene-tab.tsx'
 import { pageWindow } from './page-window.tsx'
 import styles from './scene-window.module.css'
-import type { WindowSpec } from './windows.tsx'
 
 export function sceneWindow(
   worldId: string,

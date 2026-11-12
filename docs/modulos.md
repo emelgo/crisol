@@ -7,6 +7,190 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
+### Para retomar (2026-11-12, noche: tanda 7, libros de texto, terminada en local; falta su visto bueno)
+
+- Rama `revision/tanda-7` (sobre la 6, sin subir), plan en `tasks/tanda-7.md` (7 porciones hechas). **Migración 0080**
+  (`system_chapters`), ya aplicada a la base local. Al desplegar, opcional: `pnpm crisol quitar-dados`.
+- Hecho: capítulos de los libros (ADR-0025, lector en `apps/web/src/books/`, MCP, viajan con el sistema, sin secretos
+  para quien no dirige); tirar las acciones de una entrada (`rollContentAction`); la ficha incrustada `![[@Nombre]]`
+  en una línea compacta que se despliega (resuelve desde la campaña, el sistema o el mundo; prueba de fugas); «Entrada
+  nueva del compendio» desde el mundo en ventana flotante de cristal (`wiki/new-entry.tsx`); los dados salen de la
+  wiki (texto en código; conversión en Yjs al abrir y barrido). Encontrado de paso: las barras del editor tapadas o
+  descolocadas desde el cristal del 12.
+- Pruebas: web 821; servidor (capítulos, tiradas de entradas, compendio, fugas, CLI) en verde; e2e capitulos,
+  acciones-compendio, fichas-incrustadas, entrada-desde-mundo, dados, bloques, libros, sistemas, compendio y
+  accesibilidad en verde.
+- Crítica dual 25/36, detector sin hallazgos; arreglos aplicados.
+- **Página de revisión**: https://claude.ai/artifact/LmGxerrRfELT7hqas2RfaW
+- **Siguiente**: su visto bueno de las tandas 3 a 7 → subir a `main` y staging; luego la tanda 8 (el editor de
+  sistemas a mano). Pendientes menores en `tasks/todo-revision.md`.
+
+### Para retomar (2026-11-12, tarde: tanda 6, sistemas, terminada en local; falta su visto bueno)
+
+- Rama `revision/tanda-6` (sobre la 5, sin subir), plan en `tasks/tanda-6.md` (7 porciones hechas). Sin migraciones.
+- Lo que pidió Enrique al revisar en local (2026-11-12), hecho en la rama de la 5 antes de seguir: el cristal que se
+  ve (fondo reconocible, desenfoque en lo que enmarca, cuadros/menús/campos/botón de cristal), el fondo sin parpadeo ni
+  destellos (en las transiciones viaja solo el contenido; `shown-path.ts`: lo que se elige por la dirección mira la ruta
+  montada), salir de un mundo sin el viaje raro de la cabecera, la zona de peligro, plantillas («Plantilla nueva» con
+  el cuadro de «Página nueva», el árbol del editor con carpetas y botón derecho, «Pestaña nueva» sin plantillas),
+  Sistemas sin «Tuyos».
+- Tanda 6: iconos de rol (337 de game-icons.net, «gi:<id>», `listar_iconos`); los espacios de la barra
+  (`components/spaces.ts`) y el espacio del sistema (su Inicio con portada e icono, Compendio, Reglas «pronto», Ajustes
+  abajo, la llama vuelve a Sistemas); icono y portada del sistema y color o portada de cada libro; el compendio del
+  sistema sin campaña (cuatro lecturas nuevas en el servidor) y el libro por dentro; «Sistema nuevo» con tres caminos.
+- Imágenes de Enrique (estilo F) ya en la app: 12 fondos de Entrar, la portada, el ambiente y 8 bodegones (pantallas
+  vacías en el centro y, con contenido, emblema junto al título). Las que faltan, en `docs/imagenes-por-hacer.md`.
+- Pruebas: web 823; e2e de plantillas, sistemas, libros, compendio, mundos, inicio, wiki, accesibilidad, portada y hoja
+  en verde (la de la biblioteca falló una vez con la máquina cargada; sola, pasa).
+- Crítica 24/40 y audit 15/20, con sus arreglos (el libro por dentro con su índice por tipos, «Sistema nuevo» con
+  caminos que se eligen, el fondo y el icono del sistema en todo su espacio, Reglas con lo que trae…).
+- **Página de revisión** (tandas 3 a 6 y lo del 12): https://claude.ai/artifact/EVbQg5qCzBztdNv3U1WYht (versión 3).
+- **Siguiente**: tanda 7 (libros de texto y el compendio desde el mundo: capítulos con su ADR, incrustar una entrada,
+  «Entrada nueva» desde el mundo, tirar las acciones de una entrada, los dados fuera de la wiki). Pendiente menor: el
+  ejemplo en cada problema de la comprobación de un sistema. Subir a `main` y staging con su visto bueno.
+
+### Para retomar (2026-11-12, madrugada: tanda 5, cristal, Entrar y la portada, terminada en local; falta su visto bueno)
+
+- Rama `revision/tanda-5` (sobre la 4, sin subir), plan en `tasks/tanda-5.md` (7 porciones hechas). Sin migraciones.
+- Hecho: el fondo de ambiente (`components/ambient.tsx`: la portada del mundo, o la del que uno se para en Inicio,
+  como miniatura ya difuminada y con tope de luz; quieto en las transiciones de vista); lo que enmarca de cristal sin
+  backdrop-filter (`--surface-glass*`, rayas `--line-*`, el marco con `--cut-ring`); la página, una hoja casi opaca;
+  ventanas y cuadros opacos por dentro; «Sin desenfoque» en Ajustes («Este aparato», `components/plain.ts`); el
+  respaldo del cristal de la Mesa; Entrar con su recuadro de cristal; la portada nueva (imagen, «Entrar», «Tengo una
+  invitación», tres estampas). Imágenes provisionales: el valle del ocaso (ambiente y portada); Entrar, las 24 de antes
+  hasta que Enrique genere las suyas (`docs/imagenes.md`). Crítica 28/40 y audit 16/20 con sus arreglos.
+- Pruebas: web 817; e2e de portada, accesibilidad, Archivos, mundos, Inicio, sesión, wiki, plantillas, sistemas,
+  etiquetas, hoja e imágenes en verde. `personajes.spec.ts` falla a veces con la máquina cargada (también en `main`: una
+  carrera del creador, apuntada para la revisión de la campaña).
+- **Página de revisión** (tandas 3, 4 y 5): https://claude.ai/artifact/EVbQg5qCzBztdNv3U1WYht. Pruebas en
+  `tasks/probar.md`.
+- **Siguiente**: tanda 6 (sistemas: su espacio, portadas y libros). Primero, el paquete de iconos de fantasía
+  (game-icons.net, CC BY 3.0: comprobar la licencia y apuntarlo en `docs/terceros.md`). Subir a `main` y staging con
+  más tandas.
+
+### Para retomar (2026-11-12, madrugada: tanda 4, la página y la hoja, terminada en local; falta su visto bueno)
+
+- Rama `revision/tanda-4` (sobre la 3, sin subir), plan en `tasks/tanda-4.md` (las 7 porciones hechas, cada una en su
+  commit). Sin migraciones.
+- Hecho: el árbol fijo (pulsar el mundo lleva a su portada) y la columna derecha del alto de la ventana con su
+  desplazamiento (crece al bajar; en la ventana de la Mesa, cada columna con el suyo y la cabecera opaca); la hoja a
+  todo el ancho (letra hasta 20 px) con las rayas de página, de salto y de cambio de columnas de lado a lado y «Página
+  N» de la que se cierra; la nota lateral a su lado con el texto alrededor, igual al imprimir (34 % / 42 %); «Imprimir
+  o descargar» que pregunta el aspecto (con colores, nuevo; blanco y negro; pergamino), que va con cada impresión
+  (`tema`) y se recuerda sin cambiar la página; Ctrl+P lo abre; el menú común (`components/menu.tsx`) con teclado, y
+  «Exportar» como desplegable. Crítica 29/40 (`.impeccable/critique/`) y audit con sus arreglos; los títulos con
+  `aria-level` sin saltos (encontrado de paso). Web 810, e2e de lo tocado en verde (hoja, wiki, exportar, editor,
+  plantillas, versiones, imágenes, tablas del compendio, archivos en páginas).
+- **Página de revisión para Enrique** con las capturas de las tandas 3 y 4 y las decisiones tomadas sin él:
+  https://claude.ai/artifact/EVbQg5qCzBztdNv3U1WYht (capturas en `out/tanda-4/`). Pruebas en `tasks/probar.md`.
+- **Siguiente**: tanda 5 (cristal, Entrar y la portada): empieza por su lienzo; las imágenes de la app (estilo F) las
+  genera Enrique. Subir a `main` y staging con más tandas.
+
+### Para retomar (2026-11-12, noche: tanda 3, las plantillas como páginas, terminada en local; falta su visto bueno)
+
+- Rama `revision/tanda-3`, plan en `tasks/tanda-3.md` (las 8 porciones hechas, cada una en su commit). ADR-0024 con sus
+  notas. Migraciones 0077 (las de serie en uso pasan a propias), 0078 (mundo oculto de plantillas) y 0079 (carpetas),
+  aplicadas en local. Vite reiniciado con `--force`; la API se recargó sola.
+- Hecho: el editor es la página (`EntryView` en modo plantilla); «Plantillas» como Archivos (árbol, carpetas con color
+  e icono, crear dentro, arrastre y teclado, vista previa); «Plantilla nueva» crea y abre; «⋯» → «Duplicar» y
+  «Ajustes»; «Desde plantilla» tras «o» en «Página nueva» y «Pestaña nueva» (`addTemplateTabs`); fuera «Aplicar
+  plantilla»; MCP al día. Crítica de impeccable 28/40 (`.impeccable/critique/`) con sus arreglos y lo que eligió
+  Enrique (campos y bloques plegados con seis puntos, marca «Plantilla» con color, campos como subtítulo); audit con
+  el asa a 24 px y movimiento reducido en las transiciones de vista (encontrado de paso). e2e de plantillas (5) y las
+  cercanas (36 + 24 + fugas) en verde; web 801, servidor de plantillas 13.
+- Pruebas para Enrique en `tasks/probar.md` («Revisión, tanda 3»). **Siguiente**: su visto bueno a la tanda 3 en local
+  → tanda 4 (el mundo: la página y la hoja). Subir a `main` y staging con más tandas (sin pasar la CI en cada PR). Los
+  guiones locales de `e2e/.revision/` aún siembran con las de serie.
+
+### Para retomar (2026-11-12, tarde: tanda 2 con la crítica de impeccable y lo que eligió Enrique; falta el audit)
+
+- **Crítica** (27/40, dual-agent, `.impeccable/critique/`): lo claro, arreglado y en commit (`7e423af`). De lo que se
+  preguntó, Enrique eligió las tres recomendadas y está hecho (sin commit aún al escribir esto): teclado de Archivos y
+  Mayús+clic; mover y etiquetar lo elegido de una vez (`moveFiles`, `addFileTags`, MCP `mover_archivos` y
+  `etiquetar_archivos`); el hueco de la portada que sube o recibe una imagen; Etiquetas plegables y la fila que abre su
+  ventana. Normas en `docs/diseno.md`, nota en el ADR-0005, pruebas para Enrique en `tasks/probar.md`.
+- Hecho y en commit: e2e de lo tocado (12 en verde), audit (15/20) con sus arreglos (tamaños de 24 px). **Siguiente**:
+  el visto bueno de Enrique a la tanda 2 entera en local → tanda 3 (plantillas). Subir a `main` y staging, con más
+  tandas (sin pasar la CI en cada PR).
+
+### Para retomar (2026-11-12, mediodía: tanda 2 construida, en local; falta su visto bueno, impeccable y las e2e)
+
+- **Tanda 2 entera en local** (rama `revision/tanda-2`): además de lo de abajo, el orden a mano de Archivos (migración
+  0075), el **selector de archivos** (`components/file-picker.tsx`, con la lógica del árbol común en
+  `wiki/file-tree.ts`) y **la portada** con «Subir imagen» y «Elegir de tus archivos» (el mismo cuadro para mundo,
+  campaña y página; fuera el desplegable viejo de la portada de página).
+- **Pedido por Enrique al probar** (2026-11-12): «Carpeta» en la ventana de un archivo y de una carpeta (en Etiquetas,
+  «Dentro de: Ninguna»); **carpetas con color e icono** (migración 0076, aplicada en local; ADR-0005 con su nota);
+  **ventanas de ajustes compactas** (letra 15 px, campos de 40 px, casillas de 36 px). Normas en `docs/diseno.md`.
+- Pruebas: unitarias del selector, del árbol y de las ventanas; integración del color y el icono; e2e de la portada de
+  página reescrita (en verde). Para Enrique, en `tasks/probar.md` («Revisión, tanda 2»).
+- **Siguiente**: su visto bueno → impeccable (critique y audit) de Archivos, Etiquetas, el selector y la portada → e2e
+  de lo tocado (archivos, etiquetas, mundos, imágenes, archivos-en-paginas) → commit. Opcionales sin respuesta:
+  Alt+flechas en Archivos y herramientas MCP para mover archivos y carpetas. Subir a `main` y staging, con más tandas.
+
+### Para retomar (2026-11-12, mañana: tanda 1 cerrada salvo subirla; tanda 2 en marcha, rama `revision/tanda-2`)
+
+- **Tanda 1**: Enrique contestó las dos preguntas (sí a la línea de «Nuevo…» como las tarjetas; icono propio del
+  mundo, `MountainSnow`) y se hizo todo lo del audit (X común `components/close.module.css`, la barra en pantallas
+  bajas, cuenta en palabras, colores forzados, forja y ceniza a tokens, la subida de los iconos medida). `ritmo.test.ts`
+  y el MCP con OAuth, en verde al repetirlos. La batería de e2e se lanzó (resultado, en el log de la sesión). **Subir a
+  `main` y staging, cuando haya más tandas hechas** (Enrique).
+- **Tanda 2** (rama `revision/tanda-2`, sobre la 1):
+  - Archivos comunes ya mueve (fallaba la comprobación de ámbito fuera de los mundos).
+  - `components/tree/moves.ts`: la lógica de mover, común y con pruebas; el árbol de páginas la importa.
+  - Etiquetas ordenadas a mano: `tags.position` (migración 0074, aplicada en local), `moveTag`, MCP `mover_etiqueta`,
+    y se arrastran **como las páginas del mundo** (raya delante o detrás, resalte dentro; sin «Arriba del todo», lo
+    pidió Enrique).
+  - **Archivos sin árbol**, aprobado y construido (solo lista): pulsar despliega; arrastrar como las páginas; mover al
+    momento; vista previa a la izquierda (también en Etiquetas, que ya se ordena con el teclado); al buscar, lo
+    encontrado dentro de sus carpetas; `#etiqueta` en el buscador; «Subir archivos» y «Nueva carpeta» fijos (en lo más
+    alto) y, en cada carpeta, «Subir aquí» y «Carpeta dentro» al pasar el ratón.
+  - Mover sin retardo (etiquetas y páginas, como pidió Enrique). Lo que parecía retardo tras eso era código viejo en
+    su navegador: con Ctrl+Mayús+R, «se ve al instante».
+  - **En marcha**: el orden a mano de archivos y carpetas dentro de su carpeta (Enrique: «no puedo recolocar dentro de
+    una carpeta»), migración 0075, como el de las etiquetas.
+- **Siguiente**: revisar y subir a la rama el orden de Archivos; luego el selector de archivos y la portada al crear un
+  mundo (preguntado a Enrique si con prototipo o directo), y cerrar la tanda 2 (impeccable y pruebas).
+
+### Para retomar (2026-11-12, madrugada: tanda 1 con visto bueno y revisada con impeccable; faltan e2e, PR y staging)
+
+- **Rama `revision/tanda-1`** (sin subir). Casillas al día en `tasks/todo-revision.md`.
+- **Imágenes**: Enrique eligió la **F** (pintura estilizada). Guía y los 22 prompts que faltan en `docs/imagenes.md`;
+  las entrega en `datos-locales/imagenes/`. Solo las de la app (las portadas son del usuario).
+- **Hecho**: documentos de arranque (normas, tabla de módulos, ADR-0023 sin pagos y ADR-0024 plantillas-modelo) y la
+  **tanda 1** entera con lo que pidió Enrique al revisarla: **solo tema oscuro**, X de cerrar con círculo, nombre
+  resaltado con el color del mundo, «Nuevo…» común de línea continua, descripción con cuenta y sin pista.
+- **impeccable**: critique 29/40 y audit 15/20; lo claro, arreglado (ver las casillas). **Quedan dos preguntas para
+  Enrique** (la línea de «Nuevo…» y el icono del mundo en la barra) y unos cuantos puntos del audit.
+- **Siguiente**: lo que conteste Enrique y lo del audit → `pnpm e2e` entero → repetir `ritmo.test.ts` y el MCP con
+  OAuth → PR a `main` con `[skip ci]` → staging (al final, dijo). Después, la tanda 2 empieza con un **prototipo de
+  Archivos sin árbol a la izquierda** (decidido por Enrique; ver `docs/diseno.md` y el plan).
+- **Local**: Enrique revisa por un túnel a `localhost:5173`; la API (8130) y el Vite (5173), desligados de la sesión
+  (`setsid nohup`, registros en `datos-locales/*.log`). Parados los servidores viejos de la revisión global (5174 y
+  8132). Ojo al parar procesos: el PID con `ss -ltnp` y su cwd (staging va en Docker con el mismo comando).
+  `scripts/desplegar-staging.sh [rama]` despliega una rama local. Los subagentes pueden revisar la app con el
+  servidor de las e2e (`node e2e/servidor.ts`, 8131; se siembra con una prueba que usa `freshOwner`); ojo: tras
+  recompilar la web hay que reiniciarlo (sirve el `index.html` viejo).
+
+### Para retomar (2026-11-11, tarde: plan de la revisión de Enrique, aprobado; sin empezar)
+
+- **Enrique revisó la app** (portada, Entrar, Inicio, Sistemas y el mundo) y trajo unos cuarenta puntos. El plan,
+  aprobado por él, está en **`tasks/plan-revision.md`** y sus casillas en **`tasks/todo-revision.md`**: nueve tandas
+  (Inicio; árbol común, Archivos y Etiquetas; Plantillas; la página y la hoja; cristal, Entrar y la portada; Sistemas;
+  libros de texto y compendio desde el mundo; editor de sistemas a mano; repaso del MCP) y, después, los módulos 9, 8
+  y 10.
+- **Cómo se trabaja**: una tanda cada vez, en local; Enrique da el visto bueno; pruebas y a `main`. Lo que se encuentre
+  de paso (fallos o mejoras) se le avisa y se arregla en su tanda.
+- **Decidido por Enrique**:
+  - la campaña queda fuera, para una revisión propia;
+  - **el módulo 11 (pagos) se descarta**: Crisol es una herramienta propia, gratuita y privada;
+  - donde convenga una imagen, se le da el prompt y él la genera fuera (primero hay que encontrar el estilo);
+  - el cristal de la Mesa se lleva a toda la app;
+  - fuera las plantillas de serie; vuelve el editor de sistemas a mano; los dados salen de la wiki y van al compendio.
+- **Sin empezar**: solo existe la rama `revision/tanda-1` con el plan y las casillas. Falta también lo de «Documentos
+  que se tocan al empezar» del plan (`docs/diseno.md`, la tabla de módulos entera y los ADR nuevos).
+- **Siguiente**: los prompts de estilo (`docs/imagenes.md`) y la tanda 1.
+
 ### Para retomar (2026-11-11: módulo 7 terminado, PR a `main` y staging)
 
 - **Módulo 7 construido entero** (rama `modulo-7/sala`, migraciones 0065–0073): sala, registro (Chat / Tiradas /
@@ -1655,13 +1839,21 @@ Estados: pendiente · en curso · hecho · descartado.
 | 4 | Compendios (aparte de la wiki del mundo y **como los de Foundry**: antes, estudio a fondo con craft-anything), bestiario, statblocks, biblioteca; **las imágenes de lo traído de Foundry** (las de cada documento del zip); **buscar dentro de los PDF** (texto de cada página con pdf.js; el resultado abre el visor en esa página) **y por significado** (pgvector; antes, permiso para la imagen de Postgres y elegir quién calcula los embeddings) | **hecho** (2026-11-06, PR #110 y #111; `docs/specs/modulo-4.md`); falta que Enrique lo pruebe (`tasks/probar.md`) | Foundry: compendium packs; DDB: listados |
 | 5 | Visibilidad por campaña: conocimiento de los jugadores, revelar, compartir | **hecho** (2026-11-07, PR #112, en staging) | Foundry: ownership |
 | 6 | **Mesa**: escenas, rejilla, fichas, medir y plantillas, niebla, muros, puertas, luz, visión, iniciativa, instantáneas, encuentros, UVTT; **las escenas, mapas y tokens de un zip de Foundry** | **hecho** (2026-11-07, PR #114, en staging) | Foundry: canvas, visión y muros; DDB Maps |
-| 7 | **Sala de jugadores**: presencia, chat y susurros, mostrar a jugadores, sonido (también **los de un zip de Foundry**), controles del máster | pendiente | Foundry: sockets y chat; DDB: game log |
-| 8 | Calendario, clima, viajes, líneas temporales | pendiente | — |
-| 9 | Mapas de mundo con pines y capas; pizarras | pendiente | DDB Maps |
-| 10 | Otras herramientas: tableros, gráficos, grafo de relaciones, nombres, centro de actividad | pendiente | — |
-| 11 | Pagos y planes del SaaS | pendiente | — |
+| 7 | **Sala de jugadores**: presencia, chat y susurros, mostrar a jugadores, sonido (también **los de un zip de Foundry**), controles del máster | **hecho** (2026-11-11, PR #117, en staging); falta que Enrique lo pruebe y confirme el ADR-0022 | Foundry: sockets y chat; DDB: game log |
+| R | **Revisión de la app** (2026-11-11): nueve tandas (`tasks/plan-revision.md`); la campaña, aparte | **en curso** (tanda 1) | Roliando y Roll20 (editor de sistemas); 5etools (libros) |
+| 9 | **Pizarras y mapas con capas**: la pizarra como pestaña; regiones, rutas, textos y capas en los mapas, escala y medir | pendiente (el primero tras la revisión) | DDB Maps |
+| 8 · mundo | **Calendarios y líneas temporales**: calendarios del mundo con su editor, eventos y la línea temporal como pestaña | pendiente (tras el 9) | — |
+| 10 · mundo | **Herramientas del mundo**: grafo de relaciones y árbol familiar, tableros, gráficos, generador de nombres | pendiente (tras el 8) | — |
+| 8 · campaña | El «hoy» de cada campaña, el clima y los viajes | pendiente (con la revisión de la campaña) | — |
+| 10 · campaña | El centro de actividad y la pantalla del máster | pendiente (con la revisión de la campaña) | — |
+| 11 | Pagos y planes del SaaS | **descartado** (Enrique, 2026-11-11: herramienta propia, gratuita y de uso privado; ADR-0023) | — |
 
 Cada módulo nace con su API y sus herramientas MCP.
+
+**Orden desde el 2026-11-11** (Enrique): primero la revisión de la app (R), una tanda cada vez; después los módulos 9,
+8 y 10 en lo que es del mundo, que nacen sobre el registro de tipos de pestaña, las plantillas-modelo (ADR-0024) y el
+cristal. Lo de la campaña de los módulos 8 y 10 va con la revisión de la campaña, más adelante. El 11 se descarta
+(ADR-0023).
 
 **Entre el 0 y el 1, fase de diseño** (decidido con Enrique, 2026-10-29). La interfaz del módulo 0 funciona y es
 accesible, pero no tiene un diseño visual pensado. Antes de la wiki, que es lo más visual:

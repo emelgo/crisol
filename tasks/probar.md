@@ -9,6 +9,115 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
+## Revisión, tanda 7: libros de texto (en local)
+
+- [ ] **Capítulos de un libro** (un sistema tuyo → pulsa la portada de un libro → «Capítulos»): «Capítulo nuevo», escribir
+  con el editor de bloques (se guarda solo: «Guardado»), un secreto con «/», cambiar el título; en «⋯», subir, bajar
+  y borrar (se deshace desde el Historial).
+- [ ] **Leer**: el índice de la izquierda sigue lo que lees (sus secciones se marcan al bajar); «Siguiente» al final.
+- [ ] **La jugadora**: en el compendio de su campaña → «Por libro» → el libro → «Leer · N capítulos»; no ve los
+  secretos. En el móvil, «Ir a…» en lugar del índice.
+- [ ] **El máster**: en Libros de la campaña, la ficha de un libro con capítulos tiene «Leer».
+- [ ] **La IA**: «pásame el capítulo de combate del PDF a capítulos del libro» (capitulos_libro, guardar_capitulo…).
+- [ ] **Tirar desde una entrada** (compendio de la campaña → una criatura): en «En juego», «Ataque» y «Daño» de cada
+  acción; caen los dados y sale el aviso. Un conjuro o un arma se tira con un personaje («Tirar con», si tienes varios).
+
+## Revisión, tanda 6: sistemas (en local)
+
+- [ ] **Iconos de rol**: en el icono de una página, el buscador de iconos (por nombre en español); en Ajustes de una
+  carpeta, plantilla o sistema, «Más iconos». Salen en el árbol, en la búsqueda y en las tarjetas.
+- [ ] **El espacio de un sistema**: al entrar, la barra cambia (su nombre, Compendio, Reglas y, abajo, Ajustes del
+  sistema); la llama vuelve a Sistemas. Su Inicio, con su portada arriba (y detrás, como fondo) y su icono.
+- [ ] **Icono y portada del sistema**, en sus ajustes; **color o portada de un libro**, en los ajustes del libro.
+- [ ] **El compendio del sistema** (todos sus libros) y **un libro por dentro** (pulsa su portada): «← {sistema}» para
+  volver; con un sistema tuyo, «Entrada nueva» guarda en ese libro.
+- [ ] **Sistema nuevo**: los tres caminos (con tu IA y a mano, apagados; con el esqueleto, el de verdad).
+- [ ] **Tus imágenes**: Entrar con sus 12 fondos (sin crédito), la portada nueva, el fondo de Mis mundos; las pantallas
+  vacías con su bodegón en el centro y su botón; con contenido, el bodegón pequeño junto al título.
+
+## Revisión, lo que viste el 2026-11-12 (en local)
+
+- [ ] **El cristal, ahora sí**: el fondo se reconoce detrás (en Mundos, Plantillas, Sistemas…) y la barra, las fichas
+  de los lados y las tarjetas lo desenfocan, con un brillo arriba. Los cuadros (Ajustes, Papelera, «Plantilla nueva»),
+  los menús, el buscador y el botón rojo, también de cristal.
+- [ ] **Sin parpadeo**: al cambiar de sección o entrar en un mundo, el fondo y la barra se quedan quietos; al pararte en
+  un mundo con portada en Inicio, el fondo se funde sin destello.
+- [ ] **La zona de peligro** (Ajustes de una plantilla o de un mundo): un recuadro con raya roja, no un bloque rojo.
+- [ ] **«Plantilla nueva»** (en Plantillas, en el «+» del editor o en una carpeta): sale el cuadro de «Página nueva»;
+  con «Mapa» y un nombre, se abre ya en su mapa; sin nombre, con el título listo para escribir.
+- [ ] **El árbol del editor de plantillas**: las carpetas se pliegan; «Nueva carpeta» arriba; botón derecho en una
+  plantilla → Duplicar, Ajustes, Borrar; en una carpeta → Plantilla nueva aquí, Carpeta dentro, Ajustes, Borrar.
+- [ ] **«⋯» de una plantilla**: Duplicar y Ajustes con el aspecto del menú; al abrir Ajustes, el menú se cierra.
+- [ ] **«Pestaña nueva»** ya no tiene «Desde plantilla». **Sistemas**, sin «Tuyos».
+
+## Revisión, tanda 5: cristal, Entrar y la portada (en local)
+
+- [ ] **El fondo de ambiente**: en Inicio, al pasar por un mundo con portada, detrás se ve su portada muy difuminada; en
+  un mundo, la suya; sin portada, la de ambiente. La barra, las fichas y las tarjetas, de cristal; la página, una hoja
+  casi opaca. Bajar una página larga va igual de suelto que antes.
+- [ ] **«Sin desenfoque»** (Ajustes → Este aparato): todo opaco como antes, también en la Mesa; se recuerda en este
+  navegador.
+- [ ] **Entrar**: el recuadro de cristal, con las imágenes desenfocadas detrás.
+- [ ] **La portada** (sin sesión): la imagen hasta arriba, «Entrar» y «Tengo una invitación» (pegar el enlace de una
+  campaña lleva a ella); debajo, las tres estampas.
+
+## Revisión, tanda 4: la página del mundo y la hoja (en local)
+
+- [ ] **El árbol, fijo**: pulsar el mundo en la barra lleva a su portada y el árbol no se esconde nunca.
+- [ ] **La columna derecha** mide lo mismo que la izquierda (cabe en la pantalla) y lo que no cabe se desplaza dentro;
+  en la Mesa, en la ventana de una página, el texto y el panel se desplazan cada uno por su cuenta.
+- [ ] **La hoja, a todo el ancho**: en una pantalla grande el texto crece hasta llenar la columna (la letra, hasta un
+  tope de 20 px) y queda centrado. Probar si el tope te parece bien.
+- [ ] **Saltos de página**: la raya va de lado a lado y dice la página que se cierra («Página 1»), también en uno puesto
+  a mano.
+- [ ] **Nota lateral**: a la izquierda o a la derecha (con su botón de flecha), con el texto alrededor; igual al
+  imprimir. También a una columna.
+- [ ] **«⋯» → «Imprimir o descargar…»**: elegir «Con colores», «Blanco y negro» o «Pergamino», el papel, la numeración
+  y el pie; «Descargar PDF» e «Imprimir». La próxima vez recuerda el aspecto (la página no cambia al elegirlo).
+  «Exportar», con subpáginas, se despliega con su flecha. Escape o pulsar fuera cierran «⋯»; con el teclado, las
+  flechas recorren sus filas.
+
+## Revisión, tanda 3: las plantillas como páginas (en local)
+
+- [ ] **Tus plantillas de antes** (PNJ, Lugar…) siguen ahí como tuyas, con los mismos campos; tus páginas no cambian y
+  las tablas que se llenan solas («Miembros»…) siguen igual. Al abrir una por primera vez pasa a ser una página.
+- [ ] **«Plantillas», como Archivos**: carpetas con color e icono, arrastrar para meter o recolocar, Alt + flechas, la
+  vista previa a la izquierda (portada, campos, pestañas y en cuántas páginas se usa), buscar; «Nueva carpeta»;
+  «Carpeta» en la ventana de una plantilla; borrar una carpeta se lleva lo suyo y se deshace de una vez.
+- [ ] **«Plantilla nueva»** crea «Plantilla sin título» y la abre con el título elegido; escribir «🧙 PNJ» pone el
+  emoji como icono. Un nombre que ya tiene otra no se deja.
+- [ ] **El editor es la página**: «‹ Plantillas» arriba a la izquierda (vuelve con la transición al revés), la marca
+  «Plantilla», portada, pestañas (mapa, tabla, escena, texto), texto con «/», y en el panel sus campos y bloques; las
+  demás a la izquierda, por carpetas. «⋯» → «Ajustes de la plantilla» y «Duplicar» (la copia, con los mismos campos:
+  sus páginas salen en las mismas tablas). Una imagen subida al editarla sale en Archivos comunes.
+- [ ] **Crear desde una plantilla** («Página nueva» → «Desde plantilla», tras la raya con «o»): la página nace con su
+  portada, icono, campos, panel, texto y pestañas (los pines del mapa, sin enlazar).
+- [ ] **«Pestaña nueva» → «Desde plantilla»**: elegir una y dejar marcadas las pestañas que se quieran; se añaden
+  detrás de las de la página y se deshacen de una vez. Ya no hay «Aplicar plantilla» en «⋯».
+- [ ] **«Duplicar»** una página (botón derecho en el árbol): copia portada, hoja, panel y pestañas, y se deshace de
+  una vez.
+
+## Revisión, tanda 2: Archivos, Etiquetas y el selector de archivos (en local)
+
+- [ ] **Archivos sin árbol**: pulsar una carpeta la despliega; arrastrar con raya o resalte; recolocar dentro de una
+  carpeta; mantener sobre una cerrada la abre sola; «Subir aquí» y «Carpeta dentro» en cada carpeta; buscar por nombre
+  o #etiqueta enseña el árbol hasta lo encontrado; todo se ve movido al momento.
+- [ ] **«Carpeta» en la ventana** de un archivo y de una carpeta: llevarlo a una carpeta dentro de otra cerrada (se abre
+  el camino y sale iluminado); una carpeta no ofrece ni a sí misma ni a las suyas.
+- [ ] **Color e icono de una carpeta**: ponerlos, verlos en la lista, la vista previa y el selector; quitarlos;
+  deshacer desde el historial. Un emoji escrito en «Otro».
+- [ ] **Etiquetas**: arrastrar y Alt+flechas; la vista previa a la izquierda; «Dentro de: Ninguna».
+- [ ] **La portada** de un mundo (también al crearlo), de una campaña y de una página: «Subir imagen» y «Elegir de tus
+  archivos» (el selector: buscar, desplegar, la elegida marcada), encuadrar arrastrando o con las flechas, acercar y
+  quitar.
+- [ ] **Las ventanas de ajustes**, más compactas: caben sin desplazarse en el portátil.
+- [ ] **Archivos con el teclado**: Tab llega a la lista (una sola fila), flechas para recorrer y abrir carpetas, Intro
+  abre, Espacio elige, Alt + flechas recolocan; la vista previa sale con el foco.
+- [ ] **Lo elegido**: Mayús+clic elige un tramo; «Mover a…» y «Etiquetar» de una vez (y se deshacen de una vez desde el
+  historial); la lista no se mueve al empezar a elegir; borrar dice qué se borra.
+- [ ] **Etiquetas**: plegar con su flecha o con izquierda y derecha; pulsar una (o Intro) abre su ventana.
+- [ ] **Portada vacía**: pulsar el hueco sube una imagen; soltar una del escritorio encima, también.
+
 ## Los sonidos del mapa (en local; módulo 7, docs/specs/sonido-mapa.md)
 
 - [ ] **Poner**: en la Mesa, herramienta «Sonidos del mapa» (O, junto a las luces): un clic pone uno y sale su
@@ -460,19 +569,21 @@ Los criterios de éxito de `docs/specs/plantillas.md`, en el orden en que se usa
 - [ ] Desde un enlace `[[…]]` a una página que aún no existe: crearla eligiendo plantilla.
 - [ ] **Criterio 1**: ponerle Facción al PNJ, abrir la facción y verlo en «Miembros». Lo mismo con Lugar →
   «Habitantes», y con un Objeto cuyo Portador es el PNJ → «Lleva encima».
-- [ ] «⋯» → «Aplicar plantilla…» en una página ya hecha: añade lo que falta sin borrar nada.
+- ~~«⋯» → «Aplicar plantilla…» en una página ya hecha~~ (ya no está: tanda 3, ADR-0024; ahora «Pestaña nueva» →
+  «Desde plantilla» añade sus pestañas).
 
 ### Plantillas propias (Mis mundos → Plantillas)
 
 - [ ] **Criterio 2**, en este orden (Frentes apunta a Frente, así que Frente va primero):
   1. «Frente» desde cero, con Nivel, Estado, un reloj de 8 y Regiones (→ Lugar);
-  2. copiar PNJ como «PNJ de Eana» y añadirle Frentes (→ Frente);
+  2. copiar PNJ como «PNJ de Eana» (ahora: abrir PNJ, «⋯» → «Duplicar» y cambiarle el nombre) y añadirle Frentes
+     (→ Frente);
   3. en Frente, la tabla «PNJ del frente» (PNJ de Eana · Frentes);
   4. crear un frente y dos PNJ de Eana con él: salen en su tabla.
 - [ ] Escribir el texto de una plantilla (sus apartados) y crear una página con ella.
 - [ ] **Criterio 3**: quitar un campo de «Frente»; los frentes ya hechos no cambian.
 - [ ] Borrar una plantilla propia: sus páginas dicen «(borrada)» junto al título y sus tablas siguen.
-- [ ] Las de serie no se cambian: candado y «Copiar».
+- ~~Las de serie no se cambian: candado y «Copiar»~~ (ya no hay de serie: tanda 3, ADR-0024).
 
 ### Deshacer
 

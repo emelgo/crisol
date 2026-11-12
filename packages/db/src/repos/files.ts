@@ -68,6 +68,55 @@ export function updateFile(
   return operation(db, context, (w) => w.update(files, fileId, patch))
 }
 
+/** Un puesto entre hermanas, para guardarlo */
+export type Place = { id: string; position: string }
+
+/**
+ * Mueve un archivo a una carpeta de su ámbito (null: lo más alto) con su puesto entre los de allí (null: detrás, por
+ * nombre) y, si se dan, los de sus hermanos (la primera vez que se ordenan, todos), en una sola operación
+ */
+export function moveFile(
+  db: Database,
+  context: OperationContext,
+  fileId: string,
+  to: { folderId: string | null; position: string | null },
+  siblings: readonly Place[] = []
+) {
+  return operation(db, context, async (w) => {
+    for (const { id, position } of siblings) await w.update(files, id, { position })
+    return w.update(files, fileId, to)
+  })
+}
+
+/**
+ * Mete varios archivos y carpetas de un ámbito en una carpeta (null: lo más alto), detrás y por nombre (sin puesto), en
+ * una sola operación
+ */
+export function moveItems(
+  db: Database,
+  context: OperationContext,
+  items: { fileIds: readonly string[]; folderIds: readonly string[]; folderId: string | null }
+) {
+  return operation(db, context, async (w) => {
+    for (const id of items.fileIds) await w.update(files, id, { folderId: items.folderId, position: null })
+    for (const id of items.folderIds) await w.update(fileFolders, id, { parentId: items.folderId, position: null })
+  })
+}
+
+/** Los archivos de una carpeta de un ámbito (null: los de lo más alto), fuera de la papelera */
+export function filesIn(db: Database, scope: FileScope, folderId: string | null) {
+  return db
+    .select({ id: files.id, name: files.name, position: files.position })
+    .from(files)
+    .where(
+      and(
+        inScope(scope),
+        isNull(files.deletedAt),
+        folderId === null ? isNull(files.folderId) : eq(files.folderId, folderId)
+      )
+    )
+}
+
 /** Un archivo (de un mundo o común); con trashed, también si está en la papelera */
 export async function findFile(db: Database, fileId: string, options: { trashed?: boolean } = {}) {
   const [found] = await db
@@ -164,13 +213,37 @@ export function createFolder(
   return operation(db, context, (w) => w.insert(fileFolders, input))
 }
 
+/**
+ * Cambia una carpeta (su nombre, su color, su icono, su madre o su puesto entre sus hermanas) y, si se dan, los puestos de sus hermanas (la
+ * primera vez que se ordenan, todas), en una sola operación
+ */
 export function updateFolder(
   db: Database,
   context: OperationContext,
   folderId: string,
-  patch: Partial<{ name: string; parentId: string | null }>
+  patch: Partial<{
+    name: string
+    parentId: string | null
+    position: string | null
+    color: string | null
+    icon: string | null
+  }>,
+  siblings: readonly Place[] = []
 ) {
-  return operation(db, context, (w) => w.update(fileFolders, folderId, patch))
+  return operation(db, context, async (w) => {
+    for (const { id, position } of siblings) await w.update(fileFolders, id, { position })
+    return w.update(fileFolders, folderId, patch)
+  })
+}
+
+/** Las carpetas dentro de otra de un ámbito (null: las de lo más alto) */
+export function foldersIn(db: Database, scope: FileScope, parentId: string | null) {
+  return db
+    .select({ id: fileFolders.id, name: fileFolders.name, position: fileFolders.position })
+    .from(fileFolders)
+    .where(
+      and(folderInScope(scope), parentId === null ? isNull(fileFolders.parentId) : eq(fileFolders.parentId, parentId))
+    )
 }
 
 /** Borra una carpeta con lo que tiene dentro (sus archivos, a la papelera), en una operación */
@@ -181,7 +254,7 @@ export function deleteFolder(db: Database, context: OperationContext, folderId: 
 /**
  * Borra de una vez (una operación, que se deshace entera) archivos y carpetas de un mismo ámbito: los archivos van a
  * la papelera, y las carpetas se quitan con todo lo que tengan dentro (sus archivos, a la papelera; sus carpetas,
- * también quitadas). Un archivo de la papelera vuelve a lo más alto. Devuelve cuántos archivos fueron a la papelera
+ * también quitadas). Un archivo de la papelera vuelve a lo más alto (detrás, por nombre). Devuelve cuántos archivos fueron a la papelera
  */
 export function trashItems(
   db: Database,
@@ -209,7 +282,8 @@ export function trashItems(
         : []
     const fileIds = new Set([...items.fileIds, ...inside.map((file) => file.id)])
     const now = new Date()
-    for (const id of fileIds) await w.update(files, id, { deletedAt: now, folderId: null })
+    // Sin su puesto, que era el de su carpeta
+    for (const id of fileIds) await w.update(files, id, { deletedAt: now, folderId: null, position: null })
     // De las de dentro a las de fuera (una madre no se quita antes que sus hijas)
     for (const id of [...gone].reverse()) await w.remove(fileFolders, id)
     return fileIds.size

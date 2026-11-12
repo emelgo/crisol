@@ -5,7 +5,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { buildApp } from '../app.ts'
 import type { Auth } from '../auth/auth.ts'
 import { diskStorage } from '../files/storage.ts'
-import { createTestAuth, signUpTestUser, TEST_SEAL_KEY, testDataDir } from '../testing.ts'
+import { createTestAuth, seedExampleTemplates, signUpTestUser, TEST_SEAL_KEY, testDataDir } from '../testing.ts'
 
 const BASE_URL = 'http://localhost:5173'
 const ok = async () => undefined
@@ -72,6 +72,7 @@ describe('lo que sabe cada campaña (docs/specs/conocimiento.md)', () => {
       .insert(schema.organizationMembers)
       .values({ organizationId: org.id, userId: master.userId, role: 'owner' })
     worldId = (await ok200('createWorld', { name: 'Valdren' })).id
+    await seedExampleTemplates(call)
     marca = (await ok200('createCampaign', { worldId, name: 'La Marca' })).id
     norte = (await ok200('createCampaign', { worldId, name: 'Los del norte' })).id
     ana = await signUpTestUser(auth, { name: 'Ana', email: 'ana@crisol.test' })
@@ -317,6 +318,7 @@ describe('lo que lee un jugador (docs/specs/conocimiento.md)', () => {
       .insert(schema.organizationMembers)
       .values({ organizationId: org.id, userId: master.userId, role: 'owner' })
     worldId = (await ok200('createWorld', { name: 'Valdren' })).id
+    await seedExampleTemplates(call)
     marca = (await ok200('createCampaign', { worldId, name: 'La Marca' })).id
     const norte = (await ok200('createCampaign', { worldId, name: 'Los del norte' })).id
     ana = await signUpTestUser(auth, { name: 'Ana', email: 'ana@crisol.test' })

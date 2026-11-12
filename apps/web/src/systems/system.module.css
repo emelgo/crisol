@@ -1,4 +1,20 @@
 /* Un sistema por dentro: su título como el de una plantilla, sus libros en rejilla y «Libro nuevo» */
+/* Su portada, arriba, ancha y redondeada (como la cabecera de un mundo), y el nombre debajo */
+.banner {
+  overflow: hidden;
+  block-size: 13rem;
+  margin-block-end: var(--space-4);
+  border-radius: 0.75rem;
+  box-shadow: inset 0 0 0 1px var(--line-frame);
+}
+
+.banner img {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+}
+
 .heading {
   display: flex;
   align-items: center;
@@ -210,4 +226,105 @@
   margin: 0;
   color: var(--color-tip);
   font-weight: 600;
+}
+
+/* La portada, en los ajustes: su nombre y el botón que abre su cuadro */
+.coverRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.coverLabel {
+  font-weight: 600;
+}
+
+.rowAction {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  border: 1px solid var(--line-frame);
+  border-radius: 6px;
+  background: none;
+  padding: var(--space-2) var(--space-3);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.rowAction:hover {
+  background: var(--row-hover);
+}
+
+/* Un libro por dentro: la vuelta, encima del título (fuera del flujo: el título queda donde el de Compendio) */
+.bookPage {
+  position: relative;
+}
+
+/* «← {sistema}», arriba a la izquierda, dentro de un libro: la vuelta a su Inicio */
+.back {
+  position: absolute;
+  inset-block-start: var(--space-2);
+  inset-inline-start: var(--space-6);
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.375rem 0.625rem 0.375rem 0.375rem;
+  border-radius: 6px;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.back:hover {
+  background: var(--row-hover);
+  color: var(--color-text);
+}
+
+.back:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/* Un camino que aún no se puede elegir (a mano, hasta el editor): apagado y con su «Pronto» */
+.way:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.soon {
+  align-self: flex-start;
+  margin-block-start: auto;
+  padding: 0.125rem 0.5rem;
+  border-radius: 999px;
+  background: var(--color-raised);
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* Reglas: lo que trae el sistema (lo mismo que su vista previa), en una caja de cristal que se lee */
+.rules {
+  max-inline-size: 40rem;
+  margin-block-start: var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid var(--line-frame);
+  border-radius: 8px;
+  background: var(--frame-sheen), var(--surface-glass);
+  -webkit-backdrop-filter: var(--frame-blur);
+  backdrop-filter: var(--frame-blur);
+}
+
+/* En el móvil, la vuelta va encima del título, no pegada a él */
+@media (max-width: 48rem) {
+  .back {
+    position: static;
+    margin: var(--space-3) var(--space-4) 0;
+  }
 }

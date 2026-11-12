@@ -11,8 +11,12 @@ import type { Mechanics } from './mechanics.ts'
 import { own } from './own.ts'
 import { type Language, type Text, textOf } from './text.ts'
 
+/** Lo que se tira de una acción: su ataque, su daño y su curación */
+export type ActionPart = 'attack' | 'damage' | 'heal'
+
 export interface MechanicsText {
-  actions: { label: string; parts: string[] }[]
+  /** Sus acciones, con su clave y lo que se puede tirar de cada una (para su botón) */
+  actions: { key: string; label: string; parts: string[]; rolls: ActionPart[] }[]
   resources: { label: string; parts: string[] }[]
   effects: string[]
   scaling: string | null
@@ -304,7 +308,12 @@ export function mechanicsText(
     }
     if (a.recharge) parts.push(say('recharge', language, { x: a.recharge.replace('-', '–') }))
     if (a.cost) parts.push(say('cost', language, { x: String(a.cost) }))
-    return { label: label(a.label, a.key), parts }
+    const rolls: ActionPart[] = [
+      ...(a.attack ? (['attack'] as const) : []),
+      ...(a.damage?.length ? (['damage'] as const) : []),
+      ...(a.heal ? (['heal'] as const) : [])
+    ]
+    return { key: a.key, label: label(a.label, a.key), parts, rolls }
   })
   const effects = (mechanics.effects ?? []).map((e) => {
     const target = pathName(names.bearer, e.target.split('.'), language, system)

@@ -6,7 +6,8 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 ## Identidad
 
 - **Mezcla del Crisol antiguo y del nuevo** (2026-10-30). Del antiguo:
-  - grises neutros, con el oscuro por defecto;
+  - grises neutros, **solo en oscuro** (Enrique, 2026-11-11: «el modo blanco no me convence»; el claro se quita del
+    todo y, si un día hace falta, se hará entero; la hoja impresa y el PDF siguen con sus papeles);
   - cada nivel de título con su color;
   - enlaces en azul;
   - el rojo solo en lo importante.
@@ -26,18 +27,26 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   - ni textos de ayuda fijos en pantalla.
 - **Se dice «IA», no «Claude»**: Crisol se conecta a cualquier IA. El nombre de la app conectada sale solo donde se ve
   qué está conectado.
+- **Las imágenes de la app, con prompt** (Enrique, 2026-11-11, revisión de la app): donde convenga una imagen de la
+  app (los fondos de Entrar, la portada pública, el ambiente de Inicio, las pantallas vacías), Claude escribe el prompt
+  y Enrique la genera a mano con ChatGPT, todas en un mismo estilo que elige él, **al estilo de Foundry VTT, Roliando o
+  LegendKeeper** (fantasía épica pintada). Las portadas de mundos, campañas, sistemas y libros son del usuario: la app
+  no trae ninguna. Prompts y guía de estilo en `docs/imagenes.md`.
 
 ## Armazón y navegación
 
 - **Con sesión no hay barra arriba**. A la izquierda, una barra con iconos y su nombre debajo. Dentro de un mundo
   cambia y enseña su contenido. **Sin barra de estado abajo**: «la barra que hay abajo sirve de algo? sino quitala».
+- **Fuera de un mundo, la barra va en este orden** (Enrique, 2026-11-11): Mundos, Plantillas, Etiquetas, Sistemas y
+  **Archivos el último**. El tutorial de Inicio sigue el mismo orden.
 - **Con sesión, la portada y Entrar llevan directos a Mis mundos**. Una portada que solo enlaza a Mis mundos es redundante.
 - **Lo de la barra lateral se abre encima**, como una ventana, sin quitar lo que se está viendo: Historial, Papelera,
   Ajustes, Perfil. «Ajustes y todo lo de la barra lateral debe ser como un popup, para no quitar la vista que se
   tiene en el momento». Se cierra con la X, con Escape o pulsando fuera, y se vuelve a donde se estaba; un enlace
   de dentro la cierra y lleva a su sitio. **Sin enlace de vuelta** arriba («Mis mundos»): en una ventana no tiene
   sentido.
-- **Dentro de un mundo, la barra lleva el mundo (su nombre) y Archivos**; nada más (ni Plantillas, ni Campañas, ni
+- **Dentro de un mundo, la barra lleva el mundo (su nombre, con su icono propio: un paisaje de montaña, no el globo de
+  «Mundos», Enrique, 2026-11-12) y Archivos**; nada más (ni Plantillas, ni Campañas, ni
   «Inicio»: el mundo se abre en su portada). Historial y Papelera enseñan los de ese mundo. **Los dados no van en la barra**
   (Enrique, 2026-11-08: «los dados deben estar en un icono con forma de d20 como en dndbeyond que al pulsarlo se abre
   en una esquina, pero no una pagina propia»): un botón flotante con forma de d20, siempre en la misma esquina, que
@@ -64,6 +73,11 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   con sus secciones (Inicio con el resumen y los jugadores, Libros, Compendio, Aventuras, Personajes, Páginas, Ajustes)
   y la **Mesa** como una sección más, a pantalla completa al entrar en ella, con su barra de la derecha. Sustituye a lo
   de abajo (la campaña abría directamente en la Mesa y sin barra lateral); pendiente de lienzo y de ADR.
+- **El sistema también tiene su propio espacio, como el mundo y la campaña** (Enrique, 2026-11-11, revisión de la
+  app): al entrar, la barra cambia y enseña lo suyo (su Inicio con la portada y los libros, Compendio y Reglas; los
+  ajustes, en una ventana) y la llama vuelve a Sistemas, con la transición de salir. Un libro se abre dentro, con el
+  esqueleto de tres columnas (su árbol, la entrada y sus datos) y «← {sistema}» en la cabecera. Sin el icono fijo ni
+  la palabra «Sistema».
 - **La campaña se abre en la Mesa, como en Foundry VTT** (Enrique, 2026-11-08: «la mesa debería ser lo que se ve al
   abrir la campaña como en foundryvtt»; «dentro de la mesa es donde deberíamos tener el compendio»; ADR-0019,
   construida el 2026-11-09):
@@ -89,23 +103,66 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   con cristal», `out/lienzo-cristal/`): translúcido y con el mapa desenfocado detrás (tokens `--glass-*`) solo en piezas
   pequeñas que flotan: la barra de la escena, las herramientas, el zoom, las tiradas sobre el d20, la tira de turnos de la
   tele, las ventanas minimizadas y la cabecera de las ventanas. Lo que se lee (el cuerpo de páginas, hojas y compendio)
-  va casi opaco, y la barra de la derecha, opaca (va acoplada). **El brillo, solo en lo vivo** y en el rojo de la marca
+  va casi opaco, y la barra de la derecha, de cristal pero que se lee (`--glass-panel`). **El brillo, solo en lo vivo** y en el rojo de la marca
   (`--glow-live`): «En la tele» (en rojo, como «Enseñando»), la ventana que se enseña y un crítico. Al pasar por los
   botones de las barras, suben un poco. Sin desenfoque en el navegador, el mismo tinte más tapado.
+- **El cristal, en toda la app** (Enrique, 2026-11-11, revisión de la app), no solo en la Mesa. Fuera de ella hace
+  falta algo detrás, **un fondo de ambiente**: en Entrar, las imágenes; en Inicio, una de ambiente o la portada del
+  mundo sobre el que está el ratón; en un mundo o un sistema, su portada, muy difuminada y tenue. De cristal, lo que
+  enmarca (la barra, las fichas de los lados, cabeceras, tarjetas, cuadros); lo que se lee o se escribe, casi opaco.
+  «Sin desenfoque» en Ajustes. **Que se vea** (Enrique, 2026-11-12: «¿no has puesto efecto cristal a nada aún?»;
+  «el tono cristal no se aplica a los popup»): el fondo de ambiente (`components/ambient.tsx`) va fijo detrás de todo,
+  una copia suave de la imagen ya mezclada con el color de fondo (opaca: al cambiar de imagen se funden sin destello) y
+  **con tope de luz** (con una portada clara, más tenue). Se reconoce en los márgenes. En Inicio cambia al pararse en un
+  mundo, no al pasar por encima. **En las transiciones de vista viaja solo el contenido** (`main[data-contenido]`): el
+  fondo y la barra se quedan quietos, sin parpadear; si el fondo cambia (entrar en un mundo o salir), se funde dentro de
+  la transición. Al entrar en un mundo, su tarjeta se convierte en la cabecera; **al salir, no** (salía estirada y
+  borrosa): el mundo se aleja mientras llega Mis mundos. Lo que enmarca (la barra, las fichas de los lados, las tarjetas,
+  los recuadros con título) es **cristal de verdad**: translúcido (`--surface-glass`), con lo de detrás desenfocado
+  (`--frame-blur`) y un brillo arriba (`--frame-sheen`). Las rayas, blancas translúcidas (`--line-frame`, `--line-soft`).
+  **Lo que flota encima** (cuadros, ventanas, menús, el menú del botón derecho, el selector de iconos), cristal más
+  tapado (`--popup-glass`, `--popup-blur`) sobre la pantalla oscurecida; lo de dentro, translúcido sin desenfocar otra
+  vez. Los visores de imagen a pantalla completa (`data-full`), sin él. **Los campos** (buscadores, cajas de texto,
+  desplegables), de cristal oscuro (`--field-fill`); **el botón principal**, de cristal rojo (`--accent-glass`). **La
+  página es una hoja casi opaca** (`--surface-read`): la portada y el texto, una sola pieza. Los marcos de esquinas
+  cortadas pintan su raya como un anillo (`--cut-ring`), para que su relleno pueda ser de cristal; la zona de peligro,
+  igual, en rojo. **«Sin desenfoque»** (Ajustes, «Este aparato»; se guarda en el navegador): sin fondo de ambiente ni
+  desenfoque en ninguna parte, también en la Mesa; todo opaco, como antes. Sin desenfoque en el navegador, todo más
+  tapado.
+- **La portada pública** (tanda 5): la imagen a toda pantalla (la barra de arriba, transparente encima), en el centro la
+  llama, el nombre, la frase, «Entrar» y «Tengo una invitación» (que pide el enlace y lleva a la campaña); debajo, tres
+  estampas de lo que hay dentro (el mundo, la mesa, la ficha), capturas de la app.
+- **Las pantallas vacías, una sola pieza en el centro** (Enrique, 2026-11-12: «una pieza central»): el bodegón pintado
+  (public/vacios/), una frase corta y debajo el botón de crear; nada suelto alrededor. **Con contenido, el bodegón es el
+  emblema** de la pantalla: pequeño, a la derecha del título (no en el hueco de la vista previa: «no me gusta el icono
+  ahí a la izquierda»).
+- **Los iconos: un emoji o uno de rol** (game-icons.net, «gi:<id>»), en páginas, carpetas, plantillas y sistemas; el
+  buscador de iconos flota y se recorre con una parada del tabulador y las flechas.
+- **El espacio del sistema** (tanda 6): en la barra, su nombre con su icono, Compendio y Reglas; abajo, Ajustes. Su
+  portada, arriba en su Inicio y detrás en todo su espacio. **Un libro se abre por dentro**: su tapa y su nombre arriba,
+  su índice por tipos (con cuántos trae cada uno) y, al pulsar uno, su lista; «← {sistema}» para volver. **Sus
+  capítulos se leen como en D&D Beyond** (ADR-0025, tanda 7): «Capítulos · Entradas» bajo su título; a la izquierda los
+  capítulos y, dentro del abierto, sus secciones, que siguen la lectura; anterior y siguiente al final; en el móvil, «Ir
+  a…». Quien juega los lee desde el compendio de su campaña («Leer · N capítulos»), sin los secretos. Reglas, hasta
+  el editor a mano, enseña lo que trae el sistema y deja bajarlo. **«Sistema nuevo», tres caminos que se eligen**: con
+  tu IA (la frase para pedírselo), con el esqueleto (bajarlo y subirlo) y a mano («Pronto», hasta la tanda 8).
 - **La campaña se abre en su propia vista, como un mundo** (Enrique, 2026-11-05): al entrar, la barra cambia y enseña
   lo de la campaña (sus personajes, su compendio, los dados…), con la transición de entrar. **El compendio** (el
   contenido del sistema que usa la campaña: clases, conjuros, criaturas, reglas…, con sus ediciones) **se ve ahí**.
 - **El mundo se abre en su portada**, como la Home de LegendKeeper: una página más, que se crea sola con un texto de
   bienvenida, va la primera del árbol con su casa, no se borra ni se mete en otra, y lleva «Inicio» junto al título.
   Por detrás, la portada del mundo (su tarjeta al entrar: **esa transición no se toca**).
-- **El menú de la cuenta** (la inicial, abajo en la barra): quién eres, Perfil, Ajustes y Cerrar sesión. El tema va en
-  Ajustes, no en el menú. Se abre al lado del botón y nunca se corta.
+- **El menú de la cuenta** (la inicial, abajo en la barra): quién eres, Perfil, Ajustes y Cerrar sesión. Sin elegir
+  tema (solo hay oscuro). Se abre al lado del botón y nunca se corta.
 - **Las etiquetas son de toda la cuenta** (ADR-0006): «Etiquetas» va en la barra de Mis mundos, no en la de un mundo;
   dentro, son filtros (al buscar en la wiki, en Archivos). Llevan un color opcional y se ven como un punto de color con
   su nombre. Se eligen o se escriben: una nueva entra sola. **Una puede ir dentro de otra** (Enrique, 2026-11-08: «al crearla que te
   deje poner donde debe ir y luego poder arrastrarlas»): al crearla se elige «Dentro de» (sin escribir «/»); en la lista
-  se arrastran sobre otra para meterlas dentro, como las carpetas de Archivos (se marcan los sitios donde se puede
-  soltar, con «Mover aquí»), o a «Arriba del todo» para sacarlas; también desde su ventana. Se llevan sus hijas.
+  se arrastran como las páginas del mundo (Enrique, 2026-11-12: «nada de arriba del todo, debe funcionar como las hojas
+  de un mundo»): una raya delante o detrás de una fila para ordenarlas a mano, la fila resaltada si va dentro, y
+  llevada a la izquierda sale de su madre; también desde su ventana («Dentro de»). Se llevan sus hijas. **Como las
+  carpetas de Archivos** (Enrique, 2026-11-12): las que tienen hijas llevan su flecha para plegarlas (o derecha e
+  izquierda con el teclado), y pulsar la fila (o Intro) abre su ventana.
 - **El móvil, solo para la jugadora** (Enrique, 2026-11-08: «la vista movil la vamos a descartar por completo excepto
   para la vista del jugador, el master siempre deberá trabajar desde PC»). Lo del máster (el mundo, sus páginas,
   Archivos, Plantillas, Sistemas, la Mesa…) se diseña y se revisa solo en el escritorio; lo de la jugadora (su campaña,
@@ -126,10 +183,33 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 - **Cada pantalla tiene su guía, aunque sea básica**: «debemos mantener el patrón siempre».
 
 ## Pantallas
-- **Los sistemas se hacen con la IA** (Enrique, 2026-11-04: crearlos con el editor «es poco intuitivo»). En «Sistemas»
-  no hay editor ni «Probar»: se ven los que hay (de serie y de la cuenta), se suben de un archivo y se bajan, cada uno
-  con su contenido, y también un sistema vacío para empezar. La pantalla dice que los nuevos se hacen con la IA; la IA
-  los prueba con `probar_formula` y `probar_tirada`. Se hace al acabar `srd-5e`.
+- **Un sistema se crea de tres maneras** (Enrique, 2026-11-11, revisión de la app: vuelve el editor a mano): **con la
+  IA** (por el conector; la IA lo prueba con `probar_formula` y `probar_tirada`), **con el esqueleto** (bajarlo,
+  rellenarlo y subirlo; la comprobación dice qué falta, dónde y con un ejemplo; también un zip de Foundry) o **a
+  mano**, con un editor por pasos y en palabras de mesa («¿Qué tiene un personaje?», «¿Cómo se tira?»), sin
+  tecnicismos: cada campo con su «?» y un ejemplo real, a un lado la ficha que va saliendo y «Probar», y la revisión
+  siempre a la vista. Las fórmulas y lo avanzado, al fondo. Sustituye a «los sistemas se hacen con la IA»
+  (2026-11-04: el editor de entonces «es poco intuitivo»).
+- **Las plantillas son páginas guardadas como modelo, y no hay plantillas de serie** (Enrique, 2026-11-11, revisión de
+  la app; ADR-0024): cada cuenta hace las suyas. Una plantilla lleva lo mismo que una página (portada, icono, campos,
+  panel, texto y sus pestañas) y se edita como una página; crear desde ella es duplicarla. Se ordenan en carpetas.
+  **Su lista es como Archivos** (prototipo aprobado, 2026-11-12): el árbol con carpetas de color e icono, arrastre y
+  teclado, la vista previa a la izquierda y «Plantilla nueva» y «Nueva carpeta» fijos. **«Plantilla nueva» abre el
+  mismo cuadro que «Página nueva»** (Enrique, 2026-11-12): el tipo (texto o un mapa) y el nombre; sin nombre, «Plantilla
+  sin título», que se abre para escribirlo. **Abierta, es su página** con «‹ Plantillas» arriba a la izquierda, la marca
+  «Plantilla», a la izquierda **el árbol de las demás** (carpetas que se pliegan, «Nueva carpeta» y «Plantilla nueva»
+  arriba y, con el botón derecho: de una plantilla, duplicarla, sus ajustes y borrarla; de una carpeta, crear dentro,
+  sus ajustes y borrarla) y en el panel sus campos y bloques, que se definen; un emoji delante del nombre es su icono.
+  **«Desde plantilla» va la última y centrada, tras una raya con «o»**, en «Página nueva» y en «Plantilla nueva» (allí,
+  partir de otra): cambia el cuadro a la lista de plantillas («‹ Otro tipo» vuelve). **No en «Pestaña nueva»**: la
+  plantilla, solo al crear una página (Enrique, 2026-11-12: «me choca lo de usar una plantilla en una pestaña»). Ya no
+  hay «Aplicar plantilla» en «⋯». Tras la crítica (Enrique,
+  2026-11-12): **los campos y bloques del panel de una plantilla van plegados** (nombre y tipo; al pulsarlos, sus
+  opciones) **y se recolocan con sus seis puntos**, arrastrando o con Alt y las flechas, como los de una página; **la
+  marca «Plantilla» lleva el color de acento**, para no confundirse con la píldora que lleva a una plantilla; **bajo
+  cada plantilla, sus primeros campos** (en la lista y al elegir una), no sus pestañas.
+- **Las tiradas no se escriben en las páginas** (Enrique, 2026-11-11, revisión de la app): los dados salen del texto y
+  van a las entradas del compendio, que se tiran con su botón y se enlazan o se incrustan en una página.
 - **La wiki se edita en el sitio, como en el Crisol antiguo** (`docs/specs/wiki-edicion.md`): «no me gusta que todo sea
   como con botones, debe ser más ágil, poder cambiar todo en edición, incluso el título». Se abre la página y se
   escribe: el título es el propio encabezado (Intro guarda, Escape deshace) y todo se guarda solo («Guardando…»,
@@ -139,6 +219,17 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 - **El icono va en el propio título**, si se quiere: no hay botón para ponerlo. **La portada**, como en el Crisol antiguo
   y en los mundos: se pone desde «⋯»; puesta, al pasar por encima salen «Ver» y «Cambiar», y se arrastra para
   encuadrarla.
+- **Las columnas de los lados de una página, fijas y del mismo alto** (Enrique, 2026-11-11): pulsar el mundo en la
+  barra no recoge el árbol (lleva a su portada); la derecha mide lo que la izquierda (lo que cabe en la ventana) y lo que
+  no cabe se desplaza dentro. En la ventana de una página de la Mesa, cada columna con su desplazamiento.
+- **La hoja llena el ancho** de la columna del centro hasta un tope de letra (20 px) y, si sobra, va centrada; **las
+  rayas de salto de página van de lado a lado y dicen la página que se cierra** («Página 1»). **La nota lateral va a su
+  lado** (izquierdo o derecho) con el texto alrededor, igual al imprimir.
+- **Imprimir o descargar pregunta cómo**: con colores, en blanco y negro o en pergamino (con una muestra de cada uno),
+  el papel, la numeración, el pie y los secretos. El aspecto va con cada impresión (la página se sigue escribiendo
+  igual) y se recuerda para la próxima; el papel, la numeración y el pie se guardan en la página.
+- **El menú común** (`components/menu.tsx`): flota junto a su botón sin que lo recorte nada; Escape o pulsar fuera lo
+  cierran y el foco vuelve al botón; lo que se despliega dentro lleva su flecha (como «Exportar» o «Versiones»).
 - **Las propiedades, en una ficha a un lado** (a la derecha, con el texto alrededor, como en el Crisol antiguo); en la
   hoja, arriba a todo lo ancho. Solo «+ Propiedad» y «Etiquetas» a mano: «Alias» y «Resumen» sobran. El tipo de una
   propiedad sale junto a su × mientras se edita.
@@ -195,7 +286,7 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 - **Dentro de un mundo, la forma de Everlore (esquinas redondeadas, sin cortes) con nuestros colores y nuestras
   letras.** Las propiedades de una página van en el panel de la derecha, con su título pequeño como lo demás.
 - **Los mundos no tienen papel** (máster o jugador): eso es de las campañas.
-- **La tele, siempre oscura**, aunque la app esté en el tema claro: es una pantalla para el grupo, sobre el mapa
+- **La tele, siempre oscura**: es una pantalla para el grupo, sobre el mapa
   (2026-11-08).
 - **El mapa**: la imagen se arrastra y se acerca con la rueda hacia el cursor (y con dos dedos); las herramientas, una
   columna de iconos arriba a la izquierda; el botón derecho ofrece «Pin aquí» y «Pin con página nueva» (su nombre es
@@ -204,7 +295,7 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 - **La hoja es lo que hace única la wiki, y toda página es una hoja** (Enrique, 2026-11-03: «verlo directamente como
   se ve en la hoja pero sin las texturas»; aprobada la prueba «toda página es una hoja», «está quedando genial»): el
   texto se escribe seguido y cae en sus páginas como al imprimir (el mismo paginador y la misma letra y tamaño), con una
-  raya fina y «Página N» donde empieza cada una, y con los colores de la app; el papel y las texturas del tema, solo al
+  raya fina y «Página N» de la que acaba (desde el 2026-11-12; antes, de la que empezaba), y con los colores de la app; el papel y las texturas del tema, solo al
   imprimir y en el PDF. Una columna por defecto; «Columnas» (1 o 2 desde ese punto) y los demás bloques de maquetación
   (saltos, statblock, nota lateral, a lo ancho, índice) están en «/» → Maquetación en todas las páginas. En el móvil,
   una columna seguida. Los títulos del texto, igual con hoja y sin ella (en su letra, sin mayúsculas, cada nivel en su
@@ -243,35 +334,62 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 
 - **La colocación de Ajustes es la referencia**: una columna en el centro, con el título y el contenido alineados.
   Nada suelto «en medio sin sentido». **El título no se mueve de una vista a otra**; si hace falta más sitio, se usan
-  los lados con **paneles fuera de la columna** («a cada lado puede haber como pestañas extras»): en Archivos, el
-  árbol de carpetas a la izquierda y, a la derecha, el archivo o la carpeta **sobre la que está el ratón** (solo
-  mientras lo está); en Mis mundos, a la izquierda, el mundo sobre el que está el ratón (portada, descripción,
+  los lados con **paneles fuera de la columna** («a cada lado puede haber como pestañas extras»): en Archivos y en
+  Etiquetas, a la izquierda, el archivo, la carpeta o la etiqueta **sobre la que está el ratón** (solo mientras lo
+  está; Enrique, 2026-11-11, antes a la derecha); en Mis mundos, a la izquierda, el mundo sobre el que está el ratón (portada, descripción,
   campañas y archivos). Archivos de un mundo es la misma pantalla que la de los comunes, con «Comunes» como una carpeta
   más. Con menos sitio (o con zoom) la columna del centro se estrecha; sin sitio, el panel se quita.
 - **Crear algo se hace con un botón que abre un cuadro**, no con un formulario suelto en la pantalla. **El de crear es
   prácticamente el de sus ajustes** (para un mundo: portada, nombre, descripción y color), para dejarlo bien hecho
   sin tener que entrar después en ajustes.
-- **«Nuevo …» va como un recuadro más de la lista**, con la misma forma (esquinas cortadas), vacío y con el borde
-  discontinuo, tras el último (no un botón arriba). Sin ninguno, la pantalla vacía con su botón grande.
+- **«Nuevo …» va como un recuadro más de la lista**, con la misma forma (esquinas cortadas), vacío y con el borde de
+  **línea continua** (Enrique, 2026-11-11; antes, discontinuo), **la misma que la de las tarjetas** (2026-11-12: el
+  recuadro vacío no debe pesar más que lo que hay), que se aviva al pasar el ratón; tras el último (no un botón
+  arriba). El mismo recuadro en todas las listas: mundos, campañas, plantillas, etiquetas, sistemas y libros. Sin ninguno, la pantalla vacía con
+  su botón grande.
 - **Las pantallas de cuenta (entrar, crear la cuenta)** van centradas y con aspecto profesional. **De fondo, imágenes de fantasía que van pasando, como en LegendKeeper**
   (Enrique, 2026-11-08): a toda la pantalla, cada una unos 8 segundos acercándose despacio, con un fundido entre una y
   otra, un degradado teñido de su color y su autor abajo a la derecha (enlaza a su origen). En orden al azar en cada
   visita. Solo arte (nada de fotos reales): digital de fantasía de Pixabay y cuadros de dominio público, elegidos por
-  Enrique; la lista en `apps/web/src/account/backdrops.ts` y su origen en `docs/terceros.md`.
-- **Archivos, como un explorador**: árbol de carpetas (unas dentro de otras; se les arrastran archivos, y mientras se
-  arrastra se marcan las carpetas donde se puede soltar, con «Mover aquí»; la que lo recibe se ilumina; soltado en la
-  caja del árbol, fuera de una carpeta, va a lo más alto; un común no va a una carpeta del mundo ni al revés). **Sin
-  ruta encima de la lista** («Todos › Carpeta»): el árbol ya dice dónde se está. **Toda la fila o tarjeta abre lo
-  suyo**, no solo el nombre. Mover es arrastrar y cambiar un archivo es subir otro y borrar el viejo: su ventana no
-  tiene «Carpeta» ni «Reemplazar». **Se eligen varios** con su casilla (al pasar el ratón) y se borran de una vez,
-  con aviso. **Borrar una carpeta se lleva lo que tiene dentro** (sus archivos, a la papelera), avisando. Lista
-  compacta o tarjetas, **buscador por nombre y filtro por tipo** siempre a la vista. Se suben varios a la vez (no
-  carpetas enteras), a la carpeta elegida; cada subida sale con su progreso y una X para cancelarla, y al acabar ya
-  es su archivo (sin lista de «Subidas»). **Solo imágenes, PDF, audio, vídeo y texto**: nada que se ejecute.
+  Enrique; la lista en `apps/web/src/account/backdrops.ts` y su origen en `docs/terceros.md`. **Se cambiarán por
+  imágenes propias** en el estilo que elija Enrique (2026-11-11, `docs/imagenes.md`), con el centro tranquilo para el
+  recuadro.
+- **Archivos, sin árbol a la izquierda: la lista del centro es el árbol** (Enrique, 2026-11-11: «el árbol de la
+  izquierda no tiene sentido, ya tenemos la visión del árbol en el centro»): pulsar una carpeta la despliega ahí mismo,
+  con lo de dentro sangrado (no se entra en ella), y al arrastrar un archivo y mantenerlo sobre una carpeta cerrada, se
+  despliega sola. La vista previa, a la izquierda. **Solo en lista** (Enrique, 2026-11-12: fuera las tarjetas). **«Subir
+  archivos» y «Nueva carpeta» no cambian de nombre** (un nombre de carpeta largo los rompería) y suben y crean en lo
+  más alto; **cada carpeta, al pasar el ratón, lleva sus botones «Subir aquí» y «Carpeta dentro»** en el sitio de lo
+  que tiene (Enrique, 2026-11-12: «al subir un archivo también debe permitir dónde se sube»). **Al buscar, por nombre o #etiqueta** (como en las páginas; sin
+  filtro aparte), lo encontrado sale dentro de sus carpetas, desplegadas: el árbol hasta él. Se construye en la tanda 2 de la
+  revisión (lienzo «Archivos sin árbol», aprobado); sustituye a lo del árbol y de las tarjetas de la norma de abajo.
+- **Archivos, como un explorador**: carpetas unas dentro de otras, en la lista (ver la norma de arriba, «sin árbol a la
+  izquierda»). Se arrastran archivos y carpetas como las páginas del mundo: raya encima o debajo de una fila (a qué
+  nivel va) o la carpeta resaltada si va dentro; lo movido se ilumina; un común no va a una carpeta del mundo ni al
+  revés (mientras se arrastra, sale apagado). Carpetas primero y luego archivos, **en el orden que se quiera** (se
+  recolocan arrastrando); sin ordenar, por nombre. **Sin ruta encima de la lista** («Todos › Carpeta»): la lista ya dice dónde está cada cosa.
+  **Toda la fila abre lo suyo**, no solo el nombre. Mover es arrastrar o, desde su ventana, **«Carpeta»** (Enrique,
+  2026-11-12: como «Dentro de» en las etiquetas; «Ninguna», lo más alto); cambiar un archivo es subir otro y borrar el
+  viejo: sin «Reemplazar». **Las carpetas llevan color e icono** (Enrique, 2026-11-12), desde su ventana: el color,
+  como el de un mundo o una etiqueta; el icono, un emoji como el de una página. El color tiñe el dibujo de la carpeta o,
+  con icono, su fondo; se ve en la lista, en la vista previa y en el selector de archivos. **Se eligen varios** con su casilla (al pasar el ratón; en su columna, a la izquierda de las filas y sin tapar la miniatura; con Mayúsculas, el tramo), y lo elegido se lleva a una carpeta («Mover a…»), se etiqueta («Etiquetar») o se borra de una vez (Enrique, 2026-11-12); mientras se elige, su barra ocupa el sitio de la de herramientas y la lista no se mueve. **Con el teclado, como Etiquetas**: una parada del tabulador, flechas para recorrer, abrir y cerrar, Intro abre, Espacio elige y Alt + flechas recolocan; con el foco en una fila sale su vista previa y se
+  borran de una vez, con aviso. **Borrar una carpeta se lleva lo que tiene dentro** (sus archivos, a la papelera),
+  avisando. **Buscador (por nombre o #etiqueta) y filtro por tipo** siempre a la vista. Se suben varios a la vez (no carpetas enteras), a la carpeta elegida; cada subida sale
+  con su progreso y una X para cancelarla, y al acabar ya es su archivo (sin lista de «Subidas»). **Solo imágenes,
+  PDF, audio, vídeo y texto**: nada que se ejecute.
 - **Los archivos comunes de la cuenta** (ADR-0005): fuera de los mundos, «Archivos» en la barra; dentro de cada
-  mundo, la carpeta «Comunes» en sus archivos, la misma en todos. Donde se elige un archivo (la portada), «Del mundo»
-  y «Comunes» por separado.
-- **Todo cuadro o ventana encima lleva la X arriba a la derecha y se cierra al pulsar fuera** (y con Escape).
+  mundo, la carpeta «Comunes» en sus archivos, la misma en todos.
+- **Donde se elige un archivo, el selector de archivos**: la lista de Archivos en una ventana (las carpetas se despliegan
+  al pulsarlas), solo con el tipo que se pide y con su buscador por nombre o #etiqueta; en un mundo, los comunes dentro
+  de «Comunes». **La portada** (de un mundo, una campaña o una página, el mismo cuadro) se pone con dos botones con su
+  texto debajo: «Subir imagen» y «Elegir de tus archivos»; sin miniaturas sueltas. Sin imagen, el hueco de la vista
+  previa sube una al pulsarlo y admite soltar una del escritorio (Enrique, 2026-11-12).
+- **Las ventanas de ajustes, compactas** (Enrique, 2026-11-12: «son tan grandes… que no cabe y hay que hacer
+  scroll»): letra algo menor que la de la página, campos de una línea más bajos, poco aire entre ellos y casillas de
+  color e icono pequeñas; han de caber enteras en la pantalla de un portátil siempre que se pueda.
+- **Todo cuadro o ventana encima lleva la X arriba a la derecha y se cierra al pulsar fuera** (y con Escape). **Las X
+  de cerrar, al pasar el ratón, un círculo suave alrededor del icono** (Enrique, 2026-11-11: «la x se ve mal al pasar
+  el ratón por encima»; antes, un cuadrado que tapaba la esquina), en todas.
 - **Todos los cuadros con la misma cabecera y los mismos botones** (Enrique, 2026-11-08: «la x se ve por encima, el
   titulo muy pegado»): el título rojo con su raya, con aire arriba (haya portada o no) y a la altura de la X, que nunca
   queda encima de la raya ni del título. La acción principal (Crear, Guardar, Borrar) a la izquierda y la primera,
@@ -281,7 +399,7 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   ventana, donde se cambia todo (nombre incluido) y donde irá lo que se añada. Nada de «Renombrar» y «Borrar» sueltos.
 - **Los mundos no llevan icono**: «no aportan nada».
 - **Las campañas se ven y se crean como los mundos**: tarjeta con portada, descripción y color, engranaje con su
-  ventana y zona de peligro, «Nueva campaña» discontinuo al final, y se forjan y arden igual. Su portada, una imagen
+  ventana y zona de peligro, «Nueva campaña» al final, y se forjan y arden igual. Su portada, una imagen
   de su mundo o común. **Viven en Mis mundos**, bajo los mundos, cada una con su mundo debajo del nombre; «Nueva
   campaña» pide el mundo. No están en la barra.
 - **La barra de la izquierda, estrecha y de iconos** (Enrique prefirió esta a una ancha al estilo Everlore). Dentro de
@@ -292,7 +410,8 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   que el ratón entra otra vez en la tarjeta.
 - **El color de un mundo**: sin color, uno de los fijos o uno propio con el selector de color; los propios se
   recuerdan para usarlos otra vez. **Solo tiñe, sutil, el contorno de su tarjeta** (y el de su ventana); la portada no
-  se colorea. **El contorno sale siempre**, entero, también alrededor de la portada. Sin imagen, el hueco de la portada lleva un tinte muy oscuro de ese color.
+  se colorea. **Al pasar el ratón, su nombre se resalta con ese color** (Enrique, 2026-11-11: «si selecciono color
+  verde, debe resaltarse el color, no de rojo siempre»), aclarado para que se lea; sin color, en rojo. **El contorno sale siempre**, entero, también alrededor de la portada. Sin imagen, el hueco de la portada lleva un tinte muy oscuro de ese color.
 - **Toda la tarjeta es clicable** y lleva al elemento, no solo su nombre (salvo sus botones).
 - **«Guardar» y «Cancelar» solo salen si hay cambios**, a la izquierda (Guardar primero), y se abren y se cierran
   suavemente al aparecer y al irse, sin saltos (`components/changes.tsx`); «Cancelar» los deshace.
@@ -316,6 +435,8 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 
 - **Los errores, con mensajes propios** bajo cada campo, nunca con el globo del navegador («ese popup tan cutre»). El
   foco va al primer campo que falla.
+- **Un texto con límite dice cuánto se lleva** («123 / 280», abajo a la derecha) mientras se escribe en él (Enrique,
+  2026-11-11, la descripción de mundos y campañas); el de varias líneas crece con lo escrito.
 
 ## Textos
 

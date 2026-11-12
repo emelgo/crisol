@@ -38,23 +38,28 @@ import type {
   SoundTrackInput,
   TablePresenceEntry,
   TagView,
+  TemplateFolder,
+  TemplateView,
   TokenView,
   TrashItem,
   WallView,
   WidgetView,
   World
 } from '@crisol/contracts'
-import { youtubeVideoId } from '@crisol/contracts'
+import { GAME_ICONS, youtubeVideoId } from '@crisol/contracts'
 import { DiceSyntaxError, rollDice as rollFormula, rowFor, tableFormula, tableProblems } from '@crisol/dice'
 import {
   advanceSound,
   applyTemplate,
-  BUILT_IN_TEMPLATES,
-  builtInTemplate,
+  bySiblingPlace,
   EMPTY_SOUND,
+  EXAMPLE_TEMPLATES,
   instantiate,
+  isTagOrChild,
   nextTrack as nextTrackOf,
   pauseSound as pauseSoundOf,
+  placeAmong,
+  placeAmongSiblings,
   removeTagIn,
   renameTagIn,
   resumeSound,
@@ -64,16 +69,19 @@ import {
   startList,
   stopSound as stopSoundOf,
   tagKey,
+  tagLeaf,
+  tagParent,
   tagTree,
+  templateEmoji,
   uniqueTags
 } from '@crisol/domain'
+import { markdownWithoutSecrets } from '@crisol/editor/markdown'
 import {
   addCondition,
   applyChanges,
   applyChoices,
   type Build,
   browseContent,
-  CATALOG,
   ChangeError,
   type Choices,
   type ContentItem,
@@ -181,8 +189,12 @@ export function fakeApi(
     }>
     /** Los archivos de los mundos (usedBy: cuántas páginas lo usan) */
     files?: Array<Pick<FileView, 'worldId' | 'name'> & Partial<FileView> & { usedBy?: number }>
-    /** Las carpetas de los archivos */
-    folders?: FolderView[]
+    /** Las carpetas de los archivos (sin puesto: por nombre) */
+    /** Las plantillas de la cuenta; sin ellas, las de ejemplo (las que fueron de serie) */
+    templates?: readonly PageTemplate[]
+    folders?: Array<
+      Omit<FolderView, 'position' | 'color' | 'icon'> & Partial<Pick<FolderView, 'position' | 'color' | 'icon'>>
+    >
     /** Las tiradas de las campañas, en el orden en que se tiraron */
     rolls?: DiceRoll[]
     /** Las notas de los jugadores (sin userId, de la cuenta «yo»), en su orden */
@@ -293,6 +305,7 @@ export function fakeApi(
       url: `/api/files/${id}`,
       tags: [],
       folderId: null,
+      position: null,
       version: 1,
       updatedAt: new Date().toISOString(),
       ...file,
@@ -302,7 +315,12 @@ export function fakeApi(
   const files = (options.files ?? []).map(({ usedBy: _, ...file }) => fileOf(file))
   const fileUses = new Map((options.files ?? []).map((file, i) => [files[i]?.id ?? '', file.usedBy ?? 0]))
   const trashedFiles: FileView[] = []
-  const folders: FolderView[] = [...(options.folders ?? [])]
+  const folders: FolderView[] = (options.folders ?? []).map((folder) => ({
+    position: null,
+    color: null,
+    icon: null,
+    ...folder
+  }))
   const folderById = (folderId: string) => {
     const folder = folders.find((f) => f.id === folderId)
     if (!folder) throw new ApiError('NOT_FOUND', 404)
@@ -436,16 +454,82 @@ export function fakeApi(
     hasChildren: childrenOf(page.worldId, page.id).length > 0,
     version: page.version
   })
-  // Las plantillas de la cuenta (las de serie, en el dominio)
-  const ownTemplates: Array<PageTemplate & { deleted: boolean }> = []
-  const templateById = (id: string): PageTemplate | undefined =>
-    (builtInTemplate(id) as PageTemplate | undefined) ?? ownTemplates.find((t) => t.id === id && !t.deleted)
+  // Las plantillas de la cuenta (no hay de serie): de entrada, las de ejemplo (las que fueron de serie)
+  // Como en el servidor (ADR-0024), cada una es una página de un mundo oculto (que no sale en Mis mundos) y se lee de
+  // ella; las de ejemplo, como las de antes, pasan a su página al abrirlas (getTemplate)
+  type StoredTemplate = PageTemplate & { deleted: boolean; folderId: string | null; position: string | null }
+  const templatesWorld = crypto.randomUUID()
+  const ownTemplates: StoredTemplate[] = (options.templates ?? EXAMPLE_TEMPLATES).map((template) => ({
+    ...(structuredClone(template) as PageTemplate),
+    pageId: null,
+    deleted: false,
+    folderId: null,
+    position: null
+  }))
+  const templateFolders: TemplateFolder[] = []
+  const templatePageOf = (template: StoredTemplate) =>
+    template.pageId ? pages.find((page) => page.id === template.pageId) : undefined
+  const templateView = (template: StoredTemplate): TemplateView => {
+    const { deleted: _, ...row } = structuredClone(template)
+    const page = templatePageOf(template)
+    // Lo que enseña su vista previa: su portada, sus pestañas y en cuántas páginas se usa
+    const extra = {
+      cover: page?.cover ?? null,
+      tabs: page
+        ? pageTabs
+            .filter((tab) => tab.pageId === page.id)
+            .map((tab) => ({ id: tab.id, name: tab.name, kind: tab.kind }))
+        : [],
+      uses: pages.filter((other) => other.template === template.id && other.worldId !== templatesWorld).length
+    }
+    if (!page) return { ...row, ...extra }
+    return {
+      ...row,
+      ...extra,
+      name: page.title,
+      icon: page.icon,
+      fields: structuredClone(page.properties),
+      panel: structuredClone(page.panel ?? []) as PageTemplate['panel']
+    }
+  }
+  /** Su puesto entre sus hermanas (las de su tipo en la carpeta de destino), como placeBeside */
+  const placeAmongTemplates = (
+    siblings: { id: string; name: string; position: string | null }[],
+    movedId: string,
+    before: string | undefined,
+    after: string | undefined,
+    save: (id: string, position: string) => void
+  ) => {
+    const copies = siblings.map((each) => ({ ...each }))
+    const own = placeBeside(copies, movedId, before, after)
+    for (const copy of copies) if (copy.position !== null) save(copy.id, copy.position)
+    return own
+  }
+  const templateById = (id: string): TemplateView | undefined => {
+    const found = ownTemplates.find((t) => t.id === id && !t.deleted)
+    return found ? templateView(found) : undefined
+  }
+  /** Su página: la que tiene o, si aún no, una nueva en el mundo oculto con lo que guardaba */
+  const templatePage = (template: StoredTemplate) => {
+    const existing = templatePageOf(template)
+    if (existing) return existing
+    const page: StoredPage = {
+      id: crypto.randomUUID(),
+      worldId: templatesWorld,
+      parentId: null,
+      title: template.name,
+      icon: template.icon,
+      properties: structuredClone(template.fields),
+      panel: structuredClone(template.panel) as Page['panel'],
+      version: 1
+    }
+    pages.push(page)
+    template.pageId = page.id
+    return page
+  }
   // Las tablas que se llenan solas, como el servidor: las de su plantilla (o sus copias) con el campo hacia esta página
   const lineOf = (page: StoredPage) =>
-    page.template
-      ? (builtInTemplate(page.template)?.line ??
-        ownTemplates.find((t) => t.id === page.template)?.line ?? [page.template])
-      : []
+    page.template ? (ownTemplates.find((t) => t.id === page.template)?.line ?? [page.template]) : []
   const tablesOf = (page: StoredPage): PageTables => {
     const blocks = (page.panel ?? []).filter((block) => block.type === 'related')
     const linked = new Map<string, string>()
@@ -511,21 +595,29 @@ export function fakeApi(
   }
 
   // Las etiquetas de la cuenta (ADR-0006): las guardadas y las que llevan páginas y archivos
-  const tagRows: { id: string; organizationId: string; name: string; color: TagView['color'] }[] = []
+  const tagRows: {
+    id: string
+    organizationId: string
+    name: string
+    color: TagView['color']
+    position?: string | null
+  }[] = []
   const tagsOfPage = (page: StoredPage) => {
     const found = page.properties.find((p) => p.name.toLowerCase() === 'etiquetas')
     return found?.type === 'list' ? found.value : []
   }
   const ownOrganization = (organizationId?: string) =>
     organizationId ?? organizations.find((o) => o.role === 'owner')?.id ?? ''
-  const catalogOf = (organizationId: string): TagView[] =>
+  const tagNodesOf = (organizationId: string) =>
     tagTree<TagView['color']>({
       rows: tagRows.filter((row) => row.organizationId === organizationId),
       pages: pages
         .filter((page) => worlds.find((w) => w.id === page.worldId)?.organizationId === organizationId)
         .map((page) => ({ worldId: page.worldId, tags: tagsOfPage(page) })),
       files: files.filter((file) => file.organizationId === organizationId)
-    }).map((node) => ({
+    })
+  const catalogOf = (organizationId: string): TagView[] =>
+    tagNodesOf(organizationId).map((node) => ({
       id: node.id,
       name: node.name,
       depth: node.depth,
@@ -570,10 +662,42 @@ export function fakeApi(
       if (row.organizationId !== organizationId) continue
       const next = change([row.name])
       if (!next) continue
-      if (next[0]) row.name = next[0]
-      else tagRows.splice(tagRows.indexOf(row), 1)
+      const name = next[0]
+      if (!name) {
+        tagRows.splice(tagRows.indexOf(row), 1)
+        continue
+      }
+      // Si cambia de madre, pierde su puesto entre las hermanas de antes (como en el servidor)
+      const parentOf = (tag: string) => tagKey(tagParent(tag) ?? '')
+      if (tagKey(row.name) === tagKey(from) && parentOf(from) !== parentOf(name)) row.position = null
+      row.name = name
     }
     return { pages: changedPages, files: changedFiles }
+  }
+
+  /**
+   * Como el servidor: lo movido, delante o detrás de un hermano de su tipo en su carpeta (`siblings`: los de allí), con
+   * los puestos de todos la primera vez; devuelve el suyo (sin ancla, null). Si el ancla no es de allí, NOT_SIBLING
+   */
+  const placeBeside = <T extends { id: string; name: string; position: string | null }>(
+    siblings: T[],
+    movedId: string,
+    before: string | undefined,
+    after: string | undefined
+  ) => {
+    const anchor = before ?? after
+    if (anchor === undefined) return null
+    if (anchor === movedId || !siblings.some((s) => s.id === anchor)) throw new ApiError('NOT_SIBLING', 400)
+    const places = placeAmong(
+      [...siblings].sort(bySiblingPlace),
+      movedId,
+      before !== undefined ? { before } : { after }
+    )
+    for (const { id, position } of places) {
+      const sibling = siblings.find((s) => s.id === id)
+      if (sibling) sibling.position = position
+    }
+    return places.find((place) => place.id === movedId)?.position ?? null
   }
 
   /** Archivos a la papelera y carpetas quitadas con lo que tienen dentro; devuelve cuántos archivos */
@@ -587,7 +711,7 @@ export function fakeApi(
     const doomed = files.filter((file) => fileIds.includes(file.id) || (file.folderId && gone.has(file.folderId)))
     for (const file of doomed) {
       files.splice(files.indexOf(file), 1)
-      trashedFiles.unshift({ ...file, folderId: null })
+      trashedFiles.unshift({ ...file, folderId: null, position: null })
     }
     for (const id of gone)
       folders.splice(
@@ -1122,6 +1246,8 @@ export function fakeApi(
     return {
       id,
       ...overview,
+      icon: document.icon ?? null,
+      cover: document.cover ?? null,
       builtIn: !own,
       version: own?.version ?? 1,
       basedOn: own?.basedOn
@@ -1278,12 +1404,31 @@ export function fakeApi(
           typeLabel: textOf(found.document.types[item.type]?.label as Text, 'es') || item.type,
           world: found.worldKeys.has(item.key),
           systemId: found.document.id,
+          systemName: textOf(found.document.name, 'es'),
           campaignId: c.id
         }))
       })
 
   /** El sistema de una campaña, con lo que eligió y su contenido (en la falsa, el de los de la cuenta) */
+  const chapters: {
+    id: string
+    systemId: string
+    source: string
+    title: string
+    markdown: string
+    position: number
+    version: number
+  }[] = []
   const compendiumOf = (campaignId: string) => {
+    // El compendio de un sistema sin campaña (su espacio): todos sus libros, las dos ediciones y nada del mundo
+    if (campaignId.startsWith('sistema:')) {
+      const document = systemById(campaignId.slice('sistema:'.length))
+      if (!document) throw new ApiError('NOT_FOUND', 404)
+      const { choices: base } = normalizeChoices(document, {})
+      const choices = { ...base, sources: (document.sources ?? []).map((s) => s.key), duplicates: 'both' as const }
+      const own = ownSystems.find((s) => s.id === document.id && !s.deleted)
+      return { document, choices, content: own?.content ?? [], world: null, worldKeys: new Set<string>() }
+    }
     const campaign = campaigns.find((c) => c.id === campaignId)
     if (!campaign) throw new ApiError('NOT_FOUND', 404)
     const document = campaign.system ? systemById(campaign.system.id) : null
@@ -1649,6 +1794,24 @@ export function fakeApi(
       place(page, before, after)
       return pageView(page)
     },
+    // Como el servidor: una copia entera (fila y pestañas, con sus mapas y pines) detrás de la original
+    copyPage: ({ pageId, title }) => {
+      const source = pageById(pageId)
+      const page: StoredPage = {
+        ...structuredClone(source),
+        id: crypto.randomUUID(),
+        title: title ?? `${source.title} (copia)`,
+        version: 1
+      }
+      place(page, undefined, source.id)
+      for (const tab of pageTabs.filter((t) => t.pageId === source.id)) {
+        const copy = { ...tab, id: crypto.randomUUID(), pageId: page.id }
+        pageTabs.push(copy)
+        const map = maps.find((m) => m.tabId === tab.id)
+        if (map) maps.push({ ...structuredClone(map), id: crypto.randomUUID(), tabId: copy.id, pageId: page.id })
+      }
+      return pageView(page)
+    },
     updatePage: ({ pageId, title, icon, locked, cover, sheet }) => {
       const page = pageById(pageId)
       Object.assign(page, {
@@ -1834,44 +1997,134 @@ export function fakeApi(
     // Por el título, sin tildes ni mayúsculas (la de verdad la prueban las del servidor)
     // Las plantillas: las de serie y las de la cuenta, como el servidor
     listTemplates: () => ({
-      templates: structuredClone([...BUILT_IN_TEMPLATES, ...ownTemplates.filter((t) => !t.deleted)]) as PageTemplate[],
-      deleted: ownTemplates.filter((t) => t.deleted).map((t) => ({ id: t.id, name: t.name, icon: t.icon }))
+      templates: ownTemplates.filter((t) => !t.deleted).map(templateView),
+      folders: structuredClone(templateFolders),
+      deleted: ownTemplates
+        .filter((t) => t.deleted)
+        .map(templateView)
+        .map((t) => ({ id: t.id, name: t.name, icon: t.icon }))
     }),
     getTemplate: ({ templateId }) => {
-      const found = templateById(templateId)
+      const found = ownTemplates.find((t) => t.id === templateId && !t.deleted)
       if (!found) throw new ApiError('NOT_FOUND', 404)
-      return structuredClone(found) as PageTemplate
+      templatePage(found)
+      return templateView(found)
     },
-    createTemplate: ({ name, icon, copyOf }) => {
+    createTemplate: ({ name, icon, copyOf, folderId }) => {
       const base = copyOf
-        ? (templateById(copyOf) ?? [...BUILT_IN_TEMPLATES, ...ownTemplates].find((t) => t.name === copyOf))
+        ? (templateById(copyOf) ?? ownTemplates.find((t) => !t.deleted && t.name === copyOf))
         : undefined
       if (copyOf && !base) throw new ApiError('TEMPLATE_NOT_FOUND', 400)
-      if ([...BUILT_IN_TEMPLATES, ...ownTemplates].some((t) => !('deleted' in t && t.deleted) && t.name === name)) {
+      if (ownTemplates.some((t) => !t.deleted && templateView(t).name === name)) {
         throw new ApiError('TEMPLATE_TAKEN', 400)
       }
       const id = crypto.randomUUID()
-      const template = {
+      const template: StoredTemplate = {
         id,
         name,
-        icon: icon ?? 'template',
+        icon: templateEmoji(icon ?? base?.icon ?? null),
+        pageId: null,
         basedOn: base?.id ?? null,
         line: [id, ...(base?.line ?? [])],
-        builtIn: false,
         fields: structuredClone(base?.fields ?? []),
         panel: structuredClone(base?.panel ?? []),
         skeleton: base?.skeleton ?? '',
-        deleted: false
-      } as PageTemplate & { deleted: boolean }
+        deleted: false,
+        // En la carpeta que se diga; la copia, sin decirlo, en la de la original
+        folderId: folderId !== undefined ? folderId : (base?.folderId ?? null),
+        position: null
+      }
       ownTemplates.push(template)
-      return structuredClone(template) as PageTemplate
+      templatePage(template)
+      return templateView(template)
+    },
+    // Las carpetas de plantillas, como las de archivos
+    createTemplateFolder: ({ parentId: parent, name }) => {
+      const parentId = parent ?? null
+      if (parentId && !templateFolders.some((f) => f.id === parentId)) throw new ApiError('BAD_FOLDER', 400)
+      if (templateFolders.some((f) => f.parentId === parentId && f.name.toLowerCase() === name.toLowerCase())) {
+        throw new ApiError('NAME_TAKEN', 400)
+      }
+      const folder: TemplateFolder = {
+        id: crypto.randomUUID(),
+        parentId,
+        name,
+        position: null,
+        color: null,
+        icon: null
+      }
+      templateFolders.push(folder)
+      return structuredClone(folder)
+    },
+    updateTemplateFolder: ({ folderId, name, color, icon, parentId, before, after }) => {
+      const folder = templateFolders.find((f) => f.id === folderId)
+      if (!folder) throw new ApiError('NOT_FOUND', 404)
+      for (let at = parentId ?? null; at; at = templateFolders.find((f) => f.id === at)?.parentId ?? null) {
+        if (at === folderId) throw new ApiError('CYCLE', 400)
+      }
+      const destination = parentId === undefined ? folder.parentId : parentId
+      const moves = destination !== folder.parentId
+      const siblings = templateFolders.filter((f) => f.parentId === destination)
+      const position = placeBeside(siblings, folderId, before, after)
+      Object.assign(folder, {
+        ...(name !== undefined ? { name } : {}),
+        ...(color !== undefined ? { color } : {}),
+        ...(icon !== undefined ? { icon } : {}),
+        parentId: destination,
+        ...(position !== null ? { position } : moves ? { position: null } : {})
+      })
+      return structuredClone(folder)
+    },
+    deleteTemplateFolder: ({ folderId }) => {
+      const folder = templateFolders.find((f) => f.id === folderId)
+      if (!folder) throw new ApiError('NOT_FOUND', 404)
+      const gone = new Set<string>()
+      let level = [folderId]
+      while (level.length > 0) {
+        for (const id of level) gone.add(id)
+        level = templateFolders.filter((f) => f.parentId && level.includes(f.parentId)).map((f) => f.id)
+      }
+      const inside = ownTemplates.filter((t) => !t.deleted && t.folderId && gone.has(t.folderId))
+      for (const template of inside) Object.assign(template, { deleted: true, folderId: null, position: null })
+      for (let i = templateFolders.length - 1; i >= 0; i--) {
+        if (gone.has(templateFolders[i]?.id ?? '')) templateFolders.splice(i, 1)
+      }
+      return { id: folder.id, name: folder.name, templates: inside.length }
+    },
+    moveTemplate: ({ templateId, folderId, before, after }) => {
+      const found = ownTemplates.find((t) => t.id === templateId && !t.deleted)
+      if (!found) throw new ApiError('NOT_FOUND', 404)
+      if (folderId && !templateFolders.some((f) => f.id === folderId)) throw new ApiError('BAD_FOLDER', 400)
+      const moves = found.folderId !== folderId
+      const siblings = ownTemplates
+        .filter((t) => !t.deleted && t.folderId === folderId)
+        .map((t) => ({ id: t.id, name: templateView(t).name, position: t.position }))
+      const position = placeAmongTemplates(siblings, templateId, before, after, (id, at) => {
+        const sibling = ownTemplates.find((t) => t.id === id)
+        if (sibling) sibling.position = at
+      })
+      found.folderId = folderId
+      if (position !== null) found.position = position
+      else if (moves) found.position = null
+      return templateView(found)
     },
     updateTemplate: ({ templateId, ...patch }) => {
       const found = ownTemplates.find((t) => t.id === templateId && !t.deleted)
       if (!found) throw new ApiError('NOT_FOUND', 404)
       const fields = patch.fields?.map((f) => (f.field ? f : { ...f, field: crypto.randomUUID().slice(0, 8) }))
-      Object.assign(found, { ...patch, ...(fields ? { fields } : {}) })
-      return structuredClone(found) as PageTemplate
+      const icon = patch.icon === undefined ? {} : { icon: templateEmoji(patch.icon) }
+      Object.assign(found, { ...patch, ...icon, ...(fields ? { fields } : {}) })
+      // Lo de su página es lo que vale: su título es su nombre; sus propiedades, sus campos
+      const page = templatePageOf(found)
+      if (page) {
+        Object.assign(page, {
+          ...(patch.name !== undefined ? { title: patch.name } : {}),
+          ...icon,
+          ...(fields ? { properties: fields } : {}),
+          ...(patch.panel ? { panel: patch.panel } : {})
+        })
+      }
+      return templateView(found)
     },
     // Las tiradas: aquí las tira la web de pruebas; la de verdad, el servidor
     rollDice: ({ campaignId, formula, visibility = 'all' }) => {
@@ -2616,12 +2869,33 @@ export function fakeApi(
         .slice(0, limit ?? 20)
         .map(({ campaignId: _, ...each }) => each)
     }),
-    getLinkedContent: ({ worldId, name }) => {
+    getLinkedContent: ({ worldId, campaignId, systemId, name }) => {
+      // Desde una campaña o un sistema (sus capítulos): lo de su compendio, por su nombre
+      if (campaignId || !worldId) {
+        const found = compendiumOf(campaignId ?? `sistema:${systemId ?? ''}`)
+        if (!found || (campaignId && systemId && found.document.id !== systemId)) return { entry: null }
+        const item = found.content.find((c) => (textOf(c.data.name as Text, found.choices.language) || c.key) === name)
+        if (!item) return { entry: null }
+        const label = found.document.types[item.type]?.label
+        return {
+          entry: {
+            key: item.key,
+            name,
+            type: item.type,
+            typeLabel: label ? textOf(label as Text, found.choices.language) : item.type,
+            world: false,
+            systemId: found.document.id,
+            systemName: textOf(found.document.name, found.choices.language),
+            lines: [],
+            campaignId: campaignId ?? null
+          }
+        }
+      }
       const all = linkablesOf(worldId)
       const found = all.find((e) => e.world && e.name === name) ?? all.find((e) => e.name === name)
       if (!found) return { entry: null }
-      const { campaignId, ...entry } = found
-      return { entry: { ...entry, lines: [], campaignId } }
+      const { campaignId: openIn, ...entry } = found
+      return { entry: { ...entry, lines: [], campaignId: openIn ?? null } }
     },
     applyRoll: ({ campaignId, rollId, targets }) => {
       const roll = rolls.find((r) => r.id === rollId && r.campaignId === campaignId)
@@ -2828,7 +3102,8 @@ export function fakeApi(
               cover: each.cover ?? null,
               requires: each.requires ?? [],
               count: (summary?.count ?? 0) - (summary?.excluded ?? 0),
-              excluded: summary?.excluded ?? 0
+              excluded: summary?.excluded ?? 0,
+              chapters: chapters.filter((c) => c.systemId === document.id && c.source === each.key).length
             }
           }),
         sections: compendiumSections(document, types).map((section) => ({
@@ -2838,6 +3113,36 @@ export function fakeApi(
         })),
         types: types.map(typeView)
       }
+    },
+    // Una acción de una entrada, a su registro: aquí, sus dados sin lo que sale de la hoja (`+ @…`)
+    rollContentAction: ({ campaignId, key, action, characterId, visibility = 'all' }) => {
+      const found = compendiumOf(campaignId)
+      const item = found?.content.find((each) => each.key === key)
+      if (!found || !item) throw new ApiError('NOT_FOUND', 404)
+      const spec = item.mechanics?.actions?.find((a) => a.key === action.key)
+      if (!spec) throw new ApiError('BAD_ROLL', 400)
+      const actor = found.document.types[item.type]?.document === 'actor'
+      if (!actor && !characterId) throw new ApiError('CHARACTER_REQUIRED', 400)
+      const bare = (formula: string) => formula.replace(/\s*[+-]\s*@[\w.]+/g, '').trim() || '0'
+      const formulas =
+        action.part === 'attack'
+          ? spec.attack
+            ? ['1d20']
+            : []
+          : action.part === 'heal'
+            ? spec.heal
+              ? [bare(spec.heal)]
+              : []
+            : (spec.damage ?? []).map((d) => bare(d.formula))
+      if (formulas.length === 0) throw new ApiError('BAD_ROLL', 400)
+      const name = textOf(item.data.name as Text, found.choices.language) || item.key
+      const label = textOf(spec.label, found.choices.language) || spec.key
+      const out = handlers.rollDice({ campaignId, formula: formulas.join(' + '), visibility })
+      const suffix = action.part === 'attack' ? '' : action.part === 'heal' ? ' · curación' : ' · daño'
+      const stored = rolls.find((r) => r.id === out.roll.id)
+      for (const each of stored ? [out.roll, stored] : [out.roll])
+        each.label = `${name}${label === name ? '' : ` · ${label}`}${suffix}`
+      return { roll: out.roll }
     },
     rollContentTable: ({ campaignId, key, table, visibility = 'all' }) => {
       const found = compendiumOf(campaignId)
@@ -2954,6 +3259,13 @@ export function fakeApi(
       })
       return { items, missing: wanted.filter((k) => !items.some((item) => item.key === k)) }
     },
+    getSystemCompendium: ({ systemId }) => handlers.getCampaignCompendium({ campaignId: `sistema:${systemId}` }),
+    searchSystemCompendium: ({ systemId, organizationId: _, ...options }) =>
+      handlers.searchCampaignContent({ campaignId: `sistema:${systemId}`, ...options }),
+    browseSystemCompendium: ({ systemId, type }) =>
+      handlers.browseCampaignContent({ campaignId: `sistema:${systemId}`, type }),
+    readSystemCompendium: ({ systemId, keys }) =>
+      handlers.getCampaignContent({ campaignId: `sistema:${systemId}`, keys }),
     putWorldContent: ({ worldId, systemId, items }) => {
       const own = ownSystems.find((s) => s.id === systemId && !s.deleted)
       if (!own || !leadsWorlds()) throw new ApiError('NOT_FOUND', 404)
@@ -3222,15 +3534,71 @@ export function fakeApi(
             origin: source.origin ?? null,
             file: source.file ?? null,
             cover: source.cover ?? null,
+            color: source.color ?? null,
             requires: source.requires ?? [],
             version: source.version ?? 1,
             count: summary?.count ?? 0,
             byType: summary?.byType ?? [],
             pending: summary?.pending ?? 0,
+            chapters: chapters.filter((c) => c.systemId === systemId && c.source === source.key).length,
             campaigns: using.map((c) => ({ id: c.id, worldId: c.worldId, name: c.name }))
           }
         })
       }
+    },
+    // Los capítulos de un libro (ADR-0025), en memoria; a los jugadores no les llegan sus secretos
+    listBookChapters: ({ systemId, source, campaignId }) => ({
+      chapters: chapters
+        .filter((c) => c.systemId === systemId && c.source === source)
+        .sort((a, b) => a.position - b.position)
+        .map(({ id, source: book, title, position, version }) => ({ id, source: book, title, position, version })),
+      editable: !campaignId && ownSystems.some((s) => s.id === systemId && !s.deleted)
+    }),
+    getChapter: ({ chapterId, campaignId }) => {
+      const found = chapters.find((c) => c.id === chapterId)
+      if (!found) throw new ApiError('NOT_FOUND', 404)
+      const player = campaignId ? campaigns.find((c) => c.id === campaignId)?.role === 'player' : false
+      const markdown = player ? markdownWithoutSecrets(found.markdown) : found.markdown
+      const { systemId: _, ...rest } = found
+      return { ...rest, markdown }
+    },
+    saveChapter: ({ systemId, source, chapterId, version, title, markdown }) => {
+      if (chapterId) {
+        const found = chapters.find((c) => c.id === chapterId)
+        if (!found) throw new ApiError('NOT_FOUND', 404)
+        if (found.version !== version) throw new ApiError('CHAPTER_CHANGED', 400)
+        Object.assign(found, {
+          ...(title !== undefined ? { title } : {}),
+          ...(markdown !== undefined ? { markdown } : {}),
+          version: found.version + 1
+        })
+        const { systemId: _, ...rest } = found
+        return rest
+      }
+      if (!title) throw new ApiError('TITLE_REQUIRED', 400)
+      const position = chapters.filter((c) => c.systemId === systemId && c.source === source).length
+      const made = { id: crypto.randomUUID(), systemId, source, title, markdown: markdown ?? '', position, version: 1 }
+      chapters.push(made)
+      const { systemId: _, ...rest } = made
+      return rest
+    },
+    orderChapters: ({ systemId, source, chapterIds }) => {
+      const own = chapters.filter((c) => c.systemId === systemId && c.source === source)
+      const order = [
+        ...chapterIds.filter((id) => own.some((c) => c.id === id)),
+        ...own.map((c) => c.id).filter((id) => !chapterIds.includes(id))
+      ]
+      for (const [position, id] of order.entries()) {
+        const found = chapters.find((c) => c.id === id)
+        if (found) found.position = position
+      }
+      return { chapterIds: order }
+    },
+    deleteChapter: ({ chapterId }) => {
+      const at = chapters.findIndex((c) => c.id === chapterId)
+      if (at < 0) throw new ApiError('NOT_FOUND', 404)
+      chapters.splice(at, 1)
+      return { ok: true as const }
     },
     getBookEntries: ({ systemId, source }) => {
       const document = systemById(systemId)
@@ -3485,7 +3853,7 @@ export function fakeApi(
       const found = ownTemplates.find((t) => t.id === templateId && !t.deleted)
       if (!found) throw new ApiError('NOT_FOUND', 404)
       found.deleted = true
-      return { id: found.id, name: found.name }
+      return { id: found.id, name: templateView(found).name }
     },
     searchWiki: ({ worldId, query, page = 1 }) => {
       const fold = (text: string) => text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
@@ -3573,9 +3941,12 @@ export function fakeApi(
       return {
         files: files
           .filter(usable)
-          .sort((a, b) => a.name.localeCompare(b.name, 'es'))
+          .sort(bySiblingPlace)
           .map((f) => ({ ...f, usedBy: fileUses.get(f.id) ?? 0 })),
-        folders: folders.filter(usable).map((f) => ({ ...f }))
+        folders: folders
+          .filter(usable)
+          .sort(bySiblingPlace)
+          .map((f) => ({ ...f }))
       }
     },
     listCommonFiles: ({ organizationId }) => {
@@ -3584,9 +3955,12 @@ export function fakeApi(
       return {
         files: files
           .filter(common)
-          .sort((a, b) => a.name.localeCompare(b.name, 'es'))
+          .sort(bySiblingPlace)
           .map((f) => ({ ...f, usedBy: fileUses.get(f.id) ?? 0 })),
-        folders: folders.filter(common).map((f) => ({ ...f }))
+        folders: folders
+          .filter(common)
+          .sort(bySiblingPlace)
+          .map((f) => ({ ...f }))
       }
     },
     createFolder: ({ worldId, organizationId, parentId, name }) => {
@@ -3599,14 +3973,32 @@ export function fakeApi(
           f.name.toLowerCase() === name.trim().toLowerCase()
       )
       if (sibling) throw new ApiError('NAME_TAKEN', 400)
-      const folder: FolderView = { id: crypto.randomUUID(), ...scope, parentId: parentId ?? null, name: name.trim() }
+      const folder: FolderView = {
+        id: crypto.randomUUID(),
+        ...scope,
+        parentId: parentId ?? null,
+        name: name.trim(),
+        position: null,
+        color: null,
+        icon: null
+      }
       folders.push(folder)
       return { ...folder }
     },
-    updateFolder: ({ folderId, name, parentId }) => {
+    updateFolder: ({ folderId, name, color, icon, parentId, before, after }) => {
       const folder = folderById(folderId)
+      const destination = parentId === undefined ? folder.parentId : parentId
+      // Como el servidor: su puesto entre las carpetas de su destino; al cambiar de carpeta sin él, ninguno
+      const siblings = folders.filter(
+        (f) => f.worldId === folder.worldId && f.organizationId === folder.organizationId && f.parentId === destination
+      )
+      const placed = placeBeside(siblings, folderId, before, after)
       if (name !== undefined) folder.name = name.trim()
-      if (parentId !== undefined) folder.parentId = parentId
+      if (color !== undefined) folder.color = color
+      if (icon !== undefined) folder.icon = icon
+      if (placed) folder.position = placed
+      else if (destination !== folder.parentId) folder.position = null
+      folder.parentId = destination
       return { ...folder }
     },
     deleteFolder: ({ folderId }) => {
@@ -3615,9 +4007,45 @@ export function fakeApi(
       return { id: folder.id, name: folder.name }
     },
     deleteFiles: ({ fileIds = [], folderIds = [] }) => ({ files: trashItems(fileIds, folderIds) }),
-    moveFile: ({ fileId, folderId }) => {
+    // Como el servidor: todo de un ámbito, el de su destino, y ninguna carpeta dentro de sí misma; detrás, por nombre
+    moveFiles: ({ fileIds = [], folderIds = [], folderId }) => {
+      const moving = [...fileIds.map(fileById), ...folderIds.map(folderById)]
+      const first = moving[0]
+      const dest = folderId ? folderById(folderId) : null
+      const scopeOf = (entry: { worldId: string | null; organizationId: string }) =>
+        `${entry.worldId}:${entry.organizationId}`
+      if (first && moving.some((entry) => scopeOf(entry) !== scopeOf(first))) throw new ApiError('BAD_FOLDER', 400)
+      if (first && dest && scopeOf(dest) !== scopeOf(first)) throw new ApiError('BAD_FOLDER', 400)
+      for (let at: string | null = folderId; at; at = folderById(at).parentId) {
+        if (folderIds.includes(at)) throw new ApiError('CYCLE', 400)
+      }
+      let moved = 0
+      for (const id of fileIds) {
+        const file = fileById(id)
+        if (file.folderId === folderId) continue
+        file.folderId = folderId
+        file.position = null
+        file.version++
+        moved++
+      }
+      for (const id of folderIds) {
+        const folder = folderById(id)
+        if (folder.parentId === folderId) continue
+        folder.parentId = folderId
+        folder.position = null
+        moved++
+      }
+      return { moved }
+    },
+    moveFile: ({ fileId, folderId, before, after }) => {
       const file = fileById(fileId)
       if (folderId) folderById(folderId)
+      const siblings = files.filter(
+        (f) => f.worldId === file.worldId && f.organizationId === file.organizationId && f.folderId === folderId
+      )
+      const placed = placeBeside(siblings, fileId, before, after)
+      if (!placed && file.folderId === folderId) return { ...file }
+      file.position = placed ?? null
       file.folderId = folderId
       file.version++
       return { ...file }
@@ -4475,6 +4903,11 @@ export function fakeApi(
       map.pins.splice(map.pins.indexOf(pin), 1)
       return { id: pinId }
     },
+    listGameIcons: ({ query }) => ({
+      icons: GAME_ICONS.filter(
+        (icon) => !query || icon.label.toLocaleLowerCase('es').includes(query.toLocaleLowerCase('es'))
+      ).map((icon) => ({ icon: `gi:${icon.id}`, label: icon.label, group: icon.group }))
+    }),
     listAccountTags: ({ organizationId }) => {
       const target = ownOrganization(organizationId)
       return { organizationId: target, tags: catalogOf(target) }
@@ -4506,10 +4939,50 @@ export function fakeApi(
       }
       return tagIn(target, now)
     },
+    moveTag: ({ organizationId, tag, parent, before, after }) => {
+      const target = ownOrganization(organizationId)
+      const current = tagIn(target, tag)
+      if (parent !== null && isTagOrChild(parent, current.name)) throw new ApiError('TAG_CYCLE', 400)
+      const mother = parent === null ? null : tagIn(target, parent).name
+      const destination = mother === null ? tagLeaf(current.name) : `${mother}/${tagLeaf(current.name)}`
+      let now = current.name
+      if (tagKey(destination) !== tagKey(current.name)) {
+        retag(target, current.name, destination)
+        now = destination
+      }
+      const anchor = before ?? after
+      if (anchor !== undefined) {
+        const motherKey = mother === null ? null : tagKey(mother)
+        const siblings = tagNodesOf(target).filter((node) => {
+          const of = tagParent(node.name)
+          return (of === null ? null : tagKey(of)) === motherKey
+        })
+        if (!siblings.some((node) => tagKey(node.name) === tagKey(anchor))) throw new ApiError('TAG_NOT_SIBLING', 400)
+        const places = placeAmongSiblings(siblings, now, before !== undefined ? { before } : { after: anchor })
+        for (const { name, position } of places) {
+          const row = tagRows.find((r) => r.organizationId === target && tagKey(r.name) === tagKey(name))
+          if (row) row.position = position
+          else tagRows.push({ id: crypto.randomUUID(), organizationId: target, name, color: null, position })
+        }
+      }
+      return tagIn(target, now)
+    },
     deleteTag: ({ organizationId, tag }) => {
       const target = ownOrganization(organizationId)
       const current = tagIn(target, tag)
       return { name: current.name, ...retag(target, current.name, null) }
+    },
+    addFileTags: ({ fileIds, tags }) => {
+      let changed = 0
+      for (const id of new Set(fileIds)) {
+        const file = fileById(id)
+        const next = uniqueTags([...file.tags, ...tags])
+        if (next.length === file.tags.length) continue
+        file.tags = next
+        file.version++
+        changed++
+      }
+      return { files: changed }
     },
     setFileTags: ({ fileId, tags }) => {
       const file = fileById(fileId)
@@ -4615,8 +5088,8 @@ export function fakeApi(
       const page = input.pageId ? pageById(input.pageId) : null
       return { name: `${page?.title ?? 'Eana'}.zip`, data: new Blob(['zip']) }
     },
-    async downloadPdf(pageId) {
-      calls.push('downloadPdf')
+    async downloadPdf(pageId, _secrets, look) {
+      calls.push(look ? `downloadPdf:${look}` : 'downloadPdf')
       return { name: `${pageById(pageId).title}.pdf`, data: new Blob(['%PDF']) }
     },
     // Sube al momento, en dos pasos de progreso; el tipo, por el que dice el Blob

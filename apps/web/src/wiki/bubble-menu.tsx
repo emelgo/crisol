@@ -107,6 +107,9 @@ const MARKS = [
 ] as const
 
 /** La barra de formato: sale al elegir texto (no dentro del código) */
+/** Las barras flotan en el body: fuera de las cajas que las recortarían o taparían (la columna de la página, una ventana) */
+const floatOnBody = () => document.body
+
 export function FormatMenu({ editor, onSecret }: { editor: Editor; onSecret?: () => void }) {
   const { t } = useTranslation()
   const toolbar = useRef<HTMLDivElement>(null)
@@ -136,7 +139,9 @@ export function FormatMenu({ editor, onSecret }: { editor: Editor; onSecret?: ()
       className={styles.bubble}
       // Que la barra en sí no sea una parada más del tabulador (se llega a sus botones con Alt+F10)
       tabIndex={-1}
-      options={{ placement: 'top', offset: 8 }}
+      // En el body, por encima de todo: dentro de la columna de la página, el panel de al lado la tapaba
+      appendTo={floatOnBody}
+      options={{ placement: 'top', offset: 8, strategy: 'fixed' }}
       shouldShow={({ editor: current, state }) =>
         current.isEditable &&
         state.selection instanceof TextSelection &&
@@ -302,7 +307,8 @@ export function TableMenu({ editor }: { editor: Editor }) {
       pluginKey="tableMenu"
       className={styles.bubble}
       tabIndex={-1}
-      options={{ placement: 'top-start', offset: 6 }}
+      appendTo={floatOnBody}
+      options={{ placement: 'top-start', offset: 6, strategy: 'fixed' }}
       getReferencedVirtualElement={() => {
         const table = tableElement(editor)
         return table ? { getBoundingClientRect: () => table.getBoundingClientRect() } : null

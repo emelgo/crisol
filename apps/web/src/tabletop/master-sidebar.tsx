@@ -10,6 +10,7 @@ import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { GroupKnowledge } from '../campaign/group-knowledge.tsx'
+import { useWindows } from '../components/windows.tsx'
 import { SoundTab } from '../sound/sound-tab.tsx'
 import { ActorsTab } from './actor-folders.tsx'
 import { CombatPanel } from './combat-panel.tsx'
@@ -32,7 +33,6 @@ import {
 } from './sidebar.tsx'
 import { sheetWindow } from './token-sheet.tsx'
 import type { SceneChoice } from './use-preparation.ts'
-import { useWindows } from './windows.tsx'
 
 const route = getRouteApi('/mundos/$worldId/campanas/$campaignId/mesa')
 

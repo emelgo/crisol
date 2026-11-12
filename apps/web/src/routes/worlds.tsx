@@ -2,14 +2,15 @@ import type { Campaign, World } from '@crisol/contracts'
 import { TRASH_DAYS } from '@crisol/domain'
 import { useQueries, useQuery } from '@tanstack/react-query'
 import { Navigate } from '@tanstack/react-router'
-import { Globe } from 'lucide-react'
-import { useId, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
+import { prepareAmbient, useAmbient } from '../components/ambient.tsx'
 import { Loading } from '../components/brand.tsx'
 import { useCardList } from '../components/card-transition.ts'
+import { EmptyState, TitleEmblem } from '../components/empty-state.tsx'
 import { FormError } from '../components/field.tsx'
 import { failed } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
@@ -36,6 +37,20 @@ export function Worlds() {
   // El mundo sobre el que está el ratón (o el foco), para el panel de la izquierda; al irse, nada
   const [previewId, setPreviewId] = useState<string | null>(null)
   const preview = worlds.data?.worlds.find((w) => w.id === previewId)
+  // Detrás, la portada del mundo en el que uno se para (un momento: pasar por encima no mueve el fondo); al salir de la
+  // lista, la de ambiente
+  const [ambientId, setAmbientId] = useState<string | null>(null)
+  useEffect(() => {
+    if (!previewId) return
+    const timer = window.setTimeout(() => setAmbientId(previewId), 300)
+    return () => window.clearTimeout(timer)
+  }, [previewId])
+  const ambientWorld = worlds.data?.worlds.find((w) => w.id === ambientId)
+  useAmbient(ambientWorld?.cover ? `/api/files/${ambientWorld.cover.fileId}` : null)
+  // Los fondos de los mundos con portada, ya preparados: al entrar en uno, el suyo llega con la transición (sin carga)
+  useEffect(() => {
+    for (const world of worlds.data?.worlds ?? []) if (world.cover) prepareAmbient(`/api/files/${world.cover.fileId}`)
+  }, [worlds.data])
 
   if (pending) return null
   if (!account) return <Navigate to="/entrar" replace />
@@ -50,21 +65,29 @@ export function Worlds() {
       </aside>
       <div className={styles.center}>
         <div className={styles.top}>
-          <PageTitle>{t('worlds.title')}</PageTitle>
+          <TitleEmblem kind="mundos" show={Boolean(worlds.data) && !empty}>
+            <PageTitle>{t('worlds.title')}</PageTitle>
+          </TitleEmblem>
         </div>
         <FormError message={failed(worlds) ? errorText(worlds.error) : null} />
         {!worlds.data && !failed(worlds) && <Loading />}
         {worlds.data &&
           (empty ? (
             // Sin mundos: qué es un mundo y el botón grande para crear el primero
-            <div className={styles.empty}>
-              <Globe aria-hidden="true" size={44} strokeWidth={1.25} />
+            <EmptyState kind="mundos" action={canCreate ? <NewWorld big /> : undefined}>
               <h2>{t('worlds.empty')}</h2>
               {!canCreate && <p>{t('worlds.emptyPlayer')}</p>}
-              {canCreate && <NewWorld big />}
-            </div>
+            </EmptyState>
           ) : (
-            <ul className={styles.list} aria-label={t('worlds.listLabel')} data-card-list>
+            <ul
+              className={styles.list}
+              aria-label={t('worlds.listLabel')}
+              data-card-list
+              onPointerLeave={() => setAmbientId(null)}
+              onBlur={(event) => {
+                if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setAmbientId(null)
+              }}
+            >
               {cards.map(({ item, fresh, burning, burnt }) => (
                 <WorldCard
                   key={item.id}
@@ -91,12 +114,13 @@ export function Worlds() {
             text: t('tour.worlds.create'),
             also: [{ target: '[data-tour="barra-mundos"]', text: t('tour.worlds.ribbon') }]
           },
-          { target: '[data-tour="barra-archivos"]', text: t('tour.worlds.files'), placement: 'right' },
-          { target: '[data-tour="barra-etiquetas"]', text: t('tour.worlds.tags'), placement: 'right' },
-          { target: '[data-tour="barra-plantillas"]', text: t('tour.worlds.templates'), placement: 'right' },
-          { target: '[data-tour="barra-sistemas"]', text: t('tour.worlds.systems'), placement: 'right' },
-          { target: '[data-tour="barra-historial"]', text: t('tour.worlds.history'), placement: 'right' },
           { target: '[data-tour="nueva-campana"]', text: t('tour.worlds.campaigns') },
+          // La barra, de arriba abajo, en su orden
+          { target: '[data-tour="barra-plantillas"]', text: t('tour.worlds.templates'), placement: 'right' },
+          { target: '[data-tour="barra-etiquetas"]', text: t('tour.worlds.tags'), placement: 'right' },
+          { target: '[data-tour="barra-sistemas"]', text: t('tour.worlds.systems'), placement: 'right' },
+          { target: '[data-tour="barra-archivos"]', text: t('tour.worlds.files'), placement: 'right' },
+          { target: '[data-tour="barra-historial"]', text: t('tour.worlds.history'), placement: 'right' },
           {
             target: '[data-tour="barra-papelera"]',
             text: t('tour.worlds.trash', { days: TRASH_DAYS }),

@@ -1,10 +1,10 @@
 /**
- * «Página nueva» (y «Nueva subpágina»): un cuadro como el de «Pestaña nueva», con el tipo (texto, un mapa o desde
- * plantilla; lo demás, pronto) y el título. Sin título, la página se abre para ponérselo en el sitio
+ * «Página nueva» (y «Nueva subpágina»): un cuadro como el de «Pestaña nueva», con el tipo (texto o un mapa; lo demás,
+ * pronto) y el título. «Desde plantilla», la última tras una raya con «o», cambia el cuadro a la lista de plantillas: la
+ * página nace como una copia de la elegida (ADR-0024). Sin título, se abre para ponérselo en el sitio
  */
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
-import { Clock, FileText, LayoutTemplate, Map as MapIcon, Network, PenTool } from 'lucide-react'
 import { createContext, useContext, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
@@ -14,19 +14,13 @@ import dialogStyles from '../components/dialog.module.css'
 import { FormError } from '../components/field.tsx'
 import form from '../components/form.module.css'
 import { Modal } from '../components/modal.tsx'
+import { NewTemplateDialog } from '../templates/new-template-dialog.tsx'
 import { TemplatePicker } from '../templates/picker.tsx'
+import { KindChoices, StepBack, TAB_KINDS, type TabKind } from './tabs/kinds.tsx'
 import styles from './tabs/page-tabs.module.css'
 
-const KINDS = [
-  { kind: 'text', icon: FileText, ready: true },
-  { kind: 'map', icon: MapIcon, ready: true },
-  { kind: 'template', icon: LayoutTemplate, ready: true },
-  { kind: 'board', icon: PenTool, ready: false },
-  { kind: 'timeline', icon: Clock, ready: false },
-  { kind: 'tree', icon: Network, ready: false }
-] as const
-
-type Kind = (typeof KINDS)[number]['kind']
+/** Los tipos que se ofrecen al crear una página (las tablas y las escenas, como pestañas) */
+const KINDS = TAB_KINDS.filter((each) => each.newPage)
 
 /** Abrir el cuadro: en el primer nivel (null) o dentro de una página */
 export type NewPageRequest = (parent: { id: string; title: string } | null) => void
@@ -48,7 +42,11 @@ export function NewPageDialog({
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const errorText = useErrorText()
-  const [kind, setKind] = useState<Kind>('text')
+  const [kind, setKind] = useState<TabKind>('text')
+  // El paso de la plantilla: se elige una de la lista
+  const [fromTemplate, setFromTemplate] = useState(false)
+  // Vuelto del paso de la plantilla: el foco, a «Desde plantilla»
+  const [back, setBack] = useState(false)
   const [title, setTitle] = useState('')
   const [template, setTemplate] = useState<string | null>(null)
   const titleId = useId()
@@ -60,11 +58,13 @@ export function NewPageDialog({
         worldId,
         title: named || t('wiki.untitled'),
         parentId: parent?.id ?? null,
-        ...(kind === 'template' && template ? { template } : {})
+        ...(fromTemplate && template ? { template } : {})
       })
       // Si la pestaña falla, la página ya está: se abre igual (sin mapa) en vez de dejar el cuadro para crear otra
       const tab =
-        kind === 'map' ? await api.call('createPageTab', { pageId: page.id, kind: 'map' }).catch(() => null) : null
+        !fromTemplate && kind === 'map'
+          ? await api.call('createPageTab', { pageId: page.id, kind: 'map' }).catch(() => null)
+          : null
       return { page, tab, named }
     },
     onSuccess: async ({ page, tab, named }) => {
@@ -95,31 +95,36 @@ export function NewPageDialog({
         }}
       >
         <h2 id={titleId}>{parent ? t('newPage.subTitle', { parent: parent.title }) : t('newPage.title')}</h2>
-        <fieldset className={styles.kinds}>
-          <legend className={styles.hidden}>{t('newPage.kind')}</legend>
-          {KINDS.map(({ kind: each, icon: Icon, ready }) => (
-            <label key={each} className={styles.kindCard} data-ready={ready || undefined}>
-              <input
-                type="radio"
-                name={`${titleId}-kind`}
-                disabled={!ready}
-                checked={kind === each}
-                onChange={() => setKind(each)}
-              />
-              <Icon aria-hidden="true" size={20} />
-              {each === 'text'
-                ? t('newPage.text')
-                : each === 'template'
-                  ? t('newPage.fromTemplate')
-                  : t(`pageTabs.kinds.${each}`)}
-              {!ready && <span className={styles.soon}>{t('pageTabs.soon')}</span>}
-            </label>
-          ))}
-        </fieldset>
-        {kind === 'template' && <TemplatePicker value={template} onChange={setTemplate} />}
+        {fromTemplate ? (
+          <>
+            <StepBack
+              onClick={() => {
+                setFromTemplate(false)
+                setBack(true)
+              }}
+            />
+            <TemplatePicker
+              value={template}
+              onChange={setTemplate}
+              autoFocus
+              newTemplate={(close) => <NewTemplateDialog folderId={null} onClose={close} />}
+            />
+          </>
+        ) : (
+          <KindChoices
+            name={`${titleId}-kind`}
+            legend={t('newPage.kind')}
+            kinds={KINDS}
+            value={kind}
+            labelOf={(each) => (each === 'text' ? t('newPage.text') : t(`pageTabs.kinds.${each}`))}
+            onChange={setKind}
+            onTemplate={() => setFromTemplate(true)}
+            focusTemplate={back}
+          />
+        )}
         <input
           className={styles.nameInput}
-          data-autofocus=""
+          data-autofocus={fromTemplate || back ? undefined : ''}
           value={title}
           maxLength={200}
           placeholder={t('wiki.untitled')}
@@ -127,9 +132,19 @@ export function NewPageDialog({
           onChange={(event) => setTitle(event.currentTarget.value)}
         />
         <FormError message={create.error ? errorText(create.error) : null} />
-        <BusyButton type="submit" className={`${form.button} ${styles.submit}`} busy={create.isPending}>
-          {t('newPage.create')}
-        </BusyButton>
+        <div className={dialogStyles.actions}>
+          <BusyButton
+            type="submit"
+            className={form.button}
+            busy={create.isPending}
+            disabled={fromTemplate && !template}
+          >
+            {t('newPage.create')}
+          </BusyButton>
+          <button type="button" className={dialogStyles.cancel} onClick={() => dialog.current?.close()}>
+            {t('newPage.cancel')}
+          </button>
+        </div>
       </form>
     </Modal>
   )

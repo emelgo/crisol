@@ -255,6 +255,7 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   paginas_recientes: { action: 'listRecentPages' },
   leer_pagina: { action: 'readPage' },
   crear_paginas: { action: 'createPages' },
+  duplicar_pagina: { action: 'copyPage' },
   editar_pagina: { action: 'editPage' },
   versiones_pagina: { action: 'listPageVersions' },
   restaurar_version: { action: 'restorePageVersion' },
@@ -291,16 +292,20 @@ export const MCP_TOOLS: Record<string, McpTool> = {
     }
   },
   listar_archivos: { action: 'listFiles' },
+  mover_archivos: { action: 'moveFiles' },
   buscar_paginas: { action: 'searchWiki' },
   mover_pagina: { action: 'movePage' },
   ordenar_subpaginas: { action: 'sortPageChildren' },
   borrar_pagina: { action: 'deletePage' },
   // Las etiquetas de la cuenta (ADR-0006); las de una página van en sus propiedades
   listar_etiquetas: { action: 'listAccountTags' },
+  listar_iconos: { action: 'listGameIcons' },
   crear_etiqueta: { action: 'createTag' },
   cambiar_etiqueta: { action: 'updateTag' },
+  mover_etiqueta: { action: 'moveTag' },
   borrar_etiqueta: { action: 'deleteTag' },
   etiquetar_archivo: { action: 'setFileTags' },
+  etiquetar_archivos: { action: 'addFileTags' },
   // Las pestañas de una página y sus mapas con pines (ADR-0007)
   ver_pestanas: { action: 'listPageTabs' },
   crear_pestana: { action: 'createPageTab' },
@@ -319,6 +324,11 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   crear_plantilla: { action: 'createTemplate' },
   cambiar_plantilla: { action: 'updateTemplate' },
   borrar_plantilla: { action: 'deleteTemplate' },
+  // Sus carpetas (ADR-0024)
+  crear_carpeta_plantillas: { action: 'createTemplateFolder' },
+  cambiar_carpeta_plantillas: { action: 'updateTemplateFolder' },
+  borrar_carpeta_plantillas: { action: 'deleteTemplateFolder' },
+  mover_plantilla: { action: 'moveTemplate' },
   // Los dados (ADR-0010): el servidor tira; con campaña queda en su registro
   tirar_dados: {
     description:
@@ -397,6 +407,7 @@ export const MCP_TOOLS: Record<string, McpTool> = {
     }
   },
   reiniciar_tabla_compendio: { action: 'resetContentTable' },
+  tirar_accion_compendio: { action: 'rollContentAction' },
   // La biblioteca: los PDF del mundo y los comunes, con su texto por página
   ver_biblioteca: { action: 'listLibrary' },
   buscar_libros: { action: 'searchLibrary' },
@@ -465,6 +476,12 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   borrar_libro: { action: 'deleteBook' },
   proponer_contenido: { action: 'proposeContent' },
   ver_pendientes: { action: 'listPending' },
+  // Sus capítulos (ADR-0025): texto corrido en Markdown, en su orden
+  capitulos_libro: { action: 'listBookChapters' },
+  leer_capitulo: { action: 'getChapter' },
+  guardar_capitulo: { action: 'saveChapter' },
+  ordenar_capitulos: { action: 'orderChapters' },
+  borrar_capitulo: { action: 'deleteChapter' },
   // Las criaturas en juego de una campaña (del máster): ponerlas, su hoja, la partida, tirar, aplicar y quitarlas
   ver_en_juego: { action: 'listInPlay' },
   ver_criatura: { action: 'getInPlay' },
@@ -659,12 +676,16 @@ const INSTRUCTIONS =
   'ya hay antes de inventar otras. Una página puede tener pestañas además de su texto, como un mapa (ver_pestanas): ' +
   'sus pines van de 0 a 1 sobre la imagen y llevan a páginas; míralo con ver_mapa antes de poner nada. Al lado del texto, cada página tiene un panel de bloques ' +
   '(medidores, estrellas, fichas, texto corto…): sale en leer_pagina y se cambia entero con cambiar_panel. ' +
-  'Las páginas de un tipo (PNJ, Lugar, Facción… o las de la cuenta) se crean con su plantilla (listar_plantillas; ' +
+  'Las páginas de un tipo (PNJ, Lugar, Facción…: las plantillas que haya hecho la cuenta) se crean con su plantilla (listar_plantillas; ' +
   'template en crear_paginas): sus propiedades del YAML van a los campos que se llamen igual, y las tablas del panel ' +
   '(«Miembros», «Habitantes»…) se llenan solas con las páginas cuyo campo apunta a esta; para buscarlas, ' +
-  'buscar_paginas con template y field. Los dados los tira el servidor: tirar_dados (con campaignId, en su ' +
-  'registro, oculta salvo que te pidan que la vean todos) y ver_tiradas; en una página, una tirada se escribe ' +
-  '`dice: 2d6+3 # Nombre` y en partida se pulsa. Las reglas de cada juego son un sistema (listar_sistemas) y cada ' +
+  'buscar_paginas con template y field. Una plantilla es una página guardada como modelo (en un mundo oculto de la ' +
+  'cuenta): su texto, su portada, su panel y sus pestañas pasan a las páginas que se hacen con ella; su texto se lee y ' +
+  'se cambia como el de una página (su pageId sale en ver_plantilla) y sus campos, con cambiar_plantilla. Se ordenan en ' +
+  'carpetas (crear_carpeta_plantillas, mover_plantilla). Los dados los tira el servidor: tirar_dados (con ' +
+  'campaignId, en su registro, oculta salvo que te pidan que la vean todos) y ver_tiradas. Lo que se tira en partida ' +
+  '(una trampa, un ataque) va en una entrada del compendio, con su mecánica, y se tira con tirar_accion_compendio; en ' +
+  'una página, `dice: …` ya no se pulsa: es texto en código. Las reglas de cada juego son un sistema (listar_sistemas) y cada ' +
   'campaña elige el suyo con cambiar_campana. Crisol viene sin ninguno: «blank» es empezar de cero, y el máster puede ' +
   'subir el archivo de uno o importarlo de Foundry. No tiene editor de sistemas: se hacen y se cambian contigo, ' +
   'enteros: sus tipos y campos, sus tiradas, su hoja (sheet), su creador de personajes (creation: los pasos, elegir del ' +

@@ -15,6 +15,8 @@ export interface PageLinks {
   canCreate?: boolean
   /** Lo que se puede enlazar del compendio con `[[@`: del mundo y de los sistemas de sus campañas */
   searchContent?: (query: string) => Promise<LinkableContent[]>
+  /** «Entrada nueva del compendio» en una ventana (en la wiki del mundo); `done`, con su nombre al guardarla */
+  newEntry?: (name: string, done: (saved: string) => void) => void
 }
 
 export type WorldFile = ActionOutput<'listFiles'>['files'][number]

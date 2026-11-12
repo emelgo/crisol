@@ -140,6 +140,12 @@ export function summaryOf(
         system: text(details.system),
         count: typeof details.count === 'number' ? details.count : 0
       })
+    // Los capítulos de un libro (ADR-0025)
+    case 'createChapter':
+    case 'updateChapter':
+    case 'deleteChapter':
+    case 'orderChapters':
+      return say(action, { title: text(details.title), book: text(details.book) })
     case 'settlePending':
       return say(action, {
         system: text(details.system),
@@ -256,6 +262,8 @@ export function summaryOf(
       return say(action, { name: text(details.name ?? details.file) })
     case 'createFolder':
     case 'deleteFolder':
+    case 'orderFile':
+    case 'orderFolder':
       return say(action, { name: text(details.name) })
     case 'updateFolder':
       return details.from !== undefined
@@ -407,6 +415,12 @@ export function summaryOf(
     case 'deleteTag':
     case 'setFileTags':
       return say(action, { name: text(details.name ?? details.tag), tag: text(details.tag ?? details.name) })
+    case 'orderTag':
+      return say(action, { name: text(details.name) })
+    case 'moveTag':
+      return details.from
+        ? say('moveTag', { from: text(details.from), to: text(details.to) })
+        : say('moveTag', { tag: text(details.tag) })
     case 'renameTag':
     case 'updateTag':
       return say('renameTag', {
@@ -447,15 +461,42 @@ export function summaryOf(
         count: Number(details.count ?? 1),
         campaign: text(details.campaign)
       })
+    case 'createTemplateFolder':
+    case 'deleteTemplateFolder':
+    case 'orderTemplateFolder':
+    case 'orderTemplate':
+      return say(action, { name: textIn(details.name) })
+    case 'updateTemplateFolder':
+      return details.from !== undefined
+        ? say('renameTemplateFolder', { from: textIn(details.from), to: textIn(details.to) })
+        : say('moveTemplateFolder', { name: textIn(details.name) })
+    case 'moveTemplate':
+      return details.folder
+        ? say('moveTemplate', { name: textIn(details.name), folder: textIn(details.folder) })
+        : say('moveTemplateTop', { name: textIn(details.name) })
+    case 'addTemplateTabs':
+      return say('addTemplateTabs', { title: text(details.title), name: textIn(details.name) })
     case 'createTemplate':
     case 'updateTemplate':
     case 'deleteTemplate':
     case 'copyContent':
     case 'pullContentOrigin':
       return say(action, { name: textIn(details.name) })
+    case 'copyPage':
+      return say('copyPage', { title: text(details.title) })
+    case 'templatePage':
+      return say('templatePage', { name: text(details.name) })
     case 'deleteFiles':
     case 'deleteWorldContent':
       return say(action, { count: Number(details.count ?? 1) })
+    case 'moveFiles':
+      return details.folder
+        ? say('moveFiles', { count: Number(details.count ?? 1), folder: text(details.folder) })
+        : say('moveFilesTop', { count: Number(details.count ?? 1) })
+    case 'addFileTags': {
+      const tags = Array.isArray(details.tags) ? details.tags.map((tag) => `#${String(tag)}`) : []
+      return say('addFileTags', { count: Number(details.count ?? 1), tags: listOf(tags) })
+    }
     default:
       return say('unknown')
   }

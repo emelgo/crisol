@@ -6,6 +6,7 @@ import { issueBootstrap } from '@crisol/server/bootstrap'
 import { exampleFile } from '@crisol/systems/examples'
 import { type Browser, expect, type Locator, type Page } from '@playwright/test'
 import { e2eDatabaseUrl } from '../servidor.ts'
+import { SIN_DESENFOQUE } from '../sin-desenfoque.ts'
 
 export const owner = { name: 'Enrique', email: 'enrique@crisol.test', password: 'una-clave-larga' }
 
@@ -142,6 +143,7 @@ export async function skipTours(page: Page, email: string) {
           'archivos',
           'etiquetas',
           'plantillas',
+          'plantilla',
           'dados',
           'sistemas',
           'paginas-jugador',
@@ -272,8 +274,8 @@ export async function campaignLink(page: Page) {
  * página antes de abrir nada (para escuchar lo que le llega)
  */
 export async function newPlayer(browser: Browser, link: string, name = 'Jugadora', onPage?: (page: Page) => void) {
-  // En su propio contexto (axe no mide una página abierta con browser.newPage)
-  const context = await browser.newContext()
+  // En su propio contexto (axe no mide una página abierta con browser.newPage), sin desenfoque como las demás
+  const context = await browser.newContext({ storageState: SIN_DESENFOQUE })
   const player = await context.newPage()
   onPage?.(player)
   const email = `${name.toLowerCase()}@crisol.test`
@@ -402,6 +404,8 @@ export async function settled(page: Page) {
             (a) =>
               a.playState === 'running' &&
               a.effect?.getTiming().iterations !== Number.POSITIVE_INFINITY &&
+              // Las que van con el desplazamiento (el pie de la barra) no acaban nunca: no son de tiempo
+              a.timeline instanceof DocumentTimeline &&
               // El fondo de las pantallas de cuenta no para nunca (y es de adorno)
               !((a.effect as KeyframeEffect | null)?.target as Element | null)?.closest('[data-fondo]')
           ).length

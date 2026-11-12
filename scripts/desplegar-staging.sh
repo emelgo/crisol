@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 # Despliega staging en este VPS desde origin/main: construye la imagen, migra la base de datos, reinicia y comprueba.
 # Trabaja en una copia aparte (~/crisol-staging) para no depender de la rama en la que se esté trabajando.
-# Uso: scripts/desplegar-staging.sh
+# Con una rama, la de este repo tal cual (sin subirla a GitHub), para que Enrique revise una tanda desde fuera antes
+# de fusionarla; al fusionar, se vuelve a desplegar main.
+# Uso: scripts/desplegar-staging.sh [rama]
 set -euo pipefail
 
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
 DESTINO="${CRISOL_STAGING_DIR:-$HOME/crisol-staging}"
 PUERTO="${CRISOL_PORT:-8140}"
+RAMA="${1:-}"
 
 # Un solo despliegue a la vez: dos migraciones simultáneas se pisan
 exec 9>"$DESTINO.lock"
@@ -19,8 +22,13 @@ fi
 if [ ! -d "$DESTINO/.git" ]; then
   git clone --quiet "$(git -C "$REPO" remote get-url origin)" "$DESTINO"
 fi
-git -C "$DESTINO" fetch --quiet origin main
-git -C "$DESTINO" checkout --quiet --detach origin/main
+if [ -n "$RAMA" ]; then
+  git -C "$DESTINO" fetch --quiet "$REPO" "$RAMA"
+  git -C "$DESTINO" checkout --quiet --detach FETCH_HEAD
+else
+  git -C "$DESTINO" fetch --quiet origin main
+  git -C "$DESTINO" checkout --quiet --detach origin/main
+fi
 echo "Desplegando $(git -C "$DESTINO" log -1 --format='%h %s')"
 
 # Variables de staging, fuera de git: se añaden las que falten y nunca se cambian las que ya hay

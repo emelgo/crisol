@@ -1,7 +1,7 @@
 /** Los libros del mundo (la biblioteca) en una ventana sobre la Mesa: buscar dentro y leer, sin dejar la Mesa */
 import { useEffect, useState } from 'react'
+import type { WindowSpec } from '../components/windows.tsx'
 import { Library, type LibrarySearch } from '../library/library.tsx'
-import type { WindowSpec } from './windows.tsx'
 
 export function libraryWindow(worldId: string, title: string, search: LibrarySearch = {}): WindowSpec {
   return {

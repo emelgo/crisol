@@ -29,11 +29,11 @@ import { pages } from './schema/pages.ts'
 import { campaignParty } from './schema/party.ts'
 import { encounters, sceneStates, scenes, sceneTokens } from './schema/scenes.ts'
 import { soundPlaylists, soundTracks } from './schema/sound.ts'
-import { systemContent, systems, worldContent } from './schema/systems.ts'
+import { systemChapters, systemContent, systems, worldContent } from './schema/systems.ts'
 import { campaignWidgets, sceneMarks, sceneSnapshots } from './schema/table-tools.ts'
 import { randomTables } from './schema/tables.ts'
 import { tags } from './schema/tags.ts'
-import { pageTemplates } from './schema/templates.ts'
+import { pageTemplates, templateFolders } from './schema/templates.ts'
 import { pageBodies } from './schema/versions.ts'
 import { sceneFog, sceneLights, sceneSounds, sceneWalls } from './schema/vision.ts'
 import { worldMembers, worlds } from './schema/worlds.ts'
@@ -53,8 +53,10 @@ export const TRACKED_TABLES = {
   file_folders: fileFolders,
   tags,
   page_templates: pageTemplates,
+  template_folders: templateFolders,
   systems,
   system_content: systemContent,
+  system_chapters: systemChapters,
   world_content: worldContent,
   page_tabs: pageTabs,
   maps,

@@ -10,6 +10,10 @@ import { z } from 'zod'
 import { LANGUAGES, type Text, text } from './text.ts'
 
 /** La versión del formato: sube si un cambio obliga a convertir los sistemas guardados */
+/** Un icono: un emoji (con sus modificadores) o uno de rol, «gi:<id>» (el paquete, @crisol/contracts game-icons.ts) */
+const ICON =
+  /^(?:gi:[a-z0-9-]{1,40}|(?:\p{Extended_Pictographic}|\p{Regional_Indicator})(?:\p{Extended_Pictographic}|\p{Regional_Indicator}|\p{Emoji_Modifier}|\u200d|\ufe0f)*)$/u
+
 export const FORMAT = 1
 
 /** Lo que cabe en un sistema */
@@ -315,6 +319,17 @@ function build(strict: boolean) {
       .describe('Cambian unos dados por otros al tirar, como la ventaja')
   })
 
+  // Una imagen de los archivos comunes de la cuenta y su encuadre (la portada de un sistema o de un libro)
+  const cover = obj({
+    fileId: z.uuid(),
+    x: z.number().min(0).max(100),
+    y: z.number().min(0).max(100),
+    zoom: z.number().min(1).max(3).optional()
+  })
+  const color = z.union([
+    z.enum(['wine', 'moss', 'slate', 'ochre', 'sea', 'plum']),
+    z.string().regex(/^#[0-9a-f]{6}$/i)
+  ])
   const source = obj({
     key,
     name: text().describe('Su nombre (SRD 5.1)'),
@@ -332,14 +347,10 @@ function build(strict: boolean) {
     released: z.iso.date().optional().describe('Cuándo salió (AAAA-MM-DD): de lo repetido, gana lo más nuevo'),
     // Lo que hace de una fuente un libro (ADR-0021): cómo se ve y de dónde sale
     description: text(600).optional().describe('De qué va, en una o dos frases'),
-    cover: obj({
-      fileId: z.uuid(),
-      x: z.number().min(0).max(100),
-      y: z.number().min(0).max(100),
-      zoom: z.number().min(1).max(3).optional()
-    })
+    cover: cover.optional().describe('Su portada: una imagen de los archivos comunes de la cuenta, encuadrada'),
+    color: color
       .optional()
-      .describe('Su portada: una imagen de los archivos comunes de la cuenta, encuadrada'),
+      .describe('Su color, sin portada (uno de los fijos: wine, moss, slate, ochre, sea, plum; o #rrggbb)'),
     origin: z
       .enum(['pdf', 'file', 'own'])
       .optional()
@@ -502,6 +513,15 @@ function build(strict: boolean) {
     id: z.string().min(1).max(100).describe('Su id: lo pone Crisol al guardarlo'),
     name: text().describe('Su nombre'),
     summary: text(8000).optional().describe('De qué va el juego, en pocas frases'),
+    icon: z
+      .string()
+      .max(48)
+      .regex(ICON)
+      .optional()
+      .describe('Su icono: un emoji o un icono de rol «gi:<id>» (listar_iconos)'),
+    cover: cover
+      .optional()
+      .describe('Su portada (su Inicio y su tarjeta; detrás, muy difuminada): una imagen de los archivos comunes'),
     version: z.string().trim().min(1).max(40).describe('La versión que le pone quien lo hace («1.0»)'),
     languages: z.array(z.enum(LANGUAGES)).min(1).max(LANGUAGES.length).describe('Los idiomas de sus textos'),
     license: source

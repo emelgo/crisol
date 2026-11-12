@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { aiSettingsQuery } from '../api/queries.ts'
+import { shownPath } from '../shown-path.ts'
 import styles from './account-menu.module.css'
 import { useApprovals } from './approval-queue.tsx'
 import { useWindow } from './window.tsx'
@@ -23,7 +24,7 @@ export function AccountMenu({ variant = 'bar' }: { variant?: 'bar' | 'ribbon' })
   const { account, pending } = accounts.useAccount()
   const navigate = useNavigate()
   // En «Entrar», el enlace a entrar sobra
-  const signingIn = useRouterState({ select: (state) => state.location.pathname === '/entrar' })
+  const signingIn = useRouterState({ select: (state) => shownPath(state) === '/entrar' })
   const [open, setOpen] = useState(false)
   // Cerrado, se queda un momento mientras se va (animado); luego se quita
   const [shown, setShown] = useState(false)

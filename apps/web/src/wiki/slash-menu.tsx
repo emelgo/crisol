@@ -46,7 +46,12 @@ export const SlashMenu = Extension.create<SlashMenuOptions>({
         char: '/',
         // Ni dentro del código ni en un título de tabla raro: solo en texto normal
         allow: ({ state, range }) => state.doc.resolve(range.from).parent.type.name !== 'codeBlock',
-        items: ({ query }) => findBlocks(query, name, nested).filter((block) => block.group !== 'sheet' || sheet()),
+        // «Entrada nueva del compendio», solo donde se puede (la wiki del mundo, con sus ventanas)
+        items: ({ query }) =>
+          findBlocks(query, name, nested).filter(
+            (block) =>
+              (block.group !== 'sheet' || sheet()) && (block.id !== 'newEntry' || Boolean(context?.canNewEntry?.()))
+          ),
         command: ({ editor, range, props: block }) => {
           editor.chain().focus().deleteRange(range).run()
           void Promise.resolve(block.run(editor, context ?? { makeSeparate: async () => undefined })).then(() =>

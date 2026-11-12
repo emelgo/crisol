@@ -11,12 +11,12 @@ import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { FormError } from '../components/field.tsx'
+import { useWindows } from '../components/windows.tsx'
 import styles from './compendium-tab.module.css'
 import { CONTENT_DRAG, readContentDrag } from './drags.ts'
 import { matches, PLACING_TYPE, type Placing } from './panel.tsx'
 import { sheetWindow } from './token-sheet.tsx'
 import { initialOf } from './tokens.ts'
-import { useWindows } from './windows.tsx'
 
 export function CampaignCreatures({
   campaignId,

@@ -42,8 +42,8 @@ export const PageEmbed = Node.create({
     start: (src) => src.search(/^!\[\[/m),
     tokenize: (src) => {
       const match = EMBED.exec(src)
-      // Un nombre con extensión de archivo es un archivo (fileEmbed), no una página
-      if (!match || isFileName(match[1] ?? '')) return undefined
+      // Un nombre con extensión de archivo es un archivo (fileEmbed), no una página; con «@», una ficha (contentEmbed)
+      if (!match || isFileName(match[1] ?? '') || (match[1] ?? '').trimStart().startsWith('@')) return undefined
       return {
         type: 'pageEmbed',
         raw: match[0],

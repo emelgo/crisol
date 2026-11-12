@@ -1,17 +1,17 @@
 import { TEMPLATE_ICONS as CONTRACT_ICONS, pageTemplate } from '@crisol/contracts'
 import { connect, schema } from '@crisol/db'
 import { freshTestDatabase, resetDatabase } from '@crisol/db/testing'
-import { BUILT_IN_TEMPLATES, TEMPLATE_ICONS } from '@crisol/domain'
+import { EXAMPLE_TEMPLATES, TEMPLATE_ICONS } from '@crisol/domain'
 import type { FastifyInstance } from 'fastify'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { buildApp } from '../app.ts'
 import type { Auth } from '../auth/auth.ts'
-import { createTestAuth, signUpTestUser, TEST_SEAL_KEY } from '../testing.ts'
+import { createTestAuth, seedExampleTemplates, signUpTestUser, TEST_SEAL_KEY } from '../testing.ts'
 
 const BASE_URL = 'http://localhost:5173'
 const ok = async () => undefined
 
-describe('las plantillas de serie', () => {
+describe('las plantillas de la cuenta (sin plantillas de serie, ADR-0024)', () => {
   let conn: ReturnType<typeof connect>
   let auth: Auth
   let app: FastifyInstance
@@ -44,25 +44,30 @@ describe('las plantillas de serie', () => {
     await conn?.close()
   })
 
-  it('cada una cumple el contrato de la API, también su panel, y los iconos son los mismos', () => {
+  it('las de ejemplo de las pruebas cumplen el contrato de la API, también su panel, y los iconos son los mismos', () => {
     expect([...CONTRACT_ICONS]).toEqual([...TEMPLATE_ICONS])
-    for (const template of BUILT_IN_TEMPLATES) expect(pageTemplate.safeParse(template).success, template.id).toBe(true)
+    for (const template of EXAMPLE_TEMPLATES) {
+      expect(pageTemplate.safeParse({ ...template, pageId: null }).success, template.id).toBe(true)
+    }
   })
 
-  it('se ven las seis, y una entera por su id', async () => {
-    const list = await call('listTemplates', {})
-    expect(list.statusCode, list.body).toBe(200)
-    expect(list.json().templates.map((t: { id: string }) => t.id)).toEqual([
-      'pnj',
-      'lugar',
-      'faccion',
-      'objeto',
-      'mision',
-      'sesion'
+  it('una cuenta nueva no tiene ninguna; las que hace se ven, y una entera por su id', async () => {
+    const empty = await call('listTemplates', {})
+    expect(empty.statusCode, empty.body).toBe(200)
+    expect(empty.json().templates).toEqual([])
+    const ids = await seedExampleTemplates(call)
+    const list = (await call('listTemplates', {})).json()
+    expect(list.templates.map((t: { name: string }) => t.name)).toEqual([
+      'PNJ',
+      'Lugar',
+      'Facción',
+      'Objeto',
+      'Misión',
+      'Sesión'
     ])
-    const pnj = await call('getTemplate', { templateId: 'pnj' })
+    const pnj = await call('getTemplate', { templateId: ids.pnj as string })
     expect(pnj.statusCode).toBe(200)
-    expect(pnj.json()).toMatchObject({ id: 'pnj', name: 'PNJ', builtIn: true, line: ['pnj'] })
+    expect(pnj.json()).toMatchObject({ id: ids.pnj, name: 'PNJ', line: [ids.pnj] })
     expect((await call('getTemplate', { templateId: 'frente' })).statusCode).toBe(404)
   })
 
@@ -78,6 +83,7 @@ describe('las plantillas de serie', () => {
 
   describe('las de la cuenta', () => {
     let worldId: string
+    let ids: Record<string, string>
     const ok200 = async (name: string, payload: object) => {
       const response = await call(name, payload)
       expect(response.statusCode, response.body).toBe(200)
@@ -86,11 +92,12 @@ describe('las plantillas de serie', () => {
 
     beforeEach(async () => {
       worldId = (await ok200('createWorld', { name: 'Eana' })).id
+      ids = await seedExampleTemplates(call)
     })
 
     it('copiar PNJ conserva los ids de sus campos y su linaje; sus páginas salen en «Miembros»', async () => {
       const copy = await ok200('createTemplate', { name: 'PNJ de Eana', icon: 'user', copyOf: 'PNJ' })
-      expect(copy).toMatchObject({ builtIn: false, basedOn: 'pnj', line: [copy.id, 'pnj'] })
+      expect(copy).toMatchObject({ basedOn: ids.pnj, line: [copy.id, ids.pnj] })
       expect(copy.fields.map((f: { field: string }) => f.field)).toEqual([
         'especie',
         'rol',
@@ -120,7 +127,7 @@ describe('las plantillas de serie', () => {
       })
       const { tables } = await ok200('getPageTables', { pageId: raqisa.id })
       expect(tables[0].rows.map((r: { title: string }) => r.title)).toEqual(['Mamá Gris'])
-      // Y sale en la lista, detrás de las de serie
+      // Y sale en la lista, la última
       const { templates } = await ok200('listTemplates', {})
       expect(templates.map((t: { name: string }) => t.name).slice(-1)).toEqual(['PNJ de Eana'])
     })
@@ -138,7 +145,7 @@ describe('las plantillas de serie', () => {
         fields: [
           { name: 'Nivel', type: 'choice', value: '', options: ['Local', 'Regional', 'Del mundo'] },
           { name: 'Reloj', type: 'clock', value: 0, segments: 8 },
-          { name: 'Regiones', type: 'pages', targets: ['lugar'], value: [] }
+          { name: 'Regiones', type: 'pages', targets: [ids.lugar], value: [] }
         ],
         panel: [
           {
@@ -192,7 +199,7 @@ describe('las plantillas de serie', () => {
       await ok200('deleteTemplate', { templateId: frente.id })
       const listed = await ok200('listTemplates', {})
       expect(listed.templates.some((t: { id: string }) => t.id === frente.id)).toBe(false)
-      expect(listed.deleted).toEqual([{ id: frente.id, name: 'Frente', icon: 'template' }])
+      expect(listed.deleted).toEqual([{ id: frente.id, name: 'Frente', icon: null }])
       expect((await ok200('getPage', { pageId: page.id })).template).toBe(frente.id)
       // Ya no se puede crear con ella; deshacerlo la devuelve
       expect((await call('createPage', { worldId, title: 'Otro', template: frente.id })).json()).toMatchObject({
@@ -204,7 +211,7 @@ describe('las plantillas de serie', () => {
       expect((await ok200('listTemplates', {})).templates.some((t: { id: string }) => t.id === frente.id)).toBe(true)
     })
 
-    it('lo que no vale: un nombre que ya está, un enlace a una página, cambiar una de serie', async () => {
+    it('lo que no vale: un nombre que ya está, un enlace a una página, una que no existe', async () => {
       expect((await call('createTemplate', { name: 'pnj' })).json()).toMatchObject({ code: 'TEMPLATE_TAKEN' })
       const frente = await ok200('createTemplate', { name: 'Frente' })
       const page = await ok200('createPage', { worldId, title: 'Ciudad Libre' })
@@ -216,7 +223,6 @@ describe('las plantillas de serie', () => {
           })
         ).json()
       ).toMatchObject({ code: 'BAD_FIELD' })
-      expect((await call('updateTemplate', { templateId: 'pnj', name: 'Otro' })).statusCode).toBe(400)
       expect((await call('deleteTemplate', { templateId: crypto.randomUUID() })).statusCode).toBe(404)
     })
 
@@ -232,6 +238,199 @@ describe('las plantillas de serie', () => {
         })
       expect((await as('updateTemplate', { templateId: frente.id, name: 'Mío' })).statusCode).toBe(404)
       expect((await as('deleteTemplate', { templateId: frente.id })).statusCode).toBe(404)
+    })
+  })
+
+  describe('como páginas (ADR-0024)', () => {
+    const ok200 = async (name: string, payload: object) => {
+      const response = await call(name, payload)
+      expect(response.statusCode, response.body).toBe(200)
+      return response.json()
+    }
+    let worldId: string
+    let organizationId: string
+
+    beforeEach(async () => {
+      worldId = (await ok200('createWorld', { name: 'Eana' })).id
+      organizationId = (await ok200('listWorlds', {})).worlds[0].organizationId
+    })
+
+    it('cada una es una página del mundo oculto de la cuenta, que no sale en Mis mundos ni admite campañas', async () => {
+      const frente = await ok200('createTemplate', { name: 'Frente', icon: '⏳' })
+      expect(frente).toMatchObject({ name: 'Frente', icon: '⏳', pageId: expect.any(String) })
+      const page = await ok200('getPage', { pageId: frente.pageId })
+      expect(page).toMatchObject({ title: 'Frente', icon: '⏳' })
+      const models = page.worldId as string
+      expect(models).not.toBe(worldId)
+      // Mis mundos no lo enseña; no se juega; la segunda plantilla va al mismo
+      expect((await ok200('listWorlds', {})).worlds.map((w: { id: string }) => w.id)).toEqual([worldId])
+      expect((await call('createCampaign', { worldId: models, name: 'No' })).statusCode).toBe(404)
+      const pnj = await ok200('createTemplate', { name: 'PNJ', icon: 'user' })
+      expect(pnj.icon).toBe('🧙')
+      expect((await ok200('getPage', { pageId: pnj.pageId })).worldId).toBe(models)
+      // Cambiar su página cambia la plantilla: su título es su nombre
+      await ok200('updatePage', { pageId: frente.pageId, title: 'Frentes' })
+      const names = (await ok200('listTemplates', {})).templates.map((t: { name: string }) => t.name)
+      expect(names).toEqual(['Frentes', 'PNJ'])
+      // Y no se repite: se buscan por nombre
+      expect((await call('updatePage', { pageId: frente.pageId, title: 'pnj' })).json()).toMatchObject({
+        code: 'TEMPLATE_TAKEN'
+      })
+      // Sus etiquetas no cuentan en las de la cuenta (es un modelo, no una página de un mundo)
+      await ok200('setPageProperties', {
+        pageId: pnj.pageId,
+        properties: [{ name: 'etiquetas', type: 'list', value: ['modelo'] }]
+      })
+      expect((await ok200('listAccountTags', {})).tags.map((t: { name: string }) => t.name)).not.toContain('modelo')
+    })
+
+    it('una de antes (sin página) pasa a su página al abrirla: su esqueleto, su texto; sus campos, sus propiedades', async () => {
+      const [old] = await conn.db
+        .insert(schema.pageTemplates)
+        .values({
+          organizationId,
+          name: 'Facción',
+          icon: 'shield',
+          line: ['x'],
+          fields: [{ name: 'Líder', field: 'lider', type: 'text', value: '' }],
+          skeleton: '## Quiénes son\n\n## Qué quieren\n'
+        })
+        .returning()
+      const listed = (await ok200('listTemplates', {})).templates.find((t: { name: string }) => t.name === 'Facción')
+      expect(listed).toMatchObject({ pageId: null, icon: '🛡️' })
+      const opened = await ok200('getTemplate', { templateId: old?.id })
+      expect(opened).toMatchObject({ pageId: expect.any(String), name: 'Facción', icon: '🛡️' })
+      expect(opened.skeleton).toBe('## Quiénes son\n\n## Qué quieren\n')
+      const page = await ok200('getPage', { pageId: opened.pageId })
+      expect(page.properties).toMatchObject([{ name: 'Líder', field: 'lider' }])
+      // Lo hizo el sistema: no se deshace; abrirla otra vez no hace otra
+      const { entries } = await ok200('listHistory', {})
+      const made = entries.find((e: { action: string }) => e.action === 'templatePage')
+      expect(made).toMatchObject({ via: 'system' })
+      expect((await call('undoOperation', { operationId: made.id })).json()).toMatchObject({ code: 'NOT_UNDOABLE' })
+      expect((await ok200('getTemplate', { templateId: old?.id })).pageId).toBe(opened.pageId)
+    })
+
+    it('crear desde ella es copiar su página: portada, pestañas y panel, sin enlaces, con su plantilla y su linaje', async () => {
+      const lugar = await ok200('createTemplate', { name: 'Lugar', icon: '🏰' })
+      await ok200('updateTemplate', {
+        templateId: lugar.id,
+        fields: [{ name: 'Región', field: 'region', type: 'pages', value: [] }],
+        panel: [{ id: 'notas00', type: 'text', title: 'Notas', text: '' }],
+        skeleton: '## Quién manda\n'
+      })
+      // Su mapa, con un pin que lleva a una página (en la plantilla no debería; aquí, para ver que se suelta)
+      const tab = await ok200('createPageTab', { pageId: lugar.pageId, kind: 'map', name: 'Plano' })
+      const map = await ok200('getMap', { tabId: tab.id })
+      const somewhere = await ok200('createPage', { worldId, title: 'Algún sitio' })
+      await conn.db.insert(schema.mapPins).values({
+        mapId: map.id,
+        worldId: (await ok200('getPage', { pageId: lugar.pageId })).worldId,
+        x: 0.5,
+        y: 0.5,
+        label: 'Puerta',
+        pageId: somewhere.id
+      })
+      const made = await ok200('createPage', { worldId, title: 'Puerto Ceniza', template: lugar.id })
+      expect(made).toMatchObject({ title: 'Puerto Ceniza', template: lugar.id, worldId })
+      expect(made.properties).toMatchObject([{ name: 'Región', field: 'region', value: [] }])
+      // Su panel, con ids nuevos
+      expect(made.panel).toMatchObject([{ type: 'text', title: 'Notas' }])
+      expect(made.panel[0].id).not.toBe('notas00')
+      expect((await ok200('readPage', { pageId: made.id })).markdown).toContain('## Quién manda')
+      const tabs = (await ok200('listPageTabs', { pageId: made.id })).tabs
+      expect(tabs.map((t: { name: string }) => t.name)).toEqual(['Plano'])
+      expect((await ok200('getMap', { tabId: tabs[0].id })).pins).toMatchObject([{ label: 'Puerta', pageId: null }])
+      // Copiar la plantilla: su página entera, con los mismos campos y el linaje
+      const copy = await ok200('createTemplate', { name: 'Puerto', copyOf: 'Lugar' })
+      expect(copy).toMatchObject({ basedOn: lugar.id, line: [copy.id, lugar.id], icon: '🏰' })
+      expect(copy.fields).toMatchObject([{ field: 'region' }])
+      expect((await ok200('listPageTabs', { pageId: copy.pageId })).tabs.map((t: { name: string }) => t.name)).toEqual([
+        'Plano'
+      ])
+      // En la lista, lo que enseña su vista previa: sus pestañas y en cuántas páginas se usa
+      const listed = (await ok200('listTemplates', {})).templates.find((t: { id: string }) => t.id === lugar.id)
+      expect(listed).toMatchObject({ tabs: [{ name: 'Plano', kind: 'map' }], uses: 1, folderId: null, cover: null })
+    })
+
+    it('la lista de plantillas trae sus pestañas, con su id y su tipo', async () => {
+      const lugar = await ok200('createTemplate', { name: 'Lugar', icon: '🏰' })
+      const plano = await ok200('createPageTab', { pageId: lugar.pageId, kind: 'map', name: 'Plano' })
+      const map = await ok200('getMap', { tabId: plano.id })
+      const somewhere = await ok200('createPage', { worldId, title: 'Algún sitio' })
+      await conn.db.insert(schema.mapPins).values({
+        mapId: map.id,
+        worldId: (await ok200('getPage', { pageId: lugar.pageId })).worldId,
+        x: 0.5,
+        y: 0.5,
+        label: 'Puerta',
+        pageId: somewhere.id
+      })
+      const encuentros = await ok200('createPageTab', { pageId: lugar.pageId, kind: 'table', name: 'Encuentros' })
+      await ok200('createPageTab', { pageId: lugar.pageId, kind: 'text', name: 'Rumores' })
+      // En la lista, sus pestañas con su id (para elegirlas)
+      const listed = (await ok200('listTemplates', {})).templates.find((t: { id: string }) => t.id === lugar.id)
+      expect(listed.tabs).toEqual([
+        { id: plano.id, name: 'Plano', kind: 'map' },
+        { id: encuentros.id, name: 'Encuentros', kind: 'table' },
+        expect.objectContaining({ name: 'Rumores', kind: 'text' })
+      ])
+    })
+
+    it('carpetas, como las de archivos: dentro de otra, ordenadas a mano y con color e icono; borrar una se lleva lo suyo y se deshace', async () => {
+      const ids = await seedExampleTemplates(call)
+      const gente = await ok200('createTemplateFolder', { name: 'Gente' })
+      const nobles = await ok200('createTemplateFolder', { name: 'Nobles', parentId: gente.id })
+      expect(nobles).toMatchObject({ name: 'Nobles', parentId: gente.id, color: null, icon: null })
+      expect((await call('createTemplateFolder', { name: 'gente' })).json()).toMatchObject({ code: 'NAME_TAKEN' })
+      // Ni dentro de sí misma ni de una de las suyas
+      expect((await call('updateTemplateFolder', { folderId: gente.id, parentId: nobles.id })).json()).toMatchObject({
+        code: 'CYCLE'
+      })
+      expect(
+        await ok200('updateTemplateFolder', { folderId: gente.id, color: 'moss', icon: '🧑‍🤝‍🧑', name: 'Personas' })
+      ).toMatchObject({ name: 'Personas', color: 'moss', icon: '🧑‍🤝‍🧑' })
+      // PNJ y Facción a «Personas»; Facción delante de PNJ
+      await ok200('moveTemplate', { templateId: ids.pnj, folderId: gente.id })
+      await ok200('moveTemplate', { templateId: ids.faccion, folderId: gente.id })
+      expect(
+        (await call('moveTemplate', { templateId: ids.lugar, folderId: null, before: ids.pnj })).json()
+      ).toMatchObject({ code: 'NOT_SIBLING' })
+      await ok200('moveTemplate', { templateId: ids.pnj, folderId: gente.id, before: ids.faccion })
+      const list = await ok200('listTemplates', {})
+      const inside = list.templates
+        .filter((t: { folderId: string | null }) => t.folderId === gente.id)
+        .sort((a: { position: string }, b: { position: string }) => (a.position < b.position ? -1 : 1))
+      expect(inside.map((t: { id: string }) => t.id)).toEqual([ids.pnj, ids.faccion])
+      expect(list.folders.map((f: { name: string }) => f.name).sort()).toEqual(['Nobles', 'Personas'])
+      const { entries } = await ok200('listHistory', {})
+      expect(entries.slice(0, 3).map((e: { action: string }) => e.action)).toEqual([
+        'orderTemplate',
+        'moveTemplate',
+        'moveTemplate'
+      ])
+      // Se crea ya dentro de una; y su copia, sin decirlo, en la misma
+      const noble = await ok200('createTemplate', { name: 'Noble', folderId: nobles.id })
+      expect(noble.folderId).toBe(nobles.id)
+      expect((await ok200('createTemplate', { name: 'Noble menor', copyOf: noble.id })).folderId).toBe(nobles.id)
+      expect((await call('createTemplate', { name: 'Otra', folderId: crypto.randomUUID() })).json()).toMatchObject({
+        code: 'BAD_FOLDER'
+      })
+      // Borrarla se lleva sus carpetas y sus plantillas (sus páginas no cambian), de una vez
+      expect(await ok200('deleteTemplateFolder', { folderId: gente.id })).toMatchObject({
+        name: 'Personas',
+        templates: 4
+      })
+      const after = await ok200('listTemplates', {})
+      expect(after.folders).toEqual([])
+      expect(after.templates.map((t: { id: string }) => t.id)).not.toContain(ids.pnj)
+      expect(after.deleted.map((t: { id: string }) => t.id)).toEqual(expect.arrayContaining([ids.pnj, ids.faccion]))
+      const deletion = (await ok200('listHistory', {})).entries[0]
+      expect(deletion.action).toBe('deleteTemplateFolder')
+      expect((await ok200('undoOperation', { operationId: deletion.id })).status).toBe('undone')
+      const back = await ok200('listTemplates', {})
+      expect(back.folders.map((f: { name: string }) => f.name).sort()).toEqual(['Nobles', 'Personas'])
+      expect(back.templates.find((t: { id: string }) => t.id === ids.pnj)).toMatchObject({ folderId: gente.id })
     })
   })
 })

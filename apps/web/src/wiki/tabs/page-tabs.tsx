@@ -4,20 +4,9 @@
  */
 import type { Page, PageTabView } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link, useNavigate } from '@tanstack/react-router'
-import {
-  ChevronDown,
-  Clock,
-  Dices,
-  FileText,
-  Grid3x3,
-  Map as MapIcon,
-  Network,
-  PenTool,
-  Plus,
-  Trash2
-} from 'lucide-react'
-import { type CSSProperties, useEffect, useId, useRef, useState } from 'react'
+import { Link, type ToOptions, useNavigate } from '@tanstack/react-router'
+import { ChevronDown, Dices, FileText, Grid3x3, Map as MapIcon, Plus, Trash2 } from 'lucide-react'
+import { type CSSProperties, createContext, useContext, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../../api/context.tsx'
 import { useErrorText } from '../../api/errors.ts'
@@ -35,9 +24,28 @@ import type { SceneChoice } from '../../tabletop/use-preparation.ts'
 import { TargetReveal } from '../reveal.tsx'
 import { setPendingChoice } from '../scene/pending.ts'
 import { SourcePicker } from '../scene/source-picker.tsx'
+import { KindChoices, TAB_KINDS } from './kinds.tsx'
 import styles from './page-tabs.module.css'
 
 export const tabsKey = (worldId: string, pageId: string) => ['pages', worldId, 'tabs', pageId]
+
+/**
+ * Adónde lleva cada pestaña (null, su texto): a la página en la wiki de su mundo o, en el editor de una plantilla, a la
+ * plantilla (ADR-0024), que lo dice con TabTargetContext
+ */
+export type TabTarget = (pestana: string | null) => ToOptions
+export const TabTargetContext = createContext<TabTarget | null>(null)
+export function useTabTarget(page: Page): TabTarget {
+  const target = useContext(TabTargetContext)
+  return (
+    target ??
+    ((pestana) => ({
+      to: '/mundos/$worldId/wiki/$pageId',
+      params: { worldId: page.worldId, pageId: page.id },
+      search: pestana ? { pestana } : {}
+    }))
+  )
+}
 
 /** Las pestañas añadidas de una página, en orden */
 export function usePageTabs(page: Page) {
@@ -58,7 +66,7 @@ export function PageTabs({ page, tabs, active }: { page: Page; tabs: PageTabView
   const api = useApi()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
-  const params = { worldId: page.worldId, pageId: page.id }
+  const target = useTabTarget(page)
   // El botón derecho sobre una pestaña: se elige y se abre su menú
   const [menuFor, setMenuFor] = useState<string | null>(null)
   // Recolocar arrastrando: la que se lleva y sobre cuál va (se pone delante de ella)
@@ -80,9 +88,7 @@ export function PageTabs({ page, tabs, active }: { page: Page; tabs: PageTabView
       <ul>
         <li>
           <Link
-            to="/mundos/$worldId/wiki/$pageId"
-            params={params}
-            search={{}}
+            {...target(null)}
             activeOptions={{ exact: true, includeSearch: true }}
             className={styles.tab}
             aria-current={active === null ? 'page' : undefined}
@@ -121,15 +127,12 @@ export function PageTabs({ page, tabs, active }: { page: Page; tabs: PageTabView
               if (page.locked) return
               event.preventDefault()
               setMenuFor(tab.id)
-              if (active !== tab.id)
-                void navigate({ to: '/mundos/$worldId/wiki/$pageId', params, search: { pestana: tab.id } })
+              if (active !== tab.id) void navigate(target(tab.id))
             }}
           >
             <Link
               draggable={false}
-              to="/mundos/$worldId/wiki/$pageId"
-              params={params}
-              search={{ pestana: tab.id }}
+              {...target(tab.id)}
               activeOptions={{ exact: true, includeSearch: true }}
               className={styles.tab}
               aria-current={active === tab.id ? 'page' : undefined}
@@ -183,22 +186,16 @@ export function PageTabs({ page, tabs, active }: { page: Page; tabs: PageTabView
 }
 
 /** Los tipos de pestaña: texto, mapa, tabla y escena ya; los demás, en las fases que vienen (ADR-0007) */
-const KINDS = [
-  { kind: 'text', icon: FileText, ready: true },
-  { kind: 'map', icon: MapIcon, ready: true },
-  { kind: 'table', icon: Dices, ready: true },
-  { kind: 'scene', icon: Grid3x3, ready: true },
-  { kind: 'board', icon: PenTool, ready: false },
-  { kind: 'timeline', icon: Clock, ready: false },
-  { kind: 'tree', icon: Network, ready: false }
-] as const
-
-/** «+»: un cuadro con un recuadro por tipo y el nombre (sin él, el del tipo); la nueva va al final y se abre */
+/**
+ * «+»: un cuadro con un recuadro por tipo y el nombre (sin él, el del tipo); la nueva va al final y se abre. Sin
+ * plantillas: una plantilla se elige solo al crear la página
+ */
 function NewTab({ page }: { page: Page }) {
   const { t } = useTranslation()
   const api = useApi()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
+  const target = useTabTarget(page)
   const errorText = useErrorText()
   const [open, setOpen] = useState(false)
   const [name, setName] = useState('')
@@ -208,21 +205,24 @@ function NewTab({ page }: { page: Page }) {
   const titleId = useId()
   const dialog = useRef<HTMLDialogElement>(null)
   const trigger = useRef<HTMLButtonElement>(null)
+  const done = async (tabs: PageTabView[]) => {
+    // Ya en la lista, sin esperar a pedirla otra vez
+    queryClient.setQueryData<PageTabView[]>(tabsKey(page.worldId, page.id), (current) => [...(current ?? []), ...tabs])
+    void queryClient.invalidateQueries({ queryKey: tabsKey(page.worldId, page.id) })
+    dialog.current?.close()
+    if (tabs[0]) await navigate(target(tabs[0].id))
+  }
   const add = useMutation({
-    mutationFn: () =>
-      api.call('createPageTab', { pageId: page.id, kind, ...(name.trim() ? { name: name.trim() } : {}) }),
-    onSuccess: async (tab) => {
-      if (tab.kind === 'scene' && choice) setPendingChoice(tab.id, choice)
-      // Ya en la lista, sin esperar a pedirla otra vez
-      queryClient.setQueryData<PageTabView[]>(tabsKey(page.worldId, page.id), (tabs) => [...(tabs ?? []), tab])
-      void queryClient.invalidateQueries({ queryKey: tabsKey(page.worldId, page.id) })
-      dialog.current?.close()
-      await navigate({
-        to: '/mundos/$worldId/wiki/$pageId',
-        params: { worldId: page.worldId, pageId: page.id },
-        search: { pestana: tab.id }
+    mutationFn: async () => {
+      const tab = await api.call('createPageTab', {
+        pageId: page.id,
+        kind,
+        ...(name.trim() ? { name: name.trim() } : {})
       })
-    }
+      if (tab.kind === 'scene' && choice) setPendingChoice(tab.id, choice)
+      return [tab]
+    },
+    onSuccess: done
   })
   return (
     <>
@@ -260,25 +260,14 @@ function NewTab({ page }: { page: Page }) {
             }}
           >
             <h2 id={titleId}>{t('pageTabs.newTitle')}</h2>
-            <fieldset className={styles.kinds}>
-              <legend className={styles.hidden}>{t('pageTabs.kind')}</legend>
-              {KINDS.map(({ kind: option, icon: Icon, ready }) => (
-                <label key={option} className={styles.kindCard} data-ready={ready || undefined}>
-                  <input
-                    type="radio"
-                    name={`${titleId}-kind`}
-                    disabled={!ready}
-                    checked={kind === option}
-                    onChange={() => {
-                      if (ready) setKind(option as typeof kind)
-                    }}
-                  />
-                  <Icon aria-hidden="true" size={20} />
-                  {t(`pageTabs.kinds.${option}`)}
-                  {!ready && <span className={styles.soon}>{t('pageTabs.soon')}</span>}
-                </label>
-              ))}
-            </fieldset>
+            <KindChoices
+              name={`${titleId}-kind`}
+              legend={t('pageTabs.kind')}
+              kinds={TAB_KINDS}
+              value={kind}
+              labelOf={(each) => t(`pageTabs.kinds.${each}`)}
+              onChange={(each) => setKind(each as typeof kind)}
+            />
             <input
               className={styles.nameInput}
               data-autofocus=""
@@ -290,9 +279,14 @@ function NewTab({ page }: { page: Page }) {
             />
             {kind === 'scene' && <SourcePicker worldId={page.worldId} value={choice} onChange={setChoice} />}
             <FormError message={add.error ? errorText(add.error) : null} />
-            <BusyButton type="submit" className={`${form.button} ${styles.submit}`} busy={add.isPending}>
-              {t('pageTabs.create')}
-            </BusyButton>
+            <div className={dialogStyles.actions}>
+              <BusyButton type="submit" className={form.button} busy={add.isPending}>
+                {t('pageTabs.create')}
+              </BusyButton>
+              <button type="button" className={dialogStyles.cancel} onClick={() => dialog.current?.close()}>
+                {t('pageTabs.cancel')}
+              </button>
+            </div>
           </form>
         </Modal>
       )}
@@ -319,6 +313,7 @@ function TabMenu({
   const api = useApi()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
+  const target = useTabTarget(page)
   const announce = useAnnounce()
   const errorText = useErrorText()
   const tab = tabs[index] as PageTabView
@@ -357,11 +352,7 @@ function TabMenu({
     onSuccess: async () => {
       await refresh()
       announce(t('pageTabs.deleted', { name: tab.name }))
-      await navigate({
-        to: '/mundos/$worldId/wiki/$pageId',
-        params: { worldId: page.worldId, pageId: page.id },
-        search: {}
-      })
+      await navigate(target(null))
     }
   })
   const rename = () => {

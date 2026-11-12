@@ -1,6 +1,7 @@
 # ADR-0004: Cuentas personales y registro público; la organización, por debajo
 
-Estado: aceptada (Enrique, 2026-10-30: «Vale») · Se construye con el módulo 11 (pagos y planes)
+Estado: aceptada (Enrique, 2026-10-30: «Vale») · El registro público, los planes y las cuotas, descartados por el
+ADR-0023 (sin pagos, 2026-11-11); las cuentas personales con su espacio se quedan
 
 ## Contexto
 

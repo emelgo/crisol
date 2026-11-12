@@ -9,7 +9,7 @@ import { prepared } from '../prepared.ts'
 import { campaigns } from '../schema/campaigns.ts'
 import { characters } from '../schema/characters.ts'
 import { organizations } from '../schema/organizations.ts'
-import { type ContentReview, systemContent, systems } from '../schema/systems.ts'
+import { type ContentReview, systemChapters, systemContent, systems } from '../schema/systems.ts'
 import { worlds } from '../schema/worlds.ts'
 
 /** Una fila, con el documento ya leído */
@@ -329,6 +329,15 @@ export function deleteBook(
     await w.removeMany(
       systemContent,
       found.map((r) => r.id)
+    )
+    // Y sus capítulos (ADR-0025)
+    const chapters = await w.read
+      .select({ id: systemChapters.id })
+      .from(systemChapters)
+      .where(and(eq(systemChapters.systemId, systemId), eq(systemChapters.source, source)))
+    await w.removeMany(
+      systemChapters,
+      chapters.map((r) => r.id)
     )
     return {
       system: read(await w.update(systems, systemId, { document: JSON.stringify(document) })),

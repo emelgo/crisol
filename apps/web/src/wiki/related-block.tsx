@@ -8,6 +8,7 @@ import { X } from 'lucide-react'
 import { useId } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
+import { Icon } from '../components/icon.tsx'
 import { useTemplates } from '../templates/picker.tsx'
 import { PageLink, readAsInput, readAsKey, useReadAs } from './read-as.tsx'
 import styles from './related-block.module.css'
@@ -79,7 +80,11 @@ export function RelatedBody({ page, block, onFix }: { page: Page; block: Related
             <tr key={row.id}>
               <td>
                 <PageLink worldId={page.worldId} pageId={row.id}>
-                  {row.icon && <span aria-hidden="true">{row.icon} </span>}
+                  {row.icon && (
+                    <>
+                      <Icon value={row.icon} />{' '}
+                    </>
+                  )}
                   {row.title}
                 </PageLink>
               </td>

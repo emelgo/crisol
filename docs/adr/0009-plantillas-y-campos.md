@@ -1,6 +1,8 @@
 # ADR-0009: Plantillas de página, campos con id y tablas que se llenan solas
 
-Estado: aceptada con la spec del módulo 2 (Enrique, 2026-11-03: «si») · `docs/specs/plantillas.md`
+Estado: aceptada con la spec del módulo 2 (Enrique, 2026-11-03: «si») · `docs/specs/plantillas.md` · Sustituida en
+parte por el ADR-0024 (2026-11-11): las plantillas pasan a ser páginas-modelo, sin plantillas de serie ni «aplicar
+plantilla»
 
 ## Contexto
 

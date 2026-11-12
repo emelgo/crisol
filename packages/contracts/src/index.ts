@@ -9,11 +9,16 @@ import { approve, getAiSettings, listApprovals, reject, setAiMode } from './ai.t
 import {
   createBook,
   deleteBook,
+  deleteChapter,
   getBookEntries,
+  getChapter,
   getSystemBooks,
   importBook,
+  listBookChapters,
   listPending,
+  orderChapters,
   proposeContent,
+  saveChapter,
   settlePending,
   updateBook
 } from './books.ts'
@@ -71,12 +76,14 @@ import {
   listCommonFiles,
   listFiles,
   moveFile,
+  moveFiles,
   renameFile,
   restoreFile,
   updateFolder
 } from './files.ts'
 import { importFoundry, inspectFoundry, putSystemImages } from './foundry.ts'
 import { importFoundryScenes, inspectFoundryScenes } from './foundry-scenes.ts'
+import { listGameIcons } from './game-icons.ts'
 import { listHistory, undoOperation } from './history.ts'
 import { getInvitation, regenerateInvitation, setInvitationsOpen } from './invitations.ts'
 import {
@@ -119,6 +126,7 @@ import {
 } from './notes.ts'
 import { listOrganizations } from './organizations.ts'
 import {
+  copyPage,
   createPage,
   createPageDocument,
   createPages,
@@ -179,6 +187,7 @@ import {
 } from './sound.ts'
 import {
   browseCampaignContent,
+  browseSystemCompendium,
   checkSystem,
   createSystem,
   deleteSystem,
@@ -187,15 +196,19 @@ import {
   getCampaignCompendium,
   getCampaignContent,
   getSystem,
+  getSystemCompendium,
   getSystemContent,
   getSystemFormat,
   getSystemParts,
   importSystem,
   listSystems,
   putSystemContent,
+  readSystemCompendium,
   resetContentTable,
+  rollContentAction,
   rollContentTable,
   searchCampaignContent,
+  searchSystemCompendium,
   searchSystemContent,
   tryFormula,
   trySystemAction,
@@ -220,8 +233,18 @@ import {
   updateWidget
 } from './table-tools.ts'
 import { getRandomTable, resetTableDraws, rollOnTable, updateRandomTable } from './tables.ts'
-import { createTag, deleteTag, listAccountTags, setFileTags, updateTag } from './tags.ts'
-import { createTemplate, deleteTemplate, getTemplate, listTemplates, updateTemplate } from './templates.ts'
+import { addFileTags, createTag, deleteTag, listAccountTags, moveTag, setFileTags, updateTag } from './tags.ts'
+import {
+  createTemplate,
+  createTemplateFolder,
+  deleteTemplate,
+  deleteTemplateFolder,
+  getTemplate,
+  listTemplates,
+  moveTemplate,
+  updateTemplate,
+  updateTemplateFolder
+} from './templates.ts'
 import {
   assignToken,
   deleteEncounter,
@@ -280,6 +303,7 @@ export * from './dice.ts'
 export * from './files.ts'
 export * from './foundry.ts'
 export * from './foundry-scenes.ts'
+export * from './game-icons.ts'
 export * from './history.ts'
 export * from './invitations.ts'
 export * from './knowledge.ts'
@@ -341,6 +365,7 @@ export const ACTIONS = [
   listApprovals,
   approve,
   reject,
+  copyPage,
   createPage,
   updatePage,
   movePage,
@@ -393,13 +418,17 @@ export const ACTIONS = [
   updateFolder,
   deleteFolder,
   deleteFiles,
+  moveFiles,
   moveFile,
   searchWiki,
   listAccountTags,
+  listGameIcons,
   createTag,
   updateTag,
+  moveTag,
   deleteTag,
   setFileTags,
+  addFileTags,
   listPageTabs,
   createPageTab,
   updatePageTab,
@@ -416,6 +445,10 @@ export const ACTIONS = [
   createTemplate,
   updateTemplate,
   deleteTemplate,
+  createTemplateFolder,
+  updateTemplateFolder,
+  deleteTemplateFolder,
+  moveTemplate,
   rollDice,
   listRolls,
   tryDice,
@@ -430,9 +463,14 @@ export const ACTIONS = [
   trySystemAction,
   getCampaignCompendium,
   getCampaignContent,
+  getSystemCompendium,
+  searchSystemCompendium,
+  browseSystemCompendium,
+  readSystemCompendium,
   searchCampaignContent,
   browseCampaignContent,
   rollContentTable,
+  rollContentAction,
   resetContentTable,
   putWorldContent,
   deleteWorldContent,
@@ -552,6 +590,11 @@ export const ACTIONS = [
   listPending,
   settlePending,
   getBookEntries,
+  listBookChapters,
+  getChapter,
+  saveChapter,
+  orderChapters,
+  deleteChapter,
   getTablePresence,
   importBook,
   setTableControls,
@@ -619,6 +662,7 @@ export type Actions = {
   listApprovals: typeof listApprovals
   approve: typeof approve
   reject: typeof reject
+  copyPage: typeof copyPage
   createPage: typeof createPage
   updatePage: typeof updatePage
   movePage: typeof movePage
@@ -670,13 +714,17 @@ export type Actions = {
   createFolder: typeof createFolder
   updateFolder: typeof updateFolder
   deleteFiles: typeof deleteFiles
+  moveFiles: typeof moveFiles
   deleteFolder: typeof deleteFolder
   moveFile: typeof moveFile
   listAccountTags: typeof listAccountTags
+  listGameIcons: typeof listGameIcons
   createTag: typeof createTag
   updateTag: typeof updateTag
+  moveTag: typeof moveTag
   deleteTag: typeof deleteTag
   setFileTags: typeof setFileTags
+  addFileTags: typeof addFileTags
   listPageTabs: typeof listPageTabs
   createPageTab: typeof createPageTab
   updatePageTab: typeof updatePageTab
@@ -694,6 +742,10 @@ export type Actions = {
   createTemplate: typeof createTemplate
   updateTemplate: typeof updateTemplate
   deleteTemplate: typeof deleteTemplate
+  createTemplateFolder: typeof createTemplateFolder
+  updateTemplateFolder: typeof updateTemplateFolder
+  deleteTemplateFolder: typeof deleteTemplateFolder
+  moveTemplate: typeof moveTemplate
   rollDice: typeof rollDice
   listRolls: typeof listRolls
   tryDice: typeof tryDice
@@ -709,9 +761,14 @@ export type Actions = {
   getSystemContent: typeof getSystemContent
   getCampaignCompendium: typeof getCampaignCompendium
   getCampaignContent: typeof getCampaignContent
+  getSystemCompendium: typeof getSystemCompendium
+  searchSystemCompendium: typeof searchSystemCompendium
+  browseSystemCompendium: typeof browseSystemCompendium
+  readSystemCompendium: typeof readSystemCompendium
   searchCampaignContent: typeof searchCampaignContent
   browseCampaignContent: typeof browseCampaignContent
   rollContentTable: typeof rollContentTable
+  rollContentAction: typeof rollContentAction
   resetContentTable: typeof resetContentTable
   putWorldContent: typeof putWorldContent
   deleteWorldContent: typeof deleteWorldContent
@@ -830,6 +887,11 @@ export type Actions = {
   listPending: typeof listPending
   settlePending: typeof settlePending
   getBookEntries: typeof getBookEntries
+  listBookChapters: typeof listBookChapters
+  getChapter: typeof getChapter
+  saveChapter: typeof saveChapter
+  orderChapters: typeof orderChapters
+  deleteChapter: typeof deleteChapter
   getTablePresence: typeof getTablePresence
   importBook: typeof importBook
   setTableControls: typeof setTableControls

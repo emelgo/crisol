@@ -67,7 +67,7 @@ test('una imagen con «/»: se sube, lleva su pie, se abre en grande y sale en e
     .click()
   await expect(body(page).getByRole('figure', { name: 'Archivo: escudo.png' })).toHaveCount(2)
 
-  for (const colorScheme of ['light', 'dark'] as const) {
+  for (const colorScheme of ['dark'] as const) {
     await page.emulateMedia({ colorScheme })
     const { violations } = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
@@ -176,30 +176,36 @@ test('un PDF en la página: enseña su tamaño, se abre aquí por la página 3 y
   await expect(figure.getByRole('button', { name: 'Anterior' })).toBeDisabled()
 })
 
-test('la portada: se sube desde la página, se encuadra con el teclado y se quita', async ({ page }) => {
+test('la portada: se sube desde la página, se elige de tus archivos, se encuadra con el teclado y se quita', async ({
+  page
+}) => {
   const { pageId } = await openPage(page)
-  // «Añadir portada», sobre la cabecera (como en Everlore)
-  await page.getByRole('button', { name: 'Añadir portada' }).click()
-  const chooser = page.waitForEvent('filechooser')
-  await page.getByRole('button', { name: 'Subir una imagen' }).click()
-  await (await chooser).setFiles({ name: 'puerto.png', mimeType: 'image/png', buffer: PNG })
-  const banner = page.locator('[data-cover-image] img').first()
-  await expect(banner).toHaveAttribute('src', /^\/api\/files\//)
-  // Puesta, se cambia desde ella: «Cambiar», al pasar por encima
-  await banner.hover()
-  await page.getByRole('button', { name: 'Cambiar' }).click()
-  await expect(page.getByLabel('Imagen de portada')).toHaveValue(/[0-9a-f-]{36}/)
   const current = async () =>
     (await (await page.request.post('/api/actions/getPage', { data: { pageId } })).json()).cover
+  // «Añadir portada», sobre la cabecera (como en Everlore): el mismo cuadro que la portada de un mundo
+  await page.getByRole('button', { name: 'Añadir portada' }).click()
+  const cover = page.getByRole('dialog', { name: /^Portada de / })
+  const chooser = page.waitForEvent('filechooser')
+  await cover.getByRole('button', { name: 'Subir imagen' }).click()
+  await (await chooser).setFiles({ name: 'puerto.png', mimeType: 'image/png', buffer: PNG })
+  await expect(cover.getByRole('button', { name: 'Arrastra para encuadrar' }).locator('img')).toHaveAttribute(
+    'src',
+    /^\/api\/files\//
+  )
+  await cover.getByRole('button', { name: 'Guardar' }).click()
+  await expect(cover).toHaveCount(0)
+  const banner = page.locator('[data-cover-image] img').first()
+  await expect(banner).toHaveAttribute('src', /^\/api\/files\//)
   expect(await current()).toMatchObject({ x: 50, y: 50 })
 
-  // El encuadre, con el teclado: se guarda al soltar la tecla
-  await page.getByRole('slider', { name: 'Horizontal' }).focus()
-  await page.keyboard.press('ArrowRight')
-  await expect.poll(current).toMatchObject({ x: 55, y: 50 })
-  await expect(banner).toHaveCSS('object-position', '55% 50%')
-
-  for (const colorScheme of ['light', 'dark'] as const) {
+  // Puesta, se cambia desde ella: «Cambiar», al pasar por encima. «Elegir de tus archivos» abre el selector, con la
+  // subida marcada
+  await banner.hover()
+  await page.getByRole('button', { name: 'Cambiar' }).click()
+  await cover.getByRole('button', { name: 'Elegir de tus archivos' }).click()
+  const picker = page.getByRole('dialog', { name: 'Elegir de tus archivos' })
+  await expect(picker.getByRole('button', { name: 'puerto.png' })).toHaveAttribute('aria-current', 'true')
+  for (const colorScheme of ['dark'] as const) {
     await page.emulateMedia({ colorScheme })
     const { violations } = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
@@ -207,8 +213,20 @@ test('la portada: se sube desde la página, se encuadra con el teclado y se quit
     const serious = violations.filter((v) => v.impact === 'critical' || v.impact === 'serious')
     expect(serious.map((v) => `${colorScheme} ${v.id}: ${v.help}`)).toEqual([])
   }
+  await picker.getByRole('button', { name: 'puerto.png' }).click()
+  await expect(picker).toHaveCount(0)
 
-  await page.getByRole('button', { name: 'Quitar la portada' }).click()
+  // El encuadre, con el teclado sobre la vista previa; se guarda con «Guardar»
+  await cover.getByRole('button', { name: 'Arrastra para encuadrar' }).press('ArrowRight')
+  await cover.getByRole('button', { name: 'Guardar' }).click()
+  await expect.poll(current).toMatchObject({ x: 55, y: 50 })
+  await expect(banner).toHaveCSS('object-position', '55% 50%')
+  await expect(cover).toHaveCount(0)
+
+  await banner.hover()
+  await page.getByRole('button', { name: 'Cambiar' }).click()
+  await cover.getByRole('button', { name: 'Quitar la portada' }).click()
+  await cover.getByRole('button', { name: 'Guardar' }).click()
   await expect(banner).toHaveCount(0)
   expect(await current()).toBeNull()
 })

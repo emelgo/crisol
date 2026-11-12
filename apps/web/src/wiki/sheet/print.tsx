@@ -3,6 +3,7 @@
  * notas ocultas no salen nunca y los secretos solo con «Incluir secretos». Al acabar de paginar lo dice
  * (`data-sheet-ready`, para el PDF del servidor) y, si se pidió, abre el diálogo de imprimir del navegador
  */
+import type { SheetSettings } from '@crisol/contracts'
 import { useQuery } from '@tanstack/react-query'
 import { getRouteApi } from '@tanstack/react-router'
 import { useCallback, useEffect } from 'react'
@@ -17,18 +18,23 @@ const route = getRouteApi('/mundos/$worldId/imprimir/$pageId')
 export interface PrintParams {
   secretos?: true
   imprimir?: true
+  /** El aspecto de esta impresión (con colores, blanco y negro o pergamino); sin él, el de la página */
+  tema?: SheetSettings['theme']
 }
+
+const LOOKS: readonly SheetSettings['theme'][] = ['color', 'neutro', 'pergamino']
 
 export const printParams = (search: Record<string, unknown>): PrintParams => ({
   ...(search.secretos === true || search.secretos === '1' || search.secretos === 1 ? { secretos: true } : {}),
-  ...(search.imprimir === true || search.imprimir === '1' || search.imprimir === 1 ? { imprimir: true } : {})
+  ...(search.imprimir === true || search.imprimir === '1' || search.imprimir === 1 ? { imprimir: true } : {}),
+  ...(LOOKS.includes(search.tema as SheetSettings['theme']) ? { tema: search.tema as SheetSettings['theme'] } : {})
 })
 
 export function PrintPage() {
   const { t } = useTranslation()
   const api = useApi()
   const { pageId } = route.useParams()
-  const { secretos, imprimir } = route.useSearch()
+  const { secretos, imprimir, tema } = route.useSearch()
   const page = useQuery({ queryKey: ['print', pageId], queryFn: () => api.call('getPage', { pageId }) })
   useEffect(() => {
     if (page.data) document.title = t('app.pageTitle', { page: page.data.title })
@@ -49,7 +55,8 @@ export function PrintPage() {
   }, [page.isError])
   if (page.isError) return <p role="alert">{t('load.title')}</p>
   if (!page.data) return null
-  const settings = page.data.sheet ?? DEFAULT_SHEET
+  const page_ = page.data.sheet ?? DEFAULT_SHEET
+  const settings = tema ? { ...page_, theme: tema } : page_
   return (
     <div className={styles.print}>
       <style>{`@page { size: ${settings.paper === 'letter' ? 'letter' : 'A4'}; margin: 0 }`}</style>

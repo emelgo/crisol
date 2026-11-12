@@ -11,16 +11,16 @@
   background: color-mix(in srgb, var(--color-accent) 8%, var(--color-surface));
 }
 
-/* Dentro de una pantalla o una ventana, la regla de las secciones con título (caja con esquinas cortadas, base.css)
-   le quitaba el rojizo: su marco y su fondo, rojizos */
-:global(main) section.zone,
-:global(dialog) section.zone {
-  background: color-mix(in srgb, var(--color-accent) 55%, transparent);
+/* Dentro de una pantalla o una ventana, la regla de las secciones con título (caja con esquinas cortadas, base.css):
+   el relleno, rojizo y de cristal; la raya (el anillo del ::before), roja */
+:global(main) section.zone[aria-labelledby],
+:global(dialog) section.zone[aria-labelledby] {
+  background: color-mix(in srgb, var(--color-accent) 12%, var(--surface-glass));
 }
 
-:global(main) section.zone::before,
-:global(dialog) section.zone::before {
-  background: color-mix(in srgb, var(--color-accent) 10%, var(--color-surface));
+:global(main) section.zone[aria-labelledby]::before,
+:global(dialog) section.zone[aria-labelledby]::before {
+  background: color-mix(in srgb, var(--color-accent) 60%, transparent);
 }
 
 .zone h3 {

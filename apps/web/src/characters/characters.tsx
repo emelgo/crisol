@@ -21,6 +21,7 @@ import { Field, FormError } from '../components/field.tsx'
 import form from '../components/form.module.css'
 import { failed, LoadError } from '../components/load-error.tsx'
 import { Modal } from '../components/modal.tsx'
+import { NewCard } from '../components/new-card.tsx'
 import { Screen } from '../components/screen.tsx'
 import { Tour } from '../components/tour.tsx'
 import cards from '../routes/world-card.module.css'
@@ -108,16 +109,8 @@ export function CharactersScreen() {
               onHover={setHovered}
             />
           ))}
-          <li>
-            <button
-              type="button"
-              className={screen.newCard}
-              data-tour="personaje-nuevo"
-              onClick={() => setCreating(true)}
-            >
-              <Plus aria-hidden="true" size={22} />
-              {t('characters.new')}
-            </button>
+          <li className={screen.newItem}>
+            <NewCard label={t('characters.new')} data-tour="personaje-nuevo" onClick={() => setCreating(true)} />
           </li>
         </ul>
       )}

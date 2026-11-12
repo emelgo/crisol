@@ -160,7 +160,7 @@ test('los enlaces en sus tres estados y la lista de [[, en los dos temas @a11y',
   await page.keyboard.press('End')
   await page.keyboard.type(' [[ma')
   await expect(suggestions(page)).toBeVisible()
-  for (const colorScheme of ['light', 'dark'] as const) {
+  for (const colorScheme of ['dark'] as const) {
     await page.emulateMedia({ colorScheme })
     const { violations } = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])

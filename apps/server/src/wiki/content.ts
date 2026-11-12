@@ -11,6 +11,7 @@ import { prosemirrorJSONToYDoc, updateYFragment, yXmlFragmentToProseMirrorRootNo
 import * as Y from 'yjs'
 import { type ActionEnv, InvalidRequestError } from '../actions/context.ts'
 import { bodyName, MAX_STATE_BYTES, separateName } from '../collab/server.ts'
+import { diceRollsToText } from './dice-text.ts'
 
 /** El esquema del cuerpo, y el de dentro de un secreto (sin otros secretos) */
 export const bodySchema = editorSchema()
@@ -37,6 +38,8 @@ function checked(json: JSONContent, schema: Schema): PMNode {
 function fragmentJson(doc: Y.Doc, schema: Schema): JSONContent {
   const fragment = doc.getXmlFragment(BODY_FIELD)
   if (fragment.length === 0) return { type: 'doc', content: [] }
+  // Una tirada escrita de antes (guardada o en una versión), a texto en código: el esquema ya no la conoce
+  diceRollsToText(fragment)
   return yXmlFragmentToProseMirrorRootNode(fragment, schema).toJSON() as JSONContent
 }
 

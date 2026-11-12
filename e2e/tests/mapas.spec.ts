@@ -101,7 +101,7 @@ test('un mapa en la página: se añade desde «⋯», se le pone imagen, se pone
   await page.reload()
   await expect(pins.getByRole('button')).toHaveCount(2)
 
-  for (const colorScheme of ['light', 'dark'] as const) {
+  for (const colorScheme of ['dark'] as const) {
     await page.emulateMedia({ colorScheme })
     const results = await new AxeBuilder({ page }).analyze()
     expect(results.violations, `${colorScheme}: ${JSON.stringify(results.violations, null, 2)}`).toEqual([])

@@ -1,23 +1,38 @@
-import type { Page } from '@crisol/contracts'
+import { gameIcon, type Page, pageIcon } from '@crisol/contracts'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { SmilePlus } from 'lucide-react'
-import { useEffect, useId, useRef, useState } from 'react'
+import { CircleOff, Shapes, SmilePlus } from 'lucide-react'
+import { type CSSProperties, type ReactNode, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { FormError } from '../components/field.tsx'
 import form from '../components/form.module.css'
+import { Icon, iconLabel } from '../components/icon.tsx'
+import { IconBrowser } from '../components/icon-browser.tsx'
 import list from '../components/list.module.css'
+import cards from '../routes/world-card.module.css'
 import styles from './icon.module.css'
 
 /** Los de un mundo de rol, para elegir de un clic; cualquier otro se escribe o se pega */
 const COMMON = ['📜', '🏰', '🏘️', '⚓', '🌲', '⛰️', '🐉', '⚔️', '🛡️', '🧙', '👑', '💀', '🗝️', '🗺️', '📖', '🎲']
 
 /**
- * El icono de la página: un botón que abre una caja (patrón de despliegue, como el menú de la cuenta) con los más
- * habituales, un campo para cualquier otro y quitarlo. Escape, pulsar fuera o salir con el tabulador la cierran
+ * El icono de la página: un botón que abre una caja (patrón de despliegue, como el menú de la cuenta) con los iconos de
+ * rol (buscador y grupos), los emojis más habituales, un campo para cualquier otro y quitarlo. Escape, pulsar fuera o
+ * salir con el tabulador la cierran
  */
-export function PageIcon({ page, ghost = false }: { page: Page; ghost?: boolean }) {
+export function PageIcon({
+  page,
+  ghost = false,
+  style,
+  elemento
+}: {
+  page: Page
+  ghost?: boolean
+  /** Su nombre de transición (el icono de una plantilla, desde su tarjeta) */
+  style?: CSSProperties | undefined
+  elemento?: 'icono'
+}) {
   const { t } = useTranslation()
   const api = useApi()
   const queryClient = useQueryClient()
@@ -57,14 +72,14 @@ export function PageIcon({ page, ghost = false }: { page: Page; ghost?: boolean 
   }, [open])
 
   return (
-    <div ref={wrapper} className={styles.wrapper}>
+    <div ref={wrapper} className={styles.wrapper} style={style} data-elemento={elemento}>
       <button
         ref={trigger}
         type="button"
         className={ghost ? styles.ghost : styles.trigger}
         aria-expanded={open}
         aria-controls={panelId}
-        aria-label={page.icon ? t('icon.change', { icon: page.icon }) : t('icon.add')}
+        aria-label={page.icon ? t('icon.change', { icon: iconLabel(page.icon) }) : t('icon.add')}
         onClick={() => setOpen(!open)}
       >
         {ghost ? (
@@ -72,13 +87,17 @@ export function PageIcon({ page, ghost = false }: { page: Page; ghost?: boolean 
             <SmilePlus aria-hidden="true" size={16} />
             {t('icon.short')}
           </>
+        ) : page.icon ? (
+          <Icon value={page.icon} />
         ) : (
-          (page.icon ?? <span className={styles.placeholder} aria-hidden="true" />)
+          <span className={styles.placeholder} aria-hidden="true" />
         )}
       </button>
       {open && (
         <div id={panelId} className={styles.panel}>
-          <ul className={styles.grid} aria-label={t('icon.common')}>
+          <IconBrowser value={page.icon} onPick={(icon) => save.mutate(icon)} autoFocus />
+          <p className={styles.emojiHead}>{t('icon.emoji')}</p>
+          <ul className={styles.grid} aria-label={t('icon.emoji')}>
             {COMMON.map((icon) => (
               <li key={icon}>
                 <button
@@ -126,5 +145,105 @@ export function PageIcon({ page, ghost = false }: { page: Page; ghost?: boolean 
         </div>
       )}
     </div>
+  )
+}
+
+/**
+ * El icono en un formulario (el de una carpeta, una plantilla…), como el color al lado: ninguno, uno de los emojis
+ * habituales, cualquier otro emoji (escrito o pegado: lo que no es un emoji no se pone) o, con «Más iconos», uno de los
+ * de rol, que sale como una casilla más
+ */
+export function IconChoices({ value, onChange }: { value: string | null; onChange: (icon: string | null) => void }) {
+  const { t } = useTranslation()
+  const name = useId()
+  const game = gameIcon(value)
+  const [browsing, setBrowsing] = useState(false)
+  const moreWrap = useRef<HTMLSpanElement>(null)
+  const moreButton = useRef<HTMLButtonElement>(null)
+  useEffect(() => {
+    if (!browsing) return
+    const outside = (event: PointerEvent) => {
+      if (event.target instanceof Node && !moreWrap.current?.contains(event.target)) setBrowsing(false)
+    }
+    document.addEventListener('pointerdown', outside)
+    return () => document.removeEventListener('pointerdown', outside)
+  }, [browsing])
+  const [typed, setTyped] = useState(value && !game && !COMMON.includes(value) ? value : '')
+  const choice = (icon: string | null, label: string, content: ReactNode) => (
+    <label key={icon ?? ''} className={cards.colorChoice} title={label}>
+      <input type="radio" name={name} checked={value === icon} onChange={() => onChange(icon)} />
+      {content}
+      <span className={cards.hidden}>{label}</span>
+    </label>
+  )
+  return (
+    <fieldset className={cards.choices}>
+      <legend>{t('icon.short')}</legend>
+      {choice(null, t('icon.none'), <CircleOff aria-hidden="true" size={18} strokeWidth={1.5} />)}
+      {COMMON.map((icon) =>
+        choice(
+          icon,
+          icon,
+          <span className={styles.emojiChoice} aria-hidden="true">
+            {icon}
+          </span>
+        )
+      )}
+      {game && choice(value, game.label, <Icon value={value as string} size={20} />)}
+      {/* Cualquier otro: una casilla más, donde se escribe o se pega */}
+      <input
+        className={styles.otherIcon}
+        data-chosen={typed !== '' && value === typed.trim() ? '' : undefined}
+        aria-label={t('icon.other')}
+        placeholder={t('icon.otherShort')}
+        value={typed}
+        maxLength={16}
+        autoComplete="off"
+        data-1p-ignore
+        data-lpignore="true"
+        data-form-type="other"
+        onChange={(event) => {
+          const text = event.currentTarget.value
+          setTyped(text)
+          if (pageIcon.safeParse(text.trim()).success) onChange(text.trim())
+        }}
+      />
+      {/* «Más iconos»: el buscador flota debajo (no empuja la ventana); Escape o pulsar fuera lo cierran */}
+      <span ref={moreWrap} className={styles.moreWrap}>
+        <button
+          ref={moreButton}
+          type="button"
+          className={styles.moreIcons}
+          aria-expanded={browsing}
+          onClick={() => setBrowsing(!browsing)}
+        >
+          <Shapes aria-hidden="true" size={15} />
+          {t('icon.moreIcons')}
+        </button>
+        {browsing && (
+          // biome-ignore lint/a11y/noStaticElementInteractions: Escape cierra el buscador sin cerrar la ventana de debajo
+          <div
+            className={styles.floatingBrowser}
+            onKeyDown={(event) => {
+              if (event.key !== 'Escape') return
+              event.preventDefault()
+              event.stopPropagation()
+              setBrowsing(false)
+              moreButton.current?.focus()
+            }}
+          >
+            <IconBrowser
+              value={value}
+              autoFocus
+              onPick={(icon) => {
+                onChange(icon)
+                setBrowsing(false)
+                moreButton.current?.focus()
+              }}
+            />
+          </div>
+        )}
+      </span>
+    </fieldset>
   )
 }

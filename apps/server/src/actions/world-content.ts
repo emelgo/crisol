@@ -30,6 +30,7 @@ import {
 } from '@crisol/systems'
 import { systemsChanged, worldContentChanged } from '../realtime/events.ts'
 import { authorizedWiki, type WikiTarget } from './access.ts'
+import { linesOf, linkedIn } from './compendium.ts'
 import { contentOf } from './content-of.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
 import * as layers from './layers.ts'
@@ -392,9 +393,13 @@ export const worldContentActions = [
     return { items: found.slice(0, limit).map(({ campaignId: _, ...each }) => each) }
   }),
 
-  implement(getLinkedContent, async (ctx, { worldId, name }) => {
+  implement(getLinkedContent, async (ctx, { worldId, campaignId, systemId, name }) => {
+    // Desde una campaña o desde un sistema (sus capítulos): lo que se ve desde ahí
+    if (campaignId) return { entry: await linkedIn(ctx, { campaignId }, name, systemId) }
+    if (!worldId) return { entry: systemId ? await linkedIn(ctx, { systemId }, name) : null }
     const wanted = foldName(name)
-    const all = await linkables(ctx, worldId)
+    // Con el sistema elegido al ponerla, solo lo suyo (también si ninguna campaña lo usa aún)
+    const all = (await linkables(ctx, worldId, systemId)).filter((each) => !systemId || each.systemId === systemId)
     const match =
       all.find((each) => each.world && foldName(each.name) === wanted) ??
       all.find((each) => foldName(each.name) === wanted)
@@ -402,14 +407,8 @@ export const worldContentActions = [
     const row = await systemsRepo.findSystem(ctx.db, match.systemId)
     const system = row?.document as unknown as System | undefined
     const [item] = await layers.contentByKeys(ctx, match.systemId, { worldId, systemId: match.systemId }, [match.key])
-    // Unas cifras suyas: sus primeros campos de número con valor (la CA, los PG, el VD)
-    const fields = system?.types[match.type]?.fields ?? {}
-    const lines = Object.entries(fields)
-      .filter(([key, f]) => f.kind === 'number' && typeof item?.data[key] === 'number')
-      .slice(0, 4)
-      .map(([key, f]) => ({ label: textOf(f.label as Text, 'es') || key, value: String(item?.data[key]) }))
-    const { campaignId, ...entry } = match
-    return { entry: { ...entry, lines, campaignId } }
+    const { campaignId: openIn, ...entry } = match
+    return { entry: { ...entry, lines: linesOf(system, item), campaignId: openIn } }
   })
 ]
 
@@ -420,19 +419,25 @@ interface Linkable {
   typeLabel: string
   world: boolean
   systemId: string
-  campaignId: string
+  systemName: string
+  campaignId: string | null
 }
 
 /**
  * Lo que se puede enlazar desde las páginas de un mundo: lo de los sistemas de sus campañas (de la cuenta) y lo de su
  * compendio, con una campaña de cada sistema para abrirlo. Solo quien lleva el mundo (hasta el módulo 5)
  */
-async function linkables(ctx: ActionContext, worldId: string): Promise<Linkable[]> {
+async function linkables(ctx: ActionContext, worldId: string, chosen?: string | null): Promise<Linkable[]> {
   const wiki = await authorizedWiki(ctx, 'page.read', worldId)
   const campaigns = await campaignsRepo.listCampaigns(ctx.db, { worldId, userId: ctx.actor.userId, onlyMember: false })
-  const bySystem = new Map<string, string>()
+  const bySystem = new Map<string, string | null>()
   for (const campaign of campaigns)
     if (campaign.system && !bySystem.has(campaign.system)) bySystem.set(campaign.system, campaign.id)
+  // Sin campañas con sistema (o ninguna): los sistemas de la cuenta, para elegir de cuál (Enrique, plan de la tanda 7)
+  if (bySystem.size === 0)
+    for (const own of await systemsRepo.listSystems(ctx.db, wiki.organizationId)) bySystem.set(own.id, null)
+  // El elegido al poner una ficha, aunque ninguna campaña lo use (sin campaña donde abrirlo)
+  if (chosen && !bySystem.has(chosen)) bySystem.set(chosen, null)
   const out: Linkable[] = []
   for (const [systemId, campaignId] of bySystem) {
     const row = await systemsRepo.findSystem(ctx.db, systemId)
@@ -447,6 +452,7 @@ async function linkables(ctx: ActionContext, worldId: string): Promise<Linkable[
         typeLabel: label ? textOf(label as Text, 'es') : entry.type,
         world: Boolean(entry.world),
         systemId: row.id,
+        systemName: textOf(system.name, 'es'),
         campaignId
       })
     }

@@ -82,7 +82,7 @@ jobs:
     name: Extremo a extremo y accesibilidad
     runs-on: ubuntu-24.04
     # Un tope por si algo se cuelga, no un listón: con libros y el espacio de la campaña pasa de 30 min
-    timeout-minutes: 50
+    timeout-minutes: 60
     services:
       postgres:
         # Con pgvector (docs/specs/biblioteca.md); el texto, ordenado por bytes como en el Postgres de Alpine

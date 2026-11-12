@@ -1,4 +1,6 @@
 import { createRootRoute, createRoute, createRouter, type RouterHistory } from '@tanstack/react-router'
+import type { BookSearch } from './books/book-tabs.tsx'
+import { CampaignBookScreen } from './books/campaign-book.tsx'
 import { CompendiumScreen } from './campaign/compendium.tsx'
 import { WorldPagesHome, WorldPageView } from './campaign/world-pages.tsx'
 import { CharacterScreen } from './characters/character.tsx'
@@ -23,7 +25,8 @@ import { WorldPage } from './routes/world.tsx'
 import { Worlds } from './routes/worlds.tsx'
 import { ReviewScreen } from './systems/review.tsx'
 import { SystemsScreen } from './systems/screen.tsx'
-import { SystemScreen } from './systems/system.tsx'
+import { SystemRules, SystemScreen } from './systems/system.tsx'
+import { SystemBook, SystemCompendium } from './systems/system-compendium.tsx'
 import { MesaScreen } from './tabletop/mesa.tsx'
 import { ScreenRoute } from './tabletop/screen.tsx'
 import { TemplateView } from './templates/editor.tsx'
@@ -65,6 +68,14 @@ const booksRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/mundos/$worldId/campanas/$campaignId/libros',
   component: CampaignBooksScreen
+})
+// Un libro de la campaña, para leer sus capítulos (ADR-0025): también quien juega
+const campaignBookRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/mundos/$worldId/campanas/$campaignId/libros/$bookKey',
+  component: CampaignBookScreen,
+  validateSearch: (search: Record<string, unknown>): { capitulo?: string } =>
+    typeof search.capitulo === 'string' && search.capitulo ? { capitulo: search.capitulo } : {}
 })
 const adventuresRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -182,16 +193,17 @@ const worldPageRoute = createRoute({
   validateSearch: asSearch
 })
 const wikiRoute = createRoute({ getParentRoute: () => rootRoute, path: '/mundos/$worldId/wiki', component: WikiHome })
+// ?nuevo=true: la página se acaba de crear y se abre con su título por poner; ?pestana=<id>: una pestaña que no es el
+// texto (un mapa)
+const pageSearch = (search: Record<string, unknown>): { nuevo?: true; pestana?: string } => ({
+  ...(search.nuevo === true || search.nuevo === 'true' ? { nuevo: true as const } : {}),
+  ...(typeof search.pestana === 'string' && search.pestana ? { pestana: search.pestana } : {})
+})
 const wikiPageRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/mundos/$worldId/wiki/$pageId',
   component: WikiPage,
-  // ?nuevo=true: la página se acaba de crear y se abre con su título por poner; ?pestana=<id>: una pestaña que no es
-  // el texto (un mapa)
-  validateSearch: (search: Record<string, unknown>): { nuevo?: true; pestana?: string } => ({
-    ...(search.nuevo === true || search.nuevo === 'true' ? { nuevo: true as const } : {}),
-    ...(typeof search.pestana === 'string' && search.pestana ? { pestana: search.pestana } : {})
-  })
+  validateSearch: pageSearch
 })
 const tagsRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -245,15 +257,44 @@ const systemRoute = createRoute({
   path: '/sistemas/$systemId',
   component: SystemScreen
 })
+// Su compendio (todos sus libros) y un libro por dentro: lo abierto, en ?ver
+const verSearch = (search: Record<string, unknown>): { ver?: string } =>
+  typeof search.ver === 'string' && search.ver ? { ver: search.ver } : {}
+const systemCompendiumRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/sistemas/$systemId/compendio',
+  component: SystemCompendium,
+  validateSearch: verSearch
+})
+// Un libro por dentro: sus capítulos (?capitulo, el abierto) o su índice de entradas (?vista=entradas); ADR-0025
+const bookSearch = (search: Record<string, unknown>): BookSearch => ({
+  ...verSearch(search),
+  ...(typeof search.capitulo === 'string' && search.capitulo ? { capitulo: search.capitulo } : {}),
+  ...(search.vista === 'capitulos' || search.vista === 'entradas' ? { vista: search.vista } : {})
+})
+const systemBookRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/sistemas/$systemId/libros/$bookKey',
+  component: SystemBook,
+  validateSearch: bookSearch
+})
+// Sus reglas: el editor a mano llega en la tanda 8
+const systemRulesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/sistemas/$systemId/reglas',
+  component: SystemRules
+})
 const reviewRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/sistemas/$systemId/libros/$bookKey/revisar',
   component: ReviewScreen
 })
+// Una plantilla abierta, como una página (ADR-0024): ?nuevo y ?pestana, como en la wiki
 const templateRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/plantillas/$templateId',
-  component: TemplateView
+  component: TemplateView,
+  validateSearch: pageSearch
 })
 const trashRoute = createRoute({ getParentRoute: () => rootRoute, path: '/papelera', component: OrganizationTrash })
 const consentRoute = createRoute({ getParentRoute: () => rootRoute, path: '/oauth/consentimiento', component: Consent })
@@ -269,6 +310,7 @@ const routeTree = rootRoute.addChildren([
   campaignsRoute,
   campaignRoute,
   booksRoute,
+  campaignBookRoute,
   adventuresRoute,
   compendiumRoute,
   inPlayRoute,
@@ -297,6 +339,9 @@ const routeTree = rootRoute.addChildren([
   templatesRoute,
   systemsRoute,
   systemRoute,
+  systemRulesRoute,
+  systemCompendiumRoute,
+  systemBookRoute,
   reviewRoute,
   templateRoute,
   consentRoute,

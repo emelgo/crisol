@@ -1,0 +1,6 @@
+/* El emoji de una plantilla, del tamaño del dibujo al que sustituye */
+.emoji {
+  display: inline-grid;
+  place-items: center;
+  line-height: 1;
+}

@@ -106,7 +106,8 @@ export const campaignActions = [
   implement(createCampaign, async (ctx, { worldId, name, system, systemChoices, knowledge }) => {
     authorize(ctx.actor, 'campaign.create', { worldId })
     const world = await worldsRepo.findWorld(ctx.db, worldId)
-    if (!world) throw new NotFoundError('world')
+    // El de las plantillas no se juega (ADR-0024)
+    if (!world || world.purpose) throw new NotFoundError('world')
     // «Lo mismo que otra»: una campaña de este mundo
     if (knowledge?.start === 'campaign') {
       const from = await campaignsRepo.findCampaign(ctx.db, knowledge.campaignId)

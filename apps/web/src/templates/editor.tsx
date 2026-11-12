@@ -1,212 +1,331 @@
 /**
- * Una plantilla abierta (/plantillas/:id), con el esqueleto común (Screen) y la forma de una página (ADR-0009): su
- * icono y su nombre arriba, sus campos y los bloques de su panel en la ficha de la derecha, y en la de la izquierda las
- * demás plantillas. Todo se guarda solo. Las de
- * serie se ven igual, sin poder cambiarlas, con «Copiar»
+ * Una plantilla abierta (/plantillas/:id, ADR-0024): es una página del mundo oculto de la cuenta, así que se ve y se
+ * edita como una página (portada, icono en el título, pestañas, texto y panel), con lo suyo: «Plantillas» arriba a la
+ * izquierda para volver, la marca «Plantilla» junto al título, sin «Quién la conoce», «Marcar» ni «Mencionado en», y
+ * en el panel sus campos y sus bloques, que se definen en vez de rellenarse. A la izquierda, las demás, para saltar
  */
-import type { PageProperty, PageTemplate, PanelBlock } from '@crisol/contracts'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Link, Navigate, useParams } from '@tanstack/react-router'
-import { ChevronDown, ChevronUp, Copy, LayoutTemplate, Lock, Plus, Trash2 } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import type {
+  TemplateView as Listed,
+  Page,
+  PageProperty,
+  PageTemplate,
+  PanelBlock,
+  TemplateFolder
+} from '@crisol/contracts'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Link, Navigate, useParams, useSearch } from '@tanstack/react-router'
+import { ChevronDown, ChevronLeft, ChevronUp, Copy, FolderPlus, Plus, Settings, Trash2 } from 'lucide-react'
+import { type ReactNode, useCallback, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
+import { ApiError } from '../api/client.ts'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
+import { Loading } from '../components/brand.tsx'
+import { useDismiss } from '../components/dismiss.ts'
 import { FormError } from '../components/field.tsx'
-import { PageTitle } from '../components/page-title.tsx'
-import layout from '../components/screen.module.css'
-import { Screen } from '../components/screen.tsx'
-import { itemTransition, SECTION } from '../components/world-transition.ts'
+import { failed, LoadError } from '../components/load-error.tsx'
+import { MenuItem } from '../components/menu.tsx'
+import { Tour } from '../components/tour.tsx'
+import { LEAVE_ITEM, leaveItem } from '../components/world-transition.ts'
+import { CollabSocket } from '../wiki/collab.tsx'
 import { blockOf, type Kind, kindOf, PANEL_GROUPS } from '../wiki/panel-blocks.tsx'
 import { RelatedOptions } from '../wiki/related-block.tsx'
+import { type TabTarget, TabTargetContext, usePageTabs } from '../wiki/tabs/page-tabs.tsx'
+import wiki from '../wiki/wiki.module.css'
+import { EntryView, pageKey, useSideTop } from '../wiki/wiki.tsx'
 import styles from './editor.module.css'
 import { FieldsEditor } from './fields.tsx'
-import { TEMPLATE_ICON } from './icons.tsx'
+import { useNewTemplate } from './new-template.ts'
 import { useTemplates } from './picker.tsx'
-import { NewTemplateDialog } from './screen.tsx'
-import { SkeletonEditor } from './skeleton.tsx'
+import { Grip, moved, useReorder } from './reorder.tsx'
+import { type SideDialog, SideDialogView, TemplateSideTree } from './side-tree.tsx'
 
-type Patch = Partial<Pick<PageTemplate, 'name' | 'fields' | 'panel' | 'skeleton'>>
+type Patch = Partial<Pick<PageTemplate, 'fields' | 'panel'>>
 
 export function TemplateView() {
-  const { account, pending } = useAccounts().useAccount()
-  const { templateId } = useParams({ strict: false }) as { templateId: string }
-  const templates = useTemplates()
-  const template = templates.data?.templates.find((each) => each.id === templateId)
-  if (pending) return null
-  if (!account) return <Navigate to="/entrar" replace />
-  // Una que no está (o que se borró) lleva a la lista; mientras la lista se está pidiendo, se espera
-  if (templates.data && !template && !templates.isFetching) return <Navigate to="/plantillas" replace />
-  if (!template) return null
-  return <TemplateEditor key={template.id} template={template} all={templates.data?.templates ?? []} />
-}
-
-function TemplateEditor({ template, all }: { template: PageTemplate; all: readonly PageTemplate[] }) {
   const { t } = useTranslation()
   const api = useApi()
   const queryClient = useQueryClient()
+  const { account, pending } = useAccounts().useAccount()
+  const { templateId } = useParams({ strict: false }) as { templateId: string }
+  const { nuevo, pestana } = useSearch({ strict: false }) as { nuevo?: true; pestana?: string }
+  const templates = useTemplates()
+  const template = templates.data?.templates.find((each) => each.id === templateId)
+  // Su página: al abrir una de antes, el servidor se la hace (getTemplate); su mundo sale de ella
+  const opened = useQuery({
+    queryKey: ['template-page', templateId],
+    queryFn: async () => {
+      const found = await api.call('getTemplate', { templateId })
+      if (!found.pageId) throw new ApiError('NOT_FOUND', 404)
+      const page = await api.call('getPage', { pageId: found.pageId })
+      queryClient.setQueryData(pageKey(page.worldId, page.id), page)
+      return { worldId: page.worldId, pageId: page.id }
+    },
+    enabled: Boolean(account),
+    staleTime: Number.POSITIVE_INFINITY
+  })
+  const page = useQuery({
+    queryKey: pageKey(opened.data?.worldId ?? '', opened.data?.pageId ?? ''),
+    queryFn: () => api.call('getPage', { pageId: opened.data?.pageId ?? '' }),
+    enabled: Boolean(opened.data)
+  })
+  // Lo que cambia en su página (nombre, icono, portada) sale también en la lista de plantillas
+  const seen = useRef(0)
+  useEffect(() => {
+    if (!page.dataUpdatedAt) return
+    if (seen.current) void queryClient.invalidateQueries({ queryKey: ['templates'] })
+    seen.current = page.dataUpdatedAt
+  }, [page.dataUpdatedAt, queryClient])
+  useEffect(() => {
+    if (page.data) document.title = t('app.pageTitle', { page: page.data.title })
+  }, [page.data, t])
+  if (pending) return null
+  if (!account) return <Navigate to="/entrar" replace />
+  const gone =
+    (opened.error instanceof ApiError && opened.error.status === 404) ||
+    (templates.data && !template && !templates.isFetching)
+  // Una que no está (o que se borró) lleva a la lista
+  if (gone) return <Navigate to="/plantillas" replace />
+  return (
+    <TemplateLayout current={template} all={templates.data?.templates ?? []} folders={templates.data?.folders ?? []}>
+      {page.data && template ? (
+        <TemplatePage
+          key={template.id}
+          page={page.data}
+          template={template}
+          folders={templates.data?.folders ?? []}
+          nuevo={nuevo === true}
+          pestana={pestana}
+        />
+      ) : failed(opened) || failed(page) ? (
+        <LoadError error={opened.error ?? page.error} onRetry={() => (opened.error ? opened : page).refetch()} />
+      ) : (
+        <Loading />
+      )}
+    </TemplateLayout>
+  )
+}
+
+/** Como la wiki: a la izquierda, la ficha con las plantillas (y «Plantillas», encima, para volver); en medio, la abierta */
+function TemplateLayout({
+  current,
+  all,
+  folders,
+  children
+}: {
+  current: Listed | undefined
+  all: readonly Listed[]
+  folders: readonly TemplateFolder[]
+  children: ReactNode
+}) {
+  const { t } = useTranslation()
+  const root = useRef<HTMLDivElement>(null)
+  const headingId = useId()
+  // Un cuadro cada vez, con su número: el que se va (tras su salida) solo se cierra a sí mismo, no al que se abrió
+  // mientras tanto
+  const [dialog, setOpenDialog] = useState<{ which: SideDialog; n: number } | null>(null)
+  const opened = useRef(0)
+  const setDialog = (which: SideDialog) => {
+    opened.current += 1
+    setOpenDialog({ which, n: opened.current })
+  }
+  useSideTop(root, true)
+  return (
+    <div ref={root} className={wiki.wiki}>
+      <Link
+        to="/plantillas"
+        className={styles.back}
+        viewTransition={LEAVE_ITEM}
+        // Al revés que al entrar: su icono y su nombre vuelven a su tarjeta
+        onClick={() => current && leaveItem(current.id, root.current)}
+      >
+        <ChevronLeft aria-hidden="true" size={16} />
+        {t('templates.title')}
+      </Link>
+      <aside className={wiki.aside} aria-labelledby={headingId}>
+        <div className={wiki.asideHeader}>
+          <h2 id={headingId}>{t('templates.listLabel')}</h2>
+          <div className={styles.headTools}>
+            <button
+              type="button"
+              className={wiki.newPageIcon}
+              aria-label={t('templates.newFolder')}
+              title={t('templates.newFolder')}
+              aria-haspopup="dialog"
+              onClick={() => setDialog({ kind: 'new-folder', parentId: null, label: t('templates.newFolder') })}
+            >
+              <FolderPlus aria-hidden="true" size={16} />
+            </button>
+            <button
+              type="button"
+              className={wiki.newPageIcon}
+              aria-label={t('templates.new')}
+              title={t('templates.new')}
+              aria-haspopup="dialog"
+              // En la carpeta de la abierta
+              onClick={() => setDialog({ kind: 'new-template', folderId: current?.folderId ?? null })}
+            >
+              <Plus aria-hidden="true" size={16} />
+            </button>
+          </div>
+        </div>
+        <TemplateSideTree folders={folders} templates={all} current={current?.id} onDialog={setDialog} />
+      </aside>
+      {dialog && (
+        <SideDialogView
+          key={dialog.n}
+          dialog={dialog.which}
+          folders={folders}
+          onClose={() => setOpenDialog((now) => (now?.n === dialog.n ? null : now))}
+        />
+      )}
+      <div className={wiki.content}>
+        <CollabSocket>{children}</CollabSocket>
+      </div>
+    </div>
+  )
+}
+
+/** La página de la plantilla, con sus pestañas llevando a la plantilla (no a la wiki de un mundo) */
+function TemplatePage({
+  page,
+  template,
+  folders,
+  nuevo,
+  pestana
+}: {
+  page: Page
+  template: Listed
+  folders: readonly TemplateFolder[]
+  nuevo: boolean
+  pestana: string | undefined
+}) {
+  const { t } = useTranslation()
+  const tabs = usePageTabs(page)
+  const [settings, setSettings] = useState(false)
+  const all = tabs.data ?? []
+  const active = pestana ? (all.find((tab) => tab.id === pestana) ?? null) : null
+  const target = useCallback<TabTarget>(
+    (tab) => ({
+      to: '/plantillas/$templateId',
+      params: { templateId: template.id },
+      search: tab ? { pestana: tab } : {}
+    }),
+    [template.id]
+  )
+  // Una pestaña que ya no está: al texto
+  if (pestana && tabs.data && !tabs.isFetching && !active) return <Navigate {...target(null)} replace />
+  if (pestana && !active) return null
+  return (
+    <TabTargetContext.Provider value={target}>
+      {!nuevo && (
+        <Tour
+          id="plantilla"
+          steps={[
+            { target: '[data-tour="plantilla-marca"]', text: t('tour.template.page') },
+            { target: '[data-tour="panel-bloques"]', text: t('tour.template.panel') }
+          ]}
+        />
+      )}
+      <EntryView
+        page={page}
+        nuevo={nuevo}
+        tabs={all}
+        active={active}
+        template={{
+          id: template.id,
+          more: (close) => <TemplateMore template={template} close={close} onSettings={() => setSettings(true)} />,
+          side: <TemplateSide template={template} page={page} />
+        }}
+      />
+      {settings && (
+        <SideDialogView dialog={{ kind: 'template', template }} folders={folders} onClose={() => setSettings(false)} />
+      )}
+    </TabTargetContext.Provider>
+  )
+}
+
+/** «⋯» de una plantilla: duplicarla y sus ajustes (nombre, carpeta, icono y borrarla), en las filas del menú */
+function TemplateMore({
+  template,
+  close,
+  onSettings
+}: {
+  template: Listed
+  close: () => void
+  onSettings: () => void
+}) {
+  const { t } = useTranslation()
+  // Duplicarla: su página entera, con los mismos campos (sus páginas salen en las mismas tablas), y se abre
+  const copy = useNewTemplate()
+  return (
+    <>
+      <MenuItem disabled={copy.isPending} onClick={() => copy.mutate({ copyOf: template })}>
+        <Copy aria-hidden="true" size={15} />
+        {t('templates.duplicate')}
+      </MenuItem>
+      <FormError message={copy.errorText} />
+      <MenuItem
+        aria-haspopup="dialog"
+        onClick={() => {
+          close()
+          onSettings()
+        }}
+      >
+        <Settings aria-hidden="true" size={15} />
+        {t('templates.settings')}
+      </MenuItem>
+    </>
+  )
+}
+
+/**
+ * El panel de la plantilla: sus campos (nombre y tipo) y los bloques de su panel, que se definen. Se guarda solo, en
+ * fila; mientras quede algo por guardar, lo que llega de fuera no pisa lo de aquí
+ */
+function TemplateSide({ template, page }: { template: PageTemplate; page: Page }) {
+  const api = useApi()
+  const queryClient = useQueryClient()
   const errorText = useErrorText()
-  const readOnly = template.builtIn
-  const [draft, setDraft] = useState(template)
-  const [copying, setCopying] = useState(false)
-  // Los guardados van en fila; mientras quede alguno, lo que llega de fuera no pisa lo de aquí
+  const [draft, setDraft] = useState<Patch & Pick<PageTemplate, 'fields' | 'panel'>>(template)
   const queue = useRef<Promise<unknown>>(Promise.resolve())
   const inFlight = useRef(0)
-  const [state, setState] = useState<'saved' | 'saving'>('saved')
   useEffect(() => {
     if (inFlight.current === 0) setDraft(template)
   }, [template])
   const save = useMutation({
     mutationFn: (patch: Patch) => {
       inFlight.current++
-      setState('saving')
       const run = queue.current
         .catch(() => undefined)
         .then(() => api.call('updateTemplate', { templateId: template.id, ...patch }))
         .finally(() => {
           inFlight.current--
-          if (inFlight.current === 0) setState('saved')
         })
       queue.current = run
       return run
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['templates'] })
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['templates'] }),
+        queryClient.invalidateQueries({ queryKey: ['pages', page.worldId] })
+      ])
   })
   const change = (patch: Patch) => {
     setDraft((current) => ({ ...current, ...patch }))
     save.mutate(patch)
   }
-  const Icon = TEMPLATE_ICON[draft.icon]
-  const mine = all.filter((each) => !each.builtIn)
-  const builtIn = all.filter((each) => each.builtIn)
   return (
-    <Screen
-      left={
-        <div className={styles.list}>
-          <p className={styles.listHead}>{t('templates.mine')}</p>
-          <TemplateLinks templates={mine} current={template.id} />
-          <p className={styles.listHead}>{t('templates.builtIn')}</p>
-          <TemplateLinks templates={builtIn} current={template.id} />
-        </div>
-      }
-      leftLabel={t('templates.title')}
-      right={
-        <div className={styles.panel}>
-          <FieldsEditor
-            fields={draft.fields}
-            readOnly={readOnly}
-            onChange={(fields: PageProperty[]) => change({ fields })}
-          />
-          <BlocksEditor blocks={draft.panel} readOnly={readOnly} onChange={(panel) => change({ panel })} />
-        </div>
-      }
-      rightLabel={t('templateEditor.panel')}
-    >
-      {/* El título, donde en las demás pantallas: su icono, su nombre y, junto a él, «Plantilla» */}
-      <div className={layout.top}>
-        <div className={styles.heading}>
-          <span className={styles.icon} aria-hidden="true" style={itemTransition(template.id, 'icono')}>
-            <Icon size={22} strokeWidth={1.5} />
-          </span>
-          <div style={itemTransition(template.id, 'nombre')}>
-            {readOnly ? (
-              <PageTitle>{draft.name}</PageTitle>
-            ) : (
-              <TitleInput name={draft.name} onCommit={(name) => change({ name })} />
-            )}
-          </div>
-          <span className={styles.kind}>
-            <LayoutTemplate size={14} aria-hidden="true" />
-            {t('templateEditor.kind')}
-          </span>
-        </div>
-        <span className={styles.status} role="status">
-          {readOnly ? '' : t(state === 'saving' ? 'templateEditor.saving' : 'templateEditor.saved')}
-        </span>
-      </div>
-      {readOnly && (
-        <p className={styles.note}>
-          <Lock size={14} aria-hidden="true" />
-          {t('templateEditor.builtInNote')}
-          <button type="button" className={styles.copy} onClick={() => setCopying(true)}>
-            <Copy size={14} aria-hidden="true" />
-            {t('templates.copy')}
-          </button>
-        </p>
-      )}
-      <FormError message={save.error ? errorText(save.error) : null} />
-      <div className={styles.skeleton}>
-        <SkeletonEditor
-          skeleton={template.skeleton}
-          readOnly={readOnly}
-          onChange={(skeleton) => change({ skeleton })}
-        />
-      </div>
-      {copying && <NewTemplateDialog copyOf={template.id} onClose={() => setCopying(false)} />}
-    </Screen>
-  )
-}
-
-function TemplateLinks({ templates, current }: { templates: readonly PageTemplate[]; current: string }) {
-  return (
-    <ul className={styles.links}>
-      {templates.map((each) => {
-        const Icon = TEMPLATE_ICON[each.icon]
-        return (
-          <li key={each.id}>
-            <Link
-              to="/plantillas/$templateId"
-              params={{ templateId: each.id }}
-              aria-current={each.id === current ? 'page' : undefined}
-              // De una a otra, como entre pestañas: rápido
-              viewTransition={SECTION}
-            >
-              <Icon size={15} aria-hidden="true" />
-              {each.name}
-              {each.builtIn && <Lock size={12} aria-hidden="true" className={styles.lock} />}
-            </Link>
-          </li>
-        )
-      })}
-    </ul>
-  )
-}
-
-/** El nombre, como el título de una página: se cambia en el sitio (Intro o salir lo guardan, Escape lo deja) */
-function TitleInput({ name, onCommit }: { name: string; onCommit: (name: string) => void }) {
-  const { t } = useTranslation()
-  const [value, setValue] = useState(name)
-  useEffect(() => setValue(name), [name])
-  // Como PageTitle: el nombre, también en la pestaña del navegador
-  useEffect(() => {
-    document.title = t('app.pageTitle', { page: name })
-  }, [name, t])
-  return (
-    // El encabezado se llama como la plantilla: su nombre se escribe dentro
-    <h1 className={styles.title} tabIndex={-1} aria-label={value || name}>
-      <input
-        className={styles.titleInput}
-        aria-label={t('templates.name')}
-        value={value}
-        // Del ancho de su texto: «Plantilla» va siempre junto al nombre
-        size={Math.max(value.length, 4)}
-        maxLength={60}
-        onChange={(event) => setValue(event.currentTarget.value)}
-        onBlur={() => {
-          const trimmed = value.trim()
-          if (trimmed && trimmed !== name) onCommit(trimmed)
-          else setValue(name)
-        }}
-        onKeyDown={(event) => {
-          if (event.key === 'Enter') event.currentTarget.blur()
-          if (event.key === 'Escape') {
-            setValue(name)
-            event.currentTarget.blur()
-          }
-        }}
+    <div className={styles.side}>
+      <FieldsEditor
+        fields={draft.fields}
+        readOnly={page.locked}
+        onChange={(fields: PageProperty[]) => change({ fields })}
       />
-    </h1>
+      <BlocksEditor blocks={draft.panel} readOnly={page.locked} onChange={(panel) => change({ panel })} />
+      <FormError message={save.error ? errorText(save.error) : null} />
+    </div>
   )
 }
 
@@ -222,14 +341,16 @@ function BlocksEditor({
 }) {
   const { t } = useTranslation()
   const [adding, setAdding] = useState(false)
+  // El bloque desplegado (sus opciones), como un campo
+  const [open, setOpen] = useState<string | null>(null)
+  const addRoot = useRef<HTMLDivElement>(null)
+  const addTrigger = useRef<HTMLButtonElement>(null)
+  // Abierto, Escape o pulsar fuera lo cierran (como «⋯»)
+  useDismiss(adding, () => setAdding(false), addRoot, addTrigger)
   const update = (index: number, patch: Partial<PanelBlock>) =>
     onChange(blocks.map((block, i) => (i === index ? ({ ...block, ...patch } as PanelBlock) : block)))
-  const move = (index: number, by: -1 | 1) => {
-    const next = [...blocks]
-    const [moved] = next.splice(index, 1)
-    if (moved) next.splice(index + by, 0, moved)
-    onChange(next)
-  }
+  const reorder = (from: number, to: number) => onChange(moved(blocks, from, to))
+  const drag = useReorder(reorder)
   return (
     <section className={styles.block} aria-label={t('templates.inPanel')}>
       <h2 className={styles.blockTitle}>{t('templates.inPanel')}</h2>
@@ -237,60 +358,92 @@ function BlocksEditor({
         {blocks.map((block, index) => {
           const kind = kindOf(block)
           const label = t(`panelBlocks.kinds.${kind}`)
+          const name = ('title' in block && block.title) || label
+          const expanded = open === block.id
+          const toggle = () => setOpen(expanded ? null : block.id)
           return (
-            <li key={block.id} className={styles.field}>
-              <fieldset className={styles.blockShape} disabled={readOnly}>
-                <legend className={styles.hidden}>{('title' in block && block.title) || label}</legend>
-                {'title' in block ? (
-                  <input
-                    className={styles.blockName}
-                    aria-label={t('templateEditor.blockTitle', { kind: label })}
-                    defaultValue={block.title}
-                    placeholder={label}
-                    maxLength={80}
-                    onBlur={(event) => {
-                      const title = event.currentTarget.value.trim()
-                      if (title !== block.title) update(index, { title } as Partial<PanelBlock>)
-                    }}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter') event.currentTarget.blur()
-                    }}
-                  />
-                ) : (
-                  <span className={styles.blockName}>{label}</span>
-                )}
-                {block.type === 'related' && (
-                  <RelatedOptions block={block} onChange={(patch) => update(index, patch as Partial<PanelBlock>)} />
-                )}
+            <li key={block.id} className={styles.field} data-open={expanded || undefined} {...drag.row(index)}>
+              {/* Plegado: sus seis puntos, su nombre y su tipo; al pulsarlo, sus opciones */}
+              <div className={styles.fieldLine}>
                 {!readOnly && (
-                  <div className={styles.shapeActions}>
-                    <button type="button" disabled={index === 0} onClick={() => move(index, -1)}>
-                      <ChevronUp size={14} aria-hidden="true" />
-                      {t('templateEditor.up')}
-                    </button>
-                    <button type="button" disabled={index === blocks.length - 1} onClick={() => move(index, 1)}>
-                      <ChevronDown size={14} aria-hidden="true" />
-                      {t('templateEditor.down')}
-                    </button>
-                    <button
-                      type="button"
-                      className={styles.danger}
-                      onClick={() => onChange(blocks.filter((_, i) => i !== index))}
-                    >
-                      <Trash2 size={14} aria-hidden="true" />
-                      {t('panelBlocks.remove')}
-                    </button>
-                  </div>
+                  <Grip
+                    name={name}
+                    index={index}
+                    count={blocks.length}
+                    open={expanded}
+                    onToggle={toggle}
+                    onMove={reorder}
+                    onDragStart={drag.start}
+                    onDragEnd={drag.end}
+                  />
                 )}
-              </fieldset>
+                <button type="button" className={styles.fieldRow} aria-expanded={expanded} onClick={toggle}>
+                  <span className={styles.fieldName}>{name}</span>
+                  <span className={styles.fieldType}>{label}</span>
+                </button>
+              </div>
+              {expanded && (
+                <fieldset className={styles.blockShape} disabled={readOnly}>
+                  <legend className={styles.hidden}>{name}</legend>
+                  {'title' in block && (
+                    <input
+                      className={styles.blockName}
+                      aria-label={t('templateEditor.blockTitle', { kind: label })}
+                      defaultValue={block.title}
+                      placeholder={label}
+                      maxLength={80}
+                      onBlur={(event) => {
+                        const title = event.currentTarget.value.trim()
+                        if (title !== block.title) update(index, { title } as Partial<PanelBlock>)
+                      }}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') event.currentTarget.blur()
+                      }}
+                    />
+                  )}
+                  {block.type === 'related' && (
+                    <RelatedOptions block={block} onChange={(patch) => update(index, patch as Partial<PanelBlock>)} />
+                  )}
+                  {!readOnly && (
+                    <div className={styles.shapeActions}>
+                      <button type="button" disabled={index === 0} onClick={() => reorder(index, index - 1)}>
+                        <ChevronUp size={14} aria-hidden="true" />
+                        {t('templateEditor.up')}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={index === blocks.length - 1}
+                        onClick={() => reorder(index, index + 1)}
+                      >
+                        <ChevronDown size={14} aria-hidden="true" />
+                        {t('templateEditor.down')}
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.danger}
+                        onClick={() => onChange(blocks.filter((_, i) => i !== index))}
+                      >
+                        <Trash2 size={14} aria-hidden="true" />
+                        {t('panelBlocks.remove')}
+                      </button>
+                    </div>
+                  )}
+                </fieldset>
+              )}
             </li>
           )
         })}
       </ul>
-      {blocks.length === 0 && <p className={styles.muted}>{t('templates.none')}</p>}
+      {blocks.length === 0 && <p className={styles.muted}>{t('templateEditor.noBlocks')}</p>}
       {!readOnly && (
-        <div className={styles.addWrap}>
-          <button type="button" className={styles.add} aria-expanded={adding} onClick={() => setAdding(!adding)}>
+        <div ref={addRoot} className={styles.addWrap}>
+          <button
+            ref={addTrigger}
+            type="button"
+            className={styles.add}
+            aria-expanded={adding}
+            onClick={() => setAdding(!adding)}
+          >
             <Plus size={14} aria-hidden="true" />
             {t('panelBlocks.add')}
           </button>
@@ -306,7 +459,9 @@ function BlocksEditor({
                       className={styles.addOption}
                       onClick={() => {
                         setAdding(false)
-                        onChange([...blocks, blockOf(kind as Kind)])
+                        const block = blockOf(kind as Kind)
+                        onChange([...blocks, block])
+                        setOpen(block.id)
                       }}
                     >
                       {icon}

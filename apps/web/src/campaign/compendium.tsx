@@ -4,14 +4,16 @@
  * idiomas, sin tildes), los tipos y la lista; en el centro, lo elegido; a la derecha, su edición, su nombre en inglés,
  * su otra versión, de dónde sale y la atribución de su fuente
  */
-import { visibilitiesFor } from '@crisol/contracts'
+import type { RollVisibility } from '@crisol/contracts'
 import { type Text, textOf } from '@crisol/systems'
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { getRouteApi, Navigate } from '@tanstack/react-router'
+import { getRouteApi, Link, Navigate } from '@tanstack/react-router'
 import {
   ArrowLeft,
+  BookOpen,
   ChevronRight,
   Copy,
+  Dice5,
   Globe,
   Pencil,
   Plus,
@@ -39,6 +41,8 @@ import { SystemImage } from '../components/system-image.tsx'
 import { Tour } from '../components/tour.tsx'
 import { PutInPlay } from '../creatures/put-in-play.tsx'
 import { useDice } from '../dice/context.tsx'
+import { appendRoll } from '../dice/rolls.ts'
+import { useTray } from '../dice/tray.tsx'
 import { visibilityIn } from '../dice/visibility.ts'
 import { useNarrow } from '../wiki/panel.tsx'
 import { BookCover } from './book-cover.tsx'
@@ -52,6 +56,14 @@ import { OriginNotice, ToSystem } from './origin.tsx'
 const route = getRouteApi('/mundos/$worldId/campanas/$campaignId/compendio')
 /** El sistema del compendio abierto: de él salen sus imágenes */
 export const SystemIdContext = createContext<string | null>(null)
+
+/**
+ * El compendio que se lee: el de una campaña (su id) o, sin campaña, el de un sistema entero («sistema:<id>»: su espacio
+ * y sus libros, revisión tanda 6). Sin campaña no hay partida: ni sus tablas se tiran, ni se ve lo nuevo, ni se pone en
+ * juego
+ */
+export const systemScope = (systemId: string) => `sistema:${systemId}`
+const systemOfScope = (scope: string) => (scope.startsWith('sistema:') ? scope.slice('sistema:'.length) : null)
 const PAGE = 100
 
 type Language = 'es' | 'en'
@@ -143,6 +155,45 @@ export function CompendiumScreen() {
   )
 }
 
+/** «Leer · N capítulos»: los capítulos del libro elegido (ADR-0025), en su lector; en el sistema, en el libro por dentro */
+function ReadBook({
+  worldId,
+  campaignId,
+  source
+}: {
+  worldId: string
+  campaignId: string
+  source: { key: string; chapters: number } | undefined
+}) {
+  const { t } = useTranslation()
+  if (!source || source.chapters === 0) return null
+  const systemId = systemOfScope(campaignId)
+  const text = (
+    <>
+      <BookOpen size={14} aria-hidden="true" />
+      {t('chapters.read')} · {t('chapters.count', { count: source.chapters })}
+    </>
+  )
+  return systemId ? (
+    <Link
+      to="/sistemas/$systemId/libros/$bookKey"
+      params={{ systemId, bookKey: source.key }}
+      search={{ vista: 'capitulos' }}
+      className={styles.readBook}
+    >
+      {text}
+    </Link>
+  ) : (
+    <Link
+      to="/mundos/$worldId/campanas/$campaignId/libros/$bookKey"
+      params={{ worldId, campaignId, bookKey: source.key }}
+      className={styles.readBook}
+    >
+      {text}
+    </Link>
+  )
+}
+
 /**
  * El compendio de una campaña: en su ruta o en una ventana sobre la Mesa (embedded: sin el título de la pestaña del
  * navegador, que es el de la Mesa)
@@ -154,7 +205,9 @@ export function Compendium({
   onVer,
   embedded = false,
   initialBook = null,
-  initialType = null
+  initialType = null,
+  title,
+  tabs
 }: {
   worldId: string
   campaignId: string
@@ -165,6 +218,10 @@ export function Compendium({
   /** Abrir ya en un libro (y un tipo): desde la ficha del libro (ADR-0021) */
   initialBook?: string | null
   initialType?: string | null
+  /** Su título (sin él, «Compendio»): el nombre del libro, dentro de él */
+  title?: string
+  /** Bajo el título: las pestañas de un libro por dentro (Capítulos y Entradas, ADR-0025) */
+  tabs?: ReactNode
 }) {
   const { t } = useTranslation()
   const api = useApi()
@@ -173,7 +230,12 @@ export function Compendium({
   const searchId = useId()
   const compendium = useQuery({
     queryKey: ['compendium', campaignId],
-    queryFn: () => api.call('getCampaignCompendium', { campaignId }),
+    queryFn: () => {
+      const systemId = systemOfScope(campaignId)
+      return systemId
+        ? api.call('getSystemCompendium', { systemId })
+        : api.call('getCampaignCompendium', { campaignId })
+    },
     enabled: Boolean(account)
   })
   const [query, setQuery] = useState('')
@@ -184,19 +246,29 @@ export function Compendium({
   const [view, setView] = useState<'type' | 'book'>(initialBook ? 'book' : 'type')
   const [book, setBook] = useState<string | null>(initialBook)
   const [bookType, setBookType] = useState<string | null>(initialType)
+  // El libro por dentro (un sistema, revisión tanda 6): el libro no se quita y, sin buscar, sus tipos son su índice
+  const fixedBook = systemOfScope(campaignId) !== null && initialBook !== null
+  const bookIndex = useQuery({
+    queryKey: ['compendium', campaignId, 'bookIndex', initialBook],
+    queryFn: () => api.call('getBookEntries', { systemId: systemOfScope(campaignId) ?? '', source: initialBook ?? '' }),
+    enabled: fixedBook
+  })
   const hits = useInfiniteQuery({
     queryKey: ['compendium', campaignId, 'search', wanted, layer, book, bookType],
     // Solo una capa o un libro, si se elige: lo filtra el servidor (antes de paginar)
-    queryFn: ({ pageParam }) =>
-      api.call('searchCampaignContent', {
-        campaignId,
+    queryFn: ({ pageParam }) => {
+      const given = {
         query: wanted,
         limit: PAGE,
         offset: pageParam,
-        ...(layer === 'all' ? {} : { layer }),
         ...(book ? { source: book } : {}),
         ...(book && bookType ? { type: bookType } : {})
-      }),
+      }
+      const systemId = systemOfScope(campaignId)
+      return systemId
+        ? api.call('searchSystemCompendium', { systemId, ...given })
+        : api.call('searchCampaignContent', { campaignId, ...given, ...(layer === 'all' ? {} : { layer }) })
+    },
     initialPageParam: 0,
     getNextPageParam: (last, pages) => {
       const seen = pages.reduce((n, p) => n + p.items.length, 0)
@@ -224,7 +296,7 @@ export function Compendium({
   const campaign = useQuery({
     queryKey: ['campaign', campaignId],
     queryFn: () => api.call('getCampaign', { campaignId }),
-    enabled: Boolean(account)
+    enabled: Boolean(account) && !systemOfScope(campaignId)
   })
   const master = campaign.data?.campaign.role === 'master'
   useSeenEntry(worldId, campaignId, shown, campaign.data?.campaign.role === 'player')
@@ -271,16 +343,28 @@ export function Compendium({
         {/* El título, en el sitio de todas las pantallas (components/screen.tsx) */}
         {!embedded && (
           <div className={styles.top}>
-            <PageTitle>{t('compendium.title')}</PageTitle>
+            <PageTitle>{title ?? t('compendium.title')}</PageTitle>
+            {tabs}
           </div>
         )}
         <aside className={styles.side} aria-label={t('compendium.title')}>
           <div className={styles.sideHead}>
             <span className={styles.system}>
-              {editions.length > 0
-                ? t('compendium.systemWith', { system: system.name, editions: editions.join(t('compendium.and')) })
-                : system.name}
-              {master && (
+              {fixedBook && sources.find((s) => s.key === book) ? (
+                <span className={styles.bookHead}>
+                  <span className={styles.bookMini}>
+                    <BookCover book={sources.find((s) => s.key === book) as (typeof sources)[number]} size="spine" />
+                  </span>
+                  {[sources.find((s) => s.key === book)?.name, sources.find((s) => s.key === book)?.edition]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </span>
+              ) : editions.length > 0 ? (
+                t('compendium.systemWith', { system: system.name, editions: editions.join(t('compendium.and')) })
+              ) : (
+                system.name
+              )}
+              {master && !fixedBook && (
                 <button
                   ref={settingsButton}
                   type="button"
@@ -345,7 +429,7 @@ export function Compendium({
               ))}
             </fieldset>
           )}
-          {sources.length > 0 && (
+          {sources.length > 0 && !fixedBook && (
             <fieldset className={styles.view}>
               <legend className={styles.hidden}>{t('compendium.view')}</legend>
               <button type="button" aria-pressed={view === 'type'} onClick={() => setView('type')}>
@@ -356,7 +440,7 @@ export function Compendium({
               </button>
             </fieldset>
           )}
-          {book && (
+          {book && !fixedBook && (
             <p className={styles.bookFilter}>
               <span>
                 {sources.find((s) => s.key === book)?.name ?? book}
@@ -374,7 +458,24 @@ export function Compendium({
               </button>
             </p>
           )}
-          {view === 'book' && !book && !wanted ? (
+          {book && !fixedBook && (
+            <ReadBook worldId={worldId} campaignId={campaignId} source={sources.find((s) => s.key === book)} />
+          )}
+          {fixedBook && !wanted && !bookType ? (
+            <ul className={styles.bookList} aria-label={t('compendium.bookIndex')} data-tour="compendio-estantes">
+              {(bookIndex.data?.types ?? []).map((type) => (
+                <li key={type.type}>
+                  <button type="button" className={styles.bookRow} onClick={() => setBookType(type.type)}>
+                    <span>{type.label}</span>
+                    <span className={styles.bookCount}>{type.entries.length}</span>
+                  </button>
+                </li>
+              ))}
+              {bookIndex.data && bookIndex.data.types.length === 0 && (
+                <li className={styles.none}>{t('compendium.bookEmpty')}</li>
+              )}
+            </ul>
+          ) : view === 'book' && !book && !wanted ? (
             <ul className={styles.bookList} aria-label={t('compendium.byBook')} data-tour="compendio-libros">
               {sources.map((s) => (
                 <li key={s.key}>
@@ -390,6 +491,12 @@ export function Compendium({
             </ul>
           ) : wanted || book ? (
             <>
+              {fixedBook && bookType && !wanted && (
+                <button type="button" className={styles.backToIndex} onClick={() => setBookType(null)}>
+                  <ArrowLeft size={14} aria-hidden="true" />
+                  {typeOf(bookType)?.label ?? bookType}
+                </button>
+              )}
               <ul className={styles.list} aria-label={t('compendium.results')} aria-busy={hits.isFetching}>
                 {items.map((hit) => (
                   <HitRow
@@ -470,6 +577,7 @@ export function Compendium({
             targets={newTargets}
             language={language}
             item={null}
+            source={book}
             onSaved={open}
             onClose={() => setCreating(false)}
           />
@@ -747,7 +855,12 @@ function TypeShelf({
   const systemId = useContext(SystemIdContext)
   const browsed = useQuery({
     queryKey: ['compendium', campaignId, 'browse', type],
-    queryFn: () => api.call('browseCampaignContent', { campaignId, type })
+    queryFn: () => {
+      const systemId = systemOfScope(campaignId)
+      return systemId
+        ? api.call('browseSystemCompendium', { systemId, type })
+        : api.call('browseCampaignContent', { campaignId, type })
+    }
   })
   if (!browsed.data)
     return failed(browsed) ? (
@@ -927,9 +1040,11 @@ function Entry({
   const announce = useAnnounce()
   // Sus tablas de tirar se tiran en la campaña, para quien elijan los dados (si vale en ella)
   const dice = useDice()
+  const inSystem = systemOfScope(campaignId) !== null
   const campaign = useQuery({
     queryKey: ['campaign', campaignId],
-    queryFn: () => api.call('getCampaign', { campaignId })
+    queryFn: () => api.call('getCampaign', { campaignId }),
+    enabled: !inSystem
   })
   const visibility = visibilityIn(dice.visibility, campaign.data?.campaign.role ?? 'player')
   const rolling = useMutation({
@@ -944,7 +1059,12 @@ function Entry({
       .catch(() => null)
   const read = useQuery({
     queryKey: ['compendium', campaignId, 'entry', entryKey],
-    queryFn: () => api.call('getCampaignContent', { campaignId, keys: [entryKey] })
+    queryFn: () => {
+      const systemId = systemOfScope(campaignId)
+      return systemId
+        ? api.call('readSystemCompendium', { systemId, keys: [entryKey] })
+        : api.call('getCampaignContent', { campaignId, keys: [entryKey] })
+    }
   })
   const item = read.data?.items[0]
   const [changing, setChanging] = useState<'edit' | 'delete' | 'toSystem' | null>(startEditing ? 'edit' : null)
@@ -1069,9 +1189,24 @@ function Entry({
             ))}
           </dl>
         )}
-        {item.play && <InPlay play={item.play} titleId={titleId} />}
+        {item.play && (
+          <InPlay
+            play={item.play}
+            titleId={titleId}
+            {...(inSystem
+              ? {}
+              : {
+                  rolling: {
+                    campaignId,
+                    entryKey,
+                    actor: types.find((type) => type.key === item.type)?.document === 'actor',
+                    visibility
+                  }
+                })}
+          />
+        )}
         <FormError message={rolling.error ? errorText(rolling.error) : null} />
-        {body && <ContentText text={body} onRoll={roll} />}
+        {body && <ContentText text={body} {...(inSystem ? {} : { onRoll: roll })} />}
         {item.table && (
           <EntryTable
             campaignId={campaignId}
@@ -1204,13 +1339,68 @@ function Entry({
 }
 
 type PlayText = NonNullable<ActionOutput<'getCampaignContent'>['items'][number]['play']>
+type ActionPart = PlayText['actions'][number]['rolls'][number]
 
-/** Su mecánica, en palabras: sus acciones, sus usos, lo que cambia, cómo escala y cuánto lo calcula Crisol */
-function InPlay({ play, titleId }: { play: PlayText; titleId: string }) {
+/** Tirar sus acciones en la campaña (revisión, tanda 7): una criatura, con lo suyo; lo demás, con un personaje */
+export interface Rolling {
+  campaignId: string
+  entryKey: string
+  /** Si tiene hoja propia (una criatura): tira con ella; si no, con la de un personaje */
+  actor: boolean
+  visibility: RollVisibility
+}
+
+/** Su mecánica, en palabras: sus acciones (con sus botones de tirar), sus usos, lo que cambia, cómo escala y cuánto lo calcula Crisol */
+export function InPlay({ play, titleId, rolling }: { play: PlayText; titleId: string; rolling?: Rolling }) {
   const { t } = useTranslation()
+  const api = useApi()
+  const announce = useAnnounce()
+  const errorText = useErrorText()
+  const characterId = useId()
+  const queryClient = useQueryClient()
+  const tray = useTray()
+  const rollable = Boolean(rolling) && play.actions.some((a) => a.rolls.length > 0)
+  // Con qué personaje se tira lo que no tiene hoja propia: los suyos (el máster, todos)
+  const characters = useQuery({
+    queryKey: ['characters', rolling?.campaignId],
+    queryFn: () => api.call('listCharacters', { campaignId: rolling?.campaignId ?? '' }),
+    enabled: rollable && rolling?.actor === false
+  })
+  const mine = characters.data?.characters ?? []
+  const [chosen, setChosen] = useState<string | null>(null)
+  const withWho = chosen && mine.some((c) => c.id === chosen) ? chosen : (mine[0]?.id ?? null)
+  const roll = useMutation({
+    mutationFn: ({ key, part }: { key: string; part: ActionPart }) =>
+      api.call('rollContentAction', {
+        campaignId: rolling?.campaignId ?? '',
+        key: rolling?.entryKey ?? '',
+        action: { key, part },
+        ...(rolling?.actor || !withWho ? {} : { characterId: withWho }),
+        visibility: rolling?.visibility ?? 'all'
+      }),
+    // Como las demás tiradas: al historial, los dados caen y, al parar, su aviso con el resultado
+    onSuccess: ({ roll: done }) => {
+      appendRoll(queryClient, done)
+      tray.play(done)
+      announce(t('dice.rolled', { label: done.label ?? done.formula, total: done.total }))
+    }
+  })
+  const canRoll = rollable && (rolling?.actor || withWho !== null)
   const rows = [
-    ...play.actions.map((a) => ({ key: `a-${a.label}`, label: a.label, text: a.parts.join(' · ') })),
-    ...play.resources.map((r) => ({ key: `r-${r.label}`, label: r.label, text: r.parts.join(' · ') }))
+    ...play.actions.map((a) => ({
+      key: `a-${a.key}`,
+      action: a.key,
+      label: a.label,
+      text: a.parts.join(' · '),
+      rolls: a.rolls
+    })),
+    ...play.resources.map((r) => ({
+      key: `r-${r.label}`,
+      action: null,
+      label: r.label,
+      text: r.parts.join(' · '),
+      rolls: [] as ActionPart[]
+    }))
   ]
   const lines = [...play.effects, ...(play.scaling ? [play.scaling] : []), ...(play.toggle ? [play.toggle] : [])]
   if (rows.length === 0 && lines.length === 0 && !play.manual && !play.automation) return null
@@ -1224,16 +1414,54 @@ function InPlay({ play, titleId }: { play: PlayText; titleId: string }) {
           </span>
         )}
       </div>
+      {/* Lo que no tiene hoja propia se tira con un personaje: si hay más de uno, se elige */}
+      {rollable && !rolling?.actor && mine.length > 1 && (
+        <div className={styles.rollWith}>
+          <label htmlFor={characterId}>{t('compendium.rollWith')}</label>
+          <select id={characterId} value={withWho ?? ''} onChange={(event) => setChosen(event.currentTarget.value)}>
+            {mine.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name || t('characters.unnamed')}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
       {rows.length > 0 && (
         <dl className={styles.playRows}>
           {rows.map((row) => (
             <div key={row.key}>
               <dt>{row.label}</dt>
-              <dd>{row.text}</dd>
+              <dd>
+                {row.text}
+                {canRoll && row.action && row.rolls.length > 0 && (
+                  <span className={styles.rolls}>
+                    {row.rolls.map((part) => (
+                      <button
+                        key={part}
+                        type="button"
+                        className={styles.rollPart}
+                        aria-label={t(`compendium.roll.${part}Of`, { action: row.label })}
+                        aria-disabled={roll.isPending || undefined}
+                        onClick={() => {
+                          if (!roll.isPending && row.action) roll.mutate({ key: row.action, part })
+                        }}
+                      >
+                        <Dice5 size={14} aria-hidden="true" />
+                        {t(`compendium.roll.${part}`)}
+                      </button>
+                    ))}
+                  </span>
+                )}
+              </dd>
             </div>
           ))}
         </dl>
       )}
+      {rollable && !rolling?.actor && characters.data && mine.length === 0 && (
+        <p className={styles.manual}>{t('compendium.rollNeedsCharacter')}</p>
+      )}
+      <FormError message={roll.error ? errorText(roll.error) : null} />
       {lines.length > 0 && (
         <ul className={styles.playLines}>
           {lines.map((line) => (

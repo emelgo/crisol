@@ -11,7 +11,8 @@
 .break::before {
   content: "";
   flex: 1 1 auto;
-  border-block-start: 1px dashed var(--color-border);
+  /* Discontinua (puesta a mano) y con el contraste de las marcas de página */
+  border-block-start: 1px dashed color-mix(in srgb, var(--color-muted) 60%, transparent);
 }
 
 .break[data-selected],
@@ -27,7 +28,23 @@
   font-weight: 700;
 }
 
+/* En la hoja, el salto a mano dice la página que cierra (::after); su nombre sigue para el lector de pantalla */
 .break .breakLabel {
+  position: var(--break-label-position, static);
+  inline-size: var(--break-label-size, auto);
+  block-size: var(--break-label-size, auto);
+  overflow: hidden;
+  clip-path: var(--break-label-clip, none);
+  white-space: nowrap;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* En la hoja, el salto que cierra una página lleva su número («Página 1»), como las marcas de página */
+.break::after {
+  content: var(--sheet-page, none);
+  font-family: var(--font-body);
   font-size: 0.6875rem;
   font-weight: 600;
   letter-spacing: 0.02em;
@@ -57,10 +74,12 @@
   overflow-wrap: anywhere;
 }
 
+/* Un recuadro fino, como al imprimir (a un lado o al otro: sin raya gruesa en uno solo) */
 .sidenote {
   margin-block: var(--space-3);
   padding: var(--space-2) var(--space-4) var(--space-3);
-  border-inline-start: 4px solid var(--color-frame);
+  border: 1px solid var(--color-frame);
+  border-radius: 4px;
   background: var(--color-raised);
 }
 
@@ -72,8 +91,37 @@
 }
 
 .side {
-  font: inherit;
-  font-size: 0.875rem;
+  display: grid;
+  flex: none;
+  place-items: center;
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: none;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.side:hover {
+  border-color: var(--color-frame);
+  color: var(--color-text);
+}
+
+.side:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/* Lo que solo lee el lector de pantalla */
+.hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .wide {

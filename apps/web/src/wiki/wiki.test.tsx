@@ -78,6 +78,68 @@ describe('el árbol de la wiki', () => {
     expect(items[0]?.hasAttribute('aria-expanded')).toBe(false)
   })
 
+  it('«⋯» flota junto a su botón; Escape lo cierra y el foco vuelve; «Exportar» con subpáginas se despliega', async () => {
+    localStorage.setItem('crisol.recorridos.enrique@crisol.test', JSON.stringify({ seen: ['mundo'] }))
+    const api = wikiApi()
+    // Lugares, que tiene subpáginas
+    renderAt(`/mundos/${WORLD.id}/wiki/${ids.places}`, api)
+    await item('Lugares')
+    const more = screen.getByRole('button', { name: 'Más acciones' })
+    await userEvent.click(more)
+    expect(more.getAttribute('aria-expanded')).toBe('true')
+    await userEvent.keyboard('{Escape}')
+    expect(more.getAttribute('aria-expanded')).toBe('false')
+    expect(document.activeElement).toBe(more)
+    // «Exportar», un desplegable de verdad: su flecha, y dentro las dos formas
+    await userEvent.click(more)
+    const exporting = screen.getByRole('button', { name: 'Exportar' })
+    expect(exporting.getAttribute('aria-expanded')).toBe('false')
+    await userEvent.click(exporting)
+    await userEvent.click(screen.getByRole('button', { name: 'Con sus subpáginas' }))
+    await waitFor(() => expect(api.calls).toContain('exportWiki'))
+  })
+
+  it('«Imprimir o descargar» pregunta cómo: con colores, en blanco y negro o en pergamino; lo recuerda para la próxima (la página no cambia)', async () => {
+    localStorage.setItem('crisol.recorridos.enrique@crisol.test', JSON.stringify({ seen: ['mundo'] }))
+    localStorage.removeItem('crisol.aspecto-impresion')
+    const api = wikiApi()
+    renderAt(`/mundos/${WORLD.id}/wiki/${ids.people}`, api)
+    await item('Personajes')
+    await userEvent.click(screen.getByRole('button', { name: 'Más acciones' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Imprimir o descargar…' }))
+    const dialog = within(await screen.findByRole('dialog', { name: 'Imprimir o descargar' }))
+    // De entrada, con colores
+    expect(dialog.getByRole('radio', { name: 'Con colores' })).toHaveProperty('checked', true)
+    await userEvent.click(dialog.getByRole('radio', { name: 'Pergamino' }))
+    await userEvent.click(dialog.getByRole('button', { name: 'Descargar PDF' }))
+    // El aspecto va con lo que se descarga: no se guarda en la página (se escribe igual), sino para la próxima vez
+    await waitFor(() => expect(api.calls).toContain('downloadPdf:pergamino'))
+    expect((await api.client.call('getPage', { pageId: ids.people })).sheet?.theme).not.toBe('pergamino')
+    expect(localStorage.getItem('crisol.aspecto-impresion')).toBe('pergamino')
+  })
+
+  it('Ctrl+P en una página abre «Imprimir o descargar» (no imprime la pantalla)', async () => {
+    localStorage.setItem('crisol.recorridos.enrique@crisol.test', JSON.stringify({ seen: ['mundo'] }))
+    renderAt(`/mundos/${WORLD.id}/wiki/${ids.people}`, wikiApi())
+    await item('Personajes')
+    await userEvent.keyboard('{Control>}p{/Control}')
+    expect(await screen.findByRole('dialog', { name: 'Imprimir o descargar' })).toBeTruthy()
+  })
+
+  it('pulsar el mundo en la barra no recoge el árbol: está fijo (lleva a su portada)', async () => {
+    localStorage.setItem('crisol.recorridos.enrique@crisol.test', JSON.stringify({ seen: ['mundo'] }))
+    const router = renderAt(`/mundos/${WORLD.id}/wiki/${ids.people}`)
+    await item('Personajes')
+    const world = screen.getByRole('navigation', { name: 'Secciones' }).querySelector('[data-tour="barra-wiki"]')
+    await userEvent.click(world as HTMLElement)
+    await waitFor(() => expect(router.state.location.pathname).toBe(`/mundos/${WORLD.id}`))
+    expect(await item('Personajes')).toBeDefined()
+    // Otra vez, igual
+    await userEvent.click(world as HTMLElement)
+    expect(await item('Personajes')).toBeDefined()
+    expect(screen.getByRole('tree', { name: 'Páginas' }).closest('[data-collapsed]')).toBeNull()
+  })
+
   it('una sola parada del tabulador; las flechas se mueven, despliegan y pliegan', async () => {
     renderAt(`/mundos/${WORLD.id}/wiki`)
     const places = await item('Lugares')
@@ -166,18 +228,30 @@ describe('el árbol de la wiki', () => {
     renderAt(`/mundos/${WORLD.id}/wiki`, api)
     await userEvent.click(await screen.findByRole('button', { name: 'Página nueva' }))
     const dialog = await screen.findByRole('dialog', { name: 'Página nueva' })
-    await userEvent.click(within(dialog).getByRole('radio', { name: 'Desde plantilla' }))
+    // «Desde plantilla», la última tras «o»: cambia el cuadro a la lista (y «Otro tipo» vuelve)
+    expect(
+      within(dialog)
+        .getAllByRole('radio')
+        .map((r) => r.getAttribute('aria-label') ?? r.closest('label')?.textContent)
+    ).not.toContain('Desde plantilla')
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Desde plantilla' }))
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Otro tipo' }))
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Desde plantilla' }))
     const list = within(await within(dialog).findByRole('group', { name: 'Plantilla' }))
-    // La primera, elegida; las de serie, todas
-    expect(list.getByRole('radio', { name: /^PNJ/ })).toHaveProperty('checked', true)
+    // La primera, elegida; todas las de la cuenta, por nombre
+    expect(list.getByRole('radio', { name: /^Facción/ })).toHaveProperty('checked', true)
     expect(list.getAllByRole('radio').map((r) => r.getAttribute('value'))).toEqual([
-      'pnj',
-      'lugar',
       'faccion',
-      'objeto',
+      'lugar',
       'mision',
+      'objeto',
+      'pnj',
       'sesion'
     ])
+    // La elegida, siempre una de las que se ven: al buscar, la primera de lo encontrado
+    await userEvent.type(within(dialog).getByLabelText('Buscar plantilla'), 'pnj')
+    expect(list.getByRole('radio', { name: /^PNJ/ })).toHaveProperty('checked', true)
+    await userEvent.clear(within(dialog).getByLabelText('Buscar plantilla'))
     // El buscador, sin mirar tildes
     await userEvent.type(within(dialog).getByLabelText('Buscar plantilla'), 'faccion')
     expect(list.getAllByRole('radio').map((r) => r.getAttribute('value'))).toEqual(['faccion'])
@@ -245,7 +319,7 @@ describe('el árbol de la wiki', () => {
     expect(trash.getByText('Costa Gris')).toBeDefined()
     expect(trash.getByText(/Página de Eana, con 1 subpágina/)).toBeDefined()
     await userEvent.click(trash.getByRole('button', { name: 'Restaurar Costa Gris' }))
-    expect(await screen.findByText('La papelera está vacía')).toBeDefined()
+    expect(await screen.findByText('La papelera está vacía.')).toBeDefined()
   })
 
   it('cancelar el borrado con Escape vuelve al menú, y otra vez Escape, a la fila del árbol', async () => {

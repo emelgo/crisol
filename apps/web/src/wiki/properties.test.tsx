@@ -271,6 +271,14 @@ describe('el icono de una página', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Quitar el icono' }))
     await waitFor(() => expect(screen.queryByRole('button', { name: /^Icono/ })).toBeNull())
   })
+  it('uno de rol, del buscador de su caja', async () => {
+    const { api } = renderPort([], '⚓')
+    await userEvent.click(await screen.findByRole('button', { name: 'Icono ⚓: cambiarlo' }))
+    await userEvent.type(screen.getByRole('searchbox', { name: 'Buscar un icono' }), 'castillo')
+    await userEvent.click(screen.getByRole('button', { name: 'Castillo' }))
+    expect(await screen.findByRole('button', { name: 'Icono Castillo: cambiarlo' })).toBeDefined()
+    expect(api.calls).toContain('updatePage')
+  })
 })
 
 describe('las etiquetas de la cuenta', () => {

@@ -1,7 +1,6 @@
 /**
- * Las plantillas de página (ADR-0009): sus campos (propiedades con el id de su campo y su valor inicial), los bloques de
- * su panel y el esqueleto del texto en Markdown. Las de serie viven aquí, en español (son contenido, no interfaz) y no se
- * cambian; las de la cuenta tienen la misma forma y se guardan en la base de datos
+ * Las plantillas de página (ADR-0009, ADR-0024): sus campos (propiedades con el id de su campo y su valor inicial), los
+ * bloques de su panel y el esqueleto del texto en Markdown. Son de cada cuenta: no hay plantillas de serie
  */
 import { conformTo, type PageProperty } from './properties.ts'
 
@@ -29,19 +28,45 @@ export const TEMPLATE_ICONS = [
 
 export type TemplateIcon = (typeof TEMPLATE_ICONS)[number]
 
+/**
+ * El emoji de un icono de antes (ADR-0024): las plantillas llevaban un dibujo con nombre; ahora, un emoji como una
+ * página. Lo que ya es un emoji se queda; «template» (el de sin elegir), ninguno
+ */
+const LEGACY_EMOJI: Record<TemplateIcon, string | null> = {
+  user: '🧙',
+  castle: '🏰',
+  shield: '🛡️',
+  gem: '💎',
+  scroll: '📜',
+  calendar: '📅',
+  hourglass: '⏳',
+  flag: '🚩',
+  swords: '⚔️',
+  crown: '👑',
+  skull: '💀',
+  map: '🗺️',
+  book: '📖',
+  flame: '🔥',
+  tree: '🌲',
+  ship: '⛵',
+  sparkles: '✨',
+  template: null
+}
+export const templateEmoji = (icon: string | null): string | null =>
+  icon === null ? null : icon in LEGACY_EMOJI ? LEGACY_EMOJI[icon as TemplateIcon] : icon
+
 /** Un bloque del panel de la plantilla (su forma la comprueba el contrato del panel) */
 export type TemplateBlock = { id: string; type: string } & Record<string, unknown>
 
 export interface PageTemplate {
-  /** El id legible de una de serie («pnj») o el de una propia */
   id: string
   name: string
-  icon: TemplateIcon
+  /** Un emoji, como el de una página (o ninguno) */
+  icon: string | null
   /** De cuál se copió */
   basedOn: string | null
   /** Ella y todas de las que viene, de la más cercana a la primera: las tablas casan con cualquiera */
   line: string[]
-  builtIn: boolean
   fields: PageProperty[]
   panel: TemplateBlock[]
   skeleton: string
@@ -49,170 +74,6 @@ export interface PageTemplate {
 
 /** El linaje de una plantilla: ella y el de la que se copió */
 export const lineOf = (id: string, basedOnLine: readonly string[] | null): string[] => [id, ...(basedOnLine ?? [])]
-
-const image = (id: string): TemplateBlock => ({ id, type: 'image', fileId: null, caption: '' })
-/** Una tabla que se llena sola: las páginas de la plantilla template cuyo campo field apunta a esta */
-const table = (id: string, title: string, template: string, field: string, columns: string[]): TemplateBlock => ({
-  id,
-  type: 'related',
-  title,
-  template,
-  field,
-  columns,
-  sort: 'title'
-})
-const text = (field: string, name: string): PageProperty => ({ name, field, type: 'text', value: '' })
-const choice = (field: string, name: string, options: string[]): PageProperty => ({
-  name,
-  field,
-  type: 'choice',
-  value: '',
-  options
-})
-const link = (field: string, name: string, targets: string[]): PageProperty => ({
-  name,
-  field,
-  type: 'pages',
-  single: true,
-  targets,
-  value: []
-})
-const links = (field: string, name: string, targets: string[]): PageProperty => ({
-  name,
-  field,
-  type: 'pages',
-  targets,
-  value: []
-})
-const number = (field: string, name: string): PageProperty => ({ name, field, type: 'number', value: null })
-
-const builtIn = (template: Omit<PageTemplate, 'basedOn' | 'line' | 'builtIn'>): PageTemplate => ({
-  ...template,
-  basedOn: null,
-  line: [template.id],
-  builtIn: true
-})
-
-export const BUILT_IN_TEMPLATES: readonly PageTemplate[] = [
-  builtIn({
-    id: 'pnj',
-    name: 'PNJ',
-    icon: 'user',
-    fields: [
-      text('especie', 'Especie'),
-      text('rol', 'Rol'),
-      link('faccion', 'Facción', ['faccion']),
-      link('lugar', 'Lugar', ['lugar']),
-      // Sin género: valen para cualquiera (docs/diseno.md)
-      choice('estado', 'Estado', ['Vive', 'Ha muerto', 'En paradero desconocido', 'No se sabe']),
-      links('padres', 'Padres', ['pnj']),
-      links('pareja', 'Pareja', ['pnj'])
-    ],
-    panel: [image('retrato'), table('llevaencima', 'Lleva encima', 'objeto', 'portador', ['tipo', 'rareza'])],
-    skeleton: '## Quién es\n\n## Cómo interpretarlo\n\n## Ganchos\n'
-  }),
-  builtIn({
-    id: 'lugar',
-    name: 'Lugar',
-    icon: 'castle',
-    fields: [
-      // De lo más grande a lo más pequeño
-      choice('tipo', 'Tipo', [
-        'Plano',
-        'Continente',
-        'Región',
-        'Reino',
-        'Ciudad',
-        'Pueblo',
-        'Aldea',
-        'Barrio',
-        'Edificio',
-        'Mazmorra',
-        'Paraje'
-      ]),
-      link('dentro-de', 'Dentro de', ['lugar']),
-      number('poblacion', 'Población'),
-      link('gobierna', 'Gobierna', ['pnj'])
-    ],
-    panel: [
-      image('imagen'),
-      table('lugaresdentro', 'Lugares dentro', 'lugar', 'dentro-de', ['tipo']),
-      table('habitantes', 'Habitantes', 'pnj', 'lugar', ['rol', 'estado'])
-    ],
-    skeleton: '## Descripción\n\n## Ganchos\n'
-  }),
-  builtIn({
-    id: 'faccion',
-    name: 'Facción',
-    icon: 'shield',
-    fields: [
-      choice('tipo', 'Tipo', ['Reino', 'Casa noble', 'Gremio', 'Orden', 'Culto', 'Compañía', 'Banda', 'Tribu']),
-      link('lider', 'Líder', ['pnj']),
-      link('sede', 'Sede', ['lugar']),
-      text('objetivo', 'Objetivo')
-    ],
-    panel: [image('emblema'), table('miembros', 'Miembros', 'pnj', 'faccion', ['rol', 'estado'])],
-    skeleton: '## Quiénes son\n\n## Qué quieren\n\n## Ganchos\n'
-  }),
-  builtIn({
-    id: 'objeto',
-    name: 'Objeto',
-    icon: 'gem',
-    fields: [
-      choice('tipo', 'Tipo', [
-        'Arma',
-        'Armadura',
-        'Escudo',
-        'Poción',
-        'Pergamino',
-        'Anillo',
-        'Varita',
-        'Vara',
-        'Bastón',
-        'Objeto maravilloso',
-        'Munición',
-        'Herramienta',
-        'Equipo',
-        'Tesoro'
-      ]),
-      choice('rareza', 'Rareza', ['Común', 'Poco común', 'Raro', 'Muy raro', 'Legendario', 'Artefacto']),
-      { name: 'Sintonización', field: 'sintonizacion', type: 'boolean', value: false },
-      text('valor', 'Valor'),
-      link('portador', 'Portador', ['pnj'])
-    ],
-    panel: [image('imagen')],
-    skeleton: '## Descripción\n\n## Historia\n'
-  }),
-  builtIn({
-    id: 'mision',
-    name: 'Misión',
-    icon: 'scroll',
-    fields: [
-      choice('estado', 'Estado', ['Pendiente', 'En curso', 'Completada', 'Fallida']),
-      link('la-da', 'La da', ['pnj', 'faccion']),
-      link('lugar', 'Lugar', ['lugar']),
-      text('recompensa', 'Recompensa')
-    ],
-    panel: [],
-    skeleton: '## Objetivos\n\n- [ ] Primer objetivo\n\n## Qué pasa\n'
-  }),
-  builtIn({
-    id: 'sesion',
-    name: 'Sesión',
-    icon: 'calendar',
-    fields: [
-      number('numero', 'Número'),
-      // Como texto hasta el calendario del mundo (módulo 8)
-      text('fecha', 'Fecha'),
-      links('aparecen', 'Aparecen', ['pnj'])
-    ],
-    panel: [],
-    skeleton: '## Resumen\n\n## Qué pasó\n\n## Pendiente\n'
-  })
-]
-
-/** Una de serie, por su id */
-export const builtInTemplate = (id: string): PageTemplate | undefined => BUILT_IN_TEMPLATES.find((t) => t.id === id)
 
 /** Lo que sale de una plantilla para una página nueva: sus copias (cambiarlas no toca la plantilla) */
 export interface Instance {

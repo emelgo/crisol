@@ -1,15 +1,16 @@
 import { useQuery } from '@tanstack/react-query'
 import { Navigate } from '@tanstack/react-router'
-import { useState } from 'react'
+import { useId } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
+import form from '../components/form.module.css'
 import { PageTitle } from '../components/page-title.tsx'
-import { currentTheme, setTheme, type Theme } from '../theme.ts'
+import { setPlain, usePlain } from '../components/plain.ts'
 import { AiSettings } from './ai-settings.tsx'
 import styles from './settings.module.css'
 
-/** Ajustes: cómo se ve Crisol y, para el propietario, la IA. Aquí irá lo que venga */
+/** Ajustes: cómo se ve Crisol en este aparato y, para el propietario, la IA. Aquí irá lo que venga */
 export function Settings() {
   const { t } = useTranslation()
   const api = useApi()
@@ -25,7 +26,6 @@ export function Settings() {
     queryFn: () => api.call('listWorldsWithCampaigns', {}),
     enabled: Boolean(account)
   })
-  const [theme, setThemeState] = useState<Theme>(currentTheme)
   if (pending) return null
   if (!account) return <Navigate to="/entrar" replace />
   const isOwner = organizations.data?.organizations.some((o) => o.role === 'owner') ?? false
@@ -33,28 +33,24 @@ export function Settings() {
   return (
     <section className={styles.page}>
       <PageTitle>{t('settings.title')}</PageTitle>
-      <section aria-labelledby="ajustes-apariencia">
-        <h2 id="ajustes-apariencia">{t('settings.appearance')}</h2>
-        <fieldset className={styles.themes}>
-          <legend>{t('settings.theme')}</legend>
-          {(['light', 'dark'] as const).map((option) => (
-            <label key={option} className={styles.theme} data-theme-option={option}>
-              <input
-                type="radio"
-                name="tema"
-                checked={theme === option}
-                onChange={() => {
-                  setTheme(option)
-                  setThemeState(option)
-                }}
-              />
-              <span aria-hidden="true" className={styles.swatch} />
-              {t(option === 'light' ? 'settings.light' : 'settings.dark')}
-            </label>
-          ))}
-        </fieldset>
-      </section>
       {isOwner ? <AiSettings /> : plays && <AiSettings player />}
+      <DeviceSettings />
+    </section>
+  )
+}
+
+/** Lo de este aparato (se guarda en el navegador): sin desenfoque, todo opaco, para un ordenador justo de fuerzas */
+function DeviceSettings() {
+  const { t } = useTranslation()
+  const plain = usePlain()
+  const id = useId()
+  return (
+    <section aria-labelledby={id} className={styles.device}>
+      <h2 id={id}>{t('settings.device')}</h2>
+      <label className={form.check}>
+        <input type="checkbox" checked={plain} onChange={(event) => setPlain(event.currentTarget.checked)} />
+        {t('settings.plain')}
+      </label>
     </section>
   )
 }

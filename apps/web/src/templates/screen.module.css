@@ -78,13 +78,16 @@
   min-block-size: 11rem;
   padding: var(--space-5) var(--space-4) var(--space-4);
   clip-path: var(--cut);
-  background: var(--color-surface);
-  box-shadow: inset 0 0 0 1px var(--color-border);
+  /* De cristal sobre el fondo de ambiente */
+  background: var(--frame-sheen), var(--surface-glass);
+  box-shadow: inset 0 0 0 1px var(--line-soft);
+  -webkit-backdrop-filter: var(--frame-blur);
+  backdrop-filter: var(--frame-blur);
 }
 
 .card:hover,
 .card:focus-within {
-  background: var(--color-raised);
+  background: var(--frame-sheen), var(--surface-glass-raised);
 }
 
 .icon {
@@ -228,51 +231,19 @@
   background: var(--color-raised);
 }
 
-/* «Plantilla nueva» (y «Sistema nuevo»): un recuadro más, vacío y con el borde discontinuo, con las esquinas cortadas
-   como «Nuevo mundo» (routes/world-card.module.css): el borde se recorta con la forma y cada diagonal se dibuja aparte */
-/* Del alto de las demás tarjetas de su fila */
-.grid > li:has(> .newCard) {
+/* «Plantilla nueva», «Sistema nuevo» y «Personaje nuevo» (components/new-card.tsx), del alto de las demás tarjetas de
+   su fila */
+.newItem {
   display: flex;
-}
-
-.newCard {
-  --line: var(--color-field-border);
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  inline-size: 100%;
-  min-block-size: 11rem;
-  clip-path: var(--cut);
-  border: 1px dashed var(--line);
-  background:
-    linear-gradient(to bottom right, transparent calc(50% - 0.6px), var(--line) 0 calc(50% + 0.6px), transparent 0) top
-    left / 12px 12px no-repeat,
-    linear-gradient(to bottom left, transparent calc(50% - 0.6px), var(--line) 0 calc(50% + 0.6px), transparent 0) top
-    right / 12px 12px no-repeat,
-    linear-gradient(to bottom right, transparent calc(50% - 0.6px), var(--line) 0 calc(50% + 0.6px), transparent 0)
-    bottom right / 12px 12px no-repeat,
-    linear-gradient(to bottom left, transparent calc(50% - 0.6px), var(--line) 0 calc(50% + 0.6px), transparent 0)
-    bottom left / 12px 12px no-repeat;
-  background-origin: border-box;
-  color: var(--color-muted);
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.newCard:hover {
-  --line: var(--color-text);
-  color: var(--color-text);
 }
 
 .preview {
   padding: var(--space-4);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--line-soft);
   border-radius: 10px;
-  background: var(--color-surface);
+  background: var(--frame-sheen), var(--surface-glass);
+  -webkit-backdrop-filter: var(--frame-blur);
+  backdrop-filter: var(--frame-blur);
 }
 
 .previewTop {
@@ -433,4 +404,48 @@
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
+}
+
+/* La miniatura de una plantilla en la lista y en su vista previa (ADR-0024): su portada, encuadrada, y su icono encima */
+.thumb {
+  display: grid;
+  place-items: center;
+  inline-size: 100%;
+  block-size: 100%;
+  border-radius: inherit;
+  background-size: cover;
+  color: var(--color-h3);
+}
+
+/* Con portada, el icono sobre un velo, para que se vea sobre cualquier imagen */
+.thumb:not([data-cover]) {
+  /* Sin portada, su recuadro se ve también sobre la fila resaltada */
+  box-shadow: inset 0 0 0 1px var(--color-border);
+}
+
+.thumb[data-cover] > * {
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.6));
+}
+
+/* En la vista previa, la portada llena el recuadro */
+.previewCover {
+  padding: 0;
+}
+
+.previewCover .thumb {
+  position: absolute;
+  inset: 0;
+  border-radius: 0;
+}
+
+/* Sin ninguna: qué es una plantilla y «Plantilla nueva», grande */
+.emptyState {
+  display: grid;
+  grid-template-columns: minmax(0, 18rem);
+  gap: var(--space-3);
+  margin-block-end: var(--space-5);
+}
+
+.emptyState > p {
+  margin: 0;
 }

@@ -5,6 +5,7 @@ import { useAccounts } from '../account/context.tsx'
 import { GroupKnowledge } from '../campaign/group-knowledge.tsx'
 import { CampaignSettings } from '../campaign/settings.tsx'
 import { AccountMenu } from '../components/account-menu.tsx'
+import { Ambient } from '../components/ambient.tsx'
 import { ApprovalQueue } from '../components/approval-queue.tsx'
 import { Backdrop } from '../components/backdrop.tsx'
 import { CrisolMark, Loading } from '../components/brand.tsx'
@@ -13,11 +14,11 @@ import { PageTitle, useFocusHeading } from '../components/page-title.tsx'
 import { RevealNotices } from '../components/reveal-notices.tsx'
 import { Ribbon, useMasteredWorld } from '../components/ribbon.tsx'
 import { Screen } from '../components/screen.tsx'
-import { ThemeToggle } from '../components/theme-toggle.tsx'
 import { type WindowKind, WindowProvider } from '../components/window.tsx'
 import { DiceProvider } from '../dice/context.tsx'
 import { DicePanel } from '../dice/panel.tsx'
 import { DiceTray } from '../dice/tray.tsx'
+import { shownPath } from '../shown-path.ts'
 import { WikiPanelProvider } from '../wiki/panel.tsx'
 import { WithCampaign } from './campaign.tsx'
 import { OrganizationHistory, WorldHistoryWindow } from './history.tsx'
@@ -39,19 +40,19 @@ export function RootLayout() {
   // consentimiento) van en la columna de siempre
   const wide = useRouterState({
     select: (state) =>
-      !/^\/(perfil|ajustes|historial|papelera|oauth\/|mundos\/[^/]+\/(historial|papelera)$)/.test(
-        state.location.pathname
-      )
+      !/^\/(perfil|ajustes|historial|papelera|oauth\/|mundos\/[^/]+\/(historial|papelera)$)/.test(shownPath(state))
   })
   // La Mesa va sola, a pantalla completa y en su pestaña (ADR-0021): sin la barra de la izquierda
   const bare = useRouterState({
-    select: (state) => /^\/mundos\/[^/]+\/campanas\/[^/]+\/mesa\/?$/.test(state.location.pathname)
+    select: (state) => /^\/mundos\/[^/]+\/campanas\/[^/]+\/mesa\/?$/.test(shownPath(state))
   })
+  // La portada (sin sesión): a toda pantalla, con su imagen (sin las que van pasando detrás)
+  const home = useRouterState({ select: (state) => shownPath(state) === '/' })
   // Imprimir: solo la hoja, sin nada de la interfaz; la pantalla de la tele, igual: solo el mapa
   const printing = useRouterState({
     select: (state) =>
-      /^\/mundos\/[^/]+\/imprimir\//.test(state.location.pathname) ||
-      /^\/mundos\/[^/]+\/campanas\/[^/]+\/pantalla\/?$/.test(state.location.pathname)
+      /^\/mundos\/[^/]+\/imprimir\//.test(shownPath(state)) ||
+      /^\/mundos\/[^/]+\/campanas\/[^/]+\/pantalla\/?$/.test(shownPath(state))
   })
   // Al llegar a otra página (no al cargar la primera), el foco va a su título
   useEffect(
@@ -78,7 +79,7 @@ export function RootLayout() {
   // Sin sesión (entrar, unirse a una campaña): una barra sencilla arriba, con la marca, entrar y el tema
   if (!account) {
     return (
-      <div className={styles.shell}>
+      <div className={styles.shell} data-home={home || undefined}>
         {skip}
         <header className={styles.header}>
           <Link to="/" className={styles.brand} translate="no">
@@ -87,15 +88,14 @@ export function RootLayout() {
           </Link>
           <nav className={styles.nav} aria-label={t('app.accountNav')}>
             <AccountMenu />
-            <ThemeToggle />
           </nav>
         </header>
-        <main id="contenido" className={styles.main}>
+        <main id="contenido" className={home ? styles.full : styles.main}>
           <Outlet />
         </main>
         {/* Detrás de todo (fijo), las imágenes que van pasando, como en LegendKeeper; al final, para que su crédito
             no vaya antes que «Saltar al contenido» */}
-        <Backdrop />
+        {!home && <Backdrop />}
       </div>
     )
   }
@@ -107,8 +107,10 @@ export function RootLayout() {
           <DiceTray>
             <div className={bare ? styles.bare : styles.app}>
               {skip}
+              {/* Detrás de todo, el fondo de ambiente para el cristal (la Mesa tiene su mapa) */}
+              {!bare && <Ambient />}
               {!bare && <Ribbon />}
-              <main id="contenido" className={wide ? styles.wide : styles.main}>
+              <main id="contenido" className={wide ? styles.wide : styles.main} data-contenido="">
                 <ApprovalQueue />
                 <Notices />
                 <RevealNotices />
@@ -153,7 +155,7 @@ function TrashWindow() {
 
 /** «Lo que sabe el grupo» de la campaña en la que se está (docs/specs/revelar.md) */
 function GroupKnowledgeWindow() {
-  const path = useRouterState({ select: (state) => state.location.pathname })
+  const path = useRouterState({ select: (state) => shownPath(state) })
   const match = /^\/mundos\/([^/]+)\/campanas\/([^/]+)/.exec(path)
   return match?.[1] && match[2] ? <GroupKnowledge worldId={match[1]} campaignId={match[2]} /> : null
 }

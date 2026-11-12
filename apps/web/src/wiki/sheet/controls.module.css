@@ -1,10 +1,121 @@
-/* En «⋯»: filas sencillas, como el resto del menú. Las columnas, con su selector 1 | 2; imprimir, en su desplegable */
-.row {
+/* «Imprimir o descargar»: el aspecto (con su muestra) y los ajustes de la hoja que se imprime */
+.dialog {
+  inline-size: min(30rem, calc(100vw - 2rem));
+  max-block-size: calc(100dvh - var(--dialog-top) - 1rem);
+  margin-block: var(--dialog-top) auto;
+}
+
+.looks {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.looks legend {
+  margin-block-end: var(--space-2);
+  padding: 0;
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.look {
+  position: relative;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+  text-align: center;
+  cursor: pointer;
+}
+
+.look:hover {
+  border-color: color-mix(in srgb, var(--color-accent) 50%, var(--color-border));
+}
+
+.look:has(input:checked) {
+  border-color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 6%, transparent);
+  color: var(--color-text);
+}
+
+.look:has(input:focus-visible) {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.look input {
+  position: absolute;
+  inset: 0;
   margin: 0;
-  padding: 0 0 var(--space-1);
-  border-block-end: 1px solid var(--color-border);
+  opacity: 0;
+  cursor: inherit;
+}
+
+/* La muestra: una página en pequeño, con un título y dos líneas en los colores de su aspecto */
+.sample {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3125rem;
+  inline-size: 3.5rem;
+  block-size: 4.5rem;
+  padding: 0.5rem 0.4375rem;
+  border-radius: 2px;
+  background: var(--sample-paper);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.35);
+}
+
+.sample > b {
+  color: var(--sample-heading);
+  font-family: var(--sample-font, var(--font-display));
+  font-size: 1.125rem;
+  line-height: 1;
+}
+
+.sample > span {
+  block-size: 0.25rem;
+  border-radius: 1px;
+  background: var(--sample-line);
+}
+
+.sample > span:nth-of-type(1) {
+  inline-size: 80%;
+  background: var(--sample-sub);
+}
+
+.sample[data-look="color"] {
+  --sample-paper: #ffffff;
+  --sample-heading: #a8261f;
+  --sample-sub: #8a5a12;
+  --sample-line: #c7c9ce;
+}
+
+.sample[data-look="neutro"] {
+  --sample-paper: #ffffff;
+  --sample-heading: #1c1c1c;
+  --sample-sub: #4a4a4a;
+  --sample-line: #c7c9ce;
+}
+
+.sample[data-look="pergamino"] {
+  --sample-font: "Alegreya", Georgia, serif;
+  --sample-paper: #f4e8cf;
+  --sample-heading: #5a1d10;
+  --sample-sub: #8c3a1d;
+  --sample-line: #cdb88e;
+}
+
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
   font-size: 0.875rem;
 }
 
@@ -13,124 +124,85 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
-  min-block-size: 2rem;
-  padding: 0 var(--space-2);
+  min-block-size: 2.25rem;
 }
 
 .line select {
-  min-block-size: 1.75rem;
-  padding: 0 var(--space-1);
-  border: 1px solid var(--color-border);
+  min-block-size: 2rem;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--color-field-border);
   border-radius: 6px;
-  background: var(--color-bg);
+  background: var(--color-surface);
   color: var(--color-text);
   font: inherit;
-}
-
-.segmented {
-  display: inline-flex;
-  padding: 2px;
-  border-radius: 6px;
-  background: color-mix(in srgb, var(--color-text) 8%, transparent);
-}
-
-.row .segmented button {
-  inline-size: 2rem;
-  min-block-size: 1.5rem;
-  justify-content: center;
-  padding: 0;
-  border-radius: 4px;
-}
-
-.row .segmented button[aria-pressed="true"] {
-  background: var(--color-bg);
-  box-shadow: 0 1px 2px rgb(0 0 0 / 0.15);
-  font-weight: 700;
-}
-
-/* Como los submenús (el «›» del árbol): al abrir, gira hacia abajo */
-.chevron {
-  margin-inline-start: auto;
-  color: var(--color-muted);
-  transition: transform 150ms ease-out;
-}
-
-.opener[aria-expanded="true"] > .chevron {
-  transform: rotate(90deg);
-}
-
-.printing {
-  display: flex;
-  flex-direction: column;
-  margin: 0 0 var(--space-1) var(--space-2);
-  padding-inline-start: var(--space-1);
-  border-inline-start: 2px solid var(--color-border);
-}
-
-.line .check {
-  padding: 0;
-}
-
-.from {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  color: var(--color-muted);
 }
 
 .check {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  min-block-size: 2rem;
-  padding: 0 var(--space-2);
+  min-block-size: 2.25rem;
+  cursor: pointer;
 }
 
-.printActions {
-  display: flex;
+.check input {
+  inline-size: 1rem;
+  block-size: 1rem;
+  margin: 0;
+  accent-color: var(--color-accent);
+}
+
+/* «Incluir secretos» no es de maquetación (decide qué sale): aparte, tras una raya, y en rojo al marcarse */
+.secrets {
+  margin-block-start: var(--space-1);
+  padding-block-start: var(--space-2);
+  border-block-start: 1px solid var(--color-border);
+}
+
+.secrets:has(input:checked) {
+  color: var(--color-accent-text);
+  font-weight: 600;
+}
+
+.from {
+  display: inline-flex;
+  align-items: center;
   gap: var(--space-2);
-  padding: var(--space-1) var(--space-2);
-}
-
-.row .printActions .printButton {
-  flex: 1;
-  justify-content: center;
-  padding: 0 var(--space-2);
-  border: 1px solid var(--color-border);
-  white-space: nowrap;
-}
-
-.error {
-  color: var(--color-danger);
+  color: var(--color-muted);
 }
 
 .number {
-  inline-size: 3.5rem;
-  min-block-size: 1.75rem;
-  padding: 0 var(--space-1);
-  border: 1px solid var(--color-border);
+  inline-size: 4rem;
+  min-block-size: 2rem;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--color-field-border);
   border-radius: 6px;
-  background: var(--color-bg);
+  background: var(--color-surface);
   color: var(--color-text);
   font: inherit;
 }
 
-/* La hoja sola: con su propia barra a lo ancho si no cabe */
-.scroller {
-  overflow-x: auto;
+/* «Imprimir»: la otra acción, con su borde (no un enlace gris como «Cancelar») */
+.secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: var(--target);
+  padding: 0 var(--space-4);
+  border: 1px solid var(--color-frame);
+  border-radius: 6px;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
 }
 
-/* Escritorio ancho: el editor y la hoja, lado a lado; la hoja con su barra */
-.sideBySide {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: var(--space-4);
-  align-items: start;
+.secondary:hover {
+  border-color: var(--color-text);
 }
 
-.panel {
-  position: sticky;
-  inset-block-start: var(--space-4);
-  max-block-size: calc(100vh - 2 * var(--space-4));
-  overflow: auto;
+.secondary:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }

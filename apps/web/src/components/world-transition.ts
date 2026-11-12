@@ -12,6 +12,9 @@ export const SECTION = { types: ['seccion'] }
 /** Entrar en un elemento desde su tarjeta (una plantilla): su icono y su nombre van al título, sin fuego */
 export const ENTER_ITEM = { types: ['entrar-elemento'] }
 
+/** Volver de un elemento a su lista: al revés, su icono y su nombre vuelven del título a su tarjeta */
+export const LEAVE_ITEM = { types: ['salir-elemento'] }
+
 let currentItem: string | null = null
 
 /**
@@ -25,6 +28,21 @@ export function enterItem(id: string, card: Element | null) {
       other.style.removeProperty('view-transition-name')
     const mine = card?.querySelector<HTMLElement>(`[data-elemento="${part}"]`)
     mine?.style.setProperty('view-transition-name', `elemento-${part}`)
+  }
+}
+
+/**
+ * Al volver a la lista desde un elemento abierto (root, su vista): su icono y su nombre del título llevan ya el nombre de
+ * transición antes de la foto de lo de antes, y en la lista lo recoge su tarjeta (itemTransition)
+ */
+export function leaveItem(id: string, root: Element | null) {
+  currentItem = id
+  for (const part of ['icono', 'nombre']) {
+    for (const other of document.querySelectorAll<HTMLElement>(`[data-elemento="${part}"]`))
+      other.style.removeProperty('view-transition-name')
+    root
+      ?.querySelector<HTMLElement>(`[data-elemento="${part}"]`)
+      ?.style.setProperty('view-transition-name', `elemento-${part}`)
   }
 }
 
@@ -54,9 +72,15 @@ export function enterWorld(worldId: string, card: Element | null) {
 
 /**
  * Al salir de un mundo (por la llama): como las brasas al entrar, pero apagadas: una bruma gris que sube desde abajo y
- * bocanadas de humo que suben, se ensanchan y se disipan (base.css, .humo)
+ * bocanadas de humo que suben, se ensanchan y se disipan (base.css, .humo). La cabecera no vuelve a ser tarjeta: el
+ * mundo se aleja entero y vuelve Mis mundos (Enrique, 2026-11-12: «al salir de un mundo sale la animación rara»; la
+ * cabecera, grande y con otra forma, se veía estirada y borrosa al encoger)
  */
 export function leaveWorld() {
+  current = null
+  for (const named of document.querySelectorAll<HTMLElement>('[style*="view-transition-name"]')) {
+    if (named.style.viewTransitionName === 'mundo-actual') named.style.removeProperty('view-transition-name')
+  }
   overlay('humo', 3000)
 }
 

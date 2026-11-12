@@ -15,7 +15,7 @@ import {
   settlePending,
   updateBook
 } from '@crisol/contracts'
-import { campaignsRepo, systemsRepo } from '@crisol/db'
+import { campaignsRepo, chaptersRepo, systemsRepo } from '@crisol/db'
 import { can } from '@crisol/domain'
 import {
   type ContentItem,
@@ -98,6 +98,7 @@ export const bookActions = [
     const users = found.row
       ? await usersOf(ctx, found.document, found.row.id, found.row.organizationId)
       : new Map<string, Campaigns>()
+    const chapters = found.row ? await chaptersRepo.chapterCounts(ctx.db, found.row.id) : new Map<string, number>()
     return {
       systemId: id,
       name: textOf(found.document.name),
@@ -116,11 +117,13 @@ export const bookActions = [
           origin: source.origin ?? null,
           file: source.file ?? null,
           cover: source.cover ?? null,
+          color: source.color ?? null,
           requires: source.requires ?? [],
           version: source.version ?? 1,
           count: summary?.count ?? 0,
           byType: summary?.byType ?? [],
           pending: summary?.pending ?? 0,
+          chapters: chapters.get(source.key) ?? 0,
           campaigns: users.get(source.key) ?? []
         }
       })

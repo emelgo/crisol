@@ -41,6 +41,15 @@
   color: var(--sheet-text);
 }
 
+/* Con colores (Enrique, 2026-11-11): los de la app sobre el papel blanco, más oscuros para que se lean en él */
+.sheet[data-theme="color"] {
+  --sheet-heading: #a8261f;
+  --sheet-accent: #b0412f;
+  --sheet-rule: #d79a8e;
+  --sheet-box: #fbf0ec;
+  --sheet-subheading: #8a5a12;
+}
+
 .sheet[data-theme="pergamino"] {
   --sheet-paper: #f4e8cf;
   --sheet-texture:
@@ -88,6 +97,8 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   align-items: start;
+  /* A dos columnas, la nota lateral algo más ancha que a una (la columna ya es estrecha) */
+  --note-share: 42%;
 }
 
 /* Cada bloque contiene sus márgenes: así mide lo que ocupa */
@@ -120,6 +131,8 @@
 }
 
 .h3 {
+  /* Con colores, el tercer nivel en el dorado de la app (como en pantalla); en los demás temas, el de los títulos */
+  color: var(--sheet-subheading, var(--sheet-heading));
   font-size: 1.15em;
 }
 
@@ -143,13 +156,20 @@
 }
 
 .page aside {
-  inline-size: 48%;
+  /* Lo mismo que al escribir (paged.tsx, noteShare): un tercio a una columna; a dos, lo de .columns */
+  inline-size: var(--note-share, 34%);
   margin: 0.2em 0 0.6em 0.8em;
   padding: 0.5em 0.7em;
   float: right;
   border: 1px solid var(--sheet-rule);
   background: var(--sheet-box);
   font-size: 0.9em;
+}
+
+/* A la izquierda, si se eligió (antes salía siempre a la derecha) */
+.page aside[data-side="left"] {
+  margin: 0.2em 0.8em 0.6em 0;
+  float: left;
 }
 
 .page table {

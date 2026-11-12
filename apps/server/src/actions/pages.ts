@@ -27,7 +27,7 @@ import {
   tagCounts
 } from '@crisol/domain'
 import * as Y from 'yjs'
-import { pagesChanged } from '../realtime/events.ts'
+import { pagesChanged, templatesChanged } from '../realtime/events.ts'
 import { resolvePending, worldNames } from '../wiki/links.ts'
 import { playerEdits } from '../wiki/player-pages.ts'
 import { pageViewFor, viewedPage, viewTree } from '../wiki/projection.ts'
@@ -37,6 +37,7 @@ import { checkTables, pageTables } from '../wiki/tables.ts'
 import { authorizedPage, authorizedWiki, type WikiTarget } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
 import { implement } from './registry.ts'
+import { checkTemplateTitle } from './templates.ts'
 
 /** La página como la ve la API: con su ruta desde el primer nivel */
 export async function pageView(ctx: ActionContext, pageId: string): Promise<Page> {
@@ -110,6 +111,8 @@ export const pageActions = [
         file && (file.worldId ? file.worldId === wiki.worldId : file.organizationId === wiki.organizationId)
       if (!file || !usable || file.kind !== 'image') throw new InvalidRequestError('BAD_COVER')
     }
+    // La página de una plantilla: su título es su nombre, que no se repite
+    const templateOrganization = await checkTemplateTitle(ctx, page.id, title)
     // Lo que cambió, para la frase del historial: renombrar, el icono, el candado o la portada
     const details = {
       ...(title !== undefined ? { from: page.title, to: title } : { title: page.title }),
@@ -127,6 +130,8 @@ export const pageActions = [
       ...(sheet !== undefined ? { sheet } : {})
     })
     ctx.realtime.publish(pagesChanged(wiki))
+    // Su nombre, su icono y su portada salen en las listas de plantillas
+    if (templateOrganization) ctx.realtime.publish(templatesChanged(templateOrganization))
     if (title !== undefined) await resolvePending(ctx, wiki.worldId, ctx.actor.userId, [title])
     return pageView(ctx, pageId)
   }),

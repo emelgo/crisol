@@ -1,5 +1,7 @@
-/* La hoja al escribir: sus páginas, con los colores de la app (sin el papel del tema), y el texto encima */
+/* La hoja al escribir: sus páginas, con los colores de la app (sin el papel del tema), y el texto encima. Llena la
+   columna del centro hasta un tope y, si sobra, va centrada (las marcas de página, de lado a lado) */
 .fit {
+  position: relative;
   inline-size: 100%;
   margin-block: var(--space-2) var(--space-6);
 }
@@ -7,6 +9,7 @@
 /* Más ancho que la columna (sus márgenes quedan fuera): que no estorbe al ratón fuera del texto */
 .paged {
   position: relative;
+  margin-inline: auto;
   pointer-events: none;
 }
 
@@ -14,7 +17,8 @@
   pointer-events: auto;
 }
 
-/* Donde empieza una página: una raya fina a todo el ancho y, a la derecha, su número (sin hueco: se escribe seguido) */
+/* Donde acaba una página: una raya fina de lado a lado y, a la derecha, el número de la que se cierra (sin hueco: se
+   escribe seguido) */
 .mark {
   position: absolute;
   inset-inline: 0;
@@ -25,12 +29,14 @@
   color: var(--color-muted);
   font-family: var(--font-body);
   font-size: 0.6875rem;
+  font-weight: 600;
   letter-spacing: 0.02em;
 }
 
 .mark::before {
   flex: 1;
-  border-block-start: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
+  /* Que se vea (es el límite de la página): 3:1 con el fondo, más clara que un borde */
+  border-block-start: 1px solid color-mix(in srgb, var(--color-muted) 60%, transparent);
   content: "";
 }
 
@@ -49,6 +55,9 @@
   block-size: 100%;
   min-block-size: 0;
   padding: 0;
+  /* Como al imprimir: el espacio del final de una línea cuelga fuera (con break-spaces, el de tiptap, bajaba al principio
+     de la siguiente y se veía, y además la línea se partía distinto que en el papel) */
+  white-space: pre-wrap;
 }
 
 /*

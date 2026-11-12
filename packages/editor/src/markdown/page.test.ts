@@ -47,7 +47,7 @@ const body: JSONContent = {
       text(', su criatura '),
       { type: 'contentLink', attrs: { name: 'Goblin jefe', label: 'el jefe' } },
       text('. La trampa: '),
-      { type: 'diceRoll', attrs: { formula: '2d6+3', label: 'Trampa' } },
+      text('dice: 2d6+3 # Trampa', [{ type: 'code' }]),
       text('.')
     ),
     { type: 'heading', attrs: { id: 'h2aaaaaa', level: 2 }, content: [text('Barrios')] },
@@ -142,6 +142,7 @@ const body: JSONContent = {
     { type: 'wideBlock', attrs: { id: 'wbaaaaaa' }, content: [paragraph(null, text('Todo a lo ancho.'))] },
     { type: 'tableOfContents', attrs: { id: 'tcaaaaaa' } },
     { type: 'pageEmbed', attrs: { id: 'emaaaaaa', pageId: null, title: 'Costa Gris', anchor: 'Historia' } },
+    { type: 'contentEmbed', attrs: { id: 'ceaaaaaa', name: 'Goblin jefe', system: null } },
     {
       type: 'fileEmbed',
       attrs: {

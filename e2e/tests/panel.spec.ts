@@ -40,7 +40,7 @@ test('el panel de la página: se añaden bloques, se tocan, se recolocan y sigue
   await panel.getByLabel('Máximo').blur()
   await panel.getByRole('button', { name: 'Subir' }).click()
 
-  for (const colorScheme of ['light', 'dark'] as const) {
+  for (const colorScheme of ['dark'] as const) {
     await page.emulateMedia({ colorScheme })
     const { violations } = await new AxeBuilder({ page }).include('aside').withTags(['wcag2a', 'wcag2aa']).analyze()
     const serious = violations.filter((v) => v.impact === 'critical' || v.impact === 'serious')

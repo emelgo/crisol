@@ -58,27 +58,18 @@
 }
 
 .close {
-  display: grid;
-  flex: none;
-  place-items: center;
-  padding: var(--space-1);
-  border: 0;
-  border-radius: 4px;
-  background: none;
-  color: var(--color-muted);
-  cursor: pointer;
+  composes: close from "./close.module.css";
+  --close-size: 2rem;
+  --close-inset: 0;
+  position: relative;
 }
 
 /* Con el dedo (los avisos los ven las jugadoras en el móvil), del tamaño que se toca */
 @media (pointer: coarse) {
   .close {
-    min-inline-size: var(--target);
-    min-block-size: var(--target);
+    --close-size: var(--target);
+    --close-inset: 0.375rem;
   }
-}
-
-.close:hover {
-  color: var(--color-text);
 }
 
 @media (width < 40rem) {

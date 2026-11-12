@@ -61,6 +61,7 @@ describe('repositorios', () => {
           color: null,
           cover: null,
           version: 1,
+          purpose: null,
           role: 'master'
         }
       ])
@@ -518,6 +519,7 @@ describe('repositorios', () => {
         color: null,
         cover: null,
         version: 1,
+        purpose: null,
         role: 'player'
       }
     ])

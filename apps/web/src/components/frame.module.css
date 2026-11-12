@@ -1,22 +1,38 @@
 /*
  * El marco de la hoja: 1px con las esquinas cortadas. Se usa con `composes: frame from "…/frame.module.css"`.
- * El fondo del elemento es el color del marco; el ::before, 1px dentro, pone la superficie.
+ * El relleno es el fondo del elemento (--frame-fill: de cristal, sobre el fondo de ambiente; uno que flota sobre otra
+ * cosa, opaco) y el ::before, solo la raya (--frame-line, para teñirla sin depender del orden de las hojas de estilo)
  * (Las secciones con título lo llevan en base.css, con el mismo dibujo, porque se eligen por su marcado.)
  */
 .frame {
   position: relative;
   isolation: isolate;
-  background: var(--color-frame);
+  background: var(--frame-sheen), var(--frame-fill, var(--surface-glass));
   clip-path: var(--cut);
+  -webkit-backdrop-filter: var(--frame-blur);
+  backdrop-filter: var(--frame-blur);
 }
 
 .frame::before {
   content: "";
   position: absolute;
-  inset: 1px;
+  inset: 0;
   z-index: -1;
-  background: var(--color-surface);
-  clip-path: var(--cut-inner);
+  background: var(--frame-line, var(--line-frame));
+  clip-path: var(--cut-ring);
+  pointer-events: none;
+}
+
+/* Con colores forzados (el alto contraste del sistema) el fondo no se pinta y el marco desaparecería: un borde */
+@media (forced-colors: active) {
+  .frame {
+    border: 1px solid CanvasText;
+    clip-path: none;
+  }
+
+  .frame::before {
+    display: none;
+  }
 }
 
 /* Una caja con el marco y su relleno, para texto suelto */

@@ -66,6 +66,23 @@ export const updateTag = defineAction({
   output: tagView
 })
 
+export const moveTag = defineAction({
+  name: 'moveTag',
+  kind: 'write',
+  description:
+    'Mueve una etiqueta de la cuenta en su árbol, con sus hijas: dentro de otra (parent; null, a lo más alto: la renombra, de «lugar/ciudad» a «sitio/ciudad», en todo lo que la lleva) y, si se da, delante (before) o detrás (after) de una de sus nuevas hermanas, para ordenarlas a mano. Se deshace desde el historial',
+  input: z
+    .object({
+      organizationId: z.uuid().optional(),
+      tag: tagName.describe('La etiqueta, por su nombre'),
+      parent: tagName.nullable().describe('Dentro de cuál queda (por su nombre); null, en lo más alto'),
+      before: tagName.optional().describe('Delante de esta hermana (por su nombre completo)'),
+      after: tagName.optional().describe('Detrás de esta hermana (por su nombre completo)')
+    })
+    .refine((input) => !(input.before && input.after), { message: 'before o after, no los dos' }),
+  output: tagView
+})
+
 export const deleteTag = defineAction({
   name: 'deleteTag',
   kind: 'delete',
@@ -73,6 +90,15 @@ export const deleteTag = defineAction({
     'Borra una etiqueta de la cuenta y sus hijas: se quitan de todas las páginas y archivos que las llevan. Se deshace desde el historial',
   input: z.object({ organizationId: z.uuid().optional(), tag: tagName }),
   output: z.object({ name: z.string(), pages: z.number().int(), files: z.number().int() })
+})
+
+export const addFileTags = defineAction({
+  name: 'addFileTags',
+  kind: 'write',
+  description:
+    'Añade unas etiquetas a varios archivos de una vez (las que ya llevan se quedan; las que no estén en la cuenta, se crean). Una sola operación por ámbito, que se deshace de una vez desde el historial',
+  input: z.object({ fileIds: z.array(z.uuid()).min(1).max(500), tags: z.array(tagName).min(1).max(50) }),
+  output: z.object({ files: z.number().int().describe('Cuántos archivos cambiaron') })
 })
 
 export const setFileTags = defineAction({

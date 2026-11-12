@@ -7,6 +7,7 @@ import { ChevronRight, Eye, FileText } from 'lucide-react'
 import { type ReactNode, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
+import { Icon } from '../components/icon.tsx'
 import { failed, LoadError } from '../components/load-error.tsx'
 import styles from './pages-tab.module.css'
 
@@ -125,7 +126,11 @@ export function PagesTab({
                 </span>
               )}
               <button type="button" className={styles.title} onClick={() => onOpen(page.id, page.title)}>
-                {page.icon && <span aria-hidden="true">{page.icon} </span>}
+                {page.icon && (
+                  <>
+                    <Icon value={page.icon} />{' '}
+                  </>
+                )}
                 {page.title}
                 {news?.has(page.id) && (
                   <>

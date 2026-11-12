@@ -3,17 +3,15 @@
  * uno en su ventana (con sus ajustes, en un sistema de la cuenta) y «Libro nuevo»: con la IA desde un PDF de la
  * biblioteca, desde el archivo de otro sistema o vacío. Lo que la IA propone se revisa en su pantalla
  */
-import type { Book } from '@crisol/contracts'
+import type { Book, PageCover } from '@crisol/contracts'
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getRouteApi, Link } from '@tanstack/react-router'
-import { FileText, Pencil, Plus, ScrollText, Settings, Sparkles, Upload } from 'lucide-react'
+import { Download, FileText, Image as ImageIcon, Pencil, Plus, Settings, Sparkles, Upload } from 'lucide-react'
 import { type FormEvent, useId, useRef, useState } from 'react'
-import { flushSync } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { BookCover } from '../campaign/book-cover.tsx'
-import { BookWindow, withTransition } from '../campaign/book-window.tsx'
 import books from '../campaign/books.module.css'
 import { Loading } from '../components/brand.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
@@ -27,10 +25,16 @@ import { Modal } from '../components/modal.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { Screen } from '../components/screen.tsx'
 import { Tour } from '../components/tour.tsx'
-import { itemTransition } from '../components/world-transition.ts'
+import { itemTransition, SECTION } from '../components/world-transition.ts'
+import { ColorChoices } from '../routes/world-card.tsx'
+import { CoverDialog, LOCAL_FILE, type LocalImage } from '../routes/world-cover.tsx'
+import { coverStyle } from '../wiki/cover-look.ts'
+import { SystemPreview, useDownload } from './screen.tsx'
 import styles from './system.module.css'
+import { SystemIcon, systemCoverUrl } from './system-look.tsx'
 
 const route = getRouteApi('/sistemas/$systemId')
+const rulesRoute = getRouteApi('/sistemas/$systemId/reglas')
 
 export function SystemScreen() {
   const { t } = useTranslation()
@@ -40,45 +44,52 @@ export function SystemScreen() {
     queryKey: ['systemBooks', systemId],
     queryFn: () => api.call('getSystemBooks', { systemId })
   })
-  const [opened, setOpened] = useState<Book | null>(null)
   const [settings, setSettings] = useState<Book | null>(null)
   const [creating, setCreating] = useState(false)
+  // Su icono y su portada (y, detrás, su portada muy difuminada, como la de un mundo)
+  const summary = useQuery({ queryKey: ['systems'], queryFn: () => api.call('listSystems', {}) }).data?.systems.find(
+    (each) => each.id === systemId
+  )
   if (!data.data) return failed(data) ? <LoadError error={data.error} onRetry={() => data.refetch()} /> : <Loading />
   const { name, editable } = data.data
   const all = data.data.books
   return (
     <Screen>
+      {/* Su Inicio, dentro de su espacio (la barra ya dice dónde se está): su portada, si tiene, y su nombre con su
+          icono (sin el pergamino fijo ni «Sistema») */}
+      {summary?.cover && (
+        <div className={styles.banner}>
+          <img src={systemCoverUrl(summary) ?? ''} alt="" style={coverStyle(summary.cover)} />
+        </div>
+      )}
       <div className={styles.heading}>
-        <span className={styles.icon} aria-hidden="true" style={itemTransition(systemId, 'icono')}>
-          <ScrollText size={22} strokeWidth={1.5} />
-        </span>
+        {summary?.icon && (
+          <span className={styles.icon} aria-hidden="true">
+            <SystemIcon icon={summary.icon} size={26} />
+          </span>
+        )}
         <div style={itemTransition(systemId, 'nombre')}>
           <PageTitle>{name}</PageTitle>
         </div>
-        <span className={styles.kind}>
-          <ScrollText size={14} aria-hidden="true" />
-          {t('systemBooks.kind')}
-        </span>
       </div>
       <h2 className={styles.h}>{t('systemBooks.books')}</h2>
       {!editable && <p className={styles.note}>{t('systemBooks.builtIn')}</p>}
       <ul className={books.books} data-tour="sistema-libros">
         {all.map((book) => (
           <li key={book.key} className={books.book} style={{ viewTransitionName: `libro-${book.key}` }}>
-            <button
-              type="button"
+            {/* Se abre por dentro: el compendio en ese libro (su árbol, la entrada y sus datos) */}
+            <Link
+              to="/sistemas/$systemId/libros/$bookKey"
+              params={{ systemId, bookKey: book.key }}
               className={books.coverButton}
-              onClick={(event) => {
-                const card = event.currentTarget
-                withTransition(card, () => flushSync(() => setOpened(book)))
-              }}
+              viewTransition={SECTION}
             >
               <span className={books.hidden}>{`${t('books.openPrefix')} `}</span>
               <BookCover
                 book={book}
                 sub={[book.origin ? t(`books.origin.${book.origin}`) : '', book.edition].filter(Boolean).join(' · ')}
               />
-            </button>
+            </Link>
             <div className={books.meta}>
               {book.pending > 0 ? (
                 <Link
@@ -90,7 +101,10 @@ export function SystemScreen() {
                   {t('systemBooks.review', { count: book.pending })}
                 </Link>
               ) : (
-                <span>{t('books.entries', { count: book.count })}</span>
+                <span>
+                  {t('books.entries', { count: book.count })}
+                  {book.chapters > 0 && ` · ${t('chapters.count', { count: book.chapters })}`}
+                </span>
               )}
               {editable && (
                 <button
@@ -120,18 +134,13 @@ export function SystemScreen() {
         id="sistema"
         steps={[
           { target: '[data-tour="sistema-libros"]', text: t('tour.system.books') },
-          ...(editable ? [{ target: '[data-tour="libro-nuevo"]', text: t('tour.system.create') }] : [])
+          ...(editable ? [{ target: '[data-tour="libro-nuevo"]', text: t('tour.system.create') }] : []),
+          // Un paso por cada botón de su barra (docs/diseno.md)
+          { target: '[data-tour="barra-compendio"]', text: t('tour.system.compendium') },
+          { target: '[data-tour="barra-reglas"]', text: t('tour.system.rules') },
+          ...(editable ? [{ target: '[data-tour="barra-ajustes-sistema"]', text: t('tour.system.settings') }] : [])
         ]}
       />
-      {opened && (
-        <BookWindow
-          book={opened}
-          books={all}
-          systemName={name}
-          builtIn={!editable && opened.origin === null}
-          onClose={() => setOpened(null)}
-        />
-      )}
       {settings && (
         <BookSettings
           systemId={systemId}
@@ -438,8 +447,23 @@ function BookSettings({
     license: book.license,
     attribution: book.attribution,
     requires: book.requires,
+    color: book.color,
     newVersion: false
   })
+  // Su portada: con el cuadro de la de un mundo (de los archivos comunes; una subida va a ellos), se guarda al momento
+  const [coverOpen, setCoverOpen] = useState(false)
+  const organizations = useQuery({ queryKey: ['organizations'], queryFn: () => api.call('listOrganizations', {}) })
+  const owned = organizations.data?.organizations.find((o) => o.role === 'owner')
+  const saveCover = async (cover: PageCover | null, local: LocalImage | null) => {
+    let chosen = cover
+    if (local && cover?.fileId === LOCAL_FILE && owned) {
+      const stored = await api.uploadFile({ organizationId: owned.id, name: local.file.name }, local.file)
+      chosen = { ...cover, fileId: stored.id }
+      await queryClient.invalidateQueries({ queryKey: ['commonFiles'] })
+    }
+    await api.call('updateBook', { systemId, version, key: book.key, cover: chosen })
+    await queryClient.invalidateQueries({ queryKey: ['systemBooks', systemId] })
+  }
   const save = useMutation({
     mutationFn: () =>
       api.call('updateBook', {
@@ -452,6 +476,7 @@ function BookSettings({
         ...(draft.license !== book.license ? { license: draft.license } : {}),
         ...(draft.attribution !== book.attribution ? { attribution: draft.attribution } : {}),
         ...(draft.requires.join() !== book.requires.join() ? { requires: draft.requires } : {}),
+        ...(draft.color !== book.color ? { color: draft.color } : {}),
         ...(draft.newVersion ? { newVersion: true as const } : {})
       }),
     onSuccess: async () => {
@@ -486,6 +511,15 @@ function BookSettings({
           onChange={(event) => setDraft({ ...draft, description: event.currentTarget.value })}
           maxLength={600}
         />
+        {/* Su portada o, sin ella, su color (el de la tapa) */}
+        <div className={styles.coverRow}>
+          <span className={styles.coverLabel}>{t('systemBooks.cover')}</span>
+          <button type="button" className={styles.rowAction} aria-haspopup="dialog" onClick={() => setCoverOpen(true)}>
+            <ImageIcon size={14} aria-hidden="true" />
+            {book.cover ? t('systemBooks.changeCover') : t('systemBooks.addCover')}
+          </button>
+        </div>
+        {!book.cover && <ColorChoices value={draft.color} onChange={(color) => setDraft({ ...draft, color })} />}
         <div className={styles.fields}>
           <Field
             label={t('systemBooks.edition')}
@@ -547,6 +581,15 @@ function BookSettings({
             {t('systemBooks.cancel')}
           </button>
         </div>
+        {coverOpen && (
+          <CoverDialog
+            title={t('systemBooks.coverOf', { name: book.name })}
+            cover={book.cover}
+            aspect="3 / 4"
+            onSave={saveCover}
+            onClose={() => setCoverOpen(false)}
+          />
+        )}
         <DangerZone>
           {book.campaigns.length > 0 ? (
             <p className={styles.note}>
@@ -569,5 +612,42 @@ function BookSettings({
         </DangerZone>
       </form>
     </Modal>
+  )
+}
+
+/** Las reglas de un sistema: aquí irá su editor a mano (tanda 8); de momento, se hacen con la IA o con su archivo */
+export function SystemRules() {
+  const { t } = useTranslation()
+  const api = useApi()
+  const errorText = useErrorText()
+  const { systemId } = rulesRoute.useParams()
+  const systems = useQuery({ queryKey: ['systems'], queryFn: () => api.call('listSystems', {}) })
+  const summary = systems.data?.systems.find((each) => each.id === systemId)
+  const download = useDownload(systemId)
+  if (!systems.data)
+    return failed(systems) ? <LoadError error={systems.error} onRetry={() => systems.refetch()} /> : <Loading />
+  return (
+    <Screen>
+      <PageTitle>{t('systemRules.title')}</PageTitle>
+      {/* Mientras no hay editor (tanda 8): lo que trae, para leer, y su archivo para cambiarlo fuera */}
+      <p className={styles.note}>{t('systemRules.soon')}</p>
+      <p>
+        <BusyButton
+          type="button"
+          className={styles.rowAction}
+          busy={download.isPending}
+          onClick={() => download.mutate()}
+        >
+          <Download size={14} aria-hidden="true" />
+          {t('systems.download')}
+        </BusyButton>
+      </p>
+      <FormError message={download.error ? errorText(download.error) : null} />
+      {summary && (
+        <div className={styles.rules}>
+          <SystemPreview system={summary} />
+        </div>
+      )}
+    </Screen>
   )
 }

@@ -9,6 +9,7 @@ import styles from './screen.module.css'
 export function Screen({
   title,
   eyebrow,
+  emblem,
   actions,
   left,
   right,
@@ -21,6 +22,8 @@ export function Screen({
   title?: string
   /** Encima del título, pequeño */
   eyebrow?: ReactNode
+  /** Su bodegón (public/vacios/), pequeño, a la derecha del título: el sello de la pantalla cuando ya tiene algo */
+  emblem?: string | undefined
   /** A la derecha del título */
   actions?: ReactNode
   left?: ReactNode
@@ -40,6 +43,7 @@ export function Screen({
               <PageTitle>{title}</PageTitle>
             </div>
             {actions}
+            {emblem && <img src={`/vacios/${emblem}.webp`} alt="" className={styles.emblem} width={240} height={240} />}
           </div>
         )}
         {children}

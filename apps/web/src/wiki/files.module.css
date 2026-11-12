@@ -1,4 +1,4 @@
-/* La pantalla de los comunes, fuera de los mundos: a todo lo ancho (los paneles van a los lados), con su margen */
+/* La pantalla de Archivos (y la de Etiquetas, que la sigue): a todo lo ancho (los paneles van a los lados), con su margen */
 .page {
   padding: var(--space-8) var(--space-6);
 }
@@ -10,9 +10,9 @@
 }
 
 /*
- * La página: la columna del centro, donde en las demás vistas (con el título), y a los lados, fuera de ella, el árbol
- * de carpetas y el archivo elegido. Sin sitio para los tres, el detalle se quita (queda el engranaje); en lo estrecho,
- * todo en una columna
+ * La página: la columna del centro, donde en las demás vistas (con el título), y a la izquierda, fuera de ella, la
+ * vista previa de lo que está bajo el ratón. La columna de la derecha, vacía, deja el centro (y el título) donde en las
+ * páginas del mundo. Con menos sitio, la del centro se estrecha; sin sitio, la vista previa se quita
  */
 .layout {
   display: grid;
@@ -21,33 +21,25 @@
   align-items: start;
 }
 
+.center {
+  grid-column: 2;
+  grid-row: 1;
+  min-inline-size: 0;
+}
+
 .detail {
-  grid-column: 3;
+  grid-column: 1;
+  grid-row: 1;
   position: sticky;
   inset-block-start: var(--space-4);
-  justify-self: end;
+  /* Hacia el borde, como el árbol de las páginas */
+  justify-self: start;
   inline-size: 100%;
   max-inline-size: 20rem;
   /* Bajo el título, a la altura de la lista */
   margin-block-start: 6.5rem;
 }
 
-.center {
-  grid-column: 2;
-  min-inline-size: 0;
-}
-
-.side {
-  grid-column: 1;
-  /* Hacia el borde, como en las páginas */
-  justify-self: start;
-  inline-size: 100%;
-  max-inline-size: 20rem;
-  margin-block-start: 6.5rem;
-}
-
-/* Con menos sitio (o con zoom), la columna del centro se estrecha y los paneles siguen; sin sitio, el detalle se quita
-   (y en lo táctil no hay ratón que pasar por encima) */
 @media (max-width: 90rem) {
   .layout {
     grid-template-columns: minmax(11rem, 15rem) minmax(0, 1fr) minmax(14rem, 18rem);
@@ -59,53 +51,32 @@
   .layout {
     grid-template-columns: minmax(11rem, 15rem) minmax(0, 1fr) 0;
   }
+}
+
+/* En lo estrecho, una columna: el título y la lista, sin vista previa */
+@media (max-width: 56rem) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .center {
+    grid-column: 1;
+  }
 
   .detail {
     display: none;
   }
 }
 
-/* En lo estrecho, una columna: el título y la lista y, debajo, las carpetas */
-@media (max-width: 56rem) {
-  .layout {
-    grid-template-columns: 1fr;
-  }
-
-  .center {
-    grid-column: 1;
-    grid-row: 1;
-  }
-
-  .side {
-    grid-column: 1;
-    grid-row: 2;
-    justify-self: stretch;
-    inline-size: auto;
-    margin-block-start: 0;
-  }
-}
-
-.detailHint {
-  margin: 0;
-  padding: var(--space-4);
-  border: 1px dashed var(--color-frame);
-  border-radius: 6px;
-  color: var(--color-muted);
-  font-size: 0.875rem;
-}
-
 .detailBody {
   animation: asoma 200ms cubic-bezier(0.16, 1, 0.3, 1) both;
   padding: var(--space-3);
-  border: 1px solid var(--color-frame);
+  border: 1px solid var(--line-frame);
   border-radius: 6px;
-  background: var(--color-surface);
-}
-
-.detailBody .preview {
-  block-size: 11rem;
-  margin-block-end: var(--space-3);
-  border-radius: 4px;
+  /* La ficha de al lado, de cristal */
+  background: var(--frame-sheen), var(--surface-glass);
+  -webkit-backdrop-filter: var(--frame-blur);
+  backdrop-filter: var(--frame-blur);
 }
 
 .detailName {
@@ -136,21 +107,22 @@
   overflow-wrap: anywhere;
 }
 
-.detailActions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2);
+/* Las primeras imágenes de una carpeta, en la vista previa */
+.minigrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-1);
 }
 
-/* La fila elegida (la del panel de la derecha) */
-.selected,
-.selected:hover {
-  background: color-mix(in srgb, var(--color-text) 8%, transparent);
-  box-shadow: inset 3px 0 0 var(--color-accent);
+.minigrid img {
+  inline-size: 100%;
+  aspect-ratio: 1;
+  border-radius: 2px;
+  background: var(--color-raised);
+  object-fit: cover;
 }
 
-/* Donde se sueltan: toda la sección; mientras se arrastra encima, se marca */
+/* Donde se sueltan archivos del escritorio: toda la sección; mientras se arrastran encima (fuera de las filas), marcada */
 .zone {
   position: relative;
   margin: calc(-1 * var(--space-2));
@@ -181,40 +153,13 @@
   color: var(--color-muted);
 }
 
-/* Arriba de la lista: la ruta de carpetas, el buscador y el filtro por tipo */
+/* Arriba de la lista: subir, el buscador y los filtros */
 .tools {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-3);
   margin-block-end: var(--space-4);
-}
-
-.path {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-1);
-  flex-basis: 100%;
-  color: var(--color-muted);
-  font-weight: 600;
-}
-
-.here {
-  padding: var(--space-1) var(--space-2);
-  color: var(--color-text);
-}
-
-/* Donde se suelta un archivo para meterlo en una carpeta de la ruta */
-.target {
-  display: inline-flex;
-  border-radius: 4px;
-}
-
-.targetOver {
-  display: inline-flex;
-  border-radius: 4px;
-  outline: 2px dashed var(--color-accent);
 }
 
 .search {
@@ -227,7 +172,10 @@
   padding: 0 var(--space-3);
   border: 1px solid var(--color-field-border);
   border-radius: 4px;
-  background: var(--color-field, var(--color-bg));
+  background: var(--field-fill);
+  /* Va sobre el fondo de ambiente: lo de detrás, desenfocado */
+  -webkit-backdrop-filter: var(--frame-blur);
+  backdrop-filter: var(--frame-blur);
   color: var(--color-muted);
 }
 
@@ -279,36 +227,7 @@
   color: var(--color-text);
 }
 
-/* La miniatura, arriba de la tarjeta: la imagen recortada, o el icono de su tipo sobre un fondo apagado */
-.thumb {
-  position: relative;
-  display: grid;
-  place-items: center;
-  block-size: 7rem;
-  margin: 1px 1px var(--space-3);
-  overflow: hidden;
-  background: var(--color-raised);
-  color: var(--color-muted);
-  clip-path: polygon(11px 0, calc(100% - 11px) 0, 100% 11px, 100% 100%, 0 100%, 0 11px);
-}
-
-.thumb img {
-  inline-size: 100%;
-  block-size: 100%;
-  object-fit: cover;
-  transition: transform 300ms ease-out;
-}
-
-/* El nombre de un archivo: entero, aunque sea largo, y sin las mayúsculas de los títulos */
-.fileName {
-  font-family: var(--font-body);
-  font-size: 1rem;
-  font-weight: 600;
-  text-transform: none;
-  overflow-wrap: anywhere;
-}
-
-/* El de una imagen es un botón (la abre en grande): como el enlace */
+/* El de una imagen es un botón (la abre en grande), y el de una carpeta (la despliega): como el enlace */
 .open {
   padding: 0;
   border: 0;
@@ -317,42 +236,19 @@
   cursor: pointer;
 }
 
-/* Subiendo: la barra al pie de la miniatura */
-.progress {
-  position: absolute;
-  inset-inline: 0;
-  inset-block-end: 0;
-  inline-size: 100%;
-  block-size: 4px;
-  border: 0;
-  appearance: none;
-  background: color-mix(in srgb, var(--color-bg) 70%, transparent);
-}
-
-.progress::-webkit-progress-bar {
-  background: transparent;
-}
-
-.progress::-webkit-progress-value {
-  background: var(--color-brand-glow, var(--color-accent));
-  transition: inline-size 200ms ease-out;
-}
-
-.progress::-moz-progress-bar {
-  background: var(--color-brand-glow, var(--color-accent));
-}
-
 .error {
   color: var(--color-danger);
   font-size: 0.875rem;
 }
 
-/* La vista previa de la ventana de un archivo: la imagen entera, o su icono */
-.preview {
+/* La vista previa (la de la izquierda y la de la ventana de un archivo): la imagen entera, o su icono */
+/* La vista previa, sin peso propio (:where): sus variantes (la de una carpeta, la almohadilla de una etiqueta con su
+   color) le ganan sin depender del orden en que se cargan las hojas */
+:where(.preview) {
   position: relative;
   display: grid;
   place-items: center;
-  block-size: 12rem;
+  block-size: 9rem;
   margin-block-end: var(--space-4);
   overflow: hidden;
   background: var(--color-raised);
@@ -367,58 +263,22 @@
   object-fit: contain;
 }
 
-/* Reemplazar: el icono y el texto, separados */
-.replace {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
+/* La de una carpeta, en su ventana: solo su icono, más baja aún */
+.iconPreview {
+  block-size: 6rem;
 }
 
-/* Subiendo, la imagen apagada hasta que llega */
-.uploading .thumb img {
-  opacity: 0.6;
-}
-
-/* Al pasar el ratón, la miniatura se acerca un poco, como las portadas */
-li:hover > .thumb img {
-  transform: scale(1.06);
+/* La de la izquierda, más baja */
+.detailBody .preview {
+  block-size: 11rem;
+  margin-block-end: var(--space-3);
+  border-radius: 4px;
 }
 
 /* Al buscar, en qué carpeta está */
 .where {
   color: var(--color-muted);
   font-size: 0.8125rem;
-}
-
-/* La carpeta de un archivo, en su ventana */
-.folderField {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.folderField label {
-  font-weight: 600;
-}
-
-.folderField select {
-  min-block-size: 2.5rem;
-  padding: 0 var(--space-3);
-  border: 1px solid var(--color-field-border);
-  border-radius: 4px;
-  background: var(--color-field, var(--color-bg));
-  color: var(--color-text);
-  font: inherit;
-}
-
-/* Una carpeta, con su icono en vez de miniatura; marcada mientras se le arrastra un archivo encima */
-.folderCard .thumb {
-  color: var(--color-accent-text);
-}
-
-.dropping {
-  outline: 2px dashed var(--color-accent);
-  outline-offset: 3px;
 }
 
 /* Lo nuevo (subido o creado) aparece subiendo un poco, con un brillo que se apaga; lo borrado se desvanece encogiendo.
@@ -455,189 +315,19 @@ li:hover > .thumb img {
   }
 }
 
-/* El explorador: el árbol de carpetas a la izquierda y lo de la elegida a la derecha; en lo estrecho, uno sobre otro */
+/* «Subir archivos» (a la elegida): con un nombre largo, cortado */
 .uploadButton {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
+  max-inline-size: 100%;
 }
 
-.views {
-  display: inline-flex;
-  margin-inline-start: auto;
-  border: 1px solid var(--color-frame);
-  border-radius: 4px;
-}
-
-.viewButton {
-  display: grid;
-  place-items: center;
-  inline-size: 2.25rem;
-  block-size: 2.25rem;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--color-muted);
-  cursor: pointer;
-}
-
-.viewButton[aria-pressed="true"] {
-  background: color-mix(in srgb, var(--color-text) 12%, transparent);
-  color: var(--color-text);
-}
-
-.explorer {
-  display: grid;
-  grid-template-columns: minmax(14rem, 18rem) 1fr;
-  gap: var(--space-5);
-  align-items: start;
-}
-
-@media (max-width: 48rem) {
-  .explorer {
-    grid-template-columns: 1fr;
-  }
-}
-
-.tree {
-  position: sticky;
-  inset-block-start: var(--space-4);
-  padding: var(--space-2) 0;
-  border: 1px solid var(--color-frame);
-  border-radius: 6px;
-  background: var(--color-surface);
-}
-
-.branch {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-/* Una fila del árbol, a todo lo ancho: la flecha (si tiene dentro), la carpeta y, en la elegida, su engranaje */
-.node {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  min-block-size: 2rem;
-  padding-inline-end: var(--space-2);
-  border-inline-start: 3px solid transparent;
-}
-
-.node:hover {
-  background: var(--color-raised);
-}
-
-.nodeHere,
-.nodeHere:hover {
-  border-inline-start-color: var(--color-accent);
-  background: color-mix(in srgb, var(--color-text) 8%, transparent);
-}
-
-.node > .target,
-.node > .targetOver {
-  flex: 1;
-  min-inline-size: 0;
-}
-
-.twisty,
-.twistySpace {
-  display: grid;
-  flex: none;
-  place-items: center;
-  inline-size: 1.25rem;
-  block-size: 1.25rem;
-  margin-inline-start: var(--space-1);
-}
-
-.twisty {
-  padding: 0;
-  border: 0;
-  border-radius: 3px;
-  background: none;
-  color: var(--color-muted);
-  cursor: pointer;
-}
-
-.twisty:hover {
-  color: var(--color-text);
-}
-
-.twisty svg {
-  transition: transform 150ms ease-out;
-}
-
-.twisty[aria-expanded="true"] svg {
-  transform: rotate(90deg);
-}
-
-.nodeButton {
-  display: flex;
-  flex: 1;
-  align-items: center;
-  gap: var(--space-2);
-  inline-size: 100%;
-  min-block-size: 2rem;
-  padding: 0 var(--space-1);
-  border: 0;
-  border-radius: 3px;
-  background: none;
-  color: var(--color-text);
-  font: inherit;
-  font-size: 0.9375rem;
-  text-align: start;
-  cursor: pointer;
-}
-
-.nodeButton svg {
-  flex: none;
-  color: var(--color-muted);
-}
-
-.nodeButton[aria-current="true"] {
-  font-weight: 600;
-}
-
-.nodeButton[aria-current="true"] svg {
-  color: var(--color-accent-text);
-}
-
-.nodeName {
-  flex: 1;
-  min-inline-size: 0;
+.uploadLabel {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.nodeCount {
-  min-inline-size: 1.5rem;
-  color: var(--color-muted);
-  font-size: 0.8125rem;
-  font-weight: 400;
-  text-align: end;
-}
-
-.newFolder {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  inline-size: calc(100% - 2 * var(--space-2));
-  min-block-size: 2rem;
-  margin: var(--space-2) var(--space-2) 0;
-  padding: 0 var(--space-2);
-  border: 1px dashed var(--color-field-border);
-  border-radius: 4px;
-  background: none;
-  color: var(--color-muted);
-  font: inherit;
-  font-size: 0.875rem;
-  cursor: pointer;
-}
-
-.newFolder:hover {
-  border-color: var(--color-text);
-  color: var(--color-text);
+  max-inline-size: 20rem;
 }
 
 .contents {
@@ -659,15 +349,18 @@ li:hover > .thumb img {
   color: var(--color-accent-text);
 }
 
-/* La lista: filas compactas, con su miniatura pequeña */
+/* La lista: filas compactas, con su miniatura pequeña. En Archivos es el árbol: lo de una carpeta, debajo, sangrado */
 .rows {
+  --indent: 1.625rem;
+  /* La columna de la casilla de elegir, a la izquierda de todas las filas (como en un explorador) */
+  --pick-gutter: 1.5rem;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
 .rows:not(:empty) {
-  border-block-start: 1px solid var(--color-border);
+  border-block-start: 1px solid var(--line-soft);
 }
 
 .row {
@@ -678,18 +371,125 @@ li:hover > .thumb img {
   gap: var(--space-3);
   min-block-size: 3.25rem;
   padding: var(--space-1) var(--space-2);
-  border-block-end: 1px solid var(--color-border);
+  border-block-end: 1px solid var(--line-soft);
   border-radius: 4px;
 }
 
 @media (hover: hover) {
   .row:hover {
-    background: var(--color-raised);
+    background: var(--row-hover);
   }
 }
 
 .row[draggable="true"] {
   cursor: grab;
+}
+
+/* Una fila del árbol de Archivos: la flecha (las carpetas), la miniatura, el nombre, cuánto y el engranaje; sangrada
+   según lo honda que esté (--depth) */
+.treeRow {
+  grid-template-columns: 1rem 2.75rem minmax(0, 1fr) auto 2rem;
+  padding-inline-start: calc(var(--space-2) + var(--pick-gutter) + var(--depth, 0) * var(--indent));
+  transition: background-color 120ms ease-out;
+}
+
+/* La flecha de una carpeta: gira al abrirla */
+.chevron {
+  display: grid;
+  place-items: center;
+  color: var(--color-muted);
+  transition: transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.chevron[data-open="true"] {
+  transform: rotate(90deg);
+}
+
+.item {
+  margin: 0;
+  padding: 0;
+}
+
+/* Lo de una carpeta desplegada: entra deslizándose, con una línea fina que lo une a ella (bajo su flecha) */
+.kids {
+  position: relative;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  animation: despliega 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.kids::before {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  inset-block: 0 0.75rem;
+  inset-inline-start: calc(var(--space-2) + var(--pick-gutter) + 0.5rem + var(--depth, 0) * var(--indent));
+  inline-size: 1px;
+  background: var(--color-frame);
+  pointer-events: none;
+}
+
+@keyframes despliega {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+/* Arrastrar, como las páginas del mundo: una raya encima o debajo (desde el nivel donde cae, que dice a qué carpeta
+   va), o la carpeta resaltada si va dentro, con «Mover aquí» */
+.treeRow[data-drop="before"]::before,
+.treeRow[data-drop="after"]::after {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  inset-inline: calc(var(--space-2) + var(--pick-gutter) + var(--depth, 0) * var(--indent)) 0;
+  block-size: 2px;
+  background: var(--color-accent-text);
+  pointer-events: none;
+}
+
+.treeRow[data-drop="before"]::before {
+  inset-block-start: -1px;
+}
+
+.treeRow[data-drop="after"]::after {
+  inset-block-end: -1px;
+}
+
+.treeRow[data-drop="inside"] {
+  background: color-mix(in srgb, var(--color-accent-text) 16%, transparent);
+  box-shadow: inset 0 0 0 1px var(--color-accent-text);
+}
+
+/* Mantenido sobre una carpeta cerrada: una raya se llena bajo la fila hasta que se despliega sola */
+.arming::after {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  inset-inline-start: 0;
+  inset-block-end: -1px;
+  inline-size: 0;
+  block-size: 2px;
+  background: var(--color-accent-text);
+  animation: llenar 650ms linear forwards;
+  pointer-events: none;
+}
+
+@keyframes llenar {
+  to {
+    inline-size: 100%;
+  }
+}
+
+/* Lo que no admite lo arrastrado (otro ámbito), apagado (la raya, si la hay, no); lo arrastrado, levantado */
+.dimmed > * {
+  opacity: 0.45;
+}
+
+.lifted {
+  opacity: 0.35;
 }
 
 .rowThumb {
@@ -698,20 +498,22 @@ li:hover > .thumb img {
   place-items: center;
   inline-size: 2.75rem;
   block-size: 2.25rem;
-  overflow: hidden;
   border-radius: 3px;
   background: var(--color-raised);
   color: var(--color-muted);
 }
 
+/* La imagen se recorta con sus esquinas (no la miniatura, que deja asomar la casilla de elegir) */
 .rowThumb img {
   inline-size: 100%;
   block-size: 100%;
+  border-radius: inherit;
   object-fit: cover;
 }
 
+/* Una carpeta, con su icono en vez de miniatura; la elegida, en color */
 .folderThumb {
-  color: var(--color-accent-text);
+  background: none;
 }
 
 .rowText {
@@ -757,6 +559,41 @@ li:hover > .thumb img {
   white-space: nowrap;
 }
 
+/* Cuánto tiene una carpeta y, en su mismo sitio, sus dos botones (subir a ella, crear una dentro), que salen al pasar
+   el ratón o con el foco: nada se mueve ni se descuadra con las filas de archivo */
+.folderMeta {
+  display: grid;
+  align-items: center;
+  justify-items: end;
+}
+
+.folderMeta > * {
+  grid-area: 1 / 1;
+}
+
+.rowActions {
+  /* Por delante del nombre, que cubre la fila para abrirla */
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: var(--space-1);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease-out;
+}
+
+/* Con el teclado (no al pulsar la carpeta con el ratón, que dejaba sus botones puestos) */
+.treeRow:hover .rowActions,
+.treeRow:has(:focus-visible) .rowActions {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.treeRow:hover .folderMeta:has(.rowActions) > .rowMeta,
+.treeRow:has(:focus-visible) .folderMeta:has(.rowActions) > .rowMeta {
+  opacity: 0;
+}
+
 .rowProgress {
   inline-size: 100%;
   block-size: 4px;
@@ -767,7 +604,24 @@ li:hover > .thumb img {
   opacity: 0.6;
 }
 
-/* Un engranaje (o la X de una subida) pequeño, para las filas y el árbol */
+/* «Nueva carpeta» (components/new-card.tsx, en forma de fila): una fila más tras la última, con su «+» bajo las
+   miniaturas */
+.newItem {
+  padding-block-start: var(--space-2);
+}
+
+.newFolder {
+  padding-inline-start: calc(var(--space-2) + var(--pick-gutter) + 1rem + var(--space-3));
+}
+
+/* En lo estrecho, menos sangría */
+@media (max-width: 48rem) {
+  .rows {
+    --indent: 1rem;
+  }
+}
+
+/* Un engranaje (o la X de una subida) pequeño, para las filas */
 .smallGear {
   display: grid;
   flex: none;
@@ -787,33 +641,7 @@ li:hover > .thumb img {
   color: var(--color-text);
 }
 
-/* Mientras se arrastra un archivo: las carpetas del árbol donde se puede soltar, marcadas; la de debajo, resaltada */
-.draggingFile .tree .nodeButton {
-  outline: 1px dashed var(--color-field-border);
-  outline-offset: -1px;
-}
-
-.draggingFile .tree .targetOver .nodeButton,
-.targetOver .nodeButton {
-  outline: 2px solid var(--color-accent);
-  background: color-mix(in srgb, var(--color-accent) 22%, transparent);
-}
-
-.draggingFile .tree .targetOver .nodeButton::after,
-.targetOver .nodeButton::after {
-  content: attr(data-move-here);
-  color: var(--color-accent-text);
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-
-.row.dropping {
-  outline: 2px solid var(--color-accent);
-  outline-offset: -2px;
-  background: color-mix(in srgb, var(--color-accent) 18%, transparent);
-}
-
-/* La carpeta que acaba de recibir un archivo arrastrado: se ilumina un momento */
+/* Lo recién movido: se ilumina un momento */
 .received {
   animation: recibe 1400ms ease-out;
 }
@@ -825,13 +653,6 @@ li:hover > .thumb img {
   }
 }
 
-/* Un enlace con aspecto de botón: sin subrayado */
-.plain {
-  display: inline-flex;
-  align-items: center;
-  text-decoration: none;
-}
-
 @keyframes asoma {
   from {
     opacity: 0;
@@ -839,56 +660,40 @@ li:hover > .thumb img {
   }
 }
 
-/* El filtro por etiqueta (si algún archivo lleva) */
-.tagPick {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  font-size: 0.875rem;
-  font-weight: 600;
-}
-
-.tagPick select {
-  min-block-size: 2.25rem;
-  max-inline-size: 14rem;
-  padding: 0 var(--space-2);
-  border: 1px solid var(--color-field-border);
-  border-radius: 6px;
-  background: var(--color-surface);
-  color: var(--color-text);
-  font: inherit;
-  font-weight: 400;
-}
-
 /* La casilla para elegir, sobre la miniatura: se ve al pasar el ratón, con el foco, elegida o mientras se elige */
+/* En su columna, a la izquierda de la fila y sin sangría: alineadas todas, sin tapar el icono ni la imagen (Enrique,
+   2026-11-12: «ese cuadro de selección habría que moverlo para que no tape»). La zona que se pulsa, de 24 px */
 .pick {
   position: absolute;
-  inset-block-start: 10px;
-  inset-inline-start: 10px;
+  inset-block: 0;
+  inset-inline-start: 0.25rem;
   z-index: 2;
-  inline-size: 1.125rem;
-  block-size: 1.125rem;
-  margin: 0;
-  accent-color: var(--color-accent);
+  display: grid;
+  place-items: center;
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+  margin: auto 0;
   cursor: pointer;
   opacity: 0;
 }
 
-.rowThumb .pick {
-  inset: 0;
-  margin: auto;
+.pick input {
+  inline-size: 1rem;
+  block-size: 1rem;
+  margin: 0;
+  accent-color: var(--color-accent);
+  cursor: pointer;
 }
 
 /* Al pasar el ratón (no en lo táctil: ahí un toque deja el «hover» puesto) */
 @media (hover: hover) {
-  .row:hover .pick,
-  :global(li):hover > .pick {
+  .row:hover .pick {
     opacity: 1;
   }
 }
 
-.pick:focus-visible,
-.pick:checked,
+.pick:has(input:focus-visible),
+.pick:has(input:checked),
 [data-selecting] .pick {
   opacity: 1;
 }
@@ -899,16 +704,66 @@ li:hover > .thumb img {
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2);
-  margin-block-end: var(--space-3);
-  padding: var(--space-2) var(--space-3);
+  padding: 0 var(--space-3);
   border: 1px solid var(--color-border);
   border-radius: 6px;
   background: var(--color-raised);
 }
 
+/* La barra de herramientas y, eligiendo, la de lo elegido encima, en la misma celda: tiene su alto y nada se mueve */
+.toolbar {
+  display: grid;
+  margin-block-end: var(--space-4);
+}
+
+.toolbar > * {
+  grid-area: 1 / 1;
+}
+
+.toolbar > .tools {
+  margin-block-end: 0;
+}
+
+.tools[data-covered] {
+  visibility: hidden;
+}
+
+/* En la confirmación de borrar lo elegido: qué se borra */
+.chosenNames {
+  margin: 0;
+  padding-inline-start: var(--space-5);
+  overflow-wrap: anywhere;
+}
+
 .chosenCount {
   flex: 1;
   font-weight: 600;
+}
+
+/* Llevar a una carpeta y etiquetar: como «Borrar», sin el rojo */
+.chosenAction {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: 2.25rem;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.chosenAction:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.chosenAction:hover:not(:disabled) {
+  border-color: var(--color-frame);
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
 }
 
 .chosenDelete {
@@ -935,8 +790,18 @@ li:hover > .thumb img {
   background: color-mix(in srgb, var(--color-danger) 14%, transparent);
 }
 
-/* El árbol mientras se le suelta un archivo fuera de sus carpetas: va a lo más alto */
-.treeOver {
-  outline: 2px dashed var(--color-accent);
+/* Solo para los lectores de pantalla (la pista del teclado de la lista) */
+.hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* La fila con el foco del teclado: su anillo, dentro de la fila */
+.treeRow:focus-visible {
+  outline: 2px solid var(--color-focus);
   outline-offset: -2px;
 }

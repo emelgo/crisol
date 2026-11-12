@@ -1,18 +1,21 @@
 /**
- * La hoja de una página: el icono que la pone o la quita, el papel donde se escribe (con la hoja puesta, la página se
- * ve y se edita sobre él, a dos columnas) y, en «⋯», sus ajustes, imprimir y el PDF. Las páginas numeradas quedan para
- * imprimir y el PDF (print.tsx)
+ * La hoja de una página: el papel donde se escribe (la página se ve y se edita ya maquetada, paged.tsx) y, desde «⋯»,
+ * «Imprimir o descargar»: un cuadro que pregunta cómo (con colores, en blanco y negro o en pergamino; el papel, la
+ * numeración, el pie y los secretos) y lo recuerda. Las páginas numeradas quedan para imprimir y el PDF (print.tsx)
  */
 import type { Page, SheetSettings } from '@crisol/contracts'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { ChevronRight, ScrollText } from 'lucide-react'
-import { type ReactNode, useEffect, useId, useState } from 'react'
+import { Printer } from 'lucide-react'
+import { type ReactNode, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../../api/context.tsx'
 import { useErrorText } from '../../api/errors.ts'
 import { useAnnounce } from '../../components/announcer.tsx'
 import { BusyButton } from '../../components/busy-button.tsx'
-import list from '../../components/list.module.css'
+import dialogStyles from '../../components/dialog.module.css'
+import { FormError } from '../../components/field.tsx'
+import form from '../../components/form.module.css'
+import { Modal } from '../../components/modal.tsx'
 import styles from './controls.module.css'
 import '@fontsource/alegreya/400.css'
 import '@fontsource/alegreya/400-italic.css'
@@ -31,46 +34,7 @@ export const DEFAULT_SHEET: SheetSettings = {
 
 export const sheetOf = (page: Page): SheetSettings => page.sheet ?? DEFAULT_SHEET
 
-/** Guarda la página con otros ajustes de hoja (o sin hoja) */
-function useSaveSheet(page: Page) {
-  const api = useApi()
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: (sheet: SheetSettings | null) => api.call('updatePage', { pageId: page.id, sheet }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['pages', page.worldId] })
-  })
-}
-
-/** El icono «Hoja» de la cabecera de la página: pone o quita la hoja */
-export function SheetToggle({ page }: { page: Page }) {
-  const { t } = useTranslation()
-  const errorText = useErrorText()
-  const save = useSaveSheet(page)
-  return (
-    <>
-      <BusyButton
-        className={list.secondary}
-        aria-label={t('sheet.toggle')}
-        title={t('sheet.toggle')}
-        aria-pressed={page.sheet !== null}
-        busy={save.isPending}
-        onClick={() => save.mutate(page.sheet ? null : DEFAULT_SHEET)}
-      >
-        <ScrollText aria-hidden="true" size={18} />
-      </BusyButton>
-      {save.error && (
-        <span role="alert" className={styles.error}>
-          {errorText(save.error)}
-        </span>
-      )}
-    </>
-  )
-}
-
-/**
- * Con la hoja puesta, el texto se escribe ya maquetado en sus páginas (paged.tsx), con los colores y la letra de la
- * app: el papel y la letra del tema son para imprimir y el PDF. Sin hoja, tal cual
- */
+/** El papel donde se escribe: con el tema de la hoja (el pergamino cambia la letra, para que caiga como al imprimir) */
 export function SheetPaper({ page, children }: { page: Page; children: ReactNode }) {
   return (
     <div className={paper.plain} data-theme={sheetOf(page).theme} data-sheet-paper="">
@@ -79,47 +43,73 @@ export function SheetPaper({ page, children }: { page: Page; children: ReactNode
   )
 }
 
-/** En «⋯»: las columnas de la página y, en su desplegable, imprimir y el PDF con los ajustes de la hoja */
-export function SheetMenu({ page }: { page: Page }) {
-  const { t } = useTranslation()
-  const [printing, setPrinting] = useState(false)
-  const id = useId()
-  return (
-    <SheetSettingsRow page={page} settings={sheetOf(page)}>
-      {(row) => (
-        <>
-          <button
-            type="button"
-            className={styles.opener}
-            aria-expanded={printing}
-            aria-controls={id}
-            onClick={() => setPrinting(!printing)}
-          >
-            {t('sheet.printing')}
-            <ChevronRight aria-hidden="true" size={14} className={styles.chevron} />
-          </button>
-          {printing && (
-            <div id={id} className={styles.printing}>
-              {row.fields}
-              <PrintButtons page={page} />
-            </div>
-          )}
-        </>
-      )}
-    </SheetSettingsRow>
-  )
+/** El aspecto que se eligió la última vez (para las páginas que aún no tienen el suyo) */
+const LOOK_KEY = 'crisol.aspecto-impresion'
+const LOOKS = ['color', 'neutro', 'pergamino'] as const
+
+function rememberedLook(): SheetSettings['theme'] | null {
+  try {
+    const stored = localStorage.getItem(LOOK_KEY)
+    return LOOKS.find((look) => look === stored) ?? null
+  } catch {
+    return null
+  }
 }
 
-/** Imprimir (por el diálogo del navegador) y descargar el PDF que saca el servidor; con o sin secretos */
-function PrintButtons({ page }: { page: Page }) {
+/**
+ * «Imprimir o descargar»: pregunta cómo (Enrique, 2026-11-11: «que pida versión con los colores o en blanco y negro»).
+ * El aspecto es de esta impresión (va en su dirección) y se recuerda como el de siempre; no cambia la página (ni su
+ * letra al escribir). El papel, la numeración y el pie, sí: son de la hoja de la página
+ */
+export function PrintDialog({ page, onClose }: { page: Page; onClose: () => void }) {
   const { t } = useTranslation()
   const api = useApi()
+  const queryClient = useQueryClient()
   const errorText = useErrorText()
   const announce = useAnnounce()
-  const secretsId = useId()
+  const dialog = useRef<HTMLDialogElement>(null)
+  const titleId = useId()
+  const ids = { paper: useId(), first: useId(), look: useId() }
+  const current = sheetOf(page)
+  // De entrada: el de una página hecha para el pergamino; si no, el de la última vez, o con colores
+  const [look, setLook] = useState<SheetSettings['theme']>(
+    current.theme === 'pergamino' ? 'pergamino' : (rememberedLook() ?? 'color')
+  )
+  const [settings, setSettings] = useState<SheetSettings>(current)
   const [secrets, setSecrets] = useState(false)
+  const change = (patch: Partial<SheetSettings>) => setSettings((current) => ({ ...current, ...patch }))
+  /** El aspecto, recordado; el papel, la numeración y el pie, en la página (si cambiaron) */
+  const keep = async () => {
+    try {
+      localStorage.setItem(LOOK_KEY, look)
+    } catch {
+      // Sin almacenamiento, la próxima vez vuelve «Con colores»
+    }
+    if (JSON.stringify(settings) === JSON.stringify(current)) return
+    await api.call('updatePage', { pageId: page.id, sheet: settings })
+    await queryClient.invalidateQueries({ queryKey: ['pages', page.worldId] })
+  }
+  const printUrl = `/mundos/${page.worldId}/imprimir/${page.id}?imprimir=1&tema=${look}${secrets ? '&secretos=1' : ''}`
+  const print = useMutation({
+    mutationFn: async () => {
+      // La pestaña se abre ya (al pulsar): después de guardar, el navegador la bloquearía
+      const tab = window.open('about:blank', '_blank')
+      try {
+        await keep()
+      } catch (error) {
+        tab?.close()
+        throw error
+      }
+      if (tab) tab.location.href = printUrl
+      else window.location.assign(printUrl)
+    },
+    onSuccess: () => dialog.current?.close()
+  })
   const download = useMutation({
-    mutationFn: () => api.downloadPdf(page.id, secrets),
+    mutationFn: async () => {
+      await keep()
+      return api.downloadPdf(page.id, secrets, look)
+    },
     onSuccess: ({ name, data }) => {
       const url = URL.createObjectURL(data)
       const link = document.createElement('a')
@@ -128,129 +118,113 @@ function PrintButtons({ page }: { page: Page }) {
       link.click()
       setTimeout(() => URL.revokeObjectURL(url), 1000)
       announce(t('sheet.downloaded', { name }))
+      dialog.current?.close()
     }
   })
-  const printUrl = `/mundos/${page.worldId}/imprimir/${page.id}?imprimir=1${secrets ? '&secretos=1' : ''}`
-  return (
-    <>
-      <span className={styles.check}>
-        <input id={secretsId} type="checkbox" checked={secrets} onChange={(e) => setSecrets(e.currentTarget.checked)} />
-        <label htmlFor={secretsId}>{t('sheet.includeSecrets')}</label>
-      </span>
-      <div className={styles.printActions}>
-        <a className={styles.printButton} href={printUrl} target="_blank" rel="noopener">
-          {t('sheet.print')}
-        </a>
-        <BusyButton className={styles.printButton} busy={download.isPending} onClick={() => download.mutate()}>
-          {t('sheet.pdf')}
-        </BusyButton>
-      </div>
-      {download.error && (
-        <span role="alert" className={styles.error}>
-          {errorText(download.error)}
-        </span>
-      )}
-    </>
-  )
-}
-
-/** Los ajustes de la hoja. Cambian al momento (sin esperar al servidor); si no se guardan, lo dice */
-function SheetSettingsRow({
-  page,
-  settings,
-  children
-}: {
-  page: Page
-  settings: SheetSettings
-  children: (row: {
-    local: SheetSettings
-    change: (patch: Partial<SheetSettings>) => void
-    fields: ReactNode
-  }) => ReactNode
-}) {
-  const { t } = useTranslation()
-  const errorText = useErrorText()
-  const save = useSaveSheet(page)
-  const [local, setLocal] = useState(settings)
-  useEffect(() => setLocal(settings), [settings])
-  const ids = { paper: useId(), theme: useId(), first: useId() }
-  const change = (patch: Partial<SheetSettings>) => {
-    const next = { ...local, ...patch }
-    setLocal(next)
-    save.mutate(next, { onError: () => setLocal(settings) })
-  }
-  const saveFirst = (input: HTMLInputElement) => {
+  // «Desde», al escribirlo (con Intro se descarga ya con él); uno que no vale, al salir vuelve al de antes
+  const typeFirst = (input: HTMLInputElement) => {
     const value = Number(input.value)
-    if (Number.isInteger(value) && value >= 1 && value <= 999) {
-      if (value !== local.firstNumber) change({ firstNumber: value })
-    } else input.value = String(local.firstNumber)
+    if (Number.isInteger(value) && value >= 1 && value <= 999) change({ firstNumber: value })
   }
-  const fields = (
-    <>
-      <div className={styles.line}>
-        <label htmlFor={ids.paper}>{t('sheet.paper')}</label>
-        <select
-          id={ids.paper}
-          value={local.paper}
-          onChange={(e) => change({ paper: e.currentTarget.value as SheetSettings['paper'] })}
-        >
-          <option value="a4">{t('sheet.papers.a4')}</option>
-          <option value="letter">{t('sheet.papers.letter')}</option>
-        </select>
-      </div>
-      <div className={styles.line}>
-        <label htmlFor={ids.theme}>{t('sheet.theme')}</label>
-        <select
-          id={ids.theme}
-          value={local.theme}
-          onChange={(e) => change({ theme: e.currentTarget.value as SheetSettings['theme'] })}
-        >
-          <option value="pergamino">{t('sheet.themes.pergamino')}</option>
-          <option value="neutro">{t('sheet.themes.neutro')}</option>
-        </select>
-      </div>
-      <div className={styles.line}>
-        <label className={styles.check}>
-          <input
-            type="checkbox"
-            checked={local.numbers}
-            onChange={(e) => change({ numbers: e.currentTarget.checked })}
-          />
-          {t('sheet.numbers')}
-        </label>
-        {local.numbers && (
-          <span className={styles.from}>
-            <label htmlFor={ids.first}>{t('sheet.firstNumber')}</label>
-            <input
-              id={ids.first}
-              type="number"
-              min={1}
-              max={999}
-              className={styles.number}
-              defaultValue={local.firstNumber}
-              key={local.firstNumber}
-              onBlur={(e) => saveFirst(e.currentTarget)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') saveFirst(e.currentTarget)
-              }}
-            />
-          </span>
-        )}
-      </div>
-      <label className={styles.check}>
-        <input type="checkbox" checked={local.footer} onChange={(e) => change({ footer: e.currentTarget.checked })} />
-        {t('sheet.footer')}
-      </label>
-    </>
-  )
+  const failure = print.error ?? download.error
   return (
-    <div className={styles.row}>
-      {children({ local, change, fields })}
-      {save.error && (
-        <span role="alert" className={styles.error}>
-          {errorText(save.error)}
-        </span>
-      )}
-    </div>
+    <Modal
+      ref={dialog}
+      aria-labelledby={titleId}
+      className={`${dialogStyles.dialog} ${styles.dialog}`}
+      onClose={onClose}
+    >
+      <form
+        className={dialogStyles.body}
+        onSubmit={(event) => {
+          event.preventDefault()
+          download.mutate()
+        }}
+      >
+        <h2 id={titleId}>{t('sheet.printTitle')}</h2>
+        {/* El aspecto, con una muestra de cada uno */}
+        <fieldset className={styles.looks}>
+          <legend>{t('sheet.look')}</legend>
+          {LOOKS.map((each) => (
+            <label key={each} className={styles.look}>
+              <input type="radio" name={ids.look} checked={look === each} onChange={() => setLook(each)} />
+              {/* Su muestra: la letra y los colores de verdad de ese aspecto */}
+              <span className={styles.sample} data-look={each} aria-hidden="true">
+                <b>Aa</b>
+                <span />
+                <span />
+              </span>
+              {t(`sheet.themes.${each}`)}
+            </label>
+          ))}
+        </fieldset>
+        <div className={styles.fields}>
+          <div className={styles.line}>
+            <label htmlFor={ids.paper}>{t('sheet.paper')}</label>
+            <select
+              id={ids.paper}
+              value={settings.paper}
+              onChange={(e) => change({ paper: e.currentTarget.value as SheetSettings['paper'] })}
+            >
+              <option value="a4">{t('sheet.papers.a4')}</option>
+              <option value="letter">{t('sheet.papers.letter')}</option>
+            </select>
+          </div>
+          <div className={styles.line}>
+            <label className={styles.check}>
+              <input
+                type="checkbox"
+                checked={settings.numbers}
+                onChange={(e) => change({ numbers: e.currentTarget.checked })}
+              />
+              {t('sheet.numbers')}
+            </label>
+            {settings.numbers && (
+              <span className={styles.from}>
+                <label htmlFor={ids.first}>{t('sheet.firstNumber')}</label>
+                <input
+                  id={ids.first}
+                  type="number"
+                  min={1}
+                  max={999}
+                  className={styles.number}
+                  defaultValue={settings.firstNumber}
+                  onChange={(e) => typeFirst(e.currentTarget)}
+                  onBlur={(e) => {
+                    e.currentTarget.value = String(settings.firstNumber)
+                  }}
+                />
+              </span>
+            )}
+          </div>
+          <label className={styles.check}>
+            <input
+              type="checkbox"
+              checked={settings.footer}
+              onChange={(e) => change({ footer: e.currentTarget.checked })}
+            />
+            {t('sheet.footer')}
+          </label>
+          <label className={`${styles.check} ${styles.secrets}`}>
+            <input type="checkbox" checked={secrets} onChange={(e) => setSecrets(e.currentTarget.checked)} />
+            {t('sheet.includeSecrets')}
+          </label>
+        </div>
+        <FormError message={failure ? errorText(failure) : null} />
+        <div className={dialogStyles.actions}>
+          <BusyButton type="submit" className={form.button} busy={download.isPending}>
+            {t('sheet.pdf')}
+          </BusyButton>
+          {/* La otra acción: secundaria, con su icono (no se confunde con «Cancelar») */}
+          <BusyButton type="button" className={styles.secondary} busy={print.isPending} onClick={() => print.mutate()}>
+            <Printer aria-hidden="true" size={16} />
+            {t('sheet.print')}
+          </BusyButton>
+          <button type="button" className={dialogStyles.cancel} onClick={() => dialog.current?.close()}>
+            {t('sheet.cancel')}
+          </button>
+        </div>
+      </form>
+    </Modal>
   )
 }

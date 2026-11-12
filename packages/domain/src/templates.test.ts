@@ -1,28 +1,31 @@
 import { describe, expect, it } from 'vitest'
+import { EXAMPLE_TEMPLATES } from './example-templates.ts'
 import { propertiesProblem } from './properties.ts'
 import {
   applyTemplate,
-  BUILT_IN_TEMPLATES,
-  builtInTemplate,
   fieldKey,
   fillTemplate,
   instantiate,
   lineOf,
-  TEMPLATE_ICONS
+  TEMPLATE_ICONS,
+  templateEmoji
 } from './templates.ts'
 
-describe('las plantillas de serie', () => {
+/** Una de las de ejemplo (las que fueron de serie), por su id legible */
+const builtInTemplate = (id: string) => EXAMPLE_TEMPLATES.find((t) => t.id === id)
+
+describe('las plantillas de ejemplo de las pruebas (las que fueron de serie)', () => {
   it('son seis, con su id legible y en este orden', () => {
-    expect(BUILT_IN_TEMPLATES.map((t) => t.id)).toEqual(['pnj', 'lugar', 'faccion', 'objeto', 'mision', 'sesion'])
-    expect(BUILT_IN_TEMPLATES.map((t) => t.name)).toEqual(['PNJ', 'Lugar', 'Facción', 'Objeto', 'Misión', 'Sesión'])
+    expect(EXAMPLE_TEMPLATES.map((t) => t.id)).toEqual(['pnj', 'lugar', 'faccion', 'objeto', 'mision', 'sesion'])
+    expect(EXAMPLE_TEMPLATES.map((t) => t.name)).toEqual(['PNJ', 'Lugar', 'Facción', 'Objeto', 'Misión', 'Sesión'])
   })
 
-  it('cada una es válida: campos sin repetir, con id, y enlaces que apuntan a plantillas de serie', () => {
-    const ids = new Set(BUILT_IN_TEMPLATES.map((t) => t.id))
-    for (const template of BUILT_IN_TEMPLATES) {
+  it('cada una es válida: campos sin repetir, con id, y enlaces que apuntan a otras de ellas', () => {
+    const ids = new Set(EXAMPLE_TEMPLATES.map((t) => t.id))
+    for (const template of EXAMPLE_TEMPLATES) {
       expect(propertiesProblem(template.fields), template.id).toBeNull()
-      expect(TEMPLATE_ICONS).toContain(template.icon)
-      expect(template.builtIn).toBe(true)
+      // Un emoji, como el de una página
+      expect(template.icon).toMatch(/^\p{Extended_Pictographic}/u)
       expect(template.basedOn).toBeNull()
       expect(template.line).toEqual([template.id])
       for (const field of template.fields) {
@@ -65,17 +68,13 @@ describe('las plantillas de serie', () => {
     ])
     expect(tables('pnj')).toEqual([['Lleva encima', 'objeto', 'portador']])
     // Cada tabla apunta a un campo de enlace de su plantilla, y sus columnas son campos suyos
-    for (const template of BUILT_IN_TEMPLATES) {
+    for (const template of EXAMPLE_TEMPLATES) {
       for (const block of template.panel.filter((b) => b.type === 'related')) {
         const of = builtInTemplate(String(block.template))
         expect(of?.fields.find((f) => f.field === block.field)?.type).toBe('pages')
         for (const column of block.columns as string[]) expect(of?.fields.map((f) => f.field)).toContain(column)
       }
     }
-  })
-
-  it('una que no es de serie no se encuentra', () => {
-    expect(builtInTemplate('frente')).toBeUndefined()
   })
 })
 
@@ -197,5 +196,16 @@ describe('aplicar una plantilla a una página ya hecha', () => {
     expect(applied.properties.filter((p) => p.name === 'Población')).toEqual([
       { name: 'Población', type: 'list', value: ['muchos'] }
     ])
+  })
+})
+
+describe('el icono de una plantilla de antes', () => {
+  it('pasa a emoji (los dibujos con nombre de antes); lo que ya es un emoji se queda; sin icono, ninguno', () => {
+    expect(templateEmoji('user')).toBe('🧙')
+    expect(templateEmoji('hourglass')).toBe('⏳')
+    expect(templateEmoji('template')).toBeNull()
+    expect(templateEmoji('🐉')).toBe('🐉')
+    expect(templateEmoji(null)).toBeNull()
+    for (const icon of TEMPLATE_ICONS) expect(icon === 'template' || templateEmoji(icon) !== icon).toBe(true)
   })
 })

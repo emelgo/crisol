@@ -12,12 +12,12 @@ import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { useCurrentCampaign } from '../campaign/current-campaign.ts'
 import { failed, LoadError } from '../components/load-error.tsx'
+import { type LinkHandler, useWindows, type WindowSpec } from '../components/windows.tsx'
 import { CollabSocket } from '../wiki/collab.tsx'
 import { usePageTabs } from '../wiki/tabs/page-tabs.tsx'
 import { EntryView, pageKey } from '../wiki/wiki.tsx'
 import styles from './page-window.module.css'
 import { ShowMenu, type ShowTarget } from './show-menu.tsx'
-import { type LinkHandler, useWindows, type WindowSpec } from './windows.tsx'
 
 /** Una página del mundo, en su ventana (una por página) */
 export function pageWindow(worldId: string, pageId: string, title: string): WindowSpec {

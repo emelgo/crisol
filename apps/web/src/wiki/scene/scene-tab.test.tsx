@@ -172,7 +172,7 @@ describe('la pestaña «Escena»', () => {
     const prepared = fakePreparer({ hold: true })
     const { api, tab } = await renderPage({ tab: 'scene', preparer: prepared })
     expect(await screen.findByText('Esta escena aún no tiene mapa.')).toBeDefined()
-    await user.click(screen.getByRole('button', { name: 'cripta.png' }))
+    await user.click(await screen.findByRole('button', { name: 'cripta.png' }))
     expect(await screen.findByText('Preparando el mapa…')).toBeDefined()
     expect(await screen.findByText('3 de 7 partes')).toBeDefined()
     await user.click(screen.getByRole('button', { name: 'Cancelar' }))

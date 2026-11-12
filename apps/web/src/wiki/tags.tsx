@@ -2,8 +2,8 @@ import type { TagView } from '@crisol/contracts'
 import { tagKey } from '@crisol/domain'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Navigate } from '@tanstack/react-router'
-import { Hash, Plus, Search, Settings, X } from 'lucide-react'
-import { type CSSProperties, useEffect, useId, useRef, useState } from 'react'
+import { ChevronRight, Hash, Plus, Search, Settings, X } from 'lucide-react'
+import { type CSSProperties, type KeyboardEvent, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
@@ -13,18 +13,31 @@ import { BusyButton } from '../components/busy-button.tsx'
 import { ChangesBar } from '../components/changes.tsx'
 import { ConfirmByName, DangerZone } from '../components/danger.tsx'
 import dialogStyles from '../components/dialog.module.css'
+import { EmptyState, TitleEmblem } from '../components/empty-state.tsx'
 import { Field, FormError } from '../components/field.tsx'
 import form from '../components/form.module.css'
 import { failed, LoadError } from '../components/load-error.tsx'
 import { Modal } from '../components/modal.tsx'
+import { NewCard } from '../components/new-card.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { Tour } from '../components/tour.tsx'
+import {
+  dropMove,
+  keyboardMove,
+  type Move,
+  outdentTarget,
+  type TreeNode,
+  type Zone,
+  zoneAt
+} from '../components/tree/moves.ts'
 import cards from '../routes/world-card.module.css'
 import { ColorChoices } from '../routes/world-card.tsx'
 import { colorHex } from '../routes/world-look.ts'
+import { plain } from './file-tree.ts'
 import files from './files.module.css'
 import { useNarrow } from './panel.tsx'
 import { useReadAs } from './read-as.tsx'
+import { moveInTagList } from './tag-order.ts'
 import styles from './tags.module.css'
 
 /** El color de una etiqueta, para su punto */
@@ -36,11 +49,12 @@ const leafOf = (name: string) => name.split('/').at(-1) ?? name
 const parentOf = (name: string) => name.split('/').slice(0, -1).join('/')
 const joinTag = (parent: string, leaf: string) => (parent ? `${parent}/${leaf}` : leaf)
 const sameTag = (a: string, b: string) => tagKey(a) === tagKey(b)
-/** Si «tag» puede ir dentro de «into» («» es arriba del todo): ni dentro de sí misma, ni donde ya está */
-const canMove = (tag: string, into: string) =>
-  !sameTag(parentOf(tag), into) && !sameTag(tag, into) && !tagKey(into).startsWith(`${tagKey(tag)}/`)
+/** Una etiqueta como elemento del árbol (components/tree): su id es su nombre y su madre, la de arriba */
+const nodeOf = (name: string): TreeNode => ({ id: name, parentId: parentOf(name) || null })
+/** Cuánto hay que llevarla a la izquierda para sacarla un nivel (como en el árbol de páginas) */
+const OUTDENT_STEP = 24
 
-/** «Dentro de»: arriba del todo o una de las etiquetas (sin ella misma ni sus hijas, al cambiarla de sitio) */
+/** «Dentro de»: ninguna (lo más alto) o una de las etiquetas (sin ella misma ni sus hijas, al cambiarla de sitio) */
 function ParentSelect({
   value,
   onChange,
@@ -96,6 +110,20 @@ export function TagChip({ name, color }: { name: string; color: TagView['color']
 const TAG = /^[^\s/]+(\/[^\s/]+)*$/u
 
 /**
+ * Lo escrito en el campo de etiquetas, añadido a las que hay: una o varias, separadas por comas; con la forma del
+ * catálogo si ya están, y sin repetir. Para quien guarda lo escrito con lo demás (onPending)
+ */
+export function addTyped(value: readonly string[], raw: string, catalog: readonly string[]): string[] {
+  const next = [...value]
+  for (const part of raw.split(',')) {
+    const name = part.trim().replace(/\s/g, '').replace(/^#/, '')
+    if (!TAG.test(name) || next.some((tag) => tagKey(tag) === tagKey(name))) continue
+    next.push(catalog.find((tag) => tagKey(tag) === tagKey(name)) ?? name)
+  }
+  return next
+}
+
+/**
  * Las etiquetas de algo (un archivo): las puestas, que se quitan con su ×, y un campo para añadir otra, con las de la
  * cuenta como sugerencias; una que no está se crea sola (ADR-0006). Cada cambio se guarda al momento
  */
@@ -133,15 +161,13 @@ export function TagsField({
     setOwnDraft(text)
     onPending?.(text)
   }
-  // Una o varias, separadas por comas; con la forma del catálogo si ya están, y sin repetir
   const add = (raw: string) => {
     setDraft('')
-    const next = [...value]
-    for (const part of raw.split(',')) {
-      const name = part.trim().replace(/\s/g, '').replace(/^#/, '')
-      if (!TAG.test(name) || next.some((tag) => tagKey(tag) === tagKey(name))) continue
-      next.push(tags.data?.tags.find((tag) => tagKey(tag.name) === tagKey(name))?.name ?? name)
-    }
+    const next = addTyped(
+      value,
+      raw,
+      (tags.data?.tags ?? []).map((tag) => tag.name)
+    )
     if (next.length > value.length) onChange(next)
   }
   return (
@@ -225,38 +251,176 @@ export function AccountTags() {
   const api = useApi()
   const announce = useAnnounce()
   const errorText = useErrorText()
-  // Arrastrar una etiqueta sobre otra la mete dentro; sobre «Arriba del todo», la saca (como las carpetas de Archivos)
+  // Arrastrar, como en el árbol de páginas: una raya delante o detrás de una fila, o la fila resaltada si va dentro;
+  // llevada a la izquierda, sale de su madre
   const [dragging, setDragging] = useState<string | null>(null)
-  const [over, setOver] = useState<string | null>(null)
+  const dragStartX = useRef(0)
+  const [drop, setDrop] = useState<{ name: string; zone: Zone; level?: number } | null>(null)
   const [received, setReceived] = useState<string | null>(null)
-  const move = useMutation({
-    mutationFn: async ({ from, to }: { from: string; to: string }) => {
-      await api.call('updateTag', { tag: from, name: to })
-      await queryClient.invalidateQueries({ queryKey: ['tags'] })
-    },
-    onSuccess: (_, { to }) => {
-      setReceived(parentOf(to) || to)
-      announce(t('tags.moved', { name: to }))
-    },
-    onError: (error) => announce(errorText(error))
+  // Las plegadas (por su clave), como las carpetas de Archivos: sus hijas no se ven
+  const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(() => new Set())
+  // Con el teclado, como el árbol de páginas: una sola parada del tabulador en la lista, flechas para moverse y Alt +
+  // flechas para recolocar. La fila con el foco (por su nombre) y la que lo recibirá al pintarse (tras moverla)
+  const items = useRef(new Map<string, HTMLLIElement>())
+  const [focused, setFocused] = useState<string | null>(null)
+  const pendingFocus = useRef<string | null>(null)
+  const hintId = useId()
+  useEffect(() => {
+    const wanted = pendingFocus.current
+    const element = wanted ? items.current.get(tagKey(wanted)) : undefined
+    if (!element) return
+    pendingFocus.current = null
+    element.focus()
   })
-  const drop = (into: string) => {
-    if (dragging && canMove(dragging, into)) move.mutate({ from: dragging, to: joinTag(into, leafOf(dragging)) })
-    setDragging(null)
-    setOver(null)
-  }
+  // Al soltarla se ve ya en su sitio (sin esperar al servidor); si falla, vuelve como estaba
+  type Catalog = { organizationId: string; tags: TagView[] }
+  const move = useMutation({
+    mutationFn: ({ tag, to }: { tag: string; to: Move }) =>
+      api.call('moveTag', {
+        tag,
+        parent: to.parentId,
+        ...(to.before ? { before: to.before } : {}),
+        ...(to.after ? { after: to.after } : {})
+      }),
+    onMutate: async ({ tag, to }) => {
+      await queryClient.cancelQueries({ queryKey: ['tags'] })
+      const before = queryClient.getQueryData<Catalog>(['tags'])
+      if (before) queryClient.setQueryData<Catalog>(['tags'], { ...before, tags: moveInTagList(before.tags, tag, to) })
+      setReceived(to.parentId ? `${to.parentId}/${leafOf(tag)}` : leafOf(tag))
+      return { before }
+    },
+    onSuccess: (moved) => {
+      setReceived(moved.name)
+      announce(t('tags.moved', { name: moved.name }))
+    },
+    onError: (error, _, context) => {
+      if (context?.before) queryClient.setQueryData(['tags'], context.before)
+      setReceived(null)
+      announce(errorText(error))
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ['tags'] })
+  })
   if (pending) return null
   if (!account) return <Navigate to="/entrar" replace />
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['tags'] })
-  const wanted = query.trim().toLocaleLowerCase('es')
+  // Sin tildes ni mayúsculas, como en Archivos y en las páginas
+  const wanted = plain(query.trim())
   const all = tags.data?.tags ?? []
-  const shown = wanted ? all.filter((tag) => tag.name.toLocaleLowerCase('es').includes(wanted)) : all
+  const hasKids = (name: string) => all.some((other) => tagKey(other.name).startsWith(`${tagKey(name)}/`))
+  // Plegada una, sus hijas no se ven (al buscar, sí: todo lo encontrado)
+  const underCollapsed = (name: string) => {
+    for (let parent = parentOf(name); parent; parent = parentOf(parent)) if (collapsed.has(tagKey(parent))) return true
+    return false
+  }
+  const shown = wanted
+    ? all.filter((tag) => plain(tag.name).includes(wanted))
+    : all.filter((tag) => !underCollapsed(tag.name))
+  const isExpanded = (name: string) => Boolean(wanted) || !collapsed.has(tagKey(name))
+  const setExpandedTag = (name: string, open: boolean) =>
+    setCollapsed((current) => {
+      const next = new Set(current)
+      if (open) next.delete(tagKey(name))
+      else next.add(tagKey(name))
+      return next
+    })
   const detail = shown.find((tag) => tag.name === hovered)
+  // Cada fila, con su nivel y su puesto entre sus hermanas: para saber adónde sale al llevarla a la izquierda
+  const rows = shown.map((tag) => {
+    const siblings = shown.filter((other) => sameTag(parentOf(other.name), parentOf(tag.name)))
+    return {
+      tag,
+      level: tag.depth + 1,
+      posinset: siblings.indexOf(tag) + 1,
+      setsize: siblings.length,
+      expanded: shown.some((other) => sameTag(parentOf(other.name), tag.name))
+    }
+  })
+  const rowOf = (name: string) => rows.find((row) => sameTag(row.tag.name, name))
+  /** Adónde iría la que se arrastra al soltarla en esa fila (y la fila a la que sale, si se lleva a la izquierda) */
+  const dropAt = (name: string, zone: Zone, clientX: number) => {
+    const row = rowOf(name)
+    if (!dragging || !row) return null
+    const out = outdentTarget(
+      row,
+      (r) => nodeOf(r.tag.name),
+      rowOf,
+      zone,
+      Math.floor((dragStartX.current - clientX) / OUTDENT_STEP),
+      dragging
+    )
+    const to = dropMove(
+      nodeOf(dragging),
+      nodeOf(name),
+      zone,
+      (id) => parentOf(id) || null,
+      out ? nodeOf(out.tag.name) : null
+    )
+    // Dentro de su propia madre (sin delante ni detrás): ya está ahí
+    if (to && !to.before && !to.after && sameTag(to.parentId ?? '', parentOf(dragging))) return null
+    return to ? { to, level: out?.level } : null
+  }
+  const tabStop = focused && shown.some((tag) => sameTag(tag.name, focused)) ? focused : shown[0]?.name
+  const focusAt = (index: number) => {
+    const tag = shown[Math.max(0, Math.min(shown.length - 1, index))]
+    if (tag) items.current.get(tagKey(tag.name))?.focus()
+  }
+  const onRowKey = (tag: TagView, event: KeyboardEvent<HTMLLIElement>) => {
+    // Las teclas de su engranaje son suyas
+    if (event.target !== event.currentTarget) return
+    const index = shown.indexOf(tag)
+    // Alt + flechas: arriba y abajo entre hermanas; derecha, dentro de la de encima; izquierda, fuera de su madre
+    if (event.altKey && event.key.startsWith('Arrow')) {
+      event.preventDefault()
+      if (wanted) return
+      const siblings = shown.filter((other) => sameTag(parentOf(other.name), parentOf(tag.name)))
+      const to = keyboardMove(
+        nodeOf(tag.name),
+        siblings.map((other) => nodeOf(other.name)),
+        nodeOf,
+        event.key
+      )
+      if (!to) return
+      // Sigue con el foco donde quede (con su nombre nuevo, si cambia de madre), con su madre desplegada
+      const moved = joinTag(to.parentId ?? '', leafOf(tag.name))
+      pendingFocus.current = moved
+      setFocused(moved)
+      if (to.parentId) setExpandedTag(to.parentId, true)
+      move.mutate({ tag: tag.name, to })
+      return
+    }
+    // Derecha e izquierda despliegan y pliegan (como las carpetas); desde una hija, la izquierda va a su madre. Intro
+    // abre su ventana
+    const kids = hasKids(tag.name)
+    if (event.key === 'ArrowRight' && kids && !wanted) {
+      event.preventDefault()
+      if (isExpanded(tag.name)) focusAt(index + 1)
+      else setExpandedTag(tag.name, true)
+      return
+    }
+    if (event.key === 'ArrowLeft' && !wanted) {
+      event.preventDefault()
+      if (kids && isExpanded(tag.name)) setExpandedTag(tag.name, false)
+      else if (parentOf(tag.name)) items.current.get(tagKey(parentOf(tag.name)))?.focus()
+      return
+    }
+    if (event.key === 'Enter') {
+      event.preventDefault()
+      event.currentTarget.querySelector<HTMLElement>('[data-row-open]')?.click()
+      return
+    }
+    const targets: Record<string, number> = { ArrowDown: index + 1, ArrowUp: index - 1, Home: 0, End: shown.length - 1 }
+    const next = targets[event.key]
+    if (next === undefined) return
+    event.preventDefault()
+    focusAt(next)
+  }
   return (
     <section className={files.page}>
       <div className={files.layout}>
         <div className={files.center}>
-          <PageTitle>{t('tags.title')}</PageTitle>
+          <TitleEmblem kind="etiquetas" show={(tags.data?.tags.length ?? 0) > 0}>
+            <PageTitle>{t('tags.title')}</PageTitle>
+          </TitleEmblem>
           <div className={files.tools}>
             <label className={files.search} data-tour="etiquetas-buscar">
               <Search aria-hidden="true" size={16} />
@@ -265,6 +429,10 @@ export function AccountTags() {
                 value={query}
                 placeholder={t('tags.search')}
                 aria-label={t('tags.search')}
+                autoComplete="off"
+                data-1p-ignore
+                data-lpignore="true"
+                data-form-type="other"
                 onChange={(event) => setQuery(event.currentTarget.value)}
               />
             </label>
@@ -273,59 +441,87 @@ export function AccountTags() {
           {tags.data && (
             <>
               {all.length === 0 ? (
-                <p className={files.empty}>{t('tags.empty')}</p>
+                <EmptyState kind="etiquetas" action={<NewTag onCreated={refresh} primary />}>
+                  <p>{t('tags.empty')}</p>
+                </EmptyState>
               ) : (
-                shown.length === 0 && <p className={files.empty}>{t('tags.noResults')}</p>
+                shown.length === 0 && (
+                  <EmptyState kind="sin-resultados" small>
+                    <p>{t('tags.noResults')}</p>
+                  </EmptyState>
+                )
               )}
               <ul
-                className={`${files.rows} ${dragging ? styles.draggingTag : ''}`}
+                className={files.rows}
                 aria-label={t('tags.title')}
+                aria-describedby={wanted ? undefined : hintId}
                 data-tour="etiquetas-lista"
               >
-                {/* Mientras se arrastra una de dentro: «Arriba del todo», para sacarla */}
-                {dragging && parentOf(dragging) && (
-                  <li
-                    className={styles.topTarget}
-                    data-over={over === '' || undefined}
-                    onDragOver={(event) => {
-                      event.preventDefault()
-                      setOver('')
-                    }}
-                    onDragLeave={() => setOver((current) => (current === '' ? null : current))}
-                    onDrop={(event) => {
-                      event.preventDefault()
-                      drop('')
-                    }}
-                  >
-                    {t('tags.topHere')}
-                    {over === '' && <span className={styles.moveHere}>{t('tags.moveHere')}</span>}
-                  </li>
-                )}
                 {shown.map((tag) => (
                   <TagRow
                     key={tag.name}
                     tag={tag}
                     indent={!wanted}
                     movable={!wanted}
-                    target={dragging !== null && canMove(dragging, tag.name)}
-                    over={over === tag.name}
+                    drop={drop && sameTag(drop.name, tag.name) ? drop : null}
                     received={received !== null && sameTag(received, tag.name)}
-                    onDrag={(on) => {
+                    kids={
+                      !wanted && hasKids(tag.name)
+                        ? { open: isExpanded(tag.name), onToggle: (open) => setExpandedTag(tag.name, open) }
+                        : null
+                    }
+                    focus={{
+                      ref: (element) => {
+                        if (element) items.current.set(tagKey(tag.name), element)
+                        else items.current.delete(tagKey(tag.name))
+                      },
+                      tabIndex: tabStop !== undefined && sameTag(tabStop, tag.name) ? 0 : -1,
+                      onFocus: () => setFocused(tag.name),
+                      onKeyDown: (event) => onRowKey(tag, event)
+                    }}
+                    onDrag={(on, x) => {
                       setDragging(on ? tag.name : null)
-                      setOver(null)
+                      dragStartX.current = x
+                      setDrop(null)
                       setReceived(null)
                     }}
-                    onOver={(on) => setOver((current) => (on ? tag.name : current === tag.name ? null : current))}
-                    onDropInto={() => drop(tag.name)}
+                    onDragOver={(zone, clientX) => {
+                      const at = dropAt(tag.name, zone, clientX)
+                      setDrop(
+                        at
+                          ? {
+                              name: tag.name,
+                              zone: at.level ? 'after' : zone,
+                              ...(at.level ? { level: at.level } : {})
+                            }
+                          : null
+                      )
+                      return at !== null
+                    }}
+                    onDrop={(zone, clientX) => {
+                      const at = dropAt(tag.name, zone, clientX)
+                      if (dragging && at) {
+                        if (at.to.parentId) setExpandedTag(at.to.parentId, true)
+                        move.mutate({ tag: dragging, to: at.to })
+                      }
+                      setDragging(null)
+                      setDrop(null)
+                    }}
                     onPreview={(on) => setHovered((current) => (on ? tag.name : current === tag.name ? null : current))}
                     onChanged={refresh}
                   />
                 ))}
-                {/* «Nueva etiqueta», una fila más tras la última: vacía y con el borde discontinuo (docs/diseno.md) */}
-                <li className={styles.newItem}>
-                  <NewTag onCreated={refresh} />
-                </li>
+                {/* «Nueva etiqueta», una fila más tras la última, vacía (docs/diseno.md); sin ninguna, en la pieza vacía */}
+                {all.length > 0 && (
+                  <li className={styles.newItem}>
+                    <NewTag onCreated={refresh} />
+                  </li>
+                )}
               </ul>
+              {/* Cómo se recoloca: para los lectores de pantalla (con el ratón se ve al arrastrar) */}
+              <p id={hintId} className={styles.hidden}>
+                {t('tags.moveHint')}
+              </p>
             </>
           )}
         </div>
@@ -363,12 +559,13 @@ function TagRow({
   tag,
   indent,
   movable,
-  target,
-  over,
+  drop,
   received,
+  kids,
+  focus,
   onDrag,
-  onOver,
-  onDropInto,
+  onDragOver,
+  onDrop,
   onPreview,
   onChanged
 }: {
@@ -377,14 +574,24 @@ function TagRow({
   indent: boolean
   /** Se puede arrastrar (en árbol, con ratón) */
   movable: boolean
-  /** Mientras se arrastra otra: si puede soltarse aquí, y si está encima */
-  target: boolean
-  over: boolean
-  /** Acaba de recibir una: se ilumina un momento */
+  /** Mientras se arrastra otra encima: dónde caería (delante, dentro o detrás) y, si sale de su madre, a qué nivel */
+  drop: { zone: Zone; level?: number } | null
+  /** Acaba de moverse: se ilumina un momento */
   received: boolean
-  onDrag: (dragging: boolean) => void
-  onOver: (over: boolean) => void
-  onDropInto: () => void
+  /** Si tiene hijas (en árbol): si están a la vista y su flecha para plegarlas o desplegarlas */
+  kids: { open: boolean; onToggle: (open: boolean) => void } | null
+  /** Con el teclado: la fila enfocable (una sola parada del tabulador) y sus teclas */
+  focus: {
+    ref: (element: HTMLLIElement | null) => void
+    tabIndex: number
+    onFocus: () => void
+    onKeyDown: (event: KeyboardEvent<HTMLLIElement>) => void
+  }
+  /** Empieza o acaba de arrastrarse (con dónde estaba el puntero al empezar) */
+  onDrag: (dragging: boolean, x: number) => void
+  /** Pasa otra por encima: devuelve si puede soltarse ahí */
+  onDragOver: (zone: Zone, clientX: number) => boolean
+  onDrop: (zone: Zone, clientX: number) => void
   onPreview: (shown: boolean) => void
   onChanged: () => Promise<unknown>
 }) {
@@ -394,31 +601,35 @@ function TagRow({
   // En el móvil (sin ratón que pase por encima), tocarla sube su hoja: lo que es y sus ajustes
   const narrow = useNarrow()
   const [open, setOpen] = useState<'sheet' | 'settings' | null>(null)
+  const nameButton = useRef<HTMLButtonElement>(null)
   return (
     <li
+      {...focus}
       className={`${files.row} ${styles.tagRow} ${received ? files.received : ''}`}
-      style={indent ? ({ paddingInlineStart: `calc(${tag.depth} * 1.5rem + var(--space-2))` } as CSSProperties) : {}}
-      data-target={target || undefined}
-      data-over={over || undefined}
+      style={
+        {
+          ...(indent ? { paddingInlineStart: `calc(${tag.depth} * 1.5rem + var(--space-2))` } : {}),
+          // La raya empieza en el nivel donde cae: el de la fila o, si sale de su madre, el de fuera
+          '--drop-indent': `calc(${drop?.level ? drop.level - 1 : indent ? tag.depth : 0} * 1.5rem)`
+        } as CSSProperties
+      }
+      data-drop={drop?.zone}
       draggable={movable && !narrow}
       onDragStart={(event) => {
         event.dataTransfer.effectAllowed = 'move'
         event.dataTransfer.setData('text/plain', tag.name)
-        onDrag(true)
+        onDrag(true, event.clientX)
       }}
-      onDragEnd={() => onDrag(false)}
+      onDragEnd={(event) => onDrag(false, event.clientX)}
       onDragOver={(event) => {
-        if (!target) return
+        const box = event.currentTarget.getBoundingClientRect()
+        if (!onDragOver(zoneAt((event.clientY - box.top) / (box.height || 1)), event.clientX)) return
         event.preventDefault()
-        onOver(true)
-      }}
-      onDragLeave={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) onOver(false)
       }}
       onDrop={(event) => {
-        if (!target) return
         event.preventDefault()
-        onDropInto()
+        const box = event.currentTarget.getBoundingClientRect()
+        onDrop(zoneAt((event.clientY - box.top) / (box.height || 1)), event.clientX)
       }}
       onPointerEnter={() => onPreview(true)}
       onPointerLeave={() => onPreview(false)}
@@ -426,21 +637,38 @@ function TagRow({
         if ((event.target as Element).closest('[aria-haspopup="dialog"]')) onPreview(false)
       }}
     >
-      <span className={styles.dot} style={tagDot(tag.color)} aria-hidden="true" />
-      <span className={files.rowText}>
-        {narrow ? (
+      {/* Su flecha, si tiene hijas (las pliega y despliega, como una carpeta), y su punto de color */}
+      <span className={styles.lead}>
+        {kids ? (
           <button
             type="button"
-            className={`${files.rowName} ${files.open} ${styles.name}`}
-            aria-haspopup="dialog"
-            onClick={() => setOpen('sheet')}
+            className={styles.toggle}
+            data-open={kids.open}
+            aria-expanded={kids.open}
+            aria-label={t(kids.open ? 'tags.collapse' : 'tags.expand', { name: tag.name })}
+            tabIndex={-1}
+            onClick={() => kids.onToggle(!kids.open)}
           >
-            {name}
+            <ChevronRight aria-hidden="true" size={14} />
           </button>
         ) : (
-          <span className={styles.name}>{name}</span>
+          <span className={styles.toggle} aria-hidden="true" />
         )}
-        {over && <span className={styles.moveHere}>{t('tags.moveHere')}</span>}
+        <span className={styles.dot} style={tagDot(tag.color)} aria-hidden="true" />
+      </span>
+      <span className={files.rowText}>
+        {/* Toda la fila abre lo suyo (como en Archivos): su ventana; en el móvil, su hoja */}
+        <button
+          ref={nameButton}
+          type="button"
+          className={`${files.rowName} ${files.open} ${styles.name}`}
+          aria-haspopup="dialog"
+          data-row-open=""
+          tabIndex={-1}
+          onClick={() => setOpen(narrow ? 'sheet' : 'settings')}
+        >
+          {name}
+        </button>
       </span>
       <span className={`${files.rowMeta} ${styles.usesAside}`}>{uses(tag)}</span>
       <TagSettings tag={tag} onChanged={onChanged} />
@@ -463,7 +691,17 @@ function TagRow({
           </div>
         </Modal>
       )}
-      {open === 'settings' && <TagDialog tag={tag} onChanged={onChanged} onClose={() => setOpen(null)} />}
+      {open === 'settings' && (
+        <TagDialog
+          tag={tag}
+          onChanged={onChanged}
+          onClose={(gone) => {
+            setOpen(null)
+            // El foco vuelve a la fila (en el escritorio, desde ella se abrió)
+            if (!gone && !narrow) nameButton.current?.closest('li')?.focus()
+          }}
+        />
+      )}
     </li>
   )
 }
@@ -498,7 +736,7 @@ function TagDetail({ tag }: { tag: TagView }) {
   )
 }
 
-function NewTag({ onCreated }: { onCreated: () => Promise<unknown> }) {
+function NewTag({ onCreated, primary = false }: { onCreated: () => Promise<unknown>; primary?: boolean }) {
   const { t } = useTranslation()
   const api = useApi()
   const errorText = useErrorText()
@@ -518,23 +756,40 @@ function NewTag({ onCreated }: { onCreated: () => Promise<unknown> }) {
   })
   return (
     <>
-      <button
-        ref={trigger}
-        type="button"
-        className={styles.newRow}
-        aria-haspopup="dialog"
-        data-tour="etiquetas-nueva"
-        onClick={() => {
-          setName('')
-          setParent('')
-          setColor(null)
-          create.reset()
-          setOpen(true)
-        }}
-      >
-        <Plus aria-hidden="true" size={16} />
-        {t('tags.new')}
-      </button>
+      {primary ? (
+        <button
+          ref={trigger}
+          type="button"
+          className={form.button}
+          aria-haspopup="dialog"
+          data-tour="etiquetas-nueva"
+          onClick={() => {
+            setName('')
+            setParent('')
+            setColor(null)
+            create.reset()
+            setOpen(true)
+          }}
+        >
+          <Plus aria-hidden="true" size={16} />
+          {t('tags.new')}
+        </button>
+      ) : (
+        <NewCard
+          ref={trigger}
+          shape="row"
+          label={t('tags.new')}
+          aria-haspopup="dialog"
+          data-tour="etiquetas-nueva"
+          onClick={() => {
+            setName('')
+            setParent('')
+            setColor(null)
+            create.reset()
+            setOpen(true)
+          }}
+        />
+      )}
       {open && (
         <Modal
           ref={dialog}

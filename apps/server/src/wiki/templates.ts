@@ -1,40 +1,144 @@
 /**
- * Las plantillas con las que se crean páginas (ADR-0009): encontrarlas por su id o su nombre y dar sus copias a una
- * página nueva. Las de serie viven en el dominio; las de la cuenta llegan con la tarea 9
+ * Las plantillas con las que se crean páginas (ADR-0009, ADR-0024): las de la cuenta (no hay de serie). Cada una es una
+ * página del mundo oculto de la cuenta, y de ella se lee (nombre, icono, campos, panel y su texto como esqueleto); la
+ * que aún no la tiene (de antes), de lo que guardaba su ficha, hasta que se abre y pasa a su página
  */
 import { randomBytes } from 'node:crypto'
-import { pagePanel, TEMPLATE_ICONS } from '@crisol/contracts'
-import { templatesRepo } from '@crisol/db'
-import { BUILT_IN_TEMPLATES, fieldKey, type PageTemplate, type TemplateIcon } from '@crisol/domain'
-import { type ActionContext, InvalidRequestError } from '../actions/context.ts'
+import { type PageTemplate, pageCover, pagePanel, type TemplateView } from '@crisol/contracts'
+import { pagesRepo, templatesRepo, worldsRepo } from '@crisol/db'
+import { fieldKey, templateEmoji } from '@crisol/domain'
+import { fillJsonIds } from '@crisol/editor'
+import { pageFromMarkdown, pageToMarkdown } from '@crisol/editor/markdown'
+import { type ActionContext, historyContext, InvalidRequestError } from '../actions/context.ts'
+import { readDocument, stateOf } from './content.ts'
 import { propertiesOf } from './properties.ts'
 
-const iconOf = (icon: string): TemplateIcon =>
-  (TEMPLATE_ICONS as readonly string[]).includes(icon) ? (icon as TemplateIcon) : 'template'
+/** Una plantilla de la cuenta, de su página si la tiene (lo guardado que no valga, fuera) */
+export async function ownTemplate(ctx: ActionContext, row: templatesRepo.TemplateRow): Promise<PageTemplate> {
+  return (await withPage(ctx, row)).template
+}
 
-/** Una plantilla de la cuenta, como las de serie (lo guardado que no valga, fuera) */
-export const ownTemplate = (row: templatesRepo.TemplateRow): PageTemplate => ({
-  id: row.id,
-  name: row.name,
-  icon: iconOf(row.icon),
-  basedOn: row.basedOn,
-  line: row.line,
-  builtIn: false,
-  fields: propertiesOf(row.fields),
-  panel: pagePanel.safeParse(row.panel).data ?? [],
-  skeleton: row.skeleton
-})
+/**
+ * Las plantillas como las da la API (ADR-0024): con su carpeta, su puesto y lo que enseña su vista previa (la portada
+ * de su página, sus pestañas y en cuántas páginas se usa)
+ */
+export async function templateViews(
+  ctx: ActionContext,
+  organizationId: string,
+  rows: readonly templatesRepo.TemplateRow[]
+): Promise<TemplateView[]> {
+  const loaded = await Promise.all(rows.map((row) => withPage(ctx, row)))
+  const uses = await templatesRepo.templateUses(
+    ctx.db,
+    organizationId,
+    rows.map((row) => row.id)
+  )
+  const tabs = await templatesRepo.tabsOfPages(
+    ctx.db,
+    loaded.flatMap(({ page }) => (page ? [page.id] : []))
+  )
+  return loaded.map(({ template, page }, index) => ({
+    ...structuredClone(template),
+    folderId: rows[index]?.folderId ?? null,
+    position: rows[index]?.position ?? null,
+    cover: page ? (pageCover.safeParse(page.cover).data ?? null) : null,
+    tabs: page ? (tabs.get(page.id) ?? []) : [],
+    uses: uses.get(template.id) ?? 0
+  }))
+}
 
-/** Las plantillas que se pueden usar en una organización: las de serie y las suyas, en el orden en que se hicieron */
+/** Una, como la da la API */
+export async function templateView(ctx: ActionContext, row: templatesRepo.TemplateRow): Promise<TemplateView> {
+  const [view] = await templateViews(ctx, row.organizationId, [row])
+  if (!view) throw new Error(`No se pudo leer la plantilla ${row.id}`)
+  return view
+}
+
+async function withPage(ctx: ActionContext, row: templatesRepo.TemplateRow) {
+  const page = row.pageId ? await pagesRepo.findPage(ctx.db, row.pageId) : null
+  const lineage = { id: row.id, basedOn: row.basedOn, line: row.line }
+  if (!page) {
+    const template: PageTemplate = {
+      ...lineage,
+      name: row.name,
+      icon: templateEmoji(row.icon),
+      pageId: null,
+      fields: propertiesOf(row.fields),
+      panel: pagePanel.safeParse(row.panel).data ?? [],
+      skeleton: row.skeleton
+    }
+    return { template, page: null }
+  }
+  // Su texto, como esqueleto en Markdown (sin propiedades: esas son sus campos); sin texto, vacío
+  const body = await readDocument(ctx, { kind: 'body', pageId: page.id })
+  const skeleton = pageToMarkdown({ properties: [], body, separate: () => null })
+  const template: PageTemplate = {
+    ...lineage,
+    name: page.title,
+    icon: page.icon,
+    pageId: page.id,
+    fields: propertiesOf(page.properties),
+    panel: pagePanel.safeParse(page.panel).data ?? [],
+    skeleton: skeleton.trim() === '' ? '' : skeleton
+  }
+  return { template, page }
+}
+
+/** Las plantillas que se pueden usar en una organización: las suyas, en el orden en que se hicieron */
 export async function usableTemplates(ctx: ActionContext, organizationId: string): Promise<readonly PageTemplate[]> {
-  const own = await templatesRepo.listTemplates(ctx.db, organizationId)
-  return [...BUILT_IN_TEMPLATES, ...own.map(ownTemplate)]
+  const rows = await templatesRepo.listTemplates(ctx.db, organizationId)
+  return Promise.all(rows.map((row) => ownTemplate(ctx, row)))
 }
 
 /** Las de la cuenta que se borraron: su nombre, para las páginas que salieron de ellas */
 export async function deletedTemplates(ctx: ActionContext, organizationId: string) {
   const rows = await templatesRepo.listTemplates(ctx.db, organizationId, true)
-  return rows.map((row) => ({ id: row.id, name: row.name, icon: iconOf(row.icon) }))
+  return Promise.all(
+    rows.map(async (row) => {
+      const page = row.pageId ? await pagesRepo.findPage(ctx.db, row.pageId) : null
+      return { id: row.id, name: page?.title ?? row.name, icon: page ? page.icon : templateEmoji(row.icon) }
+    })
+  )
+}
+
+/**
+ * La página de una plantilla: la que tiene o, si aún no la tiene (una de antes del ADR-0024), una nueva en el mundo
+ * oculto de su cuenta con lo que guardaba su ficha (su esqueleto, su texto; sus campos, sus propiedades; su panel). Lo
+ * hace el sistema: no se deshace (la ficha sigue igual)
+ */
+export async function templatePage(ctx: ActionContext, row: templatesRepo.TemplateRow): Promise<string> {
+  if (row.pageId && (await pagesRepo.findPage(ctx.db, row.pageId))) return row.pageId
+  const world = await worldsRepo.templatesWorld(ctx.db, row.organizationId)
+  const parsed = pageFromMarkdown(row.skeleton)
+  const body = (parsed.body.content ?? []).length > 0 ? stateOf(fillJsonIds(parsed.body)) : null
+  const context = {
+    ...historyContext(
+      ctx,
+      'templatePage',
+      { name: row.name },
+      { organizationId: row.organizationId, worldId: world.id }
+    ),
+    via: 'system' as const
+  }
+  const [page] = await pagesRepo.createPagesWithBodies(ctx.db, context, {
+    worldId: world.id,
+    parentId: null,
+    pages: [
+      {
+        key: 'plantilla',
+        parentKey: null,
+        title: row.name,
+        icon: templateEmoji(row.icon),
+        body,
+        separates: [],
+        panel: row.panel
+      }
+    ],
+    properties: () => new Map([['plantilla', row.fields]])
+  })
+  if (!page) throw new Error(`No se pudo hacer la página de la plantilla ${row.id}`)
+  await templatesRepo.updateTemplate(ctx.db, context, row.id, { pageId: page.id })
+  return page.id
 }
 
 /** El id de un campo nuevo de una plantilla propia */
@@ -64,7 +168,7 @@ const TYPE_NAMES = {
 } as const
 
 /** Los campos de una plantilla en una línea, para los errores: «Facción (páginas), Estado (opciones: Vive, …)» */
-export const fieldsText = (template: PageTemplate) =>
+export const fieldsText = (template: Pick<PageTemplate, 'fields'>) =>
   template.fields
     .map((field) => {
       const shape =

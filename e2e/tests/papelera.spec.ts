@@ -32,7 +32,7 @@ test('el máster borra una campaña con una jugadora dentro: ella la pierde al m
   const items = trash.getByRole('list', { name: 'En la papelera' }).getByRole('listitem')
   await expect(items).toHaveText([/^La Marca.*Campaña de Eana · Se borra del todo el/])
   await trash.getByRole('button', { name: 'Restaurar La Marca' }).click()
-  await expect(trash.getByText('La papelera está vacía')).toBeVisible()
+  await expect(trash.getByText('La papelera está vacía.')).toBeVisible()
   await closeWindow(trash)
 
   await player.goto(campaignUrl)

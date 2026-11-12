@@ -7,9 +7,12 @@
   flex-direction: column;
   inline-size: 15rem;
   padding: var(--space-1);
-  border: 1px solid var(--color-frame);
+  border: 1px solid var(--glass-edge);
   border-radius: 10px;
-  background: var(--color-surface);
+  /* De cristal, como todo lo que flota */
+  background: var(--frame-sheen), var(--popup-glass);
+  -webkit-backdrop-filter: var(--popup-blur);
+  backdrop-filter: var(--popup-blur);
   box-shadow: 0 0.75rem 2rem rgb(0 0 0 / 0.22);
   font-family: var(--font-body);
   animation: asoma 120ms cubic-bezier(0.2, 0.7, 0.2, 1);
@@ -102,7 +105,7 @@
   padding: 0 var(--space-2);
   border: 1px solid var(--color-field-border);
   border-radius: 6px;
-  background: var(--color-bg);
+  background: var(--field-fill);
   color: var(--color-text);
   font: inherit;
   font-size: 0.875rem;
@@ -146,9 +149,10 @@
   flex-direction: column;
   inline-size: 16rem;
   padding: var(--space-1);
-  border: 1px solid var(--color-frame);
+  border: 1px solid var(--glass-edge);
   border-radius: 10px;
-  background: var(--color-surface);
+  /* Dentro del menú (que ya desenfoca, y no se puede desenfocar dos veces): casi opaco */
+  background: var(--glass-solid);
   box-shadow: 0 0.75rem 2rem rgb(0 0 0 / 0.22);
   animation: asoma 120ms cubic-bezier(0.2, 0.7, 0.2, 1);
 }
@@ -168,7 +172,7 @@
   padding: 0 var(--space-2);
   border: 1px solid var(--color-field-border);
   border-radius: 6px;
-  background: var(--color-bg);
+  background: var(--field-fill);
   color: var(--color-text);
   font: inherit;
   font-size: 0.875rem;

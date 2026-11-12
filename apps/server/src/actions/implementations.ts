@@ -2,15 +2,18 @@ import { actorFolderActions } from './actor-folders.ts'
 import { aiActions } from './ai.ts'
 import { bookActions } from './books.ts'
 import { campaignActions } from './campaigns.ts'
+import { chapterActions } from './chapters.ts'
 import { characterActions } from './characters.ts'
 import { combatActions } from './combat.ts'
 import { compendiumActions } from './compendium.ts'
+import { copyPageActions } from './copy-page.ts'
 import { creatureActions } from './creatures.ts'
 import { diceActions } from './dice.ts'
 import { fileActions } from './files.ts'
 import { foundryActions } from './foundry.ts'
 import { foundrySceneActions } from './foundry-scenes.ts'
 import { historyActions } from './history.ts'
+import { iconActions } from './icons.ts'
 import { invitationActions } from './invitations.ts'
 import { knowledgeActions } from './knowledge.ts'
 import { libraryActions } from './library.ts'
@@ -61,18 +64,21 @@ export const IMPLEMENTATIONS: Implementation[] = [
   ...aiActions,
   ...pageActions,
   ...pageContentActions,
+  ...copyPageActions,
   ...linkActions,
   ...previewActions,
   ...versionActions,
   ...fileActions,
   ...searchActions,
   ...tagActions,
+  ...iconActions,
   ...templateActions,
   ...systemActions,
   ...bookActions,
   ...foundryActions,
   ...foundrySceneActions,
   ...compendiumActions,
+  ...chapterActions,
   ...worldContentActions,
   ...characterActions,
   ...creatureActions,

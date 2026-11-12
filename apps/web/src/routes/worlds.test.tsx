@@ -1,7 +1,7 @@
 import { createMemoryHistory } from '@tanstack/react-router'
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { fakeAccountClient } from '../account/fake.ts'
 import { ApiError } from '../api/client.ts'
 import { fakeApi } from '../api/fake.ts'
@@ -71,9 +71,11 @@ describe('mis mundos', () => {
     await userEvent.type(dialog.getByLabelText('Descripción'), 'Ciudades libres en la niebla')
     await userEvent.click(dialog.getByRole('radio', { name: 'Vino' }))
     await userEvent.click(dialog.getByRole('button', { name: 'Guardar' }))
-    // En su tarjeta (el panel de al lado también lo enseña)
+    // En su tarjeta (el panel de al lado también lo enseña; el cuadro, que aún se está cerrando, lo lleva escrito)
     expect(
-      await within(screen.getByRole('list', { name: 'Mundos' })).findByText('Ciudades libres en la niebla')
+      await within(screen.getByRole('list', { name: 'Mundos' })).findByText('Ciudades libres en la niebla', {
+        selector: 'p'
+      })
     ).toBeDefined()
     expect(api.calls).toContain('updateWorld')
   })
@@ -137,7 +139,18 @@ describe('mis mundos', () => {
     await userEvent.click(settings.getByRole('button', { name: 'Añadir portada' }))
     const cover = within(await screen.findByRole('dialog', { name: 'Portada de Eana' }))
     expect(cover.queryByRole('button', { name: 'Guardar' })).toBeNull()
-    await userEvent.click(await cover.findByRole('button', { name: 'mapa.png' }))
+    // Sin imagen, pulsar el hueco sube una (el mismo campo que «Subir imagen»)
+    const dialogElement = screen.getByRole('dialog', { name: 'Portada de Eana' })
+    const input = dialogElement.querySelector('input[type="file"]') as HTMLInputElement
+    const picked = vi.spyOn(input, 'click').mockImplementation(() => undefined)
+    await userEvent.click(dialogElement.querySelector('button[aria-hidden="true"]') as HTMLElement)
+    expect(picked).toHaveBeenCalled()
+    picked.mockRestore()
+    // «Elegir de tus archivos» abre el selector; elegir una la pone y lo cierra
+    await userEvent.click(cover.getByRole('button', { name: 'Elegir de tus archivos' }))
+    const picker = within(await screen.findByRole('dialog', { name: 'Elegir de tus archivos' }))
+    await userEvent.click(await picker.findByRole('button', { name: 'mapa.png' }))
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Elegir de tus archivos' })).toBeNull())
     await userEvent.click(cover.getByRole('button', { name: 'Acercar más' }))
     await userEvent.click(cover.getByRole('button', { name: 'Guardar' }))
     // Cerrar la portada no cierra la ventana del mundo

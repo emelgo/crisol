@@ -1,16 +1,28 @@
 import { z } from 'zod'
 import { defineAction } from './action.ts'
+import { gameIcon } from './game-icons.ts'
 import { pagePanel } from './panel.ts'
 import { readAs } from './read-as.ts'
 
 const pageTitle = z.string().trim().min(1).max(200)
 /** Un emoji (con sus modificadores y uniones), o una bandera */
-const pageIcon = z
+const emojiIcon = z
   .string()
   .max(16)
   .regex(
     /^(?:\p{Extended_Pictographic}|\p{Regional_Indicator})(?:\p{Extended_Pictographic}|\p{Regional_Indicator}|\p{Emoji_Modifier}|\u200d|\ufe0f)*$/u
   )
+/**
+ * El icono de una página, una carpeta, una plantilla…: un emoji o uno de los iconos de rol del paquete, «gi:<id>»
+ * (game-icons.ts: dragon-head, castle, crossed-swords, spell-book…)
+ */
+export const pageIcon = z.union([
+  emojiIcon,
+  z
+    .string()
+    .max(48)
+    .refine((value) => gameIcon(value) !== null, 'No es un icono del paquete')
+])
 
 const propertyName = z.string().trim().min(1).max(60)
 /** El id de un campo de plantilla: legible en las de serie («faccion»), corto y aleatorio en las propias (ADR-0009) */
@@ -81,7 +93,9 @@ export type PageCover = z.infer<typeof pageCover>
  */
 export const sheetSettings = z.object({
   paper: z.enum(['a4', 'letter']),
-  theme: z.enum(['pergamino', 'neutro']),
+  theme: z
+    .enum(['color', 'neutro', 'pergamino'])
+    .describe('Al imprimir: con los colores de la app, en blanco y negro (neutro) o en pergamino'),
   numbers: z.boolean(),
   firstNumber: z.number().int().min(1).max(999),
   footer: z.boolean(),
@@ -117,6 +131,15 @@ const placement = {
 const onlyOneNeighbour = (input: { before?: string | undefined; after?: string | undefined }) =>
   !(input.before && input.after)
 
+export const copyPage = defineAction({
+  name: 'copyPage',
+  kind: 'write',
+  description:
+    'Duplica una página con todo lo suyo, justo detrás de ella: portada, hoja, propiedades, panel, su texto con sus secretos y notas, y sus pestañas (mapas con sus pines, tablas, escenas con sus muros, luces y sonidos). Sus subpáginas no, ni lo que sabe cada campaña. Una sola operación, que se deshace de una vez desde el historial. Sin título, «<título> (copia)»',
+  input: z.object({ pageId: z.uuid(), title: pageTitle.optional() }),
+  output: page
+})
+
 export const createPage = defineAction({
   name: 'createPage',
   kind: 'write',
@@ -137,7 +160,7 @@ export const updatePage = defineAction({
   name: 'updatePage',
   kind: 'write',
   description:
-    'Cambia el título de una página, su icono (un emoji; null, sin icono), su candado (locked: el editor, en lectura) o su portada (una imagen del mundo con su encuadre; null, sin portada)',
+    'Cambia el título de una página, su icono (un emoji o un icono de rol «gi:<id>», listar_iconos; null, sin icono), su candado (locked: el editor, en lectura) o su portada (una imagen del mundo con su encuadre; null, sin portada)',
   input: z
     .object({
       pageId: z.uuid(),

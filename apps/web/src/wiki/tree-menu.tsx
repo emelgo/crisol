@@ -96,34 +96,12 @@ export function TreeMenu({
       onClose(true)
     }
   })
+  // Una copia entera (portada, hoja, panel, texto y pestañas), justo detrás: la hace el servidor, de una vez
   const duplicate = useMutation({
-    mutationFn: async () => {
-      const [{ markdown }, full] = await Promise.all([
-        api.call('readPage', { pageId: page.id }),
-        api.call('getPage', { pageId: page.id })
-      ])
-      const { pages } = await api.call('createPages', {
-        worldId,
-        parentId: page.parentId,
-        pages: [
-          {
-            key: 'copia',
-            title: t('treeMenu.copyOf', { title: page.title }),
-            ...(page.icon ? { icon: page.icon } : {}),
-            markdown
-          }
-        ]
-      })
-      const copy = pages[0]
-      if (!copy) return null
-      await api.call('movePage', { pageId: copy.id, parentId: page.parentId, after: page.id })
-      if (full.panel.length > 0) await api.call('setPagePanel', { pageId: copy.id, blocks: full.panel })
-      return copy
-    },
+    mutationFn: () => api.call('copyPage', { pageId: page.id, title: t('treeMenu.copyOf', { title: page.title }) }),
     onSuccess: async (copy) => {
       await refresh()
       onClose()
-      if (!copy) return
       announce(t('treeMenu.duplicated', { title: page.title }))
       await navigate({ to: '/mundos/$worldId/wiki/$pageId', params: { worldId, pageId: copy.id } })
     }

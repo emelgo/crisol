@@ -122,6 +122,8 @@ describe('un mapa sin imagen', () => {
     const { api } = await renderMap({ image: false })
     expect(await screen.findByText('Este mapa aún no tiene imagen.')).toBeDefined()
     const select = screen.getByLabelText('Imagen del mapa') as HTMLSelectElement
+    // Las del mundo, en cuanto llegan
+    await screen.findByRole('option', { name: 'rota.png' })
     expect(Array.from(select.options, (option) => option.textContent)).toEqual([
       'Elige una del mundo',
       'costa.png',
@@ -136,6 +138,7 @@ describe('un mapa sin imagen', () => {
 
   it('una imagen que no se puede leer no vale de mapa', async () => {
     await renderMap({ image: false })
+    await screen.findByRole('option', { name: 'rota.png' })
     await userEvent.selectOptions(await screen.findByLabelText('Imagen del mapa'), 'rota.png')
     expect(await screen.findByText('El mapa tiene que ser una imagen del mundo')).toBeDefined()
   })

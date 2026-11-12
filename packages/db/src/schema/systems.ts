@@ -51,6 +51,25 @@ export const systemContent = pgTable(
 )
 
 /**
+ * Los capítulos de un libro de un sistema propio (ADR-0025): texto corrido en Markdown (cómo se juega, la ambientación,
+ * una aventura), con su título y su puesto entre los del libro (source: la clave del libro en el documento del sistema)
+ */
+export const systemChapters = pgTable(
+  'system_chapters',
+  {
+    ...trackedColumns(),
+    systemId: uuid()
+      .notNull()
+      .references(() => systems.id, { onDelete: 'cascade' }),
+    source: text().notNull(),
+    position: integer().notNull(),
+    title: text().notNull(),
+    markdown: text().notNull().default('')
+  },
+  (t) => [index().on(t.systemId, t.source, t.position)]
+)
+
+/**
  * Las imágenes de un sistema (docs/specs/imagenes.md): las de su contenido (un zip de Foundry), por su ruta, con su
  * licencia y su crédito. Sus bytes, en el almacenamiento de archivos; no pasan por el historial (se rehacen al importar)
  */

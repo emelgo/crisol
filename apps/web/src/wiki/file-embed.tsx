@@ -210,7 +210,7 @@ function ImageFigure({
         </div>
       )}
       {/* La caja de luz: la imagen entera; Escape o «Cerrar» la cierran */}
-      <dialog ref={dialog} className={styles.lightbox} aria-label={file.name}>
+      <dialog ref={dialog} className={styles.lightbox} aria-label={file.name} data-full="">
         <img src={file.url} alt={attrs.alt ?? ''} className={styles.full} />
         <button type="button" className={styles.close} onClick={() => dialog.current?.close()}>
           {t('fileEmbed.close')}

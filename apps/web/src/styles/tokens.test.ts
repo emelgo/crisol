@@ -1,10 +1,23 @@
 import { describe, expect, it } from 'vitest'
 import tokens from './tokens.css?raw'
 
-/** Los colores de un bloque de tokens (el claro, :root; el oscuro, :root[data-theme="dark"]) */
+/** Los colores de un bloque de tokens (solo hay uno, :root: el tema oscuro) */
 function colors(selector: string) {
   const block = tokens.slice(tokens.indexOf(`${selector} {`)).split('}')[0] ?? ''
   return Object.fromEntries([...block.matchAll(/--(color-[\w-]+):\s*(#[0-9a-f]{6})/g)].map((m) => [m[1], m[2]]))
+}
+
+/** Los colores de los efectos (brasas, humo y ceniza): los de una pieza en hex y los de solo canales (-rgb), en hex */
+function effects(selector: string) {
+  const block = tokens.slice(tokens.indexOf(`${selector} {`)).split('}')[0] ?? ''
+  const hex = (n: string) => Number(n).toString(16).padStart(2, '0')
+  return Object.fromEntries([
+    ...[...block.matchAll(/--(fx-[\w-]+):\s*(#[0-9a-f]{6})/g)].map((m) => [m[1], m[2]]),
+    ...[...block.matchAll(/--(fx-[\w-]+-rgb):\s*(\d+) (\d+) (\d+)/g)].map((m) => [
+      m[1],
+      `#${hex(m[2] ?? '')}${hex(m[3] ?? '')}${hex(m[4] ?? '')}`
+    ])
+  ])
 }
 
 /** El contraste entre dos colores, como lo define WCAG */
@@ -21,10 +34,7 @@ function contrast(a = '', b = '') {
 }
 
 describe('los tokens de color', () => {
-  for (const [theme, selector] of [
-    ['claro', ':root'],
-    ['oscuro', ':root[data-theme="dark"]']
-  ] as const) {
+  for (const [theme, selector] of [['oscuro', ':root']] as const) {
     it(`en el tema ${theme}, el texto, el atenuado y el acento llegan a 4,5:1 con el fondo y la superficie`, () => {
       const c = colors(selector)
       for (const text of ['color-text', 'color-muted', 'color-accent-text', 'color-ai']) {
@@ -71,6 +81,18 @@ describe('los tokens de color', () => {
     it(`en el tema ${theme}, el foco llega a 3:1 con el fondo`, () => {
       const c = colors(selector)
       expect(contrast(c['color-focus'], c['color-bg'])).toBeGreaterThanOrEqual(3)
+    })
+
+    it(`en el tema ${theme}, las brasas, el humo y la ceniza se ven: a 3:1 con el fondo y con la barra`, () => {
+      const c = colors(selector)
+      const fx = effects(selector)
+      const names = ['fx-ember-1', 'fx-ember-2', 'fx-ember-3', 'fx-ember-4', 'fx-ember-5', 'fx-heat-rgb']
+      names.push('fx-smoke-rgb', 'fx-ash-1', 'fx-ash-2', 'fx-ash-3', 'fx-ash-4', 'fx-ash-5', 'fx-ash-rgb')
+      for (const name of names) {
+        expect(fx[name], name).toMatch(/^#/)
+        expect(contrast(fx[name], c['color-bg']), name).toBeGreaterThanOrEqual(3)
+        expect(contrast(fx[name], c['color-raised']), name).toBeGreaterThanOrEqual(3)
+      }
     })
 
     it(`en el tema ${theme}, el borde de los campos llega a 3:1 con el fondo y la superficie`, () => {

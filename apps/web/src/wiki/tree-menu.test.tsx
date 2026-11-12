@@ -44,26 +44,6 @@ const wikiApi = () =>
     ]
   })
 
-/** La API falsa no crea en lote (es cosa de la IA): aquí, una a una, como haría el servidor */
-const withCreatePages = (api: ReturnType<typeof wikiApi>, empty = false): ApiClient => ({
-  ...api.client,
-  call: (async (name: string, input: never) => {
-    if (name !== 'createPages') return api.client.call(name as never, input)
-    api.calls.push('createPages')
-    const { worldId, parentId, pages } = input as {
-      worldId: string
-      parentId: string | null
-      pages: { title: string }[]
-    }
-    if (empty) return { pages: [] }
-    const created = []
-    for (const page of pages) {
-      created.push(await api.client.call('createPage', { worldId, title: page.title, parentId }))
-    }
-    return { pages: created }
-  }) as ApiClient['call']
-})
-
 const renderAt = (path: string, api = wikiApi(), client: ApiClient = api.client) => {
   const router = createAppRouter(createMemoryHistory({ initialEntries: [path] }))
   render(
@@ -124,13 +104,14 @@ describe('el menú de una página en el árbol', () => {
     expect(await item('Reglas de la casa')).toBeDefined()
   })
 
-  it('duplicar hace una copia con su icono y su panel justo debajo, y la abre', async () => {
+  it('duplicar hace una copia entera (icono, portada, panel y pestañas) justo debajo, y la abre', async () => {
     const api = wikiApi()
     await api.client.call('setPagePanel', {
       pageId: ids.people,
       blocks: [{ id: 'notasdeprueba', type: 'text', title: 'Notas', text: 'Hola' }]
     })
-    const { router } = renderAt(`/mundos/${WORLD.id}/wiki/${ids.rules}`, api, withCreatePages(api))
+    await api.client.call('createPageTab', { pageId: ids.people, kind: 'map', name: 'Costa' })
+    const { router } = renderAt(`/mundos/${WORLD.id}/wiki/${ids.rules}`, api)
     const menu = await openMenu('Personajes')
     await userEvent.click(menu.getByRole('menuitem', { name: 'Duplicar' }))
     expect(await screen.findByRole('heading', { level: 1, name: 'Personajes (copia)' })).toBeDefined()
@@ -140,18 +121,13 @@ describe('el menú de una página en el árbol', () => {
     )
     const copy = api.pages.find((p) => p.title === 'Personajes (copia)')
     expect(router.state.location.pathname).toBe(`/mundos/${WORLD.id}/wiki/${copy?.id}`)
+    // De una vez, en el servidor
+    expect(api.calls.filter((call) => call === 'copyPage')).toHaveLength(1)
+    expect(api.calls).not.toContain('createPages')
     expect((await api.client.call('getPage', { pageId: copy?.id ?? '' })).panel).toHaveLength(1)
-  })
-
-  it('duplicar sin copia que devolver solo cierra el menú', async () => {
-    const api = wikiApi()
-    const { router } = renderAt(`/mundos/${WORLD.id}/wiki/${ids.rules}`, api, withCreatePages(api, true))
-    const menu = await openMenu('Reglas de la casa')
-    await userEvent.click(menu.getByRole('menuitem', { name: 'Duplicar' }))
-    await waitFor(() => expect(screen.queryByRole('menu')).toBeNull())
-    expect(api.calls).toContain('createPages')
-    expect(api.calls).not.toContain('movePage')
-    expect(router.state.location.pathname).toBe(`/mundos/${WORLD.id}/wiki/${ids.rules}`)
+    expect((await api.client.call('listPageTabs', { pageId: copy?.id ?? '' })).tabs.map((t) => t.name)).toEqual([
+      'Costa'
+    ])
   })
 
   it('exportar descarga la página y cierra el menú', async () => {

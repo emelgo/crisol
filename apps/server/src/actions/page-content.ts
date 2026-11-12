@@ -5,7 +5,7 @@
  */
 import { randomUUID } from 'node:crypto'
 import { createPage, createPages, editPage, type PageProperty, pagePanel, readPage } from '@crisol/contracts'
-import { documentsRepo, knowledgeRepo, pagesRepo, worldsRepo } from '@crisol/db'
+import { copyRepo, documentsRepo, pagesRepo, templatesRepo, worldsRepo } from '@crisol/db'
 import {
   applyTemplate,
   ForbiddenError,
@@ -35,6 +35,7 @@ import {
 import type { JSONContent } from '@tiptap/core'
 import { pagesChanged } from '../realtime/events.ts'
 import { readDocument, stateOf, writeDocument } from '../wiki/content.ts'
+import { copyDocuments } from '../wiki/copy.ts'
 import { fileNames, worldFiles } from '../wiki/file-embeds.ts'
 import { linkName, linksOfNewPages, resolveIncoming, resolvePending, worldNames } from '../wiki/links.ts'
 import { editorsNames, hasSeparates, playerEdits } from '../wiki/player-pages.ts'
@@ -42,7 +43,7 @@ import { filterBody, pageViewFor, unresolvedAsText, viewedPage, visiblePropertie
 import { propertiesOf } from '../wiki/properties.ts'
 import { knownBySomeone, type WikiView } from '../wiki/reader.ts'
 import { pageTables } from '../wiki/tables.ts'
-import { fieldsText, findTemplate, newBlockId } from '../wiki/templates.ts'
+import { fieldsText, findTemplate, newBlockId, templatePage } from '../wiki/templates.ts'
 import { snapshotPage, versionOf } from '../wiki/versions.ts'
 import { authorizedPage, authorizedWiki } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
@@ -427,22 +428,6 @@ export const pageContentActions = [
   }),
 
   implement(createPage, async (ctx, input) => {
-    if (input.template) {
-      // Con plantilla, por el mismo camino que crear_paginas (ADR-0009): sus campos, su panel y su texto, en una operación
-      const wiki = await authorizedWiki(ctx, 'page.write', input.worldId)
-      const parent = await parentIn(ctx, wiki, input.parentId)
-      const [created] = await createBatch(
-        ctx,
-        {
-          worldId: input.worldId,
-          parentId: input.parentId,
-          pages: [{ key: 'pagina', title: input.title, template: input.template }]
-        },
-        () => ({ action: 'createPage', details: { title: input.title, parent: parent?.title ?? null } })
-      )
-      if (!created) throw new InvalidRequestError('BAD_PAGE')
-      return pageView(ctx, created.id)
-    }
     const wiki = await authorizedWiki(ctx, 'page.write', input.worldId)
     const parent = await parentIn(ctx, wiki, input.parentId)
     if (parent) {
@@ -456,6 +441,46 @@ export const pageContentActions = [
     await checkNeighbour(ctx, wiki, input)
     // Bajo una página que alguna campaña conoce, nace oculta
     const hidden = parent ? await knownBySomeone(ctx, wiki.worldId, parent.id) : false
+    if (input.template) {
+      // Desde una plantilla (ADR-0024): una copia de su página (portada, campos, panel, texto y pestañas), sin los
+      // enlaces a páginas concretas, que dice de qué plantilla sale y su linaje (las tablas que se llenan solas)
+      const template = await findTemplate(ctx, wiki.organizationId, input.template)
+      const row = await templatesRepo.findTemplate(ctx.db, template.id)
+      if (!row) throw new InvalidRequestError('TEMPLATE_NOT_FOUND')
+      const sourceId = await templatePage(ctx, row)
+      const models = await worldsRepo.templatesWorld(ctx.db, wiki.organizationId)
+      const copy = await copyRepo.copyPage(
+        ctx.db,
+        historyContext(
+          ctx,
+          'createPage',
+          { title: input.title, parent: parent?.title ?? null, template: template.name, hidden },
+          wiki
+        ),
+        {
+          sourceId,
+          title: input.title,
+          ...(await copyDocuments(ctx, sourceId, models.id)),
+          hidden,
+          place: {
+            worldId: wiki.worldId,
+            parentId: input.parentId,
+            ...(input.before ? { before: input.before } : {}),
+            ...(input.after ? { after: input.after } : {})
+          },
+          // Sus bloques, con ids nuevos (como al hacerla con sus campos)
+          overrides: {
+            template: template.id,
+            templateLine: template.line,
+            panel: template.panel.map((block) => ({ ...structuredClone(block), id: newBlockId() }))
+          },
+          links: 'drop'
+        }
+      )
+      ctx.realtime.publish(pagesChanged(wiki))
+      await linksOfNewPages(ctx, wiki.worldId, [{ id: copy.id, names: [copy.title] }], ctx.actor.userId)
+      return pageView(ctx, copy.id)
+    }
     const created = await pagesRepo.createPage(
       ctx.db,
       historyContext(ctx, 'createPage', { title: input.title, parent: parent?.title ?? null, hidden }, wiki),

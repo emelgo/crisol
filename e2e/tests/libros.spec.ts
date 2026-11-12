@@ -110,7 +110,8 @@ test('un libro nuevo en un sistema: vacío, la IA le propone entradas, se revisa
   await page.screenshot({ path: test.info().outputPath('libro-nuevo.png') })
   await dialog.getByRole('button', { name: 'Crear' }).click()
   await expect(dialog).toBeHidden()
-  await expect(page.getByRole('button', { name: 'Abrir Grimorio' })).toBeVisible()
+  // Se abre por dentro (su compendio), no en una ventana
+  await expect(page.getByRole('link', { name: 'Abrir Grimorio' })).toBeVisible()
 
   // Lo que haría la IA desde el PDF: proponer entradas, con su página y el texto del que salen
   const spell = (key: string, name: string, page: number, notes: string[] = []) => ({

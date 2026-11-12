@@ -55,7 +55,7 @@ test('una tabla del mundo: el máster la crea con sus filas, tira dos veces sin 
   await expect(rows).toContainText('0 sacadas')
   await expect(rows.getByText('Ya salió')).toHaveCount(0)
 
-  for (const colorScheme of ['light', 'dark'] as const) {
+  for (const colorScheme of ['dark'] as const) {
     await page.emulateMedia({ colorScheme })
     await settled(page)
     const { violations } = await new AxeBuilder({ page })

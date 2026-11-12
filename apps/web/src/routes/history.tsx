@@ -11,6 +11,7 @@ import { historyQuery } from '../api/queries.ts'
 import { useAnnounce } from '../components/announcer.tsx'
 import { Loading } from '../components/brand.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
+import { EmptyState } from '../components/empty-state.tsx'
 import { FormError } from '../components/field.tsx'
 import { focusOnMount } from '../components/focus.ts'
 import styles from '../components/list.module.css'
@@ -87,7 +88,9 @@ function HistoryPage({ title, back, scope }: { title: string; back?: ReactNode; 
       {!history.data && !history.error && <Loading />}
       {history.data &&
         (entries.length === 0 ? (
-          <p className={styles.appear}>{t('history.empty')}</p>
+          <EmptyState kind="historial" small>
+            <p className={styles.appear}>{t('history.empty')}</p>
+          </EmptyState>
         ) : (
           <ul className={`${styles.list} ${styles.appear}`} aria-label={t('history.listLabel')}>
             {entries.map((entry) => (

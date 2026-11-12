@@ -210,6 +210,9 @@
 /* Su cuadro: un recuadro por tipo, el nombre y «Crear» */
 .newDialog {
   inline-size: min(28rem, calc(100vw - 2rem));
+  /* Anclado arriba, como las ventanas de ajustes: al cambiar de paso (la lista de plantillas) no salta */
+  max-block-size: calc(100dvh - var(--dialog-top) - 1rem);
+  margin-block: var(--dialog-top) auto;
 }
 
 /* Una escena elige también su mapa: más ancho */
@@ -289,7 +292,7 @@
   padding: 0 var(--space-3);
   border: 1px solid var(--color-field-border);
   border-radius: var(--radius);
-  background: var(--color-surface);
+  background: var(--field-fill);
   color: var(--color-text);
   font: inherit;
 }
@@ -336,4 +339,65 @@
 .submit {
   justify-self: start;
   align-self: start;
+}
+
+/* Tras los tipos, una raya con «o» y «Desde plantilla», la última y centrada (ADR-0024) */
+.or {
+  display: flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  gap: var(--space-3);
+  margin-block: var(--space-1);
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.or::before,
+.or::after {
+  flex: 1;
+  block-size: 1px;
+  background: var(--color-border);
+  content: "";
+}
+
+.fromTemplate {
+  grid-column: 1 / -1;
+  justify-self: center;
+  inline-size: calc(50% - var(--space-2) / 2);
+  background: none;
+  font: inherit;
+  font-size: 0.8125rem;
+}
+
+.fromTemplate:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/* «‹ Otro tipo»: vuelve a elegir el tipo */
+.stepBack {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 0.125rem;
+  min-block-size: 1.5rem;
+  padding: 0 var(--space-1) 0 0;
+  border: 0;
+  background: none;
+  color: var(--color-muted);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.stepBack:hover {
+  color: var(--color-text);
+}
+
+.stepBack:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }

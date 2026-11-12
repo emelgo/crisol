@@ -2,11 +2,52 @@ import AxeBuilder from '@axe-core/playwright'
 import { expect, type Page, test } from '@playwright/test'
 import { createWorld, freshOwner, openWiki } from './ayudas.ts'
 
-/** «Página nueva» desde una plantilla: el recuadro, la plantilla de la lista y el título */
+/** Sin plantillas de serie (ADR-0024): las que se usan aquí se hacen por la API, como las haría la cuenta */
+async function seedTemplates(page: Page) {
+  const call = async (name: string, data: object) => {
+    const response = await page.request.post(`/api/actions/${name}`, { data })
+    expect(response.status(), `${name}: ${await response.text()}`).toBe(200)
+    return response.json()
+  }
+  const faccion = await call('createTemplate', { name: 'Facción', icon: '🛡️' })
+  const pnj = await call('createTemplate', { name: 'PNJ', icon: '🧙' })
+  const withFields = await call('updateTemplate', {
+    templateId: pnj.id,
+    fields: [
+      { name: 'Especie', type: 'text', value: '' },
+      { name: 'Rol', type: 'text', value: '' },
+      { name: 'Facción', type: 'pages', single: true, value: [], targets: [faccion.id] }
+    ],
+    skeleton: '## Quién es\n\n## Cómo interpretarlo\n\n## Ganchos\n'
+  })
+  const field = withFields.fields.find((f: { name: string }) => f.name === 'Facción').field
+  await call('updateTemplate', {
+    templateId: faccion.id,
+    fields: [
+      { name: 'Tipo', type: 'text', value: '' },
+      { name: 'Líder', type: 'pages', single: true, value: [], targets: [pnj.id] }
+    ],
+    panel: [
+      { id: 'miembros', type: 'related', title: 'Miembros', template: pnj.id, field, columns: [], sort: 'title' }
+    ],
+    skeleton: '## Quiénes son\n\n## Qué quieren\n'
+  })
+  return { call, faccion, pnj }
+}
+
+/** Sin infracciones graves de accesibilidad en lo que se mira (en oscuro, el tema de siempre) */
+async function axe(page: Page, include: string) {
+  await page.emulateMedia({ colorScheme: 'dark' })
+  const { violations } = await new AxeBuilder({ page }).include(include).withTags(['wcag2a', 'wcag2aa']).analyze()
+  const serious = violations.filter((v) => v.impact === 'critical' || v.impact === 'serious')
+  expect(serious.map((v) => `${v.id}: ${v.help}`)).toEqual([])
+}
+
+/** «Página nueva» desde una plantilla: «Desde plantilla» (la última, tras «o»), la plantilla de la lista y el título */
 async function fromTemplate(page: Page, template: string, title: string, check?: () => Promise<void>) {
   await page.getByRole('button', { name: 'Página nueva' }).click()
   const dialog = page.getByRole('dialog', { name: 'Página nueva' })
-  await dialog.getByText('Desde plantilla').click()
+  await dialog.getByRole('button', { name: 'Desde plantilla' }).click()
   await dialog.getByLabel('Buscar plantilla').fill(template)
   await dialog.getByRole('radio', { name: new RegExp(`^${template}`) }).check()
   await check?.()
@@ -15,25 +56,21 @@ async function fromTemplate(page: Page, template: string, title: string, check?:
   await expect(page.getByRole('heading', { level: 1, name: title })).toBeVisible()
 }
 
-test('desde plantilla: una facción y un PNJ que nace con sus campos, su texto y su marca', async ({ page }) => {
+test('desde plantilla: una facción y un PNJ que nace como copia de la suya (campos, texto y marca)', async ({
+  page
+}) => {
   test.slow()
   await freshOwner(page)
+  await seedTemplates(page)
   await createWorld(page, 'Eana')
   await openWiki(page, 'Eana')
 
-  await fromTemplate(page, 'Facción', 'La Raqisa', async () => {
-    for (const colorScheme of ['light', 'dark'] as const) {
-      await page.emulateMedia({ colorScheme })
-      const { violations } = await new AxeBuilder({ page }).include('dialog').withTags(['wcag2a', 'wcag2aa']).analyze()
-      const serious = violations.filter((v) => v.impact === 'critical' || v.impact === 'serious')
-      expect(serious.map((v) => `${colorScheme} ${v.id}: ${v.help}`)).toEqual([])
-    }
-  })
+  await fromTemplate(page, 'Facción', 'La Raqisa', () => axe(page, 'dialog'))
   await expect(page.getByTitle('Hecha con la plantilla Facción')).toBeVisible()
 
   await fromTemplate(page, 'PNJ', 'Mamá Gris')
   await expect(page.getByTitle('Hecha con la plantilla PNJ')).toBeVisible()
-  // Su texto, con los apartados de la plantilla
+  // Su texto, el de la plantilla
   await expect(page.getByRole('heading', { level: 3, name: 'Quién es' })).toBeVisible()
   await expect(page.getByRole('heading', { level: 3, name: 'Ganchos' })).toBeVisible()
   // Sus campos, en el panel: la Facción busca primero entre las facciones
@@ -43,24 +80,17 @@ test('desde plantilla: una facción y un PNJ que nace con sus campos, su texto y
   await properties.getByLabel('Valor de la propiedad 3').fill('La Raqisa')
   await saved
   await expect(properties.getByRole('link', { name: 'La Raqisa' })).toBeVisible()
-  // En el árbol, con el icono de su plantilla; y sigue al recargar
   await page.reload()
-  await expect(page.getByTitle('Hecha con la plantilla PNJ')).toBeVisible()
   await expect(page.getByRole('region', { name: 'Propiedades' }).getByRole('link', { name: 'La Raqisa' })).toBeVisible()
 
-  // Al abrir la facción, Mamá Gris sale sola en «Miembros» (el primer criterio de éxito)
+  // Al abrir la facción, Mamá Gris sale sola en «Miembros»
   await page.getByRole('tree', { name: 'Páginas' }).getByRole('treeitem', { name: 'La Raqisa' }).click()
   await expect(page.getByRole('heading', { level: 1, name: 'La Raqisa' })).toBeVisible()
   const members = page
     .getByRole('complementary', { name: 'Panel de la página' })
     .getByRole('region', { name: 'Miembros' })
   await expect(members.getByRole('link', { name: 'Mamá Gris' })).toBeVisible()
-  for (const colorScheme of ['light', 'dark'] as const) {
-    await page.emulateMedia({ colorScheme })
-    const { violations } = await new AxeBuilder({ page }).include('aside').withTags(['wcag2a', 'wcag2aa']).analyze()
-    const serious = violations.filter((v) => v.impact === 'critical' || v.impact === 'serious')
-    expect(serious.map((v) => `${colorScheme} ${v.id}: ${v.help}`)).toEqual([])
-  }
+  await axe(page, 'aside')
 })
 
 test('un enlace a una página que aún no existe se crea pulsándolo: como texto o con una plantilla', async ({
@@ -68,6 +98,7 @@ test('un enlace a una página que aún no existe se crea pulsándolo: como texto
 }) => {
   test.slow()
   await freshOwner(page)
+  await seedTemplates(page)
   await createWorld(page, 'Eana')
   await openWiki(page, 'Eana')
   await fromTemplate(page, 'PNJ', 'Mamá Gris')
@@ -89,53 +120,69 @@ test('un enlace a una página que aún no existe se crea pulsándolo: como texto
   await expect(body.getByRole('link', { name: 'El Viejo Gyles' })).toHaveAttribute('data-state', 'ok')
 })
 
-test('«Plantillas» en Mis mundos: una desde cero y otra copiando PNJ', async ({ page }) => {
+test('«Plantillas», como Archivos: «Plantilla nueva» la abre como página, y se ordenan en carpetas', async ({
+  page
+}) => {
   test.slow()
   await freshOwner(page)
   await page.getByRole('navigation', { name: 'Secciones' }).getByRole('link', { name: 'Plantillas' }).click()
   await expect(page.getByRole('heading', { level: 1, name: 'Plantillas' })).toBeVisible()
-  await expect(page.getByRole('list', { name: 'De serie' }).getByRole('link', { name: 'Facción' })).toBeVisible()
-  for (const colorScheme of ['light', 'dark'] as const) {
-    await page.emulateMedia({ colorScheme })
-    const { violations } = await new AxeBuilder({ page }).include('main').withTags(['wcag2a', 'wcag2aa']).analyze()
-    const serious = violations.filter((v) => v.impact === 'critical' || v.impact === 'serious')
-    expect(serious.map((v) => `${colorScheme} ${v.id}: ${v.help}`)).toEqual([])
-  }
-  // Desde cero
+  // Sin ninguna de serie
+  await expect(page.getByText('Aún no hay plantillas')).toBeVisible()
+  // «Plantilla nueva»: su cuadro (como el de «Página nueva»); sin nombre, la abre con su título elegido para escribir
+  // encima; un emoji delante es su icono
   await page.getByRole('button', { name: 'Plantilla nueva' }).click()
-  const dialog = page.getByRole('dialog', { name: 'Plantilla nueva' })
-  await dialog.getByLabel('Nombre').fill('Frente')
-  await dialog.getByRole('radio', { name: 'Reloj de arena' }).check()
-  await dialog.getByRole('button', { name: 'Crear la plantilla' }).click()
-  await expect(page.getByRole('heading', { level: 1, name: 'Frente' })).toBeVisible()
-  // Copiando PNJ
-  await page.goBack()
-  const pnj = page.getByRole('list', { name: 'De serie' }).getByRole('listitem').filter({ hasText: 'PNJ' })
-  // «Copiar», en su engranaje
-  await pnj.getByRole('button', { name: 'Ajustes de PNJ' }).click()
-  await page.getByRole('dialog', { name: 'PNJ' }).getByRole('button', { name: 'Copiar' }).click()
-  const copy = page.getByRole('dialog', { name: 'Plantilla nueva' })
-  await copy.getByLabel('Nombre').fill('PNJ de Eana')
-  await copy.getByRole('button', { name: 'Crear la plantilla' }).click()
-  await expect(page.getByRole('heading', { level: 1, name: 'PNJ de Eana' })).toBeVisible()
-  await page.goBack()
-  const mine = page.getByRole('list', { name: 'Tuyas' })
-  await expect(mine.getByRole('link', { name: 'Frente' })).toBeVisible()
-  await expect(mine.getByText('Copia de PNJ')).toBeVisible()
+  const created = page.getByRole('dialog', { name: 'Plantilla nueva' })
+  await expect(created.getByRole('radio', { name: 'Texto' })).toBeChecked()
+  await axe(page, 'dialog')
+  await created.getByRole('button', { name: 'Crear' }).click()
+  const title = page.getByRole('textbox', { name: 'Título de la página' })
+  await expect(title).toBeFocused()
+  await expect(title).toHaveText('Plantilla sin título')
+  const renamed = page.waitForResponse((r) => r.url().endsWith('/api/actions/updatePage'))
+  await page.keyboard.type('⏳ Frente')
+  await page.keyboard.press('Enter')
+  await renamed
+  await expect(title).toHaveText('Frente')
+  await expect(page.getByText('Plantilla', { exact: true })).toBeVisible()
+  await axe(page, 'main')
+  // «‹ Plantillas» vuelve a la lista
+  await page.getByRole('link', { name: 'Plantillas' }).and(page.locator(':not(nav *)')).click()
+  const list = page.getByRole('list', { name: 'Tus plantillas' })
+  await expect(list.getByRole('link', { name: 'Frente' })).toBeVisible()
+  // «Nueva carpeta» y meterla dentro, desde su ventana
+  await page.getByRole('button', { name: 'Nueva carpeta' }).click()
+  const folder = page.getByRole('dialog', { name: 'Nueva carpeta' })
+  await folder.getByLabel('Nombre').fill('Campaña')
+  await folder.getByRole('button', { name: 'Crear la carpeta' }).click()
+  await list.getByRole('button', { name: 'Ajustes de Frente' }).click()
+  const settings = page.getByRole('dialog', { name: 'Ajustes de Frente' })
+  await settings.getByLabel('Carpeta').selectOption({ label: 'Campaña' })
+  await settings.getByRole('button', { name: 'Guardar' }).click()
+  await expect(list.getByRole('button', { name: 'Campaña', exact: true })).toHaveAttribute('aria-expanded', 'true')
+  await expect(list.getByRole('link', { name: 'Frente' })).toBeVisible()
+  await axe(page, 'main')
+  // Y sigue ahí al recargar (la carpeta, plegada)
+  await page.reload()
+  await list.getByRole('button', { name: 'Campaña', exact: true }).click()
+  await expect(list.getByRole('link', { name: 'Frente' })).toBeVisible()
 })
 
-test('editar una plantilla tuya: «Frente» con un reloj de 8, y una página hecha con ella', async ({ page }) => {
+test('editar una plantilla como una página: «Frente» con un reloj de 8 y su texto, y una página hecha con ella', async ({
+  page
+}) => {
   test.slow()
   await freshOwner(page)
   await createWorld(page, 'Eana')
   await page.goto('/plantillas')
   await page.getByRole('button', { name: 'Plantilla nueva' }).click()
-  const dialog = page.getByRole('dialog', { name: 'Plantilla nueva' })
-  await dialog.getByLabel('Nombre').fill('Frente')
-  await dialog.getByRole('button', { name: 'Crear la plantilla' }).click()
-  const fields = page.getByRole('complementary', { name: 'Campos y panel de la plantilla' }).getByRole('region', {
-    name: 'Campos'
-  })
+  await page.getByRole('dialog', { name: 'Plantilla nueva' }).getByRole('button', { name: 'Crear' }).click()
+  await expect(page.getByRole('textbox', { name: 'Título de la página' })).toBeFocused()
+  await page.keyboard.type('Frente')
+  await page.keyboard.press('Enter')
+  await expect(page.getByRole('textbox', { name: 'Título de la página' })).toHaveText('Frente')
+  // Sus campos, en el panel: se definen (nombre y tipo)
+  const fields = page.getByRole('complementary', { name: 'Panel de la página' }).getByRole('region', { name: 'Campos' })
   await fields.getByRole('button', { name: 'Campo' }).click()
   await fields.getByLabel('Nombre').fill('Reloj')
   await fields.getByLabel('Nombre').press('Enter')
@@ -147,23 +194,15 @@ test('editar una plantilla tuya: «Frente» con un reloj de 8, y una página hec
   await fields.getByLabel('Segmentos').press('Enter')
   await saved
   await expect(fields.getByRole('button', { name: /Reloj de 8/ })).toBeVisible()
-  // Su texto: «## » hace un título, como en la wiki; se guarda solo
-  const skeleton = page.getByRole('textbox', { name: 'Texto de la plantilla' })
-  await skeleton.click()
-  const written = page.waitForResponse(
-    (r) => r.url().endsWith('/api/actions/updateTemplate') && /La verdad/.test(r.request().postData() ?? '')
-  )
+  // Su texto es el de su página: «## » hace un título; se guarda solo
+  const text = page.getByRole('textbox', { name: 'Texto de la página' })
+  await text.click()
   await page.keyboard.type('## En una frase')
   await page.keyboard.press('Enter')
   await page.keyboard.type('## La verdad')
-  await written
-  for (const colorScheme of ['light', 'dark'] as const) {
-    await page.emulateMedia({ colorScheme })
-    const { violations } = await new AxeBuilder({ page }).include('main').withTags(['wcag2a', 'wcag2aa']).analyze()
-    const serious = violations.filter((v) => v.impact === 'critical' || v.impact === 'serious')
-    expect(serious.map((v) => `${colorScheme} ${v.id}: ${v.help}`)).toEqual([])
-  }
-  // Una página con ella: el reloj, con sus 8 segmentos
+  await expect(page.getByText('Guardado')).toBeVisible()
+  await axe(page, 'main')
+  // Una página con ella: el reloj, con sus 8 segmentos, y su texto
   await page.goto('/mundos')
   await openWiki(page, 'Eana')
   await fromTemplate(page, 'Frente', 'Los muelles en llamas')
@@ -171,46 +210,54 @@ test('editar una plantilla tuya: «Frente» con un reloj de 8, y una página hec
     .getByRole('region', { name: 'Propiedades' })
     .getByRole('group', { name: 'Valor de la propiedad 1' })
   await expect(clock.getByRole('button', { name: 'Segmento 8 de 8' })).toBeVisible()
-  // Y su texto, igual que se escribió
   const body = page.getByRole('textbox', { name: 'Texto de la página' })
   await expect(body.getByRole('heading', { level: 3, name: 'En una frase' })).toBeVisible()
   await expect(body.getByRole('heading', { level: 3, name: 'La verdad' })).toBeVisible()
 })
 
-test('aplicar una plantilla a una página ya hecha, desde «⋯»: añade lo que falta sin borrar nada', async ({ page }) => {
+test('el árbol del editor: carpeta nueva, plantilla nueva con un mapa y, con el botón derecho, borrarla; «Pestaña nueva» sin plantillas', async ({
+  page
+}) => {
   test.slow()
   await freshOwner(page)
+  const { call } = await seedTemplates(page)
+  const puerto = await call('createTemplate', { name: 'Puerto', icon: '⚓' })
+  await page.goto(`/plantillas/${puerto.id}`)
+  const side = page.getByRole('complementary', { name: 'Tus plantillas' })
+  await side.getByRole('button', { name: 'Nueva carpeta' }).click()
+  const folder = page.getByRole('dialog', { name: 'Nueva carpeta' })
+  await folder.getByLabel('Nombre').fill('Lugares')
+  await folder.getByRole('button', { name: 'Crear la carpeta' }).click()
+  await expect(side.getByRole('button', { name: 'Lugares' })).toBeVisible()
+  // Con el botón derecho en la carpeta, una plantilla nueva dentro, con un mapa
+  await side.getByRole('button', { name: 'Lugares' }).click({ button: 'right' })
+  await page
+    .getByRole('menu', { name: 'Opciones de «Lugares»' })
+    .getByRole('menuitem', { name: 'Plantilla nueva aquí' })
+    .click()
+  const created = page.getByRole('dialog', { name: 'Plantilla nueva' })
+  await created.getByRole('radio', { name: 'Mapa' }).check()
+  await created.getByRole('textbox', { name: 'Nombre' }).fill('Ciudad')
+  await created.getByRole('button', { name: 'Crear' }).click()
+  await expect(page.getByRole('heading', { level: 1, name: 'Ciudad' })).toBeVisible()
+  const tabs = page.getByRole('navigation', { name: 'Pestañas de la página' })
+  await expect(tabs.getByRole('link', { name: 'Mapa' })).toHaveAttribute('aria-current', 'page')
+  await axe(page, 'main')
+  // Con el botón derecho en «Puerto»: borrarla
+  await side.getByRole('link', { name: 'Puerto' }).click({ button: 'right' })
+  const menu = page.getByRole('menu', { name: 'Opciones de «Puerto»' })
+  await menu.getByRole('menuitem', { name: 'Borrar' }).click()
+  await menu.getByRole('menuitem', { name: 'Borrar la plantilla' }).click()
+  await expect(side.getByRole('link', { name: 'Puerto' })).toHaveCount(0)
+  // «Pestaña nueva», en una página, ya no ofrece plantillas
   await createWorld(page, 'Eana')
   await openWiki(page, 'Eana')
   await page.getByRole('button', { name: 'Página nueva' }).click()
   await page.keyboard.type('Ciudad Libre')
   await page.keyboard.press('Enter')
   await expect(page.getByRole('heading', { level: 1, name: 'Ciudad Libre' })).toBeVisible()
-  const pageId = new URL(page.url()).pathname.split('/').at(-1)
-  const written = await page.request.post('/api/actions/editPage', {
-    data: {
-      pageId,
-      body: { mode: 'replace', markdown: '---\nPoblación: 12000\n---\n## Descripción\n\nPuerto franco.\n' }
-    }
-  })
-  expect(written.status()).toBe(200)
-  await page.reload()
-  await page.getByRole('button', { name: 'Más acciones' }).click()
-  await page.getByRole('button', { name: 'Aplicar plantilla…' }).click()
-  const dialog = page.getByRole('dialog', { name: 'Aplicar plantilla' })
-  await dialog.getByRole('radio', { name: /^Lugar/ }).check()
-  await expect(dialog.getByRole('region', { name: 'Lo que añade Lugar' }).getByText('Ganchos')).toBeVisible()
-  for (const colorScheme of ['light', 'dark'] as const) {
-    await page.emulateMedia({ colorScheme })
-    const { violations } = await new AxeBuilder({ page }).include('dialog').withTags(['wcag2a', 'wcag2aa']).analyze()
-    const serious = violations.filter((v) => v.impact === 'critical' || v.impact === 'serious')
-    expect(serious.map((v) => `${colorScheme} ${v.id}: ${v.help}`)).toEqual([])
-  }
-  await dialog.getByRole('button', { name: 'Aplicar Lugar' }).click()
-  await expect(page.getByTitle('Hecha con la plantilla Lugar')).toBeVisible()
-  const properties = page.getByRole('region', { name: 'Propiedades' })
-  await expect(properties.getByLabel('Nombre de la propiedad 2')).toHaveValue('Tipo')
-  const body = page.getByRole('textbox', { name: 'Texto de la página' })
-  await expect(body.getByText('Puerto franco.')).toBeVisible()
-  await expect(body.getByRole('heading', { level: 3, name: 'Ganchos' })).toBeVisible()
+  await page.getByRole('button', { name: 'Pestaña nueva' }).click()
+  const dialog = page.getByRole('dialog', { name: 'Pestaña nueva' })
+  await expect(dialog.getByRole('radio', { name: 'Texto' })).toBeVisible()
+  await expect(dialog.getByRole('button', { name: 'Desde plantilla' })).toHaveCount(0)
 })

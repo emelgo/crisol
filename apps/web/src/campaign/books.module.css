@@ -204,12 +204,15 @@
 }
 
 .newBook {
+  /* Como todos los «Nuevo…» (docs/diseno.md): línea continua de 1px, con sus esquinas cortadas (el anillo del ::before) */
+  position: relative;
+  isolation: isolate;
   display: grid;
   place-items: center;
   align-content: center;
   gap: var(--space-2);
   aspect-ratio: 3 / 4;
-  border: 2px dashed var(--color-frame);
+  border: 0;
   clip-path: var(--cut);
   /* También es un botón (en la página del sistema): sin el fondo gris del navegador */
   background: none;
@@ -221,10 +224,24 @@
   text-decoration: none;
 }
 
+.newBook::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--line-frame);
+  clip-path: var(--cut-ring);
+  pointer-events: none;
+}
+
 .newBook:hover {
-  border-color: var(--color-accent);
+  background: var(--row-hover);
   color: var(--color-text);
   text-decoration: none;
+}
+
+.newBook:hover::before {
+  background: var(--color-accent);
 }
 
 /* Elegir contenido */
@@ -257,7 +274,7 @@
   padding: 0 var(--space-3);
   border: 1px solid var(--color-field-border);
   border-radius: 3px;
-  background: var(--color-bg);
+  background: var(--field-fill);
   color: var(--color-muted);
 }
 
@@ -523,7 +540,9 @@
 }
 
 :global(html:active-view-transition-type(abrir-libro))::view-transition-old(root),
-:global(html:active-view-transition-type(abrir-libro))::view-transition-new(root) {
+:global(html:active-view-transition-type(abrir-libro))::view-transition-old(contenido),
+:global(html:active-view-transition-type(abrir-libro))::view-transition-new(root),
+:global(html:active-view-transition-type(abrir-libro))::view-transition-new(contenido) {
   animation: none;
 }
 
@@ -534,7 +553,9 @@
 }
 
 :global(html:active-view-transition-type(recolocar))::view-transition-old(root),
-:global(html:active-view-transition-type(recolocar))::view-transition-new(root) {
+:global(html:active-view-transition-type(recolocar))::view-transition-old(contenido),
+:global(html:active-view-transition-type(recolocar))::view-transition-new(root),
+:global(html:active-view-transition-type(recolocar))::view-transition-new(contenido) {
   animation: none;
 }
 
@@ -542,4 +563,28 @@
   .windowGrid {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+
+/* «Leer · N capítulos», en la ficha de un libro */
+.read {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  align-self: flex-start;
+  min-block-size: 2.25rem;
+  padding: 0 var(--space-4);
+  border-radius: 6px;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.read:hover {
+  background: color-mix(in srgb, var(--color-accent) 88%, white);
+}
+
+.read:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }

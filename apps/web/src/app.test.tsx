@@ -24,7 +24,6 @@ beforeEach(() => {
 })
 
 afterEach(() => {
-  document.documentElement.removeAttribute('data-theme')
   localStorage.clear()
 })
 
@@ -33,15 +32,6 @@ describe('App', () => {
     renderAt('/')
     expect(await screen.findByRole('heading', { level: 1, name: 'Crisol' })).toBeDefined()
     expect(screen.getByText('Mundos de rol y mesa virtual')).toBeDefined()
-  })
-
-  it('cambia de tema y lo recuerda', async () => {
-    renderAt('/')
-    document.documentElement.dataset.theme = 'light'
-    await userEvent.click(await screen.findByRole('button', { name: 'Cambiar a tema oscuro' }))
-    expect(document.documentElement.dataset.theme).toBe('dark')
-    expect(localStorage.getItem('crisol.tema')).toBe('dark')
-    expect(screen.getByRole('button', { name: 'Cambiar a tema claro' })).toBeDefined()
   })
 
   it('el propietario tiene en la barra sus mundos y sus archivos, con la actual marcada, y abajo el historial y la papelera', async () => {

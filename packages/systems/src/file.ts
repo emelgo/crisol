@@ -33,19 +33,66 @@ export interface ContentItem {
   table?: TableEntry
 }
 
+/** Un capítulo de un libro (ADR-0025): su libro, su título y su texto en Markdown, en el orden del archivo */
+export interface FileChapter {
+  source: string
+  title: string
+  markdown: string
+}
+
 export interface SystemFile {
   kind: typeof SYSTEM_FILE
   format: number
   system: System
   content: ContentItem[]
+  /** Los capítulos de sus libros (sin ellos, el archivo no trae ninguno) */
+  chapters?: FileChapter[]
 }
 
-export const toFile = (system: System, content: readonly ContentItem[]): SystemFile => ({
+export const toFile = (
+  system: System,
+  content: readonly ContentItem[],
+  chapters: readonly FileChapter[] = []
+): SystemFile => ({
   kind: SYSTEM_FILE,
   format: FORMAT,
   system,
-  content: [...content]
+  content: [...content],
+  ...(chapters.length > 0 ? { chapters: [...chapters] } : {})
 })
+
+/** Como mucho, los capítulos de un archivo y el texto de cada uno */
+const CHAPTERS = 2000
+const CHAPTER_TEXT = 400_000
+
+/** Los capítulos de un archivo: de sus libros, con título y texto, y no demasiados */
+export function validateChapters(system: System, chapters: unknown): Problem[] {
+  if (chapters === undefined) return []
+  const problem = (path: string, message: string): Problem => ({
+    path,
+    where: 'Los capítulos',
+    message,
+    severity: 'error'
+  })
+  if (!Array.isArray(chapters)) return [problem('chapters', 'Tienen que ser una lista')]
+  if (chapters.length > CHAPTERS) return [problem('chapters', `Como mucho, ${CHAPTERS} capítulos`)]
+  const books = new Set((system.sources ?? []).map((s) => s.key))
+  const problems: Problem[] = []
+  chapters.forEach((chapter, index) => {
+    const path = `chapters.${index}`
+    if (!isObject(chapter)) {
+      problems.push(problem(path, 'Cada capítulo es un objeto con source, title y markdown'))
+      return
+    }
+    if (typeof chapter.source !== 'string' || !books.has(chapter.source))
+      problems.push(problem(`${path}.source`, `«${String(chapter.source)}» no es un libro del sistema (sources)`))
+    if (typeof chapter.title !== 'string' || !chapter.title.trim() || chapter.title.length > 200)
+      problems.push(problem(`${path}.title`, 'Su título: entre 1 y 200 letras'))
+    if (typeof chapter.markdown !== 'string' || chapter.markdown.length > CHAPTER_TEXT)
+      problems.push(problem(`${path}.markdown`, `Su texto, en Markdown y de como mucho ${CHAPTER_TEXT} letras`))
+  })
+  return problems
+}
 
 /** El nombre del archivo al bajarlo: fronteras.crisol-system.json */
 export const fileName = (system: System, language: Language = 'es') =>
@@ -194,6 +241,10 @@ export function validateFile(
   const problems = systemProblems.map((p) => ({ ...p, path: p.path ? `system.${p.path}` : 'system' }))
   if (!system) return { file: null, problems }
   problems.push(...validateContent(system, input.content ?? []))
+  problems.push(...validateChapters(system, input.chapters))
   if (problems.some((p) => p.severity === 'error')) return { file: null, problems }
-  return { file: toFile(system, (input.content ?? []) as ContentItem[]), problems }
+  return {
+    file: toFile(system, (input.content ?? []) as ContentItem[], (input.chapters ?? []) as FileChapter[]),
+    problems
+  }
 }

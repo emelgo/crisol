@@ -3,7 +3,7 @@
  * propiedad `etiquetas`) y los archivos (`files.tags`). Renombrar y borrar cambian todo lo que las lleva, en una sola
  * operación del historial
  */
-import { removeTagIn, renameTagIn, tagKey } from '@crisol/domain'
+import { removeTagIn, renameTagIn, tagKey, tagParent } from '@crisol/domain'
 import { and, eq, isNull, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { type OperationContext, operation } from '../operation.ts'
@@ -43,7 +43,10 @@ export async function findRow(db: Database, organizationId: string, name: string
   return found ?? null
 }
 
-/** Las páginas con etiquetas de los mundos de una organización (fuera de la papelera), con su mundo */
+/**
+ * Las páginas con etiquetas de los mundos de una organización (fuera de la papelera), con su mundo. Las de sus
+ * plantillas (su mundo oculto, ADR-0024) no cuentan: son modelos, no páginas de un mundo
+ */
 export function taggedPages(db: Database, organizationId: string) {
   return db
     .select({ id: pages.id, worldId: pages.worldId, worldName: worlds.name, properties: pages.properties })
@@ -53,6 +56,7 @@ export function taggedPages(db: Database, organizationId: string) {
       and(
         eq(worlds.organizationId, organizationId),
         isNull(worlds.deletedAt),
+        isNull(worlds.purpose),
         isNull(pages.deletedAt),
         sql`exists (select 1 from jsonb_array_elements(${pages.properties}) p
           where lower(trim(p->>'name')) = 'etiquetas' and p->>'type' = 'list')`
@@ -76,6 +80,22 @@ export function createRow(
   return operation(db, context, (w) => w.insert(tags, values))
 }
 
+/** Les pone su puesto entre sus hermanas, todas de una vez; las que no estaban guardadas, se guardan */
+export function setPositions(
+  db: Database,
+  context: OperationContext,
+  organizationId: string,
+  entries: readonly { name: string; position: string }[]
+) {
+  return operation(db, context, async (w) => {
+    for (const { name, position } of entries) {
+      const row = await findRow(w.read as unknown as Database, organizationId, name)
+      if (row) await w.update(tags, row.id, { position })
+      else await w.insert(tags, { organizationId, name, color: null, position })
+    }
+  })
+}
+
 /** Le pone color (null lo quita); si no estaba guardada, la guarda */
 export function setColor(
   db: Database,
@@ -93,7 +113,8 @@ export function setColor(
 
 /**
  * Cambia una etiqueta (con sus hijas) en todo lo que la lleva: renombrar (to) o quitar (to null). Las guardadas
- * también: renombradas, o borradas. Devuelve cuántas páginas y archivos cambió
+ * también: renombradas, o borradas. Si cambia de madre, pierde su puesto entre las hermanas de antes (sus hijas
+ * conservan el suyo entre ellas). Devuelve cuántas páginas y archivos cambió
  */
 export function retag(
   db: Database,
@@ -140,9 +161,20 @@ export function retag(
       if (taken && taken.id !== row.id) {
         if (!taken.color && row.color) await w.update(tags, taken.id, { color: row.color })
         await w.remove(tags, row.id)
-      } else await w.update(tags, row.id, { name })
+      } else {
+        const parentOf = (tag: string) => tagKey(tagParent(tag) ?? '')
+        const leaves = tagKey(row.name) === tagKey(from) && parentOf(from) !== parentOf(name)
+        await w.update(tags, row.id, leaves ? { name, position: null } : { name })
+      }
     }
     return { pages: pagesChanged, files: filesChanged, worlds: [...worldsChanged], filePlaces: [...filePlaces] }
+  })
+}
+
+/** Deja las etiquetas de varios archivos (cada uno, las suyas), en una sola operación */
+export function setManyFileTags(db: Database, context: OperationContext, changes: { id: string; tags: string[] }[]) {
+  return operation(db, context, async (w) => {
+    for (const { id, tags: next } of changes) await w.update(files, id, { tags: next })
   })
 }
 

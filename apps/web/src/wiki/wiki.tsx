@@ -1,22 +1,34 @@
 import type { Page, PageTabView } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getRouteApi, Link, Navigate, useNavigate, useRouter } from '@tanstack/react-router'
-import { Ellipsis, FileText, House, ListFilter, Lock, LockOpen, Plus } from 'lucide-react'
-import { type ReactNode, type RefObject, useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
+import { Ellipsis, FileText, House, LayoutTemplate, ListFilter, Lock, LockOpen, Plus, Printer } from 'lucide-react'
+import {
+  type CSSProperties,
+  type ReactNode,
+  type RefObject,
+  useCallback,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState
+} from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { ApiError } from '../api/client.ts'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
+import { useAmbient } from '../components/ambient.tsx'
 import { Loading } from '../components/brand.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
 import list from '../components/list.module.css'
 import { failed, LoadError } from '../components/load-error.tsx'
+import { Menu, MenuItem } from '../components/menu.tsx'
 import { headingMayTakeFocus, PageTitle, useHeadingFocusRequest } from '../components/page-title.tsx'
+import { itemTransition } from '../components/world-transition.ts'
 import { WorldBanner } from '../routes/world-card.tsx'
-import { TEMPLATE_ICON } from '../templates/icons.tsx'
+import { TemplateIcon } from '../templates/icons.tsx'
 import { useTemplates } from '../templates/picker.tsx'
-import { ApplyTemplate } from './apply-template.tsx'
 import { Backlinks } from './backlinks.tsx'
 import { CollabSocket } from './collab.tsx'
 import { CoverButton, PageCoverImage } from './cover.tsx'
@@ -25,6 +37,7 @@ import { ExportPage, ExportWiki } from './export.tsx'
 import { PageIcon } from './icon.tsx'
 import { MapTab } from './map/map-tab.tsx'
 import { BookmarkButton, Bookmarks, OpenTabs } from './navigation.tsx'
+import { WorldWindows } from './new-entry.tsx'
 import { NewPageContext, NewPageDialog, type NewPageRequest } from './new-page.tsx'
 import { useWikiPanel } from './panel.tsx'
 import panelStyles from './panel-blocks.module.css'
@@ -33,9 +46,9 @@ import { PageProperties, type PropertyAdder } from './properties.tsx'
 import { QuickSwitcher } from './quick-switcher.tsx'
 import { PageRevealButton } from './reveal.tsx'
 import { SceneMain, SceneSide, SceneTabProvider } from './scene/scene-tab.tsx'
-import { SheetMenu, SheetPaper } from './sheet/controls.tsx'
+import { PrintDialog, SheetPaper } from './sheet/controls.tsx'
 import { TableTab } from './table/table-tab.tsx'
-import { PageTabs, usePageTabs } from './tabs/page-tabs.tsx'
+import { PageTabs, usePageTabs, useTabTarget } from './tabs/page-tabs.tsx'
 import { PageTree } from './tree.tsx'
 import { Versions } from './versions.tsx'
 import { WhoKnowsButton } from './who-knows.tsx'
@@ -64,7 +77,7 @@ export function WikiLayout({
   const { t } = useTranslation()
   const api = useApi()
   const { account, pending } = useAccounts().useAccount()
-  const { panel, collapsed, open, close } = useWikiPanel()
+  const { panel, open, close } = useWikiPanel()
   const closeButton = useRef<HTMLButtonElement>(null)
   // Al abrir el cajón (en lo estrecho), el foco entra en él; al cerrarlo, vuelve al botón de la barra que lo abrió
   useEffect(() => {
@@ -85,6 +98,8 @@ export function WikiLayout({
     enabled: Boolean(account)
   })
   const world = worlds.data?.worlds.find((w) => w.id === worldId && w.role === 'master')
+  // Detrás de todo el mundo, su portada, muy difuminada (sin portada, la de ambiente)
+  useAmbient(world?.cover ? `/api/files/${world.cover.fileId}` : null)
   const root = useRef<HTMLDivElement>(null)
   useSideTop(root, Boolean(world))
 
@@ -102,98 +117,101 @@ export function WikiLayout({
   }
 
   return (
-    <NewPageContext.Provider value={requestNewPage}>
-      <WorldTour master />
-      <div ref={root} className={styles.wiki} data-collapsed={collapsed || undefined}>
-        <aside
-          id={asideId}
-          className={styles.aside}
-          data-open={open || undefined}
-          aria-labelledby={headingId}
-          onKeyDown={(event) => {
-            if (event.key === 'Escape' && open) close(true)
-          }}
-        >
-          <div className={styles.asideHeader}>
-            {/* Lo de la vista elegida en la barra: el mundo (sus páginas), las plantillas o los archivos */}
-            <h2 id={headingId}>{world.name}</h2>
-            {panel === 'pages' && <ExportWiki worldId={worldId} className={styles.newPageIcon} />}
-            {panel === 'pages' && (
+    // Sus ventanas flotantes (una entrada nueva del compendio, revisión tanda 7), por encima de la página
+    <WorldWindows worldId={worldId}>
+      <NewPageContext.Provider value={requestNewPage}>
+        <WorldTour master />
+        <div ref={root} className={styles.wiki}>
+          <aside
+            id={asideId}
+            className={styles.aside}
+            data-open={open || undefined}
+            aria-labelledby={headingId}
+            onKeyDown={(event) => {
+              if (event.key === 'Escape' && open) close(true)
+            }}
+          >
+            <div className={styles.asideHeader}>
+              {/* Lo de la vista elegida en la barra: el mundo (sus páginas), las plantillas o los archivos */}
+              <h2 id={headingId}>{world.name}</h2>
+              {panel === 'pages' && <ExportWiki worldId={worldId} className={styles.newPageIcon} />}
+              {panel === 'pages' && (
+                <button
+                  type="button"
+                  className={styles.newPageIcon}
+                  aria-label={t('wiki.newPage')}
+                  title={t('wiki.newPage')}
+                  aria-haspopup="dialog"
+                  onClick={() => requestNewPage(null)}
+                >
+                  <Plus aria-hidden="true" size={16} />
+                </button>
+              )}
               <button
                 type="button"
-                className={styles.newPageIcon}
-                aria-label={t('wiki.newPage')}
-                title={t('wiki.newPage')}
-                aria-haspopup="dialog"
-                onClick={() => requestNewPage(null)}
+                ref={closeButton}
+                className={`${list.secondary} ${styles.close}`}
+                onClick={() => close(true)}
               >
-                <Plus aria-hidden="true" size={16} />
+                {t('wiki.closePages')}
               </button>
-            )}
-            <button
-              type="button"
-              ref={closeButton}
-              className={`${list.secondary} ${styles.close}`}
-              onClick={() => close(true)}
-            >
-              {t('wiki.closePages')}
-            </button>
-          </div>
-          {/* El buscador, fijo en su sitio en cada vista, con lo suyo */}
-          <PageFilter
-            label={t('wiki.filter')}
-            value={filter}
-            onChange={setFilter}
-            // En las páginas, Intro busca dentro del texto de todas
-            {...(panel === 'pages'
-              ? {
-                  onSearch: (q: string) => {
-                    close(false)
-                    void navigate({ to: '/mundos/$worldId/buscar', params: { worldId }, search: { q } })
+            </div>
+            {/* El buscador, fijo en su sitio en cada vista, con lo suyo */}
+            <PageFilter
+              label={t('wiki.filter')}
+              value={filter}
+              onChange={setFilter}
+              // En las páginas, Intro busca dentro del texto de todas
+              {...(panel === 'pages'
+                ? {
+                    onSearch: (q: string) => {
+                      close(false)
+                      void navigate({ to: '/mundos/$worldId/buscar', params: { worldId }, search: { q } })
+                    }
                   }
-                }
-              : {})}
-          />
-          {panel === 'pages' && (
-            <>
-              {filter.trim() ? (
-                <FilteredPages
-                  worldId={worldId}
-                  query={filter}
-                  currentId={current?.id}
-                  onNavigate={() => close(false)}
-                />
-              ) : (
-                <PageTree
-                  worldId={worldId}
-                  currentId={current?.id}
-                  path={current?.path}
-                  onNavigate={() => close(false)}
-                />
-              )}
-              <OpenTabs worldId={worldId} current={current} compact />
-              {/* Los marcadores, debajo del árbol */}
-              <div className={styles.asideBookmarks}>
-                <Bookmarks worldId={worldId} onNavigate={() => close(false)} />
-              </div>
-            </>
+                : {})}
+            />
+            {panel === 'pages' && (
+              <>
+                {filter.trim() ? (
+                  <FilteredPages
+                    worldId={worldId}
+                    query={filter}
+                    currentId={current?.id}
+                    onNavigate={() => close(false)}
+                  />
+                ) : (
+                  <PageTree
+                    worldId={worldId}
+                    currentId={current?.id}
+                    path={current?.path}
+                    onNavigate={() => close(false)}
+                  />
+                )}
+                <OpenTabs worldId={worldId} current={current} compact />
+                {/* Los marcadores, debajo del árbol */}
+                <div className={styles.asideBookmarks}>
+                  <Bookmarks worldId={worldId} onNavigate={() => close(false)} />
+                </div>
+              </>
+            )}
+          </aside>
+          <QuickSwitcher worldId={worldId} onCreatePage={() => requestNewPage(null)} />
+          <div className={styles.content}>
+            <OpenTabs worldId={worldId} current={current} />
+            <CollabSocket>{children(world)}</CollabSocket>
+          </div>
+          {creating && (
+            <NewPageDialog
+              key={creating.n}
+              worldId={worldId}
+              parent={creating.parent}
+              onClose={() => setCreating(null)}
+            />
           )}
-        </aside>
-        <QuickSwitcher worldId={worldId} onCreatePage={() => requestNewPage(null)} />
-        <div className={styles.content}>
-          <OpenTabs worldId={worldId} current={current} />
-          <CollabSocket>{children(world)}</CollabSocket>
         </div>
-        {creating && (
-          <NewPageDialog
-            key={creating.n}
-            worldId={worldId}
-            parent={creating.parent}
-            onClose={() => setCreating(null)}
-          />
-        )}
-      </div>
-    </NewPageContext.Provider>
+      </NewPageContext.Provider>
+    </WorldWindows>
   )
 }
 
@@ -226,10 +244,29 @@ export function useSideTop(root: RefObject<HTMLDivElement | null>, ready: boolea
     resized.observe(element)
     const changed = new MutationObserver(schedule)
     changed.observe(element, { childList: true, subtree: true })
+    // Al bajar la página, las fichas suben hasta pegarse arriba: crecen lo mismo (--side-lift), y siguen llegando abajo
+    // (sin leer estilos en cada fotograma, y sin tocar nada si no cambia: pasado el tope, bajar no cuesta)
+    let lifted = 0
+    let shown = -1
+    const most = (SIDE_TOP_REM - 1) * (Number.parseFloat(getComputedStyle(document.documentElement).fontSize) || 16)
+    const lift = () => {
+      lifted = 0
+      const value = Math.round(Math.min(Math.max(window.scrollY, 0), most))
+      if (value === shown) return
+      shown = value
+      element.style.setProperty('--side-lift', `${value}px`)
+    }
+    const onScroll = () => {
+      if (!lifted) lifted = requestAnimationFrame(lift)
+    }
+    lift()
+    window.addEventListener('scroll', onScroll, { passive: true })
     return () => {
       cancelAnimationFrame(frame)
+      cancelAnimationFrame(lifted)
       resized.disconnect()
       changed.disconnect()
+      window.removeEventListener('scroll', onScroll)
     }
   }, [root, ready])
 }
@@ -359,27 +396,26 @@ function PageHead({
   page,
   startEditing,
   home = false,
+  template,
   actions
 }: {
   page: Page
   startEditing: boolean
   /** La portada del mundo: lleva su etiqueta junto al título */
   home?: boolean
+  /** La página de una plantilla (su id): «Plantilla» junto al título, y su icono y su nombre viajan desde su tarjeta */
+  template?: string | undefined
   actions: ReactNode
 }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const router = useRouter()
+  const target = useTabTarget(page)
   // Recién creada: ya con su nombre puesto, la dirección deja de decir «nuevo» (si aún se está en ella: al salir del
   // título pulsando otra página, se guarda sin volver aquí)
   const named = () => {
-    if (!startEditing || !router.state.location.pathname.endsWith(`/wiki/${page.id}`)) return
-    void navigate({
-      to: '/mundos/$worldId/wiki/$pageId',
-      params: { worldId: page.worldId, pageId: page.id },
-      search: {},
-      replace: true
-    })
+    if (!startEditing || router.state.location.pathname !== router.buildLocation(target(null)).pathname) return
+    void navigate({ ...target(null), replace: true })
   }
   // Pegada y pequeña en cuanto lo de encima de ella se va de la vista
   const sentinel = useRef<HTMLDivElement>(null)
@@ -397,9 +433,26 @@ function PageHead({
       <header className={styles.entryHeader} data-compact={compact || undefined}>
         <div className={styles.entryTitle}>
           <div className={styles.heading}>
-            {page.icon && <PageIcon page={page} />}
-            <InlineTitle page={page} autoFocus={startEditing} onDone={named} />
-            {page.template && <TemplateBadge templateId={page.template} />}
+            {page.icon && (
+              <PageIcon
+                page={page}
+                {...(template ? { style: itemTransition(template, 'icono'), elemento: 'icono' } : {})}
+              />
+            )}
+            <InlineTitle
+              page={page}
+              autoFocus={startEditing}
+              onDone={named}
+              {...(template ? { style: itemTransition(template, 'nombre'), iconFirst: true } : {})}
+            />
+            {template ? (
+              <span className={`${styles.templateBadge} ${styles.templateMark}`} data-tour="plantilla-marca">
+                <LayoutTemplate aria-hidden="true" size={12} />
+                {t('templateEditor.kind')}
+              </span>
+            ) : (
+              page.template && <TemplateBadge templateId={page.template} />
+            )}
             {home && (
               <span className={styles.homeBadge}>
                 <House aria-hidden="true" size={12} />
@@ -423,11 +476,10 @@ function TemplateBadge({ templateId }: { templateId: string }) {
   const deleted = list?.deleted.find((each) => each.id === templateId)
   const shown = template ?? deleted
   if (!shown) return null
-  const Icon = TEMPLATE_ICON[shown.icon]
   if (!template) {
     return (
       <span className={styles.templateBadge} title={t('templates.madeWithDeleted', { name: shown.name })}>
-        <Icon aria-hidden="true" size={12} />
+        <TemplateIcon icon={shown.icon} size={12} />
         {t('templates.deletedName', { name: shown.name })}
       </span>
     )
@@ -439,7 +491,7 @@ function TemplateBadge({ templateId }: { templateId: string }) {
       className={styles.templateBadge}
       title={t('templates.madeWith', { name: template.name })}
     >
-      <Icon aria-hidden="true" size={12} />
+      <TemplateIcon icon={shown.icon} size={12} />
       {template.name}
     </Link>
   )
@@ -451,7 +503,21 @@ function TemplateBadge({ templateId }: { templateId: string }) {
  * Vacío o igual, vuelve el de antes sin más; un error (del servidor) sale debajo y el foco se queda. Con la página
  * bloqueada, solo se lee
  */
-function InlineTitle({ page, autoFocus, onDone }: { page: Page; autoFocus: boolean; onDone: () => void }) {
+function InlineTitle({
+  page,
+  autoFocus,
+  onDone,
+  style,
+  iconFirst = false
+}: {
+  page: Page
+  autoFocus: boolean
+  onDone: () => void
+  /** Su nombre de transición (el título de una plantilla, desde su tarjeta) */
+  style?: CSSProperties | undefined
+  /** Un emoji al principio pasa a ser su icono (el de una plantilla, que sale en las listas y en sus páginas) */
+  iconFirst?: boolean
+}) {
   const { t } = useTranslation()
   const api = useApi()
   const queryClient = useQueryClient()
@@ -461,7 +527,7 @@ function InlineTitle({ page, autoFocus, onDone }: { page: Page; autoFocus: boole
   const errorId = useId()
   const [error, setError] = useState<string | null>(null)
   const rename = useMutation({
-    mutationFn: (title: string) => api.call('updatePage', { pageId: page.id, title }),
+    mutationFn: (change: { title: string; icon?: string }) => api.call('updatePage', { pageId: page.id, ...change }),
     onSuccess: async () => {
       setError(null)
       await queryClient.invalidateQueries({ queryKey: ['pages', page.worldId] })
@@ -490,15 +556,18 @@ function InlineTitle({ page, autoFocus, onDone }: { page: Page; autoFocus: boole
     body?.focus()
   }
   const commit = () => {
-    const text = (box.current?.textContent ?? '').replace(/\s+/g, ' ').trim()
-    if (!text || text === page.title) {
+    let text = (box.current?.textContent ?? '').replace(/\s+/g, ' ').trim()
+    const emoji = iconFirst ? text.match(LEADING_EMOJI) : null
+    const icon = emoji?.[1]
+    if (emoji) text = text.slice(emoji[0].length).trim() || page.title
+    if (!text || (text === page.title && !icon)) {
       if (box.current) box.current.textContent = page.title
       setError(null)
       onDone()
       return
     }
     if (box.current) box.current.textContent = text
-    rename.mutate(text)
+    rename.mutate({ title: text, ...(icon ? { icon } : {}) })
   }
   const atEnd = () => {
     const selection = getSelection()
@@ -508,7 +577,7 @@ function InlineTitle({ page, autoFocus, onDone }: { page: Page; autoFocus: boole
     return range.toString() === ''
   }
   return (
-    <div className={styles.titleBox}>
+    <div className={styles.titleBox} style={style} data-elemento={style ? 'nombre' : undefined}>
       <h1
         tabIndex={-1}
         ref={(heading) => {
@@ -566,53 +635,49 @@ function InlineTitle({ page, autoFocus, onDone }: { page: Page; autoFocus: boole
   )
 }
 
-/** «Más»: lo que se hace de vez en cuando con la página, fuera de la vista hasta que se pide */
-function MoreActions({ page }: { page: Page }) {
+/** Un emoji al principio de un texto (con su tono, su variante y sus uniones), y el espacio que lo sigue */
+const LEADING_EMOJI = /^(\p{Extended_Pictographic}(?:\p{Emoji_Modifier}|\uFE0F|\u200D\p{Extended_Pictographic})*)\s*/u
+
+/**
+ * «Más»: lo que se hace de vez en cuando con la página, en el menú común (flota junto a su botón; Escape o pulsar fuera
+ * lo cierran): imprimir o descargar (un cuadro que pregunta cómo), exportar y sus versiones. items: lo de una
+ * plantilla, en lugar de exportar
+ */
+function MoreActions({ page, items }: { page: Page; items?: (close: () => void) => ReactNode }) {
   const { t } = useTranslation()
-  const [open, setOpen] = useState(false)
-  const root = useRef<HTMLDivElement>(null)
-  const trigger = useRef<HTMLButtonElement | null>(null)
-  const panelId = useId()
-  // Abierto: pulsar fuera lo cierra; Escape también, y el foco vuelve a «Más»
+  const [printing, setPrinting] = useState(false)
+  // Ctrl+P (⌘P) imprime la hoja, no la pantalla: abre el cuadro con lo último elegido (y con Intro, se imprime)
   useEffect(() => {
-    if (!open) return
-    const outside = (event: Event) => {
-      if (!root.current?.contains(event.target as Node)) setOpen(false)
+    const onKey = (event: KeyboardEvent) => {
+      if (!(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey || event.key.toLowerCase() !== 'p') return
+      event.preventDefault()
+      setPrinting(true)
     }
-    const onEscape = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return
-      setOpen(false)
-      trigger.current?.focus()
-    }
-    document.addEventListener('pointerdown', outside)
-    document.addEventListener('keydown', onEscape)
-    return () => {
-      document.removeEventListener('pointerdown', outside)
-      document.removeEventListener('keydown', onEscape)
-    }
-  }, [open])
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
   return (
-    <div ref={root} className={styles.moreMenu}>
-      <button
-        type="button"
-        ref={trigger}
-        aria-label={t('wiki.moreActions')}
-        title={t('wiki.moreActions')}
-        aria-expanded={open}
-        aria-controls={panelId}
-        onClick={() => setOpen((value) => !value)}
-      >
-        <Ellipsis aria-hidden="true" size={18} />
-      </button>
-      {open && (
-        <div id={panelId} className={styles.morePanel}>
-          <SheetMenu page={page} />
-          {/* Lo demás (subpágina, renombrar, mover, borrar…), con el botón derecho en el árbol */}
-          <ApplyTemplate page={page} />
-          <ExportPage page={page} />
-          <Versions page={page} />
-        </div>
-      )}
+    <div className={styles.moreMenu}>
+      <Menu label={t('wiki.moreActions')} icon={<Ellipsis aria-hidden="true" size={18} />}>
+        {(close) => (
+          <>
+            <MenuItem
+              aria-haspopup="dialog"
+              onClick={() => {
+                close()
+                setPrinting(true)
+              }}
+            >
+              <Printer aria-hidden="true" size={15} />
+              {t('sheet.printOrDownload')}
+            </MenuItem>
+            {/* Lo demás (subpágina, renombrar, mover, borrar…), con el botón derecho en el árbol */}
+            {items ? items(close) : <ExportPage page={page} />}
+            <Versions page={page} />
+          </>
+        )}
+      </Menu>
+      {printing && <PrintDialog page={page} onClose={() => setPrinting(false)} />}
     </div>
   )
 }
@@ -733,6 +798,17 @@ function OpenPage({ page, nuevo, pestana }: { page: Page; nuevo: boolean; pestan
 }
 
 /**
+ * La página de una plantilla (ADR-0024), abierta en su editor: su id, lo suyo en «⋯» y, a la derecha, sus campos y sus
+ * bloques, que se definen en vez de rellenarse
+ */
+export interface TemplateMode {
+  id: string
+  /** Sus filas en «⋯» (close cierra el menú antes de abrir un cuadro) */
+  more: (close: () => void) => ReactNode
+  side: ReactNode
+}
+
+/**
  * Una página, como en Everlore: la cabecera, sus pestañas, lo de la elegida (el texto en una columna ancha, con su
  * hoja; un mapa, a todo lo ancho) y, a la derecha, el panel fijo a toda altura (sus propiedades, quién la menciona,
  * su índice y sus versiones), que se esconde con su botón. banner: en lugar de la portada (la cabecera del mundo)
@@ -743,7 +819,8 @@ export function EntryView({
   tabs,
   active = null,
   banner,
-  home = false
+  home = false,
+  template
 }: {
   page: Page
   nuevo?: boolean
@@ -751,6 +828,7 @@ export function EntryView({
   active?: PageTabView | null
   banner?: ReactNode
   home?: boolean
+  template?: TemplateMode
 }) {
   const { t } = useTranslation()
   const main = useRef<HTMLElement>(null)
@@ -765,14 +843,23 @@ export function EntryView({
           page={page}
           startEditing={nuevo}
           home={home}
+          template={template?.id}
           actions={
-            <>
-              <WhoKnowsButton page={page} />
-              <PageRevealButton page={page} />
-              <BookmarkButton page={page} />
-              <LockButton page={page} />
-              <MoreActions page={page} />
-            </>
+            template ? (
+              // Una plantilla no la conoce nadie ni se marca: el candado y «⋯», con lo suyo
+              <>
+                <LockButton page={page} />
+                <MoreActions page={page} items={template.more} />
+              </>
+            ) : (
+              <>
+                <WhoKnowsButton page={page} />
+                <PageRevealButton page={page} />
+                <BookmarkButton page={page} />
+                <LockButton page={page} />
+                <MoreActions page={page} />
+              </>
+            )
           }
         />
         <PageTabs page={page} tabs={tabs} active={active?.id ?? null} />
@@ -817,17 +904,19 @@ export function EntryView({
                   </SheetPaper>
                 </div>
               ),
-              <>
-                {/* «Mencionado en», arriba (como en Everlore); después, las propiedades y los bloques */}
-                <Backlinks key={`enlaces-${page.id}`} page={page} />
-                {/* Las propiedades, a un lado (como los bloques del panel de Everlore): tras el retrato, si lo hay */}
-                <PanelBlocks
-                  key={`bloques-${page.id}`}
-                  page={page}
-                  properties={<PageProperties key={page.id} page={page} adders={false} adderRef={addProperty} />}
-                  onAddProperty={page.locked ? undefined : (kind) => addProperty.current?.(kind)}
-                />
-              </>
+              template?.side ?? (
+                <>
+                  {/* «Mencionado en», arriba (como en Everlore); después, las propiedades y los bloques */}
+                  <Backlinks key={`enlaces-${page.id}`} page={page} />
+                  {/* Las propiedades, a un lado (como los bloques del panel de Everlore): tras el retrato, si lo hay */}
+                  <PanelBlocks
+                    key={`bloques-${page.id}`}
+                    page={page}
+                    properties={<PageProperties key={page.id} page={page} adders={false} adderRef={addProperty} />}
+                    onAddProperty={page.locked ? undefined : (kind) => addProperty.current?.(kind)}
+                  />
+                </>
+              )
             )}
       </SceneTabProvider>
     </>

@@ -3,16 +3,14 @@
  * y al pasar el ratón o al elegirlo (en el móvil, al tocarlo) su tarjeta, con unas cifras suyas y «Abrir», que la abre
  * en el compendio de una campaña del mundo con su sistema. Si no está en el compendio, se ve como por resolver
  */
-import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import type { Node } from '@tiptap/core'
 import { type NodeViewProps, NodeViewWrapper, ReactNodeViewRenderer } from '@tiptap/react'
 import { BookOpen } from 'lucide-react'
-import { type FocusEvent, type KeyboardEvent, useContext, useId, useRef, useState } from 'react'
+import { type FocusEvent, type KeyboardEvent, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useApi } from '../api/context.tsx'
 import styles from './content-link.module.css'
-import { PageLinksContext } from './links-context.ts'
+import { entryHref, useLinkedEntry } from './content-scope.tsx'
 
 export function withContentLinkView(node: Node) {
   return node.extend({
@@ -24,24 +22,16 @@ export function withContentLinkView(node: Node) {
 
 function ContentLinkView({ node, selected }: NodeViewProps) {
   const { t } = useTranslation()
-  const api = useApi()
   const navigate = useNavigate()
-  const links = useContext(PageLinksContext)
   const cardId = useId()
-  const worldId = links?.worldId ?? ''
   const name = String(node.attrs.name ?? '')
   const label = (node.attrs.label as string | null) || null
   const [hovering, setHovering] = useState(false)
   const [pinned, setPinned] = useState(false)
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
-  const linked = useQuery({
-    queryKey: ['compendium', 'linked', worldId, name],
-    queryFn: () => api.call('getLinkedContent', { worldId, name }),
-    enabled: Boolean(worldId && name),
-    staleTime: 30_000
-  })
-  const entry = linked.data?.entry ?? null
-  const missing = linked.data !== undefined && !entry
+  // Desde donde se lee: el mundo, la campaña (lo que ve ella) o el sistema de un capítulo
+  const { scope, entry, missing } = useLinkedEntry(name)
+  const href = entry ? entryHref(scope, entry) : null
   const [focused, setFocused] = useState(false)
   const [closed, setClosed] = useState(false)
   const show = Boolean(entry) && !closed && (hovering || pinned || selected || focused)
@@ -50,12 +40,7 @@ function ContentLinkView({ node, selected }: NodeViewProps) {
     timer.current = setTimeout(() => setHovering(inside), inside ? 300 : 200)
   }
   const open = () => {
-    if (!entry?.campaignId) return
-    void navigate({
-      to: '/mundos/$worldId/campanas/$campaignId/compendio',
-      params: { worldId, campaignId: entry.campaignId },
-      search: { ver: entry.key }
-    })
+    if (href) void navigate({ href })
   }
   return (
     <NodeViewWrapper
@@ -82,9 +67,9 @@ function ContentLinkView({ node, selected }: NodeViewProps) {
         }
       }}
     >
-      {entry?.campaignId ? (
+      {href ? (
         <a
-          href={`/mundos/${worldId}/campanas/${entry.campaignId}/compendio?ver=${encodeURIComponent(entry.key)}`}
+          href={href}
           className={styles.link}
           data-content-link=""
           aria-describedby={show ? cardId : undefined}
@@ -124,7 +109,7 @@ function ContentLinkView({ node, selected }: NodeViewProps) {
               ))}
             </span>
           )}
-          {entry.campaignId && (
+          {href && (
             <button
               type="button"
               className={styles.open}
