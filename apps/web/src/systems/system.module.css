@@ -259,3 +259,27 @@
 .rowAction:hover {
   background: var(--row-hover);
 }
+
+/* «← {sistema}», arriba a la izquierda, dentro de un libro: la vuelta a su Inicio */
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin: var(--space-4) 0 0 var(--space-6);
+  padding: 0.375rem 0.625rem 0.375rem 0.375rem;
+  border-radius: 6px;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.back:hover {
+  background: var(--row-hover);
+  color: var(--color-text);
+}
+
+.back:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}

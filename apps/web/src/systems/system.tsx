@@ -8,12 +8,10 @@ import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/rea
 import { getRouteApi, Link } from '@tanstack/react-router'
 import { FileText, Image as ImageIcon, Pencil, Plus, Settings, Sparkles, Upload } from 'lucide-react'
 import { type FormEvent, useId, useRef, useState } from 'react'
-import { flushSync } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { BookCover } from '../campaign/book-cover.tsx'
-import { BookWindow, withTransition } from '../campaign/book-window.tsx'
 import books from '../campaign/books.module.css'
 import { useAmbient } from '../components/ambient.tsx'
 import { Loading } from '../components/brand.tsx'
@@ -28,7 +26,7 @@ import { Modal } from '../components/modal.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { Screen } from '../components/screen.tsx'
 import { Tour } from '../components/tour.tsx'
-import { itemTransition } from '../components/world-transition.ts'
+import { itemTransition, SECTION } from '../components/world-transition.ts'
 import { ColorChoices } from '../routes/world-card.tsx'
 import { CoverDialog, LOCAL_FILE, type LocalImage } from '../routes/world-cover.tsx'
 import { coverStyle } from '../wiki/cover-look.ts'
@@ -46,7 +44,6 @@ export function SystemScreen() {
     queryKey: ['systemBooks', systemId],
     queryFn: () => api.call('getSystemBooks', { systemId })
   })
-  const [opened, setOpened] = useState<Book | null>(null)
   const [settings, setSettings] = useState<Book | null>(null)
   const [creating, setCreating] = useState(false)
   // Su icono y su portada (y, detrás, su portada muy difuminada, como la de un mundo)
@@ -81,20 +78,19 @@ export function SystemScreen() {
       <ul className={books.books} data-tour="sistema-libros">
         {all.map((book) => (
           <li key={book.key} className={books.book} style={{ viewTransitionName: `libro-${book.key}` }}>
-            <button
-              type="button"
+            {/* Se abre por dentro: el compendio en ese libro (su árbol, la entrada y sus datos) */}
+            <Link
+              to="/sistemas/$systemId/libros/$bookKey"
+              params={{ systemId, bookKey: book.key }}
               className={books.coverButton}
-              onClick={(event) => {
-                const card = event.currentTarget
-                withTransition(card, () => flushSync(() => setOpened(book)))
-              }}
+              viewTransition={SECTION}
             >
               <span className={books.hidden}>{`${t('books.openPrefix')} `}</span>
               <BookCover
                 book={book}
                 sub={[book.origin ? t(`books.origin.${book.origin}`) : '', book.edition].filter(Boolean).join(' · ')}
               />
-            </button>
+            </Link>
             <div className={books.meta}>
               {book.pending > 0 ? (
                 <Link
@@ -139,15 +135,6 @@ export function SystemScreen() {
           ...(editable ? [{ target: '[data-tour="libro-nuevo"]', text: t('tour.system.create') }] : [])
         ]}
       />
-      {opened && (
-        <BookWindow
-          book={opened}
-          books={all}
-          systemName={name}
-          builtIn={!editable && opened.origin === null}
-          onClose={() => setOpened(null)}
-        />
-      )}
       {settings && (
         <BookSettings
           systemId={systemId}

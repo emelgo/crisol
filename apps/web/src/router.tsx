@@ -24,6 +24,7 @@ import { Worlds } from './routes/worlds.tsx'
 import { ReviewScreen } from './systems/review.tsx'
 import { SystemsScreen } from './systems/screen.tsx'
 import { SystemRules, SystemScreen } from './systems/system.tsx'
+import { SystemBook, SystemCompendium } from './systems/system-compendium.tsx'
 import { MesaScreen } from './tabletop/mesa.tsx'
 import { ScreenRoute } from './tabletop/screen.tsx'
 import { TemplateView } from './templates/editor.tsx'
@@ -246,6 +247,21 @@ const systemRoute = createRoute({
   path: '/sistemas/$systemId',
   component: SystemScreen
 })
+// Su compendio (todos sus libros) y un libro por dentro: lo abierto, en ?ver
+const verSearch = (search: Record<string, unknown>): { ver?: string } =>
+  typeof search.ver === 'string' && search.ver ? { ver: search.ver } : {}
+const systemCompendiumRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/sistemas/$systemId/compendio',
+  component: SystemCompendium,
+  validateSearch: verSearch
+})
+const systemBookRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/sistemas/$systemId/libros/$bookKey',
+  component: SystemBook,
+  validateSearch: verSearch
+})
 // Sus reglas: el editor a mano llega en la tanda 8
 const systemRulesRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -307,6 +323,8 @@ const routeTree = rootRoute.addChildren([
   systemsRoute,
   systemRoute,
   systemRulesRoute,
+  systemCompendiumRoute,
+  systemBookRoute,
   reviewRoute,
   templateRoute,
   consentRoute,

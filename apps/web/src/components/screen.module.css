@@ -31,6 +31,19 @@
   margin: 0;
 }
 
+/* Su emblema, a la derecha del título (como TitleEmblem, components/empty-state.tsx) */
+.emblem {
+  inline-size: 5.5rem;
+  block-size: auto;
+  margin-block: calc(-1 * var(--space-3));
+}
+
+@media (max-width: 40rem) {
+  .emblem {
+    display: none;
+  }
+}
+
 /* La portada de lo que se ve (una campaña), como franja bajo el título */
 .cover {
   block-size: 9rem;

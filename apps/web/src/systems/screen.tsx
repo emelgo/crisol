@@ -76,6 +76,7 @@ export function SystemsScreen() {
     <Screen
       title={t('systems.title')}
       left={preview && <SystemPreview system={preview} />}
+      emblem={mine.length > 0 ? 'sistemas' : undefined}
       leftLabel={t('systems.preview')}
     >
       {failed(systems) && <LoadError error={systems.error} onRetry={() => systems.refetch()} />}

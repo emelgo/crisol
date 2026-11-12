@@ -52,6 +52,14 @@ import { OriginNotice, ToSystem } from './origin.tsx'
 const route = getRouteApi('/mundos/$worldId/campanas/$campaignId/compendio')
 /** El sistema del compendio abierto: de él salen sus imágenes */
 export const SystemIdContext = createContext<string | null>(null)
+
+/**
+ * El compendio que se lee: el de una campaña (su id) o, sin campaña, el de un sistema entero («sistema:<id>»: su espacio
+ * y sus libros, revisión tanda 6). Sin campaña no hay partida: ni sus tablas se tiran, ni se ve lo nuevo, ni se pone en
+ * juego
+ */
+export const systemScope = (systemId: string) => `sistema:${systemId}`
+const systemOfScope = (scope: string) => (scope.startsWith('sistema:') ? scope.slice('sistema:'.length) : null)
 const PAGE = 100
 
 type Language = 'es' | 'en'
@@ -173,7 +181,12 @@ export function Compendium({
   const searchId = useId()
   const compendium = useQuery({
     queryKey: ['compendium', campaignId],
-    queryFn: () => api.call('getCampaignCompendium', { campaignId }),
+    queryFn: () => {
+      const systemId = systemOfScope(campaignId)
+      return systemId
+        ? api.call('getSystemCompendium', { systemId })
+        : api.call('getCampaignCompendium', { campaignId })
+    },
     enabled: Boolean(account)
   })
   const [query, setQuery] = useState('')
@@ -187,16 +200,19 @@ export function Compendium({
   const hits = useInfiniteQuery({
     queryKey: ['compendium', campaignId, 'search', wanted, layer, book, bookType],
     // Solo una capa o un libro, si se elige: lo filtra el servidor (antes de paginar)
-    queryFn: ({ pageParam }) =>
-      api.call('searchCampaignContent', {
-        campaignId,
+    queryFn: ({ pageParam }) => {
+      const given = {
         query: wanted,
         limit: PAGE,
         offset: pageParam,
-        ...(layer === 'all' ? {} : { layer }),
         ...(book ? { source: book } : {}),
         ...(book && bookType ? { type: bookType } : {})
-      }),
+      }
+      const systemId = systemOfScope(campaignId)
+      return systemId
+        ? api.call('searchSystemCompendium', { systemId, ...given })
+        : api.call('searchCampaignContent', { campaignId, ...given, ...(layer === 'all' ? {} : { layer }) })
+    },
     initialPageParam: 0,
     getNextPageParam: (last, pages) => {
       const seen = pages.reduce((n, p) => n + p.items.length, 0)
@@ -224,7 +240,7 @@ export function Compendium({
   const campaign = useQuery({
     queryKey: ['campaign', campaignId],
     queryFn: () => api.call('getCampaign', { campaignId }),
-    enabled: Boolean(account)
+    enabled: Boolean(account) && !systemOfScope(campaignId)
   })
   const master = campaign.data?.campaign.role === 'master'
   useSeenEntry(worldId, campaignId, shown, campaign.data?.campaign.role === 'player')
@@ -470,6 +486,7 @@ export function Compendium({
             targets={newTargets}
             language={language}
             item={null}
+            source={book}
             onSaved={open}
             onClose={() => setCreating(false)}
           />
@@ -747,7 +764,12 @@ function TypeShelf({
   const systemId = useContext(SystemIdContext)
   const browsed = useQuery({
     queryKey: ['compendium', campaignId, 'browse', type],
-    queryFn: () => api.call('browseCampaignContent', { campaignId, type })
+    queryFn: () => {
+      const systemId = systemOfScope(campaignId)
+      return systemId
+        ? api.call('browseSystemCompendium', { systemId, type })
+        : api.call('browseCampaignContent', { campaignId, type })
+    }
   })
   if (!browsed.data)
     return failed(browsed) ? (
@@ -927,9 +949,11 @@ function Entry({
   const announce = useAnnounce()
   // Sus tablas de tirar se tiran en la campaña, para quien elijan los dados (si vale en ella)
   const dice = useDice()
+  const inSystem = systemOfScope(campaignId) !== null
   const campaign = useQuery({
     queryKey: ['campaign', campaignId],
-    queryFn: () => api.call('getCampaign', { campaignId })
+    queryFn: () => api.call('getCampaign', { campaignId }),
+    enabled: !inSystem
   })
   const visibility = visibilityIn(dice.visibility, campaign.data?.campaign.role ?? 'player')
   const rolling = useMutation({
@@ -944,7 +968,12 @@ function Entry({
       .catch(() => null)
   const read = useQuery({
     queryKey: ['compendium', campaignId, 'entry', entryKey],
-    queryFn: () => api.call('getCampaignContent', { campaignId, keys: [entryKey] })
+    queryFn: () => {
+      const systemId = systemOfScope(campaignId)
+      return systemId
+        ? api.call('readSystemCompendium', { systemId, keys: [entryKey] })
+        : api.call('getCampaignContent', { campaignId, keys: [entryKey] })
+    }
   })
   const item = read.data?.items[0]
   const [changing, setChanging] = useState<'edit' | 'delete' | 'toSystem' | null>(startEditing ? 'edit' : null)
@@ -1071,7 +1100,7 @@ function Entry({
         )}
         {item.play && <InPlay play={item.play} titleId={titleId} />}
         <FormError message={rolling.error ? errorText(rolling.error) : null} />
-        {body && <ContentText text={body} onRoll={roll} />}
+        {body && <ContentText text={body} {...(inSystem ? {} : { onRoll: roll })} />}
         {item.table && (
           <EntryTable
             campaignId={campaignId}

@@ -10,7 +10,7 @@ import { useErrorText } from '../api/errors.ts'
 import { prepareAmbient, useAmbient } from '../components/ambient.tsx'
 import { Loading } from '../components/brand.tsx'
 import { useCardList } from '../components/card-transition.ts'
-import { EmptyState } from '../components/empty-state.tsx'
+import { EmptyState, TitleEmblem } from '../components/empty-state.tsx'
 import { FormError } from '../components/field.tsx'
 import { failed } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
@@ -65,7 +65,9 @@ export function Worlds() {
       </aside>
       <div className={styles.center}>
         <div className={styles.top}>
-          <PageTitle>{t('worlds.title')}</PageTitle>
+          <TitleEmblem kind="mundos" show={Boolean(worlds.data) && !empty}>
+            <PageTitle>{t('worlds.title')}</PageTitle>
+          </TitleEmblem>
         </div>
         <FormError message={failed(worlds) ? errorText(worlds.error) : null} />
         {!worlds.data && !failed(worlds) && <Loading />}

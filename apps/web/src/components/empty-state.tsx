@@ -36,3 +36,19 @@ export function EmptyState({
     </div>
   )
 }
+
+/**
+ * El emblema de una pantalla con contenido (Mis mundos, Plantillas, Sistemas, Archivos, Etiquetas): su bodegón, pequeño,
+ * a la derecha del título, como su sello (Enrique, 2026-11-12: con contenido, los bodegones no se veían nunca). Sin
+ * contenido, no: ya sale grande en la pantalla vacía
+ */
+export function TitleEmblem({ kind, show = true, children }: { kind: EmptyKind; show?: boolean; children: ReactNode }) {
+  return (
+    <div className={styles.titled}>
+      {children}
+      {show && (
+        <img src={`/vacios/${kind}.webp`} alt="" className={styles.emblem} width={240} height={240} decoding="async" />
+      )}
+    </div>
+  )
+}

@@ -52,3 +52,25 @@
     transform: translateY(6px);
   }
 }
+
+/* El título con su emblema a la derecha, alineados por el centro */
+.titled {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.emblem {
+  flex: none;
+  inline-size: 5.5rem;
+  block-size: auto;
+  margin-block: calc(-1 * var(--space-3));
+  animation: llega 500ms ease-out both;
+}
+
+@media (max-width: 40rem) {
+  .emblem {
+    display: none;
+  }
+}

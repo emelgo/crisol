@@ -31,7 +31,7 @@ import { BusyButton } from '../components/busy-button.tsx'
 import { ChangesBar } from '../components/changes.tsx'
 import { ConfirmByName, DangerZone } from '../components/danger.tsx'
 import dialogStyles from '../components/dialog.module.css'
-import { EmptyState } from '../components/empty-state.tsx'
+import { EmptyState, TitleEmblem } from '../components/empty-state.tsx'
 import { Field, FormError } from '../components/field.tsx'
 import form from '../components/form.module.css'
 import { failed, LoadError } from '../components/load-error.tsx'
@@ -533,7 +533,9 @@ function TemplatesTree({ data }: { data: Listed }) {
   return (
     <div className={files.layout}>
       <div className={files.center}>
-        <PageTitle>{t('templates.title')}</PageTitle>
+        <TitleEmblem kind="plantillas" show={!nothing}>
+          <PageTitle>{t('templates.title')}</PageTitle>
+        </TitleEmblem>
         {/* Sin ninguna, solo el botón grande de la pantalla vacía (y nada que buscar) */}
         {!nothing && (
           <div className={files.toolbar}>

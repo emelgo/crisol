@@ -97,10 +97,13 @@ export function EntryEditor({
   targets,
   language,
   item,
+  source = null,
   onSaved,
   onClose
 }: {
   campaignId: string
+  /** El libro de una nueva (en el sistema, el que se está viendo): sin él, sin libro */
+  source?: string | null
   /** Dónde se puede escribir (la primera, de entrada); al cambiar una que ya está, solo la suya */
   targets: EntryTarget[]
   language: Language
@@ -179,12 +182,18 @@ export function EntryEditor({
         await api.call('putSystemContent', {
           systemId: target.systemId,
           version: target.version,
-          items: [{ ...kept, source: item?.source ?? null }]
+          items: [{ ...kept, source: item ? (item.source ?? null) : source }]
         })
       return key
     },
     onSuccess: async (key) => {
-      await client.invalidateQueries({ queryKey: ['compendium', campaignId] })
+      await Promise.all([
+        client.invalidateQueries({ queryKey: ['compendium', campaignId] }),
+        // Lo que trae cada libro (su cuenta, en el Inicio del sistema)
+        ...(target?.layer === 'system'
+          ? [client.invalidateQueries({ queryKey: ['systemBooks', target.systemId] })]
+          : [])
+      ])
       onSaved(key)
       dialog.current?.close()
     }

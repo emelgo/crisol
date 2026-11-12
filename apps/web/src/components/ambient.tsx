@@ -91,16 +91,24 @@ function prepare(url: string): Promise<Prepared> {
     image.decoding = 'async'
     image.src = url
     await image.decode()
-    // Pequeña y suavizada: estirada se ve suave sin filtro en directo; el cristal de encima la desenfoca del todo
-    const width = 480
+    // Suavizada sin filtro (el desenfoque del lienzo deja una rejilla en algunos navegadores): se reduce mucho y se
+    // vuelve a agrandar; el cristal de encima la desenfoca del todo
+    const width = 640
     const height = Math.max(1, Math.round((image.naturalHeight * width) / image.naturalWidth))
+    const small = document.createElement('canvas')
+    small.width = 160
+    small.height = Math.max(1, Math.round((height * 160) / width))
+    const smallContext = small.getContext('2d')
+    if (!smallContext) throw new Error('sin lienzo')
+    smallContext.imageSmoothingQuality = 'high'
+    smallContext.drawImage(image, 0, 0, small.width, small.height)
     const canvas = document.createElement('canvas')
     canvas.width = width
     canvas.height = height
     const context = canvas.getContext('2d', { willReadFrequently: true })
     if (!context) throw new Error('sin lienzo')
-    context.filter = 'blur(4px)'
-    context.drawImage(image, -3, -3, width + 6, height + 6)
+    context.imageSmoothingQuality = 'high'
+    context.drawImage(small, 0, 0, width, height)
     // El punto claro: el del 97 % (un brillo suelto no cuenta)
     const { data } = context.getImageData(0, 0, width, height)
     const points: [number, number, number, number][] = []
@@ -122,7 +130,7 @@ function prepare(url: string): Promise<Prepared> {
     out.fillRect(0, 0, width, height)
     out.globalAlpha = alpha
     out.drawImage(canvas, 0, 0)
-    return { src: mixed.toDataURL('image/webp', 0.86), alpha: 1 }
+    return { src: mixed.toDataURL('image/webp', 0.95), alpha: 1 }
   })().catch(() => ({ src: url, alpha: ambientAlpha(140, 110, 90) }))
   prepared.set(url, work)
   void work.then((done) => ready.set(url, done))

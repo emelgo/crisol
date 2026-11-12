@@ -52,7 +52,7 @@ import { ChangesBar } from '../components/changes.tsx'
 import dangerStyles from '../components/danger.module.css'
 import { ConfirmByName, DangerZone } from '../components/danger.tsx'
 import dialogStyles from '../components/dialog.module.css'
-import { EmptyState } from '../components/empty-state.tsx'
+import { EmptyState, TitleEmblem } from '../components/empty-state.tsx'
 import { Field, FormError } from '../components/field.tsx'
 import form from '../components/form.module.css'
 import { failed, LoadError, SectionError } from '../components/load-error.tsx'
@@ -1307,7 +1307,9 @@ function FilesSection({
       {/* La columna del centro como en las demás vistas (título, botones y lista) y, a la izquierda, la vista previa */}
       <div className={styles.layout}>
         <div ref={center} className={styles.center}>
-          {title}
+          <TitleEmblem kind="archivos" show={!nothing}>
+            {title}
+          </TitleEmblem>
           <div className={styles.toolbar}>
             {tools}
             {choosing && (

@@ -2029,6 +2029,7 @@ export const es = {
   },
   // Los libros de un sistema (ADR-0021, systems/system.tsx)
   systemBooks: {
+    back: 'Volver al sistema',
     cover: 'Portada',
     addCover: 'Poner portada',
     changeCover: 'Cambiar la portada',

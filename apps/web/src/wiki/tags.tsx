@@ -13,7 +13,7 @@ import { BusyButton } from '../components/busy-button.tsx'
 import { ChangesBar } from '../components/changes.tsx'
 import { ConfirmByName, DangerZone } from '../components/danger.tsx'
 import dialogStyles from '../components/dialog.module.css'
-import { EmptyState } from '../components/empty-state.tsx'
+import { EmptyState, TitleEmblem } from '../components/empty-state.tsx'
 import { Field, FormError } from '../components/field.tsx'
 import form from '../components/form.module.css'
 import { failed, LoadError } from '../components/load-error.tsx'
@@ -418,7 +418,9 @@ export function AccountTags() {
     <section className={files.page}>
       <div className={files.layout}>
         <div className={files.center}>
-          <PageTitle>{t('tags.title')}</PageTitle>
+          <TitleEmblem kind="etiquetas" show={(tags.data?.tags.length ?? 0) > 0}>
+            <PageTitle>{t('tags.title')}</PageTitle>
+          </TitleEmblem>
           <div className={files.tools}>
             <label className={files.search} data-tour="etiquetas-buscar">
               <Search aria-hidden="true" size={16} />

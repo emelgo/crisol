@@ -500,6 +500,15 @@ function SystemPanels({ systemId, name }: { systemId: string; name: string }) {
         <Label icon={ScrollText} text={name || t('ribbon.home')} />
       </Link>
       <Link
+        to="/sistemas/$systemId/compendio"
+        params={{ systemId }}
+        className={styles.item}
+        viewTransition={SECTION}
+        data-tour="barra-compendio"
+      >
+        <Label icon={BookOpen} text={t('ribbon.compendium')} />
+      </Link>
+      <Link
         to="/sistemas/$systemId/reglas"
         params={{ systemId }}
         className={styles.item}

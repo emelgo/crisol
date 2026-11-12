@@ -83,7 +83,9 @@ test('«Sistemas»: se hacen con la IA; subir un archivo roto y uno bueno, bajar
   const confirm = page.getByRole('dialog', { name: '¿Borrar el sistema Fronteras?' })
   await confirm.getByLabel('Nombre').fill('Fronteras')
   await confirm.getByRole('button', { name: 'Borrar el sistema' }).click()
-  await expect(mine.getByRole('button')).toHaveText(['Sistema nuevo'])
+  // Sin ninguno, la pantalla vacía con su botón
+  await expect(mine).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Sistema nuevo' })).toBeVisible()
 })
 
 test('elegir el sistema de una campaña: los dados, al escribir, proponen su tirada por defecto', async ({ page }) => {

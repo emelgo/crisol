@@ -206,4 +206,18 @@ describe('«Sistemas», en Mis mundos', () => {
     await userEvent.click(bar.getByRole('link', { name: 'Crisol' }))
     await waitFor(() => expect(router.state.location.pathname).toBe('/sistemas'))
   })
+
+  it('el compendio del sistema, sin campaña, y un libro por dentro con la vuelta al sistema', async () => {
+    localStorage.setItem(
+      'crisol.recorridos.enrique@crisol.test',
+      JSON.stringify({ seen: ['sistemas', 'sistema', 'compendio'] })
+    )
+    const { router } = renderSystems(`/sistemas/${OWN.id}/compendio`)
+    expect(await screen.findByRole('heading', { level: 1, name: 'Compendio' })).toBeDefined()
+    expect(screen.getByRole('searchbox', { name: 'Buscar en el compendio' })).toBeDefined()
+    const name = typeof OWN.name === 'string' ? OWN.name : (OWN.name.es ?? '')
+    await router.navigate({ to: '/sistemas/$systemId/libros/$bookKey', params: { systemId: OWN.id, bookKey: 'base' } })
+    const back = await screen.findByRole('link', { name })
+    expect(back.getAttribute('href')).toBe(`/sistemas/${OWN.id}`)
+  })
 })
