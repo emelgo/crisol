@@ -71,7 +71,7 @@ export function ExampleSheet({
   const value = (path: string) => out.computed[path]?.value ?? out.values[path]
   // Lo de dentro de un conjunto va anidado: el valor de un elemento
   const nested = (key: string, element: string, sub: string) =>
-    ((out.values[key] as Record<string, Record<string, unknown>> | undefined)?.[element] ?? {})[sub]
+    (out.values[key] as Record<string, Record<string, unknown>> | undefined)?.[element]?.[sub]
   return (
     <div className={styles.example}>
       {Object.entries(fields)
@@ -87,8 +87,10 @@ export function ExampleSheet({
                 <span className={styles.exLabel}>{label}</span>
                 <div className={styles.exSet}>
                   {field.elements.map((e) => (
-                    <div key={e.key} className={styles.exStat}>
-                      <small>{textOf(e.abbr ?? e.label, language).slice(0, 4)}</small>
+                    <div key={e.key} className={styles.exStat} title={textOf(e.label, language)}>
+                      {/* Su abreviatura (o su nombre, cortado con «…»); entero para el lector de pantalla */}
+                      <small aria-hidden="true">{textOf(e.abbr ?? e.label, language)}</small>
+                      <span className={styles.srOnly}>{textOf(e.label, language)}</span>
                       <strong>{main ? shown(nested(key, e.key, main)) : '—'}</strong>
                       {derived && <em>{signed(value(`${key}.${e.key}.${derived}`))}</em>}
                     </div>

@@ -3,11 +3,13 @@
  * (su nombre, su clase con palabras de mesa y un resumen), que se despliega para cambiarlo. Se añaden con las seis de
  * siempre o con «Más»; se suben, se bajan y se quitan (con «Deshacer» un momento)
  */
-import type { Field, FieldKind, Language, System } from '@crisol/systems'
-import { characterType, textOf } from '@crisol/systems'
+import type { Field, FieldKind, Language, Problem, System } from '@crisol/systems'
+import { characterType, formulaText, textOf } from '@crisol/systems'
 import { ArrowDown, ArrowUp, ChevronDown, Plus, Trash2 } from 'lucide-react'
-import { useId, useState } from 'react'
+import { useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useAnnounce } from '../../components/announcer.tsx'
+import { focusAfterRemoving, focusOnMount } from '../../components/focus.ts'
 import { Help } from './help.tsx'
 import { blankField, keyFor, MAIN_KINDS, MORE_KINDS, summaryOf, withText } from './kinds.ts'
 import styles from './rules.module.css'
@@ -17,13 +19,15 @@ export function CharacterStep({
   system,
   language,
   change,
-  onAdded
+  onAdded,
+  problems
 }: {
   system: System
   language: Language
   change: Change
   /** Lo recién añadido, para marcarlo en la ficha de ejemplo */
   onAdded: (key: string) => void
+  problems: Problem[]
 }) {
   const { t } = useTranslation()
   const type = characterType(system)
@@ -35,7 +39,14 @@ export function CharacterStep({
         Object.values(system.types[type]?.fields ?? {}).some((f) => f.kind === 'resource') && (
           <p className={styles.enough}>{t('rules.character.enough')}</p>
         )}
-      <FieldsList system={system} typeKey={type} language={language} change={change} onAdded={onAdded} />
+      <FieldsList
+        system={system}
+        typeKey={type}
+        language={language}
+        change={change}
+        onAdded={onAdded}
+        problems={problems}
+      />
     </>
   )
 }
@@ -46,17 +57,23 @@ export function FieldsList({
   typeKey,
   language,
   change,
-  onAdded
+  onAdded,
+  problems = []
 }: {
   system: System
   typeKey: string
   language: Language
   change: Change
   onAdded?: (key: string) => void
+  problems?: Problem[]
 }) {
   const { t } = useTranslation()
+  const announce = useAnnounce()
   const [open, setOpen] = useState<string | null>(null)
+  const [fresh, setFresh] = useState<string | null>(null)
   const [more, setMore] = useState(false)
+  const list = useRef<HTMLUListElement>(null)
+  const read = (formula: string) => formulaText(formula, { system, type: typeKey, language })
   const fields = Object.entries(system.types[typeKey]?.fields ?? {})
   const add = (kind: FieldKind) => {
     const label = t(`rules.kinds.${kind}.new`)
@@ -67,10 +84,14 @@ export function FieldsList({
       if (target) target.fields[key] = blankField(kind, label)
     })
     setOpen(key)
+    setFresh(key)
     setMore(false)
     onAdded?.(key)
   }
-  const move = (key: string, delta: -1 | 1) =>
+  const move = (key: string, delta: -1 | 1) => {
+    const at = fields.findIndex(([k]) => k === key)
+    const to = at + delta
+    if (at < 0 || to < 0 || to >= fields.length) return
     change((draft) => {
       const target = draft.types[typeKey]
       if (!target) return
@@ -82,7 +103,12 @@ export function FieldsList({
       if (moved) entries.splice(to, 0, moved)
       target.fields = Object.fromEntries(entries)
     })
-  const remove = (key: string) =>
+    // El foco sigue en su botón (o en el otro, si llegó arriba o abajo) y se dice dónde quedó
+    requestAnimationFrame(() => focusMoved(list.current, `campo-${typeKey}-${key}`, delta))
+    announce(t('rules.movedTo', { name: textOf(fields[at]?.[1].label, language), at: to + 1, of: fields.length }))
+  }
+  const remove = (key: string, item: Element | null) => {
+    const back = focusAfterRemoving(item)
     change(
       (draft) => {
         const target = draft.types[typeKey]
@@ -90,15 +116,24 @@ export function FieldsList({
       },
       t('rules.removed', { name: textOf(system.types[typeKey]?.fields[key]?.label, language) })
     )
+    requestAnimationFrame(back)
+  }
   return (
     <>
-      <ul className={styles.rows}>
+      <ul className={styles.rows} ref={list}>
         {fields.map(([key, field], index) => (
           <li key={key}>
             <FieldRow
+              id={`campo-${typeKey}-${key}`}
               fieldKey={key}
               field={field}
               language={language}
+              read={read}
+              issues={problems.filter(
+                (p) =>
+                  p.path === `types.${typeKey}.fields.${key}` || p.path.startsWith(`types.${typeKey}.fields.${key}.`)
+              )}
+              focusName={fresh === key}
               open={open === key}
               first={index === 0}
               last={index === fields.length - 1}
@@ -110,7 +145,7 @@ export function FieldsList({
                 })
               }
               onMove={(delta) => move(key, delta)}
-              onRemove={() => remove(key)}
+              onRemove={(item) => remove(key, item)}
             />
           </li>
         ))}
@@ -143,9 +178,13 @@ export function FieldsList({
 }
 
 function FieldRow({
+  id,
   fieldKey,
   field,
   language,
+  read,
+  issues,
+  focusName,
   open,
   first,
   last,
@@ -154,44 +193,87 @@ function FieldRow({
   onMove,
   onRemove
 }: {
+  id: string
   fieldKey: string
   field: Field
   language: Language
+  read: (formula: string) => string
+  issues: Problem[]
+  focusName: boolean
   open: boolean
   first: boolean
   last: boolean
   onToggle: () => void
   onChange: (next: Field) => void
   onMove: (delta: -1 | 1) => void
-  onRemove: () => void
+  onRemove: (item: Element | null) => void
 }) {
   const { t } = useTranslation()
   const bodyId = useId()
-  const summary = summaryOf(field, language, (key, values) => t(key as 'rules.summary.range', values ?? {}))
+  const errorId = useId()
+  const summary = summaryOf(field, language, (key, values) => t(key as 'rules.summary.range', values ?? {}), read)
+  const name = textOf(field.label, language) || fieldKey
   return (
-    <div className={styles.row} data-open={open || undefined} id={`campo-${fieldKey}`}>
+    <div className={styles.row} data-open={open || undefined} id={id}>
       <button type="button" className={styles.rowHead} aria-expanded={open} aria-controls={bodyId} onClick={onToggle}>
         <span className={styles.rowName}>
-          {textOf(field.label, language) || fieldKey}
+          {name}
           {field.help && <small>{textOf(field.help, language)}</small>}
         </span>
         <span className={styles.rowKind}>{t(`rules.kinds.${field.kind}.name`)}</span>
         <span className={styles.rowSummary}>{summary}</span>
+        {issues.some((p) => p.severity === 'error') && (
+          <span className={styles.stepWarn} title={t('rules.stepHasProblems')}>
+            <span className={styles.srOnly}>{t('rules.stepHasProblems')}</span>
+          </span>
+        )}
         <ChevronDown size={16} aria-hidden="true" className={styles.chevron} />
       </button>
       {open && (
         <div id={bodyId} className={styles.rowBody}>
-          <FieldForm field={field} language={language} onChange={onChange} />
+          <FieldForm
+            field={field}
+            language={language}
+            onChange={onChange}
+            focusName={focusName}
+            errorId={issues.length > 0 ? errorId : undefined}
+          />
+          {issues.length > 0 && (
+            <ul id={errorId} className={styles.fieldErrors}>
+              {issues.map((p) => (
+                <li key={`${p.path}-${p.message}`} className={styles.fieldError}>
+                  {p.message}
+                </li>
+              ))}
+            </ul>
+          )}
           <div className={styles.rowTools}>
-            <button type="button" disabled={first} onClick={() => onMove(-1)}>
+            <button
+              type="button"
+              data-move="up"
+              aria-label={t('rules.upNamed', { name })}
+              disabled={first}
+              onClick={() => onMove(-1)}
+            >
               <ArrowUp size={14} aria-hidden="true" />
               {t('rules.up')}
             </button>
-            <button type="button" disabled={last} onClick={() => onMove(1)}>
+            <button
+              type="button"
+              data-move="down"
+              aria-label={t('rules.downNamed', { name })}
+              disabled={last}
+              onClick={() => onMove(1)}
+            >
               <ArrowDown size={14} aria-hidden="true" />
               {t('rules.down')}
             </button>
-            <button type="button" className={styles.danger} onClick={onRemove}>
+            <button
+              type="button"
+              className={styles.danger}
+              aria-label={t('rules.removeNamed', { name })}
+              onClick={(event) => onRemove(event.currentTarget.closest('li'))}
+            >
               <Trash2 size={14} aria-hidden="true" />
               {t('rules.remove')}
             </button>
@@ -206,11 +288,17 @@ function FieldRow({
 export function FieldForm({
   field,
   language,
-  onChange
+  onChange,
+  focusName = false,
+  errorId
 }: {
   field: Field
   language: Language
   onChange: (next: Field) => void
+  /** Recién añadido: el foco, a su nombre */
+  focusName?: boolean
+  /** Sus avisos, debajo: los campos que fallan apuntan a ellos */
+  errorId?: string
 }) {
   const { t } = useTranslation()
   const ids = { name: useId(), help: useId(), min: useId(), max: useId(), start: useId(), formula: useId() }
@@ -223,6 +311,7 @@ export function FieldForm({
           <label htmlFor={ids.name}>{t('rules.field.name')}</label>
           <input
             id={ids.name}
+            ref={focusName ? focusOnMount : undefined}
             value={textOf(field.label, language)}
             maxLength={80}
             autoComplete="off"
@@ -306,6 +395,8 @@ export function FieldForm({
           <input
             id={ids.formula}
             value={field.formula}
+            aria-invalid={errorId ? true : undefined}
+            aria-describedby={errorId}
             autoComplete="off"
             spellCheck={false}
             onChange={(event) => set({ formula: event.currentTarget.value })}
@@ -347,6 +438,7 @@ function NamedList({
   onChange: (next: Field) => void
 }) {
   const { t } = useTranslation()
+  const list = useRef<HTMLUListElement>(null)
   const items =
     kind === 'elements' && field.kind === 'set'
       ? field.elements.map((e) => ({ id: e.key, label: e.label }))
@@ -369,7 +461,7 @@ function NamedList({
   return (
     <fieldset className={styles.named}>
       <legend>{t(kind === 'elements' ? 'rules.field.elements' : 'rules.field.options')}</legend>
-      <ul>
+      <ul ref={list}>
         {items.map((item, index) => (
           <li key={item.id}>
             <input
@@ -388,7 +480,11 @@ function NamedList({
               type="button"
               aria-label={t('rules.field.removeItem', { name: textOf(item.label, language) })}
               disabled={items.length <= 1}
-              onClick={() => write(items.filter((i) => i.id !== item.id))}
+              onClick={(event) => {
+                const back = focusAfterRemoving(event.currentTarget.closest('li'))
+                write(items.filter((i) => i.id !== item.id))
+                requestAnimationFrame(back)
+              }}
             >
               <Trash2 size={14} aria-hidden="true" />
             </button>
@@ -410,6 +506,12 @@ function NamedList({
               label
             }
           ])
+          // El foco, al nombre del nuevo, ya escogido para escribir encima
+          requestAnimationFrame(() => {
+            const input = list.current?.querySelector<HTMLInputElement>('li:last-child input')
+            input?.focus()
+            input?.select()
+          })
         }}
       >
         <Plus size={14} aria-hidden="true" />
@@ -458,7 +560,11 @@ function SetInside({
               type="button"
               aria-label={t('rules.field.removeItem', { name: textOf(sub.label, language) })}
               disabled={inside.length <= 1}
-              onClick={() => write(Object.fromEntries(inside.filter(([k]) => k !== key)))}
+              onClick={(event) => {
+                const back = focusAfterRemoving(event.currentTarget.closest('li'))
+                write(Object.fromEntries(inside.filter(([k]) => k !== key)))
+                requestAnimationFrame(back)
+              }}
             >
               <Trash2 size={14} aria-hidden="true" />
             </button>
@@ -503,4 +609,16 @@ function SetInside({
       </div>
     </fieldset>
   )
+}
+
+/**
+ * Tras subir o bajar una fila: el foco, a su mismo botón en su sitio nuevo; si llegó arriba o abajo (y ese botón se
+ * desactiva), al otro
+ */
+export function focusMoved(list: Element | null, rowId: string, delta: -1 | 1) {
+  const row = rowId ? document.getElementById(rowId) : null
+  const scope = row ?? list
+  const same = scope?.querySelector<HTMLButtonElement>(`[data-move="${delta < 0 ? 'up' : 'down'}"]`)
+  const other = scope?.querySelector<HTMLButtonElement>(`[data-move="${delta < 0 ? 'down' : 'up'}"]`)
+  ;(same && !same.disabled ? same : other)?.focus()
 }

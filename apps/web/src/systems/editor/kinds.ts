@@ -1,13 +1,13 @@
 /**
  * Las clases de campo con palabras de mesa (lienzo de la tanda 8): cómo se llaman, qué se pone al añadir una, su
- * resumen en la fila y su ayuda con un ejemplo. Las seis de siempre, a la vista; las demás, en «Más»
+ * resumen en la fila y su ayuda con un ejemplo. Las cinco de siempre, a la vista; las demás, en «Más»
  */
 import type { Field, FieldKind, Language, Text } from '@crisol/systems'
 import { textOf } from '@crisol/systems'
 
-/** Las que se ofrecen a la vista, en este orden; las demás, en «Más» */
-export const MAIN_KINDS = ['number', 'set', 'resource', 'choice', 'text', 'derived'] as const
-export const MORE_KINDS = ['boolean', 'dice', 'list', 'clock', 'group', 'table', 'link'] as const
+/** Las que se ofrecen a la vista, en este orden; las demás (lo que se calcula, con su fórmula, al fondo), en «Más» */
+export const MAIN_KINDS = ['number', 'set', 'resource', 'choice', 'text'] as const
+export const MORE_KINDS = ['derived', 'boolean', 'dice', 'list', 'clock', 'group', 'table', 'link'] as const
 
 /** Un texto en el idioma del editor: si ya era de dos idiomas, se cambia solo el suyo */
 export function withText(old: Text | undefined, value: string, language: Language): Text {
@@ -81,11 +81,15 @@ export function blankField(kind: FieldKind, label: string): Field {
   }
 }
 
-/** Su resumen en la fila: lo que tiene, en corto («de 1 a 20», «Fuerza, Agilidad…», «máx. 10») */
+/**
+ * Su resumen en la fila: lo que tiene, en corto («de 1 a 20», «Fuerza, Agilidad…», «máx. 10»); lo que se calcula,
+ * con su fórmula leída en palabras (`read`), nunca en crudo
+ */
 export function summaryOf(
   field: Field,
   language: Language,
-  words: (key: string, values?: Record<string, unknown>) => string
+  words: (key: string, values?: Record<string, unknown>) => string,
+  read?: (formula: string) => string
 ) {
   switch (field.kind) {
     case 'number':
@@ -101,7 +105,7 @@ export function summaryOf(
     case 'choice':
       return field.options.map((o) => textOf(o.label, language)).join(', ')
     case 'derived':
-      return field.formula
+      return read ? read(field.formula) : words('rules.summary.calculated')
     case 'dice':
       return field.default ?? ''
     case 'clock':

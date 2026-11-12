@@ -30,7 +30,7 @@
 }
 
 .saveState[data-state="invalid"] {
-  color: var(--color-warning, #e9b872);
+  color: var(--color-warning);
 }
 
 .steps,
@@ -126,7 +126,7 @@
   inline-size: 8px;
   block-size: 8px;
   border-radius: 50%;
-  background: var(--color-warning, #e9b872);
+  background: var(--color-warning);
 }
 
 /* El paso abierto */
@@ -153,7 +153,7 @@
 
 .enough {
   margin: 0;
-  color: var(--color-ok, #7fb77e);
+  color: var(--color-tip);
   font-size: 0.875rem;
 }
 
@@ -234,7 +234,7 @@
   transition: transform 150ms ease-out;
 }
 
-.row[data-open] .chevron {
+.row[data-open] > .rowHead > .chevron {
   transform: rotate(180deg);
 }
 
@@ -447,19 +447,26 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-block-size: 2.25rem;
-  padding: 0 var(--space-3);
-  border: 1px dashed var(--color-frame);
+  min-block-size: 2rem;
+  padding: 0 var(--space-2);
+  border: 0;
   border-radius: 6px;
   background: none;
-  color: var(--color-text);
+  color: var(--color-link);
   font: inherit;
   font-size: 0.875rem;
+  font-weight: 600;
   cursor: pointer;
 }
 
 .addButton:hover {
-  border-color: var(--color-accent-text);
+  background: color-mix(in srgb, var(--color-link) 10%, transparent);
+}
+
+.addButton[disabled] {
+  color: var(--color-muted);
+  font-weight: 400;
+  cursor: not-allowed;
 }
 
 .addButton:focus-visible {
@@ -511,7 +518,7 @@
   background: var(--frame-sheen), var(--popup-glass);
   -webkit-backdrop-filter: var(--popup-blur);
   backdrop-filter: var(--popup-blur);
-  box-shadow: 0 18px 40px -16px rgb(0 0 0 / 0.8);
+  box-shadow: var(--glass-shadow);
   font-size: 0.875rem;
   font-weight: 400;
   line-height: 1.45;
@@ -601,6 +608,44 @@
   display: none;
 }
 
+.side > .exPanel {
+  overflow-y: auto;
+  max-block-size: calc(100dvh - 22rem);
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
+}
+
+.panelHead span[data-errors] {
+  color: var(--color-danger);
+}
+
+.fieldErrors {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fieldError {
+  margin: 0;
+  color: var(--color-danger);
+  font-size: 0.8125rem;
+}
+
+.field input[aria-invalid="true"] {
+  border-color: var(--color-danger);
+}
+
+.srOnly {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 .panelHead {
   display: flex;
   align-items: baseline;
@@ -620,7 +665,7 @@
 }
 
 .panelHead span {
-  color: var(--color-warning, #e9b872);
+  color: var(--color-warning);
   font-size: 0.8125rem;
 }
 
@@ -629,7 +674,7 @@
 }
 
 .panelHead span[data-ok] {
-  color: var(--color-ok, #7fb77e);
+  color: var(--color-tip);
 }
 
 .example {
@@ -649,7 +694,7 @@
 
 .exSet {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 6px;
 }
 
@@ -664,6 +709,9 @@
 
 .exStat small {
   display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   color: var(--color-muted);
   font-size: 0.6875rem;
   letter-spacing: 0.06em;
@@ -754,7 +802,7 @@
 }
 
 .notes li[data-severity="warning"] .dot {
-  background: var(--color-warning, #e9b872);
+  background: var(--color-warning);
 }
 
 .goto {
@@ -790,12 +838,16 @@
   background: var(--frame-sheen), var(--popup-glass);
   -webkit-backdrop-filter: var(--popup-blur);
   backdrop-filter: var(--popup-blur);
-  box-shadow: 0 18px 40px -16px rgb(0 0 0 / 0.8);
+  box-shadow: var(--glass-shadow);
   transform: translateX(-50%);
 }
 
 .problem {
   border-color: var(--color-danger);
+}
+
+.undo + .problem {
+  inset-block-end: calc(var(--space-6) + 4rem);
 }
 
 .undo button,
@@ -811,22 +863,13 @@
 
 @media (max-width: 75rem) {
   .editor {
-    grid-template-columns: minmax(11rem, 14rem) minmax(0, 1fr);
+    grid-template-columns: minmax(10rem, 12rem) minmax(0, 1fr) minmax(15rem, 17rem);
+    gap: var(--space-4);
+    padding-inline: var(--space-4);
   }
 
-  .side {
-    position: static;
-    grid-column: 2;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .chevron {
-    transition: none;
-  }
-
-  [data-fresh] {
-    animation: none;
+  .main {
+    padding: var(--space-4);
   }
 }
 

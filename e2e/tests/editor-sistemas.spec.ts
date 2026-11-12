@@ -38,7 +38,7 @@ test('un sistema a mano: «A mano» lo crea y abre su editor; lo que se añade s
   await formula.fill('2d6 + 1')
   await expect(page.getByText(/Se lee:/)).toBeVisible()
   await page.getByRole('button', { name: 'Tirar una vez' }).click()
-  await expect(page.locator('p[aria-live="polite"]').filter({ hasText: /2d6/ })).toBeVisible()
+  await expect(page.locator('p').filter({ hasText: /^\d+2d6/ })).toBeVisible()
   await expect
     .poll(async () => Object.values((await read()).document.rolls ?? {}).map((r) => r.formula), { timeout: 10_000 })
     .toContain('2d6 + 1')
@@ -47,11 +47,14 @@ test('un sistema a mano: «A mano» lo crea y abre su editor; lo que se añade s
 
   // Un error: no se guarda, la revisión lo dice y lleva a él
   await formula.fill('1d20 + @nada')
-  await expect(page.getByText(/Sin guardar/)).toBeVisible()
+  // A la vista y anunciado
+  await expect(page.getByText(/Sin guardar/)).toHaveCount(2)
+  await expect(page.getByRole('status').getByText(/Sin guardar/)).toBeAttached()
   const review = page.getByRole('region', { name: 'Revisión' })
   await expect(review).toContainText('nada')
   await settled(page)
   await page.screenshot({ path: test.info().outputPath('3-revision.png') })
   await formula.fill('1d20')
-  await expect(page.getByText('Guardado')).toBeVisible({ timeout: 10_000 })
+  // Arreglado, se guarda y se anuncia (tras un problema)
+  await expect(page.getByRole('status').getByText('Guardado')).toBeAttached({ timeout: 10_000 })
 })

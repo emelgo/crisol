@@ -4,18 +4,22 @@
  * trae el compendio (sus libros, que se llevan en su Inicio) y lo avanzado (la iniciativa, los idiomas, la versión y
  * el archivo)
  */
-import { characterType, LANGUAGES, type Language, type System, sheetOf, textOf } from '@crisol/systems'
+import { characterType, LANGUAGES, type Language, type Problem, type System, sheetOf, textOf } from '@crisol/systems'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { ArrowDown, ArrowUp, Download, Plus, Trash2 } from 'lucide-react'
-import { useId, useState } from 'react'
+import { useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../../api/context.tsx'
 import { useErrorText } from '../../api/errors.ts'
+import { useAnnounce } from '../../components/announcer.tsx'
+import { Loading } from '../../components/brand.tsx'
 import { BusyButton } from '../../components/busy-button.tsx'
 import { FormError } from '../../components/field.tsx'
+import { focusAfterRemoving } from '../../components/focus.ts'
+import { failed, LoadError } from '../../components/load-error.tsx'
 import { useDownload } from '../screen.tsx'
-import { FieldsList } from './character-step.tsx'
+import { FieldsList, focusMoved } from './character-step.tsx'
 import { keyFor, withText } from './kinds.ts'
 import styles from './rules.module.css'
 import type { Change } from './rules-editor.tsx'
@@ -30,28 +34,64 @@ function moved<T>(list: readonly T[], at: number, delta: -1 | 1): T[] {
   return next
 }
 
-/** Subir, bajar y quitar, en una fila */
+/**
+ * Subir, bajar y quitar, en una fila, con su nombre: al mover, el foco sigue en su botón (la fila, en su sitio nuevo)
+ * y se dice dónde quedó; al quitar, pasa a la de al lado
+ */
 function RowTools({
+  name,
   index,
   count,
   onMove,
   onRemove
 }: {
+  name: string
   index: number
   count: number
   onMove: (delta: -1 | 1) => void
   onRemove: () => void
 }) {
   const { t } = useTranslation()
+  const announce = useAnnounce()
+  const self = useRef<HTMLSpanElement>(null)
+  const move = (delta: -1 | 1) => {
+    const list = self.current?.closest('ul, ol') ?? null
+    onMove(delta)
+    requestAnimationFrame(() => {
+      const row = list?.children[index + delta] ?? null
+      if (row) focusMoved(row, '', delta)
+    })
+    announce(t('rules.movedTo', { name, at: index + delta + 1, of: count }))
+  }
   return (
-    <span className={styles.inlineTools}>
-      <button type="button" aria-label={t('rules.up')} disabled={index === 0} onClick={() => onMove(-1)}>
+    <span className={styles.inlineTools} ref={self}>
+      <button
+        type="button"
+        data-move="up"
+        aria-label={t('rules.upNamed', { name })}
+        disabled={index === 0}
+        onClick={() => move(-1)}
+      >
         <ArrowUp size={14} aria-hidden="true" />
       </button>
-      <button type="button" aria-label={t('rules.down')} disabled={index === count - 1} onClick={() => onMove(1)}>
+      <button
+        type="button"
+        data-move="down"
+        aria-label={t('rules.downNamed', { name })}
+        disabled={index === count - 1}
+        onClick={() => move(1)}
+      >
         <ArrowDown size={14} aria-hidden="true" />
       </button>
-      <button type="button" aria-label={t('rules.remove')} onClick={onRemove}>
+      <button
+        type="button"
+        aria-label={t('rules.removeNamed', { name })}
+        onClick={(event) => {
+          const back = focusAfterRemoving(event.currentTarget.closest('li'))
+          onRemove()
+          requestAnimationFrame(back)
+        }}
+      >
         <Trash2 size={14} aria-hidden="true" />
       </button>
     </span>
@@ -59,7 +99,17 @@ function RowTools({
 }
 
 /** 3 · Lo que se lleva: los tipos de objeto (armas, conjuros…), cada uno con su nombre y sus campos */
-export function ObjectsStep({ system, language, change }: { system: System; language: Language; change: Change }) {
+export function ObjectsStep({
+  system,
+  language,
+  change,
+  problems
+}: {
+  system: System
+  language: Language
+  change: Change
+  problems: Problem[]
+}) {
   const { t } = useTranslation()
   const items = Object.entries(system.types).filter(([, type]) => type.document === 'item')
   const [open, setOpen] = useState<string | null>(items[0]?.[0] ?? null)
@@ -67,7 +117,7 @@ export function ObjectsStep({ system, language, change }: { system: System; lang
     const label = t('rules.objects.new')
     const key = keyFor(label, Object.keys(system.types))
     change((draft) => {
-      draft.types[key] = { label, document: 'item', fields: { nombre: { kind: 'text', label: 'Nombre' } } }
+      draft.types[key] = { label, document: 'item', fields: { nombre: { kind: 'text', label: t('rules.field.name') } } }
     })
     setOpen(key)
   }
@@ -91,14 +141,16 @@ export function ObjectsStep({ system, language, change }: { system: System; lang
                 type="button"
                 className={styles.iconButton}
                 aria-label={t('rules.objects.remove', { name: textOf(type.label, language) })}
-                onClick={() =>
+                onClick={(event) => {
+                  const back = focusAfterRemoving(event.currentTarget.closest('li'))
                   change(
                     (draft) => {
                       delete draft.types[key]
                     },
                     t('rules.removed', { name: textOf(type.label, language) })
                   )
-                }
+                  requestAnimationFrame(back)
+                }}
               >
                 <Trash2 size={14} aria-hidden="true" />
               </button>
@@ -114,7 +166,7 @@ export function ObjectsStep({ system, language, change }: { system: System; lang
                     })
                   }
                 />
-                <FieldsList system={system} typeKey={key} language={language} change={change} />
+                <FieldsList system={system} typeKey={key} language={language} change={change} problems={problems} />
               </div>
             )}
           </li>
@@ -158,7 +210,11 @@ export function SheetStep({ system, language, change }: { system: System; langua
   const nameOf = (key: string) => textOf(fields[key]?.label, language) || key
   const describe = (block: (typeof blocks)[number]): string => {
     if (block.kind === 'header') return t('rules.sheet.header')
-    if (block.kind === 'columns') return t('rules.sheet.columns', { count: block.blocks.length })
+    // Las columnas, por lo que llevan (dos «3 columnas» no se distinguirían)
+    if (block.kind === 'columns')
+      return block.blocks
+        .map((inner) => ('label' in inner && inner.label ? textOf(inner.label, language) : describe(inner)))
+        .join(' · ')
     if (block.kind === 'tabs') return block.tabs.map((tab) => textOf(tab.label, language)).join(' · ')
     if ('fields' in block) return block.fields.map(nameOf).join(', ')
     if ('field' in block) return nameOf(block.field)
@@ -181,6 +237,7 @@ export function SheetStep({ system, language, change }: { system: System; langua
               <small>{describe(block)}</small>
             </span>
             <RowTools
+              name={t(`rules.sheet.kind.${block.kind}`)}
               index={index}
               count={blocks.length}
               onMove={(delta) => write(moved(blocks, index, delta))}
@@ -216,15 +273,25 @@ export function CreationStep({ system, language, change }: { system: System; lan
       draft.creation = next
     })
   const keys = steps.map((s) => s.key)
+  const nameOf = (key: string) => textOf(system.types[type ?? '']?.fields[key]?.label, language) || key
+  const itemType = Object.entries(system.types).find(([, ty]) => ty.document === 'item')?.[0]
+  const score =
+    firstSet?.[1].kind === 'set'
+      ? Object.entries(firstSet[1].fields).find(([, f]) => f.kind === 'number')?.[0]
+      : undefined
+  // Lo que hace falta para cada clase de paso: sin ello, su botón se desactiva y dice por qué
+  const missing = {
+    content: !itemType,
+    scores: !score,
+    fields: !fields[0],
+    summary: false
+  }
   const addStep = (kind: 'content' | 'scores' | 'fields' | 'summary') => {
     const label = t(`rules.creation.kind.${kind}`)
     const key = keyFor(label, keys)
-    const itemType = Object.entries(system.types).find(([, ty]) => ty.document === 'item')?.[0]
     if (kind === 'content' && itemType) write([...steps, { key, label, kind, type: itemType }])
     if (kind === 'scores' && firstSet) {
-      const [setKey, set] = firstSet
-      const score =
-        set.kind === 'set' ? Object.entries(set.fields).find(([, f]) => f.kind === 'number')?.[0] : undefined
+      const [setKey] = firstSet
       if (score)
         write([
           ...steps,
@@ -247,39 +314,58 @@ export function CreationStep({ system, language, change }: { system: System; lan
     <>
       {steps.length === 0 && <p className={styles.muted}>{t('rules.creation.none')}</p>}
       <ol className={styles.rows}>
-        {steps.map((step, index) => (
-          <li key={step.key} className={styles.blockRow}>
-            <span className={styles.blockKind}>{t(`rules.creation.kind.${step.kind}`)}</span>
-            <span className={styles.rowName}>
-              {textOf(step.label, language)}
-              <small>
-                {step.kind === 'content'
-                  ? textOf(system.types[step.type]?.label, language)
-                  : step.kind === 'scores'
-                    ? step.methods.map((m) => textOf(m.label, language)).join(', ')
-                    : step.kind === 'fields'
-                      ? step.fields.join(', ')
-                      : ''}
-              </small>
-            </span>
-            <RowTools
-              index={index}
-              count={steps.length}
-              onMove={(delta) => write(moved(steps, index, delta))}
-              onRemove={() => write(steps.filter((_, i) => i !== index))}
-            />
-          </li>
-        ))}
+        {steps.map((step, index) => {
+          const label = textOf(step.label, language)
+          const detail =
+            step.kind === 'content'
+              ? textOf(system.types[step.type]?.label, language)
+              : step.kind === 'scores'
+                ? step.methods.map((m) => textOf(m.label, language)).join(', ')
+                : step.kind === 'fields'
+                  ? step.fields.map(nameOf).join(', ')
+                  : ''
+          return (
+            <li key={step.key} className={styles.blockRow}>
+              <span className={styles.blockKind}>{t(`rules.creation.kind.${step.kind}`)}</span>
+              <span className={styles.rowName}>
+                {label}
+                {/* Sin repetir: «Clase» bajo «Clase» no dice nada */}
+                {detail && detail !== label && <small>{detail}</small>}
+              </span>
+              <RowTools
+                name={label}
+                index={index}
+                count={steps.length}
+                onMove={(delta) => write(moved(steps, index, delta))}
+                onRemove={() => write(steps.filter((_, i) => i !== index))}
+              />
+            </li>
+          )
+        })}
       </ol>
       <div className={styles.add}>
         <span className={styles.addLabel}>{t('rules.add')}</span>
         {(['content', 'scores', 'fields', 'summary'] as const).map((kind) => (
-          <button key={kind} type="button" className={styles.addButton} onClick={() => addStep(kind)}>
+          <button
+            key={kind}
+            type="button"
+            className={styles.addButton}
+            disabled={missing[kind]}
+            aria-describedby={missing[kind] ? `falta-${kind}` : undefined}
+            onClick={() => addStep(kind)}
+          >
             <Plus size={14} aria-hidden="true" />
             {t(`rules.creation.kind.${kind}`)}
           </button>
         ))}
       </div>
+      {(['content', 'scores', 'fields'] as const)
+        .filter((kind) => missing[kind])
+        .map((kind) => (
+          <p key={kind} id={`falta-${kind}`} className={styles.muted}>
+            {t(`rules.creation.needs.${kind}`)}
+          </p>
+        ))}
     </>
   )
 }
@@ -292,6 +378,8 @@ export function CompendiumStep({ systemId }: { systemId: string }) {
     queryKey: ['systemBooks', systemId],
     queryFn: () => api.call('getSystemBooks', { systemId })
   })
+  if (!books.data)
+    return failed(books) ? <LoadError error={books.error} onRetry={() => books.refetch()} /> : <Loading />
   return (
     <>
       <ul className={styles.rows}>
@@ -299,7 +387,11 @@ export function CompendiumStep({ systemId }: { systemId: string }) {
           <li key={book.key} className={styles.blockRow}>
             <span className={styles.rowName}>
               {book.name}
-              <small>{t('rules.compendium.counts', { entries: book.count, chapters: book.chapters })}</small>
+              <small>
+                {book.chapters > 0
+                  ? t('rules.compendium.counts', { entries: book.count, chapters: book.chapters })
+                  : t('rules.compendium.entries', { entries: book.count })}
+              </small>
             </span>
             <Link
               to="/sistemas/$systemId/libros/$bookKey"

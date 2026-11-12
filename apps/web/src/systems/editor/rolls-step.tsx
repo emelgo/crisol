@@ -8,6 +8,7 @@ import {
   characterType,
   formulaText,
   type Language,
+  type Problem,
   type Roll,
   type System,
   textOf
@@ -18,6 +19,8 @@ import { useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../../api/context.tsx'
 import { useErrorText } from '../../api/errors.ts'
+import { useAnnounce } from '../../components/announcer.tsx'
+import { focusAfterRemoving, focusOnMount } from '../../components/focus.ts'
 import { sampleData } from './example-sheet.tsx'
 import { Help } from './help.tsx'
 import { keyFor, withText } from './kinds.ts'
@@ -41,10 +44,21 @@ function suggestionsOf(system: System, language: Language) {
   return out.slice(0, 8)
 }
 
-export function RollsStep({ system, language, change }: { system: System; language: Language; change: Change }) {
+export function RollsStep({
+  system,
+  language,
+  change,
+  problems
+}: {
+  system: System
+  language: Language
+  change: Change
+  problems: Problem[]
+}) {
   const { t } = useTranslation()
   const ids = { dice: useId(), critical: useId() }
   const [open, setOpen] = useState<string | null>(null)
+  const [fresh, setFresh] = useState<string | null>(null)
   const rolls = Object.entries(system.rolls ?? {})
   const add = () => {
     const label = t('rules.rolls.new')
@@ -54,6 +68,7 @@ export function RollsStep({ system, language, change }: { system: System; langua
       draft.rolls[key] = { label, formula: `${draft.dice?.default ?? '1d20'}` }
     })
     setOpen(key)
+    setFresh(key)
   }
   return (
     <>
@@ -105,6 +120,8 @@ export function RollsStep({ system, language, change }: { system: System; langua
               roll={roll}
               system={system}
               language={language}
+              issues={problems.filter((p) => p.path === `rolls.${key}` || p.path.startsWith(`rolls.${key}.`))}
+              focusName={fresh === key}
               open={open === key}
               onToggle={() => setOpen((now) => (now === key ? null : key))}
               onChange={(next) =>
@@ -113,7 +130,8 @@ export function RollsStep({ system, language, change }: { system: System; langua
                   draft.rolls[key] = next
                 })
               }
-              onRemove={() =>
+              onRemove={(item) => {
+                const back = focusAfterRemoving(item)
                 change(
                   (draft) => {
                     if (draft.rolls) delete draft.rolls[key]
@@ -121,7 +139,8 @@ export function RollsStep({ system, language, change }: { system: System; langua
                   },
                   t('rules.removed', { name: textOf(roll.label, language) })
                 )
-              }
+                requestAnimationFrame(back)
+              }}
             />
           </li>
         ))}
@@ -142,6 +161,8 @@ function RollRow({
   roll,
   system,
   language,
+  issues,
+  focusName,
   open,
   onToggle,
   onChange,
@@ -151,15 +172,18 @@ function RollRow({
   roll: Roll
   system: System
   language: Language
+  issues: Problem[]
+  focusName: boolean
   open: boolean
   onToggle: () => void
   onChange: (next: Roll) => void
-  onRemove: () => void
+  onRemove: (item: Element | null) => void
 }) {
   const { t } = useTranslation()
   const api = useApi()
   const errorText = useErrorText()
-  const ids = { name: useId(), formula: useId(), body: useId() }
+  const announce = useAnnounce()
+  const ids = { name: useId(), formula: useId(), body: useId(), error: useId() }
   const type = characterType(system)
   const words = type ? formulaText(roll.formula, { system, type, language }) : roll.formula
   const tryIt = useMutation({
@@ -178,8 +202,15 @@ function RollRow({
         ...(element ? { element } : {}),
         document: { data: sampleData(fields) }
       })
-    }
+    },
+    onSuccess: (out) => announce(`${out.total} · ${out.detail}`),
+    onError: (error) => announce(errorText(error))
   })
+  // Otra fórmula: el resultado de antes ya no vale
+  const write = (next: Roll) => {
+    if (next.formula !== roll.formula) tryIt.reset()
+    onChange(next)
+  }
   return (
     <div className={styles.row} data-open={open || undefined} id={`tirada-${rollKey}`}>
       <button
@@ -205,10 +236,11 @@ function RollRow({
               <label htmlFor={ids.name}>{t('rules.field.name')}</label>
               <input
                 id={ids.name}
+                ref={focusName ? focusOnMount : undefined}
                 value={textOf(roll.label, language)}
                 autoComplete="off"
                 onChange={(event) =>
-                  onChange({ ...roll, label: withText(roll.label, event.currentTarget.value, language) })
+                  write({ ...roll, label: withText(roll.label, event.currentTarget.value, language) })
                 }
               />
             </div>
@@ -220,10 +252,21 @@ function RollRow({
               <input
                 id={ids.formula}
                 value={roll.formula}
+                aria-invalid={issues.length > 0 || undefined}
+                aria-describedby={issues.length > 0 ? ids.error : undefined}
                 autoComplete="off"
                 spellCheck={false}
-                onChange={(event) => onChange({ ...roll, formula: event.currentTarget.value })}
+                onChange={(event) => write({ ...roll, formula: event.currentTarget.value })}
               />
+              {issues.length > 0 && (
+                <ul id={ids.error} className={styles.fieldErrors}>
+                  {issues.map((p) => (
+                    <li key={`${p.path}-${p.message}`} className={styles.fieldError}>
+                      {p.message}
+                    </li>
+                  ))}
+                </ul>
+              )}
               <p className={styles.reads}>
                 {t('rules.rolls.reads')} <b>{words}</b>
               </p>
@@ -233,7 +276,7 @@ function RollRow({
                   <button
                     key={s.ref}
                     type="button"
-                    onClick={() => onChange({ ...roll, formula: `${roll.formula.trim()} + ${s.ref}` })}
+                    onClick={() => write({ ...roll, formula: `${roll.formula.trim()} + ${s.ref}` })}
                   >
                     {s.label}
                   </button>
@@ -246,13 +289,17 @@ function RollRow({
               <Dices size={14} aria-hidden="true" />
               {t('rules.rolls.try')}
             </button>
-            <button type="button" className={styles.danger} onClick={onRemove}>
+            <button
+              type="button"
+              className={styles.danger}
+              onClick={(event) => onRemove(event.currentTarget.closest('li'))}
+            >
               <Trash2 size={14} aria-hidden="true" />
               {t('rules.remove')}
             </button>
           </div>
           {(tryIt.data || tryIt.error) && (
-            <p className={styles.tried} aria-live="polite">
+            <p className={styles.tried}>
               {tryIt.data ? (
                 <>
                   <strong>{tryIt.data.total}</strong>

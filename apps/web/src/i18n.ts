@@ -1478,6 +1478,10 @@ export const es = {
     up: 'Subir',
     down: 'Bajar',
     remove: 'Quitar',
+    upNamed: 'Subir «{{name}}»',
+    downNamed: 'Bajar «{{name}}»',
+    removeNamed: 'Quitar «{{name}}»',
+    movedTo: '«{{name}}», {{at}} de {{of}}',
     removed: '«{{name}}» quitado.',
     undo: 'Deshacer',
     reload: 'Volver a cargar',
@@ -1490,7 +1494,7 @@ export const es = {
       personaje: {
         question: '¿Qué tiene un personaje?',
         short: 'Qué tiene un personaje',
-        lead: 'Lo que se apunta en su ficha. Empieza por lo que más se usa: con unas características y la vida ya se puede jugar.'
+        lead: 'Lo que se apunta en su ficha. Empieza por lo que más se usa.'
       },
       tiradas: {
         question: '¿Cómo se tira?',
@@ -1548,7 +1552,8 @@ export const es = {
       inside_one: '{{count}} cosa dentro',
       inside_other: '{{count}} cosas dentro',
       columns_one: '{{count}} columna',
-      columns_other: '{{count}} columnas'
+      columns_other: '{{count}} columnas',
+      calculated: 'se calcula solo'
     },
     character: {
       noType: 'Este sistema aún no tiene personajes.',
@@ -1557,7 +1562,7 @@ export const es = {
     field: {
       name: 'Nombre',
       help: 'Ayuda',
-      helpHint: 'Opcional: lo que ve quien rellena la ficha',
+      helpHint: 'Opcional',
       start: 'Empieza en',
       min: 'Como poco',
       max: 'Como mucho',
@@ -1602,7 +1607,7 @@ export const es = {
     },
     sheet: {
       generated: 'Esta es la ficha que sale de sus campos. Cámbiala y se queda la tuya.',
-      regenerate: 'Volver a la que sale de los campos',
+      regenerate: 'Rehacer desde los campos',
       header: 'Nombre, línea y retrato',
       columns_one: '{{count}} columna',
       columns_other: '{{count}} columnas',
@@ -1624,6 +1629,11 @@ export const es = {
     creation: {
       none: 'Sin pasos, el personaje se rellena a mano en su ficha.',
       fixed: 'Valores fijos',
+      needs: {
+        content: 'Para elegir del compendio hace falta una clase de cosa (paso 3).',
+        scores: 'Para repartir puntuaciones hacen falta unas características con su cifra (paso 1).',
+        fields: 'Para escribir en la ficha hace falta algún campo (paso 1).'
+      },
       kind: {
         content: 'Elegir del compendio',
         scores: 'Repartir puntuaciones',
@@ -1633,6 +1643,7 @@ export const es = {
     },
     compendium: {
       counts: '{{entries}} entradas · {{chapters}} capítulos',
+      entries: '{{entries}} entradas',
       open: 'Abrir',
       none: 'Aún no tiene libros.',
       manage: 'Los libros se crean y se cambian en el Inicio del sistema'
@@ -1643,7 +1654,7 @@ export const es = {
       version: 'Su versión',
       languages: 'Sus idiomas',
       language: { es: 'Español', en: 'Inglés' },
-      file: 'Para cambiar algo que aquí no sale, o con tu IA: su archivo.'
+      file: 'Lo demás, en su archivo (o con tu IA).'
     },
     help: {
       label: 'Qué es: {{what}}',
@@ -1670,7 +1681,6 @@ export const es = {
     },
     example: {
       title: 'Ficha de ejemplo',
-      hint: 'Se rellena sola',
       none: 'Cuando tenga un personaje, aquí saldrá su ficha.',
       empty: 'Añade lo que tiene un personaje y aparecerá aquí.',
       more_one: 'Y {{count}} cosa más.',
@@ -1679,8 +1689,12 @@ export const es = {
     review: {
       title: 'Revisión',
       ok: 'Todo bien',
-      count_one: '{{count}} aviso',
-      count_other: '{{count}} avisos',
+      errors_one: '{{count}} error',
+      errors_other: '{{count}} errores',
+      warnings_one: '{{count}} aviso',
+      warnings_other: '{{count}} avisos',
+      more_one: 'Y {{count}} más.',
+      more_other: 'Y {{count}} más.',
       allGood: 'Se puede usar en una campaña.',
       goTo: 'Ir a {{step}}'
     }

@@ -8,7 +8,8 @@ import { fakeAccountClient } from '../../account/fake.ts'
 import { fakeApi } from '../../api/fake.ts'
 import { App } from '../../app.tsx'
 import { createAppRouter } from '../../router.tsx'
-import { stepOf } from './rules-editor.tsx'
+import { summaryOf } from './kinds.ts'
+import { anchorOf, stepOf } from './rules-editor.tsx'
 
 const ORG = { id: crypto.randomUUID(), name: 'Fateforge', role: 'owner' as const }
 const WORLD: World = {
@@ -50,6 +51,16 @@ describe('el editor de un sistema, a mano (tanda 8)', () => {
     expect(stepOf('version', fronteras)).toBe('avanzado')
   })
 
+  it('un aviso de un campo de objeto lleva a su fila dentro de su tipo; lo que se calcula se resume en palabras', () => {
+    expect(anchorOf('types.arma.fields.dano.formula')).toEqual({ row: 'campo-arma-dano', parent: 'tipo-arma' })
+    expect(anchorOf('rolls.ataque.formula')).toEqual({ row: 'tirada-ataque' })
+    expect(anchorOf('version')).toBeNull()
+    const words = (key: string) => key
+    const derived = { kind: 'derived' as const, label: 'Bono', formula: 'ceil(@nivel / 4) + 1' }
+    expect(summaryOf(derived, 'es', words, () => 'Nivel ÷ 4 + 1')).toBe('Nivel ÷ 4 + 1')
+    expect(summaryOf(derived, 'es', words)).toBe('rules.summary.calculated')
+  })
+
   it('añadir una cifra la pone en la ficha de ejemplo y se guarda sola, con su versión', async () => {
     const { api } = renderEditor()
     expect(await screen.findByRole('heading', { level: 2, name: '¿Qué tiene un personaje?' })).toBeDefined()
@@ -71,7 +82,9 @@ describe('el editor de un sistema, a mano (tanda 8)', () => {
     await userEvent.type(formula, '1d20 + @nada')
     const review = within(screen.getByRole('region', { name: 'Revisión' }))
     expect(await review.findByText(/nada/)).toBeDefined()
-    expect(await screen.findByText(/Sin guardar/)).toBeDefined()
+    // A la vista y anunciado una vez (no en cada tecla)
+    await waitFor(() => expect(screen.getAllByText(/Sin guardar/)).toHaveLength(2))
+    expect(within(screen.getByRole('status')).getByText(/Sin guardar/)).toBeDefined()
     await new Promise((resolve) => setTimeout(resolve, 1200))
     expect(api.calls.includes('updateSystem')).toBe(false)
     // «Ir a…» desde el primer paso
@@ -84,5 +97,18 @@ describe('el editor de un sistema, a mano (tanda 8)', () => {
     expect(screen.queryByLabelText(/Se tira/)).toBeNull()
     await userEvent.click(screen.getByRole('button', { name: 'Deshacer' }))
     expect(await review.findByText(/nada/)).toBeDefined()
+  })
+
+  it('«Deshacer» se va con el siguiente cambio: volver atrás no se lleva lo escrito después', async () => {
+    renderEditor()
+    await screen.findByRole('heading', { level: 2, name: '¿Qué tiene un personaje?' })
+    await userEvent.click(screen.getByRole('button', { name: 'Una cifra' }))
+    const name = await screen.findByLabelText('Nombre')
+    // El foco, ya en el nombre de lo nuevo
+    expect(document.activeElement).toBe(name)
+    await userEvent.click(screen.getByRole('button', { name: 'Quitar «Cifra nueva»' }))
+    expect(await screen.findByRole('button', { name: 'Deshacer' })).toBeDefined()
+    await userEvent.click(screen.getByRole('button', { name: 'Una cifra' }))
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Deshacer' })).toBeNull())
   })
 })
