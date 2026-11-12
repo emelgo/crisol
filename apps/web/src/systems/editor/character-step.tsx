@@ -27,26 +27,48 @@ export function CharacterStep({
 }) {
   const { t } = useTranslation()
   const type = characterType(system)
+  if (!type) return <p className={styles.muted}>{t('rules.character.noType')}</p>
+  return (
+    <>
+      <p className={styles.enough}>{t('rules.character.enough')}</p>
+      <FieldsList system={system} typeKey={type} language={language} change={change} onAdded={onAdded} />
+    </>
+  )
+}
+
+/** Los campos de un tipo (el personaje, las armas…): cada uno en su fila, y añadir con palabras de mesa */
+export function FieldsList({
+  system,
+  typeKey,
+  language,
+  change,
+  onAdded
+}: {
+  system: System
+  typeKey: string
+  language: Language
+  change: Change
+  onAdded?: (key: string) => void
+}) {
+  const { t } = useTranslation()
   const [open, setOpen] = useState<string | null>(null)
   const [more, setMore] = useState(false)
-  if (!type) return <p className={styles.muted}>{t('rules.character.noType')}</p>
-  const fields = Object.entries(system.types[type]?.fields ?? {})
+  const fields = Object.entries(system.types[typeKey]?.fields ?? {})
   const add = (kind: FieldKind) => {
     const label = t(`rules.kinds.${kind}.new`)
-    let key = ''
+    // La clave, con lo de ahora (el cambio se aplica después)
+    const key = keyFor(label, Object.keys(system.types[typeKey]?.fields ?? {}))
     change((draft) => {
-      const target = draft.types[type]
-      if (!target) return
-      key = keyFor(label, Object.keys(target.fields))
-      target.fields[key] = blankField(kind, label)
+      const target = draft.types[typeKey]
+      if (target) target.fields[key] = blankField(kind, label)
     })
     setOpen(key)
     setMore(false)
-    onAdded(key)
+    onAdded?.(key)
   }
   const move = (key: string, delta: -1 | 1) =>
     change((draft) => {
-      const target = draft.types[type]
+      const target = draft.types[typeKey]
       if (!target) return
       const entries = Object.entries(target.fields)
       const at = entries.findIndex(([k]) => k === key)
@@ -59,14 +81,13 @@ export function CharacterStep({
   const remove = (key: string) =>
     change(
       (draft) => {
-        const target = draft.types[type]
+        const target = draft.types[typeKey]
         if (target) delete target.fields[key]
       },
-      t('rules.removed', { name: textOf(system.types[type]?.fields[key]?.label, language) })
+      t('rules.removed', { name: textOf(system.types[typeKey]?.fields[key]?.label, language) })
     )
   return (
     <>
-      <p className={styles.enough}>{t('rules.character.enough')}</p>
       <ul className={styles.rows}>
         {fields.map(([key, field], index) => (
           <li key={key}>
@@ -80,7 +101,7 @@ export function CharacterStep({
               onToggle={() => setOpen((now) => (now === key ? null : key))}
               onChange={(next) =>
                 change((draft) => {
-                  const target = draft.types[type]
+                  const target = draft.types[typeKey]
                   if (target) target.fields[key] = next
                 })
               }

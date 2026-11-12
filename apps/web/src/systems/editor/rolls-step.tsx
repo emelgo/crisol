@@ -48,10 +48,9 @@ export function RollsStep({ system, language, change }: { system: System; langua
   const rolls = Object.entries(system.rolls ?? {})
   const add = () => {
     const label = t('rules.rolls.new')
-    let key = ''
+    const key = keyFor(label, Object.keys(system.rolls ?? {}))
     change((draft) => {
       draft.rolls ??= {}
-      key = keyFor(label, Object.keys(draft.rolls))
       draft.rolls[key] = { label, formula: `${draft.dice?.default ?? '1d20'}` }
     })
     setOpen(key)

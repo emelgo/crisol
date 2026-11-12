@@ -1472,7 +1472,6 @@ export const es = {
   rules: {
     steps: 'Pasos',
     aside: 'Ficha de ejemplo y revisión',
-    soon: 'Este paso llega en una porción siguiente de esta tanda.',
     next: 'Siguiente: {{step}}',
     add: 'Añadir:',
     more: 'Más',
@@ -1590,6 +1589,58 @@ export const es = {
       forEach: 'Una por cada una',
       try: 'Tirar una vez'
     },
+    objects: {
+      none: 'Aún no hay cosas que se lleven. Añade la primera (armas, conjuros, equipo…).',
+      add: 'Una clase de cosa',
+      new: 'Equipo',
+      name: 'Cómo se llaman',
+      remove: 'Quitar «{{name}}»'
+    },
+    sheet: {
+      generated: 'Esta es la ficha que sale de sus campos. Cámbiala y se queda la tuya.',
+      regenerate: 'Volver a la que sale de los campos',
+      header: 'Nombre, línea y retrato',
+      columns_one: '{{count}} columna',
+      columns_other: '{{count}} columnas',
+      kind: {
+        header: 'Cabecera',
+        stats: 'Cifras',
+        resource: 'Algo que se gasta',
+        set: 'Varias a la vez',
+        group: 'Un apartado',
+        list: 'Listas',
+        items: 'Lo que lleva',
+        actions: 'Lo que puede hacer',
+        uses: 'Usos',
+        text: 'Un texto',
+        columns: 'Columnas',
+        tabs: 'Pestañas'
+      }
+    },
+    creation: {
+      none: 'Sin pasos, el personaje se rellena a mano en su ficha.',
+      fixed: 'Valores fijos',
+      kind: {
+        content: 'Elegir del compendio',
+        scores: 'Repartir puntuaciones',
+        fields: 'Escribir en la ficha',
+        summary: 'El resumen'
+      }
+    },
+    compendium: {
+      counts: '{{entries}} entradas · {{chapters}} capítulos',
+      open: 'Abrir',
+      none: 'Aún no tiene libros.',
+      manage: 'Los libros se crean y se cambian en el Inicio del sistema'
+    },
+    advanced: {
+      initiative: 'La tirada de iniciativa',
+      byHand: 'Se escribe a mano',
+      version: 'Su versión',
+      languages: 'Sus idiomas',
+      language: { es: 'Español', en: 'Inglés' },
+      file: 'Para cambiar algo que aquí no sale, o con tu IA: su archivo.'
+    },
     help: {
       label: 'Qué es: {{what}}',
       help: {
@@ -1632,7 +1683,7 @@ export const es = {
   },
   systemRules: {
     title: 'Reglas',
-    soon: 'Lo que trae, para leer. Pronto se cambiará aquí a mano; de momento, con tu IA o con su archivo.'
+    soon: 'Lo que trae, para leer. Es de serie: para cambiarlo, haz una copia.'
   },
   // Los sistemas de reglas de la cuenta (docs/specs/sistemas.md)
   systems: {
@@ -1672,7 +1723,8 @@ export const es = {
       skeletonText: 'Bájalo, rellénalo y súbelo aquí.',
       hand: 'A mano',
       handText: 'Paso a paso, en palabras de mesa.',
-      soon: 'Pronto',
+      handName: 'Cómo se llama el juego',
+      handCreate: 'Crear y empezar',
       aiAsk: 'Lo que pedirle a tu IA',
       aiPhrase:
         'Hazme en Crisol el sistema de reglas de mi juego: lee su formato, créalo y prueba sus tiradas antes de darlo por bueno.'

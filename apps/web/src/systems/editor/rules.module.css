@@ -824,3 +824,94 @@
     animation: none;
   }
 }
+
+/* Una fila sencilla (un bloque de la ficha, un paso del creador, un libro): su clase, su nombre y sus botones */
+.blockRow {
+  display: grid;
+  grid-template-columns: minmax(7rem, auto) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+  min-block-size: 3rem;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--color-bg) 30%, transparent);
+}
+
+.blockKind {
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+}
+
+.inlineTools {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.inlineTools button,
+.iconButton {
+  display: grid;
+  place-items: center;
+  inline-size: 2rem;
+  block-size: 2rem;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.inlineTools button:hover:not(:disabled),
+.iconButton:hover {
+  background: var(--row-hover);
+  color: var(--color-text);
+}
+
+.inlineTools button:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
+.inlineTools button:focus-visible,
+.iconButton:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 1px;
+}
+
+.typeHead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding-inline-end: var(--space-2);
+}
+
+.typeName {
+  flex: 1;
+  min-block-size: 3rem;
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  font-weight: 600;
+  text-align: start;
+  cursor: pointer;
+}
+
+.typeName small {
+  margin-inline-start: var(--space-2);
+  color: var(--color-muted);
+  font-weight: 400;
+}
+
+.typeName:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
+}
+
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-block-size: 2rem;
+}

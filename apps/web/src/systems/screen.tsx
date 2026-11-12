@@ -6,7 +6,7 @@
 import type { PageCover, SystemSummary } from '@crisol/contracts'
 import { type Problem, validateFile } from '@crisol/systems'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link, Navigate } from '@tanstack/react-router'
+import { Link, Navigate, useNavigate } from '@tanstack/react-router'
 import {
   CircleAlert,
   Download,
@@ -275,8 +275,19 @@ export function NewSystemDialog({ onClose }: { onClose: () => void }) {
   const dialog = useRef<HTMLDialogElement>(null)
   const titleId = useId()
   const fileId = useId()
-  // El camino elegido: con tu IA (la frase para pedírselo) o con el esqueleto (bajarlo y subirlo); a mano, pronto
-  const [way, setWay] = useState<'ai' | 'skeleton'>('skeleton')
+  // El camino elegido: con tu IA (la frase para pedírselo), con el esqueleto (bajarlo y subirlo) o a mano (el editor)
+  const [way, setWay] = useState<'ai' | 'skeleton' | 'hand'>('skeleton')
+  const navigate = useNavigate()
+  const nameId = useId()
+  const [name, setName] = useState('')
+  const byHand = useMutation({
+    mutationFn: () => api.call('createSystem', { name: name.trim(), from: 'blank' }),
+    onSuccess: async (made) => {
+      await queryClient.invalidateQueries({ queryKey: ['systems'] })
+      dialog.current?.close()
+      void navigate({ to: '/sistemas/$systemId/reglas', params: { systemId: made.id } })
+    }
+  })
   const [file, setFile] = useState<{
     name: string
     content: Record<string, unknown> | null
@@ -356,12 +367,14 @@ export function NewSystemDialog({ onClose }: { onClose: () => void }) {
         className={cards.form}
         onSubmit={(event) => {
           event.preventDefault()
-          if (file?.content || (foundry && foundry.chosen.length > 0)) upload.mutate()
+          if (way === 'hand') {
+            if (name.trim()) byHand.mutate()
+          } else if (file?.content || (foundry && foundry.chosen.length > 0)) upload.mutate()
         }}
       >
         <h2 id={titleId}>{t('systems.new')}</h2>
         {/* Tres caminos (docs/diseno.md): con tu IA (por el conector: aquí, la frase para pedírselo), con el esqueleto
-            (bajarlo, rellenarlo y subirlo) y a mano (el editor, en la tanda 8: aún no se elige) */}
+            (bajarlo, rellenarlo y subirlo) y a mano (el editor de sus Reglas) */}
         <fieldset className={system.ways}>
           <legend className={screen.hidden}>{t('systems.paths.label')}</legend>
           <button type="button" className={system.way} aria-pressed={way === 'ai'} onClick={() => setWay('ai')}>
@@ -379,16 +392,33 @@ export function NewSystemDialog({ onClose }: { onClose: () => void }) {
             <b>{t('systems.paths.skeleton')}</b>
             <span>{t('systems.paths.skeletonText')}</span>
           </button>
-          <button type="button" className={system.way} disabled aria-describedby={`${titleId}-pronto`}>
+          <button type="button" className={system.way} aria-pressed={way === 'hand'} onClick={() => setWay('hand')}>
             <Pencil aria-hidden="true" size={20} />
             <b>{t('systems.paths.hand')}</b>
             <span>{t('systems.paths.handText')}</span>
-            <span id={`${titleId}-pronto`} className={system.soon}>
-              {t('systems.paths.soon')}
-            </span>
           </button>
         </fieldset>
-        {way === 'ai' ? (
+        {way === 'hand' ? (
+          <>
+            <Field
+              id={nameId}
+              label={t('systems.paths.handName')}
+              value={name}
+              maxLength={80}
+              autoComplete="off"
+              onChange={(event) => setName(event.currentTarget.value)}
+            />
+            <FormError message={byHand.error ? errorText(byHand.error) : null} />
+            <div className={dialogStyles.actions}>
+              <BusyButton type="submit" className={form.button} busy={byHand.isPending} disabled={!name.trim()}>
+                {t('systems.paths.handCreate')}
+              </BusyButton>
+              <button type="button" className={dialogStyles.cancel} onClick={() => dialog.current?.close()}>
+                {t('list.cancel')}
+              </button>
+            </div>
+          </>
+        ) : way === 'ai' ? (
           <>
             <CopyField label={t('systems.paths.aiAsk')} value={t('systems.paths.aiPhrase')} />
             <div className={dialogStyles.actions}>

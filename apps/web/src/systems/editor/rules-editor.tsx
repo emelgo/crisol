@@ -19,6 +19,7 @@ import { failed, LoadError } from '../../components/load-error.tsx'
 import { PageTitle } from '../../components/page-title.tsx'
 import { CharacterStep } from './character-step.tsx'
 import { ExampleSheet } from './example-sheet.tsx'
+import { AdvancedStep, CompendiumStep, CreationStep, ObjectsStep, SheetStep } from './more-steps.tsx'
 import { RollsStep } from './rolls-step.tsx'
 import styles from './rules.module.css'
 
@@ -200,7 +201,11 @@ function Editor({
           <CharacterStep system={draft} language={language} change={change} onAdded={setFresh} />
         )}
         {step === 'tiradas' && <RollsStep system={draft} language={language} change={change} />}
-        {step !== 'personaje' && step !== 'tiradas' && <p className={styles.muted}>{t('rules.soon')}</p>}
+        {step === 'objetos' && <ObjectsStep system={draft} language={language} change={change} />}
+        {step === 'ficha' && <SheetStep system={draft} language={language} change={change} />}
+        {step === 'creacion' && <CreationStep system={draft} language={language} change={change} />}
+        {step === 'compendio' && <CompendiumStep systemId={systemId} />}
+        {step === 'avanzado' && <AdvancedStep systemId={systemId} system={draft} language={language} change={change} />}
         <div className={styles.next}>
           {previous ? (
             <button type="button" className={styles.back} onClick={() => setStep(previous)}>
