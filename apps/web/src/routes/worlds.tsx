@@ -2,7 +2,6 @@ import type { Campaign, World } from '@crisol/contracts'
 import { TRASH_DAYS } from '@crisol/domain'
 import { useQueries, useQuery } from '@tanstack/react-query'
 import { Navigate } from '@tanstack/react-router'
-import { Globe } from 'lucide-react'
 import { useEffect, useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
@@ -11,6 +10,7 @@ import { useErrorText } from '../api/errors.ts'
 import { prepareAmbient, useAmbient } from '../components/ambient.tsx'
 import { Loading } from '../components/brand.tsx'
 import { useCardList } from '../components/card-transition.ts'
+import { EmptyState } from '../components/empty-state.tsx'
 import { FormError } from '../components/field.tsx'
 import { failed } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
@@ -73,9 +73,10 @@ export function Worlds() {
           (empty ? (
             // Sin mundos: qué es un mundo y el botón grande para crear el primero
             <div className={styles.empty}>
-              <Globe aria-hidden="true" size={44} strokeWidth={1.25} />
-              <h2>{t('worlds.empty')}</h2>
-              {!canCreate && <p>{t('worlds.emptyPlayer')}</p>}
+              <EmptyState kind="mundos">
+                <h2>{t('worlds.empty')}</h2>
+                {!canCreate && <p>{t('worlds.emptyPlayer')}</p>}
+              </EmptyState>
               {canCreate && <NewWorld big />}
             </div>
           ) : (

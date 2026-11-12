@@ -31,6 +31,7 @@ import { BusyButton } from '../components/busy-button.tsx'
 import { ChangesBar } from '../components/changes.tsx'
 import { ConfirmByName, DangerZone } from '../components/danger.tsx'
 import dialogStyles from '../components/dialog.module.css'
+import { EmptyState } from '../components/empty-state.tsx'
 import { Field, FormError } from '../components/field.tsx'
 import form from '../components/form.module.css'
 import { failed, LoadError } from '../components/load-error.tsx'
@@ -566,10 +567,16 @@ function TemplatesTree({ data }: { data: Listed }) {
         )}
         <div className={files.contents}>
           <FormError message={moveError} />
-          {searching && found?.hits.length === 0 && <p className={files.empty}>{t('templates.noneFound')}</p>}
+          {searching && found?.hits.length === 0 && (
+            <EmptyState kind="sin-resultados">
+              <p className={files.empty}>{t('templates.noneFound')}</p>
+            </EmptyState>
+          )}
           {!searching && nothing && (
             <div className={styles.emptyState}>
-              <p className={files.empty}>{t('templates.emptyHint')}</p>
+              <EmptyState kind="plantillas">
+                <p className={files.empty}>{t('templates.emptyHint')}</p>
+              </EmptyState>
               <NewCard
                 label={t('templates.new')}
                 data-tour="plantillas-nueva"

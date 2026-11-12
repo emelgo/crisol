@@ -52,6 +52,7 @@ import { ChangesBar } from '../components/changes.tsx'
 import dangerStyles from '../components/danger.module.css'
 import { ConfirmByName, DangerZone } from '../components/danger.tsx'
 import dialogStyles from '../components/dialog.module.css'
+import { EmptyState } from '../components/empty-state.tsx'
 import { Field, FormError } from '../components/field.tsx'
 import form from '../components/form.module.css'
 import { failed, LoadError, SectionError } from '../components/load-error.tsx'
@@ -1243,15 +1244,21 @@ function FilesSection({
         {searching && <p className={styles.here}>{t('files.results', { count: results.length })}</p>}
         {moveError && <FormError message={moveError} />}
         {searching && results.length === 0 && (
-          <p className={styles.empty}>
-            {!query.trim()
-              ? t('files.noKind')
-              : query.trim().startsWith('#')
-                ? t('files.noMatch')
-                : t('files.noResults')}
-          </p>
+          <EmptyState kind="sin-resultados">
+            <p className={styles.empty}>
+              {!query.trim()
+                ? t('files.noKind')
+                : query.trim().startsWith('#')
+                  ? t('files.noMatch')
+                  : t('files.noResults')}
+            </p>
+          </EmptyState>
         )}
-        {!searching && nothing && <p className={styles.empty}>{empty}</p>}
+        {!searching && nothing && (
+          <EmptyState kind="archivos">
+            <p className={styles.empty}>{empty}</p>
+          </EmptyState>
+        )}
         <ul
           ref={listRef}
           className={styles.rows}

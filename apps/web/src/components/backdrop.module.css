@@ -63,8 +63,7 @@
   }
 }
 
-/* En la Mesa sin escena: dentro de ella (no sobre toda la página) y algo más apagado, para que se lea su aviso; el
-   crédito no (Enrique: «quita los títulos»; ni Pixabay ni el dominio público piden citar) */
+/* En la Mesa sin escena: dentro de ella (no sobre toda la página) y algo más apagado, para que se lea su aviso */
 .contained {
   position: absolute;
   z-index: 0;
@@ -75,5 +74,3 @@
     radial-gradient(ellipse 60% 45% at 50% 50%, rgb(8 8 10 / 0.6), transparent 80%),
     linear-gradient(to top, color-mix(in srgb, var(--tint) 85%, transparent) 0%, transparent 55%), rgb(8 8 10 / 0.35);
 }
-
-.contained 

@@ -12,7 +12,9 @@ Plan: `tasks/plan-revision.md`. Una tanda cada vez: se enseña en local, Enrique
   `datos-locales/estilos/`.
 - [x] Guía de estilo y el resto de prompts (fondos de Entrar, portada pública, ambiente de Inicio, pantallas vacías).
   Solo las de la app: las portadas de mundos, campañas, sistemas y libros son del usuario (Enrique, 2026-11-11).
-- [ ] Imágenes en `apps/web/public/`, fuera las 24 de ahora, y su origen en `docs/terceros.md`.
+- [x] Imágenes en `apps/web/public/`, fuera las 24 de ahora, y su origen en `docs/terceros.md` (2026-11-12: los 12
+  fondos de Entrar, la portada, el ambiente y los 8 bodegones de las pantallas vacías). Seis fondos, para rehacer con
+  otra luz: `docs/imagenes-por-hacer.md`.
 - [x] **Un paquete de iconos de fantasía de calidad** (Enrique, 2026-11-12: «cuando creas más oportuno»), para elegir
   icono en vez de solo emoji: carpetas, páginas, sistemas y mundos. Momento: al empezar la tanda 6 (el icono del
   sistema), para que todos salgan del mismo paquete y del mismo selector (`IconChoices`, `wiki/icon.tsx`). Candidato:
@@ -255,3 +257,5 @@ Lo que sale sin estar en la lista: se avisa a Enrique y se arregla en su tanda.
 - [x] Al entrar en un mundo, su portada (el fondo) se cargaba al acabar la transición: el fondo va aparte y se funde
   dentro de ella, y las portadas de Inicio se preparan de antemano.
 - [x] «Plantillas» en la barra, con una plantilla abierta, vuelve con la misma animación que «‹ Plantillas».
+- [x] Al quitar el crédito de los fondos se rompió el CSS de `backdrop.module.css` (Biome no lo vio; la compilación sí):
+  arreglado el mismo día.

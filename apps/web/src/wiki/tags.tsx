@@ -13,6 +13,7 @@ import { BusyButton } from '../components/busy-button.tsx'
 import { ChangesBar } from '../components/changes.tsx'
 import { ConfirmByName, DangerZone } from '../components/danger.tsx'
 import dialogStyles from '../components/dialog.module.css'
+import { EmptyState } from '../components/empty-state.tsx'
 import { Field, FormError } from '../components/field.tsx'
 import form from '../components/form.module.css'
 import { failed, LoadError } from '../components/load-error.tsx'
@@ -438,9 +439,15 @@ export function AccountTags() {
           {tags.data && (
             <>
               {all.length === 0 ? (
-                <p className={files.empty}>{t('tags.empty')}</p>
+                <EmptyState kind="etiquetas">
+                  <p className={files.empty}>{t('tags.empty')}</p>
+                </EmptyState>
               ) : (
-                shown.length === 0 && <p className={files.empty}>{t('tags.noResults')}</p>
+                shown.length === 0 && (
+                  <EmptyState kind="sin-resultados">
+                    <p className={files.empty}>{t('tags.noResults')}</p>
+                  </EmptyState>
+                )
               )}
               <ul
                 className={files.rows}

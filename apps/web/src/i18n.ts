@@ -1470,6 +1470,7 @@ export const es = {
   },
   // Los sistemas de reglas de la cuenta (docs/specs/sistemas.md)
   systems: {
+    empty: 'Aún no hay sistemas. Un sistema son las reglas de un juego: sus fichas, sus tiradas y su contenido.',
     cover: 'Portada',
     addCover: 'Poner portada',
     changeCover: 'Cambiar la portada',

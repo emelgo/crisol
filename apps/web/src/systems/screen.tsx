@@ -17,6 +17,7 @@ import { BusyButton } from '../components/busy-button.tsx'
 import { ChangesBar } from '../components/changes.tsx'
 import { ConfirmByName, DangerZone } from '../components/danger.tsx'
 import dialogStyles from '../components/dialog.module.css'
+import { EmptyState } from '../components/empty-state.tsx'
 import { Field, FormError } from '../components/field.tsx'
 import form from '../components/form.module.css'
 import { failed, LoadError } from '../components/load-error.tsx'
@@ -78,6 +79,11 @@ export function SystemsScreen() {
       leftLabel={t('systems.preview')}
     >
       {failed(systems) && <LoadError error={systems.error} onRetry={() => systems.refetch()} />}
+      {systems.data && mine.length === 0 && (
+        <EmptyState kind="sistemas">
+          <p className={styles.summary}>{t('systems.empty')}</p>
+        </EmptyState>
+      )}
       {systems.data && (
         // Sin rótulo «Tuyos»: todos son de la cuenta (Enrique, 2026-11-12: «lo de tuyos sobra, porque todos son míos»)
         <ul className={screen.grid} aria-label={t('systems.title')} data-tour="sistemas-tuyos">
