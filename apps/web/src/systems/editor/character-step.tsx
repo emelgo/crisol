@@ -6,10 +6,11 @@
 import type { Field, FieldKind, Language, Problem, System } from '@crisol/systems'
 import { characterType, formulaText, textOf } from '@crisol/systems'
 import { ArrowDown, ArrowUp, ChevronDown, Plus, Trash2 } from 'lucide-react'
-import { useId, useRef, useState } from 'react'
+import { type ComponentProps, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAnnounce } from '../../components/announcer.tsx'
 import { focusAfterRemoving, focusOnMount } from '../../components/focus.ts'
+import { NumberText } from '../../components/number-text.tsx'
 import { Help } from './help.tsx'
 import { blankField, keyFor, MAIN_KINDS, MORE_KINDS, summaryOf, withText } from './kinds.ts'
 import styles from './rules.module.css'
@@ -374,15 +375,7 @@ export function FieldForm({
               <label htmlFor={ids.max}>{t('rules.field.resourceMax')}</label>
               <Help topic="formula" />
             </div>
-            <input
-              id={ids.max}
-              value={field.max ?? ''}
-              autoComplete="off"
-              onChange={(event) => {
-                const text = event.currentTarget.value.trim()
-                set({ max: text === '' ? undefined : /^-?\d+$/.test(text) ? Number(text) : text })
-              }}
-            />
+            <TrimmedText id={ids.max} value={field.max} numeric autoComplete="off" onValue={(max) => set({ max })} />
           </div>
         </div>
       )}
@@ -407,14 +400,7 @@ export function FieldForm({
         <div className={styles.formRow}>
           <div className={styles.field}>
             <label htmlFor={ids.max}>{t('rules.field.lines')}</label>
-            <input
-              id={ids.max}
-              type="number"
-              min={1}
-              max={20}
-              value={field.lines ?? 1}
-              onChange={(event) => set({ lines: number(event.currentTarget.value) })}
-            />
+            <NumberText id={ids.max} min={1} max={20} value={field.lines ?? 1} onValue={(lines) => set({ lines })} />
           </div>
         </div>
       )}
@@ -621,4 +607,37 @@ export function focusMoved(list: Element | null, rowId: string, delta: -1 | 1) {
   const same = scope?.querySelector<HTMLButtonElement>(`[data-move="${delta < 0 ? 'up' : 'down'}"]`)
   const other = scope?.querySelector<HTMLButtonElement>(`[data-move="${delta < 0 ? 'down' : 'up'}"]`)
   ;(same && !same.disabled ? same : other)?.focus()
+}
+
+/**
+ * Un texto que se guarda sin espacios de más (y, con `numeric`, una cifra como cifra) sin comerse los que se van
+ * escribiendo: lo escrito se ve tal cual mientras diga lo mismo que lo guardado; si lo guardado cambia por otro lado
+ * (deshacer), se ve eso
+ */
+export function TrimmedText({
+  value,
+  onValue,
+  numeric = false,
+  ...props
+}: Omit<ComponentProps<'input'>, 'value' | 'onChange'> & {
+  value: string | number | undefined
+  onValue: (value: string | number | undefined) => void
+  numeric?: boolean
+}) {
+  const [typed, setTyped] = useState<string | null>(null)
+  const parse = (raw: string) => {
+    const text = raw.trim()
+    return text === '' ? undefined : numeric && /^-?\d+$/.test(text) ? Number(text) : text
+  }
+  return (
+    <input
+      {...props}
+      value={typed !== null && parse(typed) === value ? typed : String(value ?? '')}
+      onChange={(event) => {
+        const raw = event.currentTarget.value
+        setTyped(raw)
+        onValue(parse(raw))
+      }}
+    />
+  )
 }

@@ -21,6 +21,7 @@ import { useApi } from '../../api/context.tsx'
 import { useErrorText } from '../../api/errors.ts'
 import { useAnnounce } from '../../components/announcer.tsx'
 import { focusAfterRemoving, focusOnMount } from '../../components/focus.ts'
+import { TrimmedText } from './character-step.tsx'
 import { sampleData } from './example-sheet.tsx'
 import { Help } from './help.tsx'
 import { keyFor, withText } from './kinds.ts'
@@ -78,18 +79,17 @@ export function RollsStep({
             <label htmlFor={ids.dice}>{t('rules.rolls.dice')}</label>
             <Help topic="dice" />
           </div>
-          <input
+          <TrimmedText
             id={ids.dice}
-            value={system.dice?.default ?? ''}
+            value={system.dice?.default}
             autoComplete="off"
             spellCheck={false}
             placeholder="1d20"
-            onChange={(event) => {
-              const value = event.currentTarget.value.trim()
+            onValue={(value) =>
               change((draft) => {
-                draft.dice = { critical: draft.dice?.critical ?? 'none', ...(value ? { default: value } : {}) }
+                draft.dice = { critical: draft.dice?.critical ?? 'none', ...(value ? { default: String(value) } : {}) }
               })
-            }}
+            }
           />
         </div>
         <div className={styles.field}>
