@@ -7,9 +7,9 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
-### Para retomar (2026-11-12, mediodía: tanda 6, sistemas, casi terminada en local; falta la crítica y su visto bueno)
+### Para retomar (2026-11-12, tarde: tanda 6, sistemas, terminada en local; falta su visto bueno)
 
-- Rama `revision/tanda-6` (sobre la 5, sin subir), plan en `tasks/tanda-6.md` (6 de 7 porciones). Sin migraciones.
+- Rama `revision/tanda-6` (sobre la 5, sin subir), plan en `tasks/tanda-6.md` (7 porciones hechas). Sin migraciones.
 - Lo que pidió Enrique al revisar en local (2026-11-12), hecho en la rama de la 5 antes de seguir: el cristal que se
   ve (fondo reconocible, desenfoque en lo que enmarca, cuadros/menús/campos/botón de cristal), el fondo sin parpadeo ni
   destellos (en las transiciones viaja solo el contenido; `shown-path.ts`: lo que se elige por la dirección mira la ruta
@@ -23,10 +23,13 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
 - Imágenes de Enrique (estilo F) ya en la app: 12 fondos de Entrar, la portada, el ambiente y 8 bodegones (pantallas
   vacías en el centro y, con contenido, emblema junto al título). Las que faltan, en `docs/imagenes-por-hacer.md`.
 - Pruebas: web 823; e2e de plantillas, sistemas, libros, compendio, mundos, inicio, wiki, accesibilidad, portada y hoja
-  en verde.
-- **Siguiente**: la porción 7 de la tanda 6 (crítica y audit de impeccable, capturas y página de revisión de las
-  tandas 6 y los arreglos). Pendiente menor: el ejemplo en cada problema de la comprobación de un sistema. Subir a
-  `main` y staging con su visto bueno.
+  en verde (la de la biblioteca falló una vez con la máquina cargada; sola, pasa).
+- Crítica 24/40 y audit 15/20, con sus arreglos (el libro por dentro con su índice por tipos, «Sistema nuevo» con
+  caminos que se eligen, el fondo y el icono del sistema en todo su espacio, Reglas con lo que trae…).
+- **Página de revisión** (tandas 3 a 6 y lo del 12): https://claude.ai/artifact/EVbQg5qCzBztdNv3U1WYht (versión 3).
+- **Siguiente**: tanda 7 (libros de texto y el compendio desde el mundo: capítulos con su ADR, incrustar una entrada,
+  «Entrada nueva» desde el mundo, tirar las acciones de una entrada, los dados fuera de la wiki). Pendiente menor: el
+  ejemplo en cada problema de la comprobación de un sistema. Subir a `main` y staging con su visto bueno.
 
 ### Para retomar (2026-11-12, madrugada: tanda 5, cristal, Entrar y la portada, terminada en local; falta su visto bueno)
 
