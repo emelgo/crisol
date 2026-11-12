@@ -181,3 +181,47 @@ describe('las frases del combate y de lo desconocido', () => {
     expect(say('accionNueva', {})).toBe('hizo un cambio')
   })
 })
+
+describe('las frases de los capítulos, las etiquetas, las plantillas y los archivos', () => {
+  const said = (action: string, details: Record<string, unknown>) => summaryOf(t, { action, details })
+  const asked = (action: string, details: Record<string, unknown>) => summaryOf(t, { action, details }, 'requested')
+
+  it('los capítulos de un libro', () => {
+    expect(said('createChapter', { title: 'La costa', book: 'Atlas' })).toBe(
+      'escribió el capítulo «La costa» de «Atlas»'
+    )
+    expect(asked('orderChapters', { book: 'Atlas' })).toBe('ordenar los capítulos de «Atlas»')
+  })
+
+  it('mover una etiqueta: de dónde a dónde, o solo cuál (lo que pide la IA)', () => {
+    expect(said('moveTag', { from: 'lugar/puerto', to: 'puerto' })).toBe('movió la etiqueta «lugar/puerto» a «puerto»')
+    expect(asked('moveTag', { tag: 'puerto' })).toBe('mover la etiqueta «puerto»')
+    expect(said('orderTag', { name: 'puerto' })).toBe('cambió el orden de la etiqueta «puerto»')
+  })
+
+  it('las carpetas de plantillas y las plantillas, con sus nombres en un idioma o en varios', () => {
+    expect(said('updateTemplateFolder', { from: 'PNJ', to: { es: 'Gentes' } })).toBe(
+      'renombró la carpeta de plantillas «PNJ» a «Gentes»'
+    )
+    expect(said('updateTemplateFolder', { name: { en: 'Places' } })).toBe('movió la carpeta de plantillas «Places»')
+    expect(said('createTemplateFolder', { name: { es: 'Gentes', en: 'People' } })).toBe(
+      'creó la carpeta de plantillas «Gentes»'
+    )
+    expect(asked('orderTemplate', { name: 'Lugar' })).toBe('cambiar el orden de la plantilla «Lugar»')
+    expect(said('moveTemplate', { name: 'Lugar', folder: 'Mundo' })).toBe(
+      'movió la plantilla «Lugar» a la carpeta «Mundo»'
+    )
+    expect(said('moveTemplate', { name: 'Lugar' })).toBe('sacó la plantilla «Lugar» de su carpeta')
+    expect(said('addTemplateTabs', { title: 'Puerto', name: { es: 'Lugar' } })).toBe(
+      'añadió a «Puerto» pestañas de la plantilla «Lugar»'
+    )
+    expect(said('copyPage', { title: 'Puerto' })).toBe('duplicó «Puerto»')
+    expect(asked('templatePage', { name: 'Lugar' })).toBe('pasar la plantilla «Lugar» a página')
+  })
+
+  it('mover y etiquetar varios archivos de una vez', () => {
+    expect(said('moveFiles', { count: 3, folder: 'Mapas' })).toBe('movió 3 archivos y carpetas a «Mapas»')
+    expect(said('moveFiles', { count: 2 })).toBe('sacó 2 archivos y carpetas de sus carpetas')
+    expect(said('addFileTags', { count: 2, tags: ['mapa', 'costa'] })).toBe('etiquetó 2 archivos con #mapa y #costa')
+  })
+})

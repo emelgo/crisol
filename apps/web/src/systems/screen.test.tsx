@@ -241,4 +241,112 @@ describe('«Sistemas», en Mis mundos', () => {
     expect(await screen.findByRole('list', { name: 'Lo que trae, por tipo' })).toBeDefined()
     expect(screen.queryByRole('button', { name: 'Por libro' })).toBeNull()
   })
+
+  it('su aspecto: un icono y una portada subida desde su cuadro (va a los archivos comunes), con «Guardar»', async () => {
+    const { api } = renderSystems()
+    URL.createObjectURL = vi.fn(() => 'blob:portada')
+    await userEvent.click(await screen.findByRole('button', { name: 'Ajustes de Fronteras' }))
+    const dialog = within(screen.getByRole('dialog', { name: 'Ajustes de Fronteras' }))
+    await userEvent.click(dialog.getByRole('radio', { name: '🐉' }))
+    await userEvent.click(dialog.getByRole('button', { name: 'Poner portada' }))
+    const cover = within(await screen.findByRole('dialog', { name: 'Portada de Fronteras' }))
+    const input = document.querySelector<HTMLInputElement>('input[type=file][accept="image/*"]')
+    if (!input) throw new Error('sin campo de archivos')
+    await userEvent.upload(input, new File(['png'], 'Fronteras.png', { type: 'image/png' }))
+    // Aún sin subir: se ve en el cuadro y, al aceptarlo, en los ajustes
+    expect(await cover.findByRole('button', { name: /Arrastra para encuadrar/ })).toBeDefined()
+    expect(api.calls).not.toContain('uploadFile')
+    await userEvent.click(cover.getByRole('button', { name: 'Guardar' }))
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Portada de Fronteras' })).toBeNull())
+    expect(dialog.getByRole('button', { name: 'Cambiar la portada' })).toBeDefined()
+    await userEvent.click(dialog.getByRole('button', { name: 'Guardar' }))
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Ajustes de Fronteras' })).toBeNull())
+    // La imagen, en los comunes; el sistema, con su icono y esa portada
+    const stored = api.files.find((file) => file.name === 'Fronteras.png')
+    expect(stored?.worldId).toBeNull()
+    const system = await api.client.call('getSystem', { systemId: OWN.id })
+    expect(system.icon).toBe('🐉')
+    expect(system.cover?.fileId).toBe(stored?.id)
+  })
+
+  it('un libro del sistema: sin portada, su color; la portada subida desde su cuadro se guarda al momento (en los comunes)', async () => {
+    localStorage.setItem('crisol.recorridos.enrique@crisol.test', JSON.stringify({ seen: ['sistemas', 'sistema'] }))
+    // Uno con libros
+    const withBooks = { ...structuredClone(cinco), id: crypto.randomUUID() }
+    const api = fakeApi({ organizations: [ORG], worlds: [WORLD], systems: [withBooks] })
+    render(
+      <App
+        router={createAppRouter(createMemoryHistory({ initialEntries: [`/sistemas/${withBooks.id}`] }))}
+        accounts={fakeAccountClient({ account: { name: 'Enrique', email: 'enrique@crisol.test' } }).client}
+        api={api.client}
+      />
+    )
+    URL.createObjectURL = vi.fn(() => 'blob:tapa')
+    // El engranaje de su primer libro
+    const gear = await waitFor(() => {
+      const found = screen
+        .getAllByRole('button', { name: /^Ajustes de / })
+        .find((button) => button.closest('[data-tour="sistema-libros"]'))
+      if (!found) throw new Error('sin engranaje de libro')
+      return found
+    })
+    const bookName = gear.getAttribute('aria-label')?.replace('Ajustes de ', '') ?? ''
+    await userEvent.click(gear)
+    const dialog = within(await screen.findByRole('dialog', { name: bookName }))
+    // Sin portada, el color de su tapa
+    await userEvent.click(dialog.getByRole('radio', { name: 'Musgo' }))
+    expect(dialog.getByRole('radio', { name: 'Musgo' })).toHaveProperty('checked', true)
+    await userEvent.click(dialog.getByRole('button', { name: 'Poner portada' }))
+    const cover = within(await screen.findByRole('dialog', { name: `Portada de ${bookName}` }))
+    const input = document.querySelector<HTMLInputElement>('input[type=file][accept="image/*"]')
+    if (!input) throw new Error('sin campo de archivos')
+    await userEvent.upload(input, new File(['png'], 'Tapa.png', { type: 'image/png' }))
+    expect(await cover.findByRole('button', { name: /Arrastra para encuadrar/ })).toBeDefined()
+    await userEvent.click(cover.getByRole('button', { name: 'Guardar' }))
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: `Portada de ${bookName}` })).toBeNull())
+    const stored = api.files.find((file) => file.name === 'Tapa.png')
+    expect(stored?.worldId).toBeNull()
+    const { books: after } = await api.client.call('getSystemBooks', { systemId: withBooks.id })
+    expect(after.find((book) => book.name === bookName)?.cover?.fileId).toBe(stored?.id)
+  })
+
+  it('sus reglas: mientras no hay editor, se baja su archivo', async () => {
+    localStorage.setItem('crisol.recorridos.enrique@crisol.test', JSON.stringify({ seen: ['sistemas', 'sistema'] }))
+    const { api } = renderSystems(`/sistemas/${OWN.id}/reglas`)
+    const created = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:x')
+    expect(await screen.findByRole('heading', { level: 1, name: 'Reglas' })).toBeDefined()
+    await userEvent.click(screen.getByRole('button', { name: 'Bajar' }))
+    await waitFor(() => expect(api.calls).toContain('exportSystem'))
+    created.mockRestore()
+  })
+
+  it('quitarle la portada y el icono también se guarda', async () => {
+    const { api } = renderSystems()
+    const stored = await api.client.uploadFile(
+      { organizationId: ORG.id, name: 'Vieja.png' },
+      new File(['png'], 'Vieja.png', { type: 'image/png' })
+    )
+    const before = await api.client.call('getSystem', { systemId: OWN.id })
+    await api.client.call('updateSystem', {
+      systemId: OWN.id,
+      version: before.version,
+      changes: [
+        { path: 'icon', value: '🐉' },
+        { path: 'cover', value: { fileId: stored.id, x: 50, y: 50 } }
+      ]
+    })
+    await userEvent.click(await screen.findByRole('button', { name: 'Ajustes de Fronteras' }))
+    const dialog = within(screen.getByRole('dialog', { name: 'Ajustes de Fronteras' }))
+    await userEvent.click(dialog.getByRole('radio', { name: 'Sin icono' }))
+    await userEvent.click(dialog.getByRole('button', { name: 'Cambiar la portada' }))
+    const cover = within(await screen.findByRole('dialog', { name: 'Portada de Fronteras' }))
+    await userEvent.click(await cover.findByRole('button', { name: 'Quitar la portada' }))
+    await userEvent.click(cover.getByRole('button', { name: 'Guardar' }))
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Portada de Fronteras' })).toBeNull())
+    await userEvent.click(dialog.getByRole('button', { name: 'Guardar' }))
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Ajustes de Fronteras' })).toBeNull())
+    const system = await api.client.call('getSystem', { systemId: OWN.id })
+    expect(system.icon ?? null).toBeNull()
+    expect(system.cover ?? null).toBeNull()
+  })
 })

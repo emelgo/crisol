@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { type ContentItem, FILE_BYTES, fileName, toFile, validateContent, validateFile } from './file.ts'
+import {
+  type ContentItem,
+  FILE_BYTES,
+  fileName,
+  toFile,
+  validateChapters,
+  validateContent,
+  validateFile
+} from './file.ts'
 import { cinco } from './fixtures/cinco.ts'
 import { fronteras } from './fixtures/fronteras.ts'
 import { FORMAT, LIMITS } from './format.ts'
@@ -89,5 +97,51 @@ describe('el contenido de un sistema', () => {
 
   it('un nombre en varios idiomas vale', () => {
     expect(validateContent(cinco, [{ ...anillo, data: { name: { en: 'Ring of protection' } } }])).toEqual([])
+  })
+})
+
+describe('los capítulos de un archivo (ADR-0025)', () => {
+  const capitulo = { source: 'srd51', title: 'Combate', markdown: '# Combate' }
+
+  it('ida y vuelta: los capítulos llegan igual; sin ellos, el archivo no los lleva', () => {
+    const file = toFile(cinco, [], [capitulo])
+    const round = validateFile(JSON.parse(JSON.stringify(file)))
+    expect(round.problems).toEqual([])
+    expect(round.file?.chapters).toEqual([capitulo])
+    expect(toFile(cinco, [])).not.toHaveProperty('chapters')
+    expect(validateChapters(cinco, undefined)).toEqual([])
+  })
+
+  it('una lista, y no demasiado larga', () => {
+    expect(validateChapters(cinco, { a: 1 }).map((p) => [p.path, p.message])).toEqual([
+      ['chapters', 'Tienen que ser una lista']
+    ])
+    expect(validateChapters(cinco, Array(2001).fill(capitulo)).map((p) => p.message)).toEqual([
+      'Como mucho, 2000 capítulos'
+    ])
+  })
+
+  it('cada uno, de un libro del sistema, con título y texto, y con su ruta', () => {
+    const problems = validateChapters(cinco, [
+      capitulo,
+      'suelto',
+      { source: 'otro', title: '  ', markdown: 3 },
+      { source: 'srd51', title: 'x'.repeat(201), markdown: 'x'.repeat(400_001) }
+    ])
+    expect(problems.map((p) => [p.path, p.message])).toEqual([
+      ['chapters.1', 'Cada capítulo es un objeto con source, title y markdown'],
+      ['chapters.2.source', '«otro» no es un libro del sistema (sources)'],
+      ['chapters.2.title', 'Su título: entre 1 y 200 letras'],
+      ['chapters.2.markdown', 'Su texto, en Markdown y de como mucho 400000 letras'],
+      ['chapters.3.title', 'Su título: entre 1 y 200 letras'],
+      ['chapters.3.markdown', 'Su texto, en Markdown y de como mucho 400000 letras']
+    ])
+    expect(problems.every((p) => p.severity === 'error' && p.where === 'Los capítulos')).toBe(true)
+  })
+
+  it('un archivo con capítulos que no valen no se acepta', () => {
+    const { file, problems } = validateFile({ ...toFile(cinco, []), chapters: [{ ...capitulo, source: 'nada' }] })
+    expect(file).toBeNull()
+    expect(problems.map((p) => p.path)).toEqual(['chapters.0.source'])
   })
 })

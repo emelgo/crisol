@@ -378,4 +378,33 @@ describe('el compendio de una campaña', () => {
     const campaign = (await api.client.call('getCampaign', { campaignId: CAMPAIGN.id })).campaign
     expect(campaign.hiddenTypes).toEqual(['conjuro'])
   })
+
+  it('el del sistema, sin campaña: se recorre por secciones y se lee lo de dentro', async () => {
+    localStorage.setItem(
+      'crisol.recorridos.ana@crisol.test',
+      JSON.stringify({ seen: ['sistemas', 'sistema', 'compendio'] })
+    )
+    const api = fakeApi({
+      organizations: [ORG],
+      worlds: [WORLD],
+      systems: [SYSTEM],
+      systemContent: { [SYSTEM.id]: CONTENT }
+    })
+    render(
+      <App
+        router={createAppRouter(createMemoryHistory({ initialEntries: [`/sistemas/${SYSTEM.id}/compendio`] }))}
+        accounts={fakeAccountClient({ account: { name: 'Ana', email: 'ana@crisol.test' } }).client}
+        api={api.client}
+      />
+    )
+    expect(await screen.findByRole('heading', { level: 1, name: 'Compendio' })).toBeDefined()
+    const library = within(screen.getByRole('navigation', { name: 'Biblioteca del compendio' }))
+    await userEvent.click(await library.findByRole('button', { name: /^2024/ }))
+    await userEvent.click(library.getByRole('button', { name: /^Conjuros/ }))
+    await userEvent.click(await library.findByRole('button', { name: 'Bola de fuego' }))
+    const article = within(await screen.findByRole('article', { name: 'Bola de fuego' }))
+    expect(await article.findByText('Evocación')).toBeDefined()
+    expect(api.calls).toContain('browseSystemCompendium')
+    expect(api.calls).toContain('readSystemCompendium')
+  })
 })
