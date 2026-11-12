@@ -9,6 +9,11 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
+## Revisión, tanda 9: el MCP (en staging, rama `revision/tanda-9`)
+
+- [ ] **Reconecta el conector** «Neo Crisol» en claude.ai (Ajustes → Conectores: desconectar y conectar), para que
+  coja las herramientas nuevas; luego pídele «lista mis sistemas» y «¿qué capítulos tiene el libro X del sistema Y?».
+
 ## Revisión, tanda 8: el editor de sistemas a mano (en local)
 
 - [ ] **A mano** (Sistemas → «Sistema nuevo» → «A mano»): con su nombre se crea y abre «Reglas» por pasos.

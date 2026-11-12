@@ -186,6 +186,14 @@ Plan: `tasks/plan-revision.md`. Una tanda cada vez: se enseña en local, Enrique
 
 ## Tanda 9 — Repaso del MCP
 
+- [x] Las instrucciones, al día: el editor de sistemas a mano, los capítulos de los libros, la ficha incrustada
+  `![[@Nombre]]`, sin «de serie» para lo que ya no viene con Crisol.
+- [x] Una prueba que vigila que las instrucciones solo nombran herramientas que existen (y nada de lo quitado); la de
+  integración, con el cliente oficial, comprueba la salida de `listar_sistemas` con su esquema y las instrucciones.
+- [x] Las descripciones de los contratos, repasadas («de serie» solo donde lo es: «blank» y el contenedor «grupo»).
+- [ ] Probarlo con el conector de claude.ai recién conectado (el de esta sesión guardaba las herramientas de antes de
+  la tanda 6: `listar_sistemas` fallaba al validar `icon` y `cover`, y no veía `capitulos_libro`).
+
 ## Después
 - [ ] **Registro de tiradas a la vista fuera de la Mesa** (Enrique, 2026-11-12: dirigir la sesión desde la página, sin la Mesa): un botón «Registro» en la barra mientras se está en una campaña o en su mundo, que abre el historial al lado de la página (hoy, desde el d20 → Historial).
 

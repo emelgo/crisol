@@ -7,6 +7,15 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
+### Para retomar (2026-11-12, noche: tanda 9, repaso del MCP)
+
+- Rama `revision/tanda-9` (sobre la 8), **desplegada en staging** para probar el conector (con la 8 dentro).
+- Hecho: las instrucciones al día (editor de sistemas, capítulos, ficha incrustada, sin «de serie»), una prueba que
+  vigila que solo nombren herramientas que existen, y la de integración con el cliente oficial (salida de
+  `listar_sistemas` con su esquema). El conector de una sesión vieja guarda los esquemas de entonces: hay que
+  reconectarlo en claude.ai (está en `tasks/probar.md`).
+- **Siguiente**: su visto bueno de las tandas 8 y 9 → PR a `main`; luego los módulos 9, 8 y 10 (plan de la revisión).
+
 ### Para retomar (2026-11-12, noche: tanda 8, el editor de sistemas a mano, terminada en local)
 
 - Rama `revision/tanda-8` (sobre la 7, sin subir), plan en `tasks/tanda-8.md`. Sin migraciones. Lienzo aprobado
