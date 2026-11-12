@@ -153,6 +153,13 @@ Plan: `tasks/plan-revision.md`. Una tanda cada vez: se enseña en local, Enrique
 - [x] Superficies y fondo de ambiente; respaldo sin desenfoque donde falta; «Sin desenfoque» en Ajustes.
 - [x] Entrar (el recuadro de cristal) y la portada pública. Las imágenes nuevas de Entrar, cuando Enrique las genere.
 - [x] Crítica (28/40) y audit (16/20) de impeccable, con sus arreglos.
+- [x] Lo que Enrique vio en local (2026-11-12): el cristal no se notaba (fondo casi negro, sin desenfoque); ahora el
+  fondo se reconoce y lo que enmarca desenfoca lo de detrás, con brillo arriba. De cristal también los cuadros, las
+  ventanas, los menús, los campos y el botón principal. El fondo parpadeaba en cada cambio de vista y daba un destello
+  al pasar por un mundo: arreglados. «Tuyos» fuera de Sistemas. Prompt del fondo de Mundos en `docs/imagenes.md`.
+- [x] Plantillas (2026-11-12): «Plantilla nueva» abre el cuadro de «Página nueva» (tipo y nombre); el árbol del editor
+  con carpetas, «Nueva carpeta» y el botón derecho (borrar, duplicar, ajustes; en una carpeta, crear dentro); «⋯» con
+  las filas del menú; «Pestaña nueva» sin plantillas (fuera `addTemplateTabs` y su herramienta del MCP).
 
 ## Tanda 6 — Sistemas: su espacio, sus portadas y sus libros
 
@@ -232,3 +239,10 @@ Lo que sale sin estar en la lista: se avisa a Enrique y se arregla en su tanda.
   de la barra, tanda 5), que no acaban nunca: ahora se las saltan.
 - [ ] La hoja móvil de una etiqueta (`tags.tsx`) usa clases que no existen en el CSS (`files.sheet`…): ya fallaba
   antes; el móvil es solo de la jugadora y Etiquetas es del máster, así que es menor.
+- [x] La API de desarrollo (8130) se quedó con el código de `main` tras el bisect del creador de personajes:
+  /plantillas petaba («folders is not iterable»). Reiniciada en la rama buena (2026-11-12).
+- [x] La zona de peligro se pintaba entera de rojo desde la tanda 5 (su CSS era del marco de antes, no del anillo).
+- [x] «⋯» de una plantilla: sus ajustes se abrían dentro del menú, que se quedaba abierto detrás; y sus filas no tenían
+  el aspecto del menú.
+- [x] Durante las transiciones de vista el fondo de ambiente desaparecía (la captura de la raíz es siempre opaca): ahora
+  viaja solo el contenido.

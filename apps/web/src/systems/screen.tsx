@@ -76,17 +76,15 @@ export function SystemsScreen() {
     >
       {failed(systems) && <LoadError error={systems.error} onRetry={() => systems.refetch()} />}
       {systems.data && (
-        <>
-          <h2 className={screen.section}>{t('systems.mine')}</h2>
-          <ul className={screen.grid} aria-label={t('systems.mine')} data-tour="sistemas-tuyos">
-            {mine.map((system) => (
-              <SystemCard key={system.id} system={system} onHover={setHovered} />
-            ))}
-            <li className={screen.newItem}>
-              <NewCard label={t('systems.new')} data-tour="sistemas-nuevo" onClick={() => setCreating(true)} />
-            </li>
-          </ul>
-        </>
+        // Sin rótulo «Tuyos»: todos son de la cuenta (Enrique, 2026-11-12: «lo de tuyos sobra, porque todos son míos»)
+        <ul className={screen.grid} aria-label={t('systems.title')} data-tour="sistemas-tuyos">
+          {mine.map((system) => (
+            <SystemCard key={system.id} system={system} onHover={setHovered} />
+          ))}
+          <li className={screen.newItem}>
+            <NewCard label={t('systems.new')} data-tour="sistemas-nuevo" onClick={() => setCreating(true)} />
+          </li>
+        </ul>
       )}
       {creating && <NewSystemDialog onClose={() => setCreating(false)} />}
       {systems.data && (

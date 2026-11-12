@@ -426,7 +426,11 @@ centro).
 
 ### El ambiente de Inicio
 
-Detrás de Mis mundos, muy difuminada y tenue, debajo del cristal: casi no se distingue qué es, solo su color y su luz.
+Detrás de Mis mundos (y, mientras no haya otras, de Plantillas, Etiquetas, Sistemas y Archivos), suave y algo tenue,
+debajo del cristal (2026-11-12: el cristal se ve de verdad, así que el fondo ya no va casi borrado). Se ve nítido en los
+márgenes (a los lados de la columna del centro) y desenfocado a través de las fichas y tarjetas de cristal: lo
+interesante, a los lados y abajo; el centro, donde van las tarjetas, tranquilo. Al llegar, Claude la pasa a WebP (1920
+de ancho) y sustituye a `apps/web/public/ambiente/inicio.webp`, sin tocar código.
 
 **ambiente**
 
@@ -434,11 +438,13 @@ Detrás de Mis mundos, muy difuminada y tenue, debajo del cristal: casi no se di
 > como el arte de un videojuego de fantasía de estilo pintado: formas simplificadas, grandes masas de color, pinceladas
 > amplias y seguras, poco detalle menudo, luz cálida de atardecer o de fuego contra sombras violetas y azuladas, y una
 > paleta armoniosa de violeta pizarra, naranja y ámbar, verde pino apagado y algún toque granate; nada realista ni
-> fotográfico. La escena, muy sencilla y con poco contraste: un valle amplio al atardecer visto desde lejos, con
-> montañas suaves, niebla y un cielo grande, todo en grandes manchas de color y casi sin detalle; la luz cálida, abajo a
-> la izquierda, y las sombras violetas, arriba a la derecha. Nada que llame la atención en ninguna parte: va a ir muy
-> difuminada detrás de la pantalla. Sin texto, letras, firmas ni marcas de agua, y sin marco: la pintura llega hasta los
-> bordes.
+> fotográfico. La escena: un valle amplio al anochecer visto desde lo alto, con un río que serpentea hacia el fondo y
+> brilla con la última luz. A la izquierda, en un risco, las torres de una ciudadela con alguna ventana encendida; a la
+> derecha, un bosque de pinos oscuro que sube por la ladera; abajo, en primer término, niebla baja entre las rocas y
+> una hoguera diminuta. El centro de la imagen, de arriba abajo, tiene que ser tranquilo y algo más oscuro (cielo y
+> niebla con pocas pinceladas), porque encima irán unas tarjetas; lo interesante va en los dos lados y en el tercio de
+> abajo. Contraste moderado: nada muy claro ni muy brillante, ni blancos puros; la luz más fuerte, un naranja apagado.
+> Sin texto, letras, firmas ni marcas de agua, y sin marco: la pintura llega hasta los bordes.
 
 ### Pantallas vacías
 

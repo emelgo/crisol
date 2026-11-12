@@ -58,7 +58,7 @@ describe('«Sistemas», en Mis mundos', () => {
 
   it('solo los tuyos (sin sistemas de serie); al pasar por uno, lo que trae', async () => {
     renderSystems()
-    const mine = within(await screen.findByRole('list', { name: 'Tuyos' }))
+    const mine = within(await screen.findByRole('list', { name: 'Sistemas' }))
     expect(mine.getByRole('link', { name: 'Fronteras' })).toBeDefined()
     expect(mine.getByText('Subido de un archivo')).toBeDefined()
     // Enrique, 2026-11-08: «no debemos tener sistemas de serie»
@@ -110,7 +110,7 @@ describe('«Sistemas», en Mis mundos', () => {
     await waitFor(() => expect(dialog.queryByRole('alert')).toBeNull())
     await userEvent.click(dialog.getByRole('button', { name: 'Subir el sistema' }))
     await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Sistema nuevo' })).toBeNull())
-    const mine = within(screen.getByRole('list', { name: 'Tuyos' }))
+    const mine = within(screen.getByRole('list', { name: 'Sistemas' }))
     expect(await mine.findByRole('link', { name: '5e de prueba' })).toBeDefined()
     expect(router.state.location.pathname).toBe('/sistemas')
     expect(api.calls.filter((c) => c === 'importSystem')).toHaveLength(1)
@@ -144,7 +144,7 @@ describe('«Sistemas», en Mis mundos', () => {
     await userEvent.click(dialog.getByRole('button', { name: 'Traer el sistema' }))
     await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Sistema nuevo' })).toBeNull())
     expect(
-      await within(screen.getByRole('list', { name: 'Tuyos' })).findByRole('link', { name: 'Mundo Oscuro' })
+      await within(screen.getByRole('list', { name: 'Sistemas' })).findByRole('link', { name: 'Mundo Oscuro' })
     ).toBeDefined()
     expect(api.calls.filter((c) => c === 'importFoundry')).toHaveLength(1)
   })

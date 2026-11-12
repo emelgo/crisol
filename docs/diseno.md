@@ -110,19 +110,23 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   falta algo detrás, **un fondo de ambiente**: en Entrar, las imágenes; en Inicio, una de ambiente o la portada del
   mundo sobre el que está el ratón; en un mundo o un sistema, su portada, muy difuminada y tenue. De cristal, lo que
   enmarca (la barra, las fichas de los lados, cabeceras, tarjetas, cuadros); lo que se lee o se escribe, casi opaco.
-  «Sin desenfoque» en Ajustes. Cómo (tanda 5): el fondo de ambiente (`components/ambient.tsx`) va fijo detrás de
-  todo, una miniatura ya difuminada (sin filtro en directo) **con tope de luz**: con una portada clara va más tenue,
-  para que el texto apagado de encima siga a 5:1 y los títulos rojos a 3:1. No viaja con las transiciones de vista (se
-  queda quieto debajo). En Inicio cambia al pararse en un mundo, no al pasar por encima. Lo que enmarca es solo
-  translúcido (`--surface-glass`, `--surface-glass-raised`) **sin backdrop-filter** (no cuesta al bajar), con rayas
-  blancas translúcidas (`--line-frame`, `--line-soft`: un gris fijo se pierde sobre el fondo); el desenfoque de verdad, solo en lo que va sobre algo nítido (el recuadro de
-  Entrar, lo que flota en la Mesa). **La página es una hoja casi opaca** (`--surface-read`): la portada y el texto, una
-  sola pieza sobre el fondo. Lo que flota encima de otra cosa (menús, el selector de iconos, ventanas y cuadros, con
-  todo lo de dentro), opaco. Los
-  marcos de esquinas cortadas pintan su raya como un anillo (`--cut-ring`), para que su relleno pueda ser de cristal.
-  **«Sin desenfoque»** (Ajustes, «Este aparato»; se guarda en el navegador): sin fondo de ambiente ni desenfoque en
-  ninguna parte, también en la Mesa; todo opaco, como antes. Sin desenfoque en el navegador, el cristal de lo que flota
-  se tapa más (`--glass-solid`).
+  «Sin desenfoque» en Ajustes. **Que se vea** (Enrique, 2026-11-12: «¿no has puesto efecto cristal a nada aún?»;
+  «el tono cristal no se aplica a los popup»): el fondo de ambiente (`components/ambient.tsx`) va fijo detrás de todo,
+  una copia suave de la imagen ya mezclada con el color de fondo (opaca: al cambiar de imagen se funden sin destello) y
+  **con tope de luz** (con una portada clara, más tenue). Se reconoce en los márgenes. En Inicio cambia al pararse en un
+  mundo, no al pasar por encima. **En las transiciones de vista viaja solo el contenido** (`main[data-contenido]`): el
+  fondo y la barra se quedan quietos, sin parpadear. Lo que enmarca (la barra, las fichas de los lados, las tarjetas,
+  los recuadros con título) es **cristal de verdad**: translúcido (`--surface-glass`), con lo de detrás desenfocado
+  (`--frame-blur`) y un brillo arriba (`--frame-sheen`). Las rayas, blancas translúcidas (`--line-frame`, `--line-soft`).
+  **Lo que flota encima** (cuadros, ventanas, menús, el menú del botón derecho, el selector de iconos), cristal más
+  tapado (`--popup-glass`, `--popup-blur`) sobre la pantalla oscurecida; lo de dentro, translúcido sin desenfocar otra
+  vez. Los visores de imagen a pantalla completa (`data-full`), sin él. **Los campos** (buscadores, cajas de texto,
+  desplegables), de cristal oscuro (`--field-fill`); **el botón principal**, de cristal rojo (`--accent-glass`). **La
+  página es una hoja casi opaca** (`--surface-read`): la portada y el texto, una sola pieza. Los marcos de esquinas
+  cortadas pintan su raya como un anillo (`--cut-ring`), para que su relleno pueda ser de cristal; la zona de peligro,
+  igual, en rojo. **«Sin desenfoque»** (Ajustes, «Este aparato»; se guarda en el navegador): sin fondo de ambiente ni
+  desenfoque en ninguna parte, también en la Mesa; todo opaco, como antes. Sin desenfoque en el navegador, todo más
+  tapado.
 - **La portada pública** (tanda 5): la imagen a toda pantalla (la barra de arriba, transparente encima), en el centro la
   llama, el nombre, la frase, «Entrar» y «Tengo una invitación» (que pide el enlace y lleva a la campaña); debajo, tres
   estampas de lo que hay dentro (el mundo, la mesa, la ficha), capturas de la app.
@@ -174,12 +178,16 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   la app; ADR-0024): cada cuenta hace las suyas. Una plantilla lleva lo mismo que una página (portada, icono, campos,
   panel, texto y sus pestañas) y se edita como una página; crear desde ella es duplicarla. Se ordenan en carpetas.
   **Su lista es como Archivos** (prototipo aprobado, 2026-11-12): el árbol con carpetas de color e icono, arrastre y
-  teclado, la vista previa a la izquierda y «Plantilla nueva» (crea «Plantilla sin título» y la abre) y «Nueva
-  carpeta» fijos. **Abierta, es su página** con «‹ Plantillas» arriba a la izquierda, la marca «Plantilla», las demás a
-  la izquierda (por carpetas) y en el panel sus campos y bloques, que se definen; un emoji delante del nombre es su
-  icono. **«Desde plantilla» va la última y centrada, tras una raya con «o»**, en «Página nueva» y en «Pestaña nueva»:
-  cambia el cuadro a la lista de plantillas («‹ Otro tipo» vuelve); en «Pestaña nueva» se marcan las pestañas de la
-  plantilla que se añaden (todas, de entrada). Ya no hay «Aplicar plantilla» en «⋯». Tras la crítica (Enrique,
+  teclado, la vista previa a la izquierda y «Plantilla nueva» y «Nueva carpeta» fijos. **«Plantilla nueva» abre el
+  mismo cuadro que «Página nueva»** (Enrique, 2026-11-12): el tipo (texto o un mapa) y el nombre; sin nombre, «Plantilla
+  sin título», que se abre para escribirlo. **Abierta, es su página** con «‹ Plantillas» arriba a la izquierda, la marca
+  «Plantilla», a la izquierda **el árbol de las demás** (carpetas que se pliegan, «Nueva carpeta» y «Plantilla nueva»
+  arriba y, con el botón derecho: de una plantilla, duplicarla, sus ajustes y borrarla; de una carpeta, crear dentro,
+  sus ajustes y borrarla) y en el panel sus campos y bloques, que se definen; un emoji delante del nombre es su icono.
+  **«Desde plantilla» va la última y centrada, tras una raya con «o»**, en «Página nueva» y en «Plantilla nueva» (allí,
+  partir de otra): cambia el cuadro a la lista de plantillas («‹ Otro tipo» vuelve). **No en «Pestaña nueva»**: la
+  plantilla, solo al crear una página (Enrique, 2026-11-12: «me choca lo de usar una plantilla en una pestaña»). Ya no
+  hay «Aplicar plantilla» en «⋯». Tras la crítica (Enrique,
   2026-11-12): **los campos y bloques del panel de una plantilla van plegados** (nombre y tipo; al pulsarlos, sus
   opciones) **y se recolocan con sus seis puntos**, arrastrando o con Alt y las flechas, como los de una página; **la
   marca «Plantilla» lleva el color de acento**, para no confundirse con la píldora que lleva a una plantilla; **bajo

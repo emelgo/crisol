@@ -9,6 +9,21 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
+## Revisión, lo que viste el 2026-11-12 (en local)
+
+- [ ] **El cristal, ahora sí**: el fondo se reconoce detrás (en Mundos, Plantillas, Sistemas…) y la barra, las fichas
+  de los lados y las tarjetas lo desenfocan, con un brillo arriba. Los cuadros (Ajustes, Papelera, «Plantilla nueva»),
+  los menús, el buscador y el botón rojo, también de cristal.
+- [ ] **Sin parpadeo**: al cambiar de sección o entrar en un mundo, el fondo y la barra se quedan quietos; al pararte en
+  un mundo con portada en Inicio, el fondo se funde sin destello.
+- [ ] **La zona de peligro** (Ajustes de una plantilla o de un mundo): un recuadro con raya roja, no un bloque rojo.
+- [ ] **«Plantilla nueva»** (en Plantillas, en el «+» del editor o en una carpeta): sale el cuadro de «Página nueva»;
+  con «Mapa» y un nombre, se abre ya en su mapa; sin nombre, con el título listo para escribir.
+- [ ] **El árbol del editor de plantillas**: las carpetas se pliegan; «Nueva carpeta» arriba; botón derecho en una
+  plantilla → Duplicar, Ajustes, Borrar; en una carpeta → Plantilla nueva aquí, Carpeta dentro, Ajustes, Borrar.
+- [ ] **«⋯» de una plantilla**: Duplicar y Ajustes con el aspecto del menú; al abrir Ajustes, el menú se cierra.
+- [ ] **«Pestaña nueva»** ya no tiene «Desde plantilla». **Sistemas**, sin «Tuyos».
+
 ## Revisión, tanda 5: cristal, Entrar y la portada (en local)
 
 - [ ] **El fondo de ambiente**: en Inicio, al pasar por un mundo con portada, detrás se ve su portada muy difuminada; en

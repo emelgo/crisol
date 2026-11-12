@@ -72,7 +72,7 @@ test('«Sistemas»: se hacen con la IA; subir un archivo roto y uno bueno, bajar
   await upload(file('Fronteras', '10 + @des'), 'fronteras.json')
   await dialog.getByRole('button', { name: 'Subir el sistema' }).click()
   await expect(dialog).toBeHidden()
-  const mine = page.getByRole('list', { name: 'Tuyos' })
+  const mine = page.getByRole('list', { name: 'Sistemas' })
   await expect(mine.getByRole('link', { name: 'Fronteras', exact: true })).toBeVisible()
   await expect(page).toHaveURL(/\/sistemas$/)
 

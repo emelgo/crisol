@@ -13,7 +13,7 @@ En la revisión de la app, Enrique pidió:
 - plantillas con mapa, línea temporal y demás («¿plantillas de mapa, cronológicas…?»);
 - fuera las plantillas de serie: cada cuenta hace las suyas;
 - carpetas para ordenarlas;
-- «Desde plantilla» también en «Pestaña nueva».
+- ~~«Desde plantilla» también en «Pestaña nueva».~~ (retirado el 2026-11-12: ver la decisión 5)
 
 Además, «Duplicar» una página hoy son cuatro pasos sueltos en el navegador que se dejan la portada, la hoja y las
 pestañas, y no se deshacen de una vez.
@@ -33,8 +33,10 @@ pestañas, y no se deshacen de una vez.
    guarda **la estructura y el estilo, no los enlaces**: un mapa, su escala y sus pines de ejemplo sin enlazar (y sus
    capas cuando lleguen); una línea temporal, su calendario, sus eras y sus carriles, sin eventos; una pizarra, su
    disposición inicial. No hay «tipo de plantilla»: se ve qué pestañas trae.
-5. **«Desde plantilla» en «Pestaña nueva»** añade a una página las pestañas de una plantilla. **Fuera «Aplicar
-   plantilla»** a una página ya hecha (el ADR-0009 lo permitía).
+5. ~~**«Desde plantilla» en «Pestaña nueva»** añade a una página las pestañas de una plantilla.~~ **Retirado el
+   2026-11-12** (Enrique: «me choca lo de usar una plantilla en una pestaña, la plantilla solo al crear una página»):
+   fuera de «Pestaña nueva», la acción `addTemplateTabs` y su herramienta del MCP. **Fuera «Aplicar plantilla»** a una
+   página ya hecha (el ADR-0009 lo permitía).
 6. **Sin plantillas de serie.** Antes de quitarlas, un barrido convierte en propias de cada cuenta las que estén en
    uso, **con los mismos ids de campo y el mismo linaje**, para que las tablas que se llenan solas («Miembros»,
    «Habitantes») den lo mismo antes y después.
