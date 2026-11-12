@@ -80,8 +80,12 @@ describe('«Sistemas», en Mis mundos', () => {
     const created = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:x')
     await userEvent.click(await screen.findByRole('button', { name: 'Sistema nuevo' }))
     const dialog = within(screen.getByRole('dialog', { name: 'Sistema nuevo' }))
-    expect(dialog.getByRole('list', { name: 'Cómo hacer un sistema' })).toBeDefined()
-    expect(dialog.getByText('Con tu IA')).toBeDefined()
+    // Tres caminos: con tu IA da la frase para pedírselo; a mano, aún no
+    const ways = within(dialog.getByRole('group', { name: 'Cómo hacer un sistema' }))
+    expect(ways.getByRole('button', { name: /A mano/ })).toHaveProperty('disabled', true)
+    await userEvent.click(ways.getByRole('button', { name: /Con tu IA/ }))
+    expect(dialog.getByDisplayValue(/Hazme en Crisol el sistema de reglas/)).toBeDefined()
+    await userEvent.click(ways.getByRole('button', { name: /Con el esqueleto/ }))
     expect(dialog.queryByRole('textbox', { name: 'Nombre' })).toBeNull()
     await userEvent.click(dialog.getByRole('button', { name: 'Bajar el esqueleto' }))
     await waitFor(() => expect(created).toHaveBeenCalled())
@@ -197,7 +201,7 @@ describe('«Sistemas», en Mis mundos', () => {
     const bar = within(await screen.findByRole('navigation', { name: 'Secciones' }))
     expect(await bar.findByRole('link', { name: 'Reglas' })).toBeDefined()
     expect(bar.queryByRole('link', { name: 'Plantillas' })).toBeNull()
-    expect(screen.getByRole('button', { name: 'Ajustes del sistema' })).toBeDefined()
+    expect(screen.getByRole('button', { name: 'Ajustes' })).toBeDefined()
     // Su Inicio, sin «Sistema» junto al nombre
     expect(
       screen.getByRole('heading', { level: 1, name: typeof OWN.name === 'string' ? OWN.name : (OWN.name.es ?? '') })
@@ -220,5 +224,8 @@ describe('«Sistemas», en Mis mundos', () => {
     await router.navigate({ to: '/sistemas/$systemId/libros/$bookKey', params: { systemId: OWN.id, bookKey: 'base' } })
     const back = await screen.findByRole('link', { name })
     expect(back.getAttribute('href')).toBe(`/sistemas/${OWN.id}`)
+    // Dentro de un libro, su índice por tipos (sin el conmutador «Por tipo / Por libro»)
+    expect(await screen.findByRole('list', { name: 'Lo que trae, por tipo' })).toBeDefined()
+    expect(screen.queryByRole('button', { name: 'Por libro' })).toBeNull()
   })
 })

@@ -41,8 +41,8 @@ export function SystemBook() {
   })
   const book = system.data?.books.find((each) => each.key === bookKey)
   return (
-    <>
-      {/* La vuelta al Inicio del sistema, arriba a la izquierda (como «‹ Plantillas») */}
+    <div className={styles.bookPage}>
+      {/* La vuelta al Inicio del sistema, arriba a la izquierda (como «‹ Plantillas»), sin empujar el título */}
       <Link to="/sistemas/$systemId" params={{ systemId }} className={styles.back} viewTransition={SECTION}>
         <ArrowLeft aria-hidden="true" size={16} />
         {system.data?.name ?? t('systemBooks.back')}
@@ -56,6 +56,6 @@ export function SystemBook() {
         initialBook={bookKey}
         {...(book ? { title: book.name } : {})}
       />
-    </>
+    </div>
   )
 }

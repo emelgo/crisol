@@ -3,7 +3,7 @@
  * su ventana. Al pasar por uno, a la izquierda, lo que trae. Se hacen con la IA (no hay editor): «Sistema nuevo» sube
  * su archivo o baja uno vacío
  */
-import type { SystemSummary } from '@crisol/contracts'
+import type { PageCover, SystemSummary } from '@crisol/contracts'
 import { type Problem, validateFile } from '@crisol/systems'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, Navigate } from '@tanstack/react-router'
@@ -26,6 +26,7 @@ import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { BusyButton } from '../components/busy-button.tsx'
 import { ChangesBar } from '../components/changes.tsx'
+import { CopyField } from '../components/copy-field.tsx'
 import { ConfirmByName, DangerZone } from '../components/danger.tsx'
 import dialogStyles from '../components/dialog.module.css'
 import { EmptyState } from '../components/empty-state.tsx'
@@ -39,13 +40,15 @@ import { Screen } from '../components/screen.tsx'
 import { Tour } from '../components/tour.tsx'
 import { ENTER_ITEM, enterItem } from '../components/world-transition.ts'
 import cards from '../routes/world-card.module.css'
-import { CoverDialog } from '../routes/world-cover.tsx'
+import { CoverDialog, type LocalImage } from '../routes/world-cover.tsx'
 import screen from '../templates/screen.module.css'
+import { coverStyle } from '../wiki/cover-look.ts'
 import { IconChoices } from '../wiki/icon.tsx'
 import { FoundryImages } from './foundry-images.tsx'
 import { FoundryScenes } from './foundry-scenes.tsx'
 import { type FoundryZip, imagesFromZip, readFoundryZip, slimZip, toBase64, type ZipImage } from './foundry-zip.ts'
 import styles from './screen.module.css'
+import system from './system.module.css'
 import { SystemIcon, useSaveSystemLook } from './system-look.tsx'
 
 export function useSystems() {
@@ -191,7 +194,7 @@ function SystemCard({ system, onHover }: { system: SystemSummary; onHover: (id: 
 }
 
 /** Lo que trae un sistema, a un lado: su resumen, sus tipos, sus tiradas, en qué campañas está y su fuente */
-function SystemPreview({ system }: { system: SystemSummary }) {
+export function SystemPreview({ system }: { system: SystemSummary }) {
   const { t } = useTranslation()
   const origin = useOrigin()
   return (
@@ -271,6 +274,8 @@ export function NewSystemDialog({ onClose }: { onClose: () => void }) {
   const dialog = useRef<HTMLDialogElement>(null)
   const titleId = useId()
   const fileId = useId()
+  // El camino elegido: con tu IA (la frase para pedírselo) o con el esqueleto (bajarlo y subirlo); a mano, pronto
+  const [way, setWay] = useState<'ai' | 'skeleton'>('skeleton')
   const [file, setFile] = useState<{
     name: string
     content: Record<string, unknown> | null
@@ -354,105 +359,135 @@ export function NewSystemDialog({ onClose }: { onClose: () => void }) {
         }}
       >
         <h2 id={titleId}>{t('systems.new')}</h2>
-        {/* Tres caminos (docs/diseno.md): con tu IA (por el conector; aquí no se pulsa), con el esqueleto (lo de abajo) y
-            a mano (el editor, en la tanda 8) */}
-        <ul className={styles.paths} aria-label={t('systems.paths.label')}>
-          <li className={styles.way} data-off="">
-            <Sparkles size={18} aria-hidden="true" />
-            <strong>{t('systems.paths.ai')}</strong>
+        {/* Tres caminos (docs/diseno.md): con tu IA (por el conector: aquí, la frase para pedírselo), con el esqueleto
+            (bajarlo, rellenarlo y subirlo) y a mano (el editor, en la tanda 8: aún no se elige) */}
+        <fieldset className={system.ways}>
+          <legend className={screen.hidden}>{t('systems.paths.label')}</legend>
+          <button type="button" className={system.way} aria-pressed={way === 'ai'} onClick={() => setWay('ai')}>
+            <Sparkles aria-hidden="true" size={20} />
+            <b>{t('systems.paths.ai')}</b>
             <span>{t('systems.paths.aiText')}</span>
-          </li>
-          <li className={styles.way} data-current="">
-            <FileUp size={18} aria-hidden="true" />
-            <strong>{t('systems.paths.skeleton')}</strong>
-            <span>{t('systems.paths.skeletonText')}</span>
-          </li>
-          <li className={styles.way} data-off="">
-            <Pencil size={18} aria-hidden="true" />
-            <strong>{t('systems.paths.hand')}</strong>
-            <span>{t('systems.paths.handText')}</span>
-          </li>
-        </ul>
-        {/* El esqueleto: bajarlo, rellenarlo y subirlo */}
-        <p className={styles.blank} data-first="">
-          <BusyButton type="button" className={styles.rowAction} busy={blank.isPending} onClick={() => blank.mutate()}>
-            <Download size={14} aria-hidden="true" />
-            {t('systems.blank')}
-          </BusyButton>
-          {t('systems.blankHint')}
-        </p>
-        <FormError message={blank.error ? errorText(blank.error) : null} />
-        <fieldset
-          className={styles.drop}
-          onDragOver={(event) => event.preventDefault()}
-          onDrop={(event) => {
-            event.preventDefault()
-            void read(event.dataTransfer.files[0])
-          }}
-        >
-          <legend className={screen.hidden}>{t('systems.file')}</legend>
-          <FileUp size={26} aria-hidden="true" strokeWidth={1.5} />
-          <span>{t('systems.dropFile')}</span>
-          <label htmlFor={fileId} className={styles.pick}>
-            {t('systems.pickFile')}
-          </label>
-          {(file ?? foundry) && <span className={styles.picked}>{(file ?? foundry)?.name}</span>}
-          <input
-            id={fileId}
-            type="file"
-            accept=".json,application/json,.zip,application/zip"
-            className={styles.fileInput}
-            onChange={(event) => void read(event.currentTarget.files?.[0])}
-          />
-        </fieldset>
-        {errors.length > 0 && (
-          <div role="alert">
-            <p className={styles.notUploaded}>{t('systems.notUploaded', { count: errors.length })}</p>
-            <ProblemList problems={file?.problems ?? []} />
-          </div>
-        )}
-        {errors.length === 0 && (file?.problems.length ?? 0) > 0 && <ProblemList problems={file?.problems ?? []} />}
-        {/* Un zip solo de escenas no trae nada para un sistema: va directo a sus escenas */}
-        {foundry && !onlyScenes && !created && (
-          <FoundryChoice
-            foundry={foundry.read}
-            chosen={foundry.chosen}
-            language={foundry.language}
-            onChange={(changes) => setFoundry({ ...foundry, ...changes })}
-          />
-        )}
-        <FormError message={upload.error ? errorText(upload.error) : null} />
-        {created && !images && foundry && (
-          <p className={styles.created} role="status">
-            {t('systems.scenes.systemCreated', { name: created.name })}
-          </p>
-        )}
-        {images ? (
-          <FoundryImages
-            systemId={images.systemId}
-            images={images.images}
-            onDone={() => {
-              if (foundry?.read.scenePacks.length) setImages(null)
-              else dialog.current?.close()
-            }}
-          />
-        ) : onlyScenes || created ? null : (
-          <BusyButton
-            type="submit"
-            className={form.button}
-            busy={upload.isPending}
-            disabled={foundry ? foundry.chosen.length === 0 : !file?.content}
+          </button>
+          <button
+            type="button"
+            className={system.way}
+            aria-pressed={way === 'skeleton'}
+            onClick={() => setWay('skeleton')}
           >
-            {foundry ? t('systems.foundryImport') : t('systems.upload')}
-          </BusyButton>
-        )}
-        {foundry && foundry.read.scenePacks.length > 0 && (
-          <FoundryScenes
-            bytes={foundry.bytes}
-            foundry={foundry.read}
-            {...(created ? { systemId: created.id } : {})}
-            onDone={() => dialog.current?.close()}
-          />
+            <FileUp aria-hidden="true" size={20} />
+            <b>{t('systems.paths.skeleton')}</b>
+            <span>{t('systems.paths.skeletonText')}</span>
+          </button>
+          <button type="button" className={system.way} disabled aria-describedby={`${titleId}-pronto`}>
+            <Pencil aria-hidden="true" size={20} />
+            <b>{t('systems.paths.hand')}</b>
+            <span>{t('systems.paths.handText')}</span>
+            <span id={`${titleId}-pronto`} className={system.soon}>
+              {t('systems.paths.soon')}
+            </span>
+          </button>
+        </fieldset>
+        {way === 'ai' ? (
+          <>
+            <CopyField label={t('systems.paths.aiAsk')} value={t('systems.paths.aiPhrase')} />
+            <div className={dialogStyles.actions}>
+              <button type="button" className={form.button} onClick={() => dialog.current?.close()}>
+                {t('systems.close')}
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <p className={styles.blank} data-first="">
+              <BusyButton
+                type="button"
+                className={styles.rowAction}
+                busy={blank.isPending}
+                onClick={() => blank.mutate()}
+              >
+                <Download size={14} aria-hidden="true" />
+                {t('systems.blank')}
+              </BusyButton>
+            </p>
+            <FormError message={blank.error ? errorText(blank.error) : null} />
+            <fieldset
+              className={styles.drop}
+              onDragOver={(event) => event.preventDefault()}
+              onDrop={(event) => {
+                event.preventDefault()
+                void read(event.dataTransfer.files[0])
+              }}
+            >
+              <legend className={screen.hidden}>{t('systems.file')}</legend>
+              <FileUp size={26} aria-hidden="true" strokeWidth={1.5} />
+              <span>{t('systems.dropFile')}</span>
+              <label htmlFor={fileId} className={styles.pick}>
+                {t('systems.pickFile')}
+              </label>
+              {(file ?? foundry) && <span className={styles.picked}>{(file ?? foundry)?.name}</span>}
+              <input
+                id={fileId}
+                type="file"
+                accept=".json,application/json,.zip,application/zip"
+                className={styles.fileInput}
+                onChange={(event) => void read(event.currentTarget.files?.[0])}
+              />
+            </fieldset>
+            {errors.length > 0 && (
+              <div role="alert">
+                <p className={styles.notUploaded}>{t('systems.notUploaded', { count: errors.length })}</p>
+                <ProblemList problems={file?.problems ?? []} />
+              </div>
+            )}
+            {errors.length === 0 && (file?.problems.length ?? 0) > 0 && <ProblemList problems={file?.problems ?? []} />}
+            {/* Un zip solo de escenas no trae nada para un sistema: va directo a sus escenas */}
+            {foundry && !onlyScenes && !created && (
+              <FoundryChoice
+                foundry={foundry.read}
+                chosen={foundry.chosen}
+                language={foundry.language}
+                onChange={(changes) => setFoundry({ ...foundry, ...changes })}
+              />
+            )}
+            <FormError message={upload.error ? errorText(upload.error) : null} />
+            {created && !images && foundry && (
+              <p className={styles.created} role="status">
+                {t('systems.scenes.systemCreated', { name: created.name })}
+              </p>
+            )}
+            {images ? (
+              <FoundryImages
+                systemId={images.systemId}
+                images={images.images}
+                onDone={() => {
+                  if (foundry?.read.scenePacks.length) setImages(null)
+                  else dialog.current?.close()
+                }}
+              />
+            ) : onlyScenes || created ? null : (
+              <div className={dialogStyles.actions}>
+                <BusyButton
+                  type="submit"
+                  className={form.button}
+                  busy={upload.isPending}
+                  disabled={foundry ? foundry.chosen.length === 0 : !file?.content}
+                >
+                  {foundry ? t('systems.foundryImport') : t('systems.upload')}
+                </BusyButton>
+                <button type="button" className={dialogStyles.cancel} onClick={() => dialog.current?.close()}>
+                  {t('systems.cancel')}
+                </button>
+              </div>
+            )}
+            {foundry && foundry.read.scenePacks.length > 0 && (
+              <FoundryScenes
+                bytes={foundry.bytes}
+                foundry={foundry.read}
+                {...(created ? { systemId: created.id } : {})}
+                onDone={() => dialog.current?.close()}
+              />
+            )}
+          </>
         )}
       </form>
     </Modal>
@@ -518,7 +553,7 @@ function FoundryChoice({
 }
 
 /** Bajar un sistema (de serie o tuyo) con su contenido, en un archivo */
-function useDownload(systemId: string) {
+export function useDownload(systemId: string) {
   const api = useApi()
   return useMutation({
     mutationFn: async () => {
@@ -543,14 +578,22 @@ export function SystemWindow({ system, onClose }: { system: SystemSummary; onClo
   const [name, setName] = useState(system.name)
   const [icon, setIcon] = useState(system.icon)
   const [coverOpen, setCoverOpen] = useState(false)
+  // La portada, en el borrador como lo demás: se ve arriba al elegirla y se guarda con «Guardar» (o se descarta)
+  const [cover, setCover] = useState<{ cover: PageCover | null; local: LocalImage | null }>({
+    cover: system.cover,
+    local: null
+  })
+  const coverChanged = cover.local !== null || JSON.stringify(cover.cover) !== JSON.stringify(system.cover)
   const renamed = name.trim() !== system.name
-  const changed = renamed || icon !== system.icon
+  const changed = renamed || icon !== system.icon || coverChanged
+  const coverUrl = cover.local?.url ?? (cover.cover ? `/api/files/${cover.cover.fileId}` : null)
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['systems'] })
   const saveLook = useSaveSystemLook(system)
   const save = useMutation({
     mutationFn: async () => {
-      // Primero el icono (con la versión que se tenía); el nombre, con la que deja
-      if (icon !== system.icon) await saveLook({ icon })
+      // Primero el aspecto (con la versión que se tenía); el nombre, con la que deja
+      if (icon !== system.icon || coverChanged)
+        await saveLook({ ...(icon !== system.icon ? { icon } : {}), ...(coverChanged ? { cover } : {}) })
       if (renamed) {
         const fresh = await api.call('getSystem', { systemId: system.id })
         await api.call('updateSystem', { systemId: system.id, version: fresh.version, name: name.trim() })
@@ -591,7 +634,13 @@ export function SystemWindow({ system, onClose }: { system: SystemSummary; onClo
               onChange={(event) => setName(event.currentTarget.value)}
             />
             <IconChoices value={icon} onChange={setIcon} />
-            {/* Su portada: su Inicio y su tarjeta (y, detrás, muy difuminada); con el cuadro de la de un mundo */}
+            {/* Su portada: su Inicio y su tarjeta (y, detrás, muy difuminada); con el cuadro de la de un mundo. Se ve
+                aquí lo elegido */}
+            {coverUrl && cover.cover && (
+              <div className={styles.coverPreview}>
+                <img src={coverUrl} alt="" style={coverStyle(cover.cover)} />
+              </div>
+            )}
             <div className={styles.coverRow}>
               <span className={styles.coverLabel}>{t('systems.cover')}</span>
               <button
@@ -601,7 +650,7 @@ export function SystemWindow({ system, onClose }: { system: SystemSummary; onClo
                 onClick={() => setCoverOpen(true)}
               >
                 <ImageIcon size={14} aria-hidden="true" />
-                {system.cover ? t('systems.changeCover') : t('systems.addCover')}
+                {cover.cover ? t('systems.changeCover') : t('systems.addCover')}
               </button>
             </div>
             <FormError message={save.error ? errorText(save.error) : null} />
@@ -615,6 +664,7 @@ export function SystemWindow({ system, onClose }: { system: SystemSummary; onClo
                 onClick={() => {
                   setName(system.name)
                   setIcon(system.icon)
+                  setCover({ cover: system.cover, local: null })
                 }}
               >
                 {t('systems.cancel')}
@@ -652,9 +702,10 @@ export function SystemWindow({ system, onClose }: { system: SystemSummary; onClo
       {coverOpen && (
         <CoverDialog
           title={t('systems.coverOf', { name: system.name })}
-          cover={system.cover}
+          cover={cover.cover}
+          local={cover.local}
           aspect="16 / 9"
-          onSave={(cover, local) => saveLook({ cover: { cover, local } })}
+          onSave={async (chosen, local) => setCover({ cover: chosen, local })}
           onClose={() => setCoverOpen(false)}
         />
       )}

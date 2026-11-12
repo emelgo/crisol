@@ -200,6 +200,13 @@ export function Compendium({
   const [view, setView] = useState<'type' | 'book'>(initialBook ? 'book' : 'type')
   const [book, setBook] = useState<string | null>(initialBook)
   const [bookType, setBookType] = useState<string | null>(initialType)
+  // El libro por dentro (un sistema, revisión tanda 6): el libro no se quita y, sin buscar, sus tipos son su índice
+  const fixedBook = systemOfScope(campaignId) !== null && initialBook !== null
+  const bookIndex = useQuery({
+    queryKey: ['compendium', campaignId, 'bookIndex', initialBook],
+    queryFn: () => api.call('getBookEntries', { systemId: systemOfScope(campaignId) ?? '', source: initialBook ?? '' }),
+    enabled: fixedBook
+  })
   const hits = useInfiniteQuery({
     queryKey: ['compendium', campaignId, 'search', wanted, layer, book, bookType],
     // Solo una capa o un libro, si se elige: lo filtra el servidor (antes de paginar)
@@ -296,10 +303,21 @@ export function Compendium({
         <aside className={styles.side} aria-label={t('compendium.title')}>
           <div className={styles.sideHead}>
             <span className={styles.system}>
-              {editions.length > 0
-                ? t('compendium.systemWith', { system: system.name, editions: editions.join(t('compendium.and')) })
-                : system.name}
-              {master && (
+              {fixedBook && sources.find((s) => s.key === book) ? (
+                <span className={styles.bookHead}>
+                  <span className={styles.bookMini}>
+                    <BookCover book={sources.find((s) => s.key === book) as (typeof sources)[number]} size="spine" />
+                  </span>
+                  {[sources.find((s) => s.key === book)?.name, sources.find((s) => s.key === book)?.edition]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </span>
+              ) : editions.length > 0 ? (
+                t('compendium.systemWith', { system: system.name, editions: editions.join(t('compendium.and')) })
+              ) : (
+                system.name
+              )}
+              {master && !fixedBook && (
                 <button
                   ref={settingsButton}
                   type="button"
@@ -364,7 +382,7 @@ export function Compendium({
               ))}
             </fieldset>
           )}
-          {sources.length > 0 && (
+          {sources.length > 0 && !fixedBook && (
             <fieldset className={styles.view}>
               <legend className={styles.hidden}>{t('compendium.view')}</legend>
               <button type="button" aria-pressed={view === 'type'} onClick={() => setView('type')}>
@@ -375,7 +393,7 @@ export function Compendium({
               </button>
             </fieldset>
           )}
-          {book && (
+          {book && !fixedBook && (
             <p className={styles.bookFilter}>
               <span>
                 {sources.find((s) => s.key === book)?.name ?? book}
@@ -393,7 +411,21 @@ export function Compendium({
               </button>
             </p>
           )}
-          {view === 'book' && !book && !wanted ? (
+          {fixedBook && !wanted && !bookType ? (
+            <ul className={styles.bookList} aria-label={t('compendium.bookIndex')} data-tour="compendio-estantes">
+              {(bookIndex.data?.types ?? []).map((type) => (
+                <li key={type.type}>
+                  <button type="button" className={styles.bookRow} onClick={() => setBookType(type.type)}>
+                    <span>{type.label}</span>
+                    <span className={styles.bookCount}>{type.entries.length}</span>
+                  </button>
+                </li>
+              ))}
+              {bookIndex.data && bookIndex.data.types.length === 0 && (
+                <li className={styles.none}>{t('compendium.bookEmpty')}</li>
+              )}
+            </ul>
+          ) : view === 'book' && !book && !wanted ? (
             <ul className={styles.bookList} aria-label={t('compendium.byBook')} data-tour="compendio-libros">
               {sources.map((s) => (
                 <li key={s.key}>
@@ -409,6 +441,12 @@ export function Compendium({
             </ul>
           ) : wanted || book ? (
             <>
+              {fixedBook && bookType && !wanted && (
+                <button type="button" className={styles.backToIndex} onClick={() => setBookType(null)}>
+                  <ArrowLeft size={14} aria-hidden="true" />
+                  {typeOf(bookType)?.label ?? bookType}
+                </button>
+              )}
               <ul className={styles.list} aria-label={t('compendium.results')} aria-busy={hits.isFetching}>
                 {items.map((hit) => (
                   <HitRow

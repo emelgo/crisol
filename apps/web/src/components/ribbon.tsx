@@ -1,3 +1,4 @@
+import type { SystemSummary } from '@crisol/contracts'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
 import {
@@ -21,7 +22,16 @@ import {
   Trash2,
   User
 } from 'lucide-react'
-import { type CSSProperties, type MouseEvent, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
+import {
+  type CSSProperties,
+  type MouseEvent,
+  type ReactNode,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState
+} from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
@@ -29,8 +39,10 @@ import { historyQuery, trashQuery } from '../api/queries.ts'
 import { useDice } from '../dice/context.tsx'
 import { shownPath } from '../shown-path.ts'
 import { SystemWindow } from '../systems/screen.tsx'
+import { SystemIcon, systemCoverUrl } from '../systems/system-look.tsx'
 import { useNarrow, useWikiPanel, type WikiPanel } from '../wiki/panel.tsx'
 import { AccountMenu } from './account-menu.tsx'
+import { useAmbient } from './ambient.tsx'
 import { CrisolMark } from './brand.tsx'
 import dialogStyles from './dialog.module.css'
 import { Modal } from './modal.tsx'
@@ -70,10 +82,10 @@ export function useMasteredWorld() {
 }
 
 /** Lo que va dentro de cada botón: el icono y su nombre debajo, que se entienda sin pasar el ratón */
-function Label({ icon: Icon, text }: { icon: LucideIcon; text: string }) {
+function Label({ icon: Icon, glyph, text }: { icon: LucideIcon; glyph?: ReactNode; text: string }) {
   return (
     <>
-      <Icon aria-hidden="true" size={20} strokeWidth={1.75} />
+      {glyph ?? <Icon aria-hidden="true" size={20} strokeWidth={1.75} />}
       <span className={styles.text}>{text}</span>
     </>
   )
@@ -396,7 +408,12 @@ export function Ribbon() {
             data-tour="barra-mundo"
           >
             {panelsSystem ? (
-              <SystemPanels systemId={panelsSystem} name={system?.name ?? ''} />
+              <SystemPanels
+                systemId={panelsSystem}
+                name={system?.name ?? ''}
+                icon={system?.icon ?? null}
+                cover={system ?? null}
+              />
             ) : panelsCampaign && panelsWorld ? (
               <CampaignPanels
                 worldId={panelsWorld}
@@ -485,8 +502,22 @@ export function Ribbon() {
  * Lo de un sistema (su espacio, revisión tanda 6): su Inicio (la portada y los libros) y sus Reglas (el editor a mano,
  * tanda 8). El compendio, con el libro por dentro
  */
-function SystemPanels({ systemId, name }: { systemId: string; name: string }) {
+function SystemPanels({
+  systemId,
+  name,
+  icon,
+  cover
+}: {
+  systemId: string
+  name: string
+  icon: string | null
+  cover: Pick<SystemSummary, 'cover'> | null
+}) {
   const { t } = useTranslation()
+  // Su portada, detrás, en todo su espacio (no solo en su Inicio): la barra vive mientras se está en él
+  useAmbient(cover ? systemCoverUrl(cover) : null)
+  // Dentro de un libro, también se está en su compendio
+  const inBook = useRouterState({ select: (state) => shownPath(state).startsWith(`/sistemas/${systemId}/libros/`) })
   return (
     <>
       <Link
@@ -497,7 +528,7 @@ function SystemPanels({ systemId, name }: { systemId: string; name: string }) {
         viewTransition={SECTION}
         data-tour="barra-inicio"
       >
-        <Label icon={ScrollText} text={name || t('ribbon.home')} />
+        <Label icon={ScrollText} glyph={<SystemIcon icon={icon} size={20} />} text={name || t('ribbon.home')} />
       </Link>
       <Link
         to="/sistemas/$systemId/compendio"
@@ -505,6 +536,7 @@ function SystemPanels({ systemId, name }: { systemId: string; name: string }) {
         className={styles.item}
         viewTransition={SECTION}
         data-tour="barra-compendio"
+        {...(inBook ? { 'aria-current': 'page' as const } : {})}
       >
         <Label icon={BookOpen} text={t('ribbon.compendium')} />
       </Link>

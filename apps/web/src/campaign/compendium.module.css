@@ -957,3 +957,32 @@
 .hitBook {
   color: var(--color-h4);
 }
+
+/* Dentro de un libro: su tapa en pequeño y su nombre, en lugar del sistema */
+.bookHead {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* De la lista de un tipo, la vuelta al índice del libro */
+.backToIndex {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin: 0 0 var(--space-2);
+  padding: 0.25rem 0.5rem 0.25rem 0.25rem;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--color-muted);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.backToIndex:hover {
+  background: var(--row-hover);
+  color: var(--color-text);
+}

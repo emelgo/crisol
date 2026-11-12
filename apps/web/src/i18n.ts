@@ -14,7 +14,7 @@ export const es = {
   },
   // La barra de la izquierda: cada botón con su icono y su nombre debajo
   ribbon: {
-    systemSettings: 'Ajustes del sistema',
+    systemSettings: 'Ajustes',
     rules: 'Reglas',
     worlds: 'Mundos',
     home: 'Inicio',
@@ -443,6 +443,8 @@ export const es = {
   },
   // El compendio de una campaña: el contenido de su sistema
   compendium: {
+    bookIndex: 'Lo que trae, por tipo',
+    bookEmpty: 'Este libro aún no trae nada.',
     view: 'Ver',
     byType: 'Por tipo',
     byBook: 'Por libro',
@@ -1466,10 +1468,11 @@ export const es = {
   },
   systemRules: {
     title: 'Reglas',
-    soon: 'Aquí se editarán a mano sus reglas: sus tipos, sus campos, sus tiradas y su hoja. Pronto; de momento, con tu IA o con su archivo.'
+    soon: 'Lo que trae, para leer. Pronto se cambiará aquí a mano; de momento, con tu IA o con su archivo.'
   },
   // Los sistemas de reglas de la cuenta (docs/specs/sistemas.md)
   systems: {
+    close: 'Cerrar',
     empty: 'Aún no hay sistemas. Un sistema son las reglas de un juego: sus fichas, sus tiradas y su contenido.',
     cover: 'Portada',
     addCover: 'Poner portada',
@@ -1497,15 +1500,18 @@ export const es = {
     preview: 'Lo que trae',
     new: 'Sistema nuevo',
     blank: 'Bajar el esqueleto',
-    blankHint: 'Rellénalo y súbelo aquí debajo: si falta algo, se dice qué, dónde y cómo.',
     paths: {
       label: 'Cómo hacer un sistema',
       ai: 'Con tu IA',
-      aiText: 'Conecta tu IA a Crisol y pídele el sistema: lo escribe y lo prueba.',
+      aiText: 'Pídeselo a tu IA conectada a Crisol: lo escribe y lo prueba.',
       skeleton: 'Con el esqueleto',
-      skeletonText: 'Bájalo, rellénalo y súbelo (o el zip de otra mesa virtual).',
+      skeletonText: 'Bájalo, rellénalo y súbelo aquí.',
       hand: 'A mano',
-      handText: 'Paso a paso, en palabras de mesa. Pronto.'
+      handText: 'Paso a paso, en palabras de mesa.',
+      soon: 'Pronto',
+      aiAsk: 'Lo que pedirle a tu IA',
+      aiPhrase:
+        'Hazme en Crisol el sistema de reglas de mi juego: lee su formato, créalo y prueba sus tiradas antes de darlo por bueno.'
     },
     copyOf: 'Copia de {{name}}',
     uploaded: 'Subido de un archivo',
@@ -1513,7 +1519,7 @@ export const es = {
     name: 'Nombre',
     file: 'Archivo',
     pickFile: 'Elegir el archivo',
-    dropFile: 'Suelta aquí el .json de un sistema o el .zip de uno de otra mesa virtual, o',
+    dropFile: 'Suelta aquí su archivo (o el de otra mesa virtual), o',
     notFoundry: 'Este zip no es un sistema ni un módulo que se pueda traer',
     foundryOf: '{{title}} {{version}}',
     foundrySystem: 'Sistema',
@@ -3454,7 +3460,7 @@ export const es = {
     title: 'Papelera',
     worldTitle: 'Papelera de {{world}}',
     listLabel: 'En la papelera',
-    empty: 'La papelera está vacía',
+    empty: 'La papelera está vacía.',
     world: 'Mundo',
     campaignOf: 'Campaña de {{world}}',
     fileOf: 'Archivo de {{world}}',
@@ -3589,8 +3595,11 @@ export const es = {
       text: 'Escribe aquí: se guarda solo. Con «[[» enlazas lo que conoces del mundo.'
     },
     system: {
-      books: 'Los libros del sistema: cada uno llena su compendio.',
-      create: 'Añade un libro: con la IA desde un PDF, desde un archivo o vacío.'
+      books: 'Los libros del sistema: cada uno llena su compendio. Pulsa uno para abrirlo.',
+      create: 'Añade un libro: con la IA desde un PDF, desde un archivo o vacío.',
+      compendium: 'Todo lo de sus libros, para buscar y leer.',
+      rules: 'Lo que trae el sistema: sus tipos, sus campos y sus tiradas.',
+      settings: 'Su nombre, su icono y su portada.'
     },
     review: {
       entries: 'Lo que propuso la IA: marca lo que entra.',
@@ -3659,7 +3668,7 @@ export const es = {
       readPin: 'Pulsa un pin para ver qué es. Con doble clic, abre su página.'
     },
     systems: {
-      create: 'Los sistemas se hacen con la IA. Aquí se suben y se bajan.',
+      create: 'Un sistema son las reglas de un juego. Hazlo con tu IA o con su esqueleto.',
       builtIn: 'Los que trae Crisol. Ábrelos para ver en qué campañas están o bajarlos.'
     },
     templates: {

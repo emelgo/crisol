@@ -1,6 +1,6 @@
 import { gameIcon, type Page, pageIcon } from '@crisol/contracts'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { CircleOff, SmilePlus, Swords } from 'lucide-react'
+import { CircleOff, Shapes, SmilePlus } from 'lucide-react'
 import { type CSSProperties, type ReactNode, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
@@ -158,6 +158,16 @@ export function IconChoices({ value, onChange }: { value: string | null; onChang
   const name = useId()
   const game = gameIcon(value)
   const [browsing, setBrowsing] = useState(false)
+  const moreWrap = useRef<HTMLSpanElement>(null)
+  const moreButton = useRef<HTMLButtonElement>(null)
+  useEffect(() => {
+    if (!browsing) return
+    const outside = (event: PointerEvent) => {
+      if (event.target instanceof Node && !moreWrap.current?.contains(event.target)) setBrowsing(false)
+    }
+    document.addEventListener('pointerdown', outside)
+    return () => document.removeEventListener('pointerdown', outside)
+  }, [browsing])
   const [typed, setTyped] = useState(value && !game && !COMMON.includes(value) ? value : '')
   const choice = (icon: string | null, label: string, content: ReactNode) => (
     <label key={icon ?? ''} className={cards.colorChoice} title={label}>
@@ -198,27 +208,42 @@ export function IconChoices({ value, onChange }: { value: string | null; onChang
           if (pageIcon.safeParse(text.trim()).success) onChange(text.trim())
         }}
       />
-      <button
-        type="button"
-        className={styles.moreIcons}
-        aria-expanded={browsing}
-        onClick={() => setBrowsing(!browsing)}
-      >
-        <Swords aria-hidden="true" size={15} />
-        {t('icon.moreIcons')}
-      </button>
-      {browsing && (
-        <div className={styles.inlineBrowser}>
-          <IconBrowser
-            value={value}
-            autoFocus
-            onPick={(icon) => {
-              onChange(icon)
+      {/* «Más iconos»: el buscador flota debajo (no empuja la ventana); Escape o pulsar fuera lo cierran */}
+      <span ref={moreWrap} className={styles.moreWrap}>
+        <button
+          ref={moreButton}
+          type="button"
+          className={styles.moreIcons}
+          aria-expanded={browsing}
+          onClick={() => setBrowsing(!browsing)}
+        >
+          <Shapes aria-hidden="true" size={15} />
+          {t('icon.moreIcons')}
+        </button>
+        {browsing && (
+          // biome-ignore lint/a11y/noStaticElementInteractions: Escape cierra el buscador sin cerrar la ventana de debajo
+          <div
+            className={styles.floatingBrowser}
+            onKeyDown={(event) => {
+              if (event.key !== 'Escape') return
+              event.preventDefault()
+              event.stopPropagation()
               setBrowsing(false)
+              moreButton.current?.focus()
             }}
-          />
-        </div>
-      )}
+          >
+            <IconBrowser
+              value={value}
+              autoFocus
+              onPick={(icon) => {
+                onChange(icon)
+                setBrowsing(false)
+                moreButton.current?.focus()
+              }}
+            />
+          </div>
+        )}
+      </span>
     </fieldset>
   )
 }

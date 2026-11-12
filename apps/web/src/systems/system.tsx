@@ -6,14 +6,13 @@
 import type { Book, PageCover } from '@crisol/contracts'
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getRouteApi, Link } from '@tanstack/react-router'
-import { FileText, Image as ImageIcon, Pencil, Plus, Settings, Sparkles, Upload } from 'lucide-react'
+import { Download, FileText, Image as ImageIcon, Pencil, Plus, Settings, Sparkles, Upload } from 'lucide-react'
 import { type FormEvent, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { BookCover } from '../campaign/book-cover.tsx'
 import books from '../campaign/books.module.css'
-import { useAmbient } from '../components/ambient.tsx'
 import { Loading } from '../components/brand.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
 import { CopyField } from '../components/copy-field.tsx'
@@ -30,6 +29,7 @@ import { itemTransition, SECTION } from '../components/world-transition.ts'
 import { ColorChoices } from '../routes/world-card.tsx'
 import { CoverDialog, LOCAL_FILE, type LocalImage } from '../routes/world-cover.tsx'
 import { coverStyle } from '../wiki/cover-look.ts'
+import { SystemPreview, useDownload } from './screen.tsx'
 import styles from './system.module.css'
 import { SystemIcon, systemCoverUrl } from './system-look.tsx'
 
@@ -50,7 +50,6 @@ export function SystemScreen() {
   const summary = useQuery({ queryKey: ['systems'], queryFn: () => api.call('listSystems', {}) }).data?.systems.find(
     (each) => each.id === systemId
   )
-  useAmbient(summary ? systemCoverUrl(summary) : null)
   if (!data.data) return failed(data) ? <LoadError error={data.error} onRetry={() => data.refetch()} /> : <Loading />
   const { name, editable } = data.data
   const all = data.data.books
@@ -132,7 +131,11 @@ export function SystemScreen() {
         id="sistema"
         steps={[
           { target: '[data-tour="sistema-libros"]', text: t('tour.system.books') },
-          ...(editable ? [{ target: '[data-tour="libro-nuevo"]', text: t('tour.system.create') }] : [])
+          ...(editable ? [{ target: '[data-tour="libro-nuevo"]', text: t('tour.system.create') }] : []),
+          // Un paso por cada botón de su barra (docs/diseno.md)
+          { target: '[data-tour="barra-compendio"]', text: t('tour.system.compendium') },
+          { target: '[data-tour="barra-reglas"]', text: t('tour.system.rules') },
+          ...(editable ? [{ target: '[data-tour="barra-ajustes-sistema"]', text: t('tour.system.settings') }] : [])
         ]}
       />
       {settings && (
@@ -613,16 +616,35 @@ function BookSettings({
 export function SystemRules() {
   const { t } = useTranslation()
   const api = useApi()
+  const errorText = useErrorText()
   const { systemId } = rulesRoute.useParams()
-  const data = useQuery({
-    queryKey: ['systemBooks', systemId],
-    queryFn: () => api.call('getSystemBooks', { systemId })
-  })
-  if (!data.data) return failed(data) ? <LoadError error={data.error} onRetry={() => data.refetch()} /> : <Loading />
+  const systems = useQuery({ queryKey: ['systems'], queryFn: () => api.call('listSystems', {}) })
+  const summary = systems.data?.systems.find((each) => each.id === systemId)
+  const download = useDownload(systemId)
+  if (!systems.data)
+    return failed(systems) ? <LoadError error={systems.error} onRetry={() => systems.refetch()} /> : <Loading />
   return (
     <Screen>
       <PageTitle>{t('systemRules.title')}</PageTitle>
+      {/* Mientras no hay editor (tanda 8): lo que trae, para leer, y su archivo para cambiarlo fuera */}
       <p className={styles.note}>{t('systemRules.soon')}</p>
+      <p>
+        <BusyButton
+          type="button"
+          className={styles.rowAction}
+          busy={download.isPending}
+          onClick={() => download.mutate()}
+        >
+          <Download size={14} aria-hidden="true" />
+          {t('systems.download')}
+        </BusyButton>
+      </p>
+      <FormError message={download.error ? errorText(download.error) : null} />
+      {summary && (
+        <div className={styles.rules}>
+          <SystemPreview system={summary} />
+        </div>
+      )}
     </Screen>
   )
 }

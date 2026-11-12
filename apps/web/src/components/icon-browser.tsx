@@ -4,7 +4,7 @@
  */
 import { GAME_ICON_GROUPS, GAME_ICONS, gameIcon } from '@crisol/contracts'
 import { Search } from 'lucide-react'
-import { useId, useState } from 'react'
+import { type KeyboardEvent, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Icon } from './icon.tsx'
 import styles from './icon-browser.module.css'
@@ -34,6 +34,36 @@ export function IconBrowser({
     ? GAME_ICONS.filter((icon) => plain(icon.label).includes(wanted) || plain(icon.id).includes(wanted))
     : GAME_ICONS
   const chosen = gameIcon(value)?.id
+  // Una sola parada del tabulador (la elegida o la primera); las flechas recorren la rejilla, Inicio y Fin
+  const order = GAME_ICON_GROUPS.flatMap((group) => shown.filter((icon) => icon.group === group))
+  const [focusAt, setFocusAt] = useState<string | null>(null)
+  const stop = order.some((icon) => icon.id === focusAt)
+    ? focusAt
+    : order.some((icon) => icon.id === chosen)
+      ? chosen
+      : (order[0]?.id ?? null)
+  const list = useRef<HTMLDivElement>(null)
+  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    const at = order.findIndex((icon) => icon.id === stop)
+    if (at < 0) return
+    const grid = list.current?.querySelector('ul')
+    const columns = grid ? getComputedStyle(grid).gridTemplateColumns.split(' ').length : 8
+    const moves: Record<string, number> = {
+      ArrowRight: 1,
+      ArrowLeft: -1,
+      ArrowDown: columns,
+      ArrowUp: -columns,
+      Home: -at,
+      End: order.length - 1 - at
+    }
+    const step = moves[event.key]
+    if (step === undefined) return
+    event.preventDefault()
+    const next = order[Math.max(0, Math.min(order.length - 1, at + step))]
+    if (!next) return
+    setFocusAt(next.id)
+    list.current?.querySelector<HTMLElement>(`[data-icono="${next.id}"]`)?.focus()
+  }
   return (
     <div className={styles.browser}>
       <label className={styles.search}>
@@ -52,7 +82,8 @@ export function IconBrowser({
           onChange={(event) => setQuery(event.currentTarget.value)}
         />
       </label>
-      <div className={styles.list}>
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: las flechas recorren los botones de dentro */}
+      <div ref={list} className={styles.list} onKeyDown={onKeyDown}>
         {shown.length === 0 && <p className={styles.none}>{t('icon.noneFound')}</p>}
         {GAME_ICON_GROUPS.map((group) => {
           const here = shown.filter((icon) => icon.group === group)
@@ -69,6 +100,9 @@ export function IconBrowser({
                       title={icon.label}
                       aria-label={icon.label}
                       aria-pressed={chosen === icon.id}
+                      tabIndex={icon.id === stop ? 0 : -1}
+                      data-icono={icon.id}
+                      onFocus={() => setFocusAt(icon.id)}
                       onClick={() => onPick(`gi:${icon.id}`)}
                     >
                       <Icon value={`gi:${icon.id}`} size={22} />

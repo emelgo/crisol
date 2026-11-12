@@ -319,7 +319,7 @@ describe('el árbol de la wiki', () => {
     expect(trash.getByText('Costa Gris')).toBeDefined()
     expect(trash.getByText(/Página de Eana, con 1 subpágina/)).toBeDefined()
     await userEvent.click(trash.getByRole('button', { name: 'Restaurar Costa Gris' }))
-    expect(await screen.findByText('La papelera está vacía')).toBeDefined()
+    expect(await screen.findByText('La papelera está vacía.')).toBeDefined()
   })
 
   it('cancelar el borrado con Escape vuelve al menú, y otra vez Escape, a la fila del árbol', async () => {

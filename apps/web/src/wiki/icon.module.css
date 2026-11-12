@@ -82,9 +82,24 @@
   color: var(--color-text);
 }
 
-.inlineBrowser {
-  flex-basis: 100%;
-  margin-block-start: var(--space-1);
+/* El buscador de «Más iconos», flotando debajo de su botón, de cristal como todo lo que flota */
+.moreWrap {
+  position: relative;
+}
+
+.floatingBrowser {
+  position: absolute;
+  inset-block-start: calc(100% + var(--space-1));
+  inset-inline-end: 0;
+  z-index: 20;
+  inline-size: min(23rem, 80vw);
+  padding: var(--space-3);
+  border: 1px solid var(--glass-edge);
+  border-radius: 8px;
+  background: var(--frame-sheen), var(--popup-glass);
+  -webkit-backdrop-filter: var(--popup-blur);
+  backdrop-filter: var(--popup-blur);
+  box-shadow: 0 0.75rem 2rem rgb(0 0 0 / 0.4);
 }
 
 .grid {
