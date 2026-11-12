@@ -16,9 +16,11 @@ construye con capturas de antes y después (como la 5): Enrique revisa las tanda
   (Compendio, en la barra, llega con la porción 5.)
 - [x] 4. **Icono y portada del sistema** (formato, contrato, MCP, al crearlo y en sus ajustes); **libros con portada o
   color** elegido, la portada con el selector de archivos.
-- [ ] 5. **El libro por dentro y el compendio del sistema**: tres columnas (su árbol por tipo con buscador, la entrada,
+- [x] 5. **El libro por dentro y el compendio del sistema**: tres columnas (su árbol por tipo con buscador, la entrada,
   sus datos); «Entrada nueva» pide el tipo y abre su formulario (`campaign/entry-editor.tsx`), que guarda en el libro.
   El compendio deja de depender de una campaña; en el servidor, las lecturas del compendio de un sistema por libro.
+  (Hecho con el compendio de dos columnas que ya había: su lista y la entrada con sus datos; las tres columnas, si
+  hace falta, tras la revisión.)
 - [ ] 6. **Crear un sistema: tres caminos** en el cuadro: con tu IA (no se pulsa: conecta el MCP), con el esqueleto
   (la comprobación dice qué falta, dónde y un ejemplo; también un zip de Foundry) y a mano (tanda 8).
 - [ ] 7. Crítica y audit de impeccable, arreglos, capturas y la página de revisión.
