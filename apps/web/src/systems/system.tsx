@@ -6,7 +6,7 @@
 import type { Book } from '@crisol/contracts'
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getRouteApi, Link } from '@tanstack/react-router'
-import { FileText, Pencil, Plus, ScrollText, Settings, Sparkles, Upload } from 'lucide-react'
+import { FileText, Pencil, Plus, Settings, Sparkles, Upload } from 'lucide-react'
 import { type FormEvent, useId, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { useTranslation } from 'react-i18next'
@@ -31,6 +31,7 @@ import { itemTransition } from '../components/world-transition.ts'
 import styles from './system.module.css'
 
 const route = getRouteApi('/sistemas/$systemId')
+const rulesRoute = getRouteApi('/sistemas/$systemId/reglas')
 
 export function SystemScreen() {
   const { t } = useTranslation()
@@ -48,17 +49,11 @@ export function SystemScreen() {
   const all = data.data.books
   return (
     <Screen>
+      {/* Su Inicio, dentro de su espacio (la barra ya dice dónde se está): su nombre, sin el icono fijo ni «Sistema» */}
       <div className={styles.heading}>
-        <span className={styles.icon} aria-hidden="true" style={itemTransition(systemId, 'icono')}>
-          <ScrollText size={22} strokeWidth={1.5} />
-        </span>
         <div style={itemTransition(systemId, 'nombre')}>
           <PageTitle>{name}</PageTitle>
         </div>
-        <span className={styles.kind}>
-          <ScrollText size={14} aria-hidden="true" />
-          {t('systemBooks.kind')}
-        </span>
       </div>
       <h2 className={styles.h}>{t('systemBooks.books')}</h2>
       {!editable && <p className={styles.note}>{t('systemBooks.builtIn')}</p>}
@@ -569,5 +564,23 @@ function BookSettings({
         </DangerZone>
       </form>
     </Modal>
+  )
+}
+
+/** Las reglas de un sistema: aquí irá su editor a mano (tanda 8); de momento, se hacen con la IA o con su archivo */
+export function SystemRules() {
+  const { t } = useTranslation()
+  const api = useApi()
+  const { systemId } = rulesRoute.useParams()
+  const data = useQuery({
+    queryKey: ['systemBooks', systemId],
+    queryFn: () => api.call('getSystemBooks', { systemId })
+  })
+  if (!data.data) return failed(data) ? <LoadError error={data.error} onRetry={() => data.refetch()} /> : <Loading />
+  return (
+    <Screen>
+      <PageTitle>{t('systemRules.title')}</PageTitle>
+      <p className={styles.note}>{t('systemRules.soon')}</p>
+    </Screen>
   )
 }

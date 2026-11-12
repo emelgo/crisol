@@ -19,6 +19,11 @@ export const systemSummary = z.object({
   id: systemRef,
   name: z.string(),
   summary: z.string(),
+  icon: z.string().nullable().describe('Su icono: un emoji o un icono de rol «gi:<id>» (se cambia con la ruta icon)'),
+  cover: z
+    .object({ fileId: z.uuid(), x: z.number(), y: z.number(), zoom: z.number().optional() })
+    .nullable()
+    .describe('Su portada, de los archivos comunes (se cambia con la ruta cover)'),
   builtIn: z.boolean().describe('De serie: no se cambia, pero se copia'),
   version: z.int().describe('Sube con cada cambio; guardar pide la que se tenía'),
   release: z.string().describe('La versión que le pone quien lo hace'),

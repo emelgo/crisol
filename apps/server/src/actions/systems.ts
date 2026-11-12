@@ -83,7 +83,7 @@ function summarize(
   const { defaultRoll: _, critical: __, ...overview } = systemOverview(document)
   // En la lista, el resumen corto: el entero está en el sistema (y la lista la lee la IA de cualquier sistema subido)
   const summary = overview.summary.length > 300 ? `${overview.summary.slice(0, 299)}…` : overview.summary
-  return { ...extra, ...overview, summary, campaigns: [] }
+  return { ...extra, ...overview, summary, icon: document.icon ?? null, cover: document.cover ?? null, campaigns: [] }
 }
 
 const builtIn = (document: System): SystemFull => ({

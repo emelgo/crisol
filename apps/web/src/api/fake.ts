@@ -1245,6 +1245,8 @@ export function fakeApi(
     return {
       id,
       ...overview,
+      icon: document.icon ?? null,
+      cover: document.cover ?? null,
       builtIn: !own,
       version: own?.version ?? 1,
       basedOn: own?.basedOn
@@ -3453,6 +3455,7 @@ export function fakeApi(
             origin: source.origin ?? null,
             file: source.file ?? null,
             cover: source.cover ?? null,
+            color: source.color ?? null,
             requires: source.requires ?? [],
             version: source.version ?? 1,
             count: summary?.count ?? 0,

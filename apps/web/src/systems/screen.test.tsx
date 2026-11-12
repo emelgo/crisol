@@ -189,4 +189,21 @@ describe('«Sistemas», en Mis mundos', () => {
     expect(dialog.getByText('Lo usan «Los páramos»: cámbiales el sistema antes de borrarlo.')).toBeDefined()
     expect(dialog.queryByRole('button', { name: 'Borrar el sistema' })).toBeNull()
   })
+
+  it('un sistema tiene su espacio: la barra cambia (su Inicio, Reglas y sus ajustes) y la llama vuelve a Sistemas', async () => {
+    localStorage.setItem('crisol.recorridos.enrique@crisol.test', JSON.stringify({ seen: ['sistemas', 'sistema'] }))
+    const { router } = renderSystems(`/sistemas/${OWN.id}`)
+    const bar = within(await screen.findByRole('navigation', { name: 'Secciones' }))
+    expect(await bar.findByRole('link', { name: 'Reglas' })).toBeDefined()
+    expect(bar.queryByRole('link', { name: 'Plantillas' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Ajustes del sistema' })).toBeDefined()
+    // Su Inicio, sin «Sistema» junto al nombre
+    expect(
+      screen.getByRole('heading', { level: 1, name: typeof OWN.name === 'string' ? OWN.name : (OWN.name.es ?? '') })
+    ).toBeDefined()
+    await userEvent.click(bar.getByRole('link', { name: 'Reglas' }))
+    expect(await screen.findByRole('heading', { level: 1, name: 'Reglas' })).toBeDefined()
+    await userEvent.click(bar.getByRole('link', { name: 'Crisol' }))
+    await waitFor(() => expect(router.state.location.pathname).toBe('/sistemas'))
+  })
 })

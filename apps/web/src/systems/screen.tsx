@@ -7,7 +7,7 @@ import type { SystemSummary } from '@crisol/contracts'
 import { type Problem, validateFile } from '@crisol/systems'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, Navigate } from '@tanstack/react-router'
-import { CircleAlert, Download, FileUp, Info, Lock, ScrollText, Settings, Sparkles } from 'lucide-react'
+import { CircleAlert, Download, FileUp, Image as ImageIcon, Info, Lock, Settings, Sparkles } from 'lucide-react'
 import { useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
@@ -27,11 +27,14 @@ import { Screen } from '../components/screen.tsx'
 import { Tour } from '../components/tour.tsx'
 import { ENTER_ITEM, enterItem } from '../components/world-transition.ts'
 import cards from '../routes/world-card.module.css'
+import { CoverDialog } from '../routes/world-cover.tsx'
 import screen from '../templates/screen.module.css'
+import { IconChoices } from '../wiki/icon.tsx'
 import { FoundryImages } from './foundry-images.tsx'
 import { FoundryScenes } from './foundry-scenes.tsx'
 import { type FoundryZip, imagesFromZip, readFoundryZip, slimZip, toBase64, type ZipImage } from './foundry-zip.ts'
 import styles from './screen.module.css'
+import { SystemIcon, useSaveSystemLook } from './system-look.tsx'
 
 export function useSystems() {
   const api = useApi()
@@ -114,7 +117,7 @@ function SystemCard({ system, onHover }: { system: SystemSummary; onHover: (id: 
     >
       {system.builtIn && <Lock className={screen.lock} size={14} role="img" aria-label={t('systems.locked')} />}
       <span className={screen.icon} aria-hidden="true" data-elemento="icono">
-        <ScrollText size={24} strokeWidth={1.5} />
+        <SystemIcon icon={system.icon} size={24} />
       </span>
       <h3 className={screen.name}>
         {/* Entrar es entrar: su icono y su nombre viajan al título del sistema, con sus libros (ADR-0021) */}
@@ -169,7 +172,7 @@ function SystemPreview({ system }: { system: SystemSummary }) {
     <div className={screen.preview}>
       <div className={screen.previewTop}>
         <span className={screen.icon} aria-hidden="true">
-          <ScrollText size={20} strokeWidth={1.5} />
+          <SystemIcon icon={system.icon} size={20} />
         </span>
         <div>
           <p className={screen.previewName}>{system.name}</p>
@@ -484,7 +487,7 @@ function useDownload(systemId: string) {
  * La ventana de un sistema: su versión, bajarlo y en qué campañas está; si es tuyo, también su nombre y borrarlo.
  * onClose(gone): si se borró
  */
-function SystemWindow({ system, onClose }: { system: SystemSummary; onClose: (gone: boolean) => void }) {
+export function SystemWindow({ system, onClose }: { system: SystemSummary; onClose: (gone: boolean) => void }) {
   const { t } = useTranslation()
   const api = useApi()
   const queryClient = useQueryClient()
@@ -493,11 +496,20 @@ function SystemWindow({ system, onClose }: { system: SystemSummary; onClose: (go
   const titleId = useId()
   const gone = useRef(false)
   const [name, setName] = useState(system.name)
-  const changed = name.trim() !== system.name
+  const [icon, setIcon] = useState(system.icon)
+  const [coverOpen, setCoverOpen] = useState(false)
+  const renamed = name.trim() !== system.name
+  const changed = renamed || icon !== system.icon
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['systems'] })
+  const saveLook = useSaveSystemLook(system)
   const save = useMutation({
     mutationFn: async () => {
-      await api.call('updateSystem', { systemId: system.id, version: system.version, name: name.trim() })
+      // Primero el icono (con la versión que se tenía); el nombre, con la que deja
+      if (icon !== system.icon) await saveLook({ icon })
+      if (renamed) {
+        const fresh = await api.call('getSystem', { systemId: system.id })
+        await api.call('updateSystem', { systemId: system.id, version: fresh.version, name: name.trim() })
+      }
       await refresh()
     },
     onSuccess: () => dialog.current?.close()
@@ -533,12 +545,33 @@ function SystemWindow({ system, onClose }: { system: SystemSummary; onClose: (go
               data-form-type="other"
               onChange={(event) => setName(event.currentTarget.value)}
             />
+            <IconChoices value={icon} onChange={setIcon} />
+            {/* Su portada: su Inicio y su tarjeta (y, detrás, muy difuminada); con el cuadro de la de un mundo */}
+            <div className={styles.coverRow}>
+              <span className={styles.coverLabel}>{t('systems.cover')}</span>
+              <button
+                type="button"
+                className={styles.rowAction}
+                aria-haspopup="dialog"
+                onClick={() => setCoverOpen(true)}
+              >
+                <ImageIcon size={14} aria-hidden="true" />
+                {system.cover ? t('systems.changeCover') : t('systems.addCover')}
+              </button>
+            </div>
             <FormError message={save.error ? errorText(save.error) : null} />
             <ChangesBar shown={changed}>
               <BusyButton type="submit" className={form.button} busy={save.isPending}>
                 {t('systems.save')}
               </BusyButton>
-              <button type="button" className={dialogStyles.cancel} onClick={() => setName(system.name)}>
+              <button
+                type="button"
+                className={dialogStyles.cancel}
+                onClick={() => {
+                  setName(system.name)
+                  setIcon(system.icon)
+                }}
+              >
                 {t('systems.cancel')}
               </button>
             </ChangesBar>
@@ -571,6 +604,15 @@ function SystemWindow({ system, onClose }: { system: SystemSummary; onClose: (go
         </dl>
         <FormError message={download.error ? errorText(download.error) : null} />
       </form>
+      {coverOpen && (
+        <CoverDialog
+          title={t('systems.coverOf', { name: system.name })}
+          cover={system.cover}
+          aspect="16 / 9"
+          onSave={(cover, local) => saveLook({ cover: { cover, local } })}
+          onClose={() => setCoverOpen(false)}
+        />
+      )}
       {!system.builtIn && (
         <div className={cards.dangerArea}>
           <DangerZone>

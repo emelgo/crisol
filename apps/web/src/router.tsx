@@ -23,7 +23,7 @@ import { WorldPage } from './routes/world.tsx'
 import { Worlds } from './routes/worlds.tsx'
 import { ReviewScreen } from './systems/review.tsx'
 import { SystemsScreen } from './systems/screen.tsx'
-import { SystemScreen } from './systems/system.tsx'
+import { SystemRules, SystemScreen } from './systems/system.tsx'
 import { MesaScreen } from './tabletop/mesa.tsx'
 import { ScreenRoute } from './tabletop/screen.tsx'
 import { TemplateView } from './templates/editor.tsx'
@@ -246,6 +246,12 @@ const systemRoute = createRoute({
   path: '/sistemas/$systemId',
   component: SystemScreen
 })
+// Sus reglas: el editor a mano llega en la tanda 8
+const systemRulesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/sistemas/$systemId/reglas',
+  component: SystemRules
+})
 const reviewRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/sistemas/$systemId/libros/$bookKey/revisar',
@@ -300,6 +306,7 @@ const routeTree = rootRoute.addChildren([
   templatesRoute,
   systemsRoute,
   systemRoute,
+  systemRulesRoute,
   reviewRoute,
   templateRoute,
   consentRoute,

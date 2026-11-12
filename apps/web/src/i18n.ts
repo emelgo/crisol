@@ -14,6 +14,8 @@ export const es = {
   },
   // La barra de la izquierda: cada botón con su icono y su nombre debajo
   ribbon: {
+    systemSettings: 'Ajustes del sistema',
+    rules: 'Reglas',
     worlds: 'Mundos',
     home: 'Inicio',
     campaigns: 'Campañas',
@@ -156,9 +158,6 @@ export const es = {
     }
   },
   // El fondo de las pantallas de cuenta: de quién es la imagen que se ve
-  backdrop: {
-    credit: '{{title}} · {{author}}'
-  },
   account: {
     signIn: 'Entrar',
     signOut: 'Cerrar sesión',
@@ -1465,8 +1464,16 @@ export const es = {
       template: 'Plantilla'
     }
   },
+  systemRules: {
+    title: 'Reglas',
+    soon: 'Aquí se editarán a mano sus reglas: sus tipos, sus campos, sus tiradas y su hoja. Pronto; de momento, con tu IA o con su archivo.'
+  },
   // Los sistemas de reglas de la cuenta (docs/specs/sistemas.md)
   systems: {
+    cover: 'Portada',
+    addCover: 'Poner portada',
+    changeCover: 'Cambiar la portada',
+    coverOf: 'Portada de {{name}}',
     images: {
       found_one: 'Trae {{count}} imagen:',
       found_other: 'Trae {{count}} imágenes:',

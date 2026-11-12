@@ -14,6 +14,7 @@ import {
   type LucideIcon,
   MountainSnow,
   NotebookPen,
+  Scale,
   ScrollText,
   Settings,
   Shield,
@@ -27,12 +28,14 @@ import { useApi } from '../api/context.tsx'
 import { historyQuery, trashQuery } from '../api/queries.ts'
 import { useDice } from '../dice/context.tsx'
 import { shownPath } from '../shown-path.ts'
+import { SystemWindow } from '../systems/screen.tsx'
 import { useNarrow, useWikiPanel, type WikiPanel } from '../wiki/panel.tsx'
 import { AccountMenu } from './account-menu.tsx'
 import { CrisolMark } from './brand.tsx'
 import dialogStyles from './dialog.module.css'
 import { Modal } from './modal.tsx'
 import styles from './ribbon.module.css'
+import { spaceOf } from './spaces.ts'
 import { useWindow } from './window.tsx'
 import { LEAVE_ITEM, LEAVE_WORLD, leaveItem, leaveWorld, SECTION } from './world-transition.ts'
 
@@ -94,6 +97,21 @@ export function Ribbon() {
     enabled: Boolean(account && worldId)
   })
   const world = worlds.data?.worlds.find((w) => w.id === worldId)
+  // Un sistema abierto: la barra es la suya, como la de un mundo (components/spaces.ts)
+  const systemId = useRouterState({
+    select: (state) => {
+      const space = spaceOf(shownPath(state))
+      return space?.kind === 'system' ? space.id : undefined
+    }
+  })
+  const systems = useQuery({
+    queryKey: ['systems'],
+    queryFn: () => api.call('listSystems', {}),
+    enabled: Boolean(account && systemId)
+  })
+  const system = systems.data?.systems.find((each) => each.id === systemId)
+  const [systemSettings, setSystemSettings] = useState(false)
+  const navigate = useNavigate()
   // Una plantilla abierta: «Plantillas» vuelve a la lista como «‹ Plantillas» (su icono y su nombre, a su tarjeta)
   const openTemplate = useRouterState({
     select: (state) => /^\/plantillas\/([^/]+)/.exec(shownPath(state))?.[1]
@@ -148,7 +166,8 @@ export function Ribbon() {
     })
   // Al entrar en un mundo, «Mundos» sube a la llama y se funde con ella, que se aviva (el mundo se cocina en el crisol);
   // dentro, la llama es la vuelta. Al volver, «Mundos» sale de la llama, sin fuego
-  const inWorld = Boolean(worldId)
+  // En un espacio (un mundo o un sistema): lo de la cuenta sube a la llama y salen sus iconos
+  const inWorld = Boolean(worldId || systemId)
   const [wasInWorld, setWasInWorld] = useState(inWorld)
   // Recién entrado (en este mismo pintado aún no se ve en phase)
   const justEntered = inWorld && !wasInWorld
@@ -197,7 +216,14 @@ export function Ribbon() {
     if (campaignId) setFlame('fire')
   }
   if (world && master !== panelsMaster) setPanelsMaster(master)
+  // Los del sistema, igual
+  const [panelsSystem, setPanelsSystem] = useState(systemId ?? null)
+  if (systemId && systemId !== panelsSystem) {
+    setPanelsSystem(systemId)
+    setPanelsMotion(justEntered || phase === 'merging' ? 'enter' : 'none')
+  }
   if (!world && panelsWorld && panelsMotion !== 'leave') setPanelsMotion('leave')
+  if (!systemId && panelsSystem && panelsMotion !== 'leave') setPanelsMotion('leave')
   const panelsBox = useRef<HTMLDivElement>(null)
   // Al volver, el espejo de entrar: los iconos suben al crisol del último al primero, al mismo paso y con la misma
   // duración con que salieron, y después sale «Mundos» (--leave: cuánto tardan en subir todos). Antes de pintar, para
@@ -205,11 +231,15 @@ export function Ribbon() {
   useLayoutEffect(() => {
     if (panelsMotion !== 'leave') return
     // Sin animaciones (las pruebas), al momento; si no, cuando el último ya se ha ido
-    if (typeof panelsBox.current?.getAnimations !== 'function') return setPanelsWorld(null)
+    const gone = () => {
+      setPanelsWorld(null)
+      setPanelsSystem(null)
+    }
+    if (typeof panelsBox.current?.getAnimations !== 'function') return gone()
     const icons = panelsBox.current.childElementCount
     const leave = icons > 0 ? (icons - 1) * ICON_STEP + ICON_TIME : 0
     sections.current?.style.setProperty('--leave', `${leave}ms`)
-    const timer = window.setTimeout(() => setPanelsWorld(null), leave)
+    const timer = window.setTimeout(gone, leave)
     return () => window.clearTimeout(timer)
   }, [panelsMotion])
   // Cuánto sube cada uno («Mundos» y lo de la cuenta) hasta el centro de la llama: se mide al fundirse (aún en su
@@ -256,7 +286,8 @@ export function Ribbon() {
         style={{ '--icon-time': `${ICON_TIME}ms`, '--icon-step': `${ICON_STEP}ms` } as CSSProperties}
       >
         <Link
-          to="/mundos"
+          // Dentro de un sistema, la llama vuelve a Sistemas; si no, a Mis mundos
+          to={systemId ? '/sistemas' : '/mundos'}
           activeOptions={{ exact: true }}
           className={[styles.brand, flame === 'fire' ? styles.cooking : '', flame === 'smoke' ? styles.smoking : '']
             .filter(Boolean)
@@ -350,9 +381,9 @@ export function Ribbon() {
             <Label icon={Folder} text={t('ribbon.files')} />
           </Link>
         )}
-        {panelsWorld && (
+        {(panelsWorld || panelsSystem) && (
           <div
-            key={panelsCampaign ?? panelsWorld}
+            key={panelsSystem ?? panelsCampaign ?? panelsWorld ?? ''}
             ref={panelsBox}
             className={[
               styles.panels,
@@ -364,16 +395,18 @@ export function Ribbon() {
             inert={panelsMotion === 'leave'}
             data-tour="barra-mundo"
           >
-            {panelsCampaign ? (
+            {panelsSystem ? (
+              <SystemPanels systemId={panelsSystem} name={system?.name ?? ''} />
+            ) : panelsCampaign && panelsWorld ? (
               <CampaignPanels
                 worldId={panelsWorld}
                 campaignId={panelsCampaign}
                 name={campaign?.name ?? ''}
                 master={campaignRole === 'master'}
               />
-            ) : (
+            ) : panelsWorld ? (
               <WorldPanels worldId={panelsWorld} worldName={world?.name ?? ''} master={panelsMaster} />
-            )}
+            ) : null}
           </div>
         )}
       </nav>
@@ -407,6 +440,27 @@ export function Ribbon() {
             </button>
           </>
         )}
+        {/* Los ajustes del sistema: su ventana, encima (los de serie no se cambian) */}
+        {panelsSystem && system && !system.builtIn && (
+          <button
+            type="button"
+            className={styles.item}
+            aria-haspopup="dialog"
+            data-tour="barra-ajustes-sistema"
+            onClick={() => setSystemSettings(true)}
+          >
+            <Label icon={Settings} text={t('ribbon.systemSettings')} />
+          </button>
+        )}
+        {systemSettings && system && (
+          <SystemWindow
+            system={system}
+            onClose={(gone) => {
+              setSystemSettings(false)
+              if (gone) void navigate({ to: '/sistemas', viewTransition: LEAVE_WORLD })
+            }}
+          />
+        )}
         {/* Los ajustes de la campaña: se abren encima (ADR-0021) */}
         {panelsCampaign && campaignRole === 'master' && (
           <button
@@ -424,6 +478,37 @@ export function Ribbon() {
         </nav>
       </div>
     </div>
+  )
+}
+
+/**
+ * Lo de un sistema (su espacio, revisión tanda 6): su Inicio (la portada y los libros) y sus Reglas (el editor a mano,
+ * tanda 8). El compendio, con el libro por dentro
+ */
+function SystemPanels({ systemId, name }: { systemId: string; name: string }) {
+  const { t } = useTranslation()
+  return (
+    <>
+      <Link
+        to="/sistemas/$systemId"
+        params={{ systemId }}
+        activeOptions={{ exact: true }}
+        className={styles.item}
+        viewTransition={SECTION}
+        data-tour="barra-inicio"
+      >
+        <Label icon={ScrollText} text={name || t('ribbon.home')} />
+      </Link>
+      <Link
+        to="/sistemas/$systemId/reglas"
+        params={{ systemId }}
+        className={styles.item}
+        viewTransition={SECTION}
+        data-tour="barra-reglas"
+      >
+        <Label icon={Scale} text={t('ribbon.rules')} />
+      </Link>
+    </>
   )
 }
 
