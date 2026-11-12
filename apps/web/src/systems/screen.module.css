@@ -259,3 +259,15 @@
   color: var(--color-muted);
   font-size: 0.875rem;
 }
+
+/* La portada, en los ajustes: su nombre y el botón que abre su cuadro */
+.coverRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.coverLabel {
+  font-weight: 600;
+}

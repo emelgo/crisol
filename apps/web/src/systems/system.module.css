@@ -1,4 +1,20 @@
 /* Un sistema por dentro: su título como el de una plantilla, sus libros en rejilla y «Libro nuevo» */
+/* Su portada, arriba, ancha y redondeada (como la cabecera de un mundo), y el nombre debajo */
+.banner {
+  overflow: hidden;
+  block-size: 13rem;
+  margin-block-end: var(--space-4);
+  border-radius: 0.75rem;
+  box-shadow: inset 0 0 0 1px var(--line-frame);
+}
+
+.banner img {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+}
+
 .heading {
   display: flex;
   align-items: center;
@@ -210,4 +226,36 @@
   margin: 0;
   color: var(--color-tip);
   font-weight: 600;
+}
+
+/* La portada, en los ajustes: su nombre y el botón que abre su cuadro */
+.coverRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.coverLabel {
+  font-weight: 600;
+}
+
+.rowAction {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  border: 1px solid var(--line-frame);
+  border-radius: 6px;
+  background: none;
+  padding: var(--space-2) var(--space-3);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.rowAction:hover {
+  background: var(--row-hover);
 }

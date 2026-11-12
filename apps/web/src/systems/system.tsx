@@ -3,10 +3,10 @@
  * uno en su ventana (con sus ajustes, en un sistema de la cuenta) y «Libro nuevo»: con la IA desde un PDF de la
  * biblioteca, desde el archivo de otro sistema o vacío. Lo que la IA propone se revisa en su pantalla
  */
-import type { Book } from '@crisol/contracts'
+import type { Book, PageCover } from '@crisol/contracts'
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getRouteApi, Link } from '@tanstack/react-router'
-import { FileText, Pencil, Plus, Settings, Sparkles, Upload } from 'lucide-react'
+import { FileText, Image as ImageIcon, Pencil, Plus, Settings, Sparkles, Upload } from 'lucide-react'
 import { type FormEvent, useId, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { useTranslation } from 'react-i18next'
@@ -15,6 +15,7 @@ import { useErrorText } from '../api/errors.ts'
 import { BookCover } from '../campaign/book-cover.tsx'
 import { BookWindow, withTransition } from '../campaign/book-window.tsx'
 import books from '../campaign/books.module.css'
+import { useAmbient } from '../components/ambient.tsx'
 import { Loading } from '../components/brand.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
 import { CopyField } from '../components/copy-field.tsx'
@@ -28,7 +29,11 @@ import { PageTitle } from '../components/page-title.tsx'
 import { Screen } from '../components/screen.tsx'
 import { Tour } from '../components/tour.tsx'
 import { itemTransition } from '../components/world-transition.ts'
+import { ColorChoices } from '../routes/world-card.tsx'
+import { CoverDialog, LOCAL_FILE, type LocalImage } from '../routes/world-cover.tsx'
+import { coverStyle } from '../wiki/cover-look.ts'
 import styles from './system.module.css'
+import { SystemIcon, systemCoverUrl } from './system-look.tsx'
 
 const route = getRouteApi('/sistemas/$systemId')
 const rulesRoute = getRouteApi('/sistemas/$systemId/reglas')
@@ -44,13 +49,29 @@ export function SystemScreen() {
   const [opened, setOpened] = useState<Book | null>(null)
   const [settings, setSettings] = useState<Book | null>(null)
   const [creating, setCreating] = useState(false)
+  // Su icono y su portada (y, detrás, su portada muy difuminada, como la de un mundo)
+  const summary = useQuery({ queryKey: ['systems'], queryFn: () => api.call('listSystems', {}) }).data?.systems.find(
+    (each) => each.id === systemId
+  )
+  useAmbient(summary ? systemCoverUrl(summary) : null)
   if (!data.data) return failed(data) ? <LoadError error={data.error} onRetry={() => data.refetch()} /> : <Loading />
   const { name, editable } = data.data
   const all = data.data.books
   return (
     <Screen>
-      {/* Su Inicio, dentro de su espacio (la barra ya dice dónde se está): su nombre, sin el icono fijo ni «Sistema» */}
+      {/* Su Inicio, dentro de su espacio (la barra ya dice dónde se está): su portada, si tiene, y su nombre con su
+          icono (sin el pergamino fijo ni «Sistema») */}
+      {summary?.cover && (
+        <div className={styles.banner}>
+          <img src={systemCoverUrl(summary) ?? ''} alt="" style={coverStyle(summary.cover)} />
+        </div>
+      )}
       <div className={styles.heading}>
+        {summary?.icon && (
+          <span className={styles.icon} aria-hidden="true">
+            <SystemIcon icon={summary.icon} size={26} />
+          </span>
+        )}
         <div style={itemTransition(systemId, 'nombre')}>
           <PageTitle>{name}</PageTitle>
         </div>
@@ -433,8 +454,23 @@ function BookSettings({
     license: book.license,
     attribution: book.attribution,
     requires: book.requires,
+    color: book.color,
     newVersion: false
   })
+  // Su portada: con el cuadro de la de un mundo (de los archivos comunes; una subida va a ellos), se guarda al momento
+  const [coverOpen, setCoverOpen] = useState(false)
+  const organizations = useQuery({ queryKey: ['organizations'], queryFn: () => api.call('listOrganizations', {}) })
+  const owned = organizations.data?.organizations.find((o) => o.role === 'owner')
+  const saveCover = async (cover: PageCover | null, local: LocalImage | null) => {
+    let chosen = cover
+    if (local && cover?.fileId === LOCAL_FILE && owned) {
+      const stored = await api.uploadFile({ organizationId: owned.id, name: local.file.name }, local.file)
+      chosen = { ...cover, fileId: stored.id }
+      await queryClient.invalidateQueries({ queryKey: ['commonFiles'] })
+    }
+    await api.call('updateBook', { systemId, version, key: book.key, cover: chosen })
+    await queryClient.invalidateQueries({ queryKey: ['systemBooks', systemId] })
+  }
   const save = useMutation({
     mutationFn: () =>
       api.call('updateBook', {
@@ -447,6 +483,7 @@ function BookSettings({
         ...(draft.license !== book.license ? { license: draft.license } : {}),
         ...(draft.attribution !== book.attribution ? { attribution: draft.attribution } : {}),
         ...(draft.requires.join() !== book.requires.join() ? { requires: draft.requires } : {}),
+        ...(draft.color !== book.color ? { color: draft.color } : {}),
         ...(draft.newVersion ? { newVersion: true as const } : {})
       }),
     onSuccess: async () => {
@@ -481,6 +518,15 @@ function BookSettings({
           onChange={(event) => setDraft({ ...draft, description: event.currentTarget.value })}
           maxLength={600}
         />
+        {/* Su portada o, sin ella, su color (el de la tapa) */}
+        <div className={styles.coverRow}>
+          <span className={styles.coverLabel}>{t('systemBooks.cover')}</span>
+          <button type="button" className={styles.rowAction} aria-haspopup="dialog" onClick={() => setCoverOpen(true)}>
+            <ImageIcon size={14} aria-hidden="true" />
+            {book.cover ? t('systemBooks.changeCover') : t('systemBooks.addCover')}
+          </button>
+        </div>
+        {!book.cover && <ColorChoices value={draft.color} onChange={(color) => setDraft({ ...draft, color })} />}
         <div className={styles.fields}>
           <Field
             label={t('systemBooks.edition')}
@@ -542,6 +588,15 @@ function BookSettings({
             {t('systemBooks.cancel')}
           </button>
         </div>
+        {coverOpen && (
+          <CoverDialog
+            title={t('systemBooks.coverOf', { name: book.name })}
+            cover={book.cover}
+            aspect="3 / 4"
+            onSave={saveCover}
+            onClose={() => setCoverOpen(false)}
+          />
+        )}
         <DangerZone>
           {book.campaigns.length > 0 ? (
             <p className={styles.note}>

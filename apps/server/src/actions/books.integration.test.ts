@@ -321,6 +321,29 @@ describe('los libros de un sistema y lo pendiente de revisar (ADR-0021)', () => 
     expect((await books(five)).books.find((b: { key: string }) => b.key === 'grimorio')).toMatchObject({ count: 2 })
   })
 
+  it('el aspecto: el icono y la portada de un sistema (rutas icon y cover) y el color de un libro', async () => {
+    const five = await import5e()
+    const cover = { fileId: crypto.randomUUID(), x: 50, y: 40 }
+    await ok200('updateSystem', {
+      systemId: five,
+      version: 1,
+      changes: [
+        { path: 'icon', value: 'gi:dragon-head' },
+        { path: 'cover', value: cover }
+      ]
+    })
+    const listed = (await ok200('listSystems', {})).systems.find((s: { id: string }) => s.id === five)
+    expect(listed).toMatchObject({ icon: 'gi:dragon-head', cover })
+    expect(
+      (await code('updateSystem', { systemId: five, version: 2, changes: [{ path: 'icon', value: 'dragón' }] })).code
+    ).toBe('SYSTEM_INVALID')
+    await ok200('updateBook', { systemId: five, version: 2, key: 'srd521', color: 'moss' })
+    const book = (await books(five)).books.find((b: { key: string }) => b.key === 'srd521')
+    expect(book.color).toBe('moss')
+    await ok200('updateBook', { systemId: five, version: 3, key: 'srd521', color: null })
+    expect((await books(five)).books.find((b: { key: string }) => b.key === 'srd521').color).toBeNull()
+  })
+
   it('cambiar un libro en español no le quita sus otros idiomas', async () => {
     const five = await import5e()
     const before = (await books(five)).books.find((b: { key: string }) => b.key === 'srd521')
