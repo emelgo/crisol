@@ -278,7 +278,6 @@ export function NewSystemDialog({ onClose }: { onClose: () => void }) {
   // El camino elegido: con tu IA (la frase para pedírselo), con el esqueleto (bajarlo y subirlo) o a mano (el editor)
   const [way, setWay] = useState<'ai' | 'skeleton' | 'hand'>('skeleton')
   const navigate = useNavigate()
-  const nameId = useId()
   const [name, setName] = useState('')
   const byHand = useMutation({
     mutationFn: () => api.call('createSystem', { name: name.trim(), from: 'blank' }),
@@ -401,7 +400,6 @@ export function NewSystemDialog({ onClose }: { onClose: () => void }) {
         {way === 'hand' ? (
           <>
             <Field
-              id={nameId}
               label={t('systems.paths.handName')}
               value={name}
               maxLength={80}

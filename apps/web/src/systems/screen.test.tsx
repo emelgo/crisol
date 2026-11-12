@@ -80,9 +80,9 @@ describe('«Sistemas», en Mis mundos', () => {
     const created = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:x')
     await userEvent.click(await screen.findByRole('button', { name: 'Sistema nuevo' }))
     const dialog = within(screen.getByRole('dialog', { name: 'Sistema nuevo' }))
-    // Tres caminos: con tu IA da la frase para pedírselo; a mano, aún no
+    // Tres caminos: con tu IA da la frase para pedírselo; a mano, su nombre y se abre su editor
     const ways = within(dialog.getByRole('group', { name: 'Cómo hacer un sistema' }))
-    expect(ways.getByRole('button', { name: /A mano/ })).toHaveProperty('disabled', true)
+    expect(ways.getByRole('button', { name: /A mano/ })).toHaveProperty('disabled', false)
     await userEvent.click(ways.getByRole('button', { name: /Con tu IA/ }))
     expect(dialog.getByDisplayValue(/Hazme en Crisol el sistema de reglas/)).toBeDefined()
     await userEvent.click(ways.getByRole('button', { name: /Con el esqueleto/ }))
@@ -92,6 +92,19 @@ describe('«Sistemas», en Mis mundos', () => {
     expect(api.calls.filter((c) => c === 'exportSystem')).toHaveLength(1)
     expect(api.calls.includes('createSystem')).toBe(false)
     created.mockRestore()
+  })
+
+  it('a mano: con su nombre se crea en blanco y se abre su editor (tanda 8)', async () => {
+    const { api, router } = renderSystems()
+    await userEvent.click(await screen.findByRole('button', { name: 'Sistema nuevo' }))
+    const dialog = within(screen.getByRole('dialog', { name: 'Sistema nuevo' }))
+    await userEvent.click(dialog.getByRole('button', { name: /A mano/ }))
+    expect(dialog.getByRole('button', { name: 'Crear y empezar' })).toHaveProperty('disabled', true)
+    await userEvent.type(dialog.getByLabelText('Cómo se llama el juego'), 'Mazmorras de bolsillo')
+    await userEvent.click(dialog.getByRole('button', { name: 'Crear y empezar' }))
+    await waitFor(() => expect(router.state.location.pathname).toMatch(/^\/sistemas\/[^/]+\/reglas$/))
+    expect(api.calls.includes('createSystem')).toBe(true)
+    expect(await screen.findByRole('heading', { level: 2, name: '¿Qué tiene un personaje?' })).toBeDefined()
   })
 
   it('de un archivo: el roto dice qué falla y no se sube; el bueno, sí, y sale en los tuyos', async () => {
