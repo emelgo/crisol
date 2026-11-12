@@ -192,6 +192,10 @@ Plan: `tasks/plan-revision.md`. Una tanda cada vez: se enseña en local, Enrique
 - [ ] Módulo 8 (mundo): calendarios y líneas temporales.
 - [ ] Módulo 10 (mundo): grafo y árbol familiar, tableros, gráficos, nombres.
 - [ ] Revisión de la campaña, con lo de los módulos 8 y 10 que es suyo.
+- [ ] Un tráiler animado con HyperFrames para la portada pública (Enrique, 2026-11-12), con escenas de la app de verdad;
+  quizá sustituye a las estampas. En los tutoriales se quedan los mensajes (se actualizan solos y se leen con lector de
+  pantalla); como mucho, un clip corto en bucle en algún paso difícil de describir (arrastrar al mapa, la niebla). Al
+  final de la revisión, con las pantallas quietas. Antes: su licencia y si pide instalar algo (ffmpeg) en el VPS.
 
 ## Encontrado de paso
 
