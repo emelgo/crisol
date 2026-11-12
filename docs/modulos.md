@@ -7,6 +7,27 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
+### Para retomar (2026-11-12, mediodía: tanda 6, sistemas, casi terminada en local; falta la crítica y su visto bueno)
+
+- Rama `revision/tanda-6` (sobre la 5, sin subir), plan en `tasks/tanda-6.md` (6 de 7 porciones). Sin migraciones.
+- Lo que pidió Enrique al revisar en local (2026-11-12), hecho en la rama de la 5 antes de seguir: el cristal que se
+  ve (fondo reconocible, desenfoque en lo que enmarca, cuadros/menús/campos/botón de cristal), el fondo sin parpadeo ni
+  destellos (en las transiciones viaja solo el contenido; `shown-path.ts`: lo que se elige por la dirección mira la ruta
+  montada), salir de un mundo sin el viaje raro de la cabecera, la zona de peligro, plantillas («Plantilla nueva» con
+  el cuadro de «Página nueva», el árbol del editor con carpetas y botón derecho, «Pestaña nueva» sin plantillas),
+  Sistemas sin «Tuyos».
+- Tanda 6: iconos de rol (337 de game-icons.net, «gi:<id>», `listar_iconos`); los espacios de la barra
+  (`components/spaces.ts`) y el espacio del sistema (su Inicio con portada e icono, Compendio, Reglas «pronto», Ajustes
+  abajo, la llama vuelve a Sistemas); icono y portada del sistema y color o portada de cada libro; el compendio del
+  sistema sin campaña (cuatro lecturas nuevas en el servidor) y el libro por dentro; «Sistema nuevo» con tres caminos.
+- Imágenes de Enrique (estilo F) ya en la app: 12 fondos de Entrar, la portada, el ambiente y 8 bodegones (pantallas
+  vacías en el centro y, con contenido, emblema junto al título). Las que faltan, en `docs/imagenes-por-hacer.md`.
+- Pruebas: web 823; e2e de plantillas, sistemas, libros, compendio, mundos, inicio, wiki, accesibilidad, portada y hoja
+  en verde.
+- **Siguiente**: la porción 7 de la tanda 6 (crítica y audit de impeccable, capturas y página de revisión de las
+  tandas 6 y los arreglos). Pendiente menor: el ejemplo en cada problema de la comprobación de un sistema. Subir a
+  `main` y staging con su visto bueno.
+
 ### Para retomar (2026-11-12, madrugada: tanda 5, cristal, Entrar y la portada, terminada en local; falta su visto bueno)
 
 - Rama `revision/tanda-5` (sobre la 4, sin subir), plan en `tasks/tanda-5.md` (7 porciones hechas). Sin migraciones.
