@@ -59,10 +59,10 @@ export function RollsStep({ system, language, change }: { system: System; langua
     <>
       <div className={styles.formRow}>
         <div className={styles.field}>
-          <label htmlFor={ids.dice}>
-            {t('rules.rolls.dice')}
+          <div className={styles.labelRow}>
+            <label htmlFor={ids.dice}>{t('rules.rolls.dice')}</label>
             <Help topic="dice" />
-          </label>
+          </div>
           <input
             id={ids.dice}
             value={system.dice?.default ?? ''}
@@ -213,10 +213,10 @@ function RollRow({
               />
             </div>
             <div className={styles.field}>
-              <label htmlFor={ids.formula}>
-                {t('rules.rolls.formula')}
+              <div className={styles.labelRow}>
+                <label htmlFor={ids.formula}>{t('rules.rolls.formula')}</label>
                 <Help topic="formula" />
-              </label>
+              </div>
               <input
                 id={ids.formula}
                 value={roll.formula}

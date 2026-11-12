@@ -153,8 +153,11 @@ function Editor({
     if (!anchor) return
     requestAnimationFrame(() => {
       const element = document.getElementById(anchor)
+      const head = element?.querySelector<HTMLButtonElement>('button[aria-expanded]')
+      // Su fila, abierta y con el foco
+      if (head?.getAttribute('aria-expanded') === 'false') head.click()
       element?.scrollIntoView({ block: 'center' })
-      element?.querySelector<HTMLElement>('button')?.focus()
+      head?.focus()
     })
   }
 

@@ -226,10 +226,10 @@ export function FieldForm({
           />
         </div>
         <div className={styles.field}>
-          <label htmlFor={ids.help}>
-            {t('rules.field.help')}
+          <div className={styles.labelRow}>
+            <label htmlFor={ids.help}>{t('rules.field.help')}</label>
             <Help topic="help" />
-          </label>
+          </div>
           <input
             id={ids.help}
             value={textOf(field.help, language)}
@@ -277,10 +277,10 @@ export function FieldForm({
       {field.kind === 'resource' && (
         <div className={styles.formRow}>
           <div className={styles.field}>
-            <label htmlFor={ids.max}>
-              {t('rules.field.resourceMax')}
+            <div className={styles.labelRow}>
+              <label htmlFor={ids.max}>{t('rules.field.resourceMax')}</label>
               <Help topic="formula" />
-            </label>
+            </div>
             <input
               id={ids.max}
               value={field.max ?? ''}
@@ -295,10 +295,10 @@ export function FieldForm({
       )}
       {field.kind === 'derived' && (
         <div className={styles.field}>
-          <label htmlFor={ids.formula}>
-            {t('rules.field.formula')}
+          <div className={styles.labelRow}>
+            <label htmlFor={ids.formula}>{t('rules.field.formula')}</label>
             <Help topic="derived" />
-          </label>
+          </div>
           <input
             id={ids.formula}
             value={field.formula}
