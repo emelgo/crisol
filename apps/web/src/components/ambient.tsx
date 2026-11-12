@@ -131,22 +131,48 @@ function prepare(url: string): Promise<Prepared> {
 
 type Layer = Prepared & { n: number; still?: boolean }
 
+/** Prepararla ya (las portadas de los mundos de Inicio): al entrar en uno, su fondo está listo para la transición */
+export const prepareAmbient = (url: string) => void prepare(url)
+
+/** ¿En plena transición de vista? (la foto de lo nuevo se toma ahora: el fondo nuevo, ya puesto) */
+const inTransition = () => {
+  try {
+    return document.documentElement.matches(':active-view-transition')
+  } catch {
+    return false
+  }
+}
+
+/** La nueva, encima de la de antes; si ya había dos (en pleno fundido), en lugar de la de encima */
+const stacked = (all: readonly Layer[], next: Prepared): Layer[] => {
+  const n = (all.at(-1)?.n ?? 0) + 1
+  return all.length > 1 ? [all[0] as Layer, { ...next, n }] : [...all, { ...next, n }]
+}
+
 export function Ambient() {
   const url = useSyncExternalStore(subscribe, current, current)
   const plain = usePlain()
   // La nueva aparece encima de la de antes (opacas las dos: un fundido limpio) y la de antes se va al acabar; si llega
   // otra en pleno fundido, sustituye a la de encima. Al montarse, la última que se vio, ya puesta (sin fundido)
   const [layers, setLayers] = useState<Layer[]>(() => (lastShown ? [{ ...lastShown, n: 0, still: true }] : []))
+  // Si ya está hecha, al momento (en el mismo pintado): en una transición de vista entra en la foto de lo nuevo, ya
+  // puesta y sin fundido propio (la transición funde una con otra, base.css)
+  const [seen, setSeen] = useState(url)
+  if (url !== seen) {
+    setSeen(url)
+    const known = ready.get(url)
+    if (known && known.src !== layers.at(-1)?.src) {
+      lastShown = known
+      const n = (layers.at(-1)?.n ?? 0) + 1
+      setLayers(inTransition() ? [{ ...known, n, still: true }] : stacked(layers, known))
+    }
+  }
   useEffect(() => {
     let live = true
     const show = (next: Prepared) => {
       if (!live) return
       lastShown = next
-      setLayers((all) => {
-        if (all.at(-1)?.src === next.src) return all
-        const n = (all.at(-1)?.n ?? 0) + 1
-        return all.length > 1 ? [all[0] as Layer, { ...next, n }] : [...all, { ...next, n }]
-      })
+      setLayers((all) => (all.at(-1)?.src === next.src ? all : stacked(all, next)))
     }
     const known = ready.get(url)
     if (known) show(known)

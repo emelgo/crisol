@@ -18,6 +18,7 @@ import { type WindowKind, WindowProvider } from '../components/window.tsx'
 import { DiceProvider } from '../dice/context.tsx'
 import { DicePanel } from '../dice/panel.tsx'
 import { DiceTray } from '../dice/tray.tsx'
+import { shownPath } from '../shown-path.ts'
 import { WikiPanelProvider } from '../wiki/panel.tsx'
 import { WithCampaign } from './campaign.tsx'
 import { OrganizationHistory, WorldHistoryWindow } from './history.tsx'
@@ -39,21 +40,19 @@ export function RootLayout() {
   // consentimiento) van en la columna de siempre
   const wide = useRouterState({
     select: (state) =>
-      !/^\/(perfil|ajustes|historial|papelera|oauth\/|mundos\/[^/]+\/(historial|papelera)$)/.test(
-        state.location.pathname
-      )
+      !/^\/(perfil|ajustes|historial|papelera|oauth\/|mundos\/[^/]+\/(historial|papelera)$)/.test(shownPath(state))
   })
   // La Mesa va sola, a pantalla completa y en su pestaña (ADR-0021): sin la barra de la izquierda
   const bare = useRouterState({
-    select: (state) => /^\/mundos\/[^/]+\/campanas\/[^/]+\/mesa\/?$/.test(state.location.pathname)
+    select: (state) => /^\/mundos\/[^/]+\/campanas\/[^/]+\/mesa\/?$/.test(shownPath(state))
   })
   // La portada (sin sesión): a toda pantalla, con su imagen (sin las que van pasando detrás)
-  const home = useRouterState({ select: (state) => state.location.pathname === '/' })
+  const home = useRouterState({ select: (state) => shownPath(state) === '/' })
   // Imprimir: solo la hoja, sin nada de la interfaz; la pantalla de la tele, igual: solo el mapa
   const printing = useRouterState({
     select: (state) =>
-      /^\/mundos\/[^/]+\/imprimir\//.test(state.location.pathname) ||
-      /^\/mundos\/[^/]+\/campanas\/[^/]+\/pantalla\/?$/.test(state.location.pathname)
+      /^\/mundos\/[^/]+\/imprimir\//.test(shownPath(state)) ||
+      /^\/mundos\/[^/]+\/campanas\/[^/]+\/pantalla\/?$/.test(shownPath(state))
   })
   // Al llegar a otra página (no al cargar la primera), el foco va a su título
   useEffect(
@@ -156,7 +155,7 @@ function TrashWindow() {
 
 /** «Lo que sabe el grupo» de la campaña en la que se está (docs/specs/revelar.md) */
 function GroupKnowledgeWindow() {
-  const path = useRouterState({ select: (state) => state.location.pathname })
+  const path = useRouterState({ select: (state) => shownPath(state) })
   const match = /^\/mundos\/([^/]+)\/campanas\/([^/]+)/.exec(path)
   return match?.[1] && match[2] ? <GroupKnowledge worldId={match[1]} campaignId={match[2]} /> : null
 }

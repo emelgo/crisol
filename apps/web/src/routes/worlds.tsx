@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
-import { useAmbient } from '../components/ambient.tsx'
+import { prepareAmbient, useAmbient } from '../components/ambient.tsx'
 import { Loading } from '../components/brand.tsx'
 import { useCardList } from '../components/card-transition.ts'
 import { FormError } from '../components/field.tsx'
@@ -47,6 +47,10 @@ export function Worlds() {
   }, [previewId])
   const ambientWorld = worlds.data?.worlds.find((w) => w.id === ambientId)
   useAmbient(ambientWorld?.cover ? `/api/files/${ambientWorld.cover.fileId}` : null)
+  // Los fondos de los mundos con portada, ya preparados: al entrar en uno, el suyo llega con la transición (sin carga)
+  useEffect(() => {
+    for (const world of worlds.data?.worlds ?? []) if (world.cover) prepareAmbient(`/api/files/${world.cover.fileId}`)
+  }, [worlds.data])
 
   if (pending) return null
   if (!account) return <Navigate to="/entrar" replace />

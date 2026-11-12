@@ -161,7 +161,7 @@
   --surface-glass: color-mix(in srgb, var(--color-surface) 58%, transparent);
   --surface-glass-raised: color-mix(in srgb, var(--color-raised) 62%, transparent);
   --surface-read: color-mix(in srgb, var(--color-bg) 86%, transparent);
-  --frame-blur: blur(18px) saturate(1.5);
+  --frame-blur: blur(14px);
   --frame-sheen: linear-gradient(180deg, rgb(255 255 255 / 0.05), rgb(255 255 255 / 0) 40%);
   /* Lo que flota encima de otra cosa (cuadros, ventanas, menús, el selector de iconos): cristal más tapado, que se lea
      con lo que sea debajo, y más desenfoque */

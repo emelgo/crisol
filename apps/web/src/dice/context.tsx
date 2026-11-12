@@ -7,6 +7,7 @@
 import type { RollVisibility } from '@crisol/contracts'
 import { useRouterState } from '@tanstack/react-router'
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { shownPath } from '../shown-path.ts'
 
 const CAMPAIGNS = 'crisol.dados.campañas'
 const VISIBILITY = 'crisol.dados.quien'
@@ -93,7 +94,7 @@ export function DiceProvider({ children }: { children: ReactNode }) {
     if (open) setHistory(false)
   }, [])
   // En el móvil la ficha es una hoja que tapa la pantalla: al ir a otra, se cierra
-  const pathname = useRouterState({ select: (state) => state.location.pathname })
+  const pathname = useRouterState({ select: (state) => shownPath(state) })
   const last = useRef(pathname)
   useEffect(() => {
     if (last.current === pathname) return
@@ -156,5 +157,5 @@ export function useDice() {
 
 /** El mundo en el que se está, si se está en uno */
 export function useWorldInPath() {
-  return useRouterState({ select: (state) => /^\/mundos\/([^/]+)/.exec(state.location.pathname)?.[1] })
+  return useRouterState({ select: (state) => /^\/mundos\/([^/]+)/.exec(shownPath(state))?.[1] })
 }

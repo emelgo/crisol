@@ -1,5 +1,5 @@
 /* El fondo de ambiente: detrás de todo (z-index -1: bajo el contenido, sobre el color del body), sin recibir el ratón.
-   En las transiciones de vista va en la raíz, que no se anima (base.css): no se mueve ni parpadea. Del
+   En las transiciones de vista va aparte y quieto, y se funde de un fondo a otro (base.css). Del
    alto de la pantalla entera (lvh): en el móvil, plegar la barra del navegador no lo cambia de tamaño ni lo repinta */
 .ambient {
   position: fixed;
@@ -12,6 +12,9 @@
   background: var(--color-bg);
   pointer-events: none;
   contain: strict;
+  /* En las transiciones de vista, aparte: encima de la raíz (cuya foto es opaca) y debajo del contenido; se funde de un
+     fondo a otro y no se mueve (base.css) */
+  view-transition-name: ambiente;
 }
 
 /* La copia suave (ambient.tsx), estirada y ya mezclada con el fondo (opaca: --alpha es 1 salvo si no se pudo hacer).

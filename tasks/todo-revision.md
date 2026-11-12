@@ -246,3 +246,11 @@ Lo que sale sin estar en la lista: se avisa a Enrique y se arregla en su tanda.
   el aspecto del menú.
 - [x] Durante las transiciones de vista el fondo de ambiente desaparecía (la captura de la raíz es siempre opaca): ahora
   viaja solo el contenido.
+- [x] Al salir de un mundo, la transición salía rara (2026-11-12): el router cambia la dirección enseguida y monta lo
+  nuevo dentro de la transición; el ancho de la página y la barra miraban la dirección, así que el mundo se recolocaba
+  antes de su foto. Ahora miran la ruta montada (`shown-path.ts`). Además, al salir ya no hay viaje de la cabecera a la
+  tarjeta (salía estirada y borrosa): el mundo se aleja mientras llega Mis mundos, sin hueco; sin desenfoque en las
+  animaciones de página entera (iban a saltos).
+- [x] Al entrar en un mundo, su portada (el fondo) se cargaba al acabar la transición: el fondo va aparte y se funde
+  dentro de ella, y las portadas de Inicio se preparan de antemano.
+- [x] «Plantillas» en la barra, con una plantilla abierta, vuelve con la misma animación que «‹ Plantillas».

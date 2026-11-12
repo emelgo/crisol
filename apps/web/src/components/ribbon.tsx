@@ -26,6 +26,7 @@ import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { historyQuery, trashQuery } from '../api/queries.ts'
 import { useDice } from '../dice/context.tsx'
+import { shownPath } from '../shown-path.ts'
 import { useNarrow, useWikiPanel, type WikiPanel } from '../wiki/panel.tsx'
 import { AccountMenu } from './account-menu.tsx'
 import { CrisolMark } from './brand.tsx'
@@ -33,7 +34,7 @@ import dialogStyles from './dialog.module.css'
 import { Modal } from './modal.tsx'
 import styles from './ribbon.module.css'
 import { useWindow } from './window.tsx'
-import { LEAVE_WORLD, leaveWorld, SECTION } from './world-transition.ts'
+import { LEAVE_ITEM, LEAVE_WORLD, leaveItem, leaveWorld, SECTION } from './world-transition.ts'
 
 /** Lo que tarda cada icono del mundo en salir del crisol (o en subir a él) y el paso entre uno y otro: aquí y solo aquí
  * (el nav se los pasa al CSS como --icon-time y --icon-step) */
@@ -56,7 +57,7 @@ function useIsOwner() {
 export function useMasteredWorld() {
   const api = useApi()
   const { account } = useAccounts().useAccount()
-  const worldId = useRouterState({ select: (state) => /^\/mundos\/([^/]+)/.exec(state.location.pathname)?.[1] })
+  const worldId = useRouterState({ select: (state) => /^\/mundos\/([^/]+)/.exec(shownPath(state))?.[1] })
   const worlds = useQuery({
     queryKey: ['worlds'],
     queryFn: () => api.call('listWorlds', {}),
@@ -86,16 +87,20 @@ export function Ribbon() {
   const { account } = useAccounts().useAccount()
   const isOwner = useIsOwner()
   const windows = useWindow()
-  const worldId = useRouterState({ select: (state) => /^\/mundos\/([^/]+)/.exec(state.location.pathname)?.[1] })
+  const worldId = useRouterState({ select: (state) => /^\/mundos\/([^/]+)/.exec(shownPath(state))?.[1] })
   const worlds = useQuery({
     queryKey: ['worlds'],
     queryFn: () => api.call('listWorlds', {}),
     enabled: Boolean(account && worldId)
   })
   const world = worlds.data?.worlds.find((w) => w.id === worldId)
+  // Una plantilla abierta: «Plantillas» vuelve a la lista como «‹ Plantillas» (su icono y su nombre, a su tarjeta)
+  const openTemplate = useRouterState({
+    select: (state) => /^\/plantillas\/([^/]+)/.exec(shownPath(state))?.[1]
+  })
   // Dentro de una campaña, la barra es la suya (como la de un mundo): su inicio, su compendio y los dados
   const campaignId = useRouterState({
-    select: (state) => /^\/mundos\/[^/]+\/campanas\/([^/]+)/.exec(state.location.pathname)?.[1]
+    select: (state) => /^\/mundos\/[^/]+\/campanas\/([^/]+)/.exec(shownPath(state))?.[1]
   })
   const campaigns = useQuery({
     queryKey: ['campaigns', worldId],
@@ -282,7 +287,10 @@ export function Ribbon() {
         {isOwner && !merged && (
           <Link
             to="/plantillas"
-            viewTransition={SECTION}
+            viewTransition={openTemplate ? LEAVE_ITEM : SECTION}
+            onClick={() => {
+              if (openTemplate) leaveItem(openTemplate, document.getElementById('contenido'))
+            }}
             className={worldsItem.filter(Boolean).join(' ')}
             style={{ '--rise': '-7.4rem' } as CSSProperties}
             data-tour="barra-plantillas"
@@ -552,11 +560,10 @@ function WikiPanels({ worldId, worldName }: { worldId: string; worldName: string
   const navigate = useNavigate()
   const wikiPanel = useWikiPanel()
   const inWiki = useRouterState({
-    select: (state) =>
-      new RegExp(`^/mundos/${worldId}(/(wiki/[^/]+|wiki|buscar|etiquetas))?/?$`).test(state.location.pathname)
+    select: (state) => new RegExp(`^/mundos/${worldId}(/(wiki/[^/]+|wiki|buscar|etiquetas))?/?$`).test(shownPath(state))
   })
   const atHome = useRouterState({
-    select: (state) => new RegExp(`^/mundos/${worldId}/?$`).test(state.location.pathname)
+    select: (state) => new RegExp(`^/mundos/${worldId}/?$`).test(shownPath(state))
   })
   const narrow = useNarrow()
   // El mundo lleva a su portada; su columna (el árbol) está siempre, fija: no se recoge (Enrique, 2026-11-11). En lo
@@ -629,7 +636,7 @@ function MobileMenu({
   const accounts = useAccounts()
   const windows = useWindow()
   const _wikiPanel = useWikiPanel()
-  const path = useRouterState({ select: (state) => state.location.pathname })
+  const path = useRouterState({ select: (state) => shownPath(state) })
   const trigger = useRef<HTMLButtonElement>(null)
   const dialog = useRef<HTMLDialogElement>(null)
   const titleId = useId()

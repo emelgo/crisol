@@ -72,9 +72,15 @@ export function enterWorld(worldId: string, card: Element | null) {
 
 /**
  * Al salir de un mundo (por la llama): como las brasas al entrar, pero apagadas: una bruma gris que sube desde abajo y
- * bocanadas de humo que suben, se ensanchan y se disipan (base.css, .humo)
+ * bocanadas de humo que suben, se ensanchan y se disipan (base.css, .humo). La cabecera no vuelve a ser tarjeta: el
+ * mundo se aleja entero y vuelve Mis mundos (Enrique, 2026-11-12: «al salir de un mundo sale la animación rara»; la
+ * cabecera, grande y con otra forma, se veía estirada y borrosa al encoger)
  */
 export function leaveWorld() {
+  current = null
+  for (const named of document.querySelectorAll<HTMLElement>('[style*="view-transition-name"]')) {
+    if (named.style.viewTransitionName === 'mundo-actual') named.style.removeProperty('view-transition-name')
+  }
   overlay('humo', 3000)
 }
 

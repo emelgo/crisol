@@ -115,7 +115,9 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   una copia suave de la imagen ya mezclada con el color de fondo (opaca: al cambiar de imagen se funden sin destello) y
   **con tope de luz** (con una portada clara, más tenue). Se reconoce en los márgenes. En Inicio cambia al pararse en un
   mundo, no al pasar por encima. **En las transiciones de vista viaja solo el contenido** (`main[data-contenido]`): el
-  fondo y la barra se quedan quietos, sin parpadear. Lo que enmarca (la barra, las fichas de los lados, las tarjetas,
+  fondo y la barra se quedan quietos, sin parpadear; si el fondo cambia (entrar en un mundo o salir), se funde dentro de
+  la transición. Al entrar en un mundo, su tarjeta se convierte en la cabecera; **al salir, no** (salía estirada y
+  borrosa): el mundo se aleja mientras llega Mis mundos. Lo que enmarca (la barra, las fichas de los lados, las tarjetas,
   los recuadros con título) es **cristal de verdad**: translúcido (`--surface-glass`), con lo de detrás desenfocado
   (`--frame-blur`) y un brillo arriba (`--frame-sheen`). Las rayas, blancas translúcidas (`--line-frame`, `--line-soft`).
   **Lo que flota encima** (cuadros, ventanas, menús, el menú del botón derecho, el selector de iconos), cristal más
