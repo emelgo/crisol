@@ -3237,7 +3237,7 @@ export const es = {
     failed: 'No se pudo: {{error}}',
     empty: 'Aún no hay archivos.',
     common: 'Comunes',
-    commonTitle: 'Archivos comunes',
+    commonTitle: 'Archivos',
     commonEmpty: 'Aún no hay archivos comunes.',
     kinds: 'Tipo',
     all: 'Todo',

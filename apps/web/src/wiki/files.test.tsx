@@ -987,7 +987,7 @@ describe('los archivos comunes de la cuenta (ADR-0005)', () => {
   it('fuera de los mundos, «Archivos» en la barra lleva a los comunes', async () => {
     renderAt('/mundos', withCommon())
     await userEvent.click(await screen.findByRole('link', { name: 'Archivos' }))
-    expect(await screen.findByRole('heading', { level: 1, name: 'Archivos comunes' })).toBeDefined()
+    expect(await screen.findByRole('heading', { level: 1, name: 'Archivos' })).toBeDefined()
     expect(await screen.findByRole('button', { name: 'Escudo.png' })).toBeDefined()
     expect(screen.queryByRole('button', { name: 'Mapa de Eana.png' })).toBeNull()
   })

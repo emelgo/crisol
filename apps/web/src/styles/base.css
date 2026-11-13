@@ -892,31 +892,3 @@ html:active-view-transition-type(borrar-mundo)::view-transition-group(*) {
     transform: translateY(-120px) scale(0.6);
   }
 }
-
-/* Con movimiento reducido, las transiciones de vista (entrar en un mundo, en una plantilla, cambiar de sección) son un
-   fundido breve: lo nuevo llega sin desplazarse ni crecer, y sin brasas ni humo */
-@media (prefers-reduced-motion: reduce) {
-  ::view-transition-group(*) {
-    animation-duration: 0s !important;
-  }
-
-  ::view-transition-old(*) {
-    animation: deja-paso 120ms ease-in both !important;
-  }
-
-  ::view-transition-new(*) {
-    animation: funde-entra 160ms ease-out both !important;
-  }
-
-  .brasas,
-  .humo,
-  .brasas-tarjeta {
-    display: none;
-  }
-}
-
-@keyframes funde-entra {
-  from {
-    opacity: 0;
-  }
-}

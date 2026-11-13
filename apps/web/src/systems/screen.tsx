@@ -351,7 +351,13 @@ export function NewSystemDialog({ onClose }: { onClose: () => void }) {
         return
       }
       setFile(null)
-      setFoundry({ name: picked.name, bytes, read: found, chosen: found.packs.map((p) => p.name), language: 'en' })
+      setFoundry({
+        name: picked.name,
+        bytes,
+        read: found,
+        chosen: found.packs.map((p) => p.name),
+        language: zipLanguages(found).includes('es') ? 'es' : 'en'
+      })
       return
     }
     let content: unknown
@@ -524,7 +530,14 @@ export function NewSystemDialog({ onClose }: { onClose: () => void }) {
   )
 }
 
-/** Lo que trae un zip de Foundry: qué es, sus compendios (todos marcados) y el idioma de sus textos */
+/** Los idiomas que sabe leer Crisol entre los que trae un zip de Foundry */
+const zipLanguages = (zip: FoundryZip) =>
+  (['es', 'en'] as const).filter((each) => zip.languages.some((lang) => lang.toLowerCase().startsWith(each)))
+
+/**
+ * Lo que trae un zip de Foundry: qué es, sus compendios (todos marcados) y, solo si trae sus textos en los dos idiomas,
+ * cuál leer (va el español; con uno solo, ese, sin preguntar: Enrique, 2026-11-13)
+ */
 function FoundryChoice({
   foundry,
   chosen,
@@ -567,17 +580,19 @@ function FoundryChoice({
           ))}
         </fieldset>
       )}
-      <div className={form.field}>
-        <label htmlFor={languageId}>{t('systems.foundryLanguage')}</label>
-        <select
-          id={languageId}
-          value={language}
-          onChange={(event) => onChange({ language: event.currentTarget.value as 'es' | 'en' })}
-        >
-          <option value="en">{t('systems.languageName.en')}</option>
-          <option value="es">{t('systems.languageName.es')}</option>
-        </select>
-      </div>
+      {zipLanguages(foundry).length > 1 && (
+        <div className={form.field}>
+          <label htmlFor={languageId}>{t('systems.foundryLanguage')}</label>
+          <select
+            id={languageId}
+            value={language}
+            onChange={(event) => onChange({ language: event.currentTarget.value as 'es' | 'en' })}
+          >
+            <option value="en">{t('systems.languageName.en')}</option>
+            <option value="es">{t('systems.languageName.es')}</option>
+          </select>
+        </div>
+      )}
     </div>
   )
 }

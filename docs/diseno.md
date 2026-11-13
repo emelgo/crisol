@@ -43,7 +43,8 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   portada detrás**: los fondos de Crisol («no hace falta tener la portada de fondo»).
 - **Sin idioma del contenido** (Enrique, 2026-11-13: «haremos una versión en inglés de la app PERO los sistemas y
   libros los sube el usuario en el idioma que quiera»): ni la campaña ni el editor de sistemas eligen idioma; cada
-  sistema viene en el que lo subió su dueño. La app sí se traducirá entera (i18n).
+  sistema viene en el que lo subió su dueño. La app sí se traducirá entera (i18n). Al traer un zip de Foundry, el
+  idioma de sus textos solo se pregunta si trae español e inglés (va el español); con uno, ese, sin preguntar.
 
 ## Armazón y navegación
 
@@ -225,7 +226,8 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   **«Desde plantilla» va la última y centrada, tras una raya con «o»**, en «Página nueva» y en «Plantilla nueva» (allí,
   partir de otra): cambia el cuadro a la lista de plantillas («‹ Otro tipo» vuelve). **No en «Pestaña nueva»**: la
   plantilla, solo al crear una página (Enrique, 2026-11-12: «me choca lo de usar una plantilla en una pestaña»). Ya no
-  hay «Aplicar plantilla» en «⋯». Tras la crítica (Enrique,
+  hay «Aplicar plantilla» en «⋯». **«Pestaña nueva» ya no ofrece «Tabla» ni «Escena»** (Enrique, 2026-11-13: las
+  tablas son del compendio y las escenas, sueltas); las que ya hay se siguen viendo. Tras la crítica (Enrique,
   2026-11-12): **los campos y bloques del panel de una plantilla van plegados** (nombre y tipo; al pulsarlos, sus
   opciones) **y se recolocan con sus seis puntos**, arrastrando o con Alt y las flechas, como los de una página; **la
   marca «Plantilla» lleva el color de acento**, para no confundirse con la píldora que lleva a una plantilla; **bajo
@@ -382,6 +384,7 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   Enrique; la lista en `apps/web/src/account/backdrops.ts` y su origen en `docs/terceros.md`. **Se cambiarán por
   imágenes propias** en el estilo que elija Enrique (2026-11-11, `docs/imagenes.md`), con el centro tranquilo para el
   recuadro.
+- **Los Archivos de fuera se llaman «Archivos»** (no «comunes»: llevan dentro las carpetas de los mundos).
 - **Cada mundo, una carpeta en los Archivos de fuera** (Enrique, 2026-11-13: «al crear un mundo se crea su carpeta en
   archivos y esta no se puede borrar; se borra sola al eliminar el mundo»): como «Comunes» dentro de un mundo, pero al
   revés; con el color del mundo, sin engranaje ni casilla, y lo que se sube o se crea en ella es del mundo.

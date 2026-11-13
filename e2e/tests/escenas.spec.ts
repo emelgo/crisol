@@ -59,15 +59,15 @@ test('una escena: su mapa en teselas, la rejilla alineada, la mesa y la tele que
   })
   expect(uploaded.status()).toBe(201)
 
-  // «Pestaña nueva» → Escena, con su mapa del mundo: se trocea al abrirla
-  await page.getByRole('button', { name: 'Pestaña nueva' }).click()
-  const dialog = page.getByRole('dialog', { name: 'Pestaña nueva' })
-  await dialog.getByRole('radio', { name: 'Escena' }).check()
-  await expect(dialog.getByRole('radio', { name: /Del mundo/ })).toBeChecked()
-  await expect(dialog.getByRole('radio', { name: /UVTT/ })).toBeVisible()
-  await dialog.getByRole('button', { name: 'cripta.png' }).click()
-  await expect(dialog.getByRole('button', { name: 'cripta.png' })).toHaveAttribute('aria-pressed', 'true')
-  await dialog.getByRole('button', { name: 'Crear' }).click()
+  // Una pestaña Escena (ya no se ofrece en «Pestaña nueva»: la crean el importador de Foundry y la IA) pide su mapa
+  // del mundo y se trocea al ponérselo
+  const pageId = new URL(page.url()).pathname.split('/wiki/')[1] ?? ''
+  const created = await page.request.post('/api/actions/createPageTab', { data: { pageId, kind: 'scene' } })
+  expect(created.status()).toBe(200)
+  const { id: sceneTab } = await created.json()
+  await page.goto(`/mundos/${worldId}/wiki/${pageId}?pestana=${sceneTab}`)
+  await expect(page.getByText('Esta escena aún no tiene mapa.')).toBeVisible()
+  await page.getByRole('button', { name: 'cripta.png' }).click()
   const tabs = page.getByRole('navigation', { name: 'Pestañas de la página' })
   await expect(tabs.getByRole('link', { name: 'Escena' })).toHaveAttribute('aria-current', 'page')
   const map = page.getByRole('application', { name: 'Escena Escena' })

@@ -6,6 +6,7 @@ const manifest = {
   id: 'fronteras',
   title: 'Fronteras',
   version: '2.1',
+  languages: [{ lang: 'en', name: 'English', path: 'lang/en.json' }, { name: 'sin idioma' }],
   packs: [
     { name: 'conjuros', label: 'Conjuros', type: 'Item', path: 'packs/conjuros' },
     { name: 'criaturas', label: 'Criaturas', type: 'Actor', path: './packs/criaturas' },
@@ -33,7 +34,8 @@ describe('el zip de Foundry, antes de subirlo', () => {
       id: 'fronteras',
       title: 'Fronteras',
       version: '2.1',
-      root: 'fronteras/'
+      root: 'fronteras/',
+      languages: ['en']
     })
     expect(read?.packs.map((p) => `${p.name}:${p.type}:${p.path}`)).toEqual([
       'conjuros:Item:packs/conjuros',

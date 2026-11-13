@@ -261,7 +261,7 @@ function NewTab({ page }: { page: Page }) {
             <KindChoices
               name={`${titleId}-kind`}
               legend={t('pageTabs.kind')}
-              kinds={TAB_KINDS}
+              kinds={TAB_KINDS.filter((each) => each.newTab)}
               value={kind}
               labelOf={(each) => t(`pageTabs.kinds.${each}`)}
               onChange={(each) => setKind(each as typeof kind)}

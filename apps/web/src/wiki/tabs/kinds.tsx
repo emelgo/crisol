@@ -18,13 +18,15 @@ import { useTranslation } from 'react-i18next'
 import styles from './page-tabs.module.css'
 
 export const TAB_KINDS = [
-  { kind: 'text', icon: FileText, ready: true, newPage: true },
-  { kind: 'map', icon: MapIcon, ready: true, newPage: true },
-  { kind: 'table', icon: Dices, ready: true, newPage: false },
-  { kind: 'scene', icon: Grid3x3, ready: true, newPage: false },
-  { kind: 'board', icon: PenTool, ready: true, newPage: true },
-  { kind: 'timeline', icon: Clock, ready: false, newPage: true },
-  { kind: 'tree', icon: Network, ready: false, newPage: true }
+  { kind: 'text', icon: FileText, ready: true, newPage: true, newTab: true },
+  { kind: 'map', icon: MapIcon, ready: true, newPage: true, newTab: true },
+  // Tabla y Escena ya no se ofrecen (las tablas son del compendio y las escenas, sueltas: Enrique, 2026-11-13); las
+  // que hay se siguen viendo
+  { kind: 'table', icon: Dices, ready: true, newPage: false, newTab: false },
+  { kind: 'scene', icon: Grid3x3, ready: true, newPage: false, newTab: false },
+  { kind: 'board', icon: PenTool, ready: true, newPage: true, newTab: true },
+  { kind: 'timeline', icon: Clock, ready: false, newPage: true, newTab: true },
+  { kind: 'tree', icon: Network, ready: false, newPage: true, newTab: true }
 ] as const
 
 export type TabKind = (typeof TAB_KINDS)[number]['kind']

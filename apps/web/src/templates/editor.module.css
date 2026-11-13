@@ -137,12 +137,6 @@
   transform: rotate(90deg);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .chevron {
-    transition: none;
-  }
-}
-
 /* «Nueva carpeta» y «Plantilla nueva», juntos a la derecha del rótulo */
 .headTools {
   display: flex;
@@ -455,10 +449,4 @@
 
 .field[data-over] {
   box-shadow: inset 0 2px 0 var(--color-accent);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .grip {
-    transition: none;
-  }
 }

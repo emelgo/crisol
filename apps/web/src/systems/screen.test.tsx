@@ -159,6 +159,10 @@ describe('«Sistemas», en Mis mundos', () => {
       id: 'mundo',
       title: 'Mundo Oscuro',
       version: '3.0',
+      languages: [
+        { lang: 'en', path: 'lang/en.json' },
+        { lang: 'es', path: 'lang/es.json' }
+      ],
       packs: [
         { name: 'conjuros', label: 'Conjuros', type: 'Item', path: 'packs/conjuros' },
         { name: 'bestias', label: 'Bestias', type: 'Actor', path: 'packs/bestias' }
@@ -169,7 +173,9 @@ describe('«Sistemas», en Mis mundos', () => {
     expect(dialog.getByText('Sistema', { exact: true })).toBeDefined()
     const packs = within(dialog.getByRole('group', { name: 'Compendios que se traen' }))
     await userEvent.click(packs.getByRole('checkbox', { name: /Bestias/ }))
-    await userEvent.selectOptions(dialog.getByRole('combobox', { name: 'Idioma de sus textos' }), 'es')
+    // Trae los dos idiomas: se elige, y va el español
+    expect(dialog.getByRole('combobox', { name: 'Idioma de sus textos' })).toHaveProperty('value', 'es')
+    await userEvent.selectOptions(dialog.getByRole('combobox', { name: 'Idioma de sus textos' }), 'en')
     await userEvent.click(dialog.getByRole('button', { name: 'Traer el sistema' }))
     await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Sistema nuevo' })).toBeNull())
     expect(

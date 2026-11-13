@@ -147,21 +147,24 @@ function tap(target: HTMLElement, x: number, y: number) {
 const stored = async (api: ReturnType<typeof fakeApi>, tabId: string) => api.client.call('getScene', { tabId })
 
 describe('la pestaña «Escena»', () => {
-  it('nace desde «Pestaña nueva» con una imagen del mundo: se trocea, se le pone y se ve', async () => {
+  it('ya no se ofrece en «Pestaña nueva»', async () => {
     const user = userEvent.setup()
-    const { api, prepared } = await renderPage()
+    await renderPage()
     await user.click(await screen.findByRole('button', { name: 'Pestaña nueva' }))
     const dialog = within(await screen.findByRole('dialog', { name: 'Pestaña nueva' }))
-    await user.click(dialog.getByRole('radio', { name: 'Escena' }))
-    // Del mundo, solo sus imágenes
-    expect(dialog.getByRole('radio', { name: /Del mundo/ })).toHaveProperty('checked', true)
-    expect(dialog.queryByRole('button', { name: 'notas.pdf' })).toBeNull()
-    await user.click(dialog.getByRole('button', { name: 'cripta.png' }))
-    await user.click(dialog.getByRole('button', { name: 'Crear' }))
+    expect(dialog.queryByRole('radio', { name: 'Escena' })).toBeNull()
+    expect(dialog.queryByRole('radio', { name: 'Tabla' })).toBeNull()
+  })
+
+  it('una que ya hay, sin mapa, lo pide con las imágenes del mundo: se trocea, se le pone y se ve', async () => {
+    const user = userEvent.setup()
+    const { api, prepared, tab } = await renderPage({ tab: 'scene' })
+    expect(await screen.findByText('Esta escena aún no tiene mapa.')).toBeDefined()
+    expect(screen.queryByRole('button', { name: 'notas.pdf' })).toBeNull()
+    await user.click(await screen.findByRole('button', { name: 'cripta.png' }))
     expect(await screen.findByRole('application', { name: 'Escena Escena' })).toBeDefined()
     expect(prepared.sources[0]?.kind).toBe('image')
-    const tabs = await api.client.call('listPageTabs', { pageId: CRYPT })
-    const scene = await stored(api, tabs.tabs[0]?.id ?? '')
+    const scene = await stored(api, tab?.id ?? '')
     expect(scene.image).toMatchObject({ width: 1200, height: 800, tiles: { size: 512, levels: 2 } })
     expect(scene.image?.fileId).toBe(api.files.find((file) => file.name === 'cripta.png')?.id)
     expect(api.calls).toContain('setSceneImage')
