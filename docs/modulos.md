@@ -34,11 +34,14 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   transiciones, mapa y pizarra con todo el sitio, carpeta de cada mundo en Archivos… Pruebas en `tasks/probar.md` §
   «Mejoras del 2026-11-13». Respuestas de Enrique (commit `77aa6634`): sin «Tabla» ni «Escena» en «Pestaña nueva»,
   «Archivos» a secas, el idioma de un zip de Foundry solo si trae dos, animaciones siempre completas.
-- **En marcha: el mundo a pantalla completa** (propuesta `docs/propuestas/wiki-pantalla-completa.md`, aprobada con
-  sus seis respuestas: barra a la izquierda, panel plegable, pestañas abiertas arriba, archivos en el centro, «Ver
-  todos» se queda, plantillas fuera). Lo construye un subagente (ADR-0027, `tasks/pantalla-completa.md`). **Rollback**:
-  etiqueta `antes-pantalla-completa`. **Después**: crítica y audit de impeccable (pizarra y armazón nuevo, la
-  «Biblioteca» de Excalidraw cortada), página de revisión, batería entera, una CI y a `main` y staging.
+- **El mundo a pantalla completa, hecho** (ADR-0027, `tasks/pantalla-completa.md`; rollback en la etiqueta
+  `antes-pantalla-completa`), con **el mismo esqueleto en Texto, Mapa y Pizarra** (la tira de la página arriba; Enrique:
+  «deben mantener el esqueleto»). **Crítica 24/40 y audit 12/20** de la pizarra y el armazón, con sus arreglos (lo de la
+  IA visible, Excalidraw aislado de los estilos de la app, barra sin saltos, tarjetas que se abren, la jugadora en el
+  móvil con la pizarra en palabras, foco, cristal). Licencias: Zlib permitida (pako, de Excalidraw; Enrique) y khroma
+  mirada a mano. **Página de revisión**: https://claude.ai/artifact/JWu8kUbqtWbmGJpu1u8t8q
+- **Siguiente**: la batería entera en verde y, con el visto bueno de Enrique, una sola CI y a `main` y staging.
+  Pendientes anotados: zoom al 200 % del máster, dados 3D a demanda, panel vacío junto a mapa/pizarra (pregunta).
 
 ### Para retomar (2026-11-13, madrugada: módulo 9 empezado; PR #119 en la CI)
 
