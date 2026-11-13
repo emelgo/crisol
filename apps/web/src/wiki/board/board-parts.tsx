@@ -15,7 +15,7 @@ import { useTranslation } from 'react-i18next'
 import { useApi } from '../../api/context.tsx'
 import { Icon } from '../../components/icon.tsx'
 import { PageLink, readAsInput, readAsKey, useReadAs } from '../read-as.tsx'
-import { BoardHeadContext } from '../shell/context.ts'
+import { TabToolsSlot } from '../shell/context.ts'
 import { tabRegionLabel } from '../tabs/kinds.tsx'
 import styles from './board.module.css'
 import { PAGE_DRAG } from './drag.ts'
@@ -300,8 +300,9 @@ export function BoardFrame({
     setWide(next)
   }
   const wrapper = useRef<HTMLDivElement>(null)
-  // En el mundo a pantalla completa, el título y las pestañas de la página van en esta barra (ADR-0027)
-  const head = useContext(BoardHeadContext)
+  // En el mundo a pantalla completa, sus herramientas van en la tira de la página (a la derecha de sus pestañas, como
+  // las de cualquier pestaña); ampliada, en su propia barra
+  const slot = useContext(TabToolsSlot)
   // Si el lienzo cambia de tamaño o baja (la barra crece), Excalidraw recalcula dónde está: si no, sus tarjetas, que
   // solo pinta a la vista, no salían hasta mover algo
   const canvas = useRef<HTMLDivElement>(null)
@@ -361,6 +362,44 @@ export function BoardFrame({
     }
   }, [wide])
 
+  const tools = (
+    <>
+      {onAddPage && <AddPage worldId={page.worldId} onAdd={onAddPage} />}
+      {/* Siempre en su sitio (sin nada elegido, apagado): si apareciera al elegir, la barra saltaría */}
+      {onHidden && (
+        <button
+          type="button"
+          className={`${styles.barButton} ${styles.hiddenToggle}`}
+          aria-pressed={hidden === true}
+          disabled={hidden === null}
+          aria-label={t('board.hidden')}
+          title={t('board.hidden')}
+          onClick={() => hidden !== null && onHidden(!hidden)}
+        >
+          <EyeOff aria-hidden="true" size={16} />
+        </button>
+      )}
+      <span className={styles.status} role="status" data-alert={notice ? '' : undefined}>
+        {loading
+          ? t('board.loading')
+          : offline
+            ? t('board.offline')
+            : (notice ?? (saved && onAddPage ? t('board.saved') : ''))}
+      </span>
+      <button
+        ref={wideButton}
+        type="button"
+        className={styles.barButton}
+        aria-pressed={wide}
+        aria-label={t(wide ? 'board.shrink' : 'board.expand')}
+        title={t(wide ? 'board.shrink' : 'board.expand')}
+        onClick={() => toggleWide(!wide)}
+      >
+        {wide ? <Shrink aria-hidden="true" size={16} /> : <Expand aria-hidden="true" size={16} />}
+      </button>
+    </>
+  )
+  const inSlot = Boolean(slot) && !wide
   const content = (
     <section
       ref={wrapper}
@@ -368,42 +407,11 @@ export function BoardFrame({
       data-wide={wide || undefined}
       aria-label={tabRegionLabel(t, 'board', tab.name)}
     >
-      <div className={styles.bar}>
-        {head}
-        {onAddPage && <AddPage worldId={page.worldId} onAdd={onAddPage} />}
-        {/* Siempre en su sitio (sin nada elegido, apagado): si apareciera al elegir, la barra saltaría */}
-        {onHidden && (
-          <button
-            type="button"
-            className={`${styles.barButton} ${styles.hiddenToggle}`}
-            aria-pressed={hidden === true}
-            disabled={hidden === null}
-            aria-label={t('board.hidden')}
-            title={t('board.hidden')}
-            onClick={() => hidden !== null && onHidden(!hidden)}
-          >
-            <EyeOff aria-hidden="true" size={16} />
-          </button>
-        )}
-        <span className={styles.status} role="status" data-alert={notice ? '' : undefined}>
-          {loading
-            ? t('board.loading')
-            : offline
-              ? t('board.offline')
-              : (notice ?? (saved && onAddPage ? t('board.saved') : ''))}
-        </span>
-        <button
-          ref={wideButton}
-          type="button"
-          className={styles.barButton}
-          aria-pressed={wide}
-          aria-label={t(wide ? 'board.shrink' : 'board.expand')}
-          title={t(wide ? 'board.shrink' : 'board.expand')}
-          onClick={() => toggleWide(!wide)}
-        >
-          {wide ? <Shrink aria-hidden="true" size={16} /> : <Expand aria-hidden="true" size={16} />}
-        </button>
-      </div>
+      {inSlot && slot ? (
+        createPortal(<div className={styles.slotTools}>{tools}</div>, slot)
+      ) : (
+        <div className={styles.bar}>{tools}</div>
+      )}
       {summary && !wide && <div className={styles.summary}>{summary}</div>}
       <div
         ref={canvas}

@@ -40,7 +40,7 @@ import { PageProperties, type PropertyAdder } from './properties.tsx'
 import { PageRevealButton } from './reveal.tsx'
 import { SceneMain, SceneSide, SceneTabProvider } from './scene/scene-tab.tsx'
 import { PrintDialog, SheetPaper } from './sheet/controls.tsx'
-import { BoardHeadContext, pageKey, useWorldShell } from './shell/context.ts'
+import { pageKey, TabToolsSlot, useWorldShell } from './shell/context.ts'
 import shellStyles from './shell/world-shell.module.css'
 import { TableTab } from './table/table-tab.tsx'
 import { PageTabs, usePageTabs, useTabTarget } from './tabs/page-tabs.tsx'
@@ -638,23 +638,8 @@ export function EntryView({
     />
   )
   const pageTabs = <PageTabs page={page} tabs={tabs} active={active?.id ?? null} />
-  // Lo que ocupa el título que flota sobre un mapa: sus herramientas empiezan debajo (--fill-head)
-  const floating = useRef<HTMLDivElement>(null)
-  const floats = Boolean(shell) && active?.kind === 'map'
-  useLayoutEffect(() => {
-    const box = floating.current
-    const sheet = main.current
-    if (!floats || !box || !sheet || typeof ResizeObserver === 'undefined') return
-    const measure = () =>
-      sheet.style.setProperty(
-        '--fill-head',
-        `${Math.ceil(box.getBoundingClientRect().bottom - sheet.getBoundingClientRect().top)}px`
-      )
-    measure()
-    const observer = new ResizeObserver(measure)
-    observer.observe(box)
-    return () => observer.disconnect()
-  }, [floats])
+  // En el mundo a pantalla completa, donde pone la pestaña abierta sus herramientas (a la derecha de las pestañas)
+  const [tabTools, setTabTools] = useState<HTMLElement | null>(null)
   // Lo de la pestaña elegida: el texto (o otra página de texto, con su propio documento), una tabla, una pizarra o un mapa
   const content =
     active?.kind === 'scene' ? (
@@ -710,44 +695,36 @@ export function EntryView({
   )
 
   if (shell) {
+    // El mismo esqueleto en todas las pestañas: arriba, la tira de la página (título y botones; pestañas y, a su
+    // derecha, las herramientas de la abierta); debajo, la portada y la hoja del texto, o el mapa o la pizarra hasta
+    // abajo (Enrique, 2026-11-13)
     return (
       <SceneTabProvider page={page} tab={active?.kind === 'scene' ? active : null}>
         <div className={shellStyles.entry} data-entry="" data-entry-panel="">
-          <div className={shellStyles.scroll} data-fill={fill || undefined}>
-            {fill ? (
-              <article ref={main} className={`${styles.entryMain} ${shellStyles.fillMain}`} data-fill="">
-                {active?.kind === 'map' && (
-                  <div ref={floating} className={shellStyles.floatingHead}>
-                    {head}
-                    {pageTabs}
-                  </div>
-                )}
-                {/* En una pizarra, el título y sus pestañas van en su barra (Excalidraw tiene lo suyo arriba) */}
-                <BoardHeadContext
-                  value={
-                    active?.kind === 'board' ? (
-                      <div className={shellStyles.boardHead}>
-                        {head}
-                        {pageTabs}
-                      </div>
-                    ) : null
-                  }
-                >
-                  {content}
-                </BoardHeadContext>
-              </article>
-            ) : (
-              <div className={styles.content}>
-                {cover}
-                <div className={styles.entry}>
-                  <article ref={main} className={styles.entryMain}>
-                    {head}
-                    {pageTabs}
-                    {content}
-                  </article>
-                </div>
+          <div className={shellStyles.page}>
+            <div className={shellStyles.pageHead}>
+              {head}
+              <div className={shellStyles.tabsRow}>
+                {pageTabs}
+                <div ref={setTabTools} className={shellStyles.tabTools} />
               </div>
-            )}
+            </div>
+            <div className={shellStyles.scroll} data-fill={fill || undefined}>
+              {fill ? (
+                <article ref={main} className={`${styles.entryMain} ${shellStyles.fillMain}`} data-fill="">
+                  <TabToolsSlot value={tabTools}>{content}</TabToolsSlot>
+                </article>
+              ) : (
+                <div className={styles.content}>
+                  {cover}
+                  <div className={styles.entry}>
+                    <article ref={main} className={styles.entryMain}>
+                      {content}
+                    </article>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
           <ShellPanel>{side}</ShellPanel>
         </div>

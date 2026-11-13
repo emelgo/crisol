@@ -423,7 +423,7 @@
   scrollbar-width: thin;
 }
 
-/* Un mapa o una pizarra: de borde a borde y de arriba abajo, sin desplazamiento (el título flota encima) */
+/* Un mapa o una pizarra: de borde a borde y hasta abajo, sin desplazamiento (bajo la tira de la página) */
 .scroll[data-fill] {
   position: relative;
   padding: 0;
@@ -473,45 +473,50 @@
   margin: 0;
 }
 
-/* El título y las pestañas de un mapa, flotando en cristal arriba a la izquierda (como la barra de la escena) */
-.floatingHead {
-  position: absolute;
-  inset-block-start: var(--space-3);
-  inset-inline-start: var(--space-3);
-  z-index: 7;
+/* La página: arriba su tira (la misma en el texto, el mapa y la pizarra) y debajo lo de la pestaña abierta */
+.page {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
-  max-inline-size: min(36rem, calc(100% - 22rem));
-  padding: var(--space-2) var(--space-3) 0;
-  border: 1px solid var(--glass-edge);
-  border-radius: 10px;
+  min-inline-size: 0;
+  min-block-size: 0;
+  block-size: 100%;
+}
+
+.page > .scroll {
+  flex: 1;
+}
+
+/* La tira de la página: el título y sus botones; debajo, las pestañas y, a su derecha, las herramientas de la abierta.
+   De cristal, quieta (lo de debajo se desplaza o es un lienzo) */
+.pageHead {
+  position: relative;
+  z-index: 6;
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-6) 0;
+  border-block-end: 1px solid var(--glass-edge);
   background: var(--glass-sheen), var(--glass-tint);
-  box-shadow:
-    inset 0 1px 0 var(--glass-hi),
-    0 0 0 1px var(--glass-line),
-    var(--glass-shadow);
+}
+
+.pageHead::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
   -webkit-backdrop-filter: var(--glass-blur);
   backdrop-filter: var(--glass-blur);
+  pointer-events: none;
 }
 
 @supports not (backdrop-filter: blur(1px)) {
-  .floatingHead {
+  .pageHead {
     background: var(--glass-sheen), var(--glass-solid);
   }
 }
 
-/* En la barra de una pizarra, el título y sus pestañas van en la misma tira, a la izquierda */
-.boardHead {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0 var(--space-4);
-  min-inline-size: 0;
-  margin-inline-end: auto;
-}
-
-:is(.floatingHead, .boardHead) header {
+.pageHead header {
   position: static;
   margin: 0;
   padding: 0;
@@ -519,8 +524,32 @@
   box-shadow: none;
 }
 
-:is(.floatingHead, .boardHead) h1 {
-  font-size: 1.375rem;
+.pageHead h1 {
+  font-size: 1.75rem;
+}
+
+.tabsRow {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-3);
+  min-inline-size: 0;
+}
+
+.tabsRow > :first-child {
+  flex: 1;
+  min-inline-size: 0;
+}
+
+/* Las herramientas de la pestaña abierta (las de la pizarra; el mapa lleva las suyas sobre el lienzo) */
+.tabTools {
+  display: flex;
+  flex: none;
+  align-items: center;
+  padding-block-end: var(--space-1);
+}
+
+.tabTools:empty {
+  display: none;
 }
 
 /* El móvil del máster no se cuida (docs/diseno.md); en lo estrecho, al menos, nada se sale */
@@ -563,8 +592,7 @@
   }
 }
 
-/* La hoja de un mapa o una pizarra: sin márgenes ni esquinas, a todo el hueco (--fill-head: lo que ocupa el título que
-   flota encima, para que las herramientas del mapa empiecen debajo; lo mide EntryView) */
+/* La hoja de un mapa o una pizarra: sin márgenes ni esquinas, a todo el hueco bajo la tira de la página */
 .scroll .fillMain {
   --sheet-pad: 0px;
 

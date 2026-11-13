@@ -64,8 +64,11 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   navegador** (ya no encima de la página ni en la ficha del árbol), «Buscar» (Ctrl+K) y la cuenta (su inicial). **A la
   izquierda, una barra de pestañas como la de la Mesa**: Páginas (el buscador, el árbol y los marcadores debajo) y
   Archivos; se pliega a una columna de iconos y se estira arrastrando su borde, y se recuerda. En el centro, la página
-  ocupa todo el hueco: el texto con su hoja; **el mapa y la pizarra, de borde a borde y hasta abajo**, con el título y
-  las pestañas en cristal encima (en el mapa, flotando arriba a la izquierda; en la pizarra, en su barra). A la derecha,
+  ocupa todo el hueco con **el mismo esqueleto en todas sus pestañas** (Enrique, 2026-11-13: «cada vista, texto,
+  pizarra o mapa son diferentes, deben mantener el esqueleto»): arriba, una tira de cristal quieta con el título y sus
+  botones y, debajo, las pestañas y a su derecha las herramientas de la abierta («Guardado» del texto; «Página…», el
+  ojo y «Ampliar» de la pizarra); debajo de la tira, en Texto la portada y la hoja, y **el mapa y la pizarra de borde a
+  borde y hasta abajo** (las herramientas del mapa, su columna sobre el lienzo). A la derecha,
   el panel de la página, **que se pliega** (sustituye a «no se esconde»). **Archivos abre los archivos en el centro**,
   como una pestaña abierta más (imagen, PDF, audio, vídeo, texto), con sus datos y su engranaje en el panel; la pantalla
   grande queda como «Ver todos», en el centro. Las plantillas, de momento, fuera. Lo de abajo sobre la barra de dentro

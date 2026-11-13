@@ -57,15 +57,16 @@ test('la pizarra: el máster pone tarjetas, una flecha y dibuja a mano; otra pes
   await dialog.getByRole('button', { name: 'Crear' }).click()
   const board = page.getByRole('region', { name: 'Pizarra', exact: true })
   await expect(board.locator('.excalidraw')).toBeVisible()
-  await expect(board.getByRole('status')).toHaveText('')
+  // Sus herramientas, en la tira de la página (la misma en todas las pestañas)
+  await expect(page.getByRole('button', { name: 'Página…' })).toBeVisible()
   expect(downloaded.length).toBeGreaterThan(0)
   // Sus fuentes, de Crisol (no de su CDN)
   expect(downloaded.filter((url) => !url.startsWith(new URL(page.url()).origin))).toEqual([])
 
   // Dos tarjetas con «Página…»
   for (const title of ['Doran el Cojo', 'La Madre Ceniza']) {
-    await board.getByRole('button', { name: 'Página…' }).click()
-    const form = board.getByRole('form', { name: 'Poner una página' })
+    await page.getByRole('button', { name: 'Página…' }).click()
+    const form = page.getByRole('form', { name: 'Poner una página' })
     await form.getByLabel('Página', { exact: true }).fill(title)
     await form.getByRole('button', { name: 'Poner' }).click()
     await expect(board.getByRole('link', { name: title, exact: true })).toBeVisible()
@@ -77,8 +78,8 @@ test('la pizarra: el máster pone tarjetas, una flecha y dibuja a mano; otra pes
     }
   }
   // La Madre Ceniza, oculta para los jugadores (va elegida al ponerla)
-  await board.getByRole('button', { name: 'Oculto para los jugadores' }).click()
-  await expect(board.getByRole('button', { name: 'Oculto para los jugadores' })).toHaveAttribute('aria-pressed', 'true')
+  await page.getByRole('button', { name: 'Oculto para los jugadores' }).click()
+  await expect(page.getByRole('button', { name: 'Oculto para los jugadores' })).toHaveAttribute('aria-pressed', 'true')
 
   // Una flecha de Doran a la Madre y un trazo a mano
   const doran = await board.getByRole('link', { name: 'Doran el Cojo', exact: true }).boundingBox()
@@ -164,7 +165,7 @@ test('la pizarra: el máster pone tarjetas, una flecha y dibuja a mano; otra pes
   const hers = ana.getByRole('region', { name: 'Pizarra', exact: true })
   await expect(hers.getByRole('link', { name: 'Doran el Cojo', exact: true })).toBeVisible()
   await expect(hers.getByText('La Madre Ceniza')).toHaveCount(0)
-  await expect(hers.getByRole('button', { name: 'Página…' })).toHaveCount(0)
+  await expect(ana.getByRole('button', { name: 'Página…' })).toHaveCount(0)
   const { elements } = await (
     await ana.request.post('/api/actions/getBoard', { data: { tabId: tab.id, campaignId } })
   ).json()

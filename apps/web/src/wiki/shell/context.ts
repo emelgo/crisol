@@ -18,5 +18,9 @@ export const useWorldShell = () => useContext(WorldShellContext)
 /** La clave de una página en la caché (la misma en todo el mundo) */
 export const pageKey = (worldId: string, pageId: string) => ['pages', worldId, 'page', pageId]
 
-/** En el mundo a pantalla completa, el título y las pestañas de la página que van en la barra de una pizarra */
-export const BoardHeadContext = createContext<ReactNode>(null)
+/**
+ * En el mundo a pantalla completa, el hueco de la tira de la página (a la derecha de sus pestañas) donde la pestaña
+ * abierta pone sus herramientas: la misma tira en el texto, el mapa y la pizarra (Enrique, 2026-11-13: «deben mantener
+ * el esqueleto»)
+ */
+export const TabToolsSlot = createContext<HTMLElement | null>(null)

@@ -54,6 +54,13 @@
   backdrop-filter: var(--popup-blur);
 }
 
+/* En la tira de la página (el mundo a pantalla completa): las mismas, sin barra propia */
+.slotTools {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
 .barButton {
   display: inline-flex;
   align-items: center;
