@@ -6,7 +6,7 @@
 import type { MapElementView, MapGeometry, MapPinView, MapView, Page, PageTabView } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
-import { ImageIcon, Layers, MapPin, Maximize, Minus, Pentagon, Plus, Spline, Type } from 'lucide-react'
+import { Expand, ImageIcon, Layers, MapPin, Maximize, Minus, Pentagon, Plus, Shrink, Spline, Type } from 'lucide-react'
 import {
   type KeyboardEvent,
   type PointerEvent,
@@ -17,6 +17,7 @@ import {
   useRef,
   useState
 } from 'react'
+import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { ApiError } from '../../api/client.ts'
 import { useApi } from '../../api/context.tsx'
@@ -252,11 +253,15 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
   const liveRef = useRef(live)
   liveRef.current = live
   const lastTravel = useRef(0)
+  // Lo dibujado bajo el puntero al pulsar: el visor captura el puntero (para arrastrar el mapa) y el clic le llega a él
+  const pressedOn = useRef<string | null>(null)
   const [menu, setMenu] = useState<{ sx: number; sy: number; x: number; y: number } | null>(null)
   const [moving, setMoving] = useState<{ id: string; x: number; y: number } | null>(null)
   const [newPage, setNewPage] = useState<string | null>(null)
   const [changingImage, setChangingImage] = useState(false)
   const [layersOpen, setLayersOpen] = useState(false)
+  // Ampliado: el mapa ocupa todo lo de al lado de la barra (para dibujar con sitio)
+  const [wide, setWide] = useState(false)
   const hiddenHere = useHiddenHere(map.id)
   const drawingId = useId()
   const pins = usePins(page, map)
@@ -304,7 +309,14 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
     apply()
   }, [apply, image.width, image.height])
 
-  useLayoutEffect(() => fit(), [fit])
+  // Al encuadrar y al ampliarlo o reducirlo (cambia su tamaño)
+  useLayoutEffect(() => fit(), [fit, wide])
+  // Al ampliarlo o reducirlo, el visor es otro elemento (va o vuelve del cuerpo de la página): el foco, a él
+  const wideBefore = useRef(wide)
+  useEffect(() => {
+    if (wideBefore.current !== wide) container.current?.focus()
+    wideBefore.current = wide
+  }, [wide])
 
   const zoomCenter = (factor: number) => {
     const element = container.current
@@ -338,7 +350,7 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
       element.removeEventListener('wheel', onWheel)
       cancelAnimationFrame(frame)
     }
-  }, [apply])
+  }, [apply, wide])
 
   /** De un punto de la pantalla a coordenadas del mapa (de 0 a 1) */
   const toMap = (clientX: number, clientY: number) => {
@@ -367,6 +379,8 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
     if (next !== 'select') {
       setSelected(null)
       setSelectedElement(null)
+      // Para dibujar, todo el mapa a la vista
+      if (next !== 'pin') setLayersOpen(false)
     }
   }
 
@@ -503,6 +517,7 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
   const onPointerDown = (event: PointerEvent<HTMLDivElement>) => {
     if (event.pointerType === 'mouse' && event.button !== 0) return
     setMenu(null)
+    pressedOn.current = (event.target as Element).closest?.('[data-id]')?.getAttribute('data-id') ?? null
     event.currentTarget.setPointerCapture(event.pointerId)
     pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY })
     if (pointers.current.size === 1) {
@@ -554,6 +569,11 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
     else if (tool === 'text' && editable) {
       const { x, y } = toMap(event.clientX, event.clientY)
       placeText([x, y])
+    } else if (tool === 'select' && pressedOn.current) {
+      // Pulsar lo dibujado lo elige
+      setSelectedElement(pressedOn.current)
+      setSelected(null)
+      setLayersOpen(false)
     } else {
       setSelected(null)
       setSelectedElement(null)
@@ -625,6 +645,8 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
     else if (event.key === '-') zoomCenter(0.8)
     else if (event.key === '0') fit()
     else if (event.key === 'Escape') {
+      // Escape, de dentro afuera: lo que se dibuja, lo elegido y, sin nada más, el mapa ampliado
+      if (!draft && tool === 'select' && !selectedElement && !selected && wide) setWide(false)
       if (!draft && tool === 'select') setSelectedElement(null)
       chooseTool('select')
       setMenu(null)
@@ -679,8 +701,9 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
     elements.update.error ??
     elements.remove.error
 
-  return (
-    <div className={styles.wrapper}>
+  // Ampliado, en el cuerpo de la página: por encima de todo lo demás (sus columnas tienen su propio apilamiento)
+  const content = (
+    <div className={styles.wrapper} data-wide={wide || undefined}>
       {/* Un control propio: se mueve con las flechas y se acerca con + y - */}
       <div
         ref={container}
@@ -697,7 +720,10 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
         onPointerCancel={onPointerUp}
         onPointerLeave={() => setCursor(null)}
         onDoubleClick={() => {
-          if (draft) finishDraft()
+          if (draft) return finishDraft()
+          // Doble clic en lo dibujado que lleva a una página: la abre
+          const target = map.elements.find((element) => element.id === pressedOn.current)
+          if (tool === 'select' && target?.pageId && target.pageTitle) openPage(target.pageId)
         }}
         onKeyDown={onKeyDown}
         onContextMenu={(event) => {
@@ -888,6 +914,15 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
         <button type="button" aria-label={t('map.fit')} title={t('map.fit')} onClick={fit}>
           <Maximize aria-hidden="true" size={18} />
         </button>
+        <button
+          type="button"
+          aria-pressed={wide}
+          aria-label={t(wide ? 'map.shrink' : 'map.expand')}
+          title={t(wide ? 'map.shrink' : 'map.expand')}
+          onClick={() => setWide(!wide)}
+        >
+          {wide ? <Shrink aria-hidden="true" size={18} /> : <Expand aria-hidden="true" size={18} />}
+        </button>
         {editable && (
           <button
             type="button"
@@ -996,4 +1031,5 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
       <FormError message={error ? errorText(error) : null} />
     </div>
   )
+  return wide ? createPortal(content, document.body) : content
 }

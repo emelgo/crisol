@@ -15,7 +15,7 @@ const DASHES = { solid: undefined, dashed: '10 6', dotted: '2 5' } as const
 
 /** Lo de serie de cada clase: el nombre de una región y el de una ruta, siempre; el texto es su propio nombre */
 const DEFAULTS: Record<MapElementView['kind'], Required<Pick<MapStyle, 'width' | 'size' | 'display'>>> = {
-  region: { width: 2, size: 22, display: 1 },
+  region: { width: 2, size: 26, display: 1 },
   path: { width: 3, size: 14, display: 1 },
   label: { width: 1, size: 20, display: 1 }
 }

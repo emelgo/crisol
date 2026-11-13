@@ -275,7 +275,7 @@ export function ElementPanel({
             ))}
           </fieldset>
         )}
-        {range('size', element.style.size ?? (kind === 'path' ? 14 : kind === 'label' ? 20 : 22), {
+        {range('size', element.style.size ?? (kind === 'path' ? 14 : kind === 'label' ? 20 : 26), {
           min: 10,
           max: 96,
           step: 1,

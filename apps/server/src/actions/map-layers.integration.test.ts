@@ -139,8 +139,9 @@ describe('las capas de los mapas y lo dibujado (módulo 9)', () => {
     const { layers } = await map()
     expect(names(layers)).toEqual(['General'])
     expect(region).toMatchObject({ layerId: layers[0].id, label: 'Reino de Varn', style: { fill: 'hatch' } })
-    // Lo siguiente, en la de más arriba
+    // Lo siguiente, en la de más arriba que ven las campañas (no en una solo del máster)
     const top = await ok200('createMapLayer', { mapId, name: 'Rutas' })
+    await ok200('createMapLayer', { mapId, name: 'Secretos', hidden: true })
     const text = await ok200('createMapElement', { mapId, kind: 'label', geometry: { at: [0.5, 0.9], rotate: 12 } })
     expect(text.layerId).toBe(top.id)
     // Una región con la forma de una ruta, no

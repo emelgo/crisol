@@ -313,7 +313,7 @@ export const createMapElement = defineAction({
   name: 'createMapElement',
   kind: 'write',
   description:
-    'Dibuja en un mapa una región (pieces: una o varias piezas de vértices), una ruta (points; from y to, los pines donde empieza y acaba) o un texto (at, con su giro y su arco), con coordenadas de 0 a 1 sobre la imagen, en una capa (sin ella, la de más arriba; sin capas, una «General» nueva). Se deshace',
+    'Dibuja en un mapa una región (pieces: una o varias piezas de vértices), una ruta (points; from y to, los pines donde empieza y acaba) o un texto (at, con su giro y su arco), con coordenadas de 0 a 1 sobre la imagen, en una capa (sin ella, la de más arriba que no es solo del máster; sin capas, una «General» nueva). Se deshace',
   input: z
     .object(elementFields)
     .partial()

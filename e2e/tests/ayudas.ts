@@ -129,6 +129,8 @@ export async function skipTours(page: Page, email: string) {
       key,
       JSON.stringify({
         seen: [
+          'mapa',
+          'mapa-lectura',
           'mundos',
           'mundo',
           'campanas',

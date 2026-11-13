@@ -15,6 +15,24 @@
   user-select: none;
 }
 
+/* Ampliado: todo lo de al lado de la barra de la app, por encima de la página */
+.wrapper[data-wide] {
+  position: fixed;
+  inset: var(--space-3) var(--space-3) var(--space-3) calc(4rem + var(--space-3));
+  z-index: 40;
+  border: 1px solid var(--line-frame);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--color-bg);
+  box-shadow: var(--glass-shadow);
+}
+
+.wrapper[data-wide] .viewer {
+  block-size: 100%;
+  border: 0;
+  border-radius: 0;
+}
+
 .viewer:active {
   cursor: grabbing;
 }
@@ -124,10 +142,12 @@
   flex-direction: column;
   gap: 2px;
   padding: 2px;
-  border: 1px solid var(--color-frame);
-  border-radius: 6px;
-  background: var(--color-surface);
-  box-shadow: 0 0.25rem 0.75rem rgb(0 0 0 / 0.25);
+  border: 1px solid var(--line-frame);
+  border-radius: 8px;
+  background: var(--frame-sheen), var(--popup-glass);
+  -webkit-backdrop-filter: var(--popup-blur);
+  backdrop-filter: var(--popup-blur);
+  box-shadow: var(--glass-shadow);
 }
 
 .toolbar button {
@@ -159,10 +179,13 @@
   inset-inline-start: 50%;
   z-index: 2;
   margin: 0;
-  padding: 0.25rem 0.75rem;
+  padding: 0.3rem 0.85rem;
+  border: 1px solid var(--line-frame);
   border-radius: 999px;
-  background: rgb(20 20 24 / 0.82);
-  color: #ffffff;
+  background: var(--frame-sheen), var(--popup-glass);
+  -webkit-backdrop-filter: var(--popup-blur);
+  backdrop-filter: var(--popup-blur);
+  color: var(--color-text);
   font-size: 0.875rem;
   transform: translateX(-50%);
   pointer-events: none;
@@ -176,10 +199,12 @@
   flex-direction: column;
   min-inline-size: 12rem;
   padding: var(--space-1);
-  border: 1px solid var(--color-frame);
-  border-radius: 6px;
-  background: var(--color-surface);
-  box-shadow: 0 0.75rem 2rem rgb(0 0 0 / 0.35);
+  border: 1px solid var(--line-frame);
+  border-radius: 8px;
+  background: var(--frame-sheen), var(--popup-glass);
+  -webkit-backdrop-filter: var(--popup-blur);
+  backdrop-filter: var(--popup-blur);
+  box-shadow: var(--glass-shadow);
   cursor: auto;
 }
 
@@ -208,10 +233,12 @@
   z-index: 3;
   inline-size: 17rem;
   padding: var(--space-3);
-  border: 1px solid var(--color-frame);
-  border-radius: 6px;
-  background: var(--color-surface);
-  box-shadow: 0 0.75rem 2rem rgb(0 0 0 / 0.35);
+  border: 1px solid var(--line-frame);
+  border-radius: 8px;
+  background: var(--frame-sheen), var(--popup-glass);
+  -webkit-backdrop-filter: var(--popup-blur);
+  backdrop-filter: var(--popup-blur);
+  box-shadow: var(--glass-shadow);
 }
 
 /* Sin imagen: qué poner */
@@ -249,7 +276,7 @@
   padding: 0 var(--space-3);
   border: 1px solid var(--color-field-border);
   border-radius: var(--radius);
-  background: var(--color-surface);
+  background: var(--field-fill);
   color: var(--color-text);
   font: inherit;
 }
@@ -257,8 +284,9 @@
 /* El panel del pin: a la derecha del mapa; en el móvil, abajo */
 .panel {
   position: absolute;
-  inset-block: var(--space-2);
+  inset-block-start: var(--space-2);
   inset-inline-end: var(--space-2);
+  max-block-size: calc(100% - var(--space-4));
   z-index: 3;
   display: flex;
   flex-direction: column;
@@ -268,10 +296,12 @@
   overflow: hidden auto;
   padding: var(--space-3);
   scrollbar-width: thin;
-  border: 1px solid var(--color-frame);
-  border-radius: 6px;
-  background: var(--color-surface);
-  box-shadow: 0 0.75rem 2rem rgb(0 0 0 / 0.35);
+  border: 1px solid var(--line-frame);
+  border-radius: 8px;
+  background: var(--frame-sheen), var(--popup-glass);
+  -webkit-backdrop-filter: var(--popup-blur);
+  backdrop-filter: var(--popup-blur);
+  box-shadow: var(--glass-shadow);
 }
 
 @media (max-width: 48rem) {
@@ -576,6 +606,9 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  border: 0;
   color: var(--color-muted);
   font: 600 0.75rem var(--font-body);
   letter-spacing: 0.06em;
@@ -647,7 +680,7 @@
   padding: 2px 6px;
   border: 1px solid var(--color-field-border);
   border-radius: 4px;
-  background: var(--color-bg);
+  background: var(--field-fill);
   color: var(--color-text);
   font: inherit;
   font-weight: 600;
@@ -670,6 +703,7 @@
   color: var(--color-secret-text);
   font-size: 0.6875rem;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .layerTools {

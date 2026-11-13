@@ -254,6 +254,7 @@ export function LayersPanel({
                 )}
                 <button
                   type="button"
+                  className={styles.layerTool}
                   aria-pressed={!off}
                   aria-label={t('map.layers.here', { name: layer.name })}
                   title={t('map.layers.hereHint')}

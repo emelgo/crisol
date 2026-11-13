@@ -191,7 +191,10 @@ async function checkGeometry(ctx: ActionContext, mapId: string, kind: MapElement
   }
 }
 
-/** La capa de un elemento: la que se diga (de este mapa), la de más arriba o, sin ninguna, una «General» nueva */
+/**
+ * La capa de un elemento: la que se diga (de este mapa), la de más arriba que ven las campañas (lo dibujado sin
+ * pensarlo no se esconde a nadie), la de más arriba si todas son del máster o, sin ninguna, una «General» nueva
+ */
 async function layerFor(
   ctx: ActionContext,
   wiki: WikiTarget,
@@ -205,7 +208,7 @@ async function layerFor(
     return layer.id
   }
   const layers = await mapsRepo.listLayers(ctx.db, mapId)
-  const top = layers.at(-1)
+  const top = layers.findLast((layer) => !layer.hidden) ?? layers.at(-1)
   if (top) return top.id
   const created = await mapsRepo.createLayer(
     ctx.db,

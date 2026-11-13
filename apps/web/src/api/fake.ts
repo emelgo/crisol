@@ -4961,7 +4961,9 @@ export function fakeApi(
     },
     createMapElement: ({ mapId, layerId, kind, geometry, ...rest }) => {
       const map = mapById(mapId)
-      let layer = layerId ? map.layers.find((l) => l.id === layerId) : map.layers.at(-1)
+      let layer = layerId
+        ? map.layers.find((l) => l.id === layerId)
+        : (map.layers.findLast((l) => !l.hidden) ?? map.layers.at(-1))
       if (layerId && !layer) throw new ApiError('BAD_MAP_LAYER', 400)
       if (!layer) {
         layer = { id: crypto.randomUUID(), name: 'General', hidden: false }

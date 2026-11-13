@@ -1917,6 +1917,8 @@ export const es = {
     zoomIn: 'Acercar',
     zoomOut: 'Alejar',
     fit: 'Encuadrar',
+    expand: 'Ampliar el mapa',
+    shrink: 'Volver a la página',
     tools: 'Herramientas del mapa',
     addPin: 'Poner un pin',
     addPinHint: 'Pulsa donde quieras el pin. Escape para dejarlo.',
