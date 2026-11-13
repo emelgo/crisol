@@ -121,6 +121,8 @@ export async function openWorldFiles(page: Page) {
   await abrirArchivosDelMundo(page)
   await page.getByRole('complementary', { name: 'Barra del mundo' }).getByRole('link', { name: 'Ver todos' }).click()
   await expect(page).toHaveURL(/\/mundos\/[^/]+\/archivos$/)
+  // La barra, otra vez en Páginas: la lista grande es la del centro (la pequeña se llama casi igual)
+  await abrirArbol(page)
 }
 
 /** Abre los ajustes de un mundo o una campaña (su engranaje); devuelve su ventana */

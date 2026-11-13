@@ -227,6 +227,7 @@ export default function BoardEditor({ page, tab }: { page: Page; tab: PageTabVie
       onAddPage={addCard}
       hidden={selected.length > 0 ? selected.every((element) => element.customData?.hidden) : null}
       onHidden={setHidden}
+      onCanvasResize={() => excalidraw?.refresh()}
       onDropPage={(event) => {
         const pageId = event.dataTransfer.getData(PAGE_DRAG)
         if (!pageId || !excalidraw) return false

@@ -23,9 +23,9 @@ import styles from './world-shell.module.css'
 const route = getRouteApi('/mundos/$worldId/archivo/$fileId')
 
 /** Los archivos del mundo (con los comunes), de la misma caché que su lista */
-function useWorldFiles(worldId: string) {
+function useWorldFiles(worldId: string, enabled = true) {
   const api = useApi()
-  return useQuery({ queryKey: ['files', worldId], queryFn: () => api.call('listFiles', { worldId }) })
+  return useQuery({ queryKey: ['files', worldId], queryFn: () => api.call('listFiles', { worldId }), enabled })
 }
 
 export function WorldFileView() {
@@ -156,7 +156,8 @@ export function FileTabs({ worldId, currentFileId }: { worldId: string; currentF
   const { t } = useTranslation()
   const navigate = useNavigate()
   const ids = useFileTabs(worldId)
-  const files = useWorldFiles(worldId)
+  // Sin archivos abiertos, nada que pedir
+  const files = useWorldFiles(worldId, ids.length > 0)
   const byId = new Map((files.data?.files ?? []).map((file) => [file.id, file]))
   // Los que ya no están (borrados), fuera
   const shown = files.data ? ids.filter((id) => byId.has(id)) : []

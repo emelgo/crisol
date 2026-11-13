@@ -50,7 +50,7 @@ export default function BoardView({ page, tab }: { page: Page; tab: PageTabView 
   )
 
   return (
-    <BoardFrame page={page} tab={tab} loading={board.isPending}>
+    <BoardFrame page={page} tab={tab} loading={board.isPending} onCanvasResize={() => excalidraw?.refresh()}>
       <Excalidraw
         excalidrawAPI={setExcalidraw}
         langCode="es-ES"

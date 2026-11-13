@@ -193,6 +193,7 @@ export function BoardFrame({
   onHidden,
   onAddPage,
   onDropPage,
+  onCanvasResize,
   children
 }: {
   page: Page
@@ -205,6 +206,8 @@ export function BoardFrame({
   onAddPage?: (pageId: string, title: string) => void
   /** Una página soltada encima: true si la ha puesto */
   onDropPage?: (event: DragEvent<HTMLDivElement>) => boolean
+  /** El lienzo ha cambiado de tamaño o de sitio (la barra de encima crece al llegar el título): Excalidraw, al día */
+  onCanvasResize?: () => void
   children: ReactNode
 }) {
   const { t } = useTranslation()
@@ -213,6 +216,18 @@ export function BoardFrame({
   const hiddenId = useId()
   // En el mundo a pantalla completa, el título y las pestañas de la página van en esta barra (ADR-0027)
   const head = useContext(BoardHeadContext)
+  // Si el lienzo cambia de tamaño o baja (la barra crece), Excalidraw recalcula dónde está: si no, sus tarjetas, que
+  // solo pinta a la vista, no salían hasta mover algo
+  const canvas = useRef<HTMLDivElement>(null)
+  const resized = useRef(onCanvasResize)
+  resized.current = onCanvasResize
+  useEffect(() => {
+    const element = canvas.current
+    if (!element || typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(() => resized.current?.())
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [])
 
   // Hasta el final de la ventana desde donde empieza
   useEffect(() => {
@@ -281,6 +296,7 @@ export function BoardFrame({
       </div>
       {/* biome-ignore lint/a11y/noStaticElementInteractions: soltar una página del árbol (con el teclado, «Página…») */}
       <div
+        ref={canvas}
         className={styles.canvas}
         onDragOverCapture={(event) => {
           if (onDropPage && event.dataTransfer.types.includes(PAGE_DRAG)) {
