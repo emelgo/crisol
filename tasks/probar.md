@@ -679,3 +679,37 @@ Nada ahora mismo.
 ## Lo que dijo
 
 (Aquí, lo que diga al probar, con la fecha.)
+
+## Mejoras del 2026-11-13 (en local, rama `modulo-9/mapas`)
+
+- [ ] **Formas**: en toda la app (Mis mundos, campañas, plantillas, sistemas, libros, Ajustes, zona de peligro,
+  botones rojos) ya no hay esquinas cortadas: las redondeadas del cristal de la Mesa.
+- [ ] **Mis mundos**: «Ver» la portada de un mundo y cerrarla → la vista previa y el fondo se van hasta que el ratón
+  vuelve a la tarjeta (igual con los ajustes); al dejar la tarjeta, el fondo vuelve al de siempre con un fundido.
+- [ ] **Campañas en Mis mundos**: al pasar el ratón, su vista previa a la izquierda (sistema, jugadores, tu papel) y su
+  portada de fondo.
+- [ ] Un mundo o campaña **sin color**: al pasar el ratón, el nombre en blanco (no en rojo).
+- [ ] Una descripción larga: la tarjeta no crece (una línea con «…»); entera en la vista previa.
+- [ ] **Crear campaña**: el sistema sin «Tuyos» ni «De serie», sin «Al empezar, los jugadores conocen…» ni idioma del
+  contenido; la campaña nueva no conoce ninguna página. En sus ajustes ya no está «Parte de las páginas que conoce todo
+  el mundo».
+- [ ] **El menú de tu usuario** (la inicial, abajo en la barra) se ve entero.
+- [ ] **Ajustes**: «Jugabilidad» con el color de tus dados (se guarda al momento) y «Ver caer los dados de los demás»;
+  «Aspecto · Sin efecto cristal (más fluido en ordenadores lentos)». El Perfil ya no tiene los dados.
+- [ ] **Archivos** (fuera de los mundos): cada mundo es una carpeta con lo suyo, sin engranaje; subir a ella deja el
+  archivo en el mundo; al borrar un mundo, su carpeta se va.
+- [ ] **Fondos**: en Inicio y dentro de un mundo (ya sin su portada detrás) el fondo cambia cada 45 s con un fundido
+  lento; que no maree. ¿Te parece bien el ritmo?
+- [ ] **Sistemas**: Reglas con el título sobre la columna del centro y los pasos y la revisión a los lados, como el
+  compendio; «Avanzado»; «Sistema nuevo» y «Libro nuevo» sin camino de IA (solo una línea que lo menciona).
+- [ ] **Entrar y salir de un sistema**: chispas al entrar; al salir por la llama, el icono y el nombre vuelven a su
+  tarjeta, con humo.
+- [ ] **Salir de un mundo** por la llama: la página se aleja entera con lo demás.
+- [ ] **El tutorial de un libro** (Sistemas › un libro, la primera vez): el globo por encima de todo y sin tapar la
+  barra.
+- [ ] **Cambiar deprisa** entre Reglas, Compendio y el Inicio de un sistema (o entre secciones de un mundo): el
+  segundo clic, en plena transición, ya vale.
+- [ ] **Mapa**: tras pulsar una herramienta, Escape la deja; con un pin o un dibujo elegido, Supr lo borra (también con
+  el foco en el pin). El mapa y la pizarra llegan hasta abajo de la ventana y de lado a lado de la hoja.
+- [ ] **Pizarra**: lo nuevo, con trazo limpio y letra normal (también lo que dibuja la IA); dibujar, mover una
+  tarjeta, salir a otra página y volver: se ve igual, con el mismo encuadre.
