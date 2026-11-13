@@ -66,6 +66,13 @@ main[data-contenido] {
   animation: fondo-llega 700ms ease-in-out both;
 }
 
+/* Entre pestañas el fondo no cambia: sin fundido, que alargaba la transición a 700 ms (y mientras dura, lo que se
+   pulsa espera: components/transition-clicks.ts) */
+:root:root:active-view-transition-type(seccion)::view-transition-old(ambiente),
+:root:root:active-view-transition-type(seccion)::view-transition-new(ambiente) {
+  animation-duration: 0s;
+}
+
 @keyframes fondo-se-va {
   to {
     opacity: 0;
