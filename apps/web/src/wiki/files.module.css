@@ -889,3 +889,8 @@
   margin-block-start: var(--space-2);
   font-size: 0.875rem;
 }
+
+/* Su barra de herramientas, del ancho de la barra del mundo (sin esto, la celda crece con lo de dentro) */
+.zone[data-variant="side"] .toolbar {
+  grid-template-columns: minmax(0, 1fr);
+}

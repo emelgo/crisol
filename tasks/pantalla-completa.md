@@ -28,6 +28,6 @@ al final.
 - [x] 5. **El panel plegable y el título flotante**: plegar el panel de la página (recordado); en mapas y pizarras, el
   título y las pestañas en cristal sobre el lienzo.
   - Verifica: capturas con el panel plegado; vitest de recordar.
-- [ ] 6. **Tutorial y e2e**: el tutorial del mundo con los pasos nuevos (cabecera, barra izquierda, página y panel, la
+- [x] 6. **Tutorial y e2e**: el tutorial del mundo con los pasos nuevos (cabecera, barra izquierda, página y panel, la
   llama); las e2e que entraban por la barra o la ficha del árbol, al día con los ayudantes.
   - Verifica: vitest de la web entera; las e2e que tocan el mundo.
