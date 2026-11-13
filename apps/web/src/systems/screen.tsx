@@ -38,7 +38,7 @@ import { NewCard } from '../components/new-card.tsx'
 import { saveFile } from '../components/save-file.ts'
 import { Screen } from '../components/screen.tsx'
 import { Tour } from '../components/tour.tsx'
-import { ENTER_ITEM, enterItem } from '../components/world-transition.ts'
+import { ENTER_ITEM, embers, enterItem, itemTransition } from '../components/world-transition.ts'
 import cards from '../routes/world-card.module.css'
 import { CoverDialog, type LocalImage } from '../routes/world-cover.tsx'
 import screen from '../templates/screen.module.css'
@@ -145,7 +145,13 @@ function SystemCard({ system, onHover }: { system: SystemSummary; onHover: (id: 
       }}
     >
       {system.builtIn && <Lock className={screen.lock} size={14} role="img" aria-label={t('systems.locked')} />}
-      <span className={screen.icon} aria-hidden="true" data-elemento="icono">
+      <span
+        className={screen.icon}
+        aria-hidden="true"
+        data-elemento="icono"
+        // Al volver del sistema por la llama, su icono y su nombre vuelven aquí
+        style={itemTransition(system.id, 'icono')}
+      >
         <SystemIcon icon={system.icon} size={24} />
       </span>
       {/* h2: van bajo el h1 de la pantalla (sin saltar a h3) */}
@@ -156,9 +162,15 @@ function SystemCard({ system, onHover }: { system: SystemSummary; onHover: (id: 
           params={{ systemId: system.id }}
           className={screen.open}
           viewTransition={ENTER_ITEM}
-          onClick={(event) => enterItem(system.id, event.currentTarget.closest('li'))}
+          onClick={(event) => {
+            enterItem(system.id, event.currentTarget.closest('li'))
+            // Con chispas, como un mundo (Enrique, 2026-11-13)
+            embers()
+          }}
         >
-          <span data-elemento="nombre">{system.name}</span>
+          <span data-elemento="nombre" style={itemTransition(system.id, 'nombre')}>
+            {system.name}
+          </span>
         </Link>
       </h2>
       <p className={screen.meta}>{origin(system)}</p>

@@ -81,12 +81,17 @@ export function leaveWorld() {
   for (const named of document.querySelectorAll<HTMLElement>('[style*="view-transition-name"]')) {
     if (named.style.viewTransitionName === 'mundo-actual') named.style.removeProperty('view-transition-name')
   }
-  overlay('humo', 3000)
+  smoke()
 }
 
-/** Las brasas: un calor suave que sube desde abajo y unas chispas que se apagan */
-function embers() {
+/** Las brasas: un calor suave que sube desde abajo y unas chispas que se apagan (también al entrar en un sistema) */
+export function embers() {
   overlay('brasas', 2500)
+}
+
+/** El humo de salir, sin más (al salir de un sistema: su icono y su nombre vuelven a su tarjeta) */
+export function smoke() {
+  overlay('humo', 3000)
 }
 
 /**

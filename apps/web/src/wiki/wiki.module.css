@@ -217,9 +217,10 @@
   align-items: start;
 }
 
-/* Su propia capa al entrar o salir del mundo (solo mientras dura: si no, atraparía las barras flotantes): el título
-   sale con la portada, no debajo de ella hasta que acaba */
-:global(html:active-view-transition-type(entrar-mundo, salir-mundo)) .entryMain {
+/* Su propia capa al entrar en el mundo (solo mientras dura: si no, atraparía las barras flotantes): el título sale con
+   la portada, no debajo de ella hasta que acaba. Al salir, no: se aleja con lo demás (con su capa se quedaba quieta,
+   fundiéndose en su sitio, Enrique, 2026-11-13: «la transición al salir del mundo se ha perdido en parte») */
+:global(html:active-view-transition-type(entrar-mundo)) .entryMain {
   view-transition-name: pagina-mundo;
 }
 

@@ -49,7 +49,7 @@ import { Modal } from './modal.tsx'
 import styles from './ribbon.module.css'
 import { spaceOf } from './spaces.ts'
 import { useWindow } from './window.tsx'
-import { LEAVE_ITEM, LEAVE_WORLD, leaveItem, leaveWorld, SECTION } from './world-transition.ts'
+import { LEAVE_ITEM, LEAVE_WORLD, leaveItem, leaveWorld, SECTION, smoke } from './world-transition.ts'
 
 /** Lo que tarda cada icono del mundo en salir del crisol (o en subir a él) y el paso entre uno y otro: aquí y solo aquí
  * (el nav se los pasa al CSS como --icon-time y --icon-step) */
@@ -304,8 +304,19 @@ export function Ribbon() {
           className={[styles.brand, flame === 'fire' ? styles.cooking : '', flame === 'smoke' ? styles.smoking : '']
             .filter(Boolean)
             .join(' ')}
-          // Dentro de un mundo, salir de él; fuera, como «Mundos»: el cambio rápido de sección
-          {...(inWorld ? { viewTransition: LEAVE_WORLD, onClick: leaveWorld } : { viewTransition: SECTION })}
+          // Dentro de un mundo, salir de él; de un sistema, al revés que al entrar (su icono y su nombre vuelven a su
+          // tarjeta) y con humo; fuera, como «Mundos»: el cambio rápido de sección
+          {...(systemId
+            ? {
+                viewTransition: LEAVE_ITEM,
+                onClick: () => {
+                  leaveItem(systemId, document.getElementById('contenido'))
+                  smoke()
+                }
+              }
+            : inWorld
+              ? { viewTransition: LEAVE_WORLD, onClick: leaveWorld }
+              : { viewTransition: SECTION })}
           data-tour="barra-llama"
           aria-label={t('app.name')}
           translate="no"

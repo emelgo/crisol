@@ -65,11 +65,16 @@ export function SystemScreen() {
       )}
       <div className={styles.heading}>
         {summary?.icon && (
-          <span className={styles.icon} aria-hidden="true">
+          <span
+            className={styles.icon}
+            aria-hidden="true"
+            data-elemento="icono"
+            style={itemTransition(systemId, 'icono')}
+          >
             <SystemIcon icon={summary.icon} size={26} />
           </span>
         )}
-        <div style={itemTransition(systemId, 'nombre')}>
+        <div style={itemTransition(systemId, 'nombre')} data-elemento="nombre">
           <PageTitle>{name}</PageTitle>
         </div>
       </div>
