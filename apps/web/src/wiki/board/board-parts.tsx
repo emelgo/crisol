@@ -9,12 +9,13 @@ import type { ExcalidrawElement } from '@excalidraw/excalidraw/element/types'
 import type { ExcalidrawImperativeAPI } from '@excalidraw/excalidraw/types'
 import { useQuery } from '@tanstack/react-query'
 import { Expand, FilePlus2, Shrink } from 'lucide-react'
-import { type DragEvent, type ReactNode, useCallback, useEffect, useId, useRef, useState } from 'react'
+import { type DragEvent, type ReactNode, useCallback, useContext, useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../../api/context.tsx'
 import { Icon } from '../../components/icon.tsx'
 import { PageLink, readAsInput, readAsKey, useReadAs } from '../read-as.tsx'
+import { BoardHeadContext } from '../shell/context.ts'
 import styles from './board.module.css'
 import { PAGE_DRAG } from './drag.ts'
 
@@ -210,6 +211,8 @@ export function BoardFrame({
   const [wide, setWide] = useState(false)
   const wrapper = useRef<HTMLDivElement>(null)
   const hiddenId = useId()
+  // En el mundo a pantalla completa, el título y las pestañas de la página van en esta barra (ADR-0027)
+  const head = useContext(BoardHeadContext)
 
   // Hasta el final de la ventana desde donde empieza
   useEffect(() => {
@@ -249,6 +252,7 @@ export function BoardFrame({
       aria-label={t('board.label', { name: tab.name })}
     >
       <div className={styles.bar}>
+        {head}
         {onAddPage && <AddPage worldId={page.worldId} onAdd={onAddPage} />}
         {onHidden && hidden !== null && (
           <label className={styles.hiddenToggle} htmlFor={hiddenId}>

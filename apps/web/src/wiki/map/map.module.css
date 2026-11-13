@@ -41,6 +41,12 @@
   box-shadow: var(--glass-shadow);
 }
 
+/* En el mundo a pantalla completa no hay barra de la app: todo (ADR-0027) */
+:global(html:has([data-world-shell])) .wrapper[data-wide] {
+  inset: 0;
+  border-inline-start: 0;
+}
+
 .wrapper[data-wide] .viewer {
   block-size: 100%;
   border: 0;
@@ -149,14 +155,15 @@
 /* Las herramientas: una columna de iconos arriba a la izquierda */
 .toolbar {
   position: absolute;
-  inset-block-start: var(--space-2);
+  /* Bajo el título que flota encima en el mundo a pantalla completa (--fill-head; fuera de él, nada) */
+  inset-block-start: calc(var(--fill-head, 0px) + var(--space-2));
   inset-inline-start: var(--space-2);
   z-index: 2;
   display: flex;
   flex-direction: column;
   /* Si el visor es bajo, en dos columnas: nunca se sale de él */
   flex-wrap: wrap;
-  max-block-size: calc(100% - var(--space-4));
+  max-block-size: calc(100% - var(--fill-head, 0px) - var(--space-4));
   gap: 2px;
   padding: 2px;
   border: 1px solid var(--line-frame);
@@ -245,7 +252,7 @@
 /* Cambiar la imagen: junto a las herramientas */
 .imagePanel {
   position: absolute;
-  inset-block-start: var(--space-2);
+  inset-block-start: calc(var(--fill-head, 0px) + var(--space-2));
   inset-inline-start: 3.5rem;
   z-index: 3;
   inline-size: 17rem;

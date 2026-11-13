@@ -18,7 +18,8 @@ import { useWindow } from './window.tsx'
  * Es un botón que muestra u oculta una lista (no un menú de ARIA): se recorre con el tabulador como el resto.
  * Se cierra con Escape (el foco vuelve al botón), al pulsar fuera o al salir de él con el tabulador.
  */
-export function AccountMenu({ variant = 'bar' }: { variant?: 'bar' | 'ribbon' }) {
+/** variant: bar (sin sesión, arriba), ribbon (la inicial, abajo en la barra) o header (la inicial, en la cabecera del mundo) */
+export function AccountMenu({ variant = 'bar' }: { variant?: 'bar' | 'ribbon' | 'header' }) {
   const { t } = useTranslation()
   const accounts = useAccounts()
   const { account, pending } = accounts.useAccount()
@@ -102,17 +103,17 @@ export function AccountMenu({ variant = 'bar' }: { variant?: 'bar' | 'ribbon' })
 
   const initial = account.name.trim().charAt(0).toLocaleUpperCase('es')
   return (
-    <div ref={root} className={styles.account}>
+    <div ref={root} className={styles.account} data-variant={variant}>
       <button
         ref={trigger}
         type="button"
-        className={variant === 'ribbon' ? styles.avatar : styles.trigger}
+        className={variant === 'bar' ? styles.trigger : styles.avatar}
         data-tour="cuenta"
         aria-expanded={open}
         aria-controls={panelId}
         onClick={() => setOpen((value) => !value)}
       >
-        {variant === 'ribbon' ? (
+        {variant !== 'bar' ? (
           <>
             <span aria-hidden="true">{initial}</span>
             <span className={styles.hidden}>{account.name}</span>

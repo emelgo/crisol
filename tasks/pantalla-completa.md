@@ -11,7 +11,7 @@ al final.
   piezas); de `Ribbon`, los ganchos de cuenta y mundo, Historial y Papelera (`world-hooks.ts`) y las animaciones de la
   llama (`crucible.module.css`).
   - Verifica: vitest de Archivos, mundo y wiki; `tsc`.
-- [ ] 2. **`WorldShell`**: `bare` para el mundo del máster; la cabecera fina (llama, el mundo con su menú, las pestañas
+- [x] 2. **`WorldShell`**: `bare` para el mundo del máster; la cabecera fina (llama, el mundo con su menú, las pestañas
   abiertas una sola vez, buscar, la cuenta), la barra izquierda (Páginas: buscador, árbol y marcadores; plegable,
   estirable y recordada) y el centro con su desplazamiento propio; mapa y pizarra de borde a borde. Ayudantes de e2e
   (`abrirArbol`, `abrirArchivosDelMundo`).

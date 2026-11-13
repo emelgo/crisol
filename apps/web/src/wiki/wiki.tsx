@@ -1,12 +1,11 @@
 import type { Page, PageTabView } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getRouteApi, Link, Navigate, useNavigate, useRouter } from '@tanstack/react-router'
-import { Ellipsis, FileText, House, LayoutTemplate, ListFilter, Lock, LockOpen, Plus, Printer } from 'lucide-react'
+import { Ellipsis, House, LayoutTemplate, Lock, LockOpen, PanelRightClose, PanelRightOpen, Printer } from 'lucide-react'
 import {
   type CSSProperties,
   type ReactNode,
   type RefObject,
-  useCallback,
   useEffect,
   useId,
   useLayoutEffect,
@@ -18,7 +17,6 @@ import { useAccounts } from '../account/context.tsx'
 import { ApiError } from '../api/client.ts'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
-import { useAmbient } from '../components/ambient.tsx'
 import { Loading } from '../components/brand.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
 import list from '../components/list.module.css'
@@ -31,79 +29,50 @@ import { TemplateIcon } from '../templates/icons.tsx'
 import { useTemplates } from '../templates/picker.tsx'
 import { Backlinks } from './backlinks.tsx'
 import { BoardTab } from './board/board-tab.tsx'
-import { CollabSocket } from './collab.tsx'
 import { CoverButton, PageCoverImage } from './cover.tsx'
 import { PageBody } from './editor.tsx'
-import { ExportPage, ExportWiki } from './export.tsx'
+import { ExportPage } from './export.tsx'
 import { PageIcon } from './icon.tsx'
 import { MapTab } from './map/map-tab.tsx'
-import { BookmarkButton, Bookmarks, OpenTabs } from './navigation.tsx'
-import { WorldWindows } from './new-entry.tsx'
-import { NewPageContext, NewPageDialog, type NewPageRequest } from './new-page.tsx'
-import { useWikiPanel } from './panel.tsx'
-import panelStyles from './panel-blocks.module.css'
+import { BookmarkButton } from './navigation.tsx'
 import { PanelBlocks } from './panel-blocks.tsx'
 import { PageProperties, type PropertyAdder } from './properties.tsx'
-import { QuickSwitcher } from './quick-switcher.tsx'
 import { PageRevealButton } from './reveal.tsx'
 import { SceneMain, SceneSide, SceneTabProvider } from './scene/scene-tab.tsx'
 import { PrintDialog, SheetPaper } from './sheet/controls.tsx'
+import { BoardHeadContext, pageKey, useWorldShell } from './shell/context.ts'
+import shellStyles from './shell/world-shell.module.css'
 import { TableTab } from './table/table-tab.tsx'
 import { PageTabs, usePageTabs, useTabTarget } from './tabs/page-tabs.tsx'
-import { PageTree } from './tree.tsx'
 import { Versions } from './versions.tsx'
 import { WhoKnowsButton } from './who-knows.tsx'
 import styles from './wiki.module.css'
-import { WorldTour } from './world-tour.tsx'
 
 const homeRoute = getRouteApi('/mundos/$worldId/wiki')
 const pageRoute = getRouteApi('/mundos/$worldId/wiki/$pageId')
 
-export const pageKey = (worldId: string, pageId: string) => ['pages', worldId, 'page', pageId]
+export { pageKey }
 
-/** Crea una página (o una subpágina) con el título provisional y la abre para ponerle nombre */
 /**
- * La wiki de un mundo: el árbol a un lado y la página al otro. En el móvil, el árbol va en un cajón que se abre con
- * «Páginas». Solo para quien administra el mundo (hasta el módulo 5)
+ * Lo de un mundo que va en su armazón (wiki/shell/world-shell.tsx, ADR-0027): comprueba que el mundo existe y lo
+ * dirige la cuenta, y pinta lo de la ruta. El árbol, las pestañas abiertas, buscar y «Página nueva» son del armazón
  */
 export function WikiLayout({
   worldId,
-  current,
   children
 }: {
   worldId: string
-  current?: Page | undefined
   children: (world: { name: string; organizationId: string }) => ReactNode
 }) {
   const { t } = useTranslation()
   const api = useApi()
   const { account, pending } = useAccounts().useAccount()
-  const { panel, open, close } = useWikiPanel()
-  const closeButton = useRef<HTMLButtonElement>(null)
-  // Al abrir el cajón (en lo estrecho), el foco entra en él; al cerrarlo, vuelve al botón de la barra que lo abrió
-  useEffect(() => {
-    if (open) closeButton.current?.focus()
-  }, [open])
-  const asideId = useId()
-  const headingId = useId()
-  // El cuadro de «Página nueva» (o de una subpágina), abierto
-  const [creating, setCreating] = useState<{ parent: { id: string; title: string } | null; n: number } | null>(null)
-  // Cada vez, un cuadro nuevo (su número): nunca se reutiliza uno que se cerró
-  const requestNewPage = useCallback<NewPageRequest>((parent) => setCreating({ parent, n: Date.now() }), [])
-  // Lo que se escribe en el buscador de cada vista (en las páginas, por nombre o #etiqueta)
-  const [filter, setFilter] = useState('')
-  const navigate = useNavigate()
   const worlds = useQuery({
     queryKey: ['worlds'],
     queryFn: () => api.call('listWorlds', {}),
     enabled: Boolean(account)
   })
   const world = worlds.data?.worlds.find((w) => w.id === worldId && w.role === 'master')
-  // Detrás, los fondos de Crisol, que se van turnando (Enrique, 2026-11-13: «en la wiki no hace falta tener la portada
-  // de fondo»)
-  useAmbient(null)
-  const root = useRef<HTMLDivElement>(null)
-  useSideTop(root, Boolean(world))
 
   if (pending) return null
   if (!account) return <Navigate to="/entrar" replace />
@@ -117,110 +86,14 @@ export function WikiLayout({
       </section>
     )
   }
-
-  return (
-    // Sus ventanas flotantes (una entrada nueva del compendio, revisión tanda 7), por encima de la página
-    <WorldWindows worldId={worldId}>
-      <NewPageContext.Provider value={requestNewPage}>
-        <WorldTour master />
-        <div ref={root} className={styles.wiki}>
-          <aside
-            id={asideId}
-            className={styles.aside}
-            data-open={open || undefined}
-            aria-labelledby={headingId}
-            onKeyDown={(event) => {
-              if (event.key === 'Escape' && open) close(true)
-            }}
-          >
-            <div className={styles.asideHeader}>
-              {/* Lo de la vista elegida en la barra: el mundo (sus páginas), las plantillas o los archivos */}
-              <h2 id={headingId}>{world.name}</h2>
-              {panel === 'pages' && <ExportWiki worldId={worldId} className={styles.newPageIcon} />}
-              {panel === 'pages' && (
-                <button
-                  type="button"
-                  className={styles.newPageIcon}
-                  aria-label={t('wiki.newPage')}
-                  title={t('wiki.newPage')}
-                  aria-haspopup="dialog"
-                  onClick={() => requestNewPage(null)}
-                >
-                  <Plus aria-hidden="true" size={16} />
-                </button>
-              )}
-              <button
-                type="button"
-                ref={closeButton}
-                className={`${list.secondary} ${styles.close}`}
-                onClick={() => close(true)}
-              >
-                {t('wiki.closePages')}
-              </button>
-            </div>
-            {/* El buscador, fijo en su sitio en cada vista, con lo suyo */}
-            <PageFilter
-              label={t('wiki.filter')}
-              value={filter}
-              onChange={setFilter}
-              // En las páginas, Intro busca dentro del texto de todas
-              {...(panel === 'pages'
-                ? {
-                    onSearch: (q: string) => {
-                      close(false)
-                      void navigate({ to: '/mundos/$worldId/buscar', params: { worldId }, search: { q } })
-                    }
-                  }
-                : {})}
-            />
-            {panel === 'pages' && (
-              <>
-                {filter.trim() ? (
-                  <FilteredPages
-                    worldId={worldId}
-                    query={filter}
-                    currentId={current?.id}
-                    onNavigate={() => close(false)}
-                  />
-                ) : (
-                  <PageTree
-                    worldId={worldId}
-                    currentId={current?.id}
-                    path={current?.path}
-                    onNavigate={() => close(false)}
-                  />
-                )}
-                <OpenTabs worldId={worldId} current={current} compact />
-                {/* Los marcadores, debajo del árbol */}
-                <div className={styles.asideBookmarks}>
-                  <Bookmarks worldId={worldId} onNavigate={() => close(false)} />
-                </div>
-              </>
-            )}
-          </aside>
-          <QuickSwitcher worldId={worldId} onCreatePage={() => requestNewPage(null)} />
-          <div className={styles.content}>
-            <OpenTabs worldId={worldId} current={current} />
-            <CollabSocket>{children(world)}</CollabSocket>
-          </div>
-          {creating && (
-            <NewPageDialog
-              key={creating.n}
-              worldId={worldId}
-              parent={creating.parent}
-              onClose={() => setCreating(null)}
-            />
-          )}
-        </div>
-      </NewPageContext.Provider>
-    </WorldWindows>
-  )
+  return <>{children(world)}</>
 }
 
 /**
  * Como en Archivos, las fichas de los lados empiezan a la misma altura que allí (8,5rem desde arriba: su margen y el
  * hueco del título), haya portada o no. La de la izquierda lo hace con su margen (CSS); la de la derecha va dentro de
- * la página, así que se mide cuánto tiene que subir o bajar (--panel-top)
+ * la página, así que se mide cuánto tiene que subir o bajar (--panel-top). Fuera del mundo (plantillas, las páginas de
+ * una campaña): el mundo a pantalla completa lleva su propio desplazamiento
  */
 export function useSideTop(root: RefObject<HTMLDivElement | null>, ready: boolean) {
   useLayoutEffect(() => {
@@ -275,109 +148,6 @@ export function useSideTop(root: RefObject<HTMLDivElement | null>, ready: boolea
 
 /** Donde empiezan las fichas de los lados, como en Archivos (su relleno de 2rem y su margen de 6,5rem) */
 const SIDE_TOP_REM = 8.5
-
-/** Normalizado para comparar: sin mayúsculas ni tildes */
-const plain = (text: string) => text.normalize('NFD').replace(/\p{M}/gu, '').toLocaleLowerCase('es')
-
-/** El campo para filtrar el árbol, como en LegendKeeper: por nombre o, con «#», por etiqueta */
-function PageFilter({
-  label,
-  value,
-  onChange,
-  onSearch
-}: {
-  label: string
-  value: string
-  onChange: (value: string) => void
-  onSearch?: (query: string) => void
-}) {
-  const { t } = useTranslation()
-  const hintId = useId()
-  return (
-    <div className={styles.filter} data-tour="buscador">
-      {/* La pista, también para el lector de pantalla y lo táctil (no solo en el title) */}
-      {onSearch && (
-        <span id={hintId} className={panelStyles.visuallyHidden}>
-          {t('wiki.filterHint')}
-        </span>
-      )}
-      <input
-        autoComplete="off"
-        data-1p-ignore
-        data-lpignore="true"
-        data-form-type="other"
-        type="search"
-        value={value}
-        aria-label={label}
-        aria-describedby={onSearch ? hintId : undefined}
-        placeholder={label}
-        title={onSearch ? t('wiki.filterHint') : undefined}
-        onChange={(event) => onChange(event.currentTarget.value)}
-        onKeyDown={(event) => {
-          if (event.key === 'Escape' && value) {
-            event.stopPropagation()
-            onChange('')
-          }
-          if (onSearch && event.key === 'Enter' && value.trim() && !value.trim().startsWith('#')) {
-            event.preventDefault()
-            onSearch(value.trim())
-          }
-        }}
-      />
-      <ListFilter aria-hidden="true" size={16} />
-    </div>
-  )
-}
-
-/** Las páginas que coinciden con el filtro, en una lista, con su camino debajo */
-function FilteredPages({
-  worldId,
-  query,
-  currentId,
-  onNavigate
-}: {
-  worldId: string
-  query: string
-  currentId: string | undefined
-  onNavigate: () => void
-}) {
-  const { t } = useTranslation()
-  const api = useApi()
-  const names = useQuery({
-    queryKey: ['pages', worldId, 'names'],
-    queryFn: () => api.call('listPageNames', { worldId })
-  })
-  const wanted = plain(query.trim())
-  const byTag = wanted.startsWith('#')
-  const tag = wanted.slice(1)
-  const found = (names.data?.pages ?? []).filter((page) =>
-    byTag
-      ? page.tags.some((each) => plain(each).startsWith(tag))
-      : [page.title, ...page.aliases].some((name) => plain(name).includes(wanted))
-  )
-  if (!names.data) return null
-  if (found.length === 0) return <p className={styles.filterEmpty}>{t('wiki.filterEmpty')}</p>
-  return (
-    <ul className={styles.filtered} aria-label={t('wiki.filterResults')}>
-      {found.map((page) => (
-        <li key={page.id}>
-          <Link
-            to="/mundos/$worldId/wiki/$pageId"
-            params={{ worldId, pageId: page.id }}
-            aria-current={page.id === currentId ? 'page' : undefined}
-            onClick={onNavigate}
-          >
-            <FileText aria-hidden="true" size={15} />
-            <span>
-              {page.title}
-              {page.path.length > 1 && <small>{page.path.slice(0, -1).join(' › ')}</small>}
-            </span>
-          </Link>
-        </li>
-      ))}
-    </ul>
-  )
-}
 
 /** La wiki sin página abierta */
 export function WikiHome() {
@@ -739,7 +509,7 @@ export function WikiPage() {
   }, [page.data, t])
 
   return (
-    <WikiLayout worldId={worldId} current={page.data}>
+    <WikiLayout worldId={worldId}>
       {(world) => {
         if (missing) {
           return (
@@ -772,7 +542,7 @@ function OpenPage({ page, nuevo, pestana }: { page: Page; nuevo: boolean; pestan
   const worlds = useQuery({ queryKey: ['worlds'], queryFn: () => api.call('listWorlds', {}) })
   const look = worlds.data?.worlds.find((w) => w.id === page.worldId)
   const isHome = home.data?.pageId === page.id
-  const banner = isHome && look ? <WorldBanner world={look} /> : undefined
+  const banner = isHome && look ? <WorldBanner world={look} named={false} /> : undefined
   // Una pestaña que ya no está (quitada, o de otra página): al texto, una vez al día la lista
   if (pestana && tabs.data && !tabs.isFetching && !active) {
     return (
@@ -812,8 +582,9 @@ export interface TemplateMode {
 
 /**
  * Una página, como en Everlore: la cabecera, sus pestañas, lo de la elegida (el texto en una columna ancha, con su
- * hoja; un mapa, a todo lo ancho) y, a la derecha, el panel fijo a toda altura (sus propiedades, quién la menciona,
- * su índice y sus versiones), que se esconde con su botón. banner: en lugar de la portada (la cabecera del mundo)
+ * hoja; un mapa, a todo lo ancho) y, a la derecha, su panel (sus propiedades, quién la menciona y sus bloques). En el
+ * mundo a pantalla completa (ADR-0027), la hoja con su propio desplazamiento y el panel a toda altura, que se pliega;
+ * un mapa o una pizarra, de borde a borde, con el título encima. banner: en lugar de la portada (la cabecera del mundo)
  */
 export function EntryView({
   page,
@@ -833,102 +604,205 @@ export function EntryView({
   template?: TemplateMode
 }) {
   const { t } = useTranslation()
+  const shell = useWorldShell()
   const main = useRef<HTMLElement>(null)
   // Añadir etiquetas o una propiedad desde «Añadir bloque» del panel: lo hace la ficha de propiedades
   const addProperty = useRef<PropertyAdder | null>(null)
-  /** La página: la cabecera, sus pestañas y lo de la elegida en medio; a la derecha, su panel (o el de la pestaña) */
-  const body = (content: ReactNode, side: ReactNode) => (
-    <div className={styles.entry} data-entry="" data-entry-panel="">
-      <article
-        ref={main}
-        className={styles.entryMain}
-        // El mapa y la pizarra llenan todo el sitio, hasta el final de la ventana y de lado a lado de la hoja, como en
-        // LegendKeeper (Enrique, 2026-11-13: «no debe verse por abajo cómo termina el cuadrado»)
-        data-fill={active?.kind === 'map' || active?.kind === 'board' ? '' : undefined}
-      >
-        <PageHead
-          key={page.id}
-          page={page}
-          startEditing={nuevo}
-          home={home}
-          template={template?.id}
-          actions={
-            template ? (
-              // Una plantilla no la conoce nadie ni se marca: el candado y «⋯», con lo suyo
-              <>
-                <LockButton page={page} />
-                <MoreActions page={page} items={template.more} />
-              </>
-            ) : (
-              <>
-                <WhoKnowsButton page={page} />
-                <PageRevealButton page={page} />
-                <BookmarkButton page={page} />
-                <LockButton page={page} />
-                <MoreActions page={page} />
-              </>
-            )
-          }
-        />
-        <PageTabs page={page} tabs={tabs} active={active?.id ?? null} />
-        {content}
-      </article>
-      <aside aria-label={t('wiki.pagePanel')} className={styles.entryPanel} data-tour="panel-bloques">
-        {side}
-      </aside>
+  // El mapa y la pizarra llenan todo el sitio, hasta el final de la ventana y de lado a lado de la hoja, como en
+  // LegendKeeper (Enrique, 2026-11-13: «no debe verse por abajo cómo termina el cuadrado»)
+  const fill = active?.kind === 'map' || active?.kind === 'board'
+  const head = (
+    <PageHead
+      key={page.id}
+      page={page}
+      startEditing={nuevo}
+      home={home}
+      template={template?.id}
+      actions={
+        template ? (
+          // Una plantilla no la conoce nadie ni se marca: el candado y «⋯», con lo suyo
+          <>
+            <LockButton page={page} />
+            <MoreActions page={page} items={template.more} />
+          </>
+        ) : (
+          <>
+            <WhoKnowsButton page={page} />
+            <PageRevealButton page={page} />
+            <BookmarkButton page={page} />
+            <LockButton page={page} />
+            <MoreActions page={page} />
+          </>
+        )
+      }
+    />
+  )
+  const pageTabs = <PageTabs page={page} tabs={tabs} active={active?.id ?? null} />
+  // Lo que ocupa el título que flota sobre un mapa: sus herramientas empiezan debajo (--fill-head)
+  const floating = useRef<HTMLDivElement>(null)
+  const floats = Boolean(shell) && active?.kind === 'map'
+  useLayoutEffect(() => {
+    const box = floating.current
+    const sheet = main.current
+    if (!floats || !box || !sheet || typeof ResizeObserver === 'undefined') return
+    const measure = () =>
+      sheet.style.setProperty(
+        '--fill-head',
+        `${Math.ceil(box.getBoundingClientRect().bottom - sheet.getBoundingClientRect().top)}px`
+      )
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(box)
+    return () => observer.disconnect()
+  }, [floats])
+  // Lo de la pestaña elegida: el texto (o otra página de texto, con su propio documento), una tabla, una pizarra o un mapa
+  const content =
+    active?.kind === 'scene' ? (
+      <SceneMain key={active.id} />
+    ) : active?.kind === 'text' ? (
+      <div className={styles.column}>
+        <SheetPaper page={page}>
+          <PageBody key={active.id} page={page} documentId={active.documentId} />
+        </SheetPaper>
+      </div>
+    ) : active?.kind === 'table' ? (
+      <TableTab key={active.id} page={page} tab={active} />
+    ) : active?.kind === 'board' ? (
+      <BoardTab key={active.id} page={page} tab={active} />
+    ) : active ? (
+      <MapTab key={active.id} page={page} tab={active} />
+    ) : (
+      <div className={styles.column}>
+        <SheetPaper page={page}>
+          <PageBody page={page} />
+        </SheetPaper>
+      </div>
+    )
+  // A la derecha: la rejilla de una escena o, si no, «Mencionado en», las propiedades y los bloques (o lo de una plantilla)
+  const side =
+    active?.kind === 'scene' ? (
+      <SceneSide />
+    ) : (
+      (template?.side ?? (
+        <>
+          {/* «Mencionado en», arriba (como en Everlore); después, las propiedades y los bloques */}
+          <Backlinks key={`enlaces-${page.id}`} page={page} />
+          {/* Las propiedades, a un lado (como los bloques del panel de Everlore): tras el retrato, si lo hay */}
+          <PanelBlocks
+            key={`bloques-${page.id}`}
+            page={page}
+            properties={<PageProperties key={page.id} page={page} adders={false} adderRef={addProperty} />}
+            onAddProperty={page.locked ? undefined : (kind) => addProperty.current?.(kind)}
+          />
+        </>
+      ))
+    )
+  // La portada, a todo lo ancho (la del mundo en su portada; si no, la de la página o «Añadir portada»)
+  const cover = (
+    <div className={styles.entryBanner} data-cover={banner || page.cover ? '' : undefined}>
+      {banner ??
+        (page.cover ? (
+          <PageCoverImage page={page} />
+        ) : (
+          !page.locked && <CoverButton page={page} className={styles.addCover} label={t('cover.add')} />
+        ))}
     </div>
   )
+
+  if (shell) {
+    return (
+      <SceneTabProvider page={page} tab={active?.kind === 'scene' ? active : null}>
+        <div className={shellStyles.entry} data-entry="" data-entry-panel="">
+          <div className={shellStyles.scroll} data-fill={fill || undefined}>
+            {fill ? (
+              <article ref={main} className={`${styles.entryMain} ${shellStyles.fillMain}`} data-fill="">
+                {active?.kind === 'map' && (
+                  <div ref={floating} className={shellStyles.floatingHead}>
+                    {head}
+                    {pageTabs}
+                  </div>
+                )}
+                {/* En una pizarra, el título y sus pestañas van en su barra (Excalidraw tiene lo suyo arriba) */}
+                <BoardHeadContext
+                  value={
+                    active?.kind === 'board' ? (
+                      <div className={shellStyles.boardHead}>
+                        {head}
+                        {pageTabs}
+                      </div>
+                    ) : null
+                  }
+                >
+                  {content}
+                </BoardHeadContext>
+              </article>
+            ) : (
+              <div className={styles.content}>
+                {cover}
+                <div className={styles.entry}>
+                  <article ref={main} className={styles.entryMain}>
+                    {head}
+                    {pageTabs}
+                    {content}
+                  </article>
+                </div>
+              </div>
+            )}
+          </div>
+          <ShellPanel>{side}</ShellPanel>
+        </div>
+      </SceneTabProvider>
+    )
+  }
   return (
     <>
-      {/* La portada, a todo lo ancho (la del mundo en su portada; si no, la de la página o «Añadir portada») */}
-      <div className={styles.entryBanner} data-cover={banner || page.cover ? '' : undefined}>
-        {banner ??
-          (page.cover ? (
-            <PageCoverImage page={page} />
-          ) : (
-            !page.locked && <CoverButton page={page} className={styles.addCover} label={t('cover.add')} />
-          ))}
-      </div>
+      {cover}
       {/* La escena: su mapa en medio y su rejilla en el sitio del panel de la página */}
       <SceneTabProvider page={page} tab={active?.kind === 'scene' ? active : null}>
-        {active?.kind === 'scene'
-          ? body(<SceneMain key={active.id} />, <SceneSide />)
-          : body(
-              active?.kind === 'text' ? (
-                // Otra página de texto: la misma hoja y el mismo editor, con su propio documento
-                <div className={styles.column}>
-                  <SheetPaper page={page}>
-                    <PageBody key={active.id} page={page} documentId={active.documentId} />
-                  </SheetPaper>
-                </div>
-              ) : active?.kind === 'table' ? (
-                <TableTab key={active.id} page={page} tab={active} />
-              ) : active?.kind === 'board' ? (
-                <BoardTab key={active.id} page={page} tab={active} />
-              ) : active ? (
-                <MapTab key={active.id} page={page} tab={active} />
-              ) : (
-                <div className={styles.column}>
-                  <SheetPaper page={page}>
-                    <PageBody page={page} />
-                  </SheetPaper>
-                </div>
-              ),
-              template?.side ?? (
-                <>
-                  {/* «Mencionado en», arriba (como en Everlore); después, las propiedades y los bloques */}
-                  <Backlinks key={`enlaces-${page.id}`} page={page} />
-                  {/* Las propiedades, a un lado (como los bloques del panel de Everlore): tras el retrato, si lo hay */}
-                  <PanelBlocks
-                    key={`bloques-${page.id}`}
-                    page={page}
-                    properties={<PageProperties key={page.id} page={page} adders={false} adderRef={addProperty} />}
-                    onAddProperty={page.locked ? undefined : (kind) => addProperty.current?.(kind)}
-                  />
-                </>
-              )
-            )}
+        <div className={styles.entry} data-entry="" data-entry-panel="">
+          <article ref={main} className={styles.entryMain} data-fill={fill ? '' : undefined}>
+            {head}
+            {pageTabs}
+            {content}
+          </article>
+          <aside aria-label={t('wiki.pagePanel')} className={styles.entryPanel} data-tour="panel-bloques">
+            {side}
+          </aside>
+        </div>
       </SceneTabProvider>
     </>
+  )
+}
+
+/**
+ * El panel de la página en el mundo a pantalla completa: a toda altura, con su botón para plegarlo a una tira (Enrique,
+ * 2026-11-13: para que el mapa o la pizarra lo tengan todo). Se recuerda plegado o no, en el aparato
+ */
+function ShellPanel({ children }: { children: ReactNode }) {
+  const { t } = useTranslation()
+  const shell = useWorldShell()
+  const folded = shell?.panelFolded ?? false
+  const label = t(folded ? 'worldShell.panelUnfold' : 'worldShell.panelFold')
+  return (
+    <aside
+      aria-label={t('wiki.pagePanel')}
+      className={`${styles.entryPanel} ${shellStyles.panel}`}
+      data-tour="panel-bloques"
+      data-folded={folded || undefined}
+    >
+      <div className={shellStyles.panelHead}>
+        <button
+          type="button"
+          className={shellStyles.iconButton}
+          aria-label={label}
+          title={label}
+          aria-expanded={!folded}
+          onClick={() => shell?.setPanelFolded(!folded)}
+        >
+          {folded ? <PanelRightOpen aria-hidden="true" size={18} /> : <PanelRightClose aria-hidden="true" size={18} />}
+        </button>
+      </div>
+      {!folded && children}
+    </aside>
   )
 }

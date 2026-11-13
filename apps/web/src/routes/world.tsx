@@ -70,7 +70,7 @@ export function WorldPage() {
   if (master) {
     return (
       <>
-        <WorldHome worldId={worldId} banner={<WorldBanner world={world} />} />
+        <WorldHome worldId={worldId} banner={<WorldBanner world={world} named={false} />} />
       </>
     )
   }
@@ -113,7 +113,7 @@ function WorldHome({ worldId, banner }: { worldId: string; banner: ReactNode }) 
   const current = page.data
   const error = home.error ?? ensure.error ?? page.error
   return (
-    <WikiLayout worldId={worldId} current={current}>
+    <WikiLayout worldId={worldId}>
       {() =>
         current ? (
           <HomeEntry page={current} banner={banner} />

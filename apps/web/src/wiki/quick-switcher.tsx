@@ -6,7 +6,7 @@
 import { foldName, searchNames } from '@crisol/domain'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
-import { type KeyboardEvent, useEffect, useId, useRef, useState } from 'react'
+import { type KeyboardEvent, useCallback, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { preferencesKey } from './navigation.tsx'
@@ -21,8 +21,26 @@ const keyOf = (choice: Choice) =>
   choice.kind === 'page' ? `p:${choice.id}` : choice.kind === 'all' ? 'todos' : `o:${choice.id}`
 
 /** Abre el selector con Ctrl+K (o Cmd+K) desde cualquier pantalla de la wiki */
-export function QuickSwitcher({ worldId, onCreatePage }: { worldId: string; onCreatePage: () => void }) {
-  const [open, setOpen] = useState(false)
+export function QuickSwitcher({
+  worldId,
+  onCreatePage,
+  open: asked,
+  onOpenChange
+}: {
+  worldId: string
+  onCreatePage: () => void
+  /** Abierto desde fuera (el buscador de la cabecera del mundo): si se da, manda él */
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+}) {
+  const [own, setOwn] = useState(false)
+  const open = asked ?? own
+  const latest = useRef(onOpenChange)
+  latest.current = onOpenChange
+  const setOpen = useCallback((next: boolean) => {
+    setOwn(next)
+    latest.current?.(next)
+  }, [])
   useEffect(() => {
     const listen = (event: globalThis.KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && !event.altKey && event.key.toLowerCase() === 'k') {
@@ -32,7 +50,7 @@ export function QuickSwitcher({ worldId, onCreatePage }: { worldId: string; onCr
     }
     window.addEventListener('keydown', listen)
     return () => window.removeEventListener('keydown', listen)
-  }, [])
+  }, [setOpen])
   if (!open) return null
   return <SwitcherDialog worldId={worldId} onCreatePage={onCreatePage} onClose={() => setOpen(false)} />
 }

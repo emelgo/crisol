@@ -3123,6 +3123,24 @@ export const es = {
     makeSecret: 'Secreto',
     makeNote: 'Nota oculta'
   },
+  // El mundo a pantalla completa (ADR-0027): su cabecera y su barra de la izquierda
+  worldShell: {
+    worldMenu: 'Menú de {{world}}',
+    settings: 'Ajustes del mundo',
+    export: 'Exportar el mundo',
+    search: 'Buscar',
+    searchKeys: 'Ctrl K',
+    side: 'Barra del mundo',
+    tabs: { pages: 'Páginas', files: 'Archivos' },
+    fold: 'Plegar la barra',
+    unfold: 'Desplegar la barra',
+    resize: 'Ancho de la barra',
+    panelFold: 'Plegar el panel',
+    panelUnfold: 'Desplegar el panel',
+    newPage: 'Página nueva',
+    seeAll: 'Ver todos',
+    openFiles: 'Archivos abiertos'
+  },
   tabs: {
     title: 'Páginas abiertas',
     recent: 'Abiertas',

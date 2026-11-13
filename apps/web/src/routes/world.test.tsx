@@ -135,24 +135,27 @@ describe('el Inicio de un mundo', () => {
     expect(ribbon().queryByRole('button', { name: 'Páginas' })).toBeNull()
   })
 
-  it('dentro de un mundo que se dirige, la barra lleva el mundo (sus páginas), Archivos y Dados', async () => {
+  it('dentro de un mundo que se dirige, a pantalla completa: Páginas y Archivos a la izquierda, y «Ver todos» en el centro (ADR-0027)', async () => {
     const w = world()
     const router = renderAt(`/mundos/${w.id}`, fakeApi({ organizations: [ORG], worlds: [w] }))
     await screen.findByRole('heading', { level: 1, name: 'Eana' })
     await screen.findByRole('tree', { name: 'Páginas' })
-    const items = () =>
-      [...screen.getByRole('navigation', { name: 'Secciones' }).querySelectorAll('a, button')]
-        .map((item) => item.textContent)
-        .filter(Boolean)
-    // La llama no tiene texto (lleva su nombre como etiqueta); los dados, en su botón flotante (docs/diseno.md)
-    expect(items()).toEqual(['Eana', 'Archivos'])
-
-    // Los archivos, en su pantalla
-    await userEvent.click(ribbon().getByRole('link', { name: 'Archivos' }))
+    // Sin la barra de la app
+    expect(screen.queryByRole('navigation', { name: 'Secciones' })).toBeNull()
+    const tabs = screen.getByRole('tablist', { name: 'Barra del mundo' })
+    expect(
+      within(tabs)
+        .getAllByRole('tab')
+        .map((tab) => tab.textContent)
+    ).toEqual(['Páginas', 'Archivos'])
+    // La pantalla grande de Archivos, «Ver todos», dentro del centro: la barra sigue
+    await userEvent.click(within(tabs).getByRole('tab', { name: 'Archivos' }))
+    await userEvent.click(screen.getByRole('link', { name: 'Ver todos' }))
     await waitFor(() => expect(router.state.location.pathname).toBe(`/mundos/${w.id}/archivos`))
-    // Desde Archivos, el mundo en la barra vuelve a su portada
-    await userEvent.click(ribbon().getByRole('button', { name: 'Eana' }))
-    await screen.findByRole('treeitem', { name: 'Eana' })
+    expect(screen.getByRole('tablist', { name: 'Barra del mundo' })).toBeDefined()
+    // De vuelta a la portada, desde el árbol
+    await userEvent.click(within(tabs).getByRole('tab', { name: 'Páginas' }))
+    await userEvent.click(await screen.findByRole('treeitem', { name: 'Eana' }))
     expect(await screen.findByRole('heading', { level: 1, name: 'Eana' })).toBeDefined()
   })
 

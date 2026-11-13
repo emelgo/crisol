@@ -21,6 +21,7 @@ import { DicePanel } from '../dice/panel.tsx'
 import { DiceTray } from '../dice/tray.tsx'
 import { shownPath } from '../shown-path.ts'
 import { WikiPanelProvider } from '../wiki/panel.tsx'
+import { useWorldShellRoute, WorldShell } from '../wiki/shell/world-shell.tsx'
 import { WithCampaign } from './campaign.tsx'
 import { OrganizationHistory, WorldHistoryWindow } from './history.tsx'
 import { Profile } from './profile.tsx'
@@ -44,9 +45,12 @@ export function RootLayout() {
       !/^\/(perfil|ajustes|historial|papelera|oauth\/|mundos\/[^/]+\/(historial|papelera)$)/.test(shownPath(state))
   })
   // La Mesa va sola, a pantalla completa y en su pestaña (ADR-0021): sin la barra de la izquierda
-  const bare = useRouterState({
+  const mesa = useRouterState({
     select: (state) => /^\/mundos\/[^/]+\/campanas\/[^/]+\/mesa\/?$/.test(shownPath(state))
   })
+  // El mundo del máster, también a pantalla completa, con su armazón (ADR-0027)
+  const world = useWorldShellRoute()
+  const bare = mesa || world.bare
   // La portada (sin sesión): a toda pantalla, con su imagen (sin las que van pasando detrás)
   const home = useRouterState({ select: (state) => shownPath(state) === '/' })
   // Imprimir: solo la hoja, sin nada de la interfaz; la pantalla de la tele, igual: solo el mapa
@@ -100,6 +104,14 @@ export function RootLayout() {
       </div>
     )
   }
+  // Lo que avisa (aprobaciones de la IA, avisos, revelados), al principio del contenido
+  const notices = (
+    <>
+      <ApprovalQueue />
+      <Notices />
+      <RevealNotices />
+    </>
+  )
   // Con sesión: el armazón del Crisol antiguo, con la barra de la izquierda
   return (
     <WindowProvider render={(kind) => <WindowContent kind={kind} />}>
@@ -109,14 +121,19 @@ export function RootLayout() {
             <div className={bare ? styles.bare : styles.app}>
               {skip}
               {/* Detrás de todo, el fondo de ambiente para el cristal (la Mesa tiene su mapa) */}
-              {!bare && <Ambient />}
+              {!mesa && <Ambient />}
               {!bare && <Ribbon />}
-              <main id="contenido" className={wide ? styles.wide : styles.main} data-contenido="">
-                <ApprovalQueue />
-                <Notices />
-                <RevealNotices />
-                <Outlet />
-              </main>
+              {world.worldId ? (
+                // El mundo a pantalla completa: su cabecera y su barra van fuera del contenido (ADR-0027)
+                <WorldShell key={world.worldId} worldId={world.worldId} notices={notices}>
+                  <Outlet />
+                </WorldShell>
+              ) : (
+                <main id="contenido" className={wide ? styles.wide : styles.main} data-contenido="">
+                  {notices}
+                  <Outlet />
+                </main>
+              )}
               <DicePanel />
             </div>
           </DiceTray>

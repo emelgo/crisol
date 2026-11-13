@@ -19,7 +19,13 @@ import form from '../components/form.module.css'
 import { Modal } from '../components/modal.tsx'
 import { NewCard } from '../components/new-card.tsx'
 import { PageTitle } from '../components/page-title.tsx'
-import { ENTER_WORLD, enterWorld, LEAVE_WORLD, worldTransition } from '../components/world-transition.ts'
+import {
+  ENTER_WORLD,
+  enterWorld,
+  LEAVE_WORLD,
+  LEAVE_WORLD_FULL,
+  worldTransition
+} from '../components/world-transition.ts'
 import { CampaignSystemFields, type SystemDraft } from '../systems/campaign-system.tsx'
 import { coverStyle, useWorldFiles } from '../wiki/cover-look.ts'
 import styles from './world-card.module.css'
@@ -376,7 +382,7 @@ export function CampaignCard({
  * La portada del mundo como portada ancha de su página de portada (Everlore), la misma se llegue por donde se llegue: al
  * entrar en él (su tarjeta se convierte en ella) o desde el árbol
  */
-export function WorldBanner({ world }: { world: World }) {
+export function WorldBanner({ world, named = true }: { world: World; named?: boolean }) {
   const kind = useWorldKind()
   const navigate = useNavigate()
   return (
@@ -384,9 +390,10 @@ export function WorldBanner({ world }: { world: World }) {
       banner
       kind={kind}
       look={world}
-      style={worldTransition(world.id)}
+      // Dentro del mundo a pantalla completa la tarjeta se convierte en la cabecera, no en la portada (ADR-0027)
+      style={named ? worldTransition(world.id) : undefined}
       // Borrado desde dentro: a Mis mundos, saliendo de él
-      afterDelete={() => void navigate({ to: '/mundos', viewTransition: LEAVE_WORLD })}
+      afterDelete={() => void navigate({ to: '/mundos', viewTransition: named ? LEAVE_WORLD : LEAVE_WORLD_FULL })}
     />
   )
 }
@@ -414,7 +421,8 @@ export function LookHeader({
   const [viewing, setViewing] = useState(false)
   if (banner) {
     return (
-      <header className={styles.banner} style={{ ...tint(look.color), ...style }}>
+      // Una portada, no la cabecera de la pantalla (esa es la del mundo: un solo banner)
+      <div className={styles.banner} style={{ ...tint(look.color), ...style }}>
         <CoverHeader
           url={image?.url}
           cover={look.cover}
@@ -436,7 +444,7 @@ export function LookHeader({
             <LookSettings kind={kind} look={look} afterDelete={afterDelete} />
           </div>
         )}
-      </header>
+      </div>
     )
   }
   return (
@@ -659,7 +667,7 @@ const draftOf = (look?: Look): Draft => ({
  * sube al crearlo. onClose(gone): gone, si se ha creado o borrado (el botón que la abrió ya no tiene el foco que
  * devolver). afterDelete: borrado desde fuera de su lista (su cabecera), en vez de arder en ella
  */
-function LookDialog({
+export function LookDialog({
   kind,
   look,
   afterDelete,

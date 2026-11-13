@@ -33,6 +33,12 @@
   box-shadow: var(--glass-shadow);
 }
 
+/* En el mundo a pantalla completa no hay barra de la app: todo (ADR-0027) */
+:global(html:has([data-world-shell])) .wrapper[data-wide] {
+  inset: 0;
+  border-inline-start: 0;
+}
+
 .bar {
   display: flex;
   flex-wrap: wrap;

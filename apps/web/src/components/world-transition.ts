@@ -7,6 +7,12 @@ import type { CSSProperties } from 'react'
 
 export const ENTER_WORLD = { types: ['entrar-mundo'] }
 export const LEAVE_WORLD = { types: ['salir-mundo'] }
+/**
+ * Entrar en el mundo que se dirige y salir de él, que va a pantalla completa (ADR-0027): lo mismo, y además la barra de
+ * la app sale con el contenido al entrar y vuelve a entrar al salir
+ */
+export const ENTER_WORLD_FULL = { types: ['entrar-mundo', 'pantalla-completa'] }
+export const LEAVE_WORLD_FULL = { types: ['salir-mundo', 'pantalla-completa'] }
 /** Cambiar de pestaña en la barra (dentro de una vista): rápido, sin fuego */
 export const SECTION = { types: ['seccion'] }
 /** Entrar en un elemento desde su tarjeta (una plantilla): su icono y su nombre van al título, sin fuego */

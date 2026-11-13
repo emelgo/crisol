@@ -49,9 +49,22 @@ export function sections(page: Page) {
   return page.getByRole('navigation', { name: 'Secciones' })
 }
 
-/** Abre Historial o Papelera, desde abajo en la barra (del mundo en el que se esté); devuelve la ventana */
+/** Dentro del mundo a pantalla completa (ADR-0027): su cabecera, con la llama, el mundo y su menú */
+export function worldHeader(page: Page) {
+  return page.locator('[data-cabecera-mundo]')
+}
+
+/**
+ * Abre Historial o Papelera (del mundo en el que se esté): fuera, abajo en la barra; dentro del mundo a pantalla
+ * completa, en el menú del mundo de su cabecera. Devuelve la ventana
+ */
 export async function openWindow(page: Page, name: 'Historial' | 'Papelera') {
   await leaveCampaign(page)
+  if (await worldHeader(page).isVisible()) {
+    await worldHeader(page)
+      .getByRole('button', { name: /^Menú de / })
+      .click()
+  }
   await page.getByRole('button', { name, exact: true }).click()
   const window = page.getByRole('dialog', { name, exact: true })
   await expect(window).toBeVisible()
@@ -79,13 +92,35 @@ export async function openWorld(page: Page, name: string) {
  */
 export async function openWiki(page: Page, name: string) {
   await openWorld(page, name)
-  await expect(page.getByRole('tree', { name: 'Páginas' }).getByRole('treeitem', { name, exact: true })).toBeVisible()
+  await expect((await abrirArbol(page)).getByRole('treeitem', { name, exact: true })).toBeVisible()
 }
 
-/** Los archivos del mundo abierto, en su pantalla: «Archivos» en la barra */
+/** La pestaña de la barra de la izquierda del mundo (Páginas o Archivos), abierta (y la barra desplegada) */
+async function worldTab(page: Page, name: 'Páginas' | 'Archivos') {
+  const side = page.getByRole('complementary', { name: 'Barra del mundo' })
+  const unfold = side.getByRole('button', { name: 'Desplegar la barra' })
+  if (await unfold.isVisible()) await unfold.click()
+  const tab = side.getByRole('tab', { name })
+  if ((await tab.getAttribute('aria-selected')) !== 'true') await tab.click()
+  return side.getByRole('tabpanel')
+}
+
+/** El árbol de las páginas del mundo abierto: la pestaña «Páginas» de su barra de la izquierda */
+export async function abrirArbol(page: Page) {
+  await worldTab(page, 'Páginas')
+  return page.getByRole('tree', { name: 'Páginas' })
+}
+
+/** Los archivos del mundo abierto, en la pestaña «Archivos» de su barra de la izquierda: devuelve su panel */
+export function abrirArchivosDelMundo(page: Page) {
+  return worldTab(page, 'Archivos')
+}
+
+/** Los archivos del mundo abierto, en su pantalla grande: «Ver todos», en el centro */
 export async function openWorldFiles(page: Page) {
-  // El del mundo (mientras la barra cambia, aún puede estar saliendo el de los archivos comunes)
-  await sections(page).getByRole('link', { name: 'Archivos' }).and(page.locator('[href*="/mundos/"]')).click()
+  await abrirArchivosDelMundo(page)
+  await page.getByRole('complementary', { name: 'Barra del mundo' }).getByRole('link', { name: 'Ver todos' }).click()
+  await expect(page).toHaveURL(/\/mundos\/[^/]+\/archivos$/)
 }
 
 /** Abre los ajustes de un mundo o una campaña (su engranaje); devuelve su ventana */
@@ -185,7 +220,11 @@ export async function createWorld(page: Page, name: string) {
 /** A Mis mundos con la llama, sin recargar (no corta el canal en tiempo real) */
 export async function toWorlds(page: Page) {
   await leaveCampaign(page)
-  if (new URL(page.url()).pathname !== '/mundos') await sections(page).getByRole('link', { name: 'Crisol' }).click()
+  if (new URL(page.url()).pathname !== '/mundos') {
+    // Dentro de un mundo, la llama de su cabecera; fuera, la de la barra
+    const inWorld = await worldHeader(page).isVisible()
+    await (inWorld ? worldHeader(page) : sections(page)).getByRole('link', { name: 'Crisol' }).click()
+  }
   await expect(page.getByRole('heading', { level: 1, name: 'Mis mundos' })).toBeVisible()
 }
 
