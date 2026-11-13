@@ -7,6 +7,22 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
+### Para retomar (2026-11-13: módulo 9, mapas con capas, construido en local)
+
+- Rama `modulo-9/mapas` (sobre `main` con las tandas 8 y 9), plan en `tasks/modulo-9.md` (7 porciones), ADR-0026.
+  **Migración 0081** (`map_layers`, la capa y el orden de lo dibujado, `maps.speeds`), ya aplicada en local.
+- Hecho: capas (ojo en tu pantalla, «Solo del máster», ordenar, lo que tiene por clases y elegirlo desde ahí);
+  regiones, rutas y textos a mano (pegando a vértices y pines; retocar vértices; Supr y Ctrl+Z; «Ampliar el mapa»);
+  medir con días de viaje (escala con una raya; velocidades en millas: 24, 30 y 48 al día, por docs/diseno.md);
+  lo que ve la jugadora (servidor) y revelar desde el panel; la IA: `imagen_mapa`, `dibujar_en_mapa` (píxeles de la
+  imagen, simplifica y pega), capas, `medir_mapa`; lo de fuera entra forjándose.
+- Crítica 26/40 y audit 12/20, con sus arreglos (tres tandas de commits). **Página de revisión**:
+  https://claude.ai/artifact/NUQMCPWW11Wz4HLfXRmChX
+- Pruebas: web (mapa 63, wiki 357), servidor (capas 10, MCP), e2e `mapas-capas` y la batería entera en local antes de
+  subir (sin CI este mes: `[skip ci]`).
+- **Siguiente**: subirlo a `main` y a staging con `[skip ci]` cuando pase todo en local; luego la pizarra
+  (`docs/specs/modulo-9.md`, capacidad `pizarra`) o el módulo 8, según diga Enrique.
+
 ### Para retomar (2026-11-13, madrugada: módulo 9 empezado; PR #119 en la CI)
 
 - **Tandas 8 y 9 en `main` y en staging** (PR #119, 2026-11-13, fusionado con `[skip ci]`: la CI se cortaba a los

@@ -31,5 +31,5 @@ todo en local (sin CI este mes: `[skip ci]`).
   dibujado; librería pura y MIT, p. ej. jimp: comprobar licencia y WebP; sharp no, por libvips LGPL); crear y cambiar
   capas y elementos en 0–1 o en píxeles de esa vista (el servidor convierte, simplifica, pega vértices y casa rutas con
   pines); medir; instrucciones. Lo de la IA entra animado (se forja) y se deshace entero.
-- [ ] 7. **Cierre**: e2e (criterio 1 de la spec, accesibilidad), crítica y audit de impeccable con sus arreglos,
+- [x] 7. **Cierre**: e2e (criterio 1 de la spec, accesibilidad), crítica y audit de impeccable con sus arreglos,
   página de revisión, `docs/modulos.md`, `tasks/probar.md` y memoria.

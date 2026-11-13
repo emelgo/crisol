@@ -281,3 +281,7 @@ Lo que sale sin estar en la lista: se avisa a Enrique y se arregla en su tanda.
   por tiempo agotado solo allí (bloques: el menú «Borrar»; dados:18 y herramientas: la página se queda bloqueada en
   la Mesa, axe no acaba y un botón nunca está «estable»; visión: tras reiniciar la niebla, el grupo sigue viendo).
   Ya iban sin desenfoque. Fallan a ratos desde el 2026-11-10. Trazas en el artefacto `trazas-e2e` de la CI.
+- [ ] Módulo 9, lo que quedó de la crítica y el audit: dibujar y medir con el teclado (hoy, la forma, con ratón o la
+  IA); ocultar los nombres del mapa por debajo de ~9 px en pantalla; «En barco», «—» si no hay agua (no se sabe);
+  ¿modo «Editar» como en el lienzo o las herramientas siempre a la vista? (preguntar a Enrique); colores del mapa en
+  tokens (`--map-ink`, `--map-halo`).
