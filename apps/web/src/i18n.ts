@@ -1965,6 +1965,7 @@ export const es = {
       close: 'Cerrar',
       text: 'Texto',
       layer: 'Capa',
+      aspect: 'Aspecto',
       fill: 'Relleno',
       fills: { solid: 'Liso', hatch: 'Rayado', none: 'Sin relleno' },
       opacity: 'Opacidad',
@@ -1981,7 +1982,7 @@ export const es = {
       deleted: 'Quitado del mapa.'
     },
     measure: {
-      tool: 'Medir (M)',
+      tool: 'Medir',
       title: 'Medir',
       close: 'Dejar de medir',
       hint: 'Pulsa de punto a punto (se pega a pines y vértices), o una ruta para medirla entera. Esc vuelve a empezar.',
@@ -2006,14 +2007,14 @@ export const es = {
       howLong: '¿Cuánto mide esa raya de verdad?',
       length: 'Cuánto mide',
       unit: 'Unidad',
-      units: { km: 'km', mi: 'millas', leguas: 'leguas', m: 'metros', pies: 'pies' },
+      units: { millas: 'millas', leguas: 'leguas', pies: 'pies' },
       saveScale: 'Guardar la escala',
       speeds: 'Cuánto se anda en un día',
       perDay: '{{unit}} al día',
       defaultSpeeds: 'Volver a lo de serie'
     },
     edit: {
-      tools: { region: 'Región (R)', path: 'Ruta (L)', text: 'Texto (T)' },
+      tools: { region: 'Región', path: 'Ruta', text: 'Texto' },
       hints: {
         region: 'Pulsa para poner cada vértice; Intro, doble clic o el primero la cierran. Esc cancela.',
         path: 'Pulsa para poner cada punto; Intro o doble clic la acaban. Esc cancela.',

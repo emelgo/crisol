@@ -93,11 +93,11 @@ describe('las capas de los mapas y lo dibujado (módulo 9)', () => {
   })
 
   it('un mapa nuevo: sin capas ni nada dibujado, y lo que se anda en un día, lo de serie; se cambia y se deshace', async () => {
-    expect(await map()).toMatchObject({ layers: [], elements: [], speeds: { foot: 30, horse: 60, ship: 120 } })
+    expect(await map()).toMatchObject({ layers: [], elements: [], speeds: { foot: 24, horse: 30, ship: 48 } })
     await ok200('updateMap', { mapId, speeds: { foot: 25, horse: 50, ship: 100 } })
     expect((await map()).speeds).toEqual({ foot: 25, horse: 50, ship: 100 })
     await undo('updateMap')
-    expect((await map()).speeds).toEqual({ foot: 30, horse: 60, ship: 120 })
+    expect((await map()).speeds).toEqual({ foot: 24, horse: 30, ship: 48 })
   })
 
   it('capas: se añaden encima, se renombran, se recolocan y se quitan con lo suyo (deshacer lo devuelve)', async () => {
@@ -244,6 +244,30 @@ describe('las capas de los mapas y lo dibujado (módulo 9)', () => {
     // Lo revelado en una capa del máster sigue sin llegarle
     await ok200('setKnowledge', { worldId, campaignId: marca, kind: 'element', targetId: guarida.id, known: true })
     expect(JSON.stringify(await map(ana.cookie))).not.toMatch(/Guarida|Secretos/)
+    // Un texto que lleva a Varn conserva lo que dice; pierde el enlace
+    await ok200('createMapElement', {
+      mapId,
+      layerId: politica.id,
+      kind: 'label',
+      geometry: { at: [0.5, 0.5] },
+      label: 'Mar de Varn',
+      pageId: varn
+    })
+    expect((await map(ana.cookie)).elements).toContainEqual(
+      expect.objectContaining({ kind: 'label', label: 'Mar de Varn', pageId: null })
+    )
+    // Lo de antes de las capas (sin capa) cuenta como de la primera: si es del máster, no le llega
+    await conn.db.insert(schema.mapElements).values({
+      worldId,
+      mapId,
+      kind: 'label',
+      geometry: { at: [0.1, 0.1] },
+      label: 'Antiguo'
+    })
+    await ok200('updateMapLayer', { layerId: politica.id, hidden: true })
+    expect(JSON.stringify(await map(ana.cookie))).not.toContain('Antiguo')
+    await ok200('updateMapLayer', { layerId: politica.id, hidden: false })
+    expect(JSON.stringify(await map(ana.cookie))).toContain('Antiguo')
     // Ni lo cambia ni lo quita
     expect((await call('createMapLayer', { mapId, name: 'Mía' }, ana.cookie)).statusCode).toBe(404)
     expect((await call('deleteMapElement', { elementId: reino.id }, ana.cookie)).statusCode).toBe(404)
@@ -307,12 +331,12 @@ describe('las capas de los mapas y lo dibujado (módulo 9)', () => {
       days: null,
       pixels: 300
     })
-    // 100 px son 30 km: 300 px, 90 km; 3 días a pie, 1,5 a caballo, 0,75 en barco
+    // 100 px son 30 km: 300 px, 90 km; a 24, 30 y 48 al día (lo de serie): 3,75, 3 y 1,88 días
     await ok200('updateMap', { mapId, scale: { length: 100, value: 30, unit: 'km' } })
     expect(await ok200('measureMap', { tabId, points: line })).toEqual({
       distance: 90,
       unit: 'km',
-      days: { foot: 3, horse: 1.5, ship: 0.75 },
+      days: { foot: 3.75, horse: 3, ship: 1.88 },
       pixels: 300
     })
     const a = await ok200('createMapPin', { mapId, x: 0.1, y: 0.1 })

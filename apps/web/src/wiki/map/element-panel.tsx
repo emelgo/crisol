@@ -6,7 +6,7 @@
 import { type MapElementView, type MapLayerView, type MapStyle, type Page, WORLD_COLORS } from '@crisol/contracts'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { X } from 'lucide-react'
-import { useId, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../../api/context.tsx'
 import { useErrorText } from '../../api/errors.ts'
@@ -134,7 +134,7 @@ export function ElementPanel({
   const color = element.style.color ?? 'wine'
   const kind = element.kind
   const range = (name: RangeName, value: number, options: Omit<RangeProps, 'id' | 'name' | 'value'>) => (
-    <RangeField key={`${name}-${value}`} id={`${id}-${name}`} name={name} value={value} {...options} />
+    <RangeField key={name} id={`${id}-${name}`} name={name} value={value} {...options} />
   )
 
   return (
@@ -193,6 +193,18 @@ export function ElementPanel({
           </>
         )}
 
+        <div className={styles.players}>
+          <label className={styles.check}>
+            <input
+              type="checkbox"
+              checked={element.hidden}
+              onChange={(event) => void save({ hidden: event.currentTarget.checked })}
+            />
+            {t('map.element.hidden')}
+          </label>
+          <TargetReveal worldId={page.worldId} pageId={page.id} kind="element" targetId={element.id} />
+        </div>
+
         <fieldset className={styles.choices}>
           <legend>{t('map.pin.color')}</legend>
           {WORLD_COLORS.map((option) => (
@@ -209,108 +221,102 @@ export function ElementPanel({
           ))}
         </fieldset>
 
-        {kind === 'region' && (
-          <fieldset className={styles.segmented}>
-            <legend>{t('map.element.fill')}</legend>
-            {FILLS.map((fill) => (
-              <label key={fill}>
-                <input
-                  type="radio"
-                  name={`${id}-fill`}
-                  checked={(element.style.fill ?? 'solid') === fill}
-                  onChange={() => void style({ fill })}
-                />
-                <span>{t(`map.element.fills.${fill}`)}</span>
-              </label>
-            ))}
-          </fieldset>
-        )}
-        {kind === 'region' &&
-          (element.style.fill ?? 'solid') === 'solid' &&
-          range('opacity', Math.round((element.style.opacity ?? 0.25) * 100), {
-            min: 5,
-            max: 100,
-            step: 5,
-            unit: ' %',
-            onCommit: (value) => void style({ opacity: value / 100 })
-          })}
+        <details className={styles.aspect}>
+          <summary>{t('map.element.aspect')}</summary>
+          <div className={styles.aspectBody}>
+            {kind === 'region' && (
+              <fieldset className={styles.segmented}>
+                <legend>{t('map.element.fill')}</legend>
+                {FILLS.map((fill) => (
+                  <label key={fill}>
+                    <input
+                      type="radio"
+                      name={`${id}-fill`}
+                      checked={(element.style.fill ?? 'solid') === fill}
+                      onChange={() => void style({ fill })}
+                    />
+                    <span>{t(`map.element.fills.${fill}`)}</span>
+                  </label>
+                ))}
+              </fieldset>
+            )}
+            {kind === 'region' &&
+              (element.style.fill ?? 'solid') === 'solid' &&
+              range('opacity', Math.round((element.style.opacity ?? 0.25) * 100), {
+                min: 5,
+                max: 100,
+                step: 5,
+                unit: ' %',
+                onCommit: (value) => void style({ opacity: value / 100 })
+              })}
 
-        {kind !== 'label' && (
-          <fieldset className={styles.segmented}>
-            <legend>{t(kind === 'region' ? 'map.element.border' : 'map.element.stroke')}</legend>
-            {STROKES.map((stroke) => (
-              <label key={stroke}>
-                <input
-                  type="radio"
-                  name={`${id}-stroke`}
-                  checked={(element.style.stroke ?? 'solid') === stroke}
-                  onChange={() => void style({ stroke })}
-                />
-                <span>{t(`map.element.strokes.${stroke}`)}</span>
-              </label>
-            ))}
-          </fieldset>
-        )}
-        {kind === 'path' &&
-          range('width', element.style.width ?? 3, {
-            min: 1,
-            max: 12,
-            step: 1,
-            onCommit: (width) => void style({ width })
-          })}
+            {kind !== 'label' && (
+              <fieldset className={styles.segmented}>
+                <legend>{t(kind === 'region' ? 'map.element.border' : 'map.element.stroke')}</legend>
+                {STROKES.map((stroke) => (
+                  <label key={stroke}>
+                    <input
+                      type="radio"
+                      name={`${id}-stroke`}
+                      checked={(element.style.stroke ?? 'solid') === stroke}
+                      onChange={() => void style({ stroke })}
+                    />
+                    <span>{t(`map.element.strokes.${stroke}`)}</span>
+                  </label>
+                ))}
+              </fieldset>
+            )}
+            {kind === 'path' &&
+              range('width', element.style.width ?? 3, {
+                min: 1,
+                max: 12,
+                step: 1,
+                onCommit: (width) => void style({ width })
+              })}
 
-        {kind !== 'label' && (
-          <fieldset className={styles.segmented}>
-            <legend>{t('map.element.display')}</legend>
-            {DISPLAYS.map((display) => (
-              <label key={display}>
-                <input
-                  type="radio"
-                  name={`${id}-display`}
-                  checked={(element.style.display ?? 1) === display}
-                  onChange={() => void style({ display })}
-                />
-                <span>{t(`map.displays.${DISPLAY_NAMES[display]}`)}</span>
-              </label>
-            ))}
-          </fieldset>
-        )}
-        {range('size', element.style.size ?? (kind === 'path' ? 14 : kind === 'label' ? 20 : 26), {
-          min: 10,
-          max: 96,
-          step: 1,
-          onCommit: (size) => void style({ size })
-        })}
-        {kind === 'label' &&
-          'at' in element.geometry &&
-          range('rotate', element.geometry.rotate ?? 0, {
-            min: -180,
-            max: 180,
-            step: 5,
-            unit: '°',
-            onCommit: (rotate) => 'at' in element.geometry && void save({ geometry: { ...element.geometry, rotate } })
-          })}
-        {kind === 'label' &&
-          'at' in element.geometry &&
-          range('arc', Math.round((element.geometry.arc ?? 0) * 100), {
-            min: -100,
-            max: 100,
-            step: 10,
-            onCommit: (arc) =>
-              'at' in element.geometry && void save({ geometry: { ...element.geometry, arc: arc / 100 } })
-          })}
-
-        <div className={styles.players}>
-          <label className={styles.check}>
-            <input
-              type="checkbox"
-              checked={element.hidden}
-              onChange={(event) => void save({ hidden: event.currentTarget.checked })}
-            />
-            {t('map.element.hidden')}
-          </label>
-          <TargetReveal worldId={page.worldId} pageId={page.id} kind="element" targetId={element.id} />
-        </div>
+            {kind !== 'label' && (
+              <fieldset className={styles.segmented}>
+                <legend>{t('map.element.display')}</legend>
+                {DISPLAYS.map((display) => (
+                  <label key={display}>
+                    <input
+                      type="radio"
+                      name={`${id}-display`}
+                      checked={(element.style.display ?? 1) === display}
+                      onChange={() => void style({ display })}
+                    />
+                    <span>{t(`map.displays.${DISPLAY_NAMES[display]}`)}</span>
+                  </label>
+                ))}
+              </fieldset>
+            )}
+            {range('size', element.style.size ?? (kind === 'path' ? 14 : kind === 'label' ? 20 : 26), {
+              min: 10,
+              max: 96,
+              step: 1,
+              onCommit: (size) => void style({ size })
+            })}
+            {kind === 'label' &&
+              'at' in element.geometry &&
+              range('rotate', element.geometry.rotate ?? 0, {
+                min: -180,
+                max: 180,
+                step: 5,
+                unit: '°',
+                onCommit: (rotate) =>
+                  'at' in element.geometry && void save({ geometry: { ...element.geometry, rotate } })
+              })}
+            {kind === 'label' &&
+              'at' in element.geometry &&
+              range('arc', Math.round((element.geometry.arc ?? 0) * 100), {
+                min: -100,
+                max: 100,
+                step: 10,
+                onCommit: (arc) =>
+                  'at' in element.geometry && void save({ geometry: { ...element.geometry, arc: arc / 100 } })
+              })}
+          </div>
+        </details>
 
         <button type="button" className={list.secondary} onClick={onDelete}>
           {t('map.element.delete')}
@@ -337,6 +343,8 @@ type RangeProps = {
 function RangeField({ id, name, value, min, max, step, unit = '', onCommit }: RangeProps) {
   const { t } = useTranslation()
   const [shown, setShown] = useState(value)
+  // Si cambia por otro lado (deshacer, la IA), se ve lo nuevo; mientras se mueve, lo de la mano
+  useEffect(() => setShown(value), [value])
   const commit = (next: number) => {
     if (next !== value) onCommit(next)
   }

@@ -340,9 +340,14 @@
   border: 0;
 }
 
-.fields > label:not(.check) {
-  font-size: 0.875rem;
+/* Las etiquetas, pequeñas y en mayúsculas, como en el panel de la página: el panel, compacto */
+.fields > label:not(.check),
+.fields legend {
+  color: var(--color-muted);
+  font-size: 0.6875rem;
   font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 /* Nada se sale del panel: los campos, a su ancho */
@@ -1045,4 +1050,24 @@
   100% {
     filter: none;
   }
+}
+
+/* El aspecto de lo dibujado, plegado: lo que más se cambia (el color) queda fuera */
+.aspect {
+  border-block-start: 1px solid var(--line-frame);
+  padding-block-start: var(--space-2);
+}
+
+.aspect summary {
+  color: var(--color-text);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.aspectBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-block-start: var(--space-2);
 }

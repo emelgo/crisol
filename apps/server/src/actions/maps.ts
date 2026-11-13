@@ -161,12 +161,19 @@ async function mapView(ctx: ActionContext, tabId: string, pageId: string, view?:
   const elements = full
     ? allElements
     : allElements
-        .filter((element) => !(element.layerId && hiddenLayers.has(element.layerId)))
+        // Lo de antes de las capas (sin capa) cuenta como de la primera, como lo pinta la web
+        .filter((element) => {
+          const layer = element.layerId ?? allLayers[0]?.id
+          return !(layer && hiddenLayers.has(layer))
+        })
         .filter((element) => view.seesMapItem({ kind: 'element', id: element.id, pageId, hidden: element.hidden }))
         .map((element) => ({
           ...element,
           hidden: false,
-          ...(element.pageId && !view.seesPage(element.pageId) ? { pageId: null, pageTitle: null, label: null } : {})
+          // A una página que no conoce: sin enlace y sin su nombre (un texto conserva el suyo, que es lo que se lee)
+          ...(element.pageId && !view.seesPage(element.pageId)
+            ? { pageId: null, pageTitle: null, ...(element.kind === 'label' ? {} : { label: null }) }
+            : {})
         }))
   const all = await mapsRepo.listPins(ctx.db, map.id)
   // Un jugador (ADR-0017): los pines que ve; uno a una página que no ve, con su etiqueta y sin ella

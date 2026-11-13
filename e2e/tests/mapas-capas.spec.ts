@@ -142,7 +142,7 @@ test('los mapas con capas: el máster dibuja una región y una ruta, ordena capa
   await page.waitForTimeout(300)
   const box = await viewer.boundingBox()
   if (!box) throw new Error('sin visor')
-  await page.getByRole('toolbar', { name: 'Herramientas del mapa' }).getByRole('button', { name: 'Ruta (L)' }).click()
+  await page.getByRole('toolbar', { name: 'Herramientas del mapa' }).getByRole('button', { name: 'Ruta' }).click()
   for (const [x, y] of [
     [0.3, 0.45],
     [0.45, 0.6],
@@ -155,6 +155,7 @@ test('los mapas con capas: el máster dibuja una región y una ruta, ordena capa
   await expect(routePanel).toBeVisible()
   await routePanel.getByLabel('Nombre').fill('Camino real')
   await routePanel.getByLabel('Nombre').press('Enter')
+  await routePanel.getByText('Aspecto').click()
   await routePanel.getByText('Discontinuo').click()
   await expect.poll(async () => (await api('getMap', { tabId: tab.id })).elements.length).toBe(6)
   const route = (await api('getMap', { tabId: tab.id })).elements.find((e: { kind: string }) => e.kind === 'path')
@@ -202,9 +203,11 @@ test('los mapas con capas: el máster dibuja una región y una ruta, ordena capa
   await ana.getByRole('toolbar', { name: 'Herramientas del mapa' }).getByRole('button', { name: 'Capas' }).click()
   await expect(ana.getByRole('region', { name: 'Capas' }).getByText('Política')).toBeVisible()
   await expect(ana.getByRole('region', { name: 'Capas' }).getByText('Secretos')).toHaveCount(0)
-  await expect(ana.getByRole('button', { name: 'Ruta (L)' })).toHaveCount(0)
+  await expect(
+    ana.getByRole('toolbar', { name: 'Herramientas del mapa' }).getByRole('button', { name: 'Ruta' })
+  ).toHaveCount(0)
   // Mide de un sitio a otro: la distancia y los días
-  await ana.getByRole('button', { name: 'Medir (M)' }).click()
+  await ana.getByRole('toolbar', { name: 'Herramientas del mapa' }).getByRole('button', { name: 'Medir' }).click()
   const seenBox = await seen.boundingBox()
   if (!seenBox) throw new Error('sin visor')
   await ana.mouse.click(seenBox.x + seenBox.width * 0.3, seenBox.y + seenBox.height * 0.5)

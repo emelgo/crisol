@@ -20,8 +20,11 @@ export const MAX_MAP_PINS = 2000
 export const MAX_MAP_LAYERS = 30
 export const MAX_MAP_ELEMENTS = 1000
 export const MAX_ELEMENT_POINTS = 2000
-/** Lo que se anda en un día si el mapa no dice otra cosa, en la unidad de su escala (km) */
-export const DEFAULT_SPEEDS = { foot: 30, horse: 60, ship: 120 } as const
+/**
+ * Lo que se anda en un día si el mapa no dice otra cosa, en millas (las medidas, en las de D&D: docs/diseno.md): a pie
+ * a paso normal, a caballo y en un barco de vela
+ */
+export const DEFAULT_SPEEDS = { foot: 24, horse: 30, ship: 48 } as const
 
 export const pageTabView = z.object({
   id: z.uuid(),

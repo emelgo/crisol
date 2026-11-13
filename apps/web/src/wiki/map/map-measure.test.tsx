@@ -90,9 +90,10 @@ describe('medir en el mapa (módulo 9)', () => {
     tap(viewer, 0.7, 0.9)
     expect(panel.getByText('En línea recta')).toBeDefined()
     expect(panel.getByText('180')).toBeDefined()
+    // A 24, 30 y 48 al día (lo de serie, en la unidad de la escala)
+    expect(panel.getByText('8 días')).toBeDefined()
     expect(panel.getByText('6 días')).toBeDefined()
-    expect(panel.getByText('3 días')).toBeDefined()
-    expect(panel.getByText('2 días')).toBeDefined()
+    expect(panel.getByText('4 días')).toBeDefined()
     await userEvent.keyboard('{Escape}')
     expect(panel.getByText(/Pulsa de punto a punto/)).toBeDefined()
     await userEvent.keyboard('{Escape}')
@@ -101,7 +102,9 @@ describe('medir en el mapa (módulo 9)', () => {
 
   it('pulsar una ruta la mide entera', async () => {
     const { viewer } = await renderMap()
-    await userEvent.click(screen.getByRole('button', { name: 'Medir (M)' }))
+    await userEvent.click(
+      within(screen.getByRole('toolbar', { name: 'Herramientas del mapa' })).getByRole('button', { name: 'Medir' })
+    )
     const route = await waitFor(() => {
       const found = viewer.querySelector('[data-kind="path"] path')
       if (!found) throw new Error('sin ruta')
@@ -112,15 +115,17 @@ describe('medir en el mapa (módulo 9)', () => {
     const panel = within(await screen.findByRole('region', { name: 'Medir' }))
     expect(panel.getByText('Por «Camino real»')).toBeDefined()
     expect(panel.getByText('90')).toBeDefined()
-    // 90 km: 3 días a pie, 1,5 a caballo (2) y 0,75 en barco (1)
+    // 90: 3,75 días a pie (4), 3 a caballo y 1,9 en barco (2)
+    expect(panel.getByText('4 días')).toBeDefined()
     expect(panel.getByText('3 días')).toBeDefined()
     expect(panel.getByText('2 días')).toBeDefined()
-    expect(panel.getByText('1 día')).toBeDefined()
   })
 
   it('sin escala lo dice; «Ponerla» abre los ajustes: una raya de dos puntos y lo que mide la calibran', async () => {
     const { viewer, saved } = await renderMap({ scale: false })
-    await userEvent.click(screen.getByRole('button', { name: 'Medir (M)' }))
+    await userEvent.click(
+      within(screen.getByRole('toolbar', { name: 'Herramientas del mapa' })).getByRole('button', { name: 'Medir' })
+    )
     const panel = within(await screen.findByRole('region', { name: 'Medir' }))
     await userEvent.click(panel.getByRole('button', { name: 'Ponerla' }))
     const settings = within(await screen.findByRole('region', { name: 'Ajustes del mapa' }))
@@ -149,6 +154,6 @@ describe('medir en el mapa (módulo 9)', () => {
     await userEvent.tab()
     await waitFor(async () => expect((await saved()).speeds.foot).toBe(25))
     await userEvent.click(await settings.findByRole('button', { name: 'Volver a lo de serie' }))
-    await waitFor(async () => expect((await saved()).speeds).toEqual({ foot: 30, horse: 60, ship: 120 }))
+    await waitFor(async () => expect((await saved()).speeds).toEqual({ foot: 24, horse: 30, ship: 48 }))
   })
 })

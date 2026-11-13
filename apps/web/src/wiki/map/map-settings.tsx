@@ -18,7 +18,8 @@ import { mapKey } from './keys.ts'
 import styles from './map.module.css'
 import { scaleFrom } from './measure.ts'
 
-const UNITS = ['km', 'mi', 'leguas', 'm', 'pies'] as const
+/** Las de D&D (docs/diseno.md: nunca metros) */
+const UNITS = ['millas', 'leguas', 'pies'] as const
 const SPEEDS = ['foot', 'horse', 'ship'] as const
 
 export function MapSettings({
@@ -48,7 +49,7 @@ export function MapSettings({
   const errorText = useErrorText()
   const id = useId()
   const [value, setValue] = useState(String(map.scale?.value ?? 100))
-  const [unit, setUnit] = useState(map.scale?.unit ?? 'km')
+  const [unit, setUnit] = useState(map.scale?.unit ?? 'millas')
   const save = useMutation({
     mutationFn: (patch: { scale?: MapView['scale']; speeds?: MapView['speeds'] | null }) =>
       api.call('updateMap', { mapId: map.id, ...patch }),
@@ -59,7 +60,7 @@ export function MapSettings({
     const scale = scaleFrom(line[0], line[1], image, Number(value.replace(',', '.')), unit)
     if (scale) save.mutate({ scale }, { onSuccess: onLineDone })
   }
-  const speedUnit = map.scale?.unit ?? 'km'
+  const speedUnit = map.scale?.unit ?? 'millas'
   return (
     <section className={styles.panel} aria-label={t('map.settings.title')}>
       <header className={styles.panelHead}>

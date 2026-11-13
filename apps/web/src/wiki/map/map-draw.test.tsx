@@ -93,7 +93,9 @@ const square = {
 describe('dibujar y retocar en el mapa (módulo 9)', () => {
   it('una región punto a punto: Intro la cierra y se abre su panel con el foco en el nombre', async () => {
     const { viewer, saved } = await renderMap()
-    await userEvent.click(screen.getByRole('button', { name: 'Región (R)' }))
+    await userEvent.click(
+      within(screen.getByRole('toolbar', { name: 'Herramientas del mapa' })).getByRole('button', { name: 'Región' })
+    )
     expect(screen.getAllByRole('status').some((status) => /vértice/.test(status.textContent ?? ''))).toBe(true)
     tap(viewer, 0.1, 0.1)
     tap(viewer, 0.4, 0.1)
@@ -131,7 +133,11 @@ describe('dibujar y retocar en el mapa (módulo 9)', () => {
     })
     viewer.focus()
     await userEvent.keyboard('l')
-    expect(screen.getByRole('button', { name: 'Ruta (L)' }).getAttribute('aria-pressed')).toBe('true')
+    expect(
+      within(screen.getByRole('toolbar', { name: 'Herramientas del mapa' }))
+        .getByRole('button', { name: 'Ruta' })
+        .getAttribute('aria-pressed')
+    ).toBe('true')
     // Cerca del pin (a 4 px de pantalla): se pega a él
     fireEvent.pointerDown(viewer, { pointerId: 1, pointerType: 'mouse', button: 0, clientX: 164, clientY: 136 })
     fireEvent.pointerUp(viewer, { pointerId: 1, pointerType: 'mouse', button: 0, clientX: 164, clientY: 136 })
@@ -162,7 +168,9 @@ describe('dibujar y retocar en el mapa (módulo 9)', () => {
 
   it('un texto: se pone donde se pulsa, con su nombre para cambiar', async () => {
     const { viewer, saved } = await renderMap()
-    await userEvent.click(screen.getByRole('button', { name: 'Texto (T)' }))
+    await userEvent.click(
+      within(screen.getByRole('toolbar', { name: 'Herramientas del mapa' })).getByRole('button', { name: 'Texto' })
+    )
     tap(viewer, 0.5, 0.9)
     await waitFor(async () => expect(await saved()).toHaveLength(1))
     expect((await saved())[0]).toMatchObject({ kind: 'label', label: 'Texto', geometry: { at: [0.5, 0.9] } })

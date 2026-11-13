@@ -68,11 +68,7 @@ export const MapDrawing = memo(function MapDrawing({
   const hatches = [
     ...new Set(shown.filter((e) => e.kind === 'region' && e.style.fill === 'hatch').map((e) => hexOf(e.style)))
   ]
-  const open = (element: MapElementView) => (event: MouseEvent) => {
-    if (!element.pageId || !onOpen) return
-    event.stopPropagation()
-    onOpen(element.pageId)
-  }
+
   return (
     <svg
       className={styles.drawing}
@@ -112,22 +108,23 @@ export const MapDrawing = memo(function MapDrawing({
           image={image}
           selected={element.id === selected}
           fresh={fresh?.has(element.id) ?? false}
-          onDoubleClick={open(element)}
-          onPointerDown={onElementPointerDown ? (event) => onElementPointerDown(event, element) : undefined}
-          onClick={onElementClick ? (event) => onElementClick(event, element) : undefined}
+          onOpen={onOpen}
+          onPointerDown={onElementPointerDown}
+          onClick={onElementClick}
         />
       ))}
     </svg>
   )
 })
 
-function Element({
+/** Una región, una ruta o un texto: solo se vuelve a pintar si cambia él (no al mover el cursor) */
+const Element = memo(function Element({
   id,
   element,
   image,
   selected,
   fresh,
-  onDoubleClick,
+  onOpen,
   onPointerDown,
   onClick
 }: {
@@ -136,9 +133,9 @@ function Element({
   image: Size
   selected: boolean
   fresh: boolean
-  onDoubleClick: (event: MouseEvent) => void
-  onPointerDown?: (event: PointerEvent<SVGGElement>) => void
-  onClick?: (event: MouseEvent<SVGGElement>) => void
+  onOpen?: (pageId: string) => void
+  onPointerDown?: (event: PointerEvent<SVGGElement>, element: MapElementView) => void
+  onClick?: (event: MouseEvent<SVGGElement>, element: MapElementView) => void
 }) {
   const { style, geometry } = element
   const base = DEFAULTS[element.kind]
@@ -161,9 +158,13 @@ function Element({
     'data-hidden': element.hidden || undefined,
     'data-link': element.pageId ? true : undefined,
     'data-id': element.id,
-    onDoubleClick,
-    onPointerDown,
-    onClick
+    onDoubleClick: (event: MouseEvent) => {
+      if (!element.pageId || !onOpen) return
+      event.stopPropagation()
+      onOpen(element.pageId)
+    },
+    onPointerDown: onPointerDown ? (event: PointerEvent<SVGGElement>) => onPointerDown(event, element) : undefined,
+    onClick: onClick ? (event: MouseEvent<SVGGElement>) => onClick(event, element) : undefined
   }
   if (element.kind === 'region' && 'pieces' in geometry) {
     const d = geometry.pieces.map((piece) => pathOf(piece, image, true)).join(' ')
@@ -254,4 +255,4 @@ function Element({
     )
   }
   return null
-}
+})
