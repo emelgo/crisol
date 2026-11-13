@@ -25,7 +25,9 @@
   background-position: center;
   background-size: cover;
   opacity: var(--alpha, 1);
-  animation: aparecer 600ms ease-out backwards;
+  /* Igual al llegar una portada que al irse (la de siempre vuelve encima con el mismo fundido): suave en los dos
+     sentidos (Enrique, 2026-11-13: «al quitarse igual que al aparecer quiero una transición») */
+  animation: aparecer 900ms ease-in-out backwards;
 }
 
 /* El turno de las de siempre: un fundido largo, que no se note el cambio (Enrique, 2026-11-13: «sin llegar a marear») */
