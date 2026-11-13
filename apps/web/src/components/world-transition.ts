@@ -64,8 +64,9 @@ let current: string | null = null
  * ninguna otra (la del mundo del que se salió antes aún lo tiene: con el nombre repetido, no habría transición). Y sube
  * el calor del crisol: unas brasas
  */
-export function enterWorld(worldId: string, card: Element | null) {
+export function enterWorld(worldId: string, card: Element | null, full = false) {
   current = worldId
+  if (full) riseIntoFlame()
   for (const other of document.querySelectorAll<HTMLElement>('[style*="view-transition-name"]')) {
     if (other !== card && other.style.viewTransitionName === 'mundo-actual')
       other.style.removeProperty('view-transition-name')
@@ -84,6 +85,7 @@ export function enterWorld(worldId: string, card: Element | null) {
  */
 export function leaveWorld() {
   current = null
+  leavingFull()
   for (const named of document.querySelectorAll<HTMLElement>('[style*="view-transition-name"]')) {
     if (named.style.viewTransitionName === 'mundo-actual') named.style.removeProperty('view-transition-name')
   }
@@ -116,4 +118,71 @@ function overlay(className: string, ms: number) {
 /** Para la tarjeta y la cabecera de ese mundo: su nombre de transición */
 export function worldTransition(worldId: string): CSSProperties | undefined {
   return current === worldId ? ({ viewTransitionName: 'mundo-actual' } as CSSProperties) : undefined
+}
+
+/** Cuánto vale «recién»: lo que tarda en montarse lo nuevo dentro de la transición, con margen */
+const RECENT = 1500
+/** Lo que tarda cada icono en subir al crisol y el paso entre uno y otro (los de la barra: components/ribbon.tsx) */
+const ICON_TIME = 460
+const ICON_STEP = 70
+let enteredFullAt = 0
+let leftFullAt = 0
+let leftIcons = 0
+
+/** Recién entrado en un mundo a pantalla completa desde su tarjeta: la llama de su cabecera se aviva y salen sus iconos */
+export const justEnteredFull = () => Date.now() - enteredFullAt < RECENT
+
+/**
+ * Recién salido de un mundo a pantalla completa por su llama: la barra de la app, que vuelve, expulsa a «Mundos» cuando
+ * los iconos del mundo ya han subido (leave: cuánto tardan en subir todos), y su llama echa humo
+ */
+export const justLeftFull = () =>
+  Date.now() - leftFullAt < RECENT ? { leave: leftIcons > 0 ? (leftIcons - 1) * ICON_STEP + ICON_TIME : 0 } : null
+
+/** Quita un nombre de transición puesto a mano cuando la transición ya ha acabado */
+const later = (clear: () => void) => window.setTimeout(clear, 3000)
+
+/**
+ * Al entrar en un mundo a pantalla completa (ADR-0027), lo de la barra de la app («Mundos», Plantillas…) sube a la
+ * llama y se funde con ella, como antes: cada uno va aparte en la transición, con lo que tiene que subir (--sube-N, en
+ * la raíz: de ella lo leen sus pseudoelementos; base.css). La llama de la barra se convierte en la de la cabecera
+ */
+function riseIntoFlame() {
+  enteredFullAt = Date.now()
+  const flame = document.querySelector<HTMLElement>('[data-tour="barra-llama"]')
+  const box = flame?.getBoundingClientRect()
+  if (!flame || !box) return
+  flame.style.setProperty('view-transition-name', 'llama')
+  const center = box.top + box.height / 2
+  const root = document.documentElement
+  const items = [...document.querySelectorAll<HTMLElement>('[data-rise]')].slice(0, 6)
+  items.forEach((item, i) => {
+    const at = item.getBoundingClientRect()
+    item.style.setProperty('view-transition-name', `sube-${i}`)
+    root.style.setProperty(`--sube-${i}`, `${Math.round(center - (at.top + at.height / 2))}px`)
+  })
+  later(() => {
+    for (let i = 0; i < items.length; i++) root.style.removeProperty(`--sube-${i}`)
+  })
+}
+
+/**
+ * Al salir de un mundo a pantalla completa: su cabecera y su barra se alejan con lo demás, y los iconos de la barra
+ * suben al crisol del último al primero (cada uno aparte en la transición, con su retraso: --sale-N). Fuera de él, nada
+ */
+function leavingFull() {
+  const header = document.querySelector<HTMLElement>('[data-cabecera-mundo]')
+  if (!header) return
+  leftFullAt = Date.now()
+  header.style.setProperty('view-transition-name', 'cabecera-mundo')
+  const root = document.documentElement
+  const icons = [...document.querySelectorAll<HTMLElement>('[data-world-icons] > *')].slice(0, 6)
+  leftIcons = icons.length
+  icons.forEach((icon, i) => {
+    icon.style.setProperty('view-transition-name', `icono-mundo-${i}`)
+    root.style.setProperty(`--sale-${i}`, `${(icons.length - 1 - i) * ICON_STEP}ms`)
+  })
+  later(() => {
+    for (let i = 0; i < icons.length; i++) root.style.removeProperty(`--sale-${i}`)
+  })
 }

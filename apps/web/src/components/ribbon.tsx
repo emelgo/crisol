@@ -50,7 +50,7 @@ import styles from './ribbon.module.css'
 import { spaceOf } from './spaces.ts'
 import { useWindow } from './window.tsx'
 import { useHistoryAndTrash, useIsOwner } from './world-hooks.ts'
-import { LEAVE_ITEM, LEAVE_WORLD, leaveItem, leaveWorld, SECTION, smoke } from './world-transition.ts'
+import { justLeftFull, LEAVE_ITEM, LEAVE_WORLD, leaveItem, leaveWorld, SECTION, smoke } from './world-transition.ts'
 
 /** Lo que tarda cada icono del mundo en salir del crisol (o en subir a él) y el paso entre uno y otro: aquí y solo aquí
  * (el nav se los pasa al CSS como --icon-time y --icon-step) */
@@ -158,11 +158,17 @@ export function Ribbon() {
   const [wasInWorld, setWasInWorld] = useState(inWorld)
   // Recién entrado (en este mismo pintado aún no se ve en phase)
   const justEntered = inWorld && !wasInWorld
-  const [phase, setPhase] = useState<'still' | 'merging' | 'emerging'>('still')
+  // Recién salido de un mundo a pantalla completa (ADR-0027): la barra vuelve y, como antes, la llama expulsa a
+  // «Mundos» cuando los iconos del mundo ya han subido, y echa humo
+  const [returning] = useState(justLeftFull)
+  const [phase, setPhase] = useState<'still' | 'merging' | 'emerging'>(returning ? 'emerging' : 'still')
   const sections = useRef<HTMLElement>(null)
   // La llama: al entrar, se aviva y suelta chispas; al salir, se aplaca y echa humo. Con su propio tiempo, más largo
   // que el de «Mundos»
-  const [flame, setFlame] = useState<'still' | 'fire' | 'smoke'>('still')
+  const [flame, setFlame] = useState<'still' | 'fire' | 'smoke'>(returning ? 'smoke' : 'still')
+  useLayoutEffect(() => {
+    if (returning) sections.current?.style.setProperty('--leave', `${returning.leave}ms`)
+  }, [returning])
   if (inWorld !== wasInWorld) {
     setWasInWorld(inWorld)
     setPhase(inWorld ? 'merging' : 'emerging')

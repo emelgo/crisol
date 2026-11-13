@@ -21,6 +21,7 @@ import { NewCard } from '../components/new-card.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import {
   ENTER_WORLD,
+  ENTER_WORLD_FULL,
   enterWorld,
   LEAVE_WORLD,
   LEAVE_WORLD_FULL,
@@ -318,8 +319,9 @@ export function WorldCard({
           to="/mundos/$worldId"
           params={{ worldId: world.id }}
           className={styles.name}
-          viewTransition={ENTER_WORLD}
-          onClick={(event) => enterWorld(world.id, event.currentTarget.closest('li'))}
+          // El que se dirige va a pantalla completa (ADR-0027): la barra de la app se va con lo demás
+          viewTransition={world.role === 'master' ? ENTER_WORLD_FULL : ENTER_WORLD}
+          onClick={(event) => enterWorld(world.id, event.currentTarget.closest('li'), world.role === 'master')}
         >
           {world.name}
         </Link>

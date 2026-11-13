@@ -7,13 +7,14 @@
 import type { Page, World } from '@crisol/contracts'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { ChevronDown, Download, History, Search, Settings, Trash2 } from 'lucide-react'
-import { type CSSProperties, useRef, useState } from 'react'
+import { type CSSProperties, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AccountMenu } from '../../components/account-menu.tsx'
 import { CrisolMark } from '../../components/brand.tsx'
+import crucible from '../../components/crucible.module.css'
 import { Menu, MenuItem } from '../../components/menu.tsx'
 import { useHistoryAndTrash } from '../../components/world-hooks.ts'
-import { LEAVE_WORLD_FULL, leaveWorld, worldTransition } from '../../components/world-transition.ts'
+import { justEnteredFull, LEAVE_WORLD_FULL, leaveWorld, worldTransition } from '../../components/world-transition.ts'
 import { LookDialog, useWorldKind } from '../../routes/world-card.tsx'
 import { useExport } from '../export.tsx'
 import { OpenTabs } from '../navigation.tsx'
@@ -29,17 +30,27 @@ export function WorldHeader({
   onSearch: () => void
 }) {
   const { t } = useTranslation()
+  // Recién entrado desde su tarjeta: la tarjeta se convierte en ella y la llama se aviva y suelta chispas (como la de
+  // la barra antes); al rato, quietas
+  const [entering, setEntering] = useState(justEnteredFull)
+  useEffect(() => {
+    if (!entering) return
+    const timer = window.setTimeout(() => setEntering(false), 4500)
+    return () => window.clearTimeout(timer)
+  }, [entering])
   return (
     <header
       className={styles.header}
       // Al entrar, la tarjeta del mundo se convierte en ella; si no, va aparte en las transiciones (no parpadea al
       // cambiar de página)
-      style={(worldTransition(world.id) ?? { viewTransitionName: 'cabecera-mundo' }) as CSSProperties}
+      style={((entering && worldTransition(world.id)) || { viewTransitionName: 'cabecera-mundo' }) as CSSProperties}
       data-cabecera-mundo=""
     >
       <Link
         to="/mundos"
-        className={styles.flame}
+        className={entering ? `${styles.flame} ${crucible.cooking}` : styles.flame}
+        // La llama de la barra de la app se convierte en esta al entrar, y esta en aquella al salir
+        style={{ viewTransitionName: 'llama' } as CSSProperties}
         viewTransition={LEAVE_WORLD_FULL}
         onClick={leaveWorld}
         aria-label={t('app.name')}

@@ -208,6 +208,8 @@
   min-inline-size: 0;
   border-inline-end: 1px solid var(--glass-edge);
   background: var(--glass-sheen), var(--glass-panel);
+  /* Va aparte en las transiciones: quieta al cambiar de página; al entrar llega con lo demás (base.css) */
+  view-transition-name: barra-mundo;
 }
 
 .side::before {

@@ -6,14 +6,29 @@
 import type { Page } from '@crisol/contracts'
 import { Link } from '@tanstack/react-router'
 import { Folder, type LucideIcon, PanelLeftClose, PanelLeftOpen, Plus, ScrollText } from 'lucide-react'
-import { type KeyboardEvent, type PointerEvent, type ReactNode, useId, useRef } from 'react'
+import {
+  type CSSProperties,
+  type KeyboardEvent,
+  type PointerEvent,
+  type ReactNode,
+  useEffect,
+  useId,
+  useRef,
+  useState
+} from 'react'
 import { useTranslation } from 'react-i18next'
+import crucible from '../../components/crucible.module.css'
+import { justEnteredFull } from '../../components/world-transition.ts'
 import { ExportWiki } from '../export.tsx'
 import { PagesPanel } from './pages-panel.tsx'
 import { clampWidth, SIDE_TABS, SIDE_WIDTH, type SideTab } from './shell-state.ts'
 import styles from './world-shell.module.css'
 
 const ICONS: Record<SideTab, LucideIcon> = { pages: ScrollText, files: Folder }
+
+/** Lo que tarda cada icono en salir del crisol y el paso entre uno y otro (como los de la barra de la app) */
+const ICON_TIME = 460
+const ICON_STEP = 70
 
 /** Cuánto se estira con cada flecha (con Mayúsculas, más) */
 const STEP = 16
@@ -44,6 +59,15 @@ export function WorldSidebar({
 }) {
   const { t } = useTranslation()
   const ids = useId()
+  // Recién entrado desde su tarjeta: sus iconos salen del crisol uno tras otro (crucible.module.css), como los de la barra
+  const [emerging, setEmerging] = useState(justEnteredFull)
+  useEffect(() => {
+    if (!emerging) return
+    const timer = window.setTimeout(() => setEmerging(false), 4000)
+    return () => window.clearTimeout(timer)
+  }, [emerging])
+  const emerge = emerging ? `${crucible.emerge} ${crucible.emergeIn}` : ''
+  const icons = { '--icon-time': `${ICON_TIME}ms`, '--icon-step': `${ICON_STEP}ms` } as CSSProperties
   const aside = useRef<HTMLElement>(null)
   const move = (event: KeyboardEvent) => {
     const at = SIDE_TABS.indexOf(tab)
@@ -111,7 +135,7 @@ export function WorldSidebar({
           <PanelLeftOpen aria-hidden="true" size={18} />
         </button>
         {/* Plegada, cada icono despliega la barra en su pestaña */}
-        <ul className={styles.sideIcons} data-world-icons="">
+        <ul className={`${styles.sideIcons} ${emerge}`} style={icons} data-world-icons="">
           {SIDE_TABS.map((key) => {
             const Icon = ICONS[key]
             return (
@@ -138,7 +162,13 @@ export function WorldSidebar({
   }
   return (
     <aside ref={aside} className={styles.side} aria-label={t('worldShell.side')} data-side="open">
-      <div className={styles.sideTabs} role="tablist" aria-label={t('worldShell.side')} data-world-icons="">
+      <div
+        className={`${styles.sideTabs} ${emerge}`}
+        style={icons}
+        role="tablist"
+        aria-label={t('worldShell.side')}
+        data-world-icons=""
+      >
         {SIDE_TABS.map((key) => {
           const Icon = ICONS[key]
           const selected = key === tab

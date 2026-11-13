@@ -17,7 +17,7 @@ al final.
   (`abrirArbol`, `abrirArchivosDelMundo`).
   - Verifica: vitest del armazón (pestañas, plegar, recordar), capturas a 1600 y 1440 px, la pizarra sin pasar a su
     interfaz de móvil.
-- [ ] 3. **Entrar y salir**: la tarjeta crece hasta la cabecera; lo de la barra de la app sube a la llama y se va; la
+- [x] 3. **Entrar y salir**: la tarjeta crece hasta la cabecera; lo de la barra de la app sube a la llama y se va; la
   llama de la cabecera se aviva y los iconos salen a la barra izquierda. Salir por la llama: humo, los iconos suben y la
   barra de la app vuelve con «Mundos» saliendo de la llama.
   - Verifica: capturas a mitad de cada transición; vitest de las señales (recién entrado, recién salido).
