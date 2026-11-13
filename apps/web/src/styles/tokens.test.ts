@@ -34,74 +34,75 @@ function contrast(a = '', b = '') {
 }
 
 describe('los tokens de color', () => {
-  for (const [theme, selector] of [['oscuro', ':root']] as const) {
-    it(`en el tema ${theme}, el texto, el atenuado y el acento llegan a 4,5:1 con el fondo y la superficie`, () => {
-      const c = colors(selector)
-      for (const text of ['color-text', 'color-muted', 'color-accent-text', 'color-ai']) {
-        expect(contrast(c[text], c['color-bg'])).toBeGreaterThanOrEqual(4.5)
-        expect(contrast(c[text], c['color-surface'])).toBeGreaterThanOrEqual(4.5)
-        expect(contrast(c[text], c['color-raised'])).toBeGreaterThanOrEqual(4.5)
-      }
-      expect(contrast(c['color-on-accent'], c['color-accent'])).toBeGreaterThanOrEqual(4.5)
-    })
+  // Solo hay tema oscuro (Enrique, 2026-11-11)
+  const theme = 'oscuro'
+  const selector = ':root'
+  it(`en el tema ${theme}, el texto, el atenuado y el acento llegan a 4,5:1 con el fondo y la superficie`, () => {
+    const c = colors(selector)
+    for (const text of ['color-text', 'color-muted', 'color-accent-text', 'color-ai']) {
+      expect(contrast(c[text], c['color-bg'])).toBeGreaterThanOrEqual(4.5)
+      expect(contrast(c[text], c['color-surface'])).toBeGreaterThanOrEqual(4.5)
+      expect(contrast(c[text], c['color-raised'])).toBeGreaterThanOrEqual(4.5)
+    }
+    expect(contrast(c['color-on-accent'], c['color-accent'])).toBeGreaterThanOrEqual(4.5)
+  })
 
-    it(`en el tema ${theme}, los títulos de cada nivel y los enlaces llegan a 4,5:1 con el fondo, la superficie y lo realzado`, () => {
-      const c = colors(selector)
-      for (const text of ['color-h2', 'color-h3', 'color-h4', 'color-link']) {
-        expect(contrast(c[text], c['color-bg'])).toBeGreaterThanOrEqual(4.5)
-        expect(contrast(c[text], c['color-surface'])).toBeGreaterThanOrEqual(4.5)
-        expect(contrast(c[text], c['color-raised'])).toBeGreaterThanOrEqual(4.5)
-      }
-    })
+  it(`en el tema ${theme}, los títulos de cada nivel y los enlaces llegan a 4,5:1 con el fondo, la superficie y lo realzado`, () => {
+    const c = colors(selector)
+    for (const text of ['color-h2', 'color-h3', 'color-h4', 'color-link']) {
+      expect(contrast(c[text], c['color-bg'])).toBeGreaterThanOrEqual(4.5)
+      expect(contrast(c[text], c['color-surface'])).toBeGreaterThanOrEqual(4.5)
+      expect(contrast(c[text], c['color-raised'])).toBeGreaterThanOrEqual(4.5)
+    }
+  })
 
-    it(`en el tema ${theme}, un secreto se lee: su rótulo y el texto a 4,5:1 sobre su fondo, y su borde a 3:1`, () => {
-      const c = colors(selector)
-      expect(contrast(c['color-secret-text'], c['color-secret'])).toBeGreaterThanOrEqual(4.5)
-      expect(contrast(c['color-text'], c['color-secret'])).toBeGreaterThanOrEqual(4.5)
-      expect(contrast(c['color-secret-rule'], c['color-secret'])).toBeGreaterThanOrEqual(3)
-      expect(contrast(c['color-secret-rule'], c['color-surface'])).toBeGreaterThanOrEqual(3)
-    })
+  it(`en el tema ${theme}, un secreto se lee: su rótulo y el texto a 4,5:1 sobre su fondo, y su borde a 3:1`, () => {
+    const c = colors(selector)
+    expect(contrast(c['color-secret-text'], c['color-secret'])).toBeGreaterThanOrEqual(4.5)
+    expect(contrast(c['color-text'], c['color-secret'])).toBeGreaterThanOrEqual(4.5)
+    expect(contrast(c['color-secret-rule'], c['color-secret'])).toBeGreaterThanOrEqual(3)
+    expect(contrast(c['color-secret-rule'], c['color-surface'])).toBeGreaterThanOrEqual(3)
+  })
 
-    it(`en el tema ${theme}, el rótulo de cada recuadro llega a 4,5:1 sobre su fondo, y el texto de leer en voz alta también`, () => {
-      const c = colors(selector)
-      for (const label of ['color-tip', 'color-warning', 'color-danger', 'color-muted']) {
-        expect(contrast(c[label], c['color-raised'])).toBeGreaterThanOrEqual(4.5)
-      }
-      expect(contrast(c['color-read-aloud-rule'], c['color-read-aloud'])).toBeGreaterThanOrEqual(4.5)
-      expect(contrast(c['color-text'], c['color-read-aloud'])).toBeGreaterThanOrEqual(4.5)
-    })
+  it(`en el tema ${theme}, el rótulo de cada recuadro llega a 4,5:1 sobre su fondo, y el texto de leer en voz alta también`, () => {
+    const c = colors(selector)
+    for (const label of ['color-tip', 'color-warning', 'color-danger', 'color-muted']) {
+      expect(contrast(c[label], c['color-raised'])).toBeGreaterThanOrEqual(4.5)
+    }
+    expect(contrast(c['color-read-aloud-rule'], c['color-read-aloud'])).toBeGreaterThanOrEqual(4.5)
+    expect(contrast(c['color-text'], c['color-read-aloud'])).toBeGreaterThanOrEqual(4.5)
+  })
 
-    it(`en el tema ${theme}, la barra de arriba se lee: su texto, el atenuado y el acento a 4,5:1`, () => {
-      const c = colors(selector)
-      for (const text of ['color-chrome-text', 'color-chrome-muted', 'color-chrome-accent']) {
-        expect(contrast(c[text], c['color-chrome'])).toBeGreaterThanOrEqual(4.5)
-      }
-    })
+  it(`en el tema ${theme}, la barra de arriba se lee: su texto, el atenuado y el acento a 4,5:1`, () => {
+    const c = colors(selector)
+    for (const text of ['color-chrome-text', 'color-chrome-muted', 'color-chrome-accent']) {
+      expect(contrast(c[text], c['color-chrome'])).toBeGreaterThanOrEqual(4.5)
+    }
+  })
 
-    it(`en el tema ${theme}, el foco llega a 3:1 con el fondo`, () => {
-      const c = colors(selector)
-      expect(contrast(c['color-focus'], c['color-bg'])).toBeGreaterThanOrEqual(3)
-    })
+  it(`en el tema ${theme}, el foco llega a 3:1 con el fondo`, () => {
+    const c = colors(selector)
+    expect(contrast(c['color-focus'], c['color-bg'])).toBeGreaterThanOrEqual(3)
+  })
 
-    it(`en el tema ${theme}, las brasas, el humo y la ceniza se ven: a 3:1 con el fondo y con la barra`, () => {
-      const c = colors(selector)
-      const fx = effects(selector)
-      const names = ['fx-ember-1', 'fx-ember-2', 'fx-ember-3', 'fx-ember-4', 'fx-ember-5', 'fx-heat-rgb']
-      names.push('fx-smoke-rgb', 'fx-ash-1', 'fx-ash-2', 'fx-ash-3', 'fx-ash-4', 'fx-ash-5', 'fx-ash-rgb')
-      for (const name of names) {
-        expect(fx[name], name).toMatch(/^#/)
-        expect(contrast(fx[name], c['color-bg']), name).toBeGreaterThanOrEqual(3)
-        expect(contrast(fx[name], c['color-raised']), name).toBeGreaterThanOrEqual(3)
-      }
-    })
+  it(`en el tema ${theme}, las brasas, el humo y la ceniza se ven: a 3:1 con el fondo y con la barra`, () => {
+    const c = colors(selector)
+    const fx = effects(selector)
+    const names = ['fx-ember-1', 'fx-ember-2', 'fx-ember-3', 'fx-ember-4', 'fx-ember-5', 'fx-heat-rgb']
+    names.push('fx-smoke-rgb', 'fx-ash-1', 'fx-ash-2', 'fx-ash-3', 'fx-ash-4', 'fx-ash-5', 'fx-ash-rgb')
+    for (const name of names) {
+      expect(fx[name], name).toMatch(/^#/)
+      expect(contrast(fx[name], c['color-bg']), name).toBeGreaterThanOrEqual(3)
+      expect(contrast(fx[name], c['color-raised']), name).toBeGreaterThanOrEqual(3)
+    }
+  })
 
-    it(`en el tema ${theme}, el borde de los campos llega a 3:1 con el fondo y la superficie`, () => {
-      const c = colors(selector)
-      expect(c['color-field-border']).toMatch(/^#/)
-      expect(contrast(c['color-field-border'], c['color-bg'])).toBeGreaterThanOrEqual(3)
-      expect(contrast(c['color-field-border'], c['color-surface'])).toBeGreaterThanOrEqual(3)
-    })
-  }
+  it(`en el tema ${theme}, el borde de los campos llega a 3:1 con el fondo y la superficie`, () => {
+    const c = colors(selector)
+    expect(c['color-field-border']).toMatch(/^#/)
+    expect(contrast(c['color-field-border'], c['color-bg'])).toBeGreaterThanOrEqual(3)
+    expect(contrast(c['color-field-border'], c['color-surface'])).toBeGreaterThanOrEqual(3)
+  })
 
   it('el borde decorativo no llega: por eso los campos no lo usan', () => {
     const c = colors(':root')
