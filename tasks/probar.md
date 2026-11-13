@@ -9,6 +9,20 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
+## Módulo 9: mapas con capas (en local, rama `modulo-9/mapas`; migración 0081)
+
+- [ ] **Capas** (una página con mapa → «Capas» en la barra del mapa): crear una, renombrarla, ordenarlas arrastrando,
+  dejar una «Solo del máster» y quitarla. El ojo la apaga solo en tu pantalla.
+- [ ] **Dibujar** («Ampliar el mapa» para tener sitio): una región (R) punto a punto, una ruta (L) que empiece en un
+  pin y un texto (T). Retocar: arrastrar un vértice, el «+» de un lado, botón derecho para quitarlo, arrastrar lo
+  elegido entero; Supr y Ctrl+Z. En su panel: nombre, página, capa, color, relleno, borde, oculto.
+- [ ] **Medir** (M): en «Ajustes del mapa», dibujar la raya de la escala y decir cuánto mide; luego medir de un sitio a
+  otro y pulsar una ruta para medirla entera (distancia y días a pie, a caballo y en barco).
+- [ ] **La jugadora**: no ve la capa del máster ni lo oculto; lo que lleva a una página que no conoce sale sin nombre;
+  revelarle algo desde su panel («Revelar…»). Mide, también en el móvil.
+- [ ] **La IA** (cuando esté en staging): «mira el mapa de Eana y dibuja los reinos en una capa Política y el camino
+  real de A a B» (imagen_mapa, crear_capa, dibujar_en_mapa); luego «¿cuántos días hay de A a B a caballo?».
+
 ## Revisión, tanda 9: el MCP (en staging, rama `revision/tanda-9`)
 
 - [ ] **Reconecta el conector** «Neo Crisol» en claude.ai (Ajustes → Conectores: desconectar y conectar), para que
