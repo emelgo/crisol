@@ -208,9 +208,10 @@ h1[tabindex="-1"]:focus-visible {
   cursor: not-allowed;
 }
 
-/* Una sección con título es una caja de la hoja: marco de 1px con las esquinas redondeadas del cristal */
-main section[aria-labelledby],
-dialog section[aria-labelledby] {
+/* Una sección con título es una caja de la hoja: marco de 1px con las esquinas redondeadas del cristal (no las de
+   Excalidraw, en la pizarra: su barra y su zoom son suyas; :where, para no ganar a lo de cada módulo) */
+main section[aria-labelledby]:where(:not(.excalidraw *)),
+dialog section[aria-labelledby]:where(:not(.excalidraw *)) {
   position: relative;
   isolation: isolate;
   margin-block: var(--space-6);
@@ -222,8 +223,8 @@ dialog section[aria-labelledby] {
   backdrop-filter: var(--frame-blur);
 }
 
-main section[aria-labelledby]::before,
-dialog section[aria-labelledby]::before {
+main section[aria-labelledby]:where(:not(.excalidraw *))::before,
+dialog section[aria-labelledby]:where(:not(.excalidraw *))::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -234,8 +235,8 @@ dialog section[aria-labelledby]::before {
 }
 
 /* El título de un recuadro: más pequeño y sin raya, el recuadro ya lo separa */
-main section[aria-labelledby] > h2:first-child,
-dialog section[aria-labelledby] > h2:first-child {
+main section[aria-labelledby]:where(:not(.excalidraw *)) > h2:first-child,
+dialog section[aria-labelledby]:where(:not(.excalidraw *)) > h2:first-child {
   margin-block-start: 0;
   padding: 0;
   border: 0;

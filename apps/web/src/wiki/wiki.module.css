@@ -19,7 +19,7 @@
 }
 
 /* Las secciones con título y los botones, redondeados */
-.wiki :is(section[aria-labelledby], button, input, select, textarea) {
+.wiki :is(section[aria-labelledby], button, input, select, textarea):where(:not(:global(.excalidraw) *)) {
   border-radius: var(--radius);
 }
 

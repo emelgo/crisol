@@ -382,7 +382,7 @@
   scrollbar-width: thin;
 }
 
-.center :is(section[aria-labelledby], button, input, select, textarea) {
+.center :is(section[aria-labelledby], button, input, select, textarea):where(:not(:global(.excalidraw) *)) {
   border-radius: var(--radius);
 }
 

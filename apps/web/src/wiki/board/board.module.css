@@ -152,10 +152,15 @@
   --ui-font: var(--font-body);
 }
 
-/* Lo que saca de Crisol (su biblioteca pública) no se ofrece */
-.canvas :global(.default-sidebar-trigger),
-.canvas :global(.help-icon) {
+/* Lo que saca de Crisol (su biblioteca pública) no se ofrece. Con más peso que el suyo: su CSS llega después */
+.canvas :global(.excalidraw .default-sidebar-trigger),
+.canvas :global(.excalidraw .help-icon) {
   display: none;
+}
+
+/* Su ayuda bajo la barra («Para mover el lienzo…»), legible sobre el lienzo */
+.canvas :global(.excalidraw .HintViewer) {
+  color: var(--color-muted);
 }
 
 /* Una tarjeta de página: su icono y su título; pulsarla abre la página */
