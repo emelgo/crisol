@@ -10,7 +10,7 @@ todo en local (sin CI este mes: `[skip ci]`).
 
 ## Porciones
 
-- [ ] 1. **Datos y contratos**: migración (`map_layers` con historial; `map_elements.layer_id` y `position`;
+- [x] 1. **Datos y contratos**: migración (`map_layers` con historial; `map_elements.layer_id` y `position`;
   `maps.speeds`), geometría y estilo con zod (puntos 0–1; región con piezas; ruta; texto con giro y arco; estilos en
   listas cerradas), repo y acciones (capas: crear, cambiar, ordenar, quitar; elementos: crear, cambiar, quitar),
   `getMap` con capas y elementos, y el filtro de la jugadora (capa oculta, elemento oculto o sin revelar, página que no
