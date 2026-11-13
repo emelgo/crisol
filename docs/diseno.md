@@ -15,7 +15,10 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   Del nuevo:
   - Barlow para el texto;
   - Barlow Condensed en mayúsculas para los títulos;
-  - las esquinas cortadas de los recuadros.
+  - ~~las esquinas cortadas de los recuadros~~: **las formas del cristal** (Enrique, 2026-11-13: «ahora que tenemos el
+    estilo cristal y en la mesa no se usa, … retirarlo y optar por las formas que estamos usando ahora»). Marcos,
+    tarjetas, «Nuevo…» y recuadros, con las esquinas redondeadas de la Mesa (`--radius-frame`, 10 px); los botones,
+    `--radius-button` (6 px). Ningún `clip-path` de esquinas cortadas en la app.
 - **La marca es la llama** del Crisol antiguo, de rojo abajo a naranja arriba (`components/brand.tsx`): en la barra,
   en la cabecera, en la pestaña del navegador y **mientras algo carga** (latiendo en el centro). «El icono actual no
   trasmite nada».
@@ -32,6 +35,15 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   y Enrique la genera a mano con ChatGPT, todas en un mismo estilo que elige él, **al estilo de Foundry VTT, Roliando o
   LegendKeeper** (fantasía épica pintada). Las portadas de mundos, campañas, sistemas y libros son del usuario: la app
   no trae ninguna. Prompts y guía de estilo en `docs/imagenes.md`.
+- **Los fondos de Crisol van cambiando, sin marear** (Enrique, 2026-11-13: «quiero que nuestros fondos vayan variando
+  cada x tiempo, sin llegar a marear, tanto aquí como en Inicio o cualquier vista que use un fondo con imagen»): el fondo
+  de ambiente de siempre (la de ambiente y los de `public/fondos/`) se turna cada 45 s con un fundido lento de 3 s, en
+  orden al azar en cada visita y solo con la pestaña a la vista. Una portada pedida (pararse en un mundo o una campaña
+  en Inicio, un sistema) manda mientras se ve; al llegar y al irse, el mismo fundido suave. **Dentro de un mundo, sin su
+  portada detrás**: los fondos de Crisol («no hace falta tener la portada de fondo»).
+- **Sin idioma del contenido** (Enrique, 2026-11-13: «haremos una versión en inglés de la app PERO los sistemas y
+  libros los sube el usuario en el idioma que quiera»): ni la campaña ni el editor de sistemas eligen idioma; cada
+  sistema viene en el que lo subió su dueño. La app sí se traducirá entera (i18n).
 
 ## Armazón y navegación
 
@@ -75,7 +87,10 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   de abajo (la campaña abría directamente en la Mesa y sin barra lateral); pendiente de lienzo y de ADR.
 - **El sistema también tiene su propio espacio, como el mundo y la campaña** (Enrique, 2026-11-11, revisión de la
   app): al entrar, la barra cambia y enseña lo suyo (su Inicio con la portada y los libros, Compendio y Reglas; los
-  ajustes, en una ventana) y la llama vuelve a Sistemas, con la transición de salir. Un libro se abre dentro, con el
+  ajustes, en una ventana) y la llama vuelve a Sistemas, con la transición de salir. **Entrar y salir, uno el espejo del
+  otro, con chispas y humo** (Enrique, 2026-11-13): al entrar, su icono y su nombre viajan al título y suben las
+  brasas; al salir por la llama, vuelven a su tarjeta y sale el humo. **Reglas sigue el esqueleto**: el título sobre la
+  columna del centro y los pasos y la revisión en las fichas de los lados, como el compendio y los libros. Un libro se abre dentro, con el
   esqueleto de tres columnas (su árbol, la entrada y sus datos) y «← {sistema}» en la cabecera. Sin el icono fijo ni
   la palabra «Sistema».
 - **La campaña se abre en la Mesa, como en Foundry VTT** (Enrique, 2026-11-08: «la mesa debería ser lo que se ve al
@@ -124,9 +139,8 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   tapado (`--popup-glass`, `--popup-blur`) sobre la pantalla oscurecida; lo de dentro, translúcido sin desenfocar otra
   vez. Los visores de imagen a pantalla completa (`data-full`), sin él. **Los campos** (buscadores, cajas de texto,
   desplegables), de cristal oscuro (`--field-fill`); **el botón principal**, de cristal rojo (`--accent-glass`). **La
-  página es una hoja casi opaca** (`--surface-read`): la portada y el texto, una sola pieza. Los marcos de esquinas
-  cortadas pintan su raya como un anillo (`--cut-ring`), para que su relleno pueda ser de cristal; la zona de peligro,
-  igual, en rojo. **«Sin desenfoque»** (Ajustes, «Este aparato»; se guarda en el navegador): sin fondo de ambiente ni
+  página es una hoja casi opaca** (`--surface-read`): la portada y el texto, una sola pieza. Los marcos pintan su raya en
+  una capa aparte (`::before`), para que su relleno pueda ser de cristal; la zona de peligro, igual, en rojo. **«Sin efecto cristal»** (Ajustes, «Aspecto»; se guarda en el navegador): sin fondo de ambiente ni
   desenfoque en ninguna parte, también en la Mesa; todo opaco, como antes. Sin desenfoque en el navegador, todo más
   tapado.
 - **La portada pública** (tanda 5): la imagen a toda pantalla (la barra de arriba, transparente encima), en el centro la
@@ -153,7 +167,12 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   bienvenida, va la primera del árbol con su casa, no se borra ni se mete en otra, y lleva «Inicio» junto al título.
   Por detrás, la portada del mundo (su tarjeta al entrar: **esa transición no se toca**).
 - **El menú de la cuenta** (la inicial, abajo en la barra): quién eres, Perfil, Ajustes y Cerrar sesión. Sin elegir
-  tema (solo hay oscuro). Se abre al lado del botón y nunca se corta.
+  tema (solo hay oscuro). Se abre al lado del botón y nunca se corta (2026-11-13: el desenfoque de la barra lo
+  recortaba; va en una capa detrás de ella).
+- **Ajustes: la IA, Jugabilidad y Aspecto** (Enrique, 2026-11-13: «los dados en el perfil no encajan»). **Jugabilidad**
+  lleva lo del juego (el color de tus dados, ver caer los de los demás y lo que venga), y se guarda al momento; el
+  Perfil, solo tus datos y la contraseña. **Aspecto** («¿qué es este aparato sin desenfoque?»): «Sin efecto cristal (más
+  fluido en ordenadores lentos)», guardado en el navegador.
 - **Las etiquetas son de toda la cuenta** (ADR-0006): «Etiquetas» va en la barra de Mis mundos, no en la de un mundo;
   dentro, son filtros (al buscar en la wiki, en Archivos). Llevan un color opcional y se ven como un punto de color con
   su nombre. Se eligen o se escriben: una nueva entra sola. **Una puede ir dentro de otra** (Enrique, 2026-11-08: «al crearla que te
@@ -188,7 +207,10 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   rellenarlo y subirlo; la comprobación dice qué falta, dónde y con un ejemplo; también un zip de Foundry) o **a
   mano**, con un editor por pasos y en palabras de mesa («¿Qué tiene un personaje?», «¿Cómo se tira?»), sin
   tecnicismos: cada campo con su «?» y un ejemplo real, a un lado la ficha que va saliendo y «Probar», y la revisión
-  siempre a la vista. Las fórmulas y lo avanzado, al fondo. Sustituye a «los sistemas se hacen con la IA»
+  siempre a la vista. Las fórmulas y lo avanzado («Avanzado»), al fondo. **Lo de la IA, solo mencionado** (Enrique,
+  2026-11-13: «rollo pídeselo a la IA por el MCP, pero no debe dar más opciones»): en «Sistema nuevo» y en «Libro
+  nuevo» los caminos son los de la app (el esqueleto y a mano; vacío o desde un archivo) y una línea dice que también se
+  le puede pedir a la IA por el MCP, sin elegir PDF ni copiar frases. Sustituye a «los sistemas se hacen con la IA»
   (2026-11-04: el editor de entonces «es poco intuitivo»).
 - **Las plantillas son páginas guardadas como modelo, y no hay plantillas de serie** (Enrique, 2026-11-11, revisión de
   la app; ADR-0024): cada cuenta hace las suyas. Una plantilla lleva lo mismo que una página (portada, icono, campos,
@@ -288,6 +310,10 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 - **Los mundos no tienen papel** (máster o jugador): eso es de las campañas.
 - **La tele, siempre oscura**: es una pantalla para el grupo, sobre el mapa
   (2026-11-08).
+- **El mapa y la pizarra, con todo el sitio, como en LegendKeeper** (Enrique, 2026-11-13: «no debe verse por abajo cómo
+  termina el cuadrado»): abiertos en una página, cruzan la hoja de lado a lado y llegan justo al final de la ventana;
+  la hoja no acaba (sin su borde de abajo). **Supr borra lo elegido** (lo dibujado o un pin) **y Escape deja la
+  herramienta** con el foco en cualquier sitio del mapa, no solo en él.
 - **El mapa**: la imagen se arrastra y se acerca con la rueda hacia el cursor (y con dos dedos); las herramientas, una
   columna de iconos arriba a la izquierda; el botón derecho ofrece «Pin aquí» y «Pin con página nueva» (su nombre es
   el de la página, que nace como subpágina). Pulsar un pin abre su panel a la derecha (abajo en el móvil), donde todo
@@ -328,7 +354,9 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   la plantilla abierta mientras lo demás se funde (Enrique, 2026-11-08: «falta transición al entrar en una
   plantilla»). De una plantilla a otra, rápido, como entre pestañas.
 - **Las pestañas de la barra (dentro de una vista) también tienen transición, pero rápida y sin fuego**: lo que había
-  se funde en un instante y lo nuevo sube un poco al llegar; se usan a menudo y no deben frenar.
+  se funde en un instante y lo nuevo sube un poco al llegar; se usan a menudo y no deben frenar. **Ninguna transición
+  bloquea** (Enrique, 2026-11-13: «al cambiar entre vistas no se puede hacer rápido»): un clic mientras dura la acaba al
+  momento y llega a lo de debajo.
 - **El menú de la cuenta sale del avatar** creciendo, con un pequeño rebote, y al cerrarse vuelve a él encogiendo.
 - **Las listas, en el orden en que se crearon**: lo nuevo, al final.
 
@@ -342,7 +370,7 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 - **Crear algo se hace con un botón que abre un cuadro**, no con un formulario suelto en la pantalla. **El de crear es
   prácticamente el de sus ajustes** (para un mundo: portada, nombre, descripción y color), para dejarlo bien hecho
   sin tener que entrar después en ajustes.
-- **«Nuevo …» va como un recuadro más de la lista**, con la misma forma (esquinas cortadas), vacío y con el borde de
+- **«Nuevo …» va como un recuadro más de la lista**, con la misma forma (esquinas redondeadas), vacío y con el borde de
   **línea continua** (Enrique, 2026-11-11; antes, discontinuo), **la misma que la de las tarjetas** (2026-11-12: el
   recuadro vacío no debe pesar más que lo que hay), que se aviva al pasar el ratón; tras el último (no un botón
   arriba). El mismo recuadro en todas las listas: mundos, campañas, plantillas, etiquetas, sistemas y libros. Sin ninguno, la pantalla vacía con
@@ -354,6 +382,9 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   Enrique; la lista en `apps/web/src/account/backdrops.ts` y su origen en `docs/terceros.md`. **Se cambiarán por
   imágenes propias** en el estilo que elija Enrique (2026-11-11, `docs/imagenes.md`), con el centro tranquilo para el
   recuadro.
+- **Cada mundo, una carpeta en los Archivos de fuera** (Enrique, 2026-11-13: «al crear un mundo se crea su carpeta en
+  archivos y esta no se puede borrar; se borra sola al eliminar el mundo»): como «Comunes» dentro de un mundo, pero al
+  revés; con el color del mundo, sin engranaje ni casilla, y lo que se sube o se crea en ella es del mundo.
 - **Archivos, sin árbol a la izquierda: la lista del centro es el árbol** (Enrique, 2026-11-11: «el árbol de la
   izquierda no tiene sentido, ya tenemos la visión del árbol en el centro»): pulsar una carpeta la despliega ahí mismo,
   con lo de dentro sangrado (no se entra en ella), y al arrastrar un archivo y mantenerlo sobre una carpeta cerrada, se
@@ -398,6 +429,9 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 - **Las acciones de un elemento van en su engranaje**, abajo a la derecha de su tarjeta, siempre a la vista: abre su
   ventana, donde se cambia todo (nombre incluido) y donde irá lo que se añada. Nada de «Renombrar» y «Borrar» sueltos.
 - **Los mundos no llevan icono**: «no aportan nada».
+- **Una campaña nueva no sabe nada** (Enrique, 2026-11-13: «no se conoce nada y ya está, el máster es el que va
+  revelando todo»): sin «Al empezar, los jugadores conocen…» al crearla ni «Parte de lo que sabe el mundo» en sus
+  ajustes. Al elegir su sistema, **solo los sistemas**, sin «Tuyos» ni «De serie».
 - **Las campañas se ven y se crean como los mundos**: tarjeta con portada, descripción y color, engranaje con su
   ventana y zona de peligro, «Nueva campaña» al final, y se forjan y arden igual. Su portada, una imagen
   de su mundo o común. **Viven en Mis mundos**, bajo los mundos, cada una con su mundo debajo del nombre; «Nueva
@@ -411,7 +445,12 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 - **El color de un mundo**: sin color, uno de los fijos o uno propio con el selector de color; los propios se
   recuerdan para usarlos otra vez. **Solo tiñe, sutil, el contorno de su tarjeta** (y el de su ventana); la portada no
   se colorea. **Al pasar el ratón, su nombre se resalta con ese color** (Enrique, 2026-11-11: «si selecciono color
-  verde, debe resaltarse el color, no de rojo siempre»), aclarado para que se lea; sin color, en rojo. **El contorno sale siempre**, entero, también alrededor de la portada. Sin imagen, el hueco de la portada lleva un tinte muy oscuro de ese color.
+  verde, debe resaltarse el color, no de rojo siempre»), aclarado para que se lea; sin color, en blanco, nunca en rojo (Enrique, 2026-11-13). **El contorno sale siempre**, entero, también alrededor de la portada. Sin imagen, el hueco de la portada lleva un tinte muy oscuro de ese color.
+- **La tarjeta de un mundo o una campaña no cambia de alto con la descripción** (Enrique, 2026-11-13: «cortamos la
+  descripción y listo, ya la mostramos en el popup»): una línea, cortada con «…»; entera, en la vista previa.
+- **La vista previa de la izquierda, también de las campañas** (Enrique, 2026-11-13), como la de los mundos: su
+  portada, su mundo, su descripción, su sistema, sus jugadores y tu papel. **Solo mientras el ratón está en la
+  tarjeta**: al ver su portada (o abrir sus ajustes) se quita, y el fondo con ella, hasta que el ratón vuelve.
 - **Toda la tarjeta es clicable** y lleva al elemento, no solo su nombre (salvo sus botones).
 - **«Guardar» y «Cancelar» solo salen si hay cambios**, a la izquierda (Guardar primero), y se abren y se cierran
   suavemente al aparecer y al irse, sin saltos (`components/changes.tsx`); «Cancelar» los deshace.
@@ -455,6 +494,8 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 ## Tutorial guiado de cada vista
 
 - **Se llama «tutorial guiado de la vista»**, no «recorrido».
+- **El globo nunca queda debajo de la barra de la izquierda ni encima de ella** (Enrique, 2026-11-13, en los libros):
+  se pinta por encima de todo y, si apunta a algo de la página, se aparta de la barra.
 - **Cada vista tiene el suyo**: un globo por zona, con «1 de 3», Atrás (desde el segundo) y Siguiente. Ni Saltar ni
   «Lo tengo claro»: «los jugadores tendrán que hacer la guía de todas las vistas la primera vez que entren».
 - **Sale solo la primera vez**, hasta acabarlo. Con Escape se cierra sin acabar y vuelve a salir la próxima vez.
