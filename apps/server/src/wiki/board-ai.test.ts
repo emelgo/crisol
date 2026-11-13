@@ -48,6 +48,6 @@ describe('lo que dibuja la IA en la pizarra (módulo 9)', () => {
     const arrow = elements.find((element) => element.type === 'arrow')
     // La caja A va de 0 a 220 de ancho: la flecha sale tras su borde y llega antes del de B (en 600)
     expect(arrow?.x).toBe(228)
-    expect((arrow?.points as number[][])[1]?.[0]).toBe(600 - 8 - 228)
+    expect((arrow?.points as number[][] | undefined)?.[1]?.[0]).toBe(600 - 8 - 228)
   })
 })

@@ -59,7 +59,8 @@ module.exports = {
     enhancedResolveOptions: {
       extensions: ['.ts', '.tsx', '.js'],
       exportsFields: ['exports'],
-      conditionNames: ['import', 'require', 'node', 'default', 'types']
+      // «production»: la que usa Vite al compilar (Excalidraw da así su CSS)
+      conditionNames: ['import', 'require', 'node', 'production', 'default', 'types']
     }
   }
 }
