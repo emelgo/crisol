@@ -761,9 +761,68 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
     } else if (event.key === 'Tab') closeMenu()
   }
 
+  /** Supr: borra lo elegido (lo dibujado o un pin); si no hay nada, false */
+  const removeSelected = () => {
+    if (!editable) return false
+    const element = map.elements.find((e) => e.id === selectedElement)
+    if (element) {
+      removeElement(element)
+      return true
+    }
+    const pin = map.pins.find((p) => p.id === selected)
+    if (!pin || pin.locked) return false
+    pins.remove.mutate(pin.id, {
+      onSuccess: () => {
+        setSelected(null)
+        announce(t('map.pin.deleted'))
+        container.current?.focus()
+      }
+    })
+    return true
+  }
+
+  /** Escape, de dentro afuera: lo que se mide, lo que se dibuja, lo elegido y, sin nada más, el mapa ampliado */
+  const stepBack = () => {
+    if (tool === 'measure' && measure.points.length > 0) {
+      setMeasure({ points: [], route: null })
+      setCursor(null)
+      return
+    }
+    if (!draft && tool === 'select' && !selectedElement && !selected && wide) setWide(false)
+    if (!draft && tool === 'select') {
+      setSelectedElement(null)
+      setSelected(null)
+    }
+    chooseTool('select')
+    setMenu(null)
+  }
+
+  // Supr y Escape valen con el foco en cualquier sitio del mapa (sus botones, un pin) o fuera de todo, no solo en el
+  // mapa (Enrique, 2026-11-13: «si pulso Supr debería borrar lo que tengo seleccionado, y si pulso Esc en cualquier
+  // momento quitar la herramienta»); no mientras se escribe ni en una ventana o un menú
+  const globalKeys = useRef<(event: globalThis.KeyboardEvent) => void>(() => undefined)
+  globalKeys.current = (event) => {
+    if (event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey) return
+    if (event.key !== 'Escape' && event.key !== 'Delete') return
+    const target = event.target instanceof HTMLElement ? event.target : null
+    if (target === container.current) return
+    if (target?.isContentEditable || target?.closest('input, textarea, select, dialog, [role="dialog"], [role="menu"]'))
+      return
+    if (target && target !== document.body && !container.current?.parentElement?.contains(target)) return
+    if (event.key === 'Delete') {
+      if (removeSelected()) event.preventDefault()
+      return
+    }
+    stepBack()
+  }
+  useEffect(() => {
+    const onKey = (event: globalThis.KeyboardEvent) => globalKeys.current(event)
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.target !== event.currentTarget) return
-    const element = map.elements.find((e) => e.id === selectedElement)
     // Dibujar: Intro acaba, Retroceso quita el último punto (también Ctrl+Z), Escape lo deja
     if (draft && event.key === 'Enter') {
       event.preventDefault()
@@ -781,9 +840,9 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
         .catch((error: unknown) => announce(errorText(error)))
       return
     }
-    if (element && editable && (event.key === 'Delete' || event.key === 'Backspace')) {
+    if ((event.key === 'Delete' || event.key === 'Backspace') && removeSelected()) {
       event.preventDefault()
-      return removeElement(element)
+      return
     }
     const toolKey = TOOL_KEYS[event.key.toLowerCase()]
     if (toolKey && (editable || toolKey === 'measure') && !event.ctrlKey && !event.metaKey && !event.altKey) {
@@ -805,16 +864,7 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
     } else if (event.key === '+' || event.key === '=') zoomCenter(1.25)
     else if (event.key === '-') zoomCenter(0.8)
     else if (event.key === '0') fit()
-    else if (event.key === 'Escape' && tool === 'measure' && measure.points.length > 0) {
-      setMeasure({ points: [], route: null })
-      setCursor(null)
-    } else if (event.key === 'Escape') {
-      // Escape, de dentro afuera: lo que se dibuja, lo elegido y, sin nada más, el mapa ampliado
-      if (!draft && tool === 'select' && !selectedElement && !selected && wide) setWide(false)
-      if (!draft && tool === 'select') setSelectedElement(null)
-      chooseTool('select')
-      setMenu(null)
-    }
+    else if (event.key === 'Escape') stepBack()
   }
 
   // Un pin: arrastrarlo lo mueve (si no está bloqueado); pulsarlo lo elige; doble clic abre su página

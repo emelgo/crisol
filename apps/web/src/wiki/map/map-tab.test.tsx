@@ -308,6 +308,26 @@ describe('el visor del mapa', () => {
     expect(pin.getAttribute('aria-pressed')).toBe('false')
   })
 
+  it('Escape deja la herramienta y Supr borra el pin elegido con el foco en cualquier sitio del mapa', async () => {
+    const { api, map } = await renderMap()
+    const element = await viewer()
+    const tool = screen.getByRole('button', { name: 'Poner un pin' })
+    // Con el foco en el botón de la herramienta (no en el mapa)
+    await userEvent.click(tool)
+    expect(tool.getAttribute('aria-pressed')).toBe('true')
+    expect(document.activeElement).toBe(tool)
+    await userEvent.keyboard('{Escape}')
+    expect(tool.getAttribute('aria-pressed')).toBe('false')
+    await userEvent.click(tool)
+    tap(element, 400, 150)
+    const pin = await (await pinsList()).findByRole('button', { name: 'Pin sin nombre' })
+    await waitFor(async () => expect(await savedPins(api, map.tabId)).toHaveLength(1))
+    // Con el foco en el propio pin
+    pin.focus()
+    await userEvent.keyboard('{Delete}')
+    await waitFor(async () => expect(await savedPins(api, map.tabId)).toHaveLength(0))
+  })
+
   it('el botón derecho ofrece poner un pin ahí; Escape cierra el menú', async () => {
     const { api, map } = await renderMap()
     const element = await viewer()
