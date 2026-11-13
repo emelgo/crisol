@@ -1,7 +1,7 @@
 /*
  * Tokens de diseño: la mezcla del Crisol antiguo y del nuevo (Enrique, 2026-10-30). Del antiguo, los grises neutros,
  * un color por nivel de título, los enlaces en azul y el rojo solo en lo importante; del nuevo, Barlow, los títulos
- * condensados y las esquinas cortadas. Lo de la IA, en azul claro. Solo el tema oscuro (Enrique, 2026-11-11: el claro
+ * condensados y las formas del cristal (esquinas redondeadas). Lo de la IA, en azul claro. Solo el tema oscuro (Enrique, 2026-11-11: el claro
  * se quita; si un día hace falta, se hará entero); los contrastes los comprueba tokens.test.ts
  */
 @import "@fontsource/barlow/400.css";
@@ -54,81 +54,10 @@
   --font-body: "Barlow", system-ui, sans-serif;
   --font-display: "Barlow Condensed", "Arial Narrow", sans-serif;
   --radius: 2px;
-  /* Esquinas cortadas: el marco, su interior (1px dentro) y los botones */
-  --cut: polygon(
-    12px 0,
-    calc(100% - 12px) 0,
-    100% 12px,
-    100% calc(100% - 12px),
-    calc(100% - 12px) 100%,
-    12px 100%,
-    0 calc(100% - 12px),
-    0 12px
-  );
-  --cut-inner: polygon(
-    11px 0,
-    calc(100% - 11px) 0,
-    100% 11px,
-    100% calc(100% - 11px),
-    calc(100% - 11px) 100%,
-    11px 100%,
-    0 calc(100% - 11px),
-    0 11px
-  );
-  /* Solo la raya del marco, de 1px (o 2px, con el foco), con sus diagonales: el marco sin relleno, para que lo de
-     dentro pueda ser de cristal. Dos contornos con evenodd: el de dentro hace el hueco */
-  --cut-ring: polygon(
-    evenodd,
-    12px 0,
-    calc(100% - 12px) 0,
-    100% 12px,
-    100% calc(100% - 12px),
-    calc(100% - 12px) 100%,
-    12px 100%,
-    0 calc(100% - 12px),
-    0 12px,
-    12px 0,
-    12.41px 1px,
-    1px 12.41px,
-    1px calc(100% - 12.41px),
-    12.41px calc(100% - 1px),
-    calc(100% - 12.41px) calc(100% - 1px),
-    calc(100% - 1px) calc(100% - 12.41px),
-    calc(100% - 1px) 12.41px,
-    calc(100% - 12.41px) 1px,
-    12.41px 1px
-  );
-  --cut-ring-2: polygon(
-    evenodd,
-    12px 0,
-    calc(100% - 12px) 0,
-    100% 12px,
-    100% calc(100% - 12px),
-    calc(100% - 12px) 100%,
-    12px 100%,
-    0 calc(100% - 12px),
-    0 12px,
-    12px 0,
-    12.83px 2px,
-    2px 12.83px,
-    2px calc(100% - 12.83px),
-    12.83px calc(100% - 2px),
-    calc(100% - 12.83px) calc(100% - 2px),
-    calc(100% - 2px) calc(100% - 12.83px),
-    calc(100% - 2px) 12.83px,
-    calc(100% - 12.83px) 2px,
-    12.83px 2px
-  );
-  --cut-button: polygon(
-    6px 0,
-    calc(100% - 6px) 0,
-    100% 6px,
-    100% calc(100% - 6px),
-    calc(100% - 6px) 100%,
-    6px 100%,
-    0 calc(100% - 6px),
-    0 6px
-  );
+  /* Las formas del cristal (las de la Mesa, Enrique, 2026-11-13): esquinas redondeadas; los marcos y los botones */
+  --radius-frame: 10px;
+  --radius-inner: 9px;
+  --radius-button: 6px;
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;

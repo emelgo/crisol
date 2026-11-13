@@ -77,7 +77,8 @@
 
 .detailBody .frame {
   block-size: 10rem;
-  clip-path: polygon(11px 0, calc(100% - 11px) 0, 100% 11px, 100% 100%, 0 100%, 0 11px);
+  border-radius: var(--radius-inner) var(--radius-inner) 0 0;
+  overflow: clip;
 }
 
 .detailText {
@@ -347,14 +348,15 @@
   block-size: 10rem;
 }
 
-/* En la tarjeta, la portada va 1px dentro del contorno, con las esquinas de arriba cortadas como las suyas: el
+/* En la tarjeta, la portada va 1px dentro del contorno, con las esquinas de arriba redondeadas como las suyas: el
    contorno se ve siempre, también con portada */
 .card .header {
   margin: 1px 1px var(--space-3);
 }
 
 .card .frame {
-  clip-path: polygon(11px 0, calc(100% - 11px) 0, 100% 11px, 100% 100%, 0 100%, 0 11px);
+  border-radius: var(--radius-inner) var(--radius-inner) 0 0;
+  overflow: clip;
 }
 
 /* Sin imagen, el hueco lleva un tinte oscuro del color del mundo */
@@ -588,7 +590,8 @@
 
 .hero .frame {
   block-size: clamp(8rem, 26vw, 13rem);
-  clip-path: polygon(11px 0, calc(100% - 11px) 0, 100% 11px, 100% 100%, 0 100%, 0 11px);
+  border-radius: var(--radius-inner) var(--radius-inner) 0 0;
+  overflow: clip;
 }
 
 /* El nombre y la descripción a la izquierda; el papel y el engranaje, abajo a la derecha */

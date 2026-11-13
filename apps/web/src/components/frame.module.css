@@ -1,5 +1,5 @@
 /*
- * El marco de la hoja: 1px con las esquinas cortadas. Se usa con `composes: frame from "…/frame.module.css"`.
+ * El marco de la hoja: 1px con las esquinas redondeadas del cristal (las de la Mesa). Se usa con `composes: frame from "…/frame.module.css"`.
  * El relleno es el fondo del elemento (--frame-fill: de cristal, sobre el fondo de ambiente; uno que flota sobre otra
  * cosa, opaco) y el ::before, solo la raya (--frame-line, para teñirla sin depender del orden de las hojas de estilo)
  * (Las secciones con título lo llevan en base.css, con el mismo dibujo, porque se eligen por su marcado.)
@@ -8,7 +8,9 @@
   position: relative;
   isolation: isolate;
   background: var(--frame-sheen), var(--frame-fill, var(--surface-glass));
-  clip-path: var(--cut);
+  border-radius: var(--radius-frame);
+  /* Lo de dentro (la portada) no se sale de las esquinas; clip, no hidden: no hace contenedor de desplazamiento */
+  overflow: clip;
   -webkit-backdrop-filter: var(--frame-blur);
   backdrop-filter: var(--frame-blur);
 }
@@ -18,8 +20,8 @@
   position: absolute;
   inset: 0;
   z-index: -1;
-  background: var(--frame-line, var(--line-frame));
-  clip-path: var(--cut-ring);
+  border: 1px solid var(--frame-line, var(--line-frame));
+  border-radius: inherit;
   pointer-events: none;
 }
 
@@ -27,7 +29,6 @@
 @media (forced-colors: active) {
   .frame {
     border: 1px solid CanvasText;
-    clip-path: none;
   }
 
   .frame::before {

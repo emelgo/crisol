@@ -201,7 +201,7 @@ h1[tabindex="-1"]:focus-visible {
   cursor: not-allowed;
 }
 
-/* Una sección con título es una caja de la hoja: marco de 1px con las esquinas cortadas */
+/* Una sección con título es una caja de la hoja: marco de 1px con las esquinas redondeadas del cristal */
 main section[aria-labelledby],
 dialog section[aria-labelledby] {
   position: relative;
@@ -210,7 +210,7 @@ dialog section[aria-labelledby] {
   padding: var(--space-4) var(--space-6) var(--space-6);
   /* De cristal sobre el fondo de ambiente; la raya, el ::before (como components/frame.module.css) */
   background: var(--frame-sheen), var(--surface-glass);
-  clip-path: var(--cut);
+  border-radius: var(--radius-frame);
   -webkit-backdrop-filter: var(--frame-blur);
   backdrop-filter: var(--frame-blur);
 }
@@ -221,8 +221,8 @@ dialog section[aria-labelledby]::before {
   position: absolute;
   inset: 0;
   z-index: -1;
-  background: var(--line-frame);
-  clip-path: var(--cut-ring);
+  border: 1px solid var(--line-frame);
+  border-radius: inherit;
   pointer-events: none;
 }
 

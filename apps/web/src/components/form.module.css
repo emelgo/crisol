@@ -208,7 +208,7 @@
   background: var(--color-accent-text);
 }
 
-/* La acción principal: rojo, condensada y con las esquinas cortadas */
+/* La acción principal: rojo, condensada y con las esquinas redondeadas del cristal */
 .button {
   display: inline-flex;
   align-items: center;
@@ -226,7 +226,7 @@
   font-family: var(--font-body);
   font-size: 0.9375rem;
   font-weight: 700;
-  clip-path: var(--cut-button);
+  border-radius: var(--radius-button);
   text-decoration: none;
   cursor: pointer;
 }
@@ -235,7 +235,7 @@
   filter: brightness(1.1);
 }
 
-/* El recorte taparía el anillo del foco: dentro del botón, en su color de texto */
+/* El anillo del foco, dentro del botón y en su color de texto (fuera se perdería sobre el cristal) */
 .button:focus-visible {
   outline: 2px solid var(--color-on-accent);
   outline-offset: -5px;

@@ -4,9 +4,6 @@
  */
 .wiki {
   --radius: 0.625rem;
-  --cut: none;
-  --cut-inner: none;
-  --cut-button: none;
 
   /* Como Archivos: la columna del centro (el título, las pestañas y el texto) y, a los lados, fuera de ella, el árbol y
      el panel de la página; las dos fichas empiezan a la altura de las pestañas (--side-top, lo mide WikiLayout) */
@@ -21,7 +18,7 @@
   padding: 0 var(--space-6) var(--space-8);
 }
 
-/* Las secciones con título y los botones, sin esquinas cortadas: redondeadas */
+/* Las secciones con título y los botones, redondeados */
 .wiki :is(section[aria-labelledby], button, input, select, textarea) {
   border-radius: var(--radius);
 }

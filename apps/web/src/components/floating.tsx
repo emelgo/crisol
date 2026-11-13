@@ -4,7 +4,7 @@ import { createPortal } from 'react-dom'
 
 /**
  * Lo que flota junto a un botón (una confirmación): fuera de la página, en el cuerpo, para que ninguna caja lo recorte
- * (las secciones con las esquinas cortadas lo harían), y siguiendo al botón si la página se mueve. No empuja nada
+ * (las secciones de cristal, que recortan lo suyo, lo harían), y siguiendo al botón si la página se mueve. No empuja nada
  */
 export function Floating({
   anchor,

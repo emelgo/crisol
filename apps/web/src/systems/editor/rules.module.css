@@ -598,7 +598,7 @@
 }
 
 .side > .panel {
-  /* Como los otros recuadros del editor (no la caja de esquinas cortadas de las secciones) */
+  /* Como los otros recuadros del editor (no la caja de las secciones) */
   margin: 0;
   padding: var(--space-3) var(--space-4) var(--space-4);
   clip-path: none;

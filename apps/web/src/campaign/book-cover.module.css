@@ -1,10 +1,10 @@
-/* La portada de un libro: con su imagen o una tapa de su color; las esquinas cortadas de los recuadros */
+/* La portada de un libro: con su imagen o una tapa de su color; las esquinas redondeadas de los recuadros */
 .cover {
   position: relative;
   display: block;
   overflow: hidden;
   aspect-ratio: 3 / 4;
-  clip-path: var(--cut);
+  border-radius: var(--radius-frame);
   background: hsl(var(--hue) 28% 22%);
   color: #fff;
 }
