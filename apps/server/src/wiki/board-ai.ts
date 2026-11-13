@@ -10,8 +10,8 @@ export const CELL = { width: 300, height: 150 }
 const CARD = { width: 240, height: 72 }
 const BOX = { width: 220, height: 100 }
 const FONT = 20
-/** Excalifont, la letra a mano de Excalidraw */
-const HAND = 5
+/** Nunito, la letra normal de Excalidraw (no la de a mano) */
+const PLAIN = 6
 const INK = '#e7e7ea'
 
 const cellOf = (element: BoardElement) => ({
@@ -88,10 +88,12 @@ function base(type: string, x: number, y: number, width: number, height: number,
     fillStyle: 'solid',
     strokeWidth: 2,
     strokeStyle: 'solid',
-    roughness: 1,
+    // Trazo limpio («arquitecto»), como lo que se dibuja a mano en la web
+    roughness: 0,
     opacity: 100,
     groupIds: [],
     frameId: null,
+    // Sin índice: la web le da el suyo (tras lo que haya) al pintarla y lo guarda
     index: null,
     roundness: { type: 3 },
     seed: randomInt(1, 2 ** 31),
@@ -116,7 +118,7 @@ function text(value: string, x: number, y: number, containerId: string | null = 
     text: value,
     originalText: value,
     fontSize: FONT,
-    fontFamily: HAND,
+    fontFamily: PLAIN,
     textAlign: containerId ? 'center' : 'left',
     verticalAlign: containerId ? 'middle' : 'top',
     containerId,

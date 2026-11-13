@@ -102,6 +102,34 @@ test('la pizarra: el máster pone tarjetas, una flecha y dibuja a mano; otra pes
       return elements.map((e: { type: string }) => e.type).sort()
     })
     .toEqual(['arrow', 'embeddable', 'embeddable', 'freedraw'])
+  // Y como quedó, no como empezó: Excalidraw cambia en el sitio lo que se arrastra o se dibuja (la tarjeta movida a
+  // un lado y el trazo entero)
+  type Stored = { type: string; x: number; points?: unknown[]; customData?: { pageId?: string } }
+  await expect
+    .poll(async () => {
+      const { elements } = (await api('getBoard', { tabId: tab.id })) as { elements: Stored[] }
+      const card = (title: string) => elements.find((e) => e.customData?.pageId === id(title))
+      return {
+        moved: (card('Doran el Cojo')?.x ?? 0) < (card('La Madre Ceniza')?.x ?? 0) - 100,
+        stroke: (elements.find((e) => e.type === 'freedraw')?.points?.length ?? 0) > 8
+      }
+    })
+    .toEqual({ moved: true, stroke: true })
+  // Al salir y volver se ve igual: lo mismo y donde estaba (el encuadre y el zoom de antes)
+  const before = await board.getByRole('link', { name: 'Doran el Cojo', exact: true }).boundingBox()
+  await page.getByRole('tree', { name: 'Páginas' }).getByRole('treeitem', { name: 'Doran el Cojo' }).click()
+  await expect(page.getByRole('heading', { level: 1, name: 'Doran el Cojo' })).toBeVisible()
+  await page.goBack()
+  await expect(board.getByRole('link', { name: 'La Madre Ceniza', exact: true })).toBeVisible()
+  await expect
+    .poll(async () => {
+      const after = await board.getByRole('link', { name: 'Doran el Cojo', exact: true }).boundingBox()
+      return after && before ? Math.round(Math.abs(after.x - before.x) + Math.abs(after.y - before.y)) : -1
+    })
+    .toBeLessThan(3)
+  // Lo nuevo, con trazo limpio y sin letra a mano
+  const { elements: drawn } = (await api('getBoard', { tabId: tab.id })) as { elements: { roughness?: number }[] }
+  expect(drawn.find((e) => 'roughness' in e && e.roughness !== 0)).toBeUndefined()
 
   // Otra pestaña del máster la ve igual y, al momento, lo que se añade
   const other = await page.context().newPage()

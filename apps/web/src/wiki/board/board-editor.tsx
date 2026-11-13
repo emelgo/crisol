@@ -10,7 +10,7 @@ import type { Page, PageTabView } from '@crisol/contracts'
 import type { ExcalidrawElement, ExcalidrawEmbeddableElement, NonDeleted } from '@excalidraw/excalidraw/element/types'
 import type { AppState, ExcalidrawImperativeAPI } from '@excalidraw/excalidraw/types'
 import { useNavigate } from '@tanstack/react-router'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type * as Y from 'yjs'
 import { useApi } from '../../api/context.tsx'
@@ -25,6 +25,29 @@ import { boardMap, mergeScene, sceneChanged, writeScene } from './sync.ts'
 const LOCAL = Symbol('pizarra')
 /** Cada cuánto, como mucho, va lo que se hace al documento mientras se arrastra */
 const WRITE_EVERY = 80
+
+/** Lo nuevo, con trazo limpio («arquitecto») y letra normal (Nunito), no a mano; cada uno lo cambia si quiere */
+const CLEAN = { currentItemRoughness: 0, currentItemFontFamily: 6 } as const
+
+/** Dónde se miraba la pizarra (encuadre y zoom), para volver a lo mismo: solo en este navegador */
+type View = { scrollX: number; scrollY: number; zoom: number }
+const viewKey = (tabId: string) => `crisol:pizarra:${tabId}`
+function readView(tabId: string): View | null {
+  try {
+    const value = JSON.parse(localStorage.getItem(viewKey(tabId)) ?? 'null') as View | null
+    return value && [value.scrollX, value.scrollY, value.zoom].every(Number.isFinite) ? value : null
+  } catch {
+    return null
+  }
+}
+function saveView(tabId: string, state: AppState) {
+  try {
+    const view: View = { scrollX: state.scrollX, scrollY: state.scrollY, zoom: state.zoom.value }
+    localStorage.setItem(viewKey(tabId), JSON.stringify(view))
+  } catch {
+    // Sin almacenamiento (ventana privada): se encuadra lo que haya al volver
+  }
+}
 
 export default function BoardEditor({ page, tab }: { page: Page; tab: PageTabView }) {
   const { t } = useTranslation()
@@ -48,7 +71,19 @@ export default function BoardEditor({ page, tab }: { page: Page; tab: PageTabVie
         excalidraw.updateScene({ elements: merged, captureUpdate: CaptureUpdateAction.NEVER })
       }
       loadFiles(merged)
-      if (first) excalidraw.scrollToContent(undefined, { fitToContent: true, animate: false })
+      if (!first) return
+      // Al volver, donde se estaba; la primera vez, todo a la vista
+      const saved = readView(tab.id)
+      if (saved) {
+        excalidraw.updateScene({
+          appState: {
+            scrollX: saved.scrollX,
+            scrollY: saved.scrollY,
+            zoom: { value: saved.zoom as AppState['zoom']['value'] }
+          },
+          captureUpdate: CaptureUpdateAction.NEVER
+        })
+      } else excalidraw.scrollToContent(undefined, { fitToContent: true, animate: false })
     }
     pull(true)
     const onChange = (_event: Y.YMapEvent<ExcalidrawElement>, transaction: Y.Transaction) => {
@@ -61,17 +96,21 @@ export default function BoardEditor({ page, tab }: { page: Page; tab: PageTabVie
       cancelAnimationFrame(frame)
       map.unobserve(onChange)
     }
-  }, [excalidraw, doc, synced, loadFiles])
+  }, [excalidraw, doc, synced, loadFiles, tab.id])
 
   // Lo de la escena, al documento (sin pasarse mientras se arrastra)
   const pending = useRef<readonly ExcalidrawElement[] | null>(null)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const view = useRef<AppState | null>(null)
   const flush = useCallback(() => {
     timer.current = null
     if (doc && pending.current) writeScene(doc, pending.current, LOCAL)
     pending.current = null
-  }, [doc])
-  useEffect(
+    if (view.current) saveView(tab.id, view.current)
+  }, [doc, tab.id])
+  // Al salir, lo pendiente va antes de que se cierre el documento: la limpieza de un efecto de diseño corre antes que
+  // las de los efectos normales (la de useCollabDocument lo destruye)
+  useLayoutEffect(
     () => () => {
       if (timer.current) clearTimeout(timer.current)
       flush()
@@ -87,6 +126,7 @@ export default function BoardEditor({ page, tab }: { page: Page; tab: PageTabVie
       })
       if (!doc || !synced) return
       pending.current = elements
+      view.current = appState
       if (!timer.current) timer.current = setTimeout(flush, WRITE_EVERY)
     },
     [doc, synced, flush]
@@ -115,6 +155,7 @@ export default function BoardEditor({ page, tab }: { page: Page; tab: PageTabVie
             customData: { pageId, title },
             strokeColor: 'transparent',
             backgroundColor: 'transparent',
+            roughness: 0,
             roundness: { type: 3 }
           } as unknown as ExcalidrawElement
         ],
@@ -160,6 +201,7 @@ export default function BoardEditor({ page, tab }: { page: Page; tab: PageTabVie
     [page.worldId]
   )
 
+  const initialData = useMemo(() => ({ appState: CLEAN }), [])
   const uiOptions = useMemo(
     () => ({
       canvasActions: {
@@ -200,6 +242,7 @@ export default function BoardEditor({ page, tab }: { page: Page; tab: PageTabVie
     >
       <Excalidraw
         excalidrawAPI={setExcalidraw}
+        initialData={initialData}
         langCode="es-ES"
         theme="dark"
         name={tab.name}
