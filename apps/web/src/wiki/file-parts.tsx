@@ -188,9 +188,33 @@ export function Thumb({ file, small = false }: { file: WorldFile; small?: boolea
 }
 
 /** El nombre de un archivo, que lo abre (toda su fila): una imagen, en grande; lo demás, en otra pestaña */
-export function FileName({ file, className }: { file: WorldFile; className: string | undefined }) {
+export function FileName({
+  file,
+  className,
+  onOpen,
+  current = false
+}: {
+  file: WorldFile
+  className: string | undefined
+  /** Abrirlo en el centro del mundo a pantalla completa (ADR-0027) */
+  onOpen?: (() => void) | undefined
+  current?: boolean
+}) {
   const trigger = useRef<HTMLButtonElement>(null)
   const [viewing, setViewing] = useState(false)
+  if (onOpen) {
+    return (
+      <button
+        type="button"
+        className={[className, styles.open].filter(Boolean).join(' ')}
+        data-row-open=""
+        aria-current={current ? 'page' : undefined}
+        onClick={onOpen}
+      >
+        {file.name}
+      </button>
+    )
+  }
   return (
     <>
       {file.kind === 'image' ? (

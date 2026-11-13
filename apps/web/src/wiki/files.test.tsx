@@ -52,12 +52,14 @@ const cardsIn = async (region?: string) =>
       : ((await screen.findAllByRole('list', { name: 'Archivos' }))[0] ?? document.body)
   )
 
-beforeEach(() =>
+beforeEach(() => {
   localStorage.setItem(
     'crisol.recorridos.enrique@crisol.test',
     JSON.stringify({ seen: ['mundos', 'mundo', 'archivos'] })
   )
-)
+  // La barra del mundo, en Páginas (la lista pequeña de Archivos tiene sus pruebas aparte)
+  localStorage.removeItem('crisol.mundo.pestana')
+})
 
 /** Una carpeta del mundo (o, con worldId null, de los comunes) */
 const folderOf = (name: string, parentId: string | null = null, worldId: string | null = WORLD.id) => ({
@@ -109,9 +111,10 @@ describe('los archivos del mundo', () => {
   it('desde la barra se llega; en lista, con su tamaño; se filtran por tipo y se abren', async () => {
     localStorage.setItem('crisol.recorridos.enrique@crisol.test', JSON.stringify({ seen: ['mundo'] }))
     renderAt(`/mundos/${WORLD.id}/wiki`)
-    // «Archivos» en la barra: su pantalla
-    const sections = within(await screen.findByRole('navigation', { name: 'Secciones' }))
-    await userEvent.click(await sections.findByRole('link', { name: 'Archivos' }))
+    // «Archivos» en la barra del mundo y, en ella, «Ver todos»: su pantalla, en el centro (ADR-0027)
+    const side = within(await screen.findByRole('complementary', { name: 'Barra del mundo' }))
+    await userEvent.click(side.getByRole('tab', { name: 'Archivos' }))
+    await userEvent.click(side.getByRole('link', { name: 'Ver todos' }))
     expect(await screen.findByRole('heading', { level: 1, name: 'Archivos de Eana' })).toBeDefined()
     const list = await cardsIn()
     expect(await list.findByText('2,5 MB')).toBeDefined()
@@ -126,6 +129,32 @@ describe('los archivos del mundo', () => {
     // Una imagen se ve en grande
     await userEvent.click(list.getByRole('button', { name: 'Mapa de Eana.png' }))
     expect(await screen.findByRole('dialog', { name: 'Mapa de Eana.png' })).toBeDefined()
+  })
+
+  it('en la barra del mundo: pulsar un archivo lo abre en el centro como pestaña, con sus datos en el panel; cerrarla vuelve a la portada (ADR-0027)', async () => {
+    localStorage.setItem('crisol.recorridos.enrique@crisol.test', JSON.stringify({ seen: ['mundo'] }))
+    localStorage.removeItem(`crisol.mundo.archivos.${WORLD.id}`)
+    renderAt(`/mundos/${WORLD.id}/wiki`)
+    const side = within(await screen.findByRole('complementary', { name: 'Barra del mundo' }))
+    await userEvent.click(side.getByRole('tab', { name: 'Archivos' }))
+    // La misma lista, en pequeño: sin elegir varios ni filtrar por tipo
+    const list = within(await side.findByRole('list', { name: 'Archivos del mundo' }))
+    expect(side.queryByRole('checkbox')).toBeNull()
+    expect(side.queryByRole('button', { name: 'Imágenes' })).toBeNull()
+    await userEvent.click(await list.findByRole('button', { name: 'Bestiario.pdf', exact: true }))
+    expect(await screen.findByRole('heading', { level: 1, name: 'Bestiario.pdf' })).toBeDefined()
+    // Marcado en la lista y como pestaña abierta en la cabecera
+    expect(list.getByRole('button', { name: 'Bestiario.pdf', exact: true }).getAttribute('aria-current')).toBe('page')
+    const tabs = within(screen.getByRole('navigation', { name: 'Archivos abiertos' }))
+    expect(tabs.getByRole('link', { name: 'Bestiario.pdf' }).getAttribute('aria-current')).toBe('page')
+    // Su panel: su tipo y dónde se usa, y su engranaje
+    const panel = within(screen.getByRole('complementary', { name: 'Panel del archivo' }))
+    expect(panel.getByText('PDF')).toBeDefined()
+    expect(panel.getByRole('button', { name: 'Ajustes de Bestiario.pdf' })).toBeDefined()
+    // Cerrar la pestaña: a la portada del mundo
+    await userEvent.click(tabs.getByRole('button', { name: 'Cerrar Bestiario.pdf' }))
+    expect(await screen.findByRole('heading', { level: 1, name: 'Eana' })).toBeDefined()
+    expect(screen.queryByRole('navigation', { name: 'Archivos abiertos' })).toBeNull()
   })
 
   it('subir varios: al acabar son ya sus tarjetas, sin lista de subidas; uno muy grande no se intenta y se quita', async () => {
@@ -754,7 +783,7 @@ describe('los archivos en lo estrecho (la misma lista)', () => {
     renderAt(`/mundos/${WORLD.id}/archivos`, api)
     expect(await screen.findByRole('button', { name: 'Bestias' })).toBeDefined()
     expect(screen.queryByRole('link', { name: 'Bestiario.pdf' })).toBeNull()
-    const search = screen.getByRole('searchbox', { name: 'Buscar por nombre o #etiqueta' })
+    const search = within(screen.getByRole('main')).getByRole('searchbox', { name: 'Buscar por nombre o #etiqueta' })
     await userEvent.type(search, 'bestia')
     const found = await screen.findByRole('link', { name: 'Bestiario.pdf' })
     // En su árbol: dentro de su carpeta, desplegada (Enrique: «debe aparecer la carpeta en la que está»)
@@ -800,7 +829,9 @@ describe('los archivos en lo estrecho (la misma lista)', () => {
     expect(bar.getByText('2 elegidos')).toBeDefined()
     // La barra tapa la de herramientas (en su sitio: la lista no se mueve), que no se puede usar mientras
     expect(
-      screen.getByRole('searchbox', { name: 'Buscar por nombre o #etiqueta' }).closest('[data-covered]')
+      within(screen.getByRole('main'))
+        .getByRole('searchbox', { name: 'Buscar por nombre o #etiqueta' })
+        .closest('[data-covered]')
     ).not.toBeNull()
     await userEvent.click(bar.getByRole('button', { name: 'Borrar' }))
     const confirm = within(await screen.findByRole('dialog', { name: '¿Borrar los 2 elegidos?' }))

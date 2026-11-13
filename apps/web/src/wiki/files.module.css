@@ -805,3 +805,87 @@
   outline: 2px solid var(--color-focus);
   outline-offset: -2px;
 }
+
+/*
+ * En la barra del mundo a pantalla completa (ADR-0027, variant="side"): la misma lista en pequeño. Subir, un icono junto
+ * al buscador; filas más bajas, sin el tamaño ni la columna de elegir; el archivo abierto en el centro, marcado
+ */
+.zone[data-variant="side"] {
+  margin: 0;
+  padding: 0;
+}
+
+.zone[data-variant="side"] .toolbar {
+  margin-block-end: var(--space-2);
+}
+
+.zone[data-variant="side"] .tools {
+  flex-wrap: nowrap;
+  gap: var(--space-2);
+}
+
+.zone[data-variant="side"] .search {
+  flex: 1 1 auto;
+  max-inline-size: none;
+}
+
+.zone[data-variant="side"] .uploadButton {
+  order: 1;
+  flex: none;
+  padding-inline: var(--space-2);
+}
+
+.zone[data-variant="side"] .uploadLabel {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.zone[data-variant="side"] .rows {
+  --indent: 0.875rem;
+  --pick-gutter: 0px;
+}
+
+.zone[data-variant="side"] .treeRow {
+  grid-template-columns: 0.875rem 1.75rem minmax(0, 1fr) auto 1.75rem;
+  gap: var(--space-2);
+  min-block-size: 2.25rem;
+  padding-block: 0.125rem;
+  padding-inline-end: var(--space-1);
+}
+
+.zone[data-variant="side"] .rowThumb {
+  inline-size: 1.75rem;
+  block-size: 1.5rem;
+}
+
+.zone[data-variant="side"] .rowMeta {
+  display: none;
+}
+
+.zone[data-variant="side"] .treeRow[data-current] {
+  background: color-mix(in srgb, var(--color-text) 10%, transparent);
+  box-shadow: inset 2px 0 0 var(--color-brand);
+}
+
+.zone[data-variant="side"] .search {
+  flex: 1 1 0;
+  min-inline-size: 0;
+  padding-inline: var(--space-2);
+}
+
+.zone[data-variant="side"] .uploadButton {
+  justify-content: center;
+  inline-size: 2.25rem;
+  min-block-size: 2.25rem;
+  padding: 0;
+}
+
+.zone[data-variant="side"] .newFolder {
+  min-block-size: 2.25rem;
+  margin-block-start: var(--space-2);
+  font-size: 0.875rem;
+}

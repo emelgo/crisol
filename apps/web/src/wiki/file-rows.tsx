@@ -77,7 +77,9 @@ export function FileRow({
   focus,
   onPreview,
   onMove,
-  onChanged
+  onChanged,
+  onOpen,
+  current = false
 }: {
   file: WorldFile
   /** Lo honda que está en el árbol (0: lo más alto) */
@@ -93,6 +95,10 @@ export function FileRow({
   /** Al pasar el ratón (true) y al irse (false): para la vista previa */
   onPreview: (shown: boolean) => void
   onChanged: () => Promise<unknown>
+  /** Abrirlo en el centro del mundo a pantalla completa (en vez de en grande o en otra pestaña) */
+  onOpen?: () => void
+  /** El que está abierto en el centro */
+  current?: boolean
 }) {
   const { i18n } = useTranslation()
   return (
@@ -102,6 +108,7 @@ export function FileRow({
       className={[styles.row, styles.treeRow, fresh ? styles.appear : '', drag.className].filter(Boolean).join(' ')}
       style={{ '--depth': depth } as CSSProperties}
       data-file-card={file.id}
+      data-current={current || undefined}
       onPointerEnter={() => onPreview(true)}
       onPointerLeave={() => onPreview(false)}
       // Al abrir algo suyo (su engranaje, la imagen en grande), la vista previa se va
@@ -115,7 +122,7 @@ export function FileRow({
         <Thumb file={file} small />
       </span>
       <span className={styles.rowText}>
-        <FileName file={file} className={styles.rowName} />
+        <FileName file={file} className={styles.rowName} onOpen={onOpen} current={current} />
         {where.length > 0 && <span className={styles.where}>{where.map((folder) => folder.name).join(' › ')}</span>}
         <FileTags tags={file.tags} />
       </span>

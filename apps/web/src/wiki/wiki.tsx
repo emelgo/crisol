@@ -778,14 +778,14 @@ export function EntryView({
  * El panel de la página en el mundo a pantalla completa: a toda altura, con su botón para plegarlo a una tira (Enrique,
  * 2026-11-13: para que el mapa o la pizarra lo tengan todo). Se recuerda plegado o no, en el aparato
  */
-function ShellPanel({ children }: { children: ReactNode }) {
+export function ShellPanel({ children, label: name }: { children: ReactNode; label?: string }) {
   const { t } = useTranslation()
   const shell = useWorldShell()
   const folded = shell?.panelFolded ?? false
   const label = t(folded ? 'worldShell.panelUnfold' : 'worldShell.panelFold')
   return (
     <aside
-      aria-label={t('wiki.pagePanel')}
+      aria-label={name ?? t('wiki.pagePanel')}
       className={`${styles.entryPanel} ${shellStyles.panel}`}
       data-tour="panel-bloques"
       data-folded={folded || undefined}

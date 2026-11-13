@@ -3139,7 +3139,13 @@ export const es = {
     panelUnfold: 'Desplegar el panel',
     newPage: 'Página nueva',
     seeAll: 'Ver todos',
-    openFiles: 'Archivos abiertos'
+    openFiles: 'Archivos abiertos',
+    filePanel: 'Panel del archivo',
+    fileNotFound: 'Este archivo no existe',
+    download: 'Descargar',
+    closeFile: 'Cerrar {{name}}',
+    searchFiles: 'Buscar archivos',
+    filesList: 'Archivos del mundo'
   },
   tabs: {
     title: 'Páginas abiertas',

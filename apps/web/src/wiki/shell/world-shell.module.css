@@ -546,3 +546,68 @@
 .scroll .fillMain::before {
   display: none;
 }
+
+/* Un archivo abierto en el centro: su nombre arriba (con «Descargar») y lo de dentro, a lo ancho */
+.file {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding-block: var(--space-6);
+}
+
+.fileHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.fileHead h1 {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.fileImage {
+  display: block;
+  max-inline-size: 100%;
+  max-block-size: calc(100dvh - var(--header-height) - 9rem);
+  margin-inline: auto;
+  object-fit: contain;
+  border-radius: 6px;
+}
+
+.fileMedia {
+  inline-size: 100%;
+  max-block-size: calc(100dvh - var(--header-height) - 9rem);
+  border-radius: 6px;
+}
+
+.fileText {
+  margin: 0;
+  padding: var(--space-4);
+  overflow: auto;
+  border: 1px solid var(--line-frame);
+  border-radius: 6px;
+  background: var(--surface-read);
+  font-size: 0.875rem;
+  white-space: pre-wrap;
+}
+
+/* Sus ajustes (el engranaje), arriba del panel; debajo, su vista previa */
+.fileSettings {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.fileMissing {
+  padding: var(--space-8) var(--space-6);
+}
+
+.hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

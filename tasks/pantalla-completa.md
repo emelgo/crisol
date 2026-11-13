@@ -21,7 +21,7 @@ al final.
   llama de la cabecera se aviva y los iconos salen a la barra izquierda. Salir por la llama: humo, los iconos suben y la
   barra de la app vuelve con «Mundos» saliendo de la llama.
   - Verifica: capturas a mitad de cada transición; vitest de las señales (recién entrado, recién salido).
-- [ ] 4. **Archivos en la barra y en el centro**: la lista-árbol en pequeño (buscar, subir, carpetas) en la pestaña
+- [x] 4. **Archivos en la barra y en el centro**: la lista-árbol en pequeño (buscar, subir, carpetas) en la pestaña
   Archivos; pulsar un archivo lo abre en el centro como pestaña abierta (imagen, PDF, audio, vídeo, texto) con su vista
   previa y sus ajustes en el panel; «Ver todos» abre la pantalla grande en el centro.
   - Verifica: vitest de la lista pequeña y del visor; e2e de Archivos.

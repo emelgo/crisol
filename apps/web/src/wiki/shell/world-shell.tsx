@@ -6,13 +6,14 @@
  */
 import type { Page } from '@crisol/contracts'
 import { useQuery } from '@tanstack/react-query'
-import { useRouterState } from '@tanstack/react-router'
+import { useNavigate, useRouterState } from '@tanstack/react-router'
 import { type CSSProperties, type ReactNode, useCallback, useMemo, useState } from 'react'
 import { useAccounts } from '../../account/context.tsx'
 import { useApi } from '../../api/context.tsx'
 import { useAmbient } from '../../components/ambient.tsx'
 import { shownPath } from '../../shown-path.ts'
 import { CollabSocket } from '../collab.tsx'
+import { WorldFilesSide } from '../files.tsx'
 import { WorldWindows } from '../new-entry.tsx'
 import { NewPageContext, NewPageDialog, type NewPageRequest } from '../new-page.tsx'
 import { QuickSwitcher } from '../quick-switcher.tsx'
@@ -88,6 +89,10 @@ export function WorldShell({
   const worlds = useQuery({ queryKey: ['worlds'], queryFn: () => api.call('listWorlds', {}) })
   const world = worlds.data?.worlds.find((w) => w.id === worldId)
   const current = useCurrentPage(worldId)
+  const navigate = useNavigate()
+  const currentFileId = useRouterState({
+    select: (routerState) => /^\/mundos\/[^/]+\/archivo\/([^/]+)/.exec(shownPath(routerState))?.[1]
+  })
   // Detrás, los fondos de Crisol, que se van turnando (Enrique, 2026-11-13: «no hace falta tener la portada de fondo»)
   useAmbient(null)
   // La pestaña de la barra que pida la dirección (?barra=archivos), como el ?panel= de la Mesa
@@ -122,7 +127,12 @@ export function WorldShell({
             data-world-shell=""
             style={{ '--side-width': `${state.width}px` } as CSSProperties}
           >
-            <WorldHeader world={world} current={current} onSearch={() => setSwitching(true)} />
+            <WorldHeader
+              world={world}
+              current={current}
+              currentFileId={currentFileId}
+              onSearch={() => setSwitching(true)}
+            />
             <div className={styles.body} data-side-folded={state.folded || undefined}>
               <WorldSidebar
                 worldId={worldId}
@@ -134,6 +144,16 @@ export function WorldShell({
                 width={state.width}
                 onWidth={state.setWidth}
                 onNewPage={() => requestNewPage(null)}
+                files={
+                  <WorldFilesSide
+                    worldId={worldId}
+                    organizationId={world.organizationId}
+                    currentFileId={currentFileId}
+                    onOpenFile={(file) =>
+                      void navigate({ to: '/mundos/$worldId/archivo/$fileId', params: { worldId, fileId: file.id } })
+                    }
+                  />
+                }
               />
               <main id="contenido" className={styles.center} data-contenido="" data-world-center="">
                 {notices}

@@ -18,15 +18,19 @@ import { justEnteredFull, LEAVE_WORLD_FULL, leaveWorld, worldTransition } from '
 import { LookDialog, useWorldKind } from '../../routes/world-card.tsx'
 import { useExport } from '../export.tsx'
 import { OpenTabs } from '../navigation.tsx'
+import { FileTabs } from './file-view.tsx'
 import styles from './world-shell.module.css'
 
 export function WorldHeader({
   world,
   current,
+  currentFileId,
   onSearch
 }: {
   world: World
   current: Page | undefined
+  /** El archivo abierto en el centro, si lo hay */
+  currentFileId: string | undefined
   onSearch: () => void
 }) {
   const { t } = useTranslation()
@@ -63,6 +67,7 @@ export function WorldHeader({
       <WorldMenu world={world} />
       <div className={styles.openTabs}>
         <OpenTabs worldId={world.id} current={current} variant="header" />
+        <FileTabs worldId={world.id} currentFileId={currentFileId} />
       </div>
       <button type="button" className={styles.search} aria-haspopup="dialog" data-tour="buscar" onClick={onSearch}>
         <Search aria-hidden="true" size={15} />
