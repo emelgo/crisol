@@ -12,4 +12,4 @@ Intención confirmada con Enrique: `docs/intent/mapas-pizarras.md` (2026-11-12).
 
 Orden: `mapas-capas` → `pizarra` (la pizarra es secundaria: Enrique casi no la usa).
 
-Specs: `docs/specs/mapas-capas.md` y, después, `docs/specs/pizarra.md`.
+Specs: `docs/specs/mapas-capas.md` (construida, ADR-0026) y `docs/specs/pizarra.md`.
