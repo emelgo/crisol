@@ -104,6 +104,7 @@ import {
 import { getBookPages, listLibrary, readBookAgain, searchLibrary } from './library.ts'
 import { clearLog, deleteMessage, listLog, sendMessage } from './log.ts'
 import {
+  changeBoard,
   createMapElement,
   createMapLayer,
   createMapPin,
@@ -112,6 +113,7 @@ import {
   deleteMapLayer,
   deleteMapPin,
   deletePageTab,
+  describeBoard,
   getBoard,
   getMap,
   getMapImage,
@@ -456,6 +458,8 @@ export const ACTIONS = [
   getMapImage,
   measureMap,
   getBoard,
+  describeBoard,
+  changeBoard,
   getWorldHome,
   ensureWorldHome,
   listTemplates,
@@ -761,6 +765,8 @@ export type Actions = {
   getMapImage: typeof getMapImage
   measureMap: typeof measureMap
   getBoard: typeof getBoard
+  describeBoard: typeof describeBoard
+  changeBoard: typeof changeBoard
   getWorldHome: typeof getWorldHome
   ensureWorldHome: typeof ensureWorldHome
   searchWiki: typeof searchWiki

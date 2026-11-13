@@ -4996,6 +4996,9 @@ export function fakeApi(
       if (tabById(tabId).kind !== 'board') throw new ApiError('NOT_FOUND', 404)
       return { elements: structuredClone(boards.get(tabId) ?? []) }
     },
+    // Lo de la IA en la pizarra: solo para completar el contrato (sus pruebas van contra el servidor)
+    describeBoard: () => ({ cards: [], notes: [], shapes: [], arrows: [], images: [], drawings: 0 }),
+    changeBoard: () => ({ added: [], removed: 0 }),
     getMapImage: ({ tabId }) => {
       const map = maps.find((m) => m.tabId === tabId)
       if (!map?.image) throw new ApiError('NO_MAP_IMAGE', 400)
@@ -5247,5 +5250,5 @@ export function fakeApi(
       return { ...file }
     }
   }
-  return { client, calls, worlds, campaigns, history, approvals, pages, files, shownPages }
+  return { client, calls, worlds, campaigns, history, approvals, pages, files, shownPages, boards }
 }

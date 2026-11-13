@@ -351,6 +351,9 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   poner_pin: { action: 'createMapPin' },
   cambiar_pin: { action: 'updateMapPin' },
   quitar_pin: { action: 'deleteMapPin' },
+  // La pizarra (módulo 9): en palabras, y cambios en una rejilla sencilla
+  ver_pizarra: { action: 'describeBoard' },
+  cambiar_pizarra: { action: 'changeBoard' },
   // Las capas del mapa y lo dibujado en él (módulo 9): la IA ve la imagen y dibuja en sus píxeles
   imagen_mapa: { action: 'getMapImage' },
   medir_mapa: { action: 'measureMap' },
@@ -745,7 +748,9 @@ export const INSTRUCTIONS =
   'dibujar, mira antes la imagen con imagen_mapa y da los puntos en sus píxeles (view con su ancho y su alto) con ' +
   'dibujar_en_mapa; se cambian con cambiar_dibujo y se quitan con quitar_dibujo. Lo dibujado sigue a su página como ' +
   'los pines (oculto, hasta que se revele); lo de una capa solo del máster no llega a ningún jugador. medir_mapa ' +
-  'dice la distancia con su escala y los días a pie, a caballo y en barco. Al lado del texto, cada página tiene un panel de bloques ' +
+  'dice la distancia con su escala y los días a pie, a caballo y en barco. Una pizarra (pestaña de tipo board) se lee en palabras con ver_pizarra y se cambia con cambiar_pizarra: tarjetas de ' +
+  'páginas, notas, cajas y flechas en una rejilla (column, row), unidas por su id o por el ref que les des; lo oculto ' +
+  'y las tarjetas de lo que no conocen no les llegan a los jugadores. Al lado del texto, cada página tiene un panel de bloques ' +
   '(medidores, estrellas, fichas, texto corto…): sale en leer_pagina y se cambia entero con cambiar_panel. ' +
   'Las páginas de un tipo (PNJ, Lugar, Facción…: las plantillas que haya hecho la cuenta) se crean con su plantilla (listar_plantillas; ' +
   'template en crear_paginas): sus propiedades del YAML van a los campos que se llamen igual, y las tablas del panel ' +

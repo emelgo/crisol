@@ -1,0 +1,231 @@
+/**
+ * El editor de la pizarra (módulo 9, docs/specs/pizarra.md): Excalidraw (MIT, 0.18.1; docs/terceros.md) dentro de la
+ * pestaña, en español y oscuro, guardado en vivo en el documento de Yjs de la pestaña por el Hocuspocus de la wiki
+ * (sync.ts). Las tarjetas son elementos embebidos con su página en `customData`; las imágenes, archivos del mundo (al
+ * pegarlas se suben, y su `fileId` es el del archivo). Se carga solo al abrir una pizarra (board-tab.tsx)
+ */
+import { CaptureUpdateAction, Excalidraw, MainMenu, restoreElements } from '@excalidraw/excalidraw'
+import '@excalidraw/excalidraw/index.css'
+import type { Page, PageTabView } from '@crisol/contracts'
+import type { ExcalidrawElement, ExcalidrawEmbeddableElement, NonDeleted } from '@excalidraw/excalidraw/element/types'
+import type { AppState, ExcalidrawImperativeAPI } from '@excalidraw/excalidraw/types'
+import { useNavigate } from '@tanstack/react-router'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import type * as Y from 'yjs'
+import { useApi } from '../../api/context.tsx'
+import { useCollabDocument } from '../collab.tsx'
+import { BoardFrame, PAGE_DRAG, PageCard, pageIdOfLink, pageLink, useBoardFiles } from './board-parts.tsx'
+import { boardMap, mergeScene, sceneChanged, writeScene } from './sync.ts'
+
+/** Sus fuentes, servidas por Crisol (no por su CDN): apps/web/public/excalidraw/fonts */
+;(window as { EXCALIDRAW_ASSET_PATH?: string }).EXCALIDRAW_ASSET_PATH = '/excalidraw/'
+
+/** El origen de lo que escribe esta pestaña en el documento (lo de otros se pinta; lo suyo, no) */
+const LOCAL = Symbol('pizarra')
+/** Cada cuánto, como mucho, va lo que se hace al documento mientras se arrastra */
+const WRITE_EVERY = 80
+
+export default function BoardEditor({ page, tab }: { page: Page; tab: PageTabView }) {
+  const { t } = useTranslation()
+  const api = useApi()
+  const navigate = useNavigate()
+  const { session, synced, offline } = useCollabDocument(tab.documentId ? `doc:${tab.documentId}` : null)
+  const [excalidraw, setExcalidraw] = useState<ExcalidrawImperativeAPI | null>(null)
+  const [selected, setSelected] = useState<readonly ExcalidrawElement[]>([])
+  const loadFiles = useBoardFiles(excalidraw)
+  const doc = session?.document ?? null
+
+  // Lo del documento, a la escena: al abrirla y cada vez que otro cambia algo
+  useEffect(() => {
+    if (!excalidraw || !doc || !synced) return
+    const map = boardMap<ExcalidrawElement>(doc)
+    let frame = 0
+    const pull = (first: boolean) => {
+      const local = excalidraw.getSceneElementsIncludingDeleted()
+      const merged = mergeScene(local, map.values())
+      if (first || sceneChanged(local, merged)) {
+        excalidraw.updateScene({ elements: merged, captureUpdate: CaptureUpdateAction.NEVER })
+      }
+      loadFiles(merged)
+      if (first) excalidraw.scrollToContent(undefined, { fitToContent: true, animate: false })
+    }
+    pull(true)
+    const onChange = (_event: Y.YMapEvent<ExcalidrawElement>, transaction: Y.Transaction) => {
+      if (transaction.origin === LOCAL) return
+      cancelAnimationFrame(frame)
+      frame = requestAnimationFrame(() => pull(false))
+    }
+    map.observe(onChange)
+    return () => {
+      cancelAnimationFrame(frame)
+      map.unobserve(onChange)
+    }
+  }, [excalidraw, doc, synced, loadFiles])
+
+  // Lo de la escena, al documento (sin pasarse mientras se arrastra)
+  const pending = useRef<readonly ExcalidrawElement[] | null>(null)
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const flush = useCallback(() => {
+    timer.current = null
+    if (doc && pending.current) writeScene(doc, pending.current, LOCAL)
+    pending.current = null
+  }, [doc])
+  useEffect(
+    () => () => {
+      if (timer.current) clearTimeout(timer.current)
+      flush()
+    },
+    [flush]
+  )
+  const onChange = useCallback(
+    (elements: readonly ExcalidrawElement[], appState: AppState) => {
+      const ids = appState.selectedElementIds
+      setSelected((current) => {
+        const next = elements.filter((element) => ids[element.id] && !element.isDeleted)
+        return next.length === current.length && next.every((e, i) => e === current[i]) ? current : next
+      })
+      if (!doc || !synced) return
+      pending.current = elements
+      if (!timer.current) timer.current = setTimeout(flush, WRITE_EVERY)
+    },
+    [doc, synced, flush]
+  )
+
+  /** Pone la tarjeta de una página donde se diga (en coordenadas de la escena), elegida */
+  const addCard = useCallback(
+    (pageId: string, title: string, at?: { x: number; y: number }) => {
+      if (!excalidraw) return
+      const state = excalidraw.getAppState()
+      const zoom = state.zoom.value
+      const center = at ?? {
+        x: -state.scrollX + state.width / 2 / zoom,
+        y: -state.scrollY + state.height / 2 / zoom
+      }
+      const [card] = restoreElements(
+        [
+          {
+            type: 'embeddable',
+            id: crypto.randomUUID(),
+            x: center.x - 120,
+            y: center.y - 36,
+            width: 240,
+            height: 72,
+            link: pageLink(page.worldId, pageId),
+            customData: { pageId, title },
+            strokeColor: 'transparent',
+            backgroundColor: 'transparent',
+            roundness: { type: 3 }
+          } as unknown as ExcalidrawElement
+        ],
+        null
+      )
+      if (!card) return
+      excalidraw.updateScene({
+        elements: [...excalidraw.getSceneElementsIncludingDeleted(), card],
+        appState: { selectedElementIds: { [card.id]: true } },
+        captureUpdate: CaptureUpdateAction.IMMEDIATELY
+      })
+    },
+    [excalidraw, page.worldId]
+  )
+
+  /** «Oculto para los jugadores» de lo elegido: marca y apagado (vuelve a como estaba al quitarlo) */
+  const setHidden = useCallback(
+    (hidden: boolean) => {
+      if (!excalidraw) return
+      const ids = new Set(selected.map((element) => element.id))
+      const elements = excalidraw.getSceneElementsIncludingDeleted().map((element) => {
+        if (!ids.has(element.id) || Boolean(element.customData?.hidden) === hidden) return element
+        const { hidden: _, shownOpacity, ...rest } = element.customData ?? {}
+        return {
+          ...element,
+          customData: hidden ? { ...rest, hidden: true, shownOpacity: element.opacity } : rest,
+          opacity: hidden ? Math.min(element.opacity, 40) : typeof shownOpacity === 'number' ? shownOpacity : 100,
+          version: element.version + 1,
+          versionNonce: Math.floor(Math.random() * 2 ** 31),
+          updated: Date.now()
+        } as ExcalidrawElement
+      })
+      excalidraw.updateScene({ elements, captureUpdate: CaptureUpdateAction.IMMEDIATELY })
+    },
+    [excalidraw, selected]
+  )
+
+  const renderEmbeddable = useCallback(
+    (element: NonDeleted<ExcalidrawEmbeddableElement>) => {
+      const pageId = (element.customData?.pageId as string | undefined) ?? pageIdOfLink(element.link)
+      return pageId ? <PageCard worldId={page.worldId} pageId={pageId} title={element.customData?.title} /> : null
+    },
+    [page.worldId]
+  )
+
+  const uiOptions = useMemo(
+    () => ({
+      canvasActions: {
+        export: false as const,
+        loadScene: false,
+        saveToActiveFile: false,
+        toggleTheme: null,
+        saveAsImage: true,
+        clearCanvas: true,
+        changeViewBackgroundColor: true
+      },
+      tools: { image: true }
+    }),
+    []
+  )
+
+  return (
+    <BoardFrame
+      page={page}
+      tab={tab}
+      offline={offline}
+      loading={!synced}
+      onAddPage={addCard}
+      hidden={selected.length > 0 ? selected.every((element) => element.customData?.hidden) : null}
+      onHidden={setHidden}
+      onDropPage={(event) => {
+        const pageId = event.dataTransfer.getData(PAGE_DRAG)
+        if (!pageId || !excalidraw) return false
+        const state = excalidraw.getAppState()
+        const zoom = state.zoom.value
+        const at = {
+          x: (event.clientX - state.offsetLeft) / zoom - state.scrollX,
+          y: (event.clientY - state.offsetTop) / zoom - state.scrollY
+        }
+        addCard(pageId, event.dataTransfer.getData('text/plain'), at)
+        return true
+      }}
+    >
+      <Excalidraw
+        excalidrawAPI={setExcalidraw}
+        langCode="es-ES"
+        theme="dark"
+        name={tab.name}
+        UIOptions={uiOptions}
+        onChange={onChange}
+        viewModeEnabled={!synced}
+        validateEmbeddable={(link) => (pageIdOfLink(link) ? true : undefined)}
+        renderEmbeddable={renderEmbeddable}
+        onLinkOpen={(element, event) => {
+          const pageId = (element.customData?.pageId as string | undefined) ?? pageIdOfLink(element.link)
+          if (!pageId) return
+          event.preventDefault()
+          void navigate({ to: '/mundos/$worldId/wiki/$pageId', params: { worldId: page.worldId, pageId } })
+        }}
+        generateIdForFile={async (file: File) => {
+          // Lo pegado o arrastrado va a los archivos del mundo: el id del archivo es el de la imagen
+          const stored = await api.uploadFile({ worldId: page.worldId, name: file.name || t('board.label') }, file)
+          return stored.id
+        }}
+      >
+        <MainMenu>
+          <MainMenu.DefaultItems.SaveAsImage />
+          <MainMenu.DefaultItems.ClearCanvas />
+          <MainMenu.DefaultItems.ChangeCanvasBackground />
+        </MainMenu>
+      </Excalidraw>
+    </BoardFrame>
+  )
+}

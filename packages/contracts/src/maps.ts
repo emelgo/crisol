@@ -360,9 +360,68 @@ export const getBoard = defineAction({
   name: 'getBoard',
   kind: 'read',
   description:
-    'La pizarra de una pestaña: sus elementos de Excalidraw (las tarjetas de páginas llevan customData.pageId; las imágenes, customData.fileId). Un jugador recibe solo lo que puede ver',
+    'La pizarra de una pestaña: sus elementos de Excalidraw (las tarjetas de páginas llevan customData.pageId; las imágenes, el fileId de su archivo). Un jugador recibe solo lo que puede ver',
   input: z.object({ tabId: z.uuid(), ...readAs }),
   output: z.object({ elements: z.array(z.record(z.string(), z.unknown())) })
+})
+
+/** Dónde va algo en la pizarra, para la IA: una rejilla sencilla (columnas y filas), sin coordenadas finas */
+const boardCell = { column: z.number().int().min(-50).max(50), row: z.number().int().min(-50).max(50) }
+
+export const describeBoard = defineAction({
+  name: 'describeBoard',
+  kind: 'read',
+  description:
+    'Lo que hay en una pizarra, en palabras: tarjetas (con su página), notas, cajas y flechas (con lo que unen), imágenes y cuántos trazos a mano, cada uno con su id y su sitio en la rejilla (column, row). Un jugador, solo lo que puede ver',
+  input: z.object({ tabId: z.uuid(), ...readAs }),
+  output: z.object({
+    cards: z.array(
+      z.object({ id: z.string(), pageId: z.string(), title: z.string(), ...boardCell, hidden: z.boolean() })
+    ),
+    notes: z.array(z.object({ id: z.string(), text: z.string(), ...boardCell, hidden: z.boolean() })),
+    shapes: z.array(
+      z.object({ id: z.string(), shape: z.string(), text: z.string(), ...boardCell, hidden: z.boolean() })
+    ),
+    arrows: z.array(
+      z.object({ id: z.string(), from: z.string().nullable(), to: z.string().nullable(), text: z.string() })
+    ),
+    images: z.array(z.object({ id: z.string(), fileId: z.string(), ...boardCell })),
+    drawings: z.number().int()
+  })
+})
+
+export const changeBoard = defineAction({
+  name: 'changeBoard',
+  kind: 'write',
+  description:
+    'Cambia una pizarra: añade tarjetas de páginas (pageId), notas y cajas (text; shape rectangle, ellipse o diamond) en una rejilla (column, row; cada casilla cabe una tarjeta), flechas entre ellas (from y to: el id de algo que ya está o el ref de algo que se añade aquí; text, su rótulo) y quita lo que se diga (con lo atado a ello). Lo ven al momento quienes la tengan abierta; se deshace en la propia pizarra',
+  input: z.object({
+    tabId: z.uuid(),
+    add: z
+      .array(
+        z
+          .object({
+            ref: z.string().max(60).optional().describe('Un nombre para unirlo con flechas en esta misma llamada'),
+            pageId: z.uuid().optional().describe('Una tarjeta de esta página'),
+            text: z.string().max(2000).optional().describe('Una nota (sin shape) o el texto de una caja'),
+            shape: z.enum(['rectangle', 'ellipse', 'diamond']).optional(),
+            hidden: z.boolean().optional().describe('Oculto para los jugadores'),
+            ...boardCell
+          })
+          .refine((item) => Boolean(item.pageId) !== Boolean(item.text), 'O una página o un texto')
+      )
+      .max(100)
+      .default([]),
+    arrows: z
+      .array(z.object({ from: z.string(), to: z.string(), text: z.string().max(200).optional() }))
+      .max(100)
+      .default([]),
+    remove: z.array(z.string()).max(200).default([])
+  }),
+  output: z.object({
+    added: z.array(z.object({ ref: z.string().nullable(), id: z.string() })),
+    removed: z.number().int()
+  })
 })
 
 export const getMapImage = defineAction({

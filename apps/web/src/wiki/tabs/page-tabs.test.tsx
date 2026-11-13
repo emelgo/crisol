@@ -83,8 +83,8 @@ describe('las pestañas de una página', () => {
     const dialog = within(await screen.findByRole('dialog', { name: 'Pestaña nueva' }))
     expect(dialog.getByRole('radio', { name: 'Texto' })).toHaveProperty('checked', true)
     // Las que vienen, aún no
-    expect(dialog.getByRole('radio', { name: /Pizarra/ })).toHaveProperty('disabled', true)
-    expect(dialog.getAllByText('Pronto')).toHaveLength(3)
+    expect(dialog.getByRole('radio', { name: /Línea temporal/ })).toHaveProperty('disabled', true)
+    expect(dialog.getAllByText('Pronto')).toHaveLength(2)
     await userEvent.click(dialog.getByRole('button', { name: 'Crear' }))
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
     expect(await names()).toEqual(['Texto', 'Texto 2'])

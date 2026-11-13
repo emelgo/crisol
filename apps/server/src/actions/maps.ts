@@ -4,6 +4,7 @@
  * una página del mismo mundo
  */
 import {
+  changeBoard,
   createMapElement,
   createMapLayer,
   createMapPin,
@@ -13,6 +14,7 @@ import {
   deleteMapLayer,
   deleteMapPin,
   deletePageTab,
+  describeBoard,
   getBoard,
   getMap,
   getMapImage,
@@ -35,11 +37,13 @@ import {
   updateMapPin,
   updatePageTab
 } from '@crisol/contracts'
-import { documentsRepo, filesRepo, mapsRepo } from '@crisol/db'
+import { documentsRepo, filesRepo, mapsRepo, pagesRepo } from '@crisol/db'
 import { type Capability, keyBetween, NotFoundError } from '@crisol/domain'
 import * as Y from 'yjs'
+import { separateName } from '../collab/server.ts'
 import { pagesChanged } from '../realtime/events.ts'
-import { boardElements, boardForPlayer } from '../wiki/board.ts'
+import { BOARD_ELEMENTS, type BoardElement, boardElements, boardForPlayer } from '../wiki/board.ts'
+import { buildChanges, describeElements, removals } from '../wiki/board-ai.ts'
 import { viewedPage } from '../wiki/projection.ts'
 import type { WikiView } from '../wiki/reader.ts'
 import { authorizedPage, type WikiTarget } from './access.ts'
@@ -275,6 +279,67 @@ async function checkPinPage(ctx: ActionContext, wiki: WikiTarget, pageId: string
 
 /** El nombre de un pin para el historial */
 const pinName = (pin: { label: string | null; pageTitle?: string | null }) => pin.label ?? pin.pageTitle ?? null
+
+/** Una pizarra que se puede leer (como su pestaña): un jugador, solo si se le reveló */
+async function viewedBoard(ctx: ActionContext, tabId: string, as: { campaignId?: string; asCharacterId?: string }) {
+  const tab = await mapsRepo.findTab(ctx.db, tabId)
+  const { view } = await viewedPage(ctx, tab?.pageId ?? '', as)
+  if (tab?.kind !== 'board' || !view.seesTab({ id: tab.id, pageId: tab.pageId, hidden: tab.hidden }))
+    throw new NotFoundError('tab')
+  return { tab, view }
+}
+
+/** La escena de una pizarra: la viva si alguien la tiene abierta; si no, la guardada */
+async function boardScene(ctx: ActionContext, documentId: string | null) {
+  if (!documentId) return []
+  const live = ctx.collab?.hocuspocus.documents.get(separateName(documentId))
+  if (live) return boardElements(live)
+  const stored = await documentsRepo.findSeparate(ctx.db, documentId)
+  const doc = new Y.Doc()
+  if (stored) Y.applyUpdate(doc, stored.state)
+  const elements = boardElements(doc)
+  doc.destroy()
+  return elements
+}
+
+/** Las páginas de las tarjetas de una pizarra */
+const cardPages = (elements: readonly BoardElement[]) =>
+  elements.flatMap((element) => (element.customData?.pageId ? [element.customData.pageId] : []))
+
+/**
+ * Cambia una pizarra: por una conexión directa de Hocuspocus si hay edición en vivo (les llega al momento a quienes la
+ * tienen abierta); si no, sobre lo guardado
+ */
+async function writeBoard(
+  ctx: ActionContext,
+  place: { documentId: string; pageId: string; worldId: string },
+  write: (doc: Y.Doc) => void
+) {
+  if (ctx.collab) {
+    const connection = await ctx.collab.hocuspocus.openDirectConnection(separateName(place.documentId), {
+      userId: ctx.actor.userId,
+      pageId: place.pageId,
+      worldId: place.worldId,
+      server: true
+    })
+    try {
+      await connection.transact(write)
+    } finally {
+      await connection.disconnect()
+    }
+    return
+  }
+  await documentsRepo.mergeSeparate(ctx.db, place.documentId, ctx.actor.userId, (stored) => {
+    const doc = new Y.Doc()
+    if (stored) Y.applyUpdate(doc, stored)
+    const before = Y.encodeStateVector(doc)
+    write(doc)
+    const update = Y.encodeStateAsUpdate(doc, before)
+    const merged = stored ? Y.mergeUpdates([stored, update]) : Y.encodeStateAsUpdate(doc)
+    doc.destroy()
+    return merged
+  })
+}
 
 export const mapActions = [
   implement(listPageTabs, async (ctx, { pageId, ...as }) => {
@@ -636,15 +701,47 @@ export const mapActions = [
     }
   }),
   implement(getBoard, async (ctx, { tabId, ...as }) => {
-    const tab = await mapsRepo.findTab(ctx.db, tabId)
-    const { view } = await viewedPage(ctx, tab?.pageId ?? '', as)
-    if (tab?.kind !== 'board' || !view.seesTab({ id: tab.id, pageId: tab.pageId, hidden: tab.hidden }))
-      throw new NotFoundError('tab')
-    const stored = tab.documentId ? await documentsRepo.findSeparate(ctx.db, tab.documentId) : null
-    const doc = new Y.Doc()
-    if (stored) Y.applyUpdate(doc, stored.state)
-    const elements = boardElements(doc)
+    const { tab, view } = await viewedBoard(ctx, tabId, as)
+    const elements = await boardScene(ctx, tab.documentId)
     // Un jugador, lo que ve (la escena la proyecta el servidor, como el texto de una página)
     return { elements: view.full ? elements : boardForPlayer(elements, (pageId) => view.seesPage(pageId)) }
+  }),
+  implement(describeBoard, async (ctx, { tabId, ...as }) => {
+    const { tab, view } = await viewedBoard(ctx, tabId, as)
+    const all = await boardScene(ctx, tab.documentId)
+    const elements = view.full ? all : boardForPlayer(all, (pageId) => view.seesPage(pageId))
+    const titles = await pagesRepo.titlesOf(ctx.db, tab.worldId, cardPages(elements))
+    return describeElements(elements, (pageId) => titles.get(pageId) ?? null)
+  }),
+  implement(changeBoard, async (ctx, { tabId, add, arrows, remove }) => {
+    const { tab, wiki } = await authorizedTab(ctx, 'page.write', tabId)
+    if (tab.kind !== 'board' || !tab.documentId) throw new NotFoundError('tab')
+    const asked = add.flatMap((item) => (item.pageId ? [item.pageId] : []))
+    const titles = await pagesRepo.titlesOf(ctx.db, wiki.worldId, asked)
+    const missing = asked.find((pageId) => !titles.has(pageId))
+    if (missing) throw new InvalidRequestError('BAD_PAGE', `no hay página ${missing} en este mundo`)
+    const documentId = tab.documentId
+    let result = { added: [] as { ref: string | null; id: string }[], removed: 0 }
+    await writeBoard(ctx, { documentId, pageId: tab.pageId, worldId: wiki.worldId }, (doc) => {
+      const current = boardElements(doc)
+      const { tombstones, removed } = removals(current, remove)
+      const left = current.filter((element) => !tombstones.some((gone) => gone.id === element.id))
+      let built: ReturnType<typeof buildChanges>
+      try {
+        built = buildChanges(
+          left,
+          add,
+          arrows,
+          (pageId) => `/mundos/${wiki.worldId}/wiki/${pageId}`,
+          (pageId) => titles.get(pageId) ?? ''
+        )
+      } catch (error) {
+        throw new InvalidRequestError('BAD_ARROW', error instanceof Error ? error.message : undefined)
+      }
+      const map = doc.getMap<BoardElement>(BOARD_ELEMENTS)
+      for (const element of [...tombstones, ...built.elements]) map.set(element.id, element)
+      result = { added: built.added, removed }
+    })
+    return result
   })
 ]

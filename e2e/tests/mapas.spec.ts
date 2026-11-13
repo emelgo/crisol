@@ -17,7 +17,7 @@ async function addMap(page: Page) {
   const dialog = page.getByRole('dialog', { name: 'Pestaña nueva' })
   await expect(dialog.getByRole('radio', { name: 'Texto' })).toBeChecked()
   await dialog.getByRole('radio', { name: 'Mapa' }).check()
-  await expect(dialog.getByRole('radio', { name: /Pizarra/ })).toBeDisabled()
+  await expect(dialog.getByRole('radio', { name: /Línea temporal/ })).toBeDisabled()
   await dialog.getByRole('button', { name: 'Crear' }).click()
   await expect(dialog).toHaveCount(0)
 }
@@ -68,7 +68,7 @@ test('un mapa en la página: se añade desde «⋯», se le pone imagen, se pone
 
   // «Poner un pin» y pulsar en el mapa: sale su panel
   await page.getByRole('button', { name: 'Poner un pin' }).click()
-  await expect(page.getByRole('status').getByText('Pulsa donde quieras el pin')).toBeVisible()
+  await expect(page.getByText('Pulsa donde quieras el pin')).toBeVisible()
   const box = await map.boundingBox()
   if (!box) throw new Error('sin mapa')
   await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2)

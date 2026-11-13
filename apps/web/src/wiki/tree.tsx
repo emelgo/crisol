@@ -19,6 +19,7 @@ import {
 } from '../components/tree/moves.ts'
 import { TemplateIcon } from '../templates/icons.tsx'
 import { useTemplates } from '../templates/picker.tsx'
+import { PAGE_DRAG } from './board/drag.ts'
 import styles from './tree.module.css'
 import { TreeMenu } from './tree-menu.tsx'
 
@@ -353,8 +354,10 @@ export function PageTree({ worldId, currentId, path, onNavigate }: Props) {
         onDragStart={(event) => {
           dragged.current = page.id
           dragStartX.current = event.clientX
-          event.dataTransfer.effectAllowed = 'move'
+          // Mover en el árbol, o poner su tarjeta en una pizarra
+          event.dataTransfer.effectAllowed = 'copyMove'
           event.dataTransfer.setData('text/plain', page.title)
+          event.dataTransfer.setData(PAGE_DRAG, page.id)
         }}
         onDragEnd={() => {
           dragged.current = null

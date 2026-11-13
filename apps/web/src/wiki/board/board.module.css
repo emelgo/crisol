@@ -1,0 +1,202 @@
+/* La pizarra de una pestaña: su barra (lo de Crisol) encima del lienzo de Excalidraw, hasta el final de la ventana */
+.wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  block-size: clamp(24rem, calc(100dvh - var(--board-top, 15rem) - var(--space-4)), 72rem);
+  overflow: hidden;
+  border: 1px solid var(--line-frame);
+  border-radius: 6px;
+  background: var(--color-raised);
+}
+
+/* Ampliada: todo lo de al lado de la barra de la app, por encima de la página */
+.wrapper[data-wide] {
+  position: fixed;
+  inset: 0 0 0 4rem;
+  z-index: 40;
+  block-size: auto;
+  border: 0;
+  border-inline-start: 1px solid var(--line-frame);
+  border-radius: 0;
+  background: var(--color-bg);
+  box-shadow: var(--glass-shadow);
+}
+
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border-block-end: 1px solid var(--line-frame);
+  background: var(--frame-sheen), var(--popup-glass);
+  -webkit-backdrop-filter: var(--popup-blur);
+  backdrop-filter: var(--popup-blur);
+}
+
+.barButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-block-size: 2rem;
+  padding: 0 var(--space-2);
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.barButton:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-text) 10%, transparent);
+}
+
+.barButton[aria-pressed="true"],
+.barButton[aria-expanded="true"] {
+  background: color-mix(in srgb, var(--color-accent-text) 22%, transparent);
+  color: var(--color-accent-text);
+}
+
+.barButton:disabled {
+  color: var(--color-muted);
+  cursor: default;
+}
+
+.barButton:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 1px;
+}
+
+.hiddenToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--color-secret-text);
+}
+
+.status {
+  margin-inline-start: auto;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+.addPage {
+  position: relative;
+}
+
+.addPanel {
+  position: absolute;
+  inset-block-start: calc(100% + var(--space-1));
+  inset-inline-start: 0;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: auto minmax(12rem, 1fr) auto;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border: 1px solid var(--line-frame);
+  border-radius: 8px;
+  background: var(--frame-sheen), var(--popup-glass);
+  -webkit-backdrop-filter: var(--popup-blur);
+  backdrop-filter: var(--popup-blur);
+  box-shadow: var(--glass-shadow);
+}
+
+.addPanel input {
+  min-block-size: 2rem;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--color-field-border);
+  border-radius: 4px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+}
+
+.canvas {
+  position: relative;
+  flex: 1;
+  min-block-size: 0;
+}
+
+.loading {
+  margin: auto;
+  color: var(--color-muted);
+}
+
+/* Excalidraw, con los colores de la app (su tema oscuro, retocado) */
+.canvas :global(.excalidraw.theme--dark) {
+  --color-primary: var(--color-accent-text);
+  --color-primary-darker: var(--color-accent);
+  --color-primary-darkest: var(--color-accent);
+  --color-primary-light: color-mix(in srgb, var(--color-accent-text) 22%, transparent);
+  --island-bg-color: var(--color-surface);
+  --default-bg-color: var(--color-raised);
+  --ui-font: var(--font-body);
+}
+
+/* Lo que saca de Crisol (su biblioteca pública) no se ofrece */
+.canvas :global(.default-sidebar-trigger),
+.canvas :global(.help-icon) {
+  display: none;
+}
+
+/* Una tarjeta de página: su icono y su título; pulsarla abre la página */
+.card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  block-size: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--line-frame);
+  border-radius: 8px;
+  background: var(--glass-sheen), var(--color-surface);
+  box-shadow: var(--glass-shadow);
+  color: var(--color-text);
+  overflow: hidden;
+}
+
+.cardIcon {
+  flex: none;
+}
+
+.cardTitle {
+  overflow: hidden;
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 600;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+a.cardTitle:hover {
+  color: var(--color-link);
+  text-decoration: underline;
+}
+
+.card[data-missing] {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0;
+  border-style: dashed;
+  color: var(--color-muted);
+}
+
+.card[data-missing] .cardTitle {
+  color: var(--color-muted);
+  text-decoration: line-through;
+}
+
+.cardNote {
+  font-size: 0.8125rem;
+}
+
+@media (max-width: 48rem) {
+  .wrapper[data-wide] {
+    inset: 0;
+  }
+}

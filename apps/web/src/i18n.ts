@@ -1906,6 +1906,21 @@ export const es = {
     confirmDelete: 'Eliminar',
     deleted: 'Pestaña «{{name}}» quitada'
   },
+  board: {
+    label: 'Pizarra {{name}}',
+    loading: 'Abriendo la pizarra…',
+    expand: 'Ampliar la pizarra',
+    shrink: 'Volver a la página',
+    addPage: 'Página…',
+    addPageTitle: 'Poner una página',
+    pageName: 'Página',
+    put: 'Poner',
+    hidden: 'Oculto para los jugadores',
+    noPage: 'Sin página',
+    offline: 'Sin conexión: se guardará al volver',
+    empty: 'Esta pizarra está vacía.',
+    uploadFailed: 'No se pudo subir la imagen'
+  },
   map: {
     label: 'Mapa {{name}}',
     roleDescription: 'mapa',

@@ -9,6 +9,18 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
+## Módulo 9: la pizarra (en local, rama `modulo-9/mapas`; docs/specs/pizarra.md)
+
+- [ ] En una página, «+» → «Pizarra»: se abre Excalidraw en español y oscuro; dibuja a mano, cajas, flechas y texto.
+- [ ] «Página…» pone la tarjeta de una página (y arrastrarla desde el árbol); pulsar su título la abre; si cambias el
+  título de la página, la tarjeta lo sigue.
+- [ ] Pega una imagen: se sube a los archivos del mundo y se ve.
+- [ ] Ábrela en otra pestaña o aparato: lo que hagas en una sale en la otra al momento.
+- [ ] Elige algo y marca «Oculto para los jugadores»: se apaga.
+- [ ] Revela la pestaña a la campaña: la jugadora la ve sin poder tocarla, sin lo oculto ni las tarjetas de lo que no
+  conoce.
+- [ ] Pídele a la IA un tablero («hazme el tablero de la conspiración con estas páginas»): `cambiar_pizarra`.
+
 ## Módulo 9: mapas con capas (en local, rama `modulo-9/mapas`; migración 0081)
 
 - [ ] **Capas** (una página con mapa → «Capas» en la barra del mapa): crear una, renombrarla, ordenarlas arrastrando,

@@ -48,7 +48,8 @@ export function boardJson(elements: readonly BoardElement[]): JSONContent {
         content: [{ type: 'pageLink', attrs: { pageId: page, title: element.customData?.title ?? '' } }]
       })
     }
-    const file = element.customData?.fileId
+    // Una imagen: su fileId es el de un archivo del mundo (lo sube Crisol al pegarla)
+    const file = element.fileId ?? element.customData?.fileId
     if (element.type === 'image' && file) {
       content.push({ type: 'fileEmbed', attrs: { fileId: file, name: element.customData?.name ?? '' } })
     }

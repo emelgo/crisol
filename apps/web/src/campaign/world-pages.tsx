@@ -17,6 +17,7 @@ import { failed, LoadError, SectionError } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { Tour } from '../components/tour.tsx'
 import { Backlinks } from '../wiki/backlinks.tsx'
+import { BoardReadTab } from '../wiki/board/board-tab.tsx'
 import { CollabSocket } from '../wiki/collab.tsx'
 import { ContentView, NewSecretsContext } from '../wiki/content.tsx'
 import { PageCoverImage } from '../wiki/cover.tsx'
@@ -279,8 +280,10 @@ function PlayerEntry({ page }: { page: Page }) {
     queryKey: playerKey(page.worldId, readAs, 'tabs', page.id),
     queryFn: () => api.call('listPageTabs', { pageId: page.id, ...readAsInput(readAs) })
   })
-  // Sus pestañas que ve: las de texto y los mapas
-  const texts = (tabs.data?.tabs ?? []).filter((tab) => tab.kind === 'text' || tab.kind === 'map')
+  // Sus pestañas que ve: las de texto, los mapas y las pizarras
+  const texts = (tabs.data?.tabs ?? []).filter(
+    (tab) => tab.kind === 'text' || tab.kind === 'map' || tab.kind === 'board'
+  )
   const { pestana } = pageRoute.useSearch()
   const navigate = useNavigate()
   const tabId = pestana ?? null
@@ -355,6 +358,8 @@ function PlayerEntry({ page }: { page: Page }) {
           )}
           {active?.kind === 'map' ? (
             <MapTab key={active.id} page={page} tab={active} />
+          ) : active?.kind === 'board' ? (
+            <BoardReadTab key={active.id} page={page} tab={active} />
           ) : page.editable && !active ? (
             // Una página que su campaña puede escribir (docs/specs/pagina-de-jugadores.md): el editor, en vivo
             <div className={wiki.column}>

@@ -27,7 +27,7 @@ describe('la pizarra, en el servidor (módulo 9)', () => {
   it('como texto: las tarjetas, enlaces a su página; las imágenes, archivos; las notas, su texto', () => {
     const json = boardJson([
       card('Doran', DORAN),
-      { id: 'r', type: 'image', customData: { fileId: RETRATO, name: 'retrato.png' } },
+      { id: 'r', type: 'image', fileId: RETRATO, customData: { name: 'retrato.png' } },
       { id: 't', type: 'text', text: ' le debe dinero ' },
       { id: 'vacía', type: 'text', text: '  ' }
     ])

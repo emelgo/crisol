@@ -5,7 +5,7 @@
 import type { Page, PageTabView } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, type ToOptions, useNavigate } from '@tanstack/react-router'
-import { ChevronDown, Dices, FileText, Grid3x3, Map as MapIcon, Plus, Trash2 } from 'lucide-react'
+import { ChevronDown, Plus, Trash2 } from 'lucide-react'
 import { type CSSProperties, createContext, useContext, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../../api/context.tsx'
@@ -24,7 +24,7 @@ import type { SceneChoice } from '../../tabletop/use-preparation.ts'
 import { TargetReveal } from '../reveal.tsx'
 import { setPendingChoice } from '../scene/pending.ts'
 import { SourcePicker } from '../scene/source-picker.tsx'
-import { KindChoices, TAB_KINDS } from './kinds.tsx'
+import { KindChoices, TAB_KINDS, tabIcon } from './kinds.tsx'
 import styles from './page-tabs.module.css'
 
 export const tabsKey = (worldId: string, pageId: string) => ['pages', worldId, 'tabs', pageId]
@@ -151,15 +151,7 @@ export function PageTabs({ page, tabs, active }: { page: Page; tabs: PageTabView
                 }
               }}
             >
-              {tab.kind === 'text' ? (
-                <FileText aria-hidden="true" size={14} />
-              ) : tab.kind === 'table' ? (
-                <Dices aria-hidden="true" size={14} />
-              ) : tab.kind === 'scene' ? (
-                <Grid3x3 aria-hidden="true" size={14} />
-              ) : (
-                <MapIcon aria-hidden="true" size={14} />
-              )}
+              <TabIcon kind={tab.kind} />
               {tab.name}
             </Link>
             {active === tab.id && !page.locked && (
@@ -185,7 +177,13 @@ export function PageTabs({ page, tabs, active }: { page: Page; tabs: PageTabView
   )
 }
 
-/** Los tipos de pestaña: texto, mapa, tabla y escena ya; los demás, en las fases que vienen (ADR-0007) */
+/** El dibujo de una pestaña, por su tipo */
+function TabIcon({ kind }: { kind: string }) {
+  const Icon = tabIcon(kind)
+  return <Icon aria-hidden="true" size={14} />
+}
+
+/** Los tipos de pestaña: texto, mapa, tabla, escena y pizarra ya; los demás, en las fases que vienen (ADR-0007) */
 /**
  * «+»: un cuadro con un recuadro por tipo y el nombre (sin él, el del tipo); la nueva va al final y se abre. Sin
  * plantillas: una plantilla se elige solo al crear la página
@@ -199,7 +197,7 @@ function NewTab({ page }: { page: Page }) {
   const errorText = useErrorText()
   const [open, setOpen] = useState(false)
   const [name, setName] = useState('')
-  const [kind, setKind] = useState<'text' | 'map' | 'table' | 'scene'>('text')
+  const [kind, setKind] = useState<'text' | 'map' | 'table' | 'scene' | 'board'>('text')
   // Una escena puede nacer ya con su mapa: se prepara al abrirla
   const [choice, setChoice] = useState<SceneChoice | null>(null)
   const titleId = useId()

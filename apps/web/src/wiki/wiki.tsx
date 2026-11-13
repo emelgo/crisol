@@ -30,6 +30,7 @@ import { WorldBanner } from '../routes/world-card.tsx'
 import { TemplateIcon } from '../templates/icons.tsx'
 import { useTemplates } from '../templates/picker.tsx'
 import { Backlinks } from './backlinks.tsx'
+import { BoardTab } from './board/board-tab.tsx'
 import { CollabSocket } from './collab.tsx'
 import { CoverButton, PageCoverImage } from './cover.tsx'
 import { PageBody } from './editor.tsx'
@@ -895,6 +896,8 @@ export function EntryView({
                 </div>
               ) : active?.kind === 'table' ? (
                 <TableTab key={active.id} page={page} tab={active} />
+              ) : active?.kind === 'board' ? (
+                <BoardTab key={active.id} page={page} tab={active} />
               ) : active ? (
                 <MapTab key={active.id} page={page} tab={active} />
               ) : (

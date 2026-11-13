@@ -116,4 +116,54 @@ describe('la pizarra (módulo 9)', () => {
     expect(seen.elements.map((e: { id: string }) => e.id)).toEqual(['doran', 'pista'])
     expect(JSON.stringify(seen)).not.toMatch(/Madre|Sesión|flecha/)
   })
+
+  it('la IA: pone tarjetas, una nota y una flecha en la rejilla; las lee en palabras; quita con lo atado; la jugadora no ve lo oculto', async () => {
+    const tab = await ok200('createPageTab', { pageId: robo, kind: 'board' })
+    const changed = await ok200('changeBoard', {
+      tabId: tab.id,
+      add: [
+        { ref: 'd', pageId: doran, column: 0, row: 0 },
+        { ref: 'm', pageId: madre, column: 2, row: 0, hidden: true },
+        { ref: 'n', text: 'le debe dinero', column: 1, row: 1 },
+        { ref: 'c', text: 'Almacén', shape: 'rectangle', column: 0, row: 2 }
+      ],
+      arrows: [{ from: 'd', to: 'm', text: '¿cómplices?' }]
+    })
+    expect(changed.added.map((a: { ref: string }) => a.ref)).toEqual(['d', 'm', 'n', 'c'])
+    const id = (ref: string) => changed.added.find((a: { ref: string }) => a.ref === ref).id
+    const seen = await ok200('describeBoard', { tabId: tab.id })
+    expect(seen.cards).toEqual([
+      { id: id('d'), pageId: doran, title: 'Doran el Cojo', column: 0, row: 0, hidden: false },
+      { id: id('m'), pageId: madre, title: 'La Madre Ceniza', column: 2, row: 0, hidden: true }
+    ])
+    expect(seen.notes).toMatchObject([{ id: id('n'), text: 'le debe dinero', column: 1, row: 1 }])
+    expect(seen.shapes).toMatchObject([{ id: id('c'), shape: 'rectangle', text: 'Almacén', column: 0, row: 2 }])
+    expect(seen.arrows).toMatchObject([{ from: id('d'), to: id('m'), text: '¿cómplices?' }])
+    // Lo que pinta la web: elementos de Excalidraw enteros, y la tarjeta enlaza a su página
+    const { elements } = await ok200('getBoard', { tabId: tab.id })
+    expect(elements.find((e: { id: string }) => e.id === id('d'))).toMatchObject({
+      type: 'embeddable',
+      link: `/mundos/${worldId}/wiki/${doran}`,
+      boundElements: [{ type: 'arrow' }]
+    })
+    // La jugadora (revelada la pestaña): sin la tarjeta oculta ni la flecha que iba a ella
+    await ok200('updatePageTab', { tabId: tab.id, hidden: true })
+    await ok200('setKnowledge', { worldId, campaignId: marca, kind: 'tab', targetId: tab.id, known: true })
+    const hers = await ok200('describeBoard', { tabId: tab.id }, ana.cookie)
+    expect(hers.cards.map((c: { title: string }) => c.title)).toEqual(['Doran el Cojo'])
+    expect(hers.arrows).toEqual([])
+    expect(JSON.stringify(hers)).not.toMatch(/Madre|cómplices/)
+    // Una jugadora no la cambia
+    expect((await call('changeBoard', { tabId: tab.id, remove: [id('n')] }, ana.cookie)).statusCode).toBe(404)
+    // Quitar a Doran se lleva la flecha (y su rótulo)
+    expect((await ok200('changeBoard', { tabId: tab.id, remove: [id('d')] })).removed).toBe(1)
+    const after = await ok200('describeBoard', { tabId: tab.id })
+    expect(after.cards.map((c: { title: string }) => c.title)).toEqual(['La Madre Ceniza'])
+    expect(after.arrows).toEqual([])
+    // Una página de fuera, o una flecha a nada, no entran
+    expect(
+      (await call('changeBoard', { tabId: tab.id, add: [{ pageId: tab.id, column: 0, row: 0 }] })).statusCode
+    ).toBe(400)
+    expect((await call('changeBoard', { tabId: tab.id, arrows: [{ from: 'x', to: 'y' }] })).statusCode).toBe(400)
+  })
 })

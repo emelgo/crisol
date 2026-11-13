@@ -62,8 +62,8 @@ export function NewPageDialog({
       })
       // Si la pestaña falla, la página ya está: se abre igual (sin mapa) en vez de dejar el cuadro para crear otra
       const tab =
-        !fromTemplate && kind === 'map'
-          ? await api.call('createPageTab', { pageId: page.id, kind: 'map' }).catch(() => null)
+        !fromTemplate && (kind === 'map' || kind === 'board')
+          ? await api.call('createPageTab', { pageId: page.id, kind }).catch(() => null)
           : null
       return { page, tab, named }
     },
@@ -75,7 +75,7 @@ export function NewPageDialog({
       await navigate({
         to: '/mundos/$worldId/wiki/$pageId',
         params: { worldId, pageId: page.id },
-        // Sin título, se abre para escribirlo; un mapa, con su pestaña abierta
+        // Sin título, se abre para escribirlo; un mapa o una pizarra, con su pestaña abierta
         search: { ...(named ? {} : { nuevo: true }), ...(tab ? { pestana: tab.id } : {}) }
       })
     }

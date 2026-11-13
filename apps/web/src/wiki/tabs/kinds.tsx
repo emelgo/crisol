@@ -22,7 +22,7 @@ export const TAB_KINDS = [
   { kind: 'map', icon: MapIcon, ready: true, newPage: true },
   { kind: 'table', icon: Dices, ready: true, newPage: false },
   { kind: 'scene', icon: Grid3x3, ready: true, newPage: false },
-  { kind: 'board', icon: PenTool, ready: false, newPage: true },
+  { kind: 'board', icon: PenTool, ready: true, newPage: true },
   { kind: 'timeline', icon: Clock, ready: false, newPage: true },
   { kind: 'tree', icon: Network, ready: false, newPage: true }
 ] as const

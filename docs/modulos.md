@@ -20,7 +20,12 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   https://claude.ai/artifact/NUQMCPWW11Wz4HLfXRmChX
 - Pruebas: web (mapa 63, wiki 357), servidor (capas 10, MCP), e2e `mapas-capas` y la batería entera en local antes de
   subir (sin CI este mes: `[skip ci]`).
-- **Siguiente**: la pizarra (spec `docs/specs/pizarra.md`, lienzo aprobado con Excalidraw, plan `tasks/pizarra.md`).
+- **La pizarra, construida en local** (2026-11-13; spec `docs/specs/pizarra.md`, plan `tasks/pizarra.md`): pestaña
+  «Pizarra» con Excalidraw 0.18.1 cargado a demanda (fuentes servidas por Crisol), guardada en vivo por Yjs, tarjetas
+  de páginas («Página…» o arrastrar del árbol), imágenes a los archivos del mundo, «Oculto para los jugadores», la
+  jugadora en solo lectura con lo que le proyecta el servidor, y la IA con `ver_pizarra` y `cambiar_pizarra`. e2e
+  `pizarra` en verde. **Siguiente**: parar aquí (Enrique: «cuando termines esta parte para antes de seguir»); quedan
+  la crítica y el audit de impeccable, la página de revisión y la batería entera.
   **No subir nada hasta que esté todo** (Enrique, 2026-11-13: «el ci cuando ya esté todo»): entonces una sola CI y a
   `main` y staging.
 

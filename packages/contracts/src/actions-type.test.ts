@@ -102,6 +102,8 @@ describe('Actions', () => {
       getMapImage: true,
       measureMap: true,
       getBoard: true,
+      describeBoard: true,
+      changeBoard: true,
       getWorldHome: true,
       ensureWorldHome: true,
       listTemplates: true,
