@@ -19,10 +19,10 @@ import { FormError } from '../../components/field.tsx'
 import { focusAfterRemoving } from '../../components/focus.ts'
 import { failed, LoadError } from '../../components/load-error.tsx'
 import { useDownload } from '../screen.tsx'
+import type { Change } from './change.ts'
 import { FieldsList, focusMoved } from './character-step.tsx'
 import { keyFor, withText } from './kinds.ts'
 import styles from './rules.module.css'
-import type { Change } from './rules-editor.tsx'
 
 /** Mueve un elemento de una lista (subir o bajar) */
 function moved<T>(list: readonly T[], at: number, delta: -1 | 1): T[] {

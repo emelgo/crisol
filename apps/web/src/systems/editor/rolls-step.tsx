@@ -21,12 +21,12 @@ import { useApi } from '../../api/context.tsx'
 import { useErrorText } from '../../api/errors.ts'
 import { useAnnounce } from '../../components/announcer.tsx'
 import { focusAfterRemoving, focusOnMount } from '../../components/focus.ts'
+import type { Change } from './change.ts'
 import { TrimmedText } from './character-step.tsx'
 import { sampleData } from './example-sheet.tsx'
 import { Help } from './help.tsx'
 import { keyFor, withText } from './kinds.ts'
 import styles from './rules.module.css'
-import type { Change } from './rules-editor.tsx'
 
 /** Lo que se puede poner en una fórmula: los campos de número del personaje, con su nombre y su ruta */
 function suggestionsOf(system: System, language: Language) {
