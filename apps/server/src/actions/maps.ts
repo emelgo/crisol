@@ -14,6 +14,7 @@ import {
   deleteMapPin,
   deletePageTab,
   getMap,
+  getMapImage,
   listPageTabs,
   MAX_MAP_ELEMENTS,
   MAX_MAP_LAYERS,
@@ -25,6 +26,7 @@ import {
   type MapPinView,
   type MapStyle,
   type MapView,
+  measureMap,
   type PageTabView,
   updateMap,
   updateMapElement,
@@ -40,7 +42,31 @@ import { viewedPage } from '../wiki/projection.ts'
 import type { WikiView } from '../wiki/reader.ts'
 import { authorizedPage, type WikiTarget } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
+import { snapGeometry, verticesOf } from './map-snap.ts'
 import { implement } from './registry.ts'
+
+/** Lo más que se le enseña a la IA de una imagen (su API no admite más) y los tipos que admite */
+const MAX_IMAGE_BYTES = 4_500_000
+const SHOWN_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp', 'image/gif'])
+const MAX_SVG_CHARS = 400_000
+
+async function readAll(stream: AsyncIterable<unknown>) {
+  const chunks: Buffer[] = []
+  for await (const chunk of stream) chunks.push(chunk as Buffer)
+  return Buffer.concat(chunks)
+}
+
+/** Lo dibujado, pegado a lo que ya hay en su mapa (menos él mismo) si se pide */
+async function snapped(ctx: ActionContext, mapId: string, geometry: MapGeometry, except: string | null) {
+  const map = await mapsRepo.findMap(ctx.db, mapId)
+  const others = (await mapsRepo.listElements(ctx.db, mapId)).filter((element) => element.id !== except)
+  const pins = await mapsRepo.listPins(ctx.db, mapId)
+  return snapGeometry(
+    geometry,
+    { vertices: verticesOf(others.map((element) => element.geometry as MapGeometry)), pins },
+    { width: map?.width ?? 1000, height: map?.height ?? 1000 }
+  )
+}
 
 export const tabView = (row: mapsRepo.PageTabRow): PageTabView => ({
   id: row.id,
@@ -452,11 +478,12 @@ export const mapActions = [
     ctx.realtime.publish(pagesChanged(wiki))
     return { id: layerId }
   }),
-  implement(createMapElement, async (ctx, { mapId, layerId, kind, geometry, ...input }) => {
+  implement(createMapElement, async (ctx, { mapId, layerId, kind, geometry: drawn, snap, ...input }) => {
     const { tab, page, wiki } = await authorizedMap(ctx, 'page.write', mapId)
     const stats = await mapsRepo.elementStats(ctx.db, mapId)
     if (stats.count >= MAX_MAP_ELEMENTS)
       throw new InvalidRequestError('TOO_MANY_ELEMENTS', `como mucho ${MAX_MAP_ELEMENTS}`)
+    const geometry = snap ? await snapped(ctx, mapId, drawn, null) : drawn
     await checkGeometry(ctx, mapId, kind, geometry)
     const pageTitle = await checkPinPage(ctx, wiki, input.pageId)
     const layer = await layerFor(ctx, wiki, mapId, layerId, page.title)
@@ -484,8 +511,9 @@ export const mapActions = [
     ctx.realtime.publish(pagesChanged(wiki))
     return elementView((await mapsRepo.findElement(ctx.db, element.id)) as ElementRow)
   }),
-  implement(updateMapElement, async (ctx, { elementId, layerId, geometry, ...patch }) => {
+  implement(updateMapElement, async (ctx, { elementId, layerId, geometry: drawn, snap, ...patch }) => {
     const { tab, page, element, wiki } = await authorizedElement(ctx, 'page.write', elementId)
+    const geometry = drawn && snap ? await snapped(ctx, element.mapId, drawn, elementId) : drawn
     if (geometry) await checkGeometry(ctx, element.mapId, element.kind, geometry)
     await checkPinPage(ctx, wiki, patch.pageId)
     if (layerId) {
@@ -521,5 +549,71 @@ export const mapActions = [
     )
     ctx.realtime.publish(pagesChanged(wiki))
     return { id: elementId }
+  }),
+  implement(getMapImage, async (ctx, { tabId, ...as }) => {
+    const tab = await mapsRepo.findTab(ctx.db, tabId)
+    const { view } = await viewedPage(ctx, tab?.pageId ?? '', as)
+    if (!tab || !view.seesTab({ id: tab.id, pageId: tab.pageId, hidden: tab.hidden })) throw new NotFoundError('tab')
+    const map = await mapsRepo.mapOfTab(ctx.db, tabId)
+    const file = map?.fileId ? await filesRepo.findFile(ctx.db, map.fileId) : null
+    const storage = ctx.storage
+    if (!map || !file || file.deletedAt || !map.width || !map.height || !storage)
+      throw new InvalidRequestError('NO_MAP_IMAGE')
+    const base = { width: map.width, height: map.height, mimeType: file.mime }
+    const sizes = `Mide ${map.width} × ${map.height} píxeles`
+    if (file.mime === 'image/svg+xml' && file.size <= MAX_SVG_CHARS) {
+      const svg = (await readAll(storage.read(file.storageKey))).toString('utf8')
+      return { ...base, image: null, svg, note: `${sizes}. Es un dibujo: su SVG va en svg` }
+    }
+    if (!SHOWN_TYPES.has(file.mime) || file.size > MAX_IMAGE_BYTES) {
+      return { ...base, image: null, svg: null, note: `${sizes}. No se puede enseñar (tipo o tamaño): mira ver_mapa` }
+    }
+    const data = (await readAll(storage.read(file.storageKey))).toString('base64')
+    return {
+      ...base,
+      image: { mimeType: file.mime, data },
+      svg: null,
+      note: `${sizes}. Para dibujar sobre ella, da los puntos en esos píxeles con view { width: ${map.width}, height: ${map.height} }`
+    }
+  }),
+  implement(measureMap, async (ctx, { tabId, points, pins, elementId, ...as }) => {
+    const tab = await mapsRepo.findTab(ctx.db, tabId)
+    const { view } = await viewedPage(ctx, tab?.pageId ?? '', as)
+    if (!tab || !view.seesTab({ id: tab.id, pageId: tab.pageId, hidden: tab.hidden })) throw new NotFoundError('tab')
+    // Con lo que ve quien mide: un jugador no mide hasta lo que no se le ha revelado
+    const map = await mapView(ctx, tabId, tab.pageId, view)
+    if (!map.image) throw new InvalidRequestError('NO_MAP_IMAGE')
+    let line: [number, number][] = points ?? []
+    if (pins) {
+      const ends = pins.map((id) => map.pins.find((pin) => pin.id === id))
+      if (ends.some((pin) => !pin)) throw new NotFoundError('pin')
+      line = ends.map((pin) => [pin?.x ?? 0, pin?.y ?? 0])
+    }
+    if (elementId) {
+      const route = map.elements.find((element) => element.id === elementId)
+      if (!route || !('points' in route.geometry)) throw new NotFoundError('element')
+      line = route.geometry.points
+    }
+    const { width, height } = map.image
+    let pixels = 0
+    for (let i = 1; i < line.length; i++) {
+      const [a, b] = [line[i - 1], line[i]]
+      if (a && b) pixels += Math.hypot((b[0] - a[0]) * width, (b[1] - a[1]) * height)
+    }
+    const distance = map.scale ? (pixels * map.scale.value) / map.scale.length : null
+    const round = (value: number) => Math.round(value * 100) / 100
+    return {
+      distance: distance === null ? null : round(distance),
+      unit: map.scale?.unit ?? null,
+      days:
+        distance === null
+          ? null
+          : {
+              foot: round(distance / map.speeds.foot),
+              horse: round(distance / map.speeds.horse),
+              ship: round(distance / map.speeds.ship)
+            },
+      pixels: round(pixels)
+    }
   })
 ]

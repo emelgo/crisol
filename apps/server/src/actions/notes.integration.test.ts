@@ -190,7 +190,7 @@ describe('las notas del jugador (docs/specs/notas-jugador.md)', () => {
       const found = MCP_TOOLS[tool]
       if (!found) throw new Error(`falta ${tool}`)
       const result = await callAsAi(env, { userId, tool, ...routeCall(found, args), waitMs: 50 })
-      return { ...result, text: result.content.map((c) => c.text).join('\n') }
+      return { ...result, text: result.content.map((c) => ('text' in c ? c.text : '')).join('\n') }
     }
     // En copiloto (el modo de siempre), escribir se hace sin esperar
     const written = await ai(ana.userId, 'escribir_nota', { campaignId, title: 'Pistas', markdown: 'Una llave' })

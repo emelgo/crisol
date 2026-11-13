@@ -4989,6 +4989,36 @@ export function fakeApi(
       element.pageTitle = element.pageId ? pageById(element.pageId).title : null
       return structuredClone(element)
     },
+    getMapImage: ({ tabId }) => {
+      const map = maps.find((m) => m.tabId === tabId)
+      if (!map?.image) throw new ApiError('NO_MAP_IMAGE', 400)
+      const { width, height } = map.image
+      return { width, height, mimeType: 'image/png', image: null, svg: null, note: `Mide ${width} × ${height} píxeles` }
+    },
+    measureMap: ({ tabId, points = [] }) => {
+      const map = maps.find((m) => m.tabId === tabId)
+      if (!map?.image) throw new ApiError('NO_MAP_IMAGE', 400)
+      const { width, height } = map.image
+      let pixels = 0
+      for (let i = 1; i < points.length; i++) {
+        const [a, b] = [points[i - 1], points[i]]
+        if (a && b) pixels += Math.hypot((b[0] - a[0]) * width, (b[1] - a[1]) * height)
+      }
+      const distance = map.scale ? (pixels * map.scale.value) / map.scale.length : null
+      return {
+        distance,
+        unit: map.scale?.unit ?? null,
+        days:
+          distance === null
+            ? null
+            : {
+                foot: distance / map.speeds.foot,
+                horse: distance / map.speeds.horse,
+                ship: distance / map.speeds.ship
+              },
+        pixels
+      }
+    },
     deleteMapElement: ({ elementId }) => {
       const { map, element } = elementById(elementId)
       map.elements.splice(map.elements.indexOf(element), 1)

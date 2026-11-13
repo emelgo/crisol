@@ -4,7 +4,7 @@ import { fronteras } from '@crisol/systems/fixtures'
 import { describe, expect, it } from 'vitest'
 import { UI_ONLY } from '../actions/ai.ts'
 import { InvalidRequestError } from '../actions/context.ts'
-import { errorText } from './approvals.ts'
+import { errorText, success } from './approvals.ts'
 import { INSTRUCTIONS, MCP_TOOLS, type McpTool, routeCall, toolActions, toolConfig, toolWords } from './tools.ts'
 
 describe('herramientas MCP', () => {
@@ -44,7 +44,9 @@ describe('herramientas MCP', () => {
       'buscar_paginas',
       'camara_pantalla',
       'cambiar_campana',
+      'cambiar_capa',
       'cambiar_carpeta_plantillas',
+      'cambiar_dibujo',
       'cambiar_escena',
       'cambiar_etiqueta',
       'cambiar_ficha',
@@ -69,6 +71,7 @@ describe('herramientas MCP', () => {
       'controles_sala',
       'copiar_contenido',
       'crear_campana',
+      'crear_capa',
       'crear_carpeta_actores',
       'crear_carpeta_plantillas',
       'crear_escena',
@@ -85,6 +88,7 @@ describe('herramientas MCP', () => {
       'dejar_editar',
       'dejar_volver',
       'deshacer',
+      'dibujar_en_mapa',
       'dibujar_escena',
       'duplicar_pagina',
       'echar_de_la_mesa',
@@ -108,6 +112,7 @@ describe('herramientas MCP', () => {
       'guardar_encuentro',
       'guardar_instantanea',
       'imagen_escena',
+      'imagen_mapa',
       'leer_capitulo',
       'leer_compendio',
       'leer_contenido',
@@ -124,6 +129,7 @@ describe('herramientas MCP', () => {
       'lo_que_sabe',
       'marcar_conocimiento',
       'medir',
+      'medir_mapa',
       'meter_en_combate',
       'monedas_grupo',
       'mover_a_carpeta',
@@ -159,8 +165,10 @@ describe('herramientas MCP', () => {
       'probar_tirada',
       'proponer_contenido',
       'quien_conoce',
+      'quitar_capa',
       'quitar_de_juego',
       'quitar_de_la_vista',
+      'quitar_dibujo',
       'quitar_fichas',
       'quitar_pin',
       'quitar_sonido_escena',
@@ -245,6 +253,65 @@ describe('herramientas MCP', () => {
     for (const tool of Object.values(MCP_TOOLS))
       for (const word of toolConfig(tool).description.match(/\b[a-z]+[A-Z][A-Za-z]*\b/g) ?? [])
         expect(actions.has(word), word).toBe(false)
+  })
+
+  it('dibujar_en_mapa: los píxeles de la imagen que vio, a 0–1, simplificados y pegando a lo cercano', () => {
+    const tool = MCP_TOOLS.dibujar_en_mapa as McpTool
+    const mapId = crypto.randomUUID()
+    const { impl, input } = routeCall(tool, {
+      mapId,
+      kind: 'region',
+      label: 'Reino de Varn',
+      view: { width: 1600, height: 1000 },
+      geometry: {
+        pieces: [
+          [
+            [160, 100],
+            [800, 100],
+            [800, 500],
+            [480, 500],
+            [160, 500]
+          ]
+        ]
+      }
+    })
+    expect(impl.action.name).toBe('createMapElement')
+    expect(input).toMatchObject({
+      mapId,
+      label: 'Reino de Varn',
+      snap: true,
+      geometry: {
+        pieces: [
+          [
+            [0.1, 0.1],
+            [0.5, 0.1],
+            [0.5, 0.5],
+            [0.1, 0.5]
+          ]
+        ]
+      }
+    })
+    // cambiar_dibujo sin forma no la toca (ni pega nada)
+    const redraw = routeCall(MCP_TOOLS.cambiar_dibujo as McpTool, { elementId: mapId, label: 'Varn' })
+    expect(redraw.input).toEqual({ elementId: mapId, label: 'Varn' })
+  })
+
+  it('una imagen en lo que contesta (imagen_mapa) va como imagen, y en lo demás sin sus datos', () => {
+    const result = success({
+      width: 2,
+      height: 1,
+      image: { mimeType: 'image/png', data: 'aGVsbG8=' },
+      note: 'Mide 2 × 1'
+    })
+    expect(result.content[0]).toEqual({ type: 'image', data: 'aGVsbG8=', mimeType: 'image/png' })
+    expect(result.structuredContent).toEqual({
+      width: 2,
+      height: 1,
+      image: { mimeType: 'image/png' },
+      note: 'Mide 2 × 1'
+    })
+    expect(JSON.stringify(result.content[1])).not.toContain('aGVsbG8=')
+    expect(success({ a: 1 }).content).toEqual([{ type: 'text', text: '{\n  "a": 1\n}' }])
   })
 
   it('la IA no puede aprobar lo suyo ni cambiar su modo: no hay herramienta para eso', () => {

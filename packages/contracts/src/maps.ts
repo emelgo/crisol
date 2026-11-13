@@ -267,6 +267,12 @@ export const deleteMapPin = defineAction({
 })
 
 const layerName = z.string().trim().min(1).max(60)
+const snapField = z
+  .boolean()
+  .optional()
+  .describe(
+    'Pegar sus vértices a los de lo demás que estén muy cerca (fronteras sin huecos) y los extremos de una ruta a los pines'
+  )
 const elementFields = {
   label: z.string().trim().max(120).nullable().describe('Su nombre; sin él, el de la página enlazada'),
   pageId: z.uuid().nullable().describe('La página a la que lleva, del mismo mundo'),
@@ -317,7 +323,13 @@ export const createMapElement = defineAction({
   input: z
     .object(elementFields)
     .partial()
-    .extend({ mapId: z.uuid(), layerId: z.uuid().optional(), kind: z.enum(MAP_ELEMENT_KINDS), geometry: mapGeometry }),
+    .extend({
+      mapId: z.uuid(),
+      layerId: z.uuid().optional(),
+      kind: z.enum(MAP_ELEMENT_KINDS),
+      geometry: mapGeometry,
+      snap: snapField
+    }),
   output: mapElementView
 })
 
@@ -329,7 +341,7 @@ export const updateMapElement = defineAction({
   input: z
     .object(elementFields)
     .partial()
-    .extend({ elementId: z.uuid(), layerId: z.uuid().optional(), geometry: mapGeometry.optional() }),
+    .extend({ elementId: z.uuid(), layerId: z.uuid().optional(), geometry: mapGeometry.optional(), snap: snapField }),
   output: mapElementView
 })
 
@@ -339,4 +351,47 @@ export const deleteMapElement = defineAction({
   description: 'Quita una región, ruta o texto de un mapa. Se deshace desde el historial',
   input: z.object({ elementId: z.uuid() }),
   output: z.object({ id: z.uuid() })
+})
+
+export const getMapImage = defineAction({
+  name: 'getMapImage',
+  kind: 'read',
+  description:
+    'La imagen de un mapa, para verla antes de dibujar en él: sus medidas en píxeles y la imagen (o su SVG, si es un dibujo). Lo que se dibuje encima puede ir en esos píxeles (con view: su ancho y su alto), sin pasarlo a 0–1',
+  input: z.object({ tabId: z.uuid(), ...readAs }),
+  output: z.object({
+    width: z.number().int(),
+    height: z.number().int(),
+    mimeType: z.string(),
+    image: z
+      .object({ mimeType: z.string(), data: z.string().optional() })
+      .nullable()
+      .describe('La imagen (para verla); null si es demasiado grande o de un tipo que no se puede enseñar'),
+    svg: z.string().nullable().describe('Si el mapa es un SVG, su texto'),
+    note: z.string()
+  })
+})
+
+const measurePoint = z.tuple([coordinate, coordinate])
+
+export const measureMap = defineAction({
+  name: 'measureMap',
+  kind: 'read',
+  description:
+    'Mide en un mapa con su escala: entre unos puntos (de 0 a 1), entre dos pines o a lo largo de una ruta dibujada (elementId), y cuántos días se tarda a pie, a caballo y en barco',
+  input: z
+    .object({
+      tabId: z.uuid(),
+      points: z.array(measurePoint).min(2).max(200).optional(),
+      pins: z.tuple([z.uuid(), z.uuid()]).optional(),
+      elementId: z.uuid().optional().describe('Una ruta: se mide entera'),
+      ...readAs
+    })
+    .refine((input) => input.points || input.pins || input.elementId, { message: 'points, pins o elementId' }),
+  output: z.object({
+    distance: z.number().nullable().describe('null si el mapa no tiene escala'),
+    unit: z.string().nullable(),
+    days: z.object({ foot: z.number(), horse: z.number(), ship: z.number() }).nullable(),
+    pixels: z.number()
+  })
 })

@@ -153,6 +153,25 @@ describe('las capas del mapa (módulo 9)', () => {
     expect((await api.client.call('getMap', { tabId })).elements).toHaveLength(1)
   })
 
+  it('lo que llega de fuera (lo que dibuja la IA) entra forjándose; lo de antes, no', async () => {
+    const { api, mapId } = await renderMap()
+    const panel = await openLayers()
+    await waitFor(() => expect(drawn('region')).toHaveLength(1))
+    expect(document.querySelector('[data-fresh]')).toBeNull()
+    // La IA dibuja otra región; el mapa se vuelve a pedir (aquí, al crear una capa)
+    await api.client.call('createMapElement', {
+      mapId,
+      kind: 'region',
+      label: 'Marca Verde',
+      geometry: { pieces: [SQUARE] }
+    })
+    await userEvent.click(panel.getByRole('button', { name: 'Capa nueva' }))
+    await waitFor(() => expect(drawn('region')).toHaveLength(2))
+    const fresh = document.querySelectorAll('[data-fresh]')
+    expect(fresh).toHaveLength(1)
+    expect(fresh[0]?.textContent).toBe('Marca Verde')
+  })
+
   it('Alt y las flechas mueven la capa desde su nombre; Escape al renombrar deja el nombre como estaba', async () => {
     const { api, tabId } = await renderMap()
     const panel = await openLayers()

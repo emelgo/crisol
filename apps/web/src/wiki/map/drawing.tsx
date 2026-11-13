@@ -33,6 +33,7 @@ export const MapDrawing = memo(function MapDrawing({
   elements,
   hiddenHere,
   selected,
+  fresh,
   live,
   onOpen,
   onElementPointerDown,
@@ -46,6 +47,8 @@ export const MapDrawing = memo(function MapDrawing({
   /** Las capas apagadas en esta pantalla */
   hiddenHere: ReadonlySet<string>
   selected?: string | null
+  /** Lo que acaba de llegar de fuera: entra forjándose */
+  fresh?: ReadonlySet<string>
   /** Lo que se está retocando, con su forma de ahora (aún sin guardar) */
   live?: { id: string; geometry: MapElementView['geometry'] } | null
   /** Doble clic en algo que lleva a una página */
@@ -108,6 +111,7 @@ export const MapDrawing = memo(function MapDrawing({
           element={element}
           image={image}
           selected={element.id === selected}
+          fresh={fresh?.has(element.id) ?? false}
           onDoubleClick={open(element)}
           onPointerDown={onElementPointerDown ? (event) => onElementPointerDown(event, element) : undefined}
           onClick={onElementClick ? (event) => onElementClick(event, element) : undefined}
@@ -122,6 +126,7 @@ function Element({
   element,
   image,
   selected,
+  fresh,
   onDoubleClick,
   onPointerDown,
   onClick
@@ -130,6 +135,7 @@ function Element({
   element: MapElementView
   image: Size
   selected: boolean
+  fresh: boolean
   onDoubleClick: (event: MouseEvent) => void
   onPointerDown?: (event: PointerEvent<SVGGElement>) => void
   onClick?: (event: MouseEvent<SVGGElement>) => void
@@ -151,6 +157,7 @@ function Element({
     'data-kind': element.kind,
     'data-display': display,
     'data-selected': selected || undefined,
+    'data-fresh': fresh || undefined,
     'data-hidden': element.hidden || undefined,
     'data-link': element.pageId ? true : undefined,
     'data-id': element.id,

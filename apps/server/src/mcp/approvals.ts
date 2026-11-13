@@ -33,16 +33,27 @@ import { viewedPage } from '../wiki/projection.ts'
 /** Lo que contesta una herramienta */
 export interface ToolResult {
   [key: string]: unknown
-  content: Array<{ type: 'text'; text: string }>
+  content: Array<{ type: 'text'; text: string } | { type: 'image'; data: string; mimeType: string }>
   structuredContent?: Record<string, unknown>
   isError?: boolean
 }
 
 const text = (value: string) => [{ type: 'text' as const, text: value }]
-const success = (output: Record<string, unknown>): ToolResult => ({
-  content: text(JSON.stringify(output, null, 2)),
-  structuredContent: output
-})
+/**
+ * Lo que sale bien. Si trae una imagen (la de un mapa, `image.data`), va como imagen para que la IA la vea; el resto,
+ * como siempre, sin repetir sus datos
+ */
+export const success = (output: Record<string, unknown>): ToolResult => {
+  const image = output.image as { data?: unknown; mimeType?: unknown } | null | undefined
+  if (image && typeof image.data === 'string' && typeof image.mimeType === 'string') {
+    const rest = { ...output, image: { mimeType: image.mimeType } }
+    return {
+      content: [{ type: 'image', data: image.data, mimeType: image.mimeType }, ...text(JSON.stringify(rest, null, 2))],
+      structuredContent: rest
+    }
+  }
+  return { content: text(JSON.stringify(output, null, 2)), structuredContent: output }
+}
 const failure = (message: string): ToolResult => ({ isError: true, content: text(message) })
 
 const READ_ONLY =

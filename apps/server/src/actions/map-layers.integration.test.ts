@@ -8,7 +8,8 @@ import { freshTestDatabase, resetDatabase } from '@crisol/db/testing'
 import { desc, eq } from 'drizzle-orm'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { buildApp } from '../app.ts'
-import { createTestAuth, signUpTestUser, TEST_SEAL_KEY } from '../testing.ts'
+import { diskStorage } from '../files/storage.ts'
+import { createTestAuth, signUpTestUser, TEST_SEAL_KEY, testDataDir } from '../testing.ts'
 
 const BASE_URL = 'http://localhost:5173'
 const ok = async () => undefined
@@ -59,7 +60,8 @@ describe('las capas de los mapas y lo dibujado (módulo 9)', () => {
     auth = createTestAuth(conn.db, BASE_URL)
     app = buildApp({
       checks: { postgres: ok, valkey: ok },
-      accounts: { auth, db: conn.db, publicUrl: BASE_URL, sealKey: TEST_SEAL_KEY }
+      accounts: { auth, db: conn.db, publicUrl: BASE_URL, sealKey: TEST_SEAL_KEY },
+      storage: diskStorage(testDataDir())
     })
     master = await signUpTestUser(auth, { name: 'Enrique', email: 'enrique@crisol.test' })
     const [org] = await conn.db.insert(schema.organizations).values({ name: 'Mesa' }).returning()
@@ -263,6 +265,116 @@ describe('las capas de los mapas y lo dibujado (módulo 9)', () => {
     expect(copied.layers[0].id).not.toBe(capa.id)
     expect(copied.elements[0]).toMatchObject({ layerId: copied.layers[0].id, geometry: { from: copied.pins[0].id } })
     expect(copied.pins[0].id).not.toBe(pin.id)
+  })
+
+  const upload = async (name: string, body: Buffer) =>
+    (
+      await app.inject({
+        method: 'POST',
+        url: `/api/files?worldId=${worldId}&name=${encodeURIComponent(name)}`,
+        payload: body,
+        headers: { origin: BASE_URL, cookie: master.cookie, 'content-type': 'application/octet-stream' }
+      })
+    ).json()
+
+  it('la imagen para la IA: la de verdad con sus medidas, o el texto de un SVG; sin imagen, NO_MAP_IMAGE', async () => {
+    expect((await call('getMapImage', { tabId })).json()).toMatchObject({ code: 'NO_MAP_IMAGE' })
+    const png = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.from('un mapa')])
+    const file = await upload('Valdren.png', png)
+    await ok200('updateMap', { mapId, image: { fileId: file.id, width: 1600, height: 1000 } })
+    const image = await ok200('getMapImage', { tabId })
+    expect(image).toMatchObject({ width: 1600, height: 1000, mimeType: 'image/png', svg: null })
+    expect(Buffer.from(image.image.data, 'base64').equals(png)).toBe(true)
+    expect(image.note).toMatch(/1600 × 1000.*view/)
+    // La jugadora que ve el mapa también (su IA dibuja en lo que ve)
+    expect((await call('getMapImage', { tabId }, ana.cookie)).statusCode).toBe(200)
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10"/></svg>'
+    const drawn = await upload('Dibujo.svg', Buffer.from(svg))
+    await ok200('updateMap', { mapId, image: { fileId: drawn.id, width: 10, height: 10 } })
+    expect(await ok200('getMapImage', { tabId })).toMatchObject({ image: null, svg })
+  })
+
+  it('medir: entre puntos, entre pines o a lo largo de una ruta, con la escala y los días; sin escala, sin distancia', async () => {
+    const file = await upload('Valdren.png', Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))
+    await ok200('updateMap', { mapId, image: { fileId: file.id, width: 1000, height: 500 } })
+    const line = [
+      [0.1, 0.5],
+      [0.4, 0.5]
+    ]
+    expect(await ok200('measureMap', { tabId, points: line })).toEqual({
+      distance: null,
+      unit: null,
+      days: null,
+      pixels: 300
+    })
+    // 100 px son 30 km: 300 px, 90 km; 3 días a pie, 1,5 a caballo, 0,75 en barco
+    await ok200('updateMap', { mapId, scale: { length: 100, value: 30, unit: 'km' } })
+    expect(await ok200('measureMap', { tabId, points: line })).toEqual({
+      distance: 90,
+      unit: 'km',
+      days: { foot: 3, horse: 1.5, ship: 0.75 },
+      pixels: 300
+    })
+    const a = await ok200('createMapPin', { mapId, x: 0.1, y: 0.1 })
+    const b = await ok200('createMapPin', { mapId, x: 0.1, y: 0.5 })
+    expect((await ok200('measureMap', { tabId, pins: [a.id, b.id] })).distance).toBe(60)
+    const route = await ok200('createMapElement', { mapId, kind: 'path', geometry: { points: line }, hidden: true })
+    expect((await ok200('measureMap', { tabId, elementId: route.id })).distance).toBe(90)
+    // La jugadora no mide lo que no se le ha revelado
+    expect((await call('measureMap', { tabId, elementId: route.id }, ana.cookie)).statusCode).toBe(404)
+    expect((await ok200('measureMap', { tabId, points: line }, ana.cookie)).distance).toBe(90)
+  })
+
+  it('pegar al dibujar (lo que pide la IA): a los vértices vecinos y los extremos de una ruta, a los pines', async () => {
+    await ok200('updateMap', {
+      mapId,
+      image: {
+        fileId: (await upload('m.png', Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1]))).id,
+        width: 1000,
+        height: 1000
+      }
+    })
+    await ok200('createMapElement', { mapId, kind: 'region', geometry: { pieces: [SQUARE] } })
+    const pin = await ok200('createMapPin', { mapId, x: 0.8, y: 0.8 })
+    const neighbour = await ok200('createMapElement', {
+      mapId,
+      kind: 'region',
+      snap: true,
+      geometry: {
+        pieces: [
+          [
+            [0.405, 0.103],
+            [0.7, 0.1],
+            [0.7, 0.4],
+            [0.398, 0.402]
+          ]
+        ]
+      }
+    })
+    expect(neighbour.geometry.pieces[0][0]).toEqual([0.4, 0.1])
+    expect(neighbour.geometry.pieces[0][3]).toEqual([0.4, 0.4])
+    const route = await ok200('createMapElement', {
+      mapId,
+      kind: 'path',
+      snap: true,
+      geometry: {
+        points: [
+          [0.403, 0.4],
+          [0.795, 0.806]
+        ]
+      }
+    })
+    expect(route.geometry).toEqual({
+      points: [
+        [0.4, 0.4],
+        [0.8, 0.8]
+      ],
+      from: null,
+      to: pin.id
+    })
+    // Sin pedirlo, tal cual
+    const loose = await ok200('createMapElement', { mapId, kind: 'label', geometry: { at: [0.403, 0.4] } })
+    expect(loose.geometry.at).toEqual([0.403, 0.4])
   })
 
   it('quitar la pestaña se lleva sus capas; deshacer las devuelve', async () => {

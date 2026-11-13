@@ -3,7 +3,15 @@
  * en español porque lo ve el máster en claude.ai. Lo que no es leer pasa por el modo de IA de la cuenta (approvals.ts).
  */
 
-import { changeFog, contentTable, playSound, stopSound, updateSoundPlaylist } from '@crisol/contracts'
+import {
+  changeFog,
+  contentTable,
+  createMapElement,
+  playSound,
+  stopSound,
+  updateMapElement,
+  updateSoundPlaylist
+} from '@crisol/contracts'
 import { APPROVAL_WAIT_MS } from '@crisol/domain'
 import { McpServer } from '@modelcontextprotocol/server'
 import { z } from 'zod'
@@ -11,6 +19,7 @@ import { type ActionEnv, type Implementation, InvalidRequestError } from '../act
 import { implementationsByName } from '../actions/implementations.ts'
 import { formatDocs } from '../actions/systems.ts'
 import { callAsAi } from './approvals.ts'
+import { fromAi, type Loose, type View } from './map-geometry.ts'
 import { MAPS_GUIDE, MAPS_GUIDE_RESOURCE } from './maps-guide.ts'
 
 /** La documentación del formato de los sistemas, como recurso (la misma que da formato_sistemas) */
@@ -29,6 +38,32 @@ export type McpTool =
       actions: readonly string[]
       route: (input: Record<string, unknown>) => Route
     }
+
+/** Lo que dibuja la IA: los puntos, en píxeles de la imagen que vio (con su view) o de 0 a 1 */
+const loosePoint = z.tuple([z.number().min(-1e6).max(1e6), z.number().min(-1e6).max(1e6)])
+const looseGeometry = z.union([
+  z.object({ pieces: z.array(z.array(loosePoint).min(3).max(5000)).min(1).max(50) }),
+  z.object({
+    points: z.array(loosePoint).min(2).max(5000),
+    from: z.uuid().nullable().optional(),
+    to: z.uuid().nullable().optional()
+  }),
+  z.object({
+    at: loosePoint,
+    rotate: z.number().min(-180).max(180).optional(),
+    arc: z.number().min(-1).max(1).optional()
+  })
+])
+const view = z
+  .object({ width: z.number().positive(), height: z.number().positive() })
+  .optional()
+  .describe('Las medidas de la imagen que viste (imagen_mapa): los puntos van en sus píxeles. Sin view, de 0 a 1')
+const drawInput = (createMapElement.input as unknown as z.ZodObject)
+  .omit({ geometry: true, snap: true })
+  .extend({ geometry: looseGeometry, view })
+const redrawInput = (updateMapElement.input as unknown as z.ZodObject)
+  .omit({ geometry: true, snap: true })
+  .extend({ geometry: looseGeometry.optional(), view })
 
 const invitationInput = z.object({
   campaignId: z.uuid(),
@@ -316,6 +351,36 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   poner_pin: { action: 'createMapPin' },
   cambiar_pin: { action: 'updateMapPin' },
   quitar_pin: { action: 'deleteMapPin' },
+  // Las capas del mapa y lo dibujado en él (módulo 9): la IA ve la imagen y dibuja en sus píxeles
+  imagen_mapa: { action: 'getMapImage' },
+  medir_mapa: { action: 'measureMap' },
+  crear_capa: { action: 'createMapLayer' },
+  cambiar_capa: { action: 'updateMapLayer' },
+  quitar_capa: { action: 'deleteMapLayer' },
+  dibujar_en_mapa: {
+    description:
+      'Dibuja en un mapa una región (pieces: una o varias piezas, cada una con sus vértices en orden), una ruta (points; from y to, los pines donde empieza y acaba) o un texto (at, con rotate y arc), en una capa (layerId; sin ella, la de más arriba que ven las campañas). Antes, mira la imagen con imagen_mapa y da los puntos en sus píxeles con view { width, height } (o, sin view, de 0 a 1). Crisol simplifica el trazo y pega los vértices a los de lo que ya hay muy cerca (fronteras sin huecos) y los extremos de una ruta a los pines. Se deshace',
+    input: drawInput,
+    actions: ['createMapElement'],
+    route: (input) => {
+      const { geometry, view, ...rest } = input as { geometry: Loose; view?: View } & Record<string, unknown>
+      return { action: 'createMapElement', input: { ...rest, geometry: fromAi(geometry, view), snap: true } }
+    }
+  },
+  cambiar_dibujo: {
+    description:
+      'Cambia una región, ruta o texto de un mapa: su forma (geometry entera, en los píxeles de imagen_mapa con view, o de 0 a 1), su nombre, su página, su estilo, su capa o si está oculto. Con forma nueva, se simplifica y se pega a lo cercano como al dibujar. Se deshace',
+    input: redrawInput,
+    actions: ['updateMapElement'],
+    route: (input) => {
+      const { geometry, view, ...rest } = input as { geometry?: Loose; view?: View } & Record<string, unknown>
+      return {
+        action: 'updateMapElement',
+        input: geometry ? { ...rest, geometry: fromAi(geometry, view), snap: true } : rest
+      }
+    }
+  },
+  quitar_dibujo: { action: 'deleteMapElement' },
   // El panel de bloques al lado de una página (ADR-0008); se lee con leer_pagina
   cambiar_panel: { action: 'setPagePanel' },
   // Las plantillas de página (ADR-0009)
@@ -675,7 +740,12 @@ export const INSTRUCTIONS =
   'final enlaces_pagina con worldId para ver lo que quede sin resolver; los archivos los sube el máster y se enlazan ' +
   'por su nombre (listar_archivos). Las etiquetas son de toda la cuenta: míralas con listar_etiquetas y usa las que ' +
   'ya hay antes de inventar otras. Una página puede tener pestañas además de su texto, como un mapa (ver_pestanas): ' +
-  'sus pines van de 0 a 1 sobre la imagen y llevan a páginas; míralo con ver_mapa antes de poner nada. Al lado del texto, cada página tiene un panel de bloques ' +
+  'sus pines van de 0 a 1 sobre la imagen y llevan a páginas; míralo con ver_mapa antes de poner nada. Un mapa tiene ' +
+  'además capas (crear_capa, cambiar_capa: hidden, solo del máster; quitar_capa) con regiones, rutas y textos: para ' +
+  'dibujar, mira antes la imagen con imagen_mapa y da los puntos en sus píxeles (view con su ancho y su alto) con ' +
+  'dibujar_en_mapa; se cambian con cambiar_dibujo y se quitan con quitar_dibujo. Lo dibujado sigue a su página como ' +
+  'los pines (oculto, hasta que se revele); lo de una capa solo del máster no llega a ningún jugador. medir_mapa ' +
+  'dice la distancia con su escala y los días a pie, a caballo y en barco. Al lado del texto, cada página tiene un panel de bloques ' +
   '(medidores, estrellas, fichas, texto corto…): sale en leer_pagina y se cambia entero con cambiar_panel. ' +
   'Las páginas de un tipo (PNJ, Lugar, Facción…: las plantillas que haya hecho la cuenta) se crean con su plantilla (listar_plantillas; ' +
   'template en crear_paginas): sus propiedades del YAML van a los campos que se llamen igual, y las tablas del panel ' +

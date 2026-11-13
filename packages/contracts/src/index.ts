@@ -113,7 +113,9 @@ import {
   deleteMapPin,
   deletePageTab,
   getMap,
+  getMapImage,
   listPageTabs,
+  measureMap,
   updateMap,
   updateMapElement,
   updateMapLayer,
@@ -450,6 +452,8 @@ export const ACTIONS = [
   createMapElement,
   updateMapElement,
   deleteMapElement,
+  getMapImage,
+  measureMap,
   getWorldHome,
   ensureWorldHome,
   listTemplates,
@@ -752,6 +756,8 @@ export type Actions = {
   createMapElement: typeof createMapElement
   updateMapElement: typeof updateMapElement
   deleteMapElement: typeof deleteMapElement
+  getMapImage: typeof getMapImage
+  measureMap: typeof measureMap
   getWorldHome: typeof getWorldHome
   ensureWorldHome: typeof ensureWorldHome
   searchWiki: typeof searchWiki

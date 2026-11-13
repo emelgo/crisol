@@ -422,7 +422,24 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
     }
   }
 
+  // Lo que llega de fuera (lo dibuja la IA u otro máster) entra forjándose; lo que dibuja uno mismo, no
+  const seenIds = useRef<Set<string> | null>(null)
+  const mine = useRef(new Set<string>())
+  const [fresh, setFresh] = useState<ReadonlySet<string>>(new Set())
+  useEffect(() => {
+    const ids = new Set(map.elements.map((element) => element.id))
+    const before = seenIds.current
+    seenIds.current = ids
+    if (!before) return
+    const arrived = [...ids].filter((id) => !before.has(id) && !mine.current.has(id))
+    if (arrived.length === 0) return
+    setFresh(new Set(arrived))
+    const done = setTimeout(() => setFresh(new Set()), 1800)
+    return () => clearTimeout(done)
+  }, [map.elements])
+
   const created = (element: MapElementView) => {
+    mine.current.add(element.id)
     setSelectedElement(element.id)
     setNamingElement(element.id)
     setSelected(null)
@@ -813,6 +830,7 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
             elements={map.elements}
             hiddenHere={hiddenHere.hidden}
             selected={selectedElement}
+            fresh={fresh}
             live={live}
             onOpen={openPage}
             onElementPointerDown={onElementPointerDown}

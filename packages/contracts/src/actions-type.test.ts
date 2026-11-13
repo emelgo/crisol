@@ -99,6 +99,8 @@ describe('Actions', () => {
       createMapElement: true,
       updateMapElement: true,
       deleteMapElement: true,
+      getMapImage: true,
+      measureMap: true,
       getWorldHome: true,
       ensureWorldHome: true,
       listTemplates: true,

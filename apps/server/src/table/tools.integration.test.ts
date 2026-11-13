@@ -662,7 +662,7 @@ describe('las herramientas de la mesa (docs/specs/herramientas-mesa.md)', () => 
       const found = MCP_TOOLS[tool]
       if (!found) throw new Error(`falta ${tool}`)
       const result = await callAsAi(env, { userId: master.userId, tool, ...routeCall(found, args), waitMs: 50 })
-      return { ...result, text: result.content.map((c) => c.text).join('\n') }
+      return { ...result, text: result.content.map((c) => ('text' in c ? c.text : '')).join('\n') }
     }
     // Lía, detrás de donde sale el cono
     const [, goblin] = await place([
