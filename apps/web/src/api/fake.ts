@@ -15,6 +15,7 @@ import type {
   LightView,
   LogEntry,
   LogMessage,
+  MapElementView,
   MapPinView,
   MapView,
   MarkView,
@@ -46,7 +47,7 @@ import type {
   WidgetView,
   World
 } from '@crisol/contracts'
-import { GAME_ICONS, youtubeVideoId } from '@crisol/contracts'
+import { DEFAULT_SPEEDS, GAME_ICONS, youtubeVideoId } from '@crisol/contracts'
 import { DiceSyntaxError, rollDice as rollFormula, rowFor, tableFormula, tableProblems } from '@crisol/dice'
 import {
   advanceSound,
@@ -743,7 +744,29 @@ export function fakeApi(
     }
     throw new ApiError('NOT_FOUND', 404)
   }
-  const copyMap = (map: MapView): MapView => ({ ...map, pins: map.pins.map((pin) => ({ ...pin })) })
+  const copyMap = (map: MapView): MapView => structuredClone(map)
+  // Las capas y lo dibujado (módulo 9), dentro de cada mapa
+  const layerById = (layerId: string) => {
+    for (const map of maps) {
+      const layer = map.layers.find((l) => l.id === layerId)
+      if (layer) return { map, layer }
+    }
+    throw new ApiError('NOT_FOUND', 404)
+  }
+  const elementById = (elementId: string) => {
+    for (const map of maps) {
+      const element = map.elements.find((e) => e.id === elementId)
+      if (element) return { map, element }
+    }
+    throw new ApiError('NOT_FOUND', 404)
+  }
+  /** Una capa tras otra (null, abajo del todo; sin decir, arriba) */
+  const placeLayer = (map: MapView, layer: MapView['layers'][number], after: string | null | undefined) => {
+    if (after === undefined) return map.layers.push(layer)
+    const at = after === null ? 0 : map.layers.findIndex((l) => l.id === after) + 1
+    if (after !== null && at === 0) throw new ApiError('BAD_MAP_LAYER', 400)
+    map.layers.splice(at, 0, layer)
+  }
   // Las escenas (sueltas, ADR-0020, o una por pestaña «Escena») y la mesa de cada campaña, como el servidor
   type StoredScene = {
     id: string
@@ -4084,7 +4107,17 @@ export function fakeApi(
         color: null
       }
       pageTabs.push(tab)
-      maps.push({ id: crypto.randomUUID(), tabId: tab.id, pageId, image: null, scale: null, pins: [] })
+      maps.push({
+        id: crypto.randomUUID(),
+        tabId: tab.id,
+        pageId,
+        image: null,
+        scale: null,
+        speeds: { ...DEFAULT_SPEEDS },
+        pins: [],
+        layers: [],
+        elements: []
+      })
       if (kind === 'scene')
         scenes.push({
           id: crypto.randomUUID(),
@@ -4860,7 +4893,7 @@ export function fakeApi(
       if (!map) throw new ApiError('NOT_FOUND', 404)
       return copyMap(map)
     },
-    updateMap: ({ mapId, image, scale }) => {
+    updateMap: ({ mapId, image, scale, speeds }) => {
       const map = mapById(mapId)
       if (image) {
         const file = files.find((f) => f.id === image.fileId)
@@ -4868,6 +4901,7 @@ export function fakeApi(
         map.image = { fileId: file.id, name: file.name, url: file.url, width: image.width, height: image.height }
       }
       if (scale !== undefined) map.scale = scale
+      if (speeds !== undefined) map.speeds = speeds ?? { ...DEFAULT_SPEEDS }
       return copyMap(map)
     },
     createMapPin: ({ mapId, x, y, ...rest }) => {
@@ -4902,6 +4936,61 @@ export function fakeApi(
       const { map, pin } = pinById(pinId)
       map.pins.splice(map.pins.indexOf(pin), 1)
       return { id: pinId }
+    },
+    createMapLayer: ({ mapId, name, hidden, after }) => {
+      const map = mapById(mapId)
+      const layer = { id: crypto.randomUUID(), name, hidden: hidden ?? false }
+      placeLayer(map, layer, after)
+      return { ...layer }
+    },
+    updateMapLayer: ({ layerId, name, hidden, after }) => {
+      const { map, layer } = layerById(layerId)
+      if (name !== undefined) layer.name = name
+      if (hidden !== undefined) layer.hidden = hidden
+      if (after !== undefined) {
+        map.layers.splice(map.layers.indexOf(layer), 1)
+        placeLayer(map, layer, after)
+      }
+      return { ...layer }
+    },
+    deleteMapLayer: ({ layerId }) => {
+      const { map, layer } = layerById(layerId)
+      map.layers.splice(map.layers.indexOf(layer), 1)
+      map.elements = map.elements.filter((e) => e.layerId !== layerId)
+      return { id: layerId }
+    },
+    createMapElement: ({ mapId, layerId, kind, geometry, ...rest }) => {
+      const map = mapById(mapId)
+      let layer = layerId ? map.layers.find((l) => l.id === layerId) : map.layers.at(-1)
+      if (layerId && !layer) throw new ApiError('BAD_MAP_LAYER', 400)
+      if (!layer) {
+        layer = { id: crypto.randomUUID(), name: 'General', hidden: false }
+        map.layers.push(layer)
+      }
+      const element: MapElementView = {
+        id: crypto.randomUUID(),
+        layerId: layer.id,
+        kind,
+        geometry,
+        label: rest.label ?? null,
+        pageId: rest.pageId ?? null,
+        pageTitle: rest.pageId ? pageById(rest.pageId).title : null,
+        style: rest.style ?? {},
+        hidden: rest.hidden ?? false
+      }
+      map.elements.push(element)
+      return structuredClone(element)
+    },
+    updateMapElement: ({ elementId, ...patch }) => {
+      const { element } = elementById(elementId)
+      Object.assign(element, Object.fromEntries(Object.entries(patch).filter(([, v]) => v !== undefined)))
+      element.pageTitle = element.pageId ? pageById(element.pageId).title : null
+      return structuredClone(element)
+    },
+    deleteMapElement: ({ elementId }) => {
+      const { map, element } = elementById(elementId)
+      map.elements.splice(map.elements.indexOf(element), 1)
+      return { id: elementId }
     },
     listGameIcons: ({ query }) => ({
       icons: GAME_ICONS.filter(

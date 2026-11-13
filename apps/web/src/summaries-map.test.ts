@@ -11,6 +11,34 @@ describe('las frases del historial: orden, pestañas, mapas y etiquetas', () => 
     expect(say('sortPageChildren', { title: null })).toBe('ordenó las páginas del primer nivel')
   })
 
+  it('las capas de un mapa y lo dibujado en él (módulo 9)', () => {
+    expect(say('updateMap', { name: 'Costa', title: 'Valdren', speeds: true })).toBe(
+      'cambió lo que se anda en un día en el mapa «Costa» de «Valdren»'
+    )
+    expect(say('createMapLayer', { layer: 'Política', map: 'Costa', title: 'Valdren' })).toBe(
+      'añadió la capa «Política» al mapa «Costa» de «Valdren»'
+    )
+    expect(say('updateMapLayer', { from: 'Política', to: 'Reinos', map: 'Costa' })).toBe(
+      'renombró la capa «Política» del mapa «Costa» a «Reinos»'
+    )
+    expect(say('updateMapLayer', { layer: 'Reinos', map: 'Costa', hidden: true })).toBe(
+      'cambió la capa «Reinos» del mapa «Costa»'
+    )
+    expect(say('deleteMapLayer', { layer: 'Reinos', map: 'Costa' })).toBe('quitó la capa «Reinos» del mapa «Costa»')
+    expect(say('createMapElement', { kind: 'region', element: 'Aldoria', map: 'Costa', title: 'Valdren' })).toBe(
+      'dibujó la región «Aldoria» en el mapa «Costa» de «Valdren»'
+    )
+    expect(say('updateMapElement', { kind: 'path', element: 'Camino real', map: 'Costa', reshaped: true })).toBe(
+      'retocó la ruta «Camino real» del mapa «Costa»'
+    )
+    expect(say('updateMapElement', { kind: 'label', element: null, map: 'Costa' })).toBe(
+      'cambió un texto del mapa «Costa»'
+    )
+    expect(say('deleteMapElement', { kind: 'region', element: null, map: 'Costa' })).toBe(
+      'quitó una región del mapa «Costa»'
+    )
+  })
+
   it('las pestañas de una página', () => {
     expect(say('createPageTab', { name: 'Costa', title: 'Puerto Ceniza' })).toBe(
       'añadió el mapa «Costa» a «Puerto Ceniza»'

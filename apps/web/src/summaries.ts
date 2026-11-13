@@ -310,7 +310,27 @@ export function summaryOf(
         ? say('renamePageTab', { from: text(details.from), to: text(details.to), title: text(details.title) })
         : say('updatePageTab', { name: text(details.name), title: text(details.title) })
     case 'updateMap':
-      return say(details.image ? 'setMapImage' : 'updateMap', { name: text(details.name), title: text(details.title) })
+      return say(details.image ? 'setMapImage' : details.speeds && !details.scale ? 'setMapSpeeds' : 'updateMap', {
+        name: text(details.name),
+        title: text(details.title)
+      })
+    // Las capas del mapa y lo dibujado en él (módulo 9)
+    case 'createMapLayer':
+    case 'deleteMapLayer':
+      return say(action, { layer: text(details.layer), map: text(details.map), title: text(details.title) })
+    case 'updateMapLayer':
+      return details.from !== undefined
+        ? say('renameMapLayer', { from: text(details.from), to: text(details.to), map: text(details.map) })
+        : say('updateMapLayer', { layer: text(details.layer), map: text(details.map) })
+    case 'createMapElement':
+    case 'updateMapElement':
+    case 'deleteMapElement': {
+      const kind = details.kind === 'path' || details.kind === 'label' ? details.kind : 'region'
+      const name = text(details.element)
+      const what = name ? t(`map.element.${kind}`, { name }) : t(`map.element.${kind}Untitled`)
+      const key = action === 'updateMapElement' && details.reshaped ? 'reshapeMapElement' : action
+      return say(key, { what, map: text(details.map), title: text(details.title) })
+    }
     case 'createMapPin':
     case 'updateMapPin':
     case 'deleteMapPin': {

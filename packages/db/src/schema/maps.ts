@@ -62,7 +62,9 @@ export const maps = pgTable(
     /** Un tramo de referencia en píxeles de la imagen y lo que mide de verdad (y su unidad) */
     scaleLength: doublePrecision(),
     scaleValue: doublePrecision(),
-    scaleUnit: text()
+    scaleUnit: text(),
+    /** Cuánto se anda en un día (a pie, a caballo, en barco), en la unidad de la escala; sin ellas, las de serie */
+    speeds: jsonb().$type<{ foot: number; horse: number; ship: number }>()
   },
   (t) => [index().on(t.worldId)]
 )
@@ -98,7 +100,28 @@ export const mapPins = pgTable(
   (t) => [index().on(t.mapId), index().on(t.pageId)]
 )
 
-/** Lo que se dibuja en el mapa: textos, regiones y rutas, con su geometría de 0 a 1 y su estilo */
+/**
+ * Las capas de un mapa (módulo 9), en su orden: cada región, ruta o texto va en una. Una oculta es solo del máster:
+ * nada de ella llega a ningún jugador
+ */
+export const mapLayers = pgTable(
+  'map_layers',
+  {
+    ...trackedColumns(),
+    worldId: uuid()
+      .notNull()
+      .references(() => worlds.id, { onDelete: 'cascade' }),
+    mapId: uuid()
+      .notNull()
+      .references((): Column => maps.id, { onDelete: 'cascade' }),
+    name: text().notNull(),
+    position: text().notNull(),
+    hidden: boolean().notNull().default(false)
+  },
+  (t) => [index().on(t.mapId)]
+)
+
+/** Lo que se dibuja en el mapa: textos, regiones y rutas, con su geometría de 0 a 1 y su estilo, en su capa */
 export const mapElements = pgTable(
   'map_elements',
   {
@@ -109,6 +132,10 @@ export const mapElements = pgTable(
     mapId: uuid()
       .notNull()
       .references((): Column => maps.id, { onDelete: 'cascade' }),
+    /** Su capa; sin ella (lo de antes del módulo 9), la primera */
+    layerId: uuid().references((): Column => mapLayers.id, { onDelete: 'cascade' }),
+    /** Su orden en la capa (lo de después, encima) */
+    position: text().notNull().default(''),
     kind: text({ enum: ['label', 'region', 'path'] }).notNull(),
     geometry: jsonb().$type<Record<string, unknown>>().notNull(),
     label: text(),

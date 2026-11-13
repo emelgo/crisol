@@ -104,13 +104,19 @@ import {
 import { getBookPages, listLibrary, readBookAgain, searchLibrary } from './library.ts'
 import { clearLog, deleteMessage, listLog, sendMessage } from './log.ts'
 import {
+  createMapElement,
+  createMapLayer,
   createMapPin,
   createPageTab,
+  deleteMapElement,
+  deleteMapLayer,
   deleteMapPin,
   deletePageTab,
   getMap,
   listPageTabs,
   updateMap,
+  updateMapElement,
+  updateMapLayer,
   updateMapPin,
   updatePageTab
 } from './maps.ts'
@@ -438,6 +444,12 @@ export const ACTIONS = [
   createMapPin,
   updateMapPin,
   deleteMapPin,
+  createMapLayer,
+  updateMapLayer,
+  deleteMapLayer,
+  createMapElement,
+  updateMapElement,
+  deleteMapElement,
   getWorldHome,
   ensureWorldHome,
   listTemplates,
@@ -734,6 +746,12 @@ export type Actions = {
   createMapPin: typeof createMapPin
   updateMapPin: typeof updateMapPin
   deleteMapPin: typeof deleteMapPin
+  createMapLayer: typeof createMapLayer
+  updateMapLayer: typeof updateMapLayer
+  deleteMapLayer: typeof deleteMapLayer
+  createMapElement: typeof createMapElement
+  updateMapElement: typeof updateMapElement
+  deleteMapElement: typeof deleteMapElement
   getWorldHome: typeof getWorldHome
   ensureWorldHome: typeof ensureWorldHome
   searchWiki: typeof searchWiki

@@ -22,7 +22,7 @@ import { fileFolders, files } from './schema/files.ts'
 import { changes, operations } from './schema/history.ts'
 import { invitationLinks } from './schema/invitations.ts'
 import { knowledge, pageEditors } from './schema/knowledge.ts'
-import { mapElements, mapPins, maps, pageTabs } from './schema/maps.ts'
+import { mapElements, mapLayers, mapPins, maps, pageTabs } from './schema/maps.ts'
 import { playerNotes } from './schema/notes.ts'
 import { organizationMembers, organizations } from './schema/organizations.ts'
 import { pages } from './schema/pages.ts'
@@ -61,6 +61,7 @@ export const TRACKED_TABLES = {
   page_tabs: pageTabs,
   maps,
   map_pins: mapPins,
+  map_layers: mapLayers,
   map_elements: mapElements,
   characters,
   character_versions: characterVersions,

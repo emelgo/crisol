@@ -4,18 +4,31 @@
  * una página del mismo mundo
  */
 import {
+  createMapElement,
+  createMapLayer,
   createMapPin,
   createPageTab,
+  DEFAULT_SPEEDS,
+  deleteMapElement,
+  deleteMapLayer,
   deleteMapPin,
   deletePageTab,
   getMap,
   listPageTabs,
+  MAX_MAP_ELEMENTS,
+  MAX_MAP_LAYERS,
   MAX_MAP_PINS,
   MAX_PAGE_TABS,
+  type MapElementView,
+  type MapGeometry,
+  type MapLayerView,
   type MapPinView,
+  type MapStyle,
   type MapView,
   type PageTabView,
   updateMap,
+  updateMapElement,
+  updateMapLayer,
   updateMapPin,
   updatePageTab
 } from '@crisol/contracts'
@@ -57,6 +70,21 @@ const pinView = (row: PinRow): MapPinView => ({
   locked: row.locked
 })
 
+const layerView = (row: mapsRepo.MapLayerRow): MapLayerView => ({ id: row.id, name: row.name, hidden: row.hidden })
+
+type ElementRow = mapsRepo.MapElementRow & { pageTitle: string | null }
+const elementView = (row: ElementRow): MapElementView => ({
+  id: row.id,
+  layerId: row.layerId,
+  kind: row.kind,
+  geometry: row.geometry as MapGeometry,
+  label: row.label,
+  pageId: row.pageId,
+  pageTitle: row.pageTitle,
+  style: row.style as MapStyle,
+  hidden: row.hidden
+})
+
 /** Una pestaña y su página, si la cuenta puede hacer eso en ella; si no existe, 404 */
 export async function authorizedTab(ctx: ActionContext, capability: Capability, tabId: string) {
   const tab = await mapsRepo.findTab(ctx.db, tabId)
@@ -80,9 +108,40 @@ async function authorizedPin(ctx: ActionContext, capability: Capability, pinId: 
   return { ...found, pin }
 }
 
+async function authorizedLayer(ctx: ActionContext, capability: Capability, layerId: string) {
+  const layer = await mapsRepo.findLayer(ctx.db, layerId)
+  const found = await authorizedMap(ctx, capability, layer?.mapId ?? '')
+  if (!layer) throw new NotFoundError('layer')
+  return { ...found, layer }
+}
+
+async function authorizedElement(ctx: ActionContext, capability: Capability, elementId: string) {
+  const element = await mapsRepo.findElement(ctx.db, elementId)
+  const found = await authorizedMap(ctx, capability, element?.mapId ?? '')
+  if (!element) throw new NotFoundError('element')
+  return { ...found, element }
+}
+
 async function mapView(ctx: ActionContext, tabId: string, pageId: string, view?: WikiView): Promise<MapView> {
   const map = await mapsRepo.mapOfTab(ctx.db, tabId)
   if (!map) throw new NotFoundError('map')
+  const full = !view || view.full
+  const allLayers = await mapsRepo.listLayers(ctx.db, map.id)
+  // Un jugador: ni las capas solo del máster ni nada de ellas; lo dibujado sigue a su página como los pines (oculto,
+  // hasta que se le revele), y lo que lleva a una página que no conoce, sin nombre ni enlace
+  const hiddenLayers = new Set(allLayers.filter((layer) => layer.hidden).map((layer) => layer.id))
+  const layers = full ? allLayers : allLayers.filter((layer) => !layer.hidden)
+  const allElements = await mapsRepo.listElements(ctx.db, map.id)
+  const elements = full
+    ? allElements
+    : allElements
+        .filter((element) => !(element.layerId && hiddenLayers.has(element.layerId)))
+        .filter((element) => view.seesMapItem({ kind: 'element', id: element.id, pageId, hidden: element.hidden }))
+        .map((element) => ({
+          ...element,
+          hidden: false,
+          ...(element.pageId && !view.seesPage(element.pageId) ? { pageId: null, pageTitle: null, label: null } : {})
+        }))
   const all = await mapsRepo.listPins(ctx.db, map.id)
   // Un jugador (ADR-0017): los pines que ve; uno a una página que no ve, con su etiqueta y sin ella
   const pins =
@@ -113,9 +172,59 @@ async function mapView(ctx: ActionContext, tabId: string, pageId: string, view?:
       map.scaleLength && map.scaleValue && map.scaleUnit
         ? { length: map.scaleLength, value: map.scaleValue, unit: map.scaleUnit }
         : null,
-    pins: pins.map(pinView)
+    speeds: map.speeds ?? { ...DEFAULT_SPEEDS },
+    pins: pins.map(pinView),
+    layers: layers.map(layerView),
+    elements: elements.map(elementView)
   }
 }
+
+/** Que la forma sea la de su clase (una región, piezas; una ruta, puntos; un texto, su sitio) y sus pines, del mapa */
+async function checkGeometry(ctx: ActionContext, mapId: string, kind: MapElementView['kind'], geometry: MapGeometry) {
+  const fits = kind === 'region' ? 'pieces' in geometry : kind === 'path' ? 'points' in geometry : 'at' in geometry
+  if (!fits) throw new InvalidRequestError('BAD_MAP_GEOMETRY', `la forma no es la de un ${kind}`)
+  if (!('points' in geometry)) return
+  const ends = [geometry.from, geometry.to].filter((id): id is string => typeof id === 'string')
+  for (const id of ends) {
+    const pin = await mapsRepo.findPin(ctx.db, id)
+    if (pin?.mapId !== mapId) throw new InvalidRequestError('BAD_MAP_GEOMETRY', 'el pin no es de este mapa')
+  }
+}
+
+/** La capa de un elemento: la que se diga (de este mapa), la de más arriba o, sin ninguna, una «General» nueva */
+async function layerFor(
+  ctx: ActionContext,
+  wiki: WikiTarget,
+  mapId: string,
+  layerId: string | undefined,
+  page: string
+) {
+  if (layerId) {
+    const layer = await mapsRepo.findLayer(ctx.db, layerId)
+    if (layer?.mapId !== mapId) throw new InvalidRequestError('BAD_MAP_LAYER')
+    return layer.id
+  }
+  const layers = await mapsRepo.listLayers(ctx.db, mapId)
+  const top = layers.at(-1)
+  if (top) return top.id
+  const created = await mapsRepo.createLayer(
+    ctx.db,
+    historyContext(ctx, 'createMapLayer', { title: page, layer: 'General' }, wiki),
+    { worldId: wiki.worldId, mapId, name: 'General', position: keyBetween(null, null) }
+  )
+  return created.id
+}
+
+/** La clave de una capa tras otra (null, abajo del todo) */
+function layerPlace(layers: readonly mapsRepo.MapLayerRow[], after: string | null) {
+  const index = after === null ? -1 : layers.findIndex((layer) => layer.id === after)
+  if (after !== null && index === -1) throw new InvalidRequestError('BAD_MAP_LAYER')
+  return keyBetween(layers[index]?.position ?? null, layers[index + 1]?.position ?? null)
+}
+
+/** El nombre de lo dibujado para el historial */
+const elementName = (element: { label: string | null; pageTitle?: string | null }) =>
+  element.label ?? element.pageTitle ?? null
 
 /** La página de un pin: del mismo mundo y fuera de la papelera */
 /** La página de un pin, si lleva a una: del mismo mundo (si no, BAD_PIN_PAGE); su título, para el historial */
@@ -224,7 +333,7 @@ export const mapActions = [
     return mapView(ctx, tabId, tab.pageId, view)
   }),
 
-  implement(updateMap, async (ctx, { mapId, image, scale }) => {
+  implement(updateMap, async (ctx, { mapId, image, scale, speeds }) => {
     const { tab, page, wiki } = await authorizedMap(ctx, 'page.write', mapId)
     if (image) {
       // Una imagen de este mundo o una común de su organización
@@ -237,13 +346,15 @@ export const mapActions = [
       title: page.title,
       name: tab.name,
       ...(image ? { image: true } : {}),
-      ...(scale !== undefined ? { scale: scale !== null } : {})
+      ...(scale !== undefined ? { scale: scale !== null } : {}),
+      ...(speeds !== undefined ? { speeds: true } : {})
     }
     await mapsRepo.updateMap(ctx.db, historyContext(ctx, 'updateMap', details, wiki), mapId, {
       ...(image ? { fileId: image.fileId, width: image.width, height: image.height } : {}),
       ...(scale !== undefined
         ? { scaleLength: scale?.length ?? null, scaleValue: scale?.value ?? null, scaleUnit: scale?.unit ?? null }
-        : {})
+        : {}),
+      ...(speeds !== undefined ? { speeds } : {})
     })
     ctx.realtime.publish(pagesChanged(wiki))
     return mapView(ctx, tab.id, tab.pageId)
@@ -289,5 +400,123 @@ export const mapActions = [
     )
     ctx.realtime.publish(pagesChanged(wiki))
     return { id: pinId }
+  }),
+  implement(createMapLayer, async (ctx, { mapId, name, hidden, after }) => {
+    const { tab, page, wiki } = await authorizedMap(ctx, 'page.write', mapId)
+    const layers = await mapsRepo.listLayers(ctx.db, mapId)
+    if (layers.length >= MAX_MAP_LAYERS)
+      throw new InvalidRequestError('TOO_MANY_LAYERS', `como mucho ${MAX_MAP_LAYERS}`)
+    const position = after === undefined ? keyBetween(layers.at(-1)?.position ?? null, null) : layerPlace(layers, after)
+    const layer = await mapsRepo.createLayer(
+      ctx.db,
+      historyContext(ctx, 'createMapLayer', { title: page.title, map: tab.name, layer: name }, wiki),
+      { worldId: wiki.worldId, mapId, name, position, ...(hidden !== undefined ? { hidden } : {}) }
+    )
+    ctx.realtime.publish(pagesChanged(wiki))
+    return layerView(layer)
+  }),
+  implement(updateMapLayer, async (ctx, { layerId, name, hidden, after }) => {
+    const { tab, page, layer, wiki } = await authorizedLayer(ctx, 'page.write', layerId)
+    const position =
+      after === undefined
+        ? undefined
+        : layerPlace(
+            (await mapsRepo.listLayers(ctx.db, layer.mapId)).filter((other) => other.id !== layerId),
+            after
+          )
+    const details = {
+      title: page.title,
+      map: tab.name,
+      ...(name !== undefined ? { from: layer.name, to: name } : { layer: layer.name }),
+      ...(hidden !== undefined ? { hidden } : {}),
+      ...(position !== undefined ? { moved: true } : {})
+    }
+    const updated = await mapsRepo.updateLayer(ctx.db, historyContext(ctx, 'updateMapLayer', details, wiki), layerId, {
+      ...(name !== undefined ? { name } : {}),
+      ...(hidden !== undefined ? { hidden } : {}),
+      ...(position !== undefined ? { position } : {})
+    })
+    ctx.realtime.publish(pagesChanged(wiki))
+    return layerView(updated)
+  }),
+  implement(deleteMapLayer, async (ctx, { layerId }) => {
+    const { tab, page, layer, wiki } = await authorizedLayer(ctx, 'page.write', layerId)
+    await mapsRepo.deleteLayer(
+      ctx.db,
+      historyContext(ctx, 'deleteMapLayer', { title: page.title, map: tab.name, layer: layer.name }, wiki),
+      layerId
+    )
+    ctx.realtime.publish(pagesChanged(wiki))
+    return { id: layerId }
+  }),
+  implement(createMapElement, async (ctx, { mapId, layerId, kind, geometry, ...input }) => {
+    const { tab, page, wiki } = await authorizedMap(ctx, 'page.write', mapId)
+    const stats = await mapsRepo.elementStats(ctx.db, mapId)
+    if (stats.count >= MAX_MAP_ELEMENTS)
+      throw new InvalidRequestError('TOO_MANY_ELEMENTS', `como mucho ${MAX_MAP_ELEMENTS}`)
+    await checkGeometry(ctx, mapId, kind, geometry)
+    const pageTitle = await checkPinPage(ctx, wiki, input.pageId)
+    const layer = await layerFor(ctx, wiki, mapId, layerId, page.title)
+    const element = await mapsRepo.createElement(
+      ctx.db,
+      historyContext(
+        ctx,
+        'createMapElement',
+        { title: page.title, map: tab.name, kind, element: input.label ?? pageTitle ?? null },
+        wiki
+      ),
+      {
+        worldId: wiki.worldId,
+        mapId,
+        layerId: layer,
+        kind,
+        geometry,
+        position: keyBetween(stats.last, null),
+        label: input.label ?? null,
+        pageId: input.pageId ?? null,
+        style: input.style ?? {},
+        hidden: input.hidden ?? false
+      }
+    )
+    ctx.realtime.publish(pagesChanged(wiki))
+    return elementView((await mapsRepo.findElement(ctx.db, element.id)) as ElementRow)
+  }),
+  implement(updateMapElement, async (ctx, { elementId, layerId, geometry, ...patch }) => {
+    const { tab, page, element, wiki } = await authorizedElement(ctx, 'page.write', elementId)
+    if (geometry) await checkGeometry(ctx, element.mapId, element.kind, geometry)
+    await checkPinPage(ctx, wiki, patch.pageId)
+    if (layerId) {
+      const layer = await mapsRepo.findLayer(ctx.db, layerId)
+      if (layer?.mapId !== element.mapId) throw new InvalidRequestError('BAD_MAP_LAYER')
+    }
+    const details = {
+      title: page.title,
+      map: tab.name,
+      kind: element.kind,
+      element: elementName(element),
+      ...(geometry ? { reshaped: true } : {})
+    }
+    await mapsRepo.updateElement(ctx.db, historyContext(ctx, 'updateMapElement', details, wiki), elementId, {
+      ...patch,
+      ...(geometry ? { geometry } : {}),
+      ...(layerId ? { layerId } : {})
+    })
+    ctx.realtime.publish(pagesChanged(wiki))
+    return elementView((await mapsRepo.findElement(ctx.db, elementId)) as ElementRow)
+  }),
+  implement(deleteMapElement, async (ctx, { elementId }) => {
+    const { tab, page, element, wiki } = await authorizedElement(ctx, 'page.write', elementId)
+    await mapsRepo.deleteElement(
+      ctx.db,
+      historyContext(
+        ctx,
+        'deleteMapElement',
+        { title: page.title, map: tab.name, kind: element.kind, element: elementName(element) },
+        wiki
+      ),
+      elementId
+    )
+    ctx.realtime.publish(pagesChanged(wiki))
+    return { id: elementId }
   })
 ]

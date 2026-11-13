@@ -16,6 +16,12 @@ export const MAX_MAP_SIDE = 65_535
 /** Cuántas pestañas puede tener una página, y cuántos pines un mapa */
 export const MAX_PAGE_TABS = 50
 export const MAX_MAP_PINS = 2000
+/** Cuántas capas y cuántos elementos dibujados puede tener un mapa, y cuántos puntos uno (módulo 9) */
+export const MAX_MAP_LAYERS = 30
+export const MAX_MAP_ELEMENTS = 1000
+export const MAX_ELEMENT_POINTS = 2000
+/** Lo que se anda en un día si el mapa no dice otra cosa, en la unidad de su escala (km) */
+export const DEFAULT_SPEEDS = { foot: 30, horse: 60, ship: 120 } as const
 
 export const pageTabView = z.object({
   id: z.uuid(),
@@ -113,6 +119,73 @@ export const mapPinView = z.object({
 
 export type MapPinView = z.infer<typeof mapPinView>
 
+/** Un punto de un mapa: x e y de 0 a 1 sobre la imagen */
+const point = z.tuple([coordinate, coordinate])
+const line = z.array(point).min(2).max(MAX_ELEMENT_POINTS)
+const ring = z.array(point).min(3).max(MAX_ELEMENT_POINTS)
+
+/** Lo dibujado (módulo 9): una región (una o varias piezas: islas), una ruta (puede ir de un pin a otro) o un texto */
+export const mapGeometry = z.union([
+  z.object({ pieces: z.array(ring).min(1).max(50).describe('Sus piezas: cada una, sus vértices en orden') }),
+  z.object({
+    points: line.describe('Sus puntos en orden'),
+    from: z.uuid().nullable().optional().describe('El pin donde empieza'),
+    to: z.uuid().nullable().optional().describe('El pin donde acaba')
+  }),
+  z.object({
+    at: point.describe('Su centro'),
+    rotate: z.number().min(-180).max(180).optional().describe('Su giro, en grados'),
+    arc: z.number().min(-1).max(1).optional().describe('Curvado en arco: 0 recto; hacia arriba (+) o abajo (−)')
+  })
+])
+
+export type MapGeometry = z.infer<typeof mapGeometry>
+
+/** Cómo se ve, en listas cerradas (sin pinceles): lo que no se diga, lo de serie */
+export const mapStyle = z
+  .object({
+    color: worldColor.describe('Su color (el relleno de una región, el trazo de una ruta, el de un texto)'),
+    fill: z.enum(['solid', 'hatch', 'none']).describe('El relleno de una región: liso, rayado o sin relleno'),
+    opacity: z.number().min(0.05).max(1).describe('La opacidad del relleno'),
+    stroke: z.enum(['solid', 'dashed', 'dotted']).describe('El borde o el trazo: liso, discontinuo o punteado'),
+    width: z.number().int().min(1).max(12).describe('El grosor del trazo, en píxeles de pantalla'),
+    size: z.number().int().min(10).max(96).describe('El tamaño de su nombre o del texto'),
+    display: z.number().int().min(0).max(2).describe('Su nombre: 0 al pasar por encima, 1 siempre, 2 nunca')
+  })
+  .partial()
+
+export type MapStyle = z.infer<typeof mapStyle>
+
+export const MAP_ELEMENT_KINDS = ['region', 'path', 'label'] as const
+
+export const mapLayerView = z.object({
+  id: z.uuid(),
+  name: z.string(),
+  hidden: z.boolean().describe('Solo del máster: nada de ella llega a ningún jugador')
+})
+
+export type MapLayerView = z.infer<typeof mapLayerView>
+
+export const mapElementView = z.object({
+  id: z.uuid(),
+  layerId: z.uuid().nullable().describe('Su capa; null, la primera'),
+  kind: z.enum(MAP_ELEMENT_KINDS),
+  geometry: mapGeometry,
+  label: z.string().nullable().describe('Su nombre; sin él, el de la página enlazada'),
+  pageId: z.uuid().nullable().describe('La página a la que lleva, del mismo mundo'),
+  pageTitle: z.string().nullable(),
+  style: mapStyle,
+  hidden: z.boolean().describe('Oculto a los jugadores (hasta que se les revele)')
+})
+
+export type MapElementView = z.infer<typeof mapElementView>
+
+const speeds = z.object({
+  foot: z.number().positive().max(10_000),
+  horse: z.number().positive().max(10_000),
+  ship: z.number().positive().max(10_000)
+})
+
 export const mapView = z.object({
   id: z.uuid(),
   tabId: z.uuid(),
@@ -128,7 +201,10 @@ export const mapView = z.object({
       unit: z.string().trim().min(1).max(20)
     })
     .nullable(),
-  pins: z.array(mapPinView)
+  speeds: speeds.describe('Cuánto se anda en un día, en la unidad de la escala (a pie, a caballo, en barco)'),
+  pins: z.array(mapPinView),
+  layers: z.array(mapLayerView).describe('Sus capas, de abajo arriba'),
+  elements: z.array(mapElementView).describe('Lo dibujado: regiones, rutas y textos, de abajo arriba')
 })
 
 export type MapView = z.infer<typeof mapView>
@@ -136,7 +212,8 @@ export type MapView = z.infer<typeof mapView>
 export const getMap = defineAction({
   name: 'getMap',
   kind: 'read',
-  description: 'El mapa de una pestaña: su imagen, su escala y sus pines (coordenadas de 0 a 1 sobre la imagen)',
+  description:
+    'El mapa de una pestaña: su imagen, su escala y lo que se anda en un día, sus pines y, por capas, sus regiones, rutas y textos (coordenadas de 0 a 1 sobre la imagen)',
   input: z.object({ tabId: z.uuid(), ...readAs }),
   output: mapView
 })
@@ -145,7 +222,7 @@ export const updateMap = defineAction({
   name: 'updateMap',
   kind: 'write',
   description:
-    'Cambia un mapa: su imagen (un archivo de imagen del mundo o común, con su ancho y alto en píxeles) o su escala (null la quita)',
+    'Cambia un mapa: su imagen (un archivo de imagen del mundo o común, con su ancho y alto en píxeles), su escala (null la quita) o lo que se anda en un día (null, lo de serie)',
   input: z
     .object({
       mapId: z.uuid(),
@@ -156,9 +233,12 @@ export const updateMap = defineAction({
           height: z.number().int().positive().max(MAX_MAP_SIDE)
         })
         .optional(),
-      scale: mapView.shape.scale.optional()
+      scale: mapView.shape.scale.optional(),
+      speeds: speeds.nullable().optional()
     })
-    .refine((input) => input.image !== undefined || input.scale !== undefined, { message: 'image o scale' }),
+    .refine((input) => input.image !== undefined || input.scale !== undefined || input.speeds !== undefined, {
+      message: 'image, scale o speeds'
+    }),
   output: mapView
 })
 
@@ -183,5 +263,80 @@ export const deleteMapPin = defineAction({
   kind: 'delete',
   description: 'Quita un pin de un mapa. Se deshace desde el historial',
   input: z.object({ pinId: z.uuid() }),
+  output: z.object({ id: z.uuid() })
+})
+
+const layerName = z.string().trim().min(1).max(60)
+const elementFields = {
+  label: z.string().trim().max(120).nullable().describe('Su nombre; sin él, el de la página enlazada'),
+  pageId: z.uuid().nullable().describe('La página a la que lleva, del mismo mundo'),
+  style: mapStyle,
+  hidden: z.boolean().describe('Oculto a los jugadores')
+}
+
+export const createMapLayer = defineAction({
+  name: 'createMapLayer',
+  kind: 'write',
+  description: 'Añade una capa a un mapa, encima de las demás (o tras la que se diga). Se deshace',
+  input: z.object({
+    mapId: z.uuid(),
+    name: layerName,
+    hidden: z.boolean().optional().describe('Solo del máster'),
+    after: z.uuid().nullable().optional().describe('Tras esta capa; null, la primera (abajo del todo)')
+  }),
+  output: mapLayerView
+})
+
+export const updateMapLayer = defineAction({
+  name: 'updateMapLayer',
+  kind: 'write',
+  description:
+    'Cambia una capa: su nombre, si es solo del máster o su sitio (tras otra; null, abajo del todo). Se deshace',
+  input: z.object({
+    layerId: z.uuid(),
+    name: layerName.optional(),
+    hidden: z.boolean().optional(),
+    after: z.uuid().nullable().optional()
+  }),
+  output: mapLayerView
+})
+
+export const deleteMapLayer = defineAction({
+  name: 'deleteMapLayer',
+  kind: 'delete',
+  description: 'Quita una capa con todo lo dibujado en ella. Se deshace desde el historial',
+  input: z.object({ layerId: z.uuid() }),
+  output: z.object({ id: z.uuid() })
+})
+
+export const createMapElement = defineAction({
+  name: 'createMapElement',
+  kind: 'write',
+  description:
+    'Dibuja en un mapa una región (pieces: una o varias piezas de vértices), una ruta (points; from y to, los pines donde empieza y acaba) o un texto (at, con su giro y su arco), con coordenadas de 0 a 1 sobre la imagen, en una capa (sin ella, la de más arriba; sin capas, una «General» nueva). Se deshace',
+  input: z
+    .object(elementFields)
+    .partial()
+    .extend({ mapId: z.uuid(), layerId: z.uuid().optional(), kind: z.enum(MAP_ELEMENT_KINDS), geometry: mapGeometry }),
+  output: mapElementView
+})
+
+export const updateMapElement = defineAction({
+  name: 'updateMapElement',
+  kind: 'write',
+  description:
+    'Cambia una región, ruta o texto de un mapa: su forma (geometry entera), su nombre, su página, su estilo, su capa o si está oculto. Se deshace',
+  input: z
+    .object(elementFields)
+    .partial()
+    .extend({ elementId: z.uuid(), layerId: z.uuid().optional(), geometry: mapGeometry.optional() }),
+  output: mapElementView
+})
+
+export const deleteMapElement = defineAction({
+  name: 'deleteMapElement',
+  kind: 'delete',
+  description: 'Quita una región, ruta o texto de un mapa. Se deshace desde el historial',
+  input: z.object({ elementId: z.uuid() }),
   output: z.object({ id: z.uuid() })
 })
