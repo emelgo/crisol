@@ -793,10 +793,27 @@ export const toolActions = (tool: McpTool) => ('route' in tool ? tool.actions : 
  * quedar esperando la aprobación, o devolver cosas distintas según lo que se pida
  */
 export function toolConfig(tool: McpTool) {
-  if ('route' in tool) return { description: tool.description, inputSchema: tool.input }
+  if ('route' in tool) return { description: toolWords(tool.description), inputSchema: tool.input }
   const { description, input, output, kind } = implementation(tool.action).action
-  return { description, inputSchema: input, ...(kind === 'read' ? { outputSchema: output } : {}) }
+  return {
+    description: toolWords(description),
+    inputSchema: input,
+    ...(kind === 'read' ? { outputSchema: output } : {})
+  }
 }
+
+/** De cada acción, la herramienta que la hace (la primera que la nombra) */
+const toolOfAction = new Map<string, string>()
+for (const [name, tool] of Object.entries(MCP_TOOLS))
+  for (const action of 'route' in tool ? tool.actions : [tool.action])
+    if (!toolOfAction.has(action)) toolOfAction.set(action, name)
+
+/**
+ * Las descripciones salen de los contratos, que comparte la web, y nombran acciones («léelos con getChapter»): a la
+ * IA se le dicen las herramientas que ve (leer_capitulo). Las que no tienen herramienta se quedan como están
+ */
+export const toolWords = (text: string) =>
+  text.replace(/\b[a-z]+[A-Z][A-Za-z]*\b/g, (word) => toolOfAction.get(word) ?? word)
 
 /** La acción y su entrada (validada con su contrato) para lo que pide la IA */
 export function routeCall(tool: McpTool, input: Record<string, unknown>) {

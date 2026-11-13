@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest'
 import { UI_ONLY } from '../actions/ai.ts'
 import { InvalidRequestError } from '../actions/context.ts'
 import { errorText } from './approvals.ts'
-import { INSTRUCTIONS, MCP_TOOLS, type McpTool, routeCall, toolActions, toolConfig } from './tools.ts'
+import { INSTRUCTIONS, MCP_TOOLS, type McpTool, routeCall, toolActions, toolConfig, toolWords } from './tools.ts'
 
 describe('herramientas MCP', () => {
   it('cada herramienta lleva a acciones que existen, con nombre en español', () => {
@@ -231,6 +231,20 @@ describe('herramientas MCP', () => {
     // Lo que ya no es verdad: sin editor de sistemas, sistemas o plantillas de serie, tiradas que se pulsan en la wiki
     for (const gone of ['No tiene editor', 'de serie', 'plantillas que trae', 'dice: se pulsa'])
       expect(INSTRUCTIONS).not.toContain(gone)
+  })
+
+  it('las descripciones nombran las herramientas que ve la IA, no las acciones de los contratos', () => {
+    expect(toolWords('Sin su texto: léelos con getChapter; se cambia con updateSystem')).toBe(
+      'Sin su texto: léelos con leer_capitulo; se cambia con cambiar_sistema'
+    )
+    const capitulos = MCP_TOOLS.capitulos_libro
+    if (!capitulos) throw new Error('falta capitulos_libro')
+    expect(toolConfig(capitulos).description).toContain('leer_capitulo')
+    // Ninguna descripción nombra una acción que tenga herramienta
+    const actions = new Set(Object.values(MCP_TOOLS).flatMap((t) => ('route' in t ? t.actions : [t.action])))
+    for (const tool of Object.values(MCP_TOOLS))
+      for (const word of toolConfig(tool).description.match(/\b[a-z]+[A-Z][A-Za-z]*\b/g) ?? [])
+        expect(actions.has(word), word).toBe(false)
   })
 
   it('la IA no puede aprobar lo suyo ni cambiar su modo: no hay herramienta para eso', () => {
