@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import * as Y from 'yjs'
-import { boardMap, mergeScene, type SceneElement, sceneChanged, wins, writeScene } from './sync.ts'
+import { boardMap, mergeScene, type SceneElement, sceneChanged, whenReady, wins, writeScene } from './sync.ts'
 
 const el = (id: string, version: number, extra: Partial<SceneElement> & Record<string, unknown> = {}) => ({
   id,
@@ -83,5 +83,32 @@ describe('el enlace de la pizarra con su documento (módulo 9)', () => {
     ])
     expect(sceneChanged(local, merged)).toBe(true)
     expect(sceneChanged(merged, mergeScene(merged, stored))).toBe(false)
+  })
+
+  it('lo de la escena espera a que Excalidraw acabe de arrancar (si no, lo pisa su carga)', () => {
+    vi.useFakeTimers()
+    try {
+      const state = { isLoading: true }
+      const off = vi.fn()
+      const run = vi.fn(() => off)
+      const stop = whenReady({ getAppState: () => state }, run)
+      vi.advanceTimersByTime(200)
+      expect(run).not.toHaveBeenCalled()
+      state.isLoading = false
+      vi.advanceTimersByTime(40)
+      expect(run).toHaveBeenCalledOnce()
+      stop()
+      expect(off).toHaveBeenCalledOnce()
+      // Ya arrancado, al momento; y si se limpia antes de arrancar, no corre
+      const ready = vi.fn(() => undefined)
+      whenReady({ getAppState: () => ({ isLoading: false }) }, ready)
+      expect(ready).toHaveBeenCalledOnce()
+      const never = vi.fn(() => undefined)
+      whenReady({ getAppState: () => ({ isLoading: true }) }, never)()
+      vi.advanceTimersByTime(200)
+      expect(never).not.toHaveBeenCalled()
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })

@@ -77,3 +77,27 @@ export function sceneChanged(local: readonly SceneElement[], merged: readonly Sc
     return current?.id !== element.id || current.version !== element.version
   })
 }
+
+/**
+ * Corre `run` cuando Excalidraw acabe de arrancar: mientras carga (appState.isLoading) prepara su escena por su cuenta
+ * y pisaría lo que se le pusiera antes (los elementos y el encuadre). Devuelve con qué limpiarlo
+ */
+export function whenReady(
+  api: { getAppState: () => { isLoading: boolean } },
+  run: () => (() => void) | undefined
+): () => void {
+  let cleanup: (() => void) | undefined
+  let timer: ReturnType<typeof setInterval> | null = null
+  if (!api.getAppState().isLoading) cleanup = run()
+  else
+    timer = setInterval(() => {
+      if (api.getAppState().isLoading) return
+      if (timer) clearInterval(timer)
+      timer = null
+      cleanup = run()
+    }, 30)
+  return () => {
+    if (timer) clearInterval(timer)
+    cleanup?.()
+  }
+}

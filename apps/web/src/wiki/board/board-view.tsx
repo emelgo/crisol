@@ -13,7 +13,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useApi } from '../../api/context.tsx'
 import { readAsInput, readAsKey, useReadAs } from '../read-as.tsx'
 import { BoardFrame, PageCard, pageIdOfLink, useBoardFiles } from './board-parts.tsx'
-import { mergeScene } from './sync.ts'
+import { mergeScene, whenReady } from './sync.ts'
 
 ;(window as { EXCALIDRAW_ASSET_PATH?: string }).EXCALIDRAW_ASSET_PATH = '/excalidraw/'
 
@@ -35,10 +35,14 @@ export default function BoardView({ page, tab }: { page: Page; tab: PageTabView 
 
   useEffect(() => {
     if (!excalidraw || !board.data) return
-    const first = excalidraw.getSceneElementsIncludingDeleted().length === 0
-    excalidraw.updateScene({ elements, captureUpdate: CaptureUpdateAction.NEVER })
-    loadFiles(elements)
-    if (first) excalidraw.scrollToContent(undefined, { fitToContent: true, animate: false })
+    // Cuando Excalidraw acabe de arrancar: su carga pisaría la escena y el encuadre
+    return whenReady(excalidraw, () => {
+      const first = excalidraw.getSceneElementsIncludingDeleted().length === 0
+      excalidraw.updateScene({ elements, captureUpdate: CaptureUpdateAction.NEVER })
+      loadFiles(elements)
+      if (first) excalidraw.scrollToContent(undefined, { fitToContent: true, animate: false })
+      return undefined
+    })
   }, [excalidraw, board.data, elements, loadFiles])
 
   const renderEmbeddable = useCallback(

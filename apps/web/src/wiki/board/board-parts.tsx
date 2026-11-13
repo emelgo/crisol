@@ -294,7 +294,6 @@ export function BoardFrame({
           {wide ? <Shrink aria-hidden="true" size={16} /> : <Expand aria-hidden="true" size={16} />}
         </button>
       </div>
-      {/* biome-ignore lint/a11y/noStaticElementInteractions: soltar una página del árbol (con el teclado, «Página…») */}
       <div
         ref={canvas}
         className={styles.canvas}

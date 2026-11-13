@@ -16,7 +16,7 @@ import type * as Y from 'yjs'
 import { useApi } from '../../api/context.tsx'
 import { useCollabDocument } from '../collab.tsx'
 import { BoardFrame, PAGE_DRAG, PageCard, pageIdOfLink, pageLink, useBoardFiles } from './board-parts.tsx'
-import { boardMap, mergeScene, sceneChanged, writeScene } from './sync.ts'
+import { boardMap, mergeScene, sceneChanged, whenReady, writeScene } from './sync.ts'
 
 /** Sus fuentes, servidas por Crisol (no por su CDN): apps/web/public/excalidraw/fonts */
 ;(window as { EXCALIDRAW_ASSET_PATH?: string }).EXCALIDRAW_ASSET_PATH = '/excalidraw/'
@@ -85,17 +85,20 @@ export default function BoardEditor({ page, tab }: { page: Page; tab: PageTabVie
         })
       } else excalidraw.scrollToContent(undefined, { fitToContent: true, animate: false })
     }
-    pull(true)
     const onChange = (_event: Y.YMapEvent<ExcalidrawElement>, transaction: Y.Transaction) => {
       if (transaction.origin === LOCAL) return
       cancelAnimationFrame(frame)
       frame = requestAnimationFrame(() => pull(false))
     }
-    map.observe(onChange)
-    return () => {
-      cancelAnimationFrame(frame)
-      map.unobserve(onChange)
-    }
+    // Cuando Excalidraw acabe de arrancar: su carga pisaría la escena y el encuadre
+    return whenReady(excalidraw, () => {
+      pull(true)
+      map.observe(onChange)
+      return () => {
+        cancelAnimationFrame(frame)
+        map.unobserve(onChange)
+      }
+    })
   }, [excalidraw, doc, synced, loadFiles, tab.id])
 
   // Lo de la escena, al documento (sin pasarse mientras se arrastra)
@@ -124,7 +127,8 @@ export default function BoardEditor({ page, tab }: { page: Page; tab: PageTabVie
         const next = elements.filter((element) => ids[element.id] && !element.isDeleted)
         return next.length === current.length && next.every((e, i) => e === current[i]) ? current : next
       })
-      if (!doc || !synced) return
+      // Mientras arranca, su escena aún no es la del documento (ni su encuadre, el guardado)
+      if (!doc || !synced || appState.isLoading) return
       pending.current = elements
       view.current = appState
       if (!timer.current) timer.current = setTimeout(flush, WRITE_EVERY)
