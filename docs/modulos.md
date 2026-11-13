@@ -28,6 +28,14 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   la crítica y el audit de impeccable, la página de revisión y la batería entera.
   **No subir nada hasta que esté todo** (Enrique, 2026-11-13: «el ci cuando ya esté todo»): entonces una sola CI y a
   `main` y staging.
+- **Mejoras del 2026-11-13** (lista de Enrique, 27 puntos, hechas por un subagente en la misma rama: `836b4d25` a
+  `e5da5886`): formas del cristal en toda la app, vista previa de campañas, Ajustes › Jugabilidad, fondos que se turnan,
+  el guardado de la pizarra arreglado (Excalidraw cambia los elementos en el sitio: ahora se copian), clics durante las
+  transiciones, mapa y pizarra con todo el sitio, carpeta de cada mundo en Archivos… Propuesta sin construir:
+  `docs/propuestas/wiki-pantalla-completa.md`. Pruebas en `tasks/probar.md` § «Mejoras del 2026-11-13». **Pendiente de
+  Enrique**: las 8 preguntas del informe (pantalla completa, quitar «Tabla» y «Escena» de «Pestaña nueva», el idioma
+  del zip de Foundry, «Archivos comunes», ritmo de los fondos, «Biblioteca» de Excalidraw cortada, la casilla de lo que
+  sabe el mundo, transiciones con menos movimiento).
 
 ### Para retomar (2026-11-13, madrugada: módulo 9 empezado; PR #119 en la CI)
 
