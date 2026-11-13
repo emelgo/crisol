@@ -69,7 +69,8 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   botones y, debajo, las pestañas y a su derecha las herramientas de la abierta («Guardado» del texto; «Página…», el
   ojo y «Ampliar» de la pizarra); debajo de la tira, en Texto la portada y la hoja, y **el mapa y la pizarra de borde a
   borde y hasta abajo** (las herramientas del mapa, su columna sobre el lienzo). A la derecha,
-  el panel de la página, **que se pliega** (sustituye a «no se esconde»). **Archivos abre los archivos en el centro**,
+  el panel de la página, **que se pliega** (sustituye a «no se esconde»); **junto a un mapa o una pizarra, si no
+  tiene nada (ni enlaces, ni propiedades, ni bloques), se pliega solo** (Enrique, 2026-11-14) y su botón lo abre igual. **Archivos abre los archivos en el centro**,
   como una pestaña abierta más (imagen, PDF, audio, vídeo, texto), con sus datos y su engranaje en el panel; la pantalla
   grande queda como «Ver todos», en el centro. Las plantillas, de momento, fuera. Lo de abajo sobre la barra de dentro
   de un mundo vale para quien juega.
@@ -86,7 +87,8 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   a su lado, la bandeja con lo juntado, el modificador, Ventaja/Desventaja, quién la ve (se recuerda) y «Tirar»; al
   tirar se vacía y se cierra. El resultado sale sobre el d20 cuando paran los dados; el historial, en una ventana de la
   Mesa (fuera, en una ficha junto al d20). Sin pestaña Tiradas. El d20 y el «?» no se mueven; el «?» se aparta
-  mientras los dados están abiertos.
+  mientras los dados están abiertos. **Los dados 3D se cargan al ir a tirar** (al acercarse al d20, al tirar o al
+  llegar la tirada de otro), no en cada página (Enrique, 2026-11-14: que pesen menos).
 - **En la barra de la campaña, ella con su nombre (su Inicio) y solo lo suyo** (Enrique, 2026-11-10: «páginas no lo
   queremos en la campaña … solo gestionamos las cosas de la campaña»): Mesa, Libros, Compendio y Aventuras; las páginas
   del mundo, en la Mesa. **No se dice «tele»** («muchas veces no usaré la tele para enseñarlo»): es la **pantalla de los

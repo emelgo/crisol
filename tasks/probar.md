@@ -47,6 +47,10 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   «A → B»); «Ampliar» enseña el lienzo.
 - [ ] Pídele a la IA un tablero («hazme el tablero de la conspiración con estas páginas»): `cambiar_pizarra`. Lo que
   pone se ve igual de claro que lo dibujado a mano y sus flechas no tachan las cajas.
+- [ ] Texto, Mapa y Pizarra: el título, sus botones y las pestañas, siempre en el mismo sitio (la misma tira arriba).
+- [ ] En una página sin enlaces, propiedades ni bloques, abre su mapa o su pizarra: el panel de la derecha sale
+  plegado; su botón lo abre. En Texto, abierto como siempre.
+- [ ] Los dados: la primera tirada tras abrir el mundo cae bien (la escena se carga al acercarte al d20).
 
 ## Módulo 9: mapas con capas (en local, rama `modulo-9/mapas`; migración 0081)
 
