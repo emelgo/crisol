@@ -9,7 +9,7 @@ const OBJECTS = /¿Qué se lleva\?/
 const SHEET = /¿Cómo se ve la ficha\?/
 const CREATION = /¿Cómo se crea un personaje\?/
 const COMPENDIUM = /¿Qué trae el compendio\?/
-const ADVANCED = /Lo avanzado/
+const ADVANCED = /Avanzado/
 
 const announced = (text: string) =>
   waitFor(() =>
@@ -266,7 +266,7 @@ describe('el paso «¿Qué trae el compendio?» del editor de sistemas', () => {
   })
 })
 
-describe('el paso «Lo avanzado» del editor de sistemas', () => {
+describe('el paso «Avanzado» del editor de sistemas', () => {
   it('la iniciativa es una de sus tiradas o se escribe a mano', async () => {
     const rolls = { ...fronteras.rolls, iniciativa: { label: 'Iniciativa', formula: '2d6 + @astucia' } }
     const { api, id } = await renderEditor({ system: { ...fronteras, rolls }, step: ADVANCED })

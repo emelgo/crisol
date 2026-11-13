@@ -26,7 +26,6 @@ import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { BusyButton } from '../components/busy-button.tsx'
 import { ChangesBar } from '../components/changes.tsx'
-import { CopyField } from '../components/copy-field.tsx'
 import { ConfirmByName, DangerZone } from '../components/danger.tsx'
 import dialogStyles from '../components/dialog.module.css'
 import { EmptyState } from '../components/empty-state.tsx'
@@ -288,7 +287,7 @@ export function NewSystemDialog({ onClose }: { onClose: () => void }) {
   const titleId = useId()
   const fileId = useId()
   // El camino elegido: con tu IA (la frase para pedírselo), con el esqueleto (bajarlo y subirlo) o a mano (el editor)
-  const [way, setWay] = useState<'ai' | 'skeleton' | 'hand'>('skeleton')
+  const [way, setWay] = useState<'skeleton' | 'hand'>('skeleton')
   const navigate = useNavigate()
   const [name, setName] = useState('')
   const byHand = useMutation({
@@ -384,15 +383,10 @@ export function NewSystemDialog({ onClose }: { onClose: () => void }) {
         }}
       >
         <h2 id={titleId}>{t('systems.new')}</h2>
-        {/* Tres caminos (docs/diseno.md): con tu IA (por el conector: aquí, la frase para pedírselo), con el esqueleto
-            (bajarlo, rellenarlo y subirlo) y a mano (el editor de sus Reglas) */}
+        {/* Dos caminos (docs/diseno.md): con el esqueleto (bajarlo, rellenarlo y subirlo) y a mano (el editor de sus
+            Reglas). La IA, solo mencionada: se hace desde ella, por el MCP (Enrique, 2026-11-13) */}
         <fieldset className={system.ways}>
           <legend className={screen.hidden}>{t('systems.paths.label')}</legend>
-          <button type="button" className={system.way} aria-pressed={way === 'ai'} onClick={() => setWay('ai')}>
-            <Sparkles aria-hidden="true" size={20} />
-            <b>{t('systems.paths.ai')}</b>
-            <span>{t('systems.paths.aiText')}</span>
-          </button>
           <button
             type="button"
             className={system.way}
@@ -409,6 +403,10 @@ export function NewSystemDialog({ onClose }: { onClose: () => void }) {
             <span>{t('systems.paths.handText')}</span>
           </button>
         </fieldset>
+        <p className={system.aiMention}>
+          <Sparkles aria-hidden="true" size={14} />
+          {t('systems.paths.aiMention')}
+        </p>
         {way === 'hand' ? (
           <>
             <Field
@@ -425,15 +423,6 @@ export function NewSystemDialog({ onClose }: { onClose: () => void }) {
               </BusyButton>
               <button type="button" className={dialogStyles.cancel} onClick={() => dialog.current?.close()}>
                 {t('list.cancel')}
-              </button>
-            </div>
-          </>
-        ) : way === 'ai' ? (
-          <>
-            <CopyField label={t('systems.paths.aiAsk')} value={t('systems.paths.aiPhrase')} />
-            <div className={dialogStyles.actions}>
-              <button type="button" className={form.button} onClick={() => dialog.current?.close()}>
-                {t('systems.close')}
               </button>
             </div>
           </>

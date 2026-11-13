@@ -1,7 +1,7 @@
 /**
  * Los demás pasos del editor (lienzo de la tanda 8): lo que se lleva (los tipos de objeto, cada uno con sus campos),
  * cómo se ve la ficha (sus bloques, que nacen uno por campo y se ordenan), cómo se crea un personaje (sus pasos), qué
- * trae el compendio (sus libros, que se llevan en su Inicio) y lo avanzado (la iniciativa, los idiomas, la versión y
+ * trae el compendio (sus libros, que se llevan en su Inicio) y Avanzado (la iniciativa, la versión y
  * el archivo)
  */
 import { characterType, type Language, type Problem, type System, sheetOf, textOf } from '@crisol/systems'
@@ -413,7 +413,7 @@ export function CompendiumStep({ systemId }: { systemId: string }) {
   )
 }
 
-/** Lo avanzado: la iniciativa, los idiomas, la versión y el archivo del sistema */
+/** Avanzado: la iniciativa, la versión y el archivo del sistema */
 export function AdvancedStep({
   systemId,
   system,

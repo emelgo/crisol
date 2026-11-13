@@ -75,16 +75,16 @@ describe('«Sistemas», en Mis mundos', () => {
     expect(preview.getByText('Sin licencia de fuera')).toBeDefined()
   })
 
-  it('uno nuevo se hace con la IA: aquí se baja uno vacío', async () => {
+  it('uno nuevo: con el esqueleto se baja uno vacío; la IA, solo mencionada', async () => {
     const { api } = renderSystems()
     const created = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:x')
     await userEvent.click(await screen.findByRole('button', { name: 'Sistema nuevo' }))
     const dialog = within(screen.getByRole('dialog', { name: 'Sistema nuevo' }))
-    // Tres caminos: con tu IA da la frase para pedírselo; a mano, su nombre y se abre su editor
+    // Dos caminos (el esqueleto y a mano); la IA, solo una mención: se le pide a ella, por el MCP
     const ways = within(dialog.getByRole('group', { name: 'Cómo hacer un sistema' }))
     expect(ways.getByRole('button', { name: /A mano/ })).toHaveProperty('disabled', false)
-    await userEvent.click(ways.getByRole('button', { name: /Con tu IA/ }))
-    expect(dialog.getByDisplayValue(/Hazme en Crisol el sistema de reglas/)).toBeDefined()
+    expect(ways.queryByRole('button', { name: /IA/ })).toBeNull()
+    expect(dialog.getByText(/pedírselo a tu IA/)).toBeDefined()
     await userEvent.click(ways.getByRole('button', { name: /Con el esqueleto/ }))
     expect(dialog.queryByRole('textbox', { name: 'Nombre' })).toBeNull()
     await userEvent.click(dialog.getByRole('button', { name: 'Bajar el esqueleto' }))
@@ -321,12 +321,12 @@ describe('«Sistemas», en Mis mundos', () => {
     expect(after.find((book) => book.name === bookName)?.cover?.fileId).toBe(stored?.id)
   })
 
-  it('sus reglas: en «Lo avanzado» del editor se baja su archivo', async () => {
+  it('sus reglas: en «Avanzado» del editor se baja su archivo', async () => {
     localStorage.setItem('crisol.recorridos.enrique@crisol.test', JSON.stringify({ seen: ['sistemas', 'sistema'] }))
     const { api } = renderSystems(`/sistemas/${OWN.id}/reglas`)
     const created = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:x')
     expect(await screen.findByRole('heading', { level: 1, name: 'Reglas' })).toBeDefined()
-    await userEvent.click(await screen.findByRole('button', { name: /Lo avanzado/ }))
+    await userEvent.click(await screen.findByRole('button', { name: /Avanzado/ }))
     await userEvent.click(await screen.findByRole('button', { name: 'Bajar' }))
     await waitFor(() => expect(api.calls).toContain('exportSystem'))
     created.mockRestore()

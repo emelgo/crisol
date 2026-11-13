@@ -1522,8 +1522,8 @@ export const es = {
         lead: 'Los libros del sistema y lo que trae cada uno.'
       },
       avanzado: {
-        question: 'Lo avanzado',
-        short: 'Lo avanzado',
+        question: 'Avanzado',
+        short: 'Avanzado',
         lead: 'Lo que casi nunca hace falta tocar.'
       }
     },
@@ -1733,17 +1733,13 @@ export const es = {
     blank: 'Bajar el esqueleto',
     paths: {
       label: 'Cómo hacer un sistema',
-      ai: 'Con tu IA',
-      aiText: 'Pídeselo a tu IA conectada a Crisol: lo escribe y lo prueba.',
+      aiMention: 'También puedes pedírselo a tu IA conectada a Crisol (por el MCP).',
       skeleton: 'Con el esqueleto',
       skeletonText: 'Bájalo, rellénalo y súbelo aquí.',
       hand: 'A mano',
       handText: 'Paso a paso, en palabras de mesa.',
       handName: 'Cómo se llama el juego',
-      handCreate: 'Crear y empezar',
-      aiAsk: 'Lo que pedirle a tu IA',
-      aiPhrase:
-        'Hazme en Crisol el sistema de reglas de mi juego: lee su formato, créalo y prueba sus tiradas antes de darlo por bueno.'
+      handCreate: 'Crear y empezar'
     },
     copyOf: 'Copia de {{name}}',
     uploaded: 'Subido de un archivo',
@@ -2446,31 +2442,22 @@ export const es = {
     // Libro nuevo
     newTitle: 'Libro nuevo en {{system}}',
     how: 'Cómo',
-    ai: 'Con la IA, desde un PDF',
-    aiHint: 'Tu IA lo lee y lo pasa a entradas. Lo revisas antes de que entre.',
+    aiMention: 'Desde un PDF, pídeselo a tu IA (por el MCP): lo que traiga lo revisas antes de que entre.',
     file: 'Desde un archivo',
     fileHint: 'Un libro de otro sistema de Crisol (su archivo).',
     own: 'Vacío',
     ownHint: 'Para lo tuyo: criaturas, objetos, conjuros…',
-    pdfs: 'PDF de la biblioteca',
-    noPdfs: 'No hay PDF en la biblioteca de tus mundos: súbelos en Archivos.',
-    pdfPages_one: '{{count}} página',
-    pdfPages_other: '{{count}} páginas',
     name: 'Nombre',
     edition: 'Edición',
     description: 'De qué va',
     create: 'Crear',
     cancel: 'Cancelar',
     close: 'Cerrar',
-    askAi: 'Ahora, pídeselo a tu IA:',
-    phrase: 'Pasa «{{pdf}}» al libro «{{book}}» de {{system}}',
-    copyPhrase: 'Lo que pedirle a la IA',
     pickFile: 'Archivo del sistema',
     fileBooks: 'Libros del archivo',
     fileBad: 'Ese archivo no es de un sistema de Crisol.',
     fileEntries_one: '{{count}} entrada',
     fileEntries_other: '{{count}} entradas',
-    created: 'Libro creado.',
     // Ajustes
     settingsTitle: '{{name}}',
     license: 'Licencia',
@@ -4016,7 +4003,7 @@ export const es = {
     },
     system: {
       books: 'Los libros del sistema: cada uno llena su compendio. Pulsa uno para abrirlo.',
-      create: 'Añade un libro: con la IA desde un PDF, desde un archivo o vacío.',
+      create: 'Añade un libro, vacío o desde un archivo.',
       compendium: 'Todo lo de sus libros, para buscar y leer.',
       rules: 'Lo que trae el sistema: sus tipos, sus campos y sus tiradas.',
       settings: 'Su nombre, su icono y su portada.'

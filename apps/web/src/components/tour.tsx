@@ -1,6 +1,7 @@
 import { autoUpdate, computePosition, flip, offset, type Placement, shift } from '@floating-ui/dom'
 import { CircleHelp } from 'lucide-react'
 import { useEffect, useId, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import styles from './tour.module.css'
@@ -172,10 +173,14 @@ export function Tour({ id, steps }: { id: string; steps: readonly TourStep[] }) 
         Object.assign(element.style, { left: `${left}px`, top: `${top}px` })
         return
       }
+      // Lo de la página no va encima de la barra de la izquierda (lo de la barra, sí: va a su lado)
+      const bar = document.querySelector('[data-tour="barra-llama"]')?.closest('nav')
+      const left = bar && !bar.parentElement?.contains(target) ? bar.getBoundingClientRect().right + 12 : 12
+      const padding = { top: 12, right: 12, bottom: 12, left }
       void computePosition(target, element, {
         strategy: 'fixed',
         placement: step.placement ?? 'bottom',
-        middleware: [offset(14), flip({ padding: 12 }), shift({ padding: 12 })]
+        middleware: [offset(14), flip({ padding }), shift({ padding })]
       }).then(({ x, y }) => Object.assign(element.style, { left: `${x}px`, top: `${y}px` }))
     })
   }, [step])
@@ -209,49 +214,56 @@ export function Tour({ id, steps }: { id: string; steps: readonly TourStep[] }) 
   return (
     <>
       {help}
-      <div ref={ring} aria-hidden="true" className={styles.ring} />
-      {(step.also ?? []).map((also, i) => (
-        <div key={also.target}>
-          <div
-            ref={(box) => {
-              if (box) extra.current[i] = box
-            }}
-            aria-hidden="true"
-            className={styles.also}
-          />
-          {also.text && (
-            <p
-              ref={(note) => {
-                if (note) notes.current[i] = note
-              }}
-              className={styles.note}
-            >
-              {also.text}
+      {/* En el body: dentro del contenido (que es su propia capa en las transiciones) quedaba debajo de la barra de la
+          izquierda (Enrique, 2026-11-13: «el tutorial en libros … se ve por debajo de la barra») */}
+      {createPortal(
+        <>
+          <div ref={ring} aria-hidden="true" className={styles.ring} />
+          {(step.also ?? []).map((also, i) => (
+            <div key={also.target}>
+              <div
+                ref={(box) => {
+                  if (box) extra.current[i] = box
+                }}
+                aria-hidden="true"
+                className={styles.also}
+              />
+              {also.text && (
+                <p
+                  ref={(note) => {
+                    if (note) notes.current[i] = note
+                  }}
+                  className={styles.note}
+                >
+                  {also.text}
+                </p>
+              )}
+            </div>
+          ))}
+          <div ref={bubble} role="dialog" aria-labelledby={titleId} className={styles.bubble}>
+            <p id={titleId} className={styles.text}>
+              {step.text}
             </p>
-          )}
-        </div>
-      ))}
-      <div ref={bubble} role="dialog" aria-labelledby={titleId} className={styles.bubble}>
-        <p id={titleId} className={styles.text}>
-          {step.text}
-        </p>
-        <div className={styles.footer}>
-          <span className={styles.count}>{t('tour.count', { current: index + 1, total: visible.length })}</span>
-          {index > 0 && (
-            <button type="button" className={styles.back} onClick={() => setIndex(index - 1)}>
-              {t('tour.back')}
-            </button>
-          )}
-          <button
-            ref={next}
-            type="button"
-            className={styles.next}
-            onClick={() => (last ? close(true) : setIndex(index + 1))}
-          >
-            {t(last ? 'tour.done' : 'tour.next')}
-          </button>
-        </div>
-      </div>
+            <div className={styles.footer}>
+              <span className={styles.count}>{t('tour.count', { current: index + 1, total: visible.length })}</span>
+              {index > 0 && (
+                <button type="button" className={styles.back} onClick={() => setIndex(index - 1)}>
+                  {t('tour.back')}
+                </button>
+              )}
+              <button
+                ref={next}
+                type="button"
+                className={styles.next}
+                onClick={() => (last ? close(true) : setIndex(index + 1))}
+              >
+                {t(last ? 'tour.done' : 'tour.next')}
+              </button>
+            </div>
+          </div>
+        </>,
+        document.body
+      )}
     </>
   )
 }
