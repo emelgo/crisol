@@ -27,7 +27,7 @@ import { itemTransition } from '../components/world-transition.ts'
 import { WorldBanner } from '../routes/world-card.tsx'
 import { TemplateIcon } from '../templates/icons.tsx'
 import { useTemplates } from '../templates/picker.tsx'
-import { Backlinks } from './backlinks.tsx'
+import { Backlinks, pageLinksKey } from './backlinks.tsx'
 import { BoardTab } from './board/board-tab.tsx'
 import { CoverButton, PageCoverImage } from './cover.tsx'
 import { PageBody } from './editor.tsx'
@@ -37,6 +37,7 @@ import { MapTab } from './map/map-tab.tsx'
 import { BookmarkButton } from './navigation.tsx'
 import { PanelBlocks } from './panel-blocks.tsx'
 import { PageProperties, type PropertyAdder } from './properties.tsx'
+import { readAsInput, readAsKey, useReadAs } from './read-as.tsx'
 import { PageRevealButton } from './reveal.tsx'
 import { SceneMain, SceneSide, SceneTabProvider } from './scene/scene-tab.tsx'
 import { PrintDialog, SheetPaper } from './sheet/controls.tsx'
@@ -611,6 +612,21 @@ export function EntryView({
   // El mapa y la pizarra llenan todo el sitio, hasta el final de la ventana y de lado a lado de la hoja, como en
   // LegendKeeper (Enrique, 2026-11-13: «no debe verse por abajo cómo termina el cuadrado»)
   const fill = active?.kind === 'map' || active?.kind === 'board'
+  // Junto a un mapa o una pizarra, un panel sin nada (sin enlaces, propiedades ni bloques) se pliega solo, para que lo
+  // tengan todo (Enrique, 2026-11-14); pulsar su botón lo abre igual
+  const api = useApi()
+  const readAs = useReadAs()
+  const links = useQuery({
+    queryKey: [...pageLinksKey(page.worldId, page.id), ...readAsKey(readAs)],
+    queryFn: () => api.call('getPageLinks', { pageId: page.id, ...readAsInput(readAs) }),
+    enabled: Boolean(shell) && fill
+  })
+  const emptyPanel =
+    page.panel.length === 0 &&
+    page.properties.length === 0 &&
+    links.data !== undefined &&
+    links.data.incoming.length === 0 &&
+    links.data.mentions.length === 0
   const head = (
     <PageHead
       key={page.id}
@@ -726,7 +742,7 @@ export function EntryView({
               )}
             </div>
           </div>
-          <ShellPanel>{side}</ShellPanel>
+          <ShellPanel autoFold={fill && !template && emptyPanel}>{side}</ShellPanel>
         </div>
       </SceneTabProvider>
     )
@@ -755,11 +771,33 @@ export function EntryView({
  * El panel de la página en el mundo a pantalla completa: a toda altura, con su botón para plegarlo a una tira (Enrique,
  * 2026-11-13: para que el mapa o la pizarra lo tengan todo). Se recuerda plegado o no, en el aparato
  */
-export function ShellPanel({ children, label: name }: { children: ReactNode; label?: string }) {
+export function ShellPanel({
+  children,
+  label: name,
+  autoFold = false
+}: {
+  children: ReactNode
+  label?: string
+  /** Plegado sin que se haya pedido (un panel vacío junto a un mapa o una pizarra), hasta que se abra con su botón */
+  autoFold?: boolean
+}) {
   const { t } = useTranslation()
   const shell = useWorldShell()
-  const folded = shell?.panelFolded ?? false
+  // Abierto a mano aunque esté vacío: hasta que deje de estarlo o se cambie de página
+  const [opened, setOpened] = useState(false)
+  useEffect(() => {
+    if (!autoFold) setOpened(false)
+  }, [autoFold])
+  const auto = autoFold && !opened
+  const folded = (shell?.panelFolded ?? false) || auto
   const label = t(folded ? 'worldShell.panelUnfold' : 'worldShell.panelFold')
+  const toggle = () => {
+    if (folded) {
+      if (shell?.panelFolded) shell.setPanelFolded(false)
+      if (auto) setOpened(true)
+    } else if (autoFold) setOpened(false)
+    else shell?.setPanelFolded(true)
+  }
   return (
     <aside
       aria-label={name ?? t('wiki.pagePanel')}
@@ -774,7 +812,7 @@ export function ShellPanel({ children, label: name }: { children: ReactNode; lab
           aria-label={label}
           title={label}
           aria-expanded={!folded}
-          onClick={() => shell?.setPanelFolded(!folded)}
+          onClick={toggle}
         >
           {folded ? <PanelRightOpen aria-hidden="true" size={18} /> : <PanelRightClose aria-hidden="true" size={18} />}
         </button>

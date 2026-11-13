@@ -17,8 +17,10 @@ vi.mock('../tabletop/use-renderer.ts', async () => (await import('../tabletop/fa
 // Sin WebGL en las pruebas: la escena se sustituye por una que apunta lo que le piden
 const played: { dice: unknown[]; color: string; landed: () => void; early?: unknown[] }[] = []
 const cancelled: unknown[][] = []
+let scenes = 0
 vi.mock('./3d/scene.ts', () => ({
   createScene: () => ({
+    created: ++scenes,
     play: (dice: unknown[], color: string, landed: () => void) => played.push({ dice: [...dice], color, landed }),
     // Las tuyas empiezan a caer en el clic con los dados que se esperan; el resultado llega luego
     start: (kinds: unknown[], color: string) => ({
@@ -156,7 +158,19 @@ describe('la bandeja de dados 3D', () => {
     await userEvent.click(history.getByRole('checkbox', { name: 'Ver caer los dados de los demás' }))
     expect(accounts.calls).toContain('updateDice false')
     act(() => realtime.emit({ type: 'rolled', campaignId: CAMPAIGN.id, roll: fromBruno('Otra') }))
-    await new Promise((resolve) => setTimeout(resolve, 50))
+    // Más que lo que tardaba en cargarla sola antes (1,5 s sin requestIdleCallback)
+    await new Promise((resolve) => setTimeout(resolve, 1700))
     expect(played).toHaveLength(1)
+  })
+
+  it('la escena de los dados no se carga hasta ir a tirar: al acercarse al d20 (Enrique, 2026-11-14)', async () => {
+    const before = scenes
+    renderTable()
+    const d20 = await screen.findByRole('button', { name: 'Dados' })
+    // Más que lo que tardaba en cargarla sola antes (1,5 s sin requestIdleCallback)
+    await new Promise((resolve) => setTimeout(resolve, 1700))
+    expect(scenes).toBe(before)
+    await userEvent.hover(d20)
+    await waitFor(() => expect(scenes).toBe(before + 1))
   })
 })
