@@ -58,6 +58,18 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   tiene en el momento». Se cierra con la X, con Escape o pulsando fuera, y se vuelve a donde se estaba; un enlace
   de dentro la cierra y lleva a su sitio. **Sin enlace de vuelta** arriba («Mis mundos»): en una ventana no tiene
   sentido.
+- **El mundo del máster, a pantalla completa, como la Mesa** (Enrique, 2026-11-13, propuesta aprobada; ADR-0027):
+  sin la barra de la app. Arriba, **una cabecera fina de cristal**: la llama (vuelve a Mis mundos), el nombre del mundo
+  con su menú (Ajustes del mundo, Historial, Papelera, Exportar), **las pestañas abiertas, una sola vez, como las de un
+  navegador** (ya no encima de la página ni en la ficha del árbol), «Buscar» (Ctrl+K) y la cuenta (su inicial). **A la
+  izquierda, una barra de pestañas como la de la Mesa**: Páginas (el buscador, el árbol y los marcadores debajo) y
+  Archivos; se pliega a una columna de iconos y se estira arrastrando su borde, y se recuerda. En el centro, la página
+  ocupa todo el hueco: el texto con su hoja; **el mapa y la pizarra, de borde a borde y hasta abajo**, con el título y
+  las pestañas en cristal encima (en el mapa, flotando arriba a la izquierda; en la pizarra, en su barra). A la derecha,
+  el panel de la página, **que se pliega** (sustituye a «no se esconde»). **Archivos abre los archivos en el centro**,
+  como una pestaña abierta más (imagen, PDF, audio, vídeo, texto), con sus datos y su engranaje en el panel; la pantalla
+  grande queda como «Ver todos», en el centro. Las plantillas, de momento, fuera. Lo de abajo sobre la barra de dentro
+  de un mundo vale para quien juega.
 - **Dentro de un mundo, la barra lleva el mundo (su nombre, con su icono propio: un paisaje de montaña, no el globo de
   «Mundos», Enrique, 2026-11-12) y Archivos**; nada más (ni Plantillas, ni Campañas, ni
   «Inicio»: el mundo se abre en su portada). Historial y Papelera enseñan los de ese mundo. **Los dados no van en la barra**
@@ -306,7 +318,8 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   fichas, subpáginas, páginas con una etiqueta), se titulan encima, se tocan en el sitio (+ y −, pulsar la barra, las
   estrellas o las fichas) y se recolocan arrastrando su asa o desde sus opciones; vacío, dice «Panel vacío» y para qué
   sirve. Arriba del todo, «Mencionado en» (como en Everlore: una lista corta de páginas; las que la nombran sin enlazar, debajo, con «Enlazar» al pasar). Sin índice (está el árbol); las versiones, en «⋯». No se esconde (no hay botón para eso); sin sitio,
-  va debajo de la página.
+  va debajo de la página. **Se pliega** (Enrique, 2026-11-13, ADR-0027): en el mundo a pantalla completa, su botón
+  de arriba lo deja en una tira para que el mapa o la pizarra lo tengan todo, y se recuerda plegado o no.
 - **Dentro de un mundo, la forma de Everlore (esquinas redondeadas, sin cortes) con nuestros colores y nuestras
   letras.** Las propiedades de una página van en el panel de la derecha, con su título pequeño como lo demás.
 - **Los mundos no tienen papel** (máster o jugador): eso es de las campañas.
@@ -344,6 +357,11 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   barra y se funde con ella, que se aviva soltando chispas: «como que el mundo se está cocinando». Dentro, la llama es
   la vuelta; al volver, «Mundos» sale de la llama, sin fuego. Los iconos del mundo (todos, también los que vengan)
   salen del crisol uno tras otro al entrar y suben a él al volver, antes de que salga «Mundos».
+- **Entrar y salir del mundo a pantalla completa, como siempre** (ADR-0027): la tarjeta crece hasta la cabecera fina
+  (recortada a su forma), lo de la barra de la app sube a la llama y la barra se va con lo demás; la llama de la
+  cabecera se aviva y los iconos (Páginas, Archivos) salen del crisol a la barra de la izquierda. Al salir, solo con la
+  llama, el mundo se aleja con humo, sus iconos suben al crisol y la barra de la app vuelve a entrar, con «Mundos»
+  saliendo de la llama.
 - **Entrar en un mundo es entrar**: la tarjeta pulsada se convierte en la cabecera del mundo mientras Mis mundos se
   acerca y se desvanece, como si se pasara a través; al volver, al revés (transiciones de vista del navegador). Al
   entrar, con un fuego sutil: la tarjeta se pone al rojo mientras crece y sube algo de calor con unas brasas; la

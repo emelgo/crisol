@@ -9,6 +9,27 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
+## Mundo a pantalla completa (en local, rama `modulo-9/mapas`; ADR-0027)
+
+- [ ] **Entrar** en un mundo desde Mis mundos: la tarjeta crece hasta la cabecera de arriba, al rojo; la barra de la
+  app sube a la llama y se va; la llama de la cabecera se aviva con chispas y Páginas y Archivos salen del crisol a la
+  barra de la izquierda. ¿Se ve como antes?
+- [ ] **Salir** con la llama de arriba a la izquierda: el mundo se aleja con humo, los iconos suben al crisol, vuelve la
+  barra de la app y la llama expulsa a «Mundos».
+- [ ] **La cabecera**: el nombre del mundo abre su menú (Ajustes del mundo, Historial, Papelera, Exportar); las
+  pestañas abiertas, una sola vez, como en el navegador (fijar, cerrar, arrastrar para ordenar); «Buscar» y Ctrl+K; la
+  cuenta, con tu inicial.
+- [ ] **La barra de la izquierda**: Páginas (buscador, árbol y marcadores) y Archivos. Plégala, estírala arrastrando su
+  borde y recarga: se acuerda.
+- [ ] **Archivos en la barra**: busca, sube (el icono junto al buscador), despliega carpetas; pulsa una imagen, un PDF,
+  un audio o un vídeo: se abre en el centro como pestaña, con sus datos y su engranaje a la derecha. «Ver todos» abre la
+  pantalla grande en el centro.
+- [ ] **El panel de la página**: plégalo con su botón de arriba a la derecha y cambia de página: se queda plegado.
+- [ ] **Mapa y pizarra**: de borde a borde y hasta abajo; en el mapa, el título y las pestañas flotan arriba a la
+  izquierda; en la pizarra, van en su barra. Con la barra y el panel abiertos, la pizarra no pasa a su modo de móvil.
+- [ ] **El tutorial del mundo** (el «?»): la barra de la izquierda, arriba, la página y su panel, el menú del mundo y la
+  llama.
+
 ## Módulo 9: la pizarra (en local, rama `modulo-9/mapas`; docs/specs/pizarra.md)
 
 - [ ] En una página, «+» → «Pizarra»: se abre Excalidraw en español y oscuro; dibuja a mano, cajas, flechas y texto.

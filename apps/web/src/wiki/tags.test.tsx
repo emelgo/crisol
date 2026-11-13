@@ -254,7 +254,7 @@ describe('las etiquetas de la cuenta', () => {
     await userEvent.keyboard('{Escape}')
 
     // Buscar «#lugar» trae las dos (la madre y la hija); «#lugar/costa», solo el bestiario (como en las páginas)
-    const search = screen.getAllByRole('searchbox', { name: 'Buscar por nombre o #etiqueta' })[0] as HTMLElement
+    const search = within(screen.getByRole('main')).getByRole('searchbox', { name: 'Buscar por nombre o #etiqueta' })
     await userEvent.type(search, '#lugar')
     await waitFor(() => expect(list.getByRole('link', { name: 'Bestiario.pdf' })).toBeDefined())
     expect(list.getByRole('button', { name: 'Mapa.png' })).toBeDefined()

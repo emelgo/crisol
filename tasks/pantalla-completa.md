@@ -25,7 +25,7 @@ al final.
   Archivos; pulsar un archivo lo abre en el centro como pestaña abierta (imagen, PDF, audio, vídeo, texto) con su vista
   previa y sus ajustes en el panel; «Ver todos» abre la pantalla grande en el centro.
   - Verifica: vitest de la lista pequeña y del visor; e2e de Archivos.
-- [ ] 5. **El panel plegable y el título flotante**: plegar el panel de la página (recordado); en mapas y pizarras, el
+- [x] 5. **El panel plegable y el título flotante**: plegar el panel de la página (recordado); en mapas y pizarras, el
   título y las pestañas en cristal sobre el lienzo.
   - Verifica: capturas con el panel plegado; vitest de recordar.
 - [ ] 6. **Tutorial y e2e**: el tutorial del mundo con los pasos nuevos (cabecera, barra izquierda, página y panel, la

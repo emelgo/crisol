@@ -3960,7 +3960,7 @@ export const es = {
     again: 'Tutorial guiado de esta vista',
     worlds: {
       create: 'Cada mundo guarda todo lo suyo.',
-      ribbon: 'Dentro de un mundo, esta barra cambiará y mostrará su contenido.',
+      ribbon: 'Dentro de un mundo, esta barra se aparta y el mundo ocupa toda la pantalla.',
       files: 'Aquí guardas las imágenes y documentos que comparten todos tus mundos.',
       tags: 'Para ordenar páginas y archivos de todos tus mundos.',
       templates: 'Para crear páginas con sus campos y su texto, en todos tus mundos.',
@@ -3974,6 +3974,9 @@ export const es = {
       home: 'El mundo: lo esencial y lo último que has tocado.',
       wiki: 'El mundo: se abre en su portada; aquí se esconde o se ve su árbol.',
       search: 'Filtra el árbol por nombre o #etiqueta; con Intro, busca en el texto de todas.',
+      pages: 'Las páginas del mundo, en su árbol.',
+      find: 'Arriba, lo que tienes abierto y el buscador de todo el mundo.',
+      worldMenu: 'El mundo: sus ajustes, su historial y su papelera.',
       panel: 'Lo de la página que quieras tener a la vista.',
       whoKnows: 'Qué sabe de esta página cada campaña, y lo que ven sus jugadores.',
       bookmarks: 'Tus páginas marcadas, a mano.',

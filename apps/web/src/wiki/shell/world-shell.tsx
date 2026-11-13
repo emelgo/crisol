@@ -34,8 +34,8 @@ export const shellWorldOf = (path: string) => SHELL_PATH.exec(path)?.[1]
 export const isWorldHome = (path: string) => /^\/mundos\/[^/]+\/?$/.test(path)
 
 /**
- * El mundo de la dirección, si va a pantalla completa: el que dirige la cuenta; mientras no se sabe, solo lo que es
- * solo del máster (sus páginas, buscar, archivos). bare: sin la barra de la app (aunque aún no se sepa el mundo)
+ * El mundo de la dirección, si va a pantalla completa: el que dirige la cuenta. bare: sin la barra de la app; pending:
+ * aún no se sabe si lo dirige
  */
 export function useWorldShellRoute() {
   const api = useApi()
@@ -47,11 +47,13 @@ export function useWorldShellRoute() {
     queryFn: () => api.call('listWorlds', {}),
     enabled: Boolean(account && worldId)
   })
-  if (!worldId || !account) return { worldId: undefined, bare: false }
+  if (!worldId || !account) return { worldId: undefined, bare: false, pending: false }
+  // Mientras no se sabe, nada (la llama en el centro): si no, lo de dentro se montaría dos veces, sin el armazón y con él
+  if (!worlds.data && !worlds.isError) return { worldId: undefined, bare: true, pending: true }
   const world = worlds.data?.worlds.find((w) => w.id === worldId)
-  if (world) return world.role === 'master' ? { worldId, bare: true } : { worldId: undefined, bare: false }
-  // Aún no se sabe (o no existe): sin barra solo lo que no es su portada
-  return { worldId: undefined, bare: !isWorldHome(path) }
+  if (world?.role === 'master') return { worldId, bare: true, pending: false }
+  // Quien juega (su portada) o un mundo que no existe: como siempre, con la barra
+  return { worldId: undefined, bare: false, pending: false }
 }
 
 /** La página abierta (la de la dirección o, en /mundos/$w, la portada del mundo), de la misma caché que la ruta */

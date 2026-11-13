@@ -79,8 +79,8 @@ export function RootLayout() {
       {t('app.skipToContent')}
     </a>
   )
-  // Mientras llega la sesión, la llama en el centro
-  if (pending) return <Loading full />
+  // Mientras llega la sesión (o, en un mundo, si lo dirige), la llama en el centro
+  if (pending || world.pending) return <Loading full />
   // Sin sesión (entrar, unirse a una campaña): una barra sencilla arriba, con la marca, entrar y el tema
   if (!account) {
     return (

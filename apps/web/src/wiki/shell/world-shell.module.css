@@ -512,6 +512,24 @@
 
 /* El móvil del máster no se cuida (docs/diseno.md); en lo estrecho, al menos, nada se sale */
 @media (max-width: 48rem) {
+  /* La barra de la izquierda, desplegada, encima del centro (que se queda con lo suyo) */
+  .body {
+    position: relative;
+    grid-template-columns: 3rem minmax(0, 1fr);
+  }
+
+  .side:not(.sideFolded) {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    inline-size: min(var(--side-width, 18rem), 85vw);
+    box-shadow: var(--glass-shadow);
+  }
+
+  .center {
+    grid-column: 2;
+  }
+
   .search {
     inline-size: auto;
   }

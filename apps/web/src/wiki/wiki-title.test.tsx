@@ -2,7 +2,7 @@ import type { World } from '@crisol/contracts'
 import { createMemoryHistory } from '@tanstack/react-router'
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { fakeAccountClient } from '../account/fake.ts'
 import { type ApiClient, ApiError } from '../api/client.ts'
 import { fakeApi } from '../api/fake.ts'
@@ -177,73 +177,6 @@ describe('el buscador del árbol', () => {
     await userEvent.type(filter, 'vel')
     await userEvent.click(await screen.findByRole('link', { name: /Velaria/ }))
     await waitFor(() => expect(router.state.location.pathname).toBe(`/mundos/${WORLD.id}/wiki/${ids.velaria}`))
-  })
-})
-
-describe('el cajón de las páginas, en lo estrecho', () => {
-  /** En lo estrecho, el panel es un cajón que se abre con el botón del mundo de la barra */
-  const narrow = () =>
-    vi.spyOn(window, 'matchMedia').mockImplementation(
-      (query) =>
-        ({
-          matches: true,
-          media: query,
-          addEventListener: () => undefined,
-          removeEventListener: () => undefined
-        }) as unknown as MediaQueryList
-    )
-  const drawer = () => screen.getByRole('tree', { name: 'Páginas' }).closest('aside') as HTMLElement
-  const openDrawer = async () => {
-    await screen.findByRole('tree', { name: 'Páginas' })
-    const trigger = screen.getByRole('button', { name: 'Eana' })
-    await userEvent.click(trigger)
-    await waitFor(() => expect(drawer().hasAttribute('data-open')).toBe(true))
-    return trigger
-  }
-  afterEach(() => vi.restoreAllMocks())
-
-  it('«Cerrar» lo cierra y el foco vuelve al botón que lo abrió', async () => {
-    narrow()
-    renderAt(`/mundos/${WORLD.id}/wiki/${ids.port}`)
-    const trigger = await openDrawer()
-    await waitFor(() => expect(document.activeElement?.textContent).toBe('Cerrar'))
-    await userEvent.click(screen.getByRole('button', { name: 'Cerrar' }))
-    expect(drawer().hasAttribute('data-open')).toBe(false)
-    expect(document.activeElement).toBe(trigger)
-  })
-
-  it('abrir una página del árbol lo cierra', async () => {
-    narrow()
-    const { router } = renderAt(`/mundos/${WORLD.id}/wiki/${ids.port}`)
-    await openDrawer()
-    await userEvent.click(
-      within(screen.getByRole('tree', { name: 'Páginas' })).getByRole('treeitem', { name: 'Velaria' })
-    )
-    await waitFor(() => expect(router.state.location.pathname).toBe(`/mundos/${WORLD.id}/wiki/${ids.velaria}`))
-    expect(drawer().hasAttribute('data-open')).toBe(false)
-  })
-
-  it('abrir una de las encontradas también lo cierra', async () => {
-    narrow()
-    const { router } = renderAt(`/mundos/${WORLD.id}/wiki/${ids.port}`)
-    await openDrawer()
-    await userEvent.type(screen.getByRole('searchbox', { name: 'Buscar por nombre o #etiqueta' }), 'vel')
-    await userEvent.click(await screen.findByRole('link', { name: /Velaria/ }))
-    await waitFor(() => expect(router.state.location.pathname).toBe(`/mundos/${WORLD.id}/wiki/${ids.velaria}`))
-    expect(screen.getByRole('searchbox').closest('aside')?.hasAttribute('data-open')).toBe(false)
-  })
-
-  it('un marcador también lo cierra', async () => {
-    narrow()
-    const { router } = renderAt(`/mundos/${WORLD.id}/wiki/${ids.velaria}`)
-    await userEvent.click(await screen.findByRole('button', { name: 'Marcar' }))
-    await router.navigate({ to: '/mundos/$worldId/wiki/$pageId', params: { worldId: WORLD.id, pageId: ids.port } })
-    await screen.findByRole('heading', { level: 1, name: 'Puerto Ceniza' })
-    await openDrawer()
-    const bookmarks = within(await screen.findByRole('region', { name: 'Marcadores' }))
-    await userEvent.click(bookmarks.getByRole('link', { name: 'Velaria' }))
-    await waitFor(() => expect(router.state.location.pathname).toBe(`/mundos/${WORLD.id}/wiki/${ids.velaria}`))
-    expect(drawer().hasAttribute('data-open')).toBe(false)
   })
 })
 

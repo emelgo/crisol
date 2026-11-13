@@ -93,7 +93,7 @@ function WorldMenu({ world }: { world: World }) {
   // Lo que se abre encima devuelve el foco al botón del menú
   const trigger = () => box.current?.querySelector<HTMLButtonElement>('button')
   return (
-    <div ref={box} className={styles.world}>
+    <div ref={box} className={styles.world} data-tour="menu-mundo">
       <Menu
         label={t('worldShell.worldMenu', { world: world.name })}
         className={styles.worldButton}

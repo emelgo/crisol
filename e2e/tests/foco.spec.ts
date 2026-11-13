@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { campaignLink, createWorld, freshOwner, openAccountWindow, openWindow, sections } from './ayudas.ts'
+import { campaignLink, createWorld, freshOwner, openAccountWindow, openWindow, worldHeader } from './ayudas.ts'
 
 test('con el teclado: el modo de IA con flechas y las invitaciones con espacio, sin perder el foco', async ({
   page
@@ -52,8 +52,8 @@ test('al navegar, el foco va al título de la página, y la pestaña lo dice', a
   await page.getByRole('link', { name: 'Eana', exact: true }).click()
   await expect(page.getByRole('heading', { level: 1, name: 'Eana' })).toBeFocused()
   await expect(page).toHaveTitle('Eana · Crisol')
-  // La llama de la barra vuelve a Mis mundos
-  await sections(page).getByRole('link', { name: 'Crisol' }).click()
+  // La llama de la cabecera del mundo (a pantalla completa) vuelve a Mis mundos
+  await worldHeader(page).getByRole('link', { name: 'Crisol' }).click()
   await expect(page.getByRole('heading', { level: 1, name: 'Mis mundos' })).toBeFocused()
   await expect(page).toHaveTitle('Mis mundos · Crisol')
 })
