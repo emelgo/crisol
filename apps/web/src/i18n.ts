@@ -199,7 +199,7 @@ export const es = {
     createFirst: 'Crear tu primer mundo',
     listLabel: 'Mundos',
     newTitle: 'Nuevo mundo',
-    detail: 'El mundo señalado',
+    detail: 'Vista previa',
     pickOne: 'Pasa el ratón por un mundo para ver lo que tiene.',
     noCampaigns: 'Aún ninguna',
     noFiles: 'Ninguno',
@@ -238,11 +238,6 @@ export const es = {
     yourCampaigns: 'Tus campañas'
   },
   campaigns: {
-    start: 'Al empezar, los jugadores conocen…',
-    startWorld: 'Las páginas que conoce todo el mundo',
-    startNone: 'Ninguna: se las irás revelando',
-    startSame: 'Las mismas que «{{name}}»',
-    knowsWorld: 'Parte de las páginas que conoce todo el mundo',
     title: 'Campañas',
     empty: 'Aún no hay campañas',
     emptyHint: 'Cada campaña es un grupo de jugadores que juega en este mundo.',
@@ -256,7 +251,11 @@ export const es = {
     settingsOf: 'Ajustes de {{name}}',
     delete: 'Borrar la campaña',
     deleteTitle: '¿Borrar «{{name}}»?',
-    deleteWarning: 'Irá a la papelera y sus jugadores dejarán de verla. Se podrá recuperar durante {{days}} días.'
+    deleteWarning: 'Irá a la papelera y sus jugadores dejarán de verla. Se podrá recuperar durante {{days}} días.',
+    system: 'Sistema',
+    noSystem: 'Sin sistema',
+    players: 'Jugadores',
+    noPlayers: 'Aún ninguno'
   },
   // La pestaña «Tabla» de una página: una tabla aleatoria del máster
   tableTab: {
@@ -1653,8 +1652,6 @@ export const es = {
       initiative: 'La tirada de iniciativa',
       byHand: 'Se escribe a mano',
       version: 'Su versión',
-      languages: 'Sus idiomas',
-      language: { es: 'Español', en: 'Inglés' },
       file: 'Lo demás, en su archivo (o con tu IA).'
     },
     help: {
@@ -1861,8 +1858,6 @@ export const es = {
     none: 'Sin sistema',
     noneHint: 'Sin reglas de ningún juego.',
     sources: 'Fuentes',
-    language: 'Idioma del contenido',
-    languages: { es: 'Español', en: 'English' },
     settings: 'Ajustes de {{name}}',
     editions: 'Ediciones',
     atLeastOneEdition: 'Activa al menos una edición',

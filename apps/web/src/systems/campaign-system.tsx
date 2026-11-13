@@ -1,6 +1,6 @@
 /**
- * El sistema de una campaña, en su ventana (y al crearla): cuál (de serie, de la cuenta o ninguno) y, si lo trae, sus
- * fuentes, el idioma del contenido y sus ajustes. Lo que se elige va al borrador de la ventana: se guarda con su
+ * El sistema de una campaña, en su ventana (y al crearla): cuál (o ninguno) y, si lo trae, sus fuentes y sus ajustes.
+ * Sin idioma del contenido: cada sistema viene en el que lo subió su dueño (Enrique, 2026-11-13); queda el primero. Lo que se elige va al borrador de la ventana: se guarda con su
  * «Guardar» (docs/specs/sistemas.md § campana)
  */
 import { type Choices, normalizeChoices, type SettingValue, type System, textOf } from '@crisol/systems'
@@ -83,26 +83,12 @@ export function CampaignSystemFields({
         onChange={(event) => onChange({ system: event.currentTarget.value || null, choices: {} })}
       >
         <option value="">{t('campaignSystem.none')}</option>
-        {all.some((s) => !s.builtIn) && (
-          <optgroup label={t('systems.mine')}>
-            {all
-              .filter((s) => !s.builtIn)
-              .map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-          </optgroup>
-        )}
-        <optgroup label={t('systems.builtIn')}>
-          {all
-            .filter((s) => s.builtIn)
-            .map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
-        </optgroup>
+        {/* Solo los sistemas, sin separar los tuyos de los de serie (Enrique, 2026-11-13) */}
+        {all.map((s) => (
+          <option key={s.id} value={s.id}>
+            {s.name}
+          </option>
+        ))}
       </select>
       {!value.system && <p className={styles.hint}>{t('campaignSystem.noneHint')}</p>}
 
@@ -195,25 +181,6 @@ export function CampaignSystemFields({
               {problem}
             </p>
           )}
-        </fieldset>
-      )}
-
-      {system && chosen && system.languages.length > 1 && (
-        <fieldset className={styles.group}>
-          <legend>{t('campaignSystem.language')}</legend>
-          <div className={styles.languages}>
-            {system.languages.map((language) => (
-              <label key={language} className={styles.language}>
-                <input
-                  type="radio"
-                  name={`${id}-idioma`}
-                  checked={chosen.language === language}
-                  onChange={() => set({ language })}
-                />
-                {t(`campaignSystem.languages.${language}`)}
-              </label>
-            ))}
-          </div>
         </fieldset>
       )}
 

@@ -471,12 +471,12 @@
 }
 
 /* Al pasar el ratón por la tarjeta (también por su engranaje o por «Ver», como el contorno), el nombre se resalta con
-   el color del mundo, aclarado lo justo para que se lea sobre lo oscuro; sin color, con el rojo de los enlaces
-   (Enrique, 2026-11-11: «si selecciono color verde, debe resaltarse el color»; «debe mantenerse por coherencia») */
+   el color del mundo, aclarado lo justo para que se lea sobre lo oscuro (Enrique, 2026-11-11: «si selecciono color
+   verde, debe resaltarse el color»); sin color, en blanco, nunca en rojo (Enrique, 2026-11-13) */
 .name:hover,
 .name:focus-visible,
 .card:hover .name {
-  color: oklch(from var(--world-color, var(--color-accent-text)) max(l, 0.78) c h);
+  color: oklch(from var(--world-color, #fff) max(l, 0.78) c h);
 }
 
 .name::after {
@@ -501,13 +501,13 @@
   overflow-wrap: anywhere;
 }
 
-/* En la tarjeta, tres líneas como mucho (la descripción llega a 280 letras); entera, en el panel de al lado */
+/* En la tarjeta, una línea, haya descripción o no (la tarjeta no cambia de alto; Enrique, 2026-11-13: «cortamos la
+   descripción y listo»); entera, en el panel de al lado */
 .body > .description {
-  display: -webkit-box;
+  min-block-size: 1lh;
   overflow: hidden;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
-  line-clamp: 3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* De qué mundo es una campaña (en Mis mundos): bajo su nombre, pequeño */

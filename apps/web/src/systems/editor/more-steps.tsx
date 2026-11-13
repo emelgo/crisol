@@ -4,7 +4,7 @@
  * trae el compendio (sus libros, que se llevan en su Inicio) y lo avanzado (la iniciativa, los idiomas, la versión y
  * el archivo)
  */
-import { characterType, LANGUAGES, type Language, type Problem, type System, sheetOf, textOf } from '@crisol/systems'
+import { characterType, type Language, type Problem, type System, sheetOf, textOf } from '@crisol/systems'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { ArrowDown, ArrowUp, Download, Plus, Trash2 } from 'lucide-react'
@@ -469,29 +469,6 @@ export function AdvancedStep({
           />
         </div>
       </div>
-      <fieldset className={styles.named}>
-        <legend>{t('rules.advanced.languages')}</legend>
-        <div className={styles.add}>
-          {LANGUAGES.map((lang) => (
-            <label key={lang} className={styles.check}>
-              <input
-                type="checkbox"
-                checked={system.languages.includes(lang)}
-                disabled={system.languages.length === 1 && system.languages.includes(lang)}
-                onChange={(event) => {
-                  const on = event.currentTarget.checked
-                  change((draft) => {
-                    draft.languages = on
-                      ? [...new Set([...draft.languages, lang])]
-                      : draft.languages.filter((l) => l !== lang)
-                  })
-                }}
-              />
-              {t(`rules.advanced.language.${lang}`)}
-            </label>
-          ))}
-        </div>
-      </fieldset>
       <p className={styles.muted}>{t('rules.advanced.file')}</p>
       <p>
         <BusyButton
