@@ -237,7 +237,8 @@
   flex: none;
 }
 
-.cardTitle {
+/* Con el peso de la tarjeta: el «a» de Excalidraw lo pintaría de su azul de enlace */
+.card .cardTitle {
   overflow: hidden;
   color: var(--color-text);
   font-family: var(--font-display);
@@ -248,7 +249,7 @@
   white-space: nowrap;
 }
 
-a.cardTitle:hover {
+.card a.cardTitle:hover {
   color: var(--color-link);
   text-decoration: underline;
 }
