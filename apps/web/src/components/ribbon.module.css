@@ -13,8 +13,6 @@
   /* De cristal sobre el fondo de ambiente, con su canto */
   background: var(--frame-sheen), var(--surface-glass-raised);
   border-inline-end: 1px solid var(--glass-edge);
-  -webkit-backdrop-filter: var(--frame-blur);
-  backdrop-filter: var(--frame-blur);
   /* Si lo de arriba no cabe, se desplaza sin barra: una barra que aparece y desaparece movería los iconos de lado */
   scrollbar-width: none;
   /* Lo que llega con el teclado se desplaza hasta quedar por encima del pie (en pantallas bajas o con zoom) */
@@ -23,6 +21,18 @@
   view-transition-name: barra;
   /* Por encima de la página: lo que se abre desde ella (el menú de la cuenta) no queda debajo de sus recuadros */
   z-index: 30;
+}
+
+/* El desenfoque, en una capa detrás: en la propia barra haría de marco a lo fijo de dentro (el menú de la cuenta
+   quedaba recortado por ella, Enrique, 2026-11-13: «el popup al darle al icono de mi usuario no se ve») */
+.ribbon::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  -webkit-backdrop-filter: var(--frame-blur);
+  backdrop-filter: var(--frame-blur);
+  pointer-events: none;
 }
 
 /* Abajo, fijo aunque lo de arriba no quepa: Historial, Papelera y la cuenta no se mueven nunca */

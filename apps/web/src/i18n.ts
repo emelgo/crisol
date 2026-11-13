@@ -3924,8 +3924,9 @@ export const es = {
   },
   settings: {
     title: 'Ajustes',
-    device: 'Este aparato',
-    plain: 'Sin desenfoque',
+    gameplay: 'Jugabilidad',
+    device: 'Aspecto',
+    plain: 'Sin efecto cristal (más fluido en ordenadores lentos)',
     aiWaiting_one: '{{count}} petición',
     aiWaiting_other: '{{count}} peticiones'
   },

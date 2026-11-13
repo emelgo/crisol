@@ -46,7 +46,7 @@ test.describe('con el cristal', () => {
     await freshOwner(page)
     await expect(page.locator('[data-ambiente]')).toBeAttached()
     const settings = await openAccountWindow(page, 'Ajustes')
-    await settings.getByRole('checkbox', { name: 'Sin desenfoque' }).check()
+    await settings.getByRole('checkbox', { name: 'Sin efecto cristal (más fluido en ordenadores lentos)' }).check()
     await expect(page.locator('html')).toHaveAttribute('data-plain', '')
     await expect(page.locator('[data-ambiente]')).toHaveCount(0)
     await page.reload()

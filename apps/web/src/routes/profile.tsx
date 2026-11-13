@@ -10,7 +10,6 @@ import dialogStyles from '../components/dialog.module.css'
 import { Field, FormError } from '../components/field.tsx'
 import styles from '../components/form.module.css'
 import { PageTitle } from '../components/page-title.tsx'
-import { DiceColorField } from '../dice/color-field.tsx'
 import page from './settings.module.css'
 
 /** El perfil: tus datos (el nombre de usuario, si no lo tiene otra cuenta) y la contraseña */
@@ -41,12 +40,10 @@ function ProfileData() {
   if (!account) return null
   const differs = (form: HTMLFormElement) => {
     const data = new FormData(form)
-    const dice = data.get('diceColor') === 'auto' ? null : String(data.get('diceColor'))
     return (
       String(data.get('name')) !== account.name ||
       String(data.get('firstName')) !== (account.firstName ?? '') ||
-      String(data.get('lastName')) !== (account.lastName ?? '') ||
-      dice !== account.diceColor
+      String(data.get('lastName')) !== (account.lastName ?? '')
     )
   }
   const submit = async (event: FormEvent<HTMLFormElement>) => {
@@ -56,8 +53,7 @@ function ProfileData() {
     const result = await accounts.updateProfile({
       name: String(form.get('name')),
       firstName: String(form.get('firstName')),
-      lastName: String(form.get('lastName')),
-      diceColor: form.get('diceColor') === 'auto' ? null : String(form.get('diceColor'))
+      lastName: String(form.get('lastName'))
     })
     setBusy(false)
     setStatus(result)
@@ -107,7 +103,6 @@ function ProfileData() {
         />
       </div>
       <Field label={t('account.email')} name="email" type="email" value={account.email} readOnly />
-      <DiceColorField name="diceColor" value={account.diceColor} />
       <FormError
         message={status && !status.ok ? t(`errors.${status.code}`, { defaultValue: t('errors.UNKNOWN') }) : null}
       />

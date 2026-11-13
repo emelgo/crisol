@@ -73,7 +73,7 @@ describe('el tutorial guiado', () => {
     expect(await screen.findByRole('dialog', { name: FIRST })).toBeDefined()
   })
 
-  it('Ajustes ya no tiene la casilla del tutorial (solo la de «Sin desenfoque»)', async () => {
+  it('Ajustes ya no tiene la casilla del tutorial (solo las de jugabilidad y aspecto)', async () => {
     renderWorlds()
     await screen.findByRole('dialog', { name: FIRST })
     await finish()
@@ -84,6 +84,6 @@ describe('el tutorial guiado', () => {
       settings
         .getAllByRole('checkbox')
         .map((box) => box.getAttribute('aria-label') ?? box.closest('label')?.textContent)
-    ).toEqual(['Sin desenfoque'])
+    ).toEqual(['Ver caer los dados de los demás', 'Sin efecto cristal (más fluido en ordenadores lentos)'])
   })
 })

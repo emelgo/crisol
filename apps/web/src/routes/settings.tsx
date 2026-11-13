@@ -7,10 +7,11 @@ import { useApi } from '../api/context.tsx'
 import form from '../components/form.module.css'
 import { PageTitle } from '../components/page-title.tsx'
 import { setPlain, usePlain } from '../components/plain.ts'
+import { DiceColorField } from '../dice/color-field.tsx'
 import { AiSettings } from './ai-settings.tsx'
 import styles from './settings.module.css'
 
-/** Ajustes: cómo se ve Crisol en este aparato y, para el propietario, la IA. Aquí irá lo que venga */
+/** Ajustes: la IA (el propietario o quien juega), la jugabilidad (los dados) y el aspecto. Aquí irá lo que venga */
 export function Settings() {
   const { t } = useTranslation()
   const api = useApi()
@@ -34,12 +35,43 @@ export function Settings() {
     <section className={styles.page}>
       <PageTitle>{t('settings.title')}</PageTitle>
       {isOwner ? <AiSettings /> : plays && <AiSettings player />}
+      <GameplaySettings />
       <DeviceSettings />
     </section>
   )
 }
 
-/** Lo de este aparato (se guarda en el navegador): sin desenfoque, todo opaco, para un ordenador justo de fuerzas */
+/**
+ * La jugabilidad (Enrique, 2026-11-13: «los dados en el perfil no encajan»): el color de tus dados y si ves caer los de
+ * los demás; se guarda al momento, en la cuenta. Aquí irá lo que venga del juego
+ */
+function GameplaySettings() {
+  const { t } = useTranslation()
+  const accounts = useAccounts()
+  const { account } = accounts.useAccount()
+  const id = useId()
+  if (!account) return null
+  return (
+    <section aria-labelledby={id} className={styles.device}>
+      <h2 id={id}>{t('settings.gameplay')}</h2>
+      <DiceColorField
+        name="diceColor"
+        value={account.diceColor}
+        onChange={(color) => void accounts.updateDice({ diceColor: color })}
+      />
+      <label className={form.check}>
+        <input
+          type="checkbox"
+          checked={account.diceOthers !== false}
+          onChange={(event) => void accounts.updateDice({ diceOthers: event.currentTarget.checked })}
+        />
+        {t('dice.others')}
+      </label>
+    </section>
+  )
+}
+
+/** El aspecto en este navegador (se guarda en él): sin el efecto cristal, todo opaco, para un ordenador justo de fuerzas */
 function DeviceSettings() {
   const { t } = useTranslation()
   const plain = usePlain()
