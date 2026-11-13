@@ -40,7 +40,10 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   IA visible, Excalidraw aislado de los estilos de la app, barra sin saltos, tarjetas que se abren, la jugadora en el
   móvil con la pizarra en palabras, foco, cristal). Licencias: Zlib permitida (pako, de Excalidraw; Enrique) y khroma
   mirada a mano. **Página de revisión**: https://claude.ai/artifact/JWu8kUbqtWbmGJpu1u8t8q
-- **Siguiente**: la batería entera en verde y, con el visto bueno de Enrique, una sola CI y a `main` y staging.
+- **Batería en verde** (2026-11-14): unitarias de todos los paquetes (la de ritmo de `@crisol/systems` falla con
+  carga y pasa sola), lint, tipos, licencias y límites; e2e 148/154 a la primera y las 6 restantes en verde al
+  repetirlas con la web nueva. Hechos también el panel vacío plegado junto a mapa/pizarra y los dados 3D a demanda.
+- **Siguiente**: con el visto bueno de Enrique, una sola CI y a `main` y staging (Enrique paró aquí el 2026-11-14).
   Pendientes anotados: zoom al 200 % del máster, dados 3D a demanda, panel vacío junto a mapa/pizarra (pregunta).
 
 ### Para retomar (2026-11-13, madrugada: módulo 9 empezado; PR #119 en la CI)
