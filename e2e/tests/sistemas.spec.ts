@@ -14,9 +14,7 @@ async function accessible(page: Page, include: string) {
   }
 }
 
-test('«Sistemas»: se hacen con la IA; subir un archivo roto y uno bueno, bajar uno vacío y borrar', async ({
-  page
-}) => {
+test('«Sistemas»: la IA, mencionada; subir un archivo roto y uno bueno, bajar uno vacío y borrar', async ({ page }) => {
   test.slow()
   await freshOwner(page)
   await page.getByRole('navigation', { name: 'Secciones' }).getByRole('link', { name: 'Sistemas' }).click()
@@ -28,8 +26,9 @@ test('«Sistemas»: se hacen con la IA; subir un archivo roto y uno bueno, bajar
   // «Sistema nuevo»: se hacen con la IA; aquí, un archivo roto dice qué falla y no se sube nada
   await page.getByRole('button', { name: 'Sistema nuevo' }).click()
   const dialog = page.getByRole('dialog', { name: 'Sistema nuevo' })
-  // Tres caminos: con tu IA, con el esqueleto y a mano
-  await expect(dialog.getByRole('group', { name: 'Cómo hacer un sistema' }).getByRole('button')).toHaveCount(3)
+  // Dos caminos: con el esqueleto y a mano; la IA, solo mencionada (se le pide a ella, por el MCP)
+  await expect(dialog.getByRole('group', { name: 'Cómo hacer un sistema' }).getByRole('button')).toHaveCount(2)
+  await expect(dialog.getByText(/pedírselo a tu IA/)).toBeVisible()
   await accessible(page, 'dialog')
   const file = (name: string, formula: string) => ({
     kind: 'crisol-system',
