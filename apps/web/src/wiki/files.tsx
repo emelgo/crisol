@@ -9,7 +9,7 @@
 
 import type { FolderView } from '@crisol/contracts'
 import { looksUploadable, MAX_FILE_BYTES, TRASH_DAYS, UPLOAD_ACCEPT } from '@crisol/domain'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getRouteApi, Link, Navigate } from '@tanstack/react-router'
 import {
   ChevronRight,
@@ -65,7 +65,19 @@ import cards from '../routes/world-card.module.css'
 import { ColorChoices } from '../routes/world-card.tsx'
 import { CoverViewer } from '../routes/world-cover.tsx'
 import { type FilesMove, type Item, type Listed, movedIn } from './file-order.ts'
-import { COMMON, folderChoices, foundTree, matches, type Scope, splitScopes, treeOf, withCommon } from './file-tree.ts'
+import {
+  COMMON,
+  folderChoices,
+  foundTree,
+  isRoot,
+  matches,
+  rootFolder,
+  type Scope,
+  splitScopes,
+  treeOf,
+  withRoot,
+  worldRoot
+} from './file-tree.ts'
 import styles from './files.module.css'
 import { FolderGlyph } from './folder-glyph.tsx'
 import { IconChoices } from './icon.tsx'
@@ -128,6 +140,21 @@ function FilesPage({ worldId, world, organizationId }: { worldId: string; world:
   const ownsCommon = useOwns(organizationId)
   // Las mismas listas mientras no cambien los datos
   const scopes = useMemo(() => files.data && splitScopes(files.data), [files.data])
+  const commonLabel = t('files.common')
+  const others = useMemo<OtherScope[]>(
+    () => [
+      {
+        id: COMMON,
+        name: commonLabel,
+        worldId: null,
+        organizationId,
+        target: { organizationId },
+        data: scopes?.common,
+        canWrite: ownsCommon
+      }
+    ],
+    [commonLabel, organizationId, scopes?.common, ownsCommon]
+  )
   return (
     <section className={styles.page}>
       {failed(files) && <SectionError error={files.error} onRetry={() => files.refetch()} />}
@@ -138,12 +165,16 @@ function FilesPage({ worldId, world, organizationId }: { worldId: string; world:
         canWrite
         empty={t('files.empty')}
         title={<PageTitle>{t('files.worldTitle', { world })}</PageTitle>}
-        common={{ target: { organizationId }, data: scopes?.common, canWrite: ownsCommon }}
+        others={others}
       />
       {files.data && <FilesTour />}
     </section>
   )
 }
+
+/** Lo propio de cada mundo de una lista de listFiles (fuera del componente: así no cambia en cada pintado) */
+const ownScopes = (lists: { data?: Scope | undefined }[]) =>
+  lists.map((list) => (list.data ? splitScopes(list.data).own : undefined))
 
 /** Los comunes de la cuenta, en su pantalla, fuera de los mundos («Archivos» en la barra de Mis mundos) */
 export function CommonFiles() {
@@ -161,6 +192,35 @@ export function CommonFiles() {
     queryFn: () => api.call('listCommonFiles', {}),
     enabled: Boolean(owned)
   })
+  // Cada mundo que dirige, en su carpeta (Enrique, 2026-11-13): sale al crearlo, no se borra y se va con él
+  const worlds = useQuery({
+    queryKey: ['worlds'],
+    queryFn: () => api.call('listWorlds', {}),
+    enabled: Boolean(owned)
+  })
+  const mine = useMemo(() => (worlds.data?.worlds ?? []).filter((world) => world.role === 'master'), [worlds.data])
+  // Lo de cada uno (sin sus comunes), la misma lista mientras no cambie
+  const worldScopes = useQueries({
+    queries: mine.map((world) => ({
+      queryKey: ['files', world.id],
+      queryFn: () => api.call('listFiles', { worldId: world.id })
+    })),
+    combine: ownScopes
+  })
+  const others = useMemo<OtherScope[]>(
+    () =>
+      mine.map((world, i) => ({
+        id: worldRoot(world.id),
+        name: world.name,
+        worldId: world.id,
+        organizationId: world.organizationId,
+        color: world.color,
+        target: { worldId: world.id },
+        data: worldScopes[i],
+        canWrite: true
+      })),
+    [mine, worldScopes]
+  )
   if (pending) return null
   if (!account) return <Navigate to="/entrar" replace />
   return (
@@ -174,6 +234,7 @@ export function CommonFiles() {
           canWrite
           empty={t('files.commonEmpty')}
           title={<PageTitle>{t('files.commonTitle')}</PageTitle>}
+          others={others}
         />
       ) : (
         <PageTitle>{t('files.commonTitle')}</PageTitle>
@@ -402,7 +463,7 @@ function MoveChosen({
   const [dest, setDest] = useState<string | null>(null)
   const move = useMutation({
     mutationFn: async () => {
-      const folderId = dest === COMMON ? null : dest
+      const folderId = isRoot(dest) ? null : dest
       await api.call('moveFiles', { fileIds: files, folderIds, folderId })
       dialog.current?.close()
       await onMoved(dest)
@@ -494,7 +555,24 @@ function TagChosen({
 /** Delante o detrás de qué hermano de su tipo queda lo que se recoloca */
 type Beside = Pick<FilesMove, 'before' | 'after'>
 /** De qué ámbito es algo: los del mundo y los comunes no se mezclan */
-type Realm = 'mundo' | 'comun'
+/** De qué ámbito es algo: su mundo o «comun» (lo de uno no va a otro) */
+type Realm = string
+
+/** Otro ámbito, colgando de su raíz: en un mundo, los comunes («Comunes»); en los comunes, cada mundo */
+interface OtherScope {
+  id: string
+  name: string
+  worldId: string | null
+  organizationId: string
+  color?: FolderView['color']
+  target: Target
+  data: Scope | undefined
+  canWrite: boolean
+}
+
+const NO_OTHERS: OtherScope[] = []
+
+const realmOfTarget = (target: Target): Realm => ('worldId' in target ? target.worldId : 'comun')
 
 /**
  * El teclado de una fila (como en Etiquetas): una sola parada del tabulador en la lista (la fila con el foco), flechas
@@ -535,7 +613,7 @@ function FilesSection({
   canWrite,
   empty,
   title,
-  common
+  others = NO_OTHERS
 }: {
   target: Target
   /** Sin datos aún: undefined */
@@ -546,8 +624,11 @@ function FilesSection({
   empty: string
   /** El título de la página, en la columna del centro */
   title: ReactNode
-  /** En un mundo, los comunes de la cuenta: una carpeta más, «Comunes», con las suyas dentro (ADR-0005) */
-  common?: { target: { organizationId: string }; data: Scope | undefined; canWrite: boolean }
+  /**
+   * Otros ámbitos, cada uno una carpeta más con lo suyo dentro: en un mundo, los comunes de la cuenta («Comunes»,
+   * ADR-0005); en los comunes, los mundos
+   */
+  others?: OtherScope[]
 }) {
   const { t } = useTranslation()
   const api = useApi()
@@ -555,14 +636,13 @@ function FilesSection({
   const announce = useAnnounce()
   const errorText = useErrorText()
   const uploads = useUploads()
-  const commonLabel = t('files.common')
-  // Lo de los comunes cuelga de su carpeta, «Comunes»: lo que en ellos está en lo más alto, dentro de ella
+  // Lo de cada otro ámbito cuelga de su carpeta: lo que en él está en lo más alto, dentro de ella (others llega ya
+  // memorizado: la misma lista mientras no cambien los datos)
   const data = useMemo<Scope | undefined>(
     () =>
-      ownData && common?.data
-        ? withCommon(ownData, common.data, { name: commonLabel, organizationId: common.target.organizationId })
-        : ownData,
-    [ownData, common?.data, common?.target.organizationId, commonLabel]
+      ownData &&
+      others.reduce<Scope>((all, other) => (other.data ? withRoot(all, other.data, rootFolder(other)) : all), ownData),
+    [ownData, others]
   )
   const several = useRef<HTMLInputElement>(null)
   // Adónde va lo que se elige en el campo de archivos: lo más alto (null) o la carpeta de cuyo botón se subió
@@ -713,21 +793,26 @@ function FilesSection({
   const folders = data.folders
   const byId = new Map(folders.map((folder) => [folder.id, folder]))
   const fileById = new Map(data.files.map((file) => [file.id, file]))
-  // Si una carpeta es de los comunes (la suya, o una de dentro)
-  const inCommon = (folderId: string | null) => {
+  // De qué otro ámbito es una carpeta (su raíz, o una de dentro); de ninguno, si es de este
+  const otherOf = (folderId: string | null) => {
     for (let at = folderId ? byId.get(folderId) : undefined; at; at = at.parentId ? byId.get(at.parentId) : undefined) {
-      if (at.id === COMMON) return true
+      const other = others.find((each) => each.id === at?.id)
+      if (other) return other
     }
-    return false
+    return undefined
   }
-  // Adónde va lo que se sube o se crea en una carpeta: su ámbito y la carpeta de verdad (la de «Comunes» es su raíz)
-  const placeOf = (folderId: string | null) =>
-    common && inCommon(folderId)
-      ? { target: common.target as Target, folderId: folderId === COMMON ? null : folderId, canWrite: common.canWrite }
+  // Adónde va lo que se sube o se crea en una carpeta: su ámbito y la carpeta de verdad (la raíz de otro ámbito es su
+  // lo más alto)
+  const placeOf = (folderId: string | null) => {
+    const other = otherOf(folderId)
+    return other
+      ? { target: other.target, folderId: folderId === other.id ? null : folderId, canWrite: other.canWrite }
       : { target, folderId, canWrite }
-  const canWriteFile = (file: WorldFile) => (file.worldId === null && common ? common.canWrite : canWrite)
-  // De qué ámbito es una carpeta, para lo que se le suelta (en los comunes de Inicio no hay «Comunes» y todo es común)
-  const scopeAt = (folderId: string | null): Realm => ('worldId' in placeOf(folderId).target ? 'mundo' : 'comun')
+  }
+  const canWriteFile = (file: WorldFile) =>
+    others.find((other) => realmOfTarget(other.target) === (file.worldId ?? 'comun'))?.canWrite ?? canWrite
+  // De qué ámbito es una carpeta, para lo que se le suelta
+  const scopeAt = (folderId: string | null): Realm => realmOfTarget(placeOf(folderId).target)
   // Si la elegida deja de existir (borrada aquí o en otra pestaña), a lo más alto
   const pathOf = (id: string | null): FolderView[] => {
     const path: FolderView[] = []
@@ -763,7 +848,7 @@ function FilesSection({
   const pickable = (item: Item) =>
     item.kind === 'file'
       ? Boolean(fileById.get(item.id) && canWriteFile(fileById.get(item.id) as WorldFile))
-      : item.id !== COMMON && placeOf(item.id).canWrite
+      : !isRoot(item.id) && placeOf(item.id).canWrite
   const selection = {
     has: (id: string) => chosen.has(id),
     active: chosenNow.length > 0,
@@ -789,7 +874,7 @@ function FilesSection({
   // La parada del tabulador: la fila con el foco, si sigue a la vista; si no, la primera
   const tabStop = focusedRow && isShown(focusedRow) ? focusedRow : visible[0]?.id
   const nothing = data.files.length === 0 && folders.length === 0 && uploads.items.length === 0
-  if (nothing && !canWrite && !common?.canWrite) return <p className={styles.empty}>{empty}</p>
+  if (nothing && !canWrite && !others.some((other) => other.canWrite)) return <p className={styles.empty}>{empty}</p>
 
   // Pulsar una carpeta la despliega y la elige; otra vez, la pliega y queda elegida su madre
   const toggle = (folder: FolderView) => {
@@ -818,20 +903,20 @@ function FilesSection({
   // (null: lo más alto): de su ámbito, donde se pueda escribir y, una carpeta, no dentro de sí misma. A su misma
   // carpeta, solo para recolocarlo (junto a uno de su tipo) en otro puesto
   const realmOf = (item: Item): Realm =>
-    (item.kind === 'file' ? fileById.get(item.id) : byId.get(item.id))?.worldId === null ? 'comun' : 'mundo'
+    (item.kind === 'file' ? fileById.get(item.id) : byId.get(item.id))?.worldId ?? 'comun'
   const parentOfItem = (item: Item) =>
     (item.kind === 'file' ? fileById.get(item.id)?.folderId : byId.get(item.id)?.parentId) ?? null
   // Los de su tipo en una carpeta, en su orden («Comunes» no cuenta: no es una carpeta de verdad)
   const siblingIds = (kind: Item['kind'], dest: string | null) =>
     (kind === 'file'
       ? (kids.get(dest)?.files ?? [])
-      : (kids.get(dest)?.folders ?? []).filter((f) => f.id !== COMMON)
+      : (kids.get(dest)?.folders ?? []).filter((f) => !isRoot(f.id))
     ).map((entry) => entry.id)
   // Delante o detrás de una fila de su tipo, ahí se recoloca; sobre una del otro tipo, solo dice a qué carpeta va
   const besideOf = (item: Item, row: { id: string; kind: Item['kind'] }, zone: Zone): Beside | undefined => {
     if (zone === 'inside' || row.id === item.id) return undefined
-    if (row.id === COMMON) {
-      // Delante de «Comunes» (siempre tras las del mundo): detrás de la última del mundo
+    if (isRoot(row.id)) {
+      // Delante de una raíz de otro ámbito (siempre tras las propias): detrás de la última propia
       const last =
         item.kind === 'folder' && zone === 'before'
           ? siblingIds('folder', null)
@@ -1038,12 +1123,12 @@ function FilesSection({
     if (key === 'ArrowRight') {
       // La carpeta de encima, en su misma carpeta: para una carpeta, la anterior; para un archivo, la última (los
       // archivos van tras las carpetas). «Comunes» no cuenta, y ha de ser de su ámbito
-      const there = (kids.get(parent)?.folders ?? []).filter((folder) => folder.id !== COMMON)
+      const there = (kids.get(parent)?.folders ?? []).filter((folder) => !isRoot(folder.id))
       const target = there[item.kind === 'folder' ? there.findIndex((f) => f.id === item.id) - 1 : there.length - 1]
       if (!target || scopeAt(target.id) !== realmOf(item)) return null
       return { dest: target.id }
     }
-    if (key === 'ArrowLeft' && parent && parent !== COMMON) {
+    if (key === 'ArrowLeft' && parent && !isRoot(parent)) {
       const grandparent = byId.get(parent)?.parentId ?? null
       return item.kind === 'folder' ? { dest: grandparent, beside: { after: parent } } : { dest: grandparent }
     }
@@ -1108,7 +1193,7 @@ function FilesSection({
         : uploads.items.filter((upload) => upload.place === parentId).map((upload) => uploadRow(upload, depth))),
       ...(entry?.folders ?? []).map((folder) => {
         const open = isOpen(folder.id)
-        const writable = placeOf(folder.id).canWrite && folder.id !== COMMON
+        const writable = placeOf(folder.id).canWrite && !isRoot(folder.id)
         const inside = open ? level(folder.id, depth + 1) : []
         return (
           <li key={folder.id} className={itemClass(folder.id)}>
@@ -1844,8 +1929,8 @@ function FolderField({
 }) {
   const { t } = useTranslation()
   const id = useId()
-  // Lo más alto: para lo común en un mundo, «Comunes»
-  const top = of.worldId === null && folders.some((folder) => folder.id === COMMON) ? COMMON : null
+  // Lo más alto: para lo de otro ámbito, su raíz («Comunes» en un mundo, el mundo en los comunes)
+  const top = folders.find((folder) => isRoot(folder.id) && folder.worldId === of.worldId)?.id ?? null
   return (
     <div className={form.field}>
       <label htmlFor={id}>{t('files.folder')}</label>

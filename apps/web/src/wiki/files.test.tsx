@@ -966,6 +966,24 @@ describe('los archivos comunes de la cuenta (ADR-0005)', () => {
     }
   })
 
+  it('en los comunes, cada mundo es una carpeta más con lo suyo: no se cambia ni se borra, y lo que se sube ahí es del mundo', async () => {
+    const api = renderAt('/archivos', withCommon())
+    expect(await screen.findByRole('button', { name: 'Escudo.png' })).toBeDefined()
+    // Plegada, solo los comunes; desplegada, lo del mundo dentro
+    expect(screen.queryByRole('button', { name: 'Mapa de Eana.png' })).toBeNull()
+    await userEvent.click(await screen.findByRole('button', { name: WORLD.name }))
+    expect(await screen.findByRole('button', { name: 'Mapa de Eana.png' })).toBeDefined()
+    expect(screen.queryByRole('button', { name: `Ajustes de la carpeta ${WORLD.name}` })).toBeNull()
+    expect(screen.queryByRole('checkbox', { name: `Elegir ${WORLD.name}` })).toBeNull()
+    const input = document.querySelector<HTMLInputElement>('input[type=file][multiple]')
+    if (!input) throw new Error('sin campo de archivos')
+    await userEvent.click(screen.getByRole('button', { name: `Subir archivos a ${WORLD.name}` }))
+    await userEvent.upload(input, [new File(['png'], 'Costa.png', { type: 'image/png' })])
+    await waitFor(() =>
+      expect(api.files.find((f) => f.name === 'Costa.png')).toMatchObject({ worldId: WORLD.id, folderId: null })
+    )
+  })
+
   it('fuera de los mundos, «Archivos» en la barra lleva a los comunes', async () => {
     renderAt('/mundos', withCommon())
     await userEvent.click(await screen.findByRole('link', { name: 'Archivos' }))
