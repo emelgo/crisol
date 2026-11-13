@@ -329,6 +329,15 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   termina el cuadrado»): abiertos en una página, cruzan la hoja de lado a lado y llegan justo al final de la ventana;
   la hoja no acaba (sin su borde de abajo). **Supr borra lo elegido** (lo dibujado o un pin) **y Escape deja la
   herramienta** con el foco en cualquier sitio del mapa, no solo en él.
+- **La pizarra** (tras la crítica del 2026-11-13): Excalidraw con lo de Crisol y nada de lo suyo de fuera (ni su
+  biblioteca pública, ni su ayuda con sus redes, ni sus textos de ayuda fijos, ni su menú de serie a quien solo mira);
+  los estilos de la app no se le cuelan (marcos, títulos, radios). Su barra **no salta**: «Oculto para los jugadores»
+  es un ojo tachado siempre en su sitio (apagado sin nada elegido) y «Página…» un desplegable que flota con las páginas
+  que contienen lo escrito. Dice «Guardado»; vacía, una línea en el centro con cómo empezar. Lo oculto, además de
+  apagado, con raya discontinua y el ojo tachado en su tarjeta. Lo que dibuja la IA, con la misma tinta que lo hecho a
+  mano y sus flechas de borde a borde. **Pulsar una tarjeta abre su página** (a quien juega, en su campaña); en el
+  editor, con su ↗ (pulsarla la elige). **La jugadora en el móvil** ve la pizarra en palabras (sus páginas, sus notas
+  y quién va con quién) y el lienzo, al ampliar; al abrirla nunca más lejos que el 60 %.
 - **El mapa**: la imagen se arrastra y se acerca con la rueda hacia el cursor (y con dos dedos); las herramientas, una
   columna de iconos arriba a la izquierda; el botón derecho ofrece «Pin aquí» y «Pin con página nueva» (su nombre es
   el de la página, que nace como subpágina). Pulsar un pin abre su panel a la derecha (abajo en el móvil), donde todo

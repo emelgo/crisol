@@ -37,10 +37,16 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   título de la página, la tarjeta lo sigue.
 - [ ] Pega una imagen: se sube a los archivos del mundo y se ve.
 - [ ] Ábrela en otra pestaña o aparato: lo que hagas en una sale en la otra al momento.
-- [ ] Elige algo y marca «Oculto para los jugadores»: se apaga.
+- [ ] Elige algo y pulsa el ojo tachado de la barra («Oculto para los jugadores»): se apaga y, si es una tarjeta, sale
+  con raya discontinua y el ojo. La barra no salta al elegir.
+- [ ] «Página…»: escribe parte de un nombre; salen las páginas que lo contienen; flechas e Intro ponen la elegida.
+- [ ] Tras cambiar algo, la barra dice «Guardado»; una pizarra vacía dice cómo empezar. Ctrl+K abre el buscador también
+  con el foco en el lienzo.
 - [ ] Revela la pestaña a la campaña: la jugadora la ve sin poder tocarla, sin lo oculto ni las tarjetas de lo que no
-  conoce.
-- [ ] Pídele a la IA un tablero («hazme el tablero de la conspiración con estas páginas»): `cambiar_pizarra`.
+  conoce; pulsar una tarjeta le abre su página en la campaña. En su móvil, la pizarra en palabras (páginas, notas y
+  «A → B»); «Ampliar» enseña el lienzo.
+- [ ] Pídele a la IA un tablero («hazme el tablero de la conspiración con estas páginas»): `cambiar_pizarra`. Lo que
+  pone se ve igual de claro que lo dibujado a mano y sus flechas no tachan las cajas.
 
 ## Módulo 9: mapas con capas (en local, rama `modulo-9/mapas`; migración 0081)
 
