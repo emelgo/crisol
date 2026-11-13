@@ -25,7 +25,7 @@ todo en local (sin CI este mes: `[skip ci]`).
   relleno, borde, nombre visible, oculta, quitar); Ctrl+Z mientras se edita.
 - [x] 4. **Medir**: funciones puras (tramos, a lo largo de una ruta, días por velocidad), calibrar la escala con una raya,
   las velocidades en «Ajustes del mapa», la regla (pegándose a pines y vértices) y su recuadro; también la jugadora.
-- [ ] 5. **Revelar y la jugadora**: en el panel, quién la conoce y «Revelar» (como los pines); la vista de la jugadora
+- [x] 5. **Revelar y la jugadora**: en el panel, quién la conoce y «Revelar» (como los pines); la vista de la jugadora
   (sin edición, con medir y capas en su pantalla) y en el móvil.
 - [ ] 6. **La IA**: `ver_mapa` con capas y elementos; `imagen_mapa` (la imagen reducida ≤ 1568 px con rejilla y lo
   dibujado; librería pura y MIT, p. ej. jimp: comprobar licencia y WebP; sharp no, por libvips LGPL); crear y cambiar
