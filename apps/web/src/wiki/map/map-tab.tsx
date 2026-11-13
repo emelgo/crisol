@@ -6,7 +6,7 @@
 import type { MapPinView, MapView, Page, PageTabView } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
-import { ImageIcon, MapPin, Maximize, Minus, Plus } from 'lucide-react'
+import { ImageIcon, Layers, MapPin, Maximize, Minus, Plus } from 'lucide-react'
 import {
   type KeyboardEvent,
   type PointerEvent,
@@ -30,11 +30,14 @@ import { failed, LoadError } from '../../components/load-error.tsx'
 import { Tour } from '../../components/tour.tsx'
 import { useWorldFiles } from '../cover-look.ts'
 import { readAsInput, readAsKey, useReadAs } from '../read-as.tsx'
+import { MapDrawing } from './drawing.tsx'
+import { mapKey } from './keys.ts'
+import { LayersPanel, useHiddenHere } from './layers-panel.tsx'
 import styles from './map.module.css'
 import { PinPanel } from './pin-panel.tsx'
 import { PinShape, tipAnchored } from './pin-shape.tsx'
 
-export const mapKey = (worldId: string, tabId: string) => ['pages', worldId, 'map', tabId]
+export { mapKey } from './keys.ts'
 
 const MIN_SCALE = 0.05
 const MAX_SCALE = 8
@@ -225,8 +228,25 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
   const [moving, setMoving] = useState<{ id: string; x: number; y: number } | null>(null)
   const [newPage, setNewPage] = useState<string | null>(null)
   const [changingImage, setChangingImage] = useState(false)
+  const [layersOpen, setLayersOpen] = useState(false)
+  const hiddenHere = useHiddenHere(map.id)
+  const drawingId = useId()
   const pins = usePins(page, map)
   const editable = !page.locked
+
+  /** Abrir la página de un pin o de algo dibujado (como jugador, la de su campaña) */
+  const openPage = useCallback(
+    (pageId: string) => {
+      if (readAs)
+        void navigate({
+          to: '/mundos/$worldId/campanas/$campaignId/paginas/$pageId',
+          params: { worldId: page.worldId, campaignId: readAs.campaignId, pageId },
+          search: readAs.asCharacterId ? { como: readAs.asCharacterId } : {}
+        })
+      else void navigate({ to: '/mundos/$worldId/wiki/$pageId', params: { worldId: page.worldId, pageId } })
+    },
+    [navigate, readAs, page.worldId]
+  )
 
   // Mientras se mueve, el escenario va en su capa (fluido); al parar, se suelta para que el navegador lo vuelva a
   // dibujar a la escala de ahora y los pines y la imagen no se vean borrosos
@@ -480,6 +500,14 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
       >
         <div ref={stage} className={styles.stage} style={{ inlineSize: image.width, blockSize: image.height }}>
           <img src={image.url} alt="" width={image.width} height={image.height} draggable={false} />
+          <MapDrawing
+            id={drawingId}
+            image={image}
+            layers={map.layers}
+            elements={map.elements}
+            hiddenHere={hiddenHere.hidden}
+            onOpen={openPage}
+          />
           <ul className={styles.pins} aria-label={t('map.pins')}>
             {shown.map((pin, index) => {
               const name = pin.label ?? pin.pageTitle ?? t('map.untitledPin')
@@ -509,18 +537,7 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
                       setSelected(pin.id)
                     }}
                     onDoubleClick={() => {
-                      if (!pin.pageId || !pin.pageTitle) return
-                      if (readAs)
-                        void navigate({
-                          to: '/mundos/$worldId/campanas/$campaignId/paginas/$pageId',
-                          params: { worldId: page.worldId, campaignId: readAs.campaignId, pageId: pin.pageId },
-                          search: readAs.asCharacterId ? { como: readAs.asCharacterId } : {}
-                        })
-                      else
-                        void navigate({
-                          to: '/mundos/$worldId/wiki/$pageId',
-                          params: { worldId: page.worldId, pageId: pin.pageId }
-                        })
+                      if (pin.pageId && pin.pageTitle) openPage(pin.pageId)
                     }}
                   >
                     {pin.variant === 2 ? (
@@ -588,6 +605,20 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
             onClick={() => setTool(tool === 'pin' ? 'select' : 'pin')}
           >
             <MapPin aria-hidden="true" size={18} />
+          </button>
+        )}
+        {(editable || map.layers.length > 0) && (
+          <button
+            type="button"
+            aria-label={t('map.layers.title')}
+            title={t('map.layers.title')}
+            aria-expanded={layersOpen}
+            onClick={() => {
+              setLayersOpen(!layersOpen)
+              setSelected(null)
+            }}
+          >
+            <Layers aria-hidden="true" size={18} />
           </button>
         )}
         <button type="button" aria-label={t('map.zoomIn')} title={t('map.zoomIn')} onClick={() => zoomCenter(1.25)}>
@@ -666,6 +697,19 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
           }
           onClose={() => {
             setSelected(null)
+            container.current?.focus()
+          }}
+        />
+      )}
+      {!current && layersOpen && (
+        <LayersPanel
+          page={page}
+          map={map}
+          editable={editable && !readAs}
+          hiddenHere={hiddenHere.hidden}
+          onToggleHere={hiddenHere.toggle}
+          onClose={() => {
+            setLayersOpen(false)
             container.current?.focus()
           }}
         />

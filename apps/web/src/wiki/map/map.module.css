@@ -524,3 +524,217 @@
     --close-inset: 0.375rem;
   }
 }
+
+/* Lo dibujado (módulo 9): encima de la imagen y debajo de los pines; solo lo dibujado recibe el ratón */
+.drawing {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.element {
+  pointer-events: visiblePainted;
+}
+
+.element[data-link] {
+  cursor: pointer;
+}
+
+/* Los nombres de las regiones y las rutas: con un halo claro, como en un mapa impreso */
+.elementName,
+.mapText {
+  font-family: "Alegreya", Georgia, serif;
+  paint-order: stroke;
+  stroke: rgb(255 250 235 / 0.75);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+.elementName {
+  fill: #2b2117;
+}
+
+.element[data-display="0"] .elementName {
+  opacity: 0;
+  transition: opacity 120ms ease-out;
+}
+
+.element[data-display="0"]:hover .elementName,
+.element[data-display][data-selected] .elementName {
+  opacity: 1;
+}
+
+/* Lo oculto a los jugadores, para el máster: más apagado */
+.element[data-hidden] {
+  opacity: 0.55;
+}
+
+/* Las capas */
+.layersTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-muted);
+  font: 600 0.75rem var(--font-body);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.layersEmpty,
+.layersPins {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+}
+
+.layers {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.layer {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
+  border-block-start: 1px solid var(--color-border);
+}
+
+.layer:first-child {
+  border-block-start: 0;
+}
+
+.layer[data-dragging] {
+  opacity: 0.5;
+}
+
+.layerGrip {
+  color: var(--color-muted);
+  cursor: grab;
+}
+
+.layerName {
+  display: grid;
+  min-inline-size: 0;
+  line-height: 1.25;
+}
+
+.layerLabel {
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  font-weight: 600;
+  text-align: start;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: text;
+}
+
+.layer[data-off] .layerLabel {
+  color: var(--color-muted);
+}
+
+.layerInput {
+  min-inline-size: 0;
+  padding: 2px 6px;
+  border: 1px solid var(--color-field-border);
+  border-radius: 4px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+  font-weight: 600;
+}
+
+.layerName small {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+}
+
+.masterOnly {
+  grid-column: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  gap: 4px;
+  padding: 1px 7px;
+  border: 1px dashed var(--color-secret-rule);
+  border-radius: 999px;
+  color: var(--color-secret-text);
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+
+.layerTools {
+  grid-column: 3;
+  grid-row: 1;
+  display: inline-flex;
+  gap: 2px;
+}
+
+.layerTool {
+  display: grid;
+  place-items: center;
+  min-inline-size: 1.75rem;
+  min-block-size: 1.75rem;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.layerTool:hover {
+  background: var(--color-raised);
+  color: var(--color-text);
+}
+
+.layerTool[aria-pressed="true"] {
+  color: var(--color-text);
+}
+
+.layerTool:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.layerConfirm {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.8125rem;
+}
+
+.layerTool.danger {
+  color: var(--color-danger);
+  font-weight: 600;
+}
+
+.layerAdd {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  gap: 6px;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--color-link);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.layerAdd:hover {
+  background: color-mix(in srgb, var(--color-link) 10%, transparent);
+}
