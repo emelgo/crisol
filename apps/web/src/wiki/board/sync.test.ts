@@ -46,6 +46,32 @@ describe('el enlace de la pizarra con su documento (módulo 9)', () => {
     expect(sceneA.find((e) => e.id === 'caja')?.isDeleted).toBe(true)
   })
 
+  it('lo que la escena cambia en el sitio (como hace Excalidraw al arrastrar) sigue llegando al documento', () => {
+    const doc = new Y.Doc()
+    const sent: Uint8Array[] = []
+    doc.on('update', (update: Uint8Array) => sent.push(update))
+    const box = { ...el('caja', 1), width: 1 }
+    writeScene(doc, [box], 'yo')
+    // Se sigue dibujando: el mismo objeto, más grande y con otra versión
+    Object.assign(box, { width: 200, version: 2 })
+    expect(writeScene(doc, [box], 'yo')).toBe(1)
+    // Lo que recibe otra pantalla (o el servidor al volver) es la caja entera
+    const other = new Y.Doc()
+    for (const update of sent) Y.applyUpdate(other, update)
+    expect(boardMap<typeof box>(other).get('caja')).toMatchObject({ width: 200, version: 2 })
+  })
+
+  it('lo que se lleva la escena del documento es una copia: cambiarla no toca lo guardado', () => {
+    const doc = new Y.Doc()
+    writeScene(doc, [el('caja', 1)], 'yo')
+    const [inScene] = mergeScene([], boardMap(doc).values())
+    expect(inScene).toEqual(boardMap(doc).get('caja'))
+    expect(inScene).not.toBe(boardMap(doc).get('caja'))
+    Object.assign(inScene as object, { version: 2 })
+    expect(boardMap(doc).get('caja')?.version).toBe(1)
+    expect(writeScene(doc, [inScene as SceneElement], 'yo')).toBe(1)
+  })
+
   it('juntar: por id el que gane, en el orden de sus índices, con las lápidas', () => {
     const local = [el('1', 3), el('2', 1)]
     const stored = [el('1', 2), el('2', 4, { isDeleted: true }), el('0', 1, { index: 'a0' })]

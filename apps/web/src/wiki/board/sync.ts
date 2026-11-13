@@ -2,7 +2,9 @@
  * El enlace entre la escena de Excalidraw y el documento de Yjs de la pizarra (docs/specs/pizarra.md): un `Y.Map` de
  * elementos por su id, cada uno el objeto de Excalidraw tal cual. Gana la versión más alta (y, a la par, el
  * `versionNonce` más bajo, como hace Excalidraw); lo borrado se queda como lápida (`isDeleted`) para que no vuelva.
- * Aquí no se importa Excalidraw: solo su forma, para probarlo sin él
+ * Excalidraw cambia sus elementos en el sitio (sube la versión del mismo objeto) y un `Y.Map` guarda el objeto que se
+ * le da: por eso al documento va una copia y a la escena, otra; si compartieran objeto, lo cambiado después no se
+ * vería como nuevo y no llegaría al servidor. Aquí no se importa Excalidraw: solo su forma, para probarlo sin él
  */
 import type * as Y from 'yjs'
 
@@ -17,6 +19,9 @@ export type SceneElement = {
   readonly index?: string | null
   readonly isDeleted?: boolean
 }
+
+/** Una copia del elemento que no comparte nada con él (los puntos, customData…) */
+const copy = <T>(element: T): T => structuredClone(element)
 
 /** Si `candidate` debe ganar a `current` (el que ya hay) */
 export const wins = (candidate: SceneElement, current: SceneElement | undefined) =>
@@ -36,7 +41,7 @@ export function writeScene<T extends SceneElement>(doc: Y.Doc, elements: readonl
   const changed = elements.filter((element) => wins(element, map.get(element.id)))
   if (changed.length === 0) return 0
   doc.transact(() => {
-    for (const element of changed) map.set(element.id, element)
+    for (const element of changed) map.set(element.id, copy(element))
   }, origin)
   return changed.length
 }
@@ -51,14 +56,15 @@ const byIndex = (a: SceneElement, b: SceneElement) => {
 
 /**
  * La escena que sale de juntar la que hay en pantalla con la del documento: por cada id, el que gane; en el orden de
- * sus índices. Las lápidas siguen (Excalidraw las necesita para no resucitar lo borrado)
+ * sus índices. Las lápidas siguen (Excalidraw las necesita para no resucitar lo borrado). Lo que viene del documento
+ * va copiado: la escena lo cambiará en el sitio
  */
 export function mergeScene<T extends SceneElement>(local: readonly T[], stored: Iterable<T>): T[] {
   const merged = new Map<string, T>()
   for (const element of local) merged.set(element.id, element)
   for (const element of stored) {
     if (!element || typeof element !== 'object') continue
-    if (wins(element, merged.get(element.id))) merged.set(element.id, element)
+    if (wins(element, merged.get(element.id))) merged.set(element.id, copy(element))
   }
   return [...merged.values()].sort(byIndex)
 }
