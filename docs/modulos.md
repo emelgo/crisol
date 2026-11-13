@@ -31,11 +31,14 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
 - **Mejoras del 2026-11-13** (lista de Enrique, 27 puntos, hechas por un subagente en la misma rama: `836b4d25` a
   `e5da5886`): formas del cristal en toda la app, vista previa de campañas, Ajustes › Jugabilidad, fondos que se turnan,
   el guardado de la pizarra arreglado (Excalidraw cambia los elementos en el sitio: ahora se copian), clics durante las
-  transiciones, mapa y pizarra con todo el sitio, carpeta de cada mundo en Archivos… Propuesta sin construir:
-  `docs/propuestas/wiki-pantalla-completa.md`. Pruebas en `tasks/probar.md` § «Mejoras del 2026-11-13». **Pendiente de
-  Enrique**: las 8 preguntas del informe (pantalla completa, quitar «Tabla» y «Escena» de «Pestaña nueva», el idioma
-  del zip de Foundry, «Archivos comunes», ritmo de los fondos, «Biblioteca» de Excalidraw cortada, la casilla de lo que
-  sabe el mundo, transiciones con menos movimiento).
+  transiciones, mapa y pizarra con todo el sitio, carpeta de cada mundo en Archivos… Pruebas en `tasks/probar.md` §
+  «Mejoras del 2026-11-13». Respuestas de Enrique (commit `77aa6634`): sin «Tabla» ni «Escena» en «Pestaña nueva»,
+  «Archivos» a secas, el idioma de un zip de Foundry solo si trae dos, animaciones siempre completas.
+- **En marcha: el mundo a pantalla completa** (propuesta `docs/propuestas/wiki-pantalla-completa.md`, aprobada con
+  sus seis respuestas: barra a la izquierda, panel plegable, pestañas abiertas arriba, archivos en el centro, «Ver
+  todos» se queda, plantillas fuera). Lo construye un subagente (ADR-0027, `tasks/pantalla-completa.md`). **Rollback**:
+  etiqueta `antes-pantalla-completa`. **Después**: crítica y audit de impeccable (pizarra y armazón nuevo, la
+  «Biblioteca» de Excalidraw cortada), página de revisión, batería entera, una CI y a `main` y staging.
 
 ### Para retomar (2026-11-13, madrugada: módulo 9 empezado; PR #119 en la CI)
 
