@@ -2,7 +2,7 @@
  * El mundo a pantalla completa (ADR-0027), para lo que va dentro: la página abierta, si el panel de la página va
  * plegado y abrir un archivo en el centro. Fuera del mundo (una plantilla, una ventana de la Mesa), null
  */
-import { createContext, type ReactNode, useContext } from 'react'
+import { createContext, useContext } from 'react'
 
 export interface WorldShellValue {
   worldId: string
