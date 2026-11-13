@@ -839,7 +839,13 @@ export function EntryView({
   /** La página: la cabecera, sus pestañas y lo de la elegida en medio; a la derecha, su panel (o el de la pestaña) */
   const body = (content: ReactNode, side: ReactNode) => (
     <div className={styles.entry} data-entry="" data-entry-panel="">
-      <article ref={main} className={styles.entryMain}>
+      <article
+        ref={main}
+        className={styles.entryMain}
+        // El mapa y la pizarra llenan todo el sitio, hasta el final de la ventana y de lado a lado de la hoja, como en
+        // LegendKeeper (Enrique, 2026-11-13: «no debe verse por abajo cómo termina el cuadrado»)
+        data-fill={active?.kind === 'map' || active?.kind === 'board' ? '' : undefined}
+      >
         <PageHead
           key={page.id}
           page={page}

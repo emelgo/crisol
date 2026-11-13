@@ -230,8 +230,9 @@
   gap: var(--space-4);
   grid-column: 1;
   min-inline-size: 0;
-  /* Separado del borde de la portada: el título no va pegado a ella */
-  padding-inline: var(--space-6);
+  /* Separado del borde de la portada: el título no va pegado a ella (--sheet-pad: el mapa y la pizarra lo cruzan) */
+  --sheet-pad: var(--space-6);
+  padding-inline: var(--sheet-pad);
   /* Lo que se lee, casi opaco: la portada y el texto, una hoja sobre el fondo de ambiente */
   padding-block-end: var(--space-8);
   /* El mismo radio que la portada encima */
@@ -256,8 +257,19 @@
 
 @media (max-width: 48rem) {
   .entryMain {
-    padding-inline: 0;
+    --sheet-pad: 0px;
   }
+}
+
+/* Con un mapa o una pizarra, la hoja no acaba: llega al final de la ventana sin su borde de abajo */
+.entryMain[data-fill] {
+  padding-block-end: 0;
+  border-end-start-radius: 0;
+  border-end-end-radius: 0;
+}
+
+.wiki:has(.entryMain[data-fill]) {
+  padding-block-end: 0;
 }
 
 .column {

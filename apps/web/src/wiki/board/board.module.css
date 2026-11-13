@@ -10,6 +10,16 @@
   background: var(--color-raised);
 }
 
+/* En la hoja de una página (wiki.module.css, [data-fill]): de lado a lado de ella y hasta el final de la ventana, sin un
+   recuadro que se vea terminar (como en LegendKeeper) */
+:global(article[data-fill]) .wrapper:not([data-wide]) {
+  block-size: max(24rem, calc(100dvh - var(--board-top, 15rem)));
+  margin-inline: calc(-1 * var(--sheet-pad, 0px));
+  border-inline: 0;
+  border-block-end: 0;
+  border-radius: 0;
+}
+
 /* Ampliada: todo lo de al lado de la barra de la app, por encima de la página */
 .wrapper[data-wide] {
   position: fixed;

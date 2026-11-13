@@ -16,6 +16,19 @@
   user-select: none;
 }
 
+/* En la hoja de una página (wiki.module.css, [data-fill]): de lado a lado de ella y hasta el final de la ventana, sin un
+   recuadro que se vea terminar (como en LegendKeeper) */
+:global(article[data-fill]) .wrapper:not([data-wide]) {
+  margin-inline: calc(-1 * var(--sheet-pad, 0px));
+}
+
+:global(article[data-fill]) .wrapper:not([data-wide]) .viewer {
+  block-size: max(22rem, calc(100dvh - var(--map-top, 15rem)));
+  border-inline: 0;
+  border-block-end: 0;
+  border-radius: 0;
+}
+
 /* Ampliado: todo lo de al lado de la barra de la app, por encima de la página */
 .wrapper[data-wide] {
   position: fixed;
