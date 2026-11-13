@@ -7,7 +7,7 @@ import { defineAction } from './action.ts'
 import { readAs } from './read-as.ts'
 import { worldColor } from './worlds.ts'
 
-export const PAGE_TAB_KINDS = ['map', 'text', 'table', 'scene'] as const
+export const PAGE_TAB_KINDS = ['map', 'text', 'table', 'scene', 'board'] as const
 
 const tabName = z.string().trim().min(1).max(60)
 
@@ -354,6 +354,15 @@ export const deleteMapElement = defineAction({
   description: 'Quita una región, ruta o texto de un mapa. Se deshace desde el historial',
   input: z.object({ elementId: z.uuid() }),
   output: z.object({ id: z.uuid() })
+})
+
+export const getBoard = defineAction({
+  name: 'getBoard',
+  kind: 'read',
+  description:
+    'La pizarra de una pestaña: sus elementos de Excalidraw (las tarjetas de páginas llevan customData.pageId; las imágenes, customData.fileId). Un jugador recibe solo lo que puede ver',
+  input: z.object({ tabId: z.uuid(), ...readAs }),
+  output: z.object({ elements: z.array(z.record(z.string(), z.unknown())) })
 })
 
 export const getMapImage = defineAction({

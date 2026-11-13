@@ -745,6 +745,8 @@ export function fakeApi(
     throw new ApiError('NOT_FOUND', 404)
   }
   const copyMap = (map: MapView): MapView => structuredClone(map)
+  /** Lo de cada pizarra, por su pestaña */
+  const boards = new Map<string, Record<string, unknown>[]>()
   // Las capas y lo dibujado (módulo 9), dentro de cada mapa
   const layerById = (layerId: string) => {
     for (const map of maps) {
@@ -4103,7 +4105,7 @@ export function fakeApi(
         kind,
         name: name ?? (kind === 'text' ? 'Texto 2' : kind === 'scene' ? 'Escena' : 'Mapa'),
         hidden: false,
-        documentId: kind === 'text' ? crypto.randomUUID() : null,
+        documentId: kind === 'text' || kind === 'board' ? crypto.randomUUID() : null,
         color: null
       }
       pageTabs.push(tab)
@@ -4988,6 +4990,11 @@ export function fakeApi(
       Object.assign(element, Object.fromEntries(Object.entries(patch).filter(([, v]) => v !== undefined)))
       element.pageTitle = element.pageId ? pageById(element.pageId).title : null
       return structuredClone(element)
+    },
+    // La pizarra (módulo 9): sus elementos, que las pruebas ponen a mano
+    getBoard: ({ tabId }) => {
+      if (tabById(tabId).kind !== 'board') throw new ApiError('NOT_FOUND', 404)
+      return { elements: structuredClone(boards.get(tabId) ?? []) }
     },
     getMapImage: ({ tabId }) => {
       const map = maps.find((m) => m.tabId === tabId)

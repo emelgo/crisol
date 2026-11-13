@@ -101,6 +101,7 @@ describe('Actions', () => {
       deleteMapElement: true,
       getMapImage: true,
       measureMap: true,
+      getBoard: true,
       getWorldHome: true,
       ensureWorldHome: true,
       listTemplates: true,

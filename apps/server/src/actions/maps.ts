@@ -13,6 +13,7 @@ import {
   deleteMapLayer,
   deleteMapPin,
   deletePageTab,
+  getBoard,
   getMap,
   getMapImage,
   listPageTabs,
@@ -38,6 +39,7 @@ import { documentsRepo, filesRepo, mapsRepo } from '@crisol/db'
 import { type Capability, keyBetween, NotFoundError } from '@crisol/domain'
 import * as Y from 'yjs'
 import { pagesChanged } from '../realtime/events.ts'
+import { boardElements, boardForPlayer } from '../wiki/board.ts'
 import { viewedPage } from '../wiki/projection.ts'
 import type { WikiView } from '../wiki/reader.ts'
 import { authorizedPage, type WikiTarget } from './access.ts'
@@ -292,13 +294,23 @@ export const mapActions = [
     const { page, wiki } = await authorizedPage(ctx, 'page.write', pageId)
     const tabs = await mapsRepo.listTabs(ctx.db, pageId)
     if (tabs.length >= MAX_PAGE_TABS) throw new InvalidRequestError('TOO_MANY_TABS', `como mucho ${MAX_PAGE_TABS}`)
-    const base = kind === 'text' ? 'Texto' : kind === 'table' ? 'Tabla' : kind === 'scene' ? 'Escena' : 'Mapa'
+    const base =
+      kind === 'text'
+        ? 'Texto'
+        : kind === 'table'
+          ? 'Tabla'
+          : kind === 'scene'
+            ? 'Escena'
+            : kind === 'board'
+              ? 'Pizarra'
+              : 'Mapa'
     const same = tabs.filter((tab) => tab.kind === kind).length
     // La de texto cuenta con la principal («Texto»): la primera añadida es «Texto 2»; el segundo mapa, «Mapa 2»
     const named = name ?? (kind === 'text' ? `${base} ${same + 2}` : same > 0 ? `${base} ${same + 1}` : base)
-    // Una de texto lleva su documento, como un secreto (vacío al nacer; no va al historial: lo cuenta su edición)
+    // Una de texto (y una pizarra) lleva su documento, como un secreto (vacío al nacer; no va al historial: lo cuenta su
+    // edición)
     const documentId =
-      kind === 'text'
+      kind === 'text' || kind === 'board'
         ? await documentsRepo.createSeparate(ctx.db, {
             pageId,
             worldId: wiki.worldId,
@@ -622,5 +634,17 @@ export const mapActions = [
             },
       pixels: round(pixels)
     }
+  }),
+  implement(getBoard, async (ctx, { tabId, ...as }) => {
+    const tab = await mapsRepo.findTab(ctx.db, tabId)
+    const { view } = await viewedPage(ctx, tab?.pageId ?? '', as)
+    if (tab?.kind !== 'board' || !view.seesTab({ id: tab.id, pageId: tab.pageId, hidden: tab.hidden }))
+      throw new NotFoundError('tab')
+    const stored = tab.documentId ? await documentsRepo.findSeparate(ctx.db, tab.documentId) : null
+    const doc = new Y.Doc()
+    if (stored) Y.applyUpdate(doc, stored.state)
+    const elements = boardElements(doc)
+    // Un jugador, lo que ve (la escena la proyecta el servidor, como el texto de una página)
+    return { elements: view.full ? elements : boardForPlayer(elements, (pageId) => view.seesPage(pageId)) }
   })
 ]

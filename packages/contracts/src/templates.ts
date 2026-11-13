@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { defineAction } from './action.ts'
+import { PAGE_TAB_KINDS } from './maps.ts'
 import { pageCover, pageIcon, pageProperty, templateRef } from './pages.ts'
 import { pagePanel } from './panel.ts'
 import { worldColor } from './worlds.ts'
@@ -66,7 +67,7 @@ export const templateView = pageTemplate.extend({
   position: placeInFolder,
   cover: pageCover.nullable().describe('La portada de su página'),
   tabs: z
-    .array(z.object({ id: z.uuid(), name: z.string(), kind: z.enum(['text', 'map', 'table', 'scene']) }))
+    .array(z.object({ id: z.uuid(), name: z.string(), kind: z.enum(PAGE_TAB_KINDS) }))
     .describe('Las pestañas de su página, que llevan también las páginas que se hacen con ella'),
   uses: z.number().int().describe('En cuántas páginas de los mundos de la cuenta se usa')
 })

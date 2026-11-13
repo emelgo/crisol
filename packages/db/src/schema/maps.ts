@@ -29,7 +29,7 @@ export const pageTabs = pgTable(
     pageId: uuid()
       .notNull()
       .references(() => pages.id, { onDelete: 'cascade' }),
-    kind: text({ enum: ['map', 'text', 'table', 'scene'] }).notNull(),
+    kind: text({ enum: ['map', 'text', 'table', 'scene', 'board'] }).notNull(),
     /** La de texto, su documento (como un secreto: aparte del cuerpo) */
     documentId: uuid().references((): Column => documents.id, { onDelete: 'set null' }),
     name: text().notNull(),

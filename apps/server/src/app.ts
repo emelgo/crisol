@@ -30,6 +30,7 @@ import { registerTableRoutes } from './table/routes.ts'
 import { createSoundClock } from './table/sound.ts'
 import { createVision } from './table/vision.ts'
 import { registerWeb, webBuild } from './web.ts'
+import { boardElements, boardJson, isBoard } from './wiki/board.ts'
 import { jsonOfDoc } from './wiki/content.ts'
 import { linksOfStored } from './wiki/links.ts'
 import type { PdfRenderer } from './wiki/pdf.ts'
@@ -99,11 +100,17 @@ export function buildApp(deps: AppDeps): FastifyInstance {
       onBodyLoaded: (page) => recoverSession(env, page),
       ...(deps.sessionTimes ? { sessionTimes: deps.sessionTimes } : {}),
       onStored: ({ document, kind, userId, ...source }) =>
-        linksOfStored(env, source, jsonOfDoc(document, kind === 'separate'), {
-          kind,
-          actorId: userId,
-          onError: (error) => app.log.error(error)
-        })
+        // Una pizarra no es texto: sus tarjetas, sus imágenes y sus notas, como si lo fueran (docs/specs/pizarra.md)
+        linksOfStored(
+          env,
+          source,
+          isBoard(document) ? boardJson(boardElements(document)) : jsonOfDoc(document, kind === 'separate'),
+          {
+            kind,
+            actorId: userId,
+            onError: (error) => app.log.error(error)
+          }
+        )
     })
     // Las salas de la mesa: cada una vuelve a leer su mesa de la base cuando algo cambia (ADR-0018). Lo que cambia en
     // las criaturas en juego o en los personajes de una campaña (sus PG, sus estados) llega a sus fichas por el bus

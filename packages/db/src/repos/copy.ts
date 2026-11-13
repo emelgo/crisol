@@ -79,6 +79,8 @@ type TabCopy = (
 const TAB_COPIES: Record<TabKind, TabCopy> = {
   // Su documento ya va con la pestaña
   text: async () => undefined,
+  // La pizarra va en su documento, que se copia con los de las pestañas de texto
+  board: async () => undefined,
   // El mapa (imagen y escala) con sus pines y sus elementos
   map: async (w, { from, to, worldId, keep }) => {
     const [map] = await w.read.select().from(maps).where(eq(maps.tabId, from.id))
