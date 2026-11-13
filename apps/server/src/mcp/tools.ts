@@ -60,7 +60,7 @@ const diceInput = z.object({
     )
 })
 
-const systemId = z.string().trim().min(1).max(100).describe('Uno de serie («blank») o uno de la cuenta, por su id')
+const systemId = z.string().trim().min(1).max(100).describe('«blank» (vacío) o uno de la cuenta, por su id')
 
 /** Escribir una nota del jugador: sin id, una nueva; con id (y la versión que se leyó), cambiarla */
 const noteInput = z.object({
@@ -135,7 +135,7 @@ const createSystemInput = z.object({
     .max(200)
     .optional()
     .describe('Su nombre; con document, si no se da, el suyo; con file, el del archivo'),
-  from: systemId.optional().describe('Copiar este (de serie o propio); «blank», el de por defecto, es empezar de cero'),
+  from: systemId.optional().describe('Copiar este (uno de la cuenta); «blank», el de por defecto, es empezar de cero'),
   document: z
     .record(z.string(), z.unknown())
     .optional()
@@ -653,7 +653,8 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   borrar_instantanea: { action: 'deleteSnapshot' }
 }
 
-const INSTRUCTIONS =
+/** Lo que se le dice a la IA al conectarse (tools.test.ts vigila que solo nombre herramientas que existen) */
+export const INSTRUCTIONS =
   'Crisol: mundos de rol y su mesa virtual. Habla siempre en español. Una organización tiene mundos, y cada mundo, ' +
   'campañas con su máster y sus jugadores; a una campaña se entra con su enlace de invitación. Cada mundo tiene su ' +
   'wiki: páginas con subpáginas, en Markdown de Obsidian (lee una con leer_pagina antes de cambiarla, ' +
@@ -687,8 +688,8 @@ const INSTRUCTIONS =
   '(una trampa, un ataque) va en una entrada del compendio, con su mecánica, y se tira con tirar_accion_compendio; en ' +
   'una página, `dice: …` ya no se pulsa: es texto en código. Las reglas de cada juego son un sistema (listar_sistemas) y cada ' +
   'campaña elige el suyo con cambiar_campana. Crisol viene sin ninguno: «blank» es empezar de cero, y el máster puede ' +
-  'subir el archivo de uno o importarlo de Foundry. No tiene editor de sistemas: se hacen y se cambian contigo, ' +
-  'enteros: sus tipos y campos, sus tiradas, su hoja (sheet), su creador de personajes (creation: los pasos, elegir del ' +
+  'subir el archivo de uno, importarlo de Foundry o hacerlo a mano en su editor por pasos («Reglas» del sistema). ' +
+  'Contigo se hacen y se cambian enteros: sus tipos y campos, sus tiradas, su hoja (sheet), su creador de personajes (creation: los pasos, elegir del ' +
   'contenido, generar puntuaciones o escribir campos) y su compendio (compendium). Antes de crear ' +
   'o cambiar uno, lee su formato con formato_sistemas; crea con crear_sistema, cambia por rutas con cambiar_sistema ' +
   '(con la versión que leíste), comprueba con validar_sistema y prueba con probar_formula y probar_tirada. Su ' +
@@ -721,13 +722,17 @@ const INSTRUCTIONS =
   'Bolsa de trucos, Confusión) se tiran también con tirar_tabla_compendio, con el orden de la tabla. ' +
   'Los PDF de un mundo y los comunes (los libros del juego, los suplementos) se buscan por dentro con buscar_libros ' +
   '(con su página) y se leen con leer_libro; ver_biblioteca dice cuáles hay y si ya se pueden buscar. ' +
-  'Los libros de un sistema son las fuentes de su contenido (el de serie, los importados, los del máster): ver_libros ' +
+  'Los libros de un sistema son las fuentes de su contenido (los de su archivo, los importados, los del máster): ver_libros ' +
   'dice cuáles hay, qué trae cada uno y qué campañas lo usan; cada campaña elige los suyos (y lo que deja fuera de ' +
   'ellos, excluded en cambiar_campana). Para pasar un libro desde su PDF: crear_libro (con file, el PDF de ' +
   'ver_biblioteca, y origin pdf) si aún no existe, leer_libro por tandas de páginas y proponer_contenido con lo que ' +
   'saques (cada entrada con su página, el texto del PDF del que sale y lo que falte o no esté claro en notes): queda ' +
   'pendiente de que el máster lo revise en Crisol y no se ve hasta que lo acepte. ver_pendientes dice lo que ya ' +
-  'propusiste. Mete solo lo que dice el libro, en su idioma, sin inventar. ' +
+  'propusiste. Mete solo lo que dice el libro, en su idioma, sin inventar. Un libro puede tener también capítulos de ' +
+  'texto (las reglas, la ambientación), que leen las campañas que lo usan: capitulos_libro, leer_capitulo, ' +
+  'guardar_capitulo (Markdown; lo del máster, en > [!secreto], no les llega a los jugadores), ordenar_capitulos y ' +
+  'borrar_capitulo. En una página, [[@Nombre]] enlaza una entrada del compendio y ![[@Nombre]] la pone en una línea ' +
+  'que se despliega con lo que hace en juego. ' +
   'El inventario del grupo de una campaña (el botín, el carro) se ve con ver_grupo y se cambia con cambiar_grupo (con ' +
   'su versión): objetos del compendio por su clave o escritos a mano, contenedores y monedas; mover_en_grupo pasa un ' +
   'objeto entre el grupo y un personaje sin duplicarlo, y monedas_grupo pasa o reparte monedas. ' +
@@ -788,10 +793,27 @@ export const toolActions = (tool: McpTool) => ('route' in tool ? tool.actions : 
  * quedar esperando la aprobación, o devolver cosas distintas según lo que se pida
  */
 export function toolConfig(tool: McpTool) {
-  if ('route' in tool) return { description: tool.description, inputSchema: tool.input }
+  if ('route' in tool) return { description: toolWords(tool.description), inputSchema: tool.input }
   const { description, input, output, kind } = implementation(tool.action).action
-  return { description, inputSchema: input, ...(kind === 'read' ? { outputSchema: output } : {}) }
+  return {
+    description: toolWords(description),
+    inputSchema: input,
+    ...(kind === 'read' ? { outputSchema: output } : {})
+  }
 }
+
+/** De cada acción, la herramienta que la hace (la primera que la nombra) */
+const toolOfAction = new Map<string, string>()
+for (const [name, tool] of Object.entries(MCP_TOOLS))
+  for (const action of 'route' in tool ? tool.actions : [tool.action])
+    if (!toolOfAction.has(action)) toolOfAction.set(action, name)
+
+/**
+ * Las descripciones salen de los contratos, que comparte la web, y nombran acciones («léelos con getChapter»): a la
+ * IA se le dicen las herramientas que ve (leer_capitulo). Las que no tienen herramienta se quedan como están
+ */
+export const toolWords = (text: string) =>
+  text.replace(/\b[a-z]+[A-Z][A-Za-z]*\b/g, (word) => toolOfAction.get(word) ?? word)
 
 /** La acción y su entrada (validada con su contrato) para lo que pide la IA */
 export function routeCall(tool: McpTool, input: Record<string, unknown>) {

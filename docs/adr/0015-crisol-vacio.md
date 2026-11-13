@@ -22,7 +22,7 @@ mecánica, compendio con sus ediciones. Esa prueba ya está hecha.
   1. Crearlo con la IA por el MCP: tipos, campos, tiradas, hoja, creador de personajes y compendio, y su contenido.
   2. Subir el archivo de uno (`.crisol-system.json`).
   3. Importarlo de Foundry: el zip de un sistema o de un módulo de contenido, con sus compendios.
-- **Cambiarlo**: el sistema, con la IA (no hay editor de sistemas en la app); las entradas del compendio, con la IA o
+- **Cambiarlo**: el sistema, con la IA o, desde la tanda 8 de la revisión (2026-11-12), a mano en sus Reglas (el editor por pasos); las entradas del compendio, con la IA o
   en la app.
 - **Lo que ya usaba el 5e de serie** pasa a una copia en su cuenta con `pnpm crisol sistema-5e` (una por cuenta, solo en
   las que lo usan); se corre una vez en staging tras desplegar.

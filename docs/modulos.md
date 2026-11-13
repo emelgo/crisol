@@ -7,6 +7,33 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
+### Para retomar (2026-11-12, noche: tanda 9, repaso del MCP)
+
+- Rama `revision/tanda-9` (sobre la 8), **desplegada en staging** para probar el conector (con la 8 dentro).
+- Hecho: las instrucciones al día (editor de sistemas, capítulos, ficha incrustada, sin «de serie»), una prueba que
+  vigila que solo nombren herramientas que existen, y la de integración con el cliente oficial (salida de
+  `listar_sistemas` con su esquema). El conector de una sesión vieja guarda los esquemas de entonces: hay que
+  reconectarlo en claude.ai (está en `tasks/probar.md`).
+- **Siguiente**: su visto bueno de las tandas 8 y 9 → PR a `main`; luego los módulos 9, 8 y 10 (plan de la revisión).
+
+### Para retomar (2026-11-12, noche: tanda 8, el editor de sistemas a mano, terminada en local)
+
+- Rama `revision/tanda-8` (sobre la 7, sin subir), plan en `tasks/tanda-8.md`. Sin migraciones. Lienzo aprobado
+  («me fío de tu criterio»): https://claude.ai/artifact/RNhfpKmxY2iQ2Z7GfbcNAp.
+- Hecho: «Reglas» de un sistema abre el editor por pasos con preguntas de mesa (`apps/web/src/systems/editor/`): qué
+  tiene un personaje, cómo se tira (con «Se lee:» y «Tirar una vez»), qué se lleva, la ficha, el creador, el compendio
+  y lo avanzado; la ficha de ejemplo y la revisión a la derecha; se guarda solo (de uno en uno, con su versión, y al
+  salir) si no hay errores; «Sistema nuevo → A mano».
+- Crítica y audit de impeccable (P0–P3) con sus arreglos: la revisión siempre a la vista, nada de fórmulas en crudo,
+  errores bajo su campo, foco y anuncios al añadir, quitar, mover y cambiar de paso, «Deshacer» sin perder lo de
+  después. Quedan, menores: la ficha de ejemplo no sigue aún la maqueta del paso 4; arrastrar para ordenar.
+- Pruebas: web 827, e2e `editor-sistemas` en verde. **Página de revisión**: https://claude.ai/artifact/EH91XXhfXA4xdgeoTF2DUj
+- **Tandas 3 a 7 en `main` y en staging** (PR #118, 2026-11-12; migraciones hasta la 0080). La cobertura de lo
+  cambiado subió a ~95 %; e2e sin desenfoque salvo portada y accesibilidad. En la CI fallan 4 e2e por tiempo agotado
+  (solo allí); Enrique dijo fusionar igual: arreglo apuntado en `tasks/todo-revision.md`. `pnpm crisol quitar-dados`
+  no se ha pasado en staging (las páginas se convierten solas al abrirlas).
+- **Siguiente**: la tanda 9 del plan; la 8 irá a `main` con su visto bueno (o con la siguiente subida).
+
 ### Para retomar (2026-11-12, noche: tanda 7, libros de texto, terminada en local; falta su visto bueno)
 
 - Rama `revision/tanda-7` (sobre la 6, sin subir), plan en `tasks/tanda-7.md` (7 porciones hechas). **Migración 0080**

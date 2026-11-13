@@ -1468,9 +1468,240 @@ export const es = {
       template: 'Plantilla'
     }
   },
+  // El editor de un sistema, a mano (tanda 8)
+  rules: {
+    steps: 'Pasos',
+    aside: 'Ficha de ejemplo y revisión',
+    next: 'Siguiente: {{step}}',
+    add: 'Añadir:',
+    more: 'Más',
+    up: 'Subir',
+    down: 'Bajar',
+    remove: 'Quitar',
+    upNamed: 'Subir «{{name}}»',
+    downNamed: 'Bajar «{{name}}»',
+    removeNamed: 'Quitar «{{name}}»',
+    movedTo: '«{{name}}», {{at}} de {{of}}',
+    removed: '«{{name}}» quitado.',
+    undo: 'Deshacer',
+    reload: 'Volver a cargar',
+    saved: 'Guardado',
+    saving: 'Guardando…',
+    unsaved_one: 'Sin guardar: hay {{count}} error',
+    unsaved_other: 'Sin guardar: hay {{count}} errores',
+    stepHasProblems: 'Tiene errores',
+    step: {
+      personaje: {
+        question: '¿Qué tiene un personaje?',
+        short: 'Qué tiene un personaje',
+        lead: 'Lo que se apunta en su ficha. Empieza por lo que más se usa.'
+      },
+      tiradas: {
+        question: '¿Cómo se tira?',
+        short: 'Cómo se tira',
+        lead: 'El dado de siempre y las tiradas que se repiten en la mesa: una prueba, un ataque, la iniciativa.'
+      },
+      objetos: {
+        question: '¿Qué se lleva? Armas, conjuros…',
+        short: 'Qué se lleva',
+        lead: 'Las clases de cosas que se llevan o se aprenden, cada una con lo suyo.'
+      },
+      ficha: {
+        question: '¿Cómo se ve la ficha?',
+        short: 'Cómo se ve la ficha',
+        lead: 'Dónde va cada cosa en la ficha del personaje.'
+      },
+      creacion: {
+        question: '¿Cómo se crea un personaje?',
+        short: 'Cómo se crea',
+        lead: 'Los pasos para hacer un personaje nuevo.'
+      },
+      compendio: {
+        question: '¿Qué trae el compendio?',
+        short: 'Qué trae el compendio',
+        lead: 'Los libros del sistema y lo que trae cada uno.'
+      },
+      avanzado: {
+        question: 'Lo avanzado',
+        short: 'Lo avanzado',
+        lead: 'Lo que casi nunca hace falta tocar.'
+      }
+    },
+    kinds: {
+      number: { name: 'Una cifra', new: 'Cifra nueva' },
+      set: { name: 'Varias a la vez', new: 'Características' },
+      resource: { name: 'Algo que se gasta', new: 'Vida' },
+      choice: { name: 'Una opción', new: 'Opción nueva' },
+      text: { name: 'Un texto', new: 'Texto nuevo' },
+      derived: { name: 'Algo que se calcula', new: 'Cálculo nuevo' },
+      boolean: { name: 'Sí o no', new: 'Marca nueva' },
+      dice: { name: 'Unos dados', new: 'Dados nuevos' },
+      list: { name: 'Una lista', new: 'Lista nueva' },
+      clock: { name: 'Un reloj', new: 'Reloj nuevo' },
+      group: { name: 'Un apartado', new: 'Apartado nuevo' },
+      table: { name: 'Una tabla', new: 'Tabla nueva' },
+      link: { name: 'Un enlace', new: 'Enlace nuevo' },
+      items: { name: 'Lo que lleva', new: 'Equipo' }
+    },
+    summary: {
+      range: 'de {{min}} a {{max}}',
+      starts: 'empieza en {{value}}',
+      max: 'máx. {{value}}',
+      segments_one: '{{count}} parte',
+      segments_other: '{{count}} partes',
+      inside_one: '{{count}} cosa dentro',
+      inside_other: '{{count}} cosas dentro',
+      columns_one: '{{count}} columna',
+      columns_other: '{{count}} columnas',
+      calculated: 'se calcula solo'
+    },
+    character: {
+      noType: 'Este sistema aún no tiene personajes.',
+      enough: 'Con esto ya se juega. Lo demás se añade cuando haga falta.'
+    },
+    field: {
+      name: 'Nombre',
+      help: 'Ayuda',
+      helpHint: 'Opcional',
+      start: 'Empieza en',
+      min: 'Como poco',
+      max: 'Como mucho',
+      resourceMax: 'Cuánto hay como mucho',
+      formula: 'Cómo se calcula',
+      lines: 'Líneas',
+      elements: 'Cuáles',
+      options: 'Las opciones',
+      itemName: 'Nombre {{n}}',
+      removeItem: 'Quitar «{{name}}»',
+      newItem: 'Nuevo',
+      addElement: 'Añadir otra',
+      addOption: 'Añadir otra opción',
+      inside: 'Lo que tiene cada una',
+      insideName: 'Nombre ({{kind}})',
+      modifier: 'Modificador',
+      addModifier: 'Su modificador: (valor − 10) ÷ 2'
+    },
+    rolls: {
+      dice: 'El dado de siempre',
+      critical: 'Cuándo es crítico',
+      criticalRule: {
+        none: 'Nunca',
+        d20: 'Un 20 natural (un 1, pifia)',
+        doubles: 'Dados iguales',
+        under: 'Tirando por debajo, un 1'
+      },
+      add: 'Una tirada',
+      new: 'Tirada nueva',
+      formula: 'Se tira',
+      reads: 'Se lee:',
+      suggestions: 'Añadir de la ficha:',
+      forEach: 'Una por cada una',
+      try: 'Tirar una vez'
+    },
+    objects: {
+      none: 'Aún no hay cosas que se lleven. Añade la primera (armas, conjuros, equipo…).',
+      add: 'Una clase de cosa',
+      new: 'Equipo',
+      name: 'Cómo se llaman',
+      remove: 'Quitar «{{name}}»'
+    },
+    sheet: {
+      generated: 'Esta es la ficha que sale de sus campos. Cámbiala y se queda la tuya.',
+      regenerate: 'Rehacer desde los campos',
+      header: 'Nombre, línea y retrato',
+      columns_one: '{{count}} columna',
+      columns_other: '{{count}} columnas',
+      kind: {
+        header: 'Cabecera',
+        stats: 'Cifras',
+        resource: 'Algo que se gasta',
+        set: 'Varias a la vez',
+        group: 'Un apartado',
+        list: 'Listas',
+        items: 'Lo que lleva',
+        actions: 'Lo que puede hacer',
+        uses: 'Usos',
+        text: 'Un texto',
+        columns: 'Columnas',
+        tabs: 'Pestañas'
+      }
+    },
+    creation: {
+      none: 'Sin pasos, el personaje se rellena a mano en su ficha.',
+      fixed: 'Valores fijos',
+      needs: {
+        content: 'Para elegir del compendio hace falta una clase de cosa (paso 3).',
+        scores: 'Para repartir puntuaciones hacen falta unas características con su cifra (paso 1).',
+        fields: 'Para escribir en la ficha hace falta algún campo (paso 1).'
+      },
+      kind: {
+        content: 'Elegir del compendio',
+        scores: 'Repartir puntuaciones',
+        fields: 'Escribir en la ficha',
+        summary: 'El resumen'
+      }
+    },
+    compendium: {
+      counts: '{{entries}} entradas · {{chapters}} capítulos',
+      entries: '{{entries}} entradas',
+      open: 'Abrir',
+      none: 'Aún no tiene libros.',
+      manage: 'Los libros se crean y se cambian en el Inicio del sistema'
+    },
+    advanced: {
+      initiative: 'La tirada de iniciativa',
+      byHand: 'Se escribe a mano',
+      version: 'Su versión',
+      languages: 'Sus idiomas',
+      language: { es: 'Español', en: 'Inglés' },
+      file: 'Lo demás, en su archivo (o con tu IA).'
+    },
+    help: {
+      label: 'Qué es: {{what}}',
+      help: {
+        title: 'La ayuda',
+        text: 'Una frase corta que sale en la ficha, para quien la rellena.',
+        example: 'En «Brío»: «Para aguantar golpes y cansancio».'
+      },
+      formula: {
+        title: 'Cómo se escribe una tirada',
+        text: 'Los dados y lo que se suma. Lo de la ficha se nombra con @ y su nombre interno; debajo se lee en palabras, y hay botones para añadirlo.',
+        example: '1d20 + @fuerza · 2d6 + @nivel · con ventaja: 2d20kh1 (tira dos y se queda el mejor).'
+      },
+      derived: {
+        title: 'Algo que se calcula',
+        text: 'Una cifra que sale de otras y no se escribe a mano.',
+        example: 'El modificador de una característica: floor((@este.valor - 10) / 2). Con 14, +2.'
+      },
+      dice: {
+        title: 'El dado de siempre',
+        text: 'Con el que empieza la ficha de dados y las tiradas nuevas.',
+        example: '1d20 en un juego como 5e; 2d6 en uno como Fronteras.'
+      }
+    },
+    example: {
+      title: 'Ficha de ejemplo',
+      none: 'Cuando tenga un personaje, aquí saldrá su ficha.',
+      empty: 'Añade lo que tiene un personaje y aparecerá aquí.',
+      more_one: 'Y {{count}} cosa más.',
+      more_other: 'Y {{count}} cosas más.'
+    },
+    review: {
+      title: 'Revisión',
+      ok: 'Todo bien',
+      errors_one: '{{count}} error',
+      errors_other: '{{count}} errores',
+      warnings_one: '{{count}} aviso',
+      warnings_other: '{{count}} avisos',
+      more_one: 'Y {{count}} más.',
+      more_other: 'Y {{count}} más.',
+      allGood: 'Se puede usar en una campaña.',
+      goTo: 'Ir a {{step}}'
+    }
+  },
   systemRules: {
     title: 'Reglas',
-    soon: 'Lo que trae, para leer. Pronto se cambiará aquí a mano; de momento, con tu IA o con su archivo.'
+    soon: 'Lo que trae, para leer. Es de serie: para cambiarlo, haz una copia.'
   },
   // Los sistemas de reglas de la cuenta (docs/specs/sistemas.md)
   systems: {
@@ -1510,7 +1741,8 @@ export const es = {
       skeletonText: 'Bájalo, rellénalo y súbelo aquí.',
       hand: 'A mano',
       handText: 'Paso a paso, en palabras de mesa.',
-      soon: 'Pronto',
+      handName: 'Cómo se llama el juego',
+      handCreate: 'Crear y empezar',
       aiAsk: 'Lo que pedirle a tu IA',
       aiPhrase:
         'Hazme en Crisol el sistema de reglas de mi juego: lee su formato, créalo y prueba sus tiradas antes de darlo por bueno.'

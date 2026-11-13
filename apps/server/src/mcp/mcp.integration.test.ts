@@ -123,6 +123,12 @@ describe('conector MCP con OAuth', () => {
       expect(tools.map((t) => t.name)).toContain('listar_mundos')
       const call = await client.callTool({ name: 'listar_mundos', arguments: {} })
       expect(call.structuredContent).toEqual({ worlds: [] })
+      // El cliente comprueba lo que vuelve con su esquema (como claude.ai): los sistemas, con su icono y su portada
+      const systems = await client.callTool({ name: 'listar_sistemas', arguments: {} })
+      expect(systems.isError ?? false).toBe(false)
+      // Las instrucciones, al día (tanda 9): el editor a mano y los capítulos
+      expect(client.getInstructions()).toContain('editor por pasos')
+      expect(client.getInstructions()).toContain('capitulos_libro')
     } finally {
       await client.close()
     }

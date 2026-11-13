@@ -144,8 +144,8 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   capítulos se leen como en D&D Beyond** (ADR-0025, tanda 7): «Capítulos · Entradas» bajo su título; a la izquierda los
   capítulos y, dentro del abierto, sus secciones, que siguen la lectura; anterior y siguiente al final; en el móvil, «Ir
   a…». Quien juega los lee desde el compendio de su campaña («Leer · N capítulos»), sin los secretos. Reglas, hasta
-  el editor a mano, enseña lo que trae el sistema y deja bajarlo. **«Sistema nuevo», tres caminos que se eligen**: con
-  tu IA (la frase para pedírselo), con el esqueleto (bajarlo y subirlo) y a mano («Pronto», hasta la tanda 8).
+  el editor a mano (tanda 8: pasos con preguntas de mesa, la ficha de ejemplo y la revisión a la vista, se guarda solo); uno de serie, para leer y bajar. **«Sistema nuevo», tres caminos que se eligen**: con
+  tu IA (la frase para pedírselo), con el esqueleto (bajarlo y subirlo) y a mano (su nombre, y se abre su editor).
 - **La campaña se abre en su propia vista, como un mundo** (Enrique, 2026-11-05): al entrar, la barra cambia y enseña
   lo de la campaña (sus personajes, su compendio, los dados…), con la transición de entrar. **El compendio** (el
   contenido del sistema que usa la campaña: clases, conjuros, criaturas, reglas…, con sus ediciones) **se ve ahí**.

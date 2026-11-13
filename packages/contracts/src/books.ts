@@ -55,7 +55,7 @@ export const getSystemBooks = defineAction({
   name: 'getSystemBooks',
   kind: 'read',
   description:
-    'Los libros de un sistema (de serie o de la cuenta): de cada uno, su portada, su descripción, de dónde sale, a qué amplía, cuánto trae por tipo (con unos ejemplos), cuánto tiene pendiente de revisar y qué campañas lo usan',
+    'Los libros de un sistema de la cuenta: de cada uno, su portada, su descripción, de dónde sale, a qué amplía, cuánto trae por tipo (con unos ejemplos), cuánto tiene pendiente de revisar y qué campañas lo usan',
   input: z.object({ systemId: systemRef, organizationId: z.uuid().optional() }),
   output: z.object({
     systemId: z.string(),

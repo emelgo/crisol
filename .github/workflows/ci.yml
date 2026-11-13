@@ -20,8 +20,8 @@ jobs:
   calidad:
     name: Lint, tipos, pruebas, licencias y límites
     runs-on: ubuntu-24.04
-    # Un tope por si algo se cuelga, no un listón: con el módulo 6 tarda ~15 min
-    timeout-minutes: 25
+    # Un tope por si algo se cuelga, no un listón: con la revisión (tanda 9) pasa de 25 min
+    timeout-minutes: 35
     # Postgres y Valkey para las pruebas de integración (cada paquete crea su base desde cero)
     services:
       postgres:

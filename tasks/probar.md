@@ -3,11 +3,30 @@
 Lista viva: todo lo que haya que probar se apunta aquí y se marca cuando lo pruebe. Lo que diga va a «Lo que dijo» (al
 final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interfaz.
 
-- **Staging**: https://neo.crisol.144-91-122-245.sslip.io, con los módulos 1 a 6: el 6 (la mesa) desde el 2026-11-07, PR #114; el 5 (lo que ven los jugadores)
+- **Staging**: https://neo.crisol.144-91-122-245.sslip.io, con las tandas 3 a 7 de la revisión desde el 2026-11-12 (PR #118) y los módulos 1 a 7: el 6 (la mesa) desde el 2026-11-07, PR #114; el 5 (lo que ven los jugadores)
   desde el 2026-11-07, PR #112; el 4 (compendio, criaturas, imágenes, tablas, grupo y biblioteca), PR #110 y #111.
 - **La IA**: el conector «Neo Crisol» de claude.ai (`https://neo.crisol.144-91-122-245.sslip.io/mcp`), con la cuenta
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
+
+## Revisión, tanda 9: el MCP (en staging, rama `revision/tanda-9`)
+
+- [ ] **Reconecta el conector** «Neo Crisol» en claude.ai (Ajustes → Conectores: desconectar y conectar), para que
+  coja las herramientas nuevas; luego pídele «lista mis sistemas» y «¿qué capítulos tiene el libro X del sistema Y?».
+
+## Revisión, tanda 8: el editor de sistemas a mano (en local)
+
+- [ ] **A mano** (Sistemas → «Sistema nuevo» → «A mano»): con su nombre se crea y abre «Reglas» por pasos.
+- [ ] **¿Qué tiene un personaje?**: añade «Varias a la vez» y «Algo que se gasta»: salen al momento en la ficha de
+  ejemplo y arriba pone «Guardado» solo. Abre una fila, cambia nombres, súbela, bájala y quítala («Deshacer»). Lo que se
+  calcula está en «Más» y se lee en palabras.
+- [ ] **¿Cómo se tira?**: el dado de siempre y una tirada con «Añadir de la ficha»; «Se lee:» debajo y «Tirar una vez».
+  Escribe algo que no existe (`@nada`): el aviso sale bajo el campo y en «Revisión», «Sin guardar» arriba, e «Ir a…» lleva
+  a él.
+- [ ] **Los demás pasos**: tipos de objeto con sus campos, los bloques de la ficha (ordenar, «Rehacer desde los
+  campos»), los pasos del creador (lo que no se puede añadir dice por qué), los libros, y en «Lo avanzado» la
+  iniciativa, los idiomas y bajar el archivo.
+- [ ] **Un sistema de serie o importado de Foundry** se edita igual; si otro lo cambia a la vez, sale «Volver a cargar».
 
 ## Revisión, tanda 7: libros de texto (en local)
 
