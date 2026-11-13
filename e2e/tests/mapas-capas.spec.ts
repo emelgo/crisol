@@ -105,13 +105,31 @@ test('los mapas con capas: el máster dibuja una región y una ruta, ordena capa
     style: { color: 'sea', size: 28 },
     geometry: { at: [0.5, 0.95], arc: 0.2 }
   })
+  await api('createMapElement', {
+    mapId: map.id,
+    layerId: politica.id,
+    kind: 'region',
+    label: 'Tierras sin señor',
+    hidden: true,
+    style: { color: 'ochre', fill: 'hatch' },
+    geometry: {
+      pieces: [
+        [
+          [0.35, 0.8],
+          [0.5, 0.55],
+          [0.85, 0.7],
+          [0.6, 0.85]
+        ]
+      ]
+    }
+  })
   await api('setKnowledge', { worldId, campaignId, kind: 'page', targetId: id('Valdren'), known: true })
 
   // El máster: lo dibujado, sobre la imagen; las capas, de arriba abajo
   await page.goto(`/mundos/${worldId}/wiki/${id('Valdren')}?pestana=${tab.id}`)
   const viewer = page.getByRole('application', { name: 'Mapa Mapa' })
   await expect(viewer).toBeVisible()
-  await expect(viewer.locator('[data-kind="region"]')).toHaveCount(3)
+  await expect(viewer.locator('[data-kind="region"]')).toHaveCount(4)
   await page.getByRole('toolbar', { name: 'Herramientas del mapa' }).getByRole('button', { name: 'Capas' }).click()
   const layers = page.getByRole('region', { name: 'Capas' })
   await expect(layers.getByRole('button', { name: /^Renombrar/ })).toHaveText(['Secretos', 'Política'])
@@ -138,7 +156,7 @@ test('los mapas con capas: el máster dibuja una región y una ruta, ordena capa
   await routePanel.getByLabel('Nombre').fill('Camino real')
   await routePanel.getByLabel('Nombre').press('Enter')
   await routePanel.getByText('Discontinuo').click()
-  await expect.poll(async () => (await api('getMap', { tabId: tab.id })).elements.length).toBe(5)
+  await expect.poll(async () => (await api('getMap', { tabId: tab.id })).elements.length).toBe(6)
   const route = (await api('getMap', { tabId: tab.id })).elements.find((e: { kind: string }) => e.kind === 'path')
   expect(route).toMatchObject({ label: 'Camino real', layerId: politica.id, style: { stroke: 'dashed' } })
   await settled(page)
@@ -151,6 +169,19 @@ test('los mapas con capas: el máster dibuja una región y una ruta, ordena capa
   await expect(page.getByRole('button', { name: /Arrastra para moverlo/ })).toHaveCount(4)
   await settled(page)
   await page.screenshot({ path: test.info().outputPath('3-region.png') })
+  // Revelar a la campaña lo oculto (las Tierras sin señor), desde su panel
+  await viewer.focus()
+  await page.keyboard.press('Escape')
+  await viewer.locator('[data-kind="region"][data-hidden]').first().click({ force: true })
+  const hiddenPanel = page.getByRole('region', { name: 'Región' })
+  await expect(hiddenPanel.getByLabel('Nombre')).toHaveValue('Tierras sin señor')
+  await hiddenPanel.getByRole('button', { name: 'Revelar…' }).click()
+  await page
+    .getByRole('dialog', { name: 'Revelarlo en el mapa' })
+    .getByRole('button', { name: 'Revelar', exact: true })
+    .click()
+  await expect(page.getByRole('dialog', { name: 'Revelarlo en el mapa' })).toHaveCount(0)
+
   // Escape suelta lo elegido y, después, vuelve el mapa a la página
   await viewer.focus()
   await page.keyboard.press('Escape')
@@ -163,10 +194,11 @@ test('los mapas con capas: el máster dibuja una región y una ruta, ordena capa
   await ana.goto(`/mundos/${worldId}/campanas/${campaignId}/paginas/${id('Valdren')}`)
   await ana.getByRole('group', { name: 'Pestañas de la página' }).getByRole('button', { name: 'Mapa' }).click()
   const seen = ana.getByRole('application', { name: 'Mapa Mapa' })
-  await expect(seen.locator('[data-kind="region"]')).toHaveCount(2)
+  await expect(seen.locator('[data-kind="region"]')).toHaveCount(3)
   await expect(seen).not.toContainText('Guarida')
   await expect(seen).not.toContainText('Reino de Varn')
   await expect(seen).toContainText('Marca Verde')
+  await expect(seen).toContainText('Tierras sin señor')
   await ana.getByRole('toolbar', { name: 'Herramientas del mapa' }).getByRole('button', { name: 'Capas' }).click()
   await expect(ana.getByRole('region', { name: 'Capas' }).getByText('Política')).toBeVisible()
   await expect(ana.getByRole('region', { name: 'Capas' }).getByText('Secretos')).toHaveCount(0)
@@ -184,4 +216,9 @@ test('los mapas con capas: el máster dibuja una región y una ruta, ordena capa
   await expect(ruler).toContainText(/\d+ días?|Menos de 1 día/)
   await settled(ana)
   await ana.screenshot({ path: test.info().outputPath('4-jugadora.png') })
+  // En el móvil: el mapa y medir, abajo y a lo ancho
+  await ana.setViewportSize({ width: 390, height: 844 })
+  await expect(ruler).toBeVisible()
+  await settled(ana)
+  await ana.screenshot({ path: test.info().outputPath('5-movil.png') })
 })

@@ -332,6 +332,21 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
 
   // Al encuadrar y al ampliarlo o reducirlo (cambia su tamaño)
   useLayoutEffect(() => fit(), [fit, wide])
+  // Si el visor cambia de tamaño (la ventana, el móvil al girar), se vuelve a encuadrar
+  useEffect(() => {
+    const element = container.current
+    if (!element || typeof ResizeObserver === 'undefined') return
+    let size = { width: element.clientWidth, height: element.clientHeight }
+    const observer = new ResizeObserver(() => {
+      const next = { width: element.clientWidth, height: element.clientHeight }
+      if (next.width === size.width && next.height === size.height) return
+      size = next
+      fit()
+    })
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [fit, wide])
+
   // Al ampliarlo o reducirlo, el visor es otro elemento (va o vuelve del cuerpo de la página): el foco, a él
   const wideBefore = useRef(wide)
   useEffect(() => {

@@ -1016,3 +1016,12 @@
 .primary:hover {
   filter: brightness(1.1);
 }
+
+/* En el móvil (la jugadora): medir, abajo y a lo ancho */
+@media (max-width: 48rem) {
+  .measure {
+    inset-inline: var(--space-2);
+    inset-block-end: var(--space-2);
+    inline-size: auto;
+  }
+}
