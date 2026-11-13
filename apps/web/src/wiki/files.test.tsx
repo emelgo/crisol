@@ -141,10 +141,10 @@ describe('los archivos del mundo', () => {
     const list = within(await side.findByRole('list', { name: 'Archivos del mundo' }))
     expect(side.queryByRole('checkbox')).toBeNull()
     expect(side.queryByRole('button', { name: 'Imágenes' })).toBeNull()
-    await userEvent.click(await list.findByRole('button', { name: 'Bestiario.pdf', exact: true }))
+    await userEvent.click(await list.findByRole('button', { name: 'Bestiario.pdf' }))
     expect(await screen.findByRole('heading', { level: 1, name: 'Bestiario.pdf' })).toBeDefined()
     // Marcado en la lista y como pestaña abierta en la cabecera
-    expect(list.getByRole('button', { name: 'Bestiario.pdf', exact: true }).getAttribute('aria-current')).toBe('page')
+    expect(list.getByRole('button', { name: 'Bestiario.pdf' }).getAttribute('aria-current')).toBe('page')
     const tabs = within(screen.getByRole('navigation', { name: 'Archivos abiertos' }))
     expect(tabs.getByRole('link', { name: 'Bestiario.pdf' }).getAttribute('aria-current')).toBe('page')
     // Su panel: su tipo y dónde se usa, y su engranaje
