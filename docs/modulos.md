@@ -9,13 +9,14 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
 
 ### Para retomar (2026-11-13, madrugada: módulo 9 empezado; PR #119 en la CI)
 
-- **PR #119** (tandas 8 y 9, con su visto bueno): la cobertura de lo cambiado subió del 52 % al 99,5 % con pruebas del
-  editor de sistemas (y dos fallos de escritura arreglados: los espacios en «Cuánto hay como mucho» y «El dado de
-  siempre», y vaciar «Líneas»). CI repetida; si solo fallan las e2e inestables de siempre, fusionar con su visto bueno.
+- **Tandas 8 y 9 en `main` y en staging** (PR #119, 2026-11-13, fusionado con `[skip ci]`: la CI se cortaba a los
+  60 min; en local, 150 e2e + 2 repetidas solas en verde). Sin migraciones. **Sin más CI este mes** (cuota casi
+  agotada): todo en local y `[skip ci]` en lo que se suba.
 - **Módulo 9** (rama `modulo-9/mapas`): entrevista confirmada (`docs/intent/mapas-pizarras.md`), estudio
   (`research/mapas-y-pizarras.md` y sus notas), capacidades (`docs/specs/modulo-9.md`) y la spec de los mapas con
-  capas (`docs/specs/mapas-capas.md`), con cinco decisiones tomadas sin él. **Siguiente**: su visto bueno de la spec →
-  el lienzo con impeccable (mapa con capas, dibujar, la regla, lo que ve la jugadora) → plan → construir.
+  capas (`docs/specs/mapas-capas.md`). Lienzo aprobado («está genial»): https://claude.ai/artifact/GM5TSzGsVXRx2Q1nkwDvbx.
+  Plan en `tasks/modulo-9.md`: porciones 1 (datos, migración 0081 aplicada en local), 2 (pintar y «Capas») y 3
+  (dibujar y retocar) hechas; siguiente, la 4 (medir).
 
 ### Para retomar (2026-11-12, noche: tanda 9, repaso del MCP)
 
