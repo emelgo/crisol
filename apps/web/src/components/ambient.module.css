@@ -28,6 +28,12 @@
   animation: aparecer 600ms ease-out backwards;
 }
 
+/* El turno de las de siempre: un fundido largo, que no se note el cambio (Enrique, 2026-11-13: «sin llegar a marear») */
+.layer[data-slow] {
+  animation-duration: 3s;
+  animation-timing-function: ease-in-out;
+}
+
 /* La que ya estaba al montarse (volver de la Mesa, recargar una vista): sin fundido */
 .layer[data-still] {
   animation: none;

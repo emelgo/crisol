@@ -99,8 +99,9 @@ export function WikiLayout({
     enabled: Boolean(account)
   })
   const world = worlds.data?.worlds.find((w) => w.id === worldId && w.role === 'master')
-  // Detrás de todo el mundo, su portada, muy difuminada (sin portada, la de ambiente)
-  useAmbient(world?.cover ? `/api/files/${world.cover.fileId}` : null)
+  // Detrás, los fondos de Crisol, que se van turnando (Enrique, 2026-11-13: «en la wiki no hace falta tener la portada
+  // de fondo»)
+  useAmbient(null)
   const root = useRef<HTMLDivElement>(null)
   useSideTop(root, Boolean(world))
 
