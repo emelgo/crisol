@@ -27,7 +27,9 @@ const PERMISSIVE = [
   'CC0-1.0',
   'Unlicense',
   'BlueOak-1.0.0',
-  'CC-BY-4.0'
+  'CC-BY-4.0',
+  // Permisiva como MIT (pako, dentro de Excalidraw: «MIT AND Zlib»; aprobada por Enrique el 2026-11-13)
+  'Zlib'
 ]
 const WEAK_COPYLEFT = ['MPL-2.0', 'LGPL-2.1-only', 'LGPL-2.1-or-later', 'LGPL-3.0-only', 'LGPL-3.0-or-later']
 
@@ -83,13 +85,28 @@ export function isAllowed(expression: string, policy: Policy): boolean {
   return allowed && !malformed && pos === tokens.length
 }
 
+/**
+ * Paquetes cuyo package.json no dice su licencia y la llevan en su archivo de licencia, mirado a mano (por versión
+ * exacta: otra versión se vuelve a mirar)
+ */
+export const CHECKED_BY_HAND: Record<string, string> = {
+  // De mermaid, dentro de Excalidraw: su archivo «license» es MIT (2026-11-13)
+  'khroma@2.1.0': 'MIT'
+}
+
 /** Paquetes del informe con licencia no permitida (los del propio monorepo no cuentan) */
 export function findViolations(report: Report, policy: Policy): Violation[] {
   const fonts: Policy = new Set([...policy, ...FONT_LICENSES])
+  const licenseOf = (license: string, name: string, versions: string[]) => {
+    const checked = versions.map((version) => CHECKED_BY_HAND[`${name}@${version}`])
+    return checked.length > 0 && checked.every(Boolean) ? (checked[0] as string) : license
+  }
   return Object.entries(report).flatMap(([license, packages]) =>
     packages
       .filter(({ name }) => name !== 'crisol' && !name.startsWith('@crisol/'))
-      .filter(({ name }) => !isAllowed(license, isFontPackage(name) ? fonts : policy))
+      .filter(
+        ({ name, versions }) => !isAllowed(licenseOf(license, name, versions), isFontPackage(name) ? fonts : policy)
+      )
       .map(({ name, versions }) => ({ name, versions, license }))
   )
 }
