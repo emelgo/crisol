@@ -8,7 +8,7 @@ import '@fontsource/alegreya/400-italic.css'
 import type { MapElementView, MapLayerView, MapStyle } from '@crisol/contracts'
 import { type MouseEvent, memo, type PointerEvent } from 'react'
 import { colorHex } from '../../routes/world-look.ts'
-import { arcPath, fontPixels, paintOrder, pathOf, regionLabelAt, type Size, toPixels } from './geometry.ts'
+import { arcPath, fitWidth, fontPixels, paintOrder, pathOf, regionLabelAt, type Size, toPixels } from './geometry.ts'
 import styles from './map.module.css'
 
 const DASHES = { solid: undefined, dashed: '10 6', dotted: '2 5' } as const
@@ -32,6 +32,7 @@ export const MapDrawing = memo(function MapDrawing({
   layers,
   elements,
   hiddenHere,
+  secretLayers,
   selected,
   fresh,
   live,
@@ -46,6 +47,8 @@ export const MapDrawing = memo(function MapDrawing({
   elements: readonly MapElementView[]
   /** Las capas apagadas en esta pantalla */
   hiddenHere: ReadonlySet<string>
+  /** Las capas solo del máster: lo suyo, más apagado (como lo oculto) */
+  secretLayers?: ReadonlySet<string>
   selected?: string | null
   /** Lo que acaba de llegar de fuera: entra forjándose */
   fresh?: ReadonlySet<string>
@@ -108,6 +111,7 @@ export const MapDrawing = memo(function MapDrawing({
           image={image}
           selected={element.id === selected}
           fresh={fresh?.has(element.id) ?? false}
+          secret={secretLayers?.has(element.layerId ?? first ?? '') ?? false}
           onOpen={onOpen}
           onPointerDown={onElementPointerDown}
           onClick={onElementClick}
@@ -124,6 +128,7 @@ const Element = memo(function Element({
   image,
   selected,
   fresh,
+  secret = false,
   onOpen,
   onPointerDown,
   onClick
@@ -133,6 +138,8 @@ const Element = memo(function Element({
   image: Size
   selected: boolean
   fresh: boolean
+  /** De una capa solo del máster */
+  secret?: boolean
   onOpen?: (pageId: string) => void
   onPointerDown?: (event: PointerEvent<SVGGElement>, element: MapElementView) => void
   onClick?: (event: MouseEvent<SVGGElement>, element: MapElementView) => void
@@ -155,7 +162,7 @@ const Element = memo(function Element({
     'data-display': display,
     'data-selected': selected || undefined,
     'data-fresh': fresh || undefined,
-    'data-hidden': element.hidden || undefined,
+    'data-hidden': element.hidden || secret || undefined,
     'data-link': element.pageId ? true : undefined,
     'data-id': element.id,
     onDoubleClick: (event: MouseEvent) => {
@@ -170,6 +177,8 @@ const Element = memo(function Element({
     const d = geometry.pieces.map((piece) => pathOf(piece, image, true)).join(' ')
     const fill = style.fill === 'none' ? 'none' : style.fill === 'hatch' ? `url(#${id}-hatch-${hex.slice(1)})` : hex
     const [lx, ly] = regionLabelAt(geometry.pieces, image)
+    // Sin tamaño dicho, que quepa en la región (no invada la de al lado)
+    const regionSize = style.size === undefined ? Math.min(fontSize, fitWidth(geometry.pieces, image, name)) : fontSize
     return (
       <g {...common}>
         <path
@@ -184,7 +193,7 @@ const Element = memo(function Element({
             className={styles.elementName}
             x={lx}
             y={ly}
-            fontSize={fontSize}
+            fontSize={regionSize}
             textAnchor="middle"
             dominantBaseline="middle"
           >

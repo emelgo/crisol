@@ -79,3 +79,17 @@ export function paintOrder(elements: readonly MapElementView[], layers: readonly
     .sort((a, b) => a.layer - b.layer || a.index - b.index)
     .map(({ element }) => element)
 }
+
+/**
+ * El tamaño de letra con el que un nombre cabe a lo ancho de la pieza más ancha de una región (el ancho de una letra,
+ * aproximado: media eme), sin bajar de lo que se lee
+ */
+export function fitWidth(pieces: readonly (readonly (readonly number[])[])[], image: Size, name: string, least = 12) {
+  let widest = 0
+  for (const piece of pieces) {
+    const xs = piece.map((p) => (p[0] ?? 0) * image.width)
+    widest = Math.max(widest, Math.max(...xs) - Math.min(...xs))
+  }
+  const letters = Math.max(1, name.length)
+  return Math.max(least, (widest * 0.85) / (letters * 0.55))
+}

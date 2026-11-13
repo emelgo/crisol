@@ -298,9 +298,28 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
   const [wide, setWide] = useState(false)
   // Los botones que abren los paneles: al cerrarlos, el foco vuelve a ellos
   const layersButton = useRef<HTMLButtonElement>(null)
+  // Dónde empieza el visor en la página: su alto llega justo al final de la ventana (la portada, el título y las
+  // pestañas lo empujan hacia abajo)
+  const wrapper = useRef<HTMLDivElement>(null)
+  useLayoutEffect(() => {
+    const element = wrapper.current
+    if (!element || wide) return
+    const place = () => {
+      const top = element.getBoundingClientRect().top + window.scrollY
+      element.style.setProperty('--map-top', `${Math.max(0, top)}px`)
+    }
+    place()
+    window.addEventListener('resize', place)
+    return () => window.removeEventListener('resize', place)
+  }, [wide])
   const settingsButton = useRef<HTMLButtonElement>(null)
   const hiddenHere = useHiddenHere(map.id)
   const drawingId = useId()
+  // Las capas solo del máster: lo suyo se le ve más apagado (no lo ven los jugadores)
+  const secretLayers = useMemo(
+    () => new Set(map.layers.filter((layer) => layer.hidden).map((layer) => layer.id)),
+    [map.layers]
+  )
   const pins = usePins(page, map)
   const elements = useElements(page, map)
   const editable = !page.locked
@@ -838,6 +857,12 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
   const shown = map.pins.map((pin) => (moving?.id === pin.id ? { ...pin, x: moving.x, y: moving.y } : pin))
   const current = shown.find((pin) => pin.id === selected) ?? null
   const currentElement = map.elements.find((element) => element.id === selectedElement) ?? null
+  // Lo medido hasta el cursor: la cifra, junto al extremo
+  const measured = measure.route || !cursor ? measure.points : [...measure.points, cursor]
+  const measureEnd = measured.length >= 2 ? measured.at(-1) : undefined
+  const measureDistance = measured.length >= 2 ? distanceOf(measured, image, map.scale) : null
+  const measureText =
+    measureDistance === null ? null : `${roundDistance(measureDistance).toLocaleString('es')} ${map.scale?.unit ?? ''}`
   const error =
     pins.create.error ??
     pins.update.error ??
@@ -848,7 +873,12 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
 
   // Ampliado, en el cuerpo de la página: por encima de todo lo demás (sus columnas tienen su propio apilamiento)
   const content = (
-    <div className={styles.wrapper} data-wide={wide || undefined}>
+    <div
+      ref={wrapper}
+      className={styles.wrapper}
+      data-wide={wide || undefined}
+      style={{ '--map-aspect': `${image.width} / ${image.height}` } as React.CSSProperties}
+    >
       {/* Un control propio: se mueve con las flechas y se acerca con + y - */}
       <div
         ref={container}
@@ -890,6 +920,7 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
             layers={map.layers}
             elements={map.elements}
             hiddenHere={hiddenHere.hidden}
+            secretLayers={secretLayers}
             selected={selectedElement}
             fresh={fresh}
             live={live}
@@ -903,7 +934,17 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
               image={image}
               draft={{ kind: 'path', points: measure.points }}
               cursor={measure.route ? null : cursor}
+              variant="measure"
             />
+          )}
+          {tool === 'measure' && map.scale && measureEnd && measureText && (
+            <span
+              className={styles.measureTag}
+              style={{ insetInlineStart: `${measureEnd[0] * 100}%`, insetBlockStart: `${measureEnd[1] * 100}%` }}
+              aria-hidden="true"
+            >
+              {measureText}
+            </span>
           )}
           {(calibration.length > 0 || line) && (
             <DraftLayer
@@ -1053,6 +1094,7 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
               <Icon aria-hidden="true" size={18} />
             </button>
           ))}
+        {editable && <span className={styles.toolSep} aria-hidden="true" />}
         {(editable || map.layers.length > 0) && (
           <button
             type="button"
@@ -1081,6 +1123,7 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
         >
           <Ruler aria-hidden="true" size={18} />
         </button>
+        <span className={styles.toolSep} aria-hidden="true" />
         <button type="button" aria-label={t('map.zoomIn')} title={t('map.zoomIn')} onClick={() => zoomCenter(1.25)}>
           <Plus aria-hidden="true" size={18} />
         </button>
@@ -1099,6 +1142,7 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
         >
           {wide ? <Shrink aria-hidden="true" size={18} /> : <Expand aria-hidden="true" size={18} />}
         </button>
+        {editable && <span className={styles.toolSep} aria-hidden="true" />}
         {editable && !readAs && (
           <button
             type="button"
@@ -1206,7 +1250,7 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
         <MeasurePanel
           map={map}
           image={image}
-          points={measure.route || !cursor ? measure.points : [...measure.points, cursor]}
+          points={measured}
           route={measure.route}
           canCalibrate={editable && !readAs}
           onClear={() => chooseTool('select')}
@@ -1245,6 +1289,10 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
           editable={editable && !readAs}
           hiddenHere={hiddenHere.hidden}
           onToggleHere={hiddenHere.toggle}
+          onSelect={(id) => {
+            setSelectedElement(id)
+            setSelected(null)
+          }}
           onClose={() => {
             setLayersOpen(false)
             layersButton.current?.focus()

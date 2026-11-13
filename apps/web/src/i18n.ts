@@ -1930,12 +1930,17 @@ export const es = {
       title: 'Capas',
       close: 'Cerrar las capas',
       none: 'Sin capas. Lo que dibujes irá en una nueva.',
-      count_one: '{{count}} cosa',
-      count_other: '{{count}} cosas',
+      empty: 'Vacía',
+      kinds: {
+        region_one: '{{count}} región',
+        region_other: '{{count}} regiones',
+        path_one: '{{count}} ruta',
+        path_other: '{{count}} rutas',
+        label_one: '{{count}} texto',
+        label_other: '{{count}} textos'
+      },
       name: 'Nombre de la capa',
       rename: 'Renombrar «{{name}}» (Alt y flechas para moverla)',
-      up: 'Subir «{{name}}»',
-      down: 'Bajar «{{name}}»',
       moved: '«{{name}}», {{at}} de {{of}}',
       secret: 'Solo del máster: «{{name}}»',
       secretOn: 'Solo del máster: no la ve ninguna campaña',
@@ -1985,7 +1990,7 @@ export const es = {
       tool: 'Medir',
       title: 'Medir',
       close: 'Dejar de medir',
-      hint: 'Pulsa de punto a punto (se pega a pines y vértices), o una ruta para medirla entera. Esc vuelve a empezar.',
+      hint: 'Pulsa en el mapa para medir, o en una ruta para medirla entera.',
       noScale: 'Este mapa aún no tiene escala.',
       calibrate: 'Ponerla',
       straight: 'En línea recta',
@@ -2018,9 +2023,9 @@ export const es = {
     edit: {
       tools: { region: 'Región', path: 'Ruta', text: 'Texto' },
       hints: {
-        region: 'Pulsa para poner cada vértice; Intro, doble clic o el primero la cierran. Esc cancela.',
-        path: 'Pulsa para poner cada punto; Intro o doble clic la acaban. Esc cancela.',
-        text: 'Pulsa donde vaya el texto.'
+        region: 'Un vértice en cada clic · Intro o el primero, cerrar · Esc, dejar',
+        path: 'Un punto en cada clic · Intro o doble clic, acabar · Esc, dejar',
+        text: 'Pulsa donde vaya el texto'
       },
       newText: 'Texto',
       vertex: 'Arrastra para moverlo; botón derecho para quitarlo',
@@ -4066,9 +4071,9 @@ export const es = {
     },
     map: {
       tabs: 'Las pestañas de la página: su texto y sus mapas.',
-      tools: 'Pon pines, acerca y encuadra. También con el botón derecho sobre el mapa.',
+      tools: 'Dibuja, mide y ordena lo de cada capa; acerca y encuadra.',
       pin: 'Pulsa un pin para cambiarlo; arrástralo para moverlo. Con doble clic, abre su página.',
-      readTools: 'Acerca y encuadra el mapa.',
+      readTools: 'Mide distancias, apaga capas en tu pantalla y acerca el mapa.',
       readPin: 'Pulsa un pin para ver qué es. Con doble clic, abre su página.'
     },
     systems: {

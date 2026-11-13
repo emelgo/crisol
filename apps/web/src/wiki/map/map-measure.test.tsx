@@ -84,7 +84,7 @@ describe('medir en el mapa (módulo 9)', () => {
     viewer.focus()
     await userEvent.keyboard('m')
     const panel = within(await screen.findByRole('region', { name: 'Medir' }))
-    expect(panel.getByText(/Pulsa de punto a punto/)).toBeDefined()
+    expect(panel.getByText(/Pulsa en el mapa para medir/)).toBeDefined()
     // 600 px de la imagen: 180 km
     tap(viewer, 0.1, 0.9)
     tap(viewer, 0.7, 0.9)
@@ -97,7 +97,7 @@ describe('medir en el mapa (módulo 9)', () => {
     expect(panel.getByText('6 días')).toBeDefined()
     expect(panel.getByText('4 días')).toBeDefined()
     await userEvent.keyboard('{Escape}')
-    expect(panel.getByText(/Pulsa de punto a punto/)).toBeDefined()
+    expect(panel.getByText(/Pulsa en el mapa para medir/)).toBeDefined()
     await userEvent.keyboard('{Escape}')
     expect(screen.queryByRole('region', { name: 'Medir' })).toBeNull()
   })

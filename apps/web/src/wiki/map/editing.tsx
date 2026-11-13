@@ -13,7 +13,18 @@ import styles from './map.module.css'
 export type Draft = { kind: 'region' | 'path'; points: Point[] }
 
 /** Lo que se está dibujando: lo puesto y la goma hasta el cursor (pegado, si se pega) */
-export function DraftLayer({ image, draft, cursor }: { image: Size; draft: Draft; cursor: Point | null }) {
+export function DraftLayer({
+  image,
+  draft,
+  cursor,
+  variant = 'draft'
+}: {
+  image: Size
+  draft: Draft
+  cursor: Point | null
+  /** Medir: su propia línea, más marcada (no es algo que se dibuja) */
+  variant?: 'draft' | 'measure'
+}) {
   const points = cursor ? [...draft.points, cursor] : draft.points
   const closed = draft.kind === 'region' && points.length > 2
   return (
@@ -25,7 +36,10 @@ export function DraftLayer({ image, draft, cursor }: { image: Size; draft: Draft
       aria-hidden="true"
     >
       {closed && <path d={pathOf(points, image, true)} className={styles.draftFill} />}
-      <path d={pathOf(points, image, false)} className={styles.draftLine} />
+      <path
+        d={pathOf(points, image, false)}
+        className={variant === 'measure' ? styles.measureLine : styles.draftLine}
+      />
       {draft.points.map(([x, y], index) => (
         <circle
           key={index}

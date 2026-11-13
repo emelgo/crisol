@@ -5,7 +5,8 @@
 
 .viewer {
   position: relative;
-  block-size: clamp(24rem, calc(100dvh - 15rem), 64rem);
+  /* Hasta el final de la ventana desde donde empieza (--map-top, lo mide el visor) */
+  block-size: clamp(22rem, calc(100dvh - var(--map-top, 15rem) - var(--space-4)), 64rem);
   overflow: hidden;
   border: 1px solid var(--color-border);
   border-radius: 6px;
@@ -18,10 +19,10 @@
 /* Ampliado: todo lo de al lado de la barra de la app, por encima de la página */
 .wrapper[data-wide] {
   position: fixed;
-  inset: var(--space-3) var(--space-3) var(--space-3) calc(4rem + var(--space-3));
+  inset: 0 0 0 4rem;
   z-index: 40;
-  border: 1px solid var(--line-frame);
-  border-radius: 8px;
+  border: 0;
+  border-inline-start: 1px solid var(--line-frame);
   overflow: hidden;
   background: var(--color-bg);
   box-shadow: var(--glass-shadow);
@@ -140,6 +141,9 @@
   z-index: 2;
   display: flex;
   flex-direction: column;
+  /* Si el visor es bajo, en dos columnas: nunca se sale de él */
+  flex-wrap: wrap;
+  max-block-size: calc(100% - var(--space-4));
   gap: 2px;
   padding: 2px;
   border: 1px solid var(--line-frame);
@@ -386,8 +390,11 @@
 .segmented legend {
   margin-block-end: 0.25rem;
   padding: 0;
-  font-size: 0.875rem;
+  color: var(--color-muted);
+  font-size: 0.6875rem;
   font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .swatch,
@@ -582,7 +589,8 @@
   font-family: "Alegreya", Georgia, serif;
   paint-order: stroke;
   stroke: rgb(255 250 235 / 0.75);
-  stroke-width: 3px;
+  /* En píxeles de pantalla, también al acercar o alejar */
+  stroke-width: calc(3px * var(--inv-k));
   stroke-linejoin: round;
   pointer-events: none;
 }
@@ -1005,23 +1013,6 @@
   color: var(--color-muted);
 }
 
-.primary {
-  justify-self: start;
-  min-block-size: 2.25rem;
-  padding: 0 var(--space-4);
-  border: 0;
-  border-radius: 6px;
-  background: var(--color-accent);
-  color: var(--color-on-accent);
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.primary:hover {
-  filter: brightness(1.1);
-}
-
 /* En el móvil (la jugadora): medir, abajo y a lo ancho */
 @media (max-width: 48rem) {
   .measure {
@@ -1076,4 +1067,137 @@
   margin: 0;
   color: var(--color-danger);
   font-size: 0.8125rem;
+}
+
+/* La barra, por grupos: dibujar · ver · encuadrar · el mapa */
+.toolSep {
+  block-size: 1px;
+  margin: 2px 4px;
+  background: var(--line-frame);
+}
+
+/* Medir: su propia línea (no se dibuja nada) y la cifra junto al extremo */
+.measureLine {
+  fill: none;
+  stroke: var(--color-brand-glow);
+  stroke-width: 3px;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0 0 2px rgb(0 0 0 / 0.6));
+}
+
+.measureTag {
+  position: absolute;
+  padding: 2px 8px;
+  border: 1px solid var(--line-frame);
+  border-radius: 999px;
+  background: var(--frame-sheen), var(--popup-glass);
+  -webkit-backdrop-filter: var(--popup-blur);
+  backdrop-filter: var(--popup-blur);
+  color: var(--color-text);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  white-space: nowrap;
+  pointer-events: none;
+  transform: translate(10px, -50%) scale(var(--inv-k));
+  transform-origin: 0 50%;
+}
+
+/* Las capas: lo que tienen (se despliega para elegirlo) y sus herramientas, a la vista al pasar o con el foco */
+.layerCount {
+  justify-self: start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-muted);
+  font: inherit;
+  font-size: 0.75rem;
+  text-align: start;
+  cursor: pointer;
+}
+
+.layerCount:not(:disabled):hover {
+  color: var(--color-text);
+  text-decoration: underline;
+}
+
+.layerCount:disabled {
+  cursor: default;
+}
+
+.layerMore {
+  display: inline-flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 120ms ease-out;
+}
+
+.layer:is(:hover, :focus-within) .layerMore {
+  opacity: 1;
+}
+
+.layerItems {
+  grid-column: 1 / -1;
+  display: grid;
+  margin: 0;
+  padding: 0 0 0 var(--space-5);
+  list-style: none;
+}
+
+.layerItems button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  inline-size: 100%;
+  min-block-size: 1.75rem;
+  padding: 0 var(--space-2);
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.8125rem;
+  text-align: start;
+  cursor: pointer;
+}
+
+.layerItems button:hover {
+  background: var(--row-hover);
+}
+
+/* En el móvil (la jugadora): el visor a la proporción de la imagen, y ampliado, de lado a lado */
+@media (max-width: 48rem) {
+  .viewer {
+    block-size: auto;
+    min-block-size: 16rem;
+    max-block-size: 75dvh;
+    aspect-ratio: var(--map-aspect, 4 / 3);
+  }
+
+  .wrapper[data-wide] {
+    inset: 0;
+  }
+
+  .wrapper[data-wide] .viewer {
+    max-block-size: none;
+    aspect-ratio: auto;
+  }
+}
+
+/* Con el dedo: botones a su medida */
+@media (pointer: coarse) {
+  .toolbar button {
+    inline-size: 2.75rem;
+    block-size: 2.75rem;
+  }
+
+  .layerTool {
+    min-inline-size: 2.5rem;
+    min-block-size: 2.5rem;
+  }
+
+  .layerMore {
+    opacity: 1;
+  }
 }

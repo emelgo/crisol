@@ -1,23 +1,12 @@
 /**
  * Las capas de un mapa (módulo 9, lienzo «Mapas con capas»): de arriba abajo, como en un programa de dibujo. El ojo
  * apaga una capa solo en esta pantalla (se recuerda en el aparato); el máster, además, las crea, las renombra, las
- * ordena (arrastrando o con Alt y las flechas), las deja «Solo del máster» y las quita con lo suyo
+ * ordena (arrastrando o con Alt y las flechas), las deja «Solo del máster» y las quita con lo suyo. Lo que tiene cada
+ * una se despliega para elegirlo (también sin ratón: es la otra puerta a lo dibujado)
  */
-import type { MapLayerView, MapView, Page } from '@crisol/contracts'
+import type { MapElementView, MapLayerView, MapView, Page } from '@crisol/contracts'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import {
-  ChevronDown,
-  ChevronUp,
-  Eye,
-  EyeOff,
-  GripVertical,
-  Layers,
-  Lock,
-  LockOpen,
-  Plus,
-  Trash2,
-  X
-} from 'lucide-react'
+import { Eye, EyeOff, GripVertical, Layers, Plus, Trash2, UserRoundX, X } from 'lucide-react'
 import { type DragEvent, useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../../api/context.tsx'
@@ -25,6 +14,7 @@ import { useErrorText } from '../../api/errors.ts'
 import { useAnnounce } from '../../components/announcer.tsx'
 import { FormError } from '../../components/field.tsx'
 import { focusAfterRemoving, focusOnMount } from '../../components/focus.ts'
+import { elementName } from './drawing.tsx'
 import { mapKey } from './keys.ts'
 import styles from './map.module.css'
 
@@ -99,6 +89,7 @@ export function LayersPanel({
   editable,
   hiddenHere,
   onToggleHere,
+  onSelect,
   onClose
 }: {
   page: Page
@@ -106,6 +97,8 @@ export function LayersPanel({
   editable: boolean
   hiddenHere: ReadonlySet<string>
   onToggleHere: (layerId: string) => void
+  /** Elegir algo dibujado (se abre su panel) */
+  onSelect: (elementId: string) => void
   onClose: () => void
 }) {
   const { t } = useTranslation()
@@ -117,7 +110,17 @@ export function LayersPanel({
   const [dragging, setDragging] = useState<string | null>(null)
   // De arriba abajo: la de más arriba, primero
   const ordered = [...map.layers].reverse()
-  const count = (layerId: string) => map.elements.filter((e) => (e.layerId ?? map.layers[0]?.id) === layerId).length
+  const [expanded, setExpanded] = useState<string | null>(null)
+  // Lo de cada capa (lo de antes de las capas, en la primera) y lo que tiene, por clases: «4 regiones · 1 ruta»
+  const inLayer = (layerId: string) => map.elements.filter((e) => (e.layerId ?? map.layers[0]?.id) === layerId)
+  const summary = (own: readonly MapElementView[]) => {
+    if (own.length === 0) return t('map.layers.empty')
+    return (['region', 'path', 'label'] as const)
+      .map((kind) => ({ kind, count: own.filter((e) => e.kind === kind).length }))
+      .filter(({ count }) => count > 0)
+      .map(({ kind, count }) => t(`map.layers.kinds.${kind}`, { count }))
+      .join(' · ')
+  }
 
   /** Mover una capa a un puesto de la lista (de arriba abajo) */
   const moveTo = (layer: MapLayerView, index: number) => {
@@ -163,6 +166,8 @@ export function LayersPanel({
       <ul className={styles.layers}>
         {ordered.map((layer, index) => {
           const off = hiddenHere.has(layer.id)
+          const own = inLayer(layer.id)
+          const open = expanded === layer.id
           return (
             <li
               key={layer.id}
@@ -223,35 +228,26 @@ export function LayersPanel({
                 ) : (
                   <span className={styles.layerLabel}>{layer.name}</span>
                 )}
-                <small>{t('map.layers.count', { count: count(layer.id) })}</small>
+                {/* Lo que tiene, por clases; al pulsarlo, la lista para elegir cada cosa (también sin ratón) */}
+                <button
+                  type="button"
+                  className={styles.layerCount}
+                  aria-expanded={open}
+                  disabled={own.length === 0}
+                  onClick={() => setExpanded(open ? null : layer.id)}
+                >
+                  {summary(own)}
+                </button>
               </div>
               {layer.hidden && (
                 <span className={styles.masterOnly}>
-                  <Lock aria-hidden="true" size={11} />
+                  <UserRoundX aria-hidden="true" size={11} />
                   {t('map.layers.masterOnly')}
                 </span>
               )}
               <span className={styles.layerTools}>
                 {editable && (
-                  <>
-                    <button
-                      type="button"
-                      className={styles.layerTool}
-                      aria-label={t('map.layers.up', { name: layer.name })}
-                      disabled={index === 0}
-                      onClick={() => moveTo(layer, index - 1)}
-                    >
-                      <ChevronUp aria-hidden="true" size={14} />
-                    </button>
-                    <button
-                      type="button"
-                      className={styles.layerTool}
-                      aria-label={t('map.layers.down', { name: layer.name })}
-                      disabled={index === ordered.length - 1}
-                      onClick={() => moveTo(layer, index + 1)}
-                    >
-                      <ChevronDown aria-hidden="true" size={14} />
-                    </button>
+                  <span className={styles.layerMore}>
                     <button
                       type="button"
                       className={styles.layerTool}
@@ -260,9 +256,18 @@ export function LayersPanel({
                       title={t(layer.hidden ? 'map.layers.secretOn' : 'map.layers.secretOff')}
                       onClick={() => layers.update.mutate({ layerId: layer.id, hidden: !layer.hidden })}
                     >
-                      {layer.hidden ? <Lock aria-hidden="true" size={14} /> : <LockOpen aria-hidden="true" size={14} />}
+                      <UserRoundX aria-hidden="true" size={14} />
                     </button>
-                  </>
+                    <button
+                      type="button"
+                      className={styles.layerTool}
+                      aria-label={t('map.layers.remove', { name: layer.name })}
+                      onClick={() => setDeleting(deleting === layer.id ? null : layer.id)}
+                      aria-expanded={deleting === layer.id}
+                    >
+                      <Trash2 aria-hidden="true" size={14} />
+                    </button>
+                  </span>
                 )}
                 <button
                   type="button"
@@ -274,21 +279,22 @@ export function LayersPanel({
                 >
                   {off ? <EyeOff aria-hidden="true" size={15} /> : <Eye aria-hidden="true" size={15} />}
                 </button>
-                {editable && (
-                  <button
-                    type="button"
-                    className={styles.layerTool}
-                    aria-label={t('map.layers.remove', { name: layer.name })}
-                    onClick={() => setDeleting(deleting === layer.id ? null : layer.id)}
-                    aria-expanded={deleting === layer.id}
-                  >
-                    <Trash2 aria-hidden="true" size={14} />
-                  </button>
-                )}
               </span>
+              {open && (
+                <ul className={styles.layerItems}>
+                  {own.map((element) => (
+                    <li key={element.id}>
+                      <button type="button" onClick={() => onSelect(element.id)}>
+                        {elementName(element) || t(`map.element.${element.kind}Untitled`)}
+                        {element.hidden && <EyeOff aria-label={t('map.element.hidden')} size={12} />}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
               {deleting === layer.id && (
                 <div className={styles.layerConfirm}>
-                  <span id={`${layer.id}-pregunta`}>{t('map.layers.removeAsk', { count: count(layer.id) })}</span>
+                  <span id={`${layer.id}-pregunta`}>{t('map.layers.removeAsk', { count: own.length })}</span>
                   <button
                     type="button"
                     ref={focusOnMount}

@@ -11,6 +11,7 @@ import { useApi } from '../../api/context.tsx'
 import { useErrorText } from '../../api/errors.ts'
 import { FormError } from '../../components/field.tsx'
 import { focusOnMount } from '../../components/focus.ts'
+import form from '../../components/form.module.css'
 import list from '../../components/list.module.css'
 import type { Point } from './edit.ts'
 import type { Size } from './geometry.ts'
@@ -119,7 +120,7 @@ export function MapSettings({
                 {t('map.settings.badLength')}
               </p>
             )}
-            <button type="button" className={styles.primary} onClick={saveLine}>
+            <button type="button" className={form.button} onClick={saveLine}>
               {t('map.settings.saveScale')}
             </button>
           </>

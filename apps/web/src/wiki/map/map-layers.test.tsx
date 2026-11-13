@@ -118,14 +118,20 @@ describe('las capas del mapa (módulo 9)', () => {
     const names = panel.getAllByRole('button', { name: /^Renombrar/ }).map((b) => b.textContent)
     expect(names).toEqual(['Secretos', 'Política'])
     expect(panel.getByText('Solo del máster')).toBeDefined()
-    expect(panel.getByText('2 cosas')).toBeDefined()
-    await userEvent.click(panel.getByRole('button', { name: 'Ver «Secretos» en tu pantalla' }))
+    // Lo que tiene, por clases; al pulsarlo, la lista para elegir cada cosa
+    await userEvent.click(panel.getByRole('button', { name: '1 región · 1 ruta' }))
+    await userEvent.click(panel.getByRole('button', { name: 'Camino real' }))
+    expect(await screen.findByRole('region', { name: 'Ruta' })).toBeDefined()
+    await userEvent.click(within(screen.getByRole('region', { name: 'Ruta' })).getByRole('button', { name: 'Cerrar' }))
+    // Al cerrar su panel, vuelven las capas
+    const again = within(await screen.findByRole('region', { name: 'Capas' }))
+    await userEvent.click(again.getByRole('button', { name: 'Ver «Secretos» en tu pantalla' }))
     expect(drawn('label')).toHaveLength(0)
-    expect(panel.getByRole('button', { name: 'Ver «Secretos» en tu pantalla' }).getAttribute('aria-pressed')).toBe(
+    expect(again.getByRole('button', { name: 'Ver «Secretos» en tu pantalla' }).getAttribute('aria-pressed')).toBe(
       'false'
     )
     expect(JSON.parse(localStorage.getItem(`crisol.mapa.capas-apagadas.${mapId}`) ?? '[]')).toEqual([secretos.id])
-    await userEvent.click(panel.getByRole('button', { name: 'Ver «Secretos» en tu pantalla' }))
+    await userEvent.click(again.getByRole('button', { name: 'Ver «Secretos» en tu pantalla' }))
     expect(drawn('label')).toHaveLength(1)
   })
 
@@ -142,12 +148,13 @@ describe('las capas del mapa (módulo 9)', () => {
     // «Política», solo del máster
     await userEvent.click(panel.getByRole('button', { name: 'Solo del máster: «Política»' }))
     await waitFor(async () => expect((await layers()).find((l) => l.id === politica.id)?.hidden).toBe(true))
-    // Subirla del todo (de arriba abajo: Rutas, Secretos, Política)
-    await userEvent.click(await panel.findByRole('button', { name: 'Subir «Política»' }))
+    // Subirla con Alt y la flecha desde su nombre (de arriba abajo: Rutas, Secretos, Política)
+    ;(await panel.findByRole('button', { name: /^Renombrar «Política»/ })).focus()
+    await userEvent.keyboard('{Alt>}{ArrowUp}{/Alt}')
     await waitFor(async () => expect((await layers()).map((l) => l.name)).toEqual(['Secretos', 'Política', 'Rutas']))
     // Quitarla pide confirmarlo y se lleva lo suyo
     await userEvent.click(panel.getByRole('button', { name: 'Quitar «Política»' }))
-    expect(panel.getByText('¿Quitarla con 2 cosas?')).toBeDefined()
+    expect(panel.getByText(/¿Quitarla con 2/)).toBeDefined()
     await userEvent.click(panel.getByRole('button', { name: 'Quitar' }))
     await waitFor(async () => expect((await layers()).map((l) => l.name)).toEqual(['Secretos', 'Rutas']))
     expect((await api.client.call('getMap', { tabId })).elements).toHaveLength(1)
