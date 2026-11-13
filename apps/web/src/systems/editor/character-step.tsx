@@ -11,10 +11,10 @@ import { useTranslation } from 'react-i18next'
 import { useAnnounce } from '../../components/announcer.tsx'
 import { focusAfterRemoving, focusOnMount } from '../../components/focus.ts'
 import { NumberText } from '../../components/number-text.tsx'
+import type { Change } from './change.ts'
 import { Help } from './help.tsx'
 import { blankField, keyFor, MAIN_KINDS, MORE_KINDS, summaryOf, withText } from './kinds.ts'
 import styles from './rules.module.css'
-import type { Change } from './rules-editor.tsx'
 
 export function CharacterStep({
   system,
