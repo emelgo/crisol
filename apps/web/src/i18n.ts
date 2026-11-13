@@ -1980,6 +1980,38 @@ export const es = {
       delete: 'Quitar',
       deleted: 'Quitado del mapa.'
     },
+    measure: {
+      tool: 'Medir (M)',
+      title: 'Medir',
+      close: 'Dejar de medir',
+      hint: 'Pulsa de punto a punto (se pega a pines y vértices), o una ruta para medirla entera. Esc vuelve a empezar.',
+      noScale: 'Este mapa aún no tiene escala.',
+      calibrate: 'Ponerla',
+      straight: 'En línea recta',
+      along: 'Por «{{name}}»',
+      speeds: { foot: 'A pie', horse: 'A caballo', ship: 'En barco' },
+      days_one: '{{count}} día',
+      days_other: '{{count}} días',
+      lessThanDay: 'Menos de 1 día'
+    },
+    settings: {
+      title: 'Ajustes del mapa',
+      close: 'Cerrar los ajustes',
+      scale: 'La escala',
+      none: 'Sin escala: dibuja una raya sobre algo que conozcas y di cuánto mide.',
+      current: 'Una raya de referencia mide {{value}} {{unit}}.',
+      draw: 'Dibujar la raya',
+      redraw: 'Volver a dibujarla',
+      drawHint: 'Pulsa en un extremo y luego en el otro.',
+      howLong: '¿Cuánto mide esa raya de verdad?',
+      length: 'Cuánto mide',
+      unit: 'Unidad',
+      units: { km: 'km', mi: 'millas', leguas: 'leguas', m: 'metros', pies: 'pies' },
+      saveScale: 'Guardar la escala',
+      speeds: 'Cuánto se anda en un día',
+      perDay: '{{unit}} al día',
+      defaultSpeeds: 'Volver a lo de serie'
+    },
     edit: {
       tools: { region: 'Región (R)', path: 'Ruta (L)', text: 'Texto (T)' },
       hints: {

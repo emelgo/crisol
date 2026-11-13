@@ -40,6 +40,8 @@ test('los mapas con capas: el máster dibuja una región y una ruta, ordena capa
   const tab = await api('createPageTab', { pageId: id('Valdren'), kind: 'map', name: 'Mapa' })
   const map = await api('getMap', { tabId: tab.id })
   await api('updateMap', { mapId: map.id, image: { fileId: file.id, width: 1600, height: 1000 } })
+  // 100 px de la imagen son 25 km
+  await api('updateMap', { mapId: map.id, scale: { length: 100, value: 25, unit: 'km' } })
   // Lo que traería la IA: la capa «Política» con dos reinos, y «Secretos», solo del máster
   const politica = await api('createMapLayer', { mapId: map.id, name: 'Política' })
   const secretos = await api('createMapLayer', { mapId: map.id, name: 'Secretos', hidden: true })
@@ -169,6 +171,17 @@ test('los mapas con capas: el máster dibuja una región y una ruta, ordena capa
   await expect(ana.getByRole('region', { name: 'Capas' }).getByText('Política')).toBeVisible()
   await expect(ana.getByRole('region', { name: 'Capas' }).getByText('Secretos')).toHaveCount(0)
   await expect(ana.getByRole('button', { name: 'Ruta (L)' })).toHaveCount(0)
+  // Mide de un sitio a otro: la distancia y los días
+  await ana.getByRole('button', { name: 'Medir (M)' }).click()
+  const seenBox = await seen.boundingBox()
+  if (!seenBox) throw new Error('sin visor')
+  await ana.mouse.click(seenBox.x + seenBox.width * 0.3, seenBox.y + seenBox.height * 0.5)
+  await ana.mouse.click(seenBox.x + seenBox.width * 0.7, seenBox.y + seenBox.height * 0.5)
+  const ruler = ana.getByRole('region', { name: 'Medir' })
+  await expect(ruler).toContainText('En línea recta')
+  await expect(ruler).toContainText('km')
+  await expect(ruler).toContainText('A pie')
+  await expect(ruler).toContainText(/\d+ días?|Menos de 1 día/)
   await settled(ana)
   await ana.screenshot({ path: test.info().outputPath('4-jugadora.png') })
 })

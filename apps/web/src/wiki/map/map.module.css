@@ -875,3 +875,144 @@
   font-variant-numeric: tabular-nums;
   text-align: end;
 }
+
+/* Medir (módulo 9): el recuadro abajo a la izquierda, de cristal */
+.measure {
+  position: absolute;
+  inset-block-end: var(--space-3);
+  inset-inline-start: calc(3.5rem + var(--space-3));
+  z-index: 3;
+  display: grid;
+  gap: var(--space-2);
+  inline-size: min(22rem, calc(100% - 5rem));
+  padding: var(--space-3);
+  border: 1px solid var(--line-frame);
+  border-radius: 8px;
+  background: var(--frame-sheen), var(--popup-glass);
+  -webkit-backdrop-filter: var(--popup-blur);
+  backdrop-filter: var(--popup-blur);
+  box-shadow: var(--glass-shadow);
+}
+
+.measureHead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-muted);
+}
+
+.measureHead h2 {
+  flex: 1;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  color: var(--color-muted);
+  font: 600 0.75rem var(--font-body);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.measureHint,
+.measureWhat,
+.settingsHint {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+.measureWhat {
+  color: var(--color-text);
+}
+
+.measureDistance {
+  margin: 0;
+  font: 700 2rem / 1 var(--font-display);
+  font-variant-numeric: tabular-nums;
+}
+
+.measureDistance small {
+  margin-inline-start: 6px;
+  color: var(--color-muted);
+  font: 500 0.9375rem var(--font-body);
+}
+
+.days {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.days li {
+  display: grid;
+  padding: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--field-fill);
+}
+
+.days small {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+}
+
+.days b {
+  font: 700 1.25rem / 1.15 var(--font-display);
+}
+
+.linkButton {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-link);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Los ajustes del mapa: la escala y lo que se anda en un día */
+.settingsHead {
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  border: 0;
+  color: var(--color-text);
+  font: 600 0.875rem var(--font-body);
+  text-transform: none;
+}
+
+.twoFields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-2);
+}
+
+.speedRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 5rem auto;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.875rem;
+}
+
+.speedUnit {
+  color: var(--color-muted);
+}
+
+.primary {
+  justify-self: start;
+  min-block-size: 2.25rem;
+  padding: 0 var(--space-4);
+  border: 0;
+  border-radius: 6px;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.primary:hover {
+  filter: brightness(1.1);
+}
