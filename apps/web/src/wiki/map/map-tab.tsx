@@ -63,6 +63,7 @@ import { mapKey } from './keys.ts'
 import { LayersPanel, useHiddenHere } from './layers-panel.tsx'
 import styles from './map.module.css'
 import { MapSettings } from './map-settings.tsx'
+import { distanceOf, roundDistance } from './measure.ts'
 import { MeasurePanel } from './measure-panel.tsx'
 import { PinPanel } from './pin-panel.tsx'
 import { PinShape, tipAnchored } from './pin-shape.tsx'
@@ -280,6 +281,12 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [calibration, setCalibration] = useState<Point[]>([])
   const [line, setLine] = useState<[Point, Point] | null>(null)
+  useEffect(() => {
+    if (measure.points.length < 2 || !map.scale) return
+    const distance = distanceOf(measure.points, image, map.scale)
+    if (distance !== null)
+      announce(t('map.measure.said', { distance: roundDistance(distance).toLocaleString('es'), unit: map.scale.unit }))
+  }, [measure.points, map.scale, image, announce, t])
   // Lo dibujado bajo el puntero al pulsar: el visor captura el puntero (para arrastrar el mapa) y el clic le llega a él
   const pressedOn = useRef<string | null>(null)
   const [menu, setMenu] = useState<{ sx: number; sy: number; x: number; y: number } | null>(null)
@@ -289,6 +296,9 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
   const [layersOpen, setLayersOpen] = useState(false)
   // Ampliado: el mapa ocupa todo lo de al lado de la barra (para dibujar con sitio)
   const [wide, setWide] = useState(false)
+  // Los botones que abren los paneles: al cerrarlos, el foco vuelve a ellos
+  const layersButton = useRef<HTMLButtonElement>(null)
+  const settingsButton = useRef<HTMLButtonElement>(null)
   const hiddenHere = useHiddenHere(map.id)
   const drawingId = useId()
   const pins = usePins(page, map)
@@ -338,6 +348,14 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
 
   // Al encuadrar y al ampliarlo o reducirlo (cambia su tamaño)
   useLayoutEffect(() => fit(), [fit, wide])
+  // Ampliado, lo de detrás (la página) no se alcanza con el tabulador ni con el lector de pantalla
+  useEffect(() => {
+    const root = document.getElementById('root')
+    if (!wide || !root) return
+    root.setAttribute('inert', '')
+    return () => root.removeAttribute('inert')
+  }, [wide])
+
   // Si el visor cambia de tamaño (la ventana, el móvil al girar), se vuelve a encuadrar
   useEffect(() => {
     const element = container.current
@@ -422,6 +440,11 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
     point ? (map.pins.find((pin) => samePoint([pin.x, pin.y], point))?.id ?? null) : null
 
   const chooseTool = (next: Tool) => {
+    // La ayuda de la herramienta, una vez (un aviso que aparece ya con su texto no se lee)
+    if (next !== tool && (next === 'region' || next === 'path' || next === 'text'))
+      announce(t(`map.edit.hints.${next}`))
+    if (next !== tool && next === 'measure') announce(t('map.measure.hint'))
+    if (next !== tool && next === 'calibrate') announce(t('map.settings.drawHint'))
     setTool(next)
     setDraft(null)
     setCursor(null)
@@ -1033,12 +1056,16 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
         {(editable || map.layers.length > 0) && (
           <button
             type="button"
+            ref={layersButton}
             aria-label={t('map.layers.title')}
             title={t('map.layers.title')}
-            aria-expanded={layersOpen}
+            aria-expanded={layersOpen && !current && !currentElement && !settingsOpen}
             onClick={() => {
-              setLayersOpen(!layersOpen)
+              const open = layersOpen && !current && !currentElement && !settingsOpen
+              setLayersOpen(!open)
+              setSettingsOpen(false)
               setSelected(null)
+              setSelectedElement(null)
             }}
           >
             <Layers aria-hidden="true" size={18} />
@@ -1075,9 +1102,10 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
         {editable && !readAs && (
           <button
             type="button"
+            ref={settingsButton}
             aria-label={t('map.settings.title')}
             title={t('map.settings.title')}
-            aria-expanded={settingsOpen}
+            aria-expanded={settingsOpen && !current && !currentElement}
             onClick={() => {
               setSettingsOpen(!settingsOpen)
               setLayersOpen(false)
@@ -1129,15 +1157,9 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
         </div>
       )}
 
-      {tool === 'pin' && (
-        <p className={styles.hint} role="status">
-          {t('map.addPinHint')}
-        </p>
-      )}
+      {tool === 'pin' && <p className={styles.hint}>{t('map.addPinHint')}</p>}
       {DRAWING_TOOLS.includes(tool) && (
-        <p className={styles.hint} role="status">
-          {t(`map.edit.hints.${tool as 'region' | 'path' | 'text'}`)}
-        </p>
+        <p className={styles.hint}>{t(`map.edit.hints.${tool as 'region' | 'path' | 'text'}`)}</p>
       )}
 
       {current && (
@@ -1204,13 +1226,15 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
           onDrawLine={() => {
             setLine(null)
             chooseTool('calibrate')
+            // El botón se va: el foco, al mapa, donde se dibuja la raya
+            container.current?.focus()
           }}
           onLineDone={() => setLine(null)}
           onClose={() => {
             setSettingsOpen(false)
             setLine(null)
             if (tool === 'calibrate') chooseTool('select')
-            container.current?.focus()
+            settingsButton.current?.focus()
           }}
         />
       )}
@@ -1223,7 +1247,7 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
           onToggleHere={hiddenHere.toggle}
           onClose={() => {
             setLayersOpen(false)
-            container.current?.focus()
+            layersButton.current?.focus()
           }}
         />
       )}

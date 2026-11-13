@@ -55,14 +55,26 @@ export function MapSettings({
       api.call('updateMap', { mapId: map.id, ...patch }),
     onSuccess: (next) => queryClient.setQueryData(mapKey(page.worldId, map.tabId), next)
   })
+  const [bad, setBad] = useState(false)
   const saveLine = () => {
     if (!line) return
     const scale = scaleFrom(line[0], line[1], image, Number(value.replace(',', '.')), unit)
+    setBad(!scale)
     if (scale) save.mutate({ scale }, { onSuccess: onLineDone })
   }
   const speedUnit = map.scale?.unit ?? 'millas'
   return (
-    <section className={styles.panel} aria-label={t('map.settings.title')}>
+    <section
+      ref={focusOnMount}
+      tabIndex={-1}
+      className={styles.panel}
+      aria-label={t('map.settings.title')}
+      onKeyDown={(event) => {
+        if (event.key !== 'Escape' || event.defaultPrevented) return
+        event.preventDefault()
+        onClose()
+      }}
+    >
       <header className={styles.panelHead}>
         <h2 className={styles.layersTitle}>
           <Settings2 aria-hidden="true" size={15} />
@@ -81,6 +93,8 @@ export function MapSettings({
               <input
                 ref={focusOnMount}
                 aria-label={t('map.settings.length')}
+                aria-invalid={bad || undefined}
+                aria-describedby={bad ? `${id}-malo` : undefined}
                 inputMode="decimal"
                 value={value}
                 onChange={(event) => setValue(event.currentTarget.value)}
@@ -100,14 +114,17 @@ export function MapSettings({
                 ))}
               </select>
             </div>
+            {bad && (
+              <p id={`${id}-malo`} className={styles.fieldError}>
+                {t('map.settings.badLength')}
+              </p>
+            )}
             <button type="button" className={styles.primary} onClick={saveLine}>
               {t('map.settings.saveScale')}
             </button>
           </>
         ) : drawing ? (
-          <p className={styles.settingsHint} role="status">
-            {t('map.settings.drawHint')}
-          </p>
+          <p className={styles.settingsHint}>{t('map.settings.drawHint')}</p>
         ) : (
           <>
             <p className={styles.settingsHint}>

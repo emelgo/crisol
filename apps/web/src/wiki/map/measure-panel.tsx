@@ -61,7 +61,7 @@ export function MeasurePanel({
           <p className={styles.measureWhat}>
             {route ? t('map.measure.along', { name: route }) : t('map.measure.straight')}
           </p>
-          <p className={styles.measureDistance} aria-live="polite">
+          <p className={styles.measureDistance}>
             {number(roundDistance(distance))}
             <small>{map.scale.unit}</small>
           </p>

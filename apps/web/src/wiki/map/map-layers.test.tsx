@@ -172,6 +172,16 @@ describe('las capas del mapa (módulo 9)', () => {
     expect(fresh[0]?.textContent).toBe('Marca Verde')
   })
 
+  it('el panel se lleva el foco al abrirse; Escape lo cierra y el foco vuelve a «Capas»', async () => {
+    await renderMap()
+    await openLayers()
+    const region = screen.getByRole('region', { name: 'Capas' })
+    expect(region.contains(document.activeElement)).toBe(true)
+    await userEvent.keyboard('{Escape}')
+    expect(screen.queryByRole('region', { name: 'Capas' })).toBeNull()
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Capas' }))
+  })
+
   it('Alt y las flechas mueven la capa desde su nombre; Escape al renombrar deja el nombre como estaba', async () => {
     const { api, tabId } = await renderMap()
     const panel = await openLayers()

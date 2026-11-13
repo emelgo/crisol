@@ -1071,3 +1071,9 @@
   gap: var(--space-2);
   margin-block-start: var(--space-2);
 }
+
+.fieldError {
+  margin: 0;
+  color: var(--color-danger);
+  font-size: 0.8125rem;
+}

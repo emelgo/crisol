@@ -1993,7 +1993,8 @@ export const es = {
       speeds: { foot: 'A pie', horse: 'A caballo', ship: 'En barco' },
       days_one: '{{count}} día',
       days_other: '{{count}} días',
-      lessThanDay: 'Menos de 1 día'
+      lessThanDay: 'Menos de 1 día',
+      said: '{{distance}} {{unit}}'
     },
     settings: {
       title: 'Ajustes del mapa',
@@ -2011,7 +2012,8 @@ export const es = {
       saveScale: 'Guardar la escala',
       speeds: 'Cuánto se anda en un día',
       perDay: '{{unit}} al día',
-      defaultSpeeds: 'Volver a lo de serie'
+      defaultSpeeds: 'Volver a lo de serie',
+      badLength: 'Escribe cuánto mide (una cifra mayor que 0).'
     },
     edit: {
       tools: { region: 'Región', path: 'Ruta', text: 'Texto' },

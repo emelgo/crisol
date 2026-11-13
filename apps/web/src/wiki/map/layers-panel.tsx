@@ -24,7 +24,7 @@ import { useApi } from '../../api/context.tsx'
 import { useErrorText } from '../../api/errors.ts'
 import { useAnnounce } from '../../components/announcer.tsx'
 import { FormError } from '../../components/field.tsx'
-import { focusOnMount } from '../../components/focus.ts'
+import { focusAfterRemoving, focusOnMount } from '../../components/focus.ts'
 import { mapKey } from './keys.ts'
 import styles from './map.module.css'
 
@@ -139,7 +139,17 @@ export function LayersPanel({
   }
 
   return (
-    <section className={styles.panel} aria-label={t('map.layers.title')}>
+    <section
+      ref={focusOnMount}
+      tabIndex={-1}
+      className={styles.panel}
+      aria-label={t('map.layers.title')}
+      onKeyDown={(event) => {
+        if (event.key !== 'Escape' || event.defaultPrevented) return
+        event.preventDefault()
+        onClose()
+      }}
+    >
       <header className={styles.panelHead}>
         <h2 className={styles.layersTitle}>
           <Layers aria-hidden="true" size={15} />
@@ -187,6 +197,8 @@ export function LayersPanel({
                     onKeyDown={(event) => {
                       if (event.key === 'Enter') event.currentTarget.blur()
                       if (event.key === 'Escape') {
+                        // Solo deja de renombrar (no cierra el panel)
+                        event.preventDefault()
                         event.currentTarget.value = layer.name
                         event.currentTarget.blur()
                       }
@@ -276,19 +288,22 @@ export function LayersPanel({
               </span>
               {deleting === layer.id && (
                 <div className={styles.layerConfirm}>
-                  <span>{t('map.layers.removeAsk', { count: count(layer.id) })}</span>
+                  <span id={`${layer.id}-pregunta`}>{t('map.layers.removeAsk', { count: count(layer.id) })}</span>
                   <button
                     type="button"
                     ref={focusOnMount}
                     className={`${styles.layerTool} ${styles.danger}`}
-                    onClick={() =>
+                    aria-describedby={`${layer.id}-pregunta`}
+                    onClick={(event) => {
+                      const back = focusAfterRemoving(event.currentTarget.closest('li'))
                       layers.remove.mutate(layer.id, {
                         onSuccess: () => {
                           setDeleting(null)
                           announce(t('map.layers.removed', { name: layer.name }))
+                          requestAnimationFrame(back)
                         }
                       })
-                    }
+                    }}
                   >
                     {t('map.layers.removeConfirm')}
                   </button>
