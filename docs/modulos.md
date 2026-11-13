@@ -20,8 +20,9 @@ Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguien
   https://claude.ai/artifact/NUQMCPWW11Wz4HLfXRmChX
 - Pruebas: web (mapa 63, wiki 357), servidor (capas 10, MCP), e2e `mapas-capas` y la batería entera en local antes de
   subir (sin CI este mes: `[skip ci]`).
-- **Siguiente**: subirlo a `main` y a staging con `[skip ci]` cuando pase todo en local; luego la pizarra
-  (`docs/specs/modulo-9.md`, capacidad `pizarra`) o el módulo 8, según diga Enrique.
+- **Siguiente**: la pizarra (spec `docs/specs/pizarra.md`, lienzo aprobado con Excalidraw, plan `tasks/pizarra.md`).
+  **No subir nada hasta que esté todo** (Enrique, 2026-11-13: «el ci cuando ya esté todo»): entonces una sola CI y a
+  `main` y staging.
 
 ### Para retomar (2026-11-13, madrugada: módulo 9 empezado; PR #119 en la CI)
 
