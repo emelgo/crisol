@@ -281,6 +281,15 @@
   margin: 0;
 }
 
+/* En el mundo a pantalla completa (la hoja llena, el título flotando arriba): una sola pieza en el centro del hueco,
+   sin recuadro y por debajo del título */
+:global([data-world-shell] article[data-fill]) .empty {
+  align-content: center;
+  min-block-size: calc(100dvh - var(--header-height, 3rem) - var(--space-8));
+  padding-block-start: 7rem;
+  border: 0;
+}
+
 .chooser {
   display: grid;
   gap: var(--space-2);

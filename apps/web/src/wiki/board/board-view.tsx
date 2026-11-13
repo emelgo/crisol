@@ -12,13 +12,17 @@ import { useQuery } from '@tanstack/react-query'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../../api/context.tsx'
-import { PageLink, readAsInput, readAsKey, useReadAs } from '../read-as.tsx'
+import { PageLink, readAsInput, readAsKey, useOpenPage, useReadAs } from '../read-as.tsx'
 import styles from './board.module.css'
 import { BoardFrame, PageCard, pageIdOfLink, useBoardFiles, usePages } from './board-parts.tsx'
 import { summarize } from './summary.ts'
 import { mergeScene, whenReady } from './sync.ts'
 
 ;(window as { EXCALIDRAW_ASSET_PATH?: string }).EXCALIDRAW_ASSET_PATH = '/excalidraw/'
+
+/** La página de una tarjeta (null si no lo es) */
+const cardPage = (element: { link?: string | null; customData?: Record<string, unknown> } | null) =>
+  element ? ((element.customData?.pageId as string | undefined) ?? pageIdOfLink(element.link)) : null
 
 /** Lo más lejos que se ve al abrirla: más lejos, sus tarjetas no se leen */
 const MIN_ZOOM = 0.6
@@ -69,6 +73,7 @@ export default function BoardView({ page, tab }: { page: Page; tab: PageTabView 
     [page.worldId]
   )
 
+  const openPage = useOpenPage()
   const pages = usePages(page.worldId)
   const summary = useMemo(() => {
     const titles = new Map((pages.data?.pages ?? []).map((row) => [row.id, row.title]))
@@ -102,7 +107,17 @@ export default function BoardView({ page, tab }: { page: Page; tab: PageTabView 
         }}
         validateEmbeddable={(link) => (pageIdOfLink(link) ? true : undefined)}
         renderEmbeddable={renderEmbeddable}
-        onLinkOpen={(_element, event) => event.preventDefault()}
+        // Pulsar una tarjeta (sin arrastrar) o su ↗ abre su página, la de la campaña
+        onPointerUp={(_tool, state) => {
+          const pageId = cardPage(state.hit.element)
+          const moved = Math.hypot(state.lastCoords.x - state.origin.x, state.lastCoords.y - state.origin.y)
+          if (pageId && moved < 4) openPage(page.worldId, pageId)
+        }}
+        onLinkOpen={(element, event) => {
+          event.preventDefault()
+          const pageId = cardPage(element)
+          if (pageId) openPage(page.worldId, pageId)
+        }}
       />
     </BoardFrame>
   )

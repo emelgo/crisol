@@ -19,8 +19,12 @@
 }
 
 /* Las secciones con título y los botones, redondeados */
-.wiki :is(section[aria-labelledby], button, input, select, textarea):where(:not(:global(.excalidraw) *)) {
-  border-radius: var(--radius);
+.wiki section[aria-labelledby]:where(:not(:global(.excalidraw) *)) {
+  border-radius: var(--radius-frame);
+}
+
+.wiki :is(button, input, select, textarea):where(:not(:global(.excalidraw) *)) {
+  border-radius: var(--radius-button);
 }
 
 /* Como en Archivos: el panel de la izquierda, una ficha a su lado, pegada arriba al bajar */

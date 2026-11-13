@@ -122,15 +122,29 @@ export function WorldSidebar({
     onWidth(clampWidth(next))
   }
 
+  // Al plegar o desplegar con su botón, el foco pasa al botón que hace lo contrario (si no, cae al cuerpo)
+  const toggled = useRef(false)
+  const foldButton = useRef<HTMLButtonElement>(null)
+  const unfoldButton = useRef<HTMLButtonElement>(null)
+  useEffect(() => {
+    if (!toggled.current) return
+    toggled.current = false
+    ;(folded ? unfoldButton : foldButton).current?.focus()
+  }, [folded])
+
   if (folded) {
     return (
       <aside className={`${styles.side} ${styles.sideFolded}`} aria-label={t('worldShell.side')} data-side="folded">
         <button
+          ref={unfoldButton}
           type="button"
           className={styles.iconButton}
           aria-label={t('worldShell.unfold')}
           title={t('worldShell.unfold')}
-          onClick={() => onFold(false)}
+          onClick={() => {
+            toggled.current = true
+            onFold(false)
+          }}
         >
           <PanelLeftOpen aria-hidden="true" size={18} />
         </button>
@@ -214,11 +228,15 @@ export function WorldSidebar({
           </Link>
         )}
         <button
+          ref={foldButton}
           type="button"
           className={styles.iconButton}
           aria-label={t('worldShell.fold')}
           title={t('worldShell.fold')}
-          onClick={() => onFold(true)}
+          onClick={() => {
+            toggled.current = true
+            onFold(true)
+          }}
         >
           <PanelLeftClose aria-hidden="true" size={18} />
         </button>

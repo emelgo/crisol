@@ -46,8 +46,8 @@ export function WorldHeader({
     <header
       className={styles.header}
       // Al entrar, la tarjeta del mundo se convierte en ella; si no, va aparte en las transiciones (no parpadea al
-      // cambiar de página)
-      style={((entering && worldTransition(world.id)) || { viewTransitionName: 'cabecera-mundo' }) as CSSProperties}
+      // cambiar de página: world-shell.module.css, solo mientras dura una, para que su cristal desenfoque)
+      style={(entering && worldTransition(world.id)) || undefined}
       data-cabecera-mundo=""
     >
       <Link

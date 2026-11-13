@@ -208,7 +208,15 @@
   min-inline-size: 0;
   border-inline-end: 1px solid var(--glass-edge);
   background: var(--glass-sheen), var(--glass-panel);
-  /* Va aparte en las transiciones: quieta al cambiar de página; al entrar llega con lo demás (base.css) */
+}
+
+/* La cabecera y la barra van aparte en las transiciones (quietas al cambiar de página; al entrar llegan con lo demás:
+   base.css). Solo mientras dura una: con el nombre puesto siempre, su desenfoque (en el ::before) no vería lo de detrás */
+:global(:root:active-view-transition) .header {
+  view-transition-name: cabecera-mundo;
+}
+
+:global(:root:active-view-transition) .side {
   view-transition-name: barra-mundo;
 }
 
@@ -303,12 +311,13 @@
   margin: 0;
   padding: 0;
   border: 0;
-  color: var(--color-h2);
-  font-family: var(--font-display);
-  font-size: 1.25rem;
-  font-weight: 700;
+  /* Alrededor de la página nada pesa: título pequeño y gris (docs/diseno.md) */
+  color: var(--color-muted);
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 600;
   line-height: 1;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
@@ -382,8 +391,12 @@
   scrollbar-width: thin;
 }
 
-.center :is(section[aria-labelledby], button, input, select, textarea):where(:not(:global(.excalidraw) *)) {
-  border-radius: var(--radius);
+.center section[aria-labelledby]:where(:not(:global(.excalidraw) *)) {
+  border-radius: var(--radius-frame);
+}
+
+.center :is(button, input, select, textarea):where(:not(:global(.excalidraw) *)) {
+  border-radius: var(--radius-button);
 }
 
 /* Lo que no es una página (buscar, «Ver todos», un archivo), con su margen */
@@ -583,6 +596,8 @@
 .fileHead h1 {
   margin: 0;
   overflow-wrap: anywhere;
+  /* Un nombre de archivo se escribe como es (no en las mayúsculas de los títulos) */
+  text-transform: none;
 }
 
 .fileImage {

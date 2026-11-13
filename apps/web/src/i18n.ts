@@ -1914,6 +1914,7 @@ export const es = {
     uploadFailed: 'No se pudo subir la imagen',
     noMatch: 'Ninguna página se llama así',
     suggestions: 'Páginas del mundo',
+    menu: 'Menú de la pizarra',
     nothing: 'Aún no hay nada en esta pizarra.',
     links: 'Relaciones',
     link: '{{from}} → {{to}}',

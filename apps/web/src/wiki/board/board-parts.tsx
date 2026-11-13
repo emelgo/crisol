@@ -287,6 +287,18 @@ export function BoardFrame({
 }) {
   const { t } = useTranslation()
   const [wide, setWide] = useState(false)
+  // Al ampliar o volver, el botón se monta en otro sitio (el portal): el foco vuelve a él
+  const wideButton = useRef<HTMLButtonElement>(null)
+  const wideToggled = useRef(false)
+  useEffect(() => {
+    if (!wideToggled.current) return
+    wideToggled.current = false
+    wideButton.current?.focus()
+  }, [wide])
+  const toggleWide = (next: boolean) => {
+    wideToggled.current = true
+    setWide(next)
+  }
   const wrapper = useRef<HTMLDivElement>(null)
   // En el mundo a pantalla completa, el título y las pestañas de la página van en esta barra (ADR-0027)
   const head = useContext(BoardHeadContext)
@@ -295,6 +307,22 @@ export function BoardFrame({
   const canvas = useRef<HTMLDivElement>(null)
   const resized = useRef(onCanvasResize)
   resized.current = onCanvasResize
+  // El botón de su menú no lleva nombre: se le pone (y si Excalidraw lo vuelve a pintar, otra vez)
+  const menuName = t('board.menu')
+  useEffect(() => {
+    const element = canvas.current
+    if (!element || typeof MutationObserver === 'undefined') return
+    const name = () => {
+      for (const button of element.querySelectorAll('.main-menu-trigger:not([aria-label])')) {
+        button.setAttribute('aria-label', menuName)
+        button.setAttribute('title', menuName)
+      }
+    }
+    name()
+    const observer = new MutationObserver(name)
+    observer.observe(element, { childList: true, subtree: true })
+    return () => observer.disconnect()
+  }, [menuName])
   useEffect(() => {
     const element = canvas.current
     if (!element || typeof ResizeObserver === 'undefined') return
@@ -323,7 +351,7 @@ export function BoardFrame({
     root.setAttribute('inert', '')
     const onEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && !(event.target instanceof Element && event.target.closest('.excalidraw'))) {
-        setWide(false)
+        toggleWide(false)
       }
     }
     window.addEventListener('keydown', onEscape)
@@ -365,12 +393,13 @@ export function BoardFrame({
               : (notice ?? (saved && onAddPage ? t('board.saved') : ''))}
         </span>
         <button
+          ref={wideButton}
           type="button"
           className={styles.barButton}
           aria-pressed={wide}
           aria-label={t(wide ? 'board.shrink' : 'board.expand')}
           title={t(wide ? 'board.shrink' : 'board.expand')}
-          onClick={() => setWide(!wide)}
+          onClick={() => toggleWide(!wide)}
         >
           {wide ? <Shrink aria-hidden="true" size={16} /> : <Expand aria-hidden="true" size={16} />}
         </button>

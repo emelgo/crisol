@@ -85,17 +85,16 @@ main[data-contenido] {
   }
 }
 
-/* Los títulos, condensados y en mayúsculas; cada nivel con su color, como en el Crisol antiguo */
-h1,
-h2,
-h3 {
+/* Los títulos, condensados y en mayúsculas; cada nivel con su color, como en el Crisol antiguo (no los de Excalidraw,
+   en la pizarra: los de su panel son suyos) */
+:is(h1, h2, h3):where(:not(.excalidraw *)) {
   font-family: var(--font-display);
   line-height: 1.05;
   text-transform: uppercase;
   text-wrap: balance;
 }
 
-h1 {
+h1:where(:not(.excalidraw *)) {
   margin: 0 0 var(--space-8);
   overflow-wrap: break-word;
   font-size: clamp(2.5rem, 6vw, 3.75rem);
@@ -104,7 +103,7 @@ h1 {
 }
 
 /* Un h2 abre una sección: en su color y con una raya fina debajo */
-h2 {
+h2:where(:not(.excalidraw *)) {
   margin: var(--space-8) 0 var(--space-3);
   padding-block-end: var(--space-1);
   border-block-end: 1px solid color-mix(in srgb, var(--color-h2) 35%, transparent);
@@ -114,7 +113,7 @@ h2 {
   letter-spacing: 0.01em;
 }
 
-h3 {
+h3:where(:not(.excalidraw *)) {
   margin: var(--space-6) 0 var(--space-2);
   color: var(--color-h3);
   font-size: 1.5rem;
