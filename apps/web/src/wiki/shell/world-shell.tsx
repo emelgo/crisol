@@ -48,8 +48,12 @@ export function useWorldShellRoute() {
     enabled: Boolean(account && worldId)
   })
   if (!worldId || !account) return { worldId: undefined, bare: false, pending: false }
-  // Mientras no se sabe, nada (la llama en el centro): si no, lo de dentro se montaría dos veces, sin el armazón y con él
-  if (!worlds.data && !worlds.isError) return { worldId: undefined, bare: true, pending: true }
+  // Mientras no se sabe, nada (la llama en el centro): si no, lo de dentro se montaría dos veces, sin el armazón y con él.
+  // Solo en el primer intento: si falla, lo de siempre, que reintenta con su «Cargando…» y acaba en el error (montarlo
+  // tras el error lo volvería a pedir y la llama volvería, sin salir nunca de ella)
+  if (worlds.data === undefined && worlds.isPending && worlds.failureCount === 0) {
+    return { worldId: undefined, bare: true, pending: true }
+  }
   const world = worlds.data?.worlds.find((w) => w.id === worldId)
   if (world?.role === 'master') return { worldId, bare: true, pending: false }
   // Quien juega (su portada) o un mundo que no existe: como siempre, con la barra

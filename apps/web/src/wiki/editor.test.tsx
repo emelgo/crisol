@@ -117,7 +117,8 @@ describe('el texto de una página', () => {
 
   it('sin conexión se sigue escribiendo, y lo dice', async () => {
     renderPort()
-    await waitFor(() => expect(sockets.length).toBeGreaterThan(0))
+    // El de esta página (el armazón del mundo lo monta cuando sabe que se dirige)
+    await waitFor(() => expect(providers().some((p) => p.configuration.name === `page:${PORT}`)).toBe(true))
     act(() => {
       // Como lo dice el WebSocket al perder la conexión
       for (const socket of sockets)
