@@ -1204,7 +1204,8 @@ export const es = {
       page: 'Revelar la página',
       secret: 'Revelar el secreto',
       pin: 'Revelar el pin',
-      tab: 'Revelar la pestaña'
+      tab: 'Revelar la pestaña',
+      element: 'Revelarlo en el mapa'
     },
     campaign: 'Campaña',
     to: 'A quién',
@@ -1957,7 +1958,39 @@ export const es = {
       label: 'el texto «{{name}}»',
       regionUntitled: 'una región',
       pathUntitled: 'una ruta',
-      labelUntitled: 'un texto'
+      labelUntitled: 'un texto',
+      title: { region: 'Región', path: 'Ruta', label: 'Texto' },
+      close: 'Cerrar',
+      text: 'Texto',
+      layer: 'Capa',
+      fill: 'Relleno',
+      fills: { solid: 'Liso', hatch: 'Rayado', none: 'Sin relleno' },
+      opacity: 'Opacidad',
+      border: 'Borde',
+      stroke: 'Trazo',
+      strokes: { solid: 'Liso', dashed: 'Discontinuo', dotted: 'Punteado' },
+      width: 'Grosor',
+      display: 'Su nombre en el mapa',
+      size: 'Tamaño de la letra',
+      rotate: 'Giro',
+      arc: 'Arco',
+      hidden: 'Oculto a los jugadores',
+      delete: 'Quitar',
+      deleted: 'Quitado del mapa.'
+    },
+    edit: {
+      tools: { region: 'Región (R)', path: 'Ruta (L)', text: 'Texto (T)' },
+      hints: {
+        region: 'Pulsa para poner cada vértice; Intro, doble clic o el primero la cierran. Esc cancela.',
+        path: 'Pulsa para poner cada punto; Intro o doble clic la acaban. Esc cancela.',
+        text: 'Pulsa donde vaya el texto.'
+      },
+      newText: 'Texto',
+      vertex: 'Arrastra para moverlo; botón derecho para quitarlo',
+      addVertex: 'Arrastra para añadir un vértice',
+      tooFew: 'No se puede quitar: le hacen falta más vértices.',
+      undone: 'Deshecho.',
+      nothingToUndo: 'No hay nada que deshacer.'
     },
     pins: 'Pines del mapa',
     loading: 'Cargando la imagen…',

@@ -106,7 +106,7 @@ export function SecretReveal({ worldId, pageId, documentId }: { worldId: string;
   )
 }
 
-/** «Revelar…» de un pin o de una pestaña (en su panel o su menú): con aviso, como un secreto */
+/** «Revelar…» de un pin, de algo dibujado en un mapa o de una pestaña (en su panel o su menú): con aviso, como un secreto */
 export function TargetReveal({
   worldId,
   pageId,
@@ -115,7 +115,7 @@ export function TargetReveal({
 }: {
   worldId: string
   pageId: string
-  kind: 'pin' | 'tab'
+  kind: 'pin' | 'tab' | 'element'
   targetId: string
 }) {
   const { t } = useTranslation()
@@ -191,7 +191,7 @@ function RevealMenu({
 }: {
   id: string
   worldId: string
-  kind: 'secret' | 'page' | 'pin' | 'tab'
+  kind: 'secret' | 'page' | 'pin' | 'tab' | 'element'
   targetId: string
   campaigns: Campaigns
   /** A quién se le ha revelado ya en esa campaña */

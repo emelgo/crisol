@@ -6,7 +6,7 @@
 import '@fontsource/alegreya/400.css'
 import '@fontsource/alegreya/400-italic.css'
 import type { MapElementView, MapLayerView, MapStyle } from '@crisol/contracts'
-import { type MouseEvent, memo } from 'react'
+import { type MouseEvent, memo, type PointerEvent } from 'react'
 import { colorHex } from '../../routes/world-look.ts'
 import { arcPath, fontPixels, paintOrder, pathOf, regionLabelAt, type Size, toPixels } from './geometry.ts'
 import styles from './map.module.css'
@@ -33,7 +33,10 @@ export const MapDrawing = memo(function MapDrawing({
   elements,
   hiddenHere,
   selected,
-  onOpen
+  live,
+  onOpen,
+  onElementPointerDown,
+  onElementClick
 }: {
   /** Para los ids de sus patrones (hay más de un mapa en la página) */
   id: string
@@ -43,15 +46,21 @@ export const MapDrawing = memo(function MapDrawing({
   /** Las capas apagadas en esta pantalla */
   hiddenHere: ReadonlySet<string>
   selected?: string | null
+  /** Lo que se está retocando, con su forma de ahora (aún sin guardar) */
+  live?: { id: string; geometry: MapElementView['geometry'] } | null
   /** Doble clic en algo que lleva a una página */
   onOpen?: (pageId: string) => void
+  onElementPointerDown?: (event: PointerEvent<SVGGElement>, element: MapElementView) => void
+  onElementClick?: (event: MouseEvent<SVGGElement>, element: MapElementView) => void
 }) {
   // Lo de antes de las capas (sin capa) cuenta como de la primera
   const first = layers[0]?.id
-  const shown = paintOrder(elements, layers).filter((element) => {
-    const layer = element.layerId ?? first
-    return !(layer && hiddenHere.has(layer))
-  })
+  const shown = paintOrder(elements, layers)
+    .filter((element) => {
+      const layer = element.layerId ?? first
+      return !(layer && hiddenHere.has(layer))
+    })
+    .map((element) => (live && element.id === live.id ? { ...element, geometry: live.geometry } : element))
   // Un patrón de rayas por color que se use rayado
   const hatches = [
     ...new Set(shown.filter((e) => e.kind === 'region' && e.style.fill === 'hatch').map((e) => hexOf(e.style)))
@@ -100,6 +109,8 @@ export const MapDrawing = memo(function MapDrawing({
           image={image}
           selected={element.id === selected}
           onDoubleClick={open(element)}
+          onPointerDown={onElementPointerDown ? (event) => onElementPointerDown(event, element) : undefined}
+          onClick={onElementClick ? (event) => onElementClick(event, element) : undefined}
         />
       ))}
     </svg>
@@ -111,13 +122,17 @@ function Element({
   element,
   image,
   selected,
-  onDoubleClick
+  onDoubleClick,
+  onPointerDown,
+  onClick
 }: {
   id: string
   element: MapElementView
   image: Size
   selected: boolean
   onDoubleClick: (event: MouseEvent) => void
+  onPointerDown?: (event: PointerEvent<SVGGElement>) => void
+  onClick?: (event: MouseEvent<SVGGElement>) => void
 }) {
   const { style, geometry } = element
   const base = DEFAULTS[element.kind]
@@ -139,7 +154,9 @@ function Element({
     'data-hidden': element.hidden || undefined,
     'data-link': element.pageId ? true : undefined,
     'data-id': element.id,
-    onDoubleClick
+    onDoubleClick,
+    onPointerDown,
+    onClick
   }
   if (element.kind === 'region' && 'pieces' in geometry) {
     const d = geometry.pieces.map((piece) => pathOf(piece, image, true)).join(' ')

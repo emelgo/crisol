@@ -3,10 +3,10 @@
  * visor es el de Everlore rehecho sobre lo nuestro: durante el gesto el escenario se mueve con `transform` directamente
  * en el DOM (sin pintar React), la rueda acerca hacia el cursor y los pines guardan su tamaño con --inv-k
  */
-import type { MapPinView, MapView, Page, PageTabView } from '@crisol/contracts'
+import type { MapElementView, MapGeometry, MapPinView, MapView, Page, PageTabView } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
-import { ImageIcon, Layers, MapPin, Maximize, Minus, Plus } from 'lucide-react'
+import { ImageIcon, Layers, MapPin, Maximize, Minus, Pentagon, Plus, Spline, Type } from 'lucide-react'
 import {
   type KeyboardEvent,
   type PointerEvent,
@@ -31,11 +31,24 @@ import { Tour } from '../../components/tour.tsx'
 import { useWorldFiles } from '../cover-look.ts'
 import { readAsInput, readAsKey, useReadAs } from '../read-as.tsx'
 import { MapDrawing } from './drawing.tsx'
+import {
+  insertedVertex,
+  moved,
+  type Point,
+  snapped,
+  snapTargets,
+  type VertexRef,
+  withoutVertex,
+  withVertex
+} from './edit.ts'
+import { type Draft, DraftLayer, EditHandles } from './editing.tsx'
+import { ElementPanel } from './element-panel.tsx'
 import { mapKey } from './keys.ts'
 import { LayersPanel, useHiddenHere } from './layers-panel.tsx'
 import styles from './map.module.css'
 import { PinPanel } from './pin-panel.tsx'
 import { PinShape, tipAnchored } from './pin-shape.tsx'
+import { useElements } from './use-elements.ts'
 
 export { mapKey } from './keys.ts'
 
@@ -205,6 +218,12 @@ function usePins(page: Page, map: MapView) {
 }
 
 type Gesture = { startX: number; startY: number; view: View; travel: number; pinch: number | null }
+type Tool = 'select' | 'pin' | 'region' | 'path' | 'text'
+/** Las teclas de las herramientas (con el visor enfocado) */
+const TOOL_KEYS: Record<string, Tool> = { v: 'select', p: 'pin', r: 'region', l: 'path', t: 'text' }
+const DRAWING_TOOLS: readonly Tool[] = ['region', 'path', 'text']
+const samePoint = (a: Point | undefined, b: Point | undefined) =>
+  !!a && !!b && Math.abs(a[0] - b[0]) < 1e-6 && Math.abs(a[1] - b[1]) < 1e-6
 type PinDrag = { id: string; startX: number; startY: number; x0: number; y0: number; travel: number }
 
 /** El visor: el escenario (imagen y pines) que se mueve y se acerca, sus herramientas y el panel del pin elegido */
@@ -222,8 +241,17 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
   const gesture = useRef<Gesture | null>(null)
   const pinDrag = useRef<PinDrag | null>(null)
   const dragged = useRef(false)
-  const [tool, setTool] = useState<'select' | 'pin'>('select')
+  const [tool, setTool] = useState<Tool>('select')
   const [selected, setSelected] = useState<string | null>(null)
+  // Lo dibujado elegido, lo que se está dibujando (con la goma hasta el cursor) y lo que se está retocando
+  const [selectedElement, setSelectedElement] = useState<string | null>(null)
+  const [namingElement, setNamingElement] = useState<string | null>(null)
+  const [draft, setDraft] = useState<Draft | null>(null)
+  const [cursor, setCursor] = useState<Point | null>(null)
+  const [live, setLive] = useState<{ id: string; geometry: MapGeometry } | null>(null)
+  const liveRef = useRef(live)
+  liveRef.current = live
+  const lastTravel = useRef(0)
   const [menu, setMenu] = useState<{ sx: number; sy: number; x: number; y: number } | null>(null)
   const [moving, setMoving] = useState<{ id: string; x: number; y: number } | null>(null)
   const [newPage, setNewPage] = useState<string | null>(null)
@@ -232,6 +260,7 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
   const hiddenHere = useHiddenHere(map.id)
   const drawingId = useId()
   const pins = usePins(page, map)
+  const elements = useElements(page, map)
   const editable = !page.locked
 
   /** Abrir la página de un pin o de algo dibujado (como jugador, la de su campaña) */
@@ -321,6 +350,144 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
     }
   }
 
+  /** Un punto de la pantalla en el mapa, pegado a los vértices y pines cercanos (menos los de lo que se retoca) */
+  const snappedAt = (clientX: number, clientY: number, except: string | null = null): Point => {
+    const { x, y } = toMap(clientX, clientY)
+    return snapped([x, y], snapTargets(map.elements, map.pins, except), image, view.current.k).point
+  }
+
+  /** El pin que hay justo en un punto (para que una ruta empiece o acabe en él) */
+  const pinAt = (point: Point | undefined) =>
+    point ? (map.pins.find((pin) => samePoint([pin.x, pin.y], point))?.id ?? null) : null
+
+  const chooseTool = (next: Tool) => {
+    setTool(next)
+    setDraft(null)
+    setCursor(null)
+    if (next !== 'select') {
+      setSelected(null)
+      setSelectedElement(null)
+    }
+  }
+
+  const created = (element: MapElementView) => {
+    setSelectedElement(element.id)
+    setNamingElement(element.id)
+    setSelected(null)
+    setLayersOpen(false)
+  }
+
+  /** Acabar lo que se dibuja: una región necesita tres puntos; una ruta, dos */
+  const finishDraft = () => {
+    if (!draft) return
+    const points = draft.points.filter((point, index, all) => !samePoint(point, all[index - 1]))
+    const enough = draft.kind === 'region' ? points.length >= 3 : points.length >= 2
+    setDraft(null)
+    setCursor(null)
+    setTool('select')
+    if (!enough) return
+    const geometry: MapGeometry =
+      draft.kind === 'region' ? { pieces: [points] } : { points, from: pinAt(points[0]), to: pinAt(points.at(-1)) }
+    elements.create.mutate({ kind: draft.kind, geometry }, { onSuccess: created })
+  }
+
+  const addDraftPoint = (point: Point) => {
+    const kind = tool === 'path' ? 'path' : 'region'
+    const points = draft?.points ?? []
+    // Pulsar el primero de una región la cierra; un doble clic no pone dos puntos
+    if (kind === 'region' && points.length >= 3 && samePoint(point, points[0])) return finishDraft()
+    if (samePoint(point, points.at(-1))) return
+    setDraft({ kind, points: [...points, point] })
+  }
+
+  const placeText = (point: Point) => {
+    setTool('select')
+    elements.create.mutate(
+      { kind: 'label', geometry: { at: point }, label: t('map.edit.newText') },
+      { onSuccess: created }
+    )
+  }
+
+  /** Arrastrar algo (un vértice, lo elegido): se sigue en la ventana hasta soltar; dice si se movió */
+  const drag = (
+    event: PointerEvent<Element>,
+    onMove: (clientX: number, clientY: number, dx: number, dy: number) => void,
+    onEnd: (movedIt: boolean) => void
+  ) => {
+    event.stopPropagation()
+    event.preventDefault()
+    const startX = event.clientX
+    const startY = event.clientY
+    let travel = 0
+    const move = (e: globalThis.PointerEvent) => {
+      travel = Math.max(travel, Math.hypot(e.clientX - startX, e.clientY - startY))
+      if (travel > 3) onMove(e.clientX, e.clientY, e.clientX - startX, e.clientY - startY)
+    }
+    const end = () => {
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerup', end)
+      window.removeEventListener('pointercancel', end)
+      onEnd(travel > 3)
+    }
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', end)
+    window.addEventListener('pointercancel', end)
+  }
+
+  /** Guardar la forma retocada (si la hay) y dejar de enseñarla en vivo */
+  const commitLive = () => {
+    const current = liveRef.current
+    setLive(null)
+    if (current) elements.update.mutate({ id: current.id, patch: { geometry: current.geometry } })
+  }
+
+  const dragVertex = (
+    event: PointerEvent<Element>,
+    element: MapElementView,
+    base: MapGeometry,
+    ref: VertexRef,
+    always: boolean
+  ) => {
+    setLive({ id: element.id, geometry: base })
+    drag(
+      event,
+      (clientX, clientY) =>
+        setLive({ id: element.id, geometry: withVertex(base, ref, snappedAt(clientX, clientY, element.id)) }),
+      (movedIt) => (movedIt || always ? commitLive() : setLive(null))
+    )
+  }
+
+  const onElementPointerDown = (event: PointerEvent<SVGGElement>, element: MapElementView) => {
+    if (tool !== 'select' || !editable || element.id !== selectedElement) return
+    if (event.pointerType === 'mouse' && event.button !== 0) return
+    // Lo elegido se arrastra entero
+    const original = element.geometry
+    const { k } = view.current
+    drag(
+      event,
+      (_x, _y, dx, dy) =>
+        setLive({ id: element.id, geometry: moved(original, dx / (k * image.width), dy / (k * image.height)) }),
+      (movedIt) => (movedIt ? commitLive() : setLive(null))
+    )
+  }
+
+  const onElementClick = (event: React.MouseEvent<SVGGElement>, element: MapElementView) => {
+    if (tool !== 'select' || lastTravel.current > 4) return
+    event.stopPropagation()
+    setSelectedElement(element.id)
+    setSelected(null)
+    setLayersOpen(false)
+  }
+
+  const removeElement = (element: MapElementView) =>
+    elements.remove.mutate(element, {
+      onSuccess: () => {
+        setSelectedElement(null)
+        announce(t('map.element.deleted'))
+        container.current?.focus()
+      }
+    })
+
   const placePin = (point: { x: number; y: number }, withPage = false) => {
     pins.create.mutate(point, {
       onSuccess: (pin) => {
@@ -348,6 +515,8 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
   }
 
   const onPointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    // Dibujando: la goma sigue al cursor (pegada a lo cercano)
+    if (draft && pointers.current.size === 0) setCursor(snappedAt(event.clientX, event.clientY))
     if (!pointers.current.has(event.pointerId) || !gesture.current) return
     pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY })
     const current = gesture.current
@@ -378,9 +547,17 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
     const current = gesture.current
     if (pointers.current.size > 0 || !current) return
     gesture.current = null
+    lastTravel.current = current.travel
     if (current.travel > 4 || event.type === 'pointercancel') return
     if (tool === 'pin' && editable) placePin(toMap(event.clientX, event.clientY))
-    else setSelected(null)
+    else if ((tool === 'region' || tool === 'path') && editable) addDraftPoint(snappedAt(event.clientX, event.clientY))
+    else if (tool === 'text' && editable) {
+      const { x, y } = toMap(event.clientX, event.clientY)
+      placeText([x, y])
+    } else {
+      setSelected(null)
+      setSelectedElement(null)
+    }
   }
 
   // El menú del botón derecho (también con la tecla de menú o Mayús+F10): al abrirse, el foco en su primera opción
@@ -408,6 +585,30 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.target !== event.currentTarget) return
+    const element = map.elements.find((e) => e.id === selectedElement)
+    // Dibujar: Intro acaba, Retroceso quita el último punto (también Ctrl+Z), Escape lo deja
+    if (draft && event.key === 'Enter') {
+      event.preventDefault()
+      return finishDraft()
+    }
+    if (draft && (event.key === 'Backspace' || ((event.ctrlKey || event.metaKey) && event.key === 'z'))) {
+      event.preventDefault()
+      return setDraft(draft.points.length > 1 ? { ...draft, points: draft.points.slice(0, -1) } : null)
+    }
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z' && editable) {
+      event.preventDefault()
+      void elements.undo().then((undone) => announce(t(undone ? 'map.edit.undone' : 'map.edit.nothingToUndo')))
+      return
+    }
+    if (element && editable && (event.key === 'Delete' || event.key === 'Backspace')) {
+      event.preventDefault()
+      return removeElement(element)
+    }
+    const toolKey = TOOL_KEYS[event.key.toLowerCase()]
+    if (toolKey && editable && !event.ctrlKey && !event.metaKey && !event.altKey) {
+      event.preventDefault()
+      return chooseTool(toolKey)
+    }
     const step = 80
     const moves: Record<string, [number, number]> = {
       ArrowLeft: [step, 0],
@@ -424,7 +625,8 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
     else if (event.key === '-') zoomCenter(0.8)
     else if (event.key === '0') fit()
     else if (event.key === 'Escape') {
-      setTool('select')
+      if (!draft && tool === 'select') setSelectedElement(null)
+      chooseTool('select')
       setMenu(null)
     }
   }
@@ -468,7 +670,14 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
 
   const shown = map.pins.map((pin) => (moving?.id === pin.id ? { ...pin, x: moving.x, y: moving.y } : pin))
   const current = shown.find((pin) => pin.id === selected) ?? null
-  const error = pins.create.error ?? pins.update.error ?? pins.remove.error
+  const currentElement = map.elements.find((element) => element.id === selectedElement) ?? null
+  const error =
+    pins.create.error ??
+    pins.update.error ??
+    pins.remove.error ??
+    elements.create.error ??
+    elements.update.error ??
+    elements.remove.error
 
   return (
     <div className={styles.wrapper}>
@@ -486,6 +695,10 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
+        onPointerLeave={() => setCursor(null)}
+        onDoubleClick={() => {
+          if (draft) finishDraft()
+        }}
         onKeyDown={onKeyDown}
         onContextMenu={(event) => {
           event.preventDefault()
@@ -506,8 +719,13 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
             layers={map.layers}
             elements={map.elements}
             hiddenHere={hiddenHere.hidden}
+            selected={selectedElement}
+            live={live}
             onOpen={openPage}
+            onElementPointerDown={onElementPointerDown}
+            onElementClick={onElementClick}
           />
+          {draft && <DraftLayer image={image} draft={draft} cursor={cursor} />}
           <ul className={styles.pins} aria-label={t('map.pins')}>
             {shown.map((pin, index) => {
               const name = pin.label ?? pin.pageTitle ?? t('map.untitledPin')
@@ -560,6 +778,26 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
               )
             })}
           </ul>
+          {editable && currentElement && currentElement.kind !== 'label' && (
+            <EditHandles
+              geometry={live?.id === currentElement.id ? live.geometry : currentElement.geometry}
+              onVertexDown={(event, ref) => dragVertex(event, currentElement, currentElement.geometry, ref, false)}
+              onMidpointDown={(event, ref, at) =>
+                dragVertex(
+                  event,
+                  currentElement,
+                  insertedVertex(currentElement.geometry, ref, at),
+                  { ...ref, index: ref.index + 1 },
+                  true
+                )
+              }
+              onVertexRemove={(ref) => {
+                const next = withoutVertex(currentElement.geometry, ref)
+                if (next) elements.update.mutate({ id: currentElement.id, patch: { geometry: next } })
+                else announce(t('map.edit.tooFew'))
+              }}
+            />
+          )}
         </div>
         {menu && (
           <div
@@ -602,11 +840,31 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
             aria-pressed={tool === 'pin'}
             aria-label={t('map.addPin')}
             title={t('map.addPin')}
-            onClick={() => setTool(tool === 'pin' ? 'select' : 'pin')}
+            onClick={() => chooseTool(tool === 'pin' ? 'select' : 'pin')}
           >
             <MapPin aria-hidden="true" size={18} />
           </button>
         )}
+        {editable &&
+          (
+            [
+              ['region', Pentagon],
+              ['path', Spline],
+              ['text', Type]
+            ] as const
+          ).map(([name, Icon]) => (
+            <button
+              key={name}
+              type="button"
+              aria-pressed={tool === name}
+              aria-label={t(`map.edit.tools.${name}`)}
+              aria-keyshortcuts={name === 'region' ? 'R' : name === 'path' ? 'L' : 'T'}
+              title={t(`map.edit.tools.${name}`)}
+              onClick={() => chooseTool(tool === name ? 'select' : name)}
+            >
+              <Icon aria-hidden="true" size={18} />
+            </button>
+          ))}
         {(editable || map.layers.length > 0) && (
           <button
             type="button"
@@ -676,6 +934,11 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
           {t('map.addPinHint')}
         </p>
       )}
+      {DRAWING_TOOLS.includes(tool) && (
+        <p className={styles.hint} role="status">
+          {t(`map.edit.hints.${tool as 'region' | 'path' | 'text'}`)}
+        </p>
+      )}
 
       {current && (
         <PinPanel
@@ -701,7 +964,23 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
           }}
         />
       )}
-      {!current && layersOpen && (
+      {!current && currentElement && (
+        <ElementPanel
+          key={currentElement.id}
+          page={page}
+          element={currentElement}
+          layers={map.layers}
+          editable={editable && !readAs}
+          naming={namingElement === currentElement.id}
+          onChange={(patch) => elements.update.mutateAsync({ id: currentElement.id, patch })}
+          onDelete={() => removeElement(currentElement)}
+          onClose={() => {
+            setSelectedElement(null)
+            container.current?.focus()
+          }}
+        />
+      )}
+      {!current && !currentElement && layersOpen && (
         <LayersPanel
           page={page}
           map={map}

@@ -738,3 +738,106 @@
 .layerAdd:hover {
   background: color-mix(in srgb, var(--color-link) 10%, transparent);
 }
+
+/* Dibujar (módulo 9): el cursor en cruz, lo que se está dibujando y lo elegido, realzado */
+.viewer:is([data-tool="region"], [data-tool="path"], [data-tool="text"]) {
+  cursor: crosshair;
+}
+
+.draftLine {
+  fill: none;
+  stroke: var(--color-accent-text);
+  stroke-width: 2.5px;
+  stroke-dasharray: 6 5;
+  vector-effect: non-scaling-stroke;
+}
+
+.draftFill {
+  fill: color-mix(in srgb, var(--color-accent-text) 18%, transparent);
+  stroke: none;
+}
+
+.draftDot {
+  r: calc(5px * var(--inv-k));
+  fill: #fff;
+  stroke: var(--color-accent);
+  stroke-width: 2px;
+  vector-effect: non-scaling-stroke;
+}
+
+.draftDot[data-first] {
+  r: calc(7px * var(--inv-k));
+}
+
+.element[data-selected] {
+  filter: drop-shadow(0 0 3px var(--color-accent-text));
+}
+
+.element[data-selected][data-hidden] {
+  opacity: 0.8;
+}
+
+/* Los tiradores de lo elegido: del mismo tamaño en pantalla, como los pines */
+.handles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.vertex,
+.midpoint {
+  position: absolute;
+  padding: 0;
+  border-radius: 50%;
+  pointer-events: auto;
+  transform: translate(-50%, -50%) scale(var(--inv-k));
+  touch-action: none;
+}
+
+.vertex {
+  inline-size: 14px;
+  block-size: 14px;
+  border: 2.5px solid var(--color-accent);
+  background: #fff;
+  cursor: grab;
+}
+
+.vertex:active {
+  cursor: grabbing;
+}
+
+.midpoint {
+  inline-size: 14px;
+  block-size: 14px;
+  border: 1.5px solid var(--color-accent-text);
+  background:
+    rgb(16 17 19 / 0.85) linear-gradient(var(--color-accent-text), var(--color-accent-text)) center / 8px 1.5px
+    no-repeat;
+  cursor: copy;
+}
+
+.midpoint::after {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(var(--color-accent-text), var(--color-accent-text)) center / 1.5px 8px no-repeat;
+  content: "";
+}
+
+.rangeRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.rangeRow input {
+  flex: 1;
+  accent-color: var(--color-accent);
+}
+
+.rangeRow output {
+  min-inline-size: 3.5rem;
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
