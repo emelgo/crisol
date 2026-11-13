@@ -162,7 +162,7 @@ describe('la pestaña «Escena»', () => {
     expect(await screen.findByText('Esta escena aún no tiene mapa.')).toBeDefined()
     expect(screen.queryByRole('button', { name: 'notas.pdf' })).toBeNull()
     await user.click(await screen.findByRole('button', { name: 'cripta.png' }))
-    expect(await screen.findByRole('application', { name: 'Escena Escena' })).toBeDefined()
+    expect(await screen.findByRole('application', { name: 'Escena' })).toBeDefined()
     expect(prepared.sources[0]?.kind).toBe('image')
     const scene = await stored(api, tab?.id ?? '')
     expect(scene.image).toMatchObject({ width: 1200, height: 800, tiles: { size: 512, levels: 2 } })
@@ -191,7 +191,7 @@ describe('la pestaña «Escena»', () => {
     expect(screen.getByText(/Suelta aquí el archivo \.dd2vtt/)).toBeDefined()
     const input = document.querySelector('input[type="file"][accept=".dd2vtt,.uvtt,.df2vtt"]') as HTMLInputElement
     await user.upload(input, new File(['{}'], 'cripta.dd2vtt'))
-    expect(await screen.findByRole('application', { name: 'Escena Escena' })).toBeDefined()
+    expect(await screen.findByRole('application', { name: 'Escena' })).toBeDefined()
     expect(prepared.sources[0]?.kind).toBe('uvtt')
     const scene = await stored(api, tab?.id ?? '')
     expect(scene.grid).toMatchObject({ type: 'square', size: 140, offsetX: 12 })
@@ -215,7 +215,7 @@ describe('la pestaña «Escena»', () => {
     it('la rejilla: su tipo, su forma hexagonal, su tamaño, lo que mide y si se ve; todo se guarda', async () => {
       const user = userEvent.setup()
       const { api, tab } = await withMap()
-      await screen.findByRole('application', { name: 'Escena Escena' })
+      await screen.findByRole('application', { name: 'Escena' })
       const side = within(screen.getByRole('region', { name: 'Rejilla' }))
       await user.click(side.getByRole('radio', { name: 'Hexagonal' }))
       await user.selectOptions(side.getByLabelText('Forma'), 'hex-columns')
@@ -238,7 +238,7 @@ describe('la pestaña «Escena»', () => {
     it('«Dos esquinas»: dos esquinas opuestas de una casilla dan su tamaño y su desplazamiento', async () => {
       const user = userEvent.setup()
       const { api, tab } = await withMap()
-      const map = await screen.findByRole('application', { name: 'Escena Escena' })
+      const map = await screen.findByRole('application', { name: 'Escena' })
       await user.click(screen.getByRole('button', { name: 'Dos esquinas' }))
       expect(screen.getByText('Marca dos esquinas opuestas de una casilla')).toBeDefined()
       // La vista: el mapa encuadrado en el visor de 800 × 600; se lee de su escenario
@@ -259,7 +259,7 @@ describe('la pestaña «Escena»', () => {
     it('«Buscarla» pone la rejilla que encuentra (o dice que no ve ninguna)', async () => {
       const user = userEvent.setup()
       const { api, tab } = await withMap({ preparer: fakePreparer({ detected: true }) })
-      await screen.findByRole('application', { name: 'Escena Escena' })
+      await screen.findByRole('application', { name: 'Escena' })
       await user.click(screen.getByRole('button', { name: 'Buscarla' }))
       expect(await screen.findByText('Encaja: casillas de 50 px')).toBeDefined()
       await waitFor(async () =>
@@ -270,7 +270,7 @@ describe('la pestaña «Escena»', () => {
     it('«Empezar con esta vista» la guarda para abrirla en la Mesa; «Quitarla» vuelve al mapa entero', async () => {
       const user = userEvent.setup()
       const { api, tab } = await withMap()
-      await screen.findByRole('application', { name: 'Escena Escena' })
+      await screen.findByRole('application', { name: 'Escena' })
       expect(screen.getByText('Enseña el mapa entero.')).toBeTruthy()
       await user.click(screen.getByRole('button', { name: 'Empezar con esta vista' }))
       await waitFor(async () => expect((await stored(api, tab?.id ?? '')).initialView).not.toBeNull())
@@ -283,7 +283,7 @@ describe('la pestaña «Escena»', () => {
       const user = userEvent.setup()
       const north = campaign('Los del norte')
       const { api, router, scene } = await withMap({ campaigns: [campaign('La Marca'), north] })
-      await screen.findByRole('application', { name: 'Escena Escena' })
+      await screen.findByRole('application', { name: 'Escena' })
       await user.selectOptions(await screen.findByLabelText('Campaña'), 'Los del norte')
       await user.click(screen.getByRole('button', { name: 'Abrir en la mesa' }))
       await waitFor(() => expect(router.state.location.pathname).toBe(`/mundos/${WORLD.id}/campanas/${north.id}/mesa`))
@@ -299,7 +299,7 @@ describe('la pestaña «Escena»', () => {
       before: (api, sceneId) =>
         api.client.call('setSceneImage', { sceneId, fileId: api.files.find((f) => f.name === 'cripta.png')?.id ?? '' })
     })
-    expect(await screen.findByRole('application', { name: 'Escena Escena' })).toBeDefined()
+    expect(await screen.findByRole('application', { name: 'Escena' })).toBeDefined()
     expect(prepared.sources[0]?.kind).toBe('image')
     const scene = await stored(api, tab?.id ?? '')
     // Se queda con su archivo y ya con sus teselas

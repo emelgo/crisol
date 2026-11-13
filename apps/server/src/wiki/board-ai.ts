@@ -12,7 +12,11 @@ const BOX = { width: 220, height: 100 }
 const FONT = 20
 /** Nunito, la letra normal de Excalidraw (no la de a mano) */
 const PLAIN = 6
-const INK = '#e7e7ea'
+/**
+ * La tinta de siempre de Excalidraw. Guarda los colores como en su tema claro y en el oscuro los invierte al pintar: un
+ * gris claro saldría casi negro sobre el lienzo (invisible); este sale claro, como lo que se dibuja a mano
+ */
+export const INK = '#1e1e1e'
 
 const cellOf = (element: BoardElement) => ({
   column: Math.round(Number(element.x ?? 0) / CELL.width),
@@ -137,6 +141,25 @@ export type BoardAdd = {
   row: number
 }
 
+const GAP = 8
+
+const center = (element: BoardElement) => ({
+  x: Number(element.x ?? 0) + Number(element.width ?? 0) / 2,
+  y: Number(element.y ?? 0) + Number(element.height ?? 0) / 2
+})
+
+/** Donde la recta del centro de un elemento hacia un punto sale de su caja, más el hueco de las flechas */
+export function edgeToward(element: BoardElement, toward: { x: number; y: number }) {
+  const from = center(element)
+  const dx = toward.x - from.x
+  const dy = toward.y - from.y
+  if (dx === 0 && dy === 0) return from
+  const halfW = Number(element.width ?? 0) / 2 + GAP
+  const halfH = Number(element.height ?? 0) / 2 + GAP
+  const scale = Math.min(dx === 0 ? Infinity : halfW / Math.abs(dx), dy === 0 ? Infinity : halfH / Math.abs(dy))
+  return { x: from.x + dx * Math.min(scale, 1), y: from.y + dy * Math.min(scale, 1) }
+}
+
 /**
  * Los elementos nuevos de lo que pide la IA (y los que cambian: los que reciben una flecha la apuntan en
  * boundElements), y qué id tiene cada ref. Las flechas van de borde a borde, del centro de uno al del otro
@@ -193,16 +216,13 @@ export function buildChanges(
       touched.set(copy.id, copy)
     }
   }
-  const center = (element: BoardElement) => ({
-    x: Number(element.x ?? 0) + Number(element.width ?? 0) / 2,
-    y: Number(element.y ?? 0) + Number(element.height ?? 0) / 2
-  })
   for (const arrow of arrows) {
     const from = all.get(refs.get(arrow.from) ?? arrow.from)
     const to = all.get(refs.get(arrow.to) ?? arrow.to)
     if (!from || !to) throw new Error(`NO_ELEMENT:${!from ? arrow.from : arrow.to}`)
-    const start = center(from)
-    const end = center(to)
+    // De borde a borde (con su hueco), no de centro a centro: si no, la punta tacha lo de dentro
+    const start = edgeToward(from, center(to))
+    const end = edgeToward(to, center(from))
     const line = base('arrow', start.x, start.y, Math.abs(end.x - start.x), Math.abs(end.y - start.y), {
       roundness: { type: 2 },
       points: [
@@ -210,8 +230,8 @@ export function buildChanges(
         [end.x - start.x, end.y - start.y]
       ],
       lastCommittedPoint: null,
-      startBinding: { elementId: from.id, focus: 0, gap: 8 },
-      endBinding: { elementId: to.id, focus: 0, gap: 8 },
+      startBinding: { elementId: from.id, focus: 0, gap: GAP },
+      endBinding: { elementId: to.id, focus: 0, gap: GAP },
       startArrowhead: null,
       endArrowhead: 'arrow',
       elbowed: false

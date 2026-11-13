@@ -40,8 +40,11 @@
 }
 
 .bar {
+  position: relative;
+  z-index: 10;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  min-inline-size: 0;
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-1) var(--space-2);
@@ -85,17 +88,35 @@
   outline-offset: 1px;
 }
 
-.hiddenToggle {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
+.barButton.hiddenToggle[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--color-secret-text) 20%, transparent);
   color: var(--color-secret-text);
 }
 
 .status {
   margin-inline-start: auto;
+  overflow: hidden;
   color: var(--color-muted);
   font-size: 0.875rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status[data-alert] {
+  color: var(--color-danger);
+}
+
+/* Vacía: cómo empezar, en el centro y sin estorbar (no se pulsa: lo de debajo sigue siendo el lienzo) */
+.empty {
+  position: absolute;
+  inset: 50% 0 auto;
+  translate: 0 -50%;
+  margin: 0 auto;
+  max-inline-size: 28rem;
+  padding-inline: var(--space-4);
+  color: var(--color-muted);
+  text-align: center;
+  pointer-events: none;
 }
 
 .addPage {
@@ -105,12 +126,11 @@
 .addPanel {
   position: absolute;
   inset-block-start: calc(100% + var(--space-1));
-  inset-inline-start: 0;
+  inset-inline-end: 0;
   z-index: 5;
   display: grid;
-  grid-template-columns: auto minmax(12rem, 1fr) auto;
-  align-items: center;
   gap: var(--space-2);
+  inline-size: min(26rem, 80vw);
   padding: var(--space-2);
   border: 1px solid var(--line-frame);
   border-radius: 8px;
@@ -118,6 +138,37 @@
   -webkit-backdrop-filter: var(--popup-blur);
   backdrop-filter: var(--popup-blur);
   box-shadow: var(--glass-shadow);
+}
+
+.addRow {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.suggestions {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.suggestions [role="option"] {
+  padding: var(--space-1) var(--space-2);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.suggestions [role="option"]:hover,
+.suggestions [role="option"][aria-selected="true"] {
+  background: color-mix(in srgb, var(--color-accent-text) 18%, transparent);
+}
+
+.noMatch {
+  margin: 0;
+  padding: var(--space-1) var(--space-2);
+  color: var(--color-muted);
 }
 
 .addPanel input {
@@ -152,15 +203,19 @@
   --ui-font: var(--font-body);
 }
 
-/* Lo que saca de Crisol (su biblioteca pública) no se ofrece. Con más peso que el suyo: su CSS llega después */
+/* Lo que saca de Crisol (su biblioteca pública, su ayuda con sus redes) no se ofrece, ni sus textos de ayuda fijos bajo
+   la barra (norma: nada de ayudas fijas en pantalla), ni la dirección interna de una tarjeta al elegirla. Con más peso
+   que el suyo: su CSS llega después */
 .canvas :global(.excalidraw .default-sidebar-trigger),
-.canvas :global(.excalidraw .help-icon) {
+.canvas :global(.excalidraw .help-icon),
+.canvas :global(.excalidraw .HintViewer),
+.canvas :global(.excalidraw .excalidraw-hyperlinkContainer) {
   display: none;
 }
 
-/* Su ayuda bajo la barra («Para mover el lienzo…»), legible sobre el lienzo */
-.canvas :global(.excalidraw .HintViewer) {
-  color: var(--color-muted);
+/* Quien solo mira: sin su menú (sería el de serie, con sus enlaces de fuera) */
+.canvas[data-readonly] :global(.excalidraw .main-menu-trigger) {
+  display: none;
 }
 
 /* Una tarjeta de página: su icono y su título; pulsarla abre la página */
@@ -216,8 +271,81 @@ a.cardTitle:hover {
   font-size: 0.8125rem;
 }
 
+/* Oculta a los jugadores: raya discontinua y el ojo tachado, con el color de lo secreto */
+.card[data-hidden] {
+  border-style: dashed;
+  border-color: var(--color-secret-text);
+}
+
+.cardHidden {
+  display: inline-flex;
+  flex: none;
+  margin-inline-start: auto;
+  color: var(--color-secret-text);
+}
+
+.visuallyHidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Lo que hay en la pizarra, en lista: solo en lo estrecho (el móvil de la jugadora), en vez del lienzo diminuto */
+.summary {
+  display: none;
+}
+
 @media (max-width: 48rem) {
   .wrapper[data-wide] {
     inset: 0;
   }
+
+  .summary {
+    display: block;
+    overflow-y: auto;
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .canvas[data-has-summary] {
+    display: none;
+  }
+
+  .wrapper:has(.summary) {
+    block-size: auto;
+  }
+
+  .barButton {
+    min-block-size: 2.75rem;
+    min-inline-size: 2.75rem;
+    justify-content: center;
+  }
+}
+
+.summaryList {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.summaryList a {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 2.75rem;
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.summaryLinks {
+  margin-block-start: var(--space-4);
+  color: var(--color-muted);
+}
+
+.summaryLinks li {
+  color: var(--color-text);
 }

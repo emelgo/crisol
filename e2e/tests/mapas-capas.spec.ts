@@ -127,7 +127,7 @@ test('los mapas con capas: el máster dibuja una región y una ruta, ordena capa
 
   // El máster: lo dibujado, sobre la imagen; las capas, de arriba abajo
   await page.goto(`/mundos/${worldId}/wiki/${id('Valdren')}?pestana=${tab.id}`)
-  const viewer = page.getByRole('application', { name: 'Mapa Mapa' })
+  const viewer = page.getByRole('application', { name: 'Mapa', exact: true })
   await expect(viewer).toBeVisible()
   await expect(viewer.locator('[data-kind="region"]')).toHaveCount(4)
   await page.getByRole('toolbar', { name: 'Herramientas del mapa' }).getByRole('button', { name: 'Capas' }).click()
@@ -194,7 +194,7 @@ test('los mapas con capas: el máster dibuja una región y una ruta, ordena capa
   const ana = await newPlayer(browser, link, 'Ana')
   await ana.goto(`/mundos/${worldId}/campanas/${campaignId}/paginas/${id('Valdren')}`)
   await ana.getByRole('group', { name: 'Pestañas de la página' }).getByRole('button', { name: 'Mapa' }).click()
-  const seen = ana.getByRole('application', { name: 'Mapa Mapa' })
+  const seen = ana.getByRole('application', { name: 'Mapa', exact: true })
   await expect(seen.locator('[data-kind="region"]')).toHaveCount(3)
   await expect(seen).not.toContainText('Guarida')
   await expect(seen).not.toContainText('Reino de Varn')

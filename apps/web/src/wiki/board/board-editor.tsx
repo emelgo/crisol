@@ -105,9 +105,13 @@ export default function BoardEditor({ page, tab }: { page: Page; tab: PageTabVie
   const pending = useRef<readonly ExcalidrawElement[] | null>(null)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const view = useRef<AppState | null>(null)
+  // «Guardado» en la barra, tras lo primero que se escribe (como el texto de la página)
+  const [saved, setSaved] = useState(false)
+  const [empty, setEmpty] = useState(false)
+  const [uploadFailed, setUploadFailed] = useState(false)
   const flush = useCallback(() => {
     timer.current = null
-    if (doc && pending.current) writeScene(doc, pending.current, LOCAL)
+    if (doc && pending.current && writeScene(doc, pending.current, LOCAL) > 0) setSaved(true)
     pending.current = null
     if (view.current) saveView(tab.id, view.current)
   }, [doc, tab.id])
@@ -129,6 +133,7 @@ export default function BoardEditor({ page, tab }: { page: Page; tab: PageTabVie
       })
       // Mientras arranca, su escena aún no es la del documento (ni su encuadre, el guardado)
       if (!doc || !synced || appState.isLoading) return
+      setEmpty(!elements.some((element) => !element.isDeleted))
       pending.current = elements
       view.current = appState
       if (!timer.current) timer.current = setTimeout(flush, WRITE_EVERY)
@@ -200,7 +205,14 @@ export default function BoardEditor({ page, tab }: { page: Page; tab: PageTabVie
   const renderEmbeddable = useCallback(
     (element: NonDeleted<ExcalidrawEmbeddableElement>) => {
       const pageId = (element.customData?.pageId as string | undefined) ?? pageIdOfLink(element.link)
-      return pageId ? <PageCard worldId={page.worldId} pageId={pageId} title={element.customData?.title} /> : null
+      return pageId ? (
+        <PageCard
+          worldId={page.worldId}
+          pageId={pageId}
+          title={element.customData?.title}
+          hidden={Boolean(element.customData?.hidden)}
+        />
+      ) : null
     },
     [page.worldId]
   )
@@ -228,6 +240,9 @@ export default function BoardEditor({ page, tab }: { page: Page; tab: PageTabVie
       tab={tab}
       offline={offline}
       loading={!synced}
+      saved={saved}
+      empty={synced && empty}
+      notice={uploadFailed ? t('board.uploadFailed') : null}
       onAddPage={addCard}
       hidden={selected.length > 0 ? selected.every((element) => element.customData?.hidden) : null}
       onHidden={setHidden}
@@ -264,8 +279,14 @@ export default function BoardEditor({ page, tab }: { page: Page; tab: PageTabVie
         }}
         generateIdForFile={async (file: File) => {
           // Lo pegado o arrastrado va a los archivos del mundo: el id del archivo es el de la imagen
-          const stored = await api.uploadFile({ worldId: page.worldId, name: file.name || t('board.label') }, file)
-          return stored.id
+          setUploadFailed(false)
+          try {
+            const stored = await api.uploadFile({ worldId: page.worldId, name: file.name || t('board.image') }, file)
+            return stored.id
+          } catch (error) {
+            setUploadFailed(true)
+            throw error
+          }
         }}
       >
         <MainMenu>

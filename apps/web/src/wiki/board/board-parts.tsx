@@ -8,7 +8,7 @@ import type { Page, PageTabView } from '@crisol/contracts'
 import type { ExcalidrawElement } from '@excalidraw/excalidraw/element/types'
 import type { ExcalidrawImperativeAPI } from '@excalidraw/excalidraw/types'
 import { useQuery } from '@tanstack/react-query'
-import { Expand, FilePlus2, Shrink } from 'lucide-react'
+import { Expand, EyeOff, FilePlus2, Shrink } from 'lucide-react'
 import { type DragEvent, type ReactNode, useCallback, useContext, useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
@@ -16,6 +16,7 @@ import { useApi } from '../../api/context.tsx'
 import { Icon } from '../../components/icon.tsx'
 import { PageLink, readAsInput, readAsKey, useReadAs } from '../read-as.tsx'
 import { BoardHeadContext } from '../shell/context.ts'
+import { tabRegionLabel } from '../tabs/kinds.tsx'
 import styles from './board.module.css'
 import { PAGE_DRAG } from './drag.ts'
 
@@ -30,7 +31,7 @@ const PAGE_LINK = /\/mundos\/[0-9a-f-]{36}\/wiki\/([0-9a-f-]{36})$/i
 export const pageIdOfLink = (link: string | null | undefined) => (link ? (PAGE_LINK.exec(link)?.[1] ?? null) : null)
 
 /** Las páginas que se ven del mundo (las del máster, todas; las de una jugadora, las que conoce), por su id */
-function usePages(worldId: string) {
+export function usePages(worldId: string) {
   const api = useApi()
   const readAs = useReadAs()
   return useQuery({
@@ -43,7 +44,18 @@ function usePages(worldId: string) {
  * Una tarjeta: el icono y el título de su página (lo sigue si cambia); pulsarla la abre. Si la página ya no está (a la
  * papelera), «Sin página»
  */
-export function PageCard({ worldId, pageId, title }: { worldId: string; pageId: string; title?: unknown }) {
+export function PageCard({
+  worldId,
+  pageId,
+  title,
+  hidden = false
+}: {
+  worldId: string
+  pageId: string
+  title?: unknown
+  /** Oculta a los jugadores: además de apagada, su marca (el apagado solo se confunde con lo tenue) */
+  hidden?: boolean
+}) {
   const { t } = useTranslation()
   const pages = usePages(worldId)
   const found = pages.data?.pages.find((row) => row.id === pageId)
@@ -57,11 +69,17 @@ export function PageCard({ worldId, pageId, title }: { worldId: string; pageId: 
   }
   const name = found?.title ?? (typeof title === 'string' ? title : '')
   return (
-    <div className={styles.card}>
+    <div className={styles.card} data-hidden={hidden || undefined}>
       {found?.icon && <Icon value={found.icon} size={22} className={styles.cardIcon} />}
       <PageLink worldId={worldId} pageId={pageId} className={styles.cardTitle}>
         {name}
       </PageLink>
+      {hidden && (
+        <span className={styles.cardHidden} title={t('board.hidden')}>
+          <EyeOff aria-hidden="true" size={14} />
+          <span className={styles.visuallyHidden}>{t('board.hidden')}</span>
+        </span>
+      )}
     </div>
   )
 }
@@ -109,22 +127,41 @@ export function useBoardFiles(excalidraw: ExcalidrawImperativeAPI | null) {
   )
 }
 
-/** «Página…»: el nombre de una del mundo (con sus sugerencias) y «Poner» */
+/** Cuántas páginas sugiere «Página…» a la vez */
+const SUGGESTED = 8
+
+/**
+ * «Página…»: un desplegable que flota bajo la barra (no la mueve), con el nombre que se escribe y las páginas del
+ * mundo que lo contienen; Intro pone la primera (o la que se llama así), las flechas eligen
+ */
 function AddPage({ worldId, onAdd }: { worldId: string; onAdd: (pageId: string, title: string) => void }) {
   const { t } = useTranslation()
   const pages = usePages(worldId)
   const [open, setOpen] = useState(false)
   const [name, setName] = useState('')
+  const [active, setActive] = useState(0)
   const id = useId()
   const button = useRef<HTMLButtonElement>(null)
   const close = () => {
     setOpen(false)
     setName('')
+    setActive(0)
     button.current?.focus()
   }
-  const found = pages.data?.pages.find(
-    (row) => row.title.toLocaleLowerCase('es') === name.trim().toLocaleLowerCase('es')
-  )
+  const wanted = name.trim().toLocaleLowerCase('es')
+  const all = pages.data?.pages ?? []
+  const exact = all.find((row) => row.title.toLocaleLowerCase('es') === wanted)
+  const matches = wanted
+    ? [
+        ...(exact ? [exact] : []),
+        ...all.filter((row) => row !== exact && row.title.toLocaleLowerCase('es').includes(wanted))
+      ].slice(0, SUGGESTED)
+    : all.slice(0, SUGGESTED)
+  const chosen = matches[Math.min(active, matches.length - 1)]
+  const put = (row: { id: string; title: string }) => {
+    onAdd(row.id, row.title)
+    close()
+  }
   return (
     <div className={styles.addPage}>
       <button
@@ -145,35 +182,61 @@ function AddPage({ worldId, onAdd }: { worldId: string; onAdd: (pageId: string, 
           aria-label={t('board.addPageTitle')}
           onSubmit={(event) => {
             event.preventDefault()
-            if (!found) return
-            onAdd(found.id, found.title)
-            close()
+            if (chosen) put(chosen)
           }}
           onKeyDown={(event) => {
             if (event.key === 'Escape') {
               event.stopPropagation()
               close()
+            } else if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+              event.preventDefault()
+              const step = event.key === 'ArrowDown' ? 1 : -1
+              setActive((current) => (current + step + matches.length) % Math.max(matches.length, 1))
             }
           }}
         >
-          <label htmlFor={`${id}-name`}>{t('board.pageName')}</label>
-          <input
-            id={`${id}-name`}
-            list={`${id}-pages`}
-            value={name}
-            autoComplete="off"
-            // biome-ignore lint/a11y/noAutofocus: se abre para escribir el nombre
-            autoFocus
-            onChange={(event) => setName(event.target.value)}
-          />
-          <datalist id={`${id}-pages`}>
-            {pages.data?.pages.map((row) => (
-              <option key={row.id} value={row.title} />
-            ))}
-          </datalist>
-          <button type="submit" className={styles.barButton} disabled={!found}>
-            {t('board.put')}
-          </button>
+          <div className={styles.addRow}>
+            <label htmlFor={`${id}-name`}>{t('board.pageName')}</label>
+            <input
+              id={`${id}-name`}
+              value={name}
+              autoComplete="off"
+              role="combobox"
+              aria-expanded={matches.length > 0}
+              aria-controls={`${id}-pages`}
+              aria-activedescendant={chosen ? `${id}-${chosen.id}` : undefined}
+              // biome-ignore lint/a11y/noAutofocus: se abre para escribir el nombre
+              autoFocus
+              onChange={(event) => {
+                setName(event.target.value)
+                setActive(0)
+              }}
+            />
+            <button type="submit" className={styles.barButton} disabled={!chosen}>
+              {t('board.put')}
+            </button>
+          </div>
+          {matches.length > 0 ? (
+            <div id={`${id}-pages`} role="listbox" aria-label={t('board.suggestions')} className={styles.suggestions}>
+              {matches.map((row) => (
+                <div
+                  key={row.id}
+                  id={`${id}-${row.id}`}
+                  role="option"
+                  aria-selected={row === chosen}
+                  tabIndex={-1}
+                  onMouseDown={(event) => {
+                    event.preventDefault()
+                    put(row)
+                  }}
+                >
+                  {row.title}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className={styles.noMatch}>{t('board.noMatch')}</p>
+          )}
         </form>
       )}
     </div>
@@ -189,6 +252,10 @@ export function BoardFrame({
   tab,
   offline = false,
   loading = false,
+  saved = false,
+  empty = false,
+  notice = null,
+  summary = null,
   hidden = null,
   onHidden,
   onAddPage,
@@ -200,6 +267,14 @@ export function BoardFrame({
   tab: PageTabView
   offline?: boolean
   loading?: boolean
+  /** Ya se ha guardado algo: «Guardado» */
+  saved?: boolean
+  /** Sin nada: una línea en el centro con cómo empezar */
+  empty?: boolean
+  /** Un aviso (una imagen que no se pudo subir) */
+  notice?: string | null
+  /** Lo que hay, en una lista legible: en lo estrecho va en vez del lienzo (que sale al ampliar) */
+  summary?: ReactNode
   /** Lo elegido: si va oculto a los jugadores (null: nada elegido o no se puede) */
   hidden?: boolean | null
   onHidden?: (hidden: boolean) => void
@@ -213,7 +288,6 @@ export function BoardFrame({
   const { t } = useTranslation()
   const [wide, setWide] = useState(false)
   const wrapper = useRef<HTMLDivElement>(null)
-  const hiddenId = useId()
   // En el mundo a pantalla completa, el título y las pestañas de la página van en esta barra (ADR-0027)
   const head = useContext(BoardHeadContext)
   // Si el lienzo cambia de tamaño o baja (la barra crece), Excalidraw recalcula dónde está: si no, sus tarjetas, que
@@ -264,24 +338,31 @@ export function BoardFrame({
       ref={wrapper}
       className={styles.wrapper}
       data-wide={wide || undefined}
-      aria-label={t('board.label', { name: tab.name })}
+      aria-label={tabRegionLabel(t, 'board', tab.name)}
     >
       <div className={styles.bar}>
         {head}
         {onAddPage && <AddPage worldId={page.worldId} onAdd={onAddPage} />}
-        {onHidden && hidden !== null && (
-          <label className={styles.hiddenToggle} htmlFor={hiddenId}>
-            <input
-              id={hiddenId}
-              type="checkbox"
-              checked={hidden}
-              onChange={(event) => onHidden(event.target.checked)}
-            />
-            {t('board.hidden')}
-          </label>
+        {/* Siempre en su sitio (sin nada elegido, apagado): si apareciera al elegir, la barra saltaría */}
+        {onHidden && (
+          <button
+            type="button"
+            className={`${styles.barButton} ${styles.hiddenToggle}`}
+            aria-pressed={hidden === true}
+            disabled={hidden === null}
+            aria-label={t('board.hidden')}
+            title={t('board.hidden')}
+            onClick={() => hidden !== null && onHidden(!hidden)}
+          >
+            <EyeOff aria-hidden="true" size={16} />
+          </button>
         )}
-        <span className={styles.status} role="status">
-          {loading ? t('board.loading') : offline ? t('board.offline') : ''}
+        <span className={styles.status} role="status" data-alert={notice ? '' : undefined}>
+          {loading
+            ? t('board.loading')
+            : offline
+              ? t('board.offline')
+              : (notice ?? (saved && onAddPage ? t('board.saved') : ''))}
         </span>
         <button
           type="button"
@@ -294,9 +375,12 @@ export function BoardFrame({
           {wide ? <Shrink aria-hidden="true" size={16} /> : <Expand aria-hidden="true" size={16} />}
         </button>
       </div>
+      {summary && !wide && <div className={styles.summary}>{summary}</div>}
       <div
         ref={canvas}
         className={styles.canvas}
+        data-readonly={onAddPage ? undefined : ''}
+        data-has-summary={summary && !wide ? '' : undefined}
         onDragOverCapture={(event) => {
           if (onDropPage && event.dataTransfer.types.includes(PAGE_DRAG)) {
             event.preventDefault()
@@ -311,6 +395,7 @@ export function BoardFrame({
         }}
       >
         {children}
+        {empty && <p className={styles.empty}>{t('board.empty')}</p>}
       </div>
     </section>
   )

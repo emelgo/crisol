@@ -92,7 +92,7 @@ async function renderMap() {
 
 const drawn = (kind: string) => document.querySelectorAll(`[data-kind="${kind}"]`)
 const openLayers = async () => {
-  await screen.findByRole('application', { name: 'Mapa Mapa' })
+  await screen.findByRole('application', { name: 'Mapa' })
   await userEvent.click(screen.getByRole('button', { name: 'Capas' }))
   return within(await screen.findByRole('region', { name: 'Capas' }))
 }
@@ -100,7 +100,7 @@ const openLayers = async () => {
 describe('las capas del mapa (módulo 9)', () => {
   it('pinta lo dibujado sobre la imagen: la región con el nombre de su página, el camino y el texto en arco', async () => {
     await renderMap()
-    await screen.findByRole('application', { name: 'Mapa Mapa' })
+    await screen.findByRole('application', { name: 'Mapa' })
     await waitFor(() => expect(drawn('region')).toHaveLength(1))
     expect(drawn('path')).toHaveLength(1)
     expect(drawn('label')).toHaveLength(1)

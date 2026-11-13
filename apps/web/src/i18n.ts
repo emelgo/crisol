@@ -1909,8 +1909,17 @@ export const es = {
     hidden: 'Oculto para los jugadores',
     noPage: 'Sin página',
     offline: 'Sin conexión: se guardará al volver',
-    empty: 'Esta pizarra está vacía.',
-    uploadFailed: 'No se pudo subir la imagen'
+    empty: 'Pon páginas con «Página…» o arrastrándolas del árbol, y dibuja con las herramientas de arriba.',
+    image: 'Imagen de la pizarra',
+    uploadFailed: 'No se pudo subir la imagen',
+    noMatch: 'Ninguna página se llama así',
+    suggestions: 'Páginas del mundo',
+    nothing: 'Aún no hay nada en esta pizarra.',
+    links: 'Relaciones',
+    link: '{{from}} → {{to}}',
+    linkWith: '{{from}} → {{to}}: {{label}}',
+    saving: 'Guardando…',
+    saved: 'Guardado'
   },
   map: {
     label: 'Mapa {{name}}',

@@ -3,6 +3,8 @@
  * plantilla: su icono, si ya se puede usar y si se ofrece al crear una página. Un tipo nuevo nace aquí (y, en el
  * servidor, con su forma de copiarse: packages/db/src/repos/copy.ts)
  */
+
+import type { TFunction } from 'i18next'
 import {
   ChevronLeft,
   Clock,
@@ -30,6 +32,13 @@ export const TAB_KINDS = [
 ] as const
 
 export type TabKind = (typeof TAB_KINDS)[number]['kind']
+
+/**
+ * El nombre de la zona de una pestaña con lienzo para el lector de pantalla: «Pizarra Conspiración»; si se llama como su
+ * tipo, solo «Pizarra» (no «Pizarra Pizarra»)
+ */
+export const tabRegionLabel = (t: TFunction, kind: 'map' | 'board' | 'scene', name: string) =>
+  name === t(`pageTabs.kinds.${kind}`) ? name : t(`${kind}.label`, { name })
 
 /** El dibujo de un tipo de pestaña */
 export const tabIcon = (kind: string) => TAB_KINDS.find((each) => each.kind === kind)?.icon ?? FileText

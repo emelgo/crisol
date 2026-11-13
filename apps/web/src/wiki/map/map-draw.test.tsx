@@ -60,7 +60,7 @@ async function renderMap(prepare?: (api: ReturnType<typeof fakeApi>, mapId: stri
       api={api.client}
     />
   )
-  const viewer = await screen.findByRole('application', { name: 'Mapa Mapa' })
+  const viewer = await screen.findByRole('application', { name: 'Mapa' })
   const saved = async () => (await api.client.call('getMap', { tabId: tab.id })).elements
   return { api, viewer, saved, mapId }
 }

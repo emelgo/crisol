@@ -46,6 +46,7 @@ import { failed, LoadError } from '../../components/load-error.tsx'
 import { Tour } from '../../components/tour.tsx'
 import { useWorldFiles } from '../cover-look.ts'
 import { readAsInput, readAsKey, useReadAs } from '../read-as.tsx'
+import { tabRegionLabel } from '../tabs/kinds.tsx'
 import { MapDrawing } from './drawing.tsx'
 import {
   insertedVertex,
@@ -111,7 +112,7 @@ export function MapTab({ page, tab }: { page: Page; tab: PageTabView }) {
   }
   if (!map.data.image) {
     return (
-      <section className={styles.empty} aria-label={t('map.label', { name: tab.name })}>
+      <section className={styles.empty} aria-label={tabRegionLabel(t, 'map', tab.name)}>
         <MapPin aria-hidden="true" size={32} strokeWidth={1.5} />
         <p>{t('map.empty')}</p>
         {!page.locked && <ImageChooser page={page} map={map.data} />}
@@ -936,7 +937,7 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
         data-tool={tool}
         role="application"
         aria-roledescription={t('map.roleDescription')}
-        aria-label={t('map.label', { name: tab.name })}
+        aria-label={tabRegionLabel(t, 'map', tab.name)}
         // biome-ignore lint/a11y/noNoninteractiveTabindex: es un control propio (role application), no un contenedor
         tabIndex={0}
         onPointerDown={onPointerDown}

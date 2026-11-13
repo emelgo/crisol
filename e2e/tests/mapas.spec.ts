@@ -63,7 +63,7 @@ test('un mapa en la página: se añade desde «⋯», se le pone imagen, se pone
   // Sin imagen, la pide: una del mundo
   await expect(page.getByText('Este mapa aún no tiene imagen.')).toBeVisible()
   await page.getByLabel('Imagen del mapa').selectOption({ label: 'Costa.svg' })
-  const map = page.getByRole('application', { name: 'Mapa Mapa' })
+  const map = page.getByRole('application', { name: 'Mapa', exact: true })
   await expect(map.locator('img')).toBeVisible()
 
   // «Poner un pin» y pulsar en el mapa: sale su panel

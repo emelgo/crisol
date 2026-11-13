@@ -142,7 +142,7 @@ test('traer las escenas de un zip: elegir dónde, su mapa troceado, y abrirla en
   await expect(page.getByRole('heading', { level: 1, name: 'Cripta' })).toBeVisible()
   const tabs = page.getByRole('navigation', { name: 'Pestañas de la página' })
   await tabs.getByRole('link', { name: 'Escena' }).click()
-  await expect(page.getByRole('application', { name: 'Escena Escena' }).locator('img').first()).toBeVisible({
+  await expect(page.getByRole('application', { name: 'Escena', exact: true }).locator('img').first()).toBeVisible({
     timeout: 20_000
   })
 

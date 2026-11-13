@@ -55,7 +55,7 @@ test('la pizarra: el máster pone tarjetas, una flecha y dibuja a mano; otra pes
   const dialog = page.getByRole('dialog', { name: 'Pestaña nueva' })
   await dialog.getByRole('radio', { name: 'Pizarra' }).check()
   await dialog.getByRole('button', { name: 'Crear' }).click()
-  const board = page.getByRole('region', { name: 'Pizarra Pizarra' })
+  const board = page.getByRole('region', { name: 'Pizarra', exact: true })
   await expect(board.locator('.excalidraw')).toBeVisible()
   await expect(board.getByRole('status')).toHaveText('')
   expect(downloaded.length).toBeGreaterThan(0)
@@ -66,7 +66,7 @@ test('la pizarra: el máster pone tarjetas, una flecha y dibuja a mano; otra pes
   for (const title of ['Doran el Cojo', 'La Madre Ceniza']) {
     await board.getByRole('button', { name: 'Página…' }).click()
     const form = board.getByRole('form', { name: 'Poner una página' })
-    await form.getByLabel('Página').fill(title)
+    await form.getByLabel('Página', { exact: true }).fill(title)
     await form.getByRole('button', { name: 'Poner' }).click()
     await expect(board.getByRole('link', { name: title, exact: true })).toBeVisible()
     // La segunda, a un lado: se arrastra la recién puesta (elegida) hacia la izquierda
@@ -77,7 +77,8 @@ test('la pizarra: el máster pone tarjetas, una flecha y dibuja a mano; otra pes
     }
   }
   // La Madre Ceniza, oculta para los jugadores (va elegida al ponerla)
-  await board.getByLabel('Oculto para los jugadores').check()
+  await board.getByRole('button', { name: 'Oculto para los jugadores' }).click()
+  await expect(board.getByRole('button', { name: 'Oculto para los jugadores' })).toHaveAttribute('aria-pressed', 'true')
 
   // Una flecha de Doran a la Madre y un trazo a mano
   const doran = await board.getByRole('link', { name: 'Doran el Cojo', exact: true }).boundingBox()
@@ -134,7 +135,7 @@ test('la pizarra: el máster pone tarjetas, una flecha y dibuja a mano; otra pes
   // Otra pestaña del máster la ve igual y, al momento, lo que se añade
   const other = await page.context().newPage()
   await other.goto(`/mundos/${worldId}/wiki/${id('El robo del relicario')}?pestana=${tab.id}`)
-  const otherBoard = other.getByRole('region', { name: 'Pizarra Pizarra' })
+  const otherBoard = other.getByRole('region', { name: 'Pizarra', exact: true })
   await expect(otherBoard.getByRole('link', { name: 'Doran el Cojo', exact: true })).toBeVisible()
   await expect(otherBoard.getByRole('link', { name: 'La Madre Ceniza', exact: true })).toBeVisible()
   // Lo que pone la IA (por el MCP) llega a las dos al momento
@@ -160,7 +161,7 @@ test('la pizarra: el máster pone tarjetas, una flecha y dibuja a mano; otra pes
   await api('setKnowledge', { worldId, campaignId, kind: 'page', targetId: id('Doran el Cojo'), known: true })
   const ana = await newPlayer(browser, link, 'Ana')
   await ana.goto(`/mundos/${worldId}/campanas/${campaignId}/paginas/${id('El robo del relicario')}?pestana=${tab.id}`)
-  const hers = ana.getByRole('region', { name: 'Pizarra Pizarra' })
+  const hers = ana.getByRole('region', { name: 'Pizarra', exact: true })
   await expect(hers.getByRole('link', { name: 'Doran el Cojo', exact: true })).toBeVisible()
   await expect(hers.getByText('La Madre Ceniza')).toHaveCount(0)
   await expect(hers.getByRole('button', { name: 'Página…' })).toHaveCount(0)

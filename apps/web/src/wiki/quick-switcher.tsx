@@ -45,11 +45,13 @@ export function QuickSwitcher({
     const listen = (event: globalThis.KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && !event.altKey && event.key.toLowerCase() === 'k') {
         event.preventDefault()
+        // Antes que nadie: en la pizarra, Excalidraw lo usa para sus enlaces y no dejaría llegar aquí
+        event.stopPropagation()
         setOpen(true)
       }
     }
-    window.addEventListener('keydown', listen)
-    return () => window.removeEventListener('keydown', listen)
+    window.addEventListener('keydown', listen, true)
+    return () => window.removeEventListener('keydown', listen, true)
   }, [setOpen])
   if (!open) return null
   return <SwitcherDialog worldId={worldId} onCreatePage={onCreatePage} onClose={() => setOpen(false)} />

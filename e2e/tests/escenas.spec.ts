@@ -70,7 +70,7 @@ test('una escena: su mapa en teselas, la rejilla alineada, la mesa y la tele que
   await page.getByRole('button', { name: 'cripta.png' }).click()
   const tabs = page.getByRole('navigation', { name: 'Pestañas de la página' })
   await expect(tabs.getByRole('link', { name: 'Escena' })).toHaveAttribute('aria-current', 'page')
-  const map = page.getByRole('application', { name: 'Escena Escena' })
+  const map = page.getByRole('application', { name: 'Escena', exact: true })
   await expect(map).toBeVisible({ timeout: 20_000 })
   await expect(map.locator('img').first()).toBeVisible()
   await expect(page.getByRole('heading', { name: 'Rejilla' })).toBeVisible()
