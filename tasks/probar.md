@@ -39,7 +39,9 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   izquierda. Sin «Ampliar» (la jugadora sí lo tiene).
 - [ ] **Decidido sin ti**: con el panel plegado, la página llega hasta el borde derecho dejando el mismo hueco que hay
   junto a la ficha del árbol (no pegada al borde). En la barra pequeña de un portátil con el panel abierto, si no caben,
-  el título se acorta con «…» y las pestañas se desplazan de lado; «Guardado» solo sale con la cabecera grande. Los temas de papel de la hoja (pergamino) siguen cambiando solo la
+  el título se acorta con «…» y las pestañas se desplazan de lado; «Guardado» solo sale con la cabecera grande. En una
+  pizarra de menos de 500 px de alto (el portátil), Excalidraw pasa a su modo de móvil: sus formas de arriba se quitan
+  (están en nuestra píldora) y lo de lo elegido (propiedades, duplicar, borrar) sale en una isla encima de la píldora. Los temas de papel de la hoja (pergamino) siguen cambiando solo la
   letra en pantalla; ¿quieres que el pergamino tiña la columna entera?
 
 ## Módulo 9: la pizarra (en local, rama `modulo-9/mapas`; docs/specs/pizarra.md)

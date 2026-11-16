@@ -61,16 +61,24 @@ async function wheelOver(page: Page, target: Locator, deltaY: number) {
   await page.mouse.wheel(0, deltaY)
 }
 
-/** Lo de la pestaña (el mapa, la pizarra) cabe en la ventana: empieza bajo las pestañas, acaba abajo y nada se desplaza */
+/**
+ * Lo de la pestaña (el mapa, la pizarra) cabe en la ventana: empieza bajo las pestañas y acaba con la página, que llega
+ * hasta abajo con su margen (el de las fichas de los lados); nada se desplaza
+ */
 async function fitsWindow(page: Page, canvas: Locator) {
   const height = page.viewportSize()?.height ?? 0
   const tabs = page.locator('header[data-page-head]').getByRole('navigation', { name: 'Pestañas de la página' })
   await expect
     .poll(async () => {
       const box = await canvas.boundingBox()
-      return Math.round((box?.y ?? 0) + (box?.height ?? 0))
+      const page = await column(canvas.page()).boundingBox()
+      return Math.abs((box?.y ?? 0) + (box?.height ?? 0) - ((page?.y ?? 0) + (page?.height ?? 0))) <= 2
     })
-    .toBe(height)
+    .toBe(true)
+  const pageBox = await column(page).boundingBox()
+  const bottom = (pageBox?.y ?? 0) + (pageBox?.height ?? 0)
+  expect(bottom).toBeLessThanOrEqual(height)
+  expect(bottom).toBeGreaterThan(height - 24)
   const tabsBox = await tabs.boundingBox()
   expect((await canvas.boundingBox())?.y ?? 0).toBeGreaterThanOrEqual((tabsBox?.y ?? 0) + (tabsBox?.height ?? 0) - 1)
   expect(await page.evaluate(() => document.documentElement.scrollHeight - window.innerHeight)).toBeLessThanOrEqual(0)
@@ -131,12 +139,13 @@ test('el mapa cabe en la ventana: la cabecera arriba y el lienzo hasta abajo, si
   await expect(viewer).toBeVisible()
   const height = page.viewportSize()?.height ?? 0
   await fitsWindow(page, viewer)
-  // De lado a lado de la columna (también mientras el panel vacío se pliega solo), sin fondo propio
+  // De lado a lado de la columna, dentro de su raya de 1 px (también mientras el panel vacío se pliega solo), sin fondo
+  // propio
   await expect
     .poll(async () =>
       Math.abs(((await viewer.boundingBox())?.width ?? 0) - ((await column(page).boundingBox())?.width ?? 0))
     )
-    .toBeLessThan(1)
+    .toBeLessThanOrEqual(2)
   expect(await viewer.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgba(0, 0, 0, 0)')
   // Sus herramientas abajo; el zoom y la escala, a la vista
   const tools = page.getByRole('toolbar', { name: 'Herramientas del mapa' })

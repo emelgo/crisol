@@ -154,7 +154,8 @@ test('la pizarra: el máster pone tarjetas, una flecha y dibuja a mano; otra pes
   for (const each of [otherBoard, board]) {
     const area = await each.locator('canvas.excalidraw__canvas.interactive').boundingBox()
     if (!area) throw new Error('sin lienzo')
-    await each.page().mouse.click(area.x + area.width - 40, area.y + area.height - 120)
+    // (arriba a la derecha, en vacío: abajo van el zoom y la píldora)
+    await each.page().mouse.click(area.x + area.width - 40, area.y + 40)
     await each.page().keyboard.press('Shift+1')
     await expect(each.getByRole('link', { name: 'El robo del relicario', exact: true })).toBeVisible()
   }

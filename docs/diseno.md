@@ -372,7 +372,8 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   herramientas de Excalidraw (elegir, mover el lienzo, rectángulo, rombo, elipse, flecha, línea, dibujar, texto,
   imagen y borrar; la elegida marcada y su atajo al pasar el ratón) y «⋯» (guardar como imagen, vaciarla); el zoom,
   abajo a la derecha, y deshacer y rehacer, abajo a la izquierda. Sin su barra de formas, su menú ni su pie; su panel
-  de propiedades sí. **Sin «Ampliar»** (ya va a sangre, como en Everlore); la jugadora lo conserva.
+  de propiedades sí (en un lienzo bajo o estrecho, donde Excalidraw pasa a su modo de móvil, lo de lo elegido sale en
+  una isla encima de nuestra píldora). **Sin «Ampliar»** (ya va a sangre, como en Everlore); la jugadora lo conserva.
 - **El mapa**: la imagen se arrastra y se acerca con la rueda hacia el cursor (y con dos dedos); las herramientas, una
   columna de iconos arriba a la izquierda (**en un mundo, una fila en una píldora de cristal abajo
   en el centro, el zoom abajo a la derecha y la escala abajo a la izquierda**, Enrique, 2026-11-16); el botón derecho ofrece «Pin aquí» y «Pin con página nueva» (su nombre es

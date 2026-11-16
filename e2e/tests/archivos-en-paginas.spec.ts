@@ -198,9 +198,9 @@ test('la portada: se sube desde la página, se elige de tus archivos, se encuadr
   await expect(banner).toHaveAttribute('src', /^\/api\/files\//)
   expect(await current()).toMatchObject({ x: 50, y: 50 })
 
-  // Puesta, se cambia desde ella: «Cambiar», al pasar por encima. «Elegir de tus archivos» abre el selector, con la
-  // subida marcada
-  await banner.hover()
+  // Puesta, se cambia desde ella: «Cambiar», al pasar por encima (por su parte de arriba: abajo va el título). «Elegir de
+  // tus archivos» abre el selector, con la subida marcada
+  await banner.hover({ position: { x: 24, y: 10 } })
   await page.getByRole('button', { name: 'Cambiar' }).click()
   await cover.getByRole('button', { name: 'Elegir de tus archivos' }).click()
   const picker = page.getByRole('dialog', { name: 'Elegir de tus archivos' })
@@ -223,7 +223,7 @@ test('la portada: se sube desde la página, se elige de tus archivos, se encuadr
   await expect(banner).toHaveCSS('object-position', '55% 50%')
   await expect(cover).toHaveCount(0)
 
-  await banner.hover()
+  await banner.hover({ position: { x: 24, y: 10 } })
   await page.getByRole('button', { name: 'Cambiar' }).click()
   await cover.getByRole('button', { name: 'Quitar la portada' }).click()
   await cover.getByRole('button', { name: 'Guardar' }).click()
