@@ -9,6 +9,21 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
+## Calendarios (módulo 8, en local, rama `modulo-8/calendarios`; 2026-11-16)
+
+- [ ] **La barra del mundo**: «Páginas · Calendarios · Archivos» (Páginas lleva a la portada, como antes el nombre).
+- [ ] **Calendarios**, vacía: el bodegón (provisional, el del historial) y «Calendario nuevo».
+- [ ] **«Calendario nuevo»**: en blanco, como el nuestro o copia de otro; al crearlo se abre su editor. El primero nace
+  principal.
+- [ ] **Las fichas**: el año dibujado (las festividades con su color, las estaciones debajo), «Principal», lunas y eras;
+  el engranaje (abrir, hacer principal, duplicar, borrar); arrastrar para ordenar (o Alt y las flechas en su nombre).
+- [ ] **El editor**: cada sección desde la izquierda; meses con arrastre, festividad y fuera de la semana; bisiestos;
+  estaciones que se pisan (lo dice y no deja guardar); lunas con sus fases; eras (con «Cuenta los años desde su inicio» y
+  «Solo del máster»); en uno que no es el principal, la correspondencia. La vista previa cambia al momento.
+- [ ] **Hacer principal a otro** que tenga correspondencia: el anterior recibe la inversa (una fecha convertida no cambia).
+- [ ] **Con la IA**: «crea el calendario de Eana» con una sola llamada y `describir_fecha` de «1250-Siega-18».
+- [ ] **La jugadora** no ve «Calendarios» en su barra, y su IA no ve las eras solo del máster.
+
 ## Ajustes del mapa, la pizarra y la página (en local, rama `modulo-9/mapas`; 2026-11-16, tasks/ajustes-mapa-pizarra.md)
 
 - [ ] **El «?» del tutorial**, abajo a la derecha: redondo y por encima de todo (también sobre un mapa o una pizarra).

@@ -7,6 +7,22 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
+### Para retomar (2026-11-16: módulo 8 · mundo, capacidad `calendarios`, construida en local)
+
+- Rama `modulo-8/calendarios` (sobre `modulo-9/mapas`, que sigue con su PR #120 abierto), ADR-0029. **Migración 0082**
+  (`calendars`), ya aplicada en local. Spec `docs/specs/calendarios.md`; decisiones de Enrique en `docs/specs/modulo-8.md`.
+- Hecho: la aritmética en `packages/domain/src/calendar/` (portada del Crisol antiguo; ida y vuelta en ±100.000 años,
+  10.000 fechas < 50 ms), conversión por la correspondencia con el principal, validación por secciones; contratos y
+  acciones (`listCalendars`, `getCalendar`, `createCalendar`, `updateCalendar` —nombre, principal, orden, definición—,
+  `deleteCalendar`, `describeDate`, `convertDate`); MCP (`listar_calendarios`, `ver_calendario`, `crear_calendario`,
+  `cambiar_calendario`, `borrar_calendario`, `describir_fecha`, que con `to` convierte); la jugadora sin las eras solo
+  del máster (API, tiempo real, MCP; prueba de fugas ampliada); la barra del mundo «Páginas · Calendarios · Archivos»;
+  la pantalla de Calendarios y el editor a pantalla entera con su vista previa. Crítica y audit de impeccable aplicados.
+- El gancho de las fechas en uso: `apps/server/src/actions/calendar-dates.ts` (`DATE_SOURCES`, vacío): `fechas` y
+  `cronologias` añaden ahí su fuente para que quitar un mes o borrar un calendario con fechas se impida.
+- **Siguiente**: la capacidad `fechas` (`docs/specs/fechas.md`) y después `cronologias` (decisiones 4-10). El bodegón
+  de la pantalla vacía es provisional (el del historial): prompt en `docs/imagenes-por-hacer.md`.
+
 ### Para retomar (2026-11-13: módulo 9, mapas con capas, construido en local)
 
 - Rama `modulo-9/mapas` (sobre `main` con las tandas 8 y 9), plan en `tasks/modulo-9.md` (7 porciones), ADR-0026.
@@ -1919,7 +1935,7 @@ Estados: pendiente · en curso · hecho · descartado.
 | 7 | **Sala de jugadores**: presencia, chat y susurros, mostrar a jugadores, sonido (también **los de un zip de Foundry**), controles del máster | **hecho** (2026-11-11, PR #117, en staging); falta que Enrique lo pruebe y confirme el ADR-0022 | Foundry: sockets y chat; DDB: game log |
 | R | **Revisión de la app** (2026-11-11): nueve tandas (`tasks/plan-revision.md`); la campaña, aparte | **en curso** (tanda 1) | Roliando y Roll20 (editor de sistemas); 5etools (libros) |
 | 9 | **Pizarras y mapas con capas**: la pizarra como pestaña; regiones, rutas, textos y capas en los mapas, escala y medir | pendiente (el primero tras la revisión) | DDB Maps |
-| 8 · mundo | **Calendarios y líneas temporales**: calendarios del mundo con su editor, eventos y la línea temporal como pestaña | pendiente (tras el 9) | — |
+| 8 · mundo | **Calendarios y líneas temporales**: calendarios del mundo con su editor; fechas; cronologías en «Calendarios» (decisiones del 2026-11-16) | **en curso**: `calendarios` hecha en local (2026-11-16, ADR-0029); faltan `fechas` y `cronologias` | Everlore, Crisol antiguo |
 | 10 · mundo | **Herramientas del mundo**: grafo de relaciones y árbol familiar, tableros, gráficos, generador de nombres | pendiente (tras el 8) | — |
 | 8 · campaña | El «hoy» de cada campaña, el clima y los viajes | pendiente (con la revisión de la campaña) | — |
 | 10 · campaña | El centro de actividad y la pantalla del máster | pendiente (con la revisión de la campaña) | — |
