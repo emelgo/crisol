@@ -454,9 +454,11 @@ describe('el visor del mapa', () => {
     expect(drop.querySelector('svg')?.getAttribute('width')).toBe('36')
     expect(drop.querySelector('circle')).not.toBeNull()
     const shield = list.getByRole('button', { name: 'Escudo' })
-    expect(shield.dataset.anchor).toBe('center')
+    // Todas las formas, clavadas por la punta (Enrique, 2026-11-16); solo el icono suelto, por el centro
+    expect(shield.dataset.anchor).toBe('tip')
     expect(shield.querySelector('svg')?.getAttribute('width')).toBe('24')
     expect(shield.querySelector('text')?.textContent).toBe('⚔')
+    expect(list.getByRole('button', { name: 'Solo icono' }).dataset.anchor).toBe('center')
     expect(list.getByRole('button', { name: 'Solo icono' }).querySelector('svg')).toBeNull()
     expect(list.getByRole('button', { name: 'Solo icono' }).textContent).toContain('🏰')
     expect(list.getByRole('button', { name: 'Punto' }).textContent).toContain('•')

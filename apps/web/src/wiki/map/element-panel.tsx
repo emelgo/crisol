@@ -11,7 +11,6 @@ import { useTranslation } from 'react-i18next'
 import { useApi } from '../../api/context.tsx'
 import { useErrorText } from '../../api/errors.ts'
 import { FormError } from '../../components/field.tsx'
-import { focusOnMount } from '../../components/focus.ts'
 import list from '../../components/list.module.css'
 import { PRESET_COLORS } from '../../routes/world-look.ts'
 import { PageLink } from '../read-as.tsx'
@@ -20,6 +19,12 @@ import { elementName } from './drawing.tsx'
 import styles from './map.module.css'
 import { PagePicker } from './page-picker.tsx'
 import type { ElementPatch } from './use-elements.ts'
+
+/** Recién dibujado o con doble clic en un texto: el foco en su nombre, ya elegido para escribir encima */
+const selectOnMount = (input: HTMLInputElement | null) => {
+  input?.focus()
+  input?.select()
+}
 
 const FILLS = ['solid', 'hatch', 'none'] as const
 const STROKES = ['solid', 'dashed', 'dotted'] as const
@@ -144,7 +149,7 @@ export function ElementPanel({
         <label htmlFor={`${id}-label`}>{kind === 'label' ? t('map.element.text') : t('map.pin.name')}</label>
         <input
           id={`${id}-label`}
-          ref={naming ? focusOnMount : undefined}
+          ref={naming ? selectOnMount : undefined}
           value={label}
           maxLength={120}
           placeholder={element.pageTitle ?? ''}

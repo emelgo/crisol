@@ -36,9 +36,13 @@ Pedidos al probar el módulo 9 en localhost. Se hacen en la rama `modulo-9/mapas
   «Icono» va antes de «Tamaño»; es un botón con el de ahora que abre, a la izquierda del panel, el buscador de los
   iconos de rol (el mismo de las páginas) y «Quitar el icono». Se pintan dentro de la forma, en la tinta que se lee sobre
   su color, y sueltos con «Solo el icono». Los emojis de antes se siguen viendo (y la IA aún puede ponerlos).*
-- [ ] La herramienta **Texto** deja dibujar una caja para saber dónde irá el texto.
-- [ ] Un **texto del mapa no se puede elegir** para editarlo ni borrarlo con Supr: que se elija al pulsarlo (y doble clic
-  para editarlo) como las regiones y las rutas.
+- [x] La herramienta **Texto** deja dibujar una caja para saber dónde irá el texto. *Hecho: arrastrar dibuja una caja
+  discontinua; el texto va en su centro con la letra a su alto (pulsar sin arrastrar, donde se pulsa y de serie). La
+  pista: «Dibuja una caja donde irá el texto».*
+- [x] Un **texto del mapa no se puede elegir** para editarlo ni borrarlo con Supr: que se elija al pulsarlo (y doble clic
+  para editarlo) como las regiones y las rutas. *Hecho: se elige pulsando en toda su caja (sus letras no recibían el
+  ratón), el doble clic lleva a escribirlo (su texto, ya elegido) y Supr lo quita. Al pulsar algo ya elegido, el foco va
+  al mapa (antes se quedaba en el panel y Supr borraba lo escrito).*
 - [ ] **Medir**: su panel sale en otro sitio; ahora tapa la barra de herramientas de abajo.
 - [ ] Los **desplegables nativos** (p. ej. «Se ve el nombre») salen con las opciones en claro: en oscuro, como la app.
 

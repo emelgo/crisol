@@ -225,6 +225,34 @@ describe('dibujar y retocar en el mapa (módulo 9)', () => {
     expect(panel.getByLabelText('Giro')).toBeDefined()
   })
 
+  it('un texto en su caja: va en su centro con la letra a su alto; se elige al pulsarlo, doble clic lo edita y Supr lo quita', async () => {
+    const { viewer, saved } = await renderMap()
+    viewer.focus()
+    await userEvent.keyboard('t')
+    // Una caja de 0,2 × 0,1 del mapa (70 px de la imagen de alto: la letra, 56 de 1000 → 56)
+    fireEvent.pointerDown(viewer, { pointerId: 1, pointerType: 'mouse', button: 0, ...at(0.4, 0.5) })
+    fireEvent.pointerMove(viewer, { pointerId: 1, pointerType: 'mouse', ...at(0.6, 0.6) })
+    expect(viewer.querySelector('[class*="textBox"]')).not.toBeNull()
+    fireEvent.pointerUp(viewer, { pointerId: 1, pointerType: 'mouse', button: 0, ...at(0.6, 0.6) })
+    await waitFor(async () => expect(await saved()).toHaveLength(1))
+    const [label] = await saved()
+    expect(label?.geometry).toEqual({ at: [0.5, 0.55] })
+    expect(label?.style.size).toBe(56)
+    expect(viewer.querySelector('[class*="textBox"]')).toBeNull()
+    // Cerrar su panel, pulsarlo: se elige; doble clic: a escribirlo; Supr (con el foco en el mapa) lo quita
+    await userEvent.click(within(screen.getByRole('region', { name: 'Texto' })).getByRole('button', { name: 'Cerrar' }))
+    const text = viewer.querySelector('[data-kind="label"]') as Element
+    fireEvent.pointerDown(text, { pointerId: 1, pointerType: 'mouse', button: 0, ...at(0.5, 0.55) })
+    fireEvent.pointerUp(text, { pointerId: 1, pointerType: 'mouse', button: 0, ...at(0.5, 0.55) })
+    const panel = within(await screen.findByRole('region', { name: 'Texto' }))
+    expect(document.activeElement).not.toBe(panel.getByLabelText('Texto'))
+    fireEvent.doubleClick(text, at(0.5, 0.55))
+    await waitFor(() => expect(document.activeElement).toBe(panel.getByLabelText('Texto')))
+    viewer.focus()
+    await userEvent.keyboard('{Delete}')
+    await waitFor(async () => expect(await saved()).toHaveLength(0))
+  })
+
   it('elegir lo dibujado: su estilo se cambia en su panel; Supr lo quita y Ctrl+Z lo vuelve a poner', async () => {
     const { viewer, saved } = await renderMap(async (api, mapId) => {
       await api.client.call('createMapElement', { mapId, kind: 'region', geometry: square, label: 'Aldoria' })

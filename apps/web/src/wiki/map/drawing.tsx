@@ -37,6 +37,7 @@ export const MapDrawing = memo(function MapDrawing({
   fresh,
   live,
   onOpen,
+  editLabels = false,
   onElementPointerDown,
   onElementClick
 }: {
@@ -56,6 +57,8 @@ export const MapDrawing = memo(function MapDrawing({
   live?: { id: string; geometry: MapElementView['geometry'] } | null
   /** Doble clic en algo que lleva a una página */
   onOpen?: (pageId: string) => void
+  /** El doble clic en un texto es para escribirlo (lo hace el visor), no para abrir su página */
+  editLabels?: boolean
   onElementPointerDown?: (event: PointerEvent<SVGGElement>, element: MapElementView) => void
   onElementClick?: (event: MouseEvent<SVGGElement>, element: MapElementView) => void
 }) {
@@ -112,7 +115,7 @@ export const MapDrawing = memo(function MapDrawing({
           selected={element.id === selected}
           fresh={fresh?.has(element.id) ?? false}
           secret={secretLayers?.has(element.layerId ?? first ?? '') ?? false}
-          onOpen={onOpen}
+          onOpen={element.kind === 'label' && editLabels ? undefined : onOpen}
           onPointerDown={onElementPointerDown}
           onClick={onElementClick}
         />

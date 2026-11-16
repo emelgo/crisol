@@ -712,6 +712,26 @@
   fill: #2b2117;
 }
 
+/* Un texto del mapa se elige pulsando en él (en toda su caja, no solo en sus letras) */
+.element[data-kind="label"] {
+  pointer-events: bounding-box;
+  cursor: pointer;
+}
+
+/* La caja que se dibuja con la herramienta Texto: dónde irá */
+.textBox {
+  position: absolute;
+  box-sizing: border-box;
+  border: calc(1.5px * var(--inv-k)) dashed var(--color-accent-text);
+  border-radius: calc(4px * var(--inv-k));
+  background: color-mix(in srgb, var(--color-accent-text) 10%, transparent);
+  pointer-events: none;
+}
+
+.viewer[data-tool="text"] {
+  cursor: crosshair;
+}
+
 .element[data-display="0"] .elementName {
   opacity: 0;
   transition: opacity 120ms ease-out;

@@ -2072,7 +2072,7 @@ export const es = {
       hints: {
         region: 'Un vértice en cada clic · Pulsa el primer punto o Intro para cerrar · Esc, dejar',
         path: 'Un punto en cada clic · Intro o doble clic, acabar · Esc, dejar',
-        text: 'Pulsa donde vaya el texto'
+        text: 'Dibuja una caja donde irá el texto · Esc, dejar'
       },
       newText: 'Texto',
       vertex: 'Arrastra para moverlo; botón derecho para quitarlo',

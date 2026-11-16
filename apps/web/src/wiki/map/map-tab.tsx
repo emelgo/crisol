@@ -90,6 +90,14 @@ export function zoomedAt(view: View, factor: number, px: number, py: number): Vi
   return { k, x: px - (px - view.x) * ratio, y: py - (py - view.y) * ratio }
 }
 
+/**
+ * El tamaño de un texto para que llene el alto de su caja (en píxeles de la imagen): su letra, a su alto (fontPixels
+ * de geometry.ts), dentro de lo que admite (10 a 100)
+ */
+export function textSizeFor(boxHeight: number, imageWidth: number) {
+  return Math.round(Math.min(100, Math.max(10, (boxHeight * 0.8 * 1000) / imageWidth)))
+}
+
 /** Lo que mide de verdad una imagen (un SVG sin medidas, uno razonable) */
 function naturalSize(url: string) {
   return new Promise<{ width: number; height: number }>((resolve, reject) => {
@@ -275,6 +283,10 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
   const [namingElement, setNamingElement] = useState<string | null>(null)
   const [draft, setDraft] = useState<Draft | null>(null)
   const [closing, setClosing] = useState(false)
+  // Texto: la caja que se dibuja para saber dónde irá (de esquina a esquina, en coordenadas del mapa)
+  const [textBox, setTextBox] = useState<{ from: Point; to: Point } | null>(null)
+  const textBoxRef = useRef(textBox)
+  textBoxRef.current = textBox
   const [cursor, setCursor] = useState<Point | null>(null)
   const [live, setLive] = useState<{ id: string; geometry: MapGeometry } | null>(null)
   const liveRef = useRef(live)
@@ -500,6 +512,7 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
     setDraft(null)
     setCursor(null)
     setClosing(false)
+    setTextBox(null)
     if (next !== 'measure') setMeasure({ points: [], route: null })
     if (next !== 'calibrate') setCalibration([])
     if (next !== 'select') {
@@ -584,10 +597,17 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
     setDraft({ kind, points: [...points, point] })
   }
 
-  const placeText = (point: Point) => {
+  /** Un texto en su caja: en su centro y con la letra a su alto (pulsando sin arrastrar, donde se pulsa, de serie) */
+  const placeText = (from: Point, to: Point) => {
     setTool('select')
+    setTextBox(null)
+    const a = toScreen(from)
+    const b = toScreen(to)
+    const boxed = Math.abs(a.x - b.x) > 6 && Math.abs(a.y - b.y) > 6
+    const at: Point = boxed ? [(from[0] + to[0]) / 2, (from[1] + to[1]) / 2] : from
+    const size = boxed ? textSizeFor(Math.abs(to[1] - from[1]) * image.height, image.width) : undefined
     elements.create.mutate(
-      { kind: 'label', geometry: { at: point }, label: t('map.edit.newText') },
+      { kind: 'label', geometry: { at }, label: t('map.edit.newText'), ...(size ? { style: { size } } : {}) },
       { onSuccess: created }
     )
   }
@@ -600,6 +620,8 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
   ) => {
     event.stopPropagation()
     event.preventDefault()
+    // Sin el gesto del visor, el foco no iría a él (se quedaría en el panel, y Supr borraría lo que se escribía)
+    container.current?.focus({ preventScroll: true })
     const startX = event.clientX
     const startY = event.clientY
     let travel = 0
@@ -663,6 +685,7 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
   const onElementClickNow = (event: React.MouseEvent<SVGGElement>, element: MapElementView) => {
     if (tool !== 'select' || lastTravel.current > 4) return
     event.stopPropagation()
+    if (element.id !== selectedElement) setNamingElement(null)
     setSelectedElement(element.id)
     setSelected(null)
     setLayersOpen(false)
@@ -707,6 +730,12 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
     setMenu(null)
     pressedOn.current = (event.target as Element).closest?.('[data-id]')?.getAttribute('data-id') ?? null
     event.currentTarget.setPointerCapture(event.pointerId)
+    // Texto: arrastrar dibuja su caja (no mueve el mapa)
+    if (tool === 'text' && editable && pointers.current.size === 0) {
+      const { x, y } = toMap(event.clientX, event.clientY)
+      setTextBox({ from: [x, y], to: [x, y] })
+      return
+    }
     pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY })
     if (pointers.current.size === 1) {
       gesture.current = { startX: event.clientX, startY: event.clientY, view: view.current, travel: 0, pinch: null }
@@ -718,6 +747,12 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
   }
 
   const onPointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    const box = textBoxRef.current
+    if (box) {
+      const { x, y } = toMap(event.clientX, event.clientY)
+      setTextBox({ from: box.from, to: [x, y] })
+      return
+    }
     // Dibujando, midiendo o calibrando: la goma sigue al cursor (pegada a lo cercano)
     const following =
       draft ||
@@ -759,6 +794,12 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
   }
 
   const onPointerUp = (event: PointerEvent<HTMLDivElement>) => {
+    const box = textBoxRef.current
+    if (box) {
+      if (event.type === 'pointercancel') return setTextBox(null)
+      const { x, y } = toMap(event.clientX, event.clientY)
+      return placeText(box.from, [x, y])
+    }
     pointers.current.delete(event.pointerId)
     const current = gesture.current
     if (pointers.current.size > 0 || !current) return
@@ -790,11 +831,9 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
     if (tool === 'pin' && editable) placePin(toMap(event.clientX, event.clientY))
     else if (tool === 'region' && editable && onFirstVertex(event.clientX, event.clientY)) finishDraft()
     else if ((tool === 'region' || tool === 'path') && editable) addDraftPoint(snappedAt(event.clientX, event.clientY))
-    else if (tool === 'text' && editable) {
-      const { x, y } = toMap(event.clientX, event.clientY)
-      placeText([x, y])
-    } else if (tool === 'select' && pressedOn.current) {
-      // Pulsar lo dibujado lo elige
+    else if (tool === 'select' && pressedOn.current) {
+      // Pulsar lo dibujado lo elige (con el foco en el mapa, no en su nombre)
+      if (pressedOn.current !== selectedElement) setNamingElement(null)
       setSelectedElement(pressedOn.current)
       setSelected(null)
       setLayersOpen(false)
@@ -1173,8 +1212,14 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
         onPointerLeave={() => setCursor(null)}
         onDoubleClick={(event) => {
           if (draft) return finishDraft({ x: event.clientX, y: event.clientY })
-          // Doble clic en lo dibujado que lleva a una página: la abre
+          // Doble clic en un texto: a escribirlo (Enrique, 2026-11-16); en lo dibujado que lleva a una página, la abre
           const target = map.elements.find((element) => element.id === pressedOn.current)
+          if (tool === 'select' && editable && !readAs && target?.kind === 'label') {
+            setSelectedElement(target.id)
+            setSelected(null)
+            setNamingElement(target.id)
+            return
+          }
           if (tool === 'select' && target?.pageId && target.pageTitle) openPage(target.pageId)
         }}
         onKeyDown={onKeyDown}
@@ -1202,10 +1247,23 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
             fresh={fresh}
             live={live}
             onOpen={openPage}
+            editLabels={editable && !readAs}
             onElementPointerDown={onElementPointerDown}
             onElementClick={onElementClick}
           />
           {draft && <DraftLayer image={image} draft={draft} cursor={cursor} closing={closing} />}
+          {textBox && (
+            <div
+              className={styles.textBox}
+              aria-hidden="true"
+              style={{
+                insetInlineStart: `${Math.min(textBox.from[0], textBox.to[0]) * 100}%`,
+                insetBlockStart: `${Math.min(textBox.from[1], textBox.to[1]) * 100}%`,
+                inlineSize: `${Math.abs(textBox.to[0] - textBox.from[0]) * 100}%`,
+                blockSize: `${Math.abs(textBox.to[1] - textBox.from[1]) * 100}%`
+              }}
+            />
+          )}
           {tool === 'measure' && measure.points.length > 0 && (
             <DraftLayer
               image={image}
@@ -1417,6 +1475,7 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
           onDelete={() => removeElement(currentElement)}
           onClose={() => {
             setSelectedElement(null)
+            setNamingElement(null)
             container.current?.focus()
           }}
         />
