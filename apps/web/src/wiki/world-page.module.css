@@ -9,6 +9,15 @@
 /* La wiki con una página del mundo: la columna llega hasta abajo y el panel se desliza fuera o dentro (su columna de la
    rejilla pasa de su ancho a 0 en 300 ms; lo que se sale al deslizarse, recortado) */
 .wiki[data-world-page] {
+  /* Las fichas de los lados empiezan donde la columna (--world-top lo mide la página) y llegan hasta abajo, como ella */
+  --side-top: var(--world-top, 3.375rem);
+  --side-height: calc(
+    100dvh -
+    var(--side-top) -
+    var(--space-4) +
+    min(var(--side-lift, 0px), calc(var(--side-top) - var(--space-4)))
+  );
+
   padding-block-end: 0;
   overflow-x: clip;
   transition:
@@ -33,16 +42,38 @@
   }
 }
 
-/* La columna: una sola superficie casi opaca de arriba abajo (sin borde ni esquinas abajo: no acaba). El cristal, en
-   una capa por detrás (::before): un backdrop-filter en ella sería la caja de lo que flota con position: fixed dentro
-   (los menús del editor) */
+/* La ficha del árbol y el panel, con las mismas esquinas, la misma raya y el mismo cristal que la columna */
+.wiki[data-world-page] > aside,
+.wiki[data-world-page] .panel {
+  block-size: var(--side-height);
+  border-radius: var(--radius-frame);
+  background: var(--frame-sheen), var(--surface-page);
+}
+
+/* El panel, a la altura de la columna (va en su misma fila); sin sitio, debajo de la página, con su alto */
+.wiki[data-world-page] .panel {
+  margin-block-start: 0;
+}
+
+@media (max-width: 64rem) {
+  .wiki[data-world-page] .panel {
+    block-size: auto;
+    margin-block-start: var(--space-8);
+  }
+}
+
+/* La columna: una sola pieza de cristal que se lee, con las esquinas redondeadas del cristal y su raya fina (Enrique,
+   2026-11-16: «redondea las esquinas y dale como un poco más de cristal»), la misma en el texto, el mapa y la pizarra
+   (el lienzo, recortado por ella). El cristal, en una capa por detrás (::before): un backdrop-filter en ella sería la
+   caja de lo que flota con position: fixed dentro (los menús del editor) */
 .page {
-  /* Los márgenes de dentro y el alto de la barra pegada (el lienzo a sangre llega justo hasta ella) */
+  /* Los márgenes de dentro y el alto de la barra pegada */
   --page-pad-top: 1.5rem;
   --page-pad-x: 1.75rem;
   --stuck-height: 3.25rem;
-  /* Lo que queda por encima de la columna: las pestañas abiertas */
+  /* Lo que queda por encima de la columna (las pestañas abiertas) y por debajo, hasta el borde de la ventana */
   --page-top: 4.375rem;
+  --page-bottom: var(--space-4);
 
   position: relative;
   isolation: isolate;
@@ -51,9 +82,10 @@
   gap: 0.75rem;
   grid-column: 1;
   min-inline-size: 0;
-  min-block-size: calc(100dvh - var(--page-top));
+  min-block-size: calc(100dvh - var(--page-top) - var(--page-bottom));
+  margin-block-end: var(--page-bottom);
   padding: var(--page-pad-top) var(--page-pad-x) 0;
-  border-radius: 0.75rem 0.75rem 0 0;
+  border-radius: var(--radius-frame);
 }
 
 .page::before {
@@ -61,8 +93,10 @@
   position: absolute;
   inset: 0;
   z-index: -1;
+  border: 1px solid var(--line-frame);
   border-radius: inherit;
-  background: var(--surface-read);
+  background: var(--frame-sheen), var(--surface-page);
+  box-shadow: inset 0 1px 0 var(--glass-hi);
   -webkit-backdrop-filter: var(--frame-blur);
   backdrop-filter: var(--frame-blur);
   pointer-events: none;
@@ -87,59 +121,93 @@
   padding: 0 var(--space-2) 5rem;
 }
 
-/* El mapa y la pizarra, a sangre: de lado a lado de la columna y con el alto de lo que se ve bajo la barra pegada (al
-   bajar del todo, lo ocupan todo, hasta el final de la ventana). Sin fondo propio: se ve el de la página */
+/* Con un mapa o una pizarra, la columna mide lo que queda de la ventana (--page-top lo mide la página) y no se desplaza:
+   todo cabe (Enrique, 2026-11-16: «tenemos poco espacio de trabajo») */
+.page[data-fill] {
+  block-size: calc(100dvh - var(--page-top) - var(--page-bottom));
+  min-block-size: 0;
+  /* Su raya, a la vista alrededor del lienzo */
+  padding-block-end: 1px;
+  overflow: clip;
+}
+
+/* El mapa y la pizarra, a sangre: de lado a lado de la columna y lo que queda de alto bajo las pestañas, hasta abajo,
+   recortados por sus esquinas. Sin fondo propio: se ve el de la página */
 .bleed {
   --sheet-pad: 0px;
 
   position: relative;
-  block-size: calc(100dvh - var(--stuck-height));
-  min-block-size: 22rem;
-  margin-inline: calc(-1 * var(--page-pad-x));
+  flex: 1 1 0;
+  min-block-size: 12rem;
+  margin-inline: calc(1px - var(--page-pad-x));
 }
 
 .bleed > * {
   block-size: 100%;
 }
 
-/* La portada, arriba en todas las pestañas: 176 px, con sus esquinas redondeadas y sin fundirse con nada */
-.page > .cover {
-  position: relative;
-  grid-column: auto;
-  block-size: 11rem;
-  margin: 0 0 -0.25rem;
+/* La portada, una franja baja detrás del título y sus botones, en todas las pestañas (Enrique, 2026-11-16: «Portada
+   detrás del título»), más baja en una ventana baja; con un degradado oscuro debajo del título para que se lea. Sin
+   portada, la textura de siempre (wiki.module.css). Al pegarse la cabecera, se funde */
+.head > .cover {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
+  z-index: 0;
+  block-size: var(--band);
+  margin: 0;
   border-radius: 1.125rem;
   isolation: isolate;
+  transition:
+    opacity 220ms ease,
+    visibility 0s linear 0s;
 }
 
-.page > .cover[data-cover] {
+.head > .cover[data-cover] {
   overflow: hidden;
 }
 
-.page > .cover::after {
-  display: none;
+.head > .cover.cover::after {
+  content: "";
+  display: block;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  background: linear-gradient(to top, rgb(0 0 0 / 0.62), rgb(0 0 0 / 0.22) 50%, transparent 80%);
+  pointer-events: none;
 }
 
-.page > .cover[data-cover] :global([data-cover-image]),
-.page > .cover[data-cover] > :first-child {
+.head > .cover[data-cover] :global([data-cover-image]),
+.head > .cover[data-cover] > :first-child {
   block-size: 100%;
   border-radius: inherit;
 }
 
-/* Sin portada, la textura en su hueco (wiki.module.css); «Añadir portada», arriba a la derecha */
-.page > .cover:not([data-cover]) > * {
-  position: absolute;
-  inset-block-start: var(--space-3);
-  inset-inline-end: var(--space-3);
-  z-index: 1;
+/* «Añadir portada» (o «Cambiar» y lo de la portada del mundo), arriba a la derecha, al pasar por la cabecera */
+.head > .cover > * {
+  z-index: 2;
 }
 
-/* «Añadir portada» (o «Cambiar»), al pasar por la portada o por el título */
-.page:has(.head:hover, .cover:hover) .cover > :not([data-cover-image]) {
+.head > .cover:not([data-cover]) > * {
+  position: absolute;
+  inset-block-start: var(--space-2);
+  inset-inline-end: var(--space-3);
+}
+
+.head:hover > .cover > :not([data-cover-image]) {
   opacity: 1;
 }
 
-/* Lo que avisa de que el título ya llega arriba: entonces, la barra pequeña */
+.head[data-compact] > .cover {
+  visibility: hidden;
+  opacity: 0;
+  transition:
+    opacity 220ms ease,
+    visibility 0s linear 220ms;
+}
+
+/* Lo que avisa de que la cabecera ya llega arriba: entonces, la barra pequeña */
 .sentinel {
   block-size: 1px;
   margin-block-end: calc(-1px - 0.75rem);
@@ -176,21 +244,22 @@
 }
 
 /*
- * La cabecera: el icono y el título grande, sus botones a la derecha y, debajo, las pestañas con las herramientas de la
- * abierta. Pegada arriba de la ventana; al llegar, se encoge a una barra de cristal con todo en una fila. Mide siempre
- * lo mismo en la columna (lo que encoge lo devuelve su margen): lo de debajo no salta
+ * La cabecera: sobre la franja de la portada, el icono y el título grande y sus botones a la derecha; debajo, las
+ * pestañas con las herramientas de la abierta. Pegada arriba de la ventana; al llegar, se encoge a una barra de cristal
+ * con todo en una fila (lo que se mueve, con movimiento). Mide siempre lo mismo en la columna (lo que encoge lo
+ * devuelve su margen): lo de debajo no salta
  */
 .head {
-  --title-row: 2.75rem;
+  --band: clamp(5.5rem, 12vh, 7.5rem);
   --tabs-row: 2.75rem;
-  --head-gap: 0.5rem;
+  --head-gap: 0.25rem;
 
   position: sticky;
   inset-block-start: 0;
   z-index: 6;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  grid-template-rows: var(--title-row) var(--tabs-row);
+  grid-template-rows: var(--band) var(--tabs-row);
   align-items: center;
   column-gap: var(--space-3);
   row-gap: var(--head-gap);
@@ -202,6 +271,27 @@
   grid-row: 2;
   grid-column: 1 / -1;
   align-self: stretch;
+}
+
+/* El título y los botones, encima de la parte de abajo de la franja */
+.head:not([data-compact]) > :not(.cover, .tabsRow) {
+  position: relative;
+  z-index: 1;
+  grid-row: 1;
+  align-self: end;
+  padding-block-end: 0.75rem;
+}
+
+.head:not([data-compact]) > .cover + * {
+  padding-inline-start: 1.25rem;
+}
+
+.head:not([data-compact]) > :last-child:not(.tabsRow) {
+  padding-inline-end: 0.75rem;
+}
+
+.head:not([data-compact]) h1 {
+  text-shadow: 0 1px 12px rgb(0 0 0 / 0.55);
 }
 
 .head h1 {
@@ -230,11 +320,12 @@
 .head[data-compact] {
   --title-size: 1.375rem;
 
-  grid-template-columns: fit-content(min(26rem, 40%)) minmax(0, 1fr) auto;
+  /* Las pestañas antes que el título: con poco sitio (un portátil con el panel abierto), el título se acorta con «…» */
+  grid-template-columns: fit-content(min(20rem, 30%)) minmax(0, 1fr) auto;
   grid-template-rows: calc(var(--stuck-height) - 1px);
   block-size: var(--stuck-height);
   margin-inline: -0.5rem;
-  margin-block-end: calc(var(--title-row) + var(--head-gap) + var(--tabs-row) - var(--stuck-height));
+  margin-block-end: calc(var(--band) + var(--head-gap) + var(--tabs-row) - var(--stuck-height));
   padding-inline: 0.875rem 0.5rem;
   border: 1px solid var(--glass-edge);
   border-block-start: 0;
@@ -279,6 +370,16 @@
 
 .head[data-compact] > .tabsRow nav > ul > li > a {
   min-block-size: 2.25rem;
+}
+
+/* Si aun así no caben, se desplazan de lado; «Guardado», solo con la cabecera grande */
+.head[data-compact] > .tabsRow nav > ul {
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.head[data-compact] :global([data-save-slot]) {
+  display: none;
 }
 
 /* El botón del panel, tras «⋯»: marcado mientras el panel está abierto */

@@ -414,8 +414,6 @@ function FilteredPages({
 }
 
 /** La wiki sin página abierta */
-
-/** La wiki sin página abierta */
 export function WikiHome() {
   const { worldId } = homeRoute.useParams()
   // Sin página abierta, la portada del mundo
@@ -436,6 +434,7 @@ function PageHead({
   home = false,
   template,
   actions,
+  band,
   tabs
 }: {
   page: Page
@@ -445,6 +444,8 @@ function PageHead({
   /** La página de una plantilla (su id): «Plantilla» junto al título, y su icono y su nombre viajan desde su tarjeta */
   template?: string | undefined
   actions: ReactNode
+  /** En un mundo, la portada: una franja baja detrás del título y sus botones (Enrique, 2026-11-16) */
+  band?: ReactNode
   /**
    * En un mundo, las pestañas de la página (con las herramientas de la abierta), dentro de la
    * cabecera: al bajar, la cabecera se queda arriba en una barra pequeña con el título y ellas (Enrique, 2026-11-16)
@@ -463,18 +464,57 @@ function PageHead({
   }
   // Pegada y pequeña en cuanto lo de encima de ella se va de la vista
   const sentinel = useRef<HTMLDivElement>(null)
+  const header = useRef<HTMLElement>(null)
   const [compact, setCompact] = useState(false)
+  // En un mundo, el título, las pestañas y los botones van de un sitio al otro con movimiento (Enrique, 2026-11-16:
+  // «suave, sin saltos»): dónde estaban justo antes de cambiar
+  const before = useRef<DOMRect[] | null>(null)
+  const moves = Boolean(tabs)
   useEffect(() => {
     const element = sentinel.current
     if (!element || typeof IntersectionObserver === 'undefined') return
-    const observer = new IntersectionObserver(([entry]) => setCompact(!entry?.isIntersecting), { threshold: 0 })
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (moves && header.current) before.current = moving(header.current).map((c) => c.getBoundingClientRect())
+        setCompact(!entry?.isIntersecting)
+      },
+      { threshold: 0 }
+    )
     observer.observe(element)
     return () => observer.disconnect()
-  }, [])
+  }, [moves])
+  useLayoutEffect(() => {
+    const rects = before.current
+    before.current = null
+    if (!rects || !header.current || typeof Element.prototype.animate !== 'function') return
+    moving(header.current).forEach((child, i) => {
+      const from = rects[i]
+      const to = child.getBoundingClientRect()
+      if (!from || !to.width || !to.height) return
+      const dx = from.left - to.left
+      const dy = from.top - to.top
+      // El título cambia de tamaño: crece o encoge desde su esquina
+      const scale = i === 0 ? from.height / to.height : 1
+      if (Math.abs(dx) < 1 && Math.abs(dy) < 1 && Math.abs(scale - 1) < 0.01) return
+      child.animate(
+        [
+          { transform: `translate(${dx}px, ${dy}px) scale(${scale})`, transformOrigin: 'left top' },
+          { transform: 'none', transformOrigin: 'left top' }
+        ],
+        { duration: 260, easing: 'cubic-bezier(0.2, 0.7, 0.3, 1)' }
+      )
+    })
+  }, [compact])
   return (
     <>
       <div ref={sentinel} aria-hidden="true" className={tabs ? pageStyles.sentinel : styles.sentinel} />
-      <header className={tabs ? pageStyles.head : styles.entryHeader} data-compact={compact || undefined}>
+      <header
+        ref={header}
+        className={tabs ? pageStyles.head : styles.entryHeader}
+        data-compact={compact || undefined}
+        data-page-head={tabs ? '' : undefined}
+      >
+        {band}
         <div className={styles.entryTitle}>
           <div className={styles.heading}>
             {page.icon && (
@@ -512,6 +552,9 @@ function PageHead({
     </>
   )
 }
+
+/** Lo que se mueve al pegarse la cabecera: el título, las pestañas y los botones (no la portada, que se funde) */
+const moving = (header: HTMLElement) => [...header.children].filter((child) => !child.hasAttribute('data-band'))
 
 /** La plantilla con la que se hizo la página, junto a su título: lleva a ella. Si se borró, lo dice (y no lleva) */
 function TemplateBadge({ templateId }: { templateId: string }) {
@@ -879,6 +922,7 @@ export function EntryView({
   const { t } = useTranslation()
   const worldPage = useWorldPage()
   const main = useRef<HTMLElement>(null)
+  const column = useRef<HTMLDivElement>(null)
   // Añadir etiquetas o una propiedad desde «Añadir bloque» del panel: lo hace la ficha de propiedades
   const addProperty = useRef<PropertyAdder | null>(null)
   // El mapa y la pizarra llenan todo el sitio, hasta el final de la ventana y de lado a lado de la hoja, como en
@@ -905,6 +949,26 @@ export function EntryView({
   // El panel de la derecha se pliega desde la cabecera de la página (Enrique, 2026-11-16)
   const panelId = useId()
   const panel = usePanelFold(fill && !template && emptyPanel)
+  // Dónde empieza la columna: las fichas de los lados, a su altura, y el mapa y la pizarra, del alto de lo que queda de
+  // la ventana (Enrique, 2026-11-16)
+  useColumnTop(column, Boolean(worldPage))
+  // La portada, a todo lo ancho (la del mundo en su portada; si no, la de la página o «Añadir portada»). En un mundo, una
+  // franja baja detrás del título (Enrique, 2026-11-16: «Portada detrás del título»)
+  const cover = (
+    <div
+      className={worldPage ? `${styles.entryBanner} ${pageStyles.cover}` : styles.entryBanner}
+      data-cover={banner || page.cover ? '' : undefined}
+      data-band={worldPage ? '' : undefined}
+    >
+      {banner ??
+        (page.cover ? (
+          <PageCoverImage page={page} />
+        ) : (
+          !page.locked && <CoverButton page={page} className={styles.addCover} label={t('cover.add')} />
+        ))}
+    </div>
+  )
+
   const head = (
     <PageHead
       key={page.id}
@@ -912,6 +976,7 @@ export function EntryView({
       startEditing={nuevo}
       home={home}
       template={template?.id}
+      band={worldPage ? cover : undefined}
       tabs={
         worldPage ? (
           <div className={pageStyles.tabsRow}>
@@ -982,31 +1047,16 @@ export function EntryView({
         </>
       ))
     )
-  // La portada, a todo lo ancho (la del mundo en su portada; si no, la de la página o «Añadir portada»)
-  const cover = (
-    <div
-      className={worldPage ? `${styles.entryBanner} ${pageStyles.cover}` : styles.entryBanner}
-      data-cover={banner || page.cover ? '' : undefined}
-    >
-      {banner ??
-        (page.cover ? (
-          <PageCoverImage page={page} />
-        ) : (
-          !page.locked && <CoverButton page={page} className={styles.addCover} label={t('cover.add')} />
-        ))}
-    </div>
-  )
-
   if (worldPage) {
     // El mismo esqueleto en todas las pestañas (Enrique, 2026-11-16, la mezcla con Everlore): la columna es una sola
-    // superficie de arriba abajo; arriba la portada, debajo el título con sus botones y las pestañas (con las
-    // herramientas de la abierta), que se quedan arriba en pequeño al bajar; después, el texto sin caja o el mapa o la
-    // pizarra a sangre. A la derecha, el panel, que se pliega
+    // superficie de arriba abajo; arriba la portada en una franja baja con el título encima y sus botones, y debajo las
+    // pestañas (con las herramientas de la abierta), que se quedan arriba en pequeño al bajar el texto; después, el
+    // texto sin caja o el mapa o la pizarra a sangre, que caben en la ventana sin desplazar. A la derecha, el panel,
+    // que se pliega
     return (
       <SceneTabProvider page={page} tab={active?.kind === 'scene' ? active : null}>
         <div className={styles.entry} data-entry="" data-entry-panel="" data-panel-folded={panel.folded || undefined}>
-          <div className={pageStyles.page} data-page-column="" data-fill={fill || undefined}>
-            {cover}
+          <div ref={column} className={pageStyles.page} data-page-column="" data-fill={fill || undefined}>
             {head}
             {fill ? (
               <article ref={main} className={pageStyles.bleed} data-fill="" data-bleed="">
@@ -1085,6 +1135,34 @@ function PanelToggle({ folded, controls, onToggle }: { folded: boolean; controls
       {folded ? <PanelRightOpen aria-hidden="true" size={18} /> : <PanelRightClose aria-hidden="true" size={18} />}
     </button>
   )
+}
+
+/**
+ * Dónde empieza la columna de la página (bajo las pestañas abiertas): --page-top, para que un mapa o una pizarra midan
+ * lo que queda de la ventana sin desplazar, y --world-top en la wiki, para que la ficha del árbol y el panel empiecen
+ * a su misma altura (Enrique, 2026-11-16: «que esté alineada con las columnas y llegue hasta donde la columna»)
+ */
+function useColumnTop(column: RefObject<HTMLElement | null>, enabled: boolean) {
+  useLayoutEffect(() => {
+    const element = column.current
+    const wiki = element?.closest<HTMLElement>('[data-world-page]')
+    if (!enabled || !element || !wiki) return
+    const measure = () => {
+      const top = element.getBoundingClientRect().top
+      element.style.setProperty('--page-top', `${Math.round(top + window.scrollY)}px`)
+      wiki.style.setProperty('--world-top', `${Math.round(top - wiki.getBoundingClientRect().top)}px`)
+    }
+    measure()
+    window.addEventListener('resize', measure)
+    const resized = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure)
+    if (element.parentElement) resized?.observe(element.parentElement)
+    return () => {
+      window.removeEventListener('resize', measure)
+      resized?.disconnect()
+      element.style.removeProperty('--page-top')
+      wiki.style.removeProperty('--world-top')
+    }
+  }, [column, enabled])
 }
 
 /** Lo que tarda el panel en deslizarse (world-page.module.css, .wiki) */
