@@ -56,3 +56,24 @@ que se pliega, y funciona.
 - Las pruebas que entraban por la barra de la app (`Secciones` → el mundo, Archivos) o por la ficha del árbol pasan por
   los ayudantes comunes de `e2e/tests/ayudas.ts`.
 - El móvil del máster no se cuida (norma): en lo estrecho la barra de la izquierda va plegada y el panel, debajo.
+
+## Nota (2026-11-16): la página, como la de Everlore
+
+Enrique aprobó el lienzo «Página del mundo, la mezcla» («me gusta»): el armazón de arriba se queda (cabecera, barra de
+la izquierda, transiciones), pero la página del centro cambia en sus tres pestañas. Sustituye al punto 4 y a parte del
+5:
+
+- **Toda la columna del centro se desplaza** (sin barra a la vista): la portada arriba en todas las pestañas, debajo el
+  título grande y las pestañas; al bajar, el título y las pestañas se quedan arriba en una barra pequeña de cristal
+  (la cabecera es pegajosa y se encoge sin cambiar lo que ocupa: lo de debajo no salta).
+- **El texto, sin caja**: la superficie casi opaca es la columna entera; el texto, hasta 72 rem y centrado. Los temas de
+  papel de la hoja no cambian: en pantalla solo ponen la letra (el pergamino, Alegreya); el papel y sus texturas siguen
+  siendo de la impresión y el PDF.
+- **El mapa y la pizarra, a sangre** bajo las pestañas, con el alto de lo que se ve menos la barra pegada y sin fondo
+  propio; sus herramientas, en una píldora de cristal pegada abajo de lo que se ve (`position: sticky` en una base sin
+  alto al final del lienzo). La pizarra lleva nuestra píldora con las herramientas de Excalidraw (`setActiveTool`) y
+  pierde «Ampliar» en el mundo; el mapa, su escala abajo a la izquierda.
+- **El botón del panel va en la cabecera de la página**; el panel se desliza entero (la columna de la rejilla pasa de
+  20 rem a 0 en 300 ms) y lo de dentro se quita al acabar. El panel de un archivo abierto sigue con su tira y su botón.
+
+Lo de fuera del mundo (las plantillas, las ventanas de páginas de la Mesa, la jugadora y las campañas) no cambia.

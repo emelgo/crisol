@@ -9,6 +9,28 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
+## La página del mundo, como en Everlore (en local, rama `modulo-9/mapas`; 2026-11-16)
+
+- [ ] **Texto**: la portada arriba (redondeada; sin portada, la textura y «Añadir portada» al pasar), el título grande
+  debajo y las pestañas subrayadas. Toda la columna se desplaza, sin barra a la vista; el texto va sin caja, sobre la
+  página, que llega hasta abajo sin acabar.
+- [ ] **Al bajar**: cuando el título llega arriba, se queda una barra pequeña de cristal con el título, las pestañas
+  (cambiar de pestaña desde ahí), «Guardado» y los botones. Al subir, vuelve el título grande sin saltos.
+- [ ] **El botón del panel** (tras «⋯», también en la barra pequeña): el panel se desliza fuera y el centro se ensancha
+  a la vez; al volver a pulsarlo, entra. Se recuerda al cambiar de página. Junto a un mapa o una pizarra con el panel
+  vacío, se pliega solo.
+- [ ] **Mapa**: a sangre bajo las pestañas, sin fondo propio; al bajar del todo, ocupa todo lo de debajo de la barra
+  pequeña. Las herramientas, en una píldora abajo en el centro, siempre pegadas al borde de abajo de lo que se ve (también
+  sin haber bajado); el zoom (con «Ampliar el mapa») abajo a la derecha y, con escala, la barra de escala abajo a la
+  izquierda, que cambia al acercar. Con el panel plegado, el zoom sube por encima del d20.
+- [ ] **Pizarra**: a sangre y transparente (se ve el fondo de la página); nuestra píldora abajo con elegir, mover el
+  lienzo, rectángulo, rombo, elipse, flecha, línea, dibujar, texto, imagen y borrar (la elegida marcada; su atajo al
+  pasar el ratón); «⋯» guarda una imagen o la vacía (se deshace con Deshacer). El zoom abajo a la derecha (pulsar el
+  % vuelve al 100 %) y deshacer y rehacer abajo a la izquierda. Al elegir algo, su panel de propiedades de siempre. Ya
+  no hay «Ampliar» (la jugadora sí lo tiene).
+- [ ] **Decidido sin ti**: los temas de papel de la hoja (pergamino) siguen cambiando solo la letra en pantalla, sin
+  teñir la página; el papel, al imprimir. ¿Quieres que el pergamino tiña la columna entera?
+
 ## Mundo a pantalla completa (en local, rama `modulo-9/mapas`; ADR-0027)
 
 - [ ] **Entrar** en un mundo desde Mis mundos: la tarjeta crece hasta la cabecera de arriba, al rojo; la barra de la
