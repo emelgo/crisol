@@ -19,7 +19,7 @@ const LIMITS = {
   leapDays: 10,
   leapEvery: 100_000,
   seasons: 12,
-  moons: 10,
+  moons: 20,
   phases: 32,
   eras: 100,
   eraDescription: 280,
@@ -67,7 +67,14 @@ export const calendarMonth = z.object({
   days: z.int().min(1).max(LIMITS.monthDays),
   color: calendarColor.nullable().optional(),
   festival: z.boolean().optional().describe('Ocupa su sitio en el año, pero no cuenta al numerar los meses'),
-  outsideWeek: z.boolean().optional().describe('Sus días no son de ningún día de la semana')
+  outsideWeek: z.boolean().optional().describe('Sus días no son de ningún día de la semana'),
+  dayNames: z
+    .array(z.string().trim().max(LIMITS.name))
+    .max(LIMITS.monthDays + LIMITS.leapDays)
+    .optional()
+    .describe(
+      'Días con nombre propio, por orden (los de bisiesto al final; vacío, sin nombre): «Shieldmeet» como 2.º día de Midsummer. Un mes de un día se lee por su nombre'
+    )
 })
 
 export const leapRule = z.object({

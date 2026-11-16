@@ -2023,6 +2023,13 @@ export const es = {
       inMonths: 'En el año',
       addMonth: 'Mes',
       newMonth: 'Mes {{n}}',
+      // Días con nombre propio (Shieldmeet, Año Nuevo…)
+      namedDays: 'Días con nombre',
+      namedDayMonth: 'Mes del día con nombre {{n}}',
+      namedDayNumber: 'Día del día con nombre {{n}}',
+      namedDayName: 'Nombre del día {{n}}',
+      namedDayOf: 'Día',
+      addNamedDay: 'Día con nombre',
       // Bisiestos
       leapIn: 'En',
       leapMonth: 'Mes del bisiesto {{n}}',

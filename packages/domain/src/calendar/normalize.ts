@@ -30,6 +30,7 @@ export interface CalendarDraft {
     color?: string | null | undefined
     festival?: boolean | undefined
     outsideWeek?: boolean | undefined
+    dayNames?: string[] | undefined
   }>
   leapRules?:
     | Array<{
@@ -105,7 +106,8 @@ export function normalizeCalendar(
     days: m.days,
     ...(m.color ? { color: m.color } : {}),
     ...(m.festival ? { festival: true } : {}),
-    ...(m.outsideWeek ? { outsideWeek: true } : {})
+    ...(m.outsideWeek ? { outsideWeek: true } : {}),
+    ...(m.dayNames?.some((name) => name.trim()) ? { dayNames: m.dayNames.map((name) => name.trim()) } : {})
   }))
   /** Un mes por su id o su nombre (sin tildes ni mayúsculas); si no está, tal cual (lo dirá validar) */
   const monthRef = (ref: string) =>

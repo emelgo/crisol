@@ -28,6 +28,13 @@ export function monthWithPreposition(month: CalendarMonth): string {
   return month.festival ? `del ${month.name}` : `de ${month.name}`
 }
 
+/** El nombre propio de un día («Shieldmeet»), o el del mes si es de un solo día; null si no tiene */
+export function dayName(month: CalendarMonth, day: number): string | null {
+  const own = month.dayNames?.[day - 1]?.trim()
+  if (own) return own
+  return month.days === 1 && day === 1 && !month.dayNames?.length ? month.name : null
+}
+
 /** El número de un mes sin contar las festividades (null: es una festividad) */
 export function monthNumber(def: CalendarDefinition, monthId: string): number | null {
   let n = 0
@@ -77,7 +84,8 @@ export function formatDate(def: CalendarDefinition, date: WorldDate, options: Fo
   if (!month) return year
   const withYear = (text: string) => (options.noYear ? text : `${text} de ${year}`)
   if (shown.day === undefined) return withYear(month.name)
-  let text = withYear(`${shown.day} ${monthWithPreposition(month)}`)
+  const named = dayName(month, shown.day)
+  let text = withYear(named ?? `${shown.day} ${monthWithPreposition(month)}`)
   if (options.weekday) {
     const name = weekdayName(def, { year: shown.year, month: shown.month, day: shown.day })
     if (name) text = `${name}, ${text}`
@@ -131,6 +139,16 @@ function monthFrom(def: CalendarDefinition, token: string): string | null {
   return def.months.find((m) => calendarKey(m.name) === key || m.id === text)?.id ?? null
 }
 
+/** Un día por su nombre propio («Shieldmeet»): su mes y su día */
+function namedDay(def: CalendarDefinition, token: string): { month: string; day: number } | null {
+  const key = calendarKey(token)
+  for (const month of def.months) {
+    const i = month.dayNames?.findIndex((name) => name.trim() && calendarKey(name) === key) ?? -1
+    if (i >= 0) return { month: month.id, day: i + 1 }
+  }
+  return null
+}
+
 const failure = (reason: 'FORMAT' | 'MONTH' | 'DAY', message: string): ParsedDate => ({ ok: false, reason, message })
 
 /**
@@ -163,6 +181,14 @@ export function parseDate(
 
 function withMonth(def: CalendarDefinition, year: number, token: string, day: number | undefined): ParsedDate {
   const month = monthFrom(def, token)
+  if (!month && day === undefined) {
+    const named = namedDay(def, token)
+    if (named) {
+      if (named.day > daysInMonth(def, year, named.month))
+        return failure('DAY', `${token.trim()} no cae en ${year} (solo en los años con bisiesto)`)
+      return { ok: true, date: { year, ...named } }
+    }
+  }
   if (!month) {
     const names = def.months.map((m) => m.name).join(', ')
     return failure('MONTH', `el mes «${token}» no existe en el calendario (sus meses: ${names})`)

@@ -163,6 +163,22 @@ describe('el editor de un calendario', () => {
     await waitFor(() => expect(api.calendars[0]?.version).toBe(2))
   })
 
+  it('un día con nombre propio: se añade bajo los meses, se nombra y se guarda en su mes', async () => {
+    const { api } = open()
+    const months = await screen.findByRole('region', { name: 'Meses' })
+    await userEvent.click(within(months).getByRole('button', { name: 'Día con nombre' }))
+    await userEvent.selectOptions(within(months).getByLabelText('Mes del día con nombre 1'), 'Junio')
+    const day = within(months).getByLabelText('Día del día con nombre 1')
+    await userEvent.clear(day)
+    await userEvent.type(day, '21')
+    await userEvent.type(within(months).getByLabelText('Nombre del día 1'), 'Pleno Verano')
+    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
+    await waitFor(() => expect(api.calendars[0]?.version).toBe(2))
+    const june = api.calendars[0]?.definition.months.find((m) => m.name === 'Junio')
+    expect(june?.dayNames?.[20]).toBe('Pleno Verano')
+    expect(june?.dayNames?.slice(0, 20).every((name) => name === '')).toBe(true)
+  })
+
   it('una luna nueva sale en la vista previa con su día de luna nueva y llena', async () => {
     open()
     const preview = await screen.findByRole('complementary', { name: 'Vista previa' })

@@ -16,7 +16,7 @@ import {
   yearStart
 } from '@crisol/domain'
 import { ChevronDown, ChevronUp, GripVertical, Plus, TriangleAlert, X } from 'lucide-react'
-import { type DragEvent, type KeyboardEvent, type ReactNode, useState } from 'react'
+import { type DragEvent, type KeyboardEvent, type ReactNode, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { DateInput, IntegerInput } from './date-input.tsx'
 import styles from './editor.module.css'
@@ -489,6 +489,123 @@ export function MonthsSection({
           }
         />
       )}
+      <NamedDays draft={draft} change={change} />
+    </>
+  )
+}
+
+/** Pone (o quita, con el nombre vacío) el nombre propio del día `day` de un mes */
+function setDayName(month: CalendarDefinition['months'][number], day: number, name: string) {
+  const names = [...(month.dayNames ?? [])]
+  while (names.length < day) names.push('')
+  names[day - 1] = name
+  while (names.length > 0 && !names.at(-1)?.trim()) names.pop()
+  if (names.length > 0) month.dayNames = names
+  else delete month.dayNames
+}
+
+/** Los días con nombre propio (Shieldmeet, Año Nuevo…): se leen por él en las fechas. Las filas llevan una clave
+ * propia (cambiar el mes o el día no las monta de nuevo) y una recién añadida, o vaciada, se queda sin nombre */
+function NamedDays({ draft, change }: Pick<SectionProps, 'draft' | 'change'>) {
+  const { t } = useTranslation()
+  type Row = { key: string; monthId: string; day: number }
+  const named = draft.months.flatMap((month) =>
+    (month.dayNames ?? []).flatMap((name, i) => (name.trim() ? [{ monthId: month.id, day: i + 1 }] : []))
+  )
+  const nameAt = (monthId: string, day: number) => draft.months.find((m) => m.id === monthId)?.dayNames?.[day - 1] ?? ''
+  const [rows, setRows] = useState<Row[]>(() => named.map((n) => ({ key: newCalendarId(), ...n })))
+  // Si el borrador cambia por fuera (Cancelar, otra pestaña), las filas lo siguen
+  const signature = named.map((n) => `${n.monthId}:${n.day}`).join(',')
+  useEffect(() => {
+    setRows((list) => {
+      const kept = list.filter(
+        (r) => !nameAt(r.monthId, r.day).trim() || named.some((n) => n.monthId === r.monthId && n.day === r.day)
+      )
+      const missing = named.filter((n) => !kept.some((r) => r.monthId === n.monthId && r.day === n.day))
+      return missing.length === 0 && kept.length === list.length
+        ? list
+        : [...kept, ...missing.map((n) => ({ key: newCalendarId(), ...n }))]
+    })
+  }, [signature])
+  const place = (row: Row, monthId: string, day: number) => {
+    const name = nameAt(row.monthId, row.day)
+    if (name.trim())
+      change((d) => {
+        const old = d.months.find((m) => m.id === row.monthId)
+        const target = d.months.find((m) => m.id === monthId)
+        if (!old || !target) return
+        setDayName(old, row.day, '')
+        setDayName(target, day, name)
+      })
+    setRows((list) => list.map((r) => (r.key === row.key ? { ...r, monthId, day } : r)))
+  }
+  const rename = (row: Row, name: string) =>
+    change((d) => {
+      const target = d.months.find((m) => m.id === row.monthId)
+      if (target) setDayName(target, row.day, name)
+    })
+  const remove = (row: Row) => {
+    setRows((list) => list.filter((r) => r.key !== row.key))
+    if (nameAt(row.monthId, row.day))
+      change((d) => {
+        const target = d.months.find((m) => m.id === row.monthId)
+        if (target) setDayName(target, row.day, '')
+      })
+  }
+  const add = () => {
+    const taken = (monthId: string, day: number) => rows.some((r) => r.monthId === monthId && r.day === day)
+    for (const month of draft.months) {
+      const day = Array.from({ length: month.days }, (_, i) => i + 1).find((n) => !taken(month.id, n))
+      if (day) return setRows((list) => [...list, { key: newCalendarId(), monthId: month.id, day }])
+    }
+  }
+  return (
+    <>
+      <h3 className={styles.subhead}>{t('calendars.editor.namedDays')}</h3>
+      {rows.length > 0 && (
+        <ol className={styles.rows}>
+          {rows.map((row, n) => {
+            const month = draft.months.find((m) => m.id === row.monthId)
+            const name = nameAt(row.monthId, row.day)
+            return (
+              <li key={row.key} className={styles.leap}>
+                <select
+                  value={row.monthId}
+                  aria-label={t('calendars.editor.namedDayMonth', { n: n + 1 })}
+                  onChange={(event) => place(row, event.target.value, 1)}
+                >
+                  {draft.months.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name || '—'}
+                    </option>
+                  ))}
+                </select>
+                <span>{t('calendars.editor.namedDayOf')}</span>
+                <IntegerInput
+                  className={styles.tiny}
+                  value={row.day}
+                  aria-label={t('calendars.editor.namedDayNumber', { n: n + 1 })}
+                  onValue={(day) => {
+                    if (day >= 1 && day <= (month?.days ?? 1) + 10) place(row, row.monthId, day)
+                  }}
+                />
+                <input
+                  className={styles.grow}
+                  value={name}
+                  maxLength={60}
+                  aria-label={t('calendars.editor.namedDayName', { n: n + 1 })}
+                  onChange={(event) => rename(row, event.target.value)}
+                />
+                <RemoveButton
+                  label={t('calendars.editor.remove', { name: name.trim() || t('calendars.editor.namedDayOf') })}
+                  onClick={() => remove(row)}
+                />
+              </li>
+            )
+          })}
+        </ol>
+      )}
+      <AddButton label={t('calendars.editor.addNamedDay')} onClick={add} />
     </>
   )
 }

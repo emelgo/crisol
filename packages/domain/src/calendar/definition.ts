@@ -33,6 +33,11 @@ export interface CalendarMonth {
   festival?: boolean | undefined
   /** Sus días no son de ningún día de la semana */
   outsideWeek?: boolean | undefined
+  /**
+   * Los días con nombre propio, por su orden (los de bisiesto, al final): «Shieldmeet», el 2 de Pleno Verano. Uno con
+   * nombre se lee por él («Shieldmeet de 1372 DR»); un mes de un solo día, por el del mes
+   */
+  dayNames?: string[] | undefined
 }
 
 /** Días de más en un mes algunos años: cada `every`, salvo cada `unless`, pero sí cada `but` (contando desde el año 0) */
@@ -116,7 +121,7 @@ export const CALENDAR_LIMITS = {
   leapDays: 10,
   leapEvery: 100_000,
   seasons: 12,
-  moons: 10,
+  moons: 20,
   phases: 32,
   eras: 100,
   eraDescription: 280,
