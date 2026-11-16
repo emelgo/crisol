@@ -17,6 +17,7 @@ import { PRESET_COLORS } from '../../routes/world-look.ts'
 import { PageLink } from '../read-as.tsx'
 import { TargetReveal } from '../reveal.tsx'
 import styles from './map.module.css'
+import { PagePicker } from './page-picker.tsx'
 import { PinShape, pinHex, SHAPE_NAMES } from './pin-shape.tsx'
 
 type Patch = Partial<Omit<MapPinView, 'id' | 'pageTitle'>>
@@ -51,7 +52,6 @@ export function PinPanel({
   const id = useId()
   const [error, setError] = useState<unknown>(null)
   const [label, setLabel] = useState(pin.label ?? '')
-  const [pageName, setPageName] = useState(pin.pageTitle ?? '')
   // Los nombres para elegir página, solo para quien puede cambiarlo (un jugador no los pide)
   const names = useQuery({
     queryKey: ['pages', page.worldId, 'names'],
@@ -85,7 +85,6 @@ export function PinPanel({
       onNamed()
       try {
         const pageId = await pageFor(next)
-        setPageName(next)
         setLabel('')
         await save({ pageId, label: null })
       } catch (caught) {
@@ -96,8 +95,8 @@ export function PinPanel({
     if ((next || null) !== pin.label) await save({ label: next || null })
   }
 
-  const commitPage = async () => {
-    const next = pageName.trim()
+  const commitPage = async (title: string) => {
+    const next = title.trim()
     if (next === (pin.pageTitle ?? '')) return
     if (!next) return save({ pageId: null })
     try {
@@ -174,14 +173,12 @@ export function PinPanel({
           <>
             <label htmlFor={`${id}-page`}>{t('map.pin.page')}</label>
             <div className={styles.pageRow}>
-              <input
+              <PagePicker
                 id={`${id}-page`}
-                list={`${id}-pages`}
-                value={pageName}
+                value={pin.pageTitle ?? ''}
+                pages={names.data?.pages ?? []}
                 placeholder={t('map.pin.noPage')}
-                onChange={(event) => setPageName(event.currentTarget.value)}
-                onBlur={() => void commitPage()}
-                onKeyDown={onEnter(commitPage)}
+                onCommit={(title) => void commitPage(title)}
               />
               {pin.pageId && pin.pageTitle && (
                 <PageLink className={list.secondary} worldId={page.worldId} pageId={pin.pageId}>
@@ -189,11 +186,6 @@ export function PinPanel({
                 </PageLink>
               )}
             </div>
-            <datalist id={`${id}-pages`}>
-              {names.data?.pages.map((other) => (
-                <option key={other.id} value={other.title} />
-              ))}
-            </datalist>
           </>
         )}
 

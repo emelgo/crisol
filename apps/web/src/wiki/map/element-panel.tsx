@@ -18,6 +18,7 @@ import { PageLink } from '../read-as.tsx'
 import { TargetReveal } from '../reveal.tsx'
 import { elementName } from './drawing.tsx'
 import styles from './map.module.css'
+import { PagePicker } from './page-picker.tsx'
 import type { ElementPatch } from './use-elements.ts'
 
 const FILLS = ['solid', 'hatch', 'none'] as const
@@ -53,7 +54,6 @@ export function ElementPanel({
   const id = useId()
   const [error, setError] = useState<unknown>(null)
   const [label, setLabel] = useState(element.label ?? '')
-  const [pageName, setPageName] = useState(element.pageTitle ?? '')
   const names = useQuery({
     queryKey: ['pages', page.worldId, 'names'],
     queryFn: () => api.call('listPageNames', { worldId: page.worldId }),
@@ -84,8 +84,8 @@ export function ElementPanel({
     const next = label.trim() || null
     if (next !== element.label) void save({ label: next })
   }
-  const commitPage = async () => {
-    const next = pageName.trim()
+  const commitPage = async (title: string) => {
+    const next = title.trim()
     if (next === (element.pageTitle ?? '')) return
     if (!next) return save({ pageId: null })
     try {
@@ -155,14 +155,12 @@ export function ElementPanel({
 
         <label htmlFor={`${id}-page`}>{t('map.pin.page')}</label>
         <div className={styles.pageRow}>
-          <input
+          <PagePicker
             id={`${id}-page`}
-            list={`${id}-pages`}
-            value={pageName}
+            value={element.pageTitle ?? ''}
+            pages={names.data?.pages ?? []}
             placeholder={t('map.pin.noPage')}
-            onChange={(event) => setPageName(event.currentTarget.value)}
-            onBlur={() => void commitPage()}
-            onKeyDown={onEnter(commitPage)}
+            onCommit={(title) => void commitPage(title)}
           />
           {element.pageId && element.pageTitle && (
             <PageLink className={list.secondary} worldId={page.worldId} pageId={element.pageId}>
@@ -170,11 +168,6 @@ export function ElementPanel({
             </PageLink>
           )}
         </div>
-        <datalist id={`${id}-pages`}>
-          {names.data?.pages.map((other) => (
-            <option key={other.id} value={other.title} />
-          ))}
-        </datalist>
 
         {layers.length > 1 && (
           <>

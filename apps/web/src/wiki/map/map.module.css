@@ -1336,3 +1336,57 @@
   inset-inline: 50% auto;
   transform: translateX(-50%);
 }
+
+/* El desplegable de páginas de un pin o de lo dibujado (page-picker.tsx): flota bajo su campo, fuera del panel, como
+   «Página…» de la pizarra */
+.pagePicker {
+  position: fixed;
+  z-index: 60;
+  display: grid;
+  align-content: start;
+  box-sizing: border-box;
+  overflow: hidden auto;
+  padding: var(--space-1);
+  scrollbar-width: thin;
+  border: 1px solid var(--line-frame);
+  border-radius: 8px;
+  background: var(--frame-sheen), var(--popup-glass);
+  -webkit-backdrop-filter: var(--popup-blur);
+  backdrop-filter: var(--popup-blur);
+  box-shadow: var(--glass-shadow);
+  color: var(--color-text);
+  font-size: 0.875rem;
+}
+
+.pagePicker [role="option"] {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  min-inline-size: 0;
+  padding: var(--space-1) var(--space-2);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.pagePicker [role="option"] > span:first-of-type {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pagePicker [role="option"]:hover,
+.pagePicker [role="option"][aria-selected="true"] {
+  background: color-mix(in srgb, var(--color-accent-text) 18%, transparent);
+}
+
+.pagePicker [role="option"][data-new] {
+  align-items: center;
+  color: var(--color-muted);
+}
+
+.pagePath {
+  flex: none;
+  margin-inline-start: auto;
+  color: var(--color-muted);
+  font-size: 0.75rem;
+}

@@ -24,8 +24,10 @@ Pedidos al probar el módulo 9 en localhost. Se hacen en la rama `modulo-9/mapas
   el sitio de la barra de desplazamiento está guardado (al salir no estrecha el panel).*
 - [x] El **tamaño de letra** de una región sale 96 en vez de 100. *Hecho: el tope es 100 (en el deslizador y en el
   contrato, que es lo que admite el servidor y la IA).*
-- [ ] Al elegir **«Página»** en una región o un pin: un desplegable con las páginas que no desentone (como el de «Página…»
-  de la pizarra), no el nativo.
+- [x] Al elegir **«Página»** en una región o un pin: un desplegable con las páginas que no desentone (como el de «Página…»
+  de la pizarra), no el nativo. *Hecho: un desplegable de cristal que flota bajo el campo (fuera del panel, sin moverlo),
+  con las que empiezan por lo escrito primero, su ruta en gris y, si ninguna se llama así, «Página nueva: «…»»; flechas,
+  Intro y Escape.*
 - [ ] Algunas **formas de pin** mueven el sitio donde se clava el pin, y también el tamaño: el punto de anclaje y el tamaño,
   iguales en todas las formas.
 - [ ] **«Revelar…»** del panel de una región o un pin no se entiende: rehacerlo (claro, como el ojo del árbol).

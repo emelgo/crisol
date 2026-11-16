@@ -2089,6 +2089,8 @@ export const es = {
       name: 'Nombre',
       page: 'Página',
       noPage: 'Sin página',
+      pages: 'Páginas del mundo',
+      newPage: 'Página nueva: «{{title}}»',
       open: 'Abrir',
       color: 'Color',
       customColor: 'Otro color',
