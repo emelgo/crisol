@@ -11,7 +11,7 @@
  * usan el editor, la web y las pruebas
  */
 import type { JSONContent } from '@tiptap/core'
-import { parse } from 'yaml'
+import { Document, isScalar, parse, visit } from 'yaml'
 
 export const CHART_TYPES = ['bar', 'line', 'pie', 'doughnut', 'radar', 'polarArea'] as const
 export type ChartType = (typeof CHART_TYPES)[number]
@@ -192,4 +192,96 @@ export function resolveChart(source: string, doc: JSONContent, bestFitTitle = ''
   const data = rows && chartFromRows(rows, reading.table)
   if (!data) return { error: { code: 'table', detail: reading.table.id } }
   return { chart: withBestFit({ ...reading.chart, ...data }, bestFitTitle), table: reading.table }
+}
+
+// ---------------------------------------------------------------------------
+// El editor visual (módulo 10, porción 2): el gráfico como un formulario y de vuelta a YAML
+// ---------------------------------------------------------------------------
+
+export const LEGEND_POSITIONS = ['top', 'bottom', 'right', 'none'] as const
+export type LegendPosition = (typeof LEGEND_POSITIONS)[number]
+
+/** Lo que cambia el editor visual de un gráfico; lo demás del YAML (los modificadores del plugin) se conserva */
+export interface ChartModel {
+  type: ChartType
+  title: string
+  labels: string[]
+  series: ChartSeries[]
+  /** Los colores elegidos (por serie; en tarta, donut y área polar, por etiqueta); null, los del tema */
+  colors: string[] | null
+  legend: LegendPosition
+  /** Los datos de una tabla de la página, en vez de los propios */
+  table: ChartTableSource | null
+}
+
+/** Un gráfico nuevo, para empezar a rellenar */
+export const NEW_CHART_YAML = `type: bar
+labels: [A, B, C]
+series:
+  - title: Serie 1
+    data: [1, 2, 3]`
+
+/** Las claves que lleva el editor visual (las demás pasan tal cual) */
+const MANAGED = ['type', 'title', 'labels', 'series', 'colors', 'legend', 'legendPosition', 'id', 'layout', 'select']
+
+const legendOf = (options: Record<string, unknown>): LegendPosition => {
+  if (options.legend === false) return 'none'
+  const position = options.legendPosition
+  return position === 'bottom' || position === 'right' ? position : 'top'
+}
+
+/** El formulario de un YAML (uno que no se lee, null: el editor enseña el YAML para arreglarlo) */
+export function chartModel(source: string): ChartModel | null {
+  const reading = readChart(source)
+  if (!reading.chart) return null
+  const o = reading.chart.options
+  const colors = Array.isArray(o.colors) ? o.colors.map(String) : null
+  return {
+    type: reading.chart.type,
+    title: o.title === undefined || o.title === null ? '' : String(o.title),
+    labels: reading.chart.labels,
+    series: reading.chart.series,
+    colors,
+    legend: legendOf(o),
+    table: reading.table
+  }
+}
+
+/** Una lista de números o textos sueltos, en una línea («[1, 2, 3]»), como la escribe la IA */
+function flowScalars(doc: Document) {
+  visit(doc, {
+    Seq(_, node) {
+      if (node.items.every((item) => isScalar(item))) node.flow = true
+    }
+  })
+}
+
+/**
+ * El YAML de un formulario, con lo demás que ya llevaba (previous: el YAML de antes, si se leía): primero el tipo y el
+ * título, luego los datos (propios o la tabla), la leyenda, los colores y el resto de modificadores
+ */
+export function chartYaml(model: ChartModel, previous = ''): string {
+  let rest: Record<string, unknown> = {}
+  try {
+    const read: unknown = parse(previous.replace(/\t/g, '    '))
+    if (isObject(read)) rest = Object.fromEntries(Object.entries(read).filter(([key]) => !MANAGED.includes(key)))
+  } catch {
+    // El de antes no se leía: solo lo del formulario
+  }
+  const out: Record<string, unknown> = { type: model.type }
+  if (model.title.trim()) out.title = model.title.trim()
+  if (model.table) {
+    out.id = model.table.id
+    if (model.table.byRows) out.layout = 'rows'
+    if (model.table.select) out.select = model.table.select
+  } else {
+    out.labels = model.labels
+    out.series = model.series.map((each) => ({ title: each.title, data: each.data, ...each.extra }))
+  }
+  if (model.legend === 'none') out.legend = false
+  else if (model.legend !== 'top') out.legendPosition = model.legend
+  if (model.colors && model.colors.length > 0) out.colors = model.colors
+  const doc = new Document({ ...out, ...rest })
+  flowScalars(doc)
+  return doc.toString({ lineWidth: 0, flowCollectionPadding: false }).trimEnd()
 }

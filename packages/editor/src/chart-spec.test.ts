@@ -1,6 +1,16 @@
 import type { JSONContent } from '@tiptap/core'
 import { describe, expect, it } from 'vitest'
-import { type ChartSpec, chartFromRows, chartNumber, readChart, resolveChart, tableRows } from './chart-spec.ts'
+import {
+  type ChartSpec,
+  chartFromRows,
+  chartModel,
+  chartNumber,
+  chartYaml,
+  NEW_CHART_YAML,
+  readChart,
+  resolveChart,
+  tableRows
+} from './chart-spec.ts'
 
 const read = (source: string): ChartSpec => {
   const reading = readChart(source)
@@ -136,5 +146,60 @@ describe('un gráfico ```chart: los datos de una tabla de la página', () => {
     expect(resolved.chart?.series.map((s) => s.title)).toEqual(['PX', 'Oro'])
     expect(resolveChart('type: pie\nid: nada', doc).error).toEqual({ code: 'table', detail: 'nada' })
     expect(resolveChart('type: pie\nlabels: [a]\nseries:\n  - data: [1]', doc).chart?.labels).toEqual(['a'])
+  })
+})
+
+describe('el editor visual: el gráfico como formulario y de vuelta a YAML', () => {
+  const source = `type: bar
+title: Poder de las casas
+labels: [Altamar, Varn]
+series:
+  - title: "1240"
+    data: [70, 55]
+beginAtZero: true`
+
+  it('lee el formulario de un YAML', () => {
+    expect(chartModel(source)).toEqual({
+      type: 'bar',
+      title: 'Poder de las casas',
+      labels: ['Altamar', 'Varn'],
+      series: [{ title: '1240', data: [70, 55], extra: {} }],
+      colors: null,
+      legend: 'top',
+      table: null
+    })
+    expect(chartModel('type: [')).toBeNull()
+  })
+
+  it('vuelve al mismo YAML (las listas en una línea y los modificadores del plugin, conservados)', () => {
+    const model = chartModel(source)
+    if (!model) throw new Error('sin modelo')
+    expect(chartYaml(model, source)).toBe(source)
+  })
+
+  it('el tipo, la leyenda y los colores cambian sin perder lo demás', () => {
+    const model = chartModel(source)
+    if (!model) throw new Error('sin modelo')
+    const changed = chartYaml({ ...model, type: 'pie', legend: 'none', colors: ['#f07167', '#e9b872'] }, source)
+    expect(changed).toContain('type: pie')
+    expect(changed).toContain('legend: false')
+    expect(changed).toContain('colors: ["#f07167", "#e9b872"]')
+    expect(changed).toContain('beginAtZero: true')
+    expect(chartModel(changed)).toMatchObject({ type: 'pie', legend: 'none', colors: ['#f07167', '#e9b872'] })
+    expect(chartYaml({ ...model, legend: 'right' }, source)).toContain('legendPosition: right')
+  })
+
+  it('de una tabla de la página: su id y, si se lee por filas, layout', () => {
+    const model = chartModel(source)
+    if (!model) throw new Error('sin modelo')
+    const yaml = chartYaml({ ...model, table: { id: 'tropas', byRows: true, select: null } }, source)
+    expect(yaml).toContain('id: tropas')
+    expect(yaml).toContain('layout: rows')
+    expect(yaml).not.toContain('labels')
+    expect(chartModel(yaml)?.table).toEqual({ id: 'tropas', byRows: true, select: null })
+  })
+
+  it('un gráfico nuevo se lee', () => {
+    expect(chartModel(NEW_CHART_YAML)?.series).toHaveLength(1)
   })
 })
