@@ -1,6 +1,8 @@
 import { createRootRoute, createRoute, createRouter, type RouterHistory } from '@tanstack/react-router'
 import type { BookSearch } from './books/book-tabs.tsx'
 import { CampaignBookScreen } from './books/campaign-book.tsx'
+import { CalendarEditorScreen } from './calendars/editor.tsx'
+import { CalendarsScreen } from './calendars/screen.tsx'
 import { CompendiumScreen } from './campaign/compendium.tsx'
 import { WorldPagesHome, WorldPageView } from './campaign/world-pages.tsx'
 import { CharacterScreen } from './characters/character.tsx'
@@ -215,6 +217,17 @@ const filesRoute = createRoute({
   path: '/mundos/$worldId/archivos',
   component: WikiFiles
 })
+// Los calendarios del mundo (módulo 8) y el editor de uno, a pantalla entera
+const calendarsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/mundos/$worldId/calendarios',
+  component: CalendarsScreen
+})
+const calendarRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/mundos/$worldId/calendarios/$calendarId',
+  component: CalendarEditorScreen
+})
 const searchRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/mundos/$worldId/buscar',
@@ -327,6 +340,8 @@ const routeTree = rootRoute.addChildren([
   wikiPageRoute,
   tagsRoute,
   filesRoute,
+  calendarsRoute,
+  calendarRoute,
   searchRoute,
   printRoute,
   worldHistoryRoute,

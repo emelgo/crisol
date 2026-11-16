@@ -135,7 +135,7 @@ describe('el Inicio de un mundo', () => {
     expect(ribbon().queryByRole('button', { name: 'Páginas' })).toBeNull()
   })
 
-  it('dentro de un mundo que se dirige, la barra lleva el mundo (sus páginas), Archivos y Dados', async () => {
+  it('dentro de un mundo que se dirige, la barra lleva Páginas, Calendarios y Archivos (los dados, en su botón)', async () => {
     const w = world()
     const router = renderAt(`/mundos/${w.id}`, fakeApi({ organizations: [ORG], worlds: [w] }))
     await screen.findByRole('heading', { level: 1, name: 'Eana' })
@@ -145,13 +145,13 @@ describe('el Inicio de un mundo', () => {
         .map((item) => item.textContent)
         .filter(Boolean)
     // La llama no tiene texto (lleva su nombre como etiqueta); los dados, en su botón flotante (docs/diseno.md)
-    expect(items()).toEqual(['Eana', 'Archivos'])
+    expect(items()).toEqual(['Páginas', 'Calendarios', 'Archivos'])
 
     // Los archivos, en su pantalla
     await userEvent.click(ribbon().getByRole('link', { name: 'Archivos' }))
     await waitFor(() => expect(router.state.location.pathname).toBe(`/mundos/${w.id}/archivos`))
-    // Desde Archivos, el mundo en la barra vuelve a su portada
-    await userEvent.click(ribbon().getByRole('button', { name: 'Eana' }))
+    // Desde Archivos, «Páginas» en la barra vuelve a su portada
+    await userEvent.click(ribbon().getByRole('button', { name: 'Páginas' }))
     await screen.findByRole('treeitem', { name: 'Eana' })
     expect(await screen.findByRole('heading', { level: 1, name: 'Eana' })).toBeDefined()
   })

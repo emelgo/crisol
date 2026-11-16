@@ -195,7 +195,7 @@ describe('el cajón de las páginas, en lo estrecho', () => {
   const drawer = () => screen.getByRole('tree', { name: 'Páginas' }).closest('aside') as HTMLElement
   const openDrawer = async () => {
     await screen.findByRole('tree', { name: 'Páginas' })
-    const trigger = screen.getByRole('button', { name: 'Eana' })
+    const trigger = screen.getByRole('button', { name: 'Páginas' })
     await userEvent.click(trigger)
     await waitFor(() => expect(drawer().hasAttribute('data-open')).toBe(true))
     return trigger

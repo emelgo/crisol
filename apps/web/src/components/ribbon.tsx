@@ -3,6 +3,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
 import {
   BookOpen,
+  CalendarDays,
+  Files,
   Flag,
   Folder,
   Globe,
@@ -13,7 +15,6 @@ import {
   LayoutTemplate,
   LogOut,
   type LucideIcon,
-  MountainSnow,
   NotebookPen,
   Scale,
   ScrollText,
@@ -433,7 +434,7 @@ export function Ribbon() {
                 master={campaignRole === 'master'}
               />
             ) : panelsWorld ? (
-              <WorldPanels worldId={panelsWorld} worldName={world?.name ?? ''} master={panelsMaster} />
+              <WorldPanels worldId={panelsWorld} master={panelsMaster} />
             ) : null}
           </div>
         )}
@@ -568,7 +569,7 @@ function SystemPanels({
  * Lo de un mundo: su Inicio y, para quien lo dirige, los paneles de su wiki. Fuera de la wiki, abrir uno
  * lleva a ella con ese panel abierto
  */
-function WorldPanels({ worldId, worldName, master }: { worldId: string; worldName: string; master: boolean }) {
+function WorldPanels({ worldId, master }: { worldId: string; master: boolean }) {
   const { t } = useTranslation()
   const api = useApi()
   const queryClient = useQueryClient()
@@ -577,7 +578,7 @@ function WorldPanels({ worldId, worldName, master }: { worldId: string; worldNam
     void queryClient.prefetchQuery({ queryKey, queryFn, staleTime: 10_000 })
   const prefetchHome = prefetch(['campaigns', worldId], () => api.call('listCampaigns', { worldId }))
   // Quien lo dirige: sus páginas, buscar y sus marcadores (el mundo se abre en su portada, la primera del árbol)
-  if (master) return <WikiPanels worldId={worldId} worldName={worldName} />
+  if (master) return <WikiPanels worldId={worldId} />
   // Quien juega, sin páginas: su Inicio con sus campañas, y los dados
   return (
     <Link
@@ -692,7 +693,7 @@ function CampaignPanels({
 }
 
 /** Los paneles de la wiki de un mundo */
-function WikiPanels({ worldId, worldName }: { worldId: string; worldName: string }) {
+function WikiPanels({ worldId }: { worldId: string }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const wikiPanel = useWikiPanel()
@@ -717,9 +718,8 @@ function WikiPanels({ worldId, worldName }: { worldId: string; worldName: string
   // Marcado si se está en sus páginas (en lo estrecho, con el cajón abierto)
   const shown = (panel: WikiPanel) => inWiki && wikiPanel.panel === panel && (narrow ? wikiPanel.open : true)
   const buttons: { panel: WikiPanel; icon: LucideIcon; text: string; tour: string }[] = [
-    // El mundo (sus páginas, con su nombre), las plantillas y los archivos
-    // El mundo, con su icono propio (no el globo de «Mundos», que es de donde se viene; Enrique, 2026-11-12)
-    { panel: 'pages', icon: MountainSnow, text: worldName, tour: 'barra-wiki' }
+    // Sus páginas (Enrique, 2026-11-16: «Páginas · Calendarios · Archivos»; antes, el nombre del mundo)
+    { panel: 'pages', icon: Files, text: t('ribbon.pages'), tour: 'barra-wiki' }
   ]
   return (
     <>
@@ -735,6 +735,16 @@ function WikiPanels({ worldId, worldName }: { worldId: string; worldName: string
           <Label icon={button.icon} text={button.text} />
         </button>
       ))}
+      {/* Los calendarios del mundo (módulo 8), en su pantalla */}
+      <Link
+        to="/mundos/$worldId/calendarios"
+        params={{ worldId }}
+        className={styles.item}
+        viewTransition={SECTION}
+        data-tour="barra-calendarios"
+      >
+        <Label icon={CalendarDays} text={t('ribbon.calendars')} />
+      </Link>
       {/* Los archivos, en su pantalla (como antes) */}
       <Link
         to="/mundos/$worldId/archivos"

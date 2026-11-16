@@ -37,6 +37,8 @@ export type CalendarProblemCode =
   | 'eraAbbreviation'
   | 'correspondenceCalendar'
   | 'correspondenceDate'
+  /** Del nombre, que va fuera de la definición (lo dice el editor) */
+  | 'nameMissing'
 
 export interface CalendarProblem {
   section: CalendarSection
