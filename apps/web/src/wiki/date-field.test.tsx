@@ -206,4 +206,47 @@ describe('el campo «Fecha» de una página', () => {
       )
     )
   })
+
+  it('cambiar de precisión y volver no pierde el día; «Añadir fin» espera a que se elija un día', async () => {
+    const { saved, api } = renderPort(
+      [founded({ calendarId: VARN, start: { year: 412, month: 'siega', day: 12 } })],
+      [varn]
+    )
+    const picker = await openPicker()
+    await userEvent.click(picker.getByRole('radio', { name: 'Año' }))
+    await waitFor(async () => expect((await saved())[0]).toEqual(founded({ calendarId: VARN, start: { year: 412 } })))
+    await userEvent.click(picker.getByRole('radio', { name: 'Día' }))
+    await waitFor(async () =>
+      expect((await saved())[0]).toEqual(founded({ calendarId: VARN, start: { year: 412, month: 'siega', day: 12 } }))
+    )
+    const before = api.calls.filter((call) => call === 'setPageProperties').length
+    await userEvent.click(picker.getByRole('button', { name: 'Añadir fin' }))
+    expect(picker.getByText('Elige el día del fin')).toBeDefined()
+    expect(api.calls.filter((call) => call === 'setPageProperties').length).toBe(before)
+    // Quitarlo sin elegir no guarda nada
+    await userEvent.click(picker.getByRole('button', { name: 'Quitar fin' }))
+    expect(api.calls.filter((call) => call === 'setPageProperties').length).toBe(before)
+  })
+
+  it('en «Mes», las flechas recorren los meses; RePág pasa de mes en la rejilla de días', async () => {
+    renderPort([founded({ calendarId: VARN, start: { year: 412, month: 'siega', day: 12 } })], [varn])
+    const picker = await openPicker()
+    await waitFor(() => expect(document.activeElement?.getAttribute('aria-label')).toMatch(/12 de Siega/))
+    await userEvent.keyboard('{PageDown}')
+    expect((picker.getByLabelText('Mes que se ve') as HTMLSelectElement).value).toBe('1')
+    expect(document.activeElement?.getAttribute('aria-label')).toMatch(/1 de Vendimia/)
+    await userEvent.click(picker.getByRole('radio', { name: 'Mes' }))
+    picker.getByRole('button', { name: 'Siega' }).focus()
+    await userEvent.keyboard('{ArrowRight}')
+    expect(document.activeElement?.textContent).toBe('Fiesta de la Siega')
+  })
+
+  it('una fecha de otro calendario sin correspondencia se sigue leyendo, y dice que no tiene equivalencia', async () => {
+    const elves: FakeCalendar = { id: ELVES, worldId: WORLD.id, name: 'Élfico', definition: DEFINITION }
+    renderPort([founded({ calendarId: VARN, start: { year: 412, month: 'siega', day: 12 } })], [varn, elves])
+    const picker = await openPicker()
+    await userEvent.selectOptions(picker.getByRole('combobox', { name: 'Calendario' }), 'Élfico')
+    expect(picker.getByText('12 de Siega de 412 RV')).toBeDefined()
+    expect(picker.getByText('Sin equivalencia en Élfico: elige una fecha suya')).toBeDefined()
+  })
 })

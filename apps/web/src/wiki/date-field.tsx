@@ -24,7 +24,7 @@ import {
 } from '@crisol/domain'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Repeat } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Plus, Repeat } from 'lucide-react'
 import { type KeyboardEvent, useCallback, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
@@ -123,9 +123,10 @@ export function DateField({
         type="button"
         className={styles.value}
         aria-haspopup="dialog"
-        aria-expanded={open}
+        aria-expanded={open && Boolean(list)}
+        data-property-open={(open && list) || undefined}
         // Con lo que enseña dentro: el nombre accesible contiene el texto visible (WCAG 2.5.3)
-        aria-label={`${label}: ${text || t('properties.empty')}`}
+        aria-label={`${label}: ${text || t('properties.empty')}${value?.yearly ? `, ${t('dates.repeats').toLowerCase()}` : ''}`}
         onClick={() => setOpen(!open)}
       >
         {text ? <span>{text}</span> : <span className={styles.placeholder}>{t('properties.empty')}</span>}
@@ -140,6 +141,11 @@ export function DateField({
           role="dialog"
           aria-label={name || label}
           data-property-popup=""
+          // Con el tabulador fuera de él (a otro sitio de la página), se cierra: no se queda abierto a la espalda
+          onBlur={(event) => {
+            const to = event.relatedTarget as Node | null
+            if (to && !box.current?.contains(to) && to !== button.current) close()
+          }}
         >
           {list.length === 0 ? (
             <p className={styles.none}>
@@ -191,6 +197,21 @@ function withPrecision(date: WorldDate, precision: DatePrecision, month: string)
   return { year: date.year, month: own, day: date.day ?? 1 }
 }
 
+const RANK: Record<DatePrecision, number> = { year: 0, month: 1, day: 2 }
+
+/**
+ * La fecha con más precisión: la que se recuerda si es la misma (mismo año y, si lo tiene, mismo mes) y llega a ella;
+ * si no, la de siempre. Así pasar a «Año» y volver a «Día» no pierde el día
+ */
+function refined(date: WorldDate, remembered: WorldDate | undefined, next: DatePrecision, month: string): WorldDate {
+  const same =
+    remembered &&
+    remembered.year === date.year &&
+    (date.month === undefined || date.month === remembered.month) &&
+    RANK[precisionOf(remembered)] >= RANK[next]
+  return withPrecision(same ? remembered : date, next, month)
+}
+
 /** Una fecha de un calendario en otro con la misma precisión; null si no tienen correspondencia */
 function converted(calendars: readonly CalendarView[], from: string, to: string, date: WorldDate): WorldDate | null {
   const world = calendars.map((c) => ({ id: c.id, primary: c.primary, definition: c.definition }))
@@ -224,7 +245,14 @@ function DatePicker({
   // La fecha que se edita, si es de este calendario (otro, sin correspondencia: se elige de nuevo)
   const current = value && value.calendarId === calendar.id ? value : null
   const [editing, setEditing] = useState<'start' | 'end'>('start')
-  const target = current ? (editing === 'end' && current.end ? current.end : current.start) : null
+  // «Añadir fin»: se elige el fin, que no se guarda hasta pulsar un día
+  const [addingEnd, setAddingEnd] = useState(false)
+  const choosingEnd = editing === 'end' && (current?.end !== undefined || addingEnd)
+  const target = current ? (choosingEnd ? (current.end ?? null) : current.start) : null
+  // La fecha más precisa de esta vez, para no perderla al cambiar de precisión
+  const remembered = useRef<{ start: WorldDate; end?: WorldDate | undefined } | null>(
+    current ? { start: current.start, end: current.end } : null
+  )
   const [chosen, setChosen] = useState<DatePrecision>('day')
   const precision = current ? precisionOf(current.start) : chosen
   const [view, setView] = useState<View>(() => viewOf(definition, target))
@@ -241,7 +269,7 @@ function DatePicker({
   }, [])
   // Al poner o quitar el fin, su botón desaparece: el foco va a lo que lo sustituye (elegir el fin, o «Añadir fin»)
   const foot = useRef<HTMLDivElement>(null)
-  const hasEnd = current?.end !== undefined
+  const hasEnd = current?.end !== undefined || addingEnd
   const hadEnd = useRef(hasEnd)
   useEffect(() => {
     if (hadEnd.current === hasEnd) return
@@ -250,13 +278,21 @@ function DatePicker({
     foot.current?.querySelector<HTMLElement>(next)?.focus()
   }, [hasEnd])
 
-  const save = (next: Omit<DateValue, 'calendarId'>) => onChange({ calendarId: calendar.id, ...next })
+  const save = (next: Omit<DateValue, 'calendarId'>) => {
+    const kept = remembered.current
+    const compatible = kept && kept.start.year === next.start.year
+    if (!kept || !compatible || RANK[precisionOf(next.start)] >= RANK[precisionOf(kept.start)])
+      remembered.current = { start: next.start, end: next.end }
+    setAddingEnd(false)
+    onChange({ calendarId: calendar.id, ...next })
+  }
   /** Elegir un año, un mes o un día: el inicio o el fin (si el fin queda antes, se cambian) */
   const pick = (date: WorldDate) => {
     if (!current) return save({ start: date })
-    const { start, end, yearly } = current
+    const { start, yearly } = current
+    const end = current.end ?? (choosingEnd ? start : undefined)
     const rest = yearly && date.month !== undefined ? { yearly } : {}
-    if (editing === 'end' && end) {
+    if (choosingEnd && end) {
       const before = compareDates(definition, date, start) < 0
       return save({ start: before ? date : start, end: before ? start : date, ...rest })
     }
@@ -267,11 +303,14 @@ function DatePicker({
     setChosen(next)
     if (!current) return
     const { start, end, yearly } = current
+    const kept = remembered.current
     save({
-      start: withPrecision(start, next, viewMonth),
-      ...(end ? { end: withPrecision(end, next, viewMonth) } : {}),
+      start: refined(start, kept?.start, next, viewMonth),
+      ...(end ? { end: refined(end, kept?.end, next, viewMonth) } : {}),
       ...(yearly && next !== 'year' ? { yearly } : {})
     })
+    // Lo recordado no cambia por pasar a menos precisión
+    if (kept) remembered.current = kept
   }
   const changeCalendar = (id: string) => {
     setCalendarId(id)
@@ -298,6 +337,25 @@ function DatePicker({
     setView({ year, page: next })
   }
 
+  // RePág y AvPág pasan de mes (con Mayúsculas, de año); el foco vuelve a la rejilla nueva
+  const refocus = useRef(false)
+  useEffect(() => {
+    if (!refocus.current) return
+    refocus.current = false
+    grid.current?.querySelector<HTMLElement>('[data-choice][tabindex="0"]')?.focus()
+  })
+  const keys = (event: KeyboardEvent<HTMLElement>) => {
+    if (event.key === 'PageUp' || event.key === 'PageDown') {
+      event.preventDefault()
+      const by = event.key === 'PageUp' ? -1 : 1
+      refocus.current = true
+      if (event.shiftKey || precision !== 'day') setView({ ...view, year: view.year + by })
+      else stepPage(by)
+      return
+    }
+    moveFocus(event)
+  }
+
   // La lectura larga (con el día de la semana) y, si es de otro calendario, su equivalencia en el principal
   const readout = current
     ? precision === 'day' && !current.end
@@ -306,6 +364,8 @@ function DatePicker({
     : null
   const equivalent =
     current && calendar.id !== primary.id ? converted(calendars, calendar.id, primary.id, current.start) : null
+  // Una fecha de otro calendario que no se puede pasar a este: se dice, y se lee en el suyo
+  const elsewhere = value && !current ? dateText(calendars, value) : null
   const outside = target ? target.month !== undefined && !isValidDate(definition, target) : false
 
   return (
@@ -384,42 +444,70 @@ function DatePicker({
           <ChevronsRight size={16} aria-hidden="true" />
         </button>
       </div>
-      <fieldset ref={grid} className={styles.choices} onKeyDown={moveFocus}>
+      <fieldset ref={grid} className={styles.choices} onKeyDown={keys}>
         <legend className={styles.srOnly}>{t('dates.choices')}</legend>
         {precision === 'year' && (
-          <button
-            type="button"
-            className={styles.yearChoice}
-            aria-pressed={target?.year === view.year}
-            onClick={() => pick({ year: view.year })}
-          >
-            {formatYear(definition, view.year)}
-          </button>
+          // Doce años alrededor del que se ve
+          <div className={styles.months} data-columns={3}>
+            {Array.from({ length: 12 }, (_, i) => view.year - 4 + i).map((year) => {
+              const pressed = target?.year === year
+              const inView = target !== null && target.year >= view.year - 4 && target.year <= view.year + 7
+              return (
+                <button
+                  key={year}
+                  type="button"
+                  className={styles.choice}
+                  data-choice=""
+                  aria-pressed={pressed}
+                  tabIndex={pressed || (!inView && year === view.year) ? 0 : -1}
+                  onClick={() => pick({ year })}
+                >
+                  {formatYear(definition, year)}
+                </button>
+              )
+            })}
+          </div>
         )}
         {precision === 'month' && (
           <div className={styles.months} data-columns={3}>
-            {definition.months.map((m) => (
-              <button
-                key={m.id}
-                type="button"
-                className={styles.choice}
-                data-festival={m.festival || undefined}
-                aria-pressed={target?.year === view.year && target.month === m.id}
-                onClick={() => pick({ year: view.year, month: m.id })}
-              >
-                {m.name}
-              </button>
-            ))}
+            {definition.months.map((m, i) => {
+              const pressed = target?.year === view.year && target.month === m.id
+              const inView = target?.year === view.year && target.month !== undefined
+              return (
+                <button
+                  key={m.id}
+                  type="button"
+                  className={styles.choice}
+                  data-choice=""
+                  data-festival={m.festival || undefined}
+                  aria-pressed={pressed}
+                  tabIndex={pressed || (!inView && i === 0) ? 0 : -1}
+                  onClick={() => pick({ year: view.year, month: m.id })}
+                >
+                  {m.name}
+                </button>
+              )
+            })}
           </div>
         )}
         {precision === 'day' && page && (
-          <MonthDays definition={definition} year={view.year} page={page} value={current} target={target} pick={pick} />
+          <MonthDays
+            definition={definition}
+            year={view.year}
+            page={page}
+            value={current}
+            target={target}
+            editingEnd={choosingEnd}
+            pick={pick}
+          />
         )}
       </fieldset>
       <p className={styles.readout} aria-live="polite">
-        {readout ?? <span className={styles.placeholder}>{t('dates.none')}</span>}
-        {current?.yearly && <YearlyMark label={t('dates.repeats')} />}
+        {readout ?? elsewhere ?? <span className={styles.placeholder}>{t('dates.none')}</span>}
+        {value?.yearly && <YearlyMark label={t('dates.repeats')} />}
       </p>
+      {addingEnd && <p className={styles.equivalent}>{t('dates.pickEnd')}</p>}
+      {elsewhere && <p className={styles.warning}>{t('dates.noEquivalent', { name: calendar.name })}</p>}
       {outside && <p className={styles.warning}>{t('dates.outside')}</p>}
       {equivalent && (
         <p className={styles.equivalent}>
@@ -430,7 +518,7 @@ function DatePicker({
         </p>
       )}
       <div ref={foot} className={styles.foot}>
-        {current?.end ? (
+        {current && (current.end || addingEnd) ? (
           <>
             <fieldset className={styles.segmented} data-small="">
               <legend className={styles.srOnly}>{t('dates.editing')}</legend>
@@ -442,7 +530,7 @@ function DatePicker({
                     checked={editing === which}
                     onChange={() => {
                       setEditing(which)
-                      setView(viewOf(definition, which === 'end' ? (current.end ?? null) : current.start))
+                      setView(viewOf(definition, which === 'end' ? (current.end ?? current.start) : current.start))
                     }}
                   />
                   {t(`dates.${which}`)}
@@ -454,44 +542,48 @@ function DatePicker({
               className={styles.link}
               onClick={() => {
                 setEditing('start')
-                save({ start: current.start, ...(current.yearly ? { yearly: current.yearly } : {}) })
+                if (current.end) save({ start: current.start, ...(current.yearly ? { yearly: current.yearly } : {}) })
+                else setAddingEnd(false)
               }}
             >
               {t('dates.removeEnd')}
             </button>
           </>
         ) : (
-          allowEnd && (
+          allowEnd &&
+          current && (
             <button
               type="button"
               className={styles.link}
-              disabled={!current}
               onClick={() => {
-                if (!current) return
                 setEditing('end')
-                save({ ...current, end: current.start })
+                setAddingEnd(true)
               }}
             >
+              <Plus size={14} aria-hidden="true" />
               {t('dates.addEnd')}
             </button>
           )
         )}
-        <label className={styles.check}>
-          <input
-            type="checkbox"
-            checked={current?.yearly === true}
-            disabled={!current || precision === 'year'}
-            onChange={(event) => {
-              if (!current) return
-              const { yearly: _was, ...rest } = current
-              save(event.target.checked ? { ...rest, yearly: true } : rest)
-            }}
-          />
-          {t('dates.yearly')}
-        </label>
-        <button type="button" className={styles.clear} disabled={!value} onClick={onClear}>
-          {t('dates.clear')}
-        </button>
+        {current && (
+          <label className={styles.check}>
+            <input
+              type="checkbox"
+              checked={current.yearly === true}
+              disabled={precision === 'year'}
+              onChange={(event) => {
+                const { yearly: _was, ...rest } = current
+                save(event.target.checked ? { ...rest, yearly: true } : rest)
+              }}
+            />
+            {t('dates.yearly')}
+          </label>
+        )}
+        {value && (
+          <button type="button" className={styles.clear} onClick={onClear}>
+            {t('dates.clear')}
+          </button>
+        )}
       </div>
     </div>
   )
@@ -508,7 +600,11 @@ function moveFocus(event: KeyboardEvent<HTMLElement>) {
   event.preventDefault()
   const columns = Number(event.currentTarget.querySelector<HTMLElement>('[data-columns]')?.dataset.columns ?? 1)
   const by = Math.abs(step) === 2 ? Math.sign(step) * columns : step
-  all[Math.min(all.length - 1, Math.max(0, at + by))]?.focus()
+  const next = all[Math.min(all.length - 1, Math.max(0, at + by))]
+  if (!next) return
+  // Una sola parada del tabulador: la que tiene el foco
+  for (const button of all) button.tabIndex = button === next ? 0 : -1
+  next.focus()
 }
 
 /** El mes con la semana del calendario y, debajo, sus días fuera de la semana (una festividad, su nombre delante) */
@@ -518,6 +614,7 @@ function MonthDays({
   page,
   value,
   target,
+  editingEnd,
   pick
 }: {
   definition: CalendarDefinition
@@ -525,6 +622,8 @@ function MonthDays({
   page: { month: string; before: string[]; after: string[] }
   value: DateValue | null
   target: WorldDate | null
+  /** Si se elige el fin (su extremo lleva el aro) */
+  editingEnd: boolean
   pick: (date: WorldDate) => void
 }) {
   const days = monthGrid(definition, year, page.month)
@@ -532,6 +631,15 @@ function MonthDays({
   // Lo elegido: el día que se edita, y el tramo entre inicio y fin
   const span = value ? [dayNumber(definition, value.start), dayNumber(definition, value.end ?? value.start)] : null
   const chosen = target?.day !== undefined ? dayNumber(definition, target) : null
+  // Los dos extremos de un periodo; el que se edita, con su aro
+  const ranged = value?.end !== undefined && span !== null
+  const edgeOf = (n: number) => {
+    if (!ranged || (n !== span?.[0] && n !== span?.[1])) return undefined
+    return (editingEnd ? n === span?.[1] : n === span?.[0]) ? 'editing' : 'other'
+  }
+  const shown = [...days.weeks.flat(), ...days.outside]
+  // Si lo elegido no está en este mes, la parada del tabulador es su día 1
+  const chosenHere = chosen !== null && shown.some((day) => day?.dayNumber === chosen)
   const button = (day: GridDay, monthId: string) => {
     const date = { year, month: monthId, day: day.day }
     return (
@@ -539,17 +647,20 @@ function MonthDays({
         type="button"
         className={styles.day}
         data-choice=""
-        data-in-span={(span && day.dayNumber >= (span[0] ?? 0) && day.dayNumber <= (span[1] ?? 0)) || undefined}
+        data-in-span={(ranged && day.dayNumber >= (span?.[0] ?? 0) && day.dayNumber <= (span?.[1] ?? 0)) || undefined}
+        data-edge={edgeOf(day.dayNumber)}
         aria-pressed={chosen === day.dayNumber}
         aria-label={formatDate(definition, date, { weekday: true })}
         // Una parada del tabulador: lo elegido, o el primer día
-        tabIndex={chosen === day.dayNumber || (chosen === null && day.day === 1 && monthId === page.month) ? 0 : -1}
+        tabIndex={chosen === day.dayNumber || (!chosenHere && day.day === 1 && monthId === page.month) ? 0 : -1}
         onClick={() => pick(date)}
       >
         {day.day}
       </button>
     )
   }
+  // Lo de fuera de la semana, en sus mismas columnas
+  const columns = definition.weekdays.length || 7
   const strips = [...page.before, ...page.after].map((id) => ({
     id,
     month: definition.months.find((m) => m.id === id),
@@ -582,13 +693,13 @@ function MonthDays({
       )}
       {/* Un mes entero fuera de la semana (o un calendario sin semana): sus días seguidos */}
       {days.outside.length > 0 && (
-        <div className={styles.strip} data-columns={Math.min(7, days.outside.length)}>
+        <div className={styles.strip} data-columns={columns} style={{ ['--columns' as string]: columns }}>
           <span className={styles.stripName}>{month?.name}</span>
           <div className={styles.stripDays}>{days.outside.map((day) => button(day, page.month))}</div>
         </div>
       )}
       {strips.map((strip) => (
-        <div key={strip.id} className={styles.strip}>
+        <div key={strip.id} className={styles.strip} style={{ ['--columns' as string]: columns }}>
           <span className={styles.stripName}>{strip.month?.name}</span>
           <div className={styles.stripDays}>{strip.days.map((day) => button(day, strip.id))}</div>
         </div>

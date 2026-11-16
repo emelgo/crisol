@@ -38,8 +38,8 @@
 }
 
 .value:focus-visible {
-  border-color: var(--color-field-border);
-  outline: none;
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
 }
 
 .placeholder {
@@ -81,6 +81,9 @@
 }
 
 .link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
   padding: 0;
   border: 0;
   background: none;
@@ -276,11 +279,25 @@
   outline-offset: -2px;
 }
 
-/* El tramo entre el inicio y el fin, suave; el día elegido, en rojo (lo importante) */
-.day[data-in-span] {
-  background: color-mix(in srgb, var(--color-accent) 18%, transparent);
+/* Sobre lo elegido (rojo), el foco en el color del texto: se ve a más de 3:1 */
+.day[aria-pressed="true"]:focus-visible,
+.day[data-edge]:focus-visible,
+.choice[aria-pressed="true"]:focus-visible,
+.yearChoice[aria-pressed="true"]:focus-visible {
+  outline-color: var(--color-text);
 }
 
+/* El tramo entre el inicio y el fin, suave; sus dos extremos y el día elegido, en rojo (lo importante) */
+.day[data-in-span] {
+  background: color-mix(in srgb, var(--color-accent) 14%, transparent);
+}
+
+/* El extremo que se edita, además, con su aro */
+.day[data-edge="editing"] {
+  box-shadow: inset 0 0 0 2px var(--color-text);
+}
+
+.day[data-edge],
 .day[aria-pressed="true"],
 .choice[aria-pressed="true"],
 .yearChoice[aria-pressed="true"] {
@@ -308,29 +325,27 @@
   font-size: 0.9375rem;
 }
 
-/* Lo que va fuera de la semana (una festividad): su nombre y sus días seguidos */
+/* Lo que va fuera de la semana (una festividad): su nombre y debajo sus días, en las columnas de la semana */
 .strip {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-1) var(--space-2);
+  flex-direction: column;
+  gap: var(--space-1);
 }
 
 .stripName {
-  flex: 1 1 auto;
   color: var(--color-warning);
   font-size: 0.75rem;
   font-weight: 600;
 }
 
 .stripDays {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(var(--columns, 7), minmax(0, 1fr));
   gap: 2px;
+  padding-inline: 2px;
 }
 
-.stripDays .day {
-  inline-size: 2rem;
+.stripDays .day:not([aria-pressed="true"], [data-edge], [data-in-span]) {
   background: color-mix(in srgb, var(--color-warning) 12%, transparent);
 }
 
@@ -383,17 +398,12 @@
   padding: 0;
   border: 0;
   background: none;
-  color: var(--color-muted);
+  color: var(--color-text);
   font: inherit;
   font-size: 0.875rem;
   cursor: pointer;
 }
 
-.clear:hover:not(:disabled) {
-  color: var(--color-text);
-}
-
-.clear:disabled {
-  cursor: default;
-  opacity: 0.6;
+.clear:hover {
+  color: var(--color-accent-text);
 }

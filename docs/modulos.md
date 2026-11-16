@@ -7,6 +7,27 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
+### Para retomar (2026-11-16: módulo 8 · mundo, capacidad `fechas`, construida en local)
+
+- Misma rama `modulo-8/calendarios`. **Migración 0083** (`crisol_page_text` toma el texto de una fecha, no su objeto),
+  ya aplicada en local. Spec `docs/specs/fechas.md`.
+- Hecho: el valor en `packages/domain/src/calendar/values.ts` (comprobarlo, leerlo, la forma de la IA
+  `1250-Siega-12/1250-Trilla-3 (cada año)`, su día para ordenar); la propiedad `date` en contratos y dominio (con
+  `range` y `offTimeline` de su campo, y `text`: cómo se lee sin lo solo del máster, que pone el servidor y es lo que
+  se busca); `apps/server/src/wiki/dates.ts` (comprobar contra los calendarios del mundo, leer lo que escribe la IA y
+  el YAML, `dates` en `leer_pagina`); `pageDates` en `DATE_SOURCES` (quitar un mes o borrar un calendario con fechas se
+  impide; acortar avisa con `clipped`; renombrar relee los textos en la misma operación); copiar copia las fechas y
+  desde o hacia una plantilla van vacías; las tablas ordenan por fecha. Web: `wiki/date-field.tsx` (el campo y su
+  selector flotante), el tipo en el editor de campos de plantilla, el aviso del editor de calendarios.
+- Pruebas: dominio, contratos, `dates.integration.test.ts`, MCP, web (`date-field.test.tsx`, editor de plantillas),
+  e2e `fechas` y la de fugas ampliada.
+- Decisiones tomadas sin Enrique: la fecha **sí entra en la búsqueda** como texto legible (la spec decía que no; se
+  guarda su `text` público y se relee al cambiar el calendario); el selector no tiene hoja de móvil (el máster trabaja
+  en PC y la jugadora solo lee); cambiar de calendario en el selector convierte la fecha si hay correspondencia.
+- **Siguiente**: `cronologias` (decisiones 4-10 de `docs/specs/modulo-8.md`): sus fuentes de fechas (los eventos) van
+  también en `DATE_SOURCES`; las páginas con fecha se buscan con `pages.properties @> '[{"type":"date"}]'` y el día con
+  `dateValueDay`; `offTimeline` las deja fuera.
+
 ### Para retomar (2026-11-16: módulo 8 · mundo, capacidad `calendarios`, construida en local)
 
 - Rama `modulo-8/calendarios` (sobre `modulo-9/mapas`, que sigue con su PR #120 abierto), ADR-0029. **Migración 0082**

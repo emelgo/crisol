@@ -9,6 +9,28 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
+## Fechas en las páginas (módulo 8, en local, rama `modulo-8/calendarios`; migración 0083; 2026-11-16)
+
+- [ ] **Una propiedad «Fecha»**: en el panel, «Añadir bloque» › «Propiedad», tipo «Fecha». Se lee como texto («12 de
+  Siega de 412 RC»); al pulsarla flota el selector a la izquierda del panel.
+- [ ] **El selector**: Año · Mes · Día; el mes con la semana del calendario y la festividad debajo; el año escrito a mano
+  (salta milenios); flechas de mes y año; la lectura larga con el día de la semana. Con el teclado, las flechas
+  recorren los días.
+- [ ] **«Añadir fin»** (y elegir Inicio o Fin), **«Cada año»** (el icono de repetición junto al texto) y **«Borrar»**.
+- [ ] **Varios calendarios**: se elige el suyo; de uno con correspondencia, dice la equivalencia en el principal.
+- [ ] **Sin calendario**: «Este mundo aún no tiene calendario.» con el enlace a Calendarios.
+- [ ] **Plantillas**: el tipo de campo «Fecha», con «Con fin» y «Fuera de las líneas temporales»; las páginas nacen con
+  él vacío. Sin «Con fin», el selector no ofrece fin.
+- [ ] **Calendarios con fechas**: quitar un mes con fechas no se guarda («Hay fechas en un mes que quitas»); borrar el
+  calendario tampoco; acortar un mes guarda y avisa de cuántas se leen en su último día; renombrar un mes cambia cómo
+  se leen sus fechas.
+- [ ] **Tablas de páginas** con una columna de fecha: la enseñan como texto y ordenan por ella (por su día).
+- [ ] **La búsqueda** encuentra una página por cómo se lee su fecha («Siega»).
+- [ ] **Copiar** una página copia sus fechas; deshacer desde el historial las devuelve.
+- [ ] **La IA**: `editar_pagina` con `{ name: 'Nacimiento', type: 'date', value: '-34-Siega-3' }` (o
+  `1250-Siega-12/1250-Trilla-3`, «(cada año)», `calendar`); mal escrita, dice por qué; `leer_pagina` da `dates`.
+- [ ] **La jugadora** ve la fecha en su panel, y no un campo de fecha «Oculto» (ni su IA ni la búsqueda).
+
 ## Calendarios (módulo 8, en local, rama `modulo-8/calendarios`; 2026-11-16)
 
 - [ ] **La barra del mundo**: «Páginas · Calendarios · Archivos» (Páginas lleva a la portada, como antes el nombre).

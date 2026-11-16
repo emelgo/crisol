@@ -880,6 +880,8 @@ export const es = {
     noCalendar: 'Este mundo aún no tiene calendario.',
     toCalendars: 'Calendarios',
     inPrimary: 'En {{name}}: {{text}}',
+    pickEnd: 'Elige el día del fin',
+    noEquivalent: 'Sin equivalencia en {{name}}: elige una fecha suya',
     outside: 'Fuera del calendario: se lee en el último día de su mes'
   },
   fields: {
