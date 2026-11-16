@@ -17,6 +17,7 @@ describe('el esquema del editor', () => {
         'box',
         'bulletList',
         'callout',
+        'chart',
         'codeBlock',
         'columnBreak',
         'columnsChange',

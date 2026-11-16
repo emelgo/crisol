@@ -34,7 +34,8 @@ export const BLOCK_TYPES = [
   'statblock',
   'sidenote',
   'wideBlock',
-  'tableOfContents'
+  'tableOfContents',
+  'chart'
 ]
 
 const ALPHABET = 'abcdefghijklmnopqrstuvwxyz0123456789'

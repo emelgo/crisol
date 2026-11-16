@@ -11,6 +11,7 @@ import { BlockIds } from './ids.ts'
 import { isExternalUrl } from './links.ts'
 import { Box } from './nodes/box.ts'
 import { Callout } from './nodes/callout.ts'
+import { Chart } from './nodes/chart.ts'
 import { ContentEmbed } from './nodes/content-embed.ts'
 import { ContentLink } from './nodes/content-link.ts'
 import { FileEmbed } from './nodes/file-embed.ts'
@@ -102,6 +103,7 @@ export function editorExtensions(options: EditorOptions = {}): Extensions {
     view(Sidenote),
     view(WideBlock),
     view(TableOfContents),
+    view(Chart),
     ...(nested ? [] : [view(Secret), view(HiddenNote)]),
     BlockIds
   ]

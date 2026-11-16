@@ -110,6 +110,8 @@ catalog:
   vite: ^8.3.5
   vitest: ^5.0.5
   y-protocols: ^1.0.7
+  # Leer el YAML de los gráficos (```chart, módulo 10), ISC y sin dependencias
+  yaml: 2.9.1
   yjs: ^13.6.33
   zod: ^4.6.7
 
