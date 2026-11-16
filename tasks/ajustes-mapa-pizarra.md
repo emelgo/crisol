@@ -43,7 +43,8 @@ Pedidos al probar el módulo 9 en localhost. Se hacen en la rama `modulo-9/mapas
   para editarlo) como las regiones y las rutas. *Hecho: se elige pulsando en toda su caja (sus letras no recibían el
   ratón), el doble clic lleva a escribirlo (su texto, ya elegido) y Supr lo quita. Al pulsar algo ya elegido, el foco va
   al mapa (antes se quedaba en el panel y Supr borraba lo escrito).*
-- [ ] **Medir**: su panel sale en otro sitio; ahora tapa la barra de herramientas de abajo.
+- [x] **Medir**: su panel sale en otro sitio; ahora tapa la barra de herramientas de abajo. *Hecho: en la página del
+  mundo va arriba a la izquierda del mapa (que ahí está libre); con la columna de herramientas de antes, sigue abajo.*
 - [ ] Los **desplegables nativos** (p. ej. «Se ve el nombre») salen con las opciones en claro: en oscuro, como la app.
 
 ## Pizarra

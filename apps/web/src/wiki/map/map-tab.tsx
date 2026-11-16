@@ -1185,6 +1185,7 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
       ref={wrapper}
       className={styles.wrapper}
       data-wide={wide || undefined}
+      data-docked={docked || undefined}
       style={{ '--map-aspect': `${image.width} / ${image.height}` } as React.CSSProperties}
     >
       {/* Un control propio: se mueve con las flechas y se acerca con + y - */}

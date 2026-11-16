@@ -1054,6 +1054,15 @@
   box-shadow: var(--glass-shadow);
 }
 
+/* Con las herramientas en la píldora de abajo (la página del mundo), arriba a la izquierda: no la tapa */
+.wrapper[data-docked] .measure {
+  inset-block: var(--space-3) auto;
+  inset-inline-start: var(--space-3);
+  max-block-size: calc(100% - 5.5rem);
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
 .measureHead {
   display: flex;
   align-items: center;
