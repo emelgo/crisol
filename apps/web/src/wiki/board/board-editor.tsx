@@ -19,6 +19,7 @@ import { useCollabDocument } from '../collab.tsx'
 import { useWorldPage } from '../world-page.ts'
 import { BoardDock } from './board-dock.tsx'
 import { BoardFrame, PAGE_DRAG, PageCard, pageIdOfLink, pageLink, useBoardFiles } from './board-parts.tsx'
+import { keepSharp } from './sharp.ts'
 import { boardMap, mergeScene, sceneChanged, whenReady, writeScene } from './sync.ts'
 
 /** Sus fuentes, servidas por Crisol (no por su CDN): apps/web/public/excalidraw/fonts */
@@ -134,6 +135,7 @@ export default function BoardEditor({ page, tab }: { page: Page; tab: PageTabVie
   )
   const onChange = useCallback(
     (elements: readonly ExcalidrawElement[], appState: AppState) => {
+      keepSharp(excalidraw, appState)
       setActiveTool(appState.activeTool.type)
       setZoom(appState.zoom.value)
       const ids = appState.selectedElementIds
@@ -148,7 +150,7 @@ export default function BoardEditor({ page, tab }: { page: Page; tab: PageTabVie
       view.current = appState
       if (!timer.current) timer.current = setTimeout(flush, WRITE_EVERY)
     },
-    [doc, synced, flush]
+    [doc, synced, flush, excalidraw]
   )
 
   /** Pone la tarjeta de una página donde se diga (en coordenadas de la escena), elegida */

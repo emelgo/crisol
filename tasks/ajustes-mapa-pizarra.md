@@ -55,8 +55,12 @@ Pedidos al probar el módulo 9 en localhost. Se hacen en la rama `modulo-9/mapas
   del desplegable, que es de cristal translúcido, sobre blanco). La lista abierta no sale en las capturas: a probar.*
 
 ## Pizarra
-- [ ] Al alejar se **difumina** (cuanto más lejos, más) y al acercar se ven **dientes de sierra** hasta que se para: que se
-  vea nítida al hacer zoom.
+- [x] Al alejar se **difumina** (cuanto más lejos, más) y al acercar se ven **dientes de sierra** hasta que se para: que se
+  vea nítida al hacer zoom. *Hecho. No era nuestro (ni escalado CSS, ni transform, ni backdrop-filter sobre el lienzo):
+  es Excalidraw, que durante un gesto de zoom reaprovecha el dibujo de cada elemento hecho a la escala de antes
+  (`shouldCacheIgnoreZoom`), lo estira sin suavizar y no lo rehace hasta 300 ms después de parar. Se le quita en su
+  onChange en cuanto lo pone (antes de pintar), en el editor y en la vista de la jugadora: cada paso se dibuja a su
+  escala. Cuesta algo más en pizarras enormes. A probar con la rueda + Ctrl y con dos dedos.*
 
 ## Panel de la página
 - [ ] El bloque **«Tabla de páginas»** nace apuntando a una plantilla «pnj» y un campo «faccion» que en una cuenta vacía no

@@ -15,6 +15,7 @@ import { useApi } from '../../api/context.tsx'
 import { PageLink, readAsInput, readAsKey, useOpenPage, useReadAs } from '../read-as.tsx'
 import styles from './board.module.css'
 import { BoardFrame, PageCard, pageIdOfLink, useBoardFiles, usePages } from './board-parts.tsx'
+import { keepSharp } from './sharp.ts'
 import { summarize } from './summary.ts'
 import { mergeScene, whenReady } from './sync.ts'
 
@@ -94,6 +95,7 @@ export default function BoardView({ page, tab }: { page: Page; tab: PageTabView 
         theme="dark"
         name={tab.name}
         viewModeEnabled
+        onChange={(_elements, appState) => keepSharp(excalidraw, appState)}
         UIOptions={{
           canvasActions: {
             export: false,
