@@ -17,11 +17,14 @@ export function DraftLayer({
   image,
   draft,
   cursor,
+  closing = false,
   variant = 'draft'
 }: {
   image: Size
   draft: Draft
   cursor: Point | null
+  /** El cursor está sobre el primer vértice: pulsar cierra la región (se resalta) */
+  closing?: boolean
   /** Medir: su propia línea, más marcada (no es algo que se dibuja) */
   variant?: 'draft' | 'measure'
 }) {
@@ -48,6 +51,7 @@ export function DraftLayer({
           cy={y * image.height}
           r={5}
           data-first={index === 0 || undefined}
+          data-closing={(index === 0 && closing) || undefined}
         />
       ))}
     </svg>

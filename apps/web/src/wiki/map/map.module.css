@@ -853,6 +853,18 @@
   r: calc(7px * var(--inv-k));
 }
 
+/* Junto al primer vértice: más grande y lleno, porque pulsarlo cierra la región */
+.draftDot[data-closing] {
+  r: calc(10px * var(--inv-k));
+  fill: var(--color-accent);
+  stroke: #fff;
+  transition: r 120ms ease-out;
+}
+
+.viewer:has(.draftDot[data-closing]) {
+  cursor: pointer;
+}
+
 .element[data-selected] {
   filter: drop-shadow(0 0 3px var(--color-accent-text));
 }

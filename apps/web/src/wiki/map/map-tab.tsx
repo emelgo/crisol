@@ -244,6 +244,8 @@ type Tool = 'select' | 'pin' | 'region' | 'path' | 'text' | 'measure' | 'calibra
 /** Las teclas de las herramientas (con el visor enfocado); medir, también para quien solo lee */
 const TOOL_KEYS: Record<string, Tool> = { v: 'select', p: 'pin', r: 'region', l: 'path', t: 'text', m: 'measure' }
 const DRAWING_TOOLS: readonly Tool[] = ['region', 'path', 'text']
+/** A cuántos píxeles del primer vértice se cierra la región al pulsar (y se resalta al acercarse) */
+const CLOSE_RADIUS = 12
 const samePoint = (a: Point | undefined, b: Point | undefined) =>
   !!a && !!b && Math.abs(a[0] - b[0]) < 1e-6 && Math.abs(a[1] - b[1]) < 1e-6
 type PinDrag = { id: string; startX: number; startY: number; x0: number; y0: number; travel: number }
@@ -271,6 +273,7 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
   const [selectedElement, setSelectedElement] = useState<string | null>(null)
   const [namingElement, setNamingElement] = useState<string | null>(null)
   const [draft, setDraft] = useState<Draft | null>(null)
+  const [closing, setClosing] = useState(false)
   const [cursor, setCursor] = useState<Point | null>(null)
   const [live, setLive] = useState<{ id: string; geometry: MapGeometry } | null>(null)
   const liveRef = useRef(live)
@@ -495,6 +498,7 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
     setTool(next)
     setDraft(null)
     setCursor(null)
+    setClosing(false)
     if (next !== 'measure') setMeasure({ points: [], route: null })
     if (next !== 'calibrate') setCalibration([])
     if (next !== 'select') {
@@ -529,13 +533,40 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
     setLayersOpen(false)
   }
 
-  /** Acabar lo que se dibuja: una región necesita tres puntos; una ruta, dos */
-  const finishDraft = () => {
+  /** Dónde cae en la pantalla un punto del mapa */
+  const toScreen = (point: Point) => {
+    const rect = container.current?.getBoundingClientRect()
+    const { x, y, k } = view.current
+    return {
+      x: (rect?.left ?? 0) + x + point[0] * k * image.width,
+      y: (rect?.top ?? 0) + y + point[1] * k * image.height
+    }
+  }
+  /** Si un punto de la pantalla está sobre el primer vértice de la región que se dibuja (para cerrarla) */
+  const onFirstVertex = (clientX: number, clientY: number) => {
+    const first = draft?.kind === 'region' && draft.points.length >= 3 ? draft.points[0] : undefined
+    if (!first) return false
+    const at = toScreen(first)
+    return Math.hypot(at.x - clientX, at.y - clientY) <= CLOSE_RADIUS
+  }
+
+  /**
+   * Acabar lo que se dibuja: una región necesita tres puntos; una ruta, dos. Con doble clic, sin los puntos que ha
+   * puesto el propio doble clic (Enrique, 2026-11-16: «añade un punto de más»)
+   */
+  const finishDraft = (dropNear?: { x: number; y: number }) => {
     if (!draft) return
-    const points = draft.points.filter((point, index, all) => !samePoint(point, all[index - 1]))
+    const kept = [...draft.points]
+    while (dropNear && kept.length > 0) {
+      const at = toScreen(kept[kept.length - 1] as Point)
+      if (Math.hypot(at.x - dropNear.x, at.y - dropNear.y) > CLOSE_RADIUS) break
+      kept.pop()
+    }
+    const points = kept.filter((point, index, all) => !samePoint(point, all[index - 1]))
     const enough = draft.kind === 'region' ? points.length >= 3 : points.length >= 2
     setDraft(null)
     setCursor(null)
+    setClosing(false)
     setTool('select')
     if (!enough) return
     const geometry: MapGeometry =
@@ -694,7 +725,12 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
     if (following && pointers.current.size === 0) {
       const { clientX, clientY } = event
       cancelAnimationFrame(cursorFrame.current)
-      cursorFrame.current = requestAnimationFrame(() => setCursor(snappedAt(clientX, clientY)))
+      cursorFrame.current = requestAnimationFrame(() => {
+        // Junto al primer vértice de una región, la goma se le pega y él se resalta: pulsar ahí la cierra
+        const closing = onFirstVertex(clientX, clientY)
+        setClosing(closing)
+        setCursor(closing && draft ? (draft.points[0] ?? null) : snappedAt(clientX, clientY))
+      })
     }
     if (!pointers.current.has(event.pointerId) || !gesture.current) return
     pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY })
@@ -751,6 +787,7 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
       return
     }
     if (tool === 'pin' && editable) placePin(toMap(event.clientX, event.clientY))
+    else if (tool === 'region' && editable && onFirstVertex(event.clientX, event.clientY)) finishDraft()
     else if ((tool === 'region' || tool === 'path') && editable) addDraftPoint(snappedAt(event.clientX, event.clientY))
     else if (tool === 'text' && editable) {
       const { x, y } = toMap(event.clientX, event.clientY)
@@ -1133,8 +1170,8 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
         onPointerLeave={() => setCursor(null)}
-        onDoubleClick={() => {
-          if (draft) return finishDraft()
+        onDoubleClick={(event) => {
+          if (draft) return finishDraft({ x: event.clientX, y: event.clientY })
           // Doble clic en lo dibujado que lleva a una página: la abre
           const target = map.elements.find((element) => element.id === pressedOn.current)
           if (tool === 'select' && target?.pageId && target.pageTitle) openPage(target.pageId)
@@ -1167,7 +1204,7 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
             onElementPointerDown={onElementPointerDown}
             onElementClick={onElementClick}
           />
-          {draft && <DraftLayer image={image} draft={draft} cursor={cursor} />}
+          {draft && <DraftLayer image={image} draft={draft} cursor={cursor} closing={closing} />}
           {tool === 'measure' && measure.points.length > 0 && (
             <DraftLayer
               image={image}

@@ -14,10 +14,11 @@ Pedidos al probar el módulo 9 en localhost. Se hacen en la rama `modulo-9/mapas
   casilla, un color o un deslizador del panel, en la cabecera de la página o en ningún sitio (no donde se escribe); en la
   pizarra, también con el foco en nuestra píldora o en «Página…» (antes no hacía nada), y Escape deja la herramienta. El
   aro del foco del lienzo, solo si se llega con el tabulador, y por dentro.*
-- [ ] **Cerrar una región** es poco intuitivo: con doble clic se cierra pero añade un punto de más. Cerrar sin punto extra.
+- [x] **Cerrar una región** es poco intuitivo: con doble clic se cierra pero añade un punto de más. Cerrar sin punto extra.
   Pulsar el primer vértice **no la cierra** (la pista dice «Intro o el primero, cerrar» y no se entiende): que pulsar el
   primer vértice la cierre de verdad (resaltándolo al acercarse) y que la pista lo diga claro («pulsa el primer punto o
-  Intro para cerrar»).
+  Intro para cerrar»). *Hecho: a 12 px del primer vértice, se agranda en rojo, la goma se le pega y pulsar la cierra; el
+  doble clic cierra sin dejar el punto que pone él; la pista: «Pulsa el primer punto o Intro para cerrar».*
 - [ ] En las opciones de una región, al abrir **«Aspecto»** el contenedor y lo de dentro se deforman: no debe moverse nada.
 - [ ] El **tamaño de letra** de una región sale 96 en vez de 100.
 - [ ] Al elegir **«Página»** en una región o un pin: un desplegable con las páginas que no desentone (como el de «Página…»

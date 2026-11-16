@@ -126,6 +126,52 @@ describe('dibujar y retocar en el mapa (módulo 9)', () => {
     await waitFor(async () => expect((await saved())[0]?.label).toBe('Aldoria'))
   })
 
+  it('una región se cierra pulsando su primer punto (resaltado al acercarse) o con doble clic, sin punto de más', async () => {
+    const { viewer, saved } = await renderMap()
+    viewer.focus()
+    await userEvent.keyboard('r')
+    tap(viewer, 0.1, 0.1)
+    tap(viewer, 0.4, 0.1)
+    tap(viewer, 0.4, 0.4)
+    // Junto al primero (a 5 px de pantalla), se resalta; pulsarlo la cierra con sus tres vértices
+    fireEvent.pointerMove(viewer, { pointerId: 1, clientX: 85, clientY: 79 })
+    await waitFor(() => expect(viewer.querySelector('circle[data-closing]')).not.toBeNull())
+    fireEvent.pointerDown(viewer, { pointerId: 1, pointerType: 'mouse', button: 0, clientX: 85, clientY: 79 })
+    fireEvent.pointerUp(viewer, { pointerId: 1, pointerType: 'mouse', button: 0, clientX: 85, clientY: 79 })
+    await waitFor(async () => expect(await saved()).toHaveLength(1))
+    expect((await saved())[0]?.geometry).toEqual({
+      pieces: [
+        [
+          [0.1, 0.1],
+          [0.4, 0.1],
+          [0.4, 0.4]
+        ]
+      ]
+    })
+    // Con doble clic: el punto del doble clic no se queda
+    await userEvent.click(
+      within(screen.getByRole('region', { name: 'Región' })).getByRole('button', { name: 'Cerrar' })
+    )
+    viewer.focus()
+    await userEvent.keyboard('r')
+    tap(viewer, 0.5, 0.5)
+    tap(viewer, 0.8, 0.5)
+    tap(viewer, 0.8, 0.8)
+    tap(viewer, 0.6, 0.9)
+    tap(viewer, 0.6, 0.9)
+    fireEvent.doubleClick(viewer, at(0.6, 0.9))
+    await waitFor(async () => expect(await saved()).toHaveLength(2))
+    expect((await saved())[1]?.geometry).toEqual({
+      pieces: [
+        [
+          [0.5, 0.5],
+          [0.8, 0.5],
+          [0.8, 0.8]
+        ]
+      ]
+    })
+  })
+
   it('una ruta que empieza en un pin se pega a él y lo recuerda; Retroceso quita el último punto y Esc cancela', async () => {
     let pinId = ''
     const { viewer, saved } = await renderMap(async (api, mapId) => {

@@ -2070,7 +2070,7 @@ export const es = {
     edit: {
       tools: { region: 'Región', path: 'Ruta', text: 'Texto' },
       hints: {
-        region: 'Un vértice en cada clic · Intro o el primero, cerrar · Esc, dejar',
+        region: 'Un vértice en cada clic · Pulsa el primer punto o Intro para cerrar · Esc, dejar',
         path: 'Un punto en cada clic · Intro o doble clic, acabar · Esc, dejar',
         text: 'Pulsa donde vaya el texto'
       },
