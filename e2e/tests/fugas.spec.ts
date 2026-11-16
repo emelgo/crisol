@@ -1229,3 +1229,69 @@ test('@fugas los calendarios: la jugadora los lee sin las eras solo del máster,
     expect((await player.request.post(`/api/actions/${name}`, { data })).status(), name).toBe(404)
   await player.close()
 })
+
+test('@fugas las fechas: un campo «Oculto» de fecha no le llega a la jugadora por la API, el tiempo real ni la búsqueda (módulo 8)', async ({
+  page,
+  browser
+}) => {
+  const link = await campaignLink(page)
+  const [, , worldId = '', , campaignId = ''] = campaignPath(page).split('/')
+  const api = async (name: string, data: object) => {
+    const response = await page.request.post(`/api/actions/${name}`, { data })
+    expect(response.status(), name).toBe(200)
+    return response.json()
+  }
+  await api('createCalendar', {
+    worldId,
+    name: 'Calendario de Varn',
+    from: {
+      definition: {
+        yearSuffix: 'RV',
+        weekdays: ['Lunden', 'Marden', 'Miden'],
+        months: [
+          { name: 'Siega', days: 30 },
+          { name: 'Vendimia', days: 30 }
+        ],
+        eras: [{ name: 'Era de la Corona', start: '0' }]
+      }
+    }
+  })
+  const port = await api('createPage', { worldId, title: 'Puerto Ceniza' })
+  await api('setKnowledge', { worldId, campaignId, kind: 'page', targetId: port.id, known: true })
+  let seen: ReturnType<typeof capture> | undefined
+  const player = await newPlayer(browser, link, 'Jugadora', (p) => {
+    seen = capture(p)
+  })
+  if (!seen) throw new Error('sin captura')
+  const captured = seen
+  await gotoLive(player, `/mundos/${worldId}/campanas/${campaignId}/paginas/${port.id}`)
+  // Mientras ella mira la página, el máster la fecha: una visible y otra oculta
+  await api('editPage', {
+    pageId: port.id,
+    properties: [
+      { name: 'Fundación', type: 'date', value: '412-Siega-12' },
+      { name: 'Coronación secreta', type: 'date', value: '415-Vendimia-3' }
+    ]
+  })
+  const read = await api('getPage', { pageId: port.id })
+  await api('setPageProperties', {
+    pageId: port.id,
+    properties: read.properties.map((p: { name: string }) => (p.name === 'Fundación' ? p : { ...p, hidden: true }))
+  })
+  await expect(player.getByRole('main')).toContainText('12 de Siega de 412 RV')
+  const bodies: string[] = []
+  for (const [name, data] of [
+    ['getPage', { pageId: port.id, campaignId }],
+    ['readPage', { pageId: port.id, campaignId }],
+    ['searchWiki', { worldId, campaignId, query: 'Vendimia' }],
+    ['searchWiki', { worldId, campaignId, query: 'Siega' }]
+  ] as const) {
+    const response = await player.request.post(`/api/actions/${name}`, { data })
+    expect(response.status(), name).toBe(200)
+    bodies.push(await response.text())
+  }
+  expect(bodies.join('\n')).toContain('12 de Siega de 412 RV')
+  const everything = [await captured.all(), ...bodies].join('\n')
+  for (const leak of ['Coronación', 'Vendimia de 415', '415-Vendimia']) expect(everything).not.toContain(leak)
+  await player.close()
+})
