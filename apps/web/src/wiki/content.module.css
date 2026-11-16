@@ -131,3 +131,8 @@
 .contentLink {
   color: var(--color-link);
 }
+
+/* Un gráfico en lo que se lee (módulo 10) */
+.chart {
+  margin-block: var(--space-4);
+}

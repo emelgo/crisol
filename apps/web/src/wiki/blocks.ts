@@ -2,7 +2,7 @@
  * Los bloques que se pueden poner en el texto: los del menú «/» y los de «Convertir en» del menú del bloque. Cada uno
  * sabe aplicarse donde está el cursor (o a lo elegido)
  */
-import type { CalloutKind, SeparateKind } from '@crisol/editor'
+import { type CalloutKind, NEW_CHART_YAML, type SeparateKind } from '@crisol/editor'
 import type { Editor } from '@tiptap/core'
 import type { es } from '../i18n.ts'
 
@@ -133,6 +133,29 @@ export const BLOCKS: readonly BlockChoice[] = [
     convert: false,
     run: (editor) => {
       editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()
+    }
+  },
+  // Un gráfico (módulo 10): nace con unos datos de ejemplo y su editor visual en el panel
+  {
+    id: 'chart',
+    group: 'text',
+    label: 'chart',
+    hint: 'chartHint',
+    keywords: 'grafico chart barras lineas tarta donut radar area polar diagrama datos',
+    convert: false,
+    run: (editor) => {
+      editor
+        .chain()
+        .focus()
+        .insertContent({ type: 'chart', attrs: { yaml: NEW_CHART_YAML } })
+        .run()
+      // Elegido, para que salga su editor en el panel
+      const { from } = editor.state.selection
+      let at: number | null = null
+      editor.state.doc.nodesBetween(Math.max(0, from - 4), from, (node, pos) => {
+        if (node.type.name === 'chart') at = pos
+      })
+      if (at !== null) editor.commands.setNodeSelection(at)
     }
   },
   {

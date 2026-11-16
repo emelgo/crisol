@@ -1,0 +1,307 @@
+/* El editor visual de un gráfico (módulo 10), en el sitio del panel de la página: compacto, como las ventanas de
+   ajustes (letra algo menor, campos de una línea bajos) */
+
+.editor {
+  display: grid;
+  gap: var(--space-3);
+  font-size: 0.875rem;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.head h2 {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  color: var(--color-muted);
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.close,
+.remove {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.close {
+  inline-size: 2rem;
+  block-size: 2rem;
+}
+
+.close:hover,
+.remove:hover {
+  background: color-mix(in srgb, var(--color-text) 10%, transparent);
+  color: var(--color-text);
+}
+
+.fields {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.fields > label,
+.label {
+  margin-block-start: var(--space-1);
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.fields input:not([type]),
+.fields select,
+.yaml {
+  inline-size: 100%;
+  min-block-size: 2rem;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--line-frame);
+  border-radius: var(--radius-button);
+  background: var(--field-fill);
+  color: var(--color-text);
+  font: inherit;
+}
+
+.fields input:focus-visible,
+.fields select:focus-visible,
+.yaml:focus-visible,
+.types button:focus-visible,
+.segmented button:focus-visible,
+.adders button:focus-visible,
+.yamlToggle:focus-visible,
+.close:focus-visible,
+.remove:focus-visible,
+.dot:focus-within {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 1px;
+}
+
+/* Los seis tipos, en una rejilla de recuadros con su dibujo */
+.types {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-1);
+}
+
+.types button {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: var(--space-2) var(--space-1);
+  border: 1px solid var(--line-frame);
+  border-radius: var(--radius-button);
+  background: none;
+  color: var(--color-muted);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.types button:hover {
+  background: var(--row-hover);
+  color: var(--color-text);
+}
+
+.types button[aria-pressed="true"],
+.segmented button[aria-pressed="true"] {
+  border-color: color-mix(in srgb, var(--color-accent-text) 50%, transparent);
+  background: color-mix(in srgb, var(--color-accent) 22%, transparent);
+  color: var(--color-text);
+}
+
+.segmented {
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--line-frame);
+  border-radius: 8px;
+  background: var(--field-fill);
+}
+
+.segmented button {
+  min-block-size: 1.875rem;
+  padding: 0 var(--space-1);
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: none;
+  color: var(--color-muted);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.segmented button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+/* La tabla de etiquetas y series: se desplaza de lado si no cabe */
+.gridWrap {
+  display: grid;
+  gap: var(--space-2);
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.grid {
+  inline-size: calc(100% + 6px);
+  margin-inline: -3px;
+  border-collapse: separate;
+  border-spacing: 3px;
+  table-layout: fixed;
+}
+
+/* La columna de las etiquetas, algo más ancha; las de las series se reparten lo demás */
+.grid th:first-child {
+  inline-size: 38%;
+}
+
+.grid th {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: start;
+}
+
+.grid input {
+  inline-size: 100%;
+  min-inline-size: 0;
+  min-block-size: 1.875rem;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--line-frame);
+  border-radius: 5px;
+  background: var(--field-fill);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.8125rem;
+}
+
+.grid tbody th input {
+  padding-inline-end: 1.5rem;
+}
+
+.grid input:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 0;
+}
+
+.grid .number {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.headCell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-inline-size: 0;
+}
+
+/* Quitar una fila o una serie: dentro de su campo, al pasar por ella (o con el foco) */
+.remove {
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-end: 3px;
+  inline-size: 1.25rem;
+  block-size: 1.25rem;
+  opacity: 0;
+  transform: translateY(-50%);
+}
+
+.grid tr:hover .remove,
+.headCell:focus-within .remove,
+.remove:focus-visible {
+  opacity: 1;
+}
+
+.grid thead .headCell input {
+  padding-inline-end: 1.5rem;
+}
+
+@media (pointer: coarse) {
+  .remove {
+    opacity: 1;
+  }
+}
+
+.dot {
+  position: relative;
+  flex: none;
+  inline-size: 1rem;
+  block-size: 1rem;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--line-frame);
+  cursor: pointer;
+}
+
+.dot input {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.adders {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.adders button,
+.yamlToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-link);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.yamlToggle {
+  justify-self: start;
+}
+
+.yaml {
+  padding: var(--space-2);
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.problem {
+  margin: 0;
+  color: var(--color-warning);
+}

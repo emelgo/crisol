@@ -1110,6 +1110,8 @@ export const es = {
     codeBlock: 'Código',
     table: 'Tabla',
     tableHint: 'Con cabecera',
+    chart: 'Gráfico',
+    chartHint: 'Barras, líneas, tarta…',
     horizontalRule: 'Separador',
     pageLink: 'Enlace a página',
     pageLinkHint: 'O escribe [[',

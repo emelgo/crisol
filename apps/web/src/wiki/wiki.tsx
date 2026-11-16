@@ -47,6 +47,8 @@ import { TemplateIcon } from '../templates/icons.tsx'
 import { useTemplates } from '../templates/picker.tsx'
 import { Backlinks, pageLinksKey } from './backlinks.tsx'
 import { BoardTab } from './board/board-tab.tsx'
+import { useChartEditing } from './chart/chart-editing.ts'
+import { ChartEditor } from './chart/chart-editor.tsx'
 import { CollabSocket } from './collab.tsx'
 import { CoverButton, PageCoverImage } from './cover.tsx'
 import { PageBody } from './editor.tsx'
@@ -1107,25 +1109,28 @@ export function EntryView({
       </SheetPaper>
     </div>
   )
+  // Mientras un gráfico del texto está elegido, su editor visual ocupa el sitio del panel (módulo 10)
+  const chartEditing = useChartEditing()
   // A la derecha: la rejilla de una escena o, si no, «Mencionado en», las propiedades y los bloques (o lo de una plantilla)
-  const side =
-    active?.kind === 'scene' ? (
-      <SceneSide />
-    ) : (
-      (template?.side ?? (
-        <>
-          {/* «Mencionado en», arriba (como en Everlore); después, las propiedades y los bloques */}
-          <Backlinks key={`enlaces-${page.id}`} page={page} />
-          {/* Las propiedades, a un lado (como los bloques del panel de Everlore): tras el retrato, si lo hay */}
-          <PanelBlocks
-            key={`bloques-${page.id}`}
-            page={page}
-            properties={<PageProperties key={page.id} page={page} adders={false} adderRef={addProperty} />}
-            onAddProperty={page.locked ? undefined : (kind) => addProperty.current?.(kind)}
-          />
-        </>
-      ))
-    )
+  const side = chartEditing ? (
+    <ChartEditor key={chartEditing.key} editing={chartEditing} />
+  ) : active?.kind === 'scene' ? (
+    <SceneSide />
+  ) : (
+    (template?.side ?? (
+      <>
+        {/* «Mencionado en», arriba (como en Everlore); después, las propiedades y los bloques */}
+        <Backlinks key={`enlaces-${page.id}`} page={page} />
+        {/* Las propiedades, a un lado (como los bloques del panel de Everlore): tras el retrato, si lo hay */}
+        <PanelBlocks
+          key={`bloques-${page.id}`}
+          page={page}
+          properties={<PageProperties key={page.id} page={page} adders={false} adderRef={addProperty} />}
+          onAddProperty={page.locked ? undefined : (kind) => addProperty.current?.(kind)}
+        />
+      </>
+    ))
+  )
   if (worldPage) {
     // El mismo esqueleto en todas las pestañas (Enrique, 2026-11-16, la mezcla con Everlore): la columna es una sola
     // superficie de arriba abajo; arriba la portada en una franja baja con el título encima y sus botones, y debajo las
@@ -1147,7 +1152,7 @@ export function EntryView({
               </article>
             )}
           </div>
-          <PagePanel id={panelId} folded={panel.folded}>
+          <PagePanel id={panelId} folded={panel.folded && !chartEditing}>
             {side}
           </PagePanel>
         </div>

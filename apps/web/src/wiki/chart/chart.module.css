@@ -1,0 +1,128 @@
+/* Un gráfico en el texto (módulo 10): un marco fino y redondeado, como las cajas; elegido, con el acento */
+
+.block {
+  position: relative;
+  margin-block: var(--space-4);
+}
+
+.figure {
+  display: grid;
+  gap: var(--space-2);
+  max-inline-size: 100%;
+  margin: 0;
+  padding: var(--space-4);
+  border: 1px solid var(--line-frame);
+  border-radius: var(--radius-frame);
+  background: color-mix(in srgb, var(--color-bg) 40%, transparent);
+}
+
+.block[data-selected] .figure {
+  border-color: color-mix(in srgb, var(--color-accent-text) 70%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-accent-text) 35%, transparent);
+}
+
+.title {
+  color: var(--color-text);
+  font-size: 0.9375rem;
+  font-weight: 700;
+}
+
+.canvas {
+  position: relative;
+  block-size: clamp(14rem, 34vw, 20rem);
+}
+
+.figure[data-type="pie"] .canvas,
+.figure[data-type="doughnut"] .canvas,
+.figure[data-type="polarArea"] .canvas,
+.figure[data-type="radar"] .canvas {
+  block-size: clamp(15rem, 36vw, 22rem);
+}
+
+.loading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+.data {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.edit {
+  position: absolute;
+  inset-block-start: var(--space-2);
+  inset-inline-end: var(--space-2);
+  display: grid;
+  place-items: center;
+  inline-size: 2rem;
+  block-size: 2rem;
+  border: 1px solid var(--line-frame);
+  border-radius: var(--radius-button);
+  background: var(--frame-sheen), var(--popup-glass);
+  color: var(--color-muted);
+  opacity: 0;
+  cursor: pointer;
+  transition: opacity 150ms ease-out;
+}
+
+.block:hover .edit,
+.edit:focus-visible {
+  opacity: 1;
+}
+
+.edit:hover {
+  color: var(--color-text);
+}
+
+.edit:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 1px;
+}
+
+.problem {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid color-mix(in srgb, var(--color-warning) 50%, transparent);
+  border-radius: var(--radius-frame);
+  background: color-mix(in srgb, var(--color-warning) 8%, transparent);
+}
+
+.problemTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  color: var(--color-warning);
+  font-weight: 600;
+}
+
+.problem pre {
+  margin: 0;
+  overflow: auto;
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+  white-space: pre-wrap;
+}
+
+.problemText {
+  margin: 0;
+  color: var(--color-muted);
+}
+
+@media (pointer: coarse) {
+  .edit {
+    inline-size: var(--target);
+    block-size: var(--target);
+    opacity: 1;
+  }
+}
