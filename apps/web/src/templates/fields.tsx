@@ -2,8 +2,8 @@
  * Los campos de una plantilla, en su panel (ADR-0009): cada uno con su nombre y su tipo; al abrirlo, su forma (las
  * opciones, a qué plantillas apunta un enlace, los segmentos de un reloj) y para subirlo, bajarlo o quitarlo
  */
-import type { PageProperty } from '@crisol/contracts'
-import { ChevronDown, ChevronUp, Plus, Trash2, X } from 'lucide-react'
+import type { PageProperty, RelationRole } from '@crisol/contracts'
+import { ChevronDown, ChevronUp, GitFork, Network, Plus, Trash2, X } from 'lucide-react'
 import { useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import styles from './editor.module.css'
@@ -15,6 +15,13 @@ type FieldKind = 'text' | 'number' | 'boolean' | 'list' | 'page' | 'pages' | 'ch
 const KINDS: FieldKind[] = ['text', 'number', 'choice', 'boolean', 'list', 'page', 'pages', 'clock', 'date']
 
 const kindOf = (field: PageProperty): FieldKind => (field.type === 'pages' && field.single ? 'page' : field.type)
+
+/** Los papeles de un campo de enlace (módulo 10): los de Familia y los del Organigrama */
+const ROLES: { mode: 'family' | 'org'; roles: RelationRole[] }[] = [
+  { mode: 'family', roles: ['parent', 'partner'] },
+  { mode: 'org', roles: ['member-of', 'leads'] }
+]
+const modeOf = (role: RelationRole) => (role === 'parent' || role === 'partner' ? 'family' : 'org')
 
 /** Un id de campo nuevo, con la forma que pide el contrato */
 export const newFieldId = () =>
@@ -41,13 +48,16 @@ function retype(field: PageProperty, kind: FieldKind): PageProperty {
       return { ...base, type: 'date', value: null }
     case 'page':
     case 'pages': {
-      const targets = field.type === 'pages' ? field.targets : undefined
+      // De una a varias (o al revés), el papel y el nombre al revés se quedan
+      const was = field.type === 'pages' ? field : null
       return {
         ...base,
         type: 'pages',
         value: [],
         ...(kind === 'page' ? { single: true } : {}),
-        ...(targets ? { targets } : {})
+        ...(was?.targets ? { targets: was.targets } : {}),
+        ...(was?.role ? { role: was.role } : {}),
+        ...(was?.inverseName ? { inverseName: was.inverseName } : {})
       }
     }
   }
@@ -98,6 +108,7 @@ export function FieldsEditor({
                   onClick={() => setOpen(expanded ? null : key)}
                 >
                   <span className={styles.fieldName}>{field.name}</span>
+                  {field.type === 'pages' && field.role && <RoleBadge role={field.role} />}
                   <span className={styles.fieldType}>
                     {field.type === 'clock'
                       ? t('templateEditor.clockOf', { segments: field.segments })
@@ -293,6 +304,7 @@ function FieldShape({
           </div>
         </>
       )}
+      {field.type === 'pages' && <RelationShape field={field} readOnly={readOnly} onChange={onChange} />}
       {field.type === 'date' && (
         <>
           <span className={styles.label}>{t('templateEditor.dateOptions')}</span>
@@ -361,5 +373,97 @@ function FieldShape({
         </div>
       )}
     </fieldset>
+  )
+}
+
+/** El papel de un campo, junto a su nombre en la lista: con el dibujo de su modo (Familia u Organigrama) */
+function RoleBadge({ role }: { role: RelationRole }) {
+  const { t } = useTranslation()
+  const Icon = modeOf(role) === 'family' ? GitFork : Network
+  return (
+    <span className={styles.roleBadge} data-mode={modeOf(role)}>
+      <Icon size={12} aria-hidden="true" />
+      {t(`templateEditor.roles.${role}`)}
+    </span>
+  )
+}
+
+/**
+ * Lo de un campo de enlace en las relaciones (módulo 10): su papel (lo que hace posible el árbol y el organigrama), su
+ * nombre al revés y cómo se lee en los dos sentidos
+ */
+function RelationShape({
+  field,
+  readOnly,
+  onChange
+}: {
+  field: Extract<PageProperty, { type: 'pages' }>
+  readOnly: boolean
+  onChange: (field: PageProperty) => void
+}) {
+  const { t } = useTranslation()
+  const roleId = useId()
+  const inverseId = useId()
+  const [inverse, setInverse] = useState(field.inverseName ?? '')
+  const commitInverse = () => {
+    const trimmed = inverse.trim()
+    if (trimmed === (field.inverseName ?? '')) return setInverse(trimmed)
+    const { inverseName: _was, ...rest } = field
+    onChange(trimmed ? { ...rest, inverseName: trimmed } : rest)
+  }
+  const back = inverse.trim() || t('relations.inverseOf', { name: field.name })
+  return (
+    <>
+      <label htmlFor={roleId}>{t('templateEditor.role')}</label>
+      <select
+        id={roleId}
+        value={field.role ?? ''}
+        onChange={(event) => {
+          const { role: _was, ...rest } = field
+          const role = event.currentTarget.value as RelationRole | ''
+          onChange(role ? { ...rest, role } : rest)
+        }}
+      >
+        <option value="">{t('templateEditor.roles.none')}</option>
+        {ROLES.map(({ mode, roles }) => (
+          <optgroup key={mode} label={t(`templateEditor.roleModes.${mode}`)}>
+            {roles.map((role) => (
+              <option key={role} value={role}>
+                {t(`templateEditor.roles.${role}`)}
+              </option>
+            ))}
+          </optgroup>
+        ))}
+      </select>
+      <label htmlFor={inverseId}>{t('templateEditor.inverseName')}</label>
+      <input
+        id={inverseId}
+        value={inverse}
+        maxLength={60}
+        disabled={readOnly}
+        placeholder={t('templateEditor.inversePlaceholder', { name: field.name })}
+        autoComplete="off"
+        data-1p-ignore
+        data-lpignore="true"
+        onChange={(event) => setInverse(event.currentTarget.value)}
+        onBlur={commitInverse}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter') event.currentTarget.blur()
+        }}
+      />
+      <span className={styles.label}>{t('templateEditor.readsAs')}</span>
+      <div className={styles.reads}>
+        <p>
+          <b className={styles.readSource}>{t('templateEditor.readsSource')}</b>
+          <span className={styles.readName}>{field.name}</span>
+          <span className={styles.readTarget}>{t('templateEditor.readsTarget')}</span>
+        </p>
+        <p>
+          <b className={styles.readSource}>{t('templateEditor.readsTarget')}</b>
+          <span className={styles.readName}>{back}</span>
+          <span className={styles.readTarget}>{t('templateEditor.readsSource')}</span>
+        </p>
+      </div>
+    </>
   )
 }

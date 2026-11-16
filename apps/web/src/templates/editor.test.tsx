@@ -92,6 +92,35 @@ describe('editar una plantilla', () => {
     expect(fields.getByRole('button', { name: /Reinado.*Fecha/ })).toBeDefined()
   })
 
+  it('un campo de enlace con su papel y su nombre al revés (módulo 10): «Se lee así» en los dos sentidos', async () => {
+    const { saved } = await renderTemplate()
+    const fields = within((await panel()).getByRole('region', { name: 'Campos' }))
+    await userEvent.click(fields.getByRole('button', { name: 'Campo' }))
+    await userEvent.clear(fields.getByLabelText('Nombre'))
+    await userEvent.type(fields.getByLabelText('Nombre'), 'Padres{Enter}')
+    await userEvent.selectOptions(fields.getByLabelText('Tipo'), 'Enlaces a páginas')
+    await userEvent.selectOptions(fields.getByLabelText('Papel'), 'Padre o madre')
+    // Sin nombre al revés, se lee «Padres de»
+    expect(fields.getByText('Padres de')).toBeDefined()
+    await userEvent.type(fields.getByLabelText('Nombre al revés'), 'Hijos{Enter}')
+    await waitFor(async () =>
+      expect((await saved()).fields[0]).toMatchObject({
+        name: 'Padres',
+        type: 'pages',
+        role: 'parent',
+        inverseName: 'Hijos'
+      })
+    )
+    expect(fields.getByText('Hijos')).toBeDefined()
+    // En la lista, junto a su nombre
+    expect(fields.getByRole('button', { name: /Padres.*Padre o madre/ })).toBeDefined()
+    // A una sola página, el papel se queda; «Ninguno» lo quita
+    await userEvent.selectOptions(fields.getByLabelText('Tipo'), 'Enlace a una página')
+    await waitFor(async () => expect((await saved()).fields[0]).toMatchObject({ single: true, role: 'parent' }))
+    await userEvent.selectOptions(fields.getByLabelText('Papel'), 'Ninguno')
+    await waitFor(async () => expect((await saved()).fields[0]).not.toHaveProperty('role'))
+  })
+
   it('su panel: una tabla de páginas con sus desplegables, con título', async () => {
     const { saved } = await renderTemplate()
     const blocks = within((await panel()).getByRole('region', { name: 'En el panel' }))
