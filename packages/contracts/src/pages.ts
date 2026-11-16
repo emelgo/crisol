@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { defineAction } from './action.ts'
+import { dateValue } from './calendars.ts'
 import { gameIcon } from './game-icons.ts'
 import { pagePanel } from './panel.ts'
 import { readAs } from './read-as.ts'
@@ -54,7 +55,18 @@ export const pageProperty = z.discriminatedUnion('type', [
     targets: linkTargets.optional()
   }),
   z.object({ ...field, type: z.literal('choice'), value: optionText, options: choiceOptions }),
-  z.object({ ...field, type: z.literal('clock'), value: z.number().int().min(0).max(12), segments: clockSegments })
+  z.object({ ...field, type: z.literal('clock'), value: z.number().int().min(0).max(12), segments: clockSegments }),
+  z.object({
+    ...field,
+    type: z.literal('date'),
+    value: dateValue.nullable(),
+    range: z.literal(true).optional().describe('El campo es «Con fin»: un periodo'),
+    offTimeline: z
+      .literal(true)
+      .optional()
+      .describe('«Fuera de las líneas temporales»: no es un suceso (como «Última visita»)'),
+    text: z.string().max(300).optional().describe('Cómo se lee (lo pone el servidor)')
+  })
 ])
 
 export type PageProperty = z.infer<typeof pageProperty>
@@ -356,7 +368,7 @@ export const createPageDocument = defineAction({
 
 /** Markdown de una página: el dialecto de Obsidian que entiende Crisol */
 const MARKDOWN_HELP =
-  'Markdown de Obsidian: propiedades en YAML al principio (alias, etiquetas, resumen y las demás; las de páginas como "[[Título]]"), títulos #, listas, - [ ] casillas, tablas, ``` código, recuadros > [!nota] > [!consejo] > [!aviso] > [!peligro] > [!leer], la caja > [!caja], > [!secreto] para lo que solo ve el máster (se guarda aparte, nunca en el cuerpo), %%notas ocultas%% en sus líneas, archivos del mundo con ![[mapa.png|300]] o ![[libro.pdf#page=12]], y para la vista de hoja: > [!statblock], > [!lateral] (o > [!lateral|izquierda]), > [!ancho] para varios bloques (o |ancho en un recuadro), > [!indice], y los saltos <div class="salto-pagina"></div> y <div class="salto-columna"></div> en su línea'
+  'Markdown de Obsidian: propiedades en YAML al principio (alias, etiquetas, resumen y las demás; las de páginas como "[[Título]]"; las fechas como 1250-Siega-18, con el calendario principal o el que ya tenga), títulos #, listas, - [ ] casillas, tablas, ``` código, recuadros > [!nota] > [!consejo] > [!aviso] > [!peligro] > [!leer], la caja > [!caja], > [!secreto] para lo que solo ve el máster (se guarda aparte, nunca en el cuerpo), %%notas ocultas%% en sus líneas, archivos del mundo con ![[mapa.png|300]] o ![[libro.pdf#page=12]], y para la vista de hoja: > [!statblock], > [!lateral] (o > [!lateral|izquierda]), > [!ancho] para varios bloques (o |ancho en un recuadro), > [!indice], y los saltos <div class="salto-pagina"></div> y <div class="salto-columna"></div> en su línea'
 const markdownText = z.string().max(2_000_000)
 const blockId = z.string().regex(/^[A-Za-z0-9-]{1,64}$/)
 
@@ -411,7 +423,22 @@ export const readPage = defineAction({
     ids: z.boolean().optional().describe('Los ^id de los bloques de primer nivel, para cambiar uno con editPage'),
     ...readAs
   }),
-  output: z.object({ page, markdown: z.string(), tables: pageTables.shape.tables })
+  output: z.object({
+    page,
+    markdown: z.string(),
+    tables: pageTables.shape.tables,
+    dates: z
+      .array(
+        z.object({
+          name: z.string(),
+          calendar: z.string().describe('El nombre de su calendario'),
+          text: z.string().describe('Cómo se lee'),
+          form: z.string().describe('Su forma para escribirla (1250-Siega-18)'),
+          primary: z.string().nullable().describe('Su equivalencia en el calendario principal, si es de otro')
+        })
+      )
+      .describe('Las propiedades «Fecha» con valor, legibles')
+  })
 })
 
 const newPage = z.object({
@@ -463,6 +490,10 @@ export const createPages = defineAction({
   })
 })
 
+/** Cómo escribe la IA una fecha */
+const DATE_HELP =
+  'La fecha como 1250-Siega-18 (año-mes-día, el mes por su nombre o su número sin contar festividades), 1250-Siega o 1250; un periodo, 1250-Siega-12/1250-Trilla-3; «(cada año)» al final si se repite. null la deja vacía'
+
 /**
  * Una propiedad que escribe la IA: las de páginas, por su título, un alias o su id. Si la página ya tiene una que se
  * llama igual y salió de una plantilla, se queda con su campo y su forma
@@ -489,6 +520,20 @@ const propertyInput = z.discriminatedUnion('type', [
     type: z.literal('clock'),
     value: z.number().int().min(0).max(12).describe('Segmentos llenos'),
     segments: clockSegments.optional().describe('De 2 a 12; sin ellos, los que ya tenga (4 si es nuevo)')
+  }),
+  z.object({
+    name: propertyName,
+    type: z.literal('date'),
+    value: z.string().trim().min(1).max(200).nullable().describe(DATE_HELP),
+    end: z.string().trim().min(1).max(200).optional().describe('El fin, si es un periodo (1250-Trilla-3)'),
+    yearly: z.boolean().optional().describe('Se repite cada año (solo con mes)'),
+    calendar: z
+      .string()
+      .trim()
+      .min(1)
+      .max(200)
+      .optional()
+      .describe('El calendario (su id o su nombre); sin él, el que ya tenga la propiedad o el principal')
   })
 ])
 

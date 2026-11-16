@@ -9,7 +9,7 @@ import { desc, eq } from 'drizzle-orm'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { buildApp } from '../app.ts'
 import { createTestAuth, signUpTestUser, TEST_SEAL_KEY } from '../testing.ts'
-import { DATE_SOURCES } from './calendar-dates.ts'
+import { DATE_SOURCES, pageDates } from './calendar-dates.ts'
 
 const BASE_URL = 'http://localhost:5173'
 const ok = async () => undefined
@@ -130,7 +130,7 @@ describe('los calendarios de un mundo (módulo 8)', () => {
   })
 
   afterEach(() => {
-    DATE_SOURCES.length = 0
+    DATE_SOURCES.splice(0, DATE_SOURCES.length, pageDates)
   })
 
   afterAll(async () => {
@@ -277,8 +277,10 @@ describe('los calendarios de un mundo (módulo 8)', () => {
     const siega = created.definition.months.find((m: { name: string }) => m.name === 'Siega').id
     // Una fuente de fechas de prueba: dos fechas en Siega
     DATE_SOURCES.push({
-      count: async (_db, calendarId, monthIds) =>
-        calendarId === created.id && (!monthIds || monthIds.includes(siega)) ? 2 : 0
+      dates: async (_db, calendarId) =>
+        calendarId === created.id
+          ? [{ start: { year: 1250, month: siega, day: 3 } }, { start: { year: 1250, month: siega } }]
+          : []
     })
     const without = created.definition.months.filter((m: { id: string }) => m.id !== siega)
     await fails(

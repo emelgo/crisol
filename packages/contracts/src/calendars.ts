@@ -46,6 +46,21 @@ export const worldDate = z
 
 export const fullDate = z.object({ year, month: elementId, day: z.int().min(1).max(LIMITS.monthDays) })
 
+/**
+ * El valor «fecha» (docs/specs/fechas.md): una fecha de un calendario del mundo con su precisión, un fin opcional (del
+ * mismo calendario y precisión, no antes) y «cada año» (solo con mes). Que quepa en su calendario lo mira el servidor
+ */
+export const dateValue = z
+  .object({
+    calendarId: z.uuid().describe('El calendario, siempre explícito (al crearla, el principal)'),
+    start: worldDate,
+    end: worldDate.optional().describe('El fin, si es un periodo'),
+    yearly: z.literal(true).optional().describe('Se repite cada año (fiestas, aniversarios): solo con mes')
+  })
+  .refine((value) => !value.yearly || value.start.month !== undefined, { message: 'cada año, solo con mes' })
+
+export type DateValueInput = z.infer<typeof dateValue>
+
 export const calendarMonth = z.object({
   id: elementId,
   name: label,
@@ -279,7 +294,12 @@ export const updateCalendar = defineAction({
     after: z.uuid().nullable().optional(),
     definition: calendarDefinitionInput.optional()
   }),
-  output: calendarView
+  output: calendarView.extend({
+    clipped: z
+      .int()
+      .optional()
+      .describe('Cuántas fechas tienen un día que ya no cabe en su mes (se acortó): se leen en su último día')
+  })
 })
 
 export const deleteCalendar = defineAction({

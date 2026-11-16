@@ -802,7 +802,10 @@ export const INSTRUCTIONS =
   'crear_calendario crea uno de una vez con su definición entera; ver_calendario lo enseña con sus meses numerados; ' +
   'cambiar_calendario cambia su definición entera (mira antes ver_calendario) sin reescribir ninguna fecha; ' +
   'describir_fecha dice qué día de la semana, estación, era y lunas tiene una fecha (y su equivalencia en el ' +
-  'principal, o en otro con to, si tienen correspondencia). Las etiquetas son de toda la cuenta: míralas con listar_etiquetas y usa las que ' +
+  'principal, o en otro con to, si tienen correspondencia). Una página se fecha con una propiedad de tipo date ' +
+  '(editar_pagina o crear_paginas; en el YAML, como texto en un campo de fecha): 1250-Siega-18, 1250-Siega o 1250, ' +
+  'un periodo 1250-Siega-12/1250-Trilla-3 y «(cada año)» al final si se repite; sin calendar, el que ya tenga o el ' +
+  'principal. leer_pagina da sus fechas legibles (dates). Las etiquetas son de toda la cuenta: míralas con listar_etiquetas y usa las que ' +
   'ya hay antes de inventar otras. Una página puede tener pestañas además de su texto, como un mapa (ver_pestanas): ' +
   'sus pines van de 0 a 1 sobre la imagen y llevan a páginas; míralo con ver_mapa antes de poner nada. Un mapa tiene ' +
   'además capas (crear_capa, cambiar_capa: hidden, solo del máster; quitar_capa) con regiones, rutas y textos: para ' +

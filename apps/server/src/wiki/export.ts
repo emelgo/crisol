@@ -8,7 +8,7 @@
 import { once } from 'node:events'
 import { PassThrough, type Readable } from 'node:stream'
 import type { ExportInput } from '@crisol/contracts'
-import { documentsRepo, filesRepo, linksRepo, pagesRepo, worldsRepo } from '@crisol/db'
+import { calendarsRepo, documentsRepo, filesRepo, linksRepo, pagesRepo, worldsRepo } from '@crisol/db'
 import { NotFoundError } from '@crisol/domain'
 import { pageToMarkdown } from '@crisol/editor/markdown'
 import type { JSONContent } from '@tiptap/core'
@@ -17,6 +17,7 @@ import { authorizedPage, authorizedWiki } from '../actions/access.ts'
 import type { ActionContext } from '../actions/context.ts'
 import type { Storage } from '../files/storage.ts'
 import { documentJson } from './content.ts'
+import { markdownProperties } from './dates.ts'
 import { fileNames } from './file-embeds.ts'
 import { propertiesOf } from './properties.ts'
 import { deletedTemplates, usableTemplates } from './templates.ts'
@@ -122,6 +123,8 @@ export async function exportContents(ctx: ActionContext, input: ExportInput): Pr
   }
 
   const nameOfFile = await fileNames(ctx, wiki.worldId)
+  // Las fechas van en el YAML en su forma (1250-Siega-18), que no lleva eras
+  const calendars = await calendarsRepo.listCalendars(ctx.db, wiki.worldId)
   // La plantilla de cada página, por su nombre (también las borradas): va primera en su YAML
   const templateName = new Map([
     ...(await usableTemplates(ctx, wiki.organizationId)).map((t) => [t.id, t.name] as const),
@@ -149,7 +152,7 @@ export async function exportContents(ctx: ActionContext, input: ExportInput): Pr
     const markdown = pageToMarkdown({
       properties: [
         ...(template ? [{ name: 'plantilla', type: 'text' as const, value: template }] : []),
-        ...propertiesOf(page.properties)
+        ...markdownProperties(calendars, propertiesOf(page.properties), true)
       ],
       body,
       separate: (documentId) => separates.get(documentId) ?? null,

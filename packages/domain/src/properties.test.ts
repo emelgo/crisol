@@ -188,6 +188,48 @@ describe('dar a un valor la forma de un campo', () => {
   })
 })
 
+describe('las fechas', () => {
+  const nacimiento = {
+    name: 'Nacimiento',
+    field: 'nac',
+    type: 'date',
+    value: null,
+    range: true,
+    offTimeline: true
+  } satisfies PageProperty
+  const siega = { calendarId: 'c1', start: { year: -34, month: 'siega', day: 3 } }
+
+  it('una fecha con su forma: el campo conserva «Con fin» y «Fuera de las líneas temporales»', () => {
+    expect(conformTo(nacimiento, { name: 'nacimiento', type: 'date', value: siega })).toEqual({
+      ...nacimiento,
+      name: 'nacimiento',
+      value: siega
+    })
+    // Un texto vacío la deja vacía; uno con algo no cabe (lo lee el servidor, que tiene el calendario)
+    expect(conformTo(nacimiento, { name: 'Nacimiento', type: 'text', value: ' ' })).toEqual(nacimiento)
+    expect(conformTo(nacimiento, { name: 'Nacimiento', type: 'text', value: '-34-Siega-3' })).toBeNull()
+    // Y una fecha no es un texto
+    expect(
+      conformTo({ name: 'Notas', type: 'text', value: '' }, { name: 'Notas', type: 'date', value: siega })
+    ).toBeNull()
+  })
+
+  it('cada año, solo con mes; el fin, con su inicio', () => {
+    expect(propertiesProblem([{ name: 'Fiesta', type: 'date', value: { ...siega, yearly: true } }])).toBeNull()
+    expect(
+      propertiesProblem([
+        { name: 'Fiesta', type: 'date', value: { calendarId: 'c1', start: { year: 3 }, yearly: true } }
+      ])
+    ).toBe('BAD_DATE')
+  })
+
+  it('al reescribir, una fecha que ya había conserva su campo', () => {
+    expect(keepShapes([nacimiento], [{ name: 'Nacimiento', type: 'date', value: siega }])).toEqual([
+      { ...nacimiento, value: siega }
+    ])
+  })
+})
+
 describe('el panel de etiquetas', () => {
   it('cuenta páginas por etiqueta, y cada madre cuenta también las de sus hijas sin repetir página', () => {
     const counts = tagCounts([

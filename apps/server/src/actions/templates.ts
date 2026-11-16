@@ -74,13 +74,17 @@ async function checkName(ctx: ActionContext, organizationId: string, name: strin
 }
 
 /**
- * Los campos de una plantilla propia: los nuevos reciben su id; los enlaces, vacíos (una plantilla es de toda la cuenta,
- * no apunta a páginas de un mundo), y sin nombres ni ids repetidos
+ * Los campos de una plantilla propia: los nuevos reciben su id; los enlaces y las fechas, vacíos (una plantilla es de
+ * toda la cuenta, no apunta a páginas ni calendarios de un mundo), y sin nombres ni ids repetidos
  */
 function checkFields(fields: readonly PageProperty[]): PageProperty[] {
   const withIds = fields.map((field) => (field.field ? field : { ...field, field: newFieldId() }))
   if (withIds.some((field) => field.type === 'pages' && field.value.length > 0)) {
     throw new InvalidRequestError('BAD_FIELD', 'los campos de enlace de una plantilla van vacíos (value: [])')
+  }
+  // Ni fechas: los calendarios son de cada mundo
+  if (withIds.some((field) => field.type === 'date' && field.value !== null)) {
+    throw new InvalidRequestError('BAD_FIELD', 'los campos de fecha de una plantilla van vacíos (value: null)')
   }
   const problem = propertiesProblem(withIds)
   if (problem) throw new InvalidRequestError(problem)

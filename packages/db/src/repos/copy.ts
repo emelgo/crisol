@@ -185,14 +185,18 @@ const TAB_COPIES: Record<TabKind, TabCopy> = {
   }
 }
 
-/** Los campos de enlace, vacíos: una plantilla no apunta a páginas de un mundo */
+/** Los campos de enlace y de fecha, vacíos: una plantilla no apunta a páginas ni a calendarios de un mundo */
 const withoutLinks = (properties: unknown) =>
   Array.isArray(properties)
-    ? properties.map((property) =>
-        property && typeof property === 'object' && (property as { type?: string }).type === 'pages'
-          ? { ...property, value: [] }
-          : property
-      )
+    ? properties.map((property) => {
+        const type = property && typeof property === 'object' ? (property as { type?: string }).type : undefined
+        if (type === 'pages') return { ...property, value: [] }
+        if (type === 'date') {
+          const { text: _text, ...rest } = property as { text?: string }
+          return { ...rest, value: null }
+        }
+        return property
+      })
     : properties
 
 /** Duplica una página con todo lo suyo (detrás de ella, o donde se diga); devuelve la nueva */

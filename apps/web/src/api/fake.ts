@@ -1914,7 +1914,8 @@ export function fakeApi(
     readPage: ({ pageId }) => ({
       page: pageView(pageById(pageId)),
       markdown: '',
-      tables: tablesOf(pageById(pageId)).tables
+      tables: tablesOf(pageById(pageId)).tables,
+      dates: []
     }),
     getPageTables: ({ pageId }) => tablesOf(pageById(pageId)),
     // Lo que sabe cada campaña (ADR-0017): marcas propias de la página, sin herencia (basta para la interfaz)

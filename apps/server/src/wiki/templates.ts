@@ -164,7 +164,8 @@ const TYPE_NAMES = {
   list: 'lista',
   pages: 'páginas',
   choice: 'opciones',
-  clock: 'reloj'
+  clock: 'reloj',
+  date: 'fecha'
 } as const
 
 /** Los campos de una plantilla en una línea, para los errores: «Facción (páginas), Estado (opciones: Vive, …)» */

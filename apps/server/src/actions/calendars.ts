@@ -34,14 +34,14 @@ import {
   offsetToPrimary,
   parseDate,
   validateCalendar,
-  type WorldCalendar,
   type WorldDate,
   yearLength
 } from '@crisol/domain'
-import { calendarsChanged } from '../realtime/events.ts'
+import { calendarsChanged, pagesChanged } from '../realtime/events.ts'
+import { worldCalendars as asWorld, retextedPages, seenDefinition as seen } from '../wiki/dates.ts'
 import { authorizedView, type ReadAs } from '../wiki/reader.ts'
 import { authorizedWiki } from './access.ts'
-import { datesInUse } from './calendar-dates.ts'
+import { datesClipped, datesInUse } from './calendar-dates.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
 import { implement } from './registry.ts'
 
@@ -49,10 +49,6 @@ type CalendarRow = calendarsRepo.CalendarRow
 
 /** Cuántos calendarios puede tener un mundo */
 export const MAX_CALENDARS = 50
-
-/** Lo que ve quien lee: el máster, todo; un jugador (o el máster viendo como uno), sin las eras solo del máster */
-const seen = (definition: CalendarDefinition, full: boolean): CalendarDefinition =>
-  full ? definition : { ...definition, eras: definition.eras.filter((era) => !era.hidden) }
 
 const viewOf = (row: CalendarRow, full: boolean): CalendarView => ({
   id: row.id,
@@ -81,9 +77,6 @@ async function authorizedCalendar(ctx: ActionContext, capability: 'page.write', 
   if (!calendar) throw new NotFoundError('calendar')
   return { calendar, wiki }
 }
-
-const asWorld = (rows: readonly CalendarRow[], full = true): WorldCalendar[] =>
-  rows.map((row) => ({ id: row.id, primary: row.isPrimary, definition: seen(row.definition, full) }))
 
 /** Los problemas, en el error: la IA lee qué falla y dónde */
 function rejectProblems(problems: readonly CalendarProblem[]) {
@@ -218,6 +211,8 @@ export const calendarActions = [
     const others = rows.filter((row) => row.id !== calendar.id)
     const becomesPrimary = primary === true && !calendar.isPrimary
     const patch: Partial<Pick<CalendarRow, 'name' | 'position' | 'definition'>> = {}
+    // Un mes que se acorta: las fechas con un día que ya no cabe se leen en su último (no se reescriben); se dice
+    let clipped = 0
     if (name !== undefined) patch.name = name
     if (input) {
       const { definition: next, problems } = definitionFrom(input, others, calendar.isPrimary || becomesPrimary)
@@ -233,7 +228,10 @@ export const calendarActions = [
         )
       rejectProblems(problems)
       patch.definition = next
+      clipped = await datesClipped(ctx.db, calendar.id, next)
     }
+    // Cómo se leen sus fechas en las páginas (lo que se busca), al día en la misma operación
+    const dated = patch.definition ? await retextedPages(ctx.db, calendar.id, patch.definition) : []
     if (after !== undefined) {
       const index = after === null ? -1 : others.findIndex((row) => row.id === after)
       if (after !== null && index < 0) throw new NotFoundError('calendar')
@@ -269,13 +267,15 @@ export const calendarActions = [
         patch,
         previous
           ? { id: previous.id, ...(inverse ? { definition: { ...previous.definition, correspondence: inverse } } : {}) }
-          : null
+          : null,
+        dated
       )
     } else if (Object.keys(patch).length > 0) {
-      saved = await calendarsRepo.updateCalendar(ctx.db, context, calendar.id, patch)
+      saved = await calendarsRepo.updateCalendar(ctx.db, context, calendar.id, patch, dated)
     } else return viewOf(calendar, true)
     ctx.realtime.publish(calendarsChanged(wiki))
-    return viewOf(saved, true)
+    if (dated.length > 0) ctx.realtime.publish(pagesChanged(wiki))
+    return { ...viewOf(saved, true), ...(clipped > 0 ? { clipped } : {}) }
   }),
 
   implement(deleteCalendar, async (ctx, { calendarId }) => {

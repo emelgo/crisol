@@ -4,6 +4,7 @@ import { and, asc, eq, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { type OperationContext, operation } from '../operation.ts'
 import { calendars } from '../schema/calendars.ts'
+import { pages } from '../schema/pages.ts'
 
 export type CalendarRow = typeof calendars.$inferSelect
 
@@ -38,13 +39,20 @@ export function createCalendar(
   return operation(db, context, (w) => w.insert(calendars, values))
 }
 
+/** Las propiedades de las páginas que cambian con el calendario (cómo se leen sus fechas), en la misma operación */
+export type DatedPagePatch = { id: string; properties: unknown[] }
+
 export function updateCalendar(
   db: Database,
   context: OperationContext,
   calendarId: string,
-  patch: Partial<Pick<CalendarRow, 'name' | 'position' | 'definition'>>
+  patch: Partial<Pick<CalendarRow, 'name' | 'position' | 'definition'>>,
+  dated: readonly DatedPagePatch[] = []
 ) {
-  return operation(db, context, (w) => w.update(calendars, calendarId, patch))
+  return operation(db, context, async (w) => {
+    for (const page of dated) await w.update(pages, page.id, { properties: page.properties })
+    return w.update(calendars, calendarId, patch)
+  })
 }
 
 /**
@@ -56,9 +64,11 @@ export function makePrimary(
   context: OperationContext,
   calendarId: string,
   patch: Partial<Pick<CalendarRow, 'name' | 'position' | 'definition'>>,
-  previous: { id: string; definition?: CalendarDefinition } | null
+  previous: { id: string; definition?: CalendarDefinition } | null,
+  dated: readonly DatedPagePatch[] = []
 ) {
   return operation(db, context, async (w) => {
+    for (const page of dated) await w.update(pages, page.id, { properties: page.properties })
     if (previous)
       await w.update(calendars, previous.id, {
         isPrimary: false,

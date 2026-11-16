@@ -1029,9 +1029,39 @@ describe('conector MCP con OAuth', () => {
       expect(result.text).not.toContain('Eclipse')
     }
     expect((await player.call('borrar_calendario', { calendarId: calendar.id })).isError).toBe(true)
+    // Las fechas (módulo 8): la IA del máster fecha Aldoria con la forma 1250-Siega-18 y la lee legible; mal escrita,
+    // dice por qué. Un campo «Oculto» de fecha no le llega a la de la jugadora
+    await api(cookie, 'setPageProperties', {
+      pageId: aldoria,
+      properties: [{ name: 'Coronación', type: 'date', hidden: true, value: null }]
+    })
+    const dated = await call('editar_pagina', {
+      pageId: aldoria,
+      properties: [
+        { name: 'Fundación', type: 'date', value: '1250-Siega-12/1250-Trilla-3' },
+        { name: 'Coronación', type: 'date', value: '1302-Vendimia-5' }
+      ]
+    })
+    expect(dated.isError, dated.text).toBeFalsy()
+    const badly = await call('editar_pagina', {
+      pageId: aldoria,
+      properties: [{ name: 'Fundación', type: 'date', value: '1250-Nada-3' }]
+    })
+    expect(badly.text).toMatch(/^BAD_DATE.*Nada/)
+    const masterDates = (await call<{ dates: { name: string; text: string }[] }>('leer_pagina', { pageId: aldoria }))
+      .data.dates
+    expect(masterDates).toEqual([
+      expect.objectContaining({ name: 'Fundación', text: '12 de Siega – 3 de Trilla de 1250 RC' }),
+      expect.objectContaining({ name: 'Coronación', text: '5 de Vendimia de 1302 RC' })
+    ])
     const own = (await player.call<{ pages: { title: string }[] }>('ver_arbol', { worldId: world.id })).data
     expect(own.pages.map((p) => p.title)).toEqual(['Aldoria'])
-    const read = (await player.call<{ markdown: string }>('leer_pagina', { pageId: aldoria })).data
+    const readCall = await player.call<{ markdown: string; dates: { name: string }[] }>('leer_pagina', {
+      pageId: aldoria
+    })
+    const read = readCall.data
+    expect(read.dates.map((d) => d.name)).toEqual(['Fundación'])
+    for (const leak of ['Coronación', 'Vendimia', '1302']) expect(readCall.text).not.toContain(leak)
     expect(read.markdown).toContain('Un reino.')
     expect(read.markdown).not.toContain('El rey ha muerto')
     expect((await player.call('leer_pagina', { pageId: varn })).isError).toBe(true)
