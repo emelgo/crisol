@@ -468,6 +468,9 @@ describe('Claude lee y escribe páginas en Markdown', () => {
       type: 'pages',
       single: true,
       targets: [tpl.faccion],
+      // Su papel en las relaciones (módulo 10) pasa a la página
+      role: 'member-of',
+      inverseName: 'Miembros',
       value: [faction.id]
     })
     expect(gris.properties.find((p: { field?: string }) => p.field === 'estado')).toMatchObject({
