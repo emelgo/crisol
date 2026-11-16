@@ -110,6 +110,16 @@ catalog:
   vite: ^8.3.5
   vitest: ^5.0.5
   y-protocols: ^1.0.7
+  # Las relaciones del mundo (módulo 10): el grafo (fuerzas, mover y acercar; ISC), el árbol y el organigrama (MIT) y
+  # los gráficos (MIT, cargado aparte)
+  d3-force: 3.0.0
+  d3-selection: 3.0.0
+  d3-zoom: 3.0.0
+  "@types/d3-force": 3.0.10
+  "@types/d3-selection": 3.0.12
+  "@types/d3-zoom": 3.0.9
+  "@dagrejs/dagre": 3.1.3
+  chart.js: 4.6.1
   # Leer el YAML de los gráficos (```chart, módulo 10), ISC y sin dependencias
   yaml: 2.9.1
   yjs: ^13.6.33
