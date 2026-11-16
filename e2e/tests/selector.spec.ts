@@ -2,7 +2,7 @@ import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import { createWorld, freshOwner, openWorld } from './ayudas.ts'
 
-test('un solo buscador, el de la barra (Ctrl+K lo enfoca, aunque esté plegada): filtra el árbol y con Intro busca en el texto; buscar en la página resalta y salta', async ({
+test('un solo buscador, el de la ficha del árbol (Ctrl+K lo enfoca): filtra el árbol y con Intro busca en el texto; buscar en la página resalta y salta', async ({
   page
 }) => {
   await freshOwner(page)
@@ -27,8 +27,7 @@ test('un solo buscador, el de la barra (Ctrl+K lo enfoca, aunque esté plegada):
   await page.goto(`/mundos/${worldId}/wiki/${puerto.id}`)
   await expect(page.getByRole('heading', { level: 1, name: 'Puerto Ceniza' })).toBeVisible()
 
-  // Con la barra plegada, Ctrl+K la despliega y enfoca su buscador (Enrique, 2026-11-16: uno solo, el de la izquierda)
-  await page.getByRole('button', { name: 'Plegar la barra' }).click()
+  // Ctrl+K enfoca el buscador de la ficha del árbol (Enrique, 2026-11-16: uno solo, el de la izquierda)
   await page.keyboard.press('ControlOrMeta+k')
   const search = page.getByRole('searchbox', { name: 'Buscar por nombre o #etiqueta' })
   await expect(search).toBeFocused()

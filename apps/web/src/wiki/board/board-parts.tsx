@@ -25,8 +25,8 @@ import { useTranslation } from 'react-i18next'
 import { useApi } from '../../api/context.tsx'
 import { Icon } from '../../components/icon.tsx'
 import { PageLink, readAsInput, readAsKey, useReadAs } from '../read-as.tsx'
-import { TabToolsSlot } from '../shell/context.ts'
 import { tabRegionLabel } from '../tabs/kinds.tsx'
+import { TabToolsSlot } from '../world-page.ts'
 import styles from './board.module.css'
 import { PAGE_DRAG } from './drag.ts'
 
@@ -298,7 +298,7 @@ export function BoardFrame({
   /** El lienzo, para quien lo necesite fuera (las herramientas de abajo) */
   canvasRef?: RefObject<HTMLDivElement | null>
   /**
-   * En el mundo a pantalla completa, las herramientas pegadas abajo de lo que se ve (board-dock.tsx); sin «Ampliar»:
+   * En la página del mundo, las herramientas pegadas abajo de lo que se ve (board-dock.tsx); sin «Ampliar»:
    * la pizarra ya va a sangre (Enrique, 2026-11-16, como en Everlore)
    */
   dock?: ReactNode
@@ -319,7 +319,7 @@ export function BoardFrame({
     setWide(next)
   }
   const wrapper = useRef<HTMLDivElement>(null)
-  // En el mundo a pantalla completa, sus herramientas van en la tira de la página (a la derecha de sus pestañas, como
+  // En la página del mundo, sus herramientas van en la tira de la página (a la derecha de sus pestañas, como
   // las de cualquier pestaña); ampliada, en su propia barra
   const slot = useContext(TabToolsSlot)
   // Si el lienzo cambia de tamaño o baja (la barra crece), Excalidraw recalcula dónde está: si no, sus tarjetas, que

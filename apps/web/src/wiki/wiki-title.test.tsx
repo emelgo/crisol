@@ -2,7 +2,7 @@ import type { World } from '@crisol/contracts'
 import { createMemoryHistory } from '@tanstack/react-router'
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { fakeAccountClient } from '../account/fake.ts'
 import { type ApiClient, ApiError } from '../api/client.ts'
 import { fakeApi } from '../api/fake.ts'
@@ -180,8 +180,87 @@ describe('el buscador del árbol', () => {
   })
 })
 
+describe('el cajón de las páginas, en lo estrecho', () => {
+  /** En lo estrecho, el panel es un cajón que se abre con el botón del mundo de la barra */
+  const narrow = () =>
+    vi.spyOn(window, 'matchMedia').mockImplementation(
+      (query) =>
+        ({
+          matches: true,
+          media: query,
+          addEventListener: () => undefined,
+          removeEventListener: () => undefined
+        }) as unknown as MediaQueryList
+    )
+  const drawer = () => screen.getByRole('tree', { name: 'Páginas' }).closest('aside') as HTMLElement
+  const openDrawer = async () => {
+    await screen.findByRole('tree', { name: 'Páginas' })
+    const trigger = screen.getByRole('button', { name: 'Eana' })
+    await userEvent.click(trigger)
+    await waitFor(() => expect(drawer().hasAttribute('data-open')).toBe(true))
+    return trigger
+  }
+  afterEach(() => vi.restoreAllMocks())
+
+  it('«Cerrar» lo cierra y el foco vuelve al botón que lo abrió', async () => {
+    narrow()
+    renderAt(`/mundos/${WORLD.id}/wiki/${ids.port}`)
+    const trigger = await openDrawer()
+    await waitFor(() => expect(document.activeElement?.textContent).toBe('Cerrar'))
+    await userEvent.click(screen.getByRole('button', { name: 'Cerrar' }))
+    expect(drawer().hasAttribute('data-open')).toBe(false)
+    expect(document.activeElement).toBe(trigger)
+  })
+
+  it('abrir una página del árbol lo cierra', async () => {
+    narrow()
+    const { router } = renderAt(`/mundos/${WORLD.id}/wiki/${ids.port}`)
+    await openDrawer()
+    await userEvent.click(
+      within(screen.getByRole('tree', { name: 'Páginas' })).getByRole('treeitem', { name: 'Velaria' })
+    )
+    await waitFor(() => expect(router.state.location.pathname).toBe(`/mundos/${WORLD.id}/wiki/${ids.velaria}`))
+    expect(drawer().hasAttribute('data-open')).toBe(false)
+  })
+
+  it('abrir una de las encontradas también lo cierra', async () => {
+    narrow()
+    const { router } = renderAt(`/mundos/${WORLD.id}/wiki/${ids.port}`)
+    await openDrawer()
+    await userEvent.type(screen.getByRole('searchbox', { name: 'Buscar por nombre o #etiqueta' }), 'vel')
+    await userEvent.click(await screen.findByRole('link', { name: /Velaria/ }))
+    await waitFor(() => expect(router.state.location.pathname).toBe(`/mundos/${WORLD.id}/wiki/${ids.velaria}`))
+    expect(screen.getByRole('searchbox').closest('aside')?.hasAttribute('data-open')).toBe(false)
+  })
+
+  it('Ctrl+K lo abre con el foco en el buscador (uno solo, Enrique, 2026-11-16)', async () => {
+    narrow()
+    renderAt(`/mundos/${WORLD.id}/wiki/${ids.port}`)
+    await screen.findByRole('tree', { name: 'Páginas' })
+    expect(drawer().hasAttribute('data-open')).toBe(false)
+    await userEvent.keyboard('{Control>}k{/Control}')
+    await waitFor(() => expect(drawer().hasAttribute('data-open')).toBe(true))
+    await waitFor(() =>
+      expect(document.activeElement).toBe(screen.getByRole('searchbox', { name: 'Buscar por nombre o #etiqueta' }))
+    )
+  })
+
+  it('un marcador también lo cierra', async () => {
+    narrow()
+    const { router } = renderAt(`/mundos/${WORLD.id}/wiki/${ids.velaria}`)
+    await userEvent.click(await screen.findByRole('button', { name: 'Marcar' }))
+    await router.navigate({ to: '/mundos/$worldId/wiki/$pageId', params: { worldId: WORLD.id, pageId: ids.port } })
+    await screen.findByRole('heading', { level: 1, name: 'Puerto Ceniza' })
+    await openDrawer()
+    const bookmarks = within(await screen.findByRole('region', { name: 'Marcadores' }))
+    await userEvent.click(bookmarks.getByRole('link', { name: 'Velaria' }))
+    await waitFor(() => expect(router.state.location.pathname).toBe(`/mundos/${WORLD.id}/wiki/${ids.velaria}`))
+    expect(drawer().hasAttribute('data-open')).toBe(false)
+  })
+})
+
 describe('un solo buscador (Enrique, 2026-11-16)', () => {
-  it('Ctrl+K enfoca el de la barra de la izquierda, sin abrir otro cuadro', async () => {
+  it('Ctrl+K enfoca el de la ficha del árbol, sin abrir otro cuadro', async () => {
     renderAt(`/mundos/${WORLD.id}/wiki/${ids.port}`)
     await title()
     await userEvent.keyboard('{Control>}k{/Control}')

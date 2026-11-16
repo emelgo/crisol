@@ -1,5 +1,5 @@
 /**
- * Las herramientas de la pizarra en el mundo a pantalla completa (Enrique, 2026-11-16, como las del mapa): nuestra
+ * Las herramientas de la pizarra en la página del mundo (Enrique, 2026-11-16, como las del mapa): nuestra
  * propia píldora de cristal abajo en el centro con las de Excalidraw (se eligen con su API), el zoom abajo a la derecha
  * y deshacer y rehacer abajo a la izquierda. Pegadas abajo de lo que se ve, aunque el lienzo siga más abajo. La barra de
  * formas de Excalidraw, su menú y su pie se esconden (board.module.css); su panel de propiedades se queda

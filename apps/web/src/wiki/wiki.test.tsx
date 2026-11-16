@@ -126,44 +126,18 @@ describe('el árbol de la wiki', () => {
     expect(await screen.findByRole('dialog', { name: 'Imprimir o descargar' })).toBeTruthy()
   })
 
-  it('el mundo va a pantalla completa: sin la barra de la app, con su cabecera y su barra de pestañas, que se pliega y se recuerda (ADR-0027)', async () => {
+  it('pulsar el mundo en la barra no recoge el árbol: está fijo (lleva a su portada)', async () => {
     localStorage.setItem('crisol.recorridos.enrique@crisol.test', JSON.stringify({ seen: ['mundo'] }))
     const router = renderAt(`/mundos/${WORLD.id}/wiki/${ids.people}`)
     await item('Personajes')
-    // Sin la barra de la app: la cabecera del mundo, con la llama que vuelve a Mis mundos, el nombre del mundo (abre sus
-    // ajustes) y, a la derecha, su historial y su papelera; sin buscador (va en la barra) ni Exportar (Enrique, 2026-11-16)
-    expect(screen.queryByRole('navigation', { name: 'Secciones' })).toBeNull()
-    const banner = within(document.querySelector<HTMLElement>('[data-cabecera-mundo]') as HTMLElement)
-    expect(banner.getByRole('link', { name: 'Crisol' }).getAttribute('href')).toBe('/mundos')
-    for (const name of [/Ajustes del mundo/, /^Historial$/, /^Papelera$/])
-      expect(banner.getByRole('button', { name })).toBeDefined()
-    expect(banner.queryByRole('button', { name: /Buscar|Exportar/ })).toBeNull()
-    await userEvent.click(banner.getByRole('button', { name: /Ajustes del mundo/ }))
-    expect(await screen.findByRole('dialog', { name: /Eana/ })).toBeDefined()
-    await userEvent.keyboard('{Escape}')
-    // Las pestañas abiertas, una sola vez (en la cabecera)
-    expect(screen.getAllByRole('navigation', { name: 'Páginas abiertas' })).toHaveLength(1)
-    // La barra de la izquierda: Páginas y Archivos, con las flechas
-    const tabs = screen.getByRole('tablist', { name: 'Barra del mundo' })
-    const pages = within(tabs).getByRole('tab', { name: 'Páginas' })
-    expect(pages.getAttribute('aria-selected')).toBe('true')
-    pages.focus()
-    await userEvent.keyboard('{ArrowRight}')
-    expect(within(tabs).getByRole('tab', { name: 'Archivos' }).getAttribute('aria-selected')).toBe('true')
-    expect(localStorage.getItem('crisol.mundo.pestana')).toBe('archivos')
-    await userEvent.keyboard('{ArrowLeft}')
-    // Plegada, una columna de iconos; se recuerda
-    await userEvent.click(screen.getByRole('button', { name: 'Plegar la barra' }))
-    expect(screen.queryByRole('tree', { name: 'Páginas' })).toBeNull()
-    expect(localStorage.getItem('crisol.mundo.plegada')).toBe('1')
-    await userEvent.click(screen.getByRole('button', { name: 'Páginas' }))
+    const world = screen.getByRole('navigation', { name: 'Secciones' }).querySelector('[data-tour="barra-wiki"]')
+    await userEvent.click(world as HTMLElement)
+    await waitFor(() => expect(router.state.location.pathname).toBe(`/mundos/${WORLD.id}`))
     expect(await item('Personajes')).toBeDefined()
-    expect(localStorage.getItem('crisol.mundo.plegada')).toBeNull()
-    // Cambiar de página no rehace la barra
-    const side = screen.getByRole('complementary', { name: 'Barra del mundo' })
-    await userEvent.click(await item('Reglas de la casa'))
-    await waitFor(() => expect(router.state.location.pathname).toBe(`/mundos/${WORLD.id}/wiki/${ids.rules}`))
-    expect(screen.getByRole('complementary', { name: 'Barra del mundo' })).toBe(side)
+    // Otra vez, igual
+    await userEvent.click(world as HTMLElement)
+    expect(await item('Personajes')).toBeDefined()
+    expect(screen.getByRole('tree', { name: 'Páginas' }).closest('[data-collapsed]')).toBeNull()
   })
 
   it('el panel de la página se pliega desde la cabecera de la página y se recuerda (Enrique, 2026-11-16)', async () => {
@@ -251,7 +225,7 @@ describe('el árbol de la wiki', () => {
     expect(port.getAttribute('aria-current')).toBe('page')
     expect(port.getAttribute('aria-level')).toBe('3')
     // Sin el mundo sobre el título: el título, donde el de Archivos
-    expect(screen.queryByText('Eana', { selector: 'article header span' })).toBeNull()
+    expect(screen.queryByText('Eana', { selector: 'header span' })).toBeNull()
   })
 
   it('Alt y las flechas recolocan: abajo entre hermanas y a la derecha dentro de la de encima', async () => {

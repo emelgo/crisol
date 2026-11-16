@@ -65,14 +65,11 @@ const ordered = <T extends { pinned: boolean }>(tabs: T[]) => [
 export function OpenTabs({
   worldId,
   current,
-  compact = false,
-  variant = 'column'
+  compact = false
 }: {
   worldId: string
   current?: Page | undefined
   compact?: boolean
-  /** column: encima de la página; header: en la cabecera del mundo a pantalla completa, como las de un navegador */
-  variant?: 'column' | 'header'
 }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -134,7 +131,7 @@ export function OpenTabs({
     <nav
       ref={strip}
       aria-label={t(compact ? 'tabs.recent' : 'tabs.title')}
-      className={compact ? styles.recent : variant === 'header' ? `${styles.tabs} ${styles.headerTabs}` : styles.tabs}
+      className={compact ? styles.recent : styles.tabs}
     >
       {compact && <h3>{t('tabs.recent')}</h3>}
       <ul>

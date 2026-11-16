@@ -1,0 +1,330 @@
+/*
+ * La página de un mundo, como la de Everlore (Enrique, 2026-11-16: la mezcla, «me gusta»), en el armazón de la wiki
+ * (wiki.module.css: la ficha del árbol a la izquierda, la columna del centro y el panel a la derecha). La columna es
+ * una sola superficie casi opaca de arriba abajo: arriba la portada, debajo el título grande con sus botones y las
+ * pestañas; al bajar, el título y las pestañas se quedan arriba en una barra pequeña de cristal. El texto, sin caja; el
+ * mapa y la pizarra, a sangre. El panel de la derecha se pliega desde la cabecera de la página
+ */
+
+/* La wiki con una página del mundo: la columna llega hasta abajo y el panel se desliza fuera o dentro (su columna de la
+   rejilla pasa de su ancho a 0 en 300 ms; lo que se sale al deslizarse, recortado) */
+.wiki[data-world-page] {
+  padding-block-end: 0;
+  overflow-x: clip;
+  transition:
+    grid-template-columns 300ms ease,
+    padding 300ms ease;
+}
+
+.wiki[data-world-page]:has([data-panel-folded]) {
+  grid-template-columns: minmax(14rem, 20rem) minmax(0, 1fr) minmax(0rem, 0rem);
+  padding-inline-end: 0;
+}
+
+@media (max-width: 90rem) {
+  .wiki[data-world-page]:has([data-panel-folded]) {
+    grid-template-columns: minmax(11rem, 15rem) minmax(0, 1fr) minmax(0rem, 0rem);
+  }
+}
+
+@media (max-width: 64rem) {
+  .wiki[data-world-page]:has([data-panel-folded]) {
+    grid-template-columns: minmax(11rem, 15rem) minmax(0, 1fr) 0;
+  }
+}
+
+/* La columna: una sola superficie casi opaca de arriba abajo (sin borde ni esquinas abajo: no acaba). El cristal, en
+   una capa por detrás (::before): un backdrop-filter en ella sería la caja de lo que flota con position: fixed dentro
+   (los menús del editor) */
+.page {
+  /* Los márgenes de dentro y el alto de la barra pegada (el lienzo a sangre llega justo hasta ella) */
+  --page-pad-top: 1.5rem;
+  --page-pad-x: 1.75rem;
+  --stuck-height: 3.25rem;
+  /* Lo que queda por encima de la columna: las pestañas abiertas */
+  --page-top: 4.375rem;
+
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  grid-column: 1;
+  min-inline-size: 0;
+  min-block-size: calc(100dvh - var(--page-top));
+  padding: var(--page-pad-top) var(--page-pad-x) 0;
+  border-radius: 0.75rem 0.75rem 0 0;
+}
+
+.page::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: var(--surface-read);
+  -webkit-backdrop-filter: var(--frame-blur);
+  backdrop-filter: var(--frame-blur);
+  pointer-events: none;
+}
+
+.page > * {
+  flex: none;
+}
+
+/* Al entrar en el mundo, su propia capa (solo mientras dura: si no, atraparía las barras flotantes): el título y el
+   texto salen mientras la tarjeta se posa en la portada, no debajo de ella hasta que acaba */
+:global(html:active-view-transition-type(entrar-mundo)) .page {
+  view-transition-name: pagina-mundo;
+}
+
+/* El texto, sin caja: directamente sobre la página, hasta 72 rem y centrado (Enrique: «que la caja del texto esté
+   integrada y no tenga fin») */
+.sheet {
+  inline-size: 100%;
+  max-inline-size: 72rem;
+  margin-inline: auto;
+  padding: 0 var(--space-2) 5rem;
+}
+
+/* El mapa y la pizarra, a sangre: de lado a lado de la columna y con el alto de lo que se ve bajo la barra pegada (al
+   bajar del todo, lo ocupan todo, hasta el final de la ventana). Sin fondo propio: se ve el de la página */
+.bleed {
+  --sheet-pad: 0px;
+
+  position: relative;
+  block-size: calc(100dvh - var(--stuck-height));
+  min-block-size: 22rem;
+  margin-inline: calc(-1 * var(--page-pad-x));
+}
+
+.bleed > * {
+  block-size: 100%;
+}
+
+/* La portada, arriba en todas las pestañas: 176 px, con sus esquinas redondeadas y sin fundirse con nada */
+.page > .cover {
+  position: relative;
+  grid-column: auto;
+  block-size: 11rem;
+  margin: 0 0 -0.25rem;
+  border-radius: 1.125rem;
+  isolation: isolate;
+}
+
+.page > .cover[data-cover] {
+  overflow: hidden;
+}
+
+.page > .cover::after {
+  display: none;
+}
+
+.page > .cover[data-cover] :global([data-cover-image]),
+.page > .cover[data-cover] > :first-child {
+  block-size: 100%;
+  border-radius: inherit;
+}
+
+/* Sin portada, la textura en su hueco (wiki.module.css); «Añadir portada», arriba a la derecha */
+.page > .cover:not([data-cover]) > * {
+  position: absolute;
+  inset-block-start: var(--space-3);
+  inset-inline-end: var(--space-3);
+  z-index: 1;
+}
+
+/* «Añadir portada» (o «Cambiar»), al pasar por la portada o por el título */
+.page:has(.head:hover, .cover:hover) .cover > :not([data-cover-image]) {
+  opacity: 1;
+}
+
+/* Lo que avisa de que el título ya llega arriba: entonces, la barra pequeña */
+.sentinel {
+  block-size: 1px;
+  margin-block-end: calc(-1px - 0.75rem);
+}
+
+/* Las pestañas subrayadas, con su raya de lado a lado; a su derecha, las herramientas de la abierta */
+.tabsRow {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-3);
+  min-inline-size: 0;
+  border-block-end: 1px solid var(--line-soft);
+}
+
+.tabsRow > nav {
+  flex: 1;
+  min-inline-size: 0;
+  border-block-end: 0;
+}
+
+.tabsRow nav > ul {
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+
+.tabTools {
+  display: flex;
+  flex: none;
+  align-items: center;
+}
+
+.tabTools:empty {
+  display: none;
+}
+
+/*
+ * La cabecera: el icono y el título grande, sus botones a la derecha y, debajo, las pestañas con las herramientas de la
+ * abierta. Pegada arriba de la ventana; al llegar, se encoge a una barra de cristal con todo en una fila. Mide siempre
+ * lo mismo en la columna (lo que encoge lo devuelve su margen): lo de debajo no salta
+ */
+.head {
+  --title-row: 2.75rem;
+  --tabs-row: 2.75rem;
+  --head-gap: 0.5rem;
+
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 6;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: var(--title-row) var(--tabs-row);
+  align-items: center;
+  column-gap: var(--space-3);
+  row-gap: var(--head-gap);
+  box-sizing: border-box;
+}
+
+/* Las pestañas, en su fila (o, encogida, entre el título y los botones); lo demás se coloca solo */
+.head > .tabsRow {
+  grid-row: 2;
+  grid-column: 1 / -1;
+  align-self: stretch;
+}
+
+.head h1 {
+  font-size: var(--title-size, 2.375rem);
+  line-height: 1;
+  letter-spacing: 0.01em;
+}
+
+/* El título en una línea: si no cabe, «…» (escribiendo, se ve entero desplazándose) */
+.head :is(h1 > span[role="textbox"]) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.head :is(h1 > span[role="textbox"]):focus {
+  text-overflow: clip;
+}
+
+/* Un error al renombrar, sin mover nada */
+.head h1 + p {
+  position: absolute;
+  z-index: 1;
+}
+
+.head[data-compact] {
+  --title-size: 1.375rem;
+
+  grid-template-columns: fit-content(min(26rem, 40%)) minmax(0, 1fr) auto;
+  grid-template-rows: calc(var(--stuck-height) - 1px);
+  block-size: var(--stuck-height);
+  margin-inline: -0.5rem;
+  margin-block-end: calc(var(--title-row) + var(--head-gap) + var(--tabs-row) - var(--stuck-height));
+  padding-inline: 0.875rem 0.5rem;
+  border: 1px solid var(--glass-edge);
+  border-block-start: 0;
+  border-radius: 0 0 var(--radius-frame) var(--radius-frame);
+  background: var(--glass-sheen), var(--glass-tint);
+  box-shadow: var(--glass-shadow);
+  animation: pega 160ms ease-out;
+}
+
+/* El desenfoque, en una capa detrás (en ella haría de marco a lo fijo de dentro: los menús) */
+.head[data-compact]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  pointer-events: none;
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .head[data-compact] {
+    background: var(--glass-sheen), var(--glass-solid);
+  }
+}
+
+@keyframes pega {
+  from {
+    opacity: 0.6;
+    transform: translateY(-0.5rem);
+  }
+}
+
+/* En la barra, las pestañas van junto al título, sin su raya */
+.head[data-compact] > .tabsRow {
+  grid-row: 1;
+  grid-column: 2;
+  margin-inline-start: var(--space-3);
+  border-block-end: 0;
+}
+
+.head[data-compact] > .tabsRow nav > ul > li > a {
+  min-block-size: 2.25rem;
+}
+
+/* El botón del panel, tras «⋯»: marcado mientras el panel está abierto */
+.panelToggle {
+  display: grid;
+  place-items: center;
+  inline-size: 2.25rem;
+  block-size: 2.25rem;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-button);
+  background: none;
+  color: var(--color-muted);
+  cursor: pointer;
+  transition:
+    background-color 140ms ease-out,
+    color 140ms ease-out;
+}
+
+.panelToggle:hover {
+  background: color-mix(in srgb, var(--color-text) 10%, transparent);
+  color: var(--color-text);
+}
+
+.panelToggle[aria-expanded="true"] {
+  background: color-mix(in srgb, var(--color-accent-text) 16%, transparent);
+  color: var(--color-accent-text);
+}
+
+.panelToggle:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
+}
+
+/* El panel de la página (la ficha de wiki.module.css, .entryPanel): al plegarse, su columna se cierra y él se va por la
+   derecha sin estrujarse del todo; ya fuera, ni se pinta ni lo encuentra el lector */
+.panel {
+  justify-self: start;
+  min-inline-size: 14rem;
+  transition: opacity 300ms ease;
+}
+
+.panel[data-folded] {
+  opacity: 0;
+}
+
+.panel[hidden] {
+  display: none;
+}

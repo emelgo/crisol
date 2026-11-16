@@ -20,7 +20,7 @@
   border-radius: 0;
 }
 
-/* A sangre en la página del mundo (shell/world-shell.module.css, .bleed): todo su alto y sin fondo propio (se ve el de
+/* A sangre en la página del mundo (world-page.module.css, .bleed): todo su alto y sin fondo propio (se ve el de
    la página, como en Everlore) */
 :global(article[data-bleed]) .wrapper:not([data-wide]) {
   block-size: 100%;
@@ -43,12 +43,6 @@
   box-shadow: var(--glass-shadow);
 }
 
-/* En el mundo a pantalla completa no hay barra de la app: todo (ADR-0027) */
-:global(html:has([data-world-shell])) .wrapper[data-wide] {
-  inset: 0;
-  border-inline-start: 0;
-}
-
 .bar {
   position: relative;
   z-index: 10;
@@ -64,7 +58,7 @@
   backdrop-filter: var(--popup-blur);
 }
 
-/* En la tira de la página (el mundo a pantalla completa): las mismas, sin barra propia */
+/* En la tira de la página (la página del mundo): las mismas, sin barra propia */
 .slotTools {
   display: flex;
   align-items: center;

@@ -96,9 +96,7 @@ export function useFresh(ids: readonly string[] | undefined) {
  * debajo, y la última pulsada es la elegida (adonde va lo que se sube o se crea). Arriba, buscar y filtrar (en todas,
  * en una lista plana) y subir; también se sueltan encima. Se arrastran como las páginas del mundo: una raya encima o
  * debajo de una fila (va a su carpeta y, si es de su tipo, ahí se recoloca: en el orden que se quiera) o la carpeta
- * resaltada (va dentro). A la izquierda, la vista previa de lo que está bajo el ratón. En la barra del mundo (side), en
- * pequeño: buscar, subir y el árbol; pulsar un archivo lo abre en el centro (onOpenFile), sin elegir varios ni vista
- * previa (eso, en «Ver todos»)
+ * resaltada (va dentro). A la izquierda, la vista previa de lo que está bajo el ratón
  */
 export function FilesSection({
   target,
@@ -107,10 +105,7 @@ export function FilesSection({
   canWrite,
   empty,
   title,
-  others = NO_OTHERS,
-  variant = 'screen',
-  onOpenFile,
-  currentFileId
+  others = NO_OTHERS
 }: {
   target: Target
   /** Sin datos aún: undefined */
@@ -126,15 +121,8 @@ export function FilesSection({
    * ADR-0005); en los comunes, los mundos
    */
   others?: OtherScope[]
-  /** screen: la pantalla de Archivos; side: en pequeño, en la barra del mundo a pantalla completa (ADR-0027) */
-  variant?: 'screen' | 'side'
-  /** Pulsar un archivo: abrirlo en el centro (sin él, como siempre: una imagen en grande, lo demás en otra pestaña) */
-  onOpenFile?: (file: WorldFile) => void
-  /** El archivo abierto en el centro, marcado en su fila */
-  currentFileId?: string | undefined
 }) {
   const { t } = useTranslation()
-  const side = variant === 'side'
   const api = useApi()
   const queryClient = useQueryClient()
   const announce = useAnnounce()
@@ -357,8 +345,6 @@ export function FilesSection({
     has: (id: string) => chosen.has(id),
     active: chosenNow.length > 0,
     toggle: (id: string, what: 'file' | 'folder', range = false) => {
-      // En la barra no se eligen varios (en «Ver todos», sí)
-      if (side) return
       const from = range && lastPicked.current ? visible.findIndex((item) => item.id === lastPicked.current) : -1
       const to = visible.findIndex((item) => item.id === id)
       lastPicked.current = id
@@ -760,8 +746,6 @@ export function FilesSection({
             focus={focusOf({ kind: 'file', id: file.id })}
             onPreview={preview('file', file.id)}
             onMove={moveFromDialog({ kind: 'file', id: file.id })}
-            {...(onOpenFile ? { onOpen: () => onOpenFile(file) } : {})}
-            current={file.id === currentFileId}
             {...rowProps}
           />
         </li>
@@ -815,26 +799,24 @@ export function FilesSection({
           data-form-type="other"
           type="search"
           value={query}
-          placeholder={t(side ? 'worldShell.searchFiles' : 'files.search')}
-          aria-label={t(side ? 'worldShell.searchFiles' : 'files.search')}
+          placeholder={t('files.search')}
+          aria-label={t('files.search')}
           onChange={(event) => setQuery(event.currentTarget.value)}
         />
       </label>
-      {!side && (
-        // biome-ignore lint/a11y/useSemanticElements: unos botones que filtran, no un formulario
-        <div className={styles.kinds} role="group" aria-label={t('files.kinds')}>
-          {(['all', ...KINDS] as const).map((k) => (
-            <button key={k} type="button" className={styles.kind} aria-pressed={kind === k} onClick={() => setKind(k)}>
-              {k === 'all' ? t('files.all') : t(`files.groups.${k}`)}
-            </button>
-          ))}
-        </div>
-      )}
+      {/* biome-ignore lint/a11y/useSemanticElements: unos botones que filtran, no un formulario */}
+      <div className={styles.kinds} role="group" aria-label={t('files.kinds')}>
+        {(['all', ...KINDS] as const).map((k) => (
+          <button key={k} type="button" className={styles.kind} aria-pressed={kind === k} onClick={() => setKind(k)}>
+            {k === 'all' ? t('files.all') : t(`files.groups.${k}`)}
+          </button>
+        ))}
+      </div>
     </div>
   )
   const newHere = placeOf(null)
   const contents = (
-    <SelectionContext value={side ? null : selection}>
+    <SelectionContext value={selection}>
       <div className={styles.contents} data-selecting={selection.active || undefined}>
         {searching && <p className={styles.here}>{t('files.results', { count: results.length })}</p>}
         {moveError && <FormError message={moveError} />}
@@ -857,7 +839,7 @@ export function FilesSection({
         <ul
           ref={listRef}
           className={styles.rows}
-          aria-label={t(side ? 'worldShell.filesList' : 'files.listLabel')}
+          aria-label={t('files.listLabel')}
           aria-describedby={keysHintId}
           data-tour="archivos-lista"
         >
@@ -887,7 +869,6 @@ export function FilesSection({
     // biome-ignore lint/a11y/noStaticElementInteractions: soltar es un atajo; «Subir archivos» hace lo mismo con el teclado
     <div
       className={`${styles.zone} ${over ? styles.over : ''}`}
-      data-variant={variant}
       onDragEnter={hoverZone}
       onDragOver={hoverZone}
       onDragLeave={(event) => {
@@ -900,50 +881,42 @@ export function FilesSection({
       }}
       onDrop={dropOnZone}
     >
-      {/* La columna del centro como en las demás vistas (título, botones y lista) y, a la izquierda, la vista previa; en
-          la barra del mundo, solo los botones y la lista */}
-      {side ? (
-        <>
-          <div className={styles.toolbar}>{tools}</div>
-          {contents}
-        </>
-      ) : (
-        <div className={styles.layout}>
-          <div ref={center} className={styles.center}>
-            <TitleEmblem kind="archivos" show={!nothing}>
-              {title}
-            </TitleEmblem>
-            <div className={styles.toolbar}>
-              {tools}
-              {choosing && (
-                <ChosenBar
-                  items={chosenNow.map((item) => {
-                    const entry = item.kind === 'file' ? fileById.get(item.id) : byId.get(item.id)
-                    return { ...item, name: entry?.name ?? '', worldId: entry?.worldId ?? null }
-                  })}
-                  folders={folders}
-                  onMoved={(dest) => {
-                    setExpanded((current) => new Set([...current, ...pathOf(dest).map((folder) => folder.id)]))
-                  }}
-                  onDone={async () => {
-                    stopChoosing()
-                    await refresh()
-                  }}
-                  onClear={stopChoosing}
-                />
-              )}
-            </div>
-            {contents}
+      {/* La columna del centro como en las demás vistas (título, botones y lista) y, a la izquierda, la vista previa */}
+      <div className={styles.layout}>
+        <div ref={center} className={styles.center}>
+          <TitleEmblem kind="archivos" show={!nothing}>
+            {title}
+          </TitleEmblem>
+          <div className={styles.toolbar}>
+            {tools}
+            {choosing && (
+              <ChosenBar
+                items={chosenNow.map((item) => {
+                  const entry = item.kind === 'file' ? fileById.get(item.id) : byId.get(item.id)
+                  return { ...item, name: entry?.name ?? '', worldId: entry?.worldId ?? null }
+                })}
+                folders={folders}
+                onMoved={(dest) => {
+                  setExpanded((current) => new Set([...current, ...pathOf(dest).map((folder) => folder.id)]))
+                }}
+                onDone={async () => {
+                  stopChoosing()
+                  await refresh()
+                }}
+                onClear={stopChoosing}
+              />
+            )}
           </div>
-          <aside className={styles.detail} aria-label={t('files.detail')}>
-            {hoveredFile ? (
-              <FileDetail file={hoveredFile} where={pathOf(hoveredFile.folderId)} />
-            ) : hoveredFolder ? (
-              <FolderDetail folder={hoveredFolder} files={data.files} folders={folders} />
-            ) : null}
-          </aside>
+          {contents}
         </div>
-      )}
+        <aside className={styles.detail} aria-label={t('files.detail')}>
+          {hoveredFile ? (
+            <FileDetail file={hoveredFile} where={pathOf(hoveredFile.folderId)} />
+          ) : hoveredFolder ? (
+            <FolderDetail folder={hoveredFolder} files={data.files} folders={folders} />
+          ) : null}
+        </aside>
+      </div>
       {over && <p className={styles.dropHint}>{t('files.dropHere')}</p>}
     </div>
   )

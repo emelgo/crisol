@@ -46,8 +46,8 @@ import { failed, LoadError } from '../../components/load-error.tsx'
 import { Tour } from '../../components/tour.tsx'
 import { useWorldFiles } from '../cover-look.ts'
 import { readAsInput, readAsKey, useReadAs } from '../read-as.tsx'
-import { useWorldShell } from '../shell/context.ts'
 import { tabRegionLabel } from '../tabs/kinds.tsx'
+import { useWorldPage } from '../world-page.ts'
 import { MapDrawing } from './drawing.tsx'
 import {
   insertedVertex,
@@ -315,9 +315,9 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
     return () => window.removeEventListener('resize', place)
   }, [wide])
   const settingsButton = useRef<HTMLButtonElement>(null)
-  // En el mundo a pantalla completa (Enrique, 2026-11-16): el mapa a sangre y sus herramientas en una píldora abajo en
+  // En la página del mundo (Enrique, 2026-11-16): el mapa a sangre y sus herramientas en una píldora abajo en
   // el centro, el zoom abajo a la derecha y la escala abajo a la izquierda, pegados a lo que se ve
-  const docked = Boolean(useWorldShell())
+  const docked = Boolean(useWorldPage())
   const scaleRef = useRef<HTMLDivElement>(null)
   const scaleOf = useRef(map.scale)
   const hiddenHere = useHiddenHere(map.id)

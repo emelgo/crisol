@@ -196,7 +196,7 @@ describe('el visor del mapa', () => {
     const stage = stageOf(await viewer())
     expect(stage.style.transform).toBe('translate(0px, 0px) scale(0.5)')
     expect(stage.style.getPropertyValue('--inv-k')).toBe('2')
-    // En el mundo a pantalla completa, el zoom va en su grupo, abajo a la derecha (Enrique, 2026-11-16)
+    // En la página del mundo, el zoom va en su grupo, abajo a la derecha (Enrique, 2026-11-16)
     const tools = within(screen.getByRole('toolbar', { name: 'Acercar y alejar el mapa' }))
     expect(
       within(screen.getByRole('toolbar', { name: 'Herramientas del mapa' })).queryByRole('button', { name: 'Acercar' })

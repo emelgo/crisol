@@ -15,7 +15,7 @@ import { useTranslation } from 'react-i18next'
 import type * as Y from 'yjs'
 import { useApi } from '../../api/context.tsx'
 import { useCollabDocument } from '../collab.tsx'
-import { useWorldShell } from '../shell/context.ts'
+import { useWorldPage } from '../world-page.ts'
 import { BoardDock } from './board-dock.tsx'
 import { BoardFrame, PAGE_DRAG, PageCard, pageIdOfLink, pageLink, useBoardFiles } from './board-parts.tsx'
 import { boardMap, mergeScene, sceneChanged, whenReady, writeScene } from './sync.ts'
@@ -58,8 +58,8 @@ export default function BoardEditor({ page, tab }: { page: Page; tab: PageTabVie
   const { session, synced, offline } = useCollabDocument(tab.documentId ? `doc:${tab.documentId}` : null)
   const [excalidraw, setExcalidraw] = useState<ExcalidrawImperativeAPI | null>(null)
   const [selected, setSelected] = useState<readonly ExcalidrawElement[]>([])
-  // En el mundo a pantalla completa, sus herramientas en nuestra píldora (board-dock.tsx): la elegida y el zoom
-  const docked = Boolean(useWorldShell())
+  // En la página del mundo, sus herramientas en nuestra píldora (board-dock.tsx): la elegida y el zoom
+  const docked = Boolean(useWorldPage())
   const [activeTool, setActiveTool] = useState('selection')
   const [zoom, setZoom] = useState(1)
   const canvas = useRef<HTMLDivElement>(null)

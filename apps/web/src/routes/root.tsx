@@ -12,16 +12,14 @@ import { CrisolMark, Loading } from '../components/brand.tsx'
 import { Notices } from '../components/notices.tsx'
 import { PageTitle, useFocusHeading } from '../components/page-title.tsx'
 import { RevealNotices } from '../components/reveal-notices.tsx'
-import { Ribbon } from '../components/ribbon.tsx'
+import { Ribbon, useMasteredWorld } from '../components/ribbon.tsx'
 import { Screen } from '../components/screen.tsx'
 import { type WindowKind, WindowProvider } from '../components/window.tsx'
-import { useMasteredWorld } from '../components/world-hooks.ts'
 import { DiceProvider } from '../dice/context.tsx'
 import { DicePanel } from '../dice/panel.tsx'
 import { DiceTray } from '../dice/tray.tsx'
 import { shownPath } from '../shown-path.ts'
 import { WikiPanelProvider } from '../wiki/panel.tsx'
-import { useWorldShellRoute, WorldShell } from '../wiki/shell/world-shell.tsx'
 import { WithCampaign } from './campaign.tsx'
 import { OrganizationHistory, WorldHistoryWindow } from './history.tsx'
 import { Profile } from './profile.tsx'
@@ -45,12 +43,9 @@ export function RootLayout() {
       !/^\/(perfil|ajustes|historial|papelera|oauth\/|mundos\/[^/]+\/(historial|papelera)$)/.test(shownPath(state))
   })
   // La Mesa va sola, a pantalla completa y en su pestaña (ADR-0021): sin la barra de la izquierda
-  const mesa = useRouterState({
+  const bare = useRouterState({
     select: (state) => /^\/mundos\/[^/]+\/campanas\/[^/]+\/mesa\/?$/.test(shownPath(state))
   })
-  // El mundo del máster, también a pantalla completa, con su armazón (ADR-0027)
-  const world = useWorldShellRoute()
-  const bare = mesa || world.bare
   // La portada (sin sesión): a toda pantalla, con su imagen (sin las que van pasando detrás)
   const home = useRouterState({ select: (state) => shownPath(state) === '/' })
   // Imprimir: solo la hoja, sin nada de la interfaz; la pantalla de la tele, igual: solo el mapa
@@ -79,8 +74,8 @@ export function RootLayout() {
       {t('app.skipToContent')}
     </a>
   )
-  // Mientras llega la sesión (o, en un mundo, si lo dirige), la llama en el centro
-  if (pending || world.pending) return <Loading full />
+  // Mientras llega la sesión, la llama en el centro
+  if (pending) return <Loading full />
   // Sin sesión (entrar, unirse a una campaña): una barra sencilla arriba, con la marca, entrar y el tema
   if (!account) {
     return (
@@ -104,14 +99,6 @@ export function RootLayout() {
       </div>
     )
   }
-  // Lo que avisa (aprobaciones de la IA, avisos, revelados), al principio del contenido
-  const notices = (
-    <>
-      <ApprovalQueue />
-      <Notices />
-      <RevealNotices />
-    </>
-  )
   // Con sesión: el armazón del Crisol antiguo, con la barra de la izquierda
   return (
     <WindowProvider render={(kind) => <WindowContent kind={kind} />}>
@@ -121,19 +108,14 @@ export function RootLayout() {
             <div className={bare ? styles.bare : styles.app}>
               {skip}
               {/* Detrás de todo, el fondo de ambiente para el cristal (la Mesa tiene su mapa) */}
-              {!mesa && <Ambient />}
+              {!bare && <Ambient />}
               {!bare && <Ribbon />}
-              {world.worldId ? (
-                // El mundo a pantalla completa: su cabecera y su barra van fuera del contenido (ADR-0027)
-                <WorldShell key={world.worldId} worldId={world.worldId} notices={notices}>
-                  <Outlet />
-                </WorldShell>
-              ) : (
-                <main id="contenido" className={wide ? styles.wide : styles.main} data-contenido="">
-                  {notices}
-                  <Outlet />
-                </main>
-              )}
+              <main id="contenido" className={wide ? styles.wide : styles.main} data-contenido="">
+                <ApprovalQueue />
+                <Notices />
+                <RevealNotices />
+                <Outlet />
+              </main>
               <DicePanel />
             </div>
           </DiceTray>

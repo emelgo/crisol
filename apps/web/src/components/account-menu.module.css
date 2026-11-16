@@ -93,11 +93,6 @@
   transform-origin: left bottom;
 }
 
-/* En la cabecera del mundo (arriba a la derecha), sale hacia abajo */
-.account[data-variant="header"] .panel {
-  transform-origin: right top;
-}
-
 .closing {
   animation: recoge 260ms cubic-bezier(0.5, 0, 0.75, 0) forwards;
   pointer-events: none;

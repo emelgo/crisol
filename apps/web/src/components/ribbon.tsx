@@ -35,6 +35,7 @@ import {
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
+import { historyQuery, trashQuery } from '../api/queries.ts'
 import { useDice } from '../dice/context.tsx'
 import { shownPath } from '../shown-path.ts'
 import { SystemWindow } from '../systems/screen.tsx'
@@ -43,19 +44,42 @@ import { useNarrow, useWikiPanel, type WikiPanel } from '../wiki/panel.tsx'
 import { AccountMenu } from './account-menu.tsx'
 import { useAmbient } from './ambient.tsx'
 import { CrisolMark } from './brand.tsx'
-import crucible from './crucible.module.css'
 import dialogStyles from './dialog.module.css'
 import { Modal } from './modal.tsx'
 import styles from './ribbon.module.css'
 import { spaceOf } from './spaces.ts'
 import { useWindow } from './window.tsx'
-import { useHistoryAndTrash, useIsOwner } from './world-hooks.ts'
-import { justLeftFull, LEAVE_ITEM, LEAVE_WORLD, leaveItem, leaveWorld, SECTION, smoke } from './world-transition.ts'
+import { LEAVE_ITEM, LEAVE_WORLD, leaveItem, leaveWorld, SECTION, smoke } from './world-transition.ts'
 
 /** Lo que tarda cada icono del mundo en salir del crisol (o en subir a él) y el paso entre uno y otro: aquí y solo aquí
  * (el nav se los pasa al CSS como --icon-time y --icon-step) */
 const ICON_TIME = 460
 const ICON_STEP = 70
+
+/** Si la cuenta es propietaria de alguna organización: solo ella ve su historial, su papelera y la IA */
+function useIsOwner() {
+  const api = useApi()
+  const { account } = useAccounts().useAccount()
+  const organizations = useQuery({
+    queryKey: ['organizations'],
+    queryFn: () => api.call('listOrganizations', {}),
+    enabled: Boolean(account)
+  })
+  return organizations.data?.organizations.some((o) => o.role === 'owner') ?? false
+}
+
+/** El mundo en el que se está, si lo dirige la cuenta (su historial, su papelera y su wiki son suyos) */
+export function useMasteredWorld() {
+  const api = useApi()
+  const { account } = useAccounts().useAccount()
+  const worldId = useRouterState({ select: (state) => /^\/mundos\/([^/]+)/.exec(shownPath(state))?.[1] })
+  const worlds = useQuery({
+    queryKey: ['worlds'],
+    queryFn: () => api.call('listWorlds', {}),
+    enabled: Boolean(account && worldId)
+  })
+  return worlds.data?.worlds.find((w) => w.id === worldId && w.role === 'master')?.id
+}
 
 /** Lo que va dentro de cada botón: el icono y su nombre debajo, que se entienda sin pasar el ratón */
 function Label({ icon: Icon, glyph, text }: { icon: LucideIcon; glyph?: ReactNode; text: string }) {
@@ -124,9 +148,10 @@ export function Ribbon() {
   const master = world?.role === 'master'
   // Historial y Papelera se piden en cuanto el ratón (o el foco) llega a su botón: al abrirlos, ya están
   const queryClient = useQueryClient()
-  const { prefetchHistory, prefetchTrash, openHistory, openTrash } = useHistoryAndTrash(
-    master && world ? world.id : undefined
-  )
+  const scope = master && world ? { worldId: world.id } : {}
+  const prefetchHistory = () =>
+    void queryClient.prefetchInfiniteQuery({ ...historyQuery(api, scope), staleTime: 10_000 })
+  const prefetchTrash = () => void queryClient.prefetchQuery({ ...trashQuery(api, scope), staleTime: 10_000 })
   const prefetchCommon = () =>
     void queryClient.prefetchQuery({
       queryKey: ['commonFiles'],
@@ -158,17 +183,11 @@ export function Ribbon() {
   const [wasInWorld, setWasInWorld] = useState(inWorld)
   // Recién entrado (en este mismo pintado aún no se ve en phase)
   const justEntered = inWorld && !wasInWorld
-  // Recién salido de un mundo a pantalla completa (ADR-0027): la barra vuelve y, como antes, la llama expulsa a
-  // «Mundos» cuando los iconos del mundo ya han subido, y echa humo
-  const [returning] = useState(justLeftFull)
-  const [phase, setPhase] = useState<'still' | 'merging' | 'emerging'>(returning ? 'emerging' : 'still')
+  const [phase, setPhase] = useState<'still' | 'merging' | 'emerging'>('still')
   const sections = useRef<HTMLElement>(null)
   // La llama: al entrar, se aviva y suelta chispas; al salir, se aplaca y echa humo. Con su propio tiempo, más largo
   // que el de «Mundos»
-  const [flame, setFlame] = useState<'still' | 'fire' | 'smoke'>(returning ? 'smoke' : 'still')
-  useLayoutEffect(() => {
-    if (returning) sections.current?.style.setProperty('--leave', `${returning.leave}ms`)
-  }, [returning])
+  const [flame, setFlame] = useState<'still' | 'fire' | 'smoke'>('still')
   if (inWorld !== wasInWorld) {
     setWasInWorld(inWorld)
     setPhase(inWorld ? 'merging' : 'emerging')
@@ -282,7 +301,7 @@ export function Ribbon() {
           // Dentro de un sistema, la llama vuelve a Sistemas; si no, a Mis mundos
           to={systemId ? '/sistemas' : '/mundos'}
           activeOptions={{ exact: true }}
-          className={[styles.brand, flame === 'fire' ? crucible.cooking : '', flame === 'smoke' ? crucible.smoking : '']
+          className={[styles.brand, flame === 'fire' ? styles.cooking : '', flame === 'smoke' ? styles.smoking : '']
             .filter(Boolean)
             .join(' ')}
           // Dentro de un mundo, salir de él; de un sistema, al revés que al entrar (su icono y su nombre vuelven a su
@@ -391,9 +410,8 @@ export function Ribbon() {
             ref={panelsBox}
             className={[
               styles.panels,
-              crucible.emerge,
-              panelsMotion === 'enter' ? crucible.emergeIn : '',
-              panelsMotion === 'leave' ? crucible.emergeOut : ''
+              panelsMotion === 'enter' ? styles.panelsEnter : '',
+              panelsMotion === 'leave' ? styles.panelsLeave : ''
             ]
               .filter(Boolean)
               .join(' ')}
@@ -433,7 +451,7 @@ export function Ribbon() {
               data-tour="barra-historial"
               onPointerEnter={prefetchHistory}
               onFocus={prefetchHistory}
-              onClick={() => openHistory()}
+              onClick={() => windows?.open('historial')}
             >
               <Label icon={History} text={t('ribbon.history')} />
             </button>
@@ -444,7 +462,7 @@ export function Ribbon() {
               data-tour="barra-papelera"
               onPointerEnter={prefetchTrash}
               onFocus={prefetchTrash}
-              onClick={() => openTrash()}
+              onClick={() => windows?.open('papelera')}
             >
               <Label icon={Trash2} text={t('ribbon.trash')} />
             </button>

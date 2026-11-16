@@ -34,7 +34,6 @@ import { TemplatesScreen } from './templates/screen.tsx'
 import { CommonFiles, WikiFiles } from './wiki/files.tsx'
 import { searchParams, WikiSearch } from './wiki/search.tsx'
 import { PrintPage, printParams } from './wiki/sheet/print.tsx'
-import { WorldFileView } from './wiki/shell/file-view.tsx'
 import { AccountTags, WorldTagsRedirect } from './wiki/tags.tsx'
 import { WikiHome, WikiPage } from './wiki/wiki.tsx'
 
@@ -216,12 +215,6 @@ const filesRoute = createRoute({
   path: '/mundos/$worldId/archivos',
   component: WikiFiles
 })
-// Un archivo del mundo abierto en el centro, como una pestaña (ADR-0027)
-const worldFileRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: '/mundos/$worldId/archivo/$fileId',
-  component: WorldFileView
-})
 const searchRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/mundos/$worldId/buscar',
@@ -334,7 +327,6 @@ const routeTree = rootRoute.addChildren([
   wikiPageRoute,
   tagsRoute,
   filesRoute,
-  worldFileRoute,
   searchRoute,
   printRoute,
   worldHistoryRoute,

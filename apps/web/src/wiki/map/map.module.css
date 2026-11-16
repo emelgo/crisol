@@ -41,19 +41,13 @@
   box-shadow: var(--glass-shadow);
 }
 
-/* En el mundo a pantalla completa no hay barra de la app: todo (ADR-0027) */
-:global(html:has([data-world-shell])) .wrapper[data-wide] {
-  inset: 0;
-  border-inline-start: 0;
-}
-
 .wrapper[data-wide] .viewer {
   block-size: 100%;
   border: 0;
   border-radius: 0;
 }
 
-/* A sangre en la página del mundo (shell/world-shell.module.css, .bleed): todo su alto y sin fondo propio (se ve el de
+/* A sangre en la página del mundo (world-page.module.css, .bleed): todo su alto y sin fondo propio (se ve el de
    la página, como en Everlore) */
 :global(article[data-bleed]) .wrapper:not([data-wide]) {
   block-size: 100%;
@@ -292,9 +286,8 @@
   margin: 0;
 }
 
-/* En el mundo a pantalla completa (la hoja llena, bajo la tira de la página): una sola pieza en el centro del hueco,
-   sin recuadro */
-:global([data-world-shell] article[data-fill]) .empty {
+/* En la página del mundo (a sangre, bajo la tira de la página): una sola pieza en el centro del hueco, sin recuadro */
+:global(article[data-bleed]) .empty {
   align-content: center;
   block-size: 100%;
   border: 0;
@@ -1242,7 +1235,7 @@
 }
 
 /*
- * En el mundo a pantalla completa, la base de las herramientas: pegada abajo de lo que se ve (aunque el mapa siga más
+ * En la página del mundo, la base de las herramientas: pegada abajo de lo que se ve (aunque el mapa siga más
  * abajo, si la columna aún no ha bajado del todo). Sin alto: lo de dentro sube desde ella
  */
 .dock {

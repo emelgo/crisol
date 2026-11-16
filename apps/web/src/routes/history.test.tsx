@@ -141,11 +141,9 @@ describe('el historial', () => {
     expect(await screen.findByText('No tienes permiso')).toBeDefined()
   })
 
-  it('se abre encima de la página: dentro del mundo, el suyo (desde su menú); fuera, el de la cuenta (desde la barra)', async () => {
+  it('se abre desde la barra, encima de la página: dentro del mundo, el suyo (su máster); fuera, el de la cuenta', async () => {
     const { router } = renderAt(`/mundos/${world.id}`, [])
     await screen.findByRole('heading', { level: 1, name: 'Eana' })
-    // Dentro del mundo a pantalla completa, en el menú del mundo de su cabecera (ADR-0027)
-    await userEvent.click(screen.getByRole('button', { name: 'Menú de Eana' }))
     await userEvent.click(screen.getByRole('button', { name: 'Historial' }))
     const inWorld = await screen.findByRole('dialog', { name: 'Historial' })
     expect(await within(inWorld).findByRole('heading', { level: 1, name: 'Historial de Eana' })).toBeDefined()
@@ -242,8 +240,7 @@ describe('el historial', () => {
   it('a un jugador, el historial de la barra no le enseña el del mundo, sino el de su cuenta', async () => {
     renderAt(`/mundos/${world.id}`, [], { role: 'player' })
     await screen.findByRole('heading', { level: 1, name: 'Eana' })
-    // Quien juega no va a pantalla completa: la barra de la app, con su historial (sale al saber que es propietario)
-    await userEvent.click(await screen.findByRole('button', { name: 'Historial' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Historial' }))
     const dialog = within(await screen.findByRole('dialog', { name: 'Historial' }))
     expect(await dialog.findByRole('heading', { level: 1, name: 'Historial' })).toBeDefined()
     expect(dialog.queryByRole('heading', { name: 'Historial de Eana' })).toBeNull()

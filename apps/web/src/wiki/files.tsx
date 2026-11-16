@@ -16,7 +16,6 @@ import { Tour } from '../components/tour.tsx'
 import { COMMON, type Scope, splitScopes, worldRoot } from './file-tree.ts'
 import styles from './files.module.css'
 import { FilesSection, type OtherScope } from './files-section.tsx'
-import type { WorldFile } from './links-context.ts'
 
 const route = getRouteApi('/mundos/$worldId/archivos')
 
@@ -54,8 +53,8 @@ function useOwns(organizationId: string | undefined) {
   return organizations.data?.organizations.some((o) => o.id === organizationId && o.role === 'owner') ?? false
 }
 
-/** Lo de un mundo para su lista: sus archivos y, como una carpeta más, «Comunes» (los de la cuenta, en todos sus mundos) */
-function useWorldScopes(worldId: string, organizationId: string) {
+/** Los de un mundo y, dentro, la carpeta «Comunes»: los de la cuenta, la misma en todos sus mundos */
+function FilesPage({ worldId, world, organizationId }: { worldId: string; world: string; organizationId: string }) {
   const { t } = useTranslation()
   const api = useApi()
   const files = useQuery({ queryKey: ['files', worldId], queryFn: () => api.call('listFiles', { worldId }) })
@@ -77,19 +76,12 @@ function useWorldScopes(worldId: string, organizationId: string) {
     ],
     [commonLabel, organizationId, scopes?.common, ownsCommon]
   )
-  return { files, own: scopes?.own, others }
-}
-
-/** Los de un mundo y, dentro, la carpeta «Comunes»: los de la cuenta, la misma en todos sus mundos */
-function FilesPage({ worldId, world, organizationId }: { worldId: string; world: string; organizationId: string }) {
-  const { t } = useTranslation()
-  const { files, own, others } = useWorldScopes(worldId, organizationId)
   return (
     <section className={styles.page}>
       {failed(files) && <SectionError error={files.error} onRetry={() => files.refetch()} />}
       <FilesSection
         target={{ worldId }}
-        data={own}
+        data={scopes?.own}
         cacheKey={['files', worldId]}
         canWrite
         empty={t('files.empty')}
@@ -98,42 +90,6 @@ function FilesPage({ worldId, world, organizationId }: { worldId: string; world:
       />
       {files.data && <FilesTour />}
     </section>
-  )
-}
-
-/**
- * La pestaña «Archivos» de la barra del mundo a pantalla completa (ADR-0027): la misma lista que la pantalla, en
- * pequeño; pulsar un archivo lo abre en el centro
- */
-export function WorldFilesSide({
-  worldId,
-  organizationId,
-  currentFileId,
-  onOpenFile
-}: {
-  worldId: string
-  organizationId: string
-  currentFileId: string | undefined
-  onOpenFile: (file: WorldFile) => void
-}) {
-  const { t } = useTranslation()
-  const { files, own, others } = useWorldScopes(worldId, organizationId)
-  return (
-    <>
-      {failed(files) && <SectionError error={files.error} onRetry={() => files.refetch()} />}
-      <FilesSection
-        target={{ worldId }}
-        data={own}
-        cacheKey={['files', worldId]}
-        canWrite
-        empty={t('files.empty')}
-        title={null}
-        others={others}
-        variant="side"
-        currentFileId={currentFileId}
-        onOpenFile={onOpenFile}
-      />
-    </>
   )
 }
 
