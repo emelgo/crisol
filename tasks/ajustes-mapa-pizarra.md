@@ -25,3 +25,10 @@ Pedidos al probar el módulo 9 en localhost. Se hacen en la rama `modulo-9/mapas
 ## Pizarra
 - [ ] Al alejar se **difumina** (cuanto más lejos, más) y al acercar se ven **dientes de sierra** hasta que se para: que se
   vea nítida al hacer zoom.
+
+## Panel de la página
+- [ ] El bloque **«Tabla de páginas»** nace apuntando a una plantilla «pnj» y un campo «faccion» que en una cuenta vacía no
+  existen: el servidor lo rechaza al guardar. Debe nacer sin configurar (pidiendo la plantilla y su campo de enlace, de las
+  que haya; si no hay ninguna, decirlo en una línea) y guardarse así.
+- [ ] Su error comparte el código `BAD_TABLE` con las tablas aleatorias y la app enseña «Las filas no cubren bien la
+  fórmula», que no tiene nada que ver: un código propio y un mensaje claro («Elige la plantilla y su campo»).
