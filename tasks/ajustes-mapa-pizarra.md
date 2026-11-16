@@ -22,7 +22,8 @@ Pedidos al probar el módulo 9 en localhost. Se hacen en la rama `modulo-9/mapas
 - [x] En las opciones de una región, al abrir **«Aspecto»** el contenedor y lo de dentro se deforman: no debe moverse nada.
   *Hecho: los deslizadores ya no toman el estilo de campo (salían altos y con caja), sus etiquetas van como las demás y
   el sitio de la barra de desplazamiento está guardado (al salir no estrecha el panel).*
-- [ ] El **tamaño de letra** de una región sale 96 en vez de 100.
+- [x] El **tamaño de letra** de una región sale 96 en vez de 100. *Hecho: el tope es 100 (en el deslizador y en el
+  contrato, que es lo que admite el servidor y la IA).*
 - [ ] Al elegir **«Página»** en una región o un pin: un desplegable con las páginas que no desentone (como el de «Página…»
   de la pizarra), no el nativo.
 - [ ] Algunas **formas de pin** mueven el sitio donde se clava el pin, y también el tamaño: el punto de anclaje y el tamaño,

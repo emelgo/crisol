@@ -152,7 +152,7 @@ export const mapStyle = z
     opacity: z.number().min(0.05).max(1).describe('La opacidad del relleno'),
     stroke: z.enum(['solid', 'dashed', 'dotted']).describe('El borde o el trazo: liso, discontinuo o punteado'),
     width: z.number().int().min(1).max(12).describe('El grosor del trazo, en píxeles de pantalla'),
-    size: z.number().int().min(10).max(96).describe('El tamaño de su nombre o del texto'),
+    size: z.number().int().min(10).max(100).describe('El tamaño de su nombre o del texto'),
     display: z.number().int().min(0).max(2).describe('Su nombre: 0 al pasar por encima, 1 siempre, 2 nunca')
   })
   .partial()

@@ -292,7 +292,7 @@ export function ElementPanel({
             )}
             {range('size', element.style.size ?? (kind === 'path' ? 14 : kind === 'label' ? 20 : 26), {
               min: 10,
-              max: 96,
+              max: 100,
               step: 1,
               onCommit: (size) => void style({ size })
             })}
