@@ -32,8 +32,8 @@ import { YearStrip } from './year-strip.tsx'
 
 const route = getRouteApi('/mundos/$worldId/calendarios')
 
-/** El bodegón de la pantalla: el del historial (el reloj de arena) hasta que llegue el suyo (docs/imagenes-por-hacer.md) */
-export const CALENDARS_ART = 'historial' as const
+/** El bodegón de la pantalla vacía: el astrolabio y el almanaque (public/vacios/calendarios.webp) */
+export const CALENDARS_ART = 'calendarios' as const
 
 /** Los calendarios de un mundo, solo para quien lo dirige (como sus archivos) */
 export function CalendarsScreen() {

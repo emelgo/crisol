@@ -17,6 +17,7 @@ export type EmptyKind =
   | 'papelera'
   | 'sin-resultados'
   | 'capitulos'
+  | 'calendarios'
 
 export function EmptyState({
   kind,
