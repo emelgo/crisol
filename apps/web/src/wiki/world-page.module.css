@@ -284,6 +284,12 @@
 
 .head:not([data-compact]) > .cover + * {
   padding-inline-start: 1.25rem;
+  /* Lo de la portada (encuadrarla, «Cambiar») se alcanza también bajo el hueco del título; el título, sí */
+  pointer-events: none;
+}
+
+.head:not([data-compact]) > .cover + * :is(h1, a, button, [role="textbox"]) {
+  pointer-events: auto;
 }
 
 .head:not([data-compact]) > :last-child:not(.tabsRow) {

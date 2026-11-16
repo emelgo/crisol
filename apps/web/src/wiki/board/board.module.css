@@ -240,6 +240,25 @@
   --default-bg-color: transparent;
 }
 
+/* Con poco sitio (un portátil: un lienzo de menos de 500 px de alto o 730 de ancho), Excalidraw pasa a su interfaz de
+   móvil: su barra de formas y sus botones de arriba sobran (están en nuestra píldora) y, de su barra de abajo, se quedan
+   sus propiedades, duplicar y borrar, en una isla encima de nuestra píldora; deshacer y rehacer, en la nuestra */
+.canvas[data-docked] :global(.excalidraw .App-top-bar .App-toolbar-container),
+.canvas[data-docked] :global(.excalidraw .App-bottom-bar .App-toolbar-content > div:last-child) {
+  display: none;
+}
+
+.canvas[data-docked] :global(.excalidraw .App-bottom-bar) {
+  justify-content: center;
+  padding-block-end: 4.5rem;
+}
+
+.canvas[data-docked] :global(.excalidraw .App-bottom-bar > .Island) {
+  inline-size: auto;
+  min-inline-size: 0;
+  max-inline-size: min(100%, 26rem);
+}
+
 /* La base de las herramientas: pegada abajo de lo que se ve (aunque el lienzo siga más abajo); sin alto, lo de dentro
    sube desde ella */
 .dock {
