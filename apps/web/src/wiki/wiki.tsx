@@ -12,7 +12,8 @@ import {
   PanelRightClose,
   PanelRightOpen,
   Plus,
-  Printer
+  Printer,
+  Waypoints
 } from 'lucide-react'
 import {
   type CSSProperties,
@@ -171,6 +172,19 @@ export function WikiLayout({
             <div className={styles.asideHeader}>
               {/* Lo de la vista elegida en la barra: el mundo (sus páginas), las plantillas o los archivos */}
               <h2 id={headingId}>{world.name}</h2>
+              {panel === 'pages' && (
+                // El grafo de todo el mundo (módulo 10), sin añadir nada a la barra del mundo
+                <Link
+                  to="/mundos/$worldId/relaciones"
+                  params={{ worldId }}
+                  className={styles.newPageIcon}
+                  aria-label={t('relations.world.open')}
+                  title={t('relations.world.open')}
+                  data-tour="relaciones-mundo"
+                >
+                  <Waypoints aria-hidden="true" size={15} />
+                </Link>
+              )}
               {panel === 'pages' && <ExportWiki worldId={worldId} className={styles.newPageIcon} />}
               {panel === 'pages' && (
                 <button

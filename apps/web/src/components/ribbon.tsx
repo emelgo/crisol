@@ -714,7 +714,8 @@ function WikiPanels({ worldId }: { worldId: string }) {
   const navigate = useNavigate()
   const wikiPanel = useWikiPanel()
   const inWiki = useRouterState({
-    select: (state) => new RegExp(`^/mundos/${worldId}(/(wiki/[^/]+|wiki|buscar|etiquetas))?/?$`).test(shownPath(state))
+    select: (state) =>
+      new RegExp(`^/mundos/${worldId}(/(wiki/[^/]+|wiki|buscar|etiquetas|relaciones))?/?$`).test(shownPath(state))
   })
   const atHome = useRouterState({
     select: (state) => new RegExp(`^/mundos/${worldId}/?$`).test(shownPath(state))

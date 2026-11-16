@@ -6,7 +6,7 @@
 import type { Page, PanelBlock } from '@crisol/contracts'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { getRouteApi, Link, Navigate, useNavigate } from '@tanstack/react-router'
-import { ChevronDown, ChevronRight, Eye, FileText } from 'lucide-react'
+import { ChevronDown, ChevronRight, Eye, FileText, Waypoints } from 'lucide-react'
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
@@ -169,6 +169,17 @@ function PlayerWiki({
         <aside className={wiki.aside} aria-labelledby="paginas-jugador" data-tour="paginas-arbol">
           <div className={wiki.asideHeader}>
             <h2 id="paginas-jugador">{world ? t('wiki.title', { world: world.name }) : t('wiki.pages')}</h2>
+            {/* El grafo de lo que conoce del mundo (módulo 10) */}
+            <Link
+              to="/mundos/$worldId/campanas/$campaignId/relaciones"
+              params={{ worldId, campaignId: readAs.campaignId }}
+              search={readAs.asCharacterId ? { como: readAs.asCharacterId } : {}}
+              className={styles.graphLink}
+              aria-label={t('relations.world.open')}
+              title={t('relations.world.open')}
+            >
+              <Waypoints aria-hidden="true" size={15} />
+            </Link>
           </div>
           <PlayerTree worldId={worldId} currentId={currentId} />
         </aside>

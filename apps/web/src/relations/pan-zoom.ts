@@ -143,7 +143,14 @@ export function usePanZoom(
     },
     [apply, size, transform.k]
   )
-  return { transform, zoomBy, fit, centerOn, keepFitted }
+  /** Encuadrar, si no se ha tocado desde el último encuadre (el grafo del mundo, al asentarse) */
+  const refit = useCallback(
+    (box: Bounds | null, maxScale?: number) => {
+      if (!touched.current) fit(box, maxScale)
+    },
+    [fit]
+  )
+  return { transform, zoomBy, fit, refit, centerOn, keepFitted }
 }
 
 const size2 = (entry: ResizeObserverEntry | undefined): [number, number] => [

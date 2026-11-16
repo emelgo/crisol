@@ -2351,6 +2351,7 @@ export const es = {
       orphansHidden_other: '{{count}} sueltas ocultas',
       filters: 'Filtros',
       templates: 'Plantillas',
+      templateN: 'Plantilla {{n}}',
       relations: 'Relaciones',
       tags: 'Etiquetas',
       none: 'Ninguna',

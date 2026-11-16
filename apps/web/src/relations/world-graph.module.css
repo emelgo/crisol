@@ -1,0 +1,364 @@
+/* El grafo del mundo a pantalla entera (módulo 10), con el armazón de la cronología: la cabecera arriba y el marco de
+   cristal debajo, con los filtros a la izquierda y el grafo a sangre */
+
+.screen {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: var(--space-4);
+  block-size: 100dvh;
+  padding: var(--space-5) var(--space-6);
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  min-inline-size: 0;
+}
+
+.head h1 {
+  margin: 0;
+  font-size: clamp(1.75rem, 3vw, 2.5rem);
+}
+
+.facts {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--color-muted);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.back:hover {
+  color: var(--color-text);
+}
+
+/* ---------- El buscador, a la derecha ---------- */
+.find {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  inline-size: min(22rem, 100%);
+  margin-inline-start: auto;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--line-frame);
+  border-radius: var(--radius-button);
+  background: var(--field-fill);
+  color: var(--color-muted);
+}
+
+.find:focus-within {
+  border-color: var(--color-focus);
+}
+
+.find input {
+  flex: 1;
+  min-inline-size: 0;
+  min-block-size: 2.25rem;
+  border: 0;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  outline: none;
+}
+
+.matches {
+  position: absolute;
+  inset-block-start: calc(100% + 6px);
+  inset-inline: 0;
+  z-index: 20;
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: var(--space-1);
+  border: 1px solid var(--line-frame);
+  border-radius: 8px;
+  background: var(--frame-sheen), var(--popup-glass);
+  -webkit-backdrop-filter: var(--popup-blur);
+  backdrop-filter: var(--popup-blur);
+  box-shadow: var(--glass-shadow);
+  list-style: none;
+}
+
+.matches > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-block-size: 2.25rem;
+  padding: 0 var(--space-3);
+  border-radius: 6px;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.matches > div[aria-selected="true"] {
+  background: var(--row-hover);
+}
+
+.matches small {
+  color: var(--color-muted);
+}
+
+.noMatch {
+  position: absolute;
+  inset-block-start: calc(100% + 6px);
+  inset-inline: 0;
+  z-index: 20;
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--line-frame);
+  border-radius: 8px;
+  background: var(--frame-sheen), var(--popup-glass);
+  color: var(--color-muted);
+}
+
+/* ---------- El marco ---------- */
+.frame {
+  composes: frame from "../components/frame.module.css";
+  --frame-fill: var(--surface-page);
+  display: grid;
+  grid-template-columns: 15.5rem minmax(0, 1fr);
+  gap: 0;
+  min-block-size: 0;
+  overflow: hidden;
+}
+
+.frame[data-folded] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* Los filtros: una ficha de cristal dentro del marco, a la izquierda */
+.filters {
+  display: grid;
+  align-content: start;
+  gap: var(--space-5);
+  margin: var(--space-3);
+  padding: var(--space-4);
+  overflow: auto;
+  border: 1px solid var(--line-frame);
+  border-radius: var(--radius-frame);
+  background: var(--frame-sheen), var(--surface-glass);
+  scrollbar-width: thin;
+}
+
+.group {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.group h2 {
+  margin: 0;
+  color: var(--color-muted);
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.groupHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.group ul {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-link);
+  font: inherit;
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: 1.875rem;
+  color: var(--color-text);
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.row input {
+  flex: none;
+  inline-size: 1rem;
+  block-size: 1rem;
+  margin: 0;
+  accent-color: var(--color-accent);
+}
+
+.rowName {
+  flex: 1;
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Una relación apagada se ve tachada en la leyenda de su trazo */
+.row[data-off] .rowName {
+  color: var(--color-muted);
+  text-decoration: line-through;
+}
+
+.count {
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.dot {
+  flex: none;
+  inline-size: 0.625rem;
+  block-size: 0.625rem;
+  border-radius: 50%;
+}
+
+.stroke {
+  stroke: var(--color-muted);
+  stroke-width: 1.5;
+}
+
+.stroke[data-kind="mention"] {
+  stroke-dasharray: 2 3;
+  stroke-linecap: round;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-block-size: 1.75rem;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--line-frame);
+  border-radius: 999px;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.tag::before {
+  content: "";
+  inline-size: 0.5rem;
+  block-size: 0.5rem;
+  border-radius: 50%;
+  background: var(--tag-color, var(--color-muted));
+}
+
+.tag[aria-pressed="true"] {
+  border-color: color-mix(in srgb, var(--color-accent-text) 50%, transparent);
+  background: color-mix(in srgb, var(--color-accent) 22%, transparent);
+}
+
+.orphans {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.fold,
+.unfold {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-link);
+  font: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+  justify-self: start;
+}
+
+.unfold {
+  position: absolute;
+  inset-block-start: var(--space-3);
+  inset-inline-start: var(--space-4);
+  z-index: 3;
+  min-block-size: 2.25rem;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--line-frame);
+  border-radius: 999px;
+  background: var(--frame-sheen), var(--popup-glass);
+  color: var(--color-text);
+}
+
+.fold:focus-visible,
+.unfold:focus-visible,
+.link:focus-visible,
+.tag:focus-visible,
+.row:focus-within {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/* El grafo, a sangre en lo que queda del marco; el zoom, por encima del d20 de la esquina */
+.graph {
+  position: relative;
+  min-block-size: 0;
+  overflow: hidden;
+}
+
+.graph :global([role="toolbar"]) {
+  inset-block-end: calc(var(--space-4) + 3.25rem + var(--space-3));
+}
+
+.empty {
+  display: grid;
+  place-items: center;
+  block-size: 100%;
+  margin: 0;
+  padding: var(--space-6);
+  color: var(--color-muted);
+  text-align: center;
+}
+
+@media (max-width: 48rem) {
+  .screen {
+    padding: var(--space-4);
+  }
+
+  .frame {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .filters {
+    max-block-size: 40dvh;
+  }
+
+  .find {
+    inline-size: 100%;
+  }
+}

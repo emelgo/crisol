@@ -149,3 +149,24 @@ h3.blockTitle.blockTitle {
   font-size: 0.6875rem;
   font-weight: 600;
 }
+
+/* El grafo de lo que conoce del mundo (módulo 10), un icono en la cabecera del árbol */
+.graphLink {
+  display: grid;
+  place-items: center;
+  inline-size: 2rem;
+  block-size: 2rem;
+  margin-inline-start: auto;
+  border-radius: 6px;
+  color: var(--color-muted);
+}
+
+.graphLink:hover {
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+  color: var(--color-text);
+}
+
+.graphLink:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 1px;
+}

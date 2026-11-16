@@ -13,6 +13,7 @@ import { InPlayScreen } from './creatures/in-play.tsx'
 import { LibraryScreen } from './library/library.tsx'
 import { NotesScreen } from './notes/screen.tsx'
 import { PartyScreen } from './party/route.tsx'
+import { PlayerWorldGraphScreen, WorldGraphScreen } from './relations/world-graph.tsx'
 import { Bootstrap } from './routes/bootstrap.tsx'
 import { AdventuresScreen, CampaignBooksScreen, CampaignPage, ToMesaIfMaster } from './routes/campaign.tsx'
 import { CampaignsPage } from './routes/campaigns.tsx'
@@ -236,6 +237,18 @@ const chronologyRoute = createRoute({
   path: '/mundos/$worldId/calendarios/cronologias/$chronologyId',
   component: ChronologyScreen
 })
+// El grafo de relaciones de todo el mundo (módulo 10), a pantalla entera; y el de quien juega, con lo que conoce
+const worldGraphRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/mundos/$worldId/relaciones',
+  component: WorldGraphScreen
+})
+const playerWorldGraphRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/mundos/$worldId/campanas/$campaignId/relaciones',
+  component: PlayerWorldGraphScreen,
+  validateSearch: asSearch
+})
 // Las cronologías que conoce la campaña de quien juega (ADR-0017), y una de ellas
 const playerChronologiesRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -362,6 +375,8 @@ const routeTree = rootRoute.addChildren([
   calendarsRoute,
   calendarRoute,
   chronologyRoute,
+  worldGraphRoute,
+  playerWorldGraphRoute,
   playerChronologiesRoute,
   playerChronologyRoute,
   searchRoute,
