@@ -541,6 +541,7 @@ export function fakeApi(
           (other) =>
             other.id !== page.id &&
             other.worldId === page.worldId &&
+            block.template !== '' &&
             lineOf(other).includes(block.template) &&
             other.properties.some((p) => p.field === block.field && p.type === 'pages' && p.value.includes(page.id))
         )
@@ -554,11 +555,12 @@ export function fakeApi(
           }
           return { id: other.id, title: other.title, icon: other.icon, cells }
         })
+      const unset = !block.template || !block.field
       const usable = !template || template.fields.some((f) => f.field === block.field && f.type === 'pages')
       return {
         blockId: block.id,
         title: block.title,
-        problem: usable ? null : ('field' as const),
+        problem: unset ? ('unset' as const) : usable ? null : ('field' as const),
         columns: block.columns.map((field) => ({
           field,
           name: template?.fields.find((f) => f.field === field)?.name ?? field

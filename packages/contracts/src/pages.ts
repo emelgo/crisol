@@ -370,7 +370,10 @@ export const pageTables = z.object({
       blockId: z.string(),
       title: z.string(),
       /** field: el campo ya no está en la plantilla (la tabla no vale hasta cambiarla) */
-      problem: z.enum(['field']).nullable(),
+      problem: z
+        .enum(['field', 'unset'])
+        .nullable()
+        .describe('field: su campo ya no está en la plantilla; unset: aún no se ha elegido plantilla ni campo'),
       columns: z.array(z.object({ field: fieldId, name: z.string() })),
       rows: z.array(
         z.object({

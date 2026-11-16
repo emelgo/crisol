@@ -54,8 +54,9 @@ export const panelBlock = z.discriminatedUnion('type', [
     ...base,
     type: z.literal('related'),
     title: label,
-    template: tableTemplate,
-    field: tableField,
+    // Vacíos, sin configurar aún (así nace: se eligen de las plantillas que haya)
+    template: z.union([tableTemplate, z.literal('')]).describe('La plantilla; vacía, sin configurar'),
+    field: z.union([tableField, z.literal('')]).describe('Su campo de enlace a páginas; vacío, sin configurar'),
     columns: z.array(tableField).max(3),
     sort: z.union([z.literal('title'), tableField])
   })

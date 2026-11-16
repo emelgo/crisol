@@ -51,6 +51,16 @@ export function RelatedBody({ page, block, onFix }: { page: Page; block: Related
   const titles = new Map((tables.data?.linked ?? []).map((each) => [each.id, each.title]))
   const title = (id: string) => titles.get(id) ?? t('properties.unknownPage')
   if (!table) return null
+  if (table.problem === 'unset') {
+    return (
+      <p className={styles.muted}>
+        {t('related.unset')}{' '}
+        <button type="button" className={styles.fix} onClick={onFix}>
+          {t('related.choose')}
+        </button>
+      </p>
+    )
+  }
   if (table.problem) {
     return (
       <p className={styles.warning}>
@@ -115,7 +125,11 @@ export function RelatedOptions({
   const fieldId = useId()
   const addId = useId()
   const sortId = useId()
-  const templates = useTemplates().data?.templates ?? []
+  const all = useTemplates()
+  // Solo las que tienen un campo de enlace a páginas (con ellas se hace la tabla), y la de ahora aunque ya no lo tenga
+  const templates = (all.data?.templates ?? []).filter(
+    (each) => each.id === block.template || each.fields.some((field) => field.type === 'pages' && field.field)
+  )
   const template = templates.find((each) => each.id === block.template)
   const fields = template?.fields ?? []
   const links = fields.filter((field) => field.type === 'pages')
@@ -124,22 +138,29 @@ export function RelatedOptions({
   // Otra plantilla: su primer campo de enlace y dos columnas que no sean enlaces, por título
   const pickTemplate = (id: string) => {
     const next = templates.find((each) => each.id === id)
-    const all = next?.fields ?? []
+    const nextFields = next?.fields ?? []
     onChange({
       template: id,
-      field: all.find((f) => f.type === 'pages')?.field ?? block.field,
-      columns: all
+      field: nextFields.find((f) => f.type === 'pages')?.field ?? '',
+      columns: nextFields
         .filter((f) => f.type !== 'pages' && f.field)
         .slice(0, 2)
         .map((f) => f.field as string),
       sort: 'title'
     })
   }
+  // Sin ninguna con la que hacerla, una línea que lo diga
+  if (all.data && templates.length === 0) return <p className={styles.muted}>{t('related.noTemplates')}</p>
   return (
     <div className={styles.options}>
       <p className={styles.sentence}>
         <label htmlFor={templateId}>{t('related.pagesOf')}</label>
         <select id={templateId} value={block.template} onChange={(event) => pickTemplate(event.currentTarget.value)}>
+          {!block.template && (
+            <option value="" disabled>
+              {t('related.chooseTemplate')}
+            </option>
+          )}
           {templates.map((each) => (
             <option key={each.id} value={each.id}>
               {each.name}
@@ -147,7 +168,17 @@ export function RelatedOptions({
           ))}
         </select>
         <label htmlFor={fieldId}>{t('related.whose')}</label>
-        <select id={fieldId} value={block.field} onChange={(event) => onChange({ field: event.currentTarget.value })}>
+        <select
+          id={fieldId}
+          value={block.field}
+          disabled={!template}
+          onChange={(event) => onChange({ field: event.currentTarget.value })}
+        >
+          {!block.field && (
+            <option value="" disabled>
+              {t('related.chooseField')}
+            </option>
+          )}
           {links.map((field) => (
             <option key={field.field} value={field.field}>
               {field.name}

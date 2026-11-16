@@ -63,11 +63,15 @@ Pedidos al probar el módulo 9 en localhost. Se hacen en la rama `modulo-9/mapas
   escala. Cuesta algo más en pizarras enormes. A probar con la rueda + Ctrl y con dos dedos.*
 
 ## Panel de la página
-- [ ] El bloque **«Tabla de páginas»** nace apuntando a una plantilla «pnj» y un campo «faccion» que en una cuenta vacía no
+- [x] El bloque **«Tabla de páginas»** nace apuntando a una plantilla «pnj» y un campo «faccion» que en una cuenta vacía no
   existen: el servidor lo rechaza al guardar. Debe nacer sin configurar (pidiendo la plantilla y su campo de enlace, de las
-  que haya; si no hay ninguna, decirlo en una línea) y guardarse así.
-- [ ] Su error comparte el código `BAD_TABLE` con las tablas aleatorias y la app enseña «Las filas no cubren bien la
-  fórmula», que no tiene nada que ver: un código propio y un mensaje claro («Elige la plantilla y su campo»).
+  que haya; si no hay ninguna, decirlo en una línea) y guardarse así. *Hecho: nace con plantilla y campo vacíos (el
+  contrato lo admite y el servidor lo guarda); dice «Elige la plantilla y su campo.» con «Elegir»; sus opciones ofrecen
+  solo las plantillas con un campo de enlace (y «Elige una plantilla…»); sin ninguna: «Ninguna plantilla tiene un campo
+  que enlace páginas: añade uno en Plantillas.».*
+- [x] Su error comparte el código `BAD_TABLE` con las tablas aleatorias y la app enseña «Las filas no cubren bien la
+  fórmula», que no tiene nada que ver: un código propio y un mensaje claro («Elige la plantilla y su campo»). *Hecho:
+  `BAD_PAGE_TABLE`, «Elige la plantilla y su campo».*
 
 ## La página
 - [ ] Con la columna estrecha (1200 px con el panel abierto) **la letra del texto sale diminuta** (~11 px): la hoja ajusta

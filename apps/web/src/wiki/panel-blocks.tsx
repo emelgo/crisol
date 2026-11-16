@@ -91,7 +91,8 @@ export function blockOf(kind: Kind): PanelBlock {
     case 'tagged':
       return { id, type: 'tagged', title: '', tag: '' }
     case 'related':
-      return { id, type: 'related', title: '', template: 'pnj', field: 'faccion', columns: [], sort: 'title' }
+      // Nace sin configurar: se eligen la plantilla y su campo de las que haya (Enrique, 2026-11-16)
+      return { id, type: 'related', title: '', template: '', field: '', columns: [], sort: 'title' }
   }
 }
 
