@@ -2116,6 +2116,23 @@ export const es = {
       bookmark: 'Marcapáginas',
       pennant: 'Banderín'
     },
+    // El ojo de un pin o de algo dibujado (como el del árbol): «la» de una región o una ruta, «lo» de un pin o un texto
+    eye: {
+      knows_f: 'La conoce',
+      knows_m: 'Lo conoce',
+      unknown_f: 'No la conoce',
+      unknown_m: 'No lo conoce',
+      all_f: 'La conocen todas',
+      all_m: 'Lo conocen todas',
+      none_f: 'No la conoce ninguna',
+      none_m: 'No lo conoce ninguna',
+      some_f: 'La conocen {{count}} de {{total}}',
+      some_m: 'Lo conocen {{count}} de {{total}}',
+      label: '{{name}}: {{state}}',
+      toggle: '{{name}}: pulsa para cambiarlo',
+      pageUnknown: 'aún no conoce la página',
+      campaigns: 'Qué campañas lo conocen'
+    },
     variants: { large: 'Grande', small: 'Pequeño', icon: 'Solo el icono' },
     displays: { hover: 'Al pasar por encima', always: 'Siempre', never: 'Nunca' }
   },

@@ -1491,3 +1491,89 @@
   color: var(--color-muted);
   font-size: 0.75rem;
 }
+
+/* El ojo de un pin o de algo dibujado (item-eye.tsx): su estado, que se cambia al pulsarlo, como el del árbol */
+.eye {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: var(--space-2);
+  min-block-size: 2rem;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--color-field-border);
+  border-radius: var(--radius-button);
+  background: transparent;
+  color: var(--color-muted);
+  font: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.eye[data-known] {
+  border-color: color-mix(in srgb, var(--color-accent-text) 55%, transparent);
+  color: var(--color-text);
+}
+
+.eye:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+}
+
+.eyeNote {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+}
+
+.eyeMenu {
+  position: fixed;
+  z-index: 60;
+  display: grid;
+  min-inline-size: 14rem;
+  padding: var(--space-1);
+  border: 1px solid var(--line-frame);
+  border-radius: 8px;
+  background: var(--frame-sheen), var(--popup-glass);
+  -webkit-backdrop-filter: var(--popup-blur);
+  backdrop-filter: var(--popup-blur);
+  box-shadow: var(--glass-shadow);
+}
+
+.eyeMenu button {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: 2rem;
+  padding: 0 var(--space-2);
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.875rem;
+  text-align: start;
+  cursor: pointer;
+}
+
+.eyeMenu button:hover,
+.eyeMenu button:focus-visible {
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+  outline: none;
+  box-shadow: inset 3px 0 0 var(--color-accent);
+}
+
+.eyeMenu button > svg {
+  flex: none;
+  color: var(--color-muted);
+}
+
+.eyeMenu button[aria-checked="true"] > svg {
+  color: var(--color-accent-text);
+}
+
+.eyeMenu button > span:first-of-type {
+  flex: 1;
+}
+
+.eyeState {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+}

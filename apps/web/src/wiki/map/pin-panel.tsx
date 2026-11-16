@@ -15,8 +15,8 @@ import { focusOnMount } from '../../components/focus.ts'
 import list from '../../components/list.module.css'
 import { PRESET_COLORS } from '../../routes/world-look.ts'
 import { PageLink } from '../read-as.tsx'
-import { TargetReveal } from '../reveal.tsx'
 import { IconPicker } from './icon-picker.tsx'
+import { ItemEye } from './item-eye.tsx'
 import styles from './map.module.css'
 import { PagePicker } from './page-picker.tsx'
 import { PinShape, pinHex, SHAPE_NAMES } from './pin-shape.tsx'
@@ -191,7 +191,7 @@ export function PinPanel({
         )}
 
         {editable && (
-          // Los jugadores (ADR-0017): oculto, o revelarlo en partida
+          // Los jugadores (ADR-0017): oculto a todos, y el ojo de cada campaña (como el del árbol)
           <div className={styles.players}>
             <label className={styles.check}>
               <input
@@ -201,7 +201,7 @@ export function PinPanel({
               />
               {t('map.pin.hiddenFromPlayers')}
             </label>
-            <TargetReveal worldId={page.worldId} pageId={page.id} kind="pin" targetId={pin.id} />
+            <ItemEye page={page} target={{ kind: 'pin', targetId: pin.id }} feminine={false} hidden={pin.hidden} />
           </div>
         )}
 

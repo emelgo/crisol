@@ -31,7 +31,12 @@ Pedidos al probar el módulo 9 en localhost. Se hacen en la rama `modulo-9/mapas
 - [x] Algunas **formas de pin** mueven el sitio donde se clava el pin, y también el tamaño: el punto de anclaje y el tamaño,
   iguales en todas las formas. *Hecho: cada forma se encaja en la misma caja (su lado mayor, igual) y todas se clavan
   abajo en el centro; solo el icono suelto («Solo el icono»), por el centro.*
-- [ ] **«Revelar…»** del panel de una región o un pin no se entiende: rehacerlo (claro, como el ojo del árbol).
+- [x] **«Revelar…»** del panel de una región o un pin no se entiende: rehacerlo (claro, como el ojo del árbol). *Hecho:
+  junto a «Oculto a los jugadores», un ojo con su estado («Lo conoce / No lo conoce»; «la» en una región o una ruta).
+  Con una campaña, pulsarlo lo cambia al momento; con varias, dice cuántas («Lo conocen 1 de 2») y abre la lista de
+  campañas con su marca, como «Revelar a…» del árbol. Marca sin avisar (como el árbol); si la campaña no conoce la
+  página, lo dice («aún no conoce la página»). El modelo encajaba (las marcas de pin y de región ya existían): solo
+  faltaba leerlas, con una acción nueva, `getItemKnowledge`.*
 - [x] El **icono** se elige antes que «Solo el icono», y son iconos del paquete que tenemos (no emojis sueltos). *Hecho:
   «Icono» va antes de «Tamaño»; es un botón con el de ahora que abre, a la izquierda del panel, el buscador de los
   iconos de rol (el mismo de las páginas) y «Quitar el icono». Se pintan dentro de la forma, en la tinta que se lee sobre

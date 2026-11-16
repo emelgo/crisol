@@ -173,6 +173,51 @@ describe('lo que sabe cada campaña (docs/specs/conocimiento.md)', () => {
     expect((await ok200('getPageKnowledge', { pageId: page.capital })).campaigns[0].audience).toBe('none')
   })
 
+  it('el ojo de un pin y de una región: qué campaña los conoce (por su marca o porque no están ocultos) y si conoce su página', async () => {
+    const tab = await ok200('createPageTab', { pageId: page.aldoria, kind: 'map', name: 'Mapa' })
+    const { id: mapId } = await ok200('getMap', { tabId: tab.id })
+    const pin = await ok200('createMapPin', { mapId, x: 0.5, y: 0.5, label: 'Faro', hidden: true })
+    const region = (
+      await ok200('createMapElement', {
+        mapId,
+        kind: 'region',
+        geometry: {
+          pieces: [
+            [
+              [0.1, 0.1],
+              [0.4, 0.1],
+              [0.4, 0.4]
+            ]
+          ]
+        }
+      })
+    ).id
+    const eye = (kind: string, targetId: string) => ok200('getItemKnowledge', { worldId, kind, targetId })
+    // Oculto: nadie; sin ocultar: todas (aunque aún no conozcan la página)
+    expect((await eye('pin', pin.id)).campaigns).toEqual([
+      { campaignId: marca, name: 'La Marca', knows: false, seesPage: false },
+      { campaignId: norte, name: 'Los del norte', knows: false, seesPage: false }
+    ])
+    expect((await eye('element', region)).campaigns.map((c: { knows: boolean }) => c.knows)).toEqual([true, true])
+    // Marcarlo a una (como el ojo del árbol): la conoce; la otra, no; quitárselo a una campaña la región
+    await mark({ kind: 'pin', targetId: pin.id })
+    await mark({ targetId: page.aldoria })
+    await mark({ kind: 'element', targetId: region, known: false, campaignId: norte })
+    expect((await eye('pin', pin.id)).campaigns).toEqual([
+      { campaignId: marca, name: 'La Marca', knows: true, seesPage: true },
+      { campaignId: norte, name: 'Los del norte', knows: false, seesPage: false }
+    ])
+    expect((await eye('element', region)).campaigns.map((c: { knows: boolean }) => c.knows)).toEqual([true, false])
+    // Solo quien lleva la wiki; lo de otro mundo, no existe
+    expect(await code('getItemKnowledge', { worldId, kind: 'pin', targetId: pin.id }, ana.cookie)).toMatchObject({
+      status: 404
+    })
+    expect(await code('getItemKnowledge', { worldId, kind: 'pin', targetId: crypto.randomUUID() })).toEqual({
+      status: 404,
+      code: 'NOT_FOUND'
+    })
+  })
+
   it('solo quien lleva la wiki marca y ve quién conoce: para un jugador, no existe', async () => {
     expect(await code('getPageKnowledge', { pageId: page.aldoria }, ana.cookie)).toMatchObject({ status: 404 })
     expect(

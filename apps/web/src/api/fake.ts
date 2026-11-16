@@ -1928,6 +1928,28 @@ export function fakeApi(
     },
     listCampaignKnowledge: () => ({ campaign: [], world: [], knowsWorld: true }),
     getSecretsKnowledge: () => ({ secrets: [], campaigns: [] }),
+    // El ojo de un pin o de algo dibujado: su marca o, sin ella, visible si no está oculto (la página, como conocida)
+    getItemKnowledge: ({ worldId, kind, targetId }) => {
+      const item =
+        kind === 'pin'
+          ? maps.flatMap((map) => map.pins).find((pin) => pin.id === targetId)
+          : kind === 'element'
+            ? maps.flatMap((map) => map.elements).find((element) => element.id === targetId)
+            : undefined
+      return {
+        campaigns: campaigns
+          .filter((c) => c.worldId === worldId)
+          .map((c) => {
+            const mark = marks.get(`${c.id}|${kind}|${targetId}`)
+            return {
+              campaignId: c.id,
+              name: c.name,
+              knows: mark ? mark.known && mark.characters === null : !(item?.hidden ?? false),
+              seesPage: true
+            }
+          })
+      }
+    },
     listNews: () => ({ news: [] }),
     seeNews: () => ({ ok: true as const }),
     listKnownPages: () => ({

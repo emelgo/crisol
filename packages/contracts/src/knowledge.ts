@@ -88,6 +88,24 @@ export const setKnowledge = defineAction({
   output: z.object({ page: pageKnowledge.nullable() })
 })
 
+export const getItemKnowledge = defineAction({
+  name: 'getItemKnowledge',
+  kind: 'read',
+  description:
+    'Qué campañas conocen un pin, algo dibujado en un mapa (región, ruta o texto) o una pestaña: lo conocen si lo ve toda la campaña (por su marca o porque no está oculto), contando con que conozca la página donde está; seesPage dice si la conoce',
+  input: z.object({ worldId: z.uuid(), kind: z.enum(['pin', 'element', 'tab']), targetId: z.uuid() }),
+  output: z.object({
+    campaigns: z.array(
+      z.object({
+        campaignId: z.uuid(),
+        name: z.string(),
+        knows: z.boolean(),
+        seesPage: z.boolean().describe('Si conoce la página donde está (si no, no lo verá hasta conocerla)')
+      })
+    )
+  })
+})
+
 export const listKnownPages = defineAction({
   name: 'listKnownPages',
   kind: 'read',

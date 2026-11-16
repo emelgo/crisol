@@ -170,18 +170,14 @@ test('los mapas con capas: el máster dibuja una región y una ruta, ordena capa
   await expect(page.getByRole('button', { name: /Arrastra para moverlo/ })).toHaveCount(4)
   await settled(page)
   await page.screenshot({ path: test.info().outputPath('3-region.png') })
-  // Revelar a la campaña lo oculto (las Tierras sin señor), desde su panel
+  // Dar a conocer a la campaña lo oculto (las Tierras sin señor), con el ojo de su panel (como el del árbol)
   await viewer.focus()
   await page.keyboard.press('Escape')
   await viewer.locator('[data-kind="region"][data-hidden]').first().click({ force: true })
   const hiddenPanel = page.getByRole('region', { name: 'Región' })
   await expect(hiddenPanel.getByLabel('Nombre')).toHaveValue('Tierras sin señor')
-  await hiddenPanel.getByRole('button', { name: 'Revelar…' }).click()
-  await page
-    .getByRole('dialog', { name: 'Revelarlo en el mapa' })
-    .getByRole('button', { name: 'Revelar', exact: true })
-    .click()
-  await expect(page.getByRole('dialog', { name: 'Revelarlo en el mapa' })).toHaveCount(0)
+  await hiddenPanel.getByRole('button', { name: /: No la conoce/ }).click()
+  await expect(hiddenPanel.getByRole('button', { name: /: La conoce/ })).toBeVisible()
 
   // Escape suelta lo elegido y, después, vuelve el mapa a la página
   await viewer.focus()

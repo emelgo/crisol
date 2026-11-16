@@ -14,8 +14,8 @@ import { FormError } from '../../components/field.tsx'
 import list from '../../components/list.module.css'
 import { PRESET_COLORS } from '../../routes/world-look.ts'
 import { PageLink } from '../read-as.tsx'
-import { TargetReveal } from '../reveal.tsx'
 import { elementName } from './drawing.tsx'
+import { ItemEye } from './item-eye.tsx'
 import styles from './map.module.css'
 import { PagePicker } from './page-picker.tsx'
 import type { ElementPatch } from './use-elements.ts'
@@ -200,7 +200,12 @@ export function ElementPanel({
             />
             {t('map.element.hidden')}
           </label>
-          <TargetReveal worldId={page.worldId} pageId={page.id} kind="element" targetId={element.id} />
+          <ItemEye
+            page={page}
+            target={{ kind: 'element', targetId: element.id }}
+            feminine={kind !== 'label'}
+            hidden={element.hidden}
+          />
         </div>
 
         <fieldset className={styles.choices}>

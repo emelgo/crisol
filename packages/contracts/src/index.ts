@@ -88,6 +88,7 @@ import { listHistory, undoOperation } from './history.ts'
 import { getInvitation, regenerateInvitation, setInvitationsOpen } from './invitations.ts'
 import {
   clearScreenShow,
+  getItemKnowledge,
   getPageKnowledge,
   getSecretsKnowledge,
   hide,
@@ -418,6 +419,7 @@ export const ACTIONS = [
   hide,
   listCampaignKnowledge,
   getSecretsKnowledge,
+  getItemKnowledge,
   listNews,
   seeNews,
   listFiles,
@@ -726,6 +728,7 @@ export type Actions = {
   hide: typeof hide
   listCampaignKnowledge: typeof listCampaignKnowledge
   getSecretsKnowledge: typeof getSecretsKnowledge
+  getItemKnowledge: typeof getItemKnowledge
   listNews: typeof listNews
   seeNews: typeof seeNews
   listFiles: typeof listFiles

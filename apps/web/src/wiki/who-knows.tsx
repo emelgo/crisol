@@ -99,9 +99,17 @@ function WhoKnows({ page, onClose }: { page: Page; onClose: () => void }) {
   )
 }
 
-/** Poner o quitar una marca de la página, y volver a pedir lo que ve cada campaña */
-/** Marcar o quitar lo que sabe una campaña de una página (también desde el árbol) */
-export function useMark(page: Pick<Page, 'id' | 'worldId'>) {
+/** Lo que sabe cada campaña de un pin, de algo dibujado o de una pestaña (su ojo) */
+export const itemKnowledgeKey = (worldId: string, targetId: string) => ['pages', worldId, 'item-knowledge', targetId]
+
+/** Lo que se marca que no es una página: un pin, algo dibujado en un mapa o una pestaña */
+export type MarkTarget = { kind: 'pin' | 'element' | 'tab'; targetId: string }
+
+/**
+ * Marcar o quitar lo que sabe una campaña de una página (también desde el árbol) o, con `target`, de un pin, de algo
+ * dibujado o de una pestaña (su ojo); después, vuelve a pedir lo que ve cada campaña
+ */
+export function useMark(page: Pick<Page, 'id' | 'worldId'>, target?: MarkTarget) {
   const api = useApi()
   const queryClient = useQueryClient()
   const announce = useAnnounce()
@@ -110,15 +118,16 @@ export function useMark(page: Pick<Page, 'id' | 'worldId'>) {
     mutationFn: (input: { campaignId: string | null; known: boolean | null; characters?: string[] | null }) =>
       api.call('setKnowledge', {
         worldId: page.worldId,
-        kind: 'page',
-        targetId: page.id,
+        kind: target?.kind ?? 'page',
+        targetId: target?.targetId ?? page.id,
         campaignId: input.campaignId,
         known: input.known,
         ...(input.characters ? { characters: input.characters } : {})
       }),
     onSuccess: (result) => {
       if (result.page) queryClient.setQueryData(knowledgeKey(page.worldId, page.id), result.page)
-      void queryClient.invalidateQueries({ queryKey: ['pages', page.worldId, 'known'] })
+      if (target) void queryClient.invalidateQueries({ queryKey: itemKnowledgeKey(page.worldId, target.targetId) })
+      else void queryClient.invalidateQueries({ queryKey: ['pages', page.worldId, 'known'] })
     },
     onError: (error) => announce(errorText(error))
   })

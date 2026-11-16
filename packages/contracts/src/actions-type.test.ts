@@ -120,6 +120,7 @@ describe('Actions', () => {
       hide: true,
       listCampaignKnowledge: true,
       getSecretsKnowledge: true,
+      getItemKnowledge: true,
       listNews: true,
       seeNews: true,
       createTemplate: true,
