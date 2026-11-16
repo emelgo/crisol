@@ -8,6 +8,7 @@ import type { Database } from '../client.ts'
 import { type OperationContext, operation, type Writer } from '../operation.ts'
 import { campaignMembers, campaigns } from '../schema/campaigns.ts'
 import { characters } from '../schema/characters.ts'
+import { chronologies, timelineEvents } from '../schema/chronologies.ts'
 import { documents } from '../schema/documents.ts'
 import { knowledge, knowledgeNews, pageEditors } from '../schema/knowledge.ts'
 import { mapElements, mapPins, maps, pageTabs } from '../schema/maps.ts'
@@ -231,7 +232,7 @@ export async function findTargets(
   const found = new Map<string, MarkTarget>()
   if (ids.length === 0) return found
   const live = and(eq(pages.worldId, worldId), isNull(pages.deletedAt))
-  const put = (rows: { id: string; pageId: string; name: string; hidden?: boolean }[]) => {
+  const put = (rows: { id: string; pageId: string | null; name: string; hidden?: boolean }[]) => {
     for (const { id, ...target } of rows) found.set(id, target)
   }
   switch (kind) {
@@ -293,6 +294,29 @@ export async function findTargets(
           .where(and(inArray(mapElements.id, ids), live))
       )
       break
+    case 'event':
+      // Un evento suelto (módulo 8): su título o, sin él, el de su página; no cuelga de ninguna
+      put(
+        await db
+          .select({
+            id: timelineEvents.id,
+            pageId: sql<null>`null`,
+            name: sql<string>`coalesce(nullif(${timelineEvents.title}, ''), ${pages.title}, '')`,
+            hidden: timelineEvents.hidden
+          })
+          .from(timelineEvents)
+          .leftJoin(pages, eq(pages.id, timelineEvents.pageId))
+          .where(and(inArray(timelineEvents.id, ids), eq(timelineEvents.worldId, worldId)))
+      )
+      break
+    case 'chronology':
+      put(
+        await db
+          .select({ id: chronologies.id, pageId: sql<null>`null`, name: chronologies.name })
+          .from(chronologies)
+          .where(and(inArray(chronologies.id, ids), eq(chronologies.worldId, worldId)))
+      )
+      break
     case 'content': {
       // Una clave puede estar en el compendio del mundo para varios sistemas: vale la primera
       const rows = await db
@@ -325,10 +349,11 @@ export function separatesOf(db: Database, worldId: string) {
 
 /**
  * Dónde se usa un archivo del mundo, para saber si un jugador lo puede abrir (ADR-0017): como portada o imagen del
- * panel de una página, incrustado en un documento, como imagen de un mapa, o como portada del mundo o de una campaña
+ * panel de una página, incrustado en un documento, como imagen de un mapa o de un evento suelto, o como portada del
+ * mundo o de una campaña
  */
 export async function fileUses(db: Database, worldId: string, fileId: string) {
-  const [covers, panels, embeds, mapImages, campaignCovers, world] = await Promise.all([
+  const [covers, panels, embeds, mapImages, campaignCovers, world, events, chronologyRows] = await Promise.all([
     db.execute<{ id: string }>(sql`
       select id from pages where world_id = ${worldId} and deleted_at is null and cover->>'fileId' = ${fileId}`),
     db.execute<{ id: string }>(sql`
@@ -351,7 +376,12 @@ export async function fileUses(db: Database, worldId: string, fileId: string) {
       where m.world_id = ${worldId} and m.file_id = ${fileId}`),
     db.execute<{ id: string }>(sql`
       select id from campaigns where world_id = ${worldId} and deleted_at is null and cover->>'fileId' = ${fileId}`),
-    db.execute<{ id: string }>(sql`select id from worlds where id = ${worldId} and cover->>'fileId' = ${fileId}`)
+    db.execute<{ id: string }>(sql`select id from worlds where id = ${worldId} and cover->>'fileId' = ${fileId}`),
+    db
+      .select({ id: timelineEvents.id, hidden: timelineEvents.hidden })
+      .from(timelineEvents)
+      .where(and(eq(timelineEvents.worldId, worldId), sql`${timelineEvents.image}->>'fileId' = ${fileId}`)),
+    db.select({ id: chronologies.id }).from(chronologies).where(eq(chronologies.worldId, worldId))
   ])
   return {
     covers: [...covers].map((r) => r.id),
@@ -365,7 +395,10 @@ export async function fileUses(db: Database, worldId: string, fileId: string) {
     })),
     maps: [...mapImages].map((r) => ({ tabId: r.tab_id, pageId: r.page_id, hidden: r.hidden })),
     campaignCovers: [...campaignCovers].map((r) => r.id),
-    worldCover: [...world].length > 0
+    worldCover: [...world].length > 0,
+    /** Como imagen de un evento suelto: lo ve quien ve el evento y alguna cronología (módulo 8) */
+    events,
+    chronologies: events.length > 0 ? chronologyRows.map((r) => r.id) : []
   }
 }
 

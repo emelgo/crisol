@@ -5,6 +5,7 @@ import { calendarActions } from './calendars.ts'
 import { campaignActions } from './campaigns.ts'
 import { chapterActions } from './chapters.ts'
 import { characterActions } from './characters.ts'
+import { chronologyActions } from './chronologies.ts'
 import { combatActions } from './combat.ts'
 import { compendiumActions } from './compendium.ts'
 import { copyPageActions } from './copy-page.ts'
@@ -52,6 +53,7 @@ export const IMPLEMENTATIONS: Implementation[] = [
   ...organizationActions,
   ...worldActions,
   ...calendarActions,
+  ...chronologyActions,
   ...campaignActions,
   ...diceActions,
   ...logActions,

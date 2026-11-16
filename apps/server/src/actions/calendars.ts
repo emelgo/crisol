@@ -13,7 +13,7 @@ import {
   listCalendars,
   updateCalendar
 } from '@crisol/contracts'
-import { calendarsRepo, operation, schema } from '@crisol/db'
+import { calendarsRepo, chronologiesRepo, operation, schema } from '@crisol/db'
 import {
   addDays,
   blankCalendar,
@@ -37,7 +37,7 @@ import {
   type WorldDate,
   yearLength
 } from '@crisol/domain'
-import { calendarsChanged, pagesChanged } from '../realtime/events.ts'
+import { calendarsChanged, chronologiesChanged, pagesChanged } from '../realtime/events.ts'
 import { worldCalendars as asWorld, retextedPages, seenDefinition as seen } from '../wiki/dates.ts'
 import { authorizedView, type ReadAs } from '../wiki/reader.ts'
 import { authorizedWiki } from './access.ts'
@@ -286,8 +286,12 @@ export const calendarActions = [
     const used = await datesInUse(ctx.db, calendar.id)
     if (used > 0)
       throw new InvalidRequestError('CALENDAR_IN_USE', `${used === 1 ? 'lo usa una fecha' : `lo usan ${used} fechas`}`)
-    // Los que se correspondían con él se quedan sin correspondencia, en la misma operación (deshacer la devuelve)
+    // Los que se correspondían con él se quedan sin correspondencia, y las cronologías que lo usaban pasan al
+    // principal, en la misma operación (deshacer lo devuelve)
     const linked = rows.filter((row) => row.definition.correspondence?.calendarId === calendar.id)
+    const using = (await chronologiesRepo.listChronologies(ctx.db, calendar.worldId)).filter(
+      (row) => row.calendarId === calendar.id
+    )
     await operation(
       ctx.db,
       historyContext(
@@ -299,10 +303,12 @@ export const calendarActions = [
       async (w) => {
         for (const row of linked)
           await w.update(schema.calendars, row.id, { definition: { ...row.definition, correspondence: null } })
+        for (const row of using) await w.update(schema.chronologies, row.id, { calendarId: null })
         await w.remove(schema.calendars, calendar.id)
       }
     )
     ctx.realtime.publish(calendarsChanged(wiki))
+    if (using.length > 0) ctx.realtime.publish(chronologiesChanged(wiki))
     return { id: calendar.id }
   }),
 

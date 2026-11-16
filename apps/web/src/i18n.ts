@@ -1193,7 +1193,9 @@ export const es = {
     tab: 'la pestaña «{{name}}»',
     pin: 'el pin «{{name}}»',
     element: '«{{name}}» del mapa',
-    content: '«{{name}}» del compendio del mundo'
+    content: '«{{name}}» del compendio del mundo',
+    event: 'el evento «{{name}}»',
+    chronology: 'la cronología «{{name}}»'
   },
   // El aviso de lo revelado, a quien juega
   revealNotice: {
@@ -1209,7 +1211,9 @@ export const es = {
       tab: 'Una pestaña',
       pin: 'Un lugar del mapa',
       element: 'Algo del mapa',
-      content: 'Del compendio'
+      content: 'Del compendio',
+      chronology: 'Una cronología',
+      event: 'Un evento'
     }
   },
   // «Lo que sabe el grupo» (docs/specs/revelar.md)
@@ -1224,7 +1228,16 @@ export const es = {
     hidden: '«{{name}}», oculto otra vez',
     empty: 'Aún no se les ha revelado nada.',
     world: 'Lo que sabe todo el mundo',
-    kinds: { page: 'Página', secret: 'Secreto', tab: 'Pestaña', pin: 'Pin', element: 'Del mapa', content: 'Compendio' }
+    kinds: {
+      page: 'Página',
+      secret: 'Secreto',
+      tab: 'Pestaña',
+      pin: 'Pin',
+      element: 'Del mapa',
+      content: 'Compendio',
+      chronology: 'Cronología',
+      event: 'Evento'
+    }
   },
   // Revelar en partida (docs/specs/revelar.md)
   reveal: {
@@ -3827,6 +3840,17 @@ export const es = {
       primaryCalendar: 'hizo principal el calendario «{{name}}»',
       moveCalendar: 'movió el calendario «{{name}}»',
       deleteCalendar: 'borró el calendario «{{name}}»',
+      createChronology: 'creó la cronología «{{name}}»',
+      updateChronology: 'cambió la cronología «{{name}}»',
+      renameChronology: 'renombró la cronología «{{from}}» a «{{to}}»',
+      moveChronology: 'movió la cronología «{{name}}»',
+      deleteChronology: 'borró la cronología «{{name}}»',
+      updateTimelineGroups: 'cambió los grupos de eventos',
+      createTimelineEvent: 'creó el evento «{{title}}»',
+      createTimelineEvents: 'creó {{count}} eventos',
+      updateTimelineEvent: 'cambió el evento «{{title}}»',
+      deleteTimelineEvent: 'borró el evento «{{title}}»',
+      convertEventToPage: 'convirtió el evento «{{title}}» en página',
       createMapLayer: 'añadió la capa «{{layer}}» al mapa «{{map}}» de «{{title}}»',
       renameMapLayer: 'renombró la capa «{{from}}» del mapa «{{map}}» a «{{to}}»',
       updateMapLayer: 'cambió la capa «{{layer}}» del mapa «{{map}}»',
@@ -4096,6 +4120,17 @@ export const es = {
       primaryCalendar: 'hacer principal el calendario «{{name}}»',
       moveCalendar: 'mover el calendario «{{name}}»',
       deleteCalendar: 'borrar el calendario «{{name}}»',
+      createChronology: 'crear la cronología «{{name}}»',
+      updateChronology: 'cambiar la cronología «{{name}}»',
+      renameChronology: 'renombrar la cronología «{{from}}» a «{{to}}»',
+      moveChronology: 'mover la cronología «{{name}}»',
+      deleteChronology: 'borrar la cronología «{{name}}»',
+      updateTimelineGroups: 'cambiar los grupos de eventos',
+      createTimelineEvent: 'crear el evento «{{title}}»',
+      createTimelineEvents: 'crear {{count}} eventos',
+      updateTimelineEvent: 'cambiar el evento «{{title}}»',
+      deleteTimelineEvent: 'borrar el evento «{{title}}»',
+      convertEventToPage: 'convertir el evento «{{title}}» en página',
       createMapLayer: 'añadir una capa a un mapa',
       renameMapLayer: 'renombrar una capa',
       updateMapLayer: 'cambiar una capa',

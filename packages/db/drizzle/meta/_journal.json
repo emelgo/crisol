@@ -589,6 +589,13 @@
       "when": 1794848280201,
       "tag": "0083_fechas_en_busqueda",
       "breakpoints": true
+    },
+    {
+      "idx": 84,
+      "version": "7",
+      "when": 1794851317580,
+      "tag": "0084_cronologias",
+      "breakpoints": true
     }
   ]
 }

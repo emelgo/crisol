@@ -10,10 +10,12 @@
  *   marcas «no la conocen», el público no cuenta.
  * - Secretos: su página y su marca. Pestañas, pines y regiones: siguen a su página, salvo su marca (de la campaña o del
  *   mundo) o `hidden` (la marca del mundo que ya tenían). Entradas del mundo: solo con su marca.
+ * - Cronologías (módulo 8): solo con su marca, como las entradas del mundo. Sus eventos sueltos se ven salvo `hidden` o
+ *   su marca (no cuelgan de ninguna página: siguen a la cronología en la que se leen).
  */
 import { MAX_PAGE_DEPTH } from './tree.ts'
 
-export type KnowledgeKind = 'page' | 'secret' | 'tab' | 'pin' | 'element' | 'content'
+export type KnowledgeKind = 'page' | 'secret' | 'tab' | 'pin' | 'element' | 'content' | 'event' | 'chronology'
 
 /** Una marca: en el mundo (campaignId null) o en una campaña */
 export interface KnowledgeMark {
@@ -50,6 +52,10 @@ export interface Knowledge {
   /** Un pin o un elemento (región, ruta, etiqueta) de un mapa de esa página */
   seesMapItem(item: { kind: 'pin' | 'element'; id: string; pageId: string; hidden: boolean }): boolean
   seesContent(key: string): boolean
+  /** Una cronología del mundo: solo con su marca */
+  seesChronology(id: string): boolean
+  /** Un evento suelto de las cronologías: su marca o, sin ella, visible salvo oculto */
+  seesEvent(event: { id: string; hidden: boolean }): boolean
 }
 
 // La capa del mundo, con una marca que no puede ser el id de una campaña
@@ -81,7 +87,9 @@ const ALL: Knowledge = {
   seesSecret: () => true,
   seesTab: () => true,
   seesMapItem: () => true,
-  seesContent: () => true
+  seesContent: () => true,
+  seesChronology: () => true,
+  seesEvent: () => true
 }
 
 /** La marca que decide una página en una campaña (o en el mundo, sin campaña), con la página donde está */
@@ -182,6 +190,14 @@ export function knowledgeFor(reader: Reader, tree: readonly TreePage[], marks: r
     seesContent(key) {
       const own = flat('content', key)
       return own !== undefined && admits(own, characterIds)
+    },
+    seesChronology(id) {
+      const own = flat('chronology', id)
+      return own !== undefined && admits(own, characterIds)
+    },
+    seesEvent(event) {
+      const own = flat('event', event.id)
+      return own ? admits(own, characterIds) : !event.hidden
     }
   }
 }

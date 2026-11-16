@@ -17,6 +17,7 @@ import type { Database } from './client.ts'
 import { calendars } from './schema/calendars.ts'
 import { campaignMembers, campaigns } from './schema/campaigns.ts'
 import { characters, characterVersions } from './schema/characters.ts'
+import { chronologies, timelineEvents, timelineGroups } from './schema/chronologies.ts'
 import { combatants, combats } from './schema/combat.ts'
 import { campaignCreatures } from './schema/creatures.ts'
 import { fileFolders, files } from './schema/files.ts'
@@ -65,6 +66,9 @@ export const TRACKED_TABLES = {
   map_layers: mapLayers,
   map_elements: mapElements,
   calendars,
+  chronologies,
+  timeline_groups: timelineGroups,
+  timeline_events: timelineEvents,
   characters,
   character_versions: characterVersions,
   random_tables: randomTables,

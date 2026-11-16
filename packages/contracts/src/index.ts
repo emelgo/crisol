@@ -52,6 +52,18 @@ import {
   updateCharacter
 } from './characters.ts'
 import {
+  convertEventToPage,
+  createChronology,
+  createTimelineEvents,
+  deleteChronology,
+  deleteTimelineEvent,
+  getChronology,
+  listChronologies,
+  updateChronology,
+  updateTimelineEvent,
+  updateTimelineGroups
+} from './chronologies.ts'
+import {
   addCombatants,
   endCombat,
   getCombat,
@@ -318,6 +330,7 @@ export * from './books.ts'
 export * from './calendars.ts'
 export * from './campaigns.ts'
 export * from './characters.ts'
+export * from './chronologies.ts'
 export * from './combat.ts'
 export * from './conditions.ts'
 export * from './creatures.ts'
@@ -669,7 +682,17 @@ export const ACTIONS = [
   updateCalendar,
   deleteCalendar,
   describeDate,
-  convertDate
+  convertDate,
+  listChronologies,
+  getChronology,
+  createChronology,
+  updateChronology,
+  deleteChronology,
+  updateTimelineGroups,
+  createTimelineEvents,
+  updateTimelineEvent,
+  deleteTimelineEvent,
+  convertEventToPage
 ]
 
 /** Las acciones por nombre, solo como tipo: la web las usa sin cargar zod */
@@ -986,4 +1009,14 @@ export type Actions = {
   deleteCalendar: typeof deleteCalendar
   describeDate: typeof describeDate
   convertDate: typeof convertDate
+  listChronologies: typeof listChronologies
+  getChronology: typeof getChronology
+  createChronology: typeof createChronology
+  updateChronology: typeof updateChronology
+  deleteChronology: typeof deleteChronology
+  updateTimelineGroups: typeof updateTimelineGroups
+  createTimelineEvents: typeof createTimelineEvents
+  updateTimelineEvent: typeof updateTimelineEvent
+  deleteTimelineEvent: typeof deleteTimelineEvent
+  convertEventToPage: typeof convertEventToPage
 }

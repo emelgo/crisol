@@ -1054,6 +1054,63 @@ describe('conector MCP con OAuth', () => {
       expect.objectContaining({ name: 'Fundación', text: '12 de Siega – 3 de Trilla de 1250 RC' }),
       expect.objectContaining({ name: 'Coronación', text: '5 de Vendimia de 1302 RC' })
     ])
+    // Las cronologías (módulo 8): la IA del máster pasa una de una vez con crear_eventos y la lee en orden con
+    // ver_cronologia (las páginas con fecha salen solas); mal fechada, dice cuál. La de la jugadora solo ve la
+    // revelada, sin lo oculto ni el campo oculto de fecha
+    const events = await call('crear_eventos', {
+      worldId: world.id,
+      events: [
+        { title: 'Boda de Aldren', date: '1250-Siega-18', group: 'La Corona' },
+        { title: 'Campaña de los Pasos', date: '1250-Siega-20/1250-Trilla-3', group: 'Guerras' },
+        { title: 'Feria de Vendimia', date: '413-Vendimia-1 (cada año)' },
+        { title: 'Secreto del rey', date: '1251', hidden: true }
+      ]
+    })
+    expect(events.isError, events.text).toBeFalsy()
+    const misdated = await call('crear_eventos', {
+      worldId: world.id,
+      events: [
+        { title: 'Bien', date: '1250' },
+        { title: 'Mal', date: '1250-Nada-3' }
+      ]
+    })
+    expect(misdated.text).toMatch(/^BAD_DATE.*n\.º 2/)
+    const chronology = await call<{ id: string }>('crear_cronologia', { worldId: world.id, name: 'Historia' })
+    expect(chronology.isError, chronology.text).toBeFalsy()
+    const timeline = await call<{ entries: { title: string; form: string; field?: string }[] }>('ver_cronologia', {
+      chronologyId: chronology.data.id
+    })
+    expect(timeline.data.entries.map((e) => [e.title, e.field ?? null, e.form])).toEqual([
+      ['Feria de Vendimia', null, '413-Vendimia-1 (cada año)'],
+      ['Aldoria', 'Fundación', '1250-Siega-12/1250-Trilla-3'],
+      ['Boda de Aldren', null, '1250-Siega-18'],
+      ['Campaña de los Pasos', null, '1250-Siega-20/1250-Trilla-3'],
+      ['Secreto del rey', null, '1251'],
+      ['Aldoria', 'Coronación', '1302-Vendimia-5']
+    ])
+    expect((await player.call('ver_cronologia', { chronologyId: chronology.data.id })).isError).toBe(true)
+    await api(cookie, 'setKnowledge', {
+      worldId: world.id,
+      campaignId: campaign.id,
+      kind: 'chronology',
+      targetId: chronology.data.id,
+      known: true
+    })
+    const theirs = await player.call<{ entries: { title: string }[] }>('ver_cronologia', {
+      chronologyId: chronology.data.id
+    })
+    expect(theirs.data.entries.map((e) => e.title)).toEqual([
+      'Feria de Vendimia',
+      'Aldoria',
+      'Boda de Aldren',
+      'Campaña de los Pasos'
+    ])
+    for (const leak of ['Secreto', 'Coronación', '1302']) expect(theirs.text).not.toContain(leak)
+    const listed = await player.call('listar_cronologias', { worldId: world.id })
+    expect(listed.text).toContain('Historia')
+    expect(
+      (await player.call('crear_eventos', { worldId: world.id, events: [{ title: 'x', date: '1' }] })).isError
+    ).toBe(true)
     const own = (await player.call<{ pages: { title: string }[] }>('ver_arbol', { worldId: world.id })).data
     expect(own.pages.map((p) => p.title)).toEqual(['Aldoria'])
     const readCall = await player.call<{ markdown: string; dates: { name: string }[] }>('leer_pagina', {
@@ -1100,8 +1157,9 @@ describe('conector MCP con OAuth', () => {
     const waiting = (await call<Approvals>('pendientes')).data.pending
     expect(waiting[0]).toMatchObject({ tool: 'revelar', details: { kind: 'page', name: 'Varn', known: true } })
     await api(cookie, 'approve', { approvalId: waiting[0]?.id })
+    // (la cronología revelada arriba, también)
     const group = (await call<{ campaign: { name: string }[] }>('lo_que_sabe', { campaignId: campaign.id })).data
-    expect(group.campaign.map((k) => k.name)).toEqual(['Varn', 'Diario', 'Aldoria'])
+    expect(group.campaign.map((k) => k.name)).toEqual(['Varn', 'Diario', 'Historia', 'Aldoria'])
     expect((await player.call('leer_pagina', { pageId: varn })).isError).toBeFalsy()
     expect((await player.call('revelar', { worldId: world.id, kind: 'page', targetId: aldoria })).text).toMatch(
       /^READ_ONLY/

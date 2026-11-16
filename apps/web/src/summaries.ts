@@ -189,7 +189,7 @@ export function summaryOf(
     case 'setKnowledge': {
       const kind = text(details.kind)
       const what = t(
-        `knowledgeTargets.${['page', 'secret', 'tab', 'pin', 'element', 'content'].includes(kind) ? kind : 'page'}` as 'knowledgeTargets.page',
+        `knowledgeTargets.${['page', 'secret', 'tab', 'pin', 'element', 'content', 'event', 'chronology'].includes(kind) ? kind : 'page'}` as 'knowledgeTargets.page',
         {
           name: text(details.name)
         }
@@ -323,6 +323,26 @@ export function summaryOf(
       if (details.primary) return say('primaryCalendar', { name: text(details.name) })
       if (details.moved) return say('moveCalendar', { name: text(details.name) })
       return say('updateCalendar', { name: text(details.name) })
+    // Las cronologías del mundo y sus eventos (módulo 8)
+    case 'createChronology':
+    case 'deleteChronology':
+      return say(action, { name: text(details.name) })
+    case 'updateChronology':
+      if (details.from !== undefined) return say('renameChronology', { from: text(details.from), to: text(details.to) })
+      if (details.moved) return say('moveChronology', { name: text(details.name) })
+      return say('updateChronology', { name: text(details.name) })
+    case 'updateTimelineGroups':
+      return say('updateTimelineGroups')
+    case 'createTimelineEvents': {
+      const titles = Array.isArray(details.titles) ? details.titles.map(text) : []
+      return Number(details.count ?? 0) === 1 && titles[0]
+        ? say('createTimelineEvent', { title: titles[0] })
+        : say('createTimelineEvents', { count: Number(details.count ?? titles.length) })
+    }
+    case 'updateTimelineEvent':
+    case 'deleteTimelineEvent':
+    case 'convertEventToPage':
+      return say(action, { title: text(details.title) })
     // Las capas del mapa y lo dibujado en él (módulo 9)
     case 'createMapLayer':
     case 'deleteMapLayer':

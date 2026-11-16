@@ -15,7 +15,7 @@ import { PageTitle } from '../components/page-title.tsx'
 import styles from './group-knowledge.module.css'
 
 type Item = {
-  kind: 'page' | 'secret' | 'tab' | 'pin' | 'element' | 'content'
+  kind: 'page' | 'secret' | 'tab' | 'pin' | 'element' | 'content' | 'event' | 'chronology'
   targetId: string
   name: string
   pageId: string | null
@@ -104,7 +104,7 @@ export function GroupKnowledge({ worldId, campaignId }: { worldId: string; campa
           <span>{t('group.byKind')}</span>
           <select value={kind} onChange={(event) => setKind(event.currentTarget.value)}>
             <option value="">{t('group.all')}</option>
-            {(['page', 'secret', 'tab', 'pin', 'content'] as const).map((each) => (
+            {(['page', 'secret', 'tab', 'pin', 'content', 'chronology', 'event'] as const).map((each) => (
               <option key={each} value={each}>
                 {t(`group.kinds.${each}`)}
               </option>

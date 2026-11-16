@@ -23,6 +23,8 @@ export type RealtimeMessage =
   | { type: 'changed'; what: 'pageContent'; worldId: string; pageId: string }
   /** Los calendarios de ese mundo (módulo 8): a quien lee su wiki, que los vuelve a pedir ya proyectados */
   | { type: 'changed'; what: 'calendars'; worldId: string }
+  /** Las cronologías de ese mundo, sus grupos o sus eventos (módulo 8): a quien lee su wiki, que las vuelve a pedir */
+  | { type: 'changed'; what: 'chronologies'; worldId: string }
   /** Los archivos de ese mundo */
   | { type: 'changed'; what: 'files'; worldId: string }
   /** Los archivos comunes de esa organización (los ven todos sus mundos) */
@@ -49,7 +51,7 @@ export type RealtimeMessage =
       type: 'revealed'
       worldId: string
       campaignId: string
-      kind: 'page' | 'secret' | 'tab' | 'pin' | 'element' | 'content'
+      kind: 'page' | 'secret' | 'tab' | 'pin' | 'element' | 'content' | 'event' | 'chronology'
       /** Lo revelado: su id (una entrada del compendio del mundo, su clave) */
       targetId?: string
       pageId: string | null

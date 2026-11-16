@@ -130,11 +130,21 @@ export const knowledgeActions = [
           characters: null
         }
         const knowing = knowledgeFor(reader, tree, [...marks, page])
+        // Un evento o una cronología no cuelgan de ninguna página
+        const loose = item.kind === 'event' || item.kind === 'chronology'
+        const knows =
+          item.kind === 'tab'
+            ? knowing.seesTab(item)
+            : item.kind === 'event'
+              ? knowing.seesEvent(item)
+              : item.kind === 'chronology'
+                ? knowing.seesChronology(item.id)
+                : knowing.seesMapItem({ ...item, kind: item.kind })
         return {
           campaignId: campaign.id,
           name: campaign.name,
-          knows: item.kind === 'tab' ? knowing.seesTab(item) : knowing.seesMapItem({ ...item, kind: item.kind }),
-          seesPage: knowledgeFor(reader, tree, marks).seesPage(pageId)
+          knows,
+          seesPage: loose || knowledgeFor(reader, tree, marks).seesPage(pageId)
         }
       })
     }

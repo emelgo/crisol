@@ -16,6 +16,7 @@ import {
 import { authorizedCampaign, authorizedPage } from '../actions/access.ts'
 import { bookRequest } from '../actions/books.ts'
 import { calendarRequest } from '../actions/calendars.ts'
+import { chronologyRequest } from '../actions/chronologies.ts'
 import {
   type ActionContext,
   type ActionEnv,
@@ -158,6 +159,8 @@ async function describe(ctx: ActionContext, action: string, input: Record<string
   Object.assign(details, await partyRequest(ctx, action, input))
   // Un calendario: su nombre
   Object.assign(details, await calendarRequest(ctx, action, input))
+  // Una cronología o un evento: su nombre o su título
+  Object.assign(details, await chronologyRequest(ctx, action, input))
   // Lo que sabe una campaña: qué se marca y a quién (como en el historial)
   Object.assign(details, await knowledgeRequest(ctx, action, input))
   if (action === 'updateCampaign' && typeof input.system === 'string')

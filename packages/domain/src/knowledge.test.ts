@@ -220,6 +220,34 @@ describe('secretos, pestañas, pines y entradas del mundo', () => {
     expect(deCero.seesContent('espada')).toBe(false)
   })
 
+  it('una cronología, solo con su marca; un evento, visible salvo oculto o con su marca', () => {
+    const own = (kind: KnowledgeMark['kind'], targetId: string, known: boolean): KnowledgeMark => ({
+      campaignId: 'marca',
+      kind,
+      targetId,
+      known,
+      characters: null
+    })
+    const extra = [
+      own('chronology', 'historia', true),
+      own('event', 'boda', true),
+      own('event', 'coronacion', false),
+      { ...own('chronology', 'todos', true), campaignId: null }
+    ]
+    const k = knowledgeFor(player('marca'), tree, [...marks, ...extra])
+    expect(k.seesChronology('historia')).toBe(true)
+    expect(k.seesChronology('otra')).toBe(false)
+    expect(k.seesChronology('todos')).toBe(true)
+    expect(knowledgeFor(player('marca', ['lia'], false), tree, extra).seesChronology('todos')).toBe(false)
+    expect(k.seesEvent({ id: 'suelto', hidden: false })).toBe(true)
+    expect(k.seesEvent({ id: 'oculto', hidden: true })).toBe(false)
+    expect(k.seesEvent({ id: 'boda', hidden: true })).toBe(true)
+    expect(k.seesEvent({ id: 'coronacion', hidden: false })).toBe(false)
+    const master = knowledgeFor({ kind: 'master' }, tree, [])
+    expect(master.seesChronology('x')).toBe(true)
+    expect(master.seesEvent({ id: 'x', hidden: true })).toBe(true)
+  })
+
   it('el máster lo ve todo', () => {
     const k = knowledgeFor({ kind: 'master' }, tree, marks)
     expect(k.seesSecret('s3', 'varn')).toBe(true)

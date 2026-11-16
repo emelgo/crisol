@@ -356,6 +356,17 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   crear_calendario: { action: 'createCalendar' },
   cambiar_calendario: { action: 'updateCalendar' },
   borrar_calendario: { action: 'deleteCalendar' },
+  // Las cronologías del mundo (módulo 8): los eventos sueltos y las páginas con fecha, en «Calendarios»
+  listar_cronologias: { action: 'listChronologies' },
+  ver_cronologia: { action: 'getChronology' },
+  crear_cronologia: { action: 'createChronology' },
+  cambiar_cronologia: { action: 'updateChronology' },
+  borrar_cronologia: { action: 'deleteChronology' },
+  crear_eventos: { action: 'createTimelineEvents' },
+  cambiar_evento: { action: 'updateTimelineEvent' },
+  borrar_evento: { action: 'deleteTimelineEvent' },
+  convertir_en_pagina: { action: 'convertEventToPage' },
+  cambiar_grupos_eventos: { action: 'updateTimelineGroups' },
   describir_fecha: {
     description:
       'Describe una fecha de un calendario del mundo (sin calendarId, el principal de worldId): su texto, su día de la semana, su estación, su era, la fase de cada luna y su día del año y, si no es del principal y tiene correspondencia, su equivalencia en el principal. Con addDays, también la de N días después; con until, cuántos días faltan; con to, la pasa a ese otro calendario',
@@ -805,7 +816,13 @@ export const INSTRUCTIONS =
   'principal, o en otro con to, si tienen correspondencia). Una página se fecha con una propiedad de tipo date ' +
   '(editar_pagina o crear_paginas; en el YAML, como texto en un campo de fecha): 1250-Siega-18, 1250-Siega o 1250, ' +
   'un periodo 1250-Siega-12/1250-Trilla-3 y «(cada año)» al final si se repite; sin calendar, el que ya tenga o el ' +
-  'principal. leer_pagina da sus fechas legibles (dates). Las etiquetas son de toda la cuenta: míralas con listar_etiquetas y usa las que ' +
+  'principal. leer_pagina da sus fechas legibles (dates). Las cronologías (listar_cronologias, ver_cronologia; ' +
+  'crear_cronologia con su calendario y su filtro: páginas, plantillas, etiquetas, grupos) juntan los eventos sueltos ' +
+  'del mundo (no van en el árbol) y las páginas con fecha, que salen solas; lo de otros calendarios se convierte si ' +
+  'tiene correspondencia. crear_eventos crea hasta 100 de una vez (una cronología entera), con su grupo por su nombre ' +
+  'y su página (pageId o newPage); cambiar_evento, borrar_evento y convertir_en_pagina (la crea con su texto y lo ' +
+  'deja enlazado). Un jugador ve las cronologías que se le revelan (marcar_conocimiento o revelar con kind ' +
+  'chronology) y dentro los eventos no ocultos (o revelados, kind event) y las páginas que conoce. Las etiquetas son de toda la cuenta: míralas con listar_etiquetas y usa las que ' +
   'ya hay antes de inventar otras. Una página puede tener pestañas además de su texto, como un mapa (ver_pestanas): ' +
   'sus pines van de 0 a 1 sobre la imagen y llevan a páginas; míralo con ver_mapa antes de poner nada. Un mapa tiene ' +
   'además capas (crear_capa, cambiar_capa: hidden, solo del máster; quitar_capa) con regiones, rutas y textos: para ' +

@@ -316,7 +316,17 @@ describe('Actions', () => {
       updateCalendar: true,
       deleteCalendar: true,
       describeDate: true,
-      convertDate: true
+      convertDate: true,
+      listChronologies: true,
+      getChronology: true,
+      createChronology: true,
+      updateChronology: true,
+      deleteChronology: true,
+      updateTimelineGroups: true,
+      createTimelineEvents: true,
+      updateTimelineEvent: true,
+      deleteTimelineEvent: true,
+      convertEventToPage: true
     }
     expect(Object.keys(names).sort()).toEqual(ACTIONS.map((a) => a.name).sort())
   })

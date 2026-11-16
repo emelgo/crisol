@@ -150,6 +150,7 @@ import { buildSoundView, listInfo } from '../sound/view.ts'
 import { readFoundryZip } from '../systems/foundry-zip.ts'
 import { type ActionInput, type ActionName, type ActionOutput, type ApiClient, ApiError } from './client.ts'
 import { type FakeCalendar, fakeCalendars } from './fake-calendars.ts'
+import { type FakeEvent, fakeChronologies } from './fake-chronologies.ts'
 
 export function fakeApi(
   options: {
@@ -212,6 +213,10 @@ export function fakeApi(
     soundPlaylists?: SoundPlaylistView[]
     /** Los calendarios de los mundos (módulo 8): el primero de cada mundo, principal */
     calendars?: FakeCalendar[]
+    /** Las cronologías, sus grupos y los eventos sueltos de los mundos (módulo 8) */
+    chronologies?: Parameters<typeof fakeChronologies>[0]['chronologies']
+    timelineGroups?: Parameters<typeof fakeChronologies>[0]['groups']
+    events?: FakeEvent[]
   } = {}
 ) {
   const organizations = options.organizations ?? []
@@ -600,6 +605,28 @@ export function fakeApi(
     const index = anchor ? pages.indexOf(anchor) + (before ? 0 : 1) : pages.length
     pages.splice(index, 0, page)
   }
+  // Las cronologías (módulo 8): juntan los eventos y las páginas con fecha de cada mundo
+  const chronologies = fakeChronologies({
+    calendars: () => calendars.rows,
+    pages: () => pages,
+    createPage: ({ worldId, title, parentId, icon, cover }) => {
+      const page: StoredPage = {
+        id: crypto.randomUUID(),
+        worldId,
+        parentId,
+        title,
+        icon: icon ?? null,
+        properties: [],
+        ...(cover ? { cover } : {}),
+        version: 1
+      }
+      place(page)
+      return page.id
+    },
+    ...(options.events ? { events: options.events } : {}),
+    ...(options.chronologies ? { chronologies: options.chronologies } : {}),
+    ...(options.timelineGroups ? { groups: options.timelineGroups } : {})
+  })
 
   // Las etiquetas de la cuenta (ADR-0006): las guardadas y las que llevan páginas y archivos
   const tagRows: {
@@ -1579,6 +1606,7 @@ export function fakeApi(
 
   const handlers: { [N in ActionName]: (input: ActionInput<N>) => ActionOutput<N> } = {
     ...calendars.handlers,
+    ...chronologies.handlers,
     listOrganizations: () => ({ organizations }),
     // Copias, como las de la API real (JSON nuevo en cada respuesta)
     // En el orden en que se crearon, como el servidor
@@ -1943,7 +1971,9 @@ export function fakeApi(
           ? maps.flatMap((map) => map.pins).find((pin) => pin.id === targetId)
           : kind === 'element'
             ? maps.flatMap((map) => map.elements).find((element) => element.id === targetId)
-            : undefined
+            : kind === 'event'
+              ? chronologies.events.find((event) => event.id === targetId)
+              : undefined
       return {
         campaigns: campaigns
           .filter((c) => c.worldId === worldId)
@@ -1952,7 +1982,7 @@ export function fakeApi(
             return {
               campaignId: c.id,
               name: c.name,
-              knows: mark ? mark.known && mark.characters === null : !(item?.hidden ?? false),
+              knows: mark ? mark.known && mark.characters === null : kind !== 'chronology' && !(item?.hidden ?? false),
               seesPage: true
             }
           })
@@ -5291,6 +5321,8 @@ export function fakeApi(
     files,
     shownPages,
     boards,
-    calendars: calendars.rows
+    calendars: calendars.rows,
+    events: chronologies.events,
+    chronologies: chronologies.chronologies
   }
 }

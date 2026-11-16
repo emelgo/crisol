@@ -79,6 +79,10 @@ function sees(knowledge: Knowledge, kind: KnowledgeKind, targetId: string, targe
       return knowledge.seesMapItem({ kind, id: targetId, pageId, hidden })
     case 'content':
       return knowledge.seesContent(targetId)
+    case 'event':
+      return knowledge.seesEvent({ id: targetId, hidden })
+    case 'chronology':
+      return knowledge.seesChronology(targetId)
   }
 }
 
@@ -128,6 +132,10 @@ function viewSees(view: WikiView, kind: KnowledgeKind, targetId: string, target:
       return view.seesMapItem({ kind, id: targetId, pageId, hidden })
     case 'content':
       return view.seesContent(targetId)
+    case 'event':
+      return view.seesEvent({ id: targetId, hidden })
+    case 'chronology':
+      return view.seesChronology(targetId)
   }
 }
 

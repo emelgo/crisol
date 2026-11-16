@@ -3,7 +3,7 @@
  * y acortar un mes avisa de cuántas tienen un día que ya no cabe. Cada capacidad que guarda fechas añade aquí su
  * fuente: `fechas` (las propiedades de las páginas) y `cronologias` (los eventos)
  */
-import { type Database, pagesRepo } from '@crisol/db'
+import { chronologiesRepo, type Database, pagesRepo } from '@crisol/db'
 import { type CalendarDefinition, isValidDate, type WorldDate } from '@crisol/domain'
 import { propertiesOf } from '../wiki/properties.ts'
 
@@ -28,7 +28,12 @@ export const pageDates: DateSource = {
     )
 }
 
-export const DATE_SOURCES: DateSource[] = [pageDates]
+/** Las fechas de los eventos sueltos de las cronologías */
+export const eventDates: DateSource = {
+  dates: async (db, calendarId) => (await chronologiesRepo.eventDates(db, calendarId)).map((row) => row.date)
+}
+
+export const DATE_SOURCES: DateSource[] = [pageDates, eventDates]
 
 async function allDates(db: Database, calendarId: string) {
   return (await Promise.all(DATE_SOURCES.map((source) => source.dates(db, calendarId)))).flat()
