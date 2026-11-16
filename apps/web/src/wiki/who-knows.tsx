@@ -6,7 +6,7 @@
 import type { Page, PageKnowledge } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
-import { Eye, EyeOff, Globe, Shield, Users, X } from 'lucide-react'
+import { Eye, EyeOff, Shield, Users, X } from 'lucide-react'
 import { useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
@@ -89,7 +89,6 @@ function WhoKnows({ page, onClose }: { page: Page; onClose: () => void }) {
       </div>
       {known.data && (
         <>
-          <WorldRow page={page} knowledge={known.data} />
           {known.data.campaigns.map((row) => (
             <CampaignLine key={row.campaignId} page={page} row={row} />
           ))}
@@ -137,41 +136,6 @@ function Source({ from, pageId }: { from: CampaignRow['from']; pageId: string })
   )
 }
 
-function WorldRow({ page, knowledge }: { page: Page; knowledge: PageKnowledge }) {
-  const { t } = useTranslation()
-  const mark = useMark(page)
-  const value = knowledge.world.own === null ? 'inherit' : knowledge.world.own ? 'all' : 'none'
-  return (
-    <section className={styles.row} aria-label={t('whoKnows.world')}>
-      <div className={styles.rowHead}>
-        <Globe aria-hidden="true" size={15} />
-        <span className={styles.name}>{t('whoKnows.world')}</span>
-        <select
-          className={styles.select}
-          aria-label={t('whoKnows.worldChoice')}
-          value={value}
-          disabled={mark.isPending}
-          onChange={(event) =>
-            mark.mutate({
-              campaignId: null,
-              known: event.target.value === 'inherit' ? null : event.target.value === 'all'
-            })
-          }
-        >
-          <option value="inherit">{t('whoKnows.asParent')}</option>
-          <option value="all">{t('whoKnows.everyone')}</option>
-          <option value="none">{t('whoKnows.nobody')}</option>
-        </select>
-      </div>
-      <p className={styles.state} data-known={knowledge.world.known || undefined}>
-        {knowledge.world.known ? <Eye aria-hidden="true" size={13} /> : <EyeOff aria-hidden="true" size={13} />}
-        <span>{t(knowledge.world.known ? 'whoKnows.everyone' : 'whoKnows.nobody')}</span>
-        <Source from={knowledge.world.from} pageId={page.id} />
-      </p>
-    </section>
-  )
-}
-
 function CampaignLine({ page, row }: { page: Page; row: CampaignRow }) {
   const { t } = useTranslation()
   const mark = useMark(page)
@@ -210,7 +174,8 @@ function CampaignLine({ page, row }: { page: Page; row: CampaignRow }) {
             mark.mutate({ campaignId: row.campaignId, known: next === 'inherit' ? null : next === 'all' })
           }}
         >
-          <option value="inherit">{t(row.knowsWorld ? 'whoKnows.asWorld' : 'whoKnows.asParent')}</option>
+          {/* Solo por campaña: el mundo entero no se revela (Enrique, 2026-11-16) */}
+          <option value="inherit">{t('whoKnows.asParent')}</option>
           <option value="all">{t('whoKnows.campaignAll')}</option>
           <option value="some" disabled={row.characters.length === 0}>
             {t('whoKnows.campaignSome')}
