@@ -59,15 +59,17 @@ describe('las plantillas de ejemplo de las pruebas (las que fueron de serie)', (
   })
 
   it('los enlaces con papel hacen el árbol y el organigrama: Padres, Pareja, Facción y Líder (módulo 10)', () => {
-    const field = (template: string, id: string) =>
-      builtInTemplate(template)?.fields.find((f) => f.field === id) as Record<string, unknown>
+    const field = (template: string, id: string) => {
+      const found = builtInTemplate(template)?.fields.find((f) => f.field === id)
+      return found?.type === 'pages' ? found : undefined
+    }
     expect(field('pnj', 'padres')).toMatchObject({ role: 'parent', inverseName: 'Hijos' })
     expect(field('pnj', 'pareja')).toMatchObject({ role: 'partner' })
     expect(field('pnj', 'faccion')).toMatchObject({ role: 'member-of', inverseName: 'Miembros' })
     expect(field('faccion', 'lider')).toMatchObject({ role: 'leads', inverseName: 'Dirige' })
     // Sin papel, pero con su nombre al revés
     expect(field('lugar', 'dentro-de')).toMatchObject({ inverseName: 'Contiene' })
-    expect(field('lugar', 'dentro-de').role).toBeUndefined()
+    expect(field('lugar', 'dentro-de')?.role).toBeUndefined()
   })
 
   it('al crear desde la plantilla, el papel y el nombre al revés pasan a la página', () => {
