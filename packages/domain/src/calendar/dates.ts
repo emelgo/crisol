@@ -32,6 +32,7 @@ const mod = (n: number, m: number) => ((n % m) + m) % m
 /** Lo que se calcula una vez por definición: el índice de cada mes, la longitud del año normal, lo que va fuera de la semana */
 interface Shape {
   index: Map<string, number>
+  outsideIds: Set<string>
   base: number
   outsideBase: number
   mean: number
@@ -51,7 +52,8 @@ function shapeOf(def: CalendarDefinition): Shape {
         (sum, r) => sum + r.days * (1 / r.every - (r.unless ? 1 / r.unless : 0) + (r.unless && r.but ? 1 / r.but : 0)),
         0
       )
-    shape = { index, base, outsideBase, mean }
+    const outsideIds = new Set(def.months.filter((m) => m.outsideWeek).map((m) => m.id))
+    shape = { index, outsideIds, base, outsideBase, mean }
     shapes.set(def, shape)
   }
   return shape
@@ -158,9 +160,13 @@ export function dateFromDay(def: CalendarDefinition, day: number): FullDate {
   const n = Math.floor(day)
   // Un año aproximado, que se corrige (los bisiestos solo lo desplazan un poco)
   let year = Math.floor(n / meanYearLength(def))
-  while (yearStart(def, year) > n) year--
-  while (yearStart(def, year + 1) <= n) year++
-  let rest = n - yearStart(def, year)
+  let start = yearStart(def, year)
+  while (start > n) start = yearStart(def, --year)
+  for (let next = yearStart(def, year + 1); next <= n; next = yearStart(def, year + 1)) {
+    year++
+    start = next
+  }
+  let rest = n - start
   let index = 0
   while (index < def.months.length - 1 && rest >= monthLength(def, year, index)) {
     rest -= monthLength(def, year, index)
@@ -197,8 +203,7 @@ export function addMonths(def: CalendarDefinition, date: FullDate, months: numbe
 
 /** Los días fuera de la semana antes de una fecha, desde el año 0 (en negativo antes) */
 function outsideBefore(def: CalendarDefinition, year: number, index: number): number {
-  const { outsideBase } = shapeOf(def)
-  const outsideIds = new Set(def.months.filter((m) => m.outsideWeek).map((m) => m.id))
+  const { outsideBase, outsideIds } = shapeOf(def)
   if (outsideIds.size === 0) return 0
   let total = year * outsideBase + leapDaysBefore(def, year, (rule) => outsideIds.has(rule.monthId))
   for (let i = 0; i < index; i++) if (def.months[i]?.outsideWeek) total += monthLength(def, year, i)

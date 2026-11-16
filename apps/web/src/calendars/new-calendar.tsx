@@ -54,22 +54,25 @@ export function NewCalendarDialog({
       })
     }
   })
-  const option = (value: Start, icon: ReactNode, title: string, hint: ReactNode) => (
-    <label className={styles.option} data-checked={start === value || undefined}>
-      <input
-        type="radio"
-        name="start"
-        value={value}
-        checked={start === value}
-        disabled={value === 'copy' && calendars.length === 0}
-        onChange={() => setStart(value)}
-      />
-      <span className={styles.optionIcon} aria-hidden="true">
-        {icon}
-      </span>
-      <span className={styles.optionTitle}>{title}</span>
-      {hint}
-    </label>
+  const option = (value: Start, icon: ReactNode, title: string, hint: ReactNode, extra?: ReactNode) => (
+    <div className={styles.option} data-checked={start === value || undefined}>
+      <label className={styles.optionLabel}>
+        <input
+          type="radio"
+          name="start"
+          value={value}
+          checked={start === value}
+          disabled={value === 'copy' && calendars.length === 0}
+          onChange={() => setStart(value)}
+        />
+        <span className={styles.optionIcon} aria-hidden="true">
+          {icon}
+        </span>
+        <span className={styles.optionTitle}>{title}</span>
+        {hint}
+      </label>
+      {extra}
+    </div>
   )
   return (
     <Modal
@@ -112,6 +115,7 @@ export function NewCalendarDialog({
             'copy',
             <Copy size={18} />,
             t('calendars.dialog.copy'),
+            null,
             calendars.length > 0 && (
               <select
                 className={styles.optionSelect}

@@ -186,7 +186,7 @@ export function WeekSection({ draft, change, problems }: SectionProps) {
   const { t } = useTranslation()
   return (
     <>
-      <ol className={styles.rows}>
+      <ol className={`${styles.rows} ${styles.weekdays}`}>
         {draft.weekdays.map((day, i) => {
           const label = day || t('calendars.editor.weekday', { n: i + 1 })
           return (
@@ -332,7 +332,12 @@ function useRowDrag(onMove: (from: number, to: number) => void) {
   }
 }
 
-export function MonthsSection({ draft, change, problems }: SectionProps) {
+export function MonthsSection({
+  draft,
+  change,
+  problems,
+  onFocusMonth
+}: SectionProps & { onFocusMonth?: (monthId: string) => void }) {
   const { t } = useTranslation()
   const drag = useRowDrag((from, to) => change((d) => moved(d.months, from, to)))
   return (
@@ -341,7 +346,7 @@ export function MonthsSection({ draft, change, problems }: SectionProps) {
         <thead>
           <tr>
             <th scope="col">
-              <span className={styles.srOnly}>{t('calendars.editor.dragMonth', { name: '' })}</span>
+              <span className={styles.srOnly}>{t('calendars.editor.order')}</span>
             </th>
             <th scope="col">{t('calendars.editor.number')}</th>
             <th scope="col">{t('calendars.editor.monthName')}</th>
@@ -349,7 +354,7 @@ export function MonthsSection({ draft, change, problems }: SectionProps) {
             <th scope="col">{t('calendars.editor.festival')}</th>
             <th scope="col">{t('calendars.editor.outsideWeek')}</th>
             <th scope="col">
-              <span className={styles.srOnly}>{t('calendars.editor.remove', { name: '' })}</span>
+              <span className={styles.srOnly}>{t('calendars.editor.removeColumn')}</span>
             </th>
           </tr>
         </thead>
@@ -363,6 +368,7 @@ export function MonthsSection({ draft, change, problems }: SectionProps) {
                 data-festival={month.festival || undefined}
                 data-drop={drag.over === i || undefined}
                 data-dragging={drag.dragging === i || undefined}
+                onFocus={() => onFocusMonth?.(month.id)}
                 {...drag.row(i)}
               >
                 <td>
@@ -370,7 +376,7 @@ export function MonthsSection({ draft, change, problems }: SectionProps) {
                     type="button"
                     className={styles.handle}
                     data-handle
-                    aria-label={t('calendars.editor.dragMonth', { name: label })}
+                    aria-label={t('calendars.editor.dragRow', { name: label })}
                     {...drag.handle(i, draft.months.length)}
                   >
                     <GripVertical size={16} aria-hidden="true" />
@@ -601,7 +607,13 @@ function dayText(draft: CalendarDefinition, day: number, valid: boolean) {
   return formatDate(draft, dateFromDay(draft, yearStart(draft, 1) + day - 1), { noYear: true })
 }
 
-export function SeasonsSection({ draft, change, problems, valid }: SectionProps & { valid: boolean }) {
+export function SeasonsSection({
+  draft,
+  change,
+  problems,
+  valid,
+  reference
+}: SectionProps & { valid: boolean; reference: CalendarDefinition }) {
   const { t } = useTranslation()
   const drag = useRowDrag((from, to) => change((d) => moved(d.seasons, from, to)))
   const max = yearLength(draft)
@@ -609,18 +621,42 @@ export function SeasonsSection({ draft, change, problems, valid }: SectionProps 
     <>
       {draft.seasons.length > 0 && (
         <table className={styles.table}>
+          <thead>
+            <tr>
+              <th scope="col">
+                <span className={styles.srOnly}>{t('calendars.editor.order')}</span>
+              </th>
+              <th scope="col">
+                <span className={styles.srOnly}>{t('calendars.editor.color')}</span>
+              </th>
+              <th scope="col">{t('calendars.editor.monthName')}</th>
+              <th scope="col">{t('calendars.editor.fromDay')}</th>
+              <th scope="col">{t('calendars.editor.toDay')}</th>
+              <th scope="col">
+                <span className={styles.srOnly}>{t('calendars.editor.inMonths')}</span>
+              </th>
+              <th scope="col">
+                <span className={styles.srOnly}>{t('calendars.editor.removeColumn')}</span>
+              </th>
+            </tr>
+          </thead>
           <tbody>
             {draft.seasons.map((season, i) => {
               const label = season.name || t('calendars.editor.newSeason', { n: i + 1 })
               const bad = flagged(problems, 'seasons', i)
               return (
-                <tr key={season.id} data-drop={drag.over === i || undefined} {...drag.row(i)}>
+                <tr
+                  key={season.id}
+                  data-drop={drag.over === i || undefined}
+                  data-dragging={drag.dragging === i || undefined}
+                  {...drag.row(i)}
+                >
                   <td>
                     <button
                       type="button"
                       className={styles.handle}
                       data-handle
-                      aria-label={t('calendars.editor.dragMonth', { name: label })}
+                      aria-label={t('calendars.editor.dragRow', { name: label })}
                       {...drag.handle(i, draft.seasons.length)}
                     >
                       <GripVertical size={16} aria-hidden="true" />
@@ -684,10 +720,10 @@ export function SeasonsSection({ draft, change, problems, valid }: SectionProps 
                       }
                     />
                   </td>
-                  <td className={styles.muted}>
+                  <td className={`${styles.muted} ${styles.seasonText}`}>
                     {t('calendars.editor.seasonRange', {
-                      from: dayText(draft, season.startDay, valid),
-                      to: dayText(draft, season.endDay, valid)
+                      from: dayText(reference, season.startDay, valid),
+                      to: dayText(reference, season.endDay, valid)
                     })}
                   </td>
                   <td>
@@ -918,7 +954,7 @@ export function ErasSection({ draft, change, problems }: SectionProps) {
                   />
                 </label>
               </div>
-              <div className={styles.pair}>
+              <div className={styles.dates}>
                 <div className={styles.field}>
                   <span aria-hidden="true">{t('calendars.editor.start')}</span>
                   <DateInput

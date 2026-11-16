@@ -412,10 +412,10 @@ function DeleteCalendar({
         </p>
         <FormError message={remove.error ? errorText(remove.error) : null} />
         <div className={dialogStyles.actions}>
-          <BusyButton type="submit" className={form.button} busy={remove.isPending} data-autofocus>
+          <BusyButton type="submit" className={form.button} busy={remove.isPending}>
             {t('calendars.delete')}
           </BusyButton>
-          <button type="button" className={dialogStyles.cancel} onClick={() => dialog.current?.close()}>
+          <button type="button" className={dialogStyles.cancel} onClick={() => dialog.current?.close()} data-autofocus>
             {t('calendars.editor.cancel')}
           </button>
         </div>

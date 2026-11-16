@@ -199,6 +199,11 @@
   border-block-start: 1px solid var(--line-soft);
 }
 
+/* Sin cambios ni problemas, el pie no ocupa nada */
+.foot:empty {
+  display: none;
+}
+
 .cancel {
   min-block-size: var(--target);
   padding: 0 var(--space-4);
@@ -294,8 +299,8 @@
 
 .column input[type="checkbox"],
 .column input[type="radio"] {
-  inline-size: 1.05rem;
-  block-size: 1.05rem;
+  inline-size: 1.25rem;
+  block-size: 1.25rem;
   accent-color: var(--color-accent);
 }
 
@@ -457,10 +462,6 @@
   background: color-mix(in srgb, var(--color-warning) 6%, transparent);
 }
 
-.table tr[data-festival] td:first-child {
-  box-shadow: inset 2px 0 0 var(--color-warning);
-}
-
 .table tr[data-dragging] {
   opacity: 0.45;
 }
@@ -486,8 +487,8 @@
 
 /* El color de un mes, de una estación o de una luna: un círculo que abre el selector del navegador */
 .swatch {
-  inline-size: 1.25rem;
-  block-size: 1.25rem;
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
   margin-inline-start: var(--space-2);
   padding: 0;
   border: 1px solid var(--line-frame);
@@ -513,7 +514,29 @@
 
 /* Sin color: un aro vacío */
 .swatch[data-empty] {
-  opacity: 0.35;
+  border-color: var(--color-field-border);
+}
+
+.swatch[data-empty]::-webkit-color-swatch {
+  opacity: 0;
+}
+
+.swatch[data-empty]::-moz-color-swatch {
+  opacity: 0;
+}
+
+/* La estación en fechas, en una línea (entera, al pasar el ratón) */
+.seasonText {
+  max-inline-size: 14rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Los días de la semana, en dos columnas: sus nombres son cortos */
+.weekdays {
+  grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+  column-gap: var(--space-5);
 }
 
 .muted {
@@ -631,6 +654,11 @@
 
 .phaseInput {
   inline-size: 9rem;
+}
+
+.dates {
+  display: grid;
+  gap: var(--space-3);
 }
 
 .endRow {
@@ -792,7 +820,7 @@
   inset-block-end: 2px;
   inset-inline-end: 4px;
   color: var(--color-muted);
-  font-size: 0.625rem;
+  font-size: 0.6875rem;
 }
 
 .moonMarks {

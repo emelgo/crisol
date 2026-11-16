@@ -13,7 +13,7 @@ import {
   yearLength
 } from '@crisol/domain'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { getRouteApi, Link, Navigate } from '@tanstack/react-router'
+import { getRouteApi, Link, Navigate, useBlocker } from '@tanstack/react-router'
 import {
   ArrowLeftRight,
   CalendarDays,
@@ -26,7 +26,7 @@ import {
   SlidersHorizontal,
   TriangleAlert
 } from 'lucide-react'
-import { type ReactNode, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
+import { type ReactNode, useDeferredValue, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
@@ -35,8 +35,10 @@ import { useAnnounce } from '../components/announcer.tsx'
 import { Loading } from '../components/brand.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
 import { ChangesBar } from '../components/changes.tsx'
+import dialogStyles from '../components/dialog.module.css'
 import form from '../components/form.module.css'
 import { failed, LoadError } from '../components/load-error.tsx'
+import { Modal } from '../components/modal.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { Tour } from '../components/tour.tsx'
 import styles from './editor.module.css'
@@ -81,15 +83,15 @@ export function CalendarEditorScreen() {
       </div>
     )
   const primary = calendars.data.calendars.find((c) => c.primary && c.id !== calendar.id) ?? null
-  // Al guardar (o si cambia en otra pestaña), el editor empieza de nuevo desde lo guardado
-  return <Editor key={`${calendar.id}-${calendar.version}`} worldId={worldId} calendar={calendar} primary={primary} />
+  // Al guardar, el editor sigue donde estaba (la sección y el desplazamiento); lo de otra pestaña entra si no hay cambios
+  return <Editor key={calendar.id} worldId={worldId} calendar={calendar} primary={primary} />
 }
 
 type SectionEntry = { id: CalendarSection; icon: ReactNode; title: string }
 
 function Editor({
   worldId,
-  calendar,
+  calendar: current,
   primary
 }: {
   worldId: string
@@ -101,10 +103,15 @@ function Editor({
   const client = useQueryClient()
   const announce = useAnnounce()
   const errorText = useErrorText()
-  const [draft, setDraft] = useState<CalendarDefinition>(calendar.definition)
-  const [name, setName] = useState(calendar.name)
+  // Lo guardado con lo que se compara (y su versión, la que se manda al guardar)
+  const [calendar, setCalendar] = useState(current)
+  const [draft, setDraft] = useState<CalendarDefinition>(current.definition)
+  const [name, setName] = useState(current.name)
+  const [followMonth, setFollowMonth] = useState<string | null>(null)
   const [active, setActive] = useState<CalendarSection>('general')
   const column = useRef<HTMLDivElement>(null)
+  // Mientras dura el desplazamiento pedido desde la izquierda, la sección marcada es la pedida
+  const pinned = useRef(0)
   const change: Change = (fn) =>
     setDraft((current) => {
       const next = structuredClone(current)
@@ -127,7 +134,14 @@ function Editor({
   }, [deferred, primary, name, t])
   // Los meses, los bisiestos y la semana tienen que estar bien para calcular días
   const computable = !problems.some((p) => p.section === 'months' || p.section === 'leap' || p.section === 'week')
-  const dirty = name !== calendar.name || JSON.stringify(draft) !== JSON.stringify(calendar.definition)
+  const saved = useMemo(() => JSON.stringify(calendar.definition), [calendar.definition])
+  const dirty = name !== calendar.name || JSON.stringify(draft) !== saved
+  // Si cambia en otra pestaña (o por la IA) y aquí no hay cambios, se ve lo nuevo
+  if (current.version > calendar.version && !dirty) {
+    setCalendar(current)
+    setDraft(current.definition)
+    setName(current.name)
+  }
 
   const save = useMutation({
     mutationFn: () =>
@@ -137,9 +151,12 @@ function Editor({
         name: name.trim(),
         definition: draft
       }),
-    onSuccess: (saved) => {
+    onSuccess: (stored) => {
+      setCalendar(stored)
+      setDraft(stored.definition)
+      setName(stored.name)
       client.setQueryData(['calendars', worldId], (old: { calendars: CalendarView[] } | undefined) =>
-        old ? { calendars: old.calendars.map((c) => (c.id === saved.id ? saved : c)) } : old
+        old ? { calendars: old.calendars.map((c) => (c.id === stored.id ? stored : c)) } : old
       )
       void client.invalidateQueries({ queryKey: ['calendars', worldId] })
       announce(t('calendars.editor.saved'))
@@ -173,6 +190,7 @@ function Editor({
   const goTo = (id: CalendarSection, focusProblem = false) => {
     const section = column.current?.querySelector<HTMLElement>(`[data-section="${id}"]`)
     if (!section) return
+    pinned.current = Date.now() + 900
     section.scrollIntoView({ block: 'start', behavior: 'smooth' })
     const target = focusProblem ? section.querySelector<HTMLElement>('[aria-invalid="true"]') : null
     ;(target ?? section.querySelector<HTMLElement>('h2'))?.focus({ preventScroll: true })
@@ -185,6 +203,13 @@ function Editor({
     if (!root || typeof IntersectionObserver === 'undefined') return
     const observer = new IntersectionObserver(
       (entries) => {
+        if (Date.now() < pinned.current) return
+        // Al final de la columna, la última (no llega arriba)
+        if (root.scrollTop + root.clientHeight >= root.scrollHeight - 4) {
+          const sections = root.querySelectorAll('[data-section]')
+          const last = sections[sections.length - 1]?.getAttribute('data-section')
+          if (last) return setActive(last as CalendarSection)
+        }
         const visible = entries
           .filter((e) => e.isIntersecting)
           .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)
@@ -205,6 +230,8 @@ function Editor({
     }
     save.mutate()
   }
+  // Salir con cambios: se pregunta (dentro de la app) y, al cerrar la pestaña, el aviso del navegador
+  const blocker = useBlocker({ shouldBlockFn: () => dirty, withResolver: true, enableBeforeUnload: () => dirty })
   const cancel = () => {
     setDraft(calendar.definition)
     setName(calendar.name)
@@ -280,13 +307,13 @@ function Editor({
             <WeekSection {...props} />
           </Section>
           <Section id="months" icon={sections[2]?.icon} title={t('calendars.editor.months')} problems={problems}>
-            <MonthsSection {...props} />
+            <MonthsSection {...props} onFocusMonth={setFollowMonth} />
           </Section>
           <Section id="leap" icon={sections[3]?.icon} title={t('calendars.editor.leap')} problems={problems}>
             <LeapSection {...props} />
           </Section>
           <Section id="seasons" icon={sections[4]?.icon} title={t('calendars.editor.seasons')} problems={problems}>
-            <SeasonsSection {...props} valid={computable} />
+            <SeasonsSection {...props} valid={computable} reference={deferred} />
           </Section>
           <Section id="moons" icon={sections[5]?.icon} title={t('calendars.editor.moons')} problems={problems}>
             <MoonsSection {...props} />
@@ -326,9 +353,12 @@ function Editor({
 
       <aside className={styles.preview} aria-label={t('calendars.editor.preview')} data-tour="calendario-vista-previa">
         <h2 className={styles.previewLabel}>{t('calendars.editor.preview')}</h2>
-        <MonthPreview definition={deferred} valid={computable} />
+        <MonthPreview definition={deferred} valid={computable} follow={followMonth} />
       </aside>
 
+      {blocker.status === 'blocked' && (
+        <LeaveDialog onStay={() => blocker.reset?.()} onLeave={() => blocker.proceed?.()} />
+      )}
       <Tour
         id="calendario"
         steps={[
@@ -338,5 +368,42 @@ function Editor({
         ]}
       />
     </div>
+  )
+}
+
+/** ¿Salir sin guardar? Seguir editando (lo primero, con el foco) o salir perdiendo los cambios */
+function LeaveDialog({ onStay, onLeave }: { onStay: () => void; onLeave: () => void }) {
+  const { t } = useTranslation()
+  const titleId = useId()
+  const dialog = useRef<HTMLDialogElement>(null)
+  const left = useRef(false)
+  return (
+    <Modal
+      ref={dialog}
+      aria-labelledby={titleId}
+      className={dialogStyles.dialog}
+      onClose={() => {
+        if (!left.current) onStay()
+      }}
+    >
+      <div className={dialogStyles.body}>
+        <h2 id={titleId}>{t('calendars.editor.leaveTitle')}</h2>
+        <div className={dialogStyles.actions}>
+          <button type="button" className={form.button} onClick={() => dialog.current?.close()} data-autofocus>
+            {t('calendars.editor.stay')}
+          </button>
+          <button
+            type="button"
+            className={dialogStyles.cancel}
+            onClick={() => {
+              left.current = true
+              onLeave()
+            }}
+          >
+            {t('calendars.editor.leave')}
+          </button>
+        </div>
+      </div>
+    </Modal>
   )
 }

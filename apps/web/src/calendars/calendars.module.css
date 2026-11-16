@@ -77,7 +77,7 @@
 
 .name:hover,
 .card:hover .name {
-  color: #fff;
+  color: var(--color-chrome-text);
 }
 
 .name:focus-visible {
@@ -263,13 +263,13 @@
 .option {
   position: relative;
   display: grid;
+  min-inline-size: 0;
   align-content: start;
   gap: var(--space-1);
   padding: var(--space-3);
   border: 1px solid var(--line-frame);
   border-radius: var(--radius-button);
   background: var(--surface-glass);
-  cursor: pointer;
   transition:
     border-color 150ms ease-out,
     background-color 150ms ease-out;
@@ -285,6 +285,24 @@
 }
 
 /* La radio, invisible pero con el teclado: el foco se ve en el recuadro */
+/* Toda la etiqueta elige la manera (el desplegable de «Copia de…» va aparte, debajo) */
+.optionLabel {
+  display: grid;
+  gap: var(--space-1);
+  cursor: pointer;
+}
+
+.optionLabel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.optionSelect {
+  position: relative;
+  z-index: 1;
+}
+
 .option input[type="radio"] {
   position: absolute;
   opacity: 0;
@@ -320,6 +338,8 @@
 }
 
 .optionSelect {
+  inline-size: 100%;
+  min-inline-size: 0;
   min-block-size: 2.25rem;
   margin-block-start: var(--space-1);
   padding: 0 var(--space-2);

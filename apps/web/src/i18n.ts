@@ -1885,7 +1885,7 @@ export const es = {
   calendars: {
     title: 'Calendarios',
     new: 'Calendario nuevo',
-    empty: 'El tiempo de tu mundo, con sus meses, sus lunas y sus eras.',
+    empty: 'El tiempo de tu mundo, a su manera.',
     list: 'Calendarios del mundo',
     primary: 'Principal',
     actions: 'Acciones de {{name}}',
@@ -1977,7 +1977,13 @@ export const es = {
       festivalOf: '{{name}}, festividad',
       outsideWeekOf: '{{name}}, fuera de la semana',
       colorOf: 'Color de {{name}}',
-      dragMonth: 'Mover {{name}} (arrastra o usa Alt y las flechas)',
+      dragRow: 'Mover {{name}} (arrastra o usa Alt y las flechas)',
+      order: 'Orden',
+      color: 'Color',
+      removeColumn: 'Quitar',
+      fromDay: 'Del día',
+      toDay: 'Al día',
+      inMonths: 'En el año',
       addMonth: 'Mes',
       newMonth: 'Mes {{n}}',
       // Bisiestos
@@ -2048,6 +2054,9 @@ export const es = {
       moonNew: 'nueva el {{days}}',
       moonFull: 'llena el {{days}}',
       noPreview: 'La vista previa vuelve al arreglar los meses.',
+      leaveTitle: '¿Salir sin guardar los cambios?',
+      stay: 'Seguir editando',
+      leave: 'Salir sin guardar',
       seasonEra: '{{season}} · {{era}}'
     },
     // Los problemas de una definición, por su código (los mismos que dice el servidor a la IA)

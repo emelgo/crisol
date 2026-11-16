@@ -71,6 +71,9 @@ test('calendarios (módulo 8): crear uno de 16 meses con dos lunas, editarlo, ha
   // La vista previa, al momento: las dos lunas en la leyenda
   const preview = page.getByRole('complementary', { name: 'Vista previa' })
   await expect(preview).toContainText('Luna 1:')
+  // La de 91 días no está nueva ni llena todos los meses: se pasa de mes hasta verla
+  for (let i = 0; i < 6 && !(await preview.textContent())?.includes('Luna 2:'); i++)
+    await preview.getByRole('button', { name: 'Mes siguiente' }).click()
   await expect(preview).toContainText('Luna 2:')
   expect(await axe(page)).toEqual([])
   await page.getByRole('button', { name: 'Guardar' }).click()

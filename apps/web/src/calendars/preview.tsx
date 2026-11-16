@@ -16,6 +16,7 @@ import {
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useAnnounce } from '../components/announcer.tsx'
 import styles from './editor.module.css'
 
 /** Lo que se enseña con cada mes normal: los fuera de la semana que van justo detrás (y, antes del primero, los de delante) */
@@ -30,11 +31,62 @@ function pagesOf(definition: CalendarDefinition) {
   })
 }
 
-export function MonthPreview({ definition, valid }: { definition: CalendarDefinition; valid: boolean }) {
+/**
+ * Los nombres cortos de los días de la semana para la cabecera de la rejilla: sus primeras letras, las justas para que
+ * no se repitan («Lu», «Ma»…); si empiezan igual («Día 1», «Día 2»), sus iniciales («D1»)
+ */
+export function shortWeekdays(names: readonly string[]): string[] {
+  for (let k = 2; k <= 4; k++) {
+    const short = names.map((n) => n.slice(0, k))
+    if (new Set(short).size === names.length) return short.map((s) => s.toUpperCase())
+  }
+  return names.map((n) =>
+    n
+      .split(/\s+/)
+      .map((word) => (/^\d+$/.test(word) ? word : word.charAt(0)))
+      .join('')
+      .toUpperCase()
+  )
+}
+
+/** El año con que se abre: el del principio de su última era (lo más reciente), o el 1 */
+const startYear = (definition: CalendarDefinition) =>
+  definition.eras.reduce((year, era) => Math.max(year, era.start.year), Number.NEGATIVE_INFINITY) ===
+  Number.NEGATIVE_INFINITY
+    ? 1
+    : Math.max(...definition.eras.map((era) => era.start.year))
+
+export function MonthPreview({
+  definition,
+  valid,
+  follow = null
+}: {
+  definition: CalendarDefinition
+  valid: boolean
+  /** El mes que se está editando: la vista previa va a él */
+  follow?: string | null
+}) {
   const { t } = useTranslation()
-  const [year, setYear] = useState(1)
+  const announce = useAnnounce()
+  const [year, setYear] = useState(() => startYear(definition))
   const [page, setPage] = useState(0)
+  const [followed, setFollowed] = useState<string | null>(null)
+  /** Al pasar de mes o de año con las flechas, se dice cuál se ve (no mientras se escribe) */
+  const show = (nextPage: number, nextYear: number) => {
+    setPage(nextPage)
+    setYear(nextYear)
+    const month = pages[nextPage]?.month
+    if (valid && month) announce(formatDate(definition, { year: nextYear, month }))
+  }
   const pages = pagesOf(definition)
+  // Al pasar a otro mes en el editor, la vista previa va a la página donde sale
+  if (follow !== followed) {
+    setFollowed(follow)
+    const target = pages.findIndex(
+      (p) => p.month === follow || p.before.includes(follow ?? '') || p.after.includes(follow ?? '')
+    )
+    if (target >= 0 && target !== page) setPage(target)
+  }
   const at = Math.min(page, Math.max(0, pages.length - 1))
   const current = pages[at]
   const step = (delta: number) => {
@@ -47,24 +99,23 @@ export function MonthPreview({ definition, valid }: { definition: CalendarDefini
       next = 0
       nextYear++
     }
-    setPage(next)
-    setYear(nextYear)
+    show(next, nextYear)
   }
   const nav = (
     <div className={styles.previewNav}>
-      <button type="button" aria-label={t('calendars.editor.previousYear')} onClick={() => setYear(year - 1)}>
+      <button type="button" aria-label={t('calendars.editor.previousYear')} onClick={() => show(at, year - 1)}>
         <ChevronsLeft size={16} aria-hidden="true" />
       </button>
       <button type="button" aria-label={t('calendars.editor.previousMonth')} onClick={() => step(-1)}>
         <ChevronLeft size={16} aria-hidden="true" />
       </button>
-      <h3 className={styles.previewTitle} aria-live="polite">
+      <h3 className={styles.previewTitle}>
         {valid && current ? formatDate(definition, { year, month: current.month }) : '—'}
       </h3>
       <button type="button" aria-label={t('calendars.editor.nextMonth')} onClick={() => step(1)}>
         <ChevronRight size={16} aria-hidden="true" />
       </button>
-      <button type="button" aria-label={t('calendars.editor.nextYear')} onClick={() => setYear(year + 1)}>
+      <button type="button" aria-label={t('calendars.editor.nextYear')} onClick={() => show(at, year + 1)}>
         <ChevronsRight size={16} aria-hidden="true" />
       </button>
     </div>
@@ -108,9 +159,10 @@ export function MonthPreview({ definition, valid }: { definition: CalendarDefini
         <table className={styles.grid} style={{ ['--columns' as string]: definition.weekdays.length }}>
           <thead>
             <tr>
-              {definition.weekdays.map((name, i) => (
-                <th key={i} scope="col" abbr={name}>
-                  {name.slice(0, 2).toUpperCase()}
+              {shortWeekdays(definition.weekdays).map((short, i) => (
+                <th key={i} scope="col" abbr={definition.weekdays[i]}>
+                  <span aria-hidden="true">{short}</span>
+                  <span className={styles.srOnly}>{definition.weekdays[i]}</span>
                 </th>
               ))}
             </tr>

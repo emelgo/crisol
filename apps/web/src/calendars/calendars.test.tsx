@@ -65,7 +65,7 @@ describe('la pantalla «Calendarios»', () => {
 
   it('vacía: una sola pieza con «Calendario nuevo»', async () => {
     renderAt(`/mundos/${WORLD.id}/calendarios`, [])
-    expect(await screen.findByText('El tiempo de tu mundo, con sus meses, sus lunas y sus eras.')).toBeDefined()
+    expect(await screen.findByText('El tiempo de tu mundo, a su manera.')).toBeDefined()
     expect(screen.getByRole('button', { name: 'Calendario nuevo' })).toBeDefined()
   })
 
@@ -115,9 +115,10 @@ describe('el editor de un calendario', () => {
     // Es el principal: sin correspondencia
     expect(within(nav).queryByRole('button', { name: 'Correspondencia' })).toBeNull()
     const preview = screen.getByRole('complementary', { name: 'Vista previa' })
-    expect(within(preview).getByRole('heading', { name: 'Enero de 1 RV' })).toBeDefined()
-    // El 1 de enero del año 1 (proléptico) fue lunes: la primera columna
-    expect(within(preview).getAllByRole('row')[1]?.querySelector('td')?.textContent).toContain('1')
+    // Se abre en el año en que empieza su última era (el 0)
+    expect(within(preview).getByRole('heading', { name: 'Enero de 0 RV' })).toBeDefined()
+    // El 1 de enero del año 0 (proléptico) fue sábado: la sexta columna
+    expect(within(preview).getAllByRole('row')[1]?.querySelectorAll('td')[5]?.textContent).toMatch(/^1/)
   })
 
   it('añadir una festividad cambia la vista previa y el total del año, sin guardar; Cancelar lo deshace', async () => {
@@ -136,9 +137,8 @@ describe('el editor de un calendario', () => {
     await waitFor(() =>
       expect(screen.getByRole('navigation', { name: 'Secciones del calendario' }).textContent).toContain('370 días')
     )
-    // En la vista previa, tras diciembre, la franja de la fiesta
+    // La vista previa va al mes que se edita: tras diciembre, la franja de la fiesta
     const preview = screen.getByRole('complementary', { name: 'Vista previa' })
-    await userEvent.click(within(preview).getByRole('button', { name: 'Mes anterior' }))
     expect(within(preview).getByRole('heading', { name: 'Diciembre de 0 RV' })).toBeDefined()
     expect(within(preview).getByText('Fiesta del Invierno')).toBeDefined()
     await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
@@ -170,5 +170,27 @@ describe('el editor de un calendario', () => {
     const moons = screen.getByRole('region', { name: 'Lunas' })
     await userEvent.click(within(moons).getByRole('button', { name: 'Luna' }))
     await waitFor(() => expect(within(preview).getByText(/Luna 2:/)).toBeDefined())
+  })
+
+  it('salir con cambios pregunta; «Seguir editando» se queda y guardar no lleva arriba', async () => {
+    const { router } = open()
+    const name = await within(await screen.findByRole('region', { name: 'General' })).findByRole('textbox', {
+      name: 'Nombre'
+    })
+    await userEvent.type(name, ' viejo')
+    await userEvent.click(screen.getAllByRole('link', { name: 'Calendarios' }).at(-1) as HTMLElement)
+    const ask = await screen.findByRole('dialog', { name: '¿Salir sin guardar los cambios?' })
+    await userEvent.click(within(ask).getByRole('button', { name: 'Seguir editando' }))
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    expect(router.state.location.pathname).toContain(VARN.id ?? '')
+    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Guardar' })).toBeNull())
+    expect(
+      (
+        within(screen.getByRole('region', { name: 'General' })).getByRole('textbox', {
+          name: 'Nombre'
+        }) as HTMLInputElement
+      ).value
+    ).toBe('Calendario de Varn viejo')
   })
 })
