@@ -30,6 +30,20 @@ const INSETS = { top: 48, bottom: 76 }
 const COMPACT_INSETS = { top: 8, bottom: 8 }
 const GENERATIONS = [1, 2, 3] as const
 
+/** Si la pantalla es la de un móvil (menos de 48 rem): la jugadora ve la pestaña en pequeño (compact) */
+export function useCompactScreen() {
+  const query = '(max-width: 47.99rem)'
+  const [compact, setCompact] = useState(() => typeof matchMedia !== 'undefined' && matchMedia(query).matches)
+  useEffect(() => {
+    if (typeof matchMedia === 'undefined') return
+    const list = matchMedia(query)
+    const change = () => setCompact(list.matches)
+    list.addEventListener('change', change)
+    return () => list.removeEventListener('change', change)
+  }, [])
+  return compact
+}
+
 /** El orden de los colores: el de las plantillas de la cuenta y, detrás, las que salen y no están (las de otro) */
 export function colorOrder(order: readonly string[], nodes: readonly Pick<RelationNode, 'template'>[]) {
   const all = [...order]

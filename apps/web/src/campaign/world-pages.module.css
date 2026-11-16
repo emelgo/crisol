@@ -170,3 +170,21 @@ h3.blockTitle.blockTitle {
   outline: 2px solid var(--color-focus);
   outline-offset: 1px;
 }
+
+/* «Relaciones» de quien juega, en el escritorio: el grafo en un marco del alto de la ventana */
+.relations {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  block-size: min(72dvh, 46rem);
+  margin-block: var(--space-3) var(--space-6);
+  overflow: hidden;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-frame);
+}
+
+.relations > :last-child {
+  flex: 1 1 0;
+  block-size: auto;
+  min-block-size: 0;
+}
