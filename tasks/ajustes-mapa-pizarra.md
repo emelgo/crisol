@@ -10,8 +10,10 @@ Pedidos al probar el módulo 9 en localhost. Se hacen en la rama `modulo-9/mapas
 - [ ] **Supr** borra lo elegido (también en la pizarra): comprobarlo en los dos con el foco donde sea. Ahora, en el mapa,
   Supr no borra y el lienzo se marca con la raya roja de foco por arriba (captura de Enrique): que borre, y que el foco
   del lienzo no pinte ese borde al pulsar una tecla.
-- [ ] **Cerrar una región** es poco intuitivo: con doble clic se cierra pero añade un punto de más. Cerrar sin punto extra
-  (y que pulsar el primer punto, o Intro, también la cierre, con una pista que se vea).
+- [ ] **Cerrar una región** es poco intuitivo: con doble clic se cierra pero añade un punto de más. Cerrar sin punto extra.
+  Pulsar el primer vértice **no la cierra** (la pista dice «Intro o el primero, cerrar» y no se entiende): que pulsar el
+  primer vértice la cierre de verdad (resaltándolo al acercarse) y que la pista lo diga claro («pulsa el primer punto o
+  Intro para cerrar»).
 - [ ] En las opciones de una región, al abrir **«Aspecto»** el contenedor y lo de dentro se deforman: no debe moverse nada.
 - [ ] El **tamaño de letra** de una región sale 96 en vez de 100.
 - [ ] Al elegir **«Página»** en una región o un pin: un desplegable con las páginas que no desentone (como el de «Página…»
@@ -21,6 +23,8 @@ Pedidos al probar el módulo 9 en localhost. Se hacen en la rama `modulo-9/mapas
 - [ ] **«Revelar…»** del panel de una región o un pin no se entiende: rehacerlo (claro, como el ojo del árbol).
 - [ ] El **icono** se elige antes que «Solo el icono», y son iconos del paquete que tenemos (no emojis sueltos).
 - [ ] La herramienta **Texto** deja dibujar una caja para saber dónde irá el texto.
+- [ ] Un **texto del mapa no se puede elegir** para editarlo ni borrarlo con Supr: que se elija al pulsarlo (y doble clic
+  para editarlo) como las regiones y las rutas.
 - [ ] **Medir**: su panel sale en otro sitio; ahora tapa la barra de herramientas de abajo.
 - [ ] Los **desplegables nativos** (p. ej. «Se ve el nombre») salen con las opciones en claro: en oscuro, como la app.
 
