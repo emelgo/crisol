@@ -3,6 +3,36 @@
 Intención: `docs/intent/calendarios.md` (Enrique, 2026-11-16). Estudio: `research/calendarios-y-lineas-temporales.md`
 (Everlore y el Crisol antiguo). Inventario § 7. ADR-0007, fase 3 («línea temporal y calendarios del mundo»).
 
+## Decisiones de Enrique tras el lienzo (2026-11-16) — mandan sobre lo de abajo
+
+Lienzo: https://claude.ai/artifact/3mLSy7KVsmDm3yUBn1Mt4P. Donde este apartado y el resto de la spec choquen, vale este.
+
+1. **La barra del mundo pasa a «Páginas · Calendarios · Archivos»**: el elemento del mundo se llama «Páginas».
+2. Las fichas de los calendarios con el año dibujado, bien.
+3. **El editor, a pantalla entera** (recomendación aceptada: el calendario no cabe en una ventana con su vista previa).
+4. **Sin pestaña «Línea temporal» en las páginas.** El tiempo vive en **«Calendarios»**: además de los calendarios,
+   allí se guardan **varias cronologías** (p. ej. «Historia antigua», «La campaña»), cada una con su calendario y su
+   filtro (etiquetas, plantillas, grupos), con las tres vistas (Lista · Meses · Calendario) **a pantalla entera, como el
+   mapa**. Enrique: «¿qué utilidad real tiene la línea temporal en una hoja como en LegendKeeper?».
+5. **Un evento es una página o un evento suelto.** El suelto (título, fecha o rango, color o imagen, icono, grupo,
+   descripción, oculto) **no va en el árbol ni en ninguna carpeta**: vive en las cronologías. Se puede **enlazar a una
+   página** que exista o **convertir en página** (eligiendo dónde va), y entonces se lee en ella. **Las páginas con un
+   campo Fecha salen solas** en las cronologías cuyo filtro las incluya (por defecto, todas las del mundo).
+6. Una página con varias fechas sale una vez por fecha, con el nombre del campo. Bien.
+7. Los años con sufijo y año 0, y eras que cuentan desde su inicio. Bien.
+8. Título del evento enlazado, opcional (sin él, el de la página). Bien.
+9. La vista Meses en el móvil, solo desde 640 px. Bien.
+10. **Convertir entre calendarios, ya, en este módulo.** Cada calendario que no es el principal puede llevar su
+    **correspondencia**: «el 1 del primer mes del año 0 de este calendario cae el … del principal». Con ella, una
+    cronología enseña las fechas de otros calendarios convertidas al suyo (y el selector de fecha y `describir_fecha`
+    dicen la equivalencia). Sin correspondencia, esas fechas se quedan fuera y la cronología dice cuántas.
+
+Por tanto la capacidad `linea-temporal` pasa a ser **`cronologias`**: tablas `chronologies` (nombre, orden, calendario,
+filtro), `timeline_groups` (de cada mundo) y `timeline_events` (del mundo, sin pestaña); `page_tabs.kind` no gana tipo
+nuevo; la «Pronto» de «Pestaña nueva» desaparece. Herramientas MCP: `listar_cronologias`, `ver_cronologia`,
+`crear_cronologia`, `cambiar_cronologia`, `borrar_cronologia`, `crear_eventos`, `cambiar_evento`, `borrar_evento`,
+`convertir_en_pagina`.
+
 ## Objetivo
 
 Que un mundo tenga **su tiempo**: uno o varios calendarios propios (meses, semana, eras, lunas, estaciones), con uno

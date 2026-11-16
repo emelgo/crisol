@@ -99,8 +99,8 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   **junto a un mapa o una pizarra, si no tiene nada (ni enlaces, ni propiedades, ni bloques), se pliega solo**
   (Enrique, 2026-11-14) y su botón lo abre igual. Las plantillas y las ventanas de páginas de la Mesa, con la página de
   siempre.
-- **Dentro de un mundo, la barra lleva el mundo (su nombre, con su icono propio: un paisaje de montaña, no el globo de
-  «Mundos», Enrique, 2026-11-12) y Archivos**; nada más (ni Plantillas, ni Campañas, ni
+- **Dentro de un mundo, la barra lleva «Páginas», «Calendarios» y «Archivos»** (Enrique, 2026-11-16; antes, el nombre
+  del mundo con su icono de montaña, 2026-11-12); nada más (ni Plantillas, ni Campañas, ni
   «Inicio»: el mundo se abre en su portada). Historial y Papelera enseñan los de ese mundo. **Los dados no van en la barra**
   (Enrique, 2026-11-08: «los dados deben estar en un icono con forma de d20 como en dndbeyond que al pulsarlo se abre
   en una esquina, pero no una pagina propia»): un botón flotante con forma de d20, siempre en la misma esquina, que

@@ -4,6 +4,12 @@ Capacidad `linea-temporal` del módulo 8 (`docs/specs/modulo-8.md`). Intención:
 `research/calendarios-y-lineas-temporales.md` (§ Everlore, § Respuestas 3 y 4). ADR-0007, fase 3. Depende de
 `calendarios` y `fechas`.
 
+> **Cambia (Enrique, 2026-11-16, tras el lienzo):** no hay pestaña en las páginas. Esto pasa a ser **las cronologías**
+> de la pantalla «Calendarios» (varias por mundo, con su calendario y su filtro), a pantalla entera como el mapa; los
+> eventos sueltos son del mundo (no de una pestaña) y se pueden enlazar o convertir en página; las fechas de otros
+> calendarios se convierten si tienen correspondencia. Ver `docs/specs/modulo-8.md` § Decisiones. Las vistas (lista,
+> meses, calendario), la tarjeta, el cuadro del evento y lo que ve la jugadora siguen como abajo.
+
 ## Objetivo
 
 La pestaña **«Línea temporal»** de una página (la «Pronto» de «Pestaña nueva»), con **las tres vistas de Everlore**:
