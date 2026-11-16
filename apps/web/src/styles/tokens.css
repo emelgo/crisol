@@ -50,6 +50,16 @@
   --color-danger: #f27470;
   --color-read-aloud: #2e2a22;
   --color-read-aloud-rule: #d2b077;
+  /* Las series (módulo 10): el color de cada plantilla en las relaciones y de cada serie en los gráficos, de más de 3:1
+     con el fondo (objetos gráficos, WCAG 1.4.11) */
+  --color-series-1: #e9b872;
+  --color-series-2: #f07167;
+  --color-series-3: #6fc3b2;
+  --color-series-4: #8ab4f8;
+  --color-series-5: #b5d16a;
+  --color-series-6: #c9a0dc;
+  --color-series-7: #e8a07c;
+  --color-series-8: #9fb4c7;
 
   --font-body: "Barlow", system-ui, sans-serif;
   --font-display: "Barlow Condensed", "Arial Narrow", sans-serif;

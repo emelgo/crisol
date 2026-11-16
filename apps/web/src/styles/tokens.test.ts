@@ -80,6 +80,16 @@ describe('los tokens de color', () => {
     }
   })
 
+  it(`en el tema ${theme}, los colores de serie (plantillas y gráficos) llegan a 3:1 con el fondo y la superficie`, () => {
+    const c = colors(selector)
+    const series = Object.keys(c).filter((name) => name.startsWith('color-series-'))
+    expect(series).toHaveLength(8)
+    for (const name of series) {
+      expect(contrast(c[name], c['color-bg'])).toBeGreaterThanOrEqual(3)
+      expect(contrast(c[name], c['color-surface'])).toBeGreaterThanOrEqual(3)
+    }
+  })
+
   it(`en el tema ${theme}, el foco llega a 3:1 con el fondo`, () => {
     const c = colors(selector)
     expect(contrast(c['color-focus'], c['color-bg'])).toBeGreaterThanOrEqual(3)
