@@ -1,4 +1,5 @@
 import type { Page, PageProperty } from '@crisol/contracts'
+import { relationKeyOf } from '@crisol/domain'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { EyeOff } from 'lucide-react'
@@ -284,7 +285,12 @@ export function PageProperties({
       <section aria-label={t('properties.title')} className={styles.properties} data-properties="">
         <dl className={styles.list}>
           {filled.map((property) => (
-            <div key={property.name} className={styles.row}>
+            <div
+              key={property.name}
+              className={styles.row}
+              // Al pasar por ella, sus rayas se marcan en la pestaña «Relaciones» (módulo 10)
+              data-relation-key={property.type === 'pages' ? relationKeyOf(property) : undefined}
+            >
               <dt>
                 {property.name}
                 {property.hidden && <HiddenBadge />}
@@ -513,7 +519,13 @@ function PropertyRow({
     }
   }
   return (
-    <div className={styles.prop} data-type={row.type}>
+    <div
+      className={styles.prop}
+      data-type={row.type}
+      data-relation-key={
+        row.type === 'pages' ? relationKeyOf({ name: row.name, field: row.original?.field }) : undefined
+      }
+    >
       <div className={styles.propName}>
         <input
           ref={nameInput}

@@ -1,4 +1,4 @@
-import type { Page, PageTabView } from '@crisol/contracts'
+import type { Page, PageTabView, RelationMode } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getRouteApi, Link, Navigate, useNavigate, useRouter } from '@tanstack/react-router'
 import {
@@ -39,6 +39,8 @@ import { failed, LoadError } from '../components/load-error.tsx'
 import { Menu, MenuItem } from '../components/menu.tsx'
 import { headingMayTakeFocus, PageTitle, useHeadingFocusRequest } from '../components/page-title.tsx'
 import { itemTransition } from '../components/world-transition.ts'
+import { useRelationModes } from '../relations/queries.ts'
+import { RelationsTab } from '../relations/relations-tab.tsx'
 import { WorldBanner } from '../routes/world-card.tsx'
 import { TemplateIcon } from '../templates/icons.tsx'
 import { useTemplates } from '../templates/picker.tsx'
@@ -62,7 +64,7 @@ import { PageRevealButton } from './reveal.tsx'
 import { SceneMain, SceneSide, SceneTabProvider } from './scene/scene-tab.tsx'
 import { PrintDialog, SheetPaper } from './sheet/controls.tsx'
 import { TableTab } from './table/table-tab.tsx'
-import { PageTabs, usePageTabs, useTabTarget } from './tabs/page-tabs.tsx'
+import { PageTabs, RELATIONS_TAB, usePageTabs, useTabTarget } from './tabs/page-tabs.tsx'
 import { PageTree } from './tree.tsx'
 import { Versions } from './versions.tsx'
 import { WhoKnowsButton } from './who-knows.tsx'
@@ -892,7 +894,9 @@ function OpenPage({ page, nuevo, pestana }: { page: Page; nuevo: boolean; pestan
   const api = useApi()
   const tabs = usePageTabs(page)
   const all = tabs.data ?? []
-  const active = pestana ? (all.find((tab) => tab.id === pestana) ?? null) : null
+  // «Relaciones» no es una pestaña guardada: se calcula (módulo 10)
+  const relations = pestana === RELATIONS_TAB
+  const active = pestana && !relations ? (all.find((tab) => tab.id === pestana) ?? null) : null
   // La portada del mundo lleva su portada (la del mundo), como en su Inicio
   const home = useQuery({
     queryKey: ['pages', page.worldId, 'home'],
@@ -903,7 +907,7 @@ function OpenPage({ page, nuevo, pestana }: { page: Page; nuevo: boolean; pestan
   const isHome = home.data?.pageId === page.id
   const banner = isHome && look ? <WorldBanner world={look} /> : undefined
   // Una pestaña que ya no está (quitada, o de otra página): al texto, una vez al día la lista
-  if (pestana && tabs.data && !tabs.isFetching && !active) {
+  if (pestana && !relations && tabs.data && !tabs.isFetching && !active) {
     return (
       <Navigate
         to="/mundos/$worldId/wiki/$pageId"
@@ -913,7 +917,7 @@ function OpenPage({ page, nuevo, pestana }: { page: Page; nuevo: boolean; pestan
       />
     )
   }
-  if (pestana && !active) return null
+  if (pestana && !relations && !active) return null
   return (
     <EntryView
       // Cada página entra con su animación
@@ -922,6 +926,7 @@ function OpenPage({ page, nuevo, pestana }: { page: Page; nuevo: boolean; pestan
       nuevo={nuevo}
       tabs={all}
       active={active}
+      relations={relations}
       banner={banner}
       home={isHome}
     />
@@ -952,12 +957,15 @@ export function EntryView({
   active = null,
   banner,
   home = false,
-  template
+  template,
+  relations = false
 }: {
   page: Page
   nuevo?: boolean
   tabs: PageTabView[]
   active?: PageTabView | null
+  /** La pestaña «Relaciones», abierta (módulo 10) */
+  relations?: boolean
   banner?: ReactNode
   home?: boolean
   template?: TemplateMode
@@ -970,7 +978,7 @@ export function EntryView({
   const addProperty = useRef<PropertyAdder | null>(null)
   // El mapa y la pizarra llenan todo el sitio, hasta el final de la ventana y de lado a lado de la hoja, como en
   // LegendKeeper (Enrique, 2026-11-13: «no debe verse por abajo cómo termina el cuadrado»)
-  const fill = active?.kind === 'map' || active?.kind === 'board'
+  const fill = active?.kind === 'map' || active?.kind === 'board' || relations
   // Junto a un mapa o una pizarra, un panel sin nada (sin enlaces, propiedades ni bloques) se pliega solo, para que lo
   // tengan todo (Enrique, 2026-11-14); pulsar su botón lo abre igual
   const api = useApi()
@@ -986,12 +994,25 @@ export function EntryView({
     links.data !== undefined &&
     links.data.incoming.length === 0 &&
     links.data.mentions.length === 0
-  const pageTabs = <PageTabs page={page} tabs={tabs} active={active?.id ?? null} />
+  // «Relaciones» sale si la página tiene alguna (en la página del mundo; no en una plantilla)
+  const relationModes = useRelationModes(page.worldId, page.id, Boolean(worldPage) && !template)
+  const [relationsMode, setRelationsMode] = useState<RelationMode | null>(null)
+  const pageTabs = (
+    <PageTabs
+      page={page}
+      tabs={tabs}
+      active={relations ? RELATIONS_TAB : (active?.id ?? null)}
+      relations={relations || relationModes.length > 0}
+    />
+  )
   // En un mundo, donde pone la pestaña abierta sus herramientas (a la derecha de las pestañas)
   const [tabTools, setTabTools] = useState<HTMLElement | null>(null)
   // El panel de la derecha se pliega desde la cabecera de la página (Enrique, 2026-11-16)
   const panelId = useId()
-  const panel = usePanelFold(fill && !template && emptyPanel)
+  // En Familia y Organigrama, plegado (lienzo del módulo 10): las tarjetas necesitan el ancho
+  const panel = usePanelFold(
+    (fill && !template && emptyPanel) || (relations && (relationsMode === 'family' || relationsMode === 'org'))
+  )
   // Dónde empieza la columna: las fichas de los lados, a su altura, y el mapa y la pizarra, del alto de lo que queda de
   // la ventana (Enrique, 2026-11-16)
   useColumnTop(column, Boolean(worldPage))
@@ -1049,28 +1070,29 @@ export function EntryView({
     />
   )
   // Lo de la pestaña elegida: el texto (o otra página de texto, con su propio documento), una tabla, una pizarra o un mapa
-  const content =
-    active?.kind === 'scene' ? (
-      <SceneMain key={active.id} />
-    ) : active?.kind === 'text' ? (
-      <div className={styles.column}>
-        <SheetPaper page={page}>
-          <PageBody key={active.id} page={page} documentId={active.documentId} />
-        </SheetPaper>
-      </div>
-    ) : active?.kind === 'table' ? (
-      <TableTab key={active.id} page={page} tab={active} />
-    ) : active?.kind === 'board' ? (
-      <BoardTab key={active.id} page={page} tab={active} />
-    ) : active ? (
-      <MapTab key={active.id} page={page} tab={active} />
-    ) : (
-      <div className={styles.column}>
-        <SheetPaper page={page}>
-          <PageBody page={page} />
-        </SheetPaper>
-      </div>
-    )
+  const content = relations ? (
+    <RelationsTab page={page} onMode={setRelationsMode} />
+  ) : active?.kind === 'scene' ? (
+    <SceneMain key={active.id} />
+  ) : active?.kind === 'text' ? (
+    <div className={styles.column}>
+      <SheetPaper page={page}>
+        <PageBody key={active.id} page={page} documentId={active.documentId} />
+      </SheetPaper>
+    </div>
+  ) : active?.kind === 'table' ? (
+    <TableTab key={active.id} page={page} tab={active} />
+  ) : active?.kind === 'board' ? (
+    <BoardTab key={active.id} page={page} tab={active} />
+  ) : active ? (
+    <MapTab key={active.id} page={page} tab={active} />
+  ) : (
+    <div className={styles.column}>
+      <SheetPaper page={page}>
+        <PageBody page={page} />
+      </SheetPaper>
+    </div>
+  )
   // A la derecha: la rejilla de una escena o, si no, «Mencionado en», las propiedades y los bloques (o lo de una plantilla)
   const side =
     active?.kind === 'scene' ? (

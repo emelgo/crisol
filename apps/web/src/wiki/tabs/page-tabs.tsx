@@ -29,6 +29,9 @@ import styles from './page-tabs.module.css'
 
 export const tabsKey = (worldId: string, pageId: string) => ['pages', worldId, 'tabs', pageId]
 
+/** La pestaña «Relaciones» (módulo 10): fija y calculada, no se guarda; va en la dirección como ?pestana=relaciones */
+export const RELATIONS_TAB = 'relaciones'
+
 /**
  * Adónde lleva cada pestaña (null, su texto): a la página en la wiki de su mundo o, en el editor de una plantilla, a la
  * plantilla (ADR-0024), que lo dice con TabTargetContext
@@ -58,10 +61,20 @@ export function usePageTabs(page: Page) {
 
 /**
  * La barra, como en Everlore: «Texto» y las añadidas; la elegida, con su menú (nombre, color y quitar); se recolocan
- * arrastrando (o con Alt y las flechas). Al final,
- * «+» para añadir otra
+ * arrastrando (o con Alt y las flechas). Tras ellas, «Relaciones» si la página tiene alguna (relations; fija, sin menú).
+ * Al final, «+» para añadir otra
  */
-export function PageTabs({ page, tabs, active }: { page: Page; tabs: PageTabView[]; active: string | null }) {
+export function PageTabs({
+  page,
+  tabs,
+  active,
+  relations = false
+}: {
+  page: Page
+  tabs: PageTabView[]
+  active: string | null
+  relations?: boolean
+}) {
   const { t } = useTranslation()
   const api = useApi()
   const queryClient = useQueryClient()
@@ -165,6 +178,19 @@ export function PageTabs({ page, tabs, active }: { page: Page; tabs: PageTabView
             )}
           </li>
         ))}
+        {relations && (
+          <li>
+            <Link
+              {...target(RELATIONS_TAB)}
+              activeOptions={{ exact: true, includeSearch: true }}
+              className={styles.tab}
+              aria-current={active === RELATIONS_TAB ? 'page' : undefined}
+              data-tour="relaciones-pestana"
+            >
+              {t('relations.tab')}
+            </Link>
+          </li>
+        )}
         {!page.locked && (
           <li>
             <NewTab page={page} />

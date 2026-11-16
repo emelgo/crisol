@@ -112,9 +112,9 @@ catalog:
   y-protocols: ^1.0.7
   # Las relaciones del mundo (módulo 10): el grafo (fuerzas, mover y acercar; ISC), el árbol y el organigrama (MIT) y
   # los gráficos (MIT, cargado aparte)
-  d3-force: 3.0.0
-  d3-selection: 3.0.0
-  d3-zoom: 3.0.0
+  d3-force: 3.0.1
+  d3-selection: 3.0.1
+  d3-zoom: 3.0.1
   "@types/d3-force": 3.0.10
   "@types/d3-selection": 3.0.12
   "@types/d3-zoom": 3.0.9

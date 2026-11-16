@@ -1,0 +1,846 @@
+/* Las relaciones de una página y del mundo (módulo 10): el grafo en SVG, las tarjetas de Familia y Organigrama y lo
+   que flota encima (la píldora de los modos, el zoom, la leyenda y la ficha de la elegida), de cristal como el mapa */
+
+.hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ---------- La zona del grafo: a sangre bajo las pestañas, hasta abajo ---------- */
+.area {
+  position: relative;
+  block-size: 100%;
+  min-block-size: 0;
+  overflow: hidden;
+}
+
+.svg {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+}
+
+.svg:active {
+  cursor: grabbing;
+}
+
+/* ---------- Las rayas ---------- */
+.edge {
+  stroke: color-mix(in srgb, var(--color-text) 34%, transparent);
+  stroke-width: 1.25;
+  fill: none;
+  transition:
+    stroke 150ms ease-out,
+    stroke-width 150ms ease-out;
+}
+
+.edge[data-kind="mention"] {
+  stroke-dasharray: 2 4;
+  stroke-linecap: round;
+}
+
+.edge[data-secret] {
+  stroke: color-mix(in srgb, var(--color-secret-text) 70%, transparent);
+  stroke-dasharray: 7 5;
+}
+
+.edge[data-lit] {
+  stroke: var(--color-series-1);
+  stroke-width: 2.25;
+}
+
+.edgeLabel {
+  fill: var(--color-muted);
+  font-size: 11px;
+  font-weight: 600;
+  text-anchor: middle;
+  paint-order: stroke;
+  stroke: var(--color-bg);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+.edgeLabel[data-lit] {
+  fill: var(--color-text);
+}
+
+/* ---------- Las páginas ---------- */
+.node,
+.treeCard {
+  cursor: pointer;
+  outline: none;
+}
+
+.ring {
+  fill: color-mix(in srgb, var(--node-color) 18%, var(--color-bg));
+  stroke: var(--node-color);
+  stroke-width: 2;
+}
+
+.halo {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 2;
+}
+
+.node[data-center] .ring {
+  stroke-width: 3;
+}
+
+.node[data-center] .halo {
+  stroke: color-mix(in srgb, var(--node-color) 45%, transparent);
+}
+
+.node:hover .ring,
+.node[aria-pressed="true"] .ring {
+  fill: color-mix(in srgb, var(--node-color) 32%, var(--color-bg));
+}
+
+.node[aria-pressed="true"] .halo {
+  stroke: var(--color-text);
+}
+
+.node:focus-visible .halo {
+  stroke: var(--color-focus);
+  stroke-width: 3;
+}
+
+.glyph {
+  overflow: visible;
+  pointer-events: none;
+}
+
+.glyph > span {
+  display: grid;
+  place-items: center;
+  inline-size: 100%;
+  block-size: 100%;
+  color: var(--node-color);
+  line-height: 1;
+}
+
+.initials {
+  fill: var(--node-color);
+  font-weight: 700;
+  text-anchor: middle;
+  pointer-events: none;
+}
+
+.nodeTitle {
+  fill: var(--color-text);
+  font-size: 12px;
+  font-weight: 600;
+  text-anchor: middle;
+  paint-order: stroke;
+  stroke: var(--color-bg);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+
+.node[data-center] .nodeTitle {
+  font-size: 13px;
+}
+
+/* ---------- Familia y Organigrama ---------- */
+.rowLabel {
+  fill: var(--color-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-anchor: end;
+  text-transform: uppercase;
+}
+
+.wire {
+  fill: none;
+  stroke: color-mix(in srgb, var(--color-text) 30%, transparent);
+  stroke-width: 1.25;
+}
+
+.wire[data-kind="partner"] {
+  stroke: var(--color-series-1);
+  stroke-width: 1.5;
+}
+
+.cardBox {
+  fill: color-mix(in srgb, var(--color-surface) 88%, transparent);
+  stroke: var(--line-frame);
+  stroke-width: 1;
+  transition:
+    fill 150ms ease-out,
+    stroke 150ms ease-out;
+}
+
+.treeCard[data-kind="group"] .cardBox {
+  fill: color-mix(in srgb, var(--node-color) 8%, var(--color-surface));
+}
+
+.treeCard:hover .cardBox {
+  fill: var(--color-raised);
+}
+
+.treeCard[data-center] .cardBox {
+  stroke: var(--color-accent-text);
+  stroke-width: 1.5;
+}
+
+.treeCard[aria-pressed="true"] .cardBox {
+  stroke: var(--color-text);
+  stroke-width: 1.5;
+}
+
+.treeCard:focus-visible .cardBox {
+  stroke: var(--color-focus);
+  stroke-width: 3;
+}
+
+.cardText {
+  dominant-baseline: middle;
+}
+
+.cardTitle {
+  fill: var(--color-text);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.cardSub {
+  fill: var(--color-muted);
+  font-size: 11px;
+}
+
+.cardBadge {
+  fill: var(--color-accent-text);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* ---------- Lo que flota encima: de cristal, como las herramientas del mapa ---------- */
+.pill,
+.zoom,
+.legend,
+.card,
+.back,
+.notice {
+  position: absolute;
+  z-index: 2;
+  border: 1px solid var(--line-frame);
+  background: var(--frame-sheen), var(--popup-glass);
+  -webkit-backdrop-filter: var(--popup-blur);
+  backdrop-filter: var(--popup-blur);
+  box-shadow: var(--glass-shadow);
+}
+
+.pill,
+.zoom {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+}
+
+/* Los modos, abajo en el centro */
+.pill {
+  inset-block-end: var(--space-4);
+  inset-inline-start: 50%;
+  border-radius: 12px;
+  transform: translateX(-50%);
+}
+
+/* El zoom, abajo a la derecha; con el panel plegado, por encima del d20 y del «?» de esa esquina */
+.zoom {
+  inset-block-end: var(--space-4);
+  inset-inline-end: var(--space-4);
+  border-radius: 10px;
+}
+
+:global([data-panel-folded]) .zoom {
+  inset-block-end: calc(var(--space-4) + 3.25rem + var(--space-3));
+}
+
+.pill button,
+.zoom button,
+.segmented button,
+.compactModes button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-block-size: 2.25rem;
+  min-inline-size: 2.25rem;
+  padding: 0 var(--space-3);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: none;
+  color: var(--color-muted);
+  font: inherit;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color 150ms ease-out,
+    color 150ms ease-out;
+}
+
+.zoom button {
+  padding: 0 var(--space-2);
+}
+
+.zoom .zoomValue {
+  min-inline-size: 3.5rem;
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.pill button:hover,
+.zoom button:hover,
+.segmented button:hover,
+.compactModes button:hover {
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+  color: var(--color-text);
+}
+
+.pill button[aria-pressed="true"],
+.segmented button[aria-pressed="true"],
+.compactModes button[aria-pressed="true"] {
+  border-color: color-mix(in srgb, var(--color-accent-text) 40%, transparent);
+  background: color-mix(in srgb, var(--color-accent) 22%, transparent);
+  color: var(--color-text);
+}
+
+.pill button:focus-visible,
+.zoom button:focus-visible,
+.segmented button:focus-visible,
+.compactModes button:focus-visible,
+.back:focus-visible,
+.card button:focus-visible,
+.wordLink:focus-visible,
+.miniCard:focus-visible,
+.expand:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 1px;
+}
+
+/* La leyenda de los trazos, abajo a la izquierda */
+.legend {
+  inset-block-end: var(--space-4);
+  inset-inline-start: var(--space-4);
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: 10px;
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+  list-style: none;
+}
+
+.legend li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* «‹ Volver a…», arriba a la izquierda, tras «Centrar aquí» */
+.back {
+  inset-block-start: var(--space-3);
+  inset-inline-start: var(--space-4);
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-block-size: 2.25rem;
+  padding: 0 var(--space-3) 0 var(--space-2);
+  border-radius: 999px;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.back:hover {
+  background: var(--frame-sheen), var(--color-raised);
+}
+
+/* Hay más de las que se ven, arriba en el centro */
+.notice {
+  inset-block-start: var(--space-3);
+  inset-inline-start: 50%;
+  margin: 0;
+  padding: 0.3rem 0.85rem;
+  border-radius: 999px;
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+/* ---------- La ficha de la elegida, arriba a la derecha ---------- */
+.card {
+  inset-block-start: var(--space-3);
+  inset-inline-end: var(--space-4);
+  display: grid;
+  gap: var(--space-3);
+  inline-size: min(20rem, calc(100% - 2 * var(--space-4)));
+  max-block-size: calc(100% - 8rem);
+  overflow: auto;
+  padding: var(--space-3) var(--space-4) var(--space-4);
+  border-radius: var(--radius-frame);
+  scrollbar-width: thin;
+  animation: card-in 180ms ease-out;
+}
+
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+.cardHead {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding-block-end: var(--space-3);
+  border-block-end: 1px solid var(--line-soft);
+}
+
+.cardHead h3 {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--color-text);
+}
+
+.cardHead p {
+  margin: 2px 0 0;
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  inline-size: 2.5rem;
+  block-size: 2.5rem;
+  border: 2px solid var(--node-color, var(--color-series-1));
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--node-color, var(--color-series-1)) 18%, var(--color-bg));
+  color: var(--node-color, var(--color-series-1));
+  font-size: 1.125rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.avatar[data-size="small"] {
+  inline-size: 2rem;
+  block-size: 2rem;
+  font-size: 0.875rem;
+}
+
+.close {
+  display: grid;
+  place-items: center;
+  inline-size: 2rem;
+  block-size: 2rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.close:hover {
+  background: color-mix(in srgb, var(--color-text) 10%, transparent);
+  color: var(--color-text);
+}
+
+.words {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.words > div {
+  display: grid;
+  grid-template-columns: minmax(6rem, auto) minmax(0, 1fr);
+  gap: var(--space-3);
+}
+
+.words dt {
+  color: var(--color-muted);
+}
+
+.words dd {
+  margin: 0;
+  color: var(--color-link);
+}
+
+.words > div[data-secret] dt::after {
+  content: " ·";
+  color: var(--color-secret-text);
+}
+
+.cardActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.primary,
+.secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: 2.25rem;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-button);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.primary {
+  border: 0;
+  background: var(--frame-sheen), var(--accent-glass);
+  color: var(--color-on-accent);
+}
+
+.primary:hover {
+  filter: brightness(1.1);
+}
+
+.secondary {
+  border: 1px solid var(--line-frame);
+  background: var(--surface-glass-raised);
+  color: var(--color-text);
+}
+
+.secondary:hover {
+  background: var(--color-raised);
+}
+
+/* ---------- Las herramientas, a la derecha de las pestañas ---------- */
+.tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2) var(--space-4);
+}
+
+.toolsRow {
+  display: flex;
+  justify-content: flex-end;
+  padding-block-end: var(--space-2);
+}
+
+.segmentedField {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.segmented {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--line-frame);
+  border-radius: 8px;
+  background: var(--field-fill);
+}
+
+.segmented button {
+  min-block-size: 1.75rem;
+  min-inline-size: 2rem;
+  padding: 0 var(--space-2);
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.toggle input {
+  position: absolute;
+  opacity: 0;
+  inline-size: 1px;
+  block-size: 1px;
+}
+
+.track {
+  position: relative;
+  flex: none;
+  inline-size: 2rem;
+  block-size: 1.125rem;
+  border-radius: 9px;
+  background: var(--color-frame);
+  transition: background 150ms ease-out;
+}
+
+.track::after {
+  position: absolute;
+  inset-block-start: 2px;
+  inset-inline-start: 2px;
+  inline-size: 14px;
+  block-size: 14px;
+  border-radius: 50%;
+  background: #d6d6dc;
+  content: "";
+  transition: inset-inline-start 150ms ease-out;
+}
+
+.toggle input:checked + .track {
+  background: var(--color-accent);
+}
+
+.toggle input:checked + .track::after {
+  inset-inline-start: 16px;
+  background: #ffffff;
+}
+
+.toggle input:focus-visible + .track {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.toggle:hover {
+  color: var(--color-text);
+}
+
+.nothing {
+  margin: var(--space-8) auto;
+  color: var(--color-muted);
+  text-align: center;
+}
+
+/* ---------- La jugadora: el grafo en pequeño, en palabras debajo y a pantalla entera al ampliar ---------- */
+.compact {
+  display: grid;
+  gap: var(--space-3);
+  padding-block: var(--space-2) var(--space-6);
+}
+
+.compactModes {
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--line-frame);
+  border-radius: 10px;
+  background: var(--field-fill);
+}
+
+.compactModes button {
+  min-block-size: var(--target);
+}
+
+.compactGraph {
+  position: relative;
+  block-size: clamp(14rem, 45dvh, 26rem);
+  overflow: hidden;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-frame);
+  background: color-mix(in srgb, var(--color-bg) 50%, transparent);
+}
+
+.expand {
+  position: absolute;
+  inset-block-start: var(--space-2);
+  inset-inline-end: var(--space-2);
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  inline-size: var(--target);
+  block-size: var(--target);
+  border: 1px solid var(--line-frame);
+  border-radius: 50%;
+  background: var(--frame-sheen), var(--popup-glass);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.wordsList {
+  display: grid;
+  margin: 0;
+}
+
+.wordsList > div {
+  display: grid;
+  grid-template-columns: minmax(6.5rem, auto) minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: baseline;
+  padding: var(--space-2) 0;
+  border-block-end: 1px solid var(--line-soft);
+}
+
+.wordsList dt {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.wordsList dd {
+  margin: 0;
+}
+
+.wordLink {
+  min-block-size: 2rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-link);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.rowsList {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.rowsList section {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.rowsList h4 {
+  margin: 0;
+  color: var(--color-muted);
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.rowsList ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.miniCard {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: var(--target);
+  padding: var(--space-1) var(--space-3) var(--space-1) var(--space-1);
+  border: 1px solid var(--line-frame);
+  border-radius: var(--radius-frame);
+  background: var(--surface-glass-raised);
+  color: var(--color-text);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.miniCard[aria-current] {
+  border-color: var(--color-accent-text);
+}
+
+.miniCard span {
+  display: grid;
+}
+
+.miniCard strong {
+  font-size: 0.9375rem;
+}
+
+.miniCard small {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+}
+
+.wide {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  background: var(--color-bg);
+}
+
+.wide header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+}
+
+.wide h2 {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.wideBody {
+  position: relative;
+  min-block-size: 0;
+  overflow: hidden;
+}
+
+/* En el móvil, la ficha de la elegida sube desde abajo, como una hoja */
+@media (max-width: 48rem) {
+  .wideBody .card {
+    inset-block: auto 0;
+    inset-inline: 0;
+    inline-size: 100%;
+    max-block-size: 55%;
+    border-radius: var(--radius-frame) var(--radius-frame) 0 0;
+    animation: sheet-in 220ms ease-out;
+  }
+}
+
+@keyframes sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+@media (pointer: coarse) {
+  .pill button,
+  .zoom button {
+    min-block-size: var(--target);
+    min-inline-size: var(--target);
+  }
+}

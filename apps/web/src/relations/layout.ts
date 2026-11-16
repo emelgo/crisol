@@ -47,22 +47,31 @@ function pairs(links: readonly Link[], present: ReadonlySet<string>) {
 /**
  * La simulación de fuerzas, parada (quien la usa decide cuándo avanza): se repelen, las enlazadas se atraen, no se
  * pisan y todo tiende al centro. center: la página que se queda quieta en el origen. spread: más sitio entre ellas
- * (las del grafo del mundo, con etiquetas más pequeñas, van más juntas)
+ * (las del grafo del mundo, con etiquetas más pequeñas, van más juntas). initial: dónde estaban antes
  */
 export function forceSimulationOf(
   ids: readonly string[],
   links: readonly Link[],
-  { center = null, spread = 1 }: { center?: string | null; spread?: number } = {}
+  {
+    center = null,
+    spread = 1,
+    initial
+  }: { center?: string | null; spread?: number; initial?: ReadonlyMap<string, Point> | undefined } = {}
 ): { simulation: Simulation<Body, undefined>; bodies: Body[] } {
-  const bodies: Body[] = ids.map((id) => (id === center ? { id, fx: 0, fy: 0 } : { id }))
+  // Las que ya estaban salen de donde estaban (al cambiar la profundidad, no se mueve todo)
+  const bodies: Body[] = ids.map((id) => {
+    if (id === center) return { id, fx: 0, fy: 0 }
+    const before = initial?.get(id)
+    return before ? { id, x: before.x, y: before.y } : { id }
+  })
   const present = new Set(ids)
   const simulation = forceSimulation(bodies)
     .force(
       'link',
       forceLink<Body, { source: string | Body; target: string | Body }>(pairs(links, present))
         .id((body) => body.id)
-        .distance(110 * spread)
-        .strength(0.5)
+        .distance(185 * spread)
+        .strength(0.45)
     )
     .force(
       'charge',
@@ -70,7 +79,7 @@ export function forceSimulationOf(
         .strength(-380 * spread)
         .distanceMax(700 * spread)
     )
-    .force('collide', forceCollide<Body>(40 * spread))
+    .force('collide', forceCollide<Body>(48 * spread))
     .force('x', forceX<Body>(0).strength(0.05))
     .force('y', forceY<Body>(0).strength(0.05))
     .stop()
@@ -85,7 +94,7 @@ export const ticksToSettle = (simulation: Simulation<Body, undefined>) =>
 export function forceLayout(
   ids: readonly string[],
   links: readonly Link[],
-  options: { center?: string | null; spread?: number } = {}
+  options: { center?: string | null; spread?: number; initial?: ReadonlyMap<string, Point> | undefined } = {}
 ): Map<string, Point> {
   const { simulation, bodies } = forceSimulationOf(ids, links, options)
   simulation.tick(ticksToSettle(simulation))
