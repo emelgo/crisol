@@ -79,15 +79,18 @@ export function enterWorld(worldId: string, card: Element | null, full = false) 
 
 /**
  * Al salir de un mundo (por la llama): como las brasas al entrar, pero apagadas: una bruma gris que sube desde abajo y
- * bocanadas de humo que suben, se ensanchan y se disipan (base.css, .humo). La cabecera no vuelve a ser tarjeta: el
- * mundo se aleja entero y vuelve Mis mundos (Enrique, 2026-11-12: «al salir de un mundo sale la animación rara»; la
- * cabecera, grande y con otra forma, se veía estirada y borrosa al encoger)
+ * bocanadas de humo que suben, se ensanchan y se disipan (base.css, .humo). Del mundo a pantalla completa, el espejo de
+ * entrar (Enrique, 2026-11-16: «debe ser la animación inversa a cuando entramos»): su cabecera fina vuelve a ser su
+ * tarjeta de Mis mundos (las dos con el nombre mundo-actual), sus iconos suben al crisol y la barra de la app vuelve.
+ * Fuera de él, la cabecera no vuelve a ser tarjeta: el mundo se aleja entero (la cabecera grande, con otra forma, se
+ * veía estirada al encoger; Enrique, 2026-11-12)
  */
 export function leaveWorld() {
-  current = null
-  leavingFull()
+  const full = leavingFull()
+  current = full?.worldId ?? null
   for (const named of document.querySelectorAll<HTMLElement>('[style*="view-transition-name"]')) {
-    if (named.style.viewTransitionName === 'mundo-actual') named.style.removeProperty('view-transition-name')
+    if (named !== full?.header && named.style.viewTransitionName === 'mundo-actual')
+      named.style.removeProperty('view-transition-name')
   }
   smoke()
 }
@@ -167,14 +170,16 @@ function riseIntoFlame() {
 }
 
 /**
- * Al salir de un mundo a pantalla completa: su cabecera y su barra se alejan con lo demás, y los iconos de la barra
- * suben al crisol del último al primero (cada uno aparte en la transición, con su retraso: --sale-N). Fuera de él, nada
+ * Al salir de un mundo a pantalla completa: su cabecera se convierte en su tarjeta (mundo-actual), su barra se aleja con
+ * lo demás y los iconos de la barra suben al crisol del último al primero (cada uno aparte en la transición, con su
+ * retraso: --sale-N). Devuelve la cabecera y su mundo; fuera de él, nada
  */
-function leavingFull() {
+function leavingFull(): { header: HTMLElement; worldId: string } | null {
   const header = document.querySelector<HTMLElement>('[data-cabecera-mundo]')
-  if (!header) return
+  const worldId = /^\/mundos\/([^/]+)/.exec(window.location.pathname)?.[1]
+  if (!header || !worldId) return null
   leftFullAt = Date.now()
-  header.style.setProperty('view-transition-name', 'cabecera-mundo')
+  header.style.setProperty('view-transition-name', 'mundo-actual')
   const root = document.documentElement
   const icons = [...document.querySelectorAll<HTMLElement>('[data-world-icons] > *')].slice(0, 6)
   leftIcons = icons.length
@@ -185,4 +190,5 @@ function leavingFull() {
   later(() => {
     for (let i = 0; i < icons.length; i++) root.style.removeProperty(`--sale-${i}`)
   })
+  return { header, worldId }
 }

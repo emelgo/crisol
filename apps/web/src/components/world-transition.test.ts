@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { enterWorld, justEnteredFull, justLeftFull, leaveWorld } from './world-transition.ts'
+import { enterWorld, justEnteredFull, justLeftFull, leaveWorld, worldTransition } from './world-transition.ts'
 
 afterEach(() => {
   document.body.innerHTML = ''
@@ -33,15 +33,16 @@ describe('entrar y salir del mundo a pantalla completa (ADR-0027)', () => {
     expect(document.querySelector<HTMLElement>('[data-rise]')?.style.viewTransitionName).toBe('')
   })
 
-  it('al salir por la llama, los iconos del mundo suben al crisol del último al primero y la barra lo sabe', () => {
+  it('al salir por la llama, la cabecera vuelve a su tarjeta (el espejo de entrar), los iconos del mundo suben al crisol del último al primero y la barra lo sabe', () => {
     vi.useFakeTimers()
+    window.history.replaceState(null, '', '/mundos/eana/wiki/puerto')
     document.body.innerHTML = `
       <header data-cabecera-mundo=""></header>
       <div data-world-icons=""><button></button><button></button><button></button></div>`
     leaveWorld()
-    expect(document.querySelector<HTMLElement>('[data-cabecera-mundo]')?.style.viewTransitionName).toBe(
-      'cabecera-mundo'
-    )
+    expect(document.querySelector<HTMLElement>('[data-cabecera-mundo]')?.style.viewTransitionName).toBe('mundo-actual')
+    // Su tarjeta de Mis mundos, la que lleva el mismo nombre al pintarse
+    expect(worldTransition('eana')).toEqual({ viewTransitionName: 'mundo-actual' })
     const icons = [...document.querySelectorAll<HTMLElement>('[data-world-icons] > *')]
     expect(icons.map((icon) => icon.style.viewTransitionName)).toEqual([
       'icono-mundo-0',

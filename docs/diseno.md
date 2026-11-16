@@ -395,9 +395,11 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   salen del crisol uno tras otro al entrar y suben a él al volver, antes de que salga «Mundos».
 - **Entrar y salir del mundo a pantalla completa, como siempre** (ADR-0027): la tarjeta crece hasta la cabecera fina
   (recortada a su forma), lo de la barra de la app sube a la llama y la barra se va con lo demás; la llama de la
-  cabecera se aviva y los iconos (Páginas, Archivos) salen del crisol a la barra de la izquierda. Al salir, solo con la
-  llama, el mundo se aleja con humo, sus iconos suben al crisol y la barra de la app vuelve a entrar, con «Mundos»
-  saliendo de la llama.
+  cabecera se aviva y los iconos (Páginas, Archivos) salen del crisol a la barra de la izquierda. **Al salir, el espejo
+  exacto** (Enrique, 2026-11-16: «debe ser la animación inversa a cuando entramos»), solo con la llama: la cabecera fina
+  vuelve a ser la tarjeta del mundo en Mis mundos, su llama pasa a ser la de la barra, sus iconos suben al crisol, la
+  barra de la app vuelve (de un poco más grande a su sitio, al revés de como se fue) y «Mundos» y lo demás salen de la
+  llama; con humo.
 - **Entrar en un mundo es entrar**: la tarjeta pulsada se convierte en la cabecera del mundo mientras Mis mundos se
   acerca y se desvanece, como si se pasara a través; al volver, al revés (transiciones de vista del navegador). Al
   entrar, con un fuego sutil: la tarjeta se pone al rojo mientras crece y sube algo de calor con unas brasas; la
