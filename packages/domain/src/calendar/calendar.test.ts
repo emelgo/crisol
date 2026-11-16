@@ -166,17 +166,21 @@ describe('ida y vuelta', () => {
   }
 
   it('calcula 10.000 fechas en menos de 50 ms', () => {
+    // El tiempo de CPU del proceso, no el del reloj: con todas las pruebas a la vez, la máquina va cargada y esperar
+    // turno no es calcular (el dominio no tiene los tipos de Node: se pide a globalThis)
+    const cpu = (globalThis as unknown as { process: { cpuUsage: () => { user: number; system: number } } }).process
     const round = () => {
-      const started = performance.now()
+      const started = cpu.cpuUsage()
       let sum = 0
       for (let i = 0; i < 10_000; i++) {
         const date = dateFromDay(GREGORIAN, i * 3_650 - 18_250_000)
         sum += dayNumber(GREGORIAN, date) + (weekdayOf(GREGORIAN, date) ?? 0)
       }
       expect(sum).not.toBe(0)
-      return performance.now() - started
+      const used = cpu.cpuUsage()
+      return (used.user - started.user + used.system - started.system) / 1000
     }
-    // La primera vuelta calienta el JIT; con la máquina cargada (todas las pruebas a la vez), cuenta la mejor de cinco
+    // La primera vuelta calienta el JIT; cuenta la mejor de cinco
     round()
     expect(Math.min(...Array.from({ length: 5 }, round))).toBeLessThan(50)
   })

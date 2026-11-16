@@ -39,8 +39,8 @@ import {
   yearLength
 } from '@crisol/domain'
 import { calendarsChanged } from '../realtime/events.ts'
-import { managesWiki } from '../wiki/reader.ts'
-import { authorizedWiki, type WikiTarget } from './access.ts'
+import { authorizedView, type ReadAs } from '../wiki/reader.ts'
+import { authorizedWiki } from './access.ts'
 import { datesInUse } from './calendar-dates.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
 import { implement } from './registry.ts'
@@ -63,12 +63,19 @@ const viewOf = (row: CalendarRow, full: boolean): CalendarView => ({
   version: row.version
 })
 
-/** Si quien pide lo ve todo: lleva la wiki y no lee como un personaje */
-const readsAll = (ctx: ActionContext, wiki: WikiTarget, asCharacterId?: string) =>
-  managesWiki(ctx, wiki) && asCharacterId === undefined
+/**
+ * El calendario para leerlo, con lo que ve quien lo pide (ADR-0017, por la proyección): el máster, todo; un jugador (o
+ * el máster viendo como uno), sin las eras solo del máster. Si no existe (o no lo ve), 404
+ */
+async function viewedCalendar(ctx: ActionContext, calendarId: string, as: ReadAs) {
+  const calendar = calendarId ? await calendarsRepo.findCalendar(ctx.db, calendarId) : null
+  const { wiki, view } = await authorizedView(ctx, calendar?.worldId ?? '', as)
+  if (!calendar) throw new NotFoundError('calendar')
+  return { calendar, wiki, full: view.full }
+}
 
-/** El calendario y su mundo, si la cuenta puede hacer eso en él. Si no existe (o no lo ve), 404 */
-async function authorizedCalendar(ctx: ActionContext, capability: 'page.view' | 'page.write', calendarId: string) {
+/** El calendario y su mundo, para cambiarlo (page.write). Si no existe (o no lo ve), 404 */
+async function authorizedCalendar(ctx: ActionContext, capability: 'page.write', calendarId: string) {
   const calendar = calendarId ? await calendarsRepo.findCalendar(ctx.db, calendarId) : null
   const wiki = await authorizedWiki(ctx, capability, calendar?.worldId ?? '')
   if (!calendar) throw new NotFoundError('calendar')
@@ -148,16 +155,15 @@ export async function calendarRequest(ctx: ActionContext, action: string, input:
 }
 
 export const calendarActions = [
-  implement(listCalendars, async (ctx, { worldId, asCharacterId }) => {
-    const wiki = await authorizedWiki(ctx, 'page.view', worldId)
-    const full = readsAll(ctx, wiki, asCharacterId)
+  implement(listCalendars, async (ctx, { worldId, campaignId, asCharacterId }) => {
+    const { view } = await authorizedView(ctx, worldId, { campaignId, asCharacterId })
+    const full = view.full
     const rows = await calendarsRepo.listCalendars(ctx.db, worldId)
     return { calendars: rows.map((row) => viewOf(row, full)) }
   }),
 
-  implement(getCalendar, async (ctx, { calendarId, asCharacterId }) => {
-    const { calendar, wiki } = await authorizedCalendar(ctx, 'page.view', calendarId)
-    const full = readsAll(ctx, wiki, asCharacterId)
+  implement(getCalendar, async (ctx, { calendarId, campaignId, asCharacterId }) => {
+    const { calendar, full } = await viewedCalendar(ctx, calendarId, { campaignId, asCharacterId })
     const view = viewOf(calendar, full)
     const rows = await calendarsRepo.listCalendars(ctx.db, calendar.worldId)
     return {
@@ -301,16 +307,17 @@ export const calendarActions = [
   }),
 
   implement(describeDate, async (ctx, input) => {
+    const as = { campaignId: input.campaignId, asCharacterId: input.asCharacterId }
     let calendar: CalendarRow
-    let wiki: WikiTarget
-    if (input.calendarId) ({ calendar, wiki } = await authorizedCalendar(ctx, 'page.view', input.calendarId))
+    let full: boolean
+    if (input.calendarId) ({ calendar, full } = await viewedCalendar(ctx, input.calendarId, as))
     else {
-      wiki = await authorizedWiki(ctx, 'page.view', input.worldId ?? '')
+      const { wiki, view } = await authorizedView(ctx, input.worldId ?? '', as)
       const primary = await calendarsRepo.primaryCalendar(ctx.db, wiki.worldId)
       if (!primary) throw new InvalidRequestError('NO_CALENDAR', 'este mundo aún no tiene calendario')
       calendar = primary
+      full = view.full
     }
-    const full = readsAll(ctx, wiki, input.asCharacterId)
     const definition = seen(calendar.definition, full)
     const date = dateIn(definition, input.date)
     let primary = null
@@ -341,9 +348,8 @@ export const calendarActions = [
     }
   }),
 
-  implement(convertDate, async (ctx, { calendarId, to, date: value, asCharacterId }) => {
-    const { calendar, wiki } = await authorizedCalendar(ctx, 'page.view', calendarId)
-    const full = readsAll(ctx, wiki, asCharacterId)
+  implement(convertDate, async (ctx, { calendarId, to, date: value, campaignId, asCharacterId }) => {
+    const { calendar, full } = await viewedCalendar(ctx, calendarId, { campaignId, asCharacterId })
     const rows = await calendarsRepo.listCalendars(ctx.db, calendar.worldId)
     const target = rows.find((row) => row.id === to)
     if (!target) throw new NotFoundError('calendar')

@@ -34,7 +34,7 @@ describe('leer como jugador (ADR-0017)', () => {
   })
 
   /** Ayudantes que pasan por la proyección (cada uno, comprobado abajo): una acción puede ir por ellos */
-  const WRAPPERS = ['viewedBoard']
+  const WRAPPERS = ['viewedBoard', 'viewedCalendar']
   const projected = new RegExp(`viewedPage\\(|authorizedView\\(|${WRAPPERS.map((name) => `${name}\\(`).join('|')}`)
 
   it.each(withReadAs)('%s pasa por la proyección', (action) => {
