@@ -22,6 +22,8 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 - **La marca es la llama** del Crisol antiguo, de rojo abajo a naranja arriba (`components/brand.tsx`): en la barra,
   en la cabecera, en la pestaña del navegador y **mientras algo carga** (latiendo en el centro). «El icono actual no
   trasmite nada».
+- **Los desplegables nativos, con la lista en oscuro** (Enrique, 2026-11-16: «salen con las opciones en claro»): sus
+  opciones, opacas y con los colores de la app.
 - **Las barras de desplazamiento, finas y del color de los bordes**, sin flechas; en una ventana solo se desplaza el
   contenido: «la barra lateral de los popup desentona bastante».
 - **Nada de aspecto «de IA»**:
@@ -85,7 +87,10 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   al bajar, cuando la cabecera llega arriba, se queda una **barra pequeña de cristal pegada** con el título en pequeño,
   las pestañas (se cambia de pestaña sin subir) y los botones; la franja se funde y el título, las pestañas y los
   botones pasan a la barra con movimiento, sin que lo de debajo se mueva. **El texto, sin caja** (Enrique: «quiero que
-  la caja del texto esté integrada y no tenga fin»): va sobre la superficie de la página, hasta 72 rem y centrado.
+  la caja del texto esté integrada y no tenga fin»): va sobre la superficie de la página, hasta 72 rem y centrado. **Nunca
+  diminuto** (Enrique, 2026-11-16): la hoja no encoge su letra por debajo de la suya; en una columna más estrecha que su
+  texto, va seguido, sin páginas. **El título largo se lee entero** en la franja: baja de línea y, si no cabe, encoge lo
+  justo (en la barra pegada, con «…»).
   **El mapa y la pizarra, a sangre y sin desplazar**: la cabecera arriba y, debajo, el lienzo de lado a lado de la
   columna y **hasta el final de la ventana; todo cabe** (la columna no se desplaza y la rueda sobre el lienzo es del
   lienzo), **sin fondo propio** (se ve el de la página) y **sus herramientas en una píldora de cristal abajo en el
@@ -358,7 +363,10 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   termina el cuadrado»): abiertos en una página, cruzan la hoja de lado a lado y llegan justo al final de la ventana;
   la hoja no acaba (sin su borde de abajo). En un mundo, **a sangre bajo las pestañas, hasta el final
   de la ventana y sin desplazar la página, sin fondo propio**, como en Everlore (Enrique, 2026-11-16). **Supr borra lo elegido** (lo dibujado o un pin) **y Escape deja la
-  herramienta** con el foco en cualquier sitio del mapa, no solo en él.
+  herramienta** con el foco en cualquier sitio del mapa, no solo en él; **también en la pizarra y con el foco donde sea**
+  (Enrique, 2026-11-16: «que borre»): en el panel (una casilla, un color), en la cabecera de la página, en la píldora o
+  en ningún sitio; solo no donde se escribe. El aro del foco del lienzo, solo si se llega con el tabulador («que el foco
+  del lienzo no pinte ese borde al pulsar una tecla»).
 - **La pizarra** (tras la crítica del 2026-11-13): Excalidraw con lo de Crisol y nada de lo suyo de fuera (ni su
   biblioteca pública, ni su ayuda con sus redes, ni sus textos de ayuda fijos, ni su menú de serie a quien solo mira);
   los estilos de la app no se le cuelan (marcos, títulos, radios). Su barra **no salta**: «Oculto para los jugadores»
@@ -378,7 +386,15 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   columna de iconos arriba a la izquierda (**en un mundo, una fila en una píldora de cristal abajo
   en el centro, el zoom abajo a la derecha y la escala abajo a la izquierda**, Enrique, 2026-11-16); el botón derecho ofrece «Pin aquí» y «Pin con página nueva» (su nombre es
   el de la página, que nace como subpágina). Pulsar un pin abre su panel a la derecha (abajo en el móvil), donde todo
-  se guarda al momento; arrastrarlo lo mueve y el doble clic abre su página. Los pines, las ocho formas de Everlore.
+  se guarda al momento; arrastrarlo lo mueve y el doble clic abre su página. Los pines, las ocho formas de Everlore,
+  **todas del mismo tamaño y clavadas por el mismo sitio**, abajo en el centro (Enrique, 2026-11-16). **Su icono, de los
+  de rol del paquete** («no emojis sueltos») y elegido antes que «Solo el icono». **Lo oculto, con un ojo como el del
+  árbol** («"Revelar…" no se entiende»): «Lo conoce / No lo conoce» de cada campaña, que se cambia al pulsarlo (con
+  varias, su lista). **La página de un pin o una región, con un desplegable propio** que flota, como «Página…» de la
+  pizarra. **Cerrar una región: pulsar su primer punto** (se resalta al acercarse) o doble clic, sin punto de más.
+  **La herramienta Texto dibuja una caja** donde irá el texto; **un texto se elige al pulsarlo**, doble clic lo edita y
+  Supr lo quita. **Medir, arriba a la izquierda** (no tapa la píldora). **La pizarra, nítida mientras se acerca o se
+  aleja** («al alejar se difumina … dientes de sierra»).
 - **La hoja es lo que hace única la wiki, y toda página es una hoja** (Enrique, 2026-11-03: «verlo directamente como
   se ve en la hoja pero sin las texturas»; aprobada la prueba «toda página es una hoja», «está quedando genial»): el
   texto se escribe seguido y cae en sus páginas como al imprimir (el mismo paginador y la misma letra y tamaño), con una

@@ -9,6 +9,32 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
+## Ajustes del mapa, la pizarra y la página (en local, rama `modulo-9/mapas`; 2026-11-16, tasks/ajustes-mapa-pizarra.md)
+
+- [ ] **El «?» del tutorial**, abajo a la derecha: redondo y por encima de todo (también sobre un mapa o una pizarra).
+- [ ] **Supr en el mapa**: elige un pin, una región o un texto y pulsa Supr con el foco donde sea (tras cambiar su color
+  en el panel, tras pulsar un botón de la cabecera): se borra; el mapa ya no se marca con la raya roja arriba al pulsar
+  una tecla. **En la pizarra**, lo mismo tras pulsar una herramienta de la píldora o «Página…».
+- [ ] **Cerrar una región**: al acercarte al primer punto se agranda en rojo y pulsarlo la cierra; con doble clic se
+  cierra sin dejar un punto de más.
+- [ ] **«Aspecto»** de una región: al abrirlo no se deforma nada; el tamaño de letra llega a 100.
+- [ ] **«Página»** de un pin o una región: el desplegable propio (las que empiezan por lo escrito primero, «Página
+  nueva: …» si ninguna se llama así).
+- [ ] **Las formas de pin**: cambiar de forma no mueve el pin ni cambia su tamaño.
+- [ ] **El ojo** del panel de un pin o una región (en vez de «Revelar…»): «Lo conoce / No lo conoce» y se cambia al
+  pulsarlo; con varias campañas, la lista con la marca de cada una. ¿Se entiende? (marca sin avisar, como el árbol).
+- [ ] **El icono de un pin**: va antes que el tamaño y se elige de los iconos de rol; se ve dentro de la forma y con
+  «Solo el icono».
+- [ ] **Texto en el mapa**: arrastra una caja y el texto sale en su centro, a su alto; pulsar un texto lo elige, doble
+  clic lo edita y Supr lo quita.
+- [ ] **Medir**: su panel, arriba a la izquierda (ya no tapa la píldora).
+- [ ] **Los desplegables nativos** («Se ve el nombre», los de la campaña…): la lista abierta, en oscuro.
+- [ ] **La pizarra nítida al hacer zoom** (rueda con Ctrl o dos dedos): ni borrosa al alejar ni con dientes al acercar.
+  Si en una pizarra muy grande el zoom va a tirones, dímelo.
+- [ ] **«Tabla de páginas»** en una cuenta sin plantillas: se añade sin error y dice qué falta.
+- [ ] **A 1200 px con el panel abierto**: el texto de la página con su letra de siempre (seguido, sin «Página N») y el
+  título largo entero en la franja.
+
 ## Vuelve el armazón de antes, con la página como en Everlore (en local, rama `modulo-9/mapas`; 2026-11-16, ADR-0028)
 
 - [ ] **El armazón de antes**: la barra de la app a la izquierda con el mundo, Archivos, Historial, Papelera y tu
