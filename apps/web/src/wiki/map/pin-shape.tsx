@@ -1,6 +1,7 @@
 /**
  * Las ocho formas de pin (las de Everlore, de Enrique): un trazo en una caja de 24 y su hueco blanco, donde va el
- * icono. La gota, la bandera y el banderín se clavan por la punta; las demás, por el centro
+ * icono. Todas del mismo tamaño y clavadas por el mismo sitio, abajo en el centro (Enrique, 2026-11-16: «algunas formas
+ * mueven el sitio donde se clava el pin, y también el tamaño»): cada una se encaja en la misma caja
  */
 import type { MapPinView } from '@crisol/contracts'
 import { colorHex } from '../../routes/world-look.ts'
@@ -30,9 +31,31 @@ const HOLES: [number, number, number][] = [
   [11, 12, 2.8]
 ]
 
-/** Se clava por la punta (abajo) y no por el centro */
-export const tipAnchored = (pin: Pick<MapPinView, 'shape' | 'variant'>) =>
-  pin.variant !== 2 && (pin.shape === 0 || pin.shape === 5 || pin.shape === 7)
+/** Lo que ocupa cada forma en su caja de 24: izquierda, arriba, derecha y abajo */
+const BOXES: [number, number, number, number][] = [
+  [3.5, 1.5, 20.5, 22.8],
+  [2.8, 2.8, 21.2, 21.2],
+  [2, 2, 22, 22],
+  [4, 3, 20, 21],
+  [3.5, 3.3, 20.5, 22],
+  [4.5, 1.5, 20, 19.5],
+  [4.5, 2, 19.5, 22],
+  [5, 2, 19, 21]
+]
+/** La caja común: su lado mayor y dónde queda su base (abajo en el centro, donde se clava) */
+const EXTENT = 21
+const BASE: [number, number] = [12, 23.5]
+
+/** Cómo se encaja una forma en la caja común: el mismo tamaño y la base en el mismo sitio */
+export function shapeTransform(shape: number) {
+  const [left, top, right, bottom] = BOXES[shape] ?? BOXES[0] ?? [0, 0, 24, 24]
+  const scale = EXTENT / Math.max(right - left, bottom - top)
+  const round = (value: number) => Math.round(value * 1000) / 1000
+  return `translate(${BASE[0]} ${BASE[1]}) scale(${round(scale)}) translate(${round(-(left + right) / 2)} ${-bottom})`
+}
+
+/** Se clava por la punta (abajo en el centro), como todas las formas; solo el icono suelto, por el centro */
+export const tipAnchored = (pin: Pick<MapPinView, 'shape' | 'variant'>) => pin.variant !== 2
 
 /** Tinta legible sobre un color: negra sobre los claros, blanca sobre los oscuros */
 export function contrastInk(hex: string): string {
@@ -60,14 +83,16 @@ export function PinShape({
   const [cx, cy, r] = HOLES[shape] ?? HOLES[0] ?? [12, 9, 3]
   return (
     <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true" focusable="false">
-      <path d={path} fill={hex} stroke="rgb(0 0 0 / 0.55)" strokeWidth={1} strokeLinejoin="round" />
-      {icon ? (
-        <text x={cx} y={cy} fontSize={r * 2.6} textAnchor="middle" dominantBaseline="central" fill={contrastInk(hex)}>
-          {icon}
-        </text>
-      ) : (
-        <circle cx={cx} cy={cy} r={r} fill="#ffffff" />
-      )}
+      <g transform={shapeTransform(shape)}>
+        <path d={path} fill={hex} stroke="rgb(0 0 0 / 0.55)" strokeWidth={1} strokeLinejoin="round" />
+        {icon ? (
+          <text x={cx} y={cy} fontSize={r * 2.6} textAnchor="middle" dominantBaseline="central" fill={contrastInk(hex)}>
+            {icon}
+          </text>
+        ) : (
+          <circle cx={cx} cy={cy} r={r} fill="#ffffff" />
+        )}
+      </g>
     </svg>
   )
 }

@@ -28,8 +28,9 @@ Pedidos al probar el módulo 9 en localhost. Se hacen en la rama `modulo-9/mapas
   de la pizarra), no el nativo. *Hecho: un desplegable de cristal que flota bajo el campo (fuera del panel, sin moverlo),
   con las que empiezan por lo escrito primero, su ruta en gris y, si ninguna se llama así, «Página nueva: «…»»; flechas,
   Intro y Escape.*
-- [ ] Algunas **formas de pin** mueven el sitio donde se clava el pin, y también el tamaño: el punto de anclaje y el tamaño,
-  iguales en todas las formas.
+- [x] Algunas **formas de pin** mueven el sitio donde se clava el pin, y también el tamaño: el punto de anclaje y el tamaño,
+  iguales en todas las formas. *Hecho: cada forma se encaja en la misma caja (su lado mayor, igual) y todas se clavan
+  abajo en el centro; solo el icono suelto («Solo el icono»), por el centro.*
 - [ ] **«Revelar…»** del panel de una región o un pin no se entiende: rehacerlo (claro, como el ojo del árbol).
 - [ ] El **icono** se elige antes que «Solo el icono», y son iconos del paquete que tenemos (no emojis sueltos).
 - [ ] La herramienta **Texto** deja dibujar una caja para saber dónde irá el texto.
