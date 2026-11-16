@@ -273,6 +273,11 @@ function NewTab({ page }: { page: Page }) {
               maxLength={60}
               placeholder={t('pageTabs.namePlaceholder')}
               aria-label={t('pageTabs.name')}
+              // Que los gestores de contraseñas no lo tomen por un campo suyo
+              autoComplete="off"
+              data-1p-ignore
+              data-lpignore="true"
+              data-form-type="other"
               onChange={(event) => setName(event.currentTarget.value)}
             />
             {kind === 'scene' && <SourcePicker worldId={page.worldId} value={choice} onChange={setChoice} />}

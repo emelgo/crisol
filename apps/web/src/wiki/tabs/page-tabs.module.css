@@ -210,9 +210,12 @@
 /* Su cuadro: un recuadro por tipo, el nombre y «Crear» */
 .newDialog {
   inline-size: min(28rem, calc(100vw - 2rem));
-  /* Anclado arriba, como las ventanas de ajustes: al cambiar de paso (la lista de plantillas) no salta */
-  max-block-size: calc(100dvh - var(--dialog-top) - 1rem);
-  margin-block: var(--dialog-top) auto;
+  /* Anclado arriba, como las ventanas de ajustes: al cambiar de paso (la lista de plantillas) no salta. En una pantalla
+     baja, más arriba, para que quepa sin desplazarse; nunca de lado (Enrique, 2026-11-16) */
+  max-block-size: calc(100dvh - 2 * min(var(--dialog-top), 5dvh));
+  margin-block: min(var(--dialog-top), 5dvh) auto;
+  overflow: hidden auto;
+  scrollbar-width: thin;
 }
 
 /* Una escena elige también su mapa: más ancho */
@@ -288,6 +291,8 @@
 }
 
 .nameInput {
+  box-sizing: border-box;
+  inline-size: 100%;
   min-block-size: var(--target);
   padding: 0 var(--space-3);
   border: 1px solid var(--color-field-border);
