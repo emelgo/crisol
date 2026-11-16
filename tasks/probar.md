@@ -9,48 +9,33 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
-## La página del mundo, como en Everlore (en local, rama `modulo-9/mapas`; 2026-11-16)
+## Vuelve el armazón de antes, con la página como en Everlore (en local, rama `modulo-9/mapas`; 2026-11-16, ADR-0028)
 
+- [ ] **El armazón de antes**: la barra de la app a la izquierda con el mundo, Archivos, Historial, Papelera y tu
+  inicial; la ficha del árbol a la izquierda (buscador, árbol, pestañas abiertas en pequeño y marcadores); las
+  pestañas abiertas encima de la página; Archivos del mundo, en su pantalla aparte. ¿Es como lo tenías?
+- [ ] **Entrar y salir** de un mundo: las transiciones de siempre (la tarjeta crece hasta la portada; «Mundos» sube a la
+  llama y salen los iconos del mundo; al salir, al revés, con humo).
+- [ ] **Un solo buscador**: Ctrl+K pone el cursor en el de la ficha del árbol (también con el foco en una pizarra);
+  escribir filtra el árbol e Intro busca en el texto de todas.
 - [ ] **Texto**: la portada arriba (redondeada; sin portada, la textura y «Añadir portada» al pasar), el título grande
-  debajo y las pestañas subrayadas. Toda la columna se desplaza, sin barra a la vista; el texto va sin caja, sobre la
-  página, que llega hasta abajo sin acabar.
+  debajo y las pestañas subrayadas. La página es una sola superficie de arriba abajo; el texto va sin caja.
 - [ ] **Al bajar**: cuando el título llega arriba, se queda una barra pequeña de cristal con el título, las pestañas
-  (cambiar de pestaña desde ahí), «Guardado» y los botones. Al subir, vuelve el título grande sin saltos.
-- [ ] **El botón del panel** (tras «⋯», también en la barra pequeña): el panel se desliza fuera y el centro se ensancha
-  a la vez; al volver a pulsarlo, entra. Se recuerda al cambiar de página. Junto a un mapa o una pizarra con el panel
-  vacío, se pliega solo.
-- [ ] **Mapa**: a sangre bajo las pestañas, sin fondo propio; al bajar del todo, ocupa todo lo de debajo de la barra
-  pequeña. Las herramientas, en una píldora abajo en el centro, siempre pegadas al borde de abajo de lo que se ve (también
-  sin haber bajado); el zoom (con «Ampliar el mapa») abajo a la derecha y, con escala, la barra de escala abajo a la
-  izquierda, que cambia al acercar. Con el panel plegado, el zoom sube por encima del d20.
-- [ ] **Pizarra**: a sangre y transparente (se ve el fondo de la página); nuestra píldora abajo con elegir, mover el
-  lienzo, rectángulo, rombo, elipse, flecha, línea, dibujar, texto, imagen y borrar (la elegida marcada; su atajo al
-  pasar el ratón); «⋯» guarda una imagen o la vacía (se deshace con Deshacer). El zoom abajo a la derecha (pulsar el
-  % vuelve al 100 %) y deshacer y rehacer abajo a la izquierda. Al elegir algo, su panel de propiedades de siempre. Ya
-  no hay «Ampliar» (la jugadora sí lo tiene).
-- [ ] **Decidido sin ti**: los temas de papel de la hoja (pergamino) siguen cambiando solo la letra en pantalla, sin
-  teñir la página; el papel, al imprimir. ¿Quieres que el pergamino tiña la columna entera?
-
-## Mundo a pantalla completa (en local, rama `modulo-9/mapas`; ADR-0027)
-
-- [ ] **Entrar** en un mundo desde Mis mundos: la tarjeta crece hasta la cabecera de arriba, al rojo; la barra de la
-  app sube a la llama y se va; la llama de la cabecera se aviva con chispas y Páginas y Archivos salen del crisol a la
-  barra de la izquierda. ¿Se ve como antes?
-- [ ] **Salir** con la llama de arriba a la izquierda: el mundo se aleja con humo, los iconos suben al crisol, vuelve la
-  barra de la app y la llama expulsa a «Mundos».
-- [ ] **La cabecera**: el nombre del mundo abre su menú (Ajustes del mundo, Historial, Papelera, Exportar); las
-  pestañas abiertas, una sola vez, como en el navegador (fijar, cerrar, arrastrar para ordenar); «Buscar» y Ctrl+K; la
-  cuenta, con tu inicial.
-- [ ] **La barra de la izquierda**: Páginas (buscador, árbol y marcadores) y Archivos. Plégala, estírala arrastrando su
-  borde y recarga: se acuerda.
-- [ ] **Archivos en la barra**: busca, sube (el icono junto al buscador), despliega carpetas; pulsa una imagen, un PDF,
-  un audio o un vídeo: se abre en el centro como pestaña, con sus datos y su engranaje a la derecha. «Ver todos» abre la
-  pantalla grande en el centro.
-- [ ] **El panel de la página**: plégalo con su botón de arriba a la derecha y cambia de página: se queda plegado.
-- [ ] **Mapa y pizarra**: de borde a borde y hasta abajo; en el mapa, el título y las pestañas flotan arriba a la
-  izquierda; en la pizarra, van en su barra. Con la barra y el panel abiertos, la pizarra no pasa a su modo de móvil.
-- [ ] **El tutorial del mundo** (el «?»): la barra de la izquierda, arriba, la página y su panel, el menú del mundo y la
-  llama.
+  (cambiar de pestaña desde ahí), «Guardado» y los botones; las fichas de los lados, pegadas arriba. Al subir, vuelve el
+  título grande sin saltos.
+- [ ] **El botón del panel** (tras «⋯», también en la barra pequeña): el panel se va por la derecha y el centro se
+  ensancha a la vez; al volver a pulsarlo, entra. Se recuerda al cambiar de página. Junto a un mapa o una pizarra con el
+  panel vacío, se pliega solo.
+- [ ] **Mapa**: a sangre bajo las pestañas, sin fondo propio; al bajar del todo, llega al final de la ventana. Las
+  herramientas, en una píldora abajo en el centro, siempre pegadas al borde de abajo de lo que se ve (también sin haber
+  bajado); el zoom (con «Ampliar el mapa», que deja la barra de la app a la vista) abajo a la derecha y la escala abajo
+  a la izquierda.
+- [ ] **Pizarra**: a sangre y transparente; nuestra píldora abajo con sus herramientas (la elegida marcada; su atajo al
+  pasar el ratón), «⋯» (guardar como imagen, vaciarla), el zoom abajo a la derecha y deshacer y rehacer abajo a la
+  izquierda. Sin «Ampliar» (la jugadora sí lo tiene).
+- [ ] **Decidido sin ti**: con el panel plegado, la página llega hasta el borde derecho dejando el mismo hueco que hay
+  junto a la ficha del árbol (no pegada al borde). Los temas de papel de la hoja (pergamino) siguen cambiando solo la
+  letra en pantalla; ¿quieres que el pergamino tiña la columna entera?
 
 ## Módulo 9: la pizarra (en local, rama `modulo-9/mapas`; docs/specs/pizarra.md)
 
@@ -62,8 +47,7 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
 - [ ] Elige algo y pulsa el ojo tachado de la barra («Oculto para los jugadores»): se apaga y, si es una tarjeta, sale
   con raya discontinua y el ojo. La barra no salta al elegir.
 - [ ] «Página…»: escribe parte de un nombre; salen las páginas que lo contienen; flechas e Intro ponen la elegida.
-- [ ] Tras cambiar algo, la barra dice «Guardado»; una pizarra vacía dice cómo empezar. Ctrl+K abre el buscador también
-  con el foco en el lienzo.
+- [ ] Tras cambiar algo, la barra dice «Guardado»; una pizarra vacía dice cómo empezar.
 - [ ] Revela la pestaña a la campaña: la jugadora la ve sin poder tocarla, sin lo oculto ni las tarjetas de lo que no
   conoce; pulsar una tarjeta le abre su página en la campaña. En su móvil, la pizarra en palabras (páginas, notas y
   «A → B»); «Ampliar» enseña el lienzo.

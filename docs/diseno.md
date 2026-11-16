@@ -58,32 +58,31 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   tiene en el momento». Se cierra con la X, con Escape o pulsando fuera, y se vuelve a donde se estaba; un enlace
   de dentro la cierra y lleva a su sitio. **Sin enlace de vuelta** arriba («Mis mundos»): en una ventana no tiene
   sentido.
-- **El mundo del máster, a pantalla completa, como la Mesa** (Enrique, 2026-11-13, propuesta aprobada; ADR-0027):
-  sin la barra de la app. Arriba, **una cabecera fina de cristal**: la llama (vuelve a Mis mundos), el nombre del mundo
-  con su menú (Ajustes del mundo, Historial, Papelera, Exportar), **las pestañas abiertas, una sola vez, como las de un
-  navegador** (ya no encima de la página ni en la ficha del árbol), «Buscar» (Ctrl+K) y la cuenta (su inicial). **A la
-  izquierda, una barra de pestañas como la de la Mesa**: Páginas (el buscador, el árbol y los marcadores debajo) y
-  Archivos; se pliega a una columna de iconos y se estira arrastrando su borde, y se recuerda. En el centro, la página
-  ocupa todo el hueco con **el mismo esqueleto en todas sus pestañas** (Enrique, 2026-11-13: «cada vista, texto,
-  pizarra o mapa son diferentes, deben mantener el esqueleto»). **Como la página de Everlore** (Enrique, 2026-11-16,
-  lienzo «Página del mundo, la mezcla»: «me gusta»; sustituye a la tira quieta de cristal de arriba): **toda la columna
-  del centro se desplaza**, sin barra a la vista. Dentro, **la portada arriba en las tres pestañas** (176 px, esquinas
-  redondeadas; sin portada, su textura), **debajo el título grande** con su icono y, a la derecha, sus botones, «⋯» y
-  **el botón del panel**; debajo, **las pestañas subrayadas** y a su derecha las herramientas de la abierta
-  («Guardado» del texto; «Página…» y el ojo de la pizarra). **Al bajar**, cuando el título llega arriba, se queda una
-  **barra pequeña de cristal pegada** con el título en pequeño, las pestañas (se cambia de pestaña sin subir) y los
-  botones. **El texto, sin caja** (Enrique: «quiero que la caja del texto esté integrada y no tenga fin»): va sobre la
-  superficie de la página, casi opaca de arriba abajo y sin bordes que acaben, hasta 72 rem y centrado. **El mapa y la
-  pizarra, a sangre**: de lado a lado de la columna y con el alto de lo que se ve bajo la barra pegada (al bajar del
-  todo lo ocupan todo), **sin fondo propio** (se ve el de la página) y **sus herramientas en una píldora de cristal
-  abajo en el centro**, pegada al borde de abajo de lo que se ve; el zoom, abajo a la derecha. A la derecha, el panel
-  de la página, **que se pliega** (sustituye a «no se esconde») **desde su botón en la cabecera de la página**
-  (Enrique, 2026-11-16; antes, dentro del panel, que dejaba una tira): se desliza fuera o dentro mientras el centro se
-  ensancha, y se recuerda; **junto a un mapa o una pizarra, si no tiene nada (ni enlaces, ni propiedades, ni bloques),
-  se pliega solo** (Enrique, 2026-11-14) y su botón lo abre igual. **Archivos abre los archivos en el centro**,
-  como una pestaña abierta más (imagen, PDF, audio, vídeo, texto), con sus datos y su engranaje en el panel; la pantalla
-  grande queda como «Ver todos», en el centro. Las plantillas, de momento, fuera. Lo de abajo sobre la barra de dentro
-  de un mundo vale para quien juega.
+- **El armazón de siempre, con la barra de la app a la izquierda** (Enrique, 2026-11-16: «volvamos a la versión
+  anterior donde la barra estaba a la izquierda y mantenemos lo que hemos hecho en el texto, los mapas y la pizarra»;
+  «la de antes del todo»; ADR-0028): ~~el mundo del máster a pantalla completa, con cabecera fina y barra de pestañas
+  (2026-11-13, ADR-0027)~~. Dentro de un mundo, la barra de la app con lo del mundo; a la izquierda, la ficha del árbol
+  (su buscador, el árbol, las pestañas abiertas en pequeño y los marcadores); las pestañas abiertas, encima de la
+  página; **Archivos del mundo, pantalla aparte**. **Un solo buscador**, el de la ficha del árbol (Enrique,
+  2026-11-16): filtra al escribir y con Intro busca en el texto de todas; **Ctrl+K lo enfoca** (en lo estrecho, abre
+  su cajón); sin selector rápido. En el centro, **la página con el mismo esqueleto en todas sus pestañas** (Enrique,
+  2026-11-13: «cada vista, texto, pizarra o mapa son diferentes, deben mantener el esqueleto»), **como la página de
+  Everlore** (Enrique, 2026-11-16, lienzo «Página del mundo, la mezcla»: «me gusta»; se queda al volver el armazón):
+  la columna del centro es **una sola superficie casi opaca de arriba abajo**, sin borde que acabe. Dentro, **la
+  portada arriba en las tres pestañas** (176 px, esquinas redondeadas; sin portada, su textura), **debajo el título
+  grande** con su icono y, a la derecha, sus botones, «⋯» y **el botón del panel**; debajo, **las pestañas
+  subrayadas** y a su derecha las herramientas de la abierta («Guardado» del texto; «Página…» y el ojo de la
+  pizarra). **Al bajar**, cuando el título llega arriba, se queda una **barra pequeña de cristal pegada** con el título
+  en pequeño, las pestañas (se cambia de pestaña sin subir) y los botones. **El texto, sin caja** (Enrique: «quiero que
+  la caja del texto esté integrada y no tenga fin»): va sobre la superficie de la página, hasta 72 rem y centrado.
+  **El mapa y la pizarra, a sangre**: de lado a lado de la columna y con el alto de lo que se ve bajo la barra pegada
+  (al bajar del todo llegan al final de la ventana), **sin fondo propio** (se ve el de la página) y **sus herramientas
+  en una píldora de cristal abajo en el centro**, pegada al borde de abajo de lo que se ve; el zoom, abajo a la
+  derecha. A la derecha, el panel de la página, **que se pliega** (sustituye a «no se esconde») **desde su botón en la
+  cabecera de la página** (Enrique, 2026-11-16): su columna se cierra mientras el centro se ensancha, y se recuerda;
+  **junto a un mapa o una pizarra, si no tiene nada (ni enlaces, ni propiedades, ni bloques), se pliega solo**
+  (Enrique, 2026-11-14) y su botón lo abre igual. Las plantillas y las ventanas de páginas de la Mesa, con la página de
+  siempre.
 - **Dentro de un mundo, la barra lleva el mundo (su nombre, con su icono propio: un paisaje de montaña, no el globo de
   «Mundos», Enrique, 2026-11-12) y Archivos**; nada más (ni Plantillas, ni Campañas, ni
   «Inicio»: el mundo se abre en su portada). Historial y Papelera enseñan los de ese mundo. **Los dados no van en la barra**
@@ -167,8 +166,8 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   tapado (`--popup-glass`, `--popup-blur`) sobre la pantalla oscurecida; lo de dentro, translúcido sin desenfocar otra
   vez. Los visores de imagen a pantalla completa (`data-full`), sin él. **Los campos** (buscadores, cajas de texto,
   desplegables), de cristal oscuro (`--field-fill`); **el botón principal**, de cristal rojo (`--accent-glass`). **La
-  página es una hoja casi opaca** (`--surface-read`): la portada y el texto, una sola pieza; **en el mundo a pantalla
-  completa, la hoja es toda la columna del centro**, de arriba abajo y sin caja (Enrique, 2026-11-16). Los marcos pintan su raya en
+  página es una hoja casi opaca** (`--surface-read`): la portada y el texto, una sola pieza; **en un mundo, la hoja es
+  toda la columna del centro**, de arriba abajo y sin caja (Enrique, 2026-11-16). Los marcos pintan su raya en
   una capa aparte (`::before`), para que su relleno pueda ser de cristal; la zona de peligro, igual, en rojo. **«Sin efecto cristal»** (Ajustes, «Aspecto»; se guarda en el navegador): sin fondo de ambiente ni
   desenfoque en ninguna parte, también en la Mesa; todo opaco, como antes. Sin desenfoque en el navegador, todo más
   tapado.
@@ -274,8 +273,8 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 - **Las columnas de los lados de una página, fijas y del mismo alto** (Enrique, 2026-11-11): pulsar el mundo en la
   barra no recoge el árbol (lleva a su portada); la derecha mide lo que la izquierda (lo que cabe en la ventana) y lo que
   no cabe se desplaza dentro. En la ventana de una página de la Mesa, cada columna con su desplazamiento.
-- **La hoja llena el ancho** de la columna del centro hasta un tope de letra (20 px) y, si sobra, va centrada (en el
-  mundo a pantalla completa, sin caja y hasta 72 rem, Enrique, 2026-11-16); **las
+- **La hoja llena el ancho** de la columna del centro hasta un tope de letra (20 px) y, si sobra, va centrada (en un
+  mundo, sin caja y hasta 72 rem, Enrique, 2026-11-16); **las
   rayas de salto de página van de lado a lado y dicen la página que se cierra** («Página 1»). **La nota lateral va a su
   lado** (izquierdo o derecho) con el texto alrededor, igual al imprimir.
 - **Imprimir o descargar pregunta cómo**: con colores, en blanco y negro o en pergamino (con una muestra de cada uno),
@@ -323,7 +322,7 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 - **Del estilo de Everlore, la forma** (esquinas redondeadas, cabecera pegajosa compacta al bajar) con nuestros
   colores y letras. Sin el mundo en pequeño sobre el título (estaba repetido) y sin migas de pan. La portada de la
   página va por detrás, solo en la columna del centro, fundida con el fondo, con el título encima de su parte de
-  abajo (en el mundo a pantalla completa, **arriba y entera, con sus esquinas redondeadas, y el título debajo**,
+  abajo (en un mundo, **arriba y entera, con sus esquinas redondeadas, y el título debajo**,
   Enrique, 2026-11-16). **Una página sin portada se ve como una con portada, pero sin ella**: su hueco se queda, con una textura
   suave (grano, un tejido tenue y dos manchas de color, fundidos con el fondo) para que no se vea plano (el título y
   las fichas, en el mismo sitio en todas) y «Añadir portada» sale arriba a la derecha al pasar por él.
@@ -336,8 +335,7 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   fichas, subpáginas, páginas con una etiqueta), se titulan encima, se tocan en el sitio (+ y −, pulsar la barra, las
   estrellas o las fichas) y se recolocan arrastrando su asa o desde sus opciones; vacío, dice «Panel vacío» y para qué
   sirve. Arriba del todo, «Mencionado en» (como en Everlore: una lista corta de páginas; las que la nombran sin enlazar, debajo, con «Enlazar» al pasar). Sin índice (está el árbol); las versiones, en «⋯». No se esconde (no hay botón para eso); sin sitio,
-  va debajo de la página. **Se pliega** (Enrique, 2026-11-13, ADR-0027): en el mundo a pantalla completa, para que el mapa o la
-  pizarra lo tengan todo, y se recuerda plegado o no; **su botón va en la cabecera de la página, tras «⋯»** (también
+  va debajo de la página. **Se pliega** (Enrique, 2026-11-13): en un mundo, para que el mapa o la pizarra lo tengan todo, y se recuerda plegado o no; **su botón va en la cabecera de la página, tras «⋯»** (también
   en la barra pegada al bajar) y el panel se desliza entero fuera (Enrique, 2026-11-16; antes, su botón arriba dentro
   de él lo dejaba en una tira).
 - **Dentro de un mundo, la forma de Everlore (esquinas redondeadas, sin cortes) con nuestros colores y nuestras
@@ -347,7 +345,7 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   (2026-11-08).
 - **El mapa y la pizarra, con todo el sitio, como en LegendKeeper** (Enrique, 2026-11-13: «no debe verse por abajo cómo
   termina el cuadrado»): abiertos en una página, cruzan la hoja de lado a lado y llegan justo al final de la ventana;
-  la hoja no acaba (sin su borde de abajo). En el mundo a pantalla completa, **a sangre bajo las pestañas, con el alto
+  la hoja no acaba (sin su borde de abajo). En un mundo, **a sangre bajo las pestañas, con el alto
   de lo que se ve bajo la barra pegada y sin fondo propio**, como en Everlore (Enrique, 2026-11-16). **Supr borra lo elegido** (lo dibujado o un pin) **y Escape deja la
   herramienta** con el foco en cualquier sitio del mapa, no solo en él.
 - **La pizarra** (tras la crítica del 2026-11-13): Excalidraw con lo de Crisol y nada de lo suyo de fuera (ni su
@@ -358,14 +356,14 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   apagado, con raya discontinua y el ojo tachado en su tarjeta. Lo que dibuja la IA, con la misma tinta que lo hecho a
   mano y sus flechas de borde a borde. **Pulsar una tarjeta abre su página** (a quien juega, en su campaña); en el
   editor, con su ↗ (pulsarla la elige). **La jugadora en el móvil** ve la pizarra en palabras (sus páginas, sus notas
-  y quién va con quién) y el lienzo, al ampliar; al abrirla nunca más lejos que el 60 %. **En el mundo a pantalla
-  completa, con nuestra propia píldora** (Enrique, 2026-11-16, como el mapa): abajo en el centro, de cristal, las
+  y quién va con quién) y el lienzo, al ampliar; al abrirla nunca más lejos que el 60 %. **En un mundo, con nuestra
+  propia píldora** (Enrique, 2026-11-16, como el mapa): abajo en el centro, de cristal, las
   herramientas de Excalidraw (elegir, mover el lienzo, rectángulo, rombo, elipse, flecha, línea, dibujar, texto,
   imagen y borrar; la elegida marcada y su atajo al pasar el ratón) y «⋯» (guardar como imagen, vaciarla); el zoom,
   abajo a la derecha, y deshacer y rehacer, abajo a la izquierda. Sin su barra de formas, su menú ni su pie; su panel
   de propiedades sí. **Sin «Ampliar»** (ya va a sangre, como en Everlore); la jugadora lo conserva.
 - **El mapa**: la imagen se arrastra y se acerca con la rueda hacia el cursor (y con dos dedos); las herramientas, una
-  columna de iconos arriba a la izquierda (**en el mundo a pantalla completa, una fila en una píldora de cristal abajo
+  columna de iconos arriba a la izquierda (**en un mundo, una fila en una píldora de cristal abajo
   en el centro, el zoom abajo a la derecha y la escala abajo a la izquierda**, Enrique, 2026-11-16); el botón derecho ofrece «Pin aquí» y «Pin con página nueva» (su nombre es
   el de la página, que nace como subpágina). Pulsar un pin abre su panel a la derecha (abajo en el móvil), donde todo
   se guarda al momento; arrastrarlo lo mueve y el doble clic abre su página. Los pines, las ocho formas de Everlore.
@@ -393,13 +391,8 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   barra y se funde con ella, que se aviva soltando chispas: «como que el mundo se está cocinando». Dentro, la llama es
   la vuelta; al volver, «Mundos» sale de la llama, sin fuego. Los iconos del mundo (todos, también los que vengan)
   salen del crisol uno tras otro al entrar y suben a él al volver, antes de que salga «Mundos».
-- **Entrar y salir del mundo a pantalla completa, como siempre** (ADR-0027): la tarjeta crece hasta la cabecera fina
-  (recortada a su forma), lo de la barra de la app sube a la llama y la barra se va con lo demás; la llama de la
-  cabecera se aviva y los iconos (Páginas, Archivos) salen del crisol a la barra de la izquierda. **Al salir, el espejo
-  exacto** (Enrique, 2026-11-16: «debe ser la animación inversa a cuando entramos»), solo con la llama: la cabecera fina
-  vuelve a ser la tarjeta del mundo en Mis mundos, su llama pasa a ser la de la barra, sus iconos suben al crisol, la
-  barra de la app vuelve (de un poco más grande a su sitio, al revés de como se fue) y «Mundos» y lo demás salen de la
-  llama; con humo.
+- ~~Entrar y salir del mundo a pantalla completa (ADR-0027)~~: con el armazón de siempre vuelven **las transiciones de
+  siempre** (las de abajo; Enrique, 2026-11-16, ADR-0028).
 - **Entrar en un mundo es entrar**: la tarjeta pulsada se convierte en la cabecera del mundo mientras Mis mundos se
   acerca y se desvanece, como si se pasara a través; al volver, al revés (transiciones de vista del navegador). Al
   entrar, con un fuego sutil: la tarjeta se pone al rojo mientras crece y sube algo de calor con unas brasas; la

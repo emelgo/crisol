@@ -1,5 +1,8 @@
 # El mundo a pantalla completa (plan)
 
+> **Retirado el 2026-11-16** (ADR-0028): vuelve el armazón de antes, con la barra de la app a la izquierda; de esto
+> solo se queda la página como la de Everlore, ya dentro de `WikiLayout`.
+
 Rama `modulo-9/mapas`. Propuesta aprobada: `docs/propuestas/wiki-pantalla-completa.md` (Enrique, 2026-11-13, con sus
 seis respuestas). Decisión: `docs/adr/0027-mundo-a-pantalla-completa.md`. Etiqueta para volver atrás:
 `antes-pantalla-completa`. Todo en local, `[skip ci]`. La crítica y el audit de impeccable los hace la sesión principal

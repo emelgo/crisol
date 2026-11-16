@@ -2,7 +2,9 @@
 
 Estado: aceptada (Enrique, 2026-11-13: aprobó la propuesta `docs/propuestas/wiki-pantalla-completa.md` y respondió sus
 seis preguntas). Cambia el armazón del mundo del máster; no cambia las rutas ni lo de la jugadora. Sigue al ADR-0019 y
-al ADR-0021 (la Mesa a pantalla completa, con su barra de pestañas).
+al ADR-0021 (la Mesa a pantalla completa, con su barra de pestañas). **Retirada el 2026-11-16, sustituida por el
+ADR-0028**: vuelve el armazón de antes (la barra de la app a la izquierda); de aquí solo se queda la página de su nota
+del 2026-11-16, como la de Everlore.
 
 ## Contexto
 
@@ -77,3 +79,10 @@ la izquierda, transiciones), pero la página del centro cambia en sus tres pesta
   20 rem a 0 en 300 ms) y lo de dentro se quita al acabar. El panel de un archivo abierto sigue con su tira y su botón.
 
 Lo de fuera del mundo (las plantillas, las ventanas de páginas de la Mesa, la jugadora y las campañas) no cambia.
+
+## Nota (2026-11-16, más tarde): se retira el armazón, se queda la página
+
+Enrique: «volvamos a la versión anterior donde la barra estaba a la izquierda y mantenemos lo que hemos hecho en el
+texto, los mapas y la pizarra» (y «la de antes del todo»). Lo de arriba (la cabecera fina, la barra de pestañas, los
+archivos en el centro, el modo `bare`) se quita; la página de la nota anterior pasa al armazón de siempre. Ver el
+ADR-0028.
