@@ -7,7 +7,9 @@ Pedidos al probar el módulo 9 en localhost. Se hacen en la rama `modulo-9/mapas
   encima y ser redondo, como antes.
 
 ## Mapa
-- [ ] **Supr** borra lo elegido (también en la pizarra): comprobarlo en los dos con el foco donde sea.
+- [ ] **Supr** borra lo elegido (también en la pizarra): comprobarlo en los dos con el foco donde sea. Ahora, en el mapa,
+  Supr no borra y el lienzo se marca con la raya roja de foco por arriba (captura de Enrique): que borre, y que el foco
+  del lienzo no pinte ese borde al pulsar una tecla.
 - [ ] **Cerrar una región** es poco intuitivo: con doble clic se cierra pero añade un punto de más. Cerrar sin punto extra
   (y que pulsar el primer punto, o Intro, también la cierre, con una pista que se vea).
 - [ ] En las opciones de una región, al abrir **«Aspecto»** el contenedor y lo de dentro se deforman: no debe moverse nada.
