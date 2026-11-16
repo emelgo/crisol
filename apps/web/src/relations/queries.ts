@@ -2,7 +2,7 @@
  * Las consultas de las relaciones (módulo 10): las de una página en un modo y el grafo del mundo, con lo que ve quien
  * lee (ADR-0017). Sus claves cuelgan de ['pages', mundo]: cambiar una página (sus campos, su texto) las rehace
  */
-import { type RelationMode, TEMPLATE_ICONS } from '@crisol/contracts'
+import type { RelationMode } from '@crisol/contracts'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useMemo } from 'react'
 import { useApi } from '../api/context.tsx'
@@ -85,15 +85,9 @@ export function useTemplateLook() {
   return useMemo(() => {
     const list = readAs ? [] : [...(templates.data?.templates ?? []), ...(templates.data?.deleted ?? [])]
     const names = new Map(list.map((each) => [each.id, each.name]))
-    // Los de nombre de antes («castle») no son un emoji: sin icono
-    const icons = new Map(
-      list.map((each) => [each.id, (TEMPLATE_ICONS as readonly string[]).includes(each.icon ?? '') ? null : each.icon])
-    )
     return {
       order: list.map((each) => each.id),
-      nameOf: (id: string | null) => (id ? (names.get(id) ?? null) : null),
-      /** Su icono: el de las páginas que no tienen uno propio (como en el árbol) */
-      iconOf: (id: string | null) => (id ? (icons.get(id) ?? null) : null)
+      nameOf: (id: string | null) => (id ? (names.get(id) ?? null) : null)
     }
   }, [templates.data, readAs])
 }

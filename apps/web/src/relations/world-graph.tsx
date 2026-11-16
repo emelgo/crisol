@@ -14,6 +14,7 @@ import { useAccounts } from '../account/context.tsx'
 import { Loading } from '../components/brand.tsx'
 import { failed, LoadError } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
+import { Tour } from '../components/tour.tsx'
 import { type ReadAs, ReadAsProvider, useOpenPage, useReadAs } from '../wiki/read-as.tsx'
 import { tagDot, useAccountTags } from '../wiki/tags.tsx'
 import { GraphCanvas } from './graph-canvas.tsx'
@@ -101,10 +102,7 @@ export function WorldGraph({ worldId, back }: { worldId: string; back: ReactNode
   const [selected, setSelected] = useState<string | null>(null)
   const [focus, setFocus] = useState<{ id: string; at: number } | null>(null)
 
-  const all = useMemo(
-    () => (graph.data?.nodes ?? []).map((node) => (node.icon ? node : { ...node, icon: look.iconOf(node.template) })),
-    [graph.data?.nodes, look]
-  )
+  const all = useMemo(() => graph.data?.nodes ?? [], [graph.data?.nodes])
   const relations = graph.data?.relations ?? []
   const order = useMemo(() => colorOrder(look.order, all), [look.order, all])
   const colorOf = useCallback((node: RelationNode) => templateColor(node.template, order), [order])
@@ -204,7 +202,7 @@ export function WorldGraph({ worldId, back }: { worldId: string; back: ReactNode
       </header>
       <div className={styles.frame} data-folded={folded || undefined}>
         {!folded && (
-          <aside className={styles.filters} aria-label={t('relations.world.filters')}>
+          <aside className={styles.filters} aria-label={t('relations.world.filters')} data-tour="grafo-filtros">
             <FilterGroup
               title={t('relations.world.templates')}
               onNone={() => setHiddenTemplates(new Set(templates.map((each) => each.id)))}
@@ -283,7 +281,7 @@ export function WorldGraph({ worldId, back }: { worldId: string; back: ReactNode
             </button>
           </aside>
         )}
-        <div className={styles.graph}>
+        <div className={styles.graph} data-tour="grafo-mundo">
           {folded && (
             <button type="button" className={styles.unfold} onClick={() => setFolded(false)}>
               <SlidersHorizontal size={16} aria-hidden="true" />
@@ -324,6 +322,14 @@ export function WorldGraph({ worldId, back }: { worldId: string; back: ReactNode
           )}
         </div>
       </div>
+      <Tour
+        id="grafo-mundo"
+        steps={[
+          ...(folded ? [] : [{ target: '[data-tour="grafo-filtros"]', text: t('tour.worldGraph.filters') }]),
+          { target: '[data-tour="grafo-buscar"]', text: t('tour.worldGraph.search') },
+          { target: '[data-tour="grafo-mundo"]', text: t('tour.worldGraph.graph') }
+        ]}
+      />
     </div>
   )
 }
@@ -474,7 +480,7 @@ function FindPage({
     setQuery('')
   }
   return (
-    <div className={styles.find}>
+    <div className={styles.find} data-tour="grafo-buscar">
       <Search size={16} aria-hidden="true" />
       <input
         type="search"

@@ -473,10 +473,24 @@
   accent-color: var(--color-accent);
 }
 
+/* Un campo con papel: su nombre y, debajo, su tipo; el papel, a la derecha */
+.fieldStack {
+  display: grid;
+  flex: 1 1 auto;
+  min-inline-size: 0;
+}
+
+.fieldTypeBelow {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
 /* El papel de un campo de enlace (módulo 10), junto a su nombre: Familia en ámbar, Organigrama en rojo */
 .roleBadge {
   display: inline-flex;
   flex: none;
+  margin-inline-start: auto;
   align-items: center;
   gap: 3px;
   padding: 1px 6px;

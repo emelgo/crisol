@@ -107,13 +107,25 @@ export function FieldsEditor({
                   aria-expanded={expanded}
                   onClick={() => setOpen(expanded ? null : key)}
                 >
-                  <span className={styles.fieldName}>{field.name}</span>
-                  {field.type === 'pages' && field.role && <RoleBadge role={field.role} />}
-                  <span className={styles.fieldType}>
-                    {field.type === 'clock'
-                      ? t('templateEditor.clockOf', { segments: field.segments })
-                      : t(`templateEditor.kinds.${kindOf(field)}`)}
-                  </span>
+                  {field.type === 'pages' && field.role ? (
+                    // Con papel: el nombre y, debajo, su tipo; el papel a la derecha (como en el lienzo)
+                    <>
+                      <span className={styles.fieldStack}>
+                        <span className={styles.fieldName}>{field.name}</span>
+                        <span className={styles.fieldTypeBelow}>{t(`templateEditor.kinds.${kindOf(field)}`)}</span>
+                      </span>
+                      <RoleBadge role={field.role} />
+                    </>
+                  ) : (
+                    <>
+                      <span className={styles.fieldName}>{field.name}</span>
+                      <span className={styles.fieldType}>
+                        {field.type === 'clock'
+                          ? t('templateEditor.clockOf', { segments: field.segments })
+                          : t(`templateEditor.kinds.${kindOf(field)}`)}
+                      </span>
+                    </>
+                  )}
                 </button>
               </div>
               {expanded && (

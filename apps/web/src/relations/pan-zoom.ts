@@ -46,13 +46,18 @@ export function fitTransform(
   width: number,
   height: number,
   maxScale = 1.1,
-  insets: Insets = NO_INSETS
+  insets: Insets = NO_INSETS,
+  minScale = MIN_SCALE
 ): ZoomTransform {
   const room = Math.max(1, height - insets.top - insets.bottom)
-  const k = Math.max(
-    MIN_SCALE,
-    Math.min(maxScale, width / Math.max(1, box.maxX - box.minX), room / Math.max(1, box.maxY - box.minY))
-  )
+  const fitted = Math.min(maxScale, width / Math.max(1, box.maxX - box.minX), room / Math.max(1, box.maxY - box.minY))
+  const k = Math.max(MIN_SCALE, minScale, fitted)
+  // Si no cabe sin hacerse ilegible (minScale), se queda arriba y se mueve para ver lo demás
+  if (k > fitted)
+    return zoomIdentity
+      .translate(width / 2, insets.top)
+      .scale(k)
+      .translate(-(box.minX + box.maxX) / 2, -box.minY)
   return zoomIdentity
     .translate(width / 2, insets.top + room / 2)
     .scale(k)
@@ -61,7 +66,11 @@ export function fitTransform(
 
 export function usePanZoom(
   element: Element | null,
-  { onChange, insets = NO_INSETS }: { onChange?: (transform: ZoomTransform) => void; insets?: Insets } = {}
+  {
+    onChange,
+    insets = NO_INSETS,
+    minScale = MIN_SCALE
+  }: { onChange?: (transform: ZoomTransform) => void; insets?: Insets; minScale?: number } = {}
 ) {
   const [transform, setTransform] = useState<ZoomTransform>(zoomIdentity)
   const listener = useRef(onChange)
@@ -109,9 +118,9 @@ export function usePanZoom(
       if (!box) return
       touched.current = false
       const { width, height } = size()
-      apply(fitTransform(box, width, height, maxScale, insets))
+      apply(fitTransform(box, width, height, maxScale, insets, minScale))
     },
-    [apply, size, insets]
+    [apply, size, insets, minScale]
   )
   // Mientras no se toque, si el hueco cambia (el panel se pliega o se abre, la ventana cambia), se vuelve a encuadrar
   const keepFitted = useCallback(
@@ -123,12 +132,12 @@ export function usePanZoom(
         if (now === last) return
         const first = last === ''
         last = now
-        if (!first && !touched.current && box) apply(fitTransform(box, ...size2(entry), maxScale, insets))
+        if (!first && !touched.current && box) apply(fitTransform(box, ...size2(entry), maxScale, insets, minScale))
       })
       observer.observe(element)
       return () => observer.disconnect()
     },
-    [element, apply, insets]
+    [element, apply, insets, minScale]
   )
   const centerOn = useCallback(
     (point: { x: number; y: number }, scale?: number) => {

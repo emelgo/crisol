@@ -57,7 +57,10 @@ const renderAt = (path: string) => {
 
 beforeEach(() => {
   localStorage.clear()
-  localStorage.setItem('crisol.recorridos.enrique@crisol.test', JSON.stringify({ seen: ['mundo'] }))
+  localStorage.setItem(
+    'crisol.recorridos.enrique@crisol.test',
+    JSON.stringify({ seen: ['mundo', 'relaciones', 'grafo-mundo'] })
+  )
 })
 
 describe('el grafo del mundo (módulo 10)', () => {

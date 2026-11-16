@@ -336,6 +336,18 @@ export function orgLayout(
   }
   for (const group of groups) if (present.has(group)) visit(group)
   layout(graph)
+  // Cada fila, alineada arriba: la columna de miembros empieza a la altura de los subgrupos de al lado (dagre las
+  // centra, y la columna, más alta, subía)
+  const rowsByY = new Map<number, { y: number; height: number }[]>()
+  for (const id of graph.nodes()) {
+    const node = graph.node(id) as { y: number; height: number }
+    const key = Math.round(node.y)
+    rowsByY.set(key, [...(rowsByY.get(key) ?? []), node])
+  }
+  for (const row of rowsByY.values()) {
+    const top = Math.min(...row.map((node) => node.y - node.height / 2))
+    for (const node of row) node.y = top + node.height / 2
+  }
 
   for (const card of cards) Object.assign(card, at(graph, card.id))
   const byId = new Map(cards.map((card) => [card.id, card]))

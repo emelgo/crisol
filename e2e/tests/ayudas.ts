@@ -156,7 +156,10 @@ export async function skipTours(page: Page, email: string) {
           'mesa-jugador',
           'libros',
           'sistema',
-          'revisar'
+          'revisar',
+          'relaciones',
+          'relaciones-jugadora',
+          'grafo-mundo'
         ]
       })
     )

@@ -90,17 +90,23 @@ export function inWords(
   return [...rows.values()]
 }
 
-/** Las iniciales de un título, para el círculo de una página sin icono: «Mirela de Varn» → «MV» */
+const ROMAN = /^[IVXLCDM]+$/
+
+/**
+ * Las iniciales de un título, para el círculo de una página sin icono: «Mirela de Varn» → «MV». Sin los ordinales
+ * («Aldren IV» → «AL») ni iniciales que se lean como uno («Ilsa de Varn» → «IL», no «IV»)
+ */
 export function initials(title: string) {
-  const words = title
-    .split(/\s+/)
-    .filter((word) => word.length > 0 && word[0] === word[0]?.toLocaleUpperCase() && /\p{L}/u.test(word[0] ?? ''))
-  const picked = words.length > 0 ? words : title.split(/\s+/).filter(Boolean)
-  const letters = picked.length > 1 ? [picked[0], picked[picked.length - 1]] : picked.slice(0, 1)
-  return letters
-    .map((word) => [...(word ?? '')][0] ?? '')
-    .join('')
-    .toLocaleUpperCase()
+  const all = title.split(/\s+/).filter(Boolean)
+  const words = all.filter((word) => !ROMAN.test(word))
+  const capital = words.filter((word) => /\p{Lu}/u.test([...word][0] ?? ''))
+  const picked = capital.length > 0 ? capital : words.length > 0 ? words : all
+  const first = picked[0] ?? ''
+  const twoOf = (word: string) => [...word].slice(0, 2).join('').toLocaleUpperCase()
+  if (picked.length < 2) return twoOf(first)
+  const pair = `${[...first][0] ?? ''}${[...(picked[picked.length - 1] ?? '')][0] ?? ''}`.toLocaleUpperCase()
+  // «IV», «XI»…: se leerían como un ordinal
+  return /^[IVX]{2}$/.test(pair) ? twoOf(first) : pair
 }
 
 /** Cuántos colores de serie hay en el tema (--color-series-1 a --color-series-8) */

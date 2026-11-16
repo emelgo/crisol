@@ -67,7 +67,10 @@ const modes = async () => within(await screen.findByRole('toolbar', { name: 'Mod
 
 beforeEach(() => {
   localStorage.clear()
-  localStorage.setItem('crisol.recorridos.enrique@crisol.test', JSON.stringify({ seen: ['mundo'] }))
+  localStorage.setItem(
+    'crisol.recorridos.enrique@crisol.test',
+    JSON.stringify({ seen: ['mundo', 'relaciones', 'grafo-mundo'] })
+  )
 })
 
 describe('la pestaña «Relaciones» (módulo 10)', () => {

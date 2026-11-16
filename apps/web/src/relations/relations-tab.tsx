@@ -12,6 +12,8 @@ import { ChevronLeft, Maximize2, X } from 'lucide-react'
 import { type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
+import { Loading } from '../components/brand.tsx'
+import { Tour } from '../components/tour.tsx'
 import { useOpenPage, useReadAs } from '../wiki/read-as.tsx'
 import { TabToolsSlot } from '../wiki/world-page.ts'
 import { NodeGlyphBox } from './glyph.tsx'
@@ -94,11 +96,8 @@ export function RelationsTab({
   }, [mode, onMode])
   useEffect(() => () => onMode?.(null), [onMode])
 
-  // Sin icono propio, el de su plantilla (como en el árbol)
-  const nodes = useMemo(
-    () => (data?.nodes ?? []).map((node) => (node.icon ? node : { ...node, icon: look.iconOf(node.template) })),
-    [data?.nodes, look]
-  )
+  // Su icono propio o, sin él, sus iniciales: lo mismo para el máster y para quien juega (como en el lienzo)
+  const nodes = useMemo(() => data?.nodes ?? [], [data?.nodes])
   const edges = (data?.edges ?? []) as GraphEdge[]
   const byId = useMemo(() => new Map(nodes.map((node) => [node.id, node])), [nodes])
   const titleOf = useCallback((id: string) => byId.get(id)?.title ?? '', [byId])
@@ -127,7 +126,7 @@ export function RelationsTab({
 
   const tools =
     compact || !mode ? null : mode === 'links' ? (
-      <div className={styles.tools}>
+      <div className={styles.tools} data-tour="relaciones-herramientas">
         <Segmented
           label={t('relations.depth')}
           options={DEPTHS}
@@ -139,7 +138,7 @@ export function RelationsTab({
         <Toggle label={t('relations.fieldsOnly')} checked={fieldsOnly} onChange={setFieldsOnly} />
       </div>
     ) : mode === 'family' ? (
-      <div className={styles.tools}>
+      <div className={styles.tools} data-tour="relaciones-herramientas">
         <Segmented
           label={t('relations.generations')}
           options={GENERATIONS}
@@ -152,7 +151,23 @@ export function RelationsTab({
     ) : null
 
   if (base.data && modes.length === 0 && center === page.id)
-    return <p className={styles.nothing}>{t('relations.world.empty')}</p>
+    return <p className={styles.nothing}>{t('relations.empty')}</p>
+  // Mientras llega, la llama latiendo; si falla, lo dice y se reintenta
+  const failing = base.isError ? base : view.isError ? view : null
+  const pending = (
+    <div className={styles.pending}>
+      {failing ? (
+        <p role="alert">
+          {t('relations.failed')}{' '}
+          <button type="button" className={styles.retry} onClick={() => void failing.refetch()}>
+            {t('load.retry')}
+          </button>
+        </p>
+      ) : (
+        <Loading />
+      )}
+    </div>
+  )
 
   const graph = (expanded: boolean) =>
     mode && data ? (
@@ -184,7 +199,9 @@ export function RelationsTab({
         {!compact && mode === 'links' && <Legend secrets={!readAs && edges.some((edge) => edge.secret)} />}
         {!compact && <ModePill modes={modes} value={mode} onChange={choose} />}
       </Canvas>
-    ) : null
+    ) : (
+      pending
+    )
 
   if (compact) {
     return (
@@ -234,9 +251,21 @@ export function RelationsTab({
   return (
     <>
       {tools && (slot ? createPortal(tools, slot) : <div className={styles.toolsRow}>{tools}</div>)}
-      <div className={styles.area} data-mode={mode ?? undefined}>
+      <div className={styles.area} data-mode={mode ?? undefined} data-tour="relaciones-grafo">
         {graph(false)}
       </div>
+      {data && (
+        <Tour
+          id={readAs ? 'relaciones-jugadora' : 'relaciones'}
+          steps={[
+            ...(modes.length > 1
+              ? [{ target: '[data-tour="relaciones-modos"]', text: t('tour.relations.modes') }]
+              : []),
+            ...(tools ? [{ target: '[data-tour="relaciones-herramientas"]', text: t('tour.relations.tools') }] : []),
+            { target: '[data-tour="relaciones-grafo"]', text: t('tour.relations.graph') }
+          ]}
+        />
+      )}
     </>
   )
 }
@@ -276,7 +305,11 @@ function Canvas({
   children: ReactNode
 }) {
   const [svg, setSvg] = useState<SVGSVGElement | null>(null)
-  const { transform, zoomBy, fit, keepFitted } = usePanZoom(svg, { insets: compact ? COMPACT_INSETS : INSETS })
+  // Las tarjetas, nunca tan pequeñas que no se lean: si no caben, arriba y se mueve
+  const { transform, zoomBy, fit, keepFitted } = usePanZoom(svg, {
+    insets: compact ? COMPACT_INSETS : INSETS,
+    minScale: mode === 'links' ? 0.1 : 0.85
+  })
   // Las posiciones de antes: al cambiar la profundidad o «Solo campos», lo que ya estaba no salta
   const before = useRef<Map<string, Point> | undefined>(undefined)
   const positions = useMemo(() => {

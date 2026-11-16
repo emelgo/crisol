@@ -644,6 +644,32 @@
   color: var(--color-text);
 }
 
+.pending {
+  display: grid;
+  place-items: center;
+  block-size: 100%;
+  min-block-size: 12rem;
+  color: var(--color-muted);
+}
+
+.pending p {
+  margin: 0;
+}
+
+.retry {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-link);
+  font: inherit;
+  cursor: pointer;
+}
+
+.retry:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
 .nothing {
   margin: var(--space-8) auto;
   color: var(--color-muted);

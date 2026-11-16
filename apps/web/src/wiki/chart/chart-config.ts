@@ -157,7 +157,13 @@ export function chartConfig(chart: ChartSpec, theme: ChartTheme): ChartConfigura
       min: num(o[`${name}Min`]),
       max: num(o[`${name}Max`]),
       reverse: bool(o[`${name}Reverse`]),
-      ticks: { ...ticks, display: bool(o[`${name}TickDisplay`]), padding: num(o[`${name}TickPadding`]) },
+      // Unas pocas marcas (las de Chart.js, de 10 en 10, se amontonan)
+      ticks: {
+        ...ticks,
+        display: bool(o[`${name}TickDisplay`]),
+        padding: num(o[`${name}TickPadding`]),
+        maxTicksLimit: 6
+      },
       display: bool(o[`${name}Display`]),
       stacked: bool(o.stacked),
       grid: { color: theme.grid },

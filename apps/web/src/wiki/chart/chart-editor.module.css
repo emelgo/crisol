@@ -179,7 +179,7 @@
 
 /* La columna de las etiquetas, algo más ancha; las de las series se reparten lo demás */
 .grid th:first-child {
-  inline-size: 38%;
+  inline-size: 32%;
 }
 
 .grid th {

@@ -2331,6 +2331,8 @@ export const es = {
     expand: 'Ampliar',
     inWords: 'En palabras',
     truncated: 'Hay más: se ven las 500 más cercanas',
+    empty: 'Sin relaciones',
+    failed: 'No se han podido cargar las relaciones.',
     leads: 'Lo dirige',
     members: '{{count}} miembro',
     members_other: '{{count}} miembros',
@@ -2363,7 +2365,7 @@ export const es = {
       unfold: 'Filtros',
       search: 'Buscar una página',
       noMatch: 'Ninguna con ese nombre',
-      empty: 'Aún no hay relaciones: salen de los campos de enlace y de los enlaces del texto.',
+      empty: 'Aún no hay relaciones.',
       filtered: 'Nada con estos filtros',
       canvas: 'Grafo de {{count}} páginas'
     }
@@ -4600,6 +4602,16 @@ export const es = {
       list: 'Los calendarios del mundo. El principal es el de las fechas; arrastra para ordenarlos.',
       create: 'Crea uno en blanco, como el nuestro o copia de otro.',
       chronologies: 'Las cronologías juntan los eventos y las páginas con fecha.'
+    },
+    relations: {
+      modes: 'Enlaces, familia u organigrama: la misma página vista de otra manera.',
+      tools: 'Cuánto se aleja y qué relaciones salen.',
+      graph: 'Pulsa una página para ver su ficha; con doble clic, se abre.'
+    },
+    worldGraph: {
+      filters: 'Qué páginas y relaciones salen.',
+      search: 'Busca una página para ir a ella.',
+      graph: 'Mueve y acerca para recorrer el mundo.'
     },
     chronology: {
       pill: 'Añade eventos y cambia de vista: lista, meses o calendario.',

@@ -103,10 +103,13 @@ describe('en palabras', () => {
 })
 
 describe('iniciales y colores', () => {
-  it('las iniciales de las palabras con mayúscula', () => {
+  it('las iniciales de las palabras con mayúscula, sin numerales romanos', () => {
     expect(initials('Mirela de Varn')).toBe('MV')
-    expect(initials('Rook')).toBe('R')
+    expect(initials('Rook')).toBe('RO')
     expect(initials('la torre')).toBe('LT')
+    // Ni ordinales ni iniciales que parezcan uno
+    expect(initials('Aldren IV')).toBe('AL')
+    expect(initials('Ilsa de Varn')).toBe('IL')
   })
 
   it('cada plantilla, el color de su sitio; sin plantilla, el atenuado', () => {

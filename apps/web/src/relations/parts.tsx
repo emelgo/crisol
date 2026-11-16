@@ -26,7 +26,7 @@ export function ModePill({
   const { t } = useTranslation()
   if (modes.length < 2) return null
   return (
-    <div className={styles.pill} role="toolbar" aria-label={t('relations.modes.label')}>
+    <div className={styles.pill} role="toolbar" aria-label={t('relations.modes.label')} data-tour="relaciones-modos">
       {modes.map((mode) => {
         const Icon = MODE_ICONS[mode]
         return (
