@@ -143,6 +143,8 @@ function Editor({
     setName(current.name)
   }
 
+  // Al acortar un mes, cuántas fechas se leen ahora en su último día (lo dice el servidor al guardar)
+  const [clipped, setClipped] = useState(0)
   const save = useMutation({
     mutationFn: () =>
       api.call('updateCalendar', {
@@ -151,7 +153,8 @@ function Editor({
         name: name.trim(),
         definition: draft
       }),
-    onSuccess: (stored) => {
+    onSuccess: ({ clipped: shortened, ...stored }) => {
+      setClipped(shortened ?? 0)
       setCalendar(stored)
       setDraft(stored.definition)
       setName(stored.name)
@@ -159,7 +162,7 @@ function Editor({
         old ? { calendars: old.calendars.map((c) => (c.id === stored.id ? stored : c)) } : old
       )
       void client.invalidateQueries({ queryKey: ['calendars', worldId] })
-      announce(t('calendars.editor.saved'))
+      announce(shortened ? t('calendars.editor.clipped', { count: shortened }) : t('calendars.editor.saved'))
     },
     onError: (error) => announce(errorText(error))
   })
@@ -342,6 +345,9 @@ function Editor({
             </button>
           </ChangesBar>
           {save.error && <span className={styles.error}>{errorText(save.error)}</span>}
+          {clipped > 0 && !dirty && (
+            <span className={styles.notice}>{t('calendars.editor.clipped', { count: clipped })}</span>
+          )}
           {first && (
             <button type="button" className={styles.problemLink} onClick={() => goTo(first.section, true)}>
               <TriangleAlert size={16} aria-hidden="true" />

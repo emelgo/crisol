@@ -61,6 +61,37 @@ describe('editar una plantilla', () => {
     expect(fields.getByRole('button', { name: /Reloj de 8/ })).toBeDefined()
   })
 
+  it('un campo «Fecha», vacío, con «Con fin» y «Fuera de las líneas temporales»', async () => {
+    const { saved } = await renderTemplate()
+    const fields = within((await panel()).getByRole('region', { name: 'Campos' }))
+    await userEvent.click(fields.getByRole('button', { name: 'Campo' }))
+    await userEvent.clear(fields.getByLabelText('Nombre'))
+    await userEvent.type(fields.getByLabelText('Nombre'), 'Reinado{Enter}')
+    await userEvent.selectOptions(fields.getByLabelText('Tipo'), 'Fecha')
+    await userEvent.click(fields.getByRole('checkbox', { name: 'Con fin' }))
+    await waitFor(async () =>
+      expect((await saved()).fields[0]).toEqual({
+        name: 'Reinado',
+        field: expect.any(String),
+        type: 'date',
+        value: null,
+        range: true
+      })
+    )
+    await userEvent.click(fields.getByRole('checkbox', { name: 'Fuera de las líneas temporales' }))
+    await userEvent.click(fields.getByRole('checkbox', { name: 'Con fin' }))
+    await waitFor(async () =>
+      expect((await saved()).fields[0]).toEqual({
+        name: 'Reinado',
+        field: expect.any(String),
+        type: 'date',
+        value: null,
+        offTimeline: true
+      })
+    )
+    expect(fields.getByRole('button', { name: /Reinado.*Fecha/ })).toBeDefined()
+  })
+
   it('su panel: una tabla de páginas con sus desplegables, con título', async () => {
     const { saved } = await renderTemplate()
     const blocks = within((await panel()).getByRole('region', { name: 'En el panel' }))

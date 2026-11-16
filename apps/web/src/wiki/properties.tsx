@@ -8,6 +8,7 @@ import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { FormError } from '../components/field.tsx'
 import { useTemplates } from '../templates/picker.tsx'
+import { DateField, DateText, type DateValue } from './date-field.tsx'
 import fieldStyles from './field-controls.module.css'
 import { ChoiceSelect, ClockField } from './field-controls.tsx'
 import styles from './properties.module.css'
@@ -19,7 +20,7 @@ import { TagsField, tagDot, useTagColor } from './tags.tsx'
 const isTagsName = (name: string) => name.trim().toLocaleLowerCase('es') === 'etiquetas'
 
 type PropertyType = PageProperty['type']
-const TYPES: PropertyType[] = ['text', 'number', 'boolean', 'list', 'pages', 'choice', 'clock']
+const TYPES: PropertyType[] = ['text', 'number', 'boolean', 'list', 'pages', 'choice', 'clock', 'date']
 /** Los segmentos de un reloj nuevo */
 const CLOCK_SEGMENTS = 4
 /** Las reservadas, con su tipo: se ofrecen para añadirlas de un clic */
@@ -86,6 +87,8 @@ interface Draft {
   /** De un reloj: los segmentos llenos y cuántos tiene */
   count: number
   segments: number
+  /** De una fecha: su valor (null, vacía) */
+  date?: DateValue | null
   /** Las etiquetas escritas aún sin poner: van con las demás al guardar */
   pending?: string
   /** Como estaba guardada: su campo de plantilla y su forma no se pierden al cambiar otra cosa */
@@ -109,6 +112,7 @@ const toDraft = (property: PageProperty): Draft => ({
   options: property.type === 'choice' ? property.options : [],
   count: property.type === 'clock' ? property.value : 0,
   segments: property.type === 'clock' ? property.segments : CLOCK_SEGMENTS,
+  date: property.type === 'date' ? property.value : null,
   original: property,
   hidden: property.hidden === true
 })
@@ -120,6 +124,7 @@ const retyped = (row: Draft, type: PropertyType): Partial<Draft> => {
     return { type, options }
   }
   if (type === 'clock') return { type, count: Math.min(row.count, row.segments), segments: row.segments }
+  if (type === 'date') return { type, date: null }
   return { type }
 }
 
@@ -165,6 +170,15 @@ function propertyOfDraft(draft: Draft): PageProperty | null {
       return { name, ...field, type: 'choice', value: draft.text.trim(), options: draft.options }
     case 'clock':
       return { name, ...field, type: 'clock', value: Math.min(draft.count, draft.segments), segments: draft.segments }
+    case 'date': {
+      // Su forma de plantilla («Con fin», «Fuera de las líneas temporales») se queda; cómo se lee lo pone el servidor
+      const {
+        text: _text,
+        hidden: _hidden,
+        ...shape
+      } = original?.type === 'date' ? original : { type: 'date' as const }
+      return { ...shape, name, ...field, type: 'date', value: draft.date ?? null }
+    }
   }
 }
 
@@ -225,6 +239,8 @@ function PropertyValue({ property, worldId }: { property: PageProperty; worldId:
       )
     case 'clock':
       return <>{`${property.value}/${property.segments}`}</>
+    case 'date':
+      return <DateText worldId={worldId} value={property.value} stored={property.text} />
     default:
       return <>{property.value}</>
   }
@@ -294,8 +310,11 @@ function emptyValue(property: PageProperty): boolean {
   return false
 }
 
-const sameProperties = (a: readonly PageProperty[], b: readonly PageProperty[]) =>
-  JSON.stringify(a) === JSON.stringify(b)
+/** Cómo se lee una fecha lo pone el servidor: no cuenta al comparar */
+const comparable = (properties: readonly PageProperty[]) =>
+  JSON.stringify(properties.map((p) => (p.type === 'date' ? { ...p, text: undefined } : p)))
+
+const sameProperties = (a: readonly PageProperty[], b: readonly PageProperty[]) => comparable(a) === comparable(b)
 
 function InlineProperties({
   page,
@@ -335,8 +354,16 @@ function InlineProperties({
   })
   // Lo que llega de fuera (otra pestaña, la IA) entra si no se está escribiendo aquí
   useEffect(() => {
-    if (inFlight.current > 0 || box.current?.contains(document.activeElement)) return
-    setRows(page.properties.map(toDraft))
+    // Lo que flota fuera del panel (el selector de una fecha) también es estar escribiendo aquí
+    const active = document.activeElement
+    if (inFlight.current > 0 || box.current?.contains(active) || active?.closest('[data-property-popup]')) return
+    // Cada fila conserva su clave (por su nombre): lo que tenga abierto no se cierra
+    setRows((current) =>
+      page.properties.map((property) => {
+        const same = current.find((row) => row.name === property.name)
+        return same ? { ...toDraft(property), key: same.key } : toDraft(property)
+      })
+    )
   }, [page.properties])
   const commit = (next: Draft[]) => {
     setRows(next)
@@ -739,6 +766,22 @@ function ValueField({
           onPick={(count) => onChange({ count }, true)}
         />
       )
+    case 'date': {
+      const original = row.original?.type === 'date' ? row.original : undefined
+      return (
+        <DateField
+          id={valueId}
+          label={label}
+          name={row.name.trim()}
+          value={row.date ?? null}
+          stored={original?.text}
+          worldId={worldId}
+          // Un campo de plantilla sin «Con fin» no lleva fin; una hecha a mano, si se quiere
+          allowEnd={original?.field === undefined || original.range === true || row.date?.end !== undefined}
+          onChange={(date) => onChange({ date }, true)}
+        />
+      )
+    }
     default: {
       const long = row.type === 'text' && row.name.trim().toLocaleLowerCase('es') === 'resumen'
       return long ? (

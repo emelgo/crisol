@@ -1,0 +1,399 @@
+/* El campo «Fecha» del panel y su selector, que flota a su lado con el cristal de lo que flota (docs/diseno.md) */
+
+.srOnly {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.text {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+/* Como un valor más del panel: sin borde hasta acercarse */
+.value {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  inline-size: 100%;
+  min-block-size: 2rem;
+  padding: 0.25rem 0.375rem;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.value:hover,
+.value[aria-expanded="true"] {
+  background: color-mix(in srgb, var(--color-text) 5%, transparent);
+}
+
+.value:focus-visible {
+  border-color: var(--color-field-border);
+  outline: none;
+}
+
+.placeholder {
+  color: var(--color-muted);
+}
+
+.yearly {
+  display: inline-flex;
+  color: var(--color-muted);
+}
+
+/* Lo que flota: Floating lo coloca, fijo en la ventana, a la izquierda del panel */
+.picker {
+  position: fixed;
+  z-index: 60;
+  inline-size: 21rem;
+  max-inline-size: calc(100vw - 2rem);
+  max-block-size: calc(100dvh - 2rem);
+  overflow-y: auto;
+  padding: var(--space-3);
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--radius-frame);
+  background: var(--frame-sheen), var(--popup-glass);
+  -webkit-backdrop-filter: var(--popup-blur);
+  backdrop-filter: var(--popup-blur);
+  box-shadow: 0 0.75rem 2rem rgb(0 0 0 / 0.35);
+  scrollbar-width: thin;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.none {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-link);
+  font: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.link:disabled {
+  color: var(--color-muted);
+  cursor: default;
+}
+
+.link:focus-visible,
+.clear:focus-visible,
+.nav button:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.calendar select,
+.month,
+.year {
+  min-block-size: 2rem;
+  border: 1px solid var(--color-field-border);
+  border-radius: var(--radius-button);
+  background: var(--field-fill);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.875rem;
+}
+
+.calendar select {
+  inline-size: 100%;
+  padding-inline: var(--space-2);
+}
+
+/* Año · Mes · Día, y Inicio · Fin: una pieza con la elegida resaltada */
+.segmented {
+  display: flex;
+  margin: 0;
+  padding: 2px;
+  border: 1px solid var(--color-field-border);
+  border-radius: var(--radius-button);
+  background: var(--field-fill);
+  min-inline-size: 0;
+}
+
+.segmented label {
+  position: relative;
+  flex: 1;
+  padding: 0.3rem var(--space-2);
+  border-radius: 4px;
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+  text-align: center;
+  cursor: pointer;
+}
+
+.segmented label[data-on] {
+  background: var(--color-raised);
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.segmented input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.segmented label:has(input:focus-visible) {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
+}
+
+.segmented[data-small] label {
+  padding-block: 0.15rem;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.nav button {
+  display: grid;
+  flex: none;
+  place-items: center;
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
+  border: 0;
+  border-radius: var(--radius-button);
+  background: none;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.nav button:hover {
+  background: var(--color-raised);
+  color: var(--color-text);
+}
+
+.month {
+  flex: 1.3;
+  min-inline-size: 0;
+  padding-inline: var(--space-2);
+}
+
+/* El año escrito a mano, con el sufijo del calendario detrás */
+.year {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  min-inline-size: 0;
+  padding-inline-end: var(--space-2);
+  color: var(--color-muted);
+}
+
+.year input {
+  inline-size: 100%;
+  min-inline-size: 0;
+  padding: 0 var(--space-2);
+  border: 0;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.year:focus-within {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -1px;
+}
+
+.year input:focus {
+  outline: none;
+}
+
+.choices {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-inline-size: 0;
+}
+
+.grid {
+  inline-size: 100%;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 2px;
+}
+
+.grid th {
+  padding-block-end: var(--space-1);
+  color: var(--color-muted);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.day,
+.choice,
+.yearChoice {
+  inline-size: 100%;
+  min-block-size: 2rem;
+  border: 0;
+  border-radius: var(--radius-button);
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.day:hover,
+.choice:hover,
+.yearChoice:hover {
+  background: var(--color-raised);
+}
+
+.day:focus-visible,
+.choice:focus-visible,
+.yearChoice:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
+}
+
+/* El tramo entre el inicio y el fin, suave; el día elegido, en rojo (lo importante) */
+.day[data-in-span] {
+  background: color-mix(in srgb, var(--color-accent) 18%, transparent);
+}
+
+.day[aria-pressed="true"],
+.choice[aria-pressed="true"],
+.yearChoice[aria-pressed="true"] {
+  background: var(--accent-glass);
+  color: var(--color-on-accent);
+  font-weight: 700;
+}
+
+.months {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 2px;
+}
+
+.choice[data-festival] {
+  color: var(--color-warning);
+}
+
+.choice[data-festival][aria-pressed="true"] {
+  color: var(--color-on-accent);
+}
+
+.yearChoice {
+  min-block-size: 2.5rem;
+  font-size: 0.9375rem;
+}
+
+/* Lo que va fuera de la semana (una festividad): su nombre y sus días seguidos */
+.strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+}
+
+.stripName {
+  flex: 1 1 auto;
+  color: var(--color-warning);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.stripDays {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+.stripDays .day {
+  inline-size: 2rem;
+  background: color-mix(in srgb, var(--color-warning) 12%, transparent);
+}
+
+.readout {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-button);
+  background: var(--field-fill);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.equivalent,
+.warning {
+  margin: 0;
+  font-size: 0.8125rem;
+}
+
+.equivalent {
+  color: var(--color-muted);
+}
+
+.warning {
+  color: var(--color-warning);
+}
+
+.foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: 0.875rem;
+}
+
+.check:has(input:disabled) {
+  color: var(--color-muted);
+}
+
+.clear {
+  margin-inline-start: auto;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-muted);
+  font: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.clear:hover:not(:disabled) {
+  color: var(--color-text);
+}
+
+.clear:disabled {
+  cursor: default;
+  opacity: 0.6;
+}

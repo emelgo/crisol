@@ -11,8 +11,8 @@ import { useTemplates } from './picker.tsx'
 import { Grip, moved, useReorder } from './reorder.tsx'
 
 /** Cómo se elige el tipo de un campo: los de las propiedades, con el enlace a una sola página aparte */
-type FieldKind = 'text' | 'number' | 'boolean' | 'list' | 'page' | 'pages' | 'choice' | 'clock'
-const KINDS: FieldKind[] = ['text', 'number', 'choice', 'boolean', 'list', 'page', 'pages', 'clock']
+type FieldKind = 'text' | 'number' | 'boolean' | 'list' | 'page' | 'pages' | 'choice' | 'clock' | 'date'
+const KINDS: FieldKind[] = ['text', 'number', 'choice', 'boolean', 'list', 'page', 'pages', 'clock', 'date']
 
 const kindOf = (field: PageProperty): FieldKind => (field.type === 'pages' && field.single ? 'page' : field.type)
 
@@ -36,6 +36,9 @@ function retype(field: PageProperty, kind: FieldKind): PageProperty {
       return { ...base, type: 'choice', value: '', options: field.type === 'choice' ? field.options : [] }
     case 'clock':
       return { ...base, type: 'clock', value: 0, segments: field.type === 'clock' ? field.segments : 4 }
+    // Vacía: los calendarios son de cada mundo
+    case 'date':
+      return { ...base, type: 'date', value: null }
     case 'page':
     case 'pages': {
       const targets = field.type === 'pages' ? field.targets : undefined
@@ -287,6 +290,35 @@ function FieldShape({
                 </select>
               </>
             )}
+          </div>
+        </>
+      )}
+      {field.type === 'date' && (
+        <>
+          <span className={styles.label}>{t('templateEditor.dateOptions')}</span>
+          <div className={styles.dateOptions}>
+            <label>
+              <input
+                type="checkbox"
+                checked={field.range === true}
+                onChange={(event) => {
+                  const { range: _was, ...rest } = field
+                  onChange(event.currentTarget.checked ? { ...rest, range: true } : rest)
+                }}
+              />
+              {t('templateEditor.range')}
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                checked={field.offTimeline === true}
+                onChange={(event) => {
+                  const { offTimeline: _was, ...rest } = field
+                  onChange(event.currentTarget.checked ? { ...rest, offTimeline: true } : rest)
+                }}
+              />
+              {t('templateEditor.offTimeline')}
+            </label>
           </div>
         </>
       )}

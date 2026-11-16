@@ -241,6 +241,12 @@
   font-size: 0.875rem;
 }
 
+/* Lo guardado con algo que conviene saber (fechas que se leen recortadas) */
+.notice {
+  color: var(--color-warning);
+  font-size: 0.875rem;
+}
+
 /* Los campos */
 .fields {
   display: grid;

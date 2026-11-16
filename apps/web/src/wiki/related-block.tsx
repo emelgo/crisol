@@ -2,7 +2,7 @@
  * «Tabla de páginas» en el panel (ADR-0009): las páginas de una plantilla cuyo campo de enlace apunta a esta, con sus
  * columnas. La calcula el servidor (getPageTables); aquí se pinta y se configura con desplegables
  */
-import type { Page, PageProperty, PanelBlock } from '@crisol/contracts'
+import type { CalendarView, Page, PageProperty, PanelBlock } from '@crisol/contracts'
 import { useQuery } from '@tanstack/react-query'
 import { X } from 'lucide-react'
 import { useId } from 'react'
@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { Icon } from '../components/icon.tsx'
 import { useTemplates } from '../templates/picker.tsx'
+import { dateText, useWorldCalendars } from './date-field.tsx'
 import { PageLink, readAsInput, readAsKey, useReadAs } from './read-as.tsx'
 import styles from './related-block.module.css'
 
@@ -25,10 +26,18 @@ export function usePageTables(page: Page) {
   })
 }
 
-/** Una celda, como texto (las páginas, por su título) */
-function cellText(cell: PageProperty | null, title: (id: string) => string, yes: string, no: string) {
+/** Una celda, como texto (las páginas, por su título; las fechas, con su calendario) */
+function cellText(
+  cell: PageProperty | null,
+  title: (id: string) => string,
+  yes: string,
+  no: string,
+  calendars: readonly CalendarView[] | undefined
+) {
   if (!cell) return ''
   switch (cell.type) {
+    case 'date':
+      return dateText(calendars, cell.value, cell.text)
     case 'pages':
       return cell.value.map(title).join(', ')
     case 'list':
@@ -47,6 +56,7 @@ function cellText(cell: PageProperty | null, title: (id: string) => string, yes:
 export function RelatedBody({ page, block, onFix }: { page: Page; block: RelatedBlock; onFix: () => void }) {
   const { t } = useTranslation()
   const tables = usePageTables(page)
+  const calendars = useWorldCalendars(page.worldId).data?.calendars
   const table = tables.data?.tables.find((each) => each.blockId === block.id)
   const titles = new Map((tables.data?.linked ?? []).map((each) => [each.id, each.title]))
   const title = (id: string) => titles.get(id) ?? t('properties.unknownPage')
@@ -100,7 +110,7 @@ export function RelatedBody({ page, block, onFix }: { page: Page; block: Related
               </td>
               {row.cells.map((cell, i) => (
                 <td key={table.columns[i]?.field ?? i}>
-                  {cellText(cell, title, t('properties.yes'), t('properties.no'))}
+                  {cellText(cell, title, t('properties.yes'), t('properties.no'), calendars)}
                 </td>
               ))}
             </tr>

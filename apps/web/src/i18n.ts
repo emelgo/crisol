@@ -849,9 +849,38 @@ export const es = {
       list: 'Lista',
       pages: 'Páginas',
       choice: 'Opciones',
-      clock: 'Reloj'
+      clock: 'Reloj',
+      date: 'Fecha'
     },
     reserved: { alias: 'Alias', etiquetas: 'Etiquetas', resumen: 'Resumen' }
+  },
+  // El campo «Fecha» y su selector (módulo 8)
+  dates: {
+    calendar: 'Calendario',
+    precision: 'Precisión',
+    year: 'Año',
+    month: 'Mes',
+    day: 'Día',
+    previousYear: 'Año anterior',
+    nextYear: 'Año siguiente',
+    previousMonth: 'Mes anterior',
+    nextMonth: 'Mes siguiente',
+    monthShown: 'Mes que se ve',
+    yearShown: 'Año que se ve',
+    none: 'Sin fecha',
+    choices: 'Elegir',
+    addEnd: 'Añadir fin',
+    removeEnd: 'Quitar fin',
+    editing: 'Qué se elige',
+    start: 'Inicio',
+    end: 'Fin',
+    yearly: 'Cada año',
+    repeats: 'Cada año',
+    clear: 'Borrar',
+    noCalendar: 'Este mundo aún no tiene calendario.',
+    toCalendars: 'Calendarios',
+    inPrimary: 'En {{name}}: {{text}}',
+    outside: 'Fuera del calendario: se lee en el último día de su mes'
   },
   fields: {
     choose: 'Elegir',
@@ -1384,9 +1413,13 @@ export const es = {
       list: 'Lista',
       page: 'Enlace a una página',
       pages: 'Enlaces a páginas',
-      clock: 'Reloj'
+      clock: 'Reloj',
+      date: 'Fecha'
     },
     clockOf: 'Reloj de {{segments}}',
+    dateOptions: 'La fecha',
+    range: 'Con fin',
+    offTimeline: 'Fuera de las líneas temporales',
     options: 'Opciones',
     addOption: 'Opción…',
     removeOption: 'Quitar la opción {{option}}',
@@ -1946,6 +1979,8 @@ export const es = {
       save: 'Guardar',
       cancel: 'Cancelar',
       saved: 'Guardado',
+      clipped_one: 'Guardado. Una fecha tiene un día que ya no cabe en su mes: se lee en su último día',
+      clipped_other: 'Guardado. {{count}} fechas tienen un día que ya no cabe en su mes: se leen en su último día',
       cantSave_one: 'No se puede guardar: hay {{count}} problema',
       cantSave_other: 'No se puede guardar: hay {{count}} problemas',
       yearDays: '{{days}} días',

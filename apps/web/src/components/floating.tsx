@@ -17,8 +17,8 @@ export function Floating({
   anchor: RefObject<HTMLElement | null>
   className?: string
   children: ReactNode
-  /** Dónde, respecto al botón (un menú a la derecha de la página, por su borde derecho) */
-  placement?: 'bottom-start' | 'bottom-end'
+  /** Dónde, respecto al botón (un menú a la derecha de la página, por su borde derecho; junto al panel, a su izquierda) */
+  placement?: 'bottom-start' | 'bottom-end' | 'left-start'
   /** Para quien necesite el panel (cerrarlo al pulsar fuera) */
   boxRef?: RefObject<HTMLDivElement | null>
 } & Omit<HTMLAttributes<HTMLDivElement>, 'className' | 'children'>) {

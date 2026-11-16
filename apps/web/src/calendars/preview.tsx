@@ -20,7 +20,7 @@ import { useAnnounce } from '../components/announcer.tsx'
 import styles from './editor.module.css'
 
 /** Lo que se enseña con cada mes normal: los fuera de la semana que van justo detrás (y, antes del primero, los de delante) */
-function pagesOf(definition: CalendarDefinition) {
+export function pagesOf(definition: CalendarDefinition) {
   const regular = definition.months.map((m, i) => ({ m, i })).filter(({ m }) => !m.outsideWeek)
   if (regular.length === 0) return definition.months.map((m) => ({ month: m.id, before: [], after: [] as string[] }))
   return regular.map(({ i }, k) => {
@@ -50,7 +50,7 @@ export function shortWeekdays(names: readonly string[]): string[] {
 }
 
 /** El año con que se abre: el del principio de su última era (lo más reciente), o el 1 */
-const startYear = (definition: CalendarDefinition) =>
+export const startYear = (definition: CalendarDefinition) =>
   definition.eras.reduce((year, era) => Math.max(year, era.start.year), Number.NEGATIVE_INFINITY) ===
   Number.NEGATIVE_INFINITY
     ? 1
