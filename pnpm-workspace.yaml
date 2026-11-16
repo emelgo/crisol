@@ -125,3 +125,10 @@ minimumReleaseAgeExclude:
   - "@biomejs/cli-linux-x64@2.6.4"
   - "@biomejs/cli-win32-arm64@2.6.4"
   - "@biomejs/cli-win32-x64@2.6.4"
+
+# Versiones corregidas de lo que trae Excalidraw (osv-scanner: altas en lodash-es 4.17.21 y nanoid 3.3.3 y 4.0.2; la 4
+# no tiene arreglo y la 5 se usa igual)
+overrides:
+  "lodash-es@4.17.21": 4.18.1
+  "nanoid@3.3.3": 3.3.20
+  "nanoid@4.0.2": 5.1.16
