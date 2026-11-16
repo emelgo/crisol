@@ -18,7 +18,6 @@ export function WorldTour({ master }: { master: boolean }) {
               { target: '[data-tour="mundo-paginas"]', text: t('tour.world.pages'), placement: 'right' },
               { target: '[data-tour="buscador"]', text: t('tour.world.search'), placement: 'right' },
               { target: '[data-tour="mundo-archivos"]', text: t('tour.world.files'), placement: 'right' },
-              { target: '[data-tour="buscar"]', text: t('tour.world.find'), placement: 'bottom' },
               { target: '[data-tour="panel-bloques"]', text: t('tour.world.panel'), placement: 'left' },
               { target: '[data-tour="quien-la-conoce"]', text: t('tour.world.whoKnows'), placement: 'bottom' },
               { target: '[data-tour="menu-mundo"]', text: t('tour.world.worldMenu'), placement: 'bottom' },

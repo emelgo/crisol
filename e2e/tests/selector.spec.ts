@@ -2,7 +2,9 @@ import AxeBuilder from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import { createWorld, freshOwner, openWorld } from './ayudas.ts'
 
-test('Ctrl+K: recientes, títulos con erratas y órdenes; buscar en la página resalta y salta', async ({ page }) => {
+test('un solo buscador, el de la barra (Ctrl+K lo enfoca, aunque esté plegada): filtra el árbol y con Intro busca en el texto; buscar en la página resalta y salta', async ({
+  page
+}) => {
   await freshOwner(page)
   await createWorld(page, 'Eana')
   await openWorld(page, 'Eana')
@@ -25,25 +27,26 @@ test('Ctrl+K: recientes, títulos con erratas y órdenes; buscar en la página r
   await page.goto(`/mundos/${worldId}/wiki/${puerto.id}`)
   await expect(page.getByRole('heading', { level: 1, name: 'Puerto Ceniza' })).toBeVisible()
 
-  // Recientes: la página abierta
+  // Con la barra plegada, Ctrl+K la despliega y enfoca su buscador (Enrique, 2026-11-16: uno solo, el de la izquierda)
+  await page.getByRole('button', { name: 'Plegar la barra' }).click()
   await page.keyboard.press('ControlOrMeta+k')
-  const dialog = page.getByRole('dialog', { name: 'Ir a una página' })
-  await expect(dialog.getByRole('combobox')).toBeFocused()
-  await expect(dialog.getByRole('option', { name: /Puerto Ceniza/ })).toBeVisible()
+  const search = page.getByRole('searchbox', { name: 'Buscar por nombre o #etiqueta' })
+  await expect(search).toBeFocused()
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  // Filtra al escribir
+  await page.keyboard.type('maela')
+  await page
+    .getByRole('list', { name: 'Páginas que coinciden' })
+    .getByRole('link', { name: /Maela Varn/ })
+    .click()
+  await expect(page.getByRole('heading', { level: 1, name: 'Maela Varn' })).toBeVisible()
   const { violations } = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze()
   expect(violations.filter((v) => v.impact === 'critical' || v.impact === 'serious').map((v) => v.id)).toEqual([])
-  // Con una errata
-  await page.keyboard.type('maela barn')
-  await expect(dialog.getByRole('option', { name: /Maela Varn/ })).toHaveAttribute('aria-selected', 'true')
-  await page.keyboard.press('Enter')
-  await expect(page.getByRole('heading', { level: 1, name: 'Maela Varn' })).toBeVisible()
-  await expect(dialog).toBeHidden()
-
-  // Las órdenes
+  // Con Intro, en el texto de todas
   await page.keyboard.press('ControlOrMeta+k')
-  await page.keyboard.type('>archivos')
-  await page.keyboard.press('Enter')
-  await expect(page.getByRole('heading', { level: 1, name: 'Archivos de Eana' })).toBeVisible()
+  await search.fill('dragón')
+  await search.press('Enter')
+  await expect(page).toHaveURL(/\/buscar\?q=/)
 
   // Buscar en la página
   await page.goto(`/mundos/${worldId}/wiki/${puerto.id}`)

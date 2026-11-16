@@ -7,7 +7,7 @@
 import type { Page } from '@crisol/contracts'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate, useRouterState } from '@tanstack/react-router'
-import { type CSSProperties, type ReactNode, useCallback, useMemo, useState } from 'react'
+import { type CSSProperties, type ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
 import { useAccounts } from '../../account/context.tsx'
 import { useApi } from '../../api/context.tsx'
 import { useAmbient } from '../../components/ambient.tsx'
@@ -16,7 +16,6 @@ import { CollabSocket } from '../collab.tsx'
 import { WorldFilesSide } from '../files.tsx'
 import { WorldWindows } from '../new-entry.tsx'
 import { NewPageContext, NewPageDialog, type NewPageRequest } from '../new-page.tsx'
-import { QuickSwitcher } from '../quick-switcher.tsx'
 import { WorldTour } from '../world-tour.tsx'
 import { pageKey, WorldShellContext, type WorldShellValue } from './context.ts'
 import { sideTabOfSlug, useShellState } from './shell-state.ts'
@@ -117,7 +116,21 @@ export function WorldShell({
   // El cuadro de «Página nueva» (o de una subpágina): cada vez, uno nuevo (su número)
   const [creating, setCreating] = useState<{ parent: { id: string; title: string } | null; n: number } | null>(null)
   const requestNewPage = useCallback<NewPageRequest>((parent) => setCreating({ parent, n: Date.now() }), [])
-  const [switching, setSwitching] = useState(false)
+  // Un solo buscador, el de la barra de la izquierda (Enrique, 2026-11-16): Ctrl+K lo enfoca (con la barra en Páginas
+  // y desplegada); antes que nadie, que la pizarra no se lo quede para sus enlaces
+  const { setTab, setFolded } = state
+  useEffect(() => {
+    const listen = (event: KeyboardEvent) => {
+      if (!(event.ctrlKey || event.metaKey) || event.altKey || event.key.toLowerCase() !== 'k') return
+      event.preventDefault()
+      event.stopPropagation()
+      setTab('pages')
+      setFolded(false)
+      requestAnimationFrame(() => document.querySelector<HTMLInputElement>('[data-tour="buscador"] input')?.focus())
+    }
+    window.addEventListener('keydown', listen, true)
+    return () => window.removeEventListener('keydown', listen, true)
+  }, [setTab, setFolded])
   const value = useMemo<WorldShellValue>(
     () => ({ worldId, panelFolded: state.panelFolded, setPanelFolded: state.setPanelFolded }),
     [worldId, state.panelFolded, state.setPanelFolded]
@@ -133,12 +146,7 @@ export function WorldShell({
             data-world-shell=""
             style={{ '--side-width': `${state.width}px` } as CSSProperties}
           >
-            <WorldHeader
-              world={world}
-              current={current}
-              currentFileId={currentFileId}
-              onSearch={() => setSwitching(true)}
-            />
+            <WorldHeader world={world} current={current} currentFileId={currentFileId} />
             <div className={styles.body} data-side-folded={state.folded || undefined}>
               <WorldSidebar
                 worldId={worldId}
@@ -167,12 +175,6 @@ export function WorldShell({
               </main>
             </div>
           </div>
-          <QuickSwitcher
-            worldId={worldId}
-            open={switching}
-            onOpenChange={setSwitching}
-            onCreatePage={() => requestNewPage(null)}
-          />
           {creating && (
             <NewPageDialog
               key={creating.n}

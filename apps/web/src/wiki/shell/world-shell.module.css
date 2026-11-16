@@ -59,10 +59,15 @@
 }
 
 .world {
+  display: flex;
   flex: none;
+  align-items: center;
+  gap: var(--space-3);
   min-inline-size: 0;
+  padding-inline: var(--space-2) var(--space-3);
 }
 
+/* El nombre del mundo: un botón que abre sus ajustes; su engranaje, al pasar */
 .worldButton {
   display: inline-flex;
   align-items: center;
@@ -78,18 +83,68 @@
   cursor: pointer;
 }
 
-.worldButton:hover,
-.worldButton[aria-expanded="true"] {
+.worldButton:hover {
   background: color-mix(in srgb, var(--color-text) 8%, transparent);
 }
 
-.worldButton svg {
+.worldButton:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 1px;
+}
+
+.worldGear {
   flex: none;
   color: var(--color-muted);
+  opacity: 0;
+  transition: opacity 140ms ease-out;
+}
+
+.worldButton:is(:hover, :focus-visible) .worldGear {
+  opacity: 1;
+}
+
+/* Los botones del mundo, a la derecha junto a la cuenta, como los de la barra de la izquierda de fuera: el icono y su
+   nombre debajo */
+.worldTools {
+  display: flex;
+  flex: none;
+  gap: 2px;
+}
+
+.worldTool {
+  display: grid;
+  justify-items: center;
+  gap: 1px;
+  min-inline-size: 3.25rem;
+  padding: 0.25rem 0.375rem 0.1875rem;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--color-muted);
+  font: inherit;
+  font-size: 0.625rem;
+  font-weight: 600;
+  line-height: 1.1;
+  cursor: pointer;
+  transition:
+    background-color 140ms ease-out,
+    color 140ms ease-out;
+}
+
+.worldTool:hover,
+.worldTool[aria-expanded="true"] {
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+  color: var(--color-text);
+}
+
+.worldTool:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 1px;
 }
 
 /* El nombre del mundo, como un título (con su letra) pero pequeño */
 .worldName {
+  max-inline-size: 14rem;
   overflow: hidden;
   font-family: var(--font-display);
   font-size: 1.125rem;
@@ -111,41 +166,6 @@
   padding-block: 0.4375rem;
   padding-inline-start: var(--space-2);
   border-inline-start: 1px solid var(--glass-edge);
-}
-
-.search {
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  gap: var(--space-2);
-  inline-size: 13rem;
-  min-block-size: 2rem;
-  padding: 0 var(--space-2);
-  border: 1px solid var(--line-frame);
-  border-radius: 6px;
-  background: var(--field-fill);
-  color: var(--color-muted);
-  font: inherit;
-  font-size: 0.875rem;
-  cursor: pointer;
-}
-
-.search span {
-  flex: 1;
-  text-align: start;
-}
-
-.search:hover {
-  border-color: var(--color-field-border);
-  color: var(--color-text);
-}
-
-.search kbd {
-  padding: 0.0625rem 0.3125rem;
-  border: 1px solid var(--line-frame);
-  border-radius: 4px;
-  font-family: inherit;
-  font-size: 0.6875rem;
 }
 
 .account {

@@ -3166,6 +3166,7 @@ export const es = {
   worldShell: {
     worldMenu: 'Menú de {{world}}',
     settings: 'Ajustes del mundo',
+    settingsShort: 'Ajustes',
     export: 'Exportar el mundo',
     search: 'Buscar',
     searchKeys: 'Ctrl K',

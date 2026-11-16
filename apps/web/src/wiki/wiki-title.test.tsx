@@ -180,14 +180,14 @@ describe('el buscador del árbol', () => {
   })
 })
 
-describe('el selector rápido', () => {
-  it('su orden «Página nueva» abre el cuadro de una página nueva', async () => {
+describe('un solo buscador (Enrique, 2026-11-16)', () => {
+  it('Ctrl+K enfoca el de la barra de la izquierda, sin abrir otro cuadro', async () => {
     renderAt(`/mundos/${WORLD.id}/wiki/${ids.port}`)
     await title()
     await userEvent.keyboard('{Control>}k{/Control}')
-    const dialog = await screen.findByRole('dialog', { name: 'Ir a una página' })
-    await userEvent.type(within(dialog).getByRole('combobox'), '>página nueva{Enter}')
-    expect(await screen.findByRole('dialog', { name: 'Página nueva' })).toBeDefined()
+    const filter = await screen.findByRole('searchbox', { name: 'Buscar por nombre o #etiqueta' })
+    await waitFor(() => expect(document.activeElement).toBe(filter))
+    expect(screen.queryByRole('dialog')).toBeNull()
   })
 })
 

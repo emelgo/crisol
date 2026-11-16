@@ -130,14 +130,16 @@ describe('el árbol de la wiki', () => {
     localStorage.setItem('crisol.recorridos.enrique@crisol.test', JSON.stringify({ seen: ['mundo'] }))
     const router = renderAt(`/mundos/${WORLD.id}/wiki/${ids.people}`)
     await item('Personajes')
-    // Sin la barra de la app: la cabecera del mundo, con la llama que vuelve a Mis mundos y el mundo con su menú
+    // Sin la barra de la app: la cabecera del mundo, con la llama que vuelve a Mis mundos, el nombre del mundo (abre sus
+    // ajustes) y, a la derecha, su historial y su papelera; sin buscador (va en la barra) ni Exportar (Enrique, 2026-11-16)
     expect(screen.queryByRole('navigation', { name: 'Secciones' })).toBeNull()
     const banner = within(document.querySelector<HTMLElement>('[data-cabecera-mundo]') as HTMLElement)
     expect(banner.getByRole('link', { name: 'Crisol' }).getAttribute('href')).toBe('/mundos')
-    await userEvent.click(banner.getByRole('button', { name: 'Menú de Eana' }))
-    for (const name of ['Ajustes del mundo', 'Historial', 'Papelera', 'Exportar el mundo']) {
-      expect(screen.getByRole('button', { name })).toBeDefined()
-    }
+    for (const name of [/Ajustes del mundo/, /^Historial$/, /^Papelera$/])
+      expect(banner.getByRole('button', { name })).toBeDefined()
+    expect(banner.queryByRole('button', { name: /Buscar|Exportar/ })).toBeNull()
+    await userEvent.click(banner.getByRole('button', { name: /Ajustes del mundo/ }))
+    expect(await screen.findByRole('dialog', { name: /Eana/ })).toBeDefined()
     await userEvent.keyboard('{Escape}')
     // Las pestañas abiertas, una sola vez (en la cabecera)
     expect(screen.getAllByRole('navigation', { name: 'Páginas abiertas' })).toHaveLength(1)

@@ -1,22 +1,21 @@
 /**
  * La cabecera fina del mundo a pantalla completa (ADR-0027), de cristal: la llama (vuelve a Mis mundos, con la
- * transición de salir), el mundo con su menú (Ajustes del mundo, Historial, Papelera, Exportar), las pestañas abiertas
- * una sola vez, como las de un navegador, el buscador (Ctrl+K) y la cuenta. Al entrar, la tarjeta del mundo se
+ * transición de salir), el nombre del mundo, las pestañas abiertas una sola vez, como las de un navegador, y a la
+ * derecha, junto a la cuenta, los botones del mundo (su historial y su papelera, como en la barra de la
+ * izquierda de fuera; Enrique, 2026-11-16). Pulsar el nombre abre los ajustes del mundo. El buscador va en la barra de la izquierda (Ctrl+K lo enfoca). Al entrar, la tarjeta del mundo se
  * convierte en ella
  */
 import type { Page, World } from '@crisol/contracts'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { ChevronDown, Download, History, Search, Settings, Trash2 } from 'lucide-react'
+import { History, Settings, Trash2 } from 'lucide-react'
 import { type CSSProperties, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AccountMenu } from '../../components/account-menu.tsx'
 import { CrisolMark } from '../../components/brand.tsx'
 import crucible from '../../components/crucible.module.css'
-import { Menu, MenuItem } from '../../components/menu.tsx'
 import { useHistoryAndTrash } from '../../components/world-hooks.ts'
 import { justEnteredFull, LEAVE_WORLD_FULL, leaveWorld, worldTransition } from '../../components/world-transition.ts'
 import { LookDialog, useWorldKind } from '../../routes/world-card.tsx'
-import { useExport } from '../export.tsx'
 import { OpenTabs } from '../navigation.tsx'
 import { FileTabs } from './file-view.tsx'
 import styles from './world-shell.module.css'
@@ -24,14 +23,12 @@ import styles from './world-shell.module.css'
 export function WorldHeader({
   world,
   current,
-  currentFileId,
-  onSearch
+  currentFileId
 }: {
   world: World
   current: Page | undefined
   /** El archivo abierto en el centro, si lo hay */
   currentFileId: string | undefined
-  onSearch: () => void
 }) {
   const { t } = useTranslation()
   // Recién entrado desde su tarjeta: la tarjeta se convierte en ella y la llama se aviva y suelta chispas (como la de
@@ -64,16 +61,12 @@ export function WorldHeader({
       >
         <CrisolMark size={24} />
       </Link>
-      <WorldMenu world={world} />
+      <WorldName world={world} />
       <div className={styles.openTabs}>
         <OpenTabs worldId={world.id} current={current} variant="header" />
         <FileTabs worldId={world.id} currentFileId={currentFileId} />
       </div>
-      <button type="button" className={styles.search} aria-haspopup="dialog" data-tour="buscar" onClick={onSearch}>
-        <Search aria-hidden="true" size={15} />
-        <span>{t('worldShell.search')}</span>
-        <kbd>{t('worldShell.searchKeys')}</kbd>
-      </button>
+      <WorldTools world={world} />
       <nav className={styles.account} aria-label={t('app.accountNav')}>
         <AccountMenu variant="header" />
       </nav>
@@ -81,77 +74,27 @@ export function WorldHeader({
   )
 }
 
-/** El nombre del mundo y, al pulsarlo, su menú: sus ajustes, su historial, su papelera y exportarlo */
-function WorldMenu({ world }: { world: World }) {
+/** El nombre del mundo: pulsarlo abre sus ajustes (con un engranaje pequeño al pasar; Enrique, 2026-11-16) */
+function WorldName({ world }: { world: World }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const kind = useWorldKind()
-  const { prefetchHistory, prefetchTrash, openHistory, openTrash } = useHistoryAndTrash(world.id)
-  const run = useExport()
-  const box = useRef<HTMLDivElement>(null)
+  const button = useRef<HTMLButtonElement>(null)
   const [settings, setSettings] = useState(false)
-  // Lo que se abre encima devuelve el foco al botón del menú
-  const trigger = () => box.current?.querySelector<HTMLButtonElement>('button')
   return (
-    <div ref={box} className={styles.world} data-tour="menu-mundo">
-      <Menu
-        label={t('worldShell.worldMenu', { world: world.name })}
+    <span className={styles.world}>
+      <button
+        ref={button}
+        type="button"
         className={styles.worldButton}
-        icon={
-          <>
-            <span className={styles.worldName}>{world.name}</span>
-            <ChevronDown aria-hidden="true" size={14} />
-          </>
-        }
+        aria-haspopup="dialog"
+        title={t('worldShell.settings')}
+        onClick={() => setSettings(true)}
       >
-        {(close) => (
-          <>
-            <MenuItem
-              aria-haspopup="dialog"
-              onClick={() => {
-                close()
-                setSettings(true)
-              }}
-            >
-              <Settings aria-hidden="true" size={15} />
-              {t('worldShell.settings')}
-            </MenuItem>
-            <MenuItem
-              aria-haspopup="dialog"
-              onPointerEnter={prefetchHistory}
-              onFocus={prefetchHistory}
-              onClick={() => {
-                close()
-                openHistory(trigger())
-              }}
-            >
-              <History aria-hidden="true" size={15} />
-              {t('ribbon.history')}
-            </MenuItem>
-            <MenuItem
-              aria-haspopup="dialog"
-              onPointerEnter={prefetchTrash}
-              onFocus={prefetchTrash}
-              onClick={() => {
-                close()
-                openTrash(trigger())
-              }}
-            >
-              <Trash2 aria-hidden="true" size={15} />
-              {t('ribbon.trash')}
-            </MenuItem>
-            <MenuItem
-              onClick={() => {
-                close()
-                run.mutate({ worldId: world.id })
-              }}
-            >
-              <Download aria-hidden="true" size={15} />
-              {t('worldShell.export')}
-            </MenuItem>
-          </>
-        )}
-      </Menu>
+        <span className={styles.worldName}>{world.name}</span>
+        <Settings aria-hidden="true" size={14} className={styles.worldGear} />
+        <span className={styles.hidden}>{t('worldShell.settings')}</span>
+      </button>
       {settings && (
         <LookDialog
           kind={kind}
@@ -163,10 +106,42 @@ function WorldMenu({ world }: { world: World }) {
           }}
           onClose={(gone) => {
             setSettings(false)
-            if (!gone) trigger()?.focus()
+            if (!gone) button.current?.focus()
           }}
         />
       )}
+    </span>
+  )
+}
+
+/** Los botones del mundo, a la derecha junto a la cuenta: su historial y su papelera (icono y nombre debajo) */
+function WorldTools({ world }: { world: World }) {
+  const { t } = useTranslation()
+  const { prefetchHistory, prefetchTrash, openHistory, openTrash } = useHistoryAndTrash(world.id)
+  return (
+    <div className={styles.worldTools} data-tour="menu-mundo">
+      <button
+        type="button"
+        className={styles.worldTool}
+        aria-haspopup="dialog"
+        onPointerEnter={prefetchHistory}
+        onFocus={prefetchHistory}
+        onClick={(event) => openHistory(event.currentTarget)}
+      >
+        <History aria-hidden="true" size={16} />
+        <span>{t('ribbon.history')}</span>
+      </button>
+      <button
+        type="button"
+        className={styles.worldTool}
+        aria-haspopup="dialog"
+        onPointerEnter={prefetchTrash}
+        onFocus={prefetchTrash}
+        onClick={(event) => openTrash(event.currentTarget)}
+      >
+        <Trash2 aria-hidden="true" size={16} />
+        <span>{t('ribbon.trash')}</span>
+      </button>
     </div>
   )
 }
