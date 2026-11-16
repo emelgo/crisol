@@ -176,6 +176,17 @@ textarea {
   font: inherit;
 }
 
+/*
+ * Las opciones de los desplegables nativos, opacas y con los colores de donde están (en la app, oscuras; Enrique,
+ * 2026-11-16: «salen con las opciones en claro»): el navegador pinta la lista con el fondo del desplegable, que es de
+ * cristal (translúcido), y quedaba sobre blanco
+ */
+option,
+optgroup {
+  background-color: var(--color-raised);
+  color: var(--color-text);
+}
+
 /* El texto de ejemplo de los campos (los buscadores), atenuado pero legible: el gris del navegador no llegaba a 4,5:1 */
 ::placeholder {
   color: var(--color-muted);

@@ -45,7 +45,9 @@ Pedidos al probar el módulo 9 en localhost. Se hacen en la rama `modulo-9/mapas
   al mapa (antes se quedaba en el panel y Supr borraba lo escrito).*
 - [x] **Medir**: su panel sale en otro sitio; ahora tapa la barra de herramientas de abajo. *Hecho: en la página del
   mundo va arriba a la izquierda del mapa (que ahí está libre); con la columna de herramientas de antes, sigue abajo.*
-- [ ] Los **desplegables nativos** (p. ej. «Se ve el nombre») salen con las opciones en claro: en oscuro, como la app.
+- [x] Los **desplegables nativos** (p. ej. «Se ve el nombre») salen con las opciones en claro: en oscuro, como la app.
+  *Hecho, en toda la app: las opciones llevan fondo opaco y texto de la app (el navegador pintaba la lista con el fondo
+  del desplegable, que es de cristal translúcido, sobre blanco). La lista abierta no sale en las capturas: a probar.*
 
 ## Pizarra
 - [ ] Al alejar se **difumina** (cuanto más lejos, más) y al acercar se ven **dientes de sierra** hasta que se para: que se
