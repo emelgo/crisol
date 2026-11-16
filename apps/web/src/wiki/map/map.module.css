@@ -1537,7 +1537,7 @@
   box-shadow: var(--glass-shadow);
 }
 
-.eyeMenu button {
+.eyeItem {
   display: flex;
   align-items: center;
   gap: var(--space-2);
@@ -1553,23 +1553,23 @@
   cursor: pointer;
 }
 
-.eyeMenu button:hover,
-.eyeMenu button:focus-visible {
+.eyeItem:hover,
+.eyeItem:focus-visible {
   background: color-mix(in srgb, var(--color-text) 8%, transparent);
   outline: none;
   box-shadow: inset 3px 0 0 var(--color-accent);
 }
 
-.eyeMenu button > svg {
+.eyeIcon {
   flex: none;
   color: var(--color-muted);
 }
 
-.eyeMenu button[aria-checked="true"] > svg {
+.eyeItem[aria-checked="true"] > .eyeIcon {
   color: var(--color-accent-text);
 }
 
-.eyeMenu button > span:first-of-type {
+.eyeName {
   flex: 1;
 }
 

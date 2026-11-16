@@ -151,13 +151,18 @@ export function ItemEye({
                 key={row.campaignId}
                 type="button"
                 role="menuitemcheckbox"
+                className={styles.eyeItem}
                 aria-checked={row.knows}
                 tabIndex={-1}
                 disabled={mark.isPending}
                 onClick={() => toggle(row)}
               >
-                {row.knows ? <Eye aria-hidden="true" size={15} /> : <EyeOff aria-hidden="true" size={15} />}
-                <span>{row.name}</span>
+                {row.knows ? (
+                  <Eye aria-hidden="true" size={15} className={styles.eyeIcon} />
+                ) : (
+                  <EyeOff aria-hidden="true" size={15} className={styles.eyeIcon} />
+                )}
+                <span className={styles.eyeName}>{row.name}</span>
                 <span className={styles.eyeState}>
                   {state(row)}
                   {row.knows && !row.seesPage && ` · ${t('map.eye.pageUnknown')}`}
