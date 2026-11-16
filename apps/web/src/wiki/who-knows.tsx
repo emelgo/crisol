@@ -102,8 +102,8 @@ function WhoKnows({ page, onClose }: { page: Page; onClose: () => void }) {
 /** Lo que sabe cada campaña de un pin, de algo dibujado o de una pestaña (su ojo) */
 export const itemKnowledgeKey = (worldId: string, targetId: string) => ['pages', worldId, 'item-knowledge', targetId]
 
-/** Lo que se marca que no es una página: un pin, algo dibujado en un mapa o una pestaña */
-export type MarkTarget = { kind: 'pin' | 'element' | 'tab'; targetId: string }
+/** Lo que se marca que no es una página: un pin, algo dibujado en un mapa, una pestaña, un evento o una cronología */
+export type MarkTarget = { kind: 'pin' | 'element' | 'tab' | 'event' | 'chronology'; targetId: string }
 
 /**
  * Marcar o quitar lo que sabe una campaña de una página (también desde el árbol) o, con `target`, de un pin, de algo

@@ -192,7 +192,9 @@ export function fakeChronologies(options: {
           form: dateValueForm(calendar.definition, value),
           ...(entry.eventId ? { eventId: entry.eventId } : {}),
           ...(entry.pageId ? { pageId: entry.pageId } : {}),
+          ...(entry.untitled ? { untitled: true as const } : {}),
           ...(entry.field ? { field: entry.field } : {}),
+          ...(entry.property ? { property: entry.property } : {}),
           ...(entry.end ? { end: entry.end } : {}),
           ...(entry.yearly ? { yearly: true as const } : {}),
           ...(from
@@ -200,7 +202,8 @@ export function fakeChronologies(options: {
                 converted: {
                   calendarId: from.id,
                   name: from.name,
-                  text: formatDateValue(from.definition, entry.original)
+                  text: formatDateValue(from.definition, entry.original),
+                  date: entry.original
                 }
               }
             : {}),

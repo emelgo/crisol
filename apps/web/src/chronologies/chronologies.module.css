@@ -1,0 +1,1754 @@
+/*
+ * Las cronologías (módulo 8; lienzo, pantallas 4 a 8): la sección de Calendarios, la pantalla entera con su marco de
+ * cristal, la píldora y el zoom abajo, y las tres vistas (la lista con su línea, los meses con sus carriles y el
+ * calendario con su rejilla), la tarjeta 6:1 y el cuadro del evento
+ */
+
+/* ---------- La sección en Calendarios ---------- */
+.section {
+  margin-block-start: var(--space-8);
+}
+
+.sectionTitle {
+  margin-block-start: 0;
+}
+
+.cards {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* ---------- La pantalla entera ---------- */
+.screen {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: var(--space-4);
+  block-size: 100dvh;
+  padding: var(--space-5) var(--space-6);
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  min-inline-size: 0;
+}
+
+.head h1 {
+  margin: 0;
+  font-size: clamp(1.75rem, 3vw, 2.5rem);
+}
+
+.headFacts {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+.headTools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-inline-start: auto;
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--color-muted);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.back:hover {
+  color: var(--color-text);
+}
+
+.headButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: 2.25rem;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--line-frame);
+  border-radius: var(--radius-button);
+  background: var(--surface-glass-raised);
+  color: var(--color-text);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.headButton:hover,
+.headButton[aria-expanded="true"] {
+  border-color: var(--color-field-border);
+}
+
+/* El marco de cristal donde va la vista: todo cabe en la ventana; lo que se desplaza va por dentro */
+.frame {
+  composes: frame from "../components/frame.module.css";
+  --frame-fill: var(--surface-page);
+  display: grid;
+  min-block-size: 0;
+  overflow: hidden;
+}
+
+.frame > * {
+  grid-area: 1 / 1;
+  min-block-size: 0;
+  min-inline-size: 0;
+}
+
+/* La lista se desplaza dentro del marco, con sitio abajo para la píldora */
+.listScroll {
+  overflow: auto;
+  padding: var(--space-6) var(--space-6) 6rem;
+  scrollbar-gutter: stable;
+}
+
+/* ---------- La píldora y el zoom, abajo ---------- */
+.dock {
+  position: relative;
+  align-self: end;
+  block-size: 0;
+  pointer-events: none;
+}
+
+.pill,
+.zoom {
+  position: absolute;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  border: 1px solid var(--line-frame);
+  background: var(--frame-sheen), var(--popup-glass);
+  -webkit-backdrop-filter: var(--popup-blur);
+  backdrop-filter: var(--popup-blur);
+  box-shadow: var(--glass-shadow);
+  pointer-events: auto;
+}
+
+.pill {
+  inset-block-end: var(--space-4);
+  inset-inline-start: 50%;
+  border-radius: 12px;
+  transform: translateX(-50%);
+}
+
+.zoom {
+  inset-block-end: var(--space-4);
+  inset-inline-end: var(--space-4);
+  border-radius: 10px;
+}
+
+.pill button,
+.zoom button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: 2.25rem;
+  padding: 0 var(--space-3);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: none;
+  color: var(--color-muted);
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color 150ms ease-out,
+    color 150ms ease-out;
+}
+
+.pill button:hover,
+.zoom button:hover {
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+  color: var(--color-text);
+}
+
+.pill button[aria-pressed="true"],
+.zoom button[aria-pressed="true"] {
+  border-color: color-mix(in srgb, var(--color-accent-text) 40%, transparent);
+  background: color-mix(in srgb, var(--color-accent) 22%, transparent);
+  color: var(--color-text);
+}
+
+/* «+», de cristal rojo, como el botón principal */
+.pill .add {
+  justify-content: center;
+  inline-size: 2.25rem;
+  padding: 0;
+  background: var(--accent-glass);
+  color: var(--color-on-accent);
+}
+
+.pill .add:hover {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.pillSep {
+  inline-size: 1px;
+  block-size: 1.5rem;
+  margin: 0 3px;
+  background: var(--line-frame);
+}
+
+/* ---------- Vacía: una sola pieza discontinua ---------- */
+.emptyWrap {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: var(--space-3);
+  padding: var(--space-6);
+}
+
+.empty {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: 4rem;
+  padding: 0 var(--space-8);
+  border: 1.5px dashed color-mix(in srgb, var(--color-text) 30%, transparent);
+  border-radius: var(--radius-frame);
+  background: none;
+  color: var(--color-muted);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    border-color 150ms ease-out,
+    color 150ms ease-out;
+}
+
+.empty:hover {
+  border-color: var(--color-accent-text);
+  color: var(--color-text);
+}
+
+.emptyHint,
+.emptyPlayer {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+.emptyPlayer {
+  align-self: center;
+  justify-self: center;
+  padding: var(--space-6);
+}
+
+/* ---------- La lista ---------- */
+.list {
+  max-inline-size: 72rem;
+  margin: 0 auto;
+  padding: 0;
+  list-style: none;
+}
+
+.listRow {
+  display: grid;
+  grid-template-columns: 10rem 2rem minmax(0, 1fr);
+  align-items: start;
+  padding-block-end: var(--space-5);
+  /* Lo que no se ve no se pinta: miles de entradas se desplazan sin tirones */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 10rem;
+}
+
+.when {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+  padding-block-start: 0.6rem;
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.when b {
+  font-size: 0.9375rem;
+}
+
+.when small {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+}
+
+/* La raya y su marca: un rombo (evento) o un círculo (página), del color de la entrada */
+.rail {
+  position: relative;
+  align-self: stretch;
+  margin-block-end: calc(-1 * var(--space-5));
+}
+
+.rail::before {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 50%;
+  inline-size: 1px;
+  background: var(--line-frame);
+}
+
+.listRow:first-child .rail::before {
+  inset-block-start: 1rem;
+}
+
+.listRow:last-of-type .rail::before {
+  inset-block-end: auto;
+  block-size: 1rem;
+}
+
+.marker {
+  position: absolute;
+  inset-block-start: 0.8rem;
+  inset-inline-start: 50%;
+  inline-size: 0.7rem;
+  block-size: 0.7rem;
+  border: 1px solid color-mix(in srgb, black 40%, var(--entry-color));
+  background: var(--entry-color);
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.marker[data-kind="page"] {
+  border: 2px solid var(--entry-color);
+  border-radius: 50%;
+  background: var(--color-bg);
+  transform: translateX(-50%);
+}
+
+.sentinel {
+  block-size: 1px;
+}
+
+/* ---------- La tarjeta 6:1 ---------- */
+.eventCard {
+  position: relative;
+  display: grid;
+  /* La misma franja en la lista, el detalle del día y el cuadro del evento (el recorte de la imagen, idéntico) */
+  aspect-ratio: 6 / 1;
+  min-inline-size: 0;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--entry-color) 45%, var(--line-frame));
+  border-radius: var(--radius-frame);
+  isolation: isolate;
+}
+
+/* Estrecha (el móvil, el detalle del día): más alta, para que quepa lo suyo */
+.eventCard[data-compact] {
+  aspect-ratio: auto;
+  min-block-size: 7.5rem;
+}
+
+.eventCard[data-hidden] {
+  border-style: dashed;
+}
+
+/* El fondo: su color o su imagen, y el degradado oscuro abajo para leer */
+.cardBand {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--entry-color) 55%, transparent), transparent 75%),
+    color-mix(in srgb, var(--entry-color) 22%, var(--color-surface));
+}
+
+.cardBand::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgb(0 0 0 / 0.05) 20%, rgb(0 0 0 / 0.72));
+}
+
+.cardImage {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+}
+
+.cardBody {
+  display: grid;
+  align-content: end;
+  gap: 2px;
+  min-inline-size: 0;
+  padding: var(--space-3) var(--space-4);
+  color: #f3f1ee;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.6);
+}
+
+.cardTop {
+  position: absolute;
+  inset-block-start: var(--space-2);
+  inset-inline: var(--space-3) var(--space-2);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.cardPill {
+  --pill-color: var(--entry-color);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 0.55);
+  color: #f3f1ee;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-shadow: none;
+}
+
+.pillDot {
+  inline-size: 0.5rem;
+  block-size: 0.5rem;
+  border-radius: 50%;
+  background: var(--pill-color);
+}
+
+.cardActions {
+  margin-inline-start: auto;
+}
+
+.cardMenu {
+  display: grid;
+  place-items: center;
+  inline-size: 2rem;
+  block-size: 2rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgb(0 0 0 / 0.45);
+  color: #f3f1ee;
+  cursor: pointer;
+}
+
+.cardMenu:hover,
+.cardMenu[aria-expanded="true"] {
+  background: rgb(0 0 0 / 0.7);
+}
+
+.cardTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-inline-size: 0;
+  margin: 0;
+  color: inherit;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.25;
+  text-transform: none;
+}
+
+.cardTitleButton,
+.cardTitleLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-inline-size: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.cardTitleButton:hover,
+.cardTitleLink:hover {
+  text-decoration: underline;
+}
+
+.cardTitleButton:focus-visible,
+.cardTitleLink:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.cardIcon {
+  flex: none;
+}
+
+.cardField {
+  color: rgb(243 241 238 / 0.8);
+  font-weight: 600;
+}
+
+.cardDate {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.cardYearly {
+  flex: none;
+}
+
+.cardConverted {
+  color: rgb(243 241 238 / 0.75);
+}
+
+.cardDescription {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.eventCard[data-compact] .cardDescription {
+  -webkit-line-clamp: 1;
+}
+
+.cardChip {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-block-start: 2px;
+  padding: 1px 8px;
+  border-radius: 4px;
+  background: rgb(0 0 0 / 0.5);
+  color: #f3f1ee;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-decoration: none;
+  text-shadow: none;
+}
+
+.cardChip:hover {
+  background: rgb(0 0 0 / 0.75);
+}
+
+/* ---------- Meses ---------- */
+.months {
+  overflow: auto;
+  overscroll-behavior: contain;
+  cursor: grab;
+  touch-action: pan-x pan-y;
+}
+
+.months:active {
+  cursor: grabbing;
+}
+
+.monthsInner {
+  position: relative;
+  min-block-size: 100%;
+  padding-block-end: 6rem;
+}
+
+.timeHead {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 2;
+  display: flex;
+  background: var(--frame-sheen), var(--popup-glass);
+  -webkit-backdrop-filter: var(--popup-blur);
+  backdrop-filter: var(--popup-blur);
+  border-block-end: 1px solid var(--line-frame);
+}
+
+.timeCorner {
+  position: sticky;
+  inset-inline-start: 0;
+  z-index: 1;
+  display: flex;
+  align-items: end;
+  flex: none;
+  inline-size: var(--lane-label);
+  padding: var(--space-2) var(--space-3);
+  border-inline-end: 1px solid var(--line-frame);
+  background: var(--popup-glass);
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.timeScale {
+  display: grid;
+}
+
+.bands,
+.columns,
+.gridLines {
+  display: flex;
+}
+
+.band {
+  flex: none;
+  padding: 4px 0;
+  border-inline-start: 1px solid var(--line-soft);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+/* El nombre de la banda se queda a la vista mientras se desplaza */
+.bandLabel {
+  position: sticky;
+  inset-inline-start: calc(var(--lane-label) + var(--space-2));
+  padding-inline: var(--space-2);
+  white-space: nowrap;
+}
+
+.column {
+  flex: none;
+  overflow: hidden;
+  padding: 4px 0;
+  border-inline-start: 1px solid var(--line-soft);
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.column[data-festival] {
+  background: color-mix(in srgb, var(--column-color, var(--color-warning)) 70%, transparent);
+  color: #1a1611;
+  font-weight: 700;
+}
+
+.lanes {
+  position: relative;
+}
+
+/* Las rayas de las columnas, detrás de los carriles (las festividades, rayadas) */
+.gridLines {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: var(--lane-label);
+  pointer-events: none;
+}
+
+.gridLines > span {
+  flex: none;
+  border-inline-start: 1px solid var(--line-soft);
+}
+
+.gridLines > span[data-festival] {
+  background: repeating-linear-gradient(135deg, rgb(255 255 255 / 0.04) 0 4px, transparent 4px 8px);
+}
+
+.laneList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lane {
+  position: relative;
+  display: flex;
+  border-block-end: 1px solid var(--line-soft);
+}
+
+.laneName {
+  position: sticky;
+  inset-inline-start: 0;
+  z-index: 1;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  flex: none;
+  inline-size: var(--lane-label);
+  padding: var(--space-2) var(--space-2);
+  border-inline-end: 1px solid var(--line-frame);
+  background: var(--popup-glass);
+}
+
+.laneFold {
+  display: grid;
+  place-items: center;
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.laneFold:hover {
+  color: var(--color-text);
+}
+
+.laneDot {
+  flex: none;
+  inline-size: 0.6rem;
+  block-size: 0.6rem;
+  margin-block-start: 0.45rem;
+  border-radius: 50%;
+  background: var(--lane-color);
+}
+
+.laneDot[data-kind="pages"] {
+  border: 2px solid var(--color-link);
+  background: none;
+}
+
+.laneTitle {
+  display: grid;
+  min-inline-size: 0;
+  padding-block-start: 0.2rem;
+  overflow-wrap: anywhere;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.laneTitleButton {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: grab;
+}
+
+.laneTitleButton:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.laneTitle small {
+  color: var(--color-muted);
+  font-size: 0.6875rem;
+  font-weight: 500;
+}
+
+.laneInput {
+  min-inline-size: 0;
+  inline-size: 100%;
+  min-block-size: 1.9rem;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--color-field-border);
+  border-radius: 4px;
+  background: var(--field-fill);
+  color: var(--color-text);
+}
+
+.laneTrack {
+  position: relative;
+  flex: 1 0 auto;
+}
+
+.newGroup {
+  position: sticky;
+  inset-inline-start: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  inline-size: var(--lane-label);
+  min-block-size: 2.5rem;
+  padding: 0 var(--space-3);
+  border: 0;
+  background: none;
+  color: var(--color-muted);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.newGroup:hover {
+  color: var(--color-text);
+}
+
+.barText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* El texto de una barra corta sale de ella (no se corta en dos letras) */
+.bar:not([data-point]) .barText {
+  overflow: visible;
+}
+
+/* Un periodo, una barra de su color; un día, un punto con su título */
+.bar {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  block-size: 1.6rem;
+  max-inline-size: none;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--entry-color) 75%, black 10%);
+  color: #f3f1ee;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  touch-action: none;
+}
+
+.bar[data-point] {
+  padding: 0 4px;
+  background: none;
+  color: var(--color-text);
+}
+
+.bar[data-point]:hover .barText {
+  text-decoration: underline;
+}
+
+.bar[data-hidden] {
+  outline: 1px dashed color-mix(in srgb, var(--color-text) 50%, transparent);
+  outline-offset: 1px;
+  opacity: 0.8;
+}
+
+.bar[data-dragging] {
+  z-index: 2;
+  box-shadow: var(--glass-lift);
+}
+
+.bar:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.barPoint {
+  flex: none;
+  inline-size: 0.6rem;
+  block-size: 0.6rem;
+  border: 1px solid color-mix(in srgb, black 40%, var(--entry-color));
+  background: var(--entry-color);
+  transform: rotate(45deg);
+}
+
+.barPoint[data-kind="page"] {
+  border: 2px solid var(--entry-color);
+  border-radius: 50%;
+  background: var(--color-bg);
+  transform: none;
+}
+
+/* ---------- Calendario ---------- */
+.calendar {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: var(--space-3);
+  overflow: auto;
+  padding: var(--space-5) var(--space-6) 6rem;
+}
+
+.calendarHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.calendarTitle {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  text-transform: uppercase;
+}
+
+.calendarFacts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+.seasonDot {
+  display: inline-block;
+  inline-size: 0.55rem;
+  block-size: 0.55rem;
+  margin-inline-end: 6px;
+  border-radius: 50%;
+  background: var(--season-color);
+}
+
+.calendarArrows {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.calendarArrows button,
+.iconButton {
+  display: grid;
+  place-items: center;
+  inline-size: 2.25rem;
+  block-size: 2.25rem;
+  padding: 0;
+  border: 1px solid var(--line-frame);
+  border-radius: var(--radius-button);
+  background: var(--surface-glass-raised);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.calendarArrows button:hover,
+.iconButton:hover {
+  border-color: var(--color-field-border);
+}
+
+/* Las fichas: lo de varios días, seguido de un día a otro */
+.chip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-inline-size: 0;
+  block-size: 1.3rem;
+  margin-inline: 6px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--entry-color) 70%, black 10%);
+  color: #f3f1ee;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-align: start;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.allMonth {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.allMonthLabel {
+  flex: none;
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+}
+
+.allMonthChips {
+  display: flex;
+  flex-wrap: wrap;
+  flex: 1;
+  gap: 4px;
+}
+
+.allMonthChips .chip {
+  flex: 1 1 12rem;
+}
+
+.grid {
+  display: grid;
+  border: 1px solid var(--line-frame);
+  border-radius: var(--radius-frame);
+  overflow: hidden;
+}
+
+.weekdays,
+.week {
+  display: grid;
+  grid-template-columns: repeat(var(--columns), minmax(0, 1fr));
+}
+
+.weekdays span {
+  padding: var(--space-2) var(--space-3);
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.day,
+.blank {
+  min-block-size: 6rem;
+  border-block-start: 1px solid var(--line-soft);
+  border-inline-start: 1px solid var(--line-soft);
+}
+
+.week > :first-child {
+  border-inline-start: 0;
+}
+
+.blank {
+  background: repeating-linear-gradient(135deg, rgb(255 255 255 / 0.025) 0 6px, transparent 6px 12px);
+}
+
+.day {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-inline-size: 0;
+  padding: 6px 0 6px;
+  cursor: pointer;
+  transition: background-color 150ms ease-out;
+}
+
+.day:hover {
+  background: var(--row-hover);
+}
+
+.day:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
+}
+
+.day[data-selected] {
+  box-shadow: inset 0 0 0 2px var(--color-accent-text);
+}
+
+.day[data-over] {
+  background: color-mix(in srgb, var(--color-accent) 18%, transparent);
+}
+
+.dayHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-inline: 8px;
+}
+
+.dayNumber {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.moons {
+  display: inline-flex;
+  gap: 3px;
+}
+
+/* La luna llena, un disco de su color; la nueva, solo el borde */
+.moon {
+  inline-size: 0.6rem;
+  block-size: 0.6rem;
+  border-radius: 50%;
+  background: var(--moon-color);
+}
+
+.moon[data-phase="new"] {
+  border: 1.5px solid var(--moon-color);
+  background: none;
+}
+
+.chip[data-kind="page"] {
+  border: 1px solid var(--entry-color);
+  background: color-mix(in srgb, var(--entry-color) 18%, transparent);
+  color: var(--color-text);
+}
+
+.chip[data-continues] {
+  margin-inline-end: 0;
+  border-start-end-radius: 0;
+  border-end-end-radius: 0;
+}
+
+.chip[data-continued] {
+  margin-inline-start: 0;
+  border-start-start-radius: 0;
+  border-end-start-radius: 0;
+}
+
+.chip[data-hidden] {
+  outline: 1px dashed color-mix(in srgb, var(--color-text) 50%, transparent);
+  outline-offset: -1px;
+}
+
+.chip[draggable="true"] {
+  cursor: grab;
+}
+
+.chip:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 1px;
+}
+
+.chipText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chipGap {
+  block-size: 1.3rem;
+}
+
+.more {
+  align-self: flex-start;
+  margin-inline: 6px;
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.more:hover {
+  color: var(--color-text);
+}
+
+.dots {
+  display: flex;
+  justify-content: center;
+  gap: 3px;
+}
+
+.dot {
+  inline-size: 0.35rem;
+  block-size: 0.35rem;
+  border-radius: 50%;
+  background: var(--entry-color);
+}
+
+/* Lo de fuera de la semana, debajo */
+.outside {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.outsideMonth {
+  display: grid;
+  grid-template-columns: minmax(10rem, 14rem) minmax(0, 1fr);
+  align-items: stretch;
+  gap: var(--space-2);
+}
+
+.outsideName {
+  display: grid;
+  align-content: center;
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid color-mix(in srgb, var(--color-warning) 50%, var(--line-frame));
+  border-radius: var(--radius-button);
+  color: var(--color-warning);
+}
+
+.outsideName span {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+}
+
+.outsideDays {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  border: 1px solid var(--line-frame);
+  border-radius: var(--radius-button);
+  overflow: hidden;
+}
+
+.outsideDays .day {
+  min-block-size: 3.5rem;
+  border-block-start: 0;
+}
+
+.outsideDays .day:first-child {
+  border-inline-start: 0;
+}
+
+/* El detalle de un día: encima del mes, a la derecha; en el móvil, una hoja que sube */
+.dayDetail {
+  position: absolute;
+  inset-block-start: 5.5rem;
+  inset-inline-end: var(--space-6);
+  z-index: 3;
+  display: grid;
+  gap: var(--space-3);
+  inline-size: min(26rem, calc(100% - 2 * var(--space-6)));
+  max-block-size: calc(100% - 7rem);
+  overflow: auto;
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--radius-frame);
+  background: var(--frame-sheen), var(--popup-glass);
+  -webkit-backdrop-filter: var(--popup-blur);
+  backdrop-filter: var(--popup-blur);
+  box-shadow: var(--glass-lift);
+}
+
+.dayDetailHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.dayDetailHead h3 {
+  margin: 0;
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: 1.125rem;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.dayFacts {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+.dayMoons {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dayMoons li {
+  display: grid;
+  grid-template-columns: 1rem 5rem 1fr;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.875rem;
+}
+
+.dayMoons span:last-child {
+  color: var(--color-muted);
+}
+
+/* El disco de la luna con su parte iluminada */
+.moonDisc {
+  inline-size: 0.9rem;
+  block-size: 0.9rem;
+  border: 1px solid var(--moon-color);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--moon-color) calc(var(--lit) * 100%), transparent);
+}
+
+.dayEntries {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.dayEmpty {
+  margin: 0;
+  color: var(--color-muted);
+}
+
+.dayAdd {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: 2.25rem;
+  padding: 0 var(--space-3);
+  border: 1px dashed color-mix(in srgb, var(--color-text) 30%, transparent);
+  border-radius: var(--radius-button);
+  background: none;
+  color: var(--color-muted);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.dayAdd:hover {
+  border-color: var(--color-accent-text);
+  color: var(--color-text);
+}
+
+/* ---------- Los ajustes y «Ir a…» ---------- */
+.settings,
+.goTo {
+  position: fixed;
+  z-index: 50;
+  display: grid;
+  gap: var(--space-3);
+  inline-size: min(24rem, calc(100vw - 2rem));
+  max-block-size: min(36rem, 80dvh);
+  overflow: auto;
+  padding: var(--space-4);
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--radius-frame);
+  background: var(--frame-sheen), var(--popup-glass);
+  -webkit-backdrop-filter: var(--popup-blur);
+  backdrop-filter: var(--popup-blur);
+  box-shadow: var(--glass-lift);
+  color: var(--color-text);
+}
+
+.settingsSection {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.settingsSection legend,
+.settingsSection > label {
+  margin-block-end: var(--space-1);
+  padding: 0;
+  font-weight: 700;
+}
+
+.settingsSection input:not([type="checkbox"]),
+.settingsSection select,
+.goTo input {
+  min-block-size: 2.25rem;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--color-field-border);
+  border-radius: 4px;
+  background: var(--field-fill);
+  color: var(--color-text);
+}
+
+.settingsNote,
+.settingsHint {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: 2rem;
+}
+
+.choiceList {
+  display: grid;
+  max-block-size: 10rem;
+  overflow: auto;
+  padding-inline-start: var(--space-3);
+  border-inline-start: 1px solid var(--line-soft);
+}
+
+.groupList {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.groupList li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 7.5rem 2.25rem;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.colorSelect {
+  box-shadow: inset 6px 0 0 var(--swatch);
+}
+
+.goToList {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.goToList button {
+  display: grid;
+  inline-size: 100%;
+  padding: var(--space-2);
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--color-text);
+  text-align: start;
+  cursor: pointer;
+}
+
+.goToList button:hover,
+.goToList button:focus-visible {
+  background: var(--row-hover);
+  outline: none;
+}
+
+.goToList small {
+  color: var(--color-muted);
+}
+
+/* ---------- El cuadro del evento ---------- */
+/* Color o imagen: dos pastillas; la radio, invisible pero con el teclado */
+.styleToggle {
+  display: inline-flex;
+  justify-self: start;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--line-frame);
+  border-radius: var(--radius-button);
+  background: var(--field-fill);
+}
+
+.styleToggle label {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-block-size: 2rem;
+  padding: 0 var(--space-3);
+  border-radius: 4px;
+  color: var(--color-muted);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.styleToggle input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.styleToggle label:has(input:checked) {
+  background: var(--surface-glass-raised);
+  color: var(--color-text);
+}
+
+.styleToggle label:has(input:focus-visible) {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 1px;
+}
+
+/* El selector de fecha, con aspecto de campo */
+.dateBox {
+  display: flex;
+  align-items: center;
+  min-block-size: 2.75rem;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--color-field-border);
+  border-radius: 4px;
+  background: var(--field-fill);
+}
+
+.dateBox > button {
+  flex: 1;
+  text-align: start;
+}
+
+.eventDialog {
+  inline-size: min(46rem, calc(100vw - 2rem));
+}
+
+.preview {
+  pointer-events: none;
+}
+
+.dialogGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3) var(--space-5);
+  align-items: start;
+}
+
+.wide {
+  grid-column: 1 / -1;
+}
+
+.fieldLabel {
+  font-weight: 600;
+}
+
+.styleField {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.swatch {
+  position: relative;
+  display: grid;
+  place-items: center;
+  inline-size: 1.9rem;
+  block-size: 1.9rem;
+  border: 1px solid var(--line-frame);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.swatch input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.swatch > span:not(.srOnly) {
+  inline-size: 1.35rem;
+  block-size: 1.35rem;
+  border-radius: 50%;
+}
+
+.swatch:has(input:checked) {
+  border-color: var(--color-text);
+  box-shadow: 0 0 0 1px var(--color-text);
+}
+
+.swatch:has(input:focus-visible) {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.swatchNone {
+  background: repeating-linear-gradient(135deg, var(--color-muted) 0 2px, transparent 2px 5px);
+}
+
+.imageRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.imageChoice {
+  display: grid;
+  place-items: center;
+  inline-size: 4.5rem;
+  block-size: 2.25rem;
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid var(--color-field-border);
+  border-radius: 4px;
+  background: var(--field-fill);
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.imageChoice img {
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+}
+
+.focal {
+  flex: 1;
+}
+
+.focal input {
+  inline-size: 100%;
+  accent-color: var(--color-accent-text);
+}
+
+.iconGroup {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.iconGroup select {
+  flex: 1;
+  min-inline-size: 0;
+}
+
+.newPage {
+  display: grid;
+  gap: var(--space-1);
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+}
+
+.newPage label {
+  display: grid;
+  gap: 2px;
+}
+
+.hiddenSwitch {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: 2.75rem;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--line-frame);
+  border-radius: var(--radius-button);
+  background: var(--surface-glass);
+  cursor: pointer;
+}
+
+.hiddenSwitch input {
+  inline-size: 1.1rem;
+  block-size: 1.1rem;
+  accent-color: var(--color-accent-text);
+}
+
+.eye {
+  display: flex;
+  align-items: center;
+}
+
+.danger {
+  color: var(--color-danger);
+}
+
+.srOnly {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* En el móvil, las vistas arriba (abajo en el centro va la llama) */
+.segmented {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--line-frame);
+  border-radius: var(--radius-button);
+  background: var(--surface-glass);
+}
+
+.segmented button {
+  min-block-size: 2.5rem;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--color-muted);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.segmented button[aria-pressed="true"] {
+  background: var(--surface-glass-raised);
+  color: var(--color-text);
+}
+
+/* ---------- El móvil (la jugadora) ---------- */
+@media (max-width: 639px) {
+  .screen {
+    grid-template-rows: auto auto minmax(0, 1fr);
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4) 0;
+  }
+
+  /* Arriba a la derecha va el «?» del tutorial */
+  .head {
+    padding-inline-end: 2.75rem;
+  }
+
+  .head h1 {
+    flex-basis: 100%;
+    order: 1;
+    font-size: 1.5rem;
+  }
+
+  .headFacts {
+    order: 2;
+  }
+
+  .headTools {
+    order: 3;
+  }
+
+  .listScroll {
+    padding: var(--space-4) var(--space-3) 7rem;
+  }
+
+  /* Una columna: la fecha encima de la tarjeta, con su marca */
+  .listRow {
+    grid-template-columns: 1.25rem minmax(0, 1fr);
+    grid-template-areas:
+      "rail when"
+      "rail card";
+    row-gap: var(--space-1);
+  }
+
+  .listRow > .when {
+    grid-area: when;
+    display: flex;
+    justify-items: start;
+    align-items: baseline;
+    gap: var(--space-2);
+    padding: 0;
+    text-align: start;
+  }
+
+  .listRow > .rail {
+    grid-area: rail;
+  }
+
+  .listRow > article {
+    grid-area: card;
+  }
+
+  .marker {
+    inset-block-start: 0.35rem;
+  }
+
+  .calendar {
+    padding: var(--space-3) var(--space-3) 7rem;
+  }
+
+  .day,
+  .blank {
+    min-block-size: 3.25rem;
+  }
+
+  .weekdays span {
+    padding: var(--space-1);
+    text-align: center;
+  }
+
+  .dayHead {
+    justify-content: center;
+    gap: 3px;
+  }
+
+  .outsideMonth {
+    grid-template-columns: 1fr;
+  }
+
+  /* El día elegido, en una hoja que sube desde abajo */
+  .dayDetail {
+    position: fixed;
+    inset: auto 0 0;
+    inline-size: auto;
+    max-block-size: 70dvh;
+    border-end-start-radius: 0;
+    border-end-end-radius: 0;
+    animation: sube 220ms ease-out;
+  }
+
+  .dialogGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@keyframes sube {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dayDetail {
+    animation: none;
+  }
+}

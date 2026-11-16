@@ -204,14 +204,17 @@ function entriesOf(data: WorldData, chronology: ChronologyRow) {
     // Solo lo que tiene (son miles)
     if (entry.eventId) out.eventId = entry.eventId
     if (entry.pageId) out.pageId = entry.pageId
+    if (entry.untitled) out.untitled = true
     if (entry.field) out.field = entry.field
+    if (entry.property) out.property = entry.property
     if (entry.end) out.end = entry.end
     if (entry.yearly) out.yearly = true
     if (entry.converted && from)
       out.converted = {
         calendarId: from.id,
         name: names.get(from.id) ?? '',
-        text: formatDateValue(from.definition, entry.original)
+        text: formatDateValue(from.definition, entry.original),
+        date: entry.original
       }
     if (entry.color) out.color = entry.color
     if (entry.image) out.image = entry.image
@@ -361,10 +364,12 @@ async function readEvent(
   if (input.date !== undefined) patch.date = dateFrom(rows, input.date, input.calendar, label)
   if (input.color !== undefined) patch.color = input.color
   if (input.image !== undefined) {
-    // Una imagen de los archivos de este mundo
+    // Una imagen de este mundo o una común de su organización (como las portadas)
     if (input.image) {
       const file = await filesRepo.findFile(ctx.db, input.image.fileId)
-      if (!file || file.worldId !== wiki.worldId || file.kind !== 'image')
+      const usable =
+        file && (file.worldId ? file.worldId === wiki.worldId : file.organizationId === wiki.organizationId)
+      if (!file || !usable || file.kind !== 'image')
         throw new InvalidRequestError('BAD_IMAGE', `${label}la imagen tiene que ser de los archivos del mundo`)
     }
     patch.image = input.image

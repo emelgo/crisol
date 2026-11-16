@@ -83,7 +83,9 @@ export const chronologyEntry = z.object({
   eventId: z.string().optional(),
   pageId: z.string().optional().describe('La página de la fecha o la enlazada al evento'),
   title: z.string(),
+  untitled: z.literal(true).optional().describe('Un evento sin título propio: lleva el de su página'),
   field: z.string().optional().describe('El nombre del campo, si la página tiene más de una fecha'),
+  property: z.string().optional().describe('En una página con fecha, el nombre de su propiedad'),
   start: entryDate,
   end: entryDate.optional(),
   yearly: z.literal(true).optional(),
@@ -92,9 +94,9 @@ export const chronologyEntry = z.object({
   text: z.string().describe('«18 de Siega de 1250 RC»'),
   form: z.string().describe('La forma de la IA: 1250-Siega-18'),
   converted: z
-    .object({ calendarId: z.string(), name: z.string(), text: z.string() })
+    .object({ calendarId: z.string(), name: z.string(), text: z.string(), date: dateValue })
     .optional()
-    .describe('Si viene de otro calendario: cuál y cómo se lee allí'),
+    .describe('Si viene de otro calendario: cuál, cómo se lee allí y la fecha tal como se guardó'),
   color: z.string().optional(),
   image: z.object({ fileId: z.string(), x: z.number(), y: z.number() }).optional(),
   cover: z.object({ fileId: z.string(), x: z.number(), y: z.number(), zoom: z.number().optional() }).optional(),

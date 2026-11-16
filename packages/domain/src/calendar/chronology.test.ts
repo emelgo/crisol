@@ -6,6 +6,7 @@ import {
   DEFAULT_CHRONOLOGY_FILTER,
   entryOccurrences,
   packRows,
+  shiftDate,
   timeBands,
   timeColumns
 } from './chronology.ts'
@@ -128,7 +129,8 @@ describe('las entradas de una cronología', () => {
       ]
     })
     expect(entries.map((e) => e.title)).toEqual(['Ilsa de Varn', 'Propio'])
-    expect(entries[0]?.icon).toBe('🌹')
+    expect(entries[0]?.untitled).toBe(true)
+    expect(entries[1]?.untitled).toBe(false)
     expect(entries[0]?.page).toEqual({ id: 'p1', title: 'Ilsa de Varn', icon: '🌹' })
   })
 
@@ -279,5 +281,25 @@ describe('repartir en filas', () => {
         { start: 13, end: 14 }
       ])
     ).toEqual([0, 1, 0, 1])
+  })
+})
+
+describe('mover una fecha al arrastrarla', () => {
+  it('por días, por meses (una de mes, a otro mes) o por años, con su fin; lo que no tiene esa precisión, no', () => {
+    const day = { start: { year: 1250, month: 'siega', day: 27 }, end: { year: 1250, month: 'trilla', day: 2 } }
+    expect(shiftDate(EANA, day, 'days', 3)).toEqual({
+      start: { year: 1250, month: 'trilla', day: 2 },
+      end: { year: 1250, month: 'trilla', day: 5 }
+    })
+    expect(shiftDate(EANA, { start: { year: 1250, month: 'nochelarga' } }, 'months', 2)).toEqual({
+      start: { year: 1251, month: 'cierzo' }
+    })
+    expect(shiftDate(EANA, { start: { year: 1250 }, yearly: true }, 'years', -10)).toEqual({
+      start: { year: 1240 },
+      yearly: true
+    })
+    expect(shiftDate(EANA, { start: { year: 1250, month: 'siega' } }, 'days', 1)).toBeNull()
+    expect(shiftDate(EANA, { start: { year: 1250 } }, 'months', 1)).toBeNull()
+    expect(shiftDate(EANA, day, 'days', 0)).toBeNull()
   })
 })

@@ -7,6 +7,8 @@ import { CompendiumScreen } from './campaign/compendium.tsx'
 import { WorldPagesHome, WorldPageView } from './campaign/world-pages.tsx'
 import { CharacterScreen } from './characters/character.tsx'
 import { CharactersScreen } from './characters/characters.tsx'
+import { PlayerChronologies, PlayerChronology } from './chronologies/player.tsx'
+import { ChronologyScreen } from './chronologies/screen.tsx'
 import { InPlayScreen } from './creatures/in-play.tsx'
 import { LibraryScreen } from './library/library.tsx'
 import { NotesScreen } from './notes/screen.tsx'
@@ -228,6 +230,23 @@ const calendarRoute = createRoute({
   path: '/mundos/$worldId/calendarios/$calendarId',
   component: CalendarEditorScreen
 })
+// Una cronología del mundo (módulo 8), a pantalla entera dentro de Calendarios
+const chronologyRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/mundos/$worldId/calendarios/cronologias/$chronologyId',
+  component: ChronologyScreen
+})
+// Las cronologías que conoce la campaña de quien juega (ADR-0017), y una de ellas
+const playerChronologiesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/mundos/$worldId/campanas/$campaignId/cronologias',
+  component: PlayerChronologies
+})
+const playerChronologyRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/mundos/$worldId/campanas/$campaignId/cronologias/$chronologyId',
+  component: PlayerChronology
+})
 const searchRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/mundos/$worldId/buscar',
@@ -342,6 +361,9 @@ const routeTree = rootRoute.addChildren([
   filesRoute,
   calendarsRoute,
   calendarRoute,
+  chronologyRoute,
+  playerChronologiesRoute,
+  playerChronologyRoute,
   searchRoute,
   printRoute,
   worldHistoryRoute,

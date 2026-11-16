@@ -6,7 +6,17 @@
  * Lo que ve cada uno (lo oculto, las páginas que no conoce) lo decide quien llama: aquí llega ya filtrado
  */
 import { offsetToPrimary, type WorldCalendar } from './convert.ts'
-import { CalendarDateError, dateFromDay, dateSpan, eraOfDay, occurrences, yearStart } from './dates.ts'
+import {
+  addDays,
+  addMonths,
+  CalendarDateError,
+  clampDate,
+  dateFromDay,
+  dateSpan,
+  eraOfDay,
+  occurrences,
+  yearStart
+} from './dates.ts'
 import type { CalendarDefinition, WorldDate } from './definition.ts'
 import { formatDate, formatYear } from './format.ts'
 import type { DateValue } from './values.ts'
@@ -74,8 +84,12 @@ export interface ChronologyEntry {
   /** La página de la fecha, o la enlazada al evento (si la conoce quien lee) */
   pageId: string | null
   title: string
+  /** Un evento sin título propio (lleva el de su página) */
+  untitled: boolean
   /** El nombre del campo, si la página tiene más de una fecha */
   field: string | null
+  /** En una página con fecha, el nombre de su propiedad (para cambiarla) */
+  property: string | null
   /** En el calendario de la cronología */
   start: WorldDate
   end: WorldDate | null
@@ -204,13 +218,15 @@ export function chronologyEntries(input: {
       eventId: event.id,
       pageId: event.page?.id ?? null,
       title,
+      untitled: !event.title.trim(),
       field: null,
+      property: null,
       ...placed,
       original: event.date,
       color: event.color,
       image: event.image,
       cover: null,
-      icon: event.icon ?? (event.title.trim() ? null : (event.page?.icon ?? null)),
+      icon: event.icon,
       description: event.description,
       groupId: event.groupId,
       page: event.page,
@@ -232,7 +248,9 @@ export function chronologyEntries(input: {
         eventId: null,
         pageId: page.id,
         title: page.title,
+        untitled: false,
         field: many ? date.name : null,
+        property: date.name,
         ...placed,
         original: date.value,
         color: null,
@@ -261,13 +279,19 @@ export interface Occurrence {
 /** Las veces que cae una entrada entre esos días: una por año si se repite; si no, la suya si los toca */
 export function entryOccurrences(
   def: CalendarDefinition,
-  entry: Pick<ChronologyEntry, 'start' | 'end' | 'yearly' | 'startDay' | 'endDay'>,
+  entry: {
+    start: WorldDate
+    end?: WorldDate | null | undefined
+    yearly?: boolean | undefined
+    startDay: number
+    endDay: number
+  },
   from: number,
   to: number
 ): Occurrence[] {
   if (!entry.yearly) {
     return entry.startDay <= to && entry.endDay >= from
-      ? [{ start: entry.start, end: entry.end, startDay: entry.startDay, endDay: entry.endDay }]
+      ? [{ start: entry.start, end: entry.end ?? null, startDay: entry.startDay, endDay: entry.endDay }]
       : []
   }
   try {
@@ -402,4 +426,36 @@ export function packRows(items: ReadonlyArray<{ start: number; end: number }>): 
     rowEnds[row] = item.end
     return row
   })
+}
+
+/**
+ * Una fecha movida en el tiempo (al arrastrarla en las vistas): por días (solo las de día), por meses (contando todas
+ * las posiciones del año; una de mes, a otro mes) o por años; el fin se mueve igual. Lo que no tiene esa precisión no
+ * se mueve (null)
+ */
+export function shiftDate(
+  def: CalendarDefinition,
+  value: { start: WorldDate; end?: WorldDate | undefined; yearly?: true | undefined },
+  unit: 'days' | 'months' | 'years',
+  steps: number
+): { start: WorldDate; end?: WorldDate; yearly?: true } | null {
+  if (steps === 0) return null
+  const move = (date: WorldDate): WorldDate | null => {
+    if (unit === 'years') return clampDate(def, { ...date, year: date.year + steps })
+    if (date.month === undefined) return null
+    if (unit === 'months') {
+      const moved = addMonths(def, { year: date.year, month: date.month, day: date.day ?? 1 }, steps)
+      return date.day === undefined ? { year: moved.year, month: moved.month } : moved
+    }
+    return date.day === undefined ? null : addDays(def, date, steps)
+  }
+  try {
+    const start = move(value.start)
+    const end = value.end ? move(value.end) : undefined
+    if (!start || end === null) return null
+    return { start, ...(end ? { end } : {}), ...(value.yearly ? { yearly: true as const } : {}) }
+  } catch (error) {
+    if (error instanceof CalendarDateError) return null
+    throw error
+  }
 }

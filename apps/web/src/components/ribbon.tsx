@@ -4,6 +4,7 @@ import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
 import {
   BookOpen,
   CalendarDays,
+  CalendarRange,
   Files,
   Flag,
   Folder,
@@ -37,6 +38,7 @@ import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { historyQuery, trashQuery } from '../api/queries.ts'
+import { usePlayerChronologies } from '../chronologies/queries.ts'
 import { useDice } from '../dice/context.tsx'
 import { shownPath } from '../shown-path.ts'
 import { SystemWindow } from '../systems/screen.tsx'
@@ -616,6 +618,7 @@ function CampaignPanels({
   const { setCampaign } = useDice()
   useEffect(() => setCampaign(worldId, campaignId), [setCampaign, worldId, campaignId])
   const params = { worldId, campaignId }
+  const chronologies = usePlayerChronologies(worldId, campaignId, !master)
   type Section = {
     to:
       | '/mundos/$worldId/campanas/$campaignId'
@@ -624,6 +627,7 @@ function CampaignPanels({
       | '/mundos/$worldId/campanas/$campaignId/compendio'
       | '/mundos/$worldId/campanas/$campaignId/aventuras'
       | '/mundos/$worldId/campanas/$campaignId/notas'
+      | '/mundos/$worldId/campanas/$campaignId/cronologias'
     icon: LucideIcon
     text: string
     tour: string
@@ -669,7 +673,19 @@ function CampaignPanels({
       text: t('ribbon.notes'),
       tour: 'barra-notas',
       player: true
-    }
+    },
+    // Las cronologías que el máster le ha enseñado (módulo 8): solo si tiene alguna
+    ...((chronologies.data?.chronologies.length ?? 0) > 0
+      ? [
+          {
+            to: '/mundos/$worldId/campanas/$campaignId/cronologias' as const,
+            icon: CalendarRange,
+            text: t('ribbon.chronologies'),
+            tour: 'barra-cronologias',
+            player: true
+          }
+        ]
+      : [])
   ]
   return (
     <>

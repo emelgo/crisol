@@ -13,6 +13,7 @@ import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
+import { ChronologySection } from '../chronologies/section.tsx'
 import { useAnnounce } from '../components/announcer.tsx'
 import { Loading } from '../components/brand.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
@@ -99,7 +100,8 @@ function Calendars({ worldId }: { worldId: string }) {
       ) : (
         <CalendarList worldId={worldId} calendars={list} onNew={open} />
       )}
-      {/* Aquí irán las cronologías del mundo (capacidad `cronologias`, docs/specs/modulo-8.md, decisión 4) */}
+      {/* Las cronologías del mundo, bajo los calendarios (decisión 4 de Enrique): con algún calendario */}
+      {list.length > 0 && <ChronologySection worldId={worldId} calendars={list} />}
       {creating && (
         <NewCalendarDialog
           worldId={worldId}
@@ -114,7 +116,8 @@ function Calendars({ worldId }: { worldId: string }) {
         id="calendarios"
         steps={[
           { target: '[data-tour="calendarios-lista"]', text: t('tour.calendars.list') },
-          { target: '[data-tour="calendarios-nuevo"]', text: t('tour.calendars.create') }
+          { target: '[data-tour="calendarios-nuevo"]', text: t('tour.calendars.create') },
+          { target: '[data-tour="cronologias"]', text: t('tour.calendars.chronologies') }
         ]}
       />
     </Screen>

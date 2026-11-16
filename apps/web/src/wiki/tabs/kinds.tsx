@@ -5,17 +5,7 @@
  */
 
 import type { TFunction } from 'i18next'
-import {
-  ChevronLeft,
-  Clock,
-  Dices,
-  FileText,
-  Grid3x3,
-  LayoutTemplate,
-  Map as MapIcon,
-  Network,
-  PenTool
-} from 'lucide-react'
+import { ChevronLeft, Dices, FileText, Grid3x3, LayoutTemplate, Map as MapIcon, Network, PenTool } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import styles from './page-tabs.module.css'
 
@@ -27,7 +17,7 @@ export const TAB_KINDS = [
   { kind: 'table', icon: Dices, ready: true, newPage: false, newTab: false },
   { kind: 'scene', icon: Grid3x3, ready: true, newPage: false, newTab: false },
   { kind: 'board', icon: PenTool, ready: true, newPage: true, newTab: true },
-  { kind: 'timeline', icon: Clock, ready: false, newPage: true, newTab: true },
+  // Sin «Línea temporal»: el tiempo vive en las cronologías de Calendarios (decisión 4 de Enrique, módulo 8)
   { kind: 'tree', icon: Network, ready: false, newPage: true, newTab: true }
 ] as const
 
