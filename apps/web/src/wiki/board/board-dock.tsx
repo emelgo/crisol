@@ -31,6 +31,7 @@ import type { RefObject } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Menu, MenuItem } from '../../components/menu.tsx'
 import styles from './board.module.css'
+import { zoomedAround } from './view.ts'
 
 /** Las herramientas de Excalidraw que se ofrecen, con su atajo (el suyo) */
 export const BOARD_TOOLS = [
@@ -48,24 +49,6 @@ export const BOARD_TOOLS = [
 ] as const satisfies readonly (readonly [string, LucideIcon, string])[]
 
 export type BoardTool = (typeof BOARD_TOOLS)[number][0]
-
-const MIN_ZOOM = 0.1
-const MAX_ZOOM = 30
-
-/** El zoom tras multiplicarlo (o ponerlo) alrededor del centro de lo que se ve, con su encuadre */
-export function zoomedAround(
-  state: Pick<AppState, 'width' | 'height' | 'scrollX' | 'scrollY'> & { zoom: { value: number } },
-  next: number
-) {
-  const value = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, next))
-  const cx = state.width / 2
-  const cy = state.height / 2
-  return {
-    zoom: value,
-    scrollX: state.scrollX + cx / value - cx / state.zoom.value,
-    scrollY: state.scrollY + cy / value - cy / state.zoom.value
-  }
-}
 
 export function BoardDock({
   excalidraw,

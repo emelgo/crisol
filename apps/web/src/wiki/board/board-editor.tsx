@@ -156,9 +156,19 @@ export default function BoardEditor({ page, tab }: { page: Page; tab: PageTabVie
       if (!excalidraw) return
       const state = excalidraw.getAppState()
       const zoom = state.zoom.value
+      // En el centro de lo que se ve del lienzo (en la página del mundo, si la columna no ha bajado del todo, el
+      // lienzo sigue más abajo de la ventana)
+      let middle = state.height / 2
+      const rect = canvas.current?.getBoundingClientRect()
+      const port = canvas.current?.closest('[data-page-scroll]')?.getBoundingClientRect()
+      if (rect && port) {
+        const top = Math.max(rect.top, port.top)
+        const bottom = Math.min(rect.bottom, port.bottom)
+        if (bottom > top) middle = (top + bottom) / 2 - rect.top
+      }
       const center = at ?? {
         x: -state.scrollX + state.width / 2 / zoom,
-        y: -state.scrollY + state.height / 2 / zoom
+        y: -state.scrollY + middle / zoom
       }
       const [card] = restoreElements(
         [

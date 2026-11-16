@@ -71,7 +71,10 @@ test('un mapa en la página: se añade desde «⋯», se le pone imagen, se pone
   await expect(page.getByText('Pulsa donde quieras el pin')).toBeVisible()
   const box = await map.boundingBox()
   if (!box) throw new Error('sin mapa')
-  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2)
+  // En medio de lo que se ve del mapa (en la página del mundo sigue más abajo de la ventana hasta bajar la columna,
+  // y abajo está la píldora de sus herramientas)
+  const seen = Math.min(box.y + box.height, page.viewportSize()?.height ?? 0)
+  await page.mouse.click(box.x + box.width / 2, (box.y + seen) / 2 - 30)
   const panel = page.getByRole('region', { name: 'Pin' })
   await expect(panel).toBeVisible()
   await panel.getByLabel('Nombre', { exact: true }).fill('El faro')

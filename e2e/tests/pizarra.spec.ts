@@ -85,14 +85,17 @@ test('la pizarra: el máster pone tarjetas, una flecha y dibuja a mano; otra pes
   const doran = await board.getByRole('link', { name: 'Doran el Cojo', exact: true }).boundingBox()
   const madre = await board.getByRole('link', { name: 'La Madre Ceniza', exact: true }).boundingBox()
   if (!doran || !madre) throw new Error('sin tarjetas')
-  const tools = board.locator('.App-toolbar')
-  await tools.getByRole('radio', { name: /^Flecha/ }).check({ force: true })
+  // Con nuestra píldora de abajo (la barra de formas de Excalidraw va escondida en el mundo)
+  const tools = page.getByRole('toolbar', { name: 'Herramientas de la pizarra' })
+  await expect(board.locator('.shapes-section')).toBeHidden()
+  await tools.getByRole('button', { name: 'Flecha', exact: true }).click()
+  await expect(tools.getByRole('button', { name: 'Flecha', exact: true })).toHaveAttribute('aria-pressed', 'true')
   // Desde el borde de la Madre Ceniza hacia la derecha (a la izquierda, Excalidraw abre su panel): queda atada a ella
   const edge = { x: madre.x + madre.width + 4, y: madre.y + madre.height / 2 }
   await drag(page, edge, { x: edge.x + 180, y: edge.y + 90 })
-  await tools.getByRole('radio', { name: /^Dibujar/ }).check({ force: true })
+  await tools.getByRole('button', { name: 'Dibujar', exact: true }).click()
   await drag(page, { x: madre.x, y: madre.y + 150 }, { x: madre.x + 220, y: madre.y + 190 })
-  await tools.getByRole('radio', { name: /^Selección/ }).check({ force: true })
+  await tools.getByRole('button', { name: 'Elegir', exact: true }).click()
   await page.screenshot({ path: test.info().outputPath('0-dibujado.png') })
 
   // Se guarda solo: lo tiene el servidor
