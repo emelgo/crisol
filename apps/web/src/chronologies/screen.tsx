@@ -9,7 +9,7 @@ import type { CalendarView, ChronologyEntryView, TimelineGroupView } from '@cris
 import { type DateValue, dateValueForm, type FullDate, shiftDate, type TimeZoom } from '@crisol/domain'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getRouteApi, Link, Navigate } from '@tanstack/react-router'
-import { CalendarDays, ChevronLeft, GanttChart, List, MoreHorizontal, Plus, Search } from 'lucide-react'
+import { CalendarDays, ChevronLeft, GanttChart, List, MoreHorizontal, Plus, Search, X } from 'lucide-react'
 import { type ReactNode, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
@@ -20,6 +20,7 @@ import { Loading } from '../components/brand.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
 import dialogStyles from '../components/dialog.module.css'
 import { useDismiss } from '../components/dismiss.ts'
+import { EmptyState } from '../components/empty-state.tsx'
 import { FormError } from '../components/field.tsx'
 import { Floating } from '../components/floating.tsx'
 import form from '../components/form.module.css'
@@ -165,6 +166,14 @@ export function Chronology({
     rememberView(chronologyId, next)
   }
 
+  // Lo que falla se ve (y se anuncia), no solo para el lector de pantalla
+  const [failure, setFailure] = useState<string | null>(null)
+  const fail = (error: unknown) => {
+    const text = errorText(error)
+    setFailure(text)
+    announce(text)
+  }
+  const [deleting, setDeleting] = useState<ChronologyEntryView | null>(null)
   const refresh = useCallback(() => {
     void client.invalidateQueries({ queryKey: ['chronology'] })
     void client.invalidateQueries({ queryKey: ['chronologies', worldId] })
@@ -173,7 +182,7 @@ export function Chronology({
     mutationFn: (input: { eventId: string } & Record<string, unknown>) =>
       api.call('updateTimelineEvent', input as Parameters<typeof api.call<'updateTimelineEvent'>>[1]),
     onSuccess: refresh,
-    onError: (error) => announce(errorText(error))
+    onError: fail
   })
   const remove = useMutation({
     mutationFn: (entry: ChronologyEntryView) => api.call('deleteTimelineEvent', { eventId: entry.eventId ?? '' }),
@@ -181,7 +190,7 @@ export function Chronology({
       refresh()
       announce(t('chronologies.removed', { title: entry.title }))
     },
-    onError: (error) => announce(errorText(error))
+    onError: fail
   })
   const duplicate = useMutation({
     mutationFn: (entry: ChronologyEntryView) =>
@@ -202,13 +211,13 @@ export function Chronology({
         ]
       }),
     onSuccess: refresh,
-    onError: (error) => announce(errorText(error))
+    onError: fail
   })
   const updateGroups = useMutation({
     mutationFn: (groups: Array<{ id?: string; name: string; color: TimelineGroupView['color'] }>) =>
       api.call('updateTimelineGroups', { worldId, groups }),
     onSuccess: refresh,
-    onError: (error) => announce(errorText(error))
+    onError: fail
   })
 
   if (!data.data || !calendars.data)
@@ -316,7 +325,7 @@ export function Chronology({
                   className={styles.danger}
                   onClick={() => {
                     close()
-                    remove.mutate(entry)
+                    setDeleting(entry)
                   }}
                 >
                   {t('chronologies.menu.delete')}
@@ -381,8 +390,26 @@ export function Chronology({
           )}
         </div>
       </header>
+      {failure && (
+        <p className={styles.failure} role="alert">
+          {failure}
+          <button
+            type="button"
+            className={styles.iconButton}
+            aria-label={t('chronologies.closeFailure')}
+            onClick={() => setFailure(null)}
+          >
+            <X size={14} aria-hidden="true" />
+          </button>
+        </p>
+      )}
       {narrow && (
-        <div className={styles.segmented} role="toolbar" aria-label={t('chronologies.views.label')}>
+        <div
+          className={styles.segmented}
+          role="toolbar"
+          aria-label={t('chronologies.views.label')}
+          data-tour="cronologia-vistas"
+        >
           {VIEWS.filter((v) => v.id !== 'months').map(({ id }) => (
             <button key={id} type="button" aria-pressed={shown === id} onClick={() => choose(id)}>
               {t(`chronologies.views.${id}`)}
@@ -393,13 +420,17 @@ export function Chronology({
       <div className={styles.frame} data-view={shown}>
         {empty ? (
           editable ? (
-            <div className={styles.emptyWrap}>
-              <button type="button" className={styles.empty} onClick={() => create()} data-tour="cronologia-vacia">
-                <Plus size={20} aria-hidden="true" />
-                {t('chronologies.addEvent')}
-              </button>
-              {chronology.filter.pages && <p className={styles.emptyHint}>{t('chronologies.emptyHint')}</p>}
-            </div>
+            <EmptyState
+              kind="calendarios"
+              action={
+                <button type="button" className={styles.empty} onClick={() => create()} data-tour="cronologia-vacia">
+                  <Plus size={20} aria-hidden="true" />
+                  {t('chronologies.addEvent')}
+                </button>
+              }
+            >
+              <p>{chronology.filter.pages ? t('chronologies.emptyHint') : t('chronologies.emptyNoPages')}</p>
+            </EmptyState>
           ) : (
             <p className={styles.emptyPlayer}>{t('chronologies.emptyPlayer')}</p>
           )
@@ -449,7 +480,8 @@ export function Chronology({
             aria-label={t('chronologies.views.label')}
             data-tour="cronologia-pildora"
           >
-            {editable && (
+            {/* Vacía, «Añadir evento» ya es la pieza del centro */}
+            {editable && !empty && (
               <>
                 <button
                   type="button"
@@ -488,11 +520,22 @@ export function Chronology({
           calendars={calendars.data.calendars}
           groups={groups}
           draft={draft}
-          onSaved={refresh}
+          onSaved={(eventId) => {
+            refresh()
+            if (eventId) setFocusKey(`e:${eventId}`)
+          }}
           onClose={() => {
             setDraft(null)
             opener.current?.focus()
           }}
+        />
+      )}
+      {deleting && (
+        <ConfirmDelete
+          entry={deleting}
+          busy={remove.isPending}
+          onConfirm={() => remove.mutate(deleting, { onSettled: () => setDeleting(null) })}
+          onClose={() => setDeleting(null)}
         />
       )}
       {converting && (
@@ -510,10 +553,20 @@ export function Chronology({
       )}
       <Tour
         id={editable ? 'cronologia' : 'cronologia-jugadora'}
-        steps={[
-          { target: '[data-tour="cronologia-pildora"]', text: t('tour.chronology.pill') },
-          ...(editable ? [{ target: '[data-tour="cronologia-ajustes"]', text: t('tour.chronology.settings') }] : [])
-        ]}
+        steps={
+          editable
+            ? [
+                { target: '[data-tour="cronologia-pildora"]', text: t('tour.chronology.pill') },
+                { target: '[data-tour="cronologia-ajustes"]', text: t('tour.chronology.settings') }
+              ]
+            : [
+                {
+                  target: narrow ? '[data-tour="cronologia-vistas"]' : '[data-tour="cronologia-pildora"]',
+                  text: t('tour.chronology.views')
+                },
+                { target: '[data-tour="cronologia-ir"]', text: t('tour.chronology.goTo') }
+              ]
+        }
       />
     </div>
   )
@@ -570,6 +623,7 @@ function GoTo({ entries, onPick }: { entries: readonly ChronologyEntryView[]; on
         aria-expanded={open}
         aria-haspopup="dialog"
         onClick={() => setOpen(!open)}
+        data-tour="cronologia-ir"
       >
         <Search size={16} aria-hidden="true" />
         {t('chronologies.goTo')}
@@ -772,6 +826,39 @@ function RedateDialog({
           </button>
         </div>
       </form>
+    </Modal>
+  )
+}
+
+/** Borrar un evento: se confirma (se deshace desde el historial) */
+function ConfirmDelete({
+  entry,
+  busy,
+  onConfirm,
+  onClose
+}: {
+  entry: ChronologyEntryView
+  busy: boolean
+  onConfirm: () => void
+  onClose: () => void
+}) {
+  const { t } = useTranslation()
+  const dialog = useRef<HTMLDialogElement>(null)
+  const titleId = useId()
+  return (
+    <Modal ref={dialog} aria-labelledby={titleId} className={dialogStyles.dialog} onClose={onClose}>
+      <div className={dialogStyles.body}>
+        <h2 id={titleId}>{t('chronologies.deleteEvent', { title: entry.title })}</h2>
+        <p className={dialogStyles.description}>{t('chronologies.deleteEventWarning')}</p>
+        <div className={dialogStyles.actions}>
+          <BusyButton className={form.button} busy={busy} onClick={onConfirm}>
+            {t('chronologies.delete')}
+          </BusyButton>
+          <button type="button" className={dialogStyles.cancel} onClick={() => dialog.current?.close()} data-autofocus>
+            {t('chronologies.cancel')}
+          </button>
+        </div>
+      </div>
     </Modal>
   )
 }

@@ -111,6 +111,24 @@
   scrollbar-gutter: stable;
 }
 
+/* Lo que falla, a la vista bajo la cabecera */
+.failure {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin: 0;
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+  border: 1px solid color-mix(in srgb, var(--color-danger) 55%, var(--line-frame));
+  border-radius: var(--radius-button);
+  background: color-mix(in srgb, var(--color-danger) 14%, var(--surface-glass));
+  color: var(--color-text);
+}
+
+.screen:has(.failure) {
+  grid-template-rows: auto auto minmax(0, 1fr);
+}
+
 /* ---------- La píldora y el zoom, abajo ---------- */
 .dock {
   position: relative;
@@ -143,7 +161,7 @@
 }
 
 .zoom {
-  inset-block-end: var(--space-4);
+  inset-block-end: calc(var(--space-4) + 3.25rem + var(--space-3));
   inset-inline-end: var(--space-4);
   border-radius: 10px;
 }
@@ -248,7 +266,7 @@
 
 /* ---------- La lista ---------- */
 .list {
-  max-inline-size: 72rem;
+  max-inline-size: 64rem;
   margin: 0 auto;
   padding: 0;
   list-style: none;
@@ -383,7 +401,7 @@
   gap: 2px;
   min-inline-size: 0;
   padding: var(--space-3) var(--space-4);
-  color: #f3f1ee;
+  color: var(--color-chrome-text);
   text-shadow: 0 1px 2px rgb(0 0 0 / 0.6);
 }
 
@@ -404,7 +422,7 @@
   padding: 2px 8px;
   border-radius: 999px;
   background: rgb(0 0 0 / 0.55);
-  color: #f3f1ee;
+  color: var(--color-chrome-text);
   font-size: 0.75rem;
   font-weight: 700;
   text-shadow: none;
@@ -430,7 +448,7 @@
   border: 0;
   border-radius: 50%;
   background: rgb(0 0 0 / 0.45);
-  color: #f3f1ee;
+  color: var(--color-chrome-text);
   cursor: pointer;
 }
 
@@ -486,7 +504,7 @@
 }
 
 .cardField {
-  color: rgb(243 241 238 / 0.8);
+  color: color-mix(in srgb, var(--color-chrome-text) 80%, transparent);
   font-weight: 600;
 }
 
@@ -504,7 +522,7 @@
 }
 
 .cardConverted {
-  color: rgb(243 241 238 / 0.75);
+  color: color-mix(in srgb, var(--color-chrome-text) 75%, transparent);
 }
 
 .cardDescription {
@@ -521,6 +539,34 @@
   -webkit-line-clamp: 1;
 }
 
+/* Abierta: la descripción entera, y la tarjeta crece con ella */
+.eventCard[data-expanded] {
+  aspect-ratio: auto;
+}
+
+.eventCard[data-expanded] .cardDescription {
+  display: block;
+  -webkit-line-clamp: unset;
+}
+
+.readMore {
+  justify-self: start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-chrome-text);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.readMore:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
 .cardChip {
   justify-self: start;
   display: inline-flex;
@@ -530,7 +576,7 @@
   padding: 1px 8px;
   border-radius: 4px;
   background: rgb(0 0 0 / 0.5);
-  color: #f3f1ee;
+  color: var(--color-chrome-text);
   font-size: 0.75rem;
   font-weight: 600;
   text-decoration: none;
@@ -798,7 +844,7 @@
   border: 0;
   border-radius: 5px;
   background: color-mix(in srgb, var(--entry-color) 75%, black 10%);
-  color: #f3f1ee;
+  color: var(--color-chrome-text);
   font-size: 0.8125rem;
   font-weight: 700;
   white-space: nowrap;
@@ -929,7 +975,7 @@
   border: 0;
   border-radius: 4px;
   background: color-mix(in srgb, var(--entry-color) 70%, black 10%);
-  color: #f3f1ee;
+  color: var(--color-chrome-text);
   font-size: 0.75rem;
   font-weight: 700;
   text-align: start;
@@ -1189,6 +1235,10 @@
   -webkit-backdrop-filter: var(--popup-blur);
   backdrop-filter: var(--popup-blur);
   box-shadow: var(--glass-lift);
+}
+
+.dayDetail[data-side="start"] {
+  inset-inline: var(--space-6) auto;
 }
 
 .dayDetailHead {
@@ -1725,10 +1775,15 @@
     grid-template-columns: 1fr;
   }
 
-  /* El día elegido, en una hoja que sube desde abajo */
-  .dayDetail {
+  /* El día elegido, en una hoja que sube desde abajo, con su asa y lo de detrás oscurecido */
+  .dayDetail,
+  .dayDetail[data-side="start"] {
     position: fixed;
     inset: auto 0 0;
+    padding-block-start: var(--space-6);
+    box-shadow:
+      0 0 0 100vmax rgb(0 0 0 / 0.45),
+      var(--glass-lift);
     inline-size: auto;
     max-block-size: 70dvh;
     border-end-start-radius: 0;
@@ -1738,6 +1793,24 @@
 
   .dialogGrid {
     grid-template-columns: 1fr;
+  }
+}
+
+.dayDetail::before {
+  content: none;
+}
+
+@media (max-width: 639px) {
+  .dayDetail::before {
+    content: "";
+    position: absolute;
+    inset-block-start: var(--space-2);
+    inset-inline-start: 50%;
+    inline-size: 2.5rem;
+    block-size: 4px;
+    border-radius: 2px;
+    background: var(--line-frame);
+    transform: translateX(-50%);
   }
 }
 

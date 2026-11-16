@@ -22,7 +22,8 @@ import {
   type TimelineGroupView,
   updateChronology,
   updateTimelineEvent,
-  updateTimelineGroups
+  updateTimelineGroups,
+  WORLD_COLORS
 } from '@crisol/contracts'
 import { calendarsRepo, chronologiesRepo, filesRepo, operation, pagesRepo, schema } from '@crisol/db'
 import {
@@ -665,9 +666,11 @@ export const chronologyActions = [
       async (w) => {
         const groupIds = new Map<string, string>()
         let last = groups.at(-1)?.position ?? null
-        for (const name of newGroups) {
+        for (const [index, name] of newGroups.entries()) {
           last = keyBetween(last, null)
-          const row = await w.insert(schema.timelineGroups, { worldId, name, color: null, position: last })
+          // Cada grupo nuevo, con un color de la paleta (en rueda): carriles y tarjetas se distinguen
+          const color = WORLD_COLORS[(groups.length + index) % WORLD_COLORS.length] ?? null
+          const row = await w.insert(schema.timelineGroups, { worldId, name, color, position: last })
           groupIds.set(name, row.id)
         }
         const rows: EventRow[] = []
@@ -738,7 +741,7 @@ export const chronologyActions = [
           const row = await w.insert(schema.timelineGroups, {
             worldId: event.worldId,
             name: written.newGroup,
-            color: null,
+            color: WORLD_COLORS[groups.length % WORLD_COLORS.length] ?? null,
             position: keyBetween(groups.at(-1)?.position ?? null, null)
           })
           patch.groupId = row.id

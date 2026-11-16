@@ -11,6 +11,7 @@ import type {
   TimelineEventView,
   TimelineGroupView
 } from '@crisol/contracts'
+import { WORLD_COLORS } from '@crisol/contracts'
 import {
   type ChronologyFilter,
   chronologyEntries,
@@ -241,7 +242,7 @@ export function fakeChronologies(options: {
       id: crypto.randomUUID(),
       worldId,
       name,
-      color: null,
+      color: WORLD_COLORS[groupsOf(worldId).length % WORLD_COLORS.length] ?? null,
       version: 1,
       position: keyBetween(groupsOf(worldId).at(-1)?.position ?? null, null)
     }

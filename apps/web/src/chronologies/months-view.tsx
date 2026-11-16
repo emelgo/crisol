@@ -7,7 +7,7 @@
  * moverse. El máster arrastra una barra para moverla en el tiempo, renombra un grupo con doble clic, lo reordena
  * arrastrando su nombre y crea otro con «+ Grupo»
  */
-import type { ChronologyEntryView, TimelineGroupView } from '@crisol/contracts'
+import { type ChronologyEntryView, type TimelineGroupView, WORLD_COLORS } from '@crisol/contracts'
 import {
   type CalendarDefinition,
   dateFromDay,
@@ -403,7 +403,10 @@ export function MonthsView({
           {onGroups && (
             <NewGroup
               onCreate={(name) =>
-                onGroups([...groups.map((g) => ({ id: g.id, name: g.name, color: g.color })), { name, color: null }])
+                onGroups([
+                  ...groups.map((g) => ({ id: g.id, name: g.name, color: g.color })),
+                  { name, color: WORLD_COLORS[groups.length % WORLD_COLORS.length] ?? null }
+                ])
               }
             />
           )}

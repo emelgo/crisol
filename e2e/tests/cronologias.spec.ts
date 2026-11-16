@@ -124,12 +124,12 @@ test('cronologías (módulo 8): crearla, un evento de un día, un rango entre do
   await expect(siega.getByRole('cell', { name: /, 18 de Siega de 1250 RC/ })).toContainText('Boda de Ilsa y Doran')
   // El rango, en sus dos meses
   await expect(
-    siega.getByRole('cell', { name: /, 28 de Siega de 1250 RC/ }).getByRole('button', { name: 'Campaña de los Pasos' })
+    siega.getByRole('cell', { name: /, 28 de Siega de 1250 RC/ }).locator('button[aria-label="Campaña de los Pasos"]')
   ).toBeVisible()
   await page.getByRole('button', { name: 'Mes siguiente' }).click()
   const trilla = page.getByRole('table', { name: 'Trilla de 1250 RC' })
   await expect(
-    trilla.getByRole('cell', { name: /, 3 de Trilla de 1250 RC/ }).getByRole('button', { name: 'Campaña de los Pasos' })
+    trilla.getByRole('cell', { name: /, 3 de Trilla de 1250 RC/ }).locator('button[aria-label="Campaña de los Pasos"]')
   ).toBeVisible()
   await page.getByRole('button', { name: 'Mes anterior' }).click()
 

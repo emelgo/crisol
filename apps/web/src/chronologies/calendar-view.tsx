@@ -405,6 +405,7 @@ export function CalendarView({
       )}
       {selected !== null && (
         <DayDetail
+          side={(allDays.find((d) => d.dayNumber === selected)?.weekday ?? 0) >= columns / 2 ? 'start' : 'end'}
           worldId={worldId}
           definition={definition}
           day={selected}
@@ -455,6 +456,8 @@ function Chip({
       draggable={draggable}
       onDragStart={onDragStart}
       onClick={onOpen}
+      // Los tramos de en medio repiten la misma ficha: una sola parada del tabulador, en su primer día de la semana
+      {...(starts ? {} : { tabIndex: -1, 'aria-hidden': true })}
       // El nombre siempre (los tramos de en medio no lo enseñan)
       aria-label={entry.field ? `${entry.title} · ${entry.field}` : entry.title}
     >
@@ -470,6 +473,7 @@ function Chip({
 
 /** El detalle de un día: la fecha larga, la estación, la era, el día del año, las lunas y lo que pasa */
 function DayDetail({
+  side,
   worldId,
   definition,
   day,
@@ -480,6 +484,7 @@ function DayDetail({
   onEdit,
   menuFor
 }: {
+  side: 'start' | 'end'
   worldId: string
   definition: CalendarDefinition
   day: number
@@ -496,6 +501,7 @@ function DayDetail({
   return (
     <aside
       className={styles.dayDetail}
+      data-side={side}
       aria-labelledby={titleId}
       onKeyDown={(event) => {
         if (event.key === 'Escape') {

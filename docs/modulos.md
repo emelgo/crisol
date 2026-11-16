@@ -7,6 +7,30 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
+### Para retomar (2026-11-16: módulo 8 · mundo, capacidad `cronologias`, construida en local: módulo cerrado en local)
+
+- Misma rama `modulo-8/calendarios`. **Migración 0084** (`chronologies`, `timeline_groups`, `timeline_events` y las
+  marcas `event` y `chronology` del conocimiento), ya aplicada en local. Decisiones 4-10 de `docs/specs/modulo-8.md`.
+- Hecho: el dominio (`packages/domain/src/calendar/chronology.ts`: juntar eventos y páginas con fecha en el calendario de
+  la cronología, convertir lo de otros con su correspondencia y contar lo que queda fuera, columnas y bandas de la vista
+  de meses, mover fechas al arrastrar); acciones y MCP (`listar_cronologias`, `ver_cronologia`, `crear_cronologia`,
+  `cambiar_cronologia`, `borrar_cronologia`, `crear_eventos`, `cambiar_evento`, `borrar_evento`, `convertir_en_pagina`
+  y `cambiar_grupos_eventos`); los eventos en `DATE_SOURCES`; borrar un calendario deja sus cronologías en el principal.
+  Web (`apps/web/src/chronologies/`): la sección bajo los calendarios, la cronología a pantalla entera (Lista, Meses,
+  Calendario, la píldora y el zoom, «Ir a…», ajustes y el ojo), el cuadro del evento, convertir en página, cambiar la
+  fecha de una página; «En las cronologías» en «Mencionado en» de una página enlazada (solo el máster); la jugadora en
+  `/campanas/$c/cronologias` (en su barra, si tiene alguna). Sin «Línea temporal» en «Pestaña nueva».
+- Pruebas: dominio, integración (`chronologies.integration.test.ts`, con 2.000 eventos y 5.000 páginas en ~250 ms),
+  MCP, web (`chronologies/*.test.*`), e2e `cronologias` y la de fugas ampliada.
+- Decisiones tomadas sin Enrique (en el informe): la jugadora ve una cronología **si se le revela** (marca
+  `chronology`, con el ojo de su cabecera), y dentro los eventos no ocultos (o revelados, marca `event`); **convertir
+  en página** crea la página con el texto, el icono y la imagen del evento y deja el evento enlazado (sin título propio)
+  en vez de borrarlo, así conserva fecha, color y grupo; lo convertido de otro calendario pierde «cada año»; el filtro de
+  grupos solo afecta a los eventos y el de plantillas y etiquetas, a las páginas; los eventos enlazados salen en la
+  página solo para el máster.
+- **Siguiente**: con el visto bueno de Enrique, la batería entera y una sola CI (a `main` y staging con el módulo 9).
+  Pendiente menor: los dados 3D y el resto de lo apuntado arriba.
+
 ### Para retomar (2026-11-16: módulo 8 · mundo, capacidad `fechas`, construida en local)
 
 - Misma rama `modulo-8/calendarios`. **Migración 0083** (`crisol_page_text` toma el texto de una fecha, no su objeto),
@@ -1956,7 +1980,7 @@ Estados: pendiente · en curso · hecho · descartado.
 | 7 | **Sala de jugadores**: presencia, chat y susurros, mostrar a jugadores, sonido (también **los de un zip de Foundry**), controles del máster | **hecho** (2026-11-11, PR #117, en staging); falta que Enrique lo pruebe y confirme el ADR-0022 | Foundry: sockets y chat; DDB: game log |
 | R | **Revisión de la app** (2026-11-11): nueve tandas (`tasks/plan-revision.md`); la campaña, aparte | **en curso** (tanda 1) | Roliando y Roll20 (editor de sistemas); 5etools (libros) |
 | 9 | **Pizarras y mapas con capas**: la pizarra como pestaña; regiones, rutas, textos y capas en los mapas, escala y medir | pendiente (el primero tras la revisión) | DDB Maps |
-| 8 · mundo | **Calendarios y líneas temporales**: calendarios del mundo con su editor; fechas; cronologías en «Calendarios» (decisiones del 2026-11-16) | **en curso**: `calendarios` hecha en local (2026-11-16, ADR-0029); faltan `fechas` y `cronologias` | Everlore, Crisol antiguo |
+| 8 · mundo | **Calendarios y líneas temporales**: calendarios del mundo con su editor; fechas; cronologías en «Calendarios» (decisiones del 2026-11-16) | **hecho en local** (2026-11-16, ADR-0029: `calendarios`, `fechas` y `cronologias`); falta subir y que Enrique lo pruebe | Everlore, Crisol antiguo |
 | 10 · mundo | **Herramientas del mundo**: grafo de relaciones y árbol familiar, tableros, gráficos, generador de nombres | pendiente (tras el 8) | — |
 | 8 · campaña | El «hoy» de cada campaña, el clima y los viajes | pendiente (con la revisión de la campaña) | — |
 | 10 · campaña | El centro de actividad y la pantalla del máster | pendiente (con la revisión de la campaña) | — |

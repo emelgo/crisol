@@ -155,7 +155,9 @@ describe('una cronología a pantalla entera', () => {
     const day20 = within(table).getByRole('cell', { name: /, 20 de Siega de 1247 RC/ })
     const day21 = within(table).getByRole('cell', { name: /, 21 de Siega de 1247 RC/ })
     expect(within(day20).getByRole('button', { name: 'Campaña de los Pasos' })).toBeDefined()
-    expect(within(day21).getByRole('button', { name: 'Campaña de los Pasos' })).toBeDefined()
+    // El tramo siguiente repite la ficha: sin parada propia del tabulador ni para el lector
+    expect(day21.querySelector('button[aria-hidden="true"]')?.getAttribute('aria-label')).toBe('Campaña de los Pasos')
+    expect(within(day21).queryByRole('button', { name: 'Campaña de los Pasos' })).toBeNull()
     // Con las flechas
     day20.focus()
     await userEvent.keyboard('{ArrowRight}')

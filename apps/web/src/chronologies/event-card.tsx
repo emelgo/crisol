@@ -7,7 +7,7 @@
  */
 import type { ChronologyEntryView, TimelineGroupView } from '@crisol/contracts'
 import { EyeOff, FileText, Repeat } from 'lucide-react'
-import type { CSSProperties, ReactNode } from 'react'
+import { type CSSProperties, type ReactNode, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Icon } from '../components/icon.tsx'
 import { colorHex } from '../routes/world-look.ts'
@@ -72,6 +72,14 @@ export function EventCard({
   headingLevel?: 3 | 4
 }) {
   const { t } = useTranslation()
+  // La descripción, en dos líneas; si no cabe, «Leer entero» la abre en la tarjeta
+  const [expanded, setExpanded] = useState(false)
+  const [clipped, setClipped] = useState(false)
+  const text = useRef<HTMLParagraphElement>(null)
+  useLayoutEffect(() => {
+    const element = text.current
+    if (element && !expanded) setClipped(element.scrollHeight > element.clientHeight + 1)
+  }, [expanded, entry.description])
   const color = entryColor(entry, group)
   const image = backdrop(entry)
   const icon = shownIcon(entry)
@@ -88,6 +96,7 @@ export function EventCard({
       className={styles.eventCard}
       data-compact={compact || undefined}
       data-hidden={entry.hidden || undefined}
+      data-expanded={expanded || undefined}
       style={{ '--entry-color': color } as CSSProperties}
     >
       <div className={styles.cardBand} aria-hidden="true">
@@ -141,7 +150,21 @@ export function EventCard({
           {entry.text}
           {entry.converted && <span className={styles.cardConverted}> · {entry.converted.text}</span>}
         </p>
-        {entry.description && <p className={styles.cardDescription}>{entry.description}</p>}
+        {entry.description && (
+          <p ref={text} className={styles.cardDescription}>
+            {entry.description}
+          </p>
+        )}
+        {entry.description && (clipped || expanded) && (
+          <button
+            type="button"
+            className={styles.readMore}
+            aria-expanded={expanded}
+            onClick={() => setExpanded(!expanded)}
+          >
+            {expanded ? t('chronologies.readLess') : t('chronologies.readMore')}
+          </button>
+        )}
         {entry.kind === 'event' && entry.page && !entry.untitled && (
           <PageLink worldId={worldId} pageId={entry.page.id} className={styles.cardChip}>
             {entry.page.icon && <Icon value={entry.page.icon} size={12} />}

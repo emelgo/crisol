@@ -66,7 +66,8 @@ export function EventDialog({
   groups: readonly TimelineGroupView[]
   draft: EventDraft
   onClose: () => void
-  onSaved: () => void
+  /** Con el id del evento guardado (para ir a él) */
+  onSaved: (eventId: string | null) => void
 }) {
   const { t } = useTranslation()
   const api = useApi()
@@ -133,7 +134,7 @@ export function EventDialog({
       if (editing?.eventId) return api.call('updateTimelineEvent', { eventId: editing.eventId, ...common })
       return (await api.call('createTimelineEvents', { worldId, events: [common] })).events[0]
     },
-    onSuccess: () => {
+    onSuccess: (saved) => {
       void client.invalidateQueries({ queryKey: ['chronology'] })
       void client.invalidateQueries({ queryKey: ['chronologies', worldId] })
       if (newPage) void client.invalidateQueries({ queryKey: ['pages', worldId] })
@@ -142,7 +143,7 @@ export function EventDialog({
           ? t('chronologies.dialog.saved', { title: shownTitle })
           : t('chronologies.dialog.created', { title: shownTitle })
       )
-      onSaved()
+      onSaved(saved?.id ?? null)
       dialog.current?.close()
     }
   })

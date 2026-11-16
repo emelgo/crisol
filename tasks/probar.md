@@ -9,6 +9,35 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
+## Cronologías (módulo 8, en local, rama `modulo-8/calendarios`; migración 0084; 2026-11-16)
+
+- [ ] **Calendarios**: bajo los calendarios, «Cronologías» con una ficha por cronología (su calendario, cuántas
+  entradas y de cuándo a cuándo) y «Cronología nueva» (nombre y calendario; se abre al crearla).
+- [ ] **A pantalla entera**: «‹ Calendarios», su nombre, «Ir a…», el ojo de cada campaña y «Ajustes»; abajo en el
+  centro la píldora (+ · Lista · Meses · Calendario), que se recuerda; en Meses, el zoom abajo a la derecha.
+- [ ] **Las páginas con fecha salen solas** (una vez por fecha, con el nombre del campo si tiene varias); un campo
+  «Fuera de las líneas temporales», no.
+- [ ] **Lista**: la línea con rombos (eventos) y círculos (páginas), la distancia a la anterior («312 años después»),
+  la tarjeta con su color o su imagen, el grupo arriba, «Cada año» con su icono. Doble clic o el título, editar.
+- [ ] **Meses**: carriles por grupo, «Páginas» y «Sin grupo»; festividades estrechas y con su color; arrastrar el
+  fondo para moverse y la ventana que crece por los dos lados; arrastrar una barra la mueve; doble clic en un grupo lo
+  renombra, arrastrar su nombre lo ordena, «+ Grupo».
+- [ ] **Calendario**: la semana del calendario, lo de varios días seguido, lunas nuevas y llenas, lo de fuera de la
+  semana debajo, «Todo el mes»; elegir un día abre su detalle («Evento en este día»); arrastrar una ficha a otro día le
+  cambia la fecha; las flechas recorren la rejilla y Re Pág/Av Pág cambian de mes.
+- [ ] **El cuadro del evento**: la tarjeta en vivo, la fecha con el selector, color o imagen con su encuadre, icono,
+  grupo (o uno nuevo), página enlazada (o una nueva eligiendo dónde va), descripción con su cuenta, «Oculto para los
+  jugadores» y el ojo de cada campaña.
+- [ ] **«⋯» de un evento**: duplicar, color, mover a grupo, «Convertir en página…» (la página nace con su texto, su
+  icono y su imagen, y el evento queda enlazado) y borrar; en una página, «Cambiar la fecha» y «Abrir la página».
+- [ ] **Ajustes**: renombrar, otro calendario (lo de otros se convierte si tiene correspondencia; si no, «N fechas
+  quedan fuera»), qué páginas salen (plantillas, etiquetas) y de qué grupos; el color de cada grupo o quitarlo.
+- [ ] **Una página enlazada** dice el evento en «Mencionado en» › «En las cronologías».
+- [ ] **La jugadora**: solo ve «Cronologías» en su barra si se le ha enseñado alguna (el ojo de la cabecera); dentro,
+  sin lo oculto ni lo que no conoce; en el móvil, Lista y Calendario arriba (tocar un día sube su hoja).
+- [ ] **La IA**: «pasa esta cronología» con `crear_eventos` (100 de una vez) y `ver_cronologia` la devuelve en orden.
+- [ ] **Deshacer** desde el historial: crear o borrar una cronología, un evento o los grupos.
+
 ## Fechas en las páginas (módulo 8, en local, rama `modulo-8/calendarios`; migración 0083; 2026-11-16)
 
 - [ ] **Una propiedad «Fecha»**: en el panel, «Añadir bloque» › «Propiedad», tipo «Fecha». Se lee como texto («12 de

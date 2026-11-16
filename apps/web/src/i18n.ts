@@ -883,7 +883,13 @@ export const es = {
     yearly: 'Cada año',
     openPage: 'Abrir la página',
     addEvent: 'Añadir evento',
-    emptyHint: 'Las páginas con fecha salen solas.',
+    emptyHint: 'Sus eventos y las páginas con fecha, en orden. Las páginas salen solas.',
+    emptyNoPages: 'Sus eventos, en orden.',
+    closeFailure: 'Cerrar el aviso',
+    deleteEvent: '¿Borrar «{{title}}»?',
+    deleteEventWarning: 'Se deshace desde el historial.',
+    readMore: 'Leer entero',
+    readLess: 'Leer menos',
     emptyPlayer: 'Aún no hay nada aquí.',
     nonePlayer: 'El máster aún no os ha enseñado ninguna cronología.',
     goTo: 'Ir a…',
@@ -4474,7 +4480,9 @@ export const es = {
     },
     chronology: {
       pill: 'Añade eventos y cambia de vista: lista, meses o calendario.',
-      settings: 'Su calendario y qué entra en ella.'
+      settings: 'Su calendario y qué entra en ella.',
+      views: 'La lista o el calendario, para verla de otra manera.',
+      goTo: 'Busca un evento para ir a él.'
     },
     calendar: {
       sections: 'Cada parte del calendario, para ir a ella.',
