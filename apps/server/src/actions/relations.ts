@@ -28,6 +28,13 @@ import { implement } from './registry.ts'
 /** Las páginas que se dan de una vez como mucho en las relaciones de una página */
 const PAGE_LIMIT = 500
 
+/** Lo que va bajo el nombre en las tarjetas: su primer campo de texto con algo (ya sin los que no ve quien pregunta) */
+function subtitleOf(properties: readonly PageProperty[]): string | undefined {
+  for (const property of properties)
+    if (property.type === 'text' && property.value.trim()) return property.value.trim().slice(0, 120)
+  return undefined
+}
+
 /** Sus etiquetas (sin toLocaleLowerCase: con miles de páginas, se nota) */
 function tagsOf(properties: readonly PageProperty[]): string[] {
   const found = properties.find((p) => p.type === 'list' && p.name.trim().toLowerCase() === 'etiquetas')
@@ -38,17 +45,19 @@ const isRole = (value: unknown): value is RelationRole => RELATION_ROLES.include
 const strings = (value: unknown[]) => value.filter((item): item is string => typeof item === 'string')
 
 /**
- * Los campos de enlace y las etiquetas de una página, leídos sin zod (se comprobaron al guardarlos; con 5.000 páginas,
+ * Los campos de enlace, los de texto y las etiquetas de una página, leídos sin zod (se comprobaron al guardarlos; con 5.000 páginas,
  * zod se come el tiempo)
  */
 function graphProperties(stored: readonly Record<string, unknown>[]): PageProperty[] {
   return stored.flatMap((item): PageProperty[] => {
-    if (typeof item.name !== 'string' || !Array.isArray(item.value)) return []
+    if (typeof item.name !== 'string') return []
     const base = {
       name: item.name,
       ...(typeof item.field === 'string' ? { field: item.field } : {}),
       ...(item.hidden === true ? { hidden: true as const } : {})
     }
+    if (item.type === 'text' && typeof item.value === 'string') return [{ ...base, type: 'text', value: item.value }]
+    if (!Array.isArray(item.value)) return []
     if (item.type === 'list') return [{ ...base, type: 'list', value: strings(item.value) }]
     if (item.type !== 'pages') return []
     return [
@@ -76,6 +85,7 @@ async function visibleGraph(ctx: ActionContext, worldId: string, view: WikiView)
       template: row.template,
       line: row.line,
       tags: tagsOf(properties),
+      subtitle: subtitleOf(properties),
       properties
     }
   })
@@ -100,6 +110,7 @@ const nodeOf = (page: GraphPage, generation?: number): RelationNode => ({
   title: page.title,
   icon: page.icon,
   template: page.template,
+  ...(page.subtitle === undefined ? {} : { subtitle: page.subtitle }),
   ...(generation === undefined ? {} : { generation })
 })
 

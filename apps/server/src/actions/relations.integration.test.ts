@@ -226,6 +226,29 @@ describe('las relaciones del mundo (módulo 10)', () => {
     for (const hidden of ['mara', 'bruno', 'varn', 'hija', 'suelta']) expect(text).not.toContain(id[hidden])
     expect((graph.edges as Edge[]).some((e) => e.secret)).toBe(false)
   })
+
+  it('bajo el nombre, el primer campo de texto con algo; a la jugadora, sin los ocultos', async () => {
+    const varn = await ok200('getPage', { pageId: id.varn })
+    await ok200('setPageProperties', {
+      pageId: id.varn,
+      properties: varn.properties.map((p: { name: string }) =>
+        p.name === 'Especie'
+          ? { ...p, value: 'Humano', hidden: true }
+          : p.name === 'Rol'
+            ? { ...p, value: 'Gran maestre' }
+            : p
+      )
+    })
+    const subtitle = (result: { nodes: (Node & { subtitle?: string })[] }) =>
+      result.nodes.find((n) => n.id === id.varn)?.subtitle
+    expect(subtitle(await ok200('getRelations', { pageId: id.liga, mode: 'org' }))).toBe('Humano')
+    for (const key of ['liga', 'varn']) await known(id[key] ?? '')
+    const seen = await ok200('getRelations', { pageId: id.liga, mode: 'org' }, ana.cookie)
+    expect(subtitle(seen)).toBe('Gran maestre')
+    expect(JSON.stringify(seen)).not.toContain('Humano')
+    // Sin nada escrito, sin subtítulo
+    expect((seen.nodes as (Node & { subtitle?: string })[]).find((n) => n.id === id.liga)?.subtitle).toBeUndefined()
+  })
 })
 
 // Se mide sola (CRISOL_RENDIMIENTO=1, su paso en la CI y `pnpm --filter @crisol/server test:rendimiento`): con las

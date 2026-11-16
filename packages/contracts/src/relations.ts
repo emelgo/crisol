@@ -13,6 +13,7 @@ export const relationNode = z.object({
   title: z.string(),
   icon: z.string().nullable(),
   template: templateRef.nullable().describe('La plantilla de la que salió: el color del nodo'),
+  subtitle: z.string().optional().describe('Bajo el nombre en las tarjetas: su primer campo de texto con algo escrito'),
   generation: z
     .number()
     .int()

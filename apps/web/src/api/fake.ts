@@ -2106,11 +2106,13 @@ export function fakeApi(
         nodes: view.ids.map((id) => {
           const node = pageById(id)
           const at = view.generation?.get(id)
+          const subtitle = node.properties.find((p) => p.type === 'text' && p.value.trim())?.value
           return {
             id,
             title: node.title,
             icon: node.icon,
             template: node.template ?? null,
+            ...(typeof subtitle === 'string' ? { subtitle: subtitle.trim() } : {}),
             ...(at === undefined ? {} : { generation: at })
           }
         }),

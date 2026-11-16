@@ -246,11 +246,14 @@ export type GraphMentionRow = {
 
 /** Si una propiedad guardada cuenta para el grafo: un campo de enlace o las etiquetas */
 const graphProperty = (item: Record<string, unknown>) =>
-  item.type === 'pages' || (typeof item.name === 'string' && item.name.trim().toLowerCase() === 'etiquetas')
+  item.type === 'pages' ||
+  // Los de texto con algo: el primero que ve quien pregunta va bajo el nombre en las tarjetas
+  (item.type === 'text' && typeof item.value === 'string' && item.value.trim() !== '') ||
+  (typeof item.name === 'string' && item.name.trim().toLowerCase() === 'etiquetas')
 
 /**
  * Lo que hace falta para el grafo de relaciones del mundo (módulo 10): las páginas fuera de la papelera con sus campos
- * de enlace y sus etiquetas, y los enlaces resueltos de su texto (sin los de pestañas quitadas; los repetidos los junta
+ * de enlace, sus etiquetas y sus campos de texto con algo, y los enlaces resueltos de su texto (sin los de pestañas quitadas; los repetidos los junta
  * el dominio). Dos consultas, sin caché: 5.000 páginas y 20.000 aristas en menos de 300 ms. Las propiedades y la línea
  * de plantillas llegan como texto y se leen aquí (más rápido que dejárselas al driver)
  */
