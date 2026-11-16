@@ -1,8 +1,8 @@
-import { expect, type Page, test } from '@playwright/test'
+import { expect, type Locator, type Page, test } from '@playwright/test'
 import { freshOwner } from './ayudas.ts'
 
 /**
- * La página del mundo, como la de Everlore (Enrique, 2026-11-16): toda la columna se desplaza; al bajar, el título y las
+ * La página del mundo, como la de Everlore (Enrique, 2026-11-16), en el armazón de la wiki: al bajar, el título y las
  * pestañas se quedan arriba en una barra pequeña; el panel se pliega desde la cabecera de la página; el mapa y la
  * pizarra van a sangre, con sus herramientas en una píldora pegada abajo de lo que se ve
  */
@@ -45,9 +45,36 @@ async function setUp(page: Page) {
   return { url: `/mundos/${world.id}/wiki/${pageId}`, mapId: map.id as string, boardId: board.id as string }
 }
 
-/** Baja la columna del centro hasta el final (o lo que se diga) */
+/** Baja la página hasta el final (o lo que se diga): se desplaza con la ventana, con las fichas de los lados pegadas */
 const scrollColumn = (page: Page, to?: number) =>
-  page.locator('[data-page-scroll]').evaluate((el, y) => el.scrollTo(0, y ?? el.scrollHeight), to)
+  page.evaluate((y) => window.scrollTo(0, y ?? document.documentElement.scrollHeight), to)
+
+/** La columna de la página, entre la ficha del árbol y el panel */
+const column = (page: Page) => page.locator('[data-page-column]')
+
+/** Una vuelta de rueda con el ratón encima de algo (en su mitad) */
+async function wheelOver(page: Page, target: Locator, deltaY: number) {
+  const box = await target.boundingBox()
+  if (!box) throw new Error('sin caja')
+  const y = Math.min(box.y + box.height / 2, (page.viewportSize()?.height ?? 0) - 120)
+  await page.mouse.move(box.x + box.width / 2, Math.max(box.y + 4, y))
+  await page.mouse.wheel(0, deltaY)
+}
+
+/** Lo de la pestaña (el mapa, la pizarra) cabe en la ventana: empieza bajo las pestañas, acaba abajo y nada se desplaza */
+async function fitsWindow(page: Page, canvas: Locator) {
+  const height = page.viewportSize()?.height ?? 0
+  const tabs = page.locator('header[data-page-head]').getByRole('navigation', { name: 'Pestañas de la página' })
+  await expect
+    .poll(async () => {
+      const box = await canvas.boundingBox()
+      return Math.round((box?.y ?? 0) + (box?.height ?? 0))
+    })
+    .toBe(height)
+  const tabsBox = await tabs.boundingBox()
+  expect((await canvas.boundingBox())?.y ?? 0).toBeGreaterThanOrEqual((tabsBox?.y ?? 0) + (tabsBox?.height ?? 0) - 1)
+  expect(await page.evaluate(() => document.documentElement.scrollHeight - window.innerHeight)).toBeLessThanOrEqual(0)
+}
 
 test('el texto: al bajar, el título y las pestañas se quedan arriba en pequeño; el panel se pliega desde la cabecera', async ({
   page
@@ -58,16 +85,21 @@ test('el texto: al bajar, el título y las pestañas se quedan arriba en pequeñ
   await expect(title).toBeVisible()
   const head = page.locator('header').filter({ has: title })
   await expect(head).not.toHaveAttribute('data-compact')
-  // Arriba la portada (sin ella, su hueco) y debajo el título: la portada empieza arriba de la columna
-  const column = await page.locator('[data-page-scroll]').boundingBox()
+  // La portada (sin ella, su textura), una franja baja con el título encima, sobre su parte de abajo
+  const band = await page.locator('header[data-page-head] > [data-band]').boundingBox()
   const titleBox = await title.boundingBox()
-  expect((titleBox?.y ?? 0) - (column?.y ?? 0)).toBeGreaterThan(150)
+  expect(band?.height ?? 0).toBeLessThanOrEqual(121)
+  expect(titleBox?.y ?? 0).toBeGreaterThan(band?.y ?? 0)
+  expect((titleBox?.y ?? 0) + (titleBox?.height ?? 0)).toBeLessThanOrEqual((band?.y ?? 0) + (band?.height ?? 0))
+  // La barra de la app y la ficha del árbol, como siempre
+  await expect(page.getByRole('navigation', { name: 'Secciones' })).toBeVisible()
+  await expect(page.getByRole('tree', { name: 'Páginas' })).toBeVisible()
 
   // Al bajar: pegada arriba, encogida, con las pestañas dentro
   await scrollColumn(page, 900)
   await expect(head).toHaveAttribute('data-compact')
-  // (al pegarse, entra con un desliz corto)
-  await expect.poll(async () => Math.round((await head.boundingBox())?.y ?? -1)).toBe(Math.round(column?.y ?? 0))
+  // (al pegarse, entra con un desliz corto): arriba de la ventana
+  await expect.poll(async () => Math.round((await head.boundingBox())?.y ?? -1)).toBe(0)
   expect((await head.boundingBox())?.height ?? 0).toBeLessThan(60)
   await expect(head.getByRole('navigation', { name: 'Pestañas de la página' })).toBeVisible()
   // Desde la barra pequeña se cambia de pestaña
@@ -79,12 +111,10 @@ test('el texto: al bajar, el título y las pestañas se quedan arriba en pequeñ
   // El panel: su botón, en la cabecera; se desliza fuera y el centro se ensancha
   const panel = page.getByRole('complementary', { name: 'Panel de la página' })
   await expect(panel).toBeVisible()
-  const before = (await page.locator('[data-page-scroll]').boundingBox())?.width ?? 0
+  const before = (await column(page).boundingBox())?.width ?? 0
   await head.getByRole('button', { name: 'Plegar el panel' }).click()
   await expect(panel).toBeHidden()
-  await expect
-    .poll(async () => (await page.locator('[data-page-scroll]').boundingBox())?.width ?? 0)
-    .toBeGreaterThan(before + 250)
+  await expect.poll(async () => (await column(page).boundingBox())?.width ?? 0).toBeGreaterThan(before + 250)
   // Se recuerda
   await page.reload()
   await expect(page.getByRole('button', { name: 'Desplegar el panel' })).toHaveAttribute('aria-expanded', 'false')
@@ -92,45 +122,73 @@ test('el texto: al bajar, el título y las pestañas se quedan arriba en pequeñ
   await expect(panel).toBeVisible()
 })
 
-test('el mapa a sangre: al bajar del todo ocupa todo lo de debajo de la barra; sus herramientas, abajo de lo que se ve', async ({
+test('el mapa cabe en la ventana: la cabecera arriba y el lienzo hasta abajo, sin desplazar; la rueda es del mapa', async ({
   page
 }) => {
   const { url, mapId } = await setUp(page)
   await page.goto(`${url}?pestana=${mapId}`)
   const viewer = page.getByRole('application', { name: 'Mapa', exact: true })
   await expect(viewer).toBeVisible()
-  const tools = page.getByRole('toolbar', { name: 'Herramientas del mapa' })
-  const zoom = page.getByRole('toolbar', { name: 'Acercar y alejar el mapa' })
-  // Sin haber bajado, el mapa sigue más abajo, pero sus herramientas se ven, pegadas abajo
   const height = page.viewportSize()?.height ?? 0
+  await fitsWindow(page, viewer)
+  // De lado a lado de la columna (también mientras el panel vacío se pliega solo), sin fondo propio
+  await expect
+    .poll(async () =>
+      Math.abs(((await viewer.boundingBox())?.width ?? 0) - ((await column(page).boundingBox())?.width ?? 0))
+    )
+    .toBeLessThan(1)
+  expect(await viewer.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgba(0, 0, 0, 0)')
+  // Sus herramientas abajo; el zoom y la escala, a la vista
+  const tools = page.getByRole('toolbar', { name: 'Herramientas del mapa' })
   const pill = await tools.boundingBox()
   expect((pill?.y ?? 0) + (pill?.height ?? 0)).toBeGreaterThan(height - 40)
   expect((pill?.y ?? 0) + (pill?.height ?? 0)).toBeLessThanOrEqual(height)
-  await expect(zoom.getByRole('button', { name: 'Acercar' })).toBeVisible()
-  await expect(page.getByText('2 millas')).toBeVisible()
-
-  // Al bajar del todo: del borde de la barra pegada al final de la ventana, de lado a lado de la columna
-  await scrollColumn(page)
-  const head = page.locator('header[data-compact]')
-  await expect(head).toBeVisible()
-  const column = await page.locator('[data-page-scroll]').boundingBox()
-  await expect.poll(async () => Math.round((await head.boundingBox())?.y ?? -1)).toBe(Math.round(column?.y ?? 0))
-  const stuck = await head.boundingBox()
-  await expect
-    .poll(async () => {
-      const box = await viewer.boundingBox()
-      return [Math.round(box?.y ?? 0), Math.round((box?.y ?? 0) + (box?.height ?? 0)), Math.round(box?.width ?? 0)]
-    })
-    .toEqual([
-      Math.round((stuck?.y ?? 0) + (stuck?.height ?? 0)),
-      Math.round((column?.y ?? 0) + (column?.height ?? 0)),
-      Math.round(column?.width ?? 0)
-    ])
-  // Sin fondo propio
-  expect(await viewer.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgba(0, 0, 0, 0)')
+  await expect(page.getByRole('toolbar', { name: 'Acercar y alejar el mapa' })).toBeVisible()
+  // La rueda sobre el mapa lo acerca (la escala cambia) y la página no se mueve
+  const scale = () =>
+    page.locator('[class*="scaleBar"]').evaluate((el) => `${el.getAttribute('style')} ${el.textContent}`)
+  const before = await scale()
+  await wheelOver(page, viewer, -300)
+  await expect.poll(scale).not.toBe(before)
+  expect(await page.evaluate(() => window.scrollY)).toBe(0)
   // Las herramientas siguen funcionando: una herramienta elegida, marcada
   await tools.getByRole('button', { name: 'Medir' }).click()
   await expect(tools.getByRole('button', { name: 'Medir' })).toHaveAttribute('aria-pressed', 'true')
+})
+
+test('en una ventana baja (un portátil), el mapa y la pizarra caben sin desplazar y el texto se desplaza con la rueda como siempre', async ({
+  page
+}) => {
+  await page.setViewportSize({ width: 1200, height: 650 })
+  const { url, mapId, boardId } = await setUp(page)
+  await page.goto(url)
+  const title = page.getByRole('heading', { level: 1, name: 'El robo del relicario' })
+  await expect(title).toBeVisible()
+  // La franja de la portada, más baja en una ventana baja
+  expect((await page.locator('header[data-page-head] > [data-band]').boundingBox())?.height ?? 0).toBeLessThan(95)
+  // El texto: con el ratón (y el foco) dentro del editor, la rueda baja poco a poco, sin saltos ni vueltas atrás
+  const editor = page.locator('.ProseMirror').first()
+  await editor.locator('p').nth(2).click()
+  const positions: number[] = []
+  for (let i = 0; i < 6; i++) {
+    await wheelOver(page, editor, 60)
+    await page.waitForTimeout(120)
+    positions.push(await page.evaluate(() => window.scrollY))
+  }
+  for (let i = 1; i < positions.length; i++) expect(positions[i] ?? 0).toBeGreaterThanOrEqual(positions[i - 1] ?? 0)
+  expect(positions.at(-1) ?? 0).toBeGreaterThan(200)
+  await page.waitForTimeout(600)
+  expect(await page.evaluate(() => window.scrollY)).toBe(positions.at(-1))
+  // Al bajar, la barra pequeña pegada con el título y las pestañas
+  const head = page.locator('header[data-page-head]')
+  await expect(head).toHaveAttribute('data-compact')
+  // La pizarra y el mapa, sin desplazar
+  await page.goto(`${url}?pestana=${boardId}`)
+  const board = page.getByRole('region', { name: 'Pizarra', exact: true })
+  await expect(board.locator('.excalidraw')).toBeVisible()
+  await fitsWindow(page, board)
+  await page.goto(`${url}?pestana=${mapId}`)
+  await fitsWindow(page, page.getByRole('application', { name: 'Mapa', exact: true }))
 })
 
 test('la pizarra: transparente, a sangre y con nuestra píldora; elegir, dibujar, deshacer y el zoom; sin «Ampliar»', async ({
@@ -151,15 +209,8 @@ test('la pizarra: transparente, a sangre y con nuestra píldora; elegir, dibujar
   await expect(pill.getByRole('button', { name: 'Elegir' })).toHaveAttribute('aria-pressed', 'true')
   await expect(pill.getByRole('button', { name: 'Rectángulo' })).toHaveAttribute('title', 'Rectángulo (R)')
 
-  // Al bajar del todo, a sangre hasta el final de la ventana; la píldora, abajo
-  await scrollColumn(page)
-  const column = await page.locator('[data-page-scroll]').boundingBox()
-  await expect
-    .poll(async () => {
-      const box = await board.boundingBox()
-      return Math.round((box?.y ?? 0) + (box?.height ?? 0))
-    })
-    .toBe(Math.round((column?.y ?? 0) + (column?.height ?? 0)))
+  // A sangre hasta el final de la ventana, sin desplazar; la píldora, abajo
+  await fitsWindow(page, board)
   expect(await board.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgba(0, 0, 0, 0)')
 
   // Un rectángulo con la píldora; deshacer lo quita

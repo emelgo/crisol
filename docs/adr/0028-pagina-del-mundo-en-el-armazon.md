@@ -24,13 +24,16 @@ prefirió volver al armazón de antes y quedarse con la página nueva.
    archivos recordadas en el aparato), la lista de Archivos en pequeño y las transiciones de tipo
    `pantalla-completa`. Lo común que se había sacado de la barra (`world-hooks.ts`, `crucible.module.css`) vuelve a
    ella: ya solo hay un armazón.
-3. **La página, como la de Everlore, se queda** dentro de `WikiLayout` (la nota del 2026-11-16 del ADR-0027): la
-   portada arriba en todas las pestañas (176 px, esquinas de 18 px; sin portada, la textura), el título grande con su
-   icono y a la derecha sus botones y el del panel; las pestañas subrayadas con las herramientas de la abierta a su
-   derecha; al bajar, la barra pequeña de cristal pegada con el título y las pestañas; el texto sin caja, hasta 72 rem y
-   centrado; el mapa y la pizarra a sangre hasta el final de la ventana, transparentes, con sus píldoras. La columna
-   del centro es una sola superficie casi opaca de arriba abajo, sin borde que acabe. Va con el desplazamiento de la
-   ventana, como el resto del armazón: las dos fichas de los lados, pegadas arriba al bajar. Su contexto,
+3. **La página, como la de Everlore, se queda** dentro de `WikiLayout` (la nota del 2026-11-16 del ADR-0027), con lo
+   que Enrique pidió al probarla en su portátil (2026-11-16: «tenemos poco espacio de trabajo»): la portada, una franja
+   baja detrás del título (de 5,5 a 7,5 rem según el alto de la ventana; sin portada, la textura) con el título grande
+   encima y a la derecha sus botones y el del panel; las pestañas subrayadas justo debajo, con las herramientas de la
+   abierta a su derecha. La columna, una pieza de cristal con las esquinas redondeadas y su raya, algo más translúcida
+   que la hoja (`--surface-page`). **El desplazamiento es el del navegador** (se probó un ajuste automático entre
+   «arriba» y «pegada» y se retiró: «no me gusta la solución de hacer scroll para centrar»): en el texto, al bajar, la
+   barra pequeña de cristal se pega con el título y las pestañas (con movimiento, sin mover lo de debajo); el texto,
+   sin caja, hasta 72 rem y centrado. **El mapa y la pizarra caben en la ventana**: la columna mide lo que queda de
+   ella y no se desplaza; el lienzo, a sangre bajo las pestañas, transparente y con sus píldoras. Su contexto,
    `wiki/world-page.ts`; sus estilos, `wiki/world-page.module.css`.
 4. **El panel de la página se pliega** desde su botón en la cabecera de la página (también en la barra pegada) y se
    recuerda en el aparato; su columna de la rejilla se cierra y él se va por la derecha. Junto a un mapa o una pizarra,

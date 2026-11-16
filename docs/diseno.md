@@ -68,17 +68,28 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   su cajón); sin selector rápido. En el centro, **la página con el mismo esqueleto en todas sus pestañas** (Enrique,
   2026-11-13: «cada vista, texto, pizarra o mapa son diferentes, deben mantener el esqueleto»), **como la página de
   Everlore** (Enrique, 2026-11-16, lienzo «Página del mundo, la mezcla»: «me gusta»; se queda al volver el armazón):
-  la columna del centro es **una sola superficie casi opaca de arriba abajo**, sin borde que acabe. Dentro, **la
-  portada arriba en las tres pestañas** (176 px, esquinas redondeadas; sin portada, su textura), **debajo el título
-  grande** con su icono y, a la derecha, sus botones, «⋯» y **el botón del panel**; debajo, **las pestañas
-  subrayadas** y a su derecha las herramientas de la abierta («Guardado» del texto; «Página…» y el ojo de la
-  pizarra). **Al bajar**, cuando el título llega arriba, se queda una **barra pequeña de cristal pegada** con el título
-  en pequeño, las pestañas (se cambia de pestaña sin subir) y los botones. **El texto, sin caja** (Enrique: «quiero que
+  la columna del centro es **una sola pieza de cristal que se lee, con las esquinas redondeadas del cristal y su raya
+  fina**, algo más translúcida que la hoja (Enrique, 2026-11-16: «pon el estilo del cuadro de texto a los demás,
+  redondea las esquinas y dale como un poco más de cristal»; `--surface-page`, el texto a más de 4,5:1), **la misma en
+  el texto, el mapa y la pizarra** (el lienzo, recortado por sus esquinas). **La ficha del árbol y el panel, alineados
+  con ella** (Enrique, 2026-11-16: «que esté alineada con las columnas y llegue hasta donde la columna»): empiezan a su
+  altura, bajo las pestañas abiertas, y llegan hasta abajo con el mismo margen, con sus mismas esquinas y su mismo
+  cristal. Dentro, **la
+  portada detrás del título en las tres pestañas** (Enrique, 2026-11-16: «tenemos poco espacio de trabajo»; eligió
+  «Portada detrás del título»; antes, la portada de 176 px encima del título): una franja baja (de 5,5 a 7,5 rem según
+  el alto de la ventana, esquinas redondeadas; sin portada, su textura) con **el título grande encima de su parte de
+  abajo**, sobre un degradado oscuro que lo deja leer, y **a la derecha, en la misma franja, sus botones**, «⋯» y
+  **el botón del panel**; justo debajo, **las pestañas subrayadas** y a su derecha las herramientas de la abierta
+  («Guardado» del texto; «Página…» y el ojo de la pizarra). **El desplazamiento, el del navegador**: nada baja solo ni
+  se ajusta con la rueda (Enrique, 2026-11-16: «no me gusta la solución de hacer scroll para centrar»). **En el texto**,
+  al bajar, cuando la cabecera llega arriba, se queda una **barra pequeña de cristal pegada** con el título en pequeño,
+  las pestañas (se cambia de pestaña sin subir) y los botones; la franja se funde y el título, las pestañas y los
+  botones pasan a la barra con movimiento, sin que lo de debajo se mueva. **El texto, sin caja** (Enrique: «quiero que
   la caja del texto esté integrada y no tenga fin»): va sobre la superficie de la página, hasta 72 rem y centrado.
-  **El mapa y la pizarra, a sangre**: de lado a lado de la columna y con el alto de lo que se ve bajo la barra pegada
-  (al bajar del todo llegan al final de la ventana), **sin fondo propio** (se ve el de la página) y **sus herramientas
-  en una píldora de cristal abajo en el centro**, pegada al borde de abajo de lo que se ve; el zoom, abajo a la
-  derecha. A la derecha, el panel de la página, **que se pliega** (sustituye a «no se esconde») **desde su botón en la
+  **El mapa y la pizarra, a sangre y sin desplazar**: la cabecera arriba y, debajo, el lienzo de lado a lado de la
+  columna y **hasta el final de la ventana; todo cabe** (la columna no se desplaza y la rueda sobre el lienzo es del
+  lienzo), **sin fondo propio** (se ve el de la página) y **sus herramientas en una píldora de cristal abajo en el
+  centro**; el zoom, abajo a la derecha. A la derecha, el panel de la página, **que se pliega** (sustituye a «no se esconde») **desde su botón en la
   cabecera de la página** (Enrique, 2026-11-16): su columna se cierra mientras el centro se ensancha, y se recuerda;
   **junto a un mapa o una pizarra, si no tiene nada (ni enlaces, ni propiedades, ni bloques), se pliega solo**
   (Enrique, 2026-11-14) y su botón lo abre igual. Las plantillas y las ventanas de páginas de la Mesa, con la página de
@@ -167,7 +178,8 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   vez. Los visores de imagen a pantalla completa (`data-full`), sin él. **Los campos** (buscadores, cajas de texto,
   desplegables), de cristal oscuro (`--field-fill`); **el botón principal**, de cristal rojo (`--accent-glass`). **La
   página es una hoja casi opaca** (`--surface-read`): la portada y el texto, una sola pieza; **en un mundo, la hoja es
-  toda la columna del centro**, de arriba abajo y sin caja (Enrique, 2026-11-16). Los marcos pintan su raya en
+  toda la columna del centro**, sin caja, de cristal algo más translúcido y con las esquinas redondeadas (Enrique,
+  2026-11-16). Los marcos pintan su raya en
   una capa aparte (`::before`), para que su relleno pueda ser de cristal; la zona de peligro, igual, en rojo. **«Sin efecto cristal»** (Ajustes, «Aspecto»; se guarda en el navegador): sin fondo de ambiente ni
   desenfoque en ninguna parte, también en la Mesa; todo opaco, como antes. Sin desenfoque en el navegador, todo más
   tapado.
@@ -322,8 +334,7 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 - **Del estilo de Everlore, la forma** (esquinas redondeadas, cabecera pegajosa compacta al bajar) con nuestros
   colores y letras. Sin el mundo en pequeño sobre el título (estaba repetido) y sin migas de pan. La portada de la
   página va por detrás, solo en la columna del centro, fundida con el fondo, con el título encima de su parte de
-  abajo (en un mundo, **arriba y entera, con sus esquinas redondeadas, y el título debajo**,
-  Enrique, 2026-11-16). **Una página sin portada se ve como una con portada, pero sin ella**: su hueco se queda, con una textura
+  abajo (en un mundo, **una franja baja detrás del título**, Enrique, 2026-11-16). **Una página sin portada se ve como una con portada, pero sin ella**: su hueco se queda, con una textura
   suave (grano, un tejido tenue y dos manchas de color, fundidos con el fondo) para que no se vea plano (el título y
   las fichas, en el mismo sitio en todas) y «Añadir portada» sale arriba a la derecha al pasar por él.
 - **Las pestañas de una página** (ADR-0007): siempre bajo el título, «Texto» y las que se añaden, en texto plano con la
@@ -345,8 +356,8 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   (2026-11-08).
 - **El mapa y la pizarra, con todo el sitio, como en LegendKeeper** (Enrique, 2026-11-13: «no debe verse por abajo cómo
   termina el cuadrado»): abiertos en una página, cruzan la hoja de lado a lado y llegan justo al final de la ventana;
-  la hoja no acaba (sin su borde de abajo). En un mundo, **a sangre bajo las pestañas, con el alto
-  de lo que se ve bajo la barra pegada y sin fondo propio**, como en Everlore (Enrique, 2026-11-16). **Supr borra lo elegido** (lo dibujado o un pin) **y Escape deja la
+  la hoja no acaba (sin su borde de abajo). En un mundo, **a sangre bajo las pestañas, hasta el final
+  de la ventana y sin desplazar la página, sin fondo propio**, como en Everlore (Enrique, 2026-11-16). **Supr borra lo elegido** (lo dibujado o un pin) **y Escape deja la
   herramienta** con el foco en cualquier sitio del mapa, no solo en él.
 - **La pizarra** (tras la crítica del 2026-11-13): Excalidraw con lo de Crisol y nada de lo suyo de fuera (ni su
   biblioteca pública, ni su ayuda con sus redes, ni sus textos de ayuda fijos, ni su menú de serie a quien solo mira);

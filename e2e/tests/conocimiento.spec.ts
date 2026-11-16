@@ -89,11 +89,11 @@ test('lo que sabe cada campaña: el máster da a conocer «Aldoria» a La Marca;
   await expect(who.getByRole('region', { name: 'La Marca' })).toContainText('Decidido en esta página')
   await expect(who.getByRole('region', { name: 'Los del norte' })).toContainText('No la ve')
   await page.screenshot({ path: test.info().outputPath('quien-la-conoce.png'), fullPage: false })
-  // El ojo en el árbol, en ella y en su subpágina
+  // El ojo en el árbol (siempre a la vista en las que conoce alguna campaña; para el lector, dicho en la fila)
   await page.keyboard.press('Escape')
-  await expect(
-    page.getByRole('treeitem', { name: /Aldoria/ }).getByRole('img', { name: 'La conoce alguna campaña' })
-  ).toBeVisible()
+  const row = page.getByRole('treeitem', { name: /Aldoria/ })
+  await expect(row).toHaveAccessibleName(/La conoce alguna campaña/)
+  await expect(row.locator('[data-known]')).toBeVisible()
 
   // La jugadora de La Marca: en su campaña, las páginas del mundo, con Aldoria y su capital
   const ana = await newPlayer(browser, link, 'Ana')

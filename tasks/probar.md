@@ -18,23 +18,28 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   llama y salen los iconos del mundo; al salir, al revés, con humo).
 - [ ] **Un solo buscador**: Ctrl+K pone el cursor en el de la ficha del árbol (también con el foco en una pizarra);
   escribir filtra el árbol e Intro busca en el texto de todas.
-- [ ] **Texto**: la portada arriba (redondeada; sin portada, la textura y «Añadir portada» al pasar), el título grande
-  debajo y las pestañas subrayadas. La página es una sola superficie de arriba abajo; el texto va sin caja.
-- [ ] **Al bajar**: cuando el título llega arriba, se queda una barra pequeña de cristal con el título, las pestañas
-  (cambiar de pestaña desde ahí), «Guardado» y los botones; las fichas de los lados, pegadas arriba. Al subir, vuelve el
-  título grande sin saltos.
+- [ ] **La portada detrás del título**: en Texto, Mapa y Pizarra, una franja baja (más baja en el portátil) con el
+  título grande encima, que se lee sobre la imagen, y sus botones a la derecha; las pestañas justo debajo. Sin
+  portada, la textura y «Añadir portada» al pasar.
+- [ ] **La página, de cristal**: el recuadro de la página con las esquinas redondeadas y algo más translúcido (se intuye
+  el fondo), igual en Texto, Mapa y Pizarra; el texto se lee bien. La ficha del árbol y el panel empiezan y acaban a su
+  misma altura, con las mismas esquinas y el mismo cristal.
+- [ ] **El desplazamiento, el normal**: nada baja solo. En Texto, con el ratón dentro del texto, la rueda baja suave como
+  en cualquier página; al bajar, la barra pequeña de cristal se pega arriba con el título y las pestañas (cambiar de
+  pestaña desde ahí) y lo de debajo no salta.
+- [ ] **Mapa y Pizarra, sin desplazar**: en el portátil (1200×650) y en la pantalla grande, la cabecera y debajo el
+  lienzo hasta abajo, todo a la vista; la rueda sobre el lienzo acerca y aleja.
 - [ ] **El botón del panel** (tras «⋯», también en la barra pequeña): el panel se va por la derecha y el centro se
   ensancha a la vez; al volver a pulsarlo, entra. Se recuerda al cambiar de página. Junto a un mapa o una pizarra con el
   panel vacío, se pliega solo.
-- [ ] **Mapa**: a sangre bajo las pestañas, sin fondo propio; al bajar del todo, llega al final de la ventana. Las
-  herramientas, en una píldora abajo en el centro, siempre pegadas al borde de abajo de lo que se ve (también sin haber
-  bajado); el zoom (con «Ampliar el mapa», que deja la barra de la app a la vista) abajo a la derecha y la escala abajo
-  a la izquierda.
+- [ ] **Mapa**: a sangre, sin fondo propio. Las herramientas, en una píldora abajo en el centro; el zoom (con «Ampliar el
+  mapa», que deja la barra de la app a la vista) abajo a la derecha y la escala abajo a la izquierda.
 - [ ] **Pizarra**: a sangre y transparente; nuestra píldora abajo con sus herramientas (la elegida marcada; su atajo al
   pasar el ratón), «⋯» (guardar como imagen, vaciarla), el zoom abajo a la derecha y deshacer y rehacer abajo a la
   izquierda. Sin «Ampliar» (la jugadora sí lo tiene).
 - [ ] **Decidido sin ti**: con el panel plegado, la página llega hasta el borde derecho dejando el mismo hueco que hay
-  junto a la ficha del árbol (no pegada al borde). Los temas de papel de la hoja (pergamino) siguen cambiando solo la
+  junto a la ficha del árbol (no pegada al borde). En la barra pequeña de un portátil con el panel abierto, si no caben,
+  el título se acorta con «…» y las pestañas se desplazan de lado; «Guardado» solo sale con la cabecera grande. Los temas de papel de la hoja (pergamino) siguen cambiando solo la
   letra en pantalla; ¿quieres que el pergamino tiña la columna entera?
 
 ## Módulo 9: la pizarra (en local, rama `modulo-9/mapas`; docs/specs/pizarra.md)
