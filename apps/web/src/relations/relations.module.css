@@ -127,11 +127,10 @@
   line-height: 1;
 }
 
-.initials {
-  fill: var(--node-color);
+.initials::before {
+  content: attr(data-initials);
+  color: var(--node-color);
   font-weight: 700;
-  text-anchor: middle;
-  pointer-events: none;
 }
 
 .nodeTitle {
@@ -416,6 +415,11 @@
   border-block-end: 1px solid var(--line-soft);
 }
 
+.cardHead > div {
+  min-inline-size: 0;
+  text-align: start;
+}
+
 .cardHead h3 {
   margin: 0;
   font-family: var(--font-body);
@@ -580,6 +584,7 @@
 }
 
 .toggle {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
@@ -591,9 +596,12 @@
 
 .toggle input {
   position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  margin: 0;
   opacity: 0;
-  inline-size: 1px;
-  block-size: 1px;
+  cursor: pointer;
 }
 
 .track {
@@ -819,8 +827,12 @@
   overflow: hidden;
 }
 
-/* En el móvil, la ficha de la elegida sube desde abajo, como una hoja */
+/* En el móvil, la ficha de la elegida sube desde abajo, como una hoja; el zoom, arriba (no la tapa) */
 @media (max-width: 48rem) {
+  .wideBody .zoom {
+    inset-block: var(--space-3) auto;
+  }
+
   .wideBody .card {
     inset-block: auto 0;
     inset-inline: 0;

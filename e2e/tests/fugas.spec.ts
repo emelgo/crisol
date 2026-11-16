@@ -1397,3 +1397,78 @@ test('@fugas las cronologías: la jugadora solo ve las reveladas y, dentro, lo q
     expect((await player.request.post(`/api/actions/${name}`, { data })).status(), name).toBe(404)
   await player.close()
 })
+
+test('@fugas las relaciones: la jugadora no recibe ni aristas, ni nodos, ni nombres de lo que su campaña no conoce, por la API ni al abrir la pestaña o el grafo del mundo (módulo 10)', async ({
+  page,
+  browser
+}) => {
+  const link = await campaignLink(page)
+  const [, , worldId = '', , campaignId = ''] = campaignPath(page).split('/')
+  const api = async (name: string, data: object) => {
+    const response = await page.request.post(`/api/actions/${name}`, { data })
+    expect(response.status(), name).toBe(200)
+    return response.json()
+  }
+  const created = await api('createPages', {
+    worldId,
+    parentId: null,
+    pages: [
+      {
+        key: 'ilsa',
+        title: 'Ilsa de Varn',
+        markdown: 'Vive en [[El Puerto]].\n\n> [!secreto]\n> Sirve a [[El Topo]].\n'
+      },
+      { key: 'puerto', title: 'El Puerto' },
+      { key: 'topo', title: 'El Topo' },
+      { key: 'madre', title: 'La Reina Oculta' },
+      { key: 'liga', title: 'La Liga' }
+    ]
+  })
+  const id = Object.fromEntries((created.pages as { key: string; id: string }[]).map((p) => [p.key, p.id])) as Record<
+    string,
+    string
+  >
+  await api('setPageProperties', {
+    pageId: id.ilsa,
+    properties: [
+      { name: 'Apodo', type: 'text', value: 'La Sombra de Varn', hidden: true },
+      { name: 'Padres', type: 'pages', value: [id.madre], role: 'parent', inverseName: 'Hijos' },
+      { name: 'Facción', type: 'pages', value: [id.liga], role: 'member-of', single: true, hidden: true }
+    ]
+  })
+  for (const key of ['ilsa', 'puerto', 'topo', 'liga'])
+    await api('setKnowledge', { worldId, campaignId, kind: 'page', targetId: id[key], known: true })
+
+  let seen: ReturnType<typeof capture> | undefined
+  const player = await newPlayer(browser, link, 'Jugadora', (p) => {
+    seen = capture(p)
+  })
+  if (!seen) throw new Error('sin captura')
+  await player.goto(`/mundos/${worldId}/campanas/${campaignId}/paginas/${id.ilsa}?pestana=relaciones`)
+  await expect(player.getByRole('button', { name: 'El Puerto' }).first()).toBeVisible()
+  await player.goto(`/mundos/${worldId}/campanas/${campaignId}/relaciones`)
+  await expect(player.getByRole('heading', { level: 1, name: 'Relaciones' })).toBeVisible()
+  const bodies: string[] = []
+  for (const [name, data] of [
+    ['getRelations', { pageId: id.ilsa, campaignId }],
+    ['getRelations', { pageId: id.ilsa, campaignId, mode: 'family' }],
+    ['getRelations', { pageId: id.liga, campaignId, mode: 'org' }],
+    ['getWorldGraph', { worldId, campaignId, orphans: true }]
+  ] as const) {
+    const response = await player.request.post(`/api/actions/${name}`, { data })
+    expect(response.status(), name).toBe(200)
+    bodies.push(await response.text())
+  }
+  expect(bodies.join('\n')).toContain('El Puerto')
+  // Una página que no conoce, ni por su id
+  expect(
+    (await player.request.post('/api/actions/getRelations', { data: { pageId: id.madre, campaignId } })).status()
+  ).toBe(404)
+  const everything = [await seen.all(), ...bodies].join('\n')
+  // Ni la madre que no conoce, ni el campo oculto (ni su valor bajo el nombre), ni la mención desde el secreto
+  for (const leak of ['Reina Oculta', id.madre, 'La Sombra de Varn', '"secret"', 'Facción'])
+    expect(everything).not.toContain(leak)
+  // El Topo lo conoce, pero solo se le nombra en un secreto sin revelar: ni arista ni nodo en la pestaña de Ilsa
+  expect(bodies[0]).not.toContain(id.topo)
+  await player.close()
+})

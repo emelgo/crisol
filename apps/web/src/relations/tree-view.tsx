@@ -6,7 +6,7 @@
  */
 import type { RelationNode } from '@crisol/contracts'
 import type { ZoomTransform } from 'd3-zoom'
-import { type CSSProperties, memo, type ReactNode } from 'react'
+import { type CSSProperties, memo, type ReactNode, useId } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { TreeLayout } from './layout.ts'
 import { activates, NodeGlyph } from './links-graph.tsx'
@@ -56,8 +56,30 @@ const TreeBody = memo(function TreeBody({
 }: Omit<TreeViewProps, 'transform' | 'svgRef' | 'label' | 'children'>) {
   const { t } = useTranslation()
   const left = Math.min(...layout.cards.map((card) => card.x - card.width / 2))
+  // Lo que no cabe en una tarjeta se funde por la derecha (entero, al pasar el ratón y en la ficha al elegirla)
+  const fade = useId()
+  const widths = [...new Set(layout.cards.map((card) => card.width))]
   return (
     <>
+      <defs>
+        <linearGradient id={`${fade}-g`} x1="0" x2="1" y1="0" y2="0">
+          <stop offset="0.86" stopColor="#fff" />
+          <stop offset="1" stopColor="#fff" stopOpacity="0" />
+        </linearGradient>
+        {widths.map((width) => (
+          <mask
+            key={width}
+            id={`${fade}-${width}`}
+            maskUnits="userSpaceOnUse"
+            x="0"
+            y="0"
+            width={width - 8}
+            height="80"
+          >
+            <rect x="0" y="0" width={width - 8} height="80" fill={`url(#${fade}-g)`} />
+          </mask>
+        ))}
+      </defs>
       {layout.rows.map((row) => (
         <text key={row.generation} className={styles.rowLabel} x={left - 24} y={row.y} dy="0.35em">
           {t(`relations.rows.${String(Math.max(-3, Math.min(3, row.generation))) as '0'}`)}
@@ -111,15 +133,23 @@ const TreeBody = memo(function TreeBody({
               onSelect(card.id)
             }}
           >
+            <title>
+              {[card.kind === 'leader' ? t('relations.leads') : '', node.title, below].filter(Boolean).join(', ')}
+            </title>
             <rect width={card.width} height={card.height} rx={10} className={styles.cardBox} />
             <g transform={`translate(${avatar + 8},${card.height / 2})`}>
               <circle r={avatar - 6} className={styles.ring} />
               <NodeGlyph node={node} size={avatar} />
             </g>
-            <text x={avatar * 2 + 12} y={card.height / 2} className={styles.cardText}>
+            <text
+              x={avatar * 2 + 12}
+              y={card.height / 2}
+              className={styles.cardText}
+              mask={`url(#${fade}-${card.width})`}
+            >
               {card.kind === 'leader' && (
                 <tspan x={avatar * 2 + 12} dy="-1.35em" className={styles.cardBadge}>
-                  {t('relations.leads')}
+                  {`${t('relations.leads')} `}
                 </tspan>
               )}
               <tspan
@@ -127,11 +157,12 @@ const TreeBody = memo(function TreeBody({
                 dy={card.kind === 'leader' ? '1.2em' : below ? '-0.2em' : '0.35em'}
                 className={styles.cardTitle}
               >
-                {clip(node.title, card.width)}
+                {/* Con su espacio: lo que se ve se lee seguido, como su nombre */}
+                {below ? `${node.title} ` : node.title}
               </tspan>
               {below && (
                 <tspan x={avatar * 2 + 12} dy="1.25em" className={styles.cardSub}>
-                  {clip(below, card.width)}
+                  {below}
                 </tspan>
               )}
             </text>
@@ -141,9 +172,3 @@ const TreeBody = memo(function TreeBody({
     </>
   )
 })
-
-/** Lo que cabe en una tarjeta (a ojo, por letras): lo demás, con «…» (entero, en la ficha al elegirla) */
-function clip(text: string, width: number) {
-  const room = Math.floor((width - 64) / 7)
-  return text.length > room ? `${text.slice(0, Math.max(1, room - 1)).trimEnd()}…` : text
-}

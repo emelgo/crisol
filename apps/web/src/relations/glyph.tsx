@@ -13,7 +13,11 @@ export function NodeGlyphBox({
 }) {
   return (
     <span className={styles.avatar} data-size={size} aria-hidden="true">
-      {node.icon ? <Icon value={node.icon} /> : initials(node.title)}
+      {node.icon ? (
+        <Icon value={node.icon} />
+      ) : (
+        <span className={styles.initials} data-initials={initials(node.title)} />
+      )}
     </span>
   )
 }

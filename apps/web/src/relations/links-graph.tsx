@@ -16,18 +16,19 @@ import styles from './relations.module.css'
 
 export type GraphEdge = ReadableEdge & Pick<RelationEdge, 'key' | 'role'>
 
-/** El dibujo de una página dentro de su círculo: su icono o sus iniciales */
+/**
+ * El dibujo de una página dentro de su círculo: su icono o sus iniciales. Las iniciales, como contenido de CSS: se ven
+ * pero no son texto (el nombre de la página ya lo dice su etiqueta, y no lo repite)
+ */
 export function NodeGlyph({ node, size }: { node: Pick<RelationNode, 'icon' | 'title'>; size: number }) {
-  if (node.icon)
-    return (
-      <foreignObject x={-size / 2} y={-size / 2} width={size} height={size} className={styles.glyph}>
-        <Icon value={node.icon} size={size * 0.8} />
-      </foreignObject>
-    )
   return (
-    <text className={styles.initials} dy="0.35em" style={{ fontSize: size * 0.48 }}>
-      {initials(node.title)}
-    </text>
+    <foreignObject x={-size / 2} y={-size / 2} width={size} height={size} className={styles.glyph}>
+      {node.icon ? (
+        <Icon value={node.icon} size={size * 0.8} />
+      ) : (
+        <span className={styles.initials} data-initials={initials(node.title)} style={{ fontSize: size * 0.48 }} />
+      )}
+    </foreignObject>
   )
 }
 
@@ -191,7 +192,8 @@ const GraphBody = memo(function GraphBody({
               <text className={styles.nodeTitle} y={radius + 15}>
                 {lines.map((line, index) => (
                   <tspan key={line} x={0} dy={index === 0 ? 0 : '1.15em'}>
-                    {line}
+                    {/* Con su espacio: el nombre se lee seguido («Guerra de las Brumas») */}
+                    {index < lines.length - 1 ? `${line} ` : line}
                   </tspan>
                 ))}
               </text>
