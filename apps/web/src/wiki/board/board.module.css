@@ -20,6 +20,16 @@
   border-radius: 0;
 }
 
+/* A sangre en la página del mundo (shell/world-shell.module.css, .bleed): todo su alto y sin fondo propio (se ve el de
+   la página, como en Everlore) */
+:global(article[data-bleed]) .wrapper:not([data-wide]) {
+  block-size: 100%;
+  /* Sin recortar: sus herramientas se pegan abajo de lo que se ve de la columna (.dock) */
+  overflow: visible;
+  border: 0;
+  background: transparent;
+}
+
 /* Ampliada: todo lo de al lado de la barra de la app, por encima de la página */
 .wrapper[data-wide] {
   position: fixed;
@@ -194,6 +204,10 @@
   min-block-size: 0;
 }
 
+:global(article[data-bleed]) .wrapper:not([data-wide]) .canvas {
+  overflow: hidden;
+}
+
 .loading {
   margin: auto;
   color: var(--color-muted);
@@ -218,6 +232,107 @@
 .canvas :global(.excalidraw .HintViewer),
 .canvas :global(.excalidraw .excalidraw-hyperlinkContainer) {
   display: none;
+}
+
+/* Con nuestras herramientas abajo (board-dock.tsx): sin su barra de formas, su menú ni su pie (el zoom y deshacer); su
+   panel de propiedades se queda. Y sin fondo propio: se ve el de la página */
+.canvas[data-docked] :global(.excalidraw .shapes-section),
+.canvas[data-docked] :global(.excalidraw .main-menu-trigger),
+.canvas[data-docked] :global(.excalidraw .layer-ui__wrapper__footer-left) {
+  display: none;
+}
+
+.canvas[data-docked] :global(.excalidraw.theme--dark) {
+  --default-bg-color: transparent;
+}
+
+/* La base de las herramientas: pegada abajo de lo que se ve (aunque el lienzo siga más abajo); sin alto, lo de dentro
+   sube desde ella */
+.dock {
+  position: sticky;
+  inset-block-end: 0;
+  z-index: 10;
+  flex: none;
+  block-size: 0;
+}
+
+/* Una píldora de cristal: la de las herramientas, abajo en el centro; el zoom, a la derecha; deshacer, a la izquierda */
+.pill {
+  position: absolute;
+  inset-block-end: var(--space-4);
+  inset-inline-start: 50%;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  border: 1px solid var(--line-frame);
+  border-radius: 12px;
+  background: var(--frame-sheen), var(--popup-glass);
+  -webkit-backdrop-filter: var(--popup-blur);
+  backdrop-filter: var(--popup-blur);
+  box-shadow: var(--glass-shadow);
+  transform: translateX(-50%);
+}
+
+.zoomTools {
+  inset-block-end: var(--space-3);
+  inset-inline: auto var(--space-3);
+  border-radius: 10px;
+  transform: none;
+}
+
+:global([data-panel-folded]) .zoomTools {
+  inset-block-end: calc(var(--space-4) + 3.25rem + var(--space-3));
+}
+
+.historyTools {
+  inset-block-end: var(--space-3);
+  inset-inline: var(--space-3) auto;
+  border-radius: 10px;
+  transform: none;
+}
+
+.dockButton {
+  display: grid;
+  place-items: center;
+  min-inline-size: 2.25rem;
+  block-size: 2.25rem;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition: background-color 120ms ease-out;
+}
+
+.dockButton:hover {
+  background: color-mix(in srgb, var(--color-text) 10%, transparent);
+}
+
+.dockButton[aria-pressed="true"],
+.dockButton[aria-expanded="true"] {
+  background: color-mix(in srgb, var(--color-accent-text) 22%, transparent);
+  color: var(--color-accent-text);
+}
+
+.dockButton:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
+}
+
+.zoomValue {
+  min-inline-size: 3.25rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.dockSep {
+  inline-size: 1px;
+  block-size: 1.5rem;
+  margin: 0 3px;
+  background: var(--line-frame);
 }
 
 /* Quien solo mira: sin su menú (sería el de serie, con sus enlaces de fuera) */

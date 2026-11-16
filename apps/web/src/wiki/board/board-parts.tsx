@@ -9,7 +9,17 @@ import type { ExcalidrawElement } from '@excalidraw/excalidraw/element/types'
 import type { ExcalidrawImperativeAPI } from '@excalidraw/excalidraw/types'
 import { useQuery } from '@tanstack/react-query'
 import { Expand, EyeOff, FilePlus2, Shrink } from 'lucide-react'
-import { type DragEvent, type ReactNode, useCallback, useContext, useEffect, useId, useRef, useState } from 'react'
+import {
+  type DragEvent,
+  type ReactNode,
+  type RefObject,
+  useCallback,
+  useContext,
+  useEffect,
+  useId,
+  useRef,
+  useState
+} from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../../api/context.tsx'
@@ -261,6 +271,8 @@ export function BoardFrame({
   onAddPage,
   onDropPage,
   onCanvasResize,
+  canvasRef,
+  dock,
   children
 }: {
   page: Page
@@ -283,6 +295,13 @@ export function BoardFrame({
   onDropPage?: (event: DragEvent<HTMLDivElement>) => boolean
   /** El lienzo ha cambiado de tamaño o de sitio (la barra de encima crece al llegar el título): Excalidraw, al día */
   onCanvasResize?: () => void
+  /** El lienzo, para quien lo necesite fuera (las herramientas de abajo) */
+  canvasRef?: RefObject<HTMLDivElement | null>
+  /**
+   * En el mundo a pantalla completa, las herramientas pegadas abajo de lo que se ve (board-dock.tsx); sin «Ampliar»:
+   * la pizarra ya va a sangre (Enrique, 2026-11-16, como en Everlore)
+   */
+  dock?: ReactNode
   children: ReactNode
 }) {
   const { t } = useTranslation()
@@ -305,7 +324,8 @@ export function BoardFrame({
   const slot = useContext(TabToolsSlot)
   // Si el lienzo cambia de tamaño o baja (la barra crece), Excalidraw recalcula dónde está: si no, sus tarjetas, que
   // solo pinta a la vista, no salían hasta mover algo
-  const canvas = useRef<HTMLDivElement>(null)
+  const ownCanvas = useRef<HTMLDivElement>(null)
+  const canvas = canvasRef ?? ownCanvas
   const resized = useRef(onCanvasResize)
   resized.current = onCanvasResize
   // El botón de su menú no lleva nombre: se le pone (y si Excalidraw lo vuelve a pintar, otra vez)
@@ -386,17 +406,19 @@ export function BoardFrame({
             ? t('board.offline')
             : (notice ?? (saved && onAddPage ? t('board.saved') : ''))}
       </span>
-      <button
-        ref={wideButton}
-        type="button"
-        className={styles.barButton}
-        aria-pressed={wide}
-        aria-label={t(wide ? 'board.shrink' : 'board.expand')}
-        title={t(wide ? 'board.shrink' : 'board.expand')}
-        onClick={() => toggleWide(!wide)}
-      >
-        {wide ? <Shrink aria-hidden="true" size={16} /> : <Expand aria-hidden="true" size={16} />}
-      </button>
+      {!dock && (
+        <button
+          ref={wideButton}
+          type="button"
+          className={styles.barButton}
+          aria-pressed={wide}
+          aria-label={t(wide ? 'board.shrink' : 'board.expand')}
+          title={t(wide ? 'board.shrink' : 'board.expand')}
+          onClick={() => toggleWide(!wide)}
+        >
+          {wide ? <Shrink aria-hidden="true" size={16} /> : <Expand aria-hidden="true" size={16} />}
+        </button>
+      )}
     </>
   )
   const inSlot = Boolean(slot) && !wide
@@ -417,6 +439,7 @@ export function BoardFrame({
         ref={canvas}
         className={styles.canvas}
         data-readonly={onAddPage ? undefined : ''}
+        data-docked={dock ? '' : undefined}
         data-has-summary={summary && !wide ? '' : undefined}
         onDragOverCapture={(event) => {
           if (onDropPage && event.dataTransfer.types.includes(PAGE_DRAG)) {
@@ -434,6 +457,7 @@ export function BoardFrame({
         {children}
         {empty && <p className={styles.empty}>{t('board.empty')}</p>}
       </div>
+      {dock}
     </section>
   )
   return wide ? createPortal(content, document.body) : content

@@ -15,6 +15,8 @@ import { useTranslation } from 'react-i18next'
 import type * as Y from 'yjs'
 import { useApi } from '../../api/context.tsx'
 import { useCollabDocument } from '../collab.tsx'
+import { useWorldShell } from '../shell/context.ts'
+import { BoardDock } from './board-dock.tsx'
 import { BoardFrame, PAGE_DRAG, PageCard, pageIdOfLink, pageLink, useBoardFiles } from './board-parts.tsx'
 import { boardMap, mergeScene, sceneChanged, whenReady, writeScene } from './sync.ts'
 
@@ -56,6 +58,11 @@ export default function BoardEditor({ page, tab }: { page: Page; tab: PageTabVie
   const { session, synced, offline } = useCollabDocument(tab.documentId ? `doc:${tab.documentId}` : null)
   const [excalidraw, setExcalidraw] = useState<ExcalidrawImperativeAPI | null>(null)
   const [selected, setSelected] = useState<readonly ExcalidrawElement[]>([])
+  // En el mundo a pantalla completa, sus herramientas en nuestra píldora (board-dock.tsx): la elegida y el zoom
+  const docked = Boolean(useWorldShell())
+  const [activeTool, setActiveTool] = useState('selection')
+  const [zoom, setZoom] = useState(1)
+  const canvas = useRef<HTMLDivElement>(null)
   const loadFiles = useBoardFiles(excalidraw)
   const doc = session?.document ?? null
 
@@ -126,6 +133,8 @@ export default function BoardEditor({ page, tab }: { page: Page; tab: PageTabVie
   )
   const onChange = useCallback(
     (elements: readonly ExcalidrawElement[], appState: AppState) => {
+      setActiveTool(appState.activeTool.type)
+      setZoom(appState.zoom.value)
       const ids = appState.selectedElementIds
       setSelected((current) => {
         const next = elements.filter((element) => ids[element.id] && !element.isDeleted)
@@ -217,7 +226,11 @@ export default function BoardEditor({ page, tab }: { page: Page; tab: PageTabVie
     [page.worldId]
   )
 
-  const initialData = useMemo(() => ({ appState: CLEAN }), [])
+  // A sangre en la página del mundo, sin fondo propio: se ve el de la página (como en Everlore)
+  const initialData = useMemo(
+    () => ({ appState: docked ? { ...CLEAN, viewBackgroundColor: 'transparent' } : CLEAN }),
+    [docked]
+  )
   const uiOptions = useMemo(
     () => ({
       canvasActions: {
@@ -247,6 +260,12 @@ export default function BoardEditor({ page, tab }: { page: Page; tab: PageTabVie
       hidden={selected.length > 0 ? selected.every((element) => element.customData?.hidden) : null}
       onHidden={setHidden}
       onCanvasResize={() => excalidraw?.refresh()}
+      canvasRef={canvas}
+      dock={
+        docked ? (
+          <BoardDock excalidraw={excalidraw} canvas={canvas} active={activeTool} zoom={zoom} name={tab.name} />
+        ) : undefined
+      }
       onDropPage={(event) => {
         const pageId = event.dataTransfer.getData(PAGE_DRAG)
         if (!pageId || !excalidraw) return false
