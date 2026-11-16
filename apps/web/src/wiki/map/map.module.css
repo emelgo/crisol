@@ -311,7 +311,7 @@
 }
 
 .chooser select,
-.fields input:not([type="radio"], [type="checkbox"], [type="color"]),
+.fields input:not([type="radio"], [type="checkbox"], [type="color"], [type="range"]),
 .fields select {
   min-block-size: var(--target);
   padding: 0 var(--space-3);
@@ -337,6 +337,8 @@
   overflow: hidden auto;
   padding: var(--space-3);
   scrollbar-width: thin;
+  /* Al abrir «Aspecto» sale la barra de desplazamiento: su sitio, ya guardado, para que nada se mueva */
+  scrollbar-gutter: stable;
   border: 1px solid var(--line-frame);
   border-radius: 8px;
   background: var(--frame-sheen), var(--popup-glass);
@@ -381,8 +383,10 @@
   border: 0;
 }
 
-/* Las etiquetas, pequeñas y en mayúsculas, como en el panel de la página: el panel, compacto */
+/* Las etiquetas, pequeñas y en mayúsculas, como en el panel de la página: el panel, compacto (también las de
+   «Aspecto», que al abrirlo no cambian de letra) */
 .fields > label:not(.check),
+.aspectBody > label,
 .fields legend {
   color: var(--color-muted);
   font-size: 0.6875rem;
@@ -392,7 +396,7 @@
 }
 
 /* Nada se sale del panel: los campos, a su ancho */
-.panel .fields input:not([type="radio"], [type="checkbox"], [type="color"]),
+.panel .fields input:not([type="radio"], [type="checkbox"], [type="color"], [type="range"]),
 .panel .fields select {
   box-sizing: border-box;
   inline-size: 100%;
@@ -927,6 +931,8 @@
 
 .rangeRow input {
   flex: 1;
+  min-inline-size: 0;
+  margin: 0;
   accent-color: var(--color-accent);
 }
 
