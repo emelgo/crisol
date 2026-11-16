@@ -100,7 +100,8 @@ function WhoKnows({ page, onClose }: { page: Page; onClose: () => void }) {
 }
 
 /** Poner o quitar una marca de la página, y volver a pedir lo que ve cada campaña */
-function useMark(page: Page) {
+/** Marcar o quitar lo que sabe una campaña de una página (también desde el árbol) */
+export function useMark(page: Pick<Page, 'id' | 'worldId'>) {
   const api = useApi()
   const queryClient = useQueryClient()
   const announce = useAnnounce()

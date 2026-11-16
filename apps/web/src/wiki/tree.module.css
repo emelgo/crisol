@@ -143,9 +143,40 @@
 }
 
 /* Lo que conoce alguna campaña: un ojo gris, discreto */
+/* El ojo de lo que conoce alguna campaña: a la vista si la conoce; si no, solo al pasar por la fila. Se pulsa */
 .known {
+  display: inline-grid;
   flex: none;
-  margin-inline: var(--space-1) var(--space-2);
+  place-items: center;
+  inline-size: 1.375rem;
+  block-size: 1.375rem;
+  margin-inline: var(--space-1) var(--space-1);
+  border-radius: 4px;
   color: var(--color-muted);
-  opacity: 0.7;
+  opacity: 0;
+  cursor: pointer;
+  transition: opacity 120ms ease;
+}
+
+.known[data-known] {
+  opacity: 0.75;
+}
+
+:global([role="treeitem"]):hover .known {
+  opacity: 1;
+}
+
+.known:hover {
+  background: color-mix(in srgb, var(--color-text) 10%, transparent);
+  color: var(--color-text);
+}
+
+/* Solo para el lector de pantalla */
+.hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
