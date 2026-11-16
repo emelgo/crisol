@@ -256,6 +256,30 @@ const linksInput = z.object({
     .describe('Un jugador: desde esta campaña, con lo que sabe (si juega una sola del mundo, se deduce)')
 })
 
+/** Describir una fecha y, con to, pasarla a otro calendario del mundo (docs/specs/calendarios.md) */
+const dateToolInput = z.object({
+  calendarId: z.uuid().optional().describe('El calendario de la fecha; sin él, el principal del mundo'),
+  worldId: z.uuid().optional().describe('Sin calendarId: el mundo, para usar su principal'),
+  date: z
+    .union([
+      z.string().trim().min(1).max(80),
+      z.object({ year: z.int(), month: z.union([z.string(), z.int()]).optional(), day: z.int().optional() })
+    ])
+    .describe('1250-Siega-18 (o 1250-03-18, el mes por su número sin contar festividades; 1250-03; 1250; -980-01-01)'),
+  addDays: z
+    .int()
+    .min(-100_000_000)
+    .max(100_000_000)
+    .optional()
+    .describe('Describe también la de N días después (negativo, antes)'),
+  until: z.string().trim().min(1).max(80).optional().describe('Cuántos días faltan hasta esta otra fecha'),
+  to: z
+    .uuid()
+    .optional()
+    .describe('Pasarla a este otro calendario del mundo (por la correspondencia de cada uno con el principal)'),
+  campaignId: z.uuid().optional().describe('Un jugador: desde esta campaña')
+})
+
 /** Ver una página (o el árbol) como la ve un personaje de una campaña, o la campaña sin excepciones (ADR-0017) */
 const viewAsInput = z.object({
   campaignId: z.uuid(),
@@ -324,6 +348,37 @@ export const MCP_TOOLS: Record<string, McpTool> = {
       if (pageId) return { action: 'readPage', input: { pageId, ...as } }
       if (!worldId) throw new InvalidRequestError('BAD_INPUT', 'pageId o worldId')
       return { action: 'listPageTree', input: { worldId, levels: 6, ...as } }
+    }
+  },
+  // Los calendarios del mundo (docs/specs/calendarios.md): varios, uno principal; las fechas, como 1250-Siega-18
+  listar_calendarios: { action: 'listCalendars' },
+  ver_calendario: { action: 'getCalendar' },
+  crear_calendario: { action: 'createCalendar' },
+  cambiar_calendario: { action: 'updateCalendar' },
+  borrar_calendario: { action: 'deleteCalendar' },
+  describir_fecha: {
+    description:
+      'Describe una fecha de un calendario del mundo (sin calendarId, el principal de worldId): su texto, su día de la semana, su estación, su era, la fase de cada luna y su día del año y, si no es del principal y tiene correspondencia, su equivalencia en el principal. Con addDays, también la de N días después; con until, cuántos días faltan; con to, la pasa a ese otro calendario',
+    input: dateToolInput,
+    actions: ['describeDate', 'convertDate'],
+    route: (input) => {
+      const { to, calendarId, worldId, date, addDays, until, campaignId } = dateToolInput.parse(input)
+      const as = campaignId ? { campaignId } : {}
+      if (to) {
+        if (!calendarId) throw new InvalidRequestError('BAD_INPUT', 'para pasarla a otro, calendarId')
+        return { action: 'convertDate', input: { calendarId, to, date, ...as } }
+      }
+      return {
+        action: 'describeDate',
+        input: {
+          ...(calendarId ? { calendarId } : {}),
+          ...(worldId ? { worldId } : {}),
+          date,
+          ...(addDays === undefined ? {} : { addDays }),
+          ...(until === undefined ? {} : { until }),
+          ...as
+        }
+      }
     }
   },
   listar_archivos: { action: 'listFiles' },
@@ -741,7 +796,13 @@ export const INSTRUCTIONS =
   'escribir_nota: suyas, con enlaces [[Página]] a lo que conoce; el máster las lee y no las escribe). ' +
   'Para pasar una wiki entera: crear_paginas de 50 en 50, en cualquier orden (los enlaces se resuelven solos), y al ' +
   'final enlaces_pagina con worldId para ver lo que quede sin resolver; los archivos los sube el máster y se enlazan ' +
-  'por su nombre (listar_archivos). Las etiquetas son de toda la cuenta: míralas con listar_etiquetas y usa las que ' +
+  'por su nombre (listar_archivos). Cada mundo puede tener calendarios propios (meses, festividades, semana, ' +
+  'bisiestos, eras, lunas y estaciones), uno principal: antes de fechar nada, míralos con listar_calendarios y escribe ' +
+  'las fechas como 1250-Siega-18 (el mes por su nombre; 1250-03-18 cuenta los meses sin las festividades). ' +
+  'crear_calendario crea uno de una vez con su definición entera; ver_calendario lo enseña con sus meses numerados; ' +
+  'cambiar_calendario cambia su definición entera (mira antes ver_calendario) sin reescribir ninguna fecha; ' +
+  'describir_fecha dice qué día de la semana, estación, era y lunas tiene una fecha (y su equivalencia en el ' +
+  'principal, o en otro con to, si tienen correspondencia). Las etiquetas son de toda la cuenta: míralas con listar_etiquetas y usa las que ' +
   'ya hay antes de inventar otras. Una página puede tener pestañas además de su texto, como un mapa (ver_pestanas): ' +
   'sus pines van de 0 a 1 sobre la imagen y llevan a páginas; míralo con ver_mapa antes de poner nada. Un mapa tiene ' +
   'además capas (crear_capa, cambiar_capa: hidden, solo del máster; quitar_capa) con regiones, rutas y textos: para ' +

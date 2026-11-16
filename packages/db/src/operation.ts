@@ -14,6 +14,7 @@ import {
 } from 'drizzle-orm'
 import type { PgTable } from 'drizzle-orm/pg-core'
 import type { Database } from './client.ts'
+import { calendars } from './schema/calendars.ts'
 import { campaignMembers, campaigns } from './schema/campaigns.ts'
 import { characters, characterVersions } from './schema/characters.ts'
 import { combatants, combats } from './schema/combat.ts'
@@ -63,6 +64,7 @@ export const TRACKED_TABLES = {
   map_pins: mapPins,
   map_layers: mapLayers,
   map_elements: mapElements,
+  calendars,
   characters,
   character_versions: characterVersions,
   random_tables: randomTables,

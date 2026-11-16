@@ -1004,6 +1004,92 @@ describe('conector MCP con OAuth', () => {
     )
   })
 
+  it('calendarios (módulo 8): la IA crea el de Eana de una vez, lo describe y la de una jugadora no ve la era oculta', async () => {
+    const { cookie, call } = await connected()
+    const world = (await call<World>('crear_mundo', { name: 'Eana' })).data
+    const campaign = (await call<Campaign>('crear_campana', { worldId: world.id, name: 'La Marca' })).data
+    const fest = (name: string) => ({ name, days: 7, festival: true })
+    const month = (name: string) => ({ name, days: 28 })
+    const months = [
+      fest('Alba Triste'),
+      ...['Cierzo', 'Escarcha', 'Deshielo'].map(month),
+      fest('Carnaval'),
+      ...['Siembra', 'Florida', 'Pastos'].map(month),
+      fest('Semana del Yunque'),
+      ...['Siega', 'Trilla', 'Vendimia'].map(month),
+      fest('Semana de las Hermanas'),
+      ...['Hojarasca', 'Brumas', 'Nochelarga'].map(month)
+    ]
+    const definition = {
+      yearSuffix: 'RC',
+      weekdays: ['Herrero', 'Hacedor', 'Muerte', 'Frostelle', 'Flora', 'Eternidad', 'Melancolía'],
+      months,
+      seasons: [
+        { name: 'Invierno', startDay: 1, endDay: 91 },
+        { name: 'Primavera', startDay: 92, endDay: 182 },
+        { name: 'Verano', startDay: 183, endDay: 273 },
+        { name: 'Otoño', startDay: 274, endDay: 364 }
+      ],
+      moons: [
+        { name: 'Melancolía', cycleDays: 28, offsetDays: -1.25 },
+        { name: 'Eternidad', cycleDays: 91, offsetDays: 48.1875 }
+      ],
+      eras: [
+        { name: 'Era de los Nuevos Reinos', start: '-980', end: '-1' },
+        { name: 'Era del Eclipse', start: '1300-Siega-1', hidden: true },
+        { name: 'Era de la República', abbreviation: 'ER', start: '0' }
+      ]
+    }
+    // Con un problema, la IA lee cuál
+    const wrong = await call('crear_calendario', {
+      worldId: world.id,
+      name: 'Eana',
+      from: { definition: { ...definition, seasons: [{ name: 'Larga', startDay: 1, endDay: 400 }] } }
+    })
+    expect(wrong.text).toContain('BAD_CALENDAR')
+    expect(wrong.text).toContain('«Larga» debe empezar y acabar entre el día 1 y el 364 del año')
+    const created = await call<{ id: string; primary: boolean }>('crear_calendario', {
+      worldId: world.id,
+      name: 'Eana',
+      from: { definition }
+    })
+    expect(created.isError, created.text).toBeFalsy()
+    expect(created.data.primary).toBe(true)
+    const described = await call<{ date: { text: string; season: string; era: { name: string } } }>('describir_fecha', {
+      worldId: world.id,
+      date: '1250-Siega-18'
+    })
+    expect(described.data.date).toMatchObject({
+      text: 'Frostelle, 18 de Siega de 1250 RC',
+      season: 'Verano',
+      era: { name: 'Era de la República' }
+    })
+    const seen = await call<{ months: { name: string; number: number | null }[] }>('ver_calendario', {
+      calendarId: created.data.id
+    })
+    expect(seen.data.months.find((m) => m.name === 'Siega')?.number).toBe(7)
+
+    // La IA de una jugadora: lee el calendario sin la era oculta, por ninguna herramienta
+    const ana = await signUpTestUser(server.auth, { name: 'Ana', email: `ana-cal-${Date.now()}@crisol.test` })
+    const link = await api<{ url: string }>(cookie, 'getInvitation', { campaignId: campaign.id })
+    await fetch(new URL('/api/join', BASE), {
+      method: 'POST',
+      headers: { cookie: ana.cookie, origin: BASE, 'content-type': 'application/json' },
+      body: JSON.stringify({ secret: link.url.split('/unirse/')[1] })
+    })
+    const player = await connectAs(ana, cookie)
+    for (const [tool, args] of [
+      ['listar_calendarios', { worldId: world.id }],
+      ['ver_calendario', { calendarId: created.data.id }],
+      ['describir_fecha', { calendarId: created.data.id, date: '1300-Siega-5' }]
+    ] as const) {
+      const result = await player.call(tool, args)
+      expect(result.isError, result.text).toBeFalsy()
+      expect(result.text).not.toContain('Eclipse')
+    }
+    expect((await player.call('borrar_calendario', { calendarId: created.data.id })).isError).toBe(true)
+  })
+
   it('lo de la papelera no sale en listar_mundos', async () => {
     const { cookie, call } = await connected()
     const world = (await call<World>('crear_mundo', { name: 'Eana' })).data

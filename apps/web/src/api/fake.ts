@@ -149,6 +149,7 @@ import { FogGrid, tokensInTemplate } from '@crisol/tabletop'
 import { buildSoundView, listInfo } from '../sound/view.ts'
 import { readFoundryZip } from '../systems/foundry-zip.ts'
 import { type ActionInput, type ActionName, type ActionOutput, type ApiClient, ApiError } from './client.ts'
+import { type FakeCalendar, fakeCalendars } from './fake-calendars.ts'
 
 export function fakeApi(
   options: {
@@ -209,12 +210,15 @@ export function fakeApi(
     }>
     /** Las listas de sonido de los mundos (docs/specs/sonido.md) */
     soundPlaylists?: SoundPlaylistView[]
+    /** Los calendarios de los mundos (módulo 8): el primero de cada mundo, principal */
+    calendars?: FakeCalendar[]
   } = {}
 ) {
   const organizations = options.organizations ?? []
   const worlds = [...(options.worlds ?? [])]
   const campaigns = [...(options.campaigns ?? [])]
   const history = [...(options.history ?? [])]
+  const calendars = fakeCalendars(options.calendars)
   const rolls = [...(options.rolls ?? [])]
   // El registro de la partida (docs/specs/registro.md): los mensajes; las tiradas, de rolls
   const messages: LogMessage[] = []
@@ -1574,6 +1578,7 @@ export function fakeApi(
   }
 
   const handlers: { [N in ActionName]: (input: ActionInput<N>) => ActionOutput<N> } = {
+    ...calendars.handlers,
     listOrganizations: () => ({ organizations }),
     // Copias, como las de la API real (JSON nuevo en cada respuesta)
     // En el orden en que se crearon, como el servidor
@@ -5274,5 +5279,17 @@ export function fakeApi(
       return { ...file }
     }
   }
-  return { client, calls, worlds, campaigns, history, approvals, pages, files, shownPages, boards }
+  return {
+    client,
+    calls,
+    worlds,
+    campaigns,
+    history,
+    approvals,
+    pages,
+    files,
+    shownPages,
+    boards,
+    calendars: calendars.rows
+  }
 }

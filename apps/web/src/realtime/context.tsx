@@ -85,6 +85,8 @@ function changedBy(message: RealtimeMessage): QueryKey[] {
       if (message.what === 'knowledge')
         return [['pages', message.worldId], message.campaignId ? ['compendium', message.campaignId] : ['compendium']]
       if (message.what === 'files') return [['files', message.worldId], ['tags']]
+      // Los calendarios del mundo (módulo 8): la lista y el abierto
+      if (message.what === 'calendars') return [['calendars', message.worldId], ['calendar']]
       // Los comunes salen en los archivos de todos los mundos
       if (message.what === 'commonFiles') return [['files'], ['commonFiles'], ['tags']]
       if (message.what === 'tags') return [['tags']]

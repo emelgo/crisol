@@ -21,6 +21,8 @@ export type RealtimeMessage =
   | { type: 'changed'; what: 'pages'; worldId: string }
   /** El texto de una página (su cuerpo o un secreto) se guardó: lo que lo enseña en otra (vista previa, incrustado) */
   | { type: 'changed'; what: 'pageContent'; worldId: string; pageId: string }
+  /** Los calendarios de ese mundo (módulo 8): a quien lee su wiki, que los vuelve a pedir ya proyectados */
+  | { type: 'changed'; what: 'calendars'; worldId: string }
   /** Los archivos de ese mundo */
   | { type: 'changed'; what: 'files'; worldId: string }
   /** Los archivos comunes de esa organización (los ven todos sus mundos) */

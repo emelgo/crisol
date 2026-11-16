@@ -23,6 +23,15 @@ import {
   updateBook
 } from './books.ts'
 import {
+  convertDate,
+  createCalendar,
+  deleteCalendar,
+  describeDate,
+  getCalendar,
+  listCalendars,
+  updateCalendar
+} from './calendars.ts'
+import {
   createCampaign,
   getCampaign,
   listCampaigns,
@@ -306,6 +315,7 @@ export * from './action.ts'
 export * from './actor-folders.ts'
 export * from './ai.ts'
 export * from './books.ts'
+export * from './calendars.ts'
 export * from './campaigns.ts'
 export * from './characters.ts'
 export * from './combat.ts'
@@ -652,7 +662,14 @@ export const ACTIONS = [
   playSound,
   setSoundVolume,
   stopSound,
-  updateSoundPlaylist
+  updateSoundPlaylist,
+  listCalendars,
+  getCalendar,
+  createCalendar,
+  updateCalendar,
+  deleteCalendar,
+  describeDate,
+  convertDate
 ]
 
 /** Las acciones por nombre, solo como tipo: la web las usa sin cargar zod */
@@ -962,4 +979,11 @@ export type Actions = {
   setSoundVolume: typeof setSoundVolume
   stopSound: typeof stopSound
   updateSoundPlaylist: typeof updateSoundPlaylist
+  listCalendars: typeof listCalendars
+  getCalendar: typeof getCalendar
+  createCalendar: typeof createCalendar
+  updateCalendar: typeof updateCalendar
+  deleteCalendar: typeof deleteCalendar
+  describeDate: typeof describeDate
+  convertDate: typeof convertDate
 }

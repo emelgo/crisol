@@ -314,6 +314,15 @@ export function summaryOf(
         name: text(details.name),
         title: text(details.title)
       })
+    // Los calendarios del mundo (módulo 8)
+    case 'createCalendar':
+    case 'deleteCalendar':
+      return say(action, { name: text(details.name) })
+    case 'updateCalendar':
+      if (details.from !== undefined) return say('renameCalendar', { from: text(details.from), to: text(details.to) })
+      if (details.primary) return say('primaryCalendar', { name: text(details.name) })
+      if (details.moved) return say('moveCalendar', { name: text(details.name) })
+      return say('updateCalendar', { name: text(details.name) })
     // Las capas del mapa y lo dibujado en él (módulo 9)
     case 'createMapLayer':
     case 'deleteMapLayer':

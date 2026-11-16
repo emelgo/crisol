@@ -309,7 +309,14 @@ describe('Actions', () => {
       playSound: true,
       setSoundVolume: true,
       stopSound: true,
-      updateSoundPlaylist: true
+      updateSoundPlaylist: true,
+      listCalendars: true,
+      getCalendar: true,
+      createCalendar: true,
+      updateCalendar: true,
+      deleteCalendar: true,
+      describeDate: true,
+      convertDate: true
     }
     expect(Object.keys(names).sort()).toEqual(ACTIONS.map((a) => a.name).sort())
   })

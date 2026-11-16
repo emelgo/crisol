@@ -2,6 +2,7 @@
 export * from './actor-folders.ts'
 export * from './ai.ts'
 export * from './auth.ts'
+export * from './calendars.ts'
 export * from './campaigns.ts'
 export * from './characters.ts'
 export * from './combat.ts'

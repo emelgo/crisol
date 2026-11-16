@@ -33,6 +33,15 @@ export const pagesChanged = (wiki: { worldId: string; organizationId: string }):
   message: { type: 'changed', what: 'pages', worldId: wiki.worldId }
 })
 
+/**
+ * Los calendarios de un mundo: a quien lee su wiki (los jugadores también los leen, sin las eras solo del máster; el
+ * aviso no dice qué cambió)
+ */
+export const calendarsChanged = (wiki: { worldId: string; organizationId: string }): RealtimeEvent => ({
+  to: { capability: 'page.view', target: wiki },
+  message: { type: 'changed', what: 'calendars', worldId: wiki.worldId }
+})
+
 /** Los archivos de un mundo: a quien ve su wiki */
 export const filesChanged = (wiki: { worldId: string; organizationId: string }): RealtimeEvent => ({
   to: { capability: 'page.read', target: wiki },
@@ -175,6 +184,9 @@ export function undoEvents(
       // Las escenas sueltas (ADR-0020): sus listas cuelgan de las páginas en la web
       case 'scenes':
         events.push(pagesChanged({ worldId, organizationId: context.organizationId }))
+        break
+      case 'calendars':
+        events.push(calendarsChanged({ worldId, organizationId: context.organizationId }))
         break
       case 'tags':
         events.push(tagsChanged(String(row.organization_id ?? context.organizationId)))
