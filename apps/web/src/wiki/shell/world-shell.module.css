@@ -783,6 +783,11 @@
   backdrop-filter: none;
 }
 
+/* Plegado y ya fuera: ni se pinta ni lo encuentra el lector */
+.pageEntry > .slidePanel[hidden] {
+  display: none;
+}
+
 /* El móvil del máster no se cuida (docs/diseno.md); en lo estrecho, al menos, nada se sale */
 @media (max-width: 48rem) {
   /* La barra de la izquierda, desplegada, encima del centro (que se queda con lo suyo) */
