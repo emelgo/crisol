@@ -46,6 +46,7 @@ import { failed, LoadError } from '../../components/load-error.tsx'
 import { Tour } from '../../components/tour.tsx'
 import { useWorldFiles } from '../cover-look.ts'
 import { readAsInput, readAsKey, useReadAs } from '../read-as.tsx'
+import { useWorldShell } from '../shell/context.ts'
 import { tabRegionLabel } from '../tabs/kinds.tsx'
 import { MapDrawing } from './drawing.tsx'
 import {
@@ -64,7 +65,7 @@ import { mapKey } from './keys.ts'
 import { LayersPanel, useHiddenHere } from './layers-panel.tsx'
 import styles from './map.module.css'
 import { MapSettings } from './map-settings.tsx'
-import { distanceOf, roundDistance } from './measure.ts'
+import { distanceOf, roundDistance, scaleBar } from './measure.ts'
 import { MeasurePanel } from './measure-panel.tsx'
 import { PinPanel } from './pin-panel.tsx'
 import { PinShape, tipAnchored } from './pin-shape.tsx'
@@ -314,6 +315,11 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
     return () => window.removeEventListener('resize', place)
   }, [wide])
   const settingsButton = useRef<HTMLButtonElement>(null)
+  // En el mundo a pantalla completa (Enrique, 2026-11-16): el mapa a sangre y sus herramientas en una píldora abajo en
+  // el centro, el zoom abajo a la derecha y la escala abajo a la izquierda, pegados a lo que se ve
+  const docked = Boolean(useWorldShell())
+  const scaleRef = useRef<HTMLDivElement>(null)
+  const scaleOf = useRef(map.scale)
   const hiddenHere = useHiddenHere(map.id)
   const drawingId = useId()
   // Las capas solo del máster: lo suyo se le ve más apagado (no lo ven los jugadores)
@@ -343,6 +349,18 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
   // dibujar a la escala de ahora y los pines y la imagen no se vean borrosos
   const settle = useRef<ReturnType<typeof setTimeout> | null>(null)
   useEffect(() => () => clearTimeout(settle.current ?? undefined), [])
+  // La barra de escala, a la de ahora (sin pintar React: va con cada paso del gesto)
+  const showScale = useCallback(() => {
+    const bar = scaleRef.current
+    const scale = scaleOf.current
+    if (!bar) return
+    const shown = scale ? scaleBar((view.current.k * scale.length) / scale.value) : null
+    bar.hidden = !shown
+    if (!shown || !scale) return
+    bar.style.setProperty('--scale-width', `${shown.width}px`)
+    const label = bar.querySelector('span')
+    if (label) label.textContent = `${shown.units.toLocaleString('es')} ${scale.unit}`
+  }, [])
   const apply = useCallback(() => {
     const element = stage.current
     if (!element) return
@@ -350,11 +368,17 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
     element.style.willChange = 'transform'
     element.style.transform = `translate(${x}px, ${y}px) scale(${k})`
     element.style.setProperty('--inv-k', String(1 / k))
+    showScale()
     clearTimeout(settle.current ?? undefined)
     settle.current = setTimeout(() => {
       element.style.willChange = 'auto'
     }, 200)
-  }, [])
+  }, [showScale])
+  // Si cambia la escala del mapa (al calibrarla), la barra, al día
+  useEffect(() => {
+    scaleOf.current = map.scale
+    showScale()
+  }, [showScale, map.scale])
 
   const fit = useCallback(() => {
     const element = container.current
@@ -922,6 +946,160 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
     elements.update.error ??
     elements.remove.error
 
+  // Las herramientas: dibujar, capas y medir; acercar y encuadrar; los ajustes y la imagen
+  const drawing = (
+    <>
+      {editable && (
+        <button
+          type="button"
+          aria-pressed={tool === 'pin'}
+          aria-label={t('map.addPin')}
+          aria-keyshortcuts="P"
+          title={`${t('map.addPin')} (P)`}
+          onClick={() => chooseTool(tool === 'pin' ? 'select' : 'pin')}
+        >
+          <MapPin aria-hidden="true" size={18} />
+        </button>
+      )}
+      {editable &&
+        (
+          [
+            ['region', Pentagon],
+            ['path', Spline],
+            ['text', Type]
+          ] as const
+        ).map(([name, Icon]) => (
+          <button
+            key={name}
+            type="button"
+            aria-pressed={tool === name}
+            aria-label={t(`map.edit.tools.${name}`)}
+            aria-keyshortcuts={name === 'region' ? 'R' : name === 'path' ? 'L' : 'T'}
+            title={`${t(`map.edit.tools.${name}`)} (${name === 'region' ? 'R' : name === 'path' ? 'L' : 'T'})`}
+            onClick={() => chooseTool(tool === name ? 'select' : name)}
+          >
+            <Icon aria-hidden="true" size={18} />
+          </button>
+        ))}
+      {editable && <span className={styles.toolSep} aria-hidden="true" />}
+      {(editable || map.layers.length > 0) && (
+        <button
+          type="button"
+          ref={layersButton}
+          aria-label={t('map.layers.title')}
+          title={t('map.layers.title')}
+          aria-expanded={layersOpen && !current && !currentElement && !settingsOpen}
+          onClick={() => {
+            const open = layersOpen && !current && !currentElement && !settingsOpen
+            setLayersOpen(!open)
+            setSettingsOpen(false)
+            setSelected(null)
+            setSelectedElement(null)
+          }}
+        >
+          <Layers aria-hidden="true" size={18} />
+        </button>
+      )}
+      <button
+        type="button"
+        aria-pressed={tool === 'measure'}
+        aria-label={t('map.measure.tool')}
+        aria-keyshortcuts="M"
+        title={`${t('map.measure.tool')} (M)`}
+        onClick={() => chooseTool(tool === 'measure' ? 'select' : 'measure')}
+      >
+        <Ruler aria-hidden="true" size={18} />
+      </button>
+    </>
+  )
+  const zooming = (
+    <>
+      <button type="button" aria-label={t('map.zoomIn')} title={t('map.zoomIn')} onClick={() => zoomCenter(1.25)}>
+        <Plus aria-hidden="true" size={18} />
+      </button>
+      <button type="button" aria-label={t('map.zoomOut')} title={t('map.zoomOut')} onClick={() => zoomCenter(0.8)}>
+        <Minus aria-hidden="true" size={18} />
+      </button>
+      <button type="button" aria-label={t('map.fit')} title={t('map.fit')} onClick={fit}>
+        <Maximize aria-hidden="true" size={18} />
+      </button>
+      <button
+        type="button"
+        aria-pressed={wide}
+        aria-label={t(wide ? 'map.shrink' : 'map.expand')}
+        title={t(wide ? 'map.shrink' : 'map.expand')}
+        onClick={() => setWide(!wide)}
+      >
+        {wide ? <Shrink aria-hidden="true" size={18} /> : <Expand aria-hidden="true" size={18} />}
+      </button>
+    </>
+  )
+  const setup = (
+    <>
+      {editable && <span className={styles.toolSep} aria-hidden="true" />}
+      {editable && !readAs && (
+        <button
+          type="button"
+          ref={settingsButton}
+          aria-label={t('map.settings.title')}
+          title={t('map.settings.title')}
+          aria-expanded={settingsOpen && !current && !currentElement}
+          onClick={() => {
+            setSettingsOpen(!settingsOpen)
+            setLayersOpen(false)
+            setSelected(null)
+            setSelectedElement(null)
+          }}
+        >
+          <Settings2 aria-hidden="true" size={18} />
+        </button>
+      )}
+      {editable && (
+        <button
+          type="button"
+          aria-label={t('map.changeImage')}
+          title={t('map.changeImage')}
+          aria-expanded={changingImage}
+          onClick={() => setChangingImage(!changingImage)}
+        >
+          <ImageIcon aria-hidden="true" size={18} />
+        </button>
+      )}
+    </>
+  )
+  const toolbar = !docked ? (
+    <div className={styles.toolbar} role="toolbar" aria-label={t('map.tools')} data-tour="mapa-herramientas">
+      {drawing}
+      <span className={styles.toolSep} aria-hidden="true" />
+      {zooming}
+      {setup}
+    </div>
+  ) : (
+    // Pegadas abajo de lo que se ve aunque el mapa siga más abajo (la columna aún no ha bajado del todo)
+    <div className={styles.dock}>
+      <div
+        className={`${styles.toolbar} ${styles.pill}`}
+        role="toolbar"
+        aria-label={t('map.tools')}
+        data-tour="mapa-herramientas"
+      >
+        {drawing}
+        {setup}
+      </div>
+      <div className={`${styles.toolbar} ${styles.zoomTools}`} role="toolbar" aria-label={t('map.zoomTools')}>
+        {zooming}
+      </div>
+      <div ref={scaleRef} className={styles.scaleBar} hidden>
+        <span />
+      </div>
+      {changingImage && (
+        <div className={`${styles.imagePanel} ${styles.dockPanel}`}>
+          <ImageChooser page={page} map={map} onDone={() => setChangingImage(false)} />
+        </div>
+      )}
+    </div>
+  )
+
   // Ampliado, en el cuerpo de la página: por encima de todo lo demás (sus columnas tienen su propio apilamiento)
   const content = (
     <div
@@ -1112,117 +1290,7 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
         )}
       </div>
 
-      <div className={styles.toolbar} role="toolbar" aria-label={t('map.tools')} data-tour="mapa-herramientas">
-        {editable && (
-          <button
-            type="button"
-            aria-pressed={tool === 'pin'}
-            aria-label={t('map.addPin')}
-            aria-keyshortcuts="P"
-            title={`${t('map.addPin')} (P)`}
-            onClick={() => chooseTool(tool === 'pin' ? 'select' : 'pin')}
-          >
-            <MapPin aria-hidden="true" size={18} />
-          </button>
-        )}
-        {editable &&
-          (
-            [
-              ['region', Pentagon],
-              ['path', Spline],
-              ['text', Type]
-            ] as const
-          ).map(([name, Icon]) => (
-            <button
-              key={name}
-              type="button"
-              aria-pressed={tool === name}
-              aria-label={t(`map.edit.tools.${name}`)}
-              aria-keyshortcuts={name === 'region' ? 'R' : name === 'path' ? 'L' : 'T'}
-              title={`${t(`map.edit.tools.${name}`)} (${name === 'region' ? 'R' : name === 'path' ? 'L' : 'T'})`}
-              onClick={() => chooseTool(tool === name ? 'select' : name)}
-            >
-              <Icon aria-hidden="true" size={18} />
-            </button>
-          ))}
-        {editable && <span className={styles.toolSep} aria-hidden="true" />}
-        {(editable || map.layers.length > 0) && (
-          <button
-            type="button"
-            ref={layersButton}
-            aria-label={t('map.layers.title')}
-            title={t('map.layers.title')}
-            aria-expanded={layersOpen && !current && !currentElement && !settingsOpen}
-            onClick={() => {
-              const open = layersOpen && !current && !currentElement && !settingsOpen
-              setLayersOpen(!open)
-              setSettingsOpen(false)
-              setSelected(null)
-              setSelectedElement(null)
-            }}
-          >
-            <Layers aria-hidden="true" size={18} />
-          </button>
-        )}
-        <button
-          type="button"
-          aria-pressed={tool === 'measure'}
-          aria-label={t('map.measure.tool')}
-          aria-keyshortcuts="M"
-          title={`${t('map.measure.tool')} (M)`}
-          onClick={() => chooseTool(tool === 'measure' ? 'select' : 'measure')}
-        >
-          <Ruler aria-hidden="true" size={18} />
-        </button>
-        <span className={styles.toolSep} aria-hidden="true" />
-        <button type="button" aria-label={t('map.zoomIn')} title={t('map.zoomIn')} onClick={() => zoomCenter(1.25)}>
-          <Plus aria-hidden="true" size={18} />
-        </button>
-        <button type="button" aria-label={t('map.zoomOut')} title={t('map.zoomOut')} onClick={() => zoomCenter(0.8)}>
-          <Minus aria-hidden="true" size={18} />
-        </button>
-        <button type="button" aria-label={t('map.fit')} title={t('map.fit')} onClick={fit}>
-          <Maximize aria-hidden="true" size={18} />
-        </button>
-        <button
-          type="button"
-          aria-pressed={wide}
-          aria-label={t(wide ? 'map.shrink' : 'map.expand')}
-          title={t(wide ? 'map.shrink' : 'map.expand')}
-          onClick={() => setWide(!wide)}
-        >
-          {wide ? <Shrink aria-hidden="true" size={18} /> : <Expand aria-hidden="true" size={18} />}
-        </button>
-        {editable && <span className={styles.toolSep} aria-hidden="true" />}
-        {editable && !readAs && (
-          <button
-            type="button"
-            ref={settingsButton}
-            aria-label={t('map.settings.title')}
-            title={t('map.settings.title')}
-            aria-expanded={settingsOpen && !current && !currentElement}
-            onClick={() => {
-              setSettingsOpen(!settingsOpen)
-              setLayersOpen(false)
-              setSelected(null)
-              setSelectedElement(null)
-            }}
-          >
-            <Settings2 aria-hidden="true" size={18} />
-          </button>
-        )}
-        {editable && (
-          <button
-            type="button"
-            aria-label={t('map.changeImage')}
-            title={t('map.changeImage')}
-            aria-expanded={changingImage}
-            onClick={() => setChangingImage(!changingImage)}
-          >
-            <ImageIcon aria-hidden="true" size={18} />
-          </button>
-        )}
-      </div>
+      {toolbar}
 
       {/* Fuera de la barra: sus botones no son de herramientas */}
       {/* Quien solo lo lee (un jugador) ni pone ni mueve pines: su propio tutorial */}
@@ -1231,7 +1299,11 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
           id="mapa-lectura"
           steps={[
             { target: '[data-tour="mapa-pestanas"]', text: t('tour.map.tabs') },
-            { target: '[data-tour="mapa-herramientas"]', text: t('tour.map.readTools'), placement: 'right' },
+            {
+              target: '[data-tour="mapa-herramientas"]',
+              text: t('tour.map.readTools'),
+              placement: docked ? 'top' : 'right'
+            },
             { target: '[data-tour="mapa-pin"]', text: t('tour.map.readPin') }
           ]}
         />
@@ -1240,13 +1312,17 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
           id="mapa"
           steps={[
             { target: '[data-tour="mapa-pestanas"]', text: t('tour.map.tabs') },
-            { target: '[data-tour="mapa-herramientas"]', text: t('tour.map.tools'), placement: 'right' },
+            {
+              target: '[data-tour="mapa-herramientas"]',
+              text: t('tour.map.tools'),
+              placement: docked ? 'top' : 'right'
+            },
             { target: '[data-tour="mapa-pin"]', text: t('tour.map.pin') }
           ]}
         />
       )}
 
-      {changingImage && (
+      {changingImage && !docked && (
         <div className={styles.imagePanel}>
           <ImageChooser page={page} map={map} onDone={() => setChangingImage(false)} />
         </div>

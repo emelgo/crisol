@@ -48,3 +48,19 @@ export function roundDays(days: number): { lessThanOne: boolean; days: number } 
 /** Una distancia como se dice: sin decimales desde 100; con uno, por debajo */
 export const roundDistance = (distance: number) =>
   distance >= 100 ? Math.round(distance) : Math.round(distance * 10) / 10
+
+/**
+ * La barra de escala del mapa (abajo a la izquierda): un número redondo de unidades (1, 2 o 5 por una potencia de diez)
+ * cuya raya mida cerca de `target` píxeles en pantalla, con `pixelsPerUnit` (lo que mide una unidad, a la escala de ahora)
+ */
+export function scaleBar(pixelsPerUnit: number, target = 110): { units: number; width: number } | null {
+  if (!(pixelsPerUnit > 0) || !Number.isFinite(pixelsPerUnit)) return null
+  const raw = target / pixelsPerUnit
+  const power = 10 ** Math.floor(Math.log10(raw))
+  // El redondo más cercano (en proporción) a lo que mediría la raya justa
+  const closest = [1, 2, 5, 10].reduce((best, each) =>
+    Math.abs(Math.log((each * power) / raw)) < Math.abs(Math.log((best * power) / raw)) ? each : best
+  )
+  const units = Number((closest * power).toPrecision(12))
+  return { units, width: Math.round(units * pixelsPerUnit) }
+}

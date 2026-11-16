@@ -53,6 +53,18 @@
   border-radius: 0;
 }
 
+/* A sangre en la página del mundo (shell/world-shell.module.css, .bleed): todo su alto y sin fondo propio (se ve el de
+   la página, como en Everlore) */
+:global(article[data-bleed]) .wrapper:not([data-wide]) {
+  block-size: 100%;
+}
+
+:global(article[data-bleed]) .wrapper:not([data-wide]) .viewer {
+  block-size: 100%;
+  border: 0;
+  background: transparent;
+}
+
 .viewer:active {
   cursor: grabbing;
 }
@@ -1227,4 +1239,84 @@
   .layerMore {
     opacity: 1;
   }
+}
+
+/*
+ * En el mundo a pantalla completa, la base de las herramientas: pegada abajo de lo que se ve (aunque el mapa siga más
+ * abajo, si la columna aún no ha bajado del todo). Sin alto: lo de dentro sube desde ella
+ */
+.dock {
+  position: sticky;
+  inset-block-end: 0;
+  z-index: 2;
+  block-size: 0;
+}
+
+/* Las herramientas, una píldora de cristal abajo en el centro */
+.dock > .pill {
+  inset-block: auto var(--space-4);
+  inset-inline: 50% auto;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  max-block-size: none;
+  max-inline-size: calc(100% - 2 * 7rem);
+  gap: 2px;
+  padding: 4px;
+  border-radius: 12px;
+  transform: translateX(-50%);
+}
+
+.dock > .pill .toolSep {
+  inline-size: 1px;
+  block-size: 1.5rem;
+  margin: 0 3px;
+}
+
+/* El zoom, abajo a la derecha; con el panel plegado, por encima del d20 y del «?» de esa esquina */
+.dock > .zoomTools {
+  flex-direction: column;
+  flex-wrap: nowrap;
+  max-block-size: none;
+  inset-block: auto var(--space-3);
+  inset-inline: auto var(--space-3);
+  border-radius: 10px;
+}
+
+:global([data-panel-folded]) .dock > .zoomTools {
+  inset-block-end: calc(var(--space-4) + 3.25rem + var(--space-3));
+}
+
+/* La escala, abajo a la izquierda: una raya con sus topes y lo que mide */
+.scaleBar {
+  position: absolute;
+  inset-block-end: var(--space-4);
+  inset-inline-start: var(--space-4);
+  display: grid;
+  gap: 3px;
+  color: var(--color-text);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.8);
+  pointer-events: none;
+}
+
+.scaleBar::before {
+  content: "";
+  inline-size: var(--scale-width, 6rem);
+  block-size: 0.375rem;
+  border: 2px solid currentColor;
+  border-block-start: 0;
+  filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.7));
+}
+
+.scaleBar[hidden] {
+  display: none;
+}
+
+/* Cambiar la imagen: sobre la píldora */
+.dock > .dockPanel {
+  inset-block: auto calc(var(--space-4) + 3.5rem);
+  inset-inline: 50% auto;
+  transform: translateX(-50%);
 }

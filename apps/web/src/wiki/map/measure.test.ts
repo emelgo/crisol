@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { distanceOf, pixelLength, roundDays, roundDistance, scaleFrom, travelDays } from './measure.ts'
+import { distanceOf, pixelLength, roundDays, roundDistance, scaleBar, scaleFrom, travelDays } from './measure.ts'
 
 const IMAGE = { width: 1000, height: 500 }
 /** 100 píxeles de la imagen son 25 km */
@@ -47,5 +47,18 @@ describe('medir en un mapa (módulo 9)', () => {
   it('las distancias, redondeadas como se dicen', () => {
     expect(roundDistance(340.4)).toBe(340)
     expect(roundDistance(12.345)).toBe(12.3)
+  })
+
+  it('la barra de escala: un número redondo de unidades cuya raya mide cerca de lo pedido', () => {
+    // 50 px por milla: 2 millas, 100 px
+    expect(scaleBar(50)).toEqual({ units: 2, width: 100 })
+    // 10 px por milla: 10 millas
+    expect(scaleBar(10)).toEqual({ units: 10, width: 100 })
+    // 0,3 px por km: 500 km (150 px) antes que 200 (60 px)
+    expect(scaleBar(0.3)).toEqual({ units: 500, width: 150 })
+    // Muy cerca: fracciones redondas
+    expect(scaleBar(1000)).toEqual({ units: 0.1, width: 100 })
+    expect(scaleBar(0)).toBeNull()
+    expect(scaleBar(Number.POSITIVE_INFINITY)).toBeNull()
   })
 })
