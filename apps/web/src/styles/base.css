@@ -365,6 +365,16 @@ dialog[open]::backdrop {
   animation: none;
 }
 
+/* Mientras dura una transición de vista, el cristal sin desenfoque: con la página nueva hay tres superficies grandes de
+   cristal, y en una tarjeta gráfica normal recalcular su desenfoque en cada fotograma mientras todo se mueve hacía ir a
+   saltos la entrada y la salida del mundo (Enrique, 2026-11-16: «no son fluidas, antes funcionaban bien»). Al acabar,
+   vuelve; las superficies son casi opacas y apenas se nota */
+:root:active-view-transition {
+  --frame-blur: none;
+  --glass-blur: none;
+  --popup-blur: none;
+}
+
 ::view-transition-old(barra) {
   display: none;
 }
