@@ -31,6 +31,7 @@ import { partyActions } from './party.ts'
 import { preferenceActions } from './preferences.ts'
 import { previewActions } from './preview.ts'
 import type { Implementation } from './registry.ts'
+import { relationActions } from './relations.ts'
 import { revealActions } from './reveal.ts'
 import { roomActions } from './room.ts'
 import { sceneActions } from './scenes.ts'
@@ -70,6 +71,7 @@ export const IMPLEMENTATIONS: Implementation[] = [
   ...pageContentActions,
   ...copyPageActions,
   ...linkActions,
+  ...relationActions,
   ...previewActions,
   ...versionActions,
   ...fileActions,

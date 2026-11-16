@@ -329,6 +329,9 @@ export const MCP_TOOLS: Record<string, McpTool> = {
       return { action: 'listUnresolvedLinks', input: { worldId } }
     }
   },
+  // Las relaciones (módulo 10): de una página y de todo el mundo
+  relaciones_pagina: { action: 'getRelations' },
+  grafo_mundo: { action: 'getWorldGraph' },
   // Lo que sabe cada campaña (ADR-0017) y revelar en partida (docs/specs/revelar.md)
   quien_conoce: { action: 'getPageKnowledge' },
   marcar_conocimiento: { action: 'setKnowledge' },
@@ -838,7 +841,11 @@ export const INSTRUCTIONS =
   '(«Miembros», «Habitantes»…) se llenan solas con las páginas cuyo campo apunta a esta; para buscarlas, ' +
   'buscar_paginas con template y field. Una plantilla es una página guardada como modelo (en un mundo oculto de la ' +
   'cuenta): su texto, su portada, su panel y sus pestañas pasan a las páginas que se hacen con ella; su texto se lee y ' +
-  'se cambia como el de una página (su pageId sale en ver_plantilla) y sus campos, con cambiar_plantilla. Se ordenan en ' +
+  'se cambia como el de una página (su pageId sale en ver_plantilla) y sus campos, con cambiar_plantilla: uno de enlace ' +
+  'puede llevar un papel (role: parent para Padres, partner para Pareja, member-of para Facción, leads para el Líder de ' +
+  'una facción) y un nombre al revés (inverseName: «Padres» → «Hijos»), que hacen el árbol genealógico y el ' +
+  'organigrama. relaciones_pagina da las relaciones de una página (sus campos de enlace y lo que enlaza su texto, en ' +
+  'los dos sentidos; mode links, family u org) y grafo_mundo, las de todo el mundo con filtros. Se ordenan en ' +
   'carpetas (crear_carpeta_plantillas, mover_plantilla). Los dados los tira el servidor: tirar_dados (con ' +
   'campaignId, en su registro, oculta salvo que te pidan que la vean todos) y ver_tiradas. Lo que se tira en partida ' +
   '(una trampa, un ataque) va en una entrada del compendio, con su mecánica, y se tira con tirar_accion_compendio; en ' +

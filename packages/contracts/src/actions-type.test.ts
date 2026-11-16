@@ -326,7 +326,9 @@ describe('Actions', () => {
       createTimelineEvents: true,
       updateTimelineEvent: true,
       deleteTimelineEvent: true,
-      convertEventToPage: true
+      convertEventToPage: true,
+      getRelations: true,
+      getWorldGraph: true
     }
     expect(Object.keys(names).sort()).toEqual(ACTIONS.map((a) => a.name).sort())
   })

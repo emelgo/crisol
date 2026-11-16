@@ -1,7 +1,7 @@
 /**
  * Las fugas que encontró la revisión de `conocimiento` (2026-11-06), cada una con lo que debe pasar: lo de dentro de un
  * secreto revelado, los enlaces que salen, los campos ocultos en los filtros, el resolutor de nombres, las campañas de
- * cero, «lo mismo que otra», las marcas del mundo en pestañas y «ver como» en los mapas
+ * cero, «lo mismo que otra», las marcas del mundo en pestañas, «ver como» en los mapas y las relaciones (módulo 10)
  */
 import { connect, loadMemberships, schema } from '@crisol/db'
 import { freshTestDatabase, resetDatabase } from '@crisol/db/testing'
@@ -213,6 +213,58 @@ describe('las fugas de la revisión de conocimiento (ADR-0017)', () => {
       ana.cookie
     )
     expect(byField.results.map((r: { title: string }) => r.title)).not.toContain('Topo')
+  })
+
+  it('las relaciones y el grafo del mundo (módulo 10): ni aristas, ni conteos, ni nodos de lo oculto', async () => {
+    const liga = (await ok200('createPage', { worldId, title: 'La liga', parentId: null, template: 'faccion' })).id
+    await mark({ targetId: liga })
+    const made = await ok200('createPages', {
+      worldId,
+      parentId: null,
+      pages: [
+        {
+          key: 'topo',
+          title: 'Topo',
+          template: 'pnj',
+          markdown: `---\nFacción: "[[La liga]]"\nPadres:\n  - "[[Varn]]"\n---\nVive en [[Aldoria]].\n`
+        }
+      ]
+    })
+    const topo = made.pages[0].id
+    await mark({ targetId: topo })
+    // La Facción de Topo, oculta
+    const full = await ok200('getPage', { pageId: topo })
+    await ok200('setPageProperties', {
+      pageId: topo,
+      properties: full.properties.map((p: { name: string }) => (p.name === 'Facción' ? { ...p, hidden: true } : p))
+    })
+    // El secreto de Aldoria (que enlaza a Varn, oculta), revelado: Varn sigue sin salir
+    const [secret] = await secretsOf(page.Aldoria ?? '')
+    await mark({ kind: 'secret', targetId: secret?.id })
+
+    const aldoria = await ok200('getRelations', { pageId: page.Aldoria }, ana.cookie)
+    // Solo Topo, que la enlaza; ni Varn (oculta, desde un secreto) ni Mira (desde una nota oculta)
+    expect(aldoria.nodes.map((n: { title: string }) => n.title).sort()).toEqual(['Aldoria', 'Topo'])
+    expect(aldoria.edges).toHaveLength(1)
+    const ofTopo = await ok200('getRelations', { pageId: topo, depth: 3 }, ana.cookie)
+    expect(ofTopo.modes).toEqual(['links'])
+    const graph = await ok200('getWorldGraph', { worldId, orphans: true }, ana.cookie)
+    expect(graph.relations).toEqual([{ key: 'mention', kind: 'mention', name: '', count: 1 }])
+    for (const result of [aldoria, ofTopo, graph]) {
+      const text = JSON.stringify(result)
+      expect(text).not.toContain(page.Varn)
+      expect(text).not.toContain('Varn')
+      expect(text).not.toContain('Facción')
+      expect(text).not.toContain('secret')
+      // La liga la ve, pero el campo que la une a Topo está oculto
+      expect(JSON.stringify(result.edges)).not.toContain(liga)
+    }
+    expect(graph.nodes.map((n: { title: string }) => n.title).sort()).toEqual(['Aldoria', 'La liga', 'Mira', 'Topo'])
+    // Por la IA del máster, todo, con lo del secreto y la nota marcado
+    const master = await ok200('getRelations', { pageId: page.Aldoria })
+    expect(master.edges.filter((e: { secret?: true }) => e.secret)).toHaveLength(2)
+    // Una página oculta: como si no existiera
+    expect((await call('getRelations', { pageId: page.Varn }, ana.cookie)).statusCode).toBe(404)
   })
 
   it('unas etiquetas «Ocultas» no se encuentran buscando por etiqueta', async () => {

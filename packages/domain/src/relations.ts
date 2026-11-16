@@ -14,10 +14,10 @@ export interface RelationEdge {
   key: string
   /** El nombre del campo (vacío en una mención) */
   name: string
-  inverseName?: string
-  role?: RelationRole
+  inverseName?: string | undefined
+  role?: RelationRole | undefined
   /** Sale de un secreto o de una nota oculta (solo el máster lo recibe) */
-  secret?: true
+  secret?: true | undefined
 }
 
 /** Una página con lo que hace falta para el grafo (sus propiedades, ya sin lo que no ve quien pregunta) */
@@ -39,48 +39,73 @@ export const relationKeyOf = (property: Pick<PageProperty, 'field' | 'name'>) =>
 
 export const MENTION_KEY = 'mention'
 
+/** Si una de las aristas desde from ya va a ese destino */
+function repeatedSince(edges: readonly RelationEdge[], from: number, target: string) {
+  for (let i = from; i < edges.length; i++) if (edges[i]?.target === target) return true
+  return false
+}
+
 /**
  * Las aristas entre estas páginas: una por campo y destino, y una «menciona» por par (de secreto solo si todos los
  * enlaces salen de secretos), salvo si el destino ya está en un campo de la página. Sin enlaces a sí misma ni a páginas
  * que no están
  */
 export function relationEdges(pages: readonly RelationPage[], mentions: readonly Mention[]): RelationEdge[] {
+  // Sin claves compuestas («a|b»): con miles de aristas, juntar textos y buscarlos se come el tiempo
   const present = new Set(pages.map((page) => page.id))
   const edges: RelationEdge[] = []
-  const linked = new Set<string>()
-  const seen = new Set<string>()
+  /** Los destinos de los campos de cada página (pocos: una lista basta) */
+  const linked = new Map<string, string[]>()
   for (const page of pages) {
+    const targets: string[] = []
     for (const property of page.properties) {
       if (property.type !== 'pages') continue
       const key = relationKeyOf(property)
+      const first = edges.length
       for (const target of property.value) {
         if (target === page.id || !present.has(target)) continue
-        const id = `${page.id}|${target}|${key}`
-        if (seen.has(id)) continue
-        seen.add(id)
-        linked.add(`${page.id}|${target}`)
+        // El mismo destino dos veces en el campo, una arista
+        if (repeatedSince(edges, first, target)) continue
+        targets.push(target)
         edges.push({
           source: page.id,
           target,
           kind: 'field',
           key,
           name: property.name,
-          ...(property.inverseName ? { inverseName: property.inverseName } : {}),
-          ...(property.role ? { role: property.role } : {})
+          // La misma forma en todas (más rápido): lo que no hay, undefined, que no sale en el JSON
+          inverseName: property.inverseName || undefined,
+          role: property.role,
+          secret: undefined
         })
       }
     }
+    if (targets.length > 0) linked.set(page.id, targets)
   }
-  const byPair = new Map<string, Mention>()
-  for (const mention of mentions) {
-    if (mention.source === mention.target || !present.has(mention.source) || !present.has(mention.target)) continue
-    const pair = `${mention.source}|${mention.target}`
-    if (linked.has(pair)) continue
-    const before = byPair.get(pair)
-    byPair.set(pair, before ? { ...before, secret: before.secret && mention.secret } : mention)
+  /** De cada página, a cuáles enlaza y si solo desde secretos */
+  const byPair = new Map<string, Map<string, boolean>>()
+  for (const { source, target, secret } of mentions) {
+    if (source === target || !present.has(source) || !present.has(target) || linked.get(source)?.includes(target))
+      continue
+    let targets = byPair.get(source)
+    if (!targets) {
+      targets = new Map()
+      byPair.set(source, targets)
+    }
+    targets.set(target, (targets.get(target) ?? true) && secret)
   }
-  for (const { source, target, secret } of byPair.values())
-    edges.push({ source, target, kind: 'mention', key: MENTION_KEY, name: '', ...(secret ? { secret: true } : {}) })
+  for (const [source, targets] of byPair)
+    for (const [target, secret] of targets)
+      edges.push({
+        source,
+        target,
+        kind: 'mention',
+        key: MENTION_KEY,
+        name: '',
+        inverseName: undefined,
+        role: undefined,
+        secret: secret || undefined
+      })
   return edges
 }
 
@@ -288,7 +313,7 @@ export interface RelationCount {
 /**
  * El grafo del mundo filtrado: las páginas de esas plantillas y etiquetas, las aristas de esas relaciones entre ellas
  * y, sin orphans, solo las páginas con alguna. counts, las relaciones que hay entre las páginas filtradas (antes de
- * filtrar por relación: para elegir)
+ * filtrar por relación: para elegir). Las aristas, entre estas páginas (como las da relationEdges)
  */
 export function filterGraph<P extends GraphPage>(
   pages: readonly P[],
@@ -296,17 +321,18 @@ export function filterGraph<P extends GraphPage>(
   filter: GraphFilter
 ): { pages: P[]; edges: RelationEdge[]; counts: RelationCount[] } {
   const templates = filter.templates ? new Set(filter.templates) : null
-  const tags = filter.tags?.map((tag) => tag.toLocaleLowerCase('es'))
+  const tags = filter.tags && filter.tags.length > 0 ? filter.tags.map((tag) => tag.toLocaleLowerCase('es')) : null
   const hasTag = (page: GraphPage) =>
     page.tags.some((tag) => {
       const own = tag.toLocaleLowerCase('es')
       return tags?.some((wanted) => own === wanted || own.startsWith(`${wanted}/`))
     })
-  const kept = pages.filter(
-    (page) => (!templates || page.line.some((t) => templates.has(t))) && (!tags || tags.length === 0 || hasTag(page))
-  )
-  const ids = new Set(kept.map((page) => page.id))
-  const between = among(edges, ids)
+  // Sin filtro de páginas, todas (las aristas ya van entre ellas: así salen de relationEdges)
+  const kept =
+    templates || tags
+      ? pages.filter((page) => (!templates || page.line.some((t) => templates.has(t))) && (!tags || hasTag(page)))
+      : [...pages]
+  const between = kept.length === pages.length ? [...edges] : among(edges, new Set(kept.map((page) => page.id)))
   const counts = new Map<string, RelationCount>()
   for (const edge of between) {
     const count = counts.get(edge.key)

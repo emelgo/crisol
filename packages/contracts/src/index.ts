@@ -190,6 +190,7 @@ import {
   updatePage
 } from './pages.ts'
 import { getParty, moveCoins, moveItem, splitCoins, updateParty } from './party.ts'
+import { getRelations, getWorldGraph } from './relations.ts'
 import {
   createScene,
   deleteScene,
@@ -354,6 +355,7 @@ export * from './panel.ts'
 export * from './party.ts'
 export * from './read-as.ts'
 export type * from './realtime.ts'
+export * from './relations.ts'
 export * from './scenes.ts'
 export * from './search.ts'
 export * from './sound.ts'
@@ -692,7 +694,9 @@ export const ACTIONS = [
   createTimelineEvents,
   updateTimelineEvent,
   deleteTimelineEvent,
-  convertEventToPage
+  convertEventToPage,
+  getRelations,
+  getWorldGraph
 ]
 
 /** Las acciones por nombre, solo como tipo: la web las usa sin cargar zod */
@@ -1019,4 +1023,6 @@ export type Actions = {
   updateTimelineEvent: typeof updateTimelineEvent
   deleteTimelineEvent: typeof deleteTimelineEvent
   convertEventToPage: typeof convertEventToPage
+  getRelations: typeof getRelations
+  getWorldGraph: typeof getWorldGraph
 }

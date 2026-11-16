@@ -55,12 +55,19 @@ import {
   bySiblingPlace,
   EMPTY_SOUND,
   EXAMPLE_TEMPLATES,
+  familyTree,
+  filterGraph,
   instantiate,
   isTagOrChild,
+  neighborhood,
   nextTrack as nextTrackOf,
+  orgChart,
   pauseSound as pauseSoundOf,
   placeAmong,
   placeAmongSiblings,
+  type RelationView,
+  relationEdges,
+  relationModes,
   removeTagIn,
   renameTagIn,
   resumeSound,
@@ -2077,6 +2084,54 @@ export function fakeApi(
       return { incoming: [], outgoing: [], mentions: [], fields: [], events }
     },
     listUnresolvedLinks: () => ({ links: [] }),
+    // Las relaciones (módulo 10): solo las de los campos (la falsa no guarda los enlaces del texto)
+    getRelations: ({ pageId, depth = 1, mode = 'links' }) => {
+      const page = pageById(pageId)
+      const graph = relationEdges(
+        pages.filter((p) => p.worldId === page.worldId),
+        []
+      )
+      const modes = relationModes(graph, pageId)
+      const view: RelationView & { generation?: Map<string, number>; groups?: string[] } = !modes.includes(mode)
+        ? { ids: [pageId], edges: [], truncated: false }
+        : mode === 'family'
+          ? familyTree(graph, pageId)
+          : mode === 'org'
+            ? orgChart(graph, pageId)
+            : neighborhood(graph, pageId, depth)
+      return {
+        pageId,
+        mode,
+        modes,
+        nodes: view.ids.map((id) => {
+          const node = pageById(id)
+          const at = view.generation?.get(id)
+          return {
+            id,
+            title: node.title,
+            icon: node.icon,
+            template: node.template ?? null,
+            ...(at === undefined ? {} : { generation: at })
+          }
+        }),
+        edges: view.edges,
+        groups: view.groups ?? [],
+        truncated: view.truncated
+      }
+    },
+    getWorldGraph: ({ worldId, relations, orphans = false }) => {
+      const inWorld = pages.filter((p) => p.worldId === worldId)
+      const graph = filterGraph(
+        inWorld.map((p) => ({ ...p, line: p.template ? [p.template] : [], tags: [] })),
+        relationEdges(inWorld, []),
+        { relations, orphans }
+      )
+      return {
+        nodes: graph.pages.map((p) => ({ id: p.id, title: p.title, icon: p.icon, template: p.template ?? null })),
+        edges: graph.edges.map(({ source, target, key }) => ({ source, target, key })),
+        relations: graph.counts
+      }
+    },
     listPageVersions: () => ({ versions: [] }),
     getPageVersion: () => {
       throw new ApiError('NOT_FOUND', 404)
