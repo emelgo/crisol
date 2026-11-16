@@ -4,7 +4,8 @@
  */
 import type { Page } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { FileText, Link2 } from 'lucide-react'
+import { Link } from '@tanstack/react-router'
+import { CalendarRange, FileText, Link2 } from 'lucide-react'
 import { useId } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
@@ -53,7 +54,7 @@ export function Backlinks({ page }: { page: Page }) {
         <Link2 aria-hidden="true" size={12} />
         {t('backlinks.title')}
       </h2>
-      {data && data.incoming.length === 0 && data.mentions.length === 0 && (
+      {data && data.incoming.length === 0 && data.mentions.length === 0 && !data.events?.length && (
         <p className={styles.empty}>{t('backlinks.none')}</p>
       )}
       {data && data.incoming.length > 0 && (
@@ -68,6 +69,27 @@ export function Backlinks({ page }: { page: Page }) {
             </li>
           ))}
         </ul>
+      )}
+      {/* Los eventos de las cronologías enlazados a ella (módulo 8): discretos, para el máster */}
+      {data?.events && data.events.length > 0 && (
+        <>
+          <h3 id={`${id}-events`} className={styles.subtitle}>
+            {t('backlinks.events')}
+          </h3>
+          <ul aria-labelledby={`${id}-events`} className={styles.list}>
+            {data.events.map((event) => (
+              <li key={event.id} className={styles.item}>
+                <Link to="/mundos/$worldId/calendarios" params={{ worldId: page.worldId }}>
+                  <span aria-hidden="true" className={styles.icon}>
+                    <CalendarRange size={14} />
+                  </span>
+                  <span className={styles.name}>{event.title}</span>
+                </Link>
+                {event.text && <span className={styles.secret}>{event.text}</span>}
+              </li>
+            ))}
+          </ul>
+        </>
       )}
       {data && data.mentions.length > 0 && (
         <>

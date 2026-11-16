@@ -661,7 +661,9 @@ export const getPageLinks = defineAction({
     /** Las que la apuntan desde un campo de enlace (como la Facción de un PNJ), con el nombre de esos campos */
     fields: z.array(
       z.object({ pageId: z.uuid(), title: z.string(), path: z.array(z.string()), fields: z.array(z.string()) })
-    )
+    ),
+    /** Los eventos sueltos de las cronologías enlazados a ella (módulo 8), para el máster: su título y su fecha */
+    events: z.array(z.object({ id: z.uuid(), title: z.string(), text: z.string() })).optional()
   })
 })
 

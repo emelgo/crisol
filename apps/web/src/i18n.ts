@@ -1180,6 +1180,7 @@ export const es = {
     restored: 'Restaurada la versión del {{when}}.'
   },
   backlinks: {
+    events: 'En las cronologías',
     title: 'Mencionado en',
     incoming: 'La enlazan',
     noIncoming: 'Ninguna página la enlaza.',

@@ -339,6 +339,10 @@ describe('las cronologías de un mundo (módulo 8)', () => {
     expect(read.markdown).toContain('En el Salón de las Velas.')
     const chronology = await historia()
     expect((await entries(chronology.id))[0]).toMatchObject({ title: 'Boda de Ilsa', page: { id: pageId } })
+    // La página dice, discreta, que la enlaza un evento (al máster)
+    expect((await ok200('getPageLinks', { pageId })).events).toEqual([
+      { id: boda.id, title: 'Boda de Ilsa', text: '18 de Siega de 1247 RC' }
+    ])
     await undo('convertEventToPage')
     expect((await entries(chronology.id))[0]?.page).toBeUndefined()
   })

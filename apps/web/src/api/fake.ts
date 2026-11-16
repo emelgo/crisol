@@ -2070,8 +2070,11 @@ export function fakeApi(
     listPageChildren: ({ worldId, parentId }) => ({ pages: childrenOf(worldId, parentId ?? null).map(summary) }),
     // Sin documentos en estas pruebas: sin enlaces
     getPageLinks: ({ pageId }) => {
-      pageById(pageId)
-      return { incoming: [], outgoing: [], mentions: [], fields: [] }
+      const page = pageById(pageId)
+      const events = chronologies.events
+        .filter((event) => event.pageId === pageId)
+        .map((event) => ({ id: event.id, title: event.title || page.title, text: '' }))
+      return { incoming: [], outgoing: [], mentions: [], fields: [], events }
     },
     listUnresolvedLinks: () => ({ links: [] }),
     listPageVersions: () => ({ versions: [] }),

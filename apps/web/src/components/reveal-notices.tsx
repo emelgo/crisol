@@ -51,6 +51,25 @@ export function RevealNotices() {
                 {t('revealNotice.read')}
               </Link>
             )}
+            {/* Una cronología (módulo 8): se abre en la campaña; un evento, en sus cronologías */}
+            {(notice.kind === 'chronology' || notice.kind === 'event') && (
+              <Link
+                to={
+                  notice.kind === 'chronology' && notice.targetId
+                    ? '/mundos/$worldId/campanas/$campaignId/cronologias/$chronologyId'
+                    : '/mundos/$worldId/campanas/$campaignId/cronologias'
+                }
+                params={{
+                  worldId: notice.worldId,
+                  campaignId: notice.campaignId,
+                  chronologyId: notice.targetId ?? ''
+                }}
+                className={styles.read}
+                onClick={() => dismissRevealed(notice.id)}
+              >
+                {t('revealNotice.read')}
+              </Link>
+            )}
             {notice.kind === 'content' && notice.targetId && (
               <Link
                 to="/mundos/$worldId/campanas/$campaignId/compendio"
