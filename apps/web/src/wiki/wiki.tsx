@@ -505,6 +505,7 @@ function PageHead({
       )
     })
   }, [compact])
+  useTitleFit(header, Boolean(tabs) && !compact, page.title)
   return (
     <>
       <div ref={sentinel} aria-hidden="true" className={tabs ? pageStyles.sentinel : styles.sentinel} />
@@ -551,6 +552,48 @@ function PageHead({
       </header>
     </>
   )
+}
+
+/** La letra del título en la franja: de la de siempre a esta, lo justo para que quepa entero */
+const TITLE_MIN = 16
+
+/**
+ * El título de la franja, entero (Enrique, 2026-11-16: «que se lea entero»): baja de línea y, si aun así no cabe en el
+ * alto de la franja (un título largo con la columna estrecha), su letra encoge lo justo, hasta TITLE_MIN. En la barra
+ * pegada, la suya (con «…»)
+ */
+function useTitleFit(header: RefObject<HTMLElement | null>, active: boolean, title: string) {
+  useLayoutEffect(() => {
+    const head = header.current
+    const heading = head?.querySelector<HTMLElement>('h1')
+    if (!head || !heading) return
+    if (!active) {
+      heading.style.removeProperty('font-size')
+      return
+    }
+    const band = head.querySelector<HTMLElement>('[data-band]')
+    const fit = () => {
+      heading.style.removeProperty('font-size')
+      // Su sitio: el alto de la franja, menos el margen de abajo del título y un poco de aire arriba
+      const room = (band?.clientHeight ?? 0) - 12 - 8
+      if (room <= 0) return
+      let size = Number.parseFloat(getComputedStyle(heading).fontSize)
+      while (heading.offsetHeight > room && size > TITLE_MIN) {
+        size -= 1
+        heading.style.fontSize = `${size}px`
+      }
+    }
+    fit()
+    if (typeof ResizeObserver === 'undefined') return
+    let width = head.clientWidth
+    const observer = new ResizeObserver(() => {
+      if (head.clientWidth === width) return
+      width = head.clientWidth
+      fit()
+    })
+    observer.observe(head)
+    return () => observer.disconnect()
+  }, [header, active, title])
 }
 
 /** Lo que se mueve al pegarse la cabecera: el título, las pestañas y los botones (no la portada, que se funde) */

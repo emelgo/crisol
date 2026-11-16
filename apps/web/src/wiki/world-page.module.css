@@ -306,14 +306,24 @@
   letter-spacing: 0.01em;
 }
 
-/* El título en una línea: si no cabe, «…» (escribiendo, se ve entero desplazándose) */
-.head :is(h1 > span[role="textbox"]) {
+/*
+ * En la franja, el título se lee entero (Enrique, 2026-11-16: «el título largo se corta»): baja de línea, repartido, y
+ * si no cabe en la franja encoge lo justo (lo ajusta useTitleFit, wiki.tsx)
+ */
+.head:not([data-compact]) h1 {
+  line-height: 1.05;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+
+/* En la barra pegada, en una línea: si no cabe, «…» (escribiendo, se ve entero desplazándose) */
+.head[data-compact] :is(h1 > span[role="textbox"]) {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.head :is(h1 > span[role="textbox"]):focus {
+.head[data-compact] :is(h1 > span[role="textbox"]):focus {
   text-overflow: clip;
 }
 

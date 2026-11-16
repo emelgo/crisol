@@ -74,6 +74,10 @@ Pedidos al probar el módulo 9 en localhost. Se hacen en la rama `modulo-9/mapas
   `BAD_PAGE_TABLE`, «Elige la plantilla y su campo».*
 
 ## La página
-- [ ] Con la columna estrecha (1200 px con el panel abierto) **la letra del texto sale diminuta** (~11 px): la hoja ajusta
-  la letra al ancho y no tiene mínimo. Un mínimo legible (≥ 1rem) y el ancho de lectura de siempre.
-- [ ] El **título largo se corta** con «…» en la cabecera grande: que se lea entero (que baje de línea o encoja un poco).
+- [x] Con la columna estrecha (1200 px con el panel abierto) **la letra del texto sale diminuta** (~11 px): la hoja ajusta
+  la letra al ancho y no tiene mínimo. Un mínimo legible (≥ 1rem) y el ancho de lectura de siempre. *Hecho: la hoja ya
+  no encoge por debajo de su letra (12 pt = 16 px); con una columna más estrecha que su texto, va seguido, sin páginas y
+  con la letra de siempre (17 px), como en el móvil; al ensanchar (plegar el panel) vuelven las páginas.*
+- [x] El **título largo se corta** con «…» en la cabecera grande: que se lea entero (que baje de línea o encoja un poco).
+  *Hecho: en la franja baja de línea (repartido) y, si aun así no cabe en su alto, su letra encoge lo justo (hasta
+  16 px). En la barra pequeña pegada sigue en una línea con «…».*
