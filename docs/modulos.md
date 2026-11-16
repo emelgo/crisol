@@ -1981,7 +1981,7 @@ Estados: pendiente · en curso · hecho · descartado.
 | R | **Revisión de la app** (2026-11-11): nueve tandas (`tasks/plan-revision.md`); la campaña, aparte | **en curso** (tanda 1) | Roliando y Roll20 (editor de sistemas); 5etools (libros) |
 | 9 | **Pizarras y mapas con capas**: la pizarra como pestaña; regiones, rutas, textos y capas en los mapas, escala y medir | pendiente (el primero tras la revisión) | DDB Maps |
 | 8 · mundo | **Calendarios y líneas temporales**: calendarios del mundo con su editor; fechas; cronologías en «Calendarios» (decisiones del 2026-11-16) | **hecho en local** (2026-11-16, ADR-0029: `calendarios`, `fechas` y `cronologias`); falta subir y que Enrique lo pruebe | Everlore, Crisol antiguo |
-| 10 · mundo | **Herramientas del mundo**: grafo de relaciones y árbol familiar, tableros, gráficos, generador de nombres | pendiente (tras el 8) | — |
+| 10 · mundo | **Herramientas del mundo**: grafo de relaciones (pestaña de la página y vista del mundo; de campos de relación y enlaces del texto), árbol genealógico u organigrama, gráficos como bloque del editor. Fuera, por decisión de Enrique (2026-11-16): tableros Kanban y generador de nombres | en marcha (estudio y spec) | — |
 | 8 · campaña | El «hoy» de cada campaña, el clima y los viajes | pendiente (con la revisión de la campaña) | — |
 | 10 · campaña | El centro de actividad y la pantalla del máster | pendiente (con la revisión de la campaña) | — |
 | 11 | Pagos y planes del SaaS | **descartado** (Enrique, 2026-11-11: herramienta propia, gratuita y de uso privado; ADR-0023) | — |
