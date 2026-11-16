@@ -170,7 +170,8 @@ function PageHead({
   startEditing,
   home = false,
   template,
-  actions
+  actions,
+  tabs
 }: {
   page: Page
   startEditing: boolean
@@ -179,6 +180,11 @@ function PageHead({
   /** La página de una plantilla (su id): «Plantilla» junto al título, y su icono y su nombre viajan desde su tarjeta */
   template?: string | undefined
   actions: ReactNode
+  /**
+   * En el mundo a pantalla completa, las pestañas de la página (con las herramientas de la abierta), dentro de la
+   * cabecera: al bajar, la cabecera se queda arriba en una barra pequeña con el título y ellas (Enrique, 2026-11-16)
+   */
+  tabs?: ReactNode
 }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -202,8 +208,8 @@ function PageHead({
   }, [])
   return (
     <>
-      <div ref={sentinel} aria-hidden="true" className={styles.sentinel} />
-      <header className={styles.entryHeader} data-compact={compact || undefined}>
+      <div ref={sentinel} aria-hidden="true" className={tabs ? shellStyles.sentinel : styles.sentinel} />
+      <header className={tabs ? shellStyles.head : styles.entryHeader} data-compact={compact || undefined}>
         <div className={styles.entryTitle}>
           <div className={styles.heading}>
             {page.icon && (
@@ -235,6 +241,7 @@ function PageHead({
             {page.locked && <span className={styles.locked}>{t('editor.locked')}</span>}
           </div>
         </div>
+        {tabs}
         <div className={styles.pageActions}>{actions}</div>
       </header>
     </>
@@ -627,6 +634,12 @@ export function EntryView({
     links.data !== undefined &&
     links.data.incoming.length === 0 &&
     links.data.mentions.length === 0
+  const pageTabs = <PageTabs page={page} tabs={tabs} active={active?.id ?? null} />
+  // En el mundo a pantalla completa, donde pone la pestaña abierta sus herramientas (a la derecha de las pestañas)
+  const [tabTools, setTabTools] = useState<HTMLElement | null>(null)
+  // El panel de la derecha se pliega desde la cabecera de la página (Enrique, 2026-11-16)
+  const panelId = useId()
+  const panel = usePanelFold(fill && !template && emptyPanel)
   const head = (
     <PageHead
       key={page.id}
@@ -634,6 +647,14 @@ export function EntryView({
       startEditing={nuevo}
       home={home}
       template={template?.id}
+      tabs={
+        shell ? (
+          <div className={shellStyles.tabsRow}>
+            {pageTabs}
+            <div ref={setTabTools} className={shellStyles.tabTools} />
+          </div>
+        ) : undefined
+      }
       actions={
         template ? (
           // Una plantilla no la conoce nadie ni se marca: el candado y «⋯», con lo suyo
@@ -648,14 +669,12 @@ export function EntryView({
             <BookmarkButton page={page} />
             <LockButton page={page} />
             <MoreActions page={page} />
+            {shell && <PanelToggle folded={panel.folded} controls={panelId} onToggle={panel.toggle} />}
           </>
         )
       }
     />
   )
-  const pageTabs = <PageTabs page={page} tabs={tabs} active={active?.id ?? null} />
-  // En el mundo a pantalla completa, donde pone la pestaña abierta sus herramientas (a la derecha de las pestañas)
-  const [tabTools, setTabTools] = useState<HTMLElement | null>(null)
   // Lo de la pestaña elegida: el texto (o otra página de texto, con su propio documento), una tabla, una pizarra o un mapa
   const content =
     active?.kind === 'scene' ? (
@@ -700,7 +719,10 @@ export function EntryView({
     )
   // La portada, a todo lo ancho (la del mundo en su portada; si no, la de la página o «Añadir portada»)
   const cover = (
-    <div className={styles.entryBanner} data-cover={banner || page.cover ? '' : undefined}>
+    <div
+      className={shell ? `${styles.entryBanner} ${shellStyles.cover}` : styles.entryBanner}
+      data-cover={banner || page.cover ? '' : undefined}
+    >
       {banner ??
         (page.cover ? (
           <PageCoverImage page={page} />
@@ -711,38 +733,33 @@ export function EntryView({
   )
 
   if (shell) {
-    // El mismo esqueleto en todas las pestañas: arriba, la tira de la página (título y botones; pestañas y, a su
-    // derecha, las herramientas de la abierta); debajo, la portada y la hoja del texto, o el mapa o la pizarra hasta
-    // abajo (Enrique, 2026-11-13)
+    // El mismo esqueleto en todas las pestañas (Enrique, 2026-11-16, la mezcla con Everlore): toda la columna se
+    // desplaza; arriba la portada, debajo el título con sus botones y las pestañas (con las herramientas de la abierta),
+    // que se quedan arriba en pequeño al bajar; después, el texto sin caja o el mapa o la pizarra a sangre
     return (
       <SceneTabProvider page={page} tab={active?.kind === 'scene' ? active : null}>
-        <div className={shellStyles.entry} data-entry="" data-entry-panel="">
-          <div className={shellStyles.page}>
-            <div className={shellStyles.pageHead}>
-              {head}
-              <div className={shellStyles.tabsRow}>
-                {pageTabs}
-                <div ref={setTabTools} className={shellStyles.tabTools} />
-              </div>
-            </div>
-            <div className={shellStyles.scroll} data-fill={fill || undefined}>
-              {fill ? (
-                <article ref={main} className={`${styles.entryMain} ${shellStyles.fillMain}`} data-fill="">
-                  <TabToolsSlot value={tabTools}>{content}</TabToolsSlot>
-                </article>
-              ) : (
-                <div className={styles.content}>
-                  {cover}
-                  <div className={styles.entry}>
-                    <article ref={main} className={styles.entryMain}>
-                      {content}
-                    </article>
-                  </div>
-                </div>
-              )}
-            </div>
+        <div
+          className={shellStyles.pageEntry}
+          data-entry=""
+          data-entry-panel=""
+          data-panel-folded={panel.folded || undefined}
+        >
+          <div className={shellStyles.pageScroll} data-page-scroll="" data-fill={fill || undefined}>
+            {cover}
+            {head}
+            {fill ? (
+              <article ref={main} className={shellStyles.bleed} data-fill="" data-bleed="">
+                <TabToolsSlot value={tabTools}>{content}</TabToolsSlot>
+              </article>
+            ) : (
+              <article ref={main} className={shellStyles.sheet}>
+                {content}
+              </article>
+            )}
           </div>
-          <ShellPanel autoFold={fill && !template && emptyPanel}>{side}</ShellPanel>
+          <ShellPanel id={panelId} folded={panel.folded}>
+            {side}
+          </ShellPanel>
         </div>
       </SceneTabProvider>
     )
@@ -768,20 +785,10 @@ export function EntryView({
 }
 
 /**
- * El panel de la página en el mundo a pantalla completa: a toda altura, con su botón para plegarlo a una tira (Enrique,
- * 2026-11-13: para que el mapa o la pizarra lo tengan todo). Se recuerda plegado o no, en el aparato
+ * Si el panel de la página va plegado y cómo se pliega o se despliega (se recuerda en el aparato). autoFold: plegado sin
+ * que se haya pedido (un panel vacío junto a un mapa o una pizarra), hasta que se abra a mano
  */
-export function ShellPanel({
-  children,
-  label: name,
-  autoFold = false
-}: {
-  children: ReactNode
-  label?: string
-  /** Plegado sin que se haya pedido (un panel vacío junto a un mapa o una pizarra), hasta que se abra con su botón */
-  autoFold?: boolean
-}) {
-  const { t } = useTranslation()
+function usePanelFold(autoFold: boolean) {
   const shell = useWorldShell()
   // Abierto a mano aunque esté vacío: hasta que deje de estarlo o se cambie de página
   const [opened, setOpened] = useState(false)
@@ -790,7 +797,6 @@ export function ShellPanel({
   }, [autoFold])
   const auto = autoFold && !opened
   const folded = (shell?.panelFolded ?? false) || auto
-  const label = t(folded ? 'worldShell.panelUnfold' : 'worldShell.panelFold')
   const toggle = () => {
     if (folded) {
       if (shell?.panelFolded) shell.setPanelFolded(false)
@@ -798,6 +804,74 @@ export function ShellPanel({
     } else if (autoFold) setOpened(false)
     else shell?.setPanelFolded(true)
   }
+  return { folded, toggle }
+}
+
+/** El botón del panel, en la cabecera de la página (también en su barra pequeña al bajar) */
+function PanelToggle({ folded, controls, onToggle }: { folded: boolean; controls: string; onToggle: () => void }) {
+  const { t } = useTranslation()
+  const label = t(folded ? 'worldShell.panelUnfold' : 'worldShell.panelFold')
+  return (
+    <button
+      type="button"
+      className={shellStyles.panelToggle}
+      aria-label={label}
+      title={label}
+      aria-expanded={!folded}
+      aria-controls={controls}
+      onClick={onToggle}
+    >
+      {folded ? <PanelRightOpen aria-hidden="true" size={18} /> : <PanelRightClose aria-hidden="true" size={18} />}
+    </button>
+  )
+}
+
+/** Lo que tarda el panel en deslizarse (world-shell.module.css, .pageEntry) */
+const PANEL_SLIDE_MS = 300
+
+/**
+ * El panel de la derecha en el mundo a pantalla completa, a toda altura. Con folded (el de una página), se desliza
+ * fuera o dentro mientras el centro se ensancha, y su botón va en la cabecera de la página (Enrique, 2026-11-16). Sin
+ * él (el de un archivo), lleva su propio botón y se pliega a una tira
+ */
+export function ShellPanel({
+  children,
+  label: name,
+  id,
+  folded: given
+}: {
+  children: ReactNode
+  label?: string
+  id?: string
+  folded?: boolean
+}) {
+  const { t } = useTranslation()
+  const own = usePanelFold(false)
+  const sliding = given !== undefined
+  const folded = given ?? own.folded
+  // Plegándose, lo de dentro se queda hasta que acaba de irse; desplegándose, entra ya
+  const [present, setPresent] = useState(!folded)
+  useEffect(() => {
+    if (!folded) return setPresent(true)
+    const timer = setTimeout(() => setPresent(false), PANEL_SLIDE_MS)
+    return () => clearTimeout(timer)
+  }, [folded])
+  if (sliding) {
+    return (
+      <aside
+        id={id}
+        aria-label={name ?? t('wiki.pagePanel')}
+        className={`${styles.entryPanel} ${shellStyles.slidePanel}`}
+        data-tour="panel-bloques"
+        data-folded={folded || undefined}
+        hidden={folded && !present}
+        inert={folded || undefined}
+      >
+        {present && children}
+      </aside>
+    )
+  }
+  const label = t(folded ? 'worldShell.panelUnfold' : 'worldShell.panelFold')
   return (
     <aside
       aria-label={name ?? t('wiki.pagePanel')}
@@ -812,7 +886,7 @@ export function ShellPanel({
           aria-label={label}
           title={label}
           aria-expanded={!folded}
-          onClick={toggle}
+          onClick={own.toggle}
         >
           {folded ? <PanelRightOpen aria-hidden="true" size={18} /> : <PanelRightClose aria-hidden="true" size={18} />}
         </button>

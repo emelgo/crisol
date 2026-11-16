@@ -942,8 +942,8 @@ a.templateBadge:hover {
 
 /* Sin portada, una textura suave en su sitio (para que no se vea plano): grano, un tejido muy tenue y dos manchas de
    color, fundidos con el fondo por abajo como una portada */
-.content > .entryBanner:not([data-cover]) {
-  border-radius: 0.75rem 0.75rem 0 0;
+/* (también en el mundo a pantalla completa: shell/world-shell.module.css) */
+.entryBanner:not([data-cover]) {
   background:
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0 0.5 0 0 0 0.09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
     repeating-linear-gradient(45deg, color-mix(in srgb, var(--color-text) 3%, transparent) 0 1px, transparent 1px 9px),
@@ -951,6 +951,10 @@ a.templateBadge:hover {
     radial-gradient(ellipse 60% 90% at 15% 0%, color-mix(in srgb, var(--color-accent) 12%, transparent), transparent),
     radial-gradient(ellipse 55% 80% at 90% 10%, color-mix(in srgb, var(--color-link) 9%, transparent), transparent),
     var(--color-raised);
+}
+
+.content > .entryBanner:not([data-cover]) {
+  border-radius: 0.75rem 0.75rem 0 0;
 }
 
 .content > .entryBanner:not([data-cover])::after {
