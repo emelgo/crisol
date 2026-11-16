@@ -1167,3 +1167,65 @@ test('@fugas la pantalla de la tele solo recibe lo que ve el grupo, y un jugador
     expect(toPlayer, leak).not.toContain(leak)
   await player.close()
 })
+
+test('@fugas los calendarios: la jugadora los lee sin las eras solo del máster, por la API ni por el tiempo real (módulo 8)', async ({
+  page,
+  browser
+}) => {
+  const link = await campaignLink(page)
+  const worldId = new URL(page.url()).pathname.split('/')[2] ?? ''
+  const api = async (name: string, data: object) => {
+    const response = await page.request.post(`/api/actions/${name}`, { data })
+    expect(response.status(), name).toBe(200)
+    return response.json()
+  }
+  const definition = {
+    yearSuffix: 'RV',
+    weekdays: ['Lunden', 'Marden', 'Miden'],
+    months: [
+      { name: 'Siega', days: 30 },
+      { name: 'Vendimia', days: 30 }
+    ],
+    eras: [
+      { name: 'Era de la Corona', start: '0' },
+      { name: 'Era del Eclipse', abbreviation: 'EE', start: '1300-Siega-1', hidden: true }
+    ]
+  }
+  const calendar = await api('createCalendar', { worldId, name: 'Calendario de Varn', from: { definition } })
+  let seen: ReturnType<typeof capture> | undefined
+  const player = await newPlayer(browser, link, 'Jugadora', (p) => {
+    seen = capture(p)
+  })
+  if (!seen) throw new Error('sin captura')
+  const captured = seen
+  await gotoLive(player, new URL(player.url()).pathname)
+  // Mientras está conectada, el máster añade otra era oculta: el aviso le llega sin decir qué cambió
+  await api('updateCalendar', {
+    calendarId: calendar.id,
+    definition: { ...definition, eras: [...definition.eras, { name: 'Era del Ocaso', start: '2000', hidden: true }] }
+  })
+  await expect.poll(() => captured.frames.some((f) => f.includes('"calendars"'))).toBe(true)
+  // Lo que pide ella, con su sesión: los lee, sin las eras ocultas
+  const bodies: string[] = []
+  for (const [name, data] of [
+    ['listCalendars', { worldId }],
+    ['getCalendar', { calendarId: calendar.id }],
+    ['describeDate', { calendarId: calendar.id, date: '1300-Siega-2' }],
+    ['describeDate', { worldId, date: '2001-Vendimia-3', addDays: 5 }]
+  ] as const) {
+    const response = await player.request.post(`/api/actions/${name}`, { data })
+    expect(response.status(), name).toBe(200)
+    bodies.push(await response.text())
+  }
+  expect(bodies.join('\n')).toContain('Era de la Corona')
+  const everything = [await captured.all(), ...bodies].join('\n')
+  for (const leak of ['Eclipse', 'Ocaso', '"EE"']) expect(everything).not.toContain(leak)
+  // Y no los cambia
+  for (const [name, data] of [
+    ['updateCalendar', { calendarId: calendar.id, name: 'Mío' }],
+    ['deleteCalendar', { calendarId: calendar.id }],
+    ['createCalendar', { worldId, name: 'Mío' }]
+  ] as const)
+    expect((await player.request.post(`/api/actions/${name}`, { data })).status(), name).toBe(404)
+  await player.close()
+})

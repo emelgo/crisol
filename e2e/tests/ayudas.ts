@@ -143,6 +143,8 @@ export async function skipTours(page: Page, email: string) {
           'biblioteca',
           'tabla',
           'archivos',
+          'calendarios',
+          'calendario',
           'etiquetas',
           'plantillas',
           'plantilla',
