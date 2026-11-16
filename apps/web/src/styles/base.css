@@ -592,11 +592,6 @@ html:active-view-transition-type(pantalla-completa)::view-transition-old(barra) 
   animation: atraviesa 320ms cubic-bezier(0.2, 0.7, 0.4, 1) both;
 }
 
-/* Al salir, la barra de la app vuelve como se fue al entrar, al revés: de un poco más grande y transparente a su sitio */
-html:active-view-transition-type(pantalla-completa)::view-transition-new(barra) {
-  animation: barra-vuelve 420ms cubic-bezier(0.33, 1, 0.68, 1) both;
-}
-
 html:active-view-transition-type(entrar-mundo)::view-transition-new(barra-mundo) {
   animation: llega 850ms cubic-bezier(0.33, 1, 0.68, 1) 460ms both;
 }
@@ -605,6 +600,76 @@ html:active-view-transition-type(salir-mundo)::view-transition-old(barra-mundo),
 html:active-view-transition-type(salir-mundo)::view-transition-old(cabecera-mundo) {
   display: block;
   animation: se-aleja 300ms cubic-bezier(0.2, 0.7, 0.4, 1) both;
+}
+
+/*
+ * Salir del mundo a pantalla completa: la entrada al revés, en su misma línea de tiempo invertida (Enrique, 2026-11-16:
+ * «debe ser la animación inversa a cuando entramos»). Entrar dura 1310 ms: Mis mundos se atraviesa (0-320), la tarjeta
+ * crece hasta la cabecera (0-1150) y el mundo llega (460-1310). Al salir, cada cosa en t' = 1310 - t: el mundo y su
+ * barra se encogen y se van (0-850), la cabecera vuelve a ser la tarjeta (160-1310) y Mis mundos y la barra de la app
+ * vuelven de un poco más grandes (990-1310); las curvas, también al revés
+ */
+html:active-view-transition-type(salir-mundo):active-view-transition-type(pantalla-completa)::view-transition-old(root),
+html:active-view-transition-type(salir-mundo):active-view-transition-type(pantalla-completa)::view-transition-old(
+  contenido
+),
+html:active-view-transition-type(salir-mundo):active-view-transition-type(pantalla-completa)::view-transition-old(
+  barra-mundo
+) {
+  display: block;
+  animation: se-va-encogiendo 850ms cubic-bezier(0.32, 0, 0.67, 0) both;
+}
+
+html:active-view-transition-type(salir-mundo):active-view-transition-type(pantalla-completa)::view-transition-new(root),
+html:active-view-transition-type(salir-mundo):active-view-transition-type(pantalla-completa)::view-transition-new(
+  contenido
+),
+html:active-view-transition-type(salir-mundo):active-view-transition-type(pantalla-completa)::view-transition-new(
+  barra
+) {
+  animation: vuelve-de-atravesar 320ms cubic-bezier(0.6, 0, 0.8, 0.3) 990ms both;
+}
+
+html:active-view-transition-type(salir-mundo):active-view-transition-type(pantalla-completa)::view-transition-group(
+  mundo-actual
+) {
+  animation-delay: 160ms;
+  animation-timing-function: cubic-bezier(0.32, 0, 0.67, 0);
+}
+
+/* La cabecera deja paso a la tarjeta al revés que al entrar: se funde al final y la tarjeta llega al posarse */
+html:active-view-transition-type(salir-mundo):active-view-transition-type(pantalla-completa)::view-transition-old(
+  mundo-actual
+) {
+  animation: deja-paso 420ms ease-in 550ms both;
+}
+
+html:active-view-transition-type(salir-mundo):active-view-transition-type(pantalla-completa)::view-transition-new(
+  mundo-actual
+) {
+  animation: toma-el-relevo 340ms ease-out 970ms both;
+}
+
+/* La llama de la cabecera pasa a la de la barra al final, al revés que al entrar (0-420 → 890-1310) */
+html:active-view-transition-type(salir-mundo):active-view-transition-type(pantalla-completa)::view-transition-group(
+  llama
+) {
+  animation-delay: 890ms;
+  animation-timing-function: cubic-bezier(0.32, 0, 0.67, 0);
+}
+
+@keyframes se-va-encogiendo {
+  to {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+}
+
+@keyframes vuelve-de-atravesar {
+  from {
+    opacity: 0;
+    transform: scale(1.08);
+  }
 }
 
 /* Al salir del mundo a pantalla completa, el espejo de entrar: la llama de la cabecera se convierte en la de la barra
@@ -723,13 +788,6 @@ html:active-view-transition-type(pantalla-completa)::view-transition-old(icono-m
   to {
     opacity: 0;
     transform: translateY(-18px) scale(0.6);
-  }
-}
-
-@keyframes barra-vuelve {
-  from {
-    opacity: 0;
-    transform: scale(1.08);
   }
 }
 

@@ -128,7 +128,7 @@ function WorldTools({ world }: { world: World }) {
         onFocus={prefetchHistory}
         onClick={(event) => openHistory(event.currentTarget)}
       >
-        <History aria-hidden="true" size={16} />
+        <History aria-hidden="true" size={20} strokeWidth={1.75} />
         <span>{t('ribbon.history')}</span>
       </button>
       <button
@@ -139,7 +139,7 @@ function WorldTools({ world }: { world: World }) {
         onFocus={prefetchTrash}
         onClick={(event) => openTrash(event.currentTarget)}
       >
-        <Trash2 aria-hidden="true" size={16} />
+        <Trash2 aria-hidden="true" size={20} strokeWidth={1.75} />
         <span>{t('ribbon.trash')}</span>
       </button>
     </div>
