@@ -4,6 +4,7 @@
  */
 import { z } from 'zod'
 import { defineAction } from './action.ts'
+import { gameIcon } from './game-icons.ts'
 import { readAs } from './read-as.ts'
 import { worldColor } from './worlds.ts'
 
@@ -98,7 +99,20 @@ export const PIN_SHAPES = 8
 const pinFields = {
   label: z.string().trim().max(120).nullable().describe('Su nombre; sin él, el de la página enlazada'),
   pageId: z.uuid().nullable().describe('La página a la que lleva, del mismo mundo'),
-  icon: z.string().trim().max(16).nullable().describe('Un emoji dentro del pin'),
+  icon: z
+    .union([
+      z
+        .string()
+        .max(48)
+        .refine((value) => gameIcon(value) !== null, 'No es un icono del paquete'),
+      z
+        .string()
+        .trim()
+        .max(16)
+        .refine((value) => !value.startsWith('gi:'), 'No es un icono del paquete')
+    ])
+    .nullable()
+    .describe('Su icono: uno de rol del paquete («gi:<id>», listar_iconos) o un emoji'),
   color: worldColor,
   shape: z
     .number()

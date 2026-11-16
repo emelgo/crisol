@@ -42,6 +42,7 @@ import { Loading } from '../../components/brand.tsx'
 import { BusyButton } from '../../components/busy-button.tsx'
 import { FormError } from '../../components/field.tsx'
 import { canvasKeyTarget } from '../../components/focus.ts'
+import { Icon } from '../../components/icon.tsx'
 import list from '../../components/list.module.css'
 import { failed, LoadError } from '../../components/load-error.tsx'
 import { Tour } from '../../components/tour.tsx'
@@ -1264,7 +1265,7 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
                   >
                     {pin.variant === 2 ? (
                       <span className={styles.iconOnly} aria-hidden="true">
-                        {pin.icon ?? '•'}
+                        {pin.icon ? <Icon value={pin.icon} /> : '•'}
                       </span>
                     ) : (
                       <PinShape

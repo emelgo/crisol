@@ -120,9 +120,85 @@
 
 .iconOnly {
   display: block;
+  color: #ffffff;
   font-size: 1.5rem;
   line-height: 1;
   text-shadow: 0 1px 3px rgb(0 0 0 / 0.7);
+  /* Un icono de rol es una máscara (sin sombra de texto): la sombra, de su dibujo */
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.75));
+}
+
+/* El icono de rol dentro de la forma de un pin (pin-shape.tsx) */
+.pinGlyph {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  background-color: currentColor;
+  mask: var(--icono) center / contain no-repeat;
+}
+
+/* El botón del icono de un pin: el de ahora con su nombre; abre el buscador junto a él */
+.iconTrigger {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: var(--target);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-field-border);
+  border-radius: var(--radius);
+  background: var(--field-fill);
+  color: var(--color-text);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.iconTrigger > span {
+  flex: 1;
+  text-align: start;
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.iconTrigger > svg:last-child {
+  color: var(--color-muted);
+}
+
+.iconPanel {
+  position: fixed;
+  z-index: 60;
+  display: grid;
+  gap: var(--space-2);
+  box-sizing: border-box;
+  inline-size: min(23rem, calc(100vw - 1rem));
+  padding: var(--space-3);
+  border: 1px solid var(--line-frame);
+  border-radius: 8px;
+  background: var(--frame-sheen), var(--popup-glass);
+  -webkit-backdrop-filter: var(--popup-blur);
+  backdrop-filter: var(--popup-blur);
+  box-shadow: var(--glass-shadow);
+  color: var(--color-text);
+}
+
+.noIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-block-size: 2.25rem;
+  border: 1px solid var(--color-field-border);
+  border-radius: var(--radius-button);
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.noIcon:hover {
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
 }
 
 .pin svg {
@@ -545,10 +621,6 @@
 .segmented input:focus-visible + span {
   outline: 2px solid var(--color-focus);
   outline-offset: 1px;
-}
-
-.iconInput {
-  inline-size: 6rem;
 }
 
 .check {

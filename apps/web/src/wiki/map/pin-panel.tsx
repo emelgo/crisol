@@ -16,6 +16,7 @@ import list from '../../components/list.module.css'
 import { PRESET_COLORS } from '../../routes/world-look.ts'
 import { PageLink } from '../read-as.tsx'
 import { TargetReveal } from '../reveal.tsx'
+import { IconPicker } from './icon-picker.tsx'
 import styles from './map.module.css'
 import { PagePicker } from './page-picker.tsx'
 import { PinShape, pinHex, SHAPE_NAMES } from './pin-shape.tsx'
@@ -249,6 +250,9 @@ export function PinPanel({
           ))}
         </fieldset>
 
+        <label htmlFor={`${id}-icon`}>{t('map.pin.icon')}</label>
+        <IconPicker id={`${id}-icon`} value={pin.icon} onPick={(icon) => void save({ icon })} />
+
         <fieldset className={styles.segmented}>
           <legend>{t('map.pin.size')}</legend>
           {VARIANTS.map((variant, index) => (
@@ -263,20 +267,6 @@ export function PinPanel({
             </label>
           ))}
         </fieldset>
-
-        <label htmlFor={`${id}-icon`}>{t('map.pin.icon')}</label>
-        <input
-          id={`${id}-icon`}
-          className={styles.iconInput}
-          defaultValue={pin.icon ?? ''}
-          maxLength={16}
-          placeholder={t('map.pin.iconHint')}
-          onBlur={(event) => {
-            const next = event.currentTarget.value.trim() || null
-            if (next !== pin.icon) void save({ icon: next })
-          }}
-          onKeyDown={onEnter(() => (document.activeElement as HTMLElement | null)?.blur())}
-        />
 
         <label htmlFor={`${id}-display`}>{t('map.pin.display')}</label>
         <select

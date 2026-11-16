@@ -32,7 +32,10 @@ Pedidos al probar el módulo 9 en localhost. Se hacen en la rama `modulo-9/mapas
   iguales en todas las formas. *Hecho: cada forma se encaja en la misma caja (su lado mayor, igual) y todas se clavan
   abajo en el centro; solo el icono suelto («Solo el icono»), por el centro.*
 - [ ] **«Revelar…»** del panel de una región o un pin no se entiende: rehacerlo (claro, como el ojo del árbol).
-- [ ] El **icono** se elige antes que «Solo el icono», y son iconos del paquete que tenemos (no emojis sueltos).
+- [x] El **icono** se elige antes que «Solo el icono», y son iconos del paquete que tenemos (no emojis sueltos). *Hecho:
+  «Icono» va antes de «Tamaño»; es un botón con el de ahora que abre, a la izquierda del panel, el buscador de los
+  iconos de rol (el mismo de las páginas) y «Quitar el icono». Se pintan dentro de la forma, en la tinta que se lee sobre
+  su color, y sueltos con «Solo el icono». Los emojis de antes se siguen viendo (y la IA aún puede ponerlos).*
 - [ ] La herramienta **Texto** deja dibujar una caja para saber dónde irá el texto.
 - [ ] Un **texto del mapa no se puede elegir** para editarlo ni borrarlo con Supr: que se elija al pulsarlo (y doble clic
   para editarlo) como las regiones y las rutas.
