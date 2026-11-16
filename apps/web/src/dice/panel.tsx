@@ -80,6 +80,7 @@ function WorldDice({ worldId }: { worldId: string }) {
           )}
           <Tour
             id="dados"
+            helpInPlace
             steps={[
               { target: '[data-tour="dados-columna"]', text: t('tour.dice.card'), placement: 'left' },
               { target: '[data-tour="dados-historial"]', text: t('tour.dice.roll'), placement: 'left' }

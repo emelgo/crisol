@@ -3,8 +3,9 @@
 Pedidos al probar el módulo 9 en localhost. Se hacen en la rama `modulo-9/mapas` antes de subir.
 
 ## Tutorial
-- [ ] El botón del tutorial guiado («?», abajo a la derecha) se ha ido al fondo (debajo de lo demás) y sale cuadrado: debe ir
-  encima y ser redondo, como antes.
+- [x] El botón del tutorial guiado («?», abajo a la derecha) se ha ido al fondo (debajo de lo demás) y sale cuadrado: debe ir
+  encima y ser redondo, como antes. *Hecho: el «?» va al body (dentro de la página quedaba en su capa y los botones de
+  la wiki lo hacían cuadrado); el de los dados sigue en su ficha.*
 
 ## Mapa
 - [ ] **Supr** borra lo elegido (también en la pizarra): comprobarlo en los dos con el foco donde sea. Ahora, en el mapa,

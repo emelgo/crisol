@@ -68,7 +68,16 @@ const snapshot = () => version
  * primera vez, hasta acabarlo; después, con el botón «?» que pinta este componente (va junto al título de la
  * pantalla). Los pasos cuyo elemento no está en la pantalla se saltan
  */
-export function Tour({ id, steps }: { id: string; steps: readonly TourStep[] }) {
+export function Tour({
+  id,
+  steps,
+  helpInPlace = false
+}: {
+  id: string
+  steps: readonly TourStep[]
+  /** El «?» junto a su sitio (en una ficha flotante, la de los dados), no en la esquina de la pantalla */
+  helpInPlace?: boolean
+}) {
   const { t } = useTranslation()
   const { account } = useAccounts().useAccount()
   const [index, setIndex] = useState<number | null>(null)
@@ -198,11 +207,14 @@ export function Tour({ id, steps }: { id: string; steps: readonly TourStep[] }) 
   }, [index])
 
   // El «?»: vuelve a sacar el recorrido cuando se quiera (solo el del recorrido más concreto de los montados)
-  const help = top && (
+  // En el body: dentro de la página (su propia capa) quedaba debajo de lo demás y los botones de la wiki lo hacían
+  // cuadrado (Enrique, 2026-11-16: «se ha ido al fondo … y sale cuadrado»)
+  const button = (
     <button type="button" className={styles.help} aria-label={t('tour.again')} title={t('tour.again')} onClick={start}>
       <CircleHelp aria-hidden="true" size={18} />
     </button>
   )
+  const help = top && (helpInPlace ? button : createPortal(button, document.body))
   if (!step || index === null || !email) return help
   // Con Escape se cierra sin acabarlo: volverá a salir la próxima vez
   const close = (finished: boolean) => {
