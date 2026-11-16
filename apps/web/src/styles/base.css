@@ -446,8 +446,10 @@ html:active-view-transition-type(entrar-mundo)::view-transition-image-pair(mundo
     radial-gradient(ellipse 8% 10% at 49% 95%, rgb(var(--fx-smoke-rgb) / 0.26), transparent 70%),
     radial-gradient(ellipse 12% 14% at 64% 100%, rgb(var(--fx-smoke-rgb) / 0.22), transparent 70%),
     radial-gradient(ellipse 9% 11% at 81% 97%, rgb(var(--fx-smoke-rgb) / 0.24), transparent 70%);
-  filter: blur(10px);
   opacity: 0;
+  /* Solo se mueven y se funden (sin desenfoque que cambie: redibujaba la pantalla entera en cada paso y la salida del
+     mundo iba a saltos; Enrique, 2026-11-16: «la transición no es fluida»). Las manchas ya son suaves por sí solas */
+  will-change: transform, opacity;
   animation: humo-sube 2400ms ease-out forwards;
 }
 
@@ -467,12 +469,11 @@ html:active-view-transition-type(entrar-mundo)::view-transition-image-pair(mundo
   animation: none;
 }
 
-/* Las bocanadas suben, se abren y se difuminan */
+/* Las bocanadas suben, se abren y se desvanecen */
 @keyframes humo-sube {
   0% {
     opacity: 0;
     transform: translateY(0) scale(1, 0.8);
-    filter: blur(8px);
   }
 
   25% {
@@ -481,8 +482,7 @@ html:active-view-transition-type(entrar-mundo)::view-transition-image-pair(mundo
 
   100% {
     opacity: 0;
-    transform: translateY(-38vh) scale(1.15, 1.6);
-    filter: blur(22px);
+    transform: translateY(-38vh) scale(1.25, 1.8);
   }
 }
 
