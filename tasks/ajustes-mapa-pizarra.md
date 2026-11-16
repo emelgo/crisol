@@ -38,3 +38,8 @@ Pedidos al probar el módulo 9 en localhost. Se hacen en la rama `modulo-9/mapas
   que haya; si no hay ninguna, decirlo en una línea) y guardarse así.
 - [ ] Su error comparte el código `BAD_TABLE` con las tablas aleatorias y la app enseña «Las filas no cubren bien la
   fórmula», que no tiene nada que ver: un código propio y un mensaje claro («Elige la plantilla y su campo»).
+
+## La página
+- [ ] Con la columna estrecha (1200 px con el panel abierto) **la letra del texto sale diminuta** (~11 px): la hoja ajusta
+  la letra al ancho y no tiene mínimo. Un mínimo legible (≥ 1rem) y el ancho de lectura de siempre.
+- [ ] El **título largo se corta** con «…» en la cabecera grande: que se lea entero (que baje de línea o encoja un poco).
