@@ -8,9 +8,12 @@ Pedidos al probar el módulo 9 en localhost. Se hacen en la rama `modulo-9/mapas
   la wiki lo hacían cuadrado); el de los dados sigue en su ficha.*
 
 ## Mapa
-- [ ] **Supr** borra lo elegido (también en la pizarra): comprobarlo en los dos con el foco donde sea. Ahora, en el mapa,
+- [x] **Supr** borra lo elegido (también en la pizarra): comprobarlo en los dos con el foco donde sea. Ahora, en el mapa,
   Supr no borra y el lienzo se marca con la raya roja de foco por arriba (captura de Enrique): que borre, y que el foco
-  del lienzo no pinte ese borde al pulsar una tecla.
+  del lienzo no pinte ese borde al pulsar una tecla. *Hecho: Supr (y Retroceso) borran con el foco en el lienzo, en una
+  casilla, un color o un deslizador del panel, en la cabecera de la página o en ningún sitio (no donde se escribe); en la
+  pizarra, también con el foco en nuestra píldora o en «Página…» (antes no hacía nada), y Escape deja la herramienta. El
+  aro del foco del lienzo, solo si se llega con el tabulador, y por dentro.*
 - [ ] **Cerrar una región** es poco intuitivo: con doble clic se cierra pero añade un punto de más. Cerrar sin punto extra.
   Pulsar el primer vértice **no la cierra** (la pista dice «Intro o el primero, cerrar» y no se entiende): que pulsar el
   primer vértice la cierre de verdad (resaltándolo al acercarse) y que la pista lo diga claro («pulsa el primer punto o

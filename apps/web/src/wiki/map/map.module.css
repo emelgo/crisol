@@ -67,9 +67,14 @@
   cursor: crosshair;
 }
 
+/* El aro, solo si se llega con el tabulador y por dentro (a sangre, fuera se cortaba y quedaba una raya arriba) */
 .viewer:focus-visible {
+  outline: none;
+}
+
+.viewer[data-tabbed]:focus-visible {
   outline: 2px solid var(--color-focus);
-  outline-offset: 2px;
+  outline-offset: -2px;
 }
 
 /* El escenario: la imagen a su tamaño, movida y escalada desde su esquina */

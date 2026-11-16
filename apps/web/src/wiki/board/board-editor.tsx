@@ -14,6 +14,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { useTranslation } from 'react-i18next'
 import type * as Y from 'yjs'
 import { useApi } from '../../api/context.tsx'
+import { canvasKeyTarget } from '../../components/focus.ts'
 import { useCollabDocument } from '../collab.tsx'
 import { useWorldPage } from '../world-page.ts'
 import { BoardDock } from './board-dock.tsx'
@@ -220,6 +221,47 @@ export default function BoardEditor({ page, tab }: { page: Page; tab: PageTabVie
     },
     [excalidraw, selected]
   )
+
+  // Supr (o Retroceso) borra lo elegido y Escape deja la herramienta también con el foco fuera del lienzo: en nuestra
+  // píldora, en las herramientas de la cabecera o en ningún sitio (Enrique, 2026-11-16); en el lienzo, son las suyas
+  useEffect(() => {
+    if (!excalidraw) return
+    const onKey = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey) return
+      if (event.key !== 'Delete' && event.key !== 'Backspace' && event.key !== 'Escape') return
+      const target = event.target instanceof Element ? event.target : null
+      if (target?.closest('.excalidraw')) return
+      if (!canvasKeyTarget(event.target, canvas.current?.closest('[data-page-column]') ?? canvas.current)) return
+      if (event.key === 'Escape') {
+        if (excalidraw.getAppState().activeTool.type !== 'selection') excalidraw.setActiveTool({ type: 'selection' })
+        return
+      }
+      const ids = excalidraw.getAppState().selectedElementIds
+      const all = excalidraw.getSceneElementsIncludingDeleted()
+      const gone = (element: ExcalidrawElement) =>
+        !element.isDeleted &&
+        (ids[element.id] || ('containerId' in element && element.containerId && ids[element.containerId]))
+      if (!all.some(gone)) return
+      event.preventDefault()
+      excalidraw.updateScene({
+        elements: all.map((element) =>
+          gone(element)
+            ? {
+                ...element,
+                isDeleted: true,
+                version: element.version + 1,
+                versionNonce: Math.floor(Math.random() * 2 ** 31),
+                updated: Date.now()
+              }
+            : element
+        ),
+        appState: { selectedElementIds: {} },
+        captureUpdate: CaptureUpdateAction.IMMEDIATELY
+      })
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [excalidraw])
 
   const renderEmbeddable = useCallback(
     (element: NonDeleted<ExcalidrawEmbeddableElement>) => {

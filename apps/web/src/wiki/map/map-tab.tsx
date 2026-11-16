@@ -41,6 +41,7 @@ import { useAnnounce } from '../../components/announcer.tsx'
 import { Loading } from '../../components/brand.tsx'
 import { BusyButton } from '../../components/busy-button.tsx'
 import { FormError } from '../../components/field.tsx'
+import { canvasKeyTarget } from '../../components/focus.ts'
 import list from '../../components/list.module.css'
 import { failed, LoadError } from '../../components/load-error.tsx'
 import { Tour } from '../../components/tour.tsx'
@@ -263,6 +264,8 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
   const pinDrag = useRef<PinDrag | null>(null)
   const dragged = useRef(false)
   const [tool, setTool] = useState<Tool>('select')
+  // El aro del foco, solo si se llegó con el tabulador (al pulsar una tecla con el ratón en el mapa no se pinta)
+  const [tabbed, setTabbed] = useState(false)
   const [selected, setSelected] = useState<string | null>(null)
   // Lo dibujado elegido, lo que se está dibujando (con la goma hasta el cursor) y lo que se está retocando
   const [selectedElement, setSelectedElement] = useState<string | null>(null)
@@ -828,13 +831,12 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
   const globalKeys = useRef<(event: globalThis.KeyboardEvent) => void>(() => undefined)
   globalKeys.current = (event) => {
     if (event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey) return
-    if (event.key !== 'Escape' && event.key !== 'Delete') return
-    const target = event.target instanceof HTMLElement ? event.target : null
-    if (target === container.current) return
-    if (target?.isContentEditable || target?.closest('input, textarea, select, dialog, [role="dialog"], [role="menu"]'))
-      return
-    if (target && target !== document.body && !container.current?.parentElement?.contains(target)) return
-    if (event.key === 'Delete') {
+    if (event.key !== 'Escape' && event.key !== 'Delete' && event.key !== 'Backspace') return
+    if (event.target === container.current) return
+    // También con el foco en una casilla o un color del panel, o en la cabecera de la página (no donde se escribe)
+    const root = container.current?.closest('[data-page-column]') ?? container.current?.parentElement
+    if (!canvasKeyTarget(event.target, root)) return
+    if (event.key !== 'Escape') {
       if (removeSelected()) event.preventDefault()
       return
     }
@@ -1113,12 +1115,20 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
         ref={container}
         className={styles.viewer}
         data-tool={tool}
+        data-tabbed={tabbed || undefined}
         role="application"
         aria-roledescription={t('map.roleDescription')}
         aria-label={tabRegionLabel(t, 'map', tab.name)}
         // biome-ignore lint/a11y/noNoninteractiveTabindex: es un control propio (role application), no un contenedor
         tabIndex={0}
-        onPointerDown={onPointerDown}
+        onPointerDown={(event) => {
+          setTabbed(false)
+          onPointerDown(event)
+        }}
+        onKeyUp={(event) => {
+          if (event.key === 'Tab' && event.target === event.currentTarget) setTabbed(true)
+        }}
+        onBlur={() => setTabbed(false)}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
