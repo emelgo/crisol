@@ -37,6 +37,16 @@ const choiceOptions = z.array(optionText.min(1)).max(50)
 const clockSegments = z.number().int().min(2).max(12)
 /** Las plantillas cuyas páginas se buscan primero al elegir un enlace (no encierra: se puede elegir cualquiera) */
 const linkTargets = z.array(templateRef).max(10)
+/** El papel de un campo de enlace en las relaciones (módulo 10; los mismos que RELATION_ROLES del dominio) */
+export const relationRole = z
+  .enum(['parent', 'partner', 'member-of', 'leads'])
+  .describe(
+    'Lo que es el destino para la página: parent, su padre o su madre (el árbol genealógico); partner, su pareja; member-of, el grupo al que pertenece (facción, orden, gremio…); leads, quien la dirige (la página es el grupo: el organigrama). Sin papel, es una relación más con el nombre del campo'
+  )
+export type RelationRole = z.infer<typeof relationRole>
+const inverseName = propertyName.describe(
+  'Cómo se lee la relación desde el destino: «Padres» → «Hijos», «Facción» → «Miembros», «Líder» → «Dirige»'
+)
 
 /**
  * Una propiedad con su tipo. alias y etiquetas son listas y resumen es texto (lo comprueba el servidor). Las que salen
@@ -52,7 +62,9 @@ export const pageProperty = z.discriminatedUnion('type', [
     type: z.literal('pages'),
     value: z.array(z.uuid()).max(200),
     single: z.literal(true).optional(),
-    targets: linkTargets.optional()
+    targets: linkTargets.optional(),
+    role: relationRole.optional(),
+    inverseName: inverseName.optional()
   }),
   z.object({ ...field, type: z.literal('choice'), value: optionText, options: choiceOptions }),
   z.object({ ...field, type: z.literal('clock'), value: z.number().int().min(0).max(12), segments: clockSegments }),

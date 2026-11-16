@@ -101,6 +101,29 @@ describe('dar a un valor la forma de un campo', () => {
     })
   })
 
+  it('un enlace leído toma el papel y el nombre al revés del campo (módulo 10)', () => {
+    const padres = {
+      name: 'Padres',
+      field: 'padres',
+      type: 'pages',
+      role: 'parent',
+      inverseName: 'Hijos',
+      value: []
+    } satisfies PageProperty
+    expect(conformTo(padres, { name: 'Padres', type: 'pages', value: ['ilsa'] })).toEqual({
+      ...padres,
+      value: ['ilsa']
+    })
+    expect(keepShapes([padres], [{ name: 'padres', type: 'pages', value: ['ilsa'] }])).toEqual([
+      { ...padres, name: 'padres', value: ['ilsa'] }
+    ])
+    // Sin id de campo, un enlace con papel también conserva su forma al reescribirlo
+    const { field: _, ...loose } = padres
+    expect(keepShapes([loose], [{ name: 'Padres', type: 'pages', value: ['ilsa'] }])).toEqual([
+      { ...loose, value: ['ilsa'] }
+    ])
+  })
+
   it('un texto toma las opciones de un desplegable', () => {
     const estado = {
       name: 'Estado',

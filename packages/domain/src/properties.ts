@@ -14,14 +14,32 @@ interface Field {
   hidden?: true | undefined
 }
 
+/**
+ * El papel de un campo de enlace (módulo 10): lo que es el destino para la página. parent: su padre o su madre;
+ * partner: su pareja; member-of: el grupo al que pertenece (facción, orden…); leads: quien la dirige (la página es el
+ * grupo). Hace posibles el árbol genealógico y el organigrama
+ */
+export const RELATION_ROLES = ['parent', 'partner', 'member-of', 'leads'] as const
+export type RelationRole = (typeof RELATION_ROLES)[number]
+
 export type PageProperty =
   | (Field & { type: 'text'; value: string })
   /** Sin valor (null): un campo de plantilla aún sin rellenar */
   | (Field & { type: 'number'; value: number | null })
   | (Field & { type: 'boolean'; value: boolean })
   | (Field & { type: 'list'; value: string[] })
-  /** Enlaces a páginas (sus ids). Con single, a una sola; targets, las plantillas que se buscan primero */
-  | (Field & { type: 'pages'; value: string[]; single?: true | undefined; targets?: string[] | undefined })
+  /**
+   * Enlaces a páginas (sus ids). Con single, a una sola; targets, las plantillas que se buscan primero; role, su papel
+   * en las relaciones; inverseName, cómo se lee desde el destino («Padres» → «Hijos»)
+   */
+  | (Field & {
+      type: 'pages'
+      value: string[]
+      single?: true | undefined
+      targets?: string[] | undefined
+      role?: RelationRole | undefined
+      inverseName?: string | undefined
+    })
   /** Uno de una lista. Un valor fuera de ella se guarda igual y se nota */
   | (Field & { type: 'choice'; value: string; options: string[] })
   /** Un reloj de progreso: cuántos segmentos lleva llenos de los que tiene */
@@ -163,7 +181,9 @@ export function conformTo(shape: PageProperty, read: PageProperty): PageProperty
         type: 'pages',
         value,
         ...(single ? { single: true } : {}),
-        ...(shape.targets ? { targets: shape.targets } : {})
+        ...(shape.targets ? { targets: shape.targets } : {}),
+        ...(shape.role ? { role: shape.role } : {}),
+        ...(shape.inverseName ? { inverseName: shape.inverseName } : {})
       }
     }
   }
@@ -190,7 +210,7 @@ function keptShapes(before: readonly PageProperty[], after: readonly PagePropert
           p.type === 'choice' ||
           p.type === 'clock' ||
           (p.type === 'date' && (p.range || p.offTimeline)) ||
-          (p.type === 'pages' && (p.single || p.targets))
+          (p.type === 'pages' && (p.single || p.targets || p.role || p.inverseName))
       )
       .map((p) => [propertyKey(p.name), p])
   )

@@ -46,6 +46,8 @@ describe('las plantillas de ejemplo de las pruebas (las que fueron de serie)', (
       type: 'pages',
       single: true,
       targets: ['faccion'],
+      role: 'member-of',
+      inverseName: 'Miembros',
       value: []
     })
     expect(pnj?.fields.find((f) => f.field === 'estado')).toMatchObject({
@@ -54,6 +56,30 @@ describe('las plantillas de ejemplo de las pruebas (las que fueron de serie)', (
       options: ['Vive', 'Ha muerto', 'En paradero desconocido', 'No se sabe']
     })
     expect(pnj?.skeleton).toBe('## Quién es\n\n## Cómo interpretarlo\n\n## Ganchos\n')
+  })
+
+  it('los enlaces con papel hacen el árbol y el organigrama: Padres, Pareja, Facción y Líder (módulo 10)', () => {
+    const field = (template: string, id: string) =>
+      builtInTemplate(template)?.fields.find((f) => f.field === id) as Record<string, unknown>
+    expect(field('pnj', 'padres')).toMatchObject({ role: 'parent', inverseName: 'Hijos' })
+    expect(field('pnj', 'pareja')).toMatchObject({ role: 'partner' })
+    expect(field('pnj', 'faccion')).toMatchObject({ role: 'member-of', inverseName: 'Miembros' })
+    expect(field('faccion', 'lider')).toMatchObject({ role: 'leads', inverseName: 'Dirige' })
+    // Sin papel, pero con su nombre al revés
+    expect(field('lugar', 'dentro-de')).toMatchObject({ inverseName: 'Contiene' })
+    expect(field('lugar', 'dentro-de').role).toBeUndefined()
+  })
+
+  it('al crear desde la plantilla, el papel y el nombre al revés pasan a la página', () => {
+    const pnj = builtInTemplate('pnj') as NonNullable<ReturnType<typeof builtInTemplate>>
+    const made = instantiate(pnj, () => 'x').properties.find((p) => p.name === 'Padres')
+    expect(made).toMatchObject({ role: 'parent', inverseName: 'Hijos' })
+    const filled = fillTemplate(pnj.fields, [{ name: 'Padres', type: 'pages', value: ['ilsa'] }])
+    expect('properties' in filled && filled.properties.find((p) => p.name === 'Padres')).toMatchObject({
+      role: 'parent',
+      inverseName: 'Hijos',
+      value: ['ilsa']
+    })
   })
 
   it('traen sus tablas: los miembros de una facción, los habitantes de un lugar, lo que lleva un PNJ', () => {

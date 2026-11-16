@@ -126,7 +126,7 @@ export const updateTemplate = defineAction({
   name: 'updateTemplate',
   kind: 'write',
   description:
-    'Cambia una plantilla de la cuenta: su nombre, su icono, sus campos (todos, como se den; uno nuevo sin field recibe uno, y conservar el field de los que ya estaban mantiene sus tablas; los enlaces van vacíos, value: []), los bloques de su panel o su esqueleto en Markdown. Las páginas ya hechas no cambian',
+    'Cambia una plantilla de la cuenta: su nombre, su icono, sus campos (todos, como se den; uno nuevo sin field recibe uno, y conservar el field de los que ya estaban mantiene sus tablas; los enlaces van vacíos, value: []), los bloques de su panel o su esqueleto en Markdown. Un campo de enlace (pages) puede llevar un papel (role) para el árbol genealógico y el organigrama (Padres: parent; Pareja: partner; Facción: member-of; en la facción, Líder: leads) y un nombre al revés (inverseName: «Padres» → «Hijos»). Las páginas ya hechas no cambian',
   input: z.object({
     templateId: z.uuid(),
     name: templateName.optional(),
