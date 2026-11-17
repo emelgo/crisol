@@ -27,8 +27,13 @@ describe('migraciones', () => {
 })
 
 describe('migrateFromEnv', () => {
+  // La base nueva (y migrada), en su preparación, como en las demás: con todo en paralelo tarda lo suyo
+  let url: string
+  beforeAll(async () => {
+    url = await freshTestDatabase('crisol_test_db_env')
+  })
+
   it('usa DATABASE_URL', async () => {
-    const url = await freshTestDatabase('crisol_test_db_env')
     await expect(migrateFromEnv({ DATABASE_URL: url })).resolves.toBeUndefined()
   })
 
