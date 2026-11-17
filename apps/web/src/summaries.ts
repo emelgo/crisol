@@ -369,7 +369,24 @@ export function summaryOf(
     }
     // Las escenas de la mesa y la mesa de cada campaña (docs/specs/escenas.md)
     case 'updateScene':
+      if (details.interior !== undefined && !details.view && !details.grid)
+        return say(details.interior ? 'sceneInterior' : 'sceneOutdoor', sceneOf(details))
       return say(details.view && !details.grid ? 'sceneView' : 'sceneGrid', sceneOf(details))
+    // El tiempo de la campaña (8 · campaña): el hoy, los viajes, la zona, el clima a mano y la pantalla del máster
+    case 'setCampaignToday':
+      return say('setCampaignToday', { campaign: text(details.campaign), to: text(details.to) })
+    case 'travel':
+      return say('travel', {
+        campaign: text(details.campaign),
+        to: text(details.to),
+        count: Number(details.days ?? 0)
+      })
+    case 'setCampaignClimate':
+      return say('setCampaignClimate', { campaign: text(details.campaign) })
+    case 'setDayWeather':
+      return say('setDayWeather', { campaign: text(details.campaign), date: text(details.date) })
+    case 'setGmScreen':
+      return say('setGmScreen', { campaign: text(details.campaign), name: text(details.name) })
     case 'setSceneImage':
     case 'drawScene':
       return say(action, sceneOf(details))
