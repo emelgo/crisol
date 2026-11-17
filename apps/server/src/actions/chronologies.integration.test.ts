@@ -505,14 +505,22 @@ describe('las cronologías de un mundo (módulo 8)', () => {
     'rendimiento: 2.000 eventos y 5.000 páginas con fecha responden en menos de 300 ms',
     async () => {
       const chronology = await bigWorld()
-      // La primera calienta; se mide la segunda
+      // Con las estadísticas al día, como en producción. La primera calienta; se mide la mediana de tres, como en las
+      // relaciones (el VPS de pruebas es compartido: un pico suelto no dice nada del cálculo)
+      await conn.sql`analyze`
       await ok200('getChronology', { chronologyId: chronology.id })
-      // Lo que tarda en responder (sin leer luego la respuesta aquí)
-      const started = performance.now()
-      const response = await call('getChronology', { chronologyId: chronology.id })
-      const took = performance.now() - started
-      expect(response.json().entries).toHaveLength(7000)
+      const times: number[] = []
+      for (let i = 0; i < 3; i++) {
+        // Lo que tarda en responder (sin leer luego la respuesta aquí)
+        const started = performance.now()
+        const response = await call('getChronology', { chronologyId: chronology.id })
+        times.push(performance.now() - started)
+        expect(response.json().entries).toHaveLength(7000)
+      }
+      const took = times.sort((a, b) => a - b)[1] ?? 0
+      process.stdout.write(`cronología: 2.000 eventos y 5.000 páginas, ${Math.round(took)} ms\n`)
       expect(took).toBeLessThan(300)
-    }
+    },
+    120_000
   )
 })
