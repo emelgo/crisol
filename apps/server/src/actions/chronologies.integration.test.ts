@@ -463,7 +463,8 @@ describe('las cronologías de un mundo (módulo 8)', () => {
     }
   })
 
-  it('2.000 eventos y 5.000 páginas con fecha responden en menos de 300 ms', async () => {
+  /** 5.000 páginas con fecha y 2.000 eventos sueltos en el mundo; la cronología que los junta */
+  const bigWorld = async () => {
     const [world] = await conn.db.select().from(schema.worlds).where(eq(schema.worlds.id, worldId))
     if (!world) throw new Error('sin mundo')
     const siega = eana.definition.months[9]?.id ?? ''
@@ -490,14 +491,28 @@ describe('las cronologías de un mundo (módulo 8)', () => {
       date: { calendarId: eana.id, start: { year: i - 1000 } }
     }))
     await conn.db.insert(schema.timelineEvents).values(events)
-    const chronology = await historia()
-    // La primera calienta; se mide la segunda
-    await ok200('getChronology', { chronologyId: chronology.id })
-    // Lo que tarda en responder (sin leer luego la respuesta aquí)
-    const started = performance.now()
-    const response = await call('getChronology', { chronologyId: chronology.id })
-    const took = performance.now() - started
-    expect(response.json().entries).toHaveLength(7000)
-    expect(took).toBeLessThan(300)
+    return historia()
+  }
+
+  it('2.000 eventos y 5.000 páginas con fecha salen todos', async () => {
+    const chronology = await bigWorld()
+    expect((await ok200('getChronology', { chronologyId: chronology.id })).entries).toHaveLength(7000)
   })
+
+  // Se mide sola (CRISOL_RENDIMIENTO=1, su paso en la CI y `pnpm --filter @crisol/server test:rendimiento`): con las
+  // demás pruebas a la vez, lo que se mide es la carga de la máquina
+  it.skipIf(!process.env.CRISOL_RENDIMIENTO)(
+    'rendimiento: 2.000 eventos y 5.000 páginas con fecha responden en menos de 300 ms',
+    async () => {
+      const chronology = await bigWorld()
+      // La primera calienta; se mide la segunda
+      await ok200('getChronology', { chronologyId: chronology.id })
+      // Lo que tarda en responder (sin leer luego la respuesta aquí)
+      const started = performance.now()
+      const response = await call('getChronology', { chronologyId: chronology.id })
+      const took = performance.now() - started
+      expect(response.json().entries).toHaveLength(7000)
+      expect(took).toBeLessThan(300)
+    }
+  )
 })
