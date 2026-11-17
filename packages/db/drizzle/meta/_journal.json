@@ -610,6 +610,13 @@
       "when": 1794905289910,
       "tag": "0086_clima",
       "breakpoints": true
+    },
+    {
+      "idx": 87,
+      "version": "7",
+      "when": 1794905951020,
+      "tag": "0087_actividad",
+      "breakpoints": true
     }
   ]
 }

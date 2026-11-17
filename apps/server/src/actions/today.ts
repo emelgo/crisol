@@ -6,7 +6,7 @@
 import { getCampaignToday, type LogEventData, setCampaignToday } from '@crisol/contracts'
 import { calendarsRepo, campaignsRepo, campaignTimeRepo } from '@crisol/db'
 import { addDays, dayNumber, type FullDate, sunTimes } from '@crisol/domain'
-import { campaignsChanged } from '../realtime/events.ts'
+import { activityChanged, campaignsChanged } from '../realtime/events.ts'
 import { authorizedCampaign } from './access.ts'
 import {
   dayIn,
@@ -51,7 +51,8 @@ export async function changeToday(
     today,
     zone
   )
-  ctx.realtime.publish(campaignsChanged({ campaignId: campaign.id, worldId: campaign.worldId }))
+  const scope = { campaignId: campaign.id, worldId: campaign.worldId }
+  ctx.realtime.publish(campaignsChanged(scope), activityChanged(scope))
   ctx.table?.changed(campaign.id)
   return today
 }

@@ -1,7 +1,8 @@
 /**
  * Las fugas que encontró la revisión de `conocimiento` (2026-11-06), cada una con lo que debe pasar: lo de dentro de un
  * secreto revelado, los enlaces que salen, los campos ocultos en los filtros, el resolutor de nombres, las campañas de
- * cero, «lo mismo que otra», las marcas del mundo en pestañas, «ver como» en los mapas y las relaciones (módulo 10)
+ * cero, «lo mismo que otra», las marcas del mundo en pestañas, «ver como» en los mapas, las relaciones (módulo 10) y el
+ * «hoy», el clima y el centro de actividad de la campaña (8 · campaña)
  */
 import { connect, loadMemberships, schema } from '@crisol/db'
 import { freshTestDatabase, resetDatabase } from '@crisol/db/testing'
@@ -9,7 +10,7 @@ import { actorFrom } from '@crisol/domain'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { buildApp } from '../app.ts'
 import { errorText } from '../mcp/approvals.ts'
-import { createTestAuth, seedExampleTemplates, signUpTestUser, TEST_SEAL_KEY } from '../testing.ts'
+import { createTestAuth, seedExampleTemplates, signUpTestUser, TEST_CALENDAR, TEST_SEAL_KEY } from '../testing.ts'
 import { implementationsByName } from './implementations.ts'
 
 const BASE_URL = 'http://localhost:5173'
@@ -315,5 +316,49 @@ describe('las fugas de la revisión de conocimiento (ADR-0017)', () => {
     ).id
     const campaigns = (await ok200('getPageKnowledge', { pageId: page.Varn })).campaigns
     expect(campaigns.find((c: { campaignId: string }) => c.campaignId === copia).knowsWorld).toBe(false)
+  })
+
+  it('el «hoy», el clima y la actividad (8 · campaña): ni previsión, ni clima a mano, ni eras ocultas, ni notas de otras', async () => {
+    await ok200('createCalendar', { worldId, name: 'Eana', from: { definition: TEST_CALENDAR } })
+    await ok200('setCampaignToday', { campaignId: marca, date: '1250-Siega-18' })
+    await ok200('setCampaignToday', { campaignId: norte, date: '1260-Brumas-2' })
+    await ok200('markActivitySeen', { campaignId: marca }, ana.cookie)
+    const storm = { condition: 'snow', low: -3, high: 0, wind: 'gale', windDirection: 'N' }
+    await ok200('setDayWeather', { campaignId: marca, weather: storm })
+    const bruno = await signUpTestUser(auth, { name: 'Bruno', email: 'bruno@crisol.test' })
+    await join(marca, bruno)
+    await ok200('createPlayerNote', { campaignId: marca, title: 'Lo que sabe Bruno' }, bruno.cookie)
+    await ok200('sendMessage', { campaignId: marca, text: 'Psst', whisper: ['master'] }, bruno.cookie)
+
+    // El «hoy»: la fecha sin la era solo del máster, el clima de hoy y el sol; sin previsión
+    const today = await ok200('getCampaignToday', { campaignId: marca }, ana.cookie)
+    expect(today.forecast).toEqual([])
+    expect(today.suggestion).toBeNull()
+    expect(today.weather.condition).toBe('snow')
+    expect(JSON.stringify(today)).not.toContain('EE')
+    // Lo del máster: la previsión, el clima a mano, los viajes; y nada de otra campaña
+    for (const [name, input] of [
+      ['getCampaignWeather', { campaignId: marca }],
+      ['setDayWeather', { campaignId: marca, weather: null }],
+      ['setCampaignClimate', { campaignId: marca, zone: 'arid' }],
+      ['planTravel', { campaignId: marca, distance: 10 }],
+      ['setCampaignToday', { campaignId: marca, days: 1 }]
+    ] as const)
+      expect((await call(name, input, ana.cookie)).statusCode, name).toBe(403)
+    expect((await call('getCampaignToday', { campaignId: norte }, ana.cookie)).statusCode).toBe(404)
+    expect((await call('getCampaignActivity', { campaignId: norte }, ana.cookie)).statusCode).toBe(404)
+
+    // El registro: el cambio de fecha sí; el clima a mano y el susurro de Bruno, no
+    const log = JSON.stringify((await ok200('listLog', { campaignId: marca }, ana.cookie)).entries)
+    expect(log).toContain('"type":"date"')
+    expect(log).not.toContain('"type":"weather"')
+    expect(log).not.toContain('Psst')
+    expect(log).not.toContain('EE')
+
+    // Su centro: sin la nota ni el susurro de Bruno
+    const activity = await ok200('getCampaignActivity', { campaignId: marca }, ana.cookie)
+    expect(JSON.stringify(activity)).not.toContain('Lo que sabe Bruno')
+    expect(activity.items.map((i: { type: string }) => i.type)).not.toContain('note')
+    expect(activity.log).toEqual([])
   })
 })

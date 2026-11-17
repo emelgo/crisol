@@ -44,6 +44,11 @@ export type RealtimeMessage =
   | { type: 'changed'; what: 'tablePresence'; campaignId: string }
   /** El máster vació el registro o borró tiradas: se vuelven a pedir */
   | { type: 'changed'; what: 'log' | 'rolls'; campaignId: string }
+  /**
+   * Hay algo nuevo en el centro de actividad de esa campaña (8 · campaña): se vuelve a pedir lo suyo. Los cambios de
+   * fecha, a todos; las notas y los personajes, a los másteres. Lo del registro y lo revelado llega con sus avisos
+   */
+  | { type: 'changed'; what: 'activity'; campaignId: string }
   /** Las carpetas de la pestaña Actores (solo al máster) */
   | { type: 'changed'; what: 'actorFolders'; campaignId: string }
   /** Se le reveló algo a quien lo recibe (solo a él): el aviso, con lo que ya ve (docs/specs/revelar.md) */

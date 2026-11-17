@@ -107,6 +107,8 @@ export interface OperationContext {
   organizationId?: string
   /** Si falta, se deduce de los cambios; hay que darlo cuando no lo llevan (los miembros de una campaña) */
   worldId?: string
+  /** Si falta, se deduce de los cambios (la fila de la campaña o la que la lleva): el centro de actividad la lee */
+  campaignId?: string
   /** La cuenta que lo pidió (null: el sistema) */
   actorId: string | null
   via: 'ui' | 'ai' | 'system'
@@ -330,6 +332,7 @@ export async function operation<R>(
         id: opId,
         organizationId,
         worldId: context.worldId ?? scopeOf(recorded, 'worlds', 'world_id'),
+        campaignId: context.campaignId ?? scopeOf(recorded, 'campaigns', 'campaign_id'),
         actorId: context.actorId,
         via: context.via,
         tool: context.tool ?? null,

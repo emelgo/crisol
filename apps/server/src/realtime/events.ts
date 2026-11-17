@@ -12,6 +12,15 @@ export const tablePresenceChanged = (scope: CampaignScope): RealtimeEvent => ({
   message: { type: 'changed', what: 'tablePresence', campaignId: scope.campaignId }
 })
 
+/**
+ * Algo nuevo en el centro de actividad de una campaña (8 · campaña): un cambio de fecha, a todos; las notas y los
+ * personajes de los jugadores, solo a los másteres (master: true). El aviso no dice qué
+ */
+export const activityChanged = (scope: CampaignScope, master = false): RealtimeEvent => ({
+  to: { capability: master ? 'notes.read' : 'campaign.read', target: scope },
+  message: { type: 'changed', what: 'activity', campaignId: scope.campaignId }
+})
+
 /** El mundo (su nombre, sus campañas): a quien lo ve */
 export const worldsChanged = (worldId: string): RealtimeEvent => ({
   to: { capability: 'world.read', target: { worldId } },

@@ -35,6 +35,8 @@ type Names =
   | 'setDayWeather'
   | 'planTravel'
   | 'travel'
+  | 'getCampaignActivity'
+  | 'markActivitySeen'
 
 /** El «hoy» de partida de una campaña */
 export interface FakeToday {
@@ -127,6 +129,9 @@ export function fakeCampaignTime(options: {
     }
   }
 
+  // La última visita de la cuenta a cada centro de actividad (sin historial: siempre vacío)
+  const visits = new Map<string, string>()
+
   const handlers: { [N in Names]: (input: ActionInput<N>) => ActionOutput<N> } = {
     getCampaignToday: ({ campaignId }) => {
       const campaign = campaignOf(campaignId)
@@ -206,6 +211,16 @@ export function fakeCampaignTime(options: {
       todays.set(input.campaignId, { calendarId: found.calendar.id, date: planned.arrival.date })
       if (zone) climates.set(input.campaignId, { ...climateOf(input.campaignId), zone })
       return { plan: planned, today: planned.arrival }
+    },
+    getCampaignActivity: ({ campaignId }) => {
+      campaignOf(campaignId)
+      return { since: visits.get(campaignId) ?? null, count: 0, items: [], log: [] }
+    },
+    markActivitySeen: ({ campaignId }) => {
+      campaignOf(campaignId)
+      const seenAt = new Date().toISOString()
+      visits.set(campaignId, seenAt)
+      return { seenAt }
     }
   }
   return { handlers, todays }

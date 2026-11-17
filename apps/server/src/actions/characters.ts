@@ -47,6 +47,7 @@ import {
   tryAction,
   tryRoll
 } from '@crisol/systems'
+import { activityChanged } from '../realtime/events.ts'
 import { contentSeen } from '../wiki/reader.ts'
 import { authorizedCampaign } from './access.ts'
 import { withCondition } from './conditions.ts'
@@ -414,8 +415,9 @@ async function save(
   if (!fresh) throw new NotFoundError('character')
   // Otro dueño: lo que el de antes escribía por él (una página de jugadores) se vuelve a mirar
   if (patch.ownerId !== undefined) ctx.collab?.closeWorldPlayers(row.worldId)
-  // Su ficha en la mesa (sus PG, sus estados, su nombre)
+  // Su ficha en la mesa (sus PG, sus estados, su nombre) y, al máster, en su centro de actividad
   ctx.table?.changed(row.campaignId)
+  ctx.realtime.publish(activityChanged({ campaignId: row.campaignId, worldId: row.worldId }, true))
   return { character: characterOf(fresh), state: view }
 }
 
@@ -464,6 +466,7 @@ export const characterActions = [
     )
     const row = await charactersRepo.findCharacter(ctx.db, created.id)
     if (!row) throw new NotFoundError('character')
+    ctx.realtime.publish(activityChanged({ campaignId, worldId: campaign.worldId }, true))
     const { view } = await stateOf(ctx, row.campaignId, row.system, row.build)
     return { character: characterOf(row), state: view }
   }),

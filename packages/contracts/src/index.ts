@@ -1,3 +1,4 @@
+import { getCampaignActivity, markActivitySeen } from './activity.ts'
 import {
   createActorFolder,
   deleteActorFolder,
@@ -328,6 +329,7 @@ import {
 import { createWorld, ensureWorldHome, getWorldHome, listWorlds, renameWorld, updateWorld } from './worlds.ts'
 
 export * from './action.ts'
+export * from './activity.ts'
 export * from './actor-folders.ts'
 export * from './ai.ts'
 export * from './books.ts'
@@ -709,7 +711,9 @@ export const ACTIONS = [
   setCampaignClimate,
   setDayWeather,
   planTravel,
-  travel
+  travel,
+  getCampaignActivity,
+  markActivitySeen
 ]
 
 /** Las acciones por nombre, solo como tipo: la web las usa sin cargar zod */
@@ -1045,4 +1049,6 @@ export type Actions = {
   setDayWeather: typeof setDayWeather
   planTravel: typeof planTravel
   travel: typeof travel
+  getCampaignActivity: typeof getCampaignActivity
+  markActivitySeen: typeof markActivitySeen
 }

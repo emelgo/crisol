@@ -335,7 +335,9 @@ describe('Actions', () => {
       setCampaignClimate: true,
       setDayWeather: true,
       planTravel: true,
-      travel: true
+      travel: true,
+      getCampaignActivity: true,
+      markActivitySeen: true
     }
     expect(Object.keys(names).sort()).toEqual(ACTIONS.map((a) => a.name).sort())
   })

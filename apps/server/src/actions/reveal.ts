@@ -117,7 +117,7 @@ export function widened(
 }
 
 /** Si lo ve quien lee, con su vista (lo mismo que sees, desde el servidor) */
-function viewSees(view: WikiView, kind: KnowledgeKind, targetId: string, target: Target) {
+export function viewSees(view: WikiView, kind: KnowledgeKind, targetId: string, target: Target) {
   const pageId = target.pageId ?? ''
   const hidden = target.hidden ?? false
   switch (kind) {
