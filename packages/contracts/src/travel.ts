@@ -49,6 +49,9 @@ export const travelPlan = z.object({
   restDays: z.int(),
   travelDays: z.number().describe('Los días de camino, con decimales'),
   days: z.int().describe('Los que pasan: los de camino redondeados hacia arriba, más el descanso'),
+  schedule: z
+    .array(z.enum(['travel', 'rest']))
+    .describe('Qué es cada día que pasa: de camino o de descanso (repartidos por el camino)'),
   from: campaignDate.nullable().describe('El «hoy» de la campaña (null si no tiene)'),
   arrival: campaignDate.nullable(),
   weather: z.array(weatherDayView).describe('El clima de cada día del viaje, en la zona de ahora')

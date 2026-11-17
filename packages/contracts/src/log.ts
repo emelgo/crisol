@@ -83,7 +83,7 @@ export const logEventData = z.discriminatedUnion('type', [
     days: z.int(),
     route: z.string().nullable().describe('El nombre de la ruta del mapa, si se midió una'),
     zone: z.string().nullable().describe('La zona de destino, si cambió'),
-    weather: z.array(loggedWeather)
+    weather: z.array(loggedWeather.extend({ rest: z.boolean().describe('Día de descanso') }))
   }),
   z.object({
     type: z.literal('weather'),

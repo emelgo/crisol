@@ -48,18 +48,19 @@ async function measured(ctx: ActionContext, campaign: Campaign, input: Input) {
 async function plan(ctx: ActionContext, campaign: Campaign, input: Input): Promise<TravelPlanView> {
   const { distance, unit, speed, route } = await measured(ctx, campaign, input)
   if (distance <= 0) throw new InvalidRequestError('BAD_DISTANCE', 'no hay camino que andar')
-  const { travelDays, days } = planDays({ distance, speed, pace: input.pace, restDays: input.restDays })
+  const { travelDays, days, schedule } = planDays({ distance, speed, pace: input.pace, restDays: input.restDays })
   if (days > MAX_DAYS) throw new InvalidRequestError('TRAVEL_TOO_LONG', `como mucho ${MAX_DAYS} días de una vez`)
   const current = await todayOf(ctx, campaign.id)
   const climate = await campaignTimeRepo.findClimate(ctx.db, campaign.id)
   const base = { distance, unit, route, medium: input.medium, pace: input.pace, speed, restDays: input.restDays }
-  if (!current || !climate) return { ...base, travelDays, days, from: null, arrival: null, weather: [] }
+  if (!current || !climate) return { ...base, travelDays, days, schedule, from: null, arrival: null, weather: [] }
   const def = current.calendar.definition
   const start = dayNumber(def, current.today.date)
   return {
     ...base,
     travelDays,
     days,
+    schedule,
     from: presentDate(current.calendar, current.today.date, true),
     arrival: presentDate(current.calendar, addDays(def, current.today.date, days), true),
     weather: await weatherDays(
@@ -113,7 +114,11 @@ export const travelActions = [
       days: planned.days,
       route: planned.route,
       zone: zone ?? null,
-      weather: planned.weather.map((day) => ({ date: loggedDate(calendar, day.date), ...loggedWeather(day) }))
+      weather: planned.weather.map((day, index) => ({
+        date: loggedDate(calendar, day.date),
+        ...loggedWeather(day),
+        rest: planned.schedule[index] === 'rest'
+      }))
     }
     await logEvent(ctx, campaign, event)
     return { plan: planned, today: presentDate(calendar, arrival, true) }

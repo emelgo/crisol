@@ -108,6 +108,7 @@ describe('los viajes de una campaña (8 · campaña)', () => {
       speed: 24,
       travelDays: 7.46,
       days: 10,
+      schedule: ['travel', 'travel', 'travel', 'rest', 'travel', 'travel', 'rest', 'travel', 'travel', 'travel'],
       from: null,
       arrival: null,
       weather: []
@@ -152,6 +153,7 @@ describe('los viajes de una campaña (8 · campaña)', () => {
     const travelled = entries.find((e) => e.event?.type === 'travel')?.event
     expect(travelled).toMatchObject({ days: 2, route: 'Camino real' })
     expect(travelled?.weather).toHaveLength(2)
+    expect(travelled?.weather.map((d) => (d as { rest?: boolean }).rest)).toEqual([false, false])
 
     // Deshacer devuelve el «hoy» y la zona, y lo dice en el registro
     const [op] = await conn.db
