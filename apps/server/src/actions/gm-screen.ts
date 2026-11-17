@@ -1,6 +1,6 @@
 /**
  * La pantalla del máster (docs/specs/modulo-8-10-campana.md, decisión 24): lo que enseña el cajón G en cada escena de
- * una campaña (la nota fijada, los statblocks, los personajes y las tablas aleatorias elegidas) se guarda en el
+ * una campaña (sus cuatro columnas, la nota fijada y las tablas aleatorias elegidas) se guarda en el
  * servidor, en el estado de la campaña en la escena (con su historial). Las tablas se tiran con rollOnTable
  */
 import { type GmScreen, listRandomTables, setGmScreen } from '@crisol/contracts'
@@ -10,11 +10,10 @@ import { authorizedCampaign, authorizedWiki } from './access.ts'
 import { historyContext, InvalidRequestError } from './context.ts'
 import { implement } from './registry.ts'
 
-/** La de siempre: la página de la escena y los statblocks */
+/** La de siempre: las cuatro columnas, con la página de la escena fijada y ninguna tabla */
 export const defaultGmScreen = (pageId: string | null): GmScreen => ({
+  columns: { statblocks: true, characters: true, note: true, tables: true },
   note: pageId,
-  statblocks: true,
-  characters: true,
   tables: []
 })
 
@@ -37,12 +36,12 @@ export const gmScreenActions = [
       const table = await tablesRepo.tableOfTab(ctx.db, tabId)
       if (!table || table.worldId !== campaign.worldId) throw new NotFoundError('table')
     }
+    const current = state.gmScreen ?? defaultGmScreen(scene.pageId)
+    const columns = Object.fromEntries(Object.entries(patch.columns ?? {}).filter(([, on]) => on !== undefined))
     const gmScreen: GmScreen = {
-      ...(state.gmScreen ?? defaultGmScreen(scene.pageId)),
-      ...(patch.note !== undefined ? { note: patch.note } : {}),
-      ...(patch.statblocks !== undefined ? { statblocks: patch.statblocks } : {}),
-      ...(patch.characters !== undefined ? { characters: patch.characters } : {}),
-      ...(tables ? { tables } : {})
+      columns: { ...current.columns, ...columns },
+      note: patch.note !== undefined ? patch.note : current.note,
+      tables: tables ?? current.tables
     }
     await scenesRepo.setGmScreen(
       ctx.db,

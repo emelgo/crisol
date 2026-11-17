@@ -85,13 +85,25 @@ describe('la pantalla del máster (8 · campaña)', () => {
     await fails('setGmScreen', { campaignId, sceneId, note: pageId }, 'SCENE_NOT_OPEN')
     await ok200('openScene', { campaignId, sceneId })
     expect((await ok200('getCampaignTable', { campaignId })).gmScreen).toBeNull()
-    const saved = await ok200('setGmScreen', { campaignId, note: pageId, tables: [tabId, tabId], characters: false })
-    expect(saved).toEqual({ sceneId, gmScreen: { note: pageId, statblocks: true, characters: false, tables: [tabId] } })
+    const saved = await ok200('setGmScreen', {
+      campaignId,
+      note: pageId,
+      tables: [tabId, tabId],
+      columns: { characters: false }
+    })
+    expect(saved).toEqual({
+      sceneId,
+      gmScreen: {
+        columns: { statblocks: true, characters: false, note: true, tables: true },
+        note: pageId,
+        tables: [tabId]
+      }
+    })
     expect((await ok200('getCampaignTable', { campaignId })).gmScreen).toEqual(saved.gmScreen)
-    await ok200('setGmScreen', { campaignId, statblocks: false })
+    await ok200('setGmScreen', { campaignId, columns: { statblocks: false, tables: false } })
     expect((await ok200('getCampaignTable', { campaignId })).gmScreen).toMatchObject({
       note: pageId,
-      statblocks: false
+      columns: { statblocks: false, characters: false, note: true, tables: false }
     })
 
     const [op] = await conn.db
@@ -101,7 +113,9 @@ describe('la pantalla del máster (8 · campaña)', () => {
       .orderBy(desc(schema.operations.createdAt))
     expect(op?.campaignId).toBe(campaignId)
     expect((await ok200('undoOperation', { operationId: op?.id })).status).toBe('undone')
-    expect((await ok200('getCampaignTable', { campaignId })).gmScreen).toMatchObject({ statblocks: true })
+    expect((await ok200('getCampaignTable', { campaignId })).gmScreen).toMatchObject({
+      columns: { statblocks: true, tables: true }
+    })
   })
 
   it('tirar una tabla elegida: oculta al registro (la jugadora no la ve); nada de otro mundo; solo el máster', async () => {
@@ -117,7 +131,7 @@ describe('la pantalla del máster (8 · campaña)', () => {
     const foreign = await table(other, 'Fuera')
     await fails('setGmScreen', { campaignId, tables: [foreign.tabId] }, 'NOT_FOUND')
     await fails('setGmScreen', { campaignId, note: foreign.pageId }, 'NOT_FOUND')
-    await fails('setGmScreen', { campaignId, statblocks: false }, 'FORBIDDEN', ana.cookie)
+    await fails('setGmScreen', { campaignId, columns: { note: false } }, 'FORBIDDEN', ana.cookie)
     expect((await call('listRandomTables', { worldId }, ana.cookie)).statusCode).toBe(404)
   })
 

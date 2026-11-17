@@ -118,15 +118,16 @@ export function fakeCampaignTime(options: {
     const pace = input.pace ?? 'normal'
     const restDays = input.restDays ?? 0
     const speed = DEFAULT_SPEEDS[medium]
-    const { travelDays, days } = planDays({ distance: input.distance, speed, pace, restDays })
+    const { travelDays, days, schedule } = planDays({ distance: input.distance, speed, pace, restDays })
     const found = todayOf(input.campaignId)
     const base = { distance: input.distance, unit: input.unit ?? null, route: null, medium, pace, speed, restDays }
-    if (!found) return { ...base, travelDays, days, from: null, arrival: null, weather: [] }
+    if (!found) return { ...base, travelDays, days, schedule, from: null, arrival: null, weather: [] }
     const def = found.calendar.definition
     return {
       ...base,
       travelDays,
       days,
+      schedule,
       from: present(found.calendar, found.today.date),
       arrival: present(found.calendar, addDays(def, found.today.date, days)),
       weather: weatherDays(input.campaignId, found.calendar, dayNumber(def, found.today.date) + 1, days)
@@ -228,13 +229,22 @@ export function fakeCampaignTime(options: {
       visits.set(campaignId, seenAt)
       return { seenAt }
     },
-    setGmScreen: ({ campaignId, sceneId, ...patch }) => {
+    setGmScreen: ({ campaignId, sceneId, columns, note, tables }) => {
       campaignOf(campaignId)
       if (!sceneId) throw new ApiError('NO_OPEN_SCENE', 400)
       const key = `${campaignId}|${sceneId}`
+      const current = gmScreens.get(key) ?? {
+        columns: { statblocks: true, characters: true, note: true, tables: true },
+        note: null,
+        tables: []
+      }
       const gmScreen = {
-        ...(gmScreens.get(key) ?? { note: null, statblocks: true, characters: true, tables: [] }),
-        ...Object.fromEntries(Object.entries(patch).filter(([, value]) => value !== undefined))
+        columns: {
+          ...current.columns,
+          ...Object.fromEntries(Object.entries(columns ?? {}).filter(([, on]) => on !== undefined))
+        },
+        note: note !== undefined ? note : current.note,
+        tables: tables ?? current.tables
       }
       gmScreens.set(key, gmScreen)
       return { sceneId, gmScreen }

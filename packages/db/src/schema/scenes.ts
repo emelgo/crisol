@@ -142,14 +142,13 @@ export const scenes = pgTable(
 )
 
 /**
- * Lo que enseña la pantalla del máster (el cajón G) en una escena (docs/specs/modulo-8-10-campana.md, decisión 24): la
- * nota fijada (una página del mundo), si salen los statblocks y los personajes, y las tablas aleatorias elegidas (sus
- * pestañas)
+ * Lo que enseña la pantalla del máster (el cajón G) en una escena (docs/specs/modulo-8-10-campana.md, decisiones 24 y
+ * 33): qué columnas salen (statblocks, personajes, nota y tablas), la nota fijada (una página del mundo) y las tablas
+ * aleatorias elegidas (sus pestañas)
  */
 export interface GmScreenData {
+  columns: { statblocks: boolean; characters: boolean; note: boolean; tables: boolean }
   note: string | null
-  statblocks: boolean
-  characters: boolean
   tables: string[]
 }
 
