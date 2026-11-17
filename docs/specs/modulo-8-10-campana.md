@@ -83,6 +83,19 @@ del nuevo: 2026-11-17 (resumen en «Lo que había»).
 26. MCP: `fecha_de_hoy`, `cambiar_fecha` (fecha o días), `ver_clima` (rango), `cambiar_clima`, `planear_viaje` (con o
     sin avanzar), `actividad_campana`.
 
+## Preguntas del lienzo, aprobadas por Enrique (2026-11-17: «ok»)
+
+Lienzo: https://claude.ai/artifact/UN7grzw9ZSYEjDEg9HrKcs.
+
+27. El hoy en el Inicio del máster, grande (fecha, clima, sol, zona y previsión de 7 días).
+28. Temperatura en grados centígrados; el viento en palabras con su dirección.
+29. En la Mesa, el chip del hoy bajo el de la escena; la capa de clima e «Interior», en su menú.
+30. Los días de descanso de un viaje, repartidos por el camino.
+31. La jugadora no ve la previsión: solo hoy y el sol (confirma la 14).
+32. «Desde tu última visita» se marca como visto solo con su botón (confirma la 19).
+33. La pantalla del máster en cuatro columnas que se encienden y apagan; las tablas, ocultas por defecto, con la opción
+    de tirarlas a la vista de todos.
+
 ## Capacidades
 
 | Capacidad | Qué | Depende de |
