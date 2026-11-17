@@ -143,11 +143,26 @@ describe('el menú «/»', () => {
     const list = within(await menu())
     await waitFor(() => expect(list.getAllByRole('option').map((o) => o.textContent)).toEqual(['Cita']))
     const option = list.getByRole('option', { name: 'Cita' })
-    fireEvent.mouseEnter(option)
+    fireEvent.mouseMove(option, { movementX: 4, movementY: 2 })
     expect(option.getAttribute('aria-selected')).toBe('true')
     fireEvent.mouseDown(option)
     await waitFor(() => expect(screen.queryByRole('listbox')).toBeNull())
     expect(editor.state.doc.firstChild?.type.name).toBe('blockquote')
+  })
+
+  it('una lista que sale bajo el ratón quieto no le quita la elección a las flechas; moverlo, sí', async () => {
+    const editor = await mount()
+    type(editor, '/')
+    const list = within(await menu())
+    const first = selected()
+    const other = list.getAllByRole('option').find((option) => option !== first)
+    if (!first || !other) throw new Error('faltan opciones')
+    // Lo que manda el navegador cuando algo aparece bajo el ratón: sin moverse
+    fireEvent.mouseEnter(other)
+    fireEvent.mouseMove(other, { movementX: 0, movementY: 0 })
+    expect(selected()).toBe(first)
+    fireEvent.mouseMove(other, { movementX: 0, movementY: 3 })
+    expect(selected()).toBe(other)
   })
 
   it('al pulsar un grupo con el ratón se abre, y otra vez se pliega', async () => {

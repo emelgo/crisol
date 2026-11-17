@@ -555,7 +555,10 @@ const LinkList = forwardRef<ListHandle, LinkListProps>(function LinkList({ items
             aria-selected={choice === current}
             className={menu.option}
             tabIndex={-1}
-            onMouseEnter={() => setActiveKey(keyOf(choice))}
+            // Al mover el ratón por encima (no si la lista sale bajo un ratón quieto: Intro elegiría otra)
+            onMouseMove={(event) => {
+              if (event.movementX || event.movementY) setActiveKey(keyOf(choice))
+            }}
             onMouseDown={(event) => {
               event.preventDefault()
               command(choice)
