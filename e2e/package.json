@@ -7,6 +7,7 @@
     "e2e": "playwright test --grep-invert '@a11y|@fugas'",
     "e2e:fugas": "playwright test --grep @fugas",
     "e2e:a11y": "playwright test --grep @a11y",
+    "e2e:rendimiento": "CRISOL_RENDIMIENTO=1 playwright test tests/rendimiento.spec.ts",
     "typecheck": "tsc -p ."
   },
   "devDependencies": {

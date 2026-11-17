@@ -4,6 +4,9 @@ import { createWorld, freshOwner, openWorld } from './ayudas.ts'
 test('una página mediana se abre lista para escribir en menos de 1 s', async ({ page }) => {
   // El tiempo cuenta en el VPS (como staging); las máquinas de la CI no se le parecen
   test.skip(Boolean(process.env.CI), 'Se mide en el VPS, no en la CI')
+  // Y sola (CRISOL_RENDIMIENTO=1, `pnpm --filter @crisol/e2e e2e:rendimiento`, al final de `pnpm e2e`): entre las demás,
+  // con la máquina ocupada, se medía la carga (1017 ms una vez; sola, unos 850)
+  test.skip(!process.env.CRISOL_RENDIMIENTO, 'Se mide sola: e2e:rendimiento')
   await freshOwner(page)
   await createWorld(page, 'Eana')
   await openWorld(page, 'Eana')
