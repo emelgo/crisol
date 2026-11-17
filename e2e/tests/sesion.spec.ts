@@ -35,6 +35,8 @@ test('al salir no queda nada del máster en la pestaña, tampoco para la jugador
   page,
   browser
 }) => {
+  // Larga (dos cuentas por la interfaz): con la máquina ocupada rozaba los 30 s; como las demás largas
+  test.slow()
   await skipTours(page, 'jugadora@crisol.test')
   await campaignLink(page)
   const campaignId = new URL(page.url()).pathname.split('/campanas/')[1]?.split('/')[0] ?? ''

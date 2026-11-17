@@ -115,6 +115,8 @@ test('en el móvil de la jugadora, el d20 abre los dados en una hoja que sube de
   page,
   browser
 }) => {
+  // Mundo, campaña y la cuenta de la jugadora por la interfaz, y axe dos veces: con el margen de las largas
+  test.slow()
   const link = await campaignLink(page)
   const ana = await newPlayer(browser, link, 'Ana')
   page = ana
