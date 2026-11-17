@@ -1598,6 +1598,8 @@ export const es = {
     },
     roleModes: { family: 'Familia', org: 'Organigrama' },
     inverseName: 'Nombre al revés',
+    // El que se pone solo al elegir un papel, si no tenía
+    inverseOf: { parent: 'Hijos', partner: 'Pareja', 'member-of': 'Miembros', leads: 'Dirige' },
     inversePlaceholder: '{{name}} de…',
     readsAs: 'Se lee así',
     readsSource: 'Una página',

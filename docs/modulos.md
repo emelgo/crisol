@@ -7,6 +7,29 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
+### Para retomar (2026-11-16, noche: módulo 10 · mundo, relaciones y gráficos, construido en local)
+
+- Misma rama `modulo-8/calendarios` (sin push ni PR; sin migración). Spec: `docs/specs/modulo-10.md`; lienzo aprobado
+  en el scratchpad de la sesión (`lienzo-m10/`). Porción 1 (contrato, dominio `packages/domain/src/relations.ts`,
+  acciones `getRelations` y `getWorldGraph`, MCP, nodo `chart`) y porción 2 (la web) hechas.
+- Web (`apps/web/src/relations/`): la pestaña «Relaciones» fija y calculada (`?pestana=relaciones`, tras las demás) con
+  Enlaces (SVG, d3-force y d3-zoom; profundidad y «Solo campos» en la tira de la página; leyenda; ficha de la elegida con
+  «Abrir» y «Centrar aquí»; las propiedades del panel marcan sus rayas), Familia y Organigrama (tarjetas con dagre y,
+  bajo el nombre, el primer campo de texto: `subtitle` nuevo en `relationNode`); el modo, recordado por plantilla; en
+  Familia y Organigrama el panel se pliega solo. El grafo del mundo en `/mundos/$w/relaciones` (y el de la jugadora en
+  `/campanas/$c/relaciones`), abierto desde un icono de la cabecera del árbol, con filtros, buscador y lienzo desde 300
+  páginas. Papel y nombre al revés en los campos de enlace de la plantilla (`templates/fields.tsx`). El bloque Gráfico
+  (`wiki/chart/`): Chart.js aparte, editor visual en el sitio del panel, «/» → Gráfico, también en lo que se lee
+  (`chartModel`/`chartYaml` en `packages/editor/src/chart-spec.ts`). La jugadora: la pestaña en su página, compacta en
+  el móvil. Ocho colores de serie en el tema. Sin el esbozo de la pestaña «Árbol familiar».
+- Arreglado de paso: la guarda de leer como jugador (`read-as.test.ts`) conoce `viewedChronology`.
+- Pruebas: unitarias (`relations/*.test.*`, `chart-spec`, `chart-config`, `chart-editor`, plantillas), integración
+  (`relations.integration.test.ts`, con el subtítulo y los campos ocultos), e2e `relaciones` y la de fugas ampliada.
+  Revisión de impeccable (critique y audit) aplicada.
+- Decisiones sin Enrique y preguntas pendientes: en `tasks/probar.md` › «Relaciones y gráficos».
+- **Siguiente**: que Enrique lo pruebe y conteste las preguntas; luego la batería entera y una sola CI (a `main` y
+  staging con los módulos 8 y 9). Queda del módulo 10: crear relaciones arrastrando (más adelante).
+
 ### Para retomar (2026-11-16: módulo 8 · mundo, capacidad `cronologias`, construida en local: módulo cerrado en local)
 
 - Misma rama `modulo-8/calendarios`. **Migración 0084** (`chronologies`, `timeline_groups`, `timeline_events` y las
@@ -1981,7 +2004,7 @@ Estados: pendiente · en curso · hecho · descartado.
 | R | **Revisión de la app** (2026-11-11): nueve tandas (`tasks/plan-revision.md`); la campaña, aparte | **en curso** (tanda 1) | Roliando y Roll20 (editor de sistemas); 5etools (libros) |
 | 9 | **Pizarras y mapas con capas**: la pizarra como pestaña; regiones, rutas, textos y capas en los mapas, escala y medir | pendiente (el primero tras la revisión) | DDB Maps |
 | 8 · mundo | **Calendarios y líneas temporales**: calendarios del mundo con su editor; fechas; cronologías en «Calendarios» (decisiones del 2026-11-16) | **hecho en local** (2026-11-16, ADR-0029: `calendarios`, `fechas` y `cronologias`); falta subir y que Enrique lo pruebe | Everlore, Crisol antiguo |
-| 10 · mundo | **Herramientas del mundo**: grafo de relaciones (pestaña de la página y vista del mundo; de campos de relación y enlaces del texto), árbol genealógico u organigrama, gráficos como bloque del editor. Fuera, por decisión de Enrique (2026-11-16): tableros Kanban y generador de nombres | en marcha (estudio y spec) | — |
+| 10 · mundo | **Herramientas del mundo**: grafo de relaciones (pestaña de la página y vista del mundo; de campos de relación y enlaces del texto), árbol genealógico u organigrama, gráficos como bloque del editor. Fuera, por decisión de Enrique (2026-11-16): tableros Kanban y generador de nombres | construido en local (2026-11-16), falta que Enrique lo pruebe | — |
 | 8 · campaña | El «hoy» de cada campaña, el clima y los viajes | pendiente (con la revisión de la campaña) | — |
 | 10 · campaña | El centro de actividad y la pantalla del máster | pendiente (con la revisión de la campaña) | — |
 | 11 | Pagos y planes del SaaS | **descartado** (Enrique, 2026-11-11: herramienta propia, gratuita y de uso privado; ADR-0023) | — |

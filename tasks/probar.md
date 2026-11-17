@@ -9,6 +9,74 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
+## Relaciones y gráficos (módulo 10, en local, rama `modulo-8/calendarios`; sin migración; 2026-11-16)
+
+- [ ] **La pestaña «Relaciones»** de una página: sale (tras las demás) si tiene alguna relación, por sus campos de
+  enlace o por los enlaces de su texto; no se añade con «+» ni se guarda. Un PNJ con Padres y Pareja se abre en
+  **Familia**; una facción con Líder, en **Organigrama**; si no, en **Enlaces**. El modo que elijas se recuerda para las
+  páginas de esa plantilla.
+- [ ] **Enlaces**: la página en el centro y sus relaciones alrededor (sin flechas); los nombres solo en las rayas del
+  centro y de la elegida, leídos desde ella («Padres», «Hijos» o, sin nombre al revés, «Facción de»). «Menciona», de
+  puntos; lo que sale de un secreto, discontinuo (solo tú). «Profundidad» 1–3 y «Solo campos» a la derecha de las
+  pestañas; la leyenda abajo a la izquierda, el zoom abajo a la derecha (con el panel plegado, por encima del d20).
+- [ ] Pulsar una página saca su ficha (arriba a la derecha) con «Abrir» y «Centrar aquí»; el doble clic la abre;
+  «Centrar aquí» rehace el grafo desde ella con «‹ Volver a…» arriba. Al pasar por una propiedad de enlace del panel,
+  sus rayas se marcan.
+- [ ] **Familia**: filas por generación (Abuelos, Padres, Su generación, Hijos…), cada pareja junta con una raya y de
+  ella la línea a sus hijos; «Generaciones ±1 ±2 ±3» (de entrada ±2). **Organigrama**: el grupo arriba, quien lo dirige
+  debajo («Lo dirige») y sus miembros en una columna; cada subgrupo, en la suya. Bajo cada nombre, su primer campo de
+  texto con algo. En los dos, el panel se pliega solo (su botón lo abre).
+- [ ] **El grafo del mundo**: el icono nuevo de la cabecera del árbol de páginas (junto a Exportar). «‹ Páginas»,
+  cuántas páginas y relaciones salen, el buscador (Intro lleva a la página y saca su ficha); a la izquierda los filtros
+  (plantillas, relaciones —la apagada sale tachada—, etiquetas y «Páginas sueltas», ocultas de entrada), que se
+  pliegan. Cada página, del color de su plantilla. Con 300 páginas o más se pinta en un lienzo (que se asienta solo, sin congelar la página).
+- [ ] **En la plantilla**, un campo «Enlace a una página» o «Enlaces a páginas» tiene «Papel» (Ninguno; Familia: Padre o
+  madre, Pareja; Organigrama: Pertenece a, Lo dirige), «Nombre al revés» (al elegir un papel se pone solo si estaba
+  vacío: «Hijos», «Pareja», «Miembros», «Dirige») y «Se lee así»; el papel sale junto al nombre del campo en la lista.
+- [ ] **Gráficos**: «/» → «Gráfico» pone uno de ejemplo y abre su editor en el sitio del panel: título, los seis tipos,
+  datos propios (etiquetas y series en una tabla, con sus colores; en tarta, donut y área polar, por etiqueta) o «De una
+  tabla» de la página, leyenda y «Ver YAML» (también se escribe). Cada cambio se guarda solo. Un ```chart que escriba la
+  IA se ve igual; uno que falle dice qué falla. Al elegir el bloque (o su lápiz) sale el editor; la X lo cierra.
+- [ ] **La jugadora** ve la pestaña con lo que sabe su campaña (ni lo que no conoce, ni campos ocultos, ni lo de
+  secretos sin revelar) y el grafo del mundo desde el icono de su árbol. **En el móvil**: los modos arriba, el grafo en
+  pequeño con «Ampliar» (a pantalla entera; la ficha sube desde abajo), en palabras debajo y la familia y el
+  organigrama en filas.
+- [ ] **La IA**: `relaciones_pagina` y `grafo_mundo`; al crear una plantilla con la IA, que ponga el papel a Padres,
+  Pareja, Facción y Líder.
+
+Decisiones tomadas sin ti (dime si cambias alguna):
+
+- De la spec (5-17): la pestaña fija y calculada, como «Mencionado en»; el papel del campo (Padre o madre, Pareja,
+  Pertenece a, Lo dirige) es lo que hace el árbol y el organigrama; el nombre de la relación es el del campo, con nombre
+  al revés opcional; «menciona» = enlaces e incrustados del texto (no los nombres sin enlazar), sin repetir lo que ya
+  está en un campo; lo de un secreto, solo para ti y discontinuo, y las notas ocultas nunca; pines, pizarra, eventos y
+  subpáginas no cuentan; el grafo del mundo con sus filtros y en lienzo (la spec decía ~800; lo he bajado a 300 porque el audit vio que el
+  SVG se congelaba unos segundos con 700); solo se mira (crear
+  relaciones arrastrando, más adelante); se calcula en el servidor sin caché; Chart.js cargado aparte; los gráficos se
+  guardan como el ```chart del antiguo.
+- Qué dice cada papel: *Padre o madre* (el destino es su padre o su madre), *Pareja*, *Pertenece a* (el destino es su
+  grupo) y *Lo dirige* (en el grupo, el destino es quien lo dirige). La familia llega a ±3 generaciones, con hermanos,
+  tíos y primos (la pareja de cada uno sale a su lado, sin seguir por su familia); el organigrama baja 3 niveles; el
+  vecindario se corta en las 500 páginas más cercanas (lo dice: «Hay más»).
+- Las mías: la pestaña va **tras las demás** pestañas (como en el lienzo) y sin icono, como «Texto»; con la página
+  sin relaciones no sale. Sin nombre al revés, la raya entrante se lee **«Facción de»** junto a la otra página («Facción
+  de Ilsa»). Bajo el nombre, el **primer campo de texto con algo escrito** (sin los ocultos para quien mira). Sin
+  icono propio, sus **iniciales** (sin numerales romanos: «Aldren IV» → «AL»), igual para ti y para la jugadora. En Familia y Organigrama **el panel se pliega
+  solo**. Los colores de las plantillas, ocho nuevos del tema (a 3:1 con el fondo), por el orden de tus plantillas. En el
+  grafo del mundo, los nombres de las rayas solo los de la elegida; «Centrar aquí» lleva la vista a ella. La ficha de
+  la elegida: «Centrar aquí» de principal en el escritorio y «Abrir» en el móvil. La tarta, el donut y el área polar
+  pintan solo la primera serie (como el antiguo); los colores elegidos van en `colors:` (clave nueva). La jugadora en
+  el escritorio ve el grafo en un marco del alto de la ventana. Las tarjetas de Familia y Organigrama nunca bajan del
+  85 % (si no caben, arriba y se mueve); con muchas páginas, lo que flota sobre el grafo va sin desenfoque. Tutorial
+  guiado en la pestaña y en el grafo del mundo. d3 en la 3.0.1 (la que ya traía otra dependencia).
+- Las siete preguntas del lienzo, decididas por el coordinador con tu permiso (2026-11-17): se abre en Familia u
+  Organigrama si los hay y, si no, en Enlaces; el nombre al revés no es obligatorio, pero **al elegir un papel en la
+  plantilla se rellena solo si está vacío** (Padre o madre → «Hijos», Pareja → «Pareja», Pertenece a → «Miembros», Lo
+  dirige → «Dirige»), y sin él vale «Facción de Ilsa»; «Menciona» encendido de entrada, en la pestaña y en el grafo del
+  mundo; el grafo del mundo, desde el icono de la cabecera del árbol (la barra sigue con Páginas · Calendarios ·
+  Archivos); bajo el nombre, el primer campo de texto visible para quien mira; el editor del gráfico, en el sitio del
+  panel; y el gráfico no va como bloque del panel, por ahora.
+
 ## Cronologías (módulo 8, en local, rama `modulo-8/calendarios`; migración 0084; 2026-11-16)
 
 - [ ] **Calendarios**: bajo los calendarios, «Cronologías» con una ficha por cronología (su calendario, cuántas

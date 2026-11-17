@@ -99,10 +99,11 @@ describe('editar una plantilla', () => {
     await userEvent.clear(fields.getByLabelText('Nombre'))
     await userEvent.type(fields.getByLabelText('Nombre'), 'Padres{Enter}')
     await userEvent.selectOptions(fields.getByLabelText('Tipo'), 'Enlaces a páginas')
-    await userEvent.selectOptions(fields.getByLabelText('Papel'), 'Padre o madre')
     // Sin nombre al revés, se lee «Padres de»
     expect(fields.getByText('Padres de')).toBeDefined()
-    await userEvent.type(fields.getByLabelText('Nombre al revés'), 'Hijos{Enter}')
+    // Al elegir el papel, el nombre al revés se pone solo si estaba vacío
+    await userEvent.selectOptions(fields.getByLabelText('Papel'), 'Padre o madre')
+    expect(fields.getByLabelText('Nombre al revés')).toHaveProperty('value', 'Hijos')
     await waitFor(async () =>
       expect((await saved()).fields[0]).toMatchObject({
         name: 'Padres',
@@ -112,6 +113,19 @@ describe('editar una plantilla', () => {
       })
     )
     expect(fields.getByText('Hijos')).toBeDefined()
+    // Uno escrito a mano no se pisa al cambiar de papel; y se puede quitar
+    await userEvent.clear(fields.getByLabelText('Nombre al revés'))
+    await userEvent.type(fields.getByLabelText('Nombre al revés'), 'Descendencia{Enter}')
+    await userEvent.selectOptions(fields.getByLabelText('Papel'), 'Pareja')
+    await waitFor(async () =>
+      expect((await saved()).fields[0]).toMatchObject({ role: 'partner', inverseName: 'Descendencia' })
+    )
+    await userEvent.clear(fields.getByLabelText('Nombre al revés'))
+    fields.getByLabelText('Nombre al revés').blur()
+    await waitFor(async () => expect((await saved()).fields[0]).not.toHaveProperty('inverseName'))
+    expect(fields.getByText('Padres de')).toBeDefined()
+    await userEvent.selectOptions(fields.getByLabelText('Papel'), 'Padre o madre')
+    await waitFor(async () => expect((await saved()).fields[0]).toMatchObject({ inverseName: 'Hijos' }))
     // En la lista, junto a su nombre
     expect(fields.getByRole('button', { name: /Padres.*Padre o madre/ })).toBeDefined()
     // A una sola página, el papel se queda; «Ninguno» lo quita

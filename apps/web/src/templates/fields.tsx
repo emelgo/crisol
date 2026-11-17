@@ -433,7 +433,10 @@ function RelationShape({
         onChange={(event) => {
           const { role: _was, ...rest } = field
           const role = event.currentTarget.value as RelationRole | ''
-          onChange(role ? { ...rest, role } : rest)
+          // Sin nombre al revés, el de su papel (se puede cambiar o quitar; sin él, «Padres de»)
+          const filled = role && !inverse.trim() ? t(`templateEditor.inverseOf.${role}`) : ''
+          if (filled) setInverse(filled)
+          onChange(role ? { ...rest, role, ...(filled ? { inverseName: filled } : {}) } : rest)
         }}
       >
         <option value="">{t('templateEditor.roles.none')}</option>
