@@ -189,9 +189,9 @@ describe('el «hoy» de cada campaña (8 · campaña)', () => {
           sun: null
         }))
       expect(await week(other)).toEqual(await week(campaignId))
-      expect(await ok200('setCampaignClimate', { campaignId: other, zone: 'polar', latitude: 70 })).toEqual({
+      expect(await ok200('setCampaignClimate', { campaignId: other, zone: 'polar', latitude: 80 })).toEqual({
         zone: 'polar',
-        latitude: 70
+        latitude: 80
       })
       expect(await week(other)).not.toEqual(await week(campaignId))
       expect((await today(master.cookie, other)).sun.daylight).toBe(24 * 60)

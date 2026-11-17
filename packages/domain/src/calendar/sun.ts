@@ -1,7 +1,7 @@
 /**
  * El sol de un día del mundo (docs/specs/modulo-8-10-campana.md, decisión 15): salida, puesta, alba y anochecer
  * (crepúsculo civil: el sol 6° bajo el horizonte), horas de luz y día o noche polar, a partir de la latitud de la
- * campaña y del solsticio de invierno del calendario (la mitad de su estación «Invierno»). Como en la Tierra, con días
+ * campaña y del solsticio de invierno del calendario (el primer día de su estación «Invierno»). Como en la Tierra, con días
  * de 24 horas y el mediodía a las 12. Solo informa: no mueve la oscuridad de las escenas.
  *
  * Origen: el sol del Crisol antiguo (código de Enrique, `~/crisol-app`, commit e5a72bb,

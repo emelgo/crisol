@@ -271,20 +271,37 @@ function seededRandom(seed: number): () => number {
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value))
 const fold = (text: string) => text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
 
+/** La estación de un calendario que se llama así (por su id o su nombre, sin tildes) */
+function namedSeason(def: CalendarDefinition, pattern: RegExp) {
+  return def.seasons.find((s) => pattern.test(fold(s.id)) || pattern.test(fold(s.name)))
+}
+
 /**
  * El día del año (desde 1, con decimales) a mitad del invierno: el de la estación «Invierno» del calendario (o la
- * opuesta al «Verano»); sin ellas, al principio del año. Lo más frío y, para el sol, el solsticio de invierno
+ * opuesta al «Verano»); sin ellas, al principio del año. Lo más frío del clima
  */
-export function winterSolsticeDay(def: CalendarDefinition): number {
+export function coldestDay(def: CalendarDefinition): number {
   const length = yearLength(def)
   const middle = (start: number, end: number) =>
     start <= end ? (start + end) / 2 : (((start + end + length) / 2 - 1) % length) + 1
-  const named = (pattern: RegExp) => def.seasons.find((s) => pattern.test(fold(s.id)) || pattern.test(fold(s.name)))
-  const winter = named(/invierno|winter/)
+  const winter = namedSeason(def, /invierno|winter/)
   if (winter) return middle(winter.startDay, winter.endDay)
-  const summer = named(/verano|summer/)
+  const summer = namedSeason(def, /verano|summer/)
   if (summer) return ((middle(summer.startDay, summer.endDay) + length / 2 - 1) % length) + 1
   return 1 + length * 0.05
+}
+
+/**
+ * El solsticio de invierno, para el sol: el primer día de la estación «Invierno» (en un gregoriano, el 21 de diciembre,
+ * el día más corto; corregido el 2026-11-17), o el opuesto al primero del «Verano»; sin ellas, al principio del año
+ */
+export function winterSolsticeDay(def: CalendarDefinition): number {
+  const length = yearLength(def)
+  const winter = namedSeason(def, /invierno|winter/)
+  if (winter) return winter.startDay
+  const summer = namedSeason(def, /verano|summer/)
+  if (summer) return ((summer.startDay + length / 2 - 1) % length) + 1
+  return 1
 }
 
 function cloudsCondition(sky: number): WeatherCondition {
@@ -343,7 +360,7 @@ function modelOf(def: CalendarDefinition, worldId: string, zone: WeatherZone): M
   const params = ZONE_PARAMS[zone]
   const p = (value: number) => clamp(value / 100, 0, 1)
   const length = yearLength(def)
-  const coldest = winterSolsticeDay(def)
+  const coldest = coldestDay(def)
   const middle = (params.temperatureMin + params.temperatureMax) / 2
   const amplitude = ((params.temperatureMax - params.temperatureMin) / 2) * (0.45 + 0.55 * p(params.seasonality))
   return {

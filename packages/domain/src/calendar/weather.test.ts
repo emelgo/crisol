@@ -4,6 +4,7 @@ import { gregorianCalendar } from './definition.ts'
 import { EANA } from './fixtures.ts'
 import { sunTimes } from './sun.ts'
 import {
+  coldestDay,
   effectiveWeatherLayer,
   WEATHER_WINDOW,
   WEATHER_ZONES,
@@ -106,16 +107,33 @@ describe('el clima (8 · campaña)', () => {
 
 describe('el sol (8 · campaña)', () => {
   const hours = (minutes: number) => minutes / 60
-  it('el solsticio de invierno, a mitad de la estación «Invierno» (sin ella, la opuesta al verano)', () => {
-    expect(winterSolsticeDay(EANA)).toBe(46)
-    expect(winterSolsticeDay(gregorianCalendar())).toBeCloseTo(34.5)
+  it('el solsticio de invierno, el primer día de la estación «Invierno» (sin ella, el opuesto al del verano)', () => {
+    expect(winterSolsticeDay(EANA)).toBe(1)
+    // En el gregoriano, el 21 de diciembre: el día más corto
+    expect(winterSolsticeDay(gregorianCalendar())).toBe(355)
     const onlySummer = { ...EANA, seasons: EANA.seasons.filter((s) => s.name === 'Verano') }
-    expect(winterSolsticeDay(onlySummer)).toBe(46)
+    expect(winterSolsticeDay(onlySummer)).toBe(1)
+  })
+
+  it('el día más frío del clima sigue a mitad del invierno', () => {
+    expect(coldestDay(EANA)).toBe(46)
+    expect(coldestDay(gregorianCalendar())).toBeCloseTo(34.5)
+    const onlySummer = { ...EANA, seasons: EANA.seasons.filter((s) => s.name === 'Verano') }
+    expect(coldestDay(onlySummer)).toBe(46)
+  })
+
+  it('en el gregoriano, el día más corto del año es el 21 de diciembre', () => {
+    const gregorian = gregorianCalendar()
+    const daylight = (month: string, day: number) => sunTimes(gregorian, { year: 2025, month, day }, 45).daylight
+    expect(daylight('dic', 21)).toBeLessThanOrEqual(daylight('dic', 1))
+    expect(daylight('dic', 21)).toBeLessThanOrEqual(daylight('ene', 10))
+    expect(daylight('dic', 21)).toBeLessThan(daylight('feb', 4))
   })
 
   it('a 45°: días cortos en invierno y largos en verano, con alba y anochecer alrededor del mediodía', () => {
-    const winter = sunTimes(EANA, { year: 1250, month: 'escarcha', day: 11 }, 45)
-    const summer = sunTimes(EANA, { year: 1250, month: 'trilla', day: 11 }, 45)
+    // Los solsticios: el primer día del invierno (Alba Triste) y el del verano (Semana del Yunque)
+    const winter = sunTimes(EANA, { year: 1250, month: 'alba', day: 1 }, 45)
+    const summer = sunTimes(EANA, { year: 1250, month: 'yunque', day: 1 }, 45)
     expect(hours(winter.daylight)).toBeGreaterThan(8.5)
     expect(hours(winter.daylight)).toBeLessThan(9.1)
     expect(hours(summer.daylight)).toBeGreaterThan(15.1)

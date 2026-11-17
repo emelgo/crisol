@@ -45,7 +45,8 @@ del nuevo: 2026-11-17 (resumen en «Lo que había»).
 14. **El máster ve hoy y la previsión de 7 días; la jugadora, solo el clima de hoy y el sol.**
 15. **Sol**: latitud en la campaña (por defecto 45°) y solsticio de invierno sacado de la estación «Invierno» del
     calendario (mitad de la estación). Salida, puesta, alba y anochecer (crepúsculo civil), horas de luz, día o noche
-    polar. Solo informa: sin horas en las fechas, no mueve la oscuridad de la escena.
+    polar. Solo informa: sin horas en las fechas, no mueve la oscuridad de la escena. Corregido el 2026-11-17:
+    solsticio = primer día del Invierno (el día más frío del clima sigue a mitad del invierno).
 16. **Capa de clima de la Mesa** (nueva, PixiJS, en la Mesa, la de la jugadora y la Vista de jugadores): partículas sin
     estado (semilla + tiempo; nada que sincronizar). Modo en `campaign_tables`: **como hoy** (por defecto) / a mano
     (lluvia, nieve, niebla, ceniza, intensidad, viento) / ninguno; interruptor **Interior** por escena (`scenes`), que
