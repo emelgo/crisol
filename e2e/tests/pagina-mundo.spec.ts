@@ -62,6 +62,30 @@ async function wheelOver(page: Page, target: Locator, deltaY: number) {
 }
 
 /**
+ * Dónde se queda la página tras la rueda: cuando ya se movió desde `from` (o pasó un segundo sin moverse) y lleva diez
+ * fotogramas quieta. Con la máquina cargada, la rueda llega tarde y un tiempo fijo no bastaba
+ */
+const settledScroll = (page: Page, from: number) =>
+  page.evaluate(
+    (from) =>
+      new Promise<number>((resolve) => {
+        const began = performance.now()
+        let last = window.scrollY
+        let still = 0
+        const tick = () => {
+          const now = window.scrollY
+          still = now === last ? still + 1 : 0
+          last = now
+          const moved = now !== from || performance.now() - began > 1000
+          if (moved && still >= 10) resolve(now)
+          else requestAnimationFrame(tick)
+        }
+        requestAnimationFrame(tick)
+      }),
+    from
+  )
+
+/**
  * Lo de la pestaña (el mapa, la pizarra) cabe en la ventana: empieza bajo las pestañas y acaba con la página, que llega
  * hasta abajo con su margen (el de las fichas de los lados); nada se desplaza
  */
@@ -180,9 +204,9 @@ test('en una ventana baja (un portátil), el mapa y la pizarra caben sin desplaz
   await editor.locator('p').nth(2).click()
   const positions: number[] = []
   for (let i = 0; i < 6; i++) {
+    const from = await page.evaluate(() => window.scrollY)
     await wheelOver(page, editor, 60)
-    await page.waitForTimeout(120)
-    positions.push(await page.evaluate(() => window.scrollY))
+    positions.push(await settledScroll(page, from))
   }
   for (let i = 1; i < positions.length; i++) expect(positions[i] ?? 0).toBeGreaterThanOrEqual(positions[i - 1] ?? 0)
   expect(positions.at(-1) ?? 0).toBeGreaterThan(200)

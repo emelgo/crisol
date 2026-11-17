@@ -33,6 +33,8 @@ async function downloaded(page: Page, click: () => Promise<void>) {
 }
 
 test('exportar una página, con sus subpáginas, y la wiki entera en Markdown', async ({ page }) => {
+  // Mundo, dos páginas y un secreto por la interfaz, y tres descargas: sola, 9 s; con la máquina cargada, 26-31 s
+  test.slow()
   await freshOwner(page)
   await createWorld(page, 'Eana')
   await openWiki(page, 'Eana')
