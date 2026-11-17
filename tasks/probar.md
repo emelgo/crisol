@@ -9,6 +9,103 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
+## El tiempo de la campaña (módulos 8 y 10 · campaña, en local, rama `modulo-8/calendarios`; migraciones 0085-0089; 2026-11-17)
+
+Spec: `docs/specs/modulo-8-10-campana.md` (decisiones 1-33). Lienzo aprobado «El tiempo de la campaña».
+
+### El hoy (decisiones 1 y 5-10)
+- [ ] **Inicio del máster**: el hoy grande (fecha, año, estación con su color y lunas con su fase), −1 día, +1 día,
+  +1 semana (los días de la semana del calendario) y «Poner fecha» (el mes con su semana, elegir día, «Poner fecha»).
+  Cada cambio saca abajo «La fecha pasa a… · Deshacer» unos 7 s; «Deshacer» la devuelve y el registro dice «Deshecho:
+  la fecha vuelve a…» (el registro no se deshace: escribe su entrada).
+- [ ] **Campaña sin fecha**: «Sin fecha» con «Poner fecha» y, si otra campaña del mundo tiene, «Copiar de otra campaña:
+  …». El hoy va en el calendario principal (`campaigns.today`); la jugadora lo lee sin eras ocultas.
+- [ ] **En la Mesa**: el chip del hoy bajo el de la escena (día, icono y grados; «A mano» o «Interior» si toca); su menú
+  con la fecha entera, el clima, el sol, los botones y «Viaje…». La jugadora solo lo lee.
+- [ ] **Cronologías**: desde la campaña (la jugadora, y en la Mesa desde «Cronologías» del menú del chip, en una
+  ventana) la línea roja «Hoy» con la fecha y «hace / dentro de N días» bajo cada entrada (desde 2 años, en años); lo
+  que viene, con borde discontinuo. En la del mundo, «Hoy de» con las campañas que llevas con fecha (y «Sin «hoy»»);
+  se recuerda por mundo. **Solo en la vista Lista** (no en Meses ni Calendario).
+- [ ] **Permisos**: cambiar el hoy, el clima, los viajes, la capa y la pantalla del máster es del máster
+  (`table.manage`); la jugadora recibe 403 (probado en la e2e de fugas).
+- [ ] El hoy y el clima a mano cuentan como **fechas en uso** del calendario: quitar ese mes avisa.
+
+### El clima y el sol (decisiones 11-16, 27, 28 y 31)
+- [ ] **Zonas**: templada, árida, fría, tropical, de montaña, de costa y polar; la zona y la latitud son de la campaña
+  («Cambiar»: la lista con el clima que haría hoy en cada zona, la latitud con Norte o Sur y las horas de luz). **Los
+  parámetros de las siete zonas son inventados** (la templada es el pack «General» del antiguo): ¿te cuadran?
+- [ ] **Con semilla** `(mundo, zona, día)`: no cambia al recargar; dos campañas en la misma zona y día ven lo mismo.
+  Las rachas se calculan en **bloques de 14 días** (puede haber un salto de tiempo entre un bloque y el siguiente).
+  15 condiciones (despejado… nieve).
+- [ ] **A mano**: pulsar el clima de hoy o un día de la previsión abre «Clima · día»: condición (las 15), mínima y
+  máxima en °C, rumbo en una rosa de 8 (los 16 del clima se redondean al más cercano) y fuerza del viento; «Volver al
+  generado». No cambia los días siguientes. El día a mano lleva un punto en la previsión. En el registro, «Clima del …
+  a mano: Nieve, −1° / 3°» con «Solo tú».
+- [ ] **El máster** ve hoy y los 7 días siguientes; **la jugadora**, solo hoy y el sol (sin previsión).
+- [ ] **Sol**: salida, puesta, alba y anochecer, horas de luz; sol todo el día o noche polar. **Corregido**: el
+  solsticio de invierno es el **primer día** de la estación «Invierno» (en un gregoriano, el 21 de diciembre); lo más
+  frío del clima sigue a mitad del invierno.
+- [ ] **Capa de clima** (Mesa, Mesa de la jugadora y Vista de jugadores): «Como hoy» (de entrada), «A mano» (lluvia,
+  nieve, niebla o ceniza, intensidad y viento) o «Ninguna». Partículas sin estado (misma semilla en todos los
+  aparatos), en la pantalla (no siguen el zoom del mapa), a 30 fotogramas. **La capa no va al historial; Interior sí**
+  (es de la escena). **Interior** va primero en el menú y, encendido, la capa se apaga y sale «Interior: sin clima»
+  sobre el mapa. ¿Te gustan la lluvia, la nieve, la niebla y la ceniza?
+
+### Los viajes (decisiones 3, 17, 18 y 30)
+- [ ] **Desde el recuadro de medir del mapa** (máster, en el mapa del mundo): bajo los días a pie, a caballo y en barco,
+  «Viaje» con la campaña (las que llevas con fecha), medio, ritmo (×0,67 / ×1 / ×1,33) y descanso → los días (los de
+  camino redondeados hacia arriba más el descanso, **repartido por el camino**), el clima de cada día, «Al llegar» (la
+  zona de destino) y «Avanzar hoy · N días». Midiendo una ruta dibujada, el viaje lleva su nombre.
+- [ ] **Desde la Mesa**: «Viaje…» en el menú del chip, con la distancia escrita en millas (de entrada 60, a caballo).
+  **Sin mapa, las velocidades son las de por defecto** (a pie 24, a caballo 30, en barco 48 millas al día).
+- [ ] Tope de **366 días**; el clima del viaje es el de **la zona de salida**. En el registro, la tarjeta del viaje:
+  ruta, «118 millas a caballo, ritmo rápido · 3 días y 1 de descanso», el clima de cada día (con «descanso») y «La
+  fecha pasa a … · zona De costa». Se deshace entero desde el historial.
+
+### La actividad (decisiones 19-23 y 32)
+- [ ] **«Desde tu última visita»** en el Inicio (máster y jugadora), agrupado por día real («Hoy», «Ayer», «domingo
+  16»), con **«Sesión»** el día que hubo mensajes o tiradas y su línea («64 mensajes · 38 tiradas»). Al máster: notas y
+  personajes de las jugadoras, lo revelado por otros o la IA y los cambios de fecha; a la jugadora: lo que le revelan,
+  lo nuevo del registro que le llega y los cambios de fecha (nunca notas de otras: e2e de fugas).
+- [ ] **Qué cuenta como nuevo**: lo de después de tu última visita (sin visita, desde que entraste en la campaña). Se
+  marca como visto **solo con «Marcar como visto»** (✓ en el móvil); «Ver lo anterior» lo enseña otra vez hasta que
+  recargues.
+- [ ] **Insignia**: el número rojo sobre el icono de la campaña en la barra (su Inicio). Se refresca con el aviso en
+  vivo `changed/activity` (fecha, notas y personajes) y con lo nuevo del registro, las tiradas y lo revelado.
+- [ ] **Aviso en vivo**: en las demás secciones de la campaña (no en su Inicio, que ya lo enseña, ni en la Mesa), abajo
+  a la derecha con «Ver» (lleva al Inicio); se va a los 10 s, salvo con el ratón encima o el foco dentro. Sin correo
+  ni notificaciones del navegador. Sin las horas de la sesión (no hay datos para ellas).
+
+### La pantalla del máster (decisiones 24, 25 y 33)
+- [ ] **Cajón G** en cuatro columnas que se encienden y apagan desde su cabecera (Criaturas, Personajes, Nota, Tablas);
+  **se guarda en el servidor** por campaña y escena (en otro aparato sale igual; solo en escenas ya abiertas). Lo que
+  tenías antes en el navegador (nota y statblocks) se pierde: sale la página de la escena.
+- [ ] **Criaturas**: la primera desplegada y las demás plegadas (×N). **Personajes de la escena**: ficha corta (PG y los
+  3-4 primeros números de su ficha, la barra de vida y los estados). **Nota fijada**: «Cambiar» busca por título.
+  **Tablas**: «Añadir tabla» (las del mundo), desplegar, «Tirar»: **oculta por defecto** (al registro, solo tú), con la
+  casilla «A la vista de todos» (no se recuerda); se resalta la fila. El d20 también saca la tirada.
+- [ ] El Kanban de reglas del antiguo no vuelve.
+
+### La jugadora en el móvil (pantalla 8)
+- [ ] Su Inicio: el hoy (fecha, estación y lunas, clima con viento y grados, sol y horas de luz), «Desde tu última
+  visita» compacto con su ✓, y debajo lo de siempre.
+
+### La IA
+- [ ] Desde claude.ai: `fecha_de_hoy`, `cambiar_fecha`, `ver_clima`, `cambiar_clima`, `planear_viaje` (con o sin
+  avanzar) y `actividad_campana`.
+
+### Decisiones tomadas sin ti (porción 2)
+- «Deshacer» deshace la última operación del hoy (o un viaje) de esa campaña hecha desde la web, por el historial del
+  mundo.
+- En la Mesa, el menú del chip lleva también las cronologías del mundo (se abren en una ventana con la línea «Hoy»).
+- La línea «Hoy» solo en la vista Lista; «Hoy de» se recuerda por mundo.
+- La previsión entera se edita (cada día, también hoy); la zona enseña el clima de hoy en cada zona.
+- Los deslizadores de la capa se guardan al poco de moverlos; las partículas van en la pantalla, no en el mapa.
+- La insignia, en el icono de la campaña de la barra; el aviso en vivo, no en su Inicio ni en la Mesa.
+- El historial dice ya las operaciones nuevas («cambió la fecha de «La Marca» a…», «hizo un viaje de 4 días…»,
+  «marcó la escena… como interior»…).
+- Lo que flota (menús, recuadros) se corre también en vertical si no cabe ni arriba ni abajo (en toda la app).
+
 ## Relaciones y gráficos (módulo 10, en local, rama `modulo-8/calendarios`; sin migración; 2026-11-16)
 
 - [ ] **La pestaña «Relaciones»** de una página: sale (tras las demás) si tiene alguna relación, por sus campos de

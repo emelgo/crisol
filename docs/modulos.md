@@ -7,6 +7,33 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
+### Para retomar (2026-11-17: módulos 8 y 10 · campaña, el tiempo de la campaña, construido en local)
+
+- Misma rama `modulo-8/calendarios` (sin push ni PR). Spec `docs/specs/modulo-8-10-campana.md` (decisiones 1-33; la 15,
+  corregida: el solsticio es el primer día del Invierno). **Migraciones 0085-0089**, ya aplicadas en local.
+- Porción 1 (servidor, dominio, contratos y MCP): el hoy (`getCampaignToday`/`setCampaignToday`), el clima
+  (`packages/domain/src/calendar/weather.ts` y `sun.ts`; `getCampaignWeather`, `setCampaignClimate`, `setDayWeather`),
+  los viajes (`packages/domain/src/travel.ts`; `planTravel`, `travel`), la actividad (`getCampaignActivity`,
+  `markActivitySeen`, aviso `changed/activity`), la pantalla del máster (`setGmScreen`, `listRandomTables`) y la capa de
+  clima (`setWeatherLayer`, `updateScene` con `interior`).
+- Porción 2 (la web, `apps/web/src/campaign-time/`): el hoy grande del Inicio (`today.tsx`: botones, «Poner fecha»
+  con `day-picker.tsx`, «Deshacer», previsión editable con `weather-dialog.tsx`, zona con `zone-dialog.tsx`; la
+  jugadora, hoy y el sol), «Desde tu última visita» con la insignia de la barra y el aviso en vivo (`activity.tsx`), el
+  chip del hoy en la Mesa (`today-chip.tsx`, con «Viaje…», la capa de clima, Interior y las cronologías en ventana), el
+  formulario de viaje (`travel.tsx`, también en `wiki/map/measure-panel.tsx`), las entradas del sistema del registro
+  (`log-event.tsx`), la línea «Hoy» de las cronologías (`today-mark.tsx`, `today-chronology.tsx`, en la vista Lista) y
+  «Hoy de…» en la del mundo. La capa de clima en PixiJS (`tabletop/weather-layer.tsx`, partículas sin estado en
+  `weather-particles.ts`) en la Mesa, la jugadora y la Vista de jugadores. La pantalla del máster en cuatro columnas
+  guardadas en el servidor (`tabletop/gm-screen.tsx`). Frases del historial de las acciones nuevas.
+- Pruebas: dominio (el solsticio), web (`campaign-time/*.test.*`, `weather-particles.test.ts`,
+  `realtime/activity-queries.test.ts`, `summaries-campaign-time.test.ts`, `herramientas.test.tsx`), e2e nueva
+  `tiempo-campana` y la de fugas ampliada. Revisión de impeccable (critique y audit) aplicada.
+- Decisiones sin Enrique y lo que tiene que probar: `tasks/probar.md` › «El tiempo de la campaña».
+- Pendiente menor: la línea «Hoy» en las vistas Meses y Calendario; iconos del medio en el viaje; colores sueltos de
+  sol y de sesión a tokens; la tirada de una tabla también sale en el aviso del d20.
+- **Siguiente**: que Enrique lo pruebe; luego la batería entera y una sola CI (a `main` y staging con los módulos 8, 9 y
+  10).
+
 ### Para retomar (2026-11-16, noche: módulo 10 · mundo, relaciones y gráficos, construido en local)
 
 - Misma rama `modulo-8/calendarios` (sin push ni PR; sin migración). Spec: `docs/specs/modulo-10.md`; lienzo aprobado
