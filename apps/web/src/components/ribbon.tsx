@@ -38,6 +38,7 @@ import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { historyQuery, trashQuery } from '../api/queries.ts'
+import { LiveActivityNotice, useActivityBadge } from '../campaign-time/activity.tsx'
 import { usePlayerChronologies } from '../chronologies/queries.ts'
 import { useDice } from '../dice/context.tsx'
 import { shownPath } from '../shown-path.ts'
@@ -619,6 +620,8 @@ function CampaignPanels({
   useEffect(() => setCampaign(worldId, campaignId), [setCampaign, worldId, campaignId])
   const params = { worldId, campaignId }
   const chronologies = usePlayerChronologies(worldId, campaignId, !master)
+  // Lo nuevo desde la última visita (8 · campaña): su número, sobre el icono de la campaña
+  const fresh = useActivityBadge(campaignId)
   type Section = {
     to:
       | '/mundos/$worldId/campanas/$campaignId'
@@ -701,9 +704,28 @@ function CampaignPanels({
             viewTransition={SECTION}
             data-tour={section.tour}
           >
-            <Label icon={section.icon} text={section.text} />
+            {section.exact && fresh > 0 ? (
+              <>
+                <Label
+                  icon={section.icon}
+                  glyph={
+                    <span className={styles.badged}>
+                      <section.icon aria-hidden="true" size={20} strokeWidth={1.75} />
+                      <span className={`${styles.badge} ${styles.badgeNew}`} aria-hidden="true">
+                        {fresh > 99 ? '99+' : fresh}
+                      </span>
+                    </span>
+                  }
+                  text={section.text}
+                />
+                <span className={styles.hidden}>{t('campaignTime.badge', { count: fresh })}</span>
+              </>
+            ) : (
+              <Label icon={section.icon} text={section.text} />
+            )}
           </Link>
         ))}
+      <LiveActivityNotice worldId={worldId} campaign={{ id: campaignId, name }} master={master} />
     </>
   )
 }

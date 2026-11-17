@@ -174,12 +174,12 @@ export function DateField({
 }
 
 /** Lo que se ve en el selector: un año y uno de sus meses (por su página: el mes normal con sus fiestas de al lado) */
-interface View {
+export interface View {
   year: number
   page: number
 }
 
-function viewOf(definition: CalendarDefinition, date: WorldDate | null): View {
+export function viewOf(definition: CalendarDefinition, date: WorldDate | null): View {
   const pages = pagesOf(definition)
   const page = date?.month
     ? pages.findIndex(
@@ -590,7 +590,7 @@ function DatePicker({
 }
 
 /** Las flechas mueven el foco entre los días (o los meses): izquierda y derecha, de uno en uno; arriba y abajo, por filas */
-function moveFocus(event: KeyboardEvent<HTMLElement>) {
+export function moveFocus(event: KeyboardEvent<HTMLElement>) {
   const keys: Record<string, number> = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -2, ArrowDown: 2 }
   const step = keys[event.key]
   if (step === undefined) return
@@ -608,7 +608,7 @@ function moveFocus(event: KeyboardEvent<HTMLElement>) {
 }
 
 /** El mes con la semana del calendario y, debajo, sus días fuera de la semana (una festividad, su nombre delante) */
-function MonthDays({
+export function MonthDays({
   definition,
   year,
   page,

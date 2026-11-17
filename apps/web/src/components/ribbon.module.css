@@ -193,6 +193,12 @@
   text-align: center;
 }
 
+/* Lo nuevo de una campaña (8 · campaña): en el rojo de la marca */
+.badgeNew {
+  background: var(--color-brand);
+  color: #ffffff;
+}
+
 /*
  * Entrar en un mundo: «Mundos» sube hasta la llama encogiendo, se funde con ella y su hueco se cierra; la llama se aviva
  * y suelta chispas (el mundo se cocina). Dentro, «Mundos» no está: la llama es la vuelta. Al volver, sale de la llama

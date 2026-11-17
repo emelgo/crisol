@@ -29,11 +29,15 @@ const NoticesContext = createContext<{
 export function queriesFor(message: RealtimeMessage): QueryKey[] {
   // Las tiradas llegan enteras (ADR-0010) y no son del historial: no hay nada que volver a pedir
   // El registro de la partida no es del historial: solo se vuelve a pedir él
-  if (message.type === 'logged' || message.type === 'unlogged') return [['log', message.campaignId]]
-  return message.type === 'hello' ||
-    message.type === 'rolled' ||
-    message.type === 'shown' ||
-    message.type === 'shownImage'
+  // Lo nuevo del registro y cada tirada cuentan en el centro de actividad (su insignia, 8 · campaña)
+  if (message.type === 'logged')
+    return [
+      ['log', message.campaignId],
+      ['activity', message.campaignId]
+    ]
+  if (message.type === 'unlogged') return [['log', message.campaignId]]
+  if (message.type === 'rolled') return [['activity', message.campaignId]]
+  return message.type === 'hello' || message.type === 'shown' || message.type === 'shownImage'
     ? []
     : [...changedBy(message), ['history'], ['trash']]
 }
@@ -124,6 +128,7 @@ function changedBy(message: RealtimeMessage): QueryKey[] {
     // Lo revelado: lo de las páginas del mundo (su árbol, lo nuevo) se vuelve a pedir
     case 'revealed':
       return [
+        ['activity', message.campaignId],
         ['pages', message.worldId],
         ['compendium', message.campaignId],
         ['chronologies', message.worldId],
