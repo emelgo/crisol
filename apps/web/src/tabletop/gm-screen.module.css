@@ -16,13 +16,14 @@
   position: absolute;
   inset-inline: 4.25rem calc(24rem + 1.5rem);
   inset-block-end: 0.75rem;
-  /* Debajo de la columna de herramientas, que sigue a la vista */
-  z-index: 11;
+  /* Encima de la tira del registro (como en el lienzo), debajo de los menús */
+  z-index: 21;
   display: flex;
   flex-direction: column;
   block-size: min(34rem, 62%);
   border: 1px solid var(--glass-edge);
-  border-radius: 10px;
+  border-radius: var(--radius-frame);
+  overflow: hidden;
   background: var(--glass-sheen), var(--glass-panel);
   box-shadow:
     inset 0 1px 0 var(--glass-hi),
@@ -50,6 +51,8 @@
 
 .head h2 {
   margin: 0;
+  padding: 0;
+  border: 0;
   color: var(--color-h2);
   font: 800 1.25rem / 1 var(--font-display);
   text-transform: uppercase;
@@ -80,18 +83,19 @@
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  padding: 0.25rem 0.7rem 0.25rem 0.5rem;
-  border: 1px solid var(--line-frame);
-  border-radius: 999px;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-button);
   color: var(--color-muted);
   font-size: 0.8125rem;
   font-weight: 600;
   cursor: pointer;
 }
 
+.toggles label:hover {
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+}
+
 .toggles label[data-on] {
-  border-color: color-mix(in srgb, var(--color-accent) 55%, transparent);
-  background: color-mix(in srgb, var(--color-accent) 14%, transparent);
   color: var(--color-text);
 }
 
@@ -99,7 +103,7 @@
   inline-size: 0.95rem;
   block-size: 0.95rem;
   margin: 0;
-  accent-color: var(--color-accent);
+  accent-color: var(--color-muted);
 }
 
 .scene {
@@ -128,6 +132,8 @@
 .body {
   display: grid;
   flex: 1;
+  /* Lo que se lee, casi opaco (docs/diseno.md): el mapa no se trasluce entre las columnas */
+  background: var(--surface-read);
   grid-template-columns: repeat(var(--columns), minmax(15rem, 1fr));
   min-block-size: 0;
   overflow-x: auto;
@@ -156,6 +162,7 @@
 .columnHead h3 {
   margin: 0;
   color: var(--color-muted);
+  font-family: var(--font-body);
   font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -323,7 +330,7 @@
 
 .stats dt {
   color: var(--color-muted);
-  font-size: 0.625rem;
+  font-size: 0.6875rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -390,6 +397,7 @@
 
 .note h4 {
   margin: 0;
+  color: var(--color-text);
   font: 800 1.25rem / 1.1 var(--font-display);
   text-transform: uppercase;
 }
@@ -533,9 +541,11 @@
 }
 
 .tableToggle b {
+  display: -webkit-box;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-height: 1.2;
 }
 
 .formula {

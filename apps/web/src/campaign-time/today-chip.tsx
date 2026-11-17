@@ -7,7 +7,7 @@
 import type { CampaignTableView, WeatherLayerSettingView } from '@crisol/contracts'
 import { WEATHER_LAYER_KINDS } from '@crisol/contracts'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { CalendarDays, ChevronDown, CloudSun, Home, Route } from 'lucide-react'
+import { CalendarDays, ChevronDown, CloudSun, Flame, Home, Route } from 'lucide-react'
 import { useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
@@ -115,9 +115,9 @@ export function TodayChip({
         className={chipStyles.chip}
         aria-expanded={open}
         aria-controls={menuId}
-        aria-label={label}
         onClick={() => (open ? close() : setOpen(true))}
       >
+        <span className={styles.srOnly}>{t('campaignTime.chipPrefix')} </span>
         {weather ? (
           <WeatherIcon condition={weather.condition} size={16} />
         ) : (
@@ -197,31 +197,45 @@ export function TodayChip({
               </button>
             </div>
             {today && (
-              <button type="button" className={chipStyles.row} onClick={() => setPanel('travel')}>
+              <button
+                type="button"
+                className={chipStyles.row}
+                title={t('campaignTime.travelHint')}
+                onClick={() => setPanel('travel')}
+              >
                 <Route aria-hidden="true" size={15} />
                 <span>{t('campaignTime.travelMenu')}</span>
-                <span className={chipStyles.hint}>{t('campaignTime.travelHint')}</span>
               </button>
             )}
           </div>
           <div className={chipStyles.section}>
             <h3 className={styles.label}>{t('campaignTime.layer')}</h3>
-            <LayerModes value={layer.mode} onChange={(mode) => changeLayer(mode === 'manual' ? manual : { mode })} />
-            {layer.mode === 'today' && (
-              <p className={styles.quiet}>
-                {effective || weather
-                  ? weather &&
-                    t('campaignTime.layerToday', { condition: t(`campaignTime.conditions.${weather.condition}`) })
-                  : t('campaignTime.layerTodayNone')}
-              </p>
-            )}
-            {layer.mode === 'manual' && <ManualLayer value={manual} onChange={changeLayer} />}
+            {/* Interior manda sobre lo demás: va primero y, encendido, la capa se apaga */}
             <Switch checked={interior} onChange={(value) => setInterior.mutate(value)}>
               <span className={chipStyles.switchLabel}>
                 <Home aria-hidden="true" size={14} />
                 {t('campaignTime.interior')}
               </span>
             </Switch>
+            {interior ? (
+              <p className={styles.quiet}>{t('campaignTime.interiorNoWeather')}</p>
+            ) : (
+              <>
+                <LayerModes
+                  value={layer.mode}
+                  onChange={(mode) => changeLayer(mode === 'manual' ? manual : { mode })}
+                />
+                {layer.mode === 'today' && (
+                  <p className={styles.quiet}>
+                    {effective || weather
+                      ? weather &&
+                        t('campaignTime.layerToday', { condition: t(`campaignTime.conditions.${weather.condition}`) })
+                      : t('campaignTime.layerTodayNone')}
+                  </p>
+                )}
+                {layer.mode === 'manual' && <ManualLayer value={manual} onChange={changeLayer} />}
+              </>
+            )}
           </div>
           {windows && (chronologies.data?.chronologies.length ?? 0) > 0 && (
             <div className={chipStyles.section}>
@@ -271,6 +285,17 @@ export function TodayChip({
   )
 }
 
+/** «Interior: sin clima», sobre el mapa (lienzo, pantalla 3c) */
+export function InteriorPill() {
+  const { t } = useTranslation()
+  return (
+    <span className={chipStyles.interior}>
+      <Home aria-hidden="true" size={13} />
+      {t('campaignTime.interiorNoWeather')}
+    </span>
+  )
+}
+
 function LayerModes({ value, onChange }: { value: Layer['mode']; onChange: (mode: Layer['mode']) => void }) {
   const { t } = useTranslation()
   const name = useId()
@@ -287,7 +312,7 @@ function LayerModes({ value, onChange }: { value: Layer['mode']; onChange: (mode
   )
 }
 
-const LAYER_ICONS = { rain: 'rain', snow: 'snow', fog: 'fog', ash: 'overcast' } as const
+const LAYER_ICONS = { rain: 'rain', snow: 'snow', fog: 'fog' } as const
 
 /** La capa a mano: lluvia, nieve, niebla o ceniza, su intensidad y su viento */
 function ManualLayer({ value, onChange }: { value: Manual; onChange: (next: Layer, wait?: number) => void }) {
@@ -305,7 +330,11 @@ function ManualLayer({ value, onChange }: { value: Manual; onChange: (next: Laye
               checked={value.kind === kind}
               onChange={() => onChange({ ...value, kind })}
             />
-            <WeatherIcon condition={LAYER_ICONS[kind]} size={16} />
+            {kind === 'ash' ? (
+              <Flame aria-hidden="true" size={16} className={chipStyles.ash} />
+            ) : (
+              <WeatherIcon condition={LAYER_ICONS[kind]} size={16} />
+            )}
             {t(`campaignTime.layerKinds.${kind}`)}
           </label>
         ))}

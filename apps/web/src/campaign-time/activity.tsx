@@ -7,7 +7,7 @@
  */
 import type { ActivityItem, Campaign } from '@crisol/contracts'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Link, useNavigate } from '@tanstack/react-router'
+import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
 import type { TFunction } from 'i18next'
 import { CalendarDays, Check, Eye, Layers, MessageSquare, X } from 'lucide-react'
 import { type ReactNode, useEffect, useRef, useState } from 'react'
@@ -16,6 +16,7 @@ import { Trans, useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { useAnnounce } from '../components/announcer.tsx'
 import { colorOf } from '../dice/rolls.ts'
+import { shownPath } from '../shown-path.ts'
 import styles from './activity.module.css'
 import { activityKey, useCampaignActivity } from './queries.ts'
 
@@ -225,11 +226,12 @@ export function ActivityCenter({
   return (
     <section
       className={compact ? `${styles.center} ${styles.compact}` : styles.center}
-      aria-labelledby={`actividad-${campaign.id}`}
+      // Con su nombre, no con aria-labelledby: el marco es suyo, no el de las secciones de la hoja
+      aria-label={t('campaignTime.activity')}
       data-tour="inicio-actividad"
     >
       <header className={styles.head}>
-        <h2 id={`actividad-${campaign.id}`}>{t('campaignTime.activity')}</h2>
+        <h2>{t('campaignTime.activity')}</h2>
         {count > 0 && (
           <span className={styles.count}>
             <span aria-hidden="true">{count}</span>
@@ -336,28 +338,41 @@ export function LiveActivityNotice({
   const activity = useCampaignActivity(campaign.id)
   const known = useRef<Set<string> | null>(null)
   const [notice, setNotice] = useState<ActivityItem | null>(null)
+  // En su Inicio ya se ve en «Desde tu última visita»: allí no hace falta el aviso
+  const atHome = useRouterState({
+    select: (state) => new RegExp(`^/mundos/${worldId}/campanas/${campaign.id}/?$`).test(shownPath(state))
+  })
+  // Mientras se mira (el ratón encima o el foco dentro), no se va
+  const [held, setHeld] = useState(false)
   const items = activity.data?.items
   useEffect(() => {
     if (!items) return
     const keys = new Set(items.map(itemKey))
     const before = known.current
     known.current = keys
-    if (!before) return
+    if (!before || atHome) return
     const arrived = items.filter((item) => !before.has(itemKey(item)))
     const newest = arrived.sort((a, b) => b.at.localeCompare(a.at))[0]
     if (newest) {
       setNotice(newest)
       announce(t('campaignTime.liveNew', { campaign: campaign.name }))
     }
-  }, [items, announce, t, campaign.name])
+  }, [items, announce, t, campaign.name, atHome])
   useEffect(() => {
-    if (!notice) return
+    if (!notice || held) return
     const timer = window.setTimeout(() => setNotice(null), 10_000)
     return () => window.clearTimeout(timer)
-  }, [notice])
+  }, [notice, held])
   if (!notice) return null
   return createPortal(
-    <aside className={styles.live} aria-label={t('campaignTime.liveNew', { campaign: campaign.name })}>
+    <aside
+      className={styles.live}
+      aria-label={t('campaignTime.liveNew', { campaign: campaign.name })}
+      onPointerEnter={() => setHeld(true)}
+      onPointerLeave={() => setHeld(false)}
+      onFocus={() => setHeld(true)}
+      onBlur={() => setHeld(false)}
+    >
       <ul className={styles.liveList}>
         <Item item={notice} worldId={worldId} campaignId={campaign.id} master={master} fresh />
       </ul>

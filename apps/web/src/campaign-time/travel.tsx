@@ -189,6 +189,7 @@ export function TravelForm({
                   <WeatherIcon condition={day.condition} size={15} />
                   <span className={travelStyles.dayCondition}>
                     {t(`campaignTime.conditions.${day.condition}`)}
+                    {day.manual && ` · ${t('campaignTime.manual').toLowerCase()}`}
                     {data.schedule[index] === 'rest' && <b> · {t('campaignTime.restDay')}</b>}
                   </span>
                   <span className={travelStyles.dayTemps}>{temperatureText(day)}</span>

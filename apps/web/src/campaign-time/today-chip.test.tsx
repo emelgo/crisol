@@ -67,7 +67,7 @@ async function renderChip() {
 describe('el chip del «hoy» en la Mesa (8 · campaña)', () => {
   it('lleva el día y los grados; su menú cambia la fecha', async () => {
     await renderChip()
-    const chip = await screen.findByRole('button', { name: /El hoy de la campaña: Frostelle, 18 de Siega/ })
+    const chip = await screen.findByRole('button', { name: /El hoy de la campaña: 18 de Siega/ })
     expect(chip.textContent).toContain('18 de Siega')
     await userEvent.click(chip)
     const menu = screen.getByRole('region', { name: /El hoy de la campaña/ })
@@ -85,7 +85,7 @@ describe('el chip del «hoy» en la Mesa (8 · campaña)', () => {
     await waitFor(() => expect((advance as HTMLButtonElement).disabled).toBe(false))
     expect(dialog.textContent).toContain('Llegáis el')
     await userEvent.click(advance)
-    expect(await screen.findByRole('button', { name: /El hoy de la campaña: .*(19|2\d) de Siega/ })).toBeTruthy()
+    expect(await screen.findByRole('button', { name: /El hoy de la campaña: (19|2\d) de Siega/ })).toBeTruthy()
     expect(screen.queryByRole('dialog', { name: 'Viaje' })).toBeNull()
   })
 

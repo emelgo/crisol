@@ -2973,6 +2973,7 @@ export const es = {
     },
     // La Mesa: el chip del hoy y su menú
     chip: 'El hoy de la campaña: {{date}}',
+    chipPrefix: 'El hoy de la campaña:',
     travelMenu: 'Viaje…',
     travelHint: 'con la distancia escrita',
     layer: 'Capa de clima',
@@ -3102,7 +3103,7 @@ export const es = {
       roll: 'Tirar',
       rollTable: 'Tirar {{name}}',
       rollVisible: 'A la vista de todos',
-      hiddenResult: 'Solo tú · al registro, oculta',
+      hiddenResult: 'Solo tú',
       visibleResult: 'A la vista de todos',
       expand: 'Desplegar {{name}}',
       collapse: 'Plegar {{name}}',

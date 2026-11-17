@@ -1472,3 +1472,82 @@ test('@fugas las relaciones: la jugadora no recibe ni aristas, ni nodos, ni nomb
   expect(bodies[0]).not.toContain(id.topo)
   await player.close()
 })
+
+test('@fugas el tiempo de la campaña: la jugadora no recibe la previsión, ni el clima a mano, ni la actividad de otras, ni puede cambiarlo (módulos 8 y 10 · campaña)', async ({
+  page,
+  browser
+}) => {
+  const link = await campaignLink(page)
+  const [, , worldId = '', , campaignId = ''] = campaignPath(page).split('/')
+  const api = async (name: string, data: object) => {
+    const response = await page.request.post(`/api/actions/${name}`, { data })
+    expect(response.status(), `${name}: ${await response.text()}`).toBe(200)
+    return response.json()
+  }
+  await api('createCalendar', {
+    worldId,
+    name: 'Eana',
+    from: {
+      definition: {
+        yearSuffix: 'RC',
+        weekdays: ['Herrero', 'Hacedor', 'Muerte', 'Frostelle', 'Flora', 'Eternidad', 'Melancolía'],
+        months: [
+          { name: 'Siega', days: 28 },
+          { name: 'Trilla', days: 28 }
+        ]
+      }
+    }
+  })
+  await api('setCampaignToday', { campaignId, date: '1250-Siega-10' })
+  // El clima a mano de pasado mañana, con unos grados que no salen solos: ni la previsión ni el registro le llegan (se
+  // buscan con su clave: «-41» a secas puede salir en un id)
+  await api('setDayWeather', {
+    campaignId,
+    date: '1250-Siega-12',
+    weather: { condition: 'sleet', low: -41, high: -40, wind: 'gale', windDirection: 'NNW' }
+  })
+  const ana = await newPlayer(browser, link, 'Ana')
+  await (
+    await ana.request.post('/api/actions/createPlayerNote', { data: { campaignId, title: 'Diario secreto de Ana' } })
+  ).json()
+
+  let seen: ReturnType<typeof capture> | undefined
+  const bea = await newPlayer(browser, link, 'Bea', (p) => {
+    seen = capture(p)
+  })
+  if (!seen) throw new Error('sin captura')
+  await bea.goto(`/mundos/${worldId}/campanas/${campaignId}`)
+  await expect(bea.getByRole('region', { name: 'Hoy' })).toBeVisible()
+  await expect(bea.getByRole('region', { name: 'Desde tu última visita' })).toBeVisible()
+  const bodies: string[] = []
+  const today = await bea.request.post('/api/actions/getCampaignToday', { data: { campaignId } })
+  expect(today.status()).toBe(200)
+  const todayBody = await today.json()
+  bodies.push(JSON.stringify(todayBody))
+  expect(todayBody.forecast).toEqual([])
+  expect(todayBody.weather).not.toBeNull()
+  for (const name of ['getCampaignActivity', 'listLog'] as const) {
+    const response = await bea.request.post(`/api/actions/${name}`, { data: { campaignId } })
+    expect(response.status(), name).toBe(200)
+    bodies.push(await response.text())
+  }
+  const activity = JSON.parse(bodies[1] ?? '{}') as { items: Array<{ type: string }> }
+  expect(activity.items.some((item) => item.type === 'note' || item.type === 'character')).toBe(false)
+  // Lo del máster: ni lo lee ni lo cambia
+  for (const [name, data] of [
+    ['getCampaignWeather', { campaignId }],
+    ['setCampaignToday', { campaignId, days: 1 }],
+    ['setDayWeather', { campaignId, weather: null }],
+    ['setCampaignClimate', { campaignId, zone: 'polar' }],
+    ['planTravel', { campaignId, distance: 30 }],
+    ['travel', { campaignId, distance: 30 }],
+    ['setWeatherLayer', { campaignId, layer: { mode: 'none' } }],
+    ['setGmScreen', { campaignId, columns: { note: false } }]
+  ] as const)
+    expect((await bea.request.post(`/api/actions/${name}`, { data })).status(), name).toBe(403)
+  const everything = [await seen.all(), ...bodies].join('\n')
+  for (const leak of ['"low":-41', '-41° / -40°', 'Diario secreto de Ana', '"type":"weather"', '"forecast":[{'])
+    expect(everything).not.toContain(leak)
+  await ana.close()
+  await bea.close()
+})

@@ -24,7 +24,7 @@
 .label {
   margin: 0 0 var(--space-2);
   color: var(--color-muted);
-  font: 700 0.6875rem / 1.2 var(--font-body, inherit);
+  font: 700 0.6875rem / 1.2 var(--font-body);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -182,6 +182,8 @@
   flex: 1;
   min-inline-size: 0;
   margin: 0;
+  padding: 0;
+  border: 0;
   color: var(--color-h2);
   font: 800 1.125rem / 1.15 var(--font-display);
   text-transform: uppercase;
@@ -241,6 +243,8 @@
 
 .date {
   margin: 0;
+  padding: 0;
+  border: 0;
   color: var(--color-text);
   font: 800 1.75rem / 1.05 var(--font-display);
   text-transform: uppercase;
@@ -481,8 +485,16 @@
   background: color-mix(in srgb, var(--color-text) 5%, transparent);
 }
 
-.day[data-manual] {
-  border-color: color-mix(in srgb, var(--color-h3) 60%, transparent);
+.day[data-manual]::after {
+  /* Puesto a mano: un punto en la esquina, del color de «A mano» del hoy */
+  content: "";
+  position: absolute;
+  inset-block-start: 0.45rem;
+  inset-inline-start: 0.45rem;
+  inline-size: 6px;
+  block-size: 6px;
+  border-radius: 50%;
+  background: var(--color-h3);
 }
 
 .day[aria-expanded="true"] {
@@ -526,6 +538,8 @@
 .noDateTitle {
   flex: 1;
   margin: 0;
+  padding: 0;
+  border: 0;
   color: var(--color-muted);
   font: 800 1.5rem / 1 var(--font-display);
   text-transform: uppercase;

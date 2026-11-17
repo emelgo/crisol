@@ -219,6 +219,7 @@
   position: relative;
   z-index: -1;
   display: flex;
+  gap: 0.5rem;
   flex-basis: 100%;
   justify-content: center;
   pointer-events: none;

@@ -11,7 +11,6 @@ import { CalendarDays, Copy, Pencil, Sunrise, Sunset, Undo2, Wind } from 'lucide
 import { type CSSProperties, useEffect, useRef, useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import { useErrorText } from '../api/errors.ts'
-import { useAnnounce } from '../components/announcer.tsx'
 import { FormError } from '../components/field.tsx'
 import { useWorldCalendars } from '../wiki/date-field.tsx'
 import { ReadAsProvider } from '../wiki/read-as.tsx'
@@ -182,7 +181,6 @@ function UndoToast({
 /** El «hoy» grande del Inicio del máster */
 export function MasterToday({ worldId, campaign }: { worldId: string; campaign: Campaign }) {
   const { t } = useTranslation()
-  const announce = useAnnounce()
   const errorText = useErrorText()
   const data = useCampaignToday(campaign.id)
   const calendar = useTodayCalendar(worldId, data.data?.today?.calendarId ?? null)
@@ -195,8 +193,8 @@ export function MasterToday({ worldId, campaign }: { worldId: string; campaign: 
     setToday.mutate(input, {
       onSuccess: ({ today }) => {
         setPicking(false)
+        // El aviso de «Deshacer» es una región viva: ya se anuncia
         setMoved({ text: today.text, at: Date.now() })
-        announce(t('campaignTime.movedText', { date: today.text }))
       }
     })
   const error = setToday.error ?? undo.error
@@ -347,11 +345,11 @@ function EditableWeather({ campaignId, day, big }: { campaignId: string; day: We
         type="button"
         className={big ? `${styles.now} ${styles.cell}` : styles.now}
         aria-expanded={open}
-        aria-label={`${t(`campaignTime.conditions.${day.condition}`)}, ${temperatureText(day)}, ${windText(t, day)}. ${t('campaignTime.editDay', { date: day.text })}`}
         onClick={() => setOpen(!open)}
       >
         <WeatherNow day={day} />
         {day.manual && <span className={styles.manualMark}>{t('campaignTime.manual')}</span>}
+        <span className={styles.srOnly}>. {t('campaignTime.editDay', { date: day.text })}</span>
         <Pencil aria-hidden="true" size={13} className={styles.editMark} />
       </button>
       {open && <WeatherDialog anchor={button} campaignId={campaignId} day={day} onClose={() => setOpen(false)} />}
@@ -385,19 +383,18 @@ function ForecastDay({
         type="button"
         className={styles.day}
         data-manual={day.manual || undefined}
+        title={day.manual ? t('campaignTime.manual') : undefined}
         aria-expanded={open}
-        aria-label={`${day.text}: ${t(`campaignTime.conditions.${day.condition}`)}, ${temperatureText(day)}. ${t('campaignTime.editDay', { date: day.text })}`}
         onClick={() => setOpen(!open)}
       >
-        <span className={styles.dayName} aria-hidden="true">
-          {weekday.slice(0, 3)}
-        </span>
-        <span className={styles.dayNumber} aria-hidden="true">
-          {day.date.day}
-        </span>
+        <span className={styles.dayName}>{weekday.slice(0, 3)}</span>
+        <span className={styles.dayNumber}>{day.date.day}</span>
         <WeatherIcon condition={day.condition} size={22} />
-        <span className={styles.dayTemps} aria-hidden="true">
+        <span className={styles.dayTemps}>
           <b>{day.high}°</b> {day.low}°
+        </span>
+        <span className={styles.srOnly}>
+          {`. ${t(`campaignTime.conditions.${day.condition}`)}${day.manual ? ` (${t('campaignTime.manual').toLowerCase()})` : ''}. ${t('campaignTime.editDay', { date: day.text })}`}
         </span>
         <Pencil aria-hidden="true" size={12} className={styles.editMark} />
       </button>

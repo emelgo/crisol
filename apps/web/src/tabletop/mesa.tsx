@@ -42,7 +42,7 @@ import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { CurrentCampaignContext } from '../campaign/current-campaign.ts'
-import { TodayChip } from '../campaign-time/today-chip.tsx'
+import { InteriorPill, TodayChip } from '../campaign-time/today-chip.tsx'
 import { Backdrop } from '../components/backdrop.tsx'
 import { Loading } from '../components/brand.tsx'
 import { useDismiss } from '../components/dismiss.ts'
@@ -1502,6 +1502,7 @@ function TopBar({
       {/* La franja de la pausa, en su propia línea debajo de las barras (aunque se partan en dos): no tapa nada */}
       <div className={styles.pauseRow}>
         <PauseBanner campaignId={campaignId} className={roomStyles.inRow} />
+        {open?.interior && <InteriorPill />}
       </div>
     </div>
   )

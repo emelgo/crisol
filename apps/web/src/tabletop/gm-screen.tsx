@@ -174,12 +174,12 @@ function Column({
   aside?: ReactNode
   children: ReactNode
 }) {
-  const id = useId()
+  // Con su nombre, no con aria-labelledby: sin el marco de las secciones de la hoja
   return (
-    <section className={gm.column} aria-labelledby={id}>
+    <section className={gm.column} aria-label={title}>
       <header className={gm.columnHead}>
         {icon}
-        <h3 id={id}>{title}</h3>
+        <h3>{title}</h3>
         {aside}
       </header>
       <div className={gm.columnBody}>{children}</div>

@@ -32,7 +32,8 @@ export function Floating({
       void computePosition(reference, element, {
         strategy: 'fixed',
         placement,
-        middleware: [offset(8), flip({ padding: 12 }), shift({ padding: 12 })]
+        // Si no cabe ni arriba ni abajo, se corre también en vertical: nunca se sale de la pantalla
+        middleware: [offset(8), flip({ padding: 12 }), shift({ padding: 12, crossAxis: true })]
       }).then(({ x, y }) => Object.assign(element.style, { left: `${x}px`, top: `${y}px` }))
     })
   }, [anchor, box, placement])
