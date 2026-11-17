@@ -7,13 +7,13 @@ import { getRouteApi, Link } from '@tanstack/react-router'
 import { ChevronLeft } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import calendarStyles from '../calendars/calendars.module.css'
+import { CampaignChronology } from '../campaign-time/today-chronology.tsx'
 import { Loading } from '../components/brand.tsx'
 import { failed, LoadError } from '../components/load-error.tsx'
 import { Screen } from '../components/screen.tsx'
 import { ReadAsProvider } from '../wiki/read-as.tsx'
 import styles from './chronologies.module.css'
 import { usePlayerChronologies } from './queries.ts'
-import { Chronology } from './screen.tsx'
 
 const listRoute = getRouteApi('/mundos/$worldId/campanas/$campaignId/cronologias')
 const oneRoute = getRouteApi('/mundos/$worldId/campanas/$campaignId/cronologias/$chronologyId')
@@ -65,11 +65,10 @@ export function PlayerChronology() {
   const { worldId, campaignId, chronologyId } = oneRoute.useParams()
   return (
     <ReadAsProvider value={{ campaignId }}>
-      <Chronology
+      <CampaignChronology
         worldId={worldId}
+        campaignId={campaignId}
         chronologyId={chronologyId}
-        organizationId={undefined}
-        editable={false}
         back={
           <Link
             to="/mundos/$worldId/campanas/$campaignId/cronologias"

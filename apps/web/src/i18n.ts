@@ -2986,6 +2986,9 @@ export const es = {
     interiorChip: 'Interior',
     interiorNoWeather: 'Interior: sin clima',
     chronologies: 'Cronologías',
+    todayOf: 'Hoy de',
+    todayNone: 'Sin «hoy»',
+    todayLine: 'Hoy: {{date}}',
     // Los viajes
     travel: 'Viaje',
     travelTitle: 'Viaje',

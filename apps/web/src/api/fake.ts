@@ -825,6 +825,8 @@ export function fakeApi(
     grid: SceneGrid
     initialView: SceneViewport | null
     imported: SceneImported | null
+    /** Interior (8 · campaña): sin capa de clima */
+    interior?: boolean
   }
   const scenes: StoredScene[] = []
   const sceneById = (sceneId: string) => {
@@ -841,7 +843,8 @@ export function fakeApi(
     image: scene.image ? { ...scene.image } : null,
     grid: { ...scene.grid },
     initialView: scene.initialView ? { ...scene.initialView } : null,
-    hasImported: scene.imported !== null
+    hasImported: scene.imported !== null,
+    interior: scene.interior ?? false
   })
   type StoredTable = { open: string | null; presented: string | null; hidden: boolean; camera: ScreenCamera }
   const tables = new Map<string, StoredTable>()
@@ -4345,10 +4348,11 @@ export function fakeApi(
       if (!scene) throw new ApiError('NOT_FOUND', 404)
       return sceneView(scene)
     },
-    updateScene: ({ sceneId, grid, initialView }) => {
+    updateScene: ({ sceneId, grid, initialView, interior }) => {
       const scene = sceneById(sceneId)
       if (grid) scene.grid = { ...scene.grid, ...grid }
       if (initialView !== undefined) scene.initialView = initialView
+      if (interior !== undefined) scene.interior = interior
       return sceneView(scene)
     },
     setSceneImage: ({ sceneId, width, height, fileId, tiles, imported }) => {

@@ -298,7 +298,10 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
   const endDrag = useRef<(() => void) | null>(null)
   useEffect(() => () => endDrag.current?.(), [])
   // Medir: los puntos y, si se mide a lo largo de una ruta, su nombre; calibrar: la raya y lo que se dibuja de ella
-  const [measure, setMeasure] = useState<{ points: Point[]; route: string | null }>({ points: [], route: null })
+  const [measure, setMeasure] = useState<{ points: Point[]; route: string | null; routeId?: string | null }>({
+    points: [],
+    route: null
+  })
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [calibration, setCalibration] = useState<Point[]>([])
   const [line, setLine] = useState<[Point, Point] | null>(null)
@@ -811,7 +814,7 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
       const route = map.elements.find((element) => element.id === pressedOn.current && element.kind === 'path')
       if (route && 'points' in route.geometry && (measure.points.length === 0 || measure.route)) {
         const points = route.geometry.points.map((p) => [p[0], p[1]] as Point)
-        setMeasure({ points, route: route.label ?? route.pageTitle ?? '' })
+        setMeasure({ points, route: route.label ?? route.pageTitle ?? '', routeId: route.id })
       } else {
         const point = snappedAt(event.clientX, event.clientY)
         setMeasure((now) => ({ points: now.route ? [point] : [...now.points, point], route: null }))
@@ -1487,6 +1490,10 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
           image={image}
           points={measured}
           route={measure.route}
+          routeId={measure.routeId ?? null}
+          worldId={page.worldId}
+          // Viajes de una campaña (8 · campaña): quien lleva el mundo, no quien lee como jugador
+          travel={editable && !readAs && measure.points.length >= 2}
           canCalibrate={editable && !readAs}
           onClear={() => chooseTool('select')}
           onCalibrate={() => {

@@ -4,8 +4,12 @@
  * dónde se pone)
  */
 import type { MapView } from '@crisol/contracts'
-import { Ruler, X } from 'lucide-react'
+import { Route, Ruler, X } from 'lucide-react'
+import { useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useWorldTodays } from '../../campaign-time/today-mark.tsx'
+import { TravelForm } from '../../campaign-time/travel.tsx'
+import { chipDate } from '../../campaign-time/words.ts'
 import type { Point } from './edit.ts'
 import type { Size } from './geometry.ts'
 import styles from './map.module.css'
@@ -18,6 +22,9 @@ export function MeasurePanel({
   image,
   points,
   route,
+  routeId = null,
+  worldId,
+  travel = false,
   canCalibrate,
   onClear,
   onCalibrate
@@ -28,6 +35,11 @@ export function MeasurePanel({
   points: readonly Point[]
   /** La ruta a lo largo de la que se mide, si es eso */
   route: string | null
+  /** La ruta dibujada que se mide (su elemento), para el viaje */
+  routeId?: string | null
+  worldId?: string
+  /** Si se puede hacer un viaje con lo medido (el máster, en el mapa del mundo) */
+  travel?: boolean
   canCalibrate: boolean
   onClear: () => void
   onCalibrate: () => void
@@ -80,8 +92,72 @@ export function MeasurePanel({
               )
             })}
           </ul>
+          {travel && worldId && <MeasureTravel worldId={worldId} tabId={map.tabId} points={points} routeId={routeId} />}
         </>
       )}
     </section>
+  )
+}
+
+/**
+ * El viaje desde lo medido (lienzo, pantalla 4; decisión 17): la campaña (las del mundo que llevas, con su «hoy»), el
+ * medio, el ritmo y el descanso; «Avanzar hoy» con la zona de destino
+ */
+function MeasureTravel({
+  worldId,
+  tabId,
+  points,
+  routeId
+}: {
+  worldId: string
+  tabId: string
+  points: readonly Point[]
+  routeId: string | null
+}) {
+  const { t } = useTranslation()
+  const id = useId()
+  const campaigns = useWorldTodays(worldId)
+  const [chosen, setChosen] = useState<string | null>(null)
+  const [done, setDone] = useState<string | null>(null)
+  const current = campaigns.find((c) => c.campaign.id === chosen) ?? campaigns[0]
+  if (!current) return null
+  return (
+    <div className={styles.travel}>
+      <div className={styles.travelHead}>
+        <Route aria-hidden="true" size={14} />
+        <h3>{t('campaignTime.travel')}</h3>
+        <label className={styles.srOnly} htmlFor={id}>
+          {t('campaignTime.campaign')}
+        </label>
+        <select
+          id={id}
+          className={styles.travelCampaign}
+          value={current.campaign.id}
+          onChange={(event) => {
+            setChosen(event.target.value)
+            setDone(null)
+          }}
+        >
+          {campaigns.map(({ campaign, today }) => (
+            <option key={campaign.id} value={campaign.id}>
+              {campaign.name} · {chipDate(today.text)}
+            </option>
+          ))}
+        </select>
+      </div>
+      {done ? (
+        <p className={styles.measureHint} role="status">
+          {t('campaignTime.movedText', { date: done })}
+        </p>
+      ) : (
+        <TravelForm
+          key={current.campaign.id}
+          campaignId={current.campaign.id}
+          source={{ kind: 'map', tabId, points, elementId: routeId }}
+          initialZone={current.zone}
+          onDone={(plan) => setDone(plan.arrival?.text ?? '')}
+        />
+      )}
+    </div>
   )
 }

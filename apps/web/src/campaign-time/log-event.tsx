@@ -10,11 +10,11 @@ import { Trans, useTranslation } from 'react-i18next'
 import log from '../dice/log.module.css'
 import styles from './log-event.module.css'
 import { WeatherIcon } from './weather-icon.tsx'
-
-/** «Lunden, 7 de Brumas de 1247 RV» → «Lunden, 7 de Brumas» */
-export const withoutYear = (text: string) => text.replace(/ de -?\d[\d.]*(\s.*)?$/, '')
+import { withoutYear } from './words.ts'
 
 const number = (value: number) => (Math.round(value * 10) / 10).toLocaleString('es')
+
+export { withoutYear }
 
 export function LogEventEntry({ entry, time, remove }: { entry: LogEvent; time: ReactNode; remove: ReactNode }) {
   const { t } = useTranslation()

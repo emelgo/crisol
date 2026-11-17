@@ -1,0 +1,14 @@
+/* La capa de clima: encima del mapa y de las fichas, debajo de lo que se pulsa, sin ratón */
+.layer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.layer canvas {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+}

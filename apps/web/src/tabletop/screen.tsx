@@ -37,6 +37,7 @@ import toolStyles from './tools.module.css'
 import { markShapes, measureLabels, measureShapes } from './tools.ts'
 import { useTableRenderer } from './use-renderer.ts'
 import { fitCanvas, pyramidOf } from './view.ts'
+import { WeatherLayer } from './weather-layer.tsx'
 import { WidgetCards } from './widgets.tsx'
 
 const LASER_COLOR = 0xff3b3b
@@ -439,6 +440,7 @@ export function TableScreen({
         onPointerUp={inMesa ? onPointerUp : undefined}
         onPointerCancel={inMesa ? onPointerUp : undefined}
       />
+      {!dark && <WeatherLayer layer={screen?.weather ?? null} />}
       {!dark && <MarksLayer layer={marksLayer} view={shownView} marks={marks} big />}
       {!dark && <Bubbles layer={bubblesLayer} bubbles={bubbles} />}
       {!dark && doors.length > 0 && (

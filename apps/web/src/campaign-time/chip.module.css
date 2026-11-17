@@ -1,0 +1,252 @@
+/* El chip del «hoy» en la Mesa: cristal como la barra de la escena, y su menú debajo */
+
+.root {
+  position: relative;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  max-inline-size: 100%;
+  min-block-size: 2.25rem;
+  padding: 0 0.6rem 0 0.7rem;
+  border: 1px solid var(--glass-edge);
+  border-radius: 10px;
+  background: var(--glass-sheen), var(--glass-tint);
+  box-shadow:
+    inset 0 1px 0 var(--glass-hi),
+    0 0 0 1px var(--glass-line),
+    var(--glass-shadow);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.875rem;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform 120ms ease-out;
+}
+
+.chip:hover {
+  transform: translateY(-1px);
+}
+
+.chip b {
+  font-weight: 700;
+}
+
+.temps {
+  color: var(--color-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.flag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding-inline-start: 0.5rem;
+  border-inline-start: 1px solid var(--line-frame);
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.menu {
+  position: absolute;
+  inset-block-start: calc(100% + 0.5rem);
+  inset-inline-start: 0;
+  z-index: 30;
+  inline-size: 23.5rem;
+  max-inline-size: calc(100vw - 6rem);
+  max-block-size: calc(100dvh - 9rem);
+  overflow-y: auto;
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--radius-frame);
+  background: var(--frame-sheen), var(--popup-glass);
+  -webkit-backdrop-filter: var(--popup-blur);
+  backdrop-filter: var(--popup-blur);
+  box-shadow: 0 1rem 2.5rem rgb(0 0 0 / 0.45);
+  scrollbar-width: thin;
+  animation: opens 150ms ease-out;
+}
+
+@keyframes opens {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+.head,
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: var(--space-3) var(--space-4);
+}
+
+.section {
+  border-block-start: 1px solid var(--line-soft);
+}
+
+.date {
+  margin: 0;
+  font: 800 1.25rem / 1.1 var(--font-display);
+  text-transform: uppercase;
+}
+
+.facts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.2rem 0.9rem;
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+}
+
+.facts ul {
+  margin: 0;
+}
+
+.line {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+}
+
+.line b {
+  color: var(--color-text);
+}
+
+.sun p {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-block-size: 2.25rem;
+  padding: 0 0.4rem;
+  border: 0;
+  border-radius: var(--radius-button);
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-align: start;
+  cursor: pointer;
+}
+
+.row:hover {
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+}
+
+.hint {
+  margin-inline-start: auto;
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+
+.modes {
+  inline-size: 100%;
+}
+
+.kinds {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.kinds label {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.45rem 0.2rem;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-button);
+  background: var(--field-fill);
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.kinds label[data-on] {
+  border-color: color-mix(in srgb, var(--color-h2) 75%, transparent);
+  background: color-mix(in srgb, var(--color-h2) 16%, var(--field-fill));
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.kinds label:has(input:focus-visible) {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 1px;
+}
+
+.kinds input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.slider {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1fr) 3rem;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+}
+
+.slider input {
+  inline-size: 100%;
+  accent-color: var(--color-accent);
+}
+
+.slider span {
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+
+.switchLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.list button {
+  inline-size: 100%;
+  padding: 0.35rem 0.4rem;
+  border: 0;
+  border-radius: var(--radius-button);
+  background: none;
+  color: var(--color-link);
+  font: inherit;
+  font-size: 0.875rem;
+  text-align: start;
+  cursor: pointer;
+}
+
+.list button:hover {
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+}

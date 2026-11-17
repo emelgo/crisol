@@ -8,6 +8,7 @@
  * láser; abajo en la columna, los widgets, la pantalla del máster y las instantáneas. Lo de la campaña llega por el
  * canal de la mesa; lo que se cambia, por la API
  */
+
 import type { Campaign, CampaignTableView, SceneView, SceneViewport, TokenView } from '@crisol/contracts'
 import {
   framingRect,
@@ -41,6 +42,7 @@ import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { CurrentCampaignContext } from '../campaign/current-campaign.ts'
+import { TodayChip } from '../campaign-time/today-chip.tsx'
 import { Backdrop } from '../components/backdrop.tsx'
 import { Loading } from '../components/brand.tsx'
 import { useDismiss } from '../components/dismiss.ts'
@@ -101,6 +103,7 @@ import {
   VisionMarkers
 } from './vision.tsx'
 import { AsGroupBanner, FogTools, VisionPanel } from './vision-panel.tsx'
+import { WeatherLayer } from './weather-layer.tsx'
 import { useWidgets, WidgetCards, WidgetsPanel } from './widgets.tsx'
 
 const route = getRouteApi('/mundos/$worldId/campanas/$campaignId/mesa')
@@ -1290,6 +1293,8 @@ function Stage({
           onPlace(placing, dropAt(worldAt(event), 1, grid, event.shiftKey))
         }}
       />
+      {/* La capa de clima (8 · campaña): la que manda el servidor (nada en una escena interior) */}
+      {scene && <WeatherLayer layer={table?.weather?.effective ?? null} />}
       {box && (
         <div
           className={styles.box}
@@ -1407,35 +1412,39 @@ function TopBar({
     // Sin escena no hay columna de herramientas: lo de arriba se pega al borde; al abrir una, su recuadro entra y
     // desplaza a los demás (Enrique, 2026-11-10)
     <div className={open ? styles.topBar : `${styles.topBar} ${styles.noTools}`} data-mesa-top="">
-      <div className={open ? `${styles.bar} ${styles.sceneBar}` : `${styles.bar} ${styles.sceneBar} ${styles.gone}`}>
-        {open && (
-          <>
-            <SceneMenu worldId={worldId} open={open} onOpen={onOpen} />
-            {live && <span className={`${styles.chip} ${styles.live}`}>{t('tabletop.live')}</span>}
-            {presented && table?.screenHidden && <span className={styles.chip}>{t('tabletop.dark')}</span>}
-            {showing && !live && <span className={styles.chip}>{t('tabletop.elsewhere')}</span>}
-            {table?.show && (
-              <span className={`${styles.chip} ${styles.live}`}>
-                {t('show.shownOnScreen', { title: table.show.title })}
-                <button
-                  type="button"
-                  className={styles.chipClose}
-                  aria-label={t('show.clearScreen')}
-                  title={t('show.clearScreen')}
-                  onClick={() =>
-                    onAct(() =>
-                      api
-                        .call('clearScreenShow', { campaignId })
-                        .then(() => api.call('getCampaignTable', { campaignId }))
-                    )
-                  }
-                >
-                  <X aria-hidden="true" size={12} />
-                </button>
-              </span>
-            )}
-          </>
-        )}
+      {/* La escena y, debajo, el «hoy» de la campaña con su menú (8 · campaña) */}
+      <div className={open ? styles.sceneColumn : `${styles.sceneColumn} ${styles.sceneColumnGone}`}>
+        <div className={open ? `${styles.bar} ${styles.sceneBar}` : `${styles.bar} ${styles.sceneBar} ${styles.gone}`}>
+          {open && (
+            <>
+              <SceneMenu worldId={worldId} open={open} onOpen={onOpen} />
+              {live && <span className={`${styles.chip} ${styles.live}`}>{t('tabletop.live')}</span>}
+              {presented && table?.screenHidden && <span className={styles.chip}>{t('tabletop.dark')}</span>}
+              {showing && !live && <span className={styles.chip}>{t('tabletop.elsewhere')}</span>}
+              {table?.show && (
+                <span className={`${styles.chip} ${styles.live}`}>
+                  {t('show.shownOnScreen', { title: table.show.title })}
+                  <button
+                    type="button"
+                    className={styles.chipClose}
+                    aria-label={t('show.clearScreen')}
+                    title={t('show.clearScreen')}
+                    onClick={() =>
+                      onAct(() =>
+                        api
+                          .call('clearScreenShow', { campaignId })
+                          .then(() => api.call('getCampaignTable', { campaignId }))
+                      )
+                    }
+                  >
+                    <X aria-hidden="true" size={12} />
+                  </button>
+                </span>
+              )}
+            </>
+          )}
+        </div>
+        {open && <TodayChip worldId={worldId} campaignId={campaignId} table={table} />}
       </div>
       <RoomBar
         campaignId={campaignId}

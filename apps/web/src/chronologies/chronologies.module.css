@@ -347,6 +347,62 @@
   block-size: 1px;
 }
 
+/* La línea «Hoy» de una campaña (8 · campaña): la píldora roja, su punto en la raya y la fecha sobre una raya roja */
+.todayRow {
+  display: grid;
+  grid-template-columns: 10rem 2rem minmax(0, 1fr);
+  align-items: center;
+  padding-block-end: var(--space-5);
+}
+
+.todayRow .when {
+  padding-block-start: 0;
+}
+
+.todayBadge {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--accent-glass);
+  color: var(--color-on-accent);
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  box-shadow: var(--glow-live, 0 0 12px rgb(220 60 50 / 0.45));
+}
+
+.todayDot {
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  inline-size: 0.8rem;
+  block-size: 0.8rem;
+  border: 2px solid color-mix(in srgb, var(--color-accent) 60%, transparent);
+  border-radius: 50%;
+  background: var(--color-accent);
+  transform: translate(-50%, -50%);
+}
+
+.todayLine {
+  margin: 0;
+  padding-block-end: 0.3rem;
+  border-block-end: 1px solid color-mix(in srgb, var(--color-accent) 70%, transparent);
+  color: #ff8f80;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.todayLine span {
+  color: color-mix(in srgb, #ff8f80 75%, var(--color-muted));
+  font-weight: 500;
+}
+
+/* Una cronología en una ventana de la Mesa: su propio desplazamiento */
+.inWindow {
+  block-size: 100%;
+  overflow: auto;
+}
+
 /* ---------- La tarjeta 6:1 ---------- */
 .eventCard {
   position: relative;
@@ -1824,4 +1880,9 @@
   .dayDetail {
     animation: none;
   }
+}
+
+/* Lo que aún no ha pasado (con el «hoy» de una campaña): la tarjeta, con la raya discontinua */
+.listRow[data-future] .eventCard {
+  border-style: dashed;
 }

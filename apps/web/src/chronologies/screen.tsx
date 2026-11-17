@@ -5,7 +5,8 @@
  * con «+» y las tres vistas; en Meses, el zoom abajo a la derecha. Vacía, una sola pieza discontinua «Añadir evento».
  * La jugadora la lee igual, sin «+», sin «⋯» y sin arrastrar; en el móvil, Lista y Calendario (Meses, desde 640 px)
  */
-import type { CalendarView, ChronologyEntryView, TimelineGroupView } from '@crisol/contracts'
+
+import type { CalendarView, CampaignDate, ChronologyEntryView, TimelineGroupView } from '@crisol/contracts'
 import { type DateValue, dateValueForm, type FullDate, shiftDate, type TimeZoom } from '@crisol/domain'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getRouteApi, Link, Navigate } from '@tanstack/react-router'
@@ -15,6 +16,7 @@ import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
+import { TodayOf, todayIn, useChosenToday } from '../campaign-time/today-mark.tsx'
 import { useAnnounce } from '../components/announcer.tsx'
 import { Loading } from '../components/brand.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
@@ -102,7 +104,7 @@ export function ChronologyScreen() {
     return failed(worlds) ? <LoadError error={worlds.error} onRetry={() => worlds.refetch()} /> : <Loading />
   const world = worlds.data.worlds.find((w) => w.id === worldId)
   return (
-    <Chronology
+    <WorldChronology
       worldId={worldId}
       chronologyId={chronologyId}
       organizationId={world?.organizationId}
@@ -113,6 +115,18 @@ export function ChronologyScreen() {
           <ChronologyBackText />
         </Link>
       }
+    />
+  )
+}
+
+/** La del mundo: con «Hoy de…» (las campañas del mundo con fecha) y su línea «Hoy» */
+function WorldChronology(props: Omit<Parameters<typeof Chronology>[0], 'today' | 'headTools'>) {
+  const chosen = useChosenToday(props.worldId)
+  return (
+    <Chronology
+      {...props}
+      today={chosen.current ? { date: chosen.current.today, campaign: chosen.current.campaign.name } : null}
+      headTools={<TodayOf options={chosen.options} value={chosen.chosen} onChange={chosen.choose} />}
     />
   )
 }
@@ -128,13 +142,22 @@ export function Chronology({
   chronologyId,
   organizationId,
   editable,
-  back
+  back,
+  today = null,
+  headTools = null,
+  tour = true
 }: {
   worldId: string
   chronologyId: string
   organizationId: string | undefined
   editable: boolean
   back: ReactNode
+  /** El «hoy» de una campaña (8 · campaña): su línea en la lista y «hace / dentro de N días» */
+  today?: { date: CampaignDate; campaign: string | null } | null
+  /** Lo que va en la cabecera antes de «Ir a…» («Hoy de…» en la del mundo) */
+  headTools?: ReactNode
+  /** Su tutorial guiado (no en una ventana de la Mesa) */
+  tour?: boolean
 }) {
   const { t } = useTranslation()
   const api = useApi()
@@ -224,6 +247,8 @@ export function Chronology({
     return failed(data) ? <LoadError error={data.error} onRetry={() => data.refetch()} /> : <Loading />
   const { chronology, calendar, groups, entries, outside } = data.data
   const definition = calendar.definition
+  const todayDay = today ? todayIn(calendars.data.calendars, calendar.id, today.date) : null
+  const mark = today && todayDay !== null ? { day: todayDay, text: today.date.text, campaign: today.campaign } : null
 
   /** Mover una entrada en el tiempo (arrastrarla): un evento, su fecha; una página, su campo de fecha */
   const move = (entry: ChronologyEntryView, unit: 'days' | 'months' | 'years', steps: number) => {
@@ -369,6 +394,7 @@ export function Chronology({
           {outside > 0 && <span> · {t('chronologies.outside', { count: outside })}</span>}
         </p>
         <div className={styles.headTools}>
+          {headTools}
           {!empty && <GoTo entries={entries} onPick={(key) => setFocusKey(key)} />}
           {editable && (
             <>
@@ -445,6 +471,7 @@ export function Chronology({
                 compact={narrow}
                 menuFor={menuFor}
                 onEdit={editable ? edit : undefined}
+                today={mark}
               />
             </FocusList>
           </div>
@@ -551,23 +578,25 @@ export function Chronology({
           onClose={() => setRedating(null)}
         />
       )}
-      <Tour
-        id={editable ? 'cronologia' : 'cronologia-jugadora'}
-        steps={
-          editable
-            ? [
-                { target: '[data-tour="cronologia-pildora"]', text: t('tour.chronology.pill') },
-                { target: '[data-tour="cronologia-ajustes"]', text: t('tour.chronology.settings') }
-              ]
-            : [
-                {
-                  target: narrow ? '[data-tour="cronologia-vistas"]' : '[data-tour="cronologia-pildora"]',
-                  text: t('tour.chronology.views')
-                },
-                { target: '[data-tour="cronologia-ir"]', text: t('tour.chronology.goTo') }
-              ]
-        }
-      />
+      {tour && (
+        <Tour
+          id={editable ? 'cronologia' : 'cronologia-jugadora'}
+          steps={
+            editable
+              ? [
+                  { target: '[data-tour="cronologia-pildora"]', text: t('tour.chronology.pill') },
+                  { target: '[data-tour="cronologia-ajustes"]', text: t('tour.chronology.settings') }
+                ]
+              : [
+                  {
+                    target: narrow ? '[data-tour="cronologia-vistas"]' : '[data-tour="cronologia-pildora"]',
+                    text: t('tour.chronology.views')
+                  },
+                  { target: '[data-tour="cronologia-ir"]', text: t('tour.chronology.goTo') }
+                ]
+          }
+        />
+      )}
     </div>
   )
 }

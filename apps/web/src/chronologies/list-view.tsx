@@ -5,9 +5,11 @@
  * entradas, lo que se ve y un poco más
  */
 import type { ChronologyEntryView, TimelineGroupView } from '@crisol/contracts'
-import type { CalendarDefinition } from '@crisol/domain'
+import { type CalendarDefinition, meanYearLength } from '@crisol/domain'
 import { type CSSProperties, type ReactNode, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { TodayMark } from '../campaign-time/today-mark.tsx'
+import { relativeDays } from '../campaign-time/words.ts'
 import styles from './chronologies.module.css'
 import { EventCard, entryColor } from './event-card.tsx'
 import { distanceText, shortDate } from './layout.ts'
@@ -22,7 +24,8 @@ export function ListView({
   groups,
   compact,
   menuFor,
-  onEdit
+  onEdit,
+  today = null
 }: {
   worldId: string
   definition: CalendarDefinition
@@ -33,6 +36,8 @@ export function ListView({
   menuFor?: ((entry: ChronologyEntryView) => ReactNode) | undefined
   /** Editar un evento (el máster): al pulsar su título o con doble clic */
   onEdit?: ((entry: ChronologyEntryView) => void) | undefined
+  /** El «hoy» de una campaña (8 · campaña): su línea y la distancia de cada entrada a él */
+  today?: TodayMark | null
 }) {
   const { t } = useTranslation()
   const [shown, setShown] = useState(STEP)
@@ -52,15 +57,36 @@ export function ListView({
     return () => observer.disconnect()
   }, [])
   const visible = entries.slice(0, shown)
+  const year = meanYearLength(definition)
+  // La línea «Hoy», antes de la primera que viene después
+  const todayAt = today ? entries.findIndex((entry) => entry.startDay > today.day) : -1
+  const todayIndex = today ? (todayAt < 0 ? entries.length : todayAt) : -1
+  const todayRow = today && (
+    <li key="hoy" className={styles.todayRow} aria-label={t('campaignTime.todayLine', { date: today.text })}>
+      <div className={styles.when}>
+        <span className={styles.todayBadge}>{t('campaignTime.today')}</span>
+      </div>
+      <div className={styles.rail} aria-hidden="true">
+        <span className={styles.todayDot} />
+      </div>
+      <p className={styles.todayLine}>
+        {today.text}
+        {today.campaign && <span> · {today.campaign}</span>}
+      </p>
+    </li>
+  )
   return (
     <ol className={styles.list} aria-label={t('chronologies.views.list')}>
       {visible.map((entry, index) => {
         const group = groupOf(entry.groupId)
-        const distance = distanceText(definition, entries[index - 1], entry)
-        return (
+        const distance = today
+          ? relativeDays(t, today.day, entry.startDay, year)
+          : distanceText(definition, entries[index - 1], entry)
+        const row = (
           <li
             key={entry.key}
             className={styles.listRow}
+            data-future={(today && entry.startDay > today.day) || undefined}
             style={{ '--entry-color': entryColor(entry, group) } as CSSProperties}
             onDoubleClick={
               onEdit && entry.kind === 'event'
@@ -88,7 +114,9 @@ export function ListView({
             />
           </li>
         )
+        return index === todayIndex ? [todayRow, row] : row
       })}
+      {todayIndex >= visible.length && todayIndex === entries.length && todayRow}
       {shown < entries.length && <li ref={sentinel} className={styles.sentinel} aria-hidden="true" />}
     </ol>
   )
