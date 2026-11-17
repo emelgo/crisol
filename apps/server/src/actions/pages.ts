@@ -27,6 +27,7 @@ import {
   tagCounts
 } from '@crisol/domain'
 import * as Y from 'yjs'
+import { separateName } from '../collab/server.ts'
 import { pagesChanged, templatesChanged } from '../realtime/events.ts'
 import { checkDates } from '../wiki/dates.ts'
 import { resolvePending, worldNames } from '../wiki/links.ts'
@@ -257,7 +258,9 @@ export const pageActions = [
       const source = await documentsRepo.findSeparate(ctx.db, copyOf)
       await authorizedPage(ctx, 'page.read', source?.pageId ?? '')
       if (!source) throw new NotFoundError('document')
-      state = source.state
+      // Lo de ahora: si alguien lo tiene abierto, lo vivo (lo guardado espera unos segundos a la última tecla)
+      const live = ctx.collab?.hocuspocus.documents.get(separateName(copyOf))
+      state = live ? Y.encodeStateAsUpdate(live) : source.state
     }
     // No va al historial: lo cuenta la sesión de edición del cuerpo, que es donde aparece el bloque
     const id = await documentsRepo.createSeparate(ctx.db, {
