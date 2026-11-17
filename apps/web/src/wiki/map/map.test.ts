@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { zoomedAt } from './map-tab.tsx'
-import { contrastInk, tipAnchored } from './pin-shape.tsx'
+import { contrastInk, shapeTransform, tipAnchored } from './pin-shape.tsx'
 
 describe('el visor del mapa', () => {
   it('acercar deja quieto el punto del cursor', () => {
@@ -19,18 +19,17 @@ describe('el visor del mapa', () => {
 })
 
 describe('los pines', () => {
-  it('la gota, la bandera y el banderín se clavan por la punta; el resto y los de solo icono, por el centro', () => {
-    expect([0, 1, 2, 3, 4, 5, 6, 7].map((shape) => tipAnchored({ shape, variant: 0 }))).toEqual([
-      true,
-      false,
-      false,
-      false,
-      false,
-      true,
-      false,
-      true
-    ])
+  it('todas las formas se clavan por la punta, abajo en el centro; los de solo icono, por el centro', () => {
+    expect([0, 1, 2, 3, 4, 5, 6, 7].map((shape) => tipAnchored({ shape, variant: 0 }))).toEqual(Array(8).fill(true))
     expect(tipAnchored({ shape: 0, variant: 2 })).toBe(false)
+  })
+
+  it('todas las formas, del mismo tamaño y con la base en el mismo sitio de su caja', () => {
+    // El círculo (18,4 de lado) crece hasta 21 y su base baja a 23,5; el rombo (20), igual
+    expect(shapeTransform(1)).toBe('translate(12 23.5) scale(1.141) translate(-12 -21.2)')
+    expect(shapeTransform(2)).toBe('translate(12 23.5) scale(1.05) translate(-12 -22)')
+    // El banderín, estrecho: manda su alto
+    expect(shapeTransform(7)).toBe('translate(12 23.5) scale(1.105) translate(-12 -21)')
   })
 
   it('el icono va en negro sobre los colores claros y en blanco sobre los oscuros', () => {

@@ -6,7 +6,7 @@ import { and, asc, count, eq, getTableColumns, inArray, isNull, sql } from 'driz
 import type { Database } from '../client.ts'
 import { type OperationContext, operation } from '../operation.ts'
 import { files } from '../schema/files.ts'
-import { mapElements, mapPins, maps, pageTabs } from '../schema/maps.ts'
+import { mapElements, mapLayers, mapPins, maps, pageTabs } from '../schema/maps.ts'
 import { pages } from '../schema/pages.ts'
 import { DEFAULT_SCENE_GRID, scenes } from '../schema/scenes.ts'
 import { randomTables } from '../schema/tables.ts'
@@ -15,6 +15,12 @@ import { removeSceneWith } from './scenes.ts'
 export type PageTabRow = typeof pageTabs.$inferSelect
 export type MapRow = typeof maps.$inferSelect
 export type MapPinRow = typeof mapPins.$inferSelect
+export type MapLayerRow = typeof mapLayers.$inferSelect
+export type MapElementRow = typeof mapElements.$inferSelect
+type ElementValues = Omit<
+  typeof mapElements.$inferInsert,
+  'id' | 'version' | 'createdBy' | 'updatedBy' | 'createdAt' | 'updatedAt'
+>
 type PinValues = Omit<
   typeof mapPins.$inferInsert,
   'id' | 'version' | 'createdBy' | 'updatedBy' | 'createdAt' | 'updatedAt'
@@ -90,6 +96,8 @@ export function deleteTab(db: Database, context: OperationContext, tabId: string
         .from(mapElements)
         .where(eq(mapElements.mapId, map.id))
       for (const element of elements) await w.remove(mapElements, element.id)
+      const layers = await w.read.select({ id: mapLayers.id }).from(mapLayers).where(eq(mapLayers.mapId, map.id))
+      for (const layer of layers) await w.remove(mapLayers, layer.id)
       await w.remove(maps, map.id)
     }
     // Su tabla aleatoria, al historial: deshacer la devuelve con sus filas
@@ -126,7 +134,7 @@ export function updateMap(
   db: Database,
   context: OperationContext,
   mapId: string,
-  patch: Partial<Pick<MapRow, 'fileId' | 'width' | 'height' | 'scaleLength' | 'scaleValue' | 'scaleUnit'>>
+  patch: Partial<Pick<MapRow, 'fileId' | 'width' | 'height' | 'scaleLength' | 'scaleValue' | 'scaleUnit' | 'speeds'>>
 ) {
   return operation(db, context, (w) => w.update(maps, mapId, patch))
 }
@@ -174,4 +182,92 @@ export function pagesInWorld(db: Database, worldId: string, ids: readonly string
     .select({ id: pages.id, title: pages.title })
     .from(pages)
     .where(and(eq(pages.worldId, worldId), inArray(pages.id, [...ids]), isNull(pages.deletedAt)))
+}
+
+/** Las capas de un mapa, de abajo arriba (y por id, si dos claves coinciden) */
+export function listLayers(db: Database, mapId: string) {
+  return db
+    .select()
+    .from(mapLayers)
+    .where(eq(mapLayers.mapId, mapId))
+    .orderBy(sql`${mapLayers.position} collate "C"`, asc(mapLayers.id))
+}
+
+export async function findLayer(db: Database, layerId: string) {
+  const [found] = await db.select().from(mapLayers).where(eq(mapLayers.id, layerId))
+  return found ?? null
+}
+
+export function createLayer(
+  db: Database,
+  context: OperationContext,
+  values: { worldId: string; mapId: string; name: string; position: string; hidden?: boolean }
+) {
+  return operation(db, context, (w) => w.insert(mapLayers, values))
+}
+
+export function updateLayer(
+  db: Database,
+  context: OperationContext,
+  layerId: string,
+  patch: Partial<Pick<MapLayerRow, 'name' | 'hidden' | 'position'>>
+) {
+  return operation(db, context, (w) => w.update(mapLayers, layerId, patch))
+}
+
+/** Quita la capa con lo dibujado en ella, en la misma operación (deshacer lo devuelve todo) */
+export function deleteLayer(db: Database, context: OperationContext, layerId: string) {
+  return operation(db, context, async (w) => {
+    const elements = await w.read
+      .select({ id: mapElements.id })
+      .from(mapElements)
+      .where(eq(mapElements.layerId, layerId))
+    for (const element of elements) await w.remove(mapElements, element.id)
+    await w.remove(mapLayers, layerId)
+  })
+}
+
+/** Lo dibujado en un mapa, de abajo arriba dentro de cada capa, con el título de su página si sigue viva */
+export function listElements(db: Database, mapId: string) {
+  return db
+    .select({ ...getTableColumns(mapElements), pageTitle: pages.title })
+    .from(mapElements)
+    .leftJoin(pages, and(eq(pages.id, mapElements.pageId), isNull(pages.deletedAt)))
+    .where(eq(mapElements.mapId, mapId))
+    .orderBy(sql`${mapElements.position} collate "C"`, asc(mapElements.createdAt), asc(mapElements.id))
+}
+
+export async function findElement(db: Database, elementId: string) {
+  const [found] = await db
+    .select({ ...getTableColumns(mapElements), pageTitle: pages.title })
+    .from(mapElements)
+    .leftJoin(pages, and(eq(pages.id, mapElements.pageId), isNull(pages.deletedAt)))
+    .where(eq(mapElements.id, elementId))
+  return found ?? null
+}
+
+/** Cuántos elementos tiene un mapa (para su tope) y la clave del de más arriba (para poner otro encima) */
+export async function elementStats(db: Database, mapId: string) {
+  const [row] = await db
+    .select({ n: count(), last: sql<string | null>`max(${mapElements.position} collate "C")` })
+    .from(mapElements)
+    .where(eq(mapElements.mapId, mapId))
+  return { count: row?.n ?? 0, last: row?.last || null }
+}
+
+export function createElement(db: Database, context: OperationContext, values: ElementValues) {
+  return operation(db, context, (w) => w.insert(mapElements, values))
+}
+
+export function updateElement(
+  db: Database,
+  context: OperationContext,
+  elementId: string,
+  patch: Partial<Omit<ElementValues, 'worldId' | 'mapId' | 'kind'>>
+) {
+  return operation(db, context, (w) => w.update(mapElements, elementId, patch))
+}
+
+export function deleteElement(db: Database, context: OperationContext, elementId: string) {
+  return operation(db, context, (w) => w.remove(mapElements, elementId))
 }

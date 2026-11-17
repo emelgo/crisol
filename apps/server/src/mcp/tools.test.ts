@@ -4,7 +4,7 @@ import { fronteras } from '@crisol/systems/fixtures'
 import { describe, expect, it } from 'vitest'
 import { UI_ONLY } from '../actions/ai.ts'
 import { InvalidRequestError } from '../actions/context.ts'
-import { errorText } from './approvals.ts'
+import { errorText, success } from './approvals.ts'
 import { INSTRUCTIONS, MCP_TOOLS, type McpTool, routeCall, toolActions, toolConfig, toolWords } from './tools.ts'
 
 describe('herramientas MCP', () => {
@@ -20,15 +20,19 @@ describe('herramientas MCP', () => {
       'abrir_escena',
       'abrir_puerta',
       'acabar_combate',
+      'actividad_campana',
       'aplicar_tirada',
       'asignar_ficha',
+      'borrar_calendario',
       'borrar_capitulo',
       'borrar_carpeta_actores',
       'borrar_carpeta_plantillas',
       'borrar_contenido',
+      'borrar_cronologia',
       'borrar_encuentro',
       'borrar_escena',
       'borrar_etiqueta',
+      'borrar_evento',
       'borrar_instantanea',
       'borrar_libro',
       'borrar_mensaje',
@@ -43,12 +47,20 @@ describe('herramientas MCP', () => {
       'buscar_libros',
       'buscar_paginas',
       'camara_pantalla',
+      'cambiar_calendario',
       'cambiar_campana',
+      'cambiar_capa',
       'cambiar_carpeta_plantillas',
+      'cambiar_clima',
+      'cambiar_cronologia',
+      'cambiar_dibujo',
       'cambiar_escena',
       'cambiar_etiqueta',
+      'cambiar_evento',
+      'cambiar_fecha',
       'cambiar_ficha',
       'cambiar_grupo',
+      'cambiar_grupos_eventos',
       'cambiar_libro',
       'cambiar_lista_sonido',
       'cambiar_mapa',
@@ -59,6 +71,7 @@ describe('herramientas MCP', () => {
       'cambiar_personaje',
       'cambiar_pestana',
       'cambiar_pin',
+      'cambiar_pizarra',
       'cambiar_plantilla',
       'cambiar_sistema',
       'cambiar_sonido_escena',
@@ -67,12 +80,17 @@ describe('herramientas MCP', () => {
       'capitulos_libro',
       'compendio_campana',
       'controles_sala',
+      'convertir_en_pagina',
       'copiar_contenido',
+      'crear_calendario',
       'crear_campana',
+      'crear_capa',
       'crear_carpeta_actores',
       'crear_carpeta_plantillas',
+      'crear_cronologia',
       'crear_escena',
       'crear_etiqueta',
+      'crear_eventos',
       'crear_libro',
       'crear_lista_sonido',
       'crear_mundo',
@@ -84,7 +102,9 @@ describe('herramientas MCP', () => {
       'crear_widget',
       'dejar_editar',
       'dejar_volver',
+      'describir_fecha',
       'deshacer',
+      'dibujar_en_mapa',
       'dibujar_escena',
       'duplicar_pagina',
       'echar_de_la_mesa',
@@ -101,13 +121,16 @@ describe('herramientas MCP', () => {
       'escribir_nota',
       'etiquetar_archivo',
       'etiquetar_archivos',
+      'fecha_de_hoy',
       'fichas_en_plantilla',
       'formato_sistemas',
+      'grafo_mundo',
       'guardar_capitulo',
       'guardar_contenido',
       'guardar_encuentro',
       'guardar_instantanea',
       'imagen_escena',
+      'imagen_mapa',
       'leer_capitulo',
       'leer_compendio',
       'leer_contenido',
@@ -115,6 +138,8 @@ describe('herramientas MCP', () => {
       'leer_nota',
       'leer_pagina',
       'listar_archivos',
+      'listar_calendarios',
+      'listar_cronologias',
       'listar_etiquetas',
       'listar_iconos',
       'listar_mundos',
@@ -124,6 +149,7 @@ describe('herramientas MCP', () => {
       'lo_que_sabe',
       'marcar_conocimiento',
       'medir',
+      'medir_mapa',
       'meter_en_combate',
       'monedas_grupo',
       'mover_a_carpeta',
@@ -146,6 +172,7 @@ describe('herramientas MCP', () => {
       'partida_criatura',
       'partida_personaje',
       'pendientes',
+      'planear_viaje',
       'poner_en_juego',
       'poner_encuentro',
       'poner_fichas',
@@ -159,13 +186,16 @@ describe('herramientas MCP', () => {
       'probar_tirada',
       'proponer_contenido',
       'quien_conoce',
+      'quitar_capa',
       'quitar_de_juego',
       'quitar_de_la_vista',
+      'quitar_dibujo',
       'quitar_fichas',
       'quitar_pin',
       'quitar_sonido_escena',
       'reiniciar_tabla',
       'reiniciar_tabla_compendio',
+      'relaciones_pagina',
       'renombrar_carpeta_actores',
       'renombrar_escena',
       'restaurar_personaje',
@@ -187,12 +217,15 @@ describe('herramientas MCP', () => {
       'ver_a_la_vista',
       'ver_arbol',
       'ver_biblioteca',
+      'ver_calendario',
       'ver_campana',
       'ver_carpetas_actores',
+      'ver_clima',
       'ver_combate',
       'ver_como_grupo',
       'ver_como_jugador',
       'ver_criatura',
+      'ver_cronologia',
       'ver_en_juego',
       'ver_encuentros',
       'ver_escena',
@@ -209,6 +242,7 @@ describe('herramientas MCP', () => {
       'ver_pendientes',
       'ver_personaje',
       'ver_pestanas',
+      'ver_pizarra',
       'ver_plantilla',
       'ver_registro',
       'ver_sala',
@@ -247,6 +281,65 @@ describe('herramientas MCP', () => {
         expect(actions.has(word), word).toBe(false)
   })
 
+  it('dibujar_en_mapa: los píxeles de la imagen que vio, a 0–1, simplificados y pegando a lo cercano', () => {
+    const tool = MCP_TOOLS.dibujar_en_mapa as McpTool
+    const mapId = crypto.randomUUID()
+    const { impl, input } = routeCall(tool, {
+      mapId,
+      kind: 'region',
+      label: 'Reino de Varn',
+      view: { width: 1600, height: 1000 },
+      geometry: {
+        pieces: [
+          [
+            [160, 100],
+            [800, 100],
+            [800, 500],
+            [480, 500],
+            [160, 500]
+          ]
+        ]
+      }
+    })
+    expect(impl.action.name).toBe('createMapElement')
+    expect(input).toMatchObject({
+      mapId,
+      label: 'Reino de Varn',
+      snap: true,
+      geometry: {
+        pieces: [
+          [
+            [0.1, 0.1],
+            [0.5, 0.1],
+            [0.5, 0.5],
+            [0.1, 0.5]
+          ]
+        ]
+      }
+    })
+    // cambiar_dibujo sin forma no la toca (ni pega nada)
+    const redraw = routeCall(MCP_TOOLS.cambiar_dibujo as McpTool, { elementId: mapId, label: 'Varn' })
+    expect(redraw.input).toEqual({ elementId: mapId, label: 'Varn' })
+  })
+
+  it('una imagen en lo que contesta (imagen_mapa) va como imagen, y en lo demás sin sus datos', () => {
+    const result = success({
+      width: 2,
+      height: 1,
+      image: { mimeType: 'image/png', data: 'aGVsbG8=' },
+      note: 'Mide 2 × 1'
+    })
+    expect(result.content[0]).toEqual({ type: 'image', data: 'aGVsbG8=', mimeType: 'image/png' })
+    expect(result.structuredContent).toEqual({
+      width: 2,
+      height: 1,
+      image: { mimeType: 'image/png' },
+      note: 'Mide 2 × 1'
+    })
+    expect(JSON.stringify(result.content[1])).not.toContain('aGVsbG8=')
+    expect(success({ a: 1 }).content).toEqual([{ type: 'text', text: '{\n  "a": 1\n}' }])
+  })
+
   it('la IA no puede aprobar lo suyo ni cambiar su modo: no hay herramienta para eso', () => {
     for (const tool of Object.values(MCP_TOOLS)) {
       for (const impl of toolActions(tool)) expect(UI_ONLY.has(impl.action.name)).toBe(false)
@@ -275,6 +368,42 @@ describe('herramientas MCP', () => {
     expect(route('open')).toEqual(['setInvitationsOpen', 'players', { campaignId, open: true }])
     expect(route('close')).toEqual(['setInvitationsOpen', 'players', { campaignId, open: false }])
     expect(() => route('borrar')).toThrow()
+  })
+
+  it('cambiar_clima: un día a mano, la zona y la latitud o la capa de la Mesa; planear_viaje: con advance, viajar', () => {
+    const { cambiar_clima, planear_viaje } = MCP_TOOLS
+    if (!cambiar_clima || !planear_viaje) throw new Error('faltan herramientas del clima')
+    const campaignId = crypto.randomUUID()
+    const route = (tool: McpTool, input: Record<string, unknown>) => {
+      const { impl, input: given } = routeCall(tool, input)
+      return [impl.action.name, given]
+    }
+    const snow = { condition: 'snow', low: -4, high: 0, wind: 'gale', windDirection: 'N' }
+    expect(route(cambiar_clima, { campaignId, weather: snow })).toEqual([
+      'setDayWeather',
+      { campaignId, weather: snow }
+    ])
+    expect(route(cambiar_clima, { campaignId, date: '1250-Siega-18', weather: null })).toEqual([
+      'setDayWeather',
+      { campaignId, weather: null, date: '1250-Siega-18' }
+    ])
+    expect(route(cambiar_clima, { campaignId, zone: 'polar' })).toEqual([
+      'setCampaignClimate',
+      { campaignId, zone: 'polar' }
+    ])
+    expect(route(cambiar_clima, { campaignId, layer: { mode: 'none' } })).toEqual([
+      'setWeatherLayer',
+      { campaignId, layer: { mode: 'none' } }
+    ])
+    expect(() => route(cambiar_clima, { campaignId })).toThrow()
+    const [planned, plan] = route(planear_viaje, { campaignId, distance: 90, medium: 'horse', zone: 'coast' })
+    expect(planned).toBe('planTravel')
+    expect(plan).toMatchObject({ campaignId, distance: 90, medium: 'horse' })
+    expect(plan).not.toHaveProperty('zone')
+    const [done, travelled] = route(planear_viaje, { campaignId, distance: 90, advance: true, zone: 'coast' })
+    expect([done, travelled]).toMatchObject(['travel', { campaignId, distance: 90, zone: 'coast' }])
+    expect(travelled).not.toHaveProperty('advance')
+    expect(MCP_TOOLS.fecha_de_hoy && toolConfig(MCP_TOOLS.fecha_de_hoy)).toHaveProperty('outputSchema')
   })
 
   it('niebla: destapar o tapar una zona, o reiniciarla (las dos, de las que ven los jugadores)', () => {

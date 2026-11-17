@@ -392,7 +392,8 @@ function useFit(container: HTMLElement | null, width: number) {
     if (!container || typeof ResizeObserver === 'undefined') return
     const observer = new ResizeObserver(([entry]) => {
       const room = entry?.contentRect.width ?? width
-      setFit({ scale: Math.min(MAX_SCALE, Math.max(0.4, room / width)), room })
+      // Nunca por debajo de la letra de la hoja (12 pt): más estrecho, va seguido (tight)
+      setFit({ scale: Math.min(MAX_SCALE, Math.max(1, room / width)), room })
     })
     observer.observe(container)
     return () => observer.disconnect()
@@ -436,7 +437,11 @@ export function PagedSheet({
   const { scale, room } = useFit(frame, contentWidth(settings ?? DEFAULT_GEOMETRY))
   // Lo que sobra a cada lado de la hoja centrada: las rayas de salto llegan hasta ahí
   const bleed = Math.max(0, (room - contentWidth(settings ?? DEFAULT_GEOMETRY) * scale) / 2)
-  const paged = Boolean(settings) && !narrow
+  // Una columna más estrecha que el texto de la hoja (1200 px con el panel abierto): la letra no baja de la de siempre
+  // (Enrique, 2026-11-16: «sale diminuta»); el texto va seguido, a lo ancho de la columna, sin páginas (como en el
+  // móvil)
+  const tight = room < contentWidth(settings ?? DEFAULT_GEOMETRY)
+  const paged = Boolean(settings) && !narrow && !tight
 
   useEffect(() => {
     const query = window.matchMedia?.(NARROW)
@@ -519,7 +524,15 @@ export function PagedSheet({
     }
   }, [editor, paged, settings, ready, scale, bleed, t])
 
-  if (!paged || !settings) return <>{children}</>
+  if (!settings || narrow) return <>{children}</>
+  // Seguido, pero midiendo la columna: si se ensancha (se pliega el panel), vuelven las páginas
+  if (!paged) {
+    return (
+      <div ref={setFrame} className={styles.flow}>
+        {children}
+      </div>
+    )
+  }
   const g = geometry(settings, scale)
   // Debajo, sitio para la línea de más
   const height = layout.height + 32 * scale

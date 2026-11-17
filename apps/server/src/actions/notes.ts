@@ -16,6 +16,7 @@ import {
 } from '@crisol/contracts'
 import { campaignsRepo, knowledgeRepo, membersRepo, notesRepo, pagesRepo } from '@crisol/db'
 import { can, ForbiddenError, foldName, type NamedPage, NotFoundError, reservedList, resolveName } from '@crisol/domain'
+import { activityChanged } from '../realtime/events.ts'
 import { propertiesOf } from '../wiki/properties.ts'
 import { viewFor } from '../wiki/reader.ts'
 import { authorizedCampaign } from './access.ts'
@@ -162,6 +163,8 @@ export const noteActions = [
       icon: input.icon,
       markdown: input.markdown
     })
+    // Al máster, en su centro de actividad
+    ctx.realtime.publish(activityChanged(targetOf(campaign), true))
     return { note: await present(ctx, campaign, note) }
   }),
 
@@ -178,6 +181,7 @@ export const noteActions = [
         version,
         patch
       )
+      ctx.realtime.publish(activityChanged(targetOf(campaign), true))
       return { note: await present(ctx, campaign, updated) }
     } catch (error) {
       if (error instanceof notesRepo.NoteChangedError)

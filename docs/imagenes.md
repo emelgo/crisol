@@ -654,3 +654,15 @@ Una para cada pantalla de Inicio que puede estar vacía. La del libro y el criso
 > luz del farol que se pierde en la penumbra. Es una ilustración pequeña y aislada, sin escenario detrás: todo agrupado
 > en el centro, visto un poco desde arriba, y los bordes del dibujo se deshacen en pinceladas sueltas hacia la
 > transparencia, sin rectángulo ni sombra de fondo. Sin texto, letras, firmas ni marcas de agua.
+
+**vacio-calendarios · Calendarios, sin ninguno** (módulo 8, ya en la app)
+
+> Haz una imagen cuadrada de 1024 × 1024 píxeles, en PNG con fondo transparente: una pintura digital de fantasía épica
+> estilizada, como el arte de un videojuego de fantasía de estilo pintado: formas simplificadas, grandes masas de color,
+> pinceladas amplias y seguras, poco detalle menudo, luz cálida de atardecer o de fuego contra sombras violetas y
+> azuladas, y una paleta armoniosa de violeta pizarra, naranja y ámbar, verde pino apagado y algún toque granate; nada
+> realista ni fotográfico. Un astrolabio de latón junto a un almanaque cerrado con cintas de colores, dos pequeñas lunas
+> de cristal (una plateada y otra cobriza) sobre un soporte y una vela encendida. Es una ilustración pequeña y aislada,
+> sin escenario detrás: todo agrupado en el centro, visto un poco desde arriba, y los bordes del dibujo se deshacen en
+> pinceladas sueltas hacia la transparencia, sin rectángulo ni sombra de fondo. Sin texto, letras, firmas ni marcas de
+> agua.

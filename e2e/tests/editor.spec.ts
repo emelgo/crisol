@@ -36,6 +36,8 @@ test('lo escrito se guarda solo y sigue al recargar, con sus bloques', async ({ 
 })
 
 test('dos pestañas convergen; sin conexión se sigue escribiendo y llega al volver', async ({ page, context }) => {
+  // Con la máquina cargada rozaba los 30 s (de 22 a 32 en las baterías enteras): con el margen de las demás largas
+  test.slow()
   const url = await openPage(page)
   const other = await context.newPage()
   // La red de la otra pestaña, a mano: sin red, su WebSocket de la edición se corta y no vuelve a conectar

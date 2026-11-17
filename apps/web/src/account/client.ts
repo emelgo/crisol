@@ -59,8 +59,8 @@ export interface AccountClient {
     lastName: string
     diceColor?: string | null
   }): Promise<Result>
-  /** Las preferencias de los dados: si ver caer los de los demás */
-  updateDice(dice: { diceOthers: boolean }): Promise<Result>
+  /** Las preferencias de los dados: su color (null: automático) y si ver caer los de los demás */
+  updateDice(dice: { diceOthers?: boolean; diceColor?: string | null }): Promise<Result>
   /** Con la actual; cierra las demás sesiones */
   changePassword(current: string, next: string): Promise<Result>
   bootstrapInfo(secret: string): Promise<{ organizationName: string } | null>

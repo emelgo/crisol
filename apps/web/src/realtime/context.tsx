@@ -29,11 +29,15 @@ const NoticesContext = createContext<{
 export function queriesFor(message: RealtimeMessage): QueryKey[] {
   // Las tiradas llegan enteras (ADR-0010) y no son del historial: no hay nada que volver a pedir
   // El registro de la partida no es del historial: solo se vuelve a pedir él
-  if (message.type === 'logged' || message.type === 'unlogged') return [['log', message.campaignId]]
-  return message.type === 'hello' ||
-    message.type === 'rolled' ||
-    message.type === 'shown' ||
-    message.type === 'shownImage'
+  // Lo nuevo del registro y cada tirada cuentan en el centro de actividad (su insignia, 8 · campaña)
+  if (message.type === 'logged')
+    return [
+      ['log', message.campaignId],
+      ['activity', message.campaignId]
+    ]
+  if (message.type === 'unlogged') return [['log', message.campaignId]]
+  if (message.type === 'rolled') return [['activity', message.campaignId]]
+  return message.type === 'hello' || message.type === 'shown' || message.type === 'shownImage'
     ? []
     : [...changedBy(message), ['history'], ['trash']]
 }
@@ -80,11 +84,20 @@ function changedBy(message: RealtimeMessage): QueryKey[] {
       // Una campaña: su tarjeta y lo que se ve de su compendio (los tipos que oculta a sus jugadores)
       if (message.what === 'campaigns') return [['campaigns', message.worldId], ['campaign'], ['compendium']]
       // Lo que lleva etiquetas cambia también su catálogo
-      if (message.what === 'pages') return [['pages', message.worldId], ['tags']]
+      if (message.what === 'pages') return [['pages', message.worldId], ['tags'], ['chronology']]
       // Lo que sabe una campaña (ADR-0017): todo lo de las páginas del mundo se vuelve a pedir, ya proyectado
       if (message.what === 'knowledge')
-        return [['pages', message.worldId], message.campaignId ? ['compendium', message.campaignId] : ['compendium']]
+        return [
+          ['pages', message.worldId],
+          message.campaignId ? ['compendium', message.campaignId] : ['compendium'],
+          ['chronologies', message.worldId],
+          ['chronology']
+        ]
       if (message.what === 'files') return [['files', message.worldId], ['tags']]
+      // Los calendarios del mundo (módulo 8): la lista y el abierto
+      if (message.what === 'calendars') return [['calendars', message.worldId], ['calendar'], ['chronology']]
+      // Las cronologías del mundo (módulo 8): la lista y la abierta
+      if (message.what === 'chronologies') return [['chronologies', message.worldId], ['chronology']]
       // Los comunes salen en los archivos de todos los mundos
       if (message.what === 'commonFiles') return [['files'], ['commonFiles'], ['tags']]
       if (message.what === 'tags') return [['tags']]
@@ -115,8 +128,11 @@ function changedBy(message: RealtimeMessage): QueryKey[] {
     // Lo revelado: lo de las páginas del mundo (su árbol, lo nuevo) se vuelve a pedir
     case 'revealed':
       return [
+        ['activity', message.campaignId],
         ['pages', message.worldId],
-        ['compendium', message.campaignId]
+        ['compendium', message.campaignId],
+        ['chronologies', message.worldId],
+        ['chronology']
       ]
     case 'joined':
       return [

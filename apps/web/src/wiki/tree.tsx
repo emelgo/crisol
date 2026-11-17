@@ -1,8 +1,8 @@
 import type { PageSummary } from '@crisol/contracts'
-import { useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { BookCopy, Eye, FileText, House } from 'lucide-react'
+import { BookCopy, Eye, EyeOff, FileText, House } from 'lucide-react'
 import { type CSSProperties, type DragEvent, type KeyboardEvent, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
@@ -19,6 +19,7 @@ import {
 } from '../components/tree/moves.ts'
 import { TemplateIcon } from '../templates/icons.tsx'
 import { useTemplates } from '../templates/picker.tsx'
+import { PAGE_DRAG } from './board/drag.ts'
 import styles from './tree.module.css'
 import { TreeMenu } from './tree-menu.tsx'
 
@@ -72,7 +73,7 @@ export function PageTree({ worldId, currentId, path, onNavigate }: Props) {
   const [drop, setDrop] = useState<{ id: string; zone: Zone; level?: number } | null>(null)
   const dragged = useRef<string | null>(null)
   const dragStartX = useRef(0)
-  const [menu, setMenu] = useState<{ page: PageSummary; x: number; y: number } | null>(null)
+  const [menu, setMenu] = useState<{ page: PageSummary; x: number; y: number; reveal?: boolean } | null>(null)
   const items = useRef(new Map<string, HTMLAnchorElement>())
   const pendingFocus = useRef(false)
   const scroller = useRef<HTMLDivElement>(null)
@@ -100,13 +101,27 @@ export function PageTree({ worldId, currentId, path, onNavigate }: Props) {
     queryKey: ['pages', worldId, 'home'],
     queryFn: () => api.call('getWorldHome', { worldId })
   }).data?.pageId
-  // Las que conoce alguna campaña (ADR-0017): un ojo gris al lado, para quien lleva la wiki
+  // Las que conoce alguna campaña (ADR-0017): su ojo al lado, siempre a la vista; en las demás, al pasar por la fila.
+  // Pulsarlo la revela o la esconde (como en Everlore; Enrique, 2026-11-16): con una sola campaña, al momento; con
+  // varias, el menú de la página con «Revelar a…» desplegado. Con el teclado, desde ese menú
   const known = new Set(
     useQuery({
       queryKey: ['pages', worldId, 'known'],
       queryFn: () => api.call('listKnownPages', { worldId })
     }).data?.pageIds ?? []
   )
+  const campaigns = useQuery({
+    queryKey: ['campaigns', worldId],
+    queryFn: () => api.call('listCampaigns', { worldId })
+  }).data?.campaigns
+  const reveal = useMutation({
+    mutationFn: (input: { pageId: string; campaignId: string; known: boolean }) =>
+      api.call('setKnowledge', { worldId, kind: 'page', targetId: input.pageId, ...input }),
+    onSuccess: (_result, input) => {
+      void queryClient.invalidateQueries({ queryKey: ['pages', worldId, 'known'] })
+      void queryClient.invalidateQueries({ queryKey: ['pages', worldId, 'knowledge', input.pageId] })
+    }
+  })
   const childrenOf = new Map(
     parents.map((parentId, i) => {
       const pages = lists[i]?.data?.pages
@@ -353,8 +368,10 @@ export function PageTree({ worldId, currentId, path, onNavigate }: Props) {
         onDragStart={(event) => {
           dragged.current = page.id
           dragStartX.current = event.clientX
-          event.dataTransfer.effectAllowed = 'move'
+          // Mover en el árbol, o poner su tarjeta en una pizarra
+          event.dataTransfer.effectAllowed = 'copyMove'
           event.dataTransfer.setData('text/plain', page.title)
+          event.dataTransfer.setData(PAGE_DRAG, page.id)
         }}
         onDragEnd={() => {
           dragged.current = null
@@ -405,7 +422,28 @@ export function PageTree({ worldId, currentId, path, onNavigate }: Props) {
         </span>
         {/* La portada del mundo, con su casa a la derecha (como en LegendKeeper) */}
         {page.id === homeId && <House aria-hidden="true" size={15} className={styles.home} />}
-        {known.has(page.id) && <Eye aria-label={t('whoKnows.known')} role="img" size={13} className={styles.known} />}
+        {/* Con el ratón (dentro de un enlace no cabe un botón); con el teclado, «Revelar a…» del menú de la página */}
+        {campaigns && campaigns.length > 0 && (
+          <span
+            aria-hidden="true"
+            className={styles.known}
+            data-known={known.has(page.id) || undefined}
+            title={t(known.has(page.id) ? 'whoKnows.known' : 'treeMenu.reveal')}
+            onClick={(event) => {
+              event.preventDefault()
+              event.stopPropagation()
+              const only = campaigns.length === 1 ? campaigns[0] : undefined
+              if (only) reveal.mutate({ pageId: page.id, campaignId: only.id, known: !known.has(page.id) })
+              else {
+                const box = event.currentTarget.getBoundingClientRect()
+                setMenu({ page, x: box.left, y: box.bottom, reveal: true })
+              }
+            }}
+          >
+            {known.has(page.id) ? <Eye size={13} /> : <EyeOff size={13} />}
+          </span>
+        )}
+        {known.has(page.id) && <span className={styles.hidden}>{t('whoKnows.known')}</span>}
       </Link>
     )
   }
@@ -447,6 +485,7 @@ export function PageTree({ worldId, currentId, path, onNavigate }: Props) {
           at={{ x: menu.x, y: menu.y }}
           isHome={menu.page.id === homeId}
           openPath={(path ?? []).map((p) => p.id)}
+          startReveal={menu.reveal ?? false}
           onClose={(returnFocus) => {
             const id = menu.page.id
             setMenu(null)

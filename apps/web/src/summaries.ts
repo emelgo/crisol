@@ -189,7 +189,7 @@ export function summaryOf(
     case 'setKnowledge': {
       const kind = text(details.kind)
       const what = t(
-        `knowledgeTargets.${['page', 'secret', 'tab', 'pin', 'element', 'content'].includes(kind) ? kind : 'page'}` as 'knowledgeTargets.page',
+        `knowledgeTargets.${['page', 'secret', 'tab', 'pin', 'element', 'content', 'event', 'chronology'].includes(kind) ? kind : 'page'}` as 'knowledgeTargets.page',
         {
           name: text(details.name)
         }
@@ -310,7 +310,56 @@ export function summaryOf(
         ? say('renamePageTab', { from: text(details.from), to: text(details.to), title: text(details.title) })
         : say('updatePageTab', { name: text(details.name), title: text(details.title) })
     case 'updateMap':
-      return say(details.image ? 'setMapImage' : 'updateMap', { name: text(details.name), title: text(details.title) })
+      return say(details.image ? 'setMapImage' : details.speeds && !details.scale ? 'setMapSpeeds' : 'updateMap', {
+        name: text(details.name),
+        title: text(details.title)
+      })
+    // Los calendarios del mundo (módulo 8)
+    case 'createCalendar':
+    case 'deleteCalendar':
+      return say(action, { name: text(details.name) })
+    case 'updateCalendar':
+      if (details.from !== undefined) return say('renameCalendar', { from: text(details.from), to: text(details.to) })
+      if (details.primary) return say('primaryCalendar', { name: text(details.name) })
+      if (details.moved) return say('moveCalendar', { name: text(details.name) })
+      return say('updateCalendar', { name: text(details.name) })
+    // Las cronologías del mundo y sus eventos (módulo 8)
+    case 'createChronology':
+    case 'deleteChronology':
+      return say(action, { name: text(details.name) })
+    case 'updateChronology':
+      if (details.from !== undefined) return say('renameChronology', { from: text(details.from), to: text(details.to) })
+      if (details.moved) return say('moveChronology', { name: text(details.name) })
+      return say('updateChronology', { name: text(details.name) })
+    case 'updateTimelineGroups':
+      return say('updateTimelineGroups')
+    case 'createTimelineEvents': {
+      const titles = Array.isArray(details.titles) ? details.titles.map(text) : []
+      return Number(details.count ?? 0) === 1 && titles[0]
+        ? say('createTimelineEvent', { title: titles[0] })
+        : say('createTimelineEvents', { count: Number(details.count ?? titles.length) })
+    }
+    case 'updateTimelineEvent':
+    case 'deleteTimelineEvent':
+    case 'convertEventToPage':
+      return say(action, { title: text(details.title) })
+    // Las capas del mapa y lo dibujado en él (módulo 9)
+    case 'createMapLayer':
+    case 'deleteMapLayer':
+      return say(action, { layer: text(details.layer), map: text(details.map), title: text(details.title) })
+    case 'updateMapLayer':
+      return details.from !== undefined
+        ? say('renameMapLayer', { from: text(details.from), to: text(details.to), map: text(details.map) })
+        : say('updateMapLayer', { layer: text(details.layer), map: text(details.map) })
+    case 'createMapElement':
+    case 'updateMapElement':
+    case 'deleteMapElement': {
+      const kind = details.kind === 'path' || details.kind === 'label' ? details.kind : 'region'
+      const name = text(details.element)
+      const what = name ? t(`map.element.${kind}`, { name }) : t(`map.element.${kind}Untitled`)
+      const key = action === 'updateMapElement' && details.reshaped ? 'reshapeMapElement' : action
+      return say(key, { what, map: text(details.map), title: text(details.title) })
+    }
     case 'createMapPin':
     case 'updateMapPin':
     case 'deleteMapPin': {
@@ -320,7 +369,24 @@ export function summaryOf(
     }
     // Las escenas de la mesa y la mesa de cada campaña (docs/specs/escenas.md)
     case 'updateScene':
+      if (details.interior !== undefined && !details.view && !details.grid)
+        return say(details.interior ? 'sceneInterior' : 'sceneOutdoor', sceneOf(details))
       return say(details.view && !details.grid ? 'sceneView' : 'sceneGrid', sceneOf(details))
+    // El tiempo de la campaña (8 · campaña): el hoy, los viajes, la zona, el clima a mano y la pantalla del máster
+    case 'setCampaignToday':
+      return say('setCampaignToday', { campaign: text(details.campaign), to: text(details.to) })
+    case 'travel':
+      return say('travel', {
+        campaign: text(details.campaign),
+        to: text(details.to),
+        count: Number(details.days ?? 0)
+      })
+    case 'setCampaignClimate':
+      return say('setCampaignClimate', { campaign: text(details.campaign) })
+    case 'setDayWeather':
+      return say('setDayWeather', { campaign: text(details.campaign), date: text(details.date) })
+    case 'setGmScreen':
+      return say('setGmScreen', { campaign: text(details.campaign), name: text(details.name) })
     case 'setSceneImage':
     case 'drawScene':
       return say(action, sceneOf(details))

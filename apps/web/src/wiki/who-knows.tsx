@@ -6,7 +6,7 @@
 import type { Page, PageKnowledge } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
-import { Eye, EyeOff, Globe, Shield, Users, X } from 'lucide-react'
+import { Eye, EyeOff, Shield, Users, X } from 'lucide-react'
 import { useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
@@ -89,7 +89,6 @@ function WhoKnows({ page, onClose }: { page: Page; onClose: () => void }) {
       </div>
       {known.data && (
         <>
-          <WorldRow page={page} knowledge={known.data} />
           {known.data.campaigns.map((row) => (
             <CampaignLine key={row.campaignId} page={page} row={row} />
           ))}
@@ -100,8 +99,17 @@ function WhoKnows({ page, onClose }: { page: Page; onClose: () => void }) {
   )
 }
 
-/** Poner o quitar una marca de la página, y volver a pedir lo que ve cada campaña */
-function useMark(page: Page) {
+/** Lo que sabe cada campaña de un pin, de algo dibujado o de una pestaña (su ojo) */
+export const itemKnowledgeKey = (worldId: string, targetId: string) => ['pages', worldId, 'item-knowledge', targetId]
+
+/** Lo que se marca que no es una página: un pin, algo dibujado en un mapa, una pestaña, un evento o una cronología */
+export type MarkTarget = { kind: 'pin' | 'element' | 'tab' | 'event' | 'chronology'; targetId: string }
+
+/**
+ * Marcar o quitar lo que sabe una campaña de una página (también desde el árbol) o, con `target`, de un pin, de algo
+ * dibujado o de una pestaña (su ojo); después, vuelve a pedir lo que ve cada campaña
+ */
+export function useMark(page: Pick<Page, 'id' | 'worldId'>, target?: MarkTarget) {
   const api = useApi()
   const queryClient = useQueryClient()
   const announce = useAnnounce()
@@ -110,15 +118,16 @@ function useMark(page: Page) {
     mutationFn: (input: { campaignId: string | null; known: boolean | null; characters?: string[] | null }) =>
       api.call('setKnowledge', {
         worldId: page.worldId,
-        kind: 'page',
-        targetId: page.id,
+        kind: target?.kind ?? 'page',
+        targetId: target?.targetId ?? page.id,
         campaignId: input.campaignId,
         known: input.known,
         ...(input.characters ? { characters: input.characters } : {})
       }),
     onSuccess: (result) => {
       if (result.page) queryClient.setQueryData(knowledgeKey(page.worldId, page.id), result.page)
-      void queryClient.invalidateQueries({ queryKey: ['pages', page.worldId, 'known'] })
+      if (target) void queryClient.invalidateQueries({ queryKey: itemKnowledgeKey(page.worldId, target.targetId) })
+      else void queryClient.invalidateQueries({ queryKey: ['pages', page.worldId, 'known'] })
     },
     onError: (error) => announce(errorText(error))
   })
@@ -134,41 +143,6 @@ function Source({ from, pageId }: { from: CampaignRow['from']; pageId: string })
     <span className={styles.why}>
       {from.layer === 'world' ? t('whoKnows.byWorld') : t('whoKnows.by', { title: from.title })}
     </span>
-  )
-}
-
-function WorldRow({ page, knowledge }: { page: Page; knowledge: PageKnowledge }) {
-  const { t } = useTranslation()
-  const mark = useMark(page)
-  const value = knowledge.world.own === null ? 'inherit' : knowledge.world.own ? 'all' : 'none'
-  return (
-    <section className={styles.row} aria-label={t('whoKnows.world')}>
-      <div className={styles.rowHead}>
-        <Globe aria-hidden="true" size={15} />
-        <span className={styles.name}>{t('whoKnows.world')}</span>
-        <select
-          className={styles.select}
-          aria-label={t('whoKnows.worldChoice')}
-          value={value}
-          disabled={mark.isPending}
-          onChange={(event) =>
-            mark.mutate({
-              campaignId: null,
-              known: event.target.value === 'inherit' ? null : event.target.value === 'all'
-            })
-          }
-        >
-          <option value="inherit">{t('whoKnows.asParent')}</option>
-          <option value="all">{t('whoKnows.everyone')}</option>
-          <option value="none">{t('whoKnows.nobody')}</option>
-        </select>
-      </div>
-      <p className={styles.state} data-known={knowledge.world.known || undefined}>
-        {knowledge.world.known ? <Eye aria-hidden="true" size={13} /> : <EyeOff aria-hidden="true" size={13} />}
-        <span>{t(knowledge.world.known ? 'whoKnows.everyone' : 'whoKnows.nobody')}</span>
-        <Source from={knowledge.world.from} pageId={page.id} />
-      </p>
-    </section>
   )
 }
 
@@ -210,7 +184,8 @@ function CampaignLine({ page, row }: { page: Page; row: CampaignRow }) {
             mark.mutate({ campaignId: row.campaignId, known: next === 'inherit' ? null : next === 'all' })
           }}
         >
-          <option value="inherit">{t(row.knowsWorld ? 'whoKnows.asWorld' : 'whoKnows.asParent')}</option>
+          {/* Solo por campaña: el mundo entero no se revela (Enrique, 2026-11-16) */}
+          <option value="inherit">{t('whoKnows.asParent')}</option>
           <option value="all">{t('whoKnows.campaignAll')}</option>
           <option value="some" disabled={row.characters.length === 0}>
             {t('whoKnows.campaignSome')}

@@ -1,7 +1,20 @@
-import type { Page, PageTabView } from '@crisol/contracts'
+import type { Page, PageTabView, RelationMode } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getRouteApi, Link, Navigate, useNavigate, useRouter } from '@tanstack/react-router'
-import { Ellipsis, FileText, House, LayoutTemplate, ListFilter, Lock, LockOpen, Plus, Printer } from 'lucide-react'
+import {
+  Ellipsis,
+  FileText,
+  House,
+  LayoutTemplate,
+  ListFilter,
+  Lock,
+  LockOpen,
+  PanelRightClose,
+  PanelRightOpen,
+  Plus,
+  Printer,
+  Waypoints
+} from 'lucide-react'
 import {
   type CSSProperties,
   type ReactNode,
@@ -10,6 +23,7 @@ import {
   useEffect,
   useId,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState
 } from 'react'
@@ -26,10 +40,15 @@ import { failed, LoadError } from '../components/load-error.tsx'
 import { Menu, MenuItem } from '../components/menu.tsx'
 import { headingMayTakeFocus, PageTitle, useHeadingFocusRequest } from '../components/page-title.tsx'
 import { itemTransition } from '../components/world-transition.ts'
+import { useRelationModes } from '../relations/queries.ts'
+import { RelationsTab } from '../relations/relations-tab.tsx'
 import { WorldBanner } from '../routes/world-card.tsx'
 import { TemplateIcon } from '../templates/icons.tsx'
 import { useTemplates } from '../templates/picker.tsx'
-import { Backlinks } from './backlinks.tsx'
+import { Backlinks, pageLinksKey } from './backlinks.tsx'
+import { BoardTab } from './board/board-tab.tsx'
+import { useChartEditing } from './chart/chart-editing.ts'
+import { ChartEditor } from './chart/chart-editor.tsx'
 import { CollabSocket } from './collab.tsx'
 import { CoverButton, PageCoverImage } from './cover.tsx'
 import { PageBody } from './editor.tsx'
@@ -43,16 +62,18 @@ import { useWikiPanel } from './panel.tsx'
 import panelStyles from './panel-blocks.module.css'
 import { PanelBlocks } from './panel-blocks.tsx'
 import { PageProperties, type PropertyAdder } from './properties.tsx'
-import { QuickSwitcher } from './quick-switcher.tsx'
+import { readAsInput, readAsKey, useReadAs } from './read-as.tsx'
 import { PageRevealButton } from './reveal.tsx'
 import { SceneMain, SceneSide, SceneTabProvider } from './scene/scene-tab.tsx'
 import { PrintDialog, SheetPaper } from './sheet/controls.tsx'
 import { TableTab } from './table/table-tab.tsx'
-import { PageTabs, usePageTabs, useTabTarget } from './tabs/page-tabs.tsx'
+import { PageTabs, RELATIONS_TAB, usePageTabs, useTabTarget } from './tabs/page-tabs.tsx'
 import { PageTree } from './tree.tsx'
 import { Versions } from './versions.tsx'
 import { WhoKnowsButton } from './who-knows.tsx'
 import styles from './wiki.module.css'
+import pageStyles from './world-page.module.css'
+import { TabToolsSlot, useRememberedPanel, useWorldPage, WorldPageContext, type WorldPageValue } from './world-page.ts'
 import { WorldTour } from './world-tour.tsx'
 
 const homeRoute = getRouteApi('/mundos/$worldId/wiki')
@@ -60,7 +81,6 @@ const pageRoute = getRouteApi('/mundos/$worldId/wiki/$pageId')
 
 export const pageKey = (worldId: string, pageId: string) => ['pages', worldId, 'page', pageId]
 
-/** Crea una página (o una subpágina) con el título provisional y la abre para ponerle nombre */
 /**
  * La wiki de un mundo: el árbol a un lado y la página al otro. En el móvil, el árbol va en un cajón que se abre con
  * «Páginas». Solo para quien administra el mundo (hasta el módulo 5)
@@ -77,7 +97,7 @@ export function WikiLayout({
   const { t } = useTranslation()
   const api = useApi()
   const { account, pending } = useAccounts().useAccount()
-  const { panel, open, close } = useWikiPanel()
+  const { panel, open, show, close } = useWikiPanel()
   const closeButton = useRef<HTMLButtonElement>(null)
   // Al abrir el cajón (en lo estrecho), el foco entra en él; al cerrarlo, vuelve al botón de la barra que lo abrió
   useEffect(() => {
@@ -98,10 +118,30 @@ export function WikiLayout({
     enabled: Boolean(account)
   })
   const world = worlds.data?.worlds.find((w) => w.id === worldId && w.role === 'master')
-  // Detrás de todo el mundo, su portada, muy difuminada (sin portada, la de ambiente)
-  useAmbient(world?.cover ? `/api/files/${world.cover.fileId}` : null)
+  // Detrás, los fondos de Crisol, que se van turnando (Enrique, 2026-11-13: «en la wiki no hace falta tener la portada
+  // de fondo»)
+  useAmbient(null)
   const root = useRef<HTMLDivElement>(null)
   useSideTop(root, Boolean(world))
+  // Un solo buscador, el de la ficha del árbol (Enrique, 2026-11-16): Ctrl+K lo enfoca (en lo estrecho, abriendo su
+  // cajón); antes que nadie, que la pizarra no se lo quede para sus enlaces
+  useEffect(() => {
+    const listen = (event: KeyboardEvent) => {
+      if (!(event.ctrlKey || event.metaKey) || event.altKey || event.key.toLowerCase() !== 'k') return
+      event.preventDefault()
+      event.stopPropagation()
+      const from = document.activeElement instanceof HTMLElement ? document.activeElement : null
+      if (!open) show('pages', from)
+      requestAnimationFrame(() =>
+        root.current?.querySelector<HTMLInputElement>('[data-tour="buscador"] input')?.focus()
+      )
+    }
+    window.addEventListener('keydown', listen, true)
+    return () => window.removeEventListener('keydown', listen, true)
+  }, [open, show])
+  // La página del mundo, como la de Everlore: su panel se pliega desde su cabecera y se recuerda
+  const [panelFolded, setPanelFolded] = useRememberedPanel()
+  const worldPage = useMemo<WorldPageValue>(() => ({ panelFolded, setPanelFolded }), [panelFolded, setPanelFolded])
 
   if (pending) return null
   if (!account) return <Navigate to="/entrar" replace />
@@ -121,7 +161,7 @@ export function WikiLayout({
     <WorldWindows worldId={worldId}>
       <NewPageContext.Provider value={requestNewPage}>
         <WorldTour master />
-        <div ref={root} className={styles.wiki}>
+        <div ref={root} className={`${styles.wiki} ${pageStyles.wiki}`} data-world-page="">
           <aside
             id={asideId}
             className={styles.aside}
@@ -134,6 +174,19 @@ export function WikiLayout({
             <div className={styles.asideHeader}>
               {/* Lo de la vista elegida en la barra: el mundo (sus páginas), las plantillas o los archivos */}
               <h2 id={headingId}>{world.name}</h2>
+              {panel === 'pages' && (
+                // El grafo de todo el mundo (módulo 10), sin añadir nada a la barra del mundo
+                <Link
+                  to="/mundos/$worldId/relaciones"
+                  params={{ worldId }}
+                  className={styles.newPageIcon}
+                  aria-label={t('relations.world.open')}
+                  title={t('relations.world.open')}
+                  data-tour="relaciones-mundo"
+                >
+                  <Waypoints aria-hidden="true" size={15} />
+                </Link>
+              )}
               {panel === 'pages' && <ExportWiki worldId={worldId} className={styles.newPageIcon} />}
               {panel === 'pages' && (
                 <button
@@ -196,10 +249,11 @@ export function WikiLayout({
               </>
             )}
           </aside>
-          <QuickSwitcher worldId={worldId} onCreatePage={() => requestNewPage(null)} />
           <div className={styles.content}>
             <OpenTabs worldId={worldId} current={current} />
-            <CollabSocket>{children(world)}</CollabSocket>
+            <WorldPageContext value={worldPage}>
+              <CollabSocket>{children(world)}</CollabSocket>
+            </WorldPageContext>
           </div>
           {creating && (
             <NewPageDialog
@@ -397,7 +451,9 @@ function PageHead({
   startEditing,
   home = false,
   template,
-  actions
+  actions,
+  band,
+  tabs
 }: {
   page: Page
   startEditing: boolean
@@ -406,6 +462,13 @@ function PageHead({
   /** La página de una plantilla (su id): «Plantilla» junto al título, y su icono y su nombre viajan desde su tarjeta */
   template?: string | undefined
   actions: ReactNode
+  /** En un mundo, la portada: una franja baja detrás del título y sus botones (Enrique, 2026-11-16) */
+  band?: ReactNode
+  /**
+   * En un mundo, las pestañas de la página (con las herramientas de la abierta), dentro de la
+   * cabecera: al bajar, la cabecera se queda arriba en una barra pequeña con el título y ellas (Enrique, 2026-11-16)
+   */
+  tabs?: ReactNode
 }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -419,18 +482,58 @@ function PageHead({
   }
   // Pegada y pequeña en cuanto lo de encima de ella se va de la vista
   const sentinel = useRef<HTMLDivElement>(null)
+  const header = useRef<HTMLElement>(null)
   const [compact, setCompact] = useState(false)
+  // En un mundo, el título, las pestañas y los botones van de un sitio al otro con movimiento (Enrique, 2026-11-16:
+  // «suave, sin saltos»): dónde estaban justo antes de cambiar
+  const before = useRef<DOMRect[] | null>(null)
+  const moves = Boolean(tabs)
   useEffect(() => {
     const element = sentinel.current
     if (!element || typeof IntersectionObserver === 'undefined') return
-    const observer = new IntersectionObserver(([entry]) => setCompact(!entry?.isIntersecting), { threshold: 0 })
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (moves && header.current) before.current = moving(header.current).map((c) => c.getBoundingClientRect())
+        setCompact(!entry?.isIntersecting)
+      },
+      { threshold: 0 }
+    )
     observer.observe(element)
     return () => observer.disconnect()
-  }, [])
+  }, [moves])
+  useLayoutEffect(() => {
+    const rects = before.current
+    before.current = null
+    if (!rects || !header.current || typeof Element.prototype.animate !== 'function') return
+    moving(header.current).forEach((child, i) => {
+      const from = rects[i]
+      const to = child.getBoundingClientRect()
+      if (!from || !to.width || !to.height) return
+      const dx = from.left - to.left
+      const dy = from.top - to.top
+      // El título cambia de tamaño: crece o encoge desde su esquina
+      const scale = i === 0 ? from.height / to.height : 1
+      if (Math.abs(dx) < 1 && Math.abs(dy) < 1 && Math.abs(scale - 1) < 0.01) return
+      child.animate(
+        [
+          { transform: `translate(${dx}px, ${dy}px) scale(${scale})`, transformOrigin: 'left top' },
+          { transform: 'none', transformOrigin: 'left top' }
+        ],
+        { duration: 260, easing: 'cubic-bezier(0.2, 0.7, 0.3, 1)' }
+      )
+    })
+  }, [compact])
+  useTitleFit(header, Boolean(tabs) && !compact, page.title)
   return (
     <>
-      <div ref={sentinel} aria-hidden="true" className={styles.sentinel} />
-      <header className={styles.entryHeader} data-compact={compact || undefined}>
+      <div ref={sentinel} aria-hidden="true" className={tabs ? pageStyles.sentinel : styles.sentinel} />
+      <header
+        ref={header}
+        className={tabs ? pageStyles.head : styles.entryHeader}
+        data-compact={compact || undefined}
+        data-page-head={tabs ? '' : undefined}
+      >
+        {band}
         <div className={styles.entryTitle}>
           <div className={styles.heading}>
             {page.icon && (
@@ -462,11 +565,57 @@ function PageHead({
             {page.locked && <span className={styles.locked}>{t('editor.locked')}</span>}
           </div>
         </div>
+        {tabs}
         <div className={styles.pageActions}>{actions}</div>
       </header>
     </>
   )
 }
+
+/** La letra del título en la franja: de la de siempre a esta, lo justo para que quepa entero */
+const TITLE_MIN = 16
+
+/**
+ * El título de la franja, entero (Enrique, 2026-11-16: «que se lea entero»): baja de línea y, si aun así no cabe en el
+ * alto de la franja (un título largo con la columna estrecha), su letra encoge lo justo, hasta TITLE_MIN. En la barra
+ * pegada, la suya (con «…»)
+ */
+function useTitleFit(header: RefObject<HTMLElement | null>, active: boolean, title: string) {
+  useLayoutEffect(() => {
+    const head = header.current
+    const heading = head?.querySelector<HTMLElement>('h1')
+    if (!head || !heading) return
+    if (!active) {
+      heading.style.removeProperty('font-size')
+      return
+    }
+    const band = head.querySelector<HTMLElement>('[data-band]')
+    const fit = () => {
+      heading.style.removeProperty('font-size')
+      // Su sitio: el alto de la franja, menos el margen de abajo del título y un poco de aire arriba
+      const room = (band?.clientHeight ?? 0) - 12 - 8
+      if (room <= 0) return
+      let size = Number.parseFloat(getComputedStyle(heading).fontSize)
+      while (heading.offsetHeight > room && size > TITLE_MIN) {
+        size -= 1
+        heading.style.fontSize = `${size}px`
+      }
+    }
+    fit()
+    if (typeof ResizeObserver === 'undefined') return
+    let width = head.clientWidth
+    const observer = new ResizeObserver(() => {
+      if (head.clientWidth === width) return
+      width = head.clientWidth
+      fit()
+    })
+    observer.observe(head)
+    return () => observer.disconnect()
+  }, [header, active, title])
+}
+
+/** Lo que se mueve al pegarse la cabecera: el título, las pestañas y los botones (no la portada, que se funde) */
+const moving = (header: HTMLElement) => [...header.children].filter((child) => !child.hasAttribute('data-band'))
 
 /** La plantilla con la que se hizo la página, junto a su título: lleva a ella. Si se borró, lo dice (y no lleva) */
 function TemplateBadge({ templateId }: { templateId: string }) {
@@ -761,7 +910,9 @@ function OpenPage({ page, nuevo, pestana }: { page: Page; nuevo: boolean; pestan
   const api = useApi()
   const tabs = usePageTabs(page)
   const all = tabs.data ?? []
-  const active = pestana ? (all.find((tab) => tab.id === pestana) ?? null) : null
+  // «Relaciones» no es una pestaña guardada: se calcula (módulo 10)
+  const relations = pestana === RELATIONS_TAB
+  const active = pestana && !relations ? (all.find((tab) => tab.id === pestana) ?? null) : null
   // La portada del mundo lleva su portada (la del mundo), como en su Inicio
   const home = useQuery({
     queryKey: ['pages', page.worldId, 'home'],
@@ -772,7 +923,7 @@ function OpenPage({ page, nuevo, pestana }: { page: Page; nuevo: boolean; pestan
   const isHome = home.data?.pageId === page.id
   const banner = isHome && look ? <WorldBanner world={look} /> : undefined
   // Una pestaña que ya no está (quitada, o de otra página): al texto, una vez al día la lista
-  if (pestana && tabs.data && !tabs.isFetching && !active) {
+  if (pestana && !relations && tabs.data && !tabs.isFetching && !active) {
     return (
       <Navigate
         to="/mundos/$worldId/wiki/$pageId"
@@ -782,7 +933,7 @@ function OpenPage({ page, nuevo, pestana }: { page: Page; nuevo: boolean; pestan
       />
     )
   }
-  if (pestana && !active) return null
+  if (pestana && !relations && !active) return null
   return (
     <EntryView
       // Cada página entra con su animación
@@ -791,6 +942,7 @@ function OpenPage({ page, nuevo, pestana }: { page: Page; nuevo: boolean; pestan
       nuevo={nuevo}
       tabs={all}
       active={active}
+      relations={relations}
       banner={banner}
       home={isHome}
     />
@@ -810,8 +962,9 @@ export interface TemplateMode {
 
 /**
  * Una página, como en Everlore: la cabecera, sus pestañas, lo de la elegida (el texto en una columna ancha, con su
- * hoja; un mapa, a todo lo ancho) y, a la derecha, el panel fijo a toda altura (sus propiedades, quién la menciona,
- * su índice y sus versiones), que se esconde con su botón. banner: en lugar de la portada (la cabecera del mundo)
+ * hoja; un mapa, a todo lo ancho) y, a la derecha, su panel (sus propiedades, quién la menciona y sus bloques). En un
+ * mundo (Enrique, 2026-11-16: como la de Everlore), la portada arriba en todas las pestañas, el texto sin caja, el mapa
+ * y la pizarra a sangre y el panel, que se pliega. banner: en lugar de la portada (la del mundo, en su portada)
  */
 export function EntryView({
   page,
@@ -820,105 +973,309 @@ export function EntryView({
   active = null,
   banner,
   home = false,
-  template
+  template,
+  relations = false
 }: {
   page: Page
   nuevo?: boolean
   tabs: PageTabView[]
   active?: PageTabView | null
+  /** La pestaña «Relaciones», abierta (módulo 10) */
+  relations?: boolean
   banner?: ReactNode
   home?: boolean
   template?: TemplateMode
 }) {
   const { t } = useTranslation()
+  const worldPage = useWorldPage()
   const main = useRef<HTMLElement>(null)
+  const column = useRef<HTMLDivElement>(null)
   // Añadir etiquetas o una propiedad desde «Añadir bloque» del panel: lo hace la ficha de propiedades
   const addProperty = useRef<PropertyAdder | null>(null)
-  /** La página: la cabecera, sus pestañas y lo de la elegida en medio; a la derecha, su panel (o el de la pestaña) */
-  const body = (content: ReactNode, side: ReactNode) => (
-    <div className={styles.entry} data-entry="" data-entry-panel="">
-      <article ref={main} className={styles.entryMain}>
-        <PageHead
-          key={page.id}
-          page={page}
-          startEditing={nuevo}
-          home={home}
-          template={template?.id}
-          actions={
-            template ? (
-              // Una plantilla no la conoce nadie ni se marca: el candado y «⋯», con lo suyo
-              <>
-                <LockButton page={page} />
-                <MoreActions page={page} items={template.more} />
-              </>
-            ) : (
-              <>
-                <WhoKnowsButton page={page} />
-                <PageRevealButton page={page} />
-                <BookmarkButton page={page} />
-                <LockButton page={page} />
-                <MoreActions page={page} />
-              </>
-            )
-          }
-        />
-        <PageTabs page={page} tabs={tabs} active={active?.id ?? null} />
-        {content}
-      </article>
-      <aside aria-label={t('wiki.pagePanel')} className={styles.entryPanel} data-tour="panel-bloques">
-        {side}
-      </aside>
+  // El mapa y la pizarra llenan todo el sitio, hasta el final de la ventana y de lado a lado de la hoja, como en
+  // LegendKeeper (Enrique, 2026-11-13: «no debe verse por abajo cómo termina el cuadrado»)
+  const fill = active?.kind === 'map' || active?.kind === 'board' || relations
+  // Junto a un mapa o una pizarra, un panel sin nada (sin enlaces, propiedades ni bloques) se pliega solo, para que lo
+  // tengan todo (Enrique, 2026-11-14); pulsar su botón lo abre igual
+  const api = useApi()
+  const readAs = useReadAs()
+  const links = useQuery({
+    queryKey: [...pageLinksKey(page.worldId, page.id), ...readAsKey(readAs)],
+    queryFn: () => api.call('getPageLinks', { pageId: page.id, ...readAsInput(readAs) }),
+    enabled: Boolean(worldPage) && fill
+  })
+  const emptyPanel =
+    page.panel.length === 0 &&
+    page.properties.length === 0 &&
+    links.data !== undefined &&
+    links.data.incoming.length === 0 &&
+    links.data.mentions.length === 0
+  // «Relaciones» sale si la página tiene alguna (en la página del mundo; no en una plantilla)
+  const relationModes = useRelationModes(page.worldId, page.id, Boolean(worldPage) && !template)
+  const [relationsMode, setRelationsMode] = useState<RelationMode | null>(null)
+  const pageTabs = (
+    <PageTabs
+      page={page}
+      tabs={tabs}
+      active={relations ? RELATIONS_TAB : (active?.id ?? null)}
+      relations={relations || relationModes.length > 0}
+    />
+  )
+  // En un mundo, donde pone la pestaña abierta sus herramientas (a la derecha de las pestañas)
+  const [tabTools, setTabTools] = useState<HTMLElement | null>(null)
+  // El panel de la derecha se pliega desde la cabecera de la página (Enrique, 2026-11-16)
+  const panelId = useId()
+  // En Familia y Organigrama, plegado (lienzo del módulo 10): las tarjetas necesitan el ancho
+  const panel = usePanelFold(
+    (fill && !template && emptyPanel) || (relations && (relationsMode === 'family' || relationsMode === 'org'))
+  )
+  // Dónde empieza la columna: las fichas de los lados, a su altura, y el mapa y la pizarra, del alto de lo que queda de
+  // la ventana (Enrique, 2026-11-16)
+  useColumnTop(column, Boolean(worldPage))
+  // La portada, a todo lo ancho (la del mundo en su portada; si no, la de la página o «Añadir portada»). En un mundo, una
+  // franja baja detrás del título (Enrique, 2026-11-16: «Portada detrás del título»)
+  const cover = (
+    <div
+      className={worldPage ? `${styles.entryBanner} ${pageStyles.cover}` : styles.entryBanner}
+      data-cover={banner || page.cover ? '' : undefined}
+      data-band={worldPage ? '' : undefined}
+    >
+      {banner ??
+        (page.cover ? (
+          <PageCoverImage page={page} />
+        ) : (
+          !page.locked && <CoverButton page={page} className={styles.addCover} label={t('cover.add')} />
+        ))}
     </div>
   )
+
+  const head = (
+    <PageHead
+      key={page.id}
+      page={page}
+      startEditing={nuevo}
+      home={home}
+      template={template?.id}
+      band={worldPage ? cover : undefined}
+      tabs={
+        worldPage ? (
+          <div className={pageStyles.tabsRow}>
+            {pageTabs}
+            <div ref={setTabTools} className={pageStyles.tabTools} />
+          </div>
+        ) : undefined
+      }
+      actions={
+        template ? (
+          // Una plantilla no la conoce nadie ni se marca: el candado y «⋯», con lo suyo
+          <>
+            <LockButton page={page} />
+            <MoreActions page={page} items={template.more} />
+          </>
+        ) : (
+          <>
+            <WhoKnowsButton page={page} />
+            <PageRevealButton page={page} />
+            <BookmarkButton page={page} />
+            <LockButton page={page} />
+            <MoreActions page={page} />
+            {worldPage && <PanelToggle folded={panel.folded} controls={panelId} onToggle={panel.toggle} />}
+          </>
+        )
+      }
+    />
+  )
+  // Lo de la pestaña elegida: el texto (o otra página de texto, con su propio documento), una tabla, una pizarra o un mapa
+  const content = relations ? (
+    <RelationsTab page={page} onMode={setRelationsMode} />
+  ) : active?.kind === 'scene' ? (
+    <SceneMain key={active.id} />
+  ) : active?.kind === 'text' ? (
+    <div className={styles.column}>
+      <SheetPaper page={page}>
+        <PageBody key={active.id} page={page} documentId={active.documentId} />
+      </SheetPaper>
+    </div>
+  ) : active?.kind === 'table' ? (
+    <TableTab key={active.id} page={page} tab={active} />
+  ) : active?.kind === 'board' ? (
+    <BoardTab key={active.id} page={page} tab={active} />
+  ) : active ? (
+    <MapTab key={active.id} page={page} tab={active} />
+  ) : (
+    <div className={styles.column}>
+      <SheetPaper page={page}>
+        <PageBody page={page} />
+      </SheetPaper>
+    </div>
+  )
+  // Mientras un gráfico del texto está elegido, su editor visual ocupa el sitio del panel (módulo 10)
+  const chartEditing = useChartEditing()
+  // A la derecha: la rejilla de una escena o, si no, «Mencionado en», las propiedades y los bloques (o lo de una plantilla)
+  const side = chartEditing ? (
+    <ChartEditor key={chartEditing.key} editing={chartEditing} />
+  ) : active?.kind === 'scene' ? (
+    <SceneSide />
+  ) : (
+    (template?.side ?? (
+      <>
+        {/* «Mencionado en», arriba (como en Everlore); después, las propiedades y los bloques */}
+        <Backlinks key={`enlaces-${page.id}`} page={page} />
+        {/* Las propiedades, a un lado (como los bloques del panel de Everlore): tras el retrato, si lo hay */}
+        <PanelBlocks
+          key={`bloques-${page.id}`}
+          page={page}
+          properties={<PageProperties key={page.id} page={page} adders={false} adderRef={addProperty} />}
+          onAddProperty={page.locked ? undefined : (kind) => addProperty.current?.(kind)}
+        />
+      </>
+    ))
+  )
+  if (worldPage) {
+    // El mismo esqueleto en todas las pestañas (Enrique, 2026-11-16, la mezcla con Everlore): la columna es una sola
+    // superficie de arriba abajo; arriba la portada en una franja baja con el título encima y sus botones, y debajo las
+    // pestañas (con las herramientas de la abierta), que se quedan arriba en pequeño al bajar el texto; después, el
+    // texto sin caja o el mapa o la pizarra a sangre, que caben en la ventana sin desplazar. A la derecha, el panel,
+    // que se pliega
+    return (
+      <SceneTabProvider page={page} tab={active?.kind === 'scene' ? active : null}>
+        <div className={styles.entry} data-entry="" data-entry-panel="" data-panel-folded={panel.folded || undefined}>
+          <div ref={column} className={pageStyles.page} data-page-column="" data-fill={fill || undefined}>
+            {head}
+            {fill ? (
+              <article ref={main} className={pageStyles.bleed} data-fill="" data-bleed="">
+                <TabToolsSlot value={tabTools}>{content}</TabToolsSlot>
+              </article>
+            ) : (
+              <article ref={main} className={pageStyles.sheet}>
+                {content}
+              </article>
+            )}
+          </div>
+          <PagePanel id={panelId} folded={panel.folded && !chartEditing}>
+            {side}
+          </PagePanel>
+        </div>
+      </SceneTabProvider>
+    )
+  }
   return (
     <>
-      {/* La portada, a todo lo ancho (la del mundo en su portada; si no, la de la página o «Añadir portada») */}
-      <div className={styles.entryBanner} data-cover={banner || page.cover ? '' : undefined}>
-        {banner ??
-          (page.cover ? (
-            <PageCoverImage page={page} />
-          ) : (
-            !page.locked && <CoverButton page={page} className={styles.addCover} label={t('cover.add')} />
-          ))}
-      </div>
+      {cover}
       {/* La escena: su mapa en medio y su rejilla en el sitio del panel de la página */}
       <SceneTabProvider page={page} tab={active?.kind === 'scene' ? active : null}>
-        {active?.kind === 'scene'
-          ? body(<SceneMain key={active.id} />, <SceneSide />)
-          : body(
-              active?.kind === 'text' ? (
-                // Otra página de texto: la misma hoja y el mismo editor, con su propio documento
-                <div className={styles.column}>
-                  <SheetPaper page={page}>
-                    <PageBody key={active.id} page={page} documentId={active.documentId} />
-                  </SheetPaper>
-                </div>
-              ) : active?.kind === 'table' ? (
-                <TableTab key={active.id} page={page} tab={active} />
-              ) : active ? (
-                <MapTab key={active.id} page={page} tab={active} />
-              ) : (
-                <div className={styles.column}>
-                  <SheetPaper page={page}>
-                    <PageBody page={page} />
-                  </SheetPaper>
-                </div>
-              ),
-              template?.side ?? (
-                <>
-                  {/* «Mencionado en», arriba (como en Everlore); después, las propiedades y los bloques */}
-                  <Backlinks key={`enlaces-${page.id}`} page={page} />
-                  {/* Las propiedades, a un lado (como los bloques del panel de Everlore): tras el retrato, si lo hay */}
-                  <PanelBlocks
-                    key={`bloques-${page.id}`}
-                    page={page}
-                    properties={<PageProperties key={page.id} page={page} adders={false} adderRef={addProperty} />}
-                    onAddProperty={page.locked ? undefined : (kind) => addProperty.current?.(kind)}
-                  />
-                </>
-              )
-            )}
+        <div className={styles.entry} data-entry="" data-entry-panel="">
+          <article ref={main} className={styles.entryMain} data-fill={fill ? '' : undefined}>
+            {head}
+            {pageTabs}
+            {content}
+          </article>
+          <aside aria-label={t('wiki.pagePanel')} className={styles.entryPanel} data-tour="panel-bloques">
+            {side}
+          </aside>
+        </div>
       </SceneTabProvider>
     </>
+  )
+}
+
+/**
+ * Si el panel de la página va plegado y cómo se pliega o se despliega (se recuerda en el aparato). autoFold: plegado sin
+ * que se haya pedido (un panel vacío junto a un mapa o una pizarra), hasta que se abra a mano
+ */
+function usePanelFold(autoFold: boolean) {
+  const worldPage = useWorldPage()
+  // Abierto a mano aunque esté vacío: hasta que deje de estarlo o se cambie de página
+  const [opened, setOpened] = useState(false)
+  useEffect(() => {
+    if (!autoFold) setOpened(false)
+  }, [autoFold])
+  const auto = autoFold && !opened
+  const folded = (worldPage?.panelFolded ?? false) || auto
+  const toggle = () => {
+    if (folded) {
+      if (worldPage?.panelFolded) worldPage.setPanelFolded(false)
+      if (auto) setOpened(true)
+    } else if (autoFold) setOpened(false)
+    else worldPage?.setPanelFolded(true)
+  }
+  return { folded, toggle }
+}
+
+/** El botón del panel, en la cabecera de la página (también en su barra pequeña al bajar) */
+function PanelToggle({ folded, controls, onToggle }: { folded: boolean; controls: string; onToggle: () => void }) {
+  const { t } = useTranslation()
+  const label = t(folded ? 'wiki.panelUnfold' : 'wiki.panelFold')
+  return (
+    <button
+      type="button"
+      className={pageStyles.panelToggle}
+      aria-label={label}
+      title={label}
+      aria-expanded={!folded}
+      aria-controls={controls}
+      onClick={onToggle}
+    >
+      {folded ? <PanelRightOpen aria-hidden="true" size={18} /> : <PanelRightClose aria-hidden="true" size={18} />}
+    </button>
+  )
+}
+
+/**
+ * Dónde empieza la columna de la página (bajo las pestañas abiertas): --page-top, para que un mapa o una pizarra midan
+ * lo que queda de la ventana sin desplazar, y --world-top en la wiki, para que la ficha del árbol y el panel empiecen
+ * a su misma altura (Enrique, 2026-11-16: «que esté alineada con las columnas y llegue hasta donde la columna»)
+ */
+function useColumnTop(column: RefObject<HTMLElement | null>, enabled: boolean) {
+  useLayoutEffect(() => {
+    const element = column.current
+    const wiki = element?.closest<HTMLElement>('[data-world-page]')
+    if (!enabled || !element || !wiki) return
+    const measure = () => {
+      const top = element.getBoundingClientRect().top
+      element.style.setProperty('--page-top', `${Math.round(top + window.scrollY)}px`)
+      wiki.style.setProperty('--world-top', `${Math.round(top - wiki.getBoundingClientRect().top)}px`)
+    }
+    measure()
+    window.addEventListener('resize', measure)
+    const resized = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure)
+    if (element.parentElement) resized?.observe(element.parentElement)
+    return () => {
+      window.removeEventListener('resize', measure)
+      resized?.disconnect()
+      element.style.removeProperty('--page-top')
+      wiki.style.removeProperty('--world-top')
+    }
+  }, [column, enabled])
+}
+
+/** Lo que tarda el panel en deslizarse (world-page.module.css, .wiki) */
+const PANEL_SLIDE_MS = 300
+
+/**
+ * El panel de la derecha de la página del mundo: se desliza fuera o dentro mientras el centro se ensancha, y su botón
+ * va en la cabecera de la página (Enrique, 2026-11-16). Plegado y ya fuera, no se pinta
+ */
+function PagePanel({ children, id, folded }: { children: ReactNode; id: string; folded: boolean }) {
+  const { t } = useTranslation()
+  // Plegándose, lo de dentro se queda hasta que acaba de irse; desplegándose, entra ya
+  const [present, setPresent] = useState(!folded)
+  useEffect(() => {
+    if (!folded) return setPresent(true)
+    const timer = setTimeout(() => setPresent(false), PANEL_SLIDE_MS)
+    return () => clearTimeout(timer)
+  }, [folded])
+  return (
+    <aside
+      id={id}
+      aria-label={t('wiki.pagePanel')}
+      className={`${styles.entryPanel} ${pageStyles.panel}`}
+      data-tour="panel-bloques"
+      data-folded={folded || undefined}
+      hidden={folded && !present}
+      inert={folded || undefined}
+    >
+      {present && children}
+    </aside>
   )
 }

@@ -66,6 +66,13 @@ main[data-contenido] {
   animation: fondo-llega 700ms ease-in-out both;
 }
 
+/* Entre pestañas el fondo no cambia: sin fundido, que alargaba la transición a 700 ms (y mientras dura, lo que se
+   pulsa espera: components/transition-clicks.ts) */
+:root:root:active-view-transition-type(seccion)::view-transition-old(ambiente),
+:root:root:active-view-transition-type(seccion)::view-transition-new(ambiente) {
+  animation-duration: 0s;
+}
+
 @keyframes fondo-se-va {
   to {
     opacity: 0;
@@ -78,17 +85,16 @@ main[data-contenido] {
   }
 }
 
-/* Los títulos, condensados y en mayúsculas; cada nivel con su color, como en el Crisol antiguo */
-h1,
-h2,
-h3 {
+/* Los títulos, condensados y en mayúsculas; cada nivel con su color, como en el Crisol antiguo (no los de Excalidraw,
+   en la pizarra: los de su panel son suyos) */
+:is(h1, h2, h3):where(:not(.excalidraw *)) {
   font-family: var(--font-display);
   line-height: 1.05;
   text-transform: uppercase;
   text-wrap: balance;
 }
 
-h1 {
+h1:where(:not(.excalidraw *)) {
   margin: 0 0 var(--space-8);
   overflow-wrap: break-word;
   font-size: clamp(2.5rem, 6vw, 3.75rem);
@@ -97,7 +103,7 @@ h1 {
 }
 
 /* Un h2 abre una sección: en su color y con una raya fina debajo */
-h2 {
+h2:where(:not(.excalidraw *)) {
   margin: var(--space-8) 0 var(--space-3);
   padding-block-end: var(--space-1);
   border-block-end: 1px solid color-mix(in srgb, var(--color-h2) 35%, transparent);
@@ -107,7 +113,7 @@ h2 {
   letter-spacing: 0.01em;
 }
 
-h3 {
+h3:where(:not(.excalidraw *)) {
   margin: var(--space-6) 0 var(--space-2);
   color: var(--color-h3);
   font-size: 1.5rem;
@@ -170,6 +176,17 @@ textarea {
   font: inherit;
 }
 
+/*
+ * Las opciones de los desplegables nativos, opacas y con los colores de donde están (en la app, oscuras; Enrique,
+ * 2026-11-16: «salen con las opciones en claro»): el navegador pinta la lista con el fondo del desplegable, que es de
+ * cristal (translúcido), y quedaba sobre blanco
+ */
+option,
+optgroup {
+  background-color: var(--color-raised);
+  color: var(--color-text);
+}
+
 /* El texto de ejemplo de los campos (los buscadores), atenuado pero legible: el gris del navegador no llegaba a 4,5:1 */
 ::placeholder {
   color: var(--color-muted);
@@ -201,34 +218,35 @@ h1[tabindex="-1"]:focus-visible {
   cursor: not-allowed;
 }
 
-/* Una sección con título es una caja de la hoja: marco de 1px con las esquinas cortadas */
-main section[aria-labelledby],
-dialog section[aria-labelledby] {
+/* Una sección con título es una caja de la hoja: marco de 1px con las esquinas redondeadas del cristal (no las de
+   Excalidraw, en la pizarra: su barra y su zoom son suyas; :where, para no ganar a lo de cada módulo) */
+main section[aria-labelledby]:where(:not(.excalidraw *)),
+dialog section[aria-labelledby]:where(:not(.excalidraw *)) {
   position: relative;
   isolation: isolate;
   margin-block: var(--space-6);
   padding: var(--space-4) var(--space-6) var(--space-6);
   /* De cristal sobre el fondo de ambiente; la raya, el ::before (como components/frame.module.css) */
   background: var(--frame-sheen), var(--surface-glass);
-  clip-path: var(--cut);
+  border-radius: var(--radius-frame);
   -webkit-backdrop-filter: var(--frame-blur);
   backdrop-filter: var(--frame-blur);
 }
 
-main section[aria-labelledby]::before,
-dialog section[aria-labelledby]::before {
+main section[aria-labelledby]:where(:not(.excalidraw *))::before,
+dialog section[aria-labelledby]:where(:not(.excalidraw *))::before {
   content: "";
   position: absolute;
   inset: 0;
   z-index: -1;
-  background: var(--line-frame);
-  clip-path: var(--cut-ring);
+  border: 1px solid var(--line-frame);
+  border-radius: inherit;
   pointer-events: none;
 }
 
 /* El título de un recuadro: más pequeño y sin raya, el recuadro ya lo separa */
-main section[aria-labelledby] > h2:first-child,
-dialog section[aria-labelledby] > h2:first-child {
+main section[aria-labelledby]:where(:not(.excalidraw *)) > h2:first-child,
+dialog section[aria-labelledby]:where(:not(.excalidraw *)) > h2:first-child {
   margin-block-start: 0;
   padding: 0;
   border: 0;
@@ -347,6 +365,16 @@ dialog[open]::backdrop {
   animation: none;
 }
 
+/* Mientras dura una transición de vista, el cristal sin desenfoque: con la página nueva hay tres superficies grandes de
+   cristal, y en una tarjeta gráfica normal recalcular su desenfoque en cada fotograma mientras todo se mueve hacía ir a
+   saltos la entrada y la salida del mundo (Enrique, 2026-11-16: «no son fluidas, antes funcionaban bien»). Al acabar,
+   vuelve; las superficies son casi opacas y apenas se nota */
+:root:active-view-transition {
+  --frame-blur: none;
+  --glass-blur: none;
+  --popup-blur: none;
+}
+
 ::view-transition-old(barra) {
   display: none;
 }
@@ -439,8 +467,10 @@ html:active-view-transition-type(entrar-mundo)::view-transition-image-pair(mundo
     radial-gradient(ellipse 8% 10% at 49% 95%, rgb(var(--fx-smoke-rgb) / 0.26), transparent 70%),
     radial-gradient(ellipse 12% 14% at 64% 100%, rgb(var(--fx-smoke-rgb) / 0.22), transparent 70%),
     radial-gradient(ellipse 9% 11% at 81% 97%, rgb(var(--fx-smoke-rgb) / 0.24), transparent 70%);
-  filter: blur(10px);
   opacity: 0;
+  /* Solo se mueven y se funden (sin desenfoque que cambie: redibujaba la pantalla entera en cada paso y la salida del
+     mundo iba a saltos; Enrique, 2026-11-16: «la transición no es fluida»). Las manchas ya son suaves por sí solas */
+  will-change: transform, opacity;
   animation: humo-sube 2400ms ease-out forwards;
 }
 
@@ -460,12 +490,11 @@ html:active-view-transition-type(entrar-mundo)::view-transition-image-pair(mundo
   animation: none;
 }
 
-/* Las bocanadas suben, se abren y se difuminan */
+/* Las bocanadas suben, se abren y se desvanecen */
 @keyframes humo-sube {
   0% {
     opacity: 0;
     transform: translateY(0) scale(1, 0.8);
-    filter: blur(8px);
   }
 
   25% {
@@ -474,8 +503,7 @@ html:active-view-transition-type(entrar-mundo)::view-transition-image-pair(mundo
 
   100% {
     opacity: 0;
-    transform: translateY(-38vh) scale(1.15, 1.6);
-    filter: blur(22px);
+    transform: translateY(-38vh) scale(1.25, 1.8);
   }
 }
 
@@ -883,33 +911,5 @@ html:active-view-transition-type(borrar-mundo)::view-transition-group(*) {
   100% {
     opacity: 0;
     transform: translateY(-120px) scale(0.6);
-  }
-}
-
-/* Con movimiento reducido, las transiciones de vista (entrar en un mundo, en una plantilla, cambiar de sección) son un
-   fundido breve: lo nuevo llega sin desplazarse ni crecer, y sin brasas ni humo */
-@media (prefers-reduced-motion: reduce) {
-  ::view-transition-group(*) {
-    animation-duration: 0s !important;
-  }
-
-  ::view-transition-old(*) {
-    animation: deja-paso 120ms ease-in both !important;
-  }
-
-  ::view-transition-new(*) {
-    animation: funde-entra 160ms ease-out both !important;
-  }
-
-  .brasas,
-  .humo,
-  .brasas-tarjeta {
-    display: none;
-  }
-}
-
-@keyframes funde-entra {
-  from {
-    opacity: 0;
   }
 }

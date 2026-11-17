@@ -4,9 +4,10 @@
  */
 
 import type { JSONContent } from '@tiptap/core'
-import { createContext, type ReactNode, useContext } from 'react'
+import { createContext, type ReactNode, useContext, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import callout from './callout.module.css'
+import { ChartFigure } from './chart/chart-block.tsx'
 import styles from './content.module.css'
 import { ContentCard } from './content-embed.tsx'
 import editor from './editor.module.css'
@@ -168,6 +169,9 @@ export function Block({ node, worldId }: { node: JSONContent; worldId: string })
       )
     case 'wideBlock':
       return <div>{children}</div>
+    // Un gráfico, con las tablas de su documento a mano (las de un incrustado, las suyas)
+    case 'chart':
+      return <ChartBlock node={node} />
     case 'pageBreak':
     case 'columnBreak':
     case 'tableOfContents':
@@ -175,6 +179,18 @@ export function Block({ node, worldId }: { node: JSONContent; worldId: string })
     default:
       return null
   }
+}
+
+/** El documento de lo que se pinta: un gráfico lee de él sus tablas */
+const ContentDoc = createContext<JSONContent>({ type: 'doc', content: [] })
+
+function ChartBlock({ node }: { node: JSONContent }) {
+  const doc = useContext(ContentDoc)
+  return (
+    <div className={styles.chart}>
+      <ChartFigure yaml={String(node.attrs?.yaml ?? '')} doc={doc} />
+    </div>
+  )
 }
 
 /** Los secretos recién revelados a quien lee (docs/specs/revelar.md): salen con «Nuevo» */
@@ -238,11 +254,14 @@ export function ContentView({
   /** En lo pequeño (la vista previa de un enlace, un incrustado, la pantalla del máster): los títulos, contenidos */
   compact?: boolean
 }) {
+  const doc = useMemo<JSONContent>(() => ({ type: 'doc', content: blocks }), [blocks])
   return (
-    <div className={`${editor.prose} ${styles.content}${compact ? ` ${styles.compact}` : ''}`}>
-      {blocks.map((block, i) => (
-        <Block key={String(i)} node={block} worldId={worldId} />
-      ))}
-    </div>
+    <ContentDoc.Provider value={doc}>
+      <div className={`${editor.prose} ${styles.content}${compact ? ` ${styles.compact}` : ''}`}>
+        {blocks.map((block, i) => (
+          <Block key={String(i)} node={block} worldId={worldId} />
+        ))}
+      </div>
+    </ContentDoc.Provider>
   )
 }

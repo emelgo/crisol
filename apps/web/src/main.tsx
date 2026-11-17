@@ -3,6 +3,7 @@ import { createAccountClient } from './account/client.ts'
 import { createApiClient } from './api/client.ts'
 import { App } from './app.tsx'
 import { applyPlain } from './components/plain.ts'
+import { installTransitionClicks } from './components/transition-clicks.ts'
 import { createRealtimeClient } from './realtime/client.ts'
 import { createAppRouter } from './router.tsx'
 import { createCollabClient } from './wiki/collab.tsx'
@@ -13,6 +14,8 @@ if (!root) throw new Error('Falta el elemento #root')
 applyPlain()
 // Sin StrictMode: en desarrollo monta el editor dos veces y, con la edición en vivo (Yjs), el editor de más dejaba una
 // línea vacía en el documento compartido cada vez que se abría una página (en producción no monta dos veces)
+// Lo que se pulsa mientras dura una transición de vista no se pierde
+installTransitionClicks()
 createRoot(root).render(
   <App
     router={createAppRouter()}

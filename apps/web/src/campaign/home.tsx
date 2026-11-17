@@ -10,12 +10,15 @@ import { ChevronRight, Layers, NotebookPen, UserPlus } from 'lucide-react'
 import { type ReactNode, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
+import { ActivityCenter } from '../campaign-time/activity.tsx'
+import { MasterToday, PlayerToday } from '../campaign-time/today.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { Tour } from '../components/tour.tsx'
 import { useWindow } from '../components/window.tsx'
 import { worldTransition } from '../components/world-transition.ts'
 import { useDice } from '../dice/context.tsx'
 import { coverStyle } from '../wiki/cover-look.ts'
+import { useNarrow } from '../wiki/panel.tsx'
 import { BookCover, useCampaignBooks } from './book-cover.tsx'
 import styles from './home.module.css'
 import { MembersPanel } from './settings.tsx'
@@ -280,6 +283,8 @@ export function CampaignHome({ worldId, worldName, campaign }: Props) {
             </button>
           }
         />
+        <MasterToday worldId={worldId} campaign={campaign} />
+        <ActivityCenter worldId={worldId} campaign={campaign} master />
         <ToMesa worldId={worldId} campaignId={campaign.id} />
         <Players worldId={worldId} campaignId={campaign.id} />
         <div className={styles.two}>
@@ -306,6 +311,7 @@ export function CampaignHome({ worldId, worldName, campaign }: Props) {
 export function PlayerCampaignHome({ worldId, worldName, campaign }: Props) {
   const { t } = useTranslation()
   const api = useApi()
+  const narrow = useNarrow()
   useDiceHere(worldId, campaign.id)
   const characters = useQuery({
     queryKey: ['characters', campaign.id],
@@ -317,6 +323,8 @@ export function PlayerCampaignHome({ worldId, worldName, campaign }: Props) {
     <div className={styles.home}>
       <div className={styles.col}>
         <Hero campaign={campaign} worldName={worldName} />
+        <PlayerToday worldId={worldId} campaign={campaign} />
+        <ActivityCenter worldId={worldId} campaign={campaign} master={false} compact={narrow} />
         <Section title={t('campaignHome.yours')} tour="inicio-personaje">
           {own.length === 0 && characters.data ? (
             <Link

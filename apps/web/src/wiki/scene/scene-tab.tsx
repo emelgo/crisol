@@ -24,6 +24,7 @@ import { usePreparer } from '../../tabletop/preparer.ts'
 import { Preparing } from '../../tabletop/preparing.tsx'
 import { sceneKey, sceneTabKey } from '../../tabletop/queries.ts'
 import { type SceneChoice, useScenePreparation } from '../../tabletop/use-preparation.ts'
+import { tabRegionLabel } from '../tabs/kinds.tsx'
 import { takePendingChoice } from './pending.ts'
 import styles from './scene.module.css'
 import { type GridPatch, SceneTabContext, type SceneTabState, useSceneTab } from './scene-context.ts'
@@ -211,7 +212,7 @@ export function SceneMain() {
   )
   if (state.status !== 'preparing' && !scene.image) {
     return (
-      <section className={styles.empty} aria-label={t('scene.label', { name })} data-tour="escena-mapa">
+      <section className={styles.empty} aria-label={tabRegionLabel(t, 'scene', name)} data-tour="escena-mapa">
         <MapIcon aria-hidden="true" size={32} strokeWidth={1.5} />
         <p>{t('scene.empty')}</p>
         {editable && <SourcePicker worldId={worldId} value={null} onChange={start} />}

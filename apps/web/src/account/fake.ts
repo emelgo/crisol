@@ -70,7 +70,7 @@ export function fakeAccountClient(
       return { ok: true }
     },
     async updateDice(dice): Promise<Result> {
-      calls.push(`updateDice ${dice.diceOthers}`)
+      calls.push(`updateDice ${dice.diceOthers ?? dice.diceColor}`)
       if (account) set({ ...account, ...dice })
       return { ok: true }
     },

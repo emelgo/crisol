@@ -41,11 +41,15 @@ export function RollNotices({ campaign }: { campaign: Campaign }) {
   const live = useRef(enabled)
   live.current = enabled
   const again = useRollAgain(campaign)
+  // La cuenta llega como un objeto nuevo en cada pintada (account/client.ts): en lo que se recuerda, por una ref (si
+  // no, «show» cambiaba siempre y, con los dados abiertos, el efecto que vacía los avisos entraba en bucle)
+  const me = useRef(account)
+  me.current = account
 
   const relevant = useCallback(
     // Lo «para sí» de otro le llega sin aviso (como en el historial)
-    (roll: DiceRoll) => roll.campaignId === campaign.id && (roll.visibility !== 'self' || isMine(roll, account)),
-    [campaign.id, account]
+    (roll: DiceRoll) => roll.campaignId === campaign.id && (roll.visibility !== 'self' || isMine(roll, me.current)),
+    [campaign.id]
   )
   const forget = useCallback((id: string) => {
     clearTimeout(timers.current.get(id))
@@ -69,14 +73,14 @@ export function RollNotices({ campaign }: { campaign: Campaign }) {
     (roll: DiceRoll) => {
       if (seen.current.has(roll.id)) return
       if (!live.current) {
-        if (isMine(roll, account)) pending.current.set(roll.id, { roll, at: Date.now() })
+        if (isMine(roll, me.current)) pending.current.set(roll.id, { roll, at: Date.now() })
         return
       }
       seen.current.add(roll.id)
       setShown((current) => [...current.filter((r) => r.id !== roll.id), roll].slice(-MAX))
       later(roll.id)
     },
-    [later, account]
+    [later]
   )
   // Cuando paran los dados que caen
   useEffect(() => tray.onSettled((roll) => relevant(roll) && show(roll)), [tray, relevant, show])
@@ -98,7 +102,7 @@ export function RollNotices({ campaign }: { campaign: Campaign }) {
   // Al abrir los dados o el historial, fuera (ya están en el historial); al irse, sin temporizadores colgando
   useEffect(() => {
     if (!enabled) {
-      setShown([])
+      setShown((current) => (current.length === 0 ? current : []))
       return
     }
     const fresh = [...pending.current.values()].filter(({ at }) => Date.now() - at < DEFER_MS)

@@ -1,0 +1,136 @@
+/* El viaje: sus filas (etiqueta a la izquierda), el total, el clima de cada día y la llegada */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 5.25rem minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.rowLabel {
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+}
+
+.distance {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 0.6rem;
+  border: 1px solid var(--color-field-border);
+  border-radius: var(--radius-button);
+  background: var(--field-fill);
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+.distance input {
+  inline-size: 100%;
+  min-block-size: 2.125rem;
+  border: 0;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  font-weight: 600;
+}
+
+.distance input:focus {
+  outline: none;
+}
+
+.distance:focus-within {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 1px;
+}
+
+.rest {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* El Stepper del descanso, sin su etiqueta (ya la lleva la fila) */
+.rest label {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.total {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.6rem;
+  margin: 0.15rem 0 0;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-button);
+  background: color-mix(in srgb, #e7b84f 10%, transparent);
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+}
+
+.total b {
+  color: #f0c56a;
+  font: 800 1.375rem / 1 var(--font-display);
+}
+
+.days {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.days li {
+  display: grid;
+  grid-template-columns: max-content auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.12rem 0;
+  font-size: 0.8125rem;
+}
+
+.dayDate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dayCondition {
+  min-inline-size: 0;
+  color: var(--color-muted);
+}
+
+.dayCondition b {
+  color: var(--color-text);
+  font-size: 0.6875rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.dayTemps {
+  color: var(--color-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.arrival {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+}
+
+.arrival b {
+  color: var(--color-text);
+}

@@ -204,7 +204,7 @@
 }
 
 .newBook {
-  /* Como todos los «Nuevo…» (docs/diseno.md): línea continua de 1px, con sus esquinas cortadas (el anillo del ::before) */
+  /* Como todos los «Nuevo…» (docs/diseno.md): línea continua de 1px (el ::before), con las esquinas redondeadas */
   position: relative;
   isolation: isolate;
   display: grid;
@@ -213,7 +213,7 @@
   gap: var(--space-2);
   aspect-ratio: 3 / 4;
   border: 0;
-  clip-path: var(--cut);
+  border-radius: var(--radius-frame);
   /* También es un botón (en la página del sistema): sin el fondo gris del navegador */
   background: none;
   color: var(--color-muted);
@@ -229,8 +229,8 @@
   position: absolute;
   inset: 0;
   z-index: -1;
-  background: var(--line-frame);
-  clip-path: var(--cut-ring);
+  border: 1px solid var(--line-frame);
+  border-radius: inherit;
   pointer-events: none;
 }
 
@@ -241,7 +241,7 @@
 }
 
 .newBook:hover::before {
-  background: var(--color-accent);
+  border-color: var(--color-accent);
 }
 
 /* Elegir contenido */

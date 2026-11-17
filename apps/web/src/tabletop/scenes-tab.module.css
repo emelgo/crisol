@@ -62,7 +62,7 @@
   block-size: 5.5rem;
   overflow: hidden;
   background: #111114;
-  clip-path: var(--cut);
+  border-radius: var(--radius-frame);
 }
 
 /* La miniatura de la escena llena la tarjeta (centrada) */
@@ -85,7 +85,7 @@
   position: absolute;
   inset: 0;
   box-shadow: inset 0 0 0 2px var(--color-brand);
-  clip-path: var(--cut);
+  border-radius: inherit;
 }
 
 .name {

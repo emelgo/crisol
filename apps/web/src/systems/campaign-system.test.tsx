@@ -118,7 +118,7 @@ describe('el sistema de una campaña', () => {
     )
   )
 
-  it('en su ventana: sin sistema, los dados de siempre; con uno, sus fuentes, su idioma y sus ajustes', async () => {
+  it('en su ventana: sin sistema, los dados de siempre; con uno, sus fuentes y sus ajustes (sin idioma)', async () => {
     const { api } = renderCampaigns()
     const dialog = await settingsOf('La Marca')
     const select = dialog.getByRole<HTMLSelectElement>('combobox', { name: 'Sistema' })
@@ -130,9 +130,8 @@ describe('el sistema de una campaña', () => {
     const sources = within(await dialog.findByRole('group', { name: 'Fuentes' }))
     expect(sources.getByRole<HTMLInputElement>('checkbox', { name: /SRD 5\.1/ }).checked).toBe(true)
     await userEvent.click(sources.getByRole('checkbox', { name: /SRD 5\.2/ }))
-    await userEvent.click(
-      within(dialog.getByRole('group', { name: 'Idioma del contenido' })).getByRole('radio', { name: 'English' })
-    )
+    // Sin idioma del contenido: queda el primero del sistema
+    expect(dialog.queryByRole('group', { name: 'Idioma del contenido' })).toBeNull()
     const settings = within(dialog.getByRole('group', { name: 'Ajustes de 5e de prueba' }))
     expect(settings.getByRole<HTMLInputElement>('checkbox', { name: 'Compra por puntos' }).checked).toBe(true)
     await userEvent.click(settings.getByRole('checkbox', { name: 'Tiradas' }))
@@ -143,7 +142,7 @@ describe('el sistema de una campaña', () => {
       const { campaigns } = await api.client.call('listCampaigns', { worldId: WORLD.id })
       expect(campaigns[0]).toMatchObject({
         system: { id: CINCO.id, name: '5e de prueba', defaultRoll: '1d20', critical: 'd20' },
-        systemChoices: { sources: ['srd51'], language: 'en', settings: { metodos: ['estandar', 'compra', 'tiradas'] } }
+        systemChoices: { sources: ['srd51'], language: 'es', settings: { metodos: ['estandar', 'compra', 'tiradas'] } }
       })
     })
   })

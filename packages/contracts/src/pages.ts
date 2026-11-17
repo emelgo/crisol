@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { defineAction } from './action.ts'
+import { dateValue } from './calendars.ts'
 import { gameIcon } from './game-icons.ts'
 import { pagePanel } from './panel.ts'
 import { readAs } from './read-as.ts'
@@ -36,6 +37,16 @@ const choiceOptions = z.array(optionText.min(1)).max(50)
 const clockSegments = z.number().int().min(2).max(12)
 /** Las plantillas cuyas páginas se buscan primero al elegir un enlace (no encierra: se puede elegir cualquiera) */
 const linkTargets = z.array(templateRef).max(10)
+/** El papel de un campo de enlace en las relaciones (módulo 10; los mismos que RELATION_ROLES del dominio) */
+export const relationRole = z
+  .enum(['parent', 'partner', 'member-of', 'leads'])
+  .describe(
+    'Lo que es el destino para la página: parent, su padre o su madre (el árbol genealógico); partner, su pareja; member-of, el grupo al que pertenece (facción, orden, gremio…); leads, quien la dirige (la página es el grupo: el organigrama). Sin papel, es una relación más con el nombre del campo'
+  )
+export type RelationRole = z.infer<typeof relationRole>
+const inverseName = propertyName.describe(
+  'Cómo se lee la relación desde el destino: «Padres» → «Hijos», «Facción» → «Miembros», «Líder» → «Dirige»'
+)
 
 /**
  * Una propiedad con su tipo. alias y etiquetas son listas y resumen es texto (lo comprueba el servidor). Las que salen
@@ -51,10 +62,23 @@ export const pageProperty = z.discriminatedUnion('type', [
     type: z.literal('pages'),
     value: z.array(z.uuid()).max(200),
     single: z.literal(true).optional(),
-    targets: linkTargets.optional()
+    targets: linkTargets.optional(),
+    role: relationRole.optional(),
+    inverseName: inverseName.optional()
   }),
   z.object({ ...field, type: z.literal('choice'), value: optionText, options: choiceOptions }),
-  z.object({ ...field, type: z.literal('clock'), value: z.number().int().min(0).max(12), segments: clockSegments })
+  z.object({ ...field, type: z.literal('clock'), value: z.number().int().min(0).max(12), segments: clockSegments }),
+  z.object({
+    ...field,
+    type: z.literal('date'),
+    value: dateValue.nullable(),
+    range: z.literal(true).optional().describe('El campo es «Con fin»: un periodo'),
+    offTimeline: z
+      .literal(true)
+      .optional()
+      .describe('«Fuera de las líneas temporales»: no es un suceso (como «Última visita»)'),
+    text: z.string().max(300).optional().describe('Cómo se lee (lo pone el servidor)')
+  })
 ])
 
 export type PageProperty = z.infer<typeof pageProperty>
@@ -356,7 +380,7 @@ export const createPageDocument = defineAction({
 
 /** Markdown de una página: el dialecto de Obsidian que entiende Crisol */
 const MARKDOWN_HELP =
-  'Markdown de Obsidian: propiedades en YAML al principio (alias, etiquetas, resumen y las demás; las de páginas como "[[Título]]"), títulos #, listas, - [ ] casillas, tablas, ``` código, recuadros > [!nota] > [!consejo] > [!aviso] > [!peligro] > [!leer], la caja > [!caja], > [!secreto] para lo que solo ve el máster (se guarda aparte, nunca en el cuerpo), %%notas ocultas%% en sus líneas, archivos del mundo con ![[mapa.png|300]] o ![[libro.pdf#page=12]], y para la vista de hoja: > [!statblock], > [!lateral] (o > [!lateral|izquierda]), > [!ancho] para varios bloques (o |ancho en un recuadro), > [!indice], y los saltos <div class="salto-pagina"></div> y <div class="salto-columna"></div> en su línea'
+  'Markdown de Obsidian: propiedades en YAML al principio (alias, etiquetas, resumen y las demás; las de páginas como "[[Título]]"; las fechas como 1250-Siega-18, con el calendario principal o el que ya tenga), títulos #, listas, - [ ] casillas, tablas, ``` código, recuadros > [!nota] > [!consejo] > [!aviso] > [!peligro] > [!leer], la caja > [!caja], > [!secreto] para lo que solo ve el máster (se guarda aparte, nunca en el cuerpo), %%notas ocultas%% en sus líneas, archivos del mundo con ![[mapa.png|300]] o ![[libro.pdf#page=12]], gráficos en un bloque ```chart con YAML (type: bar, line, pie, doughnut, radar o polarArea; labels: [..] y series: - title: .. data: [..]; o id: con el id de bloque de una tabla de la página, y layout: rows para leerla por filas), y para la vista de hoja: > [!statblock], > [!lateral] (o > [!lateral|izquierda]), > [!ancho] para varios bloques (o |ancho en un recuadro), > [!indice], y los saltos <div class="salto-pagina"></div> y <div class="salto-columna"></div> en su línea'
 const markdownText = z.string().max(2_000_000)
 const blockId = z.string().regex(/^[A-Za-z0-9-]{1,64}$/)
 
@@ -370,7 +394,10 @@ export const pageTables = z.object({
       blockId: z.string(),
       title: z.string(),
       /** field: el campo ya no está en la plantilla (la tabla no vale hasta cambiarla) */
-      problem: z.enum(['field']).nullable(),
+      problem: z
+        .enum(['field', 'unset'])
+        .nullable()
+        .describe('field: su campo ya no está en la plantilla; unset: aún no se ha elegido plantilla ni campo'),
       columns: z.array(z.object({ field: fieldId, name: z.string() })),
       rows: z.array(
         z.object({
@@ -408,7 +435,22 @@ export const readPage = defineAction({
     ids: z.boolean().optional().describe('Los ^id de los bloques de primer nivel, para cambiar uno con editPage'),
     ...readAs
   }),
-  output: z.object({ page, markdown: z.string(), tables: pageTables.shape.tables })
+  output: z.object({
+    page,
+    markdown: z.string(),
+    tables: pageTables.shape.tables,
+    dates: z
+      .array(
+        z.object({
+          name: z.string(),
+          calendar: z.string().describe('El nombre de su calendario'),
+          text: z.string().describe('Cómo se lee'),
+          form: z.string().describe('Su forma para escribirla (1250-Siega-18)'),
+          primary: z.string().nullable().describe('Su equivalencia en el calendario principal, si es de otro')
+        })
+      )
+      .describe('Las propiedades «Fecha» con valor, legibles')
+  })
 })
 
 const newPage = z.object({
@@ -460,6 +502,10 @@ export const createPages = defineAction({
   })
 })
 
+/** Cómo escribe la IA una fecha */
+const DATE_HELP =
+  'La fecha como 1250-Siega-18 (año-mes-día, el mes por su nombre o su número sin contar festividades), 1250-Siega o 1250; un periodo, 1250-Siega-12/1250-Trilla-3; «(cada año)» al final si se repite. null la deja vacía'
+
 /**
  * Una propiedad que escribe la IA: las de páginas, por su título, un alias o su id. Si la página ya tiene una que se
  * llama igual y salió de una plantilla, se queda con su campo y su forma
@@ -486,6 +532,20 @@ const propertyInput = z.discriminatedUnion('type', [
     type: z.literal('clock'),
     value: z.number().int().min(0).max(12).describe('Segmentos llenos'),
     segments: clockSegments.optional().describe('De 2 a 12; sin ellos, los que ya tenga (4 si es nuevo)')
+  }),
+  z.object({
+    name: propertyName,
+    type: z.literal('date'),
+    value: z.string().trim().min(1).max(200).nullable().describe(DATE_HELP),
+    end: z.string().trim().min(1).max(200).optional().describe('El fin, si es un periodo (1250-Trilla-3)'),
+    yearly: z.boolean().optional().describe('Se repite cada año (solo con mes)'),
+    calendar: z
+      .string()
+      .trim()
+      .min(1)
+      .max(200)
+      .optional()
+      .describe('El calendario (su id o su nombre); sin él, el que ya tenga la propiedad o el principal')
   })
 ])
 
@@ -613,7 +673,9 @@ export const getPageLinks = defineAction({
     /** Las que la apuntan desde un campo de enlace (como la Facción de un PNJ), con el nombre de esos campos */
     fields: z.array(
       z.object({ pageId: z.uuid(), title: z.string(), path: z.array(z.string()), fields: z.array(z.string()) })
-    )
+    ),
+    /** Los eventos sueltos de las cronologías enlazados a ella (módulo 8), para el máster: su título y su fecha */
+    events: z.array(z.object({ id: z.uuid(), title: z.string(), text: z.string() })).optional()
   })
 })
 

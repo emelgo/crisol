@@ -9,7 +9,7 @@ import { asc, eq, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { type OperationContext, operation, type Writer } from '../operation.ts'
 import { documents } from '../schema/documents.ts'
-import { mapElements, mapPins, maps, pageTabs } from '../schema/maps.ts'
+import { mapElements, mapLayers, mapPins, maps, pageTabs } from '../schema/maps.ts'
 import { pages } from '../schema/pages.ts'
 import { scenes, sceneTiles } from '../schema/scenes.ts'
 import { randomTables } from '../schema/tables.ts'
@@ -17,6 +17,18 @@ import { sceneLights, sceneSounds, sceneWalls } from '../schema/vision.ts'
 import { writeMark } from './knowledge.ts'
 import { placeKey } from './pages.ts'
 import { type DocumentState, recordVersion } from './versions.ts'
+
+/** La geometría de una ruta, con los pines donde empieza y acaba cambiados por sus copias */
+function withPins(geometry: Record<string, unknown>, pinIds: ReadonlyMap<string, string>) {
+  const swap = (id: unknown) => (typeof id === 'string' ? (pinIds.get(id) ?? null) : id)
+  return 'from' in geometry || 'to' in geometry
+    ? {
+        ...geometry,
+        ...('from' in geometry ? { from: swap(geometry.from) } : {}),
+        ...('to' in geometry ? { to: swap(geometry.to) } : {})
+      }
+    : geometry
+}
 
 /** Lo que pone el historial (o es de la fila de origen) y no se copia */
 const OWN = ['id', 'version', 'createdBy', 'updatedBy', 'createdAt', 'updatedAt'] as const
@@ -67,6 +79,8 @@ type TabCopy = (
 const TAB_COPIES: Record<TabKind, TabCopy> = {
   // Su documento ya va con la pestaña
   text: async () => undefined,
+  // La pizarra va en su documento, que se copia con los de las pestañas de texto
+  board: async () => undefined,
   // El mapa (imagen y escala) con sus pines y sus elementos
   map: async (w, { from, to, worldId, keep }) => {
     const [map] = await w.read.select().from(maps).where(eq(maps.tabId, from.id))
@@ -77,6 +91,8 @@ const TAB_COPIES: Record<TabKind, TabCopy> = {
       .from(mapPins)
       .where(eq(mapPins.mapId, map.id))
       .orderBy(asc(mapPins.createdAt), asc(mapPins.id))
+    // Cada pin y cada capa, con su id nuevo ya escogido: las rutas que van de un pin a otro y lo de cada capa, a sus copias
+    const pinIds = new Map(pins.map((pin) => [pin.id, crypto.randomUUID()]))
     if (pins.length > 0) {
       await w.insertMany(
         mapPins,
@@ -84,9 +100,21 @@ const TAB_COPIES: Record<TabKind, TabCopy> = {
           (pin) =>
             ({
               ...copied(pin, worldId),
+              id: pinIds.get(pin.id),
               mapId: copy.id,
               ...(keep ? {} : { pageId: null })
             }) as typeof mapPins.$inferInsert
+        )
+      )
+    }
+    const layers = await w.read.select().from(mapLayers).where(eq(mapLayers.mapId, map.id))
+    const layerIds = new Map(layers.map((layer) => [layer.id, crypto.randomUUID()]))
+    if (layers.length > 0) {
+      await w.insertMany(
+        mapLayers,
+        layers.map(
+          (layer) =>
+            ({ ...copied(layer, worldId), id: layerIds.get(layer.id), mapId: copy.id }) as typeof mapLayers.$inferInsert
         )
       )
     }
@@ -103,6 +131,8 @@ const TAB_COPIES: Record<TabKind, TabCopy> = {
             ({
               ...copied(element, worldId),
               mapId: copy.id,
+              layerId: element.layerId ? (layerIds.get(element.layerId) ?? null) : null,
+              geometry: withPins(element.geometry, pinIds),
               ...(keep ? {} : { pageId: null })
             }) as typeof mapElements.$inferInsert
         )
@@ -155,14 +185,18 @@ const TAB_COPIES: Record<TabKind, TabCopy> = {
   }
 }
 
-/** Los campos de enlace, vacíos: una plantilla no apunta a páginas de un mundo */
+/** Los campos de enlace y de fecha, vacíos: una plantilla no apunta a páginas ni a calendarios de un mundo */
 const withoutLinks = (properties: unknown) =>
   Array.isArray(properties)
-    ? properties.map((property) =>
-        property && typeof property === 'object' && (property as { type?: string }).type === 'pages'
-          ? { ...property, value: [] }
-          : property
-      )
+    ? properties.map((property) => {
+        const type = property && typeof property === 'object' ? (property as { type?: string }).type : undefined
+        if (type === 'pages') return { ...property, value: [] }
+        if (type === 'date') {
+          const { text: _text, ...rest } = property as { text?: string }
+          return { ...rest, value: null }
+        }
+        return property
+      })
     : properties
 
 /** Duplica una página con todo lo suyo (detrás de ella, o donde se diga); devuelve la nueva */

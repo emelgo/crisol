@@ -5,8 +5,10 @@
 import { z } from 'zod'
 import { defineAction } from './action.ts'
 import { combatView } from './combat.ts'
+import { gmScreen } from './gm-screen.ts'
 import { markView, widgetView } from './table-tools.ts'
 import { tokenView } from './tokens.ts'
+import { weatherLayer, weatherLayerSetting } from './weather.ts'
 
 export const SCENE_GRID_TYPES = ['square', 'hex-rows', 'hex-columns', 'none'] as const
 /** Cómo cuentan las diagonales al medir: todas iguales, alternas (una sí y otra doble) o la distancia real */
@@ -105,7 +107,9 @@ export const sceneView = z.object({
     .array(z.object({ key: z.string(), name: z.string(), unique: z.boolean(), hidden: z.boolean() }))
     .optional(),
   /** Cuántos pines trae (las notas de una escena de Foundry): salen como marcas del máster al abrirla una campaña */
-  pins: z.int().optional()
+  pins: z.int().optional(),
+  /** Interior (8 · campaña): sin capa de clima (opcional por la API de prueba de la web) */
+  interior: z.boolean().optional()
 })
 
 export type SceneView = z.infer<typeof sceneView>
@@ -163,15 +167,17 @@ export const deleteScene = defineAction({
 export const updateScene = defineAction({
   name: 'updateScene',
   kind: 'write',
-  description: 'Cambia la rejilla de una escena (lo que se pase) o su vista inicial (null, sin ella)',
+  description:
+    'Cambia la rejilla de una escena (lo que se pase), su vista inicial (null, sin ella) o si es Interior (sin capa de clima en la Mesa)',
   input: z
     .object({
       sceneId: z.uuid(),
       grid: sceneGrid.partial().optional(),
-      initialView: sceneViewport.nullable().optional()
+      initialView: sceneViewport.nullable().optional(),
+      interior: z.boolean().optional()
     })
-    .refine((input) => input.grid !== undefined || input.initialView !== undefined, {
-      message: 'grid o initialView'
+    .refine((input) => input.grid !== undefined || input.initialView !== undefined || input.interior !== undefined, {
+      message: 'grid, initialView o interior'
     }),
   output: sceneView
 })
@@ -275,6 +281,10 @@ export const campaignTableView = z.object({
   /** La sala (docs/specs/sala.md): en pausa y cómo mueven los jugadores (opcional por la API de prueba de la web) */
   paused: z.boolean().optional(),
   movement: z.enum(['free', 'turn', 'locked']).optional(),
+  /** La capa de clima: cómo sale y la que se pinta en la escena abierta (8 · campaña; opcional por la API de prueba) */
+  weather: z.object({ setting: weatherLayerSetting, effective: weatherLayer.nullable() }).optional(),
+  /** La pantalla del máster en la escena abierta (8 · campaña; null: la de siempre; opcional por la API de prueba) */
+  gmScreen: gmScreen.nullable().optional(),
   /** Lo que enseña el máster en la vista de jugadores (docs/specs/ensenar.md) */
   show: z
     .object({ kind: z.enum(['page', 'image']), id: z.string(), title: z.string(), worldId: z.uuid() })

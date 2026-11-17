@@ -1,10 +1,10 @@
 /**
  * Los demás pasos del editor (lienzo de la tanda 8): lo que se lleva (los tipos de objeto, cada uno con sus campos),
  * cómo se ve la ficha (sus bloques, que nacen uno por campo y se ordenan), cómo se crea un personaje (sus pasos), qué
- * trae el compendio (sus libros, que se llevan en su Inicio) y lo avanzado (la iniciativa, los idiomas, la versión y
+ * trae el compendio (sus libros, que se llevan en su Inicio) y Avanzado (la iniciativa, la versión y
  * el archivo)
  */
-import { characterType, LANGUAGES, type Language, type Problem, type System, sheetOf, textOf } from '@crisol/systems'
+import { characterType, type Language, type Problem, type System, sheetOf, textOf } from '@crisol/systems'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { ArrowDown, ArrowUp, Download, Plus, Trash2 } from 'lucide-react'
@@ -19,10 +19,10 @@ import { FormError } from '../../components/field.tsx'
 import { focusAfterRemoving } from '../../components/focus.ts'
 import { failed, LoadError } from '../../components/load-error.tsx'
 import { useDownload } from '../screen.tsx'
+import type { Change } from './change.ts'
 import { FieldsList, focusMoved } from './character-step.tsx'
 import { keyFor, withText } from './kinds.ts'
 import styles from './rules.module.css'
-import type { Change } from './rules-editor.tsx'
 
 /** Mueve un elemento de una lista (subir o bajar) */
 function moved<T>(list: readonly T[], at: number, delta: -1 | 1): T[] {
@@ -413,7 +413,7 @@ export function CompendiumStep({ systemId }: { systemId: string }) {
   )
 }
 
-/** Lo avanzado: la iniciativa, los idiomas, la versión y el archivo del sistema */
+/** Avanzado: la iniciativa, la versión y el archivo del sistema */
 export function AdvancedStep({
   systemId,
   system,
@@ -469,29 +469,6 @@ export function AdvancedStep({
           />
         </div>
       </div>
-      <fieldset className={styles.named}>
-        <legend>{t('rules.advanced.languages')}</legend>
-        <div className={styles.add}>
-          {LANGUAGES.map((lang) => (
-            <label key={lang} className={styles.check}>
-              <input
-                type="checkbox"
-                checked={system.languages.includes(lang)}
-                disabled={system.languages.length === 1 && system.languages.includes(lang)}
-                onChange={(event) => {
-                  const on = event.currentTarget.checked
-                  change((draft) => {
-                    draft.languages = on
-                      ? [...new Set([...draft.languages, lang])]
-                      : draft.languages.filter((l) => l !== lang)
-                  })
-                }}
-              />
-              {t(`rules.advanced.language.${lang}`)}
-            </label>
-          ))}
-        </div>
-      </fieldset>
       <p className={styles.muted}>{t('rules.advanced.file')}</p>
       <p>
         <BusyButton

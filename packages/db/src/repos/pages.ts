@@ -282,6 +282,17 @@ export function listProperties(db: Database, worldId: string) {
     .where(and(eq(pages.worldId, worldId), isNull(pages.deletedAt), sql`${pages.properties} <> '[]'::jsonb`))
 }
 
+/**
+ * Las páginas con alguna propiedad «Fecha» de ese calendario, también las de la papelera (al volver, sus fechas tienen
+ * que caber): para no dejar quitar sus meses y para poner al día cómo se leen (índice GIN de las propiedades)
+ */
+export function datedPages(db: Database, calendarId: string) {
+  return db
+    .select({ id: pages.id, properties: pages.properties })
+    .from(pages)
+    .where(sql`${pages.properties} @> ${JSON.stringify([{ type: 'date', value: { calendarId } }])}::jsonb`)
+}
+
 export function movePage(
   db: Database,
   context: OperationContext,

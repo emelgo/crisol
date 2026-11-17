@@ -1,3 +1,4 @@
+import { getCampaignActivity, markActivitySeen } from './activity.ts'
 import {
   createActorFolder,
   deleteActorFolder,
@@ -23,6 +24,15 @@ import {
   updateBook
 } from './books.ts'
 import {
+  convertDate,
+  createCalendar,
+  deleteCalendar,
+  describeDate,
+  getCalendar,
+  listCalendars,
+  updateCalendar
+} from './calendars.ts'
+import {
   createCampaign,
   getCampaign,
   listCampaigns,
@@ -42,6 +52,18 @@ import {
   rollForCharacter,
   updateCharacter
 } from './characters.ts'
+import {
+  convertEventToPage,
+  createChronology,
+  createTimelineEvents,
+  deleteChronology,
+  deleteTimelineEvent,
+  getChronology,
+  listChronologies,
+  updateChronology,
+  updateTimelineEvent,
+  updateTimelineGroups
+} from './chronologies.ts'
 import {
   addCombatants,
   endCombat,
@@ -84,10 +106,12 @@ import {
 import { importFoundry, inspectFoundry, putSystemImages } from './foundry.ts'
 import { importFoundryScenes, inspectFoundryScenes } from './foundry-scenes.ts'
 import { listGameIcons } from './game-icons.ts'
+import { listRandomTables, setGmScreen } from './gm-screen.ts'
 import { listHistory, undoOperation } from './history.ts'
 import { getInvitation, regenerateInvitation, setInvitationsOpen } from './invitations.ts'
 import {
   clearScreenShow,
+  getItemKnowledge,
   getPageKnowledge,
   getSecretsKnowledge,
   hide,
@@ -104,13 +128,24 @@ import {
 import { getBookPages, listLibrary, readBookAgain, searchLibrary } from './library.ts'
 import { clearLog, deleteMessage, listLog, sendMessage } from './log.ts'
 import {
+  changeBoard,
+  createMapElement,
+  createMapLayer,
   createMapPin,
   createPageTab,
+  deleteMapElement,
+  deleteMapLayer,
   deleteMapPin,
   deletePageTab,
+  describeBoard,
+  getBoard,
   getMap,
+  getMapImage,
   listPageTabs,
+  measureMap,
   updateMap,
+  updateMapElement,
+  updateMapLayer,
   updateMapPin,
   updatePageTab
 } from './maps.ts'
@@ -157,6 +192,7 @@ import {
   updatePage
 } from './pages.ts'
 import { getParty, moveCoins, moveItem, splitCoins, updateParty } from './party.ts'
+import { getRelations, getWorldGraph } from './relations.ts'
 import {
   createScene,
   deleteScene,
@@ -245,6 +281,7 @@ import {
   updateTemplate,
   updateTemplateFolder
 } from './templates.ts'
+import { getCampaignToday, setCampaignToday } from './today.ts'
 import {
   assignToken,
   deleteEncounter,
@@ -265,6 +302,7 @@ import {
   restorePage,
   restoreWorld
 } from './trash.ts'
+import { planTravel, travel } from './travel.ts'
 import {
   changeFog,
   changeSceneSound,
@@ -279,6 +317,7 @@ import {
   updateSceneVision,
   viewAsParty
 } from './vision.ts'
+import { getCampaignWeather, setCampaignClimate, setDayWeather, setWeatherLayer } from './weather.ts'
 import {
   copyContent,
   deleteWorldContent,
@@ -291,11 +330,14 @@ import {
 import { createWorld, ensureWorldHome, getWorldHome, listWorlds, renameWorld, updateWorld } from './worlds.ts'
 
 export * from './action.ts'
+export * from './activity.ts'
 export * from './actor-folders.ts'
 export * from './ai.ts'
 export * from './books.ts'
+export * from './calendars.ts'
 export * from './campaigns.ts'
 export * from './characters.ts'
+export * from './chronologies.ts'
 export * from './combat.ts'
 export * from './conditions.ts'
 export * from './creatures.ts'
@@ -304,6 +346,7 @@ export * from './files.ts'
 export * from './foundry.ts'
 export * from './foundry-scenes.ts'
 export * from './game-icons.ts'
+export * from './gm-screen.ts'
 export * from './history.ts'
 export * from './invitations.ts'
 export * from './knowledge.ts'
@@ -319,6 +362,7 @@ export * from './panel.ts'
 export * from './party.ts'
 export * from './read-as.ts'
 export type * from './realtime.ts'
+export * from './relations.ts'
 export * from './scenes.ts'
 export * from './search.ts'
 export * from './sound.ts'
@@ -328,9 +372,12 @@ export * from './table-tools.ts'
 export * from './tables.ts'
 export * from './tags.ts'
 export * from './templates.ts'
+export * from './today.ts'
 export * from './tokens.ts'
 export * from './trash.ts'
+export * from './travel.ts'
 export * from './vision.ts'
+export * from './weather.ts'
 export * from './world-content.ts'
 export * from './worlds.ts'
 
@@ -347,6 +394,8 @@ export const ACTIONS = [
   updateCampaign,
   listWorldsWithCampaigns,
   getCampaign,
+  getCampaignToday,
+  setCampaignToday,
   getInvitation,
   regenerateInvitation,
   setInvitationsOpen,
@@ -407,6 +456,7 @@ export const ACTIONS = [
   hide,
   listCampaignKnowledge,
   getSecretsKnowledge,
+  getItemKnowledge,
   listNews,
   seeNews,
   listFiles,
@@ -438,6 +488,17 @@ export const ACTIONS = [
   createMapPin,
   updateMapPin,
   deleteMapPin,
+  createMapLayer,
+  updateMapLayer,
+  deleteMapLayer,
+  createMapElement,
+  updateMapElement,
+  deleteMapElement,
+  getMapImage,
+  measureMap,
+  getBoard,
+  describeBoard,
+  changeBoard,
   getWorldHome,
   ensureWorldHome,
   listTemplates,
@@ -628,7 +689,36 @@ export const ACTIONS = [
   playSound,
   setSoundVolume,
   stopSound,
-  updateSoundPlaylist
+  updateSoundPlaylist,
+  listCalendars,
+  getCalendar,
+  createCalendar,
+  updateCalendar,
+  deleteCalendar,
+  describeDate,
+  convertDate,
+  listChronologies,
+  getChronology,
+  createChronology,
+  updateChronology,
+  deleteChronology,
+  updateTimelineGroups,
+  createTimelineEvents,
+  updateTimelineEvent,
+  deleteTimelineEvent,
+  convertEventToPage,
+  getRelations,
+  getWorldGraph,
+  getCampaignWeather,
+  setCampaignClimate,
+  setDayWeather,
+  planTravel,
+  travel,
+  getCampaignActivity,
+  markActivitySeen,
+  setGmScreen,
+  listRandomTables,
+  setWeatherLayer
 ]
 
 /** Las acciones por nombre, solo como tipo: la web las usa sin cargar zod */
@@ -644,6 +734,8 @@ export type Actions = {
   updateCampaign: typeof updateCampaign
   listWorldsWithCampaigns: typeof listWorldsWithCampaigns
   getCampaign: typeof getCampaign
+  getCampaignToday: typeof getCampaignToday
+  setCampaignToday: typeof setCampaignToday
   getInvitation: typeof getInvitation
   regenerateInvitation: typeof regenerateInvitation
   setInvitationsOpen: typeof setInvitationsOpen
@@ -704,6 +796,7 @@ export type Actions = {
   hide: typeof hide
   listCampaignKnowledge: typeof listCampaignKnowledge
   getSecretsKnowledge: typeof getSecretsKnowledge
+  getItemKnowledge: typeof getItemKnowledge
   listNews: typeof listNews
   seeNews: typeof seeNews
   listFiles: typeof listFiles
@@ -734,6 +827,17 @@ export type Actions = {
   createMapPin: typeof createMapPin
   updateMapPin: typeof updateMapPin
   deleteMapPin: typeof deleteMapPin
+  createMapLayer: typeof createMapLayer
+  updateMapLayer: typeof updateMapLayer
+  deleteMapLayer: typeof deleteMapLayer
+  createMapElement: typeof createMapElement
+  updateMapElement: typeof updateMapElement
+  deleteMapElement: typeof deleteMapElement
+  getMapImage: typeof getMapImage
+  measureMap: typeof measureMap
+  getBoard: typeof getBoard
+  describeBoard: typeof describeBoard
+  changeBoard: typeof changeBoard
   getWorldHome: typeof getWorldHome
   ensureWorldHome: typeof ensureWorldHome
   searchWiki: typeof searchWiki
@@ -926,4 +1030,33 @@ export type Actions = {
   setSoundVolume: typeof setSoundVolume
   stopSound: typeof stopSound
   updateSoundPlaylist: typeof updateSoundPlaylist
+  listCalendars: typeof listCalendars
+  getCalendar: typeof getCalendar
+  createCalendar: typeof createCalendar
+  updateCalendar: typeof updateCalendar
+  deleteCalendar: typeof deleteCalendar
+  describeDate: typeof describeDate
+  convertDate: typeof convertDate
+  listChronologies: typeof listChronologies
+  getChronology: typeof getChronology
+  createChronology: typeof createChronology
+  updateChronology: typeof updateChronology
+  deleteChronology: typeof deleteChronology
+  updateTimelineGroups: typeof updateTimelineGroups
+  createTimelineEvents: typeof createTimelineEvents
+  updateTimelineEvent: typeof updateTimelineEvent
+  deleteTimelineEvent: typeof deleteTimelineEvent
+  convertEventToPage: typeof convertEventToPage
+  getRelations: typeof getRelations
+  getWorldGraph: typeof getWorldGraph
+  getCampaignWeather: typeof getCampaignWeather
+  setCampaignClimate: typeof setCampaignClimate
+  setDayWeather: typeof setDayWeather
+  planTravel: typeof planTravel
+  travel: typeof travel
+  getCampaignActivity: typeof getCampaignActivity
+  markActivitySeen: typeof markActivitySeen
+  setGmScreen: typeof setGmScreen
+  listRandomTables: typeof listRandomTables
+  setWeatherLayer: typeof setWeatherLayer
 }

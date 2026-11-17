@@ -1,9 +1,12 @@
 // Tablas de Crisol: cada porción añade las suyas aquí
+export * from './activity.ts'
 export * from './actor-folders.ts'
 export * from './ai.ts'
 export * from './auth.ts'
+export * from './calendars.ts'
 export * from './campaigns.ts'
 export * from './characters.ts'
+export * from './chronologies.ts'
 export * from './combat.ts'
 export * from './creatures.ts'
 export * from './dice.ts'

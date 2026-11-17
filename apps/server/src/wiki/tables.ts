@@ -3,10 +3,11 @@
  * (y de sus copias, por su linaje) cuyo campo apunta a esta página. Se calculan al leer: la web y la IA las reciben hechas
  */
 import { type PageTables, pagePanel } from '@crisol/contracts'
-import { pagesRepo } from '@crisol/db'
-import type { PageProperty, PageTemplate } from '@crisol/domain'
+import { calendarsRepo, pagesRepo } from '@crisol/db'
+import { dateValueDay, type PageProperty, type PageTemplate, type WorldCalendar } from '@crisol/domain'
 import type { WikiTarget } from '../actions/access.ts'
 import { type ActionContext, InvalidRequestError } from '../actions/context.ts'
+import { worldCalendars } from './dates.ts'
 import { visiblePanel, visibleProperties } from './projection.ts'
 import { propertiesOf } from './properties.ts'
 import type { WikiView } from './reader.ts'
@@ -22,7 +23,30 @@ const sortText = (cell: PageProperty | null, title: (id: string) => string) => {
   if (!cell) return ''
   if (cell.type === 'pages') return cell.value.map(title).join(', ')
   if (cell.type === 'list') return cell.value.join(', ')
+  if (cell.type === 'date') return cell.text ?? ''
   return String(cell.value ?? '')
+}
+
+/** Dos celdas por su orden: las fechas, por el día en que empiezan (en el principal, si se puede); lo demás, por su texto */
+function compareCells(
+  a: PageProperty | null,
+  b: PageProperty | null,
+  title: (id: string) => string,
+  calendars: readonly WorldCalendar[]
+): number {
+  if (a?.type === 'date' || b?.type === 'date') {
+    const day = (cell: PageProperty | null) =>
+      cell?.type === 'date' && cell.value ? dateValueDay(calendars, cell.value) : null
+    const x = day(a)
+    const y = day(b)
+    // Lo vacío, al final
+    if (x === null || y === null) return x === y ? 0 : x === null ? 1 : -1
+    return x - y
+  }
+  const x = sortText(a, title)
+  const y = sortText(b, title)
+  if (!x !== !y) return x ? -1 : 1
+  return x.localeCompare(y, 'es')
 }
 
 export async function pageTables(
@@ -42,8 +66,10 @@ export async function pageTables(
   const found = await Promise.all(
     blocks.map(async (block) => {
       const template = templates.find((each) => each.id === block.template)
+      // Sin configurar aún: sin filas (dice que se elijan la plantilla y su campo)
+      const unset = !block.template || !block.field
       // Una plantilla propia borrada no estorba: sus páginas siguen con su linaje. Un campo que ya no está, sí
-      const usable = !template || template.fields.some((f) => f.field === block.field && f.type === 'pages')
+      const usable = !unset && (!template || template.fields.some((f) => f.field === block.field && f.type === 'pages'))
       const rows = usable
         ? await pagesRepo.relatedPages(ctx.db, {
             worldId: wiki.worldId,
@@ -54,7 +80,7 @@ export async function pageTables(
             ...(within ? { within } : {})
           })
         : []
-      return { block, template, usable, rows }
+      return { block, template, unset, usable, rows }
     })
   )
   // Los títulos de las páginas de las celdas, de una vez
@@ -72,7 +98,12 @@ export async function pageTables(
   }
   const titles = await pagesRepo.titlesOf(ctx.db, wiki.worldId, [...linkedIds])
   const title = (id: string) => titles.get(id) ?? ''
-  const tables = found.map(({ block, template, usable, rows }) => {
+  // Para ordenar por una columna de fechas, los calendarios del mundo
+  const dated = found.some(({ block, rows }) =>
+    rows.some((row) => cellsOf(row.properties, block.columns).some((cell) => cell?.type === 'date'))
+  )
+  const calendars = dated ? worldCalendars(await calendarsRepo.listCalendars(ctx.db, wiki.worldId)) : []
+  const tables = found.map(({ block, template, unset, usable, rows }) => {
     const shown = rows.slice(0, TABLE_ROWS).map((row) => ({
       id: row.id,
       title: row.title,
@@ -81,13 +112,11 @@ export async function pageTables(
     }))
     const by = block.sort === 'title' ? -1 : block.columns.indexOf(block.sort)
     if (by >= 0) {
-      shown.sort((a, b) => {
-        const x = sortText(a.cells[by] ?? null, title)
-        const y = sortText(b.cells[by] ?? null, title)
-        // Lo vacío, al final
-        if (!x !== !y) return x ? -1 : 1
-        return x.localeCompare(y, 'es') || a.title.localeCompare(b.title, 'es')
-      })
+      shown.sort(
+        (a, b) =>
+          compareCells(a.cells[by] ?? null, b.cells[by] ?? null, title, calendars) ||
+          a.title.localeCompare(b.title, 'es')
+      )
     }
     const columnName = (field: string) =>
       template?.fields.find((f) => f.field === field)?.name ??
@@ -96,7 +125,7 @@ export async function pageTables(
     return {
       blockId: block.id,
       title: block.title,
-      problem: usable ? null : ('field' as const),
+      problem: unset ? ('unset' as const) : usable ? null : ('field' as const),
       columns: block.columns.map((field) => ({ field, name: columnName(field) })),
       rows: shown,
       more: rows.length > TABLE_ROWS
@@ -118,8 +147,12 @@ export async function checkTables(
   against?: readonly PageTemplate[]
 ) {
   const old = new Map((pagePanel.safeParse(before).data ?? []).map((block) => [block.id, JSON.stringify(block)]))
+  // Una sin configurar (sin plantilla ni campo) se guarda así: es como nace
   const changed = after.filter(
-    (block): block is TableBlock => block.type === 'related' && old.get(block.id) !== JSON.stringify(block)
+    (block): block is TableBlock =>
+      block.type === 'related' &&
+      old.get(block.id) !== JSON.stringify(block) &&
+      !(block.template === '' && block.field === '')
   )
   if (changed.length === 0) return
   const templates = against ?? (await usableTemplates(ctx, organizationId))
@@ -131,7 +164,7 @@ export async function checkTables(
     const sortOk = block.sort === 'title' || block.columns.includes(block.sort)
     if (!template || !link || !columnsOk || !sortOk) {
       throw new InvalidRequestError(
-        'BAD_TABLE',
+        'BAD_PAGE_TABLE',
         template
           ? `«${block.title || block.id}»: el campo y las columnas tienen que ser de ${template.name} (sus campos de enlace: ${fields
               .filter((f) => f.type === 'pages')

@@ -125,16 +125,22 @@ describe('las tablas que se llenan solas', () => {
     const lugar = await ok200('createPage', { worldId, title: 'Ciudad Libre', template: 'lugar' })
     const panel = (block: object) => call('setPagePanel', { pageId: ids.raqisa, blocks: [block] })
     const table = { id: 'estados', type: 'related', title: 'Por estado', template: tpl.pnj, field: 'faccion' }
+    // Recién puesta, sin configurar: se guarda así y dice que falta elegir (Enrique, 2026-11-16)
+    expect((await panel({ ...table, template: '', field: '', columns: [], sort: 'title' })).statusCode).toBe(200)
+    const unset = await ok200('getPageTables', { pageId: ids.raqisa })
+    expect(unset.tables[0]).toMatchObject({ problem: 'unset', rows: [] })
     // Un campo que no es de enlace, una columna que no es de la plantilla, un orden que no es columna
     expect((await panel({ ...table, field: 'rol', columns: [], sort: 'title' })).json()).toMatchObject({
-      code: 'BAD_TABLE'
+      code: 'BAD_PAGE_TABLE'
     })
     expect((await panel({ ...table, columns: ['poblacion'], sort: 'title' })).json()).toMatchObject({
-      code: 'BAD_TABLE'
+      code: 'BAD_PAGE_TABLE'
     })
-    expect((await panel({ ...table, columns: ['rol'], sort: 'estado' })).json()).toMatchObject({ code: 'BAD_TABLE' })
+    expect((await panel({ ...table, columns: ['rol'], sort: 'estado' })).json()).toMatchObject({
+      code: 'BAD_PAGE_TABLE'
+    })
     expect((await panel({ ...table, template: 'frente', columns: [], sort: 'title' })).json()).toMatchObject({
-      code: 'BAD_TABLE'
+      code: 'BAD_PAGE_TABLE'
     })
     expect((await panel({ ...table, columns: ['estado', 'rol'], sort: 'estado' })).statusCode).toBe(200)
     const { tables } = await ok200('getPageTables', { pageId: ids.raqisa })

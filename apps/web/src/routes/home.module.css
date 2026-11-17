@@ -81,7 +81,7 @@
   font: inherit;
   font-size: 0.9375rem;
   font-weight: 700;
-  clip-path: var(--cut-button);
+  border-radius: var(--radius-button);
   cursor: pointer;
   -webkit-backdrop-filter: var(--glass-blur);
   backdrop-filter: var(--glass-blur);
@@ -105,7 +105,7 @@
   inline-size: min(100%, 28rem);
   padding: var(--space-4) var(--space-5);
   background: var(--glass-sheen), var(--glass-tint);
-  clip-path: var(--cut);
+  border-radius: var(--radius-frame);
   text-align: start;
   -webkit-backdrop-filter: var(--glass-blur);
   backdrop-filter: var(--glass-blur);
@@ -122,14 +122,14 @@
   }
 }
 
-/* Su raya, con las esquinas cortadas (como los recuadros) */
+/* Su raya, con las esquinas redondeadas (como los recuadros) */
 .invite::before,
 .shot::before {
   position: absolute;
   inset: 0;
   z-index: -1;
-  background: var(--glass-edge);
-  clip-path: var(--cut-ring);
+  border: 1px solid var(--glass-edge);
+  border-radius: inherit;
   content: "";
   pointer-events: none;
 }
@@ -198,17 +198,18 @@
   align-content: start;
 }
 
-/* La captura, recortada con las esquinas de la casa y su raya encima */
+/* La captura, con las esquinas de la casa y su raya encima */
 .shot {
   position: relative;
   isolation: isolate;
   margin-block-end: var(--space-2);
-  clip-path: var(--cut);
+  border-radius: var(--radius-frame);
+  overflow: clip;
 }
 
 .shot::before {
   z-index: 1;
-  background: var(--color-frame);
+  border-color: var(--color-frame);
 }
 
 .shot img {

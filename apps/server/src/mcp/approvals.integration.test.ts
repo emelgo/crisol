@@ -39,7 +39,7 @@ describe('la IA según el modo, y la cola de aprobación', () => {
       input: impl(name).action.input.parse(input) as Record<string, unknown>,
       waitMs
     })
-  const textOf = (result: ToolResult) => result.content.map((c) => c.text).join('\n')
+  const textOf = (result: ToolResult) => result.content.map((c) => ('text' in c ? c.text : '')).join('\n')
   const pending = async () => (await aiRepo.listApprovals(conn.db, 'u1', new Date())).pending
   /** Espera a que la petición de la IA esté en la cola */
   const queued = async () => {

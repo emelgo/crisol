@@ -1,7 +1,8 @@
 /**
  * Las fugas que encontró la revisión de `conocimiento` (2026-11-06), cada una con lo que debe pasar: lo de dentro de un
  * secreto revelado, los enlaces que salen, los campos ocultos en los filtros, el resolutor de nombres, las campañas de
- * cero, «lo mismo que otra», las marcas del mundo en pestañas y «ver como» en los mapas
+ * cero, «lo mismo que otra», las marcas del mundo en pestañas, «ver como» en los mapas, las relaciones (módulo 10) y el
+ * «hoy», el clima y el centro de actividad de la campaña (8 · campaña)
  */
 import { connect, loadMemberships, schema } from '@crisol/db'
 import { freshTestDatabase, resetDatabase } from '@crisol/db/testing'
@@ -9,7 +10,7 @@ import { actorFrom } from '@crisol/domain'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { buildApp } from '../app.ts'
 import { errorText } from '../mcp/approvals.ts'
-import { createTestAuth, seedExampleTemplates, signUpTestUser, TEST_SEAL_KEY } from '../testing.ts'
+import { createTestAuth, seedExampleTemplates, signUpTestUser, TEST_CALENDAR, TEST_SEAL_KEY } from '../testing.ts'
 import { implementationsByName } from './implementations.ts'
 
 const BASE_URL = 'http://localhost:5173'
@@ -215,6 +216,58 @@ describe('las fugas de la revisión de conocimiento (ADR-0017)', () => {
     expect(byField.results.map((r: { title: string }) => r.title)).not.toContain('Topo')
   })
 
+  it('las relaciones y el grafo del mundo (módulo 10): ni aristas, ni conteos, ni nodos de lo oculto', async () => {
+    const liga = (await ok200('createPage', { worldId, title: 'La liga', parentId: null, template: 'faccion' })).id
+    await mark({ targetId: liga })
+    const made = await ok200('createPages', {
+      worldId,
+      parentId: null,
+      pages: [
+        {
+          key: 'topo',
+          title: 'Topo',
+          template: 'pnj',
+          markdown: `---\nFacción: "[[La liga]]"\nPadres:\n  - "[[Varn]]"\n---\nVive en [[Aldoria]].\n`
+        }
+      ]
+    })
+    const topo = made.pages[0].id
+    await mark({ targetId: topo })
+    // La Facción de Topo, oculta
+    const full = await ok200('getPage', { pageId: topo })
+    await ok200('setPageProperties', {
+      pageId: topo,
+      properties: full.properties.map((p: { name: string }) => (p.name === 'Facción' ? { ...p, hidden: true } : p))
+    })
+    // El secreto de Aldoria (que enlaza a Varn, oculta), revelado: Varn sigue sin salir
+    const [secret] = await secretsOf(page.Aldoria ?? '')
+    await mark({ kind: 'secret', targetId: secret?.id })
+
+    const aldoria = await ok200('getRelations', { pageId: page.Aldoria }, ana.cookie)
+    // Solo Topo, que la enlaza; ni Varn (oculta, desde un secreto) ni Mira (desde una nota oculta)
+    expect(aldoria.nodes.map((n: { title: string }) => n.title).sort()).toEqual(['Aldoria', 'Topo'])
+    expect(aldoria.edges).toHaveLength(1)
+    const ofTopo = await ok200('getRelations', { pageId: topo, depth: 3 }, ana.cookie)
+    expect(ofTopo.modes).toEqual(['links'])
+    const graph = await ok200('getWorldGraph', { worldId, orphans: true }, ana.cookie)
+    expect(graph.relations).toEqual([{ key: 'mention', kind: 'mention', name: '', count: 1 }])
+    for (const result of [aldoria, ofTopo, graph]) {
+      const text = JSON.stringify(result)
+      expect(text).not.toContain(page.Varn)
+      expect(text).not.toContain('Varn')
+      expect(text).not.toContain('Facción')
+      expect(text).not.toContain('secret')
+      // La liga la ve, pero el campo que la une a Topo está oculto
+      expect(JSON.stringify(result.edges)).not.toContain(liga)
+    }
+    expect(graph.nodes.map((n: { title: string }) => n.title).sort()).toEqual(['Aldoria', 'La liga', 'Mira', 'Topo'])
+    // Por la IA del máster, todo, con lo del secreto y la nota marcado
+    const master = await ok200('getRelations', { pageId: page.Aldoria })
+    expect(master.edges.filter((e: { secret?: true }) => e.secret)).toHaveLength(2)
+    // Una página oculta: como si no existiera
+    expect((await call('getRelations', { pageId: page.Varn }, ana.cookie)).statusCode).toBe(404)
+  })
+
   it('unas etiquetas «Ocultas» no se encuentran buscando por etiqueta', async () => {
     await ok200('setPageProperties', {
       pageId: page.Mira,
@@ -263,5 +316,49 @@ describe('las fugas de la revisión de conocimiento (ADR-0017)', () => {
     ).id
     const campaigns = (await ok200('getPageKnowledge', { pageId: page.Varn })).campaigns
     expect(campaigns.find((c: { campaignId: string }) => c.campaignId === copia).knowsWorld).toBe(false)
+  })
+
+  it('el «hoy», el clima y la actividad (8 · campaña): ni previsión, ni clima a mano, ni eras ocultas, ni notas de otras', async () => {
+    await ok200('createCalendar', { worldId, name: 'Eana', from: { definition: TEST_CALENDAR } })
+    await ok200('setCampaignToday', { campaignId: marca, date: '1250-Siega-18' })
+    await ok200('setCampaignToday', { campaignId: norte, date: '1260-Brumas-2' })
+    await ok200('markActivitySeen', { campaignId: marca }, ana.cookie)
+    const storm = { condition: 'snow', low: -3, high: 0, wind: 'gale', windDirection: 'N' }
+    await ok200('setDayWeather', { campaignId: marca, weather: storm })
+    const bruno = await signUpTestUser(auth, { name: 'Bruno', email: 'bruno@crisol.test' })
+    await join(marca, bruno)
+    await ok200('createPlayerNote', { campaignId: marca, title: 'Lo que sabe Bruno' }, bruno.cookie)
+    await ok200('sendMessage', { campaignId: marca, text: 'Psst', whisper: ['master'] }, bruno.cookie)
+
+    // El «hoy»: la fecha sin la era solo del máster, el clima de hoy y el sol; sin previsión
+    const today = await ok200('getCampaignToday', { campaignId: marca }, ana.cookie)
+    expect(today.forecast).toEqual([])
+    expect(today.suggestion).toBeNull()
+    expect(today.weather.condition).toBe('snow')
+    expect(JSON.stringify(today)).not.toContain('EE')
+    // Lo del máster: la previsión, el clima a mano, los viajes; y nada de otra campaña
+    for (const [name, input] of [
+      ['getCampaignWeather', { campaignId: marca }],
+      ['setDayWeather', { campaignId: marca, weather: null }],
+      ['setCampaignClimate', { campaignId: marca, zone: 'arid' }],
+      ['planTravel', { campaignId: marca, distance: 10 }],
+      ['setCampaignToday', { campaignId: marca, days: 1 }]
+    ] as const)
+      expect((await call(name, input, ana.cookie)).statusCode, name).toBe(403)
+    expect((await call('getCampaignToday', { campaignId: norte }, ana.cookie)).statusCode).toBe(404)
+    expect((await call('getCampaignActivity', { campaignId: norte }, ana.cookie)).statusCode).toBe(404)
+
+    // El registro: el cambio de fecha sí; el clima a mano y el susurro de Bruno, no
+    const log = JSON.stringify((await ok200('listLog', { campaignId: marca }, ana.cookie)).entries)
+    expect(log).toContain('"type":"date"')
+    expect(log).not.toContain('"type":"weather"')
+    expect(log).not.toContain('Psst')
+    expect(log).not.toContain('EE')
+
+    // Su centro: sin la nota ni el susurro de Bruno
+    const activity = await ok200('getCampaignActivity', { campaignId: marca }, ana.cookie)
+    expect(JSON.stringify(activity)).not.toContain('Lo que sabe Bruno')
+    expect(activity.items.map((i: { type: string }) => i.type)).not.toContain('note')
+    expect(activity.log).toEqual([])
   })
 })

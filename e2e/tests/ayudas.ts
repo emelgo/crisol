@@ -129,6 +129,8 @@ export async function skipTours(page: Page, email: string) {
       key,
       JSON.stringify({
         seen: [
+          'mapa',
+          'mapa-lectura',
           'mundos',
           'mundo',
           'campanas',
@@ -141,6 +143,8 @@ export async function skipTours(page: Page, email: string) {
           'biblioteca',
           'tabla',
           'archivos',
+          'calendarios',
+          'calendario',
           'etiquetas',
           'plantillas',
           'plantilla',
@@ -152,7 +156,10 @@ export async function skipTours(page: Page, email: string) {
           'mesa-jugador',
           'libros',
           'sistema',
-          'revisar'
+          'revisar',
+          'relaciones',
+          'relaciones-jugadora',
+          'grafo-mundo'
         ]
       })
     )

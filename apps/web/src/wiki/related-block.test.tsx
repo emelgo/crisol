@@ -117,8 +117,13 @@ describe('«Tabla de páginas» en el panel', () => {
     await userEvent.click(inside.getByRole('button', { name: 'Añadir bloque' }))
     await userEvent.click(inside.getByRole('button', { name: 'Tabla de páginas' }))
     await userEvent.keyboard('Equipo{Enter}')
-    await waitFor(async () => expect((await saved())[0]).toMatchObject({ type: 'related', title: 'Equipo' }))
-    await userEvent.click(inside.getByRole('button', { name: 'Opciones de «Equipo»' }))
+    // Nace sin configurar: se guarda así y lo dice, con «Elegir» a mano
+    await waitFor(async () =>
+      expect((await saved())[0]).toMatchObject({ type: 'related', title: 'Equipo', template: '', field: '' })
+    )
+    expect(await inside.findByText(/Elige la plantilla y su campo/)).toBeDefined()
+    await userEvent.click(inside.getByRole('button', { name: 'Elegir' }))
+    expect(inside.getByLabelText('cuyo')).toHaveProperty('disabled', true)
     // Otra plantilla: su primer campo de enlace y dos columnas
     await userEvent.selectOptions(inside.getByLabelText('Páginas de'), 'Objeto')
     await waitFor(async () =>

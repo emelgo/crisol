@@ -2,6 +2,8 @@ import { expect, test } from '@playwright/test'
 import { campaignLink, closeWindow, openWindow, openWorld, rename, toWorlds } from './ayudas.ts'
 
 test('el propietario ve en el historial lo que ha hecho, en el mundo y en toda la organización', async ({ page }) => {
+  // Larga (mundo, campaña, enlace y renombrar por la interfaz): sola, 13-18 s; con la máquina cargada pasó de 30
+  test.slow()
   await campaignLink(page)
   await page.getByRole('button', { name: 'Nuevo enlace' }).click()
   await page.getByRole('button', { name: 'Generar el nuevo' }).click()

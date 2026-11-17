@@ -1,0 +1,135 @@
+/* Las entradas del sistema en el registro: la fecha, el viaje y el clima a mano */
+
+.system {
+  align-items: center;
+}
+
+.icon {
+  display: grid;
+  place-items: center;
+  inline-size: 1.625rem;
+  color: #e7b84f;
+}
+
+.text {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.text b {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.time {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.onlyYou,
+.ai {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-inline-start: 0.4rem;
+  color: var(--color-secret-text);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  vertical-align: 1px;
+}
+
+.ai {
+  color: var(--color-ai);
+}
+
+/* El viaje: una tarjeta a lo ancho */
+.travelEntry {
+  display: block;
+}
+
+.travel {
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--line-frame, var(--color-border));
+  border-radius: var(--radius-button);
+  background: color-mix(in srgb, var(--color-bg) 30%, transparent);
+}
+
+.travelHead {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8125rem;
+}
+
+.travelHead svg {
+  color: #e7b84f;
+}
+
+.travelHead .time {
+  margin-inline-start: auto;
+}
+
+.travelLine {
+  margin: 0.25rem 0 0.4rem;
+  color: var(--color-muted);
+  font-size: 0.75rem;
+}
+
+.days {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.days li {
+  display: grid;
+  grid-template-columns: max-content auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.15rem 0;
+  font-size: 0.8125rem;
+}
+
+.dayDate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dayCondition {
+  min-inline-size: 0;
+  color: var(--color-muted);
+}
+
+.rest {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.dayTemps {
+  color: var(--color-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.arrival {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0.45rem 0 0;
+  padding-block-start: 0.4rem;
+  border-block-start: 1px solid var(--line-soft, var(--color-border));
+  color: var(--color-muted);
+  font-size: 0.75rem;
+}
+
+.arrival b {
+  color: var(--color-text);
+}

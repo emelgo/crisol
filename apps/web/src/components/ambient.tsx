@@ -1,17 +1,23 @@
 /**
  * El fondo de ambiente (tanda 5, «Crisol, con cristal»): el cristal solo luce con algo detrás, y fuera de la Mesa no
- * hay mapa. Detrás de todo, fija, una imagen suave y tenue: en un mundo, su portada; en Inicio, la del mundo en el que
- * uno se para; si no, la de ambiente. Lo que enmarca va encima, de cristal (desenfoca lo de detrás). Con «Sin
+ * hay mapa. Detrás de todo, fija, una imagen suave y tenue: en Inicio, la portada del mundo en el que uno se para; en
+ * un sistema, la suya; si no, los fondos de Crisol, que van cambiando despacio (Enrique, 2026-11-13: «que vayan
+ * variando cada x tiempo, sin llegar a marear»). Lo que enmarca va encima, de cristal (desenfoca lo de detrás). Con «Sin
  * desenfoque» (Ajustes) no sale: todo opaco, como antes. De cada imagen se hace una copia pequeña, suavizada y ya
  * mezclada con el color de fondo (opaca: al pasar de una a otra se funden sin sumar luz), y su luz pone el tope: con una
  * portada clara (nieve, un desierto a mediodía) va más tenue, para que el texto de encima se siga leyendo
  */
 import { type CSSProperties, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { BACKDROPS } from '../account/backdrops.ts'
 import styles from './ambient.module.css'
 import { usePlain } from './plain.ts'
 
-/** La de siempre, si nadie pide otra */
+/** La primera de las de siempre, si nadie pide otra */
 export const DEFAULT_AMBIENT = '/ambiente/inicio.webp'
+/** Las de siempre: la de ambiente y los fondos de Crisol (public/fondos), que se van turnando */
+const ROTATION = [DEFAULT_AMBIENT, ...BACKDROPS.map((backdrop) => `/fondos/${backdrop.file}.webp`)]
+/** Cada cuánto cambia la de siempre: despacio, para que no maree */
+export const ROTATE_EVERY = 45_000
 
 /** Lo más que se ve la imagen, y lo menos (con una muy clara) */
 const MOST = 0.62
@@ -38,7 +44,19 @@ const subscribe = (listener: () => void) => {
   listeners.add(listener)
   return () => listeners.delete(listener)
 }
-const current = () => wanted.at(-1)?.url ?? DEFAULT_AMBIENT
+// Cuál de las de siempre toca: la primera al llegar; luego, las demás en un orden al azar en cada visita
+let turn = 0
+const order = [ROTATION[0] as string, ...ROTATION.slice(1).sort(() => Math.random() - 0.5)]
+const current = () => wanted.at(-1)?.url ?? (order[turn % order.length] as string)
+/** ¿Es una de las de siempre? (entre ellas, el fundido es lento) */
+const inRotation = (url: string) => ROTATION.includes(url)
+/** Pasa a la siguiente de las de siempre (si se está viendo una de ellas) y prepara la de después */
+function rotate() {
+  if (wanted.at(-1)?.url) return
+  turn += 1
+  emit()
+  void prepare(order[(turn + 1) % order.length] as string)
+}
 
 /** Pide el fondo mientras se ve: url de una imagen (la portada de un mundo) o null para la de siempre */
 export function useAmbient(url: string | null | undefined) {
@@ -137,7 +155,7 @@ function prepare(url: string): Promise<Prepared> {
   return work
 }
 
-type Layer = Prepared & { n: number; still?: boolean }
+type Layer = Prepared & { n: number; still?: boolean; slow?: boolean }
 
 /** Prepararla ya (las portadas de los mundos de Inicio): al entrar en uno, su fondo está listo para la transición */
 export const prepareAmbient = (url: string) => void prepare(url)
@@ -152,9 +170,9 @@ const inTransition = () => {
 }
 
 /** La nueva, encima de la de antes; si ya había dos (en pleno fundido), en lugar de la de encima */
-const stacked = (all: readonly Layer[], next: Prepared): Layer[] => {
+const stacked = (all: readonly Layer[], next: Prepared, slow = false): Layer[] => {
   const n = (all.at(-1)?.n ?? 0) + 1
-  return all.length > 1 ? [all[0] as Layer, { ...next, n }] : [...all, { ...next, n }]
+  return all.length > 1 ? [all[0] as Layer, { ...next, n, slow }] : [...all, { ...next, n, slow }]
 }
 
 export function Ambient() {
@@ -166,21 +184,33 @@ export function Ambient() {
   // Si ya está hecha, al momento (en el mismo pintado): en una transición de vista entra en la foto de lo nuevo, ya
   // puesta y sin fundido propio (la transición funde una con otra, base.css)
   const [seen, setSeen] = useState(url)
+  // De una de las de siempre a otra, un fundido lento (el turno); a una portada o de ella, el de siempre
+  const slow = inRotation(url) && inRotation(seen)
   if (url !== seen) {
     setSeen(url)
     const known = ready.get(url)
     if (known && known.src !== layers.at(-1)?.src) {
       lastShown = known
       const n = (layers.at(-1)?.n ?? 0) + 1
-      setLayers(inTransition() ? [{ ...known, n, still: true }] : stacked(layers, known))
+      setLayers(inTransition() ? [{ ...known, n, still: true }] : stacked(layers, known, slow))
     }
   }
+  // Las de siempre se turnan mientras se ve una de ellas (con la pestaña a la vista)
+  useEffect(() => {
+    void prepare(order[(turn + 1) % order.length] as string)
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === 'visible') rotate()
+    }, ROTATE_EVERY)
+    return () => window.clearInterval(timer)
+  }, [])
+  const slowRef = useRef(slow)
+  slowRef.current = slow
   useEffect(() => {
     let live = true
     const show = (next: Prepared) => {
       if (!live) return
       lastShown = next
-      setLayers((all) => (all.at(-1)?.src === next.src ? all : stacked(all, next)))
+      setLayers((all) => (all.at(-1)?.src === next.src ? all : stacked(all, next, slowRef.current)))
     }
     const known = ready.get(url)
     if (known) show(known)
@@ -197,6 +227,7 @@ export function Ambient() {
           key={layer.n}
           className={styles.layer}
           data-still={layer.still || undefined}
+          data-slow={layer.slow || undefined}
           style={{ backgroundImage: `url("${layer.src}")`, '--alpha': layer.alpha } as CSSProperties}
           onAnimationEnd={() => {
             if (index === layers.length - 1 && layers.length > 1) setLayers((all) => all.slice(-1))

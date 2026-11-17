@@ -15,6 +15,12 @@ export interface ShownData {
 }
 
 /**
+ * Una entrada del sistema (docs/specs/modulo-8-10-campana.md, decisión 9): un cambio de fecha, un viaje o el clima
+ * cambiado a mano, con sus datos; el texto lo pone la interfaz (i18n). El contrato los describe (log.ts)
+ */
+export type LogEventData = { type: 'date' | 'travel' | 'weather' } & Record<string, unknown>
+
+/**
  * El registro de la partida de una campaña (docs/specs/registro.md, ADR-0022): sus mensajes y lo enseñado. Las tiradas
  * siguen en dice_rolls y se mezclan al listar. Como ellas, no pasa por operation(): no se deshace. whisper: los
  * destinatarios (ids de cuenta, o «master» por los másteres); null, para todos
@@ -34,7 +40,7 @@ export const campaignMessages = pgTable(
       .references(() => user.id, { onDelete: 'cascade' }),
     /** Lo escribió la IA, con la cuenta de quien la conecta */
     ai: boolean().notNull().default(false),
-    kind: text({ enum: ['message', 'shown'] })
+    kind: text({ enum: ['message', 'shown', 'event'] })
       .notNull()
       .default('message'),
     style: text({ enum: ['ic', 'ooc', 'emote'] })
@@ -44,12 +50,13 @@ export const campaignMessages = pgTable(
     text: text().notNull().default(''),
     whisper: text().array(),
     shown: jsonb().$type<ShownData>(),
+    event: jsonb().$type<LogEventData>(),
     deletedAt: timestamp({ withTimezone: true }),
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow()
   },
   (t) => [
     index().on(t.campaignId, t.createdAt),
-    check('campaign_messages_kind', sql`${t.kind} in ('message', 'shown')`),
+    check('campaign_messages_kind', sql`${t.kind} in ('message', 'shown', 'event')`),
     check('campaign_messages_style', sql`${t.style} in ('ic', 'ooc', 'emote')`)
   ]
 )

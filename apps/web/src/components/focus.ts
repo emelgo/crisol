@@ -47,3 +47,18 @@ export function useReturnFocus() {
   }, [])
   return { ref, back }
 }
+
+/** Donde se escribe: ahí las teclas (Supr, Escape) son del campo; una casilla, un color o un deslizador, no */
+const TYPING =
+  'textarea, select, input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="button"])'
+
+/**
+ * Si una tecla de un lienzo (el mapa, la pizarra) le toca a él: con el foco en la columna de la página (sus botones, su
+ * panel) o en ningún sitio, pero no donde se escribe ni en una ventana o un menú
+ */
+export function canvasKeyTarget(target: EventTarget | null, root: Element | null | undefined) {
+  const element = target instanceof HTMLElement ? target : null
+  if (!element || element === document.body) return true
+  if (element.isContentEditable || element.closest(`${TYPING}, dialog, [role="dialog"], [role="menu"]`)) return false
+  return Boolean(root?.contains(element))
+}

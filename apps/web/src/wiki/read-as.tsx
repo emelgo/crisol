@@ -3,8 +3,8 @@
  * Las piezas de la wiki que leen (lo de dentro de una página, sus enlaces, sus tablas) lo añaden a lo que piden, y sus
  * enlaces llevan a la vista de la campaña en lugar de a la del mundo
  */
-import { Link } from '@tanstack/react-router'
-import { createContext, type ReactNode, useContext } from 'react'
+import { Link, useNavigate } from '@tanstack/react-router'
+import { createContext, type ReactNode, useCallback, useContext } from 'react'
 
 export interface ReadAs {
   campaignId: string
@@ -31,6 +31,23 @@ export const readAsInput = (readAs: ReadAs | null) =>
 export const readAsKey = (readAs: ReadAs | null) => (readAs ? [readAs.campaignId, readAs.asCharacterId ?? null] : [])
 
 /** Un enlace a una página: a la del mundo o, leyendo como jugador, a la de la campaña */
+/** Abrir una página como lo haría PageLink (en la campaña, la de quien la lee) */
+export function useOpenPage() {
+  const readAs = useReadAs()
+  const navigate = useNavigate()
+  return useCallback(
+    (worldId: string, pageId: string) =>
+      readAs
+        ? void navigate({
+            to: '/mundos/$worldId/campanas/$campaignId/paginas/$pageId',
+            params: { worldId, campaignId: readAs.campaignId, pageId },
+            search: readAs.asCharacterId ? { como: readAs.asCharacterId } : {}
+          })
+        : void navigate({ to: '/mundos/$worldId/wiki/$pageId', params: { worldId, pageId } }),
+    [readAs, navigate]
+  )
+}
+
 export function PageLink({
   worldId,
   pageId,

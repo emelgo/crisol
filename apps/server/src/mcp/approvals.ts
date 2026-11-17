@@ -15,6 +15,8 @@ import {
 } from '@crisol/domain'
 import { authorizedCampaign, authorizedPage } from '../actions/access.ts'
 import { bookRequest } from '../actions/books.ts'
+import { calendarRequest } from '../actions/calendars.ts'
+import { chronologyRequest } from '../actions/chronologies.ts'
 import {
   type ActionContext,
   type ActionEnv,
@@ -33,16 +35,27 @@ import { viewedPage } from '../wiki/projection.ts'
 /** Lo que contesta una herramienta */
 export interface ToolResult {
   [key: string]: unknown
-  content: Array<{ type: 'text'; text: string }>
+  content: Array<{ type: 'text'; text: string } | { type: 'image'; data: string; mimeType: string }>
   structuredContent?: Record<string, unknown>
   isError?: boolean
 }
 
 const text = (value: string) => [{ type: 'text' as const, text: value }]
-const success = (output: Record<string, unknown>): ToolResult => ({
-  content: text(JSON.stringify(output, null, 2)),
-  structuredContent: output
-})
+/**
+ * Lo que sale bien. Si trae una imagen (la de un mapa, `image.data`), va como imagen para que la IA la vea; el resto,
+ * como siempre, sin repetir sus datos
+ */
+export const success = (output: Record<string, unknown>): ToolResult => {
+  const image = output.image as { data?: unknown; mimeType?: unknown } | null | undefined
+  if (image && typeof image.data === 'string' && typeof image.mimeType === 'string') {
+    const rest = { ...output, image: { mimeType: image.mimeType } }
+    return {
+      content: [{ type: 'image', data: image.data, mimeType: image.mimeType }, ...text(JSON.stringify(rest, null, 2))],
+      structuredContent: rest
+    }
+  }
+  return { content: text(JSON.stringify(output, null, 2)), structuredContent: output }
+}
 const failure = (message: string): ToolResult => ({ isError: true, content: text(message) })
 
 const READ_ONLY =
@@ -144,6 +157,10 @@ async function describe(ctx: ActionContext, action: string, input: Record<string
   Object.assign(details, await bookRequest(ctx, action, input))
   // El grupo: qué, cuánto y los nombres (como en el historial)
   Object.assign(details, await partyRequest(ctx, action, input))
+  // Un calendario: su nombre
+  Object.assign(details, await calendarRequest(ctx, action, input))
+  // Una cronología o un evento: su nombre o su título
+  Object.assign(details, await chronologyRequest(ctx, action, input))
   // Lo que sabe una campaña: qué se marca y a quién (como en el historial)
   Object.assign(details, await knowledgeRequest(ctx, action, input))
   if (action === 'updateCampaign' && typeof input.system === 'string')

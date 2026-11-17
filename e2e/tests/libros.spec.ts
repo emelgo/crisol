@@ -11,6 +11,8 @@ async function act(page: import('@playwright/test').Page, name: string, data: ob
 test('la campaña abre en su Inicio, con su barra; desde ahí, sus libros y la Mesa en otra pestaña (ADR-0021)', async ({
   page
 }) => {
+  // Larga (mundo, campaña y sistema por la interfaz): con la máquina ocupada rozaba los 30 s; como las demás largas
+  test.slow()
   await freshOwner(page)
   const five = await import5e(page)
   await createWorld(page, 'Eana')
@@ -91,6 +93,8 @@ test('la campaña abre en su Inicio, con su barra; desde ahí, sus libros y la M
 test('un libro nuevo en un sistema: vacío, la IA le propone entradas, se revisan y salen en la campaña (ADR-0021)', async ({
   page
 }) => {
+  // Larga (mundo, campaña y sistema por la interfaz): con la máquina ocupada rozaba los 30 s; como las demás largas
+  test.slow()
   await freshOwner(page)
   const five = await import5e(page)
   await createWorld(page, 'Eana')

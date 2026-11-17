@@ -1,0 +1,343 @@
+/* El centro de actividad: «Desde tu última visita», por días, y el aviso en vivo */
+
+.srOnly {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.center {
+  composes: frame from "../components/frame.module.css";
+  margin-block-start: var(--space-6);
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  padding: var(--space-3) var(--space-5);
+  border-block-end: 1px solid var(--line-soft);
+}
+
+.head h2 {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  color: var(--color-text);
+  font: 700 0.9375rem / 1.2 var(--font-body);
+  text-transform: none;
+}
+
+.count {
+  display: inline-grid;
+  place-items: center;
+  min-inline-size: 1.375rem;
+  block-size: 1.375rem;
+  padding-inline: 0.35rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-brand) 28%, transparent);
+  color: #ffb3a8;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.since {
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+}
+
+.mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-inline-start: auto;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: var(--radius-button);
+  background: none;
+  color: var(--color-link);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mark:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-link) 12%, transparent);
+}
+
+.nothing {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-4) var(--space-5);
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+.previous {
+  min-block-size: 2rem;
+  padding-inline: var(--space-2);
+  margin-inline-start: auto;
+  border: 0;
+  background: none;
+  color: var(--color-link);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.previous:hover {
+  text-decoration: underline;
+}
+
+.days {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dayGroup + .dayGroup {
+  border-block-start: 1px solid var(--line-soft);
+}
+
+.dayHead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-3) var(--space-5) var(--space-1);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.session {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, #4fae8a 20%, transparent);
+  color: #8fd9b9;
+  font-size: 0.6875rem;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+.logLine {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 0.15rem var(--space-5) 0.35rem calc(var(--space-5) + 2.4rem);
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+}
+
+.items {
+  margin: 0;
+  padding: 0 0 var(--space-2);
+  list-style: none;
+}
+
+.item {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-block-size: 2.625rem;
+  padding: 0.35rem var(--space-5);
+  font-size: 0.9375rem;
+}
+
+.item[data-fresh]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: color-mix(in srgb, var(--color-brand) 20%, transparent);
+  opacity: 0;
+  animation: arrives 1.6s ease-out;
+  pointer-events: none;
+}
+
+@keyframes arrives {
+  from {
+    opacity: 1;
+  }
+}
+
+.dot {
+  position: absolute;
+  inset-inline-start: 0.55rem;
+  inline-size: 6px;
+  block-size: 6px;
+  border-radius: 50%;
+  background: var(--color-brand);
+}
+
+.avatar,
+.glyph {
+  display: grid;
+  flex: none;
+  place-items: center;
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.avatar {
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.4);
+}
+
+.glyph {
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+  color: var(--color-muted);
+}
+
+.text {
+  flex: 1;
+  min-inline-size: 0;
+  color: var(--color-muted);
+  overflow-wrap: anywhere;
+}
+
+.text b {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.text a {
+  color: var(--color-link);
+}
+
+.time {
+  flex: none;
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* En el móvil (la jugadora): más apretado */
+.compact .head,
+.compact .item,
+.compact .dayHead,
+.compact .nothing {
+  padding-inline: var(--space-4);
+}
+
+.compact .mark {
+  justify-content: center;
+  min-inline-size: var(--target);
+  min-block-size: var(--target);
+  margin-block: -0.5rem;
+}
+
+.compact .logLine {
+  padding-inline-start: calc(var(--space-4) + 2.4rem);
+}
+
+.compact .item {
+  align-items: flex-start;
+  font-size: 0.875rem;
+}
+
+.compact .dot {
+  inset-inline-start: 0.4rem;
+  inset-block-start: 1rem;
+}
+
+/* El aviso en vivo: abajo a la derecha, encima del d20 */
+.live {
+  position: fixed;
+  inset-block-end: 6rem;
+  inset-inline-end: 1.25rem;
+  z-index: 90;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0 var(--space-2);
+  inline-size: min(22rem, calc(100vw - 2rem));
+  padding: var(--space-2) var(--space-2) var(--space-2) 0;
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--radius-frame);
+  background: var(--frame-sheen), var(--popup-glass);
+  -webkit-backdrop-filter: var(--popup-blur);
+  backdrop-filter: var(--popup-blur);
+  box-shadow: 0 0.75rem 2rem rgb(0 0 0 / 0.4);
+  animation: rises 240ms ease-out;
+}
+
+@keyframes rises {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+.liveList {
+  grid-row: 1;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.liveList .item {
+  padding-inline: var(--space-3) 0;
+  background: none;
+  animation: none;
+}
+
+.liveList .dot,
+.liveList .time {
+  display: none;
+}
+
+.liveWhere {
+  grid-row: 2;
+  padding-inline-start: calc(var(--space-3) + 2.5rem);
+  color: var(--color-muted);
+  font-size: 0.75rem;
+}
+
+.liveSee {
+  grid-row: 1;
+  border: 0;
+  background: none;
+  color: var(--color-link);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.liveClose {
+  grid-row: 1;
+  display: grid;
+  place-items: center;
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.liveClose:hover {
+  background: color-mix(in srgb, var(--color-text) 10%, transparent);
+  color: var(--color-text);
+}

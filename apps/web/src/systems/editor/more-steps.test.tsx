@@ -9,7 +9,7 @@ const OBJECTS = /¿Qué se lleva\?/
 const SHEET = /¿Cómo se ve la ficha\?/
 const CREATION = /¿Cómo se crea un personaje\?/
 const COMPENDIUM = /¿Qué trae el compendio\?/
-const ADVANCED = /Lo avanzado/
+const ADVANCED = /Avanzado/
 
 const announced = (text: string) =>
   waitFor(() =>
@@ -266,7 +266,7 @@ describe('el paso «¿Qué trae el compendio?» del editor de sistemas', () => {
   })
 })
 
-describe('el paso «Lo avanzado» del editor de sistemas', () => {
+describe('el paso «Avanzado» del editor de sistemas', () => {
   it('la iniciativa es una de sus tiradas o se escribe a mano', async () => {
     const rolls = { ...fronteras.rolls, iniciativa: { label: 'Iniciativa', formula: '2d6 + @astucia' } }
     const { api, id } = await renderEditor({ system: { ...fronteras, rolls }, step: ADVANCED })
@@ -278,24 +278,13 @@ describe('el paso «Lo avanzado» del editor de sistemas', () => {
     await waitFor(async () => expect((await lastSaved(api, id)).initiative).toBeUndefined())
   })
 
-  it('su versión y sus idiomas (el último no se puede quitar)', async () => {
+  it('su versión; sin idiomas (cada sistema, en el que lo subió su dueño)', async () => {
     const { api, id } = await renderEditor({ step: ADVANCED })
     const version = screen.getByLabelText<HTMLInputElement>('Su versión')
     await userEvent.clear(version)
     await userEvent.type(version, '8')
-    const spanish = screen.getByRole<HTMLInputElement>('checkbox', { name: 'Español' })
-    expect(spanish.checked).toBe(true)
-    expect(spanish.disabled).toBe(true)
-    await userEvent.click(screen.getByRole('checkbox', { name: 'Inglés' }))
-    expect(spanish.disabled).toBe(false)
-    await waitFor(async () => {
-      const saved = await lastSaved(api, id)
-      expect(saved.version).toBe('8')
-      expect(saved.languages).toEqual(['es', 'en'])
-    })
-    await userEvent.click(spanish)
-    await waitFor(async () => expect((await lastSaved(api, id)).languages).toEqual(['en']))
-    expect(screen.getByRole<HTMLInputElement>('checkbox', { name: 'Inglés' }).disabled).toBe(true)
+    expect(screen.queryByRole('checkbox', { name: 'Español' })).toBeNull()
+    await waitFor(async () => expect((await lastSaved(api, id)).version).toBe('8'))
   })
 
   it('bajar su archivo', async () => {

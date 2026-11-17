@@ -18,6 +18,9 @@ async function accessible(page: Page, include: string) {
 test('el máster abre los dados en su campaña, junta unos cuantos y tira: se vacían, se cierran y se anuncia el total', async ({
   page
 }) => {
+  // Crea el mundo y la campaña por la interfaz y mira axe: sola tarda la mitad de los 30 s, y con la máquina ocupada
+  // se pasaba (como otras largas, con más margen; las esperas siguen siendo por estado)
+  test.slow()
   await campaignLink(page)
   await toMesa(page)
   // El d20 flotante (fuera de la barra), en la esquina
@@ -112,6 +115,8 @@ test('en el móvil de la jugadora, el d20 abre los dados en una hoja que sube de
   page,
   browser
 }) => {
+  // Mundo, campaña y la cuenta de la jugadora por la interfaz, y axe dos veces: con el margen de las largas
+  test.slow()
   const link = await campaignLink(page)
   const ana = await newPlayer(browser, link, 'Ana')
   page = ana
@@ -151,6 +156,8 @@ test('en el móvil de la jugadora, el d20 abre los dados en una hoja que sube de
 test('los dados 3D: la escena se carga aparte, en un rato libre dentro del mundo, y caen al tirar', async ({
   page
 }) => {
+  // Con la máquina cargada rozaba los 30 s (de 22 a 32 en las baterías enteras): con el margen de las demás largas
+  test.slow()
   const scripts: string[] = []
   page.on('request', (request) => {
     if (request.resourceType() === 'script') scripts.push(new URL(request.url()).pathname)

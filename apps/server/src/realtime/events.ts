@@ -12,6 +12,15 @@ export const tablePresenceChanged = (scope: CampaignScope): RealtimeEvent => ({
   message: { type: 'changed', what: 'tablePresence', campaignId: scope.campaignId }
 })
 
+/**
+ * Algo nuevo en el centro de actividad de una campaña (8 · campaña): un cambio de fecha, a todos; las notas y los
+ * personajes de los jugadores, solo a los másteres (master: true). El aviso no dice qué
+ */
+export const activityChanged = (scope: CampaignScope, master = false): RealtimeEvent => ({
+  to: { capability: master ? 'notes.read' : 'campaign.read', target: scope },
+  message: { type: 'changed', what: 'activity', campaignId: scope.campaignId }
+})
+
 /** El mundo (su nombre, sus campañas): a quien lo ve */
 export const worldsChanged = (worldId: string): RealtimeEvent => ({
   to: { capability: 'world.read', target: { worldId } },
@@ -31,6 +40,24 @@ export const campaignsChanged = (scope: CampaignScope): RealtimeEvent => ({
 export const pagesChanged = (wiki: { worldId: string; organizationId: string }): RealtimeEvent => ({
   to: { capability: 'page.view', target: wiki },
   message: { type: 'changed', what: 'pages', worldId: wiki.worldId }
+})
+
+/**
+ * Los calendarios de un mundo: a quien lee su wiki (los jugadores también los leen, sin las eras solo del máster; el
+ * aviso no dice qué cambió)
+ */
+export const calendarsChanged = (wiki: { worldId: string; organizationId: string }): RealtimeEvent => ({
+  to: { capability: 'page.view', target: wiki },
+  message: { type: 'changed', what: 'calendars', worldId: wiki.worldId }
+})
+
+/**
+ * Las cronologías de un mundo, sus grupos o sus eventos (módulo 8): a quien lee su wiki (un jugador las vuelve a pedir
+ * ya proyectadas; el aviso no dice qué cambió)
+ */
+export const chronologiesChanged = (wiki: { worldId: string; organizationId: string }): RealtimeEvent => ({
+  to: { capability: 'page.view', target: wiki },
+  message: { type: 'changed', what: 'chronologies', worldId: wiki.worldId }
 })
 
 /** Los archivos de un mundo: a quien ve su wiki */
@@ -175,6 +202,14 @@ export function undoEvents(
       // Las escenas sueltas (ADR-0020): sus listas cuelgan de las páginas en la web
       case 'scenes':
         events.push(pagesChanged({ worldId, organizationId: context.organizationId }))
+        break
+      case 'calendars':
+        events.push(calendarsChanged({ worldId, organizationId: context.organizationId }))
+        break
+      case 'chronologies':
+      case 'timeline_groups':
+      case 'timeline_events':
+        events.push(chronologiesChanged({ worldId, organizationId: context.organizationId }))
         break
       case 'tags':
         events.push(tagsChanged(String(row.organization_id ?? context.organizationId)))

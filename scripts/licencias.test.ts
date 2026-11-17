@@ -95,3 +95,11 @@ describe('checkLicenses', () => {
     expect(err[0]).toBe('desarrollo: malo@1.0.0 tiene licencia GPL-3.0-only')
   })
 })
+
+describe('las licencias miradas a mano', () => {
+  it('valen solo para su versión exacta', () => {
+    expect(findViolations({ Unknown: [{ name: 'khroma', versions: ['2.1.0'] }] }, PROD_POLICY)).toEqual([])
+    expect(findViolations({ Unknown: [{ name: 'khroma', versions: ['2.2.0'] }] }, PROD_POLICY)).toHaveLength(1)
+    expect(isAllowed('MIT AND Zlib', PROD_POLICY)).toBe(true)
+  })
+})

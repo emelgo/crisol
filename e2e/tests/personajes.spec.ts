@@ -82,7 +82,9 @@ test('una jugadora hace su personaje de 5e con el creador, lo termina y lo sube 
 
   // Terminar: deja la versión «Creado · Nivel 1» y lleva a la ficha
   const finish = player.getByRole('button', { name: 'Terminar' })
-  await expect(finish).toBeEnabled()
+  // Mientras guarda las seis características sale «Guardando…»: con la máquina cargada pasaba de los 5 s de siempre
+  // (los 10 de la CI), así que se espera a que acabe con más margen
+  await expect(finish).toBeEnabled({ timeout: 15_000 })
   await finish.click()
   await expect(player.getByText('Guardado')).toBeVisible()
   await player.getByRole('navigation', { name: 'Vistas del personaje' }).getByRole('link', { name: 'Ficha' }).click()

@@ -175,7 +175,12 @@ test('la visión: la cripta con su puerta secreta, el grupo que entra, la secret
   const lights = page.getByRole('complementary', { name: 'Luces' })
   await expect(lights).toBeVisible()
   await expect(page.getByRole('button', { name: 'Luz 2' })).toBeAttached()
-  const torch = await onMap(stage, LIGHTS[0] as Point)
+  // La de la sala del altar de la derecha: la de la izquierda queda bajo la barra de la cabecera (con el chip del hoy)
+  const torch = await onMap(stage, LIGHTS[1] as Point)
+  // Que lo de encima (barras, menús) no tape el punto: el clic tiene que llegar al mapa
+  expect(
+    await page.evaluate(({ x, y }) => !!document.elementFromPoint(x, y)?.closest('[role="application"]'), torch)
+  ).toBe(true)
   await page.mouse.click(torch.x, torch.y)
   await expect(lights.getByRole('region', { name: /^Luz \d$/ })).toBeVisible()
   await settled()

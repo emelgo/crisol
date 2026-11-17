@@ -3,10 +3,24 @@
  * visor es el de Everlore rehecho sobre lo nuestro: durante el gesto el escenario se mueve con `transform` directamente
  * en el DOM (sin pintar React), la rueda acerca hacia el cursor y los pines guardan su tamaño con --inv-k
  */
-import type { MapPinView, MapView, Page, PageTabView } from '@crisol/contracts'
+import type { MapElementView, MapGeometry, MapPinView, MapView, Page, PageTabView } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
-import { ImageIcon, MapPin, Maximize, Minus, Plus } from 'lucide-react'
+import {
+  Expand,
+  ImageIcon,
+  Layers,
+  MapPin,
+  Maximize,
+  Minus,
+  Pentagon,
+  Plus,
+  Ruler,
+  Settings2,
+  Shrink,
+  Spline,
+  Type
+} from 'lucide-react'
 import {
   type KeyboardEvent,
   type PointerEvent,
@@ -14,9 +28,11 @@ import {
   useEffect,
   useId,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState
 } from 'react'
+import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { ApiError } from '../../api/client.ts'
 import { useApi } from '../../api/context.tsx'
@@ -25,16 +41,39 @@ import { useAnnounce } from '../../components/announcer.tsx'
 import { Loading } from '../../components/brand.tsx'
 import { BusyButton } from '../../components/busy-button.tsx'
 import { FormError } from '../../components/field.tsx'
+import { canvasKeyTarget } from '../../components/focus.ts'
+import { Icon } from '../../components/icon.tsx'
 import list from '../../components/list.module.css'
 import { failed, LoadError } from '../../components/load-error.tsx'
 import { Tour } from '../../components/tour.tsx'
 import { useWorldFiles } from '../cover-look.ts'
 import { readAsInput, readAsKey, useReadAs } from '../read-as.tsx'
+import { tabRegionLabel } from '../tabs/kinds.tsx'
+import { useWorldPage } from '../world-page.ts'
+import { MapDrawing } from './drawing.tsx'
+import {
+  insertedVertex,
+  moved,
+  type Point,
+  snapped,
+  snapTargets,
+  type VertexRef,
+  withoutVertex,
+  withVertex
+} from './edit.ts'
+import { type Draft, DraftLayer, EditHandles } from './editing.tsx'
+import { ElementPanel } from './element-panel.tsx'
+import { mapKey } from './keys.ts'
+import { LayersPanel, useHiddenHere } from './layers-panel.tsx'
 import styles from './map.module.css'
+import { MapSettings } from './map-settings.tsx'
+import { distanceOf, roundDistance, scaleBar } from './measure.ts'
+import { MeasurePanel } from './measure-panel.tsx'
 import { PinPanel } from './pin-panel.tsx'
 import { PinShape, tipAnchored } from './pin-shape.tsx'
+import { useElements } from './use-elements.ts'
 
-export const mapKey = (worldId: string, tabId: string) => ['pages', worldId, 'map', tabId]
+export { mapKey } from './keys.ts'
 
 const MIN_SCALE = 0.05
 const MAX_SCALE = 8
@@ -49,6 +88,14 @@ export function zoomedAt(view: View, factor: number, px: number, py: number): Vi
   const k = clampScale(view.k * factor)
   const ratio = k / view.k
   return { k, x: px - (px - view.x) * ratio, y: py - (py - view.y) * ratio }
+}
+
+/**
+ * El tamaño de un texto para que llene el alto de su caja (en píxeles de la imagen): su letra, a su alto (fontPixels
+ * de geometry.ts), dentro de lo que admite (10 a 100)
+ */
+export function textSizeFor(boxHeight: number, imageWidth: number) {
+  return Math.round(Math.min(100, Math.max(10, (boxHeight * 0.8 * 1000) / imageWidth)))
 }
 
 /** Lo que mide de verdad una imagen (un SVG sin medidas, uno razonable) */
@@ -76,7 +123,7 @@ export function MapTab({ page, tab }: { page: Page; tab: PageTabView }) {
   }
   if (!map.data.image) {
     return (
-      <section className={styles.empty} aria-label={t('map.label', { name: tab.name })}>
+      <section className={styles.empty} aria-label={tabRegionLabel(t, 'map', tab.name)}>
         <MapPin aria-hidden="true" size={32} strokeWidth={1.5} />
         <p>{t('map.empty')}</p>
         {!page.locked && <ImageChooser page={page} map={map.data} />}
@@ -202,6 +249,14 @@ function usePins(page: Page, map: MapView) {
 }
 
 type Gesture = { startX: number; startY: number; view: View; travel: number; pinch: number | null }
+type Tool = 'select' | 'pin' | 'region' | 'path' | 'text' | 'measure' | 'calibrate'
+/** Las teclas de las herramientas (con el visor enfocado); medir, también para quien solo lee */
+const TOOL_KEYS: Record<string, Tool> = { v: 'select', p: 'pin', r: 'region', l: 'path', t: 'text', m: 'measure' }
+const DRAWING_TOOLS: readonly Tool[] = ['region', 'path', 'text']
+/** A cuántos píxeles del primer vértice se cierra la región al pulsar (y se resalta al acercarse) */
+const CLOSE_RADIUS = 12
+const samePoint = (a: Point | undefined, b: Point | undefined) =>
+  !!a && !!b && Math.abs(a[0] - b[0]) < 1e-6 && Math.abs(a[1] - b[1]) < 1e-6
 type PinDrag = { id: string; startX: number; startY: number; x0: number; y0: number; travel: number }
 
 /** El visor: el escenario (imagen y pines) que se mueve y se acerca, sus herramientas y el panel del pin elegido */
@@ -219,19 +274,115 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
   const gesture = useRef<Gesture | null>(null)
   const pinDrag = useRef<PinDrag | null>(null)
   const dragged = useRef(false)
-  const [tool, setTool] = useState<'select' | 'pin'>('select')
+  const [tool, setTool] = useState<Tool>('select')
+  // El aro del foco, solo si se llegó con el tabulador (al pulsar una tecla con el ratón en el mapa no se pinta)
+  const [tabbed, setTabbed] = useState(false)
   const [selected, setSelected] = useState<string | null>(null)
+  // Lo dibujado elegido, lo que se está dibujando (con la goma hasta el cursor) y lo que se está retocando
+  const [selectedElement, setSelectedElement] = useState<string | null>(null)
+  const [namingElement, setNamingElement] = useState<string | null>(null)
+  const [draft, setDraft] = useState<Draft | null>(null)
+  const [closing, setClosing] = useState(false)
+  // Texto: la caja que se dibuja para saber dónde irá (de esquina a esquina, en coordenadas del mapa)
+  const [textBox, setTextBox] = useState<{ from: Point; to: Point } | null>(null)
+  const textBoxRef = useRef(textBox)
+  textBoxRef.current = textBox
+  const [cursor, setCursor] = useState<Point | null>(null)
+  const [live, setLive] = useState<{ id: string; geometry: MapGeometry } | null>(null)
+  const liveRef = useRef(live)
+  liveRef.current = live
+  const lastTravel = useRef(0)
+  const cursorFrame = useRef(0)
+  useEffect(() => () => cancelAnimationFrame(cursorFrame.current), [])
+  // El arrastre en curso (para soltarlo si el visor se va)
+  const endDrag = useRef<(() => void) | null>(null)
+  useEffect(() => () => endDrag.current?.(), [])
+  // Medir: los puntos y, si se mide a lo largo de una ruta, su nombre; calibrar: la raya y lo que se dibuja de ella
+  const [measure, setMeasure] = useState<{ points: Point[]; route: string | null; routeId?: string | null }>({
+    points: [],
+    route: null
+  })
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [calibration, setCalibration] = useState<Point[]>([])
+  const [line, setLine] = useState<[Point, Point] | null>(null)
+  useEffect(() => {
+    if (measure.points.length < 2 || !map.scale) return
+    const distance = distanceOf(measure.points, image, map.scale)
+    if (distance !== null)
+      announce(t('map.measure.said', { distance: roundDistance(distance).toLocaleString('es'), unit: map.scale.unit }))
+  }, [measure.points, map.scale, image, announce, t])
+  // Lo dibujado bajo el puntero al pulsar: el visor captura el puntero (para arrastrar el mapa) y el clic le llega a él
+  const pressedOn = useRef<string | null>(null)
   const [menu, setMenu] = useState<{ sx: number; sy: number; x: number; y: number } | null>(null)
   const [moving, setMoving] = useState<{ id: string; x: number; y: number } | null>(null)
   const [newPage, setNewPage] = useState<string | null>(null)
   const [changingImage, setChangingImage] = useState(false)
+  const [layersOpen, setLayersOpen] = useState(false)
+  // Ampliado: el mapa ocupa todo lo de al lado de la barra (para dibujar con sitio)
+  const [wide, setWide] = useState(false)
+  // Los botones que abren los paneles: al cerrarlos, el foco vuelve a ellos
+  const layersButton = useRef<HTMLButtonElement>(null)
+  // Dónde empieza el visor en la página: su alto llega justo al final de la ventana (la portada, el título y las
+  // pestañas lo empujan hacia abajo)
+  const wrapper = useRef<HTMLDivElement>(null)
+  useLayoutEffect(() => {
+    const element = wrapper.current
+    if (!element || wide) return
+    const place = () => {
+      const top = element.getBoundingClientRect().top + window.scrollY
+      element.style.setProperty('--map-top', `${Math.max(0, top)}px`)
+    }
+    place()
+    window.addEventListener('resize', place)
+    return () => window.removeEventListener('resize', place)
+  }, [wide])
+  const settingsButton = useRef<HTMLButtonElement>(null)
+  // En la página del mundo (Enrique, 2026-11-16): el mapa a sangre y sus herramientas en una píldora abajo en
+  // el centro, el zoom abajo a la derecha y la escala abajo a la izquierda, pegados a lo que se ve
+  const docked = Boolean(useWorldPage())
+  const scaleRef = useRef<HTMLDivElement>(null)
+  const scaleOf = useRef(map.scale)
+  const hiddenHere = useHiddenHere(map.id)
+  const drawingId = useId()
+  // Las capas solo del máster: lo suyo se le ve más apagado (no lo ven los jugadores)
+  const secretLayers = useMemo(
+    () => new Set(map.layers.filter((layer) => layer.hidden).map((layer) => layer.id)),
+    [map.layers]
+  )
   const pins = usePins(page, map)
+  const elements = useElements(page, map)
   const editable = !page.locked
+
+  /** Abrir la página de un pin o de algo dibujado (como jugador, la de su campaña) */
+  const openPage = useCallback(
+    (pageId: string) => {
+      if (readAs)
+        void navigate({
+          to: '/mundos/$worldId/campanas/$campaignId/paginas/$pageId',
+          params: { worldId: page.worldId, campaignId: readAs.campaignId, pageId },
+          search: readAs.asCharacterId ? { como: readAs.asCharacterId } : {}
+        })
+      else void navigate({ to: '/mundos/$worldId/wiki/$pageId', params: { worldId: page.worldId, pageId } })
+    },
+    [navigate, readAs, page.worldId]
+  )
 
   // Mientras se mueve, el escenario va en su capa (fluido); al parar, se suelta para que el navegador lo vuelva a
   // dibujar a la escala de ahora y los pines y la imagen no se vean borrosos
   const settle = useRef<ReturnType<typeof setTimeout> | null>(null)
   useEffect(() => () => clearTimeout(settle.current ?? undefined), [])
+  // La barra de escala, a la de ahora (sin pintar React: va con cada paso del gesto)
+  const showScale = useCallback(() => {
+    const bar = scaleRef.current
+    const scale = scaleOf.current
+    if (!bar) return
+    const shown = scale ? scaleBar((view.current.k * scale.length) / scale.value) : null
+    bar.hidden = !shown
+    if (!shown || !scale) return
+    bar.style.setProperty('--scale-width', `${shown.width}px`)
+    const label = bar.querySelector('span')
+    if (label) label.textContent = `${shown.units.toLocaleString('es')} ${scale.unit}`
+  }, [])
   const apply = useCallback(() => {
     const element = stage.current
     if (!element) return
@@ -239,11 +390,17 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
     element.style.willChange = 'transform'
     element.style.transform = `translate(${x}px, ${y}px) scale(${k})`
     element.style.setProperty('--inv-k', String(1 / k))
+    showScale()
     clearTimeout(settle.current ?? undefined)
     settle.current = setTimeout(() => {
       element.style.willChange = 'auto'
     }, 200)
-  }, [])
+  }, [showScale])
+  // Si cambia la escala del mapa (al calibrarla), la barra, al día
+  useEffect(() => {
+    scaleOf.current = map.scale
+    showScale()
+  }, [showScale, map.scale])
 
   const fit = useCallback(() => {
     const element = container.current
@@ -255,7 +412,37 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
     apply()
   }, [apply, image.width, image.height])
 
-  useLayoutEffect(() => fit(), [fit])
+  // Al encuadrar y al ampliarlo o reducirlo (cambia su tamaño)
+  useLayoutEffect(() => fit(), [fit, wide])
+  // Ampliado, lo de detrás (la página) no se alcanza con el tabulador ni con el lector de pantalla
+  useEffect(() => {
+    const root = document.getElementById('root')
+    if (!wide || !root) return
+    root.setAttribute('inert', '')
+    return () => root.removeAttribute('inert')
+  }, [wide])
+
+  // Si el visor cambia de tamaño (la ventana, el móvil al girar), se vuelve a encuadrar
+  useEffect(() => {
+    const element = container.current
+    if (!element || typeof ResizeObserver === 'undefined') return
+    let size = { width: element.clientWidth, height: element.clientHeight }
+    const observer = new ResizeObserver(() => {
+      const next = { width: element.clientWidth, height: element.clientHeight }
+      if (next.width === size.width && next.height === size.height) return
+      size = next
+      fit()
+    })
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [fit, wide])
+
+  // Al ampliarlo o reducirlo, el visor es otro elemento (va o vuelve del cuerpo de la página): el foco, a él
+  const wideBefore = useRef(wide)
+  useEffect(() => {
+    if (wideBefore.current !== wide) container.current?.focus()
+    wideBefore.current = wide
+  }, [wide])
 
   const zoomCenter = (factor: number) => {
     const element = container.current
@@ -289,7 +476,7 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
       element.removeEventListener('wheel', onWheel)
       cancelAnimationFrame(frame)
     }
-  }, [apply])
+  }, [apply, wide])
 
   /** De un punto de la pantalla a coordenadas del mapa (de 0 a 1) */
   const toMap = (clientX: number, clientY: number) => {
@@ -300,6 +487,234 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
       y: clamp01((clientY - (rect?.top ?? 0) - y) / (k * image.height))
     }
   }
+
+  /** Un punto de la pantalla en el mapa, pegado a los vértices y pines cercanos (menos los de lo que se retoca) */
+  // Los puntos a los que se pega, una vez por cada cosa que se retoca (no en cada movimiento)
+  const targets = useMemo(() => new Map<string | null, Point[]>(), [map.elements, map.pins])
+  const snappedAt = (clientX: number, clientY: number, except: string | null = null): Point => {
+    const { x, y } = toMap(clientX, clientY)
+    let list = targets.get(except)
+    if (!list) {
+      list = snapTargets(map.elements, map.pins, except)
+      targets.set(except, list)
+    }
+    return snapped([x, y], list, image, view.current.k).point
+  }
+
+  /** El pin que hay justo en un punto (para que una ruta empiece o acabe en él) */
+  const pinAt = (point: Point | undefined) =>
+    point ? (map.pins.find((pin) => samePoint([pin.x, pin.y], point))?.id ?? null) : null
+
+  const chooseTool = (next: Tool) => {
+    // La ayuda de la herramienta, una vez (un aviso que aparece ya con su texto no se lee)
+    if (next !== tool && (next === 'region' || next === 'path' || next === 'text'))
+      announce(t(`map.edit.hints.${next}`))
+    if (next !== tool && next === 'measure') announce(t('map.measure.hint'))
+    if (next !== tool && next === 'calibrate') announce(t('map.settings.drawHint'))
+    setTool(next)
+    setDraft(null)
+    setCursor(null)
+    setClosing(false)
+    setTextBox(null)
+    if (next !== 'measure') setMeasure({ points: [], route: null })
+    if (next !== 'calibrate') setCalibration([])
+    if (next !== 'select') {
+      setSelected(null)
+      setSelectedElement(null)
+      // Para dibujar, todo el mapa a la vista
+      if (next !== 'pin') setLayersOpen(false)
+    }
+  }
+
+  // Lo que llega de fuera (lo dibuja la IA u otro máster) entra forjándose; lo que dibuja uno mismo, no
+  const seenIds = useRef<Set<string> | null>(null)
+  const mine = useRef(new Set<string>())
+  const [fresh, setFresh] = useState<ReadonlySet<string>>(new Set())
+  useEffect(() => {
+    const ids = new Set(map.elements.map((element) => element.id))
+    const before = seenIds.current
+    seenIds.current = ids
+    if (!before) return
+    const arrived = [...ids].filter((id) => !before.has(id) && !mine.current.has(id))
+    if (arrived.length === 0) return
+    setFresh(new Set(arrived))
+    const done = setTimeout(() => setFresh(new Set()), 1800)
+    return () => clearTimeout(done)
+  }, [map.elements])
+
+  const created = (element: MapElementView) => {
+    mine.current.add(element.id)
+    setSelectedElement(element.id)
+    setNamingElement(element.id)
+    setSelected(null)
+    setLayersOpen(false)
+  }
+
+  /** Dónde cae en la pantalla un punto del mapa */
+  const toScreen = (point: Point) => {
+    const rect = container.current?.getBoundingClientRect()
+    const { x, y, k } = view.current
+    return {
+      x: (rect?.left ?? 0) + x + point[0] * k * image.width,
+      y: (rect?.top ?? 0) + y + point[1] * k * image.height
+    }
+  }
+  /** Si un punto de la pantalla está sobre el primer vértice de la región que se dibuja (para cerrarla) */
+  const onFirstVertex = (clientX: number, clientY: number) => {
+    const first = draft?.kind === 'region' && draft.points.length >= 3 ? draft.points[0] : undefined
+    if (!first) return false
+    const at = toScreen(first)
+    return Math.hypot(at.x - clientX, at.y - clientY) <= CLOSE_RADIUS
+  }
+
+  /**
+   * Acabar lo que se dibuja: una región necesita tres puntos; una ruta, dos. Con doble clic, sin los puntos que ha
+   * puesto el propio doble clic (Enrique, 2026-11-16: «añade un punto de más»)
+   */
+  const finishDraft = (dropNear?: { x: number; y: number }) => {
+    if (!draft) return
+    const kept = [...draft.points]
+    while (dropNear && kept.length > 0) {
+      const at = toScreen(kept[kept.length - 1] as Point)
+      if (Math.hypot(at.x - dropNear.x, at.y - dropNear.y) > CLOSE_RADIUS) break
+      kept.pop()
+    }
+    const points = kept.filter((point, index, all) => !samePoint(point, all[index - 1]))
+    const enough = draft.kind === 'region' ? points.length >= 3 : points.length >= 2
+    setDraft(null)
+    setCursor(null)
+    setClosing(false)
+    setTool('select')
+    if (!enough) return
+    const geometry: MapGeometry =
+      draft.kind === 'region' ? { pieces: [points] } : { points, from: pinAt(points[0]), to: pinAt(points.at(-1)) }
+    elements.create.mutate({ kind: draft.kind, geometry }, { onSuccess: created })
+  }
+
+  const addDraftPoint = (point: Point) => {
+    const kind = tool === 'path' ? 'path' : 'region'
+    const points = draft?.points ?? []
+    // Pulsar el primero de una región la cierra; un doble clic no pone dos puntos
+    if (kind === 'region' && points.length >= 3 && samePoint(point, points[0])) return finishDraft()
+    if (samePoint(point, points.at(-1))) return
+    setDraft({ kind, points: [...points, point] })
+  }
+
+  /** Un texto en su caja: en su centro y con la letra a su alto (pulsando sin arrastrar, donde se pulsa, de serie) */
+  const placeText = (from: Point, to: Point) => {
+    setTool('select')
+    setTextBox(null)
+    const a = toScreen(from)
+    const b = toScreen(to)
+    const boxed = Math.abs(a.x - b.x) > 6 && Math.abs(a.y - b.y) > 6
+    const at: Point = boxed ? [(from[0] + to[0]) / 2, (from[1] + to[1]) / 2] : from
+    const size = boxed ? textSizeFor(Math.abs(to[1] - from[1]) * image.height, image.width) : undefined
+    elements.create.mutate(
+      { kind: 'label', geometry: { at }, label: t('map.edit.newText'), ...(size ? { style: { size } } : {}) },
+      { onSuccess: created }
+    )
+  }
+
+  /** Arrastrar algo (un vértice, lo elegido): se sigue en la ventana hasta soltar; dice si se movió */
+  const drag = (
+    event: PointerEvent<Element>,
+    onMove: (clientX: number, clientY: number, dx: number, dy: number) => void,
+    onEnd: (movedIt: boolean) => void
+  ) => {
+    event.stopPropagation()
+    event.preventDefault()
+    // Sin el gesto del visor, el foco no iría a él (se quedaría en el panel, y Supr borraría lo que se escribía)
+    container.current?.focus({ preventScroll: true })
+    const startX = event.clientX
+    const startY = event.clientY
+    let travel = 0
+    const move = (e: globalThis.PointerEvent) => {
+      travel = Math.max(travel, Math.hypot(e.clientX - startX, e.clientY - startY))
+      if (travel > 3) onMove(e.clientX, e.clientY, e.clientX - startX, e.clientY - startY)
+    }
+    const end = () => {
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerup', end)
+      window.removeEventListener('pointercancel', end)
+      window.removeEventListener('blur', end)
+      endDrag.current = null
+      onEnd(travel > 3)
+    }
+    endDrag.current?.()
+    endDrag.current = end
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', end)
+    window.addEventListener('pointercancel', end)
+    window.addEventListener('blur', end)
+  }
+
+  /** Guardar la forma retocada (si la hay) y dejar de enseñarla en vivo */
+  const commitLive = () => {
+    const current = liveRef.current
+    setLive(null)
+    if (current) elements.update.mutate({ id: current.id, patch: { geometry: current.geometry } })
+  }
+
+  const dragVertex = (
+    event: PointerEvent<Element>,
+    element: MapElementView,
+    base: MapGeometry,
+    ref: VertexRef,
+    always: boolean
+  ) => {
+    setLive({ id: element.id, geometry: base })
+    drag(
+      event,
+      (clientX, clientY) =>
+        setLive({ id: element.id, geometry: withVertex(base, ref, snappedAt(clientX, clientY, element.id)) }),
+      (movedIt) => (movedIt || always ? commitLive() : setLive(null))
+    )
+  }
+
+  const onElementPointerDownNow = (event: PointerEvent<SVGGElement>, element: MapElementView) => {
+    if (tool !== 'select' || !editable || element.id !== selectedElement) return
+    if (event.pointerType === 'mouse' && event.button !== 0) return
+    // Lo elegido se arrastra entero
+    const original = element.geometry
+    const { k } = view.current
+    drag(
+      event,
+      (_x, _y, dx, dy) =>
+        setLive({ id: element.id, geometry: moved(original, dx / (k * image.width), dy / (k * image.height)) }),
+      (movedIt) => (movedIt ? commitLive() : setLive(null))
+    )
+  }
+
+  const onElementClickNow = (event: React.MouseEvent<SVGGElement>, element: MapElementView) => {
+    if (tool !== 'select' || lastTravel.current > 4) return
+    event.stopPropagation()
+    if (element.id !== selectedElement) setNamingElement(null)
+    setSelectedElement(element.id)
+    setSelected(null)
+    setLayersOpen(false)
+  }
+
+  // Siempre la misma función (lo dibujado no se vuelve a pintar entero en cada movimiento); hacen lo de ahora
+  const latest = useRef({ down: onElementPointerDownNow, click: onElementClickNow })
+  latest.current.down = onElementPointerDownNow
+  latest.current.click = onElementClickNow
+  const onElementPointerDown = useCallback(
+    (event: PointerEvent<SVGGElement>, element: MapElementView) => latest.current.down(event, element),
+    []
+  )
+  const onElementClick = useCallback(
+    (event: React.MouseEvent<SVGGElement>, element: MapElementView) => latest.current.click(event, element),
+    []
+  )
+
+  const removeElement = (element: MapElementView) =>
+    elements.remove.mutate(element, {
+      onSuccess: () => {
+        setSelectedElement(null)
+        announce(t('map.element.deleted'))
+        container.current?.focus()
+      }
+    })
 
   const placePin = (point: { x: number; y: number }, withPage = false) => {
     pins.create.mutate(point, {
@@ -316,7 +731,14 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
   const onPointerDown = (event: PointerEvent<HTMLDivElement>) => {
     if (event.pointerType === 'mouse' && event.button !== 0) return
     setMenu(null)
+    pressedOn.current = (event.target as Element).closest?.('[data-id]')?.getAttribute('data-id') ?? null
     event.currentTarget.setPointerCapture(event.pointerId)
+    // Texto: arrastrar dibuja su caja (no mueve el mapa)
+    if (tool === 'text' && editable && pointers.current.size === 0) {
+      const { x, y } = toMap(event.clientX, event.clientY)
+      setTextBox({ from: [x, y], to: [x, y] })
+      return
+    }
     pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY })
     if (pointers.current.size === 1) {
       gesture.current = { startX: event.clientX, startY: event.clientY, view: view.current, travel: 0, pinch: null }
@@ -328,6 +750,27 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
   }
 
   const onPointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    const box = textBoxRef.current
+    if (box) {
+      const { x, y } = toMap(event.clientX, event.clientY)
+      setTextBox({ from: box.from, to: [x, y] })
+      return
+    }
+    // Dibujando, midiendo o calibrando: la goma sigue al cursor (pegada a lo cercano)
+    const following =
+      draft ||
+      (tool === 'measure' && measure.points.length > 0 && !measure.route) ||
+      (tool === 'calibrate' && calibration.length === 1)
+    if (following && pointers.current.size === 0) {
+      const { clientX, clientY } = event
+      cancelAnimationFrame(cursorFrame.current)
+      cursorFrame.current = requestAnimationFrame(() => {
+        // Junto al primer vértice de una región, la goma se le pega y él se resalta: pulsar ahí la cierra
+        const closing = onFirstVertex(clientX, clientY)
+        setClosing(closing)
+        setCursor(closing && draft ? (draft.points[0] ?? null) : snappedAt(clientX, clientY))
+      })
+    }
     if (!pointers.current.has(event.pointerId) || !gesture.current) return
     pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY })
     const current = gesture.current
@@ -354,13 +797,53 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
   }
 
   const onPointerUp = (event: PointerEvent<HTMLDivElement>) => {
+    const box = textBoxRef.current
+    if (box) {
+      if (event.type === 'pointercancel') return setTextBox(null)
+      const { x, y } = toMap(event.clientX, event.clientY)
+      return placeText(box.from, [x, y])
+    }
     pointers.current.delete(event.pointerId)
     const current = gesture.current
     if (pointers.current.size > 0 || !current) return
     gesture.current = null
+    lastTravel.current = current.travel
     if (current.travel > 4 || event.type === 'pointercancel') return
+    if (tool === 'measure') {
+      // Pulsar una ruta sin haber empezado: medirla entera; si no, un punto más (pegado a pines y vértices)
+      const route = map.elements.find((element) => element.id === pressedOn.current && element.kind === 'path')
+      if (route && 'points' in route.geometry && (measure.points.length === 0 || measure.route)) {
+        const points = route.geometry.points.map((p) => [p[0], p[1]] as Point)
+        setMeasure({ points, route: route.label ?? route.pageTitle ?? '', routeId: route.id })
+      } else {
+        const point = snappedAt(event.clientX, event.clientY)
+        setMeasure((now) => ({ points: now.route ? [point] : [...now.points, point], route: null }))
+      }
+      return
+    }
+    if (tool === 'calibrate') {
+      const point = snappedAt(event.clientX, event.clientY)
+      const [first] = calibration
+      if (!first) return setCalibration([point])
+      setLine([first, point])
+      setCalibration([])
+      setCursor(null)
+      setTool('select')
+      return
+    }
     if (tool === 'pin' && editable) placePin(toMap(event.clientX, event.clientY))
-    else setSelected(null)
+    else if (tool === 'region' && editable && onFirstVertex(event.clientX, event.clientY)) finishDraft()
+    else if ((tool === 'region' || tool === 'path') && editable) addDraftPoint(snappedAt(event.clientX, event.clientY))
+    else if (tool === 'select' && pressedOn.current) {
+      // Pulsar lo dibujado lo elige (con el foco en el mapa, no en su nombre)
+      if (pressedOn.current !== selectedElement) setNamingElement(null)
+      setSelectedElement(pressedOn.current)
+      setSelected(null)
+      setLayersOpen(false)
+    } else {
+      setSelected(null)
+      setSelectedElement(null)
+    }
   }
 
   // El menú del botón derecho (también con la tecla de menú o Mayús+F10): al abrirse, el foco en su primera opción
@@ -386,8 +869,93 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
     } else if (event.key === 'Tab') closeMenu()
   }
 
+  /** Supr: borra lo elegido (lo dibujado o un pin); si no hay nada, false */
+  const removeSelected = () => {
+    if (!editable) return false
+    const element = map.elements.find((e) => e.id === selectedElement)
+    if (element) {
+      removeElement(element)
+      return true
+    }
+    const pin = map.pins.find((p) => p.id === selected)
+    if (!pin || pin.locked) return false
+    pins.remove.mutate(pin.id, {
+      onSuccess: () => {
+        setSelected(null)
+        announce(t('map.pin.deleted'))
+        container.current?.focus()
+      }
+    })
+    return true
+  }
+
+  /** Escape, de dentro afuera: lo que se mide, lo que se dibuja, lo elegido y, sin nada más, el mapa ampliado */
+  const stepBack = () => {
+    if (tool === 'measure' && measure.points.length > 0) {
+      setMeasure({ points: [], route: null })
+      setCursor(null)
+      return
+    }
+    if (!draft && tool === 'select' && !selectedElement && !selected && wide) setWide(false)
+    if (!draft && tool === 'select') {
+      setSelectedElement(null)
+      setSelected(null)
+    }
+    chooseTool('select')
+    setMenu(null)
+  }
+
+  // Supr y Escape valen con el foco en cualquier sitio del mapa (sus botones, un pin) o fuera de todo, no solo en el
+  // mapa (Enrique, 2026-11-13: «si pulso Supr debería borrar lo que tengo seleccionado, y si pulso Esc en cualquier
+  // momento quitar la herramienta»); no mientras se escribe ni en una ventana o un menú
+  const globalKeys = useRef<(event: globalThis.KeyboardEvent) => void>(() => undefined)
+  globalKeys.current = (event) => {
+    if (event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey) return
+    if (event.key !== 'Escape' && event.key !== 'Delete' && event.key !== 'Backspace') return
+    if (event.target === container.current) return
+    // También con el foco en una casilla o un color del panel, o en la cabecera de la página (no donde se escribe)
+    const root = container.current?.closest('[data-page-column]') ?? container.current?.parentElement
+    if (!canvasKeyTarget(event.target, root)) return
+    if (event.key !== 'Escape') {
+      if (removeSelected()) event.preventDefault()
+      return
+    }
+    stepBack()
+  }
+  useEffect(() => {
+    const onKey = (event: globalThis.KeyboardEvent) => globalKeys.current(event)
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.target !== event.currentTarget) return
+    // Dibujar: Intro acaba, Retroceso quita el último punto (también Ctrl+Z), Escape lo deja
+    if (draft && event.key === 'Enter') {
+      event.preventDefault()
+      return finishDraft()
+    }
+    if (draft && (event.key === 'Backspace' || ((event.ctrlKey || event.metaKey) && event.key === 'z'))) {
+      event.preventDefault()
+      return setDraft(draft.points.length > 1 ? { ...draft, points: draft.points.slice(0, -1) } : null)
+    }
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'z' && editable) {
+      event.preventDefault()
+      void elements
+        .undo()
+        .then((undone) => announce(t(undone ? 'map.edit.undone' : 'map.edit.nothingToUndo')))
+        .catch((error: unknown) => announce(errorText(error)))
+      return
+    }
+    if ((event.key === 'Delete' || event.key === 'Backspace') && removeSelected()) {
+      event.preventDefault()
+      return
+    }
+    const toolKey = TOOL_KEYS[event.key.toLowerCase()]
+    if (toolKey && (editable || toolKey === 'measure') && !event.ctrlKey && !event.metaKey && !event.altKey) {
+      event.preventDefault()
+      return chooseTool(toolKey)
+    }
     const step = 80
     const moves: Record<string, [number, number]> = {
       ArrowLeft: [step, 0],
@@ -403,10 +971,7 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
     } else if (event.key === '+' || event.key === '=') zoomCenter(1.25)
     else if (event.key === '-') zoomCenter(0.8)
     else if (event.key === '0') fit()
-    else if (event.key === 'Escape') {
-      setTool('select')
-      setMenu(null)
-    }
+    else if (event.key === 'Escape') stepBack()
   }
 
   // Un pin: arrastrarlo lo mueve (si no está bloqueado); pulsarlo lo elige; doble clic abre su página
@@ -448,24 +1013,219 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
 
   const shown = map.pins.map((pin) => (moving?.id === pin.id ? { ...pin, x: moving.x, y: moving.y } : pin))
   const current = shown.find((pin) => pin.id === selected) ?? null
-  const error = pins.create.error ?? pins.update.error ?? pins.remove.error
+  const currentElement = map.elements.find((element) => element.id === selectedElement) ?? null
+  // Lo medido hasta el cursor: la cifra, junto al extremo
+  const measured = measure.route || !cursor ? measure.points : [...measure.points, cursor]
+  const measureEnd = measured.length >= 2 ? measured.at(-1) : undefined
+  const measureDistance = measured.length >= 2 ? distanceOf(measured, image, map.scale) : null
+  const measureText =
+    measureDistance === null ? null : `${roundDistance(measureDistance).toLocaleString('es')} ${map.scale?.unit ?? ''}`
+  const error =
+    pins.create.error ??
+    pins.update.error ??
+    pins.remove.error ??
+    elements.create.error ??
+    elements.update.error ??
+    elements.remove.error
 
-  return (
-    <div className={styles.wrapper}>
+  // Las herramientas: dibujar, capas y medir; acercar y encuadrar; los ajustes y la imagen
+  const drawing = (
+    <>
+      {editable && (
+        <button
+          type="button"
+          aria-pressed={tool === 'pin'}
+          aria-label={t('map.addPin')}
+          aria-keyshortcuts="P"
+          title={`${t('map.addPin')} (P)`}
+          onClick={() => chooseTool(tool === 'pin' ? 'select' : 'pin')}
+        >
+          <MapPin aria-hidden="true" size={18} />
+        </button>
+      )}
+      {editable &&
+        (
+          [
+            ['region', Pentagon],
+            ['path', Spline],
+            ['text', Type]
+          ] as const
+        ).map(([name, Icon]) => (
+          <button
+            key={name}
+            type="button"
+            aria-pressed={tool === name}
+            aria-label={t(`map.edit.tools.${name}`)}
+            aria-keyshortcuts={name === 'region' ? 'R' : name === 'path' ? 'L' : 'T'}
+            title={`${t(`map.edit.tools.${name}`)} (${name === 'region' ? 'R' : name === 'path' ? 'L' : 'T'})`}
+            onClick={() => chooseTool(tool === name ? 'select' : name)}
+          >
+            <Icon aria-hidden="true" size={18} />
+          </button>
+        ))}
+      {editable && <span className={styles.toolSep} aria-hidden="true" />}
+      {(editable || map.layers.length > 0) && (
+        <button
+          type="button"
+          ref={layersButton}
+          aria-label={t('map.layers.title')}
+          title={t('map.layers.title')}
+          aria-expanded={layersOpen && !current && !currentElement && !settingsOpen}
+          onClick={() => {
+            const open = layersOpen && !current && !currentElement && !settingsOpen
+            setLayersOpen(!open)
+            setSettingsOpen(false)
+            setSelected(null)
+            setSelectedElement(null)
+          }}
+        >
+          <Layers aria-hidden="true" size={18} />
+        </button>
+      )}
+      <button
+        type="button"
+        aria-pressed={tool === 'measure'}
+        aria-label={t('map.measure.tool')}
+        aria-keyshortcuts="M"
+        title={`${t('map.measure.tool')} (M)`}
+        onClick={() => chooseTool(tool === 'measure' ? 'select' : 'measure')}
+      >
+        <Ruler aria-hidden="true" size={18} />
+      </button>
+    </>
+  )
+  const zooming = (
+    <>
+      <button type="button" aria-label={t('map.zoomIn')} title={t('map.zoomIn')} onClick={() => zoomCenter(1.25)}>
+        <Plus aria-hidden="true" size={18} />
+      </button>
+      <button type="button" aria-label={t('map.zoomOut')} title={t('map.zoomOut')} onClick={() => zoomCenter(0.8)}>
+        <Minus aria-hidden="true" size={18} />
+      </button>
+      <button type="button" aria-label={t('map.fit')} title={t('map.fit')} onClick={fit}>
+        <Maximize aria-hidden="true" size={18} />
+      </button>
+      <button
+        type="button"
+        aria-pressed={wide}
+        aria-label={t(wide ? 'map.shrink' : 'map.expand')}
+        title={t(wide ? 'map.shrink' : 'map.expand')}
+        onClick={() => setWide(!wide)}
+      >
+        {wide ? <Shrink aria-hidden="true" size={18} /> : <Expand aria-hidden="true" size={18} />}
+      </button>
+    </>
+  )
+  const setup = (
+    <>
+      {editable && <span className={styles.toolSep} aria-hidden="true" />}
+      {editable && !readAs && (
+        <button
+          type="button"
+          ref={settingsButton}
+          aria-label={t('map.settings.title')}
+          title={t('map.settings.title')}
+          aria-expanded={settingsOpen && !current && !currentElement}
+          onClick={() => {
+            setSettingsOpen(!settingsOpen)
+            setLayersOpen(false)
+            setSelected(null)
+            setSelectedElement(null)
+          }}
+        >
+          <Settings2 aria-hidden="true" size={18} />
+        </button>
+      )}
+      {editable && (
+        <button
+          type="button"
+          aria-label={t('map.changeImage')}
+          title={t('map.changeImage')}
+          aria-expanded={changingImage}
+          onClick={() => setChangingImage(!changingImage)}
+        >
+          <ImageIcon aria-hidden="true" size={18} />
+        </button>
+      )}
+    </>
+  )
+  const toolbar = !docked ? (
+    <div className={styles.toolbar} role="toolbar" aria-label={t('map.tools')} data-tour="mapa-herramientas">
+      {drawing}
+      <span className={styles.toolSep} aria-hidden="true" />
+      {zooming}
+      {setup}
+    </div>
+  ) : (
+    // Pegadas abajo de lo que se ve aunque el mapa siga más abajo (la columna aún no ha bajado del todo)
+    <div className={styles.dock}>
+      <div
+        className={`${styles.toolbar} ${styles.pill}`}
+        role="toolbar"
+        aria-label={t('map.tools')}
+        data-tour="mapa-herramientas"
+      >
+        {drawing}
+        {setup}
+      </div>
+      <div className={`${styles.toolbar} ${styles.zoomTools}`} role="toolbar" aria-label={t('map.zoomTools')}>
+        {zooming}
+      </div>
+      <div ref={scaleRef} className={styles.scaleBar} hidden>
+        <span />
+      </div>
+      {changingImage && (
+        <div className={`${styles.imagePanel} ${styles.dockPanel}`}>
+          <ImageChooser page={page} map={map} onDone={() => setChangingImage(false)} />
+        </div>
+      )}
+    </div>
+  )
+
+  // Ampliado, en el cuerpo de la página: por encima de todo lo demás (sus columnas tienen su propio apilamiento)
+  const content = (
+    <div
+      ref={wrapper}
+      className={styles.wrapper}
+      data-wide={wide || undefined}
+      data-docked={docked || undefined}
+      style={{ '--map-aspect': `${image.width} / ${image.height}` } as React.CSSProperties}
+    >
       {/* Un control propio: se mueve con las flechas y se acerca con + y - */}
       <div
         ref={container}
         className={styles.viewer}
         data-tool={tool}
+        data-tabbed={tabbed || undefined}
         role="application"
         aria-roledescription={t('map.roleDescription')}
-        aria-label={t('map.label', { name: tab.name })}
+        aria-label={tabRegionLabel(t, 'map', tab.name)}
         // biome-ignore lint/a11y/noNoninteractiveTabindex: es un control propio (role application), no un contenedor
         tabIndex={0}
-        onPointerDown={onPointerDown}
+        onPointerDown={(event) => {
+          setTabbed(false)
+          onPointerDown(event)
+        }}
+        onKeyUp={(event) => {
+          if (event.key === 'Tab' && event.target === event.currentTarget) setTabbed(true)
+        }}
+        onBlur={() => setTabbed(false)}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
+        onPointerLeave={() => setCursor(null)}
+        onDoubleClick={(event) => {
+          if (draft) return finishDraft({ x: event.clientX, y: event.clientY })
+          // Doble clic en un texto: a escribirlo (Enrique, 2026-11-16); en lo dibujado que lleva a una página, la abre
+          const target = map.elements.find((element) => element.id === pressedOn.current)
+          if (tool === 'select' && editable && !readAs && target?.kind === 'label') {
+            setSelectedElement(target.id)
+            setSelected(null)
+            setNamingElement(target.id)
+            return
+          }
+          if (tool === 'select' && target?.pageId && target.pageTitle) openPage(target.pageId)
+        }}
         onKeyDown={onKeyDown}
         onContextMenu={(event) => {
           event.preventDefault()
@@ -480,6 +1240,58 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
       >
         <div ref={stage} className={styles.stage} style={{ inlineSize: image.width, blockSize: image.height }}>
           <img src={image.url} alt="" width={image.width} height={image.height} draggable={false} />
+          <MapDrawing
+            id={drawingId}
+            image={image}
+            layers={map.layers}
+            elements={map.elements}
+            hiddenHere={hiddenHere.hidden}
+            secretLayers={secretLayers}
+            selected={selectedElement}
+            fresh={fresh}
+            live={live}
+            onOpen={openPage}
+            editLabels={editable && !readAs}
+            onElementPointerDown={onElementPointerDown}
+            onElementClick={onElementClick}
+          />
+          {draft && <DraftLayer image={image} draft={draft} cursor={cursor} closing={closing} />}
+          {textBox && (
+            <div
+              className={styles.textBox}
+              aria-hidden="true"
+              style={{
+                insetInlineStart: `${Math.min(textBox.from[0], textBox.to[0]) * 100}%`,
+                insetBlockStart: `${Math.min(textBox.from[1], textBox.to[1]) * 100}%`,
+                inlineSize: `${Math.abs(textBox.to[0] - textBox.from[0]) * 100}%`,
+                blockSize: `${Math.abs(textBox.to[1] - textBox.from[1]) * 100}%`
+              }}
+            />
+          )}
+          {tool === 'measure' && measure.points.length > 0 && (
+            <DraftLayer
+              image={image}
+              draft={{ kind: 'path', points: measure.points }}
+              cursor={measure.route ? null : cursor}
+              variant="measure"
+            />
+          )}
+          {tool === 'measure' && map.scale && measureEnd && measureText && (
+            <span
+              className={styles.measureTag}
+              style={{ insetInlineStart: `${measureEnd[0] * 100}%`, insetBlockStart: `${measureEnd[1] * 100}%` }}
+              aria-hidden="true"
+            >
+              {measureText}
+            </span>
+          )}
+          {(calibration.length > 0 || line) && (
+            <DraftLayer
+              image={image}
+              draft={{ kind: 'path', points: line ?? calibration }}
+              cursor={line ? null : cursor}
+            />
+          )}
           <ul className={styles.pins} aria-label={t('map.pins')}>
             {shown.map((pin, index) => {
               const name = pin.label ?? pin.pageTitle ?? t('map.untitledPin')
@@ -499,6 +1311,7 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
                     onPointerDown={(event) => onPinPointerDown(event, pin)}
                     onPointerMove={onPinPointerMove}
                     onPointerUp={onPinPointerUp}
+                    onPointerCancel={onPinPointerUp}
                     onClick={(event) => {
                       event.stopPropagation()
                       if (dragged.current) {
@@ -509,23 +1322,12 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
                       setSelected(pin.id)
                     }}
                     onDoubleClick={() => {
-                      if (!pin.pageId || !pin.pageTitle) return
-                      if (readAs)
-                        void navigate({
-                          to: '/mundos/$worldId/campanas/$campaignId/paginas/$pageId',
-                          params: { worldId: page.worldId, campaignId: readAs.campaignId, pageId: pin.pageId },
-                          search: readAs.asCharacterId ? { como: readAs.asCharacterId } : {}
-                        })
-                      else
-                        void navigate({
-                          to: '/mundos/$worldId/wiki/$pageId',
-                          params: { worldId: page.worldId, pageId: pin.pageId }
-                        })
+                      if (pin.pageId && pin.pageTitle) openPage(pin.pageId)
                     }}
                   >
                     {pin.variant === 2 ? (
                       <span className={styles.iconOnly} aria-hidden="true">
-                        {pin.icon ?? '•'}
+                        {pin.icon ? <Icon value={pin.icon} /> : '•'}
                       </span>
                     ) : (
                       <PinShape
@@ -543,6 +1345,26 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
               )
             })}
           </ul>
+          {editable && currentElement && currentElement.kind !== 'label' && (
+            <EditHandles
+              geometry={live?.id === currentElement.id ? live.geometry : currentElement.geometry}
+              onVertexDown={(event, ref) => dragVertex(event, currentElement, currentElement.geometry, ref, false)}
+              onMidpointDown={(event, ref, at) =>
+                dragVertex(
+                  event,
+                  currentElement,
+                  insertedVertex(currentElement.geometry, ref, at),
+                  { ...ref, index: ref.index + 1 },
+                  true
+                )
+              }
+              onVertexRemove={(ref) => {
+                const next = withoutVertex(currentElement.geometry, ref)
+                if (next) elements.update.mutate({ id: currentElement.id, patch: { geometry: next } })
+                else announce(t('map.edit.tooFew'))
+              }}
+            />
+          )}
         </div>
         {menu && (
           <div
@@ -578,39 +1400,7 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
         )}
       </div>
 
-      <div className={styles.toolbar} role="toolbar" aria-label={t('map.tools')} data-tour="mapa-herramientas">
-        {editable && (
-          <button
-            type="button"
-            aria-pressed={tool === 'pin'}
-            aria-label={t('map.addPin')}
-            title={t('map.addPin')}
-            onClick={() => setTool(tool === 'pin' ? 'select' : 'pin')}
-          >
-            <MapPin aria-hidden="true" size={18} />
-          </button>
-        )}
-        <button type="button" aria-label={t('map.zoomIn')} title={t('map.zoomIn')} onClick={() => zoomCenter(1.25)}>
-          <Plus aria-hidden="true" size={18} />
-        </button>
-        <button type="button" aria-label={t('map.zoomOut')} title={t('map.zoomOut')} onClick={() => zoomCenter(0.8)}>
-          <Minus aria-hidden="true" size={18} />
-        </button>
-        <button type="button" aria-label={t('map.fit')} title={t('map.fit')} onClick={fit}>
-          <Maximize aria-hidden="true" size={18} />
-        </button>
-        {editable && (
-          <button
-            type="button"
-            aria-label={t('map.changeImage')}
-            title={t('map.changeImage')}
-            aria-expanded={changingImage}
-            onClick={() => setChangingImage(!changingImage)}
-          >
-            <ImageIcon aria-hidden="true" size={18} />
-          </button>
-        )}
-      </div>
+      {toolbar}
 
       {/* Fuera de la barra: sus botones no son de herramientas */}
       {/* Quien solo lo lee (un jugador) ni pone ni mueve pines: su propio tutorial */}
@@ -619,7 +1409,11 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
           id="mapa-lectura"
           steps={[
             { target: '[data-tour="mapa-pestanas"]', text: t('tour.map.tabs') },
-            { target: '[data-tour="mapa-herramientas"]', text: t('tour.map.readTools'), placement: 'right' },
+            {
+              target: '[data-tour="mapa-herramientas"]',
+              text: t('tour.map.readTools'),
+              placement: docked ? 'top' : 'right'
+            },
             { target: '[data-tour="mapa-pin"]', text: t('tour.map.readPin') }
           ]}
         />
@@ -628,22 +1422,25 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
           id="mapa"
           steps={[
             { target: '[data-tour="mapa-pestanas"]', text: t('tour.map.tabs') },
-            { target: '[data-tour="mapa-herramientas"]', text: t('tour.map.tools'), placement: 'right' },
+            {
+              target: '[data-tour="mapa-herramientas"]',
+              text: t('tour.map.tools'),
+              placement: docked ? 'top' : 'right'
+            },
             { target: '[data-tour="mapa-pin"]', text: t('tour.map.pin') }
           ]}
         />
       )}
 
-      {changingImage && (
+      {changingImage && !docked && (
         <div className={styles.imagePanel}>
           <ImageChooser page={page} map={map} onDone={() => setChangingImage(false)} />
         </div>
       )}
 
-      {tool === 'pin' && (
-        <p className={styles.hint} role="status">
-          {t('map.addPinHint')}
-        </p>
+      {tool === 'pin' && <p className={styles.hint}>{t('map.addPinHint')}</p>}
+      {DRAWING_TOOLS.includes(tool) && (
+        <p className={styles.hint}>{t(`map.edit.hints.${tool as 'region' | 'path' | 'text'}`)}</p>
       )}
 
       {current && (
@@ -670,7 +1467,82 @@ function MapViewer({ page, tab, map }: { page: Page; tab: PageTabView; map: MapV
           }}
         />
       )}
+      {!current && currentElement && (
+        <ElementPanel
+          key={currentElement.id}
+          page={page}
+          element={currentElement}
+          layers={map.layers}
+          editable={editable && !readAs}
+          naming={namingElement === currentElement.id}
+          onChange={(patch) => elements.update.mutateAsync({ id: currentElement.id, patch })}
+          onDelete={() => removeElement(currentElement)}
+          onClose={() => {
+            setSelectedElement(null)
+            setNamingElement(null)
+            container.current?.focus()
+          }}
+        />
+      )}
+      {tool === 'measure' && (
+        <MeasurePanel
+          map={map}
+          image={image}
+          points={measured}
+          route={measure.route}
+          routeId={measure.routeId ?? null}
+          worldId={page.worldId}
+          // Viajes de una campaña (8 · campaña): quien lleva el mundo, no quien lee como jugador
+          travel={editable && !readAs && measure.points.length >= 2}
+          canCalibrate={editable && !readAs}
+          onClear={() => chooseTool('select')}
+          onCalibrate={() => {
+            chooseTool('select')
+            setSettingsOpen(true)
+          }}
+        />
+      )}
+      {!current && !currentElement && settingsOpen && (
+        <MapSettings
+          page={page}
+          map={map}
+          image={image}
+          line={line}
+          drawing={tool === 'calibrate'}
+          onDrawLine={() => {
+            setLine(null)
+            chooseTool('calibrate')
+            // El botón se va: el foco, al mapa, donde se dibuja la raya
+            container.current?.focus()
+          }}
+          onLineDone={() => setLine(null)}
+          onClose={() => {
+            setSettingsOpen(false)
+            setLine(null)
+            if (tool === 'calibrate') chooseTool('select')
+            settingsButton.current?.focus()
+          }}
+        />
+      )}
+      {!current && !currentElement && !settingsOpen && layersOpen && (
+        <LayersPanel
+          page={page}
+          map={map}
+          editable={editable && !readAs}
+          hiddenHere={hiddenHere.hidden}
+          onToggleHere={hiddenHere.toggle}
+          onSelect={(id) => {
+            setSelectedElement(id)
+            setSelected(null)
+          }}
+          onClose={() => {
+            setLayersOpen(false)
+            layersButton.current?.focus()
+          }}
+        />
+      )}
       <FormError message={error ? errorText(error) : null} />
     </div>
   )
+  return wide ? createPortal(content, document.body) : content
 }

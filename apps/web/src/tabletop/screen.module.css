@@ -350,7 +350,7 @@
   font-size: 1rem;
   font-weight: 700;
   white-space: nowrap;
-  clip-path: var(--cut-button);
+  border-radius: var(--radius-button);
   transform: translateX(-50%);
   cursor: pointer;
 }

@@ -5,6 +5,7 @@
  */
 import { z } from 'zod'
 import { defineAction } from './action.ts'
+import { fullDate } from './calendars.ts'
 import { diceRoll } from './dice.ts'
 
 /** ic: en personaje (habla su personaje); ooc: fuera de personaje; emote: una acción («Lía se esconde») */
@@ -45,9 +46,73 @@ export const logShown = z.object({
   createdAt: z.iso.datetime()
 })
 
+/** Una fecha tal como quedó en el registro: con su calendario y su texto de entonces */
+export const loggedDate = z.object({ calendarId: z.uuid(), date: fullDate, text: z.string() })
+
+/** El clima de un día, como queda en el registro (los códigos los traduce la interfaz) */
+export const loggedWeather = z.object({
+  date: loggedDate,
+  condition: z.string(),
+  low: z.number(),
+  high: z.number(),
+  wind: z.string()
+})
+
+/**
+ * Lo que dice una entrada del sistema (docs/specs/modulo-8-10-campana.md, decisión 9): la interfaz pone el texto. date:
+ * la fecha cambió (undo: al deshacer); travel: un viaje que avanzó la fecha; weather: el clima de un día cambiado a
+ * mano (solo lo ve el máster; weather null, vuelve al generado)
+ */
+export const logEventData = z.discriminatedUnion('type', [
+  z.object({
+    type: z.literal('date'),
+    from: loggedDate.nullable(),
+    to: loggedDate.nullable(),
+    days: z.int().nullable().describe('Cuántos días avanzó (negativo, retrocedió); null si se puso a mano'),
+    undo: z.boolean().optional()
+  }),
+  z.object({
+    type: z.literal('travel'),
+    from: loggedDate.nullable(),
+    to: loggedDate,
+    distance: z.number(),
+    unit: z.string().nullable(),
+    medium: z.enum(['foot', 'horse', 'ship']),
+    pace: z.enum(['slow', 'normal', 'fast']),
+    restDays: z.int(),
+    days: z.int(),
+    route: z.string().nullable().describe('El nombre de la ruta del mapa, si se midió una'),
+    zone: z.string().nullable().describe('La zona de destino, si cambió'),
+    weather: z.array(loggedWeather.extend({ rest: z.boolean().describe('Día de descanso') }))
+  }),
+  z.object({
+    type: z.literal('weather'),
+    date: loggedDate,
+    weather: loggedWeather.omit({ date: true }).nullable()
+  })
+])
+
+export type LogEventData = z.infer<typeof logEventData>
+
+export const logEvent = z.object({
+  kind: z.literal('event'),
+  id: z.uuid(),
+  campaignId: z.uuid(),
+  by: author,
+  ai: z.boolean(),
+  event: logEventData,
+  whisper: z.array(z.object({ id: z.string(), name: z.string() })).nullable(),
+  /** Siempre false: borrada, queda como un mensaje borrado */
+  deleted: z.boolean(),
+  createdAt: z.iso.datetime()
+})
+
+export type LogEvent = z.infer<typeof logEvent>
+
 export const logEntry = z.discriminatedUnion('kind', [
   logMessage,
   logShown,
+  logEvent,
   z.object({ kind: z.literal('roll'), id: z.uuid(), roll: diceRoll, createdAt: z.iso.datetime() })
 ])
 

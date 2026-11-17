@@ -77,7 +77,8 @@
 
 .detailBody .frame {
   block-size: 10rem;
-  clip-path: polygon(11px 0, calc(100% - 11px) 0, 100% 11px, 100% 100%, 0 100%, 0 11px);
+  border-radius: var(--radius-inner) var(--radius-inner) 0 0;
+  overflow: clip;
 }
 
 .detailText {
@@ -347,14 +348,15 @@
   block-size: 10rem;
 }
 
-/* En la tarjeta, la portada va 1px dentro del contorno, con las esquinas de arriba cortadas como las suyas: el
+/* En la tarjeta, la portada va 1px dentro del contorno, con las esquinas de arriba redondeadas como las suyas: el
    contorno se ve siempre, también con portada */
 .card .header {
   margin: 1px 1px var(--space-3);
 }
 
 .card .frame {
-  clip-path: polygon(11px 0, calc(100% - 11px) 0, 100% 11px, 100% 100%, 0 100%, 0 11px);
+  border-radius: var(--radius-inner) var(--radius-inner) 0 0;
+  overflow: clip;
 }
 
 /* Sin imagen, el hueco lleva un tinte oscuro del color del mundo */
@@ -469,12 +471,12 @@
 }
 
 /* Al pasar el ratón por la tarjeta (también por su engranaje o por «Ver», como el contorno), el nombre se resalta con
-   el color del mundo, aclarado lo justo para que se lea sobre lo oscuro; sin color, con el rojo de los enlaces
-   (Enrique, 2026-11-11: «si selecciono color verde, debe resaltarse el color»; «debe mantenerse por coherencia») */
+   el color del mundo, aclarado lo justo para que se lea sobre lo oscuro (Enrique, 2026-11-11: «si selecciono color
+   verde, debe resaltarse el color»); sin color, en blanco, nunca en rojo (Enrique, 2026-11-13) */
 .name:hover,
 .name:focus-visible,
 .card:hover .name {
-  color: oklch(from var(--world-color, var(--color-accent-text)) max(l, 0.78) c h);
+  color: oklch(from var(--world-color, #fff) max(l, 0.78) c h);
 }
 
 .name::after {
@@ -499,13 +501,13 @@
   overflow-wrap: anywhere;
 }
 
-/* En la tarjeta, tres líneas como mucho (la descripción llega a 280 letras); entera, en el panel de al lado */
+/* En la tarjeta, una línea, haya descripción o no (la tarjeta no cambia de alto; Enrique, 2026-11-13: «cortamos la
+   descripción y listo»); entera, en el panel de al lado */
 .body > .description {
-  display: -webkit-box;
+  min-block-size: 1lh;
   overflow: hidden;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
-  line-clamp: 3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* De qué mundo es una campaña (en Mis mundos): bajo su nombre, pequeño */
@@ -588,7 +590,8 @@
 
 .hero .frame {
   block-size: clamp(8rem, 26vw, 13rem);
-  clip-path: polygon(11px 0, calc(100% - 11px) 0, 100% 11px, 100% 100%, 0 100%, 0 11px);
+  border-radius: var(--radius-inner) var(--radius-inner) 0 0;
+  overflow: clip;
 }
 
 /* El nombre y la descripción a la izquierda; el papel y el engranaje, abajo a la derecha */

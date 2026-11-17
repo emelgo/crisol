@@ -195,7 +195,7 @@ describe('el cajón de las páginas, en lo estrecho', () => {
   const drawer = () => screen.getByRole('tree', { name: 'Páginas' }).closest('aside') as HTMLElement
   const openDrawer = async () => {
     await screen.findByRole('tree', { name: 'Páginas' })
-    const trigger = screen.getByRole('button', { name: 'Eana' })
+    const trigger = screen.getByRole('button', { name: 'Páginas' })
     await userEvent.click(trigger)
     await waitFor(() => expect(drawer().hasAttribute('data-open')).toBe(true))
     return trigger
@@ -233,6 +233,18 @@ describe('el cajón de las páginas, en lo estrecho', () => {
     expect(screen.getByRole('searchbox').closest('aside')?.hasAttribute('data-open')).toBe(false)
   })
 
+  it('Ctrl+K lo abre con el foco en el buscador (uno solo, Enrique, 2026-11-16)', async () => {
+    narrow()
+    renderAt(`/mundos/${WORLD.id}/wiki/${ids.port}`)
+    await screen.findByRole('tree', { name: 'Páginas' })
+    expect(drawer().hasAttribute('data-open')).toBe(false)
+    await userEvent.keyboard('{Control>}k{/Control}')
+    await waitFor(() => expect(drawer().hasAttribute('data-open')).toBe(true))
+    await waitFor(() =>
+      expect(document.activeElement).toBe(screen.getByRole('searchbox', { name: 'Buscar por nombre o #etiqueta' }))
+    )
+  })
+
   it('un marcador también lo cierra', async () => {
     narrow()
     const { router } = renderAt(`/mundos/${WORLD.id}/wiki/${ids.velaria}`)
@@ -247,14 +259,14 @@ describe('el cajón de las páginas, en lo estrecho', () => {
   })
 })
 
-describe('el selector rápido', () => {
-  it('su orden «Página nueva» abre el cuadro de una página nueva', async () => {
+describe('un solo buscador (Enrique, 2026-11-16)', () => {
+  it('Ctrl+K enfoca el de la ficha del árbol, sin abrir otro cuadro', async () => {
     renderAt(`/mundos/${WORLD.id}/wiki/${ids.port}`)
     await title()
     await userEvent.keyboard('{Control>}k{/Control}')
-    const dialog = await screen.findByRole('dialog', { name: 'Ir a una página' })
-    await userEvent.type(within(dialog).getByRole('combobox'), '>página nueva{Enter}')
-    expect(await screen.findByRole('dialog', { name: 'Página nueva' })).toBeDefined()
+    const filter = await screen.findByRole('searchbox', { name: 'Buscar por nombre o #etiqueta' })
+    await waitFor(() => expect(document.activeElement).toBe(filter))
+    expect(screen.queryByRole('dialog')).toBeNull()
   })
 })
 

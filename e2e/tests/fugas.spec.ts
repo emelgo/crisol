@@ -1167,3 +1167,387 @@ test('@fugas la pantalla de la tele solo recibe lo que ve el grupo, y un jugador
     expect(toPlayer, leak).not.toContain(leak)
   await player.close()
 })
+
+test('@fugas los calendarios: la jugadora los lee sin las eras solo del máster, por la API ni por el tiempo real (módulo 8)', async ({
+  page,
+  browser
+}) => {
+  const link = await campaignLink(page)
+  const worldId = new URL(page.url()).pathname.split('/')[2] ?? ''
+  const api = async (name: string, data: object) => {
+    const response = await page.request.post(`/api/actions/${name}`, { data })
+    expect(response.status(), name).toBe(200)
+    return response.json()
+  }
+  const definition = {
+    yearSuffix: 'RV',
+    weekdays: ['Lunden', 'Marden', 'Miden'],
+    months: [
+      { name: 'Siega', days: 30 },
+      { name: 'Vendimia', days: 30 }
+    ],
+    eras: [
+      { name: 'Era de la Corona', start: '0' },
+      { name: 'Era del Eclipse', abbreviation: 'EE', start: '1300-Siega-1', hidden: true }
+    ]
+  }
+  const calendar = await api('createCalendar', { worldId, name: 'Calendario de Varn', from: { definition } })
+  let seen: ReturnType<typeof capture> | undefined
+  const player = await newPlayer(browser, link, 'Jugadora', (p) => {
+    seen = capture(p)
+  })
+  if (!seen) throw new Error('sin captura')
+  const captured = seen
+  await gotoLive(player, new URL(player.url()).pathname)
+  // Mientras está conectada, el máster añade otra era oculta: el aviso le llega sin decir qué cambió
+  await api('updateCalendar', {
+    calendarId: calendar.id,
+    definition: { ...definition, eras: [...definition.eras, { name: 'Era del Ocaso', start: '2000', hidden: true }] }
+  })
+  await expect.poll(() => captured.frames.some((f) => f.includes('"calendars"'))).toBe(true)
+  // Lo que pide ella, con su sesión: los lee, sin las eras ocultas
+  const bodies: string[] = []
+  for (const [name, data] of [
+    ['listCalendars', { worldId }],
+    ['getCalendar', { calendarId: calendar.id }],
+    ['describeDate', { calendarId: calendar.id, date: '1300-Siega-2' }],
+    ['describeDate', { worldId, date: '2001-Vendimia-3', addDays: 5 }]
+  ] as const) {
+    const response = await player.request.post(`/api/actions/${name}`, { data })
+    expect(response.status(), name).toBe(200)
+    bodies.push(await response.text())
+  }
+  expect(bodies.join('\n')).toContain('Era de la Corona')
+  const everything = [await captured.all(), ...bodies].join('\n')
+  for (const leak of ['Eclipse', 'Ocaso', '"EE"']) expect(everything).not.toContain(leak)
+  // Y no los cambia
+  for (const [name, data] of [
+    ['updateCalendar', { calendarId: calendar.id, name: 'Mío' }],
+    ['deleteCalendar', { calendarId: calendar.id }],
+    ['createCalendar', { worldId, name: 'Mío' }]
+  ] as const)
+    expect((await player.request.post(`/api/actions/${name}`, { data })).status(), name).toBe(404)
+  await player.close()
+})
+
+test('@fugas las fechas: un campo «Oculto» de fecha no le llega a la jugadora por la API, el tiempo real ni la búsqueda (módulo 8)', async ({
+  page,
+  browser
+}) => {
+  const link = await campaignLink(page)
+  const [, , worldId = '', , campaignId = ''] = campaignPath(page).split('/')
+  const api = async (name: string, data: object) => {
+    const response = await page.request.post(`/api/actions/${name}`, { data })
+    expect(response.status(), name).toBe(200)
+    return response.json()
+  }
+  await api('createCalendar', {
+    worldId,
+    name: 'Calendario de Varn',
+    from: {
+      definition: {
+        yearSuffix: 'RV',
+        weekdays: ['Lunden', 'Marden', 'Miden'],
+        months: [
+          { name: 'Siega', days: 30 },
+          { name: 'Vendimia', days: 30 }
+        ],
+        eras: [{ name: 'Era de la Corona', start: '0' }]
+      }
+    }
+  })
+  const port = await api('createPage', { worldId, title: 'Puerto Ceniza' })
+  await api('setKnowledge', { worldId, campaignId, kind: 'page', targetId: port.id, known: true })
+  let seen: ReturnType<typeof capture> | undefined
+  const player = await newPlayer(browser, link, 'Jugadora', (p) => {
+    seen = capture(p)
+  })
+  if (!seen) throw new Error('sin captura')
+  const captured = seen
+  await gotoLive(player, `/mundos/${worldId}/campanas/${campaignId}/paginas/${port.id}`)
+  // Mientras ella mira la página, el máster la fecha: una visible y otra oculta
+  await api('editPage', {
+    pageId: port.id,
+    properties: [
+      { name: 'Fundación', type: 'date', value: '412-Siega-12' },
+      { name: 'Coronación secreta', type: 'date', value: '415-Vendimia-3' }
+    ]
+  })
+  const read = await api('getPage', { pageId: port.id })
+  await api('setPageProperties', {
+    pageId: port.id,
+    properties: read.properties.map((p: { name: string }) => (p.name === 'Fundación' ? p : { ...p, hidden: true }))
+  })
+  await expect(player.getByRole('main')).toContainText('12 de Siega de 412 RV')
+  const bodies: string[] = []
+  for (const [name, data] of [
+    ['getPage', { pageId: port.id, campaignId }],
+    ['readPage', { pageId: port.id, campaignId }],
+    ['searchWiki', { worldId, campaignId, query: 'Vendimia' }],
+    ['searchWiki', { worldId, campaignId, query: 'Siega' }]
+  ] as const) {
+    const response = await player.request.post(`/api/actions/${name}`, { data })
+    expect(response.status(), name).toBe(200)
+    bodies.push(await response.text())
+  }
+  expect(bodies.join('\n')).toContain('12 de Siega de 412 RV')
+  const everything = [await captured.all(), ...bodies].join('\n')
+  for (const leak of ['Coronación', 'Vendimia de 415', '415-Vendimia']) expect(everything).not.toContain(leak)
+  await player.close()
+})
+
+test('@fugas las cronologías: la jugadora solo ve las reveladas y, dentro, lo que sabe su campaña, por la API, el tiempo real y lo que abre (módulo 8)', async ({
+  page,
+  browser
+}) => {
+  const link = await campaignLink(page)
+  const [, , worldId = '', , campaignId = ''] = campaignPath(page).split('/')
+  const api = async (name: string, data: object) => {
+    const response = await page.request.post(`/api/actions/${name}`, { data })
+    expect(response.status(), name).toBe(200)
+    return response.json()
+  }
+  await api('createCalendar', {
+    worldId,
+    name: 'Calendario de Varn',
+    from: {
+      definition: {
+        yearSuffix: 'RV',
+        weekdays: ['Lunden', 'Marden', 'Miden'],
+        months: [
+          { name: 'Siega', days: 30 },
+          { name: 'Vendimia', days: 30 }
+        ],
+        eras: [
+          { name: 'Era de la Corona', start: '0' },
+          { name: 'Era del Eclipse', start: '1300', hidden: true }
+        ]
+      }
+    }
+  })
+  const port = await api('createPage', { worldId, title: 'Puerto Ceniza' })
+  const tower = await api('createPage', { worldId, title: 'La Torre Negra' })
+  await api('editPage', { pageId: port.id, properties: [{ name: 'Fundación', type: 'date', value: '412-Siega-12' }] })
+  await api('editPage', { pageId: tower.id, properties: [{ name: 'Fundación', type: 'date', value: '413-Siega-1' }] })
+  const read = await api('getPage', { pageId: port.id })
+  await api('setPageProperties', {
+    pageId: port.id,
+    properties: [
+      ...read.properties,
+      { name: 'Traición', type: 'date', hidden: true, value: { ...read.properties[0].value, start: { year: 414 } } }
+    ]
+  })
+  await api('setKnowledge', { worldId, campaignId, kind: 'page', targetId: port.id, known: true })
+  const { events } = await api('createTimelineEvents', {
+    worldId,
+    events: [
+      { title: 'La Coronación', date: '0-Siega-1' },
+      { title: 'El Asesinato del Rey', date: '1250-Siega-2', hidden: true },
+      { title: 'El Pacto Revelado', date: '1250-Siega-3', hidden: true },
+      { title: 'Visita a la Torre', date: '1251', pageId: tower.id },
+      { date: '1252', pageId: tower.id }
+    ]
+  })
+  const secret = await api('createChronology', { worldId, name: 'Los Planes del Culto' })
+  const shown = await api('createChronology', { worldId, name: 'Historia de Valdren' })
+  await api('setKnowledge', { worldId, campaignId, kind: 'chronology', targetId: shown.id, known: true })
+  await api('setKnowledge', { worldId, campaignId, kind: 'event', targetId: events[2].id, known: true })
+  let seen: ReturnType<typeof capture> | undefined
+  const player = await newPlayer(browser, link, 'Jugadora', (p) => {
+    seen = capture(p)
+  })
+  if (!seen) throw new Error('sin captura')
+  const captured = seen
+  await gotoLive(player, `/mundos/${worldId}/campanas/${campaignId}/cronologias/${shown.id}`)
+  await expect(player.getByRole('heading', { level: 1, name: 'Historia de Valdren' })).toBeVisible()
+  await expect(player.getByRole('heading', { name: 'El Pacto Revelado' })).toBeVisible()
+  // Mientras mira, el máster crea otro evento oculto: el aviso le llega sin decir qué
+  await api('createTimelineEvents', {
+    worldId,
+    events: [{ title: 'La Noche Roja', date: '1250-Vendimia-1', hidden: true }]
+  })
+  await expect.poll(() => captured.frames.some((f) => f.includes('"chronologies"'))).toBe(true)
+  const bodies: string[] = []
+  for (const [name, data] of [
+    ['listChronologies', { worldId, campaignId }],
+    ['getChronology', { chronologyId: shown.id, campaignId }]
+  ] as const) {
+    const response = await player.request.post(`/api/actions/${name}`, { data })
+    expect(response.status(), name).toBe(200)
+    bodies.push(await response.text())
+  }
+  expect(bodies.join('\n')).toContain('Visita a la Torre')
+  // La que no se le enseñó, ni por su id
+  expect(
+    (
+      await player.request.post('/api/actions/getChronology', { data: { chronologyId: secret.id, campaignId } })
+    ).status()
+  ).toBe(404)
+  const everything = [await captured.all(), ...bodies].join('\n')
+  for (const leak of ['Asesinato', 'Noche Roja', 'Torre Negra', tower.id, 'Traición', 'Eclipse', 'Planes del Culto'])
+    expect(everything).not.toContain(leak)
+  // Y no escribe
+  for (const [name, data] of [
+    ['createChronology', { worldId, name: 'Mía' }],
+    ['createTimelineEvents', { worldId, events: [{ title: 'x', date: '1' }] }],
+    ['updateTimelineEvent', { eventId: events[0].id, title: 'y' }],
+    ['deleteTimelineEvent', { eventId: events[0].id }],
+    ['convertEventToPage', { eventId: events[0].id, parentId: null }]
+  ] as const)
+    expect((await player.request.post(`/api/actions/${name}`, { data })).status(), name).toBe(404)
+  await player.close()
+})
+
+test('@fugas las relaciones: la jugadora no recibe ni aristas, ni nodos, ni nombres de lo que su campaña no conoce, por la API ni al abrir la pestaña o el grafo del mundo (módulo 10)', async ({
+  page,
+  browser
+}) => {
+  const link = await campaignLink(page)
+  const [, , worldId = '', , campaignId = ''] = campaignPath(page).split('/')
+  const api = async (name: string, data: object) => {
+    const response = await page.request.post(`/api/actions/${name}`, { data })
+    expect(response.status(), name).toBe(200)
+    return response.json()
+  }
+  const created = await api('createPages', {
+    worldId,
+    parentId: null,
+    pages: [
+      {
+        key: 'ilsa',
+        title: 'Ilsa de Varn',
+        markdown: 'Vive en [[El Puerto]].\n\n> [!secreto]\n> Sirve a [[El Topo]].\n'
+      },
+      { key: 'puerto', title: 'El Puerto' },
+      { key: 'topo', title: 'El Topo' },
+      { key: 'madre', title: 'La Reina Oculta' },
+      { key: 'liga', title: 'La Liga' }
+    ]
+  })
+  const id = Object.fromEntries((created.pages as { key: string; id: string }[]).map((p) => [p.key, p.id])) as Record<
+    string,
+    string
+  >
+  await api('setPageProperties', {
+    pageId: id.ilsa,
+    properties: [
+      { name: 'Apodo', type: 'text', value: 'La Sombra de Varn', hidden: true },
+      { name: 'Padres', type: 'pages', value: [id.madre], role: 'parent', inverseName: 'Hijos' },
+      { name: 'Facción', type: 'pages', value: [id.liga], role: 'member-of', single: true, hidden: true }
+    ]
+  })
+  for (const key of ['ilsa', 'puerto', 'topo', 'liga'])
+    await api('setKnowledge', { worldId, campaignId, kind: 'page', targetId: id[key], known: true })
+
+  let seen: ReturnType<typeof capture> | undefined
+  const player = await newPlayer(browser, link, 'Jugadora', (p) => {
+    seen = capture(p)
+  })
+  if (!seen) throw new Error('sin captura')
+  await player.goto(`/mundos/${worldId}/campanas/${campaignId}/paginas/${id.ilsa}?pestana=relaciones`)
+  await expect(player.getByRole('button', { name: 'El Puerto' }).first()).toBeVisible()
+  await player.goto(`/mundos/${worldId}/campanas/${campaignId}/relaciones`)
+  await expect(player.getByRole('heading', { level: 1, name: 'Relaciones' })).toBeVisible()
+  const bodies: string[] = []
+  for (const [name, data] of [
+    ['getRelations', { pageId: id.ilsa, campaignId }],
+    ['getRelations', { pageId: id.ilsa, campaignId, mode: 'family' }],
+    ['getRelations', { pageId: id.liga, campaignId, mode: 'org' }],
+    ['getWorldGraph', { worldId, campaignId, orphans: true }]
+  ] as const) {
+    const response = await player.request.post(`/api/actions/${name}`, { data })
+    expect(response.status(), name).toBe(200)
+    bodies.push(await response.text())
+  }
+  expect(bodies.join('\n')).toContain('El Puerto')
+  // Una página que no conoce, ni por su id
+  expect(
+    (await player.request.post('/api/actions/getRelations', { data: { pageId: id.madre, campaignId } })).status()
+  ).toBe(404)
+  const everything = [await seen.all(), ...bodies].join('\n')
+  // Ni la madre que no conoce, ni el campo oculto (ni su valor bajo el nombre), ni la mención desde el secreto
+  for (const leak of ['Reina Oculta', id.madre, 'La Sombra de Varn', '"secret"', 'Facción'])
+    expect(everything).not.toContain(leak)
+  // El Topo lo conoce, pero solo se le nombra en un secreto sin revelar: ni arista ni nodo en la pestaña de Ilsa
+  expect(bodies[0]).not.toContain(id.topo)
+  await player.close()
+})
+
+test('@fugas el tiempo de la campaña: la jugadora no recibe la previsión, ni el clima a mano, ni la actividad de otras, ni puede cambiarlo (módulos 8 y 10 · campaña)', async ({
+  page,
+  browser
+}) => {
+  const link = await campaignLink(page)
+  const [, , worldId = '', , campaignId = ''] = campaignPath(page).split('/')
+  const api = async (name: string, data: object) => {
+    const response = await page.request.post(`/api/actions/${name}`, { data })
+    expect(response.status(), `${name}: ${await response.text()}`).toBe(200)
+    return response.json()
+  }
+  await api('createCalendar', {
+    worldId,
+    name: 'Eana',
+    from: {
+      definition: {
+        yearSuffix: 'RC',
+        weekdays: ['Herrero', 'Hacedor', 'Muerte', 'Frostelle', 'Flora', 'Eternidad', 'Melancolía'],
+        months: [
+          { name: 'Siega', days: 28 },
+          { name: 'Trilla', days: 28 }
+        ]
+      }
+    }
+  })
+  await api('setCampaignToday', { campaignId, date: '1250-Siega-10' })
+  // El clima a mano de pasado mañana, con unos grados que no salen solos: ni la previsión ni el registro le llegan (se
+  // buscan con su clave: «-41» a secas puede salir en un id)
+  await api('setDayWeather', {
+    campaignId,
+    date: '1250-Siega-12',
+    weather: { condition: 'sleet', low: -41, high: -40, wind: 'gale', windDirection: 'NNW' }
+  })
+  const ana = await newPlayer(browser, link, 'Ana')
+  await (
+    await ana.request.post('/api/actions/createPlayerNote', { data: { campaignId, title: 'Diario secreto de Ana' } })
+  ).json()
+
+  let seen: ReturnType<typeof capture> | undefined
+  const bea = await newPlayer(browser, link, 'Bea', (p) => {
+    seen = capture(p)
+  })
+  if (!seen) throw new Error('sin captura')
+  await bea.goto(`/mundos/${worldId}/campanas/${campaignId}`)
+  await expect(bea.getByRole('region', { name: 'Hoy' })).toBeVisible()
+  await expect(bea.getByRole('region', { name: 'Desde tu última visita' })).toBeVisible()
+  const bodies: string[] = []
+  const today = await bea.request.post('/api/actions/getCampaignToday', { data: { campaignId } })
+  expect(today.status()).toBe(200)
+  const todayBody = await today.json()
+  bodies.push(JSON.stringify(todayBody))
+  expect(todayBody.forecast).toEqual([])
+  expect(todayBody.weather).not.toBeNull()
+  for (const name of ['getCampaignActivity', 'listLog'] as const) {
+    const response = await bea.request.post(`/api/actions/${name}`, { data: { campaignId } })
+    expect(response.status(), name).toBe(200)
+    bodies.push(await response.text())
+  }
+  const activity = JSON.parse(bodies[1] ?? '{}') as { items: Array<{ type: string }> }
+  expect(activity.items.some((item) => item.type === 'note' || item.type === 'character')).toBe(false)
+  // Lo del máster: ni lo lee ni lo cambia
+  for (const [name, data] of [
+    ['getCampaignWeather', { campaignId }],
+    ['setCampaignToday', { campaignId, days: 1 }],
+    ['setDayWeather', { campaignId, weather: null }],
+    ['setCampaignClimate', { campaignId, zone: 'polar' }],
+    ['planTravel', { campaignId, distance: 30 }],
+    ['travel', { campaignId, distance: 30 }],
+    ['setWeatherLayer', { campaignId, layer: { mode: 'none' } }],
+    ['setGmScreen', { campaignId, columns: { note: false } }]
+  ] as const)
+    expect((await bea.request.post(`/api/actions/${name}`, { data })).status(), name).toBe(403)
+  const everything = [await seen.all(), ...bodies].join('\n')
+  for (const leak of ['"low":-41', '-41° / -40°', 'Diario secreto de Ana', '"type":"weather"', '"forecast":[{'])
+    expect(everything).not.toContain(leak)
+  await ana.close()
+  await bea.close()
+})

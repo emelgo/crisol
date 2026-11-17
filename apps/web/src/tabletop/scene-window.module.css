@@ -19,7 +19,7 @@
   min-inline-size: 0;
 }
 
-/* La rejilla trae su propia ficha (la de las secciones de la página, opaca y con esquinas cortadas): aquí, de cristal
+/* La rejilla trae su propia ficha (la de las secciones de la página, opaca): aquí, de cristal
    como lo demás de la campaña. Con el atributo, para pesar más que la regla de base.css */
 .side > section[aria-labelledby] {
   margin: 0;

@@ -219,6 +219,7 @@
   position: relative;
   z-index: -1;
   display: flex;
+  gap: 0.5rem;
   flex-basis: 100%;
   justify-content: center;
   pointer-events: none;
@@ -271,6 +272,24 @@
     opacity 220ms ease-out,
     padding 320ms cubic-bezier(0.2, 0.8, 0.2, 1),
     margin 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* La escena y el chip del «hoy» debajo (8 · campaña) */
+.sceneColumn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  min-inline-size: 0;
+  max-inline-size: min(28rem, 100%);
+}
+
+.sceneColumn > .sceneBar {
+  max-inline-size: 100%;
+}
+
+.sceneColumnGone {
+  margin-inline-end: -0.6rem;
 }
 
 /* Sin escena: el recuadro de la escena se cierra y los de al lado se corren a su sitio */

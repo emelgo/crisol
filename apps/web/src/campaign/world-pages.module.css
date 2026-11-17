@@ -149,3 +149,42 @@ h3.blockTitle.blockTitle {
   font-size: 0.6875rem;
   font-weight: 600;
 }
+
+/* El grafo de lo que conoce del mundo (módulo 10), un icono en la cabecera del árbol */
+.graphLink {
+  display: grid;
+  place-items: center;
+  inline-size: 2rem;
+  block-size: 2rem;
+  margin-inline-start: auto;
+  border-radius: 6px;
+  color: var(--color-muted);
+}
+
+.graphLink:hover {
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+  color: var(--color-text);
+}
+
+.graphLink:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 1px;
+}
+
+/* «Relaciones» de quien juega, en el escritorio: el grafo en un marco del alto de la ventana */
+.relations {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  block-size: min(72dvh, 46rem);
+  margin-block: var(--space-3) var(--space-6);
+  overflow: hidden;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-frame);
+}
+
+.relations > :last-child {
+  flex: 1 1 0;
+  block-size: auto;
+  min-block-size: 0;
+}

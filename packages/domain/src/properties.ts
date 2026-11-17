@@ -4,6 +4,8 @@
  * llevan el id de su campo (`field`) y su forma (opciones, segmentos, a qué apuntan), guardada en la propia página
  * (ADR-0009)
  */
+import type { DateValue } from './calendar/values.ts'
+
 interface Field {
   name: string
   /** El id del campo de la plantilla de la que salió */
@@ -12,18 +14,48 @@ interface Field {
   hidden?: true | undefined
 }
 
+/**
+ * El papel de un campo de enlace (módulo 10): lo que es el destino para la página. parent: su padre o su madre;
+ * partner: su pareja; member-of: el grupo al que pertenece (facción, orden…); leads: quien la dirige (la página es el
+ * grupo). Hace posibles el árbol genealógico y el organigrama
+ */
+export const RELATION_ROLES = ['parent', 'partner', 'member-of', 'leads'] as const
+export type RelationRole = (typeof RELATION_ROLES)[number]
+
 export type PageProperty =
   | (Field & { type: 'text'; value: string })
   /** Sin valor (null): un campo de plantilla aún sin rellenar */
   | (Field & { type: 'number'; value: number | null })
   | (Field & { type: 'boolean'; value: boolean })
   | (Field & { type: 'list'; value: string[] })
-  /** Enlaces a páginas (sus ids). Con single, a una sola; targets, las plantillas que se buscan primero */
-  | (Field & { type: 'pages'; value: string[]; single?: true | undefined; targets?: string[] | undefined })
+  /**
+   * Enlaces a páginas (sus ids). Con single, a una sola; targets, las plantillas que se buscan primero; role, su papel
+   * en las relaciones; inverseName, cómo se lee desde el destino («Padres» → «Hijos»)
+   */
+  | (Field & {
+      type: 'pages'
+      value: string[]
+      single?: true | undefined
+      targets?: string[] | undefined
+      role?: RelationRole | undefined
+      inverseName?: string | undefined
+    })
   /** Uno de una lista. Un valor fuera de ella se guarda igual y se nota */
   | (Field & { type: 'choice'; value: string; options: string[] })
   /** Un reloj de progreso: cuántos segmentos lleva llenos de los que tiene */
   | (Field & { type: 'clock'; value: number; segments: number })
+  /**
+   * Una fecha de un calendario del mundo (docs/specs/fechas.md); sin valor (null), vacía. range: el campo es «Con fin»;
+   * offTimeline: «Fuera de las líneas temporales» (no es un suceso, como «Última visita»). text: cómo se lee, sin lo
+   * solo del máster (lo pone el servidor, para la búsqueda)
+   */
+  | (Field & {
+      type: 'date'
+      value: DateValue | null
+      range?: true | undefined
+      offTimeline?: true | undefined
+      text?: string | undefined
+    })
 
 export type PropertyType = PageProperty['type']
 
@@ -52,6 +84,7 @@ export function propertiesProblem(
   | 'BAD_TAG'
   | 'BAD_CLOCK'
   | 'BAD_PROPERTY'
+  | 'BAD_DATE'
   | null {
   const seen = new Set<string>()
   const fields = new Set<string>()
@@ -75,6 +108,8 @@ export function propertiesProblem(
       }
     }
     if (property.type === 'pages' && property.single && property.value.length > 1) return 'BAD_PROPERTY'
+    if (property.type === 'date' && property.value?.yearly && property.value.start.month === undefined)
+      return 'BAD_DATE'
   }
   return null
 }
@@ -124,6 +159,19 @@ export function conformTo(shape: PageProperty, read: PageProperty): PageProperty
           : null
       return { ...base, type: 'clock', value: Number(match[1]), segments: match[2] ? Number(match[2]) : shape.segments }
     }
+    case 'date': {
+      // Un texto con algo no se lee aquí: lo convierte el servidor, que tiene el calendario
+      const value =
+        read.type === 'date' ? read.value : read.type === 'text' && read.value.trim() === '' ? null : undefined
+      if (value === undefined) return null
+      return {
+        ...base,
+        type: 'date',
+        value,
+        ...(shape.range ? { range: true } : {}),
+        ...(shape.offTimeline ? { offTimeline: true } : {})
+      }
+    }
     case 'pages': {
       const value = read.type === 'pages' ? read.value : read.type === 'text' && read.value.trim() === '' ? [] : null
       if (value === null) return null
@@ -133,7 +181,9 @@ export function conformTo(shape: PageProperty, read: PageProperty): PageProperty
         type: 'pages',
         value,
         ...(single ? { single: true } : {}),
-        ...(shape.targets ? { targets: shape.targets } : {})
+        ...(shape.targets ? { targets: shape.targets } : {}),
+        ...(shape.role ? { role: shape.role } : {}),
+        ...(shape.inverseName ? { inverseName: shape.inverseName } : {})
       }
     }
   }
@@ -159,7 +209,8 @@ function keptShapes(before: readonly PageProperty[], after: readonly PagePropert
           p.field !== undefined ||
           p.type === 'choice' ||
           p.type === 'clock' ||
-          (p.type === 'pages' && (p.single || p.targets))
+          (p.type === 'date' && (p.range || p.offTimeline)) ||
+          (p.type === 'pages' && (p.single || p.targets || p.role || p.inverseName))
       )
       .map((p) => [propertyKey(p.name), p])
   )

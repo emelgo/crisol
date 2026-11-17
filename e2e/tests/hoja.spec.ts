@@ -90,6 +90,9 @@ test('la página se escribe ya como hoja; «⋯» → «Imprimir o descargar» p
   // El papel, sin botón: toda página lo es (el texto encima; la cabecera, como en Everlore, va fuera)
   const paper = page.locator('[data-sheet-paper]')
   await expect(paper).toHaveAttribute('data-theme', 'neutro')
+  // Con el panel abierto, la columna es más estrecha que la hoja y el texto va seguido, sin páginas (Enrique,
+  // 2026-11-16: la letra no encoge); plegado, vuelven
+  await page.getByRole('button', { name: 'Plegar el panel' }).click()
   // Con varias páginas, donde acaba cada una, su marca (con la que se cierra)
   await expect(page.getByText('Página 1', { exact: true })).toBeAttached()
   await expect(page.getByRole('heading', { level: 1, name: 'El Dragón Rojo' })).toBeVisible()

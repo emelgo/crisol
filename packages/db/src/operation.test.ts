@@ -3,6 +3,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { connect } from './client.ts'
 import { operation, TRACKED_TABLES } from './operation.ts'
 import { user } from './schema/auth.ts'
+import { campaigns } from './schema/campaigns.ts'
 import { changes, operations } from './schema/history.ts'
 import { organizations } from './schema/organizations.ts'
 import { worldMembers, worlds } from './schema/worlds.ts'
@@ -196,6 +197,8 @@ describe('operation', () => {
     notTracked.add('campaign_messages')
     // Las carpetas de Actores: orden de la Mesa de cada campaña, como lo que mira (Enrique, 2026-11-10)
     notTracked.add('actor_folders').add('actor_folder_items')
+    // La última visita de cada cuenta a su centro de actividad: es suya, como lo nuevo (8 · campaña)
+    notTracked.add('campaign_visits')
     const tables = await conn.sql<
       { name: string }[]
     >`select tablename as name from pg_tables where schemaname = 'public'`
@@ -204,6 +207,30 @@ describe('operation', () => {
       .map((t) => t.name)
       .filter((name) => !notTracked.has(name) && name !== 'jwks' && !name.startsWith('oauth_'))
     expect(domain.sort()).toEqual(Object.keys(TRACKED_TABLES).sort())
+  })
+
+  it('la operación guarda la campaña de sus cambios (la fila de la campaña o la que la lleva), o la que se le dé', async () => {
+    const org = await operation(conn.db, { actorId: null, via: 'system', action: 'createOrganization' }, (w) =>
+      w.insert(organizations, { name: 'Campañas' })
+    )
+    const world = await operation(conn.db, { actorId: null, via: 'system', action: 'createWorld' }, (w) =>
+      w.insert(worlds, { organizationId: org.id, name: 'Eana' })
+    )
+    const campaign = await operation(
+      conn.db,
+      { actorId: null, via: 'system', action: 'createCampaign', organizationId: org.id },
+      (w) => w.insert(campaigns, { worldId: world.id, name: 'La Marca' })
+    )
+    const other = crypto.randomUUID()
+    await operation(
+      conn.db,
+      { actorId: null, via: 'system', action: 'renameWorld', organizationId: org.id, campaignId: other },
+      (w) => w.update(worlds, world.id, { name: 'Eana II' })
+    )
+    const rows = await conn.db.select().from(operations)
+    expect(rows.find((op) => op.action === 'createWorld')?.campaignId).toBeNull()
+    expect(rows.find((op) => op.action === 'createCampaign')?.campaignId).toBe(campaign.id)
+    expect(rows.find((op) => op.action === 'renameWorld')?.campaignId).toBe(other)
   })
 
   it('al crear una organización, la operación es de esa organización', async () => {

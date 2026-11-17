@@ -4,8 +4,8 @@
  * texto plano de los documentos
  */
 import { getPageLinks, linkMention, listUnresolvedLinks } from '@crisol/contracts'
-import { documentsRepo, linksRepo, pagesRepo } from '@crisol/db'
-import { foldName, NotFoundError, reservedList } from '@crisol/domain'
+import { calendarsRepo, chronologiesRepo, documentsRepo, linksRepo, pagesRepo } from '@crisol/db'
+import { CalendarDateError, foldName, formatDateValue, NotFoundError, reservedList } from '@crisol/domain'
 import { findName, fragmentAround, plainText, textBlocks } from '@crisol/editor'
 import type { JSONContent } from '@tiptap/core'
 import { documentJson, readDocument, writeDocument } from '../wiki/content.ts'
@@ -175,7 +175,7 @@ export const linkActions = [
           .slice(0, -1)
           .map((step) => step.title)
     }
-    return { incoming, outgoing, mentions, fields }
+    return { incoming, outgoing, mentions, fields, ...(view.full ? { events: await linkedEvents(ctx, page) } : {}) }
   }),
 
   implement(listUnresolvedLinks, async (ctx, { worldId }) => {
@@ -220,3 +220,23 @@ export const linkActions = [
     return { linked: false }
   })
 ]
+
+/**
+ * Los eventos sueltos enlazados a una página, con su fecha legible (para el máster: un jugador los lee en las
+ * cronologías que se le enseñan). Sin título propio, llevan el de la página
+ */
+async function linkedEvents(ctx: ActionContext, page: { id: string; worldId: string; title: string }) {
+  const events = await chronologiesRepo.eventsOfPage(ctx.db, page.id)
+  if (events.length === 0) return []
+  const calendars = await calendarsRepo.listCalendars(ctx.db, page.worldId)
+  return events.map((event) => {
+    const calendar = calendars.find((row) => row.id === event.date.calendarId)
+    let text = ''
+    try {
+      text = calendar ? formatDateValue(calendar.definition, event.date) : ''
+    } catch (error) {
+      if (!(error instanceof CalendarDateError)) throw error
+    }
+    return { id: event.id, title: event.title || page.title, text }
+  })
+}

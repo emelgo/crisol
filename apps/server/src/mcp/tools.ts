@@ -3,7 +3,20 @@
  * en español porque lo ve el máster en claude.ai. Lo que no es leer pasa por el modo de IA de la cuenta (approvals.ts).
  */
 
-import { changeFog, contentTable, playSound, stopSound, updateSoundPlaylist } from '@crisol/contracts'
+import {
+  changeFog,
+  contentTable,
+  createMapElement,
+  dateInput,
+  playSound,
+  stopSound,
+  travel,
+  updateMapElement,
+  updateSoundPlaylist,
+  weatherDay,
+  weatherLayerSetting,
+  weatherZone
+} from '@crisol/contracts'
 import { APPROVAL_WAIT_MS } from '@crisol/domain'
 import { McpServer } from '@modelcontextprotocol/server'
 import { z } from 'zod'
@@ -11,6 +24,7 @@ import { type ActionEnv, type Implementation, InvalidRequestError } from '../act
 import { implementationsByName } from '../actions/implementations.ts'
 import { formatDocs } from '../actions/systems.ts'
 import { callAsAi } from './approvals.ts'
+import { fromAi, type Loose, type View } from './map-geometry.ts'
 import { MAPS_GUIDE, MAPS_GUIDE_RESOURCE } from './maps-guide.ts'
 
 /** La documentación del formato de los sistemas, como recurso (la misma que da formato_sistemas) */
@@ -29,6 +43,32 @@ export type McpTool =
       actions: readonly string[]
       route: (input: Record<string, unknown>) => Route
     }
+
+/** Lo que dibuja la IA: los puntos, en píxeles de la imagen que vio (con su view) o de 0 a 1 */
+const loosePoint = z.tuple([z.number().min(-1e6).max(1e6), z.number().min(-1e6).max(1e6)])
+const looseGeometry = z.union([
+  z.object({ pieces: z.array(z.array(loosePoint).min(3).max(5000)).min(1).max(50) }),
+  z.object({
+    points: z.array(loosePoint).min(2).max(5000),
+    from: z.uuid().nullable().optional(),
+    to: z.uuid().nullable().optional()
+  }),
+  z.object({
+    at: loosePoint,
+    rotate: z.number().min(-180).max(180).optional(),
+    arc: z.number().min(-1).max(1).optional()
+  })
+])
+const view = z
+  .object({ width: z.number().positive(), height: z.number().positive() })
+  .optional()
+  .describe('Las medidas de la imagen que viste (imagen_mapa): los puntos van en sus píxeles. Sin view, de 0 a 1')
+const drawInput = (createMapElement.input as unknown as z.ZodObject)
+  .omit({ geometry: true, snap: true })
+  .extend({ geometry: looseGeometry, view })
+const redrawInput = (updateMapElement.input as unknown as z.ZodObject)
+  .omit({ geometry: true, snap: true })
+  .extend({ geometry: looseGeometry.optional(), view })
 
 const invitationInput = z.object({
   campaignId: z.uuid(),
@@ -221,6 +261,51 @@ const linksInput = z.object({
     .describe('Un jugador: desde esta campaña, con lo que sabe (si juega una sola del mundo, se deduce)')
 })
 
+/** Describir una fecha y, con to, pasarla a otro calendario del mundo (docs/specs/calendarios.md) */
+const dateToolInput = z.object({
+  calendarId: z.uuid().optional().describe('El calendario de la fecha; sin él, el principal del mundo'),
+  worldId: z.uuid().optional().describe('Sin calendarId: el mundo, para usar su principal'),
+  date: z
+    .union([
+      z.string().trim().min(1).max(80),
+      z.object({ year: z.int(), month: z.union([z.string(), z.int()]).optional(), day: z.int().optional() })
+    ])
+    .describe('1250-Siega-18 (o 1250-03-18, el mes por su número sin contar festividades; 1250-03; 1250; -980-01-01)'),
+  addDays: z
+    .int()
+    .min(-100_000_000)
+    .max(100_000_000)
+    .optional()
+    .describe('Describe también la de N días después (negativo, antes)'),
+  until: z.string().trim().min(1).max(80).optional().describe('Cuántos días faltan hasta esta otra fecha'),
+  to: z
+    .uuid()
+    .optional()
+    .describe('Pasarla a este otro calendario del mundo (por la correspondencia de cada uno con el principal)'),
+  campaignId: z.uuid().optional().describe('Un jugador: desde esta campaña')
+})
+
+/** El clima de una campaña (8 · campaña): un día a mano, su zona y su latitud, o la capa de la Mesa */
+const climateInput = z.object({
+  campaignId: z.uuid(),
+  date: dateInput.optional().describe('Con weather: el día (sin él, el «hoy» de la campaña)'),
+  weather: weatherDay
+    .nullable()
+    .optional()
+    .describe('El clima de ese día a mano (condition, low, high, wind, windDirection); null vuelve al generado'),
+  zone: weatherZone.optional().describe('La zona de clima de la campaña'),
+  latitude: z.number().min(-90).max(90).optional().describe('La latitud de la campaña, para el sol'),
+  layer: weatherLayerSetting.optional().describe('La capa de clima de la Mesa: today (como hoy), manual o none')
+})
+
+/** Planear un viaje y, con advance, hacerlo (8 · campaña) */
+const travelToolInput = (travel.input as unknown as z.ZodObject).safeExtend({
+  advance: z
+    .boolean()
+    .optional()
+    .describe('Hacer el viaje: avanza el «hoy» los días que pasan (y la zona, con zone) y lo deja en el registro')
+})
+
 /** Ver una página (o el árbol) como la ve un personaje de una campaña, o la campaña sin excepciones (ADR-0017) */
 const viewAsInput = z.object({
   campaignId: z.uuid(),
@@ -270,6 +355,9 @@ export const MCP_TOOLS: Record<string, McpTool> = {
       return { action: 'listUnresolvedLinks', input: { worldId } }
     }
   },
+  // Las relaciones (módulo 10): de una página y de todo el mundo
+  relaciones_pagina: { action: 'getRelations' },
+  grafo_mundo: { action: 'getWorldGraph' },
   // Lo que sabe cada campaña (ADR-0017) y revelar en partida (docs/specs/revelar.md)
   quien_conoce: { action: 'getPageKnowledge' },
   marcar_conocimiento: { action: 'setKnowledge' },
@@ -289,6 +377,83 @@ export const MCP_TOOLS: Record<string, McpTool> = {
       if (pageId) return { action: 'readPage', input: { pageId, ...as } }
       if (!worldId) throw new InvalidRequestError('BAD_INPUT', 'pageId o worldId')
       return { action: 'listPageTree', input: { worldId, levels: 6, ...as } }
+    }
+  },
+  // Los calendarios del mundo (docs/specs/calendarios.md): varios, uno principal; las fechas, como 1250-Siega-18
+  listar_calendarios: { action: 'listCalendars' },
+  ver_calendario: { action: 'getCalendar' },
+  crear_calendario: { action: 'createCalendar' },
+  cambiar_calendario: { action: 'updateCalendar' },
+  borrar_calendario: { action: 'deleteCalendar' },
+  // Las cronologías del mundo (módulo 8): los eventos sueltos y las páginas con fecha, en «Calendarios»
+  listar_cronologias: { action: 'listChronologies' },
+  ver_cronologia: { action: 'getChronology' },
+  crear_cronologia: { action: 'createChronology' },
+  cambiar_cronologia: { action: 'updateChronology' },
+  borrar_cronologia: { action: 'deleteChronology' },
+  crear_eventos: { action: 'createTimelineEvents' },
+  cambiar_evento: { action: 'updateTimelineEvent' },
+  borrar_evento: { action: 'deleteTimelineEvent' },
+  convertir_en_pagina: { action: 'convertEventToPage' },
+  cambiar_grupos_eventos: { action: 'updateTimelineGroups' },
+  // El «hoy» de cada campaña, su clima, su sol y sus viajes (módulos 8 y 10 · campaña)
+  fecha_de_hoy: { action: 'getCampaignToday' },
+  cambiar_fecha: { action: 'setCampaignToday' },
+  ver_clima: { action: 'getCampaignWeather' },
+  cambiar_clima: {
+    description:
+      'Cambia el clima de una campaña (solo su máster): con weather, el de un día a mano (sin date, su «hoy»; null lo devuelve al generado; no cambia los siguientes; queda en el registro solo para el máster); con zone o latitude, su zona de clima o su latitud; con layer, la capa de clima de la Mesa (today, manual con kind, intensity y wind, o none). Se deshace, salvo la capa',
+    input: climateInput,
+    actions: ['setDayWeather', 'setCampaignClimate', 'setWeatherLayer'],
+    route: (input) => {
+      const { campaignId, date, weather, zone, latitude, layer } = climateInput.parse(input)
+      if (weather !== undefined)
+        return { action: 'setDayWeather', input: { campaignId, weather, ...(date === undefined ? {} : { date }) } }
+      if (zone !== undefined || latitude !== undefined)
+        return {
+          action: 'setCampaignClimate',
+          input: { campaignId, ...(zone ? { zone } : {}), ...(latitude === undefined ? {} : { latitude }) }
+        }
+      if (layer) return { action: 'setWeatherLayer', input: { campaignId, layer } }
+      throw new InvalidRequestError('BAD_INPUT', 'weather, zone, latitude o layer')
+    }
+  },
+  planear_viaje: {
+    description:
+      'Planea un viaje de una campaña (solo su máster): la distancia escrita (distance, unit) o medida en un mapa del mundo (tabId con points, pins o la ruta elementId, con su escala y lo que se anda al día), el medio (foot, horse, ship), el ritmo (slow ×0,67, normal, fast ×1,33) y los días de descanso dan los días de camino, los que pasan (redondeados hacia arriba), la llegada y el clima de cada día. Con advance, lo hace: avanza el «hoy» (y la zona de clima, con zone) en una sola operación que se deshace, y deja el resumen en el registro',
+    input: travelToolInput,
+    actions: ['planTravel', 'travel'],
+    route: (input) => {
+      const { advance, ...rest } = travelToolInput.parse(input) as Record<string, unknown> & { advance?: boolean }
+      if (advance) return { action: 'travel', input: rest }
+      const { zone: _, ...plan } = rest
+      return { action: 'planTravel', input: plan }
+    }
+  },
+  actividad_campana: { action: 'getCampaignActivity' },
+  describir_fecha: {
+    description:
+      'Describe una fecha de un calendario del mundo (sin calendarId, el principal de worldId): su texto, su día de la semana, su estación, su era, la fase de cada luna y su día del año y, si no es del principal y tiene correspondencia, su equivalencia en el principal. Con addDays, también la de N días después; con until, cuántos días faltan; con to, la pasa a ese otro calendario',
+    input: dateToolInput,
+    actions: ['describeDate', 'convertDate'],
+    route: (input) => {
+      const { to, calendarId, worldId, date, addDays, until, campaignId } = dateToolInput.parse(input)
+      const as = campaignId ? { campaignId } : {}
+      if (to) {
+        if (!calendarId) throw new InvalidRequestError('BAD_INPUT', 'para pasarla a otro, calendarId')
+        return { action: 'convertDate', input: { calendarId, to, date, ...as } }
+      }
+      return {
+        action: 'describeDate',
+        input: {
+          ...(calendarId ? { calendarId } : {}),
+          ...(worldId ? { worldId } : {}),
+          date,
+          ...(addDays === undefined ? {} : { addDays }),
+          ...(until === undefined ? {} : { until }),
+          ...as
+        }
+      }
     }
   },
   listar_archivos: { action: 'listFiles' },
@@ -316,6 +481,39 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   poner_pin: { action: 'createMapPin' },
   cambiar_pin: { action: 'updateMapPin' },
   quitar_pin: { action: 'deleteMapPin' },
+  // La pizarra (módulo 9): en palabras, y cambios en una rejilla sencilla
+  ver_pizarra: { action: 'describeBoard' },
+  cambiar_pizarra: { action: 'changeBoard' },
+  // Las capas del mapa y lo dibujado en él (módulo 9): la IA ve la imagen y dibuja en sus píxeles
+  imagen_mapa: { action: 'getMapImage' },
+  medir_mapa: { action: 'measureMap' },
+  crear_capa: { action: 'createMapLayer' },
+  cambiar_capa: { action: 'updateMapLayer' },
+  quitar_capa: { action: 'deleteMapLayer' },
+  dibujar_en_mapa: {
+    description:
+      'Dibuja en un mapa una región (pieces: una o varias piezas, cada una con sus vértices en orden), una ruta (points; from y to, los pines donde empieza y acaba) o un texto (at, con rotate y arc), en una capa (layerId; sin ella, la de más arriba que ven las campañas). Antes, mira la imagen con imagen_mapa y da los puntos en sus píxeles con view { width, height } (o, sin view, de 0 a 1). Crisol simplifica el trazo y pega los vértices a los de lo que ya hay muy cerca (fronteras sin huecos) y los extremos de una ruta a los pines. Se deshace',
+    input: drawInput,
+    actions: ['createMapElement'],
+    route: (input) => {
+      const { geometry, view, ...rest } = input as { geometry: Loose; view?: View } & Record<string, unknown>
+      return { action: 'createMapElement', input: { ...rest, geometry: fromAi(geometry, view), snap: true } }
+    }
+  },
+  cambiar_dibujo: {
+    description:
+      'Cambia una región, ruta o texto de un mapa: su forma (geometry entera, en los píxeles de imagen_mapa con view, o de 0 a 1), su nombre, su página, su estilo, su capa o si está oculto. Con forma nueva, se simplifica y se pega a lo cercano como al dibujar. Se deshace',
+    input: redrawInput,
+    actions: ['updateMapElement'],
+    route: (input) => {
+      const { geometry, view, ...rest } = input as { geometry?: Loose; view?: View } & Record<string, unknown>
+      return {
+        action: 'updateMapElement',
+        input: geometry ? { ...rest, geometry: fromAi(geometry, view), snap: true } : rest
+      }
+    }
+  },
+  quitar_dibujo: { action: 'deleteMapElement' },
   // El panel de bloques al lado de una página (ADR-0008); se lee con leer_pagina
   cambiar_panel: { action: 'setPagePanel' },
   // Las plantillas de página (ADR-0009)
@@ -673,16 +871,50 @@ export const INSTRUCTIONS =
   'escribir_nota: suyas, con enlaces [[Página]] a lo que conoce; el máster las lee y no las escribe). ' +
   'Para pasar una wiki entera: crear_paginas de 50 en 50, en cualquier orden (los enlaces se resuelven solos), y al ' +
   'final enlaces_pagina con worldId para ver lo que quede sin resolver; los archivos los sube el máster y se enlazan ' +
-  'por su nombre (listar_archivos). Las etiquetas son de toda la cuenta: míralas con listar_etiquetas y usa las que ' +
+  'por su nombre (listar_archivos). Cada mundo puede tener calendarios propios (meses, festividades, semana, ' +
+  'bisiestos, eras, lunas y estaciones), uno principal: antes de fechar nada, míralos con listar_calendarios y escribe ' +
+  'las fechas como 1250-Siega-18 (el mes por su nombre; 1250-03-18 cuenta los meses sin las festividades). ' +
+  'crear_calendario crea uno de una vez con su definición entera; ver_calendario lo enseña con sus meses numerados; ' +
+  'cambiar_calendario cambia su definición entera (mira antes ver_calendario) sin reescribir ninguna fecha; ' +
+  'describir_fecha dice qué día de la semana, estación, era y lunas tiene una fecha (y su equivalencia en el ' +
+  'principal, o en otro con to, si tienen correspondencia). Una página se fecha con una propiedad de tipo date ' +
+  '(editar_pagina o crear_paginas; en el YAML, como texto en un campo de fecha): 1250-Siega-18, 1250-Siega o 1250, ' +
+  'un periodo 1250-Siega-12/1250-Trilla-3 y «(cada año)» al final si se repite; sin calendar, el que ya tenga o el ' +
+  'principal. leer_pagina da sus fechas legibles (dates). Las cronologías (listar_cronologias, ver_cronologia; ' +
+  'crear_cronologia con su calendario y su filtro: páginas, plantillas, etiquetas, grupos) juntan los eventos sueltos ' +
+  'del mundo (no van en el árbol) y las páginas con fecha, que salen solas; lo de otros calendarios se convierte si ' +
+  'tiene correspondencia. crear_eventos crea hasta 100 de una vez (una cronología entera), con su grupo por su nombre ' +
+  'y su página (pageId o newPage); cambiar_evento, borrar_evento y convertir_en_pagina (la crea con su texto y lo ' +
+  'deja enlazado). Un jugador ve las cronologías que se le revelan (marcar_conocimiento o revelar con kind ' +
+  'chronology) y dentro los eventos no ocultos (o revelados, kind event) y las páginas que conoce. ' +
+  'Cada campaña tiene su «hoy», una fecha del calendario principal: fecha_de_hoy lo da (con el clima de hoy, el sol ' +
+  'y, al máster, la previsión de 7 días) y cambiar_fecha lo pone (date) o lo avanza (days o weeks); cada cambio queda ' +
+  'en el registro de la partida y se deshace. El clima de cada día sale de la zona de la campaña con semilla (no ' +
+  'cambia al volver a pedirlo): ver_clima da un intervalo, y cambiar_clima pone a mano el de un día, la zona, la ' +
+  'latitud o la capa de clima de la Mesa. planear_viaje calcula un viaje (desde una ruta del mapa o la distancia) y, ' +
+  'con advance, avanza el «hoy» con el clima de cada día. actividad_campana dice qué ha pasado en una campaña desde ' +
+  'la última visita de quien te conecta. La jugadora ve el «hoy», el clima de hoy y el sol, no la previsión. ' +
+  'Las etiquetas son de toda la cuenta: míralas con listar_etiquetas y usa las que ' +
   'ya hay antes de inventar otras. Una página puede tener pestañas además de su texto, como un mapa (ver_pestanas): ' +
-  'sus pines van de 0 a 1 sobre la imagen y llevan a páginas; míralo con ver_mapa antes de poner nada. Al lado del texto, cada página tiene un panel de bloques ' +
+  'sus pines van de 0 a 1 sobre la imagen y llevan a páginas; míralo con ver_mapa antes de poner nada. Un mapa tiene ' +
+  'además capas (crear_capa, cambiar_capa: hidden, solo del máster; quitar_capa) con regiones, rutas y textos: para ' +
+  'dibujar, mira antes la imagen con imagen_mapa y da los puntos en sus píxeles (view con su ancho y su alto) con ' +
+  'dibujar_en_mapa; se cambian con cambiar_dibujo y se quitan con quitar_dibujo. Lo dibujado sigue a su página como ' +
+  'los pines (oculto, hasta que se revele); lo de una capa solo del máster no llega a ningún jugador. medir_mapa ' +
+  'dice la distancia con su escala y los días a pie, a caballo y en barco. Una pizarra (pestaña de tipo board) se lee en palabras con ver_pizarra y se cambia con cambiar_pizarra: tarjetas de ' +
+  'páginas, notas, cajas y flechas en una rejilla (column, row), unidas por su id o por el ref que les des; lo oculto ' +
+  'y las tarjetas de lo que no conocen no les llegan a los jugadores. Al lado del texto, cada página tiene un panel de bloques ' +
   '(medidores, estrellas, fichas, texto corto…): sale en leer_pagina y se cambia entero con cambiar_panel. ' +
   'Las páginas de un tipo (PNJ, Lugar, Facción…: las plantillas que haya hecho la cuenta) se crean con su plantilla (listar_plantillas; ' +
   'template en crear_paginas): sus propiedades del YAML van a los campos que se llamen igual, y las tablas del panel ' +
   '(«Miembros», «Habitantes»…) se llenan solas con las páginas cuyo campo apunta a esta; para buscarlas, ' +
   'buscar_paginas con template y field. Una plantilla es una página guardada como modelo (en un mundo oculto de la ' +
   'cuenta): su texto, su portada, su panel y sus pestañas pasan a las páginas que se hacen con ella; su texto se lee y ' +
-  'se cambia como el de una página (su pageId sale en ver_plantilla) y sus campos, con cambiar_plantilla. Se ordenan en ' +
+  'se cambia como el de una página (su pageId sale en ver_plantilla) y sus campos, con cambiar_plantilla: uno de enlace ' +
+  'puede llevar un papel (role: parent para Padres, partner para Pareja, member-of para Facción, leads para el Líder de ' +
+  'una facción) y un nombre al revés (inverseName: «Padres» → «Hijos»), que hacen el árbol genealógico y el ' +
+  'organigrama. relaciones_pagina da las relaciones de una página (sus campos de enlace y lo que enlaza su texto, en ' +
+  'los dos sentidos; mode links, family u org) y grafo_mundo, las de todo el mundo con filtros. Se ordenan en ' +
   'carpetas (crear_carpeta_plantillas, mover_plantilla). Los dados los tira el servidor: tirar_dados (con ' +
   'campaignId, en su registro, oculta salvo que te pidan que la vean todos) y ver_tiradas. Lo que se tira en partida ' +
   '(una trampa, un ataque) va en una entrada del compendio, con su mecánica, y se tira con tirar_accion_compendio; en ' +

@@ -3,31 +3,32 @@
  * plantilla: su icono, si ya se puede usar y si se ofrece al crear una página. Un tipo nuevo nace aquí (y, en el
  * servidor, con su forma de copiarse: packages/db/src/repos/copy.ts)
  */
-import {
-  ChevronLeft,
-  Clock,
-  Dices,
-  FileText,
-  Grid3x3,
-  LayoutTemplate,
-  Map as MapIcon,
-  Network,
-  PenTool
-} from 'lucide-react'
+
+import type { TFunction } from 'i18next'
+import { ChevronLeft, Dices, FileText, Grid3x3, LayoutTemplate, Map as MapIcon, PenTool } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import styles from './page-tabs.module.css'
 
 export const TAB_KINDS = [
-  { kind: 'text', icon: FileText, ready: true, newPage: true },
-  { kind: 'map', icon: MapIcon, ready: true, newPage: true },
-  { kind: 'table', icon: Dices, ready: true, newPage: false },
-  { kind: 'scene', icon: Grid3x3, ready: true, newPage: false },
-  { kind: 'board', icon: PenTool, ready: false, newPage: true },
-  { kind: 'timeline', icon: Clock, ready: false, newPage: true },
-  { kind: 'tree', icon: Network, ready: false, newPage: true }
+  { kind: 'text', icon: FileText, ready: true, newPage: true, newTab: true },
+  { kind: 'map', icon: MapIcon, ready: true, newPage: true, newTab: true },
+  // Tabla y Escena ya no se ofrecen (las tablas son del compendio y las escenas, sueltas: Enrique, 2026-11-13); las
+  // que hay se siguen viendo
+  { kind: 'table', icon: Dices, ready: true, newPage: false, newTab: false },
+  { kind: 'scene', icon: Grid3x3, ready: true, newPage: false, newTab: false },
+  // Sin «Línea temporal» (el tiempo vive en las cronologías de Calendarios, módulo 8) ni «Árbol familiar» (la pestaña
+  // «Relaciones» de cada página lo calcula de sus campos, módulo 10)
+  { kind: 'board', icon: PenTool, ready: true, newPage: true, newTab: true }
 ] as const
 
 export type TabKind = (typeof TAB_KINDS)[number]['kind']
+
+/**
+ * El nombre de la zona de una pestaña con lienzo para el lector de pantalla: «Pizarra Conspiración»; si se llama como su
+ * tipo, solo «Pizarra» (no «Pizarra Pizarra»)
+ */
+export const tabRegionLabel = (t: TFunction, kind: 'map' | 'board' | 'scene', name: string) =>
+  name === t(`pageTabs.kinds.${kind}`) ? name : t(`${kind}.label`, { name })
 
 /** El dibujo de un tipo de pestaña */
 export const tabIcon = (kind: string) => TAB_KINDS.find((each) => each.kind === kind)?.icon ?? FileText

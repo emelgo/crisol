@@ -568,6 +568,69 @@
       "when": 1794485833221,
       "tag": "0080_capitulos",
       "breakpoints": true
+    },
+    {
+      "idx": 81,
+      "version": "7",
+      "when": 1794561265159,
+      "tag": "0081_capas_del_mapa",
+      "breakpoints": true
+    },
+    {
+      "idx": 82,
+      "version": "7",
+      "when": 1794841152266,
+      "tag": "0082_calendarios",
+      "breakpoints": true
+    },
+    {
+      "idx": 83,
+      "version": "7",
+      "when": 1794848280201,
+      "tag": "0083_fechas_en_busqueda",
+      "breakpoints": true
+    },
+    {
+      "idx": 84,
+      "version": "7",
+      "when": 1794851317580,
+      "tag": "0084_cronologias",
+      "breakpoints": true
+    },
+    {
+      "idx": 85,
+      "version": "7",
+      "when": 1794904485479,
+      "tag": "0085_hoy",
+      "breakpoints": true
+    },
+    {
+      "idx": 86,
+      "version": "7",
+      "when": 1794905289910,
+      "tag": "0086_clima",
+      "breakpoints": true
+    },
+    {
+      "idx": 87,
+      "version": "7",
+      "when": 1794905951020,
+      "tag": "0087_actividad",
+      "breakpoints": true
+    },
+    {
+      "idx": 88,
+      "version": "7",
+      "when": 1794906895188,
+      "tag": "0088_pantalla_master",
+      "breakpoints": true
+    },
+    {
+      "idx": 89,
+      "version": "7",
+      "when": 1794907357232,
+      "tag": "0089_capa_clima",
+      "breakpoints": true
     }
   ]
 }

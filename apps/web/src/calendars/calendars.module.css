@@ -1,0 +1,370 @@
+/*
+ * «Calendarios» (lienzo aprobado, pantalla 1): una ficha de cristal por calendario con su nombre, «Principal», sus
+ * cifras, el año dibujado y, al pie, sus lunas, sus eras y su engranaje; «Calendario nuevo» como una fila más
+ */
+.screen {
+  /* El esqueleto de siempre (components/screen.module.css): la columna del centro, sin fichas a los lados */
+  container-type: inline-size;
+}
+
+.list {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.card {
+  composes: frame from "../components/frame.module.css";
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  transition:
+    background-color 150ms ease-out,
+    opacity 150ms ease-out;
+}
+
+.card:hover {
+  --frame-line: var(--color-field-border);
+}
+
+.card[data-dragging] {
+  opacity: 0.45;
+}
+
+/* Dónde cae lo que se arrastra: una raya encima o debajo */
+.card[data-drop]::after {
+  content: "";
+  position: absolute;
+  inset-inline: var(--space-3);
+  block-size: 2px;
+  border-radius: 1px;
+  background: var(--color-accent-text);
+}
+
+.card[data-drop="before"]::after {
+  inset-block-start: 0;
+}
+
+.card[data-drop="after"]::after {
+  inset-block-end: 0;
+}
+
+.cardHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+/* El nombre lleva a su editor; su enlace cubre toda la ficha (el engranaje va encima) */
+.name {
+  color: var(--color-text);
+  font-size: 1.125rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+
+.name::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+
+.name:hover,
+.card:hover .name {
+  color: var(--color-chrome-text);
+}
+
+.name:focus-visible {
+  outline: none;
+}
+
+.name:focus-visible::before {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
+}
+
+/* «Principal»: la marca de acento */
+.badge {
+  padding: 2px var(--space-2);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-accent) 22%, transparent);
+  color: var(--color-accent-text);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+/* Las cifras: separadas por un punto medio */
+.facts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) 0;
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.facts > span + span::before {
+  content: "·";
+  padding-inline: var(--space-3);
+  color: color-mix(in srgb, var(--color-muted) 70%, transparent);
+}
+
+/* El año dibujado: un tramo por mes y, debajo, las estaciones */
+.strip {
+  display: grid;
+  gap: 3px;
+}
+
+.months {
+  display: flex;
+  gap: 2px;
+  block-size: 0.75rem;
+}
+
+.month {
+  flex-basis: 0;
+  min-inline-size: 2px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--month-color, var(--color-text)) 16%, transparent);
+}
+
+.month[data-festival] {
+  background: var(--month-color, var(--color-warning));
+}
+
+.seasons {
+  position: relative;
+  block-size: 3px;
+  border-radius: 2px;
+  background: var(--line-soft);
+  overflow: hidden;
+}
+
+.season {
+  position: absolute;
+  inset-block: 0;
+  background: var(--season-color, var(--color-muted));
+}
+
+.cardFoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.moons {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.moonDots {
+  display: inline-flex;
+  gap: 3px;
+}
+
+.moonDot {
+  inline-size: 0.625rem;
+  block-size: 0.625rem;
+  border-radius: 50%;
+  background: var(--moon-color);
+  box-shadow: inset -2px -1px 0 rgb(0 0 0 / 0.35);
+}
+
+/* El engranaje: redondo, siempre a la vista y por encima del enlace de la ficha */
+.gear {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  flex: none;
+  place-items: center;
+  inline-size: 2.25rem;
+  block-size: 2.25rem;
+  padding: 0;
+  border: 1px solid var(--line-frame);
+  border-radius: 50%;
+  background: var(--surface-glass-raised);
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.gear:hover,
+.gear[aria-expanded="true"] {
+  border-color: var(--color-field-border);
+  color: var(--color-text);
+}
+
+/* «Abrir», un enlace con el aspecto de las filas del menú */
+.menuLink {
+  display: flex;
+  align-items: center;
+  min-block-size: 2.25rem;
+  padding: 0 var(--space-3);
+  border-radius: 4px;
+  color: var(--color-text);
+  font-size: 0.875rem;
+  text-decoration: none;
+}
+
+.menuLink:hover {
+  background: var(--color-raised);
+  color: var(--color-text);
+}
+
+.menuLink:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
+}
+
+.danger {
+  color: var(--color-danger);
+}
+
+.danger:disabled {
+  color: var(--color-muted);
+  cursor: not-allowed;
+}
+
+.new {
+  margin-block-start: var(--space-3);
+  inline-size: 100%;
+}
+
+/* El cuadro de «Calendario nuevo»: más ancho, con sus tres maneras de empezar en fila */
+.newDialog {
+  inline-size: min(38rem, calc(100vw - 2rem));
+}
+
+.options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.options legend {
+  margin-block-end: var(--space-2);
+  padding: 0;
+  font-weight: 600;
+}
+
+.option {
+  position: relative;
+  display: grid;
+  min-inline-size: 0;
+  align-content: start;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border: 1px solid var(--line-frame);
+  border-radius: var(--radius-button);
+  background: var(--surface-glass);
+  transition:
+    border-color 150ms ease-out,
+    background-color 150ms ease-out;
+}
+
+.option:hover {
+  border-color: var(--color-field-border);
+}
+
+.option[data-checked] {
+  border-color: color-mix(in srgb, var(--color-accent-text) 70%, transparent);
+  background: color-mix(in srgb, var(--color-accent) 12%, var(--surface-glass));
+}
+
+/* La radio, invisible pero con el teclado: el foco se ve en el recuadro */
+/* Toda la etiqueta elige la manera (el desplegable de «Copia de…» va aparte, debajo) */
+.optionLabel {
+  display: grid;
+  gap: var(--space-1);
+  cursor: pointer;
+}
+
+.optionLabel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.optionSelect {
+  position: relative;
+  z-index: 1;
+}
+
+.option input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.option:has(input[type="radio"]:focus-visible) {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.option:has(input[type="radio"]:disabled) {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.optionIcon {
+  color: var(--color-muted);
+}
+
+.option[data-checked] .optionIcon {
+  color: var(--color-accent-text);
+}
+
+.optionTitle {
+  font-weight: 700;
+}
+
+.optionHint {
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+  line-height: 1.35;
+}
+
+.optionSelect {
+  inline-size: 100%;
+  min-inline-size: 0;
+  min-block-size: 2.25rem;
+  margin-block-start: var(--space-1);
+  padding: 0 var(--space-2);
+  border: 1px solid var(--color-field-border);
+  border-radius: 3px;
+  background: var(--field-fill);
+  color: var(--color-text);
+}
+
+/* La línea de la IA: en su azul, sin más */
+.ai {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+.ai svg {
+  color: var(--color-ai);
+}
+
+@media (max-width: 40rem) {
+  .options {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

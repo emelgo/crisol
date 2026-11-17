@@ -225,3 +225,61 @@ export async function filesUsedBy(db: Database, pageIds: readonly string[]) {
     ])
   ]
 }
+
+/** Una página para el grafo del mundo: lo justo y, de sus propiedades, sus campos de enlace y sus etiquetas */
+export type GraphPageRow = {
+  id: string
+  title: string
+  icon: string | null
+  template: string | null
+  line: string[]
+  properties: Record<string, unknown>[]
+}
+
+/** Un enlace del texto entre dos páginas del grafo, con el documento del que sale (solo si no es el cuerpo) */
+export type GraphMentionRow = {
+  source: string
+  target: string
+  kind: 'body' | 'secret' | 'note' | 'tab'
+  documentId: string | null
+}
+
+/** Si una propiedad guardada cuenta para el grafo: un campo de enlace o las etiquetas */
+const graphProperty = (item: Record<string, unknown>) =>
+  item.type === 'pages' ||
+  // Los de texto con algo: el primero que ve quien pregunta va bajo el nombre en las tarjetas
+  (item.type === 'text' && typeof item.value === 'string' && item.value.trim() !== '') ||
+  (typeof item.name === 'string' && item.name.trim().toLowerCase() === 'etiquetas')
+
+/**
+ * Lo que hace falta para el grafo de relaciones del mundo (módulo 10): las páginas fuera de la papelera con sus campos
+ * de enlace, sus etiquetas y sus campos de texto con algo, y los enlaces resueltos de su texto (sin los de pestañas quitadas; los repetidos los junta
+ * el dominio). Dos consultas, sin caché: 5.000 páginas y 20.000 aristas en menos de 300 ms. Las propiedades y la línea
+ * de plantillas llegan como texto y se leen aquí (más rápido que dejárselas al driver)
+ */
+export async function worldGraph(db: Database, worldId: string) {
+  const [pageRows, mentionRows] = await Promise.all([
+    db.execute<Omit<GraphPageRow, 'properties' | 'line'> & { properties: string; line: string }>(sql`
+      select p.id, p.title, p.icon, p.template, array_to_string(p.template_line, ' ') as line,
+        p.properties::text as properties
+      from pages p
+      where p.world_id = ${worldId} and p.deleted_at is null`),
+    db.execute<GraphMentionRow>(sql`
+      select l.source_page_id as source, l.target_page_id as target, d.kind,
+        case when d.kind = 'body' then null else l.source_document_id end as "documentId"
+      from page_links l
+      join documents d on d.id = l.source_document_id
+      where l.world_id = ${worldId} and l.target_page_id is not null and l.target_page_id <> l.source_page_id
+        and (d.kind <> 'tab' or exists (select 1 from page_tabs t where t.document_id = d.id))`)
+  ])
+  const pages: GraphPageRow[] = [...pageRows].map((row) => {
+    const stored: unknown = JSON.parse(row.properties)
+    const properties = Array.isArray(stored)
+      ? stored.filter(
+          (item): item is Record<string, unknown> => typeof item === 'object' && item !== null && graphProperty(item)
+        )
+      : []
+    return { ...row, line: row.line === '' ? [] : row.line.split(' '), properties }
+  })
+  return { pages, mentions: [...mentionRows] }
+}

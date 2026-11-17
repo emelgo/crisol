@@ -1,14 +1,19 @@
 import { createRootRoute, createRoute, createRouter, type RouterHistory } from '@tanstack/react-router'
 import type { BookSearch } from './books/book-tabs.tsx'
 import { CampaignBookScreen } from './books/campaign-book.tsx'
+import { CalendarEditorScreen } from './calendars/editor.tsx'
+import { CalendarsScreen } from './calendars/screen.tsx'
 import { CompendiumScreen } from './campaign/compendium.tsx'
 import { WorldPagesHome, WorldPageView } from './campaign/world-pages.tsx'
 import { CharacterScreen } from './characters/character.tsx'
 import { CharactersScreen } from './characters/characters.tsx'
+import { PlayerChronologies, PlayerChronology } from './chronologies/player.tsx'
+import { ChronologyScreen } from './chronologies/screen.tsx'
 import { InPlayScreen } from './creatures/in-play.tsx'
 import { LibraryScreen } from './library/library.tsx'
 import { NotesScreen } from './notes/screen.tsx'
 import { PartyScreen } from './party/route.tsx'
+import { PlayerWorldGraphScreen, WorldGraphScreen } from './relations/world-graph.tsx'
 import { Bootstrap } from './routes/bootstrap.tsx'
 import { AdventuresScreen, CampaignBooksScreen, CampaignPage, ToMesaIfMaster } from './routes/campaign.tsx'
 import { CampaignsPage } from './routes/campaigns.tsx'
@@ -215,6 +220,46 @@ const filesRoute = createRoute({
   path: '/mundos/$worldId/archivos',
   component: WikiFiles
 })
+// Los calendarios del mundo (módulo 8) y el editor de uno, a pantalla entera
+const calendarsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/mundos/$worldId/calendarios',
+  component: CalendarsScreen
+})
+const calendarRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/mundos/$worldId/calendarios/$calendarId',
+  component: CalendarEditorScreen
+})
+// Una cronología del mundo (módulo 8), a pantalla entera dentro de Calendarios
+const chronologyRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/mundos/$worldId/calendarios/cronologias/$chronologyId',
+  component: ChronologyScreen
+})
+// El grafo de relaciones de todo el mundo (módulo 10), a pantalla entera; y el de quien juega, con lo que conoce
+const worldGraphRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/mundos/$worldId/relaciones',
+  component: WorldGraphScreen
+})
+const playerWorldGraphRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/mundos/$worldId/campanas/$campaignId/relaciones',
+  component: PlayerWorldGraphScreen,
+  validateSearch: asSearch
+})
+// Las cronologías que conoce la campaña de quien juega (ADR-0017), y una de ellas
+const playerChronologiesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/mundos/$worldId/campanas/$campaignId/cronologias',
+  component: PlayerChronologies
+})
+const playerChronologyRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/mundos/$worldId/campanas/$campaignId/cronologias/$chronologyId',
+  component: PlayerChronology
+})
 const searchRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/mundos/$worldId/buscar',
@@ -327,6 +372,13 @@ const routeTree = rootRoute.addChildren([
   wikiPageRoute,
   tagsRoute,
   filesRoute,
+  calendarsRoute,
+  calendarRoute,
+  chronologyRoute,
+  worldGraphRoute,
+  playerWorldGraphRoute,
+  playerChronologiesRoute,
+  playerChronologyRoute,
   searchRoute,
   printRoute,
   worldHistoryRoute,

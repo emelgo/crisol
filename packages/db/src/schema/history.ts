@@ -24,6 +24,8 @@ export const operations = pgTable(
       .references(() => organizations.id, { onDelete: 'cascade' }),
     // Sin clave ajena: el historial sobrevive a la purga de un mundo
     worldId: uuid(),
+    // La campaña de lo que cambió, si la tiene (el centro de actividad la lee de aquí); sin clave ajena, como el mundo
+    campaignId: uuid(),
     actorId: text().references(() => user.id, { onDelete: 'set null' }),
     via: text({ enum: ['ui', 'ai', 'system'] }).notNull(),
     tool: text(),
@@ -37,6 +39,7 @@ export const operations = pgTable(
   (t) => [
     index().on(t.organizationId, t.createdAt),
     index().on(t.worldId, t.createdAt),
+    index().on(t.campaignId, t.createdAt),
     check('operations_via', sql`${t.via} in ('ui', 'ai', 'system')`)
   ]
 )

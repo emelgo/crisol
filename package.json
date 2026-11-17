@@ -11,7 +11,7 @@
     "lint": "biome check .",
     "format": "biome check --write .",
     "typecheck": "turbo run typecheck",
-    "test": "turbo run test",
+    "test": "turbo run test --concurrency=1",
     "licencias": "node scripts/licencias.ts",
     "sala-limpia": "node scripts/sala-limpia.ts",
     "test:coverage": "turbo run test:coverage",
@@ -21,7 +21,7 @@
     "dev": "docker compose up -d --wait && turbo run dev",
     "db:migrate": "pnpm --filter @crisol/db migrate",
     "build": "turbo run build",
-    "e2e": "pnpm --filter @crisol/web build && pnpm --filter @crisol/e2e e2e && pnpm --filter @crisol/e2e e2e:fugas && pnpm --filter @crisol/e2e e2e:a11y",
+    "e2e": "pnpm --filter @crisol/web build && pnpm --filter @crisol/e2e e2e && pnpm --filter @crisol/e2e e2e:fugas && pnpm --filter @crisol/e2e e2e:a11y && pnpm --filter @crisol/e2e e2e:rendimiento",
     "crisol": "pnpm --filter @crisol/server crisol",
     "sistema-5e": "node scripts/sistemas/archivo-5e.ts"
   },

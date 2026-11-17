@@ -21,6 +21,10 @@ export type RealtimeMessage =
   | { type: 'changed'; what: 'pages'; worldId: string }
   /** El texto de una página (su cuerpo o un secreto) se guardó: lo que lo enseña en otra (vista previa, incrustado) */
   | { type: 'changed'; what: 'pageContent'; worldId: string; pageId: string }
+  /** Los calendarios de ese mundo (módulo 8): a quien lee su wiki, que los vuelve a pedir ya proyectados */
+  | { type: 'changed'; what: 'calendars'; worldId: string }
+  /** Las cronologías de ese mundo, sus grupos o sus eventos (módulo 8): a quien lee su wiki, que las vuelve a pedir */
+  | { type: 'changed'; what: 'chronologies'; worldId: string }
   /** Los archivos de ese mundo */
   | { type: 'changed'; what: 'files'; worldId: string }
   /** Los archivos comunes de esa organización (los ven todos sus mundos) */
@@ -40,6 +44,11 @@ export type RealtimeMessage =
   | { type: 'changed'; what: 'tablePresence'; campaignId: string }
   /** El máster vació el registro o borró tiradas: se vuelven a pedir */
   | { type: 'changed'; what: 'log' | 'rolls'; campaignId: string }
+  /**
+   * Hay algo nuevo en el centro de actividad de esa campaña (8 · campaña): se vuelve a pedir lo suyo. Los cambios de
+   * fecha, a todos; las notas y los personajes, a los másteres. Lo del registro y lo revelado llega con sus avisos
+   */
+  | { type: 'changed'; what: 'activity'; campaignId: string }
   /** Las carpetas de la pestaña Actores (solo al máster) */
   | { type: 'changed'; what: 'actorFolders'; campaignId: string }
   /** Se le reveló algo a quien lo recibe (solo a él): el aviso, con lo que ya ve (docs/specs/revelar.md) */
@@ -47,7 +56,7 @@ export type RealtimeMessage =
       type: 'revealed'
       worldId: string
       campaignId: string
-      kind: 'page' | 'secret' | 'tab' | 'pin' | 'element' | 'content'
+      kind: 'page' | 'secret' | 'tab' | 'pin' | 'element' | 'content' | 'event' | 'chronology'
       /** Lo revelado: su id (una entrada del compendio del mundo, su clave) */
       targetId?: string
       pageId: string | null

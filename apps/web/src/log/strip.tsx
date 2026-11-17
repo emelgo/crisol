@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
+import { LogEventEntry } from '../campaign-time/log-event.tsx'
 import { useDismiss } from '../components/dismiss.ts'
 import { useDice } from '../dice/context.tsx'
 import log from '../dice/log.module.css'
@@ -448,6 +449,7 @@ function Entry({
       {whisperLabel}
     </span>
   )
+  if (entry.kind === 'event') return <LogEventEntry entry={entry} time={time} remove={remove} />
   if (entry.kind === 'shown') {
     return (
       <li className={log.entry}>

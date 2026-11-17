@@ -1,8 +1,11 @@
 import { z } from 'zod'
 import { defineAction } from './action.ts'
 
-/** Qué se marca: una página (con herencia a sus subpáginas), un secreto, una pestaña, un pin, una región o una entrada del mundo */
-export const knowledgeKind = z.enum(['page', 'secret', 'tab', 'pin', 'element', 'content'])
+/**
+ * Qué se marca: una página (con herencia a sus subpáginas), un secreto, una pestaña, un pin, una región, una entrada del
+ * mundo, un evento suelto o una cronología (módulo 8)
+ */
+export const knowledgeKind = z.enum(['page', 'secret', 'tab', 'pin', 'element', 'content', 'event', 'chronology'])
 
 /** De dónde viene lo que se ve: la página con la marca que decide y su capa */
 const knowledgeSource = z
@@ -67,7 +70,7 @@ export const setKnowledge = defineAction({
   name: 'setKnowledge',
   kind: 'players',
   description:
-    'Marca lo que sabe una campaña (o todo el mundo): una página (sus subpáginas la heredan), un secreto (su id de documento), una pestaña, un pin, una región o una entrada del compendio del mundo (su id, el de guardar_contenido). La conocen (toda la campaña o unos personajes), no la conocen, o se quita la marca para que herede',
+    'Marca lo que sabe una campaña (o todo el mundo): una página (sus subpáginas la heredan), un secreto (su id de documento), una pestaña, un pin, una región, una entrada del compendio del mundo (su id, el de guardar_contenido), un evento suelto o una cronología (que solo ven con su marca). La conocen (toda la campaña o unos personajes), no la conocen, o se quita la marca para que herede',
   input: z.object({
     worldId: z.uuid(),
     campaignId: z
@@ -88,6 +91,28 @@ export const setKnowledge = defineAction({
   output: z.object({ page: pageKnowledge.nullable() })
 })
 
+export const getItemKnowledge = defineAction({
+  name: 'getItemKnowledge',
+  kind: 'read',
+  description:
+    'Qué campañas conocen un pin, algo dibujado en un mapa (región, ruta o texto), una pestaña, un evento suelto o una cronología: lo conocen si lo ve toda la campaña (por su marca o porque no está oculto), contando con que conozca la página donde está; seesPage dice si la conoce (sin página, siempre)',
+  input: z.object({
+    worldId: z.uuid(),
+    kind: z.enum(['pin', 'element', 'tab', 'event', 'chronology']),
+    targetId: z.uuid()
+  }),
+  output: z.object({
+    campaigns: z.array(
+      z.object({
+        campaignId: z.uuid(),
+        name: z.string(),
+        knows: z.boolean(),
+        seesPage: z.boolean().describe('Si conoce la página donde está (si no, no lo verá hasta conocerla)')
+      })
+    )
+  })
+})
+
 export const listKnownPages = defineAction({
   name: 'listKnownPages',
   kind: 'read',
@@ -104,7 +129,7 @@ export const reveal = defineAction({
   name: 'reveal',
   kind: 'players',
   description:
-    'Revela algo a una campaña en partida, con aviso a sus jugadores: un secreto (su id de documento), una página, una pestaña, un pin, una región o una entrada del compendio del mundo (su clave); a toda la campaña o a unos personajes. Solo suma: a quien ya lo ve no se le quita (para eso, ocultar). Con alsoPage, si alguno de ellos no conoce la página donde está, también. Sin campaignId, la única del mundo',
+    'Revela algo a una campaña en partida, con aviso a sus jugadores: un secreto (su id de documento), una página, una pestaña, un pin, una región, una entrada del compendio del mundo (su clave), un evento suelto o una cronología; a toda la campaña o a unos personajes. Solo suma: a quien ya lo ve no se le quita (para eso, ocultar). Con alsoPage, si alguno de ellos no conoce la página donde está, también. Sin campaignId, la única del mundo',
   input: z.object({
     worldId: z.uuid(),
     campaignId: z.uuid().optional(),

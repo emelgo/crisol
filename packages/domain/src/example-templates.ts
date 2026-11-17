@@ -3,7 +3,7 @@
  * revisión (ADR-0024; la migración 0077 convirtió en propias las que estaban en uso). Sus ids legibles («pnj») no son
  * los de una plantilla de verdad (un uuid): el servidor las encuentra también por su nombre
  */
-import type { PageProperty } from './properties.ts'
+import type { PageProperty, RelationRole } from './properties.ts'
 import type { PageTemplate, TemplateBlock } from './templates.ts'
 
 const image = (id: string): TemplateBlock => ({ id, type: 'image', fileId: null, caption: '' })
@@ -25,19 +25,23 @@ const choice = (field: string, name: string, options: string[]): PageProperty =>
   value: '',
   options
 })
-const link = (field: string, name: string, targets: string[]): PageProperty => ({
+/** Su papel en las relaciones y cómo se lee al revés (módulo 10) */
+type Relation = { role?: RelationRole; inverseName?: string }
+const link = (field: string, name: string, targets: string[], relation: Relation = {}): PageProperty => ({
   name,
   field,
   type: 'pages',
   single: true,
   targets,
+  ...relation,
   value: []
 })
-const links = (field: string, name: string, targets: string[]): PageProperty => ({
+const links = (field: string, name: string, targets: string[], relation: Relation = {}): PageProperty => ({
   name,
   field,
   type: 'pages',
   targets,
+  ...relation,
   value: []
 })
 const number = (field: string, name: string): PageProperty => ({ name, field, type: 'number', value: null })
@@ -56,12 +60,12 @@ export const EXAMPLE_TEMPLATES: readonly PageTemplate[] = [
     fields: [
       text('especie', 'Especie'),
       text('rol', 'Rol'),
-      link('faccion', 'Facción', ['faccion']),
+      link('faccion', 'Facción', ['faccion'], { role: 'member-of', inverseName: 'Miembros' }),
       link('lugar', 'Lugar', ['lugar']),
       // Sin género: valen para cualquiera (docs/diseno.md)
       choice('estado', 'Estado', ['Vive', 'Ha muerto', 'En paradero desconocido', 'No se sabe']),
-      links('padres', 'Padres', ['pnj']),
-      links('pareja', 'Pareja', ['pnj'])
+      links('padres', 'Padres', ['pnj'], { role: 'parent', inverseName: 'Hijos' }),
+      links('pareja', 'Pareja', ['pnj'], { role: 'partner', inverseName: 'Pareja' })
     ],
     panel: [image('retrato'), table('llevaencima', 'Lleva encima', 'objeto', 'portador', ['tipo', 'rareza'])],
     skeleton: '## Quién es\n\n## Cómo interpretarlo\n\n## Ganchos\n'
@@ -85,7 +89,7 @@ export const EXAMPLE_TEMPLATES: readonly PageTemplate[] = [
         'Mazmorra',
         'Paraje'
       ]),
-      link('dentro-de', 'Dentro de', ['lugar']),
+      link('dentro-de', 'Dentro de', ['lugar'], { inverseName: 'Contiene' }),
       number('poblacion', 'Población'),
       link('gobierna', 'Gobierna', ['pnj'])
     ],
@@ -102,8 +106,8 @@ export const EXAMPLE_TEMPLATES: readonly PageTemplate[] = [
     icon: '🛡️',
     fields: [
       choice('tipo', 'Tipo', ['Reino', 'Casa noble', 'Gremio', 'Orden', 'Culto', 'Compañía', 'Banda', 'Tribu']),
-      link('lider', 'Líder', ['pnj']),
-      link('sede', 'Sede', ['lugar']),
+      link('lider', 'Líder', ['pnj'], { role: 'leads', inverseName: 'Dirige' }),
+      link('sede', 'Sede', ['lugar'], { inverseName: 'Sede de' }),
       text('objetivo', 'Objetivo')
     ],
     panel: [image('emblema'), table('miembros', 'Miembros', 'pnj', 'faccion', ['rol', 'estado'])],
@@ -133,7 +137,7 @@ export const EXAMPLE_TEMPLATES: readonly PageTemplate[] = [
       choice('rareza', 'Rareza', ['Común', 'Poco común', 'Raro', 'Muy raro', 'Legendario', 'Artefacto']),
       { name: 'Sintonización', field: 'sintonizacion', type: 'boolean', value: false },
       text('valor', 'Valor'),
-      link('portador', 'Portador', ['pnj'])
+      link('portador', 'Portador', ['pnj'], { inverseName: 'Lleva encima' })
     ],
     panel: [image('imagen')],
     skeleton: '## Descripción\n\n## Historia\n'

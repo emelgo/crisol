@@ -66,6 +66,8 @@ test('fichas: Lía y tres goblins de un encuentro, moverlos, dañar a uno, ocult
   })
   await call('openScene', { campaignId, sceneId })
   await call('presentScene', { campaignId })
+  // Abrirla la pone en pausa: aquí se juega, y su franja (bajo el chip del hoy) taparía la parte alta del mapa
+  await call('setTableControls', { campaignId, paused: false })
   // La cripta, destapada a mano entera: lo que se prueba aquí son las fichas, no la niebla
   await call('changeFog', { campaignId, mode: 'reveal', shape: 'rectangle', x: 0, y: 0, width: 1200, height: 800 })
   const tokens = async () => (await call('getCampaignTable', { campaignId })).tokens as Token[]
@@ -140,6 +142,10 @@ test('fichas: Lía y tres goblins de un encuentro, moverlos, dañar a uno, ocult
   // Pulsarlo abre su tarjeta: dañarlo lo deja «Con heridas» en la tele
   const moved = (await tokens()).find((token) => token.id === goblin.id) as Token
   const at = await onScreen(stage, moved)
+  // Que lo de encima (barras, la franja de la pausa) no tape la ficha: el clic tiene que llegar al mapa
+  expect(
+    await page.evaluate(({ x, y }) => !!document.elementFromPoint(x, y)?.closest('[role="application"]'), at)
+  ).toBe(true)
   await page.mouse.click(at.x, at.y)
   const card = page.getByRole('region', { name: 'Goblin 1' })
   await expect(card).toBeVisible()
@@ -162,6 +168,9 @@ test('fichas: Lía y tres goblins de un encuentro, moverlos, dañar a uno, ocult
   await expect(onTv.getByRole('listitem')).toHaveCount(3)
   await expect(onTv).not.toContainText('Goblin 1')
 
+  // Cerrada la tarjeta, que con la ficha arriba del todo tapa la barra de la cabecera (más alta con el chip del hoy)
+  await card.getByRole('button', { name: 'Cerrar' }).click()
+  await expect(card).toBeHidden()
   // Encuadrar al grupo: la tele va a Lía
   await page.getByRole('button', { name: /^Cámara/ }).click()
   await page.getByRole('menuitemradio', { name: /^Sigue al grupo/ }).click()
@@ -175,7 +184,6 @@ test('fichas: Lía y tres goblins de un encuentro, moverlos, dañar a uno, ocult
       )
     })
     .toBeLessThan(5)
-  await card.getByRole('button', { name: 'Cerrar' }).click()
 
   // El creador de fichas: una imagen del mundo para Lía, encuadrada en redondo
   const portrait = png(240, 240, (x, y) => (Math.hypot(x - 120, y - 100) < 60 ? [220, 180, 140] : [40, 90, 120]))

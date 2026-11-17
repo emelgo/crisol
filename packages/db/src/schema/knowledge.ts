@@ -6,12 +6,12 @@ import { pages } from './pages.ts'
 import { trackedColumns } from './tracked.ts'
 import { worlds } from './worlds.ts'
 
-export const KNOWLEDGE_KINDS = ['page', 'secret', 'tab', 'pin', 'element', 'content'] as const
+export const KNOWLEDGE_KINDS = ['page', 'secret', 'tab', 'pin', 'element', 'content', 'event', 'chronology'] as const
 
 /**
  * Lo que sabe cada campaña (ADR-0017): una marca por campaña (o por mundo, sin campaña) y cosa: una página (con
- * herencia a sus subpáginas, que se calcula al leer), un secreto, una pestaña, un pin, una región o una entrada del
- * compendio del mundo. Sin fila, hereda. Pasa por el historial: revelar se deshace
+ * herencia a sus subpáginas, que se calcula al leer), un secreto, una pestaña, un pin, una región, una entrada del
+ * compendio del mundo, un evento suelto o una cronología (módulo 8). Sin fila, hereda. Pasa por el historial: revelar se deshace
  */
 export const knowledge = pgTable(
   'knowledge',
@@ -33,7 +33,10 @@ export const knowledge = pgTable(
   (t) => [
     unique('knowledge_one').on(t.worldId, t.campaignId, t.kind, t.targetId).nullsNotDistinct(),
     index().on(t.campaignId),
-    check('knowledge_kind', sql`${t.kind} in ('page', 'secret', 'tab', 'pin', 'element', 'content')`)
+    check(
+      'knowledge_kind',
+      sql`${t.kind} in ('page', 'secret', 'tab', 'pin', 'element', 'content', 'event', 'chronology')`
+    )
   ]
 )
 

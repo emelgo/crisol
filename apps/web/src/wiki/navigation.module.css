@@ -1,12 +1,12 @@
-/* Las pestañas: una tira fina arriba, de lado a lado; la abierta, del color de la página y con las esquinas cortadas */
 /* Las páginas abiertas: pestañas sin fondo, la abierta subrayada sobre la línea de abajo (como las de la página), y el
    texto de la primera en la misma vertical que el título de la hoja */
 .tabs ul {
   /* Una sola fila, como las del navegador: encogen hasta su mínimo y luego la tira se desplaza (no empuja la página) */
   display: flex;
   flex-wrap: nowrap;
-  overflow-x: auto;
-  scrollbar-width: thin;
+  /* Se desplaza de lado si no caben, sin barra a la vista ni desplazamiento vertical (Enrique, 2026-11-16) */
+  overflow: auto hidden;
+  scrollbar-width: none;
   gap: 2px;
   /* Del ancho de la columna, con el texto de la primera alineado con el título */
   margin: 0 0 var(--space-2);
@@ -85,9 +85,19 @@
   stroke-linejoin: round;
 }
 
-/* Como en el navegador: la chincheta y la × salen al acercarse (o en la abierta); fijada, su chincheta se queda */
-.tabs li:not(:hover, :focus-within, [data-current]) .tabButton:not([aria-pressed="true"]) {
+.tabs ul::-webkit-scrollbar {
   display: none;
+}
+
+/* Como en el navegador: la chincheta y la × salen al acercarse (o en la abierta); fijada, su chincheta se queda. Su
+   sitio está siempre: al salir, la pestaña no cambia de tamaño (Enrique, 2026-11-16: «deforma la cajita») */
+.tabButton {
+  transition: opacity 120ms ease-out;
+}
+
+.tabs li:not(:hover, :focus-within, [data-current]) .tabButton:not([aria-pressed="true"]) {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .tabButton[aria-pressed="true"] {

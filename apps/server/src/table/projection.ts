@@ -16,6 +16,7 @@ import type {
   ScreenView,
   TableVision,
   TokenView,
+  WeatherLayerView,
   WidgetView
 } from '@crisol/contracts'
 import {
@@ -47,6 +48,7 @@ import { doorSeen } from './rules.ts'
 import { campaignSceneSounds } from './scene-sounds.ts'
 import type { VisionResult, VisionToken, WalkedMove } from './vision.ts'
 import type { WalkedPath } from './vision-compute.ts'
+import { layerIn, todayWeather } from './weather-layer.ts'
 
 type Campaign = NonNullable<Awaited<ReturnType<typeof campaignsRepo.findCampaign>>>
 
@@ -314,7 +316,8 @@ export function sceneView(row: scenesRepo.SceneWithPage): SceneView {
     initialView: row.initialView ?? null,
     hasImported: row.imported !== null,
     prepared: (row.prepared ?? []).map((p) => ({ key: p.key, name: p.name, unique: p.unique, hidden: p.hidden })),
-    pins: (row.pins ?? []).length
+    pins: (row.pins ?? []).length,
+    interior: row.interior ?? false
   }
 }
 
@@ -419,16 +422,19 @@ async function tableOf(ctx: ActionContext, campaign: Campaign, given?: scenesRep
   // La presentada, si es otra que la abierta
   const otherId = table.presentedSceneId !== openId ? table.presentedSceneId : null
   const none = { views: [], senses: new Map<string, SenseRanges>() }
-  const [open, other, openTokens, otherTokens, combat, openRows, otherRows, widgetRows] = await Promise.all([
-    openId ? scenesRepo.findScene(ctx.db, openId) : null,
-    otherId ? scenesRepo.findScene(ctx.db, otherId) : null,
-    openId ? tokensWithSenses(ctx, campaign, openId) : none,
-    otherId ? tokensWithSenses(ctx, campaign, otherId) : none,
-    combatsRepo.findCombat(ctx.db, campaign.id),
-    openId ? tableToolsRepo.listMarks(ctx.db, campaign.id, openId) : Promise.resolve([]),
-    otherId ? tableToolsRepo.listMarks(ctx.db, campaign.id, otherId) : Promise.resolve([]),
-    tableToolsRepo.listWidgets(ctx.db, campaign.id)
-  ])
+  const [open, other, openTokens, otherTokens, combat, openRows, otherRows, widgetRows, openState, today] =
+    await Promise.all([
+      openId ? scenesRepo.findScene(ctx.db, openId) : null,
+      otherId ? scenesRepo.findScene(ctx.db, otherId) : null,
+      openId ? tokensWithSenses(ctx, campaign, openId) : none,
+      otherId ? tokensWithSenses(ctx, campaign, otherId) : none,
+      combatsRepo.findCombat(ctx.db, campaign.id),
+      openId ? tableToolsRepo.listMarks(ctx.db, campaign.id, openId) : Promise.resolve([]),
+      otherId ? tableToolsRepo.listMarks(ctx.db, campaign.id, otherId) : Promise.resolve([]),
+      tableToolsRepo.listWidgets(ctx.db, campaign.id),
+      openId ? scenesRepo.findSceneState(ctx.db, campaign.id, openId) : null,
+      todayWeather(ctx.db, campaign)
+    ])
   // Una escena que ya no está (su página, en la papelera) no tiene fichas ni marcas
   const presented = table.presentedSceneId === openId ? open : other
   const openLoaded = open ? openTokens : none
@@ -459,9 +465,12 @@ async function tableOf(ctx: ActionContext, campaign: Campaign, given?: scenesRep
     measureOnScreen: table.measureOnScreen,
     paused: table.paused,
     movement: table.movement,
+    gmScreen: open ? (openState?.gmScreen ?? null) : null,
+    weather: { setting: table.weatherLayer, effective: layerIn(table.weatherLayer, today, open) },
     show: table.screenShow ? { ...table.screenShow, worldId: campaign.worldId } : null
   }
-  return { master, shownTokens: shownLoaded.views, shownVision, shownMarks, widgets, shownSounds }
+  const shownWeather = layerIn(table.weatherLayer, today, presented)
+  return { master, shownTokens: shownLoaded.views, shownVision, shownMarks, widgets, shownSounds, shownWeather }
 }
 
 /** La mesa de una campaña para su máster (la campaña ya autorizada) */
@@ -494,6 +503,8 @@ export function screenViewOf(input: {
   show?: ScreenView['show']
   /** Lo que suena en el mapa de la escena y los muros que lo paran */
   sounds?: Pick<ScreenView, 'sounds' | 'soundWalls'>
+  /** La capa de clima que se pinta en la escena (8 · campaña) */
+  weather?: WeatherLayerView | null
 }): ScreenView {
   const { scene, vision } = input
   // Sin la vista del grupo no se enseña nada (no debería pasar: el servidor siempre la tiene)
@@ -544,6 +555,7 @@ export function screenViewOf(input: {
         : [],
     sounds: showing ? (input.sounds?.sounds ?? []) : [],
     soundWalls: showing ? (input.sounds?.soundWalls ?? []) : [],
+    weather: showing ? (input.weather ?? null) : null,
     // Aunque esté oculta la escena: lo enseñado va encima
     show: input.show ?? null
   }
@@ -559,6 +571,7 @@ function screenOfTable(
     marks: readonly tableToolsRepo.MarkRow[]
     widgets: readonly WidgetView[]
     sounds: Pick<ScreenView, 'sounds' | 'soundWalls'>
+    weather: WeatherLayerView | null
   }
 ) {
   return screenViewOf({
@@ -575,7 +588,8 @@ function screenOfTable(
     paused: master.paused,
     movement: master.movement,
     show: master.show ?? null,
-    sounds: shown.sounds
+    sounds: shown.sounds,
+    weather: shown.weather
   })
 }
 
@@ -595,13 +609,18 @@ export function loadTable(env: ActionEnv): LoadTable {
       scenesRepo.campaignTable(env.db, campaignId)
     ])
     if (!campaign) return null
-    const { master, shownTokens, shownVision, shownMarks, widgets, shownSounds } = await tableOf(ctx, campaign, table)
+    const { master, shownTokens, shownVision, shownMarks, widgets, shownSounds, shownWeather } = await tableOf(
+      ctx,
+      campaign,
+      table
+    )
     const screen = screenOfTable(master, campaign.name, {
       tokens: shownTokens,
       vision: shownVision,
       marks: shownMarks,
       widgets,
-      sounds: shownSounds
+      sounds: shownSounds,
+      weather: shownWeather
     })
     const screenVisible: FogGrid | null = screen.scene && shownVision ? shownVision.visible : null
     const screenMask: FogGrid | null = screen.scene && shownVision ? shownVision.screenMask : null

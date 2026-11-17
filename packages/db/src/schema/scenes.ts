@@ -134,10 +134,23 @@ export const scenes = pgTable(
     /** Las criaturas preparadas (docs/specs/escenas-foundry.md): salen al abrirla una campaña por primera vez */
     prepared: jsonb().$type<PreparedCreatureData[]>().notNull().default([]),
     /** Sus pines a páginas (las notas de una escena de Foundry) */
-    pins: jsonb().$type<ScenePinData[]>().notNull().default([])
+    pins: jsonb().$type<ScenePinData[]>().notNull().default([]),
+    /** Interior (8 · campaña, decisión 16): la capa de clima de la Mesa no se pinta en ella */
+    interior: boolean().notNull().default(false)
   },
   (t) => [index().on(t.worldId)]
 )
+
+/**
+ * Lo que enseña la pantalla del máster (el cajón G) en una escena (docs/specs/modulo-8-10-campana.md, decisiones 24 y
+ * 33): qué columnas salen (statblocks, personajes, nota y tablas), la nota fijada (una página del mundo) y las tablas
+ * aleatorias elegidas (sus pestañas)
+ */
+export interface GmScreenData {
+  columns: { statblocks: boolean; characters: boolean; note: boolean; tables: boolean }
+  note: string | null
+  tables: string[]
+}
 
 /** El estado de las puertas de una campaña, por el id de su muro */
 export type SceneDoorStates = Record<string, { open: boolean }>
@@ -162,10 +175,21 @@ export const sceneStates = pgTable(
     /** Las puertas que la campaña tiene distinto de como se dibujaron (docs/specs/vision.md), por el id de su muro */
     doors: jsonb().$type<SceneDoorStates>().notNull().default({}),
     /** Los sonidos del mapa que la campaña tiene apagados (o encendidos), por su id (docs/specs/sonido-mapa.md) */
-    sounds: jsonb().$type<Record<string, boolean>>().notNull().default({})
+    sounds: jsonb().$type<Record<string, boolean>>().notNull().default({}),
+    /** La pantalla del máster en esta escena (null: la de siempre, con su página y los statblocks) */
+    gmScreen: jsonb().$type<GmScreenData | null>()
   },
   (t) => [unique().on(t.campaignId, t.sceneId), index().on(t.sceneId)]
 )
+
+/**
+ * La capa de clima de la Mesa de una campaña (8 · campaña, decisión 16): como el clima de hoy (lo de siempre), a mano
+ * (lluvia, nieve, niebla o ceniza, con su intensidad y su viento, de 0 a 1) o ninguna
+ */
+export type WeatherLayerData =
+  | { mode: 'today' }
+  | { mode: 'manual'; kind: 'rain' | 'snow' | 'fog' | 'ash'; intensity: number; wind: number }
+  | { mode: 'none' }
 
 /** La cámara de la pantalla de la tele: sigue al máster o se queda en un encuadre */
 export type ScreenCameraData = { mode: 'follow' } | { mode: 'group' } | { mode: 'fixed'; view: SceneViewData }
@@ -200,6 +224,8 @@ export const campaignTables = pgTable('campaign_tables', {
   screenShow: jsonb().$type<{ kind: 'page' | 'image'; id: string; title: string } | null>(),
   /** Lo que suena (docs/specs/sonido.md): las listas y los efectos con la hora del servidor en que empezaron */
   sound: jsonb().$type<SoundState>(),
+  /** La capa de clima (8 · campaña): como hoy, a mano o ninguna */
+  weatherLayer: jsonb().$type<WeatherLayerData>().notNull().default({ mode: 'today' }),
   updatedAt: timestamp({ withTimezone: true }).defaultNow().notNull()
 })
 

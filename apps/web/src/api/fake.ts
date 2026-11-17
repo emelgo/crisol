@@ -15,6 +15,7 @@ import type {
   LightView,
   LogEntry,
   LogMessage,
+  MapElementView,
   MapPinView,
   MapView,
   MarkView,
@@ -46,7 +47,7 @@ import type {
   WidgetView,
   World
 } from '@crisol/contracts'
-import { GAME_ICONS, youtubeVideoId } from '@crisol/contracts'
+import { DEFAULT_SPEEDS, GAME_ICONS, youtubeVideoId } from '@crisol/contracts'
 import { DiceSyntaxError, rollDice as rollFormula, rowFor, tableFormula, tableProblems } from '@crisol/dice'
 import {
   advanceSound,
@@ -54,12 +55,19 @@ import {
   bySiblingPlace,
   EMPTY_SOUND,
   EXAMPLE_TEMPLATES,
+  familyTree,
+  filterGraph,
   instantiate,
   isTagOrChild,
+  neighborhood,
   nextTrack as nextTrackOf,
+  orgChart,
   pauseSound as pauseSoundOf,
   placeAmong,
   placeAmongSiblings,
+  type RelationView,
+  relationEdges,
+  relationModes,
   removeTagIn,
   renameTagIn,
   resumeSound,
@@ -148,6 +156,9 @@ import { FogGrid, tokensInTemplate } from '@crisol/tabletop'
 import { buildSoundView, listInfo } from '../sound/view.ts'
 import { readFoundryZip } from '../systems/foundry-zip.ts'
 import { type ActionInput, type ActionName, type ActionOutput, type ApiClient, ApiError } from './client.ts'
+import { type FakeCalendar, fakeCalendars } from './fake-calendars.ts'
+import { type FakeToday, fakeCampaignTime } from './fake-campaign-time.ts'
+import { type FakeEvent, fakeChronologies } from './fake-chronologies.ts'
 
 export function fakeApi(
   options: {
@@ -208,12 +219,22 @@ export function fakeApi(
     }>
     /** Las listas de sonido de los mundos (docs/specs/sonido.md) */
     soundPlaylists?: SoundPlaylistView[]
+    /** Los calendarios de los mundos (módulo 8): el primero de cada mundo, principal */
+    calendars?: FakeCalendar[]
+    /** Las cronologías, sus grupos y los eventos sueltos de los mundos (módulo 8) */
+    chronologies?: Parameters<typeof fakeChronologies>[0]['chronologies']
+    timelineGroups?: Parameters<typeof fakeChronologies>[0]['groups']
+    events?: FakeEvent[]
+    /** El «hoy» de las campañas (8 · campaña) */
+    todays?: FakeToday[]
   } = {}
 ) {
   const organizations = options.organizations ?? []
   const worlds = [...(options.worlds ?? [])]
   const campaigns = [...(options.campaigns ?? [])]
   const history = [...(options.history ?? [])]
+  const calendars = fakeCalendars(options.calendars)
+  const campaignTime = fakeCampaignTime({ calendars: calendars.rows, campaigns, todays: options.todays ?? [] })
   const rolls = [...(options.rolls ?? [])]
   // El registro de la partida (docs/specs/registro.md): los mensajes; las tiradas, de rolls
   const messages: LogMessage[] = []
@@ -540,6 +561,7 @@ export function fakeApi(
           (other) =>
             other.id !== page.id &&
             other.worldId === page.worldId &&
+            block.template !== '' &&
             lineOf(other).includes(block.template) &&
             other.properties.some((p) => p.field === block.field && p.type === 'pages' && p.value.includes(page.id))
         )
@@ -553,11 +575,12 @@ export function fakeApi(
           }
           return { id: other.id, title: other.title, icon: other.icon, cells }
         })
+      const unset = !block.template || !block.field
       const usable = !template || template.fields.some((f) => f.field === block.field && f.type === 'pages')
       return {
         blockId: block.id,
         title: block.title,
-        problem: usable ? null : ('field' as const),
+        problem: unset ? ('unset' as const) : usable ? null : ('field' as const),
         columns: block.columns.map((field) => ({
           field,
           name: template?.fields.find((f) => f.field === field)?.name ?? field
@@ -593,6 +616,28 @@ export function fakeApi(
     const index = anchor ? pages.indexOf(anchor) + (before ? 0 : 1) : pages.length
     pages.splice(index, 0, page)
   }
+  // Las cronologías (módulo 8): juntan los eventos y las páginas con fecha de cada mundo
+  const chronologies = fakeChronologies({
+    calendars: () => calendars.rows,
+    pages: () => pages,
+    createPage: ({ worldId, title, parentId, icon, cover }) => {
+      const page: StoredPage = {
+        id: crypto.randomUUID(),
+        worldId,
+        parentId,
+        title,
+        icon: icon ?? null,
+        properties: [],
+        ...(cover ? { cover } : {}),
+        version: 1
+      }
+      place(page)
+      return page.id
+    },
+    ...(options.events ? { events: options.events } : {}),
+    ...(options.chronologies ? { chronologies: options.chronologies } : {}),
+    ...(options.timelineGroups ? { groups: options.timelineGroups } : {})
+  })
 
   // Las etiquetas de la cuenta (ADR-0006): las guardadas y las que llevan páginas y archivos
   const tagRows: {
@@ -743,7 +788,31 @@ export function fakeApi(
     }
     throw new ApiError('NOT_FOUND', 404)
   }
-  const copyMap = (map: MapView): MapView => ({ ...map, pins: map.pins.map((pin) => ({ ...pin })) })
+  const copyMap = (map: MapView): MapView => structuredClone(map)
+  /** Lo de cada pizarra, por su pestaña */
+  const boards = new Map<string, Record<string, unknown>[]>()
+  // Las capas y lo dibujado (módulo 9), dentro de cada mapa
+  const layerById = (layerId: string) => {
+    for (const map of maps) {
+      const layer = map.layers.find((l) => l.id === layerId)
+      if (layer) return { map, layer }
+    }
+    throw new ApiError('NOT_FOUND', 404)
+  }
+  const elementById = (elementId: string) => {
+    for (const map of maps) {
+      const element = map.elements.find((e) => e.id === elementId)
+      if (element) return { map, element }
+    }
+    throw new ApiError('NOT_FOUND', 404)
+  }
+  /** Una capa tras otra (null, abajo del todo; sin decir, arriba) */
+  const placeLayer = (map: MapView, layer: MapView['layers'][number], after: string | null | undefined) => {
+    if (after === undefined) return map.layers.push(layer)
+    const at = after === null ? 0 : map.layers.findIndex((l) => l.id === after) + 1
+    if (after !== null && at === 0) throw new ApiError('BAD_MAP_LAYER', 400)
+    map.layers.splice(at, 0, layer)
+  }
   // Las escenas (sueltas, ADR-0020, o una por pestaña «Escena») y la mesa de cada campaña, como el servidor
   type StoredScene = {
     id: string
@@ -756,6 +825,8 @@ export function fakeApi(
     grid: SceneGrid
     initialView: SceneViewport | null
     imported: SceneImported | null
+    /** Interior (8 · campaña): sin capa de clima */
+    interior?: boolean
   }
   const scenes: StoredScene[] = []
   const sceneById = (sceneId: string) => {
@@ -772,7 +843,8 @@ export function fakeApi(
     image: scene.image ? { ...scene.image } : null,
     grid: { ...scene.grid },
     initialView: scene.initialView ? { ...scene.initialView } : null,
-    hasImported: scene.imported !== null
+    hasImported: scene.imported !== null,
+    interior: scene.interior ?? false
   })
   type StoredTable = { open: string | null; presented: string | null; hidden: boolean; camera: ScreenCamera }
   const tables = new Map<string, StoredTable>()
@@ -1547,6 +1619,15 @@ export function fakeApi(
   }
 
   const handlers: { [N in ActionName]: (input: ActionInput<N>) => ActionOutput<N> } = {
+    ...calendars.handlers,
+    ...chronologies.handlers,
+    ...campaignTime.handlers,
+    // Las tablas aleatorias del mundo (las pestañas «Tabla» de sus páginas), para la pantalla del máster
+    listRandomTables: ({ worldId }) => ({
+      tables: pageTabs
+        .filter((tab) => tab.kind === 'table' && pageById(tab.pageId).worldId === worldId)
+        .map((tab) => ({ tabId: tab.id, name: tab.name, pageId: tab.pageId, pageTitle: pageById(tab.pageId).title }))
+    }),
     listOrganizations: () => ({ organizations }),
     // Copias, como las de la API real (JSON nuevo en cada respuesta)
     // En el orden en que se crearon, como el servidor
@@ -1882,7 +1963,8 @@ export function fakeApi(
     readPage: ({ pageId }) => ({
       page: pageView(pageById(pageId)),
       markdown: '',
-      tables: tablesOf(pageById(pageId)).tables
+      tables: tablesOf(pageById(pageId)).tables,
+      dates: []
     }),
     getPageTables: ({ pageId }) => tablesOf(pageById(pageId)),
     // Lo que sabe cada campaña (ADR-0017): marcas propias de la página, sin herencia (basta para la interfaz)
@@ -1903,6 +1985,30 @@ export function fakeApi(
     },
     listCampaignKnowledge: () => ({ campaign: [], world: [], knowsWorld: true }),
     getSecretsKnowledge: () => ({ secrets: [], campaigns: [] }),
+    // El ojo de un pin o de algo dibujado: su marca o, sin ella, visible si no está oculto (la página, como conocida)
+    getItemKnowledge: ({ worldId, kind, targetId }) => {
+      const item =
+        kind === 'pin'
+          ? maps.flatMap((map) => map.pins).find((pin) => pin.id === targetId)
+          : kind === 'element'
+            ? maps.flatMap((map) => map.elements).find((element) => element.id === targetId)
+            : kind === 'event'
+              ? chronologies.events.find((event) => event.id === targetId)
+              : undefined
+      return {
+        campaigns: campaigns
+          .filter((c) => c.worldId === worldId)
+          .map((c) => {
+            const mark = marks.get(`${c.id}|${kind}|${targetId}`)
+            return {
+              campaignId: c.id,
+              name: c.name,
+              knows: mark ? mark.known && mark.characters === null : kind !== 'chronology' && !(item?.hidden ?? false),
+              seesPage: true
+            }
+          })
+      }
+    },
     listNews: () => ({ news: [] }),
     seeNews: () => ({ ok: true as const }),
     listKnownPages: () => ({
@@ -1985,10 +2091,63 @@ export function fakeApi(
     listPageChildren: ({ worldId, parentId }) => ({ pages: childrenOf(worldId, parentId ?? null).map(summary) }),
     // Sin documentos en estas pruebas: sin enlaces
     getPageLinks: ({ pageId }) => {
-      pageById(pageId)
-      return { incoming: [], outgoing: [], mentions: [], fields: [] }
+      const page = pageById(pageId)
+      const events = chronologies.events
+        .filter((event) => event.pageId === pageId)
+        .map((event) => ({ id: event.id, title: event.title || page.title, text: '' }))
+      return { incoming: [], outgoing: [], mentions: [], fields: [], events }
     },
     listUnresolvedLinks: () => ({ links: [] }),
+    // Las relaciones (módulo 10): solo las de los campos (la falsa no guarda los enlaces del texto)
+    getRelations: ({ pageId, depth = 1, mode = 'links' }) => {
+      const page = pageById(pageId)
+      const graph = relationEdges(
+        pages.filter((p) => p.worldId === page.worldId),
+        []
+      )
+      const modes = relationModes(graph, pageId)
+      const view: RelationView & { generation?: Map<string, number>; groups?: string[] } = !modes.includes(mode)
+        ? { ids: [pageId], edges: [], truncated: false }
+        : mode === 'family'
+          ? familyTree(graph, pageId)
+          : mode === 'org'
+            ? orgChart(graph, pageId)
+            : neighborhood(graph, pageId, depth)
+      return {
+        pageId,
+        mode,
+        modes,
+        nodes: view.ids.map((id) => {
+          const node = pageById(id)
+          const at = view.generation?.get(id)
+          const subtitle = node.properties.find((p) => p.type === 'text' && p.value.trim())?.value
+          return {
+            id,
+            title: node.title,
+            icon: node.icon,
+            template: node.template ?? null,
+            ...(typeof subtitle === 'string' ? { subtitle: subtitle.trim() } : {}),
+            ...(at === undefined ? {} : { generation: at })
+          }
+        }),
+        edges: view.edges,
+        groups: view.groups ?? [],
+        truncated: view.truncated
+      }
+    },
+    getWorldGraph: ({ worldId, relations, orphans = false }) => {
+      const inWorld = pages.filter((p) => p.worldId === worldId)
+      const graph = filterGraph(
+        inWorld.map((p) => ({ ...p, line: p.template ? [p.template] : [], tags: [] })),
+        relationEdges(inWorld, []),
+        { relations, orphans }
+      )
+      return {
+        nodes: graph.pages.map((p) => ({ id: p.id, title: p.title, icon: p.icon, template: p.template ?? null })),
+        edges: graph.edges.map(({ source, target, key }) => ({ source, target, key })),
+        relations: graph.counts
+      }
+    },
     listPageVersions: () => ({ versions: [] }),
     getPageVersion: () => {
       throw new ApiError('NOT_FOUND', 404)
@@ -4080,11 +4239,21 @@ export function fakeApi(
         kind,
         name: name ?? (kind === 'text' ? 'Texto 2' : kind === 'scene' ? 'Escena' : 'Mapa'),
         hidden: false,
-        documentId: kind === 'text' ? crypto.randomUUID() : null,
+        documentId: kind === 'text' || kind === 'board' ? crypto.randomUUID() : null,
         color: null
       }
       pageTabs.push(tab)
-      maps.push({ id: crypto.randomUUID(), tabId: tab.id, pageId, image: null, scale: null, pins: [] })
+      maps.push({
+        id: crypto.randomUUID(),
+        tabId: tab.id,
+        pageId,
+        image: null,
+        scale: null,
+        speeds: { ...DEFAULT_SPEEDS },
+        pins: [],
+        layers: [],
+        elements: []
+      })
       if (kind === 'scene')
         scenes.push({
           id: crypto.randomUUID(),
@@ -4185,10 +4354,11 @@ export function fakeApi(
       if (!scene) throw new ApiError('NOT_FOUND', 404)
       return sceneView(scene)
     },
-    updateScene: ({ sceneId, grid, initialView }) => {
+    updateScene: ({ sceneId, grid, initialView, interior }) => {
       const scene = sceneById(sceneId)
       if (grid) scene.grid = { ...scene.grid, ...grid }
       if (initialView !== undefined) scene.initialView = initialView
+      if (interior !== undefined) scene.interior = interior
       return sceneView(scene)
     },
     setSceneImage: ({ sceneId, width, height, fileId, tiles, imported }) => {
@@ -4860,7 +5030,7 @@ export function fakeApi(
       if (!map) throw new ApiError('NOT_FOUND', 404)
       return copyMap(map)
     },
-    updateMap: ({ mapId, image, scale }) => {
+    updateMap: ({ mapId, image, scale, speeds }) => {
       const map = mapById(mapId)
       if (image) {
         const file = files.find((f) => f.id === image.fileId)
@@ -4868,6 +5038,7 @@ export function fakeApi(
         map.image = { fileId: file.id, name: file.name, url: file.url, width: image.width, height: image.height }
       }
       if (scale !== undefined) map.scale = scale
+      if (speeds !== undefined) map.speeds = speeds ?? { ...DEFAULT_SPEEDS }
       return copyMap(map)
     },
     createMapPin: ({ mapId, x, y, ...rest }) => {
@@ -4902,6 +5073,101 @@ export function fakeApi(
       const { map, pin } = pinById(pinId)
       map.pins.splice(map.pins.indexOf(pin), 1)
       return { id: pinId }
+    },
+    createMapLayer: ({ mapId, name, hidden, after }) => {
+      const map = mapById(mapId)
+      const layer = { id: crypto.randomUUID(), name, hidden: hidden ?? false }
+      placeLayer(map, layer, after)
+      return { ...layer }
+    },
+    updateMapLayer: ({ layerId, name, hidden, after }) => {
+      const { map, layer } = layerById(layerId)
+      if (name !== undefined) layer.name = name
+      if (hidden !== undefined) layer.hidden = hidden
+      if (after !== undefined) {
+        map.layers.splice(map.layers.indexOf(layer), 1)
+        placeLayer(map, layer, after)
+      }
+      return { ...layer }
+    },
+    deleteMapLayer: ({ layerId }) => {
+      const { map, layer } = layerById(layerId)
+      map.layers.splice(map.layers.indexOf(layer), 1)
+      map.elements = map.elements.filter((e) => e.layerId !== layerId)
+      return { id: layerId }
+    },
+    createMapElement: ({ mapId, layerId, kind, geometry, ...rest }) => {
+      const map = mapById(mapId)
+      let layer = layerId
+        ? map.layers.find((l) => l.id === layerId)
+        : (map.layers.findLast((l) => !l.hidden) ?? map.layers.at(-1))
+      if (layerId && !layer) throw new ApiError('BAD_MAP_LAYER', 400)
+      if (!layer) {
+        layer = { id: crypto.randomUUID(), name: 'General', hidden: false }
+        map.layers.push(layer)
+      }
+      const element: MapElementView = {
+        id: crypto.randomUUID(),
+        layerId: layer.id,
+        kind,
+        geometry,
+        label: rest.label ?? null,
+        pageId: rest.pageId ?? null,
+        pageTitle: rest.pageId ? pageById(rest.pageId).title : null,
+        style: rest.style ?? {},
+        hidden: rest.hidden ?? false
+      }
+      map.elements.push(element)
+      return structuredClone(element)
+    },
+    updateMapElement: ({ elementId, ...patch }) => {
+      const { element } = elementById(elementId)
+      Object.assign(element, Object.fromEntries(Object.entries(patch).filter(([, v]) => v !== undefined)))
+      element.pageTitle = element.pageId ? pageById(element.pageId).title : null
+      return structuredClone(element)
+    },
+    // La pizarra (módulo 9): sus elementos, que las pruebas ponen a mano
+    getBoard: ({ tabId }) => {
+      if (tabById(tabId).kind !== 'board') throw new ApiError('NOT_FOUND', 404)
+      return { elements: structuredClone(boards.get(tabId) ?? []) }
+    },
+    // Lo de la IA en la pizarra: solo para completar el contrato (sus pruebas van contra el servidor)
+    describeBoard: () => ({ cards: [], notes: [], shapes: [], arrows: [], images: [], drawings: 0 }),
+    changeBoard: () => ({ added: [], removed: 0 }),
+    getMapImage: ({ tabId }) => {
+      const map = maps.find((m) => m.tabId === tabId)
+      if (!map?.image) throw new ApiError('NO_MAP_IMAGE', 400)
+      const { width, height } = map.image
+      return { width, height, mimeType: 'image/png', image: null, svg: null, note: `Mide ${width} × ${height} píxeles` }
+    },
+    measureMap: ({ tabId, points = [] }) => {
+      const map = maps.find((m) => m.tabId === tabId)
+      if (!map?.image) throw new ApiError('NO_MAP_IMAGE', 400)
+      const { width, height } = map.image
+      let pixels = 0
+      for (let i = 1; i < points.length; i++) {
+        const [a, b] = [points[i - 1], points[i]]
+        if (a && b) pixels += Math.hypot((b[0] - a[0]) * width, (b[1] - a[1]) * height)
+      }
+      const distance = map.scale ? (pixels * map.scale.value) / map.scale.length : null
+      return {
+        distance,
+        unit: map.scale?.unit ?? null,
+        days:
+          distance === null
+            ? null
+            : {
+                foot: distance / map.speeds.foot,
+                horse: distance / map.speeds.horse,
+                ship: distance / map.speeds.ship
+              },
+        pixels
+      }
+    },
+    deleteMapElement: ({ elementId }) => {
+      const { map, element } = elementById(elementId)
+      map.elements.splice(map.elements.indexOf(element), 1)
+      return { id: elementId }
     },
     listGameIcons: ({ query }) => ({
       icons: GAME_ICONS.filter(
@@ -5119,5 +5385,19 @@ export function fakeApi(
       return { ...file }
     }
   }
-  return { client, calls, worlds, campaigns, history, approvals, pages, files, shownPages }
+  return {
+    client,
+    calls,
+    worlds,
+    campaigns,
+    history,
+    approvals,
+    pages,
+    files,
+    shownPages,
+    boards,
+    calendars: calendars.rows,
+    events: chronologies.events,
+    chronologies: chronologies.chronologies
+  }
 }

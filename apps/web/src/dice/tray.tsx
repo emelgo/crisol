@@ -41,13 +41,16 @@ interface Tray {
   onSettled(listener: Settled): () => void
   /** Si los dados de esa tirada están cayendo */
   playing(rollId: string): boolean
+  /** Va a tirar (el ratón o el foco en el d20): se carga ya la escena, para que la primera tirada no espere */
+  prepare(): void
 }
 
 const TrayContext = createContext<Tray>({
   play: () => {},
   start: () => null,
   onSettled: () => () => {},
-  playing: () => false
+  playing: () => false,
+  prepare: () => {}
 })
 
 export const useTray = () => useContext(TrayContext)
@@ -148,20 +151,11 @@ export function DiceTray({ children }: { children: ReactNode }) {
     [account, settle, load, play]
   )
 
-  // Dentro de un mundo, en un rato libre, se deja lista la escena: la primera tirada ya no espera a cargarla
-  useEffect(() => {
-    if (!worldId) return
-    const target = canvas.current
-    if (!target) return
-    const warm = () => void load(target)
-    // Safari aún no tiene requestIdleCallback
-    if (typeof window.requestIdleCallback === 'function') {
-      const id = window.requestIdleCallback(warm, { timeout: 4000 })
-      return () => window.cancelIdleCallback(id)
-    }
-    const id = setTimeout(warm, 1500)
-    return () => clearTimeout(id)
-  }, [worldId, load])
+  // La escena (three.js, ~0,5 MB) no se carga hasta que se va a tirar (Enrique, 2026-11-14: así las páginas pesan
+  // menos): al acercarse al d20, al tirar o al llegar la tirada de otro
+  const prepare = useCallback(() => {
+    if (canvas.current) void load(canvas.current)
+  }, [load])
 
   // Las de los demás: en el mundo en el que se está y si no se ha apagado; las tuyas ya cayeron al tirarlas
   useRolled((roll) => {
@@ -188,9 +182,10 @@ export function DiceTray({ children }: { children: ReactNode }) {
         listeners.current.add(listener)
         return () => listeners.current.delete(listener)
       },
-      playing: (rollId) => falling.current.has(rollId)
+      playing: (rollId) => falling.current.has(rollId),
+      prepare
     }),
-    [play, start]
+    [play, start, prepare]
   )
   return (
     <TrayContext.Provider value={value}>

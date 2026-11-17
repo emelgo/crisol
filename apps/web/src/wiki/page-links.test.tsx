@@ -3,7 +3,7 @@ import type { ContentItem, System } from '@crisol/systems'
 import { cinco } from '@crisol/systems/fixtures'
 import { type HocuspocusProvider, HocuspocusProviderWebsocket } from '@hocuspocus/provider'
 import { createMemoryHistory } from '@tanstack/react-router'
-import { act, render, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { Editor } from '@tiptap/core'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -144,6 +144,21 @@ describe('los enlaces del texto de una página', () => {
       option.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }))
     })
     await waitFor(() => expect(nodesOf(editor, 'contentLink', 'name')).toEqual(['Lobo']))
+  })
+
+  it('«[[» bajo el ratón quieto deja elegida la primera (Intro enlaza, no crea); al moverlo, elige', async () => {
+    renderPort()
+    const editor = await synced()
+    type(editor, '[[Puer')
+    const page = await screen.findByRole('option', { name: /Puerto Ceniza/ })
+    const create = await screen.findByRole('option', { name: /Crear página «Puer»/ })
+    expect(page.getAttribute('aria-selected')).toBe('true')
+    // Lo que manda el navegador cuando la lista aparece bajo el ratón: sin moverse
+    fireEvent.mouseEnter(create)
+    fireEvent.mouseMove(create, { movementX: 0, movementY: 0 })
+    expect(page.getAttribute('aria-selected')).toBe('true')
+    fireEvent.mouseMove(create, { movementX: 2, movementY: 0 })
+    expect(create.getAttribute('aria-selected')).toBe('true')
   })
 
   it('pulsar el enlace a una página que no existe deja crearla con una plantilla: se crea con ella y se abre', async () => {

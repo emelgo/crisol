@@ -360,6 +360,21 @@ describe('la edición en vivo (/api/collab)', () => {
       ).toEqual({ code: 'NOT_FOUND' })
     })
 
+    it('copiar un secreto que sigue abierto copia lo de ahora, aún sin guardar', async () => {
+      const page = await call('createPage', { worldId, title: 'Puerto Ceniza' })
+      const other = await call('createPage', { worldId, title: 'Velaria' })
+      const { id } = await call('createPageDocument', { pageId: page.id, kind: 'secret' })
+      const secret = client(`doc:${id}`)
+      await until(() => secret.events.synced, 'la sincronización')
+      write(secret.document, [paragraph('El mapa de las corrientes.')], true)
+      // Ya en el servidor (le llega a otra pestaña), aunque lo guardado espere unos segundos a la última tecla
+      const reader = client(`doc:${id}`)
+      await until(() => reader.document.getXmlFragment('default').toString().includes('corrientes'), 'lo vivo')
+      const copy = await call('createPageDocument', { pageId: other.id, kind: 'secret', copyOf: id })
+      expect((await raw(copy.id, other.id)).includes('corrientes')).toBe(true)
+      secret.destroy()
+    })
+
     it('un jugador no abre un secreto, y al borrar la página se cierra también el secreto', async () => {
       const page = await call('createPage', { worldId, title: 'Puerto Ceniza' })
       const { id } = await call('createPageDocument', { pageId: page.id, kind: 'secret' })

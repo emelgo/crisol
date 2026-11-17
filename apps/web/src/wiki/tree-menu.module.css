@@ -182,3 +182,11 @@
   max-block-size: 16rem;
   overflow-y: auto;
 }
+
+/* Un aviso dentro de un desplegable (sin campañas a las que revelar) */
+.note {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+}

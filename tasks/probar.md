@@ -9,6 +9,333 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
+## El tiempo de la campaña (módulos 8 y 10 · campaña, en local, rama `modulo-8/calendarios`; migraciones 0085-0089; 2026-11-17)
+
+Spec: `docs/specs/modulo-8-10-campana.md` (decisiones 1-33). Lienzo aprobado «El tiempo de la campaña».
+
+### El hoy (decisiones 1 y 5-10)
+- [ ] **Inicio del máster**: el hoy grande (fecha, año, estación con su color y lunas con su fase), −1 día, +1 día,
+  +1 semana (los días de la semana del calendario) y «Poner fecha» (el mes con su semana, elegir día, «Poner fecha»).
+  Cada cambio saca abajo «La fecha pasa a… · Deshacer» unos 7 s; «Deshacer» la devuelve y el registro dice «Deshecho:
+  la fecha vuelve a…» (el registro no se deshace: escribe su entrada).
+- [ ] **Campaña sin fecha**: «Sin fecha» con «Poner fecha» y, si otra campaña del mundo tiene, «Copiar de otra campaña:
+  …». El hoy va en el calendario principal (`campaigns.today`); la jugadora lo lee sin eras ocultas.
+- [ ] **En la Mesa**: el chip del hoy bajo el de la escena (día, icono y grados; «A mano» o «Interior» si toca); su menú
+  con la fecha entera, el clima, el sol, los botones y «Viaje…». La jugadora solo lo lee.
+- [ ] **Cronologías**: desde la campaña (la jugadora, y en la Mesa desde «Cronologías» del menú del chip, en una
+  ventana) la línea roja «Hoy» con la fecha y «hace / dentro de N días» bajo cada entrada (desde 2 años, en años); lo
+  que viene, con borde discontinuo. En la del mundo, «Hoy de» con las campañas que llevas con fecha (y «Sin «hoy»»);
+  se recuerda por mundo. **Solo en la vista Lista** (no en Meses ni Calendario).
+- [ ] **Permisos**: cambiar el hoy, el clima, los viajes, la capa y la pantalla del máster es del máster
+  (`table.manage`); la jugadora recibe 403 (probado en la e2e de fugas).
+- [ ] El hoy y el clima a mano cuentan como **fechas en uso** del calendario: quitar ese mes avisa.
+
+### El clima y el sol (decisiones 11-16, 27, 28 y 31)
+- [ ] **Zonas**: templada, árida, fría, tropical, de montaña, de costa y polar; la zona y la latitud son de la campaña
+  («Cambiar»: la lista con el clima que haría hoy en cada zona, la latitud con Norte o Sur y las horas de luz). **Los
+  parámetros de las siete zonas son inventados** (la templada es el pack «General» del antiguo): ¿te cuadran?
+- [ ] **Con semilla** `(mundo, zona, día)`: no cambia al recargar; dos campañas en la misma zona y día ven lo mismo.
+  Las rachas se calculan en **bloques de 14 días** (puede haber un salto de tiempo entre un bloque y el siguiente).
+  15 condiciones (despejado… nieve).
+- [ ] **A mano**: pulsar el clima de hoy o un día de la previsión abre «Clima · día»: condición (las 15), mínima y
+  máxima en °C, rumbo en una rosa de 8 (los 16 del clima se redondean al más cercano) y fuerza del viento; «Volver al
+  generado». No cambia los días siguientes. El día a mano lleva un punto en la previsión. En el registro, «Clima del …
+  a mano: Nieve, −1° / 3°» con «Solo tú».
+- [ ] **El máster** ve hoy y los 7 días siguientes; **la jugadora**, solo hoy y el sol (sin previsión).
+- [ ] **Sol**: salida, puesta, alba y anochecer, horas de luz; sol todo el día o noche polar. **Corregido**: el
+  solsticio de invierno es el **primer día** de la estación «Invierno» (en un gregoriano, el 21 de diciembre); lo más
+  frío del clima sigue a mitad del invierno.
+- [ ] **Capa de clima** (Mesa, Mesa de la jugadora y Vista de jugadores): «Como hoy» (de entrada), «A mano» (lluvia,
+  nieve, niebla o ceniza, intensidad y viento) o «Ninguna». Partículas sin estado (misma semilla en todos los
+  aparatos), en la pantalla (no siguen el zoom del mapa), a 30 fotogramas. **La capa no va al historial; Interior sí**
+  (es de la escena). **Interior** va primero en el menú y, encendido, la capa se apaga y sale «Interior: sin clima»
+  sobre el mapa. ¿Te gustan la lluvia, la nieve, la niebla y la ceniza?
+
+### Los viajes (decisiones 3, 17, 18 y 30)
+- [ ] **Desde el recuadro de medir del mapa** (máster, en el mapa del mundo): bajo los días a pie, a caballo y en barco,
+  «Viaje» con la campaña (las que llevas con fecha), medio, ritmo (×0,67 / ×1 / ×1,33) y descanso → los días (los de
+  camino redondeados hacia arriba más el descanso, **repartido por el camino**), el clima de cada día, «Al llegar» (la
+  zona de destino) y «Avanzar hoy · N días». Midiendo una ruta dibujada, el viaje lleva su nombre.
+- [ ] **Desde la Mesa**: «Viaje…» en el menú del chip, con la distancia escrita en millas (de entrada 60, a caballo).
+  **Sin mapa, las velocidades son las de por defecto** (a pie 24, a caballo 30, en barco 48 millas al día).
+- [ ] Tope de **366 días**; el clima del viaje es el de **la zona de salida**. En el registro, la tarjeta del viaje:
+  ruta, «118 millas a caballo, ritmo rápido · 3 días y 1 de descanso», el clima de cada día (con «descanso») y «La
+  fecha pasa a … · zona De costa». Se deshace entero desde el historial.
+
+### La actividad (decisiones 19-23 y 32)
+- [ ] **«Desde tu última visita»** en el Inicio (máster y jugadora), agrupado por día real («Hoy», «Ayer», «domingo
+  16»), con **«Sesión»** el día que hubo mensajes o tiradas y su línea («64 mensajes · 38 tiradas»). Al máster: notas y
+  personajes de las jugadoras, lo revelado por otros o la IA y los cambios de fecha; a la jugadora: lo que le revelan,
+  lo nuevo del registro que le llega y los cambios de fecha (nunca notas de otras: e2e de fugas).
+- [ ] **Qué cuenta como nuevo**: lo de después de tu última visita (sin visita, desde que entraste en la campaña). Se
+  marca como visto **solo con «Marcar como visto»** (✓ en el móvil); «Ver lo anterior» lo enseña otra vez hasta que
+  recargues.
+- [ ] **Insignia**: el número rojo sobre el icono de la campaña en la barra (su Inicio). Se refresca con el aviso en
+  vivo `changed/activity` (fecha, notas y personajes) y con lo nuevo del registro, las tiradas y lo revelado.
+- [ ] **Aviso en vivo**: en las demás secciones de la campaña (no en su Inicio, que ya lo enseña, ni en la Mesa), abajo
+  a la derecha con «Ver» (lleva al Inicio); se va a los 10 s, salvo con el ratón encima o el foco dentro. Sin correo
+  ni notificaciones del navegador. Sin las horas de la sesión (no hay datos para ellas).
+
+### La pantalla del máster (decisiones 24, 25 y 33)
+- [ ] **Cajón G** en cuatro columnas que se encienden y apagan desde su cabecera (Criaturas, Personajes, Nota, Tablas);
+  **se guarda en el servidor** por campaña y escena (en otro aparato sale igual; solo en escenas ya abiertas). Lo que
+  tenías antes en el navegador (nota y statblocks) se pierde: sale la página de la escena.
+- [ ] **Criaturas**: la primera desplegada y las demás plegadas (×N). **Personajes de la escena**: ficha corta (PG y los
+  3-4 primeros números de su ficha, la barra de vida y los estados). **Nota fijada**: «Cambiar» busca por título.
+  **Tablas**: «Añadir tabla» (las del mundo), desplegar, «Tirar»: **oculta por defecto** (al registro, solo tú), con la
+  casilla «A la vista de todos» (no se recuerda); se resalta la fila. El d20 también saca la tirada.
+- [ ] El Kanban de reglas del antiguo no vuelve.
+
+### La jugadora en el móvil (pantalla 8)
+- [ ] Su Inicio: el hoy (fecha, estación y lunas, clima con viento y grados, sol y horas de luz), «Desde tu última
+  visita» compacto con su ✓, y debajo lo de siempre.
+
+### La IA
+- [ ] Desde claude.ai: `fecha_de_hoy`, `cambiar_fecha`, `ver_clima`, `cambiar_clima`, `planear_viaje` (con o sin
+  avanzar) y `actividad_campana`.
+
+### Decisiones tomadas sin ti (porción 2)
+- «Deshacer» deshace la última operación del hoy (o un viaje) de esa campaña hecha desde la web, por el historial del
+  mundo.
+- En la Mesa, el menú del chip lleva también las cronologías del mundo (se abren en una ventana con la línea «Hoy»).
+- La línea «Hoy» solo en la vista Lista; «Hoy de» se recuerda por mundo.
+- La previsión entera se edita (cada día, también hoy); la zona enseña el clima de hoy en cada zona.
+- Los deslizadores de la capa se guardan al poco de moverlos; las partículas van en la pantalla, no en el mapa.
+- La insignia, en el icono de la campaña de la barra; el aviso en vivo, no en su Inicio ni en la Mesa.
+- El historial dice ya las operaciones nuevas («cambió la fecha de «La Marca» a…», «hizo un viaje de 4 días…»,
+  «marcó la escena… como interior»…).
+- Lo que flota (menús, recuadros) se corre también en vertical si no cabe ni arriba ni abajo (en toda la app).
+
+## Relaciones y gráficos (módulo 10, en local, rama `modulo-8/calendarios`; sin migración; 2026-11-16)
+
+- [ ] **La pestaña «Relaciones»** de una página: sale (tras las demás) si tiene alguna relación, por sus campos de
+  enlace o por los enlaces de su texto; no se añade con «+» ni se guarda. Un PNJ con Padres y Pareja se abre en
+  **Familia**; una facción con Líder, en **Organigrama**; si no, en **Enlaces**. El modo que elijas se recuerda para las
+  páginas de esa plantilla.
+- [ ] **Enlaces**: la página en el centro y sus relaciones alrededor (sin flechas); los nombres solo en las rayas del
+  centro y de la elegida, leídos desde ella («Padres», «Hijos» o, sin nombre al revés, «Facción de»). «Menciona», de
+  puntos; lo que sale de un secreto, discontinuo (solo tú). «Profundidad» 1–3 y «Solo campos» a la derecha de las
+  pestañas; la leyenda abajo a la izquierda, el zoom abajo a la derecha (con el panel plegado, por encima del d20).
+- [ ] Pulsar una página saca su ficha (arriba a la derecha) con «Abrir» y «Centrar aquí»; el doble clic la abre;
+  «Centrar aquí» rehace el grafo desde ella con «‹ Volver a…» arriba. Al pasar por una propiedad de enlace del panel,
+  sus rayas se marcan.
+- [ ] **Familia**: filas por generación (Abuelos, Padres, Su generación, Hijos…), cada pareja junta con una raya y de
+  ella la línea a sus hijos; «Generaciones ±1 ±2 ±3» (de entrada ±2). **Organigrama**: el grupo arriba, quien lo dirige
+  debajo («Lo dirige») y sus miembros en una columna; cada subgrupo, en la suya. Bajo cada nombre, su primer campo de
+  texto con algo. En los dos, el panel se pliega solo (su botón lo abre).
+- [ ] **El grafo del mundo**: el icono nuevo de la cabecera del árbol de páginas (junto a Exportar). «‹ Páginas»,
+  cuántas páginas y relaciones salen, el buscador (Intro lleva a la página y saca su ficha); a la izquierda los filtros
+  (plantillas, relaciones —la apagada sale tachada—, etiquetas y «Páginas sueltas», ocultas de entrada), que se
+  pliegan. Cada página, del color de su plantilla. Con 300 páginas o más se pinta en un lienzo (que se asienta solo, sin congelar la página).
+- [ ] **En la plantilla**, un campo «Enlace a una página» o «Enlaces a páginas» tiene «Papel» (Ninguno; Familia: Padre o
+  madre, Pareja; Organigrama: Pertenece a, Lo dirige), «Nombre al revés» (al elegir un papel se pone solo si estaba
+  vacío: «Hijos», «Pareja», «Miembros», «Dirige») y «Se lee así»; el papel sale junto al nombre del campo en la lista.
+- [ ] **Gráficos**: «/» → «Gráfico» pone uno de ejemplo y abre su editor en el sitio del panel: título, los seis tipos,
+  datos propios (etiquetas y series en una tabla, con sus colores; en tarta, donut y área polar, por etiqueta) o «De una
+  tabla» de la página, leyenda y «Ver YAML» (también se escribe). Cada cambio se guarda solo. Un ```chart que escriba la
+  IA se ve igual; uno que falle dice qué falla. Al elegir el bloque (o su lápiz) sale el editor; la X lo cierra.
+- [ ] **La jugadora** ve la pestaña con lo que sabe su campaña (ni lo que no conoce, ni campos ocultos, ni lo de
+  secretos sin revelar) y el grafo del mundo desde el icono de su árbol. **En el móvil**: los modos arriba, el grafo en
+  pequeño con «Ampliar» (a pantalla entera; la ficha sube desde abajo), en palabras debajo y la familia y el
+  organigrama en filas.
+- [ ] **La IA**: `relaciones_pagina` y `grafo_mundo`; al crear una plantilla con la IA, que ponga el papel a Padres,
+  Pareja, Facción y Líder.
+
+Decisiones tomadas sin ti (dime si cambias alguna):
+
+- De la spec (5-17): la pestaña fija y calculada, como «Mencionado en»; el papel del campo (Padre o madre, Pareja,
+  Pertenece a, Lo dirige) es lo que hace el árbol y el organigrama; el nombre de la relación es el del campo, con nombre
+  al revés opcional; «menciona» = enlaces e incrustados del texto (no los nombres sin enlazar), sin repetir lo que ya
+  está en un campo; lo de un secreto, solo para ti y discontinuo, y las notas ocultas nunca; pines, pizarra, eventos y
+  subpáginas no cuentan; el grafo del mundo con sus filtros y en lienzo (la spec decía ~800; lo he bajado a 300 porque el audit vio que el
+  SVG se congelaba unos segundos con 700); solo se mira (crear
+  relaciones arrastrando, más adelante); se calcula en el servidor sin caché; Chart.js cargado aparte; los gráficos se
+  guardan como el ```chart del antiguo.
+- Qué dice cada papel: *Padre o madre* (el destino es su padre o su madre), *Pareja*, *Pertenece a* (el destino es su
+  grupo) y *Lo dirige* (en el grupo, el destino es quien lo dirige). La familia llega a ±3 generaciones, con hermanos,
+  tíos y primos (la pareja de cada uno sale a su lado, sin seguir por su familia); el organigrama baja 3 niveles; el
+  vecindario se corta en las 500 páginas más cercanas (lo dice: «Hay más»).
+- Las mías: la pestaña va **tras las demás** pestañas (como en el lienzo) y sin icono, como «Texto»; con la página
+  sin relaciones no sale. Sin nombre al revés, la raya entrante se lee **«Facción de»** junto a la otra página («Facción
+  de Ilsa»). Bajo el nombre, el **primer campo de texto con algo escrito** (sin los ocultos para quien mira). Sin
+  icono propio, sus **iniciales** (sin numerales romanos: «Aldren IV» → «AL»), igual para ti y para la jugadora. En Familia y Organigrama **el panel se pliega
+  solo**. Los colores de las plantillas, ocho nuevos del tema (a 3:1 con el fondo), por el orden de tus plantillas. En el
+  grafo del mundo, los nombres de las rayas solo los de la elegida; «Centrar aquí» lleva la vista a ella. La ficha de
+  la elegida: «Centrar aquí» de principal en el escritorio y «Abrir» en el móvil. La tarta, el donut y el área polar
+  pintan solo la primera serie (como el antiguo); los colores elegidos van en `colors:` (clave nueva). La jugadora en
+  el escritorio ve el grafo en un marco del alto de la ventana. Las tarjetas de Familia y Organigrama nunca bajan del
+  85 % (si no caben, arriba y se mueve); con muchas páginas, lo que flota sobre el grafo va sin desenfoque. Tutorial
+  guiado en la pestaña y en el grafo del mundo. d3 en la 3.0.1 (la que ya traía otra dependencia).
+- Las siete preguntas del lienzo, decididas por el coordinador con tu permiso (2026-11-17): se abre en Familia u
+  Organigrama si los hay y, si no, en Enlaces; el nombre al revés no es obligatorio, pero **al elegir un papel en la
+  plantilla se rellena solo si está vacío** (Padre o madre → «Hijos», Pareja → «Pareja», Pertenece a → «Miembros», Lo
+  dirige → «Dirige»), y sin él vale «Facción de Ilsa»; «Menciona» encendido de entrada, en la pestaña y en el grafo del
+  mundo; el grafo del mundo, desde el icono de la cabecera del árbol (la barra sigue con Páginas · Calendarios ·
+  Archivos); bajo el nombre, el primer campo de texto visible para quien mira; el editor del gráfico, en el sitio del
+  panel; y el gráfico no va como bloque del panel, por ahora.
+
+## Cronologías (módulo 8, en local, rama `modulo-8/calendarios`; migración 0084; 2026-11-16)
+
+- [ ] **Calendarios**: bajo los calendarios, «Cronologías» con una ficha por cronología (su calendario, cuántas
+  entradas y de cuándo a cuándo) y «Cronología nueva» (nombre y calendario; se abre al crearla).
+- [ ] **A pantalla entera**: «‹ Calendarios», su nombre, «Ir a…», el ojo de cada campaña y «Ajustes»; abajo en el
+  centro la píldora (+ · Lista · Meses · Calendario), que se recuerda; en Meses, el zoom abajo a la derecha.
+- [ ] **Las páginas con fecha salen solas** (una vez por fecha, con el nombre del campo si tiene varias); un campo
+  «Fuera de las líneas temporales», no.
+- [ ] **Lista**: la línea con rombos (eventos) y círculos (páginas), la distancia a la anterior («312 años después»),
+  la tarjeta con su color o su imagen, el grupo arriba, «Cada año» con su icono. Doble clic o el título, editar.
+- [ ] **Meses**: carriles por grupo, «Páginas» y «Sin grupo»; festividades estrechas y con su color; arrastrar el
+  fondo para moverse y la ventana que crece por los dos lados; arrastrar una barra la mueve; doble clic en un grupo lo
+  renombra, arrastrar su nombre lo ordena, «+ Grupo».
+- [ ] **Calendario**: la semana del calendario, lo de varios días seguido, lunas nuevas y llenas, lo de fuera de la
+  semana debajo, «Todo el mes»; elegir un día abre su detalle («Evento en este día»); arrastrar una ficha a otro día le
+  cambia la fecha; las flechas recorren la rejilla y Re Pág/Av Pág cambian de mes.
+- [ ] **El cuadro del evento**: la tarjeta en vivo, la fecha con el selector, color o imagen con su encuadre, icono,
+  grupo (o uno nuevo), página enlazada (o una nueva eligiendo dónde va), descripción con su cuenta, «Oculto para los
+  jugadores» y el ojo de cada campaña.
+- [ ] **«⋯» de un evento**: duplicar, color, mover a grupo, «Convertir en página…» (la página nace con su texto, su
+  icono y su imagen, y el evento queda enlazado) y borrar; en una página, «Cambiar la fecha» y «Abrir la página».
+- [ ] **Ajustes**: renombrar, otro calendario (lo de otros se convierte si tiene correspondencia; si no, «N fechas
+  quedan fuera»), qué páginas salen (plantillas, etiquetas) y de qué grupos; el color de cada grupo o quitarlo.
+- [ ] **Una página enlazada** dice el evento en «Mencionado en» › «En las cronologías».
+- [ ] **La jugadora**: solo ve «Cronologías» en su barra si se le ha enseñado alguna (el ojo de la cabecera); dentro,
+  sin lo oculto ni lo que no conoce; en el móvil, Lista y Calendario arriba (tocar un día sube su hoja).
+- [ ] **La IA**: «pasa esta cronología» con `crear_eventos` (100 de una vez) y `ver_cronologia` la devuelve en orden.
+- [ ] **Deshacer** desde el historial: crear o borrar una cronología, un evento o los grupos.
+
+## Fechas en las páginas (módulo 8, en local, rama `modulo-8/calendarios`; migración 0083; 2026-11-16)
+
+- [ ] **Una propiedad «Fecha»**: en el panel, «Añadir bloque» › «Propiedad», tipo «Fecha». Se lee como texto («12 de
+  Siega de 412 RC»); al pulsarla flota el selector a la izquierda del panel.
+- [ ] **El selector**: Año · Mes · Día; el mes con la semana del calendario y la festividad debajo; el año escrito a mano
+  (salta milenios); flechas de mes y año; la lectura larga con el día de la semana. Con el teclado, las flechas
+  recorren los días.
+- [ ] **«Añadir fin»** (y elegir Inicio o Fin), **«Cada año»** (el icono de repetición junto al texto) y **«Borrar»**.
+- [ ] **Varios calendarios**: se elige el suyo; de uno con correspondencia, dice la equivalencia en el principal.
+- [ ] **Sin calendario**: «Este mundo aún no tiene calendario.» con el enlace a Calendarios.
+- [ ] **Plantillas**: el tipo de campo «Fecha», con «Con fin» y «Fuera de las líneas temporales»; las páginas nacen con
+  él vacío. Sin «Con fin», el selector no ofrece fin.
+- [ ] **Calendarios con fechas**: quitar un mes con fechas no se guarda («Hay fechas en un mes que quitas»); borrar el
+  calendario tampoco; acortar un mes guarda y avisa de cuántas se leen en su último día; renombrar un mes cambia cómo
+  se leen sus fechas.
+- [ ] **Tablas de páginas** con una columna de fecha: la enseñan como texto y ordenan por ella (por su día).
+- [ ] **La búsqueda** encuentra una página por cómo se lee su fecha («Siega»).
+- [ ] **Copiar** una página copia sus fechas; deshacer desde el historial las devuelve.
+- [ ] **La IA**: `editar_pagina` con `{ name: 'Nacimiento', type: 'date', value: '-34-Siega-3' }` (o
+  `1250-Siega-12/1250-Trilla-3`, «(cada año)», `calendar`); mal escrita, dice por qué; `leer_pagina` da `dates`.
+- [ ] **La jugadora** ve la fecha en su panel, y no un campo de fecha «Oculto» (ni su IA ni la búsqueda).
+
+## Calendarios (módulo 8, en local, rama `modulo-8/calendarios`; 2026-11-16)
+
+- [ ] **La barra del mundo**: «Páginas · Calendarios · Archivos» (Páginas lleva a la portada, como antes el nombre).
+- [ ] **Calendarios**, vacía: el bodegón (provisional, el del historial) y «Calendario nuevo».
+- [ ] **«Calendario nuevo»**: en blanco, como el nuestro o copia de otro; al crearlo se abre su editor. El primero nace
+  principal.
+- [ ] **Las fichas**: el año dibujado (las festividades con su color, las estaciones debajo), «Principal», lunas y eras;
+  el engranaje (abrir, hacer principal, duplicar, borrar); arrastrar para ordenar (o Alt y las flechas en su nombre).
+- [ ] **El editor**: cada sección desde la izquierda; meses con arrastre, festividad y fuera de la semana; bisiestos;
+  estaciones que se pisan (lo dice y no deja guardar); lunas con sus fases; eras (con «Cuenta los años desde su inicio» y
+  «Solo del máster»); en uno que no es el principal, la correspondencia. La vista previa cambia al momento.
+- [ ] **Hacer principal a otro** que tenga correspondencia: el anterior recibe la inversa (una fecha convertida no cambia).
+- [ ] **Con la IA**: «crea el calendario de Eana» con una sola llamada y `describir_fecha` de «1250-Siega-18».
+- [ ] **La jugadora** no ve «Calendarios» en su barra, y su IA no ve las eras solo del máster.
+
+## Ajustes del mapa, la pizarra y la página (en local, rama `modulo-9/mapas`; 2026-11-16, tasks/ajustes-mapa-pizarra.md)
+
+- [ ] **El «?» del tutorial**, abajo a la derecha: redondo y por encima de todo (también sobre un mapa o una pizarra).
+- [ ] **Supr en el mapa**: elige un pin, una región o un texto y pulsa Supr con el foco donde sea (tras cambiar su color
+  en el panel, tras pulsar un botón de la cabecera): se borra; el mapa ya no se marca con la raya roja arriba al pulsar
+  una tecla. **En la pizarra**, lo mismo tras pulsar una herramienta de la píldora o «Página…».
+- [ ] **Cerrar una región**: al acercarte al primer punto se agranda en rojo y pulsarlo la cierra; con doble clic se
+  cierra sin dejar un punto de más.
+- [ ] **«Aspecto»** de una región: al abrirlo no se deforma nada; el tamaño de letra llega a 100.
+- [ ] **«Página»** de un pin o una región: el desplegable propio (las que empiezan por lo escrito primero, «Página
+  nueva: …» si ninguna se llama así).
+- [ ] **Las formas de pin**: cambiar de forma no mueve el pin ni cambia su tamaño.
+- [ ] **El ojo** del panel de un pin o una región (en vez de «Revelar…»): «Lo conoce / No lo conoce» y se cambia al
+  pulsarlo; con varias campañas, la lista con la marca de cada una. ¿Se entiende? (marca sin avisar, como el árbol).
+- [ ] **El icono de un pin**: va antes que el tamaño y se elige de los iconos de rol; se ve dentro de la forma y con
+  «Solo el icono».
+- [ ] **Texto en el mapa**: arrastra una caja y el texto sale en su centro, a su alto; pulsar un texto lo elige, doble
+  clic lo edita y Supr lo quita.
+- [ ] **Medir**: su panel, arriba a la izquierda (ya no tapa la píldora).
+- [ ] **Los desplegables nativos** («Se ve el nombre», los de la campaña…): la lista abierta, en oscuro.
+- [ ] **La pizarra nítida al hacer zoom** (rueda con Ctrl o dos dedos): ni borrosa al alejar ni con dientes al acercar.
+  Si en una pizarra muy grande el zoom va a tirones, dímelo.
+- [ ] **«Tabla de páginas»** en una cuenta sin plantillas: se añade sin error y dice qué falta.
+- [ ] **A 1200 px con el panel abierto**: el texto de la página con su letra de siempre (seguido, sin «Página N») y el
+  título largo entero en la franja.
+
+## Vuelve el armazón de antes, con la página como en Everlore (en local, rama `modulo-9/mapas`; 2026-11-16, ADR-0028)
+
+- [ ] **El armazón de antes**: la barra de la app a la izquierda con el mundo, Archivos, Historial, Papelera y tu
+  inicial; la ficha del árbol a la izquierda (buscador, árbol, pestañas abiertas en pequeño y marcadores); las
+  pestañas abiertas encima de la página; Archivos del mundo, en su pantalla aparte. ¿Es como lo tenías?
+- [ ] **Entrar y salir** de un mundo: las transiciones de siempre (la tarjeta crece hasta la portada; «Mundos» sube a la
+  llama y salen los iconos del mundo; al salir, al revés, con humo).
+- [ ] **Un solo buscador**: Ctrl+K pone el cursor en el de la ficha del árbol (también con el foco en una pizarra);
+  escribir filtra el árbol e Intro busca en el texto de todas.
+- [ ] **La portada detrás del título**: en Texto, Mapa y Pizarra, una franja baja (más baja en el portátil) con el
+  título grande encima, que se lee sobre la imagen, y sus botones a la derecha; las pestañas justo debajo. Sin
+  portada, la textura y «Añadir portada» al pasar.
+- [ ] **La página, de cristal**: el recuadro de la página con las esquinas redondeadas y algo más translúcido (se intuye
+  el fondo), igual en Texto, Mapa y Pizarra; el texto se lee bien. La ficha del árbol y el panel empiezan y acaban a su
+  misma altura, con las mismas esquinas y el mismo cristal.
+- [ ] **El desplazamiento, el normal**: nada baja solo. En Texto, con el ratón dentro del texto, la rueda baja suave como
+  en cualquier página; al bajar, la barra pequeña de cristal se pega arriba con el título y las pestañas (cambiar de
+  pestaña desde ahí) y lo de debajo no salta.
+- [ ] **Mapa y Pizarra, sin desplazar**: en el portátil (1200×650) y en la pantalla grande, la cabecera y debajo el
+  lienzo hasta abajo, todo a la vista; la rueda sobre el lienzo acerca y aleja.
+- [ ] **El botón del panel** (tras «⋯», también en la barra pequeña): el panel se va por la derecha y el centro se
+  ensancha a la vez; al volver a pulsarlo, entra. Se recuerda al cambiar de página. Junto a un mapa o una pizarra con el
+  panel vacío, se pliega solo.
+- [ ] **Mapa**: a sangre, sin fondo propio. Las herramientas, en una píldora abajo en el centro; el zoom (con «Ampliar el
+  mapa», que deja la barra de la app a la vista) abajo a la derecha y la escala abajo a la izquierda.
+- [ ] **Pizarra**: a sangre y transparente; nuestra píldora abajo con sus herramientas (la elegida marcada; su atajo al
+  pasar el ratón), «⋯» (guardar como imagen, vaciarla), el zoom abajo a la derecha y deshacer y rehacer abajo a la
+  izquierda. Sin «Ampliar» (la jugadora sí lo tiene).
+- [ ] **Decidido sin ti**: con el panel plegado, la página llega hasta el borde derecho dejando el mismo hueco que hay
+  junto a la ficha del árbol (no pegada al borde). En la barra pequeña de un portátil con el panel abierto, si no caben,
+  el título se acorta con «…» y las pestañas se desplazan de lado; «Guardado» solo sale con la cabecera grande. En una
+  pizarra de menos de 500 px de alto (el portátil), Excalidraw pasa a su modo de móvil: sus formas de arriba se quitan
+  (están en nuestra píldora) y lo de lo elegido (propiedades, duplicar, borrar) sale en una isla encima de la píldora. Los temas de papel de la hoja (pergamino) siguen cambiando solo la
+  letra en pantalla; ¿quieres que el pergamino tiña la columna entera?
+
+## Módulo 9: la pizarra (en local, rama `modulo-9/mapas`; docs/specs/pizarra.md)
+
+- [ ] En una página, «+» → «Pizarra»: se abre Excalidraw en español y oscuro; dibuja a mano, cajas, flechas y texto.
+- [ ] «Página…» pone la tarjeta de una página (y arrastrarla desde el árbol); pulsar su título la abre; si cambias el
+  título de la página, la tarjeta lo sigue.
+- [ ] Pega una imagen: se sube a los archivos del mundo y se ve.
+- [ ] Ábrela en otra pestaña o aparato: lo que hagas en una sale en la otra al momento.
+- [ ] Elige algo y pulsa el ojo tachado de la barra («Oculto para los jugadores»): se apaga y, si es una tarjeta, sale
+  con raya discontinua y el ojo. La barra no salta al elegir.
+- [ ] «Página…»: escribe parte de un nombre; salen las páginas que lo contienen; flechas e Intro ponen la elegida.
+- [ ] Tras cambiar algo, la barra dice «Guardado»; una pizarra vacía dice cómo empezar.
+- [ ] Revela la pestaña a la campaña: la jugadora la ve sin poder tocarla, sin lo oculto ni las tarjetas de lo que no
+  conoce; pulsar una tarjeta le abre su página en la campaña. En su móvil, la pizarra en palabras (páginas, notas y
+  «A → B»); «Ampliar» enseña el lienzo.
+- [ ] Pídele a la IA un tablero («hazme el tablero de la conspiración con estas páginas»): `cambiar_pizarra`. Lo que
+  pone se ve igual de claro que lo dibujado a mano y sus flechas no tachan las cajas.
+- [ ] Texto, Mapa y Pizarra: el título, sus botones y las pestañas, siempre en el mismo sitio (la misma tira arriba).
+- [ ] En una página sin enlaces, propiedades ni bloques, abre su mapa o su pizarra: el panel de la derecha sale
+  plegado; su botón lo abre. En Texto, abierto como siempre.
+- [ ] Los dados: la primera tirada tras abrir el mundo cae bien (la escena se carga al acercarte al d20).
+
+## Módulo 9: mapas con capas (en local, rama `modulo-9/mapas`; migración 0081)
+
+- [ ] **Capas** (una página con mapa → «Capas» en la barra del mapa): crear una, renombrarla, ordenarlas arrastrando,
+  dejar una «Solo del máster» y quitarla. El ojo la apaga solo en tu pantalla.
+- [ ] **Dibujar** («Ampliar el mapa» para tener sitio): una región (R) punto a punto, una ruta (L) que empiece en un
+  pin y un texto (T). Retocar: arrastrar un vértice, el «+» de un lado, botón derecho para quitarlo, arrastrar lo
+  elegido entero; Supr y Ctrl+Z. En su panel: nombre, página, capa, color, relleno, borde, oculto.
+- [ ] **Medir** (M): en «Ajustes del mapa», dibujar la raya de la escala y decir cuánto mide; luego medir de un sitio a
+  otro y pulsar una ruta para medirla entera (distancia y días a pie, a caballo y en barco).
+- [ ] **La jugadora**: no ve la capa del máster ni lo oculto; lo que lleva a una página que no conoce sale sin nombre;
+  revelarle algo desde su panel («Revelar…»). Mide, también en el móvil.
+- [ ] **La IA** (cuando esté en staging): «mira el mapa de Eana y dibuja los reinos en una capa Política y el camino
+  real de A a B» (imagen_mapa, crear_capa, dibujar_en_mapa); luego «¿cuántos días hay de A a B a caballo?».
+
 ## Revisión, tanda 9: el MCP (en staging, rama `revision/tanda-9`)
 
 - [ ] **Reconecta el conector** «Neo Crisol» en claude.ai (Ajustes → Conectores: desconectar y conectar), para que
@@ -653,3 +980,37 @@ Nada ahora mismo.
 ## Lo que dijo
 
 (Aquí, lo que diga al probar, con la fecha.)
+
+## Mejoras del 2026-11-13 (en local, rama `modulo-9/mapas`)
+
+- [ ] **Formas**: en toda la app (Mis mundos, campañas, plantillas, sistemas, libros, Ajustes, zona de peligro,
+  botones rojos) ya no hay esquinas cortadas: las redondeadas del cristal de la Mesa.
+- [ ] **Mis mundos**: «Ver» la portada de un mundo y cerrarla → la vista previa y el fondo se van hasta que el ratón
+  vuelve a la tarjeta (igual con los ajustes); al dejar la tarjeta, el fondo vuelve al de siempre con un fundido.
+- [ ] **Campañas en Mis mundos**: al pasar el ratón, su vista previa a la izquierda (sistema, jugadores, tu papel) y su
+  portada de fondo.
+- [ ] Un mundo o campaña **sin color**: al pasar el ratón, el nombre en blanco (no en rojo).
+- [ ] Una descripción larga: la tarjeta no crece (una línea con «…»); entera en la vista previa.
+- [ ] **Crear campaña**: el sistema sin «Tuyos» ni «De serie», sin «Al empezar, los jugadores conocen…» ni idioma del
+  contenido; la campaña nueva no conoce ninguna página. En sus ajustes ya no está «Parte de las páginas que conoce todo
+  el mundo».
+- [ ] **El menú de tu usuario** (la inicial, abajo en la barra) se ve entero.
+- [ ] **Ajustes**: «Jugabilidad» con el color de tus dados (se guarda al momento) y «Ver caer los dados de los demás»;
+  «Aspecto · Sin efecto cristal (más fluido en ordenadores lentos)». El Perfil ya no tiene los dados.
+- [ ] **Archivos** (fuera de los mundos): cada mundo es una carpeta con lo suyo, sin engranaje; subir a ella deja el
+  archivo en el mundo; al borrar un mundo, su carpeta se va.
+- [ ] **Fondos**: en Inicio y dentro de un mundo (ya sin su portada detrás) el fondo cambia cada 45 s con un fundido
+  lento; que no maree. ¿Te parece bien el ritmo?
+- [ ] **Sistemas**: Reglas con el título sobre la columna del centro y los pasos y la revisión a los lados, como el
+  compendio; «Avanzado»; «Sistema nuevo» y «Libro nuevo» sin camino de IA (solo una línea que lo menciona).
+- [ ] **Entrar y salir de un sistema**: chispas al entrar; al salir por la llama, el icono y el nombre vuelven a su
+  tarjeta, con humo.
+- [ ] **Salir de un mundo** por la llama: la página se aleja entera con lo demás.
+- [ ] **El tutorial de un libro** (Sistemas › un libro, la primera vez): el globo por encima de todo y sin tapar la
+  barra.
+- [ ] **Cambiar deprisa** entre Reglas, Compendio y el Inicio de un sistema (o entre secciones de un mundo): el
+  segundo clic, en plena transición, ya vale.
+- [ ] **Mapa**: tras pulsar una herramienta, Escape la deja; con un pin o un dibujo elegido, Supr lo borra (también con
+  el foco en el pin). El mapa y la pizarra llegan hasta abajo de la ventana y de lado a lado de la hoja.
+- [ ] **Pizarra**: lo nuevo, con trazo limpio y letra normal (también lo que dibuja la IA); dibujar, mover una
+  tarjeta, salir a otra página y volver: se ve igual, con el mismo encuadre.

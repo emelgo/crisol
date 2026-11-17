@@ -14,15 +14,17 @@ import {
 } from 'drizzle-orm'
 import type { PgTable } from 'drizzle-orm/pg-core'
 import type { Database } from './client.ts'
-import { campaignMembers, campaigns } from './schema/campaigns.ts'
+import { calendars } from './schema/calendars.ts'
+import { campaignMembers, campaigns, campaignWeather } from './schema/campaigns.ts'
 import { characters, characterVersions } from './schema/characters.ts'
+import { chronologies, timelineEvents, timelineGroups } from './schema/chronologies.ts'
 import { combatants, combats } from './schema/combat.ts'
 import { campaignCreatures } from './schema/creatures.ts'
 import { fileFolders, files } from './schema/files.ts'
 import { changes, operations } from './schema/history.ts'
 import { invitationLinks } from './schema/invitations.ts'
 import { knowledge, pageEditors } from './schema/knowledge.ts'
-import { mapElements, mapPins, maps, pageTabs } from './schema/maps.ts'
+import { mapElements, mapLayers, mapPins, maps, pageTabs } from './schema/maps.ts'
 import { playerNotes } from './schema/notes.ts'
 import { organizationMembers, organizations } from './schema/organizations.ts'
 import { pages } from './schema/pages.ts'
@@ -46,6 +48,7 @@ export const TRACKED_TABLES = {
   world_members: worldMembers,
   campaigns,
   campaign_members: campaignMembers,
+  campaign_weather: campaignWeather,
   invitation_links: invitationLinks,
   pages,
   page_bodies: pageBodies,
@@ -61,7 +64,12 @@ export const TRACKED_TABLES = {
   page_tabs: pageTabs,
   maps,
   map_pins: mapPins,
+  map_layers: mapLayers,
   map_elements: mapElements,
+  calendars,
+  chronologies,
+  timeline_groups: timelineGroups,
+  timeline_events: timelineEvents,
   characters,
   character_versions: characterVersions,
   random_tables: randomTables,
@@ -99,6 +107,8 @@ export interface OperationContext {
   organizationId?: string
   /** Si falta, se deduce de los cambios; hay que darlo cuando no lo llevan (los miembros de una campaña) */
   worldId?: string
+  /** Si falta, se deduce de los cambios (la fila de la campaña o la que la lleva): el centro de actividad la lee */
+  campaignId?: string
   /** La cuenta que lo pidió (null: el sistema) */
   actorId: string | null
   via: 'ui' | 'ai' | 'system'
@@ -322,6 +332,7 @@ export async function operation<R>(
         id: opId,
         organizationId,
         worldId: context.worldId ?? scopeOf(recorded, 'worlds', 'world_id'),
+        campaignId: context.campaignId ?? scopeOf(recorded, 'campaigns', 'campaign_id'),
         actorId: context.actorId,
         via: context.via,
         tool: context.tool ?? null,

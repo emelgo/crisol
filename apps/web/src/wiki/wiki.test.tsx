@@ -140,6 +140,45 @@ describe('el árbol de la wiki', () => {
     expect(screen.getByRole('tree', { name: 'Páginas' }).closest('[data-collapsed]')).toBeNull()
   })
 
+  it('el panel de la página se pliega desde la cabecera de la página y se recuerda (Enrique, 2026-11-16)', async () => {
+    localStorage.setItem('crisol.recorridos.enrique@crisol.test', JSON.stringify({ seen: ['mundo'] }))
+    localStorage.removeItem('crisol.mundo.panel-plegado')
+    renderAt(`/mundos/${WORLD.id}/wiki/${ids.people}`)
+    const panel = await screen.findByRole('complementary', { name: 'Panel de la página' })
+    expect(await within(panel).findByRole('button', { name: 'Añadir bloque' })).toBeDefined()
+    // Su botón va en la cabecera de la página, tras «⋯», no dentro del panel
+    const fold = screen.getByRole('button', { name: 'Plegar el panel' })
+    expect(panel.contains(fold)).toBe(false)
+    expect(fold.closest('header')).not.toBeNull()
+    expect(fold.getAttribute('aria-controls')).toBe(panel.id)
+    await userEvent.click(fold)
+    // Se desliza fuera y, al acabar, se va lo de dentro
+    expect(panel.getAttribute('data-folded')).toBe('true')
+    await waitFor(() => expect(within(panel).queryByRole('button', { name: 'Añadir bloque' })).toBeNull())
+    expect(panel.hidden).toBe(true)
+    expect(localStorage.getItem('crisol.mundo.panel-plegado')).toBe('1')
+    const unfold = screen.getByRole('button', { name: 'Desplegar el panel' })
+    expect(unfold.getAttribute('aria-expanded')).toBe('false')
+    await userEvent.click(unfold)
+    expect(await within(panel).findByRole('button', { name: 'Añadir bloque' })).toBeDefined()
+    expect(panel.hidden).toBe(false)
+  })
+
+  it('junto a un mapa, un panel sin nada se pliega solo; su botón lo abre (Enrique, 2026-11-14)', async () => {
+    localStorage.setItem('crisol.recorridos.enrique@crisol.test', JSON.stringify({ seen: ['mundo'] }))
+    localStorage.removeItem('crisol.mundo.panel-plegado')
+    const api = wikiApi()
+    const map = await api.client.call('createPageTab', { pageId: ids.people, kind: 'map' })
+    renderAt(`/mundos/${WORLD.id}/wiki/${ids.people}?pestana=${map.id}`, api)
+    const unfold = await screen.findByRole('button', { name: 'Desplegar el panel' })
+    const panel = document.getElementById(unfold.getAttribute('aria-controls') ?? '') as HTMLElement
+    await waitFor(() => expect(within(panel).queryByRole('button', { name: 'Añadir bloque' })).toBeNull())
+    await userEvent.click(unfold)
+    expect(await within(panel).findByRole('button', { name: 'Añadir bloque' })).toBeDefined()
+    // No se recuerda como plegado a mano: el texto lo enseña abierto
+    expect(localStorage.getItem('crisol.mundo.panel-plegado')).toBeNull()
+  })
+
   it('una sola parada del tabulador; las flechas se mueven, despliegan y pliegan', async () => {
     renderAt(`/mundos/${WORLD.id}/wiki`)
     const places = await item('Lugares')

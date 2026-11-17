@@ -33,9 +33,21 @@ describe('leer como jugador (ADR-0017)', () => {
     expect(withReadAs.length).toBeGreaterThan(8)
   })
 
+  /** Ayudantes que pasan por la proyección (cada uno, comprobado abajo): una acción puede ir por ellos */
+  const WRAPPERS = ['viewedBoard', 'viewedCalendar', 'viewedChronology']
+  const projected = new RegExp(`viewedPage\\(|authorizedView\\(|${WRAPPERS.map((name) => `${name}\\(`).join('|')}`)
+
   it.each(withReadAs)('%s pasa por la proyección', (action) => {
     const body = implementationOf(action)
     expect(body, `sin implementación de ${action}`).not.toBeNull()
+    expect(body).toMatch(projected)
+  })
+
+  it.each(WRAPPERS)('el ayudante %s pasa por la proyección', (name) => {
+    const source = sources.find(({ text }) => text.includes(`async function ${name}(`))?.text ?? ''
+    const start = source.indexOf(`async function ${name}(`)
+    expect(start, `sin ${name}`).toBeGreaterThan(-1)
+    const body = source.slice(start, source.indexOf('\n}\n', start))
     expect(body).toMatch(/viewedPage\(|authorizedView\(/)
   })
 

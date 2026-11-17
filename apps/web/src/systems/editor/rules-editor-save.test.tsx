@@ -63,7 +63,7 @@ describe('el editor de un sistema: cargar, guardar y moverse por sus pasos', () 
     const first = await screen.findByRole('heading', { level: 2, name: '¿Qué tiene un personaje?' })
     expect(document.activeElement).toBe(first)
     // El último no tiene «Siguiente»
-    await userEvent.click(screen.getByRole('button', { name: /Lo avanzado/ }))
+    await userEvent.click(screen.getByRole('button', { name: /Avanzado/ }))
     expect(screen.queryByRole('button', { name: /^Siguiente/ })).toBeNull()
   })
 

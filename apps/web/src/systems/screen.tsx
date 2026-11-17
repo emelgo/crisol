@@ -26,7 +26,6 @@ import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { BusyButton } from '../components/busy-button.tsx'
 import { ChangesBar } from '../components/changes.tsx'
-import { CopyField } from '../components/copy-field.tsx'
 import { ConfirmByName, DangerZone } from '../components/danger.tsx'
 import dialogStyles from '../components/dialog.module.css'
 import { EmptyState } from '../components/empty-state.tsx'
@@ -38,7 +37,7 @@ import { NewCard } from '../components/new-card.tsx'
 import { saveFile } from '../components/save-file.ts'
 import { Screen } from '../components/screen.tsx'
 import { Tour } from '../components/tour.tsx'
-import { ENTER_ITEM, enterItem } from '../components/world-transition.ts'
+import { ENTER_ITEM, embers, enterItem, itemTransition } from '../components/world-transition.ts'
 import cards from '../routes/world-card.module.css'
 import { CoverDialog, type LocalImage } from '../routes/world-cover.tsx'
 import screen from '../templates/screen.module.css'
@@ -145,7 +144,13 @@ function SystemCard({ system, onHover }: { system: SystemSummary; onHover: (id: 
       }}
     >
       {system.builtIn && <Lock className={screen.lock} size={14} role="img" aria-label={t('systems.locked')} />}
-      <span className={screen.icon} aria-hidden="true" data-elemento="icono">
+      <span
+        className={screen.icon}
+        aria-hidden="true"
+        data-elemento="icono"
+        // Al volver del sistema por la llama, su icono y su nombre vuelven aquí
+        style={itemTransition(system.id, 'icono')}
+      >
         <SystemIcon icon={system.icon} size={24} />
       </span>
       {/* h2: van bajo el h1 de la pantalla (sin saltar a h3) */}
@@ -156,9 +161,15 @@ function SystemCard({ system, onHover }: { system: SystemSummary; onHover: (id: 
           params={{ systemId: system.id }}
           className={screen.open}
           viewTransition={ENTER_ITEM}
-          onClick={(event) => enterItem(system.id, event.currentTarget.closest('li'))}
+          onClick={(event) => {
+            enterItem(system.id, event.currentTarget.closest('li'))
+            // Con chispas, como un mundo (Enrique, 2026-11-13)
+            embers()
+          }}
         >
-          <span data-elemento="nombre">{system.name}</span>
+          <span data-elemento="nombre" style={itemTransition(system.id, 'nombre')}>
+            {system.name}
+          </span>
         </Link>
       </h2>
       <p className={screen.meta}>{origin(system)}</p>
@@ -276,7 +287,7 @@ export function NewSystemDialog({ onClose }: { onClose: () => void }) {
   const titleId = useId()
   const fileId = useId()
   // El camino elegido: con tu IA (la frase para pedírselo), con el esqueleto (bajarlo y subirlo) o a mano (el editor)
-  const [way, setWay] = useState<'ai' | 'skeleton' | 'hand'>('skeleton')
+  const [way, setWay] = useState<'skeleton' | 'hand'>('skeleton')
   const navigate = useNavigate()
   const [name, setName] = useState('')
   const byHand = useMutation({
@@ -340,7 +351,13 @@ export function NewSystemDialog({ onClose }: { onClose: () => void }) {
         return
       }
       setFile(null)
-      setFoundry({ name: picked.name, bytes, read: found, chosen: found.packs.map((p) => p.name), language: 'en' })
+      setFoundry({
+        name: picked.name,
+        bytes,
+        read: found,
+        chosen: found.packs.map((p) => p.name),
+        language: zipLanguages(found).includes('es') ? 'es' : 'en'
+      })
       return
     }
     let content: unknown
@@ -372,15 +389,10 @@ export function NewSystemDialog({ onClose }: { onClose: () => void }) {
         }}
       >
         <h2 id={titleId}>{t('systems.new')}</h2>
-        {/* Tres caminos (docs/diseno.md): con tu IA (por el conector: aquí, la frase para pedírselo), con el esqueleto
-            (bajarlo, rellenarlo y subirlo) y a mano (el editor de sus Reglas) */}
+        {/* Dos caminos (docs/diseno.md): con el esqueleto (bajarlo, rellenarlo y subirlo) y a mano (el editor de sus
+            Reglas). La IA, solo mencionada: se hace desde ella, por el MCP (Enrique, 2026-11-13) */}
         <fieldset className={system.ways}>
           <legend className={screen.hidden}>{t('systems.paths.label')}</legend>
-          <button type="button" className={system.way} aria-pressed={way === 'ai'} onClick={() => setWay('ai')}>
-            <Sparkles aria-hidden="true" size={20} />
-            <b>{t('systems.paths.ai')}</b>
-            <span>{t('systems.paths.aiText')}</span>
-          </button>
           <button
             type="button"
             className={system.way}
@@ -397,6 +409,10 @@ export function NewSystemDialog({ onClose }: { onClose: () => void }) {
             <span>{t('systems.paths.handText')}</span>
           </button>
         </fieldset>
+        <p className={system.aiMention}>
+          <Sparkles aria-hidden="true" size={14} />
+          {t('systems.paths.aiMention')}
+        </p>
         {way === 'hand' ? (
           <>
             <Field
@@ -413,15 +429,6 @@ export function NewSystemDialog({ onClose }: { onClose: () => void }) {
               </BusyButton>
               <button type="button" className={dialogStyles.cancel} onClick={() => dialog.current?.close()}>
                 {t('list.cancel')}
-              </button>
-            </div>
-          </>
-        ) : way === 'ai' ? (
-          <>
-            <CopyField label={t('systems.paths.aiAsk')} value={t('systems.paths.aiPhrase')} />
-            <div className={dialogStyles.actions}>
-              <button type="button" className={form.button} onClick={() => dialog.current?.close()}>
-                {t('systems.close')}
               </button>
             </div>
           </>
@@ -523,7 +530,14 @@ export function NewSystemDialog({ onClose }: { onClose: () => void }) {
   )
 }
 
-/** Lo que trae un zip de Foundry: qué es, sus compendios (todos marcados) y el idioma de sus textos */
+/** Los idiomas que sabe leer Crisol entre los que trae un zip de Foundry */
+const zipLanguages = (zip: FoundryZip) =>
+  (['es', 'en'] as const).filter((each) => zip.languages.some((lang) => lang.toLowerCase().startsWith(each)))
+
+/**
+ * Lo que trae un zip de Foundry: qué es, sus compendios (todos marcados) y, solo si trae sus textos en los dos idiomas,
+ * cuál leer (va el español; con uno solo, ese, sin preguntar: Enrique, 2026-11-13)
+ */
 function FoundryChoice({
   foundry,
   chosen,
@@ -566,17 +580,19 @@ function FoundryChoice({
           ))}
         </fieldset>
       )}
-      <div className={form.field}>
-        <label htmlFor={languageId}>{t('systems.foundryLanguage')}</label>
-        <select
-          id={languageId}
-          value={language}
-          onChange={(event) => onChange({ language: event.currentTarget.value as 'es' | 'en' })}
-        >
-          <option value="en">{t('systems.languageName.en')}</option>
-          <option value="es">{t('systems.languageName.es')}</option>
-        </select>
-      </div>
+      {zipLanguages(foundry).length > 1 && (
+        <div className={form.field}>
+          <label htmlFor={languageId}>{t('systems.foundryLanguage')}</label>
+          <select
+            id={languageId}
+            value={language}
+            onChange={(event) => onChange({ language: event.currentTarget.value as 'es' | 'en' })}
+          >
+            <option value="en">{t('systems.languageName.en')}</option>
+            <option value="es">{t('systems.languageName.es')}</option>
+          </select>
+        </div>
+      )}
     </div>
   )
 }

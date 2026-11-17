@@ -1,7 +1,7 @@
 /*
  * Tokens de diseño: la mezcla del Crisol antiguo y del nuevo (Enrique, 2026-10-30). Del antiguo, los grises neutros,
  * un color por nivel de título, los enlaces en azul y el rojo solo en lo importante; del nuevo, Barlow, los títulos
- * condensados y las esquinas cortadas. Lo de la IA, en azul claro. Solo el tema oscuro (Enrique, 2026-11-11: el claro
+ * condensados y las formas del cristal (esquinas redondeadas). Lo de la IA, en azul claro. Solo el tema oscuro (Enrique, 2026-11-11: el claro
  * se quita; si un día hace falta, se hará entero); los contrastes los comprueba tokens.test.ts
  */
 @import "@fontsource/barlow/400.css";
@@ -50,85 +50,24 @@
   --color-danger: #f27470;
   --color-read-aloud: #2e2a22;
   --color-read-aloud-rule: #d2b077;
+  /* Las series (módulo 10): el color de cada plantilla en las relaciones y de cada serie en los gráficos, de más de 3:1
+     con el fondo (objetos gráficos, WCAG 1.4.11) */
+  --color-series-1: #e9b872;
+  --color-series-2: #f07167;
+  --color-series-3: #6fc3b2;
+  --color-series-4: #8ab4f8;
+  --color-series-5: #b5d16a;
+  --color-series-6: #c9a0dc;
+  --color-series-7: #e8a07c;
+  --color-series-8: #9fb4c7;
 
   --font-body: "Barlow", system-ui, sans-serif;
   --font-display: "Barlow Condensed", "Arial Narrow", sans-serif;
   --radius: 2px;
-  /* Esquinas cortadas: el marco, su interior (1px dentro) y los botones */
-  --cut: polygon(
-    12px 0,
-    calc(100% - 12px) 0,
-    100% 12px,
-    100% calc(100% - 12px),
-    calc(100% - 12px) 100%,
-    12px 100%,
-    0 calc(100% - 12px),
-    0 12px
-  );
-  --cut-inner: polygon(
-    11px 0,
-    calc(100% - 11px) 0,
-    100% 11px,
-    100% calc(100% - 11px),
-    calc(100% - 11px) 100%,
-    11px 100%,
-    0 calc(100% - 11px),
-    0 11px
-  );
-  /* Solo la raya del marco, de 1px (o 2px, con el foco), con sus diagonales: el marco sin relleno, para que lo de
-     dentro pueda ser de cristal. Dos contornos con evenodd: el de dentro hace el hueco */
-  --cut-ring: polygon(
-    evenodd,
-    12px 0,
-    calc(100% - 12px) 0,
-    100% 12px,
-    100% calc(100% - 12px),
-    calc(100% - 12px) 100%,
-    12px 100%,
-    0 calc(100% - 12px),
-    0 12px,
-    12px 0,
-    12.41px 1px,
-    1px 12.41px,
-    1px calc(100% - 12.41px),
-    12.41px calc(100% - 1px),
-    calc(100% - 12.41px) calc(100% - 1px),
-    calc(100% - 1px) calc(100% - 12.41px),
-    calc(100% - 1px) 12.41px,
-    calc(100% - 12.41px) 1px,
-    12.41px 1px
-  );
-  --cut-ring-2: polygon(
-    evenodd,
-    12px 0,
-    calc(100% - 12px) 0,
-    100% 12px,
-    100% calc(100% - 12px),
-    calc(100% - 12px) 100%,
-    12px 100%,
-    0 calc(100% - 12px),
-    0 12px,
-    12px 0,
-    12.83px 2px,
-    2px 12.83px,
-    2px calc(100% - 12.83px),
-    12.83px calc(100% - 2px),
-    calc(100% - 12.83px) calc(100% - 2px),
-    calc(100% - 2px) calc(100% - 12.83px),
-    calc(100% - 2px) 12.83px,
-    calc(100% - 12.83px) 2px,
-    12.83px 2px
-  );
-  --cut-button: polygon(
-    6px 0,
-    calc(100% - 6px) 0,
-    100% 6px,
-    100% calc(100% - 6px),
-    calc(100% - 6px) 100%,
-    6px 100%,
-    0 calc(100% - 6px),
-    0 6px
-  );
+  /* Las formas del cristal (las de la Mesa, Enrique, 2026-11-13): esquinas redondeadas; los marcos y los botones */
+  --radius-frame: 10px;
+  --radius-inner: 9px;
+  --radius-button: 6px;
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
@@ -161,6 +100,9 @@
   --surface-glass: color-mix(in srgb, var(--color-surface) 58%, transparent);
   --surface-glass-raised: color-mix(in srgb, var(--color-raised) 62%, transparent);
   --surface-read: color-mix(in srgb, var(--color-bg) 86%, transparent);
+  /* La página de un mundo, de cristal que se lee: algo más translúcida que la hoja (Enrique, 2026-11-16: «dale como un
+     poco más de cristal»), con el texto a más de 4,5:1 sobre lo que haya detrás */
+  --surface-page: color-mix(in srgb, var(--color-bg) 78%, transparent);
   --frame-blur: blur(14px);
   --frame-sheen: linear-gradient(180deg, rgb(255 255 255 / 0.05), rgb(255 255 255 / 0) 40%);
   /* Lo que flota encima de otra cosa (cuadros, ventanas, menús, el selector de iconos): cristal más tapado, que se lea
@@ -219,6 +161,7 @@
     --popup-glass: var(--color-surface);
     --field-fill: var(--color-bg);
     --accent-glass: var(--color-accent);
+    --surface-page: var(--surface-read);
   }
 }
 
@@ -228,6 +171,7 @@
   --surface-glass: var(--color-surface);
   --surface-glass-raised: var(--color-raised);
   --surface-read: var(--color-bg);
+  --surface-page: var(--color-bg);
   --line-frame: var(--color-frame);
   --line-soft: var(--color-border);
   --row-hover: var(--color-raised);

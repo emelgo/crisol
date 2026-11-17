@@ -239,7 +239,8 @@ describe('el menú de una página en el árbol', () => {
     expect(document.activeElement?.textContent).toBe('Borrar')
     await userEvent.keyboard('{ArrowDown}{ArrowDown}')
     expect(document.activeElement?.textContent).toBe('Renombrar')
-    await userEvent.keyboard('{ArrowDown}{ArrowDown}{ArrowDown}')
+    // Duplicar, Exportar, Revelar a… y Mover a…
+    await userEvent.keyboard('{ArrowDown}{ArrowDown}{ArrowDown}{ArrowDown}')
     const opener = menu.getByRole('menuitem', { name: 'Mover a…' })
     expect(document.activeElement).toBe(opener)
     await userEvent.keyboard('{ArrowRight}')
@@ -377,6 +378,39 @@ describe('recolocar en el árbol arrastrando', () => {
         'Reglas de la casa',
         'Personajes'
       ])
+    )
+  })
+
+  it('revelar a cada campaña desde el árbol (como en Everlore): «Revelar a…» con su marca (Enrique, 2026-11-16)', async () => {
+    const api = fakeApi({
+      organizations: [ORG],
+      worlds: [WORLD],
+      campaigns: [
+        {
+          id: crypto.randomUUID(),
+          worldId: WORLD.id,
+          name: 'La Marca',
+          description: '',
+          color: null,
+          cover: null,
+          role: 'master',
+          version: 1
+        }
+      ],
+      pages: [{ id: ids.rules, worldId: WORLD.id, title: 'Reglas de la casa' }]
+    })
+    renderAt(`/mundos/${WORLD.id}/wiki/${ids.rules}`, api)
+    const menu = await openMenu('Reglas de la casa')
+    await userEvent.click(menu.getByRole('menuitem', { name: 'Revelar a…' }))
+    const flyout = within(await screen.findByRole('menu', { name: 'Revelar a…' }))
+    const marca = await flyout.findByRole('menuitemcheckbox', { name: /La Marca/ })
+    expect(marca.getAttribute('aria-checked')).toBe('false')
+    await userEvent.click(marca)
+    await waitFor(() => expect(api.calls).toContain('setKnowledge'))
+    await waitFor(async () =>
+      expect((await flyout.findByRole('menuitemcheckbox', { name: /La Marca/ })).getAttribute('aria-checked')).toBe(
+        'true'
+      )
     )
   })
 })

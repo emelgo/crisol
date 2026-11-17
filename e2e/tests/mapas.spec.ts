@@ -17,7 +17,8 @@ async function addMap(page: Page) {
   const dialog = page.getByRole('dialog', { name: 'Pestaña nueva' })
   await expect(dialog.getByRole('radio', { name: 'Texto' })).toBeChecked()
   await dialog.getByRole('radio', { name: 'Mapa' }).check()
-  await expect(dialog.getByRole('radio', { name: /Pizarra/ })).toBeDisabled()
+  // Ni «Línea temporal» ni «Árbol familiar»: el tiempo vive en las cronologías (módulo 8) y el árbol, en «Relaciones»
+  await expect(dialog.getByRole('radio', { name: /Línea temporal|Árbol/ })).toHaveCount(0)
   await dialog.getByRole('button', { name: 'Crear' }).click()
   await expect(dialog).toHaveCount(0)
 }
@@ -63,15 +64,18 @@ test('un mapa en la página: se añade desde «⋯», se le pone imagen, se pone
   // Sin imagen, la pide: una del mundo
   await expect(page.getByText('Este mapa aún no tiene imagen.')).toBeVisible()
   await page.getByLabel('Imagen del mapa').selectOption({ label: 'Costa.svg' })
-  const map = page.getByRole('application', { name: 'Mapa Mapa' })
+  const map = page.getByRole('application', { name: 'Mapa', exact: true })
   await expect(map.locator('img')).toBeVisible()
 
   // «Poner un pin» y pulsar en el mapa: sale su panel
   await page.getByRole('button', { name: 'Poner un pin' }).click()
-  await expect(page.getByRole('status').getByText('Pulsa donde quieras el pin')).toBeVisible()
+  await expect(page.getByText('Pulsa donde quieras el pin')).toBeVisible()
   const box = await map.boundingBox()
   if (!box) throw new Error('sin mapa')
-  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2)
+  // En medio de lo que se ve del mapa (en la página del mundo sigue más abajo de la ventana hasta bajar la columna,
+  // y abajo está la píldora de sus herramientas)
+  const seen = Math.min(box.y + box.height, page.viewportSize()?.height ?? 0)
+  await page.mouse.click(box.x + box.width / 2, (box.y + seen) / 2 - 30)
   const panel = page.getByRole('region', { name: 'Pin' })
   await expect(panel).toBeVisible()
   await panel.getByLabel('Nombre', { exact: true }).fill('El faro')

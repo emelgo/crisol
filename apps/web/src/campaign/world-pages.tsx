@@ -6,7 +6,7 @@
 import type { Page, PanelBlock } from '@crisol/contracts'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { getRouteApi, Link, Navigate, useNavigate } from '@tanstack/react-router'
-import { ChevronDown, ChevronRight, Eye, FileText } from 'lucide-react'
+import { ChevronDown, ChevronRight, Eye, FileText, Waypoints } from 'lucide-react'
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
@@ -16,7 +16,10 @@ import { Loading } from '../components/brand.tsx'
 import { failed, LoadError, SectionError } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { Tour } from '../components/tour.tsx'
+import { useRelationModes } from '../relations/queries.ts'
+import { RelationsTab, useCompactScreen } from '../relations/relations-tab.tsx'
 import { Backlinks } from '../wiki/backlinks.tsx'
+import { BoardReadTab } from '../wiki/board/board-tab.tsx'
 import { CollabSocket } from '../wiki/collab.tsx'
 import { ContentView, NewSecretsContext } from '../wiki/content.tsx'
 import { PageCoverImage } from '../wiki/cover.tsx'
@@ -29,6 +32,7 @@ import { PageProperties } from '../wiki/properties.tsx'
 import { type ReadAs, ReadAsProvider, readAsInput, readAsKey, useReadAs } from '../wiki/read-as.tsx'
 import { RelatedBody } from '../wiki/related-block.tsx'
 import { SheetPaper } from '../wiki/sheet/controls.tsx'
+import { RELATIONS_TAB } from '../wiki/tabs/page-tabs.tsx'
 import treeStyles from '../wiki/tree.module.css'
 import wiki from '../wiki/wiki.module.css'
 import { useSideTop } from '../wiki/wiki.tsx'
@@ -168,6 +172,17 @@ function PlayerWiki({
         <aside className={wiki.aside} aria-labelledby="paginas-jugador" data-tour="paginas-arbol">
           <div className={wiki.asideHeader}>
             <h2 id="paginas-jugador">{world ? t('wiki.title', { world: world.name }) : t('wiki.pages')}</h2>
+            {/* El grafo de lo que conoce del mundo (módulo 10) */}
+            <Link
+              to="/mundos/$worldId/campanas/$campaignId/relaciones"
+              params={{ worldId, campaignId: readAs.campaignId }}
+              search={readAs.asCharacterId ? { como: readAs.asCharacterId } : {}}
+              className={styles.graphLink}
+              aria-label={t('relations.world.open')}
+              title={t('relations.world.open')}
+            >
+              <Waypoints aria-hidden="true" size={15} />
+            </Link>
           </div>
           <PlayerTree worldId={worldId} currentId={currentId} />
         </aside>
@@ -279,8 +294,10 @@ function PlayerEntry({ page }: { page: Page }) {
     queryKey: playerKey(page.worldId, readAs, 'tabs', page.id),
     queryFn: () => api.call('listPageTabs', { pageId: page.id, ...readAsInput(readAs) })
   })
-  // Sus pestañas que ve: las de texto y los mapas
-  const texts = (tabs.data?.tabs ?? []).filter((tab) => tab.kind === 'text' || tab.kind === 'map')
+  // Sus pestañas que ve: las de texto, los mapas y las pizarras
+  const texts = (tabs.data?.tabs ?? []).filter(
+    (tab) => tab.kind === 'text' || tab.kind === 'map' || tab.kind === 'board'
+  )
   const { pestana } = pageRoute.useSearch()
   const navigate = useNavigate()
   const tabId = pestana ?? null
@@ -292,6 +309,10 @@ function PlayerEntry({ page }: { page: Page }) {
       replace: true
     })
   const active = texts.find((tab) => tab.id === tabId) ?? null
+  // «Relaciones» (módulo 10), con lo que conoce su campaña: si la página tiene alguna
+  const relationModes = useRelationModes(page.worldId, page.id)
+  const relations = tabId === RELATIONS_TAB
+  const compact = useCompactScreen()
   const content = usePageContent(page.worldId, page.id, null, false, active?.kind === 'text' ? active.id : undefined)
   // Para escribir en ella: se enlaza a lo que conoce (sin crear páginas ni subir archivos)
   const tree = useTree(page.worldId)
@@ -335,10 +356,10 @@ function PlayerEntry({ page }: { page: Page }) {
               </div>
             </div>
           </header>
-          {texts.length > 0 && (
+          {(texts.length > 0 || relationModes.length > 0) && (
             // biome-ignore lint/a11y/useSemanticElements: un grupo de botones que eligen qué se ve, no un formulario
             <div role="group" aria-label={t('playerPages.tabs')} className={styles.tabs}>
-              <button type="button" aria-pressed={!active} onClick={() => setTabId(null)}>
+              <button type="button" aria-pressed={!active && !relations} onClick={() => setTabId(null)}>
                 {t('playerPages.text')}
               </button>
               {texts.map((tab) => (
@@ -351,10 +372,25 @@ function PlayerEntry({ page }: { page: Page }) {
                   {tab.name}
                 </button>
               ))}
+              {(relationModes.length > 0 || relations) && (
+                <button type="button" aria-pressed={relations} onClick={() => setTabId(RELATIONS_TAB)}>
+                  {t('relations.tab')}
+                </button>
+              )}
             </div>
           )}
-          {active?.kind === 'map' ? (
+          {relations ? (
+            compact ? (
+              <RelationsTab key={page.id} page={page} compact />
+            ) : (
+              <div className={styles.relations}>
+                <RelationsTab key={page.id} page={page} />
+              </div>
+            )
+          ) : active?.kind === 'map' ? (
             <MapTab key={active.id} page={page} tab={active} />
+          ) : active?.kind === 'board' ? (
+            <BoardReadTab key={active.id} page={page} tab={active} />
           ) : page.editable && !active ? (
             // Una página que su campaña puede escribir (docs/specs/pagina-de-jugadores.md): el editor, en vivo
             <div className={wiki.column}>

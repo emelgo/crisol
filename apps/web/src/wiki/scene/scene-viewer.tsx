@@ -21,6 +21,7 @@ import { useTranslation } from 'react-i18next'
 import { canvasViewOf, sceneViewportOfCanvas } from '../../tabletop/camera.ts'
 import { masterTileUrl } from '../../tabletop/queries.ts'
 import { fitCanvas, pyramidOf, screenGridLines, type TilesToDraw, tilesToDraw } from '../../tabletop/view.ts'
+import { tabRegionLabel } from '../tabs/kinds.tsx'
 import styles from './scene.module.css'
 import { useSceneTab } from './scene-context.ts'
 
@@ -253,7 +254,7 @@ export function SceneViewer() {
         data-aligning={aligning || undefined}
         role="application"
         aria-roledescription={t('scene.roleDescription')}
-        aria-label={t('scene.label', { name })}
+        aria-label={tabRegionLabel(t, 'scene', name)}
         aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown + - 0"
         // biome-ignore lint/a11y/noNoninteractiveTabindex: es un control propio (role application), no un contenedor
         tabIndex={0}

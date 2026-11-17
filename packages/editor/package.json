@@ -20,7 +20,8 @@
     "@tiptap/extension-unique-id": "catalog:",
     "@tiptap/markdown": "catalog:",
     "@tiptap/pm": "catalog:",
-    "@tiptap/starter-kit": "catalog:"
+    "@tiptap/starter-kit": "catalog:",
+    "yaml": "catalog:"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "catalog:",

@@ -4,6 +4,8 @@ import { campaignLink, createWorld, freshOwner, openAccountWindow, openWindow, s
 test('con el teclado: el modo de IA con flechas y las invitaciones con espacio, sin perder el foco', async ({
   page
 }) => {
+  // Con la máquina cargada rozaba los 30 s (de 22 a 32 en las baterías enteras): con el margen de las demás largas
+  test.slow()
   await campaignLink(page)
   // Cada cambio, guardado antes del siguiente (mientras se guarda uno, otro se ignora)
   const saved = (action: string) => page.waitForResponse(`**/api/actions/${action}`)
@@ -42,6 +44,8 @@ test('con el teclado: el modo de IA con flechas y las invitaciones con espacio, 
 })
 
 test('al navegar, el foco va al título de la página, y la pestaña lo dice', async ({ page }) => {
+  // Con la máquina cargada rozaba los 30 s (de 22 a 32 en las baterías enteras): con el margen de las demás largas
+  test.slow()
   await campaignLink(page)
   // Con sus ajustes abiertos encima, la pestaña los nombra; al cerrarlos, vuelve la campaña
   await expect(page).toHaveTitle('Ajustes de la campaña · Crisol')

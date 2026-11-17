@@ -1,0 +1,487 @@
+/* La pizarra de una pestaña: su barra (lo de Crisol) encima del lienzo de Excalidraw, hasta el final de la ventana */
+.wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  block-size: clamp(24rem, calc(100dvh - var(--board-top, 15rem) - var(--space-4)), 72rem);
+  overflow: hidden;
+  border: 1px solid var(--line-frame);
+  border-radius: 6px;
+  background: var(--color-raised);
+}
+
+/* En la hoja de una página (wiki.module.css, [data-fill]): de lado a lado de ella y hasta el final de la ventana, sin un
+   recuadro que se vea terminar (como en LegendKeeper) */
+:global(article[data-fill]) .wrapper:not([data-wide]) {
+  block-size: max(24rem, calc(100dvh - var(--board-top, 15rem)));
+  margin-inline: calc(-1 * var(--sheet-pad, 0px));
+  border-inline: 0;
+  border-block-end: 0;
+  border-radius: 0;
+}
+
+/* A sangre en la página del mundo (world-page.module.css, .bleed): todo su alto y sin fondo propio (se ve el de
+   la página, como en Everlore) */
+:global(article[data-bleed]) .wrapper:not([data-wide]) {
+  block-size: 100%;
+  /* Sin recortar: sus herramientas se pegan abajo de lo que se ve de la columna (.dock) */
+  overflow: visible;
+  border: 0;
+  background: transparent;
+}
+
+/* Ampliada: todo lo de al lado de la barra de la app, por encima de la página */
+.wrapper[data-wide] {
+  position: fixed;
+  inset: 0 0 0 4rem;
+  z-index: 40;
+  block-size: auto;
+  border: 0;
+  border-inline-start: 1px solid var(--line-frame);
+  border-radius: 0;
+  background: var(--color-bg);
+  box-shadow: var(--glass-shadow);
+}
+
+.bar {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-wrap: nowrap;
+  min-inline-size: 0;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border-block-end: 1px solid var(--line-frame);
+  background: var(--frame-sheen), var(--popup-glass);
+  -webkit-backdrop-filter: var(--popup-blur);
+  backdrop-filter: var(--popup-blur);
+}
+
+/* En la tira de la página (la página del mundo): las mismas, sin barra propia */
+.slotTools {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.barButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-block-size: 2rem;
+  padding: 0 var(--space-2);
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.barButton:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-text) 10%, transparent);
+}
+
+.barButton[aria-pressed="true"],
+.barButton[aria-expanded="true"] {
+  background: color-mix(in srgb, var(--color-accent-text) 22%, transparent);
+  color: var(--color-accent-text);
+}
+
+.barButton:disabled {
+  color: var(--color-muted);
+  cursor: default;
+}
+
+.barButton:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 1px;
+}
+
+.barButton.hiddenToggle[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--color-secret-text) 20%, transparent);
+  color: var(--color-secret-text);
+}
+
+.status {
+  margin-inline-start: auto;
+  overflow: hidden;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status[data-alert] {
+  color: var(--color-danger);
+}
+
+/* Vacía: cómo empezar, en el centro y sin estorbar (no se pulsa: lo de debajo sigue siendo el lienzo) */
+.empty {
+  position: absolute;
+  inset: 50% 0 auto;
+  translate: 0 -50%;
+  margin: 0 auto;
+  max-inline-size: 28rem;
+  padding-inline: var(--space-4);
+  color: var(--color-muted);
+  text-align: center;
+  pointer-events: none;
+}
+
+.addPage {
+  position: relative;
+}
+
+.addPanel {
+  position: absolute;
+  inset-block-start: calc(100% + var(--space-1));
+  inset-inline-end: 0;
+  z-index: 5;
+  display: grid;
+  gap: var(--space-2);
+  inline-size: min(26rem, 80vw);
+  padding: var(--space-2);
+  border: 1px solid var(--line-frame);
+  border-radius: 8px;
+  background: var(--frame-sheen), var(--popup-glass);
+  -webkit-backdrop-filter: var(--popup-blur);
+  backdrop-filter: var(--popup-blur);
+  box-shadow: var(--glass-shadow);
+}
+
+.addRow {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.suggestions {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.suggestions [role="option"] {
+  padding: var(--space-1) var(--space-2);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.suggestions [role="option"]:hover,
+.suggestions [role="option"][aria-selected="true"] {
+  background: color-mix(in srgb, var(--color-accent-text) 18%, transparent);
+}
+
+.noMatch {
+  margin: 0;
+  padding: var(--space-1) var(--space-2);
+  color: var(--color-muted);
+}
+
+.addPanel input {
+  min-block-size: 2rem;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--color-field-border);
+  border-radius: 4px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+}
+
+.canvas {
+  position: relative;
+  flex: 1;
+  min-block-size: 0;
+}
+
+:global(article[data-bleed]) .wrapper:not([data-wide]) .canvas {
+  overflow: hidden;
+}
+
+.loading {
+  margin: auto;
+  color: var(--color-muted);
+}
+
+/* Excalidraw, con los colores de la app (su tema oscuro, retocado) */
+.canvas :global(.excalidraw.theme--dark) {
+  --color-primary: var(--color-accent-text);
+  --color-primary-darker: var(--color-accent);
+  --color-primary-darkest: var(--color-accent);
+  --color-primary-light: color-mix(in srgb, var(--color-accent-text) 22%, transparent);
+  --island-bg-color: var(--color-surface);
+  --default-bg-color: var(--color-raised);
+  --ui-font: var(--font-body);
+}
+
+/* Lo que saca de Crisol (su biblioteca pública, su ayuda con sus redes) no se ofrece, ni sus textos de ayuda fijos bajo
+   la barra (norma: nada de ayudas fijas en pantalla), ni la dirección interna de una tarjeta al elegirla. Con más peso
+   que el suyo: su CSS llega después */
+.canvas :global(.excalidraw .default-sidebar-trigger),
+.canvas :global(.excalidraw .help-icon),
+.canvas :global(.excalidraw .HintViewer),
+.canvas :global(.excalidraw .excalidraw-hyperlinkContainer) {
+  display: none;
+}
+
+/* Con nuestras herramientas abajo (board-dock.tsx): sin su barra de formas, su menú ni su pie (el zoom y deshacer); su
+   panel de propiedades se queda. Y sin fondo propio: se ve el de la página */
+.canvas[data-docked] :global(.excalidraw .shapes-section),
+.canvas[data-docked] :global(.excalidraw .main-menu-trigger),
+.canvas[data-docked] :global(.excalidraw .layer-ui__wrapper__footer-left) {
+  display: none;
+}
+
+.canvas[data-docked] :global(.excalidraw.theme--dark) {
+  --default-bg-color: transparent;
+}
+
+/* Con poco sitio (un portátil: un lienzo de menos de 500 px de alto o 730 de ancho), Excalidraw pasa a su interfaz de
+   móvil: su barra de formas y sus botones de arriba sobran (están en nuestra píldora) y, de su barra de abajo, se quedan
+   sus propiedades, duplicar y borrar, en una isla encima de nuestra píldora; deshacer y rehacer, en la nuestra */
+.canvas[data-docked] :global(.excalidraw .App-top-bar .App-toolbar-container),
+.canvas[data-docked] :global(.excalidraw .App-bottom-bar .App-toolbar-content > div:last-child) {
+  display: none;
+}
+
+.canvas[data-docked] :global(.excalidraw .App-bottom-bar) {
+  justify-content: center;
+  padding-block-end: 4.5rem;
+}
+
+.canvas[data-docked] :global(.excalidraw .App-bottom-bar > .Island) {
+  inline-size: auto;
+  min-inline-size: 0;
+  max-inline-size: min(100%, 26rem);
+}
+
+/* La base de las herramientas: pegada abajo de lo que se ve (aunque el lienzo siga más abajo); sin alto, lo de dentro
+   sube desde ella */
+.dock {
+  position: sticky;
+  inset-block-end: 0;
+  z-index: 10;
+  flex: none;
+  block-size: 0;
+}
+
+/* Una píldora de cristal: la de las herramientas, abajo en el centro; el zoom, a la derecha; deshacer, a la izquierda */
+.pill {
+  position: absolute;
+  inset-block-end: var(--space-4);
+  inset-inline-start: 50%;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  border: 1px solid var(--line-frame);
+  border-radius: 12px;
+  background: var(--frame-sheen), var(--popup-glass);
+  -webkit-backdrop-filter: var(--popup-blur);
+  backdrop-filter: var(--popup-blur);
+  box-shadow: var(--glass-shadow);
+  transform: translateX(-50%);
+}
+
+.zoomTools {
+  inset-block-end: var(--space-3);
+  inset-inline: auto var(--space-3);
+  border-radius: 10px;
+  transform: none;
+}
+
+:global([data-panel-folded]) .zoomTools {
+  inset-block-end: calc(var(--space-4) + 3.25rem + var(--space-3));
+}
+
+.historyTools {
+  inset-block-end: var(--space-3);
+  inset-inline: var(--space-3) auto;
+  border-radius: 10px;
+  transform: none;
+}
+
+.dockButton {
+  display: grid;
+  place-items: center;
+  min-inline-size: 2.25rem;
+  block-size: 2.25rem;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition: background-color 120ms ease-out;
+}
+
+.dockButton:hover {
+  background: color-mix(in srgb, var(--color-text) 10%, transparent);
+}
+
+.dockButton[aria-pressed="true"],
+.dockButton[aria-expanded="true"] {
+  background: color-mix(in srgb, var(--color-accent-text) 22%, transparent);
+  color: var(--color-accent-text);
+}
+
+.dockButton:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
+}
+
+.zoomValue {
+  min-inline-size: 3.25rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.dockSep {
+  inline-size: 1px;
+  block-size: 1.5rem;
+  margin: 0 3px;
+  background: var(--line-frame);
+}
+
+/* Quien solo mira: sin su menú (sería el de serie, con sus enlaces de fuera) */
+.canvas[data-readonly] :global(.excalidraw .main-menu-trigger) {
+  display: none;
+}
+
+/* Una tarjeta de página: su icono y su título; pulsarla abre la página */
+.card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  block-size: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--line-frame);
+  border-radius: 8px;
+  background: var(--glass-sheen), var(--color-surface);
+  box-shadow: var(--glass-shadow);
+  color: var(--color-text);
+  overflow: hidden;
+}
+
+.cardIcon {
+  flex: none;
+}
+
+/* Con el peso de la tarjeta: el «a» de Excalidraw lo pintaría de su azul de enlace */
+.card .cardTitle {
+  overflow: hidden;
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 600;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card a.cardTitle:hover {
+  color: var(--color-link);
+  text-decoration: underline;
+}
+
+.card[data-missing] {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0;
+  border-style: dashed;
+  color: var(--color-muted);
+}
+
+.card[data-missing] .cardTitle {
+  color: var(--color-muted);
+  text-decoration: line-through;
+}
+
+.cardNote {
+  font-size: 0.8125rem;
+}
+
+/* Oculta a los jugadores: raya discontinua y el ojo tachado, con el color de lo secreto */
+.card[data-hidden] {
+  border-style: dashed;
+  border-color: var(--color-secret-text);
+}
+
+.cardHidden {
+  display: inline-flex;
+  flex: none;
+  margin-inline-start: auto;
+  color: var(--color-secret-text);
+}
+
+.visuallyHidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Lo que hay en la pizarra, en lista: solo en lo estrecho (el móvil de la jugadora), en vez del lienzo diminuto */
+.summary {
+  display: none;
+}
+
+@media (max-width: 48rem) {
+  .wrapper[data-wide] {
+    inset: 0;
+  }
+
+  .summary {
+    display: block;
+    overflow-y: auto;
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .canvas[data-has-summary] {
+    display: none;
+  }
+
+  .wrapper:has(.summary) {
+    block-size: auto;
+  }
+
+  .barButton {
+    min-block-size: 2.75rem;
+    min-inline-size: 2.75rem;
+    justify-content: center;
+  }
+}
+
+.summaryList {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.summaryList a {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 2.75rem;
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.summaryLinks {
+  margin-block-start: var(--space-4);
+  color: var(--color-muted);
+}
+
+.summaryLinks li {
+  color: var(--color-text);
+}

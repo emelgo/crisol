@@ -16,7 +16,18 @@ import { failed } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { Tour } from '../components/tour.tsx'
 import styles from './world-card.module.css'
-import { CampaignCard, NewLook, NewWorld, useAllCampaignsKind, WorldCard, WorldDetail } from './world-card.tsx'
+import {
+  CampaignCard,
+  CampaignDetail,
+  NewLook,
+  NewWorld,
+  useAllCampaignsKind,
+  WorldCard,
+  WorldDetail
+} from './world-card.tsx'
+
+/** Lo que se enseña en el panel de la izquierda: un mundo o una campaña */
+type Shown = { kind: 'world' | 'campaign'; id: string }
 
 export function Worlds() {
   const { t } = useTranslation()
@@ -34,19 +45,22 @@ export function Worlds() {
     enabled: Boolean(account)
   })
   const cards = useCardList('mundos', worlds.data?.worlds)
-  // El mundo sobre el que está el ratón (o el foco), para el panel de la izquierda; al irse, nada
-  const [previewId, setPreviewId] = useState<string | null>(null)
-  const preview = worlds.data?.worlds.find((w) => w.id === previewId)
-  // Detrás, la portada del mundo en el que uno se para (un momento: pasar por encima no mueve el fondo); al salir de la
-  // lista, la de ambiente
-  const [ambientId, setAmbientId] = useState<string | null>(null)
+  // El mundo o la campaña sobre el que está el ratón (o el foco), para el panel de la izquierda; al irse, nada
+  const [shown, setShown] = useState<Shown | null>(null)
+  const [campaigns, setCampaigns] = useState<Campaign[]>([])
+  const preview = shown?.kind === 'world' ? worlds.data?.worlds.find((w) => w.id === shown.id) : undefined
+  const previewCampaign = shown?.kind === 'campaign' ? campaigns.find((c) => c.id === shown.id) : undefined
+  const previewOf = (kind: Shown['kind'], id: string) => (on: boolean) =>
+    setShown((current) => (on ? { kind, id } : current?.id === id ? null : current))
+  // Detrás, la portada de lo que uno señala (un momento: pasar por encima no mueve el fondo); al irse de la tarjeta,
+  // también un momento después (de una tarjeta a otra no vuelve a la de ambiente), la de ambiente
+  const [ambientCover, setAmbientCover] = useState<string | null>(null)
+  const shownCover = (preview ?? previewCampaign)?.cover?.fileId ?? null
   useEffect(() => {
-    if (!previewId) return
-    const timer = window.setTimeout(() => setAmbientId(previewId), 300)
+    const timer = window.setTimeout(() => setAmbientCover(shownCover), 300)
     return () => window.clearTimeout(timer)
-  }, [previewId])
-  const ambientWorld = worlds.data?.worlds.find((w) => w.id === ambientId)
-  useAmbient(ambientWorld?.cover ? `/api/files/${ambientWorld.cover.fileId}` : null)
+  }, [shownCover])
+  useAmbient(ambientCover ? `/api/files/${ambientCover}` : null)
   // Los fondos de los mundos con portada, ya preparados: al entrar en uno, el suyo llega con la transición (sin carga)
   useEffect(() => {
     for (const world of worlds.data?.worlds ?? []) if (world.cover) prepareAmbient(`/api/files/${world.cover.fileId}`)
@@ -62,6 +76,13 @@ export function Worlds() {
     <section className={styles.layout}>
       <aside className={styles.detail} aria-label={t('worlds.detail')} data-vista-previa>
         {preview && <WorldDetail key={preview.id} world={preview} />}
+        {previewCampaign && (
+          <CampaignDetail
+            key={previewCampaign.id}
+            campaign={previewCampaign}
+            place={worlds.data?.worlds.find((w) => w.id === previewCampaign.worldId)?.name}
+          />
+        )}
       </aside>
       <div className={styles.center}>
         <div className={styles.top}>
@@ -79,15 +100,7 @@ export function Worlds() {
               {!canCreate && <p>{t('worlds.emptyPlayer')}</p>}
             </EmptyState>
           ) : (
-            <ul
-              className={styles.list}
-              aria-label={t('worlds.listLabel')}
-              data-card-list
-              onPointerLeave={() => setAmbientId(null)}
-              onBlur={(event) => {
-                if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setAmbientId(null)
-              }}
-            >
+            <ul className={styles.list} aria-label={t('worlds.listLabel')} data-card-list>
               {cards.map(({ item, fresh, burning, burnt }) => (
                 <WorldCard
                   key={item.id}
@@ -95,16 +108,20 @@ export function Worlds() {
                   fresh={fresh}
                   burning={burning}
                   onBurnt={burnt}
-                  onPreview={(shown) =>
-                    setPreviewId((current) => (shown ? item.id : current === item.id ? null : current))
-                  }
+                  onPreview={previewOf('world', item.id)}
                 />
               ))}
               {/* Tras el último, el recuadro vacío para crear otro */}
               {canCreate && <NewWorld />}
             </ul>
           ))}
-        {worlds.data && !empty && <AllCampaigns worlds={worlds.data.worlds} />}
+        {worlds.data && !empty && (
+          <AllCampaigns
+            worlds={worlds.data.worlds}
+            onList={setCampaigns}
+            onPreview={(id) => previewOf('campaign', id)}
+          />
+        )}
       </div>
       <Tour
         id="mundos"
@@ -144,7 +161,16 @@ function joinCampaigns(lists: { data?: { campaigns: Campaign[] } | undefined }[]
  * Las campañas de todos los mundos de la cuenta (las que ve: el máster, todas; un jugador, las suyas), con el mundo de
  * cada una, y tras la última, «Nueva campaña», que pide el mundo (de los que dirige)
  */
-function AllCampaigns({ worlds }: { worlds: World[] }) {
+function AllCampaigns({
+  worlds,
+  onList,
+  onPreview
+}: {
+  worlds: World[]
+  /** Las que hay, para el panel de la izquierda */
+  onList: (campaigns: Campaign[]) => void
+  onPreview: (id: string) => (shown: boolean) => void
+}) {
   const { t } = useTranslation()
   const api = useApi()
   const headingId = useId()
@@ -160,6 +186,9 @@ function AllCampaigns({ worlds }: { worlds: World[] }) {
   const places = worlds.filter((world) => world.role === 'master').map(({ id, name }) => ({ id, name }))
   const kind = useAllCampaignsKind(places)
   const cards = useCardList(kind.list, all)
+  useEffect(() => {
+    if (all) onList(all)
+  }, [all, onList])
   if (!all) return null
   if (cards.length === 0 && places.length === 0) return null
   return (
@@ -179,6 +208,7 @@ function AllCampaigns({ worlds }: { worlds: World[] }) {
             fresh={fresh}
             burning={burning}
             onBurnt={burnt}
+            onPreview={onPreview(item.id)}
           />
         ))}
         {places.length > 0 && <NewLook kind={kind} tour="nueva-campana" />}

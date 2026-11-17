@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { userEvent } from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { Ambient, ambientAlpha, DEFAULT_AMBIENT, prepareAmbient, useAmbient } from './ambient.tsx'
+import { Ambient, ambientAlpha, DEFAULT_AMBIENT, prepareAmbient, ROTATE_EVERY, useAmbient } from './ambient.tsx'
 import { setPlain, usePlain } from './plain.ts'
 
 function Wants({ url }: { url: string | null }) {
@@ -17,6 +17,32 @@ afterEach(() => {
 })
 
 describe('el fondo de ambiente', () => {
+  it('las de siempre se turnan despacio (los fondos de Crisol); con una portada pedida, no', () => {
+    vi.useFakeTimers()
+    try {
+      const { rerender } = render(<Ambient />)
+      expect(shown()).toBe(DEFAULT_AMBIENT)
+      act(() => vi.advanceTimersByTime(ROTATE_EVERY))
+      const next = shown()
+      expect(next).toMatch(/^\/fondos\/.+\.webp$/)
+      rerender(
+        <>
+          <Ambient />
+          <Wants url="/api/files/mundo" />
+        </>
+      )
+      act(() => vi.advanceTimersByTime(ROTATE_EVERY * 2))
+      expect(shown()).toBe('/api/files/mundo')
+      rerender(<Ambient />)
+      expect(shown()).toBe(next)
+      // Da la vuelta entera (la de ambiente y los doce fondos) y vuelve a la primera
+      act(() => vi.advanceTimersByTime(ROTATE_EVERY * 12))
+      expect(shown()).toBe(DEFAULT_AMBIENT)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('sin nadie que pida otro, el de siempre; manda el último que lo pide, y al irse vuelve el de antes', () => {
     const { rerender } = render(<Ambient />)
     expect(shown()).toBe(DEFAULT_AMBIENT)

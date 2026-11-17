@@ -153,47 +153,19 @@
   color: var(--color-accent-text);
 }
 
-.pdfs {
-  display: grid;
-  gap: var(--space-2);
-  max-block-size: 14rem;
-  margin: var(--space-2) 0 0;
-  padding: 0;
-  overflow: auto;
-  list-style: none;
-}
-
-.pdf {
+/* La IA, solo mencionada (se le pide a ella, por el MCP): una línea gris bajo los caminos */
+.aiMention {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-  inline-size: 100%;
-  padding: var(--space-2) var(--space-3);
-  border: 0;
-  border-radius: 4px;
-  background: none;
-  box-shadow: inset 0 0 0 1px var(--color-border);
-  color: var(--color-text);
-  font: inherit;
-  text-align: start;
-  cursor: pointer;
-}
-
-.pdf > span {
-  display: grid;
-}
-
-.pdf b {
-  font-weight: 600;
-}
-
-.pdf span span {
-  font-size: 0.8rem;
+  gap: var(--space-2);
+  margin: 0;
   color: var(--color-muted);
+  font-size: 0.875rem;
 }
 
-.pdf[aria-pressed="true"] {
-  box-shadow: inset 0 0 0 2px var(--color-accent);
+.aiMention svg {
+  flex: none;
+  color: var(--color-ai);
 }
 
 .fields {
@@ -220,12 +192,6 @@
   padding-inline: var(--space-1);
   font-size: 0.85rem;
   color: var(--color-muted);
-}
-
-.done {
-  margin: 0;
-  color: var(--color-tip);
-  font-weight: 600;
 }
 
 /* La portada, en los ajustes: su nombre y el botón que abre su cuadro */

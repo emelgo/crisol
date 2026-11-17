@@ -3,6 +3,9 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router'
 import {
   BookOpen,
+  CalendarDays,
+  CalendarRange,
+  Files,
   Flag,
   Folder,
   Globe,
@@ -13,7 +16,6 @@ import {
   LayoutTemplate,
   LogOut,
   type LucideIcon,
-  MountainSnow,
   NotebookPen,
   Scale,
   ScrollText,
@@ -36,6 +38,8 @@ import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { historyQuery, trashQuery } from '../api/queries.ts'
+import { LiveActivityNotice, useActivityBadge } from '../campaign-time/activity.tsx'
+import { usePlayerChronologies } from '../chronologies/queries.ts'
 import { useDice } from '../dice/context.tsx'
 import { shownPath } from '../shown-path.ts'
 import { SystemWindow } from '../systems/screen.tsx'
@@ -49,7 +53,7 @@ import { Modal } from './modal.tsx'
 import styles from './ribbon.module.css'
 import { spaceOf } from './spaces.ts'
 import { useWindow } from './window.tsx'
-import { LEAVE_ITEM, LEAVE_WORLD, leaveItem, leaveWorld, SECTION } from './world-transition.ts'
+import { LEAVE_ITEM, LEAVE_WORLD, leaveItem, leaveWorld, SECTION, smoke } from './world-transition.ts'
 
 /** Lo que tarda cada icono del mundo en salir del crisol (o en subir a él) y el paso entre uno y otro: aquí y solo aquí
  * (el nav se los pasa al CSS como --icon-time y --icon-step) */
@@ -304,8 +308,19 @@ export function Ribbon() {
           className={[styles.brand, flame === 'fire' ? styles.cooking : '', flame === 'smoke' ? styles.smoking : '']
             .filter(Boolean)
             .join(' ')}
-          // Dentro de un mundo, salir de él; fuera, como «Mundos»: el cambio rápido de sección
-          {...(inWorld ? { viewTransition: LEAVE_WORLD, onClick: leaveWorld } : { viewTransition: SECTION })}
+          // Dentro de un mundo, salir de él; de un sistema, al revés que al entrar (su icono y su nombre vuelven a su
+          // tarjeta) y con humo; fuera, como «Mundos»: el cambio rápido de sección
+          {...(systemId
+            ? {
+                viewTransition: LEAVE_ITEM,
+                onClick: () => {
+                  leaveItem(systemId, document.getElementById('contenido'))
+                  smoke()
+                }
+              }
+            : inWorld
+              ? { viewTransition: LEAVE_WORLD, onClick: leaveWorld }
+              : { viewTransition: SECTION })}
           data-tour="barra-llama"
           aria-label={t('app.name')}
           translate="no"
@@ -422,7 +437,7 @@ export function Ribbon() {
                 master={campaignRole === 'master'}
               />
             ) : panelsWorld ? (
-              <WorldPanels worldId={panelsWorld} worldName={world?.name ?? ''} master={panelsMaster} />
+              <WorldPanels worldId={panelsWorld} master={panelsMaster} />
             ) : null}
           </div>
         )}
@@ -557,7 +572,7 @@ function SystemPanels({
  * Lo de un mundo: su Inicio y, para quien lo dirige, los paneles de su wiki. Fuera de la wiki, abrir uno
  * lleva a ella con ese panel abierto
  */
-function WorldPanels({ worldId, worldName, master }: { worldId: string; worldName: string; master: boolean }) {
+function WorldPanels({ worldId, master }: { worldId: string; master: boolean }) {
   const { t } = useTranslation()
   const api = useApi()
   const queryClient = useQueryClient()
@@ -566,7 +581,7 @@ function WorldPanels({ worldId, worldName, master }: { worldId: string; worldNam
     void queryClient.prefetchQuery({ queryKey, queryFn, staleTime: 10_000 })
   const prefetchHome = prefetch(['campaigns', worldId], () => api.call('listCampaigns', { worldId }))
   // Quien lo dirige: sus páginas, buscar y sus marcadores (el mundo se abre en su portada, la primera del árbol)
-  if (master) return <WikiPanels worldId={worldId} worldName={worldName} />
+  if (master) return <WikiPanels worldId={worldId} />
   // Quien juega, sin páginas: su Inicio con sus campañas, y los dados
   return (
     <Link
@@ -604,6 +619,9 @@ function CampaignPanels({
   const { setCampaign } = useDice()
   useEffect(() => setCampaign(worldId, campaignId), [setCampaign, worldId, campaignId])
   const params = { worldId, campaignId }
+  const chronologies = usePlayerChronologies(worldId, campaignId, !master)
+  // Lo nuevo desde la última visita (8 · campaña): su número, sobre el icono de la campaña
+  const fresh = useActivityBadge(campaignId)
   type Section = {
     to:
       | '/mundos/$worldId/campanas/$campaignId'
@@ -612,6 +630,7 @@ function CampaignPanels({
       | '/mundos/$worldId/campanas/$campaignId/compendio'
       | '/mundos/$worldId/campanas/$campaignId/aventuras'
       | '/mundos/$worldId/campanas/$campaignId/notas'
+      | '/mundos/$worldId/campanas/$campaignId/cronologias'
     icon: LucideIcon
     text: string
     tour: string
@@ -657,7 +676,19 @@ function CampaignPanels({
       text: t('ribbon.notes'),
       tour: 'barra-notas',
       player: true
-    }
+    },
+    // Las cronologías que el máster le ha enseñado (módulo 8): solo si tiene alguna
+    ...((chronologies.data?.chronologies.length ?? 0) > 0
+      ? [
+          {
+            to: '/mundos/$worldId/campanas/$campaignId/cronologias' as const,
+            icon: CalendarRange,
+            text: t('ribbon.chronologies'),
+            tour: 'barra-cronologias',
+            player: true
+          }
+        ]
+      : [])
   ]
   return (
     <>
@@ -673,20 +704,40 @@ function CampaignPanels({
             viewTransition={SECTION}
             data-tour={section.tour}
           >
-            <Label icon={section.icon} text={section.text} />
+            {section.exact && fresh > 0 ? (
+              <>
+                <Label
+                  icon={section.icon}
+                  glyph={
+                    <span className={styles.badged}>
+                      <section.icon aria-hidden="true" size={20} strokeWidth={1.75} />
+                      <span className={`${styles.badge} ${styles.badgeNew}`} aria-hidden="true">
+                        {fresh > 99 ? '99+' : fresh}
+                      </span>
+                    </span>
+                  }
+                  text={section.text}
+                />
+                <span className={styles.hidden}>{t('campaignTime.badge', { count: fresh })}</span>
+              </>
+            ) : (
+              <Label icon={section.icon} text={section.text} />
+            )}
           </Link>
         ))}
+      <LiveActivityNotice worldId={worldId} campaign={{ id: campaignId, name }} master={master} />
     </>
   )
 }
 
 /** Los paneles de la wiki de un mundo */
-function WikiPanels({ worldId, worldName }: { worldId: string; worldName: string }) {
+function WikiPanels({ worldId }: { worldId: string }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const wikiPanel = useWikiPanel()
   const inWiki = useRouterState({
-    select: (state) => new RegExp(`^/mundos/${worldId}(/(wiki/[^/]+|wiki|buscar|etiquetas))?/?$`).test(shownPath(state))
+    select: (state) =>
+      new RegExp(`^/mundos/${worldId}(/(wiki/[^/]+|wiki|buscar|etiquetas|relaciones))?/?$`).test(shownPath(state))
   })
   const atHome = useRouterState({
     select: (state) => new RegExp(`^/mundos/${worldId}/?$`).test(shownPath(state))
@@ -706,9 +757,8 @@ function WikiPanels({ worldId, worldName }: { worldId: string; worldName: string
   // Marcado si se está en sus páginas (en lo estrecho, con el cajón abierto)
   const shown = (panel: WikiPanel) => inWiki && wikiPanel.panel === panel && (narrow ? wikiPanel.open : true)
   const buttons: { panel: WikiPanel; icon: LucideIcon; text: string; tour: string }[] = [
-    // El mundo (sus páginas, con su nombre), las plantillas y los archivos
-    // El mundo, con su icono propio (no el globo de «Mundos», que es de donde se viene; Enrique, 2026-11-12)
-    { panel: 'pages', icon: MountainSnow, text: worldName, tour: 'barra-wiki' }
+    // Sus páginas (Enrique, 2026-11-16: «Páginas · Calendarios · Archivos»; antes, el nombre del mundo)
+    { panel: 'pages', icon: Files, text: t('ribbon.pages'), tour: 'barra-wiki' }
   ]
   return (
     <>
@@ -724,6 +774,16 @@ function WikiPanels({ worldId, worldName }: { worldId: string; worldName: string
           <Label icon={button.icon} text={button.text} />
         </button>
       ))}
+      {/* Los calendarios del mundo (módulo 8), en su pantalla */}
+      <Link
+        to="/mundos/$worldId/calendarios"
+        params={{ worldId }}
+        className={styles.item}
+        viewTransition={SECTION}
+        data-tour="barra-calendarios"
+      >
+        <Label icon={CalendarDays} text={t('ribbon.calendars')} />
+      </Link>
       {/* Los archivos, en su pantalla (como antes) */}
       <Link
         to="/mundos/$worldId/archivos"

@@ -28,6 +28,8 @@ export interface FoundryZip {
   root: string
   /** Sus mapas de arte (el retrato de cada actor), dentro del zip */
   art: string[]
+  /** Los idiomas de sus textos (los de su manifiesto: «en», «es»…) */
+  languages: string[]
 }
 
 /** Una imagen que nombra lo importado, sacada del zip, con su licencia */
@@ -93,7 +95,11 @@ export function readFoundryZip(bytes: Uint8Array): FoundryZip | null {
     packs,
     scenePacks,
     root,
-    art
+    art,
+    languages: (Array.isArray(manifest.languages) ? manifest.languages : []).flatMap((raw) => {
+      const lang = (raw as { lang?: unknown } | null)?.lang
+      return typeof lang === 'string' ? [lang] : []
+    })
   }
 }
 

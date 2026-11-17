@@ -134,4 +134,33 @@ describe('el resultado sobre el d20', () => {
     await user.click(await toasts().findByRole('button', { name: /Fuerza.*Abrir el historial/ }))
     expect(await screen.findByRole('list', { name: 'Tiradas de la campaña' })).toBeTruthy()
   })
+
+  it('con los dados abiertos no entra en bucle aunque la cuenta llegue como un objeto nuevo en cada pintada (como la de verdad)', async () => {
+    const errors = vi.spyOn(console, 'error')
+    const api = fakeApi({ organizations: [ORG], worlds: [WORLD], campaigns: [CAMPAIGN] })
+    const accounts = fakeAccountClient({ account: { name: 'Enrique', email: 'enrique@crisol.test' } }).client
+    // La cuenta de verdad (account/client.ts) se rehace en cada llamada
+    const fresh = {
+      ...accounts,
+      useAccount: () => {
+        const { account, pending } = accounts.useAccount()
+        return { account: account ? { ...account } : null, pending }
+      }
+    }
+    render(
+      <App
+        router={createAppRouter(
+          createMemoryHistory({ initialEntries: [`/mundos/${WORLD.id}/campanas/${CAMPAIGN.id}/mesa`] })
+        )}
+        accounts={fresh}
+        api={api.client}
+        realtime={fakeRealtime().client}
+      />
+    )
+    const user = userEvent.setup()
+    await user.click(await screen.findByRole('button', { name: 'Dados' }))
+    await new Promise((resolve) => setTimeout(resolve, 300))
+    expect(errors.mock.calls.filter(([message]) => String(message).includes('Maximum update depth'))).toEqual([])
+    errors.mockRestore()
+  })
 })

@@ -1,7 +1,9 @@
 /**
  * El ritmo que pide la spec: calcular un personaje de nivel 20 de un 5e grande (unos 300 campos y 100 objetos) en menos
- * de 20 ms, y validar un sistema de 2 MB en menos de 500 ms. Se mide la mediana, en el mismo proceso que las demás. En
- * test:coverage va aparte y sin la cobertura: el código instrumentado tarda varias veces más y no es el que se usa
+ * de 20 ms, y validar un sistema de 2 MB en menos de 500 ms. Lo que calcula cada caso se comprueba con las demás
+ * pruebas; sus tiempos (la mediana) se miden solos, con CRISOL_RENDIMIENTO (`pnpm --filter @crisol/systems
+ * test:rendimiento` y su paso en la CI): con todo a la vez, lo que se mide es la carga de la máquina. En test:coverage
+ * va aparte y sin la cobertura: el código instrumentado tarda varias veces más y no es el que se usa
  */
 import { describe, expect, it } from 'vitest'
 import { type Build, buildCharacter } from './builder.ts'
@@ -53,90 +55,140 @@ function big(): System {
   return system
 }
 
+/** Un mago de nivel 20 del 5e de ejemplo con todo: rasgos, 40 conjuros y equipo */
+function wizard() {
+  const content = exampleContent('5e')
+  const doc = referenceCharacter(content, {
+    klass: 'mago',
+    edition: '2024',
+    level: 20,
+    scores: { fue: 8, des: 14, con: 14, int: 20, sab: 12, car: 10 },
+    gear: ['baston_2024', 'anillo_de_proteccion_2024', 'capa_de_proteccion_2024']
+  })
+  const spells = content.filter((c) => c.type === 'conjuro' && c.source === 'srd521').slice(0, 40)
+  doc.items = [
+    ...(doc.items ?? []),
+    ...spells.map((c) => ({
+      id: c.key,
+      type: c.type,
+      name: c.key,
+      data: { ...c.data, preparado: true },
+      ...(c.mechanics ? { mechanics: c.mechanics } : {})
+    }))
+  ]
+  return doc
+}
+
+/** Lo que pide el creador para un mago de nivel 20 del 5e */
+function wizardBuild() {
+  const content = exampleContent('5e')
+  const campaign = { sources: ['srd51', 'srd521'], duplicates: 'both' as const }
+  const build: Build = {
+    scores: { base: { fue: 15, des: 14, con: 13, int: 12, sab: 10, car: 8 } },
+    picks: [{ id: 'c1', step: 'clase', key: 'mago_2024', level: 20 }],
+    decisions: { 'c1>subclase@3': ['evocador'] }
+  }
+  return { content, campaign, build }
+}
+
+/** Todo el contenido del 5e de ejemplo, como lo busca el compendio */
+const searchable = () =>
+  exampleContent('5e').map((c) => ({ ...c, name: c.data.name, automation: c.mechanics?.automation ?? null }))
+
+/** Un personaje de nivel 20 del sistema grande, con 100 objetos con efectos */
+function hundredItems() {
+  const system = big()
+  const cars = ['fue', 'des', 'con', 'int', 'sab', 'car']
+  const items: DocumentItem[] = Array.from({ length: 100 }, (_, i) => ({
+    id: `o${i}`,
+    type: 'objeto',
+    name: `Objeto ${i}`,
+    data: { equipado: i % 3 === 0, bono_ca: i % 2, peso: i % 5 },
+    // Efectos de su mecánica: un bono, una armadura, una ventaja
+    mechanics: {
+      effects: [
+        ...(i % 4 === 0 ? [{ target: 'ca', op: 'add' as const, value: '1', when: '@este.equipado' }] : []),
+        ...(i % 10 === 0
+          ? [
+              {
+                target: 'ca',
+                op: 'base' as const,
+                value: `${11 + (i % 7)} + @caracteristicas.des.mod`,
+                when: '@este.equipado'
+              }
+            ]
+          : []),
+        ...(i % 7 === 0 ? [{ target: 'caracteristica', op: 'advantage' as const, when: '@este.equipado' }] : [])
+      ]
+    }
+  }))
+  const doc = {
+    data: {
+      nivel: 20,
+      caracteristicas: Object.fromEntries(cars.map((c, i) => [c, { puntuacion: 10 + i * 2 }])),
+      habilidades: Object.fromEntries(
+        Array.from({ length: 18 }, (_, i) => [`h${i}`, { car: cars[i % 6], grado: i % 3 }])
+      )
+    },
+    items
+  }
+  const fieldCount = Object.keys(system.types.personaje?.fields ?? {}).length + 6 * 2 + 18 * 3
+  return { system, doc, fieldCount }
+}
+
+/** Un sistema de 2 MB: 34 tipos de 120 campos con ayudas largas */
+function twoMegabytes() {
+  const system: System & Record<string, unknown> = {
+    format: FORMAT,
+    id: 'grande',
+    name: 'Grande',
+    version: '1',
+    languages: ['es'],
+    types: {},
+    rolls: {}
+  }
+  const help = 'Una ayuda larga para que el sistema pese lo que pesa uno de verdad. '.repeat(6)
+  for (let t = 0; t < 34; t++) {
+    const fields: Record<string, unknown> = {}
+    for (let f = 0; f < 120; f++)
+      fields[`f${f}`] =
+        f % 4 === 0
+          ? { kind: 'derived', label: `F${f}`, help, formula: `@f${f + 1} + 1` }
+          : { kind: 'number', label: `F${f}`, help, min: 0, max: 99 }
+    system.types[`t${t}`] = { document: t === 0 ? 'actor' : 'item', label: `Tipo ${t}`, fields: fields as never }
+  }
+  const bytes = new TextEncoder().encode(JSON.stringify(system)).length
+  return { system, bytes }
+}
+
+/** Lo que hace Avanzado con cada tecla: leer el JSON, ver su forma, validarlo y saber la línea de cada ruta */
+function typeInAdvanced(text: string) {
+  const parsed = JSON.parse(text) as unknown
+  if (fitsFormat(parsed)) validateSystem(parsed)
+  jsonLines(text)
+}
+
 describe('el ritmo', () => {
-  it('el 5e de ejemplo: un mago de nivel 20 con todo (rasgos, 40 conjuros y equipo), en menos de 20 ms', () => {
-    const content = exampleContent('5e')
-    const doc = referenceCharacter(content, {
-      klass: 'mago',
-      edition: '2024',
-      level: 20,
-      scores: { fue: 8, des: 14, con: 14, int: 20, sab: 12, car: 10 },
-      gear: ['baston_2024', 'anillo_de_proteccion_2024', 'capa_de_proteccion_2024']
-    })
-    const spells = content.filter((c) => c.type === 'conjuro' && c.source === 'srd521').slice(0, 40)
-    doc.items = [
-      ...(doc.items ?? []),
-      ...spells.map((c) => ({
-        id: c.key,
-        type: c.type,
-        name: c.key,
-        data: { ...c.data, preparado: true },
-        ...(c.mechanics ? { mechanics: c.mechanics } : {})
-      }))
-    ]
-    expect(evaluate(fiveE, 'personaje', doc).problems).toEqual([])
-    expect(median(() => evaluate(fiveE, 'personaje', doc), 15)).toBeLessThan(20)
+  it('el 5e de ejemplo: un mago de nivel 20 con todo (rasgos, 40 conjuros y equipo) se calcula sin problemas', () => {
+    expect(evaluate(fiveE, 'personaje', wizard()).problems).toEqual([])
   })
 
-  it('el creador: lo pendiente de un mago de nivel 20 del 5e, en menos de 20 ms', () => {
-    const content = exampleContent('5e')
-    const campaign = { sources: ['srd51', 'srd521'], duplicates: 'both' as const }
-    const build: Build = {
-      scores: { base: { fue: 15, des: 14, con: 13, int: 12, sab: 10, car: 8 } },
-      picks: [{ id: 'c1', step: 'clase', key: 'mago_2024', level: 20 }],
-      decisions: { 'c1>subclase@3': ['evocador'] }
-    }
-    buildCharacter(fiveE, content, campaign, build)
-    expect(median(() => buildCharacter(fiveE, content, campaign, build), 9)).toBeLessThan(20)
+  it('el creador: lo pendiente de un mago de nivel 20 del 5e se calcula', () => {
+    const { content, campaign, build } = wizardBuild()
+    const built = buildCharacter(fiveE, content, campaign, build)
+    expect(built.level).toBe(20)
+    expect(built.missing).toEqual([])
   })
 
-  it('buscar en todo el contenido del 5e de ejemplo (más de 3000 documentos), en menos de 100 ms', () => {
-    const entries = exampleContent('5e').map((c) => ({
-      ...c,
-      name: c.data.name,
-      automation: c.mechanics?.automation ?? null
-    }))
+  it('buscar en todo el contenido del 5e de ejemplo (más de 3000 documentos) encuentra', () => {
+    const entries = searchable()
+    expect(entries.length).toBeGreaterThan(3000)
     expect(searchContent(fiveE, entries, { query: 'bola de fuego' }).total).toBeGreaterThan(0)
-    expect(median(() => searchContent(fiveE, entries, { query: 'espada', duplicates: 'newest' }), 15)).toBeLessThan(100)
+    expect(searchContent(fiveE, entries, { query: 'espada', duplicates: 'newest' }).total).toBeGreaterThan(0)
   })
 
-  it('un personaje de nivel 20 con 100 objetos, en menos de 20 ms', () => {
-    const system = big()
-    const cars = ['fue', 'des', 'con', 'int', 'sab', 'car']
-    const items: DocumentItem[] = Array.from({ length: 100 }, (_, i) => ({
-      id: `o${i}`,
-      type: 'objeto',
-      name: `Objeto ${i}`,
-      data: { equipado: i % 3 === 0, bono_ca: i % 2, peso: i % 5 },
-      // Efectos de su mecánica: un bono, una armadura, una ventaja
-      mechanics: {
-        effects: [
-          ...(i % 4 === 0 ? [{ target: 'ca', op: 'add' as const, value: '1', when: '@este.equipado' }] : []),
-          ...(i % 10 === 0
-            ? [
-                {
-                  target: 'ca',
-                  op: 'base' as const,
-                  value: `${11 + (i % 7)} + @caracteristicas.des.mod`,
-                  when: '@este.equipado'
-                }
-              ]
-            : []),
-          ...(i % 7 === 0 ? [{ target: 'caracteristica', op: 'advantage' as const, when: '@este.equipado' }] : [])
-        ]
-      }
-    }))
-    const doc = {
-      data: {
-        nivel: 20,
-        caracteristicas: Object.fromEntries(cars.map((c, i) => [c, { puntuacion: 10 + i * 2 }])),
-        habilidades: Object.fromEntries(
-          Array.from({ length: 18 }, (_, i) => [`h${i}`, { car: cars[i % 6], grado: i % 3 }])
-        )
-      },
-      items
-    }
-    const fieldCount = Object.keys(system.types.personaje?.fields ?? {}).length + 6 * 2 + 18 * 3
+  it('un personaje de nivel 20 con 100 objetos: más de 300 campos, la CA con sus bonos y las ventajas', () => {
+    const { system, doc, fieldCount } = hundredItems()
     expect(fieldCount).toBeGreaterThanOrEqual(300)
     const once = evaluate(system, 'personaje', doc)
     expect(once.computed.c29?.error).toBeUndefined()
@@ -144,50 +196,14 @@ describe('el ritmo', () => {
     expect(once.computed.ca?.terms.filter((t) => t.kind === 'bonus')).toHaveLength(26)
     expect(once.computed.ca?.terms[0]).toMatchObject({ kind: 'base', value: 17, origin: 'o90' })
     expect(once.advantages.caracteristica).toHaveLength(5)
-    const ms = median(() => evaluate(system, 'personaje', doc), 30)
-    console.info(`Nivel 20 (${fieldCount} campos, 100 objetos): ${ms.toFixed(2)} ms de mediana`)
-    expect(ms).toBeLessThan(20)
   })
 
-  it('validar un sistema de 2 MB, en menos de 500 ms', () => {
-    const system: System & Record<string, unknown> = {
-      format: FORMAT,
-      id: 'grande',
-      name: 'Grande',
-      version: '1',
-      languages: ['es'],
-      types: {},
-      rolls: {}
-    }
-    const help = 'Una ayuda larga para que el sistema pese lo que pesa uno de verdad. '.repeat(6)
-    for (let t = 0; t < 34; t++) {
-      const fields: Record<string, unknown> = {}
-      for (let f = 0; f < 120; f++)
-        fields[`f${f}`] =
-          f % 4 === 0
-            ? { kind: 'derived', label: `F${f}`, help, formula: `@f${f + 1} + 1` }
-            : { kind: 'number', label: `F${f}`, help, min: 0, max: 99 }
-      system.types[`t${t}`] = { document: t === 0 ? 'actor' : 'item', label: `Tipo ${t}`, fields: fields as never }
-    }
-    const bytes = new TextEncoder().encode(JSON.stringify(system)).length
+  it('un sistema de 2 MB vale, y escribir en Avanzado lo lee', () => {
+    const { system, bytes } = twoMegabytes()
     expect(bytes).toBeGreaterThan(1.8 * 1024 * 1024)
     expect(bytes).toBeLessThan(2 * 1024 * 1024)
     expect(validateSystem(system).problems).toEqual([])
-    const ms = median(() => validateSystem(system), 5)
-    console.info(`Validar ${(bytes / 1024 / 1024).toFixed(2)} MB: ${ms.toFixed(0)} ms de mediana`)
-    expect(ms).toBeLessThan(500)
-
-    // Lo que hace Avanzado con cada tecla: leer el JSON, ver su forma, validarlo y saber la línea de cada ruta
-    const text = JSON.stringify(system, null, 2)
-    const typing = median(() => {
-      const parsed = JSON.parse(text) as unknown
-      if (fitsFormat(parsed)) validateSystem(parsed)
-      jsonLines(text)
-    }, 5)
-    console.info(
-      `Escribir en Avanzado (${(text.length / 1024 / 1024).toFixed(2)} MB de texto): ${typing.toFixed(0)} ms de mediana`
-    )
-    expect(typing).toBeLessThan(500)
+    expect(() => typeInAdvanced(JSON.stringify(system, null, 2))).not.toThrow()
   })
 
   // Los ataques de las revisiones de código y de seguridad: un documento pequeño no puede bloquear el servidor
@@ -284,5 +300,45 @@ describe('el ritmo', () => {
       const problems = validateSystem({ ...base, id: 'e', name: 'E', types }).problems.map((p) => p.message)
       expect(problems.some((m) => m.startsWith('No existe la función «constructor»'))).toBe(true)
     })
+  })
+})
+
+// Se mide sola (CRISOL_RENDIMIENTO=1, su paso en la CI y `pnpm --filter @crisol/systems test:rendimiento`): con las
+// demás pruebas a la vez, y con la cobertura, lo que se mide es la carga de la máquina
+describe.skipIf(!process.env.CRISOL_RENDIMIENTO)('rendimiento de los sistemas', () => {
+  it('el 5e de ejemplo: un mago de nivel 20 con todo (rasgos, 40 conjuros y equipo), en menos de 20 ms', () => {
+    const doc = wizard()
+    expect(median(() => evaluate(fiveE, 'personaje', doc), 15)).toBeLessThan(20)
+  })
+
+  it('el creador: lo pendiente de un mago de nivel 20 del 5e, en menos de 20 ms', () => {
+    const { content, campaign, build } = wizardBuild()
+    buildCharacter(fiveE, content, campaign, build)
+    expect(median(() => buildCharacter(fiveE, content, campaign, build), 9)).toBeLessThan(20)
+  })
+
+  it('buscar en todo el contenido del 5e de ejemplo (más de 3000 documentos), en menos de 100 ms', () => {
+    const entries = searchable()
+    expect(median(() => searchContent(fiveE, entries, { query: 'espada', duplicates: 'newest' }), 15)).toBeLessThan(100)
+  })
+
+  it('un personaje de nivel 20 con 100 objetos, en menos de 20 ms', () => {
+    const { system, doc, fieldCount } = hundredItems()
+    const ms = median(() => evaluate(system, 'personaje', doc), 30)
+    console.info(`Nivel 20 (${fieldCount} campos, 100 objetos): ${ms.toFixed(2)} ms de mediana`)
+    expect(ms).toBeLessThan(20)
+  })
+
+  it('validar un sistema de 2 MB, en menos de 500 ms', () => {
+    const { system, bytes } = twoMegabytes()
+    const ms = median(() => validateSystem(system), 5)
+    console.info(`Validar ${(bytes / 1024 / 1024).toFixed(2)} MB: ${ms.toFixed(0)} ms de mediana`)
+    expect(ms).toBeLessThan(500)
+    const text = JSON.stringify(system, null, 2)
+    const typing = median(() => typeInAdvanced(text), 5)
+    console.info(
+      `Escribir en Avanzado (${(text.length / 1024 / 1024).toFixed(2)} MB de texto): ${typing.toFixed(0)} ms de mediana`
+    )
+    expect(typing).toBeLessThan(500)
   })
 })

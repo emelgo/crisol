@@ -9,7 +9,7 @@ import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/cli
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { startServer } from '../server.ts'
-import { seedExampleTemplates, signUpTestUser, TEST_AUTH_SECRET, testDataDir } from '../testing.ts'
+import { seedExampleTemplates, signUpTestUser, TEST_AUTH_SECRET, TEST_CALENDAR, testDataDir } from '../testing.ts'
 import { mcpTestHelpers } from './test-client.ts'
 
 type History = { entries: HistoryEntry[] }
@@ -607,7 +607,7 @@ describe('conector MCP con OAuth', () => {
     expect(entries[0]).toMatchObject({ action: 'editPage', via: 'ai', tool: 'editar_pagina' })
   })
 
-  it('la IA tira: en una campaña, oculta por defecto y marcada como de la IA; sin campaña, solo el resultado', async () => {
+  it('la IA tira (en una campaña, oculta por defecto; sin campaña, solo el resultado) y lleva el «hoy» de una campaña', async () => {
     const { call } = await connected()
     const world = (await call<World>('crear_mundo', { name: 'Eana' })).data
     const campaign = (await call<Campaign>('crear_campana', { worldId: world.id, name: 'La Marca' })).data
@@ -632,6 +632,48 @@ describe('conector MCP con OAuth', () => {
     const bad = await call('tirar_dados', { formula: '1d20+' })
     expect(bad.isError).toBe(true)
     expect(bad.text).toContain('No se entiende «1d20+» al final')
+
+    // El «hoy» de una campaña (8 · campaña), con la misma conexión: los tokens de OAuth tienen tope
+    const eana = (await call<World>('crear_mundo', { name: 'Eana' })).data
+    const marca = (await call<Campaign>('crear_campana', { worldId: eana.id, name: 'La Marca' })).data
+    const calendar = await call('crear_calendario', {
+      worldId: eana.id,
+      name: 'Eana',
+      from: { definition: TEST_CALENDAR }
+    })
+    expect(calendar.isError, calendar.text).toBeFalsy()
+    expect((await call('cambiar_fecha', { campaignId: marca.id, days: 1 })).text).toContain('NO_TODAY')
+    const set = await call<{ today: { form: string } }>('cambiar_fecha', {
+      campaignId: marca.id,
+      date: '1250-Siega-18'
+    })
+    expect(set.data.today.form).toBe('1250-Siega-18')
+    const today = await call<{ forecast: unknown[]; weather: { condition: string } }>('fecha_de_hoy', {
+      campaignId: marca.id
+    })
+    expect(today.data.forecast).toHaveLength(7)
+    const days = await call<{ days: Array<{ form: string }> }>('ver_clima', { campaignId: marca.id, days: 3 })
+    expect(days.data.days.map((d) => d.form)).toEqual(['1250-Siega-18', '1250-Siega-19', '1250-Siega-20'])
+    const changed = await call('cambiar_clima', {
+      campaignId: marca.id,
+      weather: { condition: 'fog', low: 2, high: 6, wind: 'calm', windDirection: 'N' }
+    })
+    expect(changed.isError, changed.text).toBeFalsy()
+    const plan = await call<{ days: number; arrival: { form: string } }>('planear_viaje', {
+      campaignId: marca.id,
+      distance: 48,
+      medium: 'foot'
+    })
+    expect(plan.data).toMatchObject({ days: 2, arrival: { form: '1250-Siega-20' } })
+    const done = await call<{ today: { form: string } }>('planear_viaje', {
+      campaignId: marca.id,
+      distance: 48,
+      advance: true,
+      zone: 'coast'
+    })
+    expect(done.data.today.form).toBe('1250-Siega-20')
+    const activity = await call<{ count: number }>('actividad_campana', { campaignId: marca.id })
+    expect(activity.isError, activity.text).toBeFalsy()
   })
 
   it('la IA crea una tabla del mundo y tira en ella: oculta por defecto; luego la reinicia', async () => {
@@ -955,9 +997,170 @@ describe('conector MCP con OAuth', () => {
       body: JSON.stringify({ secret: link.url.split('/unirse/')[1] })
     })
     const player = await connectAs(ana, cookie)
+    // Los calendarios (módulo 8): la IA del máster crea el de Eana de una vez y lo describe; la de la jugadora los lee
+    // sin las eras solo del máster, por ninguna herramienta, y no los cambia
+    const fest = (name: string) => ({ name, days: 7, festival: true })
+    const month = (name: string) => ({ name, days: 28 })
+    const months = [
+      fest('Alba Triste'),
+      ...['Cierzo', 'Escarcha', 'Deshielo'].map(month),
+      fest('Carnaval'),
+      ...['Siembra', 'Florida', 'Pastos'].map(month),
+      fest('Semana del Yunque'),
+      ...['Siega', 'Trilla', 'Vendimia'].map(month),
+      fest('Semana de las Hermanas'),
+      ...['Hojarasca', 'Brumas', 'Nochelarga'].map(month)
+    ]
+    const definition = {
+      yearSuffix: 'RC',
+      weekdays: ['Herrero', 'Hacedor', 'Muerte', 'Frostelle', 'Flora', 'Eternidad', 'Melancolía'],
+      months,
+      seasons: [
+        { name: 'Invierno', startDay: 1, endDay: 91 },
+        { name: 'Primavera', startDay: 92, endDay: 182 },
+        { name: 'Verano', startDay: 183, endDay: 273 },
+        { name: 'Otoño', startDay: 274, endDay: 364 }
+      ],
+      moons: [
+        { name: 'Melancolía', cycleDays: 28, offsetDays: -1.25 },
+        { name: 'Eternidad', cycleDays: 91, offsetDays: 48.1875 }
+      ],
+      eras: [
+        { name: 'Era de los Nuevos Reinos', start: '-980', end: '-1' },
+        { name: 'Era del Eclipse', start: '1300-Siega-1', hidden: true },
+        { name: 'Era de la República', abbreviation: 'ER', start: '0' }
+      ]
+    }
+    // Con un problema, la IA lee cuál
+    const wrong = await call('crear_calendario', {
+      worldId: world.id,
+      name: 'Eana',
+      from: { definition: { ...definition, seasons: [{ name: 'Larga', startDay: 1, endDay: 400 }] } }
+    })
+    expect(wrong.text).toContain('BAD_CALENDAR')
+    expect(wrong.text).toContain('«Larga» debe empezar y acabar entre el día 1 y el 364 del año')
+    const madeCalendar = await call<{ id: string; primary: boolean }>('crear_calendario', {
+      worldId: world.id,
+      name: 'Eana',
+      from: { definition }
+    })
+    expect(madeCalendar.isError, madeCalendar.text).toBeFalsy()
+    expect(madeCalendar.data.primary).toBe(true)
+    const described = await call<{ date: { text: string; season: string; era: { name: string } } }>('describir_fecha', {
+      worldId: world.id,
+      date: '1250-Siega-18'
+    })
+    expect(described.data.date).toMatchObject({
+      text: 'Frostelle, 18 de Siega de 1250 RC',
+      season: 'Verano',
+      era: { name: 'Era de la República' }
+    })
+    const seen = await call<{ months: { name: string; number: number | null }[] }>('ver_calendario', {
+      calendarId: madeCalendar.data.id
+    })
+    expect(seen.data.months.find((m) => m.name === 'Siega')?.number).toBe(7)
+    const calendar = madeCalendar.data
+    for (const [tool, args] of [
+      ['listar_calendarios', { worldId: world.id }],
+      ['ver_calendario', { calendarId: calendar.id }],
+      ['describir_fecha', { calendarId: calendar.id, date: '1300-Siega-5' }]
+    ] as const) {
+      const result = await player.call(tool, args)
+      expect(result.isError, result.text).toBeFalsy()
+      expect(result.text).toContain('Era de la República')
+      expect(result.text).not.toContain('Eclipse')
+    }
+    expect((await player.call('borrar_calendario', { calendarId: calendar.id })).isError).toBe(true)
+    // Las fechas (módulo 8): la IA del máster fecha Aldoria con la forma 1250-Siega-18 y la lee legible; mal escrita,
+    // dice por qué. Un campo «Oculto» de fecha no le llega a la de la jugadora
+    await api(cookie, 'setPageProperties', {
+      pageId: aldoria,
+      properties: [{ name: 'Coronación', type: 'date', hidden: true, value: null }]
+    })
+    const dated = await call('editar_pagina', {
+      pageId: aldoria,
+      properties: [
+        { name: 'Fundación', type: 'date', value: '1250-Siega-12/1250-Trilla-3' },
+        { name: 'Coronación', type: 'date', value: '1302-Vendimia-5' }
+      ]
+    })
+    expect(dated.isError, dated.text).toBeFalsy()
+    const badly = await call('editar_pagina', {
+      pageId: aldoria,
+      properties: [{ name: 'Fundación', type: 'date', value: '1250-Nada-3' }]
+    })
+    expect(badly.text).toMatch(/^BAD_DATE.*Nada/)
+    const masterDates = (await call<{ dates: { name: string; text: string }[] }>('leer_pagina', { pageId: aldoria }))
+      .data.dates
+    expect(masterDates).toEqual([
+      expect.objectContaining({ name: 'Fundación', text: '12 de Siega – 3 de Trilla de 1250 RC' }),
+      expect.objectContaining({ name: 'Coronación', text: '5 de Vendimia de 1302 RC' })
+    ])
+    // Las cronologías (módulo 8): la IA del máster pasa una de una vez con crear_eventos y la lee en orden con
+    // ver_cronologia (las páginas con fecha salen solas); mal fechada, dice cuál. La de la jugadora solo ve la
+    // revelada, sin lo oculto ni el campo oculto de fecha
+    const events = await call('crear_eventos', {
+      worldId: world.id,
+      events: [
+        { title: 'Boda de Aldren', date: '1250-Siega-18', group: 'La Corona' },
+        { title: 'Campaña de los Pasos', date: '1250-Siega-20/1250-Trilla-3', group: 'Guerras' },
+        { title: 'Feria de Vendimia', date: '413-Vendimia-1 (cada año)' },
+        { title: 'Secreto del rey', date: '1251', hidden: true }
+      ]
+    })
+    expect(events.isError, events.text).toBeFalsy()
+    const misdated = await call('crear_eventos', {
+      worldId: world.id,
+      events: [
+        { title: 'Bien', date: '1250' },
+        { title: 'Mal', date: '1250-Nada-3' }
+      ]
+    })
+    expect(misdated.text).toMatch(/^BAD_DATE.*n\.º 2/)
+    const chronology = await call<{ id: string }>('crear_cronologia', { worldId: world.id, name: 'Historia' })
+    expect(chronology.isError, chronology.text).toBeFalsy()
+    const timeline = await call<{ entries: { title: string; form: string; field?: string }[] }>('ver_cronologia', {
+      chronologyId: chronology.data.id
+    })
+    expect(timeline.data.entries.map((e) => [e.title, e.field ?? null, e.form])).toEqual([
+      ['Feria de Vendimia', null, '413-Vendimia-1 (cada año)'],
+      ['Aldoria', 'Fundación', '1250-Siega-12/1250-Trilla-3'],
+      ['Boda de Aldren', null, '1250-Siega-18'],
+      ['Campaña de los Pasos', null, '1250-Siega-20/1250-Trilla-3'],
+      ['Secreto del rey', null, '1251'],
+      ['Aldoria', 'Coronación', '1302-Vendimia-5']
+    ])
+    expect((await player.call('ver_cronologia', { chronologyId: chronology.data.id })).isError).toBe(true)
+    await api(cookie, 'setKnowledge', {
+      worldId: world.id,
+      campaignId: campaign.id,
+      kind: 'chronology',
+      targetId: chronology.data.id,
+      known: true
+    })
+    const theirs = await player.call<{ entries: { title: string }[] }>('ver_cronologia', {
+      chronologyId: chronology.data.id
+    })
+    expect(theirs.data.entries.map((e) => e.title)).toEqual([
+      'Feria de Vendimia',
+      'Aldoria',
+      'Boda de Aldren',
+      'Campaña de los Pasos'
+    ])
+    for (const leak of ['Secreto', 'Coronación', '1302']) expect(theirs.text).not.toContain(leak)
+    const listed = await player.call('listar_cronologias', { worldId: world.id })
+    expect(listed.text).toContain('Historia')
+    expect(
+      (await player.call('crear_eventos', { worldId: world.id, events: [{ title: 'x', date: '1' }] })).isError
+    ).toBe(true)
     const own = (await player.call<{ pages: { title: string }[] }>('ver_arbol', { worldId: world.id })).data
     expect(own.pages.map((p) => p.title)).toEqual(['Aldoria'])
-    const read = (await player.call<{ markdown: string }>('leer_pagina', { pageId: aldoria })).data
+    const readCall = await player.call<{ markdown: string; dates: { name: string }[] }>('leer_pagina', {
+      pageId: aldoria
+    })
+    const read = readCall.data
+    expect(read.dates.map((d) => d.name)).toEqual(['Fundación'])
+    for (const leak of ['Coronación', 'Vendimia', '1302']) expect(readCall.text).not.toContain(leak)
     expect(read.markdown).toContain('Un reino.')
     expect(read.markdown).not.toContain('El rey ha muerto')
     expect((await player.call('leer_pagina', { pageId: varn })).isError).toBe(true)
@@ -996,8 +1199,9 @@ describe('conector MCP con OAuth', () => {
     const waiting = (await call<Approvals>('pendientes')).data.pending
     expect(waiting[0]).toMatchObject({ tool: 'revelar', details: { kind: 'page', name: 'Varn', known: true } })
     await api(cookie, 'approve', { approvalId: waiting[0]?.id })
+    // (la cronología revelada arriba, también)
     const group = (await call<{ campaign: { name: string }[] }>('lo_que_sabe', { campaignId: campaign.id })).data
-    expect(group.campaign.map((k) => k.name)).toEqual(['Varn', 'Diario', 'Aldoria'])
+    expect(group.campaign.map((k) => k.name)).toEqual(['Varn', 'Diario', 'Historia', 'Aldoria'])
     expect((await player.call('leer_pagina', { pageId: varn })).isError).toBeFalsy()
     expect((await player.call('revelar', { worldId: world.id, kind: 'page', targetId: aldoria })).text).toMatch(
       /^READ_ONLY/

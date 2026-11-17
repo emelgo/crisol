@@ -18,6 +18,7 @@ import { RollLog } from './log.tsx'
 import { RollNotices } from './notices.tsx'
 import { EMPTY, poolReducer } from './pool.ts'
 import { DiceRack } from './rack.tsx'
+import { useTray } from './tray.tsx'
 
 /** Lo que se puede enfocar dentro de la hoja, para que el foco no salga de ella */
 const FOCUSABLE =
@@ -79,6 +80,7 @@ function WorldDice({ worldId }: { worldId: string }) {
           )}
           <Tour
             id="dados"
+            helpInPlace
             steps={[
               { target: '[data-tour="dados-columna"]', text: t('tour.dice.card'), placement: 'left' },
               { target: '[data-tour="dados-historial"]', text: t('tour.dice.roll'), placement: 'left' }
@@ -154,6 +156,7 @@ function CampaignChooser({ worldId, list, chosen }: { worldId: string; list: Cam
 function DiceLauncher() {
   const { t } = useTranslation()
   const dice = useDice()
+  const tray = useTray()
   return (
     <button
       type="button"
@@ -162,6 +165,8 @@ function DiceLauncher() {
       title={t('ribbon.dice')}
       data-tour="dados"
       onClick={dice.toggle}
+      onPointerEnter={tray.prepare}
+      onFocus={tray.prepare}
     >
       {/* Su nombre, en texto (no aria-label): el «20» del dibujo se lee como texto visible (WCAG 2.5.3) */}
       <span className={styles.hidden}>{t('ribbon.dice')}</span>

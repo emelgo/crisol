@@ -26,8 +26,7 @@ import styles from './rules.module.css'
 export const STEPS = ['personaje', 'tiradas', 'objetos', 'ficha', 'creacion', 'compendio', 'avanzado'] as const
 export type Step = (typeof STEPS)[number]
 
-/** Un cambio en el borrador: sobre una copia; con `undo`, lo que se quitó (sale «Deshacer») */
-export type Change = (fn: (draft: System) => void, undo?: string) => void
+import type { Change } from './change.ts'
 
 /** De qué paso es un aviso, por su ruta */
 export function stepOf(path: string, system: System): Step {

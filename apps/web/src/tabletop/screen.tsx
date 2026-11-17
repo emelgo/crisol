@@ -37,6 +37,7 @@ import toolStyles from './tools.module.css'
 import { markShapes, measureLabels, measureShapes } from './tools.ts'
 import { useTableRenderer } from './use-renderer.ts'
 import { fitCanvas, pyramidOf } from './view.ts'
+import { WeatherLayer } from './weather-layer.tsx'
 import { WidgetCards } from './widgets.tsx'
 
 const LASER_COLOR = 0xff3b3b
@@ -138,17 +139,6 @@ export function TableScreen({
     const timer = setTimeout(() => setNotice(null), NOTICE_MS)
     return () => clearTimeout(timer)
   }, [notice])
-  // La tele, siempre oscura (con el tema claro, los relojes y los nombres no se leían sobre el mapa)
-  useEffect(() => {
-    if (inMesa) return
-    const root = document.documentElement
-    const before = root.dataset.theme
-    root.dataset.theme = 'dark'
-    return () => {
-      if (before) root.dataset.theme = before
-      else delete root.dataset.theme
-    }
-  }, [])
   // La vista de ahora (para colocar los textos, sellos y pines) y su capa
   const shownView = useRef<Viewport>({ x: 0, y: 0, scale: 1 })
   const marksLayer = useRef<HTMLDivElement | null>(null)
@@ -450,6 +440,7 @@ export function TableScreen({
         onPointerUp={inMesa ? onPointerUp : undefined}
         onPointerCancel={inMesa ? onPointerUp : undefined}
       />
+      {!dark && <WeatherLayer layer={screen?.weather ?? null} />}
       {!dark && <MarksLayer layer={marksLayer} view={shownView} marks={marks} big />}
       {!dark && <Bubbles layer={bubblesLayer} bubbles={bubbles} />}
       {!dark && doors.length > 0 && (

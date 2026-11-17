@@ -1,0 +1,622 @@
+/*
+ * La pantalla del máster: un cajón de cristal que sube desde abajo del mapa, con su cabecera (el título, la G, las
+ * cuatro columnas que se encienden y apagan, la escena y la X) y sus columnas, cada una con su desplazamiento
+ */
+
+.srOnly {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.drawer {
+  position: absolute;
+  inset-inline: 4.25rem calc(24rem + 1.5rem);
+  inset-block-end: 0.75rem;
+  /* Encima de la tira del registro (como en el lienzo), debajo de los menús */
+  z-index: 21;
+  display: flex;
+  flex-direction: column;
+  block-size: min(34rem, 62%);
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--radius-frame);
+  overflow: hidden;
+  background: var(--glass-sheen), var(--glass-panel);
+  box-shadow:
+    inset 0 1px 0 var(--glass-hi),
+    var(--glass-shadow);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  animation: rise 220ms ease-out;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  padding: 0.6rem 0.75rem 0.6rem 1rem;
+  border-block-end: 1px solid var(--line-soft);
+}
+
+.head h2 {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  color: var(--color-h2);
+  font: 800 1.25rem / 1 var(--font-display);
+  text-transform: uppercase;
+}
+
+.key {
+  display: inline-grid;
+  place-items: center;
+  min-inline-size: 1.25rem;
+  block-size: 1.25rem;
+  border: 1px solid var(--line-frame);
+  border-radius: 4px;
+  color: var(--color-muted);
+  font: 700 0.6875rem / 1 var(--font-body);
+}
+
+.toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0 0 0 0.5rem;
+  padding: 0;
+  border: 0;
+}
+
+.toggles label {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-button);
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.toggles label:hover {
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+}
+
+.toggles label[data-on] {
+  color: var(--color-text);
+}
+
+.toggles input {
+  inline-size: 0.95rem;
+  block-size: 0.95rem;
+  margin: 0;
+  accent-color: var(--color-muted);
+}
+
+.scene {
+  margin-inline-start: auto;
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+}
+
+.close {
+  display: grid;
+  place-items: center;
+  inline-size: 1.875rem;
+  block-size: 1.875rem;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.close:hover {
+  background: color-mix(in srgb, var(--color-text) 10%, transparent);
+  color: var(--color-text);
+}
+
+.body {
+  display: grid;
+  flex: 1;
+  /* Lo que se lee, casi opaco (docs/diseno.md): el mapa no se trasluce entre las columnas */
+  background: var(--surface-read);
+  grid-template-columns: repeat(var(--columns), minmax(15rem, 1fr));
+  min-block-size: 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+  min-block-size: 0;
+}
+
+.column + .column {
+  border-inline-start: 1px solid var(--line-soft);
+}
+
+.columnHead {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.65rem 1rem 0.4rem;
+  color: var(--color-muted);
+}
+
+.columnHead h3 {
+  margin: 0;
+  color: var(--color-muted);
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.count {
+  margin-inline-start: auto;
+  font-size: 0.75rem;
+}
+
+.columnBody {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.6rem;
+  min-block-size: 0;
+  padding: 0.25rem 1rem 1rem;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.empty {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-inline-start: auto;
+  padding: 2px 4px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--color-link);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.link:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-link) 12%, transparent);
+}
+
+.link:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* Las criaturas */
+.statblock {
+  position: relative;
+}
+
+.times {
+  position: absolute;
+  inset-block-start: 0.3rem;
+  inset-inline-end: 0;
+  z-index: 1;
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.folded {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  inline-size: 100%;
+  padding: 0.55rem 0.6rem;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-button);
+  background: color-mix(in srgb, var(--color-bg) 25%, transparent);
+  color: var(--color-text);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.folded:hover {
+  border-color: var(--line-frame);
+}
+
+.folded span {
+  margin-inline-start: auto;
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+}
+
+/* Los personajes */
+.people {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.person {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.7rem;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-button);
+  background: color-mix(in srgb, var(--color-bg) 25%, transparent);
+}
+
+.personHead {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.avatar {
+  display: grid;
+  flex: none;
+  place-items: center;
+  inline-size: 2rem;
+  block-size: 2rem;
+  border-radius: 50%;
+  color: #ffffff;
+  font-weight: 700;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.4);
+}
+
+.who {
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+}
+
+.who b {
+  font-size: 0.9375rem;
+}
+
+.who span {
+  overflow: hidden;
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.3rem;
+  margin: 0;
+}
+
+.stats div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.3rem 0.2rem;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--color-text) 6%, transparent);
+}
+
+.stats dt {
+  color: var(--color-muted);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.stats dd {
+  margin: 0;
+  font: 800 1.125rem / 1.1 var(--font-display);
+  font-variant-numeric: tabular-nums;
+}
+
+.stats small {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+}
+
+.bar {
+  display: block;
+  block-size: 4px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--color-text) 10%, transparent);
+}
+
+.bar span {
+  display: block;
+  block-size: 100%;
+  background: #4fae8a;
+}
+
+.bar span[data-low] {
+  background: #d9a441;
+}
+
+.conditions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin: 0;
+}
+
+.conditions span {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, #d9a441 18%, transparent);
+  color: #f0c56a;
+  font-size: 0.6875rem;
+  font-weight: 700;
+}
+
+/* La nota */
+.picker input {
+  inline-size: 100%;
+  min-block-size: 2rem;
+  padding: 0 0.6rem;
+  border: 1px solid var(--color-field-border);
+  border-radius: var(--radius-button);
+  background: var(--field-fill);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.875rem;
+}
+
+.note h4 {
+  margin: 0;
+  color: var(--color-text);
+  font: 800 1.25rem / 1.1 var(--font-display);
+  text-transform: uppercase;
+}
+
+.noteLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-block: 0.25rem 0.5rem;
+  color: var(--color-link);
+  font-size: 0.8125rem;
+}
+
+/* Las tablas */
+.addRoot {
+  position: relative;
+  margin-inline-start: auto;
+}
+
+.addMenu {
+  position: absolute;
+  inset-block-start: calc(100% + 0.35rem);
+  inset-inline-end: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  inline-size: 16rem;
+  max-block-size: 16rem;
+  overflow-y: auto;
+  padding: 4px;
+  border: 1px solid var(--glass-edge);
+  border-radius: 8px;
+  background: var(--popup-glass);
+  -webkit-backdrop-filter: var(--popup-blur);
+  backdrop-filter: var(--popup-blur);
+  box-shadow: 0 0.75rem 2rem rgb(0 0 0 / 0.4);
+}
+
+.addMenu button {
+  display: flex;
+  flex-direction: column;
+  padding: 0.4rem 0.5rem;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.875rem;
+  text-align: start;
+  cursor: pointer;
+}
+
+.addMenu button:hover {
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+}
+
+.addMenu button span {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+}
+
+.visible {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.visible input {
+  accent-color: var(--color-accent);
+}
+
+.result {
+  padding: 0.55rem 0.7rem;
+  border: 1px solid color-mix(in srgb, var(--color-secret-text) 40%, transparent);
+  border-radius: var(--radius-button);
+  background: color-mix(in srgb, var(--color-secret) 22%, transparent);
+  font-size: 0.8125rem;
+  animation: rise 220ms ease-out;
+}
+
+.result p {
+  margin: 0;
+}
+
+.resultHead {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-block-end: 0.3rem;
+  color: var(--color-secret-text);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.resultHead b {
+  margin-inline-start: auto;
+  color: var(--color-text);
+  font: 800 1.5rem / 1 var(--font-display);
+}
+
+.tables {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tableCard {
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-button);
+  background: color-mix(in srgb, var(--color-bg) 25%, transparent);
+}
+
+.tableHead {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.4rem 0.4rem 0.3rem;
+}
+
+.tableToggle {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 0.35rem;
+  min-inline-size: 0;
+  padding: 0.25rem;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.9375rem;
+  text-align: start;
+  cursor: pointer;
+}
+
+.tableToggle b {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-height: 1.2;
+}
+
+.formula {
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+}
+
+.roll {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0.25rem 0.5rem;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: #ff8f80;
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.roll:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-accent) 16%, transparent);
+}
+
+.roll:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.remove {
+  display: grid;
+  place-items: center;
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.remove:hover {
+  background: color-mix(in srgb, var(--color-text) 10%, transparent);
+  color: var(--color-text);
+}
+
+.rows {
+  margin: 0;
+  padding: 0 0.6rem 0.5rem;
+  list-style: none;
+}
+
+.rows li {
+  display: grid;
+  grid-template-columns: 2.25rem minmax(0, 1fr);
+  gap: 0.4rem;
+  padding: 0.2rem 0.3rem;
+  border-radius: 4px;
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+}
+
+.rows li > :first-child {
+  color: var(--color-text);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.rows li[data-hit] {
+  background: color-mix(in srgb, #e7b84f 16%, transparent);
+  color: var(--color-text);
+}

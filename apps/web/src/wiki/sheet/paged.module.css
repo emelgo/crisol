@@ -1,5 +1,10 @@
 /* La hoja al escribir: sus páginas, con los colores de la app (sin el papel del tema), y el texto encima. Llena la
    columna del centro hasta un tope y, si sobra, va centrada (las marcas de página, de lado a lado) */
+/* Más estrecha que el texto de la hoja: seguido, con la letra de siempre, midiendo la columna */
+.flow {
+  inline-size: 100%;
+}
+
 .fit {
   position: relative;
   inline-size: 100%;

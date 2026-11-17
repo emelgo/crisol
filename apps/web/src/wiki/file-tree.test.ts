@@ -1,6 +1,19 @@
 import type { FolderView } from '@crisol/contracts'
 import { describe, expect, it } from 'vitest'
-import { COMMON, folderChoices, foundTree, matches, splitScopes, type Tree, treeOf, withCommon } from './file-tree.ts'
+import {
+  COMMON,
+  folderChoices,
+  foundTree,
+  isRoot,
+  matches,
+  rootFolder,
+  splitScopes,
+  type Tree,
+  treeOf,
+  withCommon,
+  withRoot,
+  worldRoot
+} from './file-tree.ts'
 import type { WorldFile } from './links-context.ts'
 
 const WORLD = '11111111-1111-4111-8111-111111111111'
@@ -47,6 +60,27 @@ describe('el árbol de Archivos', () => {
     const { own, common } = splitScopes(listed)
     const tree = treeOf(withCommon(own, common, { name: 'Comunes', organizationId: ORG }))
     expect(shape(tree)).toEqual(['lugares/', '  mapa', `${COMMON}/`, '  sellos/', '    runa', '  escudo', 'suelto'])
+  })
+
+  it('en los comunes, cada mundo cuelga de su carpeta (su raíz), tras las comunes; sus carpetas no salen para lo común', () => {
+    const { own, common } = splitScopes(listed)
+    const root = rootFolder({ id: worldRoot(WORLD), name: 'Eana', worldId: WORLD, organizationId: ORG })
+    const data = withRoot(common, own, root)
+    expect(isRoot(root.id)).toBe(true)
+    expect(isRoot(COMMON)).toBe(true)
+    expect(isRoot('lugares')).toBe(false)
+    expect(shape(treeOf(data))).toEqual([
+      'sellos/',
+      '  runa',
+      `${root.id}/`,
+      '  lugares/',
+      '    mapa',
+      '  suelto',
+      'escudo'
+    ])
+    // La raíz no es una carpeta a la que llevar nada: lo del mundo va a las suyas; lo común, a las comunes
+    expect(folderChoices(data.folders, WORLD).map((c) => c.label)).toEqual(['lugares'])
+    expect(folderChoices(data.folders, null).map((c) => c.label)).toEqual(['sellos'])
   })
 
   it('al buscar, cada encontrado dentro de todas sus carpetas y nada más', () => {

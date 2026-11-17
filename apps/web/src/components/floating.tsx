@@ -4,7 +4,7 @@ import { createPortal } from 'react-dom'
 
 /**
  * Lo que flota junto a un botón (una confirmación): fuera de la página, en el cuerpo, para que ninguna caja lo recorte
- * (las secciones con las esquinas cortadas lo harían), y siguiendo al botón si la página se mueve. No empuja nada
+ * (las secciones de cristal, que recortan lo suyo, lo harían), y siguiendo al botón si la página se mueve. No empuja nada
  */
 export function Floating({
   anchor,
@@ -17,8 +17,8 @@ export function Floating({
   anchor: RefObject<HTMLElement | null>
   className?: string
   children: ReactNode
-  /** Dónde, respecto al botón (un menú a la derecha de la página, por su borde derecho) */
-  placement?: 'bottom-start' | 'bottom-end'
+  /** Dónde, respecto al botón (un menú a la derecha de la página, por su borde derecho; junto al panel, a su izquierda) */
+  placement?: 'bottom-start' | 'bottom-end' | 'left-start'
   /** Para quien necesite el panel (cerrarlo al pulsar fuera) */
   boxRef?: RefObject<HTMLDivElement | null>
 } & Omit<HTMLAttributes<HTMLDivElement>, 'className' | 'children'>) {
@@ -32,7 +32,8 @@ export function Floating({
       void computePosition(reference, element, {
         strategy: 'fixed',
         placement,
-        middleware: [offset(8), flip({ padding: 12 }), shift({ padding: 12 })]
+        // Si no cabe ni arriba ni abajo, se corre también en vertical: nunca se sale de la pantalla
+        middleware: [offset(8), flip({ padding: 12 }), shift({ padding: 12, crossAxis: true })]
       }).then(({ x, y }) => Object.assign(element.style, { left: `${x}px`, top: `${y}px` }))
     })
   }, [anchor, box, placement])

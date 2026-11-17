@@ -27,7 +27,9 @@ import {
   tagCounts
 } from '@crisol/domain'
 import * as Y from 'yjs'
+import { separateName } from '../collab/server.ts'
 import { pagesChanged, templatesChanged } from '../realtime/events.ts'
+import { checkDates } from '../wiki/dates.ts'
 import { resolvePending, worldNames } from '../wiki/links.ts'
 import { playerEdits } from '../wiki/player-pages.ts'
 import { pageViewFor, viewedPage, viewTree } from '../wiki/projection.ts'
@@ -136,10 +138,12 @@ export const pageActions = [
     return pageView(ctx, pageId)
   }),
 
-  implement(setPageProperties, async (ctx, { pageId, properties }) => {
+  implement(setPageProperties, async (ctx, { pageId, properties: given }) => {
     const { page, wiki } = await authorizedPage(ctx, 'page.write', pageId)
-    const problem = propertiesProblem(properties)
+    const problem = propertiesProblem(given)
     if (problem) throw new InvalidRequestError(problem)
+    // Las fechas, de un calendario de este mundo y que quepan en él, con cómo se leen
+    const properties = await checkDates(ctx.db, wiki.worldId, given)
     // Las que enlazan páginas, a páginas de la misma wiki
     const linked = properties.flatMap((p) => (p.type === 'pages' ? p.value : []))
     const existing = await pagesRepo.existingPages(ctx.db, wiki.worldId, linked)
@@ -254,7 +258,9 @@ export const pageActions = [
       const source = await documentsRepo.findSeparate(ctx.db, copyOf)
       await authorizedPage(ctx, 'page.read', source?.pageId ?? '')
       if (!source) throw new NotFoundError('document')
-      state = source.state
+      // Lo de ahora: si alguien lo tiene abierto, lo vivo (lo guardado espera unos segundos a la última tecla)
+      const live = ctx.collab?.hocuspocus.documents.get(separateName(copyOf))
+      state = live ? Y.encodeStateAsUpdate(live) : source.state
     }
     // No va al historial: lo cuenta la sesión de edición del cuerpo, que es donde aparece el bloque
     const id = await documentsRepo.createSeparate(ctx.db, {

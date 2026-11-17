@@ -465,12 +465,6 @@
   transform: rotate(90deg);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .chevron {
-    transition: none;
-  }
-}
-
 .folderName {
   flex: 1;
   min-inline-size: 0;

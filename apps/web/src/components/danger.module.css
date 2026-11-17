@@ -11,8 +11,8 @@
   background: color-mix(in srgb, var(--color-accent) 8%, var(--color-surface));
 }
 
-/* Dentro de una pantalla o una ventana, la regla de las secciones con título (caja con esquinas cortadas, base.css):
-   el relleno, rojizo y de cristal; la raya (el anillo del ::before), roja */
+/* Dentro de una pantalla o una ventana, la regla de las secciones con título (la caja de base.css): el relleno,
+   rojizo y de cristal; la raya (el ::before), roja */
 :global(main) section.zone[aria-labelledby],
 :global(dialog) section.zone[aria-labelledby] {
   background: color-mix(in srgb, var(--color-accent) 12%, var(--surface-glass));
@@ -20,7 +20,7 @@
 
 :global(main) section.zone[aria-labelledby]::before,
 :global(dialog) section.zone[aria-labelledby]::before {
-  background: color-mix(in srgb, var(--color-accent) 60%, transparent);
+  border-color: color-mix(in srgb, var(--color-accent) 60%, transparent);
 }
 
 .zone h3 {

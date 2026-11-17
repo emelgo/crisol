@@ -226,7 +226,7 @@ describe('la hoja al escribir', () => {
     expect(ghost?.getAttribute('style')).toBeNull()
   })
 
-  it('las páginas se escalan para caber a lo ancho de su sitio', async () => {
+  it('las páginas crecen para llenar su sitio; en uno más estrecho que el texto, va seguido con la letra de siempre', async () => {
     const callbacks: ResizeObserverCallback[] = []
     const fire = (width: number) => {
       for (const callback of callbacks) callback([{ contentRect: { width } } as ResizeObserverEntry], {} as never)
@@ -245,13 +245,11 @@ describe('la hoja al escribir', () => {
     render(<Harness content={[p('Uno'), p('Dos')]} settings={SHEET} />)
     await waitFor(() => expect(placed()[1]).toContain('top:400px'))
     expect(marks()).toEqual([])
-    // La mitad del ancho del texto: todo a la mitad, también el alto de la página (ya no caben dos párrafos)
+    // La mitad del ancho del texto: no se encoge (la letra quedaba diminuta, Enrique, 2026-11-16): seguido, sin colocar
     act(() => fire(341))
-    await waitFor(() => expect(at(placed()[1] ?? '').width).toBe(341))
-    expect(at(placed()[1] ?? '').top).toBe(400 + 28 / 2)
-    // Las rayas de página las pinta React al recibir lo colocado: pueden llegar un momento después
-    await waitFor(() => expect(marks()).toEqual(['Página 1']))
-    // Mucho sitio: crece hasta el tope (la letra a 20 px) y lo que sobra queda a los lados (va centrada)
+    await waitFor(() => expect(placed().every((style) => style === '')).toBe(true))
+    expect(document.querySelector('[data-sheet-paged]')).toBeNull()
+    // Mucho sitio: vuelven las páginas, crecen hasta el tope (la letra a 20 px) y lo que sobra queda a los lados
     act(() => fire(2000))
     await waitFor(() => expect(at(placed()[1] ?? '').width).toBe(682 * 1.25))
     vi.unstubAllGlobals()

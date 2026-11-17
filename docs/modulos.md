@@ -7,6 +7,167 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
+### Para retomar (2026-11-17: módulos 8 y 10 · campaña, el tiempo de la campaña, construido en local)
+
+- Misma rama `modulo-8/calendarios` (sin push ni PR). Spec `docs/specs/modulo-8-10-campana.md` (decisiones 1-33; la 15,
+  corregida: el solsticio es el primer día del Invierno). **Migraciones 0085-0089**, ya aplicadas en local.
+- Porción 1 (servidor, dominio, contratos y MCP): el hoy (`getCampaignToday`/`setCampaignToday`), el clima
+  (`packages/domain/src/calendar/weather.ts` y `sun.ts`; `getCampaignWeather`, `setCampaignClimate`, `setDayWeather`),
+  los viajes (`packages/domain/src/travel.ts`; `planTravel`, `travel`), la actividad (`getCampaignActivity`,
+  `markActivitySeen`, aviso `changed/activity`), la pantalla del máster (`setGmScreen`, `listRandomTables`) y la capa de
+  clima (`setWeatherLayer`, `updateScene` con `interior`).
+- Porción 2 (la web, `apps/web/src/campaign-time/`): el hoy grande del Inicio (`today.tsx`: botones, «Poner fecha»
+  con `day-picker.tsx`, «Deshacer», previsión editable con `weather-dialog.tsx`, zona con `zone-dialog.tsx`; la
+  jugadora, hoy y el sol), «Desde tu última visita» con la insignia de la barra y el aviso en vivo (`activity.tsx`), el
+  chip del hoy en la Mesa (`today-chip.tsx`, con «Viaje…», la capa de clima, Interior y las cronologías en ventana), el
+  formulario de viaje (`travel.tsx`, también en `wiki/map/measure-panel.tsx`), las entradas del sistema del registro
+  (`log-event.tsx`), la línea «Hoy» de las cronologías (`today-mark.tsx`, `today-chronology.tsx`, en la vista Lista) y
+  «Hoy de…» en la del mundo. La capa de clima en PixiJS (`tabletop/weather-layer.tsx`, partículas sin estado en
+  `weather-particles.ts`) en la Mesa, la jugadora y la Vista de jugadores. La pantalla del máster en cuatro columnas
+  guardadas en el servidor (`tabletop/gm-screen.tsx`). Frases del historial de las acciones nuevas.
+- Pruebas: dominio (el solsticio), web (`campaign-time/*.test.*`, `weather-particles.test.ts`,
+  `realtime/activity-queries.test.ts`, `summaries-campaign-time.test.ts`, `herramientas.test.tsx`), e2e nueva
+  `tiempo-campana` y la de fugas ampliada. Revisión de impeccable (critique y audit) aplicada.
+- Decisiones sin Enrique y lo que tiene que probar: `tasks/probar.md` › «El tiempo de la campaña».
+- Pendiente menor: la línea «Hoy» en las vistas Meses y Calendario; iconos del medio en el viaje; colores sueltos de
+  sol y de sesión a tokens; la tirada de una tabla también sale en el aviso del d20.
+- **Siguiente**: que Enrique lo pruebe; luego la batería entera y una sola CI (a `main` y staging con los módulos 8, 9 y
+  10).
+
+### Para retomar (2026-11-16, noche: módulo 10 · mundo, relaciones y gráficos, construido en local)
+
+- Misma rama `modulo-8/calendarios` (sin push ni PR; sin migración). Spec: `docs/specs/modulo-10.md`; lienzo aprobado
+  en el scratchpad de la sesión (`lienzo-m10/`). Porción 1 (contrato, dominio `packages/domain/src/relations.ts`,
+  acciones `getRelations` y `getWorldGraph`, MCP, nodo `chart`) y porción 2 (la web) hechas.
+- Web (`apps/web/src/relations/`): la pestaña «Relaciones» fija y calculada (`?pestana=relaciones`, tras las demás) con
+  Enlaces (SVG, d3-force y d3-zoom; profundidad y «Solo campos» en la tira de la página; leyenda; ficha de la elegida con
+  «Abrir» y «Centrar aquí»; las propiedades del panel marcan sus rayas), Familia y Organigrama (tarjetas con dagre y,
+  bajo el nombre, el primer campo de texto: `subtitle` nuevo en `relationNode`); el modo, recordado por plantilla; en
+  Familia y Organigrama el panel se pliega solo. El grafo del mundo en `/mundos/$w/relaciones` (y el de la jugadora en
+  `/campanas/$c/relaciones`), abierto desde un icono de la cabecera del árbol, con filtros, buscador y lienzo desde 300
+  páginas. Papel y nombre al revés en los campos de enlace de la plantilla (`templates/fields.tsx`). El bloque Gráfico
+  (`wiki/chart/`): Chart.js aparte, editor visual en el sitio del panel, «/» → Gráfico, también en lo que se lee
+  (`chartModel`/`chartYaml` en `packages/editor/src/chart-spec.ts`). La jugadora: la pestaña en su página, compacta en
+  el móvil. Ocho colores de serie en el tema. Sin el esbozo de la pestaña «Árbol familiar».
+- Arreglado de paso: la guarda de leer como jugador (`read-as.test.ts`) conoce `viewedChronology`.
+- Pruebas: unitarias (`relations/*.test.*`, `chart-spec`, `chart-config`, `chart-editor`, plantillas), integración
+  (`relations.integration.test.ts`, con el subtítulo y los campos ocultos), e2e `relaciones` y la de fugas ampliada.
+  Revisión de impeccable (critique y audit) aplicada.
+- Decisiones sin Enrique y preguntas pendientes: en `tasks/probar.md` › «Relaciones y gráficos».
+- **Siguiente**: que Enrique lo pruebe y conteste las preguntas; luego la batería entera y una sola CI (a `main` y
+  staging con los módulos 8 y 9). Queda del módulo 10: crear relaciones arrastrando (más adelante).
+
+### Para retomar (2026-11-16: módulo 8 · mundo, capacidad `cronologias`, construida en local: módulo cerrado en local)
+
+- Misma rama `modulo-8/calendarios`. **Migración 0084** (`chronologies`, `timeline_groups`, `timeline_events` y las
+  marcas `event` y `chronology` del conocimiento), ya aplicada en local. Decisiones 4-10 de `docs/specs/modulo-8.md`.
+- Hecho: el dominio (`packages/domain/src/calendar/chronology.ts`: juntar eventos y páginas con fecha en el calendario de
+  la cronología, convertir lo de otros con su correspondencia y contar lo que queda fuera, columnas y bandas de la vista
+  de meses, mover fechas al arrastrar); acciones y MCP (`listar_cronologias`, `ver_cronologia`, `crear_cronologia`,
+  `cambiar_cronologia`, `borrar_cronologia`, `crear_eventos`, `cambiar_evento`, `borrar_evento`, `convertir_en_pagina`
+  y `cambiar_grupos_eventos`); los eventos en `DATE_SOURCES`; borrar un calendario deja sus cronologías en el principal.
+  Web (`apps/web/src/chronologies/`): la sección bajo los calendarios, la cronología a pantalla entera (Lista, Meses,
+  Calendario, la píldora y el zoom, «Ir a…», ajustes y el ojo), el cuadro del evento, convertir en página, cambiar la
+  fecha de una página; «En las cronologías» en «Mencionado en» de una página enlazada (solo el máster); la jugadora en
+  `/campanas/$c/cronologias` (en su barra, si tiene alguna). Sin «Línea temporal» en «Pestaña nueva».
+- Pruebas: dominio, integración (`chronologies.integration.test.ts`, con 2.000 eventos y 5.000 páginas en ~250 ms),
+  MCP, web (`chronologies/*.test.*`), e2e `cronologias` y la de fugas ampliada.
+- Decisiones tomadas sin Enrique (en el informe): la jugadora ve una cronología **si se le revela** (marca
+  `chronology`, con el ojo de su cabecera), y dentro los eventos no ocultos (o revelados, marca `event`); **convertir
+  en página** crea la página con el texto, el icono y la imagen del evento y deja el evento enlazado (sin título propio)
+  en vez de borrarlo, así conserva fecha, color y grupo; lo convertido de otro calendario pierde «cada año»; el filtro de
+  grupos solo afecta a los eventos y el de plantillas y etiquetas, a las páginas; los eventos enlazados salen en la
+  página solo para el máster.
+- **Siguiente**: con el visto bueno de Enrique, la batería entera y una sola CI (a `main` y staging con el módulo 9).
+  Pendiente menor: los dados 3D y el resto de lo apuntado arriba.
+
+### Para retomar (2026-11-16: módulo 8 · mundo, capacidad `fechas`, construida en local)
+
+- Misma rama `modulo-8/calendarios`. **Migración 0083** (`crisol_page_text` toma el texto de una fecha, no su objeto),
+  ya aplicada en local. Spec `docs/specs/fechas.md`.
+- Hecho: el valor en `packages/domain/src/calendar/values.ts` (comprobarlo, leerlo, la forma de la IA
+  `1250-Siega-12/1250-Trilla-3 (cada año)`, su día para ordenar); la propiedad `date` en contratos y dominio (con
+  `range` y `offTimeline` de su campo, y `text`: cómo se lee sin lo solo del máster, que pone el servidor y es lo que
+  se busca); `apps/server/src/wiki/dates.ts` (comprobar contra los calendarios del mundo, leer lo que escribe la IA y
+  el YAML, `dates` en `leer_pagina`); `pageDates` en `DATE_SOURCES` (quitar un mes o borrar un calendario con fechas se
+  impide; acortar avisa con `clipped`; renombrar relee los textos en la misma operación); copiar copia las fechas y
+  desde o hacia una plantilla van vacías; las tablas ordenan por fecha. Web: `wiki/date-field.tsx` (el campo y su
+  selector flotante), el tipo en el editor de campos de plantilla, el aviso del editor de calendarios.
+- Pruebas: dominio, contratos, `dates.integration.test.ts`, MCP, web (`date-field.test.tsx`, editor de plantillas),
+  e2e `fechas` y la de fugas ampliada.
+- Decisiones tomadas sin Enrique: la fecha **sí entra en la búsqueda** como texto legible (la spec decía que no; se
+  guarda su `text` público y se relee al cambiar el calendario); el selector no tiene hoja de móvil (el máster trabaja
+  en PC y la jugadora solo lee); cambiar de calendario en el selector convierte la fecha si hay correspondencia.
+- **Siguiente**: `cronologias` (decisiones 4-10 de `docs/specs/modulo-8.md`): sus fuentes de fechas (los eventos) van
+  también en `DATE_SOURCES`; las páginas con fecha se buscan con `pages.properties @> '[{"type":"date"}]'` y el día con
+  `dateValueDay`; `offTimeline` las deja fuera.
+
+### Para retomar (2026-11-16: módulo 8 · mundo, capacidad `calendarios`, construida en local)
+
+- Rama `modulo-8/calendarios` (sobre `modulo-9/mapas`, que sigue con su PR #120 abierto), ADR-0029. **Migración 0082**
+  (`calendars`), ya aplicada en local. Spec `docs/specs/calendarios.md`; decisiones de Enrique en `docs/specs/modulo-8.md`.
+- Hecho: la aritmética en `packages/domain/src/calendar/` (portada del Crisol antiguo; ida y vuelta en ±100.000 años,
+  10.000 fechas < 50 ms), conversión por la correspondencia con el principal, validación por secciones; contratos y
+  acciones (`listCalendars`, `getCalendar`, `createCalendar`, `updateCalendar` —nombre, principal, orden, definición—,
+  `deleteCalendar`, `describeDate`, `convertDate`); MCP (`listar_calendarios`, `ver_calendario`, `crear_calendario`,
+  `cambiar_calendario`, `borrar_calendario`, `describir_fecha`, que con `to` convierte); la jugadora sin las eras solo
+  del máster (API, tiempo real, MCP; prueba de fugas ampliada); la barra del mundo «Páginas · Calendarios · Archivos»;
+  la pantalla de Calendarios y el editor a pantalla entera con su vista previa. Crítica y audit de impeccable aplicados.
+- El gancho de las fechas en uso: `apps/server/src/actions/calendar-dates.ts` (`DATE_SOURCES`, vacío): `fechas` y
+  `cronologias` añaden ahí su fuente para que quitar un mes o borrar un calendario con fechas se impida.
+- **Siguiente**: la capacidad `fechas` (`docs/specs/fechas.md`) y después `cronologias` (decisiones 4-10). El bodegón
+  de la pantalla vacía es provisional (el del historial): prompt en `docs/imagenes-por-hacer.md`.
+
+### Para retomar (2026-11-13: módulo 9, mapas con capas, construido en local)
+
+- Rama `modulo-9/mapas` (sobre `main` con las tandas 8 y 9), plan en `tasks/modulo-9.md` (7 porciones), ADR-0026.
+  **Migración 0081** (`map_layers`, la capa y el orden de lo dibujado, `maps.speeds`), ya aplicada en local.
+- Hecho: capas (ojo en tu pantalla, «Solo del máster», ordenar, lo que tiene por clases y elegirlo desde ahí);
+  regiones, rutas y textos a mano (pegando a vértices y pines; retocar vértices; Supr y Ctrl+Z; «Ampliar el mapa»);
+  medir con días de viaje (escala con una raya; velocidades en millas: 24, 30 y 48 al día, por docs/diseno.md);
+  lo que ve la jugadora (servidor) y revelar desde el panel; la IA: `imagen_mapa`, `dibujar_en_mapa` (píxeles de la
+  imagen, simplifica y pega), capas, `medir_mapa`; lo de fuera entra forjándose.
+- Crítica 26/40 y audit 12/20, con sus arreglos (tres tandas de commits). **Página de revisión**:
+  https://claude.ai/artifact/NUQMCPWW11Wz4HLfXRmChX
+- Pruebas: web (mapa 63, wiki 357), servidor (capas 10, MCP), e2e `mapas-capas` y la batería entera en local antes de
+  subir (sin CI este mes: `[skip ci]`).
+- **La pizarra, construida en local** (2026-11-13; spec `docs/specs/pizarra.md`, plan `tasks/pizarra.md`): pestaña
+  «Pizarra» con Excalidraw 0.18.1 cargado a demanda (fuentes servidas por Crisol), guardada en vivo por Yjs, tarjetas
+  de páginas («Página…» o arrastrar del árbol), imágenes a los archivos del mundo, «Oculto para los jugadores», la
+  jugadora en solo lectura con lo que le proyecta el servidor, y la IA con `ver_pizarra` y `cambiar_pizarra`. e2e
+  `pizarra` en verde. **Siguiente**: parar aquí (Enrique: «cuando termines esta parte para antes de seguir»); quedan
+  la crítica y el audit de impeccable, la página de revisión y la batería entera.
+  **No subir nada hasta que esté todo** (Enrique, 2026-11-13: «el ci cuando ya esté todo»): entonces una sola CI y a
+  `main` y staging.
+- **Mejoras del 2026-11-13** (lista de Enrique, 27 puntos, hechas por un subagente en la misma rama: `836b4d25` a
+  `e5da5886`): formas del cristal en toda la app, vista previa de campañas, Ajustes › Jugabilidad, fondos que se turnan,
+  el guardado de la pizarra arreglado (Excalidraw cambia los elementos en el sitio: ahora se copian), clics durante las
+  transiciones, mapa y pizarra con todo el sitio, carpeta de cada mundo en Archivos… Pruebas en `tasks/probar.md` §
+  «Mejoras del 2026-11-13». Respuestas de Enrique (commit `77aa6634`): sin «Tabla» ni «Escena» en «Pestaña nueva»,
+  «Archivos» a secas, el idioma de un zip de Foundry solo si trae dos, animaciones siempre completas.
+- **El mundo a pantalla completa, hecho** (ADR-0027, `tasks/pantalla-completa.md`; rollback en la etiqueta
+  `antes-pantalla-completa`), con **el mismo esqueleto en Texto, Mapa y Pizarra** (la tira de la página arriba; Enrique:
+  «deben mantener el esqueleto»). **Crítica 24/40 y audit 12/20** de la pizarra y el armazón, con sus arreglos (lo de la
+  IA visible, Excalidraw aislado de los estilos de la app, barra sin saltos, tarjetas que se abren, la jugadora en el
+  móvil con la pizarra en palabras, foco, cristal). Licencias: Zlib permitida (pako, de Excalidraw; Enrique) y khroma
+  mirada a mano. **Página de revisión**: https://claude.ai/artifact/JWu8kUbqtWbmGJpu1u8t8q
+- **Batería en verde** (2026-11-14): unitarias de todos los paquetes (la de ritmo de `@crisol/systems` falla con
+  carga y pasa sola), lint, tipos, licencias y límites; e2e 148/154 a la primera y las 6 restantes en verde al
+  repetirlas con la web nueva. Hechos también el panel vacío plegado junto a mapa/pizarra y los dados 3D a demanda.
+- **Siguiente**: con el visto bueno de Enrique, una sola CI y a `main` y staging (Enrique paró aquí el 2026-11-14).
+  Pendientes anotados: zoom al 200 % del máster, dados 3D a demanda, panel vacío junto a mapa/pizarra (pregunta).
+
+### Para retomar (2026-11-13, madrugada: módulo 9 empezado; PR #119 en la CI)
+
+- **Tandas 8 y 9 en `main` y en staging** (PR #119, 2026-11-13, fusionado con `[skip ci]`: la CI se cortaba a los
+  60 min; en local, 150 e2e + 2 repetidas solas en verde). Sin migraciones. **Sin más CI este mes** (cuota casi
+  agotada): todo en local y `[skip ci]` en lo que se suba.
+- **Módulo 9** (rama `modulo-9/mapas`): entrevista confirmada (`docs/intent/mapas-pizarras.md`), estudio
+  (`research/mapas-y-pizarras.md` y sus notas), capacidades (`docs/specs/modulo-9.md`) y la spec de los mapas con
+  capas (`docs/specs/mapas-capas.md`). Lienzo aprobado («está genial»): https://claude.ai/artifact/GM5TSzGsVXRx2Q1nkwDvbx.
+  Plan en `tasks/modulo-9.md`: porciones 1 (datos, migración 0081 aplicada en local), 2 (pintar y «Capas») y 3
+  (dibujar y retocar) hechas; siguiente, la 4 (medir).
+
 ### Para retomar (2026-11-12, noche: tanda 9, repaso del MCP)
 
 - Rama `revision/tanda-9` (sobre la 8), **desplegada en staging** para probar el conector (con la 8 dentro).
@@ -1868,11 +2029,11 @@ Estados: pendiente · en curso · hecho · descartado.
 | 6 | **Mesa**: escenas, rejilla, fichas, medir y plantillas, niebla, muros, puertas, luz, visión, iniciativa, instantáneas, encuentros, UVTT; **las escenas, mapas y tokens de un zip de Foundry** | **hecho** (2026-11-07, PR #114, en staging) | Foundry: canvas, visión y muros; DDB Maps |
 | 7 | **Sala de jugadores**: presencia, chat y susurros, mostrar a jugadores, sonido (también **los de un zip de Foundry**), controles del máster | **hecho** (2026-11-11, PR #117, en staging); falta que Enrique lo pruebe y confirme el ADR-0022 | Foundry: sockets y chat; DDB: game log |
 | R | **Revisión de la app** (2026-11-11): nueve tandas (`tasks/plan-revision.md`); la campaña, aparte | **en curso** (tanda 1) | Roliando y Roll20 (editor de sistemas); 5etools (libros) |
-| 9 | **Pizarras y mapas con capas**: la pizarra como pestaña; regiones, rutas, textos y capas en los mapas, escala y medir | pendiente (el primero tras la revisión) | DDB Maps |
-| 8 · mundo | **Calendarios y líneas temporales**: calendarios del mundo con su editor, eventos y la línea temporal como pestaña | pendiente (tras el 9) | — |
-| 10 · mundo | **Herramientas del mundo**: grafo de relaciones y árbol familiar, tableros, gráficos, generador de nombres | pendiente (tras el 8) | — |
-| 8 · campaña | El «hoy» de cada campaña, el clima y los viajes | pendiente (con la revisión de la campaña) | — |
-| 10 · campaña | El centro de actividad y la pantalla del máster | pendiente (con la revisión de la campaña) | — |
+| 9 | **Pizarras y mapas con capas**: la pizarra como pestaña; regiones, rutas, textos y capas en los mapas, escala y medir | **hecho en local** (2026-11-13, PR #120 sin fusionar) | DDB Maps |
+| 8 · mundo | **Calendarios y líneas temporales**: calendarios del mundo con su editor; fechas; cronologías en «Calendarios» (decisiones del 2026-11-16) | **hecho en local** (2026-11-16, ADR-0029: `calendarios`, `fechas` y `cronologias`); falta subir y que Enrique lo pruebe | Everlore, Crisol antiguo |
+| 10 · mundo | **Herramientas del mundo**: grafo de relaciones (pestaña de la página y vista del mundo; de campos de relación y enlaces del texto), árbol genealógico u organigrama, gráficos como bloque del editor. Fuera, por decisión de Enrique (2026-11-16): tableros Kanban y generador de nombres | construido en local (2026-11-16), falta que Enrique lo pruebe | — |
+| 8 · campaña | El «hoy» de cada campaña (cabecera y Mesa; botones, viajes, registro, «hoy» en las cronologías), el clima por zona con semilla y editable, orto y ocaso por latitud, la capa de clima de la Mesa, y los viajes con ruta en un mapa (Enrique, 2026-11-17) | **hecho en local** (2026-11-17, spec `modulo-8-10-campana.md`, migraciones 0085-0089) | — |
+| 10 · campaña | El centro de actividad (lo nuevo desde tu última visita, con avisos) y la pantalla del máster en la Mesa (fichas de la escena, nota fijada, tablas) (Enrique, 2026-11-17) | **hecho en local** (2026-11-17, con el 8 · campaña) | — |
 | 11 | Pagos y planes del SaaS | **descartado** (Enrique, 2026-11-11: herramienta propia, gratuita y de uso privado; ADR-0023) | — |
 
 Cada módulo nace con su API y sus herramientas MCP.

@@ -75,7 +75,7 @@
   cursor: pointer;
 }
 
-/* Con el foco, también la raya de acento (como el menú del asa): solo el fondo apenas se ve en el tema claro */
+/* Con el foco, también la raya de acento (como el menú del asa): solo el fondo apenas se ve */
 .option:focus {
   background: var(--color-raised);
   outline: none;

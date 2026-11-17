@@ -4,10 +4,11 @@
  */
 import { z } from 'zod'
 import { defineAction } from './action.ts'
+import { gameIcon } from './game-icons.ts'
 import { readAs } from './read-as.ts'
 import { worldColor } from './worlds.ts'
 
-export const PAGE_TAB_KINDS = ['map', 'text', 'table', 'scene'] as const
+export const PAGE_TAB_KINDS = ['map', 'text', 'table', 'scene', 'board'] as const
 
 const tabName = z.string().trim().min(1).max(60)
 
@@ -16,6 +17,15 @@ export const MAX_MAP_SIDE = 65_535
 /** Cuántas pestañas puede tener una página, y cuántos pines un mapa */
 export const MAX_PAGE_TABS = 50
 export const MAX_MAP_PINS = 2000
+/** Cuántas capas y cuántos elementos dibujados puede tener un mapa, y cuántos puntos uno (módulo 9) */
+export const MAX_MAP_LAYERS = 30
+export const MAX_MAP_ELEMENTS = 1000
+export const MAX_ELEMENT_POINTS = 2000
+/**
+ * Lo que se anda en un día si el mapa no dice otra cosa, en millas (las medidas, en las de D&D: docs/diseno.md): a pie
+ * a paso normal, a caballo y en un barco de vela
+ */
+export const DEFAULT_SPEEDS = { foot: 24, horse: 30, ship: 48 } as const
 
 export const pageTabView = z.object({
   id: z.uuid(),
@@ -89,7 +99,20 @@ export const PIN_SHAPES = 8
 const pinFields = {
   label: z.string().trim().max(120).nullable().describe('Su nombre; sin él, el de la página enlazada'),
   pageId: z.uuid().nullable().describe('La página a la que lleva, del mismo mundo'),
-  icon: z.string().trim().max(16).nullable().describe('Un emoji dentro del pin'),
+  icon: z
+    .union([
+      z
+        .string()
+        .max(48)
+        .refine((value) => gameIcon(value) !== null, 'No es un icono del paquete'),
+      z
+        .string()
+        .trim()
+        .max(16)
+        .refine((value) => !value.startsWith('gi:'), 'No es un icono del paquete')
+    ])
+    .nullable()
+    .describe('Su icono: uno de rol del paquete («gi:<id>», listar_iconos) o un emoji'),
   color: worldColor,
   shape: z
     .number()
@@ -113,6 +136,73 @@ export const mapPinView = z.object({
 
 export type MapPinView = z.infer<typeof mapPinView>
 
+/** Un punto de un mapa: x e y de 0 a 1 sobre la imagen */
+const point = z.tuple([coordinate, coordinate])
+const line = z.array(point).min(2).max(MAX_ELEMENT_POINTS)
+const ring = z.array(point).min(3).max(MAX_ELEMENT_POINTS)
+
+/** Lo dibujado (módulo 9): una región (una o varias piezas: islas), una ruta (puede ir de un pin a otro) o un texto */
+export const mapGeometry = z.union([
+  z.object({ pieces: z.array(ring).min(1).max(50).describe('Sus piezas: cada una, sus vértices en orden') }),
+  z.object({
+    points: line.describe('Sus puntos en orden'),
+    from: z.uuid().nullable().optional().describe('El pin donde empieza'),
+    to: z.uuid().nullable().optional().describe('El pin donde acaba')
+  }),
+  z.object({
+    at: point.describe('Su centro'),
+    rotate: z.number().min(-180).max(180).optional().describe('Su giro, en grados'),
+    arc: z.number().min(-1).max(1).optional().describe('Curvado en arco: 0 recto; hacia arriba (+) o abajo (−)')
+  })
+])
+
+export type MapGeometry = z.infer<typeof mapGeometry>
+
+/** Cómo se ve, en listas cerradas (sin pinceles): lo que no se diga, lo de serie */
+export const mapStyle = z
+  .object({
+    color: worldColor.describe('Su color (el relleno de una región, el trazo de una ruta, el de un texto)'),
+    fill: z.enum(['solid', 'hatch', 'none']).describe('El relleno de una región: liso, rayado o sin relleno'),
+    opacity: z.number().min(0.05).max(1).describe('La opacidad del relleno'),
+    stroke: z.enum(['solid', 'dashed', 'dotted']).describe('El borde o el trazo: liso, discontinuo o punteado'),
+    width: z.number().int().min(1).max(12).describe('El grosor del trazo, en píxeles de pantalla'),
+    size: z.number().int().min(10).max(100).describe('El tamaño de su nombre o del texto'),
+    display: z.number().int().min(0).max(2).describe('Su nombre: 0 al pasar por encima, 1 siempre, 2 nunca')
+  })
+  .partial()
+
+export type MapStyle = z.infer<typeof mapStyle>
+
+export const MAP_ELEMENT_KINDS = ['region', 'path', 'label'] as const
+
+export const mapLayerView = z.object({
+  id: z.uuid(),
+  name: z.string(),
+  hidden: z.boolean().describe('Solo del máster: nada de ella llega a ningún jugador')
+})
+
+export type MapLayerView = z.infer<typeof mapLayerView>
+
+export const mapElementView = z.object({
+  id: z.uuid(),
+  layerId: z.uuid().nullable().describe('Su capa; null, la primera'),
+  kind: z.enum(MAP_ELEMENT_KINDS),
+  geometry: mapGeometry,
+  label: z.string().nullable().describe('Su nombre; sin él, el de la página enlazada'),
+  pageId: z.uuid().nullable().describe('La página a la que lleva, del mismo mundo'),
+  pageTitle: z.string().nullable(),
+  style: mapStyle,
+  hidden: z.boolean().describe('Oculto a los jugadores (hasta que se les revele)')
+})
+
+export type MapElementView = z.infer<typeof mapElementView>
+
+const speeds = z.object({
+  foot: z.number().positive().max(10_000),
+  horse: z.number().positive().max(10_000),
+  ship: z.number().positive().max(10_000)
+})
+
 export const mapView = z.object({
   id: z.uuid(),
   tabId: z.uuid(),
@@ -128,7 +218,10 @@ export const mapView = z.object({
       unit: z.string().trim().min(1).max(20)
     })
     .nullable(),
-  pins: z.array(mapPinView)
+  speeds: speeds.describe('Cuánto se anda en un día, en la unidad de la escala (a pie, a caballo, en barco)'),
+  pins: z.array(mapPinView),
+  layers: z.array(mapLayerView).describe('Sus capas, de abajo arriba'),
+  elements: z.array(mapElementView).describe('Lo dibujado: regiones, rutas y textos, de abajo arriba')
 })
 
 export type MapView = z.infer<typeof mapView>
@@ -136,7 +229,8 @@ export type MapView = z.infer<typeof mapView>
 export const getMap = defineAction({
   name: 'getMap',
   kind: 'read',
-  description: 'El mapa de una pestaña: su imagen, su escala y sus pines (coordenadas de 0 a 1 sobre la imagen)',
+  description:
+    'El mapa de una pestaña: su imagen, su escala y lo que se anda en un día, sus pines y, por capas, sus regiones, rutas y textos (coordenadas de 0 a 1 sobre la imagen)',
   input: z.object({ tabId: z.uuid(), ...readAs }),
   output: mapView
 })
@@ -145,7 +239,7 @@ export const updateMap = defineAction({
   name: 'updateMap',
   kind: 'write',
   description:
-    'Cambia un mapa: su imagen (un archivo de imagen del mundo o común, con su ancho y alto en píxeles) o su escala (null la quita)',
+    'Cambia un mapa: su imagen (un archivo de imagen del mundo o común, con su ancho y alto en píxeles), su escala (null la quita) o lo que se anda en un día (null, lo de serie)',
   input: z
     .object({
       mapId: z.uuid(),
@@ -156,9 +250,12 @@ export const updateMap = defineAction({
           height: z.number().int().positive().max(MAX_MAP_SIDE)
         })
         .optional(),
-      scale: mapView.shape.scale.optional()
+      scale: mapView.shape.scale.optional(),
+      speeds: speeds.nullable().optional()
     })
-    .refine((input) => input.image !== undefined || input.scale !== undefined, { message: 'image o scale' }),
+    .refine((input) => input.image !== undefined || input.scale !== undefined || input.speeds !== undefined, {
+      message: 'image, scale o speeds'
+    }),
   output: mapView
 })
 
@@ -184,4 +281,202 @@ export const deleteMapPin = defineAction({
   description: 'Quita un pin de un mapa. Se deshace desde el historial',
   input: z.object({ pinId: z.uuid() }),
   output: z.object({ id: z.uuid() })
+})
+
+const layerName = z.string().trim().min(1).max(60)
+const snapField = z
+  .boolean()
+  .optional()
+  .describe(
+    'Pegar sus vértices a los de lo demás que estén muy cerca (fronteras sin huecos) y los extremos de una ruta a los pines'
+  )
+const elementFields = {
+  label: z.string().trim().max(120).nullable().describe('Su nombre; sin él, el de la página enlazada'),
+  pageId: z.uuid().nullable().describe('La página a la que lleva, del mismo mundo'),
+  style: mapStyle,
+  hidden: z.boolean().describe('Oculto a los jugadores')
+}
+
+export const createMapLayer = defineAction({
+  name: 'createMapLayer',
+  kind: 'write',
+  description: 'Añade una capa a un mapa, encima de las demás (o tras la que se diga). Se deshace',
+  input: z.object({
+    mapId: z.uuid(),
+    name: layerName,
+    hidden: z.boolean().optional().describe('Solo del máster'),
+    after: z.uuid().nullable().optional().describe('Tras esta capa; null, la primera (abajo del todo)')
+  }),
+  output: mapLayerView
+})
+
+export const updateMapLayer = defineAction({
+  name: 'updateMapLayer',
+  kind: 'write',
+  description:
+    'Cambia una capa: su nombre, si es solo del máster o su sitio (tras otra; null, abajo del todo). Se deshace',
+  input: z.object({
+    layerId: z.uuid(),
+    name: layerName.optional(),
+    hidden: z.boolean().optional(),
+    after: z.uuid().nullable().optional()
+  }),
+  output: mapLayerView
+})
+
+export const deleteMapLayer = defineAction({
+  name: 'deleteMapLayer',
+  kind: 'delete',
+  description: 'Quita una capa con todo lo dibujado en ella. Se deshace desde el historial',
+  input: z.object({ layerId: z.uuid() }),
+  output: z.object({ id: z.uuid() })
+})
+
+export const createMapElement = defineAction({
+  name: 'createMapElement',
+  kind: 'write',
+  description:
+    'Dibuja en un mapa una región (pieces: una o varias piezas de vértices), una ruta (points; from y to, los pines donde empieza y acaba) o un texto (at, con su giro y su arco), con coordenadas de 0 a 1 sobre la imagen, en una capa (sin ella, la de más arriba que no es solo del máster; sin capas, una «General» nueva). Se deshace',
+  input: z
+    .object(elementFields)
+    .partial()
+    .extend({
+      mapId: z.uuid(),
+      layerId: z.uuid().optional(),
+      kind: z.enum(MAP_ELEMENT_KINDS),
+      geometry: mapGeometry,
+      snap: snapField
+    }),
+  output: mapElementView
+})
+
+export const updateMapElement = defineAction({
+  name: 'updateMapElement',
+  kind: 'write',
+  description:
+    'Cambia una región, ruta o texto de un mapa: su forma (geometry entera), su nombre, su página, su estilo, su capa o si está oculto. Se deshace',
+  input: z
+    .object(elementFields)
+    .partial()
+    .extend({ elementId: z.uuid(), layerId: z.uuid().optional(), geometry: mapGeometry.optional(), snap: snapField }),
+  output: mapElementView
+})
+
+export const deleteMapElement = defineAction({
+  name: 'deleteMapElement',
+  kind: 'delete',
+  description: 'Quita una región, ruta o texto de un mapa. Se deshace desde el historial',
+  input: z.object({ elementId: z.uuid() }),
+  output: z.object({ id: z.uuid() })
+})
+
+export const getBoard = defineAction({
+  name: 'getBoard',
+  kind: 'read',
+  description:
+    'La pizarra de una pestaña: sus elementos de Excalidraw (las tarjetas de páginas llevan customData.pageId; las imágenes, el fileId de su archivo). Un jugador recibe solo lo que puede ver',
+  input: z.object({ tabId: z.uuid(), ...readAs }),
+  output: z.object({ elements: z.array(z.record(z.string(), z.unknown())) })
+})
+
+/** Dónde va algo en la pizarra, para la IA: una rejilla sencilla (columnas y filas), sin coordenadas finas */
+const boardCell = { column: z.number().int().min(-50).max(50), row: z.number().int().min(-50).max(50) }
+
+export const describeBoard = defineAction({
+  name: 'describeBoard',
+  kind: 'read',
+  description:
+    'Lo que hay en una pizarra, en palabras: tarjetas (con su página), notas, cajas y flechas (con lo que unen), imágenes y cuántos trazos a mano, cada uno con su id y su sitio en la rejilla (column, row). Un jugador, solo lo que puede ver',
+  input: z.object({ tabId: z.uuid(), ...readAs }),
+  output: z.object({
+    cards: z.array(
+      z.object({ id: z.string(), pageId: z.string(), title: z.string(), ...boardCell, hidden: z.boolean() })
+    ),
+    notes: z.array(z.object({ id: z.string(), text: z.string(), ...boardCell, hidden: z.boolean() })),
+    shapes: z.array(
+      z.object({ id: z.string(), shape: z.string(), text: z.string(), ...boardCell, hidden: z.boolean() })
+    ),
+    arrows: z.array(
+      z.object({ id: z.string(), from: z.string().nullable(), to: z.string().nullable(), text: z.string() })
+    ),
+    images: z.array(z.object({ id: z.string(), fileId: z.string(), ...boardCell })),
+    drawings: z.number().int()
+  })
+})
+
+export const changeBoard = defineAction({
+  name: 'changeBoard',
+  kind: 'write',
+  description:
+    'Cambia una pizarra: añade tarjetas de páginas (pageId), notas y cajas (text; shape rectangle, ellipse o diamond) en una rejilla (column, row; cada casilla cabe una tarjeta), flechas entre ellas (from y to: el id de algo que ya está o el ref de algo que se añade aquí; text, su rótulo) y quita lo que se diga (con lo atado a ello). Lo ven al momento quienes la tengan abierta; se deshace en la propia pizarra',
+  input: z.object({
+    tabId: z.uuid(),
+    add: z
+      .array(
+        z
+          .object({
+            ref: z.string().max(60).optional().describe('Un nombre para unirlo con flechas en esta misma llamada'),
+            pageId: z.uuid().optional().describe('Una tarjeta de esta página'),
+            text: z.string().max(2000).optional().describe('Una nota (sin shape) o el texto de una caja'),
+            shape: z.enum(['rectangle', 'ellipse', 'diamond']).optional(),
+            hidden: z.boolean().optional().describe('Oculto para los jugadores'),
+            ...boardCell
+          })
+          .refine((item) => Boolean(item.pageId) !== Boolean(item.text), 'O una página o un texto')
+      )
+      .max(100)
+      .default([]),
+    arrows: z
+      .array(z.object({ from: z.string(), to: z.string(), text: z.string().max(200).optional() }))
+      .max(100)
+      .default([]),
+    remove: z.array(z.string()).max(200).default([])
+  }),
+  output: z.object({
+    added: z.array(z.object({ ref: z.string().nullable(), id: z.string() })),
+    removed: z.number().int()
+  })
+})
+
+export const getMapImage = defineAction({
+  name: 'getMapImage',
+  kind: 'read',
+  description:
+    'La imagen de un mapa, para verla antes de dibujar en él: sus medidas en píxeles y la imagen (o su SVG, si es un dibujo). Lo que se dibuje encima puede ir en esos píxeles (con view: su ancho y su alto), sin pasarlo a 0–1',
+  input: z.object({ tabId: z.uuid(), ...readAs }),
+  output: z.object({
+    width: z.number().int(),
+    height: z.number().int(),
+    mimeType: z.string(),
+    image: z
+      .object({ mimeType: z.string(), data: z.string().optional() })
+      .nullable()
+      .describe('La imagen (para verla); null si es demasiado grande o de un tipo que no se puede enseñar'),
+    svg: z.string().nullable().describe('Si el mapa es un SVG, su texto'),
+    note: z.string()
+  })
+})
+
+const measurePoint = z.tuple([coordinate, coordinate])
+
+export const measureMap = defineAction({
+  name: 'measureMap',
+  kind: 'read',
+  description:
+    'Mide en un mapa con su escala: entre unos puntos (de 0 a 1), entre dos pines o a lo largo de una ruta dibujada (elementId), y cuántos días se tarda a pie, a caballo y en barco',
+  input: z
+    .object({
+      tabId: z.uuid(),
+      points: z.array(measurePoint).min(2).max(200).optional(),
+      pins: z.tuple([z.uuid(), z.uuid()]).optional(),
+      elementId: z.uuid().optional().describe('Una ruta: se mide entera'),
+      ...readAs
+    })
+    .refine((input) => input.points || input.pins || input.elementId, { message: 'points, pins o elementId' }),
+  output: z.object({
+    distance: z.number().nullable().describe('null si el mapa no tiene escala'),
+    unit: z.string().nullable(),
+    days: z.object({ foot: z.number(), horse: z.number(), ship: z.number() }).nullable(),
+    pixels: z.number()
+  })
 })

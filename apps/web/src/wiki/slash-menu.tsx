@@ -191,8 +191,11 @@ const SlashList = forwardRef<SlashListHandle, SlashListProps>(function SlashList
             data-nested={(entry.type === 'block' && entry.nested) || undefined}
             // El foco se queda en el texto: se elige al pulsar, sin quitárselo
             tabIndex={-1}
-            // Al pasar el ratón, esa es la elegida (como con las flechas)
-            onMouseEnter={() => setActiveId(entryId(entry))}
+            // Al mover el ratón por encima, esa es la elegida (como con las flechas); no si la lista sale bajo un
+            // ratón quieto, que se llevaría la elección de las flechas e Intro
+            onMouseMove={(event) => {
+              if (event.movementX || event.movementY) setActiveId(entryId(entry))
+            }}
             onMouseDown={(event) => {
               event.preventDefault()
               choose(entry)

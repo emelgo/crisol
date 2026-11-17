@@ -5,6 +5,8 @@ test('el máster borra una campaña con una jugadora dentro: ella la pierde al m
   page,
   browser
 }) => {
+  // Larga (cuentas, mundo y campaña por la interfaz): con la máquina ocupada pasaba de los 30 s; como las demás largas
+  test.slow()
   const link = await campaignLink(page)
   const player = await newPlayer(browser, link)
   const campaignUrl = player.url()

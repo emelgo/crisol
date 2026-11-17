@@ -8,12 +8,16 @@ export {
   type Transaction,
   type Writer
 } from './operation.ts'
+export * as activityRepo from './repos/activity.ts'
 export * as actorFoldersRepo from './repos/actor-folders.ts'
 export * as aiRepo from './repos/ai.ts'
 export * as bootstrapRepo from './repos/bootstrap.ts'
+export * as calendarsRepo from './repos/calendars.ts'
+export * as campaignTimeRepo from './repos/campaign-time.ts'
 export * as campaignsRepo from './repos/campaigns.ts'
 export * as chaptersRepo from './repos/chapters.ts'
 export * as charactersRepo from './repos/characters.ts'
+export * as chronologiesRepo from './repos/chronologies.ts'
 export * as combatsRepo from './repos/combats.ts'
 export * as copyRepo from './repos/copy.ts'
 export * as creaturesRepo from './repos/creatures.ts'

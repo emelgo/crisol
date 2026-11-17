@@ -5,7 +5,7 @@
  */
 import { randomUUID } from 'node:crypto'
 import { createPage, createPages, editPage, type PageProperty, pagePanel, readPage } from '@crisol/contracts'
-import { copyRepo, documentsRepo, pagesRepo, templatesRepo, worldsRepo } from '@crisol/db'
+import { calendarsRepo, copyRepo, documentsRepo, pagesRepo, templatesRepo, worldsRepo } from '@crisol/db'
 import {
   applyTemplate,
   ForbiddenError,
@@ -36,6 +36,15 @@ import type { JSONContent } from '@tiptap/core'
 import { pagesChanged } from '../realtime/events.ts'
 import { readDocument, stateOf, writeDocument } from '../wiki/content.ts'
 import { copyDocuments } from '../wiki/copy.ts'
+import {
+  calendarsFor,
+  markdownProperties,
+  readableDates,
+  readWrittenDates,
+  stampDates,
+  type WrittenDate,
+  writesDates
+} from '../wiki/dates.ts'
 import { fileNames, worldFiles } from '../wiki/file-embeds.ts'
 import { linkName, linksOfNewPages, resolveIncoming, resolvePending, worldNames } from '../wiki/links.ts'
 import { editorsNames, hasSeparates, playerEdits } from '../wiki/player-pages.ts'
@@ -151,6 +160,19 @@ type WantedProperty =
   | { name: string; type: 'pages'; value: string[]; single?: true | undefined }
   | { name: string; type: 'choice'; value: string; options?: string[] | undefined }
   | { name: string; type: 'clock'; value: number; segments?: number | undefined }
+  | Extract<PageProperty, { type: 'date' }>
+
+/** Las propiedades escritas a mano con sus fechas leídas contra los calendarios del mundo (shapes: las que ya había) */
+async function withDates(
+  ctx: ActionContext,
+  worldId: string,
+  wanted: readonly (WantedProperty | WrittenDate)[],
+  shapes: readonly PageProperty[]
+): Promise<WantedProperty[]> {
+  if (!writesDates(wanted, shapes)) return wanted as WantedProperty[]
+  const rows = await calendarsRepo.listCalendars(ctx.db, worldId)
+  return readWrittenDates(rows, wanted, shapes) as WantedProperty[]
+}
 
 /** Los segmentos de un reloj nuevo, si no se dicen */
 const CLOCK_DEFAULT = 4
@@ -352,6 +374,15 @@ async function createBatch(
     }
     return { newPage, properties: read.properties }
   })
+  // Las fechas, leídas contra los calendarios (los textos del YAML que van a un campo de fecha de su plantilla, también)
+  const dated = new Map<string, WantedProperty[]>()
+  for (const { newPage, properties } of prepared) {
+    dated.set(
+      newPage.key,
+      await withDates(ctx, wiki.worldId, properties, made.get(newPage.key)?.instance.properties ?? [])
+    )
+  }
+  const calendars = await calendarsRepo.listCalendars(ctx.db, wiki.worldId)
   const resolver = await pageResolver(ctx, wiki.worldId)
   // Bajo una página que alguna campaña conoce, nacen ocultas
   const hidden = parent ? await knownBySomeone(ctx, wiki.worldId, parent.id) : false
@@ -370,9 +401,12 @@ async function createBatch(
           resolver.add(ids.get(newPage.key) as string, newPage.title, aliases?.type === 'list' ? aliases.value : [])
         }
         return new Map(
-          prepared.map(({ newPage, properties }) => [
+          prepared.map(({ newPage }) => [
             newPage.key,
-            withTemplate(toProperties(properties, resolver.resolve), made.get(newPage.key))
+            stampDates(
+              calendars,
+              withTemplate(toProperties(dated.get(newPage.key) ?? [], resolver.resolve), made.get(newPage.key))
+            )
           ])
         )
       }
@@ -416,15 +450,21 @@ export const pageContentActions = [
     const titles = await pagesRepo.titlesOf(ctx.db, wiki.worldId, linked)
     // Las páginas enlazadas, por su título (o su ruta si se repite)
     const nameOf = linkName(await worldNames(ctx, wiki.worldId))
+    const calendars = await calendarsFor(ctx.db, wiki.worldId, view.properties)
     const markdown = pageToMarkdown({
-      properties: view.properties,
+      properties: markdownProperties(calendars, view.properties, reading.full),
       body,
       separate: (documentId) => contents.get(documentId) ?? null,
       pageTitle: (id) => nameOf(id) || titles.get(id) || id,
       fileName: await fileNames(ctx, wiki.worldId),
       ids: ids ?? false
     })
-    return { page: view, markdown, tables: (await pageTables(ctx, wiki, page, reading)).tables }
+    return {
+      page: view,
+      markdown,
+      tables: (await pageTables(ctx, wiki, page, reading)).tables,
+      dates: readableDates(calendars, view.properties, reading.full)
+    }
   }),
 
   implement(createPage, async (ctx, input) => {
@@ -517,11 +557,17 @@ export const pageContentActions = [
     const fromYaml =
       bodyInput?.mode === 'replace' && parsed && parsed.properties.length > 0 ? parsed.properties : undefined
     const wanted = input.properties ?? fromYaml
-    const properties = applied
+    const before = propertiesOf(page.properties)
+    const written = applied
       ? applied.applied.properties
       : wanted
-        ? toProperties(wanted, (await pageResolver(ctx, wiki.worldId)).resolve, propertiesOf(page.properties))
+        ? toProperties(
+            await withDates(ctx, wiki.worldId, wanted, before),
+            (await pageResolver(ctx, wiki.worldId)).resolve,
+            before
+          )
         : undefined
+    const properties = written ? stampDates(await calendarsFor(ctx.db, wiki.worldId, written), written) : undefined
 
     const stored = await documentsRepo.findBody(ctx.db, page.id)
     const changedSinceRequest = Boolean(ctx.requestedAt && stored && stored.updatedAt > ctx.requestedAt)

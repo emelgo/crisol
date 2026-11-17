@@ -11,5 +11,3 @@ imagen en `datos-locales/imagenes/` con el nombre que se dice en cada una.
 Las de escena (fondos, portadas de ejemplo) llevan la frase base nueva, con la luz que diga cada una; ver
 `docs/imagenes.md`. **Los bodegones de las pantallas vacías van todos con la misma frase** (la de siempre, con luz
 cálida y la misma paleta), para que no desentonen entre sí (Enrique, 2026-11-12).
-
-Ahora mismo no falta ninguna.

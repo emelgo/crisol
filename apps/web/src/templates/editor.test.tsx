@@ -61,6 +61,80 @@ describe('editar una plantilla', () => {
     expect(fields.getByRole('button', { name: /Reloj de 8/ })).toBeDefined()
   })
 
+  it('un campo «Fecha», vacío, con «Con fin» y «Fuera de las líneas temporales»', async () => {
+    const { saved } = await renderTemplate()
+    const fields = within((await panel()).getByRole('region', { name: 'Campos' }))
+    await userEvent.click(fields.getByRole('button', { name: 'Campo' }))
+    await userEvent.clear(fields.getByLabelText('Nombre'))
+    await userEvent.type(fields.getByLabelText('Nombre'), 'Reinado{Enter}')
+    await userEvent.selectOptions(fields.getByLabelText('Tipo'), 'Fecha')
+    await userEvent.click(fields.getByRole('checkbox', { name: 'Con fin' }))
+    await waitFor(async () =>
+      expect((await saved()).fields[0]).toEqual({
+        name: 'Reinado',
+        field: expect.any(String),
+        type: 'date',
+        value: null,
+        range: true
+      })
+    )
+    await userEvent.click(fields.getByRole('checkbox', { name: 'Fuera de las líneas temporales' }))
+    await userEvent.click(fields.getByRole('checkbox', { name: 'Con fin' }))
+    await waitFor(async () =>
+      expect((await saved()).fields[0]).toEqual({
+        name: 'Reinado',
+        field: expect.any(String),
+        type: 'date',
+        value: null,
+        offTimeline: true
+      })
+    )
+    expect(fields.getByRole('button', { name: /Reinado.*Fecha/ })).toBeDefined()
+  })
+
+  it('un campo de enlace con su papel y su nombre al revés (módulo 10): «Se lee así» en los dos sentidos', async () => {
+    const { saved } = await renderTemplate()
+    const fields = within((await panel()).getByRole('region', { name: 'Campos' }))
+    await userEvent.click(fields.getByRole('button', { name: 'Campo' }))
+    await userEvent.clear(fields.getByLabelText('Nombre'))
+    await userEvent.type(fields.getByLabelText('Nombre'), 'Padres{Enter}')
+    await userEvent.selectOptions(fields.getByLabelText('Tipo'), 'Enlaces a páginas')
+    // Sin nombre al revés, se lee «Padres de»
+    expect(fields.getByText('Padres de')).toBeDefined()
+    // Al elegir el papel, el nombre al revés se pone solo si estaba vacío
+    await userEvent.selectOptions(fields.getByLabelText('Papel'), 'Padre o madre')
+    expect(fields.getByLabelText('Nombre al revés')).toHaveProperty('value', 'Hijos')
+    await waitFor(async () =>
+      expect((await saved()).fields[0]).toMatchObject({
+        name: 'Padres',
+        type: 'pages',
+        role: 'parent',
+        inverseName: 'Hijos'
+      })
+    )
+    expect(fields.getByText('Hijos')).toBeDefined()
+    // Uno escrito a mano no se pisa al cambiar de papel; y se puede quitar
+    await userEvent.clear(fields.getByLabelText('Nombre al revés'))
+    await userEvent.type(fields.getByLabelText('Nombre al revés'), 'Descendencia{Enter}')
+    await userEvent.selectOptions(fields.getByLabelText('Papel'), 'Pareja')
+    await waitFor(async () =>
+      expect((await saved()).fields[0]).toMatchObject({ role: 'partner', inverseName: 'Descendencia' })
+    )
+    await userEvent.clear(fields.getByLabelText('Nombre al revés'))
+    fields.getByLabelText('Nombre al revés').blur()
+    await waitFor(async () => expect((await saved()).fields[0]).not.toHaveProperty('inverseName'))
+    expect(fields.getByText('Padres de')).toBeDefined()
+    await userEvent.selectOptions(fields.getByLabelText('Papel'), 'Padre o madre')
+    await waitFor(async () => expect((await saved()).fields[0]).toMatchObject({ inverseName: 'Hijos' }))
+    // En la lista, junto a su nombre
+    expect(fields.getByRole('button', { name: /Padres.*Padre o madre/ })).toBeDefined()
+    // A una sola página, el papel se queda; «Ninguno» lo quita
+    await userEvent.selectOptions(fields.getByLabelText('Tipo'), 'Enlace a una página')
+    await waitFor(async () => expect((await saved()).fields[0]).toMatchObject({ single: true, role: 'parent' }))
+    await userEvent.selectOptions(fields.getByLabelText('Papel'), 'Ninguno')
+    await waitFor(async () => expect((await saved()).fields[0]).not.toHaveProperty('role'))
+  })
+
   it('su panel: una tabla de páginas con sus desplegables, con título', async () => {
     const { saved } = await renderTemplate()
     const blocks = within((await panel()).getByRole('region', { name: 'En el panel' }))

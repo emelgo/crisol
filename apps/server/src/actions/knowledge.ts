@@ -2,9 +2,16 @@
  * Lo que sabe cada campaña (ADR-0017, docs/specs/conocimiento.md): «Quién la conoce» de una página y marcar lo que se
  * sabe. Solo quien lleva la wiki; marcar es de tipo «jugadores» (en copiloto, la IA espera la aprobación)
  */
-import { getPageKnowledge, listKnownPages, type PageKnowledge, setKnowledge, setPageEditors } from '@crisol/contracts'
+import {
+  getItemKnowledge,
+  getPageKnowledge,
+  listKnownPages,
+  type PageKnowledge,
+  setKnowledge,
+  setPageEditors
+} from '@crisol/contracts'
 import { campaignsRepo, charactersRepo, knowledgeRepo, operation, pagesRepo } from '@crisol/db'
-import { explainPage, knowledgeFor, NotFoundError } from '@crisol/domain'
+import { explainPage, type KnowledgeMark, knowledgeFor, NotFoundError } from '@crisol/domain'
 import { knowledgeChanged } from '../realtime/events.ts'
 import { readDocument } from '../wiki/content.ts'
 import { linksIn } from '../wiki/links.ts'
@@ -92,6 +99,55 @@ export const knowledgeActions = [
     const world = { kind: 'player' as const, campaignId: '', characterIds: [], knowsWorld: true }
     for (const id of knowledgeFor(world, tree, marks).visiblePages()) known.add(id)
     return { pageIds: [...known] }
+  }),
+
+  // El ojo de un pin, de algo dibujado o de una pestaña (como el del árbol): qué campaña entera lo ve, contando con que
+  // conozca su página (eso se dice aparte)
+  implement(getItemKnowledge, async (ctx, { worldId, kind, targetId }) => {
+    const wiki = await authorizedWiki(ctx, 'page.write', worldId)
+    const target = await knowledgeRepo.findTarget(ctx.db, wiki.worldId, kind, targetId)
+    if (!target) throw new NotFoundError(kind)
+    const [campaigns, tree, marks] = await Promise.all([
+      campaignsRepo.listCampaigns(ctx.db, { worldId: wiki.worldId, userId: ctx.actor.userId, onlyMember: false }),
+      knowledgeRepo.worldTree(ctx.db, wiki.worldId),
+      knowledgeRepo.listMarks(ctx.db, { worldId: wiki.worldId, campaignIds: 'all', kinds: ['page', kind] })
+    ])
+    const pageId = target.pageId ?? ''
+    const item = { kind, id: targetId, pageId, hidden: target.hidden ?? false }
+    return {
+      campaigns: campaigns.map((campaign) => {
+        const reader = {
+          kind: 'player' as const,
+          campaignId: campaign.id,
+          characterIds: [],
+          knowsWorld: campaign.knowsWorld
+        }
+        const page: KnowledgeMark = {
+          campaignId: campaign.id,
+          kind: 'page',
+          targetId: pageId,
+          known: true,
+          characters: null
+        }
+        const knowing = knowledgeFor(reader, tree, [...marks, page])
+        // Un evento o una cronología no cuelgan de ninguna página
+        const loose = item.kind === 'event' || item.kind === 'chronology'
+        const knows =
+          item.kind === 'tab'
+            ? knowing.seesTab(item)
+            : item.kind === 'event'
+              ? knowing.seesEvent(item)
+              : item.kind === 'chronology'
+                ? knowing.seesChronology(item.id)
+                : knowing.seesMapItem({ ...item, kind: item.kind })
+        return {
+          campaignId: campaign.id,
+          name: campaign.name,
+          knows,
+          seesPage: loose || knowledgeFor(reader, tree, marks).seesPage(pageId)
+        }
+      })
+    }
   }),
 
   implement(getPageKnowledge, async (ctx, { pageId }) => {

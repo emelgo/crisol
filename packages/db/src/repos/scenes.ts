@@ -13,18 +13,22 @@ import { pages } from '../schema/pages.ts'
 import {
   campaignTables,
   DEFAULT_SCENE_GRID,
+  type GmScreenData,
   type ScreenCameraData,
   sceneStates,
   scenes,
   sceneTiles,
-  sceneTokens
+  sceneTokens,
+  type WeatherLayerData
 } from '../schema/scenes.ts'
 import { sceneMarks, sceneSnapshots } from '../schema/table-tools.ts'
 import { sceneFog, sceneLights, sceneWalls } from '../schema/vision.ts'
 
 export type SceneRow = typeof scenes.$inferSelect
 export type CampaignTableRow = typeof campaignTables.$inferSelect
-type ScenePatch = Partial<Pick<SceneRow, 'fileId' | 'width' | 'height' | 'tiles' | 'grid' | 'initialView' | 'imported'>>
+type ScenePatch = Partial<
+  Pick<SceneRow, 'fileId' | 'width' | 'height' | 'tiles' | 'grid' | 'initialView' | 'imported' | 'interior'>
+>
 
 // La suelta (ADR-0020) lleva su nombre; la de una pestaña, el de la pestaña
 const sceneColumns = {
@@ -147,6 +151,20 @@ export async function ensureSceneState(
   })
 }
 
+/** El estado de la campaña en una escena, si ya la ha abierto */
+export async function findSceneState(db: Database, campaignId: string, sceneId: string) {
+  const [found] = await db
+    .select()
+    .from(sceneStates)
+    .where(and(eq(sceneStates.campaignId, campaignId), eq(sceneStates.sceneId, sceneId)))
+  return found ?? null
+}
+
+/** Cambia la pantalla del máster de la campaña en una escena (su estado ya existe) */
+export function setGmScreen(db: Database, context: OperationContext, stateId: string, gmScreen: GmScreenData) {
+  return operation(db, context, (w) => w.update(sceneStates, stateId, { gmScreen }))
+}
+
 /** La mesa de una campaña; sin fila aún, la de por defecto (nada abierto, cámara siguiendo al máster) */
 export async function campaignTable(db: Database, campaignId: string): Promise<CampaignTableRow> {
   const [found] = await tableOfCampaign(db).execute({ campaignId })
@@ -164,6 +182,7 @@ export async function campaignTable(db: Database, campaignId: string): Promise<C
       kicked: [],
       screenShow: null,
       sound: null,
+      weatherLayer: { mode: 'today' },
       updatedAt: new Date(0)
     }
   )
@@ -193,6 +212,7 @@ export async function setCampaignTable(
     kicked: string[]
     screenShow: { kind: 'page' | 'image'; id: string; title: string } | null
     sound: SoundState | null
+    weatherLayer: WeatherLayerData
   }>
 ): Promise<CampaignTableRow> {
   const [row] = await db

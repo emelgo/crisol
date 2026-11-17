@@ -21,7 +21,7 @@
   gap: 0.75rem;
   padding: 0.75rem;
   background: var(--color-raised);
-  clip-path: var(--cut);
+  border-radius: var(--radius-frame);
 }
 
 .cover {
@@ -30,7 +30,7 @@
   block-size: 3.5rem;
   object-fit: cover;
   background: var(--color-frame);
-  clip-path: var(--cut-inner);
+  border-radius: var(--radius-button);
 }
 
 .name {

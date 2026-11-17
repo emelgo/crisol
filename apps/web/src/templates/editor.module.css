@@ -137,12 +137,6 @@
   transform: rotate(90deg);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .chevron {
-    transition: none;
-  }
-}
-
 /* «Nueva carpeta» y «Plantilla nueva», juntos a la derecha del rótulo */
 .headTools {
   display: flex;
@@ -457,8 +451,90 @@
   box-shadow: inset 0 2px 0 var(--color-accent);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .grip {
-    transition: none;
-  }
+/* Las opciones de un campo de fecha: dos casillas con su nombre */
+.dateOptions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.shape .dateOptions label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  color: var(--color-text);
+  font-size: 0.875rem;
+  font-weight: 400;
+}
+
+.shape .dateOptions input {
+  padding: 0;
+  accent-color: var(--color-accent);
+}
+
+/* Un campo con papel: su nombre y, debajo, su tipo; el papel, a la derecha */
+.fieldStack {
+  display: grid;
+  flex: 1 1 auto;
+  min-inline-size: 0;
+}
+
+.fieldTypeBelow {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+/* El papel de un campo de enlace (módulo 10), junto a su nombre: Familia en ámbar, Organigrama en rojo */
+.roleBadge {
+  display: inline-flex;
+  flex: none;
+  margin-inline-start: auto;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-series-1) 16%, transparent);
+  color: var(--color-series-1);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.roleBadge[data-mode="org"] {
+  background: color-mix(in srgb, var(--color-series-2) 16%, transparent);
+  color: var(--color-series-2);
+}
+
+/* «Se lee así»: la relación en los dos sentidos */
+.reads {
+  display: grid;
+  gap: 4px;
+  padding: var(--space-2);
+  border: 1px solid var(--line-soft);
+  border-radius: 6px;
+  font-size: 0.8125rem;
+}
+
+.reads p {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.reads .readSource {
+  color: var(--color-text);
+  font-weight: 700;
+}
+
+.reads .readName {
+  color: var(--color-muted);
+}
+
+.reads .readTarget {
+  color: var(--color-link);
+  font-style: normal;
 }
