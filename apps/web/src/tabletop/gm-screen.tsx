@@ -182,7 +182,13 @@ function Column({
         <h3>{title}</h3>
         {aside}
       </header>
-      <div className={gm.columnBody}>{children}</div>
+      <div
+        className={gm.columnBody}
+        // biome-ignore lint/a11y/noNoninteractiveTabindex: se desplaza sola; con el teclado también, aunque dentro no haya nada que pulsar (WCAG 2.1.1)
+        tabIndex={0}
+      >
+        {children}
+      </div>
     </section>
   )
 }

@@ -338,7 +338,9 @@ test('las herramientas: medir y dejar un cono, dañar a las de dentro, un reloj 
   // La pantalla del máster: los statblocks de las criaturas de la escena y la nota de la cripta
   await tools.getByRole('button', { name: 'Pantalla del máster' }).click()
   const drawer = page.getByRole('region', { name: 'Pantalla del máster' })
-  await expect(drawer.getByText('3 en la escena')).toBeVisible()
+  // Las criaturas de la escena, todas (tres goblins y el jefe); los goblins, juntos en un statblock con su «×3»
+  await expect(drawer.getByText('4 en la escena')).toBeVisible()
+  await expect(drawer.getByText('×3')).toBeVisible()
   await expect(drawer.getByRole('article', { name: 'Cripta de Varn' }).getByText(/acechador/)).toBeVisible()
   await settled()
   await axe(page, 'la pantalla del máster')
