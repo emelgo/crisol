@@ -607,7 +607,7 @@ describe('conector MCP con OAuth', () => {
     expect(entries[0]).toMatchObject({ action: 'editPage', via: 'ai', tool: 'editar_pagina' })
   })
 
-  it('la IA tira: en una campaña, oculta por defecto y marcada como de la IA; sin campaña, solo el resultado', async () => {
+  it('la IA tira (en una campaña, oculta por defecto; sin campaña, solo el resultado) y lleva el «hoy» de una campaña', async () => {
     const { call } = await connected()
     const world = (await call<World>('crear_mundo', { name: 'Eana' })).data
     const campaign = (await call<Campaign>('crear_campana', { worldId: world.id, name: 'La Marca' })).data
@@ -632,49 +632,47 @@ describe('conector MCP con OAuth', () => {
     const bad = await call('tirar_dados', { formula: '1d20+' })
     expect(bad.isError).toBe(true)
     expect(bad.text).toContain('No se entiende «1d20+» al final')
-  })
 
-  it('la IA lleva el «hoy» de una campaña: lo pone, mira el clima, lo cambia a mano y viaja (8 · campaña)', async () => {
-    const { call } = await connected()
-    const world = (await call<World>('crear_mundo', { name: 'Eana' })).data
-    const campaign = (await call<Campaign>('crear_campana', { worldId: world.id, name: 'La Marca' })).data
+    // El «hoy» de una campaña (8 · campaña), con la misma conexión: los tokens de OAuth tienen tope
+    const eana = (await call<World>('crear_mundo', { name: 'Eana' })).data
+    const marca = (await call<Campaign>('crear_campana', { worldId: eana.id, name: 'La Marca' })).data
     const calendar = await call('crear_calendario', {
-      worldId: world.id,
+      worldId: eana.id,
       name: 'Eana',
       from: { definition: TEST_CALENDAR }
     })
     expect(calendar.isError, calendar.text).toBeFalsy()
-    expect((await call('cambiar_fecha', { campaignId: campaign.id, days: 1 })).text).toContain('NO_TODAY')
+    expect((await call('cambiar_fecha', { campaignId: marca.id, days: 1 })).text).toContain('NO_TODAY')
     const set = await call<{ today: { form: string } }>('cambiar_fecha', {
-      campaignId: campaign.id,
+      campaignId: marca.id,
       date: '1250-Siega-18'
     })
     expect(set.data.today.form).toBe('1250-Siega-18')
     const today = await call<{ forecast: unknown[]; weather: { condition: string } }>('fecha_de_hoy', {
-      campaignId: campaign.id
+      campaignId: marca.id
     })
     expect(today.data.forecast).toHaveLength(7)
-    const days = await call<{ days: Array<{ form: string }> }>('ver_clima', { campaignId: campaign.id, days: 3 })
+    const days = await call<{ days: Array<{ form: string }> }>('ver_clima', { campaignId: marca.id, days: 3 })
     expect(days.data.days.map((d) => d.form)).toEqual(['1250-Siega-18', '1250-Siega-19', '1250-Siega-20'])
     const changed = await call('cambiar_clima', {
-      campaignId: campaign.id,
+      campaignId: marca.id,
       weather: { condition: 'fog', low: 2, high: 6, wind: 'calm', windDirection: 'N' }
     })
     expect(changed.isError, changed.text).toBeFalsy()
     const plan = await call<{ days: number; arrival: { form: string } }>('planear_viaje', {
-      campaignId: campaign.id,
+      campaignId: marca.id,
       distance: 48,
       medium: 'foot'
     })
     expect(plan.data).toMatchObject({ days: 2, arrival: { form: '1250-Siega-20' } })
     const done = await call<{ today: { form: string } }>('planear_viaje', {
-      campaignId: campaign.id,
+      campaignId: marca.id,
       distance: 48,
       advance: true,
       zone: 'coast'
     })
     expect(done.data.today.form).toBe('1250-Siega-20')
-    const activity = await call<{ count: number }>('actividad_campana', { campaignId: campaign.id })
+    const activity = await call<{ count: number }>('actividad_campana', { campaignId: marca.id })
     expect(activity.isError, activity.text).toBeFalsy()
   })
 
