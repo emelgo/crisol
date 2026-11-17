@@ -53,6 +53,8 @@ test('con cuenta: entra y vuelve a la confirmación; con el enlace cerrado o cam
   page,
   browser
 }) => {
+  // Con la máquina cargada rozaba los 30 s (de 22 a 32 en las baterías enteras): con el margen de las demás largas
+  test.slow()
   const link = await campaignLink(page)
   const player = await browser.newPage()
   await skipTours(player, jugadora.email)

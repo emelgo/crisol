@@ -7,6 +7,8 @@ const PNG = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a
 test('las etiquetas de la cuenta: un archivo lleva una, sale en Etiquetas y, renombrada, cambia en el archivo', async ({
   page
 }) => {
+  // Con la máquina cargada rozaba los 30 s (de 22 a 32 en las baterías enteras): con el margen de las demás largas
+  test.slow()
   await freshOwner(page)
   await createWorld(page, 'Eana')
   await openWiki(page, 'Eana')

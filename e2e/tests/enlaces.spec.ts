@@ -39,6 +39,8 @@ const api = async (page: Page, name: string, data: Record<string, unknown>) => {
 test('[[ sugiere páginas con erratas, enlaza por id, crea la que falta y el enlace sigue a la página', async ({
   page
 }) => {
+  // Con la máquina cargada rozaba los 30 s (de 22 a 32 en las baterías enteras): con el margen de las demás largas
+  test.slow()
   const { maela } = await eana(page)
   await page.keyboard.type('Lo gobierna [[mela')
   await expect(suggestions(page).getByRole('option', { name: /Maela Varn/ })).toHaveAttribute('aria-selected', 'true')
@@ -67,6 +69,8 @@ test('[[ sugiere páginas con erratas, enlaza por id, crea la que falta y el enl
 test('un enlace sin resolver se ve «por crear» y se resuelve solo; uno a la papelera, roto, y se restaura', async ({
   page
 }) => {
+  // Con la máquina cargada rozaba los 30 s (de 22 a 32 en las baterías enteras): con el margen de las demás largas
+  test.slow()
   const { worldId, maela, puerto } = await eana(page)
   // Claude escribe dos enlaces: uno a Maela y otro a lo que aún no existe
   await api(page, 'editPage', {
@@ -88,6 +92,8 @@ test('un enlace sin resolver se ve «por crear» y se resuelve solo; uno a la pa
 })
 
 test('al elegir un nombre de página, la barra propone enlazarlo', async ({ page }) => {
+  // Con la máquina cargada rozaba los 30 s (de 22 a 32 en las baterías enteras): con el margen de las demás largas
+  test.slow()
   await eana(page)
   await page.keyboard.type('Habla con Maela Varn')
   const linkTo = page
@@ -109,6 +115,8 @@ test('al elegir un nombre de página, la barra propone enlazarlo', async ({ page
 test('los enlaces de la página: quién la enlaza, dónde se la nombra y «Enlazar»; al borrarla, cuántas la enlazan', async ({
   page
 }) => {
+  // Con la máquina cargada rozaba los 30 s (de 22 a 32 en las baterías enteras): con el margen de las demás largas
+  test.slow()
   const { worldId, maela, puerto } = await eana(page)
   await api(page, 'editPage', { pageId: puerto, body: { mode: 'append', markdown: 'Lo gobierna [[Maela Varn]].' } })
   const notas = await api(page, 'createPage', { worldId, title: 'Notas', parentId: null })

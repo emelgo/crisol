@@ -156,6 +156,8 @@ test('en el móvil de la jugadora, el d20 abre los dados en una hoja que sube de
 test('los dados 3D: la escena se carga aparte, en un rato libre dentro del mundo, y caen al tirar', async ({
   page
 }) => {
+  // Con la máquina cargada rozaba los 30 s (de 22 a 32 en las baterías enteras): con el margen de las demás largas
+  test.slow()
   const scripts: string[] = []
   page.on('request', (request) => {
     if (request.resourceType() === 'script') scripts.push(new URL(request.url()).pathname)
