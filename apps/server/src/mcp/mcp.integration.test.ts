@@ -9,7 +9,7 @@ import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/cli
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { startServer } from '../server.ts'
-import { seedExampleTemplates, signUpTestUser, TEST_AUTH_SECRET, testDataDir } from '../testing.ts'
+import { seedExampleTemplates, signUpTestUser, TEST_AUTH_SECRET, TEST_CALENDAR, testDataDir } from '../testing.ts'
 import { mcpTestHelpers } from './test-client.ts'
 
 type History = { entries: HistoryEntry[] }
@@ -632,6 +632,50 @@ describe('conector MCP con OAuth', () => {
     const bad = await call('tirar_dados', { formula: '1d20+' })
     expect(bad.isError).toBe(true)
     expect(bad.text).toContain('No se entiende «1d20+» al final')
+  })
+
+  it('la IA lleva el «hoy» de una campaña: lo pone, mira el clima, lo cambia a mano y viaja (8 · campaña)', async () => {
+    const { call } = await connected()
+    const world = (await call<World>('crear_mundo', { name: 'Eana' })).data
+    const campaign = (await call<Campaign>('crear_campana', { worldId: world.id, name: 'La Marca' })).data
+    const calendar = await call('crear_calendario', {
+      worldId: world.id,
+      name: 'Eana',
+      from: { definition: TEST_CALENDAR }
+    })
+    expect(calendar.isError, calendar.text).toBeFalsy()
+    expect((await call('cambiar_fecha', { campaignId: campaign.id, days: 1 })).text).toContain('NO_TODAY')
+    const set = await call<{ today: { form: string } }>('cambiar_fecha', {
+      campaignId: campaign.id,
+      date: '1250-Siega-18'
+    })
+    expect(set.data.today.form).toBe('1250-Siega-18')
+    const today = await call<{ forecast: unknown[]; weather: { condition: string } }>('fecha_de_hoy', {
+      campaignId: campaign.id
+    })
+    expect(today.data.forecast).toHaveLength(7)
+    const days = await call<{ days: Array<{ form: string }> }>('ver_clima', { campaignId: campaign.id, days: 3 })
+    expect(days.data.days.map((d) => d.form)).toEqual(['1250-Siega-18', '1250-Siega-19', '1250-Siega-20'])
+    const changed = await call('cambiar_clima', {
+      campaignId: campaign.id,
+      weather: { condition: 'fog', low: 2, high: 6, wind: 'calm', windDirection: 'N' }
+    })
+    expect(changed.isError, changed.text).toBeFalsy()
+    const plan = await call<{ days: number; arrival: { form: string } }>('planear_viaje', {
+      campaignId: campaign.id,
+      distance: 48,
+      medium: 'foot'
+    })
+    expect(plan.data).toMatchObject({ days: 2, arrival: { form: '1250-Siega-20' } })
+    const done = await call<{ today: { form: string } }>('planear_viaje', {
+      campaignId: campaign.id,
+      distance: 48,
+      advance: true,
+      zone: 'coast'
+    })
+    expect(done.data.today.form).toBe('1250-Siega-20')
+    const activity = await call<{ count: number }>('actividad_campana', { campaignId: campaign.id })
+    expect(activity.isError, activity.text).toBeFalsy()
   })
 
   it('la IA crea una tabla del mundo y tira en ella: oculta por defecto; luego la reinicia', async () => {

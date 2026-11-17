@@ -20,6 +20,7 @@ describe('herramientas MCP', () => {
       'abrir_escena',
       'abrir_puerta',
       'acabar_combate',
+      'actividad_campana',
       'aplicar_tirada',
       'asignar_ficha',
       'borrar_calendario',
@@ -50,11 +51,13 @@ describe('herramientas MCP', () => {
       'cambiar_campana',
       'cambiar_capa',
       'cambiar_carpeta_plantillas',
+      'cambiar_clima',
       'cambiar_cronologia',
       'cambiar_dibujo',
       'cambiar_escena',
       'cambiar_etiqueta',
       'cambiar_evento',
+      'cambiar_fecha',
       'cambiar_ficha',
       'cambiar_grupo',
       'cambiar_grupos_eventos',
@@ -118,6 +121,7 @@ describe('herramientas MCP', () => {
       'escribir_nota',
       'etiquetar_archivo',
       'etiquetar_archivos',
+      'fecha_de_hoy',
       'fichas_en_plantilla',
       'formato_sistemas',
       'grafo_mundo',
@@ -168,6 +172,7 @@ describe('herramientas MCP', () => {
       'partida_criatura',
       'partida_personaje',
       'pendientes',
+      'planear_viaje',
       'poner_en_juego',
       'poner_encuentro',
       'poner_fichas',
@@ -215,6 +220,7 @@ describe('herramientas MCP', () => {
       'ver_calendario',
       'ver_campana',
       'ver_carpetas_actores',
+      'ver_clima',
       'ver_combate',
       'ver_como_grupo',
       'ver_como_jugador',
@@ -362,6 +368,42 @@ describe('herramientas MCP', () => {
     expect(route('open')).toEqual(['setInvitationsOpen', 'players', { campaignId, open: true }])
     expect(route('close')).toEqual(['setInvitationsOpen', 'players', { campaignId, open: false }])
     expect(() => route('borrar')).toThrow()
+  })
+
+  it('cambiar_clima: un día a mano, la zona y la latitud o la capa de la Mesa; planear_viaje: con advance, viajar', () => {
+    const { cambiar_clima, planear_viaje } = MCP_TOOLS
+    if (!cambiar_clima || !planear_viaje) throw new Error('faltan herramientas del clima')
+    const campaignId = crypto.randomUUID()
+    const route = (tool: McpTool, input: Record<string, unknown>) => {
+      const { impl, input: given } = routeCall(tool, input)
+      return [impl.action.name, given]
+    }
+    const snow = { condition: 'snow', low: -4, high: 0, wind: 'gale', windDirection: 'N' }
+    expect(route(cambiar_clima, { campaignId, weather: snow })).toEqual([
+      'setDayWeather',
+      { campaignId, weather: snow }
+    ])
+    expect(route(cambiar_clima, { campaignId, date: '1250-Siega-18', weather: null })).toEqual([
+      'setDayWeather',
+      { campaignId, weather: null, date: '1250-Siega-18' }
+    ])
+    expect(route(cambiar_clima, { campaignId, zone: 'polar' })).toEqual([
+      'setCampaignClimate',
+      { campaignId, zone: 'polar' }
+    ])
+    expect(route(cambiar_clima, { campaignId, layer: { mode: 'none' } })).toEqual([
+      'setWeatherLayer',
+      { campaignId, layer: { mode: 'none' } }
+    ])
+    expect(() => route(cambiar_clima, { campaignId })).toThrow()
+    const [planned, plan] = route(planear_viaje, { campaignId, distance: 90, medium: 'horse', zone: 'coast' })
+    expect(planned).toBe('planTravel')
+    expect(plan).toMatchObject({ campaignId, distance: 90, medium: 'horse' })
+    expect(plan).not.toHaveProperty('zone')
+    const [done, travelled] = route(planear_viaje, { campaignId, distance: 90, advance: true, zone: 'coast' })
+    expect([done, travelled]).toMatchObject(['travel', { campaignId, distance: 90, zone: 'coast' }])
+    expect(travelled).not.toHaveProperty('advance')
+    expect(MCP_TOOLS.fecha_de_hoy && toolConfig(MCP_TOOLS.fecha_de_hoy)).toHaveProperty('outputSchema')
   })
 
   it('niebla: destapar o tapar una zona, o reiniciarla (las dos, de las que ven los jugadores)', () => {

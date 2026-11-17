@@ -7,10 +7,15 @@ import {
   changeFog,
   contentTable,
   createMapElement,
+  dateInput,
   playSound,
   stopSound,
+  travel,
   updateMapElement,
-  updateSoundPlaylist
+  updateSoundPlaylist,
+  weatherDay,
+  weatherLayerSetting,
+  weatherZone
 } from '@crisol/contracts'
 import { APPROVAL_WAIT_MS } from '@crisol/domain'
 import { McpServer } from '@modelcontextprotocol/server'
@@ -280,6 +285,27 @@ const dateToolInput = z.object({
   campaignId: z.uuid().optional().describe('Un jugador: desde esta campaña')
 })
 
+/** El clima de una campaña (8 · campaña): un día a mano, su zona y su latitud, o la capa de la Mesa */
+const climateInput = z.object({
+  campaignId: z.uuid(),
+  date: dateInput.optional().describe('Con weather: el día (sin él, el «hoy» de la campaña)'),
+  weather: weatherDay
+    .nullable()
+    .optional()
+    .describe('El clima de ese día a mano (condition, low, high, wind, windDirection); null vuelve al generado'),
+  zone: weatherZone.optional().describe('La zona de clima de la campaña'),
+  latitude: z.number().min(-90).max(90).optional().describe('La latitud de la campaña, para el sol'),
+  layer: weatherLayerSetting.optional().describe('La capa de clima de la Mesa: today (como hoy), manual o none')
+})
+
+/** Planear un viaje y, con advance, hacerlo (8 · campaña) */
+const travelToolInput = (travel.input as unknown as z.ZodObject).safeExtend({
+  advance: z
+    .boolean()
+    .optional()
+    .describe('Hacer el viaje: avanza el «hoy» los días que pasan (y la zona, con zone) y lo deja en el registro')
+})
+
 /** Ver una página (o el árbol) como la ve un personaje de una campaña, o la campaña sin excepciones (ADR-0017) */
 const viewAsInput = z.object({
   campaignId: z.uuid(),
@@ -370,6 +396,41 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   borrar_evento: { action: 'deleteTimelineEvent' },
   convertir_en_pagina: { action: 'convertEventToPage' },
   cambiar_grupos_eventos: { action: 'updateTimelineGroups' },
+  // El «hoy» de cada campaña, su clima, su sol y sus viajes (módulos 8 y 10 · campaña)
+  fecha_de_hoy: { action: 'getCampaignToday' },
+  cambiar_fecha: { action: 'setCampaignToday' },
+  ver_clima: { action: 'getCampaignWeather' },
+  cambiar_clima: {
+    description:
+      'Cambia el clima de una campaña (solo su máster): con weather, el de un día a mano (sin date, su «hoy»; null lo devuelve al generado; no cambia los siguientes; queda en el registro solo para el máster); con zone o latitude, su zona de clima o su latitud; con layer, la capa de clima de la Mesa (today, manual con kind, intensity y wind, o none). Se deshace, salvo la capa',
+    input: climateInput,
+    actions: ['setDayWeather', 'setCampaignClimate', 'setWeatherLayer'],
+    route: (input) => {
+      const { campaignId, date, weather, zone, latitude, layer } = climateInput.parse(input)
+      if (weather !== undefined)
+        return { action: 'setDayWeather', input: { campaignId, weather, ...(date === undefined ? {} : { date }) } }
+      if (zone !== undefined || latitude !== undefined)
+        return {
+          action: 'setCampaignClimate',
+          input: { campaignId, ...(zone ? { zone } : {}), ...(latitude === undefined ? {} : { latitude }) }
+        }
+      if (layer) return { action: 'setWeatherLayer', input: { campaignId, layer } }
+      throw new InvalidRequestError('BAD_INPUT', 'weather, zone, latitude o layer')
+    }
+  },
+  planear_viaje: {
+    description:
+      'Planea un viaje de una campaña (solo su máster): la distancia escrita (distance, unit) o medida en un mapa del mundo (tabId con points, pins o la ruta elementId, con su escala y lo que se anda al día), el medio (foot, horse, ship), el ritmo (slow ×0,67, normal, fast ×1,33) y los días de descanso dan los días de camino, los que pasan (redondeados hacia arriba), la llegada y el clima de cada día. Con advance, lo hace: avanza el «hoy» (y la zona de clima, con zone) en una sola operación que se deshace, y deja el resumen en el registro',
+    input: travelToolInput,
+    actions: ['planTravel', 'travel'],
+    route: (input) => {
+      const { advance, ...rest } = travelToolInput.parse(input) as Record<string, unknown> & { advance?: boolean }
+      if (advance) return { action: 'travel', input: rest }
+      const { zone: _, ...plan } = rest
+      return { action: 'planTravel', input: plan }
+    }
+  },
+  actividad_campana: { action: 'getCampaignActivity' },
   describir_fecha: {
     description:
       'Describe una fecha de un calendario del mundo (sin calendarId, el principal de worldId): su texto, su día de la semana, su estación, su era, la fase de cada luna y su día del año y, si no es del principal y tiene correspondencia, su equivalencia en el principal. Con addDays, también la de N días después; con until, cuántos días faltan; con to, la pasa a ese otro calendario',
@@ -825,7 +886,15 @@ export const INSTRUCTIONS =
   'tiene correspondencia. crear_eventos crea hasta 100 de una vez (una cronología entera), con su grupo por su nombre ' +
   'y su página (pageId o newPage); cambiar_evento, borrar_evento y convertir_en_pagina (la crea con su texto y lo ' +
   'deja enlazado). Un jugador ve las cronologías que se le revelan (marcar_conocimiento o revelar con kind ' +
-  'chronology) y dentro los eventos no ocultos (o revelados, kind event) y las páginas que conoce. Las etiquetas son de toda la cuenta: míralas con listar_etiquetas y usa las que ' +
+  'chronology) y dentro los eventos no ocultos (o revelados, kind event) y las páginas que conoce. ' +
+  'Cada campaña tiene su «hoy», una fecha del calendario principal: fecha_de_hoy lo da (con el clima de hoy, el sol ' +
+  'y, al máster, la previsión de 7 días) y cambiar_fecha lo pone (date) o lo avanza (days o weeks); cada cambio queda ' +
+  'en el registro de la partida y se deshace. El clima de cada día sale de la zona de la campaña con semilla (no ' +
+  'cambia al volver a pedirlo): ver_clima da un intervalo, y cambiar_clima pone a mano el de un día, la zona, la ' +
+  'latitud o la capa de clima de la Mesa. planear_viaje calcula un viaje (desde una ruta del mapa o la distancia) y, ' +
+  'con advance, avanza el «hoy» con el clima de cada día. actividad_campana dice qué ha pasado en una campaña desde ' +
+  'la última visita de quien te conecta. La jugadora ve el «hoy», el clima de hoy y el sol, no la previsión. ' +
+  'Las etiquetas son de toda la cuenta: míralas con listar_etiquetas y usa las que ' +
   'ya hay antes de inventar otras. Una página puede tener pestañas además de su texto, como un mapa (ver_pestanas): ' +
   'sus pines van de 0 a 1 sobre la imagen y llevan a páginas; míralo con ver_mapa antes de poner nada. Un mapa tiene ' +
   'además capas (crear_capa, cambiar_capa: hidden, solo del máster; quitar_capa) con regiones, rutas y textos: para ' +
