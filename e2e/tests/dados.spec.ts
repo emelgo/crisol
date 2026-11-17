@@ -18,6 +18,9 @@ async function accessible(page: Page, include: string) {
 test('el máster abre los dados en su campaña, junta unos cuantos y tira: se vacían, se cierran y se anuncia el total', async ({
   page
 }) => {
+  // Crea el mundo y la campaña por la interfaz y mira axe: sola tarda la mitad de los 30 s, y con la máquina ocupada
+  // se pasaba (como otras largas, con más margen; las esperas siguen siendo por estado)
+  test.slow()
   await campaignLink(page)
   await toMesa(page)
   // El d20 flotante (fuera de la barra), en la esquina
