@@ -88,7 +88,16 @@ describe('el «hoy» de cada campaña (8 · campaña)', () => {
   })
 
   it('sin calendario no hay fecha que poner; sin fecha no se avanza', async () => {
-    expect(await ok200('getCampaignToday', { campaignId })).toEqual({ today: null, suggestion: null, weekLength: 7 })
+    expect(await ok200('getCampaignToday', { campaignId })).toEqual({
+      today: null,
+      suggestion: null,
+      weekLength: 7,
+      zone: 'temperate',
+      latitude: 45,
+      weather: null,
+      sun: null,
+      forecast: []
+    })
     await fails('setCampaignToday', { campaignId, date: '1250-Siega-18' }, 'NO_CALENDAR')
     await ok200('createCalendar', { worldId, name: 'Eana', from: { definition: TEST_CALENDAR } })
     await fails('setCampaignToday', { campaignId, days: 1 }, 'NO_TODAY')
@@ -156,5 +165,83 @@ describe('el «hoy» de cada campaña (8 · campaña)', () => {
       { calendarId: calendar.id, definition: { ...calendar.definition, months } },
       'CALENDAR_MONTH_IN_USE'
     )
+  })
+
+  describe('el clima y el sol', () => {
+    const today = (cookie = master.cookie, id = campaignId) => ok200('getCampaignToday', { campaignId: id }, cookie)
+    const start = async () => {
+      await ok200('createCalendar', { worldId, name: 'Eana', from: { definition: TEST_CALENDAR } })
+      await ok200('setCampaignToday', { campaignId, date: '1250-Siega-18' })
+    }
+
+    it('con semilla: no cambia al recargar; el máster ve la previsión y la jugadora solo hoy y el sol', async () => {
+      await start()
+      const first = await today()
+      expect(first.zone).toBe('temperate')
+      expect(first.latitude).toBe(45)
+      expect(first.weather).toMatchObject({ form: '1250-Siega-18', manual: false })
+      expect(first.forecast).toHaveLength(7)
+      expect(first.sun.daylight).toBeGreaterThan(12 * 60)
+      expect(await today()).toEqual(first)
+      const range = await ok200('getCampaignWeather', { campaignId, days: 8 })
+      expect(range.days[0]).toEqual(first.weather)
+      expect(range.days.slice(1)).toEqual(first.forecast)
+
+      const seen = await today(ana.cookie)
+      expect(seen.weather).toEqual({ ...first.weather, text: seen.weather.text })
+      expect(seen.sun).toEqual(first.sun)
+      expect(seen.forecast).toEqual([])
+      await fails('getCampaignWeather', { campaignId }, 'FORBIDDEN', ana.cookie)
+    })
+
+    it('dos campañas en la misma zona y el mismo día ven lo mismo; otra zona, otro clima', async () => {
+      await start()
+      const other = (await ok200('createCampaign', { worldId, name: 'Los Páramos' })).id
+      await ok200('setCampaignToday', { campaignId: other, date: '1250-Siega-18' })
+      const week = async (id: string) =>
+        ((await ok200('getCampaignWeather', { campaignId: id, days: 14 })).days as object[]).map((d) => ({
+          ...d,
+          sun: null
+        }))
+      expect(await week(other)).toEqual(await week(campaignId))
+      expect(await ok200('setCampaignClimate', { campaignId: other, zone: 'polar', latitude: 70 })).toEqual({
+        zone: 'polar',
+        latitude: 70
+      })
+      expect(await week(other)).not.toEqual(await week(campaignId))
+      expect((await today(master.cookie, other)).sun.daylight).toBe(24 * 60)
+      await fails('setCampaignClimate', { campaignId, zone: 'polar' }, 'FORBIDDEN', ana.cookie)
+    })
+
+    it('a mano: se queda, no cambia mañana, solo el máster lo ve en el registro y se deshace', async () => {
+      await start()
+      const before = await ok200('getCampaignWeather', { campaignId, days: 2 })
+      const storm = { condition: 'thunderstorm', low: 12, high: 19, wind: 'storm', windDirection: 'SW' }
+      const changed = await ok200('setDayWeather', { campaignId, weather: storm })
+      expect(changed.day).toMatchObject({ ...storm, manual: true, form: '1250-Siega-18' })
+      const after = await ok200('getCampaignWeather', { campaignId, days: 2 })
+      expect(after.days[0]).toMatchObject({ ...storm, manual: true })
+      expect(after.days[1]).toEqual(before.days[1])
+      expect((await today(ana.cookie)).weather).toMatchObject({ condition: 'thunderstorm', manual: true })
+
+      const logged = (await events()).map((e) => e.event?.type)
+      expect(logged).toEqual(['date', 'weather'])
+      expect((await events(ana.cookie)).map((e) => e.event?.type)).toEqual(['date'])
+
+      // Otro día, por su fecha; y quitarlo vuelve al generado
+      await ok200('setDayWeather', { campaignId, date: '1250-Siega-19', weather: storm })
+      await ok200('setDayWeather', { campaignId, date: '1250-Siega-19', weather: null })
+      expect((await ok200('getCampaignWeather', { campaignId, days: 2 })).days[1]).toEqual(before.days[1])
+
+      const [op] = await conn.db
+        .select()
+        .from(schema.operations)
+        .where(eq(schema.operations.action, 'setDayWeather'))
+        .orderBy(schema.operations.createdAt)
+      expect((await ok200('undoOperation', { operationId: op?.id })).status).toBe('undone')
+      expect((await ok200('getCampaignWeather', { campaignId, days: 1 })).days[0]).toEqual(before.days[0])
+      await fails('setDayWeather', { campaignId, weather: storm }, 'FORBIDDEN', ana.cookie)
+      await fails('setDayWeather', { campaignId, weather: { ...storm, low: 30 } }, 'INVALID_INPUT')
+    })
   })
 })

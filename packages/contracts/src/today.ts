@@ -6,6 +6,7 @@
 import { z } from 'zod'
 import { defineAction } from './action.ts'
 import { dateInput, fullDate } from './calendars.ts'
+import { sunView, weatherDayView, weatherZone } from './weather.ts'
 
 /** Una fecha de la campaña, como se lee (sin lo solo del máster para una jugadora) */
 export const campaignDate = z.object({
@@ -25,12 +26,17 @@ export const getCampaignToday = defineAction({
   name: 'getCampaignToday',
   kind: 'read',
   description:
-    'El «hoy» de una campaña: su fecha (null si aún no tiene) y cuántos días tiene su semana. Sin fecha, al máster le propone la de otra campaña del mismo mundo (suggestion)',
+    'El «hoy» de una campaña: su fecha (null si aún no tiene), cuántos días tiene su semana, su zona y su latitud, el clima y el sol de hoy y, al máster, la previsión de los 7 días siguientes. Sin fecha, al máster le propone la de otra campaña del mismo mundo (suggestion)',
   input: z.object({ campaignId: z.uuid() }),
   output: z.object({
     today: campaignDate.nullable(),
     suggestion: campaignDate.nullable().describe('Sin fecha: la de otra campaña del mundo, para copiarla (al máster)'),
-    weekLength: z.int().describe('Los días de la semana de su calendario: lo que avanza «+1 semana»')
+    weekLength: z.int().describe('Los días de la semana de su calendario: lo que avanza «+1 semana»'),
+    zone: weatherZone,
+    latitude: z.number(),
+    weather: weatherDayView.nullable().describe('El clima de hoy, con su sol (null sin fecha)'),
+    sun: sunView.nullable(),
+    forecast: z.array(weatherDayView).describe('Los 7 días siguientes, solo al máster')
   })
 })
 

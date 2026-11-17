@@ -330,7 +330,10 @@ describe('Actions', () => {
       deleteTimelineEvent: true,
       convertEventToPage: true,
       getRelations: true,
-      getWorldGraph: true
+      getWorldGraph: true,
+      getCampaignWeather: true,
+      setCampaignClimate: true,
+      setDayWeather: true
     }
     expect(Object.keys(names).sort()).toEqual(ACTIONS.map((a) => a.name).sort())
   })

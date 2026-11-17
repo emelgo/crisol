@@ -39,7 +39,13 @@ export const todayDates: DateSource = {
     (await campaignTimeRepo.todaysInCalendar(db, calendarId)).map((today) => ({ start: today.date }))
 }
 
-export const DATE_SOURCES: DateSource[] = [pageDates, eventDates, todayDates]
+/** Los días con el clima cambiado a mano (8 · campaña) */
+export const weatherDates: DateSource = {
+  dates: async (db, calendarId) =>
+    (await campaignTimeRepo.dayWeatherInCalendar(db, calendarId)).map((date) => ({ start: date }))
+}
+
+export const DATE_SOURCES: DateSource[] = [pageDates, eventDates, todayDates, weatherDates]
 
 async function allDates(db: Database, calendarId: string) {
   return (await Promise.all(DATE_SOURCES.map((source) => source.dates(db, calendarId)))).flat()

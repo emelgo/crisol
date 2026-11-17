@@ -15,7 +15,7 @@ import {
 import type { PgTable } from 'drizzle-orm/pg-core'
 import type { Database } from './client.ts'
 import { calendars } from './schema/calendars.ts'
-import { campaignMembers, campaigns } from './schema/campaigns.ts'
+import { campaignMembers, campaigns, campaignWeather } from './schema/campaigns.ts'
 import { characters, characterVersions } from './schema/characters.ts'
 import { chronologies, timelineEvents, timelineGroups } from './schema/chronologies.ts'
 import { combatants, combats } from './schema/combat.ts'
@@ -48,6 +48,7 @@ export const TRACKED_TABLES = {
   world_members: worldMembers,
   campaigns,
   campaign_members: campaignMembers,
+  campaign_weather: campaignWeather,
   invitation_links: invitationLinks,
   pages,
   page_bodies: pageBodies,

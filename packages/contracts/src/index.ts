@@ -314,6 +314,7 @@ import {
   updateSceneVision,
   viewAsParty
 } from './vision.ts'
+import { getCampaignWeather, setCampaignClimate, setDayWeather } from './weather.ts'
 import {
   copyContent,
   deleteWorldContent,
@@ -370,6 +371,7 @@ export * from './today.ts'
 export * from './tokens.ts'
 export * from './trash.ts'
 export * from './vision.ts'
+export * from './weather.ts'
 export * from './world-content.ts'
 export * from './worlds.ts'
 
@@ -700,7 +702,10 @@ export const ACTIONS = [
   deleteTimelineEvent,
   convertEventToPage,
   getRelations,
-  getWorldGraph
+  getWorldGraph,
+  getCampaignWeather,
+  setCampaignClimate,
+  setDayWeather
 ]
 
 /** Las acciones por nombre, solo como tipo: la web las usa sin cargar zod */
@@ -1031,4 +1036,7 @@ export type Actions = {
   convertEventToPage: typeof convertEventToPage
   getRelations: typeof getRelations
   getWorldGraph: typeof getWorldGraph
+  getCampaignWeather: typeof getCampaignWeather
+  setCampaignClimate: typeof setCampaignClimate
+  setDayWeather: typeof setDayWeather
 }

@@ -1,6 +1,19 @@
 import { sql } from 'drizzle-orm'
-import { boolean, check, index, jsonb, pgTable, text, timestamp, unique, uuid } from 'drizzle-orm/pg-core'
+import {
+  boolean,
+  check,
+  doublePrecision,
+  index,
+  integer,
+  jsonb,
+  pgTable,
+  text,
+  timestamp,
+  unique,
+  uuid
+} from 'drizzle-orm/pg-core'
 import { user } from './auth.ts'
+import { calendars } from './calendars.ts'
 import { trackedColumns } from './tracked.ts'
 import { worlds } from './worlds.ts'
 
@@ -9,6 +22,9 @@ export interface CampaignToday {
   calendarId: string
   date: { year: number; month: string; day: number }
 }
+
+/** Las zonas de clima (las de `WEATHER_ZONES` del dominio) */
+export const WEATHER_ZONE_VALUES = ['temperate', 'arid', 'cold', 'tropical', 'mountain', 'coast', 'polar'] as const
 
 export const campaigns = pgTable(
   'campaigns',
@@ -39,10 +55,22 @@ export const campaigns = pgTable(
      * el principal); null hasta que el máster la pone
      */
     today: jsonb().$type<CampaignToday | null>(),
+    /** Su zona de clima (decisión 11), de una lista cerrada: cambia al viajar */
+    weatherZone: text({ enum: WEATHER_ZONE_VALUES }).notNull().default('temperate'),
+    /** Su latitud, para el sol (decisión 15) */
+    latitude: doublePrecision().notNull().default(45),
     /** En la papelera desde entonces: no sale en ninguna vista y a los 30 días se purga */
     deletedAt: timestamp({ withTimezone: true })
   },
-  (t) => [index().on(t.worldId), index().on(t.deletedAt)]
+  (t) => [
+    index().on(t.worldId),
+    index().on(t.deletedAt),
+    check(
+      'campaigns_weather_zone',
+      sql`${t.weatherZone} in ('temperate', 'arid', 'cold', 'tropical', 'mountain', 'coast', 'polar')`
+    ),
+    check('campaigns_latitude', sql`${t.latitude} between -90 and 90`)
+  ]
 )
 
 /** master: la dirige. player: juega en ella. Reservado para más adelante: spectator */
@@ -62,5 +90,38 @@ export const campaignMembers = pgTable(
     unique().on(t.campaignId, t.userId),
     index().on(t.userId),
     check('campaign_members_role', sql`${t.role} in ('master', 'player')`)
+  ]
+)
+
+/**
+ * El clima de un día cambiado a mano por el máster (decisión 13): su condición, la mínima, la máxima y el viento. El
+ * día va como fecha de su calendario (ADR-0029: el día absoluto no se guarda). No cambia los días siguientes, que se
+ * siguen calculando con la semilla. Pasa por el historial: se deshace
+ */
+export const campaignWeather = pgTable(
+  'campaign_weather',
+  {
+    ...trackedColumns(),
+    worldId: uuid()
+      .notNull()
+      .references(() => worlds.id, { onDelete: 'cascade' }),
+    campaignId: uuid()
+      .notNull()
+      .references(() => campaigns.id, { onDelete: 'cascade' }),
+    calendarId: uuid()
+      .notNull()
+      .references(() => calendars.id, { onDelete: 'cascade' }),
+    year: integer().notNull(),
+    month: text().notNull(),
+    day: integer().notNull(),
+    condition: text().notNull(),
+    low: integer().notNull(),
+    high: integer().notNull(),
+    wind: text().notNull(),
+    windDirection: text().notNull()
+  },
+  (t) => [
+    unique('campaign_weather_day').on(t.campaignId, t.calendarId, t.year, t.month, t.day),
+    index().on(t.calendarId)
   ]
 )
