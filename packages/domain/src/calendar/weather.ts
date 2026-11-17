@@ -525,3 +525,20 @@ export function weatherLayerOf(day: Pick<WeatherDay, 'condition' | 'wind'>): Wea
   if (!layer) return null
   return { ...layer, wind: WIND_FORCES.indexOf(day.wind) / (WIND_FORCES.length - 1) }
 }
+
+/** Cómo sale la capa de clima en la Mesa de una campaña: como el clima de hoy, a mano o ninguna */
+export type WeatherLayerSetting = { mode: 'today' } | ({ mode: 'manual' } & WeatherLayer) | { mode: 'none' }
+
+/**
+ * La capa que se pinta: ninguna en una escena interior o con «ninguna»; la de a mano tal cual; si no, la del clima de
+ * hoy (sin fecha, ninguna)
+ */
+export function effectiveWeatherLayer(
+  setting: WeatherLayerSetting,
+  today: Pick<WeatherDay, 'condition' | 'wind'> | null,
+  interior: boolean
+): WeatherLayer | null {
+  if (interior || setting.mode === 'none') return null
+  if (setting.mode === 'manual') return { kind: setting.kind, intensity: setting.intensity, wind: setting.wind }
+  return today ? weatherLayerOf(today) : null
+}

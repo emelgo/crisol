@@ -317,7 +317,7 @@ import {
   updateSceneVision,
   viewAsParty
 } from './vision.ts'
-import { getCampaignWeather, setCampaignClimate, setDayWeather } from './weather.ts'
+import { getCampaignWeather, setCampaignClimate, setDayWeather, setWeatherLayer } from './weather.ts'
 import {
   copyContent,
   deleteWorldContent,
@@ -717,7 +717,8 @@ export const ACTIONS = [
   getCampaignActivity,
   markActivitySeen,
   setGmScreen,
-  listRandomTables
+  listRandomTables,
+  setWeatherLayer
 ]
 
 /** Las acciones por nombre, solo como tipo: la web las usa sin cargar zod */
@@ -1057,4 +1058,5 @@ export type Actions = {
   markActivitySeen: typeof markActivitySeen
   setGmScreen: typeof setGmScreen
   listRandomTables: typeof listRandomTables
+  setWeatherLayer: typeof setWeatherLayer
 }

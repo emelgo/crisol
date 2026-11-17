@@ -339,7 +339,8 @@ describe('Actions', () => {
       getCampaignActivity: true,
       markActivitySeen: true,
       setGmScreen: true,
-      listRandomTables: true
+      listRandomTables: true,
+      setWeatherLayer: true
     }
     expect(Object.keys(names).sort()).toEqual(ACTIONS.map((a) => a.name).sort())
   })

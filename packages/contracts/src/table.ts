@@ -10,6 +10,7 @@ import { type campaignTableView, fogMask, sceneGrid, sceneTiles, sceneViewport, 
 import type { SoundView } from './sound.ts'
 import { type LiveMeasure, laserPoints, liveMeasure, screenMark, screenWidget } from './table-tools.ts'
 import { screenToken } from './tokens.ts'
+import { weatherLayer } from './weather.ts'
 
 /** master: todo; screen: la tele (lo que ve el grupo); player: la Mesa de un jugador, que ve lo mismo que la tele */
 export const TABLE_VIEWS = ['master', 'screen', 'player'] as const
@@ -151,6 +152,8 @@ export const screenView = z.object({
     .optional(),
   /** Los sonidos del mapa que suenan y los muros que los paran (opcional por la API de prueba de la web) */
   sounds: z.array(screenSound).optional(),
+  /** La capa de clima que se pinta en la escena (8 · campaña; null, ninguna; opcional por la API de prueba de la web) */
+  weather: weatherLayer.nullable().optional(),
   soundWalls: z.array(soundWall).optional(),
   /** Lo que enseña el máster encima de la escena (docs/specs/ensenar.md) */
   show: z

@@ -15,6 +15,7 @@ import {
   dateForm,
   dateFromDay,
   dayNumber,
+  effectiveWeatherLayer,
   type FullDate,
   formatDate,
   parseDate,
@@ -39,6 +40,7 @@ type Names =
   | 'markActivitySeen'
   | 'setGmScreen'
   | 'listRandomTables'
+  | 'setWeatherLayer'
 
 /** El «hoy» de partida de una campaña */
 export interface FakeToday {
@@ -237,7 +239,14 @@ export function fakeCampaignTime(options: {
       gmScreens.set(key, gmScreen)
       return { sceneId, gmScreen }
     },
-    listRandomTables: () => ({ tables: [] })
+    listRandomTables: () => ({ tables: [] }),
+    setWeatherLayer: ({ campaignId, layer }) => {
+      const found = todayOf(campaignId)
+      const [today] = found
+        ? weatherDays(campaignId, found.calendar, dayNumber(found.calendar.definition, found.today.date), 1)
+        : []
+      return { layer, effective: effectiveWeatherLayer(layer, today ?? null, false) }
+    }
   }
   return { handlers, todays }
 }

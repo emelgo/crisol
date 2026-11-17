@@ -134,7 +134,9 @@ export const scenes = pgTable(
     /** Las criaturas preparadas (docs/specs/escenas-foundry.md): salen al abrirla una campaña por primera vez */
     prepared: jsonb().$type<PreparedCreatureData[]>().notNull().default([]),
     /** Sus pines a páginas (las notas de una escena de Foundry) */
-    pins: jsonb().$type<ScenePinData[]>().notNull().default([])
+    pins: jsonb().$type<ScenePinData[]>().notNull().default([]),
+    /** Interior (8 · campaña, decisión 16): la capa de clima de la Mesa no se pinta en ella */
+    interior: boolean().notNull().default(false)
   },
   (t) => [index().on(t.worldId)]
 )
@@ -181,6 +183,15 @@ export const sceneStates = pgTable(
   (t) => [unique().on(t.campaignId, t.sceneId), index().on(t.sceneId)]
 )
 
+/**
+ * La capa de clima de la Mesa de una campaña (8 · campaña, decisión 16): como el clima de hoy (lo de siempre), a mano
+ * (lluvia, nieve, niebla o ceniza, con su intensidad y su viento, de 0 a 1) o ninguna
+ */
+export type WeatherLayerData =
+  | { mode: 'today' }
+  | { mode: 'manual'; kind: 'rain' | 'snow' | 'fog' | 'ash'; intensity: number; wind: number }
+  | { mode: 'none' }
+
 /** La cámara de la pantalla de la tele: sigue al máster o se queda en un encuadre */
 export type ScreenCameraData = { mode: 'follow' } | { mode: 'group' } | { mode: 'fixed'; view: SceneViewData }
 
@@ -214,6 +225,8 @@ export const campaignTables = pgTable('campaign_tables', {
   screenShow: jsonb().$type<{ kind: 'page' | 'image'; id: string; title: string } | null>(),
   /** Lo que suena (docs/specs/sonido.md): las listas y los efectos con la hora del servidor en que empezaron */
   sound: jsonb().$type<SoundState>(),
+  /** La capa de clima (8 · campaña): como hoy, a mano o ninguna */
+  weatherLayer: jsonb().$type<WeatherLayerData>().notNull().default({ mode: 'today' }),
   updatedAt: timestamp({ withTimezone: true }).defaultNow().notNull()
 })
 

@@ -624,6 +624,13 @@
       "when": 1794906895188,
       "tag": "0088_pantalla_master",
       "breakpoints": true
+    },
+    {
+      "idx": 89,
+      "version": "7",
+      "when": 1794907357232,
+      "tag": "0089_capa_clima",
+      "breakpoints": true
     }
   ]
 }

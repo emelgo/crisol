@@ -18,14 +18,17 @@ import {
   sceneStates,
   scenes,
   sceneTiles,
-  sceneTokens
+  sceneTokens,
+  type WeatherLayerData
 } from '../schema/scenes.ts'
 import { sceneMarks, sceneSnapshots } from '../schema/table-tools.ts'
 import { sceneFog, sceneLights, sceneWalls } from '../schema/vision.ts'
 
 export type SceneRow = typeof scenes.$inferSelect
 export type CampaignTableRow = typeof campaignTables.$inferSelect
-type ScenePatch = Partial<Pick<SceneRow, 'fileId' | 'width' | 'height' | 'tiles' | 'grid' | 'initialView' | 'imported'>>
+type ScenePatch = Partial<
+  Pick<SceneRow, 'fileId' | 'width' | 'height' | 'tiles' | 'grid' | 'initialView' | 'imported' | 'interior'>
+>
 
 // La suelta (ADR-0020) lleva su nombre; la de una pestaña, el de la pestaña
 const sceneColumns = {
@@ -179,6 +182,7 @@ export async function campaignTable(db: Database, campaignId: string): Promise<C
       kicked: [],
       screenShow: null,
       sound: null,
+      weatherLayer: { mode: 'today' },
       updatedAt: new Date(0)
     }
   )
@@ -208,6 +212,7 @@ export async function setCampaignTable(
     kicked: string[]
     screenShow: { kind: 'page' | 'image'; id: string; title: string } | null
     sound: SoundState | null
+    weatherLayer: WeatherLayerData
   }>
 ): Promise<CampaignTableRow> {
   const [row] = await db

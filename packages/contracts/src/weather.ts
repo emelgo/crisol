@@ -134,3 +134,31 @@ export const setDayWeather = defineAction({
   }),
   output: z.object({ day: weatherDayView })
 })
+
+export const WEATHER_LAYER_KINDS = ['rain', 'snow', 'fog', 'ash'] as const
+
+/** La capa de clima que se pinta en la Mesa: lluvia, nieve, niebla o ceniza, con su intensidad y su viento (0 a 1) */
+export const weatherLayer = z.object({
+  kind: z.enum(WEATHER_LAYER_KINDS),
+  intensity: z.number().min(0).max(1),
+  wind: z.number().min(0).max(1)
+})
+
+/** Cómo sale en la Mesa de una campaña: como el clima de hoy (lo de siempre), a mano o ninguna */
+export const weatherLayerSetting = z.discriminatedUnion('mode', [
+  z.object({ mode: z.literal('today') }),
+  weatherLayer.extend({ mode: z.literal('manual') }),
+  z.object({ mode: z.literal('none') })
+])
+
+export type WeatherLayerView = z.infer<typeof weatherLayer>
+export type WeatherLayerSettingView = z.infer<typeof weatherLayerSetting>
+
+export const setWeatherLayer = defineAction({
+  name: 'setWeatherLayer',
+  kind: 'write',
+  description:
+    'La capa de clima de la Mesa de una campaña (solo su máster): como el clima de hoy (today, lo de siempre), a mano (manual: rain, snow, fog o ash, con intensity y wind de 0 a 1) o ninguna (none). En una escena Interior no sale nunca',
+  input: z.object({ campaignId: z.uuid(), layer: weatherLayerSetting }),
+  output: z.object({ layer: weatherLayerSetting, effective: weatherLayer.nullable() })
+})

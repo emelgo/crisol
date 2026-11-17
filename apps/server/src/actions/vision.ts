@@ -43,6 +43,7 @@ import { campaignTableView, sceneView, screenViewOf, tokensWithSenses, visionOf 
 import { playerMayUseDoor } from '../table/rules.ts'
 import { campaignSceneSounds, loadSceneSounds, sceneSoundViewOf } from '../table/scene-sounds.ts'
 import { wallOf } from '../table/vision.ts'
+import { layerIn, todayWeather } from '../table/weather-layer.ts'
 import { authorizedCampaign, authorizedPage, authorizedScene, sceneOfCampaign } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
 import { implement } from './registry.ts'
@@ -667,7 +668,8 @@ export const visionActions = [
       widgets: master.widgets ?? [],
       paused: table.paused,
       movement: table.movement,
-      sounds: await campaignSceneSounds(ctx, campaignId, scene)
+      sounds: await campaignSceneSounds(ctx, campaignId, scene),
+      weather: layerIn(table.weatherLayer, await todayWeather(ctx.db, campaign), scene)
     })
     const cells = visibleCellsOf(scene.grid, vision.visible, vision)
     const seen = loaded.views.filter((t) => !t.hidden && vision.seen.has(t.id))

@@ -121,17 +121,19 @@ export const sceneActions = [
     return { ok: true as const }
   }),
 
-  implement(updateScene, async (ctx, { sceneId, grid, initialView }) => {
+  implement(updateScene, async (ctx, { sceneId, grid, initialView, interior }) => {
     const { scene, page, wiki } = await authorizedScene(ctx, 'page.write', sceneId)
     const details = {
       title: page.title,
       name: scene.name,
       ...(grid ? { grid: true } : {}),
-      ...(initialView !== undefined ? { view: true } : {})
+      ...(initialView !== undefined ? { view: true } : {}),
+      ...(interior !== undefined ? { interior } : {})
     }
     await scenesRepo.updateScene(ctx.db, historyContext(ctx, 'updateScene', details, wiki), sceneId, {
       ...(grid ? { grid: { ...scene.grid, ...grid } } : {}),
-      ...(initialView !== undefined ? { initialView } : {})
+      ...(initialView !== undefined ? { initialView } : {}),
+      ...(interior !== undefined ? { interior } : {})
     })
     ctx.table?.sceneChanged(sceneId)
     ctx.realtime.publish(pagesChanged(wiki))

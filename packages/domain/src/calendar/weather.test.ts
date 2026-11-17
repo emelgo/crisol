@@ -4,6 +4,7 @@ import { gregorianCalendar } from './definition.ts'
 import { EANA } from './fixtures.ts'
 import { sunTimes } from './sun.ts'
 import {
+  effectiveWeatherLayer,
   WEATHER_WINDOW,
   WEATHER_ZONES,
   type WeatherDay,
@@ -90,6 +91,16 @@ describe('el clima (8 · campaña)', () => {
     expect(weatherLayerOf({ condition: 'snow', wind: 'calm' })).toEqual({ kind: 'snow', intensity: 0.75, wind: 0 })
     expect(weatherLayerOf({ condition: 'fog', wind: 'light' })?.kind).toBe('fog')
     expect(weatherLayerOf({ condition: 'clear', wind: 'storm' })).toBeNull()
+  })
+
+  it('la capa que se pinta: como hoy, a mano o ninguna; en una escena interior, nunca', () => {
+    const rain = { condition: 'rain' as const, wind: 'calm' as const }
+    expect(effectiveWeatherLayer({ mode: 'today' }, rain, false)).toEqual({ kind: 'rain', intensity: 0.55, wind: 0 })
+    expect(effectiveWeatherLayer({ mode: 'today' }, null, false)).toBeNull()
+    const ash = { mode: 'manual' as const, kind: 'ash' as const, intensity: 0.3, wind: 0.6 }
+    expect(effectiveWeatherLayer(ash, rain, false)).toEqual({ kind: 'ash', intensity: 0.3, wind: 0.6 })
+    expect(effectiveWeatherLayer({ mode: 'none' }, rain, false)).toBeNull()
+    expect(effectiveWeatherLayer(ash, rain, true)).toBeNull()
   })
 })
 

@@ -8,9 +8,10 @@ import {
   type LogEventData,
   setCampaignClimate,
   setDayWeather,
+  setWeatherLayer,
   type WeatherDayView
 } from '@crisol/contracts'
-import { type calendarsRepo, campaignTimeRepo } from '@crisol/db'
+import { type calendarsRepo, campaignTimeRepo, scenesRepo } from '@crisol/db'
 import {
   type Compass,
   dateForm,
@@ -25,6 +26,7 @@ import {
   weatherRange
 } from '@crisol/domain'
 import { campaignsChanged } from '../realtime/events.ts'
+import { layerIn, todayWeather } from '../table/weather-layer.ts'
 import { seenDefinition } from '../wiki/dates.ts'
 import { authorizedCampaign } from './access.ts'
 import { dayIn, loggedDate, primaryOf, todayOf } from './campaign-dates.ts'
@@ -169,5 +171,14 @@ export const weatherActions = [
     ctx.realtime.publish(campaignsChanged({ campaignId: campaign.id, worldId: campaign.worldId }))
     ctx.table?.changed(campaign.id)
     return { day }
+  }),
+
+  implement(setWeatherLayer, async (ctx, { campaignId, layer }) => {
+    const campaign = await authorizedCampaign(ctx, 'table.manage', campaignId)
+    // Es estado de la mesa, como lo que mira: no va al historial
+    const table = await scenesRepo.setCampaignTable(ctx.db, campaign.id, { weatherLayer: layer })
+    ctx.table?.changed(campaign.id)
+    const open = table.openSceneId ? await scenesRepo.findScene(ctx.db, table.openSceneId) : null
+    return { layer, effective: layerIn(layer, await todayWeather(ctx.db, campaign), open) }
   })
 ]

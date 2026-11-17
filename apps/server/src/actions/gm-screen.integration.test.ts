@@ -1,14 +1,14 @@
 /**
  * La pantalla del máster (módulos 8 y 10 · campaña, decisión 24): lo elegido en el cajón G (la nota fijada, lo que
  * enseña y las tablas del mundo) se guarda en el servidor por campaña y escena, sale en la mesa en otro aparato y se
- * deshace; las tablas se tiran ocultas al registro
+ * deshace; las tablas se tiran ocultas al registro. Y la capa de clima de la Mesa: como hoy, a mano o ninguna, e Interior
  */
 import { connect, schema } from '@crisol/db'
 import { freshTestDatabase, resetDatabase } from '@crisol/db/testing'
 import { desc, eq } from 'drizzle-orm'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { buildApp } from '../app.ts'
-import { createTestAuth, signUpTestUser, TEST_SEAL_KEY } from '../testing.ts'
+import { createTestAuth, signUpTestUser, TEST_CALENDAR, TEST_SEAL_KEY } from '../testing.ts'
 
 const BASE_URL = 'http://localhost:5173'
 const ok = async () => undefined
@@ -119,5 +119,32 @@ describe('la pantalla del máster (8 · campaña)', () => {
     await fails('setGmScreen', { campaignId, note: foreign.pageId }, 'NOT_FOUND')
     await fails('setGmScreen', { campaignId, statblocks: false }, 'FORBIDDEN', ana.cookie)
     expect((await call('listRandomTables', { worldId }, ana.cookie)).statusCode).toBe(404)
+  })
+
+  it('la capa de clima: como el clima de hoy, a mano o ninguna; en una escena Interior, nada', async () => {
+    await ok200('openScene', { campaignId, sceneId })
+    const weather = async () => (await ok200('getCampaignTable', { campaignId })).weather
+    // Sin fecha, no hay clima de hoy
+    expect(await weather()).toEqual({ setting: { mode: 'today' }, effective: null })
+    await ok200('createCalendar', { worldId, name: 'Eana', from: { definition: TEST_CALENDAR } })
+    await ok200('setCampaignToday', { campaignId, date: '1250-Siega-18' })
+    await ok200('setDayWeather', {
+      campaignId,
+      weather: { condition: 'heavy-rain', low: 10, high: 14, wind: 'calm', windDirection: 'W' }
+    })
+    expect((await weather()).effective).toEqual({ kind: 'rain', intensity: 0.85, wind: 0 })
+    const ash = { mode: 'manual', kind: 'ash', intensity: 0.4, wind: 0.2 }
+    expect(await ok200('setWeatherLayer', { campaignId, layer: ash })).toEqual({
+      layer: ash,
+      effective: { kind: 'ash', intensity: 0.4, wind: 0.2 }
+    })
+    expect(await weather()).toEqual({ setting: ash, effective: { kind: 'ash', intensity: 0.4, wind: 0.2 } })
+    const inside = await ok200('updateScene', { sceneId, interior: true })
+    expect(inside.interior).toBe(true)
+    expect((await weather()).effective).toBeNull()
+    await ok200('updateScene', { sceneId, interior: false })
+    await ok200('setWeatherLayer', { campaignId, layer: { mode: 'none' } })
+    expect((await weather()).effective).toBeNull()
+    await fails('setWeatherLayer', { campaignId, layer: { mode: 'today' } }, 'FORBIDDEN', ana.cookie)
   })
 })
