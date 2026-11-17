@@ -279,6 +279,7 @@ import {
   updateTemplate,
   updateTemplateFolder
 } from './templates.ts'
+import { getCampaignToday, setCampaignToday } from './today.ts'
 import {
   assignToken,
   deleteEncounter,
@@ -365,6 +366,7 @@ export * from './table-tools.ts'
 export * from './tables.ts'
 export * from './tags.ts'
 export * from './templates.ts'
+export * from './today.ts'
 export * from './tokens.ts'
 export * from './trash.ts'
 export * from './vision.ts'
@@ -384,6 +386,8 @@ export const ACTIONS = [
   updateCampaign,
   listWorldsWithCampaigns,
   getCampaign,
+  getCampaignToday,
+  setCampaignToday,
   getInvitation,
   regenerateInvitation,
   setInvitationsOpen,
@@ -712,6 +716,8 @@ export type Actions = {
   updateCampaign: typeof updateCampaign
   listWorldsWithCampaigns: typeof listWorldsWithCampaigns
   getCampaign: typeof getCampaign
+  getCampaignToday: typeof getCampaignToday
+  setCampaignToday: typeof setCampaignToday
   getInvitation: typeof getInvitation
   regenerateInvitation: typeof regenerateInvitation
   setInvitationsOpen: typeof setInvitationsOpen

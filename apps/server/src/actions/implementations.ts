@@ -42,6 +42,7 @@ import { tableToolActions } from './table-tools.ts'
 import { tableActions } from './tables.ts'
 import { tagActions } from './tags.ts'
 import { templateActions } from './templates.ts'
+import { todayActions } from './today.ts'
 import { tokenActions } from './tokens.ts'
 import { trashActions } from './trash.ts'
 import { versionActions } from './versions.ts'
@@ -56,6 +57,7 @@ export const IMPLEMENTATIONS: Implementation[] = [
   ...calendarActions,
   ...chronologyActions,
   ...campaignActions,
+  ...todayActions,
   ...diceActions,
   ...logActions,
   ...actorFolderActions,

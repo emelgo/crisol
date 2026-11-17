@@ -3,7 +3,15 @@
  * con sus tiradas al listar. A cada uno le llega (por tiempo real y por páginas) solo lo que puede ver: el máster, todo,
  * también los susurros entre jugadores (Enrique); los demás, lo de todos, lo suyo y lo que se les susurra
  */
-import { clearLog, deleteMessage, type LogEntry, type LogMessage, listLog, sendMessage } from '@crisol/contracts'
+import {
+  clearLog,
+  deleteMessage,
+  type LogEntry,
+  type LogEventData,
+  type LogMessage,
+  listLog,
+  sendMessage
+} from '@crisol/contracts'
 import { charactersRepo, creaturesRepo, diceRepo, logRepo, membersRepo } from '@crisol/db'
 import { can, ForbiddenError, NotFoundError } from '@crisol/domain'
 import { authorizedCampaign } from './access.ts'
@@ -37,6 +45,8 @@ export function presentMessage(row: logRepo.MessageRow, names: ReadonlyMap<strin
     createdAt: row.createdAt.toISOString()
   }
   if (row.kind === 'shown') return { kind: 'shown', ...base, shown: row.shown }
+  // Una entrada del sistema; borrada, queda como un mensaje borrado
+  if (row.kind === 'event' && row.event) return { kind: 'event', ...base, ai: row.ai, event: row.event as LogEventData }
   return { kind: 'message', ...base, ai: row.ai, style: row.style, speaker: row.speaker, text: row.text }
 }
 
@@ -58,6 +68,31 @@ export function publishEntry(
     to: { capability: 'dice.private', target },
     message
   })
+}
+
+/**
+ * Deja una entrada del sistema en el registro (docs/specs/modulo-8-10-campana.md, decisión 9) y la manda a quien la
+ * puede ver: a todos, o con whisper (["master"]) solo a los másteres. No se deshace: deshacer escribe la suya
+ */
+export async function logEvent(
+  ctx: ActionContext,
+  campaign: Campaign,
+  event: LogEventData,
+  whisper: string[] | null = null
+): Promise<void> {
+  const row = await logRepo.insertMessage(ctx.db, {
+    campaignId: campaign.id,
+    worldId: campaign.worldId,
+    userId: ctx.actor.userId,
+    ai: ctx.via === 'ai',
+    kind: 'event',
+    style: 'ooc',
+    speaker: { kind: 'user' },
+    text: '',
+    whisper,
+    event
+  })
+  if (row) publishEntry(ctx, campaign, presentMessage(row, new Map()), whisper)
 }
 
 export const logActions = [

@@ -157,6 +157,7 @@ import { buildSoundView, listInfo } from '../sound/view.ts'
 import { readFoundryZip } from '../systems/foundry-zip.ts'
 import { type ActionInput, type ActionName, type ActionOutput, type ApiClient, ApiError } from './client.ts'
 import { type FakeCalendar, fakeCalendars } from './fake-calendars.ts'
+import { type FakeToday, fakeCampaignTime } from './fake-campaign-time.ts'
 import { type FakeEvent, fakeChronologies } from './fake-chronologies.ts'
 
 export function fakeApi(
@@ -224,6 +225,8 @@ export function fakeApi(
     chronologies?: Parameters<typeof fakeChronologies>[0]['chronologies']
     timelineGroups?: Parameters<typeof fakeChronologies>[0]['groups']
     events?: FakeEvent[]
+    /** El «hoy» de las campañas (8 · campaña) */
+    todays?: FakeToday[]
   } = {}
 ) {
   const organizations = options.organizations ?? []
@@ -231,6 +234,7 @@ export function fakeApi(
   const campaigns = [...(options.campaigns ?? [])]
   const history = [...(options.history ?? [])]
   const calendars = fakeCalendars(options.calendars)
+  const campaignTime = fakeCampaignTime({ calendars: calendars.rows, campaigns, todays: options.todays ?? [] })
   const rolls = [...(options.rolls ?? [])]
   // El registro de la partida (docs/specs/registro.md): los mensajes; las tiradas, de rolls
   const messages: LogMessage[] = []
@@ -1614,6 +1618,7 @@ export function fakeApi(
   const handlers: { [N in ActionName]: (input: ActionInput<N>) => ActionOutput<N> } = {
     ...calendars.handlers,
     ...chronologies.handlers,
+    ...campaignTime.handlers,
     listOrganizations: () => ({ organizations }),
     // Copias, como las de la API real (JSON nuevo en cada respuesta)
     // En el orden en que se crearon, como el servidor

@@ -16,6 +16,8 @@ describe('Actions', () => {
       updateCampaign: true,
       listWorldsWithCampaigns: true,
       getCampaign: true,
+      getCampaignToday: true,
+      setCampaignToday: true,
       getInvitation: true,
       regenerateInvitation: true,
       setInvitationsOpen: true,

@@ -9,7 +9,7 @@ import { desc, eq } from 'drizzle-orm'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { buildApp } from '../app.ts'
 import { createTestAuth, signUpTestUser, TEST_SEAL_KEY } from '../testing.ts'
-import { DATE_SOURCES, eventDates, pageDates } from './calendar-dates.ts'
+import { DATE_SOURCES, eventDates, pageDates, todayDates } from './calendar-dates.ts'
 
 const BASE_URL = 'http://localhost:5173'
 const ok = async () => undefined
@@ -130,7 +130,7 @@ describe('los calendarios de un mundo (módulo 8)', () => {
   })
 
   afterEach(() => {
-    DATE_SOURCES.splice(0, DATE_SOURCES.length, pageDates, eventDates)
+    DATE_SOURCES.splice(0, DATE_SOURCES.length, pageDates, eventDates, todayDates)
   })
 
   afterAll(async () => {

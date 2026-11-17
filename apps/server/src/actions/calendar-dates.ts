@@ -1,9 +1,9 @@
 /**
  * Las fechas que usan un calendario (ADR-0029): borrar un calendario con fechas o quitarle un mes con fechas se impide,
  * y acortar un mes avisa de cuántas tienen un día que ya no cabe. Cada capacidad que guarda fechas añade aquí su
- * fuente: `fechas` (las propiedades de las páginas) y `cronologias` (los eventos)
+ * fuente: `fechas` (las propiedades de las páginas), `cronologias` (los eventos) y el «hoy» de las campañas
  */
-import { chronologiesRepo, type Database, pagesRepo } from '@crisol/db'
+import { campaignTimeRepo, chronologiesRepo, type Database, pagesRepo } from '@crisol/db'
 import { type CalendarDefinition, isValidDate, type WorldDate } from '@crisol/domain'
 import { propertiesOf } from '../wiki/properties.ts'
 
@@ -33,7 +33,13 @@ export const eventDates: DateSource = {
   dates: async (db, calendarId) => (await chronologiesRepo.eventDates(db, calendarId)).map((row) => row.date)
 }
 
-export const DATE_SOURCES: DateSource[] = [pageDates, eventDates]
+/** El «hoy» de las campañas (8 · campaña) */
+export const todayDates: DateSource = {
+  dates: async (db, calendarId) =>
+    (await campaignTimeRepo.todaysInCalendar(db, calendarId)).map((today) => ({ start: today.date }))
+}
+
+export const DATE_SOURCES: DateSource[] = [pageDates, eventDates, todayDates]
 
 async function allDates(db: Database, calendarId: string) {
   return (await Promise.all(DATE_SOURCES.map((source) => source.dates(db, calendarId)))).flat()

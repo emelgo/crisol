@@ -318,7 +318,7 @@ export const deleteCalendar = defineAction({
   output: z.object({ id: z.uuid() })
 })
 
-const dateInput = z
+export const dateInput = z
   .union([
     z.string().trim().min(1).max(80),
     z.object({ year, month: z.union([z.string().max(LIMITS.name), z.int()]).optional(), day: z.int().optional() })

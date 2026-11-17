@@ -6,6 +6,7 @@ import { applyVersion } from '../wiki/versions.ts'
 import { targetOrganization } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
 import { implement } from './registry.ts'
+import { logUndoneToday } from './today.ts'
 
 type Row = NonNullable<Awaited<ReturnType<typeof historyRepo.getOperation>>>
 
@@ -71,6 +72,8 @@ export const historyActions = [
     }
     await tellTrashChanges(ctx, result.applied)
     tellTables(ctx, result.applied)
+    // El registro no se deshace: un «hoy» que vuelve atrás lo dice en él
+    await logUndoneToday(ctx, result.applied)
     // Lo que cambia quién escribe en una página de jugadores (el permiso, lo que se sabe, quién juega, sus personajes,
     // su texto): sus conexiones se vuelven a mirar
     const touches = ['page_editors', 'knowledge', 'campaign_members', 'campaigns', 'characters', 'page_bodies']

@@ -3,8 +3,9 @@
  * cristal abajo, a la derecha del zoom, con las últimas líneas y el cuadro para escribir; al desplegarla, el hilo entero.
  * Lo que llega lo decide el servidor (a cada uno, lo suyo); aquí se vuelve a pedir con cada aviso
  */
-import type { Campaign, DiceRoll, LogEntry } from '@crisol/contracts'
+import type { Campaign, DiceRoll, LogEntry, LogEvent } from '@crisol/contracts'
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import type { TFunction } from 'i18next'
 import { Check, ChevronDown, ChevronUp, Lock, MessageSquare, SendHorizontal, Trash2 } from 'lucide-react'
 import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -448,6 +449,22 @@ function Entry({
       {whisperLabel}
     </span>
   )
+  if (entry.kind === 'event') {
+    return (
+      <li className={log.entry}>
+        <Avatar userId={entry.by.userId} name={entry.by.name} color={entry.by.color} />
+        <div className={log.body}>
+          <div className={log.who}>
+            <b>{entry.by.name}</b>
+            {time}
+            {flag}
+            {remove}
+          </div>
+          <p className={log.what}>{eventText(t, entry.event)}</p>
+        </div>
+      </li>
+    )
+  }
   if (entry.kind === 'shown') {
     return (
       <li className={log.entry}>
@@ -493,6 +510,15 @@ function Entry({
       </div>
     </li>
   )
+}
+
+/** El texto de una entrada del sistema (el «hoy», un viaje, el clima a mano) */
+function eventText(t: TFunction, event: LogEvent['event']): string {
+  if (event.type === 'travel') return t('log.event.travel', { count: event.days, to: event.to.text })
+  if (event.type === 'weather')
+    return t(event.weather ? 'log.event.weather' : 'log.event.weatherCleared', { date: event.date.text })
+  if (!event.to) return t('log.event.dateCleared')
+  return t(event.undo ? 'log.event.dateUndo' : 'log.event.date', { to: event.to.text })
 }
 
 function Avatar({ userId, name, color }: { userId: string; name: string; color: string | null }) {

@@ -6,7 +6,7 @@
 import { and, desc, eq, inArray, isNull, lt, or, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { user } from '../schema/auth.ts'
-import { campaignMessages, type MessageSpeaker, type ShownData } from '../schema/log.ts'
+import { campaignMessages, type LogEventData, type MessageSpeaker, type ShownData } from '../schema/log.ts'
 
 /** Cuántos mensajes puede mandar una cuenta por minuto */
 export const MESSAGES_PER_MINUTE = 40
@@ -24,6 +24,7 @@ const view = {
   text: campaignMessages.text,
   whisper: campaignMessages.whisper,
   shown: campaignMessages.shown,
+  event: campaignMessages.event,
   deletedAt: campaignMessages.deletedAt,
   createdAt: campaignMessages.createdAt
 }
@@ -35,17 +36,18 @@ export type MessageRow = {
   name: string
   color: string | null
   ai: boolean
-  kind: 'message' | 'shown'
+  kind: 'message' | 'shown' | 'event'
   style: 'ic' | 'ooc' | 'emote'
   speaker: MessageSpeaker
   text: string
   whisper: string[] | null
   shown: ShownData | null
+  event: LogEventData | null
   deletedAt: Date | null
   createdAt: Date
 }
 
-/** Guarda un mensaje (null si la cuenta ya mandó los del último minuto) */
+/** Guarda un mensaje (null si la cuenta ya mandó los del último minuto; las entradas del sistema no cuentan) */
 export async function insertMessage(
   db: Database,
   input: {
@@ -53,12 +55,13 @@ export async function insertMessage(
     worldId: string
     userId: string
     ai: boolean
-    kind?: 'message' | 'shown'
+    kind?: 'message' | 'shown' | 'event'
     style: 'ic' | 'ooc' | 'emote'
     speaker: MessageSpeaker
     text: string
     whisper: string[] | null
     shown?: ShownData | null
+    event?: LogEventData | null
   }
 ): Promise<MessageRow | null> {
   return db.transaction(async (tx) => {
@@ -70,10 +73,10 @@ export async function insertMessage(
       .where(
         and(eq(campaignMessages.userId, input.userId), sql`${campaignMessages.createdAt} > now() - interval '1 minute'`)
       )
-    if ((recent?.count ?? 0) >= MESSAGES_PER_MINUTE) return null
+    if (input.kind !== 'event' && (recent?.count ?? 0) >= MESSAGES_PER_MINUTE) return null
     const [inserted] = await tx
       .insert(campaignMessages)
-      .values({ ...input, kind: input.kind ?? 'message', shown: input.shown ?? null })
+      .values({ ...input, kind: input.kind ?? 'message', shown: input.shown ?? null, event: input.event ?? null })
       .returning({ id: campaignMessages.id })
     if (!inserted) throw new Error('El mensaje no se guardó')
     const [row] = await tx
@@ -131,7 +134,7 @@ export async function findMessage(db: Database, campaignId: string, id: string):
 export async function deleteMessage(db: Database, id: string): Promise<void> {
   await db
     .update(campaignMessages)
-    .set({ deletedAt: new Date(), text: '', shown: null })
+    .set({ deletedAt: new Date(), text: '', shown: null, event: null })
     .where(eq(campaignMessages.id, id))
 }
 

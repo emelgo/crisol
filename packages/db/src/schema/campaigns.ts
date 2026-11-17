@@ -4,6 +4,12 @@ import { user } from './auth.ts'
 import { trackedColumns } from './tracked.ts'
 import { worlds } from './worlds.ts'
 
+/** El «hoy» de una campaña: la fecha canónica con su calendario */
+export interface CampaignToday {
+  calendarId: string
+  date: { year: number; month: string; day: number }
+}
+
 export const campaigns = pgTable(
   'campaigns',
   {
@@ -28,6 +34,11 @@ export const campaigns = pgTable(
     knowsWorld: boolean().notNull().default(true),
     /** Los tipos del compendio de su sistema que no ven sus jugadores (docs/specs/compendio-jugadores.md) */
     hiddenTypes: text().array().notNull().default(sql`'{}'::text[]`),
+    /**
+     * Su «hoy» (docs/specs/modulo-8-10-campana.md, ADR-0029): una fecha con día de un calendario del mundo (al ponerla,
+     * el principal); null hasta que el máster la pone
+     */
+    today: jsonb().$type<CampaignToday | null>(),
     /** En la papelera desde entonces: no sale en ninguna vista y a los 30 días se purga */
     deletedAt: timestamp({ withTimezone: true })
   },
