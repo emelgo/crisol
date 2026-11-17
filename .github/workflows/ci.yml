@@ -65,6 +65,8 @@ jobs:
       # Sola y sin cobertura: con todo a la vez se mediría la carga (ADR-0017, p95 < 300 ms con 5.000 páginas)
       - name: Rendimiento de lo que lee un jugador
         run: pnpm --filter @crisol/server test:rendimiento
+      - name: Rendimiento de la cronología
+        run: pnpm --filter @crisol/domain test:rendimiento
       - name: Licencias
         run: pnpm licencias
       - name: Sala limpia

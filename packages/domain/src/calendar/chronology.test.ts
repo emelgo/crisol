@@ -186,18 +186,33 @@ describe('las entradas de una cronología', () => {
     expect(outside).toBe(1)
   })
 
-  it('2.000 eventos y 5.000 páginas con fecha, en poco tiempo', () => {
-    const events = Array.from({ length: 2000 }, (_, i) =>
-      event(`e${i}`, {
-        date:
-          i % 3 === 0
-            ? { calendarId: 'varn', start: { year: i, month: 'm2', day: 1 + (i % 36) } }
-            : { calendarId: 'eana', start: { year: i - 1000, month: 'siega', day: 1 + (i % 28) } }
-      })
-    )
-    const pages = Array.from({ length: 5000 }, (_, i) =>
-      page(`p${i}`, { dates: [{ name: 'Fecha', value: { calendarId: 'eana', start: { year: i - 2500 } } }] })
-    )
+  it('2.000 eventos y 5.000 páginas con fecha salen todos', () => {
+    const { events, pages } = bigChronology()
+    expect(run({ events, pages }).entries).toHaveLength(7000)
+  })
+})
+
+/** 2.000 eventos (un tercio en el segundo calendario) y 5.000 páginas con fecha */
+function bigChronology() {
+  const events = Array.from({ length: 2000 }, (_, i) =>
+    event(`e${i}`, {
+      date:
+        i % 3 === 0
+          ? { calendarId: 'varn', start: { year: i, month: 'm2', day: 1 + (i % 36) } }
+          : { calendarId: 'eana', start: { year: i - 1000, month: 'siega', day: 1 + (i % 28) } }
+    })
+  )
+  const pages = Array.from({ length: 5000 }, (_, i) =>
+    page(`p${i}`, { dates: [{ name: 'Fecha', value: { calendarId: 'eana', start: { year: i - 2500 } } }] })
+  )
+  return { events, pages }
+}
+
+// Se mide sola (CRISOL_RENDIMIENTO=1, su paso en la CI y `pnpm --filter @crisol/domain test:rendimiento`): con las
+// demás pruebas a la vez, y con la cobertura, lo que se mide es la carga de la máquina
+describe.skipIf(!process.env.CRISOL_RENDIMIENTO)('rendimiento de la cronología (módulo 8)', () => {
+  it('2.000 eventos y 5.000 páginas con fecha, en menos de 250 ms', () => {
+    const { events, pages } = bigChronology()
     const started = performance.now()
     const { entries } = run({ events, pages })
     expect(entries).toHaveLength(7000)
