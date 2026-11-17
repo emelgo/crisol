@@ -159,8 +159,14 @@ test('relaciones (módulo 10): la pestaña en Familia, Enlaces y Organigrama, el
   // Un gráfico escrito en Markdown se pinta; al elegirlo, su editor ocupa el panel
   await page.goto(`/mundos/${worldId}/wiki/${id.poder}`)
   await expect(page.getByRole('img', { name: 'Gráfico de Barras: 1240' })).toBeVisible()
-  await page.getByRole('button', { name: 'Editar el gráfico' }).click({ force: true })
   const editor = page.getByRole('region', { name: 'Gráfico' })
+  // Con la máquina cargada, la página aún se estaba colocando (el foco va al título al llegar) y se llevaba la
+  // elección: se pulsa el lápiz hasta que el editor sale
+  await expect(async () => {
+    if (!(await editor.isVisible()))
+      await page.getByRole('button', { name: 'Editar el gráfico' }).click({ force: true, timeout: 2000 })
+    await expect(editor).toBeVisible({ timeout: 2000 })
+  }).toPass({ timeout: 20_000 })
   await editor.getByRole('button', { name: 'Tarta' }).click()
   await expect(page.getByRole('img', { name: 'Gráfico de Tarta: 1240' })).toBeVisible()
   await editor.getByRole('button', { name: 'Ver YAML' }).click()
