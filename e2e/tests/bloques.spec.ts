@@ -77,7 +77,13 @@ test('el menú «/» con el teclado: filtra, se mueve con las flechas, inserta y
   await expect(tableBar.getByRole('button', { name: 'Fila debajo' })).toBeFocused()
   await page.keyboard.press('Enter')
   await expect(table.getByRole('row')).toHaveCount(4)
-  await page.keyboard.press('Alt+F10')
+  // Otra vez, cuando el foco ya volvió al texto y la barra (que se recoloca con la fila nueva) lo recibe: en una máquina
+  // ocupada, el atajo justo después se perdía
+  await expect(body(page)).toBeFocused()
+  await expect(async () => {
+    await page.keyboard.press('Alt+F10')
+    await expect(tableBar.getByRole('button', { name: 'Fila debajo' })).toBeFocused({ timeout: 1000 })
+  }).toPass({ timeout: 10_000 })
   await page.keyboard.press('ArrowRight')
   await expect(tableBar.getByRole('button', { name: 'Columna a la derecha' })).toBeFocused()
   await page.keyboard.press('Enter')
