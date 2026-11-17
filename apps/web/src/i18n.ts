@@ -3130,16 +3130,6 @@ export const es = {
     deleted: 'Mensaje borrado',
     delete: 'Borrar',
     shown: '{{name}} enseñó {{title}}',
-    // Las entradas del sistema (8 · campaña): el «hoy», los viajes y el clima a mano
-    event: {
-      date: 'La fecha pasa a {{to}}',
-      dateUndo: 'La fecha vuelve a {{to}}',
-      dateCleared: 'La campaña se queda sin fecha',
-      travel_one: 'Viaje de {{count}} día: llegada el {{to}}',
-      travel_other: 'Viaje de {{count}} días: llegada el {{to}}',
-      weather: 'Clima del {{date}} cambiado a mano',
-      weatherCleared: 'Clima del {{date}}: vuelve al generado'
-    },
     noRecipient: 'No hay nadie con ese nombre en la campaña.',
     commands: '/s nombre: susurrar · /t 1d20+5: tirar · /yo: una acción · /ooc: fuera de personaje'
   },
