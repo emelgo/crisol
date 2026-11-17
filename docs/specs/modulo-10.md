@@ -48,6 +48,21 @@ Estudio del Crisol antiguo y del nuevo: hecho el 2026-11-16 por un subagente (re
     grafo; `@dagrejs/dagre` 3.x (MIT) para el árbol y el organigrama; `chart.js` 4.x (MIT), cargado aparte, para los
     gráficos. La lectura del YAML se porta del antiguo (`graficos/bloque.ts`, cabecera de origen y `docs/terceros.md`).
 
+## Preguntas del lienzo, decididas por Claude con permiso de Enrique (2026-11-17)
+
+Lienzo: https://claude.ai/artifact/SnDrrzaLKMPhqCUkwbSbBW. Enrique: «Responde tú a las preguntas con lo que creas más
+coherente».
+
+18. La pestaña se abre en Familia u Organigrama si la página los tiene; si no, en Enlaces (confirma la 8).
+19. El nombre al revés no es obligatorio: al elegir un papel se rellena solo si está vacío (Padre o madre → «Hijos»,
+    Pareja → «Pareja», Pertenece a → «Miembros», Lo dirige → «Dirige»). Sin él, «<Campo> de <página>».
+20. «Menciona» encendido de entrada, en la pestaña y en el grafo del mundo (Enrique pidió los enlaces del texto).
+21. El grafo del mundo se abre con un icono en la cabecera del árbol de páginas: la barra sigue «Páginas · Calendarios ·
+    Archivos».
+22. Bajo el nombre, en Familia y Organigrama, el primer campo de texto visible para quien mira.
+23. El editor del gráfico ocupa el sitio del panel mientras el bloque está elegido.
+24. El gráfico no va, por ahora, como bloque del panel de la derecha.
+
 ## Objetivo
 
 Ver de un vistazo quién es quién en el mundo: con quién se relaciona una página, la familia de un personaje, quién
