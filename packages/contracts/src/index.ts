@@ -300,6 +300,7 @@ import {
   restorePage,
   restoreWorld
 } from './trash.ts'
+import { planTravel, travel } from './travel.ts'
 import {
   changeFog,
   changeSceneSound,
@@ -370,6 +371,7 @@ export * from './templates.ts'
 export * from './today.ts'
 export * from './tokens.ts'
 export * from './trash.ts'
+export * from './travel.ts'
 export * from './vision.ts'
 export * from './weather.ts'
 export * from './world-content.ts'
@@ -705,7 +707,9 @@ export const ACTIONS = [
   getWorldGraph,
   getCampaignWeather,
   setCampaignClimate,
-  setDayWeather
+  setDayWeather,
+  planTravel,
+  travel
 ]
 
 /** Las acciones por nombre, solo como tipo: la web las usa sin cargar zod */
@@ -1039,4 +1043,6 @@ export type Actions = {
   getCampaignWeather: typeof getCampaignWeather
   setCampaignClimate: typeof setCampaignClimate
   setDayWeather: typeof setDayWeather
+  planTravel: typeof planTravel
+  travel: typeof travel
 }

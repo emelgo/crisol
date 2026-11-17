@@ -8,25 +8,10 @@ import { freshTestDatabase, resetDatabase } from '@crisol/db/testing'
 import { desc, eq } from 'drizzle-orm'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { buildApp } from '../app.ts'
-import { createTestAuth, signUpTestUser, TEST_SEAL_KEY } from '../testing.ts'
+import { createTestAuth, signUpTestUser, TEST_CALENDAR, TEST_SEAL_KEY } from '../testing.ts'
 
 const BASE_URL = 'http://localhost:5173'
 const ok = async () => undefined
-
-const month = (name: string) => ({ name, days: 28 })
-/** Un calendario como el de Eana, corto: 4 meses de 28 días, semana de 7 y una era solo del máster */
-export const TEST_CALENDAR = {
-  yearSuffix: 'RC',
-  weekdays: ['Herrero', 'Hacedor', 'Muerte', 'Frostelle', 'Flora', 'Eternidad', 'Melancolía'],
-  months: [month('Cierzo'), month('Siembra'), month('Siega'), month('Brumas')],
-  seasons: [
-    { name: 'Invierno', startDay: 1, endDay: 28 },
-    { name: 'Primavera', startDay: 29, endDay: 56 },
-    { name: 'Verano', startDay: 57, endDay: 84 },
-    { name: 'Otoño', startDay: 85, endDay: 112 }
-  ],
-  eras: [{ name: 'Era del Eclipse', abbreviation: 'EE', start: '1200', countsFromStart: true, hidden: true }]
-}
 
 type Event = { kind: string; event?: { type: string; from: { text: string } | null; to: { text: string } | null } }
 

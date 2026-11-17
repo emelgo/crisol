@@ -73,3 +73,21 @@ export async function seedExampleTemplates(
   }
   return ids
 }
+
+const month = (name: string) => ({ name, days: 28 })
+/**
+ * Un calendario de prueba como el de Eana, corto (8 · campaña): 4 meses de 28 días, semana de 7, sus estaciones y una
+ * era solo del máster que cuenta desde 1200
+ */
+export const TEST_CALENDAR = {
+  yearSuffix: 'RC',
+  weekdays: ['Herrero', 'Hacedor', 'Muerte', 'Frostelle', 'Flora', 'Eternidad', 'Melancolía'],
+  months: [month('Cierzo'), month('Siembra'), month('Siega'), month('Brumas')],
+  seasons: [
+    { name: 'Invierno', startDay: 1, endDay: 28 },
+    { name: 'Primavera', startDay: 29, endDay: 56 },
+    { name: 'Verano', startDay: 57, endDay: 84 },
+    { name: 'Otoño', startDay: 85, endDay: 112 }
+  ],
+  eras: [{ name: 'Era del Eclipse', abbreviation: 'EE', start: '1200', countsFromStart: true, hidden: true }]
+}

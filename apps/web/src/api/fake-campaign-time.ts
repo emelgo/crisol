@@ -2,7 +2,13 @@
  * El tiempo de las campañas en la API en memoria de las pruebas (módulos 8 y 10 · campaña): su «hoy» y su clima, como el
  * servidor, con la aritmética del dominio (sin registro ni historial)
  */
-import type { CalendarView, CampaignDate, WeatherDayView } from '@crisol/contracts'
+import {
+  type CalendarView,
+  type CampaignDate,
+  DEFAULT_SPEEDS,
+  type TravelPlanView,
+  type WeatherDayView
+} from '@crisol/contracts'
 import {
   addDays,
   clampDate,
@@ -12,6 +18,7 @@ import {
   type FullDate,
   formatDate,
   parseDate,
+  planTravel as planDays,
   seasonOf,
   sunTimes,
   type WeatherZone,
@@ -20,7 +27,14 @@ import {
 } from '@crisol/domain'
 import { type ActionInput, type ActionOutput, ApiError } from './client.ts'
 
-type Names = 'getCampaignToday' | 'setCampaignToday' | 'getCampaignWeather' | 'setCampaignClimate' | 'setDayWeather'
+type Names =
+  | 'getCampaignToday'
+  | 'setCampaignToday'
+  | 'getCampaignWeather'
+  | 'setCampaignClimate'
+  | 'setDayWeather'
+  | 'planTravel'
+  | 'travel'
 
 /** El «hoy» de partida de una campaña */
 export interface FakeToday {
@@ -89,6 +103,28 @@ export function fakeCampaignTime(options: {
     const found = todayOf(campaignId)
     if (!found) throw new ApiError('NO_TODAY', 400)
     return found
+  }
+
+  /** Un viaje con la distancia escrita (los mapas no se miden aquí), como el servidor */
+  const plan = (input: ActionInput<'planTravel'>): TravelPlanView => {
+    if (input.distance === undefined) throw new ApiError('NO_MAP_SCALE', 400)
+    const medium = input.medium ?? 'foot'
+    const pace = input.pace ?? 'normal'
+    const restDays = input.restDays ?? 0
+    const speed = DEFAULT_SPEEDS[medium]
+    const { travelDays, days } = planDays({ distance: input.distance, speed, pace, restDays })
+    const found = todayOf(input.campaignId)
+    const base = { distance: input.distance, unit: input.unit ?? null, route: null, medium, pace, speed, restDays }
+    if (!found) return { ...base, travelDays, days, from: null, arrival: null, weather: [] }
+    const def = found.calendar.definition
+    return {
+      ...base,
+      travelDays,
+      days,
+      from: present(found.calendar, found.today.date),
+      arrival: present(found.calendar, addDays(def, found.today.date, days)),
+      weather: weatherDays(input.campaignId, found.calendar, dayNumber(def, found.today.date) + 1, days)
+    }
   }
 
   const handlers: { [N in Names]: (input: ActionInput<N>) => ActionOutput<N> } = {
@@ -161,6 +197,15 @@ export function fakeCampaignTime(options: {
       const [view] = weatherDays(campaignId, found.calendar, day, 1)
       if (!view) throw new ApiError('NOT_FOUND', 404)
       return { day: view }
+    },
+    planTravel: (input) => plan(input),
+    travel: ({ zone, ...input }) => {
+      const planned = plan(input)
+      const found = requireToday(input.campaignId)
+      if (!planned.arrival) throw new ApiError('NO_TODAY', 400)
+      todays.set(input.campaignId, { calendarId: found.calendar.id, date: planned.arrival.date })
+      if (zone) climates.set(input.campaignId, { ...climateOf(input.campaignId), zone })
+      return { plan: planned, today: planned.arrival }
     }
   }
   return { handlers, todays }
