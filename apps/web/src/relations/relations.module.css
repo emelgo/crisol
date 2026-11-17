@@ -621,7 +621,7 @@
   inline-size: 14px;
   block-size: 14px;
   border-radius: 50%;
-  background: #d6d6dc;
+  background: var(--color-muted);
   content: "";
   transition: inset-inline-start 150ms ease-out;
 }
@@ -632,7 +632,7 @@
 
 .toggle input:checked + .track::after {
   inset-inline-start: 16px;
-  background: #ffffff;
+  background: var(--color-on-accent);
 }
 
 .toggle input:focus-visible + .track {
@@ -881,4 +881,34 @@
     min-block-size: var(--target);
     min-inline-size: var(--target);
   }
+}
+
+/* Con muchas páginas, lo que flota sobre el grafo va sin desenfoque: el cristal sobre lo que se mueve frena el arrastre
+   (audit de impeccable: de 9 a 34 fotogramas por segundo) */
+:global([data-heavy]) .pill,
+:global([data-heavy]) .zoom,
+:global([data-heavy]) .legend,
+:global([data-heavy]) .card {
+  background: var(--frame-sheen), var(--color-surface);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+/* La jugadora en el móvil: botones y enlaces a la medida del dedo */
+@media (max-width: 48rem) {
+  .close,
+  .primary,
+  .secondary,
+  .wordLink {
+    min-block-size: var(--target);
+  }
+
+  .close {
+    inline-size: var(--target);
+  }
+}
+
+.card:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }

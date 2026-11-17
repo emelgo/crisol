@@ -140,10 +140,19 @@ export function GraphCanvas({
     context.lineWidth = 4 / view.k
     context.strokeStyle = halo
     context.fillStyle = text
-    for (const node of nodes) {
+    // Solo los que se ven y sin pisarse (una rejilla de casillas ocupadas, en píxeles de pantalla); la elegida, primero
+    const taken = new Set<string>()
+    const cell = (x: number, y: number) => `${Math.floor(x / 120)}:${Math.floor(y / 18)}`
+    const ordered = selected ? [...nodes].sort((a, b) => Number(b.id === selected) - Number(a.id === selected)) : nodes
+    for (const node of ordered) {
       if (view.k < 0.9 && node.id !== selected) continue
       const body = at.get(node.id)
       if (!body) continue
+      const [sx, sy] = view.apply([body.x ?? 0, (body.y ?? 0) + radius])
+      if (sx < -60 || sy < -20 || sx > width + 60 || sy > height + 20) continue
+      const key = cell(sx, sy)
+      if (taken.has(key) && node.id !== selected) continue
+      taken.add(key)
       const y = (body.y ?? 0) + radius + 14 / view.k
       context.strokeText(node.title, body.x ?? 0, y)
       context.fillText(node.title, body.x ?? 0, y)
@@ -152,6 +161,7 @@ export function GraphCanvas({
 
   // Las fuerzas, a trozos: cada fotograma avanza lo que cabe en su tiempo y se pinta
   const fitted = useRef(false)
+  const settling = useRef(false)
   useEffect(() => {
     if (!canvas) return
     const before = new Map(bodies.current.map((body) => [body.id, { x: body.x ?? 0, y: body.y ?? 0 } as Point]))
@@ -162,14 +172,20 @@ export function GraphCanvas({
     )
     bodies.current = next
     fitted.current = false
+    settling.current = false
     let frame = 0
     const step = () => {
       const start = performance.now()
       while (simulation.alpha() > simulation.alphaMin() && performance.now() - start < FRAME_BUDGET_MS)
         simulation.tick()
-      if (!fitted.current && simulation.alpha() < 0.3) {
+      // Se encuadra ya en el primer fotograma (nada en blanco) y otra vez al ir asentándose, si no se ha tocado
+      const box = () => boundsOf(next.map((body) => ({ x: body.x ?? 0, y: body.y ?? 0 })))
+      if (!fitted.current) {
         fitted.current = true
-        fit(boundsOf(next.map((body) => ({ x: body.x ?? 0, y: body.y ?? 0 }))), 1)
+        fit(box(), 1)
+      } else if (!settling.current && simulation.alpha() < 0.3) {
+        settling.current = true
+        refit(box(), 1)
       }
       draw.current()
       if (simulation.alpha() > simulation.alphaMin()) frame = requestAnimationFrame(step)

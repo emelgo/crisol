@@ -20,7 +20,7 @@ interface TreeViewProps {
   selected: string | null
   colorOf: (node: RelationNode) => string
   transform: ZoomTransform
-  onSelect: (id: string | null) => void
+  onSelect: (id: string | null, viaKeyboard?: boolean) => void
   onOpen: (id: string) => void
   svgRef: (element: SVGSVGElement | null) => void
   children?: ReactNode
@@ -113,6 +113,7 @@ const TreeBody = memo(function TreeBody({
             key={card.id}
             transform={`translate(${x},${y})`}
             className={styles.treeCard}
+            data-node-id={card.id}
             role="button"
             tabIndex={0}
             aria-label={[card.kind === 'leader' ? t('relations.leads') : '', node.title, below]
@@ -130,7 +131,7 @@ const TreeBody = memo(function TreeBody({
             onKeyDown={(event) => {
               if (!activates(event)) return
               event.preventDefault()
-              onSelect(card.id)
+              onSelect(card.id, true)
             }}
           >
             <title>

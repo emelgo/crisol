@@ -64,7 +64,7 @@ interface LinksGraphProps {
   transform: ZoomTransform
   /** Las rayas con su nombre: las del centro y la elegida, o solo las de la elegida (el grafo del mundo) */
   labels: 'center' | 'selected'
-  onSelect: (id: string | null) => void
+  onSelect: (id: string | null, viaKeyboard?: boolean) => void
   onOpen: (id: string) => void
   svgRef: (element: SVGSVGElement | null) => void
   children?: ReactNode
@@ -169,6 +169,7 @@ const GraphBody = memo(function GraphBody({
               key={node.id}
               transform={`translate(${at.x},${at.y})`}
               className={styles.node}
+              data-node-id={node.id}
               role="button"
               tabIndex={0}
               aria-label={node.title}
@@ -183,7 +184,7 @@ const GraphBody = memo(function GraphBody({
               onKeyDown={(event) => {
                 if (!activates(event)) return
                 event.preventDefault()
-                onSelect(node.id)
+                onSelect(node.id, true)
               }}
             >
               <circle r={radius + 4} className={styles.halo} />

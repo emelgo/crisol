@@ -5,7 +5,7 @@
  */
 import type { RelationMode, RelationNode } from '@crisol/contracts'
 import { Crosshair, ExternalLink, GitFork, Minus, Network, Plus, Waypoints, X } from 'lucide-react'
-import { type CSSProperties, useEffect, useRef } from 'react'
+import { type CSSProperties, useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { NodeGlyphBox } from './glyph.tsx'
 import type { WordsRow } from './model.ts'
@@ -108,8 +108,41 @@ export function Legend({ secrets }: { secrets: boolean }) {
 }
 
 /**
+ * La página elegida en el grafo: pulsar o Intro la eligen; elegida con el teclado, el foco va a su ficha; al cerrarla
+ * (su X o Escape, con el foco donde sea salvo escribiendo), el foco vuelve a su nodo
+ */
+export function useSelection() {
+  const [selected, setSelected] = useState<string | null>(null)
+  const [focusCard, setFocusCard] = useState(false)
+  const select = useCallback((id: string | null, viaKeyboard = false) => {
+    setSelected(id)
+    setFocusCard(viaKeyboard && id !== null)
+  }, [])
+  const close = useCallback(() => {
+    setSelected((id) => {
+      if (id)
+        requestAnimationFrame(() =>
+          document.querySelector<SVGElement>(`[data-node-id="${CSS.escape(id)}"]`)?.focus({ preventScroll: true })
+        )
+      return null
+    })
+  }, [])
+  useEffect(() => {
+    if (!selected) return
+    const onEscape = (event: KeyboardEvent) => {
+      const target = event.target as Element | null
+      if (event.key !== 'Escape' || target?.closest('input, textarea, select, [role="dialog"] [role="dialog"]')) return
+      close()
+    }
+    document.addEventListener('keydown', onEscape)
+    return () => document.removeEventListener('keydown', onEscape)
+  }, [selected, close])
+  return { selected, select, close, focusCard }
+}
+
+/**
  * La ficha de la página elegida: su icono, su nombre, su plantilla y su primer campo, sus relaciones en palabras y
- * «Abrir» y «Centrar aquí». Escape la cierra
+ * «Abrir» y «Centrar aquí» (Escape la cierra: useSelection)
  */
 export function NodeCard({
   node,
@@ -119,7 +152,8 @@ export function NodeCard({
   primary,
   onOpen,
   onCenter,
-  onClose
+  onClose,
+  autoFocus = false
 }: {
   node: RelationNode
   color: string
@@ -130,21 +164,18 @@ export function NodeCard({
   onOpen: () => void
   onCenter: (() => void) | null
   onClose: () => void
+  /** Elegida con el teclado: el foco, a la ficha */
+  autoFocus?: boolean
 }) {
   const { t } = useTranslation()
   const box = useRef<HTMLElement>(null)
   useEffect(() => {
-    const element = box.current
-    if (!element) return
-    const onEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose()
-    }
-    element.addEventListener('keydown', onEscape)
-    return () => element.removeEventListener('keydown', onEscape)
-  }, [onClose])
+    if (autoFocus && node.id) box.current?.focus({ preventScroll: true })
+  }, [autoFocus, node.id])
   return (
     <section
       ref={box}
+      tabIndex={-1}
       className={styles.card}
       aria-label={node.title}
       style={{ '--node-color': color } as CSSProperties}

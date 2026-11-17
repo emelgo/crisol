@@ -22,13 +22,16 @@ import { forceLayout } from './layout.ts'
 import { type GraphEdge, LinksGraph } from './links-graph.tsx'
 import { inWords, templateColor } from './model.ts'
 import { boundsOf, usePanZoom } from './pan-zoom.ts'
-import { NodeCard, Toggle, ZoomControls } from './parts.tsx'
+import { NodeCard, Toggle, useSelection, ZoomControls } from './parts.tsx'
 import { useTemplateLook, useWorldGraph } from './queries.ts'
 import { colorOrder } from './relations-tab.tsx'
 import styles from './world-graph.module.css'
 
-/** A partir de cuántas páginas se pinta en un lienzo */
-export const CANVAS_FROM = 800
+/**
+ * A partir de cuántas páginas se pinta en un lienzo (que se asienta a trozos, sin congelar la página): el SVG calcula
+ * las fuerzas de una vez, y con 700 páginas se quedaba congelado unos segundos (audit de impeccable)
+ */
+export const CANVAS_FROM = 300
 const NO_TEMPLATE = 'sin-plantilla'
 const INSETS = { top: 16, bottom: 76 }
 
@@ -99,7 +102,7 @@ export function WorldGraph({ worldId, back }: { worldId: string; back: ReactNode
   const [hiddenRelations, setHiddenRelations] = useState<ReadonlySet<string>>(new Set())
   const [orphans, setOrphans] = useState(false)
   const [folded, setFolded] = useState(false)
-  const [selected, setSelected] = useState<string | null>(null)
+  const { selected, select: setSelected, close: closeCard, focusCard } = useSelection()
   const [focus, setFocus] = useState<{ id: string; at: number } | null>(null)
 
   const all = useMemo(() => graph.data?.nodes ?? [], [graph.data?.nodes])
@@ -184,13 +187,14 @@ export function WorldGraph({ worldId, back }: { worldId: string; back: ReactNode
       primary="open"
       onOpen={() => openPage(worldId, selectedNode.id)}
       onCenter={() => setFocus({ id: selectedNode.id, at: Date.now() })}
-      onClose={() => setSelected(null)}
+      onClose={closeCard}
+      autoFocus={focusCard}
     />
   )
   const label = t('relations.world.canvas', { count: nodes.length })
 
   return (
-    <div className={styles.screen}>
+    <div className={styles.screen} data-heavy={nodes.length >= CANVAS_FROM || undefined}>
       <header className={styles.head}>
         {back}
         <PageTitle>{t('relations.world.title')}</PageTitle>
@@ -352,7 +356,7 @@ function SvgWorld({
   selected: string | null
   focus: { id: string; at: number } | null
   colorOf: (node: RelationNode) => string
-  onSelect: (id: string | null) => void
+  onSelect: (id: string | null, viaKeyboard?: boolean) => void
   onOpen: (id: string) => void
   children: ReactNode
 }) {

@@ -21,7 +21,7 @@ import { familyLayout, forceLayout, orgLayout, type Point, type TreeLayout } fro
 import { type GraphEdge, LinksGraph } from './links-graph.tsx'
 import { inWords, openingMode, rememberedMode, rememberMode, templateColor, type WordsRow } from './model.ts'
 import { boundsOf, usePanZoom } from './pan-zoom.ts'
-import { Legend, ModePill, NodeCard, Segmented, Toggle, ZoomControls } from './parts.tsx'
+import { Legend, ModePill, NodeCard, Segmented, Toggle, useSelection, ZoomControls } from './parts.tsx'
 import { FIRST_VIEW, useRelations, useTemplateLook } from './queries.ts'
 import styles from './relations.module.css'
 import { TreeView } from './tree-view.tsx'
@@ -74,7 +74,7 @@ export function RelationsTab({
   // «Menciona» encendido de entrada (decisión pendiente: o «Solo campos» de entrada)
   const [fieldsOnly, setFieldsOnly] = useState(false)
   const [generations, setGenerations] = useState<number>(2)
-  const [selected, setSelected] = useState<string | null>(null)
+  const { selected, select: setSelected, close: closeCard, focusCard } = useSelection()
   const [wide, setWide] = useState(false)
 
   const base = useRelations(page.worldId, center, FIRST_VIEW)
@@ -120,7 +120,8 @@ export function RelationsTab({
       primary={compact ? 'open' : 'center'}
       onOpen={() => open(selectedNode.id)}
       onCenter={selectedNode.id === center ? null : () => recenter(selectedNode.id)}
-      onClose={() => setSelected(null)}
+      onClose={closeCard}
+      autoFocus={focusCard}
     />
   )
 
@@ -299,7 +300,7 @@ function Canvas({
   highlight: string | null
   generations: number
   colorOf: (node: RelationNode) => string
-  onSelect: (id: string | null) => void
+  onSelect: (id: string | null, viaKeyboard?: boolean) => void
   onOpen: (id: string) => void
   compact: boolean
   children: ReactNode
