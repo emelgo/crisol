@@ -419,21 +419,20 @@ describe('las herramientas de la mesa', () => {
     })
   })
 
-  it('la pantalla del máster: sube desde abajo con el statblock de cada criatura y la nota de la escena', async () => {
+  it('la pantalla del máster: sube desde abajo en cuatro columnas (criaturas, personajes, nota y tablas)', async () => {
     const user = userEvent.setup()
-    await renderMesa()
+    const { api } = await renderMesa()
     press('g')
     const drawer = within(screen.getByRole('region', { name: 'Pantalla del máster' }))
     expect(drawer.getByText('2 en la escena')).toBeDefined()
     expect(await drawer.findByRole('heading', { name: 'Lobo 1' })).toBeDefined()
     expect(await drawer.findByRole('article', { name: 'Cripta de Varn' })).toBeDefined()
-    // Sin los statblocks
-    await user.click(
-      within(screen.getByRole('complementary', { name: 'Pantalla del máster' })).getByRole('switch', {
-        name: 'Estadísticas de las criaturas de la escena'
-      })
-    )
+    expect(drawer.getByRole('heading', { name: 'Personajes de la escena' })).toBeDefined()
+    expect(drawer.getByRole('heading', { name: 'Tablas' })).toBeDefined()
+    // Sin las criaturas: se apaga su columna y se guarda en el servidor
+    await user.click(drawer.getByRole('checkbox', { name: 'Criaturas' }))
     expect(drawer.queryByText('2 en la escena')).toBeNull()
+    await waitFor(() => expect(api.calls).toContain('setGmScreen'))
     await user.click(drawer.getByRole('button', { name: 'Cerrar la pantalla del máster' }))
     expect(screen.queryByRole('region', { name: 'Pantalla del máster' })).toBeNull()
   })

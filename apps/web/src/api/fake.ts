@@ -1622,6 +1622,12 @@ export function fakeApi(
     ...calendars.handlers,
     ...chronologies.handlers,
     ...campaignTime.handlers,
+    // Las tablas aleatorias del mundo (las pestañas «Tabla» de sus páginas), para la pantalla del máster
+    listRandomTables: ({ worldId }) => ({
+      tables: pageTabs
+        .filter((tab) => tab.kind === 'table' && pageById(tab.pageId).worldId === worldId)
+        .map((tab) => ({ tabId: tab.id, name: tab.name, pageId: tab.pageId, pageTitle: pageById(tab.pageId).title }))
+    }),
     listOrganizations: () => ({ organizations }),
     // Copias, como las de la API real (JSON nuevo en cada respuesta)
     // En el orden en que se crearon, como el servidor

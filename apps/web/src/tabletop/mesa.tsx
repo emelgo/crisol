@@ -63,7 +63,7 @@ import { canvasViewOf, framingOf, REFERENCE_ASPECT, sceneViewportOf, sceneViewpo
 import { connectTable, type DragMove, type TableChannel, type TableStatus } from './channel.ts'
 import { masterDraw } from './draw.ts'
 import { decodeMask, fogImage, fogLayerOf } from './fog-paint.ts'
-import { GmPanel, GmScreen, useGmSettings } from './gm-screen.tsx'
+import { GmScreen, useGmSettings } from './gm-screen.tsx'
 import { GroupDamage } from './group-damage.tsx'
 import { ImageViewer, type ShownImage } from './image-viewer.tsx'
 import { MarksLayer, placeMarks } from './marks-layer.tsx'
@@ -379,7 +379,7 @@ export function Mesa({ worldId, campaign: current }: { worldId: string; campaign
   })
   const tools = useTableTools({ campaignId, table, tool, view, renderer, ready, channel, tokens })
   const widgets = useWidgets(campaignId, table)
-  const gm = useGmSettings(campaignId, open)
+  const gm = useGmSettings(campaignId, open, table?.gmScreen ?? null)
   // Las fichas de dentro de una plantilla, elegidas para el daño a varias
   const [fromTemplate, setFromTemplate] = useState(false)
   const notSeen = useMemo(
@@ -496,13 +496,16 @@ export function Mesa({ worldId, campaign: current }: { worldId: string; campaign
               {scene && isMarkTool(tool) && <ToolBar tool={tool} tools={tools} />}
               {scene && open && tools.writing && <TextInput tools={tools} view={view.current} scene={open} />}
               {scene && <WidgetCards widgets={widgets.widgets} control={widgets} />}
-              {scene && side === 'gm' && (
+              {scene && open && side === 'gm' && (
                 <GmScreen
                   worldId={worldId}
                   campaignId={campaignId}
                   systemId={systemId}
+                  scene={open}
                   tokens={tokens}
                   settings={gm.settings}
+                  onChange={gm.change}
+                  error={gm.error}
                   onClose={() => setSide(null)}
                 />
               )}
@@ -626,7 +629,8 @@ export function Mesa({ worldId, campaign: current }: { worldId: string; campaign
                 <WindowLayer />
               </PageWindowsSocket>
             </div>
-            {side && open ? (
+            {/* La pantalla del máster es su cajón (8 · campaña): sin panel a la derecha */}
+            {side && side !== 'gm' && open ? (
               <aside className={styles.panel} aria-label={t(`vision.${side}`)}>
                 <div className={visionStyles.body}>
                   <h2 className={visionStyles.title}>{t(`vision.${side}`)}</h2>
@@ -638,9 +642,6 @@ export function Mesa({ worldId, campaign: current }: { worldId: string; campaign
                       sceneId={open.id}
                       capture={async () => (await renderer.current?.snapshot(THUMBNAIL_SIDE, THUMBNAIL_BYTES)) ?? null}
                     />
-                  )}
-                  {side === 'gm' && (
-                    <GmPanel worldId={worldId} scene={open} settings={gm.settings} onChange={gm.change} />
                   )}
                 </div>
               </aside>
@@ -671,18 +672,19 @@ export function Mesa({ worldId, campaign: current }: { worldId: string; campaign
               />
             ) : null}
             {/* Un panel de herramienta tapa la barra: su ×, para volver a ella (como Escape) */}
-            {!asGroup && ((open && (side || (isMarkTool(tool) && tool !== 'laser'))) || isVisionTool(tool)) && (
-              <button
-                type="button"
-                className={styles.panelBack}
-                aria-label={t('tabletop.backToBar')}
-                title={t('tabletop.backToBar')}
-                onClick={backToBar}
-              >
-                <X aria-hidden="true" size={16} />
-              </button>
-            )}
-            {(side && open) ||
+            {!asGroup &&
+              ((open && ((side && side !== 'gm') || (isMarkTool(tool) && tool !== 'laser'))) || isVisionTool(tool)) && (
+                <button
+                  type="button"
+                  className={styles.panelBack}
+                  aria-label={t('tabletop.backToBar')}
+                  title={t('tabletop.backToBar')}
+                  onClick={backToBar}
+                >
+                  <X aria-hidden="true" size={16} />
+                </button>
+              )}
+            {(side && side !== 'gm' && open) ||
             (isMarkTool(tool) && tool !== 'laser' && open) ||
             isVisionTool(tool) ||
             asGroup ? null : (
