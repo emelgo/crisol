@@ -13,6 +13,7 @@ import { pages } from '../schema/pages.ts'
 import {
   campaignTables,
   DEFAULT_SCENE_GRID,
+  type GmScreenData,
   type ScreenCameraData,
   sceneStates,
   scenes,
@@ -145,6 +146,20 @@ export async function ensureSceneState(
     if (again) return { state: again, created: false }
     return { state: await w.insert(sceneStates, values), created: true }
   })
+}
+
+/** El estado de la campaña en una escena, si ya la ha abierto */
+export async function findSceneState(db: Database, campaignId: string, sceneId: string) {
+  const [found] = await db
+    .select()
+    .from(sceneStates)
+    .where(and(eq(sceneStates.campaignId, campaignId), eq(sceneStates.sceneId, sceneId)))
+  return found ?? null
+}
+
+/** Cambia la pantalla del máster de la campaña en una escena (su estado ya existe) */
+export function setGmScreen(db: Database, context: OperationContext, stateId: string, gmScreen: GmScreenData) {
+  return operation(db, context, (w) => w.update(sceneStates, stateId, { gmScreen }))
 }
 
 /** La mesa de una campaña; sin fila aún, la de por defecto (nada abierto, cámara siguiendo al máster) */

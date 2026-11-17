@@ -15,6 +15,7 @@ import { diceActions } from './dice.ts'
 import { fileActions } from './files.ts'
 import { foundryActions } from './foundry.ts'
 import { foundrySceneActions } from './foundry-scenes.ts'
+import { gmScreenActions } from './gm-screen.ts'
 import { historyActions } from './history.ts'
 import { iconActions } from './icons.ts'
 import { invitationActions } from './invitations.ts'
@@ -64,6 +65,7 @@ export const IMPLEMENTATIONS: Implementation[] = [
   ...weatherActions,
   ...travelActions,
   ...activityActions,
+  ...gmScreenActions,
   ...diceActions,
   ...logActions,
   ...actorFolderActions,

@@ -1,6 +1,6 @@
 /**
  * El tiempo de las campañas en la API en memoria de las pruebas (módulos 8 y 10 · campaña): su «hoy» y su clima, como el
- * servidor, con la aritmética del dominio (sin registro ni historial)
+ * servidor, con la aritmética del dominio (sin registro ni historial); y lo elegido en la pantalla del máster
  */
 import {
   type CalendarView,
@@ -37,6 +37,8 @@ type Names =
   | 'travel'
   | 'getCampaignActivity'
   | 'markActivitySeen'
+  | 'setGmScreen'
+  | 'listRandomTables'
 
 /** El «hoy» de partida de una campaña */
 export interface FakeToday {
@@ -129,6 +131,8 @@ export function fakeCampaignTime(options: {
     }
   }
 
+  // La pantalla del máster de cada campaña en cada escena
+  const gmScreens = new Map<string, ActionOutput<'setGmScreen'>['gmScreen']>()
   // La última visita de la cuenta a cada centro de actividad (sin historial: siempre vacío)
   const visits = new Map<string, string>()
 
@@ -221,7 +225,19 @@ export function fakeCampaignTime(options: {
       const seenAt = new Date().toISOString()
       visits.set(campaignId, seenAt)
       return { seenAt }
-    }
+    },
+    setGmScreen: ({ campaignId, sceneId, ...patch }) => {
+      campaignOf(campaignId)
+      if (!sceneId) throw new ApiError('NO_OPEN_SCENE', 400)
+      const key = `${campaignId}|${sceneId}`
+      const gmScreen = {
+        ...(gmScreens.get(key) ?? { note: null, statblocks: true, characters: true, tables: [] }),
+        ...Object.fromEntries(Object.entries(patch).filter(([, value]) => value !== undefined))
+      }
+      gmScreens.set(key, gmScreen)
+      return { sceneId, gmScreen }
+    },
+    listRandomTables: () => ({ tables: [] })
   }
   return { handlers, todays }
 }

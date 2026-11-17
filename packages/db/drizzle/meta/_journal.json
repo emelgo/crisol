@@ -617,6 +617,13 @@
       "when": 1794905951020,
       "tag": "0087_actividad",
       "breakpoints": true
+    },
+    {
+      "idx": 88,
+      "version": "7",
+      "when": 1794906895188,
+      "tag": "0088_pantalla_master",
+      "breakpoints": true
     }
   ]
 }

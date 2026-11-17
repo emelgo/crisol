@@ -106,6 +106,7 @@ import {
 import { importFoundry, inspectFoundry, putSystemImages } from './foundry.ts'
 import { importFoundryScenes, inspectFoundryScenes } from './foundry-scenes.ts'
 import { listGameIcons } from './game-icons.ts'
+import { listRandomTables, setGmScreen } from './gm-screen.ts'
 import { listHistory, undoOperation } from './history.ts'
 import { getInvitation, regenerateInvitation, setInvitationsOpen } from './invitations.ts'
 import {
@@ -345,6 +346,7 @@ export * from './files.ts'
 export * from './foundry.ts'
 export * from './foundry-scenes.ts'
 export * from './game-icons.ts'
+export * from './gm-screen.ts'
 export * from './history.ts'
 export * from './invitations.ts'
 export * from './knowledge.ts'
@@ -713,7 +715,9 @@ export const ACTIONS = [
   planTravel,
   travel,
   getCampaignActivity,
-  markActivitySeen
+  markActivitySeen,
+  setGmScreen,
+  listRandomTables
 ]
 
 /** Las acciones por nombre, solo como tipo: la web las usa sin cargar zod */
@@ -1051,4 +1055,6 @@ export type Actions = {
   travel: typeof travel
   getCampaignActivity: typeof getCampaignActivity
   markActivitySeen: typeof markActivitySeen
+  setGmScreen: typeof setGmScreen
+  listRandomTables: typeof listRandomTables
 }

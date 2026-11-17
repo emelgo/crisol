@@ -139,6 +139,18 @@ export const scenes = pgTable(
   (t) => [index().on(t.worldId)]
 )
 
+/**
+ * Lo que enseña la pantalla del máster (el cajón G) en una escena (docs/specs/modulo-8-10-campana.md, decisión 24): la
+ * nota fijada (una página del mundo), si salen los statblocks y los personajes, y las tablas aleatorias elegidas (sus
+ * pestañas)
+ */
+export interface GmScreenData {
+  note: string | null
+  statblocks: boolean
+  characters: boolean
+  tables: string[]
+}
+
 /** El estado de las puertas de una campaña, por el id de su muro */
 export type SceneDoorStates = Record<string, { open: boolean }>
 
@@ -162,7 +174,9 @@ export const sceneStates = pgTable(
     /** Las puertas que la campaña tiene distinto de como se dibujaron (docs/specs/vision.md), por el id de su muro */
     doors: jsonb().$type<SceneDoorStates>().notNull().default({}),
     /** Los sonidos del mapa que la campaña tiene apagados (o encendidos), por su id (docs/specs/sonido-mapa.md) */
-    sounds: jsonb().$type<Record<string, boolean>>().notNull().default({})
+    sounds: jsonb().$type<Record<string, boolean>>().notNull().default({}),
+    /** La pantalla del máster en esta escena (null: la de siempre, con su página y los statblocks) */
+    gmScreen: jsonb().$type<GmScreenData | null>()
   },
   (t) => [unique().on(t.campaignId, t.sceneId), index().on(t.sceneId)]
 )

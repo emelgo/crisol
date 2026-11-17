@@ -41,6 +41,17 @@ export async function tableOfTab(db: Database, tabId: string) {
 
 export type TableOfTab = NonNullable<Awaited<ReturnType<typeof tableOfTab>>>
 
+/** Las tablas aleatorias de un mundo (fuera de la papelera), con su página, por el título de su página y su nombre */
+export function listWorldTables(db: Database, worldId: string) {
+  return db
+    .select({ tabId: randomTables.tabId, name: pageTabs.name, pageId: pages.id, pageTitle: pages.title })
+    .from(randomTables)
+    .innerJoin(pageTabs, eq(pageTabs.id, randomTables.tabId))
+    .innerJoin(pages, eq(pages.id, pageTabs.pageId))
+    .where(and(eq(randomTables.worldId, worldId), isNull(pages.deletedAt)))
+    .orderBy(pages.title, pageTabs.name)
+}
+
 export function updateTable(
   db: Database,
   context: OperationContext,

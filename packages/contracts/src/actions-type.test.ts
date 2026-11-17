@@ -337,7 +337,9 @@ describe('Actions', () => {
       planTravel: true,
       travel: true,
       getCampaignActivity: true,
-      markActivitySeen: true
+      markActivitySeen: true,
+      setGmScreen: true,
+      listRandomTables: true
     }
     expect(Object.keys(names).sort()).toEqual(ACTIONS.map((a) => a.name).sort())
   })

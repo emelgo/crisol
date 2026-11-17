@@ -5,6 +5,7 @@
 import { z } from 'zod'
 import { defineAction } from './action.ts'
 import { combatView } from './combat.ts'
+import { gmScreen } from './gm-screen.ts'
 import { markView, widgetView } from './table-tools.ts'
 import { tokenView } from './tokens.ts'
 
@@ -275,6 +276,8 @@ export const campaignTableView = z.object({
   /** La sala (docs/specs/sala.md): en pausa y cómo mueven los jugadores (opcional por la API de prueba de la web) */
   paused: z.boolean().optional(),
   movement: z.enum(['free', 'turn', 'locked']).optional(),
+  /** La pantalla del máster en la escena abierta (8 · campaña; null: la de siempre; opcional por la API de prueba) */
+  gmScreen: gmScreen.nullable().optional(),
   /** Lo que enseña el máster en la vista de jugadores (docs/specs/ensenar.md) */
   show: z
     .object({ kind: z.enum(['page', 'image']), id: z.string(), title: z.string(), worldId: z.uuid() })

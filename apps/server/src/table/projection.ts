@@ -419,7 +419,7 @@ async function tableOf(ctx: ActionContext, campaign: Campaign, given?: scenesRep
   // La presentada, si es otra que la abierta
   const otherId = table.presentedSceneId !== openId ? table.presentedSceneId : null
   const none = { views: [], senses: new Map<string, SenseRanges>() }
-  const [open, other, openTokens, otherTokens, combat, openRows, otherRows, widgetRows] = await Promise.all([
+  const [open, other, openTokens, otherTokens, combat, openRows, otherRows, widgetRows, openState] = await Promise.all([
     openId ? scenesRepo.findScene(ctx.db, openId) : null,
     otherId ? scenesRepo.findScene(ctx.db, otherId) : null,
     openId ? tokensWithSenses(ctx, campaign, openId) : none,
@@ -427,7 +427,8 @@ async function tableOf(ctx: ActionContext, campaign: Campaign, given?: scenesRep
     combatsRepo.findCombat(ctx.db, campaign.id),
     openId ? tableToolsRepo.listMarks(ctx.db, campaign.id, openId) : Promise.resolve([]),
     otherId ? tableToolsRepo.listMarks(ctx.db, campaign.id, otherId) : Promise.resolve([]),
-    tableToolsRepo.listWidgets(ctx.db, campaign.id)
+    tableToolsRepo.listWidgets(ctx.db, campaign.id),
+    openId ? scenesRepo.findSceneState(ctx.db, campaign.id, openId) : null
   ])
   // Una escena que ya no está (su página, en la papelera) no tiene fichas ni marcas
   const presented = table.presentedSceneId === openId ? open : other
@@ -459,6 +460,7 @@ async function tableOf(ctx: ActionContext, campaign: Campaign, given?: scenesRep
     measureOnScreen: table.measureOnScreen,
     paused: table.paused,
     movement: table.movement,
+    gmScreen: open ? (openState?.gmScreen ?? null) : null,
     show: table.screenShow ? { ...table.screenShow, worldId: campaign.worldId } : null
   }
   return { master, shownTokens: shownLoaded.views, shownVision, shownMarks, widgets, shownSounds }
