@@ -12,7 +12,8 @@
   "scripts": {
     "typecheck": "tsc -p .",
     "test": "vitest run",
-    "test:coverage": "vitest run --coverage --exclude src/ritmo.test.ts && vitest run src/ritmo.test.ts"
+    "test:coverage": "vitest run --coverage --exclude src/ritmo.test.ts && vitest run src/ritmo.test.ts",
+    "test:rendimiento": "CRISOL_RENDIMIENTO=1 vitest run src/ritmo.test.ts -t rendimiento"
   },
   "dependencies": {
     "@crisol/dice": "workspace:*",

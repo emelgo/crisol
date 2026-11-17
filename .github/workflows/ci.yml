@@ -67,6 +67,8 @@ jobs:
         run: pnpm --filter @crisol/server test:rendimiento
       - name: Rendimiento de la cronología
         run: pnpm --filter @crisol/domain test:rendimiento
+      - name: Rendimiento de los sistemas
+        run: pnpm --filter @crisol/systems test:rendimiento
       - name: Licencias
         run: pnpm licencias
       - name: Sala limpia
