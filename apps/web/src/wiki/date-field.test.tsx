@@ -97,6 +97,23 @@ describe('el campo «Fecha» de una página', () => {
     expect(properties.getByRole('button', { name: 'Valor de la propiedad 1: 12 de Siega de 412 RV' })).toBeDefined()
   })
 
+  it('no sale de los años del calendario: el año escrito se para en el borde y las flechas se desactivan', async () => {
+    const ranged: FakeCalendar = { ...varn, definition: { ...DEFINITION, yearRange: { min: 0, max: 10 } } }
+    renderPort([founded({ calendarId: VARN, start: { year: 9, month: 'vendimia', day: 1 } })], [ranged])
+    const picker = await openPicker()
+    const year = picker.getByLabelText('Año que se ve') as HTMLInputElement
+    await userEvent.clear(year)
+    await userEvent.type(year, '12345678')
+    expect(year.value).toBe('123456')
+    expect(picker.getByRole('button', { name: /(^|\s)1 de Vendimia de 10 RV$/ })).toBeDefined()
+    expect((picker.getByRole('button', { name: 'Año siguiente' }) as HTMLButtonElement).disabled).toBe(true)
+    expect((picker.getByRole('button', { name: 'Mes siguiente' }) as HTMLButtonElement).disabled).toBe(true)
+    // En «Año», los de fuera no se eligen
+    await userEvent.click(picker.getByRole('radio', { name: 'Año' }))
+    expect((picker.getByRole('button', { name: '11 RV' }) as HTMLButtonElement).disabled).toBe(true)
+    expect((picker.getByRole('button', { name: '9 RV' }) as HTMLButtonElement).disabled).toBe(false)
+  })
+
   it('con fin y cada año: el tramo se marca y se lee sin repetir lo que comparten', async () => {
     const { saved } = renderPort([founded({ calendarId: VARN, start: { year: 412, month: 'siega', day: 12 } })], [varn])
     const picker = await openPicker()

@@ -5,6 +5,7 @@
  * los calcula el editor y aquí se marcan donde están
  */
 import {
+  CALENDAR_LIMITS,
   type CalendarDefinition,
   type CalendarProblem,
   type CalendarSection,
@@ -20,9 +21,9 @@ import {
   yearStart
 } from '@crisol/domain'
 import { ChevronDown, ChevronUp, GripVertical, Plus, TriangleAlert, X } from 'lucide-react'
-import { type DragEvent, type KeyboardEvent, type ReactNode, type Ref, useEffect, useState } from 'react'
+import { type DragEvent, type KeyboardEvent, type ReactNode, type Ref, useEffect, useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { DateInput, IntegerInput } from './date-input.tsx'
+import { DateInput, IntegerInput, YEAR_DIGITS, YearInput } from './date-input.tsx'
 import styles from './editor.module.css'
 import { useProblemText } from './problems.ts'
 
@@ -120,13 +121,30 @@ function moved<T>(list: T[], from: number, to: number) {
   if (item !== undefined) list.splice(Math.max(0, Math.min(to, list.length)), 0, item)
 }
 
+/** Cambia un extremo del rango de años (null: vacío, el tope general); sin ninguno, sin rango */
+function setYearEnd(d: CalendarDefinition, end: 'min' | 'max', year: number | null) {
+  const range = { ...d.yearRange }
+  if (year === null) delete range[end]
+  else range[end] = year
+  if (typeof range.min !== 'number' && typeof range.max !== 'number') delete d.yearRange
+  else d.yearRange = range
+}
+
 export function GeneralSection({
   draft,
   change,
+  problems,
   name,
   onName
-}: Omit<SectionProps, 'problems'> & { name: string; onName: (name: string) => void }) {
+}: SectionProps & { name: string; onName: (name: string) => void }) {
   const { t } = useTranslation()
+  const bound = CALENDAR_LIMITS.yearBound
+  const min = draft.yearRange?.min ?? null
+  const max = draft.yearRange?.max ?? null
+  // Sin «desde», se propone el inicio de la primera era (no se impone)
+  const firstEra = [...draft.eras].sort((a, b) => a.start.year - b.start.year)[0]
+  const yearsWrong = problems.some((p) => p.code === 'yearOrder' || p.code === 'yearLimit')
+  const yearsId = useId()
   return (
     <div className={styles.fields}>
       <label className={styles.field}>
@@ -187,6 +205,44 @@ export function GeneralSection({
           {draft.description.length} / 500
         </small>
       </label>
+      <fieldset className={styles.years}>
+        <legend>{t('calendars.editor.years')}</legend>
+        <label className={styles.inline} htmlFor={`${yearsId}-min`}>
+          {t('calendars.editor.yearsFrom')}
+        </label>
+        <IntegerInput
+          id={`${yearsId}-min`}
+          className={styles.yearInput}
+          digits={YEAR_DIGITS}
+          value={min ?? Number.NaN}
+          placeholder={String(firstEra?.start.year ?? -bound)}
+          aria-invalid={yearsWrong || undefined}
+          onValue={(year) => change((d) => setYearEnd(d, 'min', year))}
+          onEmpty={() => change((d) => setYearEnd(d, 'min', null))}
+        />
+        <label className={styles.inline} htmlFor={`${yearsId}-max`}>
+          {t('calendars.editor.yearsTo')}
+        </label>
+        <IntegerInput
+          id={`${yearsId}-max`}
+          className={styles.yearInput}
+          digits={YEAR_DIGITS}
+          value={max ?? Number.NaN}
+          placeholder={String(bound)}
+          aria-invalid={yearsWrong || undefined}
+          onValue={(year) => change((d) => setYearEnd(d, 'max', year))}
+          onEmpty={() => change((d) => setYearEnd(d, 'max', null))}
+        />
+        {min === null && firstEra && (
+          <button
+            type="button"
+            className={styles.link}
+            onClick={() => change((d) => setYearEnd(d, 'min', firstEra.start.year))}
+          >
+            {t('calendars.editor.yearsFromEra', { era: firstEra.name || '—', year: firstEra.start.year })}
+          </button>
+        )}
+      </fieldset>
     </div>
   )
 }
@@ -323,8 +379,9 @@ function WeekAnchor({ draft, change, valid }: Pick<SectionProps, 'draft' | 'chan
         ))}
       </select>
       <span>{t('calendars.editor.anchorYear')}</span>
-      <IntegerInput
+      <YearInput
         className={styles.yearInput}
+        definition={draft}
         value={year}
         aria-label={t('calendars.editor.anchorYearLabel')}
         onValue={setYear}

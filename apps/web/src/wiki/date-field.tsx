@@ -8,6 +8,7 @@ import type { CalendarView, PageProperty } from '@crisol/contracts'
 import {
   CalendarDateError,
   type CalendarDefinition,
+  clampYear,
   compareDates,
   convertDate,
   type DatePrecision,
@@ -20,7 +21,8 @@ import {
   isValidDate,
   monthGrid,
   precisionOf,
-  type WorldDate
+  type WorldDate,
+  yearBounds
 } from '@crisol/domain'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
@@ -28,7 +30,7 @@ import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Plus, Repeat } 
 import { type KeyboardEvent, useCallback, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
-import { IntegerInput } from '../calendars/date-input.tsx'
+import { YearInput } from '../calendars/date-input.tsx'
 import { pagesOf, shortWeekdays, startYear } from '../calendars/preview.tsx'
 import { useDismiss } from '../components/dismiss.ts'
 import { Floating } from '../components/floating.tsx'
@@ -186,7 +188,15 @@ export function viewOf(definition: CalendarDefinition, date: WorldDate | null): 
         (p) => p.month === date.month || p.before.includes(date.month ?? '') || p.after.includes(date.month ?? '')
       )
     : 0
-  return { year: date?.year ?? startYear(definition), page: Math.max(0, page) }
+  return { year: clampYear(definition, date?.year ?? startYear(definition)), page: Math.max(0, page) }
+}
+
+/** La página de al lado (la anterior o la siguiente), pasando de año al dar la vuelta */
+export function pageStep(count: number, view: View, by: -1 | 1): View {
+  const next = view.page + by
+  if (next < 0) return { year: view.year - 1, page: count - 1 }
+  if (next >= count) return { year: view.year + 1, page: 0 }
+  return { year: view.year, page: next }
 }
 
 /** La fecha con otra precisión: lo que falta, del mes que se ve (o el primero) y el día 1 */
@@ -324,18 +334,17 @@ function DatePicker({
       setView(viewOf(next.definition, start))
     } else setView(viewOf(next.definition, null))
   }
+  const years = yearBounds(definition)
   const stepPage = (by: -1 | 1) => {
-    let next = view.page + by
-    let year = view.year
-    if (next < 0) {
-      next = pages.length - 1
-      year--
-    } else if (next >= pages.length) {
-      next = 0
-      year++
-    }
-    setView({ year, page: next })
+    const next = pageStep(pages.length, view, by)
+    if (next.year >= years.min && next.year <= years.max) setView(next)
   }
+  const canPage = (by: -1 | 1) => {
+    const year = pageStep(pages.length, view, by).year
+    return year >= years.min && year <= years.max
+  }
+  // Pasar de año no sale de los del calendario
+  const showYear = (year: number) => setView({ ...view, year: clampYear(definition, year) })
 
   // RePág y AvPág pasan de mes (con Mayúsculas, de año); el foco vuelve a la rejilla nueva
   const refocus = useRef(false)
@@ -349,7 +358,7 @@ function DatePicker({
       event.preventDefault()
       const by = event.key === 'PageUp' ? -1 : 1
       refocus.current = true
-      if (event.shiftKey || precision !== 'day') setView({ ...view, year: view.year + by })
+      if (event.shiftKey || precision !== 'day') showYear(view.year + by)
       else stepPage(by)
       return
     }
@@ -400,12 +409,18 @@ function DatePicker({
         <button
           type="button"
           aria-label={t('dates.previousYear')}
-          onClick={() => setView({ ...view, year: view.year - 1 })}
+          disabled={view.year <= years.min}
+          onClick={() => showYear(view.year - 1)}
         >
           <ChevronsLeft size={16} aria-hidden="true" />
         </button>
         {precision === 'day' && (
-          <button type="button" aria-label={t('dates.previousMonth')} onClick={() => stepPage(-1)}>
+          <button
+            type="button"
+            aria-label={t('dates.previousMonth')}
+            disabled={!canPage(-1)}
+            onClick={() => stepPage(-1)}
+          >
             <ChevronLeft size={16} aria-hidden="true" />
           </button>
         )}
@@ -424,22 +439,24 @@ function DatePicker({
           </select>
         )}
         <span className={styles.year}>
-          <IntegerInput
+          <YearInput
             aria-label={t('dates.yearShown')}
+            definition={definition}
             value={view.year}
             onValue={(year) => setView({ ...view, year })}
           />
           {definition.yearSuffix && <span aria-hidden="true">{definition.yearSuffix}</span>}
         </span>
         {precision === 'day' && (
-          <button type="button" aria-label={t('dates.nextMonth')} onClick={() => stepPage(1)}>
+          <button type="button" aria-label={t('dates.nextMonth')} disabled={!canPage(1)} onClick={() => stepPage(1)}>
             <ChevronRight size={16} aria-hidden="true" />
           </button>
         )}
         <button
           type="button"
           aria-label={t('dates.nextYear')}
-          onClick={() => setView({ ...view, year: view.year + 1 })}
+          disabled={view.year >= years.max}
+          onClick={() => showYear(view.year + 1)}
         >
           <ChevronsRight size={16} aria-hidden="true" />
         </button>
@@ -460,6 +477,7 @@ function DatePicker({
                   data-choice=""
                   aria-pressed={pressed}
                   tabIndex={pressed || (!inView && year === view.year) ? 0 : -1}
+                  disabled={year < years.min || year > years.max}
                   onClick={() => pick({ year })}
                 >
                   {formatYear(definition, year)}

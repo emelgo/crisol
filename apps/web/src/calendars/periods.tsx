@@ -14,6 +14,7 @@ import {
   monthGrid,
   moonEvent,
   type WeekGrid,
+  yearBounds,
   yearLength,
   yearStart
 } from '@crisol/domain'
@@ -32,6 +33,7 @@ export function PeriodHead({
   facts,
   previous,
   next,
+  canStep = () => true,
   onStep
 }: {
   id: string
@@ -40,6 +42,8 @@ export function PeriodHead({
   /** Lo que dicen las flechas («Semana anterior») */
   previous: string
   next: string
+  /** Si se puede pasar a ese lado (en el borde de los años del calendario, no) */
+  canStep?: (step: -1 | 1) => boolean
   onStep: (step: -1 | 1) => void
 }) {
   return (
@@ -51,10 +55,10 @@ export function PeriodHead({
         {facts && <p className={chrono.calendarFacts}>{facts}</p>}
       </div>
       <div className={chrono.calendarArrows}>
-        <button type="button" aria-label={previous} title={previous} onClick={() => onStep(-1)}>
+        <button type="button" aria-label={previous} title={previous} disabled={!canStep(-1)} onClick={() => onStep(-1)}>
           <ChevronLeft size={18} aria-hidden="true" />
         </button>
-        <button type="button" aria-label={next} title={next} onClick={() => onStep(1)}>
+        <button type="button" aria-label={next} title={next} disabled={!canStep(1)} onClick={() => onStep(1)}>
           <ChevronRight size={18} aria-hidden="true" />
         </button>
       </div>
@@ -118,6 +122,15 @@ export function WeekView({
     [week]
   )
   const groupOf = (id: string | undefined) => groups.find((g) => g.id === id)
+  // No pasa de los años del calendario: la semana de antes o de después, si su día de al lado cabe
+  const years = yearBounds(definition)
+  const canStep = (step: -1 | 1) => {
+    const year = dateFromDay(definition, step < 0 ? week.first - 1 : week.last + 1).year
+    return year >= years.min && year <= years.max
+  }
+  const step = (by: -1 | 1) => {
+    if (canStep(by)) onStep(by)
+  }
   const inWeek = (day: number | null): day is number => day !== null && days.some((d) => d.dayNumber === day)
   const tabbable = inWeek(focusDay)
     ? focusDay
@@ -130,14 +143,14 @@ export function WeekView({
   const onKey = (event: KeyboardEvent<HTMLElement>) => {
     if (event.key === 'PageUp' || event.key === 'PageDown') {
       event.preventDefault()
-      onStep(event.key === 'PageUp' ? -1 : 1)
+      step(event.key === 'PageUp' ? -1 : 1)
       return
     }
     if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
     event.preventDefault()
     const at = days.findIndex((d) => d.dayNumber === (focusDay ?? tabbable))
     const target = days[at + (event.key === 'ArrowLeft' ? -1 : 1)]
-    if (!target) return onStep(event.key === 'ArrowLeft' ? -1 : 1)
+    if (!target) return step(event.key === 'ArrowLeft' ? -1 : 1)
     setFocusDay(target.dayNumber)
     document.getElementById(`dia-${titleId}-${target.dayNumber}`)?.focus()
   }
@@ -238,7 +251,8 @@ export function WeekView({
         title={title}
         previous={t('calendars.view.previousWeek')}
         next={t('calendars.view.nextWeek')}
-        onStep={onStep}
+        canStep={canStep}
+        onStep={step}
       />
       {week.days.length > 0 && (
         <table
@@ -372,6 +386,10 @@ export function YearView({
         title={title}
         previous={t('calendars.view.previousYear')}
         next={t('calendars.view.nextYear')}
+        canStep={(by) => {
+          const { min, max } = yearBounds(definition)
+          return year + by >= min && year + by <= max
+        }}
         onStep={onStep}
       />
       <ol className={styles.year} aria-labelledby={titleId}>

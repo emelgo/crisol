@@ -358,7 +358,7 @@ function Editor({
             </div>
           }
         >
-          {phase.id === 'general' && <GeneralSection draft={draft} change={change} name={name} onName={setName} />}
+          {phase.id === 'general' && <GeneralSection {...props} name={name} onName={setName} />}
           {phase.id === 'semana' && <WeekSection {...props} valid={computable} />}
           {phase.id === 'meses' && <MonthsSection {...props} />}
           {phase.id === 'dias-senalados' && <NamedDaysSection draft={draft} change={change} />}

@@ -488,12 +488,29 @@
   border: 0;
 }
 
+/* Los años que admite: «Desde … hasta …», en una línea */
+.years {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.years legend,
 .choice legend {
   margin-block-end: var(--space-1);
   padding: 0;
   color: var(--color-muted);
   font-size: 0.8125rem;
   font-weight: 600;
+}
+
+.years legend {
+  float: inline-start;
+  inline-size: 100%;
 }
 
 .choice label,
@@ -895,4 +912,9 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2) var(--space-5);
+}
+
+/* «Desde el inicio de…», tras los años */
+.years .link {
+  margin-inline-start: var(--space-2);
 }

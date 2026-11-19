@@ -273,6 +273,38 @@ describe('un calendario en grande', () => {
     ])
   })
 
+  it('los años: «Ir al año» no pasa del tope ni deja más de seis cifras', async () => {
+    open()
+    await screen.findByRole('heading', { level: 2, name: 'Enero de 0 RV' })
+    const year = screen.getByLabelText('Ir al año') as HTMLInputElement
+    await userEvent.clear(year)
+    await userEvent.type(year, '-2345656')
+    expect(year.value).toBe('-234565')
+    expect(screen.getByRole('heading', { level: 2, name: 'Enero de -99999 RV' })).toBeDefined()
+    expect((screen.getByRole('button', { name: 'Mes anterior' }) as HTMLButtonElement).disabled).toBe(true)
+  })
+
+  it('con su rango de años, se para en el borde: las flechas se desactivan y la vista no sale de él', async () => {
+    const ranged: FakeCalendar = { ...VARN, definition: { ...VARN.definition, yearRange: { min: 0, max: 2 } } }
+    renderAt(`/mundos/${WORLD.id}/calendarios/${VARN.id}`, [ranged])
+    await screen.findByRole('heading', { level: 2, name: 'Enero de 0 RV' })
+    const previous = screen.getByRole('button', { name: 'Mes anterior' }) as HTMLButtonElement
+    expect(previous.disabled).toBe(true)
+    const year = screen.getByLabelText('Ir al año')
+    await userEvent.clear(year)
+    await userEvent.type(year, '50')
+    expect(screen.getByRole('heading', { level: 2, name: 'Enero de 2 RV' })).toBeDefined()
+    await userEvent.click(screen.getByRole('button', { name: /^Ir al mes/ }))
+    await userEvent.click(screen.getByRole('button', { name: 'Diciembre' }))
+    expect((screen.getByRole('button', { name: 'Mes siguiente' }) as HTMLButtonElement).disabled).toBe(true)
+    const modes = screen.getByRole('toolbar', { name: 'Vista' })
+    await userEvent.click(within(modes).getByRole('button', { name: 'Año' }))
+    expect(screen.getByRole('heading', { level: 2, name: '2 RV' })).toBeDefined()
+    expect((screen.getByRole('button', { name: 'Año siguiente' }) as HTMLButtonElement).disabled).toBe(true)
+    await userEvent.click(screen.getByRole('button', { name: 'Año anterior' }))
+    expect(screen.getByRole('heading', { level: 2, name: '1 RV' })).toBeDefined()
+  })
+
   it('«Hoy de…»: con una campaña con fecha, se abre en su hoy, marcado', async () => {
     open({
       campaigns: [MARCA],
@@ -390,6 +422,26 @@ describe('el editor de un calendario, por fases', () => {
     expect(api.calendars[0]?.definition.leapRules).toEqual([
       { monthId: blank.definition.months[0]?.id, days: 2, every: 3 }
     ])
+  })
+
+  it('General: los años, opcionales; sin «desde», se propone el inicio de la primera era', async () => {
+    const { api } = open()
+    const general = await screen.findByRole('region', { name: 'General' })
+    const years = within(general).getByRole('group', { name: 'Años' })
+    const from = within(years).getByLabelText('Desde') as HTMLInputElement
+    const to = within(years).getByLabelText('hasta') as HTMLInputElement
+    expect(from.value).toBe('')
+    expect(from.placeholder).toBe('0')
+    await userEvent.click(within(years).getByRole('button', { name: 'Desde el inicio de Era de la Corona (0)' }))
+    expect(from.value).toBe('0')
+    expect(within(years).queryByRole('button', { name: /^Desde el inicio/ })).toBeNull()
+    await userEvent.type(to, '-5')
+    expect(await within(general).findByText('«Desde» (0) va después de «hasta» (-5).')).toBeDefined()
+    await userEvent.clear(to)
+    await userEvent.type(to, '3000')
+    await waitFor(() => expect(screen.getByText('Sin problemas.')).toBeDefined())
+    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
+    await waitFor(() => expect(api.calendars[0]?.definition.yearRange).toEqual({ min: 0, max: 3000 }))
   })
 
   it('un problema sale en su fase y a la derecha; «Guardar» lleva a él; arreglado, se guarda', async () => {

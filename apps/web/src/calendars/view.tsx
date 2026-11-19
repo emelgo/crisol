@@ -17,7 +17,9 @@ import {
   type FullDate,
   formatDate,
   formatYear,
-  weekGrid
+  weekGrid,
+  yearBounds,
+  yearStart
 } from '@crisol/domain'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getRouteApi, Link, Navigate, useNavigate } from '@tanstack/react-router'
@@ -39,7 +41,7 @@ import { failed, LoadError, SectionError } from '../components/load-error.tsx'
 import { Menu, MenuItem } from '../components/menu.tsx'
 import { Screen } from '../components/screen.tsx'
 import { Tour } from '../components/tour.tsx'
-import { IntegerInput } from './date-input.tsx'
+import { YearInput } from './date-input.tsx'
 import { WeekView, YearView } from './periods.tsx'
 import { pagesOf, startYear } from './preview.tsx'
 import styles from './view.module.css'
@@ -117,9 +119,16 @@ function BigCalendar({
   const today = chosen.current ? todayIn(calendars, calendar.id, chosen.current.today) : null
 
   const [mode, setMode] = useState<Mode>('month')
+  // Los días que caben en los años del calendario: lo que se ve no pasa de ellos (se para en el borde)
+  const { lowest, highest } = useMemo(() => {
+    const years = yearBounds(definition)
+    return { lowest: yearStart(definition, years.min), highest: yearStart(definition, years.max + 1) - 1 }
+  }, [definition])
+  const within = (day: number) => Math.min(highest, Math.max(lowest, day))
   // El día que guía lo que se ve (el mes, la semana o el año en que cae): el año de su última era (o el 1); con un
   // «hoy», él (la primera vez que llega)
-  const [cursor, setCursor] = useState(() => dayNumber(definition, { year: startYear(definition) }))
+  const [cursor, setRawCursor] = useState(() => within(dayNumber(definition, { year: startYear(definition) })))
+  const setCursor = (day: number) => setRawCursor(within(day))
   const [jumped, setJumped] = useState(false)
   if (today !== null && !jumped) {
     setJumped(true)
@@ -358,13 +367,14 @@ function BigCalendar({
               }
             </Menu>
           )}
-          <IntegerInput
+          <YearInput
             className={`${styles.jumpField} ${styles.yearInput}`}
+            definition={definition}
             value={at.year}
             aria-label={t('calendars.view.goToYear')}
             onValue={(year) => {
               const monthId = mode === 'year' ? (definition.months[0]?.id ?? at.month) : at.month
-              if (Math.abs(year) <= 10_000_000) setCursor(firstOf(monthId, year))
+              setCursor(firstOf(monthId, year))
             }}
           />
         </fieldset>

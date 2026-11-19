@@ -2215,6 +2215,10 @@ export const es = {
       name: 'Nombre',
       yearSuffix: 'Sufijo de los años',
       beforeZeroSuffix: 'Sufijo antes del año 0',
+      years: 'Años',
+      yearsFrom: 'Desde',
+      yearsTo: 'hasta',
+      yearsFromEra: 'Desde el inicio de {{era}} ({{year}})',
       description: 'Descripción',
       // Semana
       weekday: 'Día {{n}} de la semana',
@@ -2332,6 +2336,8 @@ export const es = {
     },
     // Los problemas de una definición, por su código (los mismos que dice el servidor a la IA)
     problem: {
+      yearLimit: 'Los años van, como mucho, del -{{bound}} al {{bound}}.',
+      yearOrder: '«Desde» ({{min}}) va después de «hasta» ({{max}}).',
       weekdaysEmpty: 'La semana necesita al menos un día.',
       weekdayUnnamed: 'El día {{n}} de la semana no tiene nombre.',
       firstWeekday: 'El día con el que empieza el año 0 no está en la semana.',
@@ -2356,6 +2362,7 @@ export const es = {
       eraEnd: 'El final de «{{name}}» no es una fecha del calendario.',
       eraOrder: '«{{name}}» termina antes de empezar.',
       eraAbbreviation: '«{{name}}» cuenta los años desde su inicio: necesita su abreviatura.',
+      eraOutside: '«{{name}}» empieza en el año {{year}}, fuera de los años del calendario.',
       correspondenceCalendar: 'La correspondencia apunta a un calendario que ya no es del mundo.',
       correspondenceDate: 'La fecha de la correspondencia no es un día del principal.',
       nameMissing: 'El calendario necesita un nombre.'

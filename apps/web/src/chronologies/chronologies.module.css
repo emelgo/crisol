@@ -1014,9 +1014,15 @@
   cursor: pointer;
 }
 
-.calendarArrows button:hover,
+.calendarArrows button:hover:not(:disabled),
 .iconButton:hover {
   border-color: var(--color-field-border);
+}
+
+/* En el borde de los años del calendario */
+.calendarArrows button:disabled {
+  opacity: 0.35;
+  cursor: default;
 }
 
 /* Las fichas: lo de varios días, seguido de un día a otro */

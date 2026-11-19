@@ -21,7 +21,8 @@ import {
   type GridDay,
   monthGrid,
   moonEvent,
-  seasonOfDay
+  seasonOfDay,
+  yearBounds
 } from '@crisol/domain'
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Plus, X } from 'lucide-react'
 import {
@@ -182,15 +183,19 @@ export function CalendarView({
     return { daily, monthly }
   }, [entries, definition, first, last])
 
+  // Por páginas seguidas: pasar de año es correr tantas como tiene el año; no pasa de los años del calendario
+  const years = yearBounds(definition)
+  const count = Math.max(1, pages.length)
+  const reach = (step: number) => {
+    const total = where.year * count + where.page + step
+    const year = Math.floor(total / count)
+    return year < years.min || year > years.max ? null : { page: total - year * count, year }
+  }
   const go = (step: number) => {
+    const next = reach(step)
+    if (!next) return
     setSelected(null)
-    // Por páginas seguidas: pasar de año es correr tantas como tiene el año
-    setWhere(({ page: at, year: y }) => {
-      const count = Math.max(1, pages.length)
-      const total = y * count + at + step
-      const year = Math.floor(total / count)
-      return { page: total - year * count, year }
-    })
+    setWhere(() => next)
   }
 
   const firstDay = page ? dateFromDay(definition, first) : null
@@ -318,6 +323,7 @@ export function CalendarView({
       event.preventDefault()
       const target = at + (moves[event.key] ?? 0)
       if (target < first || target > last) {
+        if (!reach(target < first ? -1 : 1)) return
         go(target < first ? -1 : 1)
         setFocusDay(target)
         return
@@ -412,6 +418,7 @@ export function CalendarView({
               aria-label={t('calendars.view.previousYear')}
               title={t('calendars.view.previousYear')}
               onClick={() => go(-pages.length)}
+              disabled={!reach(-pages.length)}
             >
               <ChevronsLeft size={18} aria-hidden="true" />
             </button>
@@ -421,6 +428,7 @@ export function CalendarView({
             aria-label={t('chronologies.previousMonth')}
             title={t('chronologies.previousMonth')}
             onClick={() => go(-1)}
+            disabled={!reach(-1)}
           >
             <ChevronLeft size={18} aria-hidden="true" />
           </button>
@@ -429,6 +437,7 @@ export function CalendarView({
             aria-label={t('chronologies.nextMonth')}
             title={t('chronologies.nextMonth')}
             onClick={() => go(1)}
+            disabled={!reach(1)}
           >
             <ChevronRight size={18} aria-hidden="true" />
           </button>
@@ -438,6 +447,7 @@ export function CalendarView({
               aria-label={t('calendars.view.nextYear')}
               title={t('calendars.view.nextYear')}
               onClick={() => go(pages.length)}
+              disabled={!reach(pages.length)}
             >
               <ChevronsRight size={18} aria-hidden="true" />
             </button>
