@@ -9,6 +9,40 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
+## Calendarios en grande y su editor por fases (ajustes tras los módulos, bloque C; rama `ajustes/tras-modulos`; 2026-11-19)
+
+Plan aprobado el 2026-11-19 («¿cómo creo eventos en el calendario?»). Normas en `docs/diseno.md` (Pantallas).
+
+- [ ] **Al pulsar un calendario se ve en grande**: el título sobre la columna y «Editar calendario» a su derecha (y en
+  el engranaje de su tarjeta, «Abrir» y «Editar calendario»). En el centro, el mes con su semana, las lunas nuevas y
+  llenas, la estación y la era; «‹ ›» de mes y «« »» de año; una festividad dentro de la semana sale con su franja de
+  color y las de fuera de la semana, debajo.
+- [ ] **El año en pequeño**, a la izquierda: la tira del año con el mes que se ve marcado y los meses (cada uno lleva a
+  él; las festividades, en su color y sin número), y los datos del calendario (año, meses, semana, lunas, estaciones,
+  eras, si es el principal y su descripción).
+- [ ] **El día elegido**, a la derecha: la fecha con su día de la semana, la estación, la era, el día del año, cada luna
+  con su fase y lo que pasa ese día (los eventos se editan al pulsar su título; las páginas, se abren). Sin elegir, el
+  primero del mes (o el hoy).
+- [ ] **«Nuevo evento»** abre el cuadro del evento con la fecha del día: crea un evento suelto del mundo, que sale en el
+  mes y en las cronologías que lo incluyan. **Salen todos los eventos y páginas con fecha del mundo**, no solo los de
+  alguna cronología; lo de otros calendarios, convertido (sin correspondencia, una línea dice cuántas fechas faltan).
+- [ ] **«Página con esta fecha»** crea una página «Sin título» en el primer nivel con el campo «Fecha» puesto y la abre
+  para escribir el título. ¿Te vale en el primer nivel, o prefieres elegir dónde va (o con plantilla)?
+- [ ] **«Hoy de…»**: con alguna campaña con fecha, se abre en su hoy, marcado en la rejilla, y «Hoy» vuelve a él.
+- [ ] **El editor, por fases** (`…/editar?fase=semana`): las fases con su número y sus avisos a la izquierda; la
+  elegida en el centro con la anterior y «Siguiente: …» al pie; a la derecha el año (su tira y sus cifras, al momento)
+  y los problemas, cada uno con «Ir a…». Sin vista previa. «Guardar» y «Cancelar» abajo cuando hay cambios; con
+  problemas, «Guardar» lleva al primero. Cambiar de fase con cambios no pregunta; salir (o «Ver calendario»), sí. Al
+  crear un calendario se abre su editor.
+- [ ] **Meses**: cada uno con su «Tipo» (Mes o Festividad, y una línea dice qué es una festividad); solo una festividad
+  enseña «Sus días no cuentan en la semana». Las columnas cortas, centradas.
+- [ ] **Días señalados**, su propia fase (mes, día y nombre), con la línea «No son los días de la semana».
+- [ ] **Semana**: «La semana empieza en» reordena los días sin cambiar el de ninguna fecha; la frase «El 1 de {mes} del
+  año {N} fue {día}» dice qué día fue y, al cambiar el día, corre el de todo el calendario. Sustituye a «El año 0
+  empieza en».
+- [ ] **Bisiestos**: uno en blanco no trae ninguno («Sin años bisiestos.»), con «Añadir regla» y «Como el gregoriano»
+  (un día más en el segundo mes que no es festividad, cada 4 años salvo cada 100 pero sí cada 400).
+
 ## El tiempo de la campaña (módulos 8 y 10 · campaña, en local, rama `modulo-8/calendarios`; migraciones 0085-0089; 2026-11-17)
 
 Spec: `docs/specs/modulo-8-10-campana.md` (decisiones 1-33). Lienzo aprobado «El tiempo de la campaña».

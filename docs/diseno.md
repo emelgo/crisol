@@ -257,6 +257,21 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   nuevo» los caminos son los de la app (el esqueleto y a mano; vacío o desde un archivo) y una línea dice que también se
   le puede pedir a la IA por el MCP, sin elegir PDF ni copiar frases. Sustituye a «los sistemas se hacen con la IA»
   (2026-11-04: el editor de entonces «es poco intuitivo»).
+- **Un calendario, al pulsarlo, se ve en grande** (Enrique, 2026-11-19, tras probar el módulo 8: «¿cómo creo eventos
+  en el calendario?»), con el esqueleto de las pantallas: el título sobre la columna y «Editar calendario» a su
+  derecha; en el centro, el mes grande (con la franja de una festividad, las lunas, la estación, lo que cae en él, las
+  flechas de mes y de año y «Hoy de…» si alguna campaña tiene fecha); a la izquierda, el año en pequeño (cada mes
+  lleva a él) y los datos del calendario; a la derecha, el día elegido con su fecha, su estación, su era, sus lunas y lo
+  que pasa, y **«Nuevo evento»** (un evento suelto del mundo, que sale en las cronologías que lo incluyan) y «Página con
+  esta fecha». **Su editor va por fases, cada una en su vista** (General, Semana, Meses, Días señalados, Bisiestos,
+  Estaciones, Lunas, Eras y Correspondencia), como Reglas: las fases con sus avisos a la izquierda, la elegida en el
+  centro (en la dirección, con la anterior y la siguiente al pie) y el año en cifras y los problemas a la derecha; sin
+  vista previa; «Guardar» abajo cuando hay cambios, y salir sin guardar pregunta. **Los campos, en palabras de mesa**:
+  cada mes es «Mes» o «Festividad» (días entre meses, que no se numeran; solo ella puede tener «Sus días no cuentan en
+  la semana»); los días con nombre propio son «Días señalados» y una línea dice que no son los de la semana; la semana
+  se elige por «La semana empieza en» y por la frase «El 1 de {mes} del año {N} fue {día}»; uno en blanco no trae
+  bisiestos («Sin años bisiestos», «Añadir regla» o «Como el gregoriano»); las columnas de las tablas, centradas.
+  Sustituye al editor a pantalla entera con todas las secciones seguidas y la vista previa (lienzo del módulo 8).
 - **Las plantillas son páginas guardadas como modelo, y no hay plantillas de serie** (Enrique, 2026-11-11, revisión de
   la app; ADR-0024): cada cuenta hace las suyas. Una plantilla lleva lo mismo que una página (portada, icono, campos,
   panel, texto y sus pestañas) y se edita como una página; crear desde ella es duplicarla. Se ordenan en carpetas.

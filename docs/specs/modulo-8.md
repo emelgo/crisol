@@ -27,6 +27,24 @@ Lienzo: https://claude.ai/artifact/3mLSy7KVsmDm3yUBn1Mt4P. Donde este apartado y
     cronología enseña las fechas de otros calendarios convertidas al suyo (y el selector de fecha y `describir_fecha`
     dicen la equivalencia). Sin correspondencia, esas fechas se quedan fuera y la cronología dice cuántas.
 
+## Ajustes tras probarlo (Enrique, 2026-11-19) — mandan sobre lo de arriba en lo que toquen
+
+Plan «Ajustes tras los módulos 8, 9 y 10», bloque C (las cronologías como pestaña de página, bloque B, van en su ADR):
+
+- **Un calendario se ve en grande al pulsarlo** (`/mundos/$w/calendarios/$id`): el mes grande con lo que cae en él
+  (todos los eventos sueltos del mundo y las páginas con fecha, en ese calendario; lo de otros, convertido), el año en
+  pequeño con sus datos y el día elegido con «Nuevo evento» (un evento suelto del mundo con esa fecha) y «Página con
+  esta fecha». Lo lee la acción `listCalendarEntries`, solo para quien lleva el mundo (a la jugadora le llega lo suyo por
+  las cronologías). Responde a «¿cómo creo eventos en el calendario?».
+- **El editor pasa a `…/$id/editar` y va por fases** (`?fase=`), cada una en su vista, con el resumen del año y los
+  problemas a la derecha. **Sin vista previa**: sustituye a la decisión 3 («a pantalla entera… con su vista previa»).
+- **Campos más claros**: cada mes tiene un **tipo** (mes o festividad) y solo una festividad puede ir fuera de la semana
+  (sustituye a las columnas «Festividad» y «Fuera de la semana»); los días con nombre son la fase **«Días señalados»**;
+  la semana se fija con **«La semana empieza en»** (reordena sin cambiar el día de ninguna fecha) y el ancla **«El 1 de
+  {mes} del año {N} fue {día}»** (en lugar de «El año 0 empieza en»; `firstWeekdayFor` y `rotateWeek` en
+  `packages/domain/src/calendar/week.ts`); los bisiestos, vacíos en uno en blanco, con «Como el gregoriano»
+  (`gregorianLeapRule`). La definición guardada no cambia: lo nuevo es cómo se edita.
+
 Por tanto la capacidad `linea-temporal` pasa a ser **`cronologias`**: tablas `chronologies` (nombre, orden, calendario,
 filtro), `timeline_groups` (de cada mundo) y `timeline_events` (del mundo, sin pestaña); `page_tabs.kind` no gana tipo
 nuevo; la «Pronto» de «Pestaña nueva» desaparece. Herramientas MCP: `listar_cronologias`, `ver_cronologia`,
@@ -49,7 +67,7 @@ que ella ve).
 
 | Id | Qué hace | Depende de |
 |---|---|---|
-| `calendarios` | Los calendarios del mundo (varios, uno principal), su editor con vista previa y validación, la aritmética de fechas (`packages/domain`) y su MCP (`listar_calendarios`, `ver_calendario`, `crear_calendario`, `cambiar_calendario`, `borrar_calendario`, `describir_fecha`) | mundos e historial (módulo 0) |
+| `calendarios` | Los calendarios del mundo (varios, uno principal), su vista grande, su editor por fases con validación, la aritmética de fechas (`packages/domain`) y su MCP (`listar_calendarios`, `ver_calendario`, `crear_calendario`, `cambiar_calendario`, `borrar_calendario`, `describir_fecha`) | mundos e historial (módulo 0) |
 | `fechas` | El valor «fecha» (año/mes/día de un calendario, con precisión y rango), el tipo de propiedad y de campo de plantilla «Fecha», su selector y su lectura y escritura por el MCP | `calendarios`, propiedades y plantillas (módulos 1 y 2) |
 | `linea-temporal` | La pestaña «Línea temporal»: sus eventos y grupos, las páginas con fecha de su alcance, las vistas lista, meses y calendario, lo que ve la jugadora y su MCP (`ver_linea_temporal`, `cambiar_linea_temporal`, `crear_eventos`, `cambiar_evento`, `borrar_evento`) | `calendarios`, `fechas`, pestañas (ADR-0007), conocimiento (ADR-0017) |
 
