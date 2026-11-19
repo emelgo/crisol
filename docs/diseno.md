@@ -385,8 +385,13 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 - **El grafo de relaciones, en una ventana** (Enrique, 2026-11-19; sustituye a «a pantalla entera, desde la cabecera
   del árbol»): como Ajustes, encima de la página y sin cambiar de vista, casi del tamaño de la pantalla; el de todo el
   mundo, desde el icono de la cabecera del árbol de páginas, y el de una página, desde el de «Mencionado en», también
-  para la jugadora. Va en la dirección (`?grafo=`): Escape, su X, pulsar fuera o Atrás la cierran. Sus controles dicen
-  lo que hacen: «Alcance: directas / a dos pasos / a tres pasos» y «Con lo que menciona el texto», encendido.
+  para la jugadora. Va en la dirección (`?grafo=`): Escape, su X, pulsar fuera o Atrás la cierran. **Sin controles
+  abstractos** (Enrique, 2026-11-19: «lo de alcance sigue sin entenderse, hay que simplificar»): el de una página enseña
+  sus relaciones directas, campos y menciones del texto (estas, discontinuas, como dice la leyenda; sin interruptor), y
+  para ir más allá se pulsa otra página y «Sus relaciones» en su ficha las añade al grafo. El del mundo, **sin filtro
+  por plantilla** («no le veo la utilidad»): relaciones, etiquetas y páginas sueltas; cada página, del color de su
+  plantilla. Los filtros se ocultan con **un botón de icono de panel**, a la izquierda de su cabecera, como el del panel
+  de la página («Ocultar filtros» / «Mostrar filtros»; nada de «‹‹ Plegar»).
 - **El panel de la derecha se escribe** (ADR-0008, como el de LegendKeeper y el de Everlore): arriba las
   propiedades; después sus bloques, que se añaden con «Añadir bloque» (texto, imagen, barra, círculo, estrellas,
   fichas, subpáginas, páginas con una etiqueta), se titulan encima, se tocan en el sitio (+ y −, pulsar la barra, las

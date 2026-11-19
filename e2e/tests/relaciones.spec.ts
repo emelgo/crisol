@@ -115,6 +115,12 @@ test('relaciones (módulo 10): el grafo en su ventana (del mundo y de una págin
   const world = page.getByRole('dialog', { name: 'Relaciones del mundo' })
   await expect(world.getByRole('complementary', { name: 'Filtros' })).toBeVisible()
   await expect(page).toHaveURL(/grafo=mundo/)
+  // Sin filtro de plantillas; los filtros se ocultan y vuelven con el botón de la cabecera
+  await expect(world.getByRole('complementary', { name: 'Filtros' })).not.toContainText('Plantillas')
+  await world.getByRole('button', { name: 'Ocultar filtros' }).click()
+  await expect(world.getByRole('complementary', { name: 'Filtros' })).toHaveCount(0)
+  await world.getByRole('button', { name: 'Mostrar filtros' }).click()
+  await expect(world.getByRole('complementary', { name: 'Filtros' })).toBeVisible()
   await world.getByRole('combobox', { name: 'Buscar una página' }).fill('dora')
   await page.keyboard.press('Enter')
   await expect(world.getByRole('region', { name: 'Doran de Kharum' })).toContainText('Facción')
@@ -125,22 +131,21 @@ test('relaciones (módulo 10): el grafo en su ventana (del mundo y de una págin
   await expect(world).toBeHidden()
   await expect(page).toHaveURL(new RegExp(`/wiki/${id.ilsa}$`))
 
-  // El de la página, desde «Mencionado en»: las directas, con lo que menciona el texto (y, del secreto, discontinuo)
+  // El de la página, desde «Mencionado en»: sus relaciones directas, también lo que menciona el texto (discontinuo, como
+  // dice la leyenda), sin controles
   await page.getByRole('button', { name: 'Ver sus relaciones' }).click()
   const own = page.getByRole('dialog', { name: 'Relaciones de Ilsa de Varn' })
   await expect(own.getByRole('button', { name: 'Guerra de las Brumas' })).toBeVisible()
+  await expect(own.getByRole('list', { name: 'Leyenda' })).toContainText('Menciona')
   await expect(own.getByRole('list', { name: 'Leyenda' })).toContainText('Desde un secreto')
-  await own.getByRole('switch', { name: 'Con lo que menciona el texto' }).uncheck()
-  await expect(own.getByRole('button', { name: 'Guerra de las Brumas' })).toHaveCount(0)
-  await own.getByRole('switch', { name: 'Con lo que menciona el texto' }).check()
-  // A dos pasos, los de su facción
+  await expect(own.getByRole('switch')).toHaveCount(0)
+  // «Sus relaciones» en la ficha de su facción las añade (los otros miembros), sin salir de la de Ilsa
   await expect(own.getByRole('button', { name: 'Doran de Kharum' })).toHaveCount(0)
-  await own.getByRole('button', { name: 'a dos pasos' }).click()
-  await expect(own.getByRole('button', { name: 'Doran de Kharum' })).toBeVisible()
-  // «Centrar aquí» la rehace desde otra; Atrás la cierra
   await own.getByRole('button', { name: 'La Orden del Alba', exact: true }).click()
-  await own.getByRole('region', { name: 'La Orden del Alba' }).getByRole('button', { name: 'Centrar aquí' }).click()
-  await expect(page.getByRole('dialog', { name: 'Relaciones de La Orden del Alba' })).toBeVisible()
+  await own.getByRole('region', { name: 'La Orden del Alba' }).getByRole('button', { name: 'Sus relaciones' }).click()
+  await expect(own.getByRole('button', { name: 'Doran de Kharum' })).toBeVisible()
+  await expect(page).toHaveURL(new RegExp(`grafo=${id.ilsa}`))
+  // Atrás la cierra
   await page.goBack()
   await expect(page.getByRole('dialog')).toHaveCount(0)
 

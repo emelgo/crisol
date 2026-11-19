@@ -86,8 +86,11 @@ ADR-0031. En local (http://localhost:5173) ya están las dos migraciones aplicad
 - [ ] **La jugadora y el árbol**: ve los nodos de las páginas que conoce y los sueltos; de los demás, nada (ni el nombre).
 - [ ] **Sin pestaña «Relaciones»**. El grafo, en una ventana: el icono de la cabecera del árbol de páginas abre el del
   mundo, y el de «Mencionado en», el de esa página, sin cambiar de vista. Escape, la X, pulsar fuera o Atrás la cierran.
-  En el de una página, «Alcance: directas / a dos pasos / a tres pasos» y «Con lo que menciona el texto» (encendido);
-  «Centrar aquí» lo rehace desde otra.
+  El de una página, sin controles: sus relaciones directas, también lo que menciona el texto (la raya discontinua, como
+  dice la leyenda); para ir más allá, pulsa otra página y, en su ficha, «Sus relaciones» las añade al grafo (sin salir
+  del de la tuya). El del mundo, sin el filtro de plantillas (cada página sigue con el color de su plantilla, que dice su
+  ficha); los filtros se ocultan y vuelven con el botón de panel a la izquierda de la cabecera («Ocultar filtros» /
+  «Mostrar filtros»), en lugar de «‹‹ Plegar».
 - [ ] **La IA**: «hazme el árbol genealógico de la casa de Varn con Ilsa, sus padres y su hija» (`crear_arbol_genealogico`)
   y «añade a la abuela, que aún no tiene página» (`editar_arbol_genealogico`).
 - [ ] **Decisiones tomadas sin ti** (dime si alguna no te vale): las cronologías migradas van al primer nivel con una
