@@ -3,8 +3,9 @@
  * página, sin cambiar de vista. Va en la dirección (?grafo=mundo, el de todo el mundo; ?grafo=<página>, centrado en
  * ella): Escape, su X, pulsar fuera o el botón Atrás del navegador la cierran. Se abre desde el icono de la cabecera del
  * árbol de páginas (el del mundo) y desde el de «Mencionado en» (el de esa página), también para quien juega, con lo
- * que conoce su campaña. El de una página: el vecindario con su «Alcance» (directas, a dos pasos o a tres) y «Con lo
- * que menciona el texto» (encendido de entrada); «Centrar aquí» lo rehace desde otra página
+ * que conoce su campaña. El de una página: sus relaciones directas, campos y menciones del texto (la leyenda dice cuál
+ * es cuál); para ir más allá, «Sus relaciones» en la ficha de otra página las añade al grafo (Enrique, 2026-11-19: sin
+ * «Alcance» ni interruptores)
  */
 import type { RelationNode } from '@crisol/contracts'
 import { useRouter, useRouterState } from '@tanstack/react-router'
@@ -18,15 +19,14 @@ import { forceLayout, type Point } from './layout.ts'
 import { type GraphEdge, LinksGraph } from './links-graph.tsx'
 import { colorOrder, inWords, templateColor } from './model.ts'
 import { boundsOf, usePanZoom } from './pan-zoom.ts'
-import { Legend, NodeCard, Segmented, Toggle, useSelection, ZoomControls } from './parts.tsx'
-import { useRelations, useTemplateLook } from './queries.ts'
+import { Legend, NodeCard, useSelection, ZoomControls } from './parts.tsx'
+import { useNeighbourhoods, useTemplateLook } from './queries.ts'
 import relationStyles from './relations.module.css'
 import styles from './world-graph.module.css'
 import { WorldGraph } from './world-graph.tsx'
 
 /** El grafo de todo el mundo, en la dirección */
 export const WORLD_GRAPH = 'mundo'
-const DEPTHS = [1, 2, 3] as const
 const INSETS = { top: 16, bottom: 76 }
 
 /** Abrir la ventana del grafo: el del mundo (WORLD_GRAPH) o el de una página (su id). null: aquí no hay ventana */
@@ -90,22 +90,12 @@ export function GraphWindowProvider({ worldId, children }: { worldId: string; ch
   return (
     <GraphWindowContext.Provider value={open}>
       {children}
-      {grafo && <GraphDialog worldId={worldId} target={grafo} onClose={close} onCenter={open} />}
+      {grafo && <GraphDialog worldId={worldId} target={grafo} onClose={close} />}
     </GraphWindowContext.Provider>
   )
 }
 
-function GraphDialog({
-  worldId,
-  target,
-  onClose,
-  onCenter
-}: {
-  worldId: string
-  target: string
-  onClose: () => void
-  onCenter: (pageId: string) => void
-}) {
+function GraphDialog({ worldId, target, onClose }: { worldId: string; target: string; onClose: () => void }) {
   const { t } = useTranslation()
   const dialog = useRef<HTMLDialogElement>(null)
   const heading = useRef<HTMLHeadingElement>(null)
@@ -159,34 +149,32 @@ function GraphDialog({
         {world ? (
           <WorldGraph worldId={worldId} />
         ) : (
-          <PageGraph key={target} worldId={worldId} pageId={target} onTitle={setTitle} onCenter={onCenter} />
+          <PageGraph key={target} worldId={worldId} pageId={target} onTitle={setTitle} />
         )}
       </div>
     </dialog>
   )
 }
 
-/** El vecindario de una página: su alcance (1 a 3 pasos) y si salen las menciones del texto */
+/** Las relaciones directas de una página y las de las que se amplían desde su ficha («Sus relaciones») */
 function PageGraph({
   worldId,
   pageId,
-  onTitle,
-  onCenter
+  onTitle
 }: {
   worldId: string
   pageId: string
   onTitle: (title: string) => void
-  onCenter: (pageId: string) => void
 }) {
   const { t } = useTranslation()
   const readAs = useReadAs()
   const openPage = useOpenPage()
   const look = useTemplateLook()
-  const [depth, setDepth] = useState<number>(1)
-  const [mentions, setMentions] = useState(true)
+  const [expanded, setExpanded] = useState<readonly string[]>([])
   const { selected, select, close: closeCard, focusCard } = useSelection()
-  const view = useRelations(worldId, pageId, { mode: 'links', depth, fieldsOnly: !mentions })
-  const data = view.data?.pageId === pageId ? view.data : null
+  const ids = useMemo(() => [pageId, ...expanded], [pageId, expanded])
+  const view = useNeighbourhoods(worldId, ids)
+  const data = view.data
   const nodes = useMemo(() => data?.nodes ?? [], [data?.nodes])
   const edges = useMemo(() => (data?.edges ?? []) as GraphEdge[], [data?.edges])
   const byId = useMemo(() => new Map(nodes.map((node) => [node.id, node])), [nodes])
@@ -198,24 +186,11 @@ function PageGraph({
     if (title) onTitle(title)
   }, [title, onTitle])
   const chosen = selected ? byId.get(selected) : undefined
-  const tools = (
-    <div className={relationStyles.tools}>
-      <Segmented
-        label={t('relations.depth')}
-        options={DEPTHS}
-        value={depth as 1}
-        text={(n) => t(`relations.depthOf.${n}` as 'relations.depthOf.1')}
-        name={(n) => t(`relations.depthOf.${n}` as 'relations.depthOf.1')}
-        onChange={setDepth}
-      />
-      <Toggle label={t('relations.withMentions')} checked={mentions} onChange={setMentions} />
-    </div>
-  )
   if (view.isError)
     return (
       <p role="alert" className={relationStyles.nothing}>
         {t('relations.failed')}{' '}
-        <button type="button" className={relationStyles.retry} onClick={() => void view.refetch()}>
+        <button type="button" className={relationStyles.retry} onClick={view.refetch}>
           {t('load.retry')}
         </button>
       </p>
@@ -223,7 +198,6 @@ function PageGraph({
   if (!data) return <Loading />
   return (
     <div className={styles.pageGraph}>
-      {tools}
       <div className={`${styles.graph} ${styles.pageFrame}`} data-tour="grafo-pagina">
         {edges.length === 0 ? (
           <p className={styles.empty}>{t('relations.empty')}</p>
@@ -245,16 +219,9 @@ function PageGraph({
                 color={colorOf(chosen)}
                 meta={[look.nameOf(chosen.template), chosen.subtitle].filter(Boolean).join(' · ')}
                 rows={inWords(chosen.id, edges, titleOf, t)}
-                primary="center"
+                primary={ids.includes(chosen.id) ? 'open' : 'expand'}
                 onOpen={() => openPage(worldId, chosen.id)}
-                onCenter={
-                  chosen.id === pageId
-                    ? null
-                    : () => {
-                        closeCard()
-                        onCenter(chosen.id)
-                      }
-                }
+                onExpand={ids.includes(chosen.id) ? null : () => setExpanded([...expanded, chosen.id])}
                 onClose={closeCard}
                 autoFocus={focusCard}
               />
@@ -267,7 +234,7 @@ function PageGraph({
   )
 }
 
-/** El grafo de fuerzas con su zoom: se encuadra al llegar; al cambiar el alcance, lo que estaba no salta */
+/** El grafo de fuerzas con su zoom: se encuadra al llegar; al ampliarlo, lo que estaba no salta */
 function Neighbourhood({
   label,
   nodes,

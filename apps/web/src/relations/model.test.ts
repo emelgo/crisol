@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { i18next } from '../i18n.ts'
-import { edgeLabel, initials, inWords, type ReadableEdge, templateColor } from './model.ts'
+import { edgeLabel, initials, inWords, joinNeighbourhoods, type ReadableEdge, templateColor } from './model.ts'
 
 const t = i18next.t.bind(i18next)
 const field = (source: string, target: string, name: string, inverseName?: string): ReadableEdge => ({
@@ -77,5 +77,22 @@ describe('iniciales y colores', () => {
     expect(templateColor('b', ['a', 'b'])).toBe('var(--color-series-2)')
     expect(templateColor('i', ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i'])).toBe('var(--color-series-1)')
     expect(templateColor(null, ['a'])).toBe('var(--color-muted)')
+  })
+})
+
+describe('el grafo de una página, ampliado', () => {
+  it('junta las páginas y las relaciones de cada vecindario sin repetir', () => {
+    const node = (id: string) => ({ id, title: titleOf(id), icon: null, template: null })
+    const joined = joinNeighbourhoods([
+      { nodes: [node('ilsa'), node('aldren')], edges: [field('ilsa', 'aldren', 'Padres')], truncated: false },
+      {
+        nodes: [node('aldren'), node('ilsa'), node('lia')],
+        edges: [field('ilsa', 'aldren', 'Padres'), mention('aldren', 'lia')],
+        truncated: true
+      }
+    ])
+    expect(joined.nodes.map((each) => each.id)).toEqual(['ilsa', 'aldren', 'lia'])
+    expect(joined.edges).toEqual([field('ilsa', 'aldren', 'Padres'), mention('aldren', 'lia')])
+    expect(joined.truncated).toBe(true)
   })
 })

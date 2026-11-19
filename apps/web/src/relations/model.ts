@@ -1,6 +1,7 @@
 /**
  * Lo que la web hace con las relaciones de una página (módulo 10, docs/specs/modulo-10.md), sin React: cómo se lee
- * cada arista desde una página, la lista «en palabras» de la ficha de una página elegida y el color de cada plantilla
+ * cada arista desde una página, la lista «en palabras» de la ficha de una página elegida, el color de cada plantilla y
+ * el grafo de una página ampliado con las relaciones de otras
  */
 import type { RelationEdge } from '@crisol/contracts'
 import type { TFunction } from 'i18next'
@@ -93,4 +94,30 @@ export function colorOrder(order: readonly string[], nodes: readonly { template:
   const all = [...order]
   for (const node of nodes) if (node.template && !all.includes(node.template)) all.push(node.template)
   return all
+}
+
+/** Un vecindario: las páginas y las relaciones que salen alrededor de una página */
+export interface Neighbourhood<N extends { id: string }, E extends ReadableEdge & { key?: string }> {
+  nodes: readonly N[]
+  edges: readonly E[]
+  truncated: boolean
+}
+
+/**
+ * El grafo de una página con las relaciones de las que se han ampliado («Sus relaciones» en su ficha): sus vecindarios,
+ * juntos y sin repetir páginas ni relaciones (la primera, la de la página)
+ */
+export function joinNeighbourhoods<N extends { id: string }, E extends ReadableEdge & { key?: string }>(
+  views: readonly Neighbourhood<N, E>[]
+): { nodes: N[]; edges: E[]; truncated: boolean } {
+  const nodes = new Map<string, N>()
+  const edges = new Map<string, E>()
+  for (const view of views) {
+    for (const node of view.nodes) if (!nodes.has(node.id)) nodes.set(node.id, node)
+    for (const edge of view.edges) {
+      const key = `${edge.source}>${edge.target}|${edge.kind}|${edge.key ?? edge.name}|${edge.secret === true}`
+      if (!edges.has(key)) edges.set(key, edge)
+    }
+  }
+  return { nodes: [...nodes.values()], edges: [...edges.values()], truncated: views.some((view) => view.truncated) }
 }

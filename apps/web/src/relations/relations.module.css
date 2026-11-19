@@ -275,7 +275,6 @@
 
 .pill button,
 .zoom button,
-.segmented button,
 .compactModes button {
   display: inline-flex;
   align-items: center;
@@ -309,14 +308,12 @@
 
 .pill button:hover,
 .zoom button:hover,
-.segmented button:hover,
 .compactModes button:hover {
   background: color-mix(in srgb, var(--color-text) 8%, transparent);
   color: var(--color-text);
 }
 
 .pill button[aria-pressed="true"],
-.segmented button[aria-pressed="true"],
 .compactModes button[aria-pressed="true"] {
   border-color: color-mix(in srgb, var(--color-accent-text) 40%, transparent);
   background: color-mix(in srgb, var(--color-accent) 22%, transparent);
@@ -325,7 +322,6 @@
 
 .pill button:focus-visible,
 .zoom button:focus-visible,
-.segmented button:focus-visible,
 .compactModes button:focus-visible,
 .back:focus-visible,
 .card button:focus-visible,
@@ -560,33 +556,6 @@
   display: flex;
   justify-content: flex-end;
   padding-block-end: var(--space-2);
-}
-
-.segmentedField {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  color: var(--color-muted);
-  font-size: 0.8125rem;
-  font-weight: 600;
-}
-
-.segmented {
-  display: inline-flex;
-  gap: 2px;
-  padding: 2px;
-  border: 1px solid var(--line-frame);
-  border-radius: 8px;
-  background: var(--field-fill);
-}
-
-.segmented button {
-  min-block-size: 1.75rem;
-  min-inline-size: 2rem;
-  padding: 0 var(--space-2);
-  border-radius: 6px;
-  font-size: 0.8125rem;
-  font-variant-numeric: tabular-nums;
 }
 
 .toggle {

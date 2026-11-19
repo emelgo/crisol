@@ -89,11 +89,26 @@ describe('el grafo del mundo, en su ventana (?grafo=)', () => {
     expect(await screen.findByText('3 páginas · 2 relaciones · 1 suelta oculta', { exact: false })).toBeDefined()
     expect(screen.getByRole('button', { name: 'Ilsa de Varn' })).toBeDefined()
     expect(screen.queryByRole('button', { name: 'Notas sueltas' })).toBeNull()
+    // Sin filtro de plantillas
+    expect(filters.queryByText('Plantillas')).toBeNull()
     // Sin «Lugar», Puerto Ceniza queda suelta
     await userEvent.click(filters.getByRole('checkbox', { name: /Lugar/ }))
     await waitFor(() => expect(screen.queryByRole('button', { name: 'Puerto Ceniza' })).toBeNull())
     await userEvent.click(filters.getByRole('switch', { name: 'Páginas sueltas' }))
     expect(await screen.findByRole('button', { name: 'Notas sueltas' })).toBeDefined()
+  })
+
+  it('los filtros se ocultan y se muestran con el botón de la cabecera', async () => {
+    renderAt(`/mundos/${WORLD.id}/wiki/${ILSA}?grafo=mundo`)
+    expect(await screen.findByRole('complementary', { name: 'Filtros' })).toBeDefined()
+    const hide = screen.getByRole('button', { name: 'Ocultar filtros' })
+    expect(hide.getAttribute('aria-expanded')).toBe('true')
+    await userEvent.click(hide)
+    expect(screen.queryByRole('complementary', { name: 'Filtros' })).toBeNull()
+    const show = screen.getByRole('button', { name: 'Mostrar filtros' })
+    expect(show.getAttribute('aria-expanded')).toBe('false')
+    await userEvent.click(show)
+    expect(screen.getByRole('complementary', { name: 'Filtros' })).toBeDefined()
   })
 
   it('buscar una página la elige y saca su ficha', async () => {
@@ -107,19 +122,24 @@ describe('el grafo del mundo, en su ventana (?grafo=)', () => {
 })
 
 describe('el grafo de una página, desde «Mencionado en»', () => {
-  it('centrado en ella, con su alcance y lo que menciona el texto encendido; «Centrar aquí» lo rehace desde otra', async () => {
-    const router = renderAt(`/mundos/${WORLD.id}/wiki/${ILSA}`)
+  it('centrado en ella, con sus relaciones directas y sin controles; «Sus relaciones» en otra las añade', async () => {
+    const router = renderAt(`/mundos/${WORLD.id}/wiki/${ALDREN}`)
     await userEvent.click(await screen.findByRole('button', { name: 'Ver sus relaciones' }))
-    await waitFor(() => expect(router.state.location.search).toMatchObject({ grafo: ILSA }))
-    const dialog = within(await screen.findByRole('dialog', { name: 'Relaciones de Ilsa de Varn' }))
-    expect(dialog.getByRole('button', { name: 'directas' }).getAttribute('aria-pressed')).toBe('true')
-    expect(dialog.getByRole('switch', { name: 'Con lo que menciona el texto' })).toHaveProperty('checked', true)
-    // Con el teclado (el ratón sobre el SVG necesita lo que jsdom no tiene)
-    dialog.getByRole('button', { name: 'Aldren IV' }).focus()
-    await userEvent.keyboard('{Enter}')
-    const card = within(await dialog.findByRole('region', { name: 'Aldren IV' }))
-    await userEvent.click(card.getByRole('button', { name: 'Centrar aquí' }))
     await waitFor(() => expect(router.state.location.search).toMatchObject({ grafo: ALDREN }))
-    expect(await screen.findByRole('dialog', { name: 'Relaciones de Aldren IV' })).toBeDefined()
+    const dialog = within(await screen.findByRole('dialog', { name: 'Relaciones de Aldren IV' }))
+    expect(dialog.queryByRole('switch')).toBeNull()
+    expect(dialog.queryByRole('toolbar', { name: 'Alcance' })).toBeNull()
+    // Directas: Ilsa; Puerto Ceniza (de Ilsa), aún no
+    expect(await dialog.findByRole('button', { name: 'Ilsa de Varn' })).toBeDefined()
+    expect(dialog.queryByRole('button', { name: 'Puerto Ceniza' })).toBeNull()
+    // Con el teclado (el ratón sobre el SVG necesita lo que jsdom no tiene)
+    dialog.getByRole('button', { name: 'Ilsa de Varn' }).focus()
+    await userEvent.keyboard('{Enter}')
+    const card = within(await dialog.findByRole('region', { name: 'Ilsa de Varn' }))
+    await userEvent.click(card.getByRole('button', { name: 'Sus relaciones' }))
+    expect(await dialog.findByRole('button', { name: 'Puerto Ceniza' })).toBeDefined()
+    // La ventana sigue en Aldren, y en la ficha de Ilsa ya no se ofrece
+    expect(router.state.location.search).toMatchObject({ grafo: ALDREN })
+    expect(card.queryByRole('button', { name: 'Sus relaciones' })).toBeNull()
   })
 })

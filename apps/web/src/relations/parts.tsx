@@ -1,6 +1,7 @@
 /**
  * Las piezas que flotan sobre el grafo de relaciones (módulo 10): el zoom (abajo a la derecha), la leyenda de los trazos
- * (abajo a la izquierda) y la ficha de la página elegida (arriba a la derecha), con «Abrir» y «Centrar aquí»
+ * (abajo a la izquierda) y la ficha de la página elegida (arriba a la derecha), con «Abrir» y «Centrar aquí» (en el del
+ * mundo) o «Sus relaciones» (en el de una página: las añade al grafo)
  */
 import type { RelationNode } from '@crisol/contracts'
 import { Crosshair, ExternalLink, Minus, Plus, X } from 'lucide-react'
@@ -111,8 +112,8 @@ export function useSelection() {
 }
 
 /**
- * La ficha de la página elegida: su icono, su nombre, su plantilla y su primer campo, sus relaciones en palabras y
- * «Abrir» y «Centrar aquí» (Escape la cierra: useSelection)
+ * La ficha de la página elegida: su icono, su nombre, su plantilla y su primer campo, sus relaciones en palabras,
+ * «Abrir» y «Centrar aquí» o «Sus relaciones» (Escape la cierra: useSelection)
  */
 export function NodeCard({
   node,
@@ -121,7 +122,8 @@ export function NodeCard({
   rows,
   primary,
   onOpen,
-  onCenter,
+  onCenter = null,
+  onExpand = null,
   onClose,
   autoFocus = false
 }: {
@@ -129,10 +131,13 @@ export function NodeCard({
   color: string
   meta: string
   rows: readonly WordsRow[]
-  /** El botón principal: «Centrar aquí» en el escritorio; en el móvil, «Abrir» */
-  primary: 'center' | 'open'
+  /** El botón principal: «Abrir», «Centrar aquí» o «Sus relaciones» */
+  primary: 'center' | 'open' | 'expand'
   onOpen: () => void
-  onCenter: (() => void) | null
+  /** Llevar la vista a ella (el grafo del mundo) */
+  onCenter?: (() => void) | null
+  /** Añadir sus relaciones al grafo (el de una página; null si ya están) */
+  onExpand?: (() => void) | null
   onClose: () => void
   /** Elegida con el teclado: el foco, a la ficha */
   autoFocus?: boolean
@@ -189,45 +194,14 @@ export function NodeCard({
             {t('relations.centerHere')}
           </button>
         )}
+        {onExpand && (
+          <button type="button" className={primary === 'expand' ? styles.primary : styles.secondary} onClick={onExpand}>
+            <Plus size={16} aria-hidden="true" />
+            {t('relations.expandHere')}
+          </button>
+        )}
       </div>
     </section>
-  )
-}
-
-/** Un grupo de botones de los que solo vale uno (la profundidad, las generaciones) */
-export function Segmented<T extends string | number>({
-  label,
-  options,
-  value,
-  text,
-  name,
-  onChange
-}: {
-  label: string
-  options: readonly T[]
-  value: T
-  text: (option: T) => string
-  /** El nombre de cada opción para el lector de pantalla */
-  name: (option: T) => string
-  onChange: (option: T) => void
-}) {
-  return (
-    <div className={styles.segmentedField}>
-      <span aria-hidden="true">{label}</span>
-      <div className={styles.segmented} role="toolbar" aria-label={label}>
-        {options.map((option) => (
-          <button
-            key={option}
-            type="button"
-            aria-pressed={value === option}
-            aria-label={name(option)}
-            onClick={() => onChange(option)}
-          >
-            {text(option)}
-          </button>
-        ))}
-      </div>
-    </div>
   )
 }
 

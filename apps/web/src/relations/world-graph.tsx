@@ -1,14 +1,14 @@
 /**
  * El grafo de todo el mundo (módulo 10, decisión 12; lienzo, pantalla 4), en la ventana del grafo (graph-window.tsx,
- * ?grafo=mundo): arriba, cuántas páginas y relaciones salen, y el buscador (lleva a una página); a la izquierda, los
- * filtros (plantillas, relaciones, etiquetas y las páginas sueltas, ocultas de entrada), que se pliegan; cada página,
- * del color de su plantilla. Hasta ~300 páginas, en SVG; con más, en un lienzo. Se abre desde un icono en la cabecera
+ * ?grafo=mundo): arriba, el botón que oculta o muestra los filtros, cuántas páginas y relaciones salen y el buscador
+ * (lleva a una página); a la izquierda, los filtros (relaciones, etiquetas y las páginas sueltas, ocultas de entrada;
+ * sin plantillas: Enrique, 2026-11-19); cada página, del color de su plantilla (su ficha dice cuál). Hasta ~300 páginas, en SVG; con más, en un lienzo. Se abre desde un icono en la cabecera
  * del árbol de páginas. La jugadora lo ve con lo que conoce su campaña (sin etiquetas: son del máster)
  */
 import type { RelationNode } from '@crisol/contracts'
 import { useQuery } from '@tanstack/react-query'
 import { getRouteApi, Navigate } from '@tanstack/react-router'
-import { ChevronsLeft, Search, SlidersHorizontal } from 'lucide-react'
+import { PanelLeftClose, PanelLeftOpen, Search } from 'lucide-react'
 import { type ReactNode, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
@@ -31,7 +31,6 @@ import styles from './world-graph.module.css'
  * las fuerzas de una vez, y con 700 páginas se quedaba congelado unos segundos (audit de impeccable)
  */
 export const CANVAS_FROM = 300
-const NO_TEMPLATE = 'sin-plantilla'
 const INSETS = { top: 16, bottom: 76 }
 
 const route = getRouteApi('/mundos/$worldId/relaciones')
@@ -80,10 +79,10 @@ export function WorldGraph({ worldId }: { worldId: string }) {
   const [tags, setTags] = useState<string[]>([])
   const graph = useWorldGraph(worldId, tags)
   const accountTags = useAccountTags(!readAs)
-  const [hiddenTemplates, setHiddenTemplates] = useState<ReadonlySet<string>>(new Set())
   const [hiddenRelations, setHiddenRelations] = useState<ReadonlySet<string>>(new Set())
   const [orphans, setOrphans] = useState(false)
   const [folded, setFolded] = useState(false)
+  const filtersId = useId()
   const { selected, select: setSelected, close: closeCard, focusCard } = useSelection()
   const [focus, setFocus] = useState<{ id: string; at: number } | null>(null)
 
@@ -109,31 +108,13 @@ export function WorldGraph({ worldId }: { worldId: string }) {
     })
   }, [graph.data?.edges, relations])
 
-  // Los filtros de plantillas y relaciones, aquí (al momento); las etiquetas, en el servidor
-  const templateOf = (node: RelationNode) => node.template ?? NO_TEMPLATE
+  // El filtro de relaciones, aquí (al momento); las etiquetas, en el servidor
   const { nodes, edges, loose } = useMemo(() => {
-    const kept = all.filter((node) => !hiddenTemplates.has(templateOf(node)))
-    const present = new Set(kept.map((node) => node.id))
-    const links = fullEdges.filter(
-      (edge) => present.has(edge.source) && present.has(edge.target) && !hiddenRelations.has(edge.key)
-    )
+    const links = fullEdges.filter((edge) => !hiddenRelations.has(edge.key))
     const linked = new Set(links.flatMap((edge) => [edge.source, edge.target]))
-    const looseCount = kept.filter((node) => !linked.has(node.id)).length
-    return { nodes: orphans ? kept : kept.filter((node) => linked.has(node.id)), edges: links, loose: looseCount }
-  }, [all, fullEdges, hiddenTemplates, hiddenRelations, orphans])
-
-  const templates = useMemo(() => {
-    const counts = new Map<string, number>()
-    for (const node of all) counts.set(templateOf(node), (counts.get(templateOf(node)) ?? 0) + 1)
-    return [...counts]
-      .map(([id, count]) => ({
-        id,
-        count,
-        name: id === NO_TEMPLATE ? t('relations.noTemplate') : (look.nameOf(id) ?? '')
-      }))
-      .sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id))
-      .map((each, index) => ({ ...each, name: each.name || t('relations.world.templateN', { n: index + 1 }) }))
-  }, [all, look, order, t])
+    const looseCount = all.filter((node) => !linked.has(node.id)).length
+    return { nodes: orphans ? all : all.filter((node) => linked.has(node.id)), edges: links, loose: looseCount }
+  }, [all, fullEdges, hiddenRelations, orphans])
 
   const byId = useMemo(() => new Map(all.map((node) => [node.id, node])), [all])
   const titleOf = useCallback((id: string) => byId.get(id)?.title ?? '', [byId])
@@ -142,12 +123,6 @@ export function WorldGraph({ worldId }: { worldId: string }) {
     setSelected(id)
     setFocus({ id, at: Date.now() })
     // Si la ocultan los filtros, se enseña
-    const node = byId.get(id)
-    if (node && hiddenTemplates.has(templateOf(node))) {
-      const next = new Set(hiddenTemplates)
-      next.delete(templateOf(node))
-      setHiddenTemplates(next)
-    }
     if (!orphans && !edges.some((edge) => edge.source === id || edge.target === id)) setOrphans(true)
   }
   const toggle = (set: ReadonlySet<string>, id: string, update: (next: ReadonlySet<string>) => void) => {
@@ -178,6 +153,7 @@ export function WorldGraph({ worldId }: { worldId: string }) {
   return (
     <div className={styles.screen} data-heavy={nodes.length >= CANVAS_FROM || undefined}>
       <header className={styles.head}>
+        <FiltersToggle folded={folded} controls={filtersId} onToggle={() => setFolded(!folded)} />
         <p className={styles.facts}>
           {t('relations.world.facts', { pages: nodes.length, relations: edges.length })}
           {!orphans && loose > 0 && <> · {t('relations.world.orphansHidden', { count: loose })}</>}
@@ -186,29 +162,12 @@ export function WorldGraph({ worldId }: { worldId: string }) {
       </header>
       <div className={styles.frame} data-folded={folded || undefined}>
         {!folded && (
-          <aside className={styles.filters} aria-label={t('relations.world.filters')} data-tour="grafo-filtros">
-            <FilterGroup
-              title={t('relations.world.templates')}
-              onNone={() => setHiddenTemplates(new Set(templates.map((each) => each.id)))}
-              onAll={() => setHiddenTemplates(new Set())}
-              allShown={hiddenTemplates.size === 0}
-            >
-              {templates.map((each) => (
-                <FilterRow
-                  key={each.id}
-                  label={each.name}
-                  count={each.count}
-                  checked={!hiddenTemplates.has(each.id)}
-                  onChange={() => toggle(hiddenTemplates, each.id, setHiddenTemplates)}
-                  mark={
-                    <span
-                      className={styles.dot}
-                      style={{ background: templateColor(each.id === NO_TEMPLATE ? null : each.id, order) }}
-                    />
-                  }
-                />
-              ))}
-            </FilterGroup>
+          <aside
+            id={filtersId}
+            className={styles.filters}
+            aria-label={t('relations.world.filters')}
+            data-tour="grafo-filtros"
+          >
             {relations.length > 0 && (
               <FilterGroup
                 title={t('relations.world.relations')}
@@ -259,19 +218,9 @@ export function WorldGraph({ worldId }: { worldId: string }) {
               <Toggle label={t('relations.world.orphans')} checked={orphans} onChange={setOrphans} />
               <span className={styles.count}>{loose}</span>
             </div>
-            <button type="button" className={styles.fold} onClick={() => setFolded(true)}>
-              <ChevronsLeft size={16} aria-hidden="true" />
-              {t('relations.world.fold')}
-            </button>
           </aside>
         )}
         <div className={styles.graph} data-tour="grafo-mundo">
-          {folded && (
-            <button type="button" className={styles.unfold} onClick={() => setFolded(false)}>
-              <SlidersHorizontal size={16} aria-hidden="true" />
-              {t('relations.world.unfold')}
-            </button>
-          )}
           {all.length === 0 || (fullEdges.length === 0 && !orphans) ? (
             <p className={styles.empty}>{t('relations.world.empty')}</p>
           ) : nodes.length === 0 ? (
@@ -387,6 +336,25 @@ function SvgWorld({
       {children}
       <ZoomControls scale={transform.k} onZoom={zoomBy} onFit={() => fit(bounds)} />
     </>
+  )
+}
+
+/** El botón que oculta o muestra los filtros, a la izquierda de la cabecera: el del panel de la página */
+function FiltersToggle({ folded, controls, onToggle }: { folded: boolean; controls: string; onToggle: () => void }) {
+  const { t } = useTranslation()
+  const label = t(folded ? 'relations.world.unfold' : 'relations.world.fold')
+  return (
+    <button
+      type="button"
+      className={styles.foldToggle}
+      aria-label={label}
+      title={label}
+      aria-expanded={!folded}
+      aria-controls={folded ? undefined : controls}
+      onClick={onToggle}
+    >
+      {folded ? <PanelLeftOpen aria-hidden="true" size={18} /> : <PanelLeftClose aria-hidden="true" size={18} />}
+    </button>
   )
 }
 
