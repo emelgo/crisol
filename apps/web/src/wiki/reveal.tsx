@@ -143,12 +143,16 @@ export function TargetReveal({
   )
 }
 
-/** «Revelar» en la cabecera de una página: la página entera, con aviso */
+/**
+ * «Revelar» en la cabecera de una página: la página entera, con aviso. Solo dentro de una campaña (su Mesa): en las
+ * páginas del mundo no se revela (Enrique, 2026-11-19)
+ */
 export function PageRevealButton({ page }: { page: Page }) {
   const { t } = useTranslation()
-  const known = useSecretsKnowledge(page.worldId, page.id)
+  const campaign = useCurrentCampaign()
+  const known = useSecretsKnowledge(page.worldId, page.id, Boolean(campaign))
   const { open, wrap, toggle, menuId, close } = usePopover()
-  if (!known.data || known.data.campaigns.length === 0) return null
+  if (!campaign || !known.data || known.data.campaigns.length === 0) return null
   return (
     <div ref={wrap} className={styles.wrap} data-action-wrap="">
       <button

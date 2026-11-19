@@ -23,6 +23,7 @@ import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
+import { useCurrentCampaign } from '../campaign/current-campaign.ts'
 import { useAnnounce } from '../components/announcer.tsx'
 import { useLinkedBy } from './backlinks.tsx'
 import { useExport } from './export.tsx'
@@ -155,7 +156,9 @@ export function TreeMenu({
   })
   const inside = new Set((below.data?.pages ?? []).map((p) => p.id))
   const linkedBy = useLinkedBy(page, view === 'delete')
-  // Revelar: lo que sabe cada campaña de la página (como en Everlore, desde el árbol; Enrique, 2026-11-16)
+  // Revelar: lo que sabe cada campaña de la página (como en Everlore, desde el árbol; Enrique, 2026-11-16). Solo dentro
+  // de una campaña: en las páginas del mundo no se revela (Enrique, 2026-11-19)
+  const campaign = useCurrentCampaign()
   const knowledge = useQuery({
     queryKey: knowledgeKey(worldId, page.id),
     queryFn: () => api.call('getPageKnowledge', { pageId: page.id }),
@@ -255,37 +258,45 @@ export function TreeMenu({
             onClose(true)
           })}
           <div className={styles.separator} />
-          {/* biome-ignore lint/a11y/noStaticElementInteractions: con el teclado se abre con la flecha derecha */}
-          <div className={styles.subWrap} onMouseEnter={() => setSub('reveal')} onMouseLeave={() => setSub(null)}>
-            {item(<Eye aria-hidden="true" size={15} />, t('treeMenu.reveal'), () => openSub('reveal'), {
-              more: true,
-              sub: 'reveal'
-            })}
-            {sub === 'reveal' && (
-              <div ref={flyout} className={styles.flyout} data-flyout="" role="menu" aria-label={t('treeMenu.reveal')}>
-                {knowledge.data?.campaigns.length === 0 && <p className={styles.note}>{t('treeMenu.noCampaigns')}</p>}
-                {knowledge.data?.campaigns.map((row) => {
-                  const knows = row.audience !== 'none'
-                  return (
-                    <button
-                      key={row.campaignId}
-                      type="button"
-                      role="menuitemcheckbox"
-                      aria-checked={knows}
-                      tabIndex={-1}
-                      className={styles.item}
-                      disabled={mark.isPending}
-                      onClick={() => mark.mutate({ campaignId: row.campaignId, known: !knows })}
-                    >
-                      {knows ? <Eye aria-hidden="true" size={15} /> : <EyeOff aria-hidden="true" size={15} />}
-                      <span>{row.name}</span>
-                      <span className={styles.path}>{t(knows ? 'treeMenu.knows' : 'treeMenu.unknown')}</span>
-                    </button>
-                  )
-                })}
-              </div>
-            )}
-          </div>
+          {campaign && (
+            // biome-ignore lint/a11y/noStaticElementInteractions: con el teclado se abre con la flecha derecha
+            <div className={styles.subWrap} onMouseEnter={() => setSub('reveal')} onMouseLeave={() => setSub(null)}>
+              {item(<Eye aria-hidden="true" size={15} />, t('treeMenu.reveal'), () => openSub('reveal'), {
+                more: true,
+                sub: 'reveal'
+              })}
+              {sub === 'reveal' && (
+                <div
+                  ref={flyout}
+                  className={styles.flyout}
+                  data-flyout=""
+                  role="menu"
+                  aria-label={t('treeMenu.reveal')}
+                >
+                  {knowledge.data?.campaigns.length === 0 && <p className={styles.note}>{t('treeMenu.noCampaigns')}</p>}
+                  {knowledge.data?.campaigns.map((row) => {
+                    const knows = row.audience !== 'none'
+                    return (
+                      <button
+                        key={row.campaignId}
+                        type="button"
+                        role="menuitemcheckbox"
+                        aria-checked={knows}
+                        tabIndex={-1}
+                        className={styles.item}
+                        disabled={mark.isPending}
+                        onClick={() => mark.mutate({ campaignId: row.campaignId, known: !knows })}
+                      >
+                        {knows ? <Eye aria-hidden="true" size={15} /> : <EyeOff aria-hidden="true" size={15} />}
+                        <span>{row.name}</span>
+                        <span className={styles.path}>{t(knows ? 'treeMenu.knows' : 'treeMenu.unknown')}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )}
           {!isHome && (
             // biome-ignore lint/a11y/noStaticElementInteractions: con el teclado se abre con la flecha derecha
             <div className={styles.subWrap} onMouseEnter={() => setSub('move')} onMouseLeave={() => setSub(null)}>

@@ -7,6 +7,7 @@ import { type CSSProperties, type DragEvent, type KeyboardEvent, useEffect, useI
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
+import { useCurrentCampaign } from '../campaign/current-campaign.ts'
 import { useAnnounce } from '../components/announcer.tsx'
 import { Icon } from '../components/icon.tsx'
 import {
@@ -103,16 +104,20 @@ export function PageTree({ worldId, currentId, path, onNavigate }: Props) {
   }).data?.pageId
   // Las que conoce alguna campaña (ADR-0017): su ojo al lado, siempre a la vista; en las demás, al pasar por la fila.
   // Pulsarlo la revela o la esconde (como en Everlore; Enrique, 2026-11-16): con una sola campaña, al momento; con
-  // varias, el menú de la página con «Revelar a…» desplegado. Con el teclado, desde ese menú
+  // varias, el menú de la página con «Revelar a…» desplegado. Con el teclado, desde ese menú. Solo dentro de una
+  // campaña: en las páginas del mundo no se revela (Enrique, 2026-11-19)
+  const inCampaign = Boolean(useCurrentCampaign())
   const known = new Set(
     useQuery({
       queryKey: ['pages', worldId, 'known'],
-      queryFn: () => api.call('listKnownPages', { worldId })
+      queryFn: () => api.call('listKnownPages', { worldId }),
+      enabled: inCampaign
     }).data?.pageIds ?? []
   )
   const campaigns = useQuery({
     queryKey: ['campaigns', worldId],
-    queryFn: () => api.call('listCampaigns', { worldId })
+    queryFn: () => api.call('listCampaigns', { worldId }),
+    enabled: inCampaign
   }).data?.campaigns
   const reveal = useMutation({
     mutationFn: (input: { pageId: string; campaignId: string; known: boolean }) =>
@@ -423,7 +428,7 @@ export function PageTree({ worldId, currentId, path, onNavigate }: Props) {
         {/* La portada del mundo, con su casa a la derecha (como en LegendKeeper) */}
         {page.id === homeId && <House aria-hidden="true" size={15} className={styles.home} />}
         {/* Con el ratón (dentro de un enlace no cabe un botón); con el teclado, «Revelar a…» del menú de la página */}
-        {campaigns && campaigns.length > 0 && (
+        {inCampaign && campaigns && campaigns.length > 0 && (
           <span
             aria-hidden="true"
             className={styles.known}
@@ -443,7 +448,7 @@ export function PageTree({ worldId, currentId, path, onNavigate }: Props) {
             {known.has(page.id) ? <Eye size={13} /> : <EyeOff size={13} />}
           </span>
         )}
-        {known.has(page.id) && <span className={styles.hidden}>{t('whoKnows.known')}</span>}
+        {inCampaign && known.has(page.id) && <span className={styles.hidden}>{t('whoKnows.known')}</span>}
       </Link>
     )
   }

@@ -7,6 +7,7 @@ import { fakeAccountClient } from '../account/fake.ts'
 import type { ApiClient } from '../api/client.ts'
 import { fakeApi } from '../api/fake.ts'
 import { App } from '../app.tsx'
+import { CurrentCampaignContext } from '../campaign/current-campaign.ts'
 import { createAppRouter } from '../router.tsx'
 
 const ORG = { id: crypto.randomUUID(), name: 'Fateforge', role: 'owner' as const }
@@ -44,14 +45,17 @@ const wikiApi = () =>
     ]
   })
 
-const renderAt = (path: string, api = wikiApi(), client: ApiClient = api.client) => {
+/** campaign: como desde dentro de una campaña (su Mesa), la única donde se revela */
+const renderAt = (path: string, api = wikiApi(), client: ApiClient = api.client, campaign: string | null = null) => {
   const router = createAppRouter(createMemoryHistory({ initialEntries: [path] }))
   render(
-    <App
-      router={router}
-      accounts={fakeAccountClient({ account: { name: 'Enrique', email: 'enrique@crisol.test' } }).client}
-      api={client}
-    />
+    <CurrentCampaignContext.Provider value={campaign}>
+      <App
+        router={router}
+        accounts={fakeAccountClient({ account: { name: 'Enrique', email: 'enrique@crisol.test' } }).client}
+        api={client}
+      />
+    </CurrentCampaignContext.Provider>
   )
   return { router, api }
 }
@@ -239,8 +243,8 @@ describe('el menú de una página en el árbol', () => {
     expect(document.activeElement?.textContent).toBe('Borrar')
     await userEvent.keyboard('{ArrowDown}{ArrowDown}')
     expect(document.activeElement?.textContent).toBe('Renombrar')
-    // Duplicar, Exportar, Revelar a… y Mover a…
-    await userEvent.keyboard('{ArrowDown}{ArrowDown}{ArrowDown}{ArrowDown}')
+    // Duplicar, Exportar y Mover a… (en las páginas del mundo no se revela)
+    await userEvent.keyboard('{ArrowDown}{ArrowDown}{ArrowDown}')
     const opener = menu.getByRole('menuitem', { name: 'Mover a…' })
     expect(document.activeElement).toBe(opener)
     await userEvent.keyboard('{ArrowRight}')
@@ -381,13 +385,14 @@ describe('recolocar en el árbol arrastrando', () => {
     )
   })
 
-  it('revelar a cada campaña desde el árbol (como en Everlore): «Revelar a…» con su marca (Enrique, 2026-11-16)', async () => {
-    const api = fakeApi({
+  const CAMPAIGN = crypto.randomUUID()
+  const withCampaign = () =>
+    fakeApi({
       organizations: [ORG],
       worlds: [WORLD],
       campaigns: [
         {
-          id: crypto.randomUUID(),
+          id: CAMPAIGN,
           worldId: WORLD.id,
           name: 'La Marca',
           description: '',
@@ -399,7 +404,25 @@ describe('recolocar en el árbol arrastrando', () => {
       ],
       pages: [{ id: ids.rules, worldId: WORLD.id, title: 'Reglas de la casa' }]
     })
+
+  it('en las páginas del mundo no se revela: ni «Revelar a…», ni el ojo, ni «Quién la conoce» (Enrique, 2026-11-19)', async () => {
+    const api = withCampaign()
     renderAt(`/mundos/${WORLD.id}/wiki/${ids.rules}`, api)
+    const row = await item('Reglas de la casa')
+    expect(row.querySelector('[data-known], [title="Revelar a…"]')).toBeNull()
+    const menu = await openMenu('Reglas de la casa')
+    expect(menu.getByRole('menuitem', { name: 'Exportar' })).toBeDefined()
+    expect(menu.queryByRole('menuitem', { name: 'Revelar a…' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Quién la conoce' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Revelar la página' })).toBeNull()
+    expect(api.calls).not.toContain('getPageKnowledge')
+    expect(api.calls).not.toContain('listKnownPages')
+  })
+
+  it('revelar a cada campaña desde el árbol (como en Everlore): «Revelar a…» con su marca, dentro de una campaña (Enrique, 2026-11-16)', async () => {
+    const api = withCampaign()
+    renderAt(`/mundos/${WORLD.id}/wiki/${ids.rules}`, api, api.client, CAMPAIGN)
+    expect(await screen.findByRole('button', { name: 'Quién la conoce' })).toBeDefined()
     const menu = await openMenu('Reglas de la casa')
     await userEvent.click(menu.getByRole('menuitem', { name: 'Revelar a…' }))
     const flyout = within(await screen.findByRole('menu', { name: 'Revelar a…' }))
