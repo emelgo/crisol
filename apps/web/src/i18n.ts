@@ -4997,7 +4997,7 @@ export const es = {
     },
     calendars: {
       list: 'Los calendarios del mundo. El principal es el de las fechas; arrastra para ordenarlos.',
-      create: 'Crea uno en blanco, como el nuestro o copia de otro.',
+      create: 'Crea uno en blanco o como el nuestro.',
       chronologies: 'Las cronologías juntan los eventos y las páginas con fecha.'
     },
     relations: {
