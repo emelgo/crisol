@@ -911,7 +911,8 @@
   padding: 0 8px;
   border: 0;
   border-radius: 5px;
-  background: color-mix(in srgb, var(--entry-color) 75%, black 10%);
+  /* Opaco y nunca claro (luminosidad ≤ 0,45): el texto claro, a más de 4,5:1 con cualquier color */
+  background: oklch(from var(--entry-color) min(l, 0.45) c h);
   color: var(--color-chrome-text);
   font-size: 0.8125rem;
   font-weight: 700;
@@ -1048,7 +1049,8 @@
   padding: 0 6px;
   border: 0;
   border-radius: 4px;
-  background: color-mix(in srgb, var(--entry-color) 70%, black 10%);
+  /* Opaco y nunca claro (luminosidad ≤ 0,45): el texto claro, a más de 4,5:1 con cualquier color */
+  background: oklch(from var(--entry-color) min(l, 0.45) c h);
   color: var(--color-chrome-text);
   font-size: 0.75rem;
   font-weight: 700;
