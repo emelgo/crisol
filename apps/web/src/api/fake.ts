@@ -1,5 +1,6 @@
 /** API en memoria para las pruebas de componentes: mundos, campañas y sus miembros de una organización */
 import type {
+  AiConnection,
   AiMode,
   Approval,
   Campaign,
@@ -173,6 +174,8 @@ export function fakeApi(
     conflicts?: Record<string, HistoryEntry | null>
     /** Lo que pidió la IA de la cuenta */
     approvals?: Approval[]
+    /** Las apps de IA conectadas a la cuenta (ADR-0030) */
+    aiConnections?: AiConnection[]
     /** Los sistemas de la cuenta (documentos), además de los de serie */
     /** Los personajes de las campañas (la cuenta de las pruebas es «yo») */
     characters?: Character[]
@@ -359,6 +362,7 @@ export function fakeApi(
   let aiMode: AiMode = 'copilot'
   const approvals = [...(options.approvals ?? [])]
   const aiSettings = () => ({ mode: aiMode, connectorUrl: 'https://crisol.test/mcp' })
+  let aiConnections = [...(options.aiConnections ?? [])]
   // Como el servidor: lo aprobado se hace (aquí, sin más) y lo rechazado no
   const decide = (approvalId: string, status: 'done' | 'rejected') => {
     const found = approvals.find((a) => a.id === approvalId)
@@ -1847,6 +1851,11 @@ export function fakeApi(
       pending: approvals.filter((a) => a.status === 'pending').map((a) => ({ ...a })),
       recent: approvals.filter((a) => a.status !== 'pending').map((a) => ({ ...a }))
     }),
+    listAiConnections: () => ({ connections: aiConnections.map((c) => ({ ...c })) }),
+    removeAiConnection: ({ clientId, url }) => {
+      aiConnections = aiConnections.filter((c) => c.clientId !== clientId || c.url !== url)
+      return { connections: aiConnections.map((c) => ({ ...c })) }
+    },
     approve: ({ approvalId }) => decide(approvalId, 'done'),
     reject: ({ approvalId }) => decide(approvalId, 'rejected'),
     // Quien sale deja de ver la campaña

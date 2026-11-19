@@ -2805,7 +2805,10 @@ export const es = {
     adventures: 'Aventuras',
     noAdventure: 'Ninguna en curso.',
     yours: 'Tu personaje',
-    party: 'El grupo'
+    party: 'El grupo',
+    connectTitle: 'Conecta tu IA a esta campaña',
+    connectHint: 'Solo verá esta campaña, con lo que puedes hacer en ella.',
+    connectLabel: 'Dirección del conector'
   },
   // Los libros (ADR-0021): los de la campaña (campaign/books.tsx), la ficha de uno (campaign/book-window.tsx)
   books: {
@@ -4767,12 +4770,22 @@ export const es = {
     }
   },
   ai: {
-    playerReads: 'Tu IA solo lee lo que sabes en tus campañas.',
     link: 'IA',
     title: 'Ajustes de IA',
     connectorTitle: 'Conectar una IA',
     connector: 'Dirección del conector',
-    connectorHint: 'En tu app de IA, añade un conector MCP con esta dirección.',
+    connectorHint: 'En tu app de IA, añade un conector MCP con esta dirección para crear y llevar tus mundos.',
+    perCampaign: 'Cada campaña tiene su propio conector, en su Inicio.',
+    campaignOnly: 'Cada campaña tiene su propio conector: copia su dirección en el Inicio de la campaña.',
+    worldsName: 'Crisol · Mundos',
+    campaignName: 'Crisol · {{name}}',
+    goneCampaign: 'Una campaña que ya no ves',
+    connectionsTitle: 'Tus conexiones',
+    noConnections: 'Aún no has conectado ninguna IA.',
+    usedBy: '{{client}} · usada {{when}}',
+    remove: 'Quitar',
+    removeButton: 'Quitar la conexión de {{client}} a {{target}}',
+    removed: 'Conexión de {{client}} quitada',
     modeTitle: 'Modo',
     modes: {
       readOnly: 'Solo lectura',
@@ -5081,6 +5094,8 @@ export const es = {
     passwordChanged: 'Contraseña cambiada'
   },
   errors: {
+    // Conectar la IA a una campaña (ADR-0030)
+    NOT_IN_CAMPAIGN: 'No estás en esta campaña',
     // El sonido (docs/specs/sonido.md)
     BAD_YOUTUBE: 'No es un enlace de un vídeo de YouTube',
     NOT_AUDIO: 'No es un archivo de audio',

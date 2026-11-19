@@ -387,3 +387,8 @@
   background: var(--color-raised);
   text-decoration: none;
 }
+
+/* Su conector de IA: la dirección con «Copiar», debajo de la frase */
+.connect {
+  margin-block-start: var(--space-3);
+}

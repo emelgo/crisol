@@ -10,8 +10,10 @@ import { ChevronRight, Layers, NotebookPen, UserPlus } from 'lucide-react'
 import { type ReactNode, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
+import { aiSettingsQuery, campaignConnectorUrl } from '../api/queries.ts'
 import { ActivityCenter } from '../campaign-time/activity.tsx'
 import { MasterToday, PlayerToday } from '../campaign-time/today.tsx'
+import { CopyField } from '../components/copy-field.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { Tour } from '../components/tour.tsx'
 import { useWindow } from '../components/window.tsx'
@@ -261,6 +263,25 @@ function Adventure({ worldId, campaignId }: { worldId: string; campaignId: strin
   )
 }
 
+/** Su conector de IA (ADR-0030): la IA solo ve esta campaña, con lo que puede hacer en ella quien la conecta */
+function ConnectAi({ campaignId }: { campaignId: string }) {
+  const { t } = useTranslation()
+  const api = useApi()
+  const settings = useQuery(aiSettingsQuery(api))
+  if (!settings.data) return null
+  return (
+    <Section title={t('campaignHome.connectTitle')} tour="inicio-ia">
+      <p className={styles.quiet}>{t('campaignHome.connectHint')}</p>
+      <div className={styles.connect}>
+        <CopyField
+          label={t('campaignHome.connectLabel')}
+          value={campaignConnectorUrl(settings.data.connectorUrl, campaignId)}
+        />
+      </div>
+    </Section>
+  )
+}
+
 /** El Inicio del máster */
 export function CampaignHome({ worldId, worldName, campaign }: Props) {
   const { t } = useTranslation()
@@ -291,6 +312,7 @@ export function CampaignHome({ worldId, worldName, campaign }: Props) {
           <Shelf worldId={worldId} worldName={worldName} campaign={campaign} editable />
           <Adventure worldId={worldId} campaignId={campaign.id} />
         </div>
+        <ConnectAi campaignId={campaign.id} />
       </div>
       <Tour
         id="campana"
@@ -387,6 +409,7 @@ export function PlayerCampaignHome({ worldId, worldName, campaign }: Props) {
           </Section>
         )}
         <Shelf worldId={worldId} worldName={worldName} campaign={campaign} editable={false} />
+        <ConnectAi campaignId={campaign.id} />
         <Tour
           id="campana"
           steps={[

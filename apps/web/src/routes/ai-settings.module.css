@@ -47,3 +47,9 @@
 .embedded {
   display: contents;
 }
+
+/* Una conexión: a qué conector (el nombre) y, debajo, qué app y cuándo */
+.connection {
+  display: block;
+  margin-block-start: 2px;
+}
