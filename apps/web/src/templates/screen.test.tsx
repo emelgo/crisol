@@ -116,24 +116,29 @@ describe('la pantalla «Plantillas»', () => {
     expect(tabs.map((tab) => tab.kind)).toEqual(['map'])
   })
 
-  it('el botón derecho sobre una tuya, como en las páginas: renombrarla y borrarla', async () => {
-    const { api } = renderTemplates()
-    await api.client.call('createTemplate', { name: 'Frente', icon: 'hourglass' })
+  it('el botón derecho sobre una tuya, como en las páginas: borrarla y renombrarla (abre su página con el título en edición)', async () => {
+    const { api, router } = renderTemplates()
+    const own = await api.client.call('createTemplate', { name: 'Frente', icon: 'hourglass' })
+    await api.client.call('createTemplate', { name: 'Taberna' })
     const mine = within(await screen.findByRole('list', { name: 'Tus plantillas' }))
-    await userEvent.pointer({ keys: '[MouseRight]', target: await mine.findByRole('link', { name: 'Frente' }) })
-    const menu = within(screen.getByRole('menu', { name: 'Opciones de «Frente»' }))
-    await userEvent.click(menu.getByRole('menuitem', { name: 'Renombrar' }))
-    const field = menu.getByRole('textbox', { name: 'Nuevo nombre' })
-    await userEvent.clear(field)
-    await userEvent.type(field, 'Frentes{Enter}')
-    expect(await mine.findByRole('link', { name: 'Frentes' })).toBeDefined()
     // Con el teclado: la tecla de menú en su fila
-    const row = mine.getByRole('link', { name: 'Frentes' }).closest('[data-file-card]') as HTMLElement
+    const row = (await mine.findByRole('link', { name: 'Taberna' })).closest('[data-file-card]') as HTMLElement
     row.focus()
     await userEvent.keyboard('{ContextMenu}')
-    const again = within(screen.getByRole('menu', { name: 'Opciones de «Frentes»' }))
-    await userEvent.click(again.getByRole('menuitem', { name: 'Borrar' }))
-    await userEvent.click(again.getByRole('menuitem', { name: 'Borrar la plantilla' }))
-    await waitFor(() => expect(mine.queryByRole('link', { name: 'Frentes' })).toBeNull())
+    const menu = within(screen.getByRole('menu', { name: 'Opciones de «Taberna»' }))
+    await userEvent.click(menu.getByRole('menuitem', { name: 'Borrar' }))
+    await userEvent.click(menu.getByRole('menuitem', { name: 'Borrar la plantilla' }))
+    await waitFor(() => expect(mine.queryByRole('link', { name: 'Taberna' })).toBeNull())
+    // Renombrar, sin cuadro: a su página, con el título elegido para escribir encima
+    await userEvent.pointer({ keys: '[MouseRight]', target: await mine.findByRole('link', { name: 'Frente' }) })
+    const again = within(screen.getByRole('menu', { name: 'Opciones de «Frente»' }))
+    await userEvent.click(again.getByRole('menuitem', { name: 'Renombrar' }))
+    expect(screen.queryByRole('textbox', { name: 'Nuevo nombre' })).toBeNull()
+    await waitFor(() => expect(router.state.location.pathname).toBe(`/plantillas/${own.id}`))
+    await waitFor(() => {
+      const title = screen.getByRole('textbox', { name: 'Título de la página' })
+      expect(document.activeElement).toBe(title)
+      expect(getSelection()?.toString()).toBe('Frente')
+    })
   })
 })

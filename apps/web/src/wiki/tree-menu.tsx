@@ -1,6 +1,7 @@
 /**
  * El menú de una página en el árbol, con el botón derecho (o la tecla de menú, o Mayús+F10), como en Everlore: crear
- * una subpágina, renombrar, duplicar, exportar, mover, ordenar sus subpáginas y borrar. Flota junto al ratón
+ * una subpágina, renombrar (pone en edición su título, sin cuadro), duplicar, exportar, mover, ordenar sus subpáginas y
+ * borrar. Flota junto al ratón
  */
 import type { PageSummary } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -28,10 +29,11 @@ import { useAnnounce } from '../components/announcer.tsx'
 import { useLinkedBy } from './backlinks.tsx'
 import { useExport } from './export.tsx'
 import { useNewPage } from './new-page.tsx'
+import { requestTitleEdit } from './title-edit.ts'
 import styles from './tree-menu.module.css'
 import { knowledgeKey, useMark } from './who-knows.tsx'
 
-type View = 'menu' | 'rename' | 'delete'
+type View = 'menu' | 'delete'
 type Sub = 'move' | 'sort' | 'reveal'
 
 const plain = (text: string) => text.normalize('NFD').replace(/\p{M}/gu, '').toLocaleLowerCase('es')
@@ -68,7 +70,6 @@ export function TreeMenu({
   // El desplegable de al lado (mover u ordenar): se abre al pasar por encima, sin pulsar
   const [sub, setSub] = useState<Sub | null>(startReveal ? 'reveal' : null)
   const flyout = useRef<HTMLDivElement>(null)
-  const [title, setTitle] = useState(page.title)
   const [filter, setFilter] = useState('')
   const [place, setPlace] = useState(at)
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['pages', worldId] })
@@ -96,13 +97,13 @@ export function TreeMenu({
     return () => document.removeEventListener('pointerdown', outside)
   }, [])
 
-  const rename = useMutation({
-    mutationFn: (next: string) => api.call('updatePage', { pageId: page.id, title: next }),
-    onSuccess: async () => {
-      await refresh()
-      onClose(true)
-    }
-  })
+  // Renombrar no abre un cuadro: pone en edición el título de la propia página (abriéndola si no lo está)
+  const rename = () => {
+    onClose()
+    requestTitleEdit(page.id)
+    if (openPath.at(-1) !== page.id)
+      void navigate({ to: '/mundos/$worldId/wiki/$pageId', params: { worldId, pageId: page.id } })
+  }
   // Una copia entera (portada, hoja, panel, texto y pestañas), justo detrás: la hace el servidor, de una vez
   const duplicate = useMutation({
     mutationFn: () => api.call('copyPage', { pageId: page.id, title: t('treeMenu.copyOf', { title: page.title }) }),
@@ -165,7 +166,7 @@ export function TreeMenu({
     enabled: sub === 'reveal'
   })
   const mark = useMark({ id: page.id, worldId })
-  const error = rename.error ?? duplicate.error ?? move.error ?? sort.error ?? remove.error
+  const error = duplicate.error ?? move.error ?? sort.error ?? remove.error
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key === 'Escape') {
@@ -251,7 +252,7 @@ export function TreeMenu({
             onClose()
             newPage({ id: page.id, title: page.title })
           })}
-          {item(<Pencil aria-hidden="true" size={15} />, t('treeMenu.rename'), () => setView('rename'))}
+          {item(<Pencil aria-hidden="true" size={15} />, t('treeMenu.rename'), rename)}
           {item(<Copy aria-hidden="true" size={15} />, t('treeMenu.duplicate'), () => duplicate.mutate())}
           {item(<Download aria-hidden="true" size={15} />, t('treeMenu.export'), () => {
             run.mutate({ worldId, pageId: page.id, children: page.hasChildren })
@@ -362,25 +363,6 @@ export function TreeMenu({
             </>
           )}
         </>
-      )}
-      {view === 'rename' && (
-        <form
-          className={styles.form}
-          onSubmit={(event) => {
-            event.preventDefault()
-            const next = title.trim()
-            if (next && next !== page.title) rename.mutate(next)
-            else onClose(true)
-          }}
-        >
-          <input
-            value={title}
-            maxLength={200}
-            aria-label={t('treeMenu.newTitle')}
-            onChange={(event) => setTitle(event.currentTarget.value)}
-            onFocus={(event) => event.currentTarget.select()}
-          />
-        </form>
       )}
       {view === 'delete' && (
         <div className={styles.confirm}>

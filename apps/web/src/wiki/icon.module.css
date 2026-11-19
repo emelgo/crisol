@@ -28,6 +28,25 @@
   border-color: var(--color-field-border);
 }
 
+.trigger:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/* Sin icono, el de su tipo (el del árbol), atenuado (en gris: a más de 3:1, se distingue): se ve que ahí va uno y se
+   pulsa igual; al pasar, se aviva */
+.trigger[data-default] {
+  border-radius: var(--radius-button);
+  color: var(--color-muted);
+  transition: color 140ms ease-out;
+}
+
+.trigger[data-default]:hover,
+.trigger[data-default]:focus-visible,
+.trigger[data-default][aria-expanded="true"] {
+  color: var(--color-text);
+}
+
 .panel {
   composes: frame from "../components/frame.module.css";
   /* Flota sobre la página: cristal más tapado, con lo de debajo desenfocado */

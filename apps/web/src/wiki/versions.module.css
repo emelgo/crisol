@@ -19,6 +19,20 @@
   inline-size: 100%;
 }
 
+/* Su rótulo, ya abiertas (en el botón «Versiones» de una plantilla): pequeño y gris, como los del panel (por encima de
+   la regla de los títulos de dentro del menú común) */
+section.panel[aria-labelledby] > h2.label {
+  margin: 0;
+  padding: var(--space-1) var(--space-2) var(--space-2);
+  border: 0;
+  color: var(--color-muted);
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
 /* Como los submenús (el «›» del árbol): al abrir, gira hacia abajo */
 .chevron {
   /* Al borde, como la de «Imprimir y PDF» y las de los demás submenús */

@@ -1046,6 +1046,7 @@ export const es = {
   icon: {
     short: 'Icono',
     change: 'Icono {{icon}}: cambiarlo',
+    choose: 'Cambiar el icono',
     remove: 'Quitar el icono',
     none: 'Sin icono',
     suggest: 'Iconos',
@@ -1505,7 +1506,6 @@ export const es = {
     label: 'Opciones de «{{title}}»',
     subpage: 'Crear subpágina',
     rename: 'Renombrar',
-    newTitle: 'Nuevo título',
     duplicate: 'Duplicar',
     copyOf: '{{title}} (copia)',
     duplicated: '«{{title}}» duplicada',
@@ -1627,7 +1627,6 @@ export const es = {
     moveTo: 'Mover a…',
     moveSearch: 'Buscar una carpeta',
     moveOut: 'Fuera de las carpetas',
-    newName: 'Nuevo nombre',
     more: 'Más de «{{name}}»',
     copyName: '{{name}} (copia)',
     empty: 'Aún no hay plantillas',

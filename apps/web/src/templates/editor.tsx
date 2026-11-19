@@ -14,7 +14,7 @@ import type {
 } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, Navigate, useParams, useSearch } from '@tanstack/react-router'
-import { ChevronDown, ChevronLeft, ChevronUp, Copy, FolderPlus, Plus, Trash2 } from 'lucide-react'
+import { ChevronDown, ChevronLeft, ChevronUp, FolderPlus, Plus, Trash2 } from 'lucide-react'
 import { type ReactNode, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
@@ -25,7 +25,6 @@ import { Loading } from '../components/brand.tsx'
 import { useDismiss } from '../components/dismiss.ts'
 import { FormError } from '../components/field.tsx'
 import { failed, LoadError } from '../components/load-error.tsx'
-import { MenuItem } from '../components/menu.tsx'
 import { Tour } from '../components/tour.tsx'
 import { LEAVE_ITEM, leaveItem } from '../components/world-transition.ts'
 import { CollabSocket } from '../wiki/collab.tsx'
@@ -38,7 +37,6 @@ import pageStyles from '../wiki/world-page.module.css'
 import { useRememberedPanel, WorldPageContext, type WorldPageValue } from '../wiki/world-page.ts'
 import styles from './editor.module.css'
 import { FieldsEditor } from './fields.tsx'
-import { useNewTemplate } from './new-template.ts'
 import { useTemplates } from './picker.tsx'
 import { Grip, moved, useReorder } from './reorder.tsx'
 import { type SideDialog, SideDialogView, TemplateSideTree } from './side-tree.tsx'
@@ -144,7 +142,10 @@ function TemplateLayout({
       </Link>
       <aside className={wiki.aside} aria-labelledby={headingId}>
         <div className={wiki.asideHeader}>
-          <h2 id={headingId}>{t('templates.listLabel')}</h2>
+          {/* El rótulo pequeño y gris de la ficha del árbol de un mundo, en el mismo sitio */}
+          <div className={wiki.asideTitle}>
+            <h2 id={headingId}>{t('templates.listLabel')}</h2>
+          </div>
           <div className={styles.headTools}>
             <button
               type="button"
@@ -231,32 +232,9 @@ function TemplatePage({
         nuevo={nuevo}
         tabs={all}
         active={active}
-        template={{
-          id: template.id,
-          more: () => <TemplateMore template={template} />,
-          side: <TemplateSide template={template} page={page} />
-        }}
+        template={{ id: template.id, side: <TemplateSide template={template} page={page} /> }}
       />
     </TabTargetContext.Provider>
-  )
-}
-
-/**
- * «⋯» de una plantilla: duplicarla (sin imprimir ni exportar: no hace falta, Enrique, 2026-11-19). Su nombre y su icono,
- * en su título; moverla, renombrarla y borrarla, con el botón derecho en el árbol
- */
-function TemplateMore({ template }: { template: Listed }) {
-  const { t } = useTranslation()
-  // Duplicarla: su página entera, con los mismos campos (sus páginas salen en las mismas tablas), y se abre
-  const copy = useNewTemplate()
-  return (
-    <>
-      <MenuItem disabled={copy.isPending} onClick={() => copy.mutate({ copyOf: template })}>
-        <Copy aria-hidden="true" size={15} />
-        {t('templates.duplicate')}
-      </MenuItem>
-      <FormError message={copy.errorText} />
-    </>
   )
 }
 

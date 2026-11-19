@@ -25,8 +25,10 @@ export function useFocusHeading() {
   const request = useContext(FocusRequest)
   return useCallback(() => {
     const heading = document.querySelector<HTMLElement>('main h1')
-    if (heading) heading.focus()
-    else {
+    // Si ya está dentro (escribiendo el título, que se puso en edición al llegar), se queda donde está
+    if (heading) {
+      if (!heading.contains(document.activeElement)) heading.focus()
+    } else {
       request.current = true
       // Lo que tenía el foco al pedirlo (el enlace pulsado): si sigue ahí, el título se lo lleva
       request.from = document.activeElement

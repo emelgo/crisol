@@ -1,12 +1,13 @@
 /**
  * El menú de una plantilla o de una carpeta de plantillas, con el botón derecho (o la tecla de menú, o Mayús+F10, o su
  * «⋯»), como el del árbol de páginas y con su aspecto (Enrique, 2026-11-19: «ponlos con botón secundario sobre la
- * plantilla como en páginas»). De una plantilla: renombrar, duplicar, moverla a una carpeta y borrarla (su icono, en su
- * título). De una carpeta: crear dentro, sus ajustes y borrarla. En el hueco: crear. Flota junto al ratón
+ * plantilla como en páginas»). De una plantilla: renombrar (pone en edición el título de su página, sin cuadro),
+ * duplicar, moverla a una carpeta y borrarla (su icono, en su título). De una carpeta: crear dentro, sus ajustes y
+ * borrarla. En el hueco: crear. Flota junto al ratón
  */
 import type { TemplateView as Listed, TemplateFolder } from '@crisol/contracts'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useNavigate } from '@tanstack/react-router'
+import { useNavigate, useParams } from '@tanstack/react-router'
 import { ChevronRight, Copy, FilePlus, FolderInput, FolderPlus, Pencil, Settings, Trash2 } from 'lucide-react'
 import { type KeyboardEvent, type ReactNode, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
@@ -15,6 +16,7 @@ import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { useAnnounce } from '../components/announcer.tsx'
 import { plain } from '../wiki/file-tree.ts'
+import { requestTitleEdit } from '../wiki/title-edit.ts'
 import styles from '../wiki/tree-menu.module.css'
 import { useNewTemplate } from './new-template.ts'
 import { treeOf } from './tree.ts'
@@ -30,7 +32,7 @@ export type MenuDialog =
   | { kind: 'new-folder'; parentId: string | null; label: string }
   | { kind: 'folder'; folder: TemplateFolder }
 
-type View = 'menu' | 'rename' | 'delete'
+type View = 'menu' | 'delete'
 
 /** Las carpetas con su camino («Campaña › Frentes»), en el orden del árbol */
 function folderPaths(folders: readonly TemplateFolder[]) {
@@ -77,7 +79,6 @@ export function TemplateMenu({
   const [view, setView] = useState<View>('menu')
   const [moving, setMoving] = useState(false)
   const [filter, setFilter] = useState('')
-  const [name, setName] = useState(target.kind === 'template' ? target.template.name : '')
   const [place, setPlace] = useState(at)
   const close = useRef(onClose)
   close.current = onClose
@@ -102,15 +103,14 @@ export function TemplateMenu({
     return () => document.removeEventListener('pointerdown', outside)
   }, [])
   const refresh = () => queryClient.invalidateQueries({ queryKey: ['templates'] })
-  // Su nombre es el título de su página: el servidor cambia los dos
-  const rename = useMutation({
-    mutationFn: async (next: string) => {
-      if (target.kind !== 'template') return
-      await api.call('updateTemplate', { templateId: target.template.id, name: next })
-      await Promise.all([refresh(), queryClient.invalidateQueries({ queryKey: ['pages'] })])
-    },
-    onSuccess: () => onClose(true)
-  })
+  const { templateId: openId } = useParams({ strict: false }) as { templateId?: string }
+  // Renombrar no abre un cuadro: su nombre es el título de su página, que se pone en edición (abriéndola si hace falta),
+  // como en el árbol de páginas
+  const rename = (template: Listed) => {
+    onClose()
+    requestTitleEdit(template.id)
+    if (openId !== template.id) void navigate({ to: '/plantillas/$templateId', params: { templateId: template.id } })
+  }
   const remove = useMutation({
     mutationFn: async () => {
       if (target.kind === 'template') await api.call('deleteTemplate', { templateId: target.template.id })
@@ -211,7 +211,7 @@ export function TemplateMenu({
     .filter((folder) => folder.id !== here)
     .filter((folder) => !wanted || plain(folder.name).includes(wanted))
     .slice(0, 30)
-  const error = rename.error ?? remove.error
+  const error = remove.error
   return createPortal(
     <div
       ref={box}
@@ -223,7 +223,7 @@ export function TemplateMenu({
     >
       {view === 'menu' && target.kind === 'template' && (
         <>
-          {item(<Pencil aria-hidden="true" size={15} />, t('treeMenu.rename'), () => setView('rename'))}
+          {item(<Pencil aria-hidden="true" size={15} />, t('treeMenu.rename'), () => rename(target.template))}
           {item(<Copy aria-hidden="true" size={15} />, t('templates.duplicate'), () =>
             copy.mutate({ copyOf: target.template }, { onSuccess: () => onClose() })
           )}
@@ -323,29 +323,6 @@ export function TemplateMenu({
             dialog({ kind: 'new-folder', parentId: null, label: t('templates.newFolder') })
           )}
         </>
-      )}
-      {view === 'rename' && target.kind === 'template' && (
-        <form
-          className={styles.form}
-          onSubmit={(event) => {
-            event.preventDefault()
-            const next = name.trim()
-            if (next && next !== target.template.name) rename.mutate(next)
-            else onClose(true)
-          }}
-        >
-          <input
-            value={name}
-            maxLength={60}
-            aria-label={t('templates.newName')}
-            autoComplete="off"
-            data-1p-ignore
-            data-lpignore="true"
-            data-form-type="other"
-            onChange={(event) => setName(event.currentTarget.value)}
-            onFocus={(event) => event.currentTarget.select()}
-          />
-        </form>
       )}
       {view === 'delete' && target.kind !== 'empty' && (
         <div className={styles.confirm}>

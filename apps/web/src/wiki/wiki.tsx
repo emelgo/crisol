@@ -4,6 +4,7 @@ import { getRouteApi, Link, Navigate, useNavigate, useRouter } from '@tanstack/r
 import {
   Ellipsis,
   FileText,
+  History,
   House,
   LayoutTemplate,
   ListFilter,
@@ -68,6 +69,7 @@ import { SceneMain, SceneSide, SceneTabProvider } from './scene/scene-tab.tsx'
 import { PrintDialog, SheetPaper } from './sheet/controls.tsx'
 import { TableTab } from './table/table-tab.tsx'
 import { PageTabs, usePageTabs, useTabTarget } from './tabs/page-tabs.tsx'
+import { useTitleEditRequest } from './title-edit.ts'
 import { PageTree } from './tree.tsx'
 import { Versions } from './versions.tsx'
 import { WhoKnowsButton } from './who-knows.tsx'
@@ -534,14 +536,15 @@ function PageHead({
         {band}
         <div className={styles.entryTitle}>
           <div className={styles.heading}>
-            {page.icon && (
-              <PageIcon
-                page={{ ...page, icon: page.icon }}
-                {...(template ? { style: itemTransition(template, 'icono'), elemento: 'icono' } : {})}
-              />
-            )}
+            {/* Siempre se puede pulsar: sin icono, el de su tipo, atenuado (con la página bloqueada, solo el suyo) */}
+            <PageIcon
+              page={page}
+              isTemplate={Boolean(template)}
+              {...(template ? { style: itemTransition(template, 'icono'), elemento: 'icono' } : {})}
+            />
             <InlineTitle
               page={page}
+              editKey={template ?? page.id}
               autoFocus={startEditing}
               onDone={named}
               {...(template ? { style: itemTransition(template, 'nombre') } : {})}
@@ -655,11 +658,14 @@ function TemplateBadge({ templateId }: { templateId: string }) {
  */
 function InlineTitle({
   page,
+  editKey,
   autoFocus,
   onDone,
   style
 }: {
   page: Page
+  /** A qué petición de renombrar atiende (title-edit.ts): el id de la página o el de su plantilla */
+  editKey: string
   autoFocus: boolean
   onDone: () => void
   /** Su nombre de transición (el título de una plantilla, desde su tarjeta) */
@@ -693,15 +699,20 @@ function InlineTitle({
   useLayoutEffect(() => {
     if (box.current && document.activeElement !== box.current) box.current.textContent = page.title
   }, [page.title])
-  // Recién creada: el foco en el título, con todo elegido para escribir encima
-  useEffect(() => {
-    if (!autoFocus || !box.current) return
-    box.current.focus()
+  // El foco en el título, con todo elegido para escribir encima
+  const editTitle = useCallback(() => {
+    if (!box.current) return
+    box.current.focus({ preventScroll: true })
     const range = document.createRange()
     range.selectNodeContents(box.current)
     getSelection()?.removeAllRanges()
     getSelection()?.addRange(range)
-  }, [autoFocus])
+  }, [])
+  // Recién creada, o al pedirlo «Renombrar» desde el árbol (sin cuadro: se escribe aquí mismo)
+  useEffect(() => {
+    if (autoFocus) editTitle()
+  }, [autoFocus, editTitle])
+  useTitleEditRequest(editKey, editTitle)
   const toBody = () => {
     const body = box.current?.closest('article')?.querySelector<HTMLElement>('.ProseMirror[contenteditable="true"]')
     body?.focus()
@@ -862,16 +873,13 @@ const LEADING_EMOJI = /^(\p{Extended_Pictographic}(?:\p{Emoji_Modifier}|\uFE0F|\
 
 /**
  * «Más»: lo que se hace de vez en cuando con la página, en el menú común (flota junto a su botón; Escape o pulsar fuera
- * lo cierran): imprimir o descargar (un cuadro que pregunta cómo), exportar y sus versiones. items: lo de una
- * plantilla, en lugar de imprimir y exportar (una plantilla no se imprime ni se descarga, Enrique, 2026-11-19)
+ * lo cierran): imprimir o descargar (un cuadro que pregunta cómo), exportar y sus versiones
  */
-function MoreActions({ page, items }: { page: Page; items?: (close: () => void) => ReactNode }) {
+function MoreActions({ page }: { page: Page }) {
   const { t } = useTranslation()
   const [printing, setPrinting] = useState(false)
-  const printable = !items
   // Ctrl+P (⌘P) imprime la hoja, no la pantalla: abre el cuadro con lo último elegido (y con Intro, se imprime)
   useEffect(() => {
-    if (!printable) return
     const onKey = (event: KeyboardEvent) => {
       if (!(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey || event.key.toLowerCase() !== 'p') return
       event.preventDefault()
@@ -879,31 +887,45 @@ function MoreActions({ page, items }: { page: Page; items?: (close: () => void) 
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [printable])
+  }, [])
   return (
     <div className={styles.moreMenu}>
       <Menu label={t('wiki.moreActions')} icon={<Ellipsis aria-hidden="true" size={18} />}>
         {(close) => (
           <>
-            {printable && (
-              <MenuItem
-                aria-haspopup="dialog"
-                onClick={() => {
-                  close()
-                  setPrinting(true)
-                }}
-              >
-                <Printer aria-hidden="true" size={15} />
-                {t('sheet.printOrDownload')}
-              </MenuItem>
-            )}
+            <MenuItem
+              aria-haspopup="dialog"
+              onClick={() => {
+                close()
+                setPrinting(true)
+              }}
+            >
+              <Printer aria-hidden="true" size={15} />
+              {t('sheet.printOrDownload')}
+            </MenuItem>
             {/* Lo demás (subpágina, renombrar, mover, borrar…), con el botón derecho en el árbol */}
-            {items ? items(close) : <ExportPage page={page} />}
+            <ExportPage page={page} />
             <Versions page={page} />
           </>
         )}
       </Menu>
       {printing && <PrintDialog page={page} onClose={() => setPrinting(false)} />}
+    </div>
+  )
+}
+
+/**
+ * Las versiones de una plantilla, en un botón de icono de la cabecera, junto al candado y con su mismo aspecto: una
+ * plantilla no se imprime ni se exporta y se duplica con el botón derecho, así que no lleva «⋯» (Enrique, 2026-11-19:
+ * «no quiero tener solo versiones en los 3 puntos»). Abre la lista en el menú común
+ */
+function VersionsButton({ page }: { page: Page }) {
+  const { t } = useTranslation()
+  return (
+    <div className={styles.moreMenu}>
+      <Menu label={t('versions.title')} icon={<History aria-hidden="true" size={18} />}>
+        {() => <Versions page={page} bare />}
+      </Menu>
     </div>
   )
 }
@@ -1024,13 +1046,11 @@ function OpenPage({ page, nuevo, pestana }: { page: Page; nuevo: boolean; pestan
 }
 
 /**
- * La página de una plantilla (ADR-0024), abierta en su editor: su id, lo suyo en «⋯» y, a la derecha, sus campos y sus
- * bloques, que se definen en vez de rellenarse
+ * La página de una plantilla (ADR-0024), abierta en su editor: su id y, a la derecha, sus campos y sus bloques, que se
+ * definen en vez de rellenarse
  */
 export interface TemplateMode {
   id: string
-  /** Sus filas en «⋯» (close cierra el menú antes de abrir un cuadro) */
-  more: (close: () => void) => ReactNode
   side: ReactNode
 }
 
@@ -1130,10 +1150,11 @@ export function EntryView({
       }
       actions={
         template ? (
-          // Una plantilla no la conoce nadie ni se marca: el candado, «⋯» con lo suyo y el botón del panel
+          // Una plantilla no la conoce nadie, ni se marca, ni se imprime: el candado, sus versiones y el botón del panel
+          // (duplicarla, con el botón derecho)
           <>
             <LockButton page={page} />
-            <MoreActions page={page} items={template.more} />
+            <VersionsButton page={page} />
             {worldPage && <PanelToggle folded={panel.folded} controls={panelId} onToggle={panel.toggle} />}
           </>
         ) : (

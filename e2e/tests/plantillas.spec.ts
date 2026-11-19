@@ -155,12 +155,21 @@ test('«Plantillas», como Archivos: «Plantilla nueva» la abre como página, y
   await iconed
   await expect(title).toHaveText('Frente')
   await expect(page.getByRole('button', { name: /^Icono .*: cambiarlo$/ })).toBeVisible()
-  // «⋯»: sin imprimir ni descargar
-  await page.getByRole('button', { name: 'Más acciones' }).click()
-  await expect(page.getByRole('button', { name: 'Duplicar' })).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Imprimir o descargar…' })).toHaveCount(0)
+  // Sin «⋯» (ni imprimir ni descargar; duplicar, con el botón derecho): sus versiones, en un botón de icono
+  await expect(page.getByRole('button', { name: 'Más acciones' })).toHaveCount(0)
+  await page.getByRole('button', { name: 'Versiones' }).click()
+  await expect(page.getByRole('heading', { name: 'Versiones' })).toBeVisible()
   await page.keyboard.press('Escape')
   await axe(page, 'main')
+  // «Renombrar», con el botón derecho en su árbol: sin cuadro, su título en edición
+  await page
+    .getByRole('complementary', { name: 'Tus plantillas' })
+    .getByRole('link', { name: 'Frente' })
+    .click({ button: 'right' })
+  await page.getByRole('menu', { name: 'Opciones de «Frente»' }).getByRole('menuitem', { name: 'Renombrar' }).click()
+  await expect(title).toBeFocused()
+  await page.keyboard.press('Escape')
+  await expect(title).toHaveText('Frente')
   // «‹ Plantillas» vuelve a la lista
   await page.getByRole('link', { name: 'Plantillas' }).and(page.locator(':not(nav *)')).click()
   const list = page.getByRole('list', { name: 'Tus plantillas' })

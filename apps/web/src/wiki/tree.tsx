@@ -2,7 +2,7 @@ import type { PageSummary } from '@crisol/contracts'
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { BookCopy, Eye, EyeOff, FileText, House } from 'lucide-react'
+import { Eye, EyeOff, House } from 'lucide-react'
 import { type CSSProperties, type DragEvent, type KeyboardEvent, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
@@ -18,9 +18,8 @@ import {
   type Zone,
   zoneAt
 } from '../components/tree/moves.ts'
-import { TemplateIcon } from '../templates/icons.tsx'
-import { useTemplates } from '../templates/picker.tsx'
 import { PAGE_DRAG } from './board/drag.ts'
+import { PageKindIcon } from './icon.tsx'
 import styles from './tree.module.css'
 import { TreeMenu } from './tree-menu.tsx'
 
@@ -500,13 +499,4 @@ export function PageTree({ worldId, currentId, path, onNavigate }: Props) {
       )}
     </div>
   )
-}
-
-/** El dibujo de una página sin icono: el de su plantilla; si no, el de página o el de varias */
-function PageKindIcon({ template, hasChildren }: { template: string | null; hasChildren: boolean }) {
-  const found = useTemplates().data?.templates.find((each) => each.id === template)
-  if (found) {
-    return <TemplateIcon icon={found.icon} size={15} />
-  }
-  return hasChildren ? <BookCopy size={15} /> : <FileText size={15} />
 }

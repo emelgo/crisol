@@ -227,15 +227,17 @@ describe('editar una plantilla', () => {
     expect((await saved()).panel.map((b) => b.id)).toEqual(['oro', 'notas', 'fama'])
   })
 
-  it('«⋯» → «Duplicar»: una copia con los mismos campos (y su linaje), que se abre', async () => {
+  it('«Duplicar», con el botón derecho en el árbol: una copia con los mismos campos (y su linaje), que se abre', async () => {
     const { api, own } = await renderTemplate()
     await api.client.call('updateTemplate', {
       templateId: own.id,
       fields: [{ name: 'Nivel', type: 'text', value: '' }]
     })
     await screen.findByRole('textbox', { name: 'Título de la página' })
-    await userEvent.click(screen.getByRole('button', { name: 'Más acciones' }))
-    await userEvent.click(screen.getByRole('button', { name: 'Duplicar' }))
+    const side = within(await screen.findByRole('complementary', { name: 'Tus plantillas' }))
+    await userEvent.pointer({ keys: '[MouseRight]', target: await side.findByRole('link', { name: 'Frente' }) })
+    const menu = within(await screen.findByRole('menu', { name: 'Opciones de «Frente»' }))
+    await userEvent.click(menu.getByRole('menuitem', { name: 'Duplicar' }))
     await waitFor(() =>
       expect(screen.getByRole('textbox', { name: 'Título de la página' }).textContent).toBe('Frente (copia)')
     )
@@ -274,15 +276,22 @@ describe('editar una plantilla', () => {
     await waitFor(async () => expect((await saved()).icon).toBeNull())
   })
 
-  it('«⋯» de una plantilla: sin imprimir, exportar ni ajustes (y Ctrl+P no imprime)', async () => {
+  it('su cabecera, sin «⋯»: «Versiones» en un botón de icono, que abre su lista (y Ctrl+P no imprime)', async () => {
     await renderTemplate()
     await screen.findByRole('textbox', { name: 'Título de la página' })
-    await userEvent.click(screen.getByRole('button', { name: 'Más acciones' }))
-    expect(screen.getByRole('button', { name: 'Duplicar' })).toBeDefined()
-    expect(screen.queryByRole('button', { name: 'Imprimir o descargar…' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Más acciones' })).toBeNull()
     expect(screen.queryByRole('button', { name: /Exportar/ })).toBeNull()
     expect(screen.queryByRole('button', { name: /Ajustes/ })).toBeNull()
+    const versions = screen.getByRole('button', { name: 'Versiones' })
+    expect(versions.getAttribute('title')).toBe('Versiones')
+    expect(versions.closest('[data-page-actions]')).not.toBeNull()
+    await userEvent.click(versions)
+    expect(await screen.findByRole('heading', { name: 'Versiones' })).toBeDefined()
+    expect(await screen.findByText(/Aún no tiene versiones/)).toBeDefined()
+    expect(screen.queryByRole('button', { name: 'Duplicar' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Imprimir o descargar…' })).toBeNull()
     await userEvent.keyboard('{Escape}')
+    await waitFor(() => expect(screen.queryByRole('heading', { name: 'Versiones' })).toBeNull())
     await userEvent.keyboard('{Control>}p{/Control}')
     expect(screen.queryByRole('dialog', { name: 'Imprimir o descargar' })).toBeNull()
   })

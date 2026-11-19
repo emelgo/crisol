@@ -1,6 +1,6 @@
 import type { Page } from '@crisol/contracts'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { ChevronDown, CircleOff } from 'lucide-react'
+import { BookCopy, ChevronDown, CircleOff, FileText, LayoutTemplate } from 'lucide-react'
 import { type CSSProperties, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
@@ -9,6 +9,8 @@ import { FormError } from '../components/field.tsx'
 import { Icon, iconLabel } from '../components/icon.tsx'
 import { IconBrowser, iconsMatching } from '../components/icon-browser.tsx'
 import cards from '../routes/world-card.module.css'
+import { useTemplates } from '../templates/data.ts'
+import { TemplateIcon } from '../templates/icons.tsx'
 import styles from './icon.module.css'
 
 /**
@@ -39,17 +41,37 @@ function IconPanel({
   )
 }
 
+/** El dibujo de una página sin icono: el de su plantilla; si no, el de página o el de varias (como en el árbol) */
+export function PageKindIcon({
+  template,
+  hasChildren,
+  size = 15
+}: {
+  template: string | null
+  hasChildren: boolean
+  size?: number
+}) {
+  const found = useTemplates().data?.templates.find((each) => each.id === template)
+  if (found) return <TemplateIcon icon={found.icon} size={size} />
+  return hasChildren ? <BookCopy aria-hidden="true" size={size} /> : <FileText aria-hidden="true" size={size} />
+}
+
 /**
  * El icono de la página, delante de su título: pulsarlo abre una caja (patrón de despliegue, como el menú de la
- * cuenta) con los iconos de la app y quitarlo. Escape, pulsar fuera o salir con el tabulador la cierran. Sin icono no
- * se ve: se pone desde el propio título (un emoji delante, o «:» y su nombre)
+ * cuenta) con los iconos de la app y quitarlo. Escape, pulsar fuera o salir con el tabulador la cierran. Siempre se
+ * puede pulsar (Enrique, 2026-11-19: «haz que el icono del título de una hoja sea pulsable»): sin icono, el de su tipo,
+ * atenuado (el mismo que en el árbol; en una plantilla, el de plantilla). También se pone desde el propio título (un
+ * emoji delante, o «:» y su nombre). Con la página bloqueada solo se ve, y sin icono no sale
  */
 export function PageIcon({
   page,
+  isTemplate = false,
   style,
   elemento
 }: {
-  page: Page & { icon: string }
+  page: Page
+  /** La página de una plantilla: sin icono, el dibujo de plantilla */
+  isTemplate?: boolean
   /** Su nombre de transición (el icono de una plantilla, desde su tarjeta) */
   style?: CSSProperties | undefined
   elemento?: 'icono'
@@ -64,12 +86,11 @@ export function PageIcon({
   const panelId = useId()
   const save = useMutation({
     mutationFn: (icon: string | null) => api.call('updatePage', { pageId: page.id, icon }),
-    onSuccess: async (_, icon) => {
+    onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['pages', page.worldId] })
       setOpen(false)
-      // Quitado, el botón ya no está: el foco, al título
-      if (icon) trigger.current?.focus()
-      else wrapper.current?.parentElement?.querySelector<HTMLElement>('[role="textbox"]')?.focus()
+      // Puesto o quitado, el botón sigue ahí (sin icono, con el de su tipo)
+      trigger.current?.focus()
     }
   })
 
@@ -94,6 +115,7 @@ export function PageIcon({
   }, [open])
 
   if (page.locked) {
+    if (!page.icon) return null
     return (
       <span className={styles.wrapper} style={style} data-elemento={elemento}>
         <span className={styles.still}>
@@ -110,10 +132,18 @@ export function PageIcon({
         className={styles.trigger}
         aria-expanded={open}
         aria-controls={panelId}
-        aria-label={t('icon.change', { icon: iconLabel(page.icon) })}
+        aria-label={page.icon ? t('icon.change', { icon: iconLabel(page.icon) }) : t('icon.choose')}
+        title={page.icon ? undefined : t('icon.choose')}
+        data-default={page.icon ? undefined : ''}
         onClick={() => setOpen(!open)}
       >
-        <Icon value={page.icon} />
+        {page.icon ? (
+          <Icon value={page.icon} />
+        ) : isTemplate ? (
+          <LayoutTemplate aria-hidden="true" size={26} />
+        ) : (
+          <PageKindIcon template={page.template ?? null} hasChildren={page.hasChildren} size={26} />
+        )}
       </button>
       {open && (
         <div id={panelId} className={styles.panel}>

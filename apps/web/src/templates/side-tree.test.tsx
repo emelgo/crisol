@@ -116,18 +116,33 @@ describe('el árbol de «Tus plantillas» en el editor', () => {
     expect(screen.queryByRole('menu')).toBeNull()
   })
 
-  it('«Renombrar» desde el menú cambia su nombre (el título de su página)', async () => {
-    const { api, own, side } = await renderSideTree()
+  it('«Renombrar» no abre un cuadro: pone en edición el título de su página (abriéndola si no lo está)', async () => {
+    const { api, own, router, side } = await renderSideTree()
+    // Otra (sale en el árbol al refrescarse la lista, tras renombrar la abierta)
+    const other = await api.client.call('createTemplate', { name: 'Taberna' })
     await userEvent.pointer({ keys: '[MouseRight]', target: side.getByRole('link', { name: 'Frente' }) })
     const menu = within(await screen.findByRole('menu', { name: 'Opciones de «Frente»' }))
     await userEvent.click(menu.getByRole('menuitem', { name: 'Renombrar' }))
-    const field = menu.getByRole('textbox', { name: 'Nuevo nombre' })
-    await userEvent.clear(field)
-    await userEvent.type(field, 'Frente de guerra{Enter}')
+    expect(screen.queryByRole('menu')).toBeNull()
+    expect(screen.queryByRole('textbox', { name: 'Nuevo nombre' })).toBeNull()
+    const title = screen.getByRole('textbox', { name: 'Título de la página' })
+    await waitFor(() => expect(document.activeElement).toBe(title))
+    expect(getSelection()?.toString()).toBe('Frente')
+    await userEvent.keyboard('Frente de guerra{Enter}')
     await waitFor(async () =>
       expect((await listed(api)).templates.find((each) => each.id === own.id)?.name).toBe('Frente de guerra')
     )
     await side.findByRole('link', { name: 'Frente de guerra' })
+    // Otra, sin abrir: se abre con su título ya en edición
+    await userEvent.pointer({ keys: '[MouseRight]', target: await side.findByRole('link', { name: 'Taberna' }) })
+    const again = within(await screen.findByRole('menu', { name: 'Opciones de «Taberna»' }))
+    await userEvent.click(again.getByRole('menuitem', { name: 'Renombrar' }))
+    await waitFor(() => expect(router.state.location.pathname).toBe(`/plantillas/${other.id}`))
+    await waitFor(() => {
+      const opened = screen.getByRole('textbox', { name: 'Título de la página' })
+      expect(opened.textContent).toBe('Taberna')
+      expect(document.activeElement).toBe(opened)
+    })
   })
 
   it('los ajustes de una carpeta desde el menú la meten en otra', async () => {

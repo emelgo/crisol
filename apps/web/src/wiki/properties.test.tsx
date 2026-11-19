@@ -256,10 +256,30 @@ describe('las propiedades de una página', () => {
 })
 
 describe('el icono de una página', () => {
-  it('sin icono no hay botón para ponerlo: si se quiere, va en el propio título', async () => {
-    renderPort()
+  it('sin icono, el de su tipo se pulsa igual («Cambiar el icono», también con Intro): abre los de la app', async () => {
+    const { api } = renderPort()
     await screen.findByRole('heading', { level: 1, name: 'Puerto Ceniza' })
-    expect(screen.queryByRole('button', { name: 'Añadir icono' })).toBeNull()
+    const choose = screen.getByRole('button', { name: 'Cambiar el icono' })
+    expect(choose.getAttribute('aria-expanded')).toBe('false')
+    // Delante del título, en su encabezado
+    expect(choose.closest('header')?.querySelector('h1')).not.toBeNull()
+    choose.focus()
+    await userEvent.keyboard('{Enter}')
+    expect(choose.getAttribute('aria-expanded')).toBe('true')
+    // Sin icono, nada que quitar
+    expect(screen.queryByRole('button', { name: 'Quitar el icono' })).toBeNull()
+    await userEvent.type(screen.getByRole('searchbox', { name: 'Buscar un icono' }), 'castillo')
+    await userEvent.click(screen.getByRole('button', { name: 'Castillo' }))
+    expect(await screen.findByRole('button', { name: 'Icono Castillo: cambiarlo' })).toBeDefined()
+    expect(api.calls).toContain('updatePage')
+  })
+
+  it('con la página bloqueada, sin icono no hay botón; con uno, solo se ve', async () => {
+    const { api } = renderPort([], '⚓')
+    await userEvent.click(await screen.findByRole('button', { name: 'Poner en lectura' }))
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Icono ⚓: cambiarlo' })).toBeNull())
+    expect(screen.queryByRole('button', { name: 'Cambiar el icono' })).toBeNull()
+    expect(api.calls).toContain('updatePage')
   })
 
   it('el que ya tiene se cambia por uno de la app, del buscador de su caja (sin emojis por defecto), o se quita', async () => {
@@ -272,8 +292,9 @@ describe('el icono de una página', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Icono Castillo: cambiarlo' }))
     await userEvent.click(screen.getByRole('button', { name: 'Quitar el icono' }))
     await waitFor(() => expect(screen.queryByRole('button', { name: /^Icono/ })).toBeNull())
-    // Quitado, el foco va al título
-    expect(document.activeElement).toBe(screen.getByRole('textbox', { name: 'Título de la página' }))
+    // Quitado, el botón sigue (con el de su tipo) y el foco, en él
+    const choose = screen.getByRole('button', { name: 'Cambiar el icono' })
+    await waitFor(() => expect(document.activeElement).toBe(choose))
   })
 
   it('se pone en el propio título: un emoji delante, o «:» y su nombre, que propone los de la app', async () => {

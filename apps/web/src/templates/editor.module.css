@@ -3,10 +3,11 @@
  * «Plantillas» para volver, la lista de la izquierda y, a la derecha, sus campos y sus bloques, que se definen
  */
 
-/* La columna de la plantilla empieza donde la de una página del mundo (allí, bajo las pestañas abiertas): la ficha de
-   la izquierda y el panel, a su altura, y «‹ Plantillas» encima de la ficha */
+/* La columna de la plantilla empieza donde la de una página del mundo (allí, bajo la tira de las pestañas abiertas, que
+   mide 3,375 rem, medido en pantalla a 1440 y a 1920 px): la ficha de la izquierda y el panel, a su altura, y
+   «‹ Plantillas» encima de la ficha, en el sitio de esa tira */
 .content {
-  padding-block-start: 3.25rem;
+  padding-block-start: 3.375rem;
 }
 
 /* Encima de la ficha de la izquierda, a la altura del título: volver a la lista */
@@ -40,6 +41,8 @@
 .side {
   display: flex;
   flex-direction: column;
+  /* Su primer rótulo, a la altura del de una página («Mencionado en», que lleva un botón a su lado) */
+  padding-block-start: 0.25rem;
 }
 
 .listHead {
