@@ -180,15 +180,17 @@ describe('un calendario en grande', () => {
     await waitFor(() => expect(screen.queryByRole('complementary', { name: 'El día elegido' })).toBeNull())
   })
 
-  it('Mes · Semana · Año, con «Ir a» y sus flechas; en el año se eligen días y el nombre de un mes lleva a él', async () => {
+  it('Mes · Semana · Año, con sus flechas y su título que lleva a otra fecha; en el año se eligen días y el nombre de un mes lleva a él', async () => {
     open()
     await screen.findByRole('heading', { level: 2, name: 'Enero del año 0 RV' })
-    // El mes, con el menú de la app
+    // El título del mes abre el recuadro: un mes lleva a él
     const goToMonth = async (name: string) => {
-      await userEvent.click(screen.getByRole('button', { name: /^Ir al mes/ }))
-      await userEvent.click(screen.getByRole('button', { name }))
+      await userEvent.click(within(screen.getByRole('heading', { level: 2 })).getByRole('button'))
+      const box = screen.getByRole('dialog', { name: 'Ir a otro mes' })
+      await userEvent.click(within(box).getByRole('button', { name }))
     }
     await goToMonth('Marzo')
+    expect(screen.queryByRole('dialog', { name: 'Ir a otro mes' })).toBeNull()
     expect(screen.getByRole('heading', { level: 2, name: 'Marzo del año 0 RV' })).toBeDefined()
     await userEvent.click(screen.getByRole('button', { name: 'Mes siguiente' }))
     expect(screen.getByRole('heading', { level: 2, name: 'Abril del año 0 RV' })).toBeDefined()
@@ -219,11 +221,62 @@ describe('un calendario en grande', () => {
     await userEvent.click(screen.getByRole('button', { name: /^Junio/ }))
     expect(screen.getByRole('heading', { level: 2, name: 'Junio del año 1 RV' })).toBeDefined()
     expect(within(modes).getByRole('button', { name: 'Mes' }).getAttribute('aria-pressed')).toBe('true')
-    // «Ir al año»
-    const year = screen.getByLabelText('Ir al año')
+    // Otro año: se escribe e Intro lo aplica, con el foco de vuelta en el título
+    const title = within(screen.getByRole('heading', { level: 2 })).getByRole('button')
+    await userEvent.click(title)
+    const year = within(screen.getByRole('dialog', { name: 'Ir a otro mes' })).getByLabelText('Año')
+    expect(document.activeElement).toBe(year)
     await userEvent.clear(year)
-    await userEvent.type(year, '1250')
+    await userEvent.type(year, '1250{Enter}')
     expect(screen.getByRole('heading', { level: 2, name: 'Junio del año 1250 RV' })).toBeDefined()
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(document.activeElement).toBe(title)
+  })
+
+  it('el título de cada vista lleva a otra fecha: la semana de un día, un año; Esc y pulsar fuera lo cierran', async () => {
+    open()
+    const modes = within(await screen.findByRole('toolbar', { name: 'Vista' }))
+    await screen.findByRole('heading', { level: 2, name: 'Enero del año 0 RV' })
+    // Sin la barra «Ir a»
+    expect(screen.queryByText('Ir a')).toBeNull()
+    // Semana: el año, el mes y el día, que lleva a su semana
+    await userEvent.click(modes.getByRole('button', { name: 'Semana' }))
+    const title = () => within(screen.getByRole('heading', { level: 2 })).getByRole('button')
+    await userEvent.click(title())
+    let box = screen.getByRole('dialog', { name: 'Ir a otra semana' })
+    await userEvent.clear(within(box).getByLabelText('Año'))
+    await userEvent.type(within(box).getByLabelText('Año'), '3')
+    await userEvent.click(
+      within(within(box).getByRole('group', { name: 'Mes' })).getByRole('button', { name: 'Marzo' })
+    )
+    // Elegir el mes no cierra: faltan sus días (los 31 de marzo)
+    const days = within(box).getByRole('group', { name: 'Día' })
+    expect(within(days).getAllByRole('button')).toHaveLength(31)
+    await userEvent.click(within(days).getByRole('button', { name: '15' }))
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(screen.getByRole('heading', { level: 2 }).textContent).toMatch(/Marzo del año 3 RV$/)
+    expect(screen.getByRole('cell', { name: / 15 de Marzo de 3 RV$/ })).toBeDefined()
+    // Esc cierra sin cambiar nada y el foco vuelve al título
+    await userEvent.click(title())
+    expect(screen.getByRole('dialog', { name: 'Ir a otra semana' })).toBeDefined()
+    await userEvent.keyboard('{Escape}')
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(document.activeElement).toBe(title())
+    // Año: solo el año, con «Ir»
+    await userEvent.click(modes.getByRole('button', { name: 'Año' }))
+    expect(screen.getByRole('heading', { level: 2, name: 'Año 3 RV' })).toBeDefined()
+    await userEvent.click(title())
+    box = screen.getByRole('dialog', { name: 'Ir a otro año' })
+    expect(within(box).queryByRole('group')).toBeNull()
+    await userEvent.clear(within(box).getByLabelText('Año'))
+    await userEvent.type(within(box).getByLabelText('Año'), '1250')
+    await userEvent.click(within(box).getByRole('button', { name: 'Ir' }))
+    expect(screen.getByRole('heading', { level: 2, name: 'Año 1250 RV' })).toBeDefined()
+    // Pulsar fuera lo cierra
+    await userEvent.click(title())
+    expect(screen.getByRole('dialog', { name: 'Ir a otro año' })).toBeDefined()
+    await userEvent.click(screen.getByRole('heading', { level: 1, name: 'Calendario de Varn' }))
+    expect(screen.queryByRole('dialog')).toBeNull()
   })
 
   it('pulsar un evento en la rejilla elige su día y lo abre para editarlo', async () => {
@@ -275,13 +328,15 @@ describe('un calendario en grande', () => {
     ])
   })
 
-  it('los años: «Ir al año» no pasa del tope ni deja más de seis cifras', async () => {
+  it('los años: el del título no pasa del tope ni deja más de seis cifras', async () => {
     open()
     await screen.findByRole('heading', { level: 2, name: 'Enero del año 0 RV' })
-    const year = screen.getByLabelText('Ir al año') as HTMLInputElement
+    await userEvent.click(within(screen.getByRole('heading', { level: 2 })).getByRole('button'))
+    const year = within(screen.getByRole('dialog')).getByLabelText('Año') as HTMLInputElement
     await userEvent.clear(year)
     await userEvent.type(year, '-2345656')
     expect(year.value).toBe('-234565')
+    await userEvent.keyboard('{Enter}')
     expect(screen.getByRole('heading', { level: 2, name: 'Enero del año -99999 RV' })).toBeDefined()
     expect((screen.getByRole('button', { name: 'Mes anterior' }) as HTMLButtonElement).disabled).toBe(true)
   })
@@ -292,12 +347,13 @@ describe('un calendario en grande', () => {
     await screen.findByRole('heading', { level: 2, name: 'Enero del año 0 RV' })
     const previous = screen.getByRole('button', { name: 'Mes anterior' }) as HTMLButtonElement
     expect(previous.disabled).toBe(true)
-    const year = screen.getByLabelText('Ir al año')
+    await userEvent.click(within(screen.getByRole('heading', { level: 2 })).getByRole('button'))
+    const year = within(screen.getByRole('dialog')).getByLabelText('Año')
     await userEvent.clear(year)
-    await userEvent.type(year, '50')
+    await userEvent.type(year, '50{Enter}')
     expect(screen.getByRole('heading', { level: 2, name: 'Enero del año 2 RV' })).toBeDefined()
-    await userEvent.click(screen.getByRole('button', { name: /^Ir al mes/ }))
-    await userEvent.click(screen.getByRole('button', { name: 'Diciembre' }))
+    await userEvent.click(within(screen.getByRole('heading', { level: 2 })).getByRole('button'))
+    await userEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Diciembre' }))
     expect((screen.getByRole('button', { name: 'Mes siguiente' }) as HTMLButtonElement).disabled).toBe(true)
     const modes = screen.getByRole('toolbar', { name: 'Vista' })
     await userEvent.click(within(modes).getByRole('button', { name: 'Año' }))

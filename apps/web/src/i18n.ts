@@ -2135,9 +2135,15 @@ export const es = {
       month: 'Mes',
       week: 'Semana',
       year: 'Año',
-      goTo: 'Ir a',
-      goToMonth: 'Ir al mes',
-      goToYear: 'Ir al año',
+      // El título de la vista, que lleva a otra fecha
+      jump: {
+        week: 'Ir a otra semana',
+        month: 'Ir a otro mes',
+        year: 'Ir a otro año',
+        go: 'Ir',
+        monthLabel: 'Mes',
+        dayLabel: 'Día'
+      },
       previousYear: 'Año anterior',
       nextYear: 'Año siguiente',
       previousWeek: 'Semana anterior',
@@ -5052,7 +5058,7 @@ export const es = {
     },
     calendarView: {
       month: 'Pasa el ratón por un día para verlo; púlsalo para dejarlo fijo.',
-      views: 'Mes, semana o año, y la fecha a la que ir.',
+      views: 'Mes, semana o año. El título lleva a otra fecha.',
       edit: 'Para cambiar cómo es el calendario.'
     },
     dice: {

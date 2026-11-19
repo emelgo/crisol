@@ -23,10 +23,13 @@ import { useTranslation } from 'react-i18next'
 import { Chip } from '../chronologies/calendar-view.tsx'
 import chrono from '../chronologies/chronologies.module.css'
 import { shortWeekdays } from './preview.tsx'
-import { SeasonFacts, seasonsOf, weekTitle } from './titles.tsx'
+import { SeasonFacts, seasonsOf } from './titles.tsx'
 import styles from './view.module.css'
 
-/** La cabecera de una vista: el título (h2) con sus datos debajo y las flechas para pasar de periodo */
+/**
+ * La cabecera de una vista: el título (h2; en la vista grande, el botón que lleva a otra fecha) con sus datos debajo y
+ * las flechas para pasar de periodo
+ */
 export function PeriodHead({
   id,
   title,
@@ -37,7 +40,7 @@ export function PeriodHead({
   onStep
 }: {
   id: string
-  title: string
+  title: ReactNode
   facts?: ReactNode
   /** Lo que dicen las flechas («Semana anterior») */
   previous: string
@@ -92,6 +95,7 @@ function placed(definition: CalendarDefinition, entries: readonly ChronologyEntr
 export function WeekView({
   definition,
   week,
+  title,
   entries,
   groups,
   selected,
@@ -103,6 +107,8 @@ export function WeekView({
 }: {
   definition: CalendarDefinition
   week: WeekGrid
+  /** «Semana del 12 al 18 de Siega del año 1250 RC» (titles.tsx), o el botón que la lleva */
+  title: ReactNode
   entries: readonly ChronologyEntryView[]
   groups: readonly TimelineGroupView[]
   selected: number | null
@@ -234,8 +240,7 @@ export function WeekView({
     )
   }
 
-  // «Semana del 12 al 18 de Siega del año 1250 RC», y su estación como en el mes
-  const title = weekTitle(t, definition, week.first, week.last)
+  // Su estación, como en el mes
   const seasons = seasonsOf(definition, [...week.days.filter((d): d is GridDay => Boolean(d)), ...week.outside])
   const columns = definition.weekdays.length || 7
   const weekdays = shortWeekdays(definition.weekdays)
@@ -326,7 +331,7 @@ export function YearView({
 }: {
   definition: CalendarDefinition
   year: number
-  title: string
+  title: ReactNode
   entries: readonly ChronologyEntryView[]
   selected: number | null
   today: number | null

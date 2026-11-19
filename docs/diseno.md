@@ -272,8 +272,10 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   derecha. **Sin fichas fijas** (Enrique, 2026-11-19, tras probarlo: «en el calendario no necesitamos ese resumen, ya
   lo tenemos cuando le doy a editar»; «la columna izquierda no me interesa»): ni el año en pequeño ni los datos del
   calendario. **Se navega desde el centro, con vistas Mes, Semana y Año** («debemos navegar desde la vista central y
-  tener diferentes vistas, mensual, semanal y anual»): arriba, el conmutador, «Ir a» un mes y un año y «Hoy de…» si
-  alguna campaña tiene fecha; debajo, la vista con sus flechas. Mes: el mes grande (la franja de una festividad, las
+  tener diferentes vistas, mensual, semanal y anual»): arriba, el conmutador en el centro y «Hoy de…» a la derecha si
+  alguna campaña tiene fecha; debajo, la vista con sus flechas. **El título de la vista lleva a otra fecha** (Enrique,
+  2026-11-20; sustituye a la barra «Ir a»): con una flecha pequeña, abre un recuadro con lo que tiene sentido en esa
+  vista (Semana: año, mes y día; Mes: año y mes; Año: el año); Intro aplica, Esc o pulsar fuera lo cierran. Mes: el mes grande (la franja de una festividad, las
   lunas, la estación, lo que cae en él); Semana: sus días en columnas con lo que cae en cada uno; Año: los meses en
   pequeño (las festividades en su color), y cada uno lleva a su mes. **La ficha del día, a la derecha, solo cuando hace
   falta** («se muestra al pasar el ratón por una fecha y se fija si hago click en un día, si le doy a Esc la

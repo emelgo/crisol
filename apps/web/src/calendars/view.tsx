@@ -1,7 +1,8 @@
 /**
  * Un calendario en grande (ajustes tras los módulos, bloque C; Crisol antiguo, VistaMes y DetalleDia), con el esqueleto
  * de las pantallas: el título sobre la columna y «Editar calendario» a su derecha. En el centro, arriba, las vistas (Mes,
- * Semana y Año), «Ir a» un mes y un año y «Hoy de…» si alguna campaña tiene fecha; debajo, la vista con sus flechas. A
+ * Semana y Año) y «Hoy de…» si alguna campaña tiene fecha; debajo, la vista con sus flechas y su título, que se pulsa
+ * para ir a otra fecha (jump.tsx). A
  * la derecha, solo cuando hace falta, la ficha de un día: al pasar el ratón (o el foco) por él se ve, al pulsarlo se fija
  * y Esc la quita. Lleva su fecha con su era, su estación, sus lunas, lo que pasa y «Nuevo evento» (un evento suelto del
  * mundo, que sale en las cronologías que lo incluyan) y «Página con esta fecha». Solo para quien lleva el mundo
@@ -22,7 +23,7 @@ import {
 } from '@crisol/domain'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getRouteApi, Link, Navigate, useNavigate } from '@tanstack/react-router'
-import { CalendarPlus, Check, ChevronDown, FilePlus, Pencil, Sparkles, X } from 'lucide-react'
+import { CalendarPlus, FilePlus, Pencil, Sparkles, X } from 'lucide-react'
 import { type CSSProperties, useEffect, useId, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
@@ -37,13 +38,12 @@ import { Loading } from '../components/brand.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
 import { FormError } from '../components/field.tsx'
 import { failed, LoadError, SectionError } from '../components/load-error.tsx'
-import { Menu, MenuItem } from '../components/menu.tsx'
 import { Screen } from '../components/screen.tsx'
 import { Tour } from '../components/tour.tsx'
-import { YearInput } from './date-input.tsx'
+import { JumpTitle } from './jump.tsx'
 import { WeekView, YearView } from './periods.tsx'
 import { pagesOf, startYear } from './preview.tsx'
-import { monthTitle, yearTitle } from './titles.tsx'
+import { monthTitle, weekTitle, yearTitle } from './titles.tsx'
 import styles from './view.module.css'
 
 const route = getRouteApi('/mundos/$worldId/calendarios/$calendarId')
@@ -160,7 +160,8 @@ function BigCalendar({
     if (pinned === null) return
     const outside = (event: PointerEvent) => {
       const at = event.target as Element | null
-      if (!at?.closest || at.closest('[data-dia-ficha], [data-tour="calendario-vistas"], dialog')) return
+      if (!at?.closest || at.closest('[data-dia-ficha], [data-tour="calendario-vistas"], [data-calendar-jump], dialog'))
+        return
       setHovered(null)
       setPinned(null)
     }
@@ -187,6 +188,16 @@ function BigCalendar({
     setCursor(step < 0 ? current.first - 1 : current.last + 1)
   }
   const stepYear = (step: -1 | 1) => setCursor(firstOf(definition.months[0]?.id ?? at.month, at.year + step))
+  // El título de la vista, que lleva a otra fecha
+  const jumpTitle = (text: string) => (
+    <JumpTitle
+      text={text}
+      mode={mode}
+      definition={definition}
+      at={at}
+      onGo={(date) => setCursor(dayNumber(definition, date))}
+    />
+  )
 
   const datedPage = useMutation({
     mutationFn: async (date: FullDate) => {
@@ -297,49 +308,6 @@ function BigCalendar({
             </button>
           ))}
         </div>
-        <fieldset className={styles.jump}>
-          <legend className={styles.srOnly}>{t('calendars.view.goTo')}</legend>
-          <span aria-hidden="true">{t('calendars.view.goTo')}</span>
-          {mode !== 'year' && (
-            // El mes, con el menú de la app (no la lista del navegador)
-            <Menu
-              label={`${t('calendars.view.goToMonth')}: ${definition.months.find((m) => m.id === at.month)?.name ?? ''}`}
-              className={styles.jumpField}
-              icon={
-                <>
-                  <span>{definition.months.find((m) => m.id === at.month)?.name}</span>
-                  <ChevronDown size={14} aria-hidden="true" />
-                </>
-              }
-            >
-              {(close) =>
-                definition.months.map((m) => (
-                  <MenuItem
-                    key={m.id}
-                    aria-current={m.id === at.month || undefined}
-                    onClick={() => {
-                      setCursor(firstOf(m.id, at.year))
-                      close()
-                    }}
-                  >
-                    {m.name}
-                    {m.id === at.month && <Check size={14} aria-hidden="true" className={styles.jumpCheck} />}
-                  </MenuItem>
-                ))
-              }
-            </Menu>
-          )}
-          <YearInput
-            className={`${styles.jumpField} ${styles.yearInput}`}
-            definition={definition}
-            value={at.year}
-            aria-label={t('calendars.view.goToYear')}
-            onValue={(year) => {
-              const monthId = mode === 'year' ? (definition.months[0]?.id ?? at.month) : at.month
-              setCursor(firstOf(monthId, year))
-            }}
-          />
-        </fieldset>
         {chosen.options.length > 0 && (
           <div className={styles.tools}>
             <TodayOf options={chosen.options} value={chosen.chosen} onChange={chosen.choose} />
@@ -360,7 +328,7 @@ function BigCalendar({
             entries={entries}
             groups={groups}
             compact={false}
-            title={monthTitle(t, definition, at.year, at.month)}
+            title={jumpTitle(monthTitle(t, definition, at.year, at.month))}
             where={place}
             onWhere={(next) => {
               const target = pages[next.page] ?? pages[0]
@@ -380,6 +348,7 @@ function BigCalendar({
           <WeekView
             definition={definition}
             week={week}
+            title={jumpTitle(weekTitle(t, definition, week.first, week.last))}
             entries={entries}
             groups={groups}
             selected={pinned}
@@ -396,7 +365,7 @@ function BigCalendar({
           <YearView
             definition={definition}
             year={at.year}
-            title={yearTitle(t, definition, at.year)}
+            title={jumpTitle(yearTitle(t, definition, at.year))}
             entries={entries}
             selected={pinned}
             today={today}

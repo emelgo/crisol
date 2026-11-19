@@ -108,8 +108,8 @@ export function CalendarView({
   banner?: ReactNode
   /** También pasar de año */
   yearArrows?: boolean
-  /** El título del mes, si se quiere otro (la vista grande: «Enero del año 1») */
-  title?: string | null
+  /** El título del mes, si se quiere otro (la vista grande: «Enero del año 1», un botón que lleva a otra fecha) */
+  title?: ReactNode
   /** El máster: «+» en un día elegido */
   onCreateAt?: ((date: FullDate) => void) | undefined
   /** El máster: soltar una ficha en otro día (cuántos días se mueve) */

@@ -103,78 +103,6 @@
   outline-offset: -2px;
 }
 
-/* Ir a un mes y un año */
-.jump {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2);
-  min-inline-size: 0;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  color: var(--color-muted);
-  font-size: 0.875rem;
-}
-
-/* El mes y el año, con el mismo aspecto: los campos de cristal de la app */
-.jumpField {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-block-size: 2rem;
-  padding: 0 var(--space-3);
-  border: 1px solid var(--color-field-border);
-  border-radius: var(--radius-button);
-  background: var(--field-fill);
-  color: var(--color-text);
-  font: inherit;
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: border-color 150ms ease-out;
-}
-
-.jumpField:hover {
-  border-color: var(--color-muted);
-}
-
-button.jumpField {
-  max-inline-size: 12rem;
-}
-
-button.jumpField > span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-button.jumpField > svg {
-  flex: none;
-  color: var(--color-muted);
-}
-
-.yearInput {
-  inline-size: 5.5rem;
-  text-align: end;
-  font-variant-numeric: tabular-nums;
-  cursor: text;
-}
-
-/* El mes en el que se está, marcado en el menú */
-.jumpCheck {
-  margin-inline-start: auto;
-  color: var(--color-accent-text);
-}
-
-.srOnly {
-  position: absolute;
-  inline-size: 1px;
-  block-size: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
 /* «Hoy de…» (la campaña) y «Ir a hoy»: callados, sin raya, al final */
 .tools {
   display: flex;
@@ -194,12 +122,6 @@ button.jumpField > svg {
 .bar > .modes {
   grid-column: 2;
   grid-row: 1;
-}
-
-.bar > .jump {
-  grid-column: 1;
-  grid-row: 1;
-  justify-self: start;
 }
 
 .bar > .tools {
@@ -225,6 +147,172 @@ button.jumpField > svg {
 .todayButton:focus-visible {
   outline: 2px solid var(--color-focus);
   outline-offset: 2px;
+}
+
+/* El título de la vista, que lleva a otra fecha: con su flecha pequeña y subrayado al pasar */
+.titleButton {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-align: start;
+  text-transform: inherit;
+  text-decoration: underline 2px transparent;
+  text-underline-offset: 0.18em;
+  cursor: pointer;
+  transition: text-decoration-color 150ms ease-out;
+}
+
+.titleButton:hover,
+.titleButton[aria-expanded="true"] {
+  text-decoration-color: var(--line-soft);
+}
+
+.titleButton:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.titleChevron {
+  margin-inline-start: var(--space-1);
+  vertical-align: -0.1em;
+  color: var(--color-muted);
+  transition:
+    color 150ms ease-out,
+    transform 150ms ease-out;
+}
+
+.titleButton:hover .titleChevron {
+  color: var(--color-text);
+}
+
+.titleButton[aria-expanded="true"] .titleChevron {
+  transform: rotate(180deg);
+}
+
+/* Su recuadro: flota como los menús, de cristal; el año arriba y, debajo, los meses y los días */
+.jumpPanel {
+  position: fixed;
+  z-index: 60;
+  inline-size: 19rem;
+  max-inline-size: calc(100vw - 2rem);
+  max-block-size: calc(100dvh - 2rem);
+  overflow-y: auto;
+  padding: var(--space-3);
+  border: 1px solid var(--glass-edge);
+  border-radius: 6px;
+  background: var(--frame-sheen), var(--popup-glass);
+  -webkit-backdrop-filter: var(--popup-blur);
+  backdrop-filter: var(--popup-blur);
+  box-shadow: 0 0.75rem 2rem rgb(0 0 0 / 0.35);
+  scrollbar-width: thin;
+}
+
+/* Solo el año: lo justo */
+.jumpPanel[data-mode="year"] {
+  inline-size: auto;
+}
+
+.jumpForm {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.jumpYear {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+.jumpField {
+  flex: 0 1 7rem;
+  min-inline-size: 0;
+  min-block-size: 2rem;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-field-border);
+  border-radius: var(--radius-button);
+  background: var(--field-fill);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+
+.jumpField:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 1px;
+}
+
+.jumpGo {
+  margin-inline-start: auto;
+  min-block-size: 2rem;
+  padding: 0 var(--space-4);
+  border: 0;
+  border-radius: var(--radius-button);
+  background: var(--accent-glass);
+  color: var(--color-on-accent);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.jumpGo:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.jumpGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 2px;
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.jumpDays {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  padding-block-start: var(--space-3);
+  border-block-start: 1px solid var(--line-soft);
+}
+
+.jumpCell {
+  overflow: hidden;
+  min-block-size: 2rem;
+  padding: 0 var(--space-1);
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.jumpCell:hover {
+  background: var(--color-raised);
+}
+
+.jumpCell[aria-pressed="true"] {
+  box-shadow: inset 0 0 0 1.5px var(--color-accent-text);
+  font-weight: 600;
+}
+
+.jumpCell:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
 }
 
 /* La franja de una festividad (días entre meses que no se numeran), en su color */

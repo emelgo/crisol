@@ -121,9 +121,13 @@ Plan aprobado el 2026-11-19 («¿cómo creo eventos en el calendario?»). Normas
 
 - [ ] **Al pulsar un calendario se ve en grande**: el título sobre la columna y «Editar calendario» a su derecha (y en
   el engranaje de su tarjeta, «Abrir» y «Editar calendario»). **Sin columna izquierda** (ni el año en pequeño ni el
-  resumen, que sigue en el editor). En el centro, arriba, **Mes · Semana · Año**, «Ir a» un mes y un año y «Hoy de…»;
+  resumen, que sigue en el editor). En el centro, arriba, **Mes · Semana · Año** centrado y «Hoy de…» a la derecha;
   debajo, la vista con «‹ ›». En Mes, las lunas nuevas y llenas, la estación y la era; una festividad dentro de la
   semana sale con su franja de color y las de fuera de la semana, debajo.
+- [ ] **El título de la vista lleva a otra fecha** (sin la barra «Ir a»): «Enero del año 1» lleva una flecha pequeña y
+  se subraya al pasar; al pulsarlo sale un recuadro pequeño. Mes: el año y los meses (un mes lleva a él); Semana: el
+  año, los meses y los días del elegido (un día lleva a su semana); Año: solo el año con «Ir». Intro aplica el año
+  escrito; Esc o pulsar fuera lo cierran y el foco vuelve al título; el año no pasa del tope ni de seis cifras.
 - [ ] **Semana**: sus días en columnas (con el mes junto al número del primero y de cada día 1) y todo lo que cae en
   cada uno; las fiestas de fuera de la semana que caen en medio, debajo; con la semana que empieza cada mes, no sale de
   él. Con el teclado, las flechas pasan de día y Re Pág / Av Pág de semana.
@@ -155,7 +159,7 @@ Plan aprobado el 2026-11-19 («¿cómo creo eventos en el calendario?»). Normas
   cada regla se lee como una frase: «Cada [N] años, [mes] tiene [D] días más, salvo cada [M] pero sí cada [K]» («pero
   sí cada», solo con un «salvo»). En ningún texto de calendarios sale «bisiesto». El resumen dice «365 días · 366 con
   días de más».
-- [ ] **Tope de años**: en «Ir a», escribe «-2345656»: no deja más de seis cifras y se para en -99999 (sin rango, de
+- [ ] **Tope de años**: en el año del título de la vista grande, escribe «-2345656»: no deja más de seis cifras y se para en -99999 (sin rango, de
   -99.999 a 99.999). En el editor, General, «Años: desde … hasta …» (opcional): con eras y «desde» vacío, propone el
   inicio de la primera («Desde el inicio de…»), sin ponerlo solo; «desde» después de «hasta», o una era que empieza
   fuera, es un problema. Con un rango, en la vista grande (Mes, Semana y Año) las flechas se apagan en el borde y el
