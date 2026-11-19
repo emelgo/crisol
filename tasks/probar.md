@@ -62,6 +62,13 @@ En local o en staging cuando llegue el PR de esta rama.
 - [ ] **Versiones de una plantilla, en un botón**: su cabecera ya no tiene «⋯»; junto al candado, un reloj
   («Versiones») que abre su lista (también sobre una portada, en la pastilla). Duplicar, solo con el botón derecho. Ctrl+P
   no imprime.
+- [ ] **El panel de una plantilla, como el de una página**: ya no hay lista «Campos» con «+ Campo» ni el rótulo «En el
+  panel». En una plantilla vacía sale «Panel vacío»; «Añadir bloque» trae arriba «Etiquetas» y «Propiedad» (los campos)
+  y debajo los bloques de siempre. «Propiedad» añade un campo abierto con su nombre elegido (escríbelo); plegado, su
+  nombre y su tipo; al pulsarlo, sus opciones (tipo, opciones, papel y nombre al revés, reloj, fecha y ahora «Oculto a
+  los jugadores»). Se recolocan con sus seis puntos. «Etiquetas» solo una vez. Con una imagen arriba del panel, los
+  campos van debajo de ella. Abre una plantilla de antes con campos: siguen todos, en su orden. Crea una página con ella
+  y mira que trae sus propiedades (y la oculta, oculta a los jugadores).
 - [ ] **El icono del título, siempre pulsable**: en una página o plantilla sin icono, delante del título sale en gris el
   de su tipo (el del árbol; en una plantilla, el de plantilla); al pulsarlo (o Tab hasta él e Intro) se abre el selector
   de nuestros iconos, sin «Quitar el icono». Puesto, igual que antes, con «Quitar el icono»; quitado, vuelve el gris.

@@ -329,7 +329,14 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   hay «Aplicar plantilla» en «⋯». **«Pestaña nueva» ya no ofrece «Tabla» ni «Escena»** (Enrique, 2026-11-13: las
   tablas son del compendio y las escenas, sueltas); las que ya hay se siguen viendo. Tras la crítica (Enrique,
   2026-11-12): **los campos y bloques del panel de una plantilla van plegados** (nombre y tipo; al pulsarlos, sus
-  opciones) **y se recolocan con sus seis puntos**, arrastrando o con Alt y las flechas, como los de una página; **la
+  opciones) **y se recolocan con sus seis puntos**, arrastrando o con Alt y las flechas, como los de una página.
+  **Su panel, el de una página** (Enrique, 2026-11-19: unificarlo): sin lista aparte «Campos» ni «+ Campo» ni rótulo
+  «En el panel»; los campos son sus propiedades y **se añaden con «Añadir bloque › Propiedad» (o «› Etiquetas», una
+  sola vez)**, el mismo menú que en una página; salen en su sitio, arriba (tras la imagen si el panel empieza por una),
+  plegados, y el recién añadido se abre con su nombre elegido para escribirlo. En sus opciones, todo lo de antes (tipo,
+  opciones, a qué plantillas apunta, papel y nombre al revés, reloj, fecha) y **«Oculto a los jugadores»** (un ojo
+  tachado junto a su nombre). Sin campos ni bloques, «Panel vacío» como en una página. Las de antes conservan sus
+  campos, en su orden (sin migración); **la
   marca «Plantilla» lleva el color de acento**, para no confundirse con la píldora que lleva a una plantilla; **bajo
   cada plantilla, sus primeros campos** (en la lista y al elegir una), no sus pestañas.
 - **Las tiradas no se escriben en las páginas** (Enrique, 2026-11-11, revisión de la app): los dados salen del texto y
