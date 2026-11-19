@@ -32,15 +32,20 @@ export function Consent() {
   const accounts = useAccounts()
   const api = useApi()
   const { account, pending } = accounts.useAccount()
-  // La consulta tal cual llegó: lleva la firma de Better Auth
-  const clientId = new URLSearchParams(useLocation().searchStr).get('client_id') ?? ''
+  // La consulta tal cual llegó: lleva la firma de Better Auth, y el conector que se pide (resource)
+  const query = new URLSearchParams(useLocation().searchStr)
+  const clientId = query.get('client_id') ?? ''
+  const campaignId = query
+    .getAll('resource')
+    .map((resource) => /\/mcp\/campanas\/([0-9a-f-]{36})$/.exec(resource)?.[1])
+    .find(Boolean)
   const name = useQuery({ queryKey: ['oauth-client', clientId], queryFn: () => accounts.oauthClientName(clientId) })
   const organizations = useQuery({
     queryKey: ['organizations'],
     queryFn: () => api.call('listOrganizations', {}),
     enabled: Boolean(account)
   })
-  // Quien juega en alguna campaña también puede (su IA solo lee, ADR-0017)
+  // Quien está en alguna campaña también puede (con el conector de cada campaña, ADR-0030)
   const worlds = useQuery({
     queryKey: ['worlds', 'campaigns'],
     queryFn: () => api.call('listWorldsWithCampaigns', {}),
@@ -64,6 +69,11 @@ export function Consent() {
   const isOwner =
     (organizations.data?.organizations.some((o) => o.role === 'owner') ?? false) ||
     (worlds.data?.worlds.some((w) => w.campaigns.length > 0) ?? false)
+  // El conector de una campaña: solo para quien está en ella (el servidor lo vuelve a mirar)
+  const campaign = campaignId
+    ? worlds.data?.worlds.flatMap((w) => w.campaigns).find((c) => c.id === campaignId)
+    : undefined
+  const allowed = campaignId ? Boolean(campaign) : isOwner
 
   const answer = async (accept: boolean) => {
     setBusy(true)
@@ -76,13 +86,15 @@ export function Consent() {
     <section>
       <PageTitle>{t('consent.title', { client })}</PageTitle>
       <div className={frame.box}>
-        <p>{t('consent.body', { client })}</p>
+        <p>
+          {campaign ? t('consent.bodyCampaign', { client, campaign: campaign.name }) : t('consent.body', { client })}
+        </p>
         <p>{t('consent.history')}</p>
       </div>
-      {!isOwner && <FormError message={t('consent.ownerOnly')} />}
+      {!allowed && <FormError message={t(campaignId ? 'consent.notInCampaign' : 'consent.ownerOnly')} />}
       <FormError message={error} />
       <div className={styles.actions}>
-        {isOwner && (
+        {allowed && (
           <BusyButton className={form.button} busy={busy} onClick={() => answer(true)}>
             {t('consent.allow')}
           </BusyButton>

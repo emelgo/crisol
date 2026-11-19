@@ -861,10 +861,11 @@ export const INSTRUCTIONS =
   'ocultar lo quita (revelar solo suma: no le quita nada a nadie), ensenar_pagina se la abre al momento a los jugadores ' +
   'conectados que ya la conocen (como enseñar un diario en la mesa) y lo_que_sabe lista lo revelado. dejar_editar deja ' +
   'a los jugadores escribir el texto de una página (el diario del grupo), que no puede llevar secretos. ' +
-  'Un campo o un bloque del panel con hidden no les llega nunca. Si quien te conecta es un jugador, ' +
-  'solo ves lo que sabe su campaña (las herramientas de leer, con campaignId si juega más de una del mundo) y solo ' +
-  'escribes, con editar_pagina, el texto de una página que su campaña puede editar, y sus notas (ver_notas, leer_nota, ' +
-  'escribir_nota: suyas, con enlaces [[Página]] a lo que conoce; el máster las lee y no las escribe). ' +
+  'Un campo o un bloque del panel con hidden no les llega nunca. Si quien te conecta es un jugador, aquí ' +
+  'solo ves lo que sabe su campaña (las herramientas de leer, con campaignId si juega más de una del mundo); lo ' +
+  'suyo (su personaje, sus tiradas, el registro, sus notas con escribir_nota y el texto de una página que su campaña ' +
+  'puede editar) lo hace con el conector de su campaña, cuya dirección está en el Inicio de la campaña. El máster ' +
+  'lee sus notas con ver_notas y leer_nota, y no las escribe. ' +
   'Para pasar una wiki entera: crear_paginas de 50 en 50, en cualquier orden (los enlaces se resuelven solos), y al ' +
   'final enlaces_pagina con worldId para ver lo que quede sin resolver; los archivos los sube el máster y se enlazan ' +
   'por su nombre (listar_archivos). Cada mundo puede tener calendarios propios (meses, festividades, semana, ' +

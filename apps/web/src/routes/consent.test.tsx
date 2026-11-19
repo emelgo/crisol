@@ -85,6 +85,54 @@ describe('consentimiento OAuth', () => {
     expect(screen.queryByRole('button', { name: 'Permitir' })).toBeNull()
   })
 
+  it('el conector de una campaña dice cuál; quien no está en ella no puede permitirlo (ADR-0030)', async () => {
+    const world = {
+      id: crypto.randomUUID(),
+      organizationId: ORG.id,
+      name: 'Eana',
+      description: '',
+      icon: null,
+      color: null,
+      cover: null,
+      role: 'player' as const,
+      version: 1
+    }
+    const campaign = {
+      id: crypto.randomUUID(),
+      worldId: world.id,
+      name: 'La Marca',
+      description: '',
+      color: null,
+      cover: null,
+      role: 'player' as const,
+      version: 1
+    }
+    const api = fakeApi({ organizations: [{ ...ORG, role: 'member' }], worlds: [world], campaigns: [campaign] }).client
+    const accounts = fakeAccountClient({
+      account: { name: 'Enrique', email: 'enrique@crisol.test' },
+      oauthClients: { [CLAUDE]: 'Claude' }
+    })
+    const at = (campaignId: string) =>
+      createAppRouter(
+        createMemoryHistory({
+          initialEntries: [`${path}&resource=${encodeURIComponent(`https://crisol.test/mcp/campanas/${campaignId}`)}`]
+        })
+      )
+    const mine = render(<App router={at(campaign.id)} accounts={accounts.client} api={api} />)
+    expect(
+      await screen.findByText(
+        'Claude (claude.ai) quiere usar tu cuenta de Crisol en La Marca: solo verá esta campaña, con lo que puedes hacer en ella.'
+      )
+    ).toBeDefined()
+    expect(screen.getByRole('button', { name: 'Permitir' })).toBeDefined()
+    mine.unmount()
+    render(<App router={at(crypto.randomUUID())} accounts={accounts.client} api={api} />)
+    expect((await screen.findByRole('alert')).textContent).toBe(
+      'No estás en esta campaña: no puedes conectarle una IA.'
+    )
+    expect(screen.queryByRole('button', { name: 'Permitir' })).toBeNull()
+  })
+
   it('quien no es propietario ni juega en ninguna campaña no puede permitirlo (ADR-0017)', async () => {
     renderConsent('member')
     expect((await screen.findByRole('alert')).textContent).toBe(

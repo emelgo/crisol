@@ -4842,6 +4842,8 @@ export const es = {
   consent: {
     title: 'Conectar {{client}}',
     body: '{{client}} quiere usar tu cuenta de Crisol: ver y cambiar tus mundos en tu nombre.',
+    bodyCampaign: '{{client}} quiere usar tu cuenta de Crisol en {{campaign}}: solo verá esta campaña, con lo que puedes hacer en ella.',
+    notInCampaign: 'No estás en esta campaña: no puedes conectarle una IA.',
     history: 'Lo que haga quedará en el historial y podrás deshacerlo.',
     ownerOnly: 'Esta cuenta aún no puede conectar una IA: entra antes en una campaña.',
     allow: 'Permitir',
