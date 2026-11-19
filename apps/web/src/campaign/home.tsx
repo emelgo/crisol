@@ -31,7 +31,7 @@ type Props = { worldId: string; worldName: string; campaign: Campaign }
 function Hero({ campaign, worldName, actions }: { campaign: Campaign; worldName: string; actions?: ReactNode }) {
   const { t } = useTranslation()
   return (
-    <div className={styles.head} style={worldTransition(campaign.id)}>
+    <div className={styles.head} style={worldTransition(campaign.id)} data-mundo-portada="">
       {campaign.cover && (
         <div className={styles.hero} aria-hidden="true">
           <img src={`/api/files/${campaign.cover.fileId}`} alt="" style={coverStyle(campaign.cover)} />

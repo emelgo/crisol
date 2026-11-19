@@ -11,6 +11,14 @@
 @import "@fontsource/barlow-condensed/700.css";
 @import "@fontsource/barlow-condensed/800.css";
 
+/* Cuánto cristal hay, de 0 a 1 (escala los desenfoques de abajo): al acabar una transición de vista, el desenfoque vuelve
+   fundiéndose, no de golpe (base.css) */
+@property --cristal {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 1;
+}
+
 :root {
   color-scheme: dark;
   --color-chrome: #111317;
@@ -90,7 +98,8 @@
   --glass-hi: rgb(255 255 255 / 0.12);
   --glass-line: rgb(0 0 0 / 0.5);
   --glass-sheen: linear-gradient(180deg, rgb(255 255 255 / 0.08), rgb(255 255 255 / 0) 60%);
-  --glass-blur: blur(14px) saturate(1.5) brightness(1.08);
+  --glass-blur: blur(calc(14px * var(--cristal))) saturate(calc(1 + 0.5 * var(--cristal)))
+    brightness(calc(1 + 0.08 * var(--cristal)));
   --glass-shadow: 0 10px 28px -12px rgb(0 0 0 / 0.6);
   --glass-lift: 0 18px 34px -14px rgb(0 0 0 / 0.7);
   /* Fuera de la Mesa (tanda 5, «Crisol, con cristal»), sobre el fondo de ambiente (components/ambient.tsx): lo que
@@ -103,12 +112,12 @@
   /* La página de un mundo, de cristal que se lee: algo más translúcida que la hoja (Enrique, 2026-11-16: «dale como un
      poco más de cristal»), con el texto a más de 4,5:1 sobre lo que haya detrás */
   --surface-page: color-mix(in srgb, var(--color-bg) 78%, transparent);
-  --frame-blur: blur(14px);
+  --frame-blur: blur(calc(14px * var(--cristal)));
   --frame-sheen: linear-gradient(180deg, rgb(255 255 255 / 0.05), rgb(255 255 255 / 0) 40%);
   /* Lo que flota encima de otra cosa (cuadros, ventanas, menús, el selector de iconos): cristal más tapado, que se lea
      con lo que sea debajo, y más desenfoque */
   --popup-glass: color-mix(in srgb, var(--color-surface) 78%, transparent);
-  --popup-blur: blur(24px) saturate(1.6);
+  --popup-blur: blur(calc(24px * var(--cristal))) saturate(calc(1 + 0.6 * var(--cristal)));
   /* Los campos (buscadores, cajas de texto, desplegables), de cristal oscuro: se lee lo escrito y se ve lo de detrás */
   --field-fill: color-mix(in srgb, var(--color-bg) 62%, transparent);
   /* La acción principal (el botón rojo), de cristal rojo: el blanco encima, sobre algo oscuro, se lee aún mejor */

@@ -71,16 +71,21 @@ export function enterWorld(worldId: string, card: Element | null) {
 }
 
 /**
- * Al salir de un mundo (por la llama): como las brasas al entrar, pero apagadas: una bruma gris que sube desde abajo y
- * bocanadas de humo que suben, se ensanchan y se disipan (base.css, .humo). La cabecera no vuelve a ser tarjeta: el
- * mundo se aleja entero y vuelve Mis mundos (Enrique, 2026-11-12: «al salir de un mundo sale la animación rara»; la
- * cabecera, grande y con otra forma, se veía estirada y borrosa al encoger)
+ * Al salir de un mundo o de una campaña (por la llama), el espejo de entrar (Enrique, 2026-11-19): su cabecera, si está
+ * a la vista (data-mundo-portada), lleva ya el nombre antes de la foto de lo de antes y vuelve a su tarjeta, que lo
+ * recoge en Mis mundos (worldTransition), recortada y no estirada (base.css); lo demás se aleja. Y en vez de las
+ * brasas, humo: una bruma gris que sube desde abajo y bocanadas que suben, se ensanchan y se disipan (base.css, .humo)
  */
-export function leaveWorld() {
-  current = null
+export function leaveWorld(id: string | null = null) {
+  current = id
   for (const named of document.querySelectorAll<HTMLElement>('[style*="view-transition-name"]')) {
     if (named.style.viewTransitionName === 'mundo-actual') named.style.removeProperty('view-transition-name')
   }
+  if (id)
+    document
+      .getElementById('contenido')
+      ?.querySelector<HTMLElement>('[data-mundo-portada]')
+      ?.style.setProperty('view-transition-name', 'mundo-actual')
   smoke()
 }
 
@@ -96,7 +101,8 @@ export function smoke() {
 
 /**
  * Una capa encima de todo, de adorno (base.css, .brasas y .humo): va aparte en la transición (su nombre), así que se ve por
- * encima mientras dura; luego se quita
+ * encima mientras dura; luego se quita. Nunca a mitad de una transición de vista: es una de sus capas, y quitarla la
+ * cortaría en seco (el salto del final, si la transición tardaba en llegar); ya apagada, espera a que acabe
  */
 function overlay(className: string, ms: number) {
   if (typeof document.startViewTransition !== 'function') return
@@ -104,7 +110,20 @@ function overlay(className: string, ms: number) {
   layer.className = className
   layer.setAttribute('aria-hidden', 'true')
   document.body.append(layer)
-  window.setTimeout(() => layer.remove(), ms)
+  const remove = () => {
+    if (transitioning()) window.setTimeout(remove, 200)
+    else layer.remove()
+  }
+  window.setTimeout(remove, ms)
+}
+
+/** Si hay una transición de vista en marcha (sin saberlo el navegador, no) */
+function transitioning() {
+  try {
+    return document.documentElement.matches(':active-view-transition')
+  } catch {
+    return false
+  }
 }
 
 /** Para la tarjeta y la cabecera de ese mundo: su nombre de transición */

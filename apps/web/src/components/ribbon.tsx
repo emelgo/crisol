@@ -319,7 +319,7 @@ export function Ribbon() {
                 }
               }
             : inWorld
-              ? { viewTransition: LEAVE_WORLD, onClick: leaveWorld }
+              ? { viewTransition: LEAVE_WORLD, onClick: () => leaveWorld(campaignId ?? world?.id ?? null) }
               : { viewTransition: SECTION })}
           data-tour="barra-llama"
           aria-label={t('app.name')}
@@ -848,7 +848,7 @@ function MobileMenu({
     current: false,
     href: '/mundos',
     run: then(() => {
-      leaveWorld()
+      leaveWorld(campaign?.id ?? world?.id ?? null)
       void navigate({ to: '/mundos', viewTransition: LEAVE_WORLD })
     })
   }
@@ -904,7 +904,7 @@ function MobileMenu({
               current: false,
               href: '/mundos',
               run: then(() => {
-                leaveWorld()
+                leaveWorld(world.id)
                 void navigate({ to: '/mundos', viewTransition: LEAVE_WORLD })
               })
             },

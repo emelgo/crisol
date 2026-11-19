@@ -368,11 +368,16 @@ dialog[open]::backdrop {
 /* Mientras dura una transición de vista, el cristal sin desenfoque: con la página nueva hay tres superficies grandes de
    cristal, y en una tarjeta gráfica normal recalcular su desenfoque en cada fotograma mientras todo se mueve hacía ir a
    saltos la entrada y la salida del mundo (Enrique, 2026-11-16: «no son fluidas, antes funcionaban bien»). Al acabar,
-   vuelve; las superficies son casi opacas y apenas se nota */
+   vuelve fundiéndose (--cristal, de 0 a 1), no de golpe (Enrique, 2026-11-19: el salto del final) */
 :root:active-view-transition {
   --frame-blur: none;
   --glass-blur: none;
   --popup-blur: none;
+  --cristal: 0;
+}
+
+:root:not(:active-view-transition) {
+  transition: --cristal 450ms ease-out;
 }
 
 ::view-transition-old(barra) {
@@ -385,9 +390,9 @@ dialog[open]::backdrop {
   animation-timing-function: cubic-bezier(0.33, 1, 0.68, 1);
 }
 
-/* Al entrar, la tarjeta se pone al rojo mientras se convierte en la cabecera, y se enfría al llegar */
+/* Al entrar, la tarjeta se pone al rojo mientras se convierte en la cabecera, y se enfría al llegar (con su grupo) */
 html:active-view-transition-type(entrar-mundo)::view-transition-image-pair(mundo-actual) {
-  animation: al-rojo 1300ms ease-out;
+  animation: al-rojo 1150ms ease-out;
 }
 
 /* Las brasas: un calor que sube desde abajo y unas chispas que se apagan (world-transition.ts); van por encima */
@@ -573,9 +578,10 @@ html:active-view-transition-type(entrar-mundo)::view-transition-old(contenido) {
   animation: atraviesa 320ms cubic-bezier(0.2, 0.7, 0.4, 1) both;
 }
 
+/* Lo nuevo acaba con la tarjeta que se posa (su grupo, 1150 ms), no después: nada se mueve ya cuando se quita la capa */
 html:active-view-transition-type(entrar-mundo)::view-transition-new(root),
 html:active-view-transition-type(entrar-mundo)::view-transition-new(contenido) {
-  animation: llega 850ms cubic-bezier(0.33, 1, 0.68, 1) 460ms both;
+  animation: llega 690ms cubic-bezier(0.33, 1, 0.68, 1) 460ms both;
 }
 
 /* Al salir, sin hueco entre medias: el mundo se aleja mientras Mis mundos llega (con un hueco, Mis mundos asomaba, se

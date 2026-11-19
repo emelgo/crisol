@@ -259,6 +259,9 @@ function LookCard({
   )
 }
 
+/** Lo que se espera, como mucho, a la portada de un mundo antes de entrar en él */
+const ENTER_WAIT_MS = 700
+
 /** La tarjeta de un mundo: lleva a él, y al entrar se convierte en su cabecera */
 export function WorldCard({
   world,
@@ -276,23 +279,25 @@ export function WorldCard({
   const kind = useWorldKind()
   const api = useApi()
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
   // Al acercarse, su portada se pide ya: al entrar, sale sin esperar
-  const prefetch = () => {
-    if (world.role !== 'master') return
-    void queryClient
+  const prefetch = (): Promise<unknown> => {
+    if (world.role !== 'master') return Promise.resolve()
+    return queryClient
       .fetchQuery({
         queryKey: ['pages', world.id, 'home'],
         queryFn: () => api.call('getWorldHome', { worldId: world.id }),
         staleTime: 30_000
       })
-      .then(({ pageId }) => {
-        if (pageId)
-          void queryClient.prefetchQuery({
-            queryKey: ['pages', world.id, 'page', pageId],
-            queryFn: () => api.call('getPage', { pageId }),
-            staleTime: 30_000
-          })
-      })
+      .then(({ pageId }) =>
+        pageId
+          ? queryClient.prefetchQuery({
+              queryKey: ['pages', world.id, 'page', pageId],
+              queryFn: () => api.call('getPage', { pageId }),
+              staleTime: 30_000
+            })
+          : undefined
+      )
       .catch(() => undefined)
   }
   return (
@@ -304,7 +309,7 @@ export function WorldCard({
       burning={burning}
       {...(onBurnt ? { onBurnt } : {})}
       onPreview={(shown) => {
-        if (shown) prefetch()
+        if (shown) void prefetch()
         onPreview?.(shown)
       }}
       name={
@@ -313,7 +318,16 @@ export function WorldCard({
           params={{ worldId: world.id }}
           className={styles.name}
           viewTransition={ENTER_WORLD}
-          onClick={(event) => enterWorld(world.id, event.currentTarget.closest('li'))}
+          onClick={(event) => {
+            enterWorld(world.id, event.currentTarget.closest('li'))
+            // Se entra con su portada ya pedida (como mucho, un momento): si llegara a mitad de la transición, su cabecera
+            // se volvería a montar y el navegador cortaría la transición en seco (el salto del final)
+            if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+            event.preventDefault()
+            void Promise.race([prefetch(), new Promise((resolve) => setTimeout(resolve, ENTER_WAIT_MS))]).then(() =>
+              navigate({ to: '/mundos/$worldId', params: { worldId: world.id }, viewTransition: ENTER_WORLD })
+            )
+          }}
         >
           {world.name}
         </Link>
@@ -424,7 +438,7 @@ export function LookHeader({
   const [viewing, setViewing] = useState(false)
   if (banner) {
     return (
-      <header className={styles.banner} style={{ ...tint(look.color), ...style }}>
+      <header className={styles.banner} style={{ ...tint(look.color), ...style }} data-mundo-portada="">
         <CoverHeader
           url={image?.url}
           cover={look.cover}
@@ -445,7 +459,7 @@ export function LookHeader({
     )
   }
   return (
-    <header className={styles.hero} style={{ ...tint(look.color), ...style }}>
+    <header className={styles.hero} style={{ ...tint(look.color), ...style }} data-mundo-portada="">
       <CoverHeader
         url={image?.url}
         cover={look.cover}
