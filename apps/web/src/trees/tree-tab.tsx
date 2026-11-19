@@ -5,7 +5,7 @@
  * adopción, expareja, hermanos, dirige, miembro u otra con su nombre); no se deduce ninguna. Cada nodo es una página del
  * mundo o solo un nombre (con la raya discontinua), que se convierte en página cuando haga falta. Pulsar un nodo lo
  * elige (su ficha, arriba a la derecha): desde ella se le añade alguien con su relación, se abre su página, se crea la de
- * uno suelto, se le cambia el nombre o se quita. El doble clic abre su página. «Añadir persona» (suelta, sin línea), en
+ * uno suelto, se le cambia el nombre o se quita. El doble clic abre su página. «Añadir al árbol» (suelta, sin línea), en
  * la píldora de abajo en el centro, como el «+» de la cronología. Vacío, una sola pieza en el centro (y «Empezar desde
  * los campos» si la página tiene campos con papel). Quien juega lo ve con lo que conoce, sin editar
  */
@@ -258,7 +258,7 @@ export function TreeTab({ page, tab, editable }: { page: Page; tab: PageTabView;
   }
   const removeEdge = (edge: TreeEdgeView) => save.mutate({ nodes, edges: edges.filter((each) => each !== edge) })
 
-  // «Añadir persona», abajo en el centro como el «+» de la cronología (suelta: sus líneas, desde su ficha)
+  // «Añadir al árbol», abajo en el centro como el «+» de la cronología (suelta: sus líneas, desde su ficha)
   const pill = canEdit && nodes.length > 0 && (
     <div className={relationStyles.pill}>
       <button
@@ -650,7 +650,7 @@ function NodeCard({
 /**
  * Añadir a alguien: junto a un nodo, primero su relación con él (un desplegable con todas; «Otra», con su nombre y dónde
  * va); luego se escribe su nombre y se elige una página del mundo (o alguien que ya está en el árbol, para unirlo con esa
- * línea) o se añade solo con su nombre. Sin nodo («Añadir persona»), solo el buscador
+ * línea) o se añade solo con su nombre. Sin nodo («Añadir al árbol»), solo el buscador
  */
 function AddDialog({
   worldId,

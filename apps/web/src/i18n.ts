@@ -2229,6 +2229,7 @@ export const es = {
       newPage: 'Página',
       newEventTitle: 'Un evento nuevo en este día',
       newPageTitle: 'Una página nueva con esta fecha',
+      deleteEvent: 'Borrar «{{title}}»',
       dateProperty: 'Fecha',
       outside_one: 'Una fecha de otro calendario no se puede pasar a este: le falta la correspondencia.',
       outside_other: '{{count}} fechas de otros calendarios no se pueden pasar a este: les falta la correspondencia.'
@@ -2492,7 +2493,7 @@ export const es = {
   // La pestaña de árbol genealógico u organigrama (bloque B de los ajustes tras los módulos 8 a 10)
   trees: {
     label: 'Árbol {{name}}',
-    add: 'Añadir persona',
+    add: 'Añadir al árbol',
     first: 'Añadir a alguien',
     empty: 'Quién es quién para quién: familia, parejas, quién dirige… cada relación, a mano.',
     emptyRead: 'Aún no hay nadie aquí.',
@@ -2564,7 +2565,7 @@ export const es = {
       leads: 'Dirige'
     },
     addTitle: {
-      first: 'Añadir persona',
+      first: 'Añadir al árbol',
       parent: 'Padre o madre de {{name}}',
       child: 'Hijo o hija de {{name}}',
       partner: 'Pareja de {{name}}',
@@ -5160,6 +5161,10 @@ export const es = {
       views: 'Mes, semana o año. El título lleva a otra fecha.',
       edit: 'Para cambiar cómo es el calendario.'
     },
+    rulesView: {
+      index: 'Salta a cada parte de las reglas.',
+      edit: 'Para cambiar las reglas, paso a paso.'
+    },
     dice: {
       card: 'Junta los dados que quieras y tíralos. Con el botón derecho, quitas uno.',
       roll: 'Las tiradas de la campaña, aquí.'
@@ -5202,10 +5207,6 @@ export const es = {
     notes: {
       list: 'Tus notas, con subpáginas si quieres. Solo las lees tú y el máster.',
       text: 'Escribe aquí: se guarda solo. Con «[[» enlazas lo que conoces del mundo.'
-    },
-    rulesView: {
-      index: 'Salta a cada parte de las reglas.',
-      edit: 'Para cambiar las reglas, paso a paso.'
     },
     system: {
       books: 'Los libros del sistema: cada uno llena su compendio. Pulsa uno para abrirlo.',

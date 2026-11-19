@@ -24,7 +24,7 @@ import {
 } from '@crisol/domain'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getRouteApi, Link, Navigate, useNavigate } from '@tanstack/react-router'
-import { CalendarPlus, FilePlus, Pencil, Sparkles, X } from 'lucide-react'
+import { CalendarPlus, FilePlus, Pencil, Sparkles, Trash2, X } from 'lucide-react'
 import { type CSSProperties, useEffect, useId, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
@@ -35,6 +35,7 @@ import { type CalendarPlace, CalendarView, placeOfMonth } from '../chronologies/
 import chrono from '../chronologies/chronologies.module.css'
 import { EventCard } from '../chronologies/event-card.tsx'
 import { EventDialog, type EventDraft } from '../chronologies/event-dialog.tsx'
+import { ConfirmDelete } from '../chronologies/screen.tsx'
 import { useAnnounce } from '../components/announcer.tsx'
 import { Loading } from '../components/brand.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
@@ -116,6 +117,17 @@ function BigCalendar({
   const data = useQuery({
     queryKey: calendarEntriesQuery(calendar.id),
     queryFn: () => api.call('listCalendarEntries', { calendarId: calendar.id })
+  })
+  // Borrar un evento desde la ficha del día (se confirma; se deshace desde el historial)
+  const [deleting, setDeleting] = useState<ChronologyEntryView | null>(null)
+  const removeEvent = useMutation({
+    mutationFn: (entry: ChronologyEntryView) => api.call('deleteTimelineEvent', { eventId: entry.eventId ?? '' }),
+    onSuccess: async (_, entry) => {
+      await client.invalidateQueries({ queryKey: calendarEntriesQuery(calendar.id) })
+      await client.invalidateQueries({ queryKey: ['chronology'] })
+      announce(t('chronologies.removed', { title: entry.title }))
+    },
+    onError: (error) => announce(errorText(error))
   })
   // A qué cronología va un evento nuevo (ADR-0032): las del mundo, primero las que usan este calendario
   const chronologies = useQuery({
@@ -289,6 +301,7 @@ function BigCalendar({
             onNewEvent={() => setDialog({ date: { calendarId: calendar.id, start: dateFromDay(definition, shown) } })}
             onNewPage={() => datedPage.mutate(dateFromDay(definition, shown))}
             onEdit={(entry) => setDialog({ entry })}
+            onDelete={setDeleting}
           />
         ) : null
       }
@@ -399,6 +412,14 @@ function BigCalendar({
       {(data.data?.outside ?? 0) > 0 && (
         <p className={styles.outside}>{t('calendars.view.outside', { count: data.data?.outside ?? 0 })}</p>
       )}
+      {deleting && (
+        <ConfirmDelete
+          entry={deleting}
+          busy={removeEvent.isPending}
+          onConfirm={() => removeEvent.mutate(deleting, { onSettled: () => setDeleting(null) })}
+          onClose={() => setDeleting(null)}
+        />
+      )}
       {dialog && (
         <EventDialog
           worldId={worldId}
@@ -441,7 +462,8 @@ function DayAside({
   onClose,
   onNewEvent,
   onNewPage,
-  onEdit
+  onEdit,
+  onDelete
 }: {
   worldId: string
   definition: CalendarDefinition
@@ -458,6 +480,7 @@ function DayAside({
   onNewEvent: () => void
   onNewPage: () => void
   onEdit: (entry: ChronologyEntryView) => void
+  onDelete: (entry: ChronologyEntryView) => void
 }) {
   const { t } = useTranslation()
   const titleId = useId()
@@ -521,6 +544,19 @@ function DayAside({
                 compact
                 headingLevel={3}
                 titleAction={entry.kind === 'event' ? () => onEdit(entry) : undefined}
+                actions={
+                  entry.kind === 'event' ? (
+                    <button
+                      type="button"
+                      className={styles.deleteEvent}
+                      aria-label={t('calendars.view.deleteEvent', { title: entry.title })}
+                      title={t('calendars.view.deleteEvent', { title: entry.title })}
+                      onClick={() => onDelete(entry)}
+                    >
+                      <Trash2 size={14} aria-hidden="true" />
+                    </button>
+                  ) : undefined
+                }
               />
             ))}
           </div>

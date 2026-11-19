@@ -931,7 +931,7 @@ function RedateDialog({
 }
 
 /** Borrar un evento: se confirma (se deshace desde el historial) */
-function ConfirmDelete({
+export function ConfirmDelete({
   entry,
   busy,
   onConfirm,

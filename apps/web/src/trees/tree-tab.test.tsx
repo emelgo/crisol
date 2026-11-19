@@ -105,7 +105,7 @@ describe('la pestaña «Árbol»', () => {
   it('vacía, una sola pieza; se añade alguien con su página o solo con su nombre, y su familia desde su ficha', async () => {
     const { api, tab } = await setup()
     await userEvent.click(await screen.findByRole('button', { name: 'Añadir a alguien' }))
-    let dialog = within(await screen.findByRole('dialog', { name: 'Añadir persona' }))
+    let dialog = within(await screen.findByRole('dialog', { name: 'Añadir al árbol' }))
     await userEvent.type(dialog.getByRole('combobox', { name: 'Busca una página o escribe un nombre' }), 'ilsa')
     await userEvent.keyboard('{Enter}')
     await waitFor(async () =>

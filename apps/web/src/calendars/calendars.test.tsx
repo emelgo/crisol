@@ -279,6 +279,24 @@ describe('un calendario en grande', () => {
     expect(screen.queryByRole('dialog')).toBeNull()
   })
 
+  it('un evento se borra desde la ficha del día, tras confirmarlo', async () => {
+    open({
+      events: [
+        {
+          worldId: WORLD.id,
+          title: 'Boda de Ilsa',
+          date: { calendarId: VARN.id ?? '', start: { year: 0, month: 'ene', day: 3 } }
+        }
+      ]
+    })
+    await userEvent.click(await screen.findByRole('cell', { name: / 3 de Enero de 0 RV$/ }))
+    const day = screen.getByRole('complementary', { name: 'El día elegido' })
+    await userEvent.click(within(day).getByRole('button', { name: 'Borrar «Boda de Ilsa»' }))
+    const confirm = await screen.findByRole('dialog', { name: '¿Borrar «Boda de Ilsa»?' })
+    await userEvent.click(within(confirm).getByRole('button', { name: 'Borrar' }))
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Boda de Ilsa' })).toBeNull())
+  })
+
   it('pulsar un evento en la rejilla elige su día y lo abre para editarlo', async () => {
     open({
       events: [

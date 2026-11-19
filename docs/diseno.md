@@ -460,7 +460,7 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   deduce ninguna. Las tarjetas, a sangre; las líneas que no son de sangre ni de pareja, discontinuas y con su nombre.
   Pulsar una tarjeta abre su ficha arriba a la derecha con «Padre o madre», «Pareja», «Hijo o hija» y «Otra relación»
   (un desplegable con todas) como texto con su +, sus líneas (con su × al acercarse), «Abrir» o «Crear página», «Nota»
-  o «Nombre» y «Quitar». **«Añadir persona», abajo en el centro en una píldora** (como el «+» de la cronología; «el
+  o «Nombre» y «Quitar». **«Añadir al árbol», abajo en el centro en una píldora** (como el «+» de la cronología; «el
   añadir del árbol no tiene sentido ahí», a la derecha de las pestañas). Añadir es un buscador: una página del mundo,
   alguien que ya está en el árbol o solo un nombre (su tarjeta, con la raya discontinua hasta que tenga página). Vacío,
   una sola pieza en el centro con «Añadir a alguien» y, si la página tiene campos con papel, «Empezar desde los campos».

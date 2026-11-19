@@ -204,7 +204,7 @@ ADR-0032. En local (http://localhost:5173) ya están aplicadas las dos migracion
   (escríbela)», con su nombre y si va encima, debajo o al lado). Añadir el hijo de alguien con pareja ya **no** lo hace
   hijo de la pareja: añade la otra línea si lo es. Lo que no es de sangre ni de pareja sale con raya discontinua y su
   nombre («Adopción», «Madrina»…); dos que comparten un hijo no salen como pareja si no lo has dicho.
-- [ ] **«Añadir persona»**, abajo en el centro (como el «+» de la cronología); ya no está a la derecha de las pestañas.
+- [ ] **«Añadir al árbol»**, abajo en el centro (como el «+» de la cronología); ya no está a la derecha de las pestañas.
 - [ ] **La IA**: «pasa estos eventos a la cronología de la Historia» (`crear_eventos` con su cronología) y «haz un
   organigrama de la Orden con su maestre y dos caballeros» (`crear_arbol_genealogico` con `leads` y `member`); «Eloy es el
   padrino de Ciro» (una libre, `other` con `label`).
