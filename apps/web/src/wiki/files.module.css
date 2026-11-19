@@ -504,12 +504,16 @@
 }
 
 /* Una imagen, entera y centrada, sin el fondo (que queda para los iconos de lo demás): encoge a su forma dentro del
-   hueco y lleva las esquinas ella (no la miniatura, que deja asomar la casilla de elegir) */
+   hueco (medido sobre él: en la rejilla, una muy alta se salía por arriba y por abajo) y lleva las esquinas ella (no la
+   miniatura, que deja asomar la casilla de elegir) */
 .rowThumb:has(> img) {
   background: none;
 }
 
 .rowThumb img {
+  position: absolute;
+  inset: 0;
+  margin: auto;
   max-inline-size: 100%;
   max-block-size: 100%;
   border-radius: inherit;
