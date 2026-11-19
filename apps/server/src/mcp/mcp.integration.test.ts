@@ -1054,7 +1054,7 @@ describe('conector MCP con OAuth', () => {
       date: '1250-Siega-18'
     })
     expect(described.data.date).toMatchObject({
-      text: 'Frostelle, 18 de Siega de 1250 RC',
+      text: 'Frostelle, 18 de Siega del año 1250 RC',
       season: 'Verano',
       era: { name: 'Era de la República' }
     })
@@ -1096,8 +1096,8 @@ describe('conector MCP con OAuth', () => {
     const masterDates = (await call<{ dates: { name: string; text: string }[] }>('leer_pagina', { pageId: aldoria }))
       .data.dates
     expect(masterDates).toEqual([
-      expect.objectContaining({ name: 'Fundación', text: '12 de Siega – 3 de Trilla de 1250 RC' }),
-      expect.objectContaining({ name: 'Coronación', text: '5 de Vendimia de 1302 RC' })
+      expect.objectContaining({ name: 'Fundación', text: '12 de Siega – 3 de Trilla del año 1250 RC' }),
+      expect.objectContaining({ name: 'Coronación', text: '5 de Vendimia del año 1302 RC' })
     ])
     // Las cronologías (módulo 8): la IA del máster crea una (ADR-0031: una pestaña; sin página, una nueva con su
     // nombre), le pasa sus eventos de una vez con crear_eventos (ADR-0032: son suyos) y la lee en orden con

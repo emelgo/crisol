@@ -340,7 +340,7 @@ export const dateInput = z
   .describe('1250-Siega-18 (o 1250-03-18, el mes por su número sin contar festividades; 1250-03; 1250; -980-01-01)')
 
 const describedDate = z.object({
-  text: z.string().describe('«Flora, 18 de Siega de 1250 RC»'),
+  text: z.string().describe('«Flora, 18 de Siega del año 1250 RC»'),
   form: z.string().describe('La forma con el nombre del mes: 1250-Siega-18'),
   precision: z.enum(['year', 'month', 'day']),
   weekday: z.string().nullable(),

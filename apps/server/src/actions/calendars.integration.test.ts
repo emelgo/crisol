@@ -206,7 +206,7 @@ describe('los calendarios de un mundo (módulo 8)', () => {
       calendarId: id,
       calendar: 'Eana',
       date: {
-        text: 'Frostelle, 18 de Siega de 1250 RC',
+        text: 'Frostelle, 18 de Siega del año 1250 RC',
         form: '1250-Siega-18',
         weekday: 'Frostelle',
         season: 'Verano',
@@ -297,7 +297,7 @@ describe('los calendarios de un mundo (módulo 8)', () => {
     const first = elves.definition.months[0].id
     const before = await ok200('convertDate', { calendarId: primary.id, to: elves.id, date: '1250-Siega-18' })
     const inPrimary = await ok200('describeDate', { calendarId: elves.id, date: { year: 0, month: first, day: 1 } })
-    expect(inPrimary.primary).toMatchObject({ calendarId: primary.id, text: '1 de Cierzo de -300 RC' })
+    expect(inPrimary.primary).toMatchObject({ calendarId: primary.id, text: '1 de Cierzo del año -300 RC' })
     expect((await ok200('getCalendar', { calendarId: elves.id })).convertible).toBe(true)
 
     await ok200('updateCalendar', { calendarId: elves.id, primary: true })

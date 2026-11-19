@@ -62,15 +62,15 @@ describe('el calendario de Eana', () => {
   })
 
   it('escribe las fechas en español, con el artículo de las festividades', () => {
-    expect(formatDate(EANA, d(18, 'Hojarasca'))).toBe('18 de Hojarasca de 331 RC')
-    expect(formatDate(EANA, d(4, 'Semana del Yunque', 332))).toBe('4 de la Semana del Yunque de 332 RC')
-    expect(formatDate(EANA, d(4, 'Alba Triste'))).toBe('4 del Alba Triste de 331 RC')
+    expect(formatDate(EANA, d(18, 'Hojarasca'))).toBe('18 de Hojarasca del año 331 RC')
+    expect(formatDate(EANA, d(4, 'Semana del Yunque', 332))).toBe('4 de la Semana del Yunque del año 332 RC')
+    expect(formatDate(EANA, d(4, 'Alba Triste'))).toBe('4 del Alba Triste del año 331 RC')
     expect(formatDate(EANA, d(2, 'Carnaval'), { noYear: true })).toBe('2 del Carnaval')
     expect(formatDate(EANA, d(1, 'Semana de las Hermanas'), { weekday: true })).toBe(
-      'Herrero, 1 de la Semana de las Hermanas de 331 RC'
+      'Herrero, 1 de la Semana de las Hermanas del año 331 RC'
     )
-    expect(formatDate(EANA, { year: 1250, month: id(EANA, 'Siega') })).toBe('Siega de 1250 RC')
-    expect(formatDate(EANA, { year: -980 })).toBe('-980 RC')
+    expect(formatDate(EANA, { year: 1250, month: id(EANA, 'Siega') })).toBe('Siega del año 1250 RC')
+    expect(formatDate(EANA, { year: -980 })).toBe('Año -980 RC')
   })
 
   it('cada mes y cada semana festiva empiezan en Herrero', () => {
@@ -122,7 +122,7 @@ describe('el calendario de Eana', () => {
     // Cada mes empieza en Herrero: el 18 es Frostelle (17 días después; 17 mod 7 = 3)
     expect(described.dayOfYear).toBe(7 * 3 + 28 * 6 + 18)
     expect(described.weekday).toBe('Frostelle')
-    expect(described.text).toBe('Frostelle, 18 de Siega de 1250 RC')
+    expect(described.text).toBe('Frostelle, 18 de Siega del año 1250 RC')
     expect(described.form).toBe('1250-Siega-18')
     expect(described.season).toBe('Verano')
     expect(described.era).toEqual({ id: 'republica', name: 'Era de la República', abbreviation: 'ER' })
@@ -286,7 +286,7 @@ describe('días fuera de la semana', () => {
     expect(formatYear(HARPTOS_LIKE, -980)).toBe('980 a. V.')
     expect(formatYear(HARPTOS_LIKE, 0)).toBe('0 CV')
     expect(formatDate(HARPTOS_LIKE, { year: -3, month: 'fiesta', day: 2 })).toBe(
-      '2 de la Fiesta del Medio Año de 3 a. V.'
+      '2 de la Fiesta del Medio Año del año 3 a. V.'
     )
   })
 })
@@ -307,7 +307,7 @@ describe('precisión, recortar y repetir', () => {
     const short = { ...EANA, months: EANA.months.map((m) => (m.id === 'siega' ? { ...m, days: 20 } : m)) }
     expect(clampDate(short, { year: 1, month: 'siega', day: 25 })).toEqual({ year: 1, month: 'siega', day: 20 })
     expect(isValidDate(short, { year: 1, month: 'siega', day: 25 })).toBe(false)
-    expect(formatDate(short, { year: 1, month: 'siega', day: 25 })).toBe('20 de Siega de 1 RC')
+    expect(formatDate(short, { year: 1, month: 'siega', day: 25 })).toBe('20 de Siega del año 1 RC')
   })
 
   it('un mes que no existe es un error', () => {
@@ -351,17 +351,20 @@ describe('eras', () => {
     ]
   }
   it('una era que cuenta desde su inicio numera sus años desde 1 con su abreviatura', () => {
-    expect(formatDate(regnal, { year: 1249, month: 'siega', day: 3 })).toBe('3 de Siega de 34 ER')
-    expect(formatDate(regnal, { year: 1216, month: 'pastos', day: 3 })).toBe('3 de Pastos de 1216 RC')
-    expect(formatDate(regnal, { year: 1216, month: 'siega', day: 1 })).toBe('1 de Siega de 1 ER')
+    expect(formatDate(regnal, { year: 1249, month: 'siega', day: 3 })).toBe('3 de Siega del año 34 ER')
+    expect(formatDate(regnal, { year: 1216, month: 'pastos', day: 3 })).toBe('3 de Pastos del año 1216 RC')
+    expect(formatDate(regnal, { year: 1216, month: 'siega', day: 1 })).toBe('1 de Siega del año 1 ER')
   })
 
   it('con la era detrás, si se pide (y la preposición según su nombre)', () => {
-    expect(formatDate(EANA, d(1, 'Cierzo'), { era: true })).toBe('1 de Cierzo de 331 RC de la Era de la República')
-    expect(formatDate(EANA, d(1, 'Cierzo'))).toBe('1 de Cierzo de 331 RC')
-    expect(formatDate(EANA, { year: -5000 }, { era: true })).toBe('-5000 RC de la Era de los Reyes Predestinados')
+    expect(formatDate(EANA, d(1, 'Cierzo'), { era: true })).toBe('1 de Cierzo del año 331 RC de la Era de la República')
+    expect(formatDate(EANA, d(1, 'Cierzo'))).toBe('1 de Cierzo del año 331 RC')
+    expect(formatDate(EANA, { year: -5000 }, { era: true })).toBe('Año -5000 RC de la Era de los Reyes Predestinados')
+    expect(formatDate(EANA, d(18, 'Siega', 1250), { weekday: true, era: true })).toBe(
+      'Frostelle, 18 de Siega del año 1250 RC de la Era de la República'
+    )
     expect(formatDate(EANA, d(1, 'Cierzo'), { era: true, noYear: true })).toBe('1 de Cierzo')
-    expect(formatDate(GREGORIAN, g(2014, 1, 1), { era: true })).toBe('1 de Enero de 2014')
+    expect(formatDate(GREGORIAN, g(2014, 1, 1), { era: true })).toBe('1 de Enero del año 2014')
     expect(eraWithPreposition('Edad Oscura')).toBe('de la Edad Oscura')
     expect(eraWithPreposition('Segunda Edad')).toBe('de la Segunda Edad')
     expect(eraWithPreposition('Erathis')).toBe('de la era Erathis')
@@ -411,7 +414,7 @@ describe('el texto y la forma de la IA', () => {
     expect(parseDate(EANA, '1250-Siega-29')).toMatchObject({
       ok: false,
       reason: 'DAY',
-      message: 'Siega de 1250 tiene 28 días'
+      message: 'Siega del año 1250 tiene 28 días'
     })
     expect(parseDate(EANA, '1250-17')).toMatchObject({ ok: false, reason: 'MONTH' })
   })
@@ -424,10 +427,19 @@ describe('el texto y la forma de la IA', () => {
   })
 
   it('un periodo sin repetir lo que comparten', () => {
-    expect(formatRange(EANA, d(12, 'Siega', 1250), d(18, 'Siega', 1250))).toBe('12–18 de Siega de 1250 RC')
-    expect(formatRange(EANA, d(12, 'Siega', 1250), d(3, 'Trilla', 1250))).toBe('12 de Siega – 3 de Trilla de 1250 RC')
-    expect(formatRange(EANA, { year: 1250 }, { year: 1262 })).toBe('1250 RC – 1262 RC')
-    expect(formatRange(EANA, d(1, 'Siega'), null)).toBe('1 de Siega de 331 RC')
+    expect(formatRange(EANA, d(12, 'Siega', 1250), d(18, 'Siega', 1250))).toBe('12–18 de Siega del año 1250 RC')
+    expect(formatRange(EANA, d(12, 'Siega', 1250), d(3, 'Trilla', 1250))).toBe(
+      '12 de Siega – 3 de Trilla del año 1250 RC'
+    )
+    expect(formatRange(EANA, d(18, 'Siega', 1250), d(3, 'Trilla', 1251))).toBe(
+      '18 de Siega del año 1250 RC – 3 de Trilla del año 1251 RC'
+    )
+    expect(formatRange(EANA, { year: 1250, month: id(EANA, 'Siega') }, { year: 1250, month: id(EANA, 'Trilla') })).toBe(
+      'Siega – Trilla del año 1250 RC'
+    )
+    expect(formatRange(EANA, { year: 1250 }, { year: 1262 })).toBe('Años 1250–1262 RC')
+    expect(formatRange(EANA, { year: -980 }, { year: 3 })).toBe('Años -980 RC – 3 RC')
+    expect(formatRange(EANA, d(1, 'Siega'), null)).toBe('1 de Siega del año 331 RC')
   })
 
   it('la distancia en la unidad natural más grande', () => {

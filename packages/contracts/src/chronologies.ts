@@ -98,7 +98,7 @@ export const chronologyEntry = z.object({
   yearly: z.literal(true).optional(),
   startDay: z.int().describe('El día absoluto en que empieza (en el calendario de la cronología)'),
   endDay: z.int(),
-  text: z.string().describe('«18 de Siega de 1250 RC»'),
+  text: z.string().describe('«18 de Siega del año 1250 RC»'),
   form: z.string().describe('La forma de la IA: 1250-Siega-18'),
   converted: z
     .object({ calendarId: z.string(), name: z.string(), text: z.string(), date: dateValue })

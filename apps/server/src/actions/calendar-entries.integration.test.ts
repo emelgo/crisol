@@ -89,9 +89,9 @@ describe('lo que cae en un calendario (vista grande)', () => {
 
     const out = await ok200('listCalendarEntries', { calendarId: varn.id })
     expect(out.entries.map((e: { title: string; text: string }) => [e.title, e.text])).toEqual([
-      ['Llegada de los elfos', '2 de Enero de 100'],
-      ['Puerto Ceniza', '21 de Junio de 412'],
-      ['Boda de Ilsa', '18 de Marzo de 1247']
+      ['Llegada de los elfos', '2 de Enero del año 100'],
+      ['Puerto Ceniza', '21 de Junio del año 412'],
+      ['Boda de Ilsa', '18 de Marzo del año 1247']
     ])
     expect(out.entries[0]).toMatchObject({
       kind: 'event',

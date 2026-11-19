@@ -281,8 +281,8 @@ describe('las columnas de la vista de meses', () => {
     ])
     const days = timeColumns(EANA, 'days', from + 30, from + 40)
     expect(timeBands(EANA, 'days', days).map((b) => [b.label, b.span])).toEqual([
-      ['Cierzo de 1250 RC', 5],
-      ['Escarcha de 1250 RC', 6]
+      ['Cierzo del año 1250 RC', 5],
+      ['Escarcha del año 1250 RC', 6]
     ])
   })
 })

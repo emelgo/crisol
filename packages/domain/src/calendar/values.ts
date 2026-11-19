@@ -31,7 +31,7 @@ function dateProblem(def: CalendarDefinition, date: WorldDate): string | null {
   if (!def.months.some((m) => m.id === date.month)) return `el mes «${date.month}» no existe en el calendario`
   if (isValidDate(def, date)) return null
   const parsed = parseDate(def, { year: date.year, month: date.month, ...(date.day ? { day: date.day } : {}) })
-  return parsed.ok ? `${monthName(def, date.month)} de ${date.year} no tiene ese día` : parsed.message
+  return parsed.ok ? `${monthName(def, date.month)} del año ${date.year} no tiene ese día` : parsed.message
 }
 
 /** Por qué no vale un valor en su calendario (un mes que no existe, un día fuera, el fin antes), o null */
@@ -47,7 +47,7 @@ export function dateValueProblem(def: CalendarDefinition, value: Omit<DateValue,
   return null
 }
 
-/** Para leerla: «18 de Siega de 1250 RC», «12 de Siega – 3 de Trilla de 1250 RC» (sin repetir lo que comparten) */
+/** Para leerla: «18 de Siega del año 1250 RC», «12 de Siega – 3 de Trilla del año 1250 RC» (sin repetir lo común) */
 export const formatDateValue = (def: CalendarDefinition, value: Omit<DateValue, 'calendarId'>) =>
   formatRange(def, value.start, value.end)
 

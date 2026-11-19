@@ -146,14 +146,14 @@ describe('las propiedades «Fecha» (módulo 8)', () => {
       name: 'Fundación',
       type: 'date',
       value,
-      text: '12 de Siega de 412 RC'
+      text: '12 de Siega del año 412 RC'
     })
     const range = { ...value, end: { year: 412, month: siega, day: 20 }, yearly: true }
     await ok200('setPageProperties', {
       pageId: puerto,
       properties: [{ name: 'Fundación', type: 'date', value: range }]
     })
-    expect((await dateOf(puerto, 'Fundación'))?.text).toBe('12–20 de Siega de 412 RC')
+    expect((await dateOf(puerto, 'Fundación'))?.text).toBe('12–20 de Siega del año 412 RC')
     await ok200('setPageProperties', { pageId: puerto, properties: [{ name: 'Fundación', type: 'date', value: null }] })
     expect(await dateOf(puerto, 'Fundación')).toEqual({ name: 'Fundación', type: 'date', value: null })
     await undo('setPageProperties')
@@ -192,25 +192,25 @@ describe('las propiedades «Fecha» (módulo 8)', () => {
       calendarId: calendar.id,
       start: { year: -34, month: siega, day: 3 }
     })
-    expect(byName.get('Viaje')?.text).toBe('12 de Siega – 3 de Trilla de 412 RC')
+    expect(byName.get('Viaje')?.text).toBe('12 de Siega – 3 de Trilla del año 412 RC')
     expect(byName.get('Fiesta')?.value?.yearly).toBe(true)
     expect(byName.get('Muerte')?.value).toBeNull()
     const read = await ok200('readPage', { pageId: gris })
     expect(read.markdown).toContain('Viaje: "412-Siega-12/412-Trilla-3"')
     expect(read.markdown).toContain('Fiesta: "1-Semana del Yunque (cada año)"')
     expect(read.dates).toEqual([
-      { name: 'Nacimiento', calendar: 'Eana', text: '3 de Siega de -34 RC', form: '-34-Siega-3', primary: null },
+      { name: 'Nacimiento', calendar: 'Eana', text: '3 de Siega del año -34 RC', form: '-34-Siega-3', primary: null },
       {
         name: 'Viaje',
         calendar: 'Eana',
-        text: '12 de Siega – 3 de Trilla de 412 RC',
+        text: '12 de Siega – 3 de Trilla del año 412 RC',
         form: '412-Siega-12/412-Trilla-3',
         primary: null
       },
       {
         name: 'Fiesta',
         calendar: 'Eana',
-        text: 'Semana del Yunque de 1 RC',
+        text: 'Semana del Yunque del año 1 RC',
         form: '1-Semana del Yunque (cada año)',
         primary: null
       }
@@ -236,7 +236,7 @@ describe('las propiedades «Fecha» (módulo 8)', () => {
       pageId: gris,
       body: { mode: 'replace', markdown: '---\nNacimiento: -30-Siega-4\n---\nUna bruja.' }
     })
-    expect((await dateOf(gris, 'Nacimiento'))?.text).toBe('4 de Siega de -30 RC')
+    expect((await dateOf(gris, 'Nacimiento'))?.text).toBe('4 de Siega del año -30 RC')
     // Una plantilla «Personaje» con Nacimiento y Muerte (Fecha): la IA los rellena al crear
     const personaje = await ok200('createTemplate', { name: 'Personaje' })
     await ok200('updateTemplate', {
@@ -262,7 +262,7 @@ describe('las propiedades «Fecha» (módulo 8)', () => {
     const varn = created.pages[0].id
     const properties = (await ok200('getPage', { pageId: varn })).properties as DateProperty[]
     expect(properties.map((p) => [p.name, p.text ?? null, p.field !== undefined])).toEqual([
-      ['Nacimiento', '1 de Siega de 380 RC', true],
+      ['Nacimiento', '1 de Siega del año 380 RC', true],
       ['Muerte', null, true]
     ])
     expect(properties[1]).toMatchObject({ offTimeline: true, value: null })
@@ -305,15 +305,15 @@ describe('las propiedades «Fecha» (módulo 8)', () => {
       ]
     })
     // Lo que se guarda para buscar no lleva la era solo del máster (que cuenta desde su inicio)
-    expect((await dateOf(puerto, 'Coronación secreta'))?.text).toBe('5 de Trilla de 1305 RC')
+    expect((await dateOf(puerto, 'Coronación secreta'))?.text).toBe('5 de Trilla del año 1305 RC')
     // El máster la lee con su era
     const masterRead = await ok200('readPage', { pageId: puerto })
-    expect(masterRead.dates.map((d: { text: string }) => d.text)).toContain('5 de Trilla de 6 EE')
+    expect(masterRead.dates.map((d: { text: string }) => d.text)).toContain('5 de Trilla del año 6 EE')
     const asked = { campaignId: marca }
     const page = await ok200('getPage', { pageId: puerto, ...asked }, ana.cookie)
     const read = await ok200('readPage', { pageId: puerto, ...asked }, ana.cookie)
     const everything = JSON.stringify([page, read])
-    expect(everything).toContain('12 de Siega de 412 RC')
+    expect(everything).toContain('12 de Siega del año 412 RC')
     for (const leak of ['Coronación', '1305', 'Trilla', 'EE']) expect(everything).not.toContain(leak)
     expect(await search('Trilla')).toEqual(['Puerto Ceniza'])
     expect(await search('Trilla', ana.cookie)).toEqual([])
@@ -404,15 +404,15 @@ describe('las propiedades «Fecha» (módulo 8)', () => {
     })
     expect(saved.clipped).toBe(1)
     expect((await dateOf(puerto, 'Fundación'))?.value?.start.day).toBe(27)
-    expect((await dateOf(puerto, 'Fundación'))?.text).toBe('20 de Siega de 412 RC')
+    expect((await dateOf(puerto, 'Fundación'))?.text).toBe('20 de Siega del año 412 RC')
     // Renombrar el mes: cómo se leen (y se buscan) sus fechas cambia en la misma operación, que se deshace
     const renamed = shorter.map((m) => (m.id === siega ? { ...m, name: 'Cosecha' } : m))
     // (la era que empezaba en Siega, ahora en Cosecha: se escribe por el nombre)
     const eras = DEFINITION.eras.map((era) => ({ ...era, start: era.start.replace('Siega', 'Cosecha') }))
     await ok200('updateCalendar', { calendarId: calendar.id, definition: { ...DEFINITION, months: renamed, eras } })
-    expect((await dateOf(kharum, 'Fundación'))?.text).toBe('Cosecha de 380 RC')
+    expect((await dateOf(kharum, 'Fundación'))?.text).toBe('Cosecha del año 380 RC')
     expect(await search('Cosecha')).toEqual(expect.arrayContaining(['Puerto Ceniza', 'Kharum']))
     await undo('updateCalendar')
-    expect((await dateOf(kharum, 'Fundación'))?.text).toBe('Siega de 380 RC')
+    expect((await dateOf(kharum, 'Fundación'))?.text).toBe('Siega del año 380 RC')
   })
 })

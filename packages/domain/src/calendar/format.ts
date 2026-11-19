@@ -1,6 +1,6 @@
 /**
- * Las fechas en texto (docs/specs/calendarios.md § Fechas y su texto): en español para leerlas («Flora, 18 de Siega de
- * 1250 RC»), la forma de la IA (`1250-Siega-18`, `1250-03-18`, `1250-03`, `1250`, `-980-01-01`) y la distancia entre
+ * Las fechas en texto (docs/specs/calendarios.md § Fechas y su texto): en español para leerlas («Flora, 18 de Siega del
+ * año 1250 RC»; Enrique, 2026-11-20: «del año», no «de» y el número suelto), la forma de la IA (`1250-Siega-18`, `1250-03-18`, `1250-03`, `1250`, `-980-01-01`) y la distancia entre
  * dos («3 años después»).
  *
  * Origen: `packages/core/src/calendar/{format,events}.ts` del Crisol antiguo (código de Enrique, `~/CrisolVTT/crisol`,
@@ -73,7 +73,7 @@ export interface FormatOptions {
   weekday?: boolean
   /** Sin el año */
   noYear?: boolean
-  /** Detrás, la era en la que cae: «…de 2014 de la Era de la República» */
+  /** Detrás, la era en la que cae: «…del año 2014 de la Era de la República» */
   era?: boolean
 }
 
@@ -86,14 +86,20 @@ export function eraWithPreposition(name: string): string {
   return `de la era ${name}`
 }
 
-/** «1250 RC», «Siega de 1250 RC», «18 de Siega de 1250 RC» (con el día recortado si su mes se acortó) */
+/** El año solo, como se lee: «Año 1250 RC» */
+const yearAlone = (year: string) => `Año ${year}`
+
+/**
+ * «Año 1250 RC», «Siega del año 1250 RC», «18 de Siega del año 1250 RC», «Shieldmeet del año 1372 DR» (con el día
+ * recortado si su mes se acortó)
+ */
 export function formatDate(def: CalendarDefinition, date: WorldDate, options: FormatOptions = {}): string {
   const shown = clampDate(def, date)
   const year = formatYear(def, shown.year, shown)
-  if (shown.month === undefined) return withEra(def, shown, year, options)
+  if (shown.month === undefined) return withEra(def, shown, yearAlone(year), options)
   const month = monthOf(def, shown.month)
-  if (!month) return withEra(def, shown, year, options)
-  const withYear = (text: string) => (options.noYear ? text : `${text} de ${year}`)
+  if (!month) return withEra(def, shown, yearAlone(year), options)
+  const withYear = (text: string) => (options.noYear ? text : `${text} del año ${year}`)
   if (shown.day === undefined) return withEra(def, shown, withYear(month.name), options)
   const named = dayName(month, shown.day)
   let text = withYear(named ?? `${shown.day} ${monthWithPreposition(month)}`)
@@ -111,8 +117,8 @@ function withEra(def: CalendarDefinition, date: WorldDate, text: string, options
 }
 
 /**
- * Un periodo sin repetir lo que comparten sus extremos: «12–18 de Siega de 1250 RC», «12 de Siega – 3 de Trilla de
- * 1250 RC», «1250 RC – 1262 RC»
+ * Un periodo sin repetir lo que comparten sus extremos: «12–18 de Siega del año 1250 RC», «12 de Siega – 3 de Trilla
+ * del año 1250 RC», «Siega – Trilla del año 1250 RC», «Años 1250–1262 RC»
  */
 export function formatRange(def: CalendarDefinition, start: WorldDate, end: WorldDate | null | undefined): string {
   const from = formatDate(def, start)
@@ -121,15 +127,29 @@ export function formatRange(def: CalendarDefinition, start: WorldDate, end: Worl
   if (to === from) return from
   const a = clampDate(def, start)
   const b = clampDate(def, end)
-  const days = a.day !== undefined && b.day !== undefined
-  const sameEraYear = formatYear(def, a.year, a) === formatYear(def, b.year, b)
-  if (days && sameEraYear && a.year === b.year) {
-    const month = b.month ? monthOf(def, b.month) : undefined
-    if (a.month === b.month && month)
-      return `${a.day}–${b.day} ${monthWithPreposition(month)} de ${formatYear(def, b.year, b)}`
-    return `${formatDate(def, a, { noYear: true })} – ${to}`
+  const yearA = formatYear(def, a.year, a)
+  const yearB = formatYear(def, b.year, b)
+  if (a.month === undefined && b.month === undefined) return yearsRange(yearA, yearB)
+  const sameYear = yearA === yearB && a.year === b.year
+  const month = b.month ? monthOf(def, b.month) : undefined
+  if (sameYear && month && a.month !== undefined) {
+    if (a.day !== undefined && b.day !== undefined) {
+      if (a.month === b.month) return `${a.day}–${b.day} ${monthWithPreposition(month)} del año ${yearB}`
+      return `${formatDate(def, a, { noYear: true })} – ${to}`
+    }
+    if (a.day === undefined && b.day === undefined) return `${formatDate(def, a, { noYear: true })} – ${to}`
   }
   return `${from} – ${to}`
+}
+
+/** «Años 1250–1262 RC» si comparten sufijo; si no, «Años 980 AC – 3 DR» */
+function yearsRange(a: string, b: string): string {
+  const [numberA = a, ...restA] = a.split(' ')
+  const [numberB = b, ...restB] = b.split(' ')
+  const suffix = restA.join(' ')
+  if (suffix === restB.join(' ') && !numberA.startsWith('-') && !numberB.startsWith('-'))
+    return `Años ${numberA}–${numberB}${suffix ? ` ${suffix}` : ''}`
+  return `Años ${a} – ${b}`
 }
 
 /** La forma de la IA, con el nombre del mes (la que no cambia al reordenar): `1250-Siega-18`, `-980-Siega`, `1250` */
@@ -210,7 +230,7 @@ function withMonth(def: CalendarDefinition, year: number, token: string, day: nu
     const named = namedDay(def, token)
     if (named) {
       if (named.day > daysInMonth(def, year, named.month))
-        return failure('DAY', `${token.trim()} no cae en ${year} (solo en los años con días de más)`)
+        return failure('DAY', `${token.trim()} no cae en el año ${year} (solo en los años con días de más)`)
       return { ok: true, date: { year, ...named } }
     }
   }
@@ -221,7 +241,7 @@ function withMonth(def: CalendarDefinition, year: number, token: string, day: nu
   if (day === undefined) return { ok: true, date: { year, month } }
   const days = daysInMonth(def, year, month)
   if (!Number.isInteger(day) || day < 1 || day > days)
-    return failure('DAY', `${monthOf(def, month)?.name} de ${year} tiene ${days} días`)
+    return failure('DAY', `${monthOf(def, month)?.name} del año ${year} tiene ${days} días`)
   return { ok: true, date: { year, month, day } }
 }
 

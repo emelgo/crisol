@@ -37,14 +37,14 @@ describe('el valor de una fecha', () => {
   })
 
   it('se lee sin repetir lo que comparten inicio y fin', () => {
-    expect(formatDateValue(EANA, at({ year: 1250, month: 'siega', day: 18 }))).toBe('18 de Siega de 1250 RC')
+    expect(formatDateValue(EANA, at({ year: 1250, month: 'siega', day: 18 }))).toBe('18 de Siega del año 1250 RC')
     expect(
       formatDateValue(
         EANA,
         at({ year: 1250, month: 'siega', day: 12 }, { end: { year: 1250, month: 'trilla', day: 3 } })
       )
-    ).toBe('12 de Siega – 3 de Trilla de 1250 RC')
-    expect(formatDateValue(EANA, at({ year: 1250 }, { end: { year: 1262 } }))).toBe('1250 RC – 1262 RC')
+    ).toBe('12 de Siega – 3 de Trilla del año 1250 RC')
+    expect(formatDateValue(EANA, at({ year: 1250 }, { end: { year: 1262 } }))).toBe('Años 1250–1262 RC')
   })
 
   it('la forma de la IA, con el fin tras «/» y «cada año» al final; y se lee de vuelta', () => {

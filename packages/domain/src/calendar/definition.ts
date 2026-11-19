@@ -35,7 +35,7 @@ export interface CalendarMonth {
   outsideWeek?: boolean | undefined
   /**
    * Los días con nombre propio, por su orden (los de bisiesto, al final): «Shieldmeet», el 2 de Pleno Verano. Uno con
-   * nombre se lee por él («Shieldmeet de 1372 DR»); un mes de un solo día, por el del mes
+   * nombre se lee por él («Shieldmeet del año 1372 DR»); un mes de un solo día, por el del mes
    */
   dayNames?: string[] | undefined
 }

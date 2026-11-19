@@ -210,10 +210,10 @@ describe('las cronologías de un mundo (módulo 8)', () => {
     expect(listed.groups.map((g: { name: string }) => g.name)).toEqual(['La Corona', 'Guerras'])
     const list = await entries(chronology.id)
     expect(list.map((e) => [e.title, e.text])).toEqual([
-      ['La Caída de los Gigantes', '312 RC'],
-      ['Feria de Vendimia', '1 de Vendimia de 413 RC'],
-      ['Boda de Ilsa y Doran', '18 de Siega de 1247 RC'],
-      ['Campaña de los Pasos', '20 de Siega – 3 de Trilla de 1247 RC']
+      ['La Caída de los Gigantes', 'Año 312 RC'],
+      ['Feria de Vendimia', '1 de Vendimia del año 413 RC'],
+      ['Boda de Ilsa y Doran', '18 de Siega del año 1247 RC'],
+      ['Campaña de los Pasos', '20 de Siega – 3 de Trilla del año 1247 RC']
     ])
     expect(list[1]).toMatchObject({ yearly: true, form: '413-Vendimia-1 (cada año)' })
     expect(list[2]?.page).toMatchObject({ id: ilsa, title: 'Ilsa de Varn' })
@@ -323,7 +323,7 @@ describe('las cronologías de un mundo (módulo 8)', () => {
     const [listed] = (await ok200('listChronologies', { worldId })).chronologies
     expect(listed).toMatchObject({
       entries: 4,
-      span: { from: '12 de Siega de 412 RC', to: '2 de Escarcha de 1248 RC' }
+      span: { from: '12 de Siega del año 412 RC', to: '2 de Escarcha del año 1248 RC' }
     })
   })
 
@@ -344,7 +344,7 @@ describe('las cronologías de un mundo (módulo 8)', () => {
     expect(list).toHaveLength(1)
     expect(list[0]).toMatchObject({
       title: 'Llegada',
-      text: '1 de Cierzo de 1000 RC',
+      text: '1 de Cierzo del año 1000 RC',
       converted: { name: 'Cuenta de Varn' }
     })
     // En una cronología con ese otro calendario, lo de Eana se pasa a él
@@ -353,7 +353,7 @@ describe('las cronologías de un mundo (módulo 8)', () => {
       { title: 'Desde Varn', date: '0-1-1', calendar: 'Cuenta de Varn' },
       { title: 'En Eana', date: '1000-Cierzo-2' }
     ])
-    expect((await entries(other.id)).map((e) => e.text)).toEqual(['1 de Enero de 0', '2 de Enero de 0'])
+    expect((await entries(other.id)).map((e) => e.text)).toEqual(['1 de Enero del año 0', '2 de Enero del año 0'])
     expect(kharum.id).toBeTruthy()
   })
 
@@ -366,10 +366,10 @@ describe('las cronologías de un mundo (módulo 8)', () => {
       eventId: boda.id,
       date: { calendarId: eana.id, start: { year: 1247, month: eana.definition.months[9]?.id, day: 22 } }
     })
-    expect((await entries(chronology.id))[0]?.text).toBe('22 de Siega de 1247 RC')
+    expect((await entries(chronology.id))[0]?.text).toBe('22 de Siega del año 1247 RC')
     await fails('updateTimelineEvent', { eventId: boda.id, title: '' }, 'EVENT_NEEDS_TITLE')
     await undo('updateTimelineEvent')
-    expect((await entries(chronology.id))[0]?.text).toBe('21 de Siega de 1247 RC')
+    expect((await entries(chronology.id))[0]?.text).toBe('21 de Siega del año 1247 RC')
     await ok200('deleteTimelineEvent', { eventId: boda.id })
     expect(await entries(chronology.id)).toEqual([])
     await undo('deleteTimelineEvent')
@@ -413,7 +413,7 @@ describe('las cronologías de un mundo (módulo 8)', () => {
     expect((await entries(chronology.id))[0]).toMatchObject({ title: 'Boda de Ilsa', page: { id: pageId } })
     // La página dice, discreta, que la enlaza un evento (al máster)
     expect((await ok200('getPageLinks', { pageId })).events).toEqual([
-      { id: boda.id, title: 'Boda de Ilsa', text: '18 de Siega de 1247 RC' }
+      { id: boda.id, title: 'Boda de Ilsa', text: '18 de Siega del año 1247 RC' }
     ])
     await undo('convertEventToPage')
     expect((await entries(chronology.id))[0]?.page).toBeUndefined()
