@@ -17,6 +17,7 @@ import {
   entryOccurrences,
   type FullDate,
   formatDate,
+  seasonOfDay,
   weekGrid,
   yearBounds,
   yearStart
@@ -31,6 +32,7 @@ import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { TodayOf, todayIn, useChosenToday } from '../campaign-time/today-mark.tsx'
 import { type CalendarPlace, CalendarView, placeOfMonth } from '../chronologies/calendar-view.tsx'
+import chrono from '../chronologies/chronologies.module.css'
 import { EventCard } from '../chronologies/event-card.tsx'
 import { EventDialog, type EventDraft } from '../chronologies/event-dialog.tsx'
 import { useAnnounce } from '../components/announcer.tsx'
@@ -43,7 +45,7 @@ import { Tour } from '../components/tour.tsx'
 import { JumpTitle } from './jump.tsx'
 import { WeekView, YearView } from './periods.tsx'
 import { pagesOf, startYear } from './preview.tsx'
-import { monthTitle, weekTitle, yearTitle } from './titles.tsx'
+import { monthTitle, SeasonFacts, weekTitle, yearTitle } from './titles.tsx'
 import styles from './view.module.css'
 
 const route = getRouteApi('/mundos/$worldId/calendarios/$calendarId')
@@ -449,7 +451,8 @@ function DayAside({
     () => entries.filter((e) => e.start.day !== undefined && entryOccurrences(definition, e, day, day).length > 0),
     [entries, definition, day]
   )
-  const facts = [described.season, t('calendars.view.dayOfYear', { day: described.dayOfYear })]
+  // Su estación, con su punto de color como en la cabecera del mes
+  const season = seasonOfDay(definition, described.dayOfYear)
   return (
     <div className={styles.side} data-dia-ficha="">
       <section aria-labelledby={titleId} className={styles.day} data-tour="calendario-dia">
@@ -470,7 +473,11 @@ function DayAside({
             </button>
           )}
         </div>
-        <p className={styles.dayFacts}>{facts.filter(Boolean).join(' · ')}</p>
+        {season && (
+          <p className={`${chrono.calendarFacts} ${styles.dayFacts}`}>
+            <SeasonFacts seasons={[season]} />
+          </p>
+        )}
         {described.moons.length > 0 && (
           <ul className={styles.moons}>
             {described.moons.map((moon) => (

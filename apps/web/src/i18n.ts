@@ -2164,7 +2164,6 @@ export const es = {
       seasonsLabel: 'Estaciones',
       erasLabel: 'Eras',
       none: 'Ninguna',
-      dayOfYear: 'día {{day}} del año',
       dayEmpty: 'Nada este día.',
       newEvent: 'Evento',
       newPage: 'Página',
