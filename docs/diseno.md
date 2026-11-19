@@ -209,7 +209,10 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   buscador de iconos flota y se recorre con una parada del tabulador y las flechas. **Un solo selector, con nuestros
   iconos** (Enrique, 2026-11-19: «que aparezcan nuestros iconos, no los por defecto»): el buscador de los de rol y
   «Quitar el icono», sin fila de emojis ni «Otro»; en un formulario (una carpeta, un sistema), un botón con el de ahora
-  que lo abre debajo. Un emoji, solo escribiéndolo delante del título.
+  que lo abre debajo. Un emoji, solo escribiéndolo delante del título. **Todos los del paquete** (Enrique, 2026-11-19:
+  «necesitamos más iconos»; 4180): el buscador arriba (en español, por su nombre, sus palabras o su grupo, y en
+  inglés), los grupos a la izquierda (Destacados, la selección de antes, y luego por temas; estrecho, en una fila
+  encima) y la rejilla, que solo pinta lo que se ve. Su lista se pide aparte, al abrirlo o al nombrar un icono.
 - **El espacio del sistema** (tanda 6): en la barra, su nombre con su icono, Compendio y Reglas; abajo, Ajustes. Su
   portada, arriba en su Inicio y detrás en todo su espacio. **Un libro se abre por dentro**: su tapa y su nombre arriba,
   su índice por tipos (con cuántos trae cada uno) y, al pulsar uno, su lista; «← {sistema}» para volver. **Sus

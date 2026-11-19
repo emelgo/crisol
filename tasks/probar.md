@@ -73,6 +73,15 @@ En local o en staging cuando llegue el PR de esta rama.
   de su tipo (el del árbol; en una plantilla, el de plantilla); al pulsarlo (o Tab hasta él e Intro) se abre el selector
   de nuestros iconos, sin «Quitar el icono». Puesto, igual que antes, con «Quitar el icono»; quitado, vuelve el gris.
   Con la página bloqueada, sin icono no sale nada. «:» y el emoji delante del título siguen valiendo.
+- [ ] **Muchos más iconos** (todos los de game-icons.net, 4180; antes 337): abre el selector desde el icono de un
+  título, de una carpeta, de un sistema y de un pin del mapa. Arriba el buscador; a la izquierda los grupos
+  (Destacados, que son los de antes, y luego Personajes, Criaturas, Animales, Edificios, Armas, Armaduras y ropa,
+  Magia, Religión, Transporte, Dinero, Libros…); a la derecha la rejilla, que se desplaza suave aunque haya cientos.
+  Busca en español: «espada», «dragón», «castillo», «barco», «moneda», «pergamino», «arma» (todo el grupo); también
+  en inglés («sword»). Con el teclado: Tab del buscador a los grupos (flechas arriba y abajo los cambian) y a la
+  rejilla (flechas, Inicio, Fin, Intro elige). Uno elegido que no es de Destacados abre en su grupo y a la vista. Los
+  iconos que ya tenías puestos se siguen viendo. ¿Están bien los nombres y los grupos? Apunta los que estén raros.
+- [ ] **«:» en el título** propone también los iconos nuevos («:kraken», «:taberna»).
 
 ## Conectores de IA: Mundos y uno por campaña (ajustes tras los módulos, bloque D; rama `ajustes/tras-modulos`; 2026-11-19)
 
