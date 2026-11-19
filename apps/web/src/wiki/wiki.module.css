@@ -104,10 +104,23 @@
   margin-block-end: var(--space-2);
 }
 
-/* El nombre del panel (Páginas, Buscar o Marcadores), siempre en el mismo sitio, arriba: un rótulo pequeño y gris,
-   como los del panel de la derecha */
-.asideHeader h2 {
+/* El nombre del mundo y, a su derecha, su engranaje; los demás botones, al otro lado */
+.asideTitle {
+  display: flex;
   flex: 1 1 auto;
+  align-items: center;
+  gap: var(--space-1);
+  min-inline-size: 0;
+}
+
+/* El nombre del panel (Páginas, Buscar o Marcadores), siempre en el mismo sitio, arriba: un rótulo pequeño y gris,
+   como los del panel de la derecha; si es largo, con «…» */
+.asideHeader h2 {
+  flex: 0 1 auto;
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   margin: 0;
   padding: 0 0 0 var(--space-2);
   border: 0;

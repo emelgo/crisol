@@ -378,14 +378,23 @@ export function CampaignCard({
  */
 export function WorldBanner({ world }: { world: World }) {
   const kind = useWorldKind()
+  // Su engranaje va junto al nombre del mundo, en la ficha del árbol (WorldSettings)
+  return <LookHeader banner kind={kind} look={world} style={worldTransition(world.id)} />
+}
+
+/**
+ * El engranaje del mundo, a la derecha de su nombre en la cabecera de la ficha del árbol (Enrique, 2026-11-19): abre su
+ * ventana; borrado desde ahí, a Mis mundos, saliendo de él
+ */
+export function WorldSettings({ world, className }: { world: World; className?: string }) {
+  const kind = useWorldKind()
   const navigate = useNavigate()
   return (
-    <LookHeader
-      banner
+    <LookSettings
       kind={kind}
       look={world}
-      style={worldTransition(world.id)}
-      // Borrado desde dentro: a Mis mundos, saliendo de él
+      className={className}
+      iconSize={15}
       afterDelete={() => void navigate({ to: '/mundos', viewTransition: LEAVE_WORLD })}
     />
   )
@@ -405,8 +414,9 @@ export function LookHeader({
   kind: LookKind
   look: Look
   style?: CSSProperties | undefined
-  afterDelete: () => void
-  /** Como portada ancha de la página de portada del mundo (Everlore): la imagen, con el engranaje encima */
+  /** Si se borra desde su engranaje (en la cabecera), adónde se va */
+  afterDelete?: () => void
+  /** Como portada ancha de la página de portada del mundo (Everlore): la imagen, sin engranaje (va en la ficha del árbol) */
   banner?: boolean
 }) {
   const { t } = useTranslation()
@@ -430,11 +440,6 @@ export function LookHeader({
         />
         {viewing && image && (
           <CoverViewer url={image.url} label={t('cover.of', { name: look.name })} onClose={() => setViewing(false)} />
-        )}
-        {look.role === 'master' && (
-          <div className={styles.bannerGear}>
-            <LookSettings kind={kind} look={look} afterDelete={afterDelete} />
-          </div>
         )}
       </header>
     )
@@ -465,7 +470,7 @@ export function LookHeader({
         <div className={styles.footer}>
           {/* El papel (máster o jugador) es de las campañas, no de los mundos */}
           {kind.texts === 'campaigns' && <span className={styles.role}>{t(`roles.${look.role}`)}</span>}
-          {look.role === 'master' && <LookSettings kind={kind} look={look} afterDelete={afterDelete} />}
+          {look.role === 'master' && <LookSettings kind={kind} look={look} {...(afterDelete ? { afterDelete } : {})} />}
         </div>
       </div>
     </header>
@@ -578,18 +583,22 @@ export function NewWorld({ big = false }: { big?: boolean }) {
   return <NewLook kind={useWorldKind()} big={big} tour="nuevo-mundo" />
 }
 
-/** El engranaje (para quien lo dirige): abre su ventana */
+/** El engranaje (para quien lo dirige): abre su ventana. className e iconSize, fuera de su tarjeta */
 function LookSettings({
   kind,
   look,
   afterDelete,
-  onOpen
+  onOpen,
+  className,
+  iconSize = 18
 }: {
   kind: LookKind
   look: Look
   afterDelete?: () => void
   /** Al abrir su ventana */
   onOpen?: () => void
+  className?: string | undefined
+  iconSize?: number
 }) {
   const { t } = useTranslation()
   const trigger = useRef<HTMLButtonElement>(null)
@@ -599,7 +608,7 @@ function LookSettings({
       <button
         ref={trigger}
         type="button"
-        className={styles.gear}
+        className={className ?? styles.gear}
         aria-label={t(`${kind.texts}.settingsOf`, { name: look.name })}
         title={t(`${kind.texts}.settingsOf`, { name: look.name })}
         aria-haspopup="dialog"
@@ -609,7 +618,7 @@ function LookSettings({
           setOpen(true)
         }}
       >
-        <Settings aria-hidden="true" size={18} />
+        <Settings aria-hidden="true" size={iconSize} />
       </button>
       {open && (
         <LookDialog

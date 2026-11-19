@@ -925,16 +925,10 @@
   block-size: 15rem;
 }
 
-.bannerGear {
-  position: absolute;
-  inset-block-start: var(--space-3);
-  inset-inline-end: var(--space-8);
-  z-index: 3;
-}
-
-/* «Ver», arriba a la derecha (junto al engranaje): abajo va el título de la página, encima de la portada */
+/* «Ver», arriba a la derecha: abajo va el título de la página, encima de la portada (el engranaje del mundo, junto a
+   su nombre en la ficha del árbol) */
 .banner .coverActions {
   inset-block: var(--space-3) auto;
-  inset-inline-end: calc(var(--space-8) + 2.75rem);
+  inset-inline-end: var(--space-8);
   z-index: 3;
 }

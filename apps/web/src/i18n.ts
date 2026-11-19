@@ -4866,7 +4866,6 @@ export const es = {
       calendars: 'El tiempo del mundo: sus calendarios.',
       search: 'Filtra el árbol por nombre o #etiqueta; con Intro, busca en el texto de todas.',
       panel: 'Lo de la página que quieras tener a la vista.',
-      whoKnows: 'Qué sabe de esta página cada campaña, y lo que ven sus jugadores.',
       bookmarks: 'Tus páginas marcadas, a mano.',
       files: 'Las imágenes y documentos del mundo.',
       history: 'Lo que se ha hecho en este mundo, para deshacerlo si hace falta.',

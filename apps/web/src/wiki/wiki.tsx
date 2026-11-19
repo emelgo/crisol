@@ -42,7 +42,7 @@ import { headingMayTakeFocus, PageTitle, useHeadingFocusRequest } from '../compo
 import { itemTransition } from '../components/world-transition.ts'
 import { useRelationModes } from '../relations/queries.ts'
 import { RelationsTab } from '../relations/relations-tab.tsx'
-import { WorldBanner } from '../routes/world-card.tsx'
+import { WorldBanner, WorldSettings } from '../routes/world-card.tsx'
 import { TemplateIcon } from '../templates/icons.tsx'
 import { useTemplates } from '../templates/picker.tsx'
 import { Backlinks, pageLinksKey } from './backlinks.tsx'
@@ -172,8 +172,12 @@ export function WikiLayout({
             }}
           >
             <div className={styles.asideHeader}>
-              {/* Lo de la vista elegida en la barra: el mundo (sus páginas), las plantillas o los archivos */}
-              <h2 id={headingId}>{world.name}</h2>
+              {/* Lo de la vista elegida en la barra: el mundo (sus páginas), las plantillas o los archivos; a la derecha
+                  del nombre, el engranaje del mundo (Enrique, 2026-11-19) */}
+              <div className={styles.asideTitle}>
+                <h2 id={headingId}>{world.name}</h2>
+                <WorldSettings world={world} className={styles.newPageIcon} />
+              </div>
               {panel === 'pages' && (
                 // El grafo de todo el mundo (módulo 10), sin añadir nada a la barra del mundo
                 <Link
