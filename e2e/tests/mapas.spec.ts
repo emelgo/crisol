@@ -17,9 +17,9 @@ async function addMap(page: Page) {
   const dialog = page.getByRole('dialog', { name: 'Pestaña nueva' })
   await expect(dialog.getByRole('radio', { name: 'Texto' })).toBeChecked()
   await dialog.getByRole('radio', { name: 'Mapa' }).check()
-  // La cronología y el árbol genealógico también son pestañas (ADR-0031): ninguna «Pronto»
+  // La cronología y el árbol también son pestañas (ADR-0031): ninguna «Pronto»
   await expect(dialog.getByRole('radio', { name: 'Cronología' })).toBeEnabled()
-  await expect(dialog.getByRole('radio', { name: 'Árbol genealógico' })).toBeEnabled()
+  await expect(dialog.getByRole('radio', { name: 'Árbol' })).toBeEnabled()
   await dialog.getByRole('button', { name: 'Crear' }).click()
   await expect(dialog).toHaveCount(0)
 }

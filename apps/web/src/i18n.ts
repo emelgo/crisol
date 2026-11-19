@@ -2488,13 +2488,10 @@ export const es = {
   },
   // La pestaña de árbol genealógico u organigrama (bloque B de los ajustes tras los módulos 8 a 10)
   trees: {
-    label: 'Árbol genealógico {{name}}',
-    labelOrg: 'Organigrama {{name}}',
-    add: 'Añadir',
+    label: 'Árbol {{name}}',
+    add: 'Añadir persona',
     first: 'Añadir a alguien',
-    firstOrg: 'Añadir un grupo',
-    empty: 'Quién desciende de quién, con sus parejas.',
-    emptyOrg: 'Quién pertenece a cada grupo y quién lo dirige.',
+    empty: 'Quién es quién para quién: familia, parejas, quién dirige… cada relación, a mano.',
     emptyRead: 'Aún no hay nadie aquí.',
     fromFields: 'Empezar desde los campos',
     noPage: 'Sin página',
@@ -2512,25 +2509,73 @@ export const es = {
       parent: 'Padre o madre',
       partner: 'Pareja',
       child: 'Hijo o hija',
+      more: 'Otra relación'
+    },
+    relation: 'Relación',
+    relations: {
+      parent: 'Padre o madre',
+      child: 'Hijo o hija',
+      partner: 'Pareja',
+      'ex-partner': 'Expareja',
+      sibling: 'Hermano o hermana',
+      stepparent: 'Padrastro o madrastra',
+      stepchild: 'Hijastro o hijastra',
+      adopter: 'Quien lo adoptó',
+      adopted: 'Hijo o hija adoptivo',
+      leader: 'Quien lo dirige',
+      led: 'A quien dirige',
       member: 'Miembro',
-      leader: 'Quien lo dirige'
+      group: 'Grupo al que pertenece',
+      other: 'Otra (escríbela)'
+    },
+    customLabel: 'Cuál',
+    customPlaceholder: 'Padrino, rival, mentora…',
+    customPlace: 'Dónde va',
+    places: {
+      above: 'Encima de {{name}}',
+      below: 'Debajo de {{name}}',
+      beside: 'Al lado de {{name}}'
     },
     lines: {
       parent: 'Padre o madre de {{name}}',
       parentOf: 'Hijo o hija de {{name}}',
+      stepparent: 'Padrastro o madrastra de {{name}}',
+      stepparentOf: 'Hijastro o hijastra de {{name}}',
+      adoptive: 'Adoptó a {{name}}',
+      adoptiveOf: 'Adoptado o adoptada por {{name}}',
       partner: 'Pareja de {{name}}',
-      member: 'Pertenece a {{name}}',
-      memberOf: 'Lo integra {{name}}',
+      'ex-partner': 'Expareja de {{name}}',
+      sibling: 'Hermano o hermana de {{name}}',
+      member: 'Miembro de {{name}}',
+      memberOf: 'Tiene de miembro a {{name}}',
       leads: 'Dirige {{name}}',
-      leadsOf: 'Lo dirige {{name}}'
+      leadsOf: 'Lo dirige {{name}}',
+      other: '{{label}} de {{name}}',
+      otherOf: '{{name}} es su {{label}}'
+    },
+    wires: {
+      stepparent: 'Padrastro o madrastra',
+      adoptive: 'Adopción',
+      'ex-partner': 'Expareja',
+      sibling: 'Hermanos',
+      leads: 'Dirige'
     },
     addTitle: {
-      first: 'Añadir al árbol',
+      first: 'Añadir persona',
       parent: 'Padre o madre de {{name}}',
-      partner: 'Pareja de {{name}}',
       child: 'Hijo o hija de {{name}}',
+      partner: 'Pareja de {{name}}',
+      'ex-partner': 'Expareja de {{name}}',
+      sibling: 'Hermano o hermana de {{name}}',
+      stepparent: 'Padrastro o madrastra de {{name}}',
+      stepchild: 'Hijastro o hijastra de {{name}}',
+      adopter: 'Quien adoptó a {{name}}',
+      adopted: 'Hijo o hija adoptivo de {{name}}',
+      leader: 'Quien dirige {{name}}',
+      led: 'A quien dirige {{name}}',
       member: 'Miembro de {{name}}',
-      leader: 'Quien dirige {{name}}'
+      group: 'Grupo de {{name}}',
+      other: 'Otra relación con {{name}}'
     },
     search: 'Busca una página o escribe un nombre',
     inTree: 'Ya en el árbol',
@@ -2609,8 +2654,7 @@ export const es = {
       scene: 'Escena',
       board: 'Pizarra',
       chronology: 'Cronología',
-      tree: 'Árbol genealógico',
-      org: 'Organigrama'
+      tree: 'Árbol'
     },
     soon: 'Pronto',
     namePlaceholder: 'Nombre (opcional)',
@@ -5089,9 +5133,9 @@ export const es = {
       graph: 'Pulsa una página para ver su ficha; con doble clic, se abre.'
     },
     tree: {
-      cards: 'Pulsa a alguien para ver su ficha y añadir a su familia.',
+      cards: 'Pulsa a alguien para ver su ficha y añadirle a alguien con su relación.',
       read: 'Pulsa a alguien para ver su ficha.',
-      add: 'Añade a alguien al árbol.'
+      add: 'Añade a alguien suelto; sus relaciones, desde su ficha.'
     },
     worldGraph: {
       filters: 'Qué páginas y relaciones salen.',

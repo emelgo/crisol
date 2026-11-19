@@ -149,10 +149,11 @@ test('relaciones (módulo 10): el grafo en su ventana (del mundo y de una págin
   await page.goBack()
   await expect(page.getByRole('dialog')).toHaveCount(0)
 
-  // El árbol genealógico, como pestaña: desde los campos de la página…
+  // El árbol (uno solo: genealógico u organigrama), como pestaña: desde los campos de la página…
   await tabs.getByRole('button', { name: 'Pestaña nueva' }).click()
   const create = page.getByRole('dialog', { name: 'Pestaña nueva' })
-  await create.getByRole('radio', { name: 'Árbol genealógico' }).check()
+  await expect(create.getByRole('radio', { name: 'Organigrama' })).toHaveCount(0)
+  await create.getByRole('radio', { name: 'Árbol' }).check()
   await create.getByRole('button', { name: 'Crear' }).click()
   await page.getByRole('button', { name: 'Empezar desde los campos' }).click()
   for (const name of ['Aldren IV', 'Mirela de Varn', 'Corwen Hale', 'Lia de Varn'])
@@ -162,11 +163,19 @@ test('relaciones (módulo 10): el grafo en su ventana (del mundo y de una págin
   const card = page.getByRole('region', { name: 'Aldren IV' })
   await card.getByRole('button', { name: 'Padre o madre', exact: true }).click()
   const add = page.getByRole('dialog', { name: 'Padre o madre de Aldren IV' })
-  await add.getByRole('combobox').fill('Aldren III')
+  await add.getByRole('combobox', { name: 'Busca una página o escribe un nombre' }).fill('Aldren III')
   await add.getByRole('option', { name: 'Añadir «Aldren III» sin página' }).click()
   const grandpa = page.getByRole('region', { name: 'Aldren III' })
   await expect(grandpa).toContainText('Sin página')
   await expect(grandpa).toContainText('Padre o madre de Aldren IV')
+  // Las relaciones no son fijas: un hijastro de Aldren III, desde «Otra relación», solo con la línea que se elige
+  await grandpa.getByRole('button', { name: 'Otra relación' }).click()
+  const other = page.getByRole('dialog', { name: 'Otra relación con Aldren III' })
+  await other.getByLabel('Relación').selectOption('stepchild')
+  await other.getByRole('combobox', { name: 'Busca una página o escribe un nombre' }).fill('Kael')
+  await other.getByRole('option', { name: 'Añadir «Kael» sin página' }).click()
+  await expect(page.getByRole('region', { name: 'Kael' })).toContainText('Hijastro o hijastra de Aldren III')
+  await page.getByRole('button', { name: 'Aldren III', exact: true }).click()
   await grandpa.getByRole('button', { name: 'Crear página' }).click()
   await expect(grandpa.getByRole('button', { name: 'Abrir' })).toBeVisible()
   // Sus líneas cuentan como relaciones: Aldren III ya sale en el grafo de Aldren IV
@@ -285,7 +294,6 @@ test.describe('con el cristal de verdad', () => {
       worldId,
       name: 'Mando',
       pageId: id.orden,
-      layout: 'org',
       nodes: [
         { id: 'orden', pageId: id.orden },
         { id: 'oriel', pageId: id.oriel },
@@ -297,7 +305,7 @@ test.describe('con el cristal de verdad', () => {
       ]
     })
     await page.goto(`/mundos/${worldId}/wiki/${id.orden}?pestana=${chart.tabId}`)
-    await expect(page.getByRole('button', { name: /^Lo dirige, Oriel Vance/ })).toBeVisible()
+    await expect(page.getByRole('button', { name: /^Oriel Vance/ })).toBeVisible()
     expect(await axe(page)).toEqual([])
     await page.goto(`/mundos/${worldId}/wiki/${id.ilsa}?grafo=mundo`)
     await expect(page.getByRole('complementary', { name: 'Filtros' })).toBeVisible()

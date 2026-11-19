@@ -1,5 +1,6 @@
 /**
- * Los árboles genealógicos y los organigramas (la pestaña tree; bloque B de los ajustes tras los módulos 8 a 10): leerlos
+ * Los árboles (la pestaña tree, genealógicos u organigramas, con líneas hechas a mano; bloque B de los ajustes tras los
+ * módulos 8 a 10, como la genealogía de Everlore): leerlos
  * con lo que ve quien pregunta, cambiarlos enteros, crearlos (en una página o en una nueva) y convertir un nodo suelto en
  * página. Los lleva quien escribe la página. Un jugador (ADR-0017) ve el árbol si ve su pestaña y, dentro, los nodos de
  * las páginas que conoce y los sueltos; un nodo de una página que no conoce no deja rastro
@@ -11,7 +12,6 @@ import {
   type FamilyTreeNode,
   keyBetween,
   NotFoundError,
-  type TreeLayout,
   treeProblem,
   visibleTree
 } from '@crisol/domain'
@@ -25,8 +25,8 @@ import { implement } from './registry.ts'
 
 type TreeRow = treesRepo.TreeRow
 
-/** El nombre de la pestaña al crearla, por su forma */
-const TREE_TAB = { family: 'Árbol genealógico', org: 'Organigrama' } as const
+/** El nombre de la pestaña al crearla en una página nueva */
+const TREE_TAB = 'Árbol'
 
 /** El árbol para quien lee: los nodos con el título, el icono y la plantilla de su página (si sigue), y lo que ve */
 async function treeView(ctx: ActionContext, worldId: string, row: TreeRow, pageId: string, view: WikiView | null) {
@@ -45,7 +45,6 @@ async function treeView(ctx: ActionContext, worldId: string, row: TreeRow, pageI
   const out: TreeView = {
     tabId: row.tabId,
     pageId,
-    layout: row.layout,
     nodes: seen.nodes.map((node) => ({
       id: node.id,
       pageId: node.pageId,
@@ -77,7 +76,7 @@ async function checkedTree(
   wiki: WikiTarget,
   nodes: readonly { id: string; pageId?: string | null | undefined; name: string; note?: string | undefined }[],
   edges: readonly FamilyTreeEdge[]
-): Promise<FamilyTreeNode[]> {
+): Promise<{ nodes: FamilyTreeNode[]; edges: FamilyTreeEdge[] }> {
   const ids = nodes.flatMap((node) => (node.pageId ? [node.pageId] : []))
   const heads = await treesRepo.nodePages(ctx.db, wiki.worldId, ids)
   const missing = ids.filter((id) => !heads.has(id))
@@ -95,9 +94,21 @@ async function checkedTree(
   })
   const unnamed = clean.find((node) => !node.pageId && !node.name)
   if (unnamed) throw new InvalidRequestError('BAD_TREE', `el nodo «${unnamed.id}» necesita un nombre o una página`)
-  const problem = treeProblem(clean, edges)
+  // El nombre y el lado, solo en las libres
+  const lines: FamilyTreeEdge[] = edges.map((edge) =>
+    edge.type === 'other'
+      ? {
+          from: edge.from,
+          to: edge.to,
+          type: edge.type,
+          label: edge.label?.trim() ?? '',
+          ...(edge.beside ? { beside: true } : {})
+        }
+      : { from: edge.from, to: edge.to, type: edge.type }
+  )
+  const problem = treeProblem(clean, lines)
   if (problem) throw new InvalidRequestError('BAD_TREE', problem)
-  return clean
+  return { nodes: clean, edges: lines }
 }
 
 export const treeActions = [
@@ -111,14 +122,12 @@ export const treeActions = [
     return treeView(ctx, wiki.worldId, tree, tab.pageId, view)
   }),
 
-  implement(updateTree, async (ctx, { tabId, layout, nodes, edges }) => {
+  implement(updateTree, async (ctx, { tabId, nodes, edges }) => {
     const { tab, page, wiki, tree } = await authorizedTree(ctx, tabId)
-    const nextEdges = edges ?? tree.edges
-    const nextNodes = await checkedTree(ctx, wiki, nodes ?? tree.nodes, nextEdges)
-    const patch: { layout?: TreeLayout; nodes?: FamilyTreeNode[]; edges?: FamilyTreeEdge[] } = {}
-    if (layout !== undefined && layout !== tree.layout) patch.layout = layout
-    if (nodes !== undefined) patch.nodes = nextNodes
-    if (edges !== undefined) patch.edges = nextEdges
+    const next = await checkedTree(ctx, wiki, nodes ?? tree.nodes, edges ?? tree.edges)
+    const patch: { nodes?: FamilyTreeNode[]; edges?: FamilyTreeEdge[] } = {}
+    if (nodes !== undefined) patch.nodes = next.nodes
+    if (edges !== undefined) patch.edges = next.edges
     const saved =
       Object.keys(patch).length === 0
         ? tree
@@ -131,11 +140,9 @@ export const treeActions = [
   }),
 
   // En una página que ya hay (una pestaña más) o en una nueva con su nombre, en una sola operación
-  implement(createTree, async (ctx, { worldId, name, pageId, parentId, layout, nodes, edges }) => {
+  implement(createTree, async (ctx, { worldId, name, pageId, parentId, nodes, edges }) => {
     const wiki = await authorizedWiki(ctx, 'page.write', worldId)
-    const shape = layout ?? 'family'
-    const lists = await checkedTree(ctx, wiki, nodes ?? [], edges ?? [])
-    const tree = { layout: shape, nodes: lists, edges: edges ?? [] }
+    const tree = await checkedTree(ctx, wiki, nodes ?? [], edges ?? [])
     let tabId: string
     let treePage: string
     if (pageId) {
@@ -169,7 +176,7 @@ export const treeActions = [
           worldId,
           pageId: page.id,
           kind: 'tree',
-          name: TREE_TAB[shape],
+          name: TREE_TAB,
           position: keyBetween(null, null)
         })
         await w.insert(schema.trees, { worldId, tabId: tab.id, ...tree })

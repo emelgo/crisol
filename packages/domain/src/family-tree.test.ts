@@ -55,6 +55,62 @@ describe('treeProblem', () => {
   })
 })
 
+describe('las relaciones que no son fijas', () => {
+  it('acepta hijastros, adopciones, exparejas, hermanos y una libre con su nombre, sin deducir nada', () => {
+    const more: FamilyTreeEdge[] = [
+      ...edges,
+      { from: 'padre', to: 'abuela', type: 'ex-partner' },
+      { from: 'abuela', to: 'ilsa', type: 'stepparent' },
+      { from: 'padre', to: 'madre', type: 'sibling' },
+      { from: 'abuela', to: 'padre', type: 'adoptive' },
+      { from: 'padre', to: 'ilsa', type: 'other', label: 'Padrino' },
+      { from: 'ilsa', to: 'madre', type: 'other', label: 'Rival', beside: true }
+    ]
+    expect(treeProblem(nodes, more)).toBeNull()
+  })
+
+  it('una libre necesita su nombre; y la misma libre, al lado, en los dos sentidos, está repetida', () => {
+    expect(treeProblem(nodes, [{ from: 'padre', to: 'ilsa', type: 'other' }])).toMatch(/qué relación/)
+    expect(
+      treeProblem(nodes, [
+        { from: 'padre', to: 'ilsa', type: 'other', label: 'Rival', beside: true },
+        { from: 'ilsa', to: 'padre', type: 'other', label: 'rival', beside: true }
+      ])
+    ).toMatch(/repetida/)
+    // Dos libres distintas entre los mismos sí valen
+    expect(
+      treeProblem(nodes, [
+        { from: 'padre', to: 'ilsa', type: 'other', label: 'Padrino' },
+        { from: 'padre', to: 'ilsa', type: 'other', label: 'Maestro' }
+      ])
+    ).toBeNull()
+  })
+
+  it('nadie es su propio antepasado tampoco por adopción o por un padrastro', () => {
+    expect(treeProblem(nodes, [...edges, { from: 'ilsa', to: 'abuela', type: 'adoptive' }])).toMatch(/antepasado/)
+    expect(treeProblem(nodes, [...edges, { from: 'ilsa', to: 'madre', type: 'stepparent' }])).toMatch(/antepasado/)
+  })
+
+  it('las que no son de los campos salen en el grafo con su nombre, sin papel', () => {
+    const out = treeRelationEdges(
+      [
+        {
+          nodes,
+          edges: [
+            { from: 'abuela', to: 'ilsa', type: 'stepparent' },
+            { from: 'madre', to: 'ilsa', type: 'other', label: 'Maestra' }
+          ]
+        }
+      ],
+      new Set(['p-abuela', 'p-madre', 'p-ilsa'])
+    )
+    expect(out.map(({ source, target, role, key, name }) => ({ source, target, role, key, name }))).toEqual([
+      { source: 'p-abuela', target: 'p-ilsa', role: undefined, key: 'tree:stepparent', name: 'Padrastro o madrastra' },
+      { source: 'p-madre', target: 'p-ilsa', role: undefined, key: 'tree:other:maestra', name: 'Maestra' }
+    ])
+  })
+})
+
 describe('treeRelationEdges', () => {
   const present = new Set(['p-abuela', 'p-madre', 'p-ilsa', 'p-orden', 'p-varn'])
 

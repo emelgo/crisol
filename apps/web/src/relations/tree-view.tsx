@@ -95,9 +95,22 @@ const TreeBody = memo(function TreeBody({
             points={wire.points.map((p) => `${p.x},${p.y}`).join(' ')}
             className={styles.wire}
             data-kind={wire.kind}
+            data-dashed={wire.dashed || undefined}
           />
         ))}
       </g>
+      {layout.labels?.map((label) => (
+        <text
+          key={`${label.x},${label.y},${label.text}`}
+          className={styles.wireLabel}
+          x={label.x}
+          y={label.y}
+          dy="0.35em"
+          textAnchor={label.anchor}
+        >
+          {label.text}
+        </text>
+      ))}
       {layout.cards.map((card) => {
         const node = nodes.get(card.id)
         if (!node) return null

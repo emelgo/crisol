@@ -60,8 +60,7 @@ const TAB_BASE_NAMES = {
   scene: 'Escena',
   board: 'Pizarra',
   chronology: 'Cronología',
-  tree: 'Árbol genealógico',
-  org: 'Organigrama'
+  tree: 'Árbol'
 } as const
 
 /** Lo más que se le enseña a la IA de una imagen (su API no admite más) y los tipos que admite */
@@ -368,7 +367,7 @@ export const mapActions = [
     return { tabs: tabs.map((tab) => (view.full ? tabView(tab) : { ...tabView(tab), hidden: false })) }
   }),
 
-  implement(createPageTab, async (ctx, { pageId, kind, name, layout }) => {
+  implement(createPageTab, async (ctx, { pageId, kind, name }) => {
     const { page, wiki } = await authorizedPage(ctx, 'page.write', pageId)
     const tabs = await mapsRepo.listTabs(ctx.db, pageId)
     if (tabs.length >= MAX_PAGE_TABS) throw new InvalidRequestError('TOO_MANY_TABS', `como mucho ${MAX_PAGE_TABS}`)
@@ -380,9 +379,8 @@ export const mapActions = [
           `un mundo tiene como mucho ${CHRONOLOGY_LIMITS.chronologies} cronologías`
         )
     }
-    const base = TAB_BASE_NAMES[kind === 'tree' && layout === 'org' ? 'org' : kind]
-    // Los árboles cuentan por su forma (el segundo organigrama, «Organigrama 2», aunque haya un árbol genealógico)
-    const same = tabs.filter((tab) => tab.kind === kind && (kind !== 'tree' || tab.name.startsWith(base))).length
+    const base = TAB_BASE_NAMES[kind]
+    const same = tabs.filter((tab) => tab.kind === kind).length
     // La de texto cuenta con la principal («Texto»): la primera añadida es «Texto 2»; el segundo mapa, «Mapa 2»
     const named = name ?? (kind === 'text' ? `${base} ${same + 2}` : same > 0 ? `${base} ${same + 1}` : base)
     // Una de texto (y una pizarra) lleva su documento, como un secreto (vacío al nacer; no va al historial: lo cuenta su
@@ -409,9 +407,9 @@ export const mapActions = [
         position: keyBetween(tabs.at(-1)?.position ?? null, null)
       },
       {
-        // Una cronología, con el calendario principal y todo el mundo; un árbol, vacío y con su forma
+        // Una cronología, con el calendario principal y sin eventos; un árbol, vacío
         ...(kind === 'chronology' ? { chronology: { calendarId: null, filter: DEFAULT_CHRONOLOGY_FILTER } } : {}),
-        ...(kind === 'tree' ? { tree: { layout: layout ?? 'family', nodes: [], edges: [] } } : {})
+        ...(kind === 'tree' ? { tree: { nodes: [], edges: [] } } : {})
       }
     )
     ctx.realtime.publish(pagesChanged(wiki))

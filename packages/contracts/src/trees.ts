@@ -1,15 +1,28 @@
 /**
- * Los árboles genealógicos y los organigramas (la pestaña tree de una página; bloque B de los ajustes tras los módulos 8
- * a 10): nodos que son una página del mundo o solo un nombre (que se convierte en página cuando haga falta) y líneas
- * entre ellos. Las líneas entre dos nodos con página cuentan como relaciones del grafo. Un jugador ve el árbol si ve su
- * pestaña, con los nodos de páginas que conoce y los sueltos (ADR-0017)
+ * Los árboles (la pestaña tree de una página; bloque B de los ajustes tras los módulos 8 a 10, como la genealogía de
+ * Everlore): nodos que son una página del mundo o solo un nombre (que se convierte en página cuando haga falta) y líneas
+ * entre ellos, hechas a mano y de tipos que no son fijos (un organigrama es un árbol con «dirige» y «miembro de»). Las
+ * líneas entre dos nodos con página cuentan como relaciones del grafo. Un jugador ve el árbol si ve su pestaña, con los
+ * nodos de páginas que conoce y los sueltos (ADR-0017)
  */
 import { z } from 'zod'
 import { defineAction } from './action.ts'
-import { TREE_LAYOUTS } from './maps.ts'
 import { readAs } from './read-as.ts'
 
-export const TREE_EDGE_TYPES = ['parent', 'partner', 'member', 'leads'] as const
+export const TREE_EDGE_TYPES = [
+  'parent',
+  'stepparent',
+  'adoptive',
+  'partner',
+  'ex-partner',
+  'sibling',
+  'leads',
+  'member',
+  'other'
+] as const
+
+const EDGE_TYPES_TEXT =
+  'parent: from es padre o madre de to; stepparent: from es su padrastro o madrastra; adoptive: from lo adoptó; partner: pareja; ex-partner: expareja; sibling: hermanos; leads: from dirige to; member: from es miembro de to; other: la que diga label (from encima de to o, con beside, al lado). No se deduce ninguna: cada una se pone'
 /** Lo más que lleva un árbol (como TREE_LIMITS del dominio) */
 export const TREE_MAX = { nodes: 400, edges: 800 } as const
 
@@ -30,11 +43,9 @@ export const treeNodeInput = z.object({
 export const treeEdge = z.object({
   from: nodeId,
   to: nodeId,
-  type: z
-    .enum(TREE_EDGE_TYPES)
-    .describe(
-      'parent: from es padre o madre de to; partner: pareja; member: from pertenece a to; leads: from dirige to'
-    )
+  type: z.enum(TREE_EDGE_TYPES).describe(EDGE_TYPES_TEXT),
+  label: z.string().trim().max(60).optional().describe('Con type other: su nombre («Padrino», «Rival», «Mentor»)'),
+  beside: z.boolean().optional().describe('Con type other: al lado (si no, from va encima de to)')
 })
 
 export type TreeEdgeView = z.infer<typeof treeEdge>
@@ -54,7 +65,6 @@ export type TreeNodeView = z.infer<typeof treeNodeView>
 export const treeView = z.object({
   tabId: z.uuid(),
   pageId: z.uuid(),
-  layout: z.enum(TREE_LAYOUTS),
   nodes: z.array(treeNodeView),
   edges: z.array(treeEdge),
   version: z.int()
@@ -65,14 +75,12 @@ export type TreeView = z.infer<typeof treeView>
 export const getTree = defineAction({
   name: 'getTree',
   kind: 'read',
-  description:
-    'Un árbol genealógico u organigrama (la pestaña tree de una página): sus nodos (con su página o sueltos, solo con su nombre) y sus líneas (parent: from es padre o madre de to; partner: pareja; member: from pertenece a to; leads: from dirige to)',
+  description: `Un árbol (la pestaña tree de una página: genealógico, un organigrama…): sus nodos (con su página o sueltos, solo con su nombre) y sus líneas (${EDGE_TYPES_TEXT})`,
   input: z.object({ tabId: z.uuid(), ...readAs }),
   output: treeView
 })
 
 const treeLists = {
-  layout: z.enum(TREE_LAYOUTS).optional().describe('family: árbol genealógico; org: organigrama'),
   nodes: z.array(treeNodeInput).max(TREE_MAX.nodes).optional().describe('La lista entera (sustituye a la que había)'),
   edges: z.array(treeEdge).max(TREE_MAX.edges).optional().describe('La lista entera (sustituye a la que había)')
 }
@@ -90,7 +98,7 @@ export const createTree = defineAction({
   name: 'createTree',
   kind: 'write',
   description:
-    'Crea un árbol genealógico (layout family) o un organigrama (org) como pestaña de una página: con pageId, en esa página; sin él, en una página nueva con ese nombre (dentro de parentId, o en el primer nivel). Con sus nodos y sus líneas, si se dan (como en updateTree). Se deshace',
+    'Crea un árbol (genealógico, un organigrama…) como pestaña de una página: con pageId, en esa página; sin él, en una página nueva con ese nombre (dentro de parentId, o en el primer nivel). Con sus nodos y sus líneas, si se dan (como en updateTree). Se deshace',
   input: z.object({
     worldId: z.uuid(),
     name: z

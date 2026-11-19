@@ -1,27 +1,19 @@
 /**
- * La pestaña «Árbol genealógico» (u «Organigrama») de una página (bloque B de los ajustes tras los módulos 8 a 10): a
- * sangre como el mapa, con las tarjetas de Familia y Organigrama (relations/). Cada nodo es una página del mundo o solo
- * un nombre (con la raya discontinua), que se convierte en página cuando haga falta. Pulsar un nodo lo elige (su ficha,
- * arriba a la derecha): desde ella se añade su padre o su madre, su pareja o sus hijos (en el organigrama, sus miembros
- * o quien lo dirige), se abre su página, se crea la de uno suelto, se le cambia el nombre o se quita. El doble clic abre
- * su página. Vacío, una sola pieza en el centro (y «Empezar desde los campos» si la página tiene campos con papel).
- * Quien juega lo ve con lo que conoce, sin editar
+ * La pestaña «Árbol» de una página (bloque B de los ajustes tras los módulos 8 a 10, como la genealogía de Everlore): a
+ * sangre como el mapa, con las tarjetas de Familia (relations/). Un solo árbol para todo (un organigrama es un árbol con
+ * «dirige» y «miembro de»): cada línea se pone a mano y de un tipo que no es fijo (padre o madre, pareja, hijastro,
+ * adopción, expareja, hermanos, dirige, miembro u otra con su nombre); no se deduce ninguna. Cada nodo es una página del
+ * mundo o solo un nombre (con la raya discontinua), que se convierte en página cuando haga falta. Pulsar un nodo lo
+ * elige (su ficha, arriba a la derecha): desde ella se le añade alguien con su relación, se abre su página, se crea la de
+ * uno suelto, se le cambia el nombre o se quita. El doble clic abre su página. «Añadir persona» (suelta, sin línea), en
+ * la píldora de abajo en el centro, como el «+» de la cronología. Vacío, una sola pieza en el centro (y «Empezar desde
+ * los campos» si la página tiene campos con papel). Quien juega lo ve con lo que conoce, sin editar
  */
 import type { Page, PageTabView, RelationEdge, TreeEdgeView, TreeNodeView, TreeView } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ExternalLink, FilePlus2, ListPlus, Pencil, Plus, Trash2, X } from 'lucide-react'
-import {
-  type CSSProperties,
-  type ReactNode,
-  useCallback,
-  useContext,
-  useEffect,
-  useId,
-  useMemo,
-  useRef,
-  useState
-} from 'react'
-import { createPortal } from 'react-dom'
+import type { TFunction } from 'i18next'
+import { ExternalLink, FilePlus2, ListPlus, Pencil, Plus, Trash2, UserPlus, X } from 'lucide-react'
+import { type CSSProperties, type ReactNode, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
@@ -42,15 +34,38 @@ import { useRelationModes, useTemplateLook } from '../relations/queries.ts'
 import relationStyles from '../relations/relations.module.css'
 import { TreeView as Cards } from '../relations/tree-view.tsx'
 import { readAsInput, readAsKey, useOpenPage, useReadAs } from '../wiki/read-as.tsx'
-import { TabToolsSlot } from '../wiki/world-page.ts'
 import { treeTabLayout } from './layout.ts'
 import styles from './trees.module.css'
 
 /** Lo que cuelga de ['pages', mundo]: se pone al día con los avisos de páginas */
 export const treeKey = (worldId: string, tabId: string) => ['pages', worldId, 'tree', tabId]
 
-/** Lo que se añade desde un nodo (o el primero, en un árbol vacío) */
-type AddKind = 'first' | 'parent' | 'partner' | 'child' | 'member' | 'leader'
+/** Lo que se añade desde un nodo: la relación del nuevo con él (en el orden del desplegable) */
+export const ADD_KINDS = [
+  'parent',
+  'child',
+  'partner',
+  'ex-partner',
+  'sibling',
+  'stepparent',
+  'stepchild',
+  'adopter',
+  'adopted',
+  'leader',
+  'led',
+  'member',
+  'group',
+  'other'
+] as const
+export type AddKind = (typeof ADD_KINDS)[number]
+/** Las de un clic en la ficha del nodo; las demás, en «Otra relación» */
+const QUICK_ADDS: readonly AddKind[] = ['parent', 'partner', 'child']
+
+/** Una relación libre: su nombre y dónde va el nuevo respecto al nodo */
+export interface CustomRelation {
+  label: string
+  place: 'above' | 'below' | 'beside'
+}
 
 const shortId = () => crypto.randomUUID().slice(0, 8)
 
@@ -63,25 +78,77 @@ const asCard = (node: TreeNodeView) => ({
   ...(node.note ? { subtitle: node.note } : {})
 })
 
-/** Las líneas nuevas al añadir a target desde source (al hijo de alguien con una sola pareja, la pareja también) */
-export function edgesFor(kind: AddKind, source: string | null, target: string, edges: readonly TreeEdgeView[]) {
-  if (!source || kind === 'first') return []
-  if (kind === 'parent') return [{ from: target, to: source, type: 'parent' as const }]
-  if (kind === 'partner') return [{ from: source, to: target, type: 'partner' as const }]
-  if (kind === 'member') return [{ from: target, to: source, type: 'member' as const }]
-  if (kind === 'leader') return [{ from: target, to: source, type: 'leads' as const }]
-  const partners = edges
-    .filter((edge) => edge.type === 'partner' && (edge.from === source || edge.to === source))
-    .map((edge) => (edge.from === source ? edge.to : edge.from))
-  return [
-    { from: source, to: target, type: 'parent' as const },
-    ...(partners.length === 1 && partners[0] !== target
-      ? [{ from: partners[0] as string, to: target, type: 'parent' as const }]
-      : [])
-  ]
+/**
+ * La línea nueva al añadir a added junto a node, con su relación: solo esa (no se deduce nada, como en Everlore: el hijo
+ * de una pareja no lo es de los dos hasta que se dice)
+ */
+export function edgeFor(kind: AddKind, node: string, added: string, custom?: CustomRelation): TreeEdgeView {
+  switch (kind) {
+    case 'parent':
+      return { from: added, to: node, type: 'parent' }
+    case 'child':
+      return { from: node, to: added, type: 'parent' }
+    case 'partner':
+    case 'ex-partner':
+    case 'sibling':
+      return { from: node, to: added, type: kind }
+    case 'stepparent':
+      return { from: added, to: node, type: 'stepparent' }
+    case 'stepchild':
+      return { from: node, to: added, type: 'stepparent' }
+    case 'adopter':
+      return { from: added, to: node, type: 'adoptive' }
+    case 'adopted':
+      return { from: node, to: added, type: 'adoptive' }
+    case 'leader':
+      return { from: added, to: node, type: 'leads' }
+    case 'led':
+      return { from: node, to: added, type: 'leads' }
+    case 'member':
+      return { from: added, to: node, type: 'member' }
+    case 'group':
+      return { from: node, to: added, type: 'member' }
+    case 'other': {
+      const label = custom?.label.trim() ?? ''
+      if (custom?.place === 'beside') return { from: node, to: added, type: 'other', label, beside: true }
+      return custom?.place === 'below'
+        ? { from: node, to: added, type: 'other', label }
+        : { from: added, to: node, type: 'other', label }
+    }
+  }
 }
 
-/** Un árbol a partir de las relaciones con papel de la página (sus campos): los nodos, sus páginas */
+/** Si dos líneas son la misma (las de lado, en los dos sentidos; las libres, por su nombre) */
+const sameLine = (a: TreeEdgeView, b: TreeEdgeView) =>
+  a.type === b.type &&
+  (a.type !== 'other' || (a.label ?? '').toLowerCase() === (b.label ?? '').toLowerCase()) &&
+  ((a.from === b.from && a.to === b.to) ||
+    ((['partner', 'ex-partner', 'sibling'].includes(a.type) || (a.type === 'other' && a.beside)) &&
+      a.from === b.to &&
+      a.to === b.from))
+
+/** Una línea leída desde un nodo: «Padre o madre de Ilsa», «Hijastra de Varn», «Padrino de Doran»… */
+export function lineText(t: TFunction, edge: TreeEdgeView, mine: boolean, name: string) {
+  if (edge.type === 'other') {
+    const label = edge.label ?? ''
+    return mine || edge.beside
+      ? t('trees.lines.other', { label, name })
+      : t('trees.lines.otherOf', { label: label.toLocaleLowerCase('es'), name })
+  }
+  if (edge.type === 'partner' || edge.type === 'ex-partner' || edge.type === 'sibling')
+    return t(`trees.lines.${edge.type}` as 'trees.lines.partner', { name })
+  return t(`trees.lines.${edge.type}${mine ? '' : 'Of'}` as 'trees.lines.parent', { name })
+}
+
+/** El nombre que va junto a una línea en el dibujo (las de sangre y pareja, y «miembro de», sin nombre) */
+const wireLabel = (t: TFunction) => (edge: TreeEdgeView) =>
+  edge.type === 'parent' || edge.type === 'partner' || edge.type === 'member'
+    ? null
+    : edge.type === 'other'
+      ? (edge.label ?? null)
+      : t(`trees.wires.${edge.type}` as 'trees.wires.leads')
+
+/** Un árbol a partir de las relaciones con papel de la página (sus campos de familia y de organización): sus páginas */
 export function treeFromRelations(
   nodes: readonly { id: string; title: string }[],
   edges: readonly Pick<RelationEdge, 'source' | 'target' | 'role'>[]
@@ -121,7 +188,6 @@ export function TreeTab({ page, tab, editable }: { page: Page; tab: PageTabView;
   const announce = useAnnounce()
   const errorText = useErrorText()
   const look = useTemplateLook()
-  const slot = useContext(TabToolsSlot)
   const key = [...treeKey(page.worldId, tab.id), ...readAsKey(readAs)]
   const tree = useQuery({
     queryKey: key,
@@ -129,6 +195,7 @@ export function TreeTab({ page, tab, editable }: { page: Page; tab: PageTabView;
   })
   const canEdit = editable && !readAs && !page.locked
   const { selected, select, close: closeCard, focusCard } = useSelection()
+  /** Añadir: suelto (from null) o junto a un nodo, con la relación que se elija (kind, la de partida) */
   const [adding, setAdding] = useState<{ kind: AddKind; from: string | null } | null>(null)
   const [renaming, setRenaming] = useState<TreeNodeView | null>(null)
   const [failure, setFailure] = useState<string | null>(null)
@@ -172,12 +239,11 @@ export function TreeTab({ page, tab, editable }: { page: Page; tab: PageTabView;
   const data = tree.data
   const nodes = useMemo(() => data?.nodes ?? [], [data?.nodes])
   const edges = useMemo(() => data?.edges ?? [], [data?.edges])
-  const layout = data?.layout ?? 'family'
   const byId = useMemo(() => new Map(nodes.map((node) => [node.id, asCard(node)])), [nodes])
   const loose = useMemo(() => new Set(nodes.filter((node) => !node.pageId).map((node) => node.id)), [nodes])
   const order = useMemo(() => colorOrder(look.order, nodes), [look.order, nodes])
   const colorOf = useCallback((node: { template: string | null }) => templateColor(node.template, order), [order])
-  const placed = useMemo(() => treeTabLayout(layout, nodes, edges), [layout, nodes, edges])
+  const placed = useMemo(() => treeTabLayout(nodes, edges, wireLabel(t)), [nodes, edges, t])
   // La de la página del árbol, marcada (si está)
   const center = nodes.find((node) => node.pageId === page.id)?.id ?? ''
   const chosen = selected ? nodes.find((node) => node.id === selected) : undefined
@@ -192,27 +258,27 @@ export function TreeTab({ page, tab, editable }: { page: Page; tab: PageTabView;
   }
   const removeEdge = (edge: TreeEdgeView) => save.mutate({ nodes, edges: edges.filter((each) => each !== edge) })
 
-  const tools = canEdit && nodes.length > 0 && (
-    <div className={relationStyles.tools}>
+  // «Añadir persona», abajo en el centro como el «+» de la cronología (suelta: sus líneas, desde su ficha)
+  const pill = canEdit && nodes.length > 0 && (
+    <div className={relationStyles.pill}>
       <button
         type="button"
-        className={styles.toolButton}
-        onClick={() => setAdding({ kind: 'first', from: null })}
+        className={styles.addPerson}
+        onClick={() => setAdding({ kind: 'child', from: null })}
         data-tour="arbol-anadir"
       >
-        <Plus size={16} aria-hidden="true" />
+        <UserPlus size={16} aria-hidden="true" />
         {t('trees.add')}
       </button>
     </div>
   )
 
   if (!data) return failed(tree) ? <LoadError error={tree.error} onRetry={() => tree.refetch()} /> : <Loading />
-  const label = t(layout === 'org' ? 'trees.labelOrg' : 'trees.label', { name: tab.name })
+  const label = t('trees.label', { name: tab.name })
 
   return (
     // Una sola caja: los cuadros de añadir y de editar van dentro (como hijos directos de la página a sangre, se estiraban)
     <div className={styles.tab}>
-      {tools && (slot ? createPortal(tools, slot) : <div className={relationStyles.toolsRow}>{tools}</div>)}
       <div className={relationStyles.area} data-tour="arbol">
         {failure && (
           <p className={styles.failure} role="alert">
@@ -230,9 +296,8 @@ export function TreeTab({ page, tab, editable }: { page: Page; tab: PageTabView;
         {nodes.length === 0 ? (
           <Empty
             page={page}
-            layout={layout}
             canEdit={canEdit}
-            onAdd={() => setAdding({ kind: 'first', from: null })}
+            onAdd={() => setAdding({ kind: 'child', from: null })}
             onFromFields={(next) => save.mutate(next)}
           />
         ) : (
@@ -253,7 +318,6 @@ export function TreeTab({ page, tab, editable }: { page: Page; tab: PageTabView;
             {chosen && (
               <NodeCard
                 node={chosen}
-                layout={layout}
                 nodes={nodes}
                 edges={edges}
                 color={colorOf(chosen)}
@@ -271,6 +335,7 @@ export function TreeTab({ page, tab, editable }: { page: Page; tab: PageTabView;
             )}
           </Canvas>
         )}
+        {pill}
       </div>
       {adding && (
         <AddDialog
@@ -285,10 +350,8 @@ export function TreeTab({ page, tab, editable }: { page: Page; tab: PageTabView;
             const added: TreeNodeView[] = existing
               ? []
               : [{ id, pageId: pick.pageId ?? null, name: pick.name, icon: null, template: null }]
-            const extra = edgesFor(adding.kind, adding.from, id, edges).filter(
-              (edge) =>
-                !edges.some((other) => other.from === edge.from && other.to === edge.to && other.type === edge.type)
-            )
+            const line = adding.from ? edgeFor(pick.kind, adding.from, id, pick.custom) : null
+            const extra = line && !edges.some((other) => sameLine(other, line)) ? [line] : []
             save.mutate({ nodes: [...nodes, ...added], edges: [...edges, ...extra] })
             announce(t('trees.added', { name: pick.name }))
             setAdding(null)
@@ -318,7 +381,7 @@ export function TreeTab({ page, tab, editable }: { page: Page; tab: PageTabView;
         id={canEdit ? 'arbol' : 'arbol-lectura'}
         steps={[
           { target: '[data-tour="arbol"]', text: t(canEdit ? 'tour.tree.cards' : 'tour.tree.read') },
-          ...(tools ? [{ target: '[data-tour="arbol-anadir"]', text: t('tour.tree.add') }] : [])
+          ...(pill ? [{ target: '[data-tour="arbol-anadir"]', text: t('tour.tree.add') }] : [])
         ]}
       />
     </div>
@@ -394,13 +457,11 @@ function Canvas({
 /** Vacío: una sola pieza en el centro; con campos con papel en la página, también empezar desde ellos */
 function Empty({
   page,
-  layout,
   canEdit,
   onAdd,
   onFromFields
 }: {
   page: Page
-  layout: 'family' | 'org'
   canEdit: boolean
   onAdd: () => void
   onFromFields: (tree: Pick<TreeView, 'nodes' | 'edges'>) => void
@@ -408,9 +469,16 @@ function Empty({
   const { t } = useTranslation()
   const api = useApi()
   const modes = useRelationModes(page.worldId, page.id, canEdit)
-  const mode = layout === 'org' ? 'org' : 'family'
+  // Sus campos de familia y de organización, juntos
+  const wanted = (['family', 'org'] as const).filter((mode) => modes.includes(mode))
   const fromFields = useMutation({
-    mutationFn: () => api.call('getRelations', { pageId: page.id, mode, depth: 1 }),
+    mutationFn: async () => {
+      const results = await Promise.all(
+        wanted.map((mode) => api.call('getRelations', { pageId: page.id, mode, depth: 1 }))
+      )
+      const nodes = new Map(results.flatMap((result) => result.nodes).map((node) => [node.id, node]))
+      return { nodes: [...nodes.values()], edges: results.flatMap((result) => result.edges) }
+    },
     onSuccess: (result) => {
       const built = treeFromRelations(result.nodes, result.edges)
       onFromFields({
@@ -428,9 +496,9 @@ function Empty({
           <div className={styles.emptyActions}>
             <button type="button" className={styles.emptyButton} onClick={onAdd} data-tour="arbol-vacio">
               <Plus size={20} aria-hidden="true" />
-              {t(layout === 'org' ? 'trees.firstOrg' : 'trees.first')}
+              {t('trees.first')}
             </button>
-            {modes.includes(mode) && (
+            {wanted.length > 0 && (
               <BusyButton className={styles.fromFields} busy={fromFields.isPending} onClick={() => fromFields.mutate()}>
                 <ListPlus size={16} aria-hidden="true" />
                 {t('trees.fromFields')}
@@ -439,7 +507,7 @@ function Empty({
           </div>
         }
       >
-        <p>{t(layout === 'org' ? 'trees.emptyOrg' : 'trees.empty')}</p>
+        <p>{t('trees.empty')}</p>
       </EmptyState>
     </div>
   )
@@ -448,7 +516,6 @@ function Empty({
 /** La ficha del nodo elegido: su página, sus líneas y lo que se hace con él */
 function NodeCard({
   node,
-  layout,
   nodes,
   edges,
   color,
@@ -464,7 +531,6 @@ function NodeCard({
   onRemoveEdge
 }: {
   node: TreeNodeView
-  layout: 'family' | 'org'
   nodes: readonly TreeNodeView[]
   edges: readonly TreeEdgeView[]
   color: string
@@ -490,14 +556,8 @@ function NodeCard({
     .filter((edge) => edge.from === node.id || edge.to === node.id)
     .map((edge) => {
       const mine = edge.from === node.id
-      const other = nameOf(mine ? edge.to : edge.from)
-      const text =
-        edge.type === 'partner'
-          ? t('trees.lines.partner', { name: other })
-          : t(`trees.lines.${edge.type}${mine ? '' : 'Of'}` as 'trees.lines.parent', { name: other })
-      return { edge, text }
+      return { edge, text: lineText(t, edge, mine, nameOf(mine ? edge.to : edge.from)) }
     })
-  const adds: AddKind[] = layout === 'org' ? ['member', 'leader'] : ['parent', 'partner', 'child']
   return (
     <section
       ref={box}
@@ -525,7 +585,7 @@ function NodeCard({
       {lines.length > 0 && (
         <ul className={styles.lines} aria-label={t('trees.linesLabel')}>
           {lines.map(({ edge, text }) => (
-            <li key={`${edge.from}-${edge.to}-${edge.type}`}>
+            <li key={`${edge.from}-${edge.to}-${edge.type}-${edge.label ?? ''}`}>
               <span>{text}</span>
               {canEdit && (
                 <button
@@ -545,12 +605,16 @@ function NodeCard({
       {canEdit && (
         // biome-ignore lint/a11y/useSemanticElements: un grupo de botones que añaden, no un formulario
         <div className={styles.adds} role="group" aria-label={t('trees.addLabel', { name: node.name })}>
-          {adds.map((kind) => (
+          {QUICK_ADDS.map((kind) => (
             <button key={kind} type="button" onClick={() => onAdd(kind)}>
               <Plus size={14} aria-hidden="true" />
               {t(`trees.adds.${kind}` as 'trees.adds.parent')}
             </button>
           ))}
+          <button type="button" onClick={() => onAdd('other')}>
+            <Plus size={14} aria-hidden="true" />
+            {t('trees.adds.more')}
+          </button>
         </div>
       )}
       <div className={relationStyles.cardActions}>
@@ -584,8 +648,9 @@ function NodeCard({
 }
 
 /**
- * Añadir a alguien: se escribe su nombre y se elige una página del mundo (o alguien que ya está en el árbol, para unirlo
- * con una línea) o se añade solo con su nombre
+ * Añadir a alguien: junto a un nodo, primero su relación con él (un desplegable con todas; «Otra», con su nombre y dónde
+ * va); luego se escribe su nombre y se elige una página del mundo (o alguien que ya está en el árbol, para unirlo con esa
+ * línea) o se añade solo con su nombre. Sin nodo («Añadir persona»), solo el buscador
  */
 function AddDialog({
   worldId,
@@ -600,13 +665,22 @@ function AddDialog({
   from: TreeNodeView | null
   nodes: readonly TreeNodeView[]
   onClose: () => void
-  onPick: (pick: { nodeId?: string; pageId?: string; name: string }) => void
+  onPick: (pick: {
+    nodeId?: string
+    pageId?: string
+    name: string
+    kind: AddKind
+    custom?: CustomRelation | undefined
+  }) => void
 }) {
   const { t } = useTranslation()
   const api = useApi()
   const dialog = useRef<HTMLDialogElement>(null)
   const titleId = useId()
   const listId = useId()
+  const fieldId = useId()
+  const [relation, setRelation] = useState<AddKind>(kind)
+  const [custom, setCustom] = useState<CustomRelation>({ label: '', place: 'above' })
   const [query, setQuery] = useState('')
   const [active, setActive] = useState(0)
   const names = useQuery({
@@ -630,21 +704,25 @@ function AddDialog({
         name: page.title,
         hint: page.path.slice(0, -1).join(' › ')
       }))
-    return [...(kind === 'first' ? [] : here), ...pages]
-  }, [nodes, names.data, wanted, from?.id, kind, inTree, t])
+    return [...(from ? here : []), ...pages]
+  }, [nodes, names.data, wanted, from, inTree, t])
   const loose = query.trim()
   const all = [...options, ...(loose ? [{ key: 'loose', name: loose, hint: t('trees.withoutPage') }] : [])]
+  // Una libre necesita su nombre
+  const ready = !from || relation !== 'other' || custom.label.trim() !== ''
   const choose = (option: (typeof all)[number] | undefined) => {
-    if (!option) return
+    if (!option || !ready) return
     onPick({
       ...('nodeId' in option && option.nodeId ? { nodeId: option.nodeId } : {}),
       ...('pageId' in option && option.pageId ? { pageId: option.pageId } : {}),
-      name: option.name
+      name: option.name,
+      kind: relation,
+      ...(relation === 'other' ? { custom } : {})
     })
     dialog.current?.close()
   }
   const title = from
-    ? t(`trees.addTitle.${kind}` as 'trees.addTitle.parent', { name: from.name })
+    ? t(`trees.addTitle.${relation}` as 'trees.addTitle.parent', { name: from.name })
     : t('trees.addTitle.first')
   return (
     <Modal ref={dialog} aria-labelledby={titleId} className={dialogStyles.dialog} onClose={onClose}>
@@ -656,6 +734,57 @@ function AddDialog({
         }}
       >
         <h2 id={titleId}>{title}</h2>
+        {from && (
+          <div className={styles.relation}>
+            <div className={form.field}>
+              <label htmlFor={`${fieldId}-relation`}>{t('trees.relation')}</label>
+              <select
+                id={`${fieldId}-relation`}
+                value={relation}
+                onChange={(event) => setRelation(event.currentTarget.value as AddKind)}
+              >
+                {ADD_KINDS.map((each) => (
+                  <option key={each} value={each}>
+                    {t(`trees.relations.${each}` as 'trees.relations.parent')}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {relation === 'other' && (
+              <>
+                <div className={form.field}>
+                  <label htmlFor={`${fieldId}-label`}>{t('trees.customLabel')}</label>
+                  <input
+                    id={`${fieldId}-label`}
+                    value={custom.label}
+                    maxLength={60}
+                    required
+                    placeholder={t('trees.customPlaceholder')}
+                    autoComplete="off"
+                    data-1p-ignore
+                    onChange={(event) => setCustom({ ...custom, label: event.currentTarget.value })}
+                  />
+                </div>
+                <div className={form.field}>
+                  <label htmlFor={`${fieldId}-place`}>{t('trees.customPlace')}</label>
+                  <select
+                    id={`${fieldId}-place`}
+                    value={custom.place}
+                    onChange={(event) =>
+                      setCustom({ ...custom, place: event.currentTarget.value as CustomRelation['place'] })
+                    }
+                  >
+                    {(['above', 'below', 'beside'] as const).map((place) => (
+                      <option key={place} value={place}>
+                        {t(`trees.places.${place}` as 'trees.places.above', { name: from.name })}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </>
+            )}
+          </div>
+        )}
         <div className={form.field}>
           <input
             role="combobox"
@@ -709,7 +838,7 @@ function AddDialog({
           </div>
         )}
         <div className={dialogStyles.actions}>
-          <button type="submit" className={form.button} disabled={all.length === 0}>
+          <button type="submit" className={form.button} disabled={all.length === 0 || !ready}>
             {t('trees.addSubmit')}
           </button>
           <button type="button" className={dialogStyles.cancel} onClick={() => dialog.current?.close()}>

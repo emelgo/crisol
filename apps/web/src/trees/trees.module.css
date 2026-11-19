@@ -1,7 +1,7 @@
 /*
- * La pestaña de árbol genealógico u organigrama: lo que no trae relations.module.css (las tarjetas, el zoom y la ficha
- * del nodo son las de Familia y Organigrama). Su botón «Añadir» junto a las pestañas, lo que se añade desde un nodo, sus
- * líneas, el buscador del cuadro de añadir y la pieza del centro cuando está vacío
+ * La pestaña «Árbol»: lo que no trae relations.module.css (las tarjetas, el zoom, la píldora y la ficha del nodo son las
+ * de Familia). «Añadir persona» en la píldora de abajo, lo que se añade desde un nodo, sus líneas, la relación y el
+ * buscador del cuadro de añadir y la pieza del centro cuando está vacío
  */
 
 /* La pestaña: del alto de la página a sangre, con sus cuadros dentro */
@@ -18,30 +18,23 @@
   min-block-size: 0;
 }
 
-/* «Añadir», a la derecha de las pestañas: discreto, como las herramientas de la pizarra */
-.toolButton {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-block-size: 2rem;
+/* «Añadir persona», abajo en el centro: de cristal rojo, como el «+» de la cronología */
+.tab .addPerson {
   padding: 0 var(--space-3);
-  border: 1px solid transparent;
-  border-radius: var(--radius-button);
-  background: none;
-  color: var(--color-muted);
-  font: inherit;
+  background: var(--accent-glass);
+  color: var(--color-on-accent);
   font-weight: 600;
-  cursor: pointer;
 }
 
-.toolButton:hover {
-  border-color: var(--line-frame);
-  color: var(--color-text);
+.tab .addPerson:hover {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
 }
 
-.toolButton:focus-visible {
-  outline: 2px solid var(--color-focus);
-  outline-offset: 1px;
+/* La relación con el nodo, encima del buscador; la libre, con su nombre y dónde va */
+.relation {
+  display: grid;
+  gap: var(--space-3);
 }
 
 /* Lo que falla, arriba en el centro, sin tapar las tarjetas */

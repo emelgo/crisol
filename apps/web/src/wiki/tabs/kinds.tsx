@@ -14,7 +14,6 @@ import {
   Grid3x3,
   LayoutTemplate,
   Map as MapIcon,
-  Network,
   PenTool
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -28,19 +27,17 @@ export const TAB_KINDS = [
   { kind: 'table', icon: Dices, ready: true, newPage: false, newTab: false },
   { kind: 'scene', icon: Grid3x3, ready: true, newPage: false, newTab: false },
   { kind: 'board', icon: PenTool, ready: true, newPage: true, newTab: true },
-  // La cronología, como en LegendKeeper (ADR-0031), y el árbol genealógico u organigrama (bloque B de los ajustes tras
-  // los módulos 8 a 10): «Organigrama» es la misma pestaña (tree) con su forma
+  // La cronología, como en LegendKeeper (ADR-0031), y el árbol, como en Everlore (uno solo: un organigrama es un árbol
+  // con líneas «dirige» y «miembro de»)
   { kind: 'chronology', icon: CalendarRange, ready: true, newPage: true, newTab: true },
-  { kind: 'tree', icon: GitFork, ready: true, newPage: true, newTab: true },
-  { kind: 'org', icon: Network, ready: true, newPage: true, newTab: true }
+  { kind: 'tree', icon: GitFork, ready: true, newPage: true, newTab: true }
 ] as const
 
-/** Lo que se elige al crear (con «org», el organigrama: una pestaña tree con su forma) */
+/** Lo que se elige al crear */
 export type TabKind = (typeof TAB_KINDS)[number]['kind']
 
-/** Lo que se pide al servidor por lo elegido: el organigrama es una pestaña tree con layout org */
-export const tabRequest = (choice: TabKind) =>
-  choice === 'org' ? { kind: 'tree' as const, layout: 'org' as const } : { kind: choice }
+/** Lo que se pide al servidor por lo elegido */
+export const tabRequest = (choice: TabKind) => ({ kind: choice })
 
 /**
  * El nombre de la zona de una pestaña con lienzo para el lector de pantalla: «Pizarra Conspiración»; si se llama como su
@@ -49,7 +46,7 @@ export const tabRequest = (choice: TabKind) =>
 export const tabRegionLabel = (t: TFunction, kind: 'map' | 'board' | 'scene', name: string) =>
   name === t(`pageTabs.kinds.${kind}`) ? name : t(`${kind}.label`, { name })
 
-/** El dibujo de un tipo de pestaña (de las guardadas: tree es el árbol genealógico o el organigrama) */
+/** El dibujo de un tipo de pestaña */
 export const tabIcon = (kind: string) => TAB_KINDS.find((each) => each.kind === kind)?.icon ?? FileText
 
 /**

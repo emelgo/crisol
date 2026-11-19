@@ -169,6 +169,22 @@
   stroke-width: 1.5;
 }
 
+/* Pestaña Árbol: las líneas que no son de sangre ni de pareja (padrastro, adopción, expareja, hermanos, libres) */
+.wire[data-dashed] {
+  stroke-dasharray: 5 4;
+}
+
+.wireLabel {
+  fill: var(--color-muted);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  paint-order: stroke;
+  stroke: var(--color-bg);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
 .cardBox {
   fill: color-mix(in srgb, var(--color-surface) 88%, transparent);
   stroke: var(--line-frame);

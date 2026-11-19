@@ -71,7 +71,7 @@ export function createTab(
   },
   extra: {
     chronology?: Pick<typeof chronologies.$inferInsert, 'calendarId' | 'filter'>
-    tree?: Pick<typeof trees.$inferInsert, 'layout' | 'nodes' | 'edges'>
+    tree?: Pick<typeof trees.$inferInsert, 'nodes' | 'edges'>
   } = {}
 ) {
   return operation(db, context, async (w) => {

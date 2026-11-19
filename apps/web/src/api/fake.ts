@@ -4385,8 +4385,7 @@ export function fakeApi(
       }
       pageTabs.push(tab)
       if (kind === 'chronology') chronologies.attach(tab, page.worldId)
-      if (kind === 'tree')
-        trees.push({ tabId: tab.id, pageId, nodes: [], edges: [], version: 1 })
+      if (kind === 'tree') trees.push({ tabId: tab.id, pageId, nodes: [], edges: [], version: 1 })
       maps.push({
         id: crypto.randomUUID(),
         tabId: tab.id,

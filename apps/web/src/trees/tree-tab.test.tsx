@@ -7,7 +7,7 @@ import { fakeAccountClient } from '../account/fake.ts'
 import { fakeApi } from '../api/fake.ts'
 import { App } from '../app.tsx'
 import { createAppRouter } from '../router.tsx'
-import { edgesFor, treeFromRelations } from './tree-tab.tsx'
+import { edgeFor, treeFromRelations } from './tree-tab.tsx'
 
 const ORG = { id: crypto.randomUUID(), name: 'Fateforge', role: 'owner' as const }
 const WORLD: World = {
@@ -55,17 +55,28 @@ beforeEach(() => {
 })
 
 describe('las líneas que se añaden desde un nodo', () => {
-  it('padre o madre, pareja, miembro y quien dirige; el hijo de alguien con una sola pareja, de los dos', () => {
-    const edges = [{ from: 'madre', to: 'padre', type: 'partner' as const }]
-    expect(edgesFor('parent', 'ilsa', 'madre', [])).toEqual([{ from: 'madre', to: 'ilsa', type: 'parent' }])
-    expect(edgesFor('partner', 'ilsa', 'doran', [])).toEqual([{ from: 'ilsa', to: 'doran', type: 'partner' }])
-    expect(edgesFor('member', 'orden', 'varn', [])).toEqual([{ from: 'varn', to: 'orden', type: 'member' }])
-    expect(edgesFor('leader', 'orden', 'varn', [])).toEqual([{ from: 'varn', to: 'orden', type: 'leads' }])
-    expect(edgesFor('child', 'madre', 'ilsa', edges)).toEqual([
-      { from: 'madre', to: 'ilsa', type: 'parent' },
-      { from: 'padre', to: 'ilsa', type: 'parent' }
-    ])
-    expect(edgesFor('first', null, 'ilsa', edges)).toEqual([])
+  it('cada relación, una sola línea en su sentido; no se deduce nada (el hijo de una pareja no lo es de los dos)', () => {
+    expect(edgeFor('parent', 'ilsa', 'madre')).toEqual({ from: 'madre', to: 'ilsa', type: 'parent' })
+    expect(edgeFor('child', 'madre', 'ilsa')).toEqual({ from: 'madre', to: 'ilsa', type: 'parent' })
+    expect(edgeFor('partner', 'ilsa', 'doran')).toEqual({ from: 'ilsa', to: 'doran', type: 'partner' })
+    expect(edgeFor('stepchild', 'doran', 'kael')).toEqual({ from: 'doran', to: 'kael', type: 'stepparent' })
+    expect(edgeFor('adopter', 'kael', 'mira')).toEqual({ from: 'mira', to: 'kael', type: 'adoptive' })
+    expect(edgeFor('member', 'orden', 'varn')).toEqual({ from: 'varn', to: 'orden', type: 'member' })
+    expect(edgeFor('group', 'varn', 'orden')).toEqual({ from: 'varn', to: 'orden', type: 'member' })
+    expect(edgeFor('leader', 'orden', 'varn')).toEqual({ from: 'varn', to: 'orden', type: 'leads' })
+    expect(edgeFor('other', 'ilsa', 'aldo', { label: 'Padrino', place: 'above' })).toEqual({
+      from: 'aldo',
+      to: 'ilsa',
+      type: 'other',
+      label: 'Padrino'
+    })
+    expect(edgeFor('other', 'ilsa', 'kord', { label: 'Rival', place: 'beside' })).toEqual({
+      from: 'ilsa',
+      to: 'kord',
+      type: 'other',
+      label: 'Rival',
+      beside: true
+    })
   })
 
   it('desde los campos con papel: el hijo apunta al padre y el grupo a quien lo dirige, sin repetir la pareja', () => {
@@ -90,12 +101,12 @@ describe('las líneas que se añaden desde un nodo', () => {
   })
 })
 
-describe('la pestaña «Árbol genealógico»', () => {
+describe('la pestaña «Árbol»', () => {
   it('vacía, una sola pieza; se añade alguien con su página o solo con su nombre, y su familia desde su ficha', async () => {
     const { api, tab } = await setup()
     await userEvent.click(await screen.findByRole('button', { name: 'Añadir a alguien' }))
-    let dialog = within(await screen.findByRole('dialog', { name: 'Añadir al árbol' }))
-    await userEvent.type(dialog.getByRole('combobox'), 'ilsa')
+    let dialog = within(await screen.findByRole('dialog', { name: 'Añadir persona' }))
+    await userEvent.type(dialog.getByRole('combobox', { name: 'Busca una página o escribe un nombre' }), 'ilsa')
     await userEvent.keyboard('{Enter}')
     await waitFor(async () =>
       expect((await api.client.call('getTree', { tabId: tab.id })).nodes).toMatchObject([
@@ -106,13 +117,52 @@ describe('la pestaña «Árbol genealógico»', () => {
     const card = within(await screen.findByRole('region', { name: 'Ilsa de Varn' }))
     await userEvent.click(card.getByRole('button', { name: 'Padre o madre' }))
     dialog = within(await screen.findByRole('dialog', { name: 'Padre o madre de Ilsa de Varn' }))
-    await userEvent.type(dialog.getByRole('combobox'), 'Mira de Varn')
+    await userEvent.type(dialog.getByRole('combobox', { name: 'Busca una página o escribe un nombre' }), 'Mira de Varn')
     await userEvent.click(dialog.getByRole('option', { name: 'Añadir «Mira de Varn» sin página' }))
     await waitFor(async () => expect((await api.client.call('getTree', { tabId: tab.id })).edges).toHaveLength(1))
     const tree = await api.client.call('getTree', { tabId: tab.id })
     const mira = tree.nodes.find((node) => node.name === 'Mira de Varn')
     expect(mira?.pageId).toBeNull()
     expect(tree.edges[0]).toMatchObject({ from: mira?.id, type: 'parent' })
+  })
+
+  it('«Otra relación» elige cualquiera (hijastro, una libre con su nombre) y solo añade esa línea', async () => {
+    const { api, tab } = await setup()
+    await api.client.call('updateTree', {
+      tabId: tab.id,
+      nodes: [
+        { id: 'mira', name: 'Mira' },
+        { id: 'doran', name: 'Doran' }
+      ],
+      edges: [{ from: 'mira', to: 'doran', type: 'partner' }]
+    })
+    const node = await screen.findByRole('button', { name: /^Mira/ })
+    node.focus()
+    await userEvent.keyboard('{Enter}')
+    let card = within(await screen.findByRole('region', { name: 'Mira' }))
+    await userEvent.click(card.getByRole('button', { name: 'Otra relación' }))
+    let dialog = within(await screen.findByRole('dialog', { name: 'Otra relación con Mira' }))
+    await userEvent.selectOptions(dialog.getByLabelText('Relación'), 'stepchild')
+    expect(dialog.getByRole('heading', { name: 'Hijastro o hijastra de Mira' })).toBeDefined()
+    await userEvent.type(dialog.getByRole('combobox', { name: 'Busca una página o escribe un nombre' }), 'Kael')
+    await userEvent.click(dialog.getByRole('option', { name: 'Añadir «Kael» sin página' }))
+    await waitFor(async () => expect((await api.client.call('getTree', { tabId: tab.id })).edges).toHaveLength(2))
+    let tree = await api.client.call('getTree', { tabId: tab.id })
+    const kael = tree.nodes.find((each) => each.name === 'Kael')
+    // Solo la de Mira: Doran, su pareja, no pasa a ser nada de Kael
+    expect(tree.edges[1]).toEqual({ from: 'mira', to: kael?.id, type: 'stepparent' })
+    card = within(await screen.findByRole('region', { name: 'Kael' }))
+    expect(card.getByText('Hijastro o hijastra de Mira')).toBeDefined()
+    // Una libre: su nombre y dónde va; sin nombre no se puede añadir
+    await userEvent.click(card.getByRole('button', { name: 'Otra relación' }))
+    dialog = within(await screen.findByRole('dialog', { name: 'Otra relación con Kael' }))
+    await userEvent.type(dialog.getByRole('combobox', { name: 'Busca una página o escribe un nombre' }), 'Doran')
+    expect(dialog.getByRole('button', { name: 'Añadir' })).toHaveProperty('disabled', true)
+    await userEvent.type(dialog.getByLabelText('Cuál'), 'Mentor')
+    await userEvent.click(dialog.getByRole('option', { name: /^Doran/ }))
+    await waitFor(async () => expect((await api.client.call('getTree', { tabId: tab.id })).edges).toHaveLength(3))
+    tree = await api.client.call('getTree', { tabId: tab.id })
+    expect(tree.edges[2]).toEqual({ from: 'doran', to: kael?.id, type: 'other', label: 'Mentor' })
   })
 
   it('«Crear página» convierte un nodo suelto en página, y «Quitar» lo saca con sus líneas', async () => {

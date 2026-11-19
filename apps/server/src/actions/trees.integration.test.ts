@@ -84,15 +84,14 @@ describe('los árboles genealógicos y los organigramas', () => {
     await conn?.close()
   })
 
-  it('una pestaña de árbol: nace vacía con su forma; se cambia entera y lo que no vale se dice', async () => {
+  it('una pestaña de árbol: nace vacía; se cambia entera y lo que no vale se dice', async () => {
     const varn = await newPage('Casa de Varn')
     const ilsa = await newPage('Ilsa de Varn')
     const tab = await ok200('createPageTab', { pageId: varn, kind: 'tree' })
-    expect(tab).toMatchObject({ kind: 'tree', name: 'Árbol genealógico' })
-    expect(await ok200('getTree', { tabId: tab.id })).toMatchObject({ layout: 'family', nodes: [], edges: [] })
-    const org = await ok200('createPageTab', { pageId: varn, kind: 'tree', layout: 'org' })
-    expect(org.name).toBe('Organigrama')
-    expect((await ok200('getTree', { tabId: org.id })).layout).toBe('org')
+    expect(tab).toMatchObject({ kind: 'tree', name: 'Árbol' })
+    expect(await ok200('getTree', { tabId: tab.id })).toMatchObject({ nodes: [], edges: [] })
+    // Uno solo: el segundo, «Árbol 2» (un organigrama es otro árbol)
+    expect((await ok200('createPageTab', { pageId: varn, kind: 'tree' })).name).toBe('Árbol 2')
 
     const saved = await ok200('updateTree', {
       tabId: tab.id,
@@ -133,7 +132,30 @@ describe('los árboles genealógicos y los organigramas', () => {
     await ok200('deletePageTab', { tabId: tab.id })
     await fails('getTree', { tabId: tab.id }, 'NOT_FOUND')
     await undo('deletePageTab')
-    expect((await ok200('getTree', { tabId: tab.id })).layout).toBe('family')
+    expect((await ok200('getTree', { tabId: tab.id })).tabId).toBe(tab.id)
+  })
+
+  it('las relaciones no son fijas: hijastros, adopciones o una libre con su nombre (sin él, no vale)', async () => {
+    const varn = await newPage('Casa de Varn')
+    const tab = await ok200('createPageTab', { pageId: varn, kind: 'tree' })
+    const nodes = [
+      { id: 'mira', name: 'Mira' },
+      { id: 'ilsa', name: 'Ilsa' }
+    ]
+    await fails('updateTree', { tabId: tab.id, nodes, edges: [{ from: 'mira', to: 'ilsa', type: 'other' }] }, 'BAD_TREE')
+    const free = await ok200('updateTree', {
+      tabId: tab.id,
+      nodes,
+      edges: [
+        { from: 'mira', to: 'ilsa', type: 'stepparent', label: 'no se guarda' },
+        { from: 'ilsa', to: 'mira', type: 'other', label: ' Rival ', beside: true }
+      ]
+    })
+    // El nombre y el lado solo se guardan en las libres
+    expect(free.edges).toEqual([
+      { from: 'mira', to: 'ilsa', type: 'stepparent' },
+      { from: 'ilsa', to: 'mira', type: 'other', label: 'Rival', beside: true }
+    ])
   })
 
   it('crearlo de una vez (como hace la IA): en una página nueva o en una que ya hay', async () => {
@@ -149,11 +171,20 @@ describe('los árboles genealógicos y los organigramas', () => {
     })
     expect((await ok200('getPage', { pageId: created.pageId })).title).toBe('Casa de Varn')
     expect((await ok200('listPageTabs', { pageId: created.pageId })).tabs).toMatchObject([
-      { kind: 'tree', name: 'Árbol genealógico' }
+      { kind: 'tree', name: 'Árbol' }
     ])
     const orden = await newPage('La Orden')
-    const chart = await ok200('createTree', { worldId, name: 'Mando', pageId: orden, layout: 'org' })
-    expect(chart).toMatchObject({ pageId: orden, layout: 'org' })
+    const chart = await ok200('createTree', {
+      worldId,
+      name: 'Mando',
+      pageId: orden,
+      nodes: [
+        { id: 'o', pageId: orden },
+        { id: 'v', name: 'Varn' }
+      ],
+      edges: [{ from: 'v', to: 'o', type: 'leads' }]
+    })
+    expect(chart).toMatchObject({ pageId: orden, edges: [{ from: 'v', to: 'o', type: 'leads' }] })
     expect((await ok200('listPageTabs', { pageId: orden })).tabs).toMatchObject([{ kind: 'tree', name: 'Mando' }])
   })
 

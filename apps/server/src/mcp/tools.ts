@@ -916,10 +916,12 @@ export const INSTRUCTIONS =
   'se cambia como el de una página (su pageId sale en ver_plantilla) y sus campos, con cambiar_plantilla: uno de enlace ' +
   'puede llevar un papel (role: parent para Padres, partner para Pareja, member-of para Facción, leads para el Líder de ' +
   'una facción) y un nombre al revés (inverseName: «Padres» → «Hijos»), que hacen el árbol genealógico y el ' +
-  'organigrama. Un árbol genealógico u organigrama también es una pestaña (kind tree): ver_arbol_genealogico, ' +
+  'organigrama. Un árbol (genealógico, un organigrama: uno solo) también es una pestaña (kind tree): ver_arbol_genealogico, ' +
   'crear_arbol_genealogico (en una página nueva o en una que ya hay, con sus nodos y líneas) y ' +
   'editar_arbol_genealogico (sus listas enteras: mira antes ver_arbol_genealogico); cada nodo es una página (pageId) ' +
-  'o solo un nombre, y sus líneas (parent, partner, member, leads) entre páginas cuentan como relaciones. ' +
+  'o solo un nombre, y sus líneas se ponen a mano, cada una (no se deduce ninguna: el hijo de una pareja lo es de los ' +
+  'dos solo si se ponen las dos), de tipos que no son fijos (parent, stepparent, adoptive, partner, ex-partner, sibling, ' +
+  'leads, member u other con su label); entre páginas cuentan como relaciones. ' +
   'relaciones_pagina da las relaciones de una página (sus campos de enlace, lo que enlaza su texto y los árboles, en ' +
   'los dos sentidos; mode links, family u org) y grafo_mundo, las de todo el mundo con filtros. Se ordenan en ' +
   'carpetas (crear_carpeta_plantillas, mover_plantilla). Los dados los tira el servidor: tirar_dados (con ' +
