@@ -34,12 +34,8 @@
           "name": "campaign_visits_user_id_user_id_fk",
           "tableFrom": "campaign_visits",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -47,12 +43,8 @@
           "name": "campaign_visits_campaign_id_campaigns_id_fk",
           "tableFrom": "campaign_visits",
           "tableTo": "campaigns",
-          "columnsFrom": [
-            "campaign_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["campaign_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -60,10 +52,7 @@
       "compositePrimaryKeys": {
         "campaign_visits_user_id_campaign_id_pk": {
           "name": "campaign_visits_user_id_campaign_id_pk",
-          "columns": [
-            "user_id",
-            "campaign_id"
-          ]
+          "columns": ["user_id", "campaign_id"]
         }
       },
       "uniqueConstraints": {},
@@ -106,12 +95,8 @@
           "name": "actor_folder_items_campaign_id_campaigns_id_fk",
           "tableFrom": "actor_folder_items",
           "tableTo": "campaigns",
-          "columnsFrom": [
-            "campaign_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["campaign_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -119,12 +104,8 @@
           "name": "actor_folder_items_folder_id_actor_folders_id_fk",
           "tableFrom": "actor_folder_items",
           "tableTo": "actor_folders",
-          "columnsFrom": [
-            "folder_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["folder_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -132,11 +113,7 @@
       "compositePrimaryKeys": {
         "actor_folder_items_campaign_id_kind_actor_id_pk": {
           "name": "actor_folder_items_campaign_id_kind_actor_id_pk",
-          "columns": [
-            "campaign_id",
-            "kind",
-            "actor_id"
-          ]
+          "columns": ["campaign_id", "kind", "actor_id"]
         }
       },
       "uniqueConstraints": {},
@@ -202,12 +179,8 @@
           "name": "actor_folders_campaign_id_campaigns_id_fk",
           "tableFrom": "actor_folders",
           "tableTo": "campaigns",
-          "columnsFrom": [
-            "campaign_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["campaign_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -248,12 +221,8 @@
           "name": "ai_settings_user_id_user_id_fk",
           "tableFrom": "ai_settings",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -378,12 +347,8 @@
           "name": "approvals_user_id_user_id_fk",
           "tableFrom": "approvals",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -505,12 +470,8 @@
           "name": "account_user_id_user_id_fk",
           "tableFrom": "account",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -753,12 +714,8 @@
           "name": "oauth_access_token_client_id_oauth_client_client_id_fk",
           "tableFrom": "oauth_access_token",
           "tableTo": "oauth_client",
-          "columnsFrom": [
-            "client_id"
-          ],
-          "columnsTo": [
-            "client_id"
-          ],
+          "columnsFrom": ["client_id"],
+          "columnsTo": ["client_id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -766,12 +723,8 @@
           "name": "oauth_access_token_session_id_session_id_fk",
           "tableFrom": "oauth_access_token",
           "tableTo": "session",
-          "columnsFrom": [
-            "session_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["session_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -779,12 +732,8 @@
           "name": "oauth_access_token_user_id_user_id_fk",
           "tableFrom": "oauth_access_token",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -792,12 +741,8 @@
           "name": "oauth_access_token_refresh_id_oauth_refresh_token_id_fk",
           "tableFrom": "oauth_access_token",
           "tableTo": "oauth_refresh_token",
-          "columnsFrom": [
-            "refresh_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["refresh_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -807,9 +752,7 @@
         "oauth_access_token_token_unique": {
           "name": "oauth_access_token_token_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "token"
-          ]
+          "columns": ["token"]
         }
       },
       "policies": {},
@@ -1062,12 +1005,8 @@
           "name": "oauth_client_user_id_user_id_fk",
           "tableFrom": "oauth_client",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1077,9 +1016,7 @@
         "oauth_client_client_id_unique": {
           "name": "oauth_client_client_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "client_id"
-          ]
+          "columns": ["client_id"]
         }
       },
       "policies": {},
@@ -1204,12 +1141,8 @@
           "name": "oauth_client_resource_client_id_oauth_client_client_id_fk",
           "tableFrom": "oauth_client_resource",
           "tableTo": "oauth_client",
-          "columnsFrom": [
-            "client_id"
-          ],
-          "columnsTo": [
-            "client_id"
-          ],
+          "columnsFrom": ["client_id"],
+          "columnsTo": ["client_id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1217,12 +1150,8 @@
           "name": "oauth_client_resource_resource_id_oauth_resource_identifier_fk",
           "tableFrom": "oauth_client_resource",
           "tableTo": "oauth_resource",
-          "columnsFrom": [
-            "resource_id"
-          ],
-          "columnsTo": [
-            "identifier"
-          ],
+          "columnsFrom": ["resource_id"],
+          "columnsTo": ["identifier"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1329,12 +1258,8 @@
           "name": "oauth_consent_client_id_oauth_client_client_id_fk",
           "tableFrom": "oauth_consent",
           "tableTo": "oauth_client",
-          "columnsFrom": [
-            "client_id"
-          ],
-          "columnsTo": [
-            "client_id"
-          ],
+          "columnsFrom": ["client_id"],
+          "columnsTo": ["client_id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1342,12 +1267,8 @@
           "name": "oauth_consent_user_id_user_id_fk",
           "tableFrom": "oauth_consent",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1538,12 +1459,8 @@
           "name": "oauth_refresh_token_client_id_oauth_client_client_id_fk",
           "tableFrom": "oauth_refresh_token",
           "tableTo": "oauth_client",
-          "columnsFrom": [
-            "client_id"
-          ],
-          "columnsTo": [
-            "client_id"
-          ],
+          "columnsFrom": ["client_id"],
+          "columnsTo": ["client_id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1551,12 +1468,8 @@
           "name": "oauth_refresh_token_session_id_session_id_fk",
           "tableFrom": "oauth_refresh_token",
           "tableTo": "session",
-          "columnsFrom": [
-            "session_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["session_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -1564,12 +1477,8 @@
           "name": "oauth_refresh_token_user_id_user_id_fk",
           "tableFrom": "oauth_refresh_token",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1579,9 +1488,7 @@
         "oauth_refresh_token_token_unique": {
           "name": "oauth_refresh_token_token_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "token"
-          ]
+          "columns": ["token"]
         }
       },
       "policies": {},
@@ -1693,9 +1600,7 @@
         "oauth_resource_identifier_unique": {
           "name": "oauth_resource_identifier_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "identifier"
-          ]
+          "columns": ["identifier"]
         }
       },
       "policies": {},
@@ -1738,9 +1643,7 @@
         "rate_limit_key_unique": {
           "name": "rate_limit_key_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "key"
-          ]
+          "columns": ["key"]
         }
       },
       "policies": {},
@@ -1823,12 +1726,8 @@
           "name": "session_user_id_user_id_fk",
           "tableFrom": "session",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1838,9 +1737,7 @@
         "session_token_unique": {
           "name": "session_token_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "token"
-          ]
+          "columns": ["token"]
         }
       },
       "policies": {},
@@ -1931,9 +1828,7 @@
         "user_email_unique": {
           "name": "user_email_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "email"
-          ]
+          "columns": ["email"]
         }
       },
       "policies": {},
@@ -2121,12 +2016,8 @@
           "name": "calendars_created_by_user_id_fk",
           "tableFrom": "calendars",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -2134,12 +2025,8 @@
           "name": "calendars_updated_by_user_id_fk",
           "tableFrom": "calendars",
           "tableTo": "user",
-          "columnsFrom": [
-            "updated_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["updated_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -2147,12 +2034,8 @@
           "name": "calendars_world_id_worlds_id_fk",
           "tableFrom": "calendars",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2248,12 +2131,8 @@
           "name": "campaign_members_created_by_user_id_fk",
           "tableFrom": "campaign_members",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -2261,12 +2140,8 @@
           "name": "campaign_members_updated_by_user_id_fk",
           "tableFrom": "campaign_members",
           "tableTo": "user",
-          "columnsFrom": [
-            "updated_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["updated_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -2274,12 +2149,8 @@
           "name": "campaign_members_campaign_id_campaigns_id_fk",
           "tableFrom": "campaign_members",
           "tableTo": "campaigns",
-          "columnsFrom": [
-            "campaign_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["campaign_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2287,12 +2158,8 @@
           "name": "campaign_members_user_id_user_id_fk",
           "tableFrom": "campaign_members",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2302,10 +2169,7 @@
         "campaign_members_campaignId_userId_unique": {
           "name": "campaign_members_campaignId_userId_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "campaign_id",
-            "user_id"
-          ]
+          "columns": ["campaign_id", "user_id"]
         }
       },
       "policies": {},
@@ -2450,12 +2314,8 @@
           "name": "campaign_weather_created_by_user_id_fk",
           "tableFrom": "campaign_weather",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -2463,12 +2323,8 @@
           "name": "campaign_weather_updated_by_user_id_fk",
           "tableFrom": "campaign_weather",
           "tableTo": "user",
-          "columnsFrom": [
-            "updated_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["updated_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -2476,12 +2332,8 @@
           "name": "campaign_weather_world_id_worlds_id_fk",
           "tableFrom": "campaign_weather",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2489,12 +2341,8 @@
           "name": "campaign_weather_campaign_id_campaigns_id_fk",
           "tableFrom": "campaign_weather",
           "tableTo": "campaigns",
-          "columnsFrom": [
-            "campaign_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["campaign_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2502,12 +2350,8 @@
           "name": "campaign_weather_calendar_id_calendars_id_fk",
           "tableFrom": "campaign_weather",
           "tableTo": "calendars",
-          "columnsFrom": [
-            "calendar_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["calendar_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2517,13 +2361,7 @@
         "campaign_weather_day": {
           "name": "campaign_weather_day",
           "nullsNotDistinct": false,
-          "columns": [
-            "campaign_id",
-            "calendar_id",
-            "year",
-            "month",
-            "day"
-          ]
+          "columns": ["campaign_id", "calendar_id", "year", "month", "day"]
         }
       },
       "policies": {},
@@ -2695,12 +2533,8 @@
           "name": "campaigns_created_by_user_id_fk",
           "tableFrom": "campaigns",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -2708,12 +2542,8 @@
           "name": "campaigns_updated_by_user_id_fk",
           "tableFrom": "campaigns",
           "tableTo": "user",
-          "columnsFrom": [
-            "updated_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["updated_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -2721,12 +2551,8 @@
           "name": "campaigns_world_id_worlds_id_fk",
           "tableFrom": "campaigns",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2837,12 +2663,8 @@
           "name": "character_versions_created_by_user_id_fk",
           "tableFrom": "character_versions",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -2850,12 +2672,8 @@
           "name": "character_versions_updated_by_user_id_fk",
           "tableFrom": "character_versions",
           "tableTo": "user",
-          "columnsFrom": [
-            "updated_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["updated_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -2863,12 +2681,8 @@
           "name": "character_versions_character_id_characters_id_fk",
           "tableFrom": "character_versions",
           "tableTo": "characters",
-          "columnsFrom": [
-            "character_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["character_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -3013,12 +2827,8 @@
           "name": "characters_created_by_user_id_fk",
           "tableFrom": "characters",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -3026,12 +2836,8 @@
           "name": "characters_updated_by_user_id_fk",
           "tableFrom": "characters",
           "tableTo": "user",
-          "columnsFrom": [
-            "updated_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["updated_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -3039,12 +2845,8 @@
           "name": "characters_campaign_id_campaigns_id_fk",
           "tableFrom": "characters",
           "tableTo": "campaigns",
-          "columnsFrom": [
-            "campaign_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["campaign_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -3052,12 +2854,8 @@
           "name": "characters_owner_id_user_id_fk",
           "tableFrom": "characters",
           "tableTo": "user",
-          "columnsFrom": [
-            "owner_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["owner_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -3159,12 +2957,8 @@
           "name": "chronologies_created_by_user_id_fk",
           "tableFrom": "chronologies",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -3172,12 +2966,8 @@
           "name": "chronologies_updated_by_user_id_fk",
           "tableFrom": "chronologies",
           "tableTo": "user",
-          "columnsFrom": [
-            "updated_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["updated_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -3185,12 +2975,8 @@
           "name": "chronologies_world_id_worlds_id_fk",
           "tableFrom": "chronologies",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -3198,12 +2984,8 @@
           "name": "chronologies_tab_id_page_tabs_id_fk",
           "tableFrom": "chronologies",
           "tableTo": "page_tabs",
-          "columnsFrom": [
-            "tab_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["tab_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -3211,12 +2993,8 @@
           "name": "chronologies_calendar_id_calendars_id_fk",
           "tableFrom": "chronologies",
           "tableTo": "calendars",
-          "columnsFrom": [
-            "calendar_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["calendar_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -3226,9 +3004,7 @@
         "chronologies_tabId_unique": {
           "name": "chronologies_tabId_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "tab_id"
-          ]
+          "columns": ["tab_id"]
         }
       },
       "policies": {},
@@ -3395,12 +3171,8 @@
           "name": "timeline_events_created_by_user_id_fk",
           "tableFrom": "timeline_events",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -3408,12 +3180,8 @@
           "name": "timeline_events_updated_by_user_id_fk",
           "tableFrom": "timeline_events",
           "tableTo": "user",
-          "columnsFrom": [
-            "updated_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["updated_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -3421,12 +3189,8 @@
           "name": "timeline_events_world_id_worlds_id_fk",
           "tableFrom": "timeline_events",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -3434,12 +3198,8 @@
           "name": "timeline_events_group_id_timeline_groups_id_fk",
           "tableFrom": "timeline_events",
           "tableTo": "timeline_groups",
-          "columnsFrom": [
-            "group_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["group_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -3447,12 +3207,8 @@
           "name": "timeline_events_page_id_pages_id_fk",
           "tableFrom": "timeline_events",
           "tableTo": "pages",
-          "columnsFrom": [
-            "page_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["page_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -3554,12 +3310,8 @@
           "name": "timeline_groups_created_by_user_id_fk",
           "tableFrom": "timeline_groups",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -3567,12 +3319,8 @@
           "name": "timeline_groups_updated_by_user_id_fk",
           "tableFrom": "timeline_groups",
           "tableTo": "user",
-          "columnsFrom": [
-            "updated_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["updated_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -3580,12 +3328,8 @@
           "name": "timeline_groups_world_id_worlds_id_fk",
           "tableFrom": "timeline_groups",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -3717,12 +3461,8 @@
           "name": "combatants_created_by_user_id_fk",
           "tableFrom": "combatants",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -3730,12 +3470,8 @@
           "name": "combatants_updated_by_user_id_fk",
           "tableFrom": "combatants",
           "tableTo": "user",
-          "columnsFrom": [
-            "updated_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["updated_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -3743,12 +3479,8 @@
           "name": "combatants_world_id_worlds_id_fk",
           "tableFrom": "combatants",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -3756,12 +3488,8 @@
           "name": "combatants_campaign_id_campaigns_id_fk",
           "tableFrom": "combatants",
           "tableTo": "campaigns",
-          "columnsFrom": [
-            "campaign_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["campaign_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -3769,12 +3497,8 @@
           "name": "combatants_combat_id_combats_id_fk",
           "tableFrom": "combatants",
           "tableTo": "combats",
-          "columnsFrom": [
-            "combat_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["combat_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -3782,12 +3506,8 @@
           "name": "combatants_character_id_characters_id_fk",
           "tableFrom": "combatants",
           "tableTo": "characters",
-          "columnsFrom": [
-            "character_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["character_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -3795,12 +3515,8 @@
           "name": "combatants_creature_id_campaign_creatures_id_fk",
           "tableFrom": "combatants",
           "tableTo": "campaign_creatures",
-          "columnsFrom": [
-            "creature_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["creature_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -3810,18 +3526,12 @@
         "combatants_combatId_characterId_unique": {
           "name": "combatants_combatId_characterId_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "combat_id",
-            "character_id"
-          ]
+          "columns": ["combat_id", "character_id"]
         },
         "combatants_combatId_creatureId_unique": {
           "name": "combatants_combatId_creatureId_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "combat_id",
-            "creature_id"
-          ]
+          "columns": ["combat_id", "creature_id"]
         }
       },
       "policies": {},
@@ -3922,12 +3632,8 @@
           "name": "combats_created_by_user_id_fk",
           "tableFrom": "combats",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -3935,12 +3641,8 @@
           "name": "combats_updated_by_user_id_fk",
           "tableFrom": "combats",
           "tableTo": "user",
-          "columnsFrom": [
-            "updated_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["updated_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -3948,12 +3650,8 @@
           "name": "combats_world_id_worlds_id_fk",
           "tableFrom": "combats",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -3961,12 +3659,8 @@
           "name": "combats_campaign_id_campaigns_id_fk",
           "tableFrom": "combats",
           "tableTo": "campaigns",
-          "columnsFrom": [
-            "campaign_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["campaign_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -3974,12 +3668,8 @@
           "name": "combats_scene_id_scenes_id_fk",
           "tableFrom": "combats",
           "tableTo": "scenes",
-          "columnsFrom": [
-            "scene_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["scene_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -3989,9 +3679,7 @@
         "combats_campaignId_unique": {
           "name": "combats_campaignId_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "campaign_id"
-          ]
+          "columns": ["campaign_id"]
         }
       },
       "policies": {},
@@ -4152,12 +3840,8 @@
           "name": "campaign_creatures_created_by_user_id_fk",
           "tableFrom": "campaign_creatures",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -4165,12 +3849,8 @@
           "name": "campaign_creatures_updated_by_user_id_fk",
           "tableFrom": "campaign_creatures",
           "tableTo": "user",
-          "columnsFrom": [
-            "updated_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["updated_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -4178,12 +3858,8 @@
           "name": "campaign_creatures_campaign_id_campaigns_id_fk",
           "tableFrom": "campaign_creatures",
           "tableTo": "campaigns",
-          "columnsFrom": [
-            "campaign_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["campaign_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -4191,12 +3867,8 @@
           "name": "campaign_creatures_system_id_systems_id_fk",
           "tableFrom": "campaign_creatures",
           "tableTo": "systems",
-          "columnsFrom": [
-            "system_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["system_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -4341,12 +4013,8 @@
           "name": "dice_rolls_campaign_id_campaigns_id_fk",
           "tableFrom": "dice_rolls",
           "tableTo": "campaigns",
-          "columnsFrom": [
-            "campaign_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["campaign_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -4354,12 +4022,8 @@
           "name": "dice_rolls_world_id_worlds_id_fk",
           "tableFrom": "dice_rolls",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -4367,12 +4031,8 @@
           "name": "dice_rolls_user_id_user_id_fk",
           "tableFrom": "dice_rolls",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -4481,12 +4141,8 @@
           "name": "documents_world_id_worlds_id_fk",
           "tableFrom": "documents",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -4494,12 +4150,8 @@
           "name": "documents_page_id_pages_id_fk",
           "tableFrom": "documents",
           "tableTo": "pages",
-          "columnsFrom": [
-            "page_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["page_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -4507,12 +4159,8 @@
           "name": "documents_updated_by_user_id_fk",
           "tableFrom": "documents",
           "tableTo": "user",
-          "columnsFrom": [
-            "updated_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["updated_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -4694,12 +4342,8 @@
           "name": "file_folders_created_by_user_id_fk",
           "tableFrom": "file_folders",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -4707,12 +4351,8 @@
           "name": "file_folders_updated_by_user_id_fk",
           "tableFrom": "file_folders",
           "tableTo": "user",
-          "columnsFrom": [
-            "updated_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["updated_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -4720,12 +4360,8 @@
           "name": "file_folders_organization_id_organizations_id_fk",
           "tableFrom": "file_folders",
           "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -4733,12 +4369,8 @@
           "name": "file_folders_world_id_worlds_id_fk",
           "tableFrom": "file_folders",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -4746,12 +4378,8 @@
           "name": "file_folders_parent_id_file_folders_id_fk",
           "tableFrom": "file_folders",
           "tableTo": "file_folders",
-          "columnsFrom": [
-            "parent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["parent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -4976,12 +4604,8 @@
           "name": "files_created_by_user_id_fk",
           "tableFrom": "files",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -4989,12 +4613,8 @@
           "name": "files_updated_by_user_id_fk",
           "tableFrom": "files",
           "tableTo": "user",
-          "columnsFrom": [
-            "updated_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["updated_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -5002,12 +4622,8 @@
           "name": "files_organization_id_organizations_id_fk",
           "tableFrom": "files",
           "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -5015,12 +4631,8 @@
           "name": "files_world_id_worlds_id_fk",
           "tableFrom": "files",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -5028,12 +4640,8 @@
           "name": "files_folder_id_file_folders_id_fk",
           "tableFrom": "files",
           "tableTo": "file_folders",
-          "columnsFrom": [
-            "folder_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["folder_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -5138,12 +4746,8 @@
           "name": "foundry_origins_world_id_worlds_id_fk",
           "tableFrom": "foundry_origins",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -5151,12 +4755,8 @@
           "name": "foundry_origins_scene_id_scenes_id_fk",
           "tableFrom": "foundry_origins",
           "tableTo": "scenes",
-          "columnsFrom": [
-            "scene_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["scene_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -5164,12 +4764,8 @@
           "name": "foundry_origins_page_id_pages_id_fk",
           "tableFrom": "foundry_origins",
           "tableTo": "pages",
-          "columnsFrom": [
-            "page_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["page_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -5177,12 +4773,8 @@
           "name": "foundry_origins_playlist_id_sound_playlists_id_fk",
           "tableFrom": "foundry_origins",
           "tableTo": "sound_playlists",
-          "columnsFrom": [
-            "playlist_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["playlist_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -5190,12 +4782,8 @@
           "name": "foundry_origins_file_id_files_id_fk",
           "tableFrom": "foundry_origins",
           "tableTo": "files",
-          "columnsFrom": [
-            "file_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["file_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -5205,12 +4793,7 @@
         "foundry_origins_worldId_kind_package_documentId_unique": {
           "name": "foundry_origins_worldId_kind_package_documentId_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "world_id",
-            "kind",
-            "package",
-            "document_id"
-          ]
+          "columns": ["world_id", "kind", "package", "document_id"]
         }
       },
       "policies": {},
@@ -5293,12 +4876,8 @@
           "name": "changes_operation_id_operations_id_fk",
           "tableFrom": "changes",
           "tableTo": "operations",
-          "columnsFrom": [
-            "operation_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["operation_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -5308,10 +4887,7 @@
         "changes_operationId_seq_unique": {
           "name": "changes_operationId_seq_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "operation_id",
-            "seq"
-          ]
+          "columns": ["operation_id", "seq"]
         }
       },
       "policies": {},
@@ -5468,12 +5044,8 @@
           "name": "operations_organization_id_organizations_id_fk",
           "tableFrom": "operations",
           "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -5481,12 +5053,8 @@
           "name": "operations_actor_id_user_id_fk",
           "tableFrom": "operations",
           "tableTo": "user",
-          "columnsFrom": [
-            "actor_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["actor_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -5494,12 +5062,8 @@
           "name": "operations_undoes_id_operations_id_fk",
           "tableFrom": "operations",
           "tableTo": "operations",
-          "columnsFrom": [
-            "undoes_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["undoes_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -5507,12 +5071,8 @@
           "name": "operations_undone_by_id_operations_id_fk",
           "tableFrom": "operations",
           "tableTo": "operations",
-          "columnsFrom": [
-            "undone_by_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["undone_by_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -5625,12 +5185,8 @@
           "name": "invitation_links_created_by_user_id_fk",
           "tableFrom": "invitation_links",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -5638,12 +5194,8 @@
           "name": "invitation_links_updated_by_user_id_fk",
           "tableFrom": "invitation_links",
           "tableTo": "user",
-          "columnsFrom": [
-            "updated_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["updated_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -5651,12 +5203,8 @@
           "name": "invitation_links_campaign_id_campaigns_id_fk",
           "tableFrom": "invitation_links",
           "tableTo": "campaigns",
-          "columnsFrom": [
-            "campaign_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["campaign_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -5666,16 +5214,12 @@
         "invitation_links_campaignId_unique": {
           "name": "invitation_links_campaignId_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "campaign_id"
-          ]
+          "columns": ["campaign_id"]
         },
         "invitation_links_tokenHash_unique": {
           "name": "invitation_links_tokenHash_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "token_hash"
-          ]
+          "columns": ["token_hash"]
         }
       },
       "policies": {},
@@ -5790,12 +5334,8 @@
           "name": "knowledge_created_by_user_id_fk",
           "tableFrom": "knowledge",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -5803,12 +5343,8 @@
           "name": "knowledge_updated_by_user_id_fk",
           "tableFrom": "knowledge",
           "tableTo": "user",
-          "columnsFrom": [
-            "updated_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["updated_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -5816,12 +5352,8 @@
           "name": "knowledge_world_id_worlds_id_fk",
           "tableFrom": "knowledge",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -5829,12 +5361,8 @@
           "name": "knowledge_campaign_id_campaigns_id_fk",
           "tableFrom": "knowledge",
           "tableTo": "campaigns",
-          "columnsFrom": [
-            "campaign_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["campaign_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -5844,12 +5372,7 @@
         "knowledge_one": {
           "name": "knowledge_one",
           "nullsNotDistinct": true,
-          "columns": [
-            "world_id",
-            "campaign_id",
-            "kind",
-            "target_id"
-          ]
+          "columns": ["world_id", "campaign_id", "kind", "target_id"]
         }
       },
       "policies": {},
@@ -5932,12 +5455,8 @@
           "name": "knowledge_news_user_id_user_id_fk",
           "tableFrom": "knowledge_news",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -5945,12 +5464,8 @@
           "name": "knowledge_news_campaign_id_campaigns_id_fk",
           "tableFrom": "knowledge_news",
           "tableTo": "campaigns",
-          "columnsFrom": [
-            "campaign_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["campaign_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -5958,12 +5473,8 @@
           "name": "knowledge_news_page_id_pages_id_fk",
           "tableFrom": "knowledge_news",
           "tableTo": "pages",
-          "columnsFrom": [
-            "page_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["page_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -5973,12 +5484,7 @@
         "knowledge_news_one": {
           "name": "knowledge_news_one",
           "nullsNotDistinct": false,
-          "columns": [
-            "user_id",
-            "campaign_id",
-            "kind",
-            "target_id"
-          ]
+          "columns": ["user_id", "campaign_id", "kind", "target_id"]
         }
       },
       "policies": {},
@@ -6076,12 +5582,8 @@
           "name": "page_editors_created_by_user_id_fk",
           "tableFrom": "page_editors",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -6089,12 +5591,8 @@
           "name": "page_editors_updated_by_user_id_fk",
           "tableFrom": "page_editors",
           "tableTo": "user",
-          "columnsFrom": [
-            "updated_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["updated_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -6102,12 +5600,8 @@
           "name": "page_editors_world_id_worlds_id_fk",
           "tableFrom": "page_editors",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -6115,12 +5609,8 @@
           "name": "page_editors_campaign_id_campaigns_id_fk",
           "tableFrom": "page_editors",
           "tableTo": "campaigns",
-          "columnsFrom": [
-            "campaign_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["campaign_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -6128,12 +5618,8 @@
           "name": "page_editors_page_id_pages_id_fk",
           "tableFrom": "page_editors",
           "tableTo": "pages",
-          "columnsFrom": [
-            "page_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["page_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -6143,10 +5629,7 @@
         "page_editors_one": {
           "name": "page_editors_one",
           "nullsNotDistinct": false,
-          "columns": [
-            "campaign_id",
-            "page_id"
-          ]
+          "columns": ["campaign_id", "page_id"]
         }
       },
       "policies": {},
@@ -6208,12 +5691,8 @@
           "name": "file_pages_file_id_files_id_fk",
           "tableFrom": "file_pages",
           "tableTo": "files",
-          "columnsFrom": [
-            "file_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["file_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -6221,10 +5700,7 @@
       "compositePrimaryKeys": {
         "file_pages_file_id_page_pk": {
           "name": "file_pages_file_id_page_pk",
-          "columns": [
-            "file_id",
-            "page"
-          ]
+          "columns": ["file_id", "page"]
         }
       },
       "uniqueConstraints": {},
@@ -6288,12 +5764,8 @@
           "name": "file_texts_file_id_files_id_fk",
           "tableFrom": "file_texts",
           "tableTo": "files",
-          "columnsFrom": [
-            "file_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["file_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -6491,12 +5963,8 @@
           "name": "search_chunks_file_id_files_id_fk",
           "tableFrom": "search_chunks",
           "tableTo": "files",
-          "columnsFrom": [
-            "file_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["file_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -6504,12 +5972,8 @@
           "name": "search_chunks_document_id_documents_id_fk",
           "tableFrom": "search_chunks",
           "tableTo": "documents",
-          "columnsFrom": [
-            "document_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["document_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -6517,12 +5981,8 @@
           "name": "search_chunks_page_id_pages_id_fk",
           "tableFrom": "search_chunks",
           "tableTo": "pages",
-          "columnsFrom": [
-            "page_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["page_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -6645,12 +6105,8 @@
           "name": "file_embeds_world_id_worlds_id_fk",
           "tableFrom": "file_embeds",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -6658,12 +6114,8 @@
           "name": "file_embeds_source_page_id_pages_id_fk",
           "tableFrom": "file_embeds",
           "tableTo": "pages",
-          "columnsFrom": [
-            "source_page_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["source_page_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -6671,12 +6123,8 @@
           "name": "file_embeds_source_document_id_documents_id_fk",
           "tableFrom": "file_embeds",
           "tableTo": "documents",
-          "columnsFrom": [
-            "source_document_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["source_document_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -6684,12 +6132,8 @@
           "name": "file_embeds_file_id_files_id_fk",
           "tableFrom": "file_embeds",
           "tableTo": "files",
-          "columnsFrom": [
-            "file_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["file_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -6813,12 +6257,8 @@
           "name": "page_links_world_id_worlds_id_fk",
           "tableFrom": "page_links",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -6826,12 +6266,8 @@
           "name": "page_links_source_page_id_pages_id_fk",
           "tableFrom": "page_links",
           "tableTo": "pages",
-          "columnsFrom": [
-            "source_page_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["source_page_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -6839,12 +6275,8 @@
           "name": "page_links_source_document_id_documents_id_fk",
           "tableFrom": "page_links",
           "tableTo": "documents",
-          "columnsFrom": [
-            "source_document_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["source_document_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -6852,12 +6284,8 @@
           "name": "page_links_target_page_id_pages_id_fk",
           "tableFrom": "page_links",
           "tableTo": "pages",
-          "columnsFrom": [
-            "target_page_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["target_page_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -6992,12 +6420,8 @@
           "name": "campaign_messages_campaign_id_campaigns_id_fk",
           "tableFrom": "campaign_messages",
           "tableTo": "campaigns",
-          "columnsFrom": [
-            "campaign_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["campaign_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -7005,12 +6429,8 @@
           "name": "campaign_messages_world_id_worlds_id_fk",
           "tableFrom": "campaign_messages",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -7018,12 +6438,8 @@
           "name": "campaign_messages_user_id_user_id_fk",
           "tableFrom": "campaign_messages",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -7173,12 +6589,8 @@
           "name": "map_elements_created_by_user_id_fk",
           "tableFrom": "map_elements",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -7186,12 +6598,8 @@
           "name": "map_elements_updated_by_user_id_fk",
           "tableFrom": "map_elements",
           "tableTo": "user",
-          "columnsFrom": [
-            "updated_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["updated_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -7199,12 +6607,8 @@
           "name": "map_elements_world_id_worlds_id_fk",
           "tableFrom": "map_elements",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -7212,12 +6616,8 @@
           "name": "map_elements_map_id_maps_id_fk",
           "tableFrom": "map_elements",
           "tableTo": "maps",
-          "columnsFrom": [
-            "map_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["map_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -7225,12 +6625,8 @@
           "name": "map_elements_layer_id_map_layers_id_fk",
           "tableFrom": "map_elements",
           "tableTo": "map_layers",
-          "columnsFrom": [
-            "layer_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["layer_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -7238,12 +6634,8 @@
           "name": "map_elements_page_id_pages_id_fk",
           "tableFrom": "map_elements",
           "tableTo": "pages",
-          "columnsFrom": [
-            "page_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["page_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -7352,12 +6744,8 @@
           "name": "map_layers_created_by_user_id_fk",
           "tableFrom": "map_layers",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -7365,12 +6753,8 @@
           "name": "map_layers_updated_by_user_id_fk",
           "tableFrom": "map_layers",
           "tableTo": "user",
-          "columnsFrom": [
-            "updated_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["updated_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -7378,12 +6762,8 @@
           "name": "map_layers_world_id_worlds_id_fk",
           "tableFrom": "map_layers",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -7391,12 +6771,8 @@
           "name": "map_layers_map_id_maps_id_fk",
           "tableFrom": "map_layers",
           "tableTo": "maps",
-          "columnsFrom": [
-            "map_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["map_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -7573,12 +6949,8 @@
           "name": "map_pins_created_by_user_id_fk",
           "tableFrom": "map_pins",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -7586,12 +6958,8 @@
           "name": "map_pins_updated_by_user_id_fk",
           "tableFrom": "map_pins",
           "tableTo": "user",
-          "columnsFrom": [
-            "updated_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["updated_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -7599,12 +6967,8 @@
           "name": "map_pins_world_id_worlds_id_fk",
           "tableFrom": "map_pins",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -7612,12 +6976,8 @@
           "name": "map_pins_map_id_maps_id_fk",
           "tableFrom": "map_pins",
           "tableTo": "maps",
-          "columnsFrom": [
-            "map_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["map_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -7625,12 +6985,8 @@
           "name": "map_pins_page_id_pages_id_fk",
           "tableFrom": "map_pins",
           "tableTo": "pages",
-          "columnsFrom": [
-            "page_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["page_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -7762,12 +7118,8 @@
           "name": "maps_created_by_user_id_fk",
           "tableFrom": "maps",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -7775,12 +7127,8 @@
           "name": "maps_updated_by_user_id_fk",
           "tableFrom": "maps",
           "tableTo": "user",
-          "columnsFrom": [
-            "updated_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["updated_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -7788,12 +7136,8 @@
           "name": "maps_world_id_worlds_id_fk",
           "tableFrom": "maps",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -7801,12 +7145,8 @@
           "name": "maps_tab_id_page_tabs_id_fk",
           "tableFrom": "maps",
           "tableTo": "page_tabs",
-          "columnsFrom": [
-            "tab_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["tab_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -7814,12 +7154,8 @@
           "name": "maps_file_id_files_id_fk",
           "tableFrom": "maps",
           "tableTo": "files",
-          "columnsFrom": [
-            "file_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["file_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -7829,9 +7165,7 @@
         "maps_tabId_unique": {
           "name": "maps_tabId_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "tab_id"
-          ]
+          "columns": ["tab_id"]
         }
       },
       "policies": {},
@@ -7984,12 +7318,8 @@
           "name": "page_tabs_created_by_user_id_fk",
           "tableFrom": "page_tabs",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -7997,12 +7327,8 @@
           "name": "page_tabs_updated_by_user_id_fk",
           "tableFrom": "page_tabs",
           "tableTo": "user",
-          "columnsFrom": [
-            "updated_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["updated_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -8010,12 +7336,8 @@
           "name": "page_tabs_world_id_worlds_id_fk",
           "tableFrom": "page_tabs",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -8023,12 +7345,8 @@
           "name": "page_tabs_page_id_pages_id_fk",
           "tableFrom": "page_tabs",
           "tableTo": "pages",
-          "columnsFrom": [
-            "page_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["page_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -8036,12 +7354,8 @@
           "name": "page_tabs_document_id_documents_id_fk",
           "tableFrom": "page_tabs",
           "tableTo": "documents",
-          "columnsFrom": [
-            "document_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["document_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -8205,12 +7519,8 @@
           "name": "player_notes_created_by_user_id_fk",
           "tableFrom": "player_notes",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -8218,12 +7528,8 @@
           "name": "player_notes_updated_by_user_id_fk",
           "tableFrom": "player_notes",
           "tableTo": "user",
-          "columnsFrom": [
-            "updated_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["updated_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -8231,12 +7537,8 @@
           "name": "player_notes_campaign_id_campaigns_id_fk",
           "tableFrom": "player_notes",
           "tableTo": "campaigns",
-          "columnsFrom": [
-            "campaign_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["campaign_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -8244,12 +7546,8 @@
           "name": "player_notes_user_id_user_id_fk",
           "tableFrom": "player_notes",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -8257,12 +7555,8 @@
           "name": "player_notes_parent_id_player_notes_id_fk",
           "tableFrom": "player_notes",
           "tableTo": "player_notes",
-          "columnsFrom": [
-            "parent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["parent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -8328,12 +7622,8 @@
           "name": "bootstrap_tokens_organization_id_organizations_id_fk",
           "tableFrom": "bootstrap_tokens",
           "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -8341,12 +7631,8 @@
           "name": "bootstrap_tokens_used_by_user_id_fk",
           "tableFrom": "bootstrap_tokens",
           "tableTo": "user",
-          "columnsFrom": [
-            "used_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["used_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -8356,9 +7642,7 @@
         "bootstrap_tokens_tokenHash_unique": {
           "name": "bootstrap_tokens_tokenHash_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "token_hash"
-          ]
+          "columns": ["token_hash"]
         }
       },
       "policies": {},
@@ -8450,12 +7734,8 @@
           "name": "organization_members_created_by_user_id_fk",
           "tableFrom": "organization_members",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -8463,12 +7743,8 @@
           "name": "organization_members_updated_by_user_id_fk",
           "tableFrom": "organization_members",
           "tableTo": "user",
-          "columnsFrom": [
-            "updated_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["updated_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -8476,12 +7752,8 @@
           "name": "organization_members_organization_id_organizations_id_fk",
           "tableFrom": "organization_members",
           "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -8489,12 +7761,8 @@
           "name": "organization_members_user_id_user_id_fk",
           "tableFrom": "organization_members",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -8504,10 +7772,7 @@
         "organization_members_organizationId_userId_unique": {
           "name": "organization_members_organizationId_userId_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "organization_id",
-            "user_id"
-          ]
+          "columns": ["organization_id", "user_id"]
         }
       },
       "policies": {},
@@ -8576,12 +7841,8 @@
           "name": "organizations_created_by_user_id_fk",
           "tableFrom": "organizations",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -8589,12 +7850,8 @@
           "name": "organizations_updated_by_user_id_fk",
           "tableFrom": "organizations",
           "tableTo": "user",
-          "columnsFrom": [
-            "updated_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["updated_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -8846,12 +8103,8 @@
           "name": "pages_created_by_user_id_fk",
           "tableFrom": "pages",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -8859,12 +8112,8 @@
           "name": "pages_updated_by_user_id_fk",
           "tableFrom": "pages",
           "tableTo": "user",
-          "columnsFrom": [
-            "updated_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["updated_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -8872,12 +8121,8 @@
           "name": "pages_world_id_worlds_id_fk",
           "tableFrom": "pages",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -8885,12 +8130,8 @@
           "name": "pages_parent_id_pages_id_fk",
           "tableFrom": "pages",
           "tableTo": "pages",
-          "columnsFrom": [
-            "parent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["parent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -8979,12 +8220,8 @@
           "name": "campaign_party_created_by_user_id_fk",
           "tableFrom": "campaign_party",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -8992,12 +8229,8 @@
           "name": "campaign_party_updated_by_user_id_fk",
           "tableFrom": "campaign_party",
           "tableTo": "user",
-          "columnsFrom": [
-            "updated_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["updated_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -9005,12 +8238,8 @@
           "name": "campaign_party_campaign_id_campaigns_id_fk",
           "tableFrom": "campaign_party",
           "tableTo": "campaigns",
-          "columnsFrom": [
-            "campaign_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["campaign_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -9020,9 +8249,7 @@
         "campaign_party_campaignId_unique": {
           "name": "campaign_party_campaignId_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "campaign_id"
-          ]
+          "columns": ["campaign_id"]
         }
       },
       "policies": {},
@@ -9133,12 +8360,8 @@
           "name": "campaign_tables_campaign_id_campaigns_id_fk",
           "tableFrom": "campaign_tables",
           "tableTo": "campaigns",
-          "columnsFrom": [
-            "campaign_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["campaign_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -9146,12 +8369,8 @@
           "name": "campaign_tables_open_scene_id_scenes_id_fk",
           "tableFrom": "campaign_tables",
           "tableTo": "scenes",
-          "columnsFrom": [
-            "open_scene_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["open_scene_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -9159,12 +8378,8 @@
           "name": "campaign_tables_presented_scene_id_scenes_id_fk",
           "tableFrom": "campaign_tables",
           "tableTo": "scenes",
-          "columnsFrom": [
-            "presented_scene_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["presented_scene_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -9267,12 +8482,8 @@
           "name": "encounters_created_by_user_id_fk",
           "tableFrom": "encounters",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -9280,12 +8491,8 @@
           "name": "encounters_updated_by_user_id_fk",
           "tableFrom": "encounters",
           "tableTo": "user",
-          "columnsFrom": [
-            "updated_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["updated_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -9293,12 +8500,8 @@
           "name": "encounters_world_id_worlds_id_fk",
           "tableFrom": "encounters",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -9306,12 +8509,8 @@
           "name": "encounters_system_id_systems_id_fk",
           "tableFrom": "encounters",
           "tableTo": "systems",
-          "columnsFrom": [
-            "system_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["system_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -9427,12 +8626,8 @@
           "name": "scene_states_created_by_user_id_fk",
           "tableFrom": "scene_states",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -9440,12 +8635,8 @@
           "name": "scene_states_updated_by_user_id_fk",
           "tableFrom": "scene_states",
           "tableTo": "user",
-          "columnsFrom": [
-            "updated_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["updated_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -9453,12 +8644,8 @@
           "name": "scene_states_world_id_worlds_id_fk",
           "tableFrom": "scene_states",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -9466,12 +8653,8 @@
           "name": "scene_states_campaign_id_campaigns_id_fk",
           "tableFrom": "scene_states",
           "tableTo": "campaigns",
-          "columnsFrom": [
-            "campaign_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["campaign_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -9479,12 +8662,8 @@
           "name": "scene_states_scene_id_scenes_id_fk",
           "tableFrom": "scene_states",
           "tableTo": "scenes",
-          "columnsFrom": [
-            "scene_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["scene_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -9494,10 +8673,7 @@
         "scene_states_campaignId_sceneId_unique": {
           "name": "scene_states_campaignId_sceneId_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "campaign_id",
-            "scene_id"
-          ]
+          "columns": ["campaign_id", "scene_id"]
         }
       },
       "policies": {},
@@ -9563,13 +8739,7 @@
       "compositePrimaryKeys": {
         "scene_tiles_scene_id_version_level_x_y_pk": {
           "name": "scene_tiles_scene_id_version_level_x_y_pk",
-          "columns": [
-            "scene_id",
-            "version",
-            "level",
-            "x",
-            "y"
-          ]
+          "columns": ["scene_id", "version", "level", "x", "y"]
         }
       },
       "uniqueConstraints": {},
@@ -9733,12 +8903,8 @@
           "name": "scene_tokens_created_by_user_id_fk",
           "tableFrom": "scene_tokens",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -9746,12 +8912,8 @@
           "name": "scene_tokens_updated_by_user_id_fk",
           "tableFrom": "scene_tokens",
           "tableTo": "user",
-          "columnsFrom": [
-            "updated_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["updated_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -9759,12 +8921,8 @@
           "name": "scene_tokens_world_id_worlds_id_fk",
           "tableFrom": "scene_tokens",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -9772,12 +8930,8 @@
           "name": "scene_tokens_campaign_id_campaigns_id_fk",
           "tableFrom": "scene_tokens",
           "tableTo": "campaigns",
-          "columnsFrom": [
-            "campaign_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["campaign_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -9785,12 +8939,8 @@
           "name": "scene_tokens_scene_id_scenes_id_fk",
           "tableFrom": "scene_tokens",
           "tableTo": "scenes",
-          "columnsFrom": [
-            "scene_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["scene_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -9798,12 +8948,8 @@
           "name": "scene_tokens_character_id_characters_id_fk",
           "tableFrom": "scene_tokens",
           "tableTo": "characters",
-          "columnsFrom": [
-            "character_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["character_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -9811,12 +8957,8 @@
           "name": "scene_tokens_creature_id_campaign_creatures_id_fk",
           "tableFrom": "scene_tokens",
           "tableTo": "campaign_creatures",
-          "columnsFrom": [
-            "creature_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["creature_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -9826,20 +8968,12 @@
         "scene_tokens_campaignId_sceneId_characterId_unique": {
           "name": "scene_tokens_campaignId_sceneId_characterId_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "campaign_id",
-            "scene_id",
-            "character_id"
-          ]
+          "columns": ["campaign_id", "scene_id", "character_id"]
         },
         "scene_tokens_campaignId_sceneId_creatureId_unique": {
           "name": "scene_tokens_campaignId_sceneId_creatureId_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "campaign_id",
-            "scene_id",
-            "creature_id"
-          ]
+          "columns": ["campaign_id", "scene_id", "creature_id"]
         }
       },
       "policies": {},
@@ -10013,12 +9147,8 @@
           "name": "scenes_created_by_user_id_fk",
           "tableFrom": "scenes",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -10026,12 +9156,8 @@
           "name": "scenes_updated_by_user_id_fk",
           "tableFrom": "scenes",
           "tableTo": "user",
-          "columnsFrom": [
-            "updated_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["updated_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -10039,12 +9165,8 @@
           "name": "scenes_world_id_worlds_id_fk",
           "tableFrom": "scenes",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -10052,12 +9174,8 @@
           "name": "scenes_tab_id_page_tabs_id_fk",
           "tableFrom": "scenes",
           "tableTo": "page_tabs",
-          "columnsFrom": [
-            "tab_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["tab_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -10065,12 +9183,8 @@
           "name": "scenes_file_id_files_id_fk",
           "tableFrom": "scenes",
           "tableTo": "files",
-          "columnsFrom": [
-            "file_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["file_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -10080,9 +9194,7 @@
         "scenes_tabId_unique": {
           "name": "scenes_tabId_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "tab_id"
-          ]
+          "columns": ["tab_id"]
         }
       },
       "policies": {},
@@ -10211,12 +9323,8 @@
           "name": "search_sections_world_id_worlds_id_fk",
           "tableFrom": "search_sections",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -10224,12 +9332,8 @@
           "name": "search_sections_page_id_pages_id_fk",
           "tableFrom": "search_sections",
           "tableTo": "pages",
-          "columnsFrom": [
-            "page_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["page_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -10237,12 +9341,8 @@
           "name": "search_sections_document_id_documents_id_fk",
           "tableFrom": "search_sections",
           "tableTo": "documents",
-          "columnsFrom": [
-            "document_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["document_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -10292,12 +9392,8 @@
           "name": "search_words_world_id_worlds_id_fk",
           "tableFrom": "search_words",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -10305,10 +9401,7 @@
       "compositePrimaryKeys": {
         "search_words_world_id_word_pk": {
           "name": "search_words_world_id_word_pk",
-          "columns": [
-            "world_id",
-            "word"
-          ]
+          "columns": ["world_id", "word"]
         }
       },
       "uniqueConstraints": {},
@@ -10414,12 +9507,8 @@
           "name": "sound_playlists_created_by_user_id_fk",
           "tableFrom": "sound_playlists",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -10427,12 +9516,8 @@
           "name": "sound_playlists_updated_by_user_id_fk",
           "tableFrom": "sound_playlists",
           "tableTo": "user",
-          "columnsFrom": [
-            "updated_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["updated_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -10440,12 +9525,8 @@
           "name": "sound_playlists_world_id_worlds_id_fk",
           "tableFrom": "sound_playlists",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -10600,12 +9681,8 @@
           "name": "sound_tracks_created_by_user_id_fk",
           "tableFrom": "sound_tracks",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -10613,12 +9690,8 @@
           "name": "sound_tracks_updated_by_user_id_fk",
           "tableFrom": "sound_tracks",
           "tableTo": "user",
-          "columnsFrom": [
-            "updated_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["updated_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -10626,12 +9699,8 @@
           "name": "sound_tracks_world_id_worlds_id_fk",
           "tableFrom": "sound_tracks",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -10639,12 +9708,8 @@
           "name": "sound_tracks_playlist_id_sound_playlists_id_fk",
           "tableFrom": "sound_tracks",
           "tableTo": "sound_playlists",
-          "columnsFrom": [
-            "playlist_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["playlist_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -10652,12 +9717,8 @@
           "name": "sound_tracks_file_id_files_id_fk",
           "tableFrom": "sound_tracks",
           "tableTo": "files",
-          "columnsFrom": [
-            "file_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["file_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -10783,12 +9844,8 @@
           "name": "system_chapters_created_by_user_id_fk",
           "tableFrom": "system_chapters",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -10796,12 +9853,8 @@
           "name": "system_chapters_updated_by_user_id_fk",
           "tableFrom": "system_chapters",
           "tableTo": "user",
-          "columnsFrom": [
-            "updated_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["updated_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -10809,12 +9862,8 @@
           "name": "system_chapters_system_id_systems_id_fk",
           "tableFrom": "system_chapters",
           "tableTo": "systems",
-          "columnsFrom": [
-            "system_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["system_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -10985,12 +10034,8 @@
           "name": "system_content_created_by_user_id_fk",
           "tableFrom": "system_content",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -10998,12 +10043,8 @@
           "name": "system_content_updated_by_user_id_fk",
           "tableFrom": "system_content",
           "tableTo": "user",
-          "columnsFrom": [
-            "updated_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["updated_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -11011,12 +10052,8 @@
           "name": "system_content_system_id_systems_id_fk",
           "tableFrom": "system_content",
           "tableTo": "systems",
-          "columnsFrom": [
-            "system_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["system_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -11116,12 +10153,8 @@
           "name": "system_images_system_id_systems_id_fk",
           "tableFrom": "system_images",
           "tableTo": "systems",
-          "columnsFrom": [
-            "system_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["system_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -11223,12 +10256,8 @@
           "name": "systems_created_by_user_id_fk",
           "tableFrom": "systems",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -11236,12 +10265,8 @@
           "name": "systems_updated_by_user_id_fk",
           "tableFrom": "systems",
           "tableTo": "user",
-          "columnsFrom": [
-            "updated_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["updated_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -11249,12 +10274,8 @@
           "name": "systems_organization_id_organizations_id_fk",
           "tableFrom": "systems",
           "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -11437,12 +10458,8 @@
           "name": "world_content_created_by_user_id_fk",
           "tableFrom": "world_content",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -11450,12 +10467,8 @@
           "name": "world_content_updated_by_user_id_fk",
           "tableFrom": "world_content",
           "tableTo": "user",
-          "columnsFrom": [
-            "updated_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["updated_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -11463,12 +10476,8 @@
           "name": "world_content_world_id_worlds_id_fk",
           "tableFrom": "world_content",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -11476,12 +10485,8 @@
           "name": "world_content_system_id_systems_id_fk",
           "tableFrom": "world_content",
           "tableTo": "systems",
-          "columnsFrom": [
-            "system_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["system_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -11623,12 +10628,8 @@
           "name": "campaign_widgets_created_by_user_id_fk",
           "tableFrom": "campaign_widgets",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -11636,12 +10637,8 @@
           "name": "campaign_widgets_updated_by_user_id_fk",
           "tableFrom": "campaign_widgets",
           "tableTo": "user",
-          "columnsFrom": [
-            "updated_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["updated_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -11649,12 +10646,8 @@
           "name": "campaign_widgets_world_id_worlds_id_fk",
           "tableFrom": "campaign_widgets",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -11662,12 +10655,8 @@
           "name": "campaign_widgets_campaign_id_campaigns_id_fk",
           "tableFrom": "campaign_widgets",
           "tableTo": "campaigns",
-          "columnsFrom": [
-            "campaign_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["campaign_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -11795,12 +10784,8 @@
           "name": "scene_marks_created_by_user_id_fk",
           "tableFrom": "scene_marks",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -11808,12 +10793,8 @@
           "name": "scene_marks_updated_by_user_id_fk",
           "tableFrom": "scene_marks",
           "tableTo": "user",
-          "columnsFrom": [
-            "updated_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["updated_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -11821,12 +10802,8 @@
           "name": "scene_marks_world_id_worlds_id_fk",
           "tableFrom": "scene_marks",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -11834,12 +10811,8 @@
           "name": "scene_marks_campaign_id_campaigns_id_fk",
           "tableFrom": "scene_marks",
           "tableTo": "campaigns",
-          "columnsFrom": [
-            "campaign_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["campaign_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -11847,12 +10820,8 @@
           "name": "scene_marks_scene_id_scenes_id_fk",
           "tableFrom": "scene_marks",
           "tableTo": "scenes",
-          "columnsFrom": [
-            "scene_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["scene_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -11972,12 +10941,8 @@
           "name": "scene_snapshots_created_by_user_id_fk",
           "tableFrom": "scene_snapshots",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -11985,12 +10950,8 @@
           "name": "scene_snapshots_updated_by_user_id_fk",
           "tableFrom": "scene_snapshots",
           "tableTo": "user",
-          "columnsFrom": [
-            "updated_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["updated_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -11998,12 +10959,8 @@
           "name": "scene_snapshots_world_id_worlds_id_fk",
           "tableFrom": "scene_snapshots",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -12011,12 +10968,8 @@
           "name": "scene_snapshots_campaign_id_campaigns_id_fk",
           "tableFrom": "scene_snapshots",
           "tableTo": "campaigns",
-          "columnsFrom": [
-            "campaign_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["campaign_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -12024,12 +10977,8 @@
           "name": "scene_snapshots_scene_id_scenes_id_fk",
           "tableFrom": "scene_snapshots",
           "tableTo": "scenes",
-          "columnsFrom": [
-            "scene_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["scene_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -12070,12 +11019,8 @@
           "name": "content_table_draws_campaign_id_campaigns_id_fk",
           "tableFrom": "content_table_draws",
           "tableTo": "campaigns",
-          "columnsFrom": [
-            "campaign_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["campaign_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -12083,10 +11028,7 @@
       "compositePrimaryKeys": {
         "content_table_draws_campaign_id_key_pk": {
           "name": "content_table_draws_campaign_id_key_pk",
-          "columns": [
-            "campaign_id",
-            "key"
-          ]
+          "columns": ["campaign_id", "key"]
         }
       },
       "uniqueConstraints": {},
@@ -12124,12 +11066,8 @@
           "name": "random_table_draws_campaign_id_campaigns_id_fk",
           "tableFrom": "random_table_draws",
           "tableTo": "campaigns",
-          "columnsFrom": [
-            "campaign_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["campaign_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -12137,12 +11075,8 @@
           "name": "random_table_draws_table_id_random_tables_id_fk",
           "tableFrom": "random_table_draws",
           "tableTo": "random_tables",
-          "columnsFrom": [
-            "table_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["table_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -12150,10 +11084,7 @@
       "compositePrimaryKeys": {
         "random_table_draws_campaign_id_table_id_pk": {
           "name": "random_table_draws_campaign_id_table_id_pk",
-          "columns": [
-            "campaign_id",
-            "table_id"
-          ]
+          "columns": ["campaign_id", "table_id"]
         }
       },
       "uniqueConstraints": {},
@@ -12260,12 +11191,8 @@
           "name": "random_tables_created_by_user_id_fk",
           "tableFrom": "random_tables",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -12273,12 +11200,8 @@
           "name": "random_tables_updated_by_user_id_fk",
           "tableFrom": "random_tables",
           "tableTo": "user",
-          "columnsFrom": [
-            "updated_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["updated_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -12286,12 +11209,8 @@
           "name": "random_tables_world_id_worlds_id_fk",
           "tableFrom": "random_tables",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -12299,12 +11218,8 @@
           "name": "random_tables_tab_id_page_tabs_id_fk",
           "tableFrom": "random_tables",
           "tableTo": "page_tabs",
-          "columnsFrom": [
-            "tab_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["tab_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -12314,9 +11229,7 @@
         "random_tables_tabId_unique": {
           "name": "random_tables_tabId_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "tab_id"
-          ]
+          "columns": ["tab_id"]
         }
       },
       "policies": {},
@@ -12435,12 +11348,8 @@
           "name": "tags_created_by_user_id_fk",
           "tableFrom": "tags",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -12448,12 +11357,8 @@
           "name": "tags_updated_by_user_id_fk",
           "tableFrom": "tags",
           "tableTo": "user",
-          "columnsFrom": [
-            "updated_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["updated_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -12461,12 +11366,8 @@
           "name": "tags_organization_id_organizations_id_fk",
           "tableFrom": "tags",
           "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -12649,12 +11550,8 @@
           "name": "page_templates_created_by_user_id_fk",
           "tableFrom": "page_templates",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -12662,12 +11559,8 @@
           "name": "page_templates_updated_by_user_id_fk",
           "tableFrom": "page_templates",
           "tableTo": "user",
-          "columnsFrom": [
-            "updated_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["updated_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -12675,12 +11568,8 @@
           "name": "page_templates_organization_id_organizations_id_fk",
           "tableFrom": "page_templates",
           "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -12688,12 +11577,8 @@
           "name": "page_templates_page_id_pages_id_fk",
           "tableFrom": "page_templates",
           "tableTo": "pages",
-          "columnsFrom": [
-            "page_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["page_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -12701,12 +11586,8 @@
           "name": "page_templates_folder_id_template_folders_id_fk",
           "tableFrom": "page_templates",
           "tableTo": "template_folders",
-          "columnsFrom": [
-            "folder_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["folder_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -12862,12 +11743,8 @@
           "name": "template_folders_created_by_user_id_fk",
           "tableFrom": "template_folders",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -12875,12 +11752,8 @@
           "name": "template_folders_updated_by_user_id_fk",
           "tableFrom": "template_folders",
           "tableTo": "user",
-          "columnsFrom": [
-            "updated_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["updated_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -12888,12 +11761,8 @@
           "name": "template_folders_organization_id_organizations_id_fk",
           "tableFrom": "template_folders",
           "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -12901,12 +11770,8 @@
           "name": "template_folders_parent_id_template_folders_id_fk",
           "tableFrom": "template_folders",
           "tableTo": "template_folders",
-          "columnsFrom": [
-            "parent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["parent_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -13017,12 +11882,8 @@
           "name": "trees_created_by_user_id_fk",
           "tableFrom": "trees",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -13030,12 +11891,8 @@
           "name": "trees_updated_by_user_id_fk",
           "tableFrom": "trees",
           "tableTo": "user",
-          "columnsFrom": [
-            "updated_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["updated_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -13043,12 +11900,8 @@
           "name": "trees_world_id_worlds_id_fk",
           "tableFrom": "trees",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -13056,12 +11909,8 @@
           "name": "trees_tab_id_page_tabs_id_fk",
           "tableFrom": "trees",
           "tableTo": "page_tabs",
-          "columnsFrom": [
-            "tab_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["tab_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -13071,9 +11920,7 @@
         "trees_tabId_unique": {
           "name": "trees_tabId_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "tab_id"
-          ]
+          "columns": ["tab_id"]
         }
       },
       "policies": {},
@@ -13171,12 +12018,8 @@
           "name": "page_bodies_created_by_user_id_fk",
           "tableFrom": "page_bodies",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -13184,12 +12027,8 @@
           "name": "page_bodies_updated_by_user_id_fk",
           "tableFrom": "page_bodies",
           "tableTo": "user",
-          "columnsFrom": [
-            "updated_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["updated_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -13197,12 +12036,8 @@
           "name": "page_bodies_page_id_pages_id_fk",
           "tableFrom": "page_bodies",
           "tableTo": "pages",
-          "columnsFrom": [
-            "page_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["page_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -13210,12 +12045,8 @@
           "name": "page_bodies_world_id_worlds_id_fk",
           "tableFrom": "page_bodies",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -13297,12 +12128,8 @@
           "name": "page_versions_page_id_pages_id_fk",
           "tableFrom": "page_versions",
           "tableTo": "pages",
-          "columnsFrom": [
-            "page_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["page_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -13310,12 +12137,8 @@
           "name": "page_versions_world_id_worlds_id_fk",
           "tableFrom": "page_versions",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -13323,12 +12146,8 @@
           "name": "page_versions_created_by_user_id_fk",
           "tableFrom": "page_versions",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -13397,12 +12216,8 @@
           "name": "snapshots_document_id_documents_id_fk",
           "tableFrom": "snapshots",
           "tableTo": "documents",
-          "columnsFrom": [
-            "document_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["document_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -13464,12 +12279,8 @@
           "name": "version_documents_version_id_page_versions_id_fk",
           "tableFrom": "version_documents",
           "tableTo": "page_versions",
-          "columnsFrom": [
-            "version_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["version_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -13477,12 +12288,8 @@
           "name": "version_documents_document_id_documents_id_fk",
           "tableFrom": "version_documents",
           "tableTo": "documents",
-          "columnsFrom": [
-            "document_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["document_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -13490,12 +12297,8 @@
           "name": "version_documents_snapshot_id_snapshots_id_fk",
           "tableFrom": "version_documents",
           "tableTo": "snapshots",
-          "columnsFrom": [
-            "snapshot_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["snapshot_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -13503,10 +12306,7 @@
       "compositePrimaryKeys": {
         "version_documents_version_id_document_id_pk": {
           "name": "version_documents_version_id_document_id_pk",
-          "columns": [
-            "version_id",
-            "document_id"
-          ]
+          "columns": ["version_id", "document_id"]
         }
       },
       "uniqueConstraints": {},
@@ -13550,12 +12350,8 @@
           "name": "scene_explored_campaign_id_campaigns_id_fk",
           "tableFrom": "scene_explored",
           "tableTo": "campaigns",
-          "columnsFrom": [
-            "campaign_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["campaign_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -13563,10 +12359,7 @@
       "compositePrimaryKeys": {
         "scene_explored_campaign_id_scene_id_pk": {
           "name": "scene_explored_campaign_id_scene_id_pk",
-          "columns": [
-            "campaign_id",
-            "scene_id"
-          ]
+          "columns": ["campaign_id", "scene_id"]
         }
       },
       "uniqueConstraints": {},
@@ -13671,12 +12464,8 @@
           "name": "scene_fog_created_by_user_id_fk",
           "tableFrom": "scene_fog",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -13684,12 +12473,8 @@
           "name": "scene_fog_updated_by_user_id_fk",
           "tableFrom": "scene_fog",
           "tableTo": "user",
-          "columnsFrom": [
-            "updated_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["updated_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -13697,12 +12482,8 @@
           "name": "scene_fog_world_id_worlds_id_fk",
           "tableFrom": "scene_fog",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -13710,12 +12491,8 @@
           "name": "scene_fog_campaign_id_campaigns_id_fk",
           "tableFrom": "scene_fog",
           "tableTo": "campaigns",
-          "columnsFrom": [
-            "campaign_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["campaign_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -13723,12 +12500,8 @@
           "name": "scene_fog_scene_id_scenes_id_fk",
           "tableFrom": "scene_fog",
           "tableTo": "scenes",
-          "columnsFrom": [
-            "scene_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["scene_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -13899,12 +12672,8 @@
           "name": "scene_lights_created_by_user_id_fk",
           "tableFrom": "scene_lights",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -13912,12 +12681,8 @@
           "name": "scene_lights_updated_by_user_id_fk",
           "tableFrom": "scene_lights",
           "tableTo": "user",
-          "columnsFrom": [
-            "updated_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["updated_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -13925,12 +12690,8 @@
           "name": "scene_lights_world_id_worlds_id_fk",
           "tableFrom": "scene_lights",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -13938,12 +12699,8 @@
           "name": "scene_lights_scene_id_scenes_id_fk",
           "tableFrom": "scene_lights",
           "tableTo": "scenes",
-          "columnsFrom": [
-            "scene_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["scene_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -14135,12 +12892,8 @@
           "name": "scene_sounds_created_by_user_id_fk",
           "tableFrom": "scene_sounds",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -14148,12 +12901,8 @@
           "name": "scene_sounds_updated_by_user_id_fk",
           "tableFrom": "scene_sounds",
           "tableTo": "user",
-          "columnsFrom": [
-            "updated_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["updated_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -14161,12 +12910,8 @@
           "name": "scene_sounds_world_id_worlds_id_fk",
           "tableFrom": "scene_sounds",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -14174,12 +12919,8 @@
           "name": "scene_sounds_scene_id_scenes_id_fk",
           "tableFrom": "scene_sounds",
           "tableTo": "scenes",
-          "columnsFrom": [
-            "scene_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["scene_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -14187,12 +12928,8 @@
           "name": "scene_sounds_file_id_files_id_fk",
           "tableFrom": "scene_sounds",
           "tableTo": "files",
-          "columnsFrom": [
-            "file_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["file_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -14200,12 +12937,8 @@
           "name": "scene_sounds_track_id_sound_tracks_id_fk",
           "tableFrom": "scene_sounds",
           "tableTo": "sound_tracks",
-          "columnsFrom": [
-            "track_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["track_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -14379,12 +13112,8 @@
           "name": "scene_walls_created_by_user_id_fk",
           "tableFrom": "scene_walls",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -14392,12 +13121,8 @@
           "name": "scene_walls_updated_by_user_id_fk",
           "tableFrom": "scene_walls",
           "tableTo": "user",
-          "columnsFrom": [
-            "updated_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["updated_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -14405,12 +13130,8 @@
           "name": "scene_walls_world_id_worlds_id_fk",
           "tableFrom": "scene_walls",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -14418,12 +13139,8 @@
           "name": "scene_walls_scene_id_scenes_id_fk",
           "tableFrom": "scene_walls",
           "tableTo": "scenes",
-          "columnsFrom": [
-            "scene_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["scene_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -14492,12 +13209,8 @@
           "name": "wiki_preferences_user_id_user_id_fk",
           "tableFrom": "wiki_preferences",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -14505,12 +13218,8 @@
           "name": "wiki_preferences_world_id_worlds_id_fk",
           "tableFrom": "wiki_preferences",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -14520,10 +13229,7 @@
         "wiki_preferences_userId_worldId_unique": {
           "name": "wiki_preferences_userId_worldId_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "user_id",
-            "world_id"
-          ]
+          "columns": ["user_id", "world_id"]
         }
       },
       "policies": {},
@@ -14615,12 +13321,8 @@
           "name": "world_members_created_by_user_id_fk",
           "tableFrom": "world_members",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -14628,12 +13330,8 @@
           "name": "world_members_updated_by_user_id_fk",
           "tableFrom": "world_members",
           "tableTo": "user",
-          "columnsFrom": [
-            "updated_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["updated_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -14641,12 +13339,8 @@
           "name": "world_members_world_id_worlds_id_fk",
           "tableFrom": "world_members",
           "tableTo": "worlds",
-          "columnsFrom": [
-            "world_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["world_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -14654,12 +13348,8 @@
           "name": "world_members_user_id_user_id_fk",
           "tableFrom": "world_members",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -14669,10 +13359,7 @@
         "world_members_worldId_userId_unique": {
           "name": "world_members_worldId_userId_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "world_id",
-            "user_id"
-          ]
+          "columns": ["world_id", "user_id"]
         }
       },
       "policies": {},
@@ -14837,12 +13524,8 @@
           "name": "worlds_created_by_user_id_fk",
           "tableFrom": "worlds",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -14850,12 +13533,8 @@
           "name": "worlds_updated_by_user_id_fk",
           "tableFrom": "worlds",
           "tableTo": "user",
-          "columnsFrom": [
-            "updated_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["updated_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -14863,12 +13542,8 @@
           "name": "worlds_organization_id_organizations_id_fk",
           "tableFrom": "worlds",
           "tableTo": "organizations",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["organization_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }

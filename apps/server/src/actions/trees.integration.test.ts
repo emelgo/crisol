@@ -142,7 +142,11 @@ describe('los árboles genealógicos y los organigramas', () => {
       { id: 'mira', name: 'Mira' },
       { id: 'ilsa', name: 'Ilsa' }
     ]
-    await fails('updateTree', { tabId: tab.id, nodes, edges: [{ from: 'mira', to: 'ilsa', type: 'other' }] }, 'BAD_TREE')
+    await fails(
+      'updateTree',
+      { tabId: tab.id, nodes, edges: [{ from: 'mira', to: 'ilsa', type: 'other' }] },
+      'BAD_TREE'
+    )
     const free = await ok200('updateTree', {
       tabId: tab.id,
       nodes,
