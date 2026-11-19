@@ -61,10 +61,13 @@ test('los mapas para los jugadores: la jugadora ve lo que no está oculto; un pi
   await expect(ana.getByRole('region', { name: 'Pin' }).getByRole('link', { name: 'Abrir' })).toBeVisible()
   await ana.screenshot({ path: test.info().outputPath('mapa-jugadora.png'), fullPage: false })
 
-  // El máster da a conocer la cueva con el ojo de su panel (como el del árbol); a ella le aparece
-  await page.goto(`/mundos/${worldId}/wiki/${id('Costa Gris')}?pestana=${tab.id}`)
-  await page.getByRole('list', { name: 'Pines' }).getByRole('button', { name: 'Cueva' }).click()
-  const panel = page.getByRole('region', { name: 'Pin' })
+  // El máster da a conocer la cueva con el ojo de su panel (como el del árbol); a ella le aparece. Desde la Mesa (en las
+  // páginas del mundo no se revela): en la ventana de la página, su pestaña del mapa
+  await page.goto(`/mundos/${worldId}/campanas/${campaignId}/mesa?pagina=${id('Costa Gris')}`)
+  const win = page.getByRole('dialog', { name: 'Costa Gris' })
+  await win.getByRole('navigation', { name: 'Pestañas de la página' }).getByRole('link', { name: 'Mapa' }).click()
+  await win.getByRole('list', { name: 'Pines' }).getByRole('button', { name: 'Cueva' }).click()
+  const panel = win.getByRole('region', { name: 'Pin' })
   await panel.getByRole('button', { name: /: No lo conoce/ }).click()
   await expect(panel.getByRole('button', { name: /: Lo conoce/ })).toBeVisible()
   await expect(pins.getByRole('button', { name: 'Cueva' })).toBeVisible()

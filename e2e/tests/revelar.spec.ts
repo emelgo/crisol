@@ -49,9 +49,16 @@ test('revelar en partida: el máster revela un secreto a Lía; a su jugadora le 
   await expect(ana.getByRole('heading', { level: 1, name: 'Aldoria' })).toBeVisible()
   await expect(ana.getByRole('main')).not.toContainText('Varn vendió el paso')
 
-  // El máster lo revela a Lía desde la cabecera del secreto
+  // En la página del mundo, el secreto no se revela: solo dentro de la campaña (Enrique, 2026-11-19)
+  const knowledge = page.waitForResponse((r) => r.url().endsWith('/api/actions/getSecretsKnowledge'))
   await page.goto(`/mundos/${worldId}/wiki/${aldoria}`)
-  const secret = page.getByRole('region', { name: 'Secreto' })
+  await knowledge
+  await expect(page.getByRole('region', { name: 'Secreto' })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Secreto' }).getByRole('button', { name: /^Revelar/ })).toHaveCount(0)
+
+  // Desde la Mesa, en la ventana de la página, el máster lo revela a Lía desde la cabecera del secreto
+  await page.goto(`/mundos/${worldId}/campanas/${campaignId}/mesa?pagina=${aldoria}`)
+  const secret = page.getByRole('dialog', { name: 'Aldoria' }).getByRole('region', { name: 'Secreto' })
   await secret.getByRole('button', { name: 'Revelar' }).click()
   const menu = page.getByRole('dialog', { name: 'Revelar el secreto' })
   await menu.getByRole('group', { name: 'A quién' }).getByRole('button', { name: 'Lía' }).click()
