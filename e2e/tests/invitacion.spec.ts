@@ -11,12 +11,14 @@ test('el máster ve y copia el enlace de su campaña, genera uno nuevo y cierra 
   // La campaña se abre en otra pestaña; aquí, en esta, en su pestaña «Campaña»
   await openCampaign(page, 'La Marca', 'campana')
 
-  const link = page.getByLabel('Enlace de invitación')
+  // Los ajustes, encima del Inicio, que también tiene su «Copiar» (el del conector de la IA)
+  const settings = page.getByRole('dialog', { name: 'Ajustes de la campaña' })
+  const link = settings.getByLabel('Enlace de invitación')
   await expect(link).toHaveValue(/^http:\/\/127\.0\.0\.1:8131\/unirse\/[\w-]{43}$/)
   const first = await link.inputValue()
   await expect(page.getByText('Nadie ha entrado aún con este enlace')).toBeVisible()
 
-  await page.getByRole('button', { name: 'Copiar' }).click()
+  await settings.getByRole('button', { name: 'Copiar' }).click()
   await expect(page.getByRole('status')).toHaveText('Copiado')
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(first)
 
