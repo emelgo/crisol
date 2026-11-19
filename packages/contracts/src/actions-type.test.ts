@@ -319,6 +319,7 @@ describe('Actions', () => {
       deleteCalendar: true,
       describeDate: true,
       convertDate: true,
+      listCalendarEntries: true,
       listChronologies: true,
       getChronology: true,
       createChronology: true,

@@ -83,7 +83,7 @@ const chronologyView = (row: ChronologyRow): ChronologyView => ({
   version: row.version
 })
 
-const groupView = (row: GroupRow): TimelineGroupView => ({
+export const groupView = (row: GroupRow): TimelineGroupView => ({
   id: row.id,
   name: row.name,
   color: row.color,
@@ -110,8 +110,8 @@ const eventView = (row: EventRow, view: WikiView | null = null): TimelineEventVi
 const calendarOf = (rows: readonly CalendarRow[], chronology: Pick<ChronologyRow, 'calendarId'>) =>
   rows.find((row) => row.id === chronology.calendarId) ?? rows.find((row) => row.isPrimary) ?? null
 
-/** Lo que juntan las cronologías de un mundo, con lo que ve quien lee */
-async function worldData(ctx: ActionContext, worldId: string, view: WikiView) {
+/** Lo que juntan las cronologías de un mundo, con lo que ve quien lee (también la vista grande de un calendario) */
+export async function worldData(ctx: ActionContext, worldId: string, view: WikiView) {
   const [calendarRows, groups, events, pageRows] = await Promise.all([
     calendarsRepo.listCalendars(ctx.db, worldId),
     chronologiesRepo.listGroups(ctx.db, worldId),
@@ -171,7 +171,7 @@ async function worldData(ctx: ActionContext, worldId: string, view: WikiView) {
 type WorldData = Awaited<ReturnType<typeof worldData>>
 
 /** Las entradas de una cronología, ya para la API: con sus fechas en texto y lo convertido, de dónde viene */
-function entriesOf(data: WorldData, chronology: ChronologyRow) {
+export function entriesOf(data: WorldData, chronology: Pick<ChronologyRow, 'calendarId' | 'filter'>) {
   const calendar = calendarOf(data.calendarRows, chronology)
   if (!calendar)
     return { calendar: null, entries: [] as ChronologyEntryView[], raw: [] as ChronologyEntry[], outside: 0 }

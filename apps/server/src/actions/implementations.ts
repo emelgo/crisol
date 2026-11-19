@@ -2,6 +2,7 @@ import { activityActions } from './activity.ts'
 import { actorFolderActions } from './actor-folders.ts'
 import { aiActions } from './ai.ts'
 import { bookActions } from './books.ts'
+import { calendarEntryActions } from './calendar-entries.ts'
 import { calendarActions } from './calendars.ts'
 import { campaignActions } from './campaigns.ts'
 import { chapterActions } from './chapters.ts'
@@ -59,6 +60,7 @@ export const IMPLEMENTATIONS: Implementation[] = [
   ...organizationActions,
   ...worldActions,
   ...calendarActions,
+  ...calendarEntryActions,
   ...chronologyActions,
   ...campaignActions,
   ...todayActions,

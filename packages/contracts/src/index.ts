@@ -23,6 +23,7 @@ import {
   settlePending,
   updateBook
 } from './books.ts'
+import { listCalendarEntries } from './calendar-entries.ts'
 import {
   convertDate,
   createCalendar,
@@ -334,6 +335,7 @@ export * from './activity.ts'
 export * from './actor-folders.ts'
 export * from './ai.ts'
 export * from './books.ts'
+export * from './calendar-entries.ts'
 export * from './calendars.ts'
 export * from './campaigns.ts'
 export * from './characters.ts'
@@ -697,6 +699,7 @@ export const ACTIONS = [
   deleteCalendar,
   describeDate,
   convertDate,
+  listCalendarEntries,
   listChronologies,
   getChronology,
   createChronology,
@@ -1037,6 +1040,7 @@ export type Actions = {
   deleteCalendar: typeof deleteCalendar
   describeDate: typeof describeDate
   convertDate: typeof convertDate
+  listCalendarEntries: typeof listCalendarEntries
   listChronologies: typeof listChronologies
   getChronology: typeof getChronology
   createChronology: typeof createChronology
