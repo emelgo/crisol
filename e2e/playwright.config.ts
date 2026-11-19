@@ -12,6 +12,9 @@ export default defineConfig({
   expect: { timeout: process.env.CI ? 10_000 : 5_000 },
   // Un solo hilo: todas las pruebas comparten el servidor y su base de datos, y algunas la vacían al empezar
   workers: 1,
+  // Freno en local: una tanda que se alarga o se rompe en cadena se corta sola en vez de seguir horas
+  globalTimeout: process.env.CI ? 0 : 75 * 60_000,
+  maxFailures: process.env.CI ? 0 : 15,
   reporter: process.env.CI ? [['github'], ['list']] : 'list',
   use: { baseURL, trace: 'retain-on-failure', storageState: SIN_DESENFOQUE },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
