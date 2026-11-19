@@ -874,7 +874,8 @@ export const INSTRUCTIONS =
   'final enlaces_pagina con worldId para ver lo que quede sin resolver; los archivos los sube el máster y se enlazan ' +
   'por su nombre (listar_archivos). Cada mundo puede tener calendarios propios (meses, festividades, semana, ' +
   'bisiestos, eras, lunas y estaciones), uno principal: antes de fechar nada, míralos con listar_calendarios y escribe ' +
-  'las fechas como 1250-Siega-18 (el mes por su nombre; 1250-03-18 cuenta los meses sin las festividades). ' +
+  'las fechas como 1250-Siega-18 (el mes por su nombre; 1250-03-18 cuenta los meses sin las festividades). Cada ' +
+  'calendario admite los años de su yearRange (sin él, de -99999 a 99999): una fecha fuera no vale. ' +
   'crear_calendario crea uno de una vez con su definición entera; ver_calendario lo enseña con sus meses numerados; ' +
   'cambiar_calendario cambia su definición entera (mira antes ver_calendario) sin reescribir ninguna fecha; ' +
   'describir_fecha dice qué día de la semana, estación, era y lunas tiene una fecha (y su equivalencia en el ' +

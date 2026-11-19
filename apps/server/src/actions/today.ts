@@ -5,7 +5,7 @@
  */
 import { getCampaignToday, type LogEventData, setCampaignToday } from '@crisol/contracts'
 import { calendarsRepo, campaignsRepo, campaignTimeRepo } from '@crisol/db'
-import { addDays, dayNumber, type FullDate, sunTimes } from '@crisol/domain'
+import { addDays, dayNumber, type FullDate, sunTimes, yearProblem } from '@crisol/domain'
 import { activityChanged, campaignsChanged } from '../realtime/events.ts'
 import { authorizedCampaign } from './access.ts'
 import {
@@ -143,6 +143,8 @@ export const todayActions = [
       if (!current) throw new InvalidRequestError('NO_TODAY', 'la campaña aún no tiene fecha: ponla con date')
       moved = days ?? (weeks ?? 0) * weekLength(current.calendar.definition)
       next = { calendar: current.calendar, date: addDays(current.calendar.definition, current.today.date, moved) }
+      const outside = yearProblem(current.calendar.definition, next.date.year)
+      if (outside) throw new InvalidRequestError('BAD_DATE', outside)
     }
     const from = current ? loggedDate(current.calendar, current.today.date) : null
     await changeToday(ctx, campaign, next, { from: from?.text ?? null, ...(moved === null ? {} : { days: moved }) })

@@ -6,11 +6,13 @@
  * `~/CrisolVTT/crisol`, commit 3f68f11), con los meses por id, los solapes de estaciones y la correspondencia
  */
 import { compareDates, isValidDate, monthIndexOf, yearLength } from './dates.ts'
-import { CALENDAR_LIMITS, type CalendarDefinition, type WorldDate } from './definition.ts'
+import { CALENDAR_LIMITS, type CalendarDefinition, type WorldDate, yearBounds } from './definition.ts'
 
 export type CalendarSection = 'general' | 'week' | 'months' | 'leap' | 'seasons' | 'moons' | 'eras' | 'correspondence'
 
 export type CalendarProblemCode =
+  | 'yearLimit'
+  | 'yearOrder'
   | 'weekdaysEmpty'
   | 'weekdayUnnamed'
   | 'firstWeekday'
@@ -35,6 +37,7 @@ export type CalendarProblemCode =
   | 'eraEnd'
   | 'eraOrder'
   | 'eraAbbreviation'
+  | 'eraOutside'
   | 'correspondenceCalendar'
   | 'correspondenceDate'
   /** Del nombre, que va fuera de la definición (lo dice el editor) */
@@ -65,6 +68,18 @@ export function validateCalendar(def: CalendarDefinition, options: ValidateOptio
     params: Record<string, string | number> = {},
     index?: number
   ) => problems.push({ section, code, message, params, ...(index === undefined ? {} : { index }) })
+
+  // Los años que admite: enteros dentro del tope general y el primero no después del último
+  const bound = CALENDAR_LIMITS.yearBound
+  const range = def.yearRange
+  const ends = [range?.min, range?.max].filter((n): n is number => typeof n === 'number')
+  if (ends.some((n) => !Number.isInteger(n) || Math.abs(n) > bound))
+    add('general', 'yearLimit', `Los años del calendario van, como mucho, del ${-bound} al ${bound}.`, { bound })
+  else if (typeof range?.min === 'number' && typeof range.max === 'number' && range.min > range.max)
+    add('general', 'yearOrder', `El primer año (${range.min}) va después del último (${range.max}).`, {
+      min: range.min,
+      max: range.max
+    })
 
   if (def.weekdays.length === 0) add('week', 'weekdaysEmpty', 'La semana necesita al menos un día.')
   def.weekdays.forEach((name, i) => {
@@ -165,6 +180,7 @@ export function validateCalendar(def: CalendarDefinition, options: ValidateOptio
     unique('moons', moon.id, i)
   })
 
+  const years = yearBounds(def)
   def.eras.forEach((era, i) => {
     const name = era.name.trim() || `Era ${i + 1}`
     if (!era.name.trim()) add('eras', 'eraUnnamed', `La era ${i + 1} no tiene nombre.`, { n: i + 1 }, i)
@@ -174,6 +190,14 @@ export function validateCalendar(def: CalendarDefinition, options: ValidateOptio
       add('eras', 'eraEnd', `El final de «${name}» no es una fecha del calendario.`, { name }, i)
     else if (startOk && era.end && compareDates(def, era.end, era.start) < 0)
       add('eras', 'eraOrder', `«${name}» termina antes de empezar.`, { name }, i)
+    if (Number.isInteger(era.start.year) && (era.start.year < years.min || era.start.year > years.max))
+      add(
+        'eras',
+        'eraOutside',
+        `«${name}» empieza en el año ${era.start.year}, fuera de los años del calendario (del ${years.min} al ${years.max}).`,
+        { name, year: era.start.year, min: years.min, max: years.max },
+        i
+      )
     if (era.countsFromStart && !era.abbreviation?.trim())
       add('eras', 'eraAbbreviation', `«${name}» cuenta los años desde su inicio: necesita su abreviatura.`, { name }, i)
     unique('eras', era.id, i)

@@ -7,7 +7,7 @@
  * commit 3f68f11), con los meses por id, las eras que cuentan desde su inicio y el sufijo de antes del 0
  */
 import { CalendarDateError, clampDate, dayNumber, daysInMonth, eraOf, monthIndexOf, weekdayName } from './dates.ts'
-import type { CalendarDefinition, CalendarMonth, WorldDate } from './definition.ts'
+import { type CalendarDefinition, type CalendarMonth, type WorldDate, yearProblem } from './definition.ts'
 
 /** Sin tildes, en minúsculas y con los separadores juntos: para comparar nombres («Semana-del-yunque» = «semana del Yunque») */
 export const calendarKey = (text: string) =>
@@ -143,7 +143,7 @@ export function dateForm(def: CalendarDefinition, date: WorldDate): string {
 
 export type ParsedDate =
   | { ok: true; date: WorldDate }
-  | { ok: false; reason: 'FORMAT' | 'MONTH' | 'DAY'; message: string }
+  | { ok: false; reason: 'FORMAT' | 'MONTH' | 'DAY' | 'YEAR'; message: string }
 
 /** El mes de un trozo de texto: su número (sin contar festividades), su nombre (sin tildes ni mayúsculas) o su id */
 function monthFrom(def: CalendarDefinition, token: string): string | null {
@@ -166,12 +166,16 @@ function namedDay(def: CalendarDefinition, token: string): { month: string; day:
   return null
 }
 
-const failure = (reason: 'FORMAT' | 'MONTH' | 'DAY', message: string): ParsedDate => ({ ok: false, reason, message })
+const failure = (reason: 'FORMAT' | 'MONTH' | 'DAY' | 'YEAR', message: string): ParsedDate => ({
+  ok: false,
+  reason,
+  message
+})
 
 /**
  * Lee una fecha escrita para la IA contra el calendario: `"1250-Siega-18"`, `"1250-03-18"` (el mes por su número, sin
  * contar las festividades, que van por su nombre), `"1250-03"`, `"1250"`, `"-980-01-01"`; o `{ year, month?, day? }`
- * con el mes por su id, su nombre o su número
+ * con el mes por su id, su nombre o su número. El año, dentro de los del calendario (yearBounds)
  */
 export function parseDate(
   def: CalendarDefinition,
@@ -179,6 +183,8 @@ export function parseDate(
 ): ParsedDate {
   if (typeof value !== 'string') {
     if (!Number.isInteger(value.year)) return failure('FORMAT', 'el año tiene que ser un número entero')
+    const outside = yearProblem(def, value.year)
+    if (outside) return failure('YEAR', outside)
     if (value.month === undefined) {
       if (value.day !== undefined) return failure('FORMAT', 'un día sin mes')
       return { ok: true, date: { year: value.year } }
@@ -188,6 +194,8 @@ export function parseDate(
   const match = /^\s*(-?\d+)(?:-(.+))?\s*$/.exec(value)
   if (!match) return failure('FORMAT', `«${value}» no es una fecha: escríbela como 1250-Siega-18`)
   const year = Number(match[1])
+  const outside = yearProblem(def, year)
+  if (outside) return failure('YEAR', outside)
   const rest = match[2]
   if (rest === undefined) return { ok: true, date: { year } }
   // Con día al final (y el resto, el mes); si ese mes no existe, todo es el mes («Mes-3» de uno en blanco)

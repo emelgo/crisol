@@ -24,7 +24,8 @@ const LIMITS = {
   eras: 100,
   eraDescription: 280,
   abbreviation: 12,
-  year: 10_000_000
+  year: 10_000_000,
+  yearBound: 99_999
 } as const
 
 const calendarColor = z.string().regex(/^#[0-9a-fA-F]{6}$/)
@@ -124,6 +125,17 @@ export const calendarCorrespondence = z.object({
   date: fullDate.describe('El día de aquel en que cae el 1 del primer mes del año 0 de este')
 })
 
+const rangeYear = z.int().min(-LIMITS.yearBound).max(LIMITS.yearBound).nullable().optional()
+/** Los años que admite: las fechas fuera no valen */
+export const calendarYearRange = z
+  .object({
+    min: rangeYear.describe('El primer año; sin él, -99999'),
+    max: rangeYear.describe('El último año; sin él, 99999')
+  })
+  .nullable()
+  .optional()
+  .describe('Los años que admite el calendario (los dos incluidos); sin él, de -99999 a 99999')
+
 /** La definición de un calendario tal como se guarda (los problemas que no son de forma los dice describeCalendar) */
 export const calendarDefinition = z.object({
   yearSuffix: z.string().trim().max(LIMITS.suffix).describe('«RC»: «1250 RC»'),
@@ -143,7 +155,8 @@ export const calendarDefinition = z.object({
   seasons: z.array(calendarSeason).max(LIMITS.seasons),
   moons: z.array(calendarMoon).max(LIMITS.moons),
   eras: z.array(calendarEra).max(LIMITS.eras),
-  correspondence: calendarCorrespondence.nullable().optional()
+  correspondence: calendarCorrespondence.nullable().optional(),
+  yearRange: calendarYearRange
 })
 
 export type CalendarDefinitionValue = z.infer<typeof calendarDefinition>
@@ -205,7 +218,8 @@ export const calendarDefinitionInput = z.object({
       date: looseDate.describe('El día de aquel en que cae el 1 del primer mes del año 0 de este (1250-Siega-18)')
     })
     .nullable()
-    .optional()
+    .optional(),
+  yearRange: calendarYearRange
 })
 
 export type CalendarDefinitionInput = z.infer<typeof calendarDefinitionInput>
