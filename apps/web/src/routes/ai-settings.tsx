@@ -227,6 +227,7 @@ function ConnectionItem({
     <li ref={item} className={styles.item}>
       <span className={styles.name}>
         <span className={styles.entity}>{target}</span>
+        <span className={settings.pause}>, </span>
         <span className={`${styles.role} ${settings.connection}`}>
           {t('ai.usedBy', { client, when: since(connection.lastUsedAt) })}
         </span>
