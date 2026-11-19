@@ -206,7 +206,10 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   emblema** de la pantalla: pequeño, a la derecha del título (no en el hueco de la vista previa: «no me gusta el icono
   ahí a la izquierda»).
 - **Los iconos: un emoji o uno de rol** (game-icons.net, «gi:<id>»), en páginas, carpetas, plantillas y sistemas; el
-  buscador de iconos flota y se recorre con una parada del tabulador y las flechas.
+  buscador de iconos flota y se recorre con una parada del tabulador y las flechas. **Un solo selector, con nuestros
+  iconos** (Enrique, 2026-11-19: «que aparezcan nuestros iconos, no los por defecto»): el buscador de los de rol y
+  «Quitar el icono», sin fila de emojis ni «Otro»; en un formulario (una carpeta, un sistema), un botón con el de ahora
+  que lo abre debajo. Un emoji, solo escribiéndolo delante del título.
 - **El espacio del sistema** (tanda 6): en la barra, su nombre con su icono, Compendio y Reglas; abajo, Ajustes. Su
   portada, arriba en su Inicio y detrás en todo su espacio. **Un libro se abre por dentro**: su tapa y su nombre arriba,
   su índice por tipos (con cuántos trae cada uno) y, al pulsar uno, su lista; «← {sistema}» para volver. **Sus
@@ -308,8 +311,14 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   mismo cuadro que «Página nueva»** (Enrique, 2026-11-12): el tipo (texto o un mapa) y el nombre; sin nombre, «Plantilla
   sin título», que se abre para escribirlo. **Abierta, es su página** con «‹ Plantillas» arriba a la izquierda, la marca
   «Plantilla», a la izquierda **el árbol de las demás** (carpetas que se pliegan, «Nueva carpeta» y «Plantilla nueva»
-  arriba y, con el botón derecho: de una plantilla, duplicarla, sus ajustes y borrarla; de una carpeta, crear dentro,
-  sus ajustes y borrarla) y en el panel sus campos y bloques, que se definen; un emoji delante del nombre es su icono.
+  arriba y, con el botón derecho: de una plantilla, renombrarla, duplicarla, moverla a una carpeta y borrarla; de una
+  carpeta, crear dentro, sus ajustes y borrarla) y en el panel sus campos y bloques, que se definen; su icono, en su
+  título, como el de una página. **Una plantilla no tiene cuadro de ajustes** (Enrique, 2026-11-19: «la carpeta e icono
+  no tiene sentido ahí»): lo suyo va en **el menú del botón derecho, como en el árbol de páginas**, también en la lista
+  de Plantillas (con la tecla de menú o Mayús+F10, y con su «⋯» en la fila). **Su «⋯» no imprime ni descarga**
+  (Enrique: «las plantillas no necesitan imprimirse o descargarse»): Duplicar y sus versiones. **Abierta, el mismo
+  esqueleto que una página del mundo** (2026-11-19): la portada detrás del título, las pestañas debajo y el panel que se
+  pliega desde su botón.
   **«Desde plantilla» va la última y centrada, tras una raya con «o»**, en «Página nueva» y en «Plantilla nueva» (allí,
   partir de otra): cambia el cuadro a la lista de plantillas («‹ Otro tipo» vuelve). **No en «Pestaña nueva»**: la
   plantilla, solo al crear una página (Enrique, 2026-11-12: «me choca lo de usar una plantilla en una pestaña»). Ya no
@@ -327,7 +336,10 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   «Guardado», abajo a la derecha). Sin «Editar», «Guardar», «Cancelar» ni «Renombrar», y sin barra de botones encima
   del texto: los bloques con «/», los enlaces con «@» o «[[», buscar con Ctrl+Alt+F y el menú del bloque con
   Ctrl+Alt+B. La cabecera, en iconos (Marcar, Bloquear, Hoja, «⋯»).
-- **El icono va en el propio título**, si se quiere: no hay botón para ponerlo. **La portada**, como en el Crisol antiguo
+- **El icono va en el propio título**, si se quiere: no hay botón para ponerlo. Un emoji delante del título pasa a ser
+  su icono, y **«:» al principio propone los iconos de la app por su nombre** (Enrique, 2026-11-19: «el icono dijimos
+  que se ponía escribiendo en el título»; como «/» y «@» en el texto): las flechas eligen, Intro lo pone y Escape lo
+  deja. Puesto, pulsarlo abre el selector de nuestros iconos, con «Quitar el icono». Igual en páginas y plantillas. **La portada**, como en el Crisol antiguo
   y en los mundos: se pone desde «⋯»; puesta, al pasar por encima salen «Ver» y «Cambiar», y se arrastra para
   encuadrarla.
 - **Las columnas de los lados de una página, fijas y del mismo alto** (Enrique, 2026-11-11): pulsar el mundo en la
@@ -566,7 +578,7 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   2026-11-19); el fondo, solo en el icono de lo que no es imagen. Mover es arrastrar o, desde su ventana, **«Carpeta»** (Enrique,
   2026-11-12: como «Dentro de» en las etiquetas; «Ninguna», lo más alto); cambiar un archivo es subir otro y borrar el
   viejo: sin «Reemplazar». **Las carpetas llevan color e icono** (Enrique, 2026-11-12), desde su ventana: el color,
-  como el de un mundo o una etiqueta; el icono, un emoji como el de una página. El color tiñe el dibujo de la carpeta o,
+  como el de un mundo o una etiqueta; el icono, uno de los nuestros, con el mismo selector que el de una página. El color tiñe el dibujo de la carpeta o,
   con icono, su fondo; se ve en la lista, en la vista previa y en el selector de archivos. **Se eligen varios** con su casilla (al pasar el ratón; en su columna, a la izquierda de las filas y sin tapar la miniatura; con Mayúsculas, el tramo), y lo elegido se lleva a una carpeta («Mover a…»), se etiqueta («Etiquetar») o se borra de una vez (Enrique, 2026-11-12); mientras se elige, su barra ocupa el sitio de la de herramientas y la lista no se mueve. **Con el teclado, como Etiquetas**: una parada del tabulador, flechas para recorrer, abrir y cerrar, Intro abre, Espacio elige y Alt + flechas recolocan; con el foco en una fila sale su vista previa y se
   borran de una vez, con aviso. **Borrar una carpeta se lleva lo que tiene dentro** (sus archivos, a la papelera),
   avisando. **Buscador (por nombre o #etiqueta) y filtro por tipo** siempre a la vista. Se suben varios a la vez (no carpetas enteras), a la carpeta elegida; cada subida sale

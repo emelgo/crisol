@@ -41,6 +41,19 @@ En local o en staging cuando llegue el PR de esta rama.
   una página, siguen. Lo mismo el «Revelar» de los secretos y el de las pestañas, y el ojo de los pines y de lo
   dibujado en los mapas: solo dentro de la campaña (Claude, 2026-11-20, por la misma razón: en el mundo se crea, no se
   juega). En la ventana de una página en la Mesa, sus pestañas se cambian dentro de ella (antes, el mapa no se abría).
+- [ ] **Plantillas sin cuadro de ajustes**: en la lista de Plantillas, el botón derecho (o la tecla de menú, o el «⋯» de
+  la fila) sobre una plantilla da Renombrar, Duplicar, Mover a… (sus carpetas, con buscador y «Fuera de las carpetas») y
+  Borrar, como en el árbol de páginas; lo mismo en el árbol de la izquierda de una plantilla abierta. Ya no sale el
+  cuadro con «Carpeta» e «Icono». Las carpetas siguen con su engranaje (nombre, carpeta, icono y color).
+- [ ] **El icono, desde el título** (páginas y plantillas): escribe «:» al principio del título y parte del nombre
+  («:castillo», «:dragón») → salen los iconos de la app; flechas e Intro (o el ratón) lo ponen y lo escrito se va.
+  Un emoji delante del título también vale, ahora también en las páginas. Pulsar el icono puesto abre nuestros iconos
+  (sin la fila de emojis) y «Quitar el icono». ¿Se entiende lo de «:» sin explicarlo, o prefieres otra forma?
+- [ ] **El icono de una carpeta o de un sistema** (su ventana): un botón con el de ahora que abre nuestros iconos debajo,
+  sin emojis por defecto ni «Otro».
+- [ ] **Una plantilla abierta, con el esqueleto de una página del mundo**: la portada detrás del título, las pestañas
+  debajo, el panel que se pliega con su botón (y se recuerda) y la ficha de la izquierda y el panel a la altura de la
+  columna, con «‹ Plantillas» encima de la ficha. Su «⋯», sin «Imprimir o descargar» (y Ctrl+P no imprime).
 
 ## Conectores de IA: Mundos y uno por campaña (ajustes tras los módulos, bloque D; rama `ajustes/tras-modulos`; 2026-11-19)
 
