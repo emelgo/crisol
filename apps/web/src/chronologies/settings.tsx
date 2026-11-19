@@ -54,10 +54,12 @@ export function ChronologySettings({
     queryFn: () => api.call('listAccountTags', organizationId ? { organizationId } : {}),
     enabled: open
   })
-  const refresh = () => {
-    void client.invalidateQueries({ queryKey: ['chronology'] })
-    void client.invalidateQueries({ queryKey: ['chronologies', worldId] })
-  }
+  // Espera a que llegue lo nuevo: mientras, se ve lo que se acaba de elegir (sin volver atrás un momento)
+  const refresh = () =>
+    Promise.all([
+      client.invalidateQueries({ queryKey: ['chronology'] }),
+      client.invalidateQueries({ queryKey: ['chronologies', worldId] })
+    ])
   const update = useMutation({
     mutationFn: (input: Omit<ActionInput<'updateChronology'>, 'chronologyId'>) =>
       api.call('updateChronology', { chronologyId: chronology.id, ...input }),
@@ -70,7 +72,10 @@ export function ChronologySettings({
     onSuccess: refresh,
     onError: (error) => announce(errorText(error))
   })
-  const filter = chronology.filter
+  // Lo elegido se ve al momento, mientras se guarda
+  const pending = update.isPending ? update.variables : undefined
+  const filter = { ...chronology.filter, ...pending?.filter }
+  const calendarId = pending && 'calendarId' in pending ? pending.calendarId : chronology.calendarId
   const toggle = (list: readonly string[], value: string) =>
     list.includes(value) ? list.filter((each) => each !== value) : [...list, value]
   const primary = calendars.find((c) => c.primary)
@@ -109,7 +114,7 @@ export function ChronologySettings({
             <label htmlFor={`${id}-calendar`}>{t('chronologies.calendar')}</label>
             <select
               id={`${id}-calendar`}
-              value={chronology.calendarId ?? ''}
+              value={calendarId ?? ''}
               onChange={(event) => update.mutate({ calendarId: event.currentTarget.value || null })}
             >
               <option value="">{t('chronologies.primaryCalendar', { name: primary?.name ?? '' })}</option>
