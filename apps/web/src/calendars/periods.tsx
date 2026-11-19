@@ -1,0 +1,389 @@
+/**
+ * Las otras vistas de un calendario en grande (calendars/view.tsx), junto al mes: la semana (sus días en columnas, con
+ * lo que cae en cada uno y, entre ellos, los de fuera de la semana) y el año (sus meses en pequeño, las festividades con
+ * su color; cada uno lleva a su mes). Su cabecera es la misma que la del mes: el título con sus datos y las flechas
+ */
+import type { ChronologyEntryView, TimelineGroupView } from '@crisol/contracts'
+import {
+  type CalendarDefinition,
+  dateFromDay,
+  entryOccurrences,
+  formatDate,
+  formatRange,
+  type GridDay,
+  monthGrid,
+  moonEvent,
+  type WeekGrid,
+  yearLength,
+  yearStart
+} from '@crisol/domain'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { type CSSProperties, type KeyboardEvent, type ReactNode, useId, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Chip } from '../chronologies/calendar-view.tsx'
+import chrono from '../chronologies/chronologies.module.css'
+import { shortWeekdays } from './preview.tsx'
+import styles from './view.module.css'
+
+/** La cabecera de una vista: el título (h2) con sus datos debajo y las flechas para pasar de periodo */
+export function PeriodHead({
+  id,
+  title,
+  facts,
+  previous,
+  next,
+  onStep
+}: {
+  id: string
+  title: string
+  facts?: ReactNode
+  /** Lo que dicen las flechas («Semana anterior») */
+  previous: string
+  next: string
+  onStep: (step: -1 | 1) => void
+}) {
+  return (
+    <header className={chrono.calendarHead}>
+      <div>
+        <h2 id={id} className={chrono.calendarTitle}>
+          {title}
+        </h2>
+        {facts && <p className={chrono.calendarFacts}>{facts}</p>}
+      </div>
+      <div className={chrono.calendarArrows}>
+        <button type="button" aria-label={previous} title={previous} onClick={() => onStep(-1)}>
+          <ChevronLeft size={18} aria-hidden="true" />
+        </button>
+        <button type="button" aria-label={next} title={next} onClick={() => onStep(1)}>
+          <ChevronRight size={18} aria-hidden="true" />
+        </button>
+      </div>
+    </header>
+  )
+}
+
+type Placed = ChronologyEntryView & { occurrence: string; startDay: number; endDay: number }
+
+/** Lo que cae con día entre `first` y `last`, una vez por cada vez que cae (las que se repiten cada año) */
+function placed(definition: CalendarDefinition, entries: readonly ChronologyEntryView[], first: number, last: number) {
+  const out: Placed[] = []
+  for (const entry of entries) {
+    if (!entry.start.month || entry.start.day === undefined) continue
+    for (const occurrence of entryOccurrences(definition, entry, first, last))
+      out.push({
+        ...entry,
+        startDay: occurrence.startDay,
+        endDay: occurrence.endDay,
+        occurrence: `${entry.key}@${occurrence.startDay}`
+      })
+  }
+  return out
+}
+
+/**
+ * La semana: un día por columna, con su número (y su mes, el primero que sale y cuando empieza otro), sus lunas nuevas
+ * y llenas y todo lo que cae en él. Con el teclado: las flechas pasan de día, Intro lo fija y Re Pág / Av Pág cambian
+ * de semana
+ */
+export function WeekView({
+  definition,
+  week,
+  entries,
+  groups,
+  selected,
+  today,
+  onSelect,
+  onHover,
+  onOpen,
+  onStep
+}: {
+  definition: CalendarDefinition
+  week: WeekGrid
+  entries: readonly ChronologyEntryView[]
+  groups: readonly TimelineGroupView[]
+  selected: number | null
+  today: number | null
+  onSelect: (day: number) => void
+  onHover: (day: number | null) => void
+  onOpen: (entry: ChronologyEntryView) => void
+  onStep: (step: -1 | 1) => void
+}) {
+  const { t } = useTranslation()
+  const titleId = useId()
+  const [focusDay, setFocusDay] = useState<number | null>(null)
+  const here = useMemo(() => placed(definition, entries, week.first, week.last), [definition, entries, week])
+  const days = useMemo(
+    () =>
+      [...week.days.filter((d): d is GridDay => d !== null), ...week.outside].sort((a, b) => a.dayNumber - b.dayNumber),
+    [week]
+  )
+  const groupOf = (id: string | undefined) => groups.find((g) => g.id === id)
+  const inWeek = (day: number | null): day is number => day !== null && days.some((d) => d.dayNumber === day)
+  const tabbable = inWeek(focusDay)
+    ? focusDay
+    : inWeek(selected)
+      ? selected
+      : inWeek(today)
+        ? today
+        : days[0]?.dayNumber
+
+  const onKey = (event: KeyboardEvent<HTMLElement>) => {
+    if (event.key === 'PageUp' || event.key === 'PageDown') {
+      event.preventDefault()
+      onStep(event.key === 'PageUp' ? -1 : 1)
+      return
+    }
+    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
+    event.preventDefault()
+    const at = days.findIndex((d) => d.dayNumber === (focusDay ?? tabbable))
+    const target = days[at + (event.key === 'ArrowLeft' ? -1 : 1)]
+    if (!target) return onStep(event.key === 'ArrowLeft' ? -1 : 1)
+    setFocusDay(target.dayNumber)
+    document.getElementById(`dia-${titleId}-${target.dayNumber}`)?.focus()
+  }
+
+  const cell = (day: GridDay, index: number) => {
+    const date = dateFromDay(definition, day.dayNumber)
+    const month = definition.months.find((m) => m.id === date.month)
+    // El mes, en el primero que sale y cuando empieza otro
+    const showMonth = index === 0 || date.day === 1
+    const chips = here.filter((e) => e.startDay <= day.dayNumber && e.endDay >= day.dayNumber)
+    return (
+      <td
+        key={day.dayNumber}
+        id={`dia-${titleId}-${day.dayNumber}`}
+        tabIndex={day.dayNumber === tabbable ? 0 : -1}
+        aria-label={formatDate(definition, date, { weekday: true })}
+        aria-current={today === day.dayNumber ? 'date' : undefined}
+        className={`${chrono.day} ${styles.weekDay}`}
+        data-selected={selected === day.dayNumber || undefined}
+        data-today={today === day.dayNumber || undefined}
+        onClick={(event) => {
+          if ((event.target as HTMLElement).closest('button, a')) return
+          onSelect(day.dayNumber)
+        }}
+        onKeyDown={(event) => {
+          if (event.target !== event.currentTarget || (event.key !== 'Enter' && event.key !== ' ')) return
+          event.preventDefault()
+          onSelect(day.dayNumber)
+        }}
+        onFocus={(event) => {
+          if (event.target !== event.currentTarget) return
+          setFocusDay(day.dayNumber)
+          onHover(day.dayNumber)
+        }}
+        onBlur={(event) => {
+          if (event.target === event.currentTarget) onHover(null)
+        }}
+        onMouseEnter={() => onHover(day.dayNumber)}
+        onMouseLeave={() => onHover(null)}
+      >
+        <span className={chrono.dayHead}>
+          <span className={styles.weekNumber}>
+            <span className={chrono.dayNumber} data-number>
+              {day.day}
+            </span>
+            {showMonth && month && <span className={styles.weekMonth}>{month.name}</span>}
+          </span>
+          <span className={chrono.moons}>
+            {definition.moons.flatMap((moon) => {
+              const phase = moonEvent(moon, day.dayNumber)
+              return phase
+                ? [
+                    <span
+                      key={moon.id}
+                      className={chrono.moon}
+                      data-phase={phase}
+                      style={{ '--moon-color': moon.color } as CSSProperties}
+                      title={t(phase === 'new' ? 'chronologies.newMoon' : 'chronologies.fullMoon', { name: moon.name })}
+                    />
+                  ]
+                : []
+            })}
+          </span>
+        </span>
+        {chips.map((entry) => (
+          <Chip
+            key={entry.occurrence}
+            entry={entry}
+            group={groupOf(entry.groupId)}
+            starts
+            continues={false}
+            continued={false}
+            draggable={false}
+            onOpen={() => {
+              onSelect(day.dayNumber)
+              onOpen(entry)
+            }}
+          />
+        ))}
+      </td>
+    )
+  }
+
+  // «12–18 de Siega de 1250 RC», sin repetir lo que comparten
+  const title = formatRange(definition, dateFromDay(definition, week.first), dateFromDay(definition, week.last))
+  const columns = definition.weekdays.length || 7
+  const weekdays = shortWeekdays(definition.weekdays)
+  // Los de fuera de la semana, por su fiesta
+  const outside = definition.months.flatMap((month) => {
+    const list = week.outside.filter((d) => dateFromDay(definition, d.dayNumber).month === month.id)
+    return list.length > 0 ? [{ month, days: list }] : []
+  })
+  let index = 0
+  return (
+    <div className={`${chrono.calendar} ${styles.period}`}>
+      <PeriodHead
+        id={titleId}
+        title={title}
+        previous={t('calendars.view.previousWeek')}
+        next={t('calendars.view.nextWeek')}
+        onStep={onStep}
+      />
+      {week.days.length > 0 && (
+        <table
+          aria-labelledby={titleId}
+          className={chrono.grid}
+          style={{ '--columns': columns } as CSSProperties}
+          onKeyDown={onKey}
+        >
+          <thead>
+            <tr className={chrono.weekdays}>
+              {weekdays.map((name, i) => (
+                <th key={definition.weekdays[i] ?? i} scope="col" abbr={definition.weekdays[i]}>
+                  <span aria-hidden="true">{name}</span>
+                  <span className={chrono.srOnly}>{definition.weekdays[i]}</span>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            <tr className={chrono.week}>
+              {week.days.map((day, i) =>
+                day ? cell(day, index++) : <td key={`hueco-${i}`} className={`${chrono.blank} ${styles.weekDay}`} />
+              )}
+            </tr>
+          </tbody>
+        </table>
+      )}
+      {outside.length > 0 && (
+        <div className={chrono.outside}>
+          {outside.map(({ month, days: list }) => (
+            <div key={month.id} className={chrono.outsideMonth}>
+              <p
+                className={chrono.outsideName}
+                id={`${titleId}-${month.id}`}
+                style={month.color ? ({ '--month-color': month.color } as CSSProperties) : undefined}
+              >
+                <b>{month.name}</b>
+                <span>{t('chronologies.outsideWeek')}</span>
+              </p>
+              <table aria-labelledby={`${titleId}-${month.id}`} className={chrono.outsideDays} onKeyDown={onKey}>
+                <tbody>
+                  <tr>{list.map((day) => cell(day, index++))}</tr>
+                </tbody>
+              </table>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/**
+ * El año: sus meses en pequeño, cada uno con sus semanas (los de fuera de la semana, en fila), los días con algo
+ * marcados, hoy y el día fijado. Pulsar un mes lleva a él
+ */
+export function YearView({
+  definition,
+  year,
+  title,
+  entries,
+  selected,
+  today,
+  onMonth,
+  onStep
+}: {
+  definition: CalendarDefinition
+  year: number
+  title: string
+  entries: readonly ChronologyEntryView[]
+  selected: number | null
+  today: number | null
+  onMonth: (monthId: string) => void
+  onStep: (step: -1 | 1) => void
+}) {
+  const { t } = useTranslation()
+  const titleId = useId()
+  const first = yearStart(definition, year)
+  const last = first + yearLength(definition, year) - 1
+  // Los días con algo (lo de varios días, cada uno de los suyos dentro del año)
+  const busy = useMemo(() => {
+    const days = new Set<number>()
+    for (const entry of placed(definition, entries, first, last))
+      for (let day = Math.max(first, entry.startDay); day <= Math.min(last, entry.endDay); day++) days.add(day)
+    return days
+  }, [definition, entries, first, last])
+  const columns = definition.weekdays.length || 7
+  const weekdays = shortWeekdays(definition.weekdays)
+  const mark = (day: GridDay) => (
+    <span
+      key={day.dayNumber}
+      data-busy={busy.has(day.dayNumber) || undefined}
+      data-today={today === day.dayNumber || undefined}
+      data-selected={selected === day.dayNumber || undefined}
+    >
+      {day.day}
+    </span>
+  )
+  return (
+    <div className={`${chrono.calendar} ${styles.period}`}>
+      <PeriodHead
+        id={titleId}
+        title={title}
+        previous={t('calendars.view.previousYear')}
+        next={t('calendars.view.nextYear')}
+        onStep={onStep}
+      />
+      <ol className={styles.year} aria-labelledby={titleId}>
+        {definition.months.map((month) => {
+          const grid = monthGrid(definition, year, month.id)
+          const count = grid.weeks.flat().filter((d) => d && busy.has(d.dayNumber)).length
+          const outsideCount = grid.outside.filter((d) => busy.has(d.dayNumber)).length
+          const marked = count + outsideCount
+          return (
+            <li key={month.id}>
+              <button
+                type="button"
+                className={styles.yearMonth}
+                data-festival={month.festival || undefined}
+                style={month.color ? ({ '--month-color': month.color } as CSSProperties) : undefined}
+                aria-label={
+                  marked > 0 ? t('calendars.view.monthWithDays', { name: month.name, count: marked }) : month.name
+                }
+                onClick={() => onMonth(month.id)}
+              >
+                <span className={styles.yearMonthName}>{month.name}</span>
+                {grid.weeks.length > 0 ? (
+                  <span className={styles.mini} style={{ '--columns': columns } as CSSProperties} aria-hidden="true">
+                    {weekdays.map((name, i) => (
+                      <span key={definition.weekdays[i] ?? i} className={styles.miniHead}>
+                        {name.charAt(0)}
+                      </span>
+                    ))}
+                    {grid.weeks.flat().map((day, i) => (day ? mark(day) : <span key={`hueco-${i}`} />))}
+                  </span>
+                ) : (
+                  <span className={`${styles.mini} ${styles.miniRow}`} aria-hidden="true">
+                    {grid.outside.map(mark)}
+                  </span>
+                )}
+              </button>
+            </li>
+          )
+        })}
+      </ol>
+    </div>
+  )
+}

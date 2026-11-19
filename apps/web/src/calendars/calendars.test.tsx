@@ -132,26 +132,23 @@ describe('un calendario en grande', () => {
   const open = (extra: Parameters<typeof renderAt>[2] = {}) =>
     renderAt(`/mundos/${WORLD.id}/calendarios/${VARN.id}`, [VARN], extra)
 
-  it('pulsar su tarjeta lo abre: el título, «Editar calendario», el mes, el año en pequeño y sus datos', async () => {
+  it('pulsar su tarjeta lo abre: el título, «Editar calendario» y el mes; sin fichas a los lados', async () => {
     const { router } = renderAt(`/mundos/${WORLD.id}/calendarios`)
     const list = await screen.findByRole('list', { name: 'Calendarios del mundo' })
     await userEvent.click(within(list).getByRole('link', { name: 'Calendario de Varn' }))
     await waitFor(() => expect(router.state.location.pathname).toBe(`/mundos/${WORLD.id}/calendarios/${VARN.id}`))
     expect(await screen.findByRole('heading', { level: 1, name: 'Calendario de Varn' })).toBeDefined()
     expect(screen.getByRole('link', { name: 'Editar calendario' })).toBeDefined()
-    // Se abre en el año de su última era (el 0): enero, con el 1 en sábado (la sexta columna)
+    // Se abre en el año de su última era (el 0), en enero, en la vista del mes
     expect(screen.getByRole('heading', { level: 2, name: 'Enero de 0 RV' })).toBeDefined()
-    const year = screen.getByRole('complementary', { name: 'El año y los datos del calendario' })
-    expect(within(year).getByRole('img', { name: 'El año de Calendario de Varn' })).toBeDefined()
-    expect(year.textContent).toContain('365 días')
-    expect(year.textContent).toContain('Principal')
-    // Un mes del año pequeño lleva a él
-    await userEvent.click(within(year).getByRole('button', { name: /Junio/ }))
-    expect(screen.getByRole('heading', { level: 2, name: 'Junio de 0 RV' })).toBeDefined()
-    expect(within(year).getByRole('button', { name: /Junio/ }).getAttribute('aria-current')).toBe('true')
+    const modes = screen.getByRole('toolbar', { name: 'Vista' })
+    expect(within(modes).getByRole('button', { name: 'Mes' }).getAttribute('aria-pressed')).toBe('true')
+    // Ni el año en pequeño ni el resumen (ese, en el editor); la ficha del día, solo cuando hace falta
+    expect(screen.queryByRole('complementary')).toBeNull()
+    expect(screen.queryByText('365 días')).toBeNull()
   })
 
-  it('el día elegido, a la derecha, con su fecha, sus lunas y lo que pasa; las flechas pasan de mes y de año', async () => {
+  it('la ficha del día: se ve al pasar el ratón, se fija al pulsarlo y Esc la quita; su fecha lleva la era', async () => {
     open({
       events: [
         {
@@ -161,18 +158,59 @@ describe('un calendario en grande', () => {
         }
       ]
     })
+    const cell = await screen.findByRole('cell', { name: / 3 de Enero de 0 RV$/ })
+    await userEvent.hover(cell)
     const day = await screen.findByRole('complementary', { name: 'El día elegido' })
-    // Sin elegir, el primero del mes
-    expect(within(day).getByRole('heading', { level: 2 }).textContent).toContain('1 de Enero de 0 RV')
-    await userEvent.click(screen.getByRole('cell', { name: / 3 de Enero de 0 RV$/ }))
-    expect(within(day).getByRole('heading', { level: 2 }).textContent).toContain('3 de Enero de 0 RV')
+    expect(within(day).getByRole('heading', { level: 2 }).textContent).toContain(
+      '3 de Enero de 0 RV de la Era de la Corona'
+    )
     expect(await within(day).findByText('Boda de Ilsa')).toBeDefined()
     expect(day.textContent).toContain('Luna')
+    // Sin fijar, al salir se va
+    await userEvent.unhover(cell)
+    await waitFor(() => expect(screen.queryByRole('complementary', { name: 'El día elegido' })).toBeNull())
+    // Fijado, se queda (con su «×») hasta Esc
+    await userEvent.click(cell)
+    await userEvent.unhover(cell)
+    const pinned = await screen.findByRole('complementary', { name: 'El día elegido' })
+    expect(within(pinned).getByRole('button', { name: 'Quitar el día' })).toBeDefined()
+    await new Promise((resolve) => setTimeout(resolve, 300))
+    expect(screen.getByRole('complementary', { name: 'El día elegido' })).toBeDefined()
+    await userEvent.keyboard('{Escape}')
+    await waitFor(() => expect(screen.queryByRole('complementary', { name: 'El día elegido' })).toBeNull())
+  })
+
+  it('Mes · Semana · Año, con «Ir a» y sus flechas; un mes del año lleva a él', async () => {
+    open()
+    await screen.findByRole('heading', { level: 2, name: 'Enero de 0 RV' })
+    await userEvent.selectOptions(screen.getByLabelText('Ir al mes'), 'Marzo')
+    expect(screen.getByRole('heading', { level: 2, name: 'Marzo de 0 RV' })).toBeDefined()
     await userEvent.click(screen.getByRole('button', { name: 'Mes siguiente' }))
-    expect(screen.getByRole('heading', { level: 2, name: 'Febrero de 0 RV' })).toBeDefined()
-    expect(within(day).getByRole('heading', { level: 2 }).textContent).toContain('1 de Febrero de 0 RV')
+    expect(screen.getByRole('heading', { level: 2, name: 'Abril de 0 RV' })).toBeDefined()
+    await userEvent.selectOptions(screen.getByLabelText('Ir al mes'), 'Marzo')
+    // La semana del 1 de marzo (miércoles: el año 0 es de 366 días), de lunes a domingo
+    const modes = screen.getByRole('toolbar', { name: 'Vista' })
+    await userEvent.click(within(modes).getByRole('button', { name: 'Semana' }))
+    expect(screen.getByRole('heading', { level: 2, name: '28 de Febrero – 5 de Marzo de 0 RV' })).toBeDefined()
+    await userEvent.click(screen.getByRole('button', { name: 'Semana siguiente' }))
+    expect(screen.getByRole('heading', { level: 2, name: '6–12 de Marzo de 0 RV' })).toBeDefined()
+    // Sus días también enseñan su ficha
+    await userEvent.click(screen.getByRole('cell', { name: / 8 de Marzo de 0 RV$/ }))
+    const day = await screen.findByRole('complementary', { name: 'El día elegido' })
+    expect(within(day).getByRole('heading', { level: 2 }).textContent).toContain('8 de Marzo de 0 RV')
+    // El año: sus meses en pequeño; uno lleva a él
+    await userEvent.click(within(modes).getByRole('button', { name: 'Año' }))
+    expect(screen.getByRole('heading', { level: 2, name: '0 RV' })).toBeDefined()
     await userEvent.click(screen.getByRole('button', { name: 'Año siguiente' }))
-    expect(screen.getByRole('heading', { level: 2, name: 'Febrero de 1 RV' })).toBeDefined()
+    expect(screen.getByRole('heading', { level: 2, name: '1 RV' })).toBeDefined()
+    await userEvent.click(screen.getByRole('button', { name: /^Junio/ }))
+    expect(screen.getByRole('heading', { level: 2, name: 'Junio de 1 RV' })).toBeDefined()
+    expect(within(modes).getByRole('button', { name: 'Mes' }).getAttribute('aria-pressed')).toBe('true')
+    // «Ir al año»
+    const year = screen.getByLabelText('Ir al año')
+    await userEvent.clear(year)
+    await userEvent.type(year, '1250')
+    expect(screen.getByRole('heading', { level: 2, name: 'Junio de 1250 RV' })).toBeDefined()
   })
 
   it('pulsar un evento en la rejilla elige su día y lo abre para editarlo', async () => {

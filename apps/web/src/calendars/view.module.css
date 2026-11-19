@@ -1,6 +1,7 @@
 /*
  * Un calendario en grande (ajustes tras los módulos, bloque C): el esqueleto de las pantallas (components/screen.tsx),
- * con el mes grande en el centro y una ficha a cada lado: el año en pequeño y sus datos; el día elegido
+ * con la vista (mes, semana o año) en el centro y, a la derecha, solo cuando hace falta, la ficha de un día. Su hueco
+ * está siempre: aparecer o irse no mueve la columna
  */
 
 /* «Editar calendario», junto al título: callado, con su raya (el rojo, para lo importante) */
@@ -51,7 +52,87 @@
   color: var(--color-on-accent);
 }
 
-/* «Hoy de…» (la campaña) y «Ir a hoy», antes de las flechas: callados, sin raya */
+/* Arriba de la vista: las vistas, «Ir a» y, al final, «Hoy de…» */
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-5);
+  margin-block-end: var(--space-4);
+}
+
+/* Mes · Semana · Año, un conmutador */
+.modes {
+  display: flex;
+  padding: 2px;
+  border: 1px solid var(--color-field-border);
+  border-radius: var(--radius-button);
+  background: var(--field-fill);
+}
+
+.mode {
+  min-block-size: 2rem;
+  padding: 0 var(--space-4);
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition:
+    background-color 150ms ease-out,
+    color 150ms ease-out;
+}
+
+.mode:hover {
+  color: var(--color-text);
+}
+
+.mode[aria-pressed="true"] {
+  background: var(--color-raised);
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.mode:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
+}
+
+/* Ir a un mes y un año */
+.jump {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+.jump select {
+  max-inline-size: 12rem;
+}
+
+.yearInput {
+  inline-size: 5.5rem;
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.srOnly {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* «Hoy de…» (la campaña) y «Ir a hoy»: callados, sin raya, al final */
 .tools {
   display: flex;
   flex-wrap: wrap;
@@ -121,10 +202,24 @@
   font-size: 0.875rem;
 }
 
-/* Las fichas de los lados: recuadros de cristal uno bajo otro */
+/* La ficha del día: un recuadro de cristal que aparece en su hueco */
 .side {
   display: grid;
   gap: var(--space-4);
+  animation: appear 160ms ease-out;
+}
+
+@keyframes appear {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .side {
+    animation: none;
+  }
 }
 
 .side > section[aria-labelledby] {
@@ -132,181 +227,54 @@
   padding: var(--space-4) var(--space-4) var(--space-5);
 }
 
-.side > section[aria-labelledby] > h2:first-child {
+/* El día: su fecha (con su era) y, fijado, su «×» */
+.dayHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2);
   margin-block-end: var(--space-3);
 }
 
-/* El año en pequeño: su número entre ‹ ›, la tira y los meses, cada uno lleva a él */
-.yearHead {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: var(--space-1);
-  margin-block-end: var(--space-3);
-}
-
-.side > section[aria-labelledby] > .yearHead > h2 {
-  margin: 0;
-  padding: 0;
-  border: 0;
-  font-size: 1.125rem;
-  text-align: center;
-}
-
-.yearArrow {
-  display: grid;
-  place-items: center;
-  inline-size: 2rem;
-  block-size: 2rem;
-  padding: 0;
-  border: 0;
-  border-radius: 50%;
-  background: none;
-  color: var(--color-muted);
-  cursor: pointer;
-  transition:
-    background-color 150ms ease-out,
-    color 150ms ease-out;
-}
-
-.yearArrow:hover {
-  background: var(--row-hover);
-  color: var(--color-text);
-}
-
-.yearArrow:focus-visible {
-  outline: 2px solid var(--color-focus);
-  outline-offset: 2px;
-}
-
-.months {
-  display: grid;
-  gap: 1px;
-  margin: var(--space-3) 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.monthButton {
-  display: grid;
-  grid-template-columns: 1.5rem minmax(0, 1fr) auto;
-  align-items: center;
-  gap: var(--space-2);
-  inline-size: 100%;
-  min-block-size: 1.75rem;
-  padding: 0 var(--space-2);
-  border: 0;
-  border-radius: var(--radius-button);
-  background: none;
-  color: var(--color-muted);
-  font-size: 0.875rem;
-  text-align: start;
-  cursor: pointer;
-  transition:
-    background-color 150ms ease-out,
-    color 150ms ease-out;
-}
-
-.monthButton:hover {
-  background: var(--row-hover);
-  color: var(--color-text);
-}
-
-.monthButton:focus-visible {
-  outline: 2px solid var(--color-focus);
-  outline-offset: -2px;
-}
-
-.monthButton[aria-current="true"] {
-  background: var(--row-hover);
-  color: var(--color-text);
-  font-weight: 600;
-  box-shadow: inset 2px 0 0 var(--color-accent-text);
-}
-
-.monthNumber,
-.monthDays {
-  font-variant-numeric: tabular-nums;
-  text-align: end;
-}
-
-.monthNumber {
-  color: color-mix(in srgb, var(--color-muted) 80%, transparent);
-}
-
-.monthName {
-  min-inline-size: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* Las festividades, sin número: su punto en su color (el nombre, legible, en el de siempre) */
-.monthButton[data-festival] .monthNumber {
-  justify-self: end;
-  inline-size: 0.5rem;
-  block-size: 0.5rem;
-  margin-inline-end: 0.25rem;
-  overflow: hidden;
-  border-radius: 50%;
-  background: var(--month-color, var(--color-warning));
-  color: transparent;
-}
-
-.monthButton[data-festival] .monthName {
-  font-style: italic;
-}
-
-/* Los datos del calendario */
-.badge {
-  justify-self: start;
-  display: inline-block;
-  margin: 0 0 var(--space-3);
-  padding: 2px var(--space-2);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--color-accent) 22%, transparent);
-  color: var(--color-accent-text);
-  font-size: 0.75rem;
-  font-weight: 700;
-}
-
-.facts {
-  display: grid;
-  gap: var(--space-2);
-  margin: 0;
-}
-
-.facts > div {
-  display: grid;
-  grid-template-columns: 6rem minmax(0, 1fr);
-  gap: var(--space-2);
-  font-size: 0.875rem;
-}
-
-.facts dt {
-  color: var(--color-muted);
-}
-
-.facts dd {
-  margin: 0;
-  font-variant-numeric: tabular-nums;
-}
-
-.description {
-  margin: var(--space-3) 0 0;
-  padding-block-start: var(--space-3);
-  border-block-start: 1px solid var(--line-soft);
-  color: var(--color-muted);
-  font-size: 0.875rem;
-}
-
-/* El día elegido */
-.side > section.day[aria-labelledby] > h2:first-child {
+/* Como el título de un recuadro (base.css), aunque no sea lo primero de él */
+.dayHead > h2 {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: 1.125rem;
   line-height: 1.25;
+}
+
+.close {
+  display: grid;
+  flex: none;
+  place-items: center;
+  inline-size: 2rem;
+  block-size: 2rem;
+  margin: -4px -6px 0 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--color-muted);
+  cursor: pointer;
+  transition:
+    background-color 150ms ease-out,
+    color 150ms ease-out;
+}
+
+.close:hover {
+  background: var(--row-hover);
+  color: var(--color-text);
+}
+
+.close:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }
 
 .todayMark {
@@ -411,4 +379,116 @@
 .action:focus-visible {
   outline: 2px solid var(--color-focus);
   outline-offset: 2px;
+}
+
+/* La semana: los días altos, con todo lo suyo; el mes, junto al número del primero y de cada día 1 */
+.month .weekDay {
+  min-block-size: 16rem;
+}
+
+.weekNumber {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  min-inline-size: 0;
+}
+
+.weekMonth {
+  overflow: hidden;
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* El año: los meses en pequeño, cada uno un botón que lleva a él */
+.year {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.yearMonth {
+  display: grid;
+  align-content: start;
+  gap: var(--space-2);
+  inline-size: 100%;
+  block-size: 100%;
+  padding: var(--space-3);
+  border: 1px solid var(--line-frame);
+  border-radius: var(--radius-frame);
+  background: var(--surface-glass-raised);
+  color: var(--color-text);
+  text-align: start;
+  cursor: pointer;
+  transition: border-color 150ms ease-out;
+}
+
+.yearMonth:hover {
+  border-color: var(--color-field-border);
+}
+
+.yearMonth:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/* Las festividades, en su color (el nombre, legible siempre) */
+.yearMonth[data-festival] {
+  border-color: color-mix(in srgb, var(--month-color, var(--color-warning)) 55%, var(--line-frame));
+  background: color-mix(in srgb, var(--month-color, var(--color-warning)) 10%, transparent);
+}
+
+.yearMonthName {
+  font-weight: 700;
+}
+
+.yearMonth[data-festival] .yearMonthName {
+  font-style: italic;
+}
+
+.mini {
+  display: grid;
+  grid-template-columns: repeat(var(--columns), minmax(0, 1fr));
+  gap: 1px;
+  color: var(--color-muted);
+  font-size: 0.6875rem;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+/* Los días de fuera de la semana, en fila */
+.miniRow {
+  grid-template-columns: repeat(auto-fill, minmax(1.5rem, 1fr));
+}
+
+.mini > span {
+  line-height: 1.5rem;
+  border-radius: 999px;
+}
+
+.mini > .miniHead {
+  font-size: 0.625rem;
+  font-weight: 700;
+  line-height: 1.25rem;
+}
+
+/* Un día con algo: más claro y subrayado; hoy, lleno; el fijado, con su aro */
+.mini > [data-busy] {
+  color: var(--color-text);
+  font-weight: 700;
+  text-decoration: underline 2px var(--color-accent-text);
+  text-underline-offset: 3px;
+}
+
+.mini > [data-today] {
+  background: var(--accent-glass);
+  color: var(--color-on-accent);
+}
+
+.mini > [data-selected] {
+  box-shadow: inset 0 0 0 1.5px var(--color-accent-text);
 }

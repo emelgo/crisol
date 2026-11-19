@@ -73,24 +73,41 @@ export interface FormatOptions {
   weekday?: boolean
   /** Sin el año */
   noYear?: boolean
+  /** Detrás, la era en la que cae: «…de 2014 de la Era de la República» */
+  era?: boolean
+}
+
+/** «de la Era de la República», «de la Segunda Edad», «del Tercer Ciclo»; si no se sabe, «de la era Dalereckoning» */
+export function eraWithPreposition(name: string): string {
+  // Por su primera o su segunda palabra
+  const words = calendarKey(name).split(' ').slice(0, 2)
+  if (words.some((word) => ['era', 'edad', 'epoca', 'etapa'].includes(word))) return `de la ${name}`
+  if (words.some((word) => ['ciclo', 'periodo', 'reinado', 'tiempo'].includes(word))) return `del ${name}`
+  return `de la era ${name}`
 }
 
 /** «1250 RC», «Siega de 1250 RC», «18 de Siega de 1250 RC» (con el día recortado si su mes se acortó) */
 export function formatDate(def: CalendarDefinition, date: WorldDate, options: FormatOptions = {}): string {
   const shown = clampDate(def, date)
   const year = formatYear(def, shown.year, shown)
-  if (shown.month === undefined) return year
+  if (shown.month === undefined) return withEra(def, shown, year, options)
   const month = monthOf(def, shown.month)
-  if (!month) return year
+  if (!month) return withEra(def, shown, year, options)
   const withYear = (text: string) => (options.noYear ? text : `${text} de ${year}`)
-  if (shown.day === undefined) return withYear(month.name)
+  if (shown.day === undefined) return withEra(def, shown, withYear(month.name), options)
   const named = dayName(month, shown.day)
   let text = withYear(named ?? `${shown.day} ${monthWithPreposition(month)}`)
   if (options.weekday) {
     const name = weekdayName(def, { year: shown.year, month: shown.month, day: shown.day })
     if (name) text = `${name}, ${text}`
   }
-  return text
+  return withEra(def, shown, text, options)
+}
+
+function withEra(def: CalendarDefinition, date: WorldDate, text: string, options: FormatOptions) {
+  if (!options.era || options.noYear) return text
+  const era = safeEra(def, date)
+  return era ? `${text} ${eraWithPreposition(era.name)}` : text
 }
 
 /**

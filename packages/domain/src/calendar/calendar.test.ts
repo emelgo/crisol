@@ -21,6 +21,7 @@ import {
   seasonOf,
   weekdayName,
   weekdayOf,
+  weekGrid,
   yearLength
 } from './dates.ts'
 import { blankCalendar, type CalendarDefinition, copyCalendar, type FullDate, gregorianCalendar } from './definition.ts'
@@ -29,6 +30,7 @@ import { EANA, HARPTOS_LIKE, OUTSIDE_CONTINUOUS } from './fixtures.ts'
 import {
   dateDistance,
   dateForm,
+  eraWithPreposition,
   formatDate,
   formatDistance,
   formatRange,
@@ -251,6 +253,35 @@ describe('días fuera de la semana', () => {
     expect(fiesta.outside.map((day) => day.day)).toEqual([1, 2, 3, 4, 5, 6])
   })
 
+  it('la semana de un día: con la semana seguida, la fiesta de fuera de la semana va entre sus días', () => {
+    // Un mes 5 de 34 días: su día 34 cae en el cuarto de la semana y la fiesta (6 días el año 0) corta la semana
+    const def: CalendarDefinition = {
+      ...OUTSIDE_CONTINUOUS,
+      months: OUTSIDE_CONTINUOUS.months.map((m) => (m.id === 'm5' ? { ...m, days: 34 } : m))
+    }
+    const week = weekGrid(def, dayNumber(def, { year: 0, month: 'm5', day: 34 }))
+    expect(week.days.map((day) => day?.weekday)).toEqual([0, 1, 2, 3, 4, 5])
+    expect(week.days.map((day) => day && dateFromDay(def, day.dayNumber).day)).toEqual([31, 32, 33, 34, 1, 2])
+    expect(week.outside.map((day) => day.day)).toEqual([1, 2, 3, 4, 5, 6])
+    expect(week.first).toBe(week.days[0]?.dayNumber)
+    expect(week.last).toBe(week.days[5]?.dayNumber)
+    // En la frontera, la fiesta no entra: es su propia «semana»
+    const edge = weekGrid(OUTSIDE_CONTINUOUS, dayNumber(OUTSIDE_CONTINUOUS, { year: 0, month: 'm5', day: 36 }))
+    expect(edge.outside).toEqual([])
+    expect(edge.days.every(Boolean)).toBe(true)
+  })
+
+  it('la semana de un día: si empieza cada mes, no sale del suyo; un día de la fiesta da la fiesta', () => {
+    const start = weekGrid(HARPTOS_LIKE, dayNumber(HARPTOS_LIKE, { year: 10, month: 'm2', day: 1 }))
+    expect(start.days.map((day) => day?.day ?? null)).toEqual([null, null, 1, 2, 3, 4])
+    const end = weekGrid(HARPTOS_LIKE, dayNumber(HARPTOS_LIKE, { year: 10, month: 'm1', day: 36 }))
+    expect(end.days.map((day) => day?.day ?? null)).toEqual([35, 36, null, null, null, null])
+    const fiesta = weekGrid(HARPTOS_LIKE, dayNumber(HARPTOS_LIKE, { year: 10, month: 'fiesta', day: 2 }))
+    expect(fiesta.days).toEqual([])
+    expect(fiesta.outside.map((day) => day.day)).toEqual([1, 2, 3, 4, 5])
+    expect(fiesta.last - fiesta.first).toBe(4)
+  })
+
   it('el sufijo de antes del año 0', () => {
     expect(formatYear(HARPTOS_LIKE, -980)).toBe('980 a. V.')
     expect(formatYear(HARPTOS_LIKE, 0)).toBe('0 CV')
@@ -323,6 +354,19 @@ describe('eras', () => {
     expect(formatDate(regnal, { year: 1249, month: 'siega', day: 3 })).toBe('3 de Siega de 34 ER')
     expect(formatDate(regnal, { year: 1216, month: 'pastos', day: 3 })).toBe('3 de Pastos de 1216 RC')
     expect(formatDate(regnal, { year: 1216, month: 'siega', day: 1 })).toBe('1 de Siega de 1 ER')
+  })
+
+  it('con la era detrás, si se pide (y la preposición según su nombre)', () => {
+    expect(formatDate(EANA, d(1, 'Cierzo'), { era: true })).toBe('1 de Cierzo de 331 RC de la Era de la República')
+    expect(formatDate(EANA, d(1, 'Cierzo'))).toBe('1 de Cierzo de 331 RC')
+    expect(formatDate(EANA, { year: -5000 }, { era: true })).toBe('-5000 RC de la Era de los Reyes Predestinados')
+    expect(formatDate(EANA, d(1, 'Cierzo'), { era: true, noYear: true })).toBe('1 de Cierzo')
+    expect(formatDate(GREGORIAN, g(2014, 1, 1), { era: true })).toBe('1 de Enero de 2014')
+    expect(eraWithPreposition('Edad Oscura')).toBe('de la Edad Oscura')
+    expect(eraWithPreposition('Segunda Edad')).toBe('de la Segunda Edad')
+    expect(eraWithPreposition('Erathis')).toBe('de la era Erathis')
+    expect(eraWithPreposition('Tercer Ciclo')).toBe('del Tercer Ciclo')
+    expect(eraWithPreposition('Dalereckoning')).toBe('de la era Dalereckoning')
   })
 
   it('una era abierta sigue hasta el final', () => {

@@ -5,7 +5,8 @@
  * arriba «Todo el mes»; debajo, lo que va fuera de la semana. Elegir un día abre su detalle (la fecha larga, la
  * estación, la era, las lunas y lo que pasa). El máster arrastra una ficha a otro día para cambiarle la fecha. Con el
  * teclado: las flechas recorren la rejilla, Intro abre el día y Re Pág / Av Pág cambian de mes. La vista grande de un
- * calendario (calendars/view.tsx) la lleva por fuera: el mes que se ve, el día elegido (su detalle, en su ficha) y el hoy
+ * calendario (calendars/view.tsx) la lleva por fuera: el mes que se ve, el día elegido (su detalle, en su ficha), el día
+ * por el que pasa el ratón (o el foco) y el hoy
  */
 import type { ChronologyEntryView, TimelineGroupView } from '@crisol/contracts'
 import {
@@ -78,6 +79,7 @@ export function CalendarView({
   onWhere,
   selected: chosenDay,
   onSelect,
+  onHover,
   today = null,
   tools = null,
   banner = null,
@@ -94,6 +96,8 @@ export function CalendarView({
   /** El día elegido, llevado por fuera (con onSelect): su detalle va fuera y aquí no sale el suyo */
   selected?: number | null | undefined
   onSelect?: ((day: number) => void) | undefined
+  /** El día por el que pasa el ratón o el foco (null al salir): la vista grande enseña su ficha */
+  onHover?: ((day: number | null) => void) | undefined
   /** El día de hoy (su día absoluto), marcado en la rejilla */
   today?: number | null | undefined
   /** Lo que va en la cabecera, antes de las flechas */
@@ -348,8 +352,15 @@ export function CalendarView({
       data-today={today === day.dayNumber || undefined}
       // Solo el foco de la celda (el de sus fichas, que sube, no la mueve)
       onFocus={(event) => {
-        if (event.target === event.currentTarget) setFocusDay(day.dayNumber)
+        if (event.target !== event.currentTarget) return
+        setFocusDay(day.dayNumber)
+        onHover?.(day.dayNumber)
       }}
+      onBlur={(event) => {
+        if (event.target === event.currentTarget) onHover?.(null)
+      }}
+      onMouseEnter={onHover ? () => onHover(day.dayNumber) : undefined}
+      onMouseLeave={onHover ? () => onHover(null) : undefined}
       onClick={(event) => {
         if ((event.target as HTMLElement).closest('button, a')) return
         setSelected(day.dayNumber)
@@ -527,7 +538,8 @@ export function CalendarView({
   )
 }
 
-function Chip({
+/** La ficha de una entrada en un día (también en la semana de la vista grande de un calendario) */
+export function Chip({
   entry,
   group,
   starts,

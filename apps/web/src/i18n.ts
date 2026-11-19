@@ -2128,18 +2128,27 @@ export const es = {
     and: '{{first}} y {{last}}',
     year: 'El año de {{name}}',
     notFound: 'Ese calendario ya no existe',
-    // Un calendario en grande: el mes, el año en pequeño con sus datos y el día elegido
+    // Un calendario en grande: el mes, la semana o el año, y la ficha de un día (y los datos del resumen del editor)
     view: {
       edit: 'Editar calendario',
+      modes: 'Vista',
+      month: 'Mes',
+      week: 'Semana',
+      year: 'Año',
+      goTo: 'Ir a',
+      goToMonth: 'Ir al mes',
+      goToYear: 'Ir al año',
       previousYear: 'Año anterior',
       nextYear: 'Año siguiente',
+      previousWeek: 'Semana anterior',
+      nextWeek: 'Semana siguiente',
+      monthWithDays_one: '{{name}}, {{count}} día con algo',
+      monthWithDays_other: '{{name}}, {{count}} días con algo',
       today: 'Hoy',
       goToday: 'Ir a hoy',
       festival: 'Festividad',
-      yearAside: 'El año y los datos del calendario',
       dayAside: 'El día elegido',
-      months: 'Los meses del año',
-      facts: 'El calendario',
+      closeDay: 'Quitar el día',
       yearLabel: 'Año',
       monthsLabel: 'Meses',
       weekLabel: 'Semana',
@@ -5029,8 +5038,8 @@ export const es = {
       summary: 'El año en cifras y lo que hay que arreglar.'
     },
     calendarView: {
-      month: 'Pulsa un día para ver qué pasa en él.',
-      day: 'El día elegido: crea un evento o una página con su fecha.',
+      month: 'Pasa el ratón por un día para verlo; púlsalo para dejarlo fijo.',
+      views: 'Mes, semana o año, y la fecha a la que ir.',
       edit: 'Para cambiar cómo es el calendario.'
     },
     dice: {

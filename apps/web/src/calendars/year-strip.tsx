@@ -1,21 +1,11 @@
 /**
  * El año de un calendario dibujado (lienzo «Calendarios del mundo», aprobado: «las fichas con el año dibujado, bien»):
- * una tira con un tramo por mes, del ancho de sus días (las festividades, con su color), y debajo las estaciones. En la
- * vista grande, el mes que se ve, marcado
+ * una tira con un tramo por mes, del ancho de sus días (las festividades, con su color), y debajo las estaciones
  */
 import { type CalendarDefinition, yearLength } from '@crisol/domain'
 import styles from './calendars.module.css'
 
-export function YearStrip({
-  definition,
-  label,
-  current = null
-}: {
-  definition: CalendarDefinition
-  label: string
-  /** El mes que se ve (la vista grande) */
-  current?: string | null
-}) {
+export function YearStrip({ definition, label }: { definition: CalendarDefinition; label: string }) {
   const total = Math.max(1, yearLength(definition))
   const seasons = seasonBands(definition, total)
   return (
@@ -26,7 +16,6 @@ export function YearStrip({
             key={month.id}
             className={styles.month}
             data-festival={month.festival || undefined}
-            data-current={month.id === current || undefined}
             style={{
               flexGrow: Math.max(1, month.days),
               ...(month.color ? { ['--month-color' as string]: month.color } : {})

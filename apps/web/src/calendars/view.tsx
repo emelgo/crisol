@@ -1,29 +1,28 @@
 /**
- * Un calendario en grande (ajustes tras los módulos, bloque C; Crisol antiguo, VistaMes y DetalleDia): con el esqueleto
- * de las pantallas, el título sobre la columna y «Editar calendario» a su derecha. En el centro, el mes grande (la vista
- * «Calendario» de las cronologías) con lo que cae en él, las lunas, la estación, la franja de una festividad y «Hoy
- * de…» si alguna campaña tiene fecha; a la izquierda, el año en pequeño y los datos del calendario; a la derecha, el día
- * elegido con «Nuevo evento» (un evento suelto del mundo, que sale en las cronologías que lo incluyan) y «Página con
- * esta fecha». Solo para quien lleva el mundo
+ * Un calendario en grande (ajustes tras los módulos, bloque C; Crisol antiguo, VistaMes y DetalleDia), con el esqueleto
+ * de las pantallas: el título sobre la columna y «Editar calendario» a su derecha. En el centro, arriba, las vistas (Mes,
+ * Semana y Año), «Ir a» un mes y un año y «Hoy de…» si alguna campaña tiene fecha; debajo, la vista con sus flechas. A
+ * la derecha, solo cuando hace falta, la ficha de un día: al pasar el ratón (o el foco) por él se ve, al pulsarlo se fija
+ * y Esc la quita. Lleva su fecha con su era, su estación, sus lunas, lo que pasa y «Nuevo evento» (un evento suelto del
+ * mundo, que sale en las cronologías que lo incluyan) y «Página con esta fecha». Solo para quien lleva el mundo
  */
 import type { CalendarView as Calendar, ChronologyEntryView, TimelineGroupView } from '@crisol/contracts'
 import {
   type CalendarDefinition,
   dateFromDay,
-  dateSpan,
   dayNumber,
   daysInMonth,
   describeDate,
   entryOccurrences,
   type FullDate,
+  formatDate,
   formatYear,
-  monthNumber,
-  yearLength
+  weekGrid
 } from '@crisol/domain'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getRouteApi, Link, Navigate, useNavigate } from '@tanstack/react-router'
-import { CalendarPlus, ChevronLeft, ChevronRight, FilePlus, Pencil, Sparkles } from 'lucide-react'
-import { type CSSProperties, useId, useMemo, useState } from 'react'
+import { CalendarPlus, FilePlus, Pencil, Sparkles, X } from 'lucide-react'
+import { type CSSProperties, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
@@ -39,14 +38,19 @@ import { FormError } from '../components/field.tsx'
 import { failed, LoadError, SectionError } from '../components/load-error.tsx'
 import { Screen } from '../components/screen.tsx'
 import { Tour } from '../components/tour.tsx'
+import { IntegerInput } from './date-input.tsx'
+import { WeekView, YearView } from './periods.tsx'
 import { pagesOf, startYear } from './preview.tsx'
 import styles from './view.module.css'
-import { YearStrip } from './year-strip.tsx'
 
 const route = getRouteApi('/mundos/$worldId/calendarios/$calendarId')
 
 /** Lo que cae en un calendario (se vuelve a pedir con lo de las cronologías: eventos, páginas, calendarios) */
 export const calendarEntriesQuery = (calendarId: string) => ['chronology', 'calendar', calendarId]
+
+/** Las vistas del centro */
+const MODES = ['month', 'week', 'year'] as const
+type Mode = (typeof MODES)[number]
 
 export function CalendarViewScreen() {
   const { t } = useTranslation()
@@ -110,43 +114,71 @@ function BigCalendar({
   })
   const chosen = useChosenToday(worldId)
   const today = chosen.current ? todayIn(calendars, calendar.id, chosen.current.today) : null
-  const placeOfDay = (day: number) => {
-    const date = dateFromDay(definition, day)
-    return placeOfMonth(pages, date.month, date.year)
-  }
-  // Se abre en el año de su última era (o el 1); con un «hoy», en él (la primera vez que llega)
-  const [place, setPlace] = useState<CalendarPlace>(() => ({ page: 0, year: startYear(definition) }))
-  const [selected, setSelected] = useState<number | null>(null)
+
+  const [mode, setMode] = useState<Mode>('month')
+  // El día que guía lo que se ve (el mes, la semana o el año en que cae): el año de su última era (o el 1); con un
+  // «hoy», él (la primera vez que llega)
+  const [cursor, setCursor] = useState(() => dayNumber(definition, { year: startYear(definition) }))
   const [jumped, setJumped] = useState(false)
   if (today !== null && !jumped) {
     setJumped(true)
-    setPlace(placeOfDay(today))
-    setSelected(today)
+    setCursor(today)
   }
+  // El día fijado (al pulsarlo) y el que se ve al pasar el ratón; la ficha enseña este, si no, aquel
+  const [pinned, setPinned] = useState<number | null>(null)
+  const [hovered, setHovered] = useState<number | null>(null)
   const [dialog, setDialog] = useState<EventDraft | null>(null)
+  const shown = hovered ?? pinned
 
-  const page = pages[Math.min(place.page, pages.length - 1)] ?? pages[0]
-  // Los días de la página que se ve (el mes con sus fiestas de fuera de la semana)
-  const range = useMemo(() => {
-    if (!page) return null
-    const ids = [...page.before, page.month, ...page.after]
-    const first = dayNumber(definition, { year: place.year, month: ids[0] ?? page.month, day: 1 })
-    const last = dateSpan(definition, { year: place.year, month: ids.at(-1) ?? page.month })[1]
-    return { first, last, start: dayNumber(definition, { year: place.year, month: page.month, day: 1 }) }
-  }, [definition, page, place.year])
-  const inPage = (day: number | null): day is number =>
-    day !== null && range !== null && day >= range.first && day <= range.last
-  // El día que se ve a la derecha: el elegido, si está en el mes; si no, hoy o el primero del mes
-  const day = inPage(selected) ? selected : inPage(today) ? today : (range?.start ?? null)
+  // Pasar el ratón: el primer día enseña su ficha al momento; de uno a otro, tras un instante (cruzar la rejilla hasta
+  // la ficha no la cambia) y, al salir, un poco después (entrar en la ficha la mantiene)
+  const hoverTimer = useRef<number | undefined>(undefined)
+  const hoveredRef = useRef<number | null>(null)
+  const hover = (day: number | null) => {
+    window.clearTimeout(hoverTimer.current)
+    const apply = () => {
+      hoveredRef.current = day
+      setHovered(day)
+    }
+    if (day !== null && hoveredRef.current === null) apply()
+    else hoverTimer.current = window.setTimeout(apply, day === null ? 250 : 120)
+  }
+  const keepHover = () => window.clearTimeout(hoverTimer.current)
+  useEffect(() => () => window.clearTimeout(hoverTimer.current), [])
 
+  // Esc quita el día fijado (si no hay un cuadro abierto, que se cierra él)
+  useEffect(() => {
+    if (shown === null) return
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || event.defaultPrevented || document.querySelector('dialog[open]')) return
+      window.clearTimeout(hoverTimer.current)
+      hoveredRef.current = null
+      setHovered(null)
+      setPinned(null)
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [shown])
+
+  const at = dateFromDay(definition, cursor)
+  const place: CalendarPlace = placeOfMonth(pages, at.month, at.year)
+  const page = pages[place.page] ?? pages[0]
+  const month = definition.months.find((m) => m.id === page?.month)
+  const week = useMemo(() => (mode === 'week' ? weekGrid(definition, cursor) : null), [mode, definition, cursor])
   const entries = data.data?.entries ?? []
   const groups = data.data?.groups ?? []
-  const month = definition.months.find((m) => m.id === page?.month)
 
+  const firstOf = (monthId: string, year: number) => dayNumber(definition, { year, month: monthId, day: 1 })
   const goToDay = (target: number) => {
-    setPlace(placeOfDay(target))
-    setSelected(target)
+    setCursor(target)
+    setPinned(target)
   }
+  // Pasar de semana: el día de antes de la primera o el de después de la última
+  const stepWeek = (step: -1 | 1) => {
+    const current = weekGrid(definition, cursor)
+    setCursor(step < 0 ? current.first - 1 : current.last + 1)
+  }
+  const stepYear = (step: -1 | 1) => setCursor(firstOf(definition.months[0]?.id ?? at.month, at.year + step))
 
   const datedPage = useMutation({
     mutationFn: async (date: FullDate) => {
@@ -183,21 +215,9 @@ function BigCalendar({
         <span>{t('calendars.view.festival')}</span>
         <b>{month.name}</b>
         <span className={styles.bandDays}>
-          {t('calendars.days', { count: daysInMonth(definition, place.year, month.id) })}
+          {t('calendars.days', { count: daysInMonth(definition, at.year, month.id) })}
         </span>
       </p>
-    ) : null
-
-  const tools =
-    chosen.options.length > 0 ? (
-      <div className={styles.tools}>
-        <TodayOf options={chosen.options} value={chosen.chosen} onChange={chosen.choose} />
-        {today !== null && (
-          <button type="button" className={styles.todayButton} onClick={() => goToDay(today)}>
-            {t('calendars.view.goToday')}
-          </button>
-        )}
-      </div>
     ) : null
 
   return (
@@ -214,56 +234,157 @@ function BigCalendar({
           {t('calendars.view.edit')}
         </Link>
       }
-      left={
-        <YearAside
-          calendar={calendar}
-          year={place.year}
-          current={page?.month ?? null}
-          onMonth={(id) => {
-            setPlace(placeOfMonth(pages, id, place.year))
-            setSelected(null)
-          }}
-          onYear={(step) => setPlace({ page: place.page, year: place.year + step })}
-        />
-      }
-      leftLabel={t('calendars.view.yearAside')}
       right={
-        day !== null ? (
+        shown !== null ? (
           <DayAside
             worldId={worldId}
             definition={definition}
-            day={day}
+            day={shown}
             today={today}
+            pinned={pinned === shown}
             entries={entries}
             groups={groups}
             busy={datedPage.isPending}
             error={datedPage.error ? errorText(datedPage.error) : null}
-            onNewEvent={() => setDialog({ date: { calendarId: calendar.id, start: dateFromDay(definition, day) } })}
-            onNewPage={() => datedPage.mutate(dateFromDay(definition, day))}
+            onEnter={keepHover}
+            onLeave={() => hover(null)}
+            onClose={() => {
+              hoveredRef.current = null
+              setHovered(null)
+              setPinned(null)
+            }}
+            onNewEvent={() => setDialog({ date: { calendarId: calendar.id, start: dateFromDay(definition, shown) } })}
+            onNewPage={() => datedPage.mutate(dateFromDay(definition, shown))}
             onEdit={(entry) => setDialog({ entry })}
           />
         ) : null
       }
       rightLabel={t('calendars.view.dayAside')}
     >
-      {failed(data) && <SectionError error={data.error} onRetry={() => data.refetch()} />}
-      <div className={styles.month} data-tour="calendario-mes">
-        <CalendarView
-          worldId={worldId}
-          definition={definition}
-          entries={entries}
-          groups={groups}
-          compact={false}
-          where={place}
-          onWhere={(next) => setPlace(next)}
-          selected={day}
-          onSelect={setSelected}
-          today={today}
-          tools={tools}
-          banner={banner}
-          onEdit={openEntry}
-        />
+      <div className={styles.bar} data-tour="calendario-vistas">
+        <div
+          className={styles.modes}
+          role="toolbar"
+          aria-label={t('calendars.view.modes')}
+          // Las flechas pasan de una vista a otra (el foco)
+          onKeyDown={(event) => {
+            if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
+            const buttons = [...event.currentTarget.querySelectorAll('button')]
+            const at = buttons.indexOf(event.target as HTMLButtonElement)
+            const step = event.key === 'ArrowLeft' ? -1 : 1
+            buttons[(at + step + buttons.length) % buttons.length]?.focus()
+            event.preventDefault()
+          }}
+        >
+          {MODES.map((one) => (
+            <button
+              key={one}
+              type="button"
+              className={styles.mode}
+              aria-pressed={mode === one}
+              onClick={() => {
+                // A la semana o al año del día fijado, si lo hay
+                if (pinned !== null) setCursor(pinned)
+                setMode(one)
+              }}
+            >
+              {t(`calendars.view.${one}`)}
+            </button>
+          ))}
+        </div>
+        <fieldset className={styles.jump}>
+          <legend className={styles.srOnly}>{t('calendars.view.goTo')}</legend>
+          <span aria-hidden="true">{t('calendars.view.goTo')}</span>
+          {mode !== 'year' && (
+            <select
+              value={definition.months.some((m) => m.id === at.month) ? at.month : ''}
+              aria-label={t('calendars.view.goToMonth')}
+              onChange={(event) => setCursor(firstOf(event.target.value, at.year))}
+            >
+              {definition.months.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name}
+                </option>
+              ))}
+            </select>
+          )}
+          <IntegerInput
+            className={styles.yearInput}
+            value={at.year}
+            aria-label={t('calendars.view.goToYear')}
+            onValue={(year) => {
+              const monthId = mode === 'year' ? (definition.months[0]?.id ?? at.month) : at.month
+              if (Math.abs(year) <= 10_000_000) setCursor(firstOf(monthId, year))
+            }}
+          />
+        </fieldset>
+        {chosen.options.length > 0 && (
+          <div className={styles.tools}>
+            <TodayOf options={chosen.options} value={chosen.chosen} onChange={chosen.choose} />
+            {today !== null && (
+              <button type="button" className={styles.todayButton} onClick={() => goToDay(today)}>
+                {t('calendars.view.goToday')}
+              </button>
+            )}
+          </div>
+        )}
       </div>
+      {failed(data) && <SectionError error={data.error} onRetry={() => data.refetch()} />}
+      {mode === 'month' && (
+        <div className={styles.month} data-tour="calendario-mes">
+          <CalendarView
+            worldId={worldId}
+            definition={definition}
+            entries={entries}
+            groups={groups}
+            compact={false}
+            where={place}
+            onWhere={(next) => {
+              const target = pages[next.page] ?? pages[0]
+              if (target) setCursor(firstOf(target.month, next.year))
+            }}
+            selected={pinned}
+            onSelect={setPinned}
+            onHover={hover}
+            today={today}
+            banner={banner}
+            onEdit={openEntry}
+          />
+        </div>
+      )}
+      {mode === 'week' && week && (
+        <div className={styles.month} data-tour="calendario-mes">
+          <WeekView
+            definition={definition}
+            week={week}
+            entries={entries}
+            groups={groups}
+            selected={pinned}
+            today={today}
+            onSelect={setPinned}
+            onHover={hover}
+            onOpen={openEntry}
+            onStep={stepWeek}
+          />
+        </div>
+      )}
+      {mode === 'year' && (
+        <div className={styles.month} data-tour="calendario-mes">
+          <YearView
+            definition={definition}
+            year={at.year}
+            title={formatYear(definition, at.year, { year: at.year })}
+            entries={entries}
+            selected={pinned}
+            today={today}
+            onMonth={(id) => {
+              setCursor(firstOf(id, at.year))
+              setMode('month')
+            }}
+            onStep={stepYear}
+          />
+        </div>
+      )}
       {(data.data?.outside ?? 0) > 0 && (
         <p className={styles.outside}>{t('calendars.view.outside', { count: data.data?.outside ?? 0 })}</p>
       )}
@@ -282,7 +403,7 @@ function BigCalendar({
         id="calendario-vista"
         steps={[
           { target: '[data-tour="calendario-mes"]', text: t('tour.calendarView.month') },
-          { target: '[data-tour="calendario-dia"]', text: t('tour.calendarView.day'), placement: 'left' },
+          { target: '[data-tour="calendario-vistas"]', text: t('tour.calendarView.views'), placement: 'bottom' },
           { target: '[data-tour="calendario-editar"]', text: t('tour.calendarView.edit'), placement: 'bottom' }
         ]}
       />
@@ -290,155 +411,23 @@ function BigCalendar({
   )
 }
 
-/** La ficha de la izquierda: el año que se ve, en pequeño (‹ › pasa de año; cada mes lleva a él), y sus datos */
-function YearAside({
-  calendar,
-  year,
-  current,
-  onMonth,
-  onYear
-}: {
-  calendar: Calendar
-  year: number
-  current: string | null
-  onMonth: (monthId: string) => void
-  onYear: (step: number) => void
-}) {
-  const { t } = useTranslation()
-  const { definition } = calendar
-  const yearId = useId()
-  const factsId = useId()
-  return (
-    <div className={styles.side}>
-      <section aria-labelledby={yearId}>
-        <div className={styles.yearHead}>
-          <button
-            type="button"
-            className={styles.yearArrow}
-            aria-label={t('calendars.view.previousYear')}
-            title={t('calendars.view.previousYear')}
-            onClick={() => onYear(-1)}
-          >
-            <ChevronLeft size={16} aria-hidden="true" />
-          </button>
-          <h2 id={yearId}>{formatYear(definition, year)}</h2>
-          <button
-            type="button"
-            className={styles.yearArrow}
-            aria-label={t('calendars.view.nextYear')}
-            title={t('calendars.view.nextYear')}
-            onClick={() => onYear(1)}
-          >
-            <ChevronRight size={16} aria-hidden="true" />
-          </button>
-        </div>
-        <YearStrip definition={definition} label={t('calendars.year', { name: calendar.name })} current={current} />
-        <ol className={styles.months} aria-label={t('calendars.view.months')}>
-          {definition.months.map((month) => {
-            const number = monthNumber(definition, month.id)
-            return (
-              <li key={month.id}>
-                <button
-                  type="button"
-                  className={styles.monthButton}
-                  aria-current={month.id === current ? 'true' : undefined}
-                  data-festival={month.festival || undefined}
-                  style={month.color ? ({ '--month-color': month.color } as CSSProperties) : undefined}
-                  onClick={() => onMonth(month.id)}
-                >
-                  <span className={styles.monthNumber} aria-hidden="true">
-                    {number ?? '·'}
-                  </span>
-                  <span className={styles.monthName}>{month.name}</span>
-                  <span className={styles.monthDays}>{daysInMonth(definition, year, month.id)}</span>
-                </button>
-              </li>
-            )
-          })}
-        </ol>
-      </section>
-      <section aria-labelledby={factsId}>
-        <h2 id={factsId}>{t('calendars.view.facts')}</h2>
-        <CalendarFacts calendar={calendar} />
-      </section>
-    </div>
-  )
-}
-
-/** Los datos de un calendario en pocas líneas (también el resumen del editor) */
-export function CalendarFacts({ calendar }: { calendar: Calendar }) {
-  const { t } = useTranslation()
-  const { definition } = calendar
-  const regular = definition.months.filter((m) => !m.festival).length
-  const festivals = definition.months.length - regular
-  const length = yearLength(definition)
-  const leap = definition.leapRules.reduce((sum, rule) => sum + rule.days, 0)
-  const list = (names: string[]) =>
-    names.length <= 1
-      ? (names[0] ?? '')
-      : t('calendars.and', { first: names.slice(0, -1).join(', '), last: names.at(-1) ?? '' })
-  const rows: Array<[string, string]> = [
-    [
-      t('calendars.view.yearLabel'),
-      leap > 0
-        ? `${t('calendars.days', { count: length })} · ${t('calendars.editor.leapDays', { days: length + leap })}`
-        : t('calendars.days', { count: length })
-    ],
-    [
-      t('calendars.view.monthsLabel'),
-      festivals > 0
-        ? t('calendars.monthsAndFestivals', {
-            months: t('calendars.months', { count: regular }),
-            festivals: t('calendars.festivals', { count: festivals })
-          })
-        : t('calendars.months', { count: regular })
-    ],
-    [
-      t('calendars.view.weekLabel'),
-      t('calendars.view.weekFacts', {
-        count: definition.weekdays.length,
-        first: definition.weekdays[0]?.trim() || t('calendars.editor.weekday', { n: 1 })
-      })
-    ],
-    [
-      t('calendars.view.moonsLabel'),
-      definition.moons.length > 0 ? list(definition.moons.map((m) => m.name)) : t('calendars.view.none')
-    ],
-    [
-      t('calendars.view.seasonsLabel'),
-      definition.seasons.length > 0 ? list(definition.seasons.map((s) => s.name)) : t('calendars.view.none')
-    ],
-    [
-      t('calendars.view.erasLabel'),
-      definition.eras.length > 0 ? t('calendars.eras', { count: definition.eras.length }) : t('calendars.noEras')
-    ]
-  ]
-  return (
-    <>
-      {calendar.primary && <p className={styles.badge}>{t('calendars.primary')}</p>}
-      <dl className={styles.facts}>
-        {rows.map(([label, value]) => (
-          <div key={label}>
-            <dt>{label}</dt>
-            <dd>{value}</dd>
-          </div>
-        ))}
-      </dl>
-      {definition.description && <p className={styles.description}>{definition.description}</p>}
-    </>
-  )
-}
-
-/** La ficha de la derecha: el día elegido, con lo que pasa en él y lo que se puede crear con su fecha */
+/**
+ * La ficha de un día: su fecha con su era, su estación y el día del año, sus lunas, lo que pasa en él y lo que se puede
+ * crear con su fecha. Fijado, lleva su «×» (y Esc lo quita)
+ */
 function DayAside({
   worldId,
   definition,
   day,
   today,
+  pinned,
   entries,
   groups,
   busy,
   error,
+  onEnter,
+  onLeave,
+  onClose,
   onNewEvent,
   onNewPage,
   onEdit
@@ -447,31 +436,51 @@ function DayAside({
   definition: CalendarDefinition
   day: number
   today: number | null
+  /** Fijado al pulsarlo (si no, se ve al pasar el ratón) */
+  pinned: boolean
   entries: readonly ChronologyEntryView[]
   groups: readonly TimelineGroupView[]
   busy: boolean
   /** Lo que falló al crear la página con su fecha */
   error: string | null
+  onEnter: () => void
+  onLeave: () => void
+  onClose: () => void
   onNewEvent: () => void
   onNewPage: () => void
   onEdit: (entry: ChronologyEntryView) => void
 }) {
   const { t } = useTranslation()
   const titleId = useId()
-  const described = describeDate(definition, dateFromDay(definition, day))
+  const date = dateFromDay(definition, day)
+  const described = describeDate(definition, date)
   // Lo que cae ese día (con día: lo de todo el mes o el año va arriba de la rejilla)
   const here = useMemo(
     () => entries.filter((e) => e.start.day !== undefined && entryOccurrences(definition, e, day, day).length > 0),
     [entries, definition, day]
   )
-  const facts = [described.season, described.era?.name, t('calendars.view.dayOfYear', { day: described.dayOfYear })]
+  const facts = [described.season, t('calendars.view.dayOfYear', { day: described.dayOfYear })]
   return (
-    <div className={styles.side}>
+    // biome-ignore lint/a11y/noStaticElementInteractions: el ratón dentro de la ficha solo la mantiene a la vista
+    <div className={styles.side} onMouseEnter={onEnter} onMouseLeave={onLeave}>
       <section aria-labelledby={titleId} className={styles.day} data-tour="calendario-dia">
-        <h2 id={titleId}>
-          {day === today && <span className={styles.todayMark}>{t('calendars.view.today')}</span>}
-          {described.text}
-        </h2>
+        <div className={styles.dayHead}>
+          <h2 id={titleId}>
+            {day === today && <span className={styles.todayMark}>{t('calendars.view.today')}</span>}
+            {formatDate(definition, date, { weekday: true, era: true })}
+          </h2>
+          {pinned && (
+            <button
+              type="button"
+              className={styles.close}
+              aria-label={t('calendars.view.closeDay')}
+              title={t('calendars.view.closeDay')}
+              onClick={onClose}
+            >
+              <X size={16} aria-hidden="true" />
+            </button>
+          )}
+        </div>
         <p className={styles.dayFacts}>{facts.filter(Boolean).join(' · ')}</p>
         {described.moons.length > 0 && (
           <ul className={styles.moons}>

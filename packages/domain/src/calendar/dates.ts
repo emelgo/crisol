@@ -350,6 +350,76 @@ export function monthGrid(def: CalendarDefinition, year: number, monthId: string
   return { weeks, outside: [] }
 }
 
+export interface WeekGrid {
+  /** Un hueco por día de la semana (null: si la semana empieza cada mes, ese día es de otro) */
+  days: Array<GridDay | null>
+  /** Los días de fuera de la semana entre los suyos (o los de su fiesta, si el día va fuera de la semana) */
+  outside: GridDay[]
+  /** El primer y el último día que abarca (con los de fuera) */
+  first: number
+  last: number
+}
+
+/** Un día absoluto como en la rejilla */
+function gridDayOf(def: CalendarDefinition, n: number): GridDay {
+  const date = dateFromDay(def, n)
+  return { day: date.day, dayOfYear: dayOfYear(def, date), dayNumber: n, weekday: weekdayOf(def, date) }
+}
+
+/**
+ * La semana de un día para la vista semanal: sus días, cada uno en su columna, y los de fuera de la semana que caen
+ * entre ellos. Con la semana seguida pasa de un mes a otro; si empieza cada mes, no sale del suyo. Un día que va fuera
+ * de la semana da los de su fiesta
+ */
+export function weekGrid(def: CalendarDefinition, day: number): WeekGrid {
+  const columns = def.weekdays.length
+  const at = gridDayOf(def, day)
+  if (columns === 0 || at.weekday === null) {
+    const date = dateFromDay(def, day)
+    const [first, last] = dateSpan(def, { year: date.year, month: date.month })
+    return {
+      days: [],
+      outside: Array.from({ length: last - first + 1 }, (_, i) => gridDayOf(def, first + i)),
+      first,
+      last
+    }
+  }
+  const month = dateFromDay(def, day).month
+  const days: Array<GridDay | null> = Array.from({ length: columns }, () => null)
+  days[at.weekday] = at
+  const outside: GridDay[] = []
+  let first = day
+  let last = day
+  for (const step of [-1, 1] as const) {
+    // Los de fuera se quedan solo si después viene otro día de la semana
+    let pending: GridDay[] = []
+    let n = day + step
+    let expected = at.weekday + step
+    while (expected >= 0 && expected < columns) {
+      const one = gridDayOf(def, n)
+      if (def.weekMode === 'reset' && dateFromDay(def, n).month !== month) break
+      if (one.weekday === null) {
+        pending.push(one)
+        n += step
+        continue
+      }
+      if (one.weekday !== expected) break
+      days[expected] = one
+      if (step < 0) {
+        outside.unshift(...pending.reverse())
+        first = n
+      } else {
+        outside.push(...pending)
+        last = n
+      }
+      pending = []
+      expected += step
+      n += step
+    }
+  }
+  return { days, outside, first, last }
+}
+
 /** Una fecha llevada a otro año: el día, recortado si ese mes es más corto ese año */
 function inYear(def: CalendarDefinition, date: WorldDate, year: number): WorldDate {
   if (date.month === undefined || date.day === undefined) return { ...date, year }
