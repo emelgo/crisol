@@ -72,7 +72,8 @@ export function ItemEye({
   }, [open])
 
   const campaigns = known.data?.campaigns ?? []
-  if (campaigns.length === 0) return null
+  // Revelar, solo dentro de una campaña: en las páginas del mundo no se sabe a quién (Enrique, 2026-11-19)
+  if (!current || campaigns.length === 0) return null
   const toggle = (row: Row) => mark.mutate({ campaignId: row.campaignId, known: !row.knows })
   const state = (row: Row) => t(row.knows ? 'map.eye.knows' : 'map.eye.unknown', { context })
 

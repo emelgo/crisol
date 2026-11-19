@@ -77,7 +77,9 @@ export function SecretReveal({ worldId, pageId, documentId }: { worldId: string;
   const { t } = useTranslation()
   const known = useSecretsKnowledge(worldId, pageId)
   const { open, wrap, toggle, menuId, close } = usePopover()
-  if (!known.data || known.data.campaigns.length === 0) return null
+  // Revelar, solo dentro de una campaña: en las páginas del mundo no se sabe a quién (Enrique, 2026-11-19)
+  const inCampaign = Boolean(useCurrentCampaign())
+  if (!inCampaign || !known.data || known.data.campaigns.length === 0) return null
   const secret = known.data.secrets.find((s) => s.documentId === documentId)
   const shown = (secret?.campaigns ?? []).filter((c) => c.audience !== 'none')
   const names = shown.flatMap((c) =>
@@ -121,7 +123,8 @@ export function TargetReveal({
   const { t } = useTranslation()
   const known = useSecretsKnowledge(worldId, pageId)
   const { open, wrap, toggle, menuId, close } = usePopover()
-  if (!known.data || known.data.campaigns.length === 0) return null
+  const inCampaign = Boolean(useCurrentCampaign())
+  if (!inCampaign || !known.data || known.data.campaigns.length === 0) return null
   return (
     <div ref={wrap} className={styles.wrapInline}>
       <button type="button" className={styles.link} {...toggle}>

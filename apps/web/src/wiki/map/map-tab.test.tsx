@@ -570,29 +570,15 @@ describe('el panel del pin', () => {
     await waitFor(async () => expect((await pinned())?.locked).toBe(true))
   })
 
-  it('el ojo del pin, como el del árbol: con una campaña, su estado y pulsarlo lo cambia; con varias, la lista', async () => {
+  it('el ojo del pin no sale en las páginas del mundo: se revela desde la campaña (Enrique, 2026-11-19)', async () => {
     const { api, panel } = await withPin([{ label: 'Cueva', hidden: true }])
-    // Sin campañas, no sale
     expect(panel.queryByRole('button', { name: /conoce/ })).toBeNull()
     await api.client.call('createCampaign', { worldId: WORLD.id, name: 'La Marca' })
     // (Quitarlo y volver a ocultarlo: lo vuelve a pedir)
     await userEvent.click(panel.getByRole('checkbox', { name: 'Oculto a los jugadores' }))
     await userEvent.click(panel.getByRole('checkbox', { name: 'Oculto a los jugadores' }))
-    await userEvent.click(await panel.findByRole('button', { name: 'La Marca: No lo conoce' }))
-    expect(await panel.findByRole('button', { name: 'La Marca: Lo conoce' })).toBeDefined()
-    expect(api.calls).toContain('setKnowledge')
-    // Con dos: cuántas lo conocen y, al pulsar, cada una con su marca
-    await api.client.call('createCampaign', { worldId: WORLD.id, name: 'Los del norte' })
-    // (Quitarlo y volver a ocultarlo: lo vuelve a pedir)
-    await userEvent.click(panel.getByRole('checkbox', { name: 'Oculto a los jugadores' }))
-    await userEvent.click(panel.getByRole('checkbox', { name: 'Oculto a los jugadores' }))
-    const eye = await panel.findByRole('button', { name: /de 2/ })
-    expect(eye.textContent).toContain('Lo conocen 1 de 2')
-    await userEvent.click(eye)
-    const menu = within(screen.getByRole('menu', { name: 'Qué campañas lo conocen' }))
-    expect(menu.getByRole('menuitemcheckbox', { name: /La Marca/ }).getAttribute('aria-checked')).toBe('true')
-    await userEvent.click(menu.getByRole('menuitemcheckbox', { name: /Los del norte/ }))
-    await waitFor(() => expect(eye.textContent).toContain('Lo conocen todas'))
+    await waitFor(() => expect(api.calls).toContain('getItemKnowledge'))
+    expect(panel.queryByRole('button', { name: /conoce/ })).toBeNull()
   })
 
   it('si no se puede guardar, lo dice y vuelve lo que hay en el servidor', async () => {
