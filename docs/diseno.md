@@ -81,7 +81,9 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   «Portada detrás del título»; antes, la portada de 176 px encima del título): una franja baja (de 5,5 a 7,5 rem según
   el alto de la ventana, esquinas redondeadas; sin portada, su textura) con **el título grande encima de su parte de
   abajo**, sobre un degradado oscuro que lo deja leer, y **a la derecha, en la misma franja, sus botones**, «⋯» y
-  **el botón del panel**; justo debajo, **las pestañas subrayadas** y a su derecha las herramientas de la abierta
+  **el botón del panel**, sobre una portada **en una pastilla de cristal oscuro** que los deja ver con cualquier imagen,
+  también una clara (Enrique, 2026-11-19: «las opciones de una página no se ven según las condiciones de la imagen»;
+  iconos a 3:1 o más); justo debajo, **las pestañas subrayadas** y a su derecha las herramientas de la abierta
   («Guardado» del texto; «Página…» y el ojo de la pizarra). **El desplazamiento, el del navegador**: nada baja solo ni
   se ajusta con la rueda (Enrique, 2026-11-16: «no me gusta la solución de hacer scroll para centrar»). **En el texto**,
   al bajar, cuando la cabecera llega arriba, se queda una **barra pequeña de cristal pegada** con el título en pequeño,
@@ -177,9 +179,11 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   **con tope de luz** (con una portada clara, más tenue). Se reconoce en los márgenes. En Inicio cambia al pararse en un
   mundo, no al pasar por encima. **En las transiciones de vista viaja solo el contenido** (`main[data-contenido]`): el
   fondo y la barra se quedan quietos, sin parpadear; si el fondo cambia (entrar en un mundo o salir), se funde dentro de
-  la transición. Al entrar en un mundo, su tarjeta se convierte en la cabecera; **al salir, también, al revés: una el
-  espejo de la otra** (Enrique, 2026-11-19; sustituye a «al salir, no», que salía estirada y borrosa): la cabecera vuelve
-  a su tarjeta recortada, nunca estirada, mientras lo demás se aleja. **Sin salto al final**: nada se vuelve a montar ni
+  la transición. Al entrar en un mundo, la imagen de su tarjeta se convierte en la portada; **al salir, también, al
+  revés: una el espejo de la otra** (Enrique, 2026-11-19; sustituye a «al salir, no», que salía estirada y borrosa): la
+  portada se encoge y viaja a su tarjeta, nunca crece ni se estira («no haciéndola grande sin sentido»), mientras lo
+  demás se aleja. Viaja **solo la imagen, del tamaño en que se ve** (la franja de la portada, la imagen de la tarjeta),
+  no la tarjeta con su texto (ver «Transiciones: el estándar»). **Sin salto al final**: nada se vuelve a montar ni
   se quita mientras dura (se entra con la portada ya pedida) y el desenfoque del cristal, que se apaga durante la
   transición, vuelve fundiéndose. Lo que enmarca (la barra, las fichas de los lados, las tarjetas,
   los recuadros con título) es **cristal de verdad**: translúcido (`--surface-glass`), con lo de detrás desenfocado
@@ -494,6 +498,19 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   se funde en un instante y lo nuevo sube un poco al llegar; se usan a menudo y no deben frenar. **Ninguna transición
   bloquea** (Enrique, 2026-11-13: «al cambiar entre vistas no se puede hacer rápido»): un clic mientras dura la acaba al
   momento y llega a lo de debajo.
+- **Transiciones: el estándar** (Enrique, 2026-11-19: «haz un estándar: transiciones para cambio de páginas dentro de
+  una misma vista, cambios de vista, etc.»). Tres tipos y nada más; sus duraciones y curvas son tokens (`tokens.css`,
+  `--motion-*` y `--ease-*`), y el tipo lo pone `components/world-transition.ts`:
+
+  | Qué | Cómo | Duración |
+  |---|---|---|
+  | Dentro de una vista (pestañas de la barra, de un libro, de una plantilla a otra; una página nueva de la wiki entra con su fundido) | Lo de antes se funde y lo nuevo sube un poco; sin fuego | 140 ms + 260 ms |
+  | Entrar y salir de un espacio (un mundo, una campaña) | En espejo: la imagen de la tarjeta viaja a la portada y vuelve; lo de antes se va (al entrar se acerca, al salir se aleja) y lo nuevo llega detrás. Al entrar, al rojo y brasas; al salir, se enfría y humo. Sin imagen, nada viaja: solo el fundido | 720 ms |
+  | Entrar en un elemento (una plantilla, un sistema) | Como el anterior, pero viajan su icono y su nombre al título; sin fuego (el humo, al salir de un sistema) | 460 ms |
+  | Abrir y cerrar cuadros, ventanas y hojas | Al abrir suben y crecen frenando; al cerrar bajan y encogen, más deprisa | 360 ms / 260 ms |
+
+  Lo que llega frena, lo que se va acelera y lo que viaja se posa. Lo propio de crear y borrar (la forja y la ceniza)
+  y el menú de la cuenta llevan los suyos. Con «menos movimiento» en el sistema, igual (las animaciones, para todos).
 - **El menú de la cuenta sale del avatar** creciendo, con un pequeño rebote, y al cerrarse vuelve a él encogiendo.
 - **Las listas, en el orden en que se crearon**: lo nuevo, al final.
 

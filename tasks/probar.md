@@ -14,9 +14,19 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
 En local o en staging cuando llegue el PR de esta rama.
 
 - [ ] **Calendario nuevo**: solo «En blanco» y «Como el nuestro»; duplicar uno sigue en el menú de su tarjeta.
-- [ ] **Entrar en un mundo y salir**: al entrar, la tarjeta se convierte en la portada hasta el final, sin el salto de
-  antes; al salir por la llama, la portada vuelve a su tarjeta, recortada y no estirada. Pruébalo con un mundo con
-  portada, con otro sin ella y desde una campaña. Al acabar, el desenfoque del cristal vuelve fundiéndose.
+- [ ] **Entrar en un mundo y salir**: al entrar, la imagen de la tarjeta crece y se posa en la franja de la portada; al
+  salir por la llama, al revés: la portada se encoge y vuelve a la imagen de su tarjeta en Mis mundos, sin crecer ni
+  estirarse. El título de la página va por encima de la imagen en los dos sentidos. Pruébalo con un mundo con portada,
+  con otro sin ella (sin imagen, solo un fundido), desde una página que no sea la portada (no viaja nada) y con una
+  campaña con portada y otra sin ella. Al acabar, el desenfoque del cristal vuelve fundiéndose.
+- [ ] **Transiciones, un estándar** (`docs/diseno.md`): las pestañas de la barra, rápidas y sin fuego; otra página del
+  árbol, su texto (o su mapa, o su pizarra) entra con un fundido corto, sin hueco; entrar y salir
+  de un mundo o una campaña, en espejo (720 ms, con brasas al entrar y humo al salir); entrar en una plantilla o un
+  sistema, su icono y su nombre al título; los cuadros y las ventanas, algo más rápidos y con menos recorrido que
+  antes. ¿Te parece bien el ritmo (antes, entrar en un mundo tardaba 1,15 s)?
+- [ ] **Los botones de una página sobre su portada** (a la derecha del título): en una pastilla de cristal oscuro, se
+  ven con una portada clara (pruébalo con una casi blanca) y con una oscura; el título, con su degradado oscuro debajo
+  (antes no salía: la imagen lo tapaba). Igual en la portada del mundo.
 - [ ] **Archivos**: la miniatura de una imagen, entera y centrada (también una muy alta o muy ancha) y sin el recuadro
   gris; lo que no es imagen, con su icono en el recuadro.
 - [ ] **El panel de la derecha**: al plegarlo se va entero, fundiéndose, mientras la columna del centro se ensancha; al
