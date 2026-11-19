@@ -110,15 +110,20 @@ ADR-0031. En local (http://localhost:5173) ya están las dos migraciones aplicad
 Plan aprobado el 2026-11-19 («¿cómo creo eventos en el calendario?»). Normas en `docs/diseno.md` (Pantallas).
 
 - [ ] **Al pulsar un calendario se ve en grande**: el título sobre la columna y «Editar calendario» a su derecha (y en
-  el engranaje de su tarjeta, «Abrir» y «Editar calendario»). En el centro, el mes con su semana, las lunas nuevas y
-  llenas, la estación y la era; «‹ ›» de mes y «« »» de año; una festividad dentro de la semana sale con su franja de
-  color y las de fuera de la semana, debajo.
-- [ ] **El año en pequeño**, a la izquierda: la tira del año con el mes que se ve marcado y los meses (cada uno lleva a
-  él; las festividades, en su color y sin número), y los datos del calendario (año, meses, semana, lunas, estaciones,
-  eras, si es el principal y su descripción).
-- [ ] **El día elegido**, a la derecha: la fecha con su día de la semana, la estación, la era, el día del año, cada luna
-  con su fase y lo que pasa ese día (los eventos se editan al pulsar su título; las páginas, se abren). Sin elegir, el
-  primero del mes (o el hoy).
+  el engranaje de su tarjeta, «Abrir» y «Editar calendario»). **Sin columna izquierda** (ni el año en pequeño ni el
+  resumen, que sigue en el editor). En el centro, arriba, **Mes · Semana · Año**, «Ir a» un mes y un año y «Hoy de…»;
+  debajo, la vista con «‹ ›». En Mes, las lunas nuevas y llenas, la estación y la era; una festividad dentro de la
+  semana sale con su franja de color y las de fuera de la semana, debajo.
+- [ ] **Semana**: sus días en columnas (con el mes junto al número del primero y de cada día 1) y todo lo que cae en
+  cada uno; las fiestas de fuera de la semana que caen en medio, debajo; con la semana que empieza cada mes, no sale de
+  él. Con el teclado, las flechas pasan de día y Re Pág / Av Pág de semana.
+- [ ] **Año**: sus meses en pequeño (las festividades, en su color; los días con algo, subrayados; hoy y el día
+  fijado, marcados); pulsar un mes lleva a él en la vista Mes.
+- [ ] **La ficha del día**, a la derecha, solo cuando hace falta: **al pasar el ratón** (o el foco) por un día se ve,
+  **al pulsarlo se fija** (con su «×») y **Esc la quita**; la columna del centro no se mueve. Su título lleva la era
+  («Lunes, 1 de Enero de 2014 de la Era X»); debajo, la estación, el día del año, cada luna con su fase y lo que pasa
+  ese día (los eventos se editan al pulsar su título; las páginas, se abren). ¿Te vale que, al ir de un día a la
+  ficha, la vista previa espere un instante para no cambiar al cruzar otros días?
 - [ ] **«Nuevo evento»** abre el cuadro del evento con la fecha del día: crea un evento suelto del mundo, que sale en el
   mes y en las cronologías que lo incluyan. **Salen todos los eventos y páginas con fecha del mundo**, no solo los de
   alguna cronología; lo de otros calendarios, convertido (sin correspondencia, una línea dice cuántas fechas faltan).
@@ -131,13 +136,15 @@ Plan aprobado el 2026-11-19 («¿cómo creo eventos en el calendario?»). Normas
   problemas, «Guardar» lleva al primero. Cambiar de fase con cambios no pregunta; salir (o «Ver calendario»), sí. Al
   crear un calendario se abre su editor.
 - [ ] **Meses**: cada uno con su «Tipo» (Mes o Festividad, y una línea dice qué es una festividad); solo una festividad
-  enseña «Sus días no cuentan en la semana». Las columnas cortas, centradas.
+  enseña «Sus días no cuentan en la semana». El número, centrado bajo «Nº», y el color en su columna.
 - [ ] **Días señalados**, su propia fase (mes, día y nombre), con la línea «No son los días de la semana».
 - [ ] **Semana**: «La semana empieza en» reordena los días sin cambiar el de ninguna fecha; la frase «El 1 de {mes} del
   año {N} fue {día}» dice qué día fue y, al cambiar el día, corre el de todo el calendario. Sustituye a «El año 0
   empieza en».
-- [ ] **Bisiestos**: uno en blanco no trae ninguno («Sin años bisiestos.»), con «Añadir regla» y «Como el gregoriano»
-  (un día más en el segundo mes que no es festividad, cada 4 años salvo cada 100 pero sí cada 400).
+- [ ] **Días de más** (antes «Bisiestos»): sin reglas de serie ni atajos («Todos los años duran lo mismo.» y «+ Regla»);
+  cada regla se lee como una frase: «Cada [N] años, [mes] tiene [D] días más, salvo cada [M] pero sí cada [K]» («pero
+  sí cada», solo con un «salvo»). En ningún texto de calendarios sale «bisiesto». El resumen dice «365 días · 366 con
+  días de más».
 
 ## El tiempo de la campaña (módulos 8 y 10 · campaña, en local, rama `modulo-8/calendarios`; migraciones 0085-0089; 2026-11-17)
 

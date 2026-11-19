@@ -265,19 +265,29 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   (2026-11-04: el editor de entonces «es poco intuitivo»).
 - **Un calendario, al pulsarlo, se ve en grande** (Enrique, 2026-11-19, tras probar el módulo 8: «¿cómo creo eventos
   en el calendario?»), con el esqueleto de las pantallas: el título sobre la columna y «Editar calendario» a su
-  derecha; en el centro, el mes grande (con la franja de una festividad, las lunas, la estación, lo que cae en él, las
-  flechas de mes y de año y «Hoy de…» si alguna campaña tiene fecha); a la izquierda, el año en pequeño (cada mes
-  lleva a él) y los datos del calendario; a la derecha, el día elegido con su fecha, su estación, su era, sus lunas y lo
-  que pasa, y **«Nuevo evento»** (un evento suelto del mundo, que sale en las cronologías que lo incluyan) y «Página con
-  esta fecha». **Su editor va por fases, cada una en su vista** (General, Semana, Meses, Días señalados, Bisiestos,
-  Estaciones, Lunas, Eras y Correspondencia), como Reglas: las fases con sus avisos a la izquierda, la elegida en el
-  centro (en la dirección, con la anterior y la siguiente al pie) y el año en cifras y los problemas a la derecha; sin
-  vista previa; «Guardar» abajo cuando hay cambios, y salir sin guardar pregunta. **Los campos, en palabras de mesa**:
-  cada mes es «Mes» o «Festividad» (días entre meses, que no se numeran; solo ella puede tener «Sus días no cuentan en
-  la semana»); los días con nombre propio son «Días señalados» y una línea dice que no son los de la semana; la semana
-  se elige por «La semana empieza en» y por la frase «El 1 de {mes} del año {N} fue {día}»; uno en blanco no trae
-  bisiestos («Sin años bisiestos», «Añadir regla» o «Como el gregoriano»); las columnas de las tablas, centradas.
-  Sustituye al editor a pantalla entera con todas las secciones seguidas y la vista previa (lienzo del módulo 8).
+  derecha. **Sin fichas fijas** (Enrique, 2026-11-19, tras probarlo: «en el calendario no necesitamos ese resumen, ya
+  lo tenemos cuando le doy a editar»; «la columna izquierda no me interesa»): ni el año en pequeño ni los datos del
+  calendario. **Se navega desde el centro, con vistas Mes, Semana y Año** («debemos navegar desde la vista central y
+  tener diferentes vistas, mensual, semanal y anual»): arriba, el conmutador, «Ir a» un mes y un año y «Hoy de…» si
+  alguna campaña tiene fecha; debajo, la vista con sus flechas. Mes: el mes grande (la franja de una festividad, las
+  lunas, la estación, lo que cae en él); Semana: sus días en columnas con lo que cae en cada uno; Año: los meses en
+  pequeño (las festividades en su color), y cada uno lleva a su mes. **La ficha del día, a la derecha, solo cuando hace
+  falta** («se muestra al pasar el ratón por una fecha y se fija si hago click en un día, si le doy a Esc la
+  deselecciono»): aparece en su hueco sin mover la columna; su título lleva la era («día 1 de enero de 2014 de la era
+  X»), y debajo la estación, las lunas, lo que pasa, **«Nuevo evento»** (un evento suelto del mundo, que sale en las
+  cronologías que lo incluyan) y «Página con esta fecha». **Su editor va por fases, cada una en su vista** (General,
+  Semana, Meses, Días señalados, Días de más, Estaciones, Lunas, Eras y Correspondencia), como Reglas: las fases con sus
+  avisos a la izquierda, la elegida en el centro (en la dirección, con la anterior y la siguiente al pie) y el año en
+  cifras (el resumen del calendario) y los problemas a la derecha; sin vista previa; «Guardar» abajo cuando hay
+  cambios, y salir sin guardar pregunta. **Los campos, en palabras de mesa**: cada mes es «Mes» o «Festividad» (días
+  entre meses, que no se numeran; solo ella puede tener «Sus días no cuentan en la semana»); los días con nombre propio
+  son «Días señalados» y una línea dice que no son los de la semana; la semana se elige por «La semana empieza en» y
+  por la frase «El 1 de {mes} del año {N} fue {día}»; las columnas cortas de las tablas, centradas. **Días de más, sin
+  preajuste humano** (Enrique: «los bisiestos es una peculiaridad de nuestro sistema solar, pero nuestra herramienta de
+  calendarios no debe obligar, sino dar las herramientas»; «no poner bisiesto directamente»): la fase da reglas («Cada
+  N años, {mes} tiene D días más, salvo cada M pero sí cada K»), ninguna de serie y sin atajo «Como el gregoriano»; en
+  los textos no sale «bisiesto». Sustituye al editor a pantalla entera con todas las secciones seguidas y la vista
+  previa (lienzo del módulo 8).
 - **Las plantillas son páginas guardadas como modelo, y no hay plantillas de serie** (Enrique, 2026-11-11, revisión de
   la app; ADR-0024): cada cuenta hace las suyas. Una plantilla lleva lo mismo que una página (portada, icono, campos,
   panel, texto y sus pestañas) y se edita como una página; crear desde ella es duplicarla. Se ordenan en carpetas.
