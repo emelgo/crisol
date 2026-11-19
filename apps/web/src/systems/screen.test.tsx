@@ -102,7 +102,7 @@ describe('«Sistemas», en Mis mundos', () => {
     expect(dialog.getByRole('button', { name: 'Crear y empezar' })).toHaveProperty('disabled', true)
     await userEvent.type(dialog.getByLabelText('Cómo se llama el juego'), 'Mazmorras de bolsillo')
     await userEvent.click(dialog.getByRole('button', { name: 'Crear y empezar' }))
-    await waitFor(() => expect(router.state.location.pathname).toMatch(/^\/sistemas\/[^/]+\/reglas$/))
+    await waitFor(() => expect(router.state.location.pathname).toMatch(/^\/sistemas\/[^/]+\/reglas\/editar$/))
     expect(api.calls.includes('createSystem')).toBe(true)
     expect(await screen.findByRole('heading', { level: 2, name: '¿Qué tiene un personaje?' })).toBeDefined()
   })
@@ -331,7 +331,7 @@ describe('«Sistemas», en Mis mundos', () => {
 
   it('sus reglas: en «Avanzado» del editor se baja su archivo', async () => {
     localStorage.setItem('crisol.recorridos.enrique@crisol.test', JSON.stringify({ seen: ['sistemas', 'sistema'] }))
-    const { api } = renderSystems(`/sistemas/${OWN.id}/reglas`)
+    const { api } = renderSystems(`/sistemas/${OWN.id}/reglas/editar`)
     const created = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:x')
     expect(await screen.findByRole('heading', { level: 1, name: 'Reglas' })).toBeDefined()
     await userEvent.click(await screen.findByRole('button', { name: /Avanzado/ }))

@@ -1935,8 +1935,49 @@ export const es = {
     }
   },
   systemRules: {
-    title: 'Reglas',
-    soon: 'Lo que trae, para leer. Es de serie: para cambiarlo, haz una copia.'
+    title: 'Reglas'
+  },
+  // Las reglas de un sistema, para leerlas (systems/rules-view.tsx)
+  rulesView: {
+    edit: 'Editar reglas',
+    view: 'Ver reglas',
+    index: 'Partes de las reglas',
+    empty: 'Aún no hay reglas.',
+    emptyEdit: 'Aún no hay reglas: empieza con «Editar reglas».',
+    rolls: 'Tiradas',
+    items: 'Lo que se lleva',
+    actors: 'Otras fichas',
+    creation: 'Crear un personaje',
+    settings: 'Ajustes de campaña',
+    derived: 'Lo que se calcula',
+    resources: 'Lo que se gasta',
+    carried: 'Lo que lleva',
+    more: 'Más en la ficha',
+    eachNotes: 'De cada una se apunta: {{list}}.',
+    max: 'Máximo: {{value}}',
+    recovery: {
+      short: 'se llena con un descanso corto',
+      long: 'se llena con un descanso largo'
+    },
+    dice: 'Dado de siempre',
+    critical: 'Crítico',
+    initiative: 'Iniciativa',
+    each: 'Una por cada: {{list}}',
+    target: {
+      optional: 'Puede ir contra una dificultad',
+      required: 'Va contra una dificultad'
+    },
+    variant: 'Si {{when}}: {{formula}}',
+    results: 'Lo que sale',
+    otherwise: 'si no',
+    modes: 'Al tirar',
+    fields_one: '{{count}} campo',
+    fields_other: '{{count}} campos',
+    bonuses: 'Da: {{list}}',
+    chosen: 'de entrada',
+    thisOne: 'su valor',
+    yes: 'Sí',
+    no: 'No'
   },
   // Los sistemas de reglas de la cuenta (docs/specs/sistemas.md)
   systems: {
@@ -5116,11 +5157,15 @@ export const es = {
       list: 'Tus notas, con subpáginas si quieres. Solo las lees tú y el máster.',
       text: 'Escribe aquí: se guarda solo. Con «[[» enlazas lo que conoces del mundo.'
     },
+    rulesView: {
+      index: 'Salta a cada parte de las reglas.',
+      edit: 'Para cambiar las reglas, paso a paso.'
+    },
     system: {
       books: 'Los libros del sistema: cada uno llena su compendio. Pulsa uno para abrirlo.',
       create: 'Añade un libro, vacío o desde un archivo.',
       compendium: 'Todo lo de sus libros, para buscar y leer.',
-      rules: 'Lo que trae el sistema: sus tipos, sus campos y sus tiradas.',
+      rules: 'Las reglas del sistema, para leerlas de un vistazo.',
       settings: 'Su nombre, su icono y su portada.'
     },
     review: {

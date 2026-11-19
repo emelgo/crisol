@@ -295,7 +295,7 @@ export function NewSystemDialog({ onClose }: { onClose: () => void }) {
     onSuccess: async (made) => {
       await queryClient.invalidateQueries({ queryKey: ['systems'] })
       dialog.current?.close()
-      void navigate({ to: '/sistemas/$systemId/reglas', params: { systemId: made.id } })
+      void navigate({ to: '/sistemas/$systemId/reglas/editar', params: { systemId: made.id } })
     }
   })
   const [file, setFile] = useState<{

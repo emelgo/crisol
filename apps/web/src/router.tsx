@@ -30,8 +30,9 @@ import { OrganizationTrash, WorldTrash } from './routes/trash.tsx'
 import { WorldPage } from './routes/world.tsx'
 import { Worlds } from './routes/worlds.tsx'
 import { ReviewScreen } from './systems/review.tsx'
+import { SystemRules, SystemRulesEditor } from './systems/rules-view.tsx'
 import { SystemsScreen } from './systems/screen.tsx'
-import { SystemRules, SystemScreen } from './systems/system.tsx'
+import { SystemScreen } from './systems/system.tsx'
 import { SystemBook, SystemCompendium } from './systems/system-compendium.tsx'
 import { MesaScreen } from './tabletop/mesa.tsx'
 import { ScreenRoute } from './tabletop/screen.tsx'
@@ -336,11 +337,16 @@ const systemBookRoute = createRoute({
   component: SystemBook,
   validateSearch: bookSearch
 })
-// Sus reglas: el editor a mano llega en la tanda 8
+// Sus reglas: una vista general para leerlas y, en «Editar reglas», su editor por pasos (como los calendarios)
 const systemRulesRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/sistemas/$systemId/reglas',
   component: SystemRules
+})
+const systemRulesEditorRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/sistemas/$systemId/reglas/editar',
+  component: SystemRulesEditor
 })
 const reviewRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -406,6 +412,7 @@ const routeTree = rootRoute.addChildren([
   systemsRoute,
   systemRoute,
   systemRulesRoute,
+  systemRulesEditorRoute,
   systemCompendiumRoute,
   systemBookRoute,
   reviewRoute,

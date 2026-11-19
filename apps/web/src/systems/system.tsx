@@ -6,7 +6,7 @@
 import type { Book, PageCover } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getRouteApi, Link } from '@tanstack/react-router'
-import { Download, Image as ImageIcon, Pencil, Plus, Settings, Sparkles, Upload } from 'lucide-react'
+import { Image as ImageIcon, Pencil, Plus, Settings, Sparkles, Upload } from 'lucide-react'
 import { type FormEvent, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
@@ -28,13 +28,10 @@ import { itemTransition, SECTION } from '../components/world-transition.ts'
 import { ColorChoices } from '../routes/world-card.tsx'
 import { CoverDialog, LOCAL_FILE, type LocalImage } from '../routes/world-cover.tsx'
 import { coverStyle } from '../wiki/cover-look.ts'
-import { RulesEditor } from './editor/rules-editor.tsx'
-import { SystemPreview, useDownload } from './screen.tsx'
 import styles from './system.module.css'
 import { SystemIcon, systemCoverUrl } from './system-look.tsx'
 
 const route = getRouteApi('/sistemas/$systemId')
-const rulesRoute = getRouteApi('/sistemas/$systemId/reglas')
 
 export function SystemScreen() {
   const { t } = useTranslation()
@@ -559,44 +556,5 @@ function BookSettings({
         </DangerZone>
       </form>
     </Modal>
-  )
-}
-
-/** Las reglas de un sistema: aquí irá su editor a mano (tanda 8); de momento, se hacen con la IA o con su archivo */
-export function SystemRules() {
-  const { t } = useTranslation()
-  const api = useApi()
-  const errorText = useErrorText()
-  const { systemId } = rulesRoute.useParams()
-  const systems = useQuery({ queryKey: ['systems'], queryFn: () => api.call('listSystems', {}) })
-  const summary = systems.data?.systems.find((each) => each.id === systemId)
-  const download = useDownload(systemId)
-  if (!systems.data)
-    return failed(systems) ? <LoadError error={systems.error} onRetry={() => systems.refetch()} /> : <Loading />
-  // Uno propio se cambia aquí, a mano (tanda 8); uno de serie, para leer y bajar
-  if (summary && !summary.builtIn) return <RulesEditor systemId={systemId} />
-  return (
-    <Screen>
-      <PageTitle>{t('systemRules.title')}</PageTitle>
-      {/* Mientras no hay editor (tanda 8): lo que trae, para leer, y su archivo para cambiarlo fuera */}
-      <p className={styles.note}>{t('systemRules.soon')}</p>
-      <p>
-        <BusyButton
-          type="button"
-          className={styles.rowAction}
-          busy={download.isPending}
-          onClick={() => download.mutate()}
-        >
-          <Download size={14} aria-hidden="true" />
-          {t('systems.download')}
-        </BusyButton>
-      </p>
-      <FormError message={download.error ? errorText(download.error) : null} />
-      {summary && (
-        <div className={styles.rules}>
-          <SystemPreview system={summary} />
-        </div>
-      )}
-    </Screen>
   )
 }

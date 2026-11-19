@@ -275,18 +275,6 @@
   font-weight: 600;
 }
 
-/* Reglas: lo que trae el sistema (lo mismo que su vista previa), en una caja de cristal que se lee */
-.rules {
-  max-inline-size: 40rem;
-  margin-block-start: var(--space-4);
-  padding: var(--space-4);
-  border: 1px solid var(--line-frame);
-  border-radius: 8px;
-  background: var(--frame-sheen), var(--surface-glass);
-  -webkit-backdrop-filter: var(--frame-blur);
-  backdrop-filter: var(--frame-blur);
-}
-
 /* En el móvil, la vuelta va encima del título, no pegada a él */
 @media (max-width: 48rem) {
   .back {

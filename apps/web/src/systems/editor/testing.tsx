@@ -56,7 +56,7 @@ export async function renderEditor({
       return Promise.reject(new ApiError(code, 400))
     }) as typeof api.client.call
   }
-  const router = createAppRouter(createMemoryHistory({ initialEntries: [`/sistemas/${own.id}/reglas`] }))
+  const router = createAppRouter(createMemoryHistory({ initialEntries: [`/sistemas/${own.id}/reglas/editar`] }))
   render(
     <App
       router={router}

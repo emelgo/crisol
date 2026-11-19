@@ -1,0 +1,464 @@
+/*
+ * Las reglas de un sistema, para leerlas (systems/rules-view.tsx): una hoja de referencia en el esqueleto de las
+ * pantallas. Cada parte es un recuadro de la hoja (base.css: una sección con título); dentro, los títulos pequeños y
+ * filas de nombre y valor, como una tabla de consulta
+ */
+
+/* «Editar reglas», junto al título: el mismo botón que «Editar calendario» */
+.edit {
+  composes: edit from "../calendars/view.module.css";
+}
+
+/* De qué va el juego, bajo el título */
+.lead {
+  max-inline-size: 70ch;
+  margin: calc(-1 * var(--space-2)) 0 var(--space-6);
+  color: var(--color-muted);
+  font-size: 1.0625rem;
+  line-height: 1.55;
+}
+
+.empty {
+  composes: box from "../components/frame.module.css";
+  color: var(--color-muted);
+}
+
+/* Cada parte: al saltar a ella desde el índice, su título queda a la vista */
+.part {
+  scroll-margin-block-start: var(--space-6);
+}
+
+.part h2:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 4px;
+}
+
+.part h2:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Lo de dentro de una parte (un conjunto, lo que se calcula), separado por una raya fina */
+.block + .block {
+  margin-block-start: var(--space-5);
+  padding-block-start: var(--space-4);
+  border-block-start: 1px solid var(--line-frame);
+}
+
+.part h3 {
+  margin: 0 0 var(--space-3);
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+}
+
+.muted {
+  color: var(--color-muted);
+}
+
+.note {
+  margin: var(--space-3) 0 0;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+/* Los elementos de un conjunto (Fuerza · FUE), en columnas */
+.elements,
+.others {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  gap: var(--space-1) var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.elements li,
+.others li {
+  display: flex;
+  flex-direction: column;
+  min-inline-size: 0;
+  padding: 6px 0;
+  border-block-end: 1px solid color-mix(in srgb, var(--line-frame) 60%, transparent);
+}
+
+.elements li > span:first-child,
+.others li > span:first-child {
+  font-weight: 600;
+}
+
+.elements .muted,
+.others .muted {
+  font-size: 0.8125rem;
+}
+
+/* Lo de un campo (sus opciones), en dos líneas como mucho */
+.others .muted {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+/* Nombre y valor: a la izquierda el nombre, a la derecha la fórmula en palabras */
+.rows {
+  display: grid;
+  margin: var(--space-3) 0 0;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(10rem, 16rem) minmax(0, 1fr);
+  gap: var(--space-1) var(--space-5);
+  align-items: baseline;
+  padding: 7px 0;
+  border-block-end: 1px solid color-mix(in srgb, var(--line-frame) 60%, transparent);
+}
+
+.row:last-child {
+  border-block-end: 0;
+}
+
+.row dt {
+  font-weight: 600;
+}
+
+.row dd {
+  margin: 0;
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+.help {
+  display: block;
+  margin-block-start: 2px;
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+  font-weight: 400;
+}
+
+/* Los dados del juego, en una franja */
+.dice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-6);
+  margin: 0 0 var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-button);
+  background: var(--row-hover);
+}
+
+.dice div {
+  display: flex;
+  gap: var(--space-2);
+  align-items: baseline;
+}
+
+.dice dt {
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+}
+
+.dice dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+/* Las tiradas, una bajo otra */
+.rolls {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.roll {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4) 0;
+  border-block-start: 1px solid color-mix(in srgb, var(--line-frame) 60%, transparent);
+}
+
+.roll:first-child {
+  padding-block-start: var(--space-1);
+  border-block-start: 0;
+}
+
+.part .roll h3 {
+  margin: 0;
+  color: var(--color-text);
+  font-size: 1.0625rem;
+}
+
+.roll p {
+  margin: 0;
+}
+
+.roll > .muted {
+  font-size: 0.875rem;
+}
+
+.formula {
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.plain {
+  margin: 0;
+  padding-inline-start: var(--space-5);
+  font-size: 0.875rem;
+}
+
+/* Lo que sale, en franjas: cada una con su color (el de los dados) y cuándo */
+.bands {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.875rem;
+}
+
+.bands li {
+  display: grid;
+  grid-template-columns: minmax(7rem, max-content) minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: baseline;
+}
+
+.band {
+  position: relative;
+  padding-inline-start: 14px;
+  font-weight: 600;
+}
+
+.band::before {
+  content: "";
+  position: absolute;
+  inset-block-start: 0.45em;
+  inset-inline-start: 0;
+  inline-size: 8px;
+  block-size: 8px;
+  border-radius: 50%;
+  background: var(--tone, var(--color-muted));
+}
+
+.bands li[data-tone="critical"] {
+  --tone: var(--color-accent-text);
+}
+
+.bands li[data-tone="success"] {
+  --tone: var(--color-h4);
+}
+
+.bands li[data-tone="partial"] {
+  --tone: var(--color-warning);
+}
+
+.bands li[data-tone="failure"] {
+  --tone: var(--color-muted);
+}
+
+.bands li[data-tone="fumble"] {
+  --tone: var(--color-danger);
+}
+
+/* Unas etiquetas pequeñas (la ventaja, las opciones de un ajuste) */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.875rem;
+}
+
+.chips li {
+  padding: 2px var(--space-3);
+  border: 1px solid var(--line-frame);
+  border-radius: 999px;
+}
+
+.chips li[data-chosen] {
+  border-color: var(--color-field-border);
+  font-weight: 600;
+}
+
+.chosen {
+  color: var(--color-muted);
+  font-weight: 400;
+}
+
+/* Los tipos (las armas, los conjuros; las criaturas), en tarjetas pequeñas */
+.types {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.type {
+  display: grid;
+  align-content: start;
+  gap: 2px;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--line-frame);
+  border-radius: var(--radius-button);
+  background: var(--row-hover);
+}
+
+.typeName {
+  font-weight: 700;
+}
+
+.type > .muted {
+  font-size: 0.8125rem;
+}
+
+.sample {
+  margin-block-start: var(--space-1);
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+
+/* Cómo se crea un personaje: los pasos, numerados */
+.steps {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: paso;
+}
+
+.steps li {
+  display: grid;
+  grid-template-columns: 1.75rem minmax(9rem, 14rem) minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: baseline;
+  padding: 7px 0;
+  border-block-end: 1px solid color-mix(in srgb, var(--line-frame) 60%, transparent);
+  counter-increment: paso;
+}
+
+.steps li:last-child {
+  border-block-end: 0;
+}
+
+.steps li::before {
+  content: counter(paso);
+  display: grid;
+  place-items: center;
+  inline-size: 1.375rem;
+  block-size: 1.375rem;
+  border: 1px solid var(--line-frame);
+  border-radius: 50%;
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.stepName {
+  font-weight: 600;
+}
+
+.license {
+  margin: var(--space-6) 0 0;
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+}
+
+/* El índice de la izquierda: cada parte, con la que se lee marcada */
+.index {
+  composes: frame from "../components/frame.module.css";
+  padding: var(--space-2);
+}
+
+.index ol {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.indexItem {
+  display: grid;
+  grid-template-columns: 1rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-2);
+  inline-size: 100%;
+  min-block-size: 2.5rem;
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius-button);
+  background: none;
+  color: var(--color-muted);
+  font-weight: 600;
+  text-align: start;
+  cursor: pointer;
+  transition:
+    background-color 150ms ease-out,
+    color 150ms ease-out;
+}
+
+.indexItem:hover {
+  background: var(--row-hover);
+  color: var(--color-text);
+}
+
+.indexItem[aria-current="location"] {
+  background: var(--row-hover);
+  color: var(--color-text);
+  box-shadow: inset 2px 0 0 var(--color-accent-text);
+}
+
+.indexItem:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
+}
+
+.indexIcon {
+  opacity: 0.8;
+}
+
+.indexTitle {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.indexCount {
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Con poco sitio, nombre y valor uno bajo otro */
+@media (max-width: 48rem) {
+  .row,
+  .steps li {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .steps li {
+    grid-template-columns: 1.75rem minmax(0, 1fr);
+  }
+
+  .steps li > .muted {
+    grid-column: 2;
+  }
+
+  .bands li {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .indexItem {
+    transition: none;
+  }
+}

@@ -52,6 +52,12 @@
   color: var(--color-warning);
 }
 
+/* «Ver reglas», tras el estado del guardado: el mismo botón que «Ver calendario» */
+.view {
+  composes: edit from "../../calendars/view.module.css";
+  align-self: center;
+}
+
 .steps,
 .main,
 .panel {
