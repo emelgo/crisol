@@ -7,6 +7,17 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
+### Para retomar (2026-11-19, noche: el Crisol oficial publicado)
+
+- **Oficial**: https://app.crisol.144-91-122-245.sslip.io (Compose `crisol-prod` en `~/crisol-prod`, puerto 8150 en loopback,
+  base y archivos propios; Caddy con su bloque; copia del Caddyfile en `/etc/caddy/Caddyfile.antes-crisol-oficial`).
+  Se despliega con `scripts/desplegar-produccion.sh` (siempre `origin/main`; copia antes de migrar). Copia diaria a las
+  4:30 (`crisol-prod-copia.timer`, `~/crisol-backups`, 14 días). Staging sigue en neo.crisol… (8140).
+- `main` al día con el PR #122 (ajustes tras los módulos 8-10, MCP por campaña, cronologías y árbol como Everlore,
+  calendarios, plantillas, iconos, despliegue oficial). Batería entera en verde en local; sin CI (cuota agotada).
+- **Siguiente**: Enrique crea su cuenta con el enlace de arranque, migra Eana por el MCP («Crisol · Mundos», `/mcp`)
+  e invita a sus jugadores; lo que vea, a `tasks/probar.md`.
+
 ### Para retomar (2026-11-17, noche: todos los módulos en main y en staging)
 
 - Los módulos 8, 9 y 10 (mundo y campaña) entraron en `main` con el PR #121 (squash, `[skip ci]`; el #120 se cerró
