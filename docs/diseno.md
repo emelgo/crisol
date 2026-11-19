@@ -323,8 +323,8 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   hoja, arriba a todo lo ancho. Solo «+ Propiedad» y «Etiquetas» a mano: «Alias» y «Resumen» sobran. El tipo de una
   propiedad sale junto a su × mientras se edita.
 - **Sin sección de subpáginas ni «Anterior / Siguiente»**: se navega desde el árbol; «Nueva subpágina», en «⋯».
-- **«Página nueva» (y «Nueva subpágina») abre un cuadro** como el de «Pestaña nueva»: el tipo (texto o mapa; pizarra,
-  línea temporal y árbol familiar, «Pronto») y el título; Intro la crea. Sin título, se abre para ponérselo.
+- **«Página nueva» (y «Nueva subpágina») abre un cuadro** como el de «Pestaña nueva»: el tipo (texto, mapa, pizarra,
+  cronología, árbol genealógico u organigrama) y el título; Intro la crea. Sin título, se abre para ponérselo.
 - **Cambiar de página no deja huecos**: la de antes se queda hasta que llega la nueva, que entra con un fundido corto
   (al pasar por el árbol ya se pide); el texto no se enseña vacío mientras llega.
 - **Escribiendo, el texto no lleva recuadro** (se confundía con una caja); las cajas, sí: marco fino y redondeado. **El asa de los bloques**, como en Everlore:
@@ -364,9 +364,28 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   suave (grano, un tejido tenue y dos manchas de color, fundidos con el fondo) para que no se vea plano (el título y
   las fichas, en el mismo sitio en todas) y «Añadir portada» sale arriba a la derecha al pasar por él.
 - **Las pestañas de una página** (ADR-0007): siempre bajo el título, «Texto» y las que se añaden, en texto plano con la
-  elegida subrayada; «+» al final abre un cuadro con un recuadro por tipo (mapa; pizarra, línea temporal y árbol
-  familiar, «Pronto») y el nombre. La elegida lleva su menú (▾): nombre, mover y quitar. El texto y el mapa, en la
-  columna del centro.
+  elegida subrayada; «+» al final abre un cuadro con un recuadro por tipo (texto, mapa, pizarra, cronología, árbol
+  genealógico y organigrama) y el nombre. La elegida lleva su menú (▾): nombre, mover y quitar. El texto y el mapa, en
+  la columna del centro. **Sin pestaña «Relaciones»** (Enrique, 2026-11-19): su familia y su organigrama, en la pestaña
+  de árbol; sus enlaces, en la ventana del grafo.
+- **La cronología, una pestaña de la página, como en LegendKeeper** (Enrique, 2026-11-19, ADR-0031; sustituye a «el
+  tiempo vive en Calendarios», 2026-11-16): con el esqueleto de la página y a sangre como el mapa; a la derecha de las
+  pestañas, su calendario, «Hoy de…», «Ir a…» y sus ajustes; abajo en el centro, la píldora con «+» y sus vistas (Lista
+  · Meses · Calendario). Calendarios se queda con las reglas del tiempo (los calendarios y su vista grande). Los
+  eventos son líneas de la cronología, del mundo, que se pueden convertir en página.
+- **El árbol genealógico (o el organigrama), una pestaña que se edita desde el árbol** (Enrique, 2026-11-19: «se hace a
+  partir de páginas y se edita desde el árbol; algunos nodos pueden no tener página todavía»): las tarjetas de Familia
+  y Organigrama, a sangre; pulsar una abre su ficha arriba a la derecha con lo que se añade junto a ella (padre o
+  madre, pareja, hijo o hija; miembro o quien lo dirige) como texto con su +, sus líneas (con su × al acercarse),
+  «Abrir» o «Crear página», «Nota» o «Nombre» y «Quitar». Añadir es un buscador: una página del mundo, alguien que ya
+  está en el árbol o solo un nombre (su tarjeta, con la raya discontinua hasta que tenga página). Vacío, una sola pieza
+  en el centro con «Añadir a alguien» y, si la página tiene campos con papel, «Empezar desde los campos». El panel de
+  la página va plegado, para que las tarjetas tengan el ancho.
+- **El grafo de relaciones, en una ventana** (Enrique, 2026-11-19; sustituye a «a pantalla entera, desde la cabecera
+  del árbol»): como Ajustes, encima de la página y sin cambiar de vista, casi del tamaño de la pantalla; el de todo el
+  mundo, desde el icono de la cabecera del árbol de páginas, y el de una página, desde el de «Mencionado en», también
+  para la jugadora. Va en la dirección (`?grafo=`): Escape, su X, pulsar fuera o Atrás la cierran. Sus controles dicen
+  lo que hacen: «Alcance: directas / a dos pasos / a tres pasos» y «Con lo que menciona el texto», encendido.
 - **El panel de la derecha se escribe** (ADR-0008, como el de LegendKeeper y el de Everlore): arriba las
   propiedades; después sus bloques, que se añaden con «Añadir bloque» (texto, imagen, barra, círculo, estrellas,
   fichas, subpáginas, páginas con una etiqueta), se titulan encima, se tocan en el sitio (+ y −, pulsar la barra, las

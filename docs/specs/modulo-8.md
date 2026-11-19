@@ -10,7 +10,8 @@ Lienzo: https://claude.ai/artifact/3mLSy7KVsmDm3yUBn1Mt4P. Donde este apartado y
 1. **La barra del mundo pasa a «Páginas · Calendarios · Archivos»**: el elemento del mundo se llama «Páginas».
 2. Las fichas de los calendarios con el año dibujado, bien.
 3. **El editor, a pantalla entera** (recomendación aceptada: el calendario no cabe en una ventana con su vista previa).
-4. **Sin pestaña «Línea temporal» en las páginas.** El tiempo vive en **«Calendarios»**: además de los calendarios,
+4. ~~**Sin pestaña «Línea temporal» en las páginas.**~~ (sustituida el 2026-11-19, ADR-0031: **cada cronología es una
+   pestaña de una página**, como en LegendKeeper; ver «Ajustes tras probarlo»). El tiempo vive en **«Calendarios»**: además de los calendarios,
    allí se guardan **varias cronologías** (p. ej. «Historia antigua», «La campaña»), cada una con su calendario y su
    filtro (etiquetas, plantillas, grupos), con las tres vistas (Lista · Meses · Calendario) **a pantalla entera, como el
    mapa**. Enrique: «¿qué utilidad real tiene la línea temporal en una hoja como en LegendKeeper?».
@@ -29,7 +30,15 @@ Lienzo: https://claude.ai/artifact/3mLSy7KVsmDm3yUBn1Mt4P. Donde este apartado y
 
 ## Ajustes tras probarlo (Enrique, 2026-11-19) — mandan sobre lo de arriba en lo que toquen
 
-Plan «Ajustes tras los módulos 8, 9 y 10», bloque C (las cronologías como pestaña de página, bloque B, van en su ADR):
+Plan «Ajustes tras los módulos 8, 9 y 10», bloques B y C:
+
+- **Las cronologías, pestañas de una página** (bloque B, ADR-0031; sustituye a la decisión 4): «Página nueva» y
+  «Pestaña nueva» ofrecen «Cronología»; se ve con el esqueleto de la página, a sangre como el mapa, con su calendario,
+  «Hoy de…», «Ir a…» y sus ajustes a la derecha de las pestañas. Su nombre y su sitio son los de su pestaña, y la ve
+  quien ve su pestaña (sin la marca `chronology`). Los eventos siguen siendo del mundo (sin pestaña): cada cronología
+  los junta según su filtro, y «Convertir en página» crea la página y la enlaza. Fuera la sección de Calendarios y su
+  pantalla (`/calendarios/cronologias/$id` lleva a su pestaña); la jugadora la lee en las páginas de su campaña y su
+  lista de cronologías lleva a cada pestaña. Migración 0090: las que había, cada una en una página nueva.
 
 - **Un calendario se ve en grande al pulsarlo** (`/mundos/$w/calendarios/$id`): el mes grande con lo que cae en él
   (todos los eventos sueltos del mundo y las páginas con fecha, en ese calendario; lo de otros, convertido), el año en
@@ -45,9 +54,9 @@ Plan «Ajustes tras los módulos 8, 9 y 10», bloque C (las cronologías como pe
   `packages/domain/src/calendar/week.ts`); los bisiestos, vacíos en uno en blanco, con «Como el gregoriano»
   (`gregorianLeapRule`). La definición guardada no cambia: lo nuevo es cómo se edita.
 
-Por tanto la capacidad `linea-temporal` pasa a ser **`cronologias`**: tablas `chronologies` (nombre, orden, calendario,
-filtro), `timeline_groups` (de cada mundo) y `timeline_events` (del mundo, sin pestaña); `page_tabs.kind` no gana tipo
-nuevo; la «Pronto» de «Pestaña nueva» desaparece. Herramientas MCP: `listar_cronologias`, `ver_cronologia`,
+Por tanto la capacidad `linea-temporal` pasa a ser **`cronologias`**: tablas `chronologies` (su pestaña, calendario y
+filtro; ADR-0031), `timeline_groups` (de cada mundo) y `timeline_events` (del mundo, sin pestaña); `page_tabs.kind` gana
+`chronology` (y `tree`, el árbol genealógico del módulo 10); la «Pronto» de «Pestaña nueva» desaparece. Herramientas MCP: `listar_cronologias`, `ver_cronologia`,
 `crear_cronologia`, `cambiar_cronologia`, `borrar_cronologia`, `crear_eventos`, `cambiar_evento`, `borrar_evento`,
 `convertir_en_pagina`.
 

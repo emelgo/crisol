@@ -38,6 +38,41 @@ ADR-0030. Se prueba en staging cuando llegue el PR de esta rama. Las direcciones
   - el inventario del grupo: la IA de la jugadora lo ve, pero no lo cambia;
   - «Quitar» una conexión no pide confirmación (se vuelve a conectar desde claude.ai).
 
+## Cronología y árbol genealógico como pestañas, y el grafo en una ventana (ajustes tras los módulos, bloque B; rama `ajustes/tras-modulos`; migraciones 0090 y 0091; 2026-11-19)
+
+ADR-0031. En local (http://localhost:5173) ya están las dos migraciones aplicadas.
+
+- [ ] **Tus cronologías de antes**: cada una es ahora una página nueva al final del árbol, con su nombre y una pestaña
+  «Cronología» (lo que sabía cada campaña de ella, ahora de la página). Muévela adonde quieras (dentro de «Historia»…).
+  Calendarios ya no las lista, y su dirección de antes lleva a su pestaña.
+- [ ] **Una cronología nueva**: en una página, «+» de las pestañas › «Cronología» (o «Página nueva» › Cronología). Se
+  ve con la portada, el título y las pestañas de la página, y sus herramientas (su calendario, «Hoy de…», «Ir a…» y
+  «Ajustes») a la derecha de las pestañas. Sus ajustes ya no llevan el nombre: es el de la pestaña (su menú ▾).
+- [ ] **La jugadora**: ve la cronología si conoce su página (y la pestaña no está oculta); «Cronologías» de su campaña
+  lleva a cada una, en su página.
+- [ ] **El árbol genealógico**: «+» › «Árbol genealógico» (u «Organigrama»). Vacío, «Añadir a alguien»: escribe y elige
+  una página, o «Añadir «…» sin página» (sale con la raya discontinua). Pulsa a alguien: su ficha, con «Padre o madre»,
+  «Pareja» e «Hijo o hija» (al hijo de alguien con pareja, los dos son sus padres), sus líneas (la × al acercarse),
+  «Crear página» (una subpágina de la del árbol), «Nota» y «Quitar». Con doble clic se abre su página.
+- [ ] **Empezar desde los campos**: en un personaje con «Padres» y «Pareja» (campos con papel), su árbol vacío ofrece
+  «Empezar desde los campos».
+- [ ] **El organigrama**: una facción con «Miembro» y «Quien lo dirige» desde la ficha del grupo.
+- [ ] **El árbol cuenta en el grafo**: quien está en un árbol con página sale relacionado con su familia en el grafo,
+  aunque no tenga los campos.
+- [ ] **La jugadora y el árbol**: ve los nodos de las páginas que conoce y los sueltos; de los demás, nada (ni el nombre).
+- [ ] **Sin pestaña «Relaciones»**. El grafo, en una ventana: el icono de la cabecera del árbol de páginas abre el del
+  mundo, y el de «Mencionado en», el de esa página, sin cambiar de vista. Escape, la X, pulsar fuera o Atrás la cierran.
+  En el de una página, «Alcance: directas / a dos pasos / a tres pasos» y «Con lo que menciona el texto» (encendido);
+  «Centrar aquí» lo rehace desde otra.
+- [ ] **La IA**: «hazme el árbol genealógico de la casa de Varn con Ilsa, sus padres y su hija» (`crear_arbol_genealogico`)
+  y «añade a la abuela, que aún no tiene página» (`editar_arbol_genealogico`).
+- [ ] **Decisiones tomadas sin ti** (dime si alguna no te vale): las cronologías migradas van al primer nivel con una
+  pestaña «Cronología»; la marca `chronology` ya no se usa (una cronología se enseña con su página o su pestaña); la
+  tarjeta vacía del árbol usa el bodegón de los capítulos (hay prompt para uno propio en `docs/imagenes-por-hacer.md`);
+  «Crear página» la pone dentro de la página del árbol; el árbol no lleva los nombres de cada generación (no hay una
+  página en el centro desde la que contar); al cambiar la forma de un árbol hecho no se rehace (la forma se elige al
+  crearlo).
+
 ## Calendarios en grande y su editor por fases (ajustes tras los módulos, bloque C; rama `ajustes/tras-modulos`; 2026-11-19)
 
 Plan aprobado el 2026-11-19 («¿cómo creo eventos en el calendario?»). Normas en `docs/diseno.md` (Pantallas).
