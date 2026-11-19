@@ -1526,7 +1526,6 @@ export const es = {
     duplicate: 'Duplicar',
     copyOf: '{{title}} (copia)',
     duplicated: '«{{title}}» duplicada',
-    export: 'Exportar',
     move: 'Mover a…',
     moveSearch: 'Buscar una página',
     moveRoot: 'Al primer nivel',

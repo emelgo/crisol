@@ -133,12 +133,25 @@ describe('el menú de una página en el árbol', () => {
     ])
   })
 
-  it('exportar descarga la página y cierra el menú', async () => {
-    const { api } = renderAt(`/mundos/${WORLD.id}/wiki/${ids.rules}`)
-    const menu = await openMenu('Lugares')
-    await userEvent.click(menu.getByRole('menuitem', { name: 'Exportar' }))
-    await waitFor(() => expect(api.calls).toContain('exportWiki'))
+  it('sin «Exportar» (va en el «⋯» de la página) y, en la portada sin subpáginas, sin raya al final (Enrique, 2026-11-19)', async () => {
+    const api = wikiApi()
+    const { pageId: home } = await api.client.call('ensureWorldHome', { worldId: WORLD.id })
+    renderAt(`/mundos/${WORLD.id}/wiki/${ids.rules}`, api)
+    const lugares = await openMenu('Lugares')
+    expect(lugares.queryByRole('menuitem', { name: 'Exportar' })).toBeNull()
+    await userEvent.keyboard('{Escape}')
     await waitFor(() => expect(screen.queryByRole('menu')).toBeNull())
+    const homeTitle = api.pages.find((page) => page.id === home)?.title ?? ''
+    const menu = await openMenu(homeTitle)
+    expect(menu.getAllByRole('menuitem').map((each) => each.textContent)).toEqual([
+      'Crear subpágina',
+      'Renombrar',
+      'Duplicar'
+    ])
+    // Ninguna raya sin nada debajo
+    const box = screen.getByRole('menu', { name: `Opciones de «${homeTitle}»` })
+    const last = [...box.children].at(-1)
+    expect(last?.getAttribute('role')).toBe('menuitem')
   })
 
   it('mover a…: al pasar por encima sale el buscador; se filtra sin tildes y se lleva dentro de otra', async () => {
@@ -242,8 +255,8 @@ describe('el menú de una página en el árbol', () => {
     expect(document.activeElement?.textContent).toBe('Borrar')
     await userEvent.keyboard('{ArrowDown}{ArrowDown}')
     expect(document.activeElement?.textContent).toBe('Renombrar')
-    // Duplicar, Exportar y Mover a… (en las páginas del mundo no se revela)
-    await userEvent.keyboard('{ArrowDown}{ArrowDown}{ArrowDown}')
+    // Duplicar y Mover a… (en las páginas del mundo no se revela; exportar, en el «⋯» de la página)
+    await userEvent.keyboard('{ArrowDown}{ArrowDown}')
     const opener = menu.getByRole('menuitem', { name: 'Mover a…' })
     expect(document.activeElement).toBe(opener)
     await userEvent.keyboard('{ArrowRight}')
@@ -410,7 +423,7 @@ describe('recolocar en el árbol arrastrando', () => {
     const row = await item('Reglas de la casa')
     expect(row.querySelector('[data-known], [title="Revelar a…"]')).toBeNull()
     const menu = await openMenu('Reglas de la casa')
-    expect(menu.getByRole('menuitem', { name: 'Exportar' })).toBeDefined()
+    expect(menu.getByRole('menuitem', { name: 'Mover a…' })).toBeDefined()
     expect(menu.queryByRole('menuitem', { name: 'Revelar a…' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Quién la conoce' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Revelar la página' })).toBeNull()

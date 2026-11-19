@@ -1,7 +1,8 @@
 /**
  * El menú de una página en el árbol, con el botón derecho (o la tecla de menú, o Mayús+F10), como en Everlore: crear
- * una subpágina, renombrar (pone en edición su título, sin cuadro), duplicar, exportar, mover, ordenar sus subpáginas y
- * borrar. Flota junto al ratón
+ * una subpágina, renombrar (pone en edición su título, sin cuadro), duplicar, mover, ordenar sus subpáginas y borrar.
+ * Exportar, no: va en el «⋯» de la página (Enrique, 2026-11-19: «exportar ya lo tenemos en los 3 puntos»). Flota junto
+ * al ratón
  */
 import type { PageSummary } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -11,7 +12,6 @@ import {
   ArrowUpZA,
   ChevronRight,
   Copy,
-  Download,
   Eye,
   EyeOff,
   FilePlus,
@@ -27,7 +27,6 @@ import { useErrorText } from '../api/errors.ts'
 import { useCurrentCampaign } from '../campaign/current-campaign.ts'
 import { useAnnounce } from '../components/announcer.tsx'
 import { useLinkedBy } from './backlinks.tsx'
-import { useExport } from './export.tsx'
 import { useNewPage } from './new-page.tsx'
 import { requestTitleEdit } from './title-edit.ts'
 import styles from './tree-menu.module.css'
@@ -64,7 +63,6 @@ export function TreeMenu({
   const announce = useAnnounce()
   const errorText = useErrorText()
   const newPage = useNewPage()
-  const run = useExport()
   const menu = useRef<HTMLDivElement>(null)
   const [view, setView] = useState<View>('menu')
   // El desplegable de al lado (mover u ordenar): se abre al pasar por encima, sin pulsar
@@ -254,11 +252,8 @@ export function TreeMenu({
           })}
           {item(<Pencil aria-hidden="true" size={15} />, t('treeMenu.rename'), rename)}
           {item(<Copy aria-hidden="true" size={15} />, t('treeMenu.duplicate'), () => duplicate.mutate())}
-          {item(<Download aria-hidden="true" size={15} />, t('treeMenu.export'), () => {
-            run.mutate({ worldId, pageId: page.id, children: page.hasChildren })
-            onClose(true)
-          })}
-          <div className={styles.separator} />
+          {/* La raya, solo si viene algo debajo (en Inicio, sin subpáginas, nada) */}
+          {(campaign || !isHome || page.hasChildren) && <div className={styles.separator} />}
           {campaign && (
             // biome-ignore lint/a11y/noStaticElementInteractions: con el teclado se abre con la flecha derecha
             <div className={styles.subWrap} onMouseEnter={() => setSub('reveal')} onMouseLeave={() => setSub(null)}>
