@@ -36,6 +36,8 @@ describe('conector MCP con OAuth', () => {
         QUEUE_PREFIX: 'crisol-test',
         MODEL_DIR: '/sin-modelo',
         AUTH_SECRET: TEST_AUTH_SECRET,
+        // Este archivo conecta muchas IA seguidas desde la misma IP: el límite general de las cuentas, más alto
+        AUTH_RATE_LIMIT_MAX: 2000,
         PUBLIC_URL: BASE,
         DATA_DIR: testDataDir()
       },

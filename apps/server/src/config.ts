@@ -15,6 +15,8 @@ const schema = z.object({
     .default('crisol'),
   // Firma las sesiones de Better Auth: largo y aleatorio (openssl rand -hex 32)
   AUTH_SECRET: z.string().min(32),
+  // Peticiones por minuto a las cuentas y al OAuth de la IA (las de entrar y registrarse van aparte, a 5)
+  AUTH_RATE_LIMIT_MAX: z.coerce.number().int().min(1).optional(),
   // Dirección pública del sitio (en desarrollo, la de Vite)
   PUBLIC_URL: z.url({ protocol: /^https?$/ }),
   // Carpeta de la web compilada; en desarrollo la sirve Vite

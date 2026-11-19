@@ -26,6 +26,8 @@ export interface AuthOptions {
   baseURL: string
   /** Otros orígenes desde los que se aceptan peticiones (Vite en desarrollo) */
   trustedOrigins?: string[]
+  /** Peticiones por minuto a lo demás de las cuentas (100); entrar y registrarse, siempre 5 */
+  rateLimitMax?: number
 }
 
 const DAY = 60 * 60 * 24
@@ -104,7 +106,7 @@ async function freeName(db: Database, name: string, except?: string) {
 /** Los dominios de los clientes que se registran solos por CIMD (claude.ai) */
 export const CIMD_HOSTS: ReadonlySet<string> = new Set(['claude.ai', 'claude.com'])
 
-export function createAuth({ db, secret, baseURL, trustedOrigins = [] }: AuthOptions) {
+export function createAuth({ db, secret, baseURL, trustedOrigins = [], rateLimitMax = 100 }: AuthOptions) {
   return betterAuth({
     secret,
     baseURL,
@@ -128,10 +130,14 @@ export function createAuth({ db, secret, baseURL, trustedOrigins = [] }: AuthOpt
       enabled: true,
       storage: 'database',
       window: 60,
-      max: 100,
+      max: rateLimitMax,
       customRules: {
         '/sign-in/email': { window: 60, max: 5 },
         '/sign-up/email': { window: 60, max: 5 },
+        // Los tokens y la autorización de la IA: las de claude.ai llegan todas desde las mismas IP de Anthropic, así que el
+        // 20 por minuto del plugin se queda corto con varios jugadores; el mismo límite general
+        '/oauth2/token': { window: 60, max: rateLimitMax },
+        '/oauth2/authorize': { window: 60, max: rateLimitMax },
         // Mirar la sesión no se limita: un 429 aquí el navegador lo toma por «sin sesión» y saca a «Entrar» (una
         // mesa con el máster, las jugadoras y la tele en la misma red pasaba de 100 por minuto)
         '/get-session': false
