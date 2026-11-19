@@ -154,6 +154,9 @@ Modelo:
 
 ### `ia`
 
+> Desde el 2026-11-19 (ADR-0030) hay dos conectores: `/mcp` («Crisol · Mundos») y uno por campaña
+> (`/mcp/campanas/:id`), con las herramientas del papel en ella.
+
 - **Servidor MCP** dentro del servidor, en `/mcp` (Streamable HTTP). Las herramientas llaman a la misma capa de
   servicios y políticas que la API.
 - **OAuth** con Better Auth como servidor de autorización. Los clientes se registran con CIMD, que es lo que prefiere

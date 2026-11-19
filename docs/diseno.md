@@ -611,4 +611,9 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   antiguo. Ni en Ajustes ni encima de la página: «ahi en ajustes no aporta nada si tengo que entrar cada vez que
   quiera verlo». Abajo a la derecha, encima del d20; **con la ficha de dados abierta, a su izquierda** (no
   tapan la tirada), y en la Mesa, a la izquierda de su panel (2026-11-08).
-- **Los ajustes de la IA**, solo el conector y el modo.
+- **Los ajustes de la IA**: la dirección de Mundos (quien crea mundos), el modo (quien dirige algo) y **tus conexiones**
+  (Enrique, 2026-11-19, ADR-0030): a qué conector, qué app y cuándo se usó, con «Quitar». Nada más.
+- **Dos tipos de conector** (Enrique, 2026-11-19, ADR-0030): «Crisol · Mundos» para crear mundos y uno por campaña,
+  donde la IA solo ve esa campaña con lo que puede hacer en ella quien la conecta. **El de cada campaña, en su Inicio**
+  («Conecta tu IA a esta campaña», con su dirección), para el máster y para quien juega; la pantalla de permiso dice a
+  qué campaña se conecta.

@@ -9,6 +9,35 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
+## Conectores de IA: Mundos y uno por campaña (ajustes tras los módulos, bloque D; rama `ajustes/tras-modulos`; 2026-11-19)
+
+ADR-0030. Se prueba en staging cuando llegue el PR de esta rama. Las direcciones:
+`https://neo.crisol.144-91-122-245.sslip.io/mcp` (Mundos) y `https://neo.crisol.144-91-122-245.sslip.io/mcp/campanas/<id>`
+(la de cada campaña, que sale en su Inicio).
+
+- [ ] **Mundos sigue igual**: el conector que ya tienes en claude.ai (`…/mcp`) funciona sin volver a conectarlo y con
+  las mismas herramientas (es el de la migración de Eana). Crisol se presenta ahora como «Crisol · Mundos».
+- [ ] **El de una campaña**: en su Inicio, «Conecta tu IA a esta campaña» con su dirección y «Copiar». En claude.ai,
+  Ajustes → Conectores → «Añadir conector personalizado»: pega la dirección y ponle un nombre (por ejemplo «Crisol · La
+  Marca»). Al conectar, la pantalla de permiso dice «… en La Marca: solo verá esta campaña…».
+- [ ] **Como máster, en ese conector**: «¿qué día es hoy?», «abre la escena del puerto», «tira iniciativa», «revela
+  Varn»… sin decirle la campaña. No puede crear páginas, plantillas ni calendarios: eso, con Mundos.
+- [ ] **Como jugadora** (con una cuenta de jugadora, desde su Inicio): «hazme un personaje», «tira 1d20+3», «escribe en
+  el registro que entro en la taberna», «apunta en mis notas…»: lo hace. «Revela…» o «abre la escena…», no. Si juega
+  en dos campañas del mismo mundo, cada conector ve solo lo que sabe la suya.
+- [ ] **Tus conexiones** (Ajustes › IA): cada conexión con su conector, la app y cuándo se usó. «Quitar» la desconecta
+  al momento: claude.ai pide volver a conectar.
+- [ ] **Quien solo juega**, en Ajustes › IA: sin la dirección de Mundos ni el modo; ve sus conexiones y que cada campaña
+  tiene la suya. Si conectara Mundos igualmente, solo vería las herramientas de leer.
+- [ ] **Decisiones tomadas sin ti** (dime si alguna no te vale):
+  - en Mundos, la jugadora solo lee: sus notas y la página del grupo pasan al conector de su campaña;
+  - para el modo de IA de la jugadora, su personaje, sus tiradas, el registro y sus notas son «escribir» (en copiloto
+    no esperan aprobación);
+  - el máster en el conector de la campaña no escribe el mundo ni toca la invitación (eso, con Mundos);
+  - las tiradas de la jugadora por la IA salen a la vista de todos salvo que pida otra cosa;
+  - el inventario del grupo: la IA de la jugadora lo ve, pero no lo cambia;
+  - «Quitar» una conexión no pide confirmación (se vuelve a conectar desde claude.ai).
+
 ## Calendarios en grande y su editor por fases (ajustes tras los módulos, bloque C; rama `ajustes/tras-modulos`; 2026-11-19)
 
 Plan aprobado el 2026-11-19 («¿cómo creo eventos en el calendario?»). Normas en `docs/diseno.md` (Pantallas).
