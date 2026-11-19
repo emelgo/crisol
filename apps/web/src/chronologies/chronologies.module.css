@@ -1902,22 +1902,17 @@
   justify-content: flex-end;
 }
 
-/* A sangre bajo las pestañas, como el mapa: la vista llena lo que queda de la ventana y se desplaza por dentro */
+/* A sangre bajo las pestañas, como el mapa: la vista llena lo que queda de la ventana y se desplaza por dentro; lo que
+   va encima (un aviso, las herramientas de la jugadora, las vistas en el móvil), con su alto */
 .tabScreen {
-  display: grid;
-  grid-template-rows: minmax(0, 1fr);
+  display: flex;
+  flex-direction: column;
   block-size: 100%;
   min-block-size: 0;
 }
 
-.tabScreen:has(> .failure),
-.tabScreen:has(> .segmented),
-.tabScreen:has(> .toolsRow) {
-  grid-template-rows: auto minmax(0, 1fr);
-}
-
-.tabScreen:has(> .failure):has(> .segmented) {
-  grid-template-rows: auto auto minmax(0, 1fr);
+.tabScreen > * {
+  flex: none;
 }
 
 .tabScreen > .failure,
@@ -1928,6 +1923,8 @@
 
 /* Sin marco propio: la superficie es la de la página */
 .tabScreen > .frame {
+  flex: 1 1 0;
+  min-block-size: 0;
   --frame-fill: transparent;
   background: none;
   border-radius: 0 0 var(--radius-frame) var(--radius-frame);

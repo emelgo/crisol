@@ -70,7 +70,7 @@ function apiOf(page: Page) {
   }
 }
 
-test('cronologías (módulo 8): crearla, un evento de un día, un rango entre dos meses, uno de cada año, la página con fecha que sale sola, arrastrar en el calendario y convertir en página', async ({
+test('cronologías (módulo 8, ADR-0031): crearla como pestaña de una página, un evento de un día, un rango entre dos meses, uno de cada año, la página con fecha que sale sola, arrastrar en el calendario y convertir en página', async ({
   page
 }) => {
   test.slow()
@@ -86,13 +86,19 @@ test('cronologías (módulo 8): crearla, un evento de un día, un rango entre do
     properties: [{ name: 'Fundación', type: 'date', value: '-980-Siega-12' }]
   })
 
-  // Desde Calendarios: «Cronología nueva»
-  await page.goto(`/mundos/${worldId}/calendarios`)
-  await page.getByRole('button', { name: 'Cronología nueva' }).click()
-  const create = page.getByRole('dialog', { name: 'Cronología nueva' })
-  await create.getByLabel('Nombre').fill('Historia de Valdren')
+  // En la página «Historia»: «Pestaña nueva» › Cronología (como en LegendKeeper)
+  await page.goto(`/mundos/${worldId}/wiki/${history.id}`)
+  await page
+    .getByRole('navigation', { name: 'Pestañas de la página' })
+    .getByRole('button', { name: 'Pestaña nueva' })
+    .click()
+  const create = page.getByRole('dialog', { name: 'Pestaña nueva' })
+  await create.getByRole('radio', { name: 'Cronología' }).check()
+  await create.getByRole('textbox', { name: 'Nombre de la pestaña' }).fill('Historia de Valdren')
   await create.getByRole('button', { name: 'Crear' }).click()
-  await expect(page.getByRole('heading', { level: 1, name: 'Historia de Valdren' })).toBeVisible()
+  await expect(
+    page.getByRole('navigation', { name: 'Pestañas de la página' }).getByRole('link', { name: 'Historia de Valdren' })
+  ).toHaveAttribute('aria-current', 'page')
   const list = page.getByRole('list', { name: 'Lista' })
   await expect(list.getByRole('heading', { name: 'Puerto Ceniza' })).toBeVisible()
   await expect(list).toContainText('12 Sie -980 RC')
@@ -175,7 +181,7 @@ test('cronologías (módulo 8): crearla, un evento de un día, un rango entre do
   expect(JSON.stringify(tree)).toContain('Boda de Ilsa y Doran')
 })
 
-test('la jugadora en el móvil: solo la cronología revelada, con lo que sabe su campaña, en lista y calendario sin desplazarse de lado', async ({
+test('la jugadora en el móvil: solo la cronología de la página que conoce, con lo que sabe su campaña, en lista y calendario sin desplazarse de lado', async ({
   page,
   browser
 }) => {
@@ -202,15 +208,18 @@ test('la jugadora en el móvil: solo la cronología revelada, con lo que sabe su
   })
   const shown = await api('createChronology', { worldId, name: 'Historia de Valdren' })
   await api('createChronology', { worldId, name: 'Los Planes del Culto' })
-  await api('setKnowledge', { worldId, campaignId, kind: 'chronology', targetId: shown.id, known: true })
+  // Se ve con su página (ADR-0031)
+  await api('setKnowledge', { worldId, campaignId, kind: 'page', targetId: shown.pageId, known: true })
 
   const player = await newPlayer(browser, link)
   await player.setViewportSize({ width: 375, height: 812 })
   await player.goto(`/mundos/${worldId}/campanas/${campaignId}/cronologias`)
   const cards = player.getByRole('list', { name: 'Cronologías del mundo' })
   await expect(cards.getByRole('link')).toHaveCount(1)
+  // Lleva a su pestaña, en su página
   await cards.getByRole('link', { name: 'Historia de Valdren' }).click()
   await expect(player.getByRole('heading', { level: 1, name: 'Historia de Valdren' })).toBeVisible()
+  await expect(player).toHaveURL(new RegExp(`/paginas/${shown.pageId}\\?pestana=${shown.tabId}`))
   const list = player.getByRole('list', { name: 'Lista' })
   await expect(list.getByRole('heading', { name: 'Boda de Ilsa y Doran' })).toBeVisible()
   await expect(list.getByRole('heading', { name: 'Puerto Ceniza' })).toBeVisible()
@@ -240,7 +249,7 @@ test('la jugadora en el móvil: solo la cronología revelada, con lo que sabe su
 test.describe('con el cristal de verdad', () => {
   test.use({ storageState: CON_DESENFOQUE })
 
-  test('la sección de Calendarios y las tres vistas, sin fallos graves de accesibilidad @a11y', async ({ page }) => {
+  test('la pestaña de la cronología y sus tres vistas, sin fallos graves de accesibilidad @a11y', async ({ page }) => {
     await freshOwner(page)
     const api = apiOf(page)
     const worldId = (await api('createWorld', { name: 'Valdren' })).id as string
@@ -253,10 +262,9 @@ test.describe('con el cristal de verdad', () => {
       ]
     })
     const chronology = await api('createChronology', { worldId, name: 'Historia de Valdren' })
-    await page.goto(`/mundos/${worldId}/calendarios`)
-    await expect(page.getByRole('list', { name: 'Cronologías del mundo' })).toBeVisible()
-    expect(await axe(page)).toEqual([])
+    // La dirección de antes lleva a su pestaña
     await page.goto(`/mundos/${worldId}/calendarios/cronologias/${chronology.id}`)
+    await expect(page).toHaveURL(new RegExp(`/wiki/${chronology.pageId}\\?pestana=${chronology.tabId}`))
     await expect(page.getByRole('list', { name: 'Lista' })).toBeVisible()
     expect(await axe(page)).toEqual([])
     const pill = page.getByRole('toolbar', { name: 'Vistas' })
@@ -266,7 +274,7 @@ test.describe('con el cristal de verdad', () => {
     await pill.getByRole('button', { name: 'Calendario' }).click()
     await expect(page.getByRole('table', { name: /de 1250 RC/ })).toBeVisible()
     expect(await axe(page)).toEqual([])
-    await page.getByRole('button', { name: 'Ajustes' }).click()
+    await page.getByRole('button', { name: 'Ajustes', exact: true }).click()
     await expect(page.getByRole('dialog', { name: 'Ajustes de la cronología' })).toBeVisible()
     expect(await axe(page)).toEqual([])
   })

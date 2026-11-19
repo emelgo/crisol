@@ -1120,7 +1120,11 @@ describe('conector MCP con OAuth', () => {
       ]
     })
     expect(misdated.text).toMatch(/^BAD_DATE.*n\.º 2/)
-    const chronology = await call<{ id: string }>('crear_cronologia', { worldId: world.id, name: 'Historia' })
+    // Una cronología es una pestaña de una página (ADR-0031): sin página, una nueva con su nombre
+    const chronology = await call<{ id: string; pageId: string }>('crear_cronologia', {
+      worldId: world.id,
+      name: 'Historia'
+    })
     expect(chronology.isError, chronology.text).toBeFalsy()
     const timeline = await call<{ entries: { title: string; form: string; field?: string }[] }>('ver_cronologia', {
       chronologyId: chronology.data.id
@@ -1134,11 +1138,12 @@ describe('conector MCP con OAuth', () => {
       ['Aldoria', 'Coronación', '1302-Vendimia-5']
     ])
     expect((await player.call('ver_cronologia', { chronologyId: chronology.data.id })).isError).toBe(true)
+    // Se ve con su página
     await api(cookie, 'setKnowledge', {
       worldId: world.id,
       campaignId: campaign.id,
-      kind: 'chronology',
-      targetId: chronology.data.id,
+      kind: 'page',
+      targetId: chronology.data.pageId,
       known: true
     })
     const theirs = await player.call<{ entries: { title: string }[] }>('ver_cronologia', {
@@ -1155,7 +1160,7 @@ describe('conector MCP con OAuth', () => {
     expect(listed.text).toContain('Historia')
     expect(reads).not.toContain('crear_eventos')
     const own = (await player.call<{ pages: { title: string }[] }>('ver_arbol', { worldId: world.id })).data
-    expect(own.pages.map((p) => p.title)).toEqual(['Aldoria'])
+    expect(own.pages.map((p) => p.title)).toEqual(['Aldoria', 'Historia'])
     const readCall = await player.call<{ markdown: string; dates: { name: string }[] }>('leer_pagina', {
       pageId: aldoria
     })
