@@ -34,6 +34,11 @@
   padding: 0;
 }
 
+/* La fila de los días de la semana, sobre un fondo casi opaco: sus iniciales, legibles sobre cualquier fondo */
+.month thead tr {
+  background: color-mix(in srgb, var(--color-surface) 88%, transparent);
+}
+
 /* Hoy, en la rejilla: su número en un círculo del color del acento */
 .month td[data-today] [data-number] {
   display: inline-grid;
