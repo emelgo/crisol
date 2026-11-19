@@ -2142,6 +2142,7 @@ export const es = {
       nextYear: 'Año siguiente',
       previousWeek: 'Semana anterior',
       nextWeek: 'Semana siguiente',
+      openMonth: 'Ver el mes',
       monthWithDays_one: '{{name}}, {{count}} día con algo',
       monthWithDays_other: '{{name}}, {{count}} días con algo',
       today: 'Hoy',

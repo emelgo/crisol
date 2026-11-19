@@ -180,14 +180,19 @@ describe('un calendario en grande', () => {
     await waitFor(() => expect(screen.queryByRole('complementary', { name: 'El día elegido' })).toBeNull())
   })
 
-  it('Mes · Semana · Año, con «Ir a» y sus flechas; un mes del año lleva a él', async () => {
+  it('Mes · Semana · Año, con «Ir a» y sus flechas; en el año se eligen días y el nombre de un mes lleva a él', async () => {
     open()
     await screen.findByRole('heading', { level: 2, name: 'Enero de 0 RV' })
-    await userEvent.selectOptions(screen.getByLabelText('Ir al mes'), 'Marzo')
+    // El mes, con el menú de la app
+    const goToMonth = async (name: string) => {
+      await userEvent.click(screen.getByRole('button', { name: /^Ir al mes/ }))
+      await userEvent.click(screen.getByRole('button', { name }))
+    }
+    await goToMonth('Marzo')
     expect(screen.getByRole('heading', { level: 2, name: 'Marzo de 0 RV' })).toBeDefined()
     await userEvent.click(screen.getByRole('button', { name: 'Mes siguiente' }))
     expect(screen.getByRole('heading', { level: 2, name: 'Abril de 0 RV' })).toBeDefined()
-    await userEvent.selectOptions(screen.getByLabelText('Ir al mes'), 'Marzo')
+    await goToMonth('Marzo')
     // La semana del 1 de marzo (miércoles: el año 0 es de 366 días), de lunes a domingo
     const modes = screen.getByRole('toolbar', { name: 'Vista' })
     await userEvent.click(within(modes).getByRole('button', { name: 'Semana' }))
@@ -203,6 +208,12 @@ describe('un calendario en grande', () => {
     expect(screen.getByRole('heading', { level: 2, name: '0 RV' })).toBeDefined()
     await userEvent.click(screen.getByRole('button', { name: 'Año siguiente' }))
     expect(screen.getByRole('heading', { level: 2, name: '1 RV' })).toBeDefined()
+    // En el año se eligen días (su ficha), y el nombre del mes lleva a él
+    await userEvent.click(screen.getByRole('button', { name: / 10 de Febrero de 1 RV$/ }))
+    expect(
+      within(screen.getByRole('complementary', { name: 'El día elegido' })).getByRole('heading', { level: 2 })
+        .textContent
+    ).toContain('10 de Febrero de 1 RV')
     await userEvent.click(screen.getByRole('button', { name: /^Junio/ }))
     expect(screen.getByRole('heading', { level: 2, name: 'Junio de 1 RV' })).toBeDefined()
     expect(within(modes).getByRole('button', { name: 'Mes' }).getAttribute('aria-pressed')).toBe('true')

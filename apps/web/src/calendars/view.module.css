@@ -53,11 +53,12 @@
 }
 
 /* Arriba de la vista: las vistas, «Ir a» y, al final, «Hoy de…» */
+/* «Ir a» a la izquierda, Semana · Mes · Año en el centro y «Hoy de…» a la derecha */
 .bar {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  gap: var(--space-2) var(--space-5);
+  gap: var(--space-2) var(--space-4);
   margin-block-end: var(--space-4);
 }
 
@@ -71,8 +72,11 @@
 }
 
 .mode {
+  flex: 1 1 0;
+  min-inline-size: 5.5rem;
   min-block-size: 2rem;
   padding: 0 var(--space-4);
+  text-align: center;
   border: 0;
   border-radius: 4px;
   background: none;
@@ -113,14 +117,53 @@
   font-size: 0.875rem;
 }
 
-.jump select {
+/* El mes y el año, con el mismo aspecto: los campos de cristal de la app */
+.jumpField {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: 2rem;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-field-border);
+  border-radius: var(--radius-button);
+  background: var(--field-fill);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: border-color 150ms ease-out;
+}
+
+.jumpField:hover {
+  border-color: var(--color-muted);
+}
+
+button.jumpField {
   max-inline-size: 12rem;
+}
+
+button.jumpField > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+button.jumpField > svg {
+  flex: none;
+  color: var(--color-muted);
 }
 
 .yearInput {
   inline-size: 5.5rem;
   text-align: end;
   font-variant-numeric: tabular-nums;
+  cursor: text;
+}
+
+/* El mes en el que se está, marcado en el menú */
+.jumpCheck {
+  margin-inline-start: auto;
+  color: var(--color-accent-text);
 }
 
 .srOnly {
@@ -138,7 +181,6 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-1) var(--space-3);
-  margin-inline-start: auto;
 }
 
 .tools > span {
@@ -147,6 +189,23 @@
   gap: var(--space-2);
   color: var(--color-muted);
   font-size: 0.875rem;
+}
+
+.bar > .modes {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.bar > .jump {
+  grid-column: 1;
+  grid-row: 1;
+  justify-self: start;
+}
+
+.bar > .tools {
+  grid-column: 3;
+  grid-row: 1;
+  justify-self: end;
 }
 
 .todayButton {
@@ -206,19 +265,31 @@
 .side {
   display: grid;
   gap: var(--space-4);
-  animation: appear 160ms ease-out;
+  /* Asoma desde su borde, como la ficha de Archivos */
+  animation: asoma 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-/* Desde casi visible: se nota que llega, sin fundirse desde la nada */
-@keyframes appear {
+.side[data-leaving] {
+  animation: se-va 180ms ease-in both;
+}
+
+@keyframes asoma {
   from {
-    opacity: 0.4;
-    transform: translateY(4px);
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+}
+
+@keyframes se-va {
+  to {
+    opacity: 0;
+    transform: translateX(-8px);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .side {
+  .side,
+  .side[data-leaving] {
     animation: none;
   }
 }
@@ -432,19 +503,49 @@
   border-color: var(--color-field-border);
 }
 
-.yearMonth:focus-visible {
-  outline: 2px solid var(--color-focus);
-  outline-offset: 2px;
-}
-
 /* Las festividades, en su color (el nombre, legible siempre) */
 .yearMonth[data-festival] {
   border-color: color-mix(in srgb, var(--month-color, var(--color-warning)) 55%, var(--line-frame));
   background: color-mix(in srgb, var(--month-color, var(--color-warning)) 10%, transparent);
 }
 
+/* El nombre del mes lleva a él */
 .yearMonthName {
+  justify-self: start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-text);
+  font: inherit;
   font-weight: 700;
+  cursor: pointer;
+}
+
+.yearMonthName:hover {
+  color: var(--color-accent-text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.yearMonthName:focus-visible,
+.miniDay:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/* Cada día, un botón pequeño que se elige como en el mes */
+.miniDay {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.miniDay:hover {
+  background: var(--color-raised);
+  color: var(--color-text);
 }
 
 .yearMonth[data-festival] .yearMonthName {
@@ -466,7 +567,8 @@
   grid-template-columns: repeat(auto-fill, minmax(1.5rem, 1fr));
 }
 
-.mini > span {
+.mini > span,
+.mini > .miniDay {
   line-height: 1.5rem;
   border-radius: 999px;
 }

@@ -21,7 +21,7 @@ import {
 } from '@crisol/domain'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getRouteApi, Link, Navigate, useNavigate } from '@tanstack/react-router'
-import { CalendarPlus, FilePlus, Pencil, Sparkles, X } from 'lucide-react'
+import { CalendarPlus, Check, ChevronDown, FilePlus, Pencil, Sparkles, X } from 'lucide-react'
 import { type CSSProperties, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
@@ -36,6 +36,7 @@ import { Loading } from '../components/brand.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
 import { FormError } from '../components/field.tsx'
 import { failed, LoadError, SectionError } from '../components/load-error.tsx'
+import { Menu, MenuItem } from '../components/menu.tsx'
 import { Screen } from '../components/screen.tsx'
 import { Tour } from '../components/tour.tsx'
 import { IntegerInput } from './date-input.tsx'
@@ -49,7 +50,7 @@ const route = getRouteApi('/mundos/$worldId/calendarios/$calendarId')
 export const calendarEntriesQuery = (calendarId: string) => ['chronology', 'calendar', calendarId]
 
 /** Las vistas del centro */
-const MODES = ['month', 'week', 'year'] as const
+const MODES = ['week', 'month', 'year'] as const
 type Mode = (typeof MODES)[number]
 
 export function CalendarViewScreen() {
@@ -160,6 +161,38 @@ function BigCalendar({
     return () => document.removeEventListener('keydown', onKey)
   }, [shown])
 
+  // Pulsar fuera de la ficha la quita, como Esc (otro día la cambia; el conmutador de vistas y los cuadros, no)
+  useEffect(() => {
+    if (pinned === null) return
+    const outside = (event: PointerEvent) => {
+      const at = event.target as Element | null
+      if (!at?.closest || at.closest('[data-dia-ficha], [data-tour="calendario-vistas"], dialog')) return
+      window.clearTimeout(hoverTimer.current)
+      hoveredRef.current = null
+      setHovered(null)
+      setPinned(null)
+    }
+    document.addEventListener('pointerdown', outside)
+    return () => document.removeEventListener('pointerdown', outside)
+  }, [pinned])
+
+  // Al irse, la ficha se queda un momento con el último día para salir fundiéndose, como en Archivos
+  const [visible, setVisible] = useState<number | null>(null)
+  const [leaving, setLeaving] = useState(false)
+  useEffect(() => {
+    if (shown !== null) {
+      setVisible(shown)
+      setLeaving(false)
+      return
+    }
+    setLeaving(true)
+    const done = window.setTimeout(() => {
+      setVisible(null)
+      setLeaving(false)
+    }, 180)
+    return () => window.clearTimeout(done)
+  }, [shown])
+
   const at = dateFromDay(definition, cursor)
   const place: CalendarPlace = placeOfMonth(pages, at.month, at.year)
   const page = pages[place.page] ?? pages[0]
@@ -234,14 +267,15 @@ function BigCalendar({
           {t('calendars.view.edit')}
         </Link>
       }
-      right={
-        shown !== null ? (
+      left={
+        visible !== null ? (
           <DayAside
             worldId={worldId}
             definition={definition}
-            day={shown}
+            day={visible}
             today={today}
-            pinned={pinned === shown}
+            pinned={pinned === visible}
+            leaving={leaving}
             entries={entries}
             groups={groups}
             busy={datedPage.isPending}
@@ -253,13 +287,13 @@ function BigCalendar({
               setHovered(null)
               setPinned(null)
             }}
-            onNewEvent={() => setDialog({ date: { calendarId: calendar.id, start: dateFromDay(definition, shown) } })}
-            onNewPage={() => datedPage.mutate(dateFromDay(definition, shown))}
+            onNewEvent={() => setDialog({ date: { calendarId: calendar.id, start: dateFromDay(definition, visible) } })}
+            onNewPage={() => datedPage.mutate(dateFromDay(definition, visible))}
             onEdit={(entry) => setDialog({ entry })}
           />
         ) : null
       }
-      rightLabel={t('calendars.view.dayAside')}
+      leftLabel={t('calendars.view.dayAside')}
     >
       <div className={styles.bar} data-tour="calendario-vistas">
         <div
@@ -296,20 +330,36 @@ function BigCalendar({
           <legend className={styles.srOnly}>{t('calendars.view.goTo')}</legend>
           <span aria-hidden="true">{t('calendars.view.goTo')}</span>
           {mode !== 'year' && (
-            <select
-              value={definition.months.some((m) => m.id === at.month) ? at.month : ''}
-              aria-label={t('calendars.view.goToMonth')}
-              onChange={(event) => setCursor(firstOf(event.target.value, at.year))}
+            // El mes, con el menú de la app (no la lista del navegador)
+            <Menu
+              label={`${t('calendars.view.goToMonth')}: ${definition.months.find((m) => m.id === at.month)?.name ?? ''}`}
+              className={styles.jumpField}
+              icon={
+                <>
+                  <span>{definition.months.find((m) => m.id === at.month)?.name}</span>
+                  <ChevronDown size={14} aria-hidden="true" />
+                </>
+              }
             >
-              {definition.months.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.name}
-                </option>
-              ))}
-            </select>
+              {(close) =>
+                definition.months.map((m) => (
+                  <MenuItem
+                    key={m.id}
+                    aria-current={m.id === at.month || undefined}
+                    onClick={() => {
+                      setCursor(firstOf(m.id, at.year))
+                      close()
+                    }}
+                  >
+                    {m.name}
+                    {m.id === at.month && <Check size={14} aria-hidden="true" className={styles.jumpCheck} />}
+                  </MenuItem>
+                ))
+              }
+            </Menu>
           )}
           <IntegerInput
-            className={styles.yearInput}
+            className={`${styles.jumpField} ${styles.yearInput}`}
             value={at.year}
             aria-label={t('calendars.view.goToYear')}
             onValue={(year) => {
@@ -381,6 +431,8 @@ function BigCalendar({
               setCursor(firstOf(id, at.year))
               setMode('month')
             }}
+            onSelect={setPinned}
+            onHover={hover}
             onStep={stepYear}
           />
         </div>
@@ -421,6 +473,7 @@ function DayAside({
   day,
   today,
   pinned,
+  leaving,
   entries,
   groups,
   busy,
@@ -438,6 +491,8 @@ function DayAside({
   today: number | null
   /** Fijado al pulsarlo (si no, se ve al pasar el ratón) */
   pinned: boolean
+  /** Saliendo: se funde antes de irse */
+  leaving: boolean
   entries: readonly ChronologyEntryView[]
   groups: readonly TimelineGroupView[]
   busy: boolean
@@ -462,7 +517,13 @@ function DayAside({
   const facts = [described.season, t('calendars.view.dayOfYear', { day: described.dayOfYear })]
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: el ratón dentro de la ficha solo la mantiene a la vista
-    <div className={styles.side} onMouseEnter={onEnter} onMouseLeave={onLeave}>
+    <div
+      className={styles.side}
+      data-dia-ficha=""
+      data-leaving={leaving || undefined}
+      onMouseEnter={onEnter}
+      onMouseLeave={onLeave}
+    >
       <section aria-labelledby={titleId} className={styles.day} data-tour="calendario-dia">
         <div className={styles.dayHead}>
           <h2 id={titleId}>

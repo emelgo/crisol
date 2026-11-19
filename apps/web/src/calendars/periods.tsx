@@ -293,7 +293,8 @@ export function WeekView({
 
 /**
  * El año: sus meses en pequeño, cada uno con sus semanas (los de fuera de la semana, en fila), los días con algo
- * marcados, hoy y el día fijado. Pulsar un mes lleva a él
+ * marcados, hoy y el día fijado. Cada día se elige como en el mes (pasar el ratón enseña su ficha, pulsarlo la fija);
+ * el nombre del mes lleva a él. Las flechas pasan de un día a otro dentro del mes
  */
 export function YearView({
   definition,
@@ -303,6 +304,8 @@ export function YearView({
   selected,
   today,
   onMonth,
+  onSelect,
+  onHover,
   onStep
 }: {
   definition: CalendarDefinition
@@ -312,6 +315,8 @@ export function YearView({
   selected: number | null
   today: number | null
   onMonth: (monthId: string) => void
+  onSelect: (day: number) => void
+  onHover: (day: number | null) => void
   onStep: (step: -1 | 1) => void
 }) {
   const { t } = useTranslation()
@@ -327,16 +332,39 @@ export function YearView({
   }, [definition, entries, first, last])
   const columns = definition.weekdays.length || 7
   const weekdays = shortWeekdays(definition.weekdays)
-  const mark = (day: GridDay) => (
-    <span
+  // En cada mes, un solo día entra en el orden del tabulador: el fijado, hoy o el primero
+  const focusDay = (days: readonly GridDay[]) =>
+    (days.find((d) => d.dayNumber === selected) ?? days.find((d) => d.dayNumber === today) ?? days[0])?.dayNumber
+  const mark = (day: GridDay, tabbable: number | undefined) => (
+    <button
+      type="button"
       key={day.dayNumber}
+      className={styles.miniDay}
+      tabIndex={day.dayNumber === tabbable ? 0 : -1}
+      aria-label={formatDate(definition, dateFromDay(definition, day.dayNumber), { weekday: true })}
+      aria-pressed={selected === day.dayNumber}
       data-busy={busy.has(day.dayNumber) || undefined}
       data-today={today === day.dayNumber || undefined}
       data-selected={selected === day.dayNumber || undefined}
+      onClick={() => onSelect(day.dayNumber)}
+      onMouseEnter={() => onHover(day.dayNumber)}
+      onMouseLeave={() => onHover(null)}
+      onFocus={() => onHover(day.dayNumber)}
+      onBlur={() => onHover(null)}
     >
       {day.day}
-    </span>
+    </button>
   )
+  // Las flechas, de un día a otro del mismo mes
+  const onDaysKey = (event: KeyboardEvent<HTMLElement>) => {
+    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
+    const buttons = [...event.currentTarget.querySelectorAll<HTMLButtonElement>('button')]
+    const at = buttons.indexOf(event.target as HTMLButtonElement)
+    const next = buttons[at + (event.key === 'ArrowLeft' ? -1 : 1)]
+    if (!next) return
+    next.focus()
+    event.preventDefault()
+  }
   return (
     <div className={`${chrono.calendar} ${styles.period}`}>
       <PeriodHead
@@ -353,33 +381,45 @@ export function YearView({
           const outsideCount = grid.outside.filter((d) => busy.has(d.dayNumber)).length
           const marked = count + outsideCount
           return (
-            <li key={month.id}>
+            <li
+              key={month.id}
+              className={styles.yearMonth}
+              data-festival={month.festival || undefined}
+              style={month.color ? ({ '--month-color': month.color } as CSSProperties) : undefined}
+            >
               <button
                 type="button"
-                className={styles.yearMonth}
-                data-festival={month.festival || undefined}
-                style={month.color ? ({ '--month-color': month.color } as CSSProperties) : undefined}
+                className={styles.yearMonthName}
                 aria-label={
                   marked > 0 ? t('calendars.view.monthWithDays', { name: month.name, count: marked }) : month.name
                 }
+                title={t('calendars.view.openMonth')}
                 onClick={() => onMonth(month.id)}
               >
-                <span className={styles.yearMonthName}>{month.name}</span>
-                {grid.weeks.length > 0 ? (
-                  <span className={styles.mini} style={{ '--columns': columns } as CSSProperties} aria-hidden="true">
-                    {weekdays.map((name, i) => (
-                      <span key={definition.weekdays[i] ?? i} className={styles.miniHead}>
-                        {name.charAt(0)}
-                      </span>
-                    ))}
-                    {grid.weeks.flat().map((day, i) => (day ? mark(day) : <span key={`hueco-${i}`} />))}
-                  </span>
-                ) : (
-                  <span className={`${styles.mini} ${styles.miniRow}`} aria-hidden="true">
-                    {grid.outside.map(mark)}
-                  </span>
-                )}
+                {month.name}
               </button>
+              {grid.weeks.length > 0 ? (
+                // biome-ignore lint/a11y/noStaticElementInteractions: las flechas mueven el foco entre los días de dentro
+                <div className={styles.mini} style={{ '--columns': columns } as CSSProperties} onKeyDown={onDaysKey}>
+                  {weekdays.map((name, i) => (
+                    <span key={definition.weekdays[i] ?? i} className={styles.miniHead} aria-hidden="true">
+                      {name.charAt(0)}
+                    </span>
+                  ))}
+                  {(() => {
+                    const days = grid.weeks.flat().filter((d): d is GridDay => Boolean(d))
+                    const tabbable = focusDay(days)
+                    return grid.weeks
+                      .flat()
+                      .map((day, i) => (day ? mark(day, tabbable) : <span key={`hueco-${i}`} aria-hidden="true" />))
+                  })()}
+                </div>
+              ) : (
+                // biome-ignore lint/a11y/noStaticElementInteractions: las flechas mueven el foco entre los días de dentro
+                <div className={`${styles.mini} ${styles.miniRow}`} onKeyDown={onDaysKey}>
+                  {grid.outside.map((day) => mark(day, focusDay(grid.outside)))}
+                </div>
+              )}
             </li>
           )
         })}
