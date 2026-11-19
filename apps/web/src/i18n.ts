@@ -1558,9 +1558,6 @@ export const es = {
 
   templateEditor: {
     kind: 'Plantilla',
-    fields: 'Campos',
-    noFields: 'Aún no tiene campos.',
-    addField: 'Campo',
     newField: 'Campo {{n}}',
     name: 'Nombre',
     type: 'Tipo',
@@ -1608,7 +1605,7 @@ export const es = {
     blockTitle: 'Título del bloque {{kind}}',
     gripOf: 'Opciones de {{name}}',
     gripHint: 'Arrástralo para moverlo (o Alt y las flechas); púlsalo para sus opciones',
-    noBlocks: 'Aún no tiene bloques.'
+    hidden: 'Oculto a los jugadores'
   },
   templates: {
     title: 'Plantillas',

@@ -22,13 +22,13 @@ import { ApiError } from '../api/client.ts'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { Loading } from '../components/brand.tsx'
-import { useDismiss } from '../components/dismiss.ts'
 import { FormError } from '../components/field.tsx'
 import { failed, LoadError } from '../components/load-error.tsx'
 import { Tour } from '../components/tour.tsx'
 import { LEAVE_ITEM, leaveItem } from '../components/world-transition.ts'
 import { CollabSocket } from '../wiki/collab.tsx'
-import { blockOf, type Kind, kindOf, PANEL_GROUPS } from '../wiki/panel-blocks.tsx'
+import panelStyles from '../wiki/panel-blocks.module.css'
+import { AddBlock, blockOf, kindOf } from '../wiki/panel-blocks.tsx'
 import { RelatedOptions } from '../wiki/related-block.tsx'
 import { type TabTarget, TabTargetContext, usePageTabs } from '../wiki/tabs/page-tabs.tsx'
 import wiki from '../wiki/wiki.module.css'
@@ -36,7 +36,7 @@ import { EntryView, pageKey, useSideTop } from '../wiki/wiki.tsx'
 import pageStyles from '../wiki/world-page.module.css'
 import { useRememberedPanel, WorldPageContext, type WorldPageValue } from '../wiki/world-page.ts'
 import styles from './editor.module.css'
-import { FieldsEditor } from './fields.tsx'
+import { FieldsEditor, withNewField } from './fields.tsx'
 import { useTemplates } from './picker.tsx'
 import { Grip, moved, useReorder } from './reorder.tsx'
 import { type SideDialog, SideDialogView, TemplateSideTree } from './side-tree.tsx'
@@ -243,6 +243,7 @@ function TemplatePage({
  * fila; mientras quede algo por guardar, lo que llega de fuera no pisa lo de aquí
  */
 function TemplateSide({ template, page }: { template: PageTemplate; page: Page }) {
+  const { t } = useTranslation()
   const api = useApi()
   const queryClient = useQueryClient()
   const errorText = useErrorText()
@@ -274,14 +275,39 @@ function TemplateSide({ template, page }: { template: PageTemplate; page: Page }
     setDraft((current) => ({ ...current, ...patch }))
     save.mutate(patch)
   }
+  // El campo desplegado (sus opciones) y el recién añadido (con el foco en su nombre)
+  const [openField, setOpenField] = useState<string | null>(null)
+  const [freshField, setFreshField] = useState<string | null>(null)
+  // «Añadir bloque › Propiedad» o «› Etiquetas»: un campo, como una propiedad de una página
+  const addField = (kind: 'tags' | 'property') => {
+    const added = withNewField(draft.fields, kind, t('templateEditor.newField', { n: draft.fields.length + 1 }))
+    if (added.fields.length !== draft.fields.length) change({ fields: added.fields })
+    setOpenField(added.key)
+    setFreshField(added.key)
+  }
+  const fields = (
+    <FieldsEditor
+      fields={draft.fields}
+      readOnly={page.locked}
+      open={openField}
+      fresh={freshField}
+      onOpen={(key) => {
+        setOpenField(key)
+        setFreshField(null)
+      }}
+      onChange={(next: PageProperty[]) => change({ fields: next })}
+    />
+  )
   return (
     <div className={styles.side}>
-      <FieldsEditor
-        fields={draft.fields}
+      <BlocksEditor
+        blocks={draft.panel}
+        properties={fields}
+        empty={draft.fields.length === 0}
         readOnly={page.locked}
-        onChange={(fields: PageProperty[]) => change({ fields })}
+        onChange={(panel) => change({ panel })}
+        onAddProperty={addField}
       />
-      <BlocksEditor blocks={draft.panel} readOnly={page.locked} onChange={(panel) => change({ panel })} />
       <FormError message={save.error ? errorText(save.error) : null} />
     </div>
   )
@@ -290,148 +316,137 @@ function TemplateSide({ template, page }: { template: PageTemplate; page: Page }
 /** Los bloques del panel de la plantilla: se añaden, se titulan, se recolocan y se quitan; las tablas, con sus desplegables */
 function BlocksEditor({
   blocks,
+  properties,
+  empty,
   readOnly,
-  onChange
+  onChange,
+  onAddProperty
 }: {
   blocks: readonly PanelBlock[]
+  /** Los campos, como las propiedades de una página: arriba, o tras la imagen si el panel empieza por una */
+  properties: ReactNode
+  /** Sin campos: con el panel sin bloques, «Panel vacío» como en una página */
+  empty: boolean
   readOnly: boolean
   onChange: (blocks: PanelBlock[]) => void
+  onAddProperty: (kind: 'tags' | 'property') => void
 }) {
   const { t } = useTranslation()
-  const [adding, setAdding] = useState(false)
   // El bloque desplegado (sus opciones), como un campo
   const [open, setOpen] = useState<string | null>(null)
-  const addRoot = useRef<HTMLDivElement>(null)
-  const addTrigger = useRef<HTMLButtonElement>(null)
-  // Abierto, Escape o pulsar fuera lo cierran (como «⋯»)
-  useDismiss(adding, () => setAdding(false), addRoot, addTrigger)
   const update = (index: number, patch: Partial<PanelBlock>) =>
     onChange(blocks.map((block, i) => (i === index ? ({ ...block, ...patch } as PanelBlock) : block)))
   const reorder = (from: number, to: number) => onChange(moved(blocks, from, to))
   const drag = useReorder(reorder)
-  return (
-    <section className={styles.block} aria-label={t('templates.inPanel')}>
-      <h2 className={styles.blockTitle}>{t('templates.inPanel')}</h2>
-      <ul className={styles.fields}>
-        {blocks.map((block, index) => {
-          const kind = kindOf(block)
-          const label = t(`panelBlocks.kinds.${kind}`)
-          const name = ('title' in block && block.title) || label
-          const expanded = open === block.id
-          const toggle = () => setOpen(expanded ? null : block.id)
-          return (
-            <li key={block.id} className={styles.field} data-open={expanded || undefined} {...drag.row(index)}>
-              {/* Plegado: sus seis puntos, su nombre y su tipo; al pulsarlo, sus opciones */}
-              <div className={styles.fieldLine}>
-                {!readOnly && (
-                  <Grip
-                    name={name}
-                    index={index}
-                    count={blocks.length}
-                    open={expanded}
-                    onToggle={toggle}
-                    onMove={reorder}
-                    onDragStart={drag.start}
-                    onDragEnd={drag.end}
-                  />
-                )}
-                <button type="button" className={styles.fieldRow} aria-expanded={expanded} onClick={toggle}>
-                  <span className={styles.fieldName}>{name}</span>
-                  <span className={styles.fieldType}>{label}</span>
+  const lead = blocks[0]?.type === 'image'
+  const row = (block: PanelBlock, index: number) => {
+    const kind = kindOf(block)
+    const label = t(`panelBlocks.kinds.${kind}`)
+    const name = ('title' in block && block.title) || label
+    const expanded = open === block.id
+    const toggle = () => setOpen(expanded ? null : block.id)
+    return (
+      <li key={block.id} className={styles.field} data-open={expanded || undefined} {...drag.row(index)}>
+        {/* Plegado: sus seis puntos, su nombre y su tipo; al pulsarlo, sus opciones */}
+        <div className={styles.fieldLine}>
+          {!readOnly && (
+            <Grip
+              name={name}
+              index={index}
+              count={blocks.length}
+              open={expanded}
+              onToggle={toggle}
+              onMove={reorder}
+              onDragStart={drag.start}
+              onDragEnd={drag.end}
+            />
+          )}
+          <button type="button" className={styles.fieldRow} aria-expanded={expanded} onClick={toggle}>
+            <span className={styles.fieldName}>{name}</span>
+            <span className={styles.fieldType}>{label}</span>
+          </button>
+        </div>
+        {expanded && (
+          <fieldset className={styles.blockShape} disabled={readOnly}>
+            <legend className={styles.hidden}>{name}</legend>
+            {'title' in block && (
+              <input
+                className={styles.blockName}
+                aria-label={t('templateEditor.blockTitle', { kind: label })}
+                defaultValue={block.title}
+                placeholder={label}
+                maxLength={80}
+                onBlur={(event) => {
+                  const title = event.currentTarget.value.trim()
+                  if (title !== block.title) update(index, { title } as Partial<PanelBlock>)
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') event.currentTarget.blur()
+                }}
+              />
+            )}
+            {block.type === 'related' && (
+              <RelatedOptions block={block} onChange={(patch) => update(index, patch as Partial<PanelBlock>)} />
+            )}
+            {!readOnly && (
+              <div className={styles.shapeActions}>
+                <button type="button" disabled={index === 0} onClick={() => reorder(index, index - 1)}>
+                  <ChevronUp size={14} aria-hidden="true" />
+                  {t('templateEditor.up')}
+                </button>
+                <button type="button" disabled={index === blocks.length - 1} onClick={() => reorder(index, index + 1)}>
+                  <ChevronDown size={14} aria-hidden="true" />
+                  {t('templateEditor.down')}
+                </button>
+                <button
+                  type="button"
+                  className={styles.danger}
+                  onClick={() => onChange(blocks.filter((_, i) => i !== index))}
+                >
+                  <Trash2 size={14} aria-hidden="true" />
+                  {t('panelBlocks.remove')}
                 </button>
               </div>
-              {expanded && (
-                <fieldset className={styles.blockShape} disabled={readOnly}>
-                  <legend className={styles.hidden}>{name}</legend>
-                  {'title' in block && (
-                    <input
-                      className={styles.blockName}
-                      aria-label={t('templateEditor.blockTitle', { kind: label })}
-                      defaultValue={block.title}
-                      placeholder={label}
-                      maxLength={80}
-                      onBlur={(event) => {
-                        const title = event.currentTarget.value.trim()
-                        if (title !== block.title) update(index, { title } as Partial<PanelBlock>)
-                      }}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter') event.currentTarget.blur()
-                      }}
-                    />
-                  )}
-                  {block.type === 'related' && (
-                    <RelatedOptions block={block} onChange={(patch) => update(index, patch as Partial<PanelBlock>)} />
-                  )}
-                  {!readOnly && (
-                    <div className={styles.shapeActions}>
-                      <button type="button" disabled={index === 0} onClick={() => reorder(index, index - 1)}>
-                        <ChevronUp size={14} aria-hidden="true" />
-                        {t('templateEditor.up')}
-                      </button>
-                      <button
-                        type="button"
-                        disabled={index === blocks.length - 1}
-                        onClick={() => reorder(index, index + 1)}
-                      >
-                        <ChevronDown size={14} aria-hidden="true" />
-                        {t('templateEditor.down')}
-                      </button>
-                      <button
-                        type="button"
-                        className={styles.danger}
-                        onClick={() => onChange(blocks.filter((_, i) => i !== index))}
-                      >
-                        <Trash2 size={14} aria-hidden="true" />
-                        {t('panelBlocks.remove')}
-                      </button>
-                    </div>
-                  )}
-                </fieldset>
-              )}
-            </li>
-          )
-        })}
-      </ul>
-      {blocks.length === 0 && <p className={styles.muted}>{t('templateEditor.noBlocks')}</p>}
-      {!readOnly && (
-        <div ref={addRoot} className={styles.addWrap}>
-          <button
-            ref={addTrigger}
-            type="button"
-            className={styles.add}
-            aria-expanded={adding}
-            onClick={() => setAdding(!adding)}
-          >
-            <Plus size={14} aria-hidden="true" />
-            {t('panelBlocks.add')}
-          </button>
-          {adding && (
-            <div className={styles.addMenu}>
-              {PANEL_GROUPS.map(({ group, kinds }) => (
-                <div key={group}>
-                  <p className={styles.listHead}>{t(`panelBlocks.groups.${group}`)}</p>
-                  {kinds.map(({ kind, icon }) => (
-                    <button
-                      key={kind}
-                      type="button"
-                      className={styles.addOption}
-                      onClick={() => {
-                        setAdding(false)
-                        const block = blockOf(kind as Kind)
-                        onChange([...blocks, block])
-                        setOpen(block.id)
-                      }}
-                    >
-                      {icon}
-                      {t(`panelBlocks.kinds.${kind}`)}
-                    </button>
-                  ))}
-                </div>
-              ))}
-            </div>
-          )}
+            )}
+          </fieldset>
+        )}
+      </li>
+    )
+  }
+  return (
+    <>
+      {/* El retrato (o la imagen del lugar) va arriba del todo, antes que los campos, como en una página */}
+      {!lead && properties}
+      {empty && blocks.length === 0 && (
+        <div className={panelStyles.empty}>
+          <p className={panelStyles.emptyTitle}>{t('panelBlocks.empty')}</p>
+          <p>{t('panelBlocks.emptyHint')}</p>
         </div>
       )}
-    </section>
+      {blocks.length > 0 && (
+        <section className={styles.block} aria-label={t('templates.inPanel')}>
+          {lead ? (
+            <>
+              <ul className={styles.fields}>{blocks.slice(0, 1).map((block) => row(block, 0))}</ul>
+              {properties}
+              <ul className={styles.fields}>{blocks.slice(1).map((block, i) => row(block, i + 1))}</ul>
+            </>
+          ) : (
+            <ul className={styles.fields}>{blocks.map(row)}</ul>
+          )}
+        </section>
+      )}
+      {/* «Añadir bloque», el de una página: sus datos (Etiquetas y Propiedad, que son campos) y los bloques */}
+      {!readOnly && (
+        <AddBlock
+          onAdd={(kind) => {
+            const block = blockOf(kind)
+            onChange([...blocks, block])
+            setOpen(block.id)
+          }}
+          onAddProperty={onAddProperty}
+        />
+      )}
+    </>
   )
 }

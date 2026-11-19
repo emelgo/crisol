@@ -26,6 +26,14 @@ async function renderTemplate(id?: string) {
 
 const panel = async () => within(await screen.findByRole('complementary', { name: 'Panel de la página' }))
 
+/** «Añadir bloque › Propiedad» (o «› Etiquetas»), como en una página: un campo; devuelve los campos del panel */
+async function addField(kind: 'Propiedad' | 'Etiquetas' = 'Propiedad') {
+  const side = await panel()
+  await userEvent.click(side.getByRole('button', { name: 'Añadir bloque' }))
+  await userEvent.click(side.getByRole('button', { name: kind }))
+  return within(await side.findByRole('region', { name: 'Propiedades' }))
+}
+
 describe('editar una plantilla', () => {
   beforeEach(() =>
     localStorage.setItem('crisol.recorridos.enrique@crisol.test', JSON.stringify({ seen: ['plantillas', 'plantilla'] }))
@@ -33,8 +41,7 @@ describe('editar una plantilla', () => {
 
   it('sus campos: uno de opciones con su lista y un reloj de 8; todo se guarda solo', async () => {
     const { saved } = await renderTemplate()
-    const fields = within((await panel()).getByRole('region', { name: 'Campos' }))
-    await userEvent.click(fields.getByRole('button', { name: 'Campo' }))
+    const fields = await addField()
     await userEvent.clear(fields.getByLabelText('Nombre'))
     await userEvent.type(fields.getByLabelText('Nombre'), 'Nivel{Enter}')
     await userEvent.selectOptions(fields.getByLabelText('Tipo'), 'Opciones')
@@ -52,7 +59,7 @@ describe('editar una plantilla', () => {
       ])
     )
     // Otro: un reloj de 8
-    await userEvent.click(fields.getByRole('button', { name: 'Campo' }))
+    await addField()
     await userEvent.selectOptions(fields.getAllByLabelText('Tipo').at(-1) as HTMLElement, 'Reloj')
     const segments = fields.getByLabelText('Segmentos')
     await userEvent.clear(segments)
@@ -61,10 +68,52 @@ describe('editar una plantilla', () => {
     expect(fields.getByRole('button', { name: /Reloj de 8/ })).toBeDefined()
   })
 
+  it('sin campos ni bloques, «Panel vacío» como en una página (sin lista «Campos» ni «+ Campo»)', async () => {
+    await renderTemplate()
+    const side = await panel()
+    expect(await side.findByText('Panel vacío')).toBeDefined()
+    expect(side.queryByRole('region', { name: 'Campos' })).toBeNull()
+    expect(side.queryByRole('button', { name: 'Campo' })).toBeNull()
+  })
+
+  it('su panel, como el de una página: los campos de antes, en su orden y arriba (tras el retrato)', async () => {
+    const { api, own, saved } = await renderTemplate()
+    await api.client.call('updateTemplate', {
+      templateId: own.id,
+      fields: [
+        { name: 'Nivel', type: 'number', value: null },
+        { name: 'Facción', type: 'text', value: '' }
+      ],
+      panel: [{ id: 'retrato', type: 'image', fileId: null, caption: '' }]
+    })
+    const side = await panel()
+    const fields = within(await side.findByRole('region', { name: 'Propiedades' }))
+    expect(
+      fields
+        .getAllByRole('button', { name: /Nivel|Facción/ })
+        .map((b) => b.textContent)
+        .filter(Boolean)
+    ).toEqual(['NivelNúmero', 'FacciónTexto'])
+    // Tras la imagen que abre el panel, como las propiedades de una página
+    const image = side.getByRole('button', { name: /^Imagen/ })
+    expect(image.compareDocumentPosition(fields.getByRole('button', { name: /^Nivel/ }))).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING
+    )
+    expect(side.queryByText('Panel vacío')).toBeNull()
+    // «Etiquetas»: su lista, una sola vez; «Oculto a los jugadores», en sus opciones
+    await addField('Etiquetas')
+    await addField('Etiquetas')
+    await waitFor(async () =>
+      expect((await saved()).fields.map((f) => f.name)).toEqual(['Nivel', 'Facción', 'etiquetas'])
+    )
+    await userEvent.click(fields.getByRole('checkbox', { name: 'Oculto a los jugadores' }))
+    await waitFor(async () => expect((await saved()).fields[2]).toMatchObject({ type: 'list', hidden: true }))
+    expect(fields.getByLabelText('Oculto')).toBeDefined()
+  })
+
   it('un campo «Fecha», vacío, con «Con fin» y «Fuera de las líneas temporales»', async () => {
     const { saved } = await renderTemplate()
-    const fields = within((await panel()).getByRole('region', { name: 'Campos' }))
-    await userEvent.click(fields.getByRole('button', { name: 'Campo' }))
+    const fields = await addField()
     await userEvent.clear(fields.getByLabelText('Nombre'))
     await userEvent.type(fields.getByLabelText('Nombre'), 'Reinado{Enter}')
     await userEvent.selectOptions(fields.getByLabelText('Tipo'), 'Fecha')
@@ -94,8 +143,7 @@ describe('editar una plantilla', () => {
 
   it('un campo de enlace con su papel y su nombre al revés (módulo 10): «Se lee así» en los dos sentidos', async () => {
     const { saved } = await renderTemplate()
-    const fields = within((await panel()).getByRole('region', { name: 'Campos' }))
-    await userEvent.click(fields.getByRole('button', { name: 'Campo' }))
+    const fields = await addField()
     await userEvent.clear(fields.getByLabelText('Nombre'))
     await userEvent.type(fields.getByLabelText('Nombre'), 'Padres{Enter}')
     await userEvent.selectOptions(fields.getByLabelText('Tipo'), 'Enlaces a páginas')
@@ -137,9 +185,10 @@ describe('editar una plantilla', () => {
 
   it('su panel: una tabla de páginas con sus desplegables, con título', async () => {
     const { saved } = await renderTemplate()
-    const blocks = within((await panel()).getByRole('region', { name: 'En el panel' }))
-    await userEvent.click(blocks.getByRole('button', { name: 'Añadir bloque' }))
-    await userEvent.click(blocks.getByRole('button', { name: 'Tabla de páginas' }))
+    const side = await panel()
+    await userEvent.click(side.getByRole('button', { name: 'Añadir bloque' }))
+    await userEvent.click(side.getByRole('button', { name: 'Tabla de páginas' }))
+    const blocks = within(side.getByRole('region', { name: 'En el panel' }))
     await userEvent.type(blocks.getByLabelText('Título del bloque Tabla de páginas'), 'PNJ del frente{Enter}')
     await userEvent.selectOptions(blocks.getByLabelText('Páginas de'), 'PNJ')
     await waitFor(async () =>
@@ -181,7 +230,7 @@ describe('editar una plantilla', () => {
         { id: 'fama', type: 'rating', title: 'Fama', value: 0, max: 5 }
       ]
     })
-    const blocks = within((await panel()).getByRole('region', { name: 'En el panel' }))
+    const blocks = within(await (await panel()).findByRole('region', { name: 'En el panel' }))
     // Plegados: su nombre y su tipo, sin sus botones a la vista
     expect((await blocks.findByRole('button', { name: /^Notas/ })).getAttribute('aria-expanded')).toBe('false')
     expect(blocks.queryByRole('button', { name: 'Quitar el bloque' })).toBeNull()
@@ -204,7 +253,7 @@ describe('editar una plantilla', () => {
         { id: 'oro', type: 'text', title: 'Oro', text: '' }
       ]
     })
-    const blocks = within((await panel()).getByRole('region', { name: 'En el panel' }))
+    const blocks = within(await (await panel()).findByRole('region', { name: 'En el panel' }))
     const grip = await blocks.findByRole('button', { name: 'Opciones de Oro' })
     const rowOf = (name: string) =>
       blocks.getByRole('button', { name: `Opciones de ${name}` }).closest('li') as HTMLElement
