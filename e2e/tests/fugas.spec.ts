@@ -1278,7 +1278,7 @@ test('@fugas las fechas: un campo «Oculto» de fecha no le llega a la jugadora 
     pageId: port.id,
     properties: read.properties.map((p: { name: string }) => (p.name === 'Fundación' ? p : { ...p, hidden: true }))
   })
-  await expect(player.getByRole('main')).toContainText('12 de Siega de 412 RV')
+  await expect(player.getByRole('main')).toContainText('12 de Siega del año 412 RV')
   const bodies: string[] = []
   for (const [name, data] of [
     ['getPage', { pageId: port.id, campaignId }],
@@ -1290,9 +1290,9 @@ test('@fugas las fechas: un campo «Oculto» de fecha no le llega a la jugadora 
     expect(response.status(), name).toBe(200)
     bodies.push(await response.text())
   }
-  expect(bodies.join('\n')).toContain('12 de Siega de 412 RV')
+  expect(bodies.join('\n')).toContain('12 de Siega del año 412 RV')
   const everything = [await captured.all(), ...bodies].join('\n')
-  for (const leak of ['Coronación', 'Vendimia de 415', '415-Vendimia']) expect(everything).not.toContain(leak)
+  for (const leak of ['Coronación', 'Vendimia del año 415', '415-Vendimia']) expect(everything).not.toContain(leak)
   await player.close()
 })
 

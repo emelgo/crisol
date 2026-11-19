@@ -25,14 +25,16 @@ import { ZoneDialog } from './zone-dialog.tsx'
 /** Cuánto se queda «Deshacer» a la vista */
 const UNDO_MS = 7000
 
-/** «Solen, 6 de Brumas» y «1247 RV» por separado (sin el calendario, el texto entero) */
+/** «Solen, 6 de Brumas» y «Año 1247 RV» por separado (sin el calendario, el texto entero) */
 export function dateParts(definition: CalendarDefinition | null, today: Pick<CampaignDate, 'date' | 'text'>) {
   if (!definition) return { main: today.text, year: '' }
   try {
     const full = formatDate(definition, today.date, { weekday: true })
     const year = formatYear(definition, today.date.year, today.date)
-    const suffix = ` de ${year}`
-    return full.endsWith(suffix) ? { main: full.slice(0, -suffix.length), year } : { main: full, year: '' }
+    const suffix = ` del año ${year}`
+    return full.endsWith(suffix)
+      ? { main: full.slice(0, -suffix.length), year: `Año ${year}` }
+      : { main: full, year: '' }
   } catch {
     return { main: today.text, year: '' }
   }

@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { todayKey } from './queries.ts'
 import styles from './time.module.css'
+import { chipDate } from './words.ts'
 
 /** La línea «Hoy» de una cronología: su día en el calendario de ella, cómo se lee y de qué campaña es */
 export interface TodayMark {
@@ -99,7 +100,7 @@ export function TodayOf({
       <select id={id} className={styles.select} value={value} onChange={(event) => onChange(event.target.value)}>
         {options.map(({ campaign, today }) => (
           <option key={campaign.id} value={campaign.id}>
-            {campaign.name} · {today.text.replace(/^[^,]+,\s*/, '').replace(/ de -?\d.*$/, '')}
+            {campaign.name} · {chipDate(today.text)}
           </option>
         ))}
         <option value="none">{t('campaignTime.todayNone')}</option>

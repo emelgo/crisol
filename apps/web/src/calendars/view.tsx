@@ -46,7 +46,7 @@ import { Tour } from '../components/tour.tsx'
 import { JumpTitle } from './jump.tsx'
 import { WeekView, YearView } from './periods.tsx'
 import { pagesOf, startYear } from './preview.tsx'
-import { monthTitle, SeasonFacts, weekTitle, yearTitle } from './titles.tsx'
+import { SeasonFacts, weekTitle } from './titles.tsx'
 import styles from './view.module.css'
 
 const route = getRouteApi('/mundos/$worldId/calendarios/$calendarId')
@@ -358,7 +358,7 @@ function BigCalendar({
             entries={entries}
             groups={groups}
             compact={false}
-            title={jumpTitle(monthTitle(t, definition, at.year, at.month))}
+            title={jumpTitle(formatDate(definition, { year: at.year, month: at.month }))}
             where={place}
             onWhere={(next) => {
               const target = pages[next.page] ?? pages[0]
@@ -395,7 +395,7 @@ function BigCalendar({
           <YearView
             definition={definition}
             year={at.year}
-            title={jumpTitle(yearTitle(t, definition, at.year))}
+            title={jumpTitle(formatDate(definition, { year: at.year }))}
             entries={entries}
             selected={pinned}
             today={today}

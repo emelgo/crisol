@@ -158,11 +158,11 @@ describe('un calendario en grande', () => {
         }
       ]
     })
-    const cell = await screen.findByRole('cell', { name: / 3 de Enero de 0 RV$/ })
+    const cell = await screen.findByRole('cell', { name: / 3 de Enero del año 0 RV$/ })
     await userEvent.hover(cell)
     const day = await screen.findByRole('complementary', { name: 'El día elegido' })
     expect(within(day).getByRole('heading', { level: 2 }).textContent).toContain(
-      '3 de Enero de 0 RV de la Era de la Corona'
+      '3 de Enero del año 0 RV de la Era de la Corona'
     )
     expect(await within(day).findByText('Boda de Ilsa')).toBeDefined()
     expect(day.textContent).toContain('Luna')
@@ -204,20 +204,20 @@ describe('un calendario en grande', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Semana siguiente' }))
     expect(screen.getByRole('heading', { level: 2, name: 'Semana del 6 al 12 de Marzo del año 0 RV' })).toBeDefined()
     // Sus días también enseñan su ficha
-    await userEvent.click(screen.getByRole('cell', { name: / 8 de Marzo de 0 RV$/ }))
+    await userEvent.click(screen.getByRole('cell', { name: / 8 de Marzo del año 0 RV$/ }))
     const day = await screen.findByRole('complementary', { name: 'El día elegido' })
-    expect(within(day).getByRole('heading', { level: 2 }).textContent).toContain('8 de Marzo de 0 RV')
+    expect(within(day).getByRole('heading', { level: 2 }).textContent).toContain('8 de Marzo del año 0 RV')
     // El año: sus meses en pequeño; uno lleva a él
     await userEvent.click(within(modes).getByRole('button', { name: 'Año' }))
     expect(screen.getByRole('heading', { level: 2, name: 'Año 0 RV' })).toBeDefined()
     await userEvent.click(screen.getByRole('button', { name: 'Año siguiente' }))
     expect(screen.getByRole('heading', { level: 2, name: 'Año 1 RV' })).toBeDefined()
     // En el año se eligen días (su ficha), y el nombre del mes lleva a él
-    await userEvent.click(screen.getByRole('button', { name: / 10 de Febrero de 1 RV$/ }))
+    await userEvent.click(screen.getByRole('button', { name: / 10 de Febrero del año 1 RV$/ }))
     expect(
       within(screen.getByRole('complementary', { name: 'El día elegido' })).getByRole('heading', { level: 2 })
         .textContent
-    ).toContain('10 de Febrero de 1 RV')
+    ).toContain('10 de Febrero del año 1 RV')
     await userEvent.click(screen.getByRole('button', { name: /^Junio/ }))
     expect(screen.getByRole('heading', { level: 2, name: 'Junio del año 1 RV' })).toBeDefined()
     expect(within(modes).getByRole('button', { name: 'Mes' }).getAttribute('aria-pressed')).toBe('true')
@@ -255,7 +255,7 @@ describe('un calendario en grande', () => {
     await userEvent.click(within(days).getByRole('button', { name: '15' }))
     expect(screen.queryByRole('dialog')).toBeNull()
     expect(screen.getByRole('heading', { level: 2 }).textContent).toMatch(/Marzo del año 3 RV$/)
-    expect(screen.getByRole('cell', { name: / 15 de Marzo de 3 RV$/ })).toBeDefined()
+    expect(screen.getByRole('cell', { name: / 15 de Marzo del año 3 RV$/ })).toBeDefined()
     // Esc cierra sin cambiar nada y el foco vuelve al título
     await userEvent.click(title())
     expect(screen.getByRole('dialog', { name: 'Ir a otra semana' })).toBeDefined()
@@ -289,7 +289,7 @@ describe('un calendario en grande', () => {
         }
       ]
     })
-    await userEvent.click(await screen.findByRole('cell', { name: / 3 de Enero de 0 RV$/ }))
+    await userEvent.click(await screen.findByRole('cell', { name: / 3 de Enero del año 0 RV$/ }))
     const day = screen.getByRole('complementary', { name: 'El día elegido' })
     await userEvent.click(within(day).getByRole('button', { name: 'Borrar «Boda de Ilsa»' }))
     const confirm = await screen.findByRole('dialog', { name: '¿Borrar «Boda de Ilsa»?' })
@@ -311,12 +311,12 @@ describe('un calendario en grande', () => {
     const dialog = await screen.findByRole('dialog')
     expect((within(dialog).getByLabelText('Título') as HTMLInputElement).value).toBe('Boda de Ilsa')
     const day = screen.getByRole('complementary', { name: 'El día elegido' })
-    expect(within(day).getByRole('heading', { level: 2 }).textContent).toContain('3 de Enero de 0 RV')
+    expect(within(day).getByRole('heading', { level: 2 }).textContent).toContain('3 de Enero del año 0 RV')
   })
 
   it('«Nuevo evento»: sin cronologías, va a una nueva («Cronología»), con la fecha del día elegido', async () => {
     const { api } = open()
-    await userEvent.click(await screen.findByRole('cell', { name: / 5 de Enero de 0 RV$/ }))
+    await userEvent.click(await screen.findByRole('cell', { name: / 5 de Enero del año 0 RV$/ }))
     await userEvent.click(screen.getByRole('button', { name: 'Un evento nuevo en este día' }))
     const dialog = await screen.findByRole('dialog')
     expect((within(dialog).getByLabelText('Cronología') as HTMLSelectElement).value).toBe('new')
@@ -345,7 +345,7 @@ describe('un calendario en grande', () => {
       chronologyId: guerras?.id ?? '',
       groups: [{ name: 'Asedios', color: null }]
     })
-    await userEvent.click(await screen.findByRole('cell', { name: / 6 de Enero de 0 RV$/ }))
+    await userEvent.click(await screen.findByRole('cell', { name: / 6 de Enero del año 0 RV$/ }))
     await userEvent.click(screen.getByRole('button', { name: 'Un evento nuevo en este día' }))
     const dialog = within(await screen.findByRole('dialog'))
     const choice = dialog.getByLabelText('Cronología') as HTMLSelectElement
@@ -368,7 +368,7 @@ describe('un calendario en grande', () => {
 
   it('«Página con esta fecha»: una página nueva con el campo Fecha, abierta para ponerle título', async () => {
     const { api, router } = open()
-    await userEvent.click(await screen.findByRole('cell', { name: / 7 de Enero de 0 RV$/ }))
+    await userEvent.click(await screen.findByRole('cell', { name: / 7 de Enero del año 0 RV$/ }))
     await userEvent.click(screen.getByRole('button', { name: 'Una página nueva con esta fecha' }))
     await waitFor(() => expect(router.state.location.pathname).toMatch(/\/wiki\/[0-9a-f-]+$/))
     const pageId = router.state.location.pathname.split('/').at(-1)
@@ -424,7 +424,7 @@ describe('un calendario en grande', () => {
     })
     expect(await screen.findByRole('heading', { level: 2, name: 'Marzo del año 1250 RV' })).toBeDefined()
     expect(screen.getByLabelText('Hoy de')).toBeDefined()
-    const today = screen.getByRole('cell', { name: /18 de Marzo de 1250 RV/ })
+    const today = screen.getByRole('cell', { name: /18 de Marzo del año 1250 RV/ })
     expect(today.getAttribute('aria-current')).toBe('date')
     await userEvent.click(screen.getByRole('button', { name: 'Mes siguiente' }))
     await userEvent.click(screen.getByRole('button', { name: 'Ir a hoy' }))

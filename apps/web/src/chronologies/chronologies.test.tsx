@@ -176,10 +176,10 @@ describe('una cronología en su pestaña', () => {
     await userEvent.click(
       within(await screen.findByRole('toolbar', { name: 'Vistas' })).getByRole('button', { name: 'Calendario' })
     )
-    expect(await screen.findByRole('heading', { name: 'Siega de 1247 RC' })).toBeDefined()
-    const table = screen.getByRole('table', { name: 'Siega de 1247 RC' })
-    const day20 = within(table).getByRole('cell', { name: /, 20 de Siega de 1247 RC/ })
-    const day21 = within(table).getByRole('cell', { name: /, 21 de Siega de 1247 RC/ })
+    expect(await screen.findByRole('heading', { name: 'Siega del año 1247 RC' })).toBeDefined()
+    const table = screen.getByRole('table', { name: 'Siega del año 1247 RC' })
+    const day20 = within(table).getByRole('cell', { name: /, 20 de Siega del año 1247 RC/ })
+    const day21 = within(table).getByRole('cell', { name: /, 21 de Siega del año 1247 RC/ })
     expect(within(day20).getByRole('button', { name: 'Campaña de los Pasos' })).toBeDefined()
     // El tramo siguiente repite la ficha: sin parada propia del tabulador ni para el lector
     expect(day21.querySelector('button[aria-hidden="true"]')?.getAttribute('aria-label')).toBe('Campaña de los Pasos')
@@ -190,7 +190,7 @@ describe('una cronología en su pestaña', () => {
     await waitFor(() => expect(document.activeElement).toBe(day21))
     // Intro abre su detalle
     await userEvent.keyboard('{Enter}')
-    const detail = await screen.findByRole('complementary', { name: /21 de Siega de 1247 RC/ })
+    const detail = await screen.findByRole('complementary', { name: /21 de Siega del año 1247 RC/ })
     expect(detail.textContent).toContain('Verano')
   })
 
@@ -199,9 +199,9 @@ describe('una cronología en su pestaña', () => {
     await userEvent.click(
       within(await screen.findByRole('toolbar', { name: 'Vistas' })).getByRole('button', { name: 'Calendario' })
     )
-    const table = await screen.findByRole('table', { name: 'Siega de 1247 RC' })
+    const table = await screen.findByRole('table', { name: 'Siega del año 1247 RC' })
     const boda = within(table).getByRole('button', { name: 'Boda de Ilsa y Doran' })
-    const target = within(table).getByRole('cell', { name: /, 22 de Siega de 1247 RC/ })
+    const target = within(table).getByRole('cell', { name: /, 22 de Siega del año 1247 RC/ })
     const data = { setData: () => undefined, getData: () => '', effectAllowed: 'move', types: [] }
     fireEvent.dragStart(boda, { dataTransfer: data })
     fireEvent.dragOver(target, { dataTransfer: data })
@@ -220,8 +220,8 @@ describe('una cronología en su pestaña', () => {
     await userEvent.click(
       within(await screen.findByRole('toolbar', { name: 'Vistas' })).getByRole('button', { name: 'Calendario' })
     )
-    const table = await screen.findByRole('table', { name: 'Siega de 1247 RC' })
-    await userEvent.click(within(table).getByRole('cell', { name: /, 5 de Siega de 1247 RC/ }))
+    const table = await screen.findByRole('table', { name: 'Siega del año 1247 RC' })
+    await userEvent.click(within(table).getByRole('cell', { name: /, 5 de Siega del año 1247 RC/ }))
     await userEvent.click(await screen.findByRole('button', { name: 'Evento en este día' }))
     const dialog = await screen.findByRole('dialog', { name: 'Evento nuevo' })
     await userEvent.type(within(dialog).getByLabelText('Título'), 'Llegan los emisarios')

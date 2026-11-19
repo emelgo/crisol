@@ -87,14 +87,16 @@ describe('el campo «Fecha» de una página', () => {
     const year = picker.getByLabelText('Año que se ve')
     await userEvent.clear(year)
     await userEvent.type(year, '412')
-    await userEvent.click(picker.getByRole('button', { name: /12 de Siega de 412 RV$/ }))
+    await userEvent.click(picker.getByRole('button', { name: /12 de Siega del año 412 RV$/ }))
     await waitFor(async () =>
       expect(await saved()).toEqual([
         { name: 'Fundación', type: 'date', value: { calendarId: VARN, start: { year: 412, month: 'siega', day: 12 } } }
       ])
     )
-    expect(picker.getByText(/, 12 de Siega de 412 RV$/)).toBeDefined()
-    expect(properties.getByRole('button', { name: 'Valor de la propiedad 1: 12 de Siega de 412 RV' })).toBeDefined()
+    expect(picker.getByText(/, 12 de Siega del año 412 RV$/)).toBeDefined()
+    expect(
+      properties.getByRole('button', { name: 'Valor de la propiedad 1: 12 de Siega del año 412 RV' })
+    ).toBeDefined()
   })
 
   it('no sale de los años del calendario: el año escrito se para en el borde y las flechas se desactivan', async () => {
@@ -105,7 +107,7 @@ describe('el campo «Fecha» de una página', () => {
     await userEvent.clear(year)
     await userEvent.type(year, '12345678')
     expect(year.value).toBe('123456')
-    expect(picker.getByRole('button', { name: /(^|\s)1 de Vendimia de 10 RV$/ })).toBeDefined()
+    expect(picker.getByRole('button', { name: /(^|\s)1 de Vendimia del año 10 RV$/ })).toBeDefined()
     expect((picker.getByRole('button', { name: 'Año siguiente' }) as HTMLButtonElement).disabled).toBe(true)
     expect((picker.getByRole('button', { name: 'Mes siguiente' }) as HTMLButtonElement).disabled).toBe(true)
     // En «Año», los de fuera no se eligen
@@ -120,7 +122,7 @@ describe('el campo «Fecha» de una página', () => {
     await userEvent.click(picker.getByRole('button', { name: 'Añadir fin' }))
     // Se elige el fin
     expect((picker.getByRole('radio', { name: 'Fin' }) as HTMLInputElement).checked).toBe(true)
-    await userEvent.click(picker.getByRole('button', { name: /20 de Siega de 412 RV$/ }))
+    await userEvent.click(picker.getByRole('button', { name: /20 de Siega del año 412 RV$/ }))
     await userEvent.click(picker.getByRole('checkbox', { name: 'Cada año' }))
     await waitFor(async () =>
       expect((await saved())[0]).toMatchObject({
@@ -132,9 +134,9 @@ describe('el campo «Fecha» de una página', () => {
         }
       })
     )
-    expect(picker.getByText('12–20 de Siega de 412 RV')).toBeDefined()
+    expect(picker.getByText('12–20 de Siega del año 412 RV')).toBeDefined()
     // Un fin antes del inicio: se cambian
-    await userEvent.click(picker.getByRole('button', { name: /10 de Siega de 412 RV$/ }))
+    await userEvent.click(picker.getByRole('button', { name: /10 de Siega del año 412 RV$/ }))
     await waitFor(async () =>
       expect((await saved())[0]).toMatchObject({
         value: { start: { day: 10 }, end: { day: 12 } }
@@ -152,7 +154,7 @@ describe('el campo «Fecha» de una página', () => {
     const { saved } = renderPort([founded({ calendarId: VARN, start: { year: 412, month: 'siega', day: 12 } })], [varn])
     const picker = await openPicker()
     // La fiesta, debajo del mes, con sus días
-    await userEvent.click(picker.getByRole('button', { name: '2 de la Fiesta de la Siega de 412 RV' }))
+    await userEvent.click(picker.getByRole('button', { name: '2 de la Fiesta de la Siega del año 412 RV' }))
     await waitFor(async () =>
       expect((await saved())[0]).toMatchObject({ value: { start: { year: 412, month: 'fiesta', day: 2 } } })
     )
@@ -206,14 +208,14 @@ describe('el campo «Fecha» de una página', () => {
     renderPort([founded({ calendarId: ELVES, start: { year: 0, month: 'siega', day: 1 } })], [varn, elves])
     const picker = await openPicker()
     expect((picker.getByRole('combobox', { name: 'Calendario' }) as HTMLSelectElement).value).toBe(ELVES)
-    expect(picker.getByText('En Calendario de Varn: 1 de Siega de 400 RV')).toBeDefined()
+    expect(picker.getByText('En Calendario de Varn: 1 de Siega del año 400 RV')).toBeDefined()
   })
 
   it('un campo de plantilla sin «Con fin» no ofrece fin; con «Fuera de las líneas temporales», lo conserva al cambiarlo', async () => {
     const { saved } = renderPort([founded(null, { field: 'fundacion', offTimeline: true })], [varn])
     const picker = await openPicker()
     expect(picker.queryByRole('button', { name: 'Añadir fin' })).toBeNull()
-    await userEvent.click(picker.getByRole('button', { name: /^Lunden, 1 de Siega de 0 RV$/ }))
+    await userEvent.click(picker.getByRole('button', { name: /^Lunden, 1 de Siega del año 0 RV$/ }))
     await waitFor(async () =>
       expect((await saved())[0]).toEqual(
         founded(
@@ -263,7 +265,7 @@ describe('el campo «Fecha» de una página', () => {
     renderPort([founded({ calendarId: VARN, start: { year: 412, month: 'siega', day: 12 } })], [varn, elves])
     const picker = await openPicker()
     await userEvent.selectOptions(picker.getByRole('combobox', { name: 'Calendario' }), 'Élfico')
-    expect(picker.getByText('12 de Siega de 412 RV')).toBeDefined()
+    expect(picker.getByText('12 de Siega del año 412 RV')).toBeDefined()
     expect(picker.getByText('Sin equivalencia en Élfico: elige una fecha suya')).toBeDefined()
   })
 })

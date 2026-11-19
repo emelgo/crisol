@@ -1,6 +1,6 @@
 /**
  * El campo «Fecha» de una página (docs/specs/fechas.md; lienzo del módulo 8, pantalla 3): se lee como texto («12 de
- * Siega de 412 RC») y al pulsarlo flota el selector junto al panel: el calendario (si hay más de uno), la precisión, el
+ * Siega del año 412 RC») y al pulsarlo flota el selector junto al panel: el calendario (si hay más de uno), la precisión, el
  * mes con la semana del calendario (y lo que va fuera de ella, debajo), el año escrito a mano, «Añadir fin», «Cada año»
  * y «Borrar». Cada cambio se guarda al momento, como el resto del panel
  */

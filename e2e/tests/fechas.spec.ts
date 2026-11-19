@@ -62,26 +62,28 @@ test('fechas (módulo 8): fechar una página con el selector, con fin y cada añ
   const picker = page.getByRole('dialog', { name: 'Fundación' })
   await expect(picker.getByRole('columnheader', { name: 'Lunden' })).toBeVisible()
   await picker.getByLabel('Año que se ve').fill('412')
-  await picker.getByRole('button', { name: /12 de Siega de 412 RV$/ }).click()
-  await expect(picker.getByText(/, 12 de Siega de 412 RV$/)).toBeVisible()
-  await expect(panel.getByRole('button', { name: 'Valor de la propiedad 2: 12 de Siega de 412 RV' })).toBeVisible()
+  await picker.getByRole('button', { name: /12 de Siega del año 412 RV$/ }).click()
+  await expect(picker.getByText(/, 12 de Siega del año 412 RV$/)).toBeVisible()
+  await expect(panel.getByRole('button', { name: 'Valor de la propiedad 2: 12 de Siega del año 412 RV' })).toBeVisible()
   // Con fin y cada año
   await picker.getByRole('button', { name: 'Añadir fin' }).click()
-  await picker.getByRole('button', { name: /20 de Siega de 412 RV$/ }).click()
+  await picker.getByRole('button', { name: /20 de Siega del año 412 RV$/ }).click()
   await picker.getByRole('checkbox', { name: 'Cada año' }).check()
-  await expect(picker.getByText('12–20 de Siega de 412 RV')).toBeVisible()
+  await expect(picker.getByText('12–20 de Siega del año 412 RV')).toBeVisible()
   expect(await axe(page)).toEqual([])
   await page.screenshot({ path: test.info().outputPath('selector.png') })
   // Se guarda solo, también tras recargar
   await page.keyboard.press('Escape')
   await expect(picker).toBeHidden()
   await page.reload()
-  await expect(panel.getByRole('button', { name: /^Valor de la propiedad 2: 12–20 de Siega de 412 RV/ })).toBeVisible()
+  await expect(
+    panel.getByRole('button', { name: /^Valor de la propiedad 2: 12–20 de Siega del año 412 RV/ })
+  ).toBeVisible()
   const saved = await api('getPage', { pageId: port.id })
   expect(saved.properties.find((p: { name: string }) => p.name === 'Fundación')).toMatchObject({
     type: 'date',
     value: { calendarId: calendar.id, start: { year: 412, day: 12 }, end: { year: 412, day: 20 }, yearly: true },
-    text: '12–20 de Siega de 412 RV'
+    text: '12–20 de Siega del año 412 RV'
   })
 
   // Quitar Siega, que tiene fechas, se impide al guardar
@@ -97,7 +99,7 @@ test('fechas (módulo 8): fechar una página con el selector, con fin y cada añ
   await ana.goto(`/mundos/${worldId}/campanas/${campaignId}/paginas/${port.id}`)
   await expect(ana.getByRole('heading', { level: 1, name: 'Puerto Ceniza' })).toBeVisible()
   const main = ana.getByRole('main')
-  await expect(main).toContainText('12–20 de Siega de 412 RV')
+  await expect(main).toContainText('12–20 de Siega del año 412 RV')
   await expect(main).not.toContainText('Coronación')
   await expect(main).not.toContainText('Vendimia')
   await ana.close()
