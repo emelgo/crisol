@@ -108,6 +108,22 @@
   pointer-events: none;
 }
 
+/* Al acabar una transición de vista, el desenfoque de la columna, de la ficha del árbol y del panel vuelve fundiéndose
+   (base.css); el panel conserva su fundido de plegarse */
+:global(:root:not(:active-view-transition)) .page::before,
+:global(:root:not(:active-view-transition)) .wiki[data-world-page] > aside {
+  transition:
+    backdrop-filter 450ms ease-out,
+    -webkit-backdrop-filter 450ms ease-out;
+}
+
+:global(:root:not(:active-view-transition)) .wiki[data-world-page] .panel {
+  transition:
+    opacity 300ms ease,
+    backdrop-filter 450ms ease-out,
+    -webkit-backdrop-filter 450ms ease-out;
+}
+
 .page > * {
   flex: none;
 }

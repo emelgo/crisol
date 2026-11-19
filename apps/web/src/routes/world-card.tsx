@@ -1,7 +1,7 @@
 import { type Campaign, type PageCover as Cover, WORLD_COLORS, type World } from '@crisol/contracts'
 import { TRASH_DAYS } from '@crisol/domain'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link, useNavigate } from '@tanstack/react-router'
+import { Link, useNavigate, useRouter } from '@tanstack/react-router'
 import { CircleOff, ImagePlus, Maximize2, Plus, Settings } from 'lucide-react'
 import { type CSSProperties, type ReactNode, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -280,6 +280,8 @@ export function WorldCard({
   const api = useApi()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
+  const router = useRouter()
+  const entering = useRef(false)
   // Al acercarse, su portada se pide ya: al entrar, sale sin esperar
   const prefetch = (): Promise<unknown> => {
     if (world.role !== 'master') return Promise.resolve()
@@ -319,14 +321,23 @@ export function WorldCard({
           className={styles.name}
           viewTransition={ENTER_WORLD}
           onClick={(event) => {
-            enterWorld(world.id, event.currentTarget.closest('li'))
-            // Se entra con su portada ya pedida (como mucho, un momento): si llegara a mitad de la transición, su cabecera
-            // se volvería a montar y el navegador cortaría la transición en seco (el salto del final)
+            // Con una tecla (otra pestaña, otra ventana), el enlace sin más
             if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
             event.preventDefault()
-            void Promise.race([prefetch(), new Promise((resolve) => setTimeout(resolve, ENTER_WAIT_MS))]).then(() =>
-              navigate({ to: '/mundos/$worldId', params: { worldId: world.id }, viewTransition: ENTER_WORLD })
-            )
+            // Una sola entrada a la vez (un doble clic repetiría las brasas y el nombre, y no habría transición)
+            if (entering.current) return
+            entering.current = true
+            const link = event.currentTarget
+            const from = router.state.location.pathname
+            enterWorld(world.id, link.closest('li'))
+            // Se entra con su portada ya pedida (como mucho, un momento): si llegara a mitad de la transición, su cabecera
+            // se volvería a montar y el navegador cortaría la transición en seco (el salto del final)
+            void Promise.race([prefetch(), new Promise((resolve) => setTimeout(resolve, ENTER_WAIT_MS))]).then(() => {
+              entering.current = false
+              // Si entretanto se fue a otro sitio, ya no
+              if (!link.isConnected || router.state.location.pathname !== from) return
+              void navigate({ to: '/mundos/$worldId', params: { worldId: world.id }, viewTransition: ENTER_WORLD })
+            })
           }}
         >
           {world.name}

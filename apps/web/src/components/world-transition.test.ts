@@ -10,13 +10,24 @@ describe('entrar en un mundo y salir de él', () => {
     document.body.innerHTML =
       '<ul><li id="tarjeta-vieja" style="view-transition-name: mundo-actual"></li></ul>' +
       '<main id="contenido"><header data-mundo-portada=""></header></main>'
-    leaveWorld('eana')
     const header = document.querySelector<HTMLElement>('[data-mundo-portada]')
+    // A la vista (sin maquetación, todo mediría 0)
+    if (header) header.getBoundingClientRect = () => DOMRect.fromRect({ x: 0, y: 0, width: 600, height: 120 })
+    leaveWorld('eana')
     expect(header?.style.viewTransitionName).toBe('mundo-actual')
     // Solo ella: el nombre repetido rompería la transición
     expect(document.getElementById('tarjeta-vieja')?.style.viewTransitionName).toBe('')
     expect(worldTransition('eana')).toEqual({ viewTransitionName: 'mundo-actual' })
     expect(worldTransition('otro')).toBeUndefined()
+  })
+
+  it('si su cabecera ya no se ve (se bajó la página), no viaja: la tarjeta sale sin más', () => {
+    document.body.innerHTML = '<main id="contenido"><header data-mundo-portada=""></header></main>'
+    const header = document.querySelector<HTMLElement>('[data-mundo-portada]')
+    if (header) header.getBoundingClientRect = () => DOMRect.fromRect({ x: 0, y: -400, width: 600, height: 120 })
+    leaveWorld('eana')
+    expect(header?.style.viewTransitionName).toBe('')
+    expect(worldTransition('eana')).toEqual({ viewTransitionName: 'mundo-actual' })
   })
 
   it('sin saber de cuál se sale, nada lleva el nombre', () => {

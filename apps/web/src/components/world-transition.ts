@@ -81,11 +81,9 @@ export function leaveWorld(id: string | null = null) {
   for (const named of document.querySelectorAll<HTMLElement>('[style*="view-transition-name"]')) {
     if (named.style.viewTransitionName === 'mundo-actual') named.style.removeProperty('view-transition-name')
   }
-  if (id)
-    document
-      .getElementById('contenido')
-      ?.querySelector<HTMLElement>('[data-mundo-portada]')
-      ?.style.setProperty('view-transition-name', 'mundo-actual')
+  const header = id ? document.getElementById('contenido')?.querySelector<HTMLElement>('[data-mundo-portada]') : null
+  if (header && header.getBoundingClientRect().bottom > 0)
+    header.style.setProperty('view-transition-name', 'mundo-actual')
   smoke()
 }
 
@@ -106,6 +104,8 @@ export function smoke() {
  */
 function overlay(className: string, ms: number) {
   if (typeof document.startViewTransition !== 'function') return
+  // Una sola de cada (dos llevarían el mismo nombre y no habría transición)
+  if (document.querySelector(`body > .${className}`)) return
   const layer = document.createElement('div')
   layer.className = className
   layer.setAttribute('aria-hidden', 'true')

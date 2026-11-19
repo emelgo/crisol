@@ -35,6 +35,13 @@
   pointer-events: none;
 }
 
+/* Al acabar una transición de vista, su desenfoque vuelve fundiéndose (base.css) */
+:global(:root:not(:active-view-transition)) .ribbon::before {
+  transition:
+    backdrop-filter 450ms ease-out,
+    -webkit-backdrop-filter 450ms ease-out;
+}
+
 /* Abajo, fijo aunque lo de arriba no quepa: Historial, Papelera y la cuenta no se mueven nunca */
 .foot {
   position: sticky;
