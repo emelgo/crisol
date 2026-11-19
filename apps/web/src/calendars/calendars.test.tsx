@@ -299,7 +299,7 @@ describe('un calendario en grande', () => {
   it('«Nuevo evento» crea un evento suelto del mundo con la fecha del día elegido', async () => {
     const { api } = open()
     await userEvent.click(await screen.findByRole('cell', { name: / 5 de Enero de 0 RV$/ }))
-    await userEvent.click(screen.getByRole('button', { name: 'Nuevo evento' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Un evento nuevo en este día' }))
     const dialog = await screen.findByRole('dialog')
     await userEvent.type(within(dialog).getByLabelText('Título'), 'Coronación')
     await userEvent.click(within(dialog).getByRole('button', { name: 'Crear evento' }))
@@ -315,7 +315,7 @@ describe('un calendario en grande', () => {
   it('«Página con esta fecha»: una página nueva con el campo Fecha, abierta para ponerle título', async () => {
     const { api, router } = open()
     await userEvent.click(await screen.findByRole('cell', { name: / 7 de Enero de 0 RV$/ }))
-    await userEvent.click(screen.getByRole('button', { name: 'Página con esta fecha' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Una página nueva con esta fecha' }))
     await waitFor(() => expect(router.state.location.pathname).toMatch(/\/wiki\/[0-9a-f-]+$/))
     const pageId = router.state.location.pathname.split('/').at(-1)
     const page = api.pages.find((p) => p.id === pageId)

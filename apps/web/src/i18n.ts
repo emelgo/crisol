@@ -2166,8 +2166,10 @@ export const es = {
       none: 'Ninguna',
       dayOfYear: 'día {{day}} del año',
       dayEmpty: 'Nada este día.',
-      newEvent: 'Nuevo evento',
-      newPage: 'Página con esta fecha',
+      newEvent: 'Evento',
+      newPage: 'Página',
+      newEventTitle: 'Un evento nuevo en este día',
+      newPageTitle: 'Una página nueva con esta fecha',
       dateProperty: 'Fecha',
       outside_one: 'Una fecha de otro calendario no se puede pasar a este: le falta la correspondencia.',
       outside_other: '{{count}} fechas de otros calendarios no se pueden pasar a este: les falta la correspondencia.'

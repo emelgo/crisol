@@ -5,7 +5,7 @@
  * para ir a otra fecha (jump.tsx). A
  * la derecha, solo cuando hace falta, la ficha de un día: al pasar el ratón (o el foco) por él se ve, al pulsarlo se fija
  * y Esc la quita. Lleva su fecha con su era, su estación, sus lunas, lo que pasa y «Nuevo evento» (un evento suelto del
- * mundo, que sale en las cronologías que lo incluyan) y «Página con esta fecha». Solo para quien lleva el mundo
+ * mundo, que sale en las cronologías que lo incluyan) y una página con esta fecha. Solo para quien lleva el mundo
  */
 import type { CalendarView as Calendar, ChronologyEntryView, TimelineGroupView } from '@crisol/contracts'
 import {
@@ -504,11 +504,24 @@ function DayAside({
           <p className={styles.empty}>{t('calendars.view.dayEmpty')}</p>
         )}
         <div className={styles.dayActions}>
-          <button type="button" className={styles.action} onClick={onNewEvent}>
+          <button
+            type="button"
+            className={styles.action}
+            title={t('calendars.view.newEventTitle')}
+            aria-label={t('calendars.view.newEventTitle')}
+            onClick={onNewEvent}
+          >
             <CalendarPlus size={16} aria-hidden="true" />
             {t('calendars.view.newEvent')}
           </button>
-          <BusyButton type="button" className={styles.action} busy={busy} onClick={onNewPage}>
+          <BusyButton
+            type="button"
+            className={styles.action}
+            title={t('calendars.view.newPageTitle')}
+            aria-label={t('calendars.view.newPageTitle')}
+            busy={busy}
+            onClick={onNewPage}
+          >
             <FilePlus size={16} aria-hidden="true" />
             {t('calendars.view.newPage')}
           </BusyButton>

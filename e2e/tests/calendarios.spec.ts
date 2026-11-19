@@ -100,7 +100,7 @@ test('calendarios (módulo 8): crear uno de 16 meses con dos lunas, editarlo, ha
   await expect(day.getByRole('heading', { level: 2 })).toContainText('3 de Mes 1 de 0')
   await page.getByRole('cell', { name: / 5 de Mes 1 de 0$/ }).click()
   await expect(day.getByRole('heading', { level: 2 })).toContainText('5 de Mes 1 de 0 de la Era del Eclipse')
-  await day.getByRole('button', { name: 'Nuevo evento' }).click()
+  await day.getByRole('button', { name: 'Un evento nuevo en este día' }).click()
   const event = page.getByRole('dialog')
   await event.getByLabel('Título').fill('Coronación de Ilsa')
   await event.getByRole('button', { name: 'Crear evento' }).click()
