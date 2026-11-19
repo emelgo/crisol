@@ -80,6 +80,10 @@ export function TemplateView() {
   useEffect(() => {
     if (page.data) document.title = t('app.pageTitle', { page: page.data.title })
   }, [page.data, t])
+  // Al pasar a otra (desde el árbol, al duplicar o renombrar), la de antes se queda hasta que llega la nueva, como
+  // entre páginas del mundo: sin hueco
+  const shown = useRef<{ page: Page; template: Listed } | null>(null)
+  if (page.data && template && page.data.id === opened.data?.pageId) shown.current = { page: page.data, template }
   if (pending) return null
   if (!account) return <Navigate to="/entrar" replace />
   const gone =
@@ -87,12 +91,22 @@ export function TemplateView() {
     (templates.data && !template && !templates.isFetching)
   // Una que no está (o que se borró) lleva a la lista
   if (gone) return <Navigate to="/plantillas" replace />
+  const ready = page.data && template && page.data.id === opened.data?.pageId
+  const before = shown.current
   return (
     <TemplateLayout current={template} all={templates.data?.templates ?? []} folders={templates.data?.folders ?? []}>
-      {page.data && template ? (
+      {ready && page.data && template ? (
         <TemplatePage key={template.id} page={page.data} template={template} nuevo={nuevo === true} pestana={pestana} />
       ) : failed(opened) || failed(page) ? (
         <LoadError error={opened.error ?? page.error} onRetry={() => (opened.error ? opened : page).refetch()} />
+      ) : before ? (
+        <TemplatePage
+          key={before.template.id}
+          page={before.page}
+          template={before.template}
+          nuevo={false}
+          pestana={undefined}
+        />
       ) : (
         <Loading />
       )}

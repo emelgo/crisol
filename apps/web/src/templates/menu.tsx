@@ -225,7 +225,7 @@ export function TemplateMenu({
         <>
           {item(<Pencil aria-hidden="true" size={15} />, t('treeMenu.rename'), () => rename(target.template))}
           {item(<Copy aria-hidden="true" size={15} />, t('templates.duplicate'), () =>
-            copy.mutate({ copyOf: target.template }, { onSuccess: () => onClose() })
+            copy.mutate({ copyOf: target.template, duplicate: true }, { onSuccess: () => onClose() })
           )}
           {folders.length > 0 && (
             // biome-ignore lint/a11y/noStaticElementInteractions: con el teclado se abre con la flecha derecha

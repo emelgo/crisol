@@ -21,7 +21,7 @@ async function renderTemplate(id?: string) {
     />
   )
   const saved = () => api.client.call('getTemplate', { templateId: own.id })
-  return { api, own, saved }
+  return { api, own, saved, router }
 }
 
 const panel = async () => within(await screen.findByRole('complementary', { name: 'Panel de la página' }))
@@ -276,8 +276,8 @@ describe('editar una plantilla', () => {
     expect((await saved()).panel.map((b) => b.id)).toEqual(['oro', 'notas', 'fama'])
   })
 
-  it('«Duplicar», con el botón derecho en el árbol: una copia con los mismos campos (y su linaje), que se abre', async () => {
-    const { api, own } = await renderTemplate()
+  it('«Duplicar», con el botón derecho en el árbol: una copia con los mismos campos (y su linaje), que se abre sin su título en edición, como una página', async () => {
+    const { api, own, router } = await renderTemplate()
     await api.client.call('updateTemplate', {
       templateId: own.id,
       fields: [{ name: 'Nivel', type: 'text', value: '' }]
@@ -290,6 +290,8 @@ describe('editar una plantilla', () => {
     await waitFor(() =>
       expect(screen.getByRole('textbox', { name: 'Título de la página' }).textContent).toBe('Frente (copia)')
     )
+    expect(document.activeElement).not.toBe(screen.getByRole('textbox', { name: 'Título de la página' }))
+    expect(router.state.location.search).not.toHaveProperty('nuevo')
     const { templates } = await api.client.call('listTemplates', {})
     const copy = templates.find((t) => t.name === 'Frente (copia)')
     const original = templates.find((t) => t.id === own.id)
@@ -325,10 +327,12 @@ describe('editar una plantilla', () => {
     await waitFor(async () => expect((await saved()).icon).toBeNull())
   })
 
-  it('su cabecera, sin «⋯»: «Versiones» en un botón de icono, que abre su lista (y Ctrl+P no imprime)', async () => {
+  it('su cabecera, sin «⋯» ni candado: «Versiones» en un botón de icono, que abre su lista (y Ctrl+P no imprime)', async () => {
     await renderTemplate()
     await screen.findByRole('textbox', { name: 'Título de la página' })
     expect(screen.queryByRole('button', { name: 'Más acciones' })).toBeNull()
+    // Una plantilla no se bloquea (Enrique, 2026-11-19: «el block en las plantillas no tiene sentido»)
+    expect(screen.queryByRole('button', { name: 'Poner en lectura' })).toBeNull()
     expect(screen.queryByRole('button', { name: /Exportar/ })).toBeNull()
     expect(screen.queryByRole('button', { name: /Ajustes/ })).toBeNull()
     const versions = screen.getByRole('button', { name: 'Versiones' })

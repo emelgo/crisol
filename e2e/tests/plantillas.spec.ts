@@ -155,8 +155,9 @@ test('«Plantillas», como Archivos: «Plantilla nueva» la abre como página, y
   await iconed
   await expect(title).toHaveText('Frente')
   await expect(page.getByRole('button', { name: /^Icono .*: cambiarlo$/ })).toBeVisible()
-  // Sin «⋯» (ni imprimir ni descargar; duplicar, con el botón derecho): sus versiones, en un botón de icono
+  // Sin «⋯» (ni imprimir ni descargar; duplicar, con el botón derecho) ni candado: sus versiones, en un botón de icono
   await expect(page.getByRole('button', { name: 'Más acciones' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Poner en lectura' })).toHaveCount(0)
   await page.getByRole('button', { name: 'Versiones' }).click()
   await expect(page.getByRole('heading', { name: 'Versiones' })).toBeVisible()
   await page.keyboard.press('Escape')
@@ -170,28 +171,43 @@ test('«Plantillas», como Archivos: «Plantilla nueva» la abre como página, y
   await expect(title).toBeFocused()
   await page.keyboard.press('Escape')
   await expect(title).toHaveText('Frente')
+  // «Duplicar», con el botón derecho: abre la copia, sin su título en edición (como al duplicar una página)
+  await page
+    .getByRole('complementary', { name: 'Tus plantillas' })
+    .getByRole('link', { name: 'Frente' })
+    .click({ button: 'right' })
+  await page.getByRole('menu', { name: 'Opciones de «Frente»' }).getByRole('menuitem', { name: 'Duplicar' }).click()
+  await expect(title).toHaveText('Frente (copia)')
+  await expect(title).not.toBeFocused()
+  await expect(page).not.toHaveURL(/nuevo/)
+  // Y de vuelta a la original
+  await page
+    .getByRole('complementary', { name: 'Tus plantillas' })
+    .getByRole('link', { name: 'Frente', exact: true })
+    .click()
+  await expect(title).toHaveText('Frente')
   // «‹ Plantillas» vuelve a la lista
   await page.getByRole('link', { name: 'Plantillas' }).and(page.locator(':not(nav *)')).click()
   const list = page.getByRole('list', { name: 'Tus plantillas' })
-  await expect(list.getByRole('link', { name: 'Frente' })).toBeVisible()
+  await expect(list.getByRole('link', { name: 'Frente', exact: true })).toBeVisible()
   // «Nueva carpeta» y meterla dentro, con el botón derecho (sin cuadro de ajustes: Enrique, 2026-11-19)
   await page.getByRole('button', { name: 'Nueva carpeta' }).click()
   const folder = page.getByRole('dialog', { name: 'Nueva carpeta' })
   await folder.getByLabel('Nombre').fill('Campaña')
   await folder.getByRole('button', { name: 'Crear la carpeta' }).click()
-  await list.getByRole('link', { name: 'Frente' }).click({ button: 'right' })
+  await list.getByRole('link', { name: 'Frente', exact: true }).click({ button: 'right' })
   const menu = page.getByRole('menu', { name: 'Opciones de «Frente»' })
   await expect(menu.getByRole('menuitem')).toHaveText(['Renombrar', 'Duplicar', 'Mover a…', 'Borrar'])
   await axe(page, '[role="menu"]')
   await menu.getByRole('menuitem', { name: 'Mover a…' }).hover()
   await page.getByRole('menu', { name: 'Mover a…' }).getByRole('menuitem', { name: 'Campaña' }).click()
   await expect(list.getByRole('button', { name: 'Campaña', exact: true })).toHaveAttribute('aria-expanded', 'true')
-  await expect(list.getByRole('link', { name: 'Frente' })).toBeVisible()
+  await expect(list.getByRole('link', { name: 'Frente', exact: true })).toBeVisible()
   await axe(page, 'main')
   // Y sigue ahí al recargar (la carpeta, plegada)
   await page.reload()
   await list.getByRole('button', { name: 'Campaña', exact: true }).click()
-  await expect(list.getByRole('link', { name: 'Frente' })).toBeVisible()
+  await expect(list.getByRole('link', { name: 'Frente', exact: true })).toBeVisible()
 })
 
 test('editar una plantilla como una página: «Frente» con un reloj de 8 y su texto, y una página hecha con ella', async ({

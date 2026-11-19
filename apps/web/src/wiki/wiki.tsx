@@ -1150,10 +1150,11 @@ export function EntryView({
       }
       actions={
         template ? (
-          // Una plantilla no la conoce nadie, ni se marca, ni se imprime: el candado, sus versiones y el botón del panel
-          // (duplicarla, con el botón derecho)
+          // Una plantilla no la conoce nadie, ni se marca, ni se imprime, ni se bloquea (Enrique, 2026-11-19: «el block en
+          // las plantillas no tiene sentido»): sus versiones y el botón del panel (duplicarla, con el botón derecho). El
+          // candado, solo en una que se bloqueó antes, para poder abrirla
           <>
-            <LockButton page={page} />
+            {page.locked && <LockButton page={page} />}
             <VersionsButton page={page} />
             {worldPage && <PanelToggle folded={panel.folded} controls={panelId} onToggle={panel.toggle} />}
           </>

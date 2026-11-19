@@ -1,6 +1,8 @@
 /**
  * Crear una plantilla y abrirla (ADR-0024): «Plantilla sin título», o la copia de otra, como «{nombre} (copia)»; en la
- * carpeta que se diga (la copia, sin decirlo, en la de la original). Se abre con el título listo para escribir
+ * carpeta que se diga (la copia, sin decirlo, en la de la original). Una nueva sin nombre se abre con el título listo
+ * para escribir; la de «Duplicar», como al duplicar una página: abierta, sin tocar su título (Enrique, 2026-11-19: «que
+ * funcione como en las páginas que te redirige a la página»)
  */
 import type { PageTemplate } from '@crisol/contracts'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
@@ -24,6 +26,8 @@ type Options = {
   folderId?: string | null
   /** Su nombre; sin él, «Plantilla sin título» (o «{nombre} (copia)»), con un número si ya hay una así */
   name?: string
+  /** «Duplicar» (del menú): la copia se abre sin poner su título en edición, como al duplicar una página */
+  duplicate?: boolean
   /** Su página nace con esa pestaña (un mapa, una pizarra…), como una página nueva (el cuadro de «Plantilla nueva») */
   kind?: TabKind
 }
@@ -41,7 +45,7 @@ export function useNewTemplate() {
   const templates = useTemplates().data?.templates ?? []
   const create = useMutation({
     // copyOf: duplicar esa (su página entera, con los mismos campos y su linaje), como «{nombre} (copia)»
-    mutationFn: async ({ copyOf, folderId, name: wanted, kind }: Options) => {
+    mutationFn: async ({ copyOf, folderId, name: wanted, kind, duplicate }: Options) => {
       const named = wanted?.trim() ?? ''
       let name = named
       if (!named) {
@@ -60,7 +64,7 @@ export function useNewTemplate() {
         kind && kind !== 'text' && created.pageId
           ? await api.call('createPageTab', { pageId: created.pageId, ...tabRequest(kind) }).catch(() => null)
           : null
-      return { created, tab, named: Boolean(named) }
+      return { created, tab, named: Boolean(named) || Boolean(duplicate) }
     },
     onSuccess: async ({ created, tab, named }) => {
       // Ya en la lista, para que su página la encuentre al abrirse (la lista de verdad llega después)
@@ -71,7 +75,7 @@ export function useNewTemplate() {
       await navigate({
         to: '/plantillas/$templateId',
         params: { templateId: created.id },
-        // Sin nombre, se abre para escribirlo; con un mapa, en su pestaña
+        // Nueva y sin nombre, se abre para escribirlo (la de «Duplicar», no); con un mapa, en su pestaña
         search: { ...(named ? {} : { nuevo: true as const }), ...(tab ? { pestana: tab.id } : {}) }
       })
     }
