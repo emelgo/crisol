@@ -105,6 +105,7 @@
 }
 
 .icon {
+  position: relative;
   display: grid;
   place-items: center;
   flex: none;
@@ -113,6 +114,21 @@
   border-radius: 6px;
   background: var(--color-raised);
   color: var(--color-h3);
+}
+
+/* Con portada, la imagen entera, centrada y sin el fondo detrás (como una imagen en Archivos) */
+.icon[data-cover] {
+  background: none;
+}
+
+.icon img {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  max-inline-size: 100%;
+  max-block-size: 100%;
+  border-radius: 3px;
+  object-fit: contain;
 }
 
 .text {

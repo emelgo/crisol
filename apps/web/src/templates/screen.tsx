@@ -677,22 +677,15 @@ function TemplatesTree({ data }: { data: Listed }) {
   )
 }
 
-/** La miniatura de una plantilla: su portada (con su encuadre) y, encima, su icono */
+/**
+ * La miniatura de una plantilla: con portada, la imagen entera, centrada y sin fondo detrás, como la de una imagen en
+ * Archivos (Enrique, 2026-11-19: «si una plantilla tiene imagen sale como antes en Archivos, como con un fondo, no
+ * debería»); sin ella, su icono en su recuadro. La imagen va suelta (sin envoltorio) para que su hueco la reconozca
+ */
 function TemplateThumb({ template, size }: { template: TemplateView; size: number }) {
-  const cover = template.cover
+  if (template.cover) return <img src={`/api/files/${template.cover.fileId}`} alt="" draggable={false} />
   return (
-    <span
-      className={styles.thumb}
-      data-cover={cover ? '' : undefined}
-      style={
-        cover
-          ? ({
-              backgroundImage: `url(/api/files/${cover.fileId})`,
-              backgroundPosition: `${cover.x}% ${cover.y}%`
-            } as CSSProperties)
-          : undefined
-      }
-    >
+    <span className={styles.thumb}>
       <TemplateIcon icon={template.icon} size={size} />
     </span>
   )

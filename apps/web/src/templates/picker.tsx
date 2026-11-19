@@ -108,8 +108,13 @@ export function TemplatePicker({
                     checked={value === template.id}
                     onChange={() => onChange(template.id)}
                   />
-                  <span className={styles.icon} aria-hidden="true">
-                    <TemplateIcon icon={template.icon} size={16} />
+                  {/* Con portada, la imagen entera y sin fondo detrás (como en la lista de Plantillas); sin ella, su icono */}
+                  <span className={styles.icon} aria-hidden="true" data-cover={template.cover ? '' : undefined}>
+                    {template.cover ? (
+                      <img src={`/api/files/${template.cover.fileId}`} alt="" draggable={false} />
+                    ) : (
+                      <TemplateIcon icon={template.icon} size={16} />
+                    )}
                   </span>
                   <span className={styles.text}>
                     <span className={styles.name}>{template.name}</span>

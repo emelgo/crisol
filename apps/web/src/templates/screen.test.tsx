@@ -49,6 +49,22 @@ describe('la pantalla «Plantillas»', () => {
     expect(preview.getByText('Sin usar')).toBeDefined()
   })
 
+  it('con portada, su miniatura es la imagen entera y sola (sin el icono encima), como una imagen en Archivos', async () => {
+    const { api } = renderTemplates()
+    const { templates } = await api.client.call('listTemplates', {})
+    const pnj = templates.find((each) => each.name === 'PNJ')
+    const { pageId } = await api.client.call('getTemplate', { templateId: pnj?.id ?? '' })
+    const fileId = crypto.randomUUID()
+    await api.client.call('updatePage', { pageId: pageId ?? '', cover: { fileId, x: 50, y: 50 } })
+    const list = within(await screen.findByRole('list', { name: 'Tus plantillas' }))
+    const row = (await list.findByRole('link', { name: 'PNJ' })).closest('[data-file-card]') as HTMLElement
+    await waitFor(() => expect(row.querySelector('img')?.getAttribute('src')).toBe(`/api/files/${fileId}`))
+    expect(row.querySelector('img')?.parentElement?.querySelector('svg')).toBeNull()
+    // Sin portada, su icono
+    const other = (await list.findByRole('link', { name: 'Facción' })).closest('[data-file-card]') as HTMLElement
+    expect(other.querySelector('img')).toBeNull()
+  })
+
   it('carpetas: «Nueva carpeta», meter una con su «⋯» → «Mover a…», desplegarla y recolocar con Alt y las flechas', async () => {
     const { api } = renderTemplates()
     await userEvent.click(await screen.findByRole('button', { name: 'Nueva carpeta' }))
