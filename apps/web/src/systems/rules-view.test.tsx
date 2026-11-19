@@ -96,7 +96,13 @@ describe('las reglas de un sistema, para leerlas (como un calendario)', () => {
   })
 
   it('sin nada aún, una línea que lleva a «Editar reglas»', async () => {
-    const blank: System = { ...structuredClone(fronteras), types: {}, rolls: {}, creation: [], settings: {} }
+    const blank: System = {
+      ...structuredClone(fronteras),
+      types: { personaje: { document: 'actor', label: 'Personaje', fields: {} } },
+      rolls: {},
+      creation: [],
+      settings: {}
+    }
     renderRules({ system: blank })
     expect(await screen.findByText('Aún no hay reglas: empieza con «Editar reglas».')).toBeDefined()
     expect(screen.queryByRole('navigation', { name: 'Partes de las reglas' })).toBeNull()

@@ -135,7 +135,14 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   ajustes, en una ventana) y la llama vuelve a Sistemas, con la transición de salir. **Entrar y salir, uno el espejo del
   otro, con chispas y humo** (Enrique, 2026-11-13): al entrar, su icono y su nombre viajan al título y suben las
   brasas; al salir por la llama, vuelven a su tarjeta y sale el humo. **Reglas sigue el esqueleto**: el título sobre la
-  columna del centro y los pasos y la revisión en las fichas de los lados, como el compendio y los libros. Un libro se abre dentro, con el
+  columna del centro y los pasos y la revisión en las fichas de los lados, como el compendio y los libros. **Reglas es
+  como un calendario** (Enrique, 2026-11-19: «debe mostrar una vista general y el editor de reglas en un botón, como en
+  calendarios»): al entrar, una vista para leerlas, como una hoja de referencia (el personaje con sus conjuntos y lo
+  que se calcula, las tiradas con sus dados y lo que sale, lo que se lleva, otras fichas, cómo se crea un personaje y
+  los ajustes de campaña; las fórmulas en palabras), con el índice de sus partes a la izquierda, que salta a cada una y
+  sigue la lectura, y sin ficha a la derecha. «Editar reglas» a la derecha del título, solo para quien puede cambiarlo,
+  abre el editor por pasos en su ruta (`…/reglas/editar`), con «Ver reglas» para volver; «A mano» abre directamente el
+  editor. Sin nada aún, una línea: «Aún no hay reglas: empieza con «Editar reglas».». Un libro se abre dentro, con el
   esqueleto de tres columnas (su árbol, la entrada y sus datos) y «← {sistema}» en la cabecera. Sin el icono fijo ni
   la palabra «Sistema».
 - **La campaña se abre en la Mesa, como en Foundry VTT** (Enrique, 2026-11-08: «la mesa debería ser lo que se ve al
@@ -225,8 +232,8 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   su índice por tipos (con cuántos trae cada uno) y, al pulsar uno, su lista; «← {sistema}» para volver. **Sus
   capítulos se leen como en D&D Beyond** (ADR-0025, tanda 7): «Capítulos · Entradas» bajo su título; a la izquierda los
   capítulos y, dentro del abierto, sus secciones, que siguen la lectura; anterior y siguiente al final; en el móvil, «Ir
-  a…». Quien juega los lee desde el compendio de su campaña («Leer · N capítulos»), sin los secretos. Reglas, hasta
-  el editor a mano (tanda 8: pasos con preguntas de mesa, la ficha de ejemplo y la revisión a la vista, se guarda solo); uno de serie, para leer y bajar. **«Sistema nuevo», tres caminos que se eligen**: con
+  a…». Quien juega los lee desde el compendio de su campaña («Leer · N capítulos»), sin los secretos. Reglas: su
+  vista para leerlas y, en «Editar reglas», el editor a mano (tanda 8: pasos con preguntas de mesa, la ficha de ejemplo y la revisión a la vista, se guarda solo). **«Sistema nuevo», tres caminos que se eligen**: con
   tu IA (la frase para pedírselo), con el esqueleto (bajarlo y subirlo) y a mano (su nombre, y se abre su editor).
 - **La campaña se abre en su propia vista, como un mundo** (Enrique, 2026-11-05): al entrar, la barra cambia y enseña
   lo de la campaña (sus personajes, su compendio, los dados…), con la transición de entrar. **El compendio** (el

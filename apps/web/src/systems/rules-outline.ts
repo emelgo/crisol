@@ -124,7 +124,8 @@ export function rulesOutline(
   }
 
   let outlineCharacter: RulesOutline['character'] = null
-  if (character) {
+  // Un personaje sin campos (el de un sistema recién hecho a mano) aún no dice nada
+  if (character && Object.keys(character.fields).length > 0) {
     const sets: OutlineSet[] = []
     const derived: { key: string; label: string; formula: string }[] = []
     const resources: { key: string; label: string; max: string; recovery: 'short' | 'long' | null }[] = []

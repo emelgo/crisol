@@ -71,6 +71,11 @@
   list-style: none;
 }
 
+/* Con pocos, todos en una fila (sin uno suelto debajo) */
+.elements[style] {
+  grid-template-columns: repeat(var(--columnas), minmax(0, 1fr));
+}
+
 .elements li,
 .others li {
   display: flex;
@@ -439,6 +444,10 @@
 
 /* Con poco sitio, nombre y valor uno bajo otro */
 @media (max-width: 48rem) {
+  .elements[style] {
+    grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+  }
+
   .row,
   .steps li {
     grid-template-columns: minmax(0, 1fr);

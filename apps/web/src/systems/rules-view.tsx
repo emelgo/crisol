@@ -9,7 +9,7 @@ import type { System } from '@crisol/systems'
 import { useQuery } from '@tanstack/react-query'
 import { getRouteApi, Link, Navigate } from '@tanstack/react-router'
 import { Backpack, Dices, type LucideIcon, Pencil, Settings2, Skull, UserRound, Wand } from 'lucide-react'
-import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
+import { type CSSProperties, type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { Loading } from '../components/brand.tsx'
@@ -110,7 +110,13 @@ function RulesSheet({ systemId, outline, editable }: { systemId: string; outline
     if (!target) return
     setChosen(anchor(part))
     pinned.current = Date.now() + 900
-    target.scrollIntoView({ block: 'start', behavior: reducedMotion() ? 'auto' : 'smooth' })
+    // Solo se desplaza su columna (scrollIntoView movía también el armazón de la app, cerca del final)
+    const box = scrollerOf(target)
+    const gap = 24
+    const top = target.getBoundingClientRect().top - (box ? box.getBoundingClientRect().top : 0) - gap
+    const behavior = reducedMotion() ? 'auto' : 'smooth'
+    if (box) box.scrollBy({ top, behavior })
+    else window.scrollBy({ top, behavior })
     target.querySelector<HTMLElement>('h2')?.focus({ preventScroll: true })
   }
 
@@ -178,7 +184,7 @@ function RulesSheet({ systemId, outline, editable }: { systemId: string; outline
               <li key={step.key}>
                 <span className={styles.stepName}>{step.label}</span>
                 <span className={styles.muted}>
-                  {t(`rules.creation.kind.${step.kind}`)}
+                  {step.kind !== 'summary' && t(`rules.creation.kind.${step.kind}`)}
                   {step.detail && step.detail !== step.label ? `: ${step.detail}` : ''}
                 </span>
               </li>
@@ -222,6 +228,15 @@ function RulesSheet({ systemId, outline, editable }: { systemId: string; outline
       />
     </Screen>
   )
+}
+
+/** Lo que se desplaza alrededor de algo: el primero que tiene desplazamiento propio */
+function scrollerOf(element: Element): Element | null {
+  for (let at = element.parentElement; at; at = at.parentElement) {
+    const { overflowY } = getComputedStyle(at)
+    if ((overflowY === 'auto' || overflowY === 'scroll') && at.scrollHeight > at.clientHeight) return at
+  }
+  return null
 }
 
 /** La parte que se está leyendo: la última cuyo principio pasó del primer cuarto de la ventana (o la última, al final) */
@@ -287,7 +302,11 @@ function CharacterPart({ character }: { character: NonNullable<RulesOutline['cha
       {character.sets.map((set) => (
         <div key={set.key} className={styles.block}>
           <h3>{set.label}</h3>
-          <ul className={styles.elements}>
+          {/* Pocos (las seis características), en una sola fila; muchos, en las columnas que quepan */}
+          <ul
+            className={styles.elements}
+            style={set.elements.length <= 6 ? ({ '--columnas': set.elements.length } as CSSProperties) : undefined}
+          >
             {set.elements.map((element) => (
               <li key={element.key}>
                 <span>{element.label}</span>

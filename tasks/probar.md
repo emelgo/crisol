@@ -13,6 +13,12 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
 
 En local o en staging cuando llegue el PR de esta rama.
 
+- [ ] **Reglas de un sistema, como un calendario**: al entrar en Reglas, una vista para leerlas (el personaje, las
+  tiradas, lo que se lleva, otras fichas, crear un personaje y los ajustes de campaña), con las fórmulas en palabras
+  («(Puntuación − 10) ÷ 2 (hacia abajo)», «con Objetivo y Total ≥ Objetivo»). El índice de la izquierda salta a cada
+  parte y marca la que lees. «Editar reglas» abre el editor de siempre; «Ver reglas» vuelve con lo cambiado. Un sistema
+  recién hecho «A mano» abre directamente el editor; vacío, la vista dice «Aún no hay reglas…». ¿Falta o sobra algo
+  (p. ej. «Más en la ficha», o la ventaja repetida en cada tirada)?
 - [ ] **Calendario nuevo**: solo «En blanco» y «Como el nuestro»; duplicar uno sigue en el menú de su tarjeta.
 - [ ] **Entrar en un mundo y salir**: al entrar, la imagen de la tarjeta crece y se posa en la franja de la portada; al
   salir por la llama, al revés: la portada se encoge y vuelve a la imagen de su tarjeta en Mis mundos, sin crecer ni
