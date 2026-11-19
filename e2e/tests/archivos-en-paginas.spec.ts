@@ -201,7 +201,7 @@ test('la portada: se sube desde la página, se elige de tus archivos, se encuadr
   // Puesta, se cambia desde ella: «Cambiar», al pasar por encima (por su parte de arriba: abajo va el título). «Elegir de
   // tus archivos» abre el selector, con la subida marcada
   await banner.hover({ position: { x: 24, y: 10 } })
-  await page.getByRole('button', { name: 'Cambiar' }).click()
+  await page.getByRole('button', { name: 'Cambiar', exact: true }).click()
   await cover.getByRole('button', { name: 'Elegir de tus archivos' }).click()
   const picker = page.getByRole('dialog', { name: 'Elegir de tus archivos' })
   await expect(picker.getByRole('button', { name: 'puerto.png' })).toHaveAttribute('aria-current', 'true')
@@ -224,7 +224,7 @@ test('la portada: se sube desde la página, se elige de tus archivos, se encuadr
   await expect(cover).toHaveCount(0)
 
   await banner.hover({ position: { x: 24, y: 10 } })
-  await page.getByRole('button', { name: 'Cambiar' }).click()
+  await page.getByRole('button', { name: 'Cambiar', exact: true }).click()
   await cover.getByRole('button', { name: 'Quitar la portada' }).click()
   await cover.getByRole('button', { name: 'Guardar' }).click()
   await expect(banner).toHaveCount(0)
