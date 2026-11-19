@@ -200,6 +200,12 @@
   border-radius: inherit;
 }
 
+/* La imagen, debajo del degradado (encima, como los botones de la franja, lo tapaba y el título no se leía sobre una
+   portada clara) */
+.head > .cover[data-cover] > :first-child {
+  z-index: 0;
+}
+
 /* «Añadir portada» (o «Cambiar» y lo de la portada del mundo), arriba a la derecha, al pasar por la cabecera */
 .head > .cover > * {
   z-index: 2;
@@ -478,6 +484,30 @@
   .wiki[data-world-page] .panel {
     inline-size: auto;
   }
+}
+
+/* Los botones de la página, sobre la portada: en una pastilla de cristal oscuro, para que se vean con cualquier imagen,
+   también con una clara (Enrique, 2026-11-19: «las opciones de una página no se ven según las condiciones de la
+   imagen»). Sus iconos, en el color del texto: sobre la pastilla, a más de 4:1 aunque la imagen sea blanca (WCAG
+   1.4.11 pide 3:1); los que llevan su color (el panel abierto), con el suyo. La pastilla va detrás (::before), sin
+   tocar el sitio de los botones */
+.head:not([data-compact]):has(> .cover[data-cover]) > [data-page-actions] {
+  --color-muted: var(--color-text);
+}
+
+.head:not([data-compact]):has(> .cover[data-cover]) > [data-page-actions]::before {
+  content: "";
+  position: absolute;
+  /* Su sitio: el de los botones (dentro del margen de abajo y del de la derecha de la cabecera) y un poco de aire */
+  inset: -0.25rem 0.5rem 0.5rem -0.25rem;
+  z-index: -1;
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--radius-frame);
+  background: color-mix(in srgb, var(--color-chrome) 66%, transparent);
+  box-shadow: var(--glass-shadow);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  pointer-events: none;
 }
 
 /* Al entrar en el mundo y al salir, la cabecera (el título y sus botones), en su propia capa por encima de la imagen que

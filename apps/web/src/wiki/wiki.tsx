@@ -564,7 +564,9 @@ function PageHead({
           </div>
         </div>
         {tabs}
-        <div className={styles.pageActions}>{actions}</div>
+        <div className={styles.pageActions} data-page-actions="">
+          {actions}
+        </div>
       </header>
     </>
   )
