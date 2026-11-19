@@ -1623,8 +1623,12 @@ export const es = {
     preview: 'Lo que trae',
     new: 'Plantilla nueva',
     untitled: 'Plantilla sin título',
-    settings: 'Ajustes de la plantilla',
     duplicate: 'Duplicar',
+    moveTo: 'Mover a…',
+    moveSearch: 'Buscar una carpeta',
+    moveOut: 'Fuera de las carpetas',
+    newName: 'Nuevo nombre',
+    more: 'Más de «{{name}}»',
     copyName: '{{name}} (copia)',
     empty: 'Aún no hay plantillas',
     emptyHint:

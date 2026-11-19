@@ -42,16 +42,17 @@ describe('el árbol de «Tus plantillas» en el editor', () => {
     await userEvent.keyboard('{Shift>}{F10}{/Shift}')
     const menu = await screen.findByRole('menu', { name: 'Opciones de «Frente»' })
     const items = within(menu).getAllByRole('menuitem')
-    expect(items.map((item) => item.textContent)).toEqual(['Duplicar', 'Ajustes de la plantilla', 'Borrar'])
+    // Sin «Ajustes»: su icono va en su título (Enrique, 2026-11-19)
+    expect(items.map((item) => item.textContent)).toEqual(['Renombrar', 'Duplicar', 'Mover a…', 'Borrar'])
     items[0]?.focus()
     await userEvent.keyboard('{ArrowDown}')
     expect(document.activeElement).toBe(items[1])
     await userEvent.keyboard('{End}')
-    expect(document.activeElement).toBe(items[2])
+    expect(document.activeElement).toBe(items[3])
     await userEvent.keyboard('{ArrowDown}')
     expect(document.activeElement).toBe(items[0])
     await userEvent.keyboard('{ArrowUp}')
-    expect(document.activeElement).toBe(items[2])
+    expect(document.activeElement).toBe(items[3])
     await userEvent.keyboard('{Home}')
     expect(document.activeElement).toBe(items[0])
     // Escape en el aviso de borrar vuelve al menú; otra vez, lo cierra
@@ -59,7 +60,7 @@ describe('el árbol de «Tus plantillas» en el editor', () => {
     expect(within(menu).getByText(/¿Borrar la plantilla Frente\?/)).toBeDefined()
     within(menu).getByRole('menuitem', { name: 'Borrar la plantilla' }).focus()
     await userEvent.keyboard('{Escape}')
-    expect(within(menu).getByRole('menuitem', { name: 'Duplicar' })).toBeDefined()
+    expect(within(menu).getByRole('menuitem', { name: 'Renombrar' })).toBeDefined()
     within(menu).getByRole('menuitem', { name: 'Duplicar' }).focus()
     await userEvent.keyboard('{Escape}')
     await waitFor(() => expect(screen.queryByRole('menu')).toBeNull())
@@ -93,17 +94,40 @@ describe('el árbol de «Tus plantillas» en el editor', () => {
     )
   })
 
-  it('los ajustes de la plantilla desde el menú la cambian de carpeta', async () => {
+  it('«Mover a…» desde el menú la cambia de carpeta (con el teclado, la flecha derecha abre las carpetas)', async () => {
     const { api, own, places, side } = await renderSideTree()
-    await userEvent.pointer({ keys: '[MouseRight]', target: side.getByRole('link', { name: 'Frente' }) })
+    side.getByRole('link', { name: 'Frente' }).focus()
+    await userEvent.keyboard('{Shift>}{F10}{/Shift}')
     const menu = within(await screen.findByRole('menu', { name: 'Opciones de «Frente»' }))
-    await userEvent.click(menu.getByRole('menuitem', { name: 'Ajustes de la plantilla' }))
-    const dialog = within(await screen.findByRole('dialog', { name: 'Ajustes de Frente' }))
-    await userEvent.selectOptions(dialog.getByLabelText('Carpeta'), 'Lugares')
-    await userEvent.click(dialog.getByRole('button', { name: 'Guardar' }))
+    menu.getByRole('menuitem', { name: 'Mover a…' }).focus()
+    await userEvent.keyboard('{ArrowRight}')
+    const folders = within(await screen.findByRole('menu', { name: 'Mover a…' }))
+    // Su carpeta no sale; sí salir de las carpetas
+    await waitFor(() =>
+      expect(document.activeElement).toBe(folders.getByRole('textbox', { name: 'Buscar una carpeta' }))
+    )
+    expect(folders.queryByRole('menuitem', { name: 'Gente' })).toBeNull()
+    expect(folders.getByRole('menuitem', { name: 'Fuera de las carpetas' })).toBeDefined()
+    await userEvent.type(folders.getByRole('textbox', { name: 'Buscar una carpeta' }), 'lug')
+    await userEvent.click(folders.getByRole('menuitem', { name: 'Lugares' }))
     await waitFor(async () =>
       expect((await listed(api)).templates.find((each) => each.id === own.id)?.folderId).toBe(places.id)
     )
+    expect(screen.queryByRole('menu')).toBeNull()
+  })
+
+  it('«Renombrar» desde el menú cambia su nombre (el título de su página)', async () => {
+    const { api, own, side } = await renderSideTree()
+    await userEvent.pointer({ keys: '[MouseRight]', target: side.getByRole('link', { name: 'Frente' }) })
+    const menu = within(await screen.findByRole('menu', { name: 'Opciones de «Frente»' }))
+    await userEvent.click(menu.getByRole('menuitem', { name: 'Renombrar' }))
+    const field = menu.getByRole('textbox', { name: 'Nuevo nombre' })
+    await userEvent.clear(field)
+    await userEvent.type(field, 'Frente de guerra{Enter}')
+    await waitFor(async () =>
+      expect((await listed(api)).templates.find((each) => each.id === own.id)?.name).toBe('Frente de guerra')
+    )
+    await side.findByRole('link', { name: 'Frente de guerra' })
   })
 
   it('los ajustes de una carpeta desde el menú la meten en otra', async () => {

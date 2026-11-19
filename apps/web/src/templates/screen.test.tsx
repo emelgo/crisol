@@ -49,7 +49,7 @@ describe('la pantalla «Plantillas»', () => {
     expect(preview.getByText('Sin usar')).toBeDefined()
   })
 
-  it('carpetas: «Nueva carpeta», meter una desde su ventana, desplegarla y recolocar con Alt y las flechas', async () => {
+  it('carpetas: «Nueva carpeta», meter una con su «⋯» → «Mover a…», desplegarla y recolocar con Alt y las flechas', async () => {
     const { api } = renderTemplates()
     await userEvent.click(await screen.findByRole('button', { name: 'Nueva carpeta' }))
     const dialog = within(screen.getByRole('dialog', { name: 'Nueva carpeta' }))
@@ -57,11 +57,14 @@ describe('la pantalla «Plantillas»', () => {
     const list = within(screen.getByRole('list', { name: 'Tus plantillas' }))
     const folder = await list.findByRole('button', { name: 'Gente' })
     expect(folder.getAttribute('aria-expanded')).toBe('false')
-    // PNJ, a «Gente» desde su ventana
-    await userEvent.click(list.getByRole('button', { name: 'Ajustes de PNJ' }))
-    const settings = within(screen.getByRole('dialog', { name: 'Ajustes de PNJ' }))
-    await userEvent.selectOptions(settings.getByLabelText('Carpeta'), 'Gente')
-    await userEvent.click(settings.getByRole('button', { name: 'Guardar' }))
+    // PNJ, a «Gente» desde su «⋯» (sin cuadro de ajustes: Enrique, 2026-11-19)
+    expect(list.queryByRole('button', { name: 'Ajustes de PNJ' })).toBeNull()
+    await userEvent.click(list.getByRole('button', { name: 'Más de «PNJ»' }))
+    const menu = within(screen.getByRole('menu', { name: 'Opciones de «PNJ»' }))
+    await userEvent.hover(menu.getByRole('menuitem', { name: 'Mover a…' }))
+    await userEvent.click(
+      within(screen.getByRole('menu', { name: 'Mover a…' })).getByRole('menuitem', { name: 'Gente' })
+    )
     await waitFor(async () => {
       const { templates, folders } = await api.client.call('listTemplates', {})
       expect(templates.find((t) => t.name === 'PNJ')?.folderId).toBe(folders[0]?.id)
@@ -113,21 +116,24 @@ describe('la pantalla «Plantillas»', () => {
     expect(tabs.map((tab) => tab.kind)).toEqual(['map'])
   })
 
-  it('el engranaje de una tuya: cambiarla de nombre y borrarla escribiendo su nombre', async () => {
+  it('el botón derecho sobre una tuya, como en las páginas: renombrarla y borrarla', async () => {
     const { api } = renderTemplates()
     await api.client.call('createTemplate', { name: 'Frente', icon: 'hourglass' })
     const mine = within(await screen.findByRole('list', { name: 'Tus plantillas' }))
-    await userEvent.click(await mine.findByRole('button', { name: 'Ajustes de Frente' }))
-    const dialog = within(screen.getByRole('dialog', { name: 'Ajustes de Frente' }))
-    await userEvent.clear(dialog.getByLabelText('Nombre'))
-    await userEvent.type(dialog.getByLabelText('Nombre'), 'Frentes{Enter}')
+    await userEvent.pointer({ keys: '[MouseRight]', target: await mine.findByRole('link', { name: 'Frente' }) })
+    const menu = within(screen.getByRole('menu', { name: 'Opciones de «Frente»' }))
+    await userEvent.click(menu.getByRole('menuitem', { name: 'Renombrar' }))
+    const field = menu.getByRole('textbox', { name: 'Nuevo nombre' })
+    await userEvent.clear(field)
+    await userEvent.type(field, 'Frentes{Enter}')
     expect(await mine.findByRole('link', { name: 'Frentes' })).toBeDefined()
-    await userEvent.click(mine.getByRole('button', { name: 'Ajustes de Frentes' }))
-    const again = within(screen.getByRole('dialog', { name: 'Ajustes de Frentes' }))
-    await userEvent.click(again.getByRole('button', { name: 'Borrar la plantilla' }))
-    const confirm = within(screen.getByRole('dialog', { name: '¿Borrar la plantilla Frentes?' }))
-    await userEvent.type(confirm.getByLabelText('Nombre'), 'Frentes')
-    await userEvent.click(confirm.getByRole('button', { name: 'Borrar la plantilla' }))
+    // Con el teclado: la tecla de menú en su fila
+    const row = mine.getByRole('link', { name: 'Frentes' }).closest('[data-file-card]') as HTMLElement
+    row.focus()
+    await userEvent.keyboard('{ContextMenu}')
+    const again = within(screen.getByRole('menu', { name: 'Opciones de «Frentes»' }))
+    await userEvent.click(again.getByRole('menuitem', { name: 'Borrar' }))
+    await userEvent.click(again.getByRole('menuitem', { name: 'Borrar la plantilla' }))
     await waitFor(() => expect(mine.queryByRole('link', { name: 'Frentes' })).toBeNull())
   })
 })

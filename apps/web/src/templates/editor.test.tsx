@@ -164,6 +164,12 @@ describe('editar una plantilla', () => {
     expect(screen.queryByRole('button', { name: /Quién la conoce/ })).toBeNull()
     expect(screen.queryByRole('button', { name: /Marcar/ })).toBeNull()
     expect(screen.queryByText('Mencionado en')).toBeNull()
+    // El mismo esqueleto que una página del mundo: la columna, la portada detrás del título y el panel que se pliega
+    expect(document.querySelector('[data-world-page] [data-page-column] [data-band]')).not.toBeNull()
+    await userEvent.click(screen.getByRole('button', { name: 'Plegar el panel' }))
+    expect(screen.getByRole('button', { name: 'Desplegar el panel' }).getAttribute('aria-expanded')).toBe('false')
+    // Se recuerda, como en el mundo: abierto otra vez para lo que sigue
+    await userEvent.click(screen.getByRole('button', { name: 'Desplegar el panel' }))
   })
 
   it('los bloques, plegados como los campos; con sus seis puntos y Alt + flechas se recolocan', async () => {
@@ -248,13 +254,37 @@ describe('editar una plantilla', () => {
     await waitFor(async () => expect(await saved()).toMatchObject({ name: 'Frentes', icon: '🗡️' }))
   })
 
-  it('«⋯» → «Ajustes de la plantilla»: el menú se cierra y queda el cuadro', async () => {
+  it('su icono se elige en su título: «:» y su nombre proponen los de la app; Intro pone el elegido', async () => {
+    const { saved } = await renderTemplate()
+    const title = await screen.findByRole('textbox', { name: 'Título de la página' })
+    await userEvent.click(title)
+    await userEvent.keyboard('{Home}:castil')
+    const options = within(await screen.findByRole('listbox', { name: 'Iconos' }))
+    expect(options.getAllByRole('option')[0]?.textContent).toBe('Castillo')
+    expect(title.getAttribute('aria-activedescendant')).toBe(options.getAllByRole('option')[0]?.id)
+    await userEvent.keyboard('{Enter}')
+    await waitFor(async () => expect(await saved()).toMatchObject({ name: 'Frente', icon: 'gi:castle' }))
+    expect(screen.queryByRole('listbox')).toBeNull()
+    expect(title.textContent).toBe('Frente')
+    // Pulsar el icono abre los de la app (sin emojis por defecto) y quitarlo
+    await userEvent.click(await screen.findByRole('button', { name: 'Icono Castillo: cambiarlo' }))
+    expect(screen.getByRole('searchbox', { name: 'Buscar un icono' })).toBeDefined()
+    expect(screen.queryByText('Emoji')).toBeNull()
+    await userEvent.click(screen.getByRole('button', { name: 'Quitar el icono' }))
+    await waitFor(async () => expect((await saved()).icon).toBeNull())
+  })
+
+  it('«⋯» de una plantilla: sin imprimir, exportar ni ajustes (y Ctrl+P no imprime)', async () => {
     await renderTemplate()
     await screen.findByRole('textbox', { name: 'Título de la página' })
     await userEvent.click(screen.getByRole('button', { name: 'Más acciones' }))
-    await userEvent.click(screen.getByRole('button', { name: 'Ajustes de la plantilla' }))
-    expect(await screen.findByRole('dialog', { name: 'Ajustes de Frente' })).toBeDefined()
-    expect(screen.queryByRole('button', { name: 'Duplicar' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Duplicar' })).toBeDefined()
+    expect(screen.queryByRole('button', { name: 'Imprimir o descargar…' })).toBeNull()
+    expect(screen.queryByRole('button', { name: /Exportar/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: /Ajustes/ })).toBeNull()
+    await userEvent.keyboard('{Escape}')
+    await userEvent.keyboard('{Control>}p{/Control}')
+    expect(screen.queryByRole('dialog', { name: 'Imprimir o descargar' })).toBeNull()
   })
 
   it('el árbol de la izquierda: carpetas que se pliegan, una carpeta nueva y, con el botón derecho, borrar una plantilla', async () => {

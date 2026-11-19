@@ -14,8 +14,8 @@ import type {
 } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, Navigate, useParams, useSearch } from '@tanstack/react-router'
-import { ChevronDown, ChevronLeft, ChevronUp, Copy, FolderPlus, Plus, Settings, Trash2 } from 'lucide-react'
-import { type ReactNode, useCallback, useEffect, useId, useRef, useState } from 'react'
+import { ChevronDown, ChevronLeft, ChevronUp, Copy, FolderPlus, Plus, Trash2 } from 'lucide-react'
+import { type ReactNode, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { ApiError } from '../api/client.ts'
@@ -34,6 +34,8 @@ import { RelatedOptions } from '../wiki/related-block.tsx'
 import { type TabTarget, TabTargetContext, usePageTabs } from '../wiki/tabs/page-tabs.tsx'
 import wiki from '../wiki/wiki.module.css'
 import { EntryView, pageKey, useSideTop } from '../wiki/wiki.tsx'
+import pageStyles from '../wiki/world-page.module.css'
+import { useRememberedPanel, WorldPageContext, type WorldPageValue } from '../wiki/world-page.ts'
 import styles from './editor.module.css'
 import { FieldsEditor } from './fields.tsx'
 import { useNewTemplate } from './new-template.ts'
@@ -90,14 +92,7 @@ export function TemplateView() {
   return (
     <TemplateLayout current={template} all={templates.data?.templates ?? []} folders={templates.data?.folders ?? []}>
       {page.data && template ? (
-        <TemplatePage
-          key={template.id}
-          page={page.data}
-          template={template}
-          folders={templates.data?.folders ?? []}
-          nuevo={nuevo === true}
-          pestana={pestana}
-        />
+        <TemplatePage key={template.id} page={page.data} template={template} nuevo={nuevo === true} pestana={pestana} />
       ) : failed(opened) || failed(page) ? (
         <LoadError error={opened.error ?? page.error} onRetry={() => (opened.error ? opened : page).refetch()} />
       ) : (
@@ -131,8 +126,12 @@ function TemplateLayout({
     setOpenDialog({ which, n: opened.current })
   }
   useSideTop(root, true)
+  // El mismo esqueleto que una página del mundo (la portada detrás del título, las pestañas debajo y el panel que se
+  // pliega), recordando si va plegado como allí
+  const [panelFolded, setPanelFolded] = useRememberedPanel()
+  const worldPage = useMemo<WorldPageValue>(() => ({ panelFolded, setPanelFolded }), [panelFolded, setPanelFolded])
   return (
-    <div ref={root} className={wiki.wiki}>
+    <div ref={root} className={`${wiki.wiki} ${pageStyles.wiki}`} data-world-page="">
       <Link
         to="/plantillas"
         className={styles.back}
@@ -180,8 +179,10 @@ function TemplateLayout({
           onClose={() => setOpenDialog((now) => (now?.n === dialog.n ? null : now))}
         />
       )}
-      <div className={wiki.content}>
-        <CollabSocket>{children}</CollabSocket>
+      <div className={`${wiki.content} ${styles.content}`}>
+        <WorldPageContext value={worldPage}>
+          <CollabSocket>{children}</CollabSocket>
+        </WorldPageContext>
       </div>
     </div>
   )
@@ -191,19 +192,16 @@ function TemplateLayout({
 function TemplatePage({
   page,
   template,
-  folders,
   nuevo,
   pestana
 }: {
   page: Page
   template: Listed
-  folders: readonly TemplateFolder[]
   nuevo: boolean
   pestana: string | undefined
 }) {
   const { t } = useTranslation()
   const tabs = usePageTabs(page)
-  const [settings, setSettings] = useState(false)
   const all = tabs.data ?? []
   const active = pestana ? (all.find((tab) => tab.id === pestana) ?? null) : null
   const target = useCallback<TabTarget>(
@@ -235,27 +233,19 @@ function TemplatePage({
         active={active}
         template={{
           id: template.id,
-          more: (close) => <TemplateMore template={template} close={close} onSettings={() => setSettings(true)} />,
+          more: () => <TemplateMore template={template} />,
           side: <TemplateSide template={template} page={page} />
         }}
       />
-      {settings && (
-        <SideDialogView dialog={{ kind: 'template', template }} folders={folders} onClose={() => setSettings(false)} />
-      )}
     </TabTargetContext.Provider>
   )
 }
 
-/** «⋯» de una plantilla: duplicarla y sus ajustes (nombre, carpeta, icono y borrarla), en las filas del menú */
-function TemplateMore({
-  template,
-  close,
-  onSettings
-}: {
-  template: Listed
-  close: () => void
-  onSettings: () => void
-}) {
+/**
+ * «⋯» de una plantilla: duplicarla (sin imprimir ni exportar: no hace falta, Enrique, 2026-11-19). Su nombre y su icono,
+ * en su título; moverla, renombrarla y borrarla, con el botón derecho en el árbol
+ */
+function TemplateMore({ template }: { template: Listed }) {
   const { t } = useTranslation()
   // Duplicarla: su página entera, con los mismos campos (sus páginas salen en las mismas tablas), y se abre
   const copy = useNewTemplate()
@@ -266,16 +256,6 @@ function TemplateMore({
         {t('templates.duplicate')}
       </MenuItem>
       <FormError message={copy.errorText} />
-      <MenuItem
-        aria-haspopup="dialog"
-        onClick={() => {
-          close()
-          onSettings()
-        }}
-      >
-        <Settings aria-hidden="true" size={15} />
-        {t('templates.settings')}
-      </MenuItem>
     </>
   )
 }

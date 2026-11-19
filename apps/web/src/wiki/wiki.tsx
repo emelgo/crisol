@@ -863,13 +863,15 @@ const LEADING_EMOJI = /^(\p{Extended_Pictographic}(?:\p{Emoji_Modifier}|\uFE0F|\
 /**
  * «Más»: lo que se hace de vez en cuando con la página, en el menú común (flota junto a su botón; Escape o pulsar fuera
  * lo cierran): imprimir o descargar (un cuadro que pregunta cómo), exportar y sus versiones. items: lo de una
- * plantilla, en lugar de exportar
+ * plantilla, en lugar de imprimir y exportar (una plantilla no se imprime ni se descarga, Enrique, 2026-11-19)
  */
 function MoreActions({ page, items }: { page: Page; items?: (close: () => void) => ReactNode }) {
   const { t } = useTranslation()
   const [printing, setPrinting] = useState(false)
+  const printable = !items
   // Ctrl+P (⌘P) imprime la hoja, no la pantalla: abre el cuadro con lo último elegido (y con Intro, se imprime)
   useEffect(() => {
+    if (!printable) return
     const onKey = (event: KeyboardEvent) => {
       if (!(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey || event.key.toLowerCase() !== 'p') return
       event.preventDefault()
@@ -877,22 +879,24 @@ function MoreActions({ page, items }: { page: Page; items?: (close: () => void) 
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [])
+  }, [printable])
   return (
     <div className={styles.moreMenu}>
       <Menu label={t('wiki.moreActions')} icon={<Ellipsis aria-hidden="true" size={18} />}>
         {(close) => (
           <>
-            <MenuItem
-              aria-haspopup="dialog"
-              onClick={() => {
-                close()
-                setPrinting(true)
-              }}
-            >
-              <Printer aria-hidden="true" size={15} />
-              {t('sheet.printOrDownload')}
-            </MenuItem>
+            {printable && (
+              <MenuItem
+                aria-haspopup="dialog"
+                onClick={() => {
+                  close()
+                  setPrinting(true)
+                }}
+              >
+                <Printer aria-hidden="true" size={15} />
+                {t('sheet.printOrDownload')}
+              </MenuItem>
+            )}
             {/* Lo demás (subpágina, renombrar, mover, borrar…), con el botón derecho en el árbol */}
             {items ? items(close) : <ExportPage page={page} />}
             <Versions page={page} />
@@ -1070,7 +1074,7 @@ export function EntryView({
   const links = useQuery({
     queryKey: [...pageLinksKey(page.worldId, page.id), ...readAsKey(readAs)],
     queryFn: () => api.call('getPageLinks', { pageId: page.id, ...readAsInput(readAs) }),
-    enabled: Boolean(worldPage) && fill
+    enabled: Boolean(worldPage) && fill && !template
   })
   const emptyPanel =
     page.panel.length === 0 &&
@@ -1126,10 +1130,11 @@ export function EntryView({
       }
       actions={
         template ? (
-          // Una plantilla no la conoce nadie ni se marca: el candado y «⋯», con lo suyo
+          // Una plantilla no la conoce nadie ni se marca: el candado, «⋯» con lo suyo y el botón del panel
           <>
             <LockButton page={page} />
             <MoreActions page={page} items={template.more} />
+            {worldPage && <PanelToggle folded={panel.folded} controls={panelId} onToggle={panel.toggle} />}
           </>
         ) : (
           <>
