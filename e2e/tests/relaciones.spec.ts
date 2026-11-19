@@ -172,9 +172,14 @@ test('relaciones (módulo 10): el grafo en su ventana (del mundo y de una págin
   await grandpa.getByRole('button', { name: 'Otra relación' }).click()
   const other = page.getByRole('dialog', { name: 'Otra relación con Aldren III' })
   await other.getByLabel('Relación').selectOption('stepchild')
-  await other.getByRole('combobox', { name: 'Busca una página o escribe un nombre' }).fill('Kael')
-  await other.getByRole('option', { name: 'Añadir «Kael» sin página' }).click()
-  await expect(page.getByRole('region', { name: 'Kael' })).toContainText('Hijastro o hijastra de Aldren III')
+  // Su título pasa a decir la relación elegida
+  const stepchild = page.getByRole('dialog', { name: 'Hijastro o hijastra de Aldren III' })
+  await stepchild.getByRole('combobox', { name: 'Busca una página o escribe un nombre' }).fill('Kael')
+  await stepchild.getByRole('option', { name: 'Añadir «Kael» sin página' }).click()
+  const kael = page.getByRole('region', { name: 'Kael' })
+  await expect(kael).toContainText('Hijastro o hijastra de Aldren III')
+  // Su ficha, a la derecha, tapa a Aldren III: se cierra antes
+  await kael.getByRole('button', { name: 'Cerrar' }).click()
   await page.getByRole('button', { name: 'Aldren III', exact: true }).click()
   await grandpa.getByRole('button', { name: 'Crear página' }).click()
   await expect(grandpa.getByRole('button', { name: 'Abrir' })).toBeVisible()
