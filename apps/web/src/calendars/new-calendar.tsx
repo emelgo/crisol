@@ -1,12 +1,11 @@
 /**
- * «Calendario nuevo» (lienzo, pantalla 1b): su nombre y de dónde se parte: en blanco, como el nuestro (el gregoriano,
- * de ejemplo) o copia de otro del mundo; una línea dice que también se le puede pedir a la IA. Al crearlo se abre su
- * editor. El primero del mundo nace principal (lo decide el servidor)
+ * «Calendario nuevo» (lienzo, pantalla 1b): su nombre y de dónde se parte: en blanco o como el nuestro (el gregoriano,
+ * de ejemplo); duplicar otro va en el menú de su tarjeta. Una línea dice que también se le puede pedir a la IA. Al
+ * crearlo se abre su editor. El primero del mundo nace principal (lo decide el servidor)
  */
-import type { CalendarView } from '@crisol/contracts'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
-import { CalendarDays, Copy, Sparkles, SquareDashed } from 'lucide-react'
+import { CalendarDays, Sparkles, SquareDashed } from 'lucide-react'
 import { type ReactNode, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
@@ -18,17 +17,9 @@ import form from '../components/form.module.css'
 import { Modal } from '../components/modal.tsx'
 import styles from './calendars.module.css'
 
-type Start = 'blank' | 'gregorian' | 'copy'
+type Start = 'blank' | 'gregorian'
 
-export function NewCalendarDialog({
-  worldId,
-  calendars,
-  onClose
-}: {
-  worldId: string
-  calendars: readonly CalendarView[]
-  onClose: () => void
-}) {
+export function NewCalendarDialog({ worldId, onClose }: { worldId: string; onClose: () => void }) {
   const { t } = useTranslation()
   const api = useApi()
   const client = useQueryClient()
@@ -38,14 +29,8 @@ export function NewCalendarDialog({
   const titleId = useId()
   const groupId = useId()
   const [start, setStart] = useState<Start>('blank')
-  const [copyOf, setCopyOf] = useState(calendars.find((c) => c.primary)?.id ?? calendars[0]?.id ?? '')
   const create = useMutation({
-    mutationFn: (name: string) =>
-      api.call('createCalendar', {
-        worldId,
-        name,
-        from: start === 'copy' ? { copyOf } : start
-      }),
+    mutationFn: (name: string) => api.call('createCalendar', { worldId, name, from: start }),
     onSuccess: (created) => {
       void client.invalidateQueries({ queryKey: ['calendars', worldId] })
       void navigate({
@@ -54,24 +39,16 @@ export function NewCalendarDialog({
       })
     }
   })
-  const option = (value: Start, icon: ReactNode, title: string, hint: ReactNode, extra?: ReactNode) => (
+  const option = (value: Start, icon: ReactNode, title: string, hint: string) => (
     <div className={styles.option} data-checked={start === value || undefined}>
       <label className={styles.optionLabel}>
-        <input
-          type="radio"
-          name="start"
-          value={value}
-          checked={start === value}
-          disabled={value === 'copy' && calendars.length === 0}
-          onChange={() => setStart(value)}
-        />
+        <input type="radio" name="start" value={value} checked={start === value} onChange={() => setStart(value)} />
         <span className={styles.optionIcon} aria-hidden="true">
           {icon}
         </span>
         <span className={styles.optionTitle}>{title}</span>
-        {hint}
+        <span className={styles.optionHint}>{hint}</span>
       </label>
-      {extra}
     </div>
   )
   return (
@@ -99,41 +76,12 @@ export function NewCalendarDialog({
         />
         <fieldset className={styles.options} aria-labelledby={groupId}>
           <legend id={groupId}>{t('calendars.dialog.from')}</legend>
-          {option(
-            'blank',
-            <SquareDashed size={18} />,
-            t('calendars.dialog.blank'),
-            <span className={styles.optionHint}>{t('calendars.dialog.blankHint')}</span>
-          )}
+          {option('blank', <SquareDashed size={18} />, t('calendars.dialog.blank'), t('calendars.dialog.blankHint'))}
           {option(
             'gregorian',
             <CalendarDays size={18} />,
             t('calendars.dialog.gregorian'),
-            <span className={styles.optionHint}>{t('calendars.dialog.gregorianHint')}</span>
-          )}
-          {option(
-            'copy',
-            <Copy size={18} />,
-            t('calendars.dialog.copy'),
-            null,
-            calendars.length > 0 && (
-              <select
-                className={styles.optionSelect}
-                aria-label={t('calendars.dialog.copyOf')}
-                value={copyOf}
-                onChange={(event) => {
-                  setCopyOf(event.target.value)
-                  setStart('copy')
-                }}
-                onFocus={() => setStart('copy')}
-              >
-                {calendars.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            )
+            t('calendars.dialog.gregorianHint')
           )}
         </fieldset>
         <p className={styles.ai}>

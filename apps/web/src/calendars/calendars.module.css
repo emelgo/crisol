@@ -240,14 +240,14 @@
   inline-size: 100%;
 }
 
-/* El cuadro de «Calendario nuevo»: más ancho, con sus tres maneras de empezar en fila */
+/* El cuadro de «Calendario nuevo»: más ancho, con sus dos maneras de empezar en fila */
 .newDialog {
-  inline-size: min(38rem, calc(100vw - 2rem));
+  inline-size: min(34rem, calc(100vw - 2rem));
 }
 
 .options {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-2);
   margin: 0;
   padding: 0;
@@ -284,8 +284,7 @@
   background: color-mix(in srgb, var(--color-accent) 12%, var(--surface-glass));
 }
 
-/* La radio, invisible pero con el teclado: el foco se ve en el recuadro */
-/* Toda la etiqueta elige la manera (el desplegable de «Copia de…» va aparte, debajo) */
+/* La radio, invisible pero con el teclado: el foco se ve en el recuadro. Toda la etiqueta elige la manera */
 .optionLabel {
   display: grid;
   gap: var(--space-1);
@@ -298,11 +297,6 @@
   inset: 0;
 }
 
-.optionSelect {
-  position: relative;
-  z-index: 1;
-}
-
 .option input[type="radio"] {
   position: absolute;
   opacity: 0;
@@ -312,11 +306,6 @@
 .option:has(input[type="radio"]:focus-visible) {
   outline: 2px solid var(--color-focus);
   outline-offset: 2px;
-}
-
-.option:has(input[type="radio"]:disabled) {
-  opacity: 0.55;
-  cursor: not-allowed;
 }
 
 .optionIcon {
@@ -335,18 +324,6 @@
   color: var(--color-muted);
   font-size: 0.8125rem;
   line-height: 1.35;
-}
-
-.optionSelect {
-  inline-size: 100%;
-  min-inline-size: 0;
-  min-block-size: 2.25rem;
-  margin-block-start: var(--space-1);
-  padding: 0 var(--space-2);
-  border: 1px solid var(--color-field-border);
-  border-radius: 3px;
-  background: var(--field-fill);
-  color: var(--color-text);
 }
 
 /* La línea de la IA: en su azul, sin más */

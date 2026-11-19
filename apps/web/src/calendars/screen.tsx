@@ -105,7 +105,6 @@ function Calendars({ worldId }: { worldId: string }) {
       {creating && (
         <NewCalendarDialog
           worldId={worldId}
-          calendars={list}
           onClose={() => {
             setCreating(false)
             opener.current?.focus()

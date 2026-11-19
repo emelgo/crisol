@@ -2132,8 +2132,6 @@ export const es = {
       blankHint: '12 meses de 30 días y semana de 7',
       gregorian: 'Como el nuestro',
       gregorianHint: 'Con su luna y sus estaciones',
-      copy: 'Copia de…',
-      copyOf: 'Calendario que se copia',
       ai: 'También puedes pedírselo a tu IA.',
       create: 'Crear'
     },
