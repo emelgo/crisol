@@ -291,7 +291,8 @@ export function TreeTab({ page, tab, editable }: { page: Page; tab: PageTabView;
             save.mutate({ nodes: [...nodes, ...added], edges: [...edges, ...extra] })
             announce(t('trees.added', { name: pick.name }))
             setAdding(null)
-            select(id)
+            // Su ficha, con el foco (el botón que abrió el cuadro era de la ficha de antes)
+            select(id, true)
           }}
         />
       )}

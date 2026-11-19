@@ -2423,7 +2423,7 @@ export const es = {
     noPage: 'Sin página',
     open: 'Abrir',
     createPage: 'Crear página',
-    rename: 'Nombre',
+    rename: 'Editar',
     note: 'Nota',
     remove: 'Quitar',
     closeCard: 'Cerrar',
@@ -5012,9 +5012,9 @@ export const es = {
       graph: 'Pulsa una página para ver su ficha; con doble clic, se abre.'
     },
     tree: {
-      cards: 'Pulsa a alguien para añadir su familia, crear su página o quitarlo. Con doble clic, se abre su página.',
-      read: 'Pulsa a alguien para ver su ficha; con doble clic, se abre su página.',
-      add: 'Añade a alguien suelto, sin unirlo a nadie.'
+      cards: 'Pulsa a alguien para ver su ficha y añadir a su familia.',
+      read: 'Pulsa a alguien para ver su ficha.',
+      add: 'Añade a alguien al árbol.'
     },
     worldGraph: {
       filters: 'Qué páginas y relaciones salen.',
