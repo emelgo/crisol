@@ -166,6 +166,7 @@ export function WikiLayout({
             <aside
               id={asideId}
               className={styles.aside}
+              data-tour="arbol"
               data-open={open || undefined}
               aria-labelledby={headingId}
               onKeyDown={(event) => {
@@ -176,7 +177,9 @@ export function WikiLayout({
                 {/* Lo de la vista elegida en la barra: el mundo (sus páginas), las plantillas o los archivos; a la derecha
                   del nombre, el engranaje del mundo (Enrique, 2026-11-19) */}
                 <div className={styles.asideTitle}>
-                  <h2 id={headingId}>{world.name}</h2>
+                  <h2 id={headingId} title={world.name}>
+                    {world.name}
+                  </h2>
                   <WorldSettings world={world} className={styles.newPageIcon} />
                 </div>
                 {/* El grafo de todo el mundo (módulo 10), en su ventana: sin añadir nada a la barra del mundo */}
@@ -1191,6 +1194,7 @@ function PanelToggle({ folded, controls, onToggle }: { folded: boolean; controls
     <button
       type="button"
       className={pageStyles.panelToggle}
+      data-tour="plegar-panel"
       aria-label={label}
       title={label}
       aria-expanded={!folded}

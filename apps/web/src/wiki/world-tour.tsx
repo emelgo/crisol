@@ -14,16 +14,26 @@ export function WorldTour({ master }: { master: boolean }) {
       steps={[
         ...(master
           ? ([
-              { target: '[data-tour="barra-wiki"]', text: t('tour.world.wiki'), placement: 'right' },
+              // El árbol, con «Páginas» de la barra resaltado a la vez; justo después, el engranaje junto a su nombre
+              {
+                target: '[data-tour="arbol"]',
+                text: t('tour.world.wiki'),
+                placement: 'right',
+                also: [{ target: '[data-tour="barra-wiki"]' }]
+              },
+              { target: '[data-tour="engranaje"]', text: t('tour.world.settings'), placement: 'right' },
               { target: '[data-tour="buscador"]', text: t('tour.world.search'), placement: 'right' },
-              { target: '[data-tour="panel-bloques"]', text: t('tour.world.panel'), placement: 'left' },
+              // El botón del panel, que sale aunque esté plegado, con el panel resaltado si se ve
+              {
+                target: '[data-tour="plegar-panel"]',
+                text: t('tour.world.panel'),
+                also: [{ target: '[data-tour="panel-bloques"]' }]
+              },
               { target: '[data-tour="barra-calendarios"]', text: t('tour.world.calendars'), placement: 'right' },
               { target: '[data-tour="barra-archivos-mundo"]', text: t('tour.world.files'), placement: 'right' },
               { target: '[data-tour="dados"]', text: t('tour.world.dice'), placement: 'top' },
               { target: '[data-tour="barra-historial"]', text: t('tour.world.history'), placement: 'right' },
-              { target: '[data-tour="barra-papelera"]', text: t('tour.world.trash'), placement: 'right' },
-              // El engranaje, junto al nombre del mundo en la ficha del árbol
-              { target: '[data-tour="engranaje"]', text: t('tour.world.settings'), placement: 'right' }
+              { target: '[data-tour="barra-papelera"]', text: t('tour.world.trash'), placement: 'right' }
             ] as const)
           : []),
         ...(master

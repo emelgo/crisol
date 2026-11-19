@@ -549,6 +549,11 @@
   margin-block-start: auto;
 }
 
+/* Solo el engranaje (un mundo no tiene papel): abajo a la derecha, como en las campañas */
+.footer > :only-child {
+  margin-inline-start: auto;
+}
+
 .role {
   color: var(--color-muted);
   font-size: 0.875rem;

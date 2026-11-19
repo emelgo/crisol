@@ -4992,7 +4992,7 @@ export const es = {
       wiki: 'Las páginas del mundo: se abre en su portada; aquí se ve su árbol.',
       calendars: 'El tiempo del mundo: sus calendarios.',
       search: 'Filtra el árbol por nombre o #etiqueta; con Intro, busca en el texto de todas.',
-      panel: 'Lo de la página que quieras tener a la vista.',
+      panel: 'Lo de la página que quieras tener a la vista; con este botón se pliega.',
       bookmarks: 'Tus páginas marcadas, a mano.',
       files: 'Las imágenes y documentos del mundo.',
       history: 'Lo que se ha hecho en este mundo, para deshacerlo si hace falta.',
