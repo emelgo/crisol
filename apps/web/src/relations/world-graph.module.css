@@ -410,7 +410,8 @@
   min-block-size: 0;
 }
 
-.pageGraph > .graph {
+/* Su marco: el del grafo del mundo */
+.pageFrame {
   composes: frame from "../components/frame.module.css";
   --frame-fill: var(--surface-page);
 }

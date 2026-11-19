@@ -134,8 +134,10 @@ function GraphDialog({
         event.preventDefault()
         const target = event.target as HTMLElement
         if (target instanceof HTMLInputElement && target.value) return
-        if (dialog.current?.querySelector('[data-node-card]')) return
-        onClose()
+        // Con la ficha de una página abierta, primero ella (también con el foco en el buscador)
+        const card = dialog.current?.querySelector<HTMLButtonElement>('[data-node-card] [data-card-close]')
+        if (card) card.click()
+        else onClose()
       }}
       onCancel={(event) => {
         event.preventDefault()
@@ -226,7 +228,7 @@ function PageGraph({
   return (
     <div className={styles.pageGraph}>
       {tools}
-      <div className={styles.graph} data-tour="grafo-pagina">
+      <div className={`${styles.graph} ${styles.pageFrame}`} data-tour="grafo-pagina">
         {edges.length === 0 ? (
           <p className={styles.empty}>{t('relations.empty')}</p>
         ) : (

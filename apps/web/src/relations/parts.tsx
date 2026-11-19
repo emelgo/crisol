@@ -163,6 +163,7 @@ export function NodeCard({
           aria-label={t('relations.close')}
           title={t('relations.close')}
           onClick={onClose}
+          data-card-close=""
         >
           <X size={16} aria-hidden="true" />
         </button>
