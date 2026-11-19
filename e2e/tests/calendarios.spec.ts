@@ -54,7 +54,7 @@ test('calendarios (módulo 8): crear uno de 16 meses con dos lunas, editarlo, ha
   const summary = page.getByRole('complementary', { name: 'El año y los problemas' })
   await expect(summary).toContainText('Principal')
 
-  // Cuatro meses más, que son festividades: 16 «meses» en el año; en blanco, sin bisiestos
+  // Cuatro meses más, que son festividades: 16 «meses» en el año; en blanco, sin días de más
   await phases.getByRole('button', { name: 'Meses' }).click()
   await expect(page).toHaveURL(/fase=meses/)
   const months = page.getByRole('region', { name: 'Meses' })
@@ -67,8 +67,10 @@ test('calendarios (módulo 8): crear uno de 16 meses con dos lunas, editarlo, ha
   await expect(summary).toContainText('388 días')
   await expect(summary).toContainText('12 meses y 4 festividades')
   await page.getByRole('button', { name: 'Siguiente: Días señalados' }).click()
-  await page.getByRole('button', { name: 'Siguiente: Bisiestos' }).click()
-  await expect(page.getByRole('region', { name: 'Bisiestos' })).toContainText('Sin años bisiestos.')
+  await page.getByRole('button', { name: 'Siguiente: Días de más' }).click()
+  const extra = page.getByRole('region', { name: 'Días de más' })
+  await expect(extra).toContainText('Todos los años duran lo mismo.')
+  await expect(extra.getByRole('button', { name: 'Como el gregoriano' })).toHaveCount(0)
   // Dos lunas
   await phases.getByRole('button', { name: 'Lunas' }).click()
   const moons = page.getByRole('region', { name: 'Lunas' })
@@ -87,13 +89,17 @@ test('calendarios (módulo 8): crear uno de 16 meses con dos lunas, editarlo, ha
   await page.getByRole('button', { name: 'Guardar' }).click()
   await expect(page.getByRole('button', { name: 'Guardar' })).toBeHidden()
 
-  // En grande: el mes, el año en pequeño y el día elegido; «Nuevo evento» crea uno suelto con su fecha
+  // En grande: el mes, sin fichas a los lados; la del día sale al pasar el ratón, se fija al pulsar (con su era) y
+  // «Nuevo evento» crea uno suelto con su fecha
   await page.getByRole('link', { name: 'Ver calendario' }).click()
   await expect(page.getByRole('heading', { level: 1, name: 'Calendario de Varn' })).toBeVisible()
   await expect(page.getByRole('heading', { level: 2, name: 'Mes 1 de 0', exact: true })).toBeVisible()
   const day = page.getByRole('complementary', { name: 'El día elegido' })
+  await expect(day).toHaveCount(0)
+  await page.getByRole('cell', { name: / 3 de Mes 1 de 0$/ }).hover()
+  await expect(day.getByRole('heading', { level: 2 })).toContainText('3 de Mes 1 de 0')
   await page.getByRole('cell', { name: / 5 de Mes 1 de 0$/ }).click()
-  await expect(day.getByRole('heading', { level: 2 })).toContainText('5 de Mes 1 de 0')
+  await expect(day.getByRole('heading', { level: 2 })).toContainText('5 de Mes 1 de 0 de la Era del Eclipse')
   await day.getByRole('button', { name: 'Nuevo evento' }).click()
   const event = page.getByRole('dialog')
   await event.getByLabel('Título').fill('Coronación de Ilsa')
@@ -102,6 +108,20 @@ test('calendarios (módulo 8): crear uno de 16 meses con dos lunas, editarlo, ha
   await expect(page.getByRole('cell', { name: / 5 de Mes 1 de 0$/ })).toContainText('Coronación de Ilsa')
   expect(await axe(page)).toEqual([])
   await page.screenshot({ path: test.info().outputPath('en-grande.png') })
+  // Esc quita la ficha; la semana y el año
+  await page.mouse.move(0, 0)
+  await page.keyboard.press('Escape')
+  await expect(day).toHaveCount(0)
+  const modes = page.getByRole('toolbar', { name: 'Vista' })
+  await modes.getByRole('button', { name: 'Semana' }).click()
+  await expect(page.getByRole('button', { name: 'Semana siguiente' })).toBeVisible()
+  expect(await axe(page)).toEqual([])
+  await modes.getByRole('button', { name: 'Año' }).click()
+  await expect(page.getByRole('heading', { level: 2, name: '0', exact: true })).toBeVisible()
+  expect(await axe(page)).toEqual([])
+  await page.screenshot({ path: test.info().outputPath('en-grande-año.png') })
+  await page.getByRole('button', { name: /^Fiesta 1/ }).click()
+  await expect(modes.getByRole('button', { name: 'Mes' })).toHaveAttribute('aria-pressed', 'true')
 
   // Vuelta a la lista: la ficha con sus cifras
   await sections(page).getByRole('link', { name: 'Calendarios' }).click()
@@ -170,12 +190,13 @@ test.describe('con el cristal de verdad', () => {
     await page.keyboard.press('Escape')
     await list.getByRole('link', { name: 'Calendario de Varn' }).click()
     await expect(page.getByRole('heading', { level: 1, name: 'Calendario de Varn' })).toBeVisible()
+    await page.getByRole('cell').filter({ hasText: /^15/ }).first().click()
     await expect(page.getByRole('complementary', { name: 'El día elegido' })).toBeVisible()
     expect(await axe(page)).toEqual([])
     await page.screenshot({ path: test.info().outputPath('en-grande-cristal.png') })
     await page.getByRole('link', { name: 'Editar calendario' }).click()
     await expect(page.getByRole('navigation', { name: 'Fases del calendario' })).toBeVisible()
-    for (const phase of ['semana', 'meses', 'bisiestos']) {
+    for (const phase of ['semana', 'meses', 'dias-de-mas']) {
       await page.goto(`/mundos/${worldId}/calendarios/${await calendarId(page)}/editar?fase=${phase}`)
       await expect(page.getByRole('navigation', { name: 'Fases del calendario' })).toBeVisible()
       expect(await axe(page)).toEqual([])
