@@ -4,7 +4,8 @@
   "license": "UNLICENSED",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./game-icons-catalog": "./src/game-icons-catalog.ts"
   },
   "scripts": {
     "typecheck": "tsc -p .",

@@ -50,7 +50,8 @@ import type {
   WidgetView,
   World
 } from '@crisol/contracts'
-import { DEFAULT_SPEEDS, GAME_ICONS, youtubeVideoId } from '@crisol/contracts'
+import { DEFAULT_SPEEDS, youtubeVideoId } from '@crisol/contracts'
+import { FEATURED_GAME_ICONS, searchGameIcons } from '@crisol/contracts/game-icons-catalog'
 import { DiceSyntaxError, rollDice as rollFormula, rowFor, tableFormula, tableProblems } from '@crisol/dice'
 import {
   advanceSound,
@@ -2200,16 +2201,15 @@ export function fakeApi(
       }
     },
     getTree: ({ tabId }) => structuredClone(treeOf(tabId)),
-    updateTree: ({ tabId, layout, nodes, edges }) => {
+    updateTree: ({ tabId, nodes, edges }) => {
       const tree = treeOf(tabId)
       const page = pageById(tree.pageId)
-      if (layout !== undefined) tree.layout = layout
       if (nodes !== undefined) tree.nodes = treeNodes(page.worldId, nodes)
       if (edges !== undefined) tree.edges = edges
       tree.version++
       return structuredClone(tree)
     },
-    createTree: ({ worldId, name, pageId, parentId, layout, nodes, edges }) => {
+    createTree: ({ worldId, name, pageId, parentId, nodes, edges }) => {
       const page = pageId
         ? pageById(pageId)
         : pageById(
@@ -2231,7 +2231,7 @@ export function fakeApi(
         id: crypto.randomUUID(),
         pageId: page.id,
         kind: 'tree',
-        name: pageId ? name : layout === 'org' ? 'Organigrama' : 'Árbol genealógico',
+        name: pageId ? name : 'Árbol',
         hidden: false,
         documentId: null,
         color: null
@@ -2240,7 +2240,6 @@ export function fakeApi(
       const tree: TreeView = {
         tabId: tab.id,
         pageId: page.id,
-        layout: layout ?? 'family',
         nodes: treeNodes(worldId, nodes ?? []),
         edges: edges ?? [],
         version: 1
@@ -4364,7 +4363,7 @@ export function fakeApi(
       return { pageId: page.id }
     },
     listPageTabs: ({ pageId }) => ({ tabs: pageTabs.filter((t) => t.pageId === pageId).map((t) => ({ ...t })) }),
-    createPageTab: ({ pageId, kind, name, layout }) => {
+    createPageTab: ({ pageId, kind, name }) => {
       const page = pageById(pageId)
       const named = {
         text: 'Texto 2',
@@ -4373,7 +4372,7 @@ export function fakeApi(
         table: 'Tabla',
         board: 'Pizarra',
         chronology: 'Cronología',
-        tree: layout === 'org' ? 'Organigrama' : 'Árbol genealógico'
+        tree: 'Árbol'
       }[kind]
       const tab: PageTabView = {
         id: crypto.randomUUID(),
@@ -4387,7 +4386,7 @@ export function fakeApi(
       pageTabs.push(tab)
       if (kind === 'chronology') chronologies.attach(tab, page.worldId)
       if (kind === 'tree')
-        trees.push({ tabId: tab.id, pageId, layout: layout ?? 'family', nodes: [], edges: [], version: 1 })
+        trees.push({ tabId: tab.id, pageId, nodes: [], edges: [], version: 1 })
       maps.push({
         id: crypto.randomUUID(),
         tabId: tab.id,
@@ -5317,11 +5316,13 @@ export function fakeApi(
       map.elements.splice(map.elements.indexOf(element), 1)
       return { id: elementId }
     },
-    listGameIcons: ({ query }) => ({
-      icons: GAME_ICONS.filter(
-        (icon) => !query || icon.label.toLocaleLowerCase('es').includes(query.toLocaleLowerCase('es'))
-      ).map((icon) => ({ icon: `gi:${icon.id}`, label: icon.label, group: icon.group }))
-    }),
+    listGameIcons: ({ query, group, limit = 50 }) => {
+      const found = query || group ? searchGameIcons(query ?? '', group) : FEATURED_GAME_ICONS
+      return {
+        icons: found.slice(0, limit).map((icon) => ({ icon: `gi:${icon.id}`, label: icon.label, group: icon.group })),
+        total: found.length
+      }
+    },
     listAccountTags: ({ organizationId }) => {
       const target = ownOrganization(organizationId)
       return { organizationId: target, tags: catalogOf(target) }

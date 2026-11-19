@@ -1,8 +1,14 @@
 // Sin globales de Vitest, Testing Library no limpia sola el DOM entre pruebas
 import { cleanup, configure } from '@testing-library/react'
-import { afterEach, beforeEach } from 'vitest'
+import { afterEach, beforeAll, beforeEach } from 'vitest'
+import { loadGameIcons } from './components/game-icons.ts'
 
 afterEach(cleanup)
+
+// La lista de los iconos de rol se pide aparte (import dinámico): en las pruebas, ya está, como tras la primera vez
+beforeAll(async () => {
+  await loadGameIcons()
+})
 
 // El tutorial del mundo sale en todas sus páginas (y se lleva el foco): en las pruebas, ya visto, salvo que una lo
 // quiera ver (pone su propia lista de vistos)

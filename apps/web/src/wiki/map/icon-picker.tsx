@@ -8,7 +8,7 @@ import { ChevronDown, CircleOff } from 'lucide-react'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
-import { Icon, iconLabel } from '../../components/icon.tsx'
+import { Icon, useIconLabel } from '../../components/icon.tsx'
 import { IconBrowser } from '../../components/icon-browser.tsx'
 import styles from './map.module.css'
 
@@ -25,6 +25,8 @@ export function IconPicker({
   const [open, setOpen] = useState(false)
   const trigger = useRef<HTMLButtonElement>(null)
   const panel = useRef<HTMLDivElement>(null)
+  const label = useIconLabel(value)
+  const named = value ? (label ?? t('map.pin.icon')) : t('map.pin.noIcon')
 
   const close = (refocus = true) => {
     setOpen(false)
@@ -73,11 +75,11 @@ export function IconPicker({
         className={styles.iconTrigger}
         aria-expanded={open}
         aria-haspopup="dialog"
-        title={value ? iconLabel(value) : t('map.pin.noIcon')}
+        title={named}
         onClick={() => (open ? close() : setOpen(true))}
       >
         {value ? <Icon value={value} size={20} /> : <CircleOff aria-hidden="true" size={16} />}
-        <span>{value ? iconLabel(value) : t('map.pin.noIcon')}</span>
+        <span>{named}</span>
         <ChevronDown aria-hidden="true" size={14} />
       </button>
       {open &&

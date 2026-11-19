@@ -6,8 +6,9 @@ import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { FormError } from '../components/field.tsx'
-import { Icon, iconLabel } from '../components/icon.tsx'
-import { IconBrowser, iconsMatching } from '../components/icon-browser.tsx'
+import { loadedGameIcons, useGameIcons } from '../components/game-icons.ts'
+import { Icon, useIconLabel } from '../components/icon.tsx'
+import { IconBrowser } from '../components/icon-browser.tsx'
 import cards from '../routes/world-card.module.css'
 import { useTemplates } from '../templates/data.ts'
 import { TemplateIcon } from '../templates/icons.tsx'
@@ -84,6 +85,9 @@ export function PageIcon({
   const wrapper = useRef<HTMLDivElement>(null)
   const trigger = useRef<HTMLButtonElement>(null)
   const panelId = useId()
+  const label = useIconLabel(page.icon)
+  // La lista de los iconos, ya pedida: «:» en el título los propone en cuanto se escribe
+  useGameIcons(!page.locked)
   const save = useMutation({
     mutationFn: (icon: string | null) => api.call('updatePage', { pageId: page.id, icon }),
     onSuccess: async () => {
@@ -132,7 +136,7 @@ export function PageIcon({
         className={styles.trigger}
         aria-expanded={open}
         aria-controls={panelId}
-        aria-label={page.icon ? t('icon.change', { icon: iconLabel(page.icon) }) : t('icon.choose')}
+        aria-label={page.icon && label ? t('icon.change', { icon: label }) : t('icon.choose')}
         title={page.icon ? undefined : t('icon.choose')}
         data-default={page.icon ? undefined : ''}
         onClick={() => setOpen(!open)}
@@ -158,9 +162,14 @@ export function PageIcon({
 /** Cuántos iconos se proponen al escribir «:» en un título */
 const SUGGESTED = 16
 
-/** Los iconos de la app que casan con lo escrito tras «:» al principio de un título (los primeros) */
+/**
+ * Los iconos de la app que casan con lo escrito tras «:» al principio de un título (los más parecidos; sin nada, los
+ * primeros destacados). Mientras llega su lista, ninguno
+ */
 export function titleIcons(query: string) {
-  return iconsMatching(query).slice(0, SUGGESTED)
+  const catalog = loadedGameIcons()
+  if (!catalog) return []
+  return (query.trim() ? catalog.searchGameIcons(query) : catalog.FEATURED_GAME_ICONS).slice(0, SUGGESTED)
 }
 
 /**
@@ -182,6 +191,8 @@ export function TitleIconSuggestions({
   onHover: (index: number) => void
 }) {
   const { t } = useTranslation()
+  // Se vuelve a pintar cuando llega la lista
+  useGameIcons()
   const shown = titleIcons(query)
   const list = useRef<HTMLDivElement>(null)
   // La elegida, siempre a la vista
@@ -233,6 +244,7 @@ export function IconChoices({ value, onChange }: { value: string | null; onChang
   const wrap = useRef<HTMLDivElement>(null)
   const button = useRef<HTMLButtonElement>(null)
   const legendId = useId()
+  const label = useIconLabel(value)
   useEffect(() => {
     if (!browsing) return
     const outside = (event: PointerEvent) => {
@@ -259,7 +271,7 @@ export function IconChoices({ value, onChange }: { value: string | null; onChang
           onClick={() => setBrowsing(!browsing)}
         >
           {value ? <Icon value={value} size={20} /> : <CircleOff aria-hidden="true" size={16} />}
-          <span>{value ? iconLabel(value) : t('icon.none')}</span>
+          <span>{value ? (label ?? t('icon.short')) : t('icon.none')}</span>
           <ChevronDown aria-hidden="true" size={14} />
         </button>
         {browsing && (

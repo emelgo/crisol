@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { defineAction } from './action.ts'
 import { dateValue } from './calendars.ts'
-import { gameIcon } from './game-icons.ts'
+import { isGameIcon } from './game-icons.ts'
 import { pagePanel } from './panel.ts'
 import { readAs } from './read-as.ts'
 
@@ -17,13 +17,7 @@ const emojiIcon = z
  * El icono de una página, una carpeta, una plantilla…: un emoji o uno de los iconos de rol del paquete, «gi:<id>»
  * (game-icons.ts: dragon-head, castle, crossed-swords, spell-book…)
  */
-export const pageIcon = z.union([
-  emojiIcon,
-  z
-    .string()
-    .max(48)
-    .refine((value) => gameIcon(value) !== null, 'No es un icono del paquete')
-])
+export const pageIcon = z.union([emojiIcon, z.string().max(48).refine(isGameIcon, 'No es un icono del paquete')])
 
 const propertyName = z.string().trim().min(1).max(60)
 /** El id de un campo de plantilla: corto y aleatorio (ADR-0009); los de antes, legibles («faccion»), siguen valiendo */

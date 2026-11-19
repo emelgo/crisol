@@ -3,7 +3,7 @@
  * icono. Todas del mismo tamaño y clavadas por el mismo sitio, abajo en el centro (Enrique, 2026-11-16: «algunas formas
  * mueven el sitio donde se clava el pin, y también el tamaño»): cada una se encaja en la misma caja
  */
-import { gameIcon, type MapPinView } from '@crisol/contracts'
+import { gameIconId, type MapPinView } from '@crisol/contracts'
 import type { CSSProperties } from 'react'
 import { gameIconUrl } from '../../components/icon.tsx'
 import { colorHex } from '../../routes/world-look.ts'
@@ -82,7 +82,7 @@ export function PinShape({
   size: number
 }) {
   const hex = pinHex(color)
-  const game = icon ? gameIcon(icon) : null
+  const game = gameIconId(icon)
   const path = SHAPE_PATHS[shape] ?? SHAPE_PATHS[0]
   const [cx, cy, r] = HOLES[shape] ?? HOLES[0] ?? [12, 9, 3]
   return (
@@ -94,7 +94,7 @@ export function PinShape({
           <foreignObject x={cx - r * 1.4} y={cy - r * 1.4} width={r * 2.8} height={r * 2.8}>
             <span
               className={styles.pinGlyph}
-              style={{ color: contrastInk(hex), '--icono': `url("${gameIconUrl(game.id)}")` } as CSSProperties}
+              style={{ color: contrastInk(hex), '--icono': `url("${gameIconUrl(game)}")` } as CSSProperties}
             />
           </foreignObject>
         ) : icon ? (
