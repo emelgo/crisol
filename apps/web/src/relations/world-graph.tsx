@@ -1,30 +1,29 @@
 /**
- * El grafo de todo el mundo a pantalla entera (módulo 10, decisión 12; lienzo, pantalla 4), como la cronología o el
- * mapa: arriba «‹ Páginas», «Relaciones», cuántas páginas y relaciones salen, y el buscador (lleva a una página); a la
- * izquierda, los filtros (plantillas, relaciones, etiquetas y las páginas sueltas, ocultas de entrada), que se pliegan;
- * cada página, del color de su plantilla. Hasta ~800 páginas, en SVG; con más, en un lienzo. Se abre desde un icono en
- * la cabecera del árbol de páginas. La jugadora lo ve con lo que conoce su campaña (sin etiquetas: son del máster)
+ * El grafo de todo el mundo (módulo 10, decisión 12; lienzo, pantalla 4), en la ventana del grafo (graph-window.tsx,
+ * ?grafo=mundo): arriba, cuántas páginas y relaciones salen, y el buscador (lleva a una página); a la izquierda, los
+ * filtros (plantillas, relaciones, etiquetas y las páginas sueltas, ocultas de entrada), que se pliegan; cada página,
+ * del color de su plantilla. Hasta ~300 páginas, en SVG; con más, en un lienzo. Se abre desde un icono en la cabecera
+ * del árbol de páginas. La jugadora lo ve con lo que conoce su campaña (sin etiquetas: son del máster)
  */
 import type { RelationNode } from '@crisol/contracts'
-import { getRouteApi, Link, Navigate } from '@tanstack/react-router'
-import { ChevronLeft, ChevronsLeft, Search, SlidersHorizontal } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
+import { getRouteApi, Navigate } from '@tanstack/react-router'
+import { ChevronsLeft, Search, SlidersHorizontal } from 'lucide-react'
 import { type ReactNode, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useAccounts } from '../account/context.tsx'
+import { useApi } from '../api/context.tsx'
 import { Loading } from '../components/brand.tsx'
 import { failed, LoadError } from '../components/load-error.tsx'
-import { PageTitle } from '../components/page-title.tsx'
 import { Tour } from '../components/tour.tsx'
-import { type ReadAs, ReadAsProvider, useOpenPage, useReadAs } from '../wiki/read-as.tsx'
+import { useOpenPage, useReadAs } from '../wiki/read-as.tsx'
 import { tagDot, useAccountTags } from '../wiki/tags.tsx'
 import { GraphCanvas } from './graph-canvas.tsx'
 import { forceLayout } from './layout.ts'
 import { type GraphEdge, LinksGraph } from './links-graph.tsx'
-import { inWords, templateColor } from './model.ts'
+import { colorOrder, inWords, templateColor } from './model.ts'
 import { boundsOf, usePanZoom } from './pan-zoom.ts'
 import { NodeCard, Toggle, useSelection, ZoomControls } from './parts.tsx'
 import { useTemplateLook, useWorldGraph } from './queries.ts'
-import { colorOrder } from './relations-tab.tsx'
 import styles from './world-graph.module.css'
 
 /**
@@ -38,59 +37,42 @@ const INSETS = { top: 16, bottom: 76 }
 const route = getRouteApi('/mundos/$worldId/relaciones')
 const playerRoute = getRouteApi('/mundos/$worldId/campanas/$campaignId/relaciones')
 
-/** La pantalla del máster: Páginas › Relaciones */
-export function WorldGraphScreen() {
+/** La dirección de antes del grafo del mundo: a su portada (la crea si aún no tiene), con el grafo en su ventana */
+export function WorldGraphRedirect() {
   const { worldId } = route.useParams()
-  const { account, pending } = useAccounts().useAccount()
-  if (pending) return null
-  if (!account) return <Navigate to="/entrar" replace />
+  const api = useApi()
+  const home = useQuery({
+    queryKey: ['pages', worldId, 'home', 'ensure'],
+    queryFn: () => api.call('ensureWorldHome', { worldId }),
+    retry: false
+  })
+  if (home.isError) return <Navigate to="/mundos/$worldId" params={{ worldId }} replace />
+  if (!home.data) return <Loading />
   return (
-    <WorldGraph
-      worldId={worldId}
-      back={
-        <Link to="/mundos/$worldId/wiki" params={{ worldId }} className={styles.back}>
-          <ChevronLeft size={16} aria-hidden="true" />
-          <BackText />
-        </Link>
-      }
+    <Navigate
+      to="/mundos/$worldId/wiki/$pageId"
+      params={{ worldId, pageId: home.data.pageId }}
+      search={{ grafo: 'mundo' }}
+      replace
     />
   )
 }
 
-/** La de quien juega: desde las páginas de su campaña, con lo que conoce */
-export function PlayerWorldGraphScreen() {
+/** La de quien juega: a las páginas de su campaña, con el grafo en su ventana */
+export function PlayerWorldGraphRedirect() {
   const { worldId, campaignId } = playerRoute.useParams()
-  const { como } = playerRoute.useSearch() as { como?: string }
-  const { account, pending } = useAccounts().useAccount()
-  if (pending) return null
-  if (!account) return <Navigate to="/entrar" replace />
-  const readAs: ReadAs = { campaignId, ...(como ? { asCharacterId: como } : {}) }
+  const { como } = playerRoute.useSearch()
   return (
-    <ReadAsProvider value={readAs}>
-      <WorldGraph
-        worldId={worldId}
-        back={
-          <Link
-            to="/mundos/$worldId/campanas/$campaignId/paginas"
-            params={{ worldId, campaignId }}
-            search={como ? { como } : {}}
-            className={styles.back}
-          >
-            <ChevronLeft size={16} aria-hidden="true" />
-            <BackText />
-          </Link>
-        }
-      />
-    </ReadAsProvider>
+    <Navigate
+      to="/mundos/$worldId/campanas/$campaignId/paginas"
+      params={{ worldId, campaignId }}
+      search={{ ...(como ? { como } : {}), grafo: 'mundo' }}
+      replace
+    />
   )
 }
 
-function BackText() {
-  const { t } = useTranslation()
-  return <>{t('relations.world.back')}</>
-}
-
-export function WorldGraph({ worldId, back }: { worldId: string; back: ReactNode }) {
+export function WorldGraph({ worldId }: { worldId: string }) {
   const { t } = useTranslation()
   const readAs = useReadAs()
   const openPage = useOpenPage()
@@ -196,8 +178,6 @@ export function WorldGraph({ worldId, back }: { worldId: string; back: ReactNode
   return (
     <div className={styles.screen} data-heavy={nodes.length >= CANVAS_FROM || undefined}>
       <header className={styles.head}>
-        {back}
-        <PageTitle>{t('relations.world.title')}</PageTitle>
         <p className={styles.facts}>
           {t('relations.world.facts', { pages: nodes.length, relations: edges.length })}
           {!orphans && loose > 0 && <> · {t('relations.world.orphansHidden', { count: loose })}</>}

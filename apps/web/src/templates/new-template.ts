@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next'
 import type { ActionOutput } from '../api/client.ts'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
+import { type TabKind, tabRequest } from '../wiki/tabs/kinds.tsx'
 import { useTemplates } from './data.ts'
 
 type Listed = ActionOutput<'listTemplates'>
@@ -23,8 +24,8 @@ type Options = {
   folderId?: string | null
   /** Su nombre; sin él, «Plantilla sin título» (o «{nombre} (copia)»), con un número si ya hay una así */
   name?: string
-  /** Su página nace con un mapa, como una página nueva (el cuadro de «Plantilla nueva») */
-  kind?: 'text' | 'map'
+  /** Su página nace con esa pestaña (un mapa, una pizarra…), como una página nueva (el cuadro de «Plantilla nueva») */
+  kind?: TabKind
 }
 
 /**
@@ -54,10 +55,10 @@ export function useNewTemplate() {
         ...(copyOf ? { copyOf: copyOf.id } : {}),
         ...(folderId !== undefined ? { folderId } : {})
       })
-      // Si el mapa falla, la plantilla ya está: se abre igual (sin él)
+      // Si la pestaña falla, la plantilla ya está: se abre igual (sin ella)
       const tab =
-        kind === 'map' && created.pageId
-          ? await api.call('createPageTab', { pageId: created.pageId, kind: 'map' }).catch(() => null)
+        kind && kind !== 'text' && created.pageId
+          ? await api.call('createPageTab', { pageId: created.pageId, ...tabRequest(kind) }).catch(() => null)
           : null
       return { created, tab, named: Boolean(named) }
     },

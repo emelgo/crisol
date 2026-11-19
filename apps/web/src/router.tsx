@@ -9,12 +9,12 @@ import { WorldPagesHome, WorldPageView } from './campaign/world-pages.tsx'
 import { CharacterScreen } from './characters/character.tsx'
 import { CharactersScreen } from './characters/characters.tsx'
 import { PlayerChronologies, PlayerChronology } from './chronologies/player.tsx'
-import { ChronologyScreen } from './chronologies/screen.tsx'
+import { ChronologyRedirect } from './chronologies/screen.tsx'
 import { InPlayScreen } from './creatures/in-play.tsx'
 import { LibraryScreen } from './library/library.tsx'
 import { NotesScreen } from './notes/screen.tsx'
 import { PartyScreen } from './party/route.tsx'
-import { PlayerWorldGraphScreen, WorldGraphScreen } from './relations/world-graph.tsx'
+import { PlayerWorldGraphRedirect, WorldGraphRedirect } from './relations/world-graph.tsx'
 import { Bootstrap } from './routes/bootstrap.tsx'
 import { AdventuresScreen, CampaignBooksScreen, CampaignPage, ToMesaIfMaster } from './routes/campaign.tsx'
 import { CampaignsPage } from './routes/campaigns.tsx'
@@ -44,6 +44,9 @@ import { AccountTags, WorldTagsRedirect } from './wiki/tags.tsx'
 import { WikiHome, WikiPage } from './wiki/wiki.tsx'
 
 const rootRoute = createRootRoute({ component: RootLayout, notFoundComponent: NotFound })
+/** ?grafo=mundo o ?grafo=<página>: la ventana del grafo de relaciones, encima de las páginas (relations/graph-window.tsx) */
+const grafoSearch = (search: Record<string, unknown>): { grafo?: string } =>
+  typeof search.grafo === 'string' && search.grafo ? { grafo: search.grafo } : {}
 const homeRoute = createRoute({ getParentRoute: () => rootRoute, path: '/', component: Home })
 
 // Las direcciones que ve la gente van en español
@@ -173,9 +176,10 @@ const libraryRoute = createRoute({
 })
 // Las páginas del mundo desde una campaña, con lo que sabe (ADR-0017); ?como=<personaje>: el máster, como él;
 // ?pestana=<id>: una pestaña de la página que no es su texto
-const asSearch = (search: Record<string, unknown>): { como?: string; pestana?: string } => ({
+const asSearch = (search: Record<string, unknown>): { como?: string; pestana?: string; grafo?: string } => ({
   ...(typeof search.como === 'string' && search.como ? { como: search.como } : {}),
-  ...(typeof search.pestana === 'string' && search.pestana ? { pestana: search.pestana } : {})
+  ...(typeof search.pestana === 'string' && search.pestana ? { pestana: search.pestana } : {}),
+  ...grafoSearch(search)
 })
 const worldPagesRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -200,10 +204,11 @@ const worldPageRoute = createRoute({
 })
 const wikiRoute = createRoute({ getParentRoute: () => rootRoute, path: '/mundos/$worldId/wiki', component: WikiHome })
 // ?nuevo=true: la página se acaba de crear y se abre con su título por poner; ?pestana=<id>: una pestaña que no es el
-// texto (un mapa)
-const pageSearch = (search: Record<string, unknown>): { nuevo?: true; pestana?: string } => ({
+// texto (un mapa); ?grafo=: la ventana del grafo
+const pageSearch = (search: Record<string, unknown>): { nuevo?: true; pestana?: string; grafo?: string } => ({
   ...(search.nuevo === true || search.nuevo === 'true' ? { nuevo: true as const } : {}),
-  ...(typeof search.pestana === 'string' && search.pestana ? { pestana: search.pestana } : {})
+  ...(typeof search.pestana === 'string' && search.pestana ? { pestana: search.pestana } : {}),
+  ...grafoSearch(search)
 })
 const wikiPageRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -239,22 +244,22 @@ const calendarEditorRoute = createRoute({
   validateSearch: (search: Record<string, unknown>): { fase?: string } =>
     typeof search.fase === 'string' && search.fase ? { fase: search.fase } : {}
 })
-// Una cronología del mundo (módulo 8), a pantalla entera dentro de Calendarios
+// La dirección de antes de una cronología (en Calendarios): lleva a su pestaña, en su página (ADR-0031)
 const chronologyRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/mundos/$worldId/calendarios/cronologias/$chronologyId',
-  component: ChronologyScreen
+  component: ChronologyRedirect
 })
-// El grafo de relaciones de todo el mundo (módulo 10), a pantalla entera; y el de quien juega, con lo que conoce
+// Las de antes del grafo de relaciones del mundo (y del de quien juega): llevan a las páginas, con el grafo en su ventana
 const worldGraphRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/mundos/$worldId/relaciones',
-  component: WorldGraphScreen
+  component: WorldGraphRedirect
 })
 const playerWorldGraphRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/mundos/$worldId/campanas/$campaignId/relaciones',
-  component: PlayerWorldGraphScreen,
+  component: PlayerWorldGraphRedirect,
   validateSearch: asSearch
 })
 // Las cronologías que conoce la campaña de quien juega (ADR-0017), y una de ellas

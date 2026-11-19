@@ -157,8 +157,12 @@ h3.blockTitle.blockTitle {
   inline-size: 2rem;
   block-size: 2rem;
   margin-inline-start: auto;
+  padding: 0;
+  border: 0;
   border-radius: 6px;
+  background: none;
   color: var(--color-muted);
+  cursor: pointer;
 }
 
 .graphLink:hover {
@@ -171,11 +175,11 @@ h3.blockTitle.blockTitle {
   outline-offset: 1px;
 }
 
-/* «Relaciones» de quien juega, en el escritorio: el grafo en un marco del alto de la ventana */
-.relations {
+/* Una cronología o un árbol de quien juega: en un marco del alto de la ventana (en el móvil, algo más bajo) */
+.filled {
   position: relative;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
   block-size: min(72dvh, 46rem);
   margin-block: var(--space-3) var(--space-6);
   overflow: hidden;
@@ -183,8 +187,6 @@ h3.blockTitle.blockTitle {
   border-radius: var(--radius-frame);
 }
 
-.relations > :last-child {
-  flex: 1 1 0;
-  block-size: auto;
+.filled > * {
   min-block-size: 0;
 }

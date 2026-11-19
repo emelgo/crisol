@@ -44,6 +44,8 @@ import type {
   TemplateView,
   TokenView,
   TrashItem,
+  TreeNodeView,
+  TreeView,
   WallView,
   WidgetView,
   World
@@ -638,6 +640,24 @@ export function fakeApi(
       place(page)
       return page.id
     },
+    // Su pestaña (ADR-0031): pageTabs se declara más abajo, pero esto solo se llama al crear una cronología
+    addTab: (pageId, name) => {
+      const tab: PageTabView = {
+        id: crypto.randomUUID(),
+        pageId,
+        kind: 'chronology',
+        name,
+        hidden: false,
+        documentId: null,
+        color: null
+      }
+      pageTabs.push(tab)
+      return tab.id
+    },
+    removeTab: (tabId) => {
+      const index = pageTabs.findIndex((tab) => tab.id === tabId)
+      if (index >= 0) pageTabs.splice(index, 1)
+    },
     ...(options.events ? { events: options.events } : {}),
     ...(options.chronologies ? { chronologies: options.chronologies } : {}),
     ...(options.timelineGroups ? { groups: options.timelineGroups } : {})
@@ -774,6 +794,41 @@ export function fakeApi(
   const homes = new Map<string, string>()
   // Las pestañas de las páginas y sus mapas (los pines, dentro de cada mapa)
   const pageTabs: PageTabView[] = []
+  // Las de las cronologías de partida, en sus páginas
+  for (const row of chronologies.chronologies)
+    pageTabs.push({
+      id: row.tabId,
+      pageId: row.pageId,
+      kind: 'chronology',
+      name: 'Cronología',
+      hidden: false,
+      documentId: null,
+      color: null
+    })
+  // Los árboles genealógicos y organigramas de las pestañas tree
+  const trees: TreeView[] = []
+  const treeOf = (tabId: string) => {
+    const tree = trees.find((each) => each.tabId === tabId)
+    if (!tree) throw new ApiError('NOT_FOUND', 404)
+    return tree
+  }
+  /** Lo que se guarda de un árbol: los nodos con página, con su título; los sueltos, con su nombre */
+  const treeNodes = (
+    worldId: string,
+    nodes: Array<{ id: string; pageId?: string | null | undefined; name?: string; note?: string | undefined }>
+  ): TreeNodeView[] =>
+    nodes.map((node) => {
+      const page = node.pageId ? pages.find((p) => p.id === node.pageId && p.worldId === worldId) : undefined
+      if (node.pageId && !page) throw new ApiError('BAD_TREE', 400)
+      return {
+        id: node.id,
+        pageId: page?.id ?? null,
+        name: page?.title ?? node.name ?? '',
+        ...(node.note ? { note: node.note } : {}),
+        icon: page?.icon ?? null,
+        template: page?.template ?? null
+      }
+    })
   const maps: MapView[] = []
   const tabById = (tabId: string) => {
     const tab = pageTabs.find((t) => t.id === tabId)
@@ -2143,6 +2198,75 @@ export function fakeApi(
         groups: view.groups ?? [],
         truncated: view.truncated
       }
+    },
+    getTree: ({ tabId }) => structuredClone(treeOf(tabId)),
+    updateTree: ({ tabId, layout, nodes, edges }) => {
+      const tree = treeOf(tabId)
+      const page = pageById(tree.pageId)
+      if (layout !== undefined) tree.layout = layout
+      if (nodes !== undefined) tree.nodes = treeNodes(page.worldId, nodes)
+      if (edges !== undefined) tree.edges = edges
+      tree.version++
+      return structuredClone(tree)
+    },
+    createTree: ({ worldId, name, pageId, parentId, layout, nodes, edges }) => {
+      const page = pageId
+        ? pageById(pageId)
+        : pageById(
+            (() => {
+              const created: StoredPage = {
+                id: crypto.randomUUID(),
+                worldId,
+                parentId: parentId ?? null,
+                title: name,
+                icon: null,
+                properties: [],
+                version: 1
+              }
+              place(created)
+              return created.id
+            })()
+          )
+      const tab: PageTabView = {
+        id: crypto.randomUUID(),
+        pageId: page.id,
+        kind: 'tree',
+        name: pageId ? name : layout === 'org' ? 'Organigrama' : 'Árbol genealógico',
+        hidden: false,
+        documentId: null,
+        color: null
+      }
+      pageTabs.push(tab)
+      const tree: TreeView = {
+        tabId: tab.id,
+        pageId: page.id,
+        layout: layout ?? 'family',
+        nodes: treeNodes(worldId, nodes ?? []),
+        edges: edges ?? [],
+        version: 1
+      }
+      trees.push(tree)
+      return structuredClone(tree)
+    },
+    convertTreeNodeToPage: ({ tabId, nodeId, parentId }) => {
+      const tree = treeOf(tabId)
+      const node = tree.nodes.find((each) => each.id === nodeId)
+      if (!node) throw new ApiError('NOT_FOUND', 404)
+      if (node.pageId) throw new ApiError('NODE_HAS_PAGE', 400)
+      const owner = pageById(tree.pageId)
+      const created: StoredPage = {
+        id: crypto.randomUUID(),
+        worldId: owner.worldId,
+        parentId: parentId === undefined ? owner.id : parentId,
+        title: node.name,
+        icon: null,
+        properties: [],
+        version: 1
+      }
+      place(created)
+      node.pageId = created.id
+      tree.version++
+      return { pageId: created.id, tree: structuredClone(tree) }
     },
     getWorldGraph: ({ worldId, relations, orphans = false }) => {
       const inWorld = pages.filter((p) => p.worldId === worldId)
@@ -4240,18 +4364,30 @@ export function fakeApi(
       return { pageId: page.id }
     },
     listPageTabs: ({ pageId }) => ({ tabs: pageTabs.filter((t) => t.pageId === pageId).map((t) => ({ ...t })) }),
-    createPageTab: ({ pageId, kind, name }) => {
-      pageById(pageId)
+    createPageTab: ({ pageId, kind, name, layout }) => {
+      const page = pageById(pageId)
+      const named = {
+        text: 'Texto 2',
+        scene: 'Escena',
+        map: 'Mapa',
+        table: 'Tabla',
+        board: 'Pizarra',
+        chronology: 'Cronología',
+        tree: layout === 'org' ? 'Organigrama' : 'Árbol genealógico'
+      }[kind]
       const tab: PageTabView = {
         id: crypto.randomUUID(),
         pageId,
         kind,
-        name: name ?? (kind === 'text' ? 'Texto 2' : kind === 'scene' ? 'Escena' : 'Mapa'),
+        name: name ?? named,
         hidden: false,
         documentId: kind === 'text' || kind === 'board' ? crypto.randomUUID() : null,
         color: null
       }
       pageTabs.push(tab)
+      if (kind === 'chronology') chronologies.attach(tab, page.worldId)
+      if (kind === 'tree')
+        trees.push({ tabId: tab.id, pageId, layout: layout ?? 'family', nodes: [], edges: [], version: 1 })
       maps.push({
         id: crypto.randomUUID(),
         tabId: tab.id,
@@ -4306,6 +4442,9 @@ export function fakeApi(
     deletePageTab: ({ tabId }) => {
       const tab = tabById(tabId)
       pageTabs.splice(pageTabs.indexOf(tab), 1)
+      chronologies.detach(tabId)
+      const tree = trees.findIndex((each) => each.tabId === tabId)
+      if (tree >= 0) trees.splice(tree, 1)
       maps.splice(
         maps.findIndex((m) => m.tabId === tabId),
         1

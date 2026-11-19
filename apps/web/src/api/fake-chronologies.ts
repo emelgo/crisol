@@ -66,6 +66,10 @@ export function fakeChronologies(options: {
     icon?: string | null
     cover?: { fileId: string; x: number; y: number } | null
   }) => string
+  /** Pone una pestaña de cronología en una página (la de la API en memoria) y devuelve su id (ADR-0031) */
+  addTab?: (pageId: string, name: string) => string
+  /** Quita su pestaña al borrar una cronología */
+  removeTab?: (tabId: string) => void
   events?: FakeEvent[]
   chronologies?: Array<Partial<ChronologyView> & { worldId: string; name: string }>
   groups?: Array<{ id?: string; worldId: string; name: string; color?: TimelineGroupView['color'] }>
@@ -77,6 +81,9 @@ export function fakeChronologies(options: {
       id: c.id ?? crypto.randomUUID(),
       worldId: c.worldId,
       name: c.name,
+      // Cada una, una pestaña de una página (sin página, una nueva con su nombre: la pestaña la pone fake.ts)
+      tabId: c.tabId ?? crypto.randomUUID(),
+      pageId: c.pageId ?? options.createPage({ worldId: c.worldId, title: c.name, parentId: null }),
       calendarId: c.calendarId ?? null,
       filter: { ...DEFAULT_CHRONOLOGY_FILTER, ...(c.filter ?? {}) },
       version: 1,
@@ -116,7 +123,7 @@ export function fakeChronologies(options: {
   const view = ({ position: _, ...row }: ChronologyRow): ChronologyView => structuredClone(row)
   const groupView = ({ position: _, worldId: __, ...row }: GroupRow): TimelineGroupView => ({ ...row })
   const find = (id: string) => {
-    const row = chronologies.find((c) => c.id === id)
+    const row = chronologies.find((c) => c.id === id || c.tabId === id)
     if (!row) throw new ApiError('NOT_FOUND', 404)
     return row
   }
@@ -293,8 +300,8 @@ export function fakeChronologies(options: {
       }),
       groups: groupsOf(worldId).map(groupView)
     }),
-    getChronology: ({ chronologyId }) => {
-      const row = find(chronologyId)
+    getChronology: ({ chronologyId, tabId }) => {
+      const row = find(chronologyId ?? tabId ?? '')
       const calendar = calendarOf(row)
       if (!calendar) throw new ApiError('NO_CALENDAR', 400)
       const { position: _, ...plain } = calendar
@@ -307,12 +314,17 @@ export function fakeChronologies(options: {
       const all = { worldId: calendar.worldId, calendarId, filter: { ...DEFAULT_CHRONOLOGY_FILTER } }
       return { groups: groupsOf(calendar.worldId).map(groupView), ...entriesOf(all) }
     },
-    createChronology: ({ worldId, name, calendarId, filter }) => {
+    createChronology: ({ worldId, name, pageId, parentId, calendarId, filter }) => {
       if (calendarsOf(worldId).length === 0) throw new ApiError('NO_CALENDAR', 400)
+      // En una página que ya hay, una pestaña más; si no, una página nueva con su pestaña «Cronología»
+      const page = pageId ?? options.createPage({ worldId, title: name, parentId: parentId ?? null })
+      const tabId = options.addTab?.(page, pageId ? name : 'Cronología') ?? crypto.randomUUID()
       const row: ChronologyRow = {
         id: crypto.randomUUID(),
         worldId,
         name,
+        tabId,
+        pageId: page,
         calendarId: calendarId ?? null,
         filter: { ...DEFAULT_CHRONOLOGY_FILTER, ...(filter ?? {}) },
         version: 1,
@@ -324,22 +336,18 @@ export function fakeChronologies(options: {
       chronologies.push(row)
       return view(row)
     },
-    updateChronology: ({ chronologyId, name, calendarId, filter, after }) => {
+    updateChronology: ({ chronologyId, name, calendarId, filter }) => {
       const row = find(chronologyId)
       if (name !== undefined) row.name = name
       if (calendarId !== undefined) row.calendarId = calendarId
       if (filter !== undefined) row.filter = { ...row.filter, ...filter }
-      if (after !== undefined) {
-        const others = byPosition(chronologies.filter((c) => c.worldId === row.worldId && c.id !== row.id))
-        const index = after === null ? -1 : others.findIndex((c) => c.id === after)
-        row.position = keyBetween(others[index]?.position ?? null, others[index + 1]?.position ?? null)
-      }
       row.version++
       return view(row)
     },
     deleteChronology: ({ chronologyId }) => {
       const row = find(chronologyId)
       chronologies.splice(chronologies.indexOf(row), 1)
+      options.removeTab?.(row.tabId)
       return { id: row.id }
     },
     updateTimelineGroups: ({ worldId, groups: wanted }) => {
@@ -413,5 +421,24 @@ export function fakeChronologies(options: {
       return { pageId, event: structuredClone(event) }
     }
   }
-  return { handlers, events, chronologies, groups }
+  /** «Pestaña nueva» de tipo cronología: con el calendario principal y todo el mundo */
+  const attach = (tab: { id: string; pageId: string; name: string }, worldId: string) => {
+    chronologies.push({
+      id: crypto.randomUUID(),
+      worldId,
+      name: tab.name,
+      tabId: tab.id,
+      pageId: tab.pageId,
+      calendarId: null,
+      filter: { ...DEFAULT_CHRONOLOGY_FILTER },
+      version: 1,
+      position: keyBetween(byPosition(chronologies).at(-1)?.position ?? null, null)
+    })
+  }
+  /** Al quitar su pestaña, la cronología se va con ella */
+  const detach = (tabId: string) => {
+    const index = chronologies.findIndex((c) => c.tabId === tabId)
+    if (index >= 0) chronologies.splice(index, 1)
+  }
+  return { handlers, events, chronologies, groups, attach, detach }
 }

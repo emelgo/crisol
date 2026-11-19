@@ -1,44 +1,14 @@
 /**
- * Las piezas que flotan sobre el grafo de relaciones (módulo 10): la píldora de los modos (abajo en el centro, como la
- * del mapa), el zoom (abajo a la derecha), la leyenda de los trazos (abajo a la izquierda) y la ficha de la página
- * elegida (arriba a la derecha), con «Abrir» y «Centrar aquí»
+ * Las piezas que flotan sobre el grafo de relaciones (módulo 10): el zoom (abajo a la derecha), la leyenda de los trazos
+ * (abajo a la izquierda) y la ficha de la página elegida (arriba a la derecha), con «Abrir» y «Centrar aquí»
  */
-import type { RelationMode, RelationNode } from '@crisol/contracts'
-import { Crosshair, ExternalLink, GitFork, Minus, Network, Plus, Waypoints, X } from 'lucide-react'
+import type { RelationNode } from '@crisol/contracts'
+import { Crosshair, ExternalLink, Minus, Plus, X } from 'lucide-react'
 import { type CSSProperties, useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { NodeGlyphBox } from './glyph.tsx'
 import type { WordsRow } from './model.ts'
 import styles from './relations.module.css'
-
-const MODE_ICONS = { links: Waypoints, family: GitFork, org: Network } as const
-
-/** Los modos que tiene la página, en una píldora de cristal (solo los que tiene) */
-export function ModePill({
-  modes,
-  value,
-  onChange
-}: {
-  modes: readonly RelationMode[]
-  value: RelationMode
-  onChange: (mode: RelationMode) => void
-}) {
-  const { t } = useTranslation()
-  if (modes.length < 2) return null
-  return (
-    <div className={styles.pill} role="toolbar" aria-label={t('relations.modes.label')} data-tour="relaciones-modos">
-      {modes.map((mode) => {
-        const Icon = MODE_ICONS[mode]
-        return (
-          <button key={mode} type="button" aria-pressed={value === mode} onClick={() => onChange(mode)}>
-            <Icon size={16} aria-hidden="true" />
-            {t(`relations.modes.${mode}`)}
-          </button>
-        )
-      })}
-    </div>
-  )
-}
 
 /** − 100 % +; pulsar el tanto por ciento lo encuadra todo */
 export function ZoomControls({
@@ -178,6 +148,7 @@ export function NodeCard({
       tabIndex={-1}
       className={styles.card}
       aria-label={node.title}
+      data-node-card=""
       style={{ '--node-color': color } as CSSProperties}
     >
       <header className={styles.cardHead}>

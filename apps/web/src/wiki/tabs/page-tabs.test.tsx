@@ -82,9 +82,9 @@ describe('las pestañas de una página', () => {
     await userEvent.click((await bar()).getByRole('button', { name: 'Pestaña nueva' }))
     const dialog = within(await screen.findByRole('dialog', { name: 'Pestaña nueva' }))
     expect(dialog.getByRole('radio', { name: 'Texto' })).toHaveProperty('checked', true)
-    // Ni la línea temporal (vive en las cronologías) ni el árbol familiar (lo calcula la pestaña «Relaciones»): ya no
-    // queda ninguna «Pronto»
-    expect(dialog.queryByRole('radio', { name: /Línea temporal|Árbol/ })).toBeNull()
+    // La cronología, el árbol genealógico y el organigrama, ya de verdad: ninguna «Pronto»
+    for (const kind of ['Cronología', 'Árbol genealógico', 'Organigrama'])
+      expect(dialog.getByRole('radio', { name: kind })).toBeDefined()
     expect(dialog.queryByText('Pronto')).toBeNull()
     await userEvent.click(dialog.getByRole('button', { name: 'Crear' }))
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())

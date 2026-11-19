@@ -4,9 +4,9 @@
 .screen {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
-  gap: var(--space-4);
-  block-size: 100dvh;
-  padding: var(--space-5) var(--space-6);
+  gap: var(--space-3);
+  block-size: 100%;
+  min-block-size: 0;
 }
 
 .head {
@@ -362,5 +362,68 @@
 
   .find {
     inline-size: 100%;
+  }
+}
+
+/* ---------- La ventana del grafo (?grafo=): casi toda la pantalla, como Ajustes pero más grande ---------- */
+.window {
+  inline-size: min(84rem, calc(100vw - 2rem));
+  block-size: min(90dvh, 64rem);
+  max-block-size: min(90dvh, 64rem);
+  margin-block: calc((100dvh - min(90dvh, 64rem)) / 2) auto;
+}
+
+.windowHead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  min-block-size: 3.5rem;
+  padding: var(--space-4) calc(var(--space-6) + 2.5rem) var(--space-3) var(--space-6);
+  border-block-end: 1px solid var(--line-soft);
+}
+
+.windowHead h2 {
+  margin: 0;
+  overflow: hidden;
+  font-size: 1.25rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.windowBody {
+  display: grid;
+  flex: 1;
+  min-block-size: 0;
+  padding: var(--space-4) var(--space-6) var(--space-6);
+}
+
+/* En la ventana no hay d20 que esquivar: el zoom, en su esquina */
+.window .graph :global([role="toolbar"]) {
+  inset-block-end: var(--space-4);
+}
+
+/* El de una página: sus herramientas arriba y el grafo debajo, en su marco */
+.pageGraph {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: var(--space-3);
+  min-block-size: 0;
+}
+
+.pageGraph > .graph {
+  composes: frame from "../components/frame.module.css";
+  --frame-fill: var(--surface-page);
+}
+
+@media (max-width: 48rem) {
+  .window {
+    inline-size: 100vw;
+    block-size: 100dvh;
+    max-block-size: 100dvh;
+    margin-block: 0;
+  }
+
+  .windowBody {
+    padding: var(--space-3);
   }
 }

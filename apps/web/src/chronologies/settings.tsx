@@ -1,7 +1,8 @@
 /**
- * Los ajustes de una cronología, en su cabecera (decisión 4 de Enrique: cada una con su calendario y su filtro): su
- * nombre, su calendario, qué páginas con fecha salen (ninguna, todas o las de unas plantillas o etiquetas) y de qué
- * grupos son sus eventos; y los grupos del mundo (su nombre y su color, o quitarlos). Cada cambio se guarda al momento
+ * Los ajustes de una cronología, junto a sus pestañas (decisión 4 de Enrique: cada una con su calendario y su filtro):
+ * su calendario, qué páginas con fecha salen (ninguna, todas o las de unas plantillas o etiquetas) y de qué grupos son
+ * sus eventos; y los grupos del mundo (su nombre y su color, o quitarlos). Su nombre es el de su pestaña (ADR-0031).
+ * Cada cambio se guarda al momento
  */
 import { type CalendarView, type ChronologyView, type TimelineGroupView, WORLD_COLORS } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -43,7 +44,6 @@ export function ChronologySettings({
   const close = useCallback(() => setOpen(false), [])
   useDismiss(open, close, box, button)
   const id = useId()
-  const [name, setName] = useState(chronology.name)
   const templates = useQuery({
     queryKey: ['templates', organizationId],
     queryFn: () => api.call('listTemplates', organizationId ? { organizationId } : {}),
@@ -105,22 +105,6 @@ export function ChronologySettings({
           role="dialog"
           aria-label={t('chronologies.settings.title')}
         >
-          <div className={styles.settingsSection}>
-            <label htmlFor={`${id}-name`}>{t('chronologies.name')}</label>
-            <input
-              id={`${id}-name`}
-              value={name}
-              maxLength={60}
-              onChange={(event) => setName(event.currentTarget.value)}
-              onBlur={() => {
-                if (name.trim() && name.trim() !== chronology.name) update.mutate({ name: name.trim() })
-                else setName(chronology.name)
-              }}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') event.currentTarget.blur()
-              }}
-            />
-          </div>
           <div className={styles.settingsSection}>
             <label htmlFor={`${id}-calendar`}>{t('chronologies.calendar')}</label>
             <select

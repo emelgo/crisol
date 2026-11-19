@@ -1,17 +1,15 @@
 /**
- * Las cronologías desde una campaña (ADR-0017, decisión 4 de Enrique): quien juega ve las que el máster le enseña
- * (las revela a su campaña) y, dentro, solo lo que sabe su campaña; en solo lectura. La lista y cada una a pantalla
- * entera, como las del máster
+ * Las cronologías desde una campaña (ADR-0017, ADR-0031): quien juega ve las de las pestañas que conoce y, dentro, solo
+ * lo que sabe su campaña; en solo lectura. Su lista lleva a cada una, en la pestaña de su página
  */
-import { getRouteApi, Link } from '@tanstack/react-router'
-import { ChevronLeft } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
+import { getRouteApi, Link, Navigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
+import { useApi } from '../api/context.tsx'
 import calendarStyles from '../calendars/calendars.module.css'
-import { CampaignChronology } from '../campaign-time/today-chronology.tsx'
 import { Loading } from '../components/brand.tsx'
 import { failed, LoadError } from '../components/load-error.tsx'
 import { Screen } from '../components/screen.tsx'
-import { ReadAsProvider } from '../wiki/read-as.tsx'
 import styles from './chronologies.module.css'
 import { usePlayerChronologies } from './queries.ts'
 
@@ -35,8 +33,9 @@ export function PlayerChronologies() {
             <li key={chronology.id} className={calendarStyles.card}>
               <div className={calendarStyles.cardHead}>
                 <Link
-                  to="/mundos/$worldId/campanas/$campaignId/cronologias/$chronologyId"
-                  params={{ worldId, campaignId, chronologyId: chronology.id }}
+                  to="/mundos/$worldId/campanas/$campaignId/paginas/$pageId"
+                  params={{ worldId, campaignId, pageId: chronology.pageId }}
+                  search={{ pestana: chronology.tabId }}
                   className={calendarStyles.name}
                 >
                   {chronology.name}
@@ -60,26 +59,25 @@ export function PlayerChronologies() {
   )
 }
 
+/** La dirección de antes de una cronología de la campaña: a su pestaña, en su página; si ya no la ve, a la lista */
 export function PlayerChronology() {
-  const { t } = useTranslation()
   const { worldId, campaignId, chronologyId } = oneRoute.useParams()
+  const api = useApi()
+  const found = useQuery({
+    queryKey: ['chronology', chronologyId, campaignId],
+    queryFn: () => api.call('getChronology', { chronologyId, campaignId }),
+    retry: false
+  })
+  if (found.isError)
+    return <Navigate to="/mundos/$worldId/campanas/$campaignId/cronologias" params={{ worldId, campaignId }} replace />
+  if (!found.data) return <Loading />
+  const { chronology } = found.data
   return (
-    <ReadAsProvider value={{ campaignId }}>
-      <CampaignChronology
-        worldId={worldId}
-        campaignId={campaignId}
-        chronologyId={chronologyId}
-        back={
-          <Link
-            to="/mundos/$worldId/campanas/$campaignId/cronologias"
-            params={{ worldId, campaignId }}
-            className={styles.back}
-          >
-            <ChevronLeft size={16} aria-hidden="true" />
-            {t('chronologies.title')}
-          </Link>
-        }
-      />
-    </ReadAsProvider>
+    <Navigate
+      to="/mundos/$worldId/campanas/$campaignId/paginas/$pageId"
+      params={{ worldId, campaignId, pageId: chronology.pageId }}
+      search={{ pestana: chronology.tabId }}
+      replace
+    />
   )
 }

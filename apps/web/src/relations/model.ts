@@ -1,43 +1,9 @@
 /**
- * Lo que la web hace con las relaciones de una página (módulo 10, docs/specs/modulo-10.md), sin React: con qué modo se
- * abre (y recordarlo por plantilla), cómo se lee cada arista desde la página del centro y la lista «en palabras» que
- * va debajo del grafo en el móvil y en la ficha de una página elegida
+ * Lo que la web hace con las relaciones de una página (módulo 10, docs/specs/modulo-10.md), sin React: cómo se lee
+ * cada arista desde una página, la lista «en palabras» de la ficha de una página elegida y el color de cada plantilla
  */
-import type { RelationEdge, RelationMode } from '@crisol/contracts'
+import type { RelationEdge } from '@crisol/contracts'
 import type { TFunction } from 'i18next'
-
-export const MODE_ORDER: readonly RelationMode[] = ['links', 'family', 'org']
-
-const modeKey = (template: string | null) => `crisol.relaciones.modo.${template ?? 'sin-plantilla'}`
-
-/** El modo que se eligió la última vez en las páginas de esa plantilla (null si no hay o no se puede leer) */
-export function rememberedMode(template: string | null): RelationMode | null {
-  try {
-    const value = localStorage.getItem(modeKey(template))
-    return MODE_ORDER.includes(value as RelationMode) ? (value as RelationMode) : null
-  } catch {
-    return null
-  }
-}
-
-export function rememberMode(template: string | null, mode: RelationMode) {
-  try {
-    localStorage.setItem(modeKey(template), mode)
-  } catch {
-    // Sin almacenamiento (ventana privada): no se recuerda
-  }
-}
-
-/**
- * Con qué modo se abre la pestaña: el recordado para su plantilla, si la página lo tiene; si no, Familia u Organigrama
- * si los tiene (decisión 8 de la spec) y, si no, Enlaces. null si no tiene ninguna relación
- */
-export function openingMode(modes: readonly RelationMode[], remembered: RelationMode | null): RelationMode | null {
-  if (remembered && modes.includes(remembered)) return remembered
-  if (modes.includes('family')) return 'family'
-  if (modes.includes('org')) return 'org'
-  return modes.includes('links') ? 'links' : null
-}
 
 /** Una arista con lo que hace falta para leerla (las del grafo del mundo llegan cortas y se completan) */
 export type ReadableEdge = Pick<RelationEdge, 'source' | 'target' | 'kind' | 'name' | 'inverseName' | 'secret'>
@@ -120,4 +86,11 @@ export function templateColor(template: string | null, order: readonly string[])
   if (!template) return 'var(--color-muted)'
   const at = order.indexOf(template)
   return `var(--color-series-${((at === -1 ? order.length : at) % SERIES_COLORS) + 1})`
+}
+
+/** El orden de los colores: el de las plantillas de la cuenta y, detrás, las que salen y no están (las de otro) */
+export function colorOrder(order: readonly string[], nodes: readonly { template: string | null }[]) {
+  const all = [...order]
+  for (const node of nodes) if (node.template && !all.includes(node.template)) all.push(node.template)
+  return all
 }

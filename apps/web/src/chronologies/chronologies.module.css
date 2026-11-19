@@ -1,6 +1,6 @@
 /*
- * Las cronologías (módulo 8; lienzo, pantallas 4 a 8): la sección de Calendarios, la pantalla entera con su marco de
- * cristal, la píldora y el zoom abajo, y las tres vistas (la lista con su línea, los meses con sus carriles y el
+ * Las cronologías (módulo 8; lienzo, pantallas 4 a 8): la lista de la jugadora, la pestaña de su página (ADR-0031) y la
+ * ventana de la Mesa con su marco de cristal, la píldora y el zoom abajo, y las tres vistas (la lista con su línea, los meses con sus carriles y el
  * calendario con su rejilla), la tarjeta 6:1 y el cuadro del evento
  */
 
@@ -1891,4 +1891,78 @@
 /* Lo que aún no ha pasado (con el «hoy» de una campaña): la tarjeta, con la raya discontinua */
 .listRow[data-future] .eventCard {
   border-style: dashed;
+}
+
+/* ---------- En la pestaña de su página (ADR-0031) ---------- */
+/* Sin sitio en la cabecera (la jugadora): encima de la vista */
+.toolsRow {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* A sangre bajo las pestañas, como el mapa: la vista llena lo que queda de la ventana y se desplaza por dentro */
+.tabScreen {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  block-size: 100%;
+  min-block-size: 0;
+}
+
+.tabScreen:has(> .failure),
+.tabScreen:has(> .segmented),
+.tabScreen:has(> .toolsRow) {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.tabScreen:has(> .failure):has(> .segmented) {
+  grid-template-rows: auto auto minmax(0, 1fr);
+}
+
+.tabScreen > .failure,
+.tabScreen > .segmented,
+.tabScreen > .toolsRow {
+  margin: var(--space-2) var(--space-4) 0;
+}
+
+/* Sin marco propio: la superficie es la de la página */
+.tabScreen > .frame {
+  --frame-fill: transparent;
+  background: none;
+  border-radius: 0 0 var(--radius-frame) var(--radius-frame);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+.tabScreen > .frame::before {
+  display: none;
+}
+
+/* Sus herramientas, a la derecha de las pestañas: su calendario, «Hoy de…», «Ir a…» y sus ajustes */
+.tabTools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.tabTools .headButton {
+  min-block-size: 2rem;
+  border-color: transparent;
+  background: none;
+  color: var(--color-muted);
+}
+
+.tabTools .headButton:hover,
+.tabTools .headButton[aria-expanded="true"] {
+  border-color: var(--line-frame);
+  color: var(--color-text);
+}
+
+/* Sin calendario en el mundo: una sola pieza en el centro */
+.tabFrame {
+  display: grid;
+  place-items: center;
+  block-size: 100%;
+  min-block-size: 12rem;
 }

@@ -1,4 +1,4 @@
-import type { Page, PageTabView, RelationMode } from '@crisol/contracts'
+import type { Page, PageTabView } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getRouteApi, Link, Navigate, useNavigate, useRouter } from '@tanstack/react-router'
 import {
@@ -12,8 +12,7 @@ import {
   PanelRightClose,
   PanelRightOpen,
   Plus,
-  Printer,
-  Waypoints
+  Printer
 } from 'lucide-react'
 import {
   type CSSProperties,
@@ -32,6 +31,7 @@ import { useAccounts } from '../account/context.tsx'
 import { ApiError } from '../api/client.ts'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
+import { ChronologyTab } from '../chronologies/screen.tsx'
 import { useAmbient } from '../components/ambient.tsx'
 import { Loading } from '../components/brand.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
@@ -40,11 +40,11 @@ import { failed, LoadError } from '../components/load-error.tsx'
 import { Menu, MenuItem } from '../components/menu.tsx'
 import { headingMayTakeFocus, PageTitle, useHeadingFocusRequest } from '../components/page-title.tsx'
 import { itemTransition } from '../components/world-transition.ts'
-import { useRelationModes } from '../relations/queries.ts'
-import { RelationsTab } from '../relations/relations-tab.tsx'
+import { GraphWindowProvider, WorldGraphButton } from '../relations/graph-window.tsx'
 import { WorldBanner, WorldSettings } from '../routes/world-card.tsx'
 import { TemplateIcon } from '../templates/icons.tsx'
 import { useTemplates } from '../templates/picker.tsx'
+import { TreeTab } from '../trees/tree-tab.tsx'
 import { Backlinks, pageLinksKey } from './backlinks.tsx'
 import { BoardTab } from './board/board-tab.tsx'
 import { useChartEditing } from './chart/chart-editing.ts'
@@ -67,7 +67,7 @@ import { PageRevealButton } from './reveal.tsx'
 import { SceneMain, SceneSide, SceneTabProvider } from './scene/scene-tab.tsx'
 import { PrintDialog, SheetPaper } from './sheet/controls.tsx'
 import { TableTab } from './table/table-tab.tsx'
-import { PageTabs, RELATIONS_TAB, usePageTabs, useTabTarget } from './tabs/page-tabs.tsx'
+import { PageTabs, usePageTabs, useTabTarget } from './tabs/page-tabs.tsx'
 import { PageTree } from './tree.tsx'
 import { Versions } from './versions.tsx'
 import { WhoKnowsButton } from './who-knows.tsx'
@@ -159,116 +159,107 @@ export function WikiLayout({
   return (
     // Sus ventanas flotantes (una entrada nueva del compendio, revisión tanda 7), por encima de la página
     <WorldWindows worldId={worldId}>
-      <NewPageContext.Provider value={requestNewPage}>
-        <WorldTour master />
-        <div ref={root} className={`${styles.wiki} ${pageStyles.wiki}`} data-world-page="">
-          <aside
-            id={asideId}
-            className={styles.aside}
-            data-open={open || undefined}
-            aria-labelledby={headingId}
-            onKeyDown={(event) => {
-              if (event.key === 'Escape' && open) close(true)
-            }}
-          >
-            <div className={styles.asideHeader}>
-              {/* Lo de la vista elegida en la barra: el mundo (sus páginas), las plantillas o los archivos; a la derecha
+      <GraphWindowProvider worldId={worldId}>
+        <NewPageContext.Provider value={requestNewPage}>
+          <WorldTour master />
+          <div ref={root} className={`${styles.wiki} ${pageStyles.wiki}`} data-world-page="">
+            <aside
+              id={asideId}
+              className={styles.aside}
+              data-open={open || undefined}
+              aria-labelledby={headingId}
+              onKeyDown={(event) => {
+                if (event.key === 'Escape' && open) close(true)
+              }}
+            >
+              <div className={styles.asideHeader}>
+                {/* Lo de la vista elegida en la barra: el mundo (sus páginas), las plantillas o los archivos; a la derecha
                   del nombre, el engranaje del mundo (Enrique, 2026-11-19) */}
-              <div className={styles.asideTitle}>
-                <h2 id={headingId}>{world.name}</h2>
-                <WorldSettings world={world} className={styles.newPageIcon} />
-              </div>
-              {panel === 'pages' && (
-                // El grafo de todo el mundo (módulo 10), sin añadir nada a la barra del mundo
-                <Link
-                  to="/mundos/$worldId/relaciones"
-                  params={{ worldId }}
-                  className={styles.newPageIcon}
-                  aria-label={t('relations.world.open')}
-                  title={t('relations.world.open')}
-                  data-tour="relaciones-mundo"
-                >
-                  <Waypoints aria-hidden="true" size={15} />
-                </Link>
-              )}
-              {panel === 'pages' && <ExportWiki worldId={worldId} className={styles.newPageIcon} />}
-              {panel === 'pages' && (
+                <div className={styles.asideTitle}>
+                  <h2 id={headingId}>{world.name}</h2>
+                  <WorldSettings world={world} className={styles.newPageIcon} />
+                </div>
+                {/* El grafo de todo el mundo (módulo 10), en su ventana: sin añadir nada a la barra del mundo */}
+                {panel === 'pages' && <WorldGraphButton className={styles.newPageIcon} />}
+                {panel === 'pages' && <ExportWiki worldId={worldId} className={styles.newPageIcon} />}
+                {panel === 'pages' && (
+                  <button
+                    type="button"
+                    className={styles.newPageIcon}
+                    aria-label={t('wiki.newPage')}
+                    title={t('wiki.newPage')}
+                    aria-haspopup="dialog"
+                    onClick={() => requestNewPage(null)}
+                  >
+                    <Plus aria-hidden="true" size={16} />
+                  </button>
+                )}
                 <button
                   type="button"
-                  className={styles.newPageIcon}
-                  aria-label={t('wiki.newPage')}
-                  title={t('wiki.newPage')}
-                  aria-haspopup="dialog"
-                  onClick={() => requestNewPage(null)}
+                  ref={closeButton}
+                  className={`${list.secondary} ${styles.close}`}
+                  onClick={() => close(true)}
                 >
-                  <Plus aria-hidden="true" size={16} />
+                  {t('wiki.closePages')}
                 </button>
-              )}
-              <button
-                type="button"
-                ref={closeButton}
-                className={`${list.secondary} ${styles.close}`}
-                onClick={() => close(true)}
-              >
-                {t('wiki.closePages')}
-              </button>
-            </div>
-            {/* El buscador, fijo en su sitio en cada vista, con lo suyo */}
-            <PageFilter
-              label={t('wiki.filter')}
-              value={filter}
-              onChange={setFilter}
-              // En las páginas, Intro busca dentro del texto de todas
-              {...(panel === 'pages'
-                ? {
-                    onSearch: (q: string) => {
-                      close(false)
-                      void navigate({ to: '/mundos/$worldId/buscar', params: { worldId }, search: { q } })
+              </div>
+              {/* El buscador, fijo en su sitio en cada vista, con lo suyo */}
+              <PageFilter
+                label={t('wiki.filter')}
+                value={filter}
+                onChange={setFilter}
+                // En las páginas, Intro busca dentro del texto de todas
+                {...(panel === 'pages'
+                  ? {
+                      onSearch: (q: string) => {
+                        close(false)
+                        void navigate({ to: '/mundos/$worldId/buscar', params: { worldId }, search: { q } })
+                      }
                     }
-                  }
-                : {})}
-            />
-            {panel === 'pages' && (
-              <>
-                {filter.trim() ? (
-                  <FilteredPages
-                    worldId={worldId}
-                    query={filter}
-                    currentId={current?.id}
-                    onNavigate={() => close(false)}
-                  />
-                ) : (
-                  <PageTree
-                    worldId={worldId}
-                    currentId={current?.id}
-                    path={current?.path}
-                    onNavigate={() => close(false)}
-                  />
-                )}
-                <OpenTabs worldId={worldId} current={current} compact />
-                {/* Los marcadores, debajo del árbol */}
-                <div className={styles.asideBookmarks}>
-                  <Bookmarks worldId={worldId} onNavigate={() => close(false)} />
-                </div>
-              </>
+                  : {})}
+              />
+              {panel === 'pages' && (
+                <>
+                  {filter.trim() ? (
+                    <FilteredPages
+                      worldId={worldId}
+                      query={filter}
+                      currentId={current?.id}
+                      onNavigate={() => close(false)}
+                    />
+                  ) : (
+                    <PageTree
+                      worldId={worldId}
+                      currentId={current?.id}
+                      path={current?.path}
+                      onNavigate={() => close(false)}
+                    />
+                  )}
+                  <OpenTabs worldId={worldId} current={current} compact />
+                  {/* Los marcadores, debajo del árbol */}
+                  <div className={styles.asideBookmarks}>
+                    <Bookmarks worldId={worldId} onNavigate={() => close(false)} />
+                  </div>
+                </>
+              )}
+            </aside>
+            <div className={styles.content}>
+              <OpenTabs worldId={worldId} current={current} />
+              <WorldPageContext value={worldPage}>
+                <CollabSocket>{children(world)}</CollabSocket>
+              </WorldPageContext>
+            </div>
+            {creating && (
+              <NewPageDialog
+                key={creating.n}
+                worldId={worldId}
+                parent={creating.parent}
+                onClose={() => setCreating(null)}
+              />
             )}
-          </aside>
-          <div className={styles.content}>
-            <OpenTabs worldId={worldId} current={current} />
-            <WorldPageContext value={worldPage}>
-              <CollabSocket>{children(world)}</CollabSocket>
-            </WorldPageContext>
           </div>
-          {creating && (
-            <NewPageDialog
-              key={creating.n}
-              worldId={worldId}
-              parent={creating.parent}
-              onClose={() => setCreating(null)}
-            />
-          )}
-        </div>
-      </NewPageContext.Provider>
+        </NewPageContext.Provider>
+      </GraphWindowProvider>
     </WorldWindows>
   )
 }
@@ -914,9 +905,7 @@ function OpenPage({ page, nuevo, pestana }: { page: Page; nuevo: boolean; pestan
   const api = useApi()
   const tabs = usePageTabs(page)
   const all = tabs.data ?? []
-  // «Relaciones» no es una pestaña guardada: se calcula (módulo 10)
-  const relations = pestana === RELATIONS_TAB
-  const active = pestana && !relations ? (all.find((tab) => tab.id === pestana) ?? null) : null
+  const active = pestana ? (all.find((tab) => tab.id === pestana) ?? null) : null
   // La portada del mundo lleva su portada (la del mundo), como en su Inicio
   const home = useQuery({
     queryKey: ['pages', page.worldId, 'home'],
@@ -926,8 +915,8 @@ function OpenPage({ page, nuevo, pestana }: { page: Page; nuevo: boolean; pestan
   const look = worlds.data?.worlds.find((w) => w.id === page.worldId)
   const isHome = home.data?.pageId === page.id
   const banner = isHome && look ? <WorldBanner world={look} /> : undefined
-  // Una pestaña que ya no está (quitada, o de otra página): al texto, una vez al día la lista
-  if (pestana && !relations && tabs.data && !tabs.isFetching && !active) {
+  // Una pestaña que ya no está (quitada, de otra página o la «Relaciones» de antes): al texto, una vez al día la lista
+  if (pestana && tabs.data && !tabs.isFetching && !active) {
     return (
       <Navigate
         to="/mundos/$worldId/wiki/$pageId"
@@ -937,7 +926,7 @@ function OpenPage({ page, nuevo, pestana }: { page: Page; nuevo: boolean; pestan
       />
     )
   }
-  if (pestana && !relations && !active) return null
+  if (pestana && !active) return null
   return (
     <EntryView
       // Cada página entra con su animación
@@ -946,7 +935,6 @@ function OpenPage({ page, nuevo, pestana }: { page: Page; nuevo: boolean; pestan
       nuevo={nuevo}
       tabs={all}
       active={active}
-      relations={relations}
       banner={banner}
       home={isHome}
     />
@@ -977,15 +965,12 @@ export function EntryView({
   active = null,
   banner,
   home = false,
-  template,
-  relations = false
+  template
 }: {
   page: Page
   nuevo?: boolean
   tabs: PageTabView[]
   active?: PageTabView | null
-  /** La pestaña «Relaciones», abierta (módulo 10) */
-  relations?: boolean
   banner?: ReactNode
   home?: boolean
   template?: TemplateMode
@@ -996,9 +981,10 @@ export function EntryView({
   const column = useRef<HTMLDivElement>(null)
   // Añadir etiquetas o una propiedad desde «Añadir bloque» del panel: lo hace la ficha de propiedades
   const addProperty = useRef<PropertyAdder | null>(null)
-  // El mapa y la pizarra llenan todo el sitio, hasta el final de la ventana y de lado a lado de la hoja, como en
-  // LegendKeeper (Enrique, 2026-11-13: «no debe verse por abajo cómo termina el cuadrado»)
-  const fill = active?.kind === 'map' || active?.kind === 'board' || relations
+  // El mapa, la pizarra, la cronología y el árbol llenan todo el sitio, hasta el final de la ventana y de lado a lado de
+  // la hoja, como en LegendKeeper (Enrique, 2026-11-13: «no debe verse por abajo cómo termina el cuadrado»)
+  const fill =
+    active?.kind === 'map' || active?.kind === 'board' || active?.kind === 'chronology' || active?.kind === 'tree'
   // Junto a un mapa o una pizarra, un panel sin nada (sin enlaces, propiedades ni bloques) se pliega solo, para que lo
   // tengan todo (Enrique, 2026-11-14); pulsar su botón lo abre igual
   const api = useApi()
@@ -1014,25 +1000,13 @@ export function EntryView({
     links.data !== undefined &&
     links.data.incoming.length === 0 &&
     links.data.mentions.length === 0
-  // «Relaciones» sale si la página tiene alguna (en la página del mundo; no en una plantilla)
-  const relationModes = useRelationModes(page.worldId, page.id, Boolean(worldPage) && !template)
-  const [relationsMode, setRelationsMode] = useState<RelationMode | null>(null)
-  const pageTabs = (
-    <PageTabs
-      page={page}
-      tabs={tabs}
-      active={relations ? RELATIONS_TAB : (active?.id ?? null)}
-      relations={relations || relationModes.length > 0}
-    />
-  )
+  const pageTabs = <PageTabs page={page} tabs={tabs} active={active?.id ?? null} />
   // En un mundo, donde pone la pestaña abierta sus herramientas (a la derecha de las pestañas)
   const [tabTools, setTabTools] = useState<HTMLElement | null>(null)
   // El panel de la derecha se pliega desde la cabecera de la página (Enrique, 2026-11-16)
   const panelId = useId()
-  // En Familia y Organigrama, plegado (lienzo del módulo 10): las tarjetas necesitan el ancho
-  const panel = usePanelFold(
-    (fill && !template && emptyPanel) || (relations && (relationsMode === 'family' || relationsMode === 'org'))
-  )
+  // Junto a un árbol, plegado: las tarjetas necesitan el ancho (como Familia y Organigrama, lienzo del módulo 10)
+  const panel = usePanelFold((fill && !template && emptyPanel) || active?.kind === 'tree')
   // Dónde empieza la columna: las fichas de los lados, a su altura, y el mapa y la pizarra, del alto de lo que queda de
   // la ventana (Enrique, 2026-11-16)
   useColumnTop(column, Boolean(worldPage))
@@ -1090,29 +1064,32 @@ export function EntryView({
     />
   )
   // Lo de la pestaña elegida: el texto (o otra página de texto, con su propio documento), una tabla, una pizarra o un mapa
-  const content = relations ? (
-    <RelationsTab page={page} onMode={setRelationsMode} />
-  ) : active?.kind === 'scene' ? (
-    <SceneMain key={active.id} />
-  ) : active?.kind === 'text' ? (
-    <div className={styles.column}>
-      <SheetPaper page={page}>
-        <PageBody key={active.id} page={page} documentId={active.documentId} />
-      </SheetPaper>
-    </div>
-  ) : active?.kind === 'table' ? (
-    <TableTab key={active.id} page={page} tab={active} />
-  ) : active?.kind === 'board' ? (
-    <BoardTab key={active.id} page={page} tab={active} />
-  ) : active ? (
-    <MapTab key={active.id} page={page} tab={active} />
-  ) : (
-    <div className={styles.column}>
-      <SheetPaper page={page}>
-        <PageBody page={page} />
-      </SheetPaper>
-    </div>
-  )
+  const content =
+    active?.kind === 'chronology' ? (
+      <ChronologyTab key={active.id} page={page} tab={active} editable={!template && !page.locked} />
+    ) : active?.kind === 'tree' ? (
+      <TreeTab key={active.id} page={page} tab={active} editable={!template} />
+    ) : active?.kind === 'scene' ? (
+      <SceneMain key={active.id} />
+    ) : active?.kind === 'text' ? (
+      <div className={styles.column}>
+        <SheetPaper page={page}>
+          <PageBody key={active.id} page={page} documentId={active.documentId} />
+        </SheetPaper>
+      </div>
+    ) : active?.kind === 'table' ? (
+      <TableTab key={active.id} page={page} tab={active} />
+    ) : active?.kind === 'board' ? (
+      <BoardTab key={active.id} page={page} tab={active} />
+    ) : active ? (
+      <MapTab key={active.id} page={page} tab={active} />
+    ) : (
+      <div className={styles.column}>
+        <SheetPaper page={page}>
+          <PageBody page={page} />
+        </SheetPaper>
+      </div>
+    )
   // Mientras un gráfico del texto está elegido, su editor visual ocupa el sitio del panel (módulo 10)
   const chartEditing = useChartEditing()
   // A la derecha: la rejilla de una escena o, si no, «Mencionado en», las propiedades y los bloques (o lo de una plantilla)

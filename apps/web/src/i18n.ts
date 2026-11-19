@@ -858,6 +858,8 @@ export const es = {
   // Las cronologías del mundo (módulo 8): en Calendarios, a pantalla entera
   chronologies: {
     title: 'Cronologías',
+    noCalendar: 'Una cronología necesita un calendario en el mundo.',
+    toCalendars: 'Ir a Calendarios',
     list: 'Cronologías del mundo',
     new: 'Cronología nueva',
     name: 'Nombre',
@@ -2347,12 +2349,10 @@ export const es = {
     tab: 'Relaciones',
     graph: 'Relaciones de {{page}}',
     modes: { label: 'Modo', links: 'Enlaces', family: 'Familia', org: 'Organigrama' },
-    depth: 'Profundidad',
-    depthOf: '{{count}} salto',
-    depthOf_other: '{{count}} saltos',
-    generations: 'Generaciones',
-    generationsOf: '±{{count}}',
-    fieldsOnly: 'Solo campos',
+    depth: 'Alcance',
+    depthOf: { '1': 'directas', '2': 'a dos pasos', '3': 'a tres pasos' },
+    withMentions: 'Con lo que menciona el texto',
+    window: { world: 'Relaciones del mundo', page: 'Ver sus relaciones' },
     legend: { label: 'Leyenda', field: 'Campo', mention: 'Menciona', secret: 'Desde un secreto' },
     zoom: { label: 'Zoom', in: 'Acercar', out: 'Alejar', fit: 'Verlo todo' },
     mentions: 'Menciona',
@@ -2403,6 +2403,66 @@ export const es = {
       filtered: 'Nada con estos filtros',
       canvas: 'Grafo de {{count}} páginas'
     }
+  },
+  // La pestaña de árbol genealógico u organigrama (bloque B de los ajustes tras los módulos 8 a 10)
+  trees: {
+    label: 'Árbol genealógico {{name}}',
+    labelOrg: 'Organigrama {{name}}',
+    add: 'Añadir',
+    first: 'Añadir a alguien',
+    firstOrg: 'Añadir un grupo',
+    empty: 'Quién es hijo de quién, con sus parejas.',
+    emptyOrg: 'Quién pertenece a cada grupo y quién lo dirige.',
+    emptyRead: 'Aún no hay nadie aquí.',
+    fromFields: 'Empezar desde los campos',
+    noPage: 'Sin página',
+    open: 'Abrir',
+    createPage: 'Crear página',
+    rename: 'Nombre',
+    note: 'Nota',
+    remove: 'Quitar',
+    closeCard: 'Cerrar',
+    closeFailure: 'Cerrar el aviso',
+    linesLabel: 'Sus líneas',
+    removeLine: 'Quitar «{{line}}»',
+    addLabel: 'Añadir junto a {{name}}',
+    adds: {
+      parent: 'Padre o madre',
+      partner: 'Pareja',
+      child: 'Hijo o hija',
+      member: 'Miembro',
+      leader: 'Quien lo dirige'
+    },
+    lines: {
+      parent: 'Padre o madre de {{name}}',
+      parentOf: 'Hijo o hija de {{name}}',
+      partner: 'Pareja de {{name}}',
+      member: 'Pertenece a {{name}}',
+      memberOf: 'Lo integra {{name}}',
+      leads: 'Dirige {{name}}',
+      leadsOf: 'Lo dirige {{name}}'
+    },
+    addTitle: {
+      first: 'Añadir al árbol',
+      parent: 'Padre o madre de {{name}}',
+      partner: 'Pareja de {{name}}',
+      child: 'Hijo o hija de {{name}}',
+      member: 'Miembro de {{name}}',
+      leader: 'Quien dirige {{name}}'
+    },
+    search: 'Busca una página o escribe un nombre',
+    inTree: 'Ya en el árbol',
+    withoutPage: 'Sin página',
+    addLoose: 'Añadir «{{name}}» sin página',
+    addSubmit: 'Añadir',
+    cancel: 'Cancelar',
+    name: 'Nombre',
+    noteLabel: 'Nota bajo el nombre',
+    notePlaceholder: '1190 – 1247',
+    save: 'Guardar',
+    added: '«{{name}}» añadido al árbol',
+    removed: '«{{name}}» quitado del árbol',
+    converted: '«{{name}}» ya es una página'
   },
   // Los gráficos del texto (módulo 10): el bloque y su editor
   charts: {
@@ -2465,7 +2525,10 @@ export const es = {
       map: 'Mapa',
       table: 'Tabla',
       scene: 'Escena',
-      board: 'Pizarra'
+      board: 'Pizarra',
+      chronology: 'Cronología',
+      tree: 'Árbol genealógico',
+      org: 'Organigrama'
     },
     soon: 'Pronto',
     namePlaceholder: 'Nombre (opcional)',
@@ -4415,6 +4478,10 @@ export const es = {
       moveCalendar: 'movió el calendario «{{name}}»',
       deleteCalendar: 'borró el calendario «{{name}}»',
       createChronology: 'creó la cronología «{{name}}»',
+      createTree: 'creó el árbol «{{name}}»',
+      updateTree: 'cambió el árbol «{{name}}» de «{{title}}»',
+      convertTreeNodeToPage: 'convirtió «{{title}}» del árbol en página',
+      createAnyTab: 'añadió la pestaña «{{name}}» a «{{title}}»',
       updateChronology: 'cambió la cronología «{{name}}»',
       renameChronology: 'renombró la cronología «{{from}}» a «{{to}}»',
       moveChronology: 'movió la cronología «{{name}}»',
@@ -4704,6 +4771,10 @@ export const es = {
       moveCalendar: 'mover el calendario «{{name}}»',
       deleteCalendar: 'borrar el calendario «{{name}}»',
       createChronology: 'crear la cronología «{{name}}»',
+      createTree: 'crear el árbol «{{name}}»',
+      updateTree: 'cambiar el árbol «{{name}}» de «{{title}}»',
+      convertTreeNodeToPage: 'convertir «{{title}}» del árbol en página',
+      createAnyTab: 'añadir la pestaña «{{name}}» a «{{title}}»',
       updateChronology: 'cambiar la cronología «{{name}}»',
       renameChronology: 'renombrar la cronología «{{from}}» a «{{to}}»',
       moveChronology: 'mover la cronología «{{name}}»',
@@ -4842,7 +4913,8 @@ export const es = {
   consent: {
     title: 'Conectar {{client}}',
     body: '{{client}} quiere usar tu cuenta de Crisol: ver y cambiar tus mundos en tu nombre.',
-    bodyCampaign: '{{client}} quiere usar tu cuenta de Crisol en {{campaign}}: solo verá esta campaña, con lo que puedes hacer en ella.',
+    bodyCampaign:
+      '{{client}} quiere usar tu cuenta de Crisol en {{campaign}}: solo verá esta campaña, con lo que puedes hacer en ella.',
     notInCampaign: 'No estás en esta campaña: no puedes conectarle una IA.',
     history: 'Lo que haga quedará en el historial y podrás deshacerlo.',
     ownerOnly: 'Esta cuenta aún no puede conectar una IA: entra antes en una campaña.',
@@ -4932,6 +5004,11 @@ export const es = {
       modes: 'Enlaces, familia u organigrama: la misma página vista de otra manera.',
       tools: 'Cuánto se aleja y qué relaciones salen.',
       graph: 'Pulsa una página para ver su ficha; con doble clic, se abre.'
+    },
+    tree: {
+      cards: 'Pulsa a alguien para añadir su familia, crear su página o quitarlo. Con doble clic, se abre su página.',
+      read: 'Pulsa a alguien para ver su ficha; con doble clic, se abre su página.',
+      add: 'Añade a alguien suelto, sin unirlo a nadie.'
     },
     worldGraph: {
       filters: 'Qué páginas y relaciones salen.',

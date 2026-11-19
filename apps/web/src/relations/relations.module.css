@@ -186,6 +186,10 @@
   fill: var(--color-raised);
 }
 
+.treeCard[data-loose] .cardBox {
+  stroke-dasharray: 5 4;
+}
+
 .treeCard[data-center] .cardBox {
   stroke: var(--color-accent-text);
   stroke-width: 1.5;

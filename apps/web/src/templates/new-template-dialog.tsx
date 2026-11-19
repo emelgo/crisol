@@ -46,7 +46,7 @@ export function NewTemplateDialog({ folderId, onClose }: { folderId: string | nu
             {
               folderId,
               name,
-              ...(copyOf ? { copyOf } : { kind: kind === 'map' ? 'map' : 'text' })
+              ...(copyOf ? { copyOf } : { kind })
             },
             {
               onSuccess: () => {

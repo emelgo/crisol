@@ -5,7 +5,7 @@
 import type { Page } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
-import { CalendarRange, FileText, Link2 } from 'lucide-react'
+import { CalendarRange, FileText, Link2, Waypoints } from 'lucide-react'
 import { useId } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
@@ -13,6 +13,7 @@ import { useErrorText } from '../api/errors.ts'
 import { useAnnounce } from '../components/announcer.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
 import { Icon } from '../components/icon.tsx'
+import { useGraphWindow } from '../relations/graph-window.tsx'
 import styles from './backlinks.module.css'
 import { PageLink, readAsInput, readAsKey, useReadAs } from './read-as.tsx'
 
@@ -27,6 +28,7 @@ export function Backlinks({ page }: { page: Page }) {
   const errorText = useErrorText()
   const id = useId()
   const readAs = useReadAs()
+  const graph = useGraphWindow()
   const links = useQuery({
     queryKey: [...pageLinksKey(page.worldId, page.id), ...readAsKey(readAs)],
     queryFn: () => api.call('getPageLinks', { pageId: page.id, ...readAsInput(readAs) })
@@ -50,10 +52,26 @@ export function Backlinks({ page }: { page: Page }) {
   // debajo, con «Enlazar» al pasar por encima. Los trozos de texto, al dejar el ratón encima (title)
   return (
     <section aria-labelledby={`${id}-title`} className={styles.panel}>
-      <h2 id={`${id}-title`} className={styles.title}>
-        <Link2 aria-hidden="true" size={12} />
-        {t('backlinks.title')}
-      </h2>
+      <div className={styles.head}>
+        <h2 id={`${id}-title`} className={styles.title}>
+          <Link2 aria-hidden="true" size={12} />
+          {t('backlinks.title')}
+        </h2>
+        {/* Sus relaciones, en la ventana del grafo centrada en ella (donde la hay: no en la Mesa) */}
+        {graph && (
+          <button
+            type="button"
+            className={styles.graph}
+            aria-label={t('relations.window.page')}
+            title={t('relations.window.page')}
+            aria-haspopup="dialog"
+            onClick={() => graph(page.id)}
+            data-tour="relaciones-pagina"
+          >
+            <Waypoints aria-hidden="true" size={14} />
+          </button>
+        )}
+      </div>
       {data && data.incoming.length === 0 && data.mentions.length === 0 && !data.events?.length && (
         <p className={styles.empty}>{t('backlinks.none')}</p>
       )}
