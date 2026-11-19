@@ -72,7 +72,7 @@ Everlore, dentro del esqueleto de la página de Crisol (`docs/diseno.md`, ADR-00
 ### Calendario
 
 - El mes del último evento, con **tantas columnas como días tenga la semana** del calendario y la semana continua o
-  reiniciada. Cabecera: «Siega de 1250 RC», la era y la estación del mes; flechas de mes anterior y siguiente y «Ir
+  reiniciada. Cabecera: «Siega del año 1250 RC», la era y la estación del mes; flechas de mes anterior y siguiente y «Ir
   a…».
 - Cada día: su número; **las lunas** (el icono de luna nueva y de luna llena de cada luna, con su color; al pasar o al
   elegir el día, la fase de cada una); los eventos como fichas de su color (los de varios días, en todos sus días; «+N

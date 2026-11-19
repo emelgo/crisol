@@ -721,6 +721,10 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   pasarlo»): pies, millas, libras, pulgadas y galones, nunca metros ni kilos. El SRD en español viene en métrico: al
   sacarlo se devuelve a las de D&D (`scripts/srd/unidades.ts`).
 
+- **Las fechas, con «del año»** (2026-11-20: «13 de Enero del año 1», no «13 de Enero de 1»): «18 de Siega del año
+  1250 RC», «Siega del año 1250 RC», «Año 1250 RC», «Años 1250–1262 RC». Lo da el dominio (`formatDate`, `formatRange`);
+  solo las etiquetas cortas de los ejes y del selector de años llevan el número suelto.
+
 ## Tutorial guiado de cada vista
 
 - **Se llama «tutorial guiado de la vista»**, no «recorrido».

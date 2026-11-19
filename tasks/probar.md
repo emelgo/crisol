@@ -215,6 +215,17 @@ ADR-0032. En local (http://localhost:5173) ya están aplicadas las dos migracion
   libres salen en el grafo con su nombre (sin papel); las etiquetas de las líneas: «Padrastro o madrastra», «Adopción»,
   «Expareja», «Hermanos», «Dirige» (las de padre o madre, pareja y miembro, sin nombre).
 
+## Las fechas, con «del año» (rama `ajustes/tras-modulos`; 2026-11-20)
+
+- [ ] **En toda la app las fechas dicen «del año»**: el campo «Fecha» del panel de una página («13 de Enero del año 1»;
+  con fin, «12–18 de Siega del año 1250 RC» o «12 de Siega – 3 de Trilla del año 1250 RC»; de mes, «Siega del año 1250
+  RC»; de año, «Año 1250 RC»; un periodo de años, «Años 1250–1262 RC»), las cronologías (lista, meses y calendario),
+  la ficha del día del calendario (con la era: «… del año 2014 de la Era de la República»), el hoy de la campaña
+  («Solen, 6 de Brumas» y debajo «Año 1247 RV»), el registro, el clima y los viajes. ¿Se lee natural «Año 1250 RC» en
+  las listas, o prefieres el número solo?
+- [ ] **La IA** recibe el texto nuevo (describir una fecha, el hoy, las cronologías) y sigue escribiendo las fechas como
+  antes (`1250-Siega-18`).
+
 ## Calendarios en grande y su editor por fases (ajustes tras los módulos, bloque C; rama `ajustes/tras-modulos`; 2026-11-19)
 
 Plan aprobado el 2026-11-19 («¿cómo creo eventos en el calendario?»). Normas en `docs/diseno.md` (Pantallas).
@@ -235,7 +246,7 @@ Plan aprobado el 2026-11-19 («¿cómo creo eventos en el calendario?»). Normas
   fijado, marcados); pulsar un mes lleva a él en la vista Mes.
 - [ ] **La ficha del día**, a la derecha, solo cuando hace falta: **al pasar el ratón** (o el foco) por un día se ve,
   **al pulsarlo se fija** (con su «×») y **Esc la quita**; la columna del centro no se mueve. Su título lleva la era
-  («Lunes, 1 de Enero de 2014 de la Era X»); debajo, la estación, el día del año, cada luna con su fase y lo que pasa
+  («Lunes, 1 de Enero del año 2014 de la Era X»); debajo, la estación, el día del año, cada luna con su fase y lo que pasa
   ese día (los eventos se editan al pulsar su título; las páginas, se abren). ¿Te vale que, al ir de un día a la
   ficha, la vista previa espere un instante para no cambiar al cruzar otros días?
 - [ ] **«Nuevo evento»** abre el cuadro del evento con la fecha del día: crea un evento suelto del mundo, que sale en el

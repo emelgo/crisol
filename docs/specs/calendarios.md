@@ -53,9 +53,13 @@ historial.
 ### Fechas y su texto
 
 - Una fecha del calendario es **año** (entero, puede ser negativo; hay año 0), **mes** (opcional, por su id) y **día**
-  (opcional, solo con mes). Lo que falta baja la precisión: «1250 RC», «Siega de 1250 RC», «18 de Siega de 1250 RC».
-- **El texto**, en español: «18 de Siega de 1250 RC»; con día de la semana, «Flora, 18 de Siega de 1250 RC»; en una era
-  que cuenta desde su inicio, con su abreviatura; antes del 0, con el sufijo de antes si lo hay.
+  (opcional, solo con mes). Lo que falta baja la precisión: «Año 1250 RC», «Siega del año 1250 RC», «18 de Siega del año
+  1250 RC».
+- **El texto**, en español y con «del año» (Enrique, 2026-11-20): «18 de Siega del año 1250 RC»; con día de la semana,
+  «Flora, 18 de Siega del año 1250 RC»; con la era, «… del año 1250 RC de la Era de la República»; un día con nombre,
+  «Shieldmeet del año 1372 DR»; en una era que cuenta desde su inicio, con su abreviatura; antes del 0, con el sufijo de
+  antes si lo hay. Los periodos no repiten lo común: «12–18 de Siega del año 1250 RC», «12 de Siega – 3 de Trilla del
+  año 1250 RC», «Siega – Trilla del año 1250 RC», «Años 1250–1262 RC».
 - **El formato para la IA** (como el `fc-date` del antiguo): `"1250-03-18"` (el mes por su número, sin contar
   festividades), `"1250-Siega-18"` (por nombre, sin tildes ni mayúsculas), `"1250-03"`, `"1250"`,
   `"-980-01-01"`. Las festividades se escriben por su nombre (no tienen número). La salida da siempre el texto y la
