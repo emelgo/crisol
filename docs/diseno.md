@@ -147,9 +147,11 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   compartida en la pestaña de equipo, sin «Grupo» en la barra. **Las campañas se abren en otra pestaña del navegador**,
   como la partida en D&D Beyond (Enrique, 2026-11-09). **Varias campañas por mundo, y lo que se comparte va a la
   campaña desde la que se hace** (Enrique, 2026-11-09, para no liarse compartiendo con grupos distintos): «Enseñar» desde
-  la Mesa de una campaña solo llega a ella (se ve siempre en cuál se está); desde la wiki del mundo, «quién la conoce»
-  enseña cada campaña con su casilla; con una sola campaña no se pregunta a quién. Lo de abajo sobre la portada y la
-  barra de la campaña ya no vale (la sustituye esto).
+  la Mesa de una campaña solo llega a ella (se ve siempre en cuál se está); ~~desde la wiki del mundo, «quién la conoce»
+  enseña cada campaña con su casilla~~; con una sola campaña no se pregunta a quién. Lo de abajo sobre la portada y la
+  barra de la campaña ya no vale (la sustituye esto). **Revelar, solo dentro de una campaña** (Enrique, 2026-11-19): en
+  las páginas del mundo no hay «Quién la conoce», «Revelar la página», «Revelar a…» del árbol ni el ojo de sus filas
+  (allí se crea el mundo, no se juega); se revela desde la Mesa de la campaña, en las ventanas de sus páginas.
 - **La sala, arriba en la Mesa; sin pestaña «Campaña»** (Enrique, 2026-11-10: «si tenemos esto podemos quitarlo de la
   barra lateral»): los retratos de quien está y la pausa van en un recuadro junto al de la escena, **de su misma
   altura**; al pulsarlos, el panel de la sala (quién está, pausa, cómo mueven, echar e invitación). Los ajustes de la
@@ -174,8 +176,11 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   **con tope de luz** (con una portada clara, más tenue). Se reconoce en los márgenes. En Inicio cambia al pararse en un
   mundo, no al pasar por encima. **En las transiciones de vista viaja solo el contenido** (`main[data-contenido]`): el
   fondo y la barra se quedan quietos, sin parpadear; si el fondo cambia (entrar en un mundo o salir), se funde dentro de
-  la transición. Al entrar en un mundo, su tarjeta se convierte en la cabecera; **al salir, no** (salía estirada y
-  borrosa): el mundo se aleja mientras llega Mis mundos. Lo que enmarca (la barra, las fichas de los lados, las tarjetas,
+  la transición. Al entrar en un mundo, su tarjeta se convierte en la cabecera; **al salir, también, al revés: una el
+  espejo de la otra** (Enrique, 2026-11-19; sustituye a «al salir, no», que salía estirada y borrosa): la cabecera vuelve
+  a su tarjeta recortada, nunca estirada, mientras lo demás se aleja. **Sin salto al final**: nada se vuelve a montar ni
+  se quita mientras dura (se entra con la portada ya pedida) y el desenfoque del cristal, que se apaga durante la
+  transición, vuelve fundiéndose. Lo que enmarca (la barra, las fichas de los lados, las tarjetas,
   los recuadros con título) es **cristal de verdad**: translúcido (`--surface-glass`), con lo de detrás desenfocado
   (`--frame-blur`) y un brillo arriba (`--frame-sheen`). Las rayas, blancas translúcidas (`--line-frame`, `--line-soft`).
   **Lo que flota encima** (cuadros, ventanas, menús, el menú del botón derecho, el selector de iconos), cristal más
@@ -350,7 +355,8 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   igual»): la columna del centro (todo el hueco entre las fichas, de hasta 20rem) con las pestañas abiertas arriba, el título, las pestañas de la página y el
   texto; a los lados, fuera de ella, la ficha del árbol (con su buscador fijo, por nombre o #etiqueta, y los
   marcadores debajo) y la ficha del panel, hacia los bordes. **Las dos fichas empiezan a la misma altura, la de las pestañas de la
-  página**, como en Archivos bajo el título. La columna no cambia al esconder el panel.
+  página**, como en Archivos bajo el título. **Al plegar el panel, la columna del centro se ensancha, suave** (Enrique,
+  2026-11-19; sustituye a «la columna no cambia al esconder el panel»).
 - **Del estilo de Everlore, la forma** (esquinas redondeadas, cabecera pegajosa compacta al bajar) con nuestros
   colores y letras. Sin el mundo en pequeño sobre el título (estaba repetido) y sin migas de pan. La portada de la
   página va por detrás, solo en la columna del centro, fundida con el fondo, con el título encima de su parte de
@@ -368,7 +374,9 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   sirve. Arriba del todo, «Mencionado en» (como en Everlore: una lista corta de páginas; las que la nombran sin enlazar, debajo, con «Enlazar» al pasar). Sin índice (está el árbol); las versiones, en «⋯». No se esconde (no hay botón para eso); sin sitio,
   va debajo de la página. **Se pliega** (Enrique, 2026-11-13): en un mundo, para que el mapa o la pizarra lo tengan todo, y se recuerda plegado o no; **su botón va en la cabecera de la página, tras «⋯»** (también
   en la barra pegada al bajar) y el panel se desliza entero fuera (Enrique, 2026-11-16; antes, su botón arriba dentro
-  de él lo dejaba en una tira).
+  de él lo dejaba en una tira). **Suave** (Enrique, 2026-11-19): se va entero, de su ancho y sin estrujarse (lo de dentro
+  no se recoloca), fundiéndose mientras la columna del centro se ensancha con él; al volver, entra igual y ya trae lo suyo
+  (nunca un panel vacío que luego se llena).
 - **Dentro de un mundo, la forma de Everlore (esquinas redondeadas, sin cortes) con nuestros colores y nuestras
   letras.** Las propiedades de una página van en el panel de la derecha, con su título pequeño como lo demás.
 - **Los mundos no tienen papel** (máster o jugador): eso es de las campañas.
@@ -494,7 +502,8 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   nivel va) o la carpeta resaltada si va dentro; lo movido se ilumina; un común no va a una carpeta del mundo ni al
   revés (mientras se arrastra, sale apagado). Carpetas primero y luego archivos, **en el orden que se quiera** (se
   recolocan arrastrando); sin ordenar, por nombre. **Sin ruta encima de la lista** («Todos › Carpeta»): la lista ya dice dónde está cada cosa.
-  **Toda la fila abre lo suyo**, no solo el nombre. Mover es arrastrar o, desde su ventana, **«Carpeta»** (Enrique,
+  **Toda la fila abre lo suyo**, no solo el nombre. **La miniatura de una imagen, entera, centrada y sin fondo** (Enrique,
+  2026-11-19); el fondo, solo en el icono de lo que no es imagen. Mover es arrastrar o, desde su ventana, **«Carpeta»** (Enrique,
   2026-11-12: como «Dentro de» en las etiquetas; «Ninguna», lo más alto); cambiar un archivo es subir otro y borrar el
   viejo: sin «Reemplazar». **Las carpetas llevan color e icono** (Enrique, 2026-11-12), desde su ventana: el color,
   como el de un mundo o una etiqueta; el icono, un emoji como el de una página. El color tiñe el dibujo de la carpeta o,
@@ -523,6 +532,8 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   de una plantilla) no sacan el icono de los gestores de contraseñas.
 - **Las acciones de un elemento van en su engranaje**, abajo a la derecha de su tarjeta, siempre a la vista: abre su
   ventana, donde se cambia todo (nombre incluido) y donde irá lo que se añada. Nada de «Renombrar» y «Borrar» sueltos.
+  **Dentro de un mundo, su engranaje va a la derecha de su nombre**, en la cabecera de la ficha del árbol (Enrique,
+  2026-11-19), no encima de su portada.
 - **Los mundos no llevan icono**: «no aportan nada».
 - **Una campaña nueva no sabe nada** (Enrique, 2026-11-13: «no se conoce nada y ya está, el máster es el que va
   revelando todo»): sin «Al empezar, los jugadores conocen…» al crearla ni «Parte de lo que sabe el mundo» en sus
