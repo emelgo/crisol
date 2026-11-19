@@ -621,6 +621,9 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 - **Se llama «tutorial guiado de la vista»**, no «recorrido».
 - **El globo nunca queda debajo de la barra de la izquierda ni encima de ella** (Enrique, 2026-11-13, en los libros):
   se pinta por encima de todo y, si apunta a algo de la página, se aparta de la barra.
+- **El globo nunca se corta ni tapa lo que señala** (2026-11-19, repaso de todos los tutoriales): junto a algo alto
+  (una ficha a un lado), si no cabe ni encima ni debajo, va al lado; un paso cuyo elemento no se ve o no mide nada (una
+  lista vacía) se salta. Es de cristal, como lo que flota, y su «Siguiente», el botón rojo de cristal de la app.
 - **Cada vista tiene el suyo**: un globo por zona, con «1 de 3», Atrás (desde el segundo) y Siguiente. Ni Saltar ni
   «Lo tengo claro»: «los jugadores tendrán que hacer la guía de todas las vistas la primera vez que entren».
 - **Sale solo la primera vez**, hasta acabarlo. Con Escape se cierra sin acabar y vuelve a salir la próxima vez.
