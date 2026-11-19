@@ -53,7 +53,19 @@ En local o en staging cuando llegue el PR de esta rama.
   sin emojis por defecto ni «Otro».
 - [ ] **Una plantilla abierta, con el esqueleto de una página del mundo**: la portada detrás del título, las pestañas
   debajo, el panel que se pliega con su botón (y se recuerda) y la ficha de la izquierda y el panel a la altura de la
-  columna, con «‹ Plantillas» encima de la ficha. Su «⋯», sin «Imprimir o descargar» (y Ctrl+P no imprime).
+  columna, con «‹ Plantillas» encima de la ficha. Abre una página de la wiki y una plantilla y alterna: la ficha de la
+  izquierda, la columna y el panel no se mueven ni un píxel (medido a 1440×900 y 1920×1080), y «Tus plantillas» es el
+  rótulo pequeño y gris como el nombre del mundo.
+- [ ] **Renombrar sin cuadro** (páginas y plantillas): botón derecho → «Renombrar» en el árbol de páginas, en el de las
+  plantillas o en la lista de Plantillas → se abre esa página (si no lo estaba) con su título elegido para escribir
+  encima; Intro guarda, Escape lo deja como estaba. Ya no sale el recuadro flotante.
+- [ ] **Versiones de una plantilla, en un botón**: su cabecera ya no tiene «⋯»; junto al candado, un reloj
+  («Versiones») que abre su lista (también sobre una portada, en la pastilla). Duplicar, solo con el botón derecho. Ctrl+P
+  no imprime.
+- [ ] **El icono del título, siempre pulsable**: en una página o plantilla sin icono, delante del título sale en gris el
+  de su tipo (el del árbol; en una plantilla, el de plantilla); al pulsarlo (o Tab hasta él e Intro) se abre el selector
+  de nuestros iconos, sin «Quitar el icono». Puesto, igual que antes, con «Quitar el icono»; quitado, vuelve el gris.
+  Con la página bloqueada, sin icono no sale nada. «:» y el emoji delante del título siguen valiendo.
 
 ## Conectores de IA: Mundos y uno por campaña (ajustes tras los módulos, bloque D; rama `ajustes/tras-modulos`; 2026-11-19)
 

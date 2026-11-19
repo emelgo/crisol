@@ -315,10 +315,14 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   carpeta, crear dentro, sus ajustes y borrarla) y en el panel sus campos y bloques, que se definen; su icono, en su
   título, como el de una página. **Una plantilla no tiene cuadro de ajustes** (Enrique, 2026-11-19: «la carpeta e icono
   no tiene sentido ahí»): lo suyo va en **el menú del botón derecho, como en el árbol de páginas**, también en la lista
-  de Plantillas (con la tecla de menú o Mayús+F10, y con su «⋯» en la fila). **Su «⋯» no imprime ni descarga**
-  (Enrique: «las plantillas no necesitan imprimirse o descargarse»): Duplicar y sus versiones. **Abierta, el mismo
-  esqueleto que una página del mundo** (2026-11-19): la portada detrás del título, las pestañas debajo y el panel que se
-  pliega desde su botón.
+  de Plantillas (con la tecla de menú o Mayús+F10, y con su «⋯» en la fila). **Sin «⋯»** (Enrique: «las plantillas no
+  necesitan imprimirse o descargarse»; «no quiero tener solo versiones en los 3 puntos»): **«Versiones», un botón de
+  icono (el reloj) en su cabecera**, junto al candado y con su mismo aspecto (también en la pastilla sobre la portada),
+  que abre su lista; duplicarla, solo con el botón derecho. **Abierta, el mismo esqueleto que una página del mundo, en
+  el mismo sitio** (2026-11-19: «las columnas no están bien situadas como en las páginas de la wiki»): la portada
+  detrás del título, las pestañas debajo y el panel que se pliega desde su botón; la ficha de la izquierda, la columna y
+  el panel, con la misma posición, anchos y alto que en una página (medido a 1440 y a 1920 px), «‹ Plantillas» en el
+  hueco de las pestañas abiertas y el nombre de la ficha, el rótulo pequeño y gris del de un mundo.
   **«Desde plantilla» va la última y centrada, tras una raya con «o»**, en «Página nueva» y en «Plantilla nueva» (allí,
   partir de otra): cambia el cuadro a la lista de plantillas («‹ Otro tipo» vuelve). **No en «Pestaña nueva»**: la
   plantilla, solo al crear una página (Enrique, 2026-11-12: «me choca lo de usar una plantilla en una pestaña»). Ya no
@@ -336,7 +340,10 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   «Guardado», abajo a la derecha). Sin «Editar», «Guardar», «Cancelar» ni «Renombrar», y sin barra de botones encima
   del texto: los bloques con «/», los enlaces con «@» o «[[», buscar con Ctrl+Alt+F y el menú del bloque con
   Ctrl+Alt+B. La cabecera, en iconos (Marcar, Bloquear, Hoja, «⋯»).
-- **El icono va en el propio título**, si se quiere: no hay botón para ponerlo. Un emoji delante del título pasa a ser
+- **El icono va en el propio título**: **delante del título siempre hay un icono que se pulsa** (Enrique, 2026-11-19:
+  «haz que el icono del título de una hoja sea pulsable»); sin icono, el de su tipo (el mismo que en el árbol; en una
+  plantilla, el de plantilla), en gris, y pulsarlo («Cambiar el icono», también con Intro o Espacio) abre el selector de
+  nuestros iconos. Con la página bloqueada, solo se ve el suyo (sin icono, nada). Un emoji delante del título pasa a ser
   su icono, y **«:» al principio propone los iconos de la app por su nombre** (Enrique, 2026-11-19: «el icono dijimos
   que se ponía escribiendo en el título»; como «/» y «@» en el texto): las flechas eligen, Intro lo pone y Escape lo
   deja. Puesto, pulsarlo abre el selector de nuestros iconos, con «Quitar el icono». Igual en páginas y plantillas. **La portada**, como en el Crisol antiguo
@@ -372,7 +379,10 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   las notas ocultas—, Hoja); al escribir, una lista plana. Sin explicaciones ni «?»: los nombres bastan. Nada de
   «máster» en el worldbuilding.
 - **Botón derecho en el árbol**, como en Everlore: crear subpágina, renombrar, duplicar, exportar, mover y ordenar
-  (desplegables que se abren al pasar el ratón) y borrar. «⋯» de la página, solo exportar.
+  (desplegables que se abren al pasar el ratón) y borrar. «⋯» de la página, solo exportar. **Renombrar no abre un
+  cuadro** (Enrique, 2026-11-19: «el renombrar solo pone en edición la propia página, no abre un cuadro»): abre la
+  página si no lo está y pone su título en edición, con todo elegido para escribir encima (Intro guarda, Escape lo
+  deja). Igual en el árbol de las plantillas y en la lista de Plantillas.
 - **Las pestañas abiertas se recolocan** arrastrándolas (o Alt + flechas). Cerrar la última lleva a la portada del
   mundo sin rehacer la pantalla.
 - **Las fichas de los lados de la página empiezan donde las de Archivos** (a la misma altura, haya portada o no) y
