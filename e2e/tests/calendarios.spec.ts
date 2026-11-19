@@ -90,7 +90,7 @@ test('calendarios (módulo 8): crear uno de 16 meses con dos lunas, editarlo, ha
   // En grande: el mes, el año en pequeño y el día elegido; «Nuevo evento» crea uno suelto con su fecha
   await page.getByRole('link', { name: 'Ver calendario' }).click()
   await expect(page.getByRole('heading', { level: 1, name: 'Calendario de Varn' })).toBeVisible()
-  await expect(page.getByRole('heading', { level: 2, name: 'Mes 1 de 0' })).toBeVisible()
+  await expect(page.getByRole('heading', { level: 2, name: 'Mes 1 de 0', exact: true })).toBeVisible()
   const day = page.getByRole('complementary', { name: 'El día elegido' })
   await page.getByRole('cell', { name: / 5 de Mes 1 de 0$/ }).click()
   await expect(day.getByRole('heading', { level: 2 })).toContainText('5 de Mes 1 de 0')
@@ -146,6 +146,8 @@ test.describe('con el cristal de verdad', () => {
   test('la pantalla de calendarios, su cuadro, uno en grande y el editor, sin fallos graves de accesibilidad; el teclado ordena @a11y', async ({
     page
   }) => {
+    // La lista, el cuadro, la vista grande y tres fases del editor, cada una con su axe
+    test.slow()
     await freshOwner(page)
     const world = await page.request.post('/api/actions/createWorld', { data: { name: 'Valdren' } })
     const worldId = (await world.json()).id as string
