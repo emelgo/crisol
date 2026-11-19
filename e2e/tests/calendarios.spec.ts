@@ -93,7 +93,7 @@ test('calendarios (módulo 8): crear uno de 16 meses con dos lunas, editarlo, ha
   // «Nuevo evento» crea uno suelto con su fecha
   await page.getByRole('link', { name: 'Ver calendario' }).click()
   await expect(page.getByRole('heading', { level: 1, name: 'Calendario de Varn' })).toBeVisible()
-  await expect(page.getByRole('heading', { level: 2, name: 'Mes 1 de 0', exact: true })).toBeVisible()
+  await expect(page.getByRole('heading', { level: 2, name: 'Mes 1 del año 0', exact: true })).toBeVisible()
   const day = page.getByRole('complementary', { name: 'El día elegido' })
   await expect(day).toHaveCount(0)
   await page.getByRole('cell', { name: / 3 de Mes 1 de 0$/ }).hover()
@@ -117,7 +117,7 @@ test('calendarios (módulo 8): crear uno de 16 meses con dos lunas, editarlo, ha
   await expect(page.getByRole('button', { name: 'Semana siguiente' })).toBeVisible()
   expect(await axe(page)).toEqual([])
   await modes.getByRole('button', { name: 'Año' }).click()
-  await expect(page.getByRole('heading', { level: 2, name: '0', exact: true })).toBeVisible()
+  await expect(page.getByRole('heading', { level: 2, name: 'Año 0', exact: true })).toBeVisible()
   expect(await axe(page)).toEqual([])
   await page.screenshot({ path: test.info().outputPath('en-grande-año.png') })
   await page.getByRole('button', { name: /^Fiesta 1/ }).click()

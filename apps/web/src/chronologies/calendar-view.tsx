@@ -84,7 +84,8 @@ export function CalendarView({
   today = null,
   tools = null,
   banner = null,
-  yearArrows = false
+  yearArrows = false,
+  title = null
 }: {
   worldId: string
   definition: CalendarDefinition
@@ -107,6 +108,8 @@ export function CalendarView({
   banner?: ReactNode
   /** También pasar de año */
   yearArrows?: boolean
+  /** El título del mes, si se quiere otro (la vista grande: «Enero del año 1») */
+  title?: string | null
   /** El máster: «+» en un día elegido */
   onCreateAt?: ((date: FullDate) => void) | undefined
   /** El máster: soltar una ficha en otro día (cuántos días se mueve) */
@@ -395,7 +398,7 @@ export function CalendarView({
       <header className={styles.calendarHead}>
         <div>
           <h2 id={titleId} className={styles.calendarTitle}>
-            {formatDate(definition, { year, month: page.month })}
+            {title ?? formatDate(definition, { year, month: page.month })}
           </h2>
           <p className={styles.calendarFacts}>
             {seasons.map((season) => (

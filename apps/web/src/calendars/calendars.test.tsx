@@ -140,7 +140,7 @@ describe('un calendario en grande', () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'Calendario de Varn' })).toBeDefined()
     expect(screen.getByRole('link', { name: 'Editar calendario' })).toBeDefined()
     // Se abre en el año de su última era (el 0), en enero, en la vista del mes
-    expect(screen.getByRole('heading', { level: 2, name: 'Enero de 0 RV' })).toBeDefined()
+    expect(screen.getByRole('heading', { level: 2, name: 'Enero del año 0 RV' })).toBeDefined()
     const modes = screen.getByRole('toolbar', { name: 'Vista' })
     expect(within(modes).getByRole('button', { name: 'Mes' }).getAttribute('aria-pressed')).toBe('true')
     // Ni el año en pequeño ni el resumen (ese, en el editor); la ficha del día, solo cuando hace falta
@@ -182,32 +182,34 @@ describe('un calendario en grande', () => {
 
   it('Mes · Semana · Año, con «Ir a» y sus flechas; en el año se eligen días y el nombre de un mes lleva a él', async () => {
     open()
-    await screen.findByRole('heading', { level: 2, name: 'Enero de 0 RV' })
+    await screen.findByRole('heading', { level: 2, name: 'Enero del año 0 RV' })
     // El mes, con el menú de la app
     const goToMonth = async (name: string) => {
       await userEvent.click(screen.getByRole('button', { name: /^Ir al mes/ }))
       await userEvent.click(screen.getByRole('button', { name }))
     }
     await goToMonth('Marzo')
-    expect(screen.getByRole('heading', { level: 2, name: 'Marzo de 0 RV' })).toBeDefined()
+    expect(screen.getByRole('heading', { level: 2, name: 'Marzo del año 0 RV' })).toBeDefined()
     await userEvent.click(screen.getByRole('button', { name: 'Mes siguiente' }))
-    expect(screen.getByRole('heading', { level: 2, name: 'Abril de 0 RV' })).toBeDefined()
+    expect(screen.getByRole('heading', { level: 2, name: 'Abril del año 0 RV' })).toBeDefined()
     await goToMonth('Marzo')
     // La semana del 1 de marzo (miércoles: el año 0 es de 366 días), de lunes a domingo
     const modes = screen.getByRole('toolbar', { name: 'Vista' })
     await userEvent.click(within(modes).getByRole('button', { name: 'Semana' }))
-    expect(screen.getByRole('heading', { level: 2, name: '28 de Febrero – 5 de Marzo de 0 RV' })).toBeDefined()
+    expect(
+      screen.getByRole('heading', { level: 2, name: 'Semana del 28 de Febrero al 5 de Marzo del año 0 RV' })
+    ).toBeDefined()
     await userEvent.click(screen.getByRole('button', { name: 'Semana siguiente' }))
-    expect(screen.getByRole('heading', { level: 2, name: '6–12 de Marzo de 0 RV' })).toBeDefined()
+    expect(screen.getByRole('heading', { level: 2, name: 'Semana del 6 al 12 de Marzo del año 0 RV' })).toBeDefined()
     // Sus días también enseñan su ficha
     await userEvent.click(screen.getByRole('cell', { name: / 8 de Marzo de 0 RV$/ }))
     const day = await screen.findByRole('complementary', { name: 'El día elegido' })
     expect(within(day).getByRole('heading', { level: 2 }).textContent).toContain('8 de Marzo de 0 RV')
     // El año: sus meses en pequeño; uno lleva a él
     await userEvent.click(within(modes).getByRole('button', { name: 'Año' }))
-    expect(screen.getByRole('heading', { level: 2, name: '0 RV' })).toBeDefined()
+    expect(screen.getByRole('heading', { level: 2, name: 'Año 0 RV' })).toBeDefined()
     await userEvent.click(screen.getByRole('button', { name: 'Año siguiente' }))
-    expect(screen.getByRole('heading', { level: 2, name: '1 RV' })).toBeDefined()
+    expect(screen.getByRole('heading', { level: 2, name: 'Año 1 RV' })).toBeDefined()
     // En el año se eligen días (su ficha), y el nombre del mes lleva a él
     await userEvent.click(screen.getByRole('button', { name: / 10 de Febrero de 1 RV$/ }))
     expect(
@@ -215,13 +217,13 @@ describe('un calendario en grande', () => {
         .textContent
     ).toContain('10 de Febrero de 1 RV')
     await userEvent.click(screen.getByRole('button', { name: /^Junio/ }))
-    expect(screen.getByRole('heading', { level: 2, name: 'Junio de 1 RV' })).toBeDefined()
+    expect(screen.getByRole('heading', { level: 2, name: 'Junio del año 1 RV' })).toBeDefined()
     expect(within(modes).getByRole('button', { name: 'Mes' }).getAttribute('aria-pressed')).toBe('true')
     // «Ir al año»
     const year = screen.getByLabelText('Ir al año')
     await userEvent.clear(year)
     await userEvent.type(year, '1250')
-    expect(screen.getByRole('heading', { level: 2, name: 'Junio de 1250 RV' })).toBeDefined()
+    expect(screen.getByRole('heading', { level: 2, name: 'Junio del año 1250 RV' })).toBeDefined()
   })
 
   it('pulsar un evento en la rejilla elige su día y lo abre para editarlo', async () => {
@@ -275,34 +277,34 @@ describe('un calendario en grande', () => {
 
   it('los años: «Ir al año» no pasa del tope ni deja más de seis cifras', async () => {
     open()
-    await screen.findByRole('heading', { level: 2, name: 'Enero de 0 RV' })
+    await screen.findByRole('heading', { level: 2, name: 'Enero del año 0 RV' })
     const year = screen.getByLabelText('Ir al año') as HTMLInputElement
     await userEvent.clear(year)
     await userEvent.type(year, '-2345656')
     expect(year.value).toBe('-234565')
-    expect(screen.getByRole('heading', { level: 2, name: 'Enero de -99999 RV' })).toBeDefined()
+    expect(screen.getByRole('heading', { level: 2, name: 'Enero del año -99999 RV' })).toBeDefined()
     expect((screen.getByRole('button', { name: 'Mes anterior' }) as HTMLButtonElement).disabled).toBe(true)
   })
 
   it('con su rango de años, se para en el borde: las flechas se desactivan y la vista no sale de él', async () => {
     const ranged: FakeCalendar = { ...VARN, definition: { ...VARN.definition, yearRange: { min: 0, max: 2 } } }
     renderAt(`/mundos/${WORLD.id}/calendarios/${VARN.id}`, [ranged])
-    await screen.findByRole('heading', { level: 2, name: 'Enero de 0 RV' })
+    await screen.findByRole('heading', { level: 2, name: 'Enero del año 0 RV' })
     const previous = screen.getByRole('button', { name: 'Mes anterior' }) as HTMLButtonElement
     expect(previous.disabled).toBe(true)
     const year = screen.getByLabelText('Ir al año')
     await userEvent.clear(year)
     await userEvent.type(year, '50')
-    expect(screen.getByRole('heading', { level: 2, name: 'Enero de 2 RV' })).toBeDefined()
+    expect(screen.getByRole('heading', { level: 2, name: 'Enero del año 2 RV' })).toBeDefined()
     await userEvent.click(screen.getByRole('button', { name: /^Ir al mes/ }))
     await userEvent.click(screen.getByRole('button', { name: 'Diciembre' }))
     expect((screen.getByRole('button', { name: 'Mes siguiente' }) as HTMLButtonElement).disabled).toBe(true)
     const modes = screen.getByRole('toolbar', { name: 'Vista' })
     await userEvent.click(within(modes).getByRole('button', { name: 'Año' }))
-    expect(screen.getByRole('heading', { level: 2, name: '2 RV' })).toBeDefined()
+    expect(screen.getByRole('heading', { level: 2, name: 'Año 2 RV' })).toBeDefined()
     expect((screen.getByRole('button', { name: 'Año siguiente' }) as HTMLButtonElement).disabled).toBe(true)
     await userEvent.click(screen.getByRole('button', { name: 'Año anterior' }))
-    expect(screen.getByRole('heading', { level: 2, name: '1 RV' })).toBeDefined()
+    expect(screen.getByRole('heading', { level: 2, name: 'Año 1 RV' })).toBeDefined()
   })
 
   it('«Hoy de…»: con una campaña con fecha, se abre en su hoy, marcado', async () => {
@@ -310,13 +312,13 @@ describe('un calendario en grande', () => {
       campaigns: [MARCA],
       todays: [{ campaignId: MARCA.id, calendarId: VARN.id ?? '', date: { year: 1250, month: 'mar', day: 18 } }]
     })
-    expect(await screen.findByRole('heading', { level: 2, name: 'Marzo de 1250 RV' })).toBeDefined()
+    expect(await screen.findByRole('heading', { level: 2, name: 'Marzo del año 1250 RV' })).toBeDefined()
     expect(screen.getByLabelText('Hoy de')).toBeDefined()
     const today = screen.getByRole('cell', { name: /18 de Marzo de 1250 RV/ })
     expect(today.getAttribute('aria-current')).toBe('date')
     await userEvent.click(screen.getByRole('button', { name: 'Mes siguiente' }))
     await userEvent.click(screen.getByRole('button', { name: 'Ir a hoy' }))
-    expect(screen.getByRole('heading', { level: 2, name: 'Marzo de 1250 RV' })).toBeDefined()
+    expect(screen.getByRole('heading', { level: 2, name: 'Marzo del año 1250 RV' })).toBeDefined()
   })
 })
 

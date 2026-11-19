@@ -16,7 +16,6 @@ import {
   entryOccurrences,
   type FullDate,
   formatDate,
-  formatYear,
   weekGrid,
   yearBounds,
   yearStart
@@ -24,7 +23,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getRouteApi, Link, Navigate, useNavigate } from '@tanstack/react-router'
 import { CalendarPlus, Check, ChevronDown, FilePlus, Pencil, Sparkles, X } from 'lucide-react'
-import { type CSSProperties, useEffect, useId, useMemo, useRef, useState } from 'react'
+import { type CSSProperties, useEffect, useId, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
@@ -44,6 +43,7 @@ import { Tour } from '../components/tour.tsx'
 import { YearInput } from './date-input.tsx'
 import { WeekView, YearView } from './periods.tsx'
 import { pagesOf, startYear } from './preview.tsx'
+import { monthTitle, yearTitle } from './titles.tsx'
 import styles from './view.module.css'
 
 const route = getRouteApi('/mundos/$worldId/calendarios/$calendarId')
@@ -140,29 +140,14 @@ function BigCalendar({
   const [dialog, setDialog] = useState<EventDraft | null>(null)
   const shown = pinned ?? hovered
 
-  // Pasar el ratón: el primer día enseña su ficha al momento; de uno a otro, tras un instante (cruzar la rejilla hasta
-  // la ficha no la cambia) y, al salir, un poco después (entrar en la ficha la mantiene)
-  const hoverTimer = useRef<number | undefined>(undefined)
-  const hoveredRef = useRef<number | null>(null)
-  const hover = (day: number | null) => {
-    window.clearTimeout(hoverTimer.current)
-    const apply = () => {
-      hoveredRef.current = day
-      setHovered(day)
-    }
-    if (day !== null && hoveredRef.current === null) apply()
-    else hoverTimer.current = window.setTimeout(apply, day === null ? 250 : 120)
-  }
-  const keepHover = () => window.clearTimeout(hoverTimer.current)
-  useEffect(() => () => window.clearTimeout(hoverTimer.current), [])
+  // Pasar el ratón, como la vista previa de Archivos: la ficha sale al momento y se va al salir
+  const hover = (day: number | null) => setHovered(day)
 
   // Esc quita el día fijado (si no hay un cuadro abierto, que se cierra él)
   useEffect(() => {
     if (shown === null) return
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== 'Escape' || event.defaultPrevented || document.querySelector('dialog[open]')) return
-      window.clearTimeout(hoverTimer.current)
-      hoveredRef.current = null
       setHovered(null)
       setPinned(null)
     }
@@ -176,31 +161,12 @@ function BigCalendar({
     const outside = (event: PointerEvent) => {
       const at = event.target as Element | null
       if (!at?.closest || at.closest('[data-dia-ficha], [data-tour="calendario-vistas"], dialog')) return
-      window.clearTimeout(hoverTimer.current)
-      hoveredRef.current = null
       setHovered(null)
       setPinned(null)
     }
     document.addEventListener('pointerdown', outside)
     return () => document.removeEventListener('pointerdown', outside)
   }, [pinned])
-
-  // Al irse, la ficha se queda un momento con el último día para salir fundiéndose, como en Archivos
-  const [visible, setVisible] = useState<number | null>(null)
-  const [leaving, setLeaving] = useState(false)
-  useEffect(() => {
-    if (shown !== null) {
-      setVisible(shown)
-      setLeaving(false)
-      return
-    }
-    setLeaving(true)
-    const done = window.setTimeout(() => {
-      setVisible(null)
-      setLeaving(false)
-    }, 180)
-    return () => window.clearTimeout(done)
-  }, [shown])
 
   const at = dateFromDay(definition, cursor)
   const place: CalendarPlace = placeOfMonth(pages, at.month, at.year)
@@ -277,27 +243,23 @@ function BigCalendar({
         </Link>
       }
       left={
-        visible !== null ? (
+        shown !== null ? (
           <DayAside
             worldId={worldId}
             definition={definition}
-            day={visible}
+            day={shown}
             today={today}
-            pinned={pinned === visible}
-            leaving={leaving}
+            pinned={pinned === shown}
             entries={entries}
             groups={groups}
             busy={datedPage.isPending}
             error={datedPage.error ? errorText(datedPage.error) : null}
-            onEnter={keepHover}
-            onLeave={() => hover(null)}
             onClose={() => {
-              hoveredRef.current = null
               setHovered(null)
               setPinned(null)
             }}
-            onNewEvent={() => setDialog({ date: { calendarId: calendar.id, start: dateFromDay(definition, visible) } })}
-            onNewPage={() => datedPage.mutate(dateFromDay(definition, visible))}
+            onNewEvent={() => setDialog({ date: { calendarId: calendar.id, start: dateFromDay(definition, shown) } })}
+            onNewPage={() => datedPage.mutate(dateFromDay(definition, shown))}
             onEdit={(entry) => setDialog({ entry })}
           />
         ) : null
@@ -398,6 +360,7 @@ function BigCalendar({
             entries={entries}
             groups={groups}
             compact={false}
+            title={monthTitle(t, definition, at.year, at.month)}
             where={place}
             onWhere={(next) => {
               const target = pages[next.page] ?? pages[0]
@@ -433,7 +396,7 @@ function BigCalendar({
           <YearView
             definition={definition}
             year={at.year}
-            title={formatYear(definition, at.year, { year: at.year })}
+            title={yearTitle(t, definition, at.year)}
             entries={entries}
             selected={pinned}
             today={today}
@@ -483,13 +446,10 @@ function DayAside({
   day,
   today,
   pinned,
-  leaving,
   entries,
   groups,
   busy,
   error,
-  onEnter,
-  onLeave,
   onClose,
   onNewEvent,
   onNewPage,
@@ -501,15 +461,11 @@ function DayAside({
   today: number | null
   /** Fijado al pulsarlo (si no, se ve al pasar el ratón) */
   pinned: boolean
-  /** Saliendo: se funde antes de irse */
-  leaving: boolean
   entries: readonly ChronologyEntryView[]
   groups: readonly TimelineGroupView[]
   busy: boolean
   /** Lo que falló al crear la página con su fecha */
   error: string | null
-  onEnter: () => void
-  onLeave: () => void
   onClose: () => void
   onNewEvent: () => void
   onNewPage: () => void
@@ -526,14 +482,7 @@ function DayAside({
   )
   const facts = [described.season, t('calendars.view.dayOfYear', { day: described.dayOfYear })]
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: el ratón dentro de la ficha solo la mantiene a la vista
-    <div
-      className={styles.side}
-      data-dia-ficha=""
-      data-leaving={leaving || undefined}
-      onMouseEnter={onEnter}
-      onMouseLeave={onLeave}
-    >
+    <div className={styles.side} data-dia-ficha="">
       <section aria-labelledby={titleId} className={styles.day} data-tour="calendario-dia">
         <div className={styles.dayHead}>
           <h2 id={titleId}>

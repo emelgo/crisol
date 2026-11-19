@@ -9,7 +9,6 @@ import {
   dateFromDay,
   entryOccurrences,
   formatDate,
-  formatRange,
   type GridDay,
   monthGrid,
   moonEvent,
@@ -24,6 +23,7 @@ import { useTranslation } from 'react-i18next'
 import { Chip } from '../chronologies/calendar-view.tsx'
 import chrono from '../chronologies/chronologies.module.css'
 import { shortWeekdays } from './preview.tsx'
+import { SeasonFacts, seasonsOf, weekTitle } from './titles.tsx'
 import styles from './view.module.css'
 
 /** La cabecera de una vista: el título (h2) con sus datos debajo y las flechas para pasar de periodo */
@@ -234,8 +234,9 @@ export function WeekView({
     )
   }
 
-  // «12–18 de Siega de 1250 RC», sin repetir lo que comparten
-  const title = formatRange(definition, dateFromDay(definition, week.first), dateFromDay(definition, week.last))
+  // «Semana del 12 al 18 de Siega del año 1250 RC», y su estación como en el mes
+  const title = weekTitle(t, definition, week.first, week.last)
+  const seasons = seasonsOf(definition, [...week.days.filter((d): d is GridDay => Boolean(d)), ...week.outside])
   const columns = definition.weekdays.length || 7
   const weekdays = shortWeekdays(definition.weekdays)
   // Los de fuera de la semana, por su fiesta
@@ -249,6 +250,7 @@ export function WeekView({
       <PeriodHead
         id={titleId}
         title={title}
+        facts={seasons.length > 0 ? <SeasonFacts seasons={seasons} /> : undefined}
         previous={t('calendars.view.previousWeek')}
         next={t('calendars.view.nextWeek')}
         canStep={canStep}
@@ -416,6 +418,17 @@ export function YearView({
               >
                 {month.name}
               </button>
+              {(() => {
+                // Su estación (la de su primer día y, si cambia, también la del último)
+                const days = [...grid.weeks.flat().filter((d): d is GridDay => Boolean(d)), ...grid.outside]
+                const ends = [days[0], days.at(-1)].filter((d): d is GridDay => Boolean(d))
+                const seasons = seasonsOf(definition, ends)
+                return seasons.length > 0 ? (
+                  <span className={`${chrono.calendarFacts} ${styles.yearSeason}`}>
+                    <SeasonFacts seasons={seasons} />
+                  </span>
+                ) : null
+              })()}
               {grid.weeks.length > 0 ? (
                 // biome-ignore lint/a11y/noStaticElementInteractions: las flechas mueven el foco entre los días de dentro
                 <div className={styles.mini} style={{ '--columns': columns } as CSSProperties} onKeyDown={onDaysKey}>
