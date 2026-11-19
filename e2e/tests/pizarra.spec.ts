@@ -159,7 +159,9 @@ test('la pizarra: el máster pone tarjetas, una flecha y dibuja a mano; otra pes
       // (arriba a la derecha, en vacío: abajo van el zoom y la píldora)
       await each.page().mouse.click(area.x + area.width - 40, area.y + 40)
       await each.page().keyboard.press('Shift+1')
-      await expect(each.getByRole('link', { name: 'El robo del relicario', exact: true })).toBeVisible({ timeout: 2000 })
+      await expect(each.getByRole('link', { name: 'El robo del relicario', exact: true })).toBeVisible({
+        timeout: 2000
+      })
     }).toPass({ timeout: 15_000 })
   }
   await page.screenshot({ path: test.info().outputPath('1-pizarra.png') })
