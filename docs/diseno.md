@@ -292,6 +292,12 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   N años, {mes} tiene D días más, salvo cada M pero sí cada K»), ninguna de serie y sin atajo «Como el gregoriano»; en
   los textos no sale «bisiesto». Sustituye al editor a pantalla entera con todas las secciones seguidas y la vista
   previa (lienzo del módulo 8).
+- **Los años de un calendario tienen tope** (Enrique, 2026-11-19: en «Ir a» se podía escribir «-2345656»): en General,
+  «Años: desde … hasta …», opcional; sin él, de -99.999 a 99.999. Si tiene eras y «desde» está vacío, se propone el
+  inicio de la primera (se ve como pista y con un botón; no se impone). «Como el nuestro» lo deja vacío. Es un problema
+  que «desde» vaya después de «hasta» o que una era empiece fuera. La vista grande y los campos de fecha (páginas,
+  eventos, el «hoy») se paran en el borde: las flechas se desactivan y el año escrito se queda en el extremo; el campo
+  del año no admite más de seis cifras. La IA no puede fechar fuera (lo dice con un motivo claro).
 - **Las plantillas son páginas guardadas como modelo, y no hay plantillas de serie** (Enrique, 2026-11-11, revisión de
   la app; ADR-0024): cada cuenta hace las suyas. Una plantilla lleva lo mismo que una página (portada, icono, campos,
   panel, texto y sus pestañas) y se edita como una página; crear desde ella es duplicarla. Se ordenan en carpetas.

@@ -155,6 +155,15 @@ Plan aprobado el 2026-11-19 («¿cómo creo eventos en el calendario?»). Normas
   cada regla se lee como una frase: «Cada [N] años, [mes] tiene [D] días más, salvo cada [M] pero sí cada [K]» («pero
   sí cada», solo con un «salvo»). En ningún texto de calendarios sale «bisiesto». El resumen dice «365 días · 366 con
   días de más».
+- [ ] **Tope de años**: en «Ir a», escribe «-2345656»: no deja más de seis cifras y se para en -99999 (sin rango, de
+  -99.999 a 99.999). En el editor, General, «Años: desde … hasta …» (opcional): con eras y «desde» vacío, propone el
+  inicio de la primera («Desde el inicio de…»), sin ponerlo solo; «desde» después de «hasta», o una era que empieza
+  fuera, es un problema. Con un rango, en la vista grande (Mes, Semana y Año) las flechas se apagan en el borde y el
+  año escrito se queda en el extremo; lo mismo en el campo «Fecha» de una página, en el de un evento y en «Poner
+  fecha» de la campaña (en «Año», los años de fuera no se eligen). Pide a la IA una fecha fuera: no la pone y dice por
+  qué. **Decidido sin ti**: el tope general es de ±99.999 (cinco cifras; el campo admite seis para poder escribir); las
+  fechas que ya hubiera fuera de un rango nuevo no se tocan, pero no se pueden volver a guardar sin cambiarlas; avanzar
+  el «hoy» más allá del último año tampoco se deja.
 
 ## El tiempo de la campaña (módulos 8 y 10 · campaña, en local, rama `modulo-8/calendarios`; migraciones 0085-0089; 2026-11-17)
 
