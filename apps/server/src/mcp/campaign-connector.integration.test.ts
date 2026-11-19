@@ -210,6 +210,45 @@ describe('el conector de una campaña', () => {
     expect(gm.client.getInstructions()).toContain('Quien te conecta es su máster. Sus personajes: Brisa (Ana).')
   })
 
+  it('tus conexiones: cada conector con su app y su último uso; quitar una la deja sin acceso al momento', async () => {
+    const master = await connected()
+    const world = (await master.call<World>('crear_mundo', { name: 'Eana' })).data
+    const campaign = (await master.call<Campaign>('crear_campana', { worldId: world.id, name: 'La Marca' })).data
+    const path = `/mcp/campanas/${campaign.id}`
+    const gm = await connectAs(master, master.cookie, path)
+    expect((await gm.call('fecha_de_hoy')).isError).toBeFalsy()
+
+    type Listed = { connections: Array<{ clientId: string; clientName: string; url: string; connector: object }> }
+    const { connections } = await api<Listed>(master.cookie, 'listAiConnections', {})
+    expect(connections).toHaveLength(2)
+    expect(connections).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ clientName: 'Pruebas', url: at('/mcp'), connector: { kind: 'worlds' } }),
+        expect.objectContaining({
+          url: at(path),
+          connector: { kind: 'campaign', campaignId: campaign.id, campaign: { name: 'La Marca', worldId: world.id } }
+        })
+      ])
+    )
+    const theCampaign = connections.find((c) => c.url === at(path))
+    // La de la campaña es la que se usó la última
+    expect(connections[0]?.url).toBe(at(path))
+
+    const left = await api<Listed>(master.cookie, 'removeAiConnection', {
+      clientId: theCampaign?.clientId,
+      url: at(path)
+    })
+    expect(left.connections.map((c) => c.url)).toEqual([at('/mcp')])
+    // Su token de acceso deja de valer al momento (vuelve a pedir permiso); Mundos sigue
+    const after = await rpc(path, gm.token, 'tools/list')
+    expect(after.status).toBe(401)
+    expect(after.headers.get('www-authenticate')).toContain('invalid_token')
+    expect((await master.call('listar_mundos')).isError).toBeFalsy()
+    // Otra cuenta no ve ni quita las de nadie
+    const other = await account('owner')
+    expect(await api<Listed>(other.cookie, 'listAiConnections', {})).toEqual({ connections: [] })
+  })
+
   it('Mundos sigue igual para quien crea mundos; quien solo juega ve las de leer', async () => {
     const master = await connected()
     const world = (await master.call<World>('crear_mundo', { name: 'Eana' })).data

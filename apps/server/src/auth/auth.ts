@@ -16,6 +16,7 @@ import { betterAuth } from 'better-auth'
 import { APIError, createAuthMiddleware, getSessionFromCtx } from 'better-auth/api'
 import { jwt } from 'better-auth/plugins'
 import { z } from 'zod'
+import { campaignOfResource, mcpResource } from '../mcp/scope.ts'
 import { signupAllowed } from './signup-gate.ts'
 
 export interface AuthOptions {
@@ -28,23 +29,6 @@ export interface AuthOptions {
 }
 
 const DAY = 60 * 60 * 24
-
-/** El recurso MCP de «Crisol · Mundos»: los tokens del conector solo valen para él */
-export const mcpResource = (baseURL: string) => new URL('/mcp', baseURL).toString()
-
-/** El conector de una campaña (ADR-0030): su propio recurso, para que su token solo valga en ella */
-export const campaignResource = (baseURL: string, campaignId: string) =>
-  new URL(`/mcp/campanas/${campaignId}`, baseURL).toString()
-
-const CAMPAIGN_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
-
-/** De qué campaña es un recurso; null si no es el de una campaña (o no es un id) */
-export function campaignOfResource(baseURL: string, resource: string): string | null {
-  const prefix = campaignResource(baseURL, '')
-  if (!resource.startsWith(prefix)) return null
-  const id = resource.slice(prefix.length)
-  return CAMPAIGN_ID.test(id) ? id : null
-}
 
 /** El parámetro resource de OAuth, que puede venir repetido */
 const resourcesOf = (value: unknown): string[] =>

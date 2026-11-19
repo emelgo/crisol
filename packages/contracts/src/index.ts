@@ -6,7 +6,15 @@ import {
   moveToActorFolder,
   renameActorFolder
 } from './actor-folders.ts'
-import { approve, getAiSettings, listApprovals, reject, setAiMode } from './ai.ts'
+import {
+  approve,
+  getAiSettings,
+  listAiConnections,
+  listApprovals,
+  reject,
+  removeAiConnection,
+  setAiMode
+} from './ai.ts'
 import {
   createBook,
   deleteBook,
@@ -418,6 +426,8 @@ export const ACTIONS = [
   reject,
   copyPage,
   createPage,
+  listAiConnections,
+  removeAiConnection,
   updatePage,
   movePage,
   getPage,
@@ -763,6 +773,8 @@ export type Actions = {
   movePage: typeof movePage
   getPage: typeof getPage
   listPageChildren: typeof listPageChildren
+  listAiConnections: typeof listAiConnections
+  removeAiConnection: typeof removeAiConnection
   listPageTree: typeof listPageTree
   listRecentPages: typeof listRecentPages
   setPagePanel: typeof setPagePanel

@@ -1,14 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 import { PLAYER_WRITES } from './approvals.ts'
-import {
-  CAMPAIGN_GUIDE,
-  CAMPAIGN_MASTER_TOOLS,
-  CAMPAIGN_PLAYER_TOOLS,
-  type CampaignScope,
-  scopedTools,
-  withScope
-} from './connectors.ts'
+import { CAMPAIGN_GUIDE, CAMPAIGN_MASTER_TOOLS, CAMPAIGN_PLAYER_TOOLS, scopedTools, withScope } from './connectors.ts'
+import type { CampaignScope } from './scope.ts'
 import { MCP_TOOLS, toolActions } from './tools.ts'
 
 const scope = (role: CampaignScope['role']): CampaignScope => ({

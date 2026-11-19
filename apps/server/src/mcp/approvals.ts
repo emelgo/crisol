@@ -33,7 +33,7 @@ import { approvalsChanged } from '../realtime/events.ts'
 import { openJson } from '../secrets.ts'
 import { playerEdits } from '../wiki/player-pages.ts'
 import { viewedPage } from '../wiki/projection.ts'
-import type { McpScope } from './connectors.ts'
+import type { McpScope } from './scope.ts'
 
 /** Lo que contesta una herramienta */
 export interface ToolResult {

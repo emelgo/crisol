@@ -14,27 +14,8 @@ import { implementationsByName } from '../actions/implementations.ts'
 import { formatDocs } from '../actions/systems.ts'
 import { callAsAi, scopedActor } from './approvals.ts'
 import { MAPS_GUIDE, MAPS_GUIDE_RESOURCE } from './maps-guide.ts'
+import { type CampaignScope, type McpScope, WORLDS } from './scope.ts'
 import { FORMAT_RESOURCE, INSTRUCTIONS, MCP_TOOLS, type McpTool, routeCall, toolActions, toolConfig } from './tools.ts'
-
-/** «Crisol · Mundos». Quien solo juega (no lleva ninguna cuenta ni ningún mundo) solo ve las herramientas de leer */
-export interface WorldsScope {
-  kind: 'worlds'
-  readOnly: boolean
-}
-
-/** «Crisol · {campaña}»: la campaña, su mundo y el papel en ella de quien conecta (máster de ella o de su mundo) */
-export interface CampaignScope {
-  kind: 'campaign'
-  campaignId: string
-  worldId: string
-  organizationId: string
-  name: string
-  role: 'master' | 'player'
-}
-
-export type McpScope = WorldsScope | CampaignScope
-
-export const WORLDS: WorldsScope = { kind: 'worlds', readOnly: false }
 
 /**
  * Lo del máster en su campaña: la Mesa, el registro, revelar, el «hoy» y el clima, las escenas, el combate, el sonido,

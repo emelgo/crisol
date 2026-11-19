@@ -1,13 +1,29 @@
-import { type Approval, approve, getAiSettings, listApprovals, reject, setAiMode } from '@crisol/contracts'
-import { aiRepo } from '@crisol/db'
-import { type AiMode, approvalStatus, ForbiddenError, NotFoundError } from '@crisol/domain'
+import {
+  type AiConnection,
+  type Approval,
+  approve,
+  getAiSettings,
+  listAiConnections,
+  listApprovals,
+  reject,
+  removeAiConnection,
+  setAiMode
+} from '@crisol/contracts'
+import { aiRepo, campaignsRepo } from '@crisol/db'
+import { type AiMode, approvalStatus, can, ForbiddenError, NotFoundError } from '@crisol/domain'
+import { campaignOfResource, mcpResource } from '../mcp/scope.ts'
 import { approvalsChanged } from '../realtime/events.ts'
 import { sealJson } from '../secrets.ts'
 import { type ActionContext, errorCode, InvalidRequestError } from './context.ts'
 import { implement } from './registry.ts'
 
-/** Lo que solo se hace desde la interfaz: la IA no aprueba lo suyo ni cambia su propio modo */
-export const UI_ONLY: ReadonlySet<string> = new Set([setAiMode.name, approve.name, reject.name])
+/** Lo que solo se hace desde la interfaz: la IA no aprueba lo suyo, ni cambia su propio modo, ni quita conexiones */
+export const UI_ONLY: ReadonlySet<string> = new Set([
+  setAiMode.name,
+  approve.name,
+  reject.name,
+  removeAiConnection.name
+])
 
 function fromInterface(ctx: ActionContext) {
   if (ctx.via !== 'ui') throw new ForbiddenError('ai')
@@ -15,8 +31,43 @@ function fromInterface(ctx: ActionContext) {
 
 const settings = (ctx: ActionContext, mode: AiMode) => ({
   mode,
-  connectorUrl: new URL('/mcp', ctx.publicUrl).toString()
+  connectorUrl: mcpResource(ctx.publicUrl)
 })
+
+/**
+ * Las conexiones de IA de la cuenta (ADR-0030): las de los conectores de este servidor, con el nombre de la campaña si
+ * aún la ve, y su último uso (el de este proceso o, si no lo hay, la última vez que renovó su acceso)
+ */
+async function connections(ctx: ActionContext): Promise<AiConnection[]> {
+  const userId = ctx.actor.userId
+  const worlds = mcpResource(ctx.publicUrl)
+  const rows = await aiRepo.listAiConnections(ctx.db, userId, new Date())
+  const found: AiConnection[] = []
+  for (const row of rows) {
+    const campaignId = campaignOfResource(ctx.publicUrl, row.resource)
+    if (row.resource !== worlds && !campaignId) continue
+    let connector: AiConnection['connector'] = { kind: 'worlds' }
+    if (campaignId) {
+      const campaign = await campaignsRepo.findCampaign(ctx.db, campaignId)
+      const sees = campaign && can(ctx.actor, 'campaign.read', { campaignId, worldId: campaign.worldId })
+      connector = {
+        kind: 'campaign',
+        campaignId,
+        campaign: campaign && sees ? { name: campaign.name, worldId: campaign.worldId } : null
+      }
+    }
+    const used = ctx.aiConnections?.lastUsed(userId, row.clientId, row.resource)
+    const lastUsedAt = used && used > row.renewedAt ? used : row.renewedAt
+    found.push({
+      clientId: row.clientId,
+      clientName: row.clientName,
+      url: row.resource,
+      connector,
+      lastUsedAt: lastUsedAt.toISOString()
+    })
+  }
+  return found.sort((a, b) => b.lastUsedAt.localeCompare(a.lastUsedAt))
+}
 
 /** Una petición tal como la ve la cuenta: la caducidad se decide con la hora de ahora */
 export function approvalView(row: aiRepo.Approval, now: Date): Approval {
@@ -95,6 +146,20 @@ export const aiActions = [
       pending: pending.map((row) => approvalView(row, now)),
       recent: recent.map((row) => approvalView(row, now))
     }
+  }),
+
+  implement(listAiConnections, async (ctx) => ({ connections: await connections(ctx) })),
+
+  // Quitarla revoca sus tokens de refresco y rechaza al momento los de acceso que ya tenía (no es del historial: son
+  // tablas de Better Auth, ADR-0002)
+  implement(removeAiConnection, async (ctx, { clientId, url }) => {
+    fromInterface(ctx)
+    if (url !== mcpResource(ctx.publicUrl) && !campaignOfResource(ctx.publicUrl, url))
+      throw new InvalidRequestError('NOT_A_CONNECTOR')
+    const userId = ctx.actor.userId
+    await aiRepo.revokeAiConnection(ctx.db, { userId, clientId, resource: url, now: new Date() })
+    ctx.aiConnections?.removed(userId, clientId, url)
+    return { connections: await connections(ctx) }
   }),
 
   implement(approve, (ctx, { approvalId }) => decide(ctx, approvalId, 'approved')),

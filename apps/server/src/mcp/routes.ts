@@ -5,9 +5,10 @@ import { FILE_BYTES } from '@crisol/systems'
 import { createMcpHandler } from '@modelcontextprotocol/server'
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 import type { ActionEnv } from '../actions/context.ts'
-import { type Auth, campaignResource, ensureCampaignResource, mcpResource } from '../auth/auth.ts'
+import { type Auth, ensureCampaignResource } from '../auth/auth.ts'
 import { toHeaders } from '../http.ts'
-import { buildMcpServer, type CampaignScope, campaignInstructions, type McpScope } from './connectors.ts'
+import { buildMcpServer, campaignInstructions } from './connectors.ts'
+import { type CampaignScope, campaignResource, type McpScope, mcpResource } from './scope.ts'
 
 export interface McpDeps extends ActionEnv {
   auth: Auth

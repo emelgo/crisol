@@ -36,6 +36,8 @@ describe('Actions', () => {
       listApprovals: true,
       approve: true,
       reject: true,
+      listAiConnections: true,
+      removeAiConnection: true,
       copyPage: true,
       createPage: true,
       updatePage: true,
