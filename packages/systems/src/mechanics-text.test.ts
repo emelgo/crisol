@@ -74,5 +74,22 @@ describe('la mecánica en palabras', () => {
     expect(say('@nivel >= 5 ? 2 : 1')).toBe('2 si Nivel ≥ 5; si no, 1')
     expect(say('@nivel + -1')).toBe('Nivel − 1')
     expect(say('(((')).toBe('(((')
+    // Con los paréntesis que hacen falta, y nada más
+    expect(say('floor((@caracteristicas.des.puntuacion - 10) / 2)')).toBe(
+      '(Puntuación de Destreza − 10) ÷ 2 (hacia abajo)'
+    )
+    expect(say('@nivel - (@nivel - 1)')).toBe('Nivel − (Nivel − 1)')
+    expect(say('@nivel * 2 + 1')).toBe('Nivel × 2 + 1')
+    expect(say('(@nivel > 4 ? 2 : 1) + @competencia')).toBe('(2 si Nivel > 4; si no, 1) + Bonificador por competencia')
+    expect(say('-(@nivel + 1)')).toBe('−(Nivel + 1)')
+    // Lo que se elige al calcular, por su nombre; las opciones de los ajustes y el texto vacío, en palabras
+    expect(say('@caracteristicas[@caracteristica_conjuros].mod')).toBe(
+      'Modificador de Característica para lanzar conjuros'
+    )
+    expect(say('@ajustes.reglas == "e2024"')).toBe('Reglas generales = 2024')
+    expect(say('@nivel != ""')).toBe('Nivel ≠ vacío')
+    expect(say('first(@clases.lanzamiento)')).toBe('el primero de Clases')
+    expect(say('@nivel != null && @nivel >= 2')).toBe('con Nivel y Nivel ≥ 2')
+    expect(say('@nivel == null')).toBe('sin Nivel')
   })
 })
