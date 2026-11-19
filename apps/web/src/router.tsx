@@ -3,6 +3,7 @@ import type { BookSearch } from './books/book-tabs.tsx'
 import { CampaignBookScreen } from './books/campaign-book.tsx'
 import { CalendarEditorScreen } from './calendars/editor.tsx'
 import { CalendarsScreen } from './calendars/screen.tsx'
+import { CalendarViewScreen } from './calendars/view.tsx'
 import { CompendiumScreen } from './campaign/compendium.tsx'
 import { WorldPagesHome, WorldPageView } from './campaign/world-pages.tsx'
 import { CharacterScreen } from './characters/character.tsx'
@@ -220,7 +221,7 @@ const filesRoute = createRoute({
   path: '/mundos/$worldId/archivos',
   component: WikiFiles
 })
-// Los calendarios del mundo (módulo 8) y el editor de uno, a pantalla entera
+// Los calendarios del mundo (módulo 8): la lista, uno en grande y su editor por fases (?fase=semana)
 const calendarsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/mundos/$worldId/calendarios',
@@ -229,7 +230,14 @@ const calendarsRoute = createRoute({
 const calendarRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/mundos/$worldId/calendarios/$calendarId',
-  component: CalendarEditorScreen
+  component: CalendarViewScreen
+})
+const calendarEditorRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/mundos/$worldId/calendarios/$calendarId/editar',
+  component: CalendarEditorScreen,
+  validateSearch: (search: Record<string, unknown>): { fase?: string } =>
+    typeof search.fase === 'string' && search.fase ? { fase: search.fase } : {}
 })
 // Una cronología del mundo (módulo 8), a pantalla entera dentro de Calendarios
 const chronologyRoute = createRoute({
@@ -374,6 +382,7 @@ const routeTree = rootRoute.addChildren([
   filesRoute,
   calendarsRoute,
   calendarRoute,
+  calendarEditorRoute,
   chronologyRoute,
   worldGraphRoute,
   playerWorldGraphRoute,

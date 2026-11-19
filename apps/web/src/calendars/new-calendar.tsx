@@ -1,7 +1,7 @@
 /**
  * «Calendario nuevo» (lienzo, pantalla 1b): su nombre y de dónde se parte: en blanco o como el nuestro (el gregoriano,
  * de ejemplo); duplicar otro va en el menú de su tarjeta. Una línea dice que también se le puede pedir a la IA. Al
- * crearlo se abre su editor. El primero del mundo nace principal (lo decide el servidor)
+ * crearlo se abre su editor (por fases). El primero del mundo nace principal (lo decide el servidor)
  */
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
@@ -34,7 +34,7 @@ export function NewCalendarDialog({ worldId, onClose }: { worldId: string; onClo
     onSuccess: (created) => {
       void client.invalidateQueries({ queryKey: ['calendars', worldId] })
       void navigate({
-        to: '/mundos/$worldId/calendarios/$calendarId',
+        to: '/mundos/$worldId/calendarios/$calendarId/editar',
         params: { worldId, calendarId: created.id }
       })
     }

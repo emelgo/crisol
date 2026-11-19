@@ -28,6 +28,7 @@ import { type ActionInput, type ActionOutput, ApiError } from './client.ts'
 type Names =
   | 'listChronologies'
   | 'getChronology'
+  | 'listCalendarEntries'
   | 'createChronology'
   | 'updateChronology'
   | 'deleteChronology'
@@ -125,12 +126,14 @@ export function fakeChronologies(options: {
     return row
   }
   const calendarsOf = (worldId: string) => options.calendars().filter((c) => c.worldId === worldId)
-  const calendarOf = (row: ChronologyRow) => {
+  const calendarOf = (row: Pick<ChronologyRow, 'worldId' | 'calendarId'>) => {
     const all = calendarsOf(row.worldId)
     return all.find((c) => c.id === row.calendarId) ?? all.find((c) => c.primary) ?? null
   }
 
-  const entriesOf = (row: ChronologyRow): { entries: ChronologyEntryView[]; outside: number } => {
+  const entriesOf = (
+    row: Pick<ChronologyRow, 'worldId' | 'calendarId' | 'filter'>
+  ): { entries: ChronologyEntryView[]; outside: number } => {
     const calendar = calendarOf(row)
     if (!calendar) return { entries: [], outside: 0 }
     const worldCalendars = calendarsOf(row.worldId).map((c) => ({
@@ -296,6 +299,13 @@ export function fakeChronologies(options: {
       if (!calendar) throw new ApiError('NO_CALENDAR', 400)
       const { position: _, ...plain } = calendar
       return { chronology: view(row), calendar: plain, groups: groupsOf(row.worldId).map(groupView), ...entriesOf(row) }
+    },
+    // La vista grande de un calendario: todo lo del mundo, como una cronología que lo incluye todo
+    listCalendarEntries: ({ calendarId }) => {
+      const calendar = options.calendars().find((c) => c.id === calendarId)
+      if (!calendar) throw new ApiError('NOT_FOUND', 404)
+      const all = { worldId: calendar.worldId, calendarId, filter: { ...DEFAULT_CHRONOLOGY_FILTER } }
+      return { groups: groupsOf(calendar.worldId).map(groupView), ...entriesOf(all) }
     },
     createChronology: ({ worldId, name, calendarId, filter }) => {
       if (calendarsOf(worldId).length === 0) throw new ApiError('NO_CALENDAR', 400)

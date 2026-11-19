@@ -141,6 +141,12 @@
   background: var(--month-color, var(--color-warning));
 }
 
+/* El mes que se ve en la vista grande: lleno y con su raya */
+.month[data-current] {
+  background: var(--color-accent-text);
+  box-shadow: 0 0 0 1px var(--color-accent-text);
+}
+
 .seasons {
   position: relative;
   block-size: 3px;

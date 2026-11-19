@@ -1,7 +1,8 @@
 /**
  * «Calendarios», la pantalla del tiempo del mundo (módulo 8; lienzo aprobado, pantalla 1): una ficha por calendario con
- * el año dibujado, el principal marcado, su engranaje con lo que se puede hacer con él, reordenar arrastrando (o con
- * Alt y las flechas) y «Calendario nuevo» al final. Solo para quien lleva el mundo: la jugadora los lee con las fechas
+ * el año dibujado (al pulsarla, se ve en grande), el principal marcado, su engranaje con lo que se puede hacer con él
+ * (abrirlo, editarlo…), reordenar arrastrando (o con Alt y las flechas) y «Calendario nuevo» al final. Solo para quien
+ * lleva el mundo: la jugadora los lee con las fechas
  */
 import type { CalendarView } from '@crisol/contracts'
 import { yearLength } from '@crisol/domain'
@@ -331,6 +332,9 @@ function CalendarCard({
             <>
               <Link to="/mundos/$worldId/calendarios/$calendarId" params={params} className={styles.menuLink}>
                 {t('calendars.open')}
+              </Link>
+              <Link to="/mundos/$worldId/calendarios/$calendarId/editar" params={params} className={styles.menuLink}>
+                {t('calendars.edit')}
               </Link>
               {!calendar.primary && (
                 <MenuItem

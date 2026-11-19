@@ -1,5 +1,5 @@
-import type { World } from '@crisol/contracts'
-import { gregorianCalendar } from '@crisol/domain'
+import type { Campaign, World } from '@crisol/contracts'
+import { blankCalendar, gregorianCalendar, weekdayName } from '@crisol/domain'
 import { createMemoryHistory } from '@tanstack/react-router'
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -34,8 +34,23 @@ const VARN: FakeCalendar = {
   }
 }
 
-const renderAt = (path: string, calendars: FakeCalendar[] = [VARN]) => {
-  const api = fakeApi({ organizations: [ORG], worlds: [WORLD], calendars })
+const MARCA: Campaign = {
+  id: crypto.randomUUID(),
+  worldId: WORLD.id,
+  name: 'La Marca',
+  description: '',
+  color: null,
+  cover: null,
+  role: 'master',
+  version: 1
+}
+
+const renderAt = (
+  path: string,
+  calendars: FakeCalendar[] = [VARN],
+  extra: Omit<NonNullable<Parameters<typeof fakeApi>[0]>, 'organizations' | 'worlds' | 'calendars'> = {}
+) => {
+  const api = fakeApi({ organizations: [ORG], worlds: [WORLD], calendars, ...extra })
   const router = createAppRouter(createMemoryHistory({ initialEntries: [path] }))
   render(
     <App
@@ -50,7 +65,7 @@ const renderAt = (path: string, calendars: FakeCalendar[] = [VARN]) => {
 beforeEach(() =>
   localStorage.setItem(
     'crisol.recorridos.enrique@crisol.test',
-    JSON.stringify({ seen: ['mundos', 'mundo', 'calendarios', 'calendario'] })
+    JSON.stringify({ seen: ['mundos', 'mundo', 'calendarios', 'calendario', 'calendario-vista'] })
   )
 )
 
@@ -90,7 +105,7 @@ describe('la pantalla «Calendarios»', () => {
     await userEvent.type(within(dialog).getByLabelText('Nombre'), 'Cómputo élfico')
     await userEvent.click(within(dialog).getByRole('radio', { name: /Como el nuestro/ }))
     await userEvent.click(within(dialog).getByRole('button', { name: 'Crear' }))
-    await waitFor(() => expect(router.state.location.pathname).toMatch(/\/calendarios\/[0-9a-f-]+$/))
+    await waitFor(() => expect(router.state.location.pathname).toMatch(/\/calendarios\/[0-9a-f-]+\/editar$/))
     expect(api.calendars.find((c) => c.name === 'Cómputo élfico')?.definition.leapRules).toHaveLength(1)
     expect(await screen.findByRole('heading', { level: 1, name: 'Cómputo élfico' })).toBeDefined()
   })
@@ -102,29 +117,139 @@ describe('la pantalla «Calendarios»', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Hacer principal' }))
     await waitFor(() => expect(api.calendars.find((c) => c.primary)?.name).toBe('Cuenta de Kharum'))
   })
+
+  it('el engranaje: abrirlo en grande o editarlo', async () => {
+    const { router } = renderAt(`/mundos/${WORLD.id}/calendarios`)
+    await userEvent.click(await screen.findByRole('button', { name: 'Acciones de Calendario de Varn' }))
+    await userEvent.click(await screen.findByRole('link', { name: 'Editar calendario' }))
+    await waitFor(() =>
+      expect(router.state.location.pathname).toBe(`/mundos/${WORLD.id}/calendarios/${VARN.id}/editar`)
+    )
+  })
 })
 
-describe('el editor de un calendario', () => {
-  const open = () => renderAt(`/mundos/${WORLD.id}/calendarios/${VARN.id}`)
+describe('un calendario en grande', () => {
+  const open = (extra: Parameters<typeof renderAt>[2] = {}) =>
+    renderAt(`/mundos/${WORLD.id}/calendarios/${VARN.id}`, [VARN], extra)
 
-  it('las secciones a la izquierda y la vista previa del mes a la derecha', async () => {
-    open()
-    const nav = await screen.findByRole('navigation', { name: 'Secciones del calendario' })
-    for (const name of ['General', 'Semana', 'Meses', 'Bisiestos', 'Estaciones', 'Lunas', 'Eras'])
+  it('pulsar su tarjeta lo abre: el título, «Editar calendario», el mes, el año en pequeño y sus datos', async () => {
+    const { router } = renderAt(`/mundos/${WORLD.id}/calendarios`)
+    const list = await screen.findByRole('list', { name: 'Calendarios del mundo' })
+    await userEvent.click(within(list).getByRole('link', { name: 'Calendario de Varn' }))
+    await waitFor(() => expect(router.state.location.pathname).toBe(`/mundos/${WORLD.id}/calendarios/${VARN.id}`))
+    expect(await screen.findByRole('heading', { level: 1, name: 'Calendario de Varn' })).toBeDefined()
+    expect(screen.getByRole('link', { name: 'Editar calendario' })).toBeDefined()
+    // Se abre en el año de su última era (el 0): enero, con el 1 en sábado (la sexta columna)
+    expect(screen.getByRole('heading', { level: 2, name: 'Enero de 0 RV' })).toBeDefined()
+    const year = screen.getByRole('complementary', { name: 'El año y los datos del calendario' })
+    expect(within(year).getByRole('img', { name: 'El año de Calendario de Varn' })).toBeDefined()
+    expect(year.textContent).toContain('365 días')
+    expect(year.textContent).toContain('Principal')
+    // Un mes del año pequeño lleva a él
+    await userEvent.click(within(year).getByRole('button', { name: /Junio/ }))
+    expect(screen.getByRole('heading', { level: 2, name: 'Junio de 0 RV' })).toBeDefined()
+    expect(within(year).getByRole('button', { name: /Junio/ }).getAttribute('aria-current')).toBe('true')
+  })
+
+  it('el día elegido, a la derecha, con su fecha, sus lunas y lo que pasa; las flechas pasan de mes y de año', async () => {
+    open({
+      events: [
+        {
+          worldId: WORLD.id,
+          title: 'Boda de Ilsa',
+          date: { calendarId: VARN.id ?? '', start: { year: 0, month: 'ene', day: 3 } }
+        }
+      ]
+    })
+    const day = await screen.findByRole('complementary', { name: 'El día elegido' })
+    // Sin elegir, el primero del mes
+    expect(within(day).getByRole('heading', { level: 2 }).textContent).toContain('1 de Enero de 0 RV')
+    await userEvent.click(screen.getByRole('cell', { name: / 3 de Enero de 0 RV$/ }))
+    expect(within(day).getByRole('heading', { level: 2 }).textContent).toContain('3 de Enero de 0 RV')
+    expect(await within(day).findByText('Boda de Ilsa')).toBeDefined()
+    expect(day.textContent).toContain('Luna')
+    await userEvent.click(screen.getByRole('button', { name: 'Mes siguiente' }))
+    expect(screen.getByRole('heading', { level: 2, name: 'Febrero de 0 RV' })).toBeDefined()
+    expect(within(day).getByRole('heading', { level: 2 }).textContent).toContain('1 de Febrero de 0 RV')
+    await userEvent.click(screen.getByRole('button', { name: 'Año siguiente' }))
+    expect(screen.getByRole('heading', { level: 2, name: 'Febrero de 1 RV' })).toBeDefined()
+  })
+
+  it('«Nuevo evento» crea un evento suelto del mundo con la fecha del día elegido', async () => {
+    const { api } = open()
+    await userEvent.click(await screen.findByRole('cell', { name: / 5 de Enero de 0 RV$/ }))
+    await userEvent.click(screen.getByRole('button', { name: 'Nuevo evento' }))
+    const dialog = await screen.findByRole('dialog')
+    await userEvent.type(within(dialog).getByLabelText('Título'), 'Coronación')
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Crear evento' }))
+    await waitFor(() => expect(api.events.find((e) => e.title === 'Coronación')).toBeDefined())
+    expect(api.events.find((e) => e.title === 'Coronación')?.date).toMatchObject({
+      calendarId: VARN.id,
+      start: { year: 0, month: 'ene', day: 5 }
+    })
+    const day = screen.getByRole('complementary', { name: 'El día elegido' })
+    expect(await within(day).findByText('Coronación')).toBeDefined()
+  })
+
+  it('«Página con esta fecha»: una página nueva con el campo Fecha, abierta para ponerle título', async () => {
+    const { api, router } = open()
+    await userEvent.click(await screen.findByRole('cell', { name: / 7 de Enero de 0 RV$/ }))
+    await userEvent.click(screen.getByRole('button', { name: 'Página con esta fecha' }))
+    await waitFor(() => expect(router.state.location.pathname).toMatch(/\/wiki\/[0-9a-f-]+$/))
+    const pageId = router.state.location.pathname.split('/').at(-1)
+    const page = api.pages.find((p) => p.id === pageId)
+    expect(page?.properties).toEqual([
+      expect.objectContaining({
+        name: 'Fecha',
+        type: 'date',
+        value: { calendarId: VARN.id, start: { year: 0, month: 'ene', day: 7 } }
+      })
+    ])
+  })
+
+  it('«Hoy de…»: con una campaña con fecha, se abre en su hoy, marcado', async () => {
+    open({
+      campaigns: [MARCA],
+      todays: [{ campaignId: MARCA.id, calendarId: VARN.id ?? '', date: { year: 1250, month: 'mar', day: 18 } }]
+    })
+    expect(await screen.findByRole('heading', { level: 2, name: 'Marzo de 1250 RV' })).toBeDefined()
+    expect(screen.getByLabelText('Hoy de')).toBeDefined()
+    const today = screen.getByRole('cell', { name: /18 de Marzo de 1250 RV/ })
+    expect(today.getAttribute('aria-current')).toBe('date')
+    await userEvent.click(screen.getByRole('button', { name: 'Mes siguiente' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Hoy' }))
+    expect(screen.getByRole('heading', { level: 2, name: 'Marzo de 1250 RV' })).toBeDefined()
+  })
+})
+
+describe('el editor de un calendario, por fases', () => {
+  const open = (phase = '') =>
+    renderAt(`/mundos/${WORLD.id}/calendarios/${VARN.id}/editar${phase ? `?fase=${phase}` : ''}`)
+  const phases = () => screen.findByRole('navigation', { name: 'Fases del calendario' })
+
+  it('las fases a la izquierda, solo la elegida en el centro (en la URL) y el resumen del año a la derecha', async () => {
+    const { router } = open()
+    const nav = await phases()
+    for (const name of ['General', 'Semana', 'Meses', 'Días señalados', 'Bisiestos', 'Estaciones', 'Lunas', 'Eras'])
       expect(within(nav).getByRole('button', { name })).toBeDefined()
     // Es el principal: sin correspondencia
     expect(within(nav).queryByRole('button', { name: 'Correspondencia' })).toBeNull()
-    const preview = screen.getByRole('complementary', { name: 'Vista previa' })
-    // Se abre en el año en que empieza su última era (el 0)
-    expect(within(preview).getByRole('heading', { name: 'Enero de 0 RV' })).toBeDefined()
-    // El 1 de enero del año 0 (proléptico) fue sábado: la sexta columna
-    expect(within(preview).getAllByRole('row')[1]?.querySelectorAll('td')[5]?.textContent).toMatch(/^1/)
+    expect(screen.getByRole('region', { name: 'General' })).toBeDefined()
+    expect(screen.queryByRole('region', { name: 'Meses' })).toBeNull()
+    // Sin vista previa: el año en cifras
+    expect(screen.queryByRole('complementary', { name: 'Vista previa' })).toBeNull()
+    expect(screen.getByRole('complementary', { name: 'El año y los problemas' }).textContent).toContain('365 días')
+    await userEvent.click(within(nav).getByRole('button', { name: 'Meses' }))
+    await waitFor(() => expect(router.state.location.search).toEqual({ fase: 'meses' }))
+    expect(await screen.findByRole('region', { name: 'Meses' })).toBeDefined()
+    await userEvent.click(screen.getByRole('button', { name: 'Siguiente: Días señalados' }))
+    expect(await screen.findByRole('region', { name: 'Días señalados' })).toBeDefined()
   })
 
-  it('añadir una festividad cambia la vista previa y el total del año, sin guardar; Cancelar lo deshace', async () => {
-    open()
+  it('Meses: cada uno, mes o festividad; una festividad puede no contar en la semana; Cancelar lo deshace', async () => {
+    open('meses')
     const months = await screen.findByRole('region', { name: 'Meses' })
-    expect(screen.getByRole('navigation', { name: 'Secciones del calendario' }).textContent).toContain('365 días')
+    expect(within(months).queryByText('Fuera de la semana')).toBeNull()
     await userEvent.click(within(months).getByRole('button', { name: 'Mes' }))
     const name = within(months).getByLabelText('Nombre del mes 13')
     await userEvent.clear(name)
@@ -132,46 +257,99 @@ describe('el editor de un calendario', () => {
     const days = within(months).getByLabelText('Días de Fiesta del Invierno')
     await userEvent.clear(days)
     await userEvent.type(days, '5')
-    await userEvent.click(within(months).getByLabelText('Fiesta del Invierno, festividad'))
-    await userEvent.click(within(months).getByLabelText('Fiesta del Invierno, fuera de la semana'))
-    await waitFor(() =>
-      expect(screen.getByRole('navigation', { name: 'Secciones del calendario' }).textContent).toContain('370 días')
+    // Como mes, sin la casilla; como festividad, con ella
+    expect(within(months).queryByRole('checkbox', { name: /Fiesta del Invierno/ })).toBeNull()
+    await userEvent.selectOptions(within(months).getByLabelText('Tipo de Fiesta del Invierno'), 'Festividad')
+    await userEvent.click(
+      within(months).getByRole('checkbox', { name: /Sus días no cuentan en la semana · Fiesta del Invierno/ })
     )
-    // La vista previa va al mes que se edita: tras diciembre, la franja de la fiesta
-    const preview = screen.getByRole('complementary', { name: 'Vista previa' })
-    expect(within(preview).getByRole('heading', { name: 'Diciembre de 0 RV' })).toBeDefined()
-    expect(within(preview).getByText('Fiesta del Invierno')).toBeDefined()
+    const summary = screen.getByRole('complementary', { name: 'El año y los problemas' })
+    await waitFor(() => expect(summary.textContent).toContain('370 días'))
+    expect(summary.textContent).toContain('12 meses y 1 festividad')
     await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
     await waitFor(() => expect(within(months).queryByLabelText('Nombre del mes 13')).toBeNull())
   })
 
-  it('un problema bloquea «Guardar» y lleva a él; arreglado, se guarda', async () => {
-    const { api } = open()
+  it('Semana: empezar en domingo reordena sin cambiar las fechas; el ancla corre el día de la semana', async () => {
+    const { api } = open('semana')
+    const week = await screen.findByRole('region', { name: 'Semana' })
+    await userEvent.selectOptions(within(week).getByLabelText('La semana empieza en'), 'Domingo')
+    expect((within(week).getByLabelText('Día 1 de la semana') as HTMLInputElement).value).toBe('Domingo')
+    // El 1 de enero del año 0 (proléptico) fue sábado; y lo sigue siendo
+    const shown = (select: HTMLElement) => {
+      const element = select as HTMLSelectElement
+      return element.options[element.selectedIndex]?.textContent
+    }
+    expect(shown(within(week).getByLabelText('Día de la semana de la fecha de referencia'))).toBe('Sábado')
+    // El 1 de enero de 2026 fue jueves; si se dice que fue viernes, todo se corre un día
+    const year = within(week).getByLabelText('Año de la fecha de referencia')
+    await userEvent.clear(year)
+    await userEvent.type(year, '2026')
+    const weekday = within(week).getByLabelText('Día de la semana de la fecha de referencia')
+    expect(shown(weekday)).toBe('Jueves')
+    await userEvent.selectOptions(weekday, 'Viernes')
+    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
+    await waitFor(() => expect(api.calendars[0]?.version).toBe(2))
+    const saved = api.calendars[0]?.definition
+    expect(saved?.weekdays[0]).toBe('Domingo')
+    // Domingo, lunes… viernes es el 5; el 1 de enero de 2026, viernes
+    expect(saved && weekdayName(saved, { year: 2026, month: 'ene', day: 1 })).toBe('Viernes')
+  })
+
+  it('Bisiestos: uno en blanco no tiene ninguno; «Como el gregoriano» pone su regla', async () => {
+    const blank: FakeCalendar = {
+      id: crypto.randomUUID(),
+      worldId: WORLD.id,
+      name: 'Cuenta de Kharum',
+      definition: blankCalendar()
+    }
+    const { api } = renderAt(`/mundos/${WORLD.id}/calendarios/${blank.id}/editar?fase=bisiestos`, [blank])
+    const leap = await screen.findByRole('region', { name: 'Bisiestos' })
+    expect(within(leap).getByText('Sin años bisiestos.')).toBeDefined()
+    expect(within(leap).getByRole('button', { name: 'Añadir regla' })).toBeDefined()
+    await userEvent.click(within(leap).getByRole('button', { name: 'Como el gregoriano' }))
+    expect(within(leap).getByLabelText('Cada cuántos años, bisiesto 1')).toBeDefined()
+    await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
+    await waitFor(() => expect(api.calendars[0]?.version).toBe(2))
+    expect(api.calendars[0]?.definition.leapRules).toEqual([
+      { monthId: blank.definition.months[1]?.id, days: 1, every: 4, unless: 100, but: 400 }
+    ])
+  })
+
+  it('un problema sale en su fase y a la derecha; «Guardar» lleva a él; arreglado, se guarda', async () => {
+    const { api, router } = open('estaciones')
     const seasons = await screen.findByRole('region', { name: 'Estaciones' })
     const from = within(seasons).getByLabelText('Primer día del año de Primavera')
     await userEvent.clear(from)
     await userEvent.type(from, '60')
     expect(await within(seasons).findByText('Invierno y Primavera se pisan (días 60 a 79).')).toBeDefined()
-    expect(screen.getByRole('button', { name: '1 problema en Estaciones' })).toBeDefined()
+    const nav = await phases()
+    expect(within(nav).getByRole('button', { name: /Estaciones/ }).textContent).toContain('1')
+    // Desde otra fase, «Guardar» no guarda y lleva a la del problema, con el foco en el campo
+    await userEvent.click(within(nav).getByRole('button', { name: 'General' }))
+    await waitFor(() => expect(router.state.location.search).toEqual({}))
     await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
     expect(api.calendars[0]?.version).toBe(1)
+    await waitFor(() => expect(router.state.location.search).toEqual({ fase: 'estaciones' }))
     await waitFor(() => expect(document.activeElement?.getAttribute('aria-invalid')).toBe('true'))
-    await userEvent.clear(from)
-    await userEvent.type(from, '81')
-    await waitFor(() => expect(screen.queryByRole('button', { name: /problema/ })).toBeNull())
+    const again = screen.getByLabelText('Primer día del año de Primavera')
+    await userEvent.clear(again)
+    await userEvent.type(again, '81')
+    await waitFor(() => expect(screen.getByText('Sin problemas.')).toBeDefined())
     await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
     await waitFor(() => expect(api.calendars[0]?.version).toBe(2))
   })
 
-  it('un día con nombre propio: se añade bajo los meses, se nombra y se guarda en su mes', async () => {
-    const { api } = open()
-    const months = await screen.findByRole('region', { name: 'Meses' })
-    await userEvent.click(within(months).getByRole('button', { name: 'Día con nombre' }))
-    await userEvent.selectOptions(within(months).getByLabelText('Mes del día con nombre 1'), 'Junio')
-    const day = within(months).getByLabelText('Día del día con nombre 1')
+  it('Días señalados, su propia fase: se añade, se nombra y se guarda en su mes', async () => {
+    const { api } = open('dias-senalados')
+    const named = await screen.findByRole('region', { name: 'Días señalados' })
+    expect(named.textContent).toContain('No son los días de la semana')
+    await userEvent.click(within(named).getByRole('button', { name: 'Día señalado' }))
+    await userEvent.selectOptions(within(named).getByLabelText('Mes del día señalado 1'), 'Junio')
+    const day = within(named).getByLabelText('Día del día señalado 1')
     await userEvent.clear(day)
     await userEvent.type(day, '21')
-    await userEvent.type(within(months).getByLabelText('Nombre del día 1'), 'Pleno Verano')
+    await userEvent.type(within(named).getByLabelText('Nombre del día señalado 1'), 'Pleno Verano')
     await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
     await waitFor(() => expect(api.calendars[0]?.version).toBe(2))
     const june = api.calendars[0]?.definition.months.find((m) => m.name === 'Junio')
@@ -179,34 +357,23 @@ describe('el editor de un calendario', () => {
     expect(june?.dayNames?.slice(0, 20).every((name) => name === '')).toBe(true)
   })
 
-  it('una luna nueva sale en la vista previa con su día de luna nueva y llena', async () => {
-    open()
-    const preview = await screen.findByRole('complementary', { name: 'Vista previa' })
-    expect(preview.textContent).toMatch(/Luna: (nueva|llena) el \d+/)
-    const moons = screen.getByRole('region', { name: 'Lunas' })
-    await userEvent.click(within(moons).getByRole('button', { name: 'Luna' }))
-    await waitFor(() => expect(within(preview).getByText(/Luna 2:/)).toBeDefined())
-  })
-
-  it('salir con cambios pregunta; «Seguir editando» se queda y guardar no lleva arriba', async () => {
+  it('salir con cambios pregunta (cambiar de fase, no); «Seguir editando» se queda', async () => {
     const { router } = open()
     const name = await within(await screen.findByRole('region', { name: 'General' })).findByRole('textbox', {
       name: 'Nombre'
     })
     await userEvent.type(name, ' viejo')
-    await userEvent.click(screen.getAllByRole('link', { name: 'Calendarios' }).at(-1) as HTMLElement)
+    // Cambiar de fase no es salir
+    await userEvent.click(screen.getByRole('button', { name: 'Siguiente: Semana' }))
+    expect(await screen.findByRole('region', { name: 'Semana' })).toBeDefined()
+    expect(screen.queryByRole('dialog')).toBeNull()
+    await userEvent.click(screen.getByRole('link', { name: 'Ver calendario' }))
     const ask = await screen.findByRole('dialog', { name: '¿Salir sin guardar los cambios?' })
     await userEvent.click(within(ask).getByRole('button', { name: 'Seguir editando' }))
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
-    expect(router.state.location.pathname).toContain(VARN.id ?? '')
+    expect(router.state.location.pathname).toContain('/editar')
     await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
     await waitFor(() => expect(screen.queryByRole('button', { name: 'Guardar' })).toBeNull())
-    expect(
-      (
-        within(screen.getByRole('region', { name: 'General' })).getByRole('textbox', {
-          name: 'Nombre'
-        }) as HTMLInputElement
-      ).value
-    ).toBe('Calendario de Varn viejo')
+    expect(screen.getByRole('heading', { level: 1, name: 'Calendario de Varn viejo' })).toBeDefined()
   })
 })

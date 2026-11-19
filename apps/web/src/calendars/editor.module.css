@@ -1,68 +1,41 @@
 /*
- * El editor de un calendario, a pantalla entera (lienzo aprobado, pantalla 2): arriba «‹ Calendarios» y el nombre; a la
- * izquierda las secciones; en el centro, un marco de cristal cuya columna se desplaza por dentro, con «Guardar» al pie;
- * a la derecha, la vista previa del mes. Todo cabe en la ventana: lo que se desplaza es la columna
+ * El editor de un calendario, por fases (ajustes tras los módulos, bloque C): el esqueleto de las pantallas
+ * (components/screen.tsx), con las fases a la izquierda, la fase abierta en el centro (con «Guardar» abajo cuando hay
+ * cambios) y, a la derecha, el año en cifras y los problemas
  */
-.editor {
-  display: grid;
-  grid-template-columns: minmax(11rem, 14rem) minmax(0, 1fr) minmax(19rem, 26rem);
-  grid-template-rows: auto minmax(0, 1fr);
-  gap: var(--space-4) var(--space-5);
-  block-size: 100dvh;
-  padding: var(--space-5) var(--space-6) var(--space-5);
-}
 
-.head {
-  grid-column: 1 / -1;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2) var(--space-4);
-  min-inline-size: 0;
-}
-
-.head h1 {
-  margin: 0;
-  font-size: clamp(1.75rem, 3vw, 2.5rem);
-}
-
-.back {
+/* «Ver calendario», junto al título: callado, con su raya */
+.view {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
-  color: var(--color-muted);
+  gap: var(--space-2);
+  min-block-size: var(--target);
+  padding: 0 var(--space-4);
+  border: 1px solid var(--line-frame);
+  border-radius: var(--radius-button);
+  background: var(--surface-glass-raised);
+  color: var(--color-text);
   font-weight: 600;
   text-decoration: none;
+  transition: border-color 150ms ease-out;
 }
 
-.back:hover {
-  color: var(--color-text);
+.view:hover {
+  border-color: var(--color-field-border);
 }
 
-.badge {
-  padding: 2px var(--space-2);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--color-accent) 22%, transparent);
-  color: var(--color-accent-text);
-  font-size: 0.75rem;
-  font-weight: 700;
+.view:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }
 
-/* Los tres marcos, de cristal como lo demás sobre el fondo de ambiente */
-.nav,
-.main,
-.preview {
-  composes: frame from "../components/frame.module.css";
-  min-block-size: 0;
-}
-
-/* Las secciones, con sus problemas; y debajo, el año en cifras */
+/* Las fases, con su número y sus problemas */
 .nav {
-  align-self: start;
+  composes: frame from "../components/frame.module.css";
   padding: var(--space-2);
 }
 
-.nav ul {
+.nav ol {
   display: grid;
   gap: 2px;
   margin: 0;
@@ -72,12 +45,12 @@
 
 .navItem {
   display: grid;
-  grid-template-columns: 1.25rem 1fr auto;
+  grid-template-columns: 1.375rem 1rem minmax(0, 1fr) auto;
   align-items: center;
-  gap: var(--space-3);
+  gap: var(--space-2);
   inline-size: 100%;
   min-block-size: 2.5rem;
-  padding: 0 var(--space-3);
+  padding: 0 var(--space-3) 0 var(--space-2);
   border: 0;
   border-radius: var(--radius-button);
   background: none;
@@ -85,6 +58,9 @@
   font-weight: 600;
   text-align: start;
   cursor: pointer;
+  transition:
+    background-color 150ms ease-out,
+    color 150ms ease-out;
 }
 
 .navItem:hover {
@@ -92,15 +68,35 @@
   color: var(--color-text);
 }
 
-.navItem[aria-current="true"] {
+.navItem[aria-current="step"] {
   background: var(--row-hover);
   color: var(--color-text);
-  box-shadow: inset 2px 0 0 var(--color-accent);
+  box-shadow: inset 2px 0 0 var(--color-accent-text);
 }
 
 .navItem:focus-visible {
   outline: 2px solid var(--color-focus);
   outline-offset: -2px;
+}
+
+.navNumber {
+  display: grid;
+  place-items: center;
+  inline-size: 1.375rem;
+  block-size: 1.375rem;
+  border: 1px solid var(--line-frame);
+  border-radius: 50%;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.navItem[aria-current="step"] .navNumber {
+  border-color: var(--color-accent-text);
+  color: var(--color-accent-text);
+}
+
+.navIcon {
+  opacity: 0.8;
 }
 
 .navTitle {
@@ -123,51 +119,76 @@
   font-weight: 700;
 }
 
-.summary {
-  margin: var(--space-3) var(--space-2) var(--space-1);
-  padding-block-start: var(--space-3);
-  border-block-start: 1px solid var(--line-soft);
-  color: var(--color-muted);
-  font-size: 0.8125rem;
-  line-height: 1.5;
-  font-variant-numeric: tabular-nums;
-}
-
-.summary b {
-  color: var(--color-text);
-}
-
-/* El centro: la columna que se desplaza por dentro y, al pie, lo de guardar */
-.main {
+/* La ficha de la derecha: el año en cifras y los problemas, uno bajo otro */
+.side {
   display: grid;
-  grid-template-rows: minmax(0, 1fr) auto;
+  gap: var(--space-4);
 }
 
+.side > section {
+  margin-block: 0;
+  padding: var(--space-4) var(--space-4) var(--space-5);
+}
+
+.side > section > h2:first-child {
+  margin-block-end: var(--space-3);
+}
+
+.facts {
+  margin-block-start: var(--space-3);
+}
+
+.notes {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.notes li {
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr);
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
+  border-block-start: 1px solid var(--line-soft);
+  color: var(--color-text);
+  font-size: 0.875rem;
+}
+
+.notes li:first-child {
+  border-block-start: 0;
+  padding-block-start: 0;
+}
+
+.notes svg {
+  margin-block-start: 3px;
+  color: var(--color-warning);
+}
+
+.goto {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-link);
+  font: inherit;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.goto:hover {
+  text-decoration: underline;
+}
+
+/* El centro: la fase abierta y, abajo, lo de guardar (pegado al pie mientras se desplaza) */
 .column {
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  padding: var(--space-2) var(--space-6) var(--space-6);
-  scroll-padding-block-start: var(--space-3);
-  scrollbar-width: thin;
-  scrollbar-color: var(--line-frame) transparent;
+  display: grid;
+  gap: var(--space-3);
+  min-inline-size: 0;
 }
 
-/* Cada sección, una tras otra dentro del marco (sin la caja de las secciones de la hoja): su raya las separa */
 .column .section {
   margin: 0;
-  padding: var(--space-5) 0 var(--space-6);
-  background: none;
-  -webkit-backdrop-filter: none;
-  backdrop-filter: none;
-  border-block-end: 1px solid var(--line-soft);
-}
-
-.column .section::before {
-  display: none;
-}
-
-.column .section:last-child {
-  border-block-end: 0;
 }
 
 .column .section > .sectionTitle {
@@ -188,15 +209,87 @@
   outline-offset: 4px;
 }
 
+/* Una línea que dice lo justo (qué es una festividad; que los días señalados no son los de la semana) */
+.lead {
+  margin: 0 0 var(--space-4);
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+/* La fase anterior y la siguiente, al pie de la fase */
+.next {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-block-start: var(--space-5);
+  padding-block-start: var(--space-4);
+  border-block-start: 1px solid var(--line-soft);
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-block-size: var(--target);
+  padding: 0 var(--space-2);
+  border: 0;
+  border-radius: var(--radius-button);
+  background: none;
+  color: var(--color-muted);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.back:hover {
+  color: var(--color-text);
+}
+
+.go {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-block-size: var(--target);
+  padding: 0 var(--space-4);
+  border: 1px solid var(--line-frame);
+  border-radius: var(--radius-button);
+  background: var(--surface-glass-raised);
+  color: var(--color-text);
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 150ms ease-out;
+}
+
+.go:hover {
+  border-color: var(--color-field-border);
+}
+
+.back:focus-visible,
+.go:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
 .foot {
+  position: sticky;
+  inset-block-end: var(--space-3);
+  z-index: 2;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
   gap: var(--space-2) var(--space-4);
-  min-block-size: 4rem;
-  padding: var(--space-3) var(--space-6);
-  border-block-start: 1px solid var(--line-soft);
+}
+
+/* Con cambios, «Guardar» en un recuadro de cristal opaco que flota sobre la fase */
+.foot > div:first-child {
+  flex: 1;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--line-frame);
+  border-radius: var(--radius-frame);
+  background: var(--surface-glass-raised);
+  -webkit-backdrop-filter: var(--frame-blur);
+  backdrop-filter: var(--frame-blur);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.35);
 }
 
 /* Sin cambios ni problemas, el pie no ocupa nada */
@@ -434,11 +527,6 @@
 .link {
   padding: 2px 0;
   font-size: 0.875rem;
-}
-
-/* Las celdas de la rejilla de la vista previa, sin relleno (antes que las tablas: menos específica) */
-.grid td {
-  padding: 0;
 }
 
 /* Las tablas (meses, estaciones) */
@@ -733,178 +821,6 @@
   margin-block-start: 2px;
 }
 
-/* La vista previa: el mes con su semana, las franjas de fuera de la semana y la leyenda */
-.preview {
-  align-self: start;
-  max-block-size: 100%;
-  overflow-y: auto;
-  padding: var(--space-4);
-  scrollbar-width: thin;
-}
-
-.preview .previewLabel {
-  margin: 0 0 var(--space-3);
-  padding: 0;
-  border: 0;
-  color: var(--color-muted);
-  font-family: var(--font-body);
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-}
-
-.previewNav {
-  display: grid;
-  grid-template-columns: auto auto 1fr auto auto;
-  align-items: center;
-  gap: var(--space-1);
-  margin-block-end: var(--space-3);
-}
-
-.previewNav button {
-  display: grid;
-  place-items: center;
-  inline-size: 2rem;
-  block-size: 2rem;
-  padding: 0;
-  border: 0;
-  border-radius: 50%;
-  background: none;
-  color: var(--color-muted);
-  cursor: pointer;
-}
-
-.previewNav button:hover {
-  background: var(--row-hover);
-  color: var(--color-text);
-}
-
-.preview .previewTitle {
-  margin: 0;
-  color: var(--color-text);
-  font-size: 1.125rem;
-  text-align: center;
-}
-
-.grid {
-  inline-size: 100%;
-  table-layout: fixed;
-  border-collapse: separate;
-  border-spacing: 3px;
-}
-
-.grid th {
-  padding-block-end: var(--space-1);
-  color: var(--color-muted);
-  font-size: 0.6875rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-}
-
-.day {
-  position: relative;
-  display: grid;
-  block-size: 2.75rem;
-  padding: 3px 5px;
-  border-radius: 4px;
-  background: color-mix(in srgb, var(--color-raised) 55%, transparent);
-  font-variant-numeric: tabular-nums;
-}
-
-.day[data-festival] {
-  background: color-mix(in srgb, var(--month-color, var(--color-warning)) 18%, transparent);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--month-color, var(--color-warning)) 45%, transparent);
-}
-
-.dayNumber {
-  font-size: 0.8125rem;
-  font-weight: 600;
-}
-
-.dayOfYear {
-  position: absolute;
-  inset-block-end: 2px;
-  inset-inline-end: 4px;
-  color: var(--color-muted);
-  font-size: 0.6875rem;
-}
-
-.moonMarks {
-  position: absolute;
-  inset-block-start: 4px;
-  inset-inline-end: 4px;
-  display: flex;
-  gap: 2px;
-}
-
-.moonMark {
-  inline-size: 0.5rem;
-  block-size: 0.5rem;
-  border-radius: 50%;
-}
-
-/* Llena, rellena con su color; nueva, solo el aro */
-.moonMark[data-event="full"] {
-  background: var(--moon-color);
-}
-
-.moonMark[data-event="new"] {
-  box-shadow: inset 0 0 0 1.5px var(--moon-color);
-}
-
-.strip {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: center;
-  gap: var(--space-2);
-  margin-block-start: var(--space-2);
-}
-
-.stripName {
-  max-inline-size: 7rem;
-  color: var(--month-color, var(--color-warning));
-  font-size: 0.8125rem;
-  font-weight: 700;
-}
-
-.stripDays {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(2.5rem, 1fr));
-  gap: 3px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.legend {
-  display: grid;
-  gap: var(--space-1);
-  margin: var(--space-4) 0 0;
-  padding: var(--space-3) 0 0;
-  border-block-start: 1px solid var(--line-soft);
-  color: var(--color-muted);
-  font-size: 0.8125rem;
-  list-style: none;
-}
-
-.legend li {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-.dot {
-  flex: none;
-  inline-size: 0.625rem;
-  block-size: 0.625rem;
-  border-radius: 50%;
-  background: var(--dot);
-}
-
-.missing {
-  padding: var(--space-8) var(--space-6);
-}
-
 .srOnly {
   position: absolute;
   inline-size: 1px;
@@ -914,44 +830,70 @@
   white-space: nowrap;
 }
 
-/* Con poco sitio, la vista previa baja debajo y la página se desplaza entera */
-@media (max-width: 72rem) {
-  .editor {
-    grid-template-columns: minmax(10rem, 13rem) minmax(0, 1fr);
-    grid-template-rows: auto auto auto;
-    block-size: auto;
-  }
-
-  .main {
-    block-size: 75dvh;
-  }
-
-  .preview {
-    grid-column: 2;
-  }
+/* Las columnas cortas (número, días, del día al día), centradas, la cabecera y lo de debajo */
+.table .center {
+  text-align: center;
 }
 
-@media (max-width: 48rem) {
-  .editor {
-    grid-template-columns: minmax(0, 1fr);
-    padding: var(--space-4);
-  }
-
-  .preview {
-    grid-column: 1;
-  }
-
-  .moonFields {
-    grid-template-columns: minmax(0, 1fr);
-  }
+.table td.center input {
+  text-align: center;
 }
 
-/* Un apartado dentro de una sección (los días con nombre, bajo los meses) */
-.subhead {
-  margin: var(--space-5) 0 var(--space-2);
+/* El tipo de un mes: «Mes» o «Festividad» y, si es festividad, si sus días cuentan en la semana */
+.type {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-1);
+  padding-block: 2px;
+}
+
+.type .inline {
   color: var(--color-muted);
-  font-family: var(--font-body);
   font-size: 0.8125rem;
+}
+
+/* El ancla de la semana, escrita como una frase */
+.anchor {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin: var(--space-5) 0 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-button);
+  color: var(--color-muted);
+}
+
+/* Sin bisiestos: lo dice, y debajo añadir una regla o la del gregoriano */
+.emptyLeap {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.emptyLeap > p {
+  margin: 0;
+}
+
+.emptyActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-5);
+}
+
+.secondary {
+  min-block-size: 2.25rem;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--line-frame);
+  border-radius: var(--radius-button);
+  background: var(--surface-glass-raised);
+  color: var(--color-text);
   font-weight: 600;
-  text-transform: none;
+  cursor: pointer;
+  transition: border-color 150ms ease-out;
+}
+
+.secondary:hover {
+  border-color: var(--color-field-border);
 }

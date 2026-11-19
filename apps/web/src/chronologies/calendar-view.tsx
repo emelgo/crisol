@@ -4,7 +4,8 @@
  * número, las lunas nuevas y llenas y las fichas de lo que cae en él (lo de varios días, seguido de un día a otro);
  * arriba «Todo el mes»; debajo, lo que va fuera de la semana. Elegir un día abre su detalle (la fecha larga, la
  * estación, la era, las lunas y lo que pasa). El máster arrastra una ficha a otro día para cambiarle la fecha. Con el
- * teclado: las flechas recorren la rejilla, Intro abre el día y Re Pág / Av Pág cambian de mes
+ * teclado: las flechas recorren la rejilla, Intro abre el día y Re Pág / Av Pág cambian de mes. La vista grande de un
+ * calendario (calendars/view.tsx) la lleva por fuera: el mes que se ve, el día elegido (su detalle, en su ficha) y el hoy
  */
 import type { ChronologyEntryView, TimelineGroupView } from '@crisol/contracts'
 import {
@@ -20,7 +21,7 @@ import {
   moonEvent,
   seasonOfDay
 } from '@crisol/domain'
-import { ChevronLeft, ChevronRight, Plus, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Plus, X } from 'lucide-react'
 import {
   type CSSProperties,
   type DragEvent,
@@ -44,12 +45,22 @@ const SLOTS = 3
 
 type Page = ReturnType<typeof pagesOf>[number]
 
-/** La página (el mes con sus fiestas de fuera de la semana) y el año en que cae una entrada */
+/** Lo que se ve: la página (el mes con sus fiestas de fuera de la semana) y el año */
+export interface CalendarPlace {
+  page: number
+  year: number
+}
+
+/** La página en que sale un mes (o una fiesta de fuera de la semana) en un año */
+export function placeOfMonth(pages: readonly Page[], month: string, year: number): CalendarPlace {
+  const page = pages.findIndex((p) => p.month === month || p.before.includes(month) || p.after.includes(month))
+  return { page: Math.max(0, page), year }
+}
+
+/** La página y el año en que cae una entrada */
 function placeOf(pages: readonly Page[], entry: ChronologyEntryView | undefined) {
   if (!entry?.start.month) return { page: 0, year: entry?.start.year ?? 0 }
-  const month = entry.start.month
-  const page = pages.findIndex((p) => p.month === month || p.before.includes(month) || p.after.includes(month))
-  return { page: Math.max(0, page), year: entry.start.year }
+  return placeOfMonth(pages, entry.start.month, entry.start.year)
 }
 
 export function CalendarView({
@@ -61,13 +72,35 @@ export function CalendarView({
   onCreateAt,
   onMove,
   onEdit,
-  menuFor
+  menuFor,
+  where: shownPlace,
+  onWhere,
+  selected: chosenDay,
+  onSelect,
+  today = null,
+  tools = null,
+  banner = null,
+  yearArrows = false
 }: {
   worldId: string
   definition: CalendarDefinition
   entries: readonly ChronologyEntryView[]
   groups: readonly TimelineGroupView[]
   compact: boolean
+  /** El mes que se ve, llevado por fuera (con onWhere); sin él, lo lleva ella */
+  where?: CalendarPlace | undefined
+  onWhere?: ((place: CalendarPlace) => void) | undefined
+  /** El día elegido, llevado por fuera (con onSelect): su detalle va fuera y aquí no sale el suyo */
+  selected?: number | null | undefined
+  onSelect?: ((day: number) => void) | undefined
+  /** El día de hoy (su día absoluto), marcado en la rejilla */
+  today?: number | null | undefined
+  /** Lo que va en la cabecera, antes de las flechas */
+  tools?: ReactNode
+  /** Lo que va entre la cabecera y la rejilla (la franja de una festividad) */
+  banner?: ReactNode
+  /** También pasar de año */
+  yearArrows?: boolean
   /** El máster: «+» en un día elegido */
   onCreateAt?: ((date: FullDate) => void) | undefined
   /** El máster: soltar una ficha en otro día (cuántos días se mueve) */
@@ -78,10 +111,21 @@ export function CalendarView({
   const { t } = useTranslation()
   const pages = useMemo(() => pagesOf(definition), [definition])
   // Abre en el mes de la última entrada con mes (o del último año)
-  const [where, setWhere] = useState(() =>
+  const [ownPlace, setOwnPlace] = useState(() =>
     placeOf(pages, [...entries].reverse().find((e) => e.start.month) ?? entries.at(-1))
   )
-  const [selected, setSelected] = useState<number | null>(null)
+  const where = shownPlace ?? ownPlace
+  const setWhere = (update: (place: CalendarPlace) => CalendarPlace) => {
+    const next = update(where)
+    if (onWhere) onWhere(next)
+    else setOwnPlace(next)
+  }
+  const [ownSelected, setOwnSelected] = useState<number | null>(null)
+  const selected = onSelect ? (chosenDay ?? null) : ownSelected
+  const setSelected = (day: number | null) => {
+    if (!onSelect) setOwnSelected(day)
+    else if (day !== null) onSelect(day)
+  }
   const [focusDay, setFocusDay] = useState<number | null>(null)
   const dragging = useRef<{ entry: ChronologyEntryView; from: number } | null>(null)
   const [over, setOver] = useState<number | null>(null)
@@ -135,11 +179,12 @@ export function CalendarView({
 
   const go = (step: number) => {
     setSelected(null)
+    // Por páginas seguidas: pasar de año es correr tantas como tiene el año
     setWhere(({ page: at, year: y }) => {
-      const next = at + step
-      if (next < 0) return { page: pages.length - 1, year: y - 1 }
-      if (next >= pages.length) return { page: 0, year: y + 1 }
-      return { page: next, year: y }
+      const count = Math.max(1, pages.length)
+      const total = y * count + at + step
+      const year = Math.floor(total / count)
+      return { page: total - year * count, year }
     })
   }
 
@@ -271,9 +316,11 @@ export function CalendarView({
       id={`dia-${titleId}-${day.dayNumber}`}
       tabIndex={day.dayNumber === tabbable ? 0 : -1}
       aria-label={formatDate(definition, dateFromDay(definition, day.dayNumber), { weekday: true })}
+      aria-current={today === day.dayNumber ? 'date' : undefined}
       className={styles.day}
       data-over={over === day.dayNumber || undefined}
       data-selected={selected === day.dayNumber || undefined}
+      data-today={today === day.dayNumber || undefined}
       onFocus={() => setFocusDay(day.dayNumber)}
       onClick={(event) => {
         if ((event.target as HTMLElement).closest('button, a')) return
@@ -316,7 +363,18 @@ export function CalendarView({
             {era && <span>{era.name}</span>}
           </p>
         </div>
+        {tools}
         <div className={styles.calendarArrows}>
+          {yearArrows && (
+            <button
+              type="button"
+              aria-label={t('calendars.view.previousYear')}
+              title={t('calendars.view.previousYear')}
+              onClick={() => go(-pages.length)}
+            >
+              <ChevronsLeft size={18} aria-hidden="true" />
+            </button>
+          )}
           <button
             type="button"
             aria-label={t('chronologies.previousMonth')}
@@ -333,8 +391,19 @@ export function CalendarView({
           >
             <ChevronRight size={18} aria-hidden="true" />
           </button>
+          {yearArrows && (
+            <button
+              type="button"
+              aria-label={t('calendars.view.nextYear')}
+              title={t('calendars.view.nextYear')}
+              onClick={() => go(pages.length)}
+            >
+              <ChevronsRight size={18} aria-hidden="true" />
+            </button>
+          )}
         </div>
       </header>
+      {banner}
       {monthly.length > 0 && (
         <div className={styles.allMonth}>
           <span className={styles.allMonthLabel}>{t('chronologies.allMonth')}</span>
@@ -403,7 +472,7 @@ export function CalendarView({
           )}
         </div>
       )}
-      {selected !== null && (
+      {selected !== null && !onSelect && (
         <DayDetail
           side={(allDays.find((d) => d.dayNumber === selected)?.weekday ?? 0) >= columns / 2 ? 'start' : 'end'}
           worldId={worldId}

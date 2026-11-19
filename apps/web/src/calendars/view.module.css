@@ -1,0 +1,349 @@
+/*
+ * Un calendario en grande (ajustes tras los módulos, bloque C): el esqueleto de las pantallas (components/screen.tsx),
+ * con el mes grande en el centro y una ficha a cada lado: el año en pequeño y sus datos; el día elegido
+ */
+
+/* «Editar calendario», junto al título: callado, con su raya (el rojo, para lo importante) */
+.edit {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: var(--target);
+  padding: 0 var(--space-4);
+  border: 1px solid var(--line-frame);
+  border-radius: var(--radius-button);
+  background: var(--surface-glass-raised);
+  color: var(--color-text);
+  font-weight: 600;
+  text-decoration: none;
+  transition: border-color 150ms ease-out;
+}
+
+.edit:hover {
+  border-color: var(--color-field-border);
+}
+
+.edit:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/* El mes grande: la vista «Calendario» de las cronologías, sin su relleno de pantalla entera */
+.month > div {
+  overflow: visible;
+  padding: 0;
+}
+
+/* Hoy, en la rejilla: su número en un círculo del color del acento */
+.month td[data-today] > span:first-child > span:first-child {
+  display: inline-grid;
+  place-items: center;
+  min-inline-size: 1.5rem;
+  block-size: 1.5rem;
+  margin: -2px 0 -2px -4px;
+  border-radius: 999px;
+  background: var(--accent-glass);
+  color: var(--color-on-accent);
+}
+
+/* «Hoy de…» y «Hoy», antes de las flechas */
+.tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-inline-start: auto;
+}
+
+.todayButton {
+  min-block-size: 2.25rem;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--line-frame);
+  border-radius: var(--radius-button);
+  background: var(--surface-glass-raised);
+  color: var(--color-text);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.todayButton:hover:not(:disabled) {
+  border-color: var(--color-field-border);
+}
+
+.todayButton:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* La franja de una festividad (días entre meses que no se numeran), en su color */
+.band {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid color-mix(in srgb, var(--month-color, var(--color-warning)) 55%, transparent);
+  border-radius: var(--radius-frame);
+  background: color-mix(in srgb, var(--month-color, var(--color-warning)) 14%, transparent);
+  color: var(--color-muted);
+}
+
+.band svg {
+  color: var(--month-color, var(--color-warning));
+}
+
+.band b {
+  color: var(--color-text);
+  font-size: 1.0625rem;
+}
+
+.bandDays {
+  margin-inline-start: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+.outside {
+  margin: var(--space-3) 0 0;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+/* Las fichas de los lados: recuadros de cristal uno bajo otro */
+.side {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.side > section {
+  margin-block: 0;
+  padding: var(--space-4) var(--space-4) var(--space-5);
+}
+
+.side > section > h2:first-child {
+  margin-block-end: var(--space-3);
+}
+
+/* El año en pequeño: la tira y los meses, cada uno lleva a él */
+.months {
+  display: grid;
+  gap: 1px;
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.monthButton {
+  display: grid;
+  grid-template-columns: 1.5rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-2);
+  inline-size: 100%;
+  min-block-size: 2rem;
+  padding: 0 var(--space-2);
+  border: 0;
+  border-radius: var(--radius-button);
+  background: none;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+  text-align: start;
+  cursor: pointer;
+  transition:
+    background-color 150ms ease-out,
+    color 150ms ease-out;
+}
+
+.monthButton:hover {
+  background: var(--row-hover);
+  color: var(--color-text);
+}
+
+.monthButton:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
+}
+
+.monthButton[aria-current="true"] {
+  background: var(--row-hover);
+  color: var(--color-text);
+  font-weight: 600;
+  box-shadow: inset 2px 0 0 var(--color-accent-text);
+}
+
+.monthNumber,
+.monthDays {
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+
+.monthNumber {
+  color: color-mix(in srgb, var(--color-muted) 80%, transparent);
+}
+
+.monthName {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Las festividades, en su color y sin número */
+.monthButton[data-festival] .monthName {
+  color: var(--month-color, var(--color-warning));
+}
+
+/* Los datos del calendario */
+.badge {
+  justify-self: start;
+  display: inline-block;
+  margin: 0 0 var(--space-3);
+  padding: 2px var(--space-2);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-accent) 22%, transparent);
+  color: var(--color-accent-text);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.facts {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.facts > div {
+  display: grid;
+  grid-template-columns: 6rem minmax(0, 1fr);
+  gap: var(--space-2);
+  font-size: 0.875rem;
+}
+
+.facts dt {
+  color: var(--color-muted);
+}
+
+.facts dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.description {
+  margin: var(--space-3) 0 0;
+  padding-block-start: var(--space-3);
+  border-block-start: 1px solid var(--line-soft);
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+/* El día elegido */
+.side > .day > h2:first-child {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  line-height: 1.25;
+}
+
+.todayMark {
+  padding: 1px var(--space-2);
+  border-radius: 999px;
+  background: var(--accent-glass);
+  color: var(--color-on-accent);
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+.dayFacts {
+  margin: 0 0 var(--space-3);
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+.moons {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0 0 var(--space-4);
+  padding: 0;
+  list-style: none;
+}
+
+.moons li {
+  display: grid;
+  grid-template-columns: 1rem minmax(0, auto) minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.875rem;
+}
+
+.moons li > span:last-child {
+  color: var(--color-muted);
+}
+
+/* El disco de la luna con su parte iluminada */
+.moonDisc {
+  inline-size: 0.9rem;
+  block-size: 0.9rem;
+  border: 1px solid var(--moon-color);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--moon-color) calc(var(--lit) * 100%), transparent);
+}
+
+.entries {
+  display: grid;
+  gap: var(--space-2);
+  margin-block-end: var(--space-4);
+}
+
+.empty {
+  margin: 0 0 var(--space-4);
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+/* Crear con su fecha: el evento, con su raya; la página, como enlace (no dos botones iguales) */
+.dayActions {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-2);
+  padding-block-start: var(--space-3);
+  border-block-start: 1px solid var(--line-soft);
+}
+
+.action {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: 2.25rem;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--line-frame);
+  border-radius: var(--radius-button);
+  background: var(--surface-glass-raised);
+  color: var(--color-text);
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 150ms ease-out;
+}
+
+.action:hover {
+  border-color: var(--color-field-border);
+}
+
+.action + .action {
+  min-block-size: 2rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-link);
+}
+
+.action + .action:hover {
+  text-decoration: underline;
+}
+
+.action:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}

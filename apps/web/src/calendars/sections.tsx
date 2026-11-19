@@ -1,7 +1,8 @@
 /**
- * Las secciones del editor de un calendario (lienzo, pantalla 2): General, Semana, Meses (con los bisiestos debajo),
- * Estaciones, Lunas, Eras y la correspondencia con el principal. Cada una cambia el borrador con `change`; los
- * problemas los calcula el editor y aquí se marcan donde están
+ * Las fases del editor de un calendario (ajustes tras los módulos, bloque C): General, Semana (en qué día empieza y el
+ * ancla «el 1 de {mes} del año {N} fue {día}»), Meses (cada uno, mes o festividad), Días señalados, Bisiestos,
+ * Estaciones, Lunas, Eras y la correspondencia con el principal. Cada una cambia el borrador con `change`; los problemas
+ * los calcula el editor y aquí se marcan donde están
  */
 import {
   type CalendarDefinition,
@@ -9,14 +10,18 @@ import {
   type CalendarSection,
   DEFAULT_PHASES,
   dateFromDay,
+  firstWeekdayFor,
   formatDate,
+  gregorianLeapRule,
   monthNumber,
   newCalendarId,
+  rotateWeek,
+  weekdayOf,
   yearLength,
   yearStart
 } from '@crisol/domain'
 import { ChevronDown, ChevronUp, GripVertical, Plus, TriangleAlert, X } from 'lucide-react'
-import { type DragEvent, type KeyboardEvent, type ReactNode, useEffect, useState } from 'react'
+import { type DragEvent, type KeyboardEvent, type ReactNode, type Ref, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { DateInput, IntegerInput } from './date-input.tsx'
 import styles from './editor.module.css'
@@ -43,25 +48,29 @@ const takenIds = (draft: CalendarDefinition) => [
 const flagged = (problems: readonly CalendarProblem[], section: CalendarSection, index: number) =>
   problems.some((p) => p.section === section && p.index === index)
 
-/** Una sección: su título con su icono y, al pie, sus problemas */
+/** La fase abierta: su título con su icono, lo suyo y, al pie, sus problemas (los de esa fase) */
 export function Section({
   id,
   icon,
   title,
-  problems,
+  problems: own,
+  headingRef,
+  footer,
   children
 }: {
-  id: CalendarSection
+  id: string
   icon: ReactNode
   title: string
   problems: readonly CalendarProblem[]
+  headingRef?: Ref<HTMLHeadingElement>
+  /** Lo que va al final, tras los problemas (la fase anterior y la siguiente) */
+  footer?: ReactNode
   children: ReactNode
 }) {
   const problemText = useProblemText()
-  const own = problems.filter((p) => p.section === id)
   return (
-    <section className={styles.section} id={`seccion-${id}`} aria-labelledby={`titulo-${id}`} data-section={id}>
-      <h2 id={`titulo-${id}`} tabIndex={-1} className={styles.sectionTitle}>
+    <section className={styles.section} id={`fase-${id}`} aria-labelledby={`titulo-${id}`} data-section={id}>
+      <h2 id={`titulo-${id}`} ref={headingRef} tabIndex={-1} className={styles.sectionTitle}>
         <span aria-hidden="true">{icon}</span>
         {title}
       </h2>
@@ -76,6 +85,7 @@ export function Section({
           ))}
         </ul>
       )}
+      {footer}
     </section>
   )
 }
@@ -182,7 +192,7 @@ export function GeneralSection({
   )
 }
 
-export function WeekSection({ draft, change, problems }: SectionProps) {
+export function WeekSection({ draft, change, problems, valid }: SectionProps & { valid: boolean }) {
   const { t } = useTranslation()
   return (
     <>
@@ -246,14 +256,14 @@ export function WeekSection({ draft, change, problems }: SectionProps) {
       )}
       <div className={styles.pair}>
         <label className={styles.field}>
-          <span>{t('calendars.editor.firstWeekday')}</span>
+          <span>{t('calendars.editor.weekStartsOn')}</span>
+          {/* Reordena la lista: el elegido pasa a ser el primero, sin cambiar el día de ninguna fecha */}
           <select
-            value={draft.firstWeekday}
-            onChange={(event) =>
-              change((d) => {
-                d.firstWeekday = Number(event.target.value)
-              })
-            }
+            value={0}
+            onChange={(event) => {
+              const start = Number(event.target.value)
+              change((d) => Object.assign(d, rotateWeek(d, start)))
+            }}
           >
             {draft.weekdays.map((day, i) => (
               <option key={i} value={i}>
@@ -281,7 +291,67 @@ export function WeekSection({ draft, change, problems }: SectionProps) {
           ))}
         </fieldset>
       </div>
+      <WeekAnchor draft={draft} change={change} valid={valid} />
     </>
+  )
+}
+
+/**
+ * El ancla de la semana: «El 1 de {mes} del año {N} fue {día}». El mes y el año son de aquí (no se guardan): al
+ * cambiarlos, la frase dice qué día fue; al elegir el día, se corre el día de la semana de todo el calendario
+ */
+function WeekAnchor({ draft, change, valid }: Pick<SectionProps, 'draft' | 'change'> & { valid: boolean }) {
+  const { t } = useTranslation()
+  const inWeek = draft.months.filter((m) => !m.outsideWeek)
+  const [monthId, setMonthId] = useState(() => inWeek[0]?.id ?? draft.months[0]?.id ?? '')
+  const [year, setYear] = useState(0)
+  const month = draft.months.find((m) => m.id === monthId) ?? inWeek[0]
+  const date = month ? { year, month: month.id, day: 1 } : null
+  const weekday = valid && date && !month?.outsideWeek ? weekdayOf(draft, date) : null
+  return (
+    <fieldset className={styles.anchor}>
+      <legend className={styles.srOnly}>{t('calendars.editor.anchor')}</legend>
+      <span>{t('calendars.editor.anchorDay')}</span>
+      <select
+        value={month?.id ?? ''}
+        aria-label={t('calendars.editor.anchorMonth')}
+        onChange={(event) => setMonthId(event.target.value)}
+      >
+        {inWeek.map((m) => (
+          <option key={m.id} value={m.id}>
+            {m.name || '—'}
+          </option>
+        ))}
+      </select>
+      <span>{t('calendars.editor.anchorYear')}</span>
+      <IntegerInput
+        className={styles.yearInput}
+        value={year}
+        aria-label={t('calendars.editor.anchorYearLabel')}
+        onValue={setYear}
+      />
+      <span>{t('calendars.editor.anchorWas')}</span>
+      <select
+        value={weekday ?? ''}
+        disabled={weekday === null}
+        aria-label={t('calendars.editor.anchorWeekday')}
+        onChange={(event) => {
+          if (!date) return
+          const target = Number(event.target.value)
+          change((d) => {
+            const first = firstWeekdayFor(d, date, target)
+            if (first !== null) d.firstWeekday = first
+          })
+        }}
+      >
+        {weekday === null && <option value="">—</option>}
+        {draft.weekdays.map((day, i) => (
+          <option key={i} value={i}>
+            {day || t('calendars.editor.weekday', { n: i + 1 })}
+          </option>
+        ))}
+      </select>
+    </fieldset>
   )
 }
 
@@ -332,27 +402,26 @@ function useRowDrag(onMove: (from: number, to: number) => void) {
   }
 }
 
-export function MonthsSection({
-  draft,
-  change,
-  problems,
-  onFocusMonth
-}: SectionProps & { onFocusMonth?: (monthId: string) => void }) {
+export function MonthsSection({ draft, change, problems }: SectionProps) {
   const { t } = useTranslation()
   const drag = useRowDrag((from, to) => change((d) => moved(d.months, from, to)))
   return (
     <>
+      <p className={styles.lead}>{t('calendars.editor.monthsLead')}</p>
       <table className={styles.table}>
         <thead>
           <tr>
             <th scope="col">
               <span className={styles.srOnly}>{t('calendars.editor.order')}</span>
             </th>
-            <th scope="col">{t('calendars.editor.number')}</th>
+            <th scope="col" className={styles.center}>
+              {t('calendars.editor.number')}
+            </th>
             <th scope="col">{t('calendars.editor.monthName')}</th>
-            <th scope="col">{t('calendars.editor.days')}</th>
-            <th scope="col">{t('calendars.editor.festival')}</th>
-            <th scope="col">{t('calendars.editor.outsideWeek')}</th>
+            <th scope="col" className={styles.center}>
+              {t('calendars.editor.days')}
+            </th>
+            <th scope="col">{t('calendars.editor.type')}</th>
             <th scope="col">
               <span className={styles.srOnly}>{t('calendars.editor.removeColumn')}</span>
             </th>
@@ -368,7 +437,6 @@ export function MonthsSection({
                 data-festival={month.festival || undefined}
                 data-drop={drag.over === i || undefined}
                 data-dragging={drag.dragging === i || undefined}
-                onFocus={() => onFocusMonth?.(month.id)}
                 {...drag.row(i)}
               >
                 <td>
@@ -413,7 +481,7 @@ export function MonthsSection({
                     }
                   />
                 </td>
-                <td>
+                <td className={styles.center}>
                   <IntegerInput
                     className={styles.small}
                     value={month.days}
@@ -427,35 +495,46 @@ export function MonthsSection({
                     }
                   />
                 </td>
-                <td className={styles.check}>
-                  <input
-                    type="checkbox"
-                    checked={!!month.festival}
-                    aria-label={t('calendars.editor.festivalOf', { name: label })}
-                    onChange={(event) =>
-                      change((d) => {
-                        const target = d.months[i]
-                        if (!target) return
-                        if (event.target.checked) target.festival = true
-                        else delete target.festival
-                      })
-                    }
-                  />
-                </td>
-                <td className={styles.check}>
-                  <input
-                    type="checkbox"
-                    checked={!!month.outsideWeek}
-                    aria-label={t('calendars.editor.outsideWeekOf', { name: label })}
-                    onChange={(event) =>
-                      change((d) => {
-                        const target = d.months[i]
-                        if (!target) return
-                        if (event.target.checked) target.outsideWeek = true
-                        else delete target.outsideWeek
-                      })
-                    }
-                  />
+                <td>
+                  {/* Mes o festividad; una festividad puede ir fuera de la semana (sus días no son de ningún día) */}
+                  <div className={styles.type}>
+                    <select
+                      value={month.festival ? 'festival' : 'month'}
+                      aria-label={t('calendars.editor.typeOf', { name: label })}
+                      onChange={(event) =>
+                        change((d) => {
+                          const target = d.months[i]
+                          if (!target) return
+                          if (event.target.value === 'festival') target.festival = true
+                          else {
+                            delete target.festival
+                            delete target.outsideWeek
+                          }
+                        })
+                      }
+                    >
+                      <option value="month">{t('calendars.editor.typeMonth')}</option>
+                      <option value="festival">{t('calendars.editor.typeFestival')}</option>
+                    </select>
+                    {(month.festival || month.outsideWeek) && (
+                      <label className={styles.inline}>
+                        <input
+                          type="checkbox"
+                          checked={!!month.outsideWeek}
+                          onChange={(event) =>
+                            change((d) => {
+                              const target = d.months[i]
+                              if (!target) return
+                              if (event.target.checked) target.outsideWeek = true
+                              else delete target.outsideWeek
+                            })
+                          }
+                        />
+                        {t('calendars.editor.outsideWeek')}
+                        <span className={styles.srOnly}> · {label}</span>
+                      </label>
+                    )}
+                  </div>
                 </td>
                 <td>
                   <RemoveButton
@@ -489,7 +568,6 @@ export function MonthsSection({
           }
         />
       )}
-      <NamedDays draft={draft} change={change} />
     </>
   )
 }
@@ -504,9 +582,10 @@ function setDayName(month: CalendarDefinition['months'][number], day: number, na
   else delete month.dayNames
 }
 
-/** Los días con nombre propio (Shieldmeet, Año Nuevo…): se leen por él en las fechas. Las filas llevan una clave
- * propia (cambiar el mes o el día no las monta de nuevo) y una recién añadida, o vaciada, se queda sin nombre */
-function NamedDays({ draft, change }: Pick<SectionProps, 'draft' | 'change'>) {
+/** Los días señalados (Shieldmeet, Año Nuevo…): días con nombre propio, que se leen por él en las fechas. Las filas
+ * llevan una clave propia (cambiar el mes o el día no las monta de nuevo) y una recién añadida, o vaciada, se queda sin
+ * nombre */
+export function NamedDaysSection({ draft, change }: Pick<SectionProps, 'draft' | 'change'>) {
   const { t } = useTranslation()
   type Row = { key: string; monthId: string; day: number }
   const named = draft.months.flatMap((month) =>
@@ -561,7 +640,7 @@ function NamedDays({ draft, change }: Pick<SectionProps, 'draft' | 'change'>) {
   }
   return (
     <>
-      <h3 className={styles.subhead}>{t('calendars.editor.namedDays')}</h3>
+      <p className={styles.lead}>{t('calendars.editor.namedDaysLead')}</p>
       {rows.length > 0 && (
         <ol className={styles.rows}>
           {rows.map((row, n) => {
@@ -612,6 +691,39 @@ function NamedDays({ draft, change }: Pick<SectionProps, 'draft' | 'change'>) {
 
 export function LeapSection({ draft, change, problems }: SectionProps) {
   const { t } = useTranslation()
+  const add = () =>
+    change(
+      (d) =>
+        void d.leapRules.push({
+          monthId: d.months.find((m) => !m.festival)?.id ?? d.months[0]?.id ?? '',
+          days: 1,
+          every: 4
+        })
+    )
+  // Sin ninguna: lo dice, y se añade una o la del gregoriano
+  if (draft.leapRules.length === 0)
+    return (
+      <div className={styles.emptyLeap}>
+        <p className={styles.muted}>{t('calendars.editor.noLeap')}</p>
+        {draft.months.length > 0 && (
+          <div className={styles.emptyActions}>
+            <AddButton label={t('calendars.editor.addLeap')} onClick={add} />
+            <button
+              type="button"
+              className={styles.secondary}
+              onClick={() =>
+                change((d) => {
+                  const rule = gregorianLeapRule(d)
+                  d.leapRules = rule ? [rule] : []
+                })
+              }
+            >
+              {t('calendars.editor.gregorianLeap')}
+            </button>
+          </div>
+        )}
+      </div>
+    )
   return (
     <>
       <ol className={styles.rows}>
@@ -700,19 +812,7 @@ export function LeapSection({ draft, change, problems }: SectionProps) {
         ))}
       </ol>
       {draft.leapRules.length < 10 && draft.months.length > 0 && (
-        <AddButton
-          label={t('calendars.editor.addLeap')}
-          onClick={() =>
-            change(
-              (d) =>
-                void d.leapRules.push({
-                  monthId: d.months.find((m) => !m.festival)?.id ?? d.months[0]?.id ?? '',
-                  days: 1,
-                  every: 4
-                })
-            )
-          }
-        />
+        <AddButton label={t('calendars.editor.addLeap')} onClick={add} />
       )}
     </>
   )
@@ -747,8 +847,12 @@ export function SeasonsSection({
                 <span className={styles.srOnly}>{t('calendars.editor.color')}</span>
               </th>
               <th scope="col">{t('calendars.editor.monthName')}</th>
-              <th scope="col">{t('calendars.editor.fromDay')}</th>
-              <th scope="col">{t('calendars.editor.toDay')}</th>
+              <th scope="col" className={styles.center}>
+                {t('calendars.editor.fromDay')}
+              </th>
+              <th scope="col" className={styles.center}>
+                {t('calendars.editor.toDay')}
+              </th>
               <th scope="col">
                 <span className={styles.srOnly}>{t('calendars.editor.inMonths')}</span>
               </th>
@@ -809,7 +913,7 @@ export function SeasonsSection({
                       }
                     />
                   </td>
-                  <td>
+                  <td className={styles.center}>
                     <IntegerInput
                       className={styles.small}
                       value={season.startDay}
@@ -823,7 +927,7 @@ export function SeasonsSection({
                       }
                     />
                   </td>
-                  <td>
+                  <td className={styles.center}>
                     <IntegerInput
                       className={styles.small}
                       value={season.endDay}
