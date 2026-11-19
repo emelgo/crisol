@@ -310,10 +310,13 @@ export async function findTargets(
       )
       break
     case 'chronology':
+      // Una marca de antes de que las cronologías fueran pestañas (ADR-0031; la migración 0090 las pasó a su página)
       put(
         await db
-          .select({ id: chronologies.id, pageId: sql<null>`null`, name: chronologies.name })
+          .select({ id: chronologies.id, pageId: pageTabs.pageId, name: pages.title })
           .from(chronologies)
+          .innerJoin(pageTabs, eq(pageTabs.id, chronologies.tabId))
+          .innerJoin(pages, eq(pages.id, pageTabs.pageId))
           .where(and(inArray(chronologies.id, ids), eq(chronologies.worldId, worldId)))
       )
       break
@@ -381,7 +384,12 @@ export async function fileUses(db: Database, worldId: string, fileId: string) {
       .select({ id: timelineEvents.id, hidden: timelineEvents.hidden })
       .from(timelineEvents)
       .where(and(eq(timelineEvents.worldId, worldId), sql`${timelineEvents.image}->>'fileId' = ${fileId}`)),
-    db.select({ id: chronologies.id }).from(chronologies).where(eq(chronologies.worldId, worldId))
+    db
+      .select({ tabId: pageTabs.id, pageId: pageTabs.pageId, hidden: pageTabs.hidden })
+      .from(chronologies)
+      .innerJoin(pageTabs, eq(pageTabs.id, chronologies.tabId))
+      .innerJoin(pages, and(eq(pages.id, pageTabs.pageId), isNull(pages.deletedAt)))
+      .where(eq(chronologies.worldId, worldId))
   ])
   return {
     covers: [...covers].map((r) => r.id),
@@ -396,9 +404,9 @@ export async function fileUses(db: Database, worldId: string, fileId: string) {
     maps: [...mapImages].map((r) => ({ tabId: r.tab_id, pageId: r.page_id, hidden: r.hidden })),
     campaignCovers: [...campaignCovers].map((r) => r.id),
     worldCover: [...world].length > 0,
-    /** Como imagen de un evento suelto: lo ve quien ve el evento y alguna cronología (módulo 8) */
+    /** Como imagen de un evento suelto: lo ve quien ve el evento y alguna cronología (su pestaña, ADR-0031) */
     events,
-    chronologies: events.length > 0 ? chronologyRows.map((r) => r.id) : []
+    chronologies: events.length > 0 ? chronologyRows : []
   }
 }
 

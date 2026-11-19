@@ -1,5 +1,6 @@
 /**
- * Las cronologías de un mundo (módulo 8, capacidad `cronologias`): crearlas con su calendario y su filtro, los eventos
+ * Las cronologías de un mundo (módulo 8, capacidad `cronologias`; ADR-0031: cada una, una pestaña de una página):
+ * crearlas con su calendario y su filtro (en una página nueva o como pestaña de otra), los eventos
  * sueltos (en lote, con la forma de la IA, con grupo y página), las páginas con fecha que salen solas, convertir entre
  * calendarios, convertir un evento en página, los grupos, deshacer, las fechas en uso y lo que ve una jugadora
  * (ADR-0017: solo lo revelado y lo que conoce su campaña)
@@ -133,24 +134,50 @@ describe('las cronologías de un mundo (módulo 8)', () => {
     await conn?.close()
   })
 
-  it('una cronología necesita un calendario; nace con el principal y todo dentro; se cambia, se ordena y se borra', async () => {
+  it('una cronología es una pestaña: en una página nueva o en otra; nace con el principal y todo dentro; se cambia y se borra', async () => {
     const lone = (await ok200('createWorld', { name: 'Vacío' })).id
     await fails('createChronology', { worldId: lone, name: 'Nada' }, 'NO_CALENDAR')
     const first = await historia()
     expect(first).toMatchObject({ calendarId: null, filter: { pages: true, templates: [], tags: [], groups: [] } })
-    const second = await ok200('createChronology', { worldId, name: 'La campaña', calendarId: eana.id })
+    // Sin página, una nueva con su nombre y su pestaña «Cronología»
+    const page = await ok200('getPage', { pageId: first.pageId })
+    expect(page.title).toBe('Historia antigua')
+    const { tabs } = await ok200('listPageTabs', { pageId: first.pageId })
+    expect(tabs.map((tab: { kind: string; name: string }) => [tab.kind, tab.name])).toEqual([
+      ['chronology', 'Cronología']
+    ])
+    expect(tabs[0].id).toBe(first.tabId)
+    // Se lee también por su pestaña
+    expect((await ok200('getChronology', { tabId: first.tabId })).chronology.id).toBe(first.id)
+    // En una página que ya hay: una pestaña más, con su nombre
+    const reino = await newPage('El reino')
+    const second = await ok200('createChronology', { worldId, name: 'La campaña', pageId: reino, calendarId: eana.id })
+    expect(second.pageId).toBe(reino)
     let listed = (await ok200('listChronologies', { worldId })).chronologies
-    expect(listed.map((c: { name: string }) => c.name)).toEqual(['Historia antigua', 'La campaña'])
-    expect(listed[0]).toMatchObject({ calendarName: 'Eana', entries: 0, span: null })
-    await ok200('updateChronology', { chronologyId: second.id, after: null, name: 'Campaña', filter: { pages: false } })
+    expect(listed.map((c: { name: string }) => c.name)).toEqual(['El reino · La campaña', 'Historia antigua'])
+    expect(listed[1]).toMatchObject({ calendarName: 'Eana', entries: 0, span: null })
+    // Cambiar su nombre es cambiar el de su pestaña
+    await ok200('updateChronology', { chronologyId: second.id, name: 'Campaña', filter: { pages: false } })
     listed = (await ok200('listChronologies', { worldId })).chronologies
-    expect(listed.map((c: { name: string }) => c.name)).toEqual(['Campaña', 'Historia antigua'])
+    expect(listed.map((c: { name: string }) => c.name)).toEqual(['El reino · Campaña', 'Historia antigua'])
     expect(listed[0].filter).toEqual({ pages: false, templates: [], tags: [], groups: [] })
+    expect((await ok200('listPageTabs', { pageId: reino })).tabs[0].name).toBe('Campaña')
+    // «Pestaña nueva» de tipo cronología también la crea, con el principal
+    const tab = await ok200('createPageTab', { pageId: reino, kind: 'chronology' })
+    // La segunda de la página, con su número
+    expect(tab.name).toBe('Cronología 2')
+    expect((await ok200('getChronology', { tabId: tab.id })).chronology.calendarId).toBeNull()
+    await ok200('deletePageTab', { tabId: tab.id })
     await fails('updateChronology', { chronologyId: first.id, filter: { groups: [crypto.randomUUID()] } }, 'BAD_GROUP')
+    // Borrarla se lleva su pestaña; su página se queda
     await ok200('deleteChronology', { chronologyId: first.id })
     expect((await ok200('listChronologies', { worldId })).chronologies).toHaveLength(1)
+    expect((await ok200('listPageTabs', { pageId: first.pageId })).tabs).toEqual([])
     await undo('deleteChronology')
     expect((await ok200('listChronologies', { worldId })).chronologies).toHaveLength(2)
+    // La de una página en la papelera no sale
+    await ok200('deletePage', { pageId: first.pageId })
+    expect((await ok200('listChronologies', { worldId })).chronologies).toHaveLength(1)
     const { entries: history } = await ok200('listHistory', { worldId })
     expect(history.some((e: { action: string }) => e.action === 'createChronology')).toBe(true)
   })
@@ -392,7 +419,7 @@ describe('las cronologías de un mundo (módulo 8)', () => {
     await fails('deleteCalendar', { calendarId: eana.id }, 'CALENDAR_IN_USE')
   })
 
-  it('la jugadora: solo las cronologías reveladas y, dentro, lo que sabe su campaña; sin eras ocultas ni escribir', async () => {
+  it('la jugadora: las cronologías de las pestañas que ve y, dentro, lo que sabe su campaña; sin eras ocultas ni escribir', async () => {
     const conocida = await newPage('Puerto Ceniza')
     const secreta = await newPage('La Torre')
     const campos = await newPage('Aldren')
@@ -420,16 +447,15 @@ describe('las cronologías de un mundo (módulo 8)', () => {
       ]
     })
     const chronology = await historia()
-    // Sin revelar, no la ve ni la encuentra
+    // Sin conocer su página, no la ve ni la encuentra (ni por su pestaña)
     expect((await ok200('listChronologies', { worldId }, ana.cookie)).chronologies).toEqual([])
     await fails('getChronology', { chronologyId: chronology.id }, 'NOT_FOUND', ana.cookie)
-    await ok200('setKnowledge', {
-      worldId,
-      campaignId: marca,
-      kind: 'chronology',
-      targetId: chronology.id,
-      known: true
-    })
+    await fails('getChronology', { tabId: chronology.tabId }, 'NOT_FOUND', ana.cookie)
+    await ok200('setKnowledge', { worldId, campaignId: marca, kind: 'page', targetId: chronology.pageId, known: true })
+    // Con la pestaña oculta, tampoco
+    await ok200('updatePageTab', { tabId: chronology.tabId, hidden: true })
+    await fails('getChronology', { chronologyId: chronology.id }, 'NOT_FOUND', ana.cookie)
+    await ok200('updatePageTab', { tabId: chronology.tabId, hidden: false })
     await ok200('setKnowledge', { worldId, campaignId: marca, kind: 'event', targetId: events[2].id, known: true })
     const seen = await entries(chronology.id, {}, ana.cookie)
     expect(seen.map((e) => (e.field ? `${e.title} · ${e.field}` : e.title))).toEqual([

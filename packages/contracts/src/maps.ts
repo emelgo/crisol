@@ -8,7 +8,10 @@ import { gameIcon } from './game-icons.ts'
 import { readAs } from './read-as.ts'
 import { worldColor } from './worlds.ts'
 
-export const PAGE_TAB_KINDS = ['map', 'text', 'table', 'scene', 'board'] as const
+export const PAGE_TAB_KINDS = ['map', 'text', 'table', 'scene', 'board', 'chronology', 'tree'] as const
+
+/** Las formas de un árbol (la pestaña tree): un árbol genealógico o un organigrama */
+export const TREE_LAYOUTS = ['family', 'org'] as const
 
 const tabName = z.string().trim().min(1).max(60)
 
@@ -53,8 +56,13 @@ export const createPageTab = defineAction({
   name: 'createPageTab',
   kind: 'write',
   description:
-    'Añade una pestaña a una página, al final: un mapa (vacío hasta que se le pone imagen con updateMap) o una escena de la mesa (con setSceneImage)',
-  input: z.object({ pageId: z.uuid(), kind: z.enum(PAGE_TAB_KINDS), name: tabName.optional() }),
+    'Añade una pestaña a una página, al final: un mapa (vacío hasta que se le pone imagen con updateMap), una escena de la mesa (con setSceneImage), una cronología (con el calendario principal y todo el mundo; se cambia con updateChronology) o un árbol (layout: family, un árbol genealógico; org, un organigrama; vacío, se llena con updateTree)',
+  input: z.object({
+    pageId: z.uuid(),
+    kind: z.enum(PAGE_TAB_KINDS),
+    name: tabName.optional(),
+    layout: z.enum(TREE_LAYOUTS).optional().describe('Con kind tree: family (por defecto) u org')
+  }),
   output: pageTabView
 })
 

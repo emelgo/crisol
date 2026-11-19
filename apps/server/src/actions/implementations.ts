@@ -49,6 +49,7 @@ import { todayActions } from './today.ts'
 import { tokenActions } from './tokens.ts'
 import { trashActions } from './trash.ts'
 import { travelActions } from './travel.ts'
+import { treeActions } from './trees.ts'
 import { versionActions } from './versions.ts'
 import { visionActions } from './vision.ts'
 import { weatherActions } from './weather.ts'
@@ -84,6 +85,7 @@ export const IMPLEMENTATIONS: Implementation[] = [
   ...copyPageActions,
   ...linkActions,
   ...relationActions,
+  ...treeActions,
   ...previewActions,
   ...versionActions,
   ...fileActions,

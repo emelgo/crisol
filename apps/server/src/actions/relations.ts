@@ -1,11 +1,12 @@
 /**
  * Las relaciones del mundo (módulo 10, docs/specs/modulo-10.md): las de una página (vecindario, árbol genealógico u
- * organigrama) y el grafo de todo el mundo. Se calculan con cada petición de los campos de enlace y de page_links, con
+ * organigrama) y el grafo de todo el mundo. Se calculan con cada petición de los campos de enlace, de page_links y de
+ * las líneas de los árboles genealógicos (pestaña tree), con
  * lo que ve quien pregunta (ADR-0017, la pauta de getPageLinks): un jugador, solo páginas que ve, campos no ocultos,
  * destinos que ve y enlaces desde documentos que ve; los de secretos y notas ocultas, solo el máster y marcados
  */
 import { getRelations, getWorldGraph, type RelationNode } from '@crisol/contracts'
-import { linksRepo } from '@crisol/db'
+import { linksRepo, treesRepo } from '@crisol/db'
 import {
   familyTree,
   filterGraph,
@@ -17,7 +18,9 @@ import {
   type RelationRole,
   type RelationView,
   relationEdges,
-  relationModes
+  relationModes,
+  treeRelationEdges,
+  visibleTree
 } from '@crisol/domain'
 import { viewedPage, visibleProperties } from '../wiki/projection.ts'
 import { authorizedView, searchScope, type WikiView } from '../wiki/reader.ts'
@@ -72,9 +75,16 @@ function graphProperties(stored: readonly Record<string, unknown>[]): PageProper
   })
 }
 
-/** El grafo del mundo con lo que ve quien pregunta: sus páginas (con sus etiquetas visibles) y sus aristas */
+/**
+ * El grafo del mundo con lo que ve quien pregunta: sus páginas (con sus etiquetas visibles) y sus aristas, también las
+ * de los árboles genealógicos cuya pestaña ve (entre nodos de páginas que ve)
+ */
 async function visibleGraph(ctx: ActionContext, worldId: string, view: WikiView) {
-  const [rows, scope] = await Promise.all([linksRepo.worldGraph(ctx.db, worldId), searchScope(ctx, worldId, view)])
+  const [rows, scope, trees] = await Promise.all([
+    linksRepo.worldGraph(ctx.db, worldId),
+    searchScope(ctx, worldId, view),
+    treesRepo.treesOfWorld(ctx.db, worldId)
+  ])
   const separates = new Set(scope?.separates ?? [])
   const pages = view.pages(rows.pages).map((row) => {
     const properties = visibleProperties(graphProperties(row.properties), view)
@@ -100,7 +110,12 @@ async function visibleGraph(ctx: ActionContext, worldId: string, view: WikiView)
         : row.kind !== 'note' && row.documentId !== null && separates.has(row.documentId)
     return seen && view.seesPage(row.target) ? [{ source: row.source, target: row.target, secret: false }] : []
   })
-  return { pages, edges: relationEdges(pages, mentions) }
+  const edges = relationEdges(pages, mentions)
+  const seenTrees = trees
+    .filter((tree) => view.seesTab({ id: tree.tabId, pageId: tree.pageId, hidden: tree.tabHidden }))
+    .map((tree) => visibleTree(tree.nodes, tree.edges, (id) => view.seesPage(id)))
+  const present = new Set(pages.map((page) => page.id))
+  return { pages, edges: [...edges, ...treeRelationEdges(seenTrees, present, edges)] }
 }
 
 type GraphPage = Awaited<ReturnType<typeof visibleGraph>>['pages'][number]

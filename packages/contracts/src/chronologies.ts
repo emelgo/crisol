@@ -1,8 +1,8 @@
 /**
- * Las cronologías de un mundo (módulo 8, capacidad `cronologias`; decisiones 4-10 de docs/specs/modulo-8.md): viven en
- * «Calendarios», cada una con su calendario y su filtro, y juntan al leer los eventos sueltos del mundo (que no van en
- * el árbol) y las páginas con fecha. Un jugador ve las que se le revelan (marca `chronology`) y, dentro, lo que sabe su
- * campaña (ADR-0017)
+ * Las cronologías de un mundo (módulo 8, capacidad `cronologias`; ADR-0031): cada una es una pestaña de una página, como
+ * en LegendKeeper, con su calendario y su filtro, y junta al leer los eventos sueltos del mundo (que no van en el árbol)
+ * y las páginas con fecha. Un jugador ve las de las pestañas que ve (su página y su pestaña, ADR-0017) y, dentro, lo que
+ * sabe su campaña
  */
 import { z } from 'zod'
 import { defineAction } from './action.ts'
@@ -28,7 +28,9 @@ export type ChronologyFilterValue = z.infer<typeof chronologyFilter>
 export const chronologyView = z.object({
   id: z.uuid(),
   worldId: z.uuid(),
-  name: z.string(),
+  name: z.string().describe('El de su página (y el de su pestaña, si no es «Cronología»)'),
+  tabId: z.uuid().describe('Su pestaña'),
+  pageId: z.uuid().describe('La página en la que está'),
   calendarId: z.uuid().nullable().describe('Su calendario; null, el principal del mundo'),
   filter: chronologyFilter,
   version: z.int()
@@ -170,7 +172,7 @@ export const listChronologies = defineAction({
   name: 'listChronologies',
   kind: 'read',
   description:
-    'Las cronologías de un mundo, en su orden (con su calendario, su filtro y cuántas entradas tienen), y sus grupos de eventos. Un jugador, solo las que se le enseñan',
+    'Las cronologías de un mundo (cada una, una pestaña de una página), por su página (con su calendario, su filtro y cuántas entradas tienen), y sus grupos de eventos. Un jugador, solo las de las pestañas que ve',
   input: z.object({ worldId: z.uuid(), ...readAs }),
   output: z.object({
     chronologies: z.array(
@@ -188,9 +190,10 @@ export const getChronology = defineAction({
   name: 'getChronology',
   kind: 'read',
   description:
-    'Una cronología: sus eventos y sus páginas con fecha en orden, con sus fechas en texto y en la forma 1250-Siega-18 (lo de otros calendarios, convertido; outside dice cuántas fechas quedan fuera por no tener correspondencia). Con from y to (fechas), solo lo que cae entre ellas; con text, solo lo que lo lleva en su título o su descripción',
+    'Una cronología (por su id o por el de su pestaña): sus eventos y sus páginas con fecha en orden, con sus fechas en texto y en la forma 1250-Siega-18 (lo de otros calendarios, convertido; outside dice cuántas fechas quedan fuera por no tener correspondencia). Con from y to (fechas), solo lo que cae entre ellas; con text, solo lo que lo lleva en su título o su descripción',
   input: z.object({
-    chronologyId: z.uuid(),
+    chronologyId: z.uuid().optional(),
+    tabId: z.uuid().optional().describe('En lugar de chronologyId: la pestaña de la cronología'),
     from: z.string().trim().min(1).max(80).optional(),
     to: z.string().trim().min(1).max(80).optional(),
     text: z.string().trim().min(1).max(100).optional(),
@@ -209,10 +212,12 @@ export const createChronology = defineAction({
   name: 'createChronology',
   kind: 'write',
   description:
-    'Crea una cronología en un mundo, al final: con su calendario (sin él, el principal) y su filtro (por defecto, todas las páginas con fecha y todos los eventos). Se deshace',
+    'Crea una cronología, que es una pestaña de una página: con pageId, la añade a esa página (name es el de la pestaña); sin él, crea una página con ese nombre (dentro de parentId, o en el primer nivel) con su pestaña «Cronología». Con su calendario (sin él, el principal) y su filtro (por defecto, todas las páginas con fecha y todos los eventos). Se deshace',
   input: z.object({
     worldId: z.uuid(),
     name: chronologyName,
+    pageId: z.uuid().optional().describe('La página a la que se añade como pestaña; sin ella, una página nueva'),
+    parentId: z.uuid().nullable().optional().describe('Sin pageId: dentro de qué página va la nueva'),
     calendarId: z.uuid().nullable().optional(),
     filter: chronologyFilter.partial().optional()
   }),
@@ -223,13 +228,12 @@ export const updateChronology = defineAction({
   name: 'updateChronology',
   kind: 'write',
   description:
-    'Cambia una cronología: su nombre, su calendario (null: el principal), su filtro (lo que se dé de él) o su sitio (after: tras otra; null, la primera). Se deshace',
+    'Cambia una cronología: el nombre de su pestaña, su calendario (null: el principal) o su filtro (lo que se dé de él). Su sitio es el de su pestaña (cambiar_pestana). Se deshace',
   input: z.object({
     chronologyId: z.uuid(),
-    name: chronologyName.optional(),
+    name: chronologyName.optional().describe('El de su pestaña'),
     calendarId: z.uuid().nullable().optional(),
-    filter: chronologyFilter.partial().optional(),
-    after: z.uuid().nullable().optional()
+    filter: chronologyFilter.partial().optional()
   }),
   output: chronologyView
 })
@@ -238,7 +242,7 @@ export const deleteChronology = defineAction({
   name: 'deleteChronology',
   kind: 'delete',
   description:
-    'Borra una cronología (sus eventos no: son del mundo y salen en las demás). Se deshace desde el historial',
+    'Borra una cronología con su pestaña (sus eventos no: son del mundo y salen en las demás; su página se queda). Se deshace desde el historial',
   input: z.object({ chronologyId: z.uuid() }),
   output: z.object({ id: z.uuid() })
 })

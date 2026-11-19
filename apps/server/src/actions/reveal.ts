@@ -135,7 +135,8 @@ export function viewSees(view: WikiView, kind: KnowledgeKind, targetId: string, 
     case 'event':
       return view.seesEvent({ id: targetId, hidden })
     case 'chronology':
-      return view.seesChronology(targetId)
+      // Las cronologías son pestañas (ADR-0031): se ven por su pestaña; una marca de las de antes no dice nada
+      return false
   }
 }
 

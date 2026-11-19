@@ -8,11 +8,13 @@ import { keyBetween } from '@crisol/domain'
 import { asc, eq, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { type OperationContext, operation, type Writer } from '../operation.ts'
+import { chronologies } from '../schema/chronologies.ts'
 import { documents } from '../schema/documents.ts'
 import { mapElements, mapLayers, mapPins, maps, pageTabs } from '../schema/maps.ts'
 import { pages } from '../schema/pages.ts'
 import { scenes, sceneTiles } from '../schema/scenes.ts'
 import { randomTables } from '../schema/tables.ts'
+import { trees } from '../schema/trees.ts'
 import { sceneLights, sceneSounds, sceneWalls } from '../schema/vision.ts'
 import { writeMark } from './knowledge.ts'
 import { placeKey } from './pages.ts'
@@ -81,6 +83,26 @@ const TAB_COPIES: Record<TabKind, TabCopy> = {
   text: async () => undefined,
   // La pizarra va en su documento, que se copia con los de las pestañas de texto
   board: async () => undefined,
+  // La cronología: su calendario y su filtro (sus eventos son del mundo). A otro mundo (una plantilla), sin el calendario
+  // ni los grupos, que son de este
+  chronology: async (w, { from, to, worldId }) => {
+    const [chronology] = await w.read.select().from(chronologies).where(eq(chronologies.tabId, from.id))
+    if (!chronology) return
+    const elsewhere = chronology.worldId !== worldId
+    await w.insert(chronologies, {
+      ...copied(chronology, worldId),
+      tabId: to.id,
+      calendarId: elsewhere ? null : chronology.calendarId,
+      filter: elsewhere ? { ...chronology.filter, groups: [] } : chronology.filter
+    } as typeof chronologies.$inferInsert)
+  },
+  // El árbol: sus nodos y sus líneas; sin enlaces (una plantilla), los nodos se quedan con su nombre y sin su página
+  tree: async (w, { from, to, worldId, keep }) => {
+    const [tree] = await w.read.select().from(trees).where(eq(trees.tabId, from.id))
+    if (!tree) return
+    const nodes = keep ? tree.nodes : tree.nodes.map((node) => ({ ...node, pageId: null }))
+    await w.insert(trees, { ...copied(tree, worldId), tabId: to.id, nodes } as typeof trees.$inferInsert)
+  },
   // El mapa (imagen y escala) con sus pines y sus elementos
   map: async (w, { from, to, worldId, keep }) => {
     const [map] = await w.read.select().from(maps).where(eq(maps.tabId, from.id))

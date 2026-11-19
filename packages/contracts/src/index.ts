@@ -312,6 +312,7 @@ import {
   restoreWorld
 } from './trash.ts'
 import { planTravel, travel } from './travel.ts'
+import { convertTreeNodeToPage, createTree, getTree, updateTree } from './trees.ts'
 import {
   changeFog,
   changeSceneSound,
@@ -386,6 +387,7 @@ export * from './today.ts'
 export * from './tokens.ts'
 export * from './trash.ts'
 export * from './travel.ts'
+export * from './trees.ts'
 export * from './vision.ts'
 export * from './weather.ts'
 export * from './world-content.ts'
@@ -722,6 +724,10 @@ export const ACTIONS = [
   convertEventToPage,
   getRelations,
   getWorldGraph,
+  getTree,
+  updateTree,
+  createTree,
+  convertTreeNodeToPage,
   getCampaignWeather,
   setCampaignClimate,
   setDayWeather,
@@ -1065,6 +1071,10 @@ export type Actions = {
   convertEventToPage: typeof convertEventToPage
   getRelations: typeof getRelations
   getWorldGraph: typeof getWorldGraph
+  getTree: typeof getTree
+  updateTree: typeof updateTree
+  createTree: typeof createTree
+  convertTreeNodeToPage: typeof convertTreeNodeToPage
   getCampaignWeather: typeof getCampaignWeather
   setCampaignClimate: typeof setCampaignClimate
   setDayWeather: typeof setDayWeather

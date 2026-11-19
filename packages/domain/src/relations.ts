@@ -1,6 +1,6 @@
 /**
- * Las relaciones del mundo (módulo 10): las aristas salen de los campos de enlace de las páginas y de los enlaces de su
- * texto («menciona»). Con ellas, el vecindario de una página, su árbol genealógico (papeles parent y partner) y el
+ * Las relaciones del mundo (módulo 10): las aristas salen de los campos de enlace de las páginas, de los enlaces de su
+ * texto («menciona») y de las líneas de sus árboles genealógicos (family-tree.ts). Con ellas, el vecindario de una página, su árbol genealógico (papeles parent y partner) y el
  * organigrama de su grupo (member-of y leads). Lo que no ve quien pregunta ya viene quitado: aquí no se filtra por eso
  */
 import type { PageProperty, RelationRole } from './properties.ts'
@@ -9,8 +9,9 @@ import { fieldKey } from './templates.ts'
 export interface RelationEdge {
   source: string
   target: string
-  kind: 'field' | 'mention'
-  /** «mention», o la del campo: field:<id> (o name:<nombre> sin id) */
+  /** field: un campo de enlace; mention: un enlace del texto; tree: una línea de un árbol genealógico u organigrama */
+  kind: 'field' | 'mention' | 'tree'
+  /** «mention», la del campo: field:<id> (o name:<nombre> sin id), o la del árbol: tree:<tipo de línea> */
   key: string
   /** El nombre del campo (vacío en una mención) */
   name: string
@@ -303,7 +304,7 @@ export interface GraphFilter {
 /** Cuántas aristas hay de cada relación */
 export interface RelationCount {
   key: string
-  kind: 'field' | 'mention'
+  kind: RelationEdge['kind']
   name: string
   inverseName?: string
   role?: RelationRole

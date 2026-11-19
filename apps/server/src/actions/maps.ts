@@ -4,6 +4,7 @@
  * una página del mismo mundo
  */
 import {
+  CHRONOLOGY_LIMITS,
   changeBoard,
   createMapElement,
   createMapLayer,
@@ -37,11 +38,11 @@ import {
   updateMapPin,
   updatePageTab
 } from '@crisol/contracts'
-import { documentsRepo, filesRepo, mapsRepo, pagesRepo } from '@crisol/db'
-import { type Capability, keyBetween, NotFoundError } from '@crisol/domain'
+import { chronologiesRepo, documentsRepo, filesRepo, mapsRepo, pagesRepo } from '@crisol/db'
+import { type Capability, DEFAULT_CHRONOLOGY_FILTER, keyBetween, NotFoundError } from '@crisol/domain'
 import * as Y from 'yjs'
 import { separateName } from '../collab/server.ts'
-import { pagesChanged } from '../realtime/events.ts'
+import { chronologiesChanged, pagesChanged } from '../realtime/events.ts'
 import { BOARD_ELEMENTS, type BoardElement, boardElements, boardForPlayer } from '../wiki/board.ts'
 import { buildChanges, describeElements, removals } from '../wiki/board-ai.ts'
 import { viewedPage } from '../wiki/projection.ts'
@@ -50,6 +51,18 @@ import { authorizedPage, type WikiTarget } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
 import { snapGeometry, verticesOf } from './map-snap.ts'
 import { implement } from './registry.ts'
+
+/** El nombre de una pestaña nueva sin nombre, por su tipo (la segunda, con su número) */
+const TAB_BASE_NAMES = {
+  text: 'Texto',
+  map: 'Mapa',
+  table: 'Tabla',
+  scene: 'Escena',
+  board: 'Pizarra',
+  chronology: 'Cronología',
+  tree: 'Árbol genealógico',
+  org: 'Organigrama'
+} as const
 
 /** Lo más que se le enseña a la IA de una imagen (su API no admite más) y los tipos que admite */
 const MAX_IMAGE_BYTES = 4_500_000
@@ -355,21 +368,21 @@ export const mapActions = [
     return { tabs: tabs.map((tab) => (view.full ? tabView(tab) : { ...tabView(tab), hidden: false })) }
   }),
 
-  implement(createPageTab, async (ctx, { pageId, kind, name }) => {
+  implement(createPageTab, async (ctx, { pageId, kind, name, layout }) => {
     const { page, wiki } = await authorizedPage(ctx, 'page.write', pageId)
     const tabs = await mapsRepo.listTabs(ctx.db, pageId)
     if (tabs.length >= MAX_PAGE_TABS) throw new InvalidRequestError('TOO_MANY_TABS', `como mucho ${MAX_PAGE_TABS}`)
-    const base =
-      kind === 'text'
-        ? 'Texto'
-        : kind === 'table'
-          ? 'Tabla'
-          : kind === 'scene'
-            ? 'Escena'
-            : kind === 'board'
-              ? 'Pizarra'
-              : 'Mapa'
-    const same = tabs.filter((tab) => tab.kind === kind).length
+    if (kind === 'chronology') {
+      const count = (await chronologiesRepo.listChronologies(ctx.db, wiki.worldId)).length
+      if (count >= CHRONOLOGY_LIMITS.chronologies)
+        throw new InvalidRequestError(
+          'TOO_MANY_CHRONOLOGIES',
+          `un mundo tiene como mucho ${CHRONOLOGY_LIMITS.chronologies} cronologías`
+        )
+    }
+    const base = TAB_BASE_NAMES[kind === 'tree' && layout === 'org' ? 'org' : kind]
+    // Los árboles cuentan por su forma (el segundo organigrama, «Organigrama 2», aunque haya un árbol genealógico)
+    const same = tabs.filter((tab) => tab.kind === kind && (kind !== 'tree' || tab.name.startsWith(base))).length
     // La de texto cuenta con la principal («Texto»): la primera añadida es «Texto 2»; el segundo mapa, «Mapa 2»
     const named = name ?? (kind === 'text' ? `${base} ${same + 2}` : same > 0 ? `${base} ${same + 1}` : base)
     // Una de texto (y una pizarra) lleva su documento, como un secreto (vacío al nacer; no va al historial: lo cuenta su
@@ -394,9 +407,15 @@ export const mapActions = [
         name: named,
         documentId,
         position: keyBetween(tabs.at(-1)?.position ?? null, null)
+      },
+      {
+        // Una cronología, con el calendario principal y todo el mundo; un árbol, vacío y con su forma
+        ...(kind === 'chronology' ? { chronology: { calendarId: null, filter: DEFAULT_CHRONOLOGY_FILTER } } : {}),
+        ...(kind === 'tree' ? { tree: { layout: layout ?? 'family', nodes: [], edges: [] } } : {})
       }
     )
     ctx.realtime.publish(pagesChanged(wiki))
+    if (kind === 'chronology') ctx.realtime.publish(chronologiesChanged(wiki))
     return tabView(tab)
   }),
 
@@ -436,6 +455,7 @@ export const mapActions = [
     // Quien la tenga abierta deja de escribir en ella (su documento queda, para deshacer)
     if (tab.documentId) ctx.collab?.closeDocument(tab.documentId)
     ctx.realtime.publish(pagesChanged(wiki))
+    if (tab.kind === 'chronology') ctx.realtime.publish(chronologiesChanged(wiki))
     return { id: tabId }
   }),
 

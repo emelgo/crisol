@@ -2,13 +2,14 @@ import type { ChronologyFilter, DateValue, EventImage } from '@crisol/domain'
 import { sql } from 'drizzle-orm'
 import { boolean, index, jsonb, pgTable, text, uuid } from 'drizzle-orm/pg-core'
 import { calendars } from './calendars.ts'
+import { pageTabs } from './maps.ts'
 import { pages } from './pages.ts'
 import { trackedColumns } from './tracked.ts'
 import { worlds } from './worlds.ts'
 
 /**
- * Las cronologías de un mundo (módulo 8, decisiones 4-10 de docs/specs/modulo-8.md): viven en «Calendarios», cada una
- * con su calendario (null: el principal) y su filtro. No guardan eventos: los juntan al leer
+ * Las cronologías de un mundo (módulo 8; ADR-0031): cada una es una pestaña de una página (como un mapa), con su
+ * calendario (null: el principal) y su filtro. No guardan eventos: los juntan al leer
  */
 export const chronologies = pgTable(
   'chronologies',
@@ -17,9 +18,11 @@ export const chronologies = pgTable(
     worldId: uuid()
       .notNull()
       .references(() => worlds.id, { onDelete: 'cascade' }),
-    name: text().notNull(),
-    /** Orden fraccionario, como los calendarios */
-    position: text().notNull(),
+    /** Su pestaña: el nombre, el orden y quién la ve son los de ella */
+    tabId: uuid()
+      .notNull()
+      .unique()
+      .references(() => pageTabs.id, { onDelete: 'cascade' }),
     calendarId: uuid().references(() => calendars.id, { onDelete: 'set null' }),
     filter: jsonb().$type<ChronologyFilter>().notNull()
   },
