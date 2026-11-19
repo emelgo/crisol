@@ -1,11 +1,12 @@
 # Staging y producción en el VPS: todo en una red propia; solo la app escucha, y solo en loopback (delante va Caddy).
-# Lo arranca scripts/desplegar-staging.sh, con las variables de .env.staging (fuera de git).
+# Lo arrancan scripts/desplegar-staging.sh (proyecto crisol-staging, .env.staging) y scripts/desplegar-produccion.sh
+# (proyecto crisol-prod, .env.produccion), con sus variables fuera de git: cada uno con su base, sus archivos y su puerto.
 name: crisol-staging
 
 services:
   app:
     build: .
-    image: crisol:staging
+    image: crisol:${CRISOL_IMAGE_TAG:-staging}
     environment:
       NODE_ENV: production
       DATABASE_URL: postgres://crisol:${POSTGRES_PASSWORD:?falta POSTGRES_PASSWORD}@postgres:5432/crisol

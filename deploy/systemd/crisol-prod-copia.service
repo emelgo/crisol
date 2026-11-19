@@ -1,0 +1,10 @@
+# Copia diaria del Crisol oficial (scripts/copia-produccion.sh). Se instala en /etc/systemd/system con su .timer
+[Unit]
+Description=Copia del Crisol oficial (base y archivos)
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+User=admin
+ExecStart=/home/admin/crisol-prod/scripts/copia-produccion.sh diaria
