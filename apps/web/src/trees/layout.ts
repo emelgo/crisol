@@ -14,6 +14,8 @@ import { CARD, type Card, type Point, type TreeLayout, type Wire } from '../rela
 
 /** El hueco entre las tarjetas sueltas de la fila de abajo */
 const LOOSE_GAP = 24
+/** Lo que se separan las barras de una misma fila */
+const BAR_STEP = 7
 
 interface Placed {
   id: string
@@ -39,7 +41,7 @@ export function treeTabLayout(
   const lines = edges.filter((edge) => present.has(edge.from) && present.has(edge.to) && edge.from !== edge.to)
   const linked = new Set(lines.flatMap((edge) => [edge.from, edge.to]))
   const graph = new graphlib.Graph({ multigraph: false })
-  graph.setGraph({ rankdir: 'TB', ranksep: 26, nodesep: 36, marginx: 24, marginy: 24 })
+  graph.setGraph({ rankdir: 'TB', ranksep: 32, nodesep: 44, marginx: 24, marginy: 24 })
   graph.setDefaultEdgeLabel(() => ({}))
   for (const node of nodes) if (linked.has(node.id)) graph.setNode(node.id, { width: CARD.width, height: CARD.height })
 
@@ -122,12 +124,23 @@ export function treeTabLayout(
     })
   }
 
-  for (const [key, { above, below, edge }] of unions) {
-    if (below.length === 0) continue
+  // Las barras de una misma fila, escalonadas (si no, se pisan y no se sabe qué baja a quién)
+  const drawn = [...unions].filter(([, union]) => union.below.length > 0)
+  const rowOf = new Map<number, string[]>()
+  for (const [key] of drawn) {
+    const y = Math.round(at(key).y)
+    rowOf.set(y, [...(rowOf.get(y) ?? []), key])
+  }
+  const barOf = (key: string) => {
+    const y = at(key).y
+    const row = rowOf.get(Math.round(y)) ?? [key]
+    return y + (row.indexOf(key) - (row.length - 1) / 2) * BAR_STEP
+  }
+  for (const [key, { above, below, edge }] of drawn) {
     const tops = above.flatMap((id) => byId.get(id) ?? []).sort((a, b) => a.x - b.x)
     const kids = below.flatMap((id) => byId.get(id) ?? [])
     if (tops.length === 0 || kids.length === 0) continue
-    const bar = at(key).y
+    const bar = barOf(key)
     const first = tops[0] as Card
     const last = tops[tops.length - 1] as Card
     // Dos de arriba que son pareja (dicho a mano) y están en la misma fila: la línea baja de la mitad de su raya; si no,
@@ -155,9 +168,10 @@ export function treeTabLayout(
         ],
         ...style(edge)
       })
+    // Su nombre, junto a la subida al primero de abajo (cada una tiene la suya, aunque bajen del mismo)
     const label = labelOf(edge)
-    const drop = drops[0] as Point
-    if (label) labels.push({ text: label, x: drop.x + 6, y: (drop.y + bar) / 2, anchor: 'start' })
+    const lead = [...kids].sort((a, b) => a.x - b.x)[0] as Card
+    if (label) labels.push({ text: label, x: lead.x + 6, y: (bar + lead.y - lead.height / 2) / 2, anchor: 'start' })
   }
 
   const graphSize = graph.graph() as { width?: number; height?: number }
