@@ -152,6 +152,21 @@ export function registerMcpRoutes(app: FastifyInstance, { auth, jwksUrl, approva
     }
   )
 
+  // Las instrucciones de una campaña cambian poco (el hoy, los personajes): un minuto en memoria, no en cada llamada
+  const instructions = new Map<string, { at: number; text: Promise<string> }>()
+  const instructionsOf = (userId: string, scope: CampaignScope) => {
+    const now = Date.now()
+    const key = JSON.stringify([userId, scope.campaignId, scope.role])
+    const found = instructions.get(key)
+    if (found && now - found.at < 60_000) return found.text
+    for (const [old, { at }] of instructions) if (now - at >= 60_000) instructions.delete(old)
+    const text = campaignInstructions(env, userId, scope)
+    instructions.set(key, { at: now, text })
+    // Si falla, no se guarda el fallo
+    text.catch(() => instructions.delete(key))
+    return text
+  }
+
   // «Crisol · {campaña}»: solo quien juega o dirige en ella; su papel, en cada petición
   const campaignIdOf = (request: FastifyRequest) => (request.params as { campaignId?: string }).campaignId ?? ''
   route(
@@ -173,7 +188,7 @@ export function registerMcpRoutes(app: FastifyInstance, { auth, jwksUrl, approva
         name: campaign.name,
         role
       }
-      return { userId, scope, instructions: await campaignInstructions(env, userId, scope) }
+      return { userId, scope, instructions: await instructionsOf(userId, scope) }
     }
   )
 

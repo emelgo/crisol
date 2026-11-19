@@ -208,7 +208,8 @@ describe('el conector de una campaña', () => {
       (await gm.call<{ characters: { name: string }[] }>('listar_personajes', {})).data.characters.map((c) => c.name)
     ).toEqual(['Brisa'])
     expect(gm.client.getInstructions()).toContain('Quien te conecta es su máster. Sus personajes: Brisa (Ana).')
-  })
+    // Importa el 5e y hace muchas llamadas: con la máquina cargada pasa de los 20 s
+  }, 60_000)
 
   it('tus conexiones: cada conector con su app y su último uso; quitar una la deja sin acceso al momento', async () => {
     const master = await connected()
