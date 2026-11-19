@@ -9,6 +9,28 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
+## Ajustes de interfaz (ajustes tras los módulos, bloque A; rama `ajustes/tras-modulos`; 2026-11-19)
+
+En local o en staging cuando llegue el PR de esta rama.
+
+- [ ] **Calendario nuevo**: solo «En blanco» y «Como el nuestro»; duplicar uno sigue en el menú de su tarjeta.
+- [ ] **Entrar en un mundo y salir**: al entrar, la tarjeta se convierte en la portada hasta el final, sin el salto de
+  antes; al salir por la llama, la portada vuelve a su tarjeta, recortada y no estirada. Pruébalo con un mundo con
+  portada, con otro sin ella y desde una campaña. Al acabar, el desenfoque del cristal vuelve fundiéndose.
+- [ ] **Archivos**: la miniatura de una imagen, entera y centrada (también una muy alta o muy ancha) y sin el recuadro
+  gris; lo que no es imagen, con su icono en el recuadro.
+- [ ] **El panel de la derecha**: al plegarlo se va entero, fundiéndose, mientras la columna del centro se ensancha; al
+  desplegarlo entra ya con lo suyo. Sin saltos ni un panel vacío que luego se llena.
+- [ ] **El engranaje del mundo**, a la derecha de su nombre en la ficha del árbol; ya no está encima de la portada. El
+  último paso del tutorial del mundo lo señala ahí.
+- [ ] **Tutoriales**: en el grafo (los filtros), en las páginas de la jugadora (su árbol) y en el editor de un calendario
+  (sus partes), el globo sale al lado y no se corta arriba. En Etiquetas, sin ninguna, no hay paso de una lista vacía.
+- [ ] **Calendarios**: su bodegón mira a la derecha, como los demás.
+- [ ] **Revelar, solo en la campaña**: en las páginas del mundo ya no están «Quién la conoce», «Revelar la página»,
+  «Revelar a…» (botón derecho en el árbol) ni el ojo de cada fila del árbol. En la Mesa de una campaña, en la ventana de
+  una página, siguen. **Pregunta**: en las páginas del mundo siguen el «Revelar» de los secretos, el de las pestañas y
+  el ojo de lo oculto en los mapas; ¿se quitan también?
+
 ## Conectores de IA: Mundos y uno por campaña (ajustes tras los módulos, bloque D; rama `ajustes/tras-modulos`; 2026-11-19)
 
 ADR-0030. Se prueba en staging cuando llegue el PR de esta rama. Las direcciones:
