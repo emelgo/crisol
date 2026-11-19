@@ -773,20 +773,24 @@ export function LeapSection({ draft, change, problems }: SectionProps) {
                   })
                 }
               />
-              <span>{t('calendars.editor.leapBut')}</span>
-              <IntegerInput
-                className={styles.tiny}
-                value={rule.but ?? Number.NaN}
-                placeholder="—"
-                disabled={!rule.unless}
-                aria-label={t('calendars.editor.leapButLabel', { n: i + 1 })}
-                onValue={(but) =>
-                  set(i, (target) => {
-                    if (but > 0) target.but = but
-                    else delete target.but
-                  })
-                }
-              />
+              {/* «Pero sí cada…» solo tiene sentido con un «salvo» */}
+              {rule.unless ? (
+                <>
+                  <span>{t('calendars.editor.leapBut')}</span>
+                  <IntegerInput
+                    className={styles.tiny}
+                    value={rule.but ?? Number.NaN}
+                    placeholder="—"
+                    aria-label={t('calendars.editor.leapButLabel', { n: i + 1 })}
+                    onValue={(but) =>
+                      set(i, (target) => {
+                        if (but > 0) target.but = but
+                        else delete target.but
+                      })
+                    }
+                  />
+                </>
+              ) : null}
               <RemoveButton
                 label={t('calendars.editor.removeLeap', { n: i + 1 })}
                 onClick={() => change((d) => void d.leapRules.splice(i, 1))}

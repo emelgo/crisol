@@ -209,9 +209,10 @@
   animation: appear 160ms ease-out;
 }
 
+/* Desde casi visible: se nota que llega, sin fundirse desde la nada */
 @keyframes appear {
   from {
-    opacity: 0;
+    opacity: 0.4;
     transform: translateY(4px);
   }
 }
