@@ -424,10 +424,10 @@ export const ACTIONS = [
   listApprovals,
   approve,
   reject,
-  copyPage,
-  createPage,
   listAiConnections,
   removeAiConnection,
+  copyPage,
+  createPage,
   updatePage,
   movePage,
   getPage,
@@ -767,14 +767,14 @@ export type Actions = {
   listApprovals: typeof listApprovals
   approve: typeof approve
   reject: typeof reject
+  listAiConnections: typeof listAiConnections
+  removeAiConnection: typeof removeAiConnection
   copyPage: typeof copyPage
   createPage: typeof createPage
   updatePage: typeof updatePage
   movePage: typeof movePage
   getPage: typeof getPage
   listPageChildren: typeof listPageChildren
-  listAiConnections: typeof listAiConnections
-  removeAiConnection: typeof removeAiConnection
   listPageTree: typeof listPageTree
   listRecentPages: typeof listRecentPages
   setPagePanel: typeof setPagePanel
