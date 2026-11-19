@@ -988,7 +988,8 @@ describe('conector MCP con OAuth', () => {
     const tree = (await call<{ pages: { title: string }[] }>('ver_arbol', { worldId: world.id })).data
     expect(tree.pages.map((p) => p.title)).toEqual(['Aldoria', 'Varn'])
 
-    // Una jugadora de La Marca conecta su IA: ve lo que sabe su campaña, y no escribe
+    // Una jugadora de La Marca conecta su IA a Mundos: ve lo que sabe su campaña y solo las herramientas de leer
+    // (ADR-0030); lo suyo lo escribe por el conector de su campaña
     const ana = await signUpTestUser(server.auth, { name: 'Ana', email: `ana-${Date.now()}@crisol.test` })
     const link = await api<{ url: string }>(cookie, 'getInvitation', { campaignId: campaign.id })
     await fetch(new URL('/api/join', BASE), {
@@ -997,6 +998,8 @@ describe('conector MCP con OAuth', () => {
       body: JSON.stringify({ secret: link.url.split('/unirse/')[1] })
     })
     const player = await connectAs(ana, cookie)
+    const reads = (await player.tools()).map((t) => t.name)
+    const inCampaign = await connectAs(ana, cookie, `/mcp/campanas/${campaign.id}`)
     // Los calendarios (módulo 8): la IA del máster crea el de Eana de una vez y lo describe; la de la jugadora los lee
     // sin las eras solo del máster, por ninguna herramienta, y no los cambia
     const fest = (name: string) => ({ name, days: 7, festival: true })
@@ -1070,7 +1073,7 @@ describe('conector MCP con OAuth', () => {
       expect(result.text).toContain('Era de la República')
       expect(result.text).not.toContain('Eclipse')
     }
-    expect((await player.call('borrar_calendario', { calendarId: calendar.id })).isError).toBe(true)
+    expect(reads).not.toContain('borrar_calendario')
     // Las fechas (módulo 8): la IA del máster fecha Aldoria con la forma 1250-Siega-18 y la lee legible; mal escrita,
     // dice por qué. Un campo «Oculto» de fecha no le llega a la de la jugadora
     await api(cookie, 'setPageProperties', {
@@ -1150,9 +1153,7 @@ describe('conector MCP con OAuth', () => {
     for (const leak of ['Secreto', 'Coronación', '1302']) expect(theirs.text).not.toContain(leak)
     const listed = await player.call('listar_cronologias', { worldId: world.id })
     expect(listed.text).toContain('Historia')
-    expect(
-      (await player.call('crear_eventos', { worldId: world.id, events: [{ title: 'x', date: '1' }] })).isError
-    ).toBe(true)
+    expect(reads).not.toContain('crear_eventos')
     const own = (await player.call<{ pages: { title: string }[] }>('ver_arbol', { worldId: world.id })).data
     expect(own.pages.map((p) => p.title)).toEqual(['Aldoria'])
     const readCall = await player.call<{ markdown: string; dates: { name: string }[] }>('leer_pagina', {
@@ -1167,7 +1168,12 @@ describe('conector MCP con OAuth', () => {
     expect((await player.call('buscar_paginas', { worldId: world.id, query: 'rey' })).data).toMatchObject({
       results: []
     })
-    const write = await player.call('editar_pagina', { pageId: aldoria, body: { mode: 'append', markdown: 'Mío' } })
+    expect(reads).not.toContain('editar_pagina')
+    // En su campaña escribe el texto de una página solo si su campaña puede (docs/specs/pagina-de-jugadores.md)
+    const write = await inCampaign.call('editar_pagina', {
+      pageId: aldoria,
+      body: { mode: 'append', markdown: 'Mío' }
+    })
     expect(write.text).toMatch(/^READ_ONLY/)
     expect((await player.call('quien_conoce', { pageId: aldoria })).isError).toBe(true)
     // Salvo el texto de una página que su campaña puede escribir (docs/specs/pagina-de-jugadores.md)
@@ -1178,16 +1184,16 @@ describe('conector MCP con OAuth', () => {
       pageId: diary.id,
       editors: 'all'
     })
-    const written = await player.call('editar_pagina', {
+    const written = await inCampaign.call('editar_pagina', {
       pageId: diary.id,
       body: { mode: 'append', markdown: 'Día 1.' }
     })
     expect(written.isError, written.text).toBeFalsy()
-    const titled = await player.call('editar_pagina', { pageId: diary.id, title: 'Otro' })
+    const titled = await inCampaign.call('editar_pagina', { pageId: diary.id, title: 'Otro' })
     expect(titled.text).toMatch(/^PLAYER_PAGE/)
     // En modo asistente, su petición espera a que ella la apruebe
     await api(ana.cookie, 'setAiMode', { mode: 'assistant' })
-    const awaiting = await player.call('editar_pagina', {
+    const awaiting = await inCampaign.call('editar_pagina', {
       pageId: diary.id,
       body: { mode: 'append', markdown: 'Día 2.' }
     })
@@ -1203,9 +1209,9 @@ describe('conector MCP con OAuth', () => {
     const group = (await call<{ campaign: { name: string }[] }>('lo_que_sabe', { campaignId: campaign.id })).data
     expect(group.campaign.map((k) => k.name)).toEqual(['Varn', 'Diario', 'Historia', 'Aldoria'])
     expect((await player.call('leer_pagina', { pageId: varn })).isError).toBeFalsy()
-    expect((await player.call('revelar', { worldId: world.id, kind: 'page', targetId: aldoria })).text).toMatch(
-      /^READ_ONLY/
-    )
+    // Revelar es del máster: no está entre las suyas en ningún conector (y si llegara, approvals.ts dice READ_ONLY)
+    expect(reads).not.toContain('revelar')
+    expect((await inCampaign.tools()).map((t) => t.name)).not.toContain('revelar')
   })
 
   it('lo de la papelera no sale en listar_mundos', async () => {

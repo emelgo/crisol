@@ -1,6 +1,7 @@
 /**
  * Las herramientas MCP salen de los contratos: mismo servicio, misma política, mismo historial que la API. El nombre va
  * en español porque lo ve el máster en claude.ai. Lo que no es leer pasa por el modo de IA de la cuenta (approvals.ts).
+ * Qué herramientas ve cada conector (Mundos o el de una campaña) y su servidor MCP, en connectors.ts.
  */
 
 import {
@@ -17,15 +18,10 @@ import {
   weatherLayerSetting,
   weatherZone
 } from '@crisol/contracts'
-import { APPROVAL_WAIT_MS } from '@crisol/domain'
-import { McpServer } from '@modelcontextprotocol/server'
 import { z } from 'zod'
-import { type ActionEnv, type Implementation, InvalidRequestError } from '../actions/context.ts'
+import { type Implementation, InvalidRequestError } from '../actions/context.ts'
 import { implementationsByName } from '../actions/implementations.ts'
-import { formatDocs } from '../actions/systems.ts'
-import { callAsAi } from './approvals.ts'
 import { fromAi, type Loose, type View } from './map-geometry.ts'
-import { MAPS_GUIDE, MAPS_GUIDE_RESOURCE } from './maps-guide.ts'
 
 /** La documentación del formato de los sistemas, como recurso (la misma que da formato_sistemas) */
 export const FORMAT_RESOURCE = 'crisol://sistemas/formato'
@@ -1052,36 +1048,4 @@ export function routeCall(tool: McpTool, input: Record<string, unknown>) {
   const route = 'route' in tool ? tool.route(input) : { action: tool.action, input }
   const impl = implementation(route.action)
   return { impl, input: impl.action.input.parse(route.input) as Record<string, unknown> }
-}
-
-/** El servidor MCP de una petición, con las herramientas de la cuenta del token */
-export function buildMcpServer(env: ActionEnv, userId: string, options: { approvalWaitMs?: number } = {}): McpServer {
-  const server = new McpServer({ name: 'crisol', version: '0.0.0' }, { instructions: INSTRUCTIONS })
-  const waitMs = options.approvalWaitMs ?? APPROVAL_WAIT_MS
-  for (const [name, tool] of Object.entries(MCP_TOOLS)) {
-    server.registerTool(name, toolConfig(tool), (args) =>
-      callAsAi(env, { userId, tool: name, ...routeCall(tool, args as Record<string, unknown>), waitMs })
-    )
-  }
-  server.registerResource(
-    'formato_sistemas',
-    FORMAT_RESOURCE,
-    {
-      title: 'El formato de los sistemas',
-      description: 'Cómo se escribe un sistema de reglas: sus partes, sus campos, sus fórmulas y dos ejemplos',
-      mimeType: 'text/markdown'
-    },
-    async (uri) => ({ contents: [{ uri: uri.href, mimeType: 'text/markdown', text: formatDocs() }] })
-  )
-  server.registerResource(
-    'guia_mapas',
-    MAPS_GUIDE_RESOURCE,
-    {
-      title: 'Cómo dibujar un mapa de batalla',
-      description: 'Para dibujar_escena: el mapa en SVG, sus capas, la casilla y los muros y las luces para la niebla',
-      mimeType: 'text/markdown'
-    },
-    async (uri) => ({ contents: [{ uri: uri.href, mimeType: 'text/markdown', text: MAPS_GUIDE }] })
-  )
-  return server
 }

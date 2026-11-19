@@ -2,7 +2,16 @@ import { cimd } from '@better-auth/cimd'
 import { fetchClientMetadataResource } from '@better-auth/cimd/node'
 import { drizzleAdapter } from '@better-auth/drizzle-adapter'
 import { mcp } from '@better-auth/mcp'
-import { authSchema, type Database, isOwner, mayUseAi, usersRepo } from '@crisol/db'
+import {
+  aiRepo,
+  authSchema,
+  campaignsRepo,
+  type Database,
+  isOwner,
+  loadMemberships,
+  mayUseAi,
+  usersRepo
+} from '@crisol/db'
 import { betterAuth } from 'better-auth'
 import { APIError, createAuthMiddleware, getSessionFromCtx } from 'better-auth/api'
 import { jwt } from 'better-auth/plugins'
@@ -20,8 +29,39 @@ export interface AuthOptions {
 
 const DAY = 60 * 60 * 24
 
-/** El recurso MCP: los tokens del conector solo valen para él */
+/** El recurso MCP de «Crisol · Mundos»: los tokens del conector solo valen para él */
 export const mcpResource = (baseURL: string) => new URL('/mcp', baseURL).toString()
+
+/** El conector de una campaña (ADR-0030): su propio recurso, para que su token solo valga en ella */
+export const campaignResource = (baseURL: string, campaignId: string) =>
+  new URL(`/mcp/campanas/${campaignId}`, baseURL).toString()
+
+const CAMPAIGN_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
+
+/** De qué campaña es un recurso; null si no es el de una campaña (o no es un id) */
+export function campaignOfResource(baseURL: string, resource: string): string | null {
+  const prefix = campaignResource(baseURL, '')
+  if (!resource.startsWith(prefix)) return null
+  const id = resource.slice(prefix.length)
+  return CAMPAIGN_ID.test(id) ? id : null
+}
+
+/** El parámetro resource de OAuth, que puede venir repetido */
+const resourcesOf = (value: unknown): string[] =>
+  (Array.isArray(value) ? value : [value]).filter((r): r is string => typeof r === 'string')
+
+/**
+ * Da de alta el recurso del conector de una campaña que existe (Better Auth solo emite tokens para recursos dados de
+ * alta, y los de las campañas no se conocen al arrancar). Devuelve la campaña, o null si no lo es o no existe
+ */
+export async function ensureCampaignResource(db: Database, baseURL: string, resource: string) {
+  const campaignId = campaignOfResource(baseURL, resource)
+  if (!campaignId) return null
+  const campaign = await campaignsRepo.findCampaign(db, campaignId)
+  if (!campaign) return null
+  await aiRepo.ensureOAuthResource(db, resource, `Crisol · ${campaign.name}`)
+  return campaign
+}
 
 const signupClosed = () => new APIError('FORBIDDEN', { message: 'El registro está cerrado', code: 'SIGNUP_CLOSED' })
 
@@ -122,6 +162,10 @@ export function createAuth({ db, secret, baseURL, trustedOrigins = [] }: AuthOpt
         loginPage: '/entrar',
         consentPage: '/oauth/consentimiento',
         resource: mcpResource(baseURL),
+        // Los recursos son todos conectores de este servidor (Mundos y el de cada campaña, ADR-0030): cualquier cliente
+        // registrado pide el que quiera. claude.ai es un solo cliente para todos sus conectores, y al registrarse solo
+        // quedaba unido a /mcp
+        enforcePerClientResources: false,
         // Los clientes externos (claude.ai) se registran solos por CIMD; gestionar clientes a mano, solo el propietario
         clientPrivileges: async ({ user }) => (user ? isOwner(db, user.id) : false)
       }),
@@ -139,10 +183,28 @@ export function createAuth({ db, secret, baseURL, trustedOrigins = [] }: AuthOpt
       before: createAuthMiddleware(async (ctx) => {
         // Registro cerrado antes de buscar el email: si no, la respuesta diría qué emails tienen cuenta
         if (ctx.path === '/sign-up/email' && !signupAllowed()) throw signupClosed()
+        // El conector de una campaña: su recurso se da de alta al pedir la autorización (ADR-0030)
+        if (ctx.path === '/oauth2/authorize') {
+          for (const resource of resourcesOf(ctx.query?.resource)) await ensureCampaignResource(db, baseURL, resource)
+          return
+        }
         if (ctx.path !== '/oauth2/consent' || ctx.body?.accept !== true) return
         const session = await getSessionFromCtx(ctx)
         if (!session || !(await mayUseAi(db, session.user.id))) {
           throw new APIError('FORBIDDEN', { message: 'Esta cuenta no puede conectar una IA', code: 'OWNER_ONLY' })
+        }
+        // Y el de una campaña, solo quien juega o dirige en ella
+        const asked = new URLSearchParams(String(ctx.body?.oauth_query ?? '')).getAll('resource')
+        const campaigns = asked.map((r) => campaignOfResource(baseURL, r)).filter((id): id is string => id !== null)
+        if (campaigns.length === 0) return
+        const { campaigns: mine, worlds } = await loadMemberships(db, session.user.id)
+        for (const campaignId of campaigns) {
+          const campaign = await campaignsRepo.findCampaign(db, campaignId)
+          const member =
+            mine.some((m) => m.campaignId === campaignId) ||
+            worlds.some((w) => w.worldId === campaign?.worldId && w.role === 'master')
+          if (!campaign || !member)
+            throw new APIError('FORBIDDEN', { message: 'No estás en esta campaña', code: 'NOT_IN_CAMPAIGN' })
         }
       })
     },

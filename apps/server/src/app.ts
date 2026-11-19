@@ -19,6 +19,7 @@ import { redactSecrets, registerOriginGuard } from './http.ts'
 import { registerJoinRoutes } from './join.ts'
 import type { Embedder } from './library/embedder.ts'
 import type { LibraryJobs } from './library/jobs.ts'
+import { createAiConnections } from './mcp/connections.ts'
 import { registerMcpRoutes } from './mcp/routes.ts'
 import { tablePresenceChanged } from './realtime/events.ts'
 import { createRealtime, type Realtime } from './realtime/hub.ts'
@@ -164,6 +165,7 @@ export function buildApp(deps: AppDeps): FastifyInstance {
       presence,
       vision,
       sound,
+      aiConnections: createAiConnections(),
       actions: implementationsByName,
       ...(deps.storage ? { storage: deps.storage } : {}),
       ...(deps.library ? { library: deps.library } : {}),

@@ -5,6 +5,7 @@ import type { Collab } from '../collab/server.ts'
 import type { Storage } from '../files/storage.ts'
 import type { Embedder } from '../library/embedder.ts'
 import type { LibraryJobs } from '../library/jobs.ts'
+import type { AiConnections } from '../mcp/connections.ts'
 import type { Realtime } from '../realtime/hub.ts'
 import type { TablePresence } from '../table/presence.ts'
 import type { TableRooms } from '../table/rooms.ts'
@@ -44,6 +45,8 @@ export interface ActionEnv {
   vision?: Vision
   /** El reloj del sonido de cada campaña: lo manda a sus salas y pasa de pista (docs/specs/sonido.md) */
   sound?: SoundClock
+  /** El último uso de cada conexión de IA y las que se han quitado (ADR-0030) */
+  aiConnections?: AiConnections
 }
 
 /** Con qué se ejecuta una acción: el servidor y quién la pide, por dónde */
