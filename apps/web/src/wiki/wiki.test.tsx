@@ -58,6 +58,10 @@ const item = async (name: string) => (await tree()).findByRole('treeitem', { nam
 /** Lo que se hace de vez en cuando con la página está en «Más» */
 const openMore = async () => userEvent.click(await screen.findByRole('button', { name: 'Más acciones' }))
 
+/** El final del fundido del panel (sin TransitionEvent en el entorno de pruebas) */
+const faded = (panel: HTMLElement) =>
+  panel.dispatchEvent(Object.assign(new Event('transitionend', { bubbles: true }), { propertyName: 'opacity' }))
+
 describe('el árbol de la wiki', () => {
   it('al entrar en el mundo, su portada con el árbol al lado, y en él el primer nivel', async () => {
     // El tutorial guiado del mundo ya hecho: que no se ponga en medio
@@ -152,16 +156,22 @@ describe('el árbol de la wiki', () => {
     expect(fold.closest('header')).not.toBeNull()
     expect(fold.getAttribute('aria-controls')).toBe(panel.id)
     await userEvent.click(fold)
-    // Se desliza fuera y, al acabar, se va lo de dentro
+    // Se desliza fuera fundiéndose y, al acabar su fundido, se va lo de dentro
     expect(panel.getAttribute('data-folded')).toBe('true')
+    expect(within(panel).getByRole('button', { name: 'Añadir bloque' })).toBeDefined()
+    faded(panel)
     await waitFor(() => expect(within(panel).queryByRole('button', { name: 'Añadir bloque' })).toBeNull())
     expect(panel.hidden).toBe(true)
     expect(localStorage.getItem('crisol.mundo.panel-plegado')).toBe('1')
     const unfold = screen.getByRole('button', { name: 'Desplegar el panel' })
     expect(unfold.getAttribute('aria-expanded')).toBe('false')
     await userEvent.click(unfold)
-    expect(await within(panel).findByRole('button', { name: 'Añadir bloque' })).toBeDefined()
+    // Lo de dentro ya está al empezar a entrar (sin un panel vacío que luego se llena), y entra fundiéndose
+    expect(within(panel).getByRole('button', { name: 'Añadir bloque' })).toBeDefined()
     expect(panel.hidden).toBe(false)
+    expect(panel.hasAttribute('data-opening')).toBe(true)
+    faded(panel)
+    await waitFor(() => expect(panel.hasAttribute('data-opening')).toBe(false))
   })
 
   it('junto a un mapa, un panel sin nada se pliega solo; su botón lo abre (Enrique, 2026-11-14)', async () => {

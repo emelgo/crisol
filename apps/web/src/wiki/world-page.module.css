@@ -7,8 +7,10 @@
  */
 
 /* La wiki con una página del mundo: la columna llega hasta abajo y el panel se desliza fuera o dentro (su columna de la
-   rejilla pasa de su ancho a 0 en 300 ms; lo que se sale al deslizarse, recortado) */
+   rejilla pasa de su ancho a 0 en 300 ms y la columna del centro se ensancha con ella; lo que se sale al deslizarse,
+   recortado). --panel-width: el ancho del panel, el de su columna abierta */
 .wiki[data-world-page] {
+  --panel-width: 20rem;
   /* Las fichas de los lados empiezan donde la columna (--world-top lo mide la página) y llegan hasta abajo, como ella */
   --side-top: var(--world-top, 3.375rem);
   --side-height: calc(
@@ -31,6 +33,10 @@
 }
 
 @media (max-width: 90rem) {
+  .wiki[data-world-page] {
+    --panel-width: 18rem;
+  }
+
   .wiki[data-world-page]:has([data-panel-folded]) {
     grid-template-columns: minmax(11rem, 15rem) minmax(0, 1fr) minmax(0rem, 0rem);
   }
@@ -431,17 +437,35 @@
 }
 
 /* El panel de la página (la ficha de wiki.module.css, .entryPanel): al plegarse, su columna se cierra y él se va por la
-   derecha sin estrujarse del todo; ya fuera, ni se pinta ni lo encuentra el lector */
+   derecha entero, sin estrujarse (de ancho fijo: lo de dentro no se recoloca mientras se mueve) y fundiéndose; ya fuera,
+   ni se pinta ni lo encuentra el lector. Al desplegarse, entra igual (opening: desde transparente) */
 .panel {
   justify-self: start;
   min-inline-size: 14rem;
   transition: opacity 300ms ease;
 }
 
+.wiki[data-world-page] .panel {
+  inline-size: var(--panel-width);
+  max-inline-size: none;
+}
+
 .panel[data-folded] {
   opacity: 0;
 }
 
+@starting-style {
+  .panel[data-opening] {
+    opacity: 0;
+  }
+}
+
 .panel[hidden] {
   display: none;
+}
+
+@media (max-width: 64rem) {
+  .wiki[data-world-page] .panel {
+    inline-size: auto;
+  }
 }

@@ -1243,7 +1243,8 @@ function useColumnTop(column: RefObject<HTMLElement | null>, enabled: boolean) {
     measure()
     window.addEventListener('resize', measure)
     const resized = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure)
-    if (element.parentElement) resized?.observe(element.parentElement)
+    // También lo de encima (las pestañas abiertas, que llegan después y la bajan sin cambiarle el tamaño)
+    for (const box of [element.parentElement, element.parentElement?.parentElement]) if (box) resized?.observe(box)
     return () => {
       window.removeEventListener('resize', measure)
       resized?.disconnect()
@@ -1257,18 +1258,30 @@ function useColumnTop(column: RefObject<HTMLElement | null>, enabled: boolean) {
 const PANEL_SLIDE_MS = 300
 
 /**
- * El panel de la derecha de la página del mundo: se desliza fuera o dentro mientras el centro se ensancha, y su botón
- * va en la cabecera de la página (Enrique, 2026-11-16). Plegado y ya fuera, no se pinta
+ * El panel de la derecha de la página del mundo: se desliza fuera o dentro mientras el centro se ensancha, suave
+ * (Enrique, 2026-11-19), y su botón va en la cabecera de la página (Enrique, 2026-11-16). Plegándose, lo de dentro se
+ * queda hasta que acaba de irse (al acabar su fundido, o al rato si no lo hay) y ya fuera no se pinta; desplegándose, lo
+ * de dentro ya está al empezar y entra fundiéndose (opening)
  */
 function PagePanel({ children, id, folded }: { children: ReactNode; id: string; folded: boolean }) {
   const { t } = useTranslation()
-  // Plegándose, lo de dentro se queda hasta que acaba de irse; desplegándose, entra ya
-  const [present, setPresent] = useState(!folded)
+  const [gone, setGone] = useState(folded)
+  const [opening, setOpening] = useState(false)
+  if (!folded && gone) {
+    setGone(false)
+    setOpening(true)
+  }
+  // Por si no llega el final del fundido (sin transiciones)
   useEffect(() => {
-    if (!folded) return setPresent(true)
-    const timer = setTimeout(() => setPresent(false), PANEL_SLIDE_MS)
+    if (!folded) return
+    const timer = setTimeout(() => setGone(true), PANEL_SLIDE_MS + 100)
     return () => clearTimeout(timer)
   }, [folded])
+  useEffect(() => {
+    if (!opening) return
+    const timer = setTimeout(() => setOpening(false), PANEL_SLIDE_MS + 100)
+    return () => clearTimeout(timer)
+  }, [opening])
   return (
     <aside
       id={id}
@@ -1276,10 +1289,16 @@ function PagePanel({ children, id, folded }: { children: ReactNode; id: string; 
       className={`${styles.entryPanel} ${pageStyles.panel}`}
       data-tour="panel-bloques"
       data-folded={folded || undefined}
-      hidden={folded && !present}
+      data-opening={opening || undefined}
+      hidden={folded && gone}
       inert={folded || undefined}
+      onTransitionEnd={(event) => {
+        if (event.target !== event.currentTarget || event.propertyName !== 'opacity') return
+        if (folded) setGone(true)
+        setOpening(false)
+      }}
     >
-      {present && children}
+      {!gone && children}
     </aside>
   )
 }
