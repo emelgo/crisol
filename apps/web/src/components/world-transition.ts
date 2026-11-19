@@ -1,7 +1,9 @@
 /**
- * Entrar en un mundo y salir de él (transiciones de vista del navegador): la tarjeta del mundo se convierte en la
- * cabecera de su página, y al volver, al revés, mientras lo demás se acerca o se aleja (base.css). Lo marcado lleva el
- * nombre de transición; solo uno a la vez, el del mundo que se abre o del que se sale
+ * Las transiciones de la app (el estándar, docs/diseno.md, «Transiciones»; duraciones y curvas en tokens.css, --motion-*):
+ * dentro de una vista (SECTION), fundido corto; entrar y salir de un espacio (un mundo, una campaña), la imagen de su
+ * tarjeta viaja a la portada y vuelve a ella, en espejo, mientras lo demás se acerca o se aleja (base.css); entrar en un
+ * elemento (una plantilla, un sistema), su icono y su nombre viajan al título. Lo que viaja lleva el nombre de
+ * transición; solo uno a la vez, el del mundo que se abre o del que se sale
  */
 import type { CSSProperties } from 'react'
 
@@ -54,27 +56,40 @@ export function itemTransition(id: string, part: 'icono' | 'nombre'): CSSPropert
 let current: string | null = null
 
 /**
- * El mundo que se abre (al pulsar su tarjeta): ella lleva el nombre ya, antes de que se tome la foto de lo de antes, y
- * ninguna otra (la del mundo del que se salió antes aún lo tiene: con el nombre repetido, no habría transición). Y sube
- * el calor del crisol: unas brasas
+ * Lo que viaja entre la tarjeta y la portada: solo la imagen (data-portada-imagen), del tamaño en que se ve. Con la
+ * tarjeta entera (con su texto) o una imagen más alta que su hueco, la foto se estiraba y salía enorme al salir (Enrique,
+ * 2026-11-19: «no haciéndola grande sin sentido»)
+ */
+function coverOf(root: Element | null | undefined): HTMLElement | null {
+  if (!root) return null
+  if (root.matches('[data-portada-imagen]')) return root as HTMLElement
+  // Dentro (la imagen de una tarjeta) o alrededor (la franja que enseña la portada del mundo en su página)
+  return root.querySelector<HTMLElement>('[data-portada-imagen]') ?? root.closest<HTMLElement>('[data-portada-imagen]')
+}
+
+/**
+ * El mundo que se abre (al pulsar su tarjeta): la imagen de su tarjeta lleva el nombre ya, antes de que se tome la foto
+ * de lo de antes, y ninguna otra (la del mundo del que se salió antes aún lo tiene: con el nombre repetido, no habría
+ * transición). Y sube el calor del crisol: unas brasas
  */
 export function enterWorld(worldId: string, card: Element | null) {
   current = worldId
+  const cover = coverOf(card)
   for (const other of document.querySelectorAll<HTMLElement>('[style*="view-transition-name"]')) {
-    if (other !== card && other.style.viewTransitionName === 'mundo-actual')
+    if (other !== cover && other.style.viewTransitionName === 'mundo-actual')
       other.style.removeProperty('view-transition-name')
   }
-  if (card instanceof HTMLElement) card.style.setProperty('view-transition-name', 'mundo-actual')
+  cover?.style.setProperty('view-transition-name', 'mundo-actual')
   // El panel del mundo señalado (Mis mundos) no entra en la foto: la tarjeta es la que se convierte en la cabecera
   for (const panel of document.querySelectorAll<HTMLElement>('[data-vista-previa]')) panel.style.visibility = 'hidden'
   embers()
 }
 
 /**
- * Al salir de un mundo o de una campaña (por la llama), el espejo de entrar (Enrique, 2026-11-19): su cabecera, si está
- * a la vista (data-mundo-portada), lleva ya el nombre antes de la foto de lo de antes y vuelve a su tarjeta, que lo
- * recoge en Mis mundos (worldTransition), recortada y no estirada (base.css); lo demás se aleja. Y en vez de las
- * brasas, humo: una bruma gris que sube desde abajo y bocanadas que suben, se ensanchan y se disipan (base.css, .humo)
+ * Al salir de un mundo o de una campaña (por la llama), el espejo de entrar (Enrique, 2026-11-19): la imagen de su
+ * portada, si está a la vista (data-mundo-portada), lleva ya el nombre antes de la foto de lo de antes, se encoge y
+ * viaja a la imagen de su tarjeta, que lo recoge en Mis mundos (worldTransition); lo demás se aleja. Sin imagen, nada
+ * viaja: un fundido. Y en vez de las brasas, humo: una bruma gris y bocanadas que suben y se disipan (base.css, .humo)
  */
 export function leaveWorld(id: string | null = null) {
   current = id
@@ -82,8 +97,10 @@ export function leaveWorld(id: string | null = null) {
     if (named.style.viewTransitionName === 'mundo-actual') named.style.removeProperty('view-transition-name')
   }
   const header = id ? document.getElementById('contenido')?.querySelector<HTMLElement>('[data-mundo-portada]') : null
-  if (header && header.getBoundingClientRect().bottom > 0)
-    header.style.setProperty('view-transition-name', 'mundo-actual')
+  const cover = coverOf(header)
+  // A la vista: ni por encima de la ventana ni escondida (con la cabecera pegada arriba, la franja no se ve)
+  if (cover && cover.getBoundingClientRect().bottom > 0 && getComputedStyle(cover).visibility !== 'hidden')
+    cover.style.setProperty('view-transition-name', 'mundo-actual')
   smoke()
 }
 
@@ -126,7 +143,7 @@ function transitioning() {
   }
 }
 
-/** Para la tarjeta y la cabecera de ese mundo: su nombre de transición */
+/** Para la imagen de la tarjeta y de la portada de ese mundo (data-portada-imagen): su nombre de transición */
 export function worldTransition(worldId: string): CSSProperties | undefined {
   return current === worldId ? ({ viewTransitionName: 'mundo-actual' } as CSSProperties) : undefined
 }

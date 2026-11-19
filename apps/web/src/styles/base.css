@@ -59,11 +59,11 @@ main[data-contenido] {
 }
 
 :root:root::view-transition-old(ambiente) {
-  animation: fondo-se-va 700ms ease-in-out both;
+  animation: fondo-se-va var(--motion-space) ease-in-out both;
 }
 
 :root:root::view-transition-new(ambiente) {
-  animation: fondo-llega 700ms ease-in-out both;
+  animation: fondo-llega var(--motion-space) ease-in-out both;
 }
 
 /* Entre pestañas el fondo no cambia: sin fundido, que alargaba la transición a 700 ms (y mientras dura, lo que se
@@ -262,47 +262,48 @@ dialog section[aria-labelledby]:where(:not(.excalidraw *)) > h2:first-child {
 }
 
 /*
- * Los cuadros y las ventanas: al abrirse suben y crecen mientras aparecen, y al cerrarse bajan y encogen mientras se
- * desvanecen; el fondo se oscurece y se aclara a la vez. Con transiciones (no animaciones) para que también se vean al
+ * Los cuadros y las ventanas (el estándar, docs/diseno.md, «Transiciones»): al abrirse suben y crecen mientras aparecen
+ * (--motion-window, frenando), y al cerrarse bajan y encogen mientras se desvanecen, más deprisa (--motion-base,
+ * acelerando); el fondo se oscurece y se aclara a la vez. Con transiciones (no animaciones) para que también se vean al
  * cerrarse: el cuadro sigue en pantalla hasta acabar (overlay y display, discretos) y quien lo quita espera (Modal)
  */
 dialog {
   transition:
-    opacity 260ms ease-in,
-    transform 260ms ease-in,
-    overlay 260ms ease-in allow-discrete,
-    display 260ms ease-in allow-discrete;
+    opacity var(--motion-base) var(--ease-in),
+    transform var(--motion-base) var(--ease-in),
+    overlay var(--motion-base) var(--ease-in) allow-discrete,
+    display var(--motion-base) var(--ease-in) allow-discrete;
 }
 
 dialog:not([open]) {
   opacity: 0;
-  transform: translateY(28px) scale(0.9);
+  transform: translateY(16px) scale(0.96);
 }
 
 dialog[open] {
   opacity: 1;
   transform: none;
-  transition-duration: 460ms;
-  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  transition-duration: var(--motion-window);
+  transition-timing-function: var(--ease-out);
 }
 
 dialog::backdrop {
   opacity: 0;
   transition:
-    opacity 260ms ease-in,
-    overlay 260ms ease-in allow-discrete,
-    display 260ms ease-in allow-discrete;
+    opacity var(--motion-base) var(--ease-in),
+    overlay var(--motion-base) var(--ease-in) allow-discrete,
+    display var(--motion-base) var(--ease-in) allow-discrete;
 }
 
 dialog[open]::backdrop {
   opacity: 1;
-  transition-duration: 460ms;
+  transition-duration: var(--motion-window);
 }
 
 @starting-style {
   dialog[open] {
     opacity: 0;
-    transform: translateY(48px) scale(0.86);
+    transform: translateY(24px) scale(0.94);
   }
 
   dialog[open]::backdrop {
@@ -323,8 +324,8 @@ dialog[open]::backdrop {
     margin: auto 0 0;
     border-radius: 16px 16px 0 0;
     border-block-end: 0;
-    transition-duration: 280ms;
-    transition-timing-function: cubic-bezier(0.4, 0, 1, 1);
+    transition-duration: var(--motion-base);
+    transition-timing-function: var(--ease-in);
   }
 
   dialog:not([data-full])::before {
@@ -343,8 +344,8 @@ dialog[open]::backdrop {
   }
 
   dialog:not([data-full])[open] {
-    transition-duration: 360ms;
-    transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+    transition-duration: var(--motion-window);
+    transition-timing-function: var(--ease-out);
   }
 
   @starting-style {
@@ -356,9 +357,17 @@ dialog[open]::backdrop {
 }
 
 /*
- * Entrar en un mundo y salir de él (transiciones de vista, components/world-transition.ts). Al entrar, Mis mundos se
- * acerca y se desvanece, como si se pasara a través, y el mundo llega creciendo; la tarjeta pulsada se convierte en su
- * cabecera. Al salir, al revés. La barra va aparte (barra) y sin la transición: su propia animación se ve tal cual
+ * Las transiciones de vista, un estándar para toda la app (docs/diseno.md, «Transiciones»; Enrique, 2026-11-19), con
+ * las duraciones y las curvas de tokens.css (--motion-*, --ease-*) y su tipo puesto en components/world-transition.ts:
+ * 1. Dentro de una vista (seccion: las pestañas de la barra, de un libro, de una plantilla a otra): lo de antes se funde
+ *    en un instante y lo nuevo sube un poco al llegar. Sin fuego.
+ * 2. Entrar y salir de un espacio (entrar-mundo, salir-mundo: un mundo o una campaña), uno el espejo del otro: la imagen
+ *    de la tarjeta viaja a la portada y, al salir, se encoge y vuelve a su tarjeta; lo de antes se va y lo nuevo llega
+ *    detrás. Al entrar, al rojo y con brasas; al salir, se enfría y sale humo.
+ * 3. Entrar en un elemento (entrar-elemento, salir-elemento: una plantilla, un sistema): como el 2, pero viajan su icono
+ *    y su nombre, más rápido y sin fuego.
+ * Las ventanas y los cuadros, más arriba (dialog). La barra va aparte (barra) y sin la transición: su propia animación
+ * se ve tal cual
  */
 ::view-transition-group(barra),
 ::view-transition-new(barra) {
@@ -381,15 +390,38 @@ dialog[open]::backdrop {
   display: none;
 }
 
-/* Frenando de forma pareja hasta posarse, sin parar en seco */
+/* 2. Lo que viaja (la imagen de la tarjeta y la de la portada): frenando de forma pareja hasta posarse, igual al ir que
+   al volver */
 ::view-transition-group(mundo-actual) {
-  animation-duration: 1150ms;
-  animation-timing-function: cubic-bezier(0.33, 1, 0.68, 1);
+  animation-duration: var(--motion-space);
+  animation-timing-function: var(--ease-travel);
 }
 
-/* Al entrar, la tarjeta se pone al rojo mientras se convierte en la cabecera, y se enfría al llegar (con su grupo) */
+/* Las dos fotos, del cuadro que viaja en todo momento: recortadas por el centro, no estiradas (tienen otra forma), y
+   fundiéndose una en otra a mitad de camino (a la vez y con la misma curva: siempre suman una imagen entera) */
+::view-transition-old(mundo-actual),
+::view-transition-new(mundo-actual) {
+  block-size: 100%;
+  object-fit: cover;
+  /* Lo que se sale del cuadro al recortar, fuera (si no, la foto ancha asomaba por los lados) */
+  overflow: clip;
+  animation-duration: calc(var(--motion-space) * 0.5);
+  animation-delay: calc(var(--motion-space) * 0.2);
+  animation-timing-function: ease-in-out;
+  animation-fill-mode: both;
+}
+
+::view-transition-old(mundo-actual) {
+  animation-name: deja-paso;
+}
+
+::view-transition-new(mundo-actual) {
+  animation-name: toma-el-relevo;
+}
+
+/* Al entrar, la imagen se pone al rojo mientras viaja, y se enfría al llegar */
 html:active-view-transition-type(entrar-mundo)::view-transition-image-pair(mundo-actual) {
-  animation: al-rojo 1150ms ease-out;
+  animation: al-rojo var(--motion-space) ease-out;
 }
 
 /* Las brasas: un calor que sube desde abajo y unas chispas que se apagan (world-transition.ts); van por encima */
@@ -509,9 +541,9 @@ html:active-view-transition-type(entrar-mundo)::view-transition-image-pair(mundo
   }
 }
 
-/* Al salir, la cabecera se enfría (pierde el color y vuelve) mientras vuelve a ser tarjeta */
+/* Al salir, la imagen se enfría (pierde el color y lo recobra) mientras vuelve a su tarjeta */
 html:active-view-transition-type(salir-mundo)::view-transition-image-pair(mundo-actual) {
-  animation: se-enfria 1100ms ease-out;
+  animation: se-enfria var(--motion-space) ease-out;
 }
 
 @keyframes se-enfria {
@@ -568,35 +600,48 @@ html:active-view-transition-type(salir-mundo)::view-transition-image-pair(mundo-
   }
 }
 
-/* En secuencia, sin verse las dos a la vez: lo de antes se va deprisa y lo nuevo llega cuando ya no está; entre
-   medias, la tarjeta que crece hace de puente */
+/* 2. Lo demás, en secuencia y en espejo: lo de antes se va deprisa (al entrar se acerca, como si se pasara a través; al
+   salir se aleja) y lo nuevo llega cuando ya casi no está (al entrar creciendo; al salir posándose desde cerca); entre
+   medias, la imagen que viaja hace de puente. Lo nuevo acaba con ella: nada se mueve ya cuando se quita la capa */
+html:active-view-transition-type(entrar-mundo, salir-mundo)::view-transition-old(root),
+html:active-view-transition-type(entrar-mundo, salir-mundo)::view-transition-old(contenido) {
+  animation-duration: calc(var(--motion-space) * 0.4);
+  animation-timing-function: var(--ease-in);
+  animation-fill-mode: both;
+}
+
+html:active-view-transition-type(entrar-mundo, salir-mundo)::view-transition-new(root),
+html:active-view-transition-type(entrar-mundo, salir-mundo)::view-transition-new(contenido) {
+  animation-duration: calc(var(--motion-space) * 0.65);
+  animation-delay: calc(var(--motion-space) * 0.35);
+  animation-timing-function: var(--ease-out);
+  animation-fill-mode: both;
+}
+
 html:active-view-transition-type(entrar-mundo)::view-transition-old(root),
 html:active-view-transition-type(entrar-mundo)::view-transition-old(contenido) {
-  animation: atraviesa 320ms cubic-bezier(0.2, 0.7, 0.4, 1) both;
+  animation-name: atraviesa;
 }
 
-/* Lo nuevo acaba con la tarjeta que se posa (su grupo, 1150 ms), no después: nada se mueve ya cuando se quita la capa */
 html:active-view-transition-type(entrar-mundo)::view-transition-new(root),
 html:active-view-transition-type(entrar-mundo)::view-transition-new(contenido) {
-  animation: llega 690ms cubic-bezier(0.33, 1, 0.68, 1) 460ms both;
+  animation-name: llega;
 }
 
-/* Al salir, sin hueco entre medias: el mundo se aleja mientras Mis mundos llega (con un hueco, Mis mundos asomaba, se
-   iba y volvía) */
 html:active-view-transition-type(salir-mundo)::view-transition-old(root),
 html:active-view-transition-type(salir-mundo)::view-transition-old(contenido) {
-  animation: se-aleja 300ms cubic-bezier(0.2, 0.7, 0.4, 1) both;
+  animation-name: se-aleja;
 }
 
 html:active-view-transition-type(salir-mundo)::view-transition-new(root),
 html:active-view-transition-type(salir-mundo)::view-transition-new(contenido) {
-  animation: vuelve 600ms cubic-bezier(0.33, 1, 0.68, 1) both;
+  animation-name: vuelve;
 }
 
-/* Cambiar de pestaña en la barra: lo que había se funde en un instante y lo nuevo sube un poco al llegar */
+/* 1. Dentro de una vista (las pestañas de la barra): lo que había se funde en un instante y lo nuevo sube un poco */
 html:active-view-transition-type(seccion)::view-transition-old(root),
 html:active-view-transition-type(seccion)::view-transition-old(contenido) {
-  animation: deja-paso 120ms ease-in both;
+  animation: deja-paso var(--motion-quick) var(--ease-in) both;
 }
 
 /* Entre pestañas, lo que lleva su propio nombre de transición (la cabecera o la tarjeta del mundo en el que se entró, la
@@ -607,11 +652,11 @@ html:active-view-transition-type(seccion)::view-transition-group(*) {
 }
 
 html:active-view-transition-type(seccion)::view-transition-old(*) {
-  animation: deja-paso 120ms ease-in both;
+  animation: deja-paso var(--motion-quick) var(--ease-in) both;
 }
 
 html:active-view-transition-type(seccion)::view-transition-new(*) {
-  animation: sube-seccion 260ms cubic-bezier(0.16, 1, 0.3, 1) 90ms both;
+  animation: sube-seccion var(--motion-base) var(--ease-out) calc(var(--motion-quick) / 2) both;
 }
 
 /* Salvo la barra, que se queda quieta */
@@ -621,25 +666,25 @@ html:active-view-transition-type(seccion)::view-transition-new(barra) {
 
 html:active-view-transition-type(seccion)::view-transition-new(root),
 html:active-view-transition-type(seccion)::view-transition-new(contenido) {
-  animation: sube-seccion 260ms cubic-bezier(0.16, 1, 0.3, 1) 90ms both;
+  animation: sube-seccion var(--motion-base) var(--ease-out) calc(var(--motion-quick) / 2) both;
 }
 
-/* Entrar en un elemento desde su tarjeta (una plantilla): su icono y su nombre viajan al título y lo demás se funde,
-   en secuencia y sin fuego (el fuego es solo de los mundos y las campañas); al volver, al revés */
+/* 3. Entrar en un elemento desde su tarjeta (una plantilla, un sistema): su icono y su nombre viajan al título y lo
+   demás se funde, en secuencia y sin fuego (el fuego es solo de los mundos y las campañas); al volver, al revés */
 html:active-view-transition-type(entrar-elemento, salir-elemento)::view-transition-old(root),
 html:active-view-transition-type(entrar-elemento, salir-elemento)::view-transition-old(contenido) {
-  animation: deja-paso 160ms ease-in both;
+  animation: deja-paso var(--motion-quick) var(--ease-in) both;
 }
 
 html:active-view-transition-type(entrar-elemento, salir-elemento)::view-transition-new(root),
 html:active-view-transition-type(entrar-elemento, salir-elemento)::view-transition-new(contenido) {
-  animation: sube-seccion 320ms cubic-bezier(0.16, 1, 0.3, 1) 180ms both;
+  animation: sube-seccion var(--motion-base) var(--ease-out) var(--motion-quick) both;
 }
 
 ::view-transition-group(elemento-icono),
 ::view-transition-group(elemento-nombre) {
-  animation-duration: 460ms;
-  animation-timing-function: cubic-bezier(0.33, 1, 0.68, 1);
+  animation-duration: var(--motion-item);
+  animation-timing-function: var(--ease-travel);
 }
 
 @keyframes sube-seccion {
@@ -649,34 +694,25 @@ html:active-view-transition-type(entrar-elemento, salir-elemento)::view-transiti
   }
 }
 
-/* La página del mundo (su título y su texto), por encima de la portada que llega: aparece mientras se posa */
+/* La cabecera de la página del mundo (su título y sus botones), por encima de la imagen que viaja (z-index: las capas,
+   si no, van en el orden de lo de antes, y la imagen la tapaba): aparece con lo demás, mientras se posa; las brasas y
+   el humo, por encima de todo */
 ::view-transition-group(pagina-mundo) {
+  z-index: 1;
   animation: none;
 }
 
+::view-transition-group(brasas),
+::view-transition-group(humo) {
+  z-index: 2;
+}
+
 ::view-transition-old(pagina-mundo) {
-  animation: deja-paso 200ms ease-in both;
+  animation: deja-paso calc(var(--motion-space) * 0.4) var(--ease-in) both;
 }
 
 ::view-transition-new(pagina-mundo) {
-  animation: toma-el-relevo 380ms ease-out 260ms both;
-}
-
-/* La tarjeta y la cabecera no se mezclan todo el rato: la de antes deja paso pronto a la nueva. Recortadas (no
-   estiradas: tienen otra forma), por arriba, donde va la portada */
-::view-transition-old(mundo-actual),
-::view-transition-new(mundo-actual) {
-  block-size: 100%;
-  object-fit: cover;
-  object-position: top;
-}
-
-::view-transition-old(mundo-actual) {
-  animation: deja-paso 340ms ease-in both;
-}
-
-::view-transition-new(mundo-actual) {
-  animation: toma-el-relevo 420ms ease-out 340ms both;
+  animation: toma-el-relevo calc(var(--motion-space) * 0.65) var(--ease-out) calc(var(--motion-space) * 0.35) both;
 }
 
 @keyframes deja-paso {
@@ -691,26 +727,26 @@ html:active-view-transition-type(entrar-elemento, salir-elemento)::view-transiti
   }
 }
 
-/* Sin desenfoque: sobre la página entera cuesta mucho y la transición iba a saltos (Enrique, 2026-11-12: «al salir de
-   un mundo sale la animación rara») */
+/* En espejo: salir (se-aleja, vuelve) es entrar al revés (llega, atraviesa). Sin desenfoque: sobre la página entera
+   cuesta mucho y la transición iba a saltos (Enrique, 2026-11-12: «al salir de un mundo sale la animación rara») */
 @keyframes atraviesa {
   to {
     opacity: 0;
-    transform: scale(1.08);
+    transform: scale(1.04);
   }
 }
 
 @keyframes llega {
   from {
     opacity: 0;
-    transform: scale(0.9);
+    transform: scale(0.96);
   }
 }
 
 @keyframes se-aleja {
   to {
     opacity: 0;
-    transform: scale(0.94);
+    transform: scale(0.96);
   }
 }
 

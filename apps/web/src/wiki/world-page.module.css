@@ -128,12 +128,6 @@
   flex: none;
 }
 
-/* Al entrar en el mundo, su propia capa (solo mientras dura: si no, atraparía las barras flotantes): el título y el
-   texto salen mientras la tarjeta se posa en la portada, no debajo de ella hasta que acaba */
-:global(html:active-view-transition-type(entrar-mundo)) .page {
-  view-transition-name: pagina-mundo;
-}
-
 /* El texto, sin caja: directamente sobre la página, hasta 72 rem y centrado (Enrique: «que la caja del texto esté
    integrada y no tenga fin») */
 .sheet {
@@ -483,5 +477,27 @@
 @media (max-width: 64rem) {
   .wiki[data-world-page] .panel {
     inline-size: auto;
+  }
+}
+
+/* Al entrar en el mundo y al salir, la cabecera (el título y sus botones), en su propia capa por encima de la imagen que
+   viaja (base.css), solo mientras dura (si no, atraparía las barras flotantes): sale mientras la imagen se posa en la
+   franja, y al salir se va mientras la imagen vuelve a su tarjeta, sin quedar debajo de ella. La página entera no: su
+   cristal tapaba la imagen */
+:global(html:active-view-transition-type(entrar-mundo, salir-mundo)) .head {
+  view-transition-name: pagina-mundo;
+}
+
+/* Otra página del mismo mundo (el estándar de transiciones, docs/diseno.md: dentro de una vista, un fundido corto): su
+   texto, su mapa o su pizarra entran fundiéndose, desde algo de opacidad y no desde cero (sin hueco entre una página y
+   otra). Sin desplazarse: el mapa y la pizarra miden dónde están al montarse */
+.sheet,
+.bleed {
+  animation: pagina-llega var(--motion-base) var(--ease-out);
+}
+
+@keyframes pagina-llega {
+  from {
+    opacity: 0.4;
   }
 }

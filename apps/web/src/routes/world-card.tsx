@@ -193,7 +193,7 @@ function LookCard({
         if (event.animationName.includes('enfria')) setEntering(false)
         if (event.animationName.includes('arde')) burnt.current?.()
       }}
-      style={{ ...tint(look.color), ...style }}
+      style={tint(look.color)}
       data-card={look.id}
       onPointerEnter={(event) => {
         // Lo de una ventana abierta desde la tarjeta (en un portal) también cuenta como dentro: eso no la enseña
@@ -212,6 +212,8 @@ function LookCard({
       <CoverHeader
         url={image?.url}
         cover={look.cover}
+        travels
+        travelStyle={style}
         actions={
           image && (
             <button
@@ -404,7 +406,8 @@ export function CampaignCard({
 export function WorldBanner({ world }: { world: World }) {
   const kind = useWorldKind()
   // Su engranaje va junto al nombre del mundo, en la ficha del árbol (WorldSettings)
-  return <LookHeader banner kind={kind} look={world} style={worldTransition(world.id)} />
+  // Lo que viaja al entrar y salir es la franja que la enseña (wiki.tsx), no ella: su imagen es más alta que lo que se ve
+  return <LookHeader banner kind={kind} look={world} />
 }
 
 /**
@@ -449,7 +452,7 @@ export function LookHeader({
   const [viewing, setViewing] = useState(false)
   if (banner) {
     return (
-      <header className={styles.banner} style={{ ...tint(look.color), ...style }} data-mundo-portada="">
+      <header className={styles.banner} style={tint(look.color)} data-mundo-portada="">
         <CoverHeader
           url={image?.url}
           cover={look.cover}
@@ -470,10 +473,12 @@ export function LookHeader({
     )
   }
   return (
-    <header className={styles.hero} style={{ ...tint(look.color), ...style }} data-mundo-portada="">
+    <header className={styles.hero} style={tint(look.color)} data-mundo-portada="">
       <CoverHeader
         url={image?.url}
         cover={look.cover}
+        travels
+        travelStyle={style}
         hero
         actions={
           image && (
@@ -504,25 +509,30 @@ export function LookHeader({
 
 /**
  * La portada: la imagen o, sin ella, un hueco con un tinte oscuro de su color. Al pasar el ratón se acerca un poco y
- * salen sus acciones (Ver, Cambiar). large: la de su ventana; hero: la de la cabecera
+ * salen sus acciones (Ver, Cambiar). large: la de su ventana; hero: la de la cabecera. travels: su marco es lo que viaja
+ * al entrar en el mundo o salir (data-portada-imagen), con travelStyle (su nombre de transición, si toca)
  */
 function CoverHeader({
   url,
   cover,
   large = false,
   hero = false,
+  travels = false,
+  travelStyle,
   actions
 }: {
   url: string | undefined
   cover: Cover | null
   large?: boolean
   hero?: boolean
+  travels?: boolean
+  travelStyle?: CSSProperties | undefined
   actions?: ReactNode
 }) {
   const classes = [styles.header, large ? styles.large : '', hero ? styles.heroCover : ''].filter(Boolean)
   return (
     <div className={classes.join(' ')}>
-      <div className={styles.frame}>
+      <div className={styles.frame} {...(travels ? { style: travelStyle, 'data-portada-imagen': '' } : {})}>
         <div className={styles.picture}>
           {url && cover && (
             <img

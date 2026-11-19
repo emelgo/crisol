@@ -39,7 +39,7 @@ import list from '../components/list.module.css'
 import { failed, LoadError } from '../components/load-error.tsx'
 import { Menu, MenuItem } from '../components/menu.tsx'
 import { headingMayTakeFocus, PageTitle, useHeadingFocusRequest } from '../components/page-title.tsx'
-import { itemTransition } from '../components/world-transition.ts'
+import { itemTransition, worldTransition } from '../components/world-transition.ts'
 import { GraphWindowProvider, WorldGraphButton } from '../relations/graph-window.tsx'
 import { WorldBanner, WorldSettings } from '../routes/world-card.tsx'
 import { TemplateIcon } from '../templates/icons.tsx'
@@ -1015,11 +1015,14 @@ export function EntryView({
   useColumnTop(column, Boolean(worldPage))
   // La portada, a todo lo ancho (la del mundo en su portada; si no, la de la página o «Añadir portada»). En un mundo, una
   // franja baja detrás del título (Enrique, 2026-11-16: «Portada detrás del título»)
+  // Con la portada del mundo, la franja entera (la imagen, del alto en que se ve, y su degradado) es lo que viaja desde
+  // la tarjeta del mundo al entrar y vuelve a ella al salir (components/world-transition.ts)
   const cover = (
     <div
       className={worldPage ? `${styles.entryBanner} ${pageStyles.cover}` : styles.entryBanner}
       data-cover={banner || page.cover ? '' : undefined}
       data-band={worldPage ? '' : undefined}
+      {...(banner ? { 'data-portada-imagen': '', style: worldTransition(page.worldId) } : {})}
     >
       {banner ??
         (page.cover ? (
