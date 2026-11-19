@@ -53,7 +53,7 @@ import { CollabSocket } from './collab.tsx'
 import { CoverButton, PageCoverImage } from './cover.tsx'
 import { PageBody } from './editor.tsx'
 import { ExportPage, ExportWiki } from './export.tsx'
-import { PageIcon } from './icon.tsx'
+import { PageIcon, TitleIconSuggestions, titleIcons } from './icon.tsx'
 import { MapTab } from './map/map-tab.tsx'
 import { BookmarkButton, Bookmarks, OpenTabs } from './navigation.tsx'
 import { WorldWindows } from './new-entry.tsx'
@@ -536,7 +536,7 @@ function PageHead({
           <div className={styles.heading}>
             {page.icon && (
               <PageIcon
-                page={page}
+                page={{ ...page, icon: page.icon }}
                 {...(template ? { style: itemTransition(template, 'icono'), elemento: 'icono' } : {})}
               />
             )}
@@ -544,7 +544,7 @@ function PageHead({
               page={page}
               autoFocus={startEditing}
               onDone={named}
-              {...(template ? { style: itemTransition(template, 'nombre'), iconFirst: true } : {})}
+              {...(template ? { style: itemTransition(template, 'nombre') } : {})}
             />
             {template ? (
               <span className={`${styles.templateBadge} ${styles.templateMark}`} data-tour="plantilla-marca">
@@ -650,22 +650,20 @@ function TemplateBadge({ templateId }: { templateId: string }) {
  * El título de la página, que es su propio encabezado y se cambia ahí mismo (como en el Crisol antiguo): Intro, la
  * flecha abajo al final o salir del campo lo guardan; Intro y la flecha bajan al texto; Escape lo deja como estaba.
  * Vacío o igual, vuelve el de antes sin más; un error (del servidor) sale debajo y el foco se queda. Con la página
- * bloqueada, solo se lee
+ * bloqueada, solo se lee. El icono va en el propio título: un emoji delante pasa a ser su icono y «:» al principio
+ * propone los de la app por su nombre (como «/» y «@» en el texto)
  */
 function InlineTitle({
   page,
   autoFocus,
   onDone,
-  style,
-  iconFirst = false
+  style
 }: {
   page: Page
   autoFocus: boolean
   onDone: () => void
   /** Su nombre de transición (el título de una plantilla, desde su tarjeta) */
   style?: CSSProperties | undefined
-  /** Un emoji al principio pasa a ser su icono (el de una plantilla, que sale en las listas y en sus páginas) */
-  iconFirst?: boolean
 }) {
   const { t } = useTranslation()
   const api = useApi()
@@ -674,7 +672,11 @@ function InlineTitle({
   const request = useHeadingFocusRequest()
   const box = useRef<HTMLSpanElement>(null)
   const errorId = useId()
+  const suggestId = useId()
   const [error, setError] = useState<string | null>(null)
+  // «:» al principio: lo escrito tras él (hasta el cursor) y la propuesta elegida con las flechas
+  const [iconQuery, setIconQuery] = useState<string | null>(null)
+  const [iconAt, setIconAt] = useState(0)
   const rename = useMutation({
     mutationFn: (change: { title: string; icon?: string }) => api.call('updatePage', { pageId: page.id, ...change }),
     onSuccess: async () => {
@@ -704,9 +706,46 @@ function InlineTitle({
     const body = box.current?.closest('article')?.querySelector<HTMLElement>('.ProseMirror[contenteditable="true"]')
     body?.focus()
   }
+  // Lo que va del principio al cursor, si el título empieza por «:» (si no, null)
+  const readIconQuery = () => {
+    const text = box.current?.textContent ?? ''
+    const selection = getSelection()
+    if (!text.startsWith(':') || !selection?.rangeCount || !box.current) return null
+    const range = selection.getRangeAt(0).cloneRange()
+    if (!box.current.contains(range.endContainer)) return null
+    range.setStart(box.current, 0)
+    const upTo = range.toString()
+    return upTo.startsWith(':') && !upTo.includes('\n') ? upTo.slice(1) : null
+  }
+  const watchIconQuery = () => {
+    const query = readIconQuery()
+    setIconQuery(query)
+    if (query !== iconQuery) setIconAt(0)
+  }
+  // Elegido uno de la app: fuera «:» y lo escrito tras él; el resto es el título (sin nada, el de antes)
+  const pickIcon = (icon: string) => {
+    const text = box.current?.textContent ?? ''
+    const rest = text
+      .slice(1 + (iconQuery ?? '').length)
+      .replace(/\s+/g, ' ')
+      .trim()
+    const title = rest || page.title
+    setIconQuery(null)
+    if (box.current) {
+      box.current.textContent = title
+      // El cursor, al final, para seguir escribiendo el nombre
+      const range = document.createRange()
+      range.selectNodeContents(box.current)
+      range.collapse(false)
+      getSelection()?.removeAllRanges()
+      getSelection()?.addRange(range)
+    }
+    rename.mutate({ title, icon })
+  }
   const commit = () => {
+    setIconQuery(null)
     let text = (box.current?.textContent ?? '').replace(/\s+/g, ' ').trim()
-    const emoji = iconFirst ? text.match(LEADING_EMOJI) : null
+    const emoji = text.match(LEADING_EMOJI)
     const icon = emoji?.[1]
     if (emoji) text = text.slice(emoji[0].length).trim() || page.title
     if (!text || (text === page.title && !icon)) {
@@ -725,6 +764,8 @@ function InlineTitle({
     range.setEnd(box.current, box.current.childNodes.length)
     return range.toString() === ''
   }
+  const suggesting = iconQuery !== null && !page.locked
+  const suggested = suggesting ? titleIcons(iconQuery) : []
   return (
     <div className={styles.titleBox} style={style} data-elemento={style ? 'nombre' : undefined}>
       <h1
@@ -745,6 +786,8 @@ function InlineTitle({
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? errorId : undefined}
           aria-readonly={page.locked || undefined}
+          aria-controls={suggesting ? suggestId : undefined}
+          aria-activedescendant={suggested.length > 0 ? `${suggestId}-${iconAt}` : undefined}
           contentEditable={!page.locked}
           suppressContentEditableWarning
           spellCheck={false}
@@ -754,6 +797,28 @@ function InlineTitle({
             if ((event.ctrlKey || event.metaKey) && ['b', 'i', 'u'].includes(event.key.toLowerCase())) {
               event.preventDefault()
               return
+            }
+            // Con los iconos propuestos a la vista: las flechas los recorren, Intro pone el elegido y Escape los deja
+            if (suggesting) {
+              const step = event.key === 'ArrowDown' ? 1 : event.key === 'ArrowUp' ? -1 : 0
+              if (step && suggested.length > 0) {
+                event.preventDefault()
+                setIconAt((at) => Math.max(0, Math.min(suggested.length - 1, at + step)))
+                return
+              }
+              if (event.key === 'Enter' || event.key === 'Tab') {
+                const chosen = suggested[iconAt]
+                if (chosen) {
+                  event.preventDefault()
+                  pickIcon(`gi:${chosen.id}`)
+                  return
+                }
+              }
+              if (event.key === 'Escape') {
+                event.preventDefault()
+                setIconQuery(null)
+                return
+              }
             }
             if (event.key === 'Enter' || (event.key === 'ArrowDown' && atEnd())) {
               event.preventDefault()
@@ -766,6 +831,11 @@ function InlineTitle({
               toBody()
             }
           }}
+          onInput={watchIconQuery}
+          onKeyUp={(event) => {
+            if (event.key === 'ArrowLeft' || event.key === 'ArrowRight' || event.key === 'Home' || event.key === 'End')
+              watchIconQuery()
+          }}
           onBlur={() => {
             if (!rename.isPending) commit()
           }}
@@ -775,6 +845,9 @@ function InlineTitle({
           }}
         />
       </h1>
+      {suggesting && (
+        <TitleIconSuggestions id={suggestId} query={iconQuery} active={iconAt} onHover={setIconAt} onPick={pickIcon} />
+      )}
       {error && (
         <p id={errorId} className={styles.titleError} role="alert">
           {error}

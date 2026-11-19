@@ -4,7 +4,8 @@
   align-self: center;
 }
 
-.trigger {
+.trigger,
+.still {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -16,20 +17,15 @@
   background: none;
   font-size: 2rem;
   line-height: 1;
+}
+
+.trigger {
   cursor: pointer;
 }
 
 .trigger:hover,
 .trigger[aria-expanded="true"] {
   border-color: var(--color-field-border);
-}
-
-/* Sin icono: un hueco que se ve al pasar o al llegar con el tabulador */
-.placeholder {
-  inline-size: 1.5rem;
-  block-size: 1.5rem;
-  border: 2px dashed var(--color-field-border);
-  opacity: 0.6;
 }
 
 .panel {
@@ -41,8 +37,14 @@
   inset-block-start: calc(100% + var(--space-1));
   inset-inline-start: 0;
   z-index: 5;
+  display: grid;
+  gap: var(--space-2);
   inline-size: min(23rem, 90vw);
-  padding: var(--space-3) var(--space-4) var(--space-4);
+  padding: var(--space-3);
+  font-size: 1rem;
+  text-shadow: none;
+  /* En la franja de la portada, lo de encima del título no recibe el ratón: esto sí */
+  pointer-events: auto;
 }
 
 /* Flota (la regla del marco, que va después en la hoja, le ponía «relative» y empujaba el título) */
@@ -50,48 +52,73 @@
   position: absolute;
 }
 
-/* «Emoji», tras los iconos de rol: el mismo rótulo pequeño que los grupos */
-.emojiHead {
-  margin: var(--space-3) 0 var(--space-1);
-  color: var(--color-muted);
-  font-size: 0.6875rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-/* «Más iconos», en un formulario: al lado de las casillas, abre el buscador debajo */
-.moreIcons {
-  display: inline-flex;
+/* «Quitar el icono», bajo los iconos */
+.remove {
+  display: flex;
   align-items: center;
-  gap: 0.375rem;
-  block-size: 2.25rem;
-  padding: 0 var(--space-3);
-  border: 1px dashed var(--color-field-border);
-  border-radius: 4px;
-  background: none;
-  color: var(--color-muted);
+  justify-content: center;
+  gap: var(--space-2);
+  min-block-size: 2.25rem;
+  border: 1px solid var(--color-field-border);
+  border-radius: var(--radius-button);
+  background: transparent;
+  color: var(--color-text);
   font: inherit;
   font-size: 0.875rem;
   cursor: pointer;
 }
 
-.moreIcons:hover,
-.moreIcons[aria-expanded="true"] {
-  border-style: solid;
-  color: var(--color-text);
+.remove:hover {
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
 }
 
-/* El buscador de «Más iconos», flotando debajo de su botón, de cristal como todo lo que flota */
-.moreWrap {
+/* En un formulario: el de ahora en un botón como un campo, y el buscador flotando debajo */
+.choiceWrap {
   position: relative;
+  inline-size: 100%;
 }
 
+.choiceTrigger {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  inline-size: 100%;
+  min-block-size: var(--target);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-field-border);
+  border-radius: 4px;
+  background: var(--field-fill);
+  color: var(--color-text);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.choiceTrigger > span {
+  flex: 1;
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.choiceTrigger > svg:last-child {
+  color: var(--color-muted);
+}
+
+.choiceTrigger:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/* De cristal como todo lo que flota; no empuja la ventana */
 .floatingBrowser {
   position: absolute;
   inset-block-start: calc(100% + var(--space-1));
-  inset-inline-end: 0;
+  inset-inline-start: 0;
   z-index: 20;
+  display: grid;
+  gap: var(--space-2);
   inline-size: min(23rem, 80vw);
   padding: var(--space-3);
   border: 1px solid var(--glass-edge);
@@ -102,98 +129,70 @@
   box-shadow: 0 0.75rem 2rem rgb(0 0 0 / 0.4);
 }
 
-.grid {
-  display: grid;
-  grid-template-columns: repeat(8, minmax(0, 1fr));
-  gap: var(--space-1);
-  margin: 0 0 var(--space-3);
-  padding: 0;
-  list-style: none;
-}
-
-.choice {
-  inline-size: 100%;
-  aspect-ratio: 1;
-  min-block-size: var(--target);
-  padding: 0;
-  border: 1px solid transparent;
-  background: none;
-  font-size: 1.375rem;
-  cursor: pointer;
-}
-
-.choice:hover,
-.choice[aria-pressed="true"] {
-  border-color: var(--color-accent);
-}
-
-.other {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  gap: 0 var(--space-2);
-}
-
-.other > div {
-  flex: 1 1 8rem;
-}
-
-/* Sin icono, sobre el título: «Icono», discreto (sale al acercarse a la cabecera) */
-.ghost {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  min-block-size: 2rem;
-  padding: 0 0.5rem;
-  border: 0;
-  border-radius: 4px;
-  background: none;
-  color: var(--color-muted);
-  font: inherit;
+/* «:» al principio del título: los iconos que casan, flotando debajo del título */
+.suggest {
+  position: absolute;
+  inset-block-start: calc(100% + var(--space-1));
+  inset-inline-start: 0;
+  z-index: 8;
+  inline-size: min(22rem, 90vw);
+  padding: var(--space-2);
+  border: 1px solid var(--glass-edge);
+  border-radius: 8px;
+  background: var(--frame-sheen), var(--popup-glass);
+  -webkit-backdrop-filter: var(--popup-blur);
+  backdrop-filter: var(--popup-blur);
+  box-shadow: var(--glass-shadow);
+  color: var(--color-text);
+  font-family: var(--font-body);
   font-size: 0.875rem;
+  font-weight: 400;
+  letter-spacing: normal;
+  line-height: 1.3;
+  text-shadow: none;
+  pointer-events: auto;
+}
+
+.suggestHead {
+  margin: 0 var(--space-1) var(--space-1);
+  color: var(--color-muted);
+  font-size: 0.75rem;
+}
+
+.suggestNone {
+  margin: var(--space-1);
+  color: var(--color-muted);
+}
+
+.suggestList {
+  display: grid;
+  gap: 2px;
+  max-block-size: 15rem;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+  scrollbar-width: thin;
+}
+
+.suggestOption {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: 2.25rem;
+  padding: 0 var(--space-2);
+  border-radius: 4px;
   cursor: pointer;
 }
 
-.ghost:hover,
-.ghost[aria-expanded="true"] {
-  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+.suggestOption > span {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.suggestOption[aria-selected="true"] {
+  background: color-mix(in srgb, var(--color-accent-text) 18%, transparent);
   color: var(--color-text);
-}
-
-/* En un formulario (IconChoices): cada emoji en su casilla, como los colores */
-.emojiChoice {
-  display: grid;
-  place-items: center;
-  font-size: 1.25rem;
-  line-height: 1;
-}
-
-/* «Otro»: una casilla más, algo más ancha, donde se escribe o se pega un emoji */
-.otherIcon {
-  inline-size: 4.75rem;
-  block-size: 2.25rem;
-  padding: 0 var(--space-2);
-  border: 1px dashed var(--color-border);
-  border-radius: 4px;
-  background: transparent;
-  color: var(--color-text);
-  font: inherit;
-  font-size: 1.125rem;
-  text-align: center;
-}
-
-.otherIcon::placeholder {
-  font-size: 0.8125rem;
-}
-
-.otherIcon:focus-visible {
-  border-style: solid;
-  border-color: var(--color-focus);
-  outline: none;
-}
-
-.otherIcon[data-chosen] {
-  border-style: solid;
-  border-color: var(--color-text);
-  background: color-mix(in srgb, var(--color-text) 10%, transparent);
 }

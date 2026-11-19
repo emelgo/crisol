@@ -1,34 +1,55 @@
-import { gameIcon, type Page, pageIcon } from '@crisol/contracts'
+import type { Page } from '@crisol/contracts'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { CircleOff, Shapes, SmilePlus } from 'lucide-react'
-import { type CSSProperties, type ReactNode, useEffect, useId, useRef, useState } from 'react'
+import { ChevronDown, CircleOff } from 'lucide-react'
+import { type CSSProperties, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { FormError } from '../components/field.tsx'
-import form from '../components/form.module.css'
 import { Icon, iconLabel } from '../components/icon.tsx'
-import { IconBrowser } from '../components/icon-browser.tsx'
-import list from '../components/list.module.css'
+import { IconBrowser, iconsMatching } from '../components/icon-browser.tsx'
 import cards from '../routes/world-card.module.css'
 import styles from './icon.module.css'
 
-/** Los de un mundo de rol, para elegir de un clic; cualquier otro se escribe o se pega */
-const COMMON = ['📜', '🏰', '🏘️', '⚓', '🌲', '⛰️', '🐉', '⚔️', '🛡️', '🧙', '👑', '💀', '🗝️', '🗺️', '📖', '🎲']
+/**
+ * Lo que se ve al elegir un icono, el mismo en todas partes (una página, una plantilla, una carpeta, un sistema): los
+ * iconos de rol de la app, con su buscador y sus grupos, y quitarlo (Enrique, 2026-11-19: «que aparezcan nuestros
+ * iconos, no los por defecto»). Un emoji se pone escribiéndolo delante del título
+ */
+function IconPanel({
+  value,
+  onPick,
+  autoFocus = true
+}: {
+  value: string | null
+  onPick: (icon: string | null) => void
+  autoFocus?: boolean
+}) {
+  const { t } = useTranslation()
+  return (
+    <>
+      <IconBrowser value={value} onPick={onPick} autoFocus={autoFocus} />
+      {value && (
+        <button type="button" className={styles.remove} onClick={() => onPick(null)}>
+          <CircleOff aria-hidden="true" size={15} />
+          {t('icon.remove')}
+        </button>
+      )}
+    </>
+  )
+}
 
 /**
- * El icono de la página: un botón que abre una caja (patrón de despliegue, como el menú de la cuenta) con los iconos de
- * rol (buscador y grupos), los emojis más habituales, un campo para cualquier otro y quitarlo. Escape, pulsar fuera o
- * salir con el tabulador la cierran
+ * El icono de la página, delante de su título: pulsarlo abre una caja (patrón de despliegue, como el menú de la
+ * cuenta) con los iconos de la app y quitarlo. Escape, pulsar fuera o salir con el tabulador la cierran. Sin icono no
+ * se ve: se pone desde el propio título (un emoji delante, o «:» y su nombre)
  */
 export function PageIcon({
   page,
-  ghost = false,
   style,
   elemento
 }: {
-  page: Page
-  ghost?: boolean
+  page: Page & { icon: string }
   /** Su nombre de transición (el icono de una plantilla, desde su tarjeta) */
   style?: CSSProperties | undefined
   elemento?: 'icono'
@@ -41,13 +62,14 @@ export function PageIcon({
   const wrapper = useRef<HTMLDivElement>(null)
   const trigger = useRef<HTMLButtonElement>(null)
   const panelId = useId()
-  const inputId = useId()
   const save = useMutation({
     mutationFn: (icon: string | null) => api.call('updatePage', { pageId: page.id, icon }),
-    onSuccess: async () => {
+    onSuccess: async (_, icon) => {
       await queryClient.invalidateQueries({ queryKey: ['pages', page.worldId] })
       setOpen(false)
-      trigger.current?.focus()
+      // Quitado, el botón ya no está: el foco, al título
+      if (icon) trigger.current?.focus()
+      else wrapper.current?.parentElement?.querySelector<HTMLElement>('[role="textbox"]')?.focus()
     }
   })
 
@@ -71,77 +93,99 @@ export function PageIcon({
     }
   }, [open])
 
+  if (page.locked) {
+    return (
+      <span className={styles.wrapper} style={style} data-elemento={elemento}>
+        <span className={styles.still}>
+          <Icon value={page.icon} />
+        </span>
+      </span>
+    )
+  }
   return (
     <div ref={wrapper} className={styles.wrapper} style={style} data-elemento={elemento}>
       <button
         ref={trigger}
         type="button"
-        className={ghost ? styles.ghost : styles.trigger}
+        className={styles.trigger}
         aria-expanded={open}
         aria-controls={panelId}
-        aria-label={page.icon ? t('icon.change', { icon: iconLabel(page.icon) }) : t('icon.add')}
+        aria-label={t('icon.change', { icon: iconLabel(page.icon) })}
         onClick={() => setOpen(!open)}
       >
-        {ghost ? (
-          <>
-            <SmilePlus aria-hidden="true" size={16} />
-            {t('icon.short')}
-          </>
-        ) : page.icon ? (
-          <Icon value={page.icon} />
-        ) : (
-          <span className={styles.placeholder} aria-hidden="true" />
-        )}
+        <Icon value={page.icon} />
       </button>
       {open && (
         <div id={panelId} className={styles.panel}>
-          <IconBrowser value={page.icon} onPick={(icon) => save.mutate(icon)} autoFocus />
-          <p className={styles.emojiHead}>{t('icon.emoji')}</p>
-          <ul className={styles.grid} aria-label={t('icon.emoji')}>
-            {COMMON.map((icon) => (
-              <li key={icon}>
-                <button
-                  type="button"
-                  className={styles.choice}
-                  aria-label={t('icon.use', { icon })}
-                  aria-pressed={page.icon === icon}
-                  onClick={() => save.mutate(icon)}
-                >
-                  {icon}
-                </button>
-              </li>
-            ))}
-          </ul>
-          <form
-            className={styles.other}
-            onSubmit={(event) => {
-              event.preventDefault()
-              const icon = String(new FormData(event.currentTarget).get('icono')).trim()
-              if (icon) save.mutate(icon)
-            }}
-          >
-            <div className={form.field}>
-              <label htmlFor={inputId}>{t('icon.other')}</label>
-              <input
-                id={inputId}
-                name="icono"
-                maxLength={16}
-                autoComplete="off"
-                data-1p-ignore
-                data-lpignore="true"
-                data-form-type="other"
-              />
-            </div>
-            <button type="submit" className={list.secondary}>
-              {t('icon.useOther')}
-            </button>
-          </form>
+          <IconPanel value={page.icon} onPick={(icon) => save.mutate(icon)} />
           <FormError message={save.error ? errorText(save.error) : null} />
-          {page.icon && (
-            <button type="button" className={list.secondary} onClick={() => save.mutate(null)}>
-              {t('icon.remove')}
-            </button>
-          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/** Cuántos iconos se proponen al escribir «:» en un título */
+const SUGGESTED = 16
+
+/** Los iconos de la app que casan con lo escrito tras «:» al principio de un título (los primeros) */
+export function titleIcons(query: string) {
+  return iconsMatching(query).slice(0, SUGGESTED)
+}
+
+/**
+ * Lo que se propone al escribir «:» al principio de un título (como «/» y «@» en el texto): los iconos de la app que
+ * casan con lo que sigue. El foco se queda en el título (las flechas mueven la elegida, Intro la pone, Escape lo
+ * deja); con el ratón, pulsar uno no saca del título
+ */
+export function TitleIconSuggestions({
+  id,
+  query,
+  active,
+  onPick,
+  onHover
+}: {
+  id: string
+  query: string
+  active: number
+  onPick: (icon: string) => void
+  onHover: (index: number) => void
+}) {
+  const { t } = useTranslation()
+  const shown = titleIcons(query)
+  const list = useRef<HTMLDivElement>(null)
+  // La elegida, siempre a la vista
+  useEffect(() => {
+    list.current?.querySelector(`[data-at="${active}"]`)?.scrollIntoView?.({ block: 'nearest' })
+  }, [active])
+  return (
+    <div className={styles.suggest}>
+      <p className={styles.suggestHead}>{query ? t('icon.suggestFor', { query }) : t('icon.suggest')}</p>
+      {shown.length === 0 ? (
+        <p className={styles.suggestNone}>{t('icon.noneFound')}</p>
+      ) : (
+        <div ref={list} id={id} role="listbox" aria-label={t('icon.suggest')} className={styles.suggestList}>
+          {shown.map((icon, index) => (
+            <div
+              key={icon.id}
+              id={`${id}-${index}`}
+              data-at={index}
+              role="option"
+              tabIndex={-1}
+              aria-selected={index === active}
+              className={styles.suggestOption}
+              title={icon.label}
+              // Sin quitarle el foco al título
+              onPointerDown={(event) => {
+                event.preventDefault()
+                onPick(`gi:${icon.id}`)
+              }}
+              onPointerEnter={() => onHover(index)}
+            >
+              <Icon value={`gi:${icon.id}`} size={22} />
+              <span>{icon.label}</span>
+            </div>
+          ))}
         </div>
       )}
     </div>
@@ -149,76 +193,44 @@ export function PageIcon({
 }
 
 /**
- * El icono en un formulario (el de una carpeta, una plantilla…), como el color al lado: ninguno, uno de los emojis
- * habituales, cualquier otro emoji (escrito o pegado: lo que no es un emoji no se pone) o, con «Más iconos», uno de los
- * de rol, que sale como una casilla más
+ * El icono en un formulario (el de una carpeta, un sistema…): un botón con el de ahora que abre, flotando debajo (sin
+ * empujar la ventana), los mismos iconos de la app que en una página, y quitarlo. Escape o pulsar fuera lo cierran y el
+ * foco vuelve al botón
  */
 export function IconChoices({ value, onChange }: { value: string | null; onChange: (icon: string | null) => void }) {
   const { t } = useTranslation()
-  const name = useId()
-  const game = gameIcon(value)
   const [browsing, setBrowsing] = useState(false)
-  const moreWrap = useRef<HTMLSpanElement>(null)
-  const moreButton = useRef<HTMLButtonElement>(null)
+  const wrap = useRef<HTMLDivElement>(null)
+  const button = useRef<HTMLButtonElement>(null)
+  const legendId = useId()
   useEffect(() => {
     if (!browsing) return
     const outside = (event: PointerEvent) => {
-      if (event.target instanceof Node && !moreWrap.current?.contains(event.target)) setBrowsing(false)
+      if (event.target instanceof Node && !wrap.current?.contains(event.target)) setBrowsing(false)
     }
     document.addEventListener('pointerdown', outside)
     return () => document.removeEventListener('pointerdown', outside)
   }, [browsing])
-  const [typed, setTyped] = useState(value && !game && !COMMON.includes(value) ? value : '')
-  const choice = (icon: string | null, label: string, content: ReactNode) => (
-    <label key={icon ?? ''} className={cards.colorChoice} title={label}>
-      <input type="radio" name={name} checked={value === icon} onChange={() => onChange(icon)} />
-      {content}
-      <span className={cards.hidden}>{label}</span>
-    </label>
-  )
+  const pick = (icon: string | null) => {
+    onChange(icon)
+    setBrowsing(false)
+    button.current?.focus()
+  }
   return (
     <fieldset className={cards.choices}>
-      <legend>{t('icon.short')}</legend>
-      {choice(null, t('icon.none'), <CircleOff aria-hidden="true" size={18} strokeWidth={1.5} />)}
-      {COMMON.map((icon) =>
-        choice(
-          icon,
-          icon,
-          <span className={styles.emojiChoice} aria-hidden="true">
-            {icon}
-          </span>
-        )
-      )}
-      {game && choice(value, game.label, <Icon value={value as string} size={20} />)}
-      {/* Cualquier otro: una casilla más, donde se escribe o se pega */}
-      <input
-        className={styles.otherIcon}
-        data-chosen={typed !== '' && value === typed.trim() ? '' : undefined}
-        aria-label={t('icon.other')}
-        placeholder={t('icon.otherShort')}
-        value={typed}
-        maxLength={16}
-        autoComplete="off"
-        data-1p-ignore
-        data-lpignore="true"
-        data-form-type="other"
-        onChange={(event) => {
-          const text = event.currentTarget.value
-          setTyped(text)
-          if (pageIcon.safeParse(text.trim()).success) onChange(text.trim())
-        }}
-      />
-      {/* «Más iconos»: el buscador flota debajo (no empuja la ventana); Escape o pulsar fuera lo cierran */}
-      <span ref={moreWrap} className={styles.moreWrap}>
+      <legend id={legendId}>{t('icon.short')}</legend>
+      <div ref={wrap} className={styles.choiceWrap}>
         <button
-          ref={moreButton}
+          ref={button}
           type="button"
-          className={styles.moreIcons}
+          className={styles.choiceTrigger}
           aria-expanded={browsing}
+          aria-describedby={legendId}
           onClick={() => setBrowsing(!browsing)}
         >
-          <Shapes aria-hidden="true" size={15} />
-          {t('icon.moreIcons')}
+          {value ? <Icon value={value} size={20} /> : <CircleOff aria-hidden="true" size={16} />}
+          <span>{value ? iconLabel(value) : t('icon.none')}</span>
+          <ChevronDown aria-hidden="true" size={14} />
         </button>
         {browsing && (
           // biome-ignore lint/a11y/noStaticElementInteractions: Escape cierra el buscador sin cerrar la ventana de debajo
@@ -229,21 +241,13 @@ export function IconChoices({ value, onChange }: { value: string | null; onChang
               event.preventDefault()
               event.stopPropagation()
               setBrowsing(false)
-              moreButton.current?.focus()
+              button.current?.focus()
             }}
           >
-            <IconBrowser
-              value={value}
-              autoFocus
-              onPick={(icon) => {
-                onChange(icon)
-                setBrowsing(false)
-                moreButton.current?.focus()
-              }}
-            />
+            <IconPanel value={value} onPick={pick} />
           </div>
         )}
-      </span>
+      </div>
     </fieldset>
   )
 }

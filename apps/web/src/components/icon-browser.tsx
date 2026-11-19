@@ -2,7 +2,7 @@
  * Buscar y elegir un icono de rol (el paquete de game-icons.net, @crisol/contracts game-icons.ts): un buscador (por su
  * nombre en español o en inglés, sin tildes) y los iconos por grupos. Abajo, su crédito (CC BY 3.0 lo pide)
  */
-import { GAME_ICON_GROUPS, GAME_ICONS, gameIcon } from '@crisol/contracts'
+import { GAME_ICON_GROUPS, GAME_ICONS, type GameIcon, gameIcon } from '@crisol/contracts'
 import { Search } from 'lucide-react'
 import { type KeyboardEvent, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -17,6 +17,14 @@ const plain = (text: string) =>
     .replace(/[-\s]+/g, ' ')
     .trim()
 
+/** Los iconos de rol que casan con lo buscado (por su nombre en español o en inglés, sin tildes); sin nada, todos */
+export function iconsMatching(query: string): readonly GameIcon[] {
+  const wanted = plain(query)
+  return wanted
+    ? GAME_ICONS.filter((icon) => plain(icon.label).includes(wanted) || plain(icon.id).includes(wanted))
+    : GAME_ICONS
+}
+
 export function IconBrowser({
   value,
   onPick,
@@ -29,10 +37,7 @@ export function IconBrowser({
   const { t } = useTranslation()
   const [query, setQuery] = useState('')
   const headingId = useId()
-  const wanted = plain(query)
-  const shown = wanted
-    ? GAME_ICONS.filter((icon) => plain(icon.label).includes(wanted) || plain(icon.id).includes(wanted))
-    : GAME_ICONS
+  const shown = iconsMatching(query)
   const chosen = gameIcon(value)?.id
   // Una sola parada del tabulador (la elegida o la primera); las flechas recorren la rejilla, Inicio y Fin
   const order = GAME_ICON_GROUPS.flatMap((group) => shown.filter((icon) => icon.group === group))

@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { describe, expect, it } from 'vitest'
 import '../i18n.ts'
-import { IconChoices } from './icon.tsx'
+import { IconChoices, titleIcons } from './icon.tsx'
 
 /** El icono de un formulario, con lo elegido a la vista */
 function Form({ start = null }: { start?: string | null }) {
@@ -19,55 +19,53 @@ function Form({ start = null }: { start?: string | null }) {
 const chosen = () => screen.getByRole('status', { name: 'Elegido' }).textContent
 
 describe('el icono en un formulario', () => {
-  it('otro emoji escrito o pegado se elige; lo que no es un emoji, no', async () => {
+  it('los iconos de la app, sin emojis por defecto: elegir uno lo pone en el botón y el foco vuelve a él', async () => {
     render(<Form />)
-    const other = screen.getByRole('textbox', { name: 'Otro emoji' })
-    await userEvent.type(other, 'abc')
-    expect(chosen()).toBe('ninguno')
-    await userEvent.clear(other)
-    await userEvent.type(other, '🦑')
-    expect(chosen()).toBe('🦑')
-    // Marcada como la elegida
-    expect(other.hasAttribute('data-chosen')).toBe(true)
-    await userEvent.click(screen.getByRole('radio', { name: 'Sin icono' }))
-    expect(chosen()).toBe('ninguno')
-    expect(other.hasAttribute('data-chosen')).toBe(false)
-  })
-
-  it('«Más iconos» abre el buscador: elegir uno lo pone como una casilla más y el foco vuelve al botón', async () => {
-    render(<Form />)
-    const more = screen.getByRole('button', { name: 'Más iconos' })
-    await userEvent.click(more)
-    expect(more.getAttribute('aria-expanded')).toBe('true')
+    const button = screen.getByRole('button', { name: 'Sin icono' })
+    expect(screen.queryByRole('radio')).toBeNull()
+    expect(screen.queryByRole('textbox', { name: 'Otro emoji' })).toBeNull()
+    await userEvent.click(button)
+    expect(button.getAttribute('aria-expanded')).toBe('true')
     // Se abre para buscar
     expect(document.activeElement).toBe(screen.getByRole('searchbox', { name: 'Buscar un icono' }))
     await userEvent.type(screen.getByRole('searchbox', { name: 'Buscar un icono' }), 'castillo')
     await userEvent.click(screen.getByRole('button', { name: 'Castillo' }))
     expect(chosen()).toBe('gi:castle')
     expect(screen.queryByRole('searchbox', { name: 'Buscar un icono' })).toBeNull()
-    expect(document.activeElement).toBe(more)
-    // Sale como una casilla más, ya marcada
-    expect(screen.getByRole('radio', { name: 'Castillo' })).toHaveProperty('checked', true)
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Castillo' }))
+  })
+
+  it('«Quitar el icono», solo con uno puesto; un emoji de antes se sigue viendo', async () => {
+    render(<Form start="🐉" />)
+    await userEvent.click(screen.getByRole('button', { name: '🐉' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Quitar el icono' }))
+    expect(chosen()).toBe('ninguno')
+    await userEvent.click(screen.getByRole('button', { name: 'Sin icono' }))
+    expect(screen.queryByRole('button', { name: 'Quitar el icono' })).toBeNull()
   })
 
   it('Escape cierra el buscador (sin elegir) y el foco vuelve al botón; pulsar fuera también lo cierra', async () => {
-    render(<Form start="🐉" />)
-    const more = screen.getByRole('button', { name: 'Más iconos' })
-    await userEvent.click(more)
+    render(<Form start="gi:castle" />)
+    const button = screen.getByRole('button', { name: 'Castillo' })
+    await userEvent.click(button)
     await userEvent.keyboard('{Escape}')
     expect(screen.queryByRole('searchbox', { name: 'Buscar un icono' })).toBeNull()
-    expect(more.getAttribute('aria-expanded')).toBe('false')
-    expect(document.activeElement).toBe(more)
-    expect(chosen()).toBe('🐉')
-    await userEvent.click(more)
+    expect(button.getAttribute('aria-expanded')).toBe('false')
+    expect(document.activeElement).toBe(button)
+    expect(chosen()).toBe('gi:castle')
+    await userEvent.click(button)
     // Pulsar dentro no lo cierra; fuera, sí
     await userEvent.click(screen.getByRole('searchbox', { name: 'Buscar un icono' }))
     expect(screen.getByRole('searchbox', { name: 'Buscar un icono' })).toBeDefined()
     await userEvent.click(screen.getByRole('button', { name: 'Fuera' }))
     expect(screen.queryByRole('searchbox', { name: 'Buscar un icono' })).toBeNull()
-    // Y otra vez el botón lo abre y lo cierra
-    await userEvent.click(more)
-    await userEvent.click(more)
-    expect(more.getAttribute('aria-expanded')).toBe('false')
+  })
+})
+
+describe('«:» en un título', () => {
+  it('propone los iconos de la app por su nombre (sin tildes), unos pocos; sin nada escrito, los primeros', () => {
+    expect(titleIcons('dragon').map((icon) => icon.id)).toContain('dragon-head')
+    expect(titleIcons('').length).toBe(16)
+    expect(titleIcons('zzzz')).toEqual([])
   })
 })

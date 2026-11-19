@@ -620,16 +620,19 @@ describe('la ventana de una carpeta o de un archivo', () => {
     renderAt(`/mundos/${WORLD.id}/archivos`, api)
     await userEvent.click(await screen.findByRole('button', { name: 'Ajustes de la carpeta Mapas' }))
     const dialog = within(await screen.findByRole('dialog', { name: 'Ajustes de la carpeta Mapas' }))
-    await userEvent.click(dialog.getByRole('radio', { name: '🗺️' }))
+    // Los iconos de la app, como en una página
+    await userEvent.click(dialog.getByRole('button', { name: 'Sin icono' }))
+    await userEvent.type(dialog.getByRole('searchbox', { name: 'Buscar un icono' }), 'castillo')
+    await userEvent.click(dialog.getByRole('button', { name: 'Castillo' }))
     await userEvent.click(dialog.getByRole('radio', { name: 'Musgo' }))
     await userEvent.click(dialog.getByRole('button', { name: 'Guardar' }))
     await waitFor(async () =>
       expect((await api.client.call('listFiles', { worldId: WORLD.id })).folders[0]).toMatchObject({
-        icon: '🗺️',
+        icon: 'gi:castle',
         color: 'moss'
       })
     )
-    await waitFor(() => expect(rowOf('Mapas').textContent).toContain('🗺️'))
+    await waitFor(() => expect(rowOf('Mapas').querySelector('[data-icon], svg')).not.toBeNull())
   })
 })
 

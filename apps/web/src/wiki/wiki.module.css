@@ -585,6 +585,8 @@
 }
 
 .titleBox {
+  /* Los iconos que se proponen al escribir «:», debajo */
+  position: relative;
   flex: 0 1 auto;
   min-inline-size: 0;
 }
