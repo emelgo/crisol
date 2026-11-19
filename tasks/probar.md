@@ -149,9 +149,10 @@ ADR-0031. En local (http://localhost:5173) ya están las dos migraciones aplicad
   «Ajustes») a la derecha de las pestañas. Sus ajustes ya no llevan el nombre: es el de la pestaña (su menú ▾).
 - [ ] **La jugadora**: ve la cronología si conoce su página (y la pestaña no está oculta); «Cronologías» de su campaña
   lleva a cada una, en su página.
-- [ ] **El árbol genealógico**: «+» › «Árbol genealógico» (u «Organigrama»). Vacío, «Añadir a alguien»: escribe y elige
+- [ ] **El árbol genealógico** (ahora uno solo, «Árbol», y sin deducir líneas: mira la sección de abajo): «+» › «Árbol».
+  Vacío, «Añadir a alguien»: escribe y elige
   una página, o «Añadir «…» sin página» (sale con la raya discontinua). Pulsa a alguien: su ficha, con «Padre o madre»,
-  «Pareja» e «Hijo o hija» (al hijo de alguien con pareja, los dos son sus padres), sus líneas (la × al acercarse),
+  «Pareja», «Hijo o hija» y «Otra relación», sus líneas (la × al acercarse),
   «Crear página» (una subpágina de la del árbol), «Nota» y «Quitar». Con doble clic se abre su página.
 - [ ] **Empezar desde los campos**: en un personaje con «Padres» y «Pareja» (campos con papel), su árbol vacío ofrece
   «Empezar desde los campos».
@@ -179,6 +180,40 @@ ADR-0031. En local (http://localhost:5173) ya están las dos migraciones aplicad
   vista grande; en el móvil, la cronología de la jugadora va con la página. **Pregunta**: en el móvil, ¿el árbol de la
   jugadora «en palabras» (padres, pareja, hijos de cada uno), como la pizarra, y el lienzo al ampliar? Hoy es el lienzo en
   una caja.
+
+## Cronologías y árbol como en Everlore (rama `ajustes/tras-modulos`; migraciones 0092 y 0093; 2026-11-19)
+
+ADR-0032. En local (http://localhost:5173) ya están aplicadas las dos migraciones.
+
+- [ ] **Cada cronología, con sus eventos**: en una, crea un evento; abre otra: no sale. Una cronología nueva nace vacía.
+  Tus cronologías de antes: cada evento fue a una sola (la que lo pedía por su grupo o, si no, la primera que los
+  juntaba todos); el de «test» sigue en «test». Si alguno debería estar en otra, ábrelo desde la vista grande del
+  calendario y cámbiale la «Cronología».
+- [ ] **Las páginas con fecha**, solo si se piden: «Ajustes» › «Juntar también las páginas con fecha» (con sus plantillas
+  y etiquetas). Tu cronología «Eana» las juntaba todas: ahora no, hasta que lo marques.
+- [ ] **Meses**: «+ Nuevo grupo» arriba a la izquierda, en la esquina de los nombres (escribe y Intro); ya no hay fila
+  «+ Grupo» abajo. Al desplazarte, lo de debajo no se transparenta por los nombres. «Sin grupo» solo sale si hay algo sin
+  grupo (sin ningún grupo, un solo carril, «Eventos»). Los grupos son de cada cronología (sus ajustes: color y quitar).
+- [ ] **La vista grande del calendario**: salen los eventos de todas las cronologías. «Evento» en la ficha de un día
+  pregunta arriba «Cronología»: primero las que usan ese calendario; «Una nueva…» crea una página con su pestaña. Al
+  editar uno desde ahí, cambiar la cronología lo pasa a esa.
+- [ ] **Un solo árbol**: «Pestaña nueva» ya no ofrece «Organigrama»; tus árboles y organigramas siguen igual (con su
+  nombre). Un organigrama es un árbol con «Quien lo dirige» / «A quien dirige» y «Miembro» / «Grupo al que pertenece».
+- [ ] **Relaciones a mano**: en la ficha de alguien, «Padre o madre», «Pareja», «Hijo o hija» y «Otra relación» (el
+  desplegable: expareja, hermanos, padrastro o madrastra, hijastro o hijastra, adopción, dirige, miembro… u «Otra
+  (escríbela)», con su nombre y si va encima, debajo o al lado). Añadir el hijo de alguien con pareja ya **no** lo hace
+  hijo de la pareja: añade la otra línea si lo es. Lo que no es de sangre ni de pareja sale con raya discontinua y su
+  nombre («Adopción», «Madrina»…); dos que comparten un hijo no salen como pareja si no lo has dicho.
+- [ ] **«Añadir persona»**, abajo en el centro (como el «+» de la cronología); ya no está a la derecha de las pestañas.
+- [ ] **La IA**: «pasa estos eventos a la cronología de la Historia» (`crear_eventos` con su cronología) y «haz un
+  organigrama de la Orden con su maestre y dos caballeros» (`crear_arbol_genealogico` con `leads` y `member`); «Eloy es el
+  padrino de Ciro» (una libre, `other` con `label`).
+- [ ] **Decisiones tomadas sin ti** (dime si alguna no te vale): los eventos de antes no se copian a varias cronologías
+  (cada uno a una); las páginas con fecha dejan de salir donde no se habían acotado; desde un calendario sin cronologías,
+  el evento va a una nueva «Cronología» (página al final del primer nivel); los grupos que no usaba nadie fueron a la
+  primera cronología del mundo; un evento cuelga, para «quién lo conoce», de la página de su cronología; las relaciones
+  libres salen en el grafo con su nombre (sin papel); las etiquetas de las líneas: «Padrastro o madrastra», «Adopción»,
+  «Expareja», «Hermanos», «Dirige» (las de padre o madre, pareja y miembro, sin nombre).
 
 ## Calendarios en grande y su editor por fases (ajustes tras los módulos, bloque C; rama `ajustes/tras-modulos`; 2026-11-19)
 

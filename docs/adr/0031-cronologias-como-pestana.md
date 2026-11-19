@@ -1,7 +1,7 @@
 # ADR-0031: Las cronologías, pestañas de una página (enmienda la decisión 4 del ADR-0029)
 
 Estado: aceptada (Enrique, 2026-11-19, ajustes tras los módulos 8, 9 y 10: «cronologías como pestaña de página, como en
-LegendKeeper») · Enmienda: la decisión 4 de Enrique en `docs/specs/modulo-8.md` («sin pestaña Línea temporal; el
+LegendKeeper»; su decisión 2, enmendada por el ADR-0032: cada evento es de una cronología) · Enmienda: la decisión 4 de Enrique en `docs/specs/modulo-8.md` («sin pestaña Línea temporal; el
 tiempo vive en Calendarios») y lo que el ADR-0029 daba por hecho sobre dónde viven las cronologías. El resto del
 ADR-0029 (la fecha canónica, el día absoluto al leer, la correspondencia) sigue igual.
 
