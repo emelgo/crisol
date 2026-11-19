@@ -28,8 +28,9 @@ En local o en staging cuando llegue el PR de esta rama.
 - [ ] **Calendarios**: su bodegón mira a la derecha, como los demás.
 - [ ] **Revelar, solo en la campaña**: en las páginas del mundo ya no están «Quién la conoce», «Revelar la página»,
   «Revelar a…» (botón derecho en el árbol) ni el ojo de cada fila del árbol. En la Mesa de una campaña, en la ventana de
-  una página, siguen. **Pregunta**: en las páginas del mundo siguen el «Revelar» de los secretos, el de las pestañas y
-  el ojo de lo oculto en los mapas; ¿se quitan también?
+  una página, siguen. Lo mismo el «Revelar» de los secretos y el de las pestañas, y el ojo de los pines y de lo
+  dibujado en los mapas: solo dentro de la campaña (Claude, 2026-11-20, por la misma razón: en el mundo se crea, no se
+  juega). En la ventana de una página en la Mesa, sus pestañas se cambian dentro de ella (antes, el mapa no se abría).
 
 ## Conectores de IA: Mundos y uno por campaña (ajustes tras los módulos, bloque D; rama `ajustes/tras-modulos`; 2026-11-19)
 

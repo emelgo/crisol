@@ -151,7 +151,8 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   enseña cada campaña con su casilla~~; con una sola campaña no se pregunta a quién. Lo de abajo sobre la portada y la
   barra de la campaña ya no vale (la sustituye esto). **Revelar, solo dentro de una campaña** (Enrique, 2026-11-19): en
   las páginas del mundo no hay «Quién la conoce», «Revelar la página», «Revelar a…» del árbol ni el ojo de sus filas
-  (allí se crea el mundo, no se juega); se revela desde la Mesa de la campaña, en las ventanas de sus páginas.
+  (allí se crea el mundo, no se juega); se revela desde la Mesa de la campaña, en las ventanas de sus páginas. Vale
+  también para los secretos, las pestañas, los pines y lo dibujado en el mapa.
 - **La sala, arriba en la Mesa; sin pestaña «Campaña»** (Enrique, 2026-11-10: «si tenemos esto podemos quitarlo de la
   barra lateral»): los retratos de quien está y la pausa van en un recuadro junto al de la escena, **de su misma
   altura**; al pulsarlos, el panel de la sala (quién está, pausa, cómo mueven, echar e invitación). Los ajustes de la
