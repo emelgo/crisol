@@ -95,6 +95,11 @@ ADR-0031. En local (http://localhost:5173) ya están las dos migraciones aplicad
   «Crear página» la pone dentro de la página del árbol; el árbol no lleva los nombres de cada generación (no hay una
   página en el centro desde la que contar); al cambiar la forma de un árbol hecho no se rehace (la forma se elige al
   crearlo).
+- [ ] **Tras la crítica de diseño** (impeccable): la escala de la vista Meses dice ahora «Año · Mes · Día» (con «Meses»
+  pulsado en las dos píldoras no se sabía cuál era cuál); el calendario de la cronología lleva su icono y lleva a su
+  vista grande; en el móvil, la cronología de la jugadora va con la página. **Pregunta**: en el móvil, ¿el árbol de la
+  jugadora «en palabras» (padres, pareja, hijos de cada uno), como la pizarra, y el lienzo al ampliar? Hoy es el lienzo en
+  una caja.
 
 ## Calendarios en grande y su editor por fases (ajustes tras los módulos, bloque C; rama `ajustes/tras-modulos`; 2026-11-19)
 
