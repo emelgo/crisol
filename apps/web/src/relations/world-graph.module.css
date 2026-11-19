@@ -208,7 +208,8 @@
   inline-size: 1rem;
   block-size: 1rem;
   margin: 0;
-  accent-color: var(--color-accent);
+  /* Sin rojo: el rojo, solo en lo importante */
+  accent-color: var(--color-text);
 }
 
 .rowName {
@@ -384,6 +385,7 @@
 
 .windowHead h2 {
   margin: 0;
+  outline: none;
   overflow: hidden;
   font-size: 1.25rem;
   text-overflow: ellipsis;

@@ -357,9 +357,9 @@ function SvgWorld({
   useEffect(() => {
     if (!svg || !bounds || fittedFor.current === positions) return
     fittedFor.current = positions
-    fit(bounds, 1.1)
+    fit(bounds, 1.6)
   }, [svg, bounds, positions, fit])
-  useEffect(() => keepFitted(bounds, 1.1), [keepFitted, bounds])
+  useEffect(() => keepFitted(bounds, 1.6), [keepFitted, bounds])
   // Al buscar una página, la vista va a ella
   const scale = useRef(transform.k)
   scale.current = transform.k

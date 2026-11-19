@@ -422,9 +422,29 @@ export function Chronology({
     : undefined
 
   const empty = entries.length === 0
+  // Su calendario, con su icono (no se confunde con el nombre del mundo); al máster, lleva a su vista grande
+  const calendarName = (
+    <>
+      <CalendarDays size={14} aria-hidden="true" />
+      {calendar.name}
+    </>
+  )
   const facts = (
     <p className={styles.headFacts}>
-      {calendar.name}
+      {editable && inTab ? (
+        <Link
+          to="/mundos/$worldId/calendarios/$calendarId"
+          params={{ worldId, calendarId: calendar.id }}
+          className={styles.calendarLink}
+          title={t('chronologies.calendarOf', { name: calendar.name })}
+        >
+          {calendarName}
+        </Link>
+      ) : (
+        <span className={styles.calendarName} title={t('chronologies.calendarOf', { name: calendar.name })}>
+          {calendarName}
+        </span>
+      )}
       {outside > 0 && <span> · {t('chronologies.outside', { count: outside })}</span>}
     </p>
   )

@@ -9,7 +9,7 @@
  */
 import type { Page, PageTabView, RelationEdge, TreeEdgeView, TreeNodeView, TreeView } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ExternalLink, FilePlus2, Pencil, Plus, Trash2, Wand2, X } from 'lucide-react'
+import { ExternalLink, FilePlus2, ListPlus, Pencil, Plus, Trash2, X } from 'lucide-react'
 import {
   type CSSProperties,
   type ReactNode,
@@ -210,7 +210,8 @@ export function TreeTab({ page, tab, editable }: { page: Page; tab: PageTabView;
   const label = t(layout === 'org' ? 'trees.labelOrg' : 'trees.label', { name: tab.name })
 
   return (
-    <>
+    // Una sola caja: los cuadros de añadir y de editar van dentro (como hijos directos de la página a sangre, se estiraban)
+    <div className={styles.tab}>
       {tools && (slot ? createPortal(tools, slot) : <div className={relationStyles.toolsRow}>{tools}</div>)}
       <div className={relationStyles.area} data-tour="arbol">
         {failure && (
@@ -320,7 +321,7 @@ export function TreeTab({ page, tab, editable }: { page: Page; tab: PageTabView;
           ...(tools ? [{ target: '[data-tour="arbol-anadir"]', text: t('tour.tree.add') }] : [])
         ]}
       />
-    </>
+    </div>
   )
 }
 
@@ -431,7 +432,7 @@ function Empty({
             </button>
             {modes.includes(mode) && (
               <BusyButton className={styles.fromFields} busy={fromFields.isPending} onClick={() => fromFields.mutate()}>
-                <Wand2 size={16} aria-hidden="true" />
+                <ListPlus size={16} aria-hidden="true" />
                 {t('trees.fromFields')}
               </BusyButton>
             )}

@@ -108,25 +108,25 @@ function GraphDialog({
 }) {
   const { t } = useTranslation()
   const dialog = useRef<HTMLDialogElement>(null)
-  const closeButton = useRef<HTMLButtonElement>(null)
+  const heading = useRef<HTMLHeadingElement>(null)
   const opener = useRef<Element | null>(null)
   const [title, setTitle] = useState<string | null>(null)
   useEffect(() => {
     opener.current = document.activeElement
     if (!dialog.current?.open) dialog.current?.showModal()
-    // El foco, dentro (en su X), como en los demás cuadros
-    closeButton.current?.focus({ preventScroll: true })
+    // El foco, dentro: en su título (la X con su aro de foco tapaba lo importante)
+    heading.current?.focus({ preventScroll: true })
     return () => {
       if (opener.current instanceof HTMLElement) opener.current.focus({ preventScroll: true })
     }
   }, [])
   const world = target === WORLD_GRAPH
-  const heading = world ? t('relations.window.world') : title ? t('relations.graph', { page: title }) : ''
+  const name = world ? t('relations.window.world') : title ? t('relations.graph', { page: title }) : ''
   return (
     <dialog
       ref={dialog}
       className={`${windowStyles.window} ${styles.window}`}
-      aria-label={heading || t('relations.window.world')}
+      aria-label={name || t('relations.window.world')}
       // Escape la cierra quitando el grafo de la dirección (salvo vaciando el buscador, o con la ficha de una página
       // abierta, que se cierra antes); el cierre propio del dialog, igual
       onKeyDown={(event) => {
@@ -148,14 +148,10 @@ function GraphDialog({
       }}
     >
       <header className={styles.windowHead}>
-        <h2>{heading}</h2>
-        <button
-          ref={closeButton}
-          type="button"
-          className={windowStyles.close}
-          aria-label={t('window.close')}
-          onClick={onClose}
-        >
+        <h2 ref={heading} tabIndex={-1}>
+          {name}
+        </h2>
+        <button type="button" className={windowStyles.close} aria-label={t('window.close')} onClick={onClose}>
           <X aria-hidden="true" size={20} />
         </button>
       </header>
@@ -311,9 +307,10 @@ function Neighbourhood({
   useEffect(() => {
     if (!svg || !bounds || fitted.current === signature) return
     fitted.current = signature
-    fit(bounds, 1.1)
+    fit(bounds, 1.8)
   }, [svg, bounds, signature, fit])
-  useEffect(() => keepFitted(bounds, 1.1), [keepFitted, bounds])
+  // Con pocas páginas, más cerca: que no quede un racimo pequeño en un marco enorme
+  useEffect(() => keepFitted(bounds, 1.8), [keepFitted, bounds])
   return (
     <>
       <LinksGraph

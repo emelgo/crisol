@@ -104,7 +104,7 @@ describe('la pestaña «Árbol genealógico»', () => {
     )
     // Su ficha, abierta: su madre, sin página
     const card = within(await screen.findByRole('region', { name: 'Ilsa de Varn' }))
-    await userEvent.click(card.getByRole('button', { name: 'Padre o madre', exact: true }))
+    await userEvent.click(card.getByRole('button', { name: 'Padre o madre' }))
     dialog = within(await screen.findByRole('dialog', { name: 'Padre o madre de Ilsa de Varn' }))
     await userEvent.type(dialog.getByRole('combobox'), 'Mira de Varn')
     await userEvent.click(dialog.getByRole('option', { name: 'Añadir «Mira de Varn» sin página' }))

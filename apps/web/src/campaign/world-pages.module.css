@@ -190,3 +190,12 @@ h3.blockTitle.blockTitle {
 .filled > * {
   min-block-size: 0;
 }
+
+/* En el móvil, la cronología va con la página: sin caja de alto fijo ni dos desplazamientos */
+@media (max-width: 639px) {
+  .filled:has([data-narrow]) {
+    display: block;
+    block-size: auto;
+    overflow: visible;
+  }
+}

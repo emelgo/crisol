@@ -161,11 +161,10 @@ test('cronologías (módulo 8, ADR-0031): crearla como pestaña de una página, 
   await expect(lanes.getByText('Guerras')).toBeVisible()
   await expect(lanes.getByRole('button', { name: /Campaña de los Pasos/ })).toBeVisible()
   expect(await axe(page)).toEqual([])
-  await page.getByRole('toolbar', { name: 'Zoom' }).getByRole('button', { name: 'Años' }).click()
-  await expect(page.getByRole('toolbar', { name: 'Zoom' }).getByRole('button', { name: 'Años' })).toHaveAttribute(
-    'aria-pressed',
-    'true'
-  )
+  await page.getByRole('toolbar', { name: 'Escala' }).getByRole('button', { name: 'Año', exact: true }).click()
+  await expect(
+    page.getByRole('toolbar', { name: 'Escala' }).getByRole('button', { name: 'Año', exact: true })
+  ).toHaveAttribute('aria-pressed', 'true')
 
   // Convertir la boda en página, dentro de Historia
   await pill.getByRole('button', { name: 'Lista' }).click()

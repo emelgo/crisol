@@ -191,8 +191,10 @@
 }
 
 .treeCard[data-center] .cardBox {
-  stroke: var(--color-accent-text);
-  stroke-width: 1.5;
+  /* La de la página: un tinte y su raya algo más viva, sin el color del foco */
+  fill: color-mix(in srgb, var(--color-accent) 10%, var(--color-surface));
+  stroke: color-mix(in srgb, var(--color-accent-text) 45%, var(--line-frame));
+  stroke-width: 1.25;
 }
 
 .treeCard[aria-pressed="true"] .cardBox {

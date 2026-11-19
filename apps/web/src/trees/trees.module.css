@@ -4,6 +4,20 @@
  * líneas, el buscador del cuadro de añadir y la pieza del centro cuando está vacío
  */
 
+/* La pestaña: del alto de la página a sangre, con sus cuadros dentro */
+.tab {
+  display: flex;
+  flex-direction: column;
+  block-size: 100%;
+  min-block-size: 0;
+}
+
+.tab > [data-tour="arbol"] {
+  flex: 1 1 0;
+  block-size: auto;
+  min-block-size: 0;
+}
+
 /* «Añadir», a la derecha de las pestañas: discreto, como las herramientas de la pizarra */
 .toolButton {
   display: inline-flex;

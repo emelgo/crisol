@@ -151,7 +151,7 @@ describe('una cronología en su pestaña', () => {
     expect(within(lanes).getByText('La Corona')).toBeDefined()
     expect(within(lanes).getByText('Páginas')).toBeDefined()
     expect(within(lanes).getByText('Sin grupo')).toBeDefined()
-    expect(screen.getByRole('toolbar', { name: 'Zoom' })).toBeDefined()
+    expect(screen.getByRole('toolbar', { name: 'Escala' })).toBeDefined()
     expect(localStorage.getItem(`crisol.cronologia.${TAB}`)).toBe('months')
   })
 
