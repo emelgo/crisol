@@ -85,7 +85,7 @@ test('fechas (módulo 8): fechar una página con el selector, con fin y cada añ
   })
 
   // Quitar Siega, que tiene fechas, se impide al guardar
-  await page.goto(`/mundos/${worldId}/calendarios/${calendar.id}`)
+  await page.goto(`/mundos/${worldId}/calendarios/${calendar.id}/editar?fase=meses`)
   await page.getByRole('region', { name: 'Meses' }).getByRole('button', { name: 'Quitar Siega' }).click()
   await page.getByRole('button', { name: 'Guardar' }).click()
   await expect(page.locator('#contenido').getByText('Hay fechas en un mes que quitas: cámbialas antes')).toBeVisible()

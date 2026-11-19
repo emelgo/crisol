@@ -145,6 +145,7 @@ export async function skipTours(page: Page, email: string) {
           'archivos',
           'calendarios',
           'calendario',
+          'calendario-vista',
           'etiquetas',
           'plantillas',
           'plantilla',
