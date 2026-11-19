@@ -59,7 +59,8 @@ const run = (input: Partial<Parameters<typeof chronologyEntries>[0]>) =>
     calendarId: 'eana',
     events: [],
     pages: [],
-    filter: DEFAULT_CHRONOLOGY_FILTER,
+    // Con las páginas con fecha (por defecto no salen: se prueba aparte)
+    filter: { ...DEFAULT_CHRONOLOGY_FILTER, pages: true },
     ...input
   })
 
@@ -161,7 +162,7 @@ describe('las entradas de una cronología', () => {
     expect((only?.endDay ?? 0) - (only?.startDay ?? 0)).toBe(35)
   })
 
-  it('el filtro: sin páginas, por plantilla y etiqueta (también las de dentro), y por grupos', () => {
+  it('el filtro: sin páginas por defecto (ADR-0032); con ellas, por plantilla y etiqueta (también las de dentro)', () => {
     const pages = [
       page('PNJ', { templates: ['pnj'], tags: ['casa/valmont'] }),
       page('Lugar', { templates: ['lugar'], tags: ['viajes'] })
@@ -169,13 +170,13 @@ describe('las entradas de una cronología', () => {
     const events = [event('Uno', { groupId: 'g1' }), event('Dos', { groupId: 'g2' }), event('Tres')]
     const titles = (filter: Partial<typeof DEFAULT_CHRONOLOGY_FILTER>) =>
       run({ pages, events, filter: { ...DEFAULT_CHRONOLOGY_FILTER, ...filter } }).entries.map((e) => e.title)
-    expect(titles({})).toHaveLength(5)
-    expect(titles({ pages: false })).toEqual(['Dos', 'Tres', 'Uno'])
-    expect(titles({ templates: ['pnj'] })).toContain('PNJ')
-    expect(titles({ templates: ['pnj'] })).not.toContain('Lugar')
-    expect(titles({ tags: ['casa'] })).toContain('PNJ')
-    expect(titles({ tags: ['Casa/Valmont'] })).not.toContain('Lugar')
-    expect(titles({ groups: ['g1'] })).toEqual(['Lugar', 'PNJ', 'Uno'])
+    // Sus eventos, siempre (son suyos); las páginas, solo si se piden
+    expect(titles({})).toEqual(['Dos', 'Tres', 'Uno'])
+    expect(titles({ pages: true })).toHaveLength(5)
+    expect(titles({ pages: true, templates: ['pnj'] })).toContain('PNJ')
+    expect(titles({ pages: true, templates: ['pnj'] })).not.toContain('Lugar')
+    expect(titles({ pages: true, tags: ['casa'] })).toContain('PNJ')
+    expect(titles({ pages: true, tags: ['Casa/Valmont'] })).not.toContain('Lugar')
   })
 
   it('una fecha que ya no cabe en su calendario (su mes se quitó) queda fuera', () => {
@@ -280,8 +281,8 @@ describe('las columnas de la vista de meses', () => {
     ])
     const days = timeColumns(EANA, 'days', from + 30, from + 40)
     expect(timeBands(EANA, 'days', days).map((b) => [b.label, b.span])).toEqual([
-      ['Cierzo de 1250 RC', 5],
-      ['Escarcha de 1250 RC', 6]
+      ['Cierzo del año 1250 RC', 5],
+      ['Escarcha del año 1250 RC', 6]
     ])
   })
 })

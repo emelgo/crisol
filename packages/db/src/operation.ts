@@ -36,6 +36,7 @@ import { campaignWidgets, sceneMarks, sceneSnapshots } from './schema/table-tool
 import { randomTables } from './schema/tables.ts'
 import { tags } from './schema/tags.ts'
 import { pageTemplates, templateFolders } from './schema/templates.ts'
+import { trees } from './schema/trees.ts'
 import { pageBodies } from './schema/versions.ts'
 import { sceneFog, sceneLights, sceneSounds, sceneWalls } from './schema/vision.ts'
 import { worldMembers, worlds } from './schema/worlds.ts'
@@ -68,6 +69,7 @@ export const TRACKED_TABLES = {
   map_elements: mapElements,
   calendars,
   chronologies,
+  trees,
   timeline_groups: timelineGroups,
   timeline_events: timelineEvents,
   characters,

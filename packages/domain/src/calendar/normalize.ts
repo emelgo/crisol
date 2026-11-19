@@ -73,6 +73,7 @@ export interface CalendarDraft {
       }>
     | undefined
   correspondence?: { calendarId?: string | undefined; date: LooseDate } | null | undefined
+  yearRange?: { min?: number | null | undefined; max?: number | null | undefined } | null | undefined
 }
 
 /** El calendario con el que se corresponde (sin decir otro, el principal del mundo) */
@@ -142,7 +143,8 @@ export function normalizeCalendar(
       color: moon.color ?? DEFAULT_MOON_COLOR,
       phases: moon.phases ?? [...DEFAULT_PHASES]
     })),
-    eras: []
+    eras: [],
+    ...yearRangeOf(draft.yearRange)
   }
 
   /** Una fecha de un calendario: el texto, contra él; el objeto, con su mes por id o por nombre */
@@ -213,6 +215,14 @@ export function normalizeCalendar(
     }
   }
   return { definition: base, problems }
+}
+
+/** El rango de años, solo con lo que trae (sin nada, sin rango: el tope general) */
+function yearRangeOf(range: CalendarDraft['yearRange']): Pick<CalendarDefinition, 'yearRange'> {
+  const min = typeof range?.min === 'number' ? range.min : null
+  const max = typeof range?.max === 'number' ? range.max : null
+  if (min === null && max === null) return {}
+  return { yearRange: { ...(min === null ? {} : { min }), ...(max === null ? {} : { max }) } }
 }
 
 const resolveIn = (def: CalendarDefinition, ref: string) =>

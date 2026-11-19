@@ -256,28 +256,75 @@ describe('las propiedades de una página', () => {
 })
 
 describe('el icono de una página', () => {
-  it('sin icono no hay botón para ponerlo: si se quiere, va en el propio título', async () => {
-    renderPort()
+  it('sin icono, el de su tipo se pulsa igual («Cambiar el icono», también con Intro): abre los de la app', async () => {
+    const { api } = renderPort()
     await screen.findByRole('heading', { level: 1, name: 'Puerto Ceniza' })
-    expect(screen.queryByRole('button', { name: 'Añadir icono' })).toBeNull()
-  })
-
-  it('el que ya tiene se cambia por cualquier otro, o se quita', async () => {
-    renderPort([], '⚓')
-    await userEvent.click(await screen.findByRole('button', { name: 'Icono ⚓: cambiarlo' }))
-    await userEvent.type(screen.getByLabelText('Otro emoji'), '🦑')
-    await userEvent.click(screen.getByRole('button', { name: 'Usar' }))
-    await userEvent.click(await screen.findByRole('button', { name: 'Icono 🦑: cambiarlo' }))
-    await userEvent.click(screen.getByRole('button', { name: 'Quitar el icono' }))
-    await waitFor(() => expect(screen.queryByRole('button', { name: /^Icono/ })).toBeNull())
-  })
-  it('uno de rol, del buscador de su caja', async () => {
-    const { api } = renderPort([], '⚓')
-    await userEvent.click(await screen.findByRole('button', { name: 'Icono ⚓: cambiarlo' }))
+    const choose = screen.getByRole('button', { name: 'Cambiar el icono' })
+    expect(choose.getAttribute('aria-expanded')).toBe('false')
+    // Delante del título, en su encabezado
+    expect(choose.closest('header')?.querySelector('h1')).not.toBeNull()
+    choose.focus()
+    await userEvent.keyboard('{Enter}')
+    expect(choose.getAttribute('aria-expanded')).toBe('true')
+    // Sin icono, nada que quitar
+    expect(screen.queryByRole('button', { name: 'Quitar el icono' })).toBeNull()
     await userEvent.type(screen.getByRole('searchbox', { name: 'Buscar un icono' }), 'castillo')
     await userEvent.click(screen.getByRole('button', { name: 'Castillo' }))
     expect(await screen.findByRole('button', { name: 'Icono Castillo: cambiarlo' })).toBeDefined()
     expect(api.calls).toContain('updatePage')
+  })
+
+  it('con la página bloqueada, sin icono no hay botón; con uno, solo se ve', async () => {
+    const { api } = renderPort([], '⚓')
+    await userEvent.click(await screen.findByRole('button', { name: 'Poner en lectura' }))
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Icono ⚓: cambiarlo' })).toBeNull())
+    expect(screen.queryByRole('button', { name: 'Cambiar el icono' })).toBeNull()
+    expect(api.calls).toContain('updatePage')
+  })
+
+  it('el que ya tiene se cambia por uno de la app, del buscador de su caja (sin emojis por defecto), o se quita', async () => {
+    const { api } = renderPort([], '⚓')
+    await userEvent.click(await screen.findByRole('button', { name: 'Icono ⚓: cambiarlo' }))
+    expect(screen.queryByLabelText('Otro emoji')).toBeNull()
+    await userEvent.type(screen.getByRole('searchbox', { name: 'Buscar un icono' }), 'castillo')
+    await userEvent.click(screen.getByRole('button', { name: 'Castillo' }))
+    expect(api.calls).toContain('updatePage')
+    await userEvent.click(await screen.findByRole('button', { name: 'Icono Castillo: cambiarlo' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Quitar el icono' }))
+    await waitFor(() => expect(screen.queryByRole('button', { name: /^Icono/ })).toBeNull())
+    // Quitado, el botón sigue (con el de su tipo) y el foco, en él
+    const choose = screen.getByRole('button', { name: 'Cambiar el icono' })
+    await waitFor(() => expect(document.activeElement).toBe(choose))
+  })
+
+  it('se pone en el propio título: un emoji delante, o «:» y su nombre, que propone los de la app', async () => {
+    renderPort()
+    const title = await screen.findByRole('textbox', { name: 'Título de la página' })
+    await userEvent.click(title)
+    await userEvent.keyboard('{Control>}a{/Control}🏰 Puerto Ceniza{Enter}')
+    expect(await screen.findByRole('button', { name: 'Icono 🏰: cambiarlo' })).toBeDefined()
+    expect(title.textContent).toBe('Puerto Ceniza')
+    // «:» al principio: los de la app; las flechas eligen, Escape los deja sin tocar nada
+    await userEvent.click(title)
+    await userEvent.keyboard('{Home}:ancla')
+    const options = within(await screen.findByRole('listbox', { name: 'Iconos' }))
+    expect(options.getAllByRole('option').length).toBeGreaterThan(0)
+    await userEvent.keyboard('{Escape}')
+    expect(screen.queryByRole('listbox')).toBeNull()
+    expect(title.textContent).toBe(':anclaPuerto Ceniza')
+  })
+
+  it('«:» y su nombre: con el ratón, uno de los propuestos, sin salir del título', async () => {
+    renderPort([], '🏰')
+    const title = await screen.findByRole('textbox', { name: 'Título de la página' })
+    await userEvent.click(title)
+    await userEvent.keyboard('{Home}:ancla')
+    const anchors = within(await screen.findByRole('listbox', { name: 'Iconos' }))
+    await userEvent.click(anchors.getByRole('option', { name: 'Ancla' }))
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Icono 🏰: cambiarlo' })).toBeNull())
+    expect(screen.getByRole('button', { name: 'Icono Ancla: cambiarlo' })).toBeDefined()
+    expect(document.activeElement).toBe(title)
+    expect(title.textContent).toBe('Puerto Ceniza')
   })
 })
 

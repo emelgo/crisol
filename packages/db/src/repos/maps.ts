@@ -5,11 +5,13 @@
 import { and, asc, count, eq, getTableColumns, inArray, isNull, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { type OperationContext, operation } from '../operation.ts'
+import { chronologies, timelineEvents, timelineGroups } from '../schema/chronologies.ts'
 import { files } from '../schema/files.ts'
 import { mapElements, mapLayers, mapPins, maps, pageTabs } from '../schema/maps.ts'
 import { pages } from '../schema/pages.ts'
 import { DEFAULT_SCENE_GRID, scenes } from '../schema/scenes.ts'
 import { randomTables } from '../schema/tables.ts'
+import { trees } from '../schema/trees.ts'
 import { removeSceneWith } from './scenes.ts'
 
 export type PageTabRow = typeof pageTabs.$inferSelect
@@ -52,7 +54,10 @@ export async function findTab(db: Database, tabId: string) {
   return found ?? null
 }
 
-/** Una pestaña nueva; si es un mapa o una escena, con su mapa o su escena vacía */
+/**
+ * Una pestaña nueva; si es un mapa, una escena, una cronología o un árbol, con lo suyo vacío (la cronología, con su
+ * calendario y su filtro; el árbol, con su forma y lo que traiga)
+ */
 export function createTab(
   db: Database,
   context: OperationContext,
@@ -63,10 +68,19 @@ export function createTab(
     name: string
     position: string
     documentId?: string | null
-  }
+  },
+  extra: {
+    chronology?: Pick<typeof chronologies.$inferInsert, 'calendarId' | 'filter'>
+    tree?: Pick<typeof trees.$inferInsert, 'nodes' | 'edges'>
+  } = {}
 ) {
   return operation(db, context, async (w) => {
     const tab = await w.insert(pageTabs, values)
+    if (values.kind === 'chronology') {
+      if (!extra.chronology) throw new Error('Una cronología nace con su calendario y su filtro')
+      await w.insert(chronologies, { worldId: values.worldId, tabId: tab.id, ...extra.chronology })
+    }
+    if (values.kind === 'tree') await w.insert(trees, { worldId: values.worldId, tabId: tab.id, ...extra.tree })
     if (values.kind === 'map') await w.insert(maps, { worldId: values.worldId, tabId: tab.id })
     if (values.kind === 'table') await w.insert(randomTables, { worldId: values.worldId, tabId: tab.id })
     if (values.kind === 'scene')
@@ -84,7 +98,7 @@ export function updateTab(
   return operation(db, context, (w) => w.update(pageTabs, tabId, patch))
 }
 
-/** Quita la pestaña con lo suyo: los pines y lo dibujado del mapa, el mapa y la pestaña, por ese orden */
+/** Quita la pestaña con lo suyo (los pines y lo dibujado del mapa, el mapa, su tabla, su escena, su cronología, su árbol) */
 export function deleteTab(db: Database, context: OperationContext, tabId: string) {
   return operation(db, context, async (w) => {
     const [map] = await w.read.select({ id: maps.id }).from(maps).where(eq(maps.tabId, tabId))
@@ -106,6 +120,26 @@ export function deleteTab(db: Database, context: OperationContext, tabId: string
     // Su escena, con el estado de cada campaña en ella: deshacer devuelve las dos
     const [scene] = await w.read.select({ id: scenes.id }).from(scenes).where(eq(scenes.tabId, tabId))
     if (scene) await removeSceneWith(w, scene.id)
+    // Su cronología con sus eventos y sus grupos (ADR-0032: deshacer los devuelve) y su árbol
+    const [chronology] = await w.read
+      .select({ id: chronologies.id })
+      .from(chronologies)
+      .where(eq(chronologies.tabId, tabId))
+    if (chronology) {
+      const events = await w.read
+        .select({ id: timelineEvents.id })
+        .from(timelineEvents)
+        .where(eq(timelineEvents.chronologyId, chronology.id))
+      for (const event of events) await w.remove(timelineEvents, event.id)
+      const groups = await w.read
+        .select({ id: timelineGroups.id })
+        .from(timelineGroups)
+        .where(eq(timelineGroups.chronologyId, chronology.id))
+      for (const group of groups) await w.remove(timelineGroups, group.id)
+      await w.remove(chronologies, chronology.id)
+    }
+    const [tree] = await w.read.select({ id: trees.id }).from(trees).where(eq(trees.tabId, tabId))
+    if (tree) await w.remove(trees, tree.id)
     await w.remove(pageTabs, tabId)
   })
 }

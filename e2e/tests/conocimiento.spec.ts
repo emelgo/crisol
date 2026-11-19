@@ -77,9 +77,15 @@ test('lo que sabe cada campaña: el máster da a conocer «Aldoria» a La Marca;
     }
   })
 
-  // En la página, «Quién la conoce»: La Marca la conoce
+  // En las páginas del mundo no se revela: ni «Quién la conoce» ni el ojo del árbol (Enrique, 2026-11-19)
   await page.goto(`/mundos/${worldId}/wiki/${id('Aldoria')}`)
-  await page.getByRole('button', { name: 'Quién la conoce' }).click()
+  await expect(page.getByRole('heading', { level: 1, name: 'Aldoria' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Quién la conoce' })).toHaveCount(0)
+  await expect(page.getByRole('treeitem', { name: /Aldoria/ }).locator('[data-known]')).toHaveCount(0)
+
+  // Desde la Mesa de La Marca, en la ventana de la página, «Quién la conoce»: La Marca la conoce
+  await page.goto(`/mundos/${worldId}/campanas/${campaignId}/mesa?pagina=${id('Aldoria')}`)
+  await page.getByRole('dialog', { name: 'Aldoria' }).getByRole('button', { name: 'Quién la conoce' }).click()
   const who = page.getByRole('dialog', { name: 'Quién la conoce' })
   await expect(who.getByRole('region', { name: 'La Marca' })).toContainText('No la ve')
   await who
@@ -87,13 +93,10 @@ test('lo que sabe cada campaña: el máster da a conocer «Aldoria» a La Marca;
     .selectOption({ label: 'Lo sabe toda la campaña' })
   await expect(who.getByRole('region', { name: 'La Marca' })).toContainText('La ve toda la campaña')
   await expect(who.getByRole('region', { name: 'La Marca' })).toContainText('Decidido en esta página')
-  await expect(who.getByRole('region', { name: 'Los del norte' })).toContainText('No la ve')
+  // Desde la Mesa de La Marca, solo ella: lo que se comparte va a la campaña desde la que se hace
+  await expect(who.getByRole('region', { name: 'Los del norte' })).toHaveCount(0)
   await page.screenshot({ path: test.info().outputPath('quien-la-conoce.png'), fullPage: false })
-  // El ojo en el árbol (siempre a la vista en las que conoce alguna campaña; para el lector, dicho en la fila)
   await page.keyboard.press('Escape')
-  const row = page.getByRole('treeitem', { name: /Aldoria/ })
-  await expect(row).toHaveAccessibleName(/La conoce alguna campaña/)
-  await expect(row.locator('[data-known]')).toBeVisible()
 
   // La jugadora de La Marca: en su campaña, las páginas del mundo, con Aldoria y su capital
   const ana = await newPlayer(browser, link, 'Ana')

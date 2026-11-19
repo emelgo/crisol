@@ -75,3 +75,44 @@ export const reject = defineAction({
   input: z.object({ approvalId: z.uuid() }),
   output: approval
 })
+
+/**
+ * Una conexión de IA de la cuenta (ADR-0030): una app (claude.ai) con un conector, Mundos o el de una campaña. El
+ * nombre de la app lo publica ella misma; la interfaz lo enseña con su dominio
+ */
+export const aiConnection = z.object({
+  clientId: z.string(),
+  clientName: z.string().nullable(),
+  /** La dirección del conector, que es también su recurso OAuth */
+  url: z.url(),
+  connector: z.discriminatedUnion('kind', [
+    z.object({ kind: z.literal('worlds') }),
+    z.object({
+      kind: z.literal('campaign'),
+      campaignId: z.uuid(),
+      /** null si ya no se ve (se salió, la expulsaron o está en la papelera) */
+      campaign: z.object({ name: z.string(), worldId: z.uuid() }).nullable()
+    })
+  ]),
+  /** La última vez que la usó (o, si el servidor se ha reiniciado desde entonces, que renovó su acceso) */
+  lastUsedAt: z.iso.datetime()
+})
+
+export type AiConnection = z.infer<typeof aiConnection>
+
+export const listAiConnections = defineAction({
+  name: 'listAiConnections',
+  kind: 'read',
+  description: 'Las apps de IA conectadas a la cuenta, cada una con su conector y su último uso',
+  input: z.object({}),
+  output: z.object({ connections: z.array(aiConnection) })
+})
+
+export const removeAiConnection = defineAction({
+  name: 'removeAiConnection',
+  kind: 'write',
+  description:
+    'Quita una conexión de IA: deja de valer al momento y, para volver, hay que conectarla otra vez. Solo desde la interfaz',
+  input: z.object({ clientId: z.string().min(1).max(500), url: z.url() }),
+  output: z.object({ connections: z.array(aiConnection) })
+})

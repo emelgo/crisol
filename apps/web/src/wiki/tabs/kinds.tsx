@@ -5,7 +5,17 @@
  */
 
 import type { TFunction } from 'i18next'
-import { ChevronLeft, Dices, FileText, Grid3x3, LayoutTemplate, Map as MapIcon, PenTool } from 'lucide-react'
+import {
+  CalendarRange,
+  ChevronLeft,
+  Dices,
+  FileText,
+  GitFork,
+  Grid3x3,
+  LayoutTemplate,
+  Map as MapIcon,
+  PenTool
+} from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import styles from './page-tabs.module.css'
 
@@ -16,12 +26,18 @@ export const TAB_KINDS = [
   // que hay se siguen viendo
   { kind: 'table', icon: Dices, ready: true, newPage: false, newTab: false },
   { kind: 'scene', icon: Grid3x3, ready: true, newPage: false, newTab: false },
-  // Sin «Línea temporal» (el tiempo vive en las cronologías de Calendarios, módulo 8) ni «Árbol familiar» (la pestaña
-  // «Relaciones» de cada página lo calcula de sus campos, módulo 10)
-  { kind: 'board', icon: PenTool, ready: true, newPage: true, newTab: true }
+  { kind: 'board', icon: PenTool, ready: true, newPage: true, newTab: true },
+  // La cronología, como en LegendKeeper (ADR-0031), y el árbol, como en Everlore (uno solo: un organigrama es un árbol
+  // con líneas «dirige» y «miembro de»)
+  { kind: 'chronology', icon: CalendarRange, ready: true, newPage: true, newTab: true },
+  { kind: 'tree', icon: GitFork, ready: true, newPage: true, newTab: true }
 ] as const
 
+/** Lo que se elige al crear */
 export type TabKind = (typeof TAB_KINDS)[number]['kind']
+
+/** Lo que se pide al servidor por lo elegido */
+export const tabRequest = (choice: TabKind) => ({ kind: choice })
 
 /**
  * El nombre de la zona de una pestaña con lienzo para el lector de pantalla: «Pizarra Conspiración»; si se llama como su

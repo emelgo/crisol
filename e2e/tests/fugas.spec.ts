@@ -1278,7 +1278,7 @@ test('@fugas las fechas: un campo «Oculto» de fecha no le llega a la jugadora 
     pageId: port.id,
     properties: read.properties.map((p: { name: string }) => (p.name === 'Fundación' ? p : { ...p, hidden: true }))
   })
-  await expect(player.getByRole('main')).toContainText('12 de Siega de 412 RV')
+  await expect(player.getByRole('main')).toContainText('12 de Siega del año 412 RV')
   const bodies: string[] = []
   for (const [name, data] of [
     ['getPage', { pageId: port.id, campaignId }],
@@ -1290,13 +1290,13 @@ test('@fugas las fechas: un campo «Oculto» de fecha no le llega a la jugadora 
     expect(response.status(), name).toBe(200)
     bodies.push(await response.text())
   }
-  expect(bodies.join('\n')).toContain('12 de Siega de 412 RV')
+  expect(bodies.join('\n')).toContain('12 de Siega del año 412 RV')
   const everything = [await captured.all(), ...bodies].join('\n')
-  for (const leak of ['Coronación', 'Vendimia de 415', '415-Vendimia']) expect(everything).not.toContain(leak)
+  for (const leak of ['Coronación', 'Vendimia del año 415', '415-Vendimia']) expect(everything).not.toContain(leak)
   await player.close()
 })
 
-test('@fugas las cronologías: la jugadora solo ve las reveladas y, dentro, lo que sabe su campaña, por la API, el tiempo real y lo que abre (módulo 8)', async ({
+test('@fugas las cronologías: la jugadora solo ve las de las pestañas que conoce y, dentro, lo que sabe su campaña (sin los eventos de las demás), por la API, el tiempo real y lo que abre (módulo 8, ADR-0031 y ADR-0032)', async ({
   page,
   browser
 }) => {
@@ -1338,8 +1338,15 @@ test('@fugas las cronologías: la jugadora solo ve las reveladas y, dentro, lo q
     ]
   })
   await api('setKnowledge', { worldId, campaignId, kind: 'page', targetId: port.id, known: true })
+  const secret = await api('createChronology', { worldId, name: 'Los Planes del Culto' })
+  const shown = await api('createChronology', { worldId, name: 'Historia de Valdren', filter: { pages: true } })
+  // Los eventos de la secreta, que no se le enseñó: no salen en la otra (cada evento es de una)
+  await api('createTimelineEvents', {
+    chronologyId: secret.id,
+    events: [{ title: 'El Ritual de la Cripta', date: '1250-Siega-5' }]
+  })
   const { events } = await api('createTimelineEvents', {
-    worldId,
+    chronologyId: shown.id,
     events: [
       { title: 'La Coronación', date: '0-Siega-1' },
       { title: 'El Asesinato del Rey', date: '1250-Siega-2', hidden: true },
@@ -1348,9 +1355,8 @@ test('@fugas las cronologías: la jugadora solo ve las reveladas y, dentro, lo q
       { date: '1252', pageId: tower.id }
     ]
   })
-  const secret = await api('createChronology', { worldId, name: 'Los Planes del Culto' })
-  const shown = await api('createChronology', { worldId, name: 'Historia de Valdren' })
-  await api('setKnowledge', { worldId, campaignId, kind: 'chronology', targetId: shown.id, known: true })
+  // Una cronología es una pestaña: se ve con su página
+  await api('setKnowledge', { worldId, campaignId, kind: 'page', targetId: shown.pageId, known: true })
   await api('setKnowledge', { worldId, campaignId, kind: 'event', targetId: events[2].id, known: true })
   let seen: ReturnType<typeof capture> | undefined
   const player = await newPlayer(browser, link, 'Jugadora', (p) => {
@@ -1358,12 +1364,12 @@ test('@fugas las cronologías: la jugadora solo ve las reveladas y, dentro, lo q
   })
   if (!seen) throw new Error('sin captura')
   const captured = seen
-  await gotoLive(player, `/mundos/${worldId}/campanas/${campaignId}/cronologias/${shown.id}`)
+  await gotoLive(player, `/mundos/${worldId}/campanas/${campaignId}/paginas/${shown.pageId}?pestana=${shown.tabId}`)
   await expect(player.getByRole('heading', { level: 1, name: 'Historia de Valdren' })).toBeVisible()
   await expect(player.getByRole('heading', { name: 'El Pacto Revelado' })).toBeVisible()
   // Mientras mira, el máster crea otro evento oculto: el aviso le llega sin decir qué
   await api('createTimelineEvents', {
-    worldId,
+    chronologyId: shown.id,
     events: [{ title: 'La Noche Roja', date: '1250-Vendimia-1', hidden: true }]
   })
   await expect.poll(() => captured.frames.some((f) => f.includes('"chronologies"'))).toBe(true)
@@ -1377,19 +1383,32 @@ test('@fugas las cronologías: la jugadora solo ve las reveladas y, dentro, lo q
     bodies.push(await response.text())
   }
   expect(bodies.join('\n')).toContain('Visita a la Torre')
-  // La que no se le enseñó, ni por su id
+  // La que no se le enseñó, ni por su id ni por el de su pestaña
   expect(
     (
       await player.request.post('/api/actions/getChronology', { data: { chronologyId: secret.id, campaignId } })
     ).status()
   ).toBe(404)
+  expect(
+    (await player.request.post('/api/actions/getChronology', { data: { tabId: secret.tabId, campaignId } })).status()
+  ).toBe(404)
   const everything = [await captured.all(), ...bodies].join('\n')
-  for (const leak of ['Asesinato', 'Noche Roja', 'Torre Negra', tower.id, 'Traición', 'Eclipse', 'Planes del Culto'])
+  for (const leak of [
+    'Asesinato',
+    'Noche Roja',
+    'Torre Negra',
+    tower.id,
+    'Traición',
+    'Eclipse',
+    'Planes del Culto',
+    'Ritual de la Cripta'
+  ])
     expect(everything).not.toContain(leak)
   // Y no escribe
   for (const [name, data] of [
     ['createChronology', { worldId, name: 'Mía' }],
-    ['createTimelineEvents', { worldId, events: [{ title: 'x', date: '1' }] }],
+    ['createTimelineEvents', { chronologyId: shown.id, events: [{ title: 'x', date: '1' }] }],
+    ['updateTimelineGroups', { chronologyId: shown.id, groups: [] }],
     ['updateTimelineEvent', { eventId: events[0].id, title: 'y' }],
     ['deleteTimelineEvent', { eventId: events[0].id }],
     ['convertEventToPage', { eventId: events[0].id, parentId: null }]
@@ -1398,7 +1417,7 @@ test('@fugas las cronologías: la jugadora solo ve las reveladas y, dentro, lo q
   await player.close()
 })
 
-test('@fugas las relaciones: la jugadora no recibe ni aristas, ni nodos, ni nombres de lo que su campaña no conoce, por la API ni al abrir la pestaña o el grafo del mundo (módulo 10)', async ({
+test('@fugas las relaciones: la jugadora no recibe ni aristas, ni nodos, ni nombres de lo que su campaña no conoce, por la API ni al abrir el grafo de una página o el del mundo (módulo 10)', async ({
   page,
   browser
 }) => {
@@ -1444,10 +1463,13 @@ test('@fugas las relaciones: la jugadora no recibe ni aristas, ni nodos, ni nomb
     seen = capture(p)
   })
   if (!seen) throw new Error('sin captura')
-  await player.goto(`/mundos/${worldId}/campanas/${campaignId}/paginas/${id.ilsa}?pestana=relaciones`)
-  await expect(player.getByRole('button', { name: 'El Puerto' }).first()).toBeVisible()
-  await player.goto(`/mundos/${worldId}/campanas/${campaignId}/relaciones`)
-  await expect(player.getByRole('heading', { level: 1, name: 'Relaciones' })).toBeVisible()
+  // El grafo de su página, desde «Mencionado en», y el del mundo, en su ventana
+  await player.goto(`/mundos/${worldId}/campanas/${campaignId}/paginas/${id.ilsa}?grafo=${id.ilsa}`)
+  await expect(
+    player.getByRole('dialog', { name: 'Relaciones de Ilsa de Varn' }).getByRole('button', { name: 'El Puerto' })
+  ).toBeVisible()
+  await player.goto(`/mundos/${worldId}/campanas/${campaignId}/paginas/${id.ilsa}?grafo=mundo`)
+  await expect(player.getByRole('dialog', { name: 'Relaciones del mundo' })).toBeVisible()
   const bodies: string[] = []
   for (const [name, data] of [
     ['getRelations', { pageId: id.ilsa, campaignId }],
@@ -1470,6 +1492,74 @@ test('@fugas las relaciones: la jugadora no recibe ni aristas, ni nodos, ni nomb
     expect(everything).not.toContain(leak)
   // El Topo lo conoce, pero solo se le nombra en un secreto sin revelar: ni arista ni nodo en la pestaña de Ilsa
   expect(bodies[0]).not.toContain(id.topo)
+  await player.close()
+})
+
+test('@fugas los árboles genealógicos: la jugadora ve la pestaña que conoce, con los nodos de lo que conoce y los sueltos; nada de lo demás, ni en el grafo', async ({
+  page,
+  browser
+}) => {
+  const link = await campaignLink(page)
+  const [, , worldId = '', , campaignId = ''] = campaignPath(page).split('/')
+  const api = async (name: string, data: object) => {
+    const response = await page.request.post(`/api/actions/${name}`, { data })
+    expect(response.status(), name).toBe(200)
+    return response.json()
+  }
+  const ilsa = await api('createPage', { worldId, title: 'Ilsa de Varn' })
+  const hidden = await api('createPage', { worldId, title: 'La Hija Secreta' })
+  const tree = await api('createTree', {
+    worldId,
+    name: 'Casa de Varn',
+    nodes: [
+      { id: 'ilsa', pageId: ilsa.id },
+      { id: 'hija', pageId: hidden.id },
+      { id: 'mira', name: 'Mira de Varn' }
+    ],
+    edges: [
+      { from: 'mira', to: 'ilsa', type: 'parent' },
+      { from: 'ilsa', to: 'hija', type: 'parent' }
+    ]
+  })
+  const plans = await api('createTree', {
+    worldId,
+    name: 'Los Planes del Culto',
+    nodes: [{ id: 'x', name: 'El Topo' }]
+  })
+  for (const pageId of [tree.pageId, ilsa.id])
+    await api('setKnowledge', { worldId, campaignId, kind: 'page', targetId: pageId, known: true })
+  let seen: ReturnType<typeof capture> | undefined
+  const player = await newPlayer(browser, link, 'Jugadora', (p) => {
+    seen = capture(p)
+  })
+  if (!seen) throw new Error('sin captura')
+  await player.goto(`/mundos/${worldId}/campanas/${campaignId}/paginas/${tree.pageId}?pestana=${tree.tabId}`)
+  await expect(player.getByRole('button', { name: 'Mira de Varn' })).toBeVisible()
+  await expect(player.getByRole('button', { name: 'Ilsa de Varn' })).toBeVisible()
+  const bodies: string[] = []
+  for (const [name, data] of [
+    ['getTree', { tabId: tree.tabId, campaignId }],
+    ['getRelations', { pageId: ilsa.id, campaignId }],
+    ['getWorldGraph', { worldId, campaignId, orphans: true }]
+  ] as const) {
+    const response = await player.request.post(`/api/actions/${name}`, { data })
+    expect(response.status(), name).toBe(200)
+    bodies.push(await response.text())
+  }
+  expect(bodies[0]).toContain('Mira de Varn')
+  // El de una página que no conoce, ni por su pestaña
+  expect(
+    (await player.request.post('/api/actions/getTree', { data: { tabId: plans.tabId, campaignId } })).status()
+  ).toBe(404)
+  const everything = [await seen.all(), ...bodies].join('\n')
+  for (const leak of ['Hija Secreta', hidden.id, 'El Topo', 'Planes del Culto']) expect(everything).not.toContain(leak)
+  // Y no escribe
+  for (const [name, data] of [
+    ['updateTree', { tabId: tree.tabId, nodes: [] }],
+    ['convertTreeNodeToPage', { tabId: tree.tabId, nodeId: 'mira' }],
+    ['createTree', { worldId, name: 'Mío' }]
+  ] as const)
+    expect([403, 404]).toContain((await player.request.post(`/api/actions/${name}`, { data })).status())
   await player.close()
 })
 

@@ -36,6 +36,7 @@ import { BusyButton } from '../components/busy-button.tsx'
 import { FormError } from '../components/field.tsx'
 import { failed, LoadError, SectionError } from '../components/load-error.tsx'
 import { PageTitle } from '../components/page-title.tsx'
+import segmented from '../components/segmented.module.css'
 import { useSettled } from '../components/settled.ts'
 import { SystemImage } from '../components/system-image.tsx'
 import { Tour } from '../components/tour.tsx'
@@ -413,10 +414,10 @@ export function Compendium({
             )}
           </div>
           {world && (
-            <fieldset className={styles.layers}>
+            <fieldset className={`${segmented.group} ${styles.layers}`}>
               <legend className={styles.hidden}>{t('compendium.layers')}</legend>
               {LAYERS.map((each) => (
-                <label key={each} className={styles.layer}>
+                <label key={each}>
                   <input
                     type="radio"
                     name="capa"
@@ -430,7 +431,7 @@ export function Compendium({
             </fieldset>
           )}
           {sources.length > 0 && !fixedBook && (
-            <fieldset className={styles.view}>
+            <fieldset className={`${segmented.group} ${styles.view}`}>
               <legend className={styles.hidden}>{t('compendium.view')}</legend>
               <button type="button" aria-pressed={view === 'type'} onClick={() => setView('type')}>
                 {t('compendium.byType')}

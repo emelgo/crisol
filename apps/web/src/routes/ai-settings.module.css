@@ -47,3 +47,39 @@
 .embedded {
   display: contents;
 }
+
+/* Una conexión: a qué conector (el nombre) y, debajo, qué app y cuándo (el nombre de la app lo pone ella: se parte) */
+.connection {
+  display: block;
+  margin-block-start: 2px;
+  overflow-wrap: anywhere;
+}
+
+/* Entre el conector y la app, una pausa para los lectores de pantalla (a la vista ya van en dos líneas) */
+.pause {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Las campañas de quien no crea mundos: enlaces a su Inicio, donde está su conector */
+.campaigns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.campaigns a {
+  color: var(--color-link);
+  font-weight: 600;
+}
+
+.campaigns a:hover {
+  text-decoration: underline;
+}

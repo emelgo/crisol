@@ -387,3 +387,10 @@
   background: var(--color-raised);
   text-decoration: none;
 }
+
+/* Su conector de IA: si ya hay una conectada, cuál y cuándo, encima de la dirección */
+.connected {
+  margin: 0 0 var(--space-2);
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}

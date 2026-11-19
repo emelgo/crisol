@@ -1,7 +1,8 @@
 /**
  * «Calendarios», la pantalla del tiempo del mundo (módulo 8; lienzo aprobado, pantalla 1): una ficha por calendario con
- * el año dibujado, el principal marcado, su engranaje con lo que se puede hacer con él, reordenar arrastrando (o con
- * Alt y las flechas) y «Calendario nuevo» al final. Solo para quien lleva el mundo: la jugadora los lee con las fechas
+ * el año dibujado (al pulsarla, se ve en grande), el principal marcado, su engranaje con lo que se puede hacer con él
+ * (abrirlo, editarlo…), reordenar arrastrando (o con Alt y las flechas) y «Calendario nuevo» al final. Solo para quien
+ * lleva el mundo: la jugadora los lee con las fechas
  */
 import type { CalendarView } from '@crisol/contracts'
 import { yearLength } from '@crisol/domain'
@@ -13,7 +14,6 @@ import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
-import { ChronologySection } from '../chronologies/section.tsx'
 import { useAnnounce } from '../components/announcer.tsx'
 import { Loading } from '../components/brand.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
@@ -100,12 +100,9 @@ function Calendars({ worldId }: { worldId: string }) {
       ) : (
         <CalendarList worldId={worldId} calendars={list} onNew={open} />
       )}
-      {/* Las cronologías del mundo, bajo los calendarios (decisión 4 de Enrique): con algún calendario */}
-      {list.length > 0 && <ChronologySection worldId={worldId} calendars={list} />}
       {creating && (
         <NewCalendarDialog
           worldId={worldId}
-          calendars={list}
           onClose={() => {
             setCreating(false)
             opener.current?.focus()
@@ -116,8 +113,7 @@ function Calendars({ worldId }: { worldId: string }) {
         id="calendarios"
         steps={[
           { target: '[data-tour="calendarios-lista"]', text: t('tour.calendars.list') },
-          { target: '[data-tour="calendarios-nuevo"]', text: t('tour.calendars.create') },
-          { target: '[data-tour="cronologias"]', text: t('tour.calendars.chronologies') }
+          { target: '[data-tour="calendarios-nuevo"]', text: t('tour.calendars.create') }
         ]}
       />
     </Screen>
@@ -332,6 +328,9 @@ function CalendarCard({
             <>
               <Link to="/mundos/$worldId/calendarios/$calendarId" params={params} className={styles.menuLink}>
                 {t('calendars.open')}
+              </Link>
+              <Link to="/mundos/$worldId/calendarios/$calendarId/editar" params={params} className={styles.menuLink}>
+                {t('calendars.edit')}
               </Link>
               {!calendar.primary && (
                 <MenuItem

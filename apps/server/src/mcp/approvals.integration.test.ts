@@ -242,6 +242,45 @@ describe('la IA según el modo, y la cola de aprobación', () => {
     expect(await pending()).toHaveLength(20)
   })
 
+  it('en el conector de una campaña manda el papel en ella (ADR-0030): la jugadora no revela, pero tira y escribe lo suyo', async () => {
+    await conn.db.insert(schema.campaignMembers).values({ campaignId: campaign.id, userId: 'u2', role: 'player' })
+    const [org] = await conn.db.select().from(schema.organizations)
+    const inCampaign = (role: 'master' | 'player') => ({
+      kind: 'campaign' as const,
+      campaignId: campaign.id,
+      worldId: world.id,
+      organizationId: org?.id ?? '',
+      name: 'La Marca',
+      role
+    })
+    const page = (await run('createPage', { worldId: world.id, title: 'Varn' })) as { id: string }
+    const scoped = (userId: string, role: 'master' | 'player', name: string, input: object) =>
+      callAsAi(env, {
+        userId,
+        tool: name,
+        impl: impl(name),
+        input: impl(name).action.input.parse(input) as Record<string, unknown>,
+        waitMs: 50,
+        scope: inCampaign(role)
+      })
+    const reveal = { worldId: world.id, campaignId: campaign.id, kind: 'page', targetId: page.id }
+    const refused = await scoped('u2', 'player', 'reveal', reveal)
+    expect(textOf(refused)).toMatch(/^READ_ONLY: en esta campaña/)
+    // Tirar a la vista es lo suyo, y con su modo (copiloto) se hace
+    const rolled = await scoped('u2', 'player', 'rollDice', {
+      campaignId: campaign.id,
+      formula: '1d20',
+      visibility: 'all'
+    })
+    expect(rolled.isError, textOf(rolled)).toBeUndefined()
+    // Su página, solo si su campaña puede escribirla
+    const page2 = await scoped('u2', 'player', 'editPage', { pageId: page.id, body: { mode: 'append', markdown: 'x' } })
+    expect(textOf(page2)).toMatch(/^READ_ONLY: en esta campaña/)
+    // El máster revela, con su aprobación (copiloto)
+    expect(textOf(await scoped('u1', 'master', 'reveal', reveal))).toMatch(/^PENDING_APPROVAL/)
+    expect((await pending())[0]).toMatchObject({ action: 'reveal', details: { campaign: 'La Marca' } })
+  })
+
   it('los ajustes dicen el modo y la dirección del conector', async () => {
     expect(await run('getAiSettings', {})).toEqual({ mode: 'copilot', connectorUrl: `${BASE_URL}/mcp` })
     expect(await run('setAiMode', { mode: 'assistant' })).toEqual({

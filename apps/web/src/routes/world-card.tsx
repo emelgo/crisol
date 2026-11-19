@@ -1,7 +1,7 @@
 import { type Campaign, type PageCover as Cover, WORLD_COLORS, type World } from '@crisol/contracts'
 import { TRASH_DAYS } from '@crisol/domain'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link, useNavigate } from '@tanstack/react-router'
+import { Link, useNavigate, useRouter } from '@tanstack/react-router'
 import { CircleOff, ImagePlus, Maximize2, Plus, Settings } from 'lucide-react'
 import { type CSSProperties, type ReactNode, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -193,7 +193,7 @@ function LookCard({
         if (event.animationName.includes('enfria')) setEntering(false)
         if (event.animationName.includes('arde')) burnt.current?.()
       }}
-      style={{ ...tint(look.color), ...style }}
+      style={tint(look.color)}
       data-card={look.id}
       onPointerEnter={(event) => {
         // Lo de una ventana abierta desde la tarjeta (en un portal) también cuenta como dentro: eso no la enseña
@@ -212,6 +212,8 @@ function LookCard({
       <CoverHeader
         url={image?.url}
         cover={look.cover}
+        travels
+        travelStyle={style}
         actions={
           image && (
             <button
@@ -259,6 +261,9 @@ function LookCard({
   )
 }
 
+/** Lo que se espera, como mucho, a la portada de un mundo antes de entrar en él */
+const ENTER_WAIT_MS = 700
+
 /** La tarjeta de un mundo: lleva a él, y al entrar se convierte en su cabecera */
 export function WorldCard({
   world,
@@ -276,23 +281,27 @@ export function WorldCard({
   const kind = useWorldKind()
   const api = useApi()
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
+  const router = useRouter()
+  const entering = useRef(false)
   // Al acercarse, su portada se pide ya: al entrar, sale sin esperar
-  const prefetch = () => {
-    if (world.role !== 'master') return
-    void queryClient
+  const prefetch = (): Promise<unknown> => {
+    if (world.role !== 'master') return Promise.resolve()
+    return queryClient
       .fetchQuery({
         queryKey: ['pages', world.id, 'home'],
         queryFn: () => api.call('getWorldHome', { worldId: world.id }),
         staleTime: 30_000
       })
-      .then(({ pageId }) => {
-        if (pageId)
-          void queryClient.prefetchQuery({
-            queryKey: ['pages', world.id, 'page', pageId],
-            queryFn: () => api.call('getPage', { pageId }),
-            staleTime: 30_000
-          })
-      })
+      .then(({ pageId }) =>
+        pageId
+          ? queryClient.prefetchQuery({
+              queryKey: ['pages', world.id, 'page', pageId],
+              queryFn: () => api.call('getPage', { pageId }),
+              staleTime: 30_000
+            })
+          : undefined
+      )
       .catch(() => undefined)
   }
   return (
@@ -304,7 +313,7 @@ export function WorldCard({
       burning={burning}
       {...(onBurnt ? { onBurnt } : {})}
       onPreview={(shown) => {
-        if (shown) prefetch()
+        if (shown) void prefetch()
         onPreview?.(shown)
       }}
       name={
@@ -313,7 +322,25 @@ export function WorldCard({
           params={{ worldId: world.id }}
           className={styles.name}
           viewTransition={ENTER_WORLD}
-          onClick={(event) => enterWorld(world.id, event.currentTarget.closest('li'))}
+          onClick={(event) => {
+            // Con una tecla (otra pestaña, otra ventana), el enlace sin más
+            if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+            event.preventDefault()
+            // Una sola entrada a la vez (un doble clic repetiría las brasas y el nombre, y no habría transición)
+            if (entering.current) return
+            entering.current = true
+            const link = event.currentTarget
+            const from = router.state.location.pathname
+            enterWorld(world.id, link.closest('li'))
+            // Se entra con su portada ya pedida (como mucho, un momento): si llegara a mitad de la transición, su cabecera
+            // se volvería a montar y el navegador cortaría la transición en seco (el salto del final)
+            void Promise.race([prefetch(), new Promise((resolve) => setTimeout(resolve, ENTER_WAIT_MS))]).then(() => {
+              entering.current = false
+              // Si entretanto se fue a otro sitio, ya no
+              if (!link.isConnected || router.state.location.pathname !== from) return
+              void navigate({ to: '/mundos/$worldId', params: { worldId: world.id }, viewTransition: ENTER_WORLD })
+            })
+          }}
         >
           {world.name}
         </Link>
@@ -378,14 +405,24 @@ export function CampaignCard({
  */
 export function WorldBanner({ world }: { world: World }) {
   const kind = useWorldKind()
+  // Su engranaje va junto al nombre del mundo, en la ficha del árbol (WorldSettings)
+  // Lo que viaja al entrar y salir es la franja que la enseña (wiki.tsx), no ella: su imagen es más alta que lo que se ve
+  return <LookHeader banner kind={kind} look={world} />
+}
+
+/**
+ * El engranaje del mundo, a la derecha de su nombre en la cabecera de la ficha del árbol (Enrique, 2026-11-19): abre su
+ * ventana; borrado desde ahí, a Mis mundos, saliendo de él
+ */
+export function WorldSettings({ world, className }: { world: World; className?: string }) {
+  const kind = useWorldKind()
   const navigate = useNavigate()
   return (
-    <LookHeader
-      banner
+    <LookSettings
       kind={kind}
       look={world}
-      style={worldTransition(world.id)}
-      // Borrado desde dentro: a Mis mundos, saliendo de él
+      className={className}
+      iconSize={15}
       afterDelete={() => void navigate({ to: '/mundos', viewTransition: LEAVE_WORLD })}
     />
   )
@@ -405,8 +442,9 @@ export function LookHeader({
   kind: LookKind
   look: Look
   style?: CSSProperties | undefined
-  afterDelete: () => void
-  /** Como portada ancha de la página de portada del mundo (Everlore): la imagen, con el engranaje encima */
+  /** Si se borra desde su engranaje (en la cabecera), adónde se va */
+  afterDelete?: () => void
+  /** Como portada ancha de la página de portada del mundo (Everlore): la imagen, sin engranaje (va en la ficha del árbol) */
   banner?: boolean
 }) {
   const { t } = useTranslation()
@@ -414,7 +452,7 @@ export function LookHeader({
   const [viewing, setViewing] = useState(false)
   if (banner) {
     return (
-      <header className={styles.banner} style={{ ...tint(look.color), ...style }}>
+      <header className={styles.banner} style={tint(look.color)} data-mundo-portada="">
         <CoverHeader
           url={image?.url}
           cover={look.cover}
@@ -431,19 +469,16 @@ export function LookHeader({
         {viewing && image && (
           <CoverViewer url={image.url} label={t('cover.of', { name: look.name })} onClose={() => setViewing(false)} />
         )}
-        {look.role === 'master' && (
-          <div className={styles.bannerGear}>
-            <LookSettings kind={kind} look={look} afterDelete={afterDelete} />
-          </div>
-        )}
       </header>
     )
   }
   return (
-    <header className={styles.hero} style={{ ...tint(look.color), ...style }}>
+    <header className={styles.hero} style={tint(look.color)} data-mundo-portada="">
       <CoverHeader
         url={image?.url}
         cover={look.cover}
+        travels
+        travelStyle={style}
         hero
         actions={
           image && (
@@ -465,7 +500,7 @@ export function LookHeader({
         <div className={styles.footer}>
           {/* El papel (máster o jugador) es de las campañas, no de los mundos */}
           {kind.texts === 'campaigns' && <span className={styles.role}>{t(`roles.${look.role}`)}</span>}
-          {look.role === 'master' && <LookSettings kind={kind} look={look} afterDelete={afterDelete} />}
+          {look.role === 'master' && <LookSettings kind={kind} look={look} {...(afterDelete ? { afterDelete } : {})} />}
         </div>
       </div>
     </header>
@@ -474,25 +509,30 @@ export function LookHeader({
 
 /**
  * La portada: la imagen o, sin ella, un hueco con un tinte oscuro de su color. Al pasar el ratón se acerca un poco y
- * salen sus acciones (Ver, Cambiar). large: la de su ventana; hero: la de la cabecera
+ * salen sus acciones (Ver, Cambiar). large: la de su ventana; hero: la de la cabecera. travels: su marco es lo que viaja
+ * al entrar en el mundo o salir (data-portada-imagen), con travelStyle (su nombre de transición, si toca)
  */
 function CoverHeader({
   url,
   cover,
   large = false,
   hero = false,
+  travels = false,
+  travelStyle,
   actions
 }: {
   url: string | undefined
   cover: Cover | null
   large?: boolean
   hero?: boolean
+  travels?: boolean
+  travelStyle?: CSSProperties | undefined
   actions?: ReactNode
 }) {
   const classes = [styles.header, large ? styles.large : '', hero ? styles.heroCover : ''].filter(Boolean)
   return (
     <div className={classes.join(' ')}>
-      <div className={styles.frame}>
+      <div className={styles.frame} {...(travels ? { style: travelStyle, 'data-portada-imagen': '' } : {})}>
         <div className={styles.picture}>
           {url && cover && (
             <img
@@ -578,18 +618,22 @@ export function NewWorld({ big = false }: { big?: boolean }) {
   return <NewLook kind={useWorldKind()} big={big} tour="nuevo-mundo" />
 }
 
-/** El engranaje (para quien lo dirige): abre su ventana */
+/** El engranaje (para quien lo dirige): abre su ventana. className e iconSize, fuera de su tarjeta */
 function LookSettings({
   kind,
   look,
   afterDelete,
-  onOpen
+  onOpen,
+  className,
+  iconSize = 18
 }: {
   kind: LookKind
   look: Look
   afterDelete?: () => void
   /** Al abrir su ventana */
   onOpen?: () => void
+  className?: string | undefined
+  iconSize?: number
 }) {
   const { t } = useTranslation()
   const trigger = useRef<HTMLButtonElement>(null)
@@ -599,7 +643,7 @@ function LookSettings({
       <button
         ref={trigger}
         type="button"
-        className={styles.gear}
+        className={className ?? styles.gear}
         aria-label={t(`${kind.texts}.settingsOf`, { name: look.name })}
         title={t(`${kind.texts}.settingsOf`, { name: look.name })}
         aria-haspopup="dialog"
@@ -609,7 +653,7 @@ function LookSettings({
           setOpen(true)
         }}
       >
-        <Settings aria-hidden="true" size={18} />
+        <Settings aria-hidden="true" size={iconSize} />
       </button>
       {open && (
         <LookDialog

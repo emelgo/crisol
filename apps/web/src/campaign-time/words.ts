@@ -52,8 +52,8 @@ export function relativeDays(t: TFunction, today: number, day: number, year: num
   return t(diff < 0 ? 'campaignTime.relative.ago' : 'campaignTime.relative.in', { amount })
 }
 
-/** «Lunden, 7 de Brumas de 1247 RV» → «Lunden, 7 de Brumas» */
-export const withoutYear = (text: string) => text.replace(/ de -?\d[\d.]*(\s.*)?$/, '')
+/** «Lunden, 7 de Brumas del año 1247 RV» → «Lunden, 7 de Brumas» (también con el «de 1247» de antes) */
+export const withoutYear = (text: string) => text.replace(/ (?:del año|de) -?\d[\d.]*(\s.*)?$/, '')
 
-/** «6 de Brumas» de «Solen, 6 de Brumas de 1247 RV» */
+/** «6 de Brumas» de «Solen, 6 de Brumas del año 1247 RV» */
 export const chipDate = (text: string) => withoutYear(text).replace(/^[^,]+,\s*/, '')

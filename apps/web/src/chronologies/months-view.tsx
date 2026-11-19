@@ -5,7 +5,8 @@
  * festividades, más estrechas y con su color); en Días, una por día con el mes encima. Un evento de un día es un punto
  * con su título; un periodo, una barra. La ventana crece por los dos lados al desplazarse; se arrastra el fondo para
  * moverse. El máster arrastra una barra para moverla en el tiempo, renombra un grupo con doble clic, lo reordena
- * arrastrando su nombre y crea otro con «+ Grupo»
+ * arrastrando su nombre y crea otro con «+ Nuevo grupo», arriba a la izquierda (en la esquina de los nombres, como en
+ * Everlore). Los grupos son de la cronología (ADR-0032); «Sin grupo» sale si hace falta (sin grupos, «Eventos»)
  */
 import { type ChronologyEntryView, type TimelineGroupView, WORLD_COLORS } from '@crisol/contracts'
 import {
@@ -109,8 +110,16 @@ export function MonthsView({
     return (offsets[index] ?? 0) + width * fraction
   }
 
-  // Los carriles: los grupos en su orden, las páginas y «Sin grupo» al final
+  // Los carriles: los grupos en su orden, las páginas y «Sin grupo» al final (si queda algo sin grupo; sin grupos,
+  // un solo carril, «Eventos»)
   const hasPages = entries.some((e) => e.kind === 'page')
+  const laneOf = (entry: ChronologyEntryView) =>
+    entry.kind === 'page'
+      ? 'pages'
+      : entry.groupId && groups.some((g) => g.id === entry.groupId)
+        ? entry.groupId
+        : 'none'
+  const ungrouped = groups.length === 0 || entries.some((entry) => laneOf(entry) === 'none')
   const lanes: Lane[] = [
     ...groups.map((g) => ({
       id: g.id,
@@ -119,14 +128,17 @@ export function MonthsView({
       kind: 'group' as const
     })),
     ...(hasPages ? [{ id: 'pages', name: t('chronologies.lanes.pages'), color: null, kind: 'pages' as const }] : []),
-    { id: 'none', name: t('chronologies.lanes.none'), color: null, kind: 'none' as const }
+    ...(ungrouped
+      ? [
+          {
+            id: 'none',
+            name: t(groups.length > 0 ? 'chronologies.lanes.none' : 'chronologies.lanes.events'),
+            color: null,
+            kind: 'none' as const
+          }
+        ]
+      : [])
   ]
-  const laneOf = (entry: ChronologyEntryView) =>
-    entry.kind === 'page'
-      ? 'pages'
-      : entry.groupId && groups.some((g) => g.id === entry.groupId)
-        ? entry.groupId
-        : 'none'
   const [folded, setFolded] = useState<ReadonlySet<string>>(new Set())
 
   // Lo que se pinta en cada carril, en filas que no se montan
@@ -253,7 +265,20 @@ export function MonthsView({
     >
       <div className={styles.monthsInner} style={{ inlineSize: `${LANE_LABEL + total}px` }}>
         <div className={styles.timeHead}>
-          <div className={styles.timeCorner}>{t('chronologies.lanes.title')}</div>
+          <div className={styles.timeCorner}>
+            {onGroups ? (
+              <NewGroup
+                onCreate={(name) =>
+                  onGroups([
+                    ...groups.map((g) => ({ id: g.id, name: g.name, color: g.color })),
+                    { name, color: WORLD_COLORS[groups.length % WORLD_COLORS.length] ?? null }
+                  ])
+                }
+              />
+            ) : (
+              t('chronologies.lanes.title')
+            )}
+          </div>
           <div className={styles.timeScale}>
             <div className={styles.bands}>
               {bands.map((band, index) => {
@@ -400,16 +425,6 @@ export function MonthsView({
               </LaneRow>
             ))}
           </ul>
-          {onGroups && (
-            <NewGroup
-              onCreate={(name) =>
-                onGroups([
-                  ...groups.map((g) => ({ id: g.id, name: g.name, color: g.color })),
-                  { name, color: WORLD_COLORS[groups.length % WORLD_COLORS.length] ?? null }
-                ])
-              }
-            />
-          )}
         </div>
       </div>
       <p className={styles.srOnly} aria-live="polite">

@@ -120,10 +120,11 @@ export interface Card extends Point {
   members?: number
 }
 
-/** Una línea entre tarjetas, por sus puntos; partner: la raya entre una pareja */
+/** Una línea entre tarjetas, por sus puntos; partner: la raya entre una pareja; dashed, discontinua (pestaña Árbol) */
 export interface Wire {
   points: Point[]
   kind: 'family' | 'partner' | 'org'
+  dashed?: boolean
 }
 
 export interface TreeLayout {
@@ -131,6 +132,8 @@ export interface TreeLayout {
   wires: Wire[]
   /** En Familia: la altura de cada generación (para su nombre a la izquierda) */
   rows: { generation: number; y: number }[]
+  /** En la pestaña Árbol: el nombre de las líneas que no son de sangre ni de pareja, junto a ellas */
+  labels?: { text: string; x: number; y: number; anchor: 'start' | 'middle' }[]
   width: number
   height: number
 }

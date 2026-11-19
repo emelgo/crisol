@@ -3,7 +3,9 @@
  * título (opcional si lleva página: sin él, el de la página), la fecha con el selector de las fechas (inicio, fin,
  * precisión, cada año), el estilo (un color de la paleta del mundo o uno propio, o una imagen de los archivos con su
  * encuadre), el icono y el grupo, la página enlazada (una que existe o una nueva, eligiendo dónde va), la descripción
- * (hasta 1.000) y «Oculto para los jugadores» con el ojo de cada campaña. Se guarda con «Crear evento» o «Guardar»
+ * (hasta 1.000) y «Oculto para los jugadores» con el ojo de cada campaña. Se guarda con «Crear evento» o «Guardar».
+ * Cada evento es de una cronología (ADR-0032): en su pestaña, de esa; desde la vista grande de un calendario, se elige
+ * arriba a cuál va (o una nueva), y con ella sus grupos
  */
 import {
   type CalendarView,
@@ -15,7 +17,7 @@ import {
 import { CalendarDateError, formatDateValue } from '@crisol/domain'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ImageIcon, Palette, Plus } from 'lucide-react'
-import { type ReactNode, useId, useMemo, useRef, useState } from 'react'
+import { type ReactNode, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
@@ -37,6 +39,13 @@ import { EventCard } from './event-card.tsx'
 /** Lo que abre el cuadro: un evento que ya está (su entrada) o uno nuevo (con su fecha, si se pidió en un día) */
 export type EventDraft = { entry: ChronologyEntryView } | { date: DateValue | null }
 
+/** Una cronología a la que puede ir el evento (en la vista grande de un calendario), con sus grupos */
+export interface ChronologyChoice {
+  id: string
+  name: string
+  groups: readonly TimelineGroupView[]
+}
+
 const MAX_DESCRIPTION = 1000
 
 /** La fecha guardada de una entrada: la de su calendario (si se convirtió) o la de la cronología */
@@ -52,6 +61,8 @@ export function storedDate(entry: ChronologyEntryView, calendarId: string): Date
 
 export function EventDialog({
   worldId,
+  chronologyId,
+  choices,
   calendarId,
   calendars,
   groups,
@@ -60,6 +71,10 @@ export function EventDialog({
   onSaved
 }: {
   worldId: string
+  /** La cronología del evento (en su pestaña); sin ella, se elige entre choices */
+  chronologyId: string | null
+  /** Las cronologías a elegir (la vista grande de un calendario; la primera, la propuesta) */
+  choices?: readonly ChronologyChoice[] | undefined
   /** El calendario de la cronología (el de las fechas nuevas) */
   calendarId: string
   calendars: readonly CalendarView[]
@@ -87,6 +102,16 @@ export function EventDialog({
   const [image, setImage] = useState(editing?.image ?? null)
   const [picking, setPicking] = useState(false)
   const [icon, setIcon] = useState<string | null>(editing?.icon ?? null)
+  // A qué cronología va: la suya o, al elegir, la del evento, la propuesta o una nueva («new»)
+  const [target, setTarget] = useState<string>(editing?.chronologyId ?? chronologyId ?? choices?.[0]?.id ?? 'new')
+  const [newChronology, setNewChronology] = useState(() => t('chronologies.dialog.newChronologyName'))
+  // Si las cronologías llegan con el cuadro ya abierto, la propuesta (salvo que ya se eligiera otra cosa)
+  const picked = useRef(false)
+  const proposed = choices?.[0]?.id
+  useEffect(() => {
+    if (!picked.current && proposed && target === 'new') setTarget(proposed)
+  }, [proposed, target])
+  const shownGroups = choices ? (choices.find((choice) => choice.id === target)?.groups ?? []) : groups
   const [groupId, setGroupId] = useState<string>(editing?.groupId ?? '')
   const [newGroup, setNewGroup] = useState('')
   const [page, setPage] = useState<{ id: string; title: string } | null>(editing?.page ?? null)
@@ -111,7 +136,7 @@ export function EventDialog({
   }, [date, calendars, t])
   const linkedTitle = newPage?.title ?? page?.title ?? null
   const shownTitle = title.trim() || linkedTitle || t('chronologies.dialog.untitled')
-  const group = groupId ? groups.find((g) => g.id === groupId) : undefined
+  const group = groupId ? shownGroups.find((g) => g.id === groupId) : undefined
 
   const save = useMutation({
     mutationFn: async () => {
@@ -131,13 +156,23 @@ export function EventDialog({
           : { groupId: groupId || null }),
         ...(newPage ? { newPage } : { pageId: page?.id ?? null })
       }
-      if (editing?.eventId) return api.call('updateTimelineEvent', { eventId: editing.eventId, ...common })
-      return (await api.call('createTimelineEvents', { worldId, events: [common] })).events[0]
+      if (editing?.eventId)
+        return api.call('updateTimelineEvent', {
+          eventId: editing.eventId,
+          ...common,
+          ...(choices && target !== 'new' && target !== editing.chronologyId ? { chronologyId: target } : {})
+        })
+      // Una cronología nueva (desde un calendario, sin ninguna o porque se pide): una página con su nombre
+      const into =
+        target === 'new'
+          ? (await api.call('createChronology', { worldId, name: newChronology.trim() || 'Cronología' })).id
+          : target
+      return (await api.call('createTimelineEvents', { chronologyId: into, events: [common] })).events[0]
     },
     onSuccess: (saved) => {
       void client.invalidateQueries({ queryKey: ['chronology'] })
       void client.invalidateQueries({ queryKey: ['chronologies', worldId] })
-      if (newPage) void client.invalidateQueries({ queryKey: ['pages', worldId] })
+      if (newPage || target === 'new') void client.invalidateQueries({ queryKey: ['pages', worldId] })
       announce(
         editing
           ? t('chronologies.dialog.saved', { title: shownTitle })
@@ -194,6 +229,38 @@ export function EventDialog({
           />
         </div>
         <div className={styles.dialogGrid}>
+          {choices && (
+            <div className={`${form.field} ${styles.wide}`}>
+              <label htmlFor={`${id}-chronology`}>{t('chronologies.dialog.chronology')}</label>
+              <div className={styles.chronologyChoice}>
+                <select
+                  id={`${id}-chronology`}
+                  value={target}
+                  onChange={(event) => {
+                    picked.current = true
+                    setTarget(event.currentTarget.value)
+                    // Sus grupos son de otra
+                    setGroupId('')
+                  }}
+                >
+                  {choices.map((choice) => (
+                    <option key={choice.id} value={choice.id}>
+                      {choice.name}
+                    </option>
+                  ))}
+                  {!editing && <option value="new">{t('chronologies.dialog.newChronology')}</option>}
+                </select>
+                {target === 'new' && (
+                  <input
+                    aria-label={t('chronologies.dialog.newChronologyLabel')}
+                    value={newChronology}
+                    maxLength={60}
+                    onChange={(event) => setNewChronology(event.currentTarget.value)}
+                  />
+                )}
+              </div>
+            </div>
+          )}
           {fieldRow(
             t('chronologies.dialog.title'),
             <input
@@ -314,7 +381,7 @@ export function EventDialog({
                 onChange={(event) => setGroupId(event.currentTarget.value)}
               >
                 <option value="">{t('chronologies.lanes.none')}</option>
-                {groups.map((g) => (
+                {shownGroups.map((g) => (
                   <option key={g.id} value={g.id}>
                     {g.name}
                   </option>

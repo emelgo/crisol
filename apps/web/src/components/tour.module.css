@@ -3,7 +3,7 @@
   position: fixed;
   z-index: 40;
   border: 2px solid var(--color-ai);
-  border-radius: 8px;
+  border-radius: var(--radius-frame);
   box-shadow: 0 0 0 9999px rgb(0 0 0 / 0.35);
   pointer-events: none;
 }
@@ -13,7 +13,7 @@
   position: fixed;
   z-index: 40;
   border: 2px solid var(--color-ai);
-  border-radius: 8px;
+  border-radius: var(--radius-frame);
   pointer-events: none;
 }
 
@@ -25,22 +25,27 @@
   margin: 0;
   padding: var(--space-2) var(--space-3);
   border: 1px solid var(--color-ai);
-  border-radius: 6px;
-  background: var(--color-surface);
+  border-radius: var(--radius-button);
+  background: var(--frame-sheen), var(--popup-glass);
+  -webkit-backdrop-filter: var(--popup-blur);
+  backdrop-filter: var(--popup-blur);
   color: var(--color-text);
   font-size: 0.875rem;
   line-height: 1.4;
 }
 
-/* El globo: lo que es, el paso y las acciones */
+/* El globo: lo que es, el paso y las acciones. Flota encima: el cristal más tapado de lo que flota, con las esquinas
+   del cristal */
 .bubble {
   position: fixed;
   z-index: 41;
   inline-size: min(22rem, calc(100vw - 2rem));
   padding: var(--space-4);
   border: 1px solid var(--color-ai);
-  border-radius: 8px;
-  background: var(--color-surface);
+  border-radius: var(--radius-frame);
+  background: var(--frame-sheen), var(--popup-glass);
+  -webkit-backdrop-filter: var(--popup-blur);
+  backdrop-filter: var(--popup-blur);
   box-shadow: 0 1rem 2.5rem rgb(0 0 0 / 0.45);
   color: var(--color-text);
 }
@@ -66,7 +71,7 @@
 .next {
   min-block-size: 2.25rem;
   padding: 0 var(--space-3);
-  border-radius: 4px;
+  border-radius: var(--radius-button);
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
@@ -83,10 +88,25 @@
 }
 
 .next {
-  /* El botón principal de la app (rojo), como los demás */
+  /* El botón principal de la app, de cristal rojo, como los demás (components/form.module.css, .button) */
   border: 0;
-  background: var(--color-accent);
+  background: var(--frame-sheen), var(--accent-glass);
   color: var(--color-on-accent);
+}
+
+.next:hover {
+  filter: brightness(1.1);
+}
+
+/* El foco va a «Siguiente» en cada paso: su anillo, dentro y en su color de texto (fuera, sobre el rojo, salía doble) */
+.next:focus-visible {
+  outline: 2px solid var(--color-on-accent);
+  outline-offset: -5px;
+}
+
+.back:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }
 
 .bubble {

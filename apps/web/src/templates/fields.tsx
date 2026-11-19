@@ -1,9 +1,10 @@
 /**
- * Los campos de una plantilla, en su panel (ADR-0009): cada uno con su nombre y su tipo; al abrirlo, su forma (las
- * opciones, a qué plantillas apunta un enlace, los segmentos de un reloj) y para subirlo, bajarlo o quitarlo
+ * Los campos de una plantilla, en su panel (ADR-0009), como las propiedades de una página: cada uno con su nombre y su
+ * tipo; al abrirlo, su forma (las opciones, a qué plantillas apunta un enlace, los segmentos de un reloj, si va oculto a
+ * los jugadores) y para subirlo, bajarlo o quitarlo
  */
 import type { PageProperty, RelationRole } from '@crisol/contracts'
-import { ChevronDown, ChevronUp, GitFork, Network, Plus, Trash2, X } from 'lucide-react'
+import { ChevronDown, ChevronUp, EyeOff, GitFork, Network, Trash2, X } from 'lucide-react'
 import { useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import styles from './editor.module.css'
@@ -63,27 +64,64 @@ function retype(field: PageProperty, kind: FieldKind): PageProperty {
   }
 }
 
+/** Las etiquetas de una página: una lista con este nombre (como en wiki/properties.tsx) */
+const TAGS = 'etiquetas'
+const isTags = (field: PageProperty) => field.name.trim().toLocaleLowerCase('es') === TAGS
+
+/** La clave de un campo en la lista (su id; los de antes, sin él, su nombre) */
+export const fieldKeyOf = (field: PageProperty) => field.field ?? field.name
+
+/**
+ * Un campo nuevo desde «Añadir bloque › Propiedad» (de texto) o «› Etiquetas» (la lista de etiquetas, si aún no la
+ * tiene; si ya, la suya): los campos y la clave del que se abre
+ */
+export function withNewField(
+  fields: readonly PageProperty[],
+  kind: 'tags' | 'property',
+  name: string
+): { fields: PageProperty[]; key: string } {
+  const tags = kind === 'tags' ? fields.find(isTags) : undefined
+  if (tags) return { fields: [...fields], key: fieldKeyOf(tags) }
+  const field: PageProperty =
+    kind === 'tags'
+      ? { name: TAGS, field: newFieldId(), type: 'list', value: [] }
+      : { name, field: newFieldId(), type: 'text', value: '' }
+  return { fields: [...fields, field], key: fieldKeyOf(field) }
+}
+
+/**
+ * Los campos de la plantilla, en su sitio en el panel, como las propiedades de una página (Enrique, 2026-11-19:
+ * unificar el panel de la plantilla con el de una página): sin lista aparte ni «+ Campo» (se añaden con «Añadir bloque ›
+ * Propiedad» o «› Etiquetas»), plegados con su nombre y su tipo y, al pulsarlos, sus opciones; se recolocan con sus seis
+ * puntos. open: el desplegado (lo lleva el panel, que abre el recién añadido); fresh: el recién añadido, con el foco en
+ * su nombre
+ */
 export function FieldsEditor({
   fields,
   readOnly,
+  open,
+  fresh,
+  onOpen,
   onChange
 }: {
   fields: readonly PageProperty[]
   readOnly: boolean
+  open: string | null
+  fresh?: string | null
+  onOpen: (key: string | null) => void
   onChange: (fields: PageProperty[]) => void
 }) {
   const { t } = useTranslation()
-  const [open, setOpen] = useState<string | null>(null)
   const update = (index: number, field: PageProperty) => onChange(fields.map((each, i) => (i === index ? field : each)))
   const reorder = (from: number, to: number) => onChange(moved(fields, from, to))
   const move = (index: number, by: -1 | 1) => reorder(index, index + by)
   const drag = useReorder(reorder)
+  if (fields.length === 0) return null
   return (
-    <section className={styles.block} aria-label={t('templateEditor.fields')}>
-      <h2 className={styles.blockTitle}>{t('templateEditor.fields')}</h2>
+    <section className={styles.block} aria-label={t('properties.title')} data-properties="">
       <ul className={styles.fields}>
         {fields.map((field, index) => {
-          const key = field.field ?? field.name
+          const key = fieldKeyOf(field)
           const expanded = open === key
           return (
             <li key={key} className={styles.field} data-open={expanded || undefined} {...drag.row(index)}>
@@ -95,7 +133,7 @@ export function FieldsEditor({
                     index={index}
                     count={fields.length}
                     open={expanded}
-                    onToggle={() => setOpen(expanded ? null : key)}
+                    onToggle={() => onOpen(expanded ? null : key)}
                     onMove={reorder}
                     onDragStart={drag.start}
                     onDragEnd={drag.end}
@@ -105,7 +143,7 @@ export function FieldsEditor({
                   type="button"
                   className={styles.fieldRow}
                   aria-expanded={expanded}
-                  onClick={() => setOpen(expanded ? null : key)}
+                  onClick={() => onOpen(expanded ? null : key)}
                 >
                   {field.type === 'pages' && field.role ? (
                     // Con papel: el nombre y, debajo, su tipo; el papel a la derecha (como en el lienzo)
@@ -119,6 +157,9 @@ export function FieldsEditor({
                   ) : (
                     <>
                       <span className={styles.fieldName}>{field.name}</span>
+                      {field.hidden && (
+                        <EyeOff size={13} aria-label={t('properties.hidden')} className={styles.hiddenMark} />
+                      )}
                       <span className={styles.fieldType}>
                         {field.type === 'clock'
                           ? t('templateEditor.clockOf', { segments: field.segments })
@@ -132,6 +173,7 @@ export function FieldsEditor({
                 <FieldShape
                   field={field}
                   readOnly={readOnly}
+                  autoFocus={fresh === key}
                   first={index === 0}
                   last={index === fields.length - 1}
                   onChange={(next) => update(index, next)}
@@ -143,26 +185,6 @@ export function FieldsEditor({
           )
         })}
       </ul>
-      {fields.length === 0 && <p className={styles.muted}>{t('templateEditor.noFields')}</p>}
-      {!readOnly && (
-        <button
-          type="button"
-          className={styles.add}
-          onClick={() => {
-            const field: PageProperty = {
-              name: t('templateEditor.newField', { n: fields.length + 1 }),
-              field: newFieldId(),
-              type: 'text',
-              value: ''
-            }
-            onChange([...fields, field])
-            setOpen(field.field ?? null)
-          }}
-        >
-          <Plus size={14} aria-hidden="true" />
-          {t('templateEditor.addField')}
-        </button>
-      )}
     </section>
   )
 }
@@ -170,6 +192,7 @@ export function FieldsEditor({
 function FieldShape({
   field,
   readOnly,
+  autoFocus = false,
   first,
   last,
   onChange,
@@ -178,6 +201,8 @@ function FieldShape({
 }: {
   field: PageProperty
   readOnly: boolean
+  /** Recién añadido: el foco en su nombre, elegido para escribir encima */
+  autoFocus?: boolean
   first: boolean
   last: boolean
   onChange: (field: PageProperty) => void
@@ -207,6 +232,11 @@ function FieldShape({
         id={nameId}
         value={name}
         maxLength={60}
+        // biome-ignore lint/a11y/noAutofocus: recién añadido desde «Añadir bloque», se escribe su nombre
+        autoFocus={autoFocus}
+        onFocus={(event) => {
+          if (autoFocus) event.currentTarget.select()
+        }}
         onChange={(event) => setName(event.currentTarget.value)}
         onBlur={commitName}
         onKeyDown={(event) => {
@@ -368,6 +398,20 @@ function FieldShape({
           />
         </>
       )}
+      {/* Oculto: no les llega a los jugadores aunque vean la página (ADR-0017), como en las propiedades de una página */}
+      <div className={styles.dateOptions}>
+        <label>
+          <input
+            type="checkbox"
+            checked={field.hidden === true}
+            onChange={(event) => {
+              const { hidden: _was, ...rest } = field
+              onChange(event.currentTarget.checked ? { ...rest, hidden: true } : rest)
+            }}
+          />
+          {t('templateEditor.hidden')}
+        </label>
+      </div>
       {!readOnly && (
         <div className={styles.shapeActions}>
           <button type="button" disabled={first} onClick={() => onMove(-1)}>

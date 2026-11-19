@@ -19,14 +19,19 @@ import styles from './versions.module.css'
 /** Cuelga de ['pages', mundo, 'content', página]: el aviso de que cambió el texto la vacía */
 const versionsKey = (page: Page) => ['pages', page.worldId, 'content', page.id, 'versions']
 
-export function Versions({ page }: { page: Page }) {
+/**
+ * bare: ya abiertas, sin su fila que se despliega (en el botón «Versiones» de la cabecera de una plantilla, que no tiene
+ * «⋯»: Enrique, 2026-11-19, «no quiero tener solo versiones en los 3 puntos»); su título, un rótulo
+ */
+export function Versions({ page, bare = false }: { page: Page; bare?: boolean }) {
   const { t } = useTranslation()
   const api = useApi()
   const queryClient = useQueryClient()
   const announce = useAnnounce()
   const errorText = useErrorText()
   const id = useId()
-  const [open, setOpen] = useState(false)
+  const [toggled, setOpen] = useState(false)
+  const open = bare || toggled
   const [viewing, setViewing] = useState<string | null>(null)
   const versions = useQuery({
     queryKey: versionsKey(page),
@@ -52,14 +57,20 @@ export function Versions({ page }: { page: Page }) {
   })
   return (
     <section aria-labelledby={`${id}-title`} className={styles.panel}>
-      <h2 id={`${id}-title`}>
-        <button type="button" className={styles.toggle} aria-expanded={open} onClick={() => setOpen(!open)}>
-          {/* Con su icono, como las demás filas de «⋯» */}
-          <History aria-hidden="true" size={15} className={styles.icon} />
+      {bare ? (
+        <h2 id={`${id}-title`} className={styles.label}>
           {t('versions.title')}
-          <ChevronRight aria-hidden="true" size={14} className={styles.chevron} />
-        </button>
-      </h2>
+        </h2>
+      ) : (
+        <h2 id={`${id}-title`}>
+          <button type="button" className={styles.toggle} aria-expanded={open} onClick={() => setOpen(!open)}>
+            {/* Con su icono, como las demás filas de «⋯» */}
+            <History aria-hidden="true" size={15} className={styles.icon} />
+            {t('versions.title')}
+            <ChevronRight aria-hidden="true" size={14} className={styles.chevron} />
+          </button>
+        </h2>
+      )}
       {open && versions.data && versions.data.versions.length === 0 && (
         <p className={styles.empty}>{t('versions.none')}</p>
       )}

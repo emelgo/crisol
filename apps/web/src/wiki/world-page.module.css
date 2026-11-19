@@ -7,8 +7,10 @@
  */
 
 /* La wiki con una página del mundo: la columna llega hasta abajo y el panel se desliza fuera o dentro (su columna de la
-   rejilla pasa de su ancho a 0 en 300 ms; lo que se sale al deslizarse, recortado) */
+   rejilla pasa de su ancho a 0 en 300 ms y la columna del centro se ensancha con ella; lo que se sale al deslizarse,
+   recortado). --panel-width: el ancho del panel, el de su columna abierta */
 .wiki[data-world-page] {
+  --panel-width: 20rem;
   /* Las fichas de los lados empiezan donde la columna (--world-top lo mide la página) y llegan hasta abajo, como ella */
   --side-top: var(--world-top, 3.375rem);
   --side-height: calc(
@@ -31,6 +33,10 @@
 }
 
 @media (max-width: 90rem) {
+  .wiki[data-world-page] {
+    --panel-width: 18rem;
+  }
+
   .wiki[data-world-page]:has([data-panel-folded]) {
     grid-template-columns: minmax(11rem, 15rem) minmax(0, 1fr) minmax(0rem, 0rem);
   }
@@ -102,14 +108,24 @@
   pointer-events: none;
 }
 
-.page > * {
-  flex: none;
+/* Al acabar una transición de vista, el desenfoque de la columna, de la ficha del árbol y del panel vuelve fundiéndose
+   (base.css); el panel conserva su fundido de plegarse */
+:global(:root:not(:active-view-transition)) .page::before,
+:global(:root:not(:active-view-transition)) .wiki[data-world-page] > aside {
+  transition:
+    backdrop-filter 450ms ease-out,
+    -webkit-backdrop-filter 450ms ease-out;
 }
 
-/* Al entrar en el mundo, su propia capa (solo mientras dura: si no, atraparía las barras flotantes): el título y el
-   texto salen mientras la tarjeta se posa en la portada, no debajo de ella hasta que acaba */
-:global(html:active-view-transition-type(entrar-mundo)) .page {
-  view-transition-name: pagina-mundo;
+:global(:root:not(:active-view-transition)) .wiki[data-world-page] .panel {
+  transition:
+    opacity 300ms ease,
+    backdrop-filter 450ms ease-out,
+    -webkit-backdrop-filter 450ms ease-out;
+}
+
+.page > * {
+  flex: none;
 }
 
 /* El texto, sin caja: directamente sobre la página, hasta 72 rem y centrado (Enrique: «que la caja del texto esté
@@ -182,6 +198,12 @@
 .head > .cover[data-cover] > :first-child {
   block-size: 100%;
   border-radius: inherit;
+}
+
+/* La imagen, debajo del degradado (encima, como los botones de la franja, lo tapaba y el título no se leía sobre una
+   portada clara) */
+.head > .cover[data-cover] > :first-child {
+  z-index: 0;
 }
 
 /* «Añadir portada» (o «Cambiar» y lo de la portada del mundo), arriba a la derecha, al pasar por la cabecera */
@@ -431,17 +453,81 @@
 }
 
 /* El panel de la página (la ficha de wiki.module.css, .entryPanel): al plegarse, su columna se cierra y él se va por la
-   derecha sin estrujarse del todo; ya fuera, ni se pinta ni lo encuentra el lector */
+   derecha entero, sin estrujarse (de ancho fijo: lo de dentro no se recoloca mientras se mueve) y fundiéndose; ya fuera,
+   ni se pinta ni lo encuentra el lector. Al desplegarse, entra igual (opening: desde transparente) */
 .panel {
   justify-self: start;
   min-inline-size: 14rem;
   transition: opacity 300ms ease;
 }
 
+.wiki[data-world-page] .panel {
+  inline-size: var(--panel-width);
+  max-inline-size: none;
+}
+
 .panel[data-folded] {
   opacity: 0;
 }
 
+@starting-style {
+  .panel[data-opening] {
+    opacity: 0;
+  }
+}
+
 .panel[hidden] {
   display: none;
+}
+
+@media (max-width: 64rem) {
+  .wiki[data-world-page] .panel {
+    inline-size: auto;
+  }
+}
+
+/* Los botones de la página, sobre la portada: en una pastilla de cristal oscuro, para que se vean con cualquier imagen,
+   también con una clara (Enrique, 2026-11-19: «las opciones de una página no se ven según las condiciones de la
+   imagen»). Sus iconos, en el color del texto: sobre la pastilla, a más de 4:1 aunque la imagen sea blanca (WCAG
+   1.4.11 pide 3:1); los que llevan su color (el panel abierto), con el suyo. La pastilla va detrás (::before), sin
+   tocar el sitio de los botones */
+.head:not([data-compact]):has(> .cover[data-cover]) > [data-page-actions] {
+  --color-muted: var(--color-text);
+}
+
+.head:not([data-compact]):has(> .cover[data-cover]) > [data-page-actions]::before {
+  content: "";
+  position: absolute;
+  /* Su sitio: el de los botones (dentro del margen de abajo y del de la derecha de la cabecera) y un poco de aire */
+  inset: -0.25rem 0.5rem 0.5rem -0.25rem;
+  z-index: -1;
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--radius-frame);
+  background: color-mix(in srgb, var(--color-chrome) 66%, transparent);
+  box-shadow: var(--glass-shadow);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  pointer-events: none;
+}
+
+/* Al entrar en el mundo y al salir, la cabecera (el título y sus botones), en su propia capa por encima de la imagen que
+   viaja (base.css), solo mientras dura (si no, atraparía las barras flotantes): sale mientras la imagen se posa en la
+   franja, y al salir se va mientras la imagen vuelve a su tarjeta, sin quedar debajo de ella. La página entera no: su
+   cristal tapaba la imagen */
+:global(html:active-view-transition-type(entrar-mundo, salir-mundo)) .head {
+  view-transition-name: pagina-mundo;
+}
+
+/* Otra página del mismo mundo (el estándar de transiciones, docs/diseno.md: dentro de una vista, un fundido corto): su
+   texto, su mapa o su pizarra entran fundiéndose, desde algo de opacidad y no desde cero (sin hueco entre una página y
+   otra). Sin desplazarse: el mapa y la pizarra miden dónde están al montarse */
+.sheet,
+.bleed {
+  animation: pagina-llega var(--motion-base) var(--ease-out);
+}
+
+@keyframes pagina-llega {
+  from {
+    opacity: 0.4;
+  }
 }

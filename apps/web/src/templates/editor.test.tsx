@@ -21,10 +21,18 @@ async function renderTemplate(id?: string) {
     />
   )
   const saved = () => api.client.call('getTemplate', { templateId: own.id })
-  return { api, own, saved }
+  return { api, own, saved, router }
 }
 
 const panel = async () => within(await screen.findByRole('complementary', { name: 'Panel de la página' }))
+
+/** «Añadir bloque › Propiedad» (o «› Etiquetas»), como en una página: un campo; devuelve los campos del panel */
+async function addField(kind: 'Propiedad' | 'Etiquetas' = 'Propiedad') {
+  const side = await panel()
+  await userEvent.click(side.getByRole('button', { name: 'Añadir bloque' }))
+  await userEvent.click(side.getByRole('button', { name: kind }))
+  return within(await side.findByRole('region', { name: 'Propiedades' }))
+}
 
 describe('editar una plantilla', () => {
   beforeEach(() =>
@@ -33,8 +41,7 @@ describe('editar una plantilla', () => {
 
   it('sus campos: uno de opciones con su lista y un reloj de 8; todo se guarda solo', async () => {
     const { saved } = await renderTemplate()
-    const fields = within((await panel()).getByRole('region', { name: 'Campos' }))
-    await userEvent.click(fields.getByRole('button', { name: 'Campo' }))
+    const fields = await addField()
     await userEvent.clear(fields.getByLabelText('Nombre'))
     await userEvent.type(fields.getByLabelText('Nombre'), 'Nivel{Enter}')
     await userEvent.selectOptions(fields.getByLabelText('Tipo'), 'Opciones')
@@ -52,7 +59,7 @@ describe('editar una plantilla', () => {
       ])
     )
     // Otro: un reloj de 8
-    await userEvent.click(fields.getByRole('button', { name: 'Campo' }))
+    await addField()
     await userEvent.selectOptions(fields.getAllByLabelText('Tipo').at(-1) as HTMLElement, 'Reloj')
     const segments = fields.getByLabelText('Segmentos')
     await userEvent.clear(segments)
@@ -61,10 +68,52 @@ describe('editar una plantilla', () => {
     expect(fields.getByRole('button', { name: /Reloj de 8/ })).toBeDefined()
   })
 
+  it('sin campos ni bloques, «Panel vacío» como en una página (sin lista «Campos» ni «+ Campo»)', async () => {
+    await renderTemplate()
+    const side = await panel()
+    expect(await side.findByText('Panel vacío')).toBeDefined()
+    expect(side.queryByRole('region', { name: 'Campos' })).toBeNull()
+    expect(side.queryByRole('button', { name: 'Campo' })).toBeNull()
+  })
+
+  it('su panel, como el de una página: los campos de antes, en su orden y arriba (tras el retrato)', async () => {
+    const { api, own, saved } = await renderTemplate()
+    await api.client.call('updateTemplate', {
+      templateId: own.id,
+      fields: [
+        { name: 'Nivel', type: 'number', value: null },
+        { name: 'Facción', type: 'text', value: '' }
+      ],
+      panel: [{ id: 'retrato', type: 'image', fileId: null, caption: '' }]
+    })
+    const side = await panel()
+    const fields = within(await side.findByRole('region', { name: 'Propiedades' }))
+    expect(
+      fields
+        .getAllByRole('button', { name: /Nivel|Facción/ })
+        .map((b) => b.textContent)
+        .filter(Boolean)
+    ).toEqual(['NivelNúmero', 'FacciónTexto'])
+    // Tras la imagen que abre el panel, como las propiedades de una página
+    const image = side.getByRole('button', { name: /^Imagen/ })
+    expect(image.compareDocumentPosition(fields.getByRole('button', { name: /^Nivel/ }))).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING
+    )
+    expect(side.queryByText('Panel vacío')).toBeNull()
+    // «Etiquetas»: su lista, una sola vez; «Oculto a los jugadores», en sus opciones
+    await addField('Etiquetas')
+    await addField('Etiquetas')
+    await waitFor(async () =>
+      expect((await saved()).fields.map((f) => f.name)).toEqual(['Nivel', 'Facción', 'etiquetas'])
+    )
+    await userEvent.click(fields.getByRole('checkbox', { name: 'Oculto a los jugadores' }))
+    await waitFor(async () => expect((await saved()).fields[2]).toMatchObject({ type: 'list', hidden: true }))
+    expect(fields.getByLabelText('Oculto')).toBeDefined()
+  })
+
   it('un campo «Fecha», vacío, con «Con fin» y «Fuera de las líneas temporales»', async () => {
     const { saved } = await renderTemplate()
-    const fields = within((await panel()).getByRole('region', { name: 'Campos' }))
-    await userEvent.click(fields.getByRole('button', { name: 'Campo' }))
+    const fields = await addField()
     await userEvent.clear(fields.getByLabelText('Nombre'))
     await userEvent.type(fields.getByLabelText('Nombre'), 'Reinado{Enter}')
     await userEvent.selectOptions(fields.getByLabelText('Tipo'), 'Fecha')
@@ -94,8 +143,7 @@ describe('editar una plantilla', () => {
 
   it('un campo de enlace con su papel y su nombre al revés (módulo 10): «Se lee así» en los dos sentidos', async () => {
     const { saved } = await renderTemplate()
-    const fields = within((await panel()).getByRole('region', { name: 'Campos' }))
-    await userEvent.click(fields.getByRole('button', { name: 'Campo' }))
+    const fields = await addField()
     await userEvent.clear(fields.getByLabelText('Nombre'))
     await userEvent.type(fields.getByLabelText('Nombre'), 'Padres{Enter}')
     await userEvent.selectOptions(fields.getByLabelText('Tipo'), 'Enlaces a páginas')
@@ -137,9 +185,10 @@ describe('editar una plantilla', () => {
 
   it('su panel: una tabla de páginas con sus desplegables, con título', async () => {
     const { saved } = await renderTemplate()
-    const blocks = within((await panel()).getByRole('region', { name: 'En el panel' }))
-    await userEvent.click(blocks.getByRole('button', { name: 'Añadir bloque' }))
-    await userEvent.click(blocks.getByRole('button', { name: 'Tabla de páginas' }))
+    const side = await panel()
+    await userEvent.click(side.getByRole('button', { name: 'Añadir bloque' }))
+    await userEvent.click(side.getByRole('button', { name: 'Tabla de páginas' }))
+    const blocks = within(side.getByRole('region', { name: 'En el panel' }))
     await userEvent.type(blocks.getByLabelText('Título del bloque Tabla de páginas'), 'PNJ del frente{Enter}')
     await userEvent.selectOptions(blocks.getByLabelText('Páginas de'), 'PNJ')
     await waitFor(async () =>
@@ -164,6 +213,12 @@ describe('editar una plantilla', () => {
     expect(screen.queryByRole('button', { name: /Quién la conoce/ })).toBeNull()
     expect(screen.queryByRole('button', { name: /Marcar/ })).toBeNull()
     expect(screen.queryByText('Mencionado en')).toBeNull()
+    // El mismo esqueleto que una página del mundo: la columna, la portada detrás del título y el panel que se pliega
+    expect(document.querySelector('[data-world-page] [data-page-column] [data-band]')).not.toBeNull()
+    await userEvent.click(screen.getByRole('button', { name: 'Plegar el panel' }))
+    expect(screen.getByRole('button', { name: 'Desplegar el panel' }).getAttribute('aria-expanded')).toBe('false')
+    // Se recuerda, como en el mundo: abierto otra vez para lo que sigue
+    await userEvent.click(screen.getByRole('button', { name: 'Desplegar el panel' }))
   })
 
   it('los bloques, plegados como los campos; con sus seis puntos y Alt + flechas se recolocan', async () => {
@@ -175,7 +230,7 @@ describe('editar una plantilla', () => {
         { id: 'fama', type: 'rating', title: 'Fama', value: 0, max: 5 }
       ]
     })
-    const blocks = within((await panel()).getByRole('region', { name: 'En el panel' }))
+    const blocks = within(await (await panel()).findByRole('region', { name: 'En el panel' }))
     // Plegados: su nombre y su tipo, sin sus botones a la vista
     expect((await blocks.findByRole('button', { name: /^Notas/ })).getAttribute('aria-expanded')).toBe('false')
     expect(blocks.queryByRole('button', { name: 'Quitar el bloque' })).toBeNull()
@@ -198,7 +253,7 @@ describe('editar una plantilla', () => {
         { id: 'oro', type: 'text', title: 'Oro', text: '' }
       ]
     })
-    const blocks = within((await panel()).getByRole('region', { name: 'En el panel' }))
+    const blocks = within(await (await panel()).findByRole('region', { name: 'En el panel' }))
     const grip = await blocks.findByRole('button', { name: 'Opciones de Oro' })
     const rowOf = (name: string) =>
       blocks.getByRole('button', { name: `Opciones de ${name}` }).closest('li') as HTMLElement
@@ -221,18 +276,22 @@ describe('editar una plantilla', () => {
     expect((await saved()).panel.map((b) => b.id)).toEqual(['oro', 'notas', 'fama'])
   })
 
-  it('«⋯» → «Duplicar»: una copia con los mismos campos (y su linaje), que se abre', async () => {
-    const { api, own } = await renderTemplate()
+  it('«Duplicar», con el botón derecho en el árbol: una copia con los mismos campos (y su linaje), que se abre sin su título en edición, como una página', async () => {
+    const { api, own, router } = await renderTemplate()
     await api.client.call('updateTemplate', {
       templateId: own.id,
       fields: [{ name: 'Nivel', type: 'text', value: '' }]
     })
     await screen.findByRole('textbox', { name: 'Título de la página' })
-    await userEvent.click(screen.getByRole('button', { name: 'Más acciones' }))
-    await userEvent.click(screen.getByRole('button', { name: 'Duplicar' }))
+    const side = within(await screen.findByRole('complementary', { name: 'Tus plantillas' }))
+    await userEvent.pointer({ keys: '[MouseRight]', target: await side.findByRole('link', { name: 'Frente' }) })
+    const menu = within(await screen.findByRole('menu', { name: 'Opciones de «Frente»' }))
+    await userEvent.click(menu.getByRole('menuitem', { name: 'Duplicar' }))
     await waitFor(() =>
       expect(screen.getByRole('textbox', { name: 'Título de la página' }).textContent).toBe('Frente (copia)')
     )
+    expect(document.activeElement).not.toBe(screen.getByRole('textbox', { name: 'Título de la página' }))
+    expect(router.state.location.search).not.toHaveProperty('nuevo')
     const { templates } = await api.client.call('listTemplates', {})
     const copy = templates.find((t) => t.name === 'Frente (copia)')
     const original = templates.find((t) => t.id === own.id)
@@ -248,13 +307,46 @@ describe('editar una plantilla', () => {
     await waitFor(async () => expect(await saved()).toMatchObject({ name: 'Frentes', icon: '🗡️' }))
   })
 
-  it('«⋯» → «Ajustes de la plantilla»: el menú se cierra y queda el cuadro', async () => {
+  it('su icono se elige en su título: «:» y su nombre proponen los de la app; Intro pone el elegido', async () => {
+    const { saved } = await renderTemplate()
+    const title = await screen.findByRole('textbox', { name: 'Título de la página' })
+    await userEvent.click(title)
+    await userEvent.keyboard('{Home}:castil')
+    const options = within(await screen.findByRole('listbox', { name: 'Iconos' }))
+    expect(options.getAllByRole('option')[0]?.textContent).toBe('Castillo')
+    expect(title.getAttribute('aria-activedescendant')).toBe(options.getAllByRole('option')[0]?.id)
+    await userEvent.keyboard('{Enter}')
+    await waitFor(async () => expect(await saved()).toMatchObject({ name: 'Frente', icon: 'gi:castle' }))
+    expect(screen.queryByRole('listbox')).toBeNull()
+    expect(title.textContent).toBe('Frente')
+    // Pulsar el icono abre los de la app (sin emojis por defecto) y quitarlo
+    await userEvent.click(await screen.findByRole('button', { name: 'Icono Castillo: cambiarlo' }))
+    expect(screen.getByRole('searchbox', { name: 'Buscar un icono' })).toBeDefined()
+    expect(screen.queryByText('Emoji')).toBeNull()
+    await userEvent.click(screen.getByRole('button', { name: 'Quitar el icono' }))
+    await waitFor(async () => expect((await saved()).icon).toBeNull())
+  })
+
+  it('su cabecera, sin «⋯» ni candado: «Versiones» en un botón de icono, que abre su lista (y Ctrl+P no imprime)', async () => {
     await renderTemplate()
     await screen.findByRole('textbox', { name: 'Título de la página' })
-    await userEvent.click(screen.getByRole('button', { name: 'Más acciones' }))
-    await userEvent.click(screen.getByRole('button', { name: 'Ajustes de la plantilla' }))
-    expect(await screen.findByRole('dialog', { name: 'Ajustes de Frente' })).toBeDefined()
+    expect(screen.queryByRole('button', { name: 'Más acciones' })).toBeNull()
+    // Una plantilla no se bloquea (Enrique, 2026-11-19: «el block en las plantillas no tiene sentido»)
+    expect(screen.queryByRole('button', { name: 'Poner en lectura' })).toBeNull()
+    expect(screen.queryByRole('button', { name: /Exportar/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: /Ajustes/ })).toBeNull()
+    const versions = screen.getByRole('button', { name: 'Versiones' })
+    expect(versions.getAttribute('title')).toBe('Versiones')
+    expect(versions.closest('[data-page-actions]')).not.toBeNull()
+    await userEvent.click(versions)
+    expect(await screen.findByRole('heading', { name: 'Versiones' })).toBeDefined()
+    expect(await screen.findByText(/Aún no tiene versiones/)).toBeDefined()
     expect(screen.queryByRole('button', { name: 'Duplicar' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Imprimir o descargar…' })).toBeNull()
+    await userEvent.keyboard('{Escape}')
+    await waitFor(() => expect(screen.queryByRole('heading', { name: 'Versiones' })).toBeNull())
+    await userEvent.keyboard('{Control>}p{/Control}')
+    expect(screen.queryByRole('dialog', { name: 'Imprimir o descargar' })).toBeNull()
   })
 
   it('el árbol de la izquierda: carpetas que se pliegan, una carpeta nueva y, con el botón derecho, borrar una plantilla', async () => {

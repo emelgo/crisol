@@ -84,11 +84,6 @@ export class WikiView {
     return this.knowledge?.seesContent(id) ?? true
   }
 
-  /** Una cronología: solo con su marca (módulo 8) */
-  seesChronology(id: string): boolean {
-    return this.knowledge?.seesChronology(id) ?? true
-  }
-
   /** Un evento suelto: su marca o, sin ella, visible salvo oculto */
   seesEvent(event: { id: string; hidden: boolean }): boolean {
     return this.knowledge?.seesEvent(event) ?? true
@@ -252,7 +247,10 @@ export async function playerOpensFile(ctx: ActionContext, worldId: string, fileI
           ? view.seesSecret(e.documentId, e.pageId)
           : e.kind === 'tab' && e.tabId !== null && view.seesTab({ id: e.tabId, pageId: e.pageId, hidden: e.hidden })
     if (uses.embeds.some(seesEmbed)) return true
-    if (uses.events.some((e) => view.seesEvent(e)) && uses.chronologies.some((id) => view.seesChronology(id)))
+    if (
+      uses.events.some((e) => view.seesEvent(e)) &&
+      uses.chronologies.some((tab) => view.seesTab({ id: tab.tabId, pageId: tab.pageId, hidden: tab.hidden }))
+    )
       return true
   }
   return false

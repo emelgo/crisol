@@ -48,7 +48,7 @@ describe('el «hoy» en las cronologías (8 · campaña)', () => {
           entries={entries}
           groups={[]}
           compact={false}
-          today={{ day: day('siega', 18), text: 'Frostelle, 18 de Siega de 1250 RC', campaign: 'La Marca' }}
+          today={{ day: day('siega', 18), text: 'Frostelle, 18 de Siega del año 1250 RC', campaign: 'La Marca' }}
         />
       )
     })
@@ -61,7 +61,7 @@ describe('el «hoy» en las cronologías (8 · campaña)', () => {
     const list = await screen.findByRole('list', { name: 'Lista' })
     const rows = within(list).getAllByRole('listitem')
     expect(rows.map((row) => row.getAttribute('aria-label') ?? row.textContent?.slice(0, 30))).toHaveLength(3)
-    expect(rows[1]?.getAttribute('aria-label')).toBe('Hoy: Frostelle, 18 de Siega de 1250 RC')
+    expect(rows[1]?.getAttribute('aria-label')).toBe('Hoy: Frostelle, 18 de Siega del año 1250 RC')
     expect(rows[1]?.textContent).toContain('La Marca')
     expect(rows[0]?.textContent).toContain('hace 8 días')
     expect(rows[2]?.textContent).toContain('dentro de 3 días')

@@ -13,7 +13,7 @@ export const campaignDate = z.object({
   calendarId: z.uuid(),
   calendar: z.string(),
   date: fullDate,
-  text: z.string().describe('«Frostelle, 18 de Siega de 1250 RC»'),
+  text: z.string().describe('«Frostelle, 18 de Siega del año 1250 RC»'),
   form: z.string().describe('La forma con el nombre del mes: 1250-Siega-18'),
   weekday: z.string().nullable(),
   season: z.string().nullable(),

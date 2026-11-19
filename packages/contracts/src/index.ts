@@ -6,7 +6,15 @@ import {
   moveToActorFolder,
   renameActorFolder
 } from './actor-folders.ts'
-import { approve, getAiSettings, listApprovals, reject, setAiMode } from './ai.ts'
+import {
+  approve,
+  getAiSettings,
+  listAiConnections,
+  listApprovals,
+  reject,
+  removeAiConnection,
+  setAiMode
+} from './ai.ts'
 import {
   createBook,
   deleteBook,
@@ -23,6 +31,7 @@ import {
   settlePending,
   updateBook
 } from './books.ts'
+import { listCalendarEntries } from './calendar-entries.ts'
 import {
   convertDate,
   createCalendar,
@@ -303,6 +312,7 @@ import {
   restoreWorld
 } from './trash.ts'
 import { planTravel, travel } from './travel.ts'
+import { convertTreeNodeToPage, createTree, getTree, updateTree } from './trees.ts'
 import {
   changeFog,
   changeSceneSound,
@@ -334,6 +344,7 @@ export * from './activity.ts'
 export * from './actor-folders.ts'
 export * from './ai.ts'
 export * from './books.ts'
+export * from './calendar-entries.ts'
 export * from './calendars.ts'
 export * from './campaigns.ts'
 export * from './characters.ts'
@@ -376,6 +387,7 @@ export * from './today.ts'
 export * from './tokens.ts'
 export * from './trash.ts'
 export * from './travel.ts'
+export * from './trees.ts'
 export * from './vision.ts'
 export * from './weather.ts'
 export * from './world-content.ts'
@@ -414,6 +426,8 @@ export const ACTIONS = [
   listApprovals,
   approve,
   reject,
+  listAiConnections,
+  removeAiConnection,
   copyPage,
   createPage,
   updatePage,
@@ -697,6 +711,7 @@ export const ACTIONS = [
   deleteCalendar,
   describeDate,
   convertDate,
+  listCalendarEntries,
   listChronologies,
   getChronology,
   createChronology,
@@ -709,6 +724,10 @@ export const ACTIONS = [
   convertEventToPage,
   getRelations,
   getWorldGraph,
+  getTree,
+  updateTree,
+  createTree,
+  convertTreeNodeToPage,
   getCampaignWeather,
   setCampaignClimate,
   setDayWeather,
@@ -754,6 +773,8 @@ export type Actions = {
   listApprovals: typeof listApprovals
   approve: typeof approve
   reject: typeof reject
+  listAiConnections: typeof listAiConnections
+  removeAiConnection: typeof removeAiConnection
   copyPage: typeof copyPage
   createPage: typeof createPage
   updatePage: typeof updatePage
@@ -1037,6 +1058,7 @@ export type Actions = {
   deleteCalendar: typeof deleteCalendar
   describeDate: typeof describeDate
   convertDate: typeof convertDate
+  listCalendarEntries: typeof listCalendarEntries
   listChronologies: typeof listChronologies
   getChronology: typeof getChronology
   createChronology: typeof createChronology
@@ -1049,6 +1071,10 @@ export type Actions = {
   convertEventToPage: typeof convertEventToPage
   getRelations: typeof getRelations
   getWorldGraph: typeof getWorldGraph
+  getTree: typeof getTree
+  updateTree: typeof updateTree
+  createTree: typeof createTree
+  convertTreeNodeToPage: typeof convertTreeNodeToPage
   getCampaignWeather: typeof getCampaignWeather
   setCampaignClimate: typeof setCampaignClimate
   setDayWeather: typeof setDayWeather

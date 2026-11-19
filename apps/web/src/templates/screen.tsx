@@ -4,11 +4,11 @@
  * vista previa va a la izquierda (portada, icono, campos, pestañas y en cuántas páginas se usa). «Plantilla nueva» y
  * «Nueva carpeta», fijos
  */
-import type { PageTemplate, TemplateFolder, TemplateView } from '@crisol/contracts'
+import type { TemplateFolder, TemplateView } from '@crisol/contracts'
 import { bySiblingPlace, placeAmong } from '@crisol/domain'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link, Navigate } from '@tanstack/react-router'
-import { ChevronRight, FolderPlus, Plus, Search, Settings } from 'lucide-react'
+import { ChevronRight, Ellipsis, FolderPlus, Plus, Search, Settings } from 'lucide-react'
 import {
   type CSSProperties,
   type DragEvent,
@@ -48,6 +48,7 @@ import files from '../wiki/files.module.css'
 import { FolderGlyph } from '../wiki/folder-glyph.tsx'
 import { IconChoices } from '../wiki/icon.tsx'
 import { TemplateIcon } from './icons.tsx'
+import { type MenuDialog, type MenuTarget, TemplateMenu } from './menu.tsx'
 import { NewTemplateDialog } from './new-template-dialog.tsx'
 import { useTemplates } from './picker.tsx'
 import styles from './screen.module.css'
@@ -139,6 +140,9 @@ function TemplatesTree({ data }: { data: Listed }) {
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set())
   const [hovered, setHovered] = useState<Item | null>(null)
   const [moveError, setMoveError] = useState<string | null>(null)
+  // El menú de una fila (botón derecho, tecla de menú o su «⋯») y el cuadro que se abra desde él
+  const [menu, setMenu] = useState<{ at: { x: number; y: number }; target: MenuTarget; from: HTMLElement } | null>(null)
+  const [dialog, setDialog] = useState<MenuDialog | null>(null)
   // Arrastrar: lo arrastrado, si ya se ve levantado, dónde caería y la carpeta cerrada que se abrirá sola
   const dragged = useRef<Item | null>(null)
   const [lifted, setLifted] = useState<Item | null>(null)
@@ -431,11 +435,28 @@ function TemplatesTree({ data }: { data: Listed }) {
     }
     return null
   }
+  const openMenu = (item: Item, at: { x: number; y: number }, from: HTMLElement) => {
+    const template = item.kind === 'template' ? templateById.get(item.id) : undefined
+    const folder = item.kind === 'folder' ? byId.get(item.id) : undefined
+    const target: MenuTarget | null = template
+      ? { kind: 'template', template }
+      : folder
+        ? { kind: 'folder', folder }
+        : null
+    if (target) setMenu({ at, target, from })
+  }
   const onRowKey = (item: Item, event: KeyboardEvent<HTMLDivElement>) => {
     // Las teclas de sus botones son suyas
     if (event.target !== event.currentTarget) return
     const index = visible.findIndex((each) => each.id === item.id)
     const folder = item.kind === 'folder' ? byId.get(item.id) : undefined
+    // La tecla de menú (o Mayús+F10): su menú, junto a la fila
+    if (event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10')) {
+      event.preventDefault()
+      const box = event.currentTarget.getBoundingClientRect()
+      openMenu(item, { x: box.left + 24, y: box.bottom }, event.currentTarget)
+      return
+    }
     if (event.altKey && event.key.startsWith('Arrow')) {
       event.preventDefault()
       if (searching) return
@@ -503,6 +524,7 @@ function TemplatesTree({ data }: { data: Listed }) {
                 expand(folder.id)
                 await refresh()
               }}
+              onMenu={(at, from) => openMenu(item, at, from)}
             />
             {open && <ul className={files.kids}>{level(folder.id, depth + 1)}</ul>}
           </li>
@@ -516,11 +538,10 @@ function TemplatesTree({ data }: { data: Listed }) {
               template={each}
               depth={depth}
               where={searching ? pathOf(each.folderId) : []}
-              folders={data.folders}
               drag={searching ? NO_DRAG : dragOf({ ...item, parentId: each.folderId, name: each.name })}
               focus={focusOf(item)}
               onPreview={preview(item)}
-              onMove={moveFromDialog(item)}
+              onMenu={(at, from) => openMenu(item, at, from)}
             />
           </li>
         )
@@ -608,6 +629,42 @@ function TemplatesTree({ data }: { data: Listed }) {
         </div>
       </div>
       {creating && <NewTemplateDialog folderId={creating.folderId} onClose={() => setCreating(null)} />}
+      {menu && (
+        <TemplateMenu
+          at={menu.at}
+          target={menu.target}
+          folders={data.folders}
+          onDialog={(next) => {
+            if (next.kind === 'new-template') setCreating({ folderId: next.folderId })
+            else setDialog(next)
+          }}
+          onMove={(template, dest) => moveFromDialog({ kind: 'template', id: template.id })(dest)}
+          onClose={(returnFocus) => {
+            const from = menu.from
+            setMenu(null)
+            if (returnFocus && from.isConnected) from.focus()
+          }}
+        />
+      )}
+      {dialog?.kind === 'new-folder' && (
+        <NewFolderDialog
+          label={dialog.label}
+          parentId={dialog.parentId}
+          onCreated={async () => {
+            expand(dialog.parentId)
+            await refresh()
+          }}
+          onClose={() => setDialog(null)}
+        />
+      )}
+      {dialog?.kind === 'folder' && (
+        <TemplateFolderDialog
+          folder={dialog.folder}
+          folders={data.folders}
+          onMove={moveFromDialog({ kind: 'folder', id: dialog.folder.id })}
+          onClose={() => setDialog(null)}
+        />
+      )}
       <aside className={files.detail} aria-label={t('templates.preview')}>
         {hoveredTemplate ? (
           <TemplatePreview template={hoveredTemplate} where={pathOf(hoveredTemplate.folderId)} />
@@ -620,22 +677,15 @@ function TemplatesTree({ data }: { data: Listed }) {
   )
 }
 
-/** La miniatura de una plantilla: su portada (con su encuadre) y, encima, su icono */
+/**
+ * La miniatura de una plantilla: con portada, la imagen entera, centrada y sin fondo detrás, como la de una imagen en
+ * Archivos (Enrique, 2026-11-19: «si una plantilla tiene imagen sale como antes en Archivos, como con un fondo, no
+ * debería»); sin ella, su icono en su recuadro. La imagen va suelta (sin envoltorio) para que su hueco la reconozca
+ */
 function TemplateThumb({ template, size }: { template: TemplateView; size: number }) {
-  const cover = template.cover
+  if (template.cover) return <img src={`/api/files/${template.cover.fileId}`} alt="" draggable={false} />
   return (
-    <span
-      className={styles.thumb}
-      data-cover={cover ? '' : undefined}
-      style={
-        cover
-          ? ({
-              backgroundImage: `url(/api/files/${cover.fileId})`,
-              backgroundPosition: `${cover.x}% ${cover.y}%`
-            } as CSSProperties)
-          : undefined
-      }
-    >
+    <span className={styles.thumb}>
       <TemplateIcon icon={template.icon} size={size} />
     </span>
   )
@@ -647,31 +697,31 @@ function useTabsLine() {
   return (template: TemplateView) => [t('pageTabs.text'), ...template.tabs.map((tab) => tab.name)].join(', ')
 }
 
-/** Una plantilla en su fila: su miniatura, su nombre (la abre), sus pestañas, en cuántas páginas se usa y su engranaje */
+/**
+ * Una plantilla en su fila: su miniatura, su nombre (la abre), sus pestañas, en cuántas páginas se usa y su «⋯», con lo
+ * mismo que el botón derecho (renombrar, duplicar, mover y borrar)
+ */
 function TemplateRow({
   template,
   depth,
   where,
-  folders,
   drag,
   focus,
   onPreview,
-  onMove
+  onMenu
 }: {
   template: TemplateView
   depth: number
   /** Al buscar, en qué carpetas está */
   where: TemplateFolder[]
-  folders: TemplateFolder[]
   drag: RowDrag
   focus: RowFocus
   onPreview: (shown: boolean) => void
-  onMove: (dest: string | null) => void
+  onMenu: (at: { x: number; y: number }, from: HTMLElement) => void
 }) {
   const { t } = useTranslation()
-  const [settings, setSettings] = useState(false)
-  const gear = useRef<HTMLButtonElement>(null)
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: la fila es una parada del tabulador; con el teclado, la tecla de menú (o Mayús+F10) o su «⋯»
     <div
       {...drag.attrs}
       {...focus}
@@ -681,7 +731,12 @@ function TemplateRow({
       onPointerEnter={() => onPreview(true)}
       onPointerLeave={() => onPreview(false)}
       onClickCapture={(event) => {
-        if ((event.target as Element).closest('[aria-haspopup="dialog"]')) onPreview(false)
+        if ((event.target as Element).closest('[aria-haspopup]')) onPreview(false)
+      }}
+      onContextMenu={(event) => {
+        event.preventDefault()
+        onPreview(false)
+        onMenu({ x: event.clientX, y: event.clientY }, event.currentTarget)
       }}
     >
       <span className={files.chevron} aria-hidden="true" />
@@ -719,27 +774,19 @@ function TemplateRow({
         {template.uses > 0 ? t('templates.uses', { count: template.uses }) : t('templates.unused')}
       </span>
       <button
-        ref={gear}
         type="button"
         className={files.smallGear}
         data-settings=""
-        aria-label={t('templates.settingsOf', { name: template.name })}
-        title={t('templates.settingsOf', { name: template.name })}
-        aria-haspopup="dialog"
-        onClick={() => setSettings(true)}
+        aria-label={t('templates.more', { name: template.name })}
+        title={t('templates.more', { name: template.name })}
+        aria-haspopup="menu"
+        onClick={(event) => {
+          const box = event.currentTarget.getBoundingClientRect()
+          onMenu({ x: box.left, y: box.bottom + 4 }, event.currentTarget)
+        }}
       >
-        <Settings aria-hidden="true" size={14} />
+        <Ellipsis aria-hidden="true" size={15} />
       </button>
-      {settings && (
-        <TemplateSettings
-          template={template}
-          folder={{ folders, value: template.folderId, onMove }}
-          onClose={(gone) => {
-            setSettings(false)
-            if (!gone) gear.current?.focus()
-          }}
-        />
-      )}
     </div>
   )
 }
@@ -756,7 +803,8 @@ function FolderRow({
   onToggle,
   onPreview,
   onMove,
-  onChanged
+  onChanged,
+  onMenu
 }: {
   folder: TemplateFolder
   depth: number
@@ -769,12 +817,15 @@ function FolderRow({
   onPreview: (shown: boolean) => void
   onMove: (dest: string | null) => void
   onChanged: () => Promise<unknown>
+  /** El botón derecho: su menú (crear dentro, sus ajustes y borrarla) */
+  onMenu: (at: { x: number; y: number }, from: HTMLElement) => void
 }) {
   const { t } = useTranslation()
   const [creating, setCreating] = useState(false)
   const [settings, setSettings] = useState(false)
   const gear = useRef<HTMLButtonElement>(null)
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: la fila es una parada del tabulador; con el teclado, la tecla de menú (o Mayús+F10)
     <div
       {...drag.attrs}
       {...focus}
@@ -784,7 +835,12 @@ function FolderRow({
       onPointerEnter={() => onPreview(true)}
       onPointerLeave={() => onPreview(false)}
       onClickCapture={(event) => {
-        if ((event.target as Element).closest('[aria-haspopup="dialog"]')) onPreview(false)
+        if ((event.target as Element).closest('[aria-haspopup]')) onPreview(false)
+      }}
+      onContextMenu={(event) => {
+        event.preventDefault()
+        onPreview(false)
+        onMenu({ x: event.clientX, y: event.clientY }, event.currentTarget)
       }}
     >
       <span className={files.chevron} data-open={open} aria-hidden="true">
@@ -1170,113 +1226,6 @@ export function TemplateFolderDialog({
             warning={t('templates.deleteFolderWarning')}
             label={t('templates.name')}
             typed={false}
-            onConfirm={remove}
-          />
-        </DangerZone>
-      </div>
-    </Modal>
-  )
-}
-
-/**
- * La ventana de una plantilla: su nombre, su icono, en qué carpeta está (folder: desde la lista) y borrarla.
- * onClose(gone): si se borró
- */
-export function TemplateSettings({
-  template,
-  folder,
-  onClose
-}: {
-  template: PageTemplate
-  folder?: { folders: TemplateFolder[]; value: string | null; onMove: (dest: string | null) => void }
-  onClose: (gone: boolean) => void
-}) {
-  const { t } = useTranslation()
-  const api = useApi()
-  const queryClient = useQueryClient()
-  const errorText = useErrorText()
-  const dialog = useRef<HTMLDialogElement>(null)
-  const titleId = useId()
-  const gone = useRef(false)
-  const [name, setName] = useState(template.name)
-  const [icon, setIcon] = useState(template.icon)
-  const [parent, setParent] = useState(folder?.value ?? null)
-  const restyled = name.trim() !== template.name || icon !== template.icon
-  const moved = folder !== undefined && parent !== folder.value
-  const changed = restyled || moved
-  const refresh = () => queryClient.invalidateQueries({ queryKey: ['templates'] })
-  const save = useMutation({
-    mutationFn: async () => {
-      if (restyled) {
-        await api.call('updateTemplate', {
-          templateId: template.id,
-          ...(name.trim() !== template.name ? { name: name.trim() } : {}),
-          ...(icon !== template.icon ? { icon } : {})
-        })
-        await refresh()
-      }
-    },
-    onSuccess: () => {
-      dialog.current?.close()
-      // A otra carpeta: se ve ya en su sitio
-      if (moved) folder?.onMove(parent)
-    }
-  })
-  const remove = async () => {
-    await api.call('deleteTemplate', { templateId: template.id })
-    gone.current = true
-    dialog.current?.close()
-    await refresh()
-  }
-  return (
-    <Modal ref={dialog} aria-labelledby={titleId} className={cards.dialog} onClose={() => onClose(gone.current)}>
-      <form
-        className={cards.form}
-        onSubmit={(event) => {
-          event.preventDefault()
-          if (changed && name.trim()) save.mutate()
-        }}
-      >
-        <h2 id={titleId}>{t('templates.settingsOf', { name: template.name })}</h2>
-        <Field
-          label={t('templates.name')}
-          value={name}
-          required
-          maxLength={60}
-          autoComplete="off"
-          data-1p-ignore
-          data-lpignore="true"
-          data-form-type="other"
-          onChange={(event) => setName(event.currentTarget.value)}
-        />
-        {folder && <FolderField folders={folder.folders} value={parent} onChange={setParent} />}
-        <IconChoices value={icon} onChange={setIcon} />
-        <FormError message={save.error ? errorText(save.error) : null} />
-        <ChangesBar shown={changed}>
-          <BusyButton type="submit" className={form.button} busy={save.isPending}>
-            {t('templates.save')}
-          </BusyButton>
-          <button
-            type="button"
-            className={dialogStyles.cancel}
-            onClick={() => {
-              setName(template.name)
-              setIcon(template.icon)
-              setParent(folder?.value ?? null)
-            }}
-          >
-            {t('templates.cancel')}
-          </button>
-        </ChangesBar>
-      </form>
-      <div className={cards.dangerArea}>
-        <DangerZone>
-          <ConfirmByName
-            name={template.name}
-            action={t('templates.delete')}
-            title={t('templates.deleteTitle', { name: template.name })}
-            warning={t('templates.deleteWarning')}
-            label={t('templates.name')}
             onConfirm={remove}
           />
         </DangerZone>

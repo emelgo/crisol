@@ -7,6 +7,7 @@ import { fakeAccountClient } from '../account/fake.ts'
 import type { ApiClient } from '../api/client.ts'
 import { fakeApi } from '../api/fake.ts'
 import { App } from '../app.tsx'
+import { CurrentCampaignContext } from '../campaign/current-campaign.ts'
 import { createAppRouter } from '../router.tsx'
 
 const ORG = { id: crypto.randomUUID(), name: 'Fateforge', role: 'owner' as const }
@@ -44,14 +45,17 @@ const wikiApi = () =>
     ]
   })
 
-const renderAt = (path: string, api = wikiApi(), client: ApiClient = api.client) => {
+/** campaign: como desde dentro de una campaña (su Mesa), la única donde se revela */
+const renderAt = (path: string, api = wikiApi(), client: ApiClient = api.client, campaign: string | null = null) => {
   const router = createAppRouter(createMemoryHistory({ initialEntries: [path] }))
   render(
-    <App
-      router={router}
-      accounts={fakeAccountClient({ account: { name: 'Enrique', email: 'enrique@crisol.test' } }).client}
-      api={client}
-    />
+    <CurrentCampaignContext.Provider value={campaign}>
+      <App
+        router={router}
+        accounts={fakeAccountClient({ account: { name: 'Enrique', email: 'enrique@crisol.test' } }).client}
+        api={client}
+      />
+    </CurrentCampaignContext.Provider>
   )
   return { router, api }
 }
@@ -71,35 +75,34 @@ beforeEach(() => {
 })
 
 describe('el menú de una página en el árbol', () => {
-  it('renombrar: el título nuevo se guarda con Intro y sale en el árbol', async () => {
-    const { api } = renderAt(`/mundos/${WORLD.id}/wiki/${ids.rules}`)
-    const menu = await openMenu('Reglas de la casa')
+  it('renombrar no abre un cuadro: pone en edición el título de la página (abriéndola), y se guarda con Intro', async () => {
+    const { api, router } = renderAt(`/mundos/${WORLD.id}/wiki/${ids.rules}`)
+    const menu = await openMenu('Personajes')
     await userEvent.click(menu.getByRole('menuitem', { name: 'Renombrar' }))
-    const input = await screen.findByRole('textbox', { name: 'Nuevo título' })
-    await waitFor(() => expect(document.activeElement).toBe(input))
-    await userEvent.clear(input)
-    await userEvent.type(input, 'Reglas de mesa{Enter}')
-    expect(await item('Reglas de mesa')).toBeDefined()
+    expect(screen.queryByRole('textbox', { name: 'Nuevo título' })).toBeNull()
+    await waitFor(() => expect(router.state.location.pathname).toBe(`/mundos/${WORLD.id}/wiki/${ids.people}`))
+    await waitFor(() => {
+      const title = screen.getByRole('textbox', { name: 'Título de la página' })
+      expect(title.textContent).toBe('Personajes')
+      expect(document.activeElement).toBe(title)
+      expect(getSelection()?.toString()).toBe('Personajes')
+    })
+    expect(screen.queryByRole('menu')).toBeNull()
+    await userEvent.keyboard('Gente{Enter}')
+    expect(await item('Gente')).toBeDefined()
     expect(api.calls).toContain('updatePage')
-    await waitFor(() => expect(screen.queryByRole('menu')).toBeNull())
   })
 
-  it('renombrar con el mismo título (o vacío) cierra sin guardar; Escape vuelve al menú', async () => {
-    const { api } = renderAt(`/mundos/${WORLD.id}/wiki/${ids.rules}`)
-    let menu = await openMenu('Reglas de la casa')
+  it('renombrar la abierta: su título, ya, sin cambiar de pestaña; Escape lo deja como estaba', async () => {
+    const { api, router } = renderAt(`/mundos/${WORLD.id}/wiki/${ids.rules}`)
+    const menu = await openMenu('Reglas de la casa')
     await userEvent.click(menu.getByRole('menuitem', { name: 'Renombrar' }))
-    // Escape en el campo: de vuelta al menú
-    await userEvent.type(await screen.findByRole('textbox', { name: 'Nuevo título' }), '{Escape}')
-    expect(await screen.findByRole('menuitem', { name: 'Renombrar' })).toBeDefined()
-    await userEvent.click(screen.getByRole('menuitem', { name: 'Renombrar' }))
-    await userEvent.type(await screen.findByRole('textbox', { name: 'Nuevo título' }), '{Enter}')
-    await waitFor(() => expect(screen.queryByRole('menu')).toBeNull())
-    menu = await openMenu('Reglas de la casa')
-    await userEvent.click(menu.getByRole('menuitem', { name: 'Renombrar' }))
-    const input = await screen.findByRole('textbox', { name: 'Nuevo título' })
-    await userEvent.clear(input)
-    await userEvent.type(input, '   {Enter}')
-    await waitFor(() => expect(screen.queryByRole('menu')).toBeNull())
+    const title = screen.getByRole('textbox', { name: 'Título de la página' })
+    await waitFor(() => expect(document.activeElement).toBe(title))
+    expect(getSelection()?.toString()).toBe('Reglas de la casa')
+    expect(router.state.location.pathname).toBe(`/mundos/${WORLD.id}/wiki/${ids.rules}`)
+    await userEvent.keyboard('Otra cosa{Escape}')
+    expect(title.textContent).toBe('Reglas de la casa')
     expect(api.calls).not.toContain('updatePage')
     expect(await item('Reglas de la casa')).toBeDefined()
   })
@@ -130,12 +133,25 @@ describe('el menú de una página en el árbol', () => {
     ])
   })
 
-  it('exportar descarga la página y cierra el menú', async () => {
-    const { api } = renderAt(`/mundos/${WORLD.id}/wiki/${ids.rules}`)
-    const menu = await openMenu('Lugares')
-    await userEvent.click(menu.getByRole('menuitem', { name: 'Exportar' }))
-    await waitFor(() => expect(api.calls).toContain('exportWiki'))
+  it('sin «Exportar» (va en el «⋯» de la página) y, en la portada sin subpáginas, sin raya al final (Enrique, 2026-11-19)', async () => {
+    const api = wikiApi()
+    const { pageId: home } = await api.client.call('ensureWorldHome', { worldId: WORLD.id })
+    renderAt(`/mundos/${WORLD.id}/wiki/${ids.rules}`, api)
+    const lugares = await openMenu('Lugares')
+    expect(lugares.queryByRole('menuitem', { name: 'Exportar' })).toBeNull()
+    await userEvent.keyboard('{Escape}')
     await waitFor(() => expect(screen.queryByRole('menu')).toBeNull())
+    const homeTitle = api.pages.find((page) => page.id === home)?.title ?? ''
+    const menu = await openMenu(homeTitle)
+    expect(menu.getAllByRole('menuitem').map((each) => each.textContent)).toEqual([
+      'Crear subpágina',
+      'Renombrar',
+      'Duplicar'
+    ])
+    // Ninguna raya sin nada debajo
+    const box = screen.getByRole('menu', { name: `Opciones de «${homeTitle}»` })
+    const last = [...box.children].at(-1)
+    expect(last?.getAttribute('role')).toBe('menuitem')
   })
 
   it('mover a…: al pasar por encima sale el buscador; se filtra sin tildes y se lleva dentro de otra', async () => {
@@ -239,8 +255,8 @@ describe('el menú de una página en el árbol', () => {
     expect(document.activeElement?.textContent).toBe('Borrar')
     await userEvent.keyboard('{ArrowDown}{ArrowDown}')
     expect(document.activeElement?.textContent).toBe('Renombrar')
-    // Duplicar, Exportar, Revelar a… y Mover a…
-    await userEvent.keyboard('{ArrowDown}{ArrowDown}{ArrowDown}{ArrowDown}')
+    // Duplicar y Mover a… (en las páginas del mundo no se revela; exportar, en el «⋯» de la página)
+    await userEvent.keyboard('{ArrowDown}{ArrowDown}')
     const opener = menu.getByRole('menuitem', { name: 'Mover a…' })
     expect(document.activeElement).toBe(opener)
     await userEvent.keyboard('{ArrowRight}')
@@ -381,13 +397,14 @@ describe('recolocar en el árbol arrastrando', () => {
     )
   })
 
-  it('revelar a cada campaña desde el árbol (como en Everlore): «Revelar a…» con su marca (Enrique, 2026-11-16)', async () => {
-    const api = fakeApi({
+  const CAMPAIGN = crypto.randomUUID()
+  const withCampaign = () =>
+    fakeApi({
       organizations: [ORG],
       worlds: [WORLD],
       campaigns: [
         {
-          id: crypto.randomUUID(),
+          id: CAMPAIGN,
           worldId: WORLD.id,
           name: 'La Marca',
           description: '',
@@ -399,7 +416,25 @@ describe('recolocar en el árbol arrastrando', () => {
       ],
       pages: [{ id: ids.rules, worldId: WORLD.id, title: 'Reglas de la casa' }]
     })
+
+  it('en las páginas del mundo no se revela: ni «Revelar a…», ni el ojo, ni «Quién la conoce» (Enrique, 2026-11-19)', async () => {
+    const api = withCampaign()
     renderAt(`/mundos/${WORLD.id}/wiki/${ids.rules}`, api)
+    const row = await item('Reglas de la casa')
+    expect(row.querySelector('[data-known], [title="Revelar a…"]')).toBeNull()
+    const menu = await openMenu('Reglas de la casa')
+    expect(menu.getByRole('menuitem', { name: 'Mover a…' })).toBeDefined()
+    expect(menu.queryByRole('menuitem', { name: 'Revelar a…' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Quién la conoce' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Revelar la página' })).toBeNull()
+    expect(api.calls).not.toContain('getPageKnowledge')
+    expect(api.calls).not.toContain('listKnownPages')
+  })
+
+  it('revelar a cada campaña desde el árbol (como en Everlore): «Revelar a…» con su marca, dentro de una campaña (Enrique, 2026-11-16)', async () => {
+    const api = withCampaign()
+    renderAt(`/mundos/${WORLD.id}/wiki/${ids.rules}`, api, api.client, CAMPAIGN)
+    expect(await screen.findByRole('button', { name: 'Quién la conoce' })).toBeDefined()
     const menu = await openMenu('Reglas de la casa')
     await userEvent.click(menu.getByRole('menuitem', { name: 'Revelar a…' }))
     const flyout = within(await screen.findByRole('menu', { name: 'Revelar a…' }))

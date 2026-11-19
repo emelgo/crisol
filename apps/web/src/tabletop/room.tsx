@@ -12,6 +12,7 @@ import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { useDismiss } from '../components/dismiss.ts'
 import { FormError } from '../components/field.tsx'
+import segmented from '../components/segmented.module.css'
 import { colorOf } from '../dice/rolls.ts'
 import styles from './room.module.css'
 
@@ -228,7 +229,7 @@ function RoomPanel({ campaignId }: { campaignId: string }) {
       <div className={styles.controls}>
         <div className={styles.control}>
           <span id={`${invitationTitle}-moves`}>{t('room.moves')}</span>
-          <div className={styles.seg}>
+          <div className={segmented.group}>
             {modes.map((mode) => (
               <button
                 key={mode.value}

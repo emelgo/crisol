@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 import { freshOwner, settled } from './ayudas.ts'
 
-test('un sistema a mano: «A mano» lo crea y abre su editor; lo que se añade sale en la ficha de ejemplo, se guarda solo y se tira (tanda 8)', async ({
+test('un sistema a mano: «A mano» lo crea y abre su editor; lo que se añade sale en la ficha de ejemplo, se guarda solo y se tira (tanda 8); «Ver reglas» lo enseña para leerlo', async ({
   page
 }) => {
   test.slow()
@@ -57,4 +57,18 @@ test('un sistema a mano: «A mano» lo crea y abre su editor; lo que se añade s
   await formula.fill('1d20')
   // Arreglado, se guarda y se anuncia (tras un problema)
   await expect(page.getByRole('status').getByText('Guardado')).toBeAttached({ timeout: 10_000 })
+
+  // «Ver reglas»: la vista para leerlas, con lo que se hizo; «Editar reglas» vuelve al editor
+  await page.getByRole('link', { name: 'Ver reglas' }).click()
+  await expect(page).toHaveURL(new RegExp(`/sistemas/${systemId}/reglas$`))
+  await expect(page.getByRole('heading', { level: 1, name: 'Reglas' })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Personaje' }).getByText('Características')).toBeVisible()
+  await expect(
+    page.getByRole('region', { name: 'Tiradas' }).getByRole('heading', { name: 'Tirada nueva' })
+  ).toBeVisible()
+  await settled(page)
+  await page.screenshot({ path: test.info().outputPath('4-vista.png') })
+  await page.getByRole('link', { name: 'Editar reglas' }).click()
+  await expect(page).toHaveURL(new RegExp(`/sistemas/${systemId}/reglas/editar$`))
+  await expect(page.getByRole('heading', { level: 2, name: '¿Qué tiene un personaje?' })).toBeVisible()
 })

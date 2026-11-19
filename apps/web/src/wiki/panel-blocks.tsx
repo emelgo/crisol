@@ -250,7 +250,7 @@ function usePopover() {
   return { open, setOpen, root, trigger }
 }
 
-function AddBlock({
+export function AddBlock({
   onAdd,
   onAddProperty
 }: {

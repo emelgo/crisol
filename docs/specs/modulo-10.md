@@ -11,6 +11,37 @@ Estudio del Crisol antiguo y del nuevo: hecho el 2026-11-16 por un subagente (re
 3. **Gráficos, como bloque del editor de páginas.**
 4. **Fuera: los tableros Kanban y el generador de nombres.**
 
+## Ajustes tras probarlo (Enrique, 2026-11-19) — mandan sobre lo de arriba y lo de abajo en lo que toquen
+
+Plan «Ajustes tras los módulos 8, 9 y 10», bloque B. Enrique: el árbol genealógico «se hace a partir de páginas y se
+edita desde el árbol; algunos nodos pueden no tener página todavía y convertirse en página más adelante».
+
+- **Fuera la pestaña «Relaciones»** (sustituye a las decisiones 1, 5, 8 y 18 en lo de la pestaña). Familia y
+  Organigrama pasan a la pestaña de árbol; Enlaces, a la ventana del grafo. Un `?pestana=relaciones` de antes abre el
+  texto.
+- **Pestaña «Árbol genealógico»** (y «Organigrama», que se elige al crearla) en «Página nueva», «Pestaña nueva» y
+  «Plantilla nueva» (`page_tabs.kind = tree`; tabla `trees`, migración 0091: su forma `family | org` y dos listas,
+  `nodes` `{id, pageId?, name, note?}` y `edges` `{from, to, type: parent | partner | member | leads}`). Se edita desde
+  el árbol: las tarjetas de Familia y Organigrama (dagre); pulsar una abre su ficha con lo que se añade (padre o madre,
+  pareja, hijo o hija; en el organigrama, miembro o quien lo dirige), con un buscador que da una página del mundo, a
+  alguien que ya está en el árbol (solo la línea) o un nombre sin página (tarjeta con raya discontinua); «Crear página»
+  convierte un nodo suelto en una subpágina de la del árbol; «Nota», «Nombre» y «Quitar». Con campos con papel en la
+  página, «Empezar desde los campos». Al hijo de alguien con una sola pareja, la pareja también le hace de padre o
+  madre (decisión de Claude).
+- **Sus líneas entre dos nodos con página cuentan como relaciones** (`kind: 'tree'`, claves `tree:parent`,
+  `tree:partner`, `tree:member`, `tree:leads`, con el nombre del papel y su nombre al revés) en `getRelations` y
+  `getWorldGraph`, sin repetir lo que ya dice un campo con el mismo papel. Sustituye a la decisión 11 en lo del árbol.
+- **La jugadora** ve la pestaña si ve su página (y la pestaña no está oculta, o se le reveló); dentro, los nodos con
+  página solo si conoce la página (sin rastro de los demás, ni su nombre) y los sueltos; y sus líneas en el grafo, igual.
+  Prueba de fugas (e2e e integración).
+- **El grafo, en una ventana** como Ajustes, sin cambiar de vista (sustituye a la decisión 12 en lo de «a pantalla
+  entera» y a la 21): `?grafo=mundo` (el de todo el mundo, con sus filtros) o `?grafo=<página>` (centrado en ella), que
+  Escape, su X, pulsar fuera o Atrás cierran. Se abre desde el icono de la cabecera del árbol de páginas y desde el de
+  «Mencionado en» (el de esa página), también para la jugadora. Las rutas `/mundos/$w/relaciones` y
+  `/campanas/$c/relaciones` llevan a las páginas con la ventana abierta. Controles más claros: «Alcance: directas / a
+  dos pasos / a tres pasos» (antes «Profundidad») y «Con lo que menciona el texto», encendido (antes «Solo campos»).
+- **MCP**: `ver_arbol_genealogico`, `crear_arbol_genealogico` y `editar_arbol_genealogico` (las listas enteras).
+
 ## Decisiones tomadas sin Enrique (con recomendación; se le enseñan en el lienzo y en `tasks/probar.md`)
 
 5. **La pestaña «Relaciones» es fija y calculada**, como «Mencionado en»: no se añade con «Pestaña nueva» ni se guarda.

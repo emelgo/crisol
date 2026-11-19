@@ -5,7 +5,7 @@
  */
 import { offsetToPrimary, type WorldCalendar } from './convert.ts'
 import { CalendarDateError, compareDates, dayNumber, isValidDate, precisionOf } from './dates.ts'
-import type { CalendarDefinition, WorldDate } from './definition.ts'
+import { type CalendarDefinition, type WorldDate, yearProblem } from './definition.ts'
 import { dateForm, formatRange, parseDate } from './format.ts'
 
 export interface DateValue {
@@ -25,11 +25,13 @@ const monthName = (def: CalendarDefinition, id: string) => def.months.find((m) =
 
 /** Por qué una fecha no cabe en el calendario, o null */
 function dateProblem(def: CalendarDefinition, date: WorldDate): string | null {
+  const outside = Number.isInteger(date.year) ? yearProblem(def, date.year) : null
+  if (outside) return outside
   if (date.month === undefined) return date.day === undefined ? null : 'un día sin mes'
   if (!def.months.some((m) => m.id === date.month)) return `el mes «${date.month}» no existe en el calendario`
   if (isValidDate(def, date)) return null
   const parsed = parseDate(def, { year: date.year, month: date.month, ...(date.day ? { day: date.day } : {}) })
-  return parsed.ok ? `${monthName(def, date.month)} de ${date.year} no tiene ese día` : parsed.message
+  return parsed.ok ? `${monthName(def, date.month)} del año ${date.year} no tiene ese día` : parsed.message
 }
 
 /** Por qué no vale un valor en su calendario (un mes que no existe, un día fuera, el fin antes), o null */
@@ -45,7 +47,7 @@ export function dateValueProblem(def: CalendarDefinition, value: Omit<DateValue,
   return null
 }
 
-/** Para leerla: «18 de Siega de 1250 RC», «12 de Siega – 3 de Trilla de 1250 RC» (sin repetir lo que comparten) */
+/** Para leerla: «18 de Siega del año 1250 RC», «12 de Siega – 3 de Trilla del año 1250 RC» (sin repetir lo común) */
 export const formatDateValue = (def: CalendarDefinition, value: Omit<DateValue, 'calendarId'>) =>
   formatRange(def, value.start, value.end)
 
@@ -57,7 +59,7 @@ export function dateValueForm(def: CalendarDefinition, value: Omit<DateValue, 'c
 
 export type ParsedDateValue =
   | { ok: true; value: Omit<DateValue, 'calendarId'> }
-  | { ok: false; reason: 'FORMAT' | 'MONTH' | 'DAY' | 'RANGE'; message: string }
+  | { ok: false; reason: 'FORMAT' | 'MONTH' | 'DAY' | 'YEAR' | 'RANGE'; message: string }
 
 /**
  * Lee la forma de la IA contra el calendario: `1250-Siega-18`, `1250-Siega-12/1250-Trilla-3`, `1250-Siega (cada año)`.

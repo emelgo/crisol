@@ -11,7 +11,7 @@ import { DiceColorField } from '../dice/color-field.tsx'
 import { AiSettings } from './ai-settings.tsx'
 import styles from './settings.module.css'
 
-/** Ajustes: la IA (el propietario o quien juega), la jugabilidad (los dados) y el aspecto. Aquí irá lo que venga */
+/** Ajustes: la IA (quien crea mundos o está en una campaña), la jugabilidad (los dados) y el aspecto. Aquí irá lo que venga */
 export function Settings() {
   const { t } = useTranslation()
   const api = useApi()
@@ -21,7 +21,7 @@ export function Settings() {
     queryFn: () => api.call('listOrganizations', {}),
     enabled: Boolean(account)
   })
-  // Quien juega en alguna campaña también conecta su IA, que solo lee lo que sabe su campaña (ADR-0017)
+  // Quien está en alguna campaña también conecta su IA, con el conector de cada campaña (ADR-0030)
   const worlds = useQuery({
     queryKey: ['worlds', 'campaigns'],
     queryFn: () => api.call('listWorldsWithCampaigns', {}),
@@ -29,12 +29,29 @@ export function Settings() {
   })
   if (pending) return null
   if (!account) return <Navigate to="/entrar" replace />
+  // Sin saber aún qué IA le toca, solo el título: si no, lo de debajo salta al llegar la IA encima
+  if (organizations.isPending || worlds.isPending)
+    return (
+      <section className={styles.page}>
+        <PageTitle>{t('settings.title')}</PageTitle>
+      </section>
+    )
   const isOwner = organizations.data?.organizations.some((o) => o.role === 'owner') ?? false
-  const plays = worlds.data?.worlds.some((w) => w.campaigns.some((c) => c.role === 'player')) ?? false
+  const all = worlds.data?.worlds ?? []
+  // Mundos, para quien crea mundos (o lleva alguno); el modo, para quien dirige algo; las conexiones, para todos
+  const creates = isOwner || all.some((w) => w.role === 'master')
+  const leads = creates || all.some((w) => w.campaigns.some((c) => c.role === 'master'))
+  const inCampaign = all.some((w) => w.campaigns.length > 0)
   return (
     <section className={styles.page}>
       <PageTitle>{t('settings.title')}</PageTitle>
-      {isOwner ? <AiSettings /> : plays && <AiSettings player />}
+      {(creates || inCampaign) && (
+        <AiSettings
+          creates={creates}
+          player={!leads}
+          campaigns={all.flatMap((w) => w.campaigns.map((c) => ({ id: c.id, worldId: w.id, name: c.name })))}
+        />
+      )}
       <GameplaySettings />
       <DeviceSettings />
     </section>

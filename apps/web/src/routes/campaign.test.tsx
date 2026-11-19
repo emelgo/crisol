@@ -61,7 +61,23 @@ const renderCampaign = (c: Campaign, w: World = world) => {
   return { api, router }
 }
 
-/** Los ajustes de la campaña se abren encima, en su ventana (fuera del contenido principal) */
+/** El Inicio de la campaña, sin abrir nada encima */
+const renderOnly = (c: Campaign, w: World) => {
+  const api = fakeApi({ organizations: [ORG], worlds: [w], campaigns: [c], members: { [c.id]: members } })
+  const router = createAppRouter(createMemoryHistory({ initialEntries: [`/mundos/${w.id}/campanas/${c.id}`] }))
+  return render(
+    <App
+      router={router}
+      accounts={fakeAccountClient({ account: { name: 'Enrique', email: 'e@crisol.test' } }).client}
+      api={api.client}
+    />
+  )
+}
+
+/**
+ * Los ajustes de la campaña se abren encima, en su ventana (fuera del contenido principal). Su «Copiar» es el de la
+ * invitación: en el Inicio, detrás, está el del conector de IA
+ */
 const inMain = () => within(screen.getByRole('dialog'))
 /** La invitación, a la vista en los ajustes de la campaña */
 const openInvite = async () => {
@@ -108,13 +124,13 @@ describe('una campaña y su enlace de invitación', () => {
     const link = await screen.findByLabelText('Enlace de invitación')
     expect((link as HTMLInputElement).value).toMatch(/\/unirse\//)
     expect(screen.getByText('Nadie ha entrado aún con este enlace')).toBeDefined()
-    await userEvent.click(screen.getByRole('button', { name: 'Copiar' }))
+    await userEvent.click(inMain().getByRole('button', { name: 'Copiar' }))
     expect(writeText).toHaveBeenCalledWith((link as HTMLInputElement).value)
     expect(await inMain().findByText('Copiado')).toBeDefined()
     expect(announced()).toBe('Copiado')
     // Otra vez: el mismo texto, en un nodo nuevo, para que se vuelva a leer
     const first = screen.getByRole('status').firstElementChild
-    await userEvent.click(screen.getByRole('button', { name: 'Copiar' }))
+    await userEvent.click(inMain().getByRole('button', { name: 'Copiar' }))
     await vi.waitFor(() => expect(screen.getByRole('status').firstElementChild).not.toBe(first))
     expect(announced()).toBe('Copiado')
   })
@@ -128,7 +144,7 @@ describe('una campaña y su enlace de invitación', () => {
     // La invitación, en su ventana: «Invitar», junto al título
     await openInvite()
     const link = await screen.findByLabelText<HTMLInputElement>('Enlace de invitación')
-    await userEvent.click(screen.getByRole('button', { name: 'Copiar' }))
+    await userEvent.click(inMain().getByRole('button', { name: 'Copiar' }))
     const text = 'No se ha podido copiar: está seleccionado, cópialo a mano.'
     expect(await inMain().findByText(text)).toBeDefined()
     expect(announced()).toBe(text)
@@ -142,7 +158,7 @@ describe('una campaña y su enlace de invitación', () => {
     renderCampaign(campaign())
     // La invitación, en su ventana: «Invitar», junto al título
     await openInvite()
-    await userEvent.click(await screen.findByRole('button', { name: 'Copiar' }))
+    await userEvent.click(await inMain().findByRole('button', { name: 'Copiar' }))
     expect(await inMain().findByText('No se ha podido copiar: está seleccionado, cópialo a mano.')).toBeDefined()
   })
 
@@ -256,6 +272,17 @@ describe('una campaña y su enlace de invitación', () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'La Marca' })).toBeDefined()
     expect(screen.queryByLabelText('Enlace de invitación')).toBeNull()
     expect(screen.queryByRole('button', { name: 'Invitar' })).toBeNull()
+  })
+
+  it('el Inicio dice cómo conectar la IA a esta campaña, al máster y a quien juega: su dirección propia', async () => {
+    for (const role of ['master', 'player'] as const) {
+      const c = campaign(role)
+      const { unmount } = renderOnly(c, { ...world, role })
+      const field = await screen.findByLabelText<HTMLInputElement>('Dirección del conector de La Marca')
+      expect(field.value).toBe(`https://crisol.test/mcp/campanas/${c.id}`)
+      expect(screen.getByRole('heading', { level: 2, name: 'Conecta tu IA a esta campaña' })).toBeDefined()
+      unmount()
+    }
   })
 
   it('una campaña que no está en el mundo no existe', async () => {

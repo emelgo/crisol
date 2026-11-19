@@ -9,6 +9,277 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
+## Ajustes de interfaz (ajustes tras los módulos, bloque A; rama `ajustes/tras-modulos`; 2026-11-19)
+
+En local o en staging cuando llegue el PR de esta rama.
+
+- [ ] **Reglas de un sistema, como un calendario**: al entrar en Reglas, una vista para leerlas (el personaje, las
+  tiradas, lo que se lleva, otras fichas, crear un personaje y los ajustes de campaña), con las fórmulas en palabras
+  («(Puntuación − 10) ÷ 2 (hacia abajo)», «con Objetivo y Total ≥ Objetivo»). El índice de la izquierda salta a cada
+  parte y marca la que lees. «Editar reglas» abre el editor de siempre; «Ver reglas» vuelve con lo cambiado. Un sistema
+  recién hecho «A mano» abre directamente el editor; vacío, la vista dice «Aún no hay reglas…». ¿Falta o sobra algo
+  (p. ej. «Más en la ficha», o la ventaja repetida en cada tirada)?
+- [ ] **Calendario nuevo**: solo «En blanco» y «Como el nuestro»; duplicar uno sigue en el menú de su tarjeta.
+- [ ] **Entrar en un mundo y salir**: al entrar, la imagen de la tarjeta crece y se posa en la franja de la portada; al
+  salir por la llama, al revés: la portada se encoge y vuelve a la imagen de su tarjeta en Mis mundos, sin crecer ni
+  estirarse. El título de la página va por encima de la imagen en los dos sentidos. Pruébalo con un mundo con portada,
+  con otro sin ella (sin imagen, solo un fundido), desde una página que no sea la portada (no viaja nada) y con una
+  campaña con portada y otra sin ella. Al acabar, el desenfoque del cristal vuelve fundiéndose.
+- [ ] **Transiciones, un estándar** (`docs/diseno.md`): las pestañas de la barra, rápidas y sin fuego; otra página del
+  árbol, su texto (o su mapa, o su pizarra) entra con un fundido corto, sin hueco; entrar y salir
+  de un mundo o una campaña, en espejo (720 ms, con brasas al entrar y humo al salir); entrar en una plantilla o un
+  sistema, su icono y su nombre al título; los cuadros y las ventanas, algo más rápidos y con menos recorrido que
+  antes. ¿Te parece bien el ritmo (antes, entrar en un mundo tardaba 1,15 s)?
+- [ ] **Los botones de una página sobre su portada** (a la derecha del título): en una pastilla de cristal oscuro, se
+  ven con una portada clara (pruébalo con una casi blanca) y con una oscura; el título, con su degradado oscuro debajo
+  (antes no salía: la imagen lo tapaba). Igual en la portada del mundo.
+- [ ] **Archivos**: la miniatura de una imagen, entera y centrada (también una muy alta o muy ancha) y sin el recuadro
+  gris; lo que no es imagen, con su icono en el recuadro.
+- [ ] **El panel de la derecha**: al plegarlo se va entero, fundiéndose, mientras la columna del centro se ensancha; al
+  desplegarlo entra ya con lo suyo. Sin saltos ni un panel vacío que luego se llena.
+- [ ] **El engranaje del mundo**, a la derecha de su nombre en la ficha del árbol; ya no está encima de la portada. El
+  último paso del tutorial del mundo lo señala ahí.
+- [ ] **Tutoriales**: en el grafo (los filtros), en las páginas de la jugadora (su árbol) y en el editor de un calendario
+  (sus partes), el globo sale al lado y no se corta arriba. En Etiquetas, sin ninguna, no hay paso de una lista vacía.
+- [ ] **Calendarios**: su bodegón mira a la derecha, como los demás.
+- [ ] **Revelar, solo en la campaña**: en las páginas del mundo ya no están «Quién la conoce», «Revelar la página»,
+  «Revelar a…» (botón derecho en el árbol) ni el ojo de cada fila del árbol. En la Mesa de una campaña, en la ventana de
+  una página, siguen. Lo mismo el «Revelar» de los secretos y el de las pestañas, y el ojo de los pines y de lo
+  dibujado en los mapas: solo dentro de la campaña (Claude, 2026-11-20, por la misma razón: en el mundo se crea, no se
+  juega). En la ventana de una página en la Mesa, sus pestañas se cambian dentro de ella (antes, el mapa no se abría).
+- [ ] **Plantillas sin cuadro de ajustes**: en la lista de Plantillas, el botón derecho (o la tecla de menú, o el «⋯» de
+  la fila) sobre una plantilla da Renombrar, Duplicar, Mover a… (sus carpetas, con buscador y «Fuera de las carpetas») y
+  Borrar, como en el árbol de páginas; lo mismo en el árbol de la izquierda de una plantilla abierta. Ya no sale el
+  cuadro con «Carpeta» e «Icono». Las carpetas siguen con su engranaje (nombre, carpeta, icono y color).
+- [ ] **El icono, desde el título** (páginas y plantillas): escribe «:» al principio del título y parte del nombre
+  («:castillo», «:dragón») → salen los iconos de la app; flechas e Intro (o el ratón) lo ponen y lo escrito se va.
+  Un emoji delante del título también vale, ahora también en las páginas. Pulsar el icono puesto abre nuestros iconos
+  (sin la fila de emojis) y «Quitar el icono». ¿Se entiende lo de «:» sin explicarlo, o prefieres otra forma?
+- [ ] **El icono de una carpeta o de un sistema** (su ventana): un botón con el de ahora que abre nuestros iconos debajo,
+  sin emojis por defecto ni «Otro».
+- [ ] **Una plantilla abierta, con el esqueleto de una página del mundo**: la portada detrás del título, las pestañas
+  debajo, el panel que se pliega con su botón (y se recuerda) y la ficha de la izquierda y el panel a la altura de la
+  columna, con «‹ Plantillas» encima de la ficha. Abre una página de la wiki y una plantilla y alterna: la ficha de la
+  izquierda, la columna y el panel no se mueven ni un píxel (medido a 1440×900 y 1920×1080), y «Tus plantillas» es el
+  rótulo pequeño y gris como el nombre del mundo.
+- [ ] **Renombrar sin cuadro** (páginas y plantillas): botón derecho → «Renombrar» en el árbol de páginas, en el de las
+  plantillas o en la lista de Plantillas → se abre esa página (si no lo estaba) con su título elegido para escribir
+  encima; Intro guarda, Escape lo deja como estaba. Ya no sale el recuadro flotante.
+- [ ] **Versiones de una plantilla, en un botón**: su cabecera ya no tiene «⋯» ni candado; un reloj («Versiones») que
+  abre su lista (también sobre una portada, en la pastilla). Duplicar, solo con el botón derecho. Ctrl+P no imprime.
+- [ ] **Duplicar una plantilla, como una página**: con el botón derecho (en la lista de Plantillas, con su «⋯», y en el
+  árbol de una abierta) → se abre la copia («… (copia)»), sin su título elegido ni ningún recuadro flotante; mientras
+  llega, la de antes sigue a la vista (sin hueco). Compáralo con duplicar una página del mundo. **Ojo**: si ves el
+  recuadro flotante de antes al renombrar, tu servidor de desarrollo (5173) sirve una copia vieja de
+  `templates/menu.tsx` (perdió el aviso de cambios por el límite de archivos vigilados del VPS): reinícialo.
+- [ ] **El botón derecho del árbol de páginas**: sin «Exportar» (está en el «⋯» de la página). En la portada (Inicio)
+  sin subpáginas, «Crear subpágina, Renombrar, Duplicar» y ninguna raya debajo. En ningún menú del botón derecho
+  (páginas, plantillas, carpetas de plantillas) queda una raya al principio, al final o dos seguidas.
+- [ ] **Plantillas con portada**: en la lista de Plantillas, en su vista previa y en «Página nueva › Desde plantilla»,
+  su miniatura es la imagen entera y centrada, sin recuadro detrás ni el icono encima (como una imagen en Archivos);
+  sin portada, su icono en el recuadro. En el selector de archivos (al poner una portada), lo mismo con las imágenes.
+- [ ] **Cristal en el compendio y los libros**: la pantalla de un libro de un sistema (Entradas y Capítulos) y el
+  compendio de una campaña: la ficha de la izquierda, la columna que se lee y la de los datos dejan ver el fondo
+  desenfocado, como la ficha del árbol y el panel de una página; «Nueva entrada», con su raya discontinua visible. En
+  una plantilla abierta, los campos de las opciones de un campo, de cristal oscuro.
+- [ ] **Un solo conmutador**: en el compendio, «Todo · Del sistema · Del mundo» y «Por tipo · Por libro», a lo ancho de
+  la ficha como el buscador, con aire debajo de él, los textos enteros y la opción elegida en relieve y negrita (como
+  Semana · Mes · Año del calendario). Igual «Todos · En la campaña» en Libros de una campaña y «Cómo mueven» en la sala
+  de la Mesa.
+- [ ] **El panel de una plantilla, como el de una página**: ya no hay lista «Campos» con «+ Campo» ni el rótulo «En el
+  panel». En una plantilla vacía sale «Panel vacío»; «Añadir bloque» trae arriba «Etiquetas» y «Propiedad» (los campos)
+  y debajo los bloques de siempre. «Propiedad» añade un campo abierto con su nombre elegido (escríbelo); plegado, su
+  nombre y su tipo; al pulsarlo, sus opciones (tipo, opciones, papel y nombre al revés, reloj, fecha y ahora «Oculto a
+  los jugadores»). Se recolocan con sus seis puntos. «Etiquetas» solo una vez. Con una imagen arriba del panel, los
+  campos van debajo de ella. Abre una plantilla de antes con campos: siguen todos, en su orden. Crea una página con ella
+  y mira que trae sus propiedades (y la oculta, oculta a los jugadores).
+- [ ] **El icono del título, siempre pulsable**: en una página o plantilla sin icono, delante del título sale en gris el
+  de su tipo (el del árbol; en una plantilla, el de plantilla); al pulsarlo (o Tab hasta él e Intro) se abre el selector
+  de nuestros iconos, sin «Quitar el icono». Puesto, igual que antes, con «Quitar el icono»; quitado, vuelve el gris.
+  Con la página bloqueada, sin icono no sale nada. «:» y el emoji delante del título siguen valiendo.
+- [ ] **Muchos más iconos** (todos los de game-icons.net, 4180; antes 337): abre el selector desde el icono de un
+  título, de una carpeta, de un sistema y de un pin del mapa. Arriba el buscador; a la izquierda los grupos
+  (Destacados, que son los de antes, y luego Personajes, Criaturas, Animales, Edificios, Armas, Armaduras y ropa,
+  Magia, Religión, Transporte, Dinero, Libros…); a la derecha la rejilla, que se desplaza suave aunque haya cientos.
+  Busca en español: «espada», «dragón», «castillo», «barco», «moneda», «pergamino», «arma» (todo el grupo); también
+  en inglés («sword»). Con el teclado: Tab del buscador a los grupos (flechas arriba y abajo los cambian) y a la
+  rejilla (flechas, Inicio, Fin, Intro elige). Uno elegido que no es de Destacados abre en su grupo y a la vista. Los
+  iconos que ya tenías puestos se siguen viendo. ¿Están bien los nombres y los grupos? Apunta los que estén raros.
+- [ ] **«:» en el título** propone también los iconos nuevos («:kraken», «:taberna»).
+
+## Conectores de IA: Mundos y uno por campaña (ajustes tras los módulos, bloque D; rama `ajustes/tras-modulos`; 2026-11-19)
+
+ADR-0030. Se prueba en staging cuando llegue el PR de esta rama. Las direcciones:
+`https://neo.crisol.144-91-122-245.sslip.io/mcp` (Mundos) y `https://neo.crisol.144-91-122-245.sslip.io/mcp/campanas/<id>`
+(la de cada campaña, que sale en su Inicio).
+
+- [ ] **Mundos sigue igual**: el conector que ya tienes en claude.ai (`…/mcp`) funciona sin volver a conectarlo y con
+  las mismas herramientas (es el de la migración de Eana). Crisol se presenta ahora como «Crisol · Mundos».
+- [ ] **El de una campaña**: en su Inicio, «Conecta tu IA a esta campaña» con su dirección y «Copiar». En claude.ai,
+  Ajustes → Conectores → «Añadir conector personalizado»: pega la dirección y ponle un nombre (por ejemplo «Crisol · La
+  Marca»). Al conectar, la pantalla de permiso dice «… en La Marca: solo verá esta campaña…».
+- [ ] **Como máster, en ese conector**: «¿qué día es hoy?», «abre la escena del puerto», «tira iniciativa», «revela
+  Varn»… sin decirle la campaña. No puede crear páginas, plantillas ni calendarios: eso, con Mundos.
+- [ ] **Como jugadora** (con una cuenta de jugadora, desde su Inicio): «hazme un personaje», «tira 1d20+3», «escribe en
+  el registro que entro en la taberna», «apunta en mis notas…»: lo hace. «Revela…» o «abre la escena…», no. Si juega
+  en dos campañas del mismo mundo, cada conector ve solo lo que sabe la suya.
+- [ ] **Tus conexiones** (Ajustes › IA): cada conexión con su conector, la app y cuándo se usó. «Quitar» (se confirma
+  en la fila) la desconecta al momento: claude.ai pide volver a conectar. En el Inicio de la campaña, si ya hay una
+  conectada, dice cuál y cuándo se usó.
+- [ ] **Quien solo juega**, en Ajustes › IA: sin la dirección de Mundos ni el modo; ve sus conexiones y que cada campaña
+  tiene la suya. Si conectara Mundos igualmente, solo vería las herramientas de leer.
+- [ ] **Decisiones tomadas sin ti** (dime si alguna no te vale):
+  - en Mundos, la jugadora solo lee: sus notas y la página del grupo pasan al conector de su campaña;
+  - para el modo de IA de la jugadora, su personaje, sus tiradas, el registro y sus notas son «escribir» (en copiloto
+    no esperan aprobación);
+  - el máster en el conector de la campaña no escribe el mundo ni toca la invitación (eso, con Mundos);
+  - las tiradas de la jugadora por la IA salen a la vista de todos salvo que pida otra cosa;
+  - el inventario del grupo: la IA de la jugadora lo ve, pero no lo cambia;
+  - «Tus conexiones» van en un orden fijo (Mundos y luego cada campaña por su nombre) y «Quitar» se confirma en la fila.
+
+## Cronología y árbol genealógico como pestañas, y el grafo en una ventana (ajustes tras los módulos, bloque B; rama `ajustes/tras-modulos`; migraciones 0090 y 0091; 2026-11-19)
+
+ADR-0031. En local (http://localhost:5173) ya están las dos migraciones aplicadas.
+
+- [ ] **Tus cronologías de antes**: cada una es ahora una página nueva al final del árbol, con su nombre y una pestaña
+  «Cronología» (lo que sabía cada campaña de ella, ahora de la página). Muévela adonde quieras (dentro de «Historia»…).
+  Calendarios ya no las lista, y su dirección de antes lleva a su pestaña.
+- [ ] **Una cronología nueva**: en una página, «+» de las pestañas › «Cronología» (o «Página nueva» › Cronología). Se
+  ve con la portada, el título y las pestañas de la página, y sus herramientas (su calendario, «Hoy de…», «Ir a…» y
+  «Ajustes») a la derecha de las pestañas. Sus ajustes ya no llevan el nombre: es el de la pestaña (su menú ▾).
+- [ ] **La jugadora**: ve la cronología si conoce su página (y la pestaña no está oculta); «Cronologías» de su campaña
+  lleva a cada una, en su página.
+- [ ] **El árbol genealógico** (ahora uno solo, «Árbol», y sin deducir líneas: mira la sección de abajo): «+» › «Árbol».
+  Vacío, «Añadir a alguien»: escribe y elige
+  una página, o «Añadir «…» sin página» (sale con la raya discontinua). Pulsa a alguien: su ficha, con «Padre o madre»,
+  «Pareja», «Hijo o hija» y «Otra relación», sus líneas (la × al acercarse),
+  «Crear página» (una subpágina de la del árbol), «Nota» y «Quitar». Con doble clic se abre su página.
+- [ ] **Empezar desde los campos**: en un personaje con «Padres» y «Pareja» (campos con papel), su árbol vacío ofrece
+  «Empezar desde los campos».
+- [ ] **El organigrama**: una facción con «Miembro» y «Quien lo dirige» desde la ficha del grupo.
+- [ ] **El árbol cuenta en el grafo**: quien está en un árbol con página sale relacionado con su familia en el grafo,
+  aunque no tenga los campos.
+- [ ] **La jugadora y el árbol**: ve los nodos de las páginas que conoce y los sueltos; de los demás, nada (ni el nombre).
+- [ ] **Sin pestaña «Relaciones»**. El grafo, en una ventana: el icono de la cabecera del árbol de páginas abre el del
+  mundo, y el de «Mencionado en», el de esa página, sin cambiar de vista. Escape, la X, pulsar fuera o Atrás la cierran.
+  El de una página, sin controles: sus relaciones directas, también lo que menciona el texto (la raya discontinua, como
+  dice la leyenda); para ir más allá, pulsa otra página y, en su ficha, «Sus relaciones» las añade al grafo (sin salir
+  del de la tuya). El del mundo, sin el filtro de plantillas (cada página sigue con el color de su plantilla, que dice su
+  ficha); los filtros se ocultan y vuelven con el botón de panel a la izquierda de la cabecera («Ocultar filtros» /
+  «Mostrar filtros»), en lugar de «‹‹ Plegar».
+- [ ] **La IA**: «hazme el árbol genealógico de la casa de Varn con Ilsa, sus padres y su hija» (`crear_arbol_genealogico`)
+  y «añade a la abuela, que aún no tiene página» (`editar_arbol_genealogico`).
+- [ ] **Decisiones tomadas sin ti** (dime si alguna no te vale): las cronologías migradas van al primer nivel con una
+  pestaña «Cronología»; la marca `chronology` ya no se usa (una cronología se enseña con su página o su pestaña); la
+  tarjeta vacía del árbol usa el bodegón de los capítulos (hay prompt para uno propio en `docs/imagenes-por-hacer.md`);
+  «Crear página» la pone dentro de la página del árbol; el árbol no lleva los nombres de cada generación (no hay una
+  página en el centro desde la que contar); al cambiar la forma de un árbol hecho no se rehace (la forma se elige al
+  crearlo).
+- [ ] **Tras la crítica de diseño** (impeccable): la escala de la vista Meses dice ahora «Año · Mes · Día» (con «Meses»
+  pulsado en las dos píldoras no se sabía cuál era cuál); el calendario de la cronología lleva su icono y lleva a su
+  vista grande; en el móvil, la cronología de la jugadora va con la página. **Pregunta**: en el móvil, ¿el árbol de la
+  jugadora «en palabras» (padres, pareja, hijos de cada uno), como la pizarra, y el lienzo al ampliar? Hoy es el lienzo en
+  una caja.
+
+## Cronologías y árbol como en Everlore (rama `ajustes/tras-modulos`; migraciones 0092 y 0093; 2026-11-19)
+
+ADR-0032. En local (http://localhost:5173) ya están aplicadas las dos migraciones.
+
+- [ ] **Cada cronología, con sus eventos**: en una, crea un evento; abre otra: no sale. Una cronología nueva nace vacía.
+  Tus cronologías de antes: cada evento fue a una sola (la que lo pedía por su grupo o, si no, la primera que los
+  juntaba todos); el de «test» sigue en «test». Si alguno debería estar en otra, ábrelo desde la vista grande del
+  calendario y cámbiale la «Cronología».
+- [ ] **Las páginas con fecha**, solo si se piden: «Ajustes» › «Juntar también las páginas con fecha» (con sus plantillas
+  y etiquetas). Tu cronología «Eana» las juntaba todas: ahora no, hasta que lo marques.
+- [ ] **Meses**: «+ Nuevo grupo» arriba a la izquierda, en la esquina de los nombres (escribe y Intro); ya no hay fila
+  «+ Grupo» abajo. Al desplazarte, lo de debajo no se transparenta por los nombres. «Sin grupo» solo sale si hay algo sin
+  grupo (sin ningún grupo, un solo carril, «Eventos»). Los grupos son de cada cronología (sus ajustes: color y quitar).
+- [ ] **La vista grande del calendario**: salen los eventos de todas las cronologías. «Evento» en la ficha de un día
+  pregunta arriba «Cronología»: primero las que usan ese calendario; «Una nueva…» crea una página con su pestaña. Al
+  editar uno desde ahí, cambiar la cronología lo pasa a esa.
+- [ ] **Un solo árbol**: «Pestaña nueva» ya no ofrece «Organigrama»; tus árboles y organigramas siguen igual (con su
+  nombre). Un organigrama es un árbol con «Quien lo dirige» / «A quien dirige» y «Miembro» / «Grupo al que pertenece».
+- [ ] **Relaciones a mano**: en la ficha de alguien, «Padre o madre», «Pareja», «Hijo o hija» y «Otra relación» (el
+  desplegable: expareja, hermanos, padrastro o madrastra, hijastro o hijastra, adopción, dirige, miembro… u «Otra
+  (escríbela)», con su nombre y si va encima, debajo o al lado). Añadir el hijo de alguien con pareja ya **no** lo hace
+  hijo de la pareja: añade la otra línea si lo es. Lo que no es de sangre ni de pareja sale con raya discontinua y su
+  nombre («Adopción», «Madrina»…); dos que comparten un hijo no salen como pareja si no lo has dicho.
+- [ ] **«Añadir al árbol»**, abajo en el centro (como el «+» de la cronología); ya no está a la derecha de las pestañas.
+- [ ] **La IA**: «pasa estos eventos a la cronología de la Historia» (`crear_eventos` con su cronología) y «haz un
+  organigrama de la Orden con su maestre y dos caballeros» (`crear_arbol_genealogico` con `leads` y `member`); «Eloy es el
+  padrino de Ciro» (una libre, `other` con `label`).
+- [ ] **Decisiones tomadas sin ti** (dime si alguna no te vale): los eventos de antes no se copian a varias cronologías
+  (cada uno a una); las páginas con fecha dejan de salir donde no se habían acotado; desde un calendario sin cronologías,
+  el evento va a una nueva «Cronología» (página al final del primer nivel); los grupos que no usaba nadie fueron a la
+  primera cronología del mundo; un evento cuelga, para «quién lo conoce», de la página de su cronología; las relaciones
+  libres salen en el grafo con su nombre (sin papel); las etiquetas de las líneas: «Padrastro o madrastra», «Adopción»,
+  «Expareja», «Hermanos», «Dirige» (las de padre o madre, pareja y miembro, sin nombre).
+
+## Las fechas, con «del año» (rama `ajustes/tras-modulos`; 2026-11-20)
+
+- [ ] **En toda la app las fechas dicen «del año»**: el campo «Fecha» del panel de una página («13 de Enero del año 1»;
+  con fin, «12–18 de Siega del año 1250 RC» o «12 de Siega – 3 de Trilla del año 1250 RC»; de mes, «Siega del año 1250
+  RC»; de año, «Año 1250 RC»; un periodo de años, «Años 1250–1262 RC»), las cronologías (lista, meses y calendario),
+  la ficha del día del calendario (con la era: «… del año 2014 de la Era de la República»), el hoy de la campaña
+  («Solen, 6 de Brumas» y debajo «Año 1247 RV»), el registro, el clima y los viajes. ¿Se lee natural «Año 1250 RC» en
+  las listas, o prefieres el número solo?
+- [ ] **La IA** recibe el texto nuevo (describir una fecha, el hoy, las cronologías) y sigue escribiendo las fechas como
+  antes (`1250-Siega-18`).
+
+## Calendarios en grande y su editor por fases (ajustes tras los módulos, bloque C; rama `ajustes/tras-modulos`; 2026-11-19)
+
+Plan aprobado el 2026-11-19 («¿cómo creo eventos en el calendario?»). Normas en `docs/diseno.md` (Pantallas).
+
+- [ ] **Al pulsar un calendario se ve en grande**: el título sobre la columna y «Editar calendario» a su derecha (y en
+  el engranaje de su tarjeta, «Abrir» y «Editar calendario»). **Sin columna izquierda** (ni el año en pequeño ni el
+  resumen, que sigue en el editor). En el centro, arriba, **Mes · Semana · Año** centrado y «Hoy de…» a la derecha;
+  debajo, la vista con «‹ ›». En Mes, las lunas nuevas y llenas, la estación y la era; una festividad dentro de la
+  semana sale con su franja de color y las de fuera de la semana, debajo.
+- [ ] **El título de la vista lleva a otra fecha** (sin la barra «Ir a»): «Enero del año 1» lleva una flecha pequeña y
+  se subraya al pasar; al pulsarlo sale un recuadro pequeño. Mes: el año y los meses (un mes lleva a él); Semana: el
+  año, los meses y los días del elegido (un día lleva a su semana); Año: solo el año con «Ir». Intro aplica el año
+  escrito; Esc o pulsar fuera lo cierran y el foco vuelve al título; el año no pasa del tope ni de seis cifras.
+- [ ] **Semana**: sus días en columnas (con el mes junto al número del primero y de cada día 1) y todo lo que cae en
+  cada uno; las fiestas de fuera de la semana que caen en medio, debajo; con la semana que empieza cada mes, no sale de
+  él. Con el teclado, las flechas pasan de día y Re Pág / Av Pág de semana.
+- [ ] **Año**: sus meses en pequeño (las festividades, en su color; los días con algo, subrayados; hoy y el día
+  fijado, marcados); pulsar un mes lleva a él en la vista Mes.
+- [ ] **La ficha del día**, a la derecha, solo cuando hace falta: **al pasar el ratón** (o el foco) por un día se ve,
+  **al pulsarlo se fija** (con su «×») y **Esc la quita**; la columna del centro no se mueve. Su título lleva la era
+  («Lunes, 1 de Enero del año 2014 de la Era X»); debajo, la estación, el día del año, cada luna con su fase y lo que pasa
+  ese día (los eventos se editan al pulsar su título; las páginas, se abren). ¿Te vale que, al ir de un día a la
+  ficha, la vista previa espere un instante para no cambiar al cruzar otros días?
+- [ ] **«Nuevo evento»** abre el cuadro del evento con la fecha del día: crea un evento suelto del mundo, que sale en el
+  mes y en las cronologías que lo incluyan. **Salen todos los eventos y páginas con fecha del mundo**, no solo los de
+  alguna cronología; lo de otros calendarios, convertido (sin correspondencia, una línea dice cuántas fechas faltan).
+- [ ] **«Página con esta fecha»** crea una página «Sin título» en el primer nivel con el campo «Fecha» puesto y la abre
+  para escribir el título. ¿Te vale en el primer nivel, o prefieres elegir dónde va (o con plantilla)?
+- [ ] **«Hoy de…»**: con alguna campaña con fecha, se abre en su hoy, marcado en la rejilla, y «Hoy» vuelve a él.
+- [ ] **El editor, por fases** (`…/editar?fase=semana`): las fases con su número y sus avisos a la izquierda; la
+  elegida en el centro con la anterior y «Siguiente: …» al pie; a la derecha el año (su tira y sus cifras, al momento)
+  y los problemas, cada uno con «Ir a…». Sin vista previa. «Guardar» y «Cancelar» abajo cuando hay cambios; con
+  problemas, «Guardar» lleva al primero. Cambiar de fase con cambios no pregunta; salir (o «Ver calendario»), sí. Al
+  crear un calendario se abre su editor.
+- [ ] **Meses**: cada uno con su «Tipo» (Mes o Festividad, y una línea dice qué es una festividad); solo una festividad
+  enseña «Sus días no cuentan en la semana». El número, centrado bajo «Nº», y el color en su columna.
+- [ ] **Días señalados**, su propia fase (mes, día y nombre), con la línea «No son los días de la semana».
+- [ ] **Semana**: «La semana empieza en» reordena los días sin cambiar el de ninguna fecha; la frase «El 1 de {mes} del
+  año {N} fue {día}» dice qué día fue y, al cambiar el día, corre el de todo el calendario. Sustituye a «El año 0
+  empieza en».
+- [ ] **Días de más** (antes «Bisiestos»): sin reglas de serie ni atajos («Todos los años duran lo mismo.» y «+ Regla»);
+  cada regla se lee como una frase: «Cada [N] años, [mes] tiene [D] días más, salvo cada [M] pero sí cada [K]» («pero
+  sí cada», solo con un «salvo»). En ningún texto de calendarios sale «bisiesto». El resumen dice «365 días · 366 con
+  días de más».
+- [ ] **Tope de años**: en el año del título de la vista grande, escribe «-2345656»: no deja más de seis cifras y se para en -99999 (sin rango, de
+  -99.999 a 99.999). En el editor, General, «Años: desde … hasta …» (opcional): con eras y «desde» vacío, propone el
+  inicio de la primera («Desde el inicio de…»), sin ponerlo solo; «desde» después de «hasta», o una era que empieza
+  fuera, es un problema. Con un rango, en la vista grande (Mes, Semana y Año) las flechas se apagan en el borde y el
+  año escrito se queda en el extremo; lo mismo en el campo «Fecha» de una página, en el de un evento y en «Poner
+  fecha» de la campaña (en «Año», los años de fuera no se eligen). Pide a la IA una fecha fuera: no la pone y dice por
+  qué. **Decidido sin ti**: el tope general es de ±99.999 (cinco cifras; el campo admite seis para poder escribir); las
+  fechas que ya hubiera fuera de un rango nuevo no se tocan, pero no se pueden volver a guardar sin cambiarlas; avanzar
+  el «hoy» más allá del último año tampoco se deja.
+
 ## El tiempo de la campaña (módulos 8 y 10 · campaña, en local, rama `modulo-8/calendarios`; migraciones 0085-0089; 2026-11-17)
 
 Spec: `docs/specs/modulo-8-10-campana.md` (decisiones 1-33). Lienzo aprobado «El tiempo de la campaña».

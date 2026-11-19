@@ -11,6 +11,7 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
+import { useCurrentCampaign } from '../campaign/current-campaign.ts'
 import { useAnnounce } from '../components/announcer.tsx'
 import list from '../components/list.module.css'
 import styles from './who-knows.module.css'
@@ -23,8 +24,10 @@ type Choice = 'inherit' | 'all' | 'some' | 'none'
 const choiceOf = (row: CampaignRow): Choice =>
   !row.own ? 'inherit' : !row.own.known ? 'none' : row.own.characters ? 'some' : 'all'
 
+/** Solo dentro de una campaña (su Mesa): en las páginas del mundo no se revela (Enrique, 2026-11-19) */
 export function WhoKnowsButton({ page }: { page: Page }) {
   const { t } = useTranslation()
+  const campaign = useCurrentCampaign()
   const [open, setOpen] = useState(false)
   const wrap = useRef<HTMLDivElement>(null)
   const button = useRef<HTMLButtonElement>(null)
@@ -40,6 +43,7 @@ export function WhoKnowsButton({ page }: { page: Page }) {
     document.addEventListener('pointerdown', outside)
     return () => document.removeEventListener('pointerdown', outside)
   }, [open])
+  if (!campaign) return null
   return (
     <div ref={wrap} className={styles.wrap} data-action-wrap="">
       <button
@@ -63,9 +67,14 @@ function WhoKnows({ page, onClose }: { page: Page; onClose: () => void }) {
   const { t } = useTranslation()
   const api = useApi()
   const id = useId()
+  // Desde la Mesa de una campaña, solo ella: lo que se comparte va a la campaña desde la que se hace
+  const campaign = useCurrentCampaign()
   const known = useQuery({
     queryKey: knowledgeKey(page.worldId, page.id),
-    queryFn: () => api.call('getPageKnowledge', { pageId: page.id })
+    queryFn: () => api.call('getPageKnowledge', { pageId: page.id }),
+    select: campaign
+      ? (data) => ({ ...data, campaigns: data.campaigns.filter((row) => row.campaignId === campaign) })
+      : undefined
   })
   return (
     <div

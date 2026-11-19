@@ -3,14 +3,14 @@
  * larga de lo elegido y «Poner fecha» o «Cancelar». Las piezas son las del selector de fechas del módulo 8
  */
 import type { CalendarView } from '@crisol/contracts'
-import { dateForm, formatDate, type WorldDate } from '@crisol/domain'
+import { dateForm, formatDate, type WorldDate, yearBounds } from '@crisol/domain'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { type KeyboardEvent, type RefObject, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { IntegerInput } from '../calendars/date-input.tsx'
+import { YearInput } from '../calendars/date-input.tsx'
 import { pagesOf } from '../calendars/preview.tsx'
 import pickerStyles from '../wiki/date-field.module.css'
-import { MonthDays, moveFocus, type View, viewOf } from '../wiki/date-field.tsx'
+import { MonthDays, moveFocus, pageStep, type View, viewOf } from '../wiki/date-field.tsx'
 import { Popover } from './popover.tsx'
 import styles from './time.module.css'
 
@@ -39,17 +39,14 @@ export function DayPicker({
   const [view, setView] = useState<View>(() => viewOf(definition, value))
   const pages = pagesOf(definition)
   const page = pages[Math.min(view.page, pages.length - 1)] ?? pages[0]
+  // No pasa de los años del calendario
+  const years = yearBounds(definition)
+  const canStep = (by: -1 | 1) => {
+    const year = pageStep(pages.length, view, by).year
+    return year >= years.min && year <= years.max
+  }
   const step = (by: -1 | 1) => {
-    let next = view.page + by
-    let year = view.year
-    if (next < 0) {
-      next = pages.length - 1
-      year--
-    } else if (next >= pages.length) {
-      next = 0
-      year++
-    }
-    setView({ year, page: next })
+    if (canStep(by)) setView(pageStep(pages.length, view, by))
   }
   const keys = (event: KeyboardEvent<HTMLElement>) => {
     if (event.key === 'PageUp' || event.key === 'PageDown') {
@@ -68,7 +65,12 @@ export function DayPicker({
     <Popover anchor={anchor} title={t('campaignTime.pickerTitle')} onClose={onClose} placement="bottom-end">
       <div className={styles.picker}>
         <div className={pickerStyles.nav}>
-          <button type="button" aria-label={t('campaignTime.previousMonth')} onClick={() => step(-1)}>
+          <button
+            type="button"
+            aria-label={t('campaignTime.previousMonth')}
+            disabled={!canStep(-1)}
+            onClick={() => step(-1)}
+          >
             <ChevronLeft size={16} aria-hidden="true" />
           </button>
           <select
@@ -84,14 +86,15 @@ export function DayPicker({
             ))}
           </select>
           <span className={pickerStyles.year}>
-            <IntegerInput
+            <YearInput
               aria-label={t('campaignTime.pickerYear')}
+              definition={definition}
               value={view.year}
               onValue={(year) => setView({ ...view, year })}
             />
             {definition.yearSuffix && <span aria-hidden="true">{definition.yearSuffix}</span>}
           </span>
-          <button type="button" aria-label={t('campaignTime.nextMonth')} onClick={() => step(1)}>
+          <button type="button" aria-label={t('campaignTime.nextMonth')} disabled={!canStep(1)} onClick={() => step(1)}>
             <ChevronRight size={16} aria-hidden="true" />
           </button>
         </div>

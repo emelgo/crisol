@@ -2,6 +2,7 @@ import { activityActions } from './activity.ts'
 import { actorFolderActions } from './actor-folders.ts'
 import { aiActions } from './ai.ts'
 import { bookActions } from './books.ts'
+import { calendarEntryActions } from './calendar-entries.ts'
 import { calendarActions } from './calendars.ts'
 import { campaignActions } from './campaigns.ts'
 import { chapterActions } from './chapters.ts'
@@ -48,6 +49,7 @@ import { todayActions } from './today.ts'
 import { tokenActions } from './tokens.ts'
 import { trashActions } from './trash.ts'
 import { travelActions } from './travel.ts'
+import { treeActions } from './trees.ts'
 import { versionActions } from './versions.ts'
 import { visionActions } from './vision.ts'
 import { weatherActions } from './weather.ts'
@@ -59,6 +61,7 @@ export const IMPLEMENTATIONS: Implementation[] = [
   ...organizationActions,
   ...worldActions,
   ...calendarActions,
+  ...calendarEntryActions,
   ...chronologyActions,
   ...campaignActions,
   ...todayActions,
@@ -82,6 +85,7 @@ export const IMPLEMENTATIONS: Implementation[] = [
   ...copyPageActions,
   ...linkActions,
   ...relationActions,
+  ...treeActions,
   ...previewActions,
   ...versionActions,
   ...fileActions,

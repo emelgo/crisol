@@ -1,15 +1,6 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { i18next } from '../i18n.ts'
-import {
-  edgeLabel,
-  initials,
-  inWords,
-  openingMode,
-  type ReadableEdge,
-  rememberedMode,
-  rememberMode,
-  templateColor
-} from './model.ts'
+import { edgeLabel, initials, inWords, joinNeighbourhoods, type ReadableEdge, templateColor } from './model.ts'
 
 const t = i18next.t.bind(i18next)
 const field = (source: string, target: string, name: string, inverseName?: string): ReadableEdge => ({
@@ -28,36 +19,6 @@ const mention = (source: string, target: string, secret = false): ReadableEdge =
 })
 const titles: Record<string, string> = { ilsa: 'Ilsa', aldren: 'Aldren', lia: 'Lia', doran: 'Doran', guerra: 'Guerra' }
 const titleOf = (id: string) => titles[id] ?? id
-
-describe('con qué modo se abre', () => {
-  it('Familia u Organigrama si los tiene; si no, Enlaces', () => {
-    expect(openingMode(['links', 'family', 'org'], null)).toBe('family')
-    expect(openingMode(['links', 'org'], null)).toBe('org')
-    expect(openingMode(['links'], null)).toBe('links')
-    expect(openingMode([], null)).toBeNull()
-  })
-
-  it('el recordado para su plantilla manda, si la página lo tiene', () => {
-    expect(openingMode(['links', 'family'], 'links')).toBe('links')
-    expect(openingMode(['links'], 'family')).toBe('links')
-  })
-
-  describe('recordado por plantilla', () => {
-    beforeEach(() => localStorage.clear())
-    it('se guarda y se lee por plantilla (y sin plantilla)', () => {
-      rememberMode('pnj', 'links')
-      rememberMode(null, 'org')
-      expect(rememberedMode('pnj')).toBe('links')
-      expect(rememberedMode(null)).toBe('org')
-      expect(rememberedMode('lugar')).toBeNull()
-    })
-
-    it('un valor raro no vale', () => {
-      localStorage.setItem('crisol.relaciones.modo.pnj', 'arbol')
-      expect(rememberedMode('pnj')).toBeNull()
-    })
-  })
-})
 
 describe('cómo se lee una arista', () => {
   it('desde la página: su campo; desde la otra, el nombre al revés o «Campo de»', () => {
@@ -116,5 +77,22 @@ describe('iniciales y colores', () => {
     expect(templateColor('b', ['a', 'b'])).toBe('var(--color-series-2)')
     expect(templateColor('i', ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i'])).toBe('var(--color-series-1)')
     expect(templateColor(null, ['a'])).toBe('var(--color-muted)')
+  })
+})
+
+describe('el grafo de una página, ampliado', () => {
+  it('junta las páginas y las relaciones de cada vecindario sin repetir', () => {
+    const node = (id: string) => ({ id, title: titleOf(id), icon: null, template: null })
+    const joined = joinNeighbourhoods([
+      { nodes: [node('ilsa'), node('aldren')], edges: [field('ilsa', 'aldren', 'Padres')], truncated: false },
+      {
+        nodes: [node('aldren'), node('ilsa'), node('lia')],
+        edges: [field('ilsa', 'aldren', 'Padres'), mention('aldren', 'lia')],
+        truncated: true
+      }
+    ])
+    expect(joined.nodes.map((each) => each.id)).toEqual(['ilsa', 'aldren', 'lia'])
+    expect(joined.edges).toEqual([field('ilsa', 'aldren', 'Padres'), mention('aldren', 'lia')])
+    expect(joined.truncated).toBe(true)
   })
 })

@@ -67,7 +67,7 @@ describe('el «hoy» en el Inicio de la campaña (8 · campaña)', () => {
     show(() => <MasterToday worldId={WORLD.id} campaign={campaign} />, api.client)
     const today = await screen.findByRole('region', { name: 'Hoy' })
     expect(await within(today).findByRole('heading', { name: /Frostelle, 18 de Siega/ })).toBeTruthy()
-    expect(within(today).getByText('1250 RC')).toBeTruthy()
+    expect(within(today).getByText('Año 1250 RC')).toBeTruthy()
     expect(within(today).getByText('Sol')).toBeTruthy()
     expect(within(today).getByText('Templada · 45° N')).toBeTruthy()
     expect(within(today).getByText('Próximos días')).toBeTruthy()
@@ -151,7 +151,7 @@ describe('el centro de actividad (8 · campaña)', () => {
       created: false,
       at: at(0)
     },
-    { type: 'date', to: 'Flora, 3 de Siega de 1250 RC', days: 1, travel: false, ai: false, at: at(0) }
+    { type: 'date', to: 'Flora, 3 de Siega del año 1250 RC', days: 1, travel: false, ai: false, at: at(0) }
   ]
 
   it('agrupa por día real, con el registro de ese día', () => {
@@ -184,7 +184,7 @@ describe('el centro de actividad (8 · campaña)', () => {
     expect(within(center).getByText('Sesión')).toBeTruthy()
     expect(within(center).getByText('3 mensajes · 2 tiradas')).toBeTruthy()
     expect(within(center).getByRole('link', { name: 'Diario de Mirra' })).toBeTruthy()
-    expect(center.textContent).toContain('La fecha pasa a Flora, 3 de Siega de 1250 RC')
+    expect(center.textContent).toContain('La fecha pasa a Flora, 3 de Siega del año 1250 RC')
     await userEvent.click(within(center).getByRole('button', { name: 'Marcar como visto' }))
     expect(await within(center).findByText('Nada nuevo desde tu última visita')).toBeTruthy()
     await userEvent.click(within(center).getByRole('button', { name: 'Ver lo anterior' }))

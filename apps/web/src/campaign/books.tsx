@@ -20,6 +20,7 @@ import form from '../components/form.module.css'
 import { failed, LoadError } from '../components/load-error.tsx'
 import { Modal } from '../components/modal.tsx'
 import { PageTitle } from '../components/page-title.tsx'
+import segmented from '../components/segmented.module.css'
 import { Tour } from '../components/tour.tsx'
 import { BookCover } from './book-cover.tsx'
 import { BookWindow, relayout, withTransition } from './book-window.tsx'
@@ -92,7 +93,7 @@ export function CampaignBooks({ worldId, worldName, campaign }: Props) {
             <PageTitle className={styles.title}>{t('books.title')}</PageTitle>
             <p className={styles.sub}>{t('books.lead', { campaign: campaign.name })}</p>
           </div>
-          <fieldset className={styles.seg}>
+          <fieldset className={segmented.group}>
             <legend className={styles.hidden}>{t('books.show')}</legend>
             <button type="button" aria-pressed={!only} onClick={() => relayout(() => flushSync(() => setOnly(false)))}>
               {t('books.all')}

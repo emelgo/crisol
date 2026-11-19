@@ -96,7 +96,6 @@
 
 .asideHeader {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-2);
@@ -104,10 +103,29 @@
   margin-block-end: var(--space-2);
 }
 
+/* Los botones, de su tamaño y en una sola fila: lo que no cabe lo cede el nombre (con «…»), no bajan de línea */
+.asideHeader > *,
+.asideTitle > * {
+  flex: none;
+}
+
+/* El nombre del mundo y, a su derecha, su engranaje; los demás botones, al otro lado */
+.asideHeader > .asideTitle {
+  display: flex;
+  flex: 1 1 0;
+  align-items: center;
+  gap: var(--space-1);
+  min-inline-size: 0;
+}
+
 /* El nombre del panel (Páginas, Buscar o Marcadores), siempre en el mismo sitio, arriba: un rótulo pequeño y gris,
-   como los del panel de la derecha */
-.asideHeader h2 {
-  flex: 1 1 auto;
+   como los del panel de la derecha; si es largo, con «…» */
+.asideHeader .asideTitle h2 {
+  flex: 0 1 auto;
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   margin: 0;
   padding: 0 0 0 var(--space-2);
   border: 0;
@@ -567,6 +585,8 @@
 }
 
 .titleBox {
+  /* Los iconos que se proponen al escribir «:», debajo */
+  position: relative;
   flex: 0 1 auto;
   min-inline-size: 0;
 }

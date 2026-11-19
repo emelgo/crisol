@@ -24,6 +24,8 @@ interface TreeViewProps {
   onOpen: (id: string) => void
   svgRef: (element: SVGSVGElement | null) => void
   children?: ReactNode
+  /** En la pestaña de árbol: los nodos sin página (su tarjeta, con la raya discontinua) */
+  loose?: ReadonlySet<string> | undefined
 }
 
 export function TreeView({ transform, svgRef, label, children, onSelect, ...rest }: TreeViewProps) {
@@ -52,7 +54,8 @@ const TreeBody = memo(function TreeBody({
   selected,
   colorOf,
   onSelect,
-  onOpen
+  onOpen,
+  loose
 }: Omit<TreeViewProps, 'transform' | 'svgRef' | 'label' | 'children'>) {
   const { t } = useTranslation()
   const left = Math.min(...layout.cards.map((card) => card.x - card.width / 2))
@@ -92,6 +95,7 @@ const TreeBody = memo(function TreeBody({
             points={wire.points.map((p) => `${p.x},${p.y}`).join(' ')}
             className={styles.wire}
             data-kind={wire.kind}
+            data-dashed={wire.dashed || undefined}
           />
         ))}
       </g>
@@ -122,6 +126,7 @@ const TreeBody = memo(function TreeBody({
             aria-pressed={selected === card.id}
             data-center={card.id === center || undefined}
             data-kind={card.kind}
+            data-loose={loose?.has(card.id) || undefined}
             style={{ '--node-color': colorOf(node) } as CSSProperties}
             onClick={(event) => {
               event.stopPropagation()
@@ -170,6 +175,19 @@ const TreeBody = memo(function TreeBody({
           </g>
         )
       })}
+      {/* Encima de las tarjetas: un nombre que no cabe entre dos se lee igual (con su halo) */}
+      {layout.labels?.map((label) => (
+        <text
+          key={`${label.x},${label.y},${label.text}`}
+          className={styles.wireLabel}
+          x={label.x}
+          y={label.y}
+          dy="0.35em"
+          textAnchor={label.anchor}
+        >
+          {label.text}
+        </text>
+      ))}
     </>
   )
 })

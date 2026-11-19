@@ -1,9 +1,10 @@
 /**
- * Las cronologías de un mundo (módulo 8, capacidad `cronologias`; decisiones 4-10 de docs/specs/modulo-8.md): viven en
- * «Calendarios», con su calendario y su filtro, y juntan al leer los eventos sueltos del mundo y las páginas con fecha.
- * Las lleva el máster (page.write). Un jugador (ADR-0017) ve las que se le revelan (marca `chronology`) y, dentro, los
- * eventos que no están ocultos (o que se le revelaron) y las páginas que conoce, sin campos ocultos ni eras solo del
- * máster; un evento enlazado a una página que no conoce sale sin enlace (y sin título propio, no sale)
+ * Las cronologías de un mundo (módulo 8, capacidad `cronologias`; ADR-0031 y ADR-0032): cada una es una pestaña de una
+ * página, con su calendario, sus eventos y sus grupos (cada evento es de una, como en Everlore) y, si su filtro las pide,
+ * las páginas con fecha. Las lleva el máster
+ * (page.write). Un jugador (ADR-0017) ve las de las pestañas que ve y, dentro, los eventos que no están ocultos (o que
+ * se le revelaron) y las páginas que conoce, sin campos ocultos ni eras solo del máster; un evento enlazado a una
+ * página que no conoce sale sin enlace (y sin título propio, no sale)
  */
 import {
   CHRONOLOGY_LIMITS,
@@ -18,6 +19,7 @@ import {
   deleteTimelineEvent,
   getChronology,
   listChronologies,
+  MAX_PAGE_TABS,
   type TimelineEventView,
   type TimelineGroupView,
   updateChronology,
@@ -25,7 +27,7 @@ import {
   updateTimelineGroups,
   WORLD_COLORS
 } from '@crisol/contracts'
-import { calendarsRepo, chronologiesRepo, filesRepo, operation, pagesRepo, schema } from '@crisol/db'
+import { calendarsRepo, chronologiesRepo, filesRepo, mapsRepo, operation, pagesRepo, schema } from '@crisol/db'
 import {
   type ChronologyEntry,
   type ChronologyEvent,
@@ -49,8 +51,9 @@ import type { JSONContent } from '@tiptap/core'
 import { chronologiesChanged, pagesChanged } from '../realtime/events.ts'
 import { stateOf } from '../wiki/content.ts'
 import { worldCalendars } from '../wiki/dates.ts'
+import { viewedPage } from '../wiki/projection.ts'
 import { authorizedView, knownBySomeone, type ReadAs, type WikiView } from '../wiki/reader.ts'
-import { authorizedWiki, type WikiTarget } from './access.ts'
+import { authorizedPage, authorizedWiki, type WikiTarget } from './access.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
 import { implement } from './registry.ts'
 
@@ -74,17 +77,29 @@ type GroupRow = chronologiesRepo.TimelineGroupRow
 type EventRow = chronologiesRepo.TimelineEventRow
 type CalendarRow = calendarsRepo.CalendarRow
 
-const chronologyView = (row: ChronologyRow): ChronologyView => ({
+type PlacedRow = chronologiesRepo.PlacedChronologyRow
+
+/** El nombre que dan a la pestaña al crearla (y la migración 0090 a las de antes) */
+export const CHRONOLOGY_TAB = 'Cronología'
+
+/** El nombre de una cronología: el de su página y, si su pestaña se llama de otra forma, también el de ella */
+const chronologyName = (row: Pick<PlacedRow, 'pageTitle' | 'tabName'>) =>
+  row.tabName === CHRONOLOGY_TAB || row.tabName === row.pageTitle ? row.pageTitle : `${row.pageTitle} · ${row.tabName}`
+
+const chronologyView = (row: PlacedRow): ChronologyView => ({
   id: row.id,
   worldId: row.worldId,
-  name: row.name,
+  name: chronologyName(row),
+  tabId: row.tabId,
+  pageId: row.pageId,
   calendarId: row.calendarId,
   filter: { ...DEFAULT_CHRONOLOGY_FILTER, ...row.filter },
   version: row.version
 })
 
-const groupView = (row: GroupRow): TimelineGroupView => ({
+export const groupView = (row: GroupRow): TimelineGroupView => ({
   id: row.id,
+  chronologyId: row.chronologyId,
   name: row.name,
   color: row.color,
   version: row.version
@@ -94,6 +109,7 @@ const groupView = (row: GroupRow): TimelineGroupView => ({
 const eventView = (row: EventRow, view: WikiView | null = null): TimelineEventView => ({
   id: row.id,
   worldId: row.worldId,
+  chronologyId: row.chronologyId,
   title: row.title,
   date: row.date,
   color: row.color,
@@ -110,13 +126,23 @@ const eventView = (row: EventRow, view: WikiView | null = null): TimelineEventVi
 const calendarOf = (rows: readonly CalendarRow[], chronology: Pick<ChronologyRow, 'calendarId'>) =>
   rows.find((row) => row.id === chronology.calendarId) ?? rows.find((row) => row.isPrimary) ?? null
 
-/** Lo que juntan las cronologías de un mundo, con lo que ve quien lee */
-async function worldData(ctx: ActionContext, worldId: string, view: WikiView) {
+/**
+ * Lo que juntan las cronologías de un mundo, con lo que ve quien lee: con chronologyId, los eventos y los grupos de esa;
+ * sin él, los de todas (la lista de cronologías y la vista grande de un calendario). Las páginas con fecha, solo si
+ * alguna las pide (pages)
+ */
+export async function worldData(
+  ctx: ActionContext,
+  worldId: string,
+  view: WikiView,
+  scope: { chronologyId?: string; pages: boolean }
+) {
+  const one = scope.chronologyId
   const [calendarRows, groups, events, pageRows] = await Promise.all([
     calendarsRepo.listCalendars(ctx.db, worldId),
-    chronologiesRepo.listGroups(ctx.db, worldId),
-    chronologiesRepo.listEvents(ctx.db, worldId),
-    chronologiesRepo.datedPagesOf(ctx.db, worldId)
+    one ? chronologiesRepo.groupsOf(ctx.db, one) : chronologiesRepo.listGroups(ctx.db, worldId),
+    one ? chronologiesRepo.eventsOf(ctx.db, one) : chronologiesRepo.listEvents(ctx.db, worldId),
+    scope.pages ? chronologiesRepo.datedPagesOf(ctx.db, worldId) : Promise.resolve([])
   ])
   const calendars = worldCalendars(calendarRows, view.full)
   const seen = events.filter((event) => view.seesEvent({ id: event.id, hidden: event.hidden }))
@@ -129,6 +155,7 @@ async function worldData(ctx: ActionContext, worldId: string, view: WikiView) {
     const head = event.pageId && view.seesPage(event.pageId) ? heads.get(event.pageId) : undefined
     return {
       id: event.id,
+      chronologyId: event.chronologyId,
       title: event.title,
       date: event.date,
       color: event.color,
@@ -170,8 +197,11 @@ async function worldData(ctx: ActionContext, worldId: string, view: WikiView) {
 
 type WorldData = Awaited<ReturnType<typeof worldData>>
 
-/** Las entradas de una cronología, ya para la API: con sus fechas en texto y lo convertido, de dónde viene */
-function entriesOf(data: WorldData, chronology: ChronologyRow) {
+/**
+ * Las entradas de una cronología, ya para la API: con sus fechas en texto y lo convertido, de dónde viene. Con id, solo
+ * sus eventos; sin él (la vista grande de un calendario), los de todas
+ */
+export function entriesOf(data: WorldData, chronology: Pick<ChronologyRow, 'calendarId' | 'filter'> & { id?: string }) {
   const calendar = calendarOf(data.calendarRows, chronology)
   if (!calendar)
     return { calendar: null, entries: [] as ChronologyEntryView[], raw: [] as ChronologyEntry[], outside: 0 }
@@ -179,7 +209,7 @@ function entriesOf(data: WorldData, chronology: ChronologyRow) {
   const { entries, outside } = chronologyEntries({
     calendars: data.calendars,
     calendarId: calendar.id,
-    events: data.events,
+    events: chronology.id ? data.events.filter((event) => event.chronologyId === chronology.id) : data.events,
     pages: data.pages,
     filter
   })
@@ -204,6 +234,7 @@ function entriesOf(data: WorldData, chronology: ChronologyRow) {
     }
     // Solo lo que tiene (son miles)
     if (entry.eventId) out.eventId = entry.eventId
+    if (entry.chronologyId) out.chronologyId = entry.chronologyId
     if (entry.pageId) out.pageId = entry.pageId
     if (entry.untitled) out.untitled = true
     if (entry.field) out.field = entry.field
@@ -230,44 +261,46 @@ function entriesOf(data: WorldData, chronology: ChronologyRow) {
   return { calendar, entries: entries.map(view), raw: entries, outside }
 }
 
-/** La cronología para leerla, con lo que ve quien la pide. Si no existe o no la ve (un jugador, sin su marca), 404 */
-async function viewedChronology(ctx: ActionContext, chronologyId: string, as: ReadAs) {
-  const chronology = chronologyId ? await chronologiesRepo.findChronology(ctx.db, chronologyId) : null
-  const { wiki, view } = await authorizedView(ctx, chronology?.worldId ?? '', as)
-  if (!chronology || !view.seesChronology(chronology.id)) throw new NotFoundError('chronology')
-  return { chronology, wiki, view }
+/** Si quien lee ve la cronología: su pestaña (y con ella su página, fuera de la papelera) */
+const seesChronology = (view: WikiView, row: PlacedRow) =>
+  view.seesTab({ id: row.tabId, pageId: row.pageId, hidden: row.tabHidden })
+
+/**
+ * La cronología para leerla (por su id o por el de su pestaña), con lo que ve quien la pide. Si no existe, su página
+ * está en la papelera o no ve su pestaña (un jugador), 404
+ */
+async function viewedChronology(ctx: ActionContext, ref: { chronologyId?: string; tabId?: string }, as: ReadAs) {
+  if (!ref.chronologyId && !ref.tabId) throw new InvalidRequestError('BAD_INPUT', 'chronologyId o tabId')
+  const chronology = ref.chronologyId
+    ? await chronologiesRepo.findChronology(ctx.db, ref.chronologyId)
+    : await chronologiesRepo.chronologyOfTab(ctx.db, ref.tabId ?? '')
+  const { page, wiki, view } = await viewedPage(ctx, chronology?.pageId ?? '', as)
+  if (!chronology || !seesChronology(view, chronology)) throw new NotFoundError('chronology')
+  return { chronology, page, wiki, view }
 }
 
 async function authorizedChronology(ctx: ActionContext, chronologyId: string) {
   const chronology = chronologyId ? await chronologiesRepo.findChronology(ctx.db, chronologyId) : null
-  const wiki = await authorizedWiki(ctx, 'page.write', chronology?.worldId ?? '')
+  const { page, wiki } = await authorizedPage(ctx, 'page.write', chronology?.pageId ?? '')
   if (!chronology) throw new NotFoundError('chronology')
-  return { chronology, wiki }
+  return { chronology, page, wiki }
 }
 
+/** Un evento que la cuenta puede cambiar: el de una cronología cuya página puede escribir */
 async function authorizedEvent(ctx: ActionContext, eventId: string) {
   const event = eventId ? await chronologiesRepo.findEvent(ctx.db, eventId) : null
-  const wiki = await authorizedWiki(ctx, 'page.write', event?.worldId ?? '')
+  const { chronology, wiki } = await authorizedChronology(ctx, event?.chronologyId ?? '')
   if (!event) throw new NotFoundError('event')
-  return { event, wiki }
+  return { event, chronology, wiki }
 }
 
-/** El filtro que se guarda: lo que se dé sobre lo que había, con los grupos del mundo */
-function filterFrom(
-  base: ChronologyFilter,
-  patch: Partial<ChronologyFilterValue> | undefined,
-  groups: readonly GroupRow[]
-): ChronologyFilter {
+/** El filtro que se guarda: lo que se dé sobre lo que había */
+function filterFrom(base: ChronologyFilter, patch: Partial<ChronologyFilterValue> | undefined): ChronologyFilter {
   const next = { ...DEFAULT_CHRONOLOGY_FILTER, ...base, ...(patch ?? {}) }
-  const known = new Set(groups.map((g) => g.id))
-  const unknown = next.groups.filter((id) => !known.has(id))
-  if (unknown.length > 0)
-    throw new InvalidRequestError('BAD_GROUP', `no son grupos de este mundo: ${unknown.join(', ')}`)
   return {
     pages: next.pages,
     templates: [...new Set(next.templates)],
-    tags: [...new Set(next.tags.map((tag) => tag.trim()).filter(Boolean))],
-    groups: [...new Set(next.groups)]
+    tags: [...new Set(next.tags.map((tag) => tag.trim()).filter(Boolean))]
   }
 }
 
@@ -328,7 +361,10 @@ async function livePage(ctx: ActionContext, wiki: WikiTarget, pageId: string) {
 }
 
 type EventPatch = Partial<
-  Pick<EventRow, 'title' | 'date' | 'color' | 'image' | 'icon' | 'description' | 'groupId' | 'pageId' | 'hidden'>
+  Pick<
+    EventRow,
+    'title' | 'date' | 'color' | 'image' | 'icon' | 'description' | 'groupId' | 'pageId' | 'hidden' | 'chronologyId'
+  >
 >
 
 /** Lo escrito de un evento (al crearlo o cambiarlo), comprobado: lo que va a la fila y lo que hay que crear antes */
@@ -402,7 +438,7 @@ export async function chronologyRequest(ctx: ActionContext, action: string, inpu
   if (action === 'createChronology') return { name: String(input.name ?? '') }
   if ((action === 'updateChronology' || action === 'deleteChronology') && typeof input.chronologyId === 'string') {
     const { chronology } = await authorizedChronology(ctx, input.chronologyId)
-    return { name: typeof input.name === 'string' ? input.name : chronology.name }
+    return { name: typeof input.name === 'string' ? input.name : chronologyName(chronology) }
   }
   if (action === 'createTimelineEvents' && Array.isArray(input.events)) {
     const titles = input.events.map((e) => String((e as { title?: unknown }).title ?? '')).filter(Boolean)
@@ -439,8 +475,8 @@ const fold = (text: string) =>
 export const chronologyActions = [
   implement(listChronologies, async (ctx, { worldId, campaignId, asCharacterId }) => {
     const { view } = await authorizedView(ctx, worldId, { campaignId, asCharacterId })
-    const rows = (await chronologiesRepo.listChronologies(ctx.db, worldId)).filter((row) => view.seesChronology(row.id))
-    const data = await worldData(ctx, worldId, view)
+    const rows = (await chronologiesRepo.listChronologies(ctx.db, worldId)).filter((row) => seesChronology(view, row))
+    const data = await worldData(ctx, worldId, view, { pages: rows.some((row) => row.filter.pages) })
     return {
       chronologies: rows.map((row) => {
         const { calendar, entries } = entriesOf(data, row)
@@ -450,16 +486,20 @@ export const chronologyActions = [
           ...chronologyView(row),
           calendarName: calendar?.name ?? null,
           entries: entries.length,
-          span: first && last ? { from: first.text, to: last.text } : null
+          span: first && last ? { from: first.text, to: last.text } : null,
+          groups: data.groups.filter((group) => group.chronologyId === row.id).map(groupView)
         }
-      }),
-      groups: data.groups.map(groupView)
+      })
     }
   }),
 
-  implement(getChronology, async (ctx, { chronologyId, from, to, text, campaignId, asCharacterId }) => {
-    const { chronology, view } = await viewedChronology(ctx, chronologyId, { campaignId, asCharacterId })
-    const data = await worldData(ctx, chronology.worldId, view)
+  implement(getChronology, async (ctx, { chronologyId, tabId, from, to, text, campaignId, asCharacterId }) => {
+    const ref = { ...(chronologyId ? { chronologyId } : {}), ...(tabId ? { tabId } : {}) }
+    const { chronology, view } = await viewedChronology(ctx, ref, { campaignId, asCharacterId })
+    const data = await worldData(ctx, chronology.worldId, view, {
+      chronologyId: chronology.id,
+      pages: { ...DEFAULT_CHRONOLOGY_FILTER, ...chronology.filter }.pages
+    })
     const { calendar, entries, raw, outside } = entriesOf(data, chronology)
     if (!calendar) throw new InvalidRequestError('NO_CALENDAR', 'este mundo aún no tiene calendario: crea uno antes')
     const seen = data.calendars.find((c) => c.id === calendar.id) as WorldCalendar
@@ -496,12 +536,12 @@ export const chronologyActions = [
     }
   }),
 
-  implement(createChronology, async (ctx, { worldId, name, calendarId, filter }) => {
+  // Una cronología es una pestaña (ADR-0031): en una página que ya hay o en una nueva con su nombre, en una operación
+  implement(createChronology, async (ctx, { worldId, name, pageId, parentId, calendarId, filter }) => {
     const wiki = await authorizedWiki(ctx, 'page.write', worldId)
-    const [rows, calendars, groups] = await Promise.all([
+    const [rows, calendars] = await Promise.all([
       chronologiesRepo.listChronologies(ctx.db, worldId),
-      calendarsRepo.listCalendars(ctx.db, worldId),
-      chronologiesRepo.listGroups(ctx.db, worldId)
+      calendarsRepo.listCalendars(ctx.db, worldId)
     ])
     if (rows.length >= CHRONOLOGY_LIMITS.chronologies)
       throw new InvalidRequestError(
@@ -509,85 +549,109 @@ export const chronologyActions = [
         `un mundo tiene como mucho ${CHRONOLOGY_LIMITS.chronologies} cronologías`
       )
     checkCalendar(calendars, calendarId)
-    const created = await operation(
-      ctx.db,
-      historyContext(ctx, 'createChronology', { name }, { organizationId: wiki.organizationId, worldId }),
-      (w) =>
-        w.insert(schema.chronologies, {
+    const chronology = { calendarId: calendarId ?? null, filter: filterFrom(DEFAULT_CHRONOLOGY_FILTER, filter) }
+    let tabId: string
+    if (pageId) {
+      // En una página que ya hay: una pestaña más, al final
+      const { page } = await authorizedPage(ctx, 'page.write', pageId)
+      if (page.worldId !== worldId) throw new NotFoundError('page')
+      const tabs = await mapsRepo.listTabs(ctx.db, pageId)
+      if (tabs.length >= MAX_PAGE_TABS) throw new InvalidRequestError('TOO_MANY_TABS', `como mucho ${MAX_PAGE_TABS}`)
+      const tab = await mapsRepo.createTab(
+        ctx.db,
+        historyContext(ctx, 'createChronology', { name, title: page.title }, wiki),
+        { worldId, pageId, kind: 'chronology', name, position: keyBetween(tabs.at(-1)?.position ?? null, null) },
+        { chronology }
+      )
+      tabId = tab.id
+    } else {
+      // Una página nueva con su nombre y su pestaña «Cronología»; oculta si alguna campaña conoce a su madre
+      if (parentId) await livePage(ctx, wiki, parentId)
+      const hidden = parentId ? await knownBySomeone(ctx, worldId, parentId) : false
+      tabId = await operation(ctx.db, historyContext(ctx, 'createChronology', { name }, wiki), async (w) => {
+        const page = await chronologiesRepo.insertEventPage(w, {
           worldId,
-          name,
-          position: keyBetween(rows.at(-1)?.position ?? null, null),
-          calendarId: calendarId ?? null,
-          filter: filterFrom(DEFAULT_CHRONOLOGY_FILTER, filter, groups)
+          parentId: parentId ?? null,
+          title: name,
+          hidden,
+          actorId: ctx.actor.userId
         })
-    )
+        const tab = await w.insert(schema.pageTabs, {
+          worldId,
+          pageId: page.id,
+          kind: 'chronology',
+          name: CHRONOLOGY_TAB,
+          position: keyBetween(null, null)
+        })
+        await w.insert(schema.chronologies, { worldId, tabId: tab.id, ...chronology })
+        return tab.id
+      })
+    }
     ctx.realtime.publish(chronologiesChanged(wiki))
+    ctx.realtime.publish(pagesChanged(wiki))
+    const created = await chronologiesRepo.chronologyOfTab(ctx.db, tabId)
+    if (!created) throw new NotFoundError('chronology')
     return chronologyView(created)
   }),
 
-  implement(updateChronology, async (ctx, { chronologyId, name, calendarId, filter, after }) => {
+  implement(updateChronology, async (ctx, { chronologyId, name, calendarId, filter }) => {
     const { chronology, wiki } = await authorizedChronology(ctx, chronologyId)
-    const patch: Partial<Pick<ChronologyRow, 'name' | 'calendarId' | 'filter' | 'position'>> = {}
-    if (name !== undefined) patch.name = name
+    const patch: Partial<Pick<ChronologyRow, 'calendarId' | 'filter'>> = {}
     if (calendarId !== undefined) {
       checkCalendar(await calendarsRepo.listCalendars(ctx.db, chronology.worldId), calendarId)
       patch.calendarId = calendarId
     }
-    if (filter !== undefined)
-      patch.filter = filterFrom(
-        chronology.filter,
-        filter,
-        await chronologiesRepo.listGroups(ctx.db, chronology.worldId)
-      )
-    if (after !== undefined) {
-      const others = (await chronologiesRepo.listChronologies(ctx.db, chronology.worldId)).filter(
-        (row) => row.id !== chronology.id
-      )
-      const index = after === null ? -1 : others.findIndex((row) => row.id === after)
-      if (after !== null && index < 0) throw new NotFoundError('chronology')
-      patch.position = keyBetween(others[index]?.position ?? null, others[index + 1]?.position ?? null)
-    }
-    if (Object.keys(patch).length === 0) return chronologyView(chronology)
-    const saved = await operation(
+    if (filter !== undefined) patch.filter = filterFrom(chronology.filter, filter)
+    const renamed = name !== undefined && name !== chronology.tabName
+    if (Object.keys(patch).length === 0 && !renamed) return chronologyView(chronology)
+    await operation(
       ctx.db,
       historyContext(
         ctx,
         'updateChronology',
         {
-          name: name ?? chronology.name,
-          ...(name !== undefined && name !== chronology.name ? { from: chronology.name, to: name } : {}),
-          ...(after !== undefined && Object.keys(patch).length === 1 ? { moved: true } : {})
+          name: chronologyName(chronology),
+          ...(renamed ? { from: chronology.tabName, to: name } : {})
         },
         { organizationId: wiki.organizationId, worldId: chronology.worldId }
       ),
-      (w) => w.update(schema.chronologies, chronology.id, patch)
+      async (w) => {
+        if (Object.keys(patch).length > 0) await w.update(schema.chronologies, chronology.id, patch)
+        // Su nombre es el de su pestaña
+        if (renamed) await w.update(schema.pageTabs, chronology.tabId, { name })
+      }
     )
     ctx.realtime.publish(chronologiesChanged(wiki))
+    if (renamed) ctx.realtime.publish(pagesChanged(wiki))
+    const saved = await chronologiesRepo.findChronology(ctx.db, chronology.id)
+    if (!saved) throw new NotFoundError('chronology')
     return chronologyView(saved)
   }),
 
+  // Con su pestaña, sus eventos y sus grupos (deshacer lo devuelve todo); su página se queda
   implement(deleteChronology, async (ctx, { chronologyId }) => {
     const { chronology, wiki } = await authorizedChronology(ctx, chronologyId)
-    await operation(
+    await mapsRepo.deleteTab(
       ctx.db,
       historyContext(
         ctx,
         'deleteChronology',
-        { name: chronology.name },
+        { name: chronologyName(chronology) },
         { organizationId: wiki.organizationId, worldId: chronology.worldId }
       ),
-      (w) => w.remove(schema.chronologies, chronology.id)
+      chronology.tabId
     )
     ctx.realtime.publish(chronologiesChanged(wiki))
+    ctx.realtime.publish(pagesChanged(wiki))
     return { id: chronology.id }
   }),
 
-  implement(updateTimelineGroups, async (ctx, { worldId, groups: wanted }) => {
-    const wiki = await authorizedWiki(ctx, 'page.write', worldId)
-    const [current, events, chronologies] = await Promise.all([
-      chronologiesRepo.listGroups(ctx.db, worldId),
-      chronologiesRepo.listEvents(ctx.db, worldId),
-      chronologiesRepo.listChronologies(ctx.db, worldId)
+  implement(updateTimelineGroups, async (ctx, { chronologyId, groups: wanted }) => {
+    const { chronology, wiki } = await authorizedChronology(ctx, chronologyId)
+    const worldId = chronology.worldId
+    const [current, events] = await Promise.all([
+      chronologiesRepo.groupsOf(ctx.db, chronology.id),
+      chronologiesRepo.eventsOf(ctx.db, chronology.id)
     ])
     const byId = new Map(current.map((g) => [g.id, g]))
     for (const group of wanted) if (group.id && !byId.has(group.id)) throw new NotFoundError('group')
@@ -599,19 +663,14 @@ export const chronologyActions = [
       historyContext(
         ctx,
         'updateTimelineGroups',
-        { names: wanted.map((g) => g.name), removed: removed.map((g) => g.name) },
+        { name: chronologyName(chronology), names: wanted.map((g) => g.name), removed: removed.map((g) => g.name) },
         { organizationId: wiki.organizationId, worldId }
       ),
       async (w) => {
-        // Lo que quedaba en un grupo que se quita, sin grupo; y fuera de los filtros (deshacer lo devuelve)
+        // Lo que quedaba en un grupo que se quita, sin grupo (deshacer lo devuelve)
         for (const event of events)
           if (event.groupId && gone.has(event.groupId))
             await w.update(schema.timelineEvents, event.id, { groupId: null })
-        for (const chronology of chronologies) {
-          const groups = (chronology.filter.groups ?? []).filter((id) => !gone.has(id))
-          if (groups.length !== (chronology.filter.groups ?? []).length)
-            await w.update(schema.chronologies, chronology.id, { filter: { ...chronology.filter, groups } })
-        }
         for (const group of removed) await w.remove(schema.timelineGroups, group.id)
         let previous: string | null = null
         for (const group of wanted) {
@@ -622,23 +681,31 @@ export const chronologyActions = [
           if (own) {
             if (own.name !== group.name || own.color !== group.color || own.position !== position)
               await w.update(schema.timelineGroups, own.id, { name: group.name, color: group.color, position })
-          } else await w.insert(schema.timelineGroups, { worldId, name: group.name, color: group.color, position })
+          } else
+            await w.insert(schema.timelineGroups, {
+              worldId,
+              chronologyId: chronology.id,
+              name: group.name,
+              color: group.color,
+              position
+            })
           previous = position
         }
       }
     )
     ctx.realtime.publish(chronologiesChanged(wiki))
-    return { groups: (await chronologiesRepo.listGroups(ctx.db, worldId)).map(groupView) }
+    return { groups: (await chronologiesRepo.groupsOf(ctx.db, chronology.id)).map(groupView) }
   }),
 
-  implement(createTimelineEvents, async (ctx, { worldId, events }) => {
-    const wiki = await authorizedWiki(ctx, 'page.write', worldId)
+  implement(createTimelineEvents, async (ctx, { chronologyId, events }) => {
+    const { chronology, wiki } = await authorizedChronology(ctx, chronologyId)
+    const worldId = chronology.worldId
     const [calendars, groups, existing] = await Promise.all([
       calendarsRepo.listCalendars(ctx.db, worldId),
-      chronologiesRepo.listGroups(ctx.db, worldId),
-      chronologiesRepo.listEvents(ctx.db, worldId)
+      chronologiesRepo.groupsOf(ctx.db, chronology.id),
+      chronologiesRepo.countEvents(ctx.db, worldId)
     ])
-    if (existing.length + events.length > CHRONOLOGY_LIMITS.events)
+    if (existing + events.length > CHRONOLOGY_LIMITS.events)
       throw new InvalidRequestError('TOO_MANY_EVENTS', `un mundo tiene como mucho ${CHRONOLOGY_LIMITS.events} eventos`)
     // Todo se lee y se comprueba antes de escribir nada
     const written: WrittenEvent[] = []
@@ -646,7 +713,10 @@ export const chronologyActions = [
       written.push(await readEvent(ctx, wiki, calendars, groups, event, `el evento n.º ${index + 1}: `))
     const newGroups = [...new Set(written.flatMap((w) => (w.newGroup ? [w.newGroup] : [])))]
     if (groups.length + newGroups.length > CHRONOLOGY_LIMITS.groups)
-      throw new InvalidRequestError('TOO_MANY_GROUPS', `un mundo tiene como mucho ${CHRONOLOGY_LIMITS.groups} grupos`)
+      throw new InvalidRequestError(
+        'TOO_MANY_GROUPS',
+        `una cronología tiene como mucho ${CHRONOLOGY_LIMITS.groups} grupos`
+      )
     const hiddenUnder = new Map<string | null, boolean>()
     for (const w of written)
       if (w.newPage && !hiddenUnder.has(w.newPage.parentId))
@@ -660,7 +730,7 @@ export const chronologyActions = [
       historyContext(
         ctx,
         'createTimelineEvents',
-        { count: events.length, titles: titles.slice(0, 10) },
+        { name: chronologyName(chronology), count: events.length, titles: titles.slice(0, 10) },
         { organizationId: wiki.organizationId, worldId }
       ),
       async (w) => {
@@ -670,7 +740,13 @@ export const chronologyActions = [
           last = keyBetween(last, null)
           // Cada grupo nuevo, con un color de la paleta (en rueda): carriles y tarjetas se distinguen
           const color = WORLD_COLORS[(groups.length + index) % WORLD_COLORS.length] ?? null
-          const row = await w.insert(schema.timelineGroups, { worldId, name, color, position: last })
+          const row = await w.insert(schema.timelineGroups, {
+            worldId,
+            chronologyId: chronology.id,
+            name,
+            color,
+            position: last
+          })
           groupIds.set(name, row.id)
         }
         const rows: EventRow[] = []
@@ -690,6 +766,7 @@ export const chronologyActions = [
           rows.push(
             await w.insert(schema.timelineEvents, {
               worldId,
+              chronologyId: chronology.id,
               title: item.patch.title ?? '',
               date,
               color: item.patch.color ?? null,
@@ -710,17 +787,29 @@ export const chronologyActions = [
     return { events: created.map((row) => eventView(row)) }
   }),
 
-  implement(updateTimelineEvent, async (ctx, { eventId, ...input }) => {
+  implement(updateTimelineEvent, async (ctx, { eventId, chronologyId, ...input }) => {
     const { event, wiki } = await authorizedEvent(ctx, eventId)
+    // Pasarlo a otra cronología del mundo (que también pueda escribir): sin grupo, salvo que se dé uno de allí
+    const moving = chronologyId !== undefined && chronologyId !== event.chronologyId
+    const target = moving ? (await authorizedChronology(ctx, chronologyId)).chronology : null
+    if (target && target.worldId !== event.worldId) throw new NotFoundError('chronology')
+    const home = target?.id ?? event.chronologyId
     const [calendars, groups] = await Promise.all([
       calendarsRepo.listCalendars(ctx.db, event.worldId),
-      chronologiesRepo.listGroups(ctx.db, event.worldId)
+      chronologiesRepo.groupsOf(ctx.db, home)
     ])
     // Una fecha escrita sin calendario: la del suyo, si no se dice otro
     const calendar = typeof input.date === 'string' && !input.calendar ? event.date.calendarId : input.calendar
     const written = await readEvent(ctx, wiki, calendars, groups, { ...input, calendar }, '')
+    if (moving) {
+      written.patch.chronologyId = home
+      if (written.patch.groupId === undefined && !written.newGroup) written.patch.groupId = null
+    }
     if (written.newGroup && groups.length >= CHRONOLOGY_LIMITS.groups)
-      throw new InvalidRequestError('TOO_MANY_GROUPS', `un mundo tiene como mucho ${CHRONOLOGY_LIMITS.groups} grupos`)
+      throw new InvalidRequestError(
+        'TOO_MANY_GROUPS',
+        `una cronología tiene como mucho ${CHRONOLOGY_LIMITS.groups} grupos`
+      )
     const title = (written.patch.title ?? event.title) || written.newPage?.title || ''
     const linked = written.newPage || (written.patch.pageId !== undefined ? written.patch.pageId : event.pageId)
     if (!title && !linked) throw new InvalidRequestError('EVENT_NEEDS_TITLE', 'un título, o una página enlazada')
@@ -740,6 +829,7 @@ export const chronologyActions = [
         if (written.newGroup) {
           const row = await w.insert(schema.timelineGroups, {
             worldId: event.worldId,
+            chronologyId: home,
             name: written.newGroup,
             color: WORLD_COLORS[groups.length % WORLD_COLORS.length] ?? null,
             position: keyBetween(groups.at(-1)?.position ?? null, null)

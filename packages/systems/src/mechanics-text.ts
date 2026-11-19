@@ -83,7 +83,11 @@ const WORDS = {
   down: { es: '{x} (hacia abajo)', en: '{x} (rounded down)' },
   up: { es: '{x} (hacia arriba)', en: '{x} (rounded up)' },
   sum: { es: 'la suma de {x}', en: 'the sum of {x}' },
-  count: { es: 'cuántos {x}', en: 'how many {x}' }
+  count: { es: 'cuántos {x}', en: 'how many {x}' },
+  first: { es: 'el primero de {x}', en: 'the first of {x}' },
+  empty: { es: 'vacío', en: 'empty' },
+  with: { es: 'con {x}', en: 'with {x}' },
+  without: { es: 'sin {x}', en: 'without {x}' }
 } satisfies Words
 
 const say = (word: keyof typeof WORDS, language: Language, values: Record<string, string> = {}) =>
@@ -113,6 +117,10 @@ function namesOf(system: System, type: string, language: Language) {
     }
   }
   for (const t of Object.values(system.types)) visit(t.fields)
+  // Las opciones de los ajustes de campaña también (@ajustes.reglas == "e2024": «2024»)
+  for (const s of Object.values(system.settings ?? {}))
+    for (const o of s.options ?? [])
+      if (!options.has(o.value)) options.set(o.value, textOf(o.label, language).toLocaleLowerCase(language))
   return { bearer, item, options, elements }
 }
 
@@ -159,7 +167,8 @@ export function formulaText(formula: string, context: { system: System; type: st
     return formula
   }
   const ref = (path: (string | Expr)[]): string => {
-    const keys = path.map((p) => (typeof p === 'string' ? p : '…'))
+    // Lo que se elige al calcular (@caracteristicas[@este.car]), por su nombre: «Modificador de Característica»
+    const keys = path.map((p) => (typeof p === 'string' ? p : visit(p)))
     const [first, ...rest] = keys
     if (first === 'este') return pathName(names.item, rest, language, system)
     if (first === 'origen')
@@ -174,12 +183,27 @@ export function formulaText(formula: string, context: { system: System; type: st
     return pathName(names.bearer, keys, language, system)
   }
   const op: Record<string, string> = { '>=': '≥', '<=': '≤', '==': '=', '!=': '≠', '>': '>', '<': '<' }
+  // Lo que va antes al calcular: con menos, entre paréntesis ((Puntuación − 10) ÷ 2)
+  const strength = (e: Expr): number => {
+    if (e.kind === 'conditional') return 0
+    if (e.kind !== 'binary') return 9
+    if (e.op === '||') return 1
+    if (e.op === '&&') return 2
+    if (e.op in op) return 3
+    return e.op === '+' || e.op === '-' ? 4 : 5
+  }
+  const side = (child: Expr, parent: Expr, right: boolean) => {
+    const text = visit(child)
+    const [c, p] = [strength(child), strength(parent)]
+    const tight = right && c === p && parent.kind === 'binary' && (parent.op === '-' || parent.op === '/')
+    return c < p || tight ? `(${text})` : text
+  }
   const visit = (e: Expr): string => {
     switch (e.kind) {
       case 'number':
         return String(e.value)
       case 'string':
-        return names.options.get(e.value) ?? e.value
+        return e.value === '' ? say('empty', language) : (names.options.get(e.value) ?? e.value)
       case 'boolean':
         return String(e.value)
       case 'null':
@@ -189,17 +213,22 @@ export function formulaText(formula: string, context: { system: System; type: st
       case 'ref':
         return ref(e.path)
       case 'unary':
-        return e.op === '-' ? `−${visit(e.value)}` : say('not', language, { x: visit(e.value) })
+        return e.op === '-'
+          ? `−${strength(e.value) < 9 ? `(${visit(e.value)})` : visit(e.value)}`
+          : say('not', language, { x: visit(e.value) })
       case 'binary': {
-        if (e.op === '&&' || e.op === '||')
-          return `${visit(e.left)}${say(e.op === '&&' ? 'and' : 'or', language)}${visit(e.right)}`
-        if (e.op in op) return `${visit(e.left)} ${op[e.op]} ${visit(e.right)}`
+        // Comparar con nada es preguntar si lo hay: «con Objetivo», «sin Característica»
+        if ((e.op === '!=' || e.op === '==') && e.right.kind === 'null')
+          return say(e.op === '!=' ? 'with' : 'without', language, { x: side(e.left, e, false) })
+        const left = side(e.left, e, false)
+        const right = side(e.right, e, true)
+        if (e.op === '&&' || e.op === '||') return `${left}${say(e.op === '&&' ? 'and' : 'or', language)}${right}`
+        if (e.op in op) return `${left} ${op[e.op]} ${right}`
         // Restar un número negativo, o sumarlo, se lee mejor con su signo
-        if (e.op === '+' && e.right.kind === 'number' && e.right.value < 0)
-          return `${visit(e.left)} − ${-e.right.value}`
+        if (e.op === '+' && e.right.kind === 'number' && e.right.value < 0) return `${left} − ${-e.right.value}`
         if (e.op === '+' && e.right.kind === 'unary' && e.right.op === '-')
-          return `${visit(e.left)} − ${visit(e.right.value)}`
-        return `${visit(e.left)} ${e.op === '*' ? '×' : e.op === '/' ? '÷' : e.op === '-' ? '−' : e.op} ${visit(e.right)}`
+          return `${left} − ${side(e.right.value, { ...e, op: '-' }, true)}`
+        return `${left} ${e.op === '*' ? '×' : e.op === '/' ? '÷' : e.op === '-' ? '−' : e.op} ${right}`
       }
       case 'conditional':
         return ladder(e) ?? say('ifElse', language, { x: visit(e.yes), t: visit(e.test), y: visit(e.no) })
@@ -212,6 +241,7 @@ export function formulaText(formula: string, context: { system: System; type: st
         if (e.name === 'ceil') return say('up', language, { x: list })
         if (e.name === 'sum') return say('sum', language, { x: list })
         if (e.name === 'count') return say('count', language, { x: list })
+        if (e.name === 'first') return say('first', language, { x: list })
         return `${e.name}(${list})`
       }
     }

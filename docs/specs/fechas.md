@@ -25,8 +25,8 @@ cada campaña (8 · campaña).
 
 ### La propiedad «Fecha»
 
-- En «Añadir propiedad» del panel de la página, un tipo más: **«Fecha»**. Se ve como texto («18 de Siega de 1250 RC»;
-  con fin, «12 de Siega – 3 de Trilla de 1250 RC», sin repetir lo que comparten; con «cada año», un pequeño icono de
+- En «Añadir propiedad» del panel de la página, un tipo más: **«Fecha»**. Se ve como texto («18 de Siega del año 1250 RC»;
+  con fin, «12 de Siega – 3 de Trilla del año 1250 RC», sin repetir lo que comparten; con «cada año», un pequeño icono de
   repetición).
 - Pulsarla abre **el selector** (en el móvil, una hoja que sube): el calendario (si hay más de uno; por defecto el
   principal), la precisión (Año · Mes · Día, como el «nivel de detalle» de Everlore), y una rejilla del mes con la

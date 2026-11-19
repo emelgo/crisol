@@ -38,12 +38,22 @@ function markSeen(email: string, id: string) {
   }
 }
 
-/** Lo que señala un paso: lo primero que se vea de su selector (con varios, el de la barra o, en el móvil, otro) */
+/**
+ * Lo que señala un paso: lo primero que se vea de su selector (con varios, el de la barra o, en el móvil, otro). Sin
+ * tamaño no se ve (una lista vacía): el paso se salta
+ */
 function find(selector: string): Element | null {
-  for (const element of document.querySelectorAll(selector))
-    if (typeof element.checkVisibility !== 'function' || element.checkVisibility()) return element
+  for (const element of document.querySelectorAll(selector)) {
+    if (typeof element.checkVisibility === 'function' && !element.checkVisibility()) continue
+    const { width, height } = element.getBoundingClientRect()
+    // Sin maquetación (las pruebas) no hay medidas: cuenta como visto
+    if ((width > 1 && height > 1) || !isLaidOut()) return element
+  }
   return null
 }
+
+/** Si el navegador maqueta de verdad (en las pruebas, sin maquetación, todo mide 0) */
+const isLaidOut = () => document.documentElement.getBoundingClientRect().height > 0
 
 /**
  * Los recorridos montados a la vez (el de la vista y, dentro, el de un mapa o el de los dados): sale uno solo cada vez
@@ -186,10 +196,11 @@ export function Tour({
       const bar = document.querySelector('[data-tour="barra-llama"]')?.closest('nav')
       const left = bar && !bar.parentElement?.contains(target) ? bar.getBoundingClientRect().right + 12 : 12
       const padding = { top: 12, right: 12, bottom: 12, left }
+      // Si no cabe ni a un lado ni al otro (lo alto, como una ficha a la izquierda: arriba se cortaba), al de al lado
       void computePosition(target, element, {
         strategy: 'fixed',
         placement: step.placement ?? 'bottom',
-        middleware: [offset(14), flip({ padding }), shift({ padding })]
+        middleware: [offset(14), flip({ padding, fallbackAxisSideDirection: 'end' }), shift({ padding })]
       }).then(({ x, y }) => Object.assign(element.style, { left: `${x}px`, top: `${y}px` }))
     })
   }, [step])

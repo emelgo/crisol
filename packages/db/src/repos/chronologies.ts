@@ -1,12 +1,13 @@
 /**
- * Las cronologías de un mundo, sus grupos y sus eventos sueltos (módulo 8): leerlos. Se escriben por operation() desde
- * las acciones, con su historial
+ * Las cronologías de un mundo (cada una, una pestaña de una página: ADR-0031), sus grupos y sus eventos (de cada una:
+ * ADR-0032; módulo 8): leerlos. Se escriben por operation() desde las acciones, con su historial
  */
-import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm'
+import { and, asc, count, eq, getTableColumns, inArray, isNull, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import type { Writer } from '../operation.ts'
 import { chronologies, timelineEvents, timelineGroups } from '../schema/chronologies.ts'
 import { documents } from '../schema/documents.ts'
+import { pageTabs } from '../schema/maps.ts'
 import { pages } from '../schema/pages.ts'
 import { writeMark } from './knowledge.ts'
 import { placeKey } from './pages.ts'
@@ -15,20 +16,56 @@ export type ChronologyRow = typeof chronologies.$inferSelect
 export type TimelineGroupRow = typeof timelineGroups.$inferSelect
 export type TimelineEventRow = typeof timelineEvents.$inferSelect
 
-/** Las de un mundo, en su orden (y por id, si dos claves coinciden) */
-export function listChronologies(db: Database, worldId: string) {
-  return db
-    .select()
-    .from(chronologies)
-    .where(eq(chronologies.worldId, worldId))
-    .orderBy(sql`${chronologies.position} collate "C"`, asc(chronologies.id))
+/** Una cronología con su pestaña y su página (ADR-0031): su nombre, quién la ve y dónde está son los de ellas */
+export type PlacedChronologyRow = ChronologyRow & {
+  tabName: string
+  tabHidden: boolean
+  pageId: string
+  pageTitle: string
 }
 
-export async function findChronology(db: Database, chronologyId: string) {
-  const [found] = await db.select().from(chronologies).where(eq(chronologies.id, chronologyId))
+const placed = {
+  ...getTableColumns(chronologies),
+  tabName: pageTabs.name,
+  tabHidden: pageTabs.hidden,
+  pageId: pageTabs.pageId,
+  pageTitle: pages.title
+}
+
+/** Las de un mundo cuya página no está en la papelera, por su página y, en ella, en el orden de sus pestañas */
+export function listChronologies(db: Database, worldId: string): Promise<PlacedChronologyRow[]> {
+  return db
+    .select(placed)
+    .from(chronologies)
+    .innerJoin(pageTabs, eq(pageTabs.id, chronologies.tabId))
+    .innerJoin(pages, and(eq(pages.id, pageTabs.pageId), isNull(pages.deletedAt)))
+    .where(eq(chronologies.worldId, worldId))
+    .orderBy(asc(pages.title), sql`${pageTabs.position} collate "C"`, asc(chronologies.id))
+}
+
+/** Una, con su pestaña y su página (aunque esté en la papelera: quien la pide lo comprueba con su página) */
+export async function findChronology(db: Database, chronologyId: string): Promise<PlacedChronologyRow | null> {
+  const [found] = await db
+    .select(placed)
+    .from(chronologies)
+    .innerJoin(pageTabs, eq(pageTabs.id, chronologies.tabId))
+    .innerJoin(pages, eq(pages.id, pageTabs.pageId))
+    .where(eq(chronologies.id, chronologyId))
   return found ?? null
 }
 
+/** La de una pestaña */
+export async function chronologyOfTab(db: Database, tabId: string): Promise<PlacedChronologyRow | null> {
+  const [found] = await db
+    .select(placed)
+    .from(chronologies)
+    .innerJoin(pageTabs, eq(pageTabs.id, chronologies.tabId))
+    .innerJoin(pages, eq(pages.id, pageTabs.pageId))
+    .where(eq(chronologies.tabId, tabId))
+  return found ?? null
+}
+
+/** Los grupos de todas las cronologías de un mundo (la vista grande de un calendario) */
 export function listGroups(db: Database, worldId: string) {
   return db
     .select()
@@ -37,13 +74,34 @@ export function listGroups(db: Database, worldId: string) {
     .orderBy(sql`${timelineGroups.position} collate "C"`, asc(timelineGroups.id))
 }
 
+/** Los grupos de una cronología, en su orden */
+export function groupsOf(db: Database, chronologyId: string) {
+  return db
+    .select()
+    .from(timelineGroups)
+    .where(eq(timelineGroups.chronologyId, chronologyId))
+    .orderBy(sql`${timelineGroups.position} collate "C"`, asc(timelineGroups.id))
+}
+
 export async function findGroup(db: Database, groupId: string) {
   const [found] = await db.select().from(timelineGroups).where(eq(timelineGroups.id, groupId))
   return found ?? null
 }
 
+/** Los eventos de todas las cronologías de un mundo */
 export function listEvents(db: Database, worldId: string) {
   return db.select().from(timelineEvents).where(eq(timelineEvents.worldId, worldId))
+}
+
+/** Los eventos de una cronología */
+export function eventsOf(db: Database, chronologyId: string) {
+  return db.select().from(timelineEvents).where(eq(timelineEvents.chronologyId, chronologyId))
+}
+
+/** Cuántos eventos tiene un mundo (su tope) */
+export async function countEvents(db: Database, worldId: string) {
+  const [row] = await db.select({ n: count() }).from(timelineEvents).where(eq(timelineEvents.worldId, worldId))
+  return row?.n ?? 0
 }
 
 export async function findEvent(db: Database, eventId: string) {

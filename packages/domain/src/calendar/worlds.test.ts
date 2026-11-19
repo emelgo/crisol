@@ -8,7 +8,7 @@ import { dateFromDay, dayNumber, isLeapYear, monthGrid, weekdayName, yearLength 
 import { type CalendarDefinition, type CalendarMonth, DEFAULT_PHASES } from './definition.ts'
 import { describeDate } from './describe.ts'
 import { EANA } from './fixtures.ts'
-import { formatDate, parseDate } from './format.ts'
+import { formatDate, formatRange, parseDate } from './format.ts'
 import { normalizeCalendar } from './normalize.ts'
 import { validateCalendar } from './validate.ts'
 
@@ -210,15 +210,15 @@ describe('los calendarios de los mundos de rol', () => {
     expect(yearLength(EANA, 331)).toBe(364)
     expect(weekdayName(EANA, { year: 331, month: 'carnaval', day: 1 })).toBe('Herrero')
     expect(weekdayName(EANA, { year: 331, month: 'siega', day: 1 })).toBe('Herrero')
-    expect(formatDate(EANA, { year: 331, month: 'alba', day: 4 })).toBe('4 del Alba Triste de 331 RC')
+    expect(formatDate(EANA, { year: 331, month: 'alba', day: 4 })).toBe('4 del Alba Triste del año 331 RC')
   })
 
   it('Harptos: las fiestas de un día se leen por su nombre, Escudo Encontrado sale cada 4 años y la decana empieza cada mes', () => {
     expect(yearLength(HARPTOS, 1371)).toBe(365)
     expect(isLeapYear(HARPTOS, 1372)).toBe(true)
     expect(yearLength(HARPTOS, 1372)).toBe(366)
-    expect(formatDate(HARPTOS, { year: 1372, month: 'midwinter', day: 1 })).toBe('Midwinter de 1372 DR')
-    expect(formatDate(HARPTOS, { year: 1372, month: 'midsummer', day: 2 })).toBe('Shieldmeet de 1372 DR')
+    expect(formatDate(HARPTOS, { year: 1372, month: 'midwinter', day: 1 })).toBe('Midwinter del año 1372 DR')
+    expect(formatDate(HARPTOS, { year: 1372, month: 'midsummer', day: 2 })).toBe('Shieldmeet del año 1372 DR')
     expect(parseDate(HARPTOS, '1372-Shieldmeet')).toEqual({
       ok: true,
       date: { year: 1372, month: 'midsummer', day: 2 }
@@ -228,7 +228,7 @@ describe('los calendarios de los mundos de rol', () => {
     expect(weekdayName(HARPTOS, { year: 1372, month: 'alturiak', day: 1 })).toBe('Primero')
     expect(weekdayName(HARPTOS, { year: 1372, month: 'alturiak', day: 11 })).toBe('Primero')
     expect(monthGrid(HARPTOS, 1372, 'ches').weeks).toHaveLength(3)
-    expect(describeDate(HARPTOS, { year: 1372, month: 'midsummer', day: 2 }).text).toBe('Shieldmeet de 1372 DR')
+    expect(describeDate(HARPTOS, { year: 1372, month: 'midsummer', day: 2 }).text).toBe('Shieldmeet del año 1372 DR')
   })
 
   it('la IA lo escribe sin ids (los meses de los bisiestos, por nombre) y conserva los días con nombre', () => {
@@ -241,7 +241,7 @@ describe('los calendarios de los mundos de rol', () => {
     })
     expect(problems).toEqual([])
     expect(formatDate(definition, { year: 1372, month: definition.months[9]?.id, day: 2 })).toBe(
-      'Shieldmeet de 1372 DR'
+      'Shieldmeet del año 1372 DR'
     )
   })
 
@@ -261,10 +261,13 @@ describe('los calendarios de los mundos de rol', () => {
     expect(yearLength(GOLARION, 4720)).toBe(366)
     expect(yearLength(GOLARION, 4721)).toBe(365)
     expect(yearLength(EXANDRIA, 836)).toBe(328)
-    expect(formatDate(EXANDRIA, { year: 836, month: 'quenpillar', day: 27 })).toBe("27 de Quen'pillar de 836 P.D.")
+    expect(formatDate(EXANDRIA, { year: 836, month: 'quenpillar', day: 27 })).toBe("27 de Quen'pillar del año 836 P.D.")
   })
 
   it('Krynn: los años antes del 0 con su sufijo', () => {
-    expect(formatDate(KRYNN, { year: -1, month: 'springdawning', day: 3 })).toBe('3 de Spring Dawning de 1 PC')
+    expect(formatDate(KRYNN, { year: -1, month: 'springdawning', day: 3 })).toBe('3 de Spring Dawning del año 1 PC')
+    expect(formatDate(KRYNN, { year: -3 })).toBe('Año 3 PC')
+    expect(formatRange(KRYNN, { year: -3 }, { year: 2 })).toBe('Años 3 PC – 2 AC')
+    expect(formatRange(KRYNN, { year: 2 }, { year: 5 })).toBe('Años 2–5 AC')
   })
 })

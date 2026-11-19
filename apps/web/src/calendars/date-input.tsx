@@ -2,7 +2,7 @@
  * Una fecha de un calendario en el editor: el año (con año 0 y negativos), el mes (por su id; «Todo el año», si se
  * admite) y el día («Todo el mes», si se admite). Los días, los de ese mes ese año
  */
-import { type CalendarDefinition, daysInMonth, type WorldDate } from '@crisol/domain'
+import { type CalendarDefinition, clampYear, daysInMonth, type WorldDate } from '@crisol/domain'
 import { type ComponentProps, useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import styles from './editor.module.css'
@@ -36,10 +36,11 @@ export function DateInput({
   }
   return (
     <fieldset className={styles.date} aria-label={label} data-invalid={invalid || undefined}>
-      <IntegerInput
+      <YearInput
         id={`${id}-y`}
         className={styles.yearInput}
         aria-label={`${t('calendars.editor.year')} · ${label}`}
+        definition={definition}
         value={value.year}
         onValue={(year) => onChange({ ...value, year })}
       />
@@ -85,6 +86,23 @@ export function DateInput({
   )
 }
 
+/** Las cifras de un año como mucho (sin contar el signo) */
+export const YEAR_DIGITS = 6
+
+/**
+ * El año de una fecha: hasta seis cifras y, lo que se escriba, dentro de los años del calendario (se para en el borde;
+ * al salir, se ve el que vale)
+ */
+export function YearInput({
+  definition,
+  onValue,
+  ...props
+}: Omit<ComponentProps<typeof IntegerInput>, 'digits' | 'decimal'> & {
+  definition: Pick<CalendarDefinition, 'yearRange'>
+}) {
+  return <IntegerInput {...props} digits={YEAR_DIGITS} onValue={(year) => onValue(clampYear(definition, year))} />
+}
+
 /**
  * Un número entero que se escribe a gusto (también «-» antes de los negativos, o vacío un momento): solo se da por
  * bueno cuando lo escrito es un entero; al salir, vuelve a lo que vale
@@ -92,11 +110,18 @@ export function DateInput({
 export function IntegerInput({
   value,
   onValue,
+  onEmpty,
+  digits,
   decimal = false,
   ...props
 }: Omit<ComponentProps<'input'>, 'value' | 'onChange' | 'type'> & {
+  /** NaN: vacío */
   value: number
   onValue: (value: number) => void
+  /** Se puede dejar vacío (un campo opcional): al borrarlo */
+  onEmpty?: (() => void) | undefined
+  /** Las cifras como mucho (sin el signo): no deja escribir más */
+  digits?: number | undefined
   /** Admite decimales (el ciclo de una luna); con coma o con punto */
   decimal?: boolean
 }) {
@@ -108,12 +133,15 @@ export function IntegerInput({
       type="text"
       inputMode={decimal ? 'decimal' : 'numeric'}
       autoComplete="off"
+      maxLength={digits === undefined ? undefined : digits + 1}
       {...props}
       value={text ?? shown}
       onChange={(event) => {
         const next = event.target.value
+        if (digits !== undefined && next.replace(/\D/g, '').length > digits) return
         setText(next)
         if (pattern.test(next.trim())) onValue(Number(next.trim().replace(',', '.')))
+        else if (!next.trim()) onEmpty?.()
       }}
       onBlur={(event) => {
         setText(null)

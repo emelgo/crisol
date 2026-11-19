@@ -150,14 +150,19 @@ test('la pizarra: el máster pone tarjetas, una flecha y dibuja a mano; otra pes
       { text: 'le debe dinero', column: 1, row: 3 }
     ]
   })
-  // Excalidraw solo pinta las tarjetas a la vista: se encuadra todo (Mayús+1), sin recargar
+  // Excalidraw solo pinta las tarjetas a la vista: se encuadra todo (Mayús+1), sin recargar. Si se encuadra antes de que
+  // llegue el cambio, la tarjeta nueva queda fuera: se vuelve a encuadrar hasta que sale
   for (const each of [otherBoard, board]) {
     const area = await each.locator('canvas.excalidraw__canvas.interactive').boundingBox()
     if (!area) throw new Error('sin lienzo')
-    // (arriba a la derecha, en vacío: abajo van el zoom y la píldora)
-    await each.page().mouse.click(area.x + area.width - 40, area.y + 40)
-    await each.page().keyboard.press('Shift+1')
-    await expect(each.getByRole('link', { name: 'El robo del relicario', exact: true })).toBeVisible()
+    await expect(async () => {
+      // (arriba a la derecha, en vacío: abajo van el zoom y la píldora)
+      await each.page().mouse.click(area.x + area.width - 40, area.y + 40)
+      await each.page().keyboard.press('Shift+1')
+      await expect(each.getByRole('link', { name: 'El robo del relicario', exact: true })).toBeVisible({
+        timeout: 2000
+      })
+    }).toPass({ timeout: 15_000 })
   }
   await page.screenshot({ path: test.info().outputPath('1-pizarra.png') })
 

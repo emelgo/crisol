@@ -1,6 +1,6 @@
 /*
- * Las cronologías (módulo 8; lienzo, pantallas 4 a 8): la sección de Calendarios, la pantalla entera con su marco de
- * cristal, la píldora y el zoom abajo, y las tres vistas (la lista con su línea, los meses con sus carriles y el
+ * Las cronologías (módulo 8; lienzo, pantallas 4 a 8): la lista de la jugadora, la pestaña de su página (ADR-0031) y la
+ * ventana de la Mesa con su marco de cristal, la píldora y el zoom abajo, y las tres vistas (la lista con su línea, los meses con sus carriles y el
  * calendario con su rejilla), la tarjeta 6:1 y el cuadro del evento
  */
 
@@ -682,7 +682,8 @@
   inline-size: var(--lane-label);
   padding: var(--space-2) var(--space-3);
   border-inline-end: 1px solid var(--line-frame);
-  background: var(--popup-glass);
+  /* Opaca: lo que pasa por debajo al desplazarse no se transparenta (el cristal, sobre el fondo) */
+  background: linear-gradient(var(--popup-glass), var(--popup-glass)), var(--color-bg);
   color: var(--color-muted);
   font-size: 0.75rem;
   font-weight: 700;
@@ -778,7 +779,7 @@
   inline-size: var(--lane-label);
   padding: var(--space-2) var(--space-2);
   border-inline-end: 1px solid var(--line-frame);
-  background: var(--popup-glass);
+  background: linear-gradient(var(--popup-glass), var(--popup-glass)), var(--color-bg);
 }
 
 .laneFold {
@@ -858,23 +859,34 @@
   flex: 1 0 auto;
 }
 
+/* «+ Nuevo grupo», en la esquina de los nombres (como en Everlore), en vez de una fila más abajo */
 .newGroup {
-  position: sticky;
-  inset-inline-start: 0;
   display: inline-flex;
   align-items: center;
-  gap: var(--space-2);
-  inline-size: var(--lane-label);
-  min-block-size: 2.5rem;
-  padding: 0 var(--space-3);
-  border: 0;
+  gap: var(--space-1);
+  inline-size: 100%;
+  min-block-size: 2rem;
+  margin: calc(-1 * var(--space-1)) calc(-1 * var(--space-2));
+  padding: 0 var(--space-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-button);
   background: none;
   color: var(--color-muted);
+  font: inherit;
+  font-size: 0.8125rem;
   font-weight: 600;
+  letter-spacing: normal;
+  text-transform: none;
   cursor: pointer;
 }
 
+.newGroup:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 1px;
+}
+
 .newGroup:hover {
+  border-color: var(--line-frame);
   color: var(--color-text);
 }
 
@@ -899,7 +911,8 @@
   padding: 0 8px;
   border: 0;
   border-radius: 5px;
-  background: color-mix(in srgb, var(--entry-color) 75%, black 10%);
+  /* Opaco y nunca claro (luminosidad ≤ 0,45): el texto claro, a más de 4,5:1 con cualquier color */
+  background: oklch(from var(--entry-color) min(l, 0.45) c h);
   color: var(--color-chrome-text);
   font-size: 0.8125rem;
   font-weight: 700;
@@ -1014,9 +1027,15 @@
   cursor: pointer;
 }
 
-.calendarArrows button:hover,
+.calendarArrows button:hover:not(:disabled),
 .iconButton:hover {
   border-color: var(--color-field-border);
+}
+
+/* En el borde de los años del calendario */
+.calendarArrows button:disabled {
+  opacity: 0.35;
+  cursor: default;
 }
 
 /* Las fichas: lo de varios días, seguido de un día a otro */
@@ -1030,7 +1049,8 @@
   padding: 0 6px;
   border: 0;
   border-radius: 4px;
-  background: color-mix(in srgb, var(--entry-color) 70%, black 10%);
+  /* Opaco y nunca claro (luminosidad ≤ 0,45): el texto claro, a más de 4,5:1 con cualquier color */
+  background: oklch(from var(--entry-color) min(l, 0.45) c h);
   color: var(--color-chrome-text);
   font-size: 0.75rem;
   font-weight: 700;
@@ -1245,9 +1265,11 @@
   align-content: center;
   margin: 0;
   padding: var(--space-2) var(--space-3);
-  border: 1px solid color-mix(in srgb, var(--color-warning) 50%, var(--line-frame));
+  /* En el color de su mes, si lo tiene (como su franja); el nombre, legible siempre */
+  border: 1px solid color-mix(in srgb, var(--month-color, var(--color-warning)) 50%, var(--line-frame));
   border-radius: var(--radius-button);
-  color: var(--color-warning);
+  background: color-mix(in srgb, var(--month-color, var(--color-warning)) 10%, transparent);
+  color: var(--color-text);
 }
 
 .outsideName span {
@@ -1262,6 +1284,12 @@
   border: 1px solid var(--line-frame);
   border-radius: var(--radius-button);
   overflow: hidden;
+}
+
+/* La tabla es una rejilla: su cuerpo y su fila no cuentan, los días van uno al lado del otro */
+.outsideDays > tbody,
+.outsideDays > tbody > tr {
+  display: contents;
 }
 
 .outsideDays .day {
@@ -1461,6 +1489,12 @@
   gap: var(--space-2);
 }
 
+.groupName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .colorSelect {
   box-shadow: inset 6px 0 0 var(--swatch);
 }
@@ -1557,6 +1591,17 @@
 
 .preview {
   pointer-events: none;
+}
+
+/* Desde la vista grande de un calendario: a qué cronología va el evento (o una nueva, con su nombre) */
+.chronologyChoice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.chronologyChoice > * {
+  flex: 1 1 12rem;
 }
 
 .dialogGrid {
@@ -1885,4 +1930,109 @@
 /* Lo que aún no ha pasado (con el «hoy» de una campaña): la tarjeta, con la raya discontinua */
 .listRow[data-future] .eventCard {
   border-style: dashed;
+}
+
+/* ---------- En la pestaña de su página (ADR-0031) ---------- */
+/* Sin sitio en la cabecera (la jugadora): encima de la vista */
+.toolsRow {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* A sangre bajo las pestañas, como el mapa: la vista llena lo que queda de la ventana y se desplaza por dentro; lo que
+   va encima (un aviso, las herramientas de la jugadora, las vistas en el móvil), con su alto */
+.tabScreen {
+  display: flex;
+  flex-direction: column;
+  block-size: 100%;
+  min-block-size: 0;
+}
+
+.tabScreen > * {
+  flex: none;
+}
+
+.tabScreen > .failure,
+.tabScreen > .segmented,
+.tabScreen > .toolsRow {
+  margin: var(--space-2) var(--space-4) 0;
+}
+
+/* Sin marco propio: la superficie es la de la página */
+.tabScreen > .frame {
+  flex: 1 1 0;
+  min-block-size: 0;
+  --frame-fill: transparent;
+  background: none;
+  border-radius: 0 0 var(--radius-frame) var(--radius-frame);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+.tabScreen > .frame::before {
+  display: none;
+}
+
+/* Su calendario, con su icono; al máster, un enlace a su vista grande */
+.calendarName,
+.calendarLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.calendarLink {
+  color: inherit;
+  text-decoration: none;
+}
+
+.calendarLink:hover {
+  color: var(--color-text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Sus herramientas, a la derecha de las pestañas: su calendario, «Hoy de…», «Ir a…» y sus ajustes */
+.tabTools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.tabTools .headButton {
+  min-block-size: 2rem;
+  border-color: transparent;
+  background: none;
+  color: var(--color-muted);
+}
+
+.tabTools .headButton:hover,
+.tabTools .headButton[aria-expanded="true"] {
+  border-color: var(--line-frame);
+  color: var(--color-text);
+}
+
+/* Sin calendario en el mundo: una sola pieza en el centro */
+.tabFrame {
+  display: grid;
+  place-items: center;
+  block-size: 100%;
+  min-block-size: 12rem;
+}
+
+/* Estrecha (la jugadora en el móvil): la vista va con la página, sin caja con su propio desplazamiento */
+.tabScreen[data-narrow] {
+  block-size: auto;
+}
+
+.tabScreen[data-narrow] > .frame {
+  flex: none;
+  overflow: visible;
+}
+
+.tabScreen[data-narrow] .listScroll {
+  overflow: visible;
+  padding-block-end: 6rem;
 }

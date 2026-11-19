@@ -1,9 +1,10 @@
-import type { Page, PageTabView, RelationMode } from '@crisol/contracts'
+import type { Page, PageTabView } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getRouteApi, Link, Navigate, useNavigate, useRouter } from '@tanstack/react-router'
 import {
   Ellipsis,
   FileText,
+  History,
   House,
   LayoutTemplate,
   ListFilter,
@@ -12,8 +13,7 @@ import {
   PanelRightClose,
   PanelRightOpen,
   Plus,
-  Printer,
-  Waypoints
+  Printer
 } from 'lucide-react'
 import {
   type CSSProperties,
@@ -32,6 +32,7 @@ import { useAccounts } from '../account/context.tsx'
 import { ApiError } from '../api/client.ts'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
+import { ChronologyTab } from '../chronologies/screen.tsx'
 import { useAmbient } from '../components/ambient.tsx'
 import { Loading } from '../components/brand.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
@@ -39,12 +40,12 @@ import list from '../components/list.module.css'
 import { failed, LoadError } from '../components/load-error.tsx'
 import { Menu, MenuItem } from '../components/menu.tsx'
 import { headingMayTakeFocus, PageTitle, useHeadingFocusRequest } from '../components/page-title.tsx'
-import { itemTransition } from '../components/world-transition.ts'
-import { useRelationModes } from '../relations/queries.ts'
-import { RelationsTab } from '../relations/relations-tab.tsx'
-import { WorldBanner } from '../routes/world-card.tsx'
+import { itemTransition, worldTransition } from '../components/world-transition.ts'
+import { GraphWindowProvider, WorldGraphButton } from '../relations/graph-window.tsx'
+import { WorldBanner, WorldSettings } from '../routes/world-card.tsx'
 import { TemplateIcon } from '../templates/icons.tsx'
 import { useTemplates } from '../templates/picker.tsx'
+import { TreeTab } from '../trees/tree-tab.tsx'
 import { Backlinks, pageLinksKey } from './backlinks.tsx'
 import { BoardTab } from './board/board-tab.tsx'
 import { useChartEditing } from './chart/chart-editing.ts'
@@ -53,7 +54,7 @@ import { CollabSocket } from './collab.tsx'
 import { CoverButton, PageCoverImage } from './cover.tsx'
 import { PageBody } from './editor.tsx'
 import { ExportPage, ExportWiki } from './export.tsx'
-import { PageIcon } from './icon.tsx'
+import { PageIcon, TitleIconSuggestions, titleIcons } from './icon.tsx'
 import { MapTab } from './map/map-tab.tsx'
 import { BookmarkButton, Bookmarks, OpenTabs } from './navigation.tsx'
 import { WorldWindows } from './new-entry.tsx'
@@ -67,7 +68,8 @@ import { PageRevealButton } from './reveal.tsx'
 import { SceneMain, SceneSide, SceneTabProvider } from './scene/scene-tab.tsx'
 import { PrintDialog, SheetPaper } from './sheet/controls.tsx'
 import { TableTab } from './table/table-tab.tsx'
-import { PageTabs, RELATIONS_TAB, usePageTabs, useTabTarget } from './tabs/page-tabs.tsx'
+import { PageTabs, usePageTabs, useTabTarget } from './tabs/page-tabs.tsx'
+import { useTitleEditRequest } from './title-edit.ts'
 import { PageTree } from './tree.tsx'
 import { Versions } from './versions.tsx'
 import { WhoKnowsButton } from './who-knows.tsx'
@@ -159,112 +161,110 @@ export function WikiLayout({
   return (
     // Sus ventanas flotantes (una entrada nueva del compendio, revisión tanda 7), por encima de la página
     <WorldWindows worldId={worldId}>
-      <NewPageContext.Provider value={requestNewPage}>
-        <WorldTour master />
-        <div ref={root} className={`${styles.wiki} ${pageStyles.wiki}`} data-world-page="">
-          <aside
-            id={asideId}
-            className={styles.aside}
-            data-open={open || undefined}
-            aria-labelledby={headingId}
-            onKeyDown={(event) => {
-              if (event.key === 'Escape' && open) close(true)
-            }}
-          >
-            <div className={styles.asideHeader}>
-              {/* Lo de la vista elegida en la barra: el mundo (sus páginas), las plantillas o los archivos */}
-              <h2 id={headingId}>{world.name}</h2>
-              {panel === 'pages' && (
-                // El grafo de todo el mundo (módulo 10), sin añadir nada a la barra del mundo
-                <Link
-                  to="/mundos/$worldId/relaciones"
-                  params={{ worldId }}
-                  className={styles.newPageIcon}
-                  aria-label={t('relations.world.open')}
-                  title={t('relations.world.open')}
-                  data-tour="relaciones-mundo"
-                >
-                  <Waypoints aria-hidden="true" size={15} />
-                </Link>
-              )}
-              {panel === 'pages' && <ExportWiki worldId={worldId} className={styles.newPageIcon} />}
-              {panel === 'pages' && (
+      <GraphWindowProvider worldId={worldId}>
+        <NewPageContext.Provider value={requestNewPage}>
+          <WorldTour master />
+          <div ref={root} className={`${styles.wiki} ${pageStyles.wiki}`} data-world-page="">
+            <aside
+              id={asideId}
+              className={styles.aside}
+              data-tour="arbol"
+              data-open={open || undefined}
+              aria-labelledby={headingId}
+              onKeyDown={(event) => {
+                if (event.key === 'Escape' && open) close(true)
+              }}
+            >
+              <div className={styles.asideHeader}>
+                {/* Lo de la vista elegida en la barra: el mundo (sus páginas), las plantillas o los archivos; a la derecha
+                  del nombre, el engranaje del mundo (Enrique, 2026-11-19) */}
+                <div className={styles.asideTitle}>
+                  <h2 id={headingId} title={world.name}>
+                    {world.name}
+                  </h2>
+                  <WorldSettings world={world} className={styles.newPageIcon} />
+                </div>
+                {/* El grafo de todo el mundo (módulo 10), en su ventana: sin añadir nada a la barra del mundo */}
+                {panel === 'pages' && <WorldGraphButton className={styles.newPageIcon} />}
+                {panel === 'pages' && <ExportWiki worldId={worldId} className={styles.newPageIcon} />}
+                {panel === 'pages' && (
+                  <button
+                    type="button"
+                    className={styles.newPageIcon}
+                    aria-label={t('wiki.newPage')}
+                    title={t('wiki.newPage')}
+                    aria-haspopup="dialog"
+                    onClick={() => requestNewPage(null)}
+                  >
+                    <Plus aria-hidden="true" size={16} />
+                  </button>
+                )}
                 <button
                   type="button"
-                  className={styles.newPageIcon}
-                  aria-label={t('wiki.newPage')}
-                  title={t('wiki.newPage')}
-                  aria-haspopup="dialog"
-                  onClick={() => requestNewPage(null)}
+                  ref={closeButton}
+                  className={`${list.secondary} ${styles.close}`}
+                  onClick={() => close(true)}
                 >
-                  <Plus aria-hidden="true" size={16} />
+                  {t('wiki.closePages')}
                 </button>
-              )}
-              <button
-                type="button"
-                ref={closeButton}
-                className={`${list.secondary} ${styles.close}`}
-                onClick={() => close(true)}
-              >
-                {t('wiki.closePages')}
-              </button>
-            </div>
-            {/* El buscador, fijo en su sitio en cada vista, con lo suyo */}
-            <PageFilter
-              label={t('wiki.filter')}
-              value={filter}
-              onChange={setFilter}
-              // En las páginas, Intro busca dentro del texto de todas
-              {...(panel === 'pages'
-                ? {
-                    onSearch: (q: string) => {
-                      close(false)
-                      void navigate({ to: '/mundos/$worldId/buscar', params: { worldId }, search: { q } })
+              </div>
+              {/* El buscador, fijo en su sitio en cada vista, con lo suyo */}
+              <PageFilter
+                label={t('wiki.filter')}
+                value={filter}
+                onChange={setFilter}
+                // En las páginas, Intro busca dentro del texto de todas
+                {...(panel === 'pages'
+                  ? {
+                      onSearch: (q: string) => {
+                        close(false)
+                        void navigate({ to: '/mundos/$worldId/buscar', params: { worldId }, search: { q } })
+                      }
                     }
-                  }
-                : {})}
-            />
-            {panel === 'pages' && (
-              <>
-                {filter.trim() ? (
-                  <FilteredPages
-                    worldId={worldId}
-                    query={filter}
-                    currentId={current?.id}
-                    onNavigate={() => close(false)}
-                  />
-                ) : (
-                  <PageTree
-                    worldId={worldId}
-                    currentId={current?.id}
-                    path={current?.path}
-                    onNavigate={() => close(false)}
-                  />
-                )}
-                <OpenTabs worldId={worldId} current={current} compact />
-                {/* Los marcadores, debajo del árbol */}
-                <div className={styles.asideBookmarks}>
-                  <Bookmarks worldId={worldId} onNavigate={() => close(false)} />
-                </div>
-              </>
+                  : {})}
+              />
+              {panel === 'pages' && (
+                <>
+                  {filter.trim() ? (
+                    <FilteredPages
+                      worldId={worldId}
+                      query={filter}
+                      currentId={current?.id}
+                      onNavigate={() => close(false)}
+                    />
+                  ) : (
+                    <PageTree
+                      worldId={worldId}
+                      currentId={current?.id}
+                      path={current?.path}
+                      onNavigate={() => close(false)}
+                    />
+                  )}
+                  <OpenTabs worldId={worldId} current={current} compact />
+                  {/* Los marcadores, debajo del árbol */}
+                  <div className={styles.asideBookmarks}>
+                    <Bookmarks worldId={worldId} onNavigate={() => close(false)} />
+                  </div>
+                </>
+              )}
+            </aside>
+            <div className={styles.content}>
+              <OpenTabs worldId={worldId} current={current} />
+              <WorldPageContext value={worldPage}>
+                <CollabSocket>{children(world)}</CollabSocket>
+              </WorldPageContext>
+            </div>
+            {creating && (
+              <NewPageDialog
+                key={creating.n}
+                worldId={worldId}
+                parent={creating.parent}
+                onClose={() => setCreating(null)}
+              />
             )}
-          </aside>
-          <div className={styles.content}>
-            <OpenTabs worldId={worldId} current={current} />
-            <WorldPageContext value={worldPage}>
-              <CollabSocket>{children(world)}</CollabSocket>
-            </WorldPageContext>
           </div>
-          {creating && (
-            <NewPageDialog
-              key={creating.n}
-              worldId={worldId}
-              parent={creating.parent}
-              onClose={() => setCreating(null)}
-            />
-          )}
-        </div>
-      </NewPageContext.Provider>
+        </NewPageContext.Provider>
+      </GraphWindowProvider>
     </WorldWindows>
   )
 }
@@ -536,17 +536,18 @@ function PageHead({
         {band}
         <div className={styles.entryTitle}>
           <div className={styles.heading}>
-            {page.icon && (
-              <PageIcon
-                page={page}
-                {...(template ? { style: itemTransition(template, 'icono'), elemento: 'icono' } : {})}
-              />
-            )}
+            {/* Siempre se puede pulsar: sin icono, el de su tipo, atenuado (con la página bloqueada, solo el suyo) */}
+            <PageIcon
+              page={page}
+              isTemplate={Boolean(template)}
+              {...(template ? { style: itemTransition(template, 'icono'), elemento: 'icono' } : {})}
+            />
             <InlineTitle
               page={page}
+              editKey={template ?? page.id}
               autoFocus={startEditing}
               onDone={named}
-              {...(template ? { style: itemTransition(template, 'nombre'), iconFirst: true } : {})}
+              {...(template ? { style: itemTransition(template, 'nombre') } : {})}
             />
             {template ? (
               <span className={`${styles.templateBadge} ${styles.templateMark}`} data-tour="plantilla-marca">
@@ -566,7 +567,9 @@ function PageHead({
           </div>
         </div>
         {tabs}
-        <div className={styles.pageActions}>{actions}</div>
+        <div className={styles.pageActions} data-page-actions="">
+          {actions}
+        </div>
       </header>
     </>
   )
@@ -650,22 +653,23 @@ function TemplateBadge({ templateId }: { templateId: string }) {
  * El título de la página, que es su propio encabezado y se cambia ahí mismo (como en el Crisol antiguo): Intro, la
  * flecha abajo al final o salir del campo lo guardan; Intro y la flecha bajan al texto; Escape lo deja como estaba.
  * Vacío o igual, vuelve el de antes sin más; un error (del servidor) sale debajo y el foco se queda. Con la página
- * bloqueada, solo se lee
+ * bloqueada, solo se lee. El icono va en el propio título: un emoji delante pasa a ser su icono y «:» al principio
+ * propone los de la app por su nombre (como «/» y «@» en el texto)
  */
 function InlineTitle({
   page,
+  editKey,
   autoFocus,
   onDone,
-  style,
-  iconFirst = false
+  style
 }: {
   page: Page
+  /** A qué petición de renombrar atiende (title-edit.ts): el id de la página o el de su plantilla */
+  editKey: string
   autoFocus: boolean
   onDone: () => void
   /** Su nombre de transición (el título de una plantilla, desde su tarjeta) */
   style?: CSSProperties | undefined
-  /** Un emoji al principio pasa a ser su icono (el de una plantilla, que sale en las listas y en sus páginas) */
-  iconFirst?: boolean
 }) {
   const { t } = useTranslation()
   const api = useApi()
@@ -674,7 +678,11 @@ function InlineTitle({
   const request = useHeadingFocusRequest()
   const box = useRef<HTMLSpanElement>(null)
   const errorId = useId()
+  const suggestId = useId()
   const [error, setError] = useState<string | null>(null)
+  // «:» al principio: lo escrito tras él (hasta el cursor) y la propuesta elegida con las flechas
+  const [iconQuery, setIconQuery] = useState<string | null>(null)
+  const [iconAt, setIconAt] = useState(0)
   const rename = useMutation({
     mutationFn: (change: { title: string; icon?: string }) => api.call('updatePage', { pageId: page.id, ...change }),
     onSuccess: async () => {
@@ -691,22 +699,64 @@ function InlineTitle({
   useLayoutEffect(() => {
     if (box.current && document.activeElement !== box.current) box.current.textContent = page.title
   }, [page.title])
-  // Recién creada: el foco en el título, con todo elegido para escribir encima
-  useEffect(() => {
-    if (!autoFocus || !box.current) return
-    box.current.focus()
+  // El foco en el título, con todo elegido para escribir encima
+  const editTitle = useCallback(() => {
+    if (!box.current) return
+    box.current.focus({ preventScroll: true })
     const range = document.createRange()
     range.selectNodeContents(box.current)
     getSelection()?.removeAllRanges()
     getSelection()?.addRange(range)
-  }, [autoFocus])
+  }, [])
+  // Recién creada, o al pedirlo «Renombrar» desde el árbol (sin cuadro: se escribe aquí mismo)
+  useEffect(() => {
+    if (autoFocus) editTitle()
+  }, [autoFocus, editTitle])
+  useTitleEditRequest(editKey, editTitle)
   const toBody = () => {
     const body = box.current?.closest('article')?.querySelector<HTMLElement>('.ProseMirror[contenteditable="true"]')
     body?.focus()
   }
+  // Lo que va del principio al cursor, si el título empieza por «:» (si no, null)
+  const readIconQuery = () => {
+    const text = box.current?.textContent ?? ''
+    const selection = getSelection()
+    if (!text.startsWith(':') || !selection?.rangeCount || !box.current) return null
+    const range = selection.getRangeAt(0).cloneRange()
+    if (!box.current.contains(range.endContainer)) return null
+    range.setStart(box.current, 0)
+    const upTo = range.toString()
+    return upTo.startsWith(':') && !upTo.includes('\n') ? upTo.slice(1) : null
+  }
+  const watchIconQuery = () => {
+    const query = readIconQuery()
+    setIconQuery(query)
+    if (query !== iconQuery) setIconAt(0)
+  }
+  // Elegido uno de la app: fuera «:» y lo escrito tras él; el resto es el título (sin nada, el de antes)
+  const pickIcon = (icon: string) => {
+    const text = box.current?.textContent ?? ''
+    const rest = text
+      .slice(1 + (iconQuery ?? '').length)
+      .replace(/\s+/g, ' ')
+      .trim()
+    const title = rest || page.title
+    setIconQuery(null)
+    if (box.current) {
+      box.current.textContent = title
+      // El cursor, al final, para seguir escribiendo el nombre
+      const range = document.createRange()
+      range.selectNodeContents(box.current)
+      range.collapse(false)
+      getSelection()?.removeAllRanges()
+      getSelection()?.addRange(range)
+    }
+    rename.mutate({ title, icon })
+  }
   const commit = () => {
+    setIconQuery(null)
     let text = (box.current?.textContent ?? '').replace(/\s+/g, ' ').trim()
-    const emoji = iconFirst ? text.match(LEADING_EMOJI) : null
+    const emoji = text.match(LEADING_EMOJI)
     const icon = emoji?.[1]
     if (emoji) text = text.slice(emoji[0].length).trim() || page.title
     if (!text || (text === page.title && !icon)) {
@@ -725,6 +775,8 @@ function InlineTitle({
     range.setEnd(box.current, box.current.childNodes.length)
     return range.toString() === ''
   }
+  const suggesting = iconQuery !== null && !page.locked
+  const suggested = suggesting ? titleIcons(iconQuery) : []
   return (
     <div className={styles.titleBox} style={style} data-elemento={style ? 'nombre' : undefined}>
       <h1
@@ -745,6 +797,8 @@ function InlineTitle({
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? errorId : undefined}
           aria-readonly={page.locked || undefined}
+          aria-controls={suggesting ? suggestId : undefined}
+          aria-activedescendant={suggested.length > 0 ? `${suggestId}-${iconAt}` : undefined}
           contentEditable={!page.locked}
           suppressContentEditableWarning
           spellCheck={false}
@@ -754,6 +808,28 @@ function InlineTitle({
             if ((event.ctrlKey || event.metaKey) && ['b', 'i', 'u'].includes(event.key.toLowerCase())) {
               event.preventDefault()
               return
+            }
+            // Con los iconos propuestos a la vista: las flechas los recorren, Intro pone el elegido y Escape los deja
+            if (suggesting) {
+              const step = event.key === 'ArrowDown' ? 1 : event.key === 'ArrowUp' ? -1 : 0
+              if (step && suggested.length > 0) {
+                event.preventDefault()
+                setIconAt((at) => Math.max(0, Math.min(suggested.length - 1, at + step)))
+                return
+              }
+              if (event.key === 'Enter' || event.key === 'Tab') {
+                const chosen = suggested[iconAt]
+                if (chosen) {
+                  event.preventDefault()
+                  pickIcon(`gi:${chosen.id}`)
+                  return
+                }
+              }
+              if (event.key === 'Escape') {
+                event.preventDefault()
+                setIconQuery(null)
+                return
+              }
             }
             if (event.key === 'Enter' || (event.key === 'ArrowDown' && atEnd())) {
               event.preventDefault()
@@ -766,6 +842,11 @@ function InlineTitle({
               toBody()
             }
           }}
+          onInput={watchIconQuery}
+          onKeyUp={(event) => {
+            if (event.key === 'ArrowLeft' || event.key === 'ArrowRight' || event.key === 'Home' || event.key === 'End')
+              watchIconQuery()
+          }}
           onBlur={() => {
             if (!rename.isPending) commit()
           }}
@@ -775,6 +856,9 @@ function InlineTitle({
           }}
         />
       </h1>
+      {suggesting && (
+        <TitleIconSuggestions id={suggestId} query={iconQuery} active={iconAt} onHover={setIconAt} onPick={pickIcon} />
+      )}
       {error && (
         <p id={errorId} className={styles.titleError} role="alert">
           {error}
@@ -789,10 +873,9 @@ const LEADING_EMOJI = /^(\p{Extended_Pictographic}(?:\p{Emoji_Modifier}|\uFE0F|\
 
 /**
  * «Más»: lo que se hace de vez en cuando con la página, en el menú común (flota junto a su botón; Escape o pulsar fuera
- * lo cierran): imprimir o descargar (un cuadro que pregunta cómo), exportar y sus versiones. items: lo de una
- * plantilla, en lugar de exportar
+ * lo cierran): imprimir o descargar (un cuadro que pregunta cómo), exportar y sus versiones
  */
-function MoreActions({ page, items }: { page: Page; items?: (close: () => void) => ReactNode }) {
+function MoreActions({ page }: { page: Page }) {
   const { t } = useTranslation()
   const [printing, setPrinting] = useState(false)
   // Ctrl+P (⌘P) imprime la hoja, no la pantalla: abre el cuadro con lo último elegido (y con Intro, se imprime)
@@ -821,12 +904,28 @@ function MoreActions({ page, items }: { page: Page; items?: (close: () => void) 
               {t('sheet.printOrDownload')}
             </MenuItem>
             {/* Lo demás (subpágina, renombrar, mover, borrar…), con el botón derecho en el árbol */}
-            {items ? items(close) : <ExportPage page={page} />}
+            <ExportPage page={page} />
             <Versions page={page} />
           </>
         )}
       </Menu>
       {printing && <PrintDialog page={page} onClose={() => setPrinting(false)} />}
+    </div>
+  )
+}
+
+/**
+ * Las versiones de una plantilla, en un botón de icono de la cabecera, junto al candado y con su mismo aspecto: una
+ * plantilla no se imprime ni se exporta y se duplica con el botón derecho, así que no lleva «⋯» (Enrique, 2026-11-19:
+ * «no quiero tener solo versiones en los 3 puntos»). Abre la lista en el menú común
+ */
+function VersionsButton({ page }: { page: Page }) {
+  const { t } = useTranslation()
+  return (
+    <div className={styles.moreMenu}>
+      <Menu label={t('versions.title')} icon={<History aria-hidden="true" size={18} />}>
+        {() => <Versions page={page} bare />}
+      </Menu>
     </div>
   )
 }
@@ -910,9 +1009,7 @@ function OpenPage({ page, nuevo, pestana }: { page: Page; nuevo: boolean; pestan
   const api = useApi()
   const tabs = usePageTabs(page)
   const all = tabs.data ?? []
-  // «Relaciones» no es una pestaña guardada: se calcula (módulo 10)
-  const relations = pestana === RELATIONS_TAB
-  const active = pestana && !relations ? (all.find((tab) => tab.id === pestana) ?? null) : null
+  const active = pestana ? (all.find((tab) => tab.id === pestana) ?? null) : null
   // La portada del mundo lleva su portada (la del mundo), como en su Inicio
   const home = useQuery({
     queryKey: ['pages', page.worldId, 'home'],
@@ -922,8 +1019,8 @@ function OpenPage({ page, nuevo, pestana }: { page: Page; nuevo: boolean; pestan
   const look = worlds.data?.worlds.find((w) => w.id === page.worldId)
   const isHome = home.data?.pageId === page.id
   const banner = isHome && look ? <WorldBanner world={look} /> : undefined
-  // Una pestaña que ya no está (quitada, o de otra página): al texto, una vez al día la lista
-  if (pestana && !relations && tabs.data && !tabs.isFetching && !active) {
+  // Una pestaña que ya no está (quitada, de otra página o la «Relaciones» de antes): al texto, una vez al día la lista
+  if (pestana && tabs.data && !tabs.isFetching && !active) {
     return (
       <Navigate
         to="/mundos/$worldId/wiki/$pageId"
@@ -933,7 +1030,7 @@ function OpenPage({ page, nuevo, pestana }: { page: Page; nuevo: boolean; pestan
       />
     )
   }
-  if (pestana && !relations && !active) return null
+  if (pestana && !active) return null
   return (
     <EntryView
       // Cada página entra con su animación
@@ -942,7 +1039,6 @@ function OpenPage({ page, nuevo, pestana }: { page: Page; nuevo: boolean; pestan
       nuevo={nuevo}
       tabs={all}
       active={active}
-      relations={relations}
       banner={banner}
       home={isHome}
     />
@@ -950,13 +1046,11 @@ function OpenPage({ page, nuevo, pestana }: { page: Page; nuevo: boolean; pestan
 }
 
 /**
- * La página de una plantilla (ADR-0024), abierta en su editor: su id, lo suyo en «⋯» y, a la derecha, sus campos y sus
- * bloques, que se definen en vez de rellenarse
+ * La página de una plantilla (ADR-0024), abierta en su editor: su id y, a la derecha, sus campos y sus bloques, que se
+ * definen en vez de rellenarse
  */
 export interface TemplateMode {
   id: string
-  /** Sus filas en «⋯» (close cierra el menú antes de abrir un cuadro) */
-  more: (close: () => void) => ReactNode
   side: ReactNode
 }
 
@@ -973,15 +1067,12 @@ export function EntryView({
   active = null,
   banner,
   home = false,
-  template,
-  relations = false
+  template
 }: {
   page: Page
   nuevo?: boolean
   tabs: PageTabView[]
   active?: PageTabView | null
-  /** La pestaña «Relaciones», abierta (módulo 10) */
-  relations?: boolean
   banner?: ReactNode
   home?: boolean
   template?: TemplateMode
@@ -992,9 +1083,10 @@ export function EntryView({
   const column = useRef<HTMLDivElement>(null)
   // Añadir etiquetas o una propiedad desde «Añadir bloque» del panel: lo hace la ficha de propiedades
   const addProperty = useRef<PropertyAdder | null>(null)
-  // El mapa y la pizarra llenan todo el sitio, hasta el final de la ventana y de lado a lado de la hoja, como en
-  // LegendKeeper (Enrique, 2026-11-13: «no debe verse por abajo cómo termina el cuadrado»)
-  const fill = active?.kind === 'map' || active?.kind === 'board' || relations
+  // El mapa, la pizarra, la cronología y el árbol llenan todo el sitio, hasta el final de la ventana y de lado a lado de
+  // la hoja, como en LegendKeeper (Enrique, 2026-11-13: «no debe verse por abajo cómo termina el cuadrado»)
+  const fill =
+    active?.kind === 'map' || active?.kind === 'board' || active?.kind === 'chronology' || active?.kind === 'tree'
   // Junto a un mapa o una pizarra, un panel sin nada (sin enlaces, propiedades ni bloques) se pliega solo, para que lo
   // tengan todo (Enrique, 2026-11-14); pulsar su botón lo abre igual
   const api = useApi()
@@ -1002,7 +1094,7 @@ export function EntryView({
   const links = useQuery({
     queryKey: [...pageLinksKey(page.worldId, page.id), ...readAsKey(readAs)],
     queryFn: () => api.call('getPageLinks', { pageId: page.id, ...readAsInput(readAs) }),
-    enabled: Boolean(worldPage) && fill
+    enabled: Boolean(worldPage) && fill && !template
   })
   const emptyPanel =
     page.panel.length === 0 &&
@@ -1010,35 +1102,26 @@ export function EntryView({
     links.data !== undefined &&
     links.data.incoming.length === 0 &&
     links.data.mentions.length === 0
-  // «Relaciones» sale si la página tiene alguna (en la página del mundo; no en una plantilla)
-  const relationModes = useRelationModes(page.worldId, page.id, Boolean(worldPage) && !template)
-  const [relationsMode, setRelationsMode] = useState<RelationMode | null>(null)
-  const pageTabs = (
-    <PageTabs
-      page={page}
-      tabs={tabs}
-      active={relations ? RELATIONS_TAB : (active?.id ?? null)}
-      relations={relations || relationModes.length > 0}
-    />
-  )
+  const pageTabs = <PageTabs page={page} tabs={tabs} active={active?.id ?? null} />
   // En un mundo, donde pone la pestaña abierta sus herramientas (a la derecha de las pestañas)
   const [tabTools, setTabTools] = useState<HTMLElement | null>(null)
   // El panel de la derecha se pliega desde la cabecera de la página (Enrique, 2026-11-16)
   const panelId = useId()
-  // En Familia y Organigrama, plegado (lienzo del módulo 10): las tarjetas necesitan el ancho
-  const panel = usePanelFold(
-    (fill && !template && emptyPanel) || (relations && (relationsMode === 'family' || relationsMode === 'org'))
-  )
+  // Junto a un árbol, plegado: las tarjetas necesitan el ancho (como Familia y Organigrama, lienzo del módulo 10)
+  const panel = usePanelFold((fill && !template && emptyPanel) || active?.kind === 'tree')
   // Dónde empieza la columna: las fichas de los lados, a su altura, y el mapa y la pizarra, del alto de lo que queda de
   // la ventana (Enrique, 2026-11-16)
   useColumnTop(column, Boolean(worldPage))
   // La portada, a todo lo ancho (la del mundo en su portada; si no, la de la página o «Añadir portada»). En un mundo, una
   // franja baja detrás del título (Enrique, 2026-11-16: «Portada detrás del título»)
+  // Con la portada del mundo, la franja entera (la imagen, del alto en que se ve, y su degradado) es lo que viaja desde
+  // la tarjeta del mundo al entrar y vuelve a ella al salir (components/world-transition.ts)
   const cover = (
     <div
       className={worldPage ? `${styles.entryBanner} ${pageStyles.cover}` : styles.entryBanner}
       data-cover={banner || page.cover ? '' : undefined}
       data-band={worldPage ? '' : undefined}
+      {...(banner ? { 'data-portada-imagen': '', style: worldTransition(page.worldId) } : {})}
     >
       {banner ??
         (page.cover ? (
@@ -1067,10 +1150,13 @@ export function EntryView({
       }
       actions={
         template ? (
-          // Una plantilla no la conoce nadie ni se marca: el candado y «⋯», con lo suyo
+          // Una plantilla no la conoce nadie, ni se marca, ni se imprime, ni se bloquea (Enrique, 2026-11-19: «el block en
+          // las plantillas no tiene sentido»): sus versiones y el botón del panel (duplicarla, con el botón derecho). El
+          // candado, solo en una que se bloqueó antes, para poder abrirla
           <>
-            <LockButton page={page} />
-            <MoreActions page={page} items={template.more} />
+            {page.locked && <LockButton page={page} />}
+            <VersionsButton page={page} />
+            {worldPage && <PanelToggle folded={panel.folded} controls={panelId} onToggle={panel.toggle} />}
           </>
         ) : (
           <>
@@ -1086,29 +1172,32 @@ export function EntryView({
     />
   )
   // Lo de la pestaña elegida: el texto (o otra página de texto, con su propio documento), una tabla, una pizarra o un mapa
-  const content = relations ? (
-    <RelationsTab page={page} onMode={setRelationsMode} />
-  ) : active?.kind === 'scene' ? (
-    <SceneMain key={active.id} />
-  ) : active?.kind === 'text' ? (
-    <div className={styles.column}>
-      <SheetPaper page={page}>
-        <PageBody key={active.id} page={page} documentId={active.documentId} />
-      </SheetPaper>
-    </div>
-  ) : active?.kind === 'table' ? (
-    <TableTab key={active.id} page={page} tab={active} />
-  ) : active?.kind === 'board' ? (
-    <BoardTab key={active.id} page={page} tab={active} />
-  ) : active ? (
-    <MapTab key={active.id} page={page} tab={active} />
-  ) : (
-    <div className={styles.column}>
-      <SheetPaper page={page}>
-        <PageBody page={page} />
-      </SheetPaper>
-    </div>
-  )
+  const content =
+    active?.kind === 'chronology' ? (
+      <ChronologyTab key={active.id} page={page} tab={active} editable={!template && !page.locked} />
+    ) : active?.kind === 'tree' ? (
+      <TreeTab key={active.id} page={page} tab={active} editable={!template} />
+    ) : active?.kind === 'scene' ? (
+      <SceneMain key={active.id} />
+    ) : active?.kind === 'text' ? (
+      <div className={styles.column}>
+        <SheetPaper page={page}>
+          <PageBody key={active.id} page={page} documentId={active.documentId} />
+        </SheetPaper>
+      </div>
+    ) : active?.kind === 'table' ? (
+      <TableTab key={active.id} page={page} tab={active} />
+    ) : active?.kind === 'board' ? (
+      <BoardTab key={active.id} page={page} tab={active} />
+    ) : active ? (
+      <MapTab key={active.id} page={page} tab={active} />
+    ) : (
+      <div className={styles.column}>
+        <SheetPaper page={page}>
+          <PageBody page={page} />
+        </SheetPaper>
+      </div>
+    )
   // Mientras un gráfico del texto está elegido, su editor visual ocupa el sitio del panel (módulo 10)
   const chartEditing = useChartEditing()
   // A la derecha: la rejilla de una escena o, si no, «Mencionado en», las propiedades y los bloques (o lo de una plantilla)
@@ -1210,6 +1299,7 @@ function PanelToggle({ folded, controls, onToggle }: { folded: boolean; controls
     <button
       type="button"
       className={pageStyles.panelToggle}
+      data-tour="plegar-panel"
       aria-label={label}
       title={label}
       aria-expanded={!folded}
@@ -1239,7 +1329,8 @@ function useColumnTop(column: RefObject<HTMLElement | null>, enabled: boolean) {
     measure()
     window.addEventListener('resize', measure)
     const resized = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure)
-    if (element.parentElement) resized?.observe(element.parentElement)
+    // También lo de encima (las pestañas abiertas, que llegan después y la bajan sin cambiarle el tamaño)
+    for (const box of [element.parentElement, element.parentElement?.parentElement]) if (box) resized?.observe(box)
     return () => {
       window.removeEventListener('resize', measure)
       resized?.disconnect()
@@ -1253,18 +1344,30 @@ function useColumnTop(column: RefObject<HTMLElement | null>, enabled: boolean) {
 const PANEL_SLIDE_MS = 300
 
 /**
- * El panel de la derecha de la página del mundo: se desliza fuera o dentro mientras el centro se ensancha, y su botón
- * va en la cabecera de la página (Enrique, 2026-11-16). Plegado y ya fuera, no se pinta
+ * El panel de la derecha de la página del mundo: se desliza fuera o dentro mientras el centro se ensancha, suave
+ * (Enrique, 2026-11-19), y su botón va en la cabecera de la página (Enrique, 2026-11-16). Plegándose, lo de dentro se
+ * queda hasta que acaba de irse (al acabar su fundido, o al rato si no lo hay) y ya fuera no se pinta; desplegándose, lo
+ * de dentro ya está al empezar y entra fundiéndose (opening)
  */
 function PagePanel({ children, id, folded }: { children: ReactNode; id: string; folded: boolean }) {
   const { t } = useTranslation()
-  // Plegándose, lo de dentro se queda hasta que acaba de irse; desplegándose, entra ya
-  const [present, setPresent] = useState(!folded)
+  const [gone, setGone] = useState(folded)
+  const [opening, setOpening] = useState(false)
+  if (!folded && gone) {
+    setGone(false)
+    setOpening(true)
+  }
+  // Por si no llega el final del fundido (sin transiciones)
   useEffect(() => {
-    if (!folded) return setPresent(true)
-    const timer = setTimeout(() => setPresent(false), PANEL_SLIDE_MS)
+    if (!folded) return
+    const timer = setTimeout(() => setGone(true), PANEL_SLIDE_MS + 100)
     return () => clearTimeout(timer)
   }, [folded])
+  useEffect(() => {
+    if (!opening) return
+    const timer = setTimeout(() => setOpening(false), PANEL_SLIDE_MS + 100)
+    return () => clearTimeout(timer)
+  }, [opening])
   return (
     <aside
       id={id}
@@ -1272,10 +1375,16 @@ function PagePanel({ children, id, folded }: { children: ReactNode; id: string; 
       className={`${styles.entryPanel} ${pageStyles.panel}`}
       data-tour="panel-bloques"
       data-folded={folded || undefined}
-      hidden={folded && !present}
+      data-opening={opening || undefined}
+      hidden={folded && gone}
       inert={folded || undefined}
+      onTransitionEnd={(event) => {
+        if (event.target !== event.currentTarget || event.propertyName !== 'opacity') return
+        if (folded) setGone(true)
+        setOpening(false)
+      }}
     >
-      {present && children}
+      {!gone && children}
     </aside>
   )
 }

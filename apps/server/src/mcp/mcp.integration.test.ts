@@ -36,6 +36,8 @@ describe('conector MCP con OAuth', () => {
         QUEUE_PREFIX: 'crisol-test',
         MODEL_DIR: '/sin-modelo',
         AUTH_SECRET: TEST_AUTH_SECRET,
+        // Este archivo conecta muchas IA seguidas desde la misma IP: el límite general de las cuentas, más alto
+        AUTH_RATE_LIMIT_MAX: 2000,
         PUBLIC_URL: BASE,
         DATA_DIR: testDataDir()
       },
@@ -988,7 +990,8 @@ describe('conector MCP con OAuth', () => {
     const tree = (await call<{ pages: { title: string }[] }>('ver_arbol', { worldId: world.id })).data
     expect(tree.pages.map((p) => p.title)).toEqual(['Aldoria', 'Varn'])
 
-    // Una jugadora de La Marca conecta su IA: ve lo que sabe su campaña, y no escribe
+    // Una jugadora de La Marca conecta su IA a Mundos: ve lo que sabe su campaña y solo las herramientas de leer
+    // (ADR-0030); lo suyo lo escribe por el conector de su campaña
     const ana = await signUpTestUser(server.auth, { name: 'Ana', email: `ana-${Date.now()}@crisol.test` })
     const link = await api<{ url: string }>(cookie, 'getInvitation', { campaignId: campaign.id })
     await fetch(new URL('/api/join', BASE), {
@@ -997,6 +1000,8 @@ describe('conector MCP con OAuth', () => {
       body: JSON.stringify({ secret: link.url.split('/unirse/')[1] })
     })
     const player = await connectAs(ana, cookie)
+    const reads = (await player.tools()).map((t) => t.name)
+    const inCampaign = await connectAs(ana, cookie, `/mcp/campanas/${campaign.id}`)
     // Los calendarios (módulo 8): la IA del máster crea el de Eana de una vez y lo describe; la de la jugadora los lee
     // sin las eras solo del máster, por ninguna herramienta, y no los cambia
     const fest = (name: string) => ({ name, days: 7, festival: true })
@@ -1051,7 +1056,7 @@ describe('conector MCP con OAuth', () => {
       date: '1250-Siega-18'
     })
     expect(described.data.date).toMatchObject({
-      text: 'Frostelle, 18 de Siega de 1250 RC',
+      text: 'Frostelle, 18 de Siega del año 1250 RC',
       season: 'Verano',
       era: { name: 'Era de la República' }
     })
@@ -1070,7 +1075,7 @@ describe('conector MCP con OAuth', () => {
       expect(result.text).toContain('Era de la República')
       expect(result.text).not.toContain('Eclipse')
     }
-    expect((await player.call('borrar_calendario', { calendarId: calendar.id })).isError).toBe(true)
+    expect(reads).not.toContain('borrar_calendario')
     // Las fechas (módulo 8): la IA del máster fecha Aldoria con la forma 1250-Siega-18 y la lee legible; mal escrita,
     // dice por qué. Un campo «Oculto» de fecha no le llega a la de la jugadora
     await api(cookie, 'setPageProperties', {
@@ -1093,14 +1098,21 @@ describe('conector MCP con OAuth', () => {
     const masterDates = (await call<{ dates: { name: string; text: string }[] }>('leer_pagina', { pageId: aldoria }))
       .data.dates
     expect(masterDates).toEqual([
-      expect.objectContaining({ name: 'Fundación', text: '12 de Siega – 3 de Trilla de 1250 RC' }),
-      expect.objectContaining({ name: 'Coronación', text: '5 de Vendimia de 1302 RC' })
+      expect.objectContaining({ name: 'Fundación', text: '12 de Siega – 3 de Trilla del año 1250 RC' }),
+      expect.objectContaining({ name: 'Coronación', text: '5 de Vendimia del año 1302 RC' })
     ])
-    // Las cronologías (módulo 8): la IA del máster pasa una de una vez con crear_eventos y la lee en orden con
-    // ver_cronologia (las páginas con fecha salen solas); mal fechada, dice cuál. La de la jugadora solo ve la
-    // revelada, sin lo oculto ni el campo oculto de fecha
-    const events = await call('crear_eventos', {
+    // Las cronologías (módulo 8): la IA del máster crea una (ADR-0031: una pestaña; sin página, una nueva con su
+    // nombre), le pasa sus eventos de una vez con crear_eventos (ADR-0032: son suyos) y la lee en orden con
+    // ver_cronologia (con las páginas con fecha, que pide su filtro); mal fechada, dice cuál. La de la jugadora solo
+    // ve la revelada, sin lo oculto ni el campo oculto de fecha
+    const chronology = await call<{ id: string; pageId: string }>('crear_cronologia', {
       worldId: world.id,
+      name: 'Historia',
+      filter: { pages: true }
+    })
+    expect(chronology.isError, chronology.text).toBeFalsy()
+    const events = await call('crear_eventos', {
+      chronologyId: chronology.data.id,
       events: [
         { title: 'Boda de Aldren', date: '1250-Siega-18', group: 'La Corona' },
         { title: 'Campaña de los Pasos', date: '1250-Siega-20/1250-Trilla-3', group: 'Guerras' },
@@ -1110,15 +1122,13 @@ describe('conector MCP con OAuth', () => {
     })
     expect(events.isError, events.text).toBeFalsy()
     const misdated = await call('crear_eventos', {
-      worldId: world.id,
+      chronologyId: chronology.data.id,
       events: [
         { title: 'Bien', date: '1250' },
         { title: 'Mal', date: '1250-Nada-3' }
       ]
     })
     expect(misdated.text).toMatch(/^BAD_DATE.*n\.º 2/)
-    const chronology = await call<{ id: string }>('crear_cronologia', { worldId: world.id, name: 'Historia' })
-    expect(chronology.isError, chronology.text).toBeFalsy()
     const timeline = await call<{ entries: { title: string; form: string; field?: string }[] }>('ver_cronologia', {
       chronologyId: chronology.data.id
     })
@@ -1131,11 +1141,12 @@ describe('conector MCP con OAuth', () => {
       ['Aldoria', 'Coronación', '1302-Vendimia-5']
     ])
     expect((await player.call('ver_cronologia', { chronologyId: chronology.data.id })).isError).toBe(true)
+    // Se ve con su página
     await api(cookie, 'setKnowledge', {
       worldId: world.id,
       campaignId: campaign.id,
-      kind: 'chronology',
-      targetId: chronology.data.id,
+      kind: 'page',
+      targetId: chronology.data.pageId,
       known: true
     })
     const theirs = await player.call<{ entries: { title: string }[] }>('ver_cronologia', {
@@ -1150,11 +1161,9 @@ describe('conector MCP con OAuth', () => {
     for (const leak of ['Secreto', 'Coronación', '1302']) expect(theirs.text).not.toContain(leak)
     const listed = await player.call('listar_cronologias', { worldId: world.id })
     expect(listed.text).toContain('Historia')
-    expect(
-      (await player.call('crear_eventos', { worldId: world.id, events: [{ title: 'x', date: '1' }] })).isError
-    ).toBe(true)
+    expect(reads).not.toContain('crear_eventos')
     const own = (await player.call<{ pages: { title: string }[] }>('ver_arbol', { worldId: world.id })).data
-    expect(own.pages.map((p) => p.title)).toEqual(['Aldoria'])
+    expect(own.pages.map((p) => p.title)).toEqual(['Aldoria', 'Historia'])
     const readCall = await player.call<{ markdown: string; dates: { name: string }[] }>('leer_pagina', {
       pageId: aldoria
     })
@@ -1167,7 +1176,12 @@ describe('conector MCP con OAuth', () => {
     expect((await player.call('buscar_paginas', { worldId: world.id, query: 'rey' })).data).toMatchObject({
       results: []
     })
-    const write = await player.call('editar_pagina', { pageId: aldoria, body: { mode: 'append', markdown: 'Mío' } })
+    expect(reads).not.toContain('editar_pagina')
+    // En su campaña escribe el texto de una página solo si su campaña puede (docs/specs/pagina-de-jugadores.md)
+    const write = await inCampaign.call('editar_pagina', {
+      pageId: aldoria,
+      body: { mode: 'append', markdown: 'Mío' }
+    })
     expect(write.text).toMatch(/^READ_ONLY/)
     expect((await player.call('quien_conoce', { pageId: aldoria })).isError).toBe(true)
     // Salvo el texto de una página que su campaña puede escribir (docs/specs/pagina-de-jugadores.md)
@@ -1178,16 +1192,16 @@ describe('conector MCP con OAuth', () => {
       pageId: diary.id,
       editors: 'all'
     })
-    const written = await player.call('editar_pagina', {
+    const written = await inCampaign.call('editar_pagina', {
       pageId: diary.id,
       body: { mode: 'append', markdown: 'Día 1.' }
     })
     expect(written.isError, written.text).toBeFalsy()
-    const titled = await player.call('editar_pagina', { pageId: diary.id, title: 'Otro' })
+    const titled = await inCampaign.call('editar_pagina', { pageId: diary.id, title: 'Otro' })
     expect(titled.text).toMatch(/^PLAYER_PAGE/)
     // En modo asistente, su petición espera a que ella la apruebe
     await api(ana.cookie, 'setAiMode', { mode: 'assistant' })
-    const awaiting = await player.call('editar_pagina', {
+    const awaiting = await inCampaign.call('editar_pagina', {
       pageId: diary.id,
       body: { mode: 'append', markdown: 'Día 2.' }
     })
@@ -1203,9 +1217,9 @@ describe('conector MCP con OAuth', () => {
     const group = (await call<{ campaign: { name: string }[] }>('lo_que_sabe', { campaignId: campaign.id })).data
     expect(group.campaign.map((k) => k.name)).toEqual(['Varn', 'Diario', 'Historia', 'Aldoria'])
     expect((await player.call('leer_pagina', { pageId: varn })).isError).toBeFalsy()
-    expect((await player.call('revelar', { worldId: world.id, kind: 'page', targetId: aldoria })).text).toMatch(
-      /^READ_ONLY/
-    )
+    // Revelar es del máster: no está entre las suyas en ningún conector (y si llegara, approvals.ts dice READ_ONLY)
+    expect(reads).not.toContain('revelar')
+    expect((await inCampaign.tools()).map((t) => t.name)).not.toContain('revelar')
   })
 
   it('lo de la papelera no sale en listar_mundos', async () => {

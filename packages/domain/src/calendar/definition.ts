@@ -35,7 +35,7 @@ export interface CalendarMonth {
   outsideWeek?: boolean | undefined
   /**
    * Los días con nombre propio, por su orden (los de bisiesto, al final): «Shieldmeet», el 2 de Pleno Verano. Uno con
-   * nombre se lee por él («Shieldmeet de 1372 DR»); un mes de un solo día, por el del mes
+   * nombre se lee por él («Shieldmeet del año 1372 DR»); un mes de un solo día, por el del mes
    */
   dayNames?: string[] | undefined
 }
@@ -90,6 +90,12 @@ export interface CalendarCorrespondence {
   date: FullDate
 }
 
+/** Los años que admite el calendario; lo que falte, hasta el tope general (CALENDAR_LIMITS.yearBound) */
+export interface CalendarYearRange {
+  min?: number | null | undefined
+  max?: number | null | undefined
+}
+
 export interface CalendarDefinition {
   /** «RC»: «1250 RC» */
   yearSuffix: string
@@ -107,6 +113,8 @@ export interface CalendarDefinition {
   moons: CalendarMoon[]
   eras: CalendarEra[]
   correspondence?: CalendarCorrespondence | null | undefined
+  /** Sin él, de -99.999 a 99.999 */
+  yearRange?: CalendarYearRange | null | undefined
 }
 
 /** Los límites de una definición (los mismos en el contrato) */
@@ -126,8 +134,36 @@ export const CALENDAR_LIMITS = {
   eras: 100,
   eraDescription: 280,
   abbreviation: 12,
-  year: 10_000_000
+  year: 10_000_000,
+  /** El tope de años de un calendario sin rango propio (y el de su rango) */
+  yearBound: 99_999
 } as const
+
+/**
+ * Los años que admite (los dos incluidos): su rango, recortado al tope general; sin él, o con uno que no vale (el
+ * primero después del último), el tope general
+ */
+export function yearBounds(def: Pick<CalendarDefinition, 'yearRange'>): { min: number; max: number } {
+  const bound = CALENDAR_LIMITS.yearBound
+  const fit = (n: number | null | undefined, fallback: number) =>
+    typeof n === 'number' && Number.isInteger(n) ? Math.min(bound, Math.max(-bound, n)) : fallback
+  const min = fit(def.yearRange?.min, -bound)
+  const max = fit(def.yearRange?.max, bound)
+  return min <= max ? { min, max } : { min: -bound, max: bound }
+}
+
+/** El año llevado al rango del calendario (se para en el borde) */
+export function clampYear(def: Pick<CalendarDefinition, 'yearRange'>, year: number): number {
+  const { min, max } = yearBounds(def)
+  return Math.min(max, Math.max(min, Math.trunc(year)))
+}
+
+/** Por qué un año no vale en el calendario (en español, para la IA), o null */
+export function yearProblem(def: Pick<CalendarDefinition, 'yearRange'>, year: number): string | null {
+  const { min, max } = yearBounds(def)
+  if (year >= min && year <= max) return null
+  return `el año ${year} se sale del calendario, que va del año ${min} al ${max}`
+}
 
 export const DEFAULT_PHASES = [
   'Nueva',

@@ -11,6 +11,8 @@ section[aria-labelledby] .list {
   padding: 0;
   background: none;
   clip-path: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 
 section[aria-labelledby] .list::before {

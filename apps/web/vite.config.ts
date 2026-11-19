@@ -9,7 +9,10 @@ export default defineConfig({
     host: '127.0.0.1',
     port: 5173,
     // En desarrollo la API la sirve el servidor de apps/server
-    proxy: { '/api': { target: 'http://127.0.0.1:8130', ws: true } }
+    proxy: { '/api': { target: 'http://127.0.0.1:8130', ws: true } },
+    // Los más de 4000 dibujos de los iconos no cambian: vigilarlos agota los vigilantes del sistema (inotify) y Vite
+    // deja de ver los cambios
+    watch: { ignored: ['**/public/iconos/**'] }
   },
   test: {
     environment: 'happy-dom',

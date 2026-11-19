@@ -16,8 +16,9 @@ import { trackedColumns } from './tracked.ts'
 import { worlds } from './worlds.ts'
 
 /**
- * Las pestañas de una página de la wiki además de «Texto» (que es su cuerpo y no se guarda aquí): un mapa, y más
- * adelante una pizarra, una línea temporal… (ADR-0007). position es una clave de orden fraccionaria, como en el árbol
+ * Las pestañas de una página de la wiki además de «Texto» (que es su cuerpo y no se guarda aquí): un mapa, una pizarra,
+ * una cronología (ADR-0031), un árbol genealógico… (ADR-0007). position es una clave de orden fraccionaria, como en el
+ * árbol
  */
 export const pageTabs = pgTable(
   'page_tabs',
@@ -29,7 +30,7 @@ export const pageTabs = pgTable(
     pageId: uuid()
       .notNull()
       .references(() => pages.id, { onDelete: 'cascade' }),
-    kind: text({ enum: ['map', 'text', 'table', 'scene', 'board'] }).notNull(),
+    kind: text({ enum: ['map', 'text', 'table', 'scene', 'board', 'chronology', 'tree'] }).notNull(),
     /** La de texto, su documento (como un secreto: aparte del cuerpo) */
     documentId: uuid().references((): Column => documents.id, { onDelete: 'set null' }),
     name: text().notNull(),

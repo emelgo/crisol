@@ -95,6 +95,23 @@ describe('las páginas en ventanas sobre la Mesa', () => {
     expect(win.queryByRole('button', { name: /no la conocen/ })).toBeNull()
   })
 
+  it('sus pestañas se cambian dentro de la ventana, sin dejar la Mesa (desde ahí se revela un pin)', async () => {
+    const user = userEvent.setup()
+    const { api } = renderAt(`/mundos/${WORLD_ID}/campanas/${CAMPAIGN_ID}?panel=paginas`)
+    await api.client.call('createPageTab', { pageId: ALDRIC_ID, kind: 'text', name: 'Notas' })
+    await screen.findByRole('complementary', { name: 'Panel de la mesa' })
+    await user.click(await panel().findByRole('button', { name: 'Aldric Varn' }))
+    const win = within(await screen.findByRole('dialog', { name: 'Aldric Varn' }))
+    const tabs = within(await win.findByRole('navigation', { name: 'Pestañas de la página' }))
+    await user.click(await tabs.findByRole('link', { name: 'Notas' }))
+    await waitFor(() => expect(tabs.getByRole('link', { name: 'Notas' }).getAttribute('aria-current')).toBe('page'))
+    // La ventana sigue con el nombre de la página, y la Mesa, con su pestaña
+    expect(screen.getByRole('dialog', { name: 'Aldric Varn' })).toBeDefined()
+    expect(panel().getByRole('tab', { name: 'Páginas' }).getAttribute('aria-selected')).toBe('true')
+    await user.click(tabs.getByRole('link', { name: 'Texto' }))
+    await waitFor(() => expect(tabs.getByRole('link', { name: 'Texto' }).getAttribute('aria-current')).toBe('page'))
+  })
+
   it('un enlace de antes a la Mesa con una página (?pagina=) la abre en su ventana, con la pestaña Páginas', async () => {
     renderAt(`/mundos/${WORLD_ID}/campanas/${CAMPAIGN_ID}?panel=paginas&pagina=${ALDRIC_ID}`)
     expect(await screen.findByRole('dialog', { name: 'Aldric Varn' })).toBeDefined()

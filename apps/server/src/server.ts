@@ -19,7 +19,12 @@ export async function startServer(
 ) {
   const db = connect(config.DATABASE_URL)
   const valkey = new Redis(config.VALKEY_URL, { maxRetriesPerRequest: 2 })
-  const auth = createAuth({ db: db.db, secret: config.AUTH_SECRET, baseURL: config.PUBLIC_URL })
+  const auth = createAuth({
+    db: db.db,
+    secret: config.AUTH_SECRET,
+    baseURL: config.PUBLIC_URL,
+    ...(config.AUTH_RATE_LIMIT_MAX ? { rateLimitMax: config.AUTH_RATE_LIMIT_MAX } : {})
+  })
   const storage = diskStorage(join(config.DATA_DIR, 'archivos'))
   // El PDF de las hojas abre la web del propio servidor: solo si la sirve él
   const internalUrl = `http://127.0.0.1:${config.PORT}`

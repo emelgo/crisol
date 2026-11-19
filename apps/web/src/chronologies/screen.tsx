@@ -1,17 +1,26 @@
 /**
- * Una cronología a pantalla entera, como el mapa (decisión 4 de Enrique, docs/specs/modulo-8.md; lienzo del módulo 8,
- * pantallas 4 a 8): arriba «‹ Calendarios», su nombre, «Ir a…», el ojo de cada campaña y sus ajustes; en el marco, la
- * vista elegida (Lista · Meses · Calendario, que se recuerda en el aparato); abajo en el centro, la píldora de cristal
- * con «+» y las tres vistas; en Meses, el zoom abajo a la derecha. Vacía, una sola pieza discontinua «Añadir evento».
- * La jugadora la lee igual, sin «+», sin «⋯» y sin arrastrar; en el móvil, Lista y Calendario (Meses, desde 640 px)
+ * Una cronología, como pestaña de una página (ADR-0031, como en LegendKeeper; lienzo del módulo 8, pantallas 4 a 8): con
+ * el esqueleto de la página, a sangre como el mapa. A la derecha de las pestañas, su calendario, «Hoy de…», «Ir a…» y
+ * sus ajustes; debajo, la vista elegida (Lista · Meses · Calendario, que se recuerda en el aparato); abajo en el centro,
+ * la píldora de cristal con «+» y las tres vistas; en Meses, el zoom abajo a la derecha. Vacía, una sola pieza
+ * «Añadir evento». La jugadora la lee igual, sin «+», sin «⋯» y sin arrastrar; en el móvil, Lista y Calendario (Meses,
+ * desde 640 px). En una ventana de la Mesa, con su cabecera propia
  */
 
-import type { CalendarView, CampaignDate, ChronologyEntryView, TimelineGroupView } from '@crisol/contracts'
+import type {
+  CalendarView,
+  CampaignDate,
+  ChronologyEntryView,
+  Page,
+  PageTabView,
+  TimelineGroupView
+} from '@crisol/contracts'
 import { type DateValue, dateValueForm, type FullDate, shiftDate, type TimeZoom } from '@crisol/domain'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getRouteApi, Link, Navigate } from '@tanstack/react-router'
-import { CalendarDays, ChevronLeft, GanttChart, List, MoreHorizontal, Plus, Search, X } from 'lucide-react'
-import { type ReactNode, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
+import { CalendarDays, GanttChart, List, MoreHorizontal, Plus, Search, X } from 'lucide-react'
+import { type ReactNode, useCallback, useContext, useEffect, useId, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
@@ -32,8 +41,8 @@ import { Modal } from '../components/modal.tsx'
 import { PageTitle } from '../components/page-title.tsx'
 import { Tour } from '../components/tour.tsx'
 import { DateField } from '../wiki/date-field.tsx'
-import { ItemEye } from '../wiki/map/item-eye.tsx'
 import { readAsInput, readAsKey, useOpenPage, useReadAs } from '../wiki/read-as.tsx'
+import { TabToolsSlot } from '../wiki/world-page.ts'
 import { CalendarView as MonthCalendar } from './calendar-view.tsx'
 import styles from './chronologies.module.css'
 import { EventDialog, type EventDraft, storedDate } from './event-dialog.tsx'
@@ -88,67 +97,72 @@ export const chronologyQuery = (chronologyId: string, readAs: ReturnType<typeof 
   ...readAsKey(readAs)
 ]
 
-/** La pantalla del máster: «Calendarios» › una cronología */
-export function ChronologyScreen() {
+/**
+ * La dirección de antes de una cronología (en «Calendarios»): lleva a su pestaña, en su página (ADR-0031). Si ya no
+ * está, a Calendarios
+ */
+export function ChronologyRedirect() {
   const { worldId, chronologyId } = route.useParams()
   const api = useApi()
   const { account, pending } = useAccounts().useAccount()
-  const worlds = useQuery({
-    queryKey: ['worlds'],
-    queryFn: () => api.call('listWorlds', {}),
-    enabled: Boolean(account)
+  const found = useQuery({
+    queryKey: chronologyQuery(chronologyId, null),
+    queryFn: () => api.call('getChronology', { chronologyId }),
+    enabled: Boolean(account),
+    retry: false
   })
   if (pending) return null
   if (!account) return <Navigate to="/entrar" replace />
-  if (!worlds.data)
-    return failed(worlds) ? <LoadError error={worlds.error} onRetry={() => worlds.refetch()} /> : <Loading />
-  const world = worlds.data.worlds.find((w) => w.id === worldId)
+  if (found.isError) return <Navigate to="/mundos/$worldId/calendarios" params={{ worldId }} replace />
+  if (!found.data) return <Loading />
+  const { chronology } = found.data
   return (
-    <WorldChronology
-      worldId={worldId}
-      chronologyId={chronologyId}
-      organizationId={world?.organizationId}
-      editable={world?.role === 'master'}
-      back={
-        <Link to="/mundos/$worldId/calendarios" params={{ worldId }} className={styles.back}>
-          <ChevronLeft size={16} aria-hidden="true" />
-          <ChronologyBackText />
-        </Link>
-      }
+    <Navigate
+      to="/mundos/$worldId/wiki/$pageId"
+      params={{ worldId, pageId: chronology.pageId }}
+      search={{ pestana: chronology.tabId }}
+      replace
     />
   )
 }
 
-/** La del mundo: con «Hoy de…» (las campañas del mundo con fecha) y su línea «Hoy» */
-function WorldChronology(props: Omit<Parameters<typeof Chronology>[0], 'today' | 'headTools'>) {
-  const chosen = useChosenToday(props.worldId)
+/** La pestaña de una cronología en una página del mundo: con «Hoy de…» (las campañas del mundo con fecha) */
+export function ChronologyTab({ page, tab, editable }: { page: Page; tab: PageTabView; editable: boolean }) {
+  const chosen = useChosenToday(page.worldId)
+  const readAs = useReadAs()
   return (
     <Chronology
-      {...props}
-      today={chosen.current ? { date: chosen.current.today, campaign: chosen.current.campaign.name } : null}
-      headTools={<TodayOf options={chosen.options} value={chosen.chosen} onChange={chosen.choose} />}
+      worldId={page.worldId}
+      tabId={tab.id}
+      organizationId={undefined}
+      editable={editable}
+      back={null}
+      inTab
+      today={
+        readAs ? null : chosen.current ? { date: chosen.current.today, campaign: chosen.current.campaign.name } : null
+      }
+      headTools={readAs ? null : <TodayOf options={chosen.options} value={chosen.chosen} onChange={chosen.choose} />}
     />
   )
-}
-
-function ChronologyBackText() {
-  const { t } = useTranslation()
-  return <>{t('calendars.title')}</>
 }
 
 /** Una cronología, para el máster (editable) o para quien juega (desde su campaña, con ReadAsProvider) */
 export function Chronology({
   worldId,
   chronologyId,
+  tabId,
   organizationId,
   editable,
   back,
   today = null,
   headTools = null,
-  tour = true
+  tour = true,
+  inTab = false
 }: {
   worldId: string
-  chronologyId: string
+  /** Cuál: por su id (una ventana de la Mesa) o por el de su pestaña */
+  chronologyId?: string
+  tabId?: string
   organizationId: string | undefined
   editable: boolean
   back: ReactNode
@@ -158,6 +172,8 @@ export function Chronology({
   headTools?: ReactNode
   /** Su tutorial guiado (no en una ventana de la Mesa) */
   tour?: boolean
+  /** En la pestaña de su página: sin cabecera propia; sus herramientas, a la derecha de las pestañas */
+  inTab?: boolean
 }) {
   const { t } = useTranslation()
   const api = useApi()
@@ -167,15 +183,21 @@ export function Chronology({
   const readAs = useReadAs()
   const openPage = useOpenPage()
   const narrow = useNarrowScreen(640)
+  const slot = useContext(TabToolsSlot)
+  const key = chronologyId ?? tabId ?? ''
   const data = useQuery({
-    queryKey: chronologyQuery(chronologyId, readAs),
-    queryFn: () => api.call('getChronology', { chronologyId, ...readAsInput(readAs) })
+    queryKey: chronologyQuery(key, readAs),
+    queryFn: () =>
+      api.call('getChronology', {
+        ...(chronologyId ? { chronologyId } : { tabId }),
+        ...readAsInput(readAs)
+      })
   })
   const calendars = useQuery({
     queryKey: ['calendars', worldId, ...readAsKey(readAs)],
     queryFn: () => api.call('listCalendars', { worldId, ...readAsInput(readAs) })
   })
-  const [view, setView] = useState<View>(() => rememberedView(chronologyId))
+  const [view, setView] = useState<View>(() => rememberedView(key))
   const [zoom, setZoom] = useState<TimeZoom>('months')
   const [draft, setDraft] = useState<EventDraft | null>(null)
   const [focusKey, setFocusKey] = useState<string | null>(null)
@@ -186,7 +208,7 @@ export function Chronology({
   const shown: View = narrow && view === 'months' ? 'list' : view
   const choose = (next: View) => {
     setView(next)
-    rememberView(chronologyId, next)
+    rememberView(key, next)
   }
 
   // Lo que falla se ve (y se anuncia), no solo para el lector de pantalla
@@ -218,7 +240,7 @@ export function Chronology({
   const duplicate = useMutation({
     mutationFn: (entry: ChronologyEntryView) =>
       api.call('createTimelineEvents', {
-        worldId,
+        chronologyId: data.data?.chronology.id ?? '',
         events: [
           {
             title: entry.untitled ? '' : entry.title,
@@ -238,13 +260,29 @@ export function Chronology({
   })
   const updateGroups = useMutation({
     mutationFn: (groups: Array<{ id?: string; name: string; color: TimelineGroupView['color'] }>) =>
-      api.call('updateTimelineGroups', { worldId, groups }),
+      api.call('updateTimelineGroups', { chronologyId: data.data?.chronology.id ?? '', groups }),
     onSuccess: refresh,
     onError: fail
   })
 
-  if (!data.data || !calendars.data)
+  if (!data.data || !calendars.data) {
+    // Sin calendario en el mundo no hay cronología que pintar: se dice, con el camino a Calendarios
+    const noCalendar = (data.error as { code?: string } | null)?.code === 'NO_CALENDAR'
+    if (noCalendar)
+      return (
+        <div className={styles.tabFrame}>
+          <EmptyState kind="calendarios">
+            <p>{t('chronologies.noCalendar')}</p>
+            {editable && (
+              <Link to="/mundos/$worldId/calendarios" params={{ worldId }} className={styles.empty}>
+                {t('chronologies.toCalendars')}
+              </Link>
+            )}
+          </EmptyState>
+        </div>
+      )
     return failed(data) ? <LoadError error={data.error} onRetry={() => data.refetch()} /> : <Loading />
+  }
   const { chronology, calendar, groups, entries, outside } = data.data
   const definition = calendar.definition
   const todayDay = today ? todayIn(calendars.data.calendars, calendar.id, today.date) : null
@@ -384,38 +422,70 @@ export function Chronology({
     : undefined
 
   const empty = entries.length === 0
+  // Su calendario, con su icono (no se confunde con el nombre del mundo); al máster, lleva a su vista grande
+  const calendarName = (
+    <>
+      <CalendarDays size={14} aria-hidden="true" />
+      {calendar.name}
+    </>
+  )
+  const facts = (
+    <p className={styles.headFacts}>
+      {editable && inTab ? (
+        <Link
+          to="/mundos/$worldId/calendarios/$calendarId"
+          params={{ worldId, calendarId: calendar.id }}
+          className={styles.calendarLink}
+          title={t('chronologies.calendarOf', { name: calendar.name })}
+        >
+          {calendarName}
+        </Link>
+      ) : (
+        <span className={styles.calendarName} title={t('chronologies.calendarOf', { name: calendar.name })}>
+          {calendarName}
+        </span>
+      )}
+      {outside > 0 && <span> · {t('chronologies.outside', { count: outside })}</span>}
+    </p>
+  )
+  const tools = (
+    <div className={inTab ? styles.tabTools : styles.headTools}>
+      {inTab && facts}
+      {headTools}
+      {!empty && <GoTo entries={entries} onPick={(key) => setFocusKey(key)} />}
+      {editable && (
+        <ChronologySettings
+          worldId={worldId}
+          organizationId={organizationId}
+          chronology={chronology}
+          calendars={calendars.data.calendars}
+          groups={groups}
+          outside={outside}
+        />
+      )}
+    </div>
+  )
   return (
-    <div className={styles.screen} data-narrow={narrow || undefined}>
-      <header className={styles.head}>
-        {back}
-        <PageTitle>{chronology.name}</PageTitle>
-        <p className={styles.headFacts}>
-          {calendar.name}
-          {outside > 0 && <span> · {t('chronologies.outside', { count: outside })}</span>}
-        </p>
-        <div className={styles.headTools}>
-          {headTools}
-          {!empty && <GoTo entries={entries} onPick={(key) => setFocusKey(key)} />}
-          {editable && (
-            <>
-              <ItemEye
-                page={{ id: '', worldId }}
-                target={{ kind: 'chronology', targetId: chronology.id }}
-                feminine
-                hidden={false}
-              />
-              <ChronologySettings
-                worldId={worldId}
-                organizationId={organizationId}
-                chronology={chronology}
-                calendars={calendars.data.calendars}
-                groups={groups}
-                outside={outside}
-              />
-            </>
-          )}
-        </div>
-      </header>
+    <div
+      className={inTab ? styles.tabScreen : styles.screen}
+      data-narrow={narrow || undefined}
+      data-tour={inTab ? 'cronologia-pestana' : undefined}
+    >
+      {inTab ? (
+        // En la pestaña: sus herramientas, a la derecha de las pestañas de la página (o encima, si no hay sitio)
+        slot ? (
+          createPortal(tools, slot)
+        ) : (
+          <div className={styles.toolsRow}>{tools}</div>
+        )
+      ) : (
+        <header className={styles.head}>
+          {back}
+          <PageTitle>{chronology.name}</PageTitle>
+          {facts}
+          {tools}
+        </header>
+      )}
       {failure && (
         <p className={styles.failure} role="alert">
           {failure}
@@ -543,6 +613,7 @@ export function Chronology({
       {draft && (
         <EventDialog
           worldId={worldId}
+          chronologyId={chronology.id}
           calendarId={calendar.id}
           calendars={calendars.data.calendars}
           groups={groups}
@@ -860,7 +931,7 @@ function RedateDialog({
 }
 
 /** Borrar un evento: se confirma (se deshace desde el historial) */
-function ConfirmDelete({
+export function ConfirmDelete({
   entry,
   busy,
   onConfirm,

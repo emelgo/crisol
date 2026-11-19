@@ -24,13 +24,10 @@ import type { SceneChoice } from '../../tabletop/use-preparation.ts'
 import { TargetReveal } from '../reveal.tsx'
 import { setPendingChoice } from '../scene/pending.ts'
 import { SourcePicker } from '../scene/source-picker.tsx'
-import { KindChoices, TAB_KINDS, tabIcon } from './kinds.tsx'
+import { KindChoices, TAB_KINDS, type TabKind, tabIcon, tabRequest } from './kinds.tsx'
 import styles from './page-tabs.module.css'
 
 export const tabsKey = (worldId: string, pageId: string) => ['pages', worldId, 'tabs', pageId]
-
-/** La pestaña «Relaciones» (módulo 10): fija y calculada, no se guarda; va en la dirección como ?pestana=relaciones */
-export const RELATIONS_TAB = 'relaciones'
 
 /**
  * Adónde lleva cada pestaña (null, su texto): a la página en la wiki de su mundo o, en el editor de una plantilla, a la
@@ -61,20 +58,9 @@ export function usePageTabs(page: Page) {
 
 /**
  * La barra, como en Everlore: «Texto» y las añadidas; la elegida, con su menú (nombre, color y quitar); se recolocan
- * arrastrando (o con Alt y las flechas). Tras ellas, «Relaciones» si la página tiene alguna (relations; fija, sin menú).
- * Al final, «+» para añadir otra
+ * arrastrando (o con Alt y las flechas). Al final, «+» para añadir otra
  */
-export function PageTabs({
-  page,
-  tabs,
-  active,
-  relations = false
-}: {
-  page: Page
-  tabs: PageTabView[]
-  active: string | null
-  relations?: boolean
-}) {
+export function PageTabs({ page, tabs, active }: { page: Page; tabs: PageTabView[]; active: string | null }) {
   const { t } = useTranslation()
   const api = useApi()
   const queryClient = useQueryClient()
@@ -178,19 +164,6 @@ export function PageTabs({
             )}
           </li>
         ))}
-        {relations && (
-          <li>
-            <Link
-              {...target(RELATIONS_TAB)}
-              activeOptions={{ exact: true, includeSearch: true }}
-              className={styles.tab}
-              aria-current={active === RELATIONS_TAB ? 'page' : undefined}
-              data-tour="relaciones-pestana"
-            >
-              {t('relations.tab')}
-            </Link>
-          </li>
-        )}
         {!page.locked && (
           <li>
             <NewTab page={page} />
@@ -209,7 +182,6 @@ function TabIcon({ kind }: { kind: string }) {
   return <Icon aria-hidden="true" size={14} />
 }
 
-/** Los tipos de pestaña: texto, mapa, tabla, escena y pizarra ya; los demás, en las fases que vienen (ADR-0007) */
 /**
  * «+»: un cuadro con un recuadro por tipo y el nombre (sin él, el del tipo); la nueva va al final y se abre. Sin
  * plantillas: una plantilla se elige solo al crear la página
@@ -223,7 +195,7 @@ function NewTab({ page }: { page: Page }) {
   const errorText = useErrorText()
   const [open, setOpen] = useState(false)
   const [name, setName] = useState('')
-  const [kind, setKind] = useState<'text' | 'map' | 'table' | 'scene' | 'board'>('text')
+  const [kind, setKind] = useState<TabKind>('text')
   // Una escena puede nacer ya con su mapa: se prepara al abrirla
   const [choice, setChoice] = useState<SceneChoice | null>(null)
   const titleId = useId()
@@ -240,7 +212,7 @@ function NewTab({ page }: { page: Page }) {
     mutationFn: async () => {
       const tab = await api.call('createPageTab', {
         pageId: page.id,
-        kind,
+        ...tabRequest(kind),
         ...(name.trim() ? { name: name.trim() } : {})
       })
       if (tab.kind === 'scene' && choice) setPendingChoice(tab.id, choice)
@@ -290,7 +262,7 @@ function NewTab({ page }: { page: Page }) {
               kinds={TAB_KINDS.filter((each) => each.newTab)}
               value={kind}
               labelOf={(each) => t(`pageTabs.kinds.${each}`)}
-              onChange={(each) => setKind(each as typeof kind)}
+              onChange={setKind}
             />
             <input
               className={styles.nameInput}

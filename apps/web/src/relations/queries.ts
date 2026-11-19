@@ -2,12 +2,13 @@
  * Las consultas de las relaciones (módulo 10): las de una página en un modo y el grafo del mundo, con lo que ve quien
  * lee (ADR-0017). Sus claves cuelgan de ['pages', mundo]: cambiar una página (sus campos, su texto) las rehace
  */
-import type { RelationMode } from '@crisol/contracts'
-import { keepPreviousData, useQuery } from '@tanstack/react-query'
+import type { RelationEdge, RelationMode, RelationNode } from '@crisol/contracts'
+import { keepPreviousData, useQueries, useQuery } from '@tanstack/react-query'
 import { useMemo } from 'react'
 import { useApi } from '../api/context.tsx'
 import { useTemplates } from '../templates/data.ts'
 import { type ReadAs, readAsInput, readAsKey, useReadAs } from '../wiki/read-as.tsx'
+import { joinNeighbourhoods } from './model.ts'
 
 export interface RelationsQuery {
   mode: RelationMode
@@ -47,6 +48,44 @@ export function useRelations(worldId: string, pageId: string, query: RelationsQu
     enabled,
     placeholderData: keepPreviousData,
     staleTime: 30_000
+  })
+}
+
+/** Lo que llega de las relaciones de una página */
+interface RelationsView {
+  nodes: RelationNode[]
+  edges: RelationEdge[]
+  truncated: boolean
+}
+
+/**
+ * Los vecindarios juntos, en cuanto llega el de la página (las ampliadas se suman según llegan); el error y reintentar,
+ * los del de la página (fuera del componente: así no cambia en cada pintado)
+ */
+function joinViews(results: { data?: RelationsView | undefined; isError: boolean; refetch: () => unknown }[]) {
+  const first = results[0]
+  const ready = results.flatMap((each) => (each.data ? [each.data] : []))
+  return {
+    data: first?.data ? joinNeighbourhoods(ready) : null,
+    isError: first?.isError ?? false,
+    refetch: () => void first?.refetch()
+  }
+}
+
+/**
+ * El grafo de una página en su ventana: sus relaciones directas y las de las páginas que se han ampliado desde él (una
+ * consulta por página, la misma que la primera vista: se reaprovechan)
+ */
+export function useNeighbourhoods(worldId: string, pageIds: readonly string[]) {
+  const api = useApi()
+  const readAs = useReadAs()
+  return useQueries({
+    queries: pageIds.map((pageId) => ({
+      queryKey: relationsKey(worldId, pageId, FIRST_VIEW, readAs),
+      queryFn: () => api.call('getRelations', { pageId, mode: 'links' as const, depth: 1, ...readAsInput(readAs) }),
+      staleTime: 30_000
+    })),
+    combine: joinViews
   })
 }
 

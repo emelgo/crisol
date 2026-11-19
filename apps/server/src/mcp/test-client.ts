@@ -37,8 +37,8 @@ export function mcpTestHelpers(
       body: { redirect_uris: [REDIRECT], token_endpoint_auth_method: 'none', client_name: 'Pruebas' }
     })
 
-  /** El flujo de claude.ai: autorizar, consentir y canjear el código con PKCE */
-  const accessToken = async (cookie: string, client: { client_id: string }) => {
+  /** El flujo de claude.ai: autorizar, consentir y canjear el código con PKCE, para un conector (sin él, Mundos) */
+  const accessToken = async (cookie: string, client: { client_id: string }, resource = `${BASE}/mcp`) => {
     const verifier = randomBytes(32).toString('base64url')
     const challenge = createHash('sha256').update(verifier).digest('base64url')
     const authorize = new URL('/api/auth/oauth2/authorize', BASE)
@@ -50,7 +50,7 @@ export function mcpTestHelpers(
       state: 'estado',
       code_challenge: challenge,
       code_challenge_method: 'S256',
-      resource: `${BASE}/mcp`
+      resource
     }))
       authorize.searchParams.set(key, value)
 
@@ -78,7 +78,7 @@ export function mcpTestHelpers(
         redirect_uri: REDIRECT,
         client_id: client.client_id,
         code_verifier: verifier,
-        resource: `${BASE}/mcp`
+        resource
       })
     })
     const body = (await token.json()) as { access_token?: string }
@@ -91,12 +91,15 @@ export function mcpTestHelpers(
     return connectAs(owner, owner.cookie)
   }
 
-  /** Conecta la IA de una cuenta cualquiera (una jugadora), con un cliente que registra un propietario */
-  const connectAs = async <P extends { cookie: string }>(person: P, ownerCookie: string) => {
-    const token = await accessToken(person.cookie, await oauthClient(ownerCookie))
+  /**
+   * Conecta la IA de una cuenta cualquiera (una jugadora), con un cliente que registra un propietario, al conector de
+   * esa dirección (sin ella, Mundos; /mcp/campanas/:id, el de una campaña)
+   */
+  const connectAs = async <P extends { cookie: string }>(person: P, ownerCookie: string, path = '/mcp') => {
+    const token = await accessToken(person.cookie, await oauthClient(ownerCookie), `${BASE}${path}`)
     const client = new Client({ name: 'pruebas', version: '1' })
     await client.connect(
-      new StreamableHTTPClientTransport(new URL('/mcp', BASE), {
+      new StreamableHTTPClientTransport(new URL(path, BASE), {
         requestInit: { headers: { authorization: `Bearer ${token}` } }
       })
     )
@@ -107,7 +110,9 @@ export function mcpTestHelpers(
       const text = (result.content as Array<{ text?: string }>).map((c) => c.text ?? '').join('\n')
       return { ...result, text, data: result.structuredContent as T }
     }
-    return { ...person, call }
+    /** Las herramientas que ve */
+    const tools = async () => (await client.listTools()).tools
+    return { ...person, call, tools, client, token }
   }
   const clients: Client[] = []
 

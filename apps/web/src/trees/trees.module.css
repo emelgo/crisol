@@ -1,0 +1,234 @@
+/*
+ * La pestaña «Árbol»: lo que no trae relations.module.css (las tarjetas, el zoom, la píldora y la ficha del nodo son las
+ * de Familia). «Añadir al árbol» en la píldora de abajo, lo que se añade desde un nodo, sus líneas, la relación y el
+ * buscador del cuadro de añadir y la pieza del centro cuando está vacío
+ */
+
+/* La pestaña: del alto de la página a sangre, con sus cuadros dentro */
+.tab {
+  display: flex;
+  flex-direction: column;
+  block-size: 100%;
+  min-block-size: 0;
+}
+
+.tab > [data-tour="arbol"] {
+  flex: 1 1 0;
+  block-size: auto;
+  min-block-size: 0;
+}
+
+/* «Añadir al árbol», abajo en el centro: de cristal rojo, como el «+» de la cronología */
+.tab .addPerson {
+  padding: 0 var(--space-3);
+  background: var(--accent-glass);
+  color: var(--color-on-accent);
+  font-weight: 600;
+}
+
+.tab .addPerson:hover {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+/* La relación con el nodo, encima del buscador; la libre, con su nombre y dónde va */
+.relation {
+  display: grid;
+  gap: var(--space-3);
+}
+
+/* Lo que falla, arriba en el centro, sin tapar las tarjetas */
+.failure {
+  position: absolute;
+  inset-block-start: var(--space-3);
+  inset-inline-start: 50%;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  max-inline-size: min(36rem, calc(100% - 2 * var(--space-4)));
+  margin: 0;
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+  border: 1px solid color-mix(in srgb, var(--color-danger) 55%, var(--line-frame));
+  border-radius: var(--radius-button);
+  background: color-mix(in srgb, var(--color-danger) 14%, var(--popup-glass));
+  transform: translateX(-50%);
+}
+
+/* Lo que se añade desde el nodo: texto con su +, sin bordes (no una fila de botones con el mismo peso) */
+.adds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  padding-block: var(--space-2);
+  border-block: 1px solid var(--line-soft);
+}
+
+.adds button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-block-size: 2rem;
+  padding: 0 var(--space-1);
+  border: 0;
+  border-radius: var(--radius-button);
+  background: none;
+  color: var(--color-link);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.adds button:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.adds button:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 1px;
+}
+
+/* Sus líneas en la ficha del nodo: cada una con su × al acercarse */
+.lines {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.875rem;
+}
+
+.lines li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-block-size: 1.75rem;
+  color: var(--color-muted);
+}
+
+.lines li button {
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
+  opacity: 0;
+  transition: opacity 120ms ease-out;
+}
+
+.lines li:hover button,
+.lines li button:focus-visible {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .lines li button {
+    opacity: 1;
+  }
+}
+
+.danger:hover {
+  border-color: color-mix(in srgb, var(--color-danger) 60%, var(--line-frame));
+  color: var(--color-danger-text, var(--color-text));
+}
+
+/* Vacío: la pieza del centro con su botón grande y, si se puede, empezar desde los campos */
+.empty {
+  display: grid;
+  place-items: center;
+  block-size: 100%;
+  padding: var(--space-6);
+}
+
+.emptyActions {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-3);
+}
+
+.emptyButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: 3rem;
+  padding: 0 var(--space-6);
+  border: 1px solid var(--line-frame);
+  border-radius: var(--radius-frame);
+  background: var(--frame-sheen), var(--surface-glass);
+  color: var(--color-text);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    border-color 150ms ease-out,
+    background 150ms ease-out;
+}
+
+.emptyButton:hover {
+  border-color: var(--color-field-border);
+  background: var(--frame-sheen), var(--surface-glass-raised);
+}
+
+.fromFields {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: 2.25rem;
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius-button);
+  background: none;
+  color: var(--color-link);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.fromFields:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.emptyButton:focus-visible,
+.fromFields:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.emptyRead {
+  display: grid;
+  place-items: center;
+  block-size: 100%;
+  margin: 0;
+  color: var(--color-muted);
+}
+
+/* El buscador del cuadro de añadir: lo que hay en el árbol, las páginas y, al final, «solo con su nombre» */
+.options {
+  display: grid;
+  gap: 2px;
+  max-block-size: 16rem;
+  margin-block-start: calc(-1 * var(--space-2));
+  overflow: auto;
+}
+
+.options [role="option"] {
+  display: grid;
+  gap: 1px;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-button);
+  cursor: pointer;
+}
+
+.options [role="option"] small {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+}
+
+.options [role="option"][aria-selected="true"] {
+  background: color-mix(in srgb, var(--color-text) 9%, transparent);
+}
+
+.options [role="option"][data-loose] span {
+  color: var(--color-link);
+}

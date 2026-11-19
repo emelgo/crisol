@@ -1,7 +1,9 @@
+import { randomUUID } from 'node:crypto'
 import { type AiMode, approvalExpiresAt, DEFAULT_AI_MODE } from '@crisol/domain'
-import { and, asc, desc, eq, gt, lt, lte, ne, or } from 'drizzle-orm'
+import { and, asc, desc, eq, gt, isNull, lt, lte, ne, or, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { aiSettings, approvals } from '../schema/ai.ts'
+import { oauthClient, oauthRefreshToken, oauthResource } from '../schema/auth.ts'
 
 /** El modo de IA de la cuenta (sin ajuste, el de por defecto) */
 export async function findAiMode(db: Database, userId: string): Promise<AiMode> {
@@ -118,4 +120,70 @@ export async function failInterruptedApprovals(db: Database, before: Date): Prom
     .where(and(eq(approvals.status, 'approved'), lt(approvals.decidedAt, before)))
     .returning({ id: approvals.id })
   return failed.length
+}
+
+/**
+ * Da de alta un recurso OAuth si aún no está (el conector de una campaña, ADR-0030): Better Auth solo emite tokens
+ * para recursos que conoce, y los de las campañas no se saben al arrancar
+ */
+export async function ensureOAuthResource(db: Database, identifier: string, name: string): Promise<void> {
+  const now = new Date()
+  await db
+    .insert(oauthResource)
+    .values({ id: randomUUID(), identifier, name, createdAt: now, updatedAt: now })
+    .onConflictDoNothing({ target: oauthResource.identifier })
+}
+
+/** Una conexión de IA: un cliente (claude.ai) con un conector (un recurso), y cuándo renovó su acceso por última vez */
+export interface AiConnectionRow {
+  clientId: string
+  clientName: string | null
+  resource: string
+  renewedAt: Date
+}
+
+/**
+ * Las conexiones de IA de una cuenta: cada cliente con cada conector del que guarda un token de refresco vivo (el de
+ * acceso no se guarda: es un JWT de una hora). Un cliente sin offline_access no sale
+ */
+export async function listAiConnections(db: Database, userId: string, now: Date): Promise<AiConnectionRow[]> {
+  const rows = await db.execute<{
+    client_id: string
+    client_name: string | null
+    resource: string
+    renewed_at: string
+  }>(sql`
+    select t.client_id, c.name as client_name, r.resource, max(t.created_at) as renewed_at
+      from ${oauthRefreshToken} t
+      join ${oauthClient} c on c.client_id = t.client_id
+      cross join lateral unnest(t.resources) as r(resource)
+      where t.user_id = ${userId} and t.revoked is null and t.expires_at > ${now.toISOString()}
+      group by t.client_id, c.name, r.resource
+      order by renewed_at desc`)
+  return [...rows].map((row) => ({
+    clientId: row.client_id,
+    clientName: row.client_name,
+    resource: row.resource,
+    renewedAt: new Date(row.renewed_at)
+  }))
+}
+
+/** Quita una conexión: sus tokens de refresco dejan de valer (los de acceso que queden los rechaza el conector) */
+export async function revokeAiConnection(
+  db: Database,
+  query: { userId: string; clientId: string; resource: string; now: Date }
+): Promise<number> {
+  const revoked = await db
+    .update(oauthRefreshToken)
+    .set({ revoked: query.now })
+    .where(
+      and(
+        eq(oauthRefreshToken.userId, query.userId),
+        eq(oauthRefreshToken.clientId, query.clientId),
+        isNull(oauthRefreshToken.revoked),
+        sql`${query.resource} = any(${oauthRefreshToken.resources})`
+      )
+    )
+    .returning({ id: oauthRefreshToken.id })
+  return revoked.length
 }

@@ -631,6 +631,34 @@
       "when": 1794907357232,
       "tag": "0089_capa_clima",
       "breakpoints": true
+    },
+    {
+      "idx": 90,
+      "version": "7",
+      "when": 1795079007014,
+      "tag": "0090_cronologias_en_pestanas",
+      "breakpoints": true
+    },
+    {
+      "idx": 91,
+      "version": "7",
+      "when": 1795079104778,
+      "tag": "0091_arboles",
+      "breakpoints": true
+    },
+    {
+      "idx": 92,
+      "version": "7",
+      "when": 1795108000725,
+      "tag": "0092_arboles_libres",
+      "breakpoints": true
+    },
+    {
+      "idx": 93,
+      "version": "7",
+      "when": 1795108896388,
+      "tag": "0093_cronologias_con_sus_eventos",
+      "breakpoints": true
     }
   ]
 }

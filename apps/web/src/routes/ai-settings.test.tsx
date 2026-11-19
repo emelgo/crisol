@@ -1,8 +1,8 @@
-import type { Approval, Organization } from '@crisol/contracts'
+import type { AiConnection, Approval, Campaign, Organization, World } from '@crisol/contracts'
 import { createMemoryHistory } from '@tanstack/react-router'
 import { act, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { fakeAccountClient } from '../account/fake.ts'
 import { fakeApi } from '../api/fake.ts'
 import { App } from '../app.tsx'
@@ -33,8 +33,23 @@ const _finished = (overrides: Partial<Approval>): Approval => ({
   ...overrides
 })
 
-const renderAt = (path: string, options: { organizations?: Organization[]; approvals?: Approval[] } = {}) => {
-  const api = fakeApi({ organizations: options.organizations ?? [owner], approvals: options.approvals ?? [] })
+const renderAt = (
+  path: string,
+  options: {
+    organizations?: Organization[]
+    approvals?: Approval[]
+    aiConnections?: AiConnection[]
+    worlds?: World[]
+    campaigns?: Campaign[]
+  } = {}
+) => {
+  const api = fakeApi({
+    organizations: options.organizations ?? [owner],
+    approvals: options.approvals ?? [],
+    aiConnections: options.aiConnections ?? [],
+    worlds: options.worlds ?? [],
+    campaigns: options.campaigns ?? []
+  })
   const router = createAppRouter(createMemoryHistory({ initialEntries: [path] }))
   render(
     <App
@@ -62,13 +77,97 @@ describe('los ajustes de IA', () => {
     expect(settings.getByRole<HTMLInputElement>('radio', { name: /^Copiloto/ }).checked).toBe(true)
   })
 
-  it('quien no es propietario no los tiene en Ajustes', async () => {
+  it('quien no es propietario ni está en ninguna campaña no los tiene en Ajustes', async () => {
     renderAt('/mundos', { organizations: [{ ...owner, role: 'member' }] })
     await screen.findByRole('heading', { level: 1, name: 'Mis mundos' })
     const settings = await openSettings()
     expect(settings.getByRole('heading', { level: 1, name: 'Ajustes' })).toBeDefined()
     expect(settings.queryByRole('heading', { name: 'Conectar una IA' })).toBeNull()
     expect(settings.queryByLabelText('Dirección del conector')).toBeNull()
+  })
+
+  it('tus conexiones: a qué conector, qué app y cuándo; «Quitar» pide confirmarlo y la quita al momento', async () => {
+    const campaignId = crypto.randomUUID()
+    const app = { clientId: 'https://ia.example/cliente', clientName: 'Mi IA' }
+    const recently = new Date(Date.now() - 5 * 60_000).toISOString()
+    const { api } = renderAt('/ajustes', {
+      aiConnections: [
+        {
+          ...app,
+          url: 'https://crisol.test/mcp',
+          connector: { kind: 'worlds' },
+          lastUsedAt: '2026-01-02T10:00:00.000Z'
+        },
+        {
+          ...app,
+          url: `https://crisol.test/mcp/campanas/${campaignId}`,
+          connector: { kind: 'campaign', campaignId, campaign: { name: 'La Marca', worldId: crypto.randomUUID() } },
+          lastUsedAt: recently
+        }
+      ]
+    })
+    const section = within(await screen.findByRole('region', { name: 'Tus conexiones' }))
+    const list = within(await section.findByRole('list'))
+    expect(list.getAllByRole('listitem').map((item) => item.textContent)).toEqual([
+      expect.stringContaining('Crisol · Mundos'),
+      expect.stringContaining('Crisol · La Marca')
+    ])
+    expect(list.getByText('Mi IA (ia.example) · hace 5 minutos')).toBeDefined()
+    // Pide confirmarlo en la fila, con el foco en «Quitar»; cancelar no quita nada
+    await userEvent.click(
+      list.getByRole('button', { name: 'Quitar la conexión de Mi IA (ia.example) a Crisol · La Marca' })
+    )
+    expect(
+      list.getByText('Mi IA (ia.example) dejará de entrar en Crisol · La Marca hasta que la conectes otra vez.')
+    ).toBeDefined()
+    expect(document.activeElement?.textContent).toBe('Quitar')
+    await userEvent.click(list.getByRole('button', { name: 'Cancelar' }))
+    expect(api.calls).not.toContain('removeAiConnection')
+    await userEvent.click(
+      list.getByRole('button', { name: 'Quitar la conexión de Mi IA (ia.example) a Crisol · La Marca' })
+    )
+    await userEvent.click(list.getByRole('button', { name: 'Quitar' }))
+    await vi.waitFor(() => expect(list.getAllByRole('listitem')).toHaveLength(1))
+    expect(announced()).toBe('Conexión de Mi IA (ia.example) quitada')
+    expect(api.calls).toContain('removeAiConnection')
+    // El foco, en la que queda
+    await vi.waitFor(() =>
+      expect(document.activeElement?.getAttribute('aria-label')).toBe(
+        'Quitar la conexión de Mi IA (ia.example) a Crisol · Mundos'
+      )
+    )
+  })
+
+  it('quien solo juega: sin la dirección de Mundos ni el modo; el conector, en cada campaña, y sus conexiones', async () => {
+    const world: World = {
+      id: crypto.randomUUID(),
+      organizationId: owner.id,
+      name: 'Eana',
+      description: '',
+      icon: null,
+      color: null,
+      cover: null,
+      role: 'player',
+      version: 1
+    }
+    const campaign: Campaign = {
+      id: crypto.randomUUID(),
+      worldId: world.id,
+      name: 'La Marca',
+      description: '',
+      color: null,
+      cover: null,
+      role: 'player',
+      version: 1
+    }
+    renderAt('/ajustes', { organizations: [{ ...owner, role: 'member' }], worlds: [world], campaigns: [campaign] })
+    expect(await screen.findByText('Cada campaña tiene su propio conector, en su Inicio:')).toBeDefined()
+    expect(screen.getByRole('link', { name: 'La Marca' }).getAttribute('href')).toBe(
+      `/mundos/${world.id}/campanas/${campaign.id}`
+    )
+    expect(screen.queryByLabelText('Dirección del conector')).toBeNull()
+    expect(screen.queryByRole('radio', { name: /^Copiloto/ })).toBeNull()
+    expect(await screen.findByText('Ninguna IA conectada.')).toBeDefined()
   })
 
   it('cambiar el modo se guarda al momento', async () => {

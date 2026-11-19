@@ -77,6 +77,19 @@
   --space-8: 2rem;
   /* Lo mínimo que se toca con el dedo */
   --target: 2.75rem;
+  /* El movimiento, un estándar para toda la app (docs/diseno.md, «Transiciones»; Enrique, 2026-11-19): dentro de una
+     vista, lo que se va (--motion-quick) y lo que llega (--motion-base); las ventanas, al abrirse (--motion-window);
+     entrar y salir de un espacio, lo que viaja de la tarjeta a la portada y vuelve (--motion-space); entrar en un
+     elemento, su icono y su nombre (--motion-item). Lo que llega frena (--ease-out), lo que se va acelera (--ease-in) y
+     lo que viaja se posa (--ease-travel). Los efectos de fuego, humo y ceniza llevan los suyos */
+  --motion-quick: 140ms;
+  --motion-base: 260ms;
+  --motion-window: 360ms;
+  --motion-space: 720ms;
+  --motion-item: 460ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-travel: cubic-bezier(0.33, 1, 0.68, 1);
   /* Dónde empiezan las ventanas encima (ajustes, portada, selector): todas a la misma altura, cada una tapa la de debajo */
   --dialog-top: min(12dvh, 6rem);
   /* El cristal de lo que flota sobre el mapa de la Mesa (lienzo «La Mesa, con cristal»): el tinte sale de la superficie,

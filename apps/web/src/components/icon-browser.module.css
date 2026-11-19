@@ -1,9 +1,11 @@
-/* El buscador de iconos de rol: el campo arriba, los grupos debajo (con su barra si no caben) y el crédito al pie */
+/* El buscador de iconos de rol: el campo arriba; debajo, los grupos a la izquierda y la rejilla (con su barra); al pie,
+   el crédito. Estrecho, los grupos van en una fila encima */
 .browser {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
   min-inline-size: 0;
+  container-type: inline-size;
 }
 
 .search {
@@ -32,55 +34,110 @@
   outline: none;
 }
 
-.list {
-  max-block-size: 16rem;
+.body {
+  display: grid;
+  grid-template-columns: 10.5rem minmax(0, 1fr);
+  gap: var(--space-2);
+  min-block-size: 0;
+}
+
+/* Los grupos: una columna de botones con su dibujo y su nombre; el elegido, marcado como una fila del árbol */
+.sections {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  max-block-size: 20rem;
   overflow-y: auto;
   scrollbar-width: thin;
 }
 
-.group + .group {
-  margin-block-start: var(--space-2);
-}
-
-/* El rótulo de cada grupo: pequeño y gris, como los de los paneles (sin la caja de las secciones con título) */
-.browser .group {
-  margin: 0;
-  padding: 0;
-  background: none;
-  clip-path: none;
-  backdrop-filter: none;
-}
-
-.browser .group::before {
-  display: none;
-}
-
-.group h3 {
-  margin: 0 0 var(--space-1);
-  padding: 0;
+.section {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: 1.75rem;
+  padding: 0 var(--space-2);
   border: 0;
+  border-radius: 4px;
+  background: none;
   color: var(--color-muted);
-  font-family: var(--font-body);
+  font: inherit;
+  font-size: 0.8125rem;
+  text-align: start;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.section span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.section:hover {
+  background: var(--row-hover);
+  color: var(--color-text);
+}
+
+.section[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--color-accent) 18%, transparent);
+  color: var(--color-text);
+}
+
+.section:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
+}
+
+.results {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-inline-size: 0;
+}
+
+/* Lo que se enseña y cuántos: pequeño y gris, como los rótulos de los paneles */
+.heading {
+  margin: 0;
+  color: var(--color-muted);
   font-size: 0.6875rem;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
-.grid {
+.list {
+  block-size: 18.5rem;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.rows {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(2.25rem, 1fr));
   gap: 0.125rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
+}
+
+.row {
+  display: grid;
+  gap: 0.125rem;
+}
+
+/* Muchas filas: solo las que se ven, cada una en su sitio */
+.virtual {
+  position: relative;
+}
+
+.virtual .row {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
 }
 
 .choice {
   display: grid;
   place-items: center;
   inline-size: 100%;
-  aspect-ratio: 1;
+  block-size: 2.25rem;
   padding: 0;
   border: 1px solid transparent;
   border-radius: 4px;
@@ -117,4 +174,23 @@
 
 .credit a {
   color: inherit;
+}
+
+/* Estrecho: los grupos, en una fila que se desplaza, encima de la rejilla */
+@container (inline-size < 30rem) {
+  .body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sections {
+    flex-direction: row;
+    max-block-size: none;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-block-end: var(--space-1);
+  }
+
+  .list {
+    block-size: 15rem;
+  }
 }

@@ -23,7 +23,7 @@ export const relationNode = z.object({
 
 export type RelationNode = z.infer<typeof relationNode>
 
-/** La clave de una relación: «mention» o la de su campo (field:<id>, o name:<nombre> sin id) */
+/** La clave de una relación: «mention», la de su campo (field:<id>, o name:<nombre> sin id) o la de un árbol (tree:<tipo>) */
 export const relationKey = z.string().min(1).max(80)
 
 /** Una arista: de la página source a la target, por un campo suyo o por enlazarla en su texto */
@@ -31,8 +31,10 @@ export const relationEdge = z.object({
   source: z.uuid(),
   target: z.uuid(),
   kind: z
-    .enum(['field', 'mention'])
-    .describe('field: un campo de enlace de source; mention: source la enlaza en su texto'),
+    .enum(['field', 'mention', 'tree'])
+    .describe(
+      'field: un campo de enlace de source; mention: source la enlaza en su texto; tree: una línea de un árbol genealógico u organigrama'
+    ),
   key: relationKey,
   name: z.string().describe('El nombre del campo (vacío en mention)'),
   inverseName: z.string().optional().describe('Cómo se lee desde target'),
@@ -53,7 +55,7 @@ export const getRelations = defineAction({
   name: 'getRelations',
   kind: 'read',
   description:
-    'Las relaciones de una página: con quién se relaciona por sus campos de enlace y por los enlaces de su texto (menciona), en ambos sentidos. mode links: el vecindario hasta depth saltos; family: el árbol genealógico (campos con papel parent o partner, ±3 generaciones); org: el organigrama de su grupo (papel member-of y leads; desde un miembro, el de su grupo). modes dice cuáles tiene',
+    'Las relaciones de una página: con quién se relaciona por sus campos de enlace, por los enlaces de su texto (menciona) y por los árboles genealógicos en los que está, en ambos sentidos. mode links: el vecindario hasta depth saltos; family: el árbol genealógico (campos con papel parent o partner, ±3 generaciones); org: el organigrama de su grupo (papel member-of y leads; desde un miembro, el de su grupo). modes dice cuáles tiene',
   input: z.object({
     pageId: z.uuid(),
     depth: z.number().int().min(1).max(3).default(1).describe('Con mode links: cuántos saltos (1 a 3)'),
@@ -76,7 +78,7 @@ export const getWorldGraph = defineAction({
   name: 'getWorldGraph',
   kind: 'read',
   description:
-    'El grafo de relaciones de todo el mundo: las páginas y sus relaciones (campos de enlace y menciones del texto), con filtros por plantilla, por relación (relations: «mention» o la key de un campo) y por etiqueta. Las páginas sin relaciones, solo con orphans. relations lista cada relación que hay, con cuántas aristas',
+    'El grafo de relaciones de todo el mundo: las páginas y sus relaciones (campos de enlace, menciones del texto y líneas de los árboles genealógicos), con filtros por plantilla, por relación (relations: «mention», la key de un campo o tree:parent, tree:partner, tree:member, tree:leads) y por etiqueta. Las páginas sin relaciones, solo con orphans. relations lista cada relación que hay, con cuántas aristas',
   input: z.object({
     worldId: z.uuid(),
     templates: z
@@ -114,7 +116,7 @@ export const getWorldGraph = defineAction({
       .array(
         z.object({
           key: relationKey,
-          kind: z.enum(['field', 'mention']),
+          kind: z.enum(['field', 'mention', 'tree']),
           name: z.string(),
           inverseName: z.string().optional(),
           role: relationRole.optional(),

@@ -7,6 +7,17 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
+### Para retomar (2026-11-17, noche: todos los módulos en main y en staging)
+
+- Los módulos 8, 9 y 10 (mundo y campaña) entraron en `main` con el PR #121 (squash, `[skip ci]`; el #120 se cerró
+  porque iba dentro) y están desplegados en staging. Batería entera en verde en local antes de subir; sin CI (cuota
+  agotada este mes): pasarla una vez cuando vuelva la cuota.
+- e2e inestables con la máquina cargada: la de historial falló una vez por tiempo y pasó al repetirla. Si la batería
+  tarda, lanzarla con `--retries=1` y separada de la sesión (`setsid nohup`), no perseguir cada lentitud en bucle.
+- **Siguiente**: que Enrique pruebe (`tasks/probar.md`) y confirme los ADR pendientes (0017, 0018, 0022, 0029);
+  después, los ajustes de interfaz (`tasks/todo-revision.md`, `tasks/everlore-pendiente.md`, los pendientes menores de
+  los módulos 8 y 10 de abajo) y pasar Eana por el MCP.
+
 ### Para retomar (2026-11-17: módulos 8 y 10 · campaña, el tiempo de la campaña, construido en local)
 
 - Misma rama `modulo-8/calendarios` (sin push ni PR). Spec `docs/specs/modulo-8-10-campana.md` (decisiones 1-33; la 15,

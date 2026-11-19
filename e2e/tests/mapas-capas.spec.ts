@@ -170,14 +170,6 @@ test('los mapas con capas: el máster dibuja una región y una ruta, ordena capa
   await expect(page.getByRole('button', { name: /Arrastra para moverlo/ })).toHaveCount(4)
   await settled(page)
   await page.screenshot({ path: test.info().outputPath('3-region.png') })
-  // Dar a conocer a la campaña lo oculto (las Tierras sin señor), con el ojo de su panel (como el del árbol)
-  await viewer.focus()
-  await page.keyboard.press('Escape')
-  await viewer.locator('[data-kind="region"][data-hidden]').first().click({ force: true })
-  const hiddenPanel = page.getByRole('region', { name: 'Región' })
-  await expect(hiddenPanel.getByLabel('Nombre')).toHaveValue('Tierras sin señor')
-  await hiddenPanel.getByRole('button', { name: /: No la conoce/ }).click()
-  await expect(hiddenPanel.getByRole('button', { name: /: La conoce/ })).toBeVisible()
 
   // Escape suelta lo elegido y, después, vuelve el mapa a la página
   await viewer.focus()
@@ -185,6 +177,18 @@ test('los mapas con capas: el máster dibuja una región y una ruta, ordena capa
   await expect(page.getByRole('region', { name: 'Región' })).toHaveCount(0)
   await page.keyboard.press('Escape')
   await expect(page.getByRole('button', { name: 'Ampliar el mapa' })).toBeVisible()
+
+  // Dar a conocer a la campaña lo oculto (las Tierras sin señor), con el ojo de su panel (como el del árbol). Desde la
+  // Mesa (en las páginas del mundo no se revela): en la ventana de la página, su pestaña del mapa
+  await page.goto(`/mundos/${worldId}/campanas/${campaignId}/mesa?pagina=${id('Valdren')}`)
+  const win = page.getByRole('dialog', { name: 'Valdren' })
+  await win.getByRole('navigation', { name: 'Pestañas de la página' }).getByRole('link', { name: 'Mapa' }).click()
+  const inWindow = win.getByRole('application', { name: 'Mapa', exact: true })
+  await inWindow.locator('[data-kind="region"][data-hidden]').first().click({ force: true })
+  const hiddenPanel = win.getByRole('region', { name: 'Región' })
+  await expect(hiddenPanel.getByLabel('Nombre')).toHaveValue('Tierras sin señor')
+  await hiddenPanel.getByRole('button', { name: /: No la conoce/ }).click()
+  await expect(hiddenPanel.getByRole('button', { name: /: La conoce/ })).toBeVisible()
 
   // La jugadora: sin «Secretos»; el reino lleva a una página que no conoce, sin nombre
   const ana = await newPlayer(browser, link, 'Ana')

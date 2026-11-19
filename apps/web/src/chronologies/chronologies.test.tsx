@@ -24,6 +24,9 @@ const WORLD: World = {
 }
 const CALENDAR = crypto.randomUUID()
 const CHRONOLOGY = crypto.randomUUID()
+// La cronología es una pestaña de una página (ADR-0031)
+const PAGE = crypto.randomUUID()
+const TAB = crypto.randomUUID()
 const at = (start: { year: number; month?: string; day?: number }, extra: object = {}) => ({
   calendarId: CALENDAR,
   start,
@@ -37,12 +40,25 @@ function renderAt(path: string, options: { events?: FakeEvent[]; chronologies?: 
     calendars: [{ id: CALENDAR, worldId: WORLD.id, name: 'Eana', definition: EANA }],
     ...(options.chronologies === false
       ? {}
-      : { chronologies: [{ id: CHRONOLOGY, worldId: WORLD.id, name: 'Historia de Valdren' }] }),
+      : {
+          // Con las páginas con fecha (por defecto no salen: ADR-0032)
+          chronologies: [
+            {
+              id: CHRONOLOGY,
+              worldId: WORLD.id,
+              name: 'Historia de Valdren',
+              pageId: PAGE,
+              tabId: TAB,
+              filter: { pages: true, templates: [], tags: [] }
+            }
+          ]
+        }),
     timelineGroups: [
       { id: 'f6c2d0b4-7a0c-4c5e-9c55-5d3a0b4f1a11', worldId: WORLD.id, name: 'La Corona', color: 'wine' }
     ],
     events: options.events ?? [],
     pages: [
+      { id: PAGE, worldId: WORLD.id, title: 'Historia de Valdren' },
       {
         worldId: WORLD.id,
         title: 'Aldren IV',
@@ -83,7 +99,7 @@ const EVENTS: FakeEvent[] = [
   }
 ]
 
-const chronologyPath = `/mundos/${WORLD.id}/calendarios/cronologias/${CHRONOLOGY}`
+const chronologyPath = `/mundos/${WORLD.id}/wiki/${PAGE}?pestana=${TAB}`
 
 beforeEach(() => {
   localStorage.clear()
@@ -93,30 +109,36 @@ beforeEach(() => {
   )
 })
 
-describe('las cronologías en «Calendarios»', () => {
-  it('bajo los calendarios, una ficha por cronología con su calendario y sus entradas', async () => {
-    renderAt(`/mundos/${WORLD.id}/calendarios`)
-    const list = await screen.findByRole('list', { name: 'Cronologías del mundo' })
-    const card = within(list).getByRole('listitem')
-    expect(within(card).getByRole('link', { name: 'Historia de Valdren' })).toBeDefined()
-    await waitFor(() => expect(card.textContent).toContain('2 entradas'))
-    expect(card.textContent).toContain('El principal (Eana)')
+describe('la cronología, como pestaña de una página (ADR-0031)', () => {
+  it('la dirección de antes (en Calendarios) lleva a su pestaña, en su página', async () => {
+    const { router } = renderAt(`/mundos/${WORLD.id}/calendarios/cronologias/${CHRONOLOGY}`)
+    await waitFor(() => expect(router.state.location.pathname).toBe(`/mundos/${WORLD.id}/wiki/${PAGE}`))
+    expect(router.state.location.search).toMatchObject({ pestana: TAB })
+    expect(await screen.findByRole('toolbar', { name: 'Vistas' })).toBeDefined()
   })
 
-  it('«Cronología nueva» la crea y la abre a pantalla entera, vacía con una sola pieza', async () => {
-    const { router } = renderAt(`/mundos/${WORLD.id}/calendarios`, { chronologies: false })
-    await userEvent.click(await screen.findByRole('button', { name: 'Cronología nueva' }))
-    const dialog = await screen.findByRole('dialog', { name: 'Cronología nueva' })
-    await userEvent.type(within(dialog).getByLabelText('Nombre'), 'La campaña')
-    await userEvent.click(within(dialog).getByRole('button', { name: 'Crear' }))
-    expect(await screen.findByRole('heading', { level: 1, name: 'La campaña' })).toBeDefined()
-    expect(router.state.location.pathname).toMatch(/\/calendarios\/cronologias\//)
-    // Las páginas con fecha del mundo salen solas: no está vacía
-    expect(await screen.findByRole('heading', { name: /Aldren IV · Muerte/ })).toBeDefined()
+  it('Calendarios ya no tiene la sección de cronologías', async () => {
+    renderAt(`/mundos/${WORLD.id}/calendarios`)
+    await screen.findByRole('heading', { level: 1, name: 'Calendarios' })
+    expect(screen.queryByRole('list', { name: 'Cronologías del mundo' })).toBeNull()
+  })
+
+  it('«Pestaña nueva» de tipo cronología la añade y la abre, vacía: sin los eventos de otras ni las páginas con fecha', async () => {
+    const { api } = renderAt(`/mundos/${WORLD.id}/wiki/${PAGE}`, { chronologies: false, events: EVENTS })
+    const bar = within(await screen.findByRole('navigation', { name: 'Pestañas de la página' }))
+    await userEvent.click(bar.getByRole('button', { name: 'Pestaña nueva' }))
+    const dialog = within(await screen.findByRole('dialog', { name: 'Pestaña nueva' }))
+    await userEvent.click(dialog.getByRole('radio', { name: 'Cronología' }))
+    await userEvent.click(dialog.getByRole('button', { name: 'Crear' }))
+    expect(await screen.findByText('Sus eventos, en orden.')).toBeDefined()
+    expect(screen.queryByRole('heading', { name: /Aldren IV/ })).toBeNull()
+    expect(screen.queryByRole('heading', { name: 'Boda de Ilsa y Doran' })).toBeNull()
+    expect(api.chronologies).toHaveLength(1)
+    expect((await bar.findByRole('link', { name: /Cronología/ })).getAttribute('aria-current')).toBe('page')
   })
 })
 
-describe('una cronología a pantalla entera', () => {
+describe('una cronología en su pestaña', () => {
   it('la lista: en orden, con la distancia a la anterior, la marca de cada año y las páginas con el nombre del campo', async () => {
     renderAt(chronologyPath, { events: EVENTS })
     const list = await screen.findByRole('list', { name: 'Lista' })
@@ -141,8 +163,12 @@ describe('una cronología a pantalla entera', () => {
     expect(within(lanes).getByText('La Corona')).toBeDefined()
     expect(within(lanes).getByText('Páginas')).toBeDefined()
     expect(within(lanes).getByText('Sin grupo')).toBeDefined()
-    expect(screen.getByRole('toolbar', { name: 'Zoom' })).toBeDefined()
-    expect(localStorage.getItem(`crisol.cronologia.${CHRONOLOGY}`)).toBe('months')
+    // «+ Nuevo grupo», en la esquina de los nombres (como en Everlore), no en una fila debajo
+    await userEvent.click(screen.getByRole('button', { name: 'Nuevo grupo' }))
+    await userEvent.type(screen.getByRole('textbox', { name: 'Nombre del grupo' }), 'Guerras{Enter}')
+    expect(await within(lanes).findByText('Guerras')).toBeDefined()
+    expect(screen.getByRole('toolbar', { name: 'Escala' })).toBeDefined()
+    expect(localStorage.getItem(`crisol.cronologia.${TAB}`)).toBe('months')
   })
 
   it('el calendario: el mes de la última entrada, con lo de varios días en cada uno y las flechas por la rejilla', async () => {
@@ -150,10 +176,10 @@ describe('una cronología a pantalla entera', () => {
     await userEvent.click(
       within(await screen.findByRole('toolbar', { name: 'Vistas' })).getByRole('button', { name: 'Calendario' })
     )
-    expect(await screen.findByRole('heading', { name: 'Siega de 1247 RC' })).toBeDefined()
-    const table = screen.getByRole('table', { name: 'Siega de 1247 RC' })
-    const day20 = within(table).getByRole('cell', { name: /, 20 de Siega de 1247 RC/ })
-    const day21 = within(table).getByRole('cell', { name: /, 21 de Siega de 1247 RC/ })
+    expect(await screen.findByRole('heading', { name: 'Siega del año 1247 RC' })).toBeDefined()
+    const table = screen.getByRole('table', { name: 'Siega del año 1247 RC' })
+    const day20 = within(table).getByRole('cell', { name: /, 20 de Siega del año 1247 RC/ })
+    const day21 = within(table).getByRole('cell', { name: /, 21 de Siega del año 1247 RC/ })
     expect(within(day20).getByRole('button', { name: 'Campaña de los Pasos' })).toBeDefined()
     // El tramo siguiente repite la ficha: sin parada propia del tabulador ni para el lector
     expect(day21.querySelector('button[aria-hidden="true"]')?.getAttribute('aria-label')).toBe('Campaña de los Pasos')
@@ -164,7 +190,7 @@ describe('una cronología a pantalla entera', () => {
     await waitFor(() => expect(document.activeElement).toBe(day21))
     // Intro abre su detalle
     await userEvent.keyboard('{Enter}')
-    const detail = await screen.findByRole('complementary', { name: /21 de Siega de 1247 RC/ })
+    const detail = await screen.findByRole('complementary', { name: /21 de Siega del año 1247 RC/ })
     expect(detail.textContent).toContain('Verano')
   })
 
@@ -173,9 +199,9 @@ describe('una cronología a pantalla entera', () => {
     await userEvent.click(
       within(await screen.findByRole('toolbar', { name: 'Vistas' })).getByRole('button', { name: 'Calendario' })
     )
-    const table = await screen.findByRole('table', { name: 'Siega de 1247 RC' })
+    const table = await screen.findByRole('table', { name: 'Siega del año 1247 RC' })
     const boda = within(table).getByRole('button', { name: 'Boda de Ilsa y Doran' })
-    const target = within(table).getByRole('cell', { name: /, 22 de Siega de 1247 RC/ })
+    const target = within(table).getByRole('cell', { name: /, 22 de Siega del año 1247 RC/ })
     const data = { setData: () => undefined, getData: () => '', effectAllowed: 'move', types: [] }
     fireEvent.dragStart(boda, { dataTransfer: data })
     fireEvent.dragOver(target, { dataTransfer: data })
@@ -194,8 +220,8 @@ describe('una cronología a pantalla entera', () => {
     await userEvent.click(
       within(await screen.findByRole('toolbar', { name: 'Vistas' })).getByRole('button', { name: 'Calendario' })
     )
-    const table = await screen.findByRole('table', { name: 'Siega de 1247 RC' })
-    await userEvent.click(within(table).getByRole('cell', { name: /, 5 de Siega de 1247 RC/ }))
+    const table = await screen.findByRole('table', { name: 'Siega del año 1247 RC' })
+    await userEvent.click(within(table).getByRole('cell', { name: /, 5 de Siega del año 1247 RC/ }))
     await userEvent.click(await screen.findByRole('button', { name: 'Evento en este día' }))
     const dialog = await screen.findByRole('dialog', { name: 'Evento nuevo' })
     await userEvent.type(within(dialog).getByLabelText('Título'), 'Llegan los emisarios')

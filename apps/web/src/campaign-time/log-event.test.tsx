@@ -29,21 +29,21 @@ const show = (event: LogEvent) =>
 
 describe('las entradas del sistema en el registro (8 · campaña)', () => {
   it('la fecha sin el año, para los días de un viaje', () => {
-    expect(withoutYear('Lunden, 7 de Brumas de 1247 RV')).toBe('Lunden, 7 de Brumas')
+    expect(withoutYear('Lunden, 7 de Brumas del año 1247 RV')).toBe('Lunden, 7 de Brumas')
     expect(withoutYear('Noche Larga, día 1 de 1247 RV')).toBe('Noche Larga, día 1')
   })
 
   it('un cambio de fecha y su deshacer', () => {
-    show(entry({ type: 'date', from: null, to: date('Solen, 6 de Brumas de 1247 RV'), days: 1 }))
-    expect(screen.getByRole('listitem').textContent).toContain('La fecha pasa a Solen, 6 de Brumas de 1247 RV')
+    show(entry({ type: 'date', from: null, to: date('Solen, 6 de Brumas del año 1247 RV'), days: 1 }))
+    expect(screen.getByRole('listitem').textContent).toContain('La fecha pasa a Solen, 6 de Brumas del año 1247 RV')
   })
 
   it('un viaje con su resumen, el clima de cada día y la llegada con su zona', () => {
     show(
       entry({
         type: 'travel',
-        from: date('Solen, 6 de Brumas de 1247 RV'),
-        to: date('Tordan, 10 de Brumas de 1247 RV'),
+        from: date('Solen, 6 de Brumas del año 1247 RV'),
+        to: date('Tordan, 10 de Brumas del año 1247 RV'),
         distance: 118,
         unit: 'millas',
         medium: 'horse',
@@ -54,7 +54,7 @@ describe('las entradas del sistema en el registro (8 · campaña)', () => {
         zone: 'coast',
         weather: [
           {
-            date: date('Lunden, 7 de Brumas de 1247 RV'),
+            date: date('Lunden, 7 de Brumas del año 1247 RV'),
             condition: 'rain',
             low: 11,
             high: 17,
@@ -62,7 +62,7 @@ describe('las entradas del sistema en el registro (8 · campaña)', () => {
             rest: false
           },
           {
-            date: date('Ardan, 8 de Brumas de 1247 RV'),
+            date: date('Ardan, 8 de Brumas del año 1247 RV'),
             condition: 'partly-cloudy',
             low: 9,
             high: 18,
@@ -77,7 +77,7 @@ describe('las entradas del sistema en el registro (8 · campaña)', () => {
     expect(item).toContain('118 millas a caballo, ritmo rápido · 3 días y 1 de descanso')
     expect(item).toContain('Lunden, 7 de Brumas')
     expect(item).toContain('Nubes y claros · descanso')
-    expect(item).toContain('La fecha pasa a Tordan, 10 de Brumas de 1247 RV · zona De costa')
+    expect(item).toContain('La fecha pasa a Tordan, 10 de Brumas del año 1247 RV · zona De costa')
   })
 
   it('el clima a mano, «Solo tú»', () => {
@@ -85,7 +85,7 @@ describe('las entradas del sistema en el registro (8 · campaña)', () => {
       entry(
         {
           type: 'weather',
-          date: date('Lunden, 7 de Brumas de 1247 RV'),
+          date: date('Lunden, 7 de Brumas del año 1247 RV'),
           weather: { condition: 'snow', low: -1, high: 3, wind: 'calm' }
         },
         [{ id: 'master', name: 'Máster' }]

@@ -25,22 +25,29 @@ test('la página de los jugadores: el máster deja editar el diario a la campañ
   const id = (title: string) => created.pages.find((p: { title: string }) => p.title === title).id as string
   const ana = await newPlayer(browser, link, 'Ana')
 
+  // «Quién la conoce», solo desde la Mesa (en las páginas del mundo no se revela): la página, en su ventana
+  const mesaWindow = async (title: string) => {
+    await page.goto(`/mundos/${worldId}/campanas/${campaignId}/mesa?pagina=${id(title)}`)
+    const window = page.getByRole('dialog', { name: title, exact: true })
+    await window.getByRole('button', { name: 'Quién la conoce' }).click()
+    return window
+  }
+
   // Una página con secretos no se deja editar
-  await page.goto(`/mundos/${worldId}/wiki/${id('Aldoria')}`)
-  await page.getByRole('button', { name: 'Quién la conoce' }).click()
-  await page.getByRole('combobox', { name: 'Quién de «La Marca» puede editarla' }).selectOption('all')
-  await expect(page.getByRole('combobox', { name: 'Quién de «La Marca» puede editarla' })).toHaveValue('none')
+  const aldoria = await mesaWindow('Aldoria')
+  await aldoria.getByRole('combobox', { name: 'Quién de «La Marca» puede editarla' }).selectOption('all')
+  await expect(aldoria.getByRole('combobox', { name: 'Quién de «La Marca» puede editarla' })).toHaveValue('none')
 
   // El diario, sí: a toda la campaña
-  await page.goto(`/mundos/${worldId}/wiki/${id('Diario de la compañía')}`)
-  await page.getByRole('button', { name: 'Quién la conoce' }).click()
-  const editors = page.getByRole('combobox', { name: 'Quién de «La Marca» puede editarla' })
+  const diary = await mesaWindow('Diario de la compañía')
+  const editors = diary.getByRole('combobox', { name: 'Quién de «La Marca» puede editarla' })
   await editors.selectOption('all')
   // Quien la edita, la ve
-  await expect(page.getByRole('region', { name: 'La Marca' })).toContainText('La ve toda la campaña')
+  await expect(diary.getByRole('region', { name: 'La Marca' })).toContainText('La ve toda la campaña')
   await expect(editors).toHaveValue('all')
   await page.screenshot({ path: test.info().outputPath('dejar-editar.png'), fullPage: false })
-  await page.keyboard.press('Escape')
+  await page.getByRole('dialog', { name: 'Quién la conoce' }).getByRole('button', { name: 'Cerrar' }).click()
+  await expect(diary).toBeVisible()
 
   // La jugadora la abre y escribe; al máster le llega en vivo
   await ana.goto(`/mundos/${worldId}/campanas/${campaignId}/paginas/${id('Diario de la compañía')}`)
@@ -51,7 +58,7 @@ test('la página de los jugadores: el máster deja editar el diario a la campañ
   await ana.keyboard.press('Enter')
   await ana.keyboard.type('Día 1: llegamos al faro.')
   await expect(body).toContainText('Día 1: llegamos al faro.')
-  await expect(page.getByRole('textbox', { name: 'Texto de la página' })).toContainText('Día 1: llegamos al faro.')
+  await expect(diary.getByRole('textbox', { name: 'Texto de la página' })).toContainText('Día 1: llegamos al faro.')
   await ana.screenshot({ path: test.info().outputPath('diario-jugadora.png'), fullPage: false })
 
   // En otra página que solo lee, no hay editor

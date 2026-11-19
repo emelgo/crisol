@@ -1,5 +1,6 @@
 /**
- * El editor de un sistema, a mano (tanda 8; lienzo aprobado: «Editor de sistemas»): los pasos con preguntas de mesa a
+ * El editor de un sistema, a mano (tanda 8; lienzo aprobado: «Editor de sistemas»), en «Editar reglas» de su vista
+ * (`/reglas/editar`; «Ver reglas» vuelve a ella): los pasos con preguntas de mesa a
  * la izquierda (se salta a cualquiera), el paso abierto en el centro con «Siguiente: …» y, a la derecha, la ficha de
  * ejemplo que se calcula al momento y la revisión siempre a la vista, cada aviso con «Ir a…». Se guarda solo, con la
  * versión que se tenía, cuando no hay errores (los mismos que valida el servidor); con errores, se sigue escribiendo y
@@ -7,7 +8,8 @@
  */
 import { characterType, type Language, type Problem, type System, textOf, validateSystem } from '@crisol/systems'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Check, ChevronRight } from 'lucide-react'
+import { Link } from '@tanstack/react-router'
+import { Check, ChevronRight, Eye } from 'lucide-react'
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ApiError } from '../../api/client.ts'
@@ -256,6 +258,11 @@ function Editor({
       <div className={styles.titleRow}>
         <PageTitle>{t('systemRules.title')}</PageTitle>
         <SaveState saving={saving} errors={errors.length} />
+        {/* La vista de las reglas, para leerlas (como «Ver calendario» en el editor de un calendario) */}
+        <Link to="/sistemas/$systemId/reglas" params={{ systemId }} className={styles.view}>
+          <Eye size={16} aria-hidden="true" />
+          {t('rulesView.view')}
+        </Link>
       </div>
       <nav className={styles.steps} aria-label={t('rules.steps')}>
         <span className={styles.stepsTitle}>{name}</span>

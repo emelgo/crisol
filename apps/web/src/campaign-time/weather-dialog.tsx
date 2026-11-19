@@ -14,7 +14,7 @@ import { Popover } from './popover.tsx'
 import { todayKey } from './queries.ts'
 import styles from './time.module.css'
 import { WeatherIcon } from './weather-icon.tsx'
-import { temperatureText, windText } from './words.ts'
+import { temperatureText, windText, withoutYear } from './words.ts'
 
 /** Los ocho rumbos de la rosa (los dieciséis del clima, en la del medio más cercana) */
 const ROSE = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'] as const
@@ -65,7 +65,7 @@ export function WeatherDialog({
       if (patch.high !== undefined && next.high < next.low) next.low = next.high
       return next
     })
-  const shortDate = day.text.replace(/ de -?\d+.*$/, '')
+  const shortDate = withoutYear(day.text)
   return (
     <Popover
       anchor={anchor}

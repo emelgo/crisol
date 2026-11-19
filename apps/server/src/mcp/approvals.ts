@@ -6,6 +6,8 @@
 import type { RealtimeMessage } from '@crisol/contracts'
 import { aiRepo, historyRepo, loadMemberships, worldsRepo } from '@crisol/db'
 import {
+  type ActionKind,
+  type Actor,
   actorFrom,
   aiDecision,
   authorize,
@@ -31,6 +33,7 @@ import { approvalsChanged } from '../realtime/events.ts'
 import { openJson } from '../secrets.ts'
 import { playerEdits } from '../wiki/player-pages.ts'
 import { viewedPage } from '../wiki/projection.ts'
+import type { McpScope } from './scope.ts'
 
 /** Lo que contesta una herramienta */
 export interface ToolResult {
@@ -63,6 +66,8 @@ const READ_ONLY =
 const REJECTED = 'REJECTED: el máster lo ha rechazado. No insistas: pregúntale qué prefiere'
 const PLAYER_READS =
   'READ_ONLY: la IA de un jugador solo lee lo que sabe su campaña. Lo demás lo hace el jugador en Crisol'
+const PLAYER_OWN =
+  'READ_ONLY: en esta campaña, la IA de una jugadora lee lo que sabe y hace lo suyo (su personaje, sus tiradas, el registro, sus notas y su página). Lo demás lo hace el máster'
 const PENDING =
   'PENDING_APPROVAL: espera la aprobación del máster en Crisol. Se hará en cuanto la apruebe (caduca a las 24 h): no lo repitas'
 const TOO_MANY = `TOO_MANY_PENDING: ya hay ${MAX_PENDING_APPROVALS} peticiones esperando la aprobación del máster. Espera a que las decida`
@@ -84,32 +89,95 @@ export interface AiCall {
   input: Record<string, unknown>
   /** Cuánto espera la decisión (15 s; las pruebas lo acortan) */
   waitMs: number
+  /** El conector por el que llega (ADR-0030); sin él, Mundos */
+  scope?: McpScope
 }
+
+/**
+ * Lo que escribe la IA de una jugadora en su campaña: lo que la web le deja (cada acción mira que sea suyo). Cuenta
+ * como «escribir» para su modo de IA: su personaje es suyo, no «de los jugadores». editPage, solo en una página que su
+ * campaña puede escribir
+ */
+export const PLAYER_WRITES: ReadonlySet<string> = new Set([
+  'createCharacter',
+  'chooseForCharacter',
+  'updateCharacter',
+  'restoreCharacterVersion',
+  'playCharacter',
+  'rollForCharacter',
+  'rollDice',
+  'sendMessage',
+  'createPlayerNote',
+  'updatePlayerNote',
+  'editPage'
+])
 
 /** Lo que la IA de un jugador escribe de sus notas */
 const NOTE_WRITES = new Set(['createPlayerNote', 'updatePlayerNote'])
+
+/**
+ * Quién pide algo por un conector: en el de una campaña, la cuenta solo con esa campaña (y su mundo y su organización),
+ * para que la IA no vea ni toque otras aunque la cuenta juegue en ellas (ADR-0030)
+ */
+export async function scopedActor(
+  env: Pick<ActionEnv, 'db'>,
+  userId: string,
+  scope: McpScope | undefined
+): Promise<{ actor: Actor }> {
+  const memberships = await loadMemberships(env.db, userId)
+  if (scope?.kind !== 'campaign') return { actor: actorFrom(userId, memberships) }
+  return {
+    actor: actorFrom(userId, {
+      organizations: memberships.organizations.filter((m) => m.organizationId === scope.organizationId),
+      worlds: memberships.worlds.filter((m) => m.worldId === scope.worldId),
+      campaigns: memberships.campaigns.filter((m) => m.campaignId === scope.campaignId)
+    })
+  }
+}
+
+/**
+ * Lo que cuenta para el modo de IA, o null si no se deja hacer. En Mundos, la IA de quien solo juega (no lleva ninguna
+ * cuenta ni ningún mundo) solo lee (ADR-0017), salvo el texto de una página que puede escribir
+ * (docs/specs/pagina-de-jugadores.md: lo comprueba editPage) y sus notas (que sean suyas lo comprueba la acción). En
+ * una campaña manda el papel en ella: la de una jugadora hace lo suyo (PLAYER_WRITES), que para su modo es escribir
+ */
+async function allowedKind(env: ActionEnv, ctx: ActionContext, call: AiCall): Promise<ActionKind | 'player' | null> {
+  const { impl, input, scope, userId } = call
+  const kind = impl.action.kind
+  if (kind === 'read') return kind
+  if (scope?.kind === 'campaign') {
+    if (scope.role === 'master') return kind
+    if (!PLAYER_WRITES.has(impl.action.name)) return 'player'
+    if (
+      impl.action.name === 'editPage' &&
+      !(await playerEdits(env, userId, String(input.pageId ?? ''), scope.campaignId))
+    )
+      return 'player'
+    return 'write'
+  }
+  const playerOnly =
+    ownedOrganizations(ctx.actor).length === 0 && ![...ctx.actor.worlds.values()].some((w) => w.role === 'master')
+  if (!playerOnly) return kind
+  if (impl.action.name === 'editPage' && (await playerEdits(env, userId, String(input.pageId ?? '')))) return kind
+  if (NOTE_WRITES.has(impl.action.name)) return kind
+  return null
+}
 
 export async function callAsAi(env: ActionEnv, call: AiCall): Promise<ToolResult> {
   const { db } = env
   const { userId, tool, impl, input } = call
   // Las pertenencias y el modo se leen en cada llamada, como en la API
-  const ctx: ActionContext = { ...env, actor: actorFrom(userId, await loadMemberships(db, userId)), via: 'ai', tool }
+  const ctx: ActionContext = { ...env, ...(await scopedActor(env, userId, call.scope)), via: 'ai', tool }
   try {
-    // La IA de quien solo juega (no lleva ninguna cuenta ni ningún mundo) solo lee (ADR-0017), salvo el texto de una
-    // página que puede escribir (docs/specs/pagina-de-jugadores.md: lo comprueba editPage)
-    const playerOnly =
-      ownedOrganizations(ctx.actor).length === 0 && ![...ctx.actor.worlds.values()].some((w) => w.role === 'master')
-    const ownPage =
-      playerOnly && impl.action.name === 'editPage' && (await playerEdits(env, userId, String(input.pageId ?? '')))
-    // y sus notas (docs/specs/notas-jugador.md: que sean suyas lo comprueba la acción)
-    const ownNote = playerOnly && NOTE_WRITES.has(impl.action.name)
-    if (playerOnly && impl.action.kind !== 'read' && !ownPage && !ownNote) return failure(PLAYER_READS)
-    const decision = aiDecision(await aiRepo.findAiMode(db, userId), impl.action.kind)
+    const kind = await allowedKind(env, ctx, call)
+    if (kind === null) return failure(PLAYER_READS)
+    if (kind === 'player') return failure(PLAYER_OWN)
+    const decision = aiDecision(await aiRepo.findAiMode(db, userId), kind)
     if (decision === 'refuse') return failure(READ_ONLY)
     if (decision === 'run') {
       return success(impl.action.output.parse(await impl.handler(ctx, input)) as Record<string, unknown>)
     }
-    const details = await describe(ctx, impl.action.name, input)
+    const details = await describe(ctx, impl.action.name, input, call.scope)
     const now = new Date()
     const { pending } = await aiRepo.listApprovals(db, userId, now)
     if (pending.length >= MAX_PENDING_APPROVALS) return failure(TOO_MANY)
@@ -125,7 +193,7 @@ export async function callAsAi(env: ActionEnv, call: AiCall): Promise<ToolResult
  * existe y no se pide nada. Cubre lo que piden las herramientas: un mundo, una campaña, una página (y su madre) o una
  * operación del historial
  */
-async function describe(ctx: ActionContext, action: string, input: Record<string, unknown>) {
+async function describe(ctx: ActionContext, action: string, input: Record<string, unknown>, scope?: McpScope) {
   const details: Record<string, unknown> = {}
   if (typeof input.worldId === 'string') {
     authorize(ctx.actor, 'world.read', { worldId: input.worldId })
@@ -139,7 +207,7 @@ async function describe(ctx: ActionContext, action: string, input: Record<string
   if (typeof input.pageId === 'string') {
     // Un jugador pide escribir en su página: la ve (docs/specs/pagina-de-jugadores.md)
     details.page = (
-      action === 'editPage' && (await playerEdits(ctx, ctx.actor.userId, input.pageId))
+      action === 'editPage' && (await playerEdits(ctx, ctx.actor.userId, input.pageId, campaignOf(scope)))
         ? await viewedPage(ctx, input.pageId)
         : await authorizedPage(ctx, 'page.read', input.pageId)
     ).page.title
@@ -175,6 +243,8 @@ async function describe(ctx: ActionContext, action: string, input: Record<string
   }
   return details
 }
+
+const campaignOf = (scope: McpScope | undefined) => (scope?.kind === 'campaign' ? scope.campaignId : undefined)
 
 const FINISHED: ReadonlySet<aiRepo.Approval['status']> = new Set(['done', 'failed', 'rejected'])
 

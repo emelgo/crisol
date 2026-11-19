@@ -390,13 +390,41 @@ function useFit(container: HTMLElement | null, width: number) {
   const [fit, setFit] = useState({ scale: 1, room: width })
   useEffect(() => {
     if (!container || typeof ResizeObserver === 'undefined') return
+    // Nunca por debajo de la letra de la hoja (12 pt): más estrecho, va seguido (tight)
+    let shown = 0
+    const measure = (room: number) => {
+      shown = room
+      setFit({ scale: Math.min(MAX_SCALE, Math.max(1, room / width)), room })
+    }
+    // Mientras la columna se ensancha porque el panel se pliega, la hoja no se vuelve a escalar en cada fotograma (la letra
+    // crecía, las líneas bailaban y se repaginaba todo): se mide una vez, al acabar. Al estrecharse, sí, para no salirse
+    const grid = container.closest<HTMLElement>('[data-world-page]')
+    const moving = () =>
+      grid
+        ?.getAnimations?.()
+        .some((a) => (a as { transitionProperty?: string }).transitionProperty === 'grid-template-columns') ?? false
+    let last: number | null = null
+    const settle = (event: TransitionEvent) => {
+      if (event.target !== grid || event.propertyName !== 'grid-template-columns' || last === null) return
+      measure(last)
+      last = null
+    }
+    grid?.addEventListener('transitionend', settle)
+    grid?.addEventListener('transitioncancel', settle)
     const observer = new ResizeObserver(([entry]) => {
       const room = entry?.contentRect.width ?? width
-      // Nunca por debajo de la letra de la hoja (12 pt): más estrecho, va seguido (tight)
-      setFit({ scale: Math.min(MAX_SCALE, Math.max(1, room / width)), room })
+      if (moving() && room > shown) last = room
+      else {
+        last = null
+        measure(room)
+      }
     })
     observer.observe(container)
-    return () => observer.disconnect()
+    return () => {
+      observer.disconnect()
+      grid?.removeEventListener('transitionend', settle)
+      grid?.removeEventListener('transitioncancel', settle)
+    }
   }, [container, width])
   return fit
 }

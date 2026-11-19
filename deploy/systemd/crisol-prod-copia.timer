@@ -1,0 +1,10 @@
+# Cada noche a las 4:30 (si el VPS estaba apagado, al arrancar)
+[Unit]
+Description=Copia diaria del Crisol oficial
+
+[Timer]
+OnCalendar=*-*-* 04:30:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

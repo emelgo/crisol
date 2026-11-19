@@ -48,6 +48,12 @@ test('el máster crea páginas y subpáginas, las renombra y las recoloca; todo 
   await page.keyboard.press('Enter')
   await expect(page.getByRole('heading', { level: 1, name: 'Reglas de la casa' })).toBeVisible()
   await expect(tree(page).getByRole('treeitem', { name: 'Reglas de la casa' })).toBeVisible()
+  // «Renombrar» con el botón derecho en el árbol: sin cuadro, abre la página con su título elegido para escribir encima
+  await tree(page).getByRole('treeitem', { name: 'Personajes' }).click({ button: 'right' })
+  await page.getByRole('menuitem', { name: 'Renombrar' }).click()
+  await expect(page.getByLabel('Título de la página')).toBeFocused()
+  await expect(page.getByLabel('Título de la página')).toHaveText('Personajes')
+  await page.keyboard.press('Escape')
 
   // Con el teclado: «Reglas de la casa» sube por encima de «Personajes»
   await tree(page).getByRole('treeitem', { name: 'Reglas de la casa' }).focus()

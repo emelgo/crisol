@@ -3,13 +3,16 @@
  * con su definición), uno principal, ordenarlos, cambiarlos sin reescribir fechas, borrarlos y deshacerlo; describir y
  * convertir fechas; y lo que ve una jugadora (sin las eras solo del máster, ADR-0017)
  */
-import { connect, schema } from '@crisol/db'
+import { connect, loadMemberships, schema } from '@crisol/db'
 import { freshTestDatabase, resetDatabase } from '@crisol/db/testing'
+import { actorFrom } from '@crisol/domain'
 import { desc, eq } from 'drizzle-orm'
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { buildApp } from '../app.ts'
+import { errorText } from '../mcp/approvals.ts'
 import { createTestAuth, signUpTestUser, TEST_SEAL_KEY } from '../testing.ts'
 import { DATE_SOURCES, eventDates, pageDates, todayDates, weatherDates } from './calendar-dates.ts'
+import { implementationsByName } from './implementations.ts'
 
 const BASE_URL = 'http://localhost:5173'
 const ok = async () => undefined
@@ -77,6 +80,21 @@ describe('los calendarios de un mundo (módulo 8)', () => {
     const response = await call(name, payload, cookie)
     expect(response.json().code, response.body).toBe(code)
     return response.json()
+  }
+  /** Lo que lee la IA cuando falla (la web solo recibe el código): el código con su motivo */
+  const aiError = async (name: string, input: object) => {
+    const ctx = {
+      db: conn.db,
+      actor: actorFrom(master.userId, await loadMemberships(conn.db, master.userId)),
+      via: 'ai',
+      realtime: { publish() {} }
+    }
+    try {
+      await implementationsByName.get(name)?.handler(ctx as never, input as never)
+    } catch (error) {
+      return errorText(error)
+    }
+    throw new Error(`${name} no falló`)
   }
   const undo = async (action: string) => {
     const [op] = await conn.db
@@ -188,7 +206,7 @@ describe('los calendarios de un mundo (módulo 8)', () => {
       calendarId: id,
       calendar: 'Eana',
       date: {
-        text: 'Frostelle, 18 de Siega de 1250 RC',
+        text: 'Frostelle, 18 de Siega del año 1250 RC',
         form: '1250-Siega-18',
         weekday: 'Frostelle',
         season: 'Verano',
@@ -209,6 +227,43 @@ describe('los calendarios de un mundo (módulo 8)', () => {
       { worldId: (await ok200('createWorld', { name: 'Vacío' })).id, date: '1' },
       'NO_CALENDAR'
     )
+  })
+
+  it('los años: con rango, las fechas fuera no valen (describir, fechar una página); sin él, de -99999 a 99999', async () => {
+    const { id } = await ok200('createCalendar', {
+      worldId,
+      name: 'Eana',
+      from: { definition: { ...EANA, yearRange: { min: -12000, max: 2000 } } }
+    })
+    expect((await list())[0]?.definition).toMatchObject({ yearRange: { min: -12000, max: 2000 } })
+    await fails('describeDate', { calendarId: id, date: '2001-Siega-1' }, 'BAD_DATE')
+    expect(await aiError('describeDate', { calendarId: id, date: '2001-Siega-1' })).toMatch(
+      /^BAD_DATE.*el año 2001 se sale del calendario, que va del año -12000 al 2000/
+    )
+    const page = await ok200('createPage', { worldId, title: 'Batalla', parentId: null })
+    await fails(
+      'setPageProperties',
+      {
+        pageId: page.id,
+        properties: [{ name: 'Fecha', type: 'date', value: { calendarId: id, start: { year: -20000 } } }]
+      },
+      'BAD_DATE'
+    )
+    // Una era que empieza fuera del rango, o el primero después del último: problemas, y no se guarda
+    await fails(
+      'updateCalendar',
+      { calendarId: id, definition: { ...EANA, yearRange: { min: -5000, max: 2000 } } },
+      'BAD_CALENDAR'
+    )
+    await fails(
+      'updateCalendar',
+      { calendarId: id, definition: { ...EANA, yearRange: { min: 10, max: 5 } } },
+      'BAD_CALENDAR'
+    )
+    const blank = await ok200('createCalendar', { worldId, name: 'En blanco' })
+    expect(blank.definition.yearRange).toBeUndefined()
+    await fails('describeDate', { calendarId: blank.id, date: '-2345656' }, 'BAD_DATE')
+    expect((await ok200('describeDate', { calendarId: blank.id, date: '99999' })).date.form).toBe('99999')
   })
 
   it('una jugadora los lee sin las eras solo del máster (API y descripción) y no puede cambiarlos', async () => {
@@ -242,7 +297,7 @@ describe('los calendarios de un mundo (módulo 8)', () => {
     const first = elves.definition.months[0].id
     const before = await ok200('convertDate', { calendarId: primary.id, to: elves.id, date: '1250-Siega-18' })
     const inPrimary = await ok200('describeDate', { calendarId: elves.id, date: { year: 0, month: first, day: 1 } })
-    expect(inPrimary.primary).toMatchObject({ calendarId: primary.id, text: '1 de Cierzo de -300 RC' })
+    expect(inPrimary.primary).toMatchObject({ calendarId: primary.id, text: '1 de Cierzo del año -300 RC' })
     expect((await ok200('getCalendar', { calendarId: elves.id })).convertible).toBe(true)
 
     await ok200('updateCalendar', { calendarId: elves.id, primary: true })

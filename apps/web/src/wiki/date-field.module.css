@@ -184,9 +184,15 @@
   cursor: pointer;
 }
 
-.nav button:hover {
+.nav button:hover:not(:disabled) {
   background: var(--color-raised);
   color: var(--color-text);
+}
+
+/* En el borde de los años del calendario */
+.nav button:disabled {
+  opacity: 0.35;
+  cursor: default;
 }
 
 .month {
@@ -267,9 +273,16 @@
 }
 
 .day:hover,
-.choice:hover,
+.choice:hover:not(:disabled),
 .yearChoice:hover {
   background: var(--color-raised);
+}
+
+/* Un año fuera de los del calendario */
+.choice:disabled {
+  color: var(--color-muted);
+  opacity: 0.45;
+  cursor: default;
 }
 
 .day:focus-visible,

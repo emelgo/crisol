@@ -96,7 +96,7 @@ async function seed(page: Page, worldId: string) {
   return id
 }
 
-test('relaciones (módulo 10): la pestaña en Familia, Enlaces y Organigrama, el grafo del mundo y un gráfico con su editor', async ({
+test('relaciones (módulo 10): el grafo en su ventana (del mundo y de una página), el árbol genealógico como pestaña y un gráfico con su editor', async ({
   page
 }) => {
   test.slow()
@@ -104,57 +104,88 @@ test('relaciones (módulo 10): la pestaña en Familia, Enlaces y Organigrama, el
   const worldId = (await apiOf(page)('createWorld', { name: 'Valdren' })).id as string
   const id = await seed(page, worldId)
 
-  // La pestaña, tras las demás; se abre en Familia (tiene padres y pareja)
-  await page.goto(`/mundos/${worldId}/wiki/${id.ilsa}`)
+  // Sin pestaña «Relaciones»: la de antes vuelve al texto
+  await page.goto(`/mundos/${worldId}/wiki/${id.ilsa}?pestana=relaciones`)
   const tabs = page.getByRole('navigation', { name: 'Pestañas de la página' })
-  await tabs.getByRole('link', { name: 'Relaciones' }).click()
-  const modes = page.getByRole('toolbar', { name: 'Modo' })
-  await expect(modes.getByRole('button', { name: 'Familia' })).toHaveAttribute('aria-pressed', 'true')
-  await expect(page.getByRole('button', { name: 'Ilsa de Varn, Princesa de Altamar' })).toBeVisible()
+  await expect(tabs.getByRole('link', { name: 'Texto' })).toHaveAttribute('aria-current', 'page')
+  await expect(tabs.getByRole('link', { name: 'Relaciones' })).toHaveCount(0)
+
+  // El grafo del mundo, en su ventana desde la cabecera del árbol, sin cambiar de vista; buscar una página la elige
+  await page.getByRole('button', { name: 'Relaciones del mundo' }).click()
+  const world = page.getByRole('dialog', { name: 'Relaciones del mundo' })
+  await expect(world.getByRole('complementary', { name: 'Filtros' })).toBeVisible()
+  await expect(page).toHaveURL(/grafo=mundo/)
+  // Sin filtro de plantillas; los filtros se ocultan y vuelven con el botón de la cabecera
+  await expect(world.getByRole('complementary', { name: 'Filtros' })).not.toContainText('Plantillas')
+  await world.getByRole('button', { name: 'Ocultar filtros' }).click()
+  await expect(world.getByRole('complementary', { name: 'Filtros' })).toHaveCount(0)
+  await world.getByRole('button', { name: 'Mostrar filtros' }).click()
+  await expect(world.getByRole('complementary', { name: 'Filtros' })).toBeVisible()
+  await world.getByRole('combobox', { name: 'Buscar una página' }).fill('dora')
+  await page.keyboard.press('Enter')
+  await expect(world.getByRole('region', { name: 'Doran de Kharum' })).toContainText('Facción')
+  // Escape: primero la ficha, luego la ventana; se sigue en la página
+  await page.keyboard.press('Escape')
+  await expect(world.getByRole('region', { name: 'Doran de Kharum' })).toHaveCount(0)
+  await world.getByRole('button', { name: 'Cerrar' }).first().click()
+  await expect(world).toBeHidden()
+  await expect(page).toHaveURL(new RegExp(`/wiki/${id.ilsa}$`))
+
+  // El de la página, desde «Mencionado en»: sus relaciones directas, también lo que menciona el texto (discontinuo, como
+  // dice la leyenda), sin controles
+  await page.getByRole('button', { name: 'Ver sus relaciones' }).click()
+  const own = page.getByRole('dialog', { name: 'Relaciones de Ilsa de Varn' })
+  await expect(own.getByRole('button', { name: 'Guerra de las Brumas' })).toBeVisible()
+  await expect(own.getByRole('list', { name: 'Leyenda' })).toContainText('Menciona')
+  await expect(own.getByRole('list', { name: 'Leyenda' })).toContainText('Desde un secreto')
+  await expect(own.getByRole('switch')).toHaveCount(0)
+  // «Sus relaciones» en la ficha de su facción las añade (los otros miembros), sin salir de la de Ilsa
+  await expect(own.getByRole('button', { name: 'Doran de Kharum' })).toHaveCount(0)
+  await own.getByRole('button', { name: 'La Orden del Alba', exact: true }).click()
+  await own.getByRole('region', { name: 'La Orden del Alba' }).getByRole('button', { name: 'Sus relaciones' }).click()
+  await expect(own.getByRole('button', { name: 'Doran de Kharum' })).toBeVisible()
+  await expect(page).toHaveURL(new RegExp(`grafo=${id.ilsa}`))
+  // Atrás la cierra
+  await page.goBack()
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+
+  // El árbol (uno solo: genealógico u organigrama), como pestaña: desde los campos de la página…
+  await tabs.getByRole('button', { name: 'Pestaña nueva' }).click()
+  const create = page.getByRole('dialog', { name: 'Pestaña nueva' })
+  await expect(create.getByRole('radio', { name: 'Organigrama' })).toHaveCount(0)
+  await create.getByRole('radio', { name: 'Árbol' }).check()
+  await create.getByRole('button', { name: 'Crear' }).click()
+  await page.getByRole('button', { name: 'Empezar desde los campos' }).click()
   for (const name of ['Aldren IV', 'Mirela de Varn', 'Corwen Hale', 'Lia de Varn'])
     await expect(page.getByRole('button', { name, exact: true })).toBeVisible()
-  // En Familia, el panel se pliega solo
-  await expect(page.getByRole('button', { name: 'Desplegar el panel' })).toBeVisible()
-
-  // Enlaces: con lo que menciona y, del secreto, discontinuo (el máster); «Solo campos» quita las menciones
-  await modes.getByRole('button', { name: 'Enlaces' }).click()
-  await expect(page.getByRole('button', { name: 'Guerra de las Brumas' })).toBeVisible()
-  await expect(page.getByRole('button', { name: 'La Mano Gris' })).toBeVisible()
-  await expect(page.getByRole('list', { name: 'Leyenda' })).toContainText('Desde un secreto')
-  await page.getByRole('switch', { name: 'Solo campos' }).check()
-  await expect(page.getByRole('button', { name: 'Guerra de las Brumas' })).toHaveCount(0)
-  await page.getByRole('switch', { name: 'Solo campos' }).uncheck()
-  // Pulsar una página saca su ficha; «Centrar aquí» rehace el grafo desde ella
-  await page.getByRole('button', { name: 'La Orden del Alba', exact: true }).click()
-  const card = page.getByRole('region', { name: 'La Orden del Alba' })
-  await expect(card).toContainText('Miembros')
-  await card.getByRole('button', { name: 'Centrar aquí' }).click()
-  await expect(page.getByRole('button', { name: 'Volver a Ilsa de Varn' })).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Doran de Kharum' })).toBeVisible()
-  await page.getByRole('button', { name: 'Volver a Ilsa de Varn' }).click()
-  // El modo se recuerda (sin plantilla, el de las páginas sin plantilla)
-  await page.reload()
-  await expect(page.getByRole('toolbar', { name: 'Modo' }).getByRole('button', { name: 'Enlaces' })).toHaveAttribute(
-    'aria-pressed',
-    'true'
-  )
-
-  // El organigrama de la facción: quien la dirige y sus miembros (sin plantilla, como Ilsa: se abre en el modo elegido
-  // para las páginas sin plantilla, Enlaces)
-  await page.goto(`/mundos/${worldId}/wiki/${id.orden}?pestana=relaciones`)
-  const orgModes = page.getByRole('toolbar', { name: 'Modo' })
-  await expect(orgModes.getByRole('button', { name: 'Enlaces' })).toHaveAttribute('aria-pressed', 'true')
-  await orgModes.getByRole('button', { name: 'Organigrama' }).click()
-  await expect(page.getByRole('button', { name: 'Lo dirige, Oriel Vance, Gran Maestre' })).toBeVisible()
-  await expect(page.getByRole('button', { name: /^Doran de Kharum/ })).toBeVisible()
-
-  // El grafo del mundo, desde la cabecera del árbol; buscar una página la elige
-  await page.getByRole('link', { name: 'Relaciones del mundo' }).click()
-  await expect(page.getByRole('heading', { level: 1, name: 'Relaciones' })).toBeVisible()
-  await expect(page.getByRole('complementary', { name: 'Filtros' })).toBeVisible()
-  await page.getByRole('combobox', { name: 'Buscar una página' }).fill('dora')
-  await page.keyboard.press('Enter')
-  await expect(page.getByRole('region', { name: 'Doran de Kharum' })).toContainText('Facción')
+  // …y a mano: un abuelo sin página, desde la ficha de Aldren; luego, su página
+  await page.getByRole('button', { name: 'Aldren IV', exact: true }).click()
+  const card = page.getByRole('region', { name: 'Aldren IV' })
+  await card.getByRole('button', { name: 'Padre o madre', exact: true }).click()
+  const add = page.getByRole('dialog', { name: 'Padre o madre de Aldren IV' })
+  await add.getByRole('combobox', { name: 'Busca una página o escribe un nombre' }).fill('Aldren III')
+  await add.getByRole('option', { name: 'Añadir «Aldren III» sin página' }).click()
+  const grandpa = page.getByRole('region', { name: 'Aldren III' })
+  await expect(grandpa).toContainText('Sin página')
+  await expect(grandpa).toContainText('Padre o madre de Aldren IV')
+  // Las relaciones no son fijas: un hijastro de Aldren III, desde «Otra relación», solo con la línea que se elige
+  await grandpa.getByRole('button', { name: 'Otra relación' }).click()
+  const other = page.getByRole('dialog', { name: 'Otra relación con Aldren III' })
+  await other.getByLabel('Relación').selectOption('stepchild')
+  // Su título pasa a decir la relación elegida
+  const stepchild = page.getByRole('dialog', { name: 'Hijastro o hijastra de Aldren III' })
+  await stepchild.getByRole('combobox', { name: 'Busca una página o escribe un nombre' }).fill('Kael')
+  await stepchild.getByRole('option', { name: 'Añadir «Kael» sin página' }).click()
+  const kael = page.getByRole('region', { name: 'Kael' })
+  await expect(kael).toContainText('Hijastro o hijastra de Aldren III')
+  // Su ficha, a la derecha, tapa a Aldren III: se cierra antes
+  await kael.getByRole('button', { name: 'Cerrar' }).click()
+  await page.getByRole('button', { name: 'Aldren III', exact: true }).click()
+  await grandpa.getByRole('button', { name: 'Crear página' }).click()
+  await expect(grandpa.getByRole('button', { name: 'Abrir' })).toBeVisible()
+  // Sus líneas cuentan como relaciones: Aldren III ya sale en el grafo de Aldren IV
+  const relations = await apiOf(page)('getRelations', { pageId: id.aldren })
+  expect(JSON.stringify(relations)).toContain('Aldren III')
 
   // Un gráfico escrito en Markdown se pinta; al elegirlo, su editor ocupa el panel
   await page.goto(`/mundos/${worldId}/wiki/${id.poder}`)
@@ -179,7 +210,7 @@ test('relaciones (módulo 10): la pestaña en Familia, Enlaces y Organigrama, el
     .toMatch(/```chart\ntype: pie\ntitle: Poder de las casas\nlabels: \[Altamar, Varn, Kharum\]/)
 })
 
-test('la jugadora en el móvil: la pestaña con lo que conoce, en palabras y a pantalla entera al ampliar', async ({
+test('la jugadora en el móvil: el árbol con lo que conoce y el grafo de su página en su ventana', async ({
   page,
   browser
 }) => {
@@ -190,57 +221,103 @@ test('la jugadora en el móvil: la pestaña con lo que conoce, en palabras y a p
   const api = apiOf(page)
   for (const key of ['ilsa', 'aldren', 'corwen', 'lia', 'orden', 'guerra'])
     await api('setKnowledge', { worldId, campaignId, kind: 'page', targetId: id[key], known: true })
+  const tree = await api('createTree', {
+    worldId,
+    name: 'Familia',
+    pageId: id.ilsa,
+    nodes: [
+      { id: 'ilsa', pageId: id.ilsa },
+      { id: 'aldren', pageId: id.aldren },
+      { id: 'mirela', pageId: id.mirela },
+      { id: 'lia', pageId: id.lia },
+      { id: 'abuela', name: 'Abuela Varn' }
+    ],
+    edges: [
+      { from: 'abuela', to: 'aldren', type: 'parent' },
+      { from: 'aldren', to: 'ilsa', type: 'parent' },
+      { from: 'mirela', to: 'ilsa', type: 'parent' },
+      { from: 'ilsa', to: 'lia', type: 'parent' }
+    ]
+  })
 
   const player = await newPlayer(browser, link)
   await player.setViewportSize({ width: 375, height: 812 })
-  await player.goto(`/mundos/${worldId}/campanas/${campaignId}/paginas/${id.ilsa}?pestana=relaciones`)
-  const modes = player.getByRole('group', { name: 'Modo' })
-  await modes.getByRole('button', { name: 'Enlaces' }).click()
-  const words = player.locator('dl[aria-label="En palabras"]')
-  await expect(words.getByRole('button', { name: 'Aldren IV' })).toBeVisible()
+  await player.goto(`/mundos/${worldId}/campanas/${campaignId}/paginas/${id.ilsa}?pestana=${tree.tabId}`)
+  for (const name of ['Aldren IV', 'Lia de Varn', 'Abuela Varn'])
+    await expect(player.getByRole('button', { name, exact: true })).toBeVisible()
   const main = player.getByRole('main')
-  // Ni lo que no conoce, ni la mención desde el secreto
-  for (const hidden of ['Mirela de Varn', 'Puerto Ceniza', 'La Mano Gris']) await expect(main).not.toContainText(hidden)
+  // Ni lo que no conoce, ni editar
+  await expect(main).not.toContainText('Mirela de Varn')
+  await expect(player.getByRole('button', { name: 'Añadir' })).toHaveCount(0)
   const sideways = () => player.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)
   expect(await sideways()).toBe(false)
   expect(await axe(player)).toEqual([])
-  // A pantalla entera, la ficha de la elegida sube desde abajo
-  await player.getByRole('button', { name: 'Ampliar' }).click()
-  const wide = player.getByRole('dialog', { name: 'Relaciones de Ilsa de Varn' })
-  await wide.getByRole('button', { name: 'Corwen Hale' }).click()
-  await expect(wide.getByRole('region', { name: 'Corwen Hale' }).getByRole('button', { name: 'Abrir' })).toBeVisible()
+  // El grafo de su página, desde «Mencionado en», con lo que conoce
+  await player.getByRole('button', { name: 'Ver sus relaciones' }).click()
+  const own = player.getByRole('dialog', { name: 'Relaciones de Ilsa de Varn' })
+  await expect(own.getByRole('button', { name: 'Corwen Hale' })).toBeVisible()
+  await expect(own).not.toContainText('Mirela de Varn')
+  await expect(own).not.toContainText('La Mano Gris')
   expect(await axe(player)).toEqual([])
-  await wide.getByRole('button', { name: 'Cerrar' }).first().press('Escape')
-  // La familia, en filas
-  await modes.getByRole('button', { name: 'Familia' }).click()
-  await expect(player.getByRole('region', { name: 'Padres' })).toContainText('Aldren IV')
-  await expect(main).not.toContainText('Mirela de Varn')
+  await own.getByRole('button', { name: 'Cerrar' }).first().click()
+  await expect(own).toBeHidden()
   await player.close()
 })
 
 test.describe('con el cristal de verdad', () => {
   test.use({ storageState: CON_DESENFOQUE })
 
-  test('la pestaña en sus tres modos, el grafo del mundo y el editor del gráfico, sin fallos graves de accesibilidad @a11y', async ({
+  test('el árbol, el organigrama, el grafo en su ventana y el editor del gráfico, sin fallos graves de accesibilidad @a11y', async ({
     page
   }) => {
     test.slow()
     await freshOwner(page)
-    const worldId = (await apiOf(page)('createWorld', { name: 'Valdren' })).id as string
+    const api = apiOf(page)
+    const worldId = (await api('createWorld', { name: 'Valdren' })).id as string
     const id = await seed(page, worldId)
-    await page.goto(`/mundos/${worldId}/wiki/${id.ilsa}?pestana=relaciones`)
-    const modes = page.getByRole('toolbar', { name: 'Modo' })
-    await expect(modes).toBeVisible()
+    const family = await api('createTree', {
+      worldId,
+      name: 'Familia',
+      pageId: id.ilsa,
+      nodes: [
+        { id: 'ilsa', pageId: id.ilsa },
+        { id: 'aldren', pageId: id.aldren },
+        { id: 'abuela', name: 'Abuela Varn' }
+      ],
+      edges: [
+        { from: 'abuela', to: 'aldren', type: 'parent' },
+        { from: 'aldren', to: 'ilsa', type: 'parent' }
+      ]
+    })
+    await page.goto(`/mundos/${worldId}/wiki/${id.ilsa}?pestana=${family.tabId}`)
+    await expect(page.getByRole('button', { name: 'Abuela Varn' })).toBeVisible()
     expect(await axe(page)).toEqual([])
-    await modes.getByRole('button', { name: 'Enlaces' }).click()
-    await page.getByRole('button', { name: 'Aldren IV', exact: true }).click()
-    await expect(page.getByRole('region', { name: 'Aldren IV' })).toBeVisible()
+    await page.getByRole('button', { name: 'Abuela Varn' }).click()
+    await expect(page.getByRole('region', { name: 'Abuela Varn' })).toBeVisible()
     expect(await axe(page)).toEqual([])
-    await modes.getByRole('button', { name: 'Organigrama' }).click()
-    await expect(page.getByRole('button', { name: /^Lo dirige, Oriel Vance/ })).toBeVisible()
+    const chart = await api('createTree', {
+      worldId,
+      name: 'Mando',
+      pageId: id.orden,
+      nodes: [
+        { id: 'orden', pageId: id.orden },
+        { id: 'oriel', pageId: id.oriel },
+        { id: 'doran', pageId: id.doran }
+      ],
+      edges: [
+        { from: 'oriel', to: 'orden', type: 'leads' },
+        { from: 'doran', to: 'orden', type: 'member' }
+      ]
+    })
+    await page.goto(`/mundos/${worldId}/wiki/${id.orden}?pestana=${chart.tabId}`)
+    await expect(page.getByRole('button', { name: /^Oriel Vance/ })).toBeVisible()
     expect(await axe(page)).toEqual([])
-    await page.goto(`/mundos/${worldId}/relaciones`)
+    await page.goto(`/mundos/${worldId}/wiki/${id.ilsa}?grafo=mundo`)
     await expect(page.getByRole('complementary', { name: 'Filtros' })).toBeVisible()
+    expect(await axe(page)).toEqual([])
+    await page.goto(`/mundos/${worldId}/wiki/${id.ilsa}?grafo=${id.ilsa}`)
+    await page.getByRole('dialog').getByRole('button', { name: 'Aldren IV', exact: true }).click()
+    await expect(page.getByRole('region', { name: 'Aldren IV' })).toBeVisible()
     expect(await axe(page)).toEqual([])
     await page.goto(`/mundos/${worldId}/wiki/${id.poder}`)
     await page.getByRole('button', { name: 'Editar el gráfico' }).click({ force: true })

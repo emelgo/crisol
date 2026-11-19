@@ -145,6 +145,7 @@ export async function skipTours(page: Page, email: string) {
           'archivos',
           'calendarios',
           'calendario',
+          'calendario-vista',
           'etiquetas',
           'plantillas',
           'plantilla',
@@ -159,7 +160,11 @@ export async function skipTours(page: Page, email: string) {
           'revisar',
           'relaciones',
           'relaciones-jugadora',
-          'grafo-mundo'
+          'grafo-mundo',
+          'cronologia',
+          'cronologia-jugadora',
+          'arbol',
+          'arbol-lectura'
         ]
       })
     )

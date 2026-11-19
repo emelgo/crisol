@@ -82,6 +82,7 @@ describe('herramientas MCP', () => {
       'controles_sala',
       'convertir_en_pagina',
       'copiar_contenido',
+      'crear_arbol_genealogico',
       'crear_calendario',
       'crear_campana',
       'crear_capa',
@@ -108,6 +109,7 @@ describe('herramientas MCP', () => {
       'dibujar_escena',
       'duplicar_pagina',
       'echar_de_la_mesa',
+      'editar_arbol_genealogico',
       'editar_pagina',
       'elegir_personaje',
       'empezar_combate',
@@ -216,6 +218,7 @@ describe('herramientas MCP', () => {
       'validar_sistema',
       'ver_a_la_vista',
       'ver_arbol',
+      'ver_arbol_genealogico',
       'ver_biblioteca',
       'ver_calendario',
       'ver_campana',
@@ -340,11 +343,11 @@ describe('herramientas MCP', () => {
     expect(success({ a: 1 }).content).toEqual([{ type: 'text', text: '{\n  "a": 1\n}' }])
   })
 
-  it('la IA no puede aprobar lo suyo ni cambiar su modo: no hay herramienta para eso', () => {
+  it('la IA no puede aprobar lo suyo, ni cambiar su modo, ni quitar conexiones: no hay herramienta para eso', () => {
     for (const tool of Object.values(MCP_TOOLS)) {
       for (const impl of toolActions(tool)) expect(UI_ONLY.has(impl.action.name)).toBe(false)
     }
-    expect([...UI_ONLY].sort()).toEqual(['approve', 'reject', 'setAiMode'])
+    expect([...UI_ONLY].sort()).toEqual(['approve', 'reject', 'removeAiConnection', 'setAiMode'])
   })
 
   it('solo las de leer anuncian qué devuelven: las demás pueden contestar «esperando la aprobación»', () => {

@@ -17,8 +17,9 @@ async function addMap(page: Page) {
   const dialog = page.getByRole('dialog', { name: 'Pestaña nueva' })
   await expect(dialog.getByRole('radio', { name: 'Texto' })).toBeChecked()
   await dialog.getByRole('radio', { name: 'Mapa' }).check()
-  // Ni «Línea temporal» ni «Árbol familiar»: el tiempo vive en las cronologías (módulo 8) y el árbol, en «Relaciones»
-  await expect(dialog.getByRole('radio', { name: /Línea temporal|Árbol/ })).toHaveCount(0)
+  // La cronología y el árbol también son pestañas (ADR-0031): ninguna «Pronto»
+  await expect(dialog.getByRole('radio', { name: 'Cronología' })).toBeEnabled()
+  await expect(dialog.getByRole('radio', { name: 'Árbol' })).toBeEnabled()
   await dialog.getByRole('button', { name: 'Crear' }).click()
   await expect(dialog).toHaveCount(0)
 }

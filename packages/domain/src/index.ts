@@ -1,6 +1,7 @@
 export * from './ai-modes.ts'
 export * from './calendar/index.ts'
 export * from './example-templates.ts'
+export * from './family-tree.ts'
 export * from './files.ts'
 export * from './knowledge.ts'
 export * from './links.ts'

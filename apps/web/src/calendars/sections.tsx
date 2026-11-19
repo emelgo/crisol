@@ -1,24 +1,29 @@
 /**
- * Las secciones del editor de un calendario (lienzo, pantalla 2): General, Semana, Meses (con los bisiestos debajo),
- * Estaciones, Lunas, Eras y la correspondencia con el principal. Cada una cambia el borrador con `change`; los
- * problemas los calcula el editor y aquí se marcan donde están
+ * Las fases del editor de un calendario (ajustes tras los módulos, bloque C): General, Semana (en qué día empieza y el
+ * ancla «el 1 de {mes} del año {N} fue {día}»), Meses (cada uno, mes o festividad), Días señalados, Días de más (años
+ * más largos, por reglas, sin dar ninguna por hecha), Estaciones, Lunas, Eras y la correspondencia con el principal. Cada una cambia el borrador con `change`; los problemas
+ * los calcula el editor y aquí se marcan donde están
  */
 import {
+  CALENDAR_LIMITS,
   type CalendarDefinition,
   type CalendarProblem,
   type CalendarSection,
   DEFAULT_PHASES,
   dateFromDay,
+  firstWeekdayFor,
   formatDate,
   monthNumber,
   newCalendarId,
+  rotateWeek,
+  weekdayOf,
   yearLength,
   yearStart
 } from '@crisol/domain'
 import { ChevronDown, ChevronUp, GripVertical, Plus, TriangleAlert, X } from 'lucide-react'
-import { type DragEvent, type KeyboardEvent, type ReactNode, useEffect, useState } from 'react'
+import { type DragEvent, type KeyboardEvent, type ReactNode, type Ref, useEffect, useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { DateInput, IntegerInput } from './date-input.tsx'
+import { DateInput, IntegerInput, YEAR_DIGITS, YearInput } from './date-input.tsx'
 import styles from './editor.module.css'
 import { useProblemText } from './problems.ts'
 
@@ -43,25 +48,29 @@ const takenIds = (draft: CalendarDefinition) => [
 const flagged = (problems: readonly CalendarProblem[], section: CalendarSection, index: number) =>
   problems.some((p) => p.section === section && p.index === index)
 
-/** Una sección: su título con su icono y, al pie, sus problemas */
+/** La fase abierta: su título con su icono, lo suyo y, al pie, sus problemas (los de esa fase) */
 export function Section({
   id,
   icon,
   title,
-  problems,
+  problems: own,
+  headingRef,
+  footer,
   children
 }: {
-  id: CalendarSection
+  id: string
   icon: ReactNode
   title: string
   problems: readonly CalendarProblem[]
+  headingRef?: Ref<HTMLHeadingElement>
+  /** Lo que va al final, tras los problemas (la fase anterior y la siguiente) */
+  footer?: ReactNode
   children: ReactNode
 }) {
   const problemText = useProblemText()
-  const own = problems.filter((p) => p.section === id)
   return (
-    <section className={styles.section} id={`seccion-${id}`} aria-labelledby={`titulo-${id}`} data-section={id}>
-      <h2 id={`titulo-${id}`} tabIndex={-1} className={styles.sectionTitle}>
+    <section className={styles.section} id={`fase-${id}`} aria-labelledby={`titulo-${id}`} data-section={id}>
+      <h2 id={`titulo-${id}`} ref={headingRef} tabIndex={-1} className={styles.sectionTitle}>
         <span aria-hidden="true">{icon}</span>
         {title}
       </h2>
@@ -76,6 +85,7 @@ export function Section({
           ))}
         </ul>
       )}
+      {footer}
     </section>
   )
 }
@@ -111,13 +121,30 @@ function moved<T>(list: T[], from: number, to: number) {
   if (item !== undefined) list.splice(Math.max(0, Math.min(to, list.length)), 0, item)
 }
 
+/** Cambia un extremo del rango de años (null: vacío, el tope general); sin ninguno, sin rango */
+function setYearEnd(d: CalendarDefinition, end: 'min' | 'max', year: number | null) {
+  const range = { ...d.yearRange }
+  if (year === null) delete range[end]
+  else range[end] = year
+  if (typeof range.min !== 'number' && typeof range.max !== 'number') delete d.yearRange
+  else d.yearRange = range
+}
+
 export function GeneralSection({
   draft,
   change,
+  problems,
   name,
   onName
-}: Omit<SectionProps, 'problems'> & { name: string; onName: (name: string) => void }) {
+}: SectionProps & { name: string; onName: (name: string) => void }) {
   const { t } = useTranslation()
+  const bound = CALENDAR_LIMITS.yearBound
+  const min = draft.yearRange?.min ?? null
+  const max = draft.yearRange?.max ?? null
+  // Sin «desde», se propone el inicio de la primera era (no se impone)
+  const firstEra = [...draft.eras].sort((a, b) => a.start.year - b.start.year)[0]
+  const yearsWrong = problems.some((p) => p.code === 'yearOrder' || p.code === 'yearLimit')
+  const yearsId = useId()
   return (
     <div className={styles.fields}>
       <label className={styles.field}>
@@ -178,11 +205,49 @@ export function GeneralSection({
           {draft.description.length} / 500
         </small>
       </label>
+      <fieldset className={styles.years}>
+        <legend>{t('calendars.editor.years')}</legend>
+        <label className={styles.inline} htmlFor={`${yearsId}-min`}>
+          {t('calendars.editor.yearsFrom')}
+        </label>
+        <IntegerInput
+          id={`${yearsId}-min`}
+          className={styles.yearInput}
+          digits={YEAR_DIGITS}
+          value={min ?? Number.NaN}
+          placeholder={String(firstEra?.start.year ?? -bound)}
+          aria-invalid={yearsWrong || undefined}
+          onValue={(year) => change((d) => setYearEnd(d, 'min', year))}
+          onEmpty={() => change((d) => setYearEnd(d, 'min', null))}
+        />
+        <label className={styles.inline} htmlFor={`${yearsId}-max`}>
+          {t('calendars.editor.yearsTo')}
+        </label>
+        <IntegerInput
+          id={`${yearsId}-max`}
+          className={styles.yearInput}
+          digits={YEAR_DIGITS}
+          value={max ?? Number.NaN}
+          placeholder={String(bound)}
+          aria-invalid={yearsWrong || undefined}
+          onValue={(year) => change((d) => setYearEnd(d, 'max', year))}
+          onEmpty={() => change((d) => setYearEnd(d, 'max', null))}
+        />
+        {min === null && firstEra && (
+          <button
+            type="button"
+            className={styles.link}
+            onClick={() => change((d) => setYearEnd(d, 'min', firstEra.start.year))}
+          >
+            {t('calendars.editor.yearsFromEra', { era: firstEra.name || '—', year: firstEra.start.year })}
+          </button>
+        )}
+      </fieldset>
     </div>
   )
 }
 
-export function WeekSection({ draft, change, problems }: SectionProps) {
+export function WeekSection({ draft, change, problems, valid }: SectionProps & { valid: boolean }) {
   const { t } = useTranslation()
   return (
     <>
@@ -246,14 +311,14 @@ export function WeekSection({ draft, change, problems }: SectionProps) {
       )}
       <div className={styles.pair}>
         <label className={styles.field}>
-          <span>{t('calendars.editor.firstWeekday')}</span>
+          <span>{t('calendars.editor.weekStartsOn')}</span>
+          {/* Reordena la lista: el elegido pasa a ser el primero, sin cambiar el día de ninguna fecha */}
           <select
-            value={draft.firstWeekday}
-            onChange={(event) =>
-              change((d) => {
-                d.firstWeekday = Number(event.target.value)
-              })
-            }
+            value={0}
+            onChange={(event) => {
+              const start = Number(event.target.value)
+              change((d) => Object.assign(d, rotateWeek(d, start)))
+            }}
           >
             {draft.weekdays.map((day, i) => (
               <option key={i} value={i}>
@@ -281,7 +346,68 @@ export function WeekSection({ draft, change, problems }: SectionProps) {
           ))}
         </fieldset>
       </div>
+      <WeekAnchor draft={draft} change={change} valid={valid} />
     </>
+  )
+}
+
+/**
+ * El ancla de la semana: «El 1 de {mes} del año {N} fue {día}». El mes y el año son de aquí (no se guardan): al
+ * cambiarlos, la frase dice qué día fue; al elegir el día, se corre el día de la semana de todo el calendario
+ */
+function WeekAnchor({ draft, change, valid }: Pick<SectionProps, 'draft' | 'change'> & { valid: boolean }) {
+  const { t } = useTranslation()
+  const inWeek = draft.months.filter((m) => !m.outsideWeek)
+  const [monthId, setMonthId] = useState(() => inWeek[0]?.id ?? draft.months[0]?.id ?? '')
+  const [year, setYear] = useState(0)
+  const month = draft.months.find((m) => m.id === monthId) ?? inWeek[0]
+  const date = month ? { year, month: month.id, day: 1 } : null
+  const weekday = valid && date && !month?.outsideWeek ? weekdayOf(draft, date) : null
+  return (
+    <fieldset className={styles.anchor}>
+      <legend className={styles.srOnly}>{t('calendars.editor.anchor')}</legend>
+      <span>{t('calendars.editor.anchorDay')}</span>
+      <select
+        value={month?.id ?? ''}
+        aria-label={t('calendars.editor.anchorMonth')}
+        onChange={(event) => setMonthId(event.target.value)}
+      >
+        {inWeek.map((m) => (
+          <option key={m.id} value={m.id}>
+            {m.name || '—'}
+          </option>
+        ))}
+      </select>
+      <span>{t('calendars.editor.anchorYear')}</span>
+      <YearInput
+        className={styles.yearInput}
+        definition={draft}
+        value={year}
+        aria-label={t('calendars.editor.anchorYearLabel')}
+        onValue={setYear}
+      />
+      <span>{t('calendars.editor.anchorWas')}</span>
+      <select
+        value={weekday ?? ''}
+        disabled={weekday === null}
+        aria-label={t('calendars.editor.anchorWeekday')}
+        onChange={(event) => {
+          if (!date) return
+          const target = Number(event.target.value)
+          change((d) => {
+            const first = firstWeekdayFor(d, date, target)
+            if (first !== null) d.firstWeekday = first
+          })
+        }}
+      >
+        {weekday === null && <option value="">—</option>}
+        {draft.weekdays.map((day, i) => (
+          <option key={i} value={i}>
+            {day || t('calendars.editor.weekday', { n: i + 1 })}
+          </option>
+        ))}
+      </select>
+    </fieldset>
   )
 }
 
@@ -332,27 +458,29 @@ function useRowDrag(onMove: (from: number, to: number) => void) {
   }
 }
 
-export function MonthsSection({
-  draft,
-  change,
-  problems,
-  onFocusMonth
-}: SectionProps & { onFocusMonth?: (monthId: string) => void }) {
+export function MonthsSection({ draft, change, problems }: SectionProps) {
   const { t } = useTranslation()
   const drag = useRowDrag((from, to) => change((d) => moved(d.months, from, to)))
   return (
     <>
+      <p className={styles.lead}>{t('calendars.editor.monthsLead')}</p>
       <table className={styles.table}>
         <thead>
           <tr>
             <th scope="col">
               <span className={styles.srOnly}>{t('calendars.editor.order')}</span>
             </th>
-            <th scope="col">{t('calendars.editor.number')}</th>
+            <th scope="col" className={styles.center}>
+              {t('calendars.editor.number')}
+            </th>
+            <th scope="col">
+              <span className={styles.srOnly}>{t('calendars.editor.color')}</span>
+            </th>
             <th scope="col">{t('calendars.editor.monthName')}</th>
-            <th scope="col">{t('calendars.editor.days')}</th>
-            <th scope="col">{t('calendars.editor.festival')}</th>
-            <th scope="col">{t('calendars.editor.outsideWeek')}</th>
+            <th scope="col" className={styles.center}>
+              {t('calendars.editor.days')}
+            </th>
+            <th scope="col">{t('calendars.editor.type')}</th>
             <th scope="col">
               <span className={styles.srOnly}>{t('calendars.editor.removeColumn')}</span>
             </th>
@@ -368,7 +496,6 @@ export function MonthsSection({
                 data-festival={month.festival || undefined}
                 data-drop={drag.over === i || undefined}
                 data-dragging={drag.dragging === i || undefined}
-                onFocus={() => onFocusMonth?.(month.id)}
                 {...drag.row(i)}
               >
                 <td>
@@ -382,8 +509,8 @@ export function MonthsSection({
                     <GripVertical size={16} aria-hidden="true" />
                   </button>
                 </td>
-                <td className={styles.number}>
-                  <span>{n ?? '—'}</span>
+                <td className={`${styles.number} ${styles.center}`}>{n ?? '—'}</td>
+                <td>
                   <input
                     type="color"
                     className={styles.swatch}
@@ -413,7 +540,7 @@ export function MonthsSection({
                     }
                   />
                 </td>
-                <td>
+                <td className={styles.center}>
                   <IntegerInput
                     className={styles.small}
                     value={month.days}
@@ -427,35 +554,46 @@ export function MonthsSection({
                     }
                   />
                 </td>
-                <td className={styles.check}>
-                  <input
-                    type="checkbox"
-                    checked={!!month.festival}
-                    aria-label={t('calendars.editor.festivalOf', { name: label })}
-                    onChange={(event) =>
-                      change((d) => {
-                        const target = d.months[i]
-                        if (!target) return
-                        if (event.target.checked) target.festival = true
-                        else delete target.festival
-                      })
-                    }
-                  />
-                </td>
-                <td className={styles.check}>
-                  <input
-                    type="checkbox"
-                    checked={!!month.outsideWeek}
-                    aria-label={t('calendars.editor.outsideWeekOf', { name: label })}
-                    onChange={(event) =>
-                      change((d) => {
-                        const target = d.months[i]
-                        if (!target) return
-                        if (event.target.checked) target.outsideWeek = true
-                        else delete target.outsideWeek
-                      })
-                    }
-                  />
+                <td>
+                  {/* Mes o festividad; una festividad puede ir fuera de la semana (sus días no son de ningún día) */}
+                  <div className={styles.type}>
+                    <select
+                      value={month.festival ? 'festival' : 'month'}
+                      aria-label={t('calendars.editor.typeOf', { name: label })}
+                      onChange={(event) =>
+                        change((d) => {
+                          const target = d.months[i]
+                          if (!target) return
+                          if (event.target.value === 'festival') target.festival = true
+                          else {
+                            delete target.festival
+                            delete target.outsideWeek
+                          }
+                        })
+                      }
+                    >
+                      <option value="month">{t('calendars.editor.typeMonth')}</option>
+                      <option value="festival">{t('calendars.editor.typeFestival')}</option>
+                    </select>
+                    {(month.festival || month.outsideWeek) && (
+                      <label className={styles.inline}>
+                        <input
+                          type="checkbox"
+                          checked={!!month.outsideWeek}
+                          onChange={(event) =>
+                            change((d) => {
+                              const target = d.months[i]
+                              if (!target) return
+                              if (event.target.checked) target.outsideWeek = true
+                              else delete target.outsideWeek
+                            })
+                          }
+                        />
+                        {t('calendars.editor.outsideWeek')}
+                        <span className={styles.srOnly}> · {label}</span>
+                      </label>
+                    )}
+                  </div>
                 </td>
                 <td>
                   <RemoveButton
@@ -489,7 +627,6 @@ export function MonthsSection({
           }
         />
       )}
-      <NamedDays draft={draft} change={change} />
     </>
   )
 }
@@ -504,9 +641,10 @@ function setDayName(month: CalendarDefinition['months'][number], day: number, na
   else delete month.dayNames
 }
 
-/** Los días con nombre propio (Shieldmeet, Año Nuevo…): se leen por él en las fechas. Las filas llevan una clave
- * propia (cambiar el mes o el día no las monta de nuevo) y una recién añadida, o vaciada, se queda sin nombre */
-function NamedDays({ draft, change }: Pick<SectionProps, 'draft' | 'change'>) {
+/** Los días señalados (Shieldmeet, Año Nuevo…): días con nombre propio, que se leen por él en las fechas. Las filas
+ * llevan una clave propia (cambiar el mes o el día no las monta de nuevo) y una recién añadida, o vaciada, se queda sin
+ * nombre */
+export function NamedDaysSection({ draft, change }: Pick<SectionProps, 'draft' | 'change'>) {
   const { t } = useTranslation()
   type Row = { key: string; monthId: string; day: number }
   const named = draft.months.flatMap((month) =>
@@ -527,6 +665,10 @@ function NamedDays({ draft, change }: Pick<SectionProps, 'draft' | 'change'>) {
         : [...kept, ...missing.map((n) => ({ key: newCalendarId(), ...n }))]
     })
   }, [signature])
+  // Los días de un mes, con los de más que le dan sus reglas (los nombres de esos van al final)
+  const maxDay = (monthId: string) =>
+    (draft.months.find((m) => m.id === monthId)?.days ?? 1) +
+    draft.leapRules.filter((r) => r.monthId === monthId).reduce((sum, r) => sum + r.days, 0)
   const place = (row: Row, monthId: string, day: number) => {
     const name = nameAt(row.monthId, row.day)
     if (name.trim())
@@ -561,18 +703,28 @@ function NamedDays({ draft, change }: Pick<SectionProps, 'draft' | 'change'>) {
   }
   return (
     <>
-      <h3 className={styles.subhead}>{t('calendars.editor.namedDays')}</h3>
+      <p className={styles.lead}>{t('calendars.editor.namedDaysLead')}</p>
       {rows.length > 0 && (
         <ol className={styles.rows}>
           {rows.map((row, n) => {
-            const month = draft.months.find((m) => m.id === row.monthId)
             const name = nameAt(row.monthId, row.day)
             return (
-              <li key={row.key} className={styles.leap}>
+              <li key={row.key} className={`${styles.leap} ${styles.namedDay}`}>
+                {/* «El [1] de [mes] se llama [nombre]»: el día cabe en su mes (con sus días de más) */}
+                <span>{t('calendars.editor.namedDayThe')}</span>
+                <IntegerInput
+                  className={styles.tiny}
+                  value={row.day}
+                  aria-label={t('calendars.editor.namedDayNumber', { n: n + 1 })}
+                  onValue={(day) => {
+                    if (day >= 1 && day <= maxDay(row.monthId)) place(row, row.monthId, day)
+                  }}
+                />
+                <span>{t('calendars.editor.namedDayOfMonth')}</span>
                 <select
                   value={row.monthId}
                   aria-label={t('calendars.editor.namedDayMonth', { n: n + 1 })}
-                  onChange={(event) => place(row, event.target.value, 1)}
+                  onChange={(event) => place(row, event.target.value, Math.min(row.day, maxDay(event.target.value)))}
                 >
                   {draft.months.map((m) => (
                     <option key={m.id} value={m.id}>
@@ -580,19 +732,12 @@ function NamedDays({ draft, change }: Pick<SectionProps, 'draft' | 'change'>) {
                     </option>
                   ))}
                 </select>
-                <span>{t('calendars.editor.namedDayOf')}</span>
-                <IntegerInput
-                  className={styles.tiny}
-                  value={row.day}
-                  aria-label={t('calendars.editor.namedDayNumber', { n: n + 1 })}
-                  onValue={(day) => {
-                    if (day >= 1 && day <= (month?.days ?? 1) + 10) place(row, row.monthId, day)
-                  }}
-                />
+                <span>{t('calendars.editor.namedDayCalled')}</span>
                 <input
                   className={styles.grow}
                   value={name}
                   maxLength={60}
+                  placeholder={t('calendars.editor.namedDayExample')}
                   aria-label={t('calendars.editor.namedDayName', { n: n + 1 })}
                   onChange={(event) => rename(row, event.target.value)}
                 />
@@ -610,95 +755,107 @@ function NamedDays({ draft, change }: Pick<SectionProps, 'draft' | 'change'>) {
   )
 }
 
+/**
+ * Días de más: algunos años, un mes tiene más días. Cada regla se lee como una frase: «Cada [4] años, [mes] tiene [1]
+ * día más, salvo cada [100] pero sí cada [400]». No hay ninguna de serie: el calendario no da por hecho cómo es el año
+ */
 export function LeapSection({ draft, change, problems }: SectionProps) {
   const { t } = useTranslation()
+  const set = (i: number, fn: (rule: CalendarDefinition['leapRules'][number]) => void) =>
+    change((d) => {
+      const target = d.leapRules[i]
+      if (target) fn(target)
+    })
   return (
     <>
-      <ol className={styles.rows}>
-        {draft.leapRules.map((rule, i) => (
-          <li key={i} className={styles.leap} data-invalid={flagged(problems, 'leap', i) || undefined}>
-            <span>{t('calendars.editor.leapIn')}</span>
-            <select
-              value={rule.monthId}
-              aria-label={t('calendars.editor.leapMonth', { n: i + 1 })}
-              onChange={(event) =>
-                change((d) => {
-                  const target = d.leapRules[i]
-                  if (target) target.monthId = event.target.value
-                })
-              }
-            >
-              {draft.months.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.name || '—'}
-                </option>
-              ))}
-            </select>
-            <IntegerInput
-              className={styles.tiny}
-              value={rule.days}
-              aria-label={t('calendars.editor.leapDaysLabel', { n: i + 1 })}
-              onValue={(days) =>
-                change((d) => {
-                  const target = d.leapRules[i]
-                  if (target) target.days = days
-                })
-              }
-            />
-            <span>{t('calendars.editor.leapMore', { count: rule.days })}</span>
-            <IntegerInput
-              className={styles.tiny}
-              value={rule.every}
-              aria-label={t('calendars.editor.leapEvery', { n: i + 1 })}
-              onValue={(every) =>
-                change((d) => {
-                  const target = d.leapRules[i]
-                  if (target) target.every = every
-                })
-              }
-            />
-            <span>{t('calendars.editor.leapYears')},</span>
-            <span>{t('calendars.editor.leapUnless')}</span>
-            <IntegerInput
-              className={styles.tiny}
-              value={rule.unless ?? Number.NaN}
-              placeholder="—"
-              aria-label={t('calendars.editor.leapUnlessLabel', { n: i + 1 })}
-              onValue={(unless) =>
-                change((d) => {
-                  const target = d.leapRules[i]
-                  if (!target) return
-                  if (unless > 0) target.unless = unless
-                  else {
-                    delete target.unless
-                    delete target.but
-                  }
-                })
-              }
-            />
-            <span>{t('calendars.editor.leapBut')}</span>
-            <IntegerInput
-              className={styles.tiny}
-              value={rule.but ?? Number.NaN}
-              placeholder="—"
-              disabled={!rule.unless}
-              aria-label={t('calendars.editor.leapButLabel', { n: i + 1 })}
-              onValue={(but) =>
-                change((d) => {
-                  const target = d.leapRules[i]
-                  if (!target) return
-                  if (but > 0) target.but = but
-                  else delete target.but
-                })
-              }
-            />
-            <RemoveButton
-              label={t('calendars.editor.removeLeap', { n: i + 1 })}
-              onClick={() => change((d) => void d.leapRules.splice(i, 1))}
-            />
-          </li>
-        ))}
-      </ol>
+      <p className={styles.lead}>{t('calendars.editor.leapLead')}</p>
+      {draft.leapRules.length === 0 ? (
+        <p className={styles.muted}>{t('calendars.editor.noLeap')}</p>
+      ) : (
+        <ol className={styles.rows}>
+          {draft.leapRules.map((rule, i) => (
+            <li key={i} className={styles.leap} data-invalid={flagged(problems, 'leap', i) || undefined}>
+              <span>{t('calendars.editor.leapEach')}</span>
+              <IntegerInput
+                className={styles.tiny}
+                value={rule.every}
+                aria-label={t('calendars.editor.leapEvery', { n: i + 1 })}
+                onValue={(every) =>
+                  set(i, (target) => {
+                    target.every = every
+                  })
+                }
+              />
+              <span>{t('calendars.editor.leapYears')}</span>
+              <select
+                value={rule.monthId}
+                aria-label={t('calendars.editor.leapMonth', { n: i + 1 })}
+                onChange={(event) =>
+                  set(i, (target) => {
+                    target.monthId = event.target.value
+                  })
+                }
+              >
+                {draft.months.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.name || '—'}
+                  </option>
+                ))}
+              </select>
+              <span>{t('calendars.editor.leapHas')}</span>
+              <IntegerInput
+                className={styles.tiny}
+                value={rule.days}
+                aria-label={t('calendars.editor.leapDaysLabel', { n: i + 1 })}
+                onValue={(days) =>
+                  set(i, (target) => {
+                    target.days = days
+                  })
+                }
+              />
+              <span>{t('calendars.editor.leapMore', { count: rule.days })}</span>
+              <span>{t('calendars.editor.leapUnless')}</span>
+              <IntegerInput
+                className={styles.tiny}
+                value={rule.unless ?? Number.NaN}
+                placeholder="—"
+                aria-label={t('calendars.editor.leapUnlessLabel', { n: i + 1 })}
+                onValue={(unless) =>
+                  set(i, (target) => {
+                    if (unless > 0) target.unless = unless
+                    else {
+                      delete target.unless
+                      delete target.but
+                    }
+                  })
+                }
+              />
+              {/* «Pero sí cada…» solo tiene sentido con un «salvo» */}
+              {rule.unless ? (
+                <>
+                  <span>{t('calendars.editor.leapBut')}</span>
+                  <IntegerInput
+                    className={styles.tiny}
+                    value={rule.but ?? Number.NaN}
+                    placeholder="—"
+                    aria-label={t('calendars.editor.leapButLabel', { n: i + 1 })}
+                    onValue={(but) =>
+                      set(i, (target) => {
+                        if (but > 0) target.but = but
+                        else delete target.but
+                      })
+                    }
+                  />
+                </>
+              ) : null}
+              <RemoveButton
+                label={t('calendars.editor.removeLeap', { n: i + 1 })}
+                onClick={() => change((d) => void d.leapRules.splice(i, 1))}
+              />
+            </li>
+          ))}
+        </ol>
+      )}
       {draft.leapRules.length < 10 && draft.months.length > 0 && (
         <AddButton
           label={t('calendars.editor.addLeap')}
@@ -708,7 +865,7 @@ export function LeapSection({ draft, change, problems }: SectionProps) {
                 void d.leapRules.push({
                   monthId: d.months.find((m) => !m.festival)?.id ?? d.months[0]?.id ?? '',
                   days: 1,
-                  every: 4
+                  every: 2
                 })
             )
           }
@@ -747,8 +904,12 @@ export function SeasonsSection({
                 <span className={styles.srOnly}>{t('calendars.editor.color')}</span>
               </th>
               <th scope="col">{t('calendars.editor.monthName')}</th>
-              <th scope="col">{t('calendars.editor.fromDay')}</th>
-              <th scope="col">{t('calendars.editor.toDay')}</th>
+              <th scope="col" className={styles.center}>
+                {t('calendars.editor.fromDay')}
+              </th>
+              <th scope="col" className={styles.center}>
+                {t('calendars.editor.toDay')}
+              </th>
               <th scope="col">
                 <span className={styles.srOnly}>{t('calendars.editor.inMonths')}</span>
               </th>
@@ -809,7 +970,7 @@ export function SeasonsSection({
                       }
                     />
                   </td>
-                  <td>
+                  <td className={styles.center}>
                     <IntegerInput
                       className={styles.small}
                       value={season.startDay}
@@ -823,7 +984,7 @@ export function SeasonsSection({
                       }
                     />
                   </td>
-                  <td>
+                  <td className={styles.center}>
                     <IntegerInput
                       className={styles.small}
                       value={season.endDay}

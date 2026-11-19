@@ -1,6 +1,7 @@
 /**
- * Las cronologías de un mundo (módulo 8, capacidad `cronologias`): crearlas con su calendario y su filtro, los eventos
- * sueltos (en lote, con la forma de la IA, con grupo y página), las páginas con fecha que salen solas, convertir entre
+ * Las cronologías de un mundo (módulo 8, capacidad `cronologias`; ADR-0031: cada una, una pestaña de una página;
+ * ADR-0032: cada evento, de una): crearlas con su calendario y su filtro (en una página nueva o como pestaña de otra), sus
+ * eventos (en lote, con la forma de la IA, con grupo y página; solo en la suya), las páginas con fecha si se piden, convertir entre
  * calendarios, convertir un evento en página, los grupos, deshacer, las fechas en uso y lo que ve una jugadora
  * (ADR-0017: solo lo revelado y lo que conoce su campaña)
  */
@@ -54,6 +55,7 @@ type Entry = {
   yearly?: true
   pageId?: string
   eventId?: string
+  groupId?: string
   converted?: { name: string; text: string }
   page?: { id: string; title: string }
   hidden?: true
@@ -96,7 +98,11 @@ describe('las cronologías de un mundo (módulo 8)', () => {
   const newPage = async (title: string, parentId: string | null = null) =>
     (await ok200('createPage', { worldId, title, parentId })).id as string
   const dated = async (pageId: string, properties: object[]) => ok200('editPage', { pageId, properties })
-  const historia = () => ok200('createChronology', { worldId, name: 'Historia antigua' })
+  const historia = (filter: object = {}) => ok200('createChronology', { worldId, name: 'Historia antigua', filter })
+  /** Una cronología con las páginas con fecha del mundo (por defecto no salen) */
+  const withPages = () => historia({ pages: true })
+  const addEvents = async (chronologyId: string, events: object[]) =>
+    (await ok200('createTimelineEvents', { chronologyId, events })).events
 
   beforeAll(async () => {
     conn = connect(await freshTestDatabase('crisol_test_chronologies'), { max: 4 })
@@ -133,32 +139,64 @@ describe('las cronologías de un mundo (módulo 8)', () => {
     await conn?.close()
   })
 
-  it('una cronología necesita un calendario; nace con el principal y todo dentro; se cambia, se ordena y se borra', async () => {
+  it('una cronología es una pestaña: en una página nueva o en otra; nace con el principal y todo dentro; se cambia y se borra', async () => {
     const lone = (await ok200('createWorld', { name: 'Vacío' })).id
     await fails('createChronology', { worldId: lone, name: 'Nada' }, 'NO_CALENDAR')
     const first = await historia()
-    expect(first).toMatchObject({ calendarId: null, filter: { pages: true, templates: [], tags: [], groups: [] } })
-    const second = await ok200('createChronology', { worldId, name: 'La campaña', calendarId: eana.id })
+    // Sin eventos y sin las páginas con fecha (ADR-0032)
+    expect(first).toMatchObject({ calendarId: null, filter: { pages: false, templates: [], tags: [] } })
+    // Sin página, una nueva con su nombre y su pestaña «Cronología»
+    const page = await ok200('getPage', { pageId: first.pageId })
+    expect(page.title).toBe('Historia antigua')
+    const { tabs } = await ok200('listPageTabs', { pageId: first.pageId })
+    expect(tabs.map((tab: { kind: string; name: string }) => [tab.kind, tab.name])).toEqual([
+      ['chronology', 'Cronología']
+    ])
+    expect(tabs[0].id).toBe(first.tabId)
+    // Se lee también por su pestaña
+    expect((await ok200('getChronology', { tabId: first.tabId })).chronology.id).toBe(first.id)
+    // En una página que ya hay: una pestaña más, con su nombre
+    const reino = await newPage('El reino')
+    const second = await ok200('createChronology', { worldId, name: 'La campaña', pageId: reino, calendarId: eana.id })
+    expect(second.pageId).toBe(reino)
     let listed = (await ok200('listChronologies', { worldId })).chronologies
-    expect(listed.map((c: { name: string }) => c.name)).toEqual(['Historia antigua', 'La campaña'])
-    expect(listed[0]).toMatchObject({ calendarName: 'Eana', entries: 0, span: null })
-    await ok200('updateChronology', { chronologyId: second.id, after: null, name: 'Campaña', filter: { pages: false } })
+    expect(listed.map((c: { name: string }) => c.name)).toEqual(['El reino · La campaña', 'Historia antigua'])
+    expect(listed[1]).toMatchObject({ calendarName: 'Eana', entries: 0, span: null, groups: [] })
+    // Cambiar su nombre es cambiar el de su pestaña
+    await ok200('updateChronology', { chronologyId: second.id, name: 'Campaña', filter: { pages: true } })
     listed = (await ok200('listChronologies', { worldId })).chronologies
-    expect(listed.map((c: { name: string }) => c.name)).toEqual(['Campaña', 'Historia antigua'])
-    expect(listed[0].filter).toEqual({ pages: false, templates: [], tags: [], groups: [] })
-    await fails('updateChronology', { chronologyId: first.id, filter: { groups: [crypto.randomUUID()] } }, 'BAD_GROUP')
+    expect(listed.map((c: { name: string }) => c.name)).toEqual(['El reino · Campaña', 'Historia antigua'])
+    expect(listed[0].filter).toEqual({ pages: true, templates: [], tags: [] })
+    expect((await ok200('listPageTabs', { pageId: reino })).tabs[0].name).toBe('Campaña')
+    // «Pestaña nueva» de tipo cronología también la crea, con el principal
+    const tab = await ok200('createPageTab', { pageId: reino, kind: 'chronology' })
+    // La segunda de la página, con su número
+    expect(tab.name).toBe('Cronología 2')
+    expect((await ok200('getChronology', { tabId: tab.id })).chronology.calendarId).toBeNull()
+    await ok200('deletePageTab', { tabId: tab.id })
+    // Borrarla se lleva su pestaña, sus eventos y sus grupos; su página se queda. Deshacer lo devuelve todo
+    await addEvents(first.id, [{ title: 'Fundación', date: '0', group: 'Orígenes' }])
     await ok200('deleteChronology', { chronologyId: first.id })
     expect((await ok200('listChronologies', { worldId })).chronologies).toHaveLength(1)
+    expect((await ok200('listPageTabs', { pageId: first.pageId })).tabs).toEqual([])
+    expect(await conn.db.select().from(schema.timelineEvents)).toEqual([])
     await undo('deleteChronology')
     expect((await ok200('listChronologies', { worldId })).chronologies).toHaveLength(2)
+    const back = await ok200('getChronology', { chronologyId: first.id })
+    expect(back.entries.map((e: Entry) => e.title)).toEqual(['Fundación'])
+    expect(back.groups.map((g: { name: string }) => g.name)).toEqual(['Orígenes'])
+    // La de una página en la papelera no sale
+    await ok200('deletePage', { pageId: first.pageId })
+    expect((await ok200('listChronologies', { worldId })).chronologies).toHaveLength(1)
     const { entries: history } = await ok200('listHistory', { worldId })
     expect(history.some((e: { action: string }) => e.action === 'createChronology')).toBe(true)
   })
 
   it('eventos en lote con la forma de la IA: un día, un rango que cruza dos meses y uno de cada año, con grupo y página', async () => {
     const ilsa = await newPage('Ilsa de Varn')
+    const chronology = await historia()
     const { events } = await ok200('createTimelineEvents', {
-      worldId,
+      chronologyId: chronology.id,
       events: [
         { title: 'Boda de Ilsa y Doran', date: '1247-Siega-18', group: 'La Corona', pageId: ilsa, icon: '💍' },
         { title: 'Campaña de los Pasos', date: '1247-Siega-20/1247-Trilla-3', group: 'Guerras', color: 'ochre' },
@@ -167,15 +205,15 @@ describe('las cronologías de un mundo (módulo 8)', () => {
       ]
     })
     expect(events).toHaveLength(4)
-    const { groups } = await ok200('listChronologies', { worldId })
-    expect(groups.map((g: { name: string }) => g.name)).toEqual(['La Corona', 'Guerras'])
-    const chronology = await historia()
+    expect(events[0]).toMatchObject({ chronologyId: chronology.id })
+    const [listed] = (await ok200('listChronologies', { worldId })).chronologies
+    expect(listed.groups.map((g: { name: string }) => g.name)).toEqual(['La Corona', 'Guerras'])
     const list = await entries(chronology.id)
     expect(list.map((e) => [e.title, e.text])).toEqual([
-      ['La Caída de los Gigantes', '312 RC'],
-      ['Feria de Vendimia', '1 de Vendimia de 413 RC'],
-      ['Boda de Ilsa y Doran', '18 de Siega de 1247 RC'],
-      ['Campaña de los Pasos', '20 de Siega – 3 de Trilla de 1247 RC']
+      ['La Caída de los Gigantes', 'Año 312 RC'],
+      ['Feria de Vendimia', '1 de Vendimia del año 413 RC'],
+      ['Boda de Ilsa y Doran', '18 de Siega del año 1247 RC'],
+      ['Campaña de los Pasos', '20 de Siega – 3 de Trilla del año 1247 RC']
     ])
     expect(list[1]).toMatchObject({ yearly: true, form: '413-Vendimia-1 (cada año)' })
     expect(list[2]?.page).toMatchObject({ id: ilsa, title: 'Ilsa de Varn' })
@@ -186,7 +224,7 @@ describe('las cronologías de un mundo (módulo 8)', () => {
     await fails(
       'createTimelineEvents',
       {
-        worldId,
+        chronologyId: chronology.id,
         events: [
           { title: 'Bien', date: '1250' },
           { title: 'Mal', date: '1250-Nada-3' }
@@ -195,10 +233,54 @@ describe('las cronologías de un mundo (módulo 8)', () => {
       'BAD_DATE'
     )
     expect(await entries(chronology.id)).toHaveLength(4)
-    await fails('createTimelineEvents', { worldId, events: [{ date: '1250' }] }, 'INVALID_INPUT')
+    await fails('createTimelineEvents', { chronologyId: chronology.id, events: [{ date: '1250' }] }, 'INVALID_INPUT')
   })
 
-  it('las páginas con fecha salen solas (una vez por fecha, sin las de fuera de las cronologías); el filtro', async () => {
+  it('cada evento es de su cronología (como en Everlore): no sale en las demás; se pasa a otra y se lleva sin su grupo', async () => {
+    const reino = await historia()
+    const guerras = await ok200('createChronology', { worldId, name: 'Las guerras' })
+    const [coronacion] = await addEvents(reino.id, [{ title: 'Coronación', date: '1249', group: 'Reyes' }])
+    const [asedio] = await addEvents(guerras.id, [{ title: 'Asedio de Kord', date: '1250', group: 'Asedios' }])
+    expect(await titles(reino.id)).toEqual(['Coronación'])
+    expect(await titles(guerras.id)).toEqual(['Asedio de Kord'])
+    // Cada una, con sus grupos (un grupo de otra no vale)
+    const [reyes] = (await ok200('getChronology', { chronologyId: reino.id })).groups
+    await fails('updateTimelineEvent', { eventId: asedio.id, groupId: reyes.id }, 'NOT_FOUND')
+    // Pasarlo a otra: sale allí, sin su grupo (o con uno de allí, por su nombre)
+    const moved = await ok200('updateTimelineEvent', { eventId: coronacion.id, chronologyId: guerras.id })
+    expect(moved).toMatchObject({ chronologyId: guerras.id, groupId: null })
+    expect(await titles(reino.id)).toEqual([])
+    expect(await titles(guerras.id)).toEqual(['Coronación', 'Asedio de Kord'])
+    await ok200('updateTimelineEvent', { eventId: coronacion.id, chronologyId: reino.id, group: 'Reyes' })
+    expect((await entries(reino.id))[0]).toMatchObject({ title: 'Coronación', groupId: reyes.id })
+    // La vista grande del calendario los junta todos, cada uno con su cronología
+    const all = await ok200('listCalendarEntries', { calendarId: eana.id })
+    expect(all.entries.map((e: Entry & { chronologyId?: string }) => [e.title, e.chronologyId])).toEqual([
+      ['Coronación', reino.id],
+      ['Asedio de Kord', guerras.id]
+    ])
+    expect(all.groups.map((g: { name: string }) => g.name).sort()).toEqual(['Asedios', 'Reyes'])
+  })
+
+  it('duplicar su página duplica la cronología con sus grupos y sus eventos, aparte (y deshacerlo los quita)', async () => {
+    const reino = await historia()
+    await addEvents(reino.id, [{ title: 'Coronación', date: '1249', group: 'Reyes' }])
+    const copy = await ok200('copyPage', { pageId: reino.pageId })
+    const { tabs } = await ok200('listPageTabs', { pageId: copy.id })
+    const twin = await ok200('getChronology', { tabId: tabs[0].id })
+    expect(twin.chronology.id).not.toBe(reino.id)
+    expect(twin.entries.map((e: Entry) => e.title)).toEqual(['Coronación'])
+    expect(twin.groups.map((g: { id: string; name: string }) => g.name)).toEqual(['Reyes'])
+    expect(twin.entries[0].groupId).toBe(twin.groups[0].id)
+    // Cambiar la copia no toca la original
+    await ok200('updateTimelineEvent', { eventId: twin.entries[0].eventId, title: 'Otra coronación' })
+    expect(await titles(reino.id)).toEqual(['Coronación'])
+    await undo('updateTimelineEvent')
+    await undo('copyPage')
+    expect(await conn.db.select().from(schema.timelineEvents)).toHaveLength(1)
+  })
+
+  it('las páginas con fecha, si se piden (una vez por fecha, sin las de fuera de las cronologías); el filtro', async () => {
     const puerto = await newPage('Puerto Ceniza')
     await dated(puerto, [
       { name: 'Fundación', type: 'date', value: '412-Siega-12' },
@@ -220,31 +302,28 @@ describe('las cronologías de un mundo (módulo 8)', () => {
         }
       ]
     })
-    await ok200('createTimelineEvents', {
-      worldId,
-      events: [{ title: 'Asedio', date: '1248-Escarcha-2', group: 'Guerras' }]
-    })
-    const chronology = await historia()
+    const chronology = await withPages()
+    await addEvents(chronology.id, [{ title: 'Asedio', date: '1248-Escarcha-2', group: 'Guerras' }])
     expect(await titles(chronology.id)).toEqual([
       'Puerto Ceniza',
       'Aldren IV · Nacimiento',
       'Aldren IV · Muerte',
       'Asedio'
     ])
-    const [guerras] = (await ok200('listChronologies', { worldId })).groups
     await ok200('updateChronology', { chronologyId: chronology.id, filter: { tags: ['lugar'] } })
     expect(await titles(chronology.id)).toEqual(['Puerto Ceniza', 'Asedio'])
-    await ok200('updateChronology', { chronologyId: chronology.id, filter: { pages: false, groups: [guerras.id] } })
+    // Sin las páginas, solo sus eventos (como nace)
+    await ok200('updateChronology', { chronologyId: chronology.id, filter: { pages: false } })
     expect(await titles(chronology.id)).toEqual(['Asedio'])
     // Buscar: por intervalo y por texto
-    await ok200('updateChronology', { chronologyId: chronology.id, filter: { pages: true, tags: [], groups: [] } })
+    await ok200('updateChronology', { chronologyId: chronology.id, filter: { pages: true, tags: [] } })
     expect(await titles(chronology.id, { from: '1247', to: '1247-Nochelarga-28' })).toEqual(['Aldren IV · Muerte'])
     expect(await titles(chronology.id, { text: 'asedio' })).toEqual(['Asedio'])
     // Y las cuenta la lista
     const [listed] = (await ok200('listChronologies', { worldId })).chronologies
     expect(listed).toMatchObject({
       entries: 4,
-      span: { from: '12 de Siega de 412 RC', to: '2 de Escarcha de 1248 RC' }
+      span: { from: '12 de Siega del año 412 RC', to: '2 de Escarcha del año 1248 RC' }
     })
   })
 
@@ -255,44 +334,42 @@ describe('las cronologías de un mundo (módulo 8)', () => {
       definition: { ...varn.definition, correspondence: { date: '1000-Cierzo-1' } }
     })
     const kharum = await ok200('createCalendar', { worldId, name: 'Kharum', from: 'blank' })
-    await ok200('createTimelineEvents', {
-      worldId,
-      events: [
-        { title: 'Llegada', date: '0-1-1', calendar: 'Cuenta de Varn' },
-        { title: 'Perdido', date: '3', calendar: 'Kharum' }
-      ]
-    })
     const chronology = await historia()
+    await addEvents(chronology.id, [
+      { title: 'Llegada', date: '0-1-1', calendar: 'Cuenta de Varn' },
+      { title: 'Perdido', date: '3', calendar: 'Kharum' }
+    ])
     const { entries: list, outside } = await ok200('getChronology', { chronologyId: chronology.id })
     expect(outside).toBe(1)
     expect(list).toHaveLength(1)
     expect(list[0]).toMatchObject({
       title: 'Llegada',
-      text: '1 de Cierzo de 1000 RC',
+      text: '1 de Cierzo del año 1000 RC',
       converted: { name: 'Cuenta de Varn' }
     })
     // En una cronología con ese otro calendario, lo de Eana se pasa a él
-    await ok200('createTimelineEvents', { worldId, events: [{ title: 'En Eana', date: '1000-Cierzo-2' }] })
     const other = await ok200('createChronology', { worldId, name: 'Varn', calendarId: varn.id })
-    expect((await entries(other.id)).map((e) => e.text)).toEqual(['1 de Enero de 0', '2 de Enero de 0'])
+    await addEvents(other.id, [
+      { title: 'Desde Varn', date: '0-1-1', calendar: 'Cuenta de Varn' },
+      { title: 'En Eana', date: '1000-Cierzo-2' }
+    ])
+    expect((await entries(other.id)).map((e) => e.text)).toEqual(['1 de Enero del año 0', '2 de Enero del año 0'])
     expect(kharum.id).toBeTruthy()
   })
 
   it('cambiar un evento (la fecha, al arrastrarlo; desenlazarlo), borrarlo y deshacerlo', async () => {
     const chronology = await historia()
-    const [boda] = (
-      await ok200('createTimelineEvents', { worldId, events: [{ title: 'Boda', date: '1247-Siega-18' }] })
-    ).events
+    const [boda] = await addEvents(chronology.id, [{ title: 'Boda', date: '1247-Siega-18' }])
     const moved = await ok200('updateTimelineEvent', { eventId: boda.id, date: '1247-Siega-21' })
     expect(moved.date.start).toMatchObject({ year: 1247, day: 21 })
     await ok200('updateTimelineEvent', {
       eventId: boda.id,
       date: { calendarId: eana.id, start: { year: 1247, month: eana.definition.months[9]?.id, day: 22 } }
     })
-    expect((await entries(chronology.id))[0]?.text).toBe('22 de Siega de 1247 RC')
+    expect((await entries(chronology.id))[0]?.text).toBe('22 de Siega del año 1247 RC')
     await fails('updateTimelineEvent', { eventId: boda.id, title: '' }, 'EVENT_NEEDS_TITLE')
     await undo('updateTimelineEvent')
-    expect((await entries(chronology.id))[0]?.text).toBe('21 de Siega de 1247 RC')
+    expect((await entries(chronology.id))[0]?.text).toBe('21 de Siega del año 1247 RC')
     await ok200('deleteTimelineEvent', { eventId: boda.id })
     expect(await entries(chronology.id)).toEqual([])
     await undo('deleteTimelineEvent')
@@ -316,20 +393,16 @@ describe('las cronologías de un mundo (módulo 8)', () => {
       })
       .returning()
     if (!file) throw new Error('sin archivo')
-    const [boda] = (
-      await ok200('createTimelineEvents', {
-        worldId,
-        events: [
-          {
-            title: 'Boda de Ilsa',
-            date: '1247-Siega-18',
-            icon: '💍',
-            description: 'En el Salón de las Velas.',
-            image: { fileId: file.id, x: 50, y: 30 }
-          }
-        ]
-      })
-    ).events
+    const chronology = await historia()
+    const [boda] = await addEvents(chronology.id, [
+      {
+        title: 'Boda de Ilsa',
+        date: '1247-Siega-18',
+        icon: '💍',
+        description: 'En el Salón de las Velas.',
+        image: { fileId: file.id, x: 50, y: 30 }
+      }
+    ])
     const { pageId, event } = await ok200('convertEventToPage', { eventId: boda.id, parentId: parent })
     expect(event).toMatchObject({ title: '', description: '', pageId })
     const page = await ok200('getPage', { pageId })
@@ -337,44 +410,54 @@ describe('las cronologías de un mundo (módulo 8)', () => {
     expect(page.cover).toMatchObject({ fileId: file.id })
     const read = await ok200('readPage', { pageId })
     expect(read.markdown).toContain('En el Salón de las Velas.')
-    const chronology = await historia()
     expect((await entries(chronology.id))[0]).toMatchObject({ title: 'Boda de Ilsa', page: { id: pageId } })
     // La página dice, discreta, que la enlaza un evento (al máster)
     expect((await ok200('getPageLinks', { pageId })).events).toEqual([
-      { id: boda.id, title: 'Boda de Ilsa', text: '18 de Siega de 1247 RC' }
+      { id: boda.id, title: 'Boda de Ilsa', text: '18 de Siega del año 1247 RC' }
     ])
     await undo('convertEventToPage')
     expect((await entries(chronology.id))[0]?.page).toBeUndefined()
   })
 
-  it('los grupos: la lista entera; quitar uno deja sus eventos sin grupo y lo saca de los filtros; se deshace', async () => {
+  it('los grupos, de cada cronología: la lista entera; quitar uno deja sus eventos sin grupo; se deshace', async () => {
+    const chronology = await ok200('createChronology', { worldId, name: 'Corona' })
+    const other = await ok200('createChronology', { worldId, name: 'Otra' })
     let { groups } = await ok200('updateTimelineGroups', {
-      worldId,
+      chronologyId: chronology.id,
       groups: [
         { name: 'La Corona', color: 'wine' },
         { name: 'Magia', color: '#8a6cd1' }
       ]
     })
     const [corona, magia] = groups
-    await ok200('createTimelineEvents', { worldId, events: [{ title: 'Coronación', date: '0', groupId: corona.id }] })
-    const chronology = await ok200('createChronology', { worldId, name: 'Corona', filter: { groups: [corona.id] } })
+    expect(corona).toMatchObject({ chronologyId: chronology.id })
+    await addEvents(chronology.id, [{ title: 'Coronación', date: '0', groupId: corona.id }])
+    // Un grupo de otra cronología no vale
+    await fails(
+      'createTimelineEvents',
+      { chronologyId: other.id, events: [{ title: 'x', date: '0', groupId: corona.id }] },
+      'NOT_FOUND'
+    )
     ;({ groups } = await ok200('updateTimelineGroups', {
-      worldId,
+      chronologyId: chronology.id,
       groups: [{ id: magia.id, name: 'Magia y portentos', color: null }]
     }))
     expect(groups.map((g: { name: string }) => g.name)).toEqual(['Magia y portentos'])
     const [event] = await entries(chronology.id)
     expect(event).toMatchObject({ title: 'Coronación' })
-    expect((await ok200('getChronology', { chronologyId: chronology.id })).chronology.filter.groups).toEqual([])
+    expect(event?.groupId).toBeUndefined()
+    // La otra no tiene grupos
+    expect((await ok200('getChronology', { chronologyId: other.id })).groups).toEqual([])
     await undo('updateTimelineGroups')
-    const back = await ok200('listChronologies', { worldId })
+    const back = await ok200('getChronology', { chronologyId: chronology.id })
     expect(back.groups.map((g: { name: string }) => g.name)).toEqual(['La Corona', 'Magia'])
-    expect(back.chronologies[0].filter.groups).toEqual([corona.id])
+    expect(back.entries[0]).toMatchObject({ groupId: corona.id })
   })
 
   it('las fechas de los eventos están en uso: no se borra su calendario ni se quita su mes; sin fechas, la cronología pasa al principal', async () => {
     const otro = await ok200('createCalendar', { worldId, name: 'Otro', from: 'blank' })
-    await ok200('createTimelineEvents', { worldId, events: [{ title: 'Siega', date: '1250-Siega-1' }] })
+    const reino = await historia()
+    await addEvents(reino.id, [{ title: 'Siega', date: '1250-Siega-1' }])
     await fails(
       'updateCalendar',
       {
@@ -392,7 +475,7 @@ describe('las cronologías de un mundo (módulo 8)', () => {
     await fails('deleteCalendar', { calendarId: eana.id }, 'CALENDAR_IN_USE')
   })
 
-  it('la jugadora: solo las cronologías reveladas y, dentro, lo que sabe su campaña; sin eras ocultas ni escribir', async () => {
+  it('la jugadora: las cronologías de las pestañas que ve y, dentro, lo que sabe su campaña; sin eras ocultas ni escribir', async () => {
     const conocida = await newPage('Puerto Ceniza')
     const secreta = await newPage('La Torre')
     const campos = await newPage('Aldren')
@@ -407,8 +490,9 @@ describe('las cronologías de un mundo (módulo 8)', () => {
     })
     for (const pageId of [conocida, campos])
       await ok200('setKnowledge', { worldId, campaignId: marca, kind: 'page', targetId: pageId, known: true })
+    const chronology = await withPages()
     const { events } = await ok200('createTimelineEvents', {
-      worldId,
+      chronologyId: chronology.id,
       events: [
         { title: 'Visible', date: '1000' },
         { title: 'Oculto', date: '1001', hidden: true },
@@ -419,17 +503,15 @@ describe('las cronologías de un mundo (módulo 8)', () => {
         { title: 'Tras el eclipse', date: '1301' }
       ]
     })
-    const chronology = await historia()
-    // Sin revelar, no la ve ni la encuentra
+    // Sin conocer su página, no la ve ni la encuentra (ni por su pestaña)
     expect((await ok200('listChronologies', { worldId }, ana.cookie)).chronologies).toEqual([])
     await fails('getChronology', { chronologyId: chronology.id }, 'NOT_FOUND', ana.cookie)
-    await ok200('setKnowledge', {
-      worldId,
-      campaignId: marca,
-      kind: 'chronology',
-      targetId: chronology.id,
-      known: true
-    })
+    await fails('getChronology', { tabId: chronology.tabId }, 'NOT_FOUND', ana.cookie)
+    await ok200('setKnowledge', { worldId, campaignId: marca, kind: 'page', targetId: chronology.pageId, known: true })
+    // Con la pestaña oculta, tampoco
+    await ok200('updatePageTab', { tabId: chronology.tabId, hidden: true })
+    await fails('getChronology', { chronologyId: chronology.id }, 'NOT_FOUND', ana.cookie)
+    await ok200('updatePageTab', { tabId: chronology.tabId, hidden: false })
     await ok200('setKnowledge', { worldId, campaignId: marca, kind: 'event', targetId: events[2].id, known: true })
     const seen = await entries(chronology.id, {}, ana.cookie)
     expect(seen.map((e) => (e.field ? `${e.title} · ${e.field}` : e.title))).toEqual([
@@ -454,7 +536,8 @@ describe('las cronologías de un mundo (módulo 8)', () => {
     // No escribe
     for (const [name, input] of [
       ['createChronology', { worldId, name: 'Mía' }],
-      ['createTimelineEvents', { worldId, events: [{ title: 'x', date: '1' }] }],
+      ['createTimelineEvents', { chronologyId: chronology.id, events: [{ title: 'x', date: '1' }] }],
+      ['updateTimelineGroups', { chronologyId: chronology.id, groups: [] }],
       ['updateTimelineEvent', { eventId: events[0].id, title: 'y' }],
       ['deleteTimelineEvent', { eventId: events[0].id }]
     ] as const) {
@@ -485,13 +568,15 @@ describe('las cronologías de un mundo (módulo 8)', () => {
       }
     })
     for (let i = 0; i < pages.length; i += 1000) await conn.db.insert(schema.pages).values(pages.slice(i, i + 1000))
+    const chronology = await withPages()
     const events = Array.from({ length: 2000 }, (_, i) => ({
       worldId,
+      chronologyId: chronology.id,
       title: `Evento ${i}`,
       date: { calendarId: eana.id, start: { year: i - 1000 } }
     }))
     await conn.db.insert(schema.timelineEvents).values(events)
-    return historia()
+    return chronology
   }
 
   it('2.000 eventos y 5.000 páginas con fecha salen todos', async () => {

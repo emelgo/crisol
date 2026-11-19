@@ -300,6 +300,9 @@ export function summaryOf(
         return say('createTableTab', { name: text(details.name), title: text(details.title) })
       if (details.kind === 'scene')
         return say('createSceneTab', { name: text(details.name), title: text(details.title) })
+      // Una de texto, una pizarra, una cronología o un árbol: «la pestaña»; un mapa (o sin tipo, las de antes), «el mapa»
+      if (details.kind && details.kind !== 'map')
+        return say('createAnyTab', { name: text(details.name), title: text(details.title) })
       return say(action, { name: text(details.name), title: text(details.title ?? details.page) })
     case 'updateRandomTable':
       return say('updateRandomTable', { name: text(details.name), title: text(details.title) })
@@ -331,6 +334,13 @@ export function summaryOf(
       if (details.from !== undefined) return say('renameChronology', { from: text(details.from), to: text(details.to) })
       if (details.moved) return say('moveChronology', { name: text(details.name) })
       return say('updateChronology', { name: text(details.name) })
+    // Los árboles genealógicos y organigramas (pestaña tree)
+    case 'createTree':
+      return say('createTree', { name: text(details.name) })
+    case 'updateTree':
+      return say('updateTree', { name: text(details.name), title: text(details.title) })
+    case 'convertTreeNodeToPage':
+      return say('convertTreeNodeToPage', { title: text(details.title) })
     case 'updateTimelineGroups':
       return say('updateTimelineGroups')
     case 'createTimelineEvents': {

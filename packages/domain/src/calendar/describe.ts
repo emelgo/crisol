@@ -20,7 +20,7 @@ import type { CalendarDefinition, DatePrecision, WorldDate } from './definition.
 import { dateForm, formatDate } from './format.ts'
 
 export interface DayDescription {
-  /** «Flora, 18 de Siega de 1250 RC» (sin día, «Siega de 1250 RC») */
+  /** «Flora, 18 de Siega del año 1250 RC» (sin día, «Siega del año 1250 RC») */
   text: string
   /** `1250-Siega-18` */
   form: string

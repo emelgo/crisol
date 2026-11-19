@@ -27,7 +27,7 @@ const OWN = { ...structuredClone(fronteras), id: crypto.randomUUID() }
 
 function renderEditor() {
   const api = fakeApi({ organizations: [ORG], worlds: [WORLD], systems: [OWN] })
-  const router = createAppRouter(createMemoryHistory({ initialEntries: [`/sistemas/${OWN.id}/reglas`] }))
+  const router = createAppRouter(createMemoryHistory({ initialEntries: [`/sistemas/${OWN.id}/reglas/editar`] }))
   render(
     <App
       router={router}

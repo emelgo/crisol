@@ -1,44 +1,15 @@
 /**
- * Las piezas que flotan sobre el grafo de relaciones (módulo 10): la píldora de los modos (abajo en el centro, como la
- * del mapa), el zoom (abajo a la derecha), la leyenda de los trazos (abajo a la izquierda) y la ficha de la página
- * elegida (arriba a la derecha), con «Abrir» y «Centrar aquí»
+ * Las piezas que flotan sobre el grafo de relaciones (módulo 10): el zoom (abajo a la derecha), la leyenda de los trazos
+ * (abajo a la izquierda) y la ficha de la página elegida (arriba a la derecha), con «Abrir» y «Centrar aquí» (en el del
+ * mundo) o «Sus relaciones» (en el de una página: las añade al grafo)
  */
-import type { RelationMode, RelationNode } from '@crisol/contracts'
-import { Crosshair, ExternalLink, GitFork, Minus, Network, Plus, Waypoints, X } from 'lucide-react'
+import type { RelationNode } from '@crisol/contracts'
+import { Crosshair, ExternalLink, Minus, Plus, X } from 'lucide-react'
 import { type CSSProperties, useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { NodeGlyphBox } from './glyph.tsx'
 import type { WordsRow } from './model.ts'
 import styles from './relations.module.css'
-
-const MODE_ICONS = { links: Waypoints, family: GitFork, org: Network } as const
-
-/** Los modos que tiene la página, en una píldora de cristal (solo los que tiene) */
-export function ModePill({
-  modes,
-  value,
-  onChange
-}: {
-  modes: readonly RelationMode[]
-  value: RelationMode
-  onChange: (mode: RelationMode) => void
-}) {
-  const { t } = useTranslation()
-  if (modes.length < 2) return null
-  return (
-    <div className={styles.pill} role="toolbar" aria-label={t('relations.modes.label')} data-tour="relaciones-modos">
-      {modes.map((mode) => {
-        const Icon = MODE_ICONS[mode]
-        return (
-          <button key={mode} type="button" aria-pressed={value === mode} onClick={() => onChange(mode)}>
-            <Icon size={16} aria-hidden="true" />
-            {t(`relations.modes.${mode}`)}
-          </button>
-        )
-      })}
-    </div>
-  )
-}
 
 /** − 100 % +; pulsar el tanto por ciento lo encuadra todo */
 export function ZoomControls({
@@ -141,8 +112,8 @@ export function useSelection() {
 }
 
 /**
- * La ficha de la página elegida: su icono, su nombre, su plantilla y su primer campo, sus relaciones en palabras y
- * «Abrir» y «Centrar aquí» (Escape la cierra: useSelection)
+ * La ficha de la página elegida: su icono, su nombre, su plantilla y su primer campo, sus relaciones en palabras,
+ * «Abrir» y «Centrar aquí» o «Sus relaciones» (Escape la cierra: useSelection)
  */
 export function NodeCard({
   node,
@@ -151,7 +122,8 @@ export function NodeCard({
   rows,
   primary,
   onOpen,
-  onCenter,
+  onCenter = null,
+  onExpand = null,
   onClose,
   autoFocus = false
 }: {
@@ -159,10 +131,13 @@ export function NodeCard({
   color: string
   meta: string
   rows: readonly WordsRow[]
-  /** El botón principal: «Centrar aquí» en el escritorio; en el móvil, «Abrir» */
-  primary: 'center' | 'open'
+  /** El botón principal: «Abrir», «Centrar aquí» o «Sus relaciones» */
+  primary: 'center' | 'open' | 'expand'
   onOpen: () => void
-  onCenter: (() => void) | null
+  /** Llevar la vista a ella (el grafo del mundo) */
+  onCenter?: (() => void) | null
+  /** Añadir sus relaciones al grafo (el de una página; null si ya están) */
+  onExpand?: (() => void) | null
   onClose: () => void
   /** Elegida con el teclado: el foco, a la ficha */
   autoFocus?: boolean
@@ -178,6 +153,7 @@ export function NodeCard({
       tabIndex={-1}
       className={styles.card}
       aria-label={node.title}
+      data-node-card=""
       style={{ '--node-color': color } as CSSProperties}
     >
       <header className={styles.cardHead}>
@@ -192,6 +168,7 @@ export function NodeCard({
           aria-label={t('relations.close')}
           title={t('relations.close')}
           onClick={onClose}
+          data-card-close=""
         >
           <X size={16} aria-hidden="true" />
         </button>
@@ -217,45 +194,14 @@ export function NodeCard({
             {t('relations.centerHere')}
           </button>
         )}
+        {onExpand && (
+          <button type="button" className={primary === 'expand' ? styles.primary : styles.secondary} onClick={onExpand}>
+            <Plus size={16} aria-hidden="true" />
+            {t('relations.expandHere')}
+          </button>
+        )}
       </div>
     </section>
-  )
-}
-
-/** Un grupo de botones de los que solo vale uno (la profundidad, las generaciones) */
-export function Segmented<T extends string | number>({
-  label,
-  options,
-  value,
-  text,
-  name,
-  onChange
-}: {
-  label: string
-  options: readonly T[]
-  value: T
-  text: (option: T) => string
-  /** El nombre de cada opción para el lector de pantalla */
-  name: (option: T) => string
-  onChange: (option: T) => void
-}) {
-  return (
-    <div className={styles.segmentedField}>
-      <span aria-hidden="true">{label}</span>
-      <div className={styles.segmented} role="toolbar" aria-label={label}>
-        {options.map((option) => (
-          <button
-            key={option}
-            type="button"
-            aria-pressed={value === option}
-            aria-label={name(option)}
-            onClick={() => onChange(option)}
-          >
-            {text(option)}
-          </button>
-        ))}
-      </div>
-    </div>
   )
 }
 

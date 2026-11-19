@@ -1,7 +1,8 @@
 /**
- * Los ajustes de una cronología, en su cabecera (decisión 4 de Enrique: cada una con su calendario y su filtro): su
- * nombre, su calendario, qué páginas con fecha salen (ninguna, todas o las de unas plantillas o etiquetas) y de qué
- * grupos son sus eventos; y los grupos del mundo (su nombre y su color, o quitarlos). Cada cambio se guarda al momento
+ * Los ajustes de una cronología, junto a sus pestañas: su calendario, si junta además las páginas con fecha del mundo
+ * (por defecto no: solo sus eventos, ADR-0032; o las de unas plantillas o etiquetas) y sus grupos (su color, o
+ * quitarlos; se crean en Meses o al hacer un evento). Su nombre es el de su pestaña (ADR-0031). Cada cambio se guarda al
+ * momento
  */
 import { type CalendarView, type ChronologyView, type TimelineGroupView, WORLD_COLORS } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -43,7 +44,6 @@ export function ChronologySettings({
   const close = useCallback(() => setOpen(false), [])
   useDismiss(open, close, box, button)
   const id = useId()
-  const [name, setName] = useState(chronology.name)
   const templates = useQuery({
     queryKey: ['templates', organizationId],
     queryFn: () => api.call('listTemplates', organizationId ? { organizationId } : {}),
@@ -54,10 +54,12 @@ export function ChronologySettings({
     queryFn: () => api.call('listAccountTags', organizationId ? { organizationId } : {}),
     enabled: open
   })
-  const refresh = () => {
-    void client.invalidateQueries({ queryKey: ['chronology'] })
-    void client.invalidateQueries({ queryKey: ['chronologies', worldId] })
-  }
+  // Espera a que llegue lo nuevo: mientras, se ve lo que se acaba de elegir (sin volver atrás un momento)
+  const refresh = () =>
+    Promise.all([
+      client.invalidateQueries({ queryKey: ['chronology'] }),
+      client.invalidateQueries({ queryKey: ['chronologies', worldId] })
+    ])
   const update = useMutation({
     mutationFn: (input: Omit<ActionInput<'updateChronology'>, 'chronologyId'>) =>
       api.call('updateChronology', { chronologyId: chronology.id, ...input }),
@@ -66,11 +68,14 @@ export function ChronologySettings({
   })
   const updateGroups = useMutation({
     mutationFn: (next: Array<{ id?: string; name: string; color: TimelineGroupView['color'] }>) =>
-      api.call('updateTimelineGroups', { worldId, groups: next }),
+      api.call('updateTimelineGroups', { chronologyId: chronology.id, groups: next }),
     onSuccess: refresh,
     onError: (error) => announce(errorText(error))
   })
-  const filter = chronology.filter
+  // Lo elegido se ve al momento, mientras se guarda
+  const pending = update.isPending ? update.variables : undefined
+  const filter = { ...chronology.filter, ...pending?.filter }
+  const calendarId = pending && 'calendarId' in pending ? pending.calendarId : chronology.calendarId
   const toggle = (list: readonly string[], value: string) =>
     list.includes(value) ? list.filter((each) => each !== value) : [...list, value]
   const primary = calendars.find((c) => c.primary)
@@ -106,26 +111,10 @@ export function ChronologySettings({
           aria-label={t('chronologies.settings.title')}
         >
           <div className={styles.settingsSection}>
-            <label htmlFor={`${id}-name`}>{t('chronologies.name')}</label>
-            <input
-              id={`${id}-name`}
-              value={name}
-              maxLength={60}
-              onChange={(event) => setName(event.currentTarget.value)}
-              onBlur={() => {
-                if (name.trim() && name.trim() !== chronology.name) update.mutate({ name: name.trim() })
-                else setName(chronology.name)
-              }}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') event.currentTarget.blur()
-              }}
-            />
-          </div>
-          <div className={styles.settingsSection}>
             <label htmlFor={`${id}-calendar`}>{t('chronologies.calendar')}</label>
             <select
               id={`${id}-calendar`}
-              value={chronology.calendarId ?? ''}
+              value={calendarId ?? ''}
               onChange={(event) => update.mutate({ calendarId: event.currentTarget.value || null })}
             >
               <option value="">{t('chronologies.primaryCalendar', { name: primary?.name ?? '' })}</option>
@@ -187,28 +176,10 @@ export function ChronologySettings({
           <fieldset className={styles.settingsSection}>
             <legend>{t('chronologies.settings.groups')}</legend>
             {groups.length === 0 && <p className={styles.settingsNote}>{t('chronologies.settings.noGroups')}</p>}
-            {groups.length > 0 && (
-              <p className={styles.settingsHint}>
-                {filter.groups.length === 0
-                  ? t('chronologies.settings.allGroups')
-                  : t('chronologies.settings.someGroups')}
-              </p>
-            )}
             <ul className={styles.groupList}>
               {groups.map((group) => (
                 <li key={group.id}>
-                  <label className={styles.check}>
-                    <input
-                      type="checkbox"
-                      checked={filter.groups.length === 0 || filter.groups.includes(group.id)}
-                      onChange={() => {
-                        const all = filter.groups.length === 0 ? groups.map((g) => g.id) : filter.groups
-                        const next = toggle(all, group.id)
-                        update.mutate({ filter: { groups: next.length === groups.length ? [] : next } })
-                      }}
-                    />
-                    {group.name}
-                  </label>
+                  <span className={styles.groupName}>{group.name}</span>
                   <select
                     aria-label={t('chronologies.settings.groupColor', { name: group.name })}
                     value={group.color ?? ''}

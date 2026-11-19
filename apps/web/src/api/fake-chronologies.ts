@@ -1,6 +1,6 @@
 /**
- * Las cronologías en la API en memoria de las pruebas (módulo 8): como el servidor, con el dominio para juntar los
- * eventos y las páginas con fecha. Lo de los jugadores (lo que ve cada campaña) lo prueba el servidor
+ * Las cronologías en la API en memoria de las pruebas (módulo 8): como el servidor, con el dominio para juntar sus
+ * eventos (cada uno de una cronología: ADR-0032) y las páginas con fecha. Lo de los jugadores lo prueba el servidor
  */
 import type {
   CalendarView,
@@ -28,6 +28,7 @@ import { type ActionInput, type ActionOutput, ApiError } from './client.ts'
 type Names =
   | 'listChronologies'
   | 'getChronology'
+  | 'listCalendarEntries'
   | 'createChronology'
   | 'updateChronology'
   | 'deleteChronology'
@@ -48,7 +49,7 @@ export interface FakeDatedPage {
   cover?: { fileId: string; x: number; y: number; zoom?: number } | null
 }
 
-/** Eventos de partida para una prueba */
+/** Eventos de partida para una prueba (sin chronologyId, de la primera cronología de su mundo) */
 export type FakeEvent = Partial<Omit<TimelineEventView, 'date'>> & { worldId: string; title: string; date: DateValue }
 
 type ChronologyRow = ChronologyView & { position: string }
@@ -65,9 +66,20 @@ export function fakeChronologies(options: {
     icon?: string | null
     cover?: { fileId: string; x: number; y: number } | null
   }) => string
+  /** Pone una pestaña de cronología en una página (la de la API en memoria) y devuelve su id (ADR-0031) */
+  addTab?: (pageId: string, name: string) => string
+  /** Quita su pestaña al borrar una cronología */
+  removeTab?: (tabId: string) => void
   events?: FakeEvent[]
   chronologies?: Array<Partial<ChronologyView> & { worldId: string; name: string }>
-  groups?: Array<{ id?: string; worldId: string; name: string; color?: TimelineGroupView['color'] }>
+  /** Sin chronologyId, de la primera cronología de su mundo */
+  groups?: Array<{
+    id?: string
+    worldId: string
+    chronologyId?: string
+    name: string
+    color?: TimelineGroupView['color']
+  }>
 }) {
   let last: string | null = null
   const chronologies: ChronologyRow[] = (options.chronologies ?? []).map((c) => {
@@ -76,6 +88,9 @@ export function fakeChronologies(options: {
       id: c.id ?? crypto.randomUUID(),
       worldId: c.worldId,
       name: c.name,
+      // Cada una, una pestaña de una página (sin página, una nueva con su nombre: la pestaña la pone fake.ts)
+      tabId: c.tabId ?? crypto.randomUUID(),
+      pageId: c.pageId ?? options.createPage({ worldId: c.worldId, title: c.name, parentId: null }),
       calendarId: c.calendarId ?? null,
       filter: { ...DEFAULT_CHRONOLOGY_FILTER, ...(c.filter ?? {}) },
       version: 1,
@@ -83,11 +98,13 @@ export function fakeChronologies(options: {
     }
   })
   last = null
+  const firstOf = (worldId: string) => chronologies.find((c) => c.worldId === worldId)?.id ?? ''
   const groups: GroupRow[] = (options.groups ?? []).map((g) => {
     last = keyBetween(last, null)
     return {
       id: g.id ?? crypto.randomUUID(),
       worldId: g.worldId,
+      chronologyId: g.chronologyId ?? firstOf(g.worldId),
       name: g.name,
       color: g.color ?? null,
       version: 1,
@@ -97,6 +114,7 @@ export function fakeChronologies(options: {
   const events: TimelineEventView[] = (options.events ?? []).map((e) => ({
     id: e.id ?? crypto.randomUUID(),
     worldId: e.worldId,
+    chronologyId: e.chronologyId ?? firstOf(e.worldId),
     title: e.title,
     date: e.date,
     color: e.color ?? null,
@@ -111,11 +129,13 @@ export function fakeChronologies(options: {
 
   const byPosition = <T extends { position: string }>(rows: T[]) =>
     [...rows].sort((a, b) => (a.position < b.position ? -1 : a.position > b.position ? 1 : 0))
-  const groupsOf = (worldId: string) => byPosition(groups.filter((g) => g.worldId === worldId))
+  /** Los de una cronología (o, con worldId, los de todas las de un mundo) */
+  const groupsOf = (chronologyId: string) => byPosition(groups.filter((g) => g.chronologyId === chronologyId))
+  const worldGroups = (worldId: string) => byPosition(groups.filter((g) => g.worldId === worldId))
   const view = ({ position: _, ...row }: ChronologyRow): ChronologyView => structuredClone(row)
   const groupView = ({ position: _, worldId: __, ...row }: GroupRow): TimelineGroupView => ({ ...row })
   const find = (id: string) => {
-    const row = chronologies.find((c) => c.id === id)
+    const row = chronologies.find((c) => c.id === id || c.tabId === id)
     if (!row) throw new ApiError('NOT_FOUND', 404)
     return row
   }
@@ -124,13 +144,21 @@ export function fakeChronologies(options: {
     if (!row) throw new ApiError('NOT_FOUND', 404)
     return row
   }
+  /** Al borrar una cronología, sus eventos y sus grupos se van con ella */
+  const dropContents = (chronologyId: string) => {
+    for (const list of [events, groups] as Array<Array<{ chronologyId: string }>>)
+      for (let i = list.length - 1; i >= 0; i--) if (list[i]?.chronologyId === chronologyId) list.splice(i, 1)
+  }
   const calendarsOf = (worldId: string) => options.calendars().filter((c) => c.worldId === worldId)
-  const calendarOf = (row: ChronologyRow) => {
+  const calendarOf = (row: Pick<ChronologyRow, 'worldId' | 'calendarId'>) => {
     const all = calendarsOf(row.worldId)
     return all.find((c) => c.id === row.calendarId) ?? all.find((c) => c.primary) ?? null
   }
 
-  const entriesOf = (row: ChronologyRow): { entries: ChronologyEntryView[]; outside: number } => {
+  /** Con id, los eventos de esa cronología; sin él (la vista grande de un calendario), los de todas */
+  const entriesOf = (
+    row: Pick<ChronologyRow, 'worldId' | 'calendarId' | 'filter'> & { id?: string }
+  ): { entries: ChronologyEntryView[]; outside: number } => {
     const calendar = calendarOf(row)
     if (!calendar) return { entries: [], outside: 0 }
     const worldCalendars = calendarsOf(row.worldId).map((c) => ({
@@ -145,7 +173,7 @@ export function fakeChronologies(options: {
       calendarId: calendar.id,
       filter: row.filter as ChronologyFilter,
       events: events
-        .filter((e) => e.worldId === row.worldId)
+        .filter((e) => e.worldId === row.worldId && (!row.id || e.chronologyId === row.id))
         .map((e) => {
           const page = e.pageId ? titleOf.get(e.pageId) : undefined
           return { ...e, page: page ? { id: page.id, title: page.title, icon: page.icon } : null }
@@ -192,6 +220,7 @@ export function fakeChronologies(options: {
           text: formatDateValue(calendar.definition, value),
           form: dateValueForm(calendar.definition, value),
           ...(entry.eventId ? { eventId: entry.eventId } : {}),
+          ...(entry.chronologyId ? { chronologyId: entry.chronologyId } : {}),
           ...(entry.pageId ? { pageId: entry.pageId } : {}),
           ...(entry.untitled ? { untitled: true as const } : {}),
           ...(entry.field ? { field: entry.field } : {}),
@@ -235,16 +264,17 @@ export function fakeChronologies(options: {
     if (!parsed.ok) throw new ApiError('BAD_DATE', 400)
     return { calendarId: row.id, ...parsed.value }
   }
-  const groupNamed = (worldId: string, name: string) => {
-    const found = groupsOf(worldId).find((g) => g.name.toLowerCase() === name.toLowerCase())
+  const groupNamed = (worldId: string, chronologyId: string, name: string) => {
+    const found = groupsOf(chronologyId).find((g) => g.name.toLowerCase() === name.toLowerCase())
     if (found) return found.id
     const row: GroupRow = {
       id: crypto.randomUUID(),
       worldId,
+      chronologyId,
       name,
-      color: WORLD_COLORS[groupsOf(worldId).length % WORLD_COLORS.length] ?? null,
+      color: WORLD_COLORS[groupsOf(chronologyId).length % WORLD_COLORS.length] ?? null,
       version: 1,
-      position: keyBetween(groupsOf(worldId).at(-1)?.position ?? null, null)
+      position: keyBetween(groupsOf(chronologyId).at(-1)?.position ?? null, null)
     }
     groups.push(row)
     return row.id
@@ -264,8 +294,16 @@ export function fakeChronologies(options: {
     if (input.icon !== undefined) event.icon = input.icon
     if (input.description !== undefined) event.description = input.description
     if (input.hidden !== undefined) event.hidden = input.hidden
-    if (input.groupId !== undefined) event.groupId = input.groupId
-    else if (input.group !== undefined) event.groupId = groupNamed(worldId, input.group)
+    if (input.chronologyId !== undefined && input.chronologyId !== event.chronologyId) {
+      find(input.chronologyId)
+      event.chronologyId = input.chronologyId
+      event.groupId = null
+    }
+    if (input.groupId !== undefined) {
+      if (input.groupId && !groupsOf(event.chronologyId).some((g) => g.id === input.groupId))
+        throw new ApiError('NOT_FOUND', 404)
+      event.groupId = input.groupId
+    } else if (input.group !== undefined) event.groupId = groupNamed(worldId, event.chronologyId, input.group)
     if (input.pageId !== undefined) event.pageId = input.pageId
     if (input.newPage)
       event.pageId = options.createPage({
@@ -285,24 +323,36 @@ export function fakeChronologies(options: {
           ...view(row),
           calendarName: calendarOf(row)?.name ?? null,
           entries: entries.length,
-          span: first && end ? { from: first.text, to: end.text } : null
+          span: first && end ? { from: first.text, to: end.text } : null,
+          groups: groupsOf(row.id).map(groupView)
         }
-      }),
-      groups: groupsOf(worldId).map(groupView)
+      })
     }),
-    getChronology: ({ chronologyId }) => {
-      const row = find(chronologyId)
+    getChronology: ({ chronologyId, tabId }) => {
+      const row = find(chronologyId ?? tabId ?? '')
       const calendar = calendarOf(row)
       if (!calendar) throw new ApiError('NO_CALENDAR', 400)
       const { position: _, ...plain } = calendar
-      return { chronology: view(row), calendar: plain, groups: groupsOf(row.worldId).map(groupView), ...entriesOf(row) }
+      return { chronology: view(row), calendar: plain, groups: groupsOf(row.id).map(groupView), ...entriesOf(row) }
     },
-    createChronology: ({ worldId, name, calendarId, filter }) => {
+    // La vista grande de un calendario: los eventos de todas las cronologías y las páginas con fecha
+    listCalendarEntries: ({ calendarId }) => {
+      const calendar = options.calendars().find((c) => c.id === calendarId)
+      if (!calendar) throw new ApiError('NOT_FOUND', 404)
+      const all = { worldId: calendar.worldId, calendarId, filter: { ...DEFAULT_CHRONOLOGY_FILTER, pages: true } }
+      return { groups: worldGroups(calendar.worldId).map(groupView), ...entriesOf(all) }
+    },
+    createChronology: ({ worldId, name, pageId, parentId, calendarId, filter }) => {
       if (calendarsOf(worldId).length === 0) throw new ApiError('NO_CALENDAR', 400)
+      // En una página que ya hay, una pestaña más; si no, una página nueva con su pestaña «Cronología»
+      const page = pageId ?? options.createPage({ worldId, title: name, parentId: parentId ?? null })
+      const tabId = options.addTab?.(page, pageId ? name : 'Cronología') ?? crypto.randomUUID()
       const row: ChronologyRow = {
         id: crypto.randomUUID(),
         worldId,
         name,
+        tabId,
+        pageId: page,
         calendarId: calendarId ?? null,
         filter: { ...DEFAULT_CHRONOLOGY_FILTER, ...(filter ?? {}) },
         version: 1,
@@ -314,27 +364,25 @@ export function fakeChronologies(options: {
       chronologies.push(row)
       return view(row)
     },
-    updateChronology: ({ chronologyId, name, calendarId, filter, after }) => {
+    updateChronology: ({ chronologyId, name, calendarId, filter }) => {
       const row = find(chronologyId)
       if (name !== undefined) row.name = name
       if (calendarId !== undefined) row.calendarId = calendarId
       if (filter !== undefined) row.filter = { ...row.filter, ...filter }
-      if (after !== undefined) {
-        const others = byPosition(chronologies.filter((c) => c.worldId === row.worldId && c.id !== row.id))
-        const index = after === null ? -1 : others.findIndex((c) => c.id === after)
-        row.position = keyBetween(others[index]?.position ?? null, others[index + 1]?.position ?? null)
-      }
       row.version++
       return view(row)
     },
     deleteChronology: ({ chronologyId }) => {
       const row = find(chronologyId)
       chronologies.splice(chronologies.indexOf(row), 1)
+      dropContents(row.id)
+      options.removeTab?.(row.tabId)
       return { id: row.id }
     },
-    updateTimelineGroups: ({ worldId, groups: wanted }) => {
+    updateTimelineGroups: ({ chronologyId, groups: wanted }) => {
+      const { worldId } = find(chronologyId)
       const kept = new Set(wanted.flatMap((g) => (g.id ? [g.id] : [])))
-      for (const group of groupsOf(worldId))
+      for (const group of groupsOf(chronologyId))
         if (!kept.has(group.id)) {
           groups.splice(groups.indexOf(group), 1)
           for (const event of events) if (event.groupId === group.id) event.groupId = null
@@ -349,19 +397,22 @@ export function fakeChronologies(options: {
           groups.push({
             id: crypto.randomUUID(),
             worldId,
+            chronologyId,
             name: group.name,
             color: group.color,
             version: 1,
             position: previous
           })
       }
-      return { groups: groupsOf(worldId).map(groupView) }
+      return { groups: groupsOf(chronologyId).map(groupView) }
     },
-    createTimelineEvents: ({ worldId, events: wanted }) => {
+    createTimelineEvents: ({ chronologyId, events: wanted }) => {
+      const { worldId } = find(chronologyId)
       const created = wanted.map((input) => {
         const event: TimelineEventView = {
           id: crypto.randomUUID(),
           worldId,
+          chronologyId,
           title: '',
           date: dateFrom(worldId, input.date, input.calendar),
           color: null,
@@ -403,5 +454,26 @@ export function fakeChronologies(options: {
       return { pageId, event: structuredClone(event) }
     }
   }
-  return { handlers, events, chronologies, groups }
+  /** «Pestaña nueva» de tipo cronología: con el calendario principal y todo el mundo */
+  const attach = (tab: { id: string; pageId: string; name: string }, worldId: string) => {
+    chronologies.push({
+      id: crypto.randomUUID(),
+      worldId,
+      name: tab.name,
+      tabId: tab.id,
+      pageId: tab.pageId,
+      calendarId: null,
+      filter: { ...DEFAULT_CHRONOLOGY_FILTER },
+      version: 1,
+      position: keyBetween(byPosition(chronologies).at(-1)?.position ?? null, null)
+    })
+  }
+  /** Al quitar su pestaña, la cronología se va con ella (y sus eventos y sus grupos) */
+  const detach = (tabId: string) => {
+    const row = chronologies.find((c) => c.tabId === tabId)
+    if (!row) return
+    chronologies.splice(chronologies.indexOf(row), 1)
+    dropContents(row.id)
+  }
+  return { handlers, events, chronologies, groups, attach, detach }
 }

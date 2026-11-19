@@ -1,32 +1,32 @@
 /**
- * El editor de un calendario, a pantalla entera (lienzo aprobado, pantalla 2; decisión 3 de Enrique): a la izquierda
- * las secciones con sus problemas y el año en cifras; en el centro, la columna que se desplaza dentro de su marco con
- * todas las secciones y, al pie, «Guardar» y «Cancelar» cuando hay cambios; a la derecha, la vista previa del mes, que
- * cambia al momento. Se guarda entero (con la versión que se leyó); con problemas, «Guardar» lleva al primero
+ * El editor de un calendario, por fases (ajustes tras los módulos, bloque C; como Reglas de un sistema): con el
+ * esqueleto de las pantallas, el título sobre la columna y «Ver calendario» a su derecha; a la izquierda, las fases con
+ * sus avisos (General, Semana, Meses, Días señalados, Días de más, Estaciones, Lunas, Eras y la correspondencia con el
+ * principal); en el centro, la fase elegida (va en la URL, ?fase=), con la anterior y la siguiente al pie y, cuando hay
+ * cambios, «Guardar» y «Cancelar» abajo; a la derecha, el año en cifras y los problemas, cada uno con «Ir a…». Se guarda
+ * entero (con la versión que se leyó); con problemas, «Guardar» lleva al primero. Salir con cambios pregunta
  */
 import type { CalendarView } from '@crisol/contracts'
-import {
-  type CalendarDefinition,
-  type CalendarProblem,
-  type CalendarSection,
-  validateCalendar,
-  yearLength
-} from '@crisol/domain'
+import { type CalendarDefinition, type CalendarProblem, type CalendarSection, validateCalendar } from '@crisol/domain'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { getRouteApi, Link, Navigate, useBlocker } from '@tanstack/react-router'
+import { getRouteApi, Link, Navigate, useBlocker, useNavigate } from '@tanstack/react-router'
 import {
   ArrowLeftRight,
   CalendarDays,
   CalendarRange,
   ChevronLeft,
+  ChevronRight,
+  Eye,
   Hourglass,
   Leaf,
+  type LucideIcon,
   Moon,
   Repeat,
   SlidersHorizontal,
+  Sparkles,
   TriangleAlert
 } from 'lucide-react'
-import { type ReactNode, useDeferredValue, useEffect, useId, useMemo, useRef, useState } from 'react'
+import { useDeferredValue, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
@@ -39,10 +39,11 @@ import dialogStyles from '../components/dialog.module.css'
 import form from '../components/form.module.css'
 import { failed, LoadError } from '../components/load-error.tsx'
 import { Modal } from '../components/modal.tsx'
-import { PageTitle } from '../components/page-title.tsx'
+import { Screen } from '../components/screen.tsx'
 import { Tour } from '../components/tour.tsx'
 import styles from './editor.module.css'
-import { MonthPreview } from './preview.tsx'
+import { CalendarFacts } from './facts.tsx'
+import { useProblemText } from './problems.ts'
 import {
   type Change,
   CorrespondenceSection,
@@ -51,16 +52,39 @@ import {
   LeapSection,
   MonthsSection,
   MoonsSection,
+  NamedDaysSection,
   SeasonsSection,
   Section,
   WeekSection
 } from './sections.tsx'
+import { YearStrip } from './year-strip.tsx'
 
-const route = getRouteApi('/mundos/$worldId/calendarios/$calendarId')
+const route = getRouteApi('/mundos/$worldId/calendarios/$calendarId/editar')
+
+/** Las fases, en su orden: su id en la URL, su sección de los problemas (los días señalados no tienen) y su título */
+export const PHASES = [
+  { id: 'general', section: 'general', title: 'general', icon: SlidersHorizontal },
+  { id: 'semana', section: 'week', title: 'week', icon: CalendarDays },
+  { id: 'meses', section: 'months', title: 'months', icon: CalendarRange },
+  { id: 'dias-senalados', section: null, title: 'namedDays', icon: Sparkles },
+  { id: 'dias-de-mas', section: 'leap', title: 'leap', icon: Repeat },
+  { id: 'estaciones', section: 'seasons', title: 'seasons', icon: Leaf },
+  { id: 'lunas', section: 'moons', title: 'moons', icon: Moon },
+  { id: 'eras', section: 'eras', title: 'eras', icon: Hourglass },
+  { id: 'correspondencia', section: 'correspondence', title: 'correspondence', icon: ArrowLeftRight }
+] as const satisfies ReadonlyArray<{
+  id: string
+  section: CalendarSection | null
+  title: string
+  icon: LucideIcon
+}>
+
+type Phase = (typeof PHASES)[number]
 
 export function CalendarEditorScreen() {
   const { t } = useTranslation()
   const { worldId, calendarId } = route.useParams()
+  const { fase } = route.useSearch()
   const api = useApi()
   const { account, pending } = useAccounts().useAccount()
   const calendars = useQuery({
@@ -75,50 +99,50 @@ export function CalendarEditorScreen() {
   const calendar = calendars.data.calendars.find((c) => c.id === calendarId)
   if (!calendar)
     return (
-      <div className={styles.missing}>
-        <PageTitle>{t('calendars.notFound')}</PageTitle>
+      <Screen title={t('calendars.notFound')}>
         <Link to="/mundos/$worldId/calendarios" params={{ worldId }}>
           {t('calendars.title')}
         </Link>
-      </div>
+      </Screen>
     )
   const primary = calendars.data.calendars.find((c) => c.primary && c.id !== calendar.id) ?? null
-  // Al guardar, el editor sigue donde estaba (la sección y el desplazamiento); lo de otra pestaña entra si no hay cambios
-  return <Editor key={calendar.id} worldId={worldId} calendar={calendar} primary={primary} />
+  // Al guardar, el editor sigue donde estaba; lo de otra pestaña entra si no hay cambios
+  return <Editor key={calendar.id} worldId={worldId} calendar={calendar} primary={primary} asked={fase ?? null} />
 }
-
-type SectionEntry = { id: CalendarSection; icon: ReactNode; title: string }
 
 function Editor({
   worldId,
   calendar: current,
-  primary
+  primary,
+  asked
 }: {
   worldId: string
   calendar: CalendarView
   primary: CalendarView | null
+  /** La fase de la URL (sin ella, o si no la tiene este calendario, General) */
+  asked: string | null
 }) {
   const { t } = useTranslation()
   const api = useApi()
   const client = useQueryClient()
+  const navigate = useNavigate()
   const announce = useAnnounce()
   const errorText = useErrorText()
+  const problemText = useProblemText()
   // Lo guardado con lo que se compara (y su versión, la que se manda al guardar)
   const [calendar, setCalendar] = useState(current)
   const [draft, setDraft] = useState<CalendarDefinition>(current.definition)
   const [name, setName] = useState(current.name)
-  const [followMonth, setFollowMonth] = useState<string | null>(null)
-  const [active, setActive] = useState<CalendarSection>('general')
-  const column = useRef<HTMLDivElement>(null)
-  // Mientras dura el desplazamiento pedido desde la izquierda, la sección marcada es la pedida
-  const pinned = useRef(0)
+  const heading = useRef<HTMLHeadingElement>(null)
+  // Al cambiar de fase: el foco, a su título o al primer campo con problema
+  const focusOnPhase = useRef<'heading' | 'problem' | null>(null)
   const change: Change = (fn) =>
     setDraft((current) => {
       const next = structuredClone(current)
       fn(next)
       return next
     })
-  // Validar y la vista previa van un paso por detrás de lo que se escribe: no frenan cada tecla
+  // Validar y el resumen van un paso por detrás de lo que se escribe: no frenan cada tecla
   const deferred = useDeferredValue(draft)
   const problems = useMemo<CalendarProblem[]>(() => {
     const anchor = deferred.correspondence ? { anchor: primary?.definition ?? null } : {}
@@ -132,7 +156,7 @@ function Editor({
       })
     return found
   }, [deferred, primary, name, t])
-  // Los meses, los bisiestos y la semana tienen que estar bien para calcular días
+  // Los meses, los días de más y la semana tienen que estar bien para calcular días
   const computable = !problems.some((p) => p.section === 'months' || p.section === 'leap' || p.section === 'week')
   const saved = useMemo(() => JSON.stringify(calendar.definition), [calendar.definition])
   const dirty = name !== calendar.name || JSON.stringify(draft) !== saved
@@ -167,174 +191,183 @@ function Editor({
     onError: (error) => announce(errorText(error))
   })
 
-  const sections: SectionEntry[] = [
-    { id: 'general', icon: <SlidersHorizontal size={16} />, title: t('calendars.editor.general') },
-    { id: 'week', icon: <CalendarDays size={16} />, title: t('calendars.editor.week') },
-    { id: 'months', icon: <CalendarRange size={16} />, title: t('calendars.editor.months') },
-    { id: 'leap', icon: <Repeat size={16} />, title: t('calendars.editor.leap') },
-    { id: 'seasons', icon: <Leaf size={16} />, title: t('calendars.editor.seasons') },
-    { id: 'moons', icon: <Moon size={16} />, title: t('calendars.editor.moons') },
-    { id: 'eras', icon: <Hourglass size={16} />, title: t('calendars.editor.eras') },
-    ...(primary && !calendar.primary
-      ? [
-          {
-            id: 'correspondence' as const,
-            icon: <ArrowLeftRight size={16} />,
-            title: t('calendars.editor.correspondence')
-          }
-        ]
-      : [])
-  ]
-  const countOf = (id: CalendarSection) => problems.filter((p) => p.section === id).length
+  const phases: Phase[] = PHASES.filter((p) => p.id !== 'correspondencia' || (primary !== null && !calendar.primary))
+  const phase = phases.find((p) => p.id === asked) ?? phases[0] ?? PHASES[0]
+  const at = phases.indexOf(phase)
+  const previous = phases[at - 1]
+  const next = phases[at + 1]
+  const titleOf = (p: Phase) => t(`calendars.editor.${p.title}`)
+  const phaseOf = (section: CalendarSection) => phases.find((p) => p.section === section) ?? phases[0] ?? PHASES[0]
+  const countOf = (p: Phase) => (p.section ? problems.filter((problem) => problem.section === p.section).length : 0)
+  const own = phase.section ? problems.filter((p) => p.section === phase.section) : []
   const first = problems[0]
-  const firstTitle = first ? (sections.find((s) => s.id === first.section)?.title ?? '') : ''
 
-  /** Lleva a una sección: arriba en la columna y con el foco en su título */
-  const goTo = (id: CalendarSection, focusProblem = false) => {
-    const section = column.current?.querySelector<HTMLElement>(`[data-section="${id}"]`)
-    if (!section) return
-    pinned.current = Date.now() + 900
-    section.scrollIntoView({ block: 'start', behavior: 'smooth' })
-    const target = focusProblem ? section.querySelector<HTMLElement>('[aria-invalid="true"]') : null
-    ;(target ?? section.querySelector<HTMLElement>('h2'))?.focus({ preventScroll: true })
-    setActive(id)
+  /** Abre una fase (en la URL): el foco, a su título o, si se va a un problema, al primer campo que lo tiene */
+  const openPhase = (target: Phase, focus: 'heading' | 'problem' = 'heading') => {
+    focusOnPhase.current = focus
+    if (target.id === phase.id) return focusPhase()
+    void navigate({
+      to: '/mundos/$worldId/calendarios/$calendarId/editar',
+      params: { worldId, calendarId: calendar.id },
+      search: target.id === 'general' ? {} : { fase: target.id }
+    })
   }
-
-  // La sección que se ve, marcada en la lista de la izquierda
-  useEffect(() => {
-    const root = column.current
-    if (!root || typeof IntersectionObserver === 'undefined') return
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (Date.now() < pinned.current) return
-        // Al final de la columna, la última (no llega arriba)
-        if (root.scrollTop + root.clientHeight >= root.scrollHeight - 4) {
-          const sections = root.querySelectorAll('[data-section]')
-          const last = sections[sections.length - 1]?.getAttribute('data-section')
-          if (last) return setActive(last as CalendarSection)
-        }
-        const visible = entries
-          .filter((e) => e.isIntersecting)
-          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)
-        const id = visible[0]?.target.getAttribute('data-section')
-        if (id) setActive(id as CalendarSection)
-      },
-      { root, rootMargin: '0px 0px -60% 0px' }
-    )
-    for (const section of root.querySelectorAll('[data-section]')) observer.observe(section)
-    return () => observer.disconnect()
-  }, [])
+  const focusPhase = () => {
+    const wanted = focusOnPhase.current
+    focusOnPhase.current = null
+    if (!wanted) return
+    const box = heading.current?.closest('section')
+    const invalid = wanted === 'problem' ? box?.querySelector<HTMLElement>('[aria-invalid="true"]') : null
+    ;(invalid ?? heading.current)?.focus({ preventScroll: true })
+    // Si su principio quedó por encima (se venía de abajo, de «Siguiente»), arriba
+    if (box && box.getBoundingClientRect().top < 0) box.scrollIntoView({ block: 'start' })
+  }
+  useEffect(focusPhase, [phase.id])
 
   const submit = () => {
     if (first) {
       announce(t('calendars.editor.cantSave', { count: problems.length }))
-      goTo(first.section, true)
+      openPhase(phaseOf(first.section), 'problem')
       return
     }
     save.mutate()
   }
-  // Salir con cambios: se pregunta (dentro de la app) y, al cerrar la pestaña, el aviso del navegador
-  const blocker = useBlocker({ shouldBlockFn: () => dirty, withResolver: true, enableBeforeUnload: () => dirty })
+  // Salir con cambios (a otra pantalla: cambiar de fase no es salir) pregunta; al cerrar la pestaña, el aviso del navegador
+  const blocker = useBlocker({
+    shouldBlockFn: ({ current: from, next: to }) => dirty && from.pathname !== to.pathname,
+    withResolver: true,
+    enableBeforeUnload: () => dirty
+  })
   const cancel = () => {
     setDraft(calendar.definition)
     setName(calendar.name)
     save.reset()
   }
 
-  const length = computable ? yearLength(deferred) : 0
-  const leapLength =
-    computable && deferred.leapRules.length > 0 ? length + deferred.leapRules.reduce((s, r) => s + r.days, 0) : 0
-  const regular = deferred.months.filter((m) => !m.festival).length
-  const festivals = deferred.months.length - regular
   const props = { draft, change, problems }
+  const PhaseIcon = phase.icon
+  const yearId = useId()
+  const problemsId = useId()
 
   return (
-    <div className={styles.editor}>
-      <header className={styles.head}>
-        <Link to="/mundos/$worldId/calendarios" params={{ worldId }} className={styles.back}>
-          <ChevronLeft size={16} aria-hidden="true" />
-          {t('calendars.editor.back')}
+    <Screen
+      title={name.trim() || calendar.name}
+      actions={
+        <Link
+          to="/mundos/$worldId/calendarios/$calendarId"
+          params={{ worldId, calendarId: calendar.id }}
+          className={styles.view}
+        >
+          <Eye size={16} aria-hidden="true" />
+          {t('calendars.editor.view')}
         </Link>
-        <PageTitle>{name.trim() || calendar.name}</PageTitle>
-        {calendar.primary && <span className={styles.badge}>{t('calendars.primary')}</span>}
-      </header>
-
-      <nav className={styles.nav} aria-label={t('calendars.editor.sections')} data-tour="calendario-secciones">
-        <ul>
-          {sections.map((section) => {
-            const count = countOf(section.id)
-            return (
-              <li key={section.id}>
-                <button
-                  type="button"
-                  className={styles.navItem}
-                  aria-current={active === section.id ? 'true' : undefined}
-                  onClick={() => goTo(section.id)}
-                >
-                  <span aria-hidden="true">{section.icon}</span>
-                  <span className={styles.navTitle}>{section.title}</span>
-                  {count > 0 && (
-                    <span className={styles.navCount}>
-                      <span aria-hidden="true">{count}</span>
-                      <span className={styles.srOnly}>{t('calendars.editor.problems', { count })}</span>
+      }
+      left={
+        <nav className={styles.nav} aria-label={t('calendars.editor.phases')} data-tour="calendario-fases">
+          <ol>
+            {phases.map((p, i) => {
+              const count = countOf(p)
+              const Icon = p.icon
+              return (
+                <li key={p.id}>
+                  <button
+                    type="button"
+                    className={styles.navItem}
+                    aria-current={p.id === phase.id ? 'step' : undefined}
+                    onClick={() => openPhase(p)}
+                  >
+                    <span className={styles.navNumber} aria-hidden="true">
+                      {i + 1}
                     </span>
-                  )}
-                </button>
-              </li>
-            )
-          })}
-        </ul>
-        <p className={styles.summary}>
-          {computable && (
-            <>
-              <b>{t('calendars.editor.yearDays', { days: length })}</b>
-              {leapLength > 0 && <> · {t('calendars.editor.leapDays', { days: leapLength })}</>}
-              <br />
-            </>
-          )}
-          {festivals > 0
-            ? t('calendars.monthsAndFestivals', {
-                months: t('calendars.months', { count: regular }),
-                festivals: t('calendars.festivals', { count: festivals })
-              })
-            : t('calendars.months', { count: regular })}
-        </p>
-      </nav>
-
-      <div className={styles.main}>
-        <div className={styles.column} ref={column}>
-          <Section id="general" icon={sections[0]?.icon} title={t('calendars.editor.general')} problems={problems}>
-            <GeneralSection draft={draft} change={change} name={name} onName={setName} />
-          </Section>
-          <Section id="week" icon={sections[1]?.icon} title={t('calendars.editor.week')} problems={problems}>
-            <WeekSection {...props} />
-          </Section>
-          <Section id="months" icon={sections[2]?.icon} title={t('calendars.editor.months')} problems={problems}>
-            <MonthsSection {...props} onFocusMonth={setFollowMonth} />
-          </Section>
-          <Section id="leap" icon={sections[3]?.icon} title={t('calendars.editor.leap')} problems={problems}>
-            <LeapSection {...props} />
-          </Section>
-          <Section id="seasons" icon={sections[4]?.icon} title={t('calendars.editor.seasons')} problems={problems}>
-            <SeasonsSection {...props} valid={computable} reference={deferred} />
-          </Section>
-          <Section id="moons" icon={sections[5]?.icon} title={t('calendars.editor.moons')} problems={problems}>
-            <MoonsSection {...props} />
-          </Section>
-          <Section id="eras" icon={sections[6]?.icon} title={t('calendars.editor.eras')} problems={problems}>
-            <ErasSection {...props} />
-          </Section>
-          {primary && !calendar.primary && (
-            <Section
-              id="correspondence"
-              icon={<ArrowLeftRight size={16} />}
-              title={t('calendars.editor.correspondenceTitle')}
-              problems={problems}
-            >
-              <CorrespondenceSection {...props} primary={primary} />
-            </Section>
-          )}
+                    <Icon size={16} aria-hidden="true" className={styles.navIcon} />
+                    <span className={styles.navTitle}>{titleOf(p)}</span>
+                    {count > 0 && (
+                      <span className={styles.navCount}>
+                        <span aria-hidden="true">{count}</span>
+                        <span className={styles.srOnly}>{t('calendars.editor.problems', { count })}</span>
+                      </span>
+                    )}
+                  </button>
+                </li>
+              )
+            })}
+          </ol>
+        </nav>
+      }
+      leftLabel={t('calendars.editor.phases')}
+      right={
+        <div className={styles.side} data-tour="calendario-resumen">
+          <section aria-labelledby={yearId}>
+            <h2 id={yearId}>{t('calendars.editor.yearSummary')}</h2>
+            <YearStrip definition={deferred} label={t('calendars.year', { name: name.trim() || calendar.name })} />
+            <div className={styles.facts}>
+              <CalendarFacts calendar={{ ...calendar, definition: deferred }} />
+            </div>
+          </section>
+          <section aria-labelledby={problemsId}>
+            <h2 id={problemsId}>{t('calendars.editor.problemsTitle')}</h2>
+            {problems.length === 0 ? (
+              <p className={styles.muted}>{t('calendars.editor.noProblems')}</p>
+            ) : (
+              <ul className={styles.notes}>
+                {problems.map((problem) => (
+                  <li key={`${problem.section}-${problem.code}-${problem.index ?? ''}-${problem.message}`}>
+                    <TriangleAlert size={14} aria-hidden="true" />
+                    <span>
+                      {problemText(problem)}{' '}
+                      <button
+                        type="button"
+                        className={styles.goto}
+                        onClick={() => openPhase(phaseOf(problem.section), 'problem')}
+                      >
+                        {t('calendars.editor.goTo', { phase: titleOf(phaseOf(problem.section)) })}
+                      </button>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
         </div>
+      }
+      rightLabel={t('calendars.editor.summary')}
+    >
+      <div className={styles.column}>
+        <Section
+          id={phase.id}
+          icon={<PhaseIcon size={18} />}
+          title={phase.id === 'correspondencia' ? t('calendars.editor.correspondenceTitle') : titleOf(phase)}
+          problems={own}
+          headingRef={heading}
+          footer={
+            <div className={styles.next}>
+              {previous ? (
+                <button type="button" className={styles.back} onClick={() => openPhase(previous)}>
+                  <ChevronLeft size={16} aria-hidden="true" />
+                  {titleOf(previous)}
+                </button>
+              ) : (
+                <span />
+              )}
+              {next && (
+                <button type="button" className={styles.go} onClick={() => openPhase(next)}>
+                  {t('calendars.editor.next', { phase: titleOf(next) })}
+                  <ChevronRight size={16} aria-hidden="true" />
+                </button>
+              )}
+            </div>
+          }
+        >
+          {phase.id === 'general' && <GeneralSection {...props} name={name} onName={setName} />}
+          {phase.id === 'semana' && <WeekSection {...props} valid={computable} />}
+          {phase.id === 'meses' && <MonthsSection {...props} />}
+          {phase.id === 'dias-senalados' && <NamedDaysSection draft={draft} change={change} />}
+          {phase.id === 'dias-de-mas' && <LeapSection {...props} />}
+          {phase.id === 'estaciones' && <SeasonsSection {...props} valid={computable} reference={deferred} />}
+          {phase.id === 'lunas' && <MoonsSection {...props} />}
+          {phase.id === 'eras' && <ErasSection {...props} />}
+          {phase.id === 'correspondencia' && primary && <CorrespondenceSection {...props} primary={primary} />}
+        </Section>
         <footer className={styles.foot} data-tour="calendario-guardar">
           <ChangesBar shown={dirty}>
             <BusyButton className={form.button} busy={save.isPending} onClick={submit}>
@@ -343,24 +376,26 @@ function Editor({
             <button type="button" className={styles.cancel} onClick={cancel}>
               {t('calendars.editor.cancel')}
             </button>
+            {first && (
+              <button
+                type="button"
+                className={styles.problemLink}
+                onClick={() => openPhase(phaseOf(first.section), 'problem')}
+              >
+                <TriangleAlert size={16} aria-hidden="true" />
+                {t('calendars.editor.problemsIn', {
+                  count: problems.length,
+                  section: titleOf(phaseOf(first.section))
+                })}
+              </button>
+            )}
           </ChangesBar>
           {save.error && <span className={styles.error}>{errorText(save.error)}</span>}
           {clipped > 0 && !dirty && (
             <span className={styles.notice}>{t('calendars.editor.clipped', { count: clipped })}</span>
           )}
-          {first && (
-            <button type="button" className={styles.problemLink} onClick={() => goTo(first.section, true)}>
-              <TriangleAlert size={16} aria-hidden="true" />
-              {t('calendars.editor.problemsIn', { count: problems.length, section: firstTitle })}
-            </button>
-          )}
         </footer>
       </div>
-
-      <aside className={styles.preview} aria-label={t('calendars.editor.preview')} data-tour="calendario-vista-previa">
-        <h2 className={styles.previewLabel}>{t('calendars.editor.preview')}</h2>
-        <MonthPreview definition={deferred} valid={computable} follow={followMonth} />
-      </aside>
 
       {blocker.status === 'blocked' && (
         <LeaveDialog onStay={() => blocker.reset?.()} onLeave={() => blocker.proceed?.()} />
@@ -368,12 +403,11 @@ function Editor({
       <Tour
         id="calendario"
         steps={[
-          { target: '[data-tour="calendario-secciones"]', text: t('tour.calendar.sections'), placement: 'right' },
-          { target: '[data-tour="calendario-vista-previa"]', text: t('tour.calendar.preview'), placement: 'left' },
-          { target: '[data-tour="calendario-guardar"]', text: t('tour.calendar.save'), placement: 'top' }
+          { target: '[data-tour="calendario-fases"]', text: t('tour.calendar.phases'), placement: 'right' },
+          { target: '[data-tour="calendario-resumen"]', text: t('tour.calendar.summary'), placement: 'left' }
         ]}
       />
-    </div>
+    </Screen>
   )
 }
 
