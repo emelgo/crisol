@@ -197,7 +197,14 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   2026-11-16). Los marcos pintan su raya en
   una capa aparte (`::before`), para que su relleno pueda ser de cristal; la zona de peligro, igual, en rojo. **«Sin efecto cristal»** (Ajustes, «Aspecto»; se guarda en el navegador): sin fondo de ambiente ni
   desenfoque en ninguna parte, también en la Mesa; todo opaco, como antes. Sin desenfoque en el navegador, todo más
-  tapado.
+  tapado. **También en el compendio y en los libros** (Enrique, 2026-11-19: «en plantilla hay cosas sin efecto
+  cristal»): la ficha de la izquierda y la de los datos, de cristal como la del árbol; la columna que se lee, la de la
+  página (`--surface-page`); sus rayas y botones, con las rayas blancas translúcidas, y sus campos, de cristal oscuro.
+- **Un solo conmutador** (Enrique, 2026-11-19, del «Por tipo | Por libro» del compendio: «esto tampoco me gusta»): el
+  de Semana · Mes · Año del calendario (`components/segmented.module.css`): opciones que reparten el ancho, centradas,
+  en un recuadro con el borde y el relleno de los campos, y la elegida en relieve y en negrita. En el compendio, «Todo ·
+  Del sistema · Del mundo» y «Por tipo · Por libro», a lo ancho de la ficha como el buscador y con aire debajo de él;
+  también «Todos · En la campaña» de Libros y cómo mueven los jugadores en la sala.
 - **La portada pública** (tanda 5): la imagen a toda pantalla (la barra de arriba, transparente encima), en el centro la
   llama, el nombre, la frase, «Entrar» y «Tengo una invitación» (que pide el enlace y lleva a la campaña); debajo, tres
   estampas de lo que hay dentro (el mundo, la mesa, la ficha), capturas de la app.
@@ -320,8 +327,11 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   no tiene sentido ahí»): lo suyo va en **el menú del botón derecho, como en el árbol de páginas**, también en la lista
   de Plantillas (con la tecla de menú o Mayús+F10, y con su «⋯» en la fila). **Sin «⋯»** (Enrique: «las plantillas no
   necesitan imprimirse o descargarse»; «no quiero tener solo versiones en los 3 puntos»): **«Versiones», un botón de
-  icono (el reloj) en su cabecera**, junto al candado y con su mismo aspecto (también en la pastilla sobre la portada),
-  que abre su lista; duplicarla, solo con el botón derecho. **Abierta, el mismo esqueleto que una página del mundo, en
+  icono (el reloj) en su cabecera**, con el aspecto del candado de las páginas (también en la pastilla sobre la
+  portada), que abre su lista; duplicarla, solo con el botón derecho. **Sin candado** (Enrique, 2026-11-19: «el block
+  en las plantillas no tiene sentido»): una plantilla no se pone en lectura (solo una que ya lo estaba lo enseña, para
+  quitarlo). **Duplicarla, como duplicar una página** (Enrique, 2026-11-19: «que funcione como en las páginas que te
+  redirige a la página»): abre la copia, sin su título en edición; mientras llega, la de antes se queda (sin hueco). **Abierta, el mismo esqueleto que una página del mundo, en
   el mismo sitio** (2026-11-19: «las columnas no están bien situadas como en las páginas de la wiki»): la portada
   detrás del título, las pestañas debajo y el panel que se pliega desde su botón; la ficha de la izquierda, la columna y
   el panel, con la misma posición, anchos y alto que en una página (medido a 1440 y a 1920 px), «‹ Plantillas» en el
@@ -388,8 +398,11 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
 - **El menú «/» y «Convertir en», por desplegables** (Texto, Títulos, Listas, Páginas, Recuadros —con los secretos y
   las notas ocultas—, Hoja); al escribir, una lista plana. Sin explicaciones ni «?»: los nombres bastan. Nada de
   «máster» en el worldbuilding.
-- **Botón derecho en el árbol**, como en Everlore: crear subpágina, renombrar, duplicar, exportar, mover y ordenar
-  (desplegables que se abren al pasar el ratón) y borrar. «⋯» de la página, solo exportar. **Renombrar no abre un
+- **Botón derecho en el árbol**, como en Everlore: crear subpágina, renombrar, duplicar, mover y ordenar
+  (desplegables que se abren al pasar el ratón) y borrar. **Exportar, solo en el «⋯» de la página** (Enrique,
+  2026-11-19: «exportar ya lo tenemos en los 3 puntos»). **Las rayas de un menú, solo entre dos grupos**: ninguna al
+  principio, al final (en Inicio, sin «Borrar», no queda la de encima) ni dos seguidas, en todos los menús del botón
+  derecho (páginas, plantillas y carpetas). **Renombrar no abre un
   cuadro** (Enrique, 2026-11-19: «el renombrar solo pone en edición la propia página, no abre un cuadro»): abre la
   página si no lo está y pone su título en edición, con todo elegido para escribir encima (Intro guarda, Escape lo
   deja). Igual en el árbol de las plantillas y en la lista de Plantillas.
@@ -595,7 +608,10 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   revés (mientras se arrastra, sale apagado). Carpetas primero y luego archivos, **en el orden que se quiera** (se
   recolocan arrastrando); sin ordenar, por nombre. **Sin ruta encima de la lista** («Todos › Carpeta»): la lista ya dice dónde está cada cosa.
   **Toda la fila abre lo suyo**, no solo el nombre. **La miniatura de una imagen, entera, centrada y sin fondo** (Enrique,
-  2026-11-19); el fondo, solo en el icono de lo que no es imagen. Mover es arrastrar o, desde su ventana, **«Carpeta»** (Enrique,
+  2026-11-19); el fondo, solo en el icono de lo que no es imagen. **Igual la de una plantilla con portada** (Enrique,
+  2026-11-19: «si una plantilla tiene imagen sale como antes en Archivos, como con un fondo, no debería»), en la lista
+  de Plantillas, su vista previa y «Desde plantilla» (la imagen sola, sin su icono encima), y en el selector de
+  archivos. Mover es arrastrar o, desde su ventana, **«Carpeta»** (Enrique,
   2026-11-12: como «Dentro de» en las etiquetas; «Ninguna», lo más alto); cambiar un archivo es subir otro y borrar el
   viejo: sin «Reemplazar». **Las carpetas llevan color e icono** (Enrique, 2026-11-12), desde su ventana: el color,
   como el de un mundo o una etiqueta; el icono, uno de los nuestros, con el mismo selector que el de una página. El color tiñe el dibujo de la carpeta o,

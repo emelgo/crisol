@@ -59,9 +59,27 @@ En local o en staging cuando llegue el PR de esta rama.
 - [ ] **Renombrar sin cuadro** (páginas y plantillas): botón derecho → «Renombrar» en el árbol de páginas, en el de las
   plantillas o en la lista de Plantillas → se abre esa página (si no lo estaba) con su título elegido para escribir
   encima; Intro guarda, Escape lo deja como estaba. Ya no sale el recuadro flotante.
-- [ ] **Versiones de una plantilla, en un botón**: su cabecera ya no tiene «⋯»; junto al candado, un reloj
-  («Versiones») que abre su lista (también sobre una portada, en la pastilla). Duplicar, solo con el botón derecho. Ctrl+P
-  no imprime.
+- [ ] **Versiones de una plantilla, en un botón**: su cabecera ya no tiene «⋯» ni candado; un reloj («Versiones») que
+  abre su lista (también sobre una portada, en la pastilla). Duplicar, solo con el botón derecho. Ctrl+P no imprime.
+- [ ] **Duplicar una plantilla, como una página**: con el botón derecho (en la lista de Plantillas, con su «⋯», y en el
+  árbol de una abierta) → se abre la copia («… (copia)»), sin su título elegido ni ningún recuadro flotante; mientras
+  llega, la de antes sigue a la vista (sin hueco). Compáralo con duplicar una página del mundo. **Ojo**: si ves el
+  recuadro flotante de antes al renombrar, tu servidor de desarrollo (5173) sirve una copia vieja de
+  `templates/menu.tsx` (perdió el aviso de cambios por el límite de archivos vigilados del VPS): reinícialo.
+- [ ] **El botón derecho del árbol de páginas**: sin «Exportar» (está en el «⋯» de la página). En la portada (Inicio)
+  sin subpáginas, «Crear subpágina, Renombrar, Duplicar» y ninguna raya debajo. En ningún menú del botón derecho
+  (páginas, plantillas, carpetas de plantillas) queda una raya al principio, al final o dos seguidas.
+- [ ] **Plantillas con portada**: en la lista de Plantillas, en su vista previa y en «Página nueva › Desde plantilla»,
+  su miniatura es la imagen entera y centrada, sin recuadro detrás ni el icono encima (como una imagen en Archivos);
+  sin portada, su icono en el recuadro. En el selector de archivos (al poner una portada), lo mismo con las imágenes.
+- [ ] **Cristal en el compendio y los libros**: la pantalla de un libro de un sistema (Entradas y Capítulos) y el
+  compendio de una campaña: la ficha de la izquierda, la columna que se lee y la de los datos dejan ver el fondo
+  desenfocado, como la ficha del árbol y el panel de una página; «Nueva entrada», con su raya discontinua visible. En
+  una plantilla abierta, los campos de las opciones de un campo, de cristal oscuro.
+- [ ] **Un solo conmutador**: en el compendio, «Todo · Del sistema · Del mundo» y «Por tipo · Por libro», a lo ancho de
+  la ficha como el buscador, con aire debajo de él, los textos enteros y la opción elegida en relieve y negrita (como
+  Semana · Mes · Año del calendario). Igual «Todos · En la campaña» en Libros de una campaña y «Cómo mueven» en la sala
+  de la Mesa.
 - [ ] **El panel de una plantilla, como el de una página**: ya no hay lista «Campos» con «+ Campo» ni el rótulo «En el
   panel». En una plantilla vacía sale «Panel vacío»; «Añadir bloque» trae arriba «Etiquetas» y «Propiedad» (los campos)
   y debajo los bloques de siempre. «Propiedad» añade un campo abierto con su nombre elegido (escríbelo); plegado, su
