@@ -8,7 +8,7 @@ import { keyBetween } from '@crisol/domain'
 import { asc, eq, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { type OperationContext, operation, type Writer } from '../operation.ts'
-import { chronologies } from '../schema/chronologies.ts'
+import { chronologies, timelineEvents, timelineGroups } from '../schema/chronologies.ts'
 import { documents } from '../schema/documents.ts'
 import { mapElements, mapLayers, mapPins, maps, pageTabs } from '../schema/maps.ts'
 import { pages } from '../schema/pages.ts'
@@ -83,18 +83,35 @@ const TAB_COPIES: Record<TabKind, TabCopy> = {
   text: async () => undefined,
   // La pizarra va en su documento, que se copia con los de las pestañas de texto
   board: async () => undefined,
-  // La cronología: su calendario y su filtro (sus eventos son del mundo). A otro mundo (una plantilla), sin el calendario
-  // ni los grupos, que son de este
-  chronology: async (w, { from, to, worldId }) => {
+  // La cronología: su calendario, su filtro, sus grupos y sus eventos (ADR-0032; sin enlaces, sin sus páginas). A otro
+  // mundo (una plantilla), sin el calendario ni los eventos, cuyas fechas son de los calendarios de este
+  chronology: async (w, { from, to, worldId, keep }) => {
     const [chronology] = await w.read.select().from(chronologies).where(eq(chronologies.tabId, from.id))
     if (!chronology) return
     const elsewhere = chronology.worldId !== worldId
-    await w.insert(chronologies, {
+    const copy = await w.insert(chronologies, {
       ...copied(chronology, worldId),
       tabId: to.id,
-      calendarId: elsewhere ? null : chronology.calendarId,
-      filter: elsewhere ? { ...chronology.filter, groups: [] } : chronology.filter
+      calendarId: elsewhere ? null : chronology.calendarId
     } as typeof chronologies.$inferInsert)
+    const groups = await w.read.select().from(timelineGroups).where(eq(timelineGroups.chronologyId, chronology.id))
+    const groupIds = new Map<string, string>()
+    for (const group of groups) {
+      const made = await w.insert(timelineGroups, {
+        ...copied(group, worldId),
+        chronologyId: copy.id
+      } as typeof timelineGroups.$inferInsert)
+      groupIds.set(group.id, made.id)
+    }
+    if (elsewhere) return
+    const events = await w.read.select().from(timelineEvents).where(eq(timelineEvents.chronologyId, chronology.id))
+    for (const event of events)
+      await w.insert(timelineEvents, {
+        ...copied(event, worldId),
+        chronologyId: copy.id,
+        groupId: event.groupId ? (groupIds.get(event.groupId) ?? null) : null,
+        pageId: keep ? event.pageId : null
+      } as typeof timelineEvents.$inferInsert)
   },
   // El árbol: sus nodos y sus líneas; sin enlaces (una plantilla), los nodos se quedan con su nombre y sin su página
   tree: async (w, { from, to, worldId, keep }) => {

@@ -682,7 +682,8 @@
   inline-size: var(--lane-label);
   padding: var(--space-2) var(--space-3);
   border-inline-end: 1px solid var(--line-frame);
-  background: var(--popup-glass);
+  /* Opaca: lo que pasa por debajo al desplazarse no se transparenta (el cristal, sobre el fondo) */
+  background: linear-gradient(var(--popup-glass), var(--popup-glass)), var(--color-bg);
   color: var(--color-muted);
   font-size: 0.75rem;
   font-weight: 700;
@@ -778,7 +779,7 @@
   inline-size: var(--lane-label);
   padding: var(--space-2) var(--space-2);
   border-inline-end: 1px solid var(--line-frame);
-  background: var(--popup-glass);
+  background: linear-gradient(var(--popup-glass), var(--popup-glass)), var(--color-bg);
 }
 
 .laneFold {
@@ -858,23 +859,34 @@
   flex: 1 0 auto;
 }
 
+/* «+ Nuevo grupo», en la esquina de los nombres (como en Everlore), en vez de una fila más abajo */
 .newGroup {
-  position: sticky;
-  inset-inline-start: 0;
   display: inline-flex;
   align-items: center;
-  gap: var(--space-2);
-  inline-size: var(--lane-label);
-  min-block-size: 2.5rem;
-  padding: 0 var(--space-3);
-  border: 0;
+  gap: var(--space-1);
+  inline-size: 100%;
+  min-block-size: 2rem;
+  margin: calc(-1 * var(--space-1)) calc(-1 * var(--space-2));
+  padding: 0 var(--space-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-button);
   background: none;
   color: var(--color-muted);
+  font: inherit;
+  font-size: 0.8125rem;
   font-weight: 600;
+  letter-spacing: normal;
+  text-transform: none;
   cursor: pointer;
 }
 
+.newGroup:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 1px;
+}
+
 .newGroup:hover {
+  border-color: var(--line-frame);
   color: var(--color-text);
 }
 
@@ -1475,6 +1487,12 @@
   gap: var(--space-2);
 }
 
+.groupName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .colorSelect {
   box-shadow: inset 6px 0 0 var(--swatch);
 }
@@ -1571,6 +1589,17 @@
 
 .preview {
   pointer-events: none;
+}
+
+/* Desde la vista grande de un calendario: a qué cronología va el evento (o una nueva, con su nombre) */
+.chronologyChoice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.chronologyChoice > * {
+  flex: 1 1 12rem;
 }
 
 .dialogGrid {

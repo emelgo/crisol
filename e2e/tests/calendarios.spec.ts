@@ -90,7 +90,7 @@ test('calendarios (módulo 8): crear uno de 16 meses con dos lunas, editarlo, ha
   await expect(page.getByRole('button', { name: 'Guardar' })).toBeHidden()
 
   // En grande: el mes, sin fichas a los lados; la del día sale al pasar el ratón, se fija al pulsar (con su era) y
-  // «Nuevo evento» crea uno suelto con su fecha
+  // «Nuevo evento» crea uno con su fecha, en la cronología que se elija (sin ninguna, una nueva: ADR-0032)
   await page.getByRole('link', { name: 'Ver calendario' }).click()
   await expect(page.getByRole('heading', { level: 1, name: 'Calendario de Varn' })).toBeVisible()
   await expect(page.getByRole('heading', { level: 2, name: 'Mes 1 del año 0', exact: true })).toBeVisible()
@@ -102,6 +102,7 @@ test('calendarios (módulo 8): crear uno de 16 meses con dos lunas, editarlo, ha
   await expect(day.getByRole('heading', { level: 2 })).toContainText('5 de Mes 1 de 0 de la Era del Eclipse')
   await day.getByRole('button', { name: 'Un evento nuevo en este día' }).click()
   const event = page.getByRole('dialog')
+  await expect(event.getByLabel('Cronología')).toHaveValue('new')
   await event.getByLabel('Título').fill('Coronación de Ilsa')
   await event.getByRole('button', { name: 'Crear evento' }).click()
   await expect(day).toContainText('Coronación de Ilsa')

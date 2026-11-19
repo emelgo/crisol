@@ -1296,7 +1296,7 @@ test('@fugas las fechas: un campo «Oculto» de fecha no le llega a la jugadora 
   await player.close()
 })
 
-test('@fugas las cronologías: la jugadora solo ve las de las pestañas que conoce y, dentro, lo que sabe su campaña, por la API, el tiempo real y lo que abre (módulo 8, ADR-0031)', async ({
+test('@fugas las cronologías: la jugadora solo ve las de las pestañas que conoce y, dentro, lo que sabe su campaña (sin los eventos de las demás), por la API, el tiempo real y lo que abre (módulo 8, ADR-0031 y ADR-0032)', async ({
   page,
   browser
 }) => {
@@ -1338,8 +1338,15 @@ test('@fugas las cronologías: la jugadora solo ve las de las pestañas que cono
     ]
   })
   await api('setKnowledge', { worldId, campaignId, kind: 'page', targetId: port.id, known: true })
+  const secret = await api('createChronology', { worldId, name: 'Los Planes del Culto' })
+  const shown = await api('createChronology', { worldId, name: 'Historia de Valdren', filter: { pages: true } })
+  // Los eventos de la secreta, que no se le enseñó: no salen en la otra (cada evento es de una)
+  await api('createTimelineEvents', {
+    chronologyId: secret.id,
+    events: [{ title: 'El Ritual de la Cripta', date: '1250-Siega-5' }]
+  })
   const { events } = await api('createTimelineEvents', {
-    worldId,
+    chronologyId: shown.id,
     events: [
       { title: 'La Coronación', date: '0-Siega-1' },
       { title: 'El Asesinato del Rey', date: '1250-Siega-2', hidden: true },
@@ -1348,8 +1355,6 @@ test('@fugas las cronologías: la jugadora solo ve las de las pestañas que cono
       { date: '1252', pageId: tower.id }
     ]
   })
-  const secret = await api('createChronology', { worldId, name: 'Los Planes del Culto' })
-  const shown = await api('createChronology', { worldId, name: 'Historia de Valdren' })
   // Una cronología es una pestaña: se ve con su página
   await api('setKnowledge', { worldId, campaignId, kind: 'page', targetId: shown.pageId, known: true })
   await api('setKnowledge', { worldId, campaignId, kind: 'event', targetId: events[2].id, known: true })
@@ -1364,7 +1369,7 @@ test('@fugas las cronologías: la jugadora solo ve las de las pestañas que cono
   await expect(player.getByRole('heading', { name: 'El Pacto Revelado' })).toBeVisible()
   // Mientras mira, el máster crea otro evento oculto: el aviso le llega sin decir qué
   await api('createTimelineEvents', {
-    worldId,
+    chronologyId: shown.id,
     events: [{ title: 'La Noche Roja', date: '1250-Vendimia-1', hidden: true }]
   })
   await expect.poll(() => captured.frames.some((f) => f.includes('"chronologies"'))).toBe(true)
@@ -1388,12 +1393,22 @@ test('@fugas las cronologías: la jugadora solo ve las de las pestañas que cono
     (await player.request.post('/api/actions/getChronology', { data: { tabId: secret.tabId, campaignId } })).status()
   ).toBe(404)
   const everything = [await captured.all(), ...bodies].join('\n')
-  for (const leak of ['Asesinato', 'Noche Roja', 'Torre Negra', tower.id, 'Traición', 'Eclipse', 'Planes del Culto'])
+  for (const leak of [
+    'Asesinato',
+    'Noche Roja',
+    'Torre Negra',
+    tower.id,
+    'Traición',
+    'Eclipse',
+    'Planes del Culto',
+    'Ritual de la Cripta'
+  ])
     expect(everything).not.toContain(leak)
   // Y no escribe
   for (const [name, data] of [
     ['createChronology', { worldId, name: 'Mía' }],
-    ['createTimelineEvents', { worldId, events: [{ title: 'x', date: '1' }] }],
+    ['createTimelineEvents', { chronologyId: shown.id, events: [{ title: 'x', date: '1' }] }],
+    ['updateTimelineGroups', { chronologyId: shown.id, groups: [] }],
     ['updateTimelineEvent', { eventId: events[0].id, title: 'y' }],
     ['deleteTimelineEvent', { eventId: events[0].id }],
     ['convertEventToPage', { eventId: events[0].id, parentId: null }]

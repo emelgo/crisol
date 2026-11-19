@@ -41,7 +41,17 @@ function renderAt(path: string, options: { events?: FakeEvent[]; chronologies?: 
     ...(options.chronologies === false
       ? {}
       : {
-          chronologies: [{ id: CHRONOLOGY, worldId: WORLD.id, name: 'Historia de Valdren', pageId: PAGE, tabId: TAB }]
+          // Con las páginas con fecha (por defecto no salen: ADR-0032)
+          chronologies: [
+            {
+              id: CHRONOLOGY,
+              worldId: WORLD.id,
+              name: 'Historia de Valdren',
+              pageId: PAGE,
+              tabId: TAB,
+              filter: { pages: true, templates: [], tags: [] }
+            }
+          ]
         }),
     timelineGroups: [
       { id: 'f6c2d0b4-7a0c-4c5e-9c55-5d3a0b4f1a11', worldId: WORLD.id, name: 'La Corona', color: 'wine' }
@@ -113,14 +123,16 @@ describe('la cronología, como pestaña de una página (ADR-0031)', () => {
     expect(screen.queryByRole('list', { name: 'Cronologías del mundo' })).toBeNull()
   })
 
-  it('«Pestaña nueva» de tipo cronología la añade y la abre, con las páginas con fecha que salen solas', async () => {
-    const { api } = renderAt(`/mundos/${WORLD.id}/wiki/${PAGE}`, { chronologies: false })
+  it('«Pestaña nueva» de tipo cronología la añade y la abre, vacía: sin los eventos de otras ni las páginas con fecha', async () => {
+    const { api } = renderAt(`/mundos/${WORLD.id}/wiki/${PAGE}`, { chronologies: false, events: EVENTS })
     const bar = within(await screen.findByRole('navigation', { name: 'Pestañas de la página' }))
     await userEvent.click(bar.getByRole('button', { name: 'Pestaña nueva' }))
     const dialog = within(await screen.findByRole('dialog', { name: 'Pestaña nueva' }))
     await userEvent.click(dialog.getByRole('radio', { name: 'Cronología' }))
     await userEvent.click(dialog.getByRole('button', { name: 'Crear' }))
-    expect(await screen.findByRole('heading', { name: /Aldren IV · Muerte/ })).toBeDefined()
+    expect(await screen.findByText('Sus eventos, en orden.')).toBeDefined()
+    expect(screen.queryByRole('heading', { name: /Aldren IV/ })).toBeNull()
+    expect(screen.queryByRole('heading', { name: 'Boda de Ilsa y Doran' })).toBeNull()
     expect(api.chronologies).toHaveLength(1)
     expect((await bar.findByRole('link', { name: /Cronología/ })).getAttribute('aria-current')).toBe('page')
   })
@@ -151,6 +163,10 @@ describe('una cronología en su pestaña', () => {
     expect(within(lanes).getByText('La Corona')).toBeDefined()
     expect(within(lanes).getByText('Páginas')).toBeDefined()
     expect(within(lanes).getByText('Sin grupo')).toBeDefined()
+    // «+ Nuevo grupo», en la esquina de los nombres (como en Everlore), no en una fila debajo
+    await userEvent.click(screen.getByRole('button', { name: 'Nuevo grupo' }))
+    await userEvent.type(screen.getByRole('textbox', { name: 'Nombre del grupo' }), 'Guerras{Enter}')
+    expect(await within(lanes).findByText('Guerras')).toBeDefined()
     expect(screen.getByRole('toolbar', { name: 'Escala' })).toBeDefined()
     expect(localStorage.getItem(`crisol.cronologia.${TAB}`)).toBe('months')
   })

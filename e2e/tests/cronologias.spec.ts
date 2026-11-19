@@ -70,7 +70,7 @@ function apiOf(page: Page) {
   }
 }
 
-test('cronologías (módulo 8, ADR-0031): crearla como pestaña de una página, un evento de un día, un rango entre dos meses, uno de cada año, la página con fecha que sale sola, arrastrar en el calendario y convertir en página', async ({
+test('cronologías (módulo 8, ADR-0031 y ADR-0032): crearla como pestaña de una página, con sus eventos (no los de otras), un evento de un día, un rango entre dos meses, uno de cada año, la página con fecha si se pide, arrastrar en el calendario y convertir en página', async ({
   page
 }) => {
   test.slow()
@@ -78,7 +78,7 @@ test('cronologías (módulo 8, ADR-0031): crearla como pestaña de una página, 
   const api = apiOf(page)
   const worldId = (await api('createWorld', { name: 'Valdren' })).id as string
   await api('createCalendar', { worldId, name: 'Eana', from: { definition: EANA } })
-  // Una subpágina con su fecha: sale sola
+  // Una subpágina con su fecha: sale si la cronología lo pide
   const history = await api('createPage', { worldId, title: 'Historia' })
   const founding = await api('createPage', { worldId, title: 'Puerto Ceniza', parentId: history.id })
   await api('editPage', {
@@ -99,13 +99,26 @@ test('cronologías (módulo 8, ADR-0031): crearla como pestaña de una página, 
   await expect(
     page.getByRole('navigation', { name: 'Pestañas de la página' }).getByRole('link', { name: 'Historia de Valdren' })
   ).toHaveAttribute('aria-current', 'page')
+  // Nace vacía (sin las páginas con fecha); en Ajustes se piden
+  await expect(page.getByText('Sus eventos, en orden.')).toBeVisible()
+  await page.getByRole('button', { name: 'Ajustes', exact: true }).click()
+  await page
+    .getByRole('dialog', { name: 'Ajustes de la cronología' })
+    .getByRole('checkbox', { name: 'Juntar también las páginas con fecha' })
+    .check()
+  await page.keyboard.press('Escape')
   const list = page.getByRole('list', { name: 'Lista' })
   await expect(list.getByRole('heading', { name: 'Puerto Ceniza' })).toBeVisible()
   await expect(list).toContainText('12 Sie -980 RC')
 
+  // Otra cronología, con un evento suyo: no sale en esta (cada evento es de una, como en Everlore)
+  const other = await api('createChronology', { worldId, name: 'Los Planes del Culto' })
+  await api('createTimelineEvents', { chronologyId: other.id, events: [{ title: 'Pacto en la cripta', date: '1250' }] })
+  const { tabs } = await api('listPageTabs', { pageId: history.id })
+  const mine = await api('getChronology', { tabId: tabs.at(-1).id })
   // Un rango que cruza dos meses y una fiesta de cada año (como los pasaría la IA)
   await api('createTimelineEvents', {
-    worldId,
+    chronologyId: mine.chronology.id,
     events: [
       { title: 'Campaña de los Pasos', date: '1250-Siega-20/1250-Trilla-3', group: 'Guerras' },
       { title: 'Feria de Vendimia', date: '1249-Vendimia-1 (cada año)' }
@@ -113,6 +126,7 @@ test('cronologías (módulo 8, ADR-0031): crearla como pestaña de una página, 
   })
   await expect(list.getByRole('heading', { name: 'Campaña de los Pasos' })).toBeVisible()
   await expect(list).toContainText('20 Sie – 3 Tri 1250 RC')
+  await expect(list).not.toContainText('Pacto en la cripta')
 
   // Uno de un día, desde el calendario: elegir el día y «Evento en este día»
   const pill = page.getByRole('toolbar', { name: 'Vistas' })
@@ -160,6 +174,11 @@ test('cronologías (módulo 8, ADR-0031): crearla como pestaña de una página, 
   const lanes = page.getByRole('list', { name: 'Grupos' })
   await expect(lanes.getByText('Guerras')).toBeVisible()
   await expect(lanes.getByRole('button', { name: /Campaña de los Pasos/ })).toBeVisible()
+  // Un grupo nuevo, desde la esquina de los nombres
+  await page.getByRole('button', { name: 'Nuevo grupo' }).click()
+  await page.getByRole('textbox', { name: 'Nombre del grupo' }).fill('La Corona')
+  await page.keyboard.press('Enter')
+  await expect(lanes.getByText('La Corona')).toBeVisible()
   expect(await axe(page)).toEqual([])
   await page.getByRole('toolbar', { name: 'Escala' }).getByRole('button', { name: 'Año', exact: true }).click()
   await expect(
@@ -197,16 +216,20 @@ test('la jugadora en el móvil: solo la cronología de la página que conoce, co
     properties: [{ name: 'Fundación', type: 'date', value: '1250-Siega-14' }]
   })
   await api('setKnowledge', { worldId, campaignId, kind: 'page', targetId: known.id, known: true })
+  const shown = await api('createChronology', { worldId, name: 'Historia de Valdren', filter: { pages: true } })
   await api('createTimelineEvents', {
-    worldId,
+    chronologyId: shown.id,
     events: [
       { title: 'Boda de Ilsa y Doran', date: '1250-Siega-18', description: 'En el Salón de las Velas.' },
       { title: 'El Asesinato del Rey', date: '1250-Siega-20', hidden: true },
       { title: 'Tras el eclipse', date: '1301-Siega-1' }
     ]
   })
-  const shown = await api('createChronology', { worldId, name: 'Historia de Valdren' })
-  await api('createChronology', { worldId, name: 'Los Planes del Culto' })
+  const secret = await api('createChronology', { worldId, name: 'Los Planes del Culto' })
+  await api('createTimelineEvents', {
+    chronologyId: secret.id,
+    events: [{ title: 'Pacto en la cripta', date: '1250' }]
+  })
   // Se ve con su página (ADR-0031)
   await api('setKnowledge', { worldId, campaignId, kind: 'page', targetId: shown.pageId, known: true })
 
@@ -224,6 +247,7 @@ test('la jugadora en el móvil: solo la cronología de la página que conoce, co
   await expect(list.getByRole('heading', { name: 'Puerto Ceniza' })).toBeVisible()
   await expect(list).not.toContainText('Asesinato')
   await expect(list).not.toContainText('Torre Negra')
+  await expect(list).not.toContainText('Pacto')
   // Solo lectura: sin «+» ni «⋯»
   await expect(player.getByRole('button', { name: 'Añadir evento' })).toHaveCount(0)
   await expect(player.getByRole('button', { name: /^Acciones de/ })).toHaveCount(0)
@@ -253,14 +277,14 @@ test.describe('con el cristal de verdad', () => {
     const api = apiOf(page)
     const worldId = (await api('createWorld', { name: 'Valdren' })).id as string
     await api('createCalendar', { worldId, name: 'Eana', from: { definition: EANA } })
+    const chronology = await api('createChronology', { worldId, name: 'Historia de Valdren' })
     await api('createTimelineEvents', {
-      worldId,
+      chronologyId: chronology.id,
       events: [
         { title: 'Boda de Ilsa y Doran', date: '1250-Siega-18', group: 'La Corona', color: 'wine' },
         { title: 'Campaña de los Pasos', date: '1250-Siega-20/1250-Trilla-3', group: 'Guerras' }
       ]
     })
-    const chronology = await api('createChronology', { worldId, name: 'Historia de Valdren' })
     // La dirección de antes lleva a su pestaña
     await page.goto(`/mundos/${worldId}/calendarios/cronologias/${chronology.id}`)
     await expect(page).toHaveURL(new RegExp(`/wiki/${chronology.pageId}\\?pestana=${chronology.tabId}`))

@@ -117,6 +117,21 @@ function BigCalendar({
     queryKey: calendarEntriesQuery(calendar.id),
     queryFn: () => api.call('listCalendarEntries', { calendarId: calendar.id })
   })
+  // A qué cronología va un evento nuevo (ADR-0032): las del mundo, primero las que usan este calendario
+  const chronologies = useQuery({
+    queryKey: ['chronologies', worldId],
+    queryFn: () => api.call('listChronologies', { worldId })
+  })
+  const choices = useMemo(() => {
+    const rows = chronologies.data?.chronologies ?? []
+    const uses = (row: (typeof rows)[number]) =>
+      row.calendarId === calendar.id || (row.calendarId === null && calendar.primary)
+    return [...rows.filter(uses), ...rows.filter((row) => !uses(row))].map((row) => ({
+      id: row.id,
+      name: row.name,
+      groups: row.groups
+    }))
+  }, [chronologies.data, calendar.id, calendar.primary])
   const chosen = useChosenToday(worldId)
   const today = chosen.current ? todayIn(calendars, calendar.id, chosen.current.today) : null
 
@@ -387,6 +402,8 @@ function BigCalendar({
       {dialog && (
         <EventDialog
           worldId={worldId}
+          chronologyId={null}
+          choices={choices}
           calendarId={calendar.id}
           calendars={calendars}
           groups={groups}

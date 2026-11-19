@@ -652,6 +652,13 @@
       "when": 1795108000725,
       "tag": "0092_arboles_libres",
       "breakpoints": true
+    },
+    {
+      "idx": 93,
+      "version": "7",
+      "when": 1795108896388,
+      "tag": "0093_cronologias_con_sus_eventos",
+      "breakpoints": true
     }
   ]
 }

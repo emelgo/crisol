@@ -130,8 +130,8 @@ export const knowledgeActions = [
           characters: null
         }
         const knowing = knowledgeFor(reader, tree, [...marks, page])
-        // Un evento o una cronología no cuelgan de ninguna página
-        const loose = item.kind === 'event' || item.kind === 'chronology'
+        // Una marca de cronología de las de antes no cuelga de ninguna página; un evento, de la de su cronología
+        const loose = item.kind === 'chronology'
         const knows =
           item.kind === 'tab'
             ? knowing.seesTab(item)

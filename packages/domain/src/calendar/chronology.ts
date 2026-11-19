@@ -1,6 +1,6 @@
 /**
- * Las cronologías de un mundo (módulo 8, capacidad `cronologias`; decisiones 4-10 de docs/specs/modulo-8.md): junta
- * los eventos sueltos y las páginas con fecha que deja pasar su filtro, en el calendario de la cronología (lo de otros
+ * Las cronologías de un mundo (módulo 8, capacidad `cronologias`; ADR-0032, como en Everlore): junta sus eventos (cada
+ * uno es de una cronología) y, si se pide, las páginas con fecha que deja pasar su filtro, en el calendario de la cronología (lo de otros
  * calendarios, convertido si tiene correspondencia; si no, fuera y contado), ordenados por el primer día que abarcan.
  * Y lo que necesitan sus vistas: las veces que cae lo que se repite, las columnas de la vista de meses y sus bandas.
  * Lo que ve cada uno (lo oculto, las páginas que no conoce) lo decide quien llama: aquí llega ya filtrado
@@ -21,7 +21,10 @@ import type { CalendarDefinition, WorldDate } from './definition.ts'
 import { formatDate, formatYear } from './format.ts'
 import type { DateValue } from './values.ts'
 
-/** Qué deja pasar una cronología: las páginas con fecha (de esas plantillas o etiquetas) y los eventos de esos grupos */
+/**
+ * Qué páginas con fecha junta una cronología además de sus eventos (ADR-0032): ninguna, salvo que se pida (de esas
+ * plantillas o etiquetas)
+ */
 export interface ChronologyFilter {
   /** Si salen las páginas con fecha */
   pages: boolean
@@ -29,11 +32,9 @@ export interface ChronologyFilter {
   templates: string[]
   /** Solo las que llevan alguna de estas etiquetas (o una de dentro); vacío, todas */
   tags: string[]
-  /** Solo los eventos de estos grupos (vacío, todos) */
-  groups: string[]
 }
 
-export const DEFAULT_CHRONOLOGY_FILTER: ChronologyFilter = { pages: true, templates: [], tags: [], groups: [] }
+export const DEFAULT_CHRONOLOGY_FILTER: ChronologyFilter = { pages: false, templates: [], tags: [] }
 
 /** La imagen de un evento: un archivo del mundo y su punto de encuadre (en %) */
 export interface EventImage {
@@ -52,6 +53,8 @@ export interface LinkedPage {
 /** Un evento suelto, con su página enlazada ya resuelta para quien lee (null si no tiene o no la conoce) */
 export interface ChronologyEvent {
   id: string
+  /** Su cronología (la vista grande de un calendario junta los de todas) */
+  chronologyId?: string | undefined
   /** El suyo; vacío, el de su página */
   title: string
   date: DateValue
@@ -81,6 +84,8 @@ export interface ChronologyEntry {
   key: string
   kind: 'event' | 'page'
   eventId: string | null
+  /** En un evento, su cronología (si se dio) */
+  chronologyId: string | null
   /** La página de la fecha, o la enlazada al evento (si la conoce quien lee) */
   pageId: string | null
   title: string
@@ -123,9 +128,6 @@ function pagePasses(page: ChronologyPage, filter: ChronologyFilter): boolean {
     return wanted.some((w) => own === w || own.startsWith(`${w}/`))
   })
 }
-
-const eventPasses = (event: ChronologyEvent, filter: ChronologyFilter) =>
-  filter.groups.length === 0 || (event.groupId !== null && filter.groups.includes(event.groupId))
 
 interface Placed {
   start: WorldDate
@@ -204,7 +206,6 @@ export function chronologyEntries(input: {
   const entries: ChronologyEntry[] = []
   let outside = 0
   for (const event of input.events) {
-    if (!eventPasses(event, input.filter)) continue
     const title = event.title.trim() || event.page?.title || ''
     if (!title) continue
     const placed = placeIn(event.date)
@@ -216,6 +217,7 @@ export function chronologyEntries(input: {
       key: `e:${event.id}`,
       kind: 'event',
       eventId: event.id,
+      chronologyId: event.chronologyId ?? null,
       pageId: event.page?.id ?? null,
       title,
       untitled: !event.title.trim(),
@@ -246,6 +248,7 @@ export function chronologyEntries(input: {
         key: `p:${page.id}:${index}`,
         kind: 'page',
         eventId: null,
+        chronologyId: null,
         pageId: page.id,
         title: page.title,
         untitled: false,

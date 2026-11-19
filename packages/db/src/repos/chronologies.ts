@@ -1,8 +1,8 @@
 /**
- * Las cronologías de un mundo (cada una, una pestaña de una página: ADR-0031), sus grupos y sus eventos sueltos (módulo
- * 8): leerlos. Se escriben por operation() desde las acciones, con su historial
+ * Las cronologías de un mundo (cada una, una pestaña de una página: ADR-0031), sus grupos y sus eventos (de cada una:
+ * ADR-0032; módulo 8): leerlos. Se escriben por operation() desde las acciones, con su historial
  */
-import { and, asc, eq, getTableColumns, inArray, isNull, sql } from 'drizzle-orm'
+import { and, asc, count, eq, getTableColumns, inArray, isNull, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import type { Writer } from '../operation.ts'
 import { chronologies, timelineEvents, timelineGroups } from '../schema/chronologies.ts'
@@ -65,6 +65,7 @@ export async function chronologyOfTab(db: Database, tabId: string): Promise<Plac
   return found ?? null
 }
 
+/** Los grupos de todas las cronologías de un mundo (la vista grande de un calendario) */
 export function listGroups(db: Database, worldId: string) {
   return db
     .select()
@@ -73,13 +74,34 @@ export function listGroups(db: Database, worldId: string) {
     .orderBy(sql`${timelineGroups.position} collate "C"`, asc(timelineGroups.id))
 }
 
+/** Los grupos de una cronología, en su orden */
+export function groupsOf(db: Database, chronologyId: string) {
+  return db
+    .select()
+    .from(timelineGroups)
+    .where(eq(timelineGroups.chronologyId, chronologyId))
+    .orderBy(sql`${timelineGroups.position} collate "C"`, asc(timelineGroups.id))
+}
+
 export async function findGroup(db: Database, groupId: string) {
   const [found] = await db.select().from(timelineGroups).where(eq(timelineGroups.id, groupId))
   return found ?? null
 }
 
+/** Los eventos de todas las cronologías de un mundo */
 export function listEvents(db: Database, worldId: string) {
   return db.select().from(timelineEvents).where(eq(timelineEvents.worldId, worldId))
+}
+
+/** Los eventos de una cronología */
+export function eventsOf(db: Database, chronologyId: string) {
+  return db.select().from(timelineEvents).where(eq(timelineEvents.chronologyId, chronologyId))
+}
+
+/** Cuántos eventos tiene un mundo (su tope) */
+export async function countEvents(db: Database, worldId: string) {
+  const [row] = await db.select({ n: count() }).from(timelineEvents).where(eq(timelineEvents.worldId, worldId))
+  return row?.n ?? 0
 }
 
 export async function findEvent(db: Database, eventId: string) {

@@ -296,20 +296,56 @@ describe('un calendario en grande', () => {
     expect(within(day).getByRole('heading', { level: 2 }).textContent).toContain('3 de Enero de 0 RV')
   })
 
-  it('«Nuevo evento» crea un evento suelto del mundo con la fecha del día elegido', async () => {
+  it('«Nuevo evento»: sin cronologías, va a una nueva («Cronología»), con la fecha del día elegido', async () => {
     const { api } = open()
     await userEvent.click(await screen.findByRole('cell', { name: / 5 de Enero de 0 RV$/ }))
     await userEvent.click(screen.getByRole('button', { name: 'Un evento nuevo en este día' }))
     const dialog = await screen.findByRole('dialog')
+    expect((within(dialog).getByLabelText('Cronología') as HTMLSelectElement).value).toBe('new')
+    expect((within(dialog).getByLabelText('Nombre de la cronología nueva') as HTMLInputElement).value).toBe(
+      'Cronología'
+    )
     await userEvent.type(within(dialog).getByLabelText('Título'), 'Coronación')
     await userEvent.click(within(dialog).getByRole('button', { name: 'Crear evento' }))
     await waitFor(() => expect(api.events.find((e) => e.title === 'Coronación')).toBeDefined())
-    expect(api.events.find((e) => e.title === 'Coronación')?.date).toMatchObject({
-      calendarId: VARN.id,
-      start: { year: 0, month: 'ene', day: 5 }
-    })
+    const created = api.events.find((e) => e.title === 'Coronación')
+    expect(created?.date).toMatchObject({ calendarId: VARN.id, start: { year: 0, month: 'ene', day: 5 } })
+    expect(api.chronologies.find((c) => c.id === created?.chronologyId)?.name).toBe('Cronología')
     const day = screen.getByRole('complementary', { name: 'El día elegido' })
     expect(await within(day).findByText('Coronación')).toBeDefined()
+  })
+
+  it('«Nuevo evento» pregunta a qué cronología va (ADR-0032): primero las de este calendario; sus grupos, los de ella', async () => {
+    const { api } = open({
+      chronologies: [
+        { worldId: WORLD.id, name: 'Historia del reino', calendarId: crypto.randomUUID() },
+        { worldId: WORLD.id, name: 'Las guerras', calendarId: VARN.id ?? null }
+      ]
+    })
+    const guerras = api.chronologies.find((c) => c.name === 'Las guerras')
+    await api.client.call('updateTimelineGroups', {
+      chronologyId: guerras?.id ?? '',
+      groups: [{ name: 'Asedios', color: null }]
+    })
+    await userEvent.click(await screen.findByRole('cell', { name: / 6 de Enero de 0 RV$/ }))
+    await userEvent.click(screen.getByRole('button', { name: 'Un evento nuevo en este día' }))
+    const dialog = within(await screen.findByRole('dialog'))
+    const choice = dialog.getByLabelText('Cronología') as HTMLSelectElement
+    await waitFor(() => expect(choice.value).toBe(guerras?.id))
+    expect([...choice.options].map((option) => option.text)).toEqual([
+      'Las guerras',
+      'Historia del reino',
+      'Una nueva…'
+    ])
+    expect(dialog.getByRole('option', { name: 'Asedios' })).toBeDefined()
+    await userEvent.selectOptions(choice, 'Historia del reino')
+    expect(dialog.queryByRole('option', { name: 'Asedios' })).toBeNull()
+    await userEvent.type(dialog.getByLabelText('Título'), 'Tratado')
+    await userEvent.click(dialog.getByRole('button', { name: 'Crear evento' }))
+    await waitFor(() => expect(api.events.find((e) => e.title === 'Tratado')).toBeDefined())
+    expect(api.events.find((e) => e.title === 'Tratado')?.chronologyId).toBe(
+      api.chronologies.find((c) => c.name === 'Historia del reino')?.id
+    )
   })
 
   it('«Página con esta fecha»: una página nueva con el campo Fecha, abierta para ponerle título', async () => {

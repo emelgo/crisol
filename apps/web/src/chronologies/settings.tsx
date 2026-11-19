@@ -1,8 +1,8 @@
 /**
- * Los ajustes de una cronología, junto a sus pestañas (decisión 4 de Enrique: cada una con su calendario y su filtro):
- * su calendario, qué páginas con fecha salen (ninguna, todas o las de unas plantillas o etiquetas) y de qué grupos son
- * sus eventos; y los grupos del mundo (su nombre y su color, o quitarlos). Su nombre es el de su pestaña (ADR-0031).
- * Cada cambio se guarda al momento
+ * Los ajustes de una cronología, junto a sus pestañas: su calendario, si junta además las páginas con fecha del mundo
+ * (por defecto no: solo sus eventos, ADR-0032; o las de unas plantillas o etiquetas) y sus grupos (su color, o
+ * quitarlos; se crean en Meses o al hacer un evento). Su nombre es el de su pestaña (ADR-0031). Cada cambio se guarda al
+ * momento
  */
 import { type CalendarView, type ChronologyView, type TimelineGroupView, WORLD_COLORS } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -66,7 +66,7 @@ export function ChronologySettings({
   })
   const updateGroups = useMutation({
     mutationFn: (next: Array<{ id?: string; name: string; color: TimelineGroupView['color'] }>) =>
-      api.call('updateTimelineGroups', { worldId, groups: next }),
+      api.call('updateTimelineGroups', { chronologyId: chronology.id, groups: next }),
     onSuccess: refresh,
     onError: (error) => announce(errorText(error))
   })
@@ -171,28 +171,10 @@ export function ChronologySettings({
           <fieldset className={styles.settingsSection}>
             <legend>{t('chronologies.settings.groups')}</legend>
             {groups.length === 0 && <p className={styles.settingsNote}>{t('chronologies.settings.noGroups')}</p>}
-            {groups.length > 0 && (
-              <p className={styles.settingsHint}>
-                {filter.groups.length === 0
-                  ? t('chronologies.settings.allGroups')
-                  : t('chronologies.settings.someGroups')}
-              </p>
-            )}
             <ul className={styles.groupList}>
               {groups.map((group) => (
                 <li key={group.id}>
-                  <label className={styles.check}>
-                    <input
-                      type="checkbox"
-                      checked={filter.groups.length === 0 || filter.groups.includes(group.id)}
-                      onChange={() => {
-                        const all = filter.groups.length === 0 ? groups.map((g) => g.id) : filter.groups
-                        const next = toggle(all, group.id)
-                        update.mutate({ filter: { groups: next.length === groups.length ? [] : next } })
-                      }}
-                    />
-                    {group.name}
-                  </label>
+                  <span className={styles.groupName}>{group.name}</span>
                   <select
                     aria-label={t('chronologies.settings.groupColor', { name: group.name })}
                     value={group.color ?? ''}

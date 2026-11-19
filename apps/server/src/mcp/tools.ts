@@ -385,7 +385,7 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   crear_calendario: { action: 'createCalendar' },
   cambiar_calendario: { action: 'updateCalendar' },
   borrar_calendario: { action: 'deleteCalendar' },
-  // Las cronologías del mundo (módulo 8; ADR-0031): pestañas de páginas que juntan los eventos sueltos y las páginas con fecha
+  // Las cronologías del mundo (módulo 8; ADR-0031 y ADR-0032): pestañas de páginas, cada una con sus eventos y sus grupos
   listar_cronologias: { action: 'listChronologies' },
   ver_cronologia: { action: 'getChronology' },
   crear_cronologia: { action: 'createChronology' },
@@ -884,11 +884,12 @@ export const INSTRUCTIONS =
   'un periodo 1250-Siega-12/1250-Trilla-3 y «(cada año)» al final si se repite; sin calendar, el que ya tenga o el ' +
   'principal. leer_pagina da sus fechas legibles (dates). Las cronologías son pestañas de una página (listar_cronologias, ' +
   'ver_cronologia; crear_cronologia, en una página nueva o como pestaña de una que ya hay, con su calendario y su ' +
-  'filtro: páginas, plantillas, etiquetas, grupos) y juntan los eventos sueltos ' +
-  'del mundo (no van en el árbol) y las páginas con fecha, que salen solas; lo de otros calendarios se convierte si ' +
-  'tiene correspondencia. crear_eventos crea hasta 100 de una vez (una cronología entera), con su grupo por su nombre ' +
-  'y su página (pageId o newPage); cambiar_evento, borrar_evento y convertir_en_pagina (la crea con su texto y lo ' +
-  'deja enlazado). Un jugador ve una cronología si ve su página y su pestaña (se revela como la página, o la ' +
+  'filtro) y cada una tiene sus eventos y sus grupos, como en Everlore: un evento es de una sola cronología (no va en ' +
+  'el árbol) y solo sale en ella; las páginas con fecha solo salen si su filtro las pide (pages, de unas plantillas o ' +
+  'etiquetas). Lo de otros calendarios se convierte si tiene correspondencia. crear_eventos crea hasta 100 de una vez ' +
+  'en una cronología (chronologyId), con su grupo por su nombre (de esa cronología) y su página (pageId o newPage); ' +
+  'cambiar_evento (también lo pasa a otra con chronologyId), borrar_evento, convertir_en_pagina (la crea con su texto ' +
+  'y lo deja enlazado) y cambiar_grupos_eventos (los de una cronología). Un jugador ve una cronología si ve su página y su pestaña (se revela como la página, o la ' +
   'pestaña con kind tab) y dentro los eventos no ocultos (o revelados, kind event) y las páginas que conoce. ' +
   'Cada campaña tiene su «hoy», una fecha del calendario principal: fecha_de_hoy lo da (con el clima de hoy, el sol ' +
   'y, al máster, la previsión de 7 días) y cambiar_fecha lo pone (date) o lo avanza (days o weeks); cada cambio queda ' +

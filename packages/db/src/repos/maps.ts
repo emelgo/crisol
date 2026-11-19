@@ -5,7 +5,7 @@
 import { and, asc, count, eq, getTableColumns, inArray, isNull, sql } from 'drizzle-orm'
 import type { Database } from '../client.ts'
 import { type OperationContext, operation } from '../operation.ts'
-import { chronologies } from '../schema/chronologies.ts'
+import { chronologies, timelineEvents, timelineGroups } from '../schema/chronologies.ts'
 import { files } from '../schema/files.ts'
 import { mapElements, mapLayers, mapPins, maps, pageTabs } from '../schema/maps.ts'
 import { pages } from '../schema/pages.ts'
@@ -120,12 +120,24 @@ export function deleteTab(db: Database, context: OperationContext, tabId: string
     // Su escena, con el estado de cada campaña en ella: deshacer devuelve las dos
     const [scene] = await w.read.select({ id: scenes.id }).from(scenes).where(eq(scenes.tabId, tabId))
     if (scene) await removeSceneWith(w, scene.id)
-    // Su cronología (sus eventos son del mundo: se quedan) y su árbol
+    // Su cronología con sus eventos y sus grupos (ADR-0032: deshacer los devuelve) y su árbol
     const [chronology] = await w.read
       .select({ id: chronologies.id })
       .from(chronologies)
       .where(eq(chronologies.tabId, tabId))
-    if (chronology) await w.remove(chronologies, chronology.id)
+    if (chronology) {
+      const events = await w.read
+        .select({ id: timelineEvents.id })
+        .from(timelineEvents)
+        .where(eq(timelineEvents.chronologyId, chronology.id))
+      for (const event of events) await w.remove(timelineEvents, event.id)
+      const groups = await w.read
+        .select({ id: timelineGroups.id })
+        .from(timelineGroups)
+        .where(eq(timelineGroups.chronologyId, chronology.id))
+      for (const group of groups) await w.remove(timelineGroups, group.id)
+      await w.remove(chronologies, chronology.id)
+    }
     const [tree] = await w.read.select({ id: trees.id }).from(trees).where(eq(trees.tabId, tabId))
     if (tree) await w.remove(trees, tree.id)
     await w.remove(pageTabs, tabId)

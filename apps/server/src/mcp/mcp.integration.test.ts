@@ -1099,11 +1099,18 @@ describe('conector MCP con OAuth', () => {
       expect.objectContaining({ name: 'Fundación', text: '12 de Siega – 3 de Trilla de 1250 RC' }),
       expect.objectContaining({ name: 'Coronación', text: '5 de Vendimia de 1302 RC' })
     ])
-    // Las cronologías (módulo 8): la IA del máster pasa una de una vez con crear_eventos y la lee en orden con
-    // ver_cronologia (las páginas con fecha salen solas); mal fechada, dice cuál. La de la jugadora solo ve la
-    // revelada, sin lo oculto ni el campo oculto de fecha
-    const events = await call('crear_eventos', {
+    // Las cronologías (módulo 8): la IA del máster crea una (ADR-0031: una pestaña; sin página, una nueva con su
+    // nombre), le pasa sus eventos de una vez con crear_eventos (ADR-0032: son suyos) y la lee en orden con
+    // ver_cronologia (con las páginas con fecha, que pide su filtro); mal fechada, dice cuál. La de la jugadora solo
+    // ve la revelada, sin lo oculto ni el campo oculto de fecha
+    const chronology = await call<{ id: string; pageId: string }>('crear_cronologia', {
       worldId: world.id,
+      name: 'Historia',
+      filter: { pages: true }
+    })
+    expect(chronology.isError, chronology.text).toBeFalsy()
+    const events = await call('crear_eventos', {
+      chronologyId: chronology.data.id,
       events: [
         { title: 'Boda de Aldren', date: '1250-Siega-18', group: 'La Corona' },
         { title: 'Campaña de los Pasos', date: '1250-Siega-20/1250-Trilla-3', group: 'Guerras' },
@@ -1113,19 +1120,13 @@ describe('conector MCP con OAuth', () => {
     })
     expect(events.isError, events.text).toBeFalsy()
     const misdated = await call('crear_eventos', {
-      worldId: world.id,
+      chronologyId: chronology.data.id,
       events: [
         { title: 'Bien', date: '1250' },
         { title: 'Mal', date: '1250-Nada-3' }
       ]
     })
     expect(misdated.text).toMatch(/^BAD_DATE.*n\.º 2/)
-    // Una cronología es una pestaña de una página (ADR-0031): sin página, una nueva con su nombre
-    const chronology = await call<{ id: string; pageId: string }>('crear_cronologia', {
-      worldId: world.id,
-      name: 'Historia'
-    })
-    expect(chronology.isError, chronology.text).toBeFalsy()
     const timeline = await call<{ entries: { title: string; form: string; field?: string }[] }>('ver_cronologia', {
       chronologyId: chronology.data.id
     })

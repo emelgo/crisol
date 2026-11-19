@@ -295,16 +295,19 @@ export async function findTargets(
       )
       break
     case 'event':
-      // Un evento suelto (módulo 8): su título o, sin él, el de su página; no cuelga de ninguna
+      // Un evento (módulo 8): su título o, sin él, el de su página enlazada; cuelga de la página de su cronología
+      // (ADR-0032: se ve con su pestaña)
       put(
         await db
           .select({
             id: timelineEvents.id,
-            pageId: sql<null>`null`,
+            pageId: pageTabs.pageId,
             name: sql<string>`coalesce(nullif(${timelineEvents.title}, ''), ${pages.title}, '')`,
             hidden: timelineEvents.hidden
           })
           .from(timelineEvents)
+          .innerJoin(chronologies, eq(chronologies.id, timelineEvents.chronologyId))
+          .innerJoin(pageTabs, eq(pageTabs.id, chronologies.tabId))
           .leftJoin(pages, eq(pages.id, timelineEvents.pageId))
           .where(and(inArray(timelineEvents.id, ids), eq(timelineEvents.worldId, worldId)))
       )

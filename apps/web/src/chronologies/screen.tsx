@@ -240,7 +240,7 @@ export function Chronology({
   const duplicate = useMutation({
     mutationFn: (entry: ChronologyEntryView) =>
       api.call('createTimelineEvents', {
-        worldId,
+        chronologyId: data.data?.chronology.id ?? '',
         events: [
           {
             title: entry.untitled ? '' : entry.title,
@@ -260,7 +260,7 @@ export function Chronology({
   })
   const updateGroups = useMutation({
     mutationFn: (groups: Array<{ id?: string; name: string; color: TimelineGroupView['color'] }>) =>
-      api.call('updateTimelineGroups', { worldId, groups }),
+      api.call('updateTimelineGroups', { chronologyId: data.data?.chronology.id ?? '', groups }),
     onSuccess: refresh,
     onError: fail
   })
@@ -613,6 +613,7 @@ export function Chronology({
       {draft && (
         <EventDialog
           worldId={worldId}
+          chronologyId={chronology.id}
           calendarId={calendar.id}
           calendars={calendars.data.calendars}
           groups={groups}

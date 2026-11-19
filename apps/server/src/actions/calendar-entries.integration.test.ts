@@ -62,7 +62,7 @@ describe('lo que cae en un calendario (vista grande)', () => {
     await conn?.close()
   })
 
-  it('los eventos y las páginas con fecha, sin cronologías; lo de otro calendario, convertido o contado', async () => {
+  it('los eventos de todas las cronologías y las páginas con fecha; lo de otro calendario, convertido o contado', async () => {
     const varn = await ok200('createCalendar', { worldId, name: 'Cuenta de Varn', from: 'gregorian' })
     const elfos = await ok200('createCalendar', { worldId, name: 'Cómputo élfico', from: 'gregorian' })
     await ok200('updateCalendar', {
@@ -70,13 +70,19 @@ describe('lo que cae en un calendario (vista grande)', () => {
       definition: { ...elfos.definition, correspondence: { date: '100-1-1' } }
     })
     await ok200('createCalendar', { worldId, name: 'Kharum', from: 'blank' })
+    // En dos cronologías (cada evento es de una: ADR-0032); la vista grande las junta
+    const reino = await ok200('createChronology', { worldId, name: 'Reino' })
+    const otra = await ok200('createChronology', { worldId, name: 'Otra' })
     await ok200('createTimelineEvents', {
-      worldId,
+      chronologyId: reino.id,
       events: [
         { title: 'Boda de Ilsa', date: '1247-3-18', group: 'La Corona', hidden: true },
-        { title: 'Llegada de los elfos', date: '0-1-2', calendar: 'Cómputo élfico' },
         { title: 'Perdido', date: '3', calendar: 'Kharum' }
       ]
+    })
+    await ok200('createTimelineEvents', {
+      chronologyId: otra.id,
+      events: [{ title: 'Llegada de los elfos', date: '0-1-2', calendar: 'Cómputo élfico' }]
     })
     const puerto = (await ok200('createPage', { worldId, title: 'Puerto Ceniza', parentId: null })).id
     await ok200('editPage', { pageId: puerto, properties: [{ name: 'Fundación', type: 'date', value: '412-6-21' }] })
@@ -87,7 +93,11 @@ describe('lo que cae en un calendario (vista grande)', () => {
       ['Puerto Ceniza', '21 de Junio de 412'],
       ['Boda de Ilsa', '18 de Marzo de 1247']
     ])
-    expect(out.entries[0]).toMatchObject({ kind: 'event', converted: { name: 'Cómputo élfico' } })
+    expect(out.entries[0]).toMatchObject({
+      kind: 'event',
+      chronologyId: otra.id,
+      converted: { name: 'Cómputo élfico' }
+    })
     expect(out.entries[1]).toMatchObject({ kind: 'page', pageId: puerto, property: 'Fundación' })
     expect(out.entries[2]).toMatchObject({ hidden: true })
     expect(out.outside).toBe(1)
@@ -96,7 +106,11 @@ describe('lo que cae en un calendario (vista grande)', () => {
 
   it('solo quien lleva el mundo: la jugadora no lo lee, y un calendario que no existe es 404', async () => {
     const varn = await ok200('createCalendar', { worldId, name: 'Cuenta de Varn', from: 'gregorian' })
-    await ok200('createTimelineEvents', { worldId, events: [{ title: 'Boda de Ilsa', date: '1247-3-18' }] })
+    const reino = await ok200('createChronology', { worldId, name: 'Reino' })
+    await ok200('createTimelineEvents', {
+      chronologyId: reino.id,
+      events: [{ title: 'Boda de Ilsa', date: '1247-3-18' }]
+    })
     const player = await call('listCalendarEntries', { calendarId: varn.id }, ana.cookie)
     expect(player.statusCode).toBe(404)
     expect(player.body).not.toContain('Boda')
