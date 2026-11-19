@@ -563,15 +563,11 @@
   border-block-start-color: var(--color-accent-text);
 }
 
+/* El número de un mes (las festividades no tienen): centrado bajo «Nº» */
 .number {
-  white-space: nowrap;
-}
-
-.number > span {
-  display: inline-block;
-  inline-size: 1.75rem;
+  min-inline-size: 2.5rem;
   color: var(--color-muted);
-  text-align: end;
+  white-space: nowrap;
 }
 
 .check {

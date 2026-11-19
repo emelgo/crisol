@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { weekdayName, weekdayOf } from './dates.ts'
 import { blankCalendar, type CalendarDefinition, gregorianCalendar } from './definition.ts'
 import { OUTSIDE_CONTINUOUS } from './fixtures.ts'
-import { firstWeekdayFor, gregorianLeapRule, rotateWeek } from './week.ts'
+import { firstWeekdayFor, rotateWeek } from './week.ts'
 
 const greg = gregorianCalendar()
 
@@ -61,23 +61,5 @@ describe('«La semana empieza en»: reordena los días sin cambiar el de ninguna
     const month = 'm6'
     for (const year of [-3, 0, 7])
       expect(weekdayName(def, { year, month, day: 3 })).toBe(weekdayName(OUTSIDE_CONTINUOUS, { year, month, day: 3 }))
-  })
-})
-
-describe('«Como el gregoriano»: la regla de sus bisiestos', () => {
-  it('un día más en el segundo mes (sin contar festividades) cada 4 años, salvo cada 100, pero sí cada 400', () => {
-    const blank = blankCalendar()
-    expect(gregorianLeapRule(blank)).toEqual({ monthId: blank.months[1]?.id, days: 1, every: 4, unless: 100, but: 400 })
-    const withFestival: CalendarDefinition = {
-      ...blank,
-      months: [{ id: 'fiesta', name: 'Fiesta', days: 5, festival: true }, ...blank.months]
-    }
-    expect(gregorianLeapRule(withFestival)?.monthId).toBe(blank.months[1]?.id)
-  })
-
-  it('con un solo mes, en él; sin meses, ninguna', () => {
-    const one: CalendarDefinition = { ...blankCalendar(), months: [{ id: 'unico', name: 'Único', days: 365 }] }
-    expect(gregorianLeapRule(one)?.monthId).toBe('unico')
-    expect(gregorianLeapRule({ ...one, months: [] })).toBeNull()
   })
 })

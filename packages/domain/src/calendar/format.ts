@@ -185,7 +185,7 @@ function withMonth(def: CalendarDefinition, year: number, token: string, day: nu
     const named = namedDay(def, token)
     if (named) {
       if (named.day > daysInMonth(def, year, named.month))
-        return failure('DAY', `${token.trim()} no cae en ${year} (solo en los años con bisiesto)`)
+        return failure('DAY', `${token.trim()} no cae en ${year} (solo en los años con días de más)`)
       return { ok: true, date: { year, ...named } }
     }
   }

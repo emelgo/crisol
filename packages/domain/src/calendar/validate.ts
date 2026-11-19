@@ -96,11 +96,12 @@ export function validateCalendar(def: CalendarDefinition, options: ValidateOptio
   def.leapRules.forEach((rule, i) => {
     const index = monthIndexOf(def, rule.monthId)
     const month = def.months[index]?.name ?? '?'
-    if (index < 0) add('leap', 'leapMonth', `El bisiesto ${i + 1} va en un mes que no existe.`, { n: i + 1 }, i)
+    if (index < 0)
+      add('leap', 'leapMonth', `La regla ${i + 1} de días de más va en un mes que no existe.`, { n: i + 1 }, i)
     if (!Number.isInteger(rule.every) || rule.every < 1)
-      add('leap', 'leapEvery', `El bisiesto de «${month}» necesita cada cuántos años.`, { name: month }, i)
+      add('leap', 'leapEvery', `Los días de más de «${month}» necesitan cada cuántos años.`, { name: month }, i)
     if (!Number.isInteger(rule.days) || rule.days < 1)
-      add('leap', 'leapDays', `El bisiesto de «${month}» debe añadir al menos un día.`, { name: month }, i)
+      add('leap', 'leapDays', `Los días de más de «${month}» deben ser al menos uno.`, { name: month }, i)
     if (rule.unless && (!Number.isInteger(rule.unless) || rule.unless % rule.every !== 0))
       add(
         'leap',

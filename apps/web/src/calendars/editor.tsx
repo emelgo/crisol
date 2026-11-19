@@ -1,7 +1,7 @@
 /**
  * El editor de un calendario, por fases (ajustes tras los módulos, bloque C; como Reglas de un sistema): con el
  * esqueleto de las pantallas, el título sobre la columna y «Ver calendario» a su derecha; a la izquierda, las fases con
- * sus avisos (General, Semana, Meses, Días señalados, Bisiestos, Estaciones, Lunas, Eras y la correspondencia con el
+ * sus avisos (General, Semana, Meses, Días señalados, Días de más, Estaciones, Lunas, Eras y la correspondencia con el
  * principal); en el centro, la fase elegida (va en la URL, ?fase=), con la anterior y la siguiente al pie y, cuando hay
  * cambios, «Guardar» y «Cancelar» abajo; a la derecha, el año en cifras y los problemas, cada uno con «Ir a…». Se guarda
  * entero (con la versión que se leyó); con problemas, «Guardar» lleva al primero. Salir con cambios pregunta
@@ -42,6 +42,7 @@ import { Modal } from '../components/modal.tsx'
 import { Screen } from '../components/screen.tsx'
 import { Tour } from '../components/tour.tsx'
 import styles from './editor.module.css'
+import { CalendarFacts } from './facts.tsx'
 import { useProblemText } from './problems.ts'
 import {
   type Change,
@@ -56,7 +57,6 @@ import {
   Section,
   WeekSection
 } from './sections.tsx'
-import { CalendarFacts } from './view.tsx'
 import { YearStrip } from './year-strip.tsx'
 
 const route = getRouteApi('/mundos/$worldId/calendarios/$calendarId/editar')
@@ -67,7 +67,7 @@ export const PHASES = [
   { id: 'semana', section: 'week', title: 'week', icon: CalendarDays },
   { id: 'meses', section: 'months', title: 'months', icon: CalendarRange },
   { id: 'dias-senalados', section: null, title: 'namedDays', icon: Sparkles },
-  { id: 'bisiestos', section: 'leap', title: 'leap', icon: Repeat },
+  { id: 'dias-de-mas', section: 'leap', title: 'leap', icon: Repeat },
   { id: 'estaciones', section: 'seasons', title: 'seasons', icon: Leaf },
   { id: 'lunas', section: 'moons', title: 'moons', icon: Moon },
   { id: 'eras', section: 'eras', title: 'eras', icon: Hourglass },
@@ -156,7 +156,7 @@ function Editor({
       })
     return found
   }, [deferred, primary, name, t])
-  // Los meses, los bisiestos y la semana tienen que estar bien para calcular días
+  // Los meses, los días de más y la semana tienen que estar bien para calcular días
   const computable = !problems.some((p) => p.section === 'months' || p.section === 'leap' || p.section === 'week')
   const saved = useMemo(() => JSON.stringify(calendar.definition), [calendar.definition])
   const dirty = name !== calendar.name || JSON.stringify(draft) !== saved
@@ -362,7 +362,7 @@ function Editor({
           {phase.id === 'semana' && <WeekSection {...props} valid={computable} />}
           {phase.id === 'meses' && <MonthsSection {...props} />}
           {phase.id === 'dias-senalados' && <NamedDaysSection draft={draft} change={change} />}
-          {phase.id === 'bisiestos' && <LeapSection {...props} />}
+          {phase.id === 'dias-de-mas' && <LeapSection {...props} />}
           {phase.id === 'estaciones' && <SeasonsSection {...props} valid={computable} reference={deferred} />}
           {phase.id === 'lunas' && <MoonsSection {...props} />}
           {phase.id === 'eras' && <ErasSection {...props} />}

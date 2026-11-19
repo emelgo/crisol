@@ -247,7 +247,7 @@ describe('el editor de un calendario, por fases', () => {
   it('las fases a la izquierda, solo la elegida en el centro (en la URL) y el resumen del año a la derecha', async () => {
     const { router } = open()
     const nav = await phases()
-    for (const name of ['General', 'Semana', 'Meses', 'Días señalados', 'Bisiestos', 'Estaciones', 'Lunas', 'Eras'])
+    for (const name of ['General', 'Semana', 'Meses', 'Días señalados', 'Días de más', 'Estaciones', 'Lunas', 'Eras'])
       expect(within(nav).getByRole('button', { name })).toBeDefined()
     // Es el principal: sin correspondencia
     expect(within(nav).queryByRole('button', { name: 'Correspondencia' })).toBeNull()
@@ -313,23 +313,33 @@ describe('el editor de un calendario, por fases', () => {
     expect(saved && weekdayName(saved, { year: 2026, month: 'ene', day: 1 })).toBe('Viernes')
   })
 
-  it('Bisiestos: uno en blanco no tiene ninguno; «Como el gregoriano» pone su regla', async () => {
+  it('Días de más: sin reglas de serie ni atajos; una regla se escribe como una frase y se guarda', async () => {
     const blank: FakeCalendar = {
       id: crypto.randomUUID(),
       worldId: WORLD.id,
       name: 'Cuenta de Kharum',
       definition: blankCalendar()
     }
-    const { api } = renderAt(`/mundos/${WORLD.id}/calendarios/${blank.id}/editar?fase=bisiestos`, [blank])
-    const leap = await screen.findByRole('region', { name: 'Bisiestos' })
-    expect(within(leap).getByText('Sin años bisiestos.')).toBeDefined()
-    expect(within(leap).getByRole('button', { name: 'Añadir regla' })).toBeDefined()
-    await userEvent.click(within(leap).getByRole('button', { name: 'Como el gregoriano' }))
-    expect(within(leap).getByLabelText('Cada cuántos años, bisiesto 1')).toBeDefined()
+    const { api } = renderAt(`/mundos/${WORLD.id}/calendarios/${blank.id}/editar?fase=dias-de-mas`, [blank])
+    const extra = await screen.findByRole('region', { name: 'Días de más' })
+    expect(within(extra).getByText('Todos los años duran lo mismo.')).toBeDefined()
+    expect(within(extra).queryByRole('button', { name: 'Como el gregoriano' })).toBeNull()
+    expect(extra.textContent).not.toMatch(/bisiest/i)
+    await userEvent.click(within(extra).getByRole('button', { name: 'Regla' }))
+    // «Cada [3] años, [Mes 1] tiene [2] días más…»
+    const every = within(extra).getByLabelText('Cada cuántos años, regla 1')
+    await userEvent.clear(every)
+    await userEvent.type(every, '3')
+    const days = within(extra).getByLabelText('Días de más de la regla 1')
+    await userEvent.clear(days)
+    await userEvent.type(days, '2')
+    expect(extra.textContent).toContain('días más')
+    const summary = screen.getByRole('complementary', { name: 'El año y los problemas' })
+    await waitFor(() => expect(summary.textContent).toContain('360 días · 362 con días de más'))
     await userEvent.click(screen.getByRole('button', { name: 'Guardar' }))
     await waitFor(() => expect(api.calendars[0]?.version).toBe(2))
     expect(api.calendars[0]?.definition.leapRules).toEqual([
-      { monthId: blank.definition.months[1]?.id, days: 1, every: 4, unless: 100, but: 400 }
+      { monthId: blank.definition.months[0]?.id, days: 2, every: 3 }
     ])
   })
 

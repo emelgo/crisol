@@ -1,10 +1,10 @@
 /**
  * La semana de un calendario, como la piensa quien lo edita (ajustes tras los módulos, bloque C): en qué día empieza
  * la semana (reordena los días sin cambiar el de ninguna fecha) y el ancla «el 1 de {mes} del año {N} fue {día}», que
- * da el día de la semana del primer día del año 0 (`firstWeekday`). Y la regla de bisiestos «Como el gregoriano»
+ * da el día de la semana del primer día del año 0 (`firstWeekday`)
  */
 import { monthIndexOf, weekdayOf } from './dates.ts'
-import type { CalendarDefinition, FullDate, LeapRule } from './definition.ts'
+import type { CalendarDefinition, FullDate } from './definition.ts'
 
 const mod = (n: number, m: number) => ((n % m) + m) % m
 
@@ -38,14 +38,4 @@ export function rotateWeek(
     weekdays: [...def.weekdays.slice(at), ...def.weekdays.slice(0, at)],
     firstWeekday: mod(def.firstWeekday - at, count)
   }
-}
-
-/**
- * «Como el gregoriano»: un día más cada 4 años, salvo cada 100, pero sí cada 400, en el segundo mes que no es
- * festividad (febrero en el nuestro; si solo hay uno, en él). null sin meses
- */
-export function gregorianLeapRule(def: CalendarDefinition): LeapRule | null {
-  const regular = def.months.filter((m) => !m.festival)
-  const month = regular[1] ?? regular[0] ?? def.months[0]
-  return month ? { monthId: month.id, days: 1, every: 4, unless: 100, but: 400 } : null
 }

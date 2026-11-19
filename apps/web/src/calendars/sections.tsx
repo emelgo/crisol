@@ -1,7 +1,7 @@
 /**
  * Las fases del editor de un calendario (ajustes tras los módulos, bloque C): General, Semana (en qué día empieza y el
- * ancla «el 1 de {mes} del año {N} fue {día}»), Meses (cada uno, mes o festividad), Días señalados, Bisiestos,
- * Estaciones, Lunas, Eras y la correspondencia con el principal. Cada una cambia el borrador con `change`; los problemas
+ * ancla «el 1 de {mes} del año {N} fue {día}»), Meses (cada uno, mes o festividad), Días señalados, Días de más (años
+ * más largos, por reglas, sin dar ninguna por hecha), Estaciones, Lunas, Eras y la correspondencia con el principal. Cada una cambia el borrador con `change`; los problemas
  * los calcula el editor y aquí se marcan donde están
  */
 import {
@@ -12,7 +12,6 @@ import {
   dateFromDay,
   firstWeekdayFor,
   formatDate,
-  gregorianLeapRule,
   monthNumber,
   newCalendarId,
   rotateWeek,
@@ -20,7 +19,7 @@ import {
   yearLength,
   yearStart
 } from '@crisol/domain'
-import { ChevronDown, ChevronUp, GripVertical, Plus, Repeat, TriangleAlert, X } from 'lucide-react'
+import { ChevronDown, ChevronUp, GripVertical, Plus, TriangleAlert, X } from 'lucide-react'
 import { type DragEvent, type KeyboardEvent, type ReactNode, type Ref, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { DateInput, IntegerInput } from './date-input.tsx'
@@ -417,6 +416,9 @@ export function MonthsSection({ draft, change, problems }: SectionProps) {
             <th scope="col" className={styles.center}>
               {t('calendars.editor.number')}
             </th>
+            <th scope="col">
+              <span className={styles.srOnly}>{t('calendars.editor.color')}</span>
+            </th>
             <th scope="col">{t('calendars.editor.monthName')}</th>
             <th scope="col" className={styles.center}>
               {t('calendars.editor.days')}
@@ -450,8 +452,8 @@ export function MonthsSection({ draft, change, problems }: SectionProps) {
                     <GripVertical size={16} aria-hidden="true" />
                   </button>
                 </td>
-                <td className={styles.number}>
-                  <span>{n ?? '—'}</span>
+                <td className={`${styles.number} ${styles.center}`}>{n ?? '—'}</td>
+                <td>
                   <input
                     type="color"
                     className={styles.swatch}
@@ -606,7 +608,7 @@ export function NamedDaysSection({ draft, change }: Pick<SectionProps, 'draft' |
         : [...kept, ...missing.map((n) => ({ key: newCalendarId(), ...n }))]
     })
   }, [signature])
-  // Los días de un mes, con los que le añaden sus bisiestos (los nombres de esos van al final)
+  // Los días de un mes, con los de más que le dan sus reglas (los nombres de esos van al final)
   const maxDay = (monthId: string) =>
     (draft.months.find((m) => m.id === monthId)?.days ?? 1) +
     draft.leapRules.filter((r) => r.monthId === monthId).reduce((sum, r) => sum + r.days, 0)
@@ -651,7 +653,7 @@ export function NamedDaysSection({ draft, change }: Pick<SectionProps, 'draft' |
             const name = nameAt(row.monthId, row.day)
             return (
               <li key={row.key} className={`${styles.leap} ${styles.namedDay}`}>
-                {/* «El [1] de [mes] se llama [nombre]»: el día cabe en su mes (con los de sus bisiestos) */}
+                {/* «El [1] de [mes] se llama [nombre]»: el día cabe en su mes (con sus días de más) */}
                 <span>{t('calendars.editor.namedDayThe')}</span>
                 <IntegerInput
                   className={styles.tiny}
@@ -696,131 +698,117 @@ export function NamedDaysSection({ draft, change }: Pick<SectionProps, 'draft' |
   )
 }
 
+/**
+ * Días de más: algunos años, un mes tiene más días. Cada regla se lee como una frase: «Cada [4] años, [mes] tiene [1]
+ * día más, salvo cada [100] pero sí cada [400]». No hay ninguna de serie: el calendario no da por hecho cómo es el año
+ */
 export function LeapSection({ draft, change, problems }: SectionProps) {
   const { t } = useTranslation()
-  const add = () =>
-    change(
-      (d) =>
-        void d.leapRules.push({
-          monthId: d.months.find((m) => !m.festival)?.id ?? d.months[0]?.id ?? '',
-          days: 1,
-          every: 4
-        })
-    )
-  // Sin ninguna: lo dice, y se añade una o la del gregoriano
-  if (draft.leapRules.length === 0)
-    return (
-      <div className={styles.emptyLeap}>
-        <p className={styles.muted}>{t('calendars.editor.noLeap')}</p>
-        {draft.months.length > 0 && (
-          <div className={styles.emptyActions}>
-            <AddButton label={t('calendars.editor.addLeap')} onClick={add} />
-            <button
-              type="button"
-              className={styles.add}
-              onClick={() =>
-                change((d) => {
-                  const rule = gregorianLeapRule(d)
-                  d.leapRules = rule ? [rule] : []
-                })
-              }
-            >
-              <Repeat size={16} aria-hidden="true" />
-              {t('calendars.editor.gregorianLeap')}
-            </button>
-          </div>
-        )}
-      </div>
-    )
+  const set = (i: number, fn: (rule: CalendarDefinition['leapRules'][number]) => void) =>
+    change((d) => {
+      const target = d.leapRules[i]
+      if (target) fn(target)
+    })
   return (
     <>
-      <ol className={styles.rows}>
-        {draft.leapRules.map((rule, i) => (
-          <li key={i} className={styles.leap} data-invalid={flagged(problems, 'leap', i) || undefined}>
-            <span>{t('calendars.editor.leapIn')}</span>
-            <select
-              value={rule.monthId}
-              aria-label={t('calendars.editor.leapMonth', { n: i + 1 })}
-              onChange={(event) =>
-                change((d) => {
-                  const target = d.leapRules[i]
-                  if (target) target.monthId = event.target.value
-                })
-              }
-            >
-              {draft.months.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.name || '—'}
-                </option>
-              ))}
-            </select>
-            <IntegerInput
-              className={styles.tiny}
-              value={rule.days}
-              aria-label={t('calendars.editor.leapDaysLabel', { n: i + 1 })}
-              onValue={(days) =>
-                change((d) => {
-                  const target = d.leapRules[i]
-                  if (target) target.days = days
-                })
-              }
-            />
-            <span>{t('calendars.editor.leapMore', { count: rule.days })}</span>
-            <IntegerInput
-              className={styles.tiny}
-              value={rule.every}
-              aria-label={t('calendars.editor.leapEvery', { n: i + 1 })}
-              onValue={(every) =>
-                change((d) => {
-                  const target = d.leapRules[i]
-                  if (target) target.every = every
-                })
-              }
-            />
-            <span>{t('calendars.editor.leapYears')},</span>
-            <span>{t('calendars.editor.leapUnless')}</span>
-            <IntegerInput
-              className={styles.tiny}
-              value={rule.unless ?? Number.NaN}
-              placeholder="—"
-              aria-label={t('calendars.editor.leapUnlessLabel', { n: i + 1 })}
-              onValue={(unless) =>
-                change((d) => {
-                  const target = d.leapRules[i]
-                  if (!target) return
-                  if (unless > 0) target.unless = unless
-                  else {
-                    delete target.unless
-                    delete target.but
-                  }
-                })
-              }
-            />
-            <span>{t('calendars.editor.leapBut')}</span>
-            <IntegerInput
-              className={styles.tiny}
-              value={rule.but ?? Number.NaN}
-              placeholder="—"
-              disabled={!rule.unless}
-              aria-label={t('calendars.editor.leapButLabel', { n: i + 1 })}
-              onValue={(but) =>
-                change((d) => {
-                  const target = d.leapRules[i]
-                  if (!target) return
-                  if (but > 0) target.but = but
-                  else delete target.but
-                })
-              }
-            />
-            <RemoveButton
-              label={t('calendars.editor.removeLeap', { n: i + 1 })}
-              onClick={() => change((d) => void d.leapRules.splice(i, 1))}
-            />
-          </li>
-        ))}
-      </ol>
+      <p className={styles.lead}>{t('calendars.editor.leapLead')}</p>
+      {draft.leapRules.length === 0 ? (
+        <p className={styles.muted}>{t('calendars.editor.noLeap')}</p>
+      ) : (
+        <ol className={styles.rows}>
+          {draft.leapRules.map((rule, i) => (
+            <li key={i} className={styles.leap} data-invalid={flagged(problems, 'leap', i) || undefined}>
+              <span>{t('calendars.editor.leapEach')}</span>
+              <IntegerInput
+                className={styles.tiny}
+                value={rule.every}
+                aria-label={t('calendars.editor.leapEvery', { n: i + 1 })}
+                onValue={(every) =>
+                  set(i, (target) => {
+                    target.every = every
+                  })
+                }
+              />
+              <span>{t('calendars.editor.leapYears')}</span>
+              <select
+                value={rule.monthId}
+                aria-label={t('calendars.editor.leapMonth', { n: i + 1 })}
+                onChange={(event) =>
+                  set(i, (target) => {
+                    target.monthId = event.target.value
+                  })
+                }
+              >
+                {draft.months.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.name || '—'}
+                  </option>
+                ))}
+              </select>
+              <span>{t('calendars.editor.leapHas')}</span>
+              <IntegerInput
+                className={styles.tiny}
+                value={rule.days}
+                aria-label={t('calendars.editor.leapDaysLabel', { n: i + 1 })}
+                onValue={(days) =>
+                  set(i, (target) => {
+                    target.days = days
+                  })
+                }
+              />
+              <span>{t('calendars.editor.leapMore', { count: rule.days })}</span>
+              <span>{t('calendars.editor.leapUnless')}</span>
+              <IntegerInput
+                className={styles.tiny}
+                value={rule.unless ?? Number.NaN}
+                placeholder="—"
+                aria-label={t('calendars.editor.leapUnlessLabel', { n: i + 1 })}
+                onValue={(unless) =>
+                  set(i, (target) => {
+                    if (unless > 0) target.unless = unless
+                    else {
+                      delete target.unless
+                      delete target.but
+                    }
+                  })
+                }
+              />
+              <span>{t('calendars.editor.leapBut')}</span>
+              <IntegerInput
+                className={styles.tiny}
+                value={rule.but ?? Number.NaN}
+                placeholder="—"
+                disabled={!rule.unless}
+                aria-label={t('calendars.editor.leapButLabel', { n: i + 1 })}
+                onValue={(but) =>
+                  set(i, (target) => {
+                    if (but > 0) target.but = but
+                    else delete target.but
+                  })
+                }
+              />
+              <RemoveButton
+                label={t('calendars.editor.removeLeap', { n: i + 1 })}
+                onClick={() => change((d) => void d.leapRules.splice(i, 1))}
+              />
+            </li>
+          ))}
+        </ol>
+      )}
       {draft.leapRules.length < 10 && draft.months.length > 0 && (
-        <AddButton label={t('calendars.editor.addLeap')} onClick={add} />
+        <AddButton
+          label={t('calendars.editor.addLeap')}
+          onClick={() =>
+            change(
+              (d) =>
+                void d.leapRules.push({
+                  monthId: d.months.find((m) => !m.festival)?.id ?? d.months[0]?.id ?? '',
+                  days: 1,
+                  every: 2
+                })
+            )
+          }
+        />
       )}
     </>
   )
