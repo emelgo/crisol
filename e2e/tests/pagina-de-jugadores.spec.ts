@@ -46,7 +46,8 @@ test('la página de los jugadores: el máster deja editar el diario a la campañ
   await expect(diary.getByRole('region', { name: 'La Marca' })).toContainText('La ve toda la campaña')
   await expect(editors).toHaveValue('all')
   await page.screenshot({ path: test.info().outputPath('dejar-editar.png'), fullPage: false })
-  await page.keyboard.press('Escape')
+  await page.getByRole('dialog', { name: 'Quién la conoce' }).getByRole('button', { name: 'Cerrar' }).click()
+  await expect(diary).toBeVisible()
 
   // La jugadora la abre y escribe; al máster le llega en vivo
   await ana.goto(`/mundos/${worldId}/campanas/${campaignId}/paginas/${id('Diario de la compañía')}`)

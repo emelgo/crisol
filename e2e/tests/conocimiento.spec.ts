@@ -93,7 +93,8 @@ test('lo que sabe cada campaña: el máster da a conocer «Aldoria» a La Marca;
     .selectOption({ label: 'Lo sabe toda la campaña' })
   await expect(who.getByRole('region', { name: 'La Marca' })).toContainText('La ve toda la campaña')
   await expect(who.getByRole('region', { name: 'La Marca' })).toContainText('Decidido en esta página')
-  await expect(who.getByRole('region', { name: 'Los del norte' })).toContainText('No la ve')
+  // Desde la Mesa de La Marca, solo ella: lo que se comparte va a la campaña desde la que se hace
+  await expect(who.getByRole('region', { name: 'Los del norte' })).toHaveCount(0)
   await page.screenshot({ path: test.info().outputPath('quien-la-conoce.png'), fullPage: false })
   await page.keyboard.press('Escape')
 

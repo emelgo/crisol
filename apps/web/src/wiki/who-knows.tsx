@@ -67,9 +67,14 @@ function WhoKnows({ page, onClose }: { page: Page; onClose: () => void }) {
   const { t } = useTranslation()
   const api = useApi()
   const id = useId()
+  // Desde la Mesa de una campaña, solo ella: lo que se comparte va a la campaña desde la que se hace
+  const campaign = useCurrentCampaign()
   const known = useQuery({
     queryKey: knowledgeKey(page.worldId, page.id),
-    queryFn: () => api.call('getPageKnowledge', { pageId: page.id })
+    queryFn: () => api.call('getPageKnowledge', { pageId: page.id }),
+    select: campaign
+      ? (data) => ({ ...data, campaigns: data.campaigns.filter((row) => row.campaignId === campaign) })
+      : undefined
   })
   return (
     <div
