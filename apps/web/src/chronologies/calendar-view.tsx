@@ -246,7 +246,11 @@ export function CalendarView({
                 event.dataTransfer.effectAllowed = 'move'
                 event.dataTransfer.setData('text/plain', entry.key)
               }}
-              onOpen={() => setSelected(day.dayNumber)}
+              onOpen={() => {
+                setSelected(day.dayNumber)
+                // Llevada por fuera (la vista grande de un calendario), la ficha también se abre
+                if (onSelect) onEdit?.(entry)
+              }}
             />
           ) : (
             // Un hueco para que lo de varios días siga a la misma altura en toda la semana
@@ -321,7 +325,15 @@ export function CalendarView({
       go(event.key === 'PageUp' ? -1 : 1)
     }
   }
-  const tabbable = focusDay !== null && focusDay >= first && focusDay <= last ? focusDay : allDays[0]?.dayNumber
+  // La parada del tabulador en la rejilla: la del último foco; si no, el día elegido, hoy o el primero
+  const inMonth = (day: number | null | undefined): day is number => day != null && day >= first && day <= last
+  const tabbable = inMonth(focusDay)
+    ? focusDay
+    : inMonth(selected)
+      ? selected
+      : inMonth(today)
+        ? today
+        : allDays[0]?.dayNumber
 
   const cell = (day: GridDay, row: Map<string, number> | null) => (
     <td
@@ -334,7 +346,10 @@ export function CalendarView({
       data-over={over === day.dayNumber || undefined}
       data-selected={selected === day.dayNumber || undefined}
       data-today={today === day.dayNumber || undefined}
-      onFocus={() => setFocusDay(day.dayNumber)}
+      // Solo el foco de la celda (el de sus fichas, que sube, no la mueve)
+      onFocus={(event) => {
+        if (event.target === event.currentTarget) setFocusDay(day.dayNumber)
+      }}
       onClick={(event) => {
         if ((event.target as HTMLElement).closest('button, a')) return
         setSelected(day.dayNumber)
@@ -347,7 +362,9 @@ export function CalendarView({
       {...dropProps(day.dayNumber)}
     >
       <span className={styles.dayHead}>
-        <span className={styles.dayNumber}>{day.day}</span>
+        <span className={styles.dayNumber} data-number>
+          {day.day}
+        </span>
         <span className={styles.moons}>{moonsOf(day.dayNumber)}</span>
       </span>
       {chipsFor(day, row)}
@@ -471,7 +488,11 @@ export function CalendarView({
           {outside.map(({ month, days }) =>
             month && days.length > 0 ? (
               <div key={month.id} className={styles.outsideMonth}>
-                <p className={styles.outsideName} id={`${titleId}-${month.id}`}>
+                <p
+                  className={styles.outsideName}
+                  id={`${titleId}-${month.id}`}
+                  style={month.color ? ({ '--month-color': month.color } as CSSProperties) : undefined}
+                >
                   <b>{month.name}</b>
                   <span>{t('chronologies.outsideWeek')}</span>
                 </p>

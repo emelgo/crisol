@@ -1245,9 +1245,11 @@
   align-content: center;
   margin: 0;
   padding: var(--space-2) var(--space-3);
-  border: 1px solid color-mix(in srgb, var(--color-warning) 50%, var(--line-frame));
+  /* En el color de su mes, si lo tiene (como su franja); el nombre, legible siempre */
+  border: 1px solid color-mix(in srgb, var(--month-color, var(--color-warning)) 50%, var(--line-frame));
   border-radius: var(--radius-button);
-  color: var(--color-warning);
+  background: color-mix(in srgb, var(--month-color, var(--color-warning)) 10%, transparent);
+  color: var(--color-text);
 }
 
 .outsideName span {

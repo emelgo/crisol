@@ -175,6 +175,23 @@ describe('un calendario en grande', () => {
     expect(screen.getByRole('heading', { level: 2, name: 'Febrero de 1 RV' })).toBeDefined()
   })
 
+  it('pulsar un evento en la rejilla elige su día y lo abre para editarlo', async () => {
+    open({
+      events: [
+        {
+          worldId: WORLD.id,
+          title: 'Boda de Ilsa',
+          date: { calendarId: VARN.id ?? '', start: { year: 0, month: 'ene', day: 3 } }
+        }
+      ]
+    })
+    await userEvent.click(await screen.findByRole('button', { name: 'Boda de Ilsa' }))
+    const dialog = await screen.findByRole('dialog')
+    expect((within(dialog).getByLabelText('Título') as HTMLInputElement).value).toBe('Boda de Ilsa')
+    const day = screen.getByRole('complementary', { name: 'El día elegido' })
+    expect(within(day).getByRole('heading', { level: 2 }).textContent).toContain('3 de Enero de 0 RV')
+  })
+
   it('«Nuevo evento» crea un evento suelto del mundo con la fecha del día elegido', async () => {
     const { api } = open()
     await userEvent.click(await screen.findByRole('cell', { name: / 5 de Enero de 0 RV$/ }))
@@ -217,7 +234,7 @@ describe('un calendario en grande', () => {
     const today = screen.getByRole('cell', { name: /18 de Marzo de 1250 RV/ })
     expect(today.getAttribute('aria-current')).toBe('date')
     await userEvent.click(screen.getByRole('button', { name: 'Mes siguiente' }))
-    await userEvent.click(screen.getByRole('button', { name: 'Hoy' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Ir a hoy' }))
     expect(screen.getByRole('heading', { level: 2, name: 'Marzo de 1250 RV' })).toBeDefined()
   })
 })

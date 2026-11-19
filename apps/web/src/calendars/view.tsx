@@ -22,7 +22,7 @@ import {
 } from '@crisol/domain'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { getRouteApi, Link, Navigate, useNavigate } from '@tanstack/react-router'
-import { CalendarPlus, FilePlus, Pencil, Sparkles } from 'lucide-react'
+import { CalendarPlus, ChevronLeft, ChevronRight, FilePlus, Pencil, Sparkles } from 'lucide-react'
 import { type CSSProperties, useId, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
@@ -35,6 +35,7 @@ import { EventDialog, type EventDraft } from '../chronologies/event-dialog.tsx'
 import { useAnnounce } from '../components/announcer.tsx'
 import { Loading } from '../components/brand.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
+import { FormError } from '../components/field.tsx'
 import { failed, LoadError, SectionError } from '../components/load-error.tsx'
 import { Screen } from '../components/screen.tsx'
 import { Tour } from '../components/tour.tsx'
@@ -191,14 +192,11 @@ function BigCalendar({
     chosen.options.length > 0 ? (
       <div className={styles.tools}>
         <TodayOf options={chosen.options} value={chosen.chosen} onChange={chosen.choose} />
-        <button
-          type="button"
-          className={styles.todayButton}
-          disabled={today === null}
-          onClick={() => today !== null && goToDay(today)}
-        >
-          {t('calendars.view.today')}
-        </button>
+        {today !== null && (
+          <button type="button" className={styles.todayButton} onClick={() => goToDay(today)}>
+            {t('calendars.view.goToday')}
+          </button>
+        )}
       </div>
     ) : null
 
@@ -225,6 +223,7 @@ function BigCalendar({
             setPlace(placeOfMonth(pages, id, place.year))
             setSelected(null)
           }}
+          onYear={(step) => setPlace({ page: place.page, year: place.year + step })}
         />
       }
       leftLabel={t('calendars.view.yearAside')}
@@ -238,6 +237,7 @@ function BigCalendar({
             entries={entries}
             groups={groups}
             busy={datedPage.isPending}
+            error={datedPage.error ? errorText(datedPage.error) : null}
             onNewEvent={() => setDialog({ date: { calendarId: calendar.id, start: dateFromDay(definition, day) } })}
             onNewPage={() => datedPage.mutate(dateFromDay(definition, day))}
             onEdit={(entry) => setDialog({ entry })}
@@ -261,7 +261,6 @@ function BigCalendar({
           today={today}
           tools={tools}
           banner={banner}
-          yearArrows
           onEdit={openEntry}
         />
       </div>
@@ -291,17 +290,19 @@ function BigCalendar({
   )
 }
 
-/** La ficha de la izquierda: el año que se ve, en pequeño (cada mes lleva a él), y los datos del calendario */
+/** La ficha de la izquierda: el año que se ve, en pequeño (‹ › pasa de año; cada mes lleva a él), y sus datos */
 function YearAside({
   calendar,
   year,
   current,
-  onMonth
+  onMonth,
+  onYear
 }: {
   calendar: Calendar
   year: number
   current: string | null
   onMonth: (monthId: string) => void
+  onYear: (step: number) => void
 }) {
   const { t } = useTranslation()
   const { definition } = calendar
@@ -310,7 +311,27 @@ function YearAside({
   return (
     <div className={styles.side}>
       <section aria-labelledby={yearId}>
-        <h2 id={yearId}>{formatYear(definition, year)}</h2>
+        <div className={styles.yearHead}>
+          <button
+            type="button"
+            className={styles.yearArrow}
+            aria-label={t('calendars.view.previousYear')}
+            title={t('calendars.view.previousYear')}
+            onClick={() => onYear(-1)}
+          >
+            <ChevronLeft size={16} aria-hidden="true" />
+          </button>
+          <h2 id={yearId}>{formatYear(definition, year)}</h2>
+          <button
+            type="button"
+            className={styles.yearArrow}
+            aria-label={t('calendars.view.nextYear')}
+            title={t('calendars.view.nextYear')}
+            onClick={() => onYear(1)}
+          >
+            <ChevronRight size={16} aria-hidden="true" />
+          </button>
+        </div>
         <YearStrip definition={definition} label={t('calendars.year', { name: calendar.name })} current={current} />
         <ol className={styles.months} aria-label={t('calendars.view.months')}>
           {definition.months.map((month) => {
@@ -374,7 +395,10 @@ export function CalendarFacts({ calendar }: { calendar: Calendar }) {
     ],
     [
       t('calendars.view.weekLabel'),
-      t('calendars.view.weekFacts', { count: definition.weekdays.length, first: definition.weekdays[0] ?? '' })
+      t('calendars.view.weekFacts', {
+        count: definition.weekdays.length,
+        first: definition.weekdays[0]?.trim() || t('calendars.editor.weekday', { n: 1 })
+      })
     ],
     [
       t('calendars.view.moonsLabel'),
@@ -414,6 +438,7 @@ function DayAside({
   entries,
   groups,
   busy,
+  error,
   onNewEvent,
   onNewPage,
   onEdit
@@ -425,6 +450,8 @@ function DayAside({
   entries: readonly ChronologyEntryView[]
   groups: readonly TimelineGroupView[]
   busy: boolean
+  /** Lo que falló al crear la página con su fecha */
+  error: string | null
   onNewEvent: () => void
   onNewPage: () => void
   onEdit: (entry: ChronologyEntryView) => void
@@ -487,6 +514,7 @@ function DayAside({
             <FilePlus size={16} aria-hidden="true" />
             {t('calendars.view.newPage')}
           </BusyButton>
+          <FormError message={error} />
         </div>
       </section>
     </div>

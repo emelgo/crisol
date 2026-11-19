@@ -35,7 +35,7 @@
 }
 
 /* Hoy, en la rejilla: su número en un círculo del color del acento */
-.month td[data-today] > span:first-child > span:first-child {
+.month td[data-today] [data-number] {
   display: inline-grid;
   place-items: center;
   min-inline-size: 1.5rem;
@@ -46,33 +46,40 @@
   color: var(--color-on-accent);
 }
 
-/* «Hoy de…» y «Hoy», antes de las flechas */
+/* «Hoy de…» (la campaña) y «Ir a hoy», antes de las flechas: callados, sin raya */
 .tools {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-1) var(--space-3);
   margin-inline-start: auto;
+}
+
+.tools > span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-muted);
+  font-size: 0.875rem;
 }
 
 .todayButton {
   min-block-size: 2.25rem;
-  padding: 0 var(--space-3);
-  border: 1px solid var(--line-frame);
-  border-radius: var(--radius-button);
-  background: var(--surface-glass-raised);
-  color: var(--color-text);
+  padding: 0 var(--space-1);
+  border: 0;
+  background: none;
+  color: var(--color-link);
   font-weight: 600;
   cursor: pointer;
 }
 
-.todayButton:hover:not(:disabled) {
-  border-color: var(--color-field-border);
+.todayButton:hover {
+  text-decoration: underline;
 }
 
-.todayButton:disabled {
-  opacity: 0.5;
-  cursor: default;
+.todayButton:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }
 
 /* La franja de una festividad (días entre meses que no se numeran), en su color */
@@ -124,11 +131,52 @@
   margin-block-end: var(--space-3);
 }
 
-/* El año en pequeño: la tira y los meses en dos columnas, cada uno lleva a él */
+/* El año en pequeño: su número entre ‹ ›, la tira y los meses, cada uno lleva a él */
+.yearHead {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-1);
+  margin-block-end: var(--space-3);
+}
+
+.side > section[aria-labelledby] > .yearHead > h2 {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: 1.125rem;
+  text-align: center;
+}
+
+.yearArrow {
+  display: grid;
+  place-items: center;
+  inline-size: 2rem;
+  block-size: 2rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--color-muted);
+  cursor: pointer;
+  transition:
+    background-color 150ms ease-out,
+    color 150ms ease-out;
+}
+
+.yearArrow:hover {
+  background: var(--row-hover);
+  color: var(--color-text);
+}
+
+.yearArrow:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
 .months {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1px var(--space-1);
+  gap: 1px;
   margin: var(--space-3) 0 0;
   padding: 0;
   list-style: none;
@@ -136,12 +184,12 @@
 
 .monthButton {
   display: grid;
-  grid-template-columns: 1.125rem minmax(0, 1fr) auto;
+  grid-template-columns: 1.5rem minmax(0, 1fr) auto;
   align-items: center;
-  gap: var(--space-1);
+  gap: var(--space-2);
   inline-size: 100%;
-  min-block-size: 1.875rem;
-  padding: 0 var(--space-2) 0 var(--space-1);
+  min-block-size: 1.75rem;
+  padding: 0 var(--space-2);
   border: 0;
   border-radius: var(--radius-button);
   background: none;
@@ -188,9 +236,20 @@
   white-space: nowrap;
 }
 
-/* Las festividades, en su color y sin número */
+/* Las festividades, sin número: su punto en su color (el nombre, legible, en el de siempre) */
+.monthButton[data-festival] .monthNumber {
+  justify-self: end;
+  inline-size: 0.5rem;
+  block-size: 0.5rem;
+  margin-inline-end: 0.25rem;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--month-color, var(--color-warning));
+  color: transparent;
+}
+
 .monthButton[data-festival] .monthName {
-  color: var(--month-color, var(--color-warning));
+  font-style: italic;
 }
 
 /* Los datos del calendario */

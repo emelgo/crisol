@@ -80,7 +80,7 @@ test('calendarios (módulo 8): crear uno de 16 meses con dos lunas, editarlo, ha
   const eras = page.getByRole('region', { name: 'Eras' })
   await eras.getByRole('button', { name: 'Era', exact: true }).click()
   await eras.getByLabel('Nombre', { exact: true }).fill('Era del Eclipse')
-  await eras.getByLabel('Solo del máster').check()
+  await eras.getByLabel('Oculta para los jugadores').check()
   await expect(summary).toContainText('Luna 1 y Luna 2')
   expect(await axe(page)).toEqual([])
   await page.screenshot({ path: test.info().outputPath('editor.png') })

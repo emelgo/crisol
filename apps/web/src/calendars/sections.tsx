@@ -20,7 +20,7 @@ import {
   yearLength,
   yearStart
 } from '@crisol/domain'
-import { ChevronDown, ChevronUp, GripVertical, Plus, TriangleAlert, X } from 'lucide-react'
+import { ChevronDown, ChevronUp, GripVertical, Plus, Repeat, TriangleAlert, X } from 'lucide-react'
 import { type DragEvent, type KeyboardEvent, type ReactNode, type Ref, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { DateInput, IntegerInput } from './date-input.tsx'
@@ -606,6 +606,10 @@ export function NamedDaysSection({ draft, change }: Pick<SectionProps, 'draft' |
         : [...kept, ...missing.map((n) => ({ key: newCalendarId(), ...n }))]
     })
   }, [signature])
+  // Los días de un mes, con los que le añaden sus bisiestos (los nombres de esos van al final)
+  const maxDay = (monthId: string) =>
+    (draft.months.find((m) => m.id === monthId)?.days ?? 1) +
+    draft.leapRules.filter((r) => r.monthId === monthId).reduce((sum, r) => sum + r.days, 0)
   const place = (row: Row, monthId: string, day: number) => {
     const name = nameAt(row.monthId, row.day)
     if (name.trim())
@@ -644,14 +648,24 @@ export function NamedDaysSection({ draft, change }: Pick<SectionProps, 'draft' |
       {rows.length > 0 && (
         <ol className={styles.rows}>
           {rows.map((row, n) => {
-            const month = draft.months.find((m) => m.id === row.monthId)
             const name = nameAt(row.monthId, row.day)
             return (
-              <li key={row.key} className={styles.leap}>
+              <li key={row.key} className={`${styles.leap} ${styles.namedDay}`}>
+                {/* «El [1] de [mes] se llama [nombre]»: el día cabe en su mes (con los de sus bisiestos) */}
+                <span>{t('calendars.editor.namedDayThe')}</span>
+                <IntegerInput
+                  className={styles.tiny}
+                  value={row.day}
+                  aria-label={t('calendars.editor.namedDayNumber', { n: n + 1 })}
+                  onValue={(day) => {
+                    if (day >= 1 && day <= maxDay(row.monthId)) place(row, row.monthId, day)
+                  }}
+                />
+                <span>{t('calendars.editor.namedDayOfMonth')}</span>
                 <select
                   value={row.monthId}
                   aria-label={t('calendars.editor.namedDayMonth', { n: n + 1 })}
-                  onChange={(event) => place(row, event.target.value, 1)}
+                  onChange={(event) => place(row, event.target.value, Math.min(row.day, maxDay(event.target.value)))}
                 >
                   {draft.months.map((m) => (
                     <option key={m.id} value={m.id}>
@@ -659,19 +673,12 @@ export function NamedDaysSection({ draft, change }: Pick<SectionProps, 'draft' |
                     </option>
                   ))}
                 </select>
-                <span>{t('calendars.editor.namedDayOf')}</span>
-                <IntegerInput
-                  className={styles.tiny}
-                  value={row.day}
-                  aria-label={t('calendars.editor.namedDayNumber', { n: n + 1 })}
-                  onValue={(day) => {
-                    if (day >= 1 && day <= (month?.days ?? 1) + 10) place(row, row.monthId, day)
-                  }}
-                />
+                <span>{t('calendars.editor.namedDayCalled')}</span>
                 <input
                   className={styles.grow}
                   value={name}
                   maxLength={60}
+                  placeholder={t('calendars.editor.namedDayExample')}
                   aria-label={t('calendars.editor.namedDayName', { n: n + 1 })}
                   onChange={(event) => rename(row, event.target.value)}
                 />
@@ -710,7 +717,7 @@ export function LeapSection({ draft, change, problems }: SectionProps) {
             <AddButton label={t('calendars.editor.addLeap')} onClick={add} />
             <button
               type="button"
-              className={styles.secondary}
+              className={styles.add}
               onClick={() =>
                 change((d) => {
                   const rule = gregorianLeapRule(d)
@@ -718,6 +725,7 @@ export function LeapSection({ draft, change, problems }: SectionProps) {
                 })
               }
             >
+              <Repeat size={16} aria-hidden="true" />
               {t('calendars.editor.gregorianLeap')}
             </button>
           </div>
