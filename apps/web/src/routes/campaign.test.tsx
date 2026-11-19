@@ -278,7 +278,7 @@ describe('una campaña y su enlace de invitación', () => {
     for (const role of ['master', 'player'] as const) {
       const c = campaign(role)
       const { unmount } = renderOnly(c, { ...world, role })
-      const field = await screen.findByLabelText<HTMLInputElement>('Dirección del conector')
+      const field = await screen.findByLabelText<HTMLInputElement>('Dirección del conector de La Marca')
       expect(field.value).toBe(`https://crisol.test/mcp/campanas/${c.id}`)
       expect(screen.getByRole('heading', { level: 2, name: 'Conecta tu IA a esta campaña' })).toBeDefined()
       unmount()

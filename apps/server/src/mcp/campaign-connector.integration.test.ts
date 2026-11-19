@@ -232,8 +232,8 @@ describe('el conector de una campaña', () => {
       ])
     )
     const theCampaign = connections.find((c) => c.url === at(path))
-    // La de la campaña es la que se usó la última
-    expect(connections[0]?.url).toBe(at(path))
+    // En un orden que no cambia al usarlas: Mundos primero
+    expect(connections.map((c) => c.url)).toEqual([at('/mcp'), at(path)])
 
     const left = await api<Listed>(master.cookie, 'removeAiConnection', {
       clientId: theCampaign?.clientId,

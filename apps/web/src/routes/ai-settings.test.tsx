@@ -86,7 +86,7 @@ describe('los ajustes de IA', () => {
     expect(settings.queryByLabelText('Dirección del conector')).toBeNull()
   })
 
-  it('tus conexiones: a qué conector, qué app y cuándo; «Quitar» la quita al momento', async () => {
+  it('tus conexiones: a qué conector, qué app y cuándo; «Quitar» pide confirmarlo y la quita al momento', async () => {
     const campaignId = crypto.randomUUID()
     const app = { clientId: 'https://ia.example/cliente', clientName: 'Mi IA' }
     const recently = new Date(Date.now() - 5 * 60_000).toISOString()
@@ -94,30 +94,48 @@ describe('los ajustes de IA', () => {
       aiConnections: [
         {
           ...app,
-          url: `https://crisol.test/mcp/campanas/${campaignId}`,
-          connector: { kind: 'campaign', campaignId, campaign: { name: 'La Marca', worldId: crypto.randomUUID() } },
-          lastUsedAt: recently
-        },
-        {
-          ...app,
           url: 'https://crisol.test/mcp',
           connector: { kind: 'worlds' },
           lastUsedAt: '2026-01-02T10:00:00.000Z'
+        },
+        {
+          ...app,
+          url: `https://crisol.test/mcp/campanas/${campaignId}`,
+          connector: { kind: 'campaign', campaignId, campaign: { name: 'La Marca', worldId: crypto.randomUUID() } },
+          lastUsedAt: recently
         }
       ]
     })
-    const list = within(await screen.findByRole('list', { name: 'Tus conexiones' }))
+    const section = within(await screen.findByRole('region', { name: 'Tus conexiones' }))
+    const list = within(await section.findByRole('list'))
     expect(list.getAllByRole('listitem').map((item) => item.textContent)).toEqual([
-      expect.stringContaining('Crisol · La Marca'),
-      expect.stringContaining('Crisol · Mundos')
+      expect.stringContaining('Crisol · Mundos'),
+      expect.stringContaining('Crisol · La Marca')
     ])
-    expect(list.getByText('Mi IA (ia.example) · usada hace 5 minutos')).toBeDefined()
+    expect(list.getByText('Mi IA (ia.example) · hace 5 minutos')).toBeDefined()
+    // Pide confirmarlo en la fila, con el foco en «Quitar»; cancelar no quita nada
     await userEvent.click(
       list.getByRole('button', { name: 'Quitar la conexión de Mi IA (ia.example) a Crisol · La Marca' })
     )
+    expect(
+      list.getByText('Mi IA (ia.example) dejará de entrar en Crisol · La Marca hasta que la conectes otra vez.')
+    ).toBeDefined()
+    expect(document.activeElement?.textContent).toBe('Quitar')
+    await userEvent.click(list.getByRole('button', { name: 'Cancelar' }))
+    expect(api.calls).not.toContain('removeAiConnection')
+    await userEvent.click(
+      list.getByRole('button', { name: 'Quitar la conexión de Mi IA (ia.example) a Crisol · La Marca' })
+    )
+    await userEvent.click(list.getByRole('button', { name: 'Quitar' }))
     await vi.waitFor(() => expect(list.getAllByRole('listitem')).toHaveLength(1))
     expect(announced()).toBe('Conexión de Mi IA (ia.example) quitada')
     expect(api.calls).toContain('removeAiConnection')
+    // El foco, en la que queda
+    await vi.waitFor(() =>
+      expect(document.activeElement?.getAttribute('aria-label')).toBe(
+        'Quitar la conexión de Mi IA (ia.example) a Crisol · Mundos'
+      )
+    )
   })
 
   it('quien solo juega: sin la dirección de Mundos ni el modo; el conector, en cada campaña, y sus conexiones', async () => {
@@ -143,10 +161,13 @@ describe('los ajustes de IA', () => {
       version: 1
     }
     renderAt('/ajustes', { organizations: [{ ...owner, role: 'member' }], worlds: [world], campaigns: [campaign] })
-    expect(await screen.findByText(/Cada campaña tiene su propio conector: copia su dirección/)).toBeDefined()
+    expect(await screen.findByText('Cada campaña tiene su propio conector, en su Inicio:')).toBeDefined()
+    expect(screen.getByRole('link', { name: 'La Marca' }).getAttribute('href')).toBe(
+      `/mundos/${world.id}/campanas/${campaign.id}`
+    )
     expect(screen.queryByLabelText('Dirección del conector')).toBeNull()
     expect(screen.queryByRole('radio', { name: /^Copiloto/ })).toBeNull()
-    expect(await screen.findByText('Aún no has conectado ninguna IA.')).toBeDefined()
+    expect(await screen.findByText('Ninguna IA conectada.')).toBeDefined()
   })
 
   it('cambiar el modo se guarda al momento', async () => {

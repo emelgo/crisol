@@ -47,8 +47,9 @@ ADR-0030. Se prueba en staging cuando llegue el PR de esta rama. Las direcciones
 - [ ] **Como jugadora** (con una cuenta de jugadora, desde su Inicio): «hazme un personaje», «tira 1d20+3», «escribe en
   el registro que entro en la taberna», «apunta en mis notas…»: lo hace. «Revela…» o «abre la escena…», no. Si juega
   en dos campañas del mismo mundo, cada conector ve solo lo que sabe la suya.
-- [ ] **Tus conexiones** (Ajustes › IA): cada conexión con su conector, la app y cuándo se usó. «Quitar» la desconecta
-  al momento: claude.ai pide volver a conectar.
+- [ ] **Tus conexiones** (Ajustes › IA): cada conexión con su conector, la app y cuándo se usó. «Quitar» (se confirma
+  en la fila) la desconecta al momento: claude.ai pide volver a conectar. En el Inicio de la campaña, si ya hay una
+  conectada, dice cuál y cuándo se usó.
 - [ ] **Quien solo juega**, en Ajustes › IA: sin la dirección de Mundos ni el modo; ve sus conexiones y que cada campaña
   tiene la suya. Si conectara Mundos igualmente, solo vería las herramientas de leer.
 - [ ] **Decisiones tomadas sin ti** (dime si alguna no te vale):
@@ -58,7 +59,7 @@ ADR-0030. Se prueba en staging cuando llegue el PR de esta rama. Las direcciones
   - el máster en el conector de la campaña no escribe el mundo ni toca la invitación (eso, con Mundos);
   - las tiradas de la jugadora por la IA salen a la vista de todos salvo que pida otra cosa;
   - el inventario del grupo: la IA de la jugadora lo ve, pero no lo cambia;
-  - «Quitar» una conexión no pide confirmación (se vuelve a conectar desde claude.ai).
+  - «Tus conexiones» van en un orden fijo (Mundos y luego cada campaña por su nombre) y «Quitar» se confirma en la fila.
 
 ## Cronología y árbol genealógico como pestañas, y el grafo en una ventana (ajustes tras los módulos, bloque B; rama `ajustes/tras-modulos`; migraciones 0090 y 0091; 2026-11-19)
 

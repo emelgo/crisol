@@ -53,3 +53,22 @@
   display: block;
   margin-block-start: 2px;
 }
+
+/* Las campañas de quien no crea mundos: enlaces a su Inicio, donde está su conector */
+.campaigns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.campaigns a {
+  color: var(--color-link);
+  font-weight: 600;
+}
+
+.campaigns a:hover {
+  text-decoration: underline;
+}

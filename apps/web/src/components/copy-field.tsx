@@ -1,15 +1,23 @@
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAnnounce } from './announcer.tsx'
+import compactStyles from './copy-field.module.css'
 import form from './form.module.css'
 import styles from './list.module.css'
 
-/** Un valor para copiar (un enlace, una dirección), con su etiqueta y «Copiar». Al cambiar el valor, vuelve a empezar */
-export function CopyField({ label, value }: { label: string; value: string }) {
-  return <Copyable key={value} label={label} value={value} />
+type Props = {
+  label: string
+  value: string
+  /** Compacto: la etiqueta, solo para los lectores de pantalla (el título de su sección ya dice qué es), y «Copiar», secundario */
+  compact?: boolean
 }
 
-function Copyable({ label, value }: { label: string; value: string }) {
+/** Un valor para copiar (un enlace, una dirección), con su etiqueta y «Copiar». Al cambiar el valor, vuelve a empezar */
+export function CopyField(props: Props) {
+  return <Copyable key={props.value} {...props} />
+}
+
+function Copyable({ label, value, compact = false }: Props) {
   const { t } = useTranslation()
   const announce = useAnnounce()
   const input = useRef<HTMLInputElement>(null)
@@ -31,12 +39,12 @@ function Copyable({ label, value }: { label: string; value: string }) {
 
   return (
     <>
-      <div className={styles.actions}>
+      <div className={compact ? `${styles.actions} ${compactStyles.compact}` : styles.actions}>
         <label className={styles.linkField}>
-          <span>{label}</span>
+          <span className={compact ? compactStyles.hidden : undefined}>{label}</span>
           <input ref={input} readOnly value={value} onFocus={(event) => event.currentTarget.select()} />
         </label>
-        <button type="button" className={form.button} onClick={copy}>
+        <button type="button" className={compact ? styles.secondary : form.button} onClick={copy}>
           {t('invitation.copy')}
         </button>
       </div>

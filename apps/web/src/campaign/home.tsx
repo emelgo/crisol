@@ -10,7 +10,7 @@ import { ChevronRight, Layers, NotebookPen, UserPlus } from 'lucide-react'
 import { type ReactNode, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
-import { aiSettingsQuery, campaignConnectorUrl } from '../api/queries.ts'
+import { aiConnectionsQuery, aiSettingsQuery, campaignConnectorUrl } from '../api/queries.ts'
 import { ActivityCenter } from '../campaign-time/activity.tsx'
 import { MasterToday, PlayerToday } from '../campaign-time/today.tsx'
 import { CopyField } from '../components/copy-field.tsx'
@@ -19,6 +19,8 @@ import { Tour } from '../components/tour.tsx'
 import { useWindow } from '../components/window.tsx'
 import { worldTransition } from '../components/world-transition.ts'
 import { useDice } from '../dice/context.tsx'
+import { since } from '../routes/ai-settings.tsx'
+import { clientLabel } from '../routes/consent.tsx'
 import { coverStyle } from '../wiki/cover-look.ts'
 import { useNarrow } from '../wiki/panel.tsx'
 import { BookCover, useCampaignBooks } from './book-cover.tsx'
@@ -263,21 +265,29 @@ function Adventure({ worldId, campaignId }: { worldId: string; campaignId: strin
   )
 }
 
-/** Su conector de IA (ADR-0030): la IA solo ve esta campaña, con lo que puede hacer en ella quien la conecta */
-function ConnectAi({ campaignId }: { campaignId: string }) {
+/**
+ * Su conector de IA (ADR-0030): la dirección para copiar en la app de IA (solo verá esta campaña) y, si ya hay una
+ * conectada, cuál y cuándo se usó. Discreto: se hace una vez, y lo principal del Inicio es la Mesa
+ */
+function ConnectAi({ campaign }: { campaign: Campaign }) {
   const { t } = useTranslation()
   const api = useApi()
   const settings = useQuery(aiSettingsQuery(api))
+  const connections = useQuery(aiConnectionsQuery(api))
   if (!settings.data) return null
+  const url = campaignConnectorUrl(settings.data.connectorUrl, campaign.id)
+  const connected = connections.data?.connections.find((c) => c.url === url)
   return (
     <Section title={t('campaignHome.connectTitle')} tour="inicio-ia">
-      <p className={styles.quiet}>{t('campaignHome.connectHint')}</p>
-      <div className={styles.connect}>
-        <CopyField
-          label={t('campaignHome.connectLabel')}
-          value={campaignConnectorUrl(settings.data.connectorUrl, campaignId)}
-        />
-      </div>
+      {connected && (
+        <p className={styles.connected}>
+          {t('campaignHome.connected', {
+            client: clientLabel(connected.clientId, connected.clientName),
+            when: since(connected.lastUsedAt)
+          })}
+        </p>
+      )}
+      <CopyField compact label={t('campaignHome.connectLabel', { name: campaign.name })} value={url} />
     </Section>
   )
 }
@@ -312,7 +322,7 @@ export function CampaignHome({ worldId, worldName, campaign }: Props) {
           <Shelf worldId={worldId} worldName={worldName} campaign={campaign} editable />
           <Adventure worldId={worldId} campaignId={campaign.id} />
         </div>
-        <ConnectAi campaignId={campaign.id} />
+        <ConnectAi campaign={campaign} />
       </div>
       <Tour
         id="campana"
@@ -322,7 +332,8 @@ export function CampaignHome({ worldId, worldName, campaign }: Props) {
           { target: '[data-tour="barra-compendio"]', text: t('tour.campaignHome.compendium') },
           { target: '[data-tour="barra-aventuras"]', text: t('tour.campaignHome.adventures') },
           { target: '[data-tour="barra-ajustes-campana"]', text: t('tour.campaignHome.settings') },
-          { target: '[data-tour="inicio-mesa"]', text: t('tour.campaignHome.toMesa') }
+          { target: '[data-tour="inicio-mesa"]', text: t('tour.campaignHome.toMesa') },
+          { target: '[data-tour="inicio-ia"]', text: t('tour.campaignHome.ai'), placement: 'top' }
         ]}
       />
     </div>
@@ -409,7 +420,7 @@ export function PlayerCampaignHome({ worldId, worldName, campaign }: Props) {
           </Section>
         )}
         <Shelf worldId={worldId} worldName={worldName} campaign={campaign} editable={false} />
-        <ConnectAi campaignId={campaign.id} />
+        <ConnectAi campaign={campaign} />
         <Tour
           id="campana"
           steps={[
@@ -417,7 +428,8 @@ export function PlayerCampaignHome({ worldId, worldName, campaign }: Props) {
             { target: '[data-tour="barra-compendio"]', text: t('tour.playerCampaign.compendium') },
             { target: '[data-tour="barra-notas"]', text: t('tour.playerCampaign.notes') },
             { target: '[data-tour="inicio-personaje"]', text: t('tour.playerCampaign.character') },
-            { target: '[data-tour="inicio-mesa"]', text: t('tour.playerCampaign.toMesa') }
+            { target: '[data-tour="inicio-mesa"]', text: t('tour.playerCampaign.toMesa') },
+            { target: '[data-tour="inicio-ia"]', text: t('tour.playerCampaign.ai'), placement: 'top' }
           ]}
         />
         {/* La campaña: quién juega y, en su zona de peligro, dejarla */}

@@ -29,6 +29,13 @@ export function Settings() {
   })
   if (pending) return null
   if (!account) return <Navigate to="/entrar" replace />
+  // Sin saber aún qué IA le toca, solo el título: si no, lo de debajo salta al llegar la IA encima
+  if (organizations.isPending || worlds.isPending)
+    return (
+      <section className={styles.page}>
+        <PageTitle>{t('settings.title')}</PageTitle>
+      </section>
+    )
   const isOwner = organizations.data?.organizations.some((o) => o.role === 'owner') ?? false
   const all = worlds.data?.worlds ?? []
   // Mundos, para quien crea mundos (o lleva alguno); el modo, para quien dirige algo; las conexiones, para todos
@@ -38,7 +45,13 @@ export function Settings() {
   return (
     <section className={styles.page}>
       <PageTitle>{t('settings.title')}</PageTitle>
-      {(creates || inCampaign) && <AiSettings creates={creates} player={!leads} />}
+      {(creates || inCampaign) && (
+        <AiSettings
+          creates={creates}
+          player={!leads}
+          campaigns={all.flatMap((w) => w.campaigns.map((c) => ({ id: c.id, worldId: w.id, name: c.name })))}
+        />
+      )}
       <GameplaySettings />
       <DeviceSettings />
     </section>

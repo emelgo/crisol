@@ -388,7 +388,9 @@
   text-decoration: none;
 }
 
-/* Su conector de IA: la dirección con «Copiar», debajo de la frase */
-.connect {
-  margin-block-start: var(--space-3);
+/* Su conector de IA: si ya hay una conectada, cuál y cuándo, encima de la dirección */
+.connected {
+  margin: 0 0 var(--space-2);
+  font-size: 0.85rem;
+  color: var(--color-muted);
 }

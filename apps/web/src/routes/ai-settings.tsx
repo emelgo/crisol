@@ -1,16 +1,19 @@
 import type { AiConnection, AiMode } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Navigate } from '@tanstack/react-router'
+import { Link, Navigate } from '@tanstack/react-router'
 import type { TFunction } from 'i18next'
-import { useState } from 'react'
+import { useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAccounts } from '../account/context.tsx'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
 import { aiConnectionsQuery, aiSettingsQuery } from '../api/queries.ts'
 import { useAnnounce } from '../components/announcer.tsx'
+import { BusyButton } from '../components/busy-button.tsx'
 import { CopyField } from '../components/copy-field.tsx'
 import { FormError } from '../components/field.tsx'
+import { focusAfterRemoving, focusOnMount, useReturnFocus } from '../components/focus.ts'
+import form from '../components/form.module.css'
 import styles from '../components/list.module.css'
 import settings from './ai-settings.module.css'
 import { clientLabel } from './consent.tsx'
@@ -43,7 +46,16 @@ export function since(at: string, now = Date.now()): string {
  * Los ajustes de la IA, dentro de «Ajustes» (docs/diseno.md): el conector de Mundos (quien crea mundos), el modo (quien
  * dirige algo) y tus conexiones, con su último uso y «Quitar» (ADR-0030). El de cada campaña está en su Inicio
  */
-export function AiSettings({ creates = false, player = false }: { creates?: boolean; player?: boolean }) {
+export function AiSettings({
+  creates = false,
+  player = false,
+  campaigns = []
+}: {
+  creates?: boolean
+  player?: boolean
+  /** Las campañas en las que está, para llevar a su Inicio (donde está su conector) a quien no crea mundos */
+  campaigns?: ReadonlyArray<{ id: string; worldId: string; name: string }>
+}) {
   const { t } = useTranslation()
   const api = useApi()
   const queryClient = useQueryClient()
@@ -79,7 +91,21 @@ export function AiSettings({ creates = false, player = false }: { creates?: bool
                 <p className={styles.role}>{t('ai.perCampaign')}</p>
               </>
             ) : (
-              <p>{t('ai.campaignOnly')}</p>
+              <>
+                <p>{t('ai.campaignOnly')}</p>
+                <ul className={settings.campaigns}>
+                  {campaigns.map((campaign) => (
+                    <li key={campaign.id}>
+                      <Link
+                        to="/mundos/$worldId/campanas/$campaignId"
+                        params={{ worldId: campaign.worldId, campaignId: campaign.id }}
+                      >
+                        {campaign.name}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </>
             )}
           </section>
           {!player && (
@@ -131,45 +157,41 @@ function Connections() {
   const errorText = useErrorText()
   const announce = useAnnounce()
   const list = useQuery(aiConnectionsQuery(api))
+  const [confirming, setConfirming] = useState<string | null>(null)
   const remove = useMutation({
-    mutationFn: (connection: AiConnection) =>
+    mutationFn: (connection: AiConnection & { refocus: () => void }) =>
       api.call('removeAiConnection', { clientId: connection.clientId, url: connection.url }),
     onSuccess: (data, connection) => {
       queryClient.setQueryData(['aiConnections'], data)
+      setConfirming(null)
       announce(t('ai.removed', { client: clientLabel(connection.clientId, connection.clientName) }))
+      // Tras quitarla, a la siguiente (o al título de la sección)
+      requestAnimationFrame(connection.refocus)
     }
   })
   const connections = list.data?.connections ?? []
   return (
     <section aria-labelledby="conexiones">
-      <h2 id="conexiones">{t('ai.connectionsTitle')}</h2>
+      <h2 id="conexiones" tabIndex={-1}>
+        {t('ai.connectionsTitle')}
+      </h2>
       {list.data && connections.length === 0 && <p className={styles.role}>{t('ai.noConnections')}</p>}
       {connections.length > 0 && (
-        <ul className={styles.list} aria-labelledby="conexiones">
+        <ul className={styles.list}>
           {connections.map((connection) => {
-            const client = clientLabel(connection.clientId, connection.clientName)
-            const target = connectorName(t, connection.connector)
-            const busy = remove.isPending && remove.variables?.url === connection.url
+            const key = `${connection.clientId} ${connection.url}`
             return (
-              <li key={`${connection.clientId} ${connection.url}`} className={styles.item}>
-                <span className={styles.name}>
-                  <span className={styles.entity}>{target}</span>
-                  <span className={`${styles.role} ${settings.connection}`}>
-                    {t('ai.usedBy', { client, when: since(connection.lastUsedAt) })}
-                  </span>
-                </span>
-                <button
-                  type="button"
-                  className={styles.secondary}
-                  aria-label={t('ai.removeButton', { client, target })}
-                  aria-disabled={busy || undefined}
-                  onClick={() => {
-                    if (!remove.isPending) remove.mutate(connection)
-                  }}
-                >
-                  {t('ai.remove')}
-                </button>
-              </li>
+              <ConnectionItem
+                key={key}
+                connection={connection}
+                confirming={confirming === key}
+                busy={remove.isPending}
+                onStart={() => setConfirming(key)}
+                onCancel={() => setConfirming(null)}
+                onRemove={(refocus) => {
+                  if (!remove.isPending) remove.mutate({ ...connection, refocus })
+                }}
+              />
             )
           })}
         </ul>
@@ -177,4 +199,84 @@ function Connections() {
       <FormError message={list.error || remove.error ? errorText(list.error ?? remove.error) : null} />
     </section>
   )
+}
+
+/** Una conexión: a qué conector (el nombre) y, debajo, la app y cuándo; «Quitar» pide confirmarlo en la misma fila */
+function ConnectionItem({
+  connection,
+  confirming,
+  busy,
+  onStart,
+  onCancel,
+  onRemove
+}: {
+  connection: AiConnection
+  confirming: boolean
+  busy: boolean
+  onStart(): void
+  onCancel(): void
+  onRemove(refocus: () => void): void
+}) {
+  const { t } = useTranslation()
+  const item = useRef<HTMLLIElement>(null)
+  const opener = useReturnFocus()
+  const warningId = useId()
+  const client = clientLabel(connection.clientId, connection.clientName)
+  const target = connectorName(t, connection.connector)
+  return (
+    <li ref={item} className={styles.item}>
+      <span className={styles.name}>
+        <span className={styles.entity}>{target}</span>
+        <span className={`${styles.role} ${settings.connection}`}>
+          {t('ai.usedBy', { client, when: since(connection.lastUsedAt) })}
+        </span>
+      </span>
+      {!confirming && (
+        <button
+          type="button"
+          ref={opener.ref}
+          className={styles.secondary}
+          aria-label={t('ai.removeButton', { client, target })}
+          onClick={onStart}
+        >
+          {t('ai.remove')}
+        </button>
+      )}
+      {confirming && (
+        <div className={styles.confirm}>
+          <p id={warningId}>{t('ai.removeWarning', { client, target })}</p>
+          <div className={styles.actions}>
+            <BusyButton
+              ref={focusOnMount}
+              className={form.button}
+              aria-describedby={warningId}
+              busy={busy}
+              onClick={() => onRemove(focusAfter(item.current))}
+            >
+              {t('ai.remove')}
+            </BusyButton>
+            <button
+              type="button"
+              className={styles.secondary}
+              onClick={() => {
+                opener.back()
+                onCancel()
+              }}
+            >
+              {t('list.cancel')}
+            </button>
+          </div>
+        </div>
+      )}
+    </li>
+  )
+}
+
+/** Tras quitar una conexión: el foco, al siguiente «Quitar» o, si no queda ninguna, al título de la sección */
+function focusAfter(item: HTMLLIElement | null) {
+  const next = focusAfterRemoving(item)
+  return () => {
+    if (item?.nextElementSibling || item?.previousElementSibling) next()
+    else document.getElementById('conexiones')?.focus()
+  }
 }

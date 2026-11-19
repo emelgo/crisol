@@ -2870,8 +2870,8 @@ export const es = {
     yours: 'Tu personaje',
     party: 'El grupo',
     connectTitle: 'Conecta tu IA a esta campaña',
-    connectHint: 'Solo verá esta campaña, con lo que puedes hacer en ella.',
-    connectLabel: 'Dirección del conector'
+    connectLabel: 'Dirección del conector de {{name}}',
+    connected: 'Conectada: {{client}} · {{when}}'
   },
   // Los libros (ADR-0021): los de la campaña (campaign/books.tsx), la ficha de uno (campaign/book-window.tsx)
   books: {
@@ -4847,16 +4847,17 @@ export const es = {
     connector: 'Dirección del conector',
     connectorHint: 'En tu app de IA, añade un conector MCP con esta dirección para crear y llevar tus mundos.',
     perCampaign: 'Cada campaña tiene su propio conector, en su Inicio.',
-    campaignOnly: 'Cada campaña tiene su propio conector: copia su dirección en el Inicio de la campaña.',
+    campaignOnly: 'Cada campaña tiene su propio conector, en su Inicio:',
     worldsName: 'Crisol · Mundos',
     campaignName: 'Crisol · {{name}}',
     goneCampaign: 'Una campaña que ya no ves',
     connectionsTitle: 'Tus conexiones',
-    noConnections: 'Aún no has conectado ninguna IA.',
-    usedBy: '{{client}} · usada {{when}}',
+    noConnections: 'Ninguna IA conectada.',
+    usedBy: '{{client}} · {{when}}',
     remove: 'Quitar',
     removeButton: 'Quitar la conexión de {{client}} a {{target}}',
     removed: 'Conexión de {{client}} quitada',
+    removeWarning: '{{client}} dejará de entrar en {{target}} hasta que la conectes otra vez.',
     modeTitle: 'Modo',
     modes: {
       readOnly: 'Solo lectura',
@@ -5055,14 +5056,16 @@ export const es = {
       compendium: 'Todo lo de sus libros, para consultarlo.',
       adventures: 'Las aventuras de la campaña.',
       settings: 'Los ajustes de la campaña: los jugadores y cómo invitarlos.',
-      toMesa: 'Vuelve a la Mesa donde lo dejasteis.'
+      toMesa: 'Vuelve a la Mesa donde lo dejasteis.',
+      ai: 'Copia esta dirección en tu app de IA, como conector: solo verá esta campaña.'
     },
     playerCampaign: {
       table: 'La partida: los personajes y la Mesa.',
       compendium: 'Las reglas y el contenido de la campaña.',
       notes: 'Tus notas de la campaña. Solo las lees tú y el máster.',
       character: 'Tu personaje: su ficha, a un toque.',
-      toMesa: 'La Mesa, en otra pestaña.'
+      toMesa: 'La Mesa, en otra pestaña.',
+      ai: 'Copia esta dirección en tu app de IA, como conector: solo verá esta campaña.'
     },
     books: {
       list: 'Enciende los libros que usa la campaña y elige qué entra de cada uno.'

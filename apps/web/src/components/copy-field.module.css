@@ -1,0 +1,30 @@
+/* El nombre del campo, solo para los lectores de pantalla */
+.hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Compacto (en el Inicio de una campaña): en una fila que no se parte; con el dedo, a 16 px (el móvil no amplía) */
+.compact {
+  flex-wrap: nowrap;
+  align-items: stretch;
+}
+
+.compact > label {
+  min-inline-size: 0;
+}
+
+.compact input {
+  font-size: 1rem;
+}
+
+@media (pointer: fine) {
+  .compact input {
+    min-block-size: 2.25rem;
+    font-size: 0.8125rem;
+  }
+}

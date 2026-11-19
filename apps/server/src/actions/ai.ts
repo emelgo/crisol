@@ -66,7 +66,13 @@ async function connections(ctx: ActionContext): Promise<AiConnection[]> {
       lastUsedAt: lastUsedAt.toISOString()
     })
   }
-  return found.sort((a, b) => b.lastUsedAt.localeCompare(a.lastUsedAt))
+  // En un orden que no cambia al usarlas (docs/diseno.md): Mundos primero, luego cada campaña por su nombre
+  const order = (c: AiConnection) =>
+    c.connector.kind === 'worlds' ? '' : (c.connector.campaign?.name ?? `\uffff${c.connector.campaignId}`)
+  return found.sort(
+    (a, b) =>
+      order(a).localeCompare(order(b), 'es') || a.clientId.localeCompare(b.clientId) || a.url.localeCompare(b.url)
+  )
 }
 
 /** Una petición tal como la ve la cuenta: la caducidad se decide con la hora de ahora */
