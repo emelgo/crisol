@@ -125,11 +125,11 @@ function BigCalendar({
     setJumped(true)
     setCursor(today)
   }
-  // El día fijado (al pulsarlo) y el que se ve al pasar el ratón; la ficha enseña este, si no, aquel
+  // El día fijado (al pulsarlo) y el que se ve al pasar el ratón; con uno fijado, la ficha se queda en él
   const [pinned, setPinned] = useState<number | null>(null)
   const [hovered, setHovered] = useState<number | null>(null)
   const [dialog, setDialog] = useState<EventDraft | null>(null)
-  const shown = hovered ?? pinned
+  const shown = pinned ?? hovered
 
   // Pasar el ratón: el primer día enseña su ficha al momento; de uno a otro, tras un instante (cruzar la rejilla hasta
   // la ficha no la cambia) y, al salir, un poco después (entrar en la ficha la mantiene)
