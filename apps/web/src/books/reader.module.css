@@ -91,7 +91,7 @@
   gap: var(--space-2);
   min-block-size: 2.25rem;
   padding: 0 var(--space-3);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--line-frame);
   border-radius: 6px;
   background: none;
   color: var(--color-text);
@@ -152,7 +152,7 @@
 }
 
 .titleInput:hover {
-  border-color: var(--color-border);
+  border-color: var(--color-field-border);
 }
 
 .titleInput:focus-visible {
@@ -215,7 +215,7 @@
   gap: var(--space-4);
   margin-block-start: var(--space-8);
   padding-block-start: var(--space-5);
-  border-block-start: 1px solid var(--color-border);
+  border-block-start: 1px solid var(--line-soft);
 }
 
 .previous,
@@ -268,7 +268,7 @@
 .goTo select {
   min-block-size: 2.75rem;
   padding: 0 var(--space-3);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-field-border);
   border-radius: 6px;
   background: var(--field-fill, var(--color-surface));
   color: var(--color-text);

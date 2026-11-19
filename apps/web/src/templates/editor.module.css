@@ -225,12 +225,13 @@
   font-weight: 600;
 }
 
+/* Los campos, de cristal oscuro como todos los de la app */
 .shape input,
 .shape select {
   padding: 0.375rem 0.5rem;
   border: 1px solid var(--color-field-border);
   border-radius: 4px;
-  background: var(--color-surface);
+  background: var(--field-fill);
   color: var(--color-text);
   font: inherit;
 }

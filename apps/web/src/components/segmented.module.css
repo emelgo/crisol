@@ -1,0 +1,85 @@
+/*
+ * El conmutador de la app, uno solo (Enrique, 2026-11-19: el «Por tipo | Por libro» del compendio, «esto tampoco me
+ * gusta»): el de Semana · Mes · Año del calendario en grande (calendars/view.module.css). Opciones que reparten el
+ * ancho, centradas, dentro de un recuadro con el borde y el relleno de los campos; la elegida, en relieve y en negrita. Vale
+ * con botones (aria-pressed) o con etiquetas que llevan su botón de opción (un fieldset de radios)
+ */
+.group {
+  display: flex;
+  min-inline-size: 0;
+  margin: 0;
+  padding: 2px;
+  border: 1px solid var(--color-field-border);
+  border-radius: var(--radius-button);
+  background: var(--field-fill);
+}
+
+.group > button,
+.group > label {
+  position: relative;
+  display: grid;
+  flex: 1 1 auto;
+  place-items: center;
+  min-inline-size: 0;
+  min-block-size: 2rem;
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--color-muted);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1.15;
+  text-align: center;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color 150ms ease-out,
+    color 150ms ease-out;
+}
+
+.group > button:hover,
+.group > label:hover {
+  color: var(--color-text);
+}
+
+.group > button[aria-pressed="true"],
+.group > label:has(input:checked) {
+  background: var(--color-raised);
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.group > button:focus-visible,
+.group > label:has(input:focus-visible) {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
+}
+
+.group > button:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+/* El botón de opción, quieto y sin verse: la etiqueta entera es la opción */
+.group > label input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Lo que no cabe en una línea, con «…» (en una ficha estrecha) */
+.group > button > span,
+.group > label > span {
+  max-inline-size: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .group > button,
+  .group > label {
+    transition: none;
+  }
+}
