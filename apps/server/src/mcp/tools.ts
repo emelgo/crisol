@@ -354,6 +354,10 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   // Las relaciones (módulo 10): de una página y de todo el mundo
   relaciones_pagina: { action: 'getRelations' },
   grafo_mundo: { action: 'getWorldGraph' },
+  // Los árboles genealógicos y organigramas: la pestaña tree de una página
+  ver_arbol_genealogico: { action: 'getTree' },
+  crear_arbol_genealogico: { action: 'createTree' },
+  editar_arbol_genealogico: { action: 'updateTree' },
   // Lo que sabe cada campaña (ADR-0017) y revelar en partida (docs/specs/revelar.md)
   quien_conoce: { action: 'getPageKnowledge' },
   marcar_conocimiento: { action: 'setKnowledge' },
@@ -381,7 +385,7 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   crear_calendario: { action: 'createCalendar' },
   cambiar_calendario: { action: 'updateCalendar' },
   borrar_calendario: { action: 'deleteCalendar' },
-  // Las cronologías del mundo (módulo 8): los eventos sueltos y las páginas con fecha, en «Calendarios»
+  // Las cronologías del mundo (módulo 8; ADR-0031): pestañas de páginas que juntan los eventos sueltos y las páginas con fecha
   listar_cronologias: { action: 'listChronologies' },
   ver_cronologia: { action: 'getChronology' },
   crear_cronologia: { action: 'createChronology' },
@@ -877,13 +881,14 @@ export const INSTRUCTIONS =
   'principal, o en otro con to, si tienen correspondencia). Una página se fecha con una propiedad de tipo date ' +
   '(editar_pagina o crear_paginas; en el YAML, como texto en un campo de fecha): 1250-Siega-18, 1250-Siega o 1250, ' +
   'un periodo 1250-Siega-12/1250-Trilla-3 y «(cada año)» al final si se repite; sin calendar, el que ya tenga o el ' +
-  'principal. leer_pagina da sus fechas legibles (dates). Las cronologías (listar_cronologias, ver_cronologia; ' +
-  'crear_cronologia con su calendario y su filtro: páginas, plantillas, etiquetas, grupos) juntan los eventos sueltos ' +
+  'principal. leer_pagina da sus fechas legibles (dates). Las cronologías son pestañas de una página (listar_cronologias, ' +
+  'ver_cronologia; crear_cronologia, en una página nueva o como pestaña de una que ya hay, con su calendario y su ' +
+  'filtro: páginas, plantillas, etiquetas, grupos) y juntan los eventos sueltos ' +
   'del mundo (no van en el árbol) y las páginas con fecha, que salen solas; lo de otros calendarios se convierte si ' +
   'tiene correspondencia. crear_eventos crea hasta 100 de una vez (una cronología entera), con su grupo por su nombre ' +
   'y su página (pageId o newPage); cambiar_evento, borrar_evento y convertir_en_pagina (la crea con su texto y lo ' +
-  'deja enlazado). Un jugador ve las cronologías que se le revelan (marcar_conocimiento o revelar con kind ' +
-  'chronology) y dentro los eventos no ocultos (o revelados, kind event) y las páginas que conoce. ' +
+  'deja enlazado). Un jugador ve una cronología si ve su página y su pestaña (se revela como la página, o la ' +
+  'pestaña con kind tab) y dentro los eventos no ocultos (o revelados, kind event) y las páginas que conoce. ' +
   'Cada campaña tiene su «hoy», una fecha del calendario principal: fecha_de_hoy lo da (con el clima de hoy, el sol ' +
   'y, al máster, la previsión de 7 días) y cambiar_fecha lo pone (date) o lo avanza (days o weeks); cada cambio queda ' +
   'en el registro de la partida y se deshace. El clima de cada día sale de la zona de la campaña con semilla (no ' +
@@ -910,7 +915,11 @@ export const INSTRUCTIONS =
   'se cambia como el de una página (su pageId sale en ver_plantilla) y sus campos, con cambiar_plantilla: uno de enlace ' +
   'puede llevar un papel (role: parent para Padres, partner para Pareja, member-of para Facción, leads para el Líder de ' +
   'una facción) y un nombre al revés (inverseName: «Padres» → «Hijos»), que hacen el árbol genealógico y el ' +
-  'organigrama. relaciones_pagina da las relaciones de una página (sus campos de enlace y lo que enlaza su texto, en ' +
+  'organigrama. Un árbol genealógico u organigrama también es una pestaña (kind tree): ver_arbol_genealogico, ' +
+  'crear_arbol_genealogico (en una página nueva o en una que ya hay, con sus nodos y líneas) y ' +
+  'editar_arbol_genealogico (sus listas enteras: mira antes ver_arbol_genealogico); cada nodo es una página (pageId) ' +
+  'o solo un nombre, y sus líneas (parent, partner, member, leads) entre páginas cuentan como relaciones. ' +
+  'relaciones_pagina da las relaciones de una página (sus campos de enlace, lo que enlaza su texto y los árboles, en ' +
   'los dos sentidos; mode links, family u org) y grafo_mundo, las de todo el mundo con filtros. Se ordenan en ' +
   'carpetas (crear_carpeta_plantillas, mover_plantilla). Los dados los tira el servidor: tirar_dados (con ' +
   'campaignId, en su registro, oculta salvo que te pidan que la vean todos) y ver_tiradas. Lo que se tira en partida ' +
