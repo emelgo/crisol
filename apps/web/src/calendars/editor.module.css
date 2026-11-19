@@ -125,12 +125,12 @@
   gap: var(--space-4);
 }
 
-.side > section {
+.side > section[aria-labelledby] {
   margin-block: 0;
   padding: var(--space-4) var(--space-4) var(--space-5);
 }
 
-.side > section > h2:first-child {
+.side > section[aria-labelledby] > h2:first-child {
   margin-block-end: var(--space-3);
 }
 
@@ -280,15 +280,14 @@
   gap: var(--space-2) var(--space-4);
 }
 
-/* Con cambios, «Guardar» en un recuadro de cristal opaco que flota sobre la fase */
+/* Con cambios, «Guardar» en un recuadro que flota sobre la fase */
 .foot > div:first-child {
   flex: 1;
   padding: var(--space-3) var(--space-4);
   border: 1px solid var(--line-frame);
   border-radius: var(--radius-frame);
-  background: var(--surface-glass-raised);
-  -webkit-backdrop-filter: var(--frame-blur);
-  backdrop-filter: var(--frame-blur);
+  /* Flota sobre la fase: opaco, para que no se lea lo de debajo */
+  background: var(--color-raised);
   box-shadow: 0 8px 24px rgb(0 0 0 / 0.35);
 }
 

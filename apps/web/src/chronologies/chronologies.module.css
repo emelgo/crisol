@@ -1264,6 +1264,12 @@
   overflow: hidden;
 }
 
+/* La tabla es una rejilla: su cuerpo y su fila no cuentan, los días van uno al lado del otro */
+.outsideDays > tbody,
+.outsideDays > tbody > tr {
+  display: contents;
+}
+
 .outsideDays .day {
   min-block-size: 3.5rem;
   border-block-start: 0;

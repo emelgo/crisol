@@ -10,6 +10,7 @@
 import type { ChronologyEntryView, TimelineGroupView } from '@crisol/contracts'
 import {
   type CalendarDefinition,
+  type CalendarSeason,
   dateFromDay,
   describeDate,
   entryOccurrences,
@@ -189,7 +190,19 @@ export function CalendarView({
   }
 
   const firstDay = page ? dateFromDay(definition, first) : null
-  const season = firstDay && Number.isFinite(first) ? seasonOfDay(definition, allDays[0]?.dayOfYear ?? 1) : null
+  // La estación del mes: la de su primer día y, si cambia antes de acabar, también la de su último
+  const ends = [
+    grid?.weeks.flat().find(Boolean) ?? grid?.outside[0],
+    grid?.weeks.flat().findLast(Boolean) ?? grid?.outside.at(-1)
+  ]
+  const seasons =
+    firstDay && Number.isFinite(first)
+      ? ends
+          .map((day) => (day ? seasonOfDay(definition, day.dayOfYear) : null))
+          .filter(
+            (one, index, all): one is CalendarSeason => one !== null && all.findIndex((o) => o?.id === one.id) === index
+          )
+      : []
   const era = Number.isFinite(first) ? eraOfDay(definition, first) : null
   const weekdays = shortWeekdays(definition.weekdays)
 
@@ -351,15 +364,15 @@ export function CalendarView({
             {formatDate(definition, { year, month: page.month })}
           </h2>
           <p className={styles.calendarFacts}>
-            {season && (
-              <span>
+            {seasons.map((season) => (
+              <span key={season.id}>
                 <span
                   className={styles.seasonDot}
                   style={{ '--season-color': season.color ?? 'var(--color-muted)' } as CSSProperties}
                 />
                 {season.name}
               </span>
-            )}
+            ))}
             {era && <span>{era.name}</span>}
           </p>
         </div>
