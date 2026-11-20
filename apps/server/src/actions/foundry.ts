@@ -4,7 +4,14 @@
  * into, su contenido entra en uno propio sin quitarle nada
  */
 import { Readable } from 'node:stream'
-import { importFoundry, inspectFoundry, putSystemImages, SYSTEM_IMAGES_BYTES } from '@crisol/contracts'
+import {
+  deleteSystemImages,
+  importFoundry,
+  inspectFoundry,
+  listSystemImages,
+  putSystemImages,
+  SYSTEM_IMAGES_BYTES
+} from '@crisol/contracts'
 import { systemImagesRepo, systemsRepo } from '@crisol/db'
 import { authorize, sniff } from '@crisol/domain'
 import { type System, validateFile } from '@crisol/systems'
@@ -115,5 +122,34 @@ export const foundryActions = [
     for (const key of replaced) await storage.remove(key).catch(() => undefined)
     if (values.length > 0) ctx.realtime.publish(systemsChanged(row.organizationId))
     return { saved: values.length, skipped }
+  }),
+
+  implement(listSystemImages, async (ctx, { systemId, prefix, limit, offset }) => {
+    const row = await ownWritable(ctx, systemId)
+    const { rows, total } = await systemImagesRepo.listImages(ctx.db, row.id, {
+      ...(prefix ? { prefix } : {}),
+      limit,
+      offset
+    })
+    return {
+      total,
+      images: rows.map((image) => ({
+        path: image.path,
+        mime: image.mime,
+        bytes: image.bytes,
+        license: image.license as 'unknown',
+        credit: image.credit,
+        url: `/api/system-images/${row.id}?path=${encodeURIComponent(image.path)}`
+      }))
+    }
+  }),
+
+  implement(deleteSystemImages, async (ctx, { systemId, paths }) => {
+    const row = await ownWritable(ctx, systemId)
+    const removed = await systemImagesRepo.deleteImages(ctx.db, row.id, paths)
+    for (const { storageKey } of removed) await ctx.storage?.remove(storageKey).catch(() => undefined)
+    if (removed.length > 0) ctx.realtime.publish(systemsChanged(row.organizationId))
+    const deleted = new Set(removed.map((r) => r.path))
+    return { deleted: [...deleted], missing: [...new Set(paths)].filter((p) => !deleted.has(p)) }
   })
 ]

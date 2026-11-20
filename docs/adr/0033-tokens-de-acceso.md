@@ -31,6 +31,19 @@ Foundry, los capítulos no podían incrustarlas, y el archivo de un sistema ten�
 - **Imágenes en los capítulos**: en el texto de un capítulo, `![[ruta]]` (con texto alternativo, ancho y pie, como en la
   wiki) es una imagen del sistema del libro por su ruta, no un archivo del mundo. Si falta, se dice. Se suben con
   `putSystemImages` (ya existía; ahora cualquiera, no solo las de un zip de Foundry), por la misma ruta.
+- **Imágenes del sistema, también por el MCP** (`subir_imagenes_sistema`, `ver_imagenes_sistema`,
+  `borrar_imagenes_sistema`): listarlas por carpeta y quitarlas por su ruta (con sus bytes; no se deshace).
+- **La portada de un libro puede ser una imagen del sistema** (`cover.image`, su ruta) en vez de un archivo de los
+  comunes (`cover.fileId`): una de las dos.
+- **Libros y capítulos solo para el máster** (`master` en una fuente del sistema o en un capítulo; migración 0095): a
+  quien no dirige la campaña no le llegan esos capítulos (ni en la lista, ni al pedirlos, ni en la cuenta del libro);
+  las entradas del compendio de ese libro, sí. Viaja en el archivo del sistema.
+- **Enlaces al compendio sin ambigüedad**: además de `[[@Nombre]]`, `[[@tipo/Nombre]]` (el tipo por su clave o su
+  nombre) y `[[@clave]]`, también en `![[@…]]`; el nombre vale en cualquier idioma. Una barra que no sea de un tipo es
+  parte del nombre. Sin texto propio, el enlace enseña el nombre de la entrada.
+- **Filas de tabla y listas en dos idiomas**: el texto de una fila de una tabla del compendio y cada texto de un campo
+  de lista pueden ser `{ es, en }`, como los demás textos; se ve el del idioma del compendio. Editar una fila cambia el
+  español y deja el otro.
 - **El archivo de un sistema, hasta 64 MB** (antes 10): un sistema con sus libros en dos idiomas pasa de 30 MB. Se
   descartó bajarlo libro a libro: subir un archivo con `into` reemplaza el sistema entero.
 
@@ -39,4 +52,4 @@ Foundry, los capítulos no podían incrustarlas, y el archivo de un sistema ten�
 - Un token robado vale como la cuenta hasta que caduca o se quita: por eso la caducidad es obligatoria y corta por
   defecto (30 días), y la lista dice su último uso (apuntado como mucho una vez por minuto).
 - Las instrucciones del MCP explican a la IA que, para lo que no cabe en la conversación, puede pedir un token.
-- El tope de 5000 documentos de contenido por sistema sigue igual.
+- El tope de documentos de contenido por sistema sube de 5000 a 20 000 (la IA ya llevaba 3264 con cinco libros).

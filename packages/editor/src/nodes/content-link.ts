@@ -1,7 +1,8 @@
 /**
  * Un enlace desde una página a una entrada del compendio (docs/specs/criaturas.md § wiki): la criatura de un PNJ, un
  * objeto, un conjuro. Por su nombre, que se busca en el compendio del mundo y en los de los sistemas de sus campañas
- * (lo del mundo, primero). En Markdown, `[[@Goblin jefe]]` o `[[@Goblin jefe|el jefe]]`
+ * (lo del mundo, primero). En Markdown, `[[@Goblin jefe]]` o `[[@Goblin jefe|el jefe]]`; para lo que se llama igual,
+ * con su tipo delante (`[[@objeto/Escudo]]`) o por su clave (`[[@escudo-armadura]]`, ADR-0033)
  */
 import { mergeAttributes, Node } from '@tiptap/core'
 

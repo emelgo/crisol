@@ -3484,6 +3484,9 @@ export const es = {
   },
   // Los libros de un sistema (ADR-0021, systems/system.tsx)
   chapters: {
+    masterTag: 'Solo para el máster',
+    onlyMaster: 'Solo para el máster',
+    forEveryone: 'Que lo lean los jugadores',
     index: 'Capítulos',
     views: 'Vistas del libro',
     tab: 'Capítulos',
@@ -3555,6 +3558,8 @@ export const es = {
     attribution: 'Atribución',
     requires: 'Amplía a',
     newVersion: 'Subir su versión',
+    master: 'Solo para el máster',
+    masterHint: 'los jugadores no leen sus capítulos; sus entradas, sí',
     save: 'Guardar',
     deleteBook: 'Borrar el libro',
     deleteTitle: '¿Borrar «{{name}}»?',

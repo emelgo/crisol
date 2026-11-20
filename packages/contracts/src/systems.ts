@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { defineAction } from './action.ts'
 import { diceRoll } from './dice.ts'
-import { worldCover } from './worlds.ts'
+import { bookCover, worldCover } from './worlds.ts'
 
 /** Un sistema: uno de serie, por su id legible (`blank`), o uno de la cuenta, por su uuid */
 export const systemRef = z.string().trim().min(1).max(100)
@@ -258,7 +258,12 @@ export const contentTable = z.object({
         id: z.string().min(1).max(40),
         from: z.int(),
         to: z.int(),
-        text: z.string().max(2000).describe('Lo que sale; puede llevar tiradas'),
+        text: z
+          .union([
+            z.string().max(2000),
+            z.object({ es: z.string().max(2000).optional(), en: z.string().max(2000).optional() })
+          ])
+          .describe('Lo que sale; puede llevar tiradas. En uno o en dos idiomas ({ es, en })'),
         key: z
           .string()
           .max(100)
@@ -496,7 +501,7 @@ export const getCampaignCompendium = defineAction({
         attribution: z.string(),
         // Lo de un libro (ADR-0021): su portada, de qué va, a qué amplía, cuánto trae y cuánto deja fuera la campaña
         description: z.string().nullable(),
-        cover: worldCover.nullable(),
+        cover: bookCover.nullable(),
         requires: z.array(z.string()),
         count: z.int(),
         excluded: z.int(),

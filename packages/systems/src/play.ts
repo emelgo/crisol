@@ -79,6 +79,17 @@ const isCount = (v: unknown) => Number.isInteger(v) && (v as number) >= 0 && (v 
 const isObject = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v)
 
 /** Lo que no vale de un valor de un campo que se cambia jugando; null si vale */
+/** Un texto corto de una lista: una cadena o, en dos idiomas, { es, en } (ADR-0033) */
+const shortText = (x: unknown) =>
+  typeof x === 'string'
+    ? x.length <= 200
+    : Boolean(x) &&
+      typeof x === 'object' &&
+      !Array.isArray(x) &&
+      Object.entries(x as object).every(
+        ([k, t]) => (k === 'es' || k === 'en') && typeof t === 'string' && t.length <= 200
+      )
+
 function simpleProblem(f: Field, v: unknown): string | null {
   switch (f.kind) {
     case 'number':
@@ -92,7 +103,7 @@ function simpleProblem(f: Field, v: unknown): string | null {
     case 'text':
       return typeof v === 'string' && v.length <= (f.max ?? 20000) ? null : `va con un texto de hasta ${f.max ?? 20000}`
     case 'list':
-      if (!Array.isArray(v) || v.length > (f.max ?? 200) || v.some((x) => typeof x !== 'string' || x.length > 200))
+      if (!Array.isArray(v) || v.length > (f.max ?? 200) || v.some((x) => !shortText(x)))
         return 'va con una lista de textos cortos'
       return f.options && v.some((x) => !f.options?.some((o) => o.value === x)) ? 'lleva algo que no es suyo' : null
     case 'choice':

@@ -155,6 +155,8 @@ describe('Actions', () => {
       inspectFoundry: true,
       importFoundry: true,
       putSystemImages: true,
+      listSystemImages: true,
+      deleteSystemImages: true,
       inspectFoundryScenes: true,
       importFoundryScenes: true,
       getSystemParts: true,

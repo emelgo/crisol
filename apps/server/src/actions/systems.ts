@@ -620,7 +620,7 @@ export const systemActions = [
         ctx.db,
         historyContext(ctx, 'createSystem', { name: textOf(system.name) }, { organizationId: target }),
         row.id,
-        chapters.map(({ source: book, title, markdown }) => ({ source: book, title, markdown }))
+        chapters.map(({ source: book, title, markdown, master }) => ({ source: book, title, markdown, master }))
       )
     }
     ctx.realtime.publish(systemsChanged(target))
@@ -687,10 +687,11 @@ export const systemActions = [
     const content = await allContent(ctx, found)
     // Con los capítulos de sus libros (ADR-0025)
     const chapters = found.row
-      ? (await chaptersRepo.chaptersWithText(ctx.db, found.row.id)).map(({ source, title, markdown }) => ({
+      ? (await chaptersRepo.chaptersWithText(ctx.db, found.row.id)).map(({ source, title, markdown, master }) => ({
           source,
           title,
-          markdown
+          markdown,
+          ...(master ? { master } : {})
         }))
       : []
     return {

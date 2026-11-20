@@ -5,7 +5,7 @@
  */
 import type { RollVisibility } from '@crisol/contracts'
 import { type TableProblem, tableFormula, tableProblemList } from '@crisol/dice'
-import type { TableEntry, TableEntryRow } from '@crisol/systems'
+import { type TableEntry, type TableEntryRow, type Text, textOf } from '@crisol/systems'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Dices, Plus, RotateCcw, Trash2 } from 'lucide-react'
 import { useId, useState } from 'react'
@@ -107,10 +107,10 @@ export function EntryTable({
                   <td className={hit ? textStyles.hit : undefined}>
                     {r.key ? (
                       <button type="button" className={styles.link} onClick={() => r.key && onOpen(r.key)}>
-                        {r.text || r.key}
+                        {textOf(r.text) || r.key}
                       </button>
                     ) : (
-                      r.text
+                      textOf(r.text)
                     )}
                     {hit && <span className={`${styles.tag} ${styles.now}`}>{t('tableTab.now')}</span>}
                     {!hit && out.has(r.id) && <span className={styles.tag}>{t('tableTab.drawn')}</span>}
@@ -151,6 +151,9 @@ export function EntryTable({
 const newId = () => crypto.randomUUID().slice(0, 8)
 
 /** Una tabla vacía, para empezar: una fila */
+/** Un texto con su español cambiado: si estaba en dos idiomas, el otro se queda */
+const withSpanish = (old: Text, value: string): Text => (typeof old === 'string' ? value : { ...old, es: value })
+
 export const emptyTable = (): TableEntry => ({ rows: [{ id: newId(), from: 1, to: 1, text: '' }] })
 
 /** Lo que impide tirar en ella (la fórmula, una fila al revés o a medias): no se guarda así */
@@ -223,7 +226,7 @@ export function TableRowsField({ table, onChange }: { table: TableEntry; onChang
                   data-1p-ignore
                   data-lpignore="true"
                   data-form-type="other"
-                  aria-label={t('tableTab.fromOf', { text: r.text || t('compendium.rowNumber', { n: i + 1 }) })}
+                  aria-label={t('tableTab.fromOf', { text: textOf(r.text) || t('compendium.rowNumber', { n: i + 1 }) })}
                   value={Number.isNaN(r.from) ? '' : r.from}
                   onChange={(event) => setRow(r.id, { from: event.currentTarget.valueAsNumber })}
                 />
@@ -235,7 +238,7 @@ export function TableRowsField({ table, onChange }: { table: TableEntry; onChang
                   data-1p-ignore
                   data-lpignore="true"
                   data-form-type="other"
-                  aria-label={t('tableTab.toOf', { text: r.text || t('compendium.rowNumber', { n: i + 1 }) })}
+                  aria-label={t('tableTab.toOf', { text: textOf(r.text) || t('compendium.rowNumber', { n: i + 1 }) })}
                   value={Number.isNaN(r.to) ? '' : r.to}
                   onChange={(event) => setRow(r.id, { to: event.currentTarget.valueAsNumber })}
                 />
@@ -248,8 +251,9 @@ export function TableRowsField({ table, onChange }: { table: TableEntry; onChang
                   data-form-type="other"
                   maxLength={2000}
                   aria-label={t('tableTab.textOf', { from: r.from, to: r.to })}
-                  value={r.text}
-                  onChange={(event) => setRow(r.id, { text: event.currentTarget.value })}
+                  value={textOf(r.text)}
+                  // En dos idiomas, se cambia el español y se queda el otro
+                  onChange={(event) => setRow(r.id, { text: withSpanish(r.text, event.currentTarget.value) })}
                 />
               </td>
               <td>

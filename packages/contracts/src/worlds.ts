@@ -21,6 +21,25 @@ export const worldCover = z.object({
   zoom: z.number().min(1).max(3).optional()
 })
 
+/** La portada de un libro: de los archivos comunes (fileId) o una imagen de su sistema por su ruta (image, ADR-0033) */
+export const bookCover = z
+  .object({
+    fileId: z.uuid().optional(),
+    image: z
+      .string()
+      .min(1)
+      .max(500)
+      .optional()
+      .describe('La ruta de una imagen del sistema (subida con putSystemImages)'),
+    x: z.number().min(0).max(100),
+    y: z.number().min(0).max(100),
+    zoom: z.number().min(1).max(3).optional()
+  })
+  .refine(
+    (c) => Boolean(c.fileId) !== Boolean(c.image),
+    'fileId (de los comunes) o image (del sistema), uno de los dos'
+  )
+
 const worldDescription = z.string().trim().max(280)
 
 /** Un mundo tal como lo ve la cuenta que lo pide */

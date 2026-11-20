@@ -20,7 +20,7 @@ import {
 } from '@crisol/contracts'
 import { chaptersRepo, systemImagesRepo, systemsRepo, tablesRepo, worldContentRepo } from '@crisol/db'
 import { cryptoRoller, DiceSyntaxError } from '@crisol/dice'
-import { authorize, can, foldName, NotFoundError } from '@crisol/domain'
+import { authorize, can, foldName, matchLinkTarget, NotFoundError } from '@crisol/domain'
 import {
   browseContent,
   type Choices,
@@ -95,7 +95,7 @@ export async function campaignSystem(ctx: ActionContext, campaignId: string) {
     (entry) => !hidden.includes(entry.type)
   )
   // `layer`: lo que se lee del mundo; `world`: el compendio del mundo como tal (su id, sus copias), solo del máster
-  return { document, row, choices, entries, layer, world: master ? layer : null, wiki, hidden }
+  return { document, row, choices, entries, layer, world: master ? layer : null, wiki, hidden, master }
 }
 
 /** El id del objeto de la entrada en la hoja del personaje con el que se tira, mientras se tira */
@@ -119,6 +119,8 @@ interface Drawing {
   open: (key: string) => Promise<ContentItem | null>
   shown: (key: string) => boolean
   nameOf: (entry: ContentItem) => string
+  /** El idioma de lo que sale (una fila puede venir en dos) */
+  language: Language
 }
 
 /**
@@ -145,7 +147,11 @@ async function drawEntry(
   for (const row of rows) {
     if (drawing.results.length >= TABLE_RESULTS) break
     const linked = row.key && drawing.shown(row.key) ? row.key : null
-    drawing.results.push({ text: `${prefix}${row.text}`, page: null, ...(linked ? { content: linked } : {}) })
+    drawing.results.push({
+      text: `${prefix}${textOf(row.text, drawing.language)}`,
+      page: null,
+      ...(linked ? { content: linked } : {})
+    })
     if (!repeats) {
       drawn.add(row.id)
       drawing.draws.push({ key: entry.key, rowId: row.id })
@@ -327,7 +333,8 @@ export const compendiumActions = [
           const [found] = await layers.contentByKeys(ctx, row.id, layer, [k])
           return found ?? null
         },
-        nameOf
+        nameOf,
+        language: choices.language
       }
       const name = nameOf(item)
       const drawnNow = await drawEntry(ctx, drawing, { key, name, table: item.table }, [key], '')
@@ -419,6 +426,10 @@ export function linesOf(system: System | undefined, item: ContentItem | undefine
     .map(([key, f]) => ({ label: textOf(f.label as Text, language) || key, value: String(item?.data[key]) }))
 }
 
+/** Un texto en todos sus idiomas (para buscar por cualquiera) */
+export const textsOf = (text: Text | undefined): string[] =>
+  !text ? [] : typeof text === 'string' ? [text] : Object.values(text).filter((t): t is string => Boolean(t))
+
 /**
  * Lo que enlaza o incrusta `[[@Nombre]]` desde una campaña (lo que ve ella: quien juega, solo lo suyo) o desde un
  * sistema (sus capítulos): la entrada con ese nombre, lo del mundo antes. Con `system` (el elegido al ponerla), solo
@@ -436,13 +447,19 @@ export async function linkedIn(
       : await systemScope(ctx, scope.systemId, undefined)
   if (!found?.row || (system && system !== found.row.id)) return null
   const { document, row, choices, entries, layer } = found
-  const wanted = foldName(name)
-  const named = (entry: ContentEntry) => foldName(textOf(entry.name as Text | undefined, choices.language) || entry.key)
   // Lo del mundo lleva su marca (layers.ts)
   const ofWorld = (entry: ContentEntry) => Boolean((entry as ContentEntry & { world?: boolean }).world)
   const seen = visibleContent(document, entries, choices).map((s) => s.item)
-  const match =
-    seen.find((entry) => ofWorld(entry) && named(entry) === wanted) ?? seen.find((entry) => named(entry) === wanted)
+  // `tipo/Nombre`, la clave o el nombre en cualquier idioma (ADR-0033)
+  const targets = seen.map((entry) => ({
+    entry,
+    key: entry.key,
+    names: textsOf(entry.name as Text | undefined),
+    type: entry.type,
+    typeLabels: textsOf(document.types[entry.type]?.label as Text | undefined),
+    world: ofWorld(entry)
+  }))
+  const match = matchLinkTarget(targets, name)?.entry
   if (!match) return null
   const [item] = await layers.contentByKeys(ctx, row.id, layer, [match.key])
   const label = document.types[match.type]?.label
@@ -477,12 +494,14 @@ async function systemScope(ctx: ActionContext, systemId: string, organizationId:
     layer: null,
     world: null,
     wiki: { worldId: '', organizationId: row?.organizationId ?? '' },
-    hidden: []
+    hidden: [],
+    // Desde el sistema lo lee quien lo lleva: todo
+    master: true
   }
 }
 
 async function compendiumView(ctx: ActionContext, found: Scope) {
-  const { document, row, choices, entries, world, wiki, hidden } = found
+  const { document, row, choices, entries, world, wiki, hidden, master } = found
   const language = choices.language
   // Los tipos que la campaña oculta a sus jugadores no salen (ni en sus secciones)
   const shownTypes = (types: CompendiumType[]) => types.filter((type) => !hidden.includes(type.key))
@@ -491,7 +510,8 @@ async function compendiumView(ctx: ActionContext, found: Scope) {
   const books = new Map(
     summarizeBooks(document, entries, { excluded: choices.excluded ?? [], language }).map((b) => [b.key, b])
   )
-  const chapters = row ? await chaptersRepo.chapterCounts(ctx.db, row.id) : new Map<string, number>()
+  // Lo que es solo para el máster no cuenta para quien no dirige (ADR-0033)
+  const chapters = row ? await chaptersRepo.chapterCounts(ctx.db, row.id, { open: !master }) : new Map<string, number>()
   const typeView = (type: CompendiumType) => ({
     ...type,
     label: say(type.label),
@@ -528,7 +548,7 @@ async function compendiumView(ctx: ActionContext, found: Scope) {
           requires: s.requires ?? [],
           count: (summary?.count ?? 0) - (summary?.excluded ?? 0),
           excluded: summary?.excluded ?? 0,
-          chapters: chapters.get(s.key) ?? 0
+          chapters: !master && s.master ? 0 : (chapters.get(s.key) ?? 0)
         }
       }),
     sections: compendiumSections(document, shownTypes(compendiumTypes(document, entries, choices)))

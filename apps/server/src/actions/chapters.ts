@@ -26,12 +26,13 @@ const view = (row: chaptersRepo.ChapterRow, markdown = row.markdown): Chapter =>
   title: row.title,
   position: row.position,
   version: row.version,
+  master: row.master,
   markdown
 })
 
 /**
  * Dónde se lee: desde el sistema (quien puede leer los de su cuenta) o desde una campaña con ese sistema, solo los
- * libros que eligió; `master`: si ve los secretos
+ * libros que eligió; `master`: si ve los secretos y lo que es solo para el máster (ADR-0033)
  */
 async function readingScope(
   ctx: ActionContext,
@@ -61,18 +62,27 @@ async function readingScope(
 
 const bookExists = (document: System, source: string) => (document.sources ?? []).some((s) => s.key === source)
 
+/** Si un libro es solo para el máster: sus capítulos no los lee quien no dirige */
+const masterBook = (document: System, source: string) =>
+  Boolean((document.sources ?? []).find((s) => s.key === source)?.master)
+
 export const chapterActions = [
   implement(listBookChapters, async (ctx, { systemId, source, campaignId, organizationId }) => {
-    const { found } = await readingScope(ctx, systemId, source, campaignId, organizationId)
+    const { found, master } = await readingScope(ctx, systemId, source, campaignId, organizationId)
     if (!found.row) return { chapters: [], editable: false }
-    const rows = await chaptersRepo.listChapters(ctx.db, found.row.id, source)
+    // Lo que es solo para el máster no existe para quien no dirige: ni el libro entero ni esos capítulos
+    const rows =
+      master || !masterBook(found.document, source)
+        ? (await chaptersRepo.listChapters(ctx.db, found.row.id, source)).filter((row) => master || !row.master)
+        : []
     return {
-      chapters: rows.map(({ id, source: s, title, position, version }) => ({
+      chapters: rows.map(({ id, source: s, title, position, version, master: only }) => ({
         id,
         source: s,
         title,
         position,
-        version
+        version,
+        master: only
       })),
       editable: !campaignId && can(ctx.actor, 'systems.write', { organizationId: found.row.organizationId })
     }
@@ -83,11 +93,12 @@ export const chapterActions = [
     if (!row) throw new NotFoundError('chapter')
     // Sin campaña, desde su sistema: con la organización de este (quien tiene varias no tiene que decirla)
     const organizationId = campaignId ? undefined : (await systemsRepo.findSystem(ctx.db, row.systemId))?.organizationId
-    const { master } = await readingScope(ctx, row.systemId, row.source, campaignId, organizationId)
+    const { found, master } = await readingScope(ctx, row.systemId, row.source, campaignId, organizationId)
+    if (!master && (row.master || masterBook(found.document, row.source))) throw new NotFoundError('chapter')
     return view(row, master ? row.markdown : markdownWithoutSecrets(row.markdown))
   }),
 
-  implement(saveChapter, async (ctx, { systemId, source, chapterId, version, title, markdown }) => {
+  implement(saveChapter, async (ctx, { systemId, source, chapterId, version, title, markdown, master }) => {
     const system = await ownWritable(ctx, systemId)
     const document = system.document as unknown as System
     if (!bookExists(document, source)) throw new InvalidRequestError('BAD_BOOK', `no hay un libro «${source}»`)
@@ -104,7 +115,11 @@ export const chapterActions = [
           historyContext(ctx, 'updateChapter', { title: title ?? current.title, book }, scope),
           chapterId,
           version,
-          { ...(title !== undefined ? { title } : {}), ...(markdown !== undefined ? { markdown } : {}) }
+          {
+            ...(title !== undefined ? { title } : {}),
+            ...(markdown !== undefined ? { markdown } : {}),
+            ...(master !== undefined ? { master } : {})
+          }
         )
       } catch (error) {
         if (error instanceof chaptersRepo.ChapterChangedError)
@@ -117,7 +132,8 @@ export const chapterActions = [
         systemId,
         source,
         title,
-        markdown: markdown ?? ''
+        markdown: markdown ?? '',
+        master: master ?? false
       })
     }
     ctx.realtime.publish(systemsChanged(system.organizationId))

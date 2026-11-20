@@ -13,7 +13,7 @@ import {
   searchLinkableContent
 } from '@crisol/contracts'
 import { campaignsRepo, type schema, systemsRepo, tablesRepo, worldContentRepo } from '@crisol/db'
-import { foldName, NotFoundError } from '@crisol/domain'
+import { foldName, matchLinkTarget, NotFoundError } from '@crisol/domain'
 import {
   type ContentItem,
   contentDiff,
@@ -30,7 +30,7 @@ import {
 } from '@crisol/systems'
 import { systemsChanged, worldContentChanged } from '../realtime/events.ts'
 import { authorizedWiki, type WikiTarget } from './access.ts'
-import { linesOf, linkedIn } from './compendium.ts'
+import { linesOf, linkedIn, textsOf } from './compendium.ts'
 import { contentOf } from './content-of.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
 import * as layers from './layers.ts'
@@ -397,12 +397,14 @@ export const worldContentActions = [
     // Desde una campaña o desde un sistema (sus capítulos): lo que se ve desde ahí
     if (campaignId) return { entry: await linkedIn(ctx, { campaignId }, name, systemId) }
     if (!worldId) return { entry: systemId ? await linkedIn(ctx, { systemId }, name) : null }
-    const wanted = foldName(name)
     // Con el sistema elegido al ponerla, solo lo suyo (también si ninguna campaña lo usa aún)
     const all = (await linkables(ctx, worldId, systemId)).filter((each) => !systemId || each.systemId === systemId)
-    const match =
-      all.find((each) => each.world && foldName(each.name) === wanted) ??
-      all.find((each) => foldName(each.name) === wanted)
+    // `tipo/Nombre`, la clave o el nombre en cualquier idioma (ADR-0033)
+    const found = matchLinkTarget(
+      all.map((each) => ({ ...each, item: each, typeLabels: [each.typeLabel] })),
+      name
+    )
+    const match = found?.item
     if (!match) return { entry: null }
     const row = await systemsRepo.findSystem(ctx.db, match.systemId)
     const system = row?.document as unknown as System | undefined
@@ -415,6 +417,8 @@ export const worldContentActions = [
 interface Linkable {
   key: string
   name: string
+  /** Sus nombres en cada idioma (para resolver un enlace) */
+  names: string[]
   type: string
   typeLabel: string
   world: boolean
@@ -448,6 +452,7 @@ async function linkables(ctx: ActionContext, worldId: string, chosen?: string | 
       out.push({
         key: entry.key,
         name: textOf(entry.name as Text | undefined, 'es') || entry.key,
+        names: textsOf(entry.name as Text | undefined),
         type: entry.type,
         typeLabel: label ? textOf(label as Text, 'es') : entry.type,
         world: Boolean(entry.world),

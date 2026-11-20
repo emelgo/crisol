@@ -226,4 +226,24 @@ describe('las tablas del compendio (docs/specs/tablas-compendio.md)', () => {
     const rolled = await ok200('rollContentTable', { campaignId, key: 'vieja' })
     expect(rolled.roll.table.results[0].text).toBe(rolled.roll.total === 1 ? 'Uno' : 'Dos')
   })
+
+  it('sus filas, en dos idiomas ({ es, en }): sale el del compendio de la campaña', async () => {
+    const clima = {
+      type: 'tabla',
+      key: 'clima',
+      data: { name: { es: 'Clima', en: 'Weather' } },
+      table: {
+        formula: '1d2',
+        rows: [
+          { id: 'a', from: 1, to: 1, text: { es: 'Llueve', en: 'Rain' } },
+          { id: 'b', from: 2, to: 2, text: { es: 'Llueve', en: 'Rain' } }
+        ]
+      }
+    }
+    await ok200('putWorldContent', { worldId, systemId: five, items: [clima] })
+    const rolled = await ok200('rollContentTable', { campaignId, key: 'clima' })
+    expect(rolled.roll.table.results).toEqual([{ text: 'Llueve', page: null }])
+    const read = await ok200('getCampaignContent', { campaignId, keys: ['clima'] })
+    expect(read.items[0].table.rows[0].text).toEqual({ es: 'Llueve', en: 'Rain' })
+  })
 })

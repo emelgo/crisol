@@ -23,6 +23,7 @@ const summary = {
   position: systemChapters.position,
   title: systemChapters.title,
   version: systemChapters.version,
+  master: systemChapters.master,
   updatedAt: systemChapters.updatedAt
 }
 
@@ -40,12 +41,20 @@ export function listChapters(db: Database, systemId: string, source?: string) {
 }
 
 /** Los de un sistema con su texto (para exportarlo o copiarlo) */
-/** Cuántos capítulos tiene cada libro de un sistema */
-export async function chapterCounts(db: Database, systemId: string): Promise<Map<string, number>> {
+/** Cuántos capítulos tiene cada libro de un sistema (con open, solo los que no son solo para el máster) */
+export async function chapterCounts(
+  db: Database,
+  systemId: string,
+  { open = false }: { open?: boolean } = {}
+): Promise<Map<string, number>> {
   const rows = await db
     .select({ source: systemChapters.source, count: count() })
     .from(systemChapters)
-    .where(eq(systemChapters.systemId, systemId))
+    .where(
+      open
+        ? and(eq(systemChapters.systemId, systemId), eq(systemChapters.master, false))
+        : eq(systemChapters.systemId, systemId)
+    )
     .groupBy(systemChapters.source)
   return new Map(rows.map((row) => [row.source, row.count]))
 }
@@ -67,7 +76,7 @@ export async function findChapter(db: Database, id: string) {
 export function createChapter(
   db: Database,
   context: OperationContext,
-  values: { systemId: string; source: string; title: string; markdown: string }
+  values: { systemId: string; source: string; title: string; markdown: string; master?: boolean }
 ) {
   return operation(db, context, async (w) => {
     const [last] = await w.read
@@ -83,7 +92,7 @@ export function insertChapters(
   db: Database,
   context: OperationContext,
   systemId: string,
-  chapters: readonly { source: string; title: string; markdown: string }[]
+  chapters: readonly { source: string; title: string; markdown: string; master?: boolean }[]
 ) {
   return operation(db, context, async (w) => {
     if (chapters.length === 0) return []
@@ -105,7 +114,7 @@ export function updateChapter(
   context: OperationContext,
   id: string,
   version: number,
-  patch: { title?: string; markdown?: string }
+  patch: { title?: string; markdown?: string; master?: boolean }
 ) {
   return operation(db, context, async (w) => {
     const [current] = await w.read

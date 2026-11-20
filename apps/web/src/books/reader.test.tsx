@@ -152,6 +152,17 @@ describe('el lector de capítulos (ADR-0025)', () => {
     expect(await screen.findByText('Falta la imagen «iconos/no-esta.webp»')).toBeDefined()
   })
 
+  it('el dueño marca un capítulo solo para el máster desde «⋯»: lleva su etiqueta y se guarda', async () => {
+    const { api, first } = await renderBook(BOOK)
+    await screen.findByLabelText('Título del capítulo')
+    await userEvent.click(screen.getByRole('button', { name: 'Más acciones del capítulo' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Solo para el máster' }))
+    expect(await screen.findByText('Solo para el máster', { selector: 'span' })).toBeDefined()
+    await waitFor(async () => expect((await api.client.call('getChapter', { chapterId: first.id })).master).toBe(true))
+    await userEvent.click(screen.getByRole('button', { name: 'Más acciones del capítulo' }))
+    expect(await screen.findByRole('button', { name: 'Que lo lean los jugadores' })).toBeDefined()
+  })
+
   it('pulsar una sección del índice va a su título y la marca como la que se lee', async () => {
     const scroll = vi.fn()
     Element.prototype.scrollIntoView = scroll

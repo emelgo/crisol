@@ -119,6 +119,7 @@ export const bookActions = [
           cover: source.cover ?? null,
           color: source.color ?? null,
           requires: source.requires ?? [],
+          master: source.master ?? false,
           version: source.version ?? 1,
           count: summary?.count ?? 0,
           byType: summary?.byType ?? [],

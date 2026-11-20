@@ -26,7 +26,7 @@ export const LIMITS = {
   /** Grupos dentro de grupos (y columnas de una lista) */
   depth: 3,
   formula: 2000,
-  contentDocuments: 5000,
+  contentDocuments: 20_000,
   contentBytes: 64 * 1024,
   /** Los pasos del creador */
   steps: 20
@@ -121,7 +121,10 @@ function build(strict: boolean) {
     obj({ ...base, kind: kind('boolean', 'Sí o no'), default: z.boolean().optional() }),
     obj({
       ...base,
-      kind: kind('list', 'Una lista de textos cortos (idiomas, rasgos)'),
+      kind: kind(
+        'list',
+        'Una lista de textos cortos (idiomas, rasgos); cada uno, en uno o en dos idiomas ({ es, en })'
+      ),
       default: z.array(z.string().max(200)).max(200).optional(),
       max: z.int().min(1).max(200).optional(),
       options: z
@@ -326,6 +329,17 @@ function build(strict: boolean) {
     y: z.number().min(0).max(100),
     zoom: z.number().min(1).max(3).optional()
   })
+  // La portada de un libro: de los archivos comunes (fileId) o una imagen del propio sistema por su ruta (image)
+  const bookCover = obj({
+    fileId: z.uuid().optional(),
+    image: z.string().min(1).max(500).optional().describe('La ruta de una imagen del sistema (la de su img)'),
+    x: z.number().min(0).max(100),
+    y: z.number().min(0).max(100),
+    zoom: z.number().min(1).max(3).optional()
+  }).refine(
+    (c) => Boolean(c.fileId) !== Boolean(c.image),
+    'Una portada lleva fileId (de los comunes) o image (del sistema)'
+  )
   const color = z.union([
     z.enum(['wine', 'moss', 'slate', 'ochre', 'sea', 'plum']),
     z.string().regex(/^#[0-9a-f]{6}$/i)
@@ -347,7 +361,9 @@ function build(strict: boolean) {
     released: z.iso.date().optional().describe('Cuándo salió (AAAA-MM-DD): de lo repetido, gana lo más nuevo'),
     // Lo que hace de una fuente un libro (ADR-0021): cómo se ve y de dónde sale
     description: text(600).optional().describe('De qué va, en una o dos frases'),
-    cover: cover.optional().describe('Su portada: una imagen de los archivos comunes de la cuenta, encuadrada'),
+    cover: bookCover
+      .optional()
+      .describe('Su portada, encuadrada: una imagen de los archivos comunes (fileId) o del sistema (image, su ruta)'),
     color: color
       .optional()
       .describe('Su color, sin portada (uno de los fijos: wine, moss, slate, ochre, sea, plum; o #rrggbb)'),
@@ -361,7 +377,13 @@ function build(strict: boolean) {
       .max(20)
       .optional()
       .describe('Las claves de los libros de este sistema a los que amplía (subclases, conjuros para sus listas…)'),
-    version: z.int().min(1).max(10_000).optional().describe('Su versión: sube al traer una nueva')
+    version: z.int().min(1).max(10_000).optional().describe('Su versión: sube al traer una nueva'),
+    master: z
+      .boolean()
+      .optional()
+      .describe(
+        'Solo para el máster (una guía, un bestiario, una aventura): sus capítulos no los leen los jugadores; sus entradas del compendio, sí'
+      )
   })
   // Los bloques de la hoja: tipos neutros; cada uno dice qué campos lee y qué se tira desde él
   const label = text().optional().describe('Su título (sin él, el del campo)')

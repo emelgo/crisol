@@ -666,6 +666,13 @@
       "when": 1795162144908,
       "tag": "0094_tokens_de_acceso",
       "breakpoints": true
+    },
+    {
+      "idx": 95,
+      "version": "7",
+      "when": 1795167858327,
+      "tag": "0095_capitulos_solo_master",
+      "breakpoints": true
     }
   ]
 }

@@ -88,7 +88,7 @@ export function SystemScreen() {
             >
               <span className={books.hidden}>{`${t('books.openPrefix')} `}</span>
               <BookCover
-                book={book}
+                book={{ ...book, systemId }}
                 sub={[book.origin ? t(`books.origin.${book.origin}`) : '', book.edition].filter(Boolean).join(' · ')}
               />
             </Link>
@@ -392,6 +392,7 @@ function BookSettings({
     attribution: book.attribution,
     requires: book.requires,
     color: book.color,
+    master: book.master,
     newVersion: false
   })
   // Su portada: con el cuadro de la de un mundo (de los archivos comunes; una subida va a ellos), se guarda al momento
@@ -421,6 +422,7 @@ function BookSettings({
         ...(draft.attribution !== book.attribution ? { attribution: draft.attribution } : {}),
         ...(draft.requires.join() !== book.requires.join() ? { requires: draft.requires } : {}),
         ...(draft.color !== book.color ? { color: draft.color } : {}),
+        ...(draft.master !== book.master ? { master: draft.master } : {}),
         ...(draft.newVersion ? { newVersion: true as const } : {})
       }),
     onSuccess: async () => {
@@ -511,6 +513,17 @@ function BookSettings({
         <label className={form.check}>
           <input
             type="checkbox"
+            checked={draft.master}
+            onChange={(event) => setDraft({ ...draft, master: event.currentTarget.checked })}
+          />
+          <span>
+            {t('systemBooks.master')}
+            <span className={form.hint}> · {t('systemBooks.masterHint')}</span>
+          </span>
+        </label>
+        <label className={form.check}>
+          <input
+            type="checkbox"
             checked={draft.newVersion}
             onChange={(event) => setDraft({ ...draft, newVersion: event.currentTarget.checked })}
           />
@@ -528,7 +541,8 @@ function BookSettings({
         {coverOpen && (
           <CoverDialog
             title={t('systemBooks.coverOf', { name: book.name })}
-            cover={book.cover}
+            // La de una imagen del sistema (la pone la IA) no se elige aquí: elegir una de los comunes la cambia
+            cover={book.cover?.fileId ? { ...book.cover, fileId: book.cover.fileId } : null}
             aspect="3 / 4"
             onSave={saveCover}
             onClose={() => setCoverOpen(false)}

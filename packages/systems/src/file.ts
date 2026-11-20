@@ -38,6 +38,8 @@ export interface FileChapter {
   source: string
   title: string
   markdown: string
+  /** Solo para quien dirige (ADR-0033) */
+  master?: boolean
 }
 
 export interface SystemFile {
@@ -88,6 +90,8 @@ export function validateChapters(system: System, chapters: unknown): Problem[] {
       problems.push(problem(`${path}.source`, `«${String(chapter.source)}» no es un libro del sistema (sources)`))
     if (typeof chapter.title !== 'string' || !chapter.title.trim() || chapter.title.length > 200)
       problems.push(problem(`${path}.title`, 'Su título: entre 1 y 200 letras'))
+    if (chapter.master !== undefined && typeof chapter.master !== 'boolean')
+      problems.push(problem(`${path}.master`, 'Tiene que ser true o false'))
     if (typeof chapter.markdown !== 'string' || chapter.markdown.length > CHAPTER_TEXT)
       problems.push(problem(`${path}.markdown`, `Su texto, en Markdown y de como mucho ${CHAPTER_TEXT} letras`))
   })

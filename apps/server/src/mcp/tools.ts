@@ -678,6 +678,9 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   capitulos_libro: { action: 'listBookChapters' },
   leer_capitulo: { action: 'getChapter' },
   guardar_capitulo: { action: 'saveChapter' },
+  subir_imagenes_sistema: { action: 'putSystemImages' },
+  ver_imagenes_sistema: { action: 'listSystemImages' },
+  borrar_imagenes_sistema: { action: 'deleteSystemImages' },
   ordenar_capitulos: { action: 'orderChapters' },
   borrar_capitulo: { action: 'deleteChapter' },
   // Las criaturas en juego de una campaña (del máster): ponerlas, su hoja, la partida, tirar, aplicar y quitarlas
@@ -978,7 +981,8 @@ export const INSTRUCTIONS =
   'texto (las reglas, la ambientación), que leen las campañas que lo usan: capitulos_libro, leer_capitulo, ' +
   'guardar_capitulo (Markdown; lo del máster, en > [!secreto], no les llega a los jugadores), ordenar_capitulos y ' +
   'borrar_capitulo. En una página, [[@Nombre]] enlaza una entrada del compendio y ![[@Nombre]] la pone en una línea ' +
-  'que se despliega con lo que hace en juego. ' +
+  'que se despliega con lo que hace en juego; si dos se llaman igual (el conjuro y la armadura «Escudo»), con su tipo ' +
+  'delante ([[@objeto/Escudo]]) o por su clave ([[@escudo-armadura]]). ' +
   'El inventario del grupo de una campaña (el botín, el carro) se ve con ver_grupo y se cambia con cambiar_grupo (con ' +
   'su versión): objetos del compendio por su clave o escritos a mano, contenedores y monedas; mover_en_grupo pasa un ' +
   'objeto entre el grupo y un personaje sin duplicarlo, y monedas_grupo pasa o reparte monedas. ' +
