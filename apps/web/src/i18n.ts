@@ -330,6 +330,18 @@ export const es = {
   // La hoja de un personaje en partida
   playSheet: {
     values: 'Sus valores',
+    spellDc: 'CD {{dc}}',
+    atWill: 'A voluntad',
+    perDay_one: '{{count}}/día',
+    perDay_other: '{{count}}/día cada uno',
+    spell: {
+      attack: 'Ataque de {{what}}',
+      damage: 'Daño de {{what}}',
+      heal: 'Curación de {{what}}',
+      attackShort: 'Ataque',
+      damageShort: 'Daño',
+      healShort: 'Cura'
+    },
     optionsCount_one: 'una de estas',
     optionsCount_other: '{{count}} de estas',
     optionsDistinct_one: 'una de estas',

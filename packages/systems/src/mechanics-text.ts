@@ -49,6 +49,10 @@ const WORDS = {
   options: { es: '{x} de estas', en: '{x} of these' },
   optionsDistinct: { es: '{x} distintas de estas', en: '{x} different ones of these' },
   pick: { es: 'al azar con {x}', en: 'at random with {x}' },
+  spellcasting: { es: 'Lanzamiento de conjuros', en: 'Spellcasting' },
+  atWill: { es: 'A voluntad: {x}', en: 'At will: {x}' },
+  perDay: { es: '{n}/día cada uno: {x}', en: '{n}/day each: {x}' },
+  spellAttack: { es: 'ataque {x}', en: '{x} to hit' },
   max: { es: 'Como mucho, {x}', en: 'Up to {x}' },
   short: { es: 'se recupera con un descanso corto', en: 'recovers on a short rest' },
   long: { es: 'se recupera con un descanso largo', en: 'recovers on a long rest' },
@@ -406,6 +410,26 @@ export function mechanicsText(
         .filter(Boolean)
         .join('; ') || null
   const duration = mechanics.toggle?.duration
+  // Los conjuros de una criatura (ADR-0033), como una acción más: su característica, su CD, su ataque y sus grupos
+  const casting = mechanics.spellcasting
+  if (casting) {
+    const head = [
+      ...(casting.ability ? [names.elements.get(casting.ability) ?? humanize(casting.ability)] : []),
+      ...(casting.dc ? [say('dc', language, { x: f(casting.dc) })] : []),
+      ...(casting.attack ? [say('spellAttack', language, { x: `+${f(casting.attack)}` })] : [])
+    ].join(', ')
+    const groups = casting.groups.map((g) => {
+      const x = g.spells.map(humanize).join(', ')
+      const line = g.uses ? say('perDay', language, { n: String(g.uses), x }) : say('atWill', language, { x })
+      return g.label ? `${textOf(g.label, language)}: ${x}` : line
+    })
+    actions.push({
+      key: 'conjuros',
+      label: casting.label ? textOf(casting.label, language) : say('spellcasting', language),
+      parts: [...(head ? [head] : []), ...groups],
+      rolls: []
+    })
+  }
   return {
     actions,
     resources,

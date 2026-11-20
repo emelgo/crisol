@@ -6,6 +6,7 @@
 import {
   applyRoll,
   type CreatureInPlay,
+  type CreatureState,
   getInPlay,
   listInPlay,
   listVisibleInPlay,
@@ -37,6 +38,7 @@ import {
   rest,
   type System,
   setRecharge,
+  spellcastingOf,
   spend,
   startingPlay,
   type Text,
@@ -145,6 +147,51 @@ function viewOf(at: Context, row: creaturesRepo.CreatureRow, content: readonly C
   if (!entry) throw new InvalidRequestError('ENTRY_GONE', 'su entrada ya no está en el compendio de la campaña')
   const played = creatureView(at.document, content, at.choices, entry, row.play as Play, row.overrides)
   return { entry, played, card: cardOf(at.document, row, entry, played.view) }
+}
+
+/** El id del conjuro que lanza una criatura, como algo que lleva mientras se tira */
+const SPELL_ITEM = 'conjuro-lanzado'
+
+/**
+ * Los conjuros de una criatura (ADR-0033) con su entrada del compendio de la campaña (por su clave o su concepto, la que
+ * se ve en ella) y su nombre; los recursos de sus usos, con el nombre del conjuro
+ */
+async function withSpells(ctx: ActionContext, at: Context, view: CreatureState): Promise<CreatureState> {
+  const casting = view.spellcasting
+  if (!casting) return view
+  const seen = visibleContent(at.document, await layers.contentIndex(ctx, at.row.id, at.world), at.choices).map(
+    (s) => s.item
+  )
+  const named = new Map<string, { key: string; name: string }>()
+  for (const ref of new Set(casting.groups.flatMap((g) => g.spells.map((sp) => sp.ref)))) {
+    const found = seen.find((e) => e.key === ref) ?? seen.find((e) => e.concept === ref)
+    if (found)
+      named.set(ref, { key: found.key, name: textOf(found.name as Text | undefined, at.choices.language) || found.key })
+  }
+  // Lo que se tira de cada uno: lo de su primera acción
+  const items = await layers.contentByKeys(ctx, at.row.id, at.world, [
+    ...new Set([...named.values()].map((n) => n.key))
+  ])
+  const rollsOf = (key: string | undefined) => {
+    const first = items.find((i) => i.key === key)?.mechanics?.actions?.[0]
+    if (!first) return []
+    return [
+      ...(first.attack ? (['attack'] as const) : []),
+      ...(first.damage?.length ? (['damage'] as const) : []),
+      ...(first.heal ? (['heal'] as const) : [])
+    ]
+  }
+  const groups = casting.groups.map((g) => ({
+    ...g,
+    spells: g.spells.map((sp) => {
+      const found = named.get(sp.ref)
+      return { ...sp, key: found?.key ?? null, name: found?.name ?? sp.ref, rolls: rollsOf(found?.key) }
+    })
+  }))
+  const resources = view.resources.map((r) =>
+    r.spell ? { ...r, label: named.get(r.spell.spell)?.name ?? r.label } : r
+  )
+  return { ...view, resources, spellcasting: { ...casting, groups } }
 }
 
 /** Lo de la lista: su vida (su primer recurso), sus primeras cifras y cómo está */
@@ -355,7 +402,7 @@ export const creatureActions = [
   implement(getInPlay, async (ctx, { creatureId }) => {
     const { row, at } = await readable(ctx, creatureId)
     const { card, played } = viewOf(at, row, await contentFor(ctx, at, row.key, row.play as Play))
-    return { creature: card, state: played.view }
+    return { creature: card, state: await withSpells(ctx, at, played.view) }
   }),
 
   implement(putInPlay, async (ctx, input) => {
@@ -514,16 +561,46 @@ export const creatureActions = [
       ctx.realtime.publish(creaturesChanged({ campaignId: row.campaignId, worldId: row.worldId }))
       const fresh = { ...saved, worldId: row.worldId }
       const after = viewOf(at, fresh, await contentFor(ctx, at, fresh.key, fresh.play as Play))
-      return { creature: after.card, state: after.played.view }
+      return { creature: after.card, state: await withSpells(ctx, at, after.played.view) }
     }
   ),
 
-  implement(rollForCreature, async (ctx, { creatureId, roll, action, visibility }) => {
+  implement(rollForCreature, async (ctx, { creatureId, roll, action: given, spell, visibility }) => {
     const { row, at } = await readable(ctx, creatureId)
-    if (Boolean(roll) === Boolean(action)) throw new InvalidRequestError('BAD_ROLL', 'una tirada o una acción')
+    if ([roll, given, spell].filter(Boolean).length !== 1)
+      throw new InvalidRequestError('BAD_ROLL', 'una tirada, una acción o un conjuro')
     const { entry, played } = viewOf(at, row, await contentFor(ctx, at, row.key, row.play as Play))
-    const doc = played.document
+    let doc = played.document
     const options = { roller: cryptoRoller, settings: at.choices.settings, language: at.choices.language }
+    let action = given
+    let cast: { dc: number | null; attack: number | null } | undefined
+    let spellName: string | null = null
+    // Un conjuro suyo (ADR-0033): su acción, como algo que lleva, con la CD y el ataque de la criatura
+    if (spell) {
+      const casting = spellcastingOf(at.document, entry.type, doc, options)
+      const [item] = await layers.contentByKeys(ctx, at.row.id, at.world, [spell.key])
+      const refs = new Set(casting?.groups.flatMap((g) => g.spells.map((sp) => sp.ref)) ?? [])
+      if (!casting || !item || !(refs.has(item.key) || (item.concept && refs.has(item.concept))))
+        throw new InvalidRequestError('BAD_ROLL', 'no es uno de sus conjuros')
+      const key = spell.action ?? item.mechanics?.actions?.[0]?.key
+      if (!key) throw new InvalidRequestError('BAD_ROLL', 'ese conjuro no tiene nada que tirar')
+      spellName = nameOf(item, at.choices.language)
+      doc = {
+        ...doc,
+        items: [
+          ...(doc.items ?? []),
+          {
+            id: SPELL_ITEM,
+            type: item.type,
+            name: spellName,
+            data: item.data,
+            ...(item.mechanics ? { mechanics: item.mechanics } : {})
+          }
+        ]
+      }
+      action = { item: SPELL_ITEM, key, part: spell.part, ...(spell.level !== undefined ? { level: spell.level } : {}) }
+      cast = { dc: casting.dc, attack: casting.attack }
+    }
     try {
       if (roll) {
         const result = tryRoll(at.document, entry.type, doc, roll.key, {
@@ -545,7 +622,8 @@ export const creatureActions = [
         ...(action.level !== undefined ? { level: action.level } : {}),
         ...(action.mode !== undefined ? { mode: action.mode } : {}),
         ...(action.critical ? { critical: true } : {}),
-        ...(action.option ? { option: action.option } : {})
+        ...(action.option ? { option: action.option } : {}),
+        ...(cast ? { cast } : {})
       })
       const parts =
         action.part === 'attack'
@@ -561,7 +639,7 @@ export const creatureActions = [
       const stored = parts.map((p) => storedOf(p.result))
       const view = await saveRoll(ctx, at.campaign, {
         formula: parts.map((p) => p.result.formula).join(' + '),
-        label: `${row.name} · ${rolled.label}${action.part === 'attack' ? '' : action.part === 'heal' ? ' · curación' : ' · daño'}`,
+        label: `${row.name} · ${spellName ?? rolled.label}${action.part === 'attack' ? '' : action.part === 'heal' ? ' · curación' : ' · daño'}`,
         visibility,
         result: {
           total: stored.reduce((n, p) => n + p.total, 0),

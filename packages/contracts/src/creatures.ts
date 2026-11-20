@@ -41,7 +41,8 @@ export const creatureState = characterState.pick({
   layout: true,
   rolls: true,
   carried: true,
-  playMissing: true
+  playMissing: true,
+  spellcasting: true
 })
 
 export type CreatureInPlay = z.infer<typeof creatureInPlay>
@@ -134,6 +135,15 @@ export const rollForCreature = defineAction({
         option: z.string().max(60).optional().describe('De una acción con opciones (sus options), cuál se tira')
       })
       .optional(),
+    spell: z
+      .object({
+        key: z.string().max(100).describe('La entrada del conjuro en el compendio (la de su spellcasting)'),
+        action: z.string().max(60).optional().describe('Su acción (sin ella, la primera)'),
+        part: z.enum(['attack', 'damage', 'heal']),
+        level: z.int().min(0).max(30).optional()
+      })
+      .optional()
+      .describe('Lanzar uno de sus conjuros (ADR-0033): su acción, con la CD y el ataque de la criatura'),
     visibility: z.enum(['all', 'self', 'master', 'hidden']).default('hidden')
   }),
   output: z.object({ roll: diceRoll })

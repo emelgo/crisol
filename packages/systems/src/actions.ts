@@ -33,6 +33,8 @@ export interface ActionOptions {
   critical?: boolean
   /** De una acción con opciones (los rayos del contemplador), cuál se tira (ADR-0033) */
   option?: string
+  /** Un conjuro que lanza una criatura: su CD y su ataque, en vez de los de la acción (ADR-0033) */
+  cast?: { dc: number | null; attack: number | null }
   roller?: DieRoller
   language?: Language
   settings?: Record<string, unknown>
@@ -196,12 +198,21 @@ export function prepareAction(
   const chosen = options.option === undefined ? undefined : found.options?.find((o) => o.key === options.option)
   if (options.option !== undefined && !chosen)
     throw new RollError(`«${found.key}» no tiene la opción «${options.option}»`)
-  const action: Action = chosen
+  const picked: Action = chosen
     ? (() => {
         const { key: _key, label: _label, ...own } = chosen
         return { ...found, ...own }
       })()
     : found
+  // Lanzado por una criatura: con su CD y su ataque
+  const cast = options.cast
+  const action: Action = cast
+    ? {
+        ...picked,
+        ...(picked.save && cast.dc !== null ? { save: { ...picked.save, dc: String(cast.dc) } } : {}),
+        ...(picked.attack && cast.attack !== null ? { attack: String(cast.attack) } : {})
+      }
+    : picked
   const { scope, evaluated } = rollContext(system, typeKey, doc, options)
   // @este: el objeto (ya calculado, con lo que sale de quien lo lleva) o, en una criatura, ella misma
   // @origen: lo que lo concedió (la clase de un rasgo, para su nivel)
@@ -402,5 +413,61 @@ function failed(item: string | null, action: Action, language: Language, error: 
     damage: [],
     heal: null,
     error
+  }
+}
+
+/** Los conjuros de una criatura, para enseñarlos: su característica, su CD y su ataque calculados, y sus grupos */
+export interface SpellcastingView {
+  label: string
+  ability: string | null
+  dc: number | null
+  attack: number | null
+  groups: {
+    label: string | null
+    uses: number | null
+    spells: { ref: string; key: string | null; name: string; resource: string | null }[]
+  }[]
+}
+
+/** Los conjuros de una criatura (ADR-0033), con su CD y su ataque calculados; sin ellos, null */
+export function spellcastingOf(
+  system: System,
+  typeKey: string,
+  doc: SystemDocument,
+  options: Pick<ActionOptions, 'language' | 'settings'> = {}
+): SpellcastingView | null {
+  const casting = doc.mechanics?.spellcasting
+  if (!casting) return null
+  const language = options.language ?? 'es'
+  const { scope } = rollContext(system, typeKey, doc, options)
+  const number = (text: string | undefined) => {
+    if (!text) return null
+    try {
+      const v = valueIn(scope, formula(text))
+      return typeof v === 'number' ? v : null
+    } catch (error) {
+      if (error instanceof RollError) return null
+      throw error
+    }
+  }
+  return {
+    label: casting.label
+      ? textOf(casting.label, language)
+      : language === 'en'
+        ? 'Spellcasting'
+        : 'Lanzamiento de conjuros',
+    ability: casting.ability ? abilityLabel(system, typeKey, casting.ability, language) : null,
+    dc: number(casting.dc),
+    attack: number(casting.attack),
+    groups: casting.groups.map((group, g) => ({
+      label: group.label ? textOf(group.label, language) : null,
+      uses: group.uses ?? null,
+      spells: group.spells.map((ref, j) => ({
+        ref,
+        key: null,
+        name: ref,
+        resource: group.uses ? `conjuro_${g}_${j}` : null
+      }))
+    }))
   }
 }

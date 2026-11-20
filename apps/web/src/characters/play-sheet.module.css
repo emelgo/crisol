@@ -726,3 +726,18 @@
   color: var(--color-muted);
   font-variant-numeric: tabular-nums;
 }
+
+/* Los conjuros de una criatura (ADR-0033): cada grupo con su rótulo pequeño encima */
+.spellGroup {
+  margin-block-start: var(--space-3);
+}
+
+.spellGroupTitle {
+  margin: 0 0 var(--space-1);
+  color: var(--color-muted);
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}

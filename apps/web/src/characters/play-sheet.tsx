@@ -84,7 +84,7 @@ type CharacterState = ActionOutput<'getCharacter'>['state']
 type State = Pick<
   CharacterState,
   'sheet' | 'resources' | 'itemValues' | 'actions' | 'layout' | 'rolls' | 'carried' | 'playMissing'
-> & { items?: CharacterState['items'] }
+> & { items?: CharacterState['items']; spellcasting?: CharacterState['spellcasting'] }
 type DiceRoll = ActionOutput<'rollForCharacter'>['roll']
 /** De quién es la hoja: su campaña y lo de la partida guardado */
 export interface SheetSubject {
@@ -98,6 +98,8 @@ export interface SheetRoll {
   visibility: 'all' | 'self' | 'master' | 'hidden'
   roll?: { key: string; element?: string; mode?: string }
   action?: { item: string | null; key: string; part: 'attack' | 'damage' | 'heal'; mode?: string; option?: string }
+  /** Un conjuro de una criatura (ADR-0033) */
+  spell?: { key: string; part: 'attack' | 'damage' | 'heal' }
 }
 
 const signed = (n: number) => (n >= 0 ? `+${n}` : `−${-n}`)
@@ -130,6 +132,7 @@ interface Ctx {
   roll: (input: {
     roll?: { key: string; element?: string }
     action?: { item: string | null; key: string; part: 'attack' | 'damage' | 'heal'; option?: string }
+    spell?: { key: string; part: 'attack' | 'damage' | 'heal' }
   }) => void
   /** Tira una fórmula suelta al registro, con su nombre (la de una acción con opciones: cuál sale) */
   rollFormula: (formula: string, label: string) => Promise<number | null>
@@ -181,7 +184,8 @@ export function PlaySheet({
       return rollWith({
         visibility,
         ...(input.roll ? { roll: { ...input.roll, ...withMode } } : {}),
-        ...(input.action ? { action: { ...input.action, ...(input.action.part === 'attack' ? withMode : {}) } } : {})
+        ...(input.action ? { action: { ...input.action, ...(input.action.part === 'attack' ? withMode : {}) } } : {}),
+        ...(input.spell ? { spell: input.spell } : {})
       })
     },
     onSuccess: (out) => setLast(out.roll)
@@ -256,6 +260,7 @@ export function PlaySheet({
       {layout.map((block, i) => (
         <Block key={`${block.kind}-${i.toString(36)}`} block={block} ctx={ctx} />
       ))}
+      {state.spellcasting && <SpellcastingBlock casting={state.spellcasting} ctx={ctx} />}
       {rests && <Rests ctx={ctx} label={t('playSheet.rest')} />}
     </div>
   )
@@ -1009,10 +1014,72 @@ function OptionsAction({ action, ctx }: { action: SheetAction; ctx: Ctx }) {
   )
 }
 
+/**
+ * Los conjuros de una criatura (ADR-0033): su característica, su CD y su ataque; cada grupo (a voluntad, N al día cada
+ * uno) con sus conjuros, lo que se tira de cada uno y, si son de N al día, sus usos
+ */
+function SpellcastingBlock({ casting, ctx }: { casting: NonNullable<State['spellcasting']>; ctx: Ctx }) {
+  const { t } = useTranslation()
+  const id = useId()
+  const titleClass = useTitleClass(casting.label)
+  const resources = new Map(ctx.state.resources.map((r) => [r.key, r]))
+  const facts = [
+    casting.ability,
+    casting.dc !== null ? t('playSheet.spellDc', { dc: casting.dc }) : null,
+    casting.attack !== null ? signed(casting.attack) : null
+  ].filter(Boolean)
+  return (
+    <Part className={styles.block} labelledBy={id}>
+      <h2 id={id} className={titleClass}>
+        {casting.label}
+      </h2>
+      {facts.length > 0 && <p className={styles.itemValue}>{facts.join(' · ')}</p>}
+      {casting.groups.map((group, g) => (
+        <div key={`${g}-${group.label ?? ''}`} className={styles.spellGroup}>
+          <h3 className={styles.spellGroupTitle}>
+            {group.label ?? (group.uses ? t('playSheet.perDay', { count: group.uses }) : t('playSheet.atWill'))}
+          </h3>
+          <ul className={styles.items}>
+            {group.spells.map((sp) => {
+              const r = sp.resource ? resources.get(sp.resource) : undefined
+              return (
+                <li key={sp.ref} className={styles.item}>
+                  <span className={styles.itemName}>{sp.name}</span>
+                  {r && (
+                    <Stepper
+                      label={sp.name}
+                      value={t('playSheet.left', { left: r.left, max: r.max })}
+                      onLess={r.left > 0 ? () => void ctx.save({ play: (p) => spend(p, r, 1) }) : undefined}
+                      onMore={r.used > 0 ? () => void ctx.save({ play: (p) => spend(p, r, -1) }) : undefined}
+                    />
+                  )}
+                  {sp.key &&
+                    (sp.rolls ?? []).map((part) => (
+                      <button
+                        key={part}
+                        type="button"
+                        className={styles.smallRoll}
+                        onClick={() => sp.key && ctx.roll({ spell: { key: sp.key, part } })}
+                        aria-label={t(`playSheet.spell.${part}`, { what: sp.name })}
+                      >
+                        {t(`playSheet.spell.${part}Short`)}
+                      </button>
+                    ))}
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+      ))}
+    </Part>
+  )
+}
+
 function UsesBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'uses' }>; ctx: Ctx }) {
   const { t } = useTranslation()
   const id = useId()
-  const uses = ctx.state.resources.filter((r) => !r.error && r.max > 0)
+  // Los usos de los conjuros de una criatura van en su bloque de conjuros
+  const uses = ctx.state.resources.filter((r) => !r.error && r.max > 0 && !r.spell)
   // De quién es cada uno (Tomar aliento, la Furia): lo que da, o lo que lleva
   const owners = new Map([
     ...(ctx.state.items ?? []).map((it) => [it.id, it.name] as const),

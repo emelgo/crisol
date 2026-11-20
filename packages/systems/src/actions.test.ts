@@ -380,4 +380,28 @@ describe('las acciones de un documento', () => {
     expect(rolled.damage[0]?.result.total).toBe(20)
     expect(() => prepareAction(system, 'criatura', beholder, null, 'rayos', { option: 'no' })).toThrow(RollError)
   })
+
+  it('un conjuro lanzado por una criatura (cast, ADR-0033): con su CD y su ataque, no los de la acción', () => {
+    const spell = {
+      id: 'conjuro-lanzado',
+      type: 'objeto',
+      name: 'Rayo',
+      data: {},
+      mechanics: {
+        actions: [
+          {
+            key: 'lanzar',
+            label: 'Rayo',
+            attack: '@portador.no_existe',
+            save: { ability: 'des', dc: '@portador.no_existe' }
+          }
+        ]
+      } satisfies Mechanics
+    }
+    const doc = { data: {}, items: [spell] }
+    const cast = prepareAction(system, 'criatura', doc, 'conjuro-lanzado', 'lanzar', { cast: { dc: 15, attack: 7 } })
+    expect(cast.save?.dc).toBe(15)
+    expect(cast.bonus).toBe(7)
+    expect(() => prepareAction(system, 'criatura', doc, 'conjuro-lanzado', 'lanzar')).toThrow(RollError)
+  })
 })

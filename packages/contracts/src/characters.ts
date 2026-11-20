@@ -133,10 +133,41 @@ export const characterState = z.object({
         left: z.number(),
         recovery: z.string().optional(),
         amount: z.string().optional(),
-        error: z.string().optional()
+        error: z.string().optional(),
+        spell: z
+          .object({ group: z.int(), spell: z.string() })
+          .optional()
+          .describe('Los usos de un conjuro de una criatura (N al día): de qué grupo y qué conjuro')
       })
     )
     .describe('Los usos de lo que lleva (la Furia, las cargas): su máximo, lo gastado y cuándo se recuperan'),
+  spellcasting: z
+    .object({
+      label: z.string(),
+      ability: z.string().nullable().describe('El nombre de su característica'),
+      dc: z.number().nullable(),
+      attack: z.number().nullable(),
+      groups: z.array(
+        z.object({
+          label: z.string().nullable(),
+          uses: z.int().nullable().describe('Al día cada uno; null, a voluntad'),
+          spells: z.array(
+            z.object({
+              ref: z.string().describe('Como lo nombra (su clave o su concepto)'),
+              key: z.string().nullable().describe('La entrada del compendio, si está'),
+              name: z.string(),
+              resource: z.string().nullable().describe('Su recurso de usos (N al día)'),
+              rolls: z
+                .array(z.enum(['attack', 'damage', 'heal']))
+                .optional()
+                .describe('Lo que se tira de su acción (rollForCreature con spell)')
+            })
+          )
+        })
+      )
+    })
+    .optional()
+    .describe('Los conjuros de una criatura (ADR-0033): su CD, su ataque y sus grupos'),
   itemValues: z
     .record(z.string(), z.record(z.string(), z.unknown()))
     .describe('Los valores calculados de cada cosa que lleva, por su id'),

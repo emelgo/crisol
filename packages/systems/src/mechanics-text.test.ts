@@ -118,3 +118,25 @@ describe('una acción con opciones, en palabras (ADR-0033)', () => {
     expect(parts.some((p) => p.startsWith('2. Rayo enervante: ') && p.includes('4d8'))).toBe(true)
   })
 })
+
+describe('los conjuros de una criatura, en palabras (ADR-0033)', () => {
+  it('su característica, su CD, su ataque y sus grupos', () => {
+    const mechanics: Mechanics = {
+      spellcasting: {
+        ability: 'int',
+        dc: '15',
+        attack: '7',
+        groups: [{ spells: ['luz'] }, { uses: 1, spells: ['bola_de_fuego'] }]
+      }
+    }
+    const casting = mechanicsText(fiveE, 'criatura', mechanics, 'es', { data: {} })?.actions.find(
+      (a) => a.key === 'conjuros'
+    )
+    expect(casting?.label).toBe('Lanzamiento de conjuros')
+    expect(casting?.parts).toEqual([
+      'Inteligencia, CD 15, ataque +7',
+      'A voluntad: Luz',
+      '1/día cada uno: Bola de fuego'
+    ])
+  })
+})

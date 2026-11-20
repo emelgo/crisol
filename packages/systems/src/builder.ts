@@ -5,7 +5,7 @@
  * cada paso, su nivel y si ya tiene lo que su sistema pide. Puro: igual en el servidor y en la web
  */
 import { z } from 'zod'
-import { actionsOf } from './actions.ts'
+import { actionsOf, type SpellcastingView, spellcastingOf } from './actions.ts'
 import type { Choices } from './choices.ts'
 import { editionOf, resolveConcept, type Seen, visibleContent } from './content.ts'
 import { type DocumentItem, evaluate, evaluateWith, type Resource, type SystemDocument } from './evaluate.ts'
@@ -705,12 +705,14 @@ export function playedSheet(
   let resources: Resource[] = []
   let itemValues: Record<string, Record<string, Value>> = {}
   let actions: ReturnType<typeof actionsOf> = []
+  let spellcasting: SpellcastingView | null = null
   try {
     const evaluated = evaluate(system, type, played.document, { settings: choices.settings ?? {}, language })
     values = evaluated.values
     resources = evaluated.resources
     itemValues = evaluated.items
     actions = actionsOf(system, type, played.document, { language, settings: choices.settings ?? {} })
+    spellcasting = spellcastingOf(system, type, played.document, { language, settings: choices.settings ?? {} })
   } catch {
     values = {}
   }
@@ -758,6 +760,8 @@ export function playedSheet(
             }
           : {})
       })),
+      // Los conjuros de una criatura (ADR-0033); sus nombres los pone quien lee el compendio
+      ...(spellcasting ? { spellcasting } : {}),
       // Los bloques de su hoja, con sus nombres
       layout: sheetView(system, type, language),
       rolls: rollsOf(system, type, language, played.document).map((r) => ({

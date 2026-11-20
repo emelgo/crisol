@@ -44,6 +44,15 @@ Foundry, los capítulos no podían incrustarlas, y el archivo de un sistema ten�
 - **Filas de tabla y listas en dos idiomas**: el texto de una fila de una tabla del compendio y cada texto de un campo
   de lista pueden ser `{ es, en }`, como los demás textos; se ve el del idioma del compendio. Editar una fila cambia el
   español y deja el otro.
+- **Tanda C, decidida con Enrique** (`tasks/tanda-c.md`):
+  - **Acciones con opciones** (los rayos oculares): `options` (cada una con su ataque, salvación, daño o curación sobre
+    lo de la acción), `count`, `distinct` y `pick` (una fórmula: sale la opción de ese puesto). En la hoja, cada opción
+    se tira con lo suyo y «Tirar 1d10» marca la que sale. Las tiradas aceptan `option`.
+  - **Tope en un aumento elegido**: `choose.max`; al sumar, lo elegido no pasa de ahí.
+  - **Conjuros de las criaturas**: `mechanics.spellcasting` (característica, CD, ataque y grupos a voluntad o de N al
+    día cada uno, con los conjuros por su clave o su concepto). Los de N al día son recursos de la criatura
+    (`conjuro_<grupo>_<puesto>`, vuelven con el descanso largo); en la hoja, un bloque con sus usos y lo que se tira de
+    cada uno; `rollForCreature` con `spell` tira la acción del conjuro con la CD y el ataque de la criatura.
 - **El archivo de un sistema, hasta 64 MB** (antes 10): un sistema con sus libros en dos idiomas pasa de 30 MB. Se
   descartó bajarlo libro a libro: subir un archivo con `into` reemplaza el sistema entero.
 
