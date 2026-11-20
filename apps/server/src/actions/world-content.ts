@@ -8,12 +8,13 @@ import {
   deleteWorldContent,
   getContentOrigin,
   getLinkedContent,
+  getLinkedContents,
   pullContentOrigin,
   putWorldContent,
   searchLinkableContent
 } from '@crisol/contracts'
 import { campaignsRepo, type schema, systemsRepo, tablesRepo, worldContentRepo } from '@crisol/db'
-import { foldName, matchLinkTarget, NotFoundError } from '@crisol/domain'
+import { foldName, linkMatcher, NotFoundError } from '@crisol/domain'
 import {
   type ContentItem,
   contentDiff,
@@ -30,7 +31,7 @@ import {
 } from '@crisol/systems'
 import { systemsChanged, worldContentChanged } from '../realtime/events.ts'
 import { authorizedWiki, type WikiTarget } from './access.ts'
-import { linesOf, linkedIn, textsOf } from './compendium.ts'
+import { type LinkedEntry, linesOf, linkedManyIn, textsOf } from './compendium.ts'
 import { contentOf } from './content-of.ts'
 import { type ActionContext, historyContext, InvalidRequestError } from './context.ts'
 import * as layers from './layers.ts'
@@ -393,26 +394,65 @@ export const worldContentActions = [
     return { items: found.slice(0, limit).map(({ campaignId: _, ...each }) => each) }
   }),
 
-  implement(getLinkedContent, async (ctx, { worldId, campaignId, systemId, name }) => {
-    // Desde una campaña o desde un sistema (sus capítulos): lo que se ve desde ahí
-    if (campaignId) return { entry: await linkedIn(ctx, { campaignId }, name, systemId) }
-    if (!worldId) return { entry: systemId ? await linkedIn(ctx, { systemId }, name) : null }
-    // Con el sistema elegido al ponerla, solo lo suyo (también si ninguna campaña lo usa aún)
-    const all = (await linkables(ctx, worldId, systemId)).filter((each) => !systemId || each.systemId === systemId)
-    // `tipo/Nombre`, la clave o el nombre en cualquier idioma (ADR-0033)
-    const found = matchLinkTarget(
-      all.map((each) => ({ ...each, item: each, typeLabels: [each.typeLabel] })),
-      name
-    )
-    const match = found?.item
-    if (!match) return { entry: null }
-    const row = await systemsRepo.findSystem(ctx.db, match.systemId)
-    const system = row?.document as unknown as System | undefined
-    const [item] = await layers.contentByKeys(ctx, match.systemId, { worldId, systemId: match.systemId }, [match.key])
-    const { campaignId: openIn, ...entry } = match
-    return { entry: { ...entry, lines: linesOf(system, item), campaignId: openIn } }
+  implement(getLinkedContent, async (ctx, { name, ...scope }) => ({
+    entry: (await linkedEntries(ctx, scope, [name])).get(name) ?? null
+  })),
+
+  implement(getLinkedContents, async (ctx, { names, ...scope }) => {
+    const found = await linkedEntries(ctx, scope, names)
+    return { items: names.map((name) => ({ name, entry: found.get(name) ?? null })) }
   })
 ]
+
+/**
+ * Lo que enlaza cada `[[@Nombre]]`. Desde una campaña o desde un sistema (sus capítulos): lo que se ve desde ahí. Desde
+ * un mundo: de su compendio o de los sistemas de sus campañas (con el elegido al ponerla, solo lo suyo, también si
+ * ninguna campaña lo usa aún). Todo se lee e indexa una vez, aunque sean cientos
+ */
+async function linkedEntries(
+  ctx: ActionContext,
+  {
+    worldId,
+    campaignId,
+    systemId
+  }: { worldId?: string | undefined; campaignId?: string | undefined; systemId?: string | undefined },
+  names: readonly string[]
+): Promise<Map<string, LinkedEntry | null>> {
+  if (campaignId) return linkedManyIn(ctx, { campaignId }, names, systemId)
+  if (!worldId) return systemId ? linkedManyIn(ctx, { systemId }, names) : new Map()
+  const all = (await linkables(ctx, worldId, systemId)).filter((each) => !systemId || each.systemId === systemId)
+  // `tipo/Nombre`, la clave o el nombre en cualquier idioma (ADR-0033)
+  const match = linkMatcher(all.map((each) => ({ ...each, item: each, typeLabels: [each.typeLabel] })))
+  const matched = new Map(names.map((name) => [name, match(name)?.item]))
+  // Las cifras de cada una, de una vez por sistema
+  const items = new Map<string, ContentItem>()
+  const systems = new Map<string, System | undefined>()
+  const bySystem = Map.groupBy(
+    [...new Set([...matched.values()])].flatMap((each) => (each ? [each] : [])),
+    (each) => each.systemId
+  )
+  for (const [system, list] of bySystem) {
+    const row = await systemsRepo.findSystem(ctx.db, system)
+    systems.set(system, row?.document as unknown as System | undefined)
+    const keys = list.map((each) => each.key)
+    for (const item of await layers.contentByKeys(ctx, system, { worldId, systemId: system }, keys))
+      items.set(`${system}:${item.key}`, item)
+  }
+  const out = new Map<string, LinkedEntry | null>()
+  for (const [name, each] of matched) {
+    if (!each) {
+      out.set(name, null)
+      continue
+    }
+    const { campaignId: openIn, names: _, ...entry } = each
+    out.set(name, {
+      ...entry,
+      lines: linesOf(systems.get(each.systemId), items.get(`${each.systemId}:${each.key}`)),
+      campaignId: openIn
+    })
+  }
+  return out
+}
 
 interface Linkable {
   key: string

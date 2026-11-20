@@ -3211,6 +3211,9 @@ export function fakeApi(
       const { campaignId: openIn, ...entry } = found
       return { entry: { ...entry, lines: [], campaignId: openIn ?? null } }
     },
+    getLinkedContents: ({ names, ...scope }) => ({
+      items: names.map((name) => ({ name, entry: handlers.getLinkedContent({ ...scope, name }).entry }))
+    }),
     applyRoll: ({ campaignId, rollId, targets }) => {
       const roll = rolls.find((r) => r.id === rollId && r.campaignId === campaignId)
       if (!roll || !leadsWorlds()) throw new ApiError('NOT_FOUND', 404)

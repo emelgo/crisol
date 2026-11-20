@@ -29,3 +29,27 @@
   font-size: 1.35rem;
   line-height: 1.15;
 }
+
+/* El apartado de un capítulo: sus imágenes, más pequeñas que en el libro */
+.card.card .section figure :is(img, button) {
+  max-block-size: 12rem;
+}
+
+/* Queda más en el capítulo */
+.more {
+  margin: 0;
+  color: var(--color-muted);
+}
+
+/* Sin los márgenes y la altura mínima del editor del libro: pegado al título del capítulo */
+.card.card .section > div,
+.card.card .section [role="textbox"] {
+  min-block-size: 0;
+  margin-block: 0;
+  padding-block: 0;
+  font-size: inherit;
+}
+
+.card.card .section [role="textbox"] > :first-child {
+  margin-block-start: 0;
+}

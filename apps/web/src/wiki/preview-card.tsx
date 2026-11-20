@@ -1,7 +1,7 @@
 /**
  * La vista previa de un enlace al pasar el ratón (como la de 5etools, ADR-0033): una ventana flotante, encima de todo
- * (fuera de las cajas, que la recortarían), junto al enlace, con la entrada entera del compendio o el apartado de un
- * capítulo
+ * (fuera de las cajas, que la recortarían), junto al enlace, con la entrada entera del compendio o el principio del
+ * apartado de un capítulo (esa la pinta el lector del libro: books/chapter-text.tsx)
  */
 import type { Text } from '@crisol/systems'
 import { textOf } from '@crisol/systems'
@@ -79,31 +79,26 @@ export function sectionOf(markdown: string, section: string | null) {
   return lines.slice(0, 40).join('\n')
 }
 
-/** El apartado de un capítulo (un enlace `[[Capítulo 4#Encuentros]]`), como lo lee quien lo mira */
-export function SectionPreview({
-  chapterId,
-  section,
-  campaignId
-}: {
-  chapterId: string
-  section: string | null
-  campaignId: string | null
-}) {
-  const api = useApi()
-  const chapter = useQuery({
-    queryKey: ['chapter', chapterId, campaignId],
-    queryFn: () => api.call('getChapter', { chapterId, ...(campaignId ? { campaignId } : {}) }),
-    staleTime: 60_000
-  })
-  if (!chapter.data) return null
-  return (
-    <>
-      <strong className={`${styles.name} ${bookLook.name}`}>{chapter.data.title}</strong>
-      <div className={bookLook.book}>
-        <ContentText text={sectionOf(chapter.data.markdown, section)} />
-      </div>
-    </>
-  )
+/** Cuántos bloques (párrafos, recuadros, tablas, imágenes) enseña la vista previa de un apartado, como 5etools */
+export const PREVIEW_BLOCKS = 4
+
+/**
+ * Lo que enseña la vista previa de un apartado de un capítulo: su título y sus primeros bloques (los separa una línea
+ * en blanco; la imagen y su pie van juntos), y si queda más
+ */
+export function previewOf(markdown: string, section: string | null) {
+  const blocks = sectionOf(markdown, section)
+    .split(/\n[ \t]*\n/)
+    .filter((block) => block.trim())
+  const kept: string[] = []
+  let shown = 0
+  for (const block of blocks) {
+    if (shown >= PREVIEW_BLOCKS) break
+    kept.push(block)
+    // Un título solo no cuenta: lo que importa es lo que va debajo
+    if (!/^#{1,6}\s[^\n]*$/.test(block.trim())) shown++
+  }
+  return { text: kept.join('\n\n'), more: kept.length < blocks.length }
 }
 
 /** La vista previa de un enlace del texto de una entrada (`[[@Nombre]]`): la entrada, como se ve desde aquí */

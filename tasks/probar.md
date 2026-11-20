@@ -9,6 +9,18 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
+## Libros más fluidos y vista previa de capítulos (rama `libros/vista-previa-capitulo`; sin migración; 2026-11-20)
+
+- [ ] **Pasar de capítulo**: en un libro grande, abrir capítulos desde el índice y con «Siguiente»: se abren mucho antes
+  que ayer (el siguiente ya viene traído y el que tiene el ratón encima se trae antes de pulsarlo).
+- [ ] **El índice no se sale de su caja**: en un capítulo con muchas secciones (el glosario, de la A a la Z), al bajar por
+  el índice todo queda dentro del recuadro.
+- [ ] **Vista previa de un enlace a un capítulo**: al pasar el ratón por «[[Capítulo 4#Apartado]]», su apartado como en
+  el libro (la imagen con su pie, la página a la derecha, los enlaces y las tiradas), sin `![[`, `{p105}` ni `[[…]]` en
+  crudo, y cortado tras unos párrafos («…»).
+- [ ] **Desde el capítulo, sus definiciones de opciones y enlaces**: en otro capítulo, al ir con el ratón por sus enlaces
+  al compendio, salen enseguida (antes, cada enlace pedía lo suyo y un capítulo con cientos tardaba).
+
 ## Carga del D&D 2024, tanda C (rama `sistemas/tanda-c`; sin migración; 2026-11-20; ADR-0033)
 
 - [ ] **Rayos del contemplador** (cuando la IA lo cargue): en su hoja en la Mesa, «Rayos oculares» con «2 distintas» (o

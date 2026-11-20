@@ -11,10 +11,10 @@
   padding-block: var(--space-8);
 }
 
-/* El índice: los capítulos y, dentro del abierto, sus secciones */
+/* El índice: los capítulos y, dentro del abierto, sus secciones. Se desplaza la lista, no la caja (su borde se
+   iría con lo de dentro) */
 .index {
   gap: var(--space-3);
-  overflow-y: auto;
 }
 
 .chapters,
@@ -24,6 +24,13 @@
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+.index > .chapters {
+  flex: 1;
+  align-content: start;
+  min-block-size: 0;
+  overflow-y: auto;
 }
 
 .chapter,

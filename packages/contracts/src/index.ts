@@ -336,6 +336,7 @@ import {
   deleteWorldContent,
   getContentOrigin,
   getLinkedContent,
+  getLinkedContents,
   pullContentOrigin,
   putWorldContent,
   searchLinkableContent
@@ -576,6 +577,7 @@ export const ACTIONS = [
   readBookAgain,
   searchLinkableContent,
   getLinkedContent,
+  getLinkedContents,
   listCharacters,
   getCharacter,
   createCharacter,
@@ -929,6 +931,7 @@ export type Actions = {
   readBookAgain: typeof readBookAgain
   searchLinkableContent: typeof searchLinkableContent
   getLinkedContent: typeof getLinkedContent
+  getLinkedContents: typeof getLinkedContents
   listCharacters: typeof listCharacters
   getCharacter: typeof getCharacter
   createCharacter: typeof createCharacter

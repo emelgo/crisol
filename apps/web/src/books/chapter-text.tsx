@@ -4,8 +4,9 @@
  * ocultas no son documentos aparte (como en las páginas): van dentro del Markdown, en `> [!secreto]` y `%%`, y aquí
  * se escriben en un editor anidado que guarda en memoria
  */
-import { editorExtensions, type SeparateKind } from '@crisol/editor'
+import { editorExtensions, fillJsonIds, type SeparateKind } from '@crisol/editor'
 import { pageFromMarkdown, pageToMarkdown } from '@crisol/editor/markdown'
+import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import type { Editor, JSONContent, Node } from '@tiptap/core'
 import type { Transaction } from '@tiptap/pm/state'
@@ -27,10 +28,12 @@ import { GhostLine } from '../wiki/ghost-line.ts'
 import type { PageLinks } from '../wiki/links-context.ts'
 import linkStyles from '../wiki/page-links.module.css'
 import { LinkSuggest } from '../wiki/page-links.tsx'
-import { SectionPreview } from '../wiki/preview-card.tsx'
+import previewStyles from '../wiki/preview-card.module.css'
+import { previewOf } from '../wiki/preview-card.tsx'
 import separateStyles from '../wiki/separate.module.css'
 import { withSheetView } from '../wiki/sheet-blocks.tsx'
 import { SlashMenu } from '../wiki/slash-menu.tsx'
+import bookLook from './book-look.module.css'
 
 /** Cuánto se espera tras la última tecla para guardar */
 export const SAVE_DELAY_MS = 800
@@ -56,7 +59,9 @@ function withLocalIds(node: Body): Body {
 export function readChapter(markdown: string) {
   const page = pageFromMarkdown(markdown)
   return {
-    body: withLocalIds(page.body),
+    // Con sus ids de bloque ya puestos: si los pone el editor al abrir, lo hace de uno en uno (en un capítulo de mil
+    // bloques, segundos); no van al Markdown
+    body: withLocalIds(fillJsonIds(page.body)),
     separates: new Map(page.separates.map((each) => [each.id, each.content]))
   }
 }
@@ -96,7 +101,8 @@ export function ChapterText({
   systemId,
   imagesOf,
   credits = {},
-  linkTo,
+  links,
+  resolveLink,
   onSection
 }: {
   markdown: string
@@ -116,8 +122,10 @@ export function ChapterText({
   imagesOf?: string
   /** El crédito de cada una, por su ruta */
   credits?: Record<string, string>
-  /** A dónde lleva un `[[…]]` de su texto (otro capítulo, otro libro, una sección), tal como se escribió; si a ninguno, null */
-  linkTo?: (target: string) => ChapterLinkTarget | null
+  /** A dónde lleva cada `[[…]]` de su texto (otro capítulo, otro libro, una sección), como lo leyó el servidor */
+  links?: ChapterLink[]
+  /** Su dirección y su vista previa, de uno que lleva a algún sitio */
+  resolveLink?: (link: ResolvedLink) => ChapterLinkTarget
   /** Ir a una sección de este capítulo, por su nombre */
   onSection?: (name: string) => boolean
 }) {
@@ -125,8 +133,8 @@ export function ChapterText({
   const announce = useAnnounce()
   const api = useApi()
   // Para `[[@`: el compendio de su sistema (sin páginas: un capítulo no es de ningún mundo)
-  const links = useRef<PageLinks | null>(null)
-  links.current = systemId
+  const suggestLinks = useRef<PageLinks | null>(null)
+  suggestLinks.current = systemId
     ? {
         worldId: '',
         names: [],
@@ -199,7 +207,7 @@ export function ChapterText({
         EmptyHint.configure({ text: t('chapters.placeholder') }),
         GhostLine.configure({ className: editorStyles.ghostLine ?? '' }),
         LinkSuggest.configure({
-          links: () => links.current,
+          links: () => suggestLinks.current,
           announce: (title) => announce(t('links.inserted', { title }))
         }),
         SlashMenu.configure({
@@ -248,7 +256,23 @@ export function ChapterText({
   return (
     <LocalSeparatesContext.Provider value={local.current}>
       <SystemImagesContext.Provider value={imagesOf ? { systemId: imagesOf, credits } : null}>
-        <ChapterLinksContext.Provider value={linkTo ? { linkTo, onSection: onSection ?? (() => false) } : null}>
+        <ChapterLinksContext.Provider
+          value={
+            links && resolveLink
+              ? {
+                  linkTo: (target) => {
+                    // Lo enlazado, como lo escribió el editor y como lo leyó el servidor, comparado sin espacios de más
+                    const link = links.find((each) => sameTarget(each.target, target))
+                    return link?.chapter ? resolveLink({ chapter: link.chapter, section: link.section }) : null
+                  },
+                  resolveLink,
+                  onSection: onSection ?? (() => false),
+                  systemId,
+                  imagesOf
+                }
+              : null
+          }
+        >
           <div className={editorStyles.body}>
             <EditorContent editor={editor} />
             {editable && editor && (
@@ -392,6 +416,24 @@ function LocalSeparateView({ node, editor, getPos, selected }: NodeViewProps) {
   )
 }
 
+/** Un enlace de un capítulo, resuelto: a qué capítulo y a qué sección */
+export type ResolvedLink = { chapter: { id: string; source: string }; section: string | null }
+
+/** Un `[[…]]` de un capítulo, tal como se escribió, y a dónde lleva (si a ningún sitio que se vea, chapter null) */
+export type ChapterLink = { target: string; chapter: ResolvedLink['chapter'] | null; section: string | null }
+
+/** Lo enlazado por un `[[…]]` (Título#Sección), comparado sin la barra de una tabla ni espacios de más */
+export const sameTarget = (a: string, b: string) => {
+  const fold = (t: string) =>
+    t
+      .replace(/\\$/, '')
+      .replace(/\s*#\s*/, '#')
+      .trim()
+      .replace(/\s+/g, ' ')
+      .toLocaleLowerCase('es')
+  return fold(a) === fold(b)
+}
+
 /** A dónde lleva un enlace de un capítulo: su dirección y, si es una sección de este mismo, su nombre */
 export interface ChapterLinkTarget {
   href: string
@@ -402,7 +444,10 @@ export interface ChapterLinkTarget {
 
 const ChapterLinksContext = createContext<{
   linkTo: (target: string) => ChapterLinkTarget | null
+  resolveLink: (link: ResolvedLink) => ChapterLinkTarget
   onSection: (name: string) => boolean
+  systemId: string | undefined
+  imagesOf: string | undefined
 } | null>(null)
 
 function withChapterLinkView(node: Node) {
@@ -464,5 +509,50 @@ function ChapterLinkView({ node }: NodeViewProps) {
         </FloatingCard>
       )}
     </NodeViewWrapper>
+  )
+}
+
+/**
+ * La vista previa de un apartado de un capítulo (un enlace `[[Capítulo 4#Encuentros]]`), como lo lee quien lo mira y
+ * pintado como en el libro (sus imágenes, sus enlaces, sus tiradas), solo para leer; corta tras unos párrafos, como
+ * 5etools
+ */
+function SectionPreview({
+  chapterId,
+  section,
+  campaignId
+}: {
+  chapterId: string
+  section: string | null
+  campaignId: string | null
+}) {
+  const { t } = useTranslation()
+  const api = useApi()
+  const links = useContext(ChapterLinksContext)
+  const chapter = useQuery({
+    queryKey: ['chapter', chapterId, campaignId],
+    queryFn: () => api.call('getChapter', { chapterId, ...(campaignId ? { campaignId } : {}) }),
+    staleTime: 60_000
+  })
+  if (!chapter.data) return null
+  const { text, more } = previewOf(chapter.data.markdown, section)
+  return (
+    <>
+      <strong className={`${previewStyles.name} ${bookLook.name}`}>{chapter.data.title}</strong>
+      <div className={`${bookLook.book} ${previewStyles.section}`}>
+        <ChapterText
+          markdown={text}
+          editable={false}
+          label={t('chapters.text', { title: chapter.data.title })}
+          onChange={() => {}}
+          {...(links?.systemId ? { systemId: links.systemId } : {})}
+          {...(links?.imagesOf ? { imagesOf: links.imagesOf } : {})}
+          credits={chapter.data.credits ?? {}}
+          links={chapter.data.links ?? []}
+          {...(links ? { resolveLink: links.resolveLink, onSection: links.onSection } : {})}
+        />
+        {more && <p className={previewStyles.more}>…</p>}
+      </div>
+    </>
   )
 }

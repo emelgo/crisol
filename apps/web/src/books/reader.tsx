@@ -39,7 +39,7 @@ import { Modal } from '../components/modal.tsx'
 import { type ContentScope, ContentScopeProvider } from '../wiki/content-scope.tsx'
 import { useNarrow } from '../wiki/panel.tsx'
 import book from './book-look.module.css'
-import { ChapterText } from './chapter-text.tsx'
+import { ChapterText, type ResolvedLink } from './chapter-text.tsx'
 import styles from './reader.module.css'
 
 /** Una sección del capítulo abierto: un título de los tres primeros niveles, por su sitio en el documento */
@@ -57,21 +57,6 @@ const sectionsOf = (editor: Editor): Section[] => {
       found.push({ pos: offset, level, text: node.textContent.trim() })
   })
   return found
-}
-
-/** Un enlace de un capítulo, resuelto: a qué capítulo y a qué sección */
-type ResolvedLink = { chapter: { id: string; source: string }; section: string | null }
-
-/** Lo enlazado por un `[[…]]` (Título#Sección), comparado sin la barra de una tabla ni espacios de más */
-const sameTarget = (a: string, b: string) => {
-  const fold = (t: string) =>
-    t
-      .replace(/\\$/, '')
-      .replace(/\s*#\s*/, '#')
-      .trim()
-      .replace(/\s+/g, ' ')
-      .toLocaleLowerCase('es')
-  return fold(a) === fold(b)
 }
 
 /** Si un título de sección es el pedido (sin mayúsculas ni espacios de más) */
@@ -210,6 +195,17 @@ export function BookReader({
   useEffect(() => {
     if (wanted.current && sections.length > 0 && goToSectionNamed(wanted.current)) wanted.current = null
   })
+  // Se trae antes de abrirlo (al pasar por su enlace, y el siguiente al leer uno): así pasar de capítulo es al momento
+  const warm = (id: string) => () =>
+    void queryClient.prefetchQuery({
+      queryKey: ['chapter', id, campaignId ?? null],
+      queryFn: () => api.call('getChapter', { chapterId: id, ...(campaignId ? { campaignId } : {}) }),
+      staleTime: 30_000
+    })
+  const nextId = next?.id
+  useEffect(() => {
+    if (nextId) warm(nextId)()
+  }, [nextId])
   const follow = (id: string) => (event: MouseEvent<HTMLAnchorElement>) => {
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return
     event.preventDefault()
@@ -275,6 +271,8 @@ export function BookReader({
                     className={styles.chapter}
                     aria-current={open ? 'page' : undefined}
                     onClick={follow(chapter.id)}
+                    onMouseEnter={warm(chapter.id)}
+                    onFocus={warm(chapter.id)}
                   >
                     {chapter.title}
                   </a>
@@ -353,7 +351,13 @@ export function BookReader({
           {(previous || next) && (
             <nav className={styles.pager} aria-label={t('chapters.pager')}>
               {previous ? (
-                <a href={chapterHref(previous.id)} className={styles.previous} onClick={follow(previous.id)}>
+                <a
+                  href={chapterHref(previous.id)}
+                  className={styles.previous}
+                  onClick={follow(previous.id)}
+                  onMouseEnter={warm(previous.id)}
+                  onFocus={warm(previous.id)}
+                >
                   <span className={styles.pagerLabel}>
                     <ArrowLeft size={14} aria-hidden="true" />
                     {t('chapters.previous')}
@@ -676,18 +680,13 @@ function OpenChapter({
           onEditor={onEditor}
           imagesOf={systemId}
           credits={chapter.data.credits ?? {}}
-          linkTo={(target) => {
-            // Lo enlazado, como lo escribió el editor y como lo leyó el servidor, comparado sin espacios de más
-            const link = chapter.data?.links?.find((l) => sameTarget(l.target, target))
-            if (!link?.chapter) return null
-            const resolved = { chapter: link.chapter, section: link.section }
-            return {
-              href: hrefOf(resolved),
-              // Una sección de este mismo capítulo: se va a ella sin cambiar de página
-              here: resolved.chapter.id === chapterId && resolved.section ? resolved.section : null,
-              preview: { chapterId: resolved.chapter.id, section: resolved.section, campaignId: campaignId ?? null }
-            }
-          }}
+          links={chapter.data.links ?? []}
+          resolveLink={(resolved) => ({
+            href: hrefOf(resolved),
+            // Una sección de este mismo capítulo: se va a ella sin cambiar de página
+            here: resolved.chapter.id === chapterId && resolved.section ? resolved.section : null,
+            preview: { chapterId: resolved.chapter.id, section: resolved.section, campaignId: campaignId ?? null }
+          })}
           onSection={onSection}
           systemId={systemId}
         />

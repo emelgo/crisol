@@ -256,8 +256,26 @@ describe('el compendio del mundo (docs/specs/compendio-mundo.md)', () => {
     expect(await key(`${hit.type}/${hit.key}`, { campaignId })).toBe(hit.key)
     // Con otro tipo delante no es esa
     expect(await key(`conjuro/${hit.key}`, { campaignId })).not.toBe(hit.key)
+    // Muchos de una vez (los de un capítulo), cada uno con lo suyo, como de uno en uno
+    const names = ['goblin', 'No existe', 'criatura/Goblin', 'Goblin del valle']
+    const many = await ok200('getLinkedContents', { worldId, names })
+    expect(
+      many.items.map((i: { name: string; entry: { key: string } | null }) => [i.name, i.entry?.key ?? null])
+    ).toEqual([
+      ['goblin', 'guerrero_goblin_2014'],
+      ['No existe', null],
+      ['criatura/Goblin', 'guerrero_goblin_2014'],
+      ['Goblin del valle', 'goblin_valle']
+    ])
+    expect(many.items[0].entry).toEqual(linked.entry)
+    const fromCampaign = await ok200('getLinkedContents', { campaignId, names: [hit.name, 'No existe'] })
+    expect(fromCampaign.items.map((i: { entry: { key: string } | null }) => i.entry?.key ?? null)).toEqual([
+      hit.key,
+      null
+    ])
     // La jugadora no lleva la wiki: ni busca ni lee
     expect((await call('searchLinkableContent', { worldId, query: 'goblin' }, ana.cookie)).statusCode).toBe(404)
+    expect((await call('getLinkedContents', { worldId, names }, ana.cookie)).statusCode).toBe(404)
   })
 
   describe('las acciones', () => {
