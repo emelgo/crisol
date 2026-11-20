@@ -40,7 +40,7 @@ compose() {
 compose build --quiet app postgres
 compose up -d --wait postgres valkey
 # Antes de migrar, una copia de la base (si ya hay algo)
-if compose exec -T postgres psql -U crisol -d crisol -tAc 'select 1 from information_schema.tables limit 1' | grep -q 1; then
+if compose exec -T postgres psql -U crisol -d crisol -tAc "select 1 from information_schema.tables where table_schema = 'public' limit 1" | grep -q 1; then
   "$DESTINO/scripts/copia-produccion.sh" antes-de-desplegar
 fi
 compose run --rm --no-deps app node packages/db/src/migrate.ts

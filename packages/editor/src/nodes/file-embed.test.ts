@@ -12,6 +12,16 @@ describe('un archivo en el texto, en Markdown', () => {
     expect(first('![[Dr. Varn]]')?.type).toBe('pageEmbed')
   })
 
+  it('una ruta con carpetas (la de una imagen de un sistema en un capítulo) se lee y se escribe igual', () => {
+    const markdown = '![[systems/dnd5e/tokens/trasgo.webp|Un trasgo|300]]\n*El trasgo*\n'
+    expect(first(markdown)).toMatchObject({
+      type: 'fileEmbed',
+      attrs: { name: 'systems/dnd5e/tokens/trasgo.webp', alt: 'Un trasgo', width: 300, caption: 'El trasgo' }
+    })
+    const body = pageFromMarkdown(markdown).body
+    expect(pageToMarkdown({ properties: [], separate: () => null, body })).toBe(markdown)
+  })
+
   it('el ancho, el texto alternativo, la página de un PDF y el pie', () => {
     expect(first('![[mapa.png|300]]')?.attrs).toMatchObject({ width: 300, alt: null })
     expect(first('![[mapa.png|El continente|300x200]]')?.attrs).toMatchObject({ width: 300, alt: 'El continente' })

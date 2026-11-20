@@ -11,12 +11,19 @@ import { createContext, useContext, useEffect, useId, useRef, useState } from 'r
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
+import { systemImageUrl } from '../components/system-image.tsx'
 import styles from './file-embed.module.css'
 import { PageLinksContext, type WorldFile } from './links-context.ts'
 import { PdfViewer } from './pdf-viewer.tsx'
 
 /** Cómo se cargan las imágenes: al acercarse (lo normal) o ya (en la hoja, que las mide antes de enseñarlas) */
 export const ImageLoading = createContext<'lazy' | 'eager'>('lazy')
+
+/**
+ * El sistema de un capítulo de libro (ADR-0033): ahí `![[ruta]]` es una de sus imágenes (las que nombra `img` en su
+ * contenido), no un archivo del mundo
+ */
+export const SystemImagesContext = createContext<string | null>(null)
 
 export function withFileEmbedView(node: Node) {
   return node.extend({
@@ -95,13 +102,28 @@ export function FileEmbedBlock({ node }: { node: JSONContent }) {
   )
 }
 
-function FileFigure({
-  attrs,
-  edit
-}: {
-  attrs: Attrs
-  edit: { selected: boolean; update: (attrs: Partial<Attrs>) => void } | null
-}) {
+type Edit = { selected: boolean; update: (attrs: Partial<Attrs>) => void } | null
+
+function FileFigure({ attrs, edit }: { attrs: Attrs; edit: Edit }) {
+  const systemId = useContext(SystemImagesContext)
+  return systemId ? (
+    <SystemImageFigure systemId={systemId} attrs={attrs} edit={edit} />
+  ) : (
+    <WorldFileFigure attrs={attrs} edit={edit} />
+  )
+}
+
+/** Una imagen del sistema por su ruta; si no está (aún no se ha subido), lo dice */
+function SystemImageFigure({ systemId, attrs, edit }: { systemId: string; attrs: Attrs; edit: Edit }) {
+  const { t } = useTranslation()
+  const path = attrs.name.trim()
+  const [failed, setFailed] = useState<string | null>(null)
+  if (failed === path) return <p className={styles.note}>{t('fileEmbed.missingImage', { name: path })}</p>
+  const file = { url: systemImageUrl(systemId, path), name: path.split('/').pop() || path }
+  return <ImageFigure attrs={attrs} file={file} edit={edit} onError={() => setFailed(path)} />
+}
+
+function WorldFileFigure({ attrs, edit }: { attrs: Attrs; edit: Edit }) {
   const { t, i18n } = useTranslation()
   const target = useFileState(attrs.fileId, attrs.name)
   if (target.state === 'loading') return <p className={styles.note}>{attrs.name}</p>
@@ -126,11 +148,13 @@ function FileFigure({
 function ImageFigure({
   attrs,
   file,
-  edit
+  edit,
+  onError
 }: {
   attrs: Attrs
-  file: WorldFile
-  edit: { selected: boolean; update: (attrs: Partial<Attrs>) => void } | null
+  file: Pick<WorldFile, 'url' | 'name'>
+  edit: Edit
+  onError?: () => void
 }) {
   const { t } = useTranslation()
   const loading = useContext(ImageLoading)
@@ -160,6 +184,7 @@ function ImageFigure({
           src={file.url}
           alt={attrs.alt ?? ''}
           loading={loading}
+          onError={onError}
           className={styles.image}
           style={attrs.width ? { inlineSize: `${attrs.width}px` } : undefined}
         />

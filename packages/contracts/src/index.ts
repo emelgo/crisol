@@ -8,8 +8,11 @@ import {
 } from './actor-folders.ts'
 import {
   approve,
+  createApiToken,
+  deleteApiToken,
   getAiSettings,
   listAiConnections,
+  listApiTokens,
   listApprovals,
   reject,
   removeAiConnection,
@@ -428,6 +431,9 @@ export const ACTIONS = [
   reject,
   listAiConnections,
   removeAiConnection,
+  listApiTokens,
+  createApiToken,
+  deleteApiToken,
   copyPage,
   createPage,
   updatePage,
@@ -775,6 +781,9 @@ export type Actions = {
   reject: typeof reject
   listAiConnections: typeof listAiConnections
   removeAiConnection: typeof removeAiConnection
+  listApiTokens: typeof listApiTokens
+  createApiToken: typeof createApiToken
+  deleteApiToken: typeof deleteApiToken
   copyPage: typeof copyPage
   createPage: typeof createPage
   updatePage: typeof updatePage

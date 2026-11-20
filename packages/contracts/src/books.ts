@@ -237,13 +237,22 @@ export const chapterSummary = z.object({
   version: z.int().describe('Para cambiarlo, la que se tenía')
 })
 export const chapter = chapterSummary.extend({
-  markdown: z.string().describe('Su texto, en Markdown de Obsidian (títulos, listas, tablas, llamadas, [[@Entrada]])')
+  markdown: z
+    .string()
+    .describe(
+      'Su texto, en Markdown de Obsidian (títulos, listas, tablas, llamadas, [[@Entrada]]; una imagen del sistema, por su ruta: ![[ruta/imagen.webp|texto alternativo|ancho]])'
+    )
 })
 export type ChapterSummary = z.infer<typeof chapterSummary>
 export type Chapter = z.infer<typeof chapter>
 
 const chapterTitle = z.string().trim().min(1).max(200)
-const chapterText = z.string().max(400_000)
+const chapterText = z
+  .string()
+  .max(400_000)
+  .describe(
+    'En Markdown de Obsidian; una imagen del sistema, por su ruta: ![[ruta/imagen.webp|texto alternativo|ancho]]'
+  )
 
 export const listBookChapters = defineAction({
   name: 'listBookChapters',

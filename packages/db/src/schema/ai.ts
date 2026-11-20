@@ -55,3 +55,28 @@ export const approvals = pgTable(
     check('approvals_status', sql`${t.status} in ('pending', 'approved', 'done', 'failed', 'rejected')`)
   ]
 )
+
+/**
+ * Los tokens de acceso personales (ADR-0033): para los guiones que cargan mucho de una vez (un sistema entero, la wiki
+ * de un mundo) por `/api/actions`. Valen como la cuenta y se guardan solo por su huella (SHA-256): el token entero se ve
+ * una vez, al crearlo. Son un ajuste de la cuenta: crearlos y quitarlos no pasa por el historial (lo que se hace con
+ * ellos, sí)
+ */
+export const apiTokens = pgTable(
+  'api_tokens',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    userId: text()
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    name: text().notNull(),
+    /** La huella del token, en hexadecimal */
+    hash: text().notNull().unique(),
+    /** Su principio (crisol_pat_ y unos caracteres), para reconocerlo en la lista */
+    prefix: text().notNull(),
+    createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
+    expiresAt: timestamp({ withTimezone: true }).notNull(),
+    lastUsedAt: timestamp({ withTimezone: true })
+  },
+  (t) => [index().on(t.userId, t.createdAt)]
+)

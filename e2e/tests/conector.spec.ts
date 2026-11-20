@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from 'node:crypto'
 import { expect, test } from '@playwright/test'
 import { E2E_PORT } from '../servidor.ts'
-import { createWorld, freshOwner, owner, signOut } from './ayudas.ts'
+import { createWorld, freshOwner, openAccountWindow, owner, signOut } from './ayudas.ts'
 
 const BASE = `http://127.0.0.1:${E2E_PORT}`
 // Como la de claude.ai: HTTPS. La prueba la intercepta para leer el código
@@ -71,4 +71,36 @@ test('el propietario conecta una aplicación por OAuth y esta lista sus mundos p
   })
   expect(mcp.status()).toBe(200)
   expect(await mcp.text()).toContain('Eana')
+})
+
+test('un token de acceso (ADR-0033): se crea en Ajustes, un guion llama a la API con él y, quitado, deja de valer', async ({
+  page,
+  request
+}) => {
+  await freshOwner(page)
+  await createWorld(page, 'Eana')
+  const settings = await openAccountWindow(page, 'Ajustes')
+  const section = settings.getByRole('region', { name: 'Tokens de acceso' })
+  await section.getByLabel('Nombre').fill('Carga del 5e')
+  await section.getByLabel('Caduca en').selectOption({ label: '7 días' })
+  await section.getByRole('button', { name: 'Crear token' }).click()
+  const field = section.getByRole('textbox', { name: 'Token «Carga del 5e»' })
+  await expect(field).toHaveValue(/^crisol_pat_/)
+  const secret = await field.inputValue()
+  if (process.env.CRISOL_CAPTURAS) await section.screenshot({ path: `${process.env.CRISOL_CAPTURAS}/tokens.png` })
+
+  // Un guion, sin cookie ni origen
+  const call = (name: string) =>
+    request.post(`${BASE}/api/actions/${name}`, { headers: { authorization: `Bearer ${secret}` }, data: {} })
+  const listed = await call('listWorlds')
+  expect(listed.status()).toBe(200)
+  expect(((await listed.json()) as { worlds: Array<{ name: string }> }).worlds.map((w) => w.name)).toContain('Eana')
+  expect((await call('listApiTokens')).status()).toBe(403)
+
+  await section.getByRole('button', { name: 'Hecho' }).click()
+  await expect(section.getByText(/crisol_pat_.{4}… · caduca el .+ · sin usar/)).toBeVisible()
+  await section.getByRole('button', { name: 'Quitar el token «Carga del 5e»' }).click()
+  await section.getByRole('button', { name: 'Quitar', exact: true }).click()
+  await expect(section.getByRole('listitem')).toHaveCount(0)
+  expect((await call('listWorlds')).status()).toBe(401)
 })

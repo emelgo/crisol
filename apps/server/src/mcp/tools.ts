@@ -872,7 +872,11 @@ export const INSTRUCTIONS =
   'lee sus notas con ver_notas y leer_nota, y no las escribe. ' +
   'Para pasar una wiki entera: crear_paginas de 50 en 50, en cualquier orden (los enlaces se resuelven solos), y al ' +
   'final enlaces_pagina con worldId para ver lo que quede sin resolver; los archivos los sube el máster y se enlazan ' +
-  'por su nombre (listar_archivos). Cada mundo puede tener calendarios propios (meses, festividades, semana, ' +
+  'por su nombre (listar_archivos). Para cargas que no caben en la conversación (miles de entradas de un sistema, ' +
+  'sus imágenes, una wiki con sus archivos), el máster puede crear un token de acceso en Ajustes › IA: con él, un ' +
+  'programa llama a las mismas acciones en POST /api/actions/<acción> (cabecera Authorization: Bearer; la lista, en ' +
+  '/api/openapi.json), sube las imágenes del sistema con putSystemImages (por la ruta que nombran img o el ' +
+  '![[ruta]] de un capítulo) y los archivos con POST /api/files. Cada mundo puede tener calendarios propios (meses, festividades, semana, ' +
   'bisiestos, eras, lunas y estaciones), uno principal: antes de fechar nada, míralos con listar_calendarios y escribe ' +
   'las fechas como 1250-Siega-18 (el mes por su nombre; 1250-03-18 cuenta los meses sin las festividades). Cada ' +
   'calendario admite los años de su yearRange (sin él, de -99999 a 99999): una fecha fuera no vale. ' +

@@ -347,7 +347,15 @@ describe('herramientas MCP', () => {
     for (const tool of Object.values(MCP_TOOLS)) {
       for (const impl of toolActions(tool)) expect(UI_ONLY.has(impl.action.name)).toBe(false)
     }
-    expect([...UI_ONLY].sort()).toEqual(['approve', 'reject', 'removeAiConnection', 'setAiMode'])
+    expect([...UI_ONLY].sort()).toEqual([
+      'approve',
+      'createApiToken',
+      'deleteApiToken',
+      'listApiTokens',
+      'reject',
+      'removeAiConnection',
+      'setAiMode'
+    ])
   })
 
   it('solo las de leer anuncian qué devuelven: las demás pueden contestar «esperando la aprobación»', () => {

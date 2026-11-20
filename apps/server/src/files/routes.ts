@@ -30,8 +30,9 @@ import {
   scopeOf,
   withFreeName
 } from '../actions/files.ts'
+import { requesterOf, viaOf } from '../auth/api-tokens.ts'
 import type { Auth } from '../auth/auth.ts'
-import { clientIp, toHeaders } from '../http.ts'
+import { clientIp } from '../http.ts'
 import { playerOpensFile } from '../wiki/reader.ts'
 import { NotAStreamError, type Storage, TooLargeError } from './storage.ts'
 
@@ -114,11 +115,12 @@ export function registerFileRoutes(
   // El cuerpo de una subida es el archivo tal cual: se pasa sin leer, como flujo
   app.addContentTypeParser('*', (_request, payload, done) => done(null, payload))
 
-  /** La cuenta de la petición, como en las acciones; null si no hay sesión */
+  /** La cuenta de la petición, como en las acciones (la sesión o un token de acceso); null si no hay ninguna */
   const contextOf = async (request: FastifyRequest): Promise<ActionContext | null> => {
-    const session = await auth.api.getSession({ headers: toHeaders(request.headers) })
-    if (!session) return null
-    return { ...env, actor: actorFrom(session.user.id, await loadMemberships(env.db, session.user.id)), via: 'ui' }
+    const requester = await requesterOf(request, auth, env.db)
+    if (!requester) return null
+    const actor = actorFrom(requester.userId, await loadMemberships(env.db, requester.userId))
+    return { ...env, actor, ...viaOf(requester) }
   }
 
   /** Lo esperado (no existe, sin permiso…) con su código; lo demás sigue hacia arriba */

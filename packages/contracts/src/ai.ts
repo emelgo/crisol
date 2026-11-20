@@ -116,3 +116,47 @@ export const removeAiConnection = defineAction({
   input: z.object({ clientId: z.string().min(1).max(500), url: z.url() }),
   output: z.object({ connections: z.array(aiConnection) })
 })
+
+/** Un token de acceso personal (ADR-0033): para guiones que llaman a `/api/actions` con `Authorization: Bearer` */
+export const apiToken = z.object({
+  id: z.uuid(),
+  name: z.string(),
+  /** Su principio, para reconocerlo (el token entero solo se ve al crearlo) */
+  prefix: z.string(),
+  createdAt: z.iso.datetime(),
+  expiresAt: z.iso.datetime(),
+  lastUsedAt: z.iso.datetime().nullable()
+})
+
+export type ApiToken = z.infer<typeof apiToken>
+
+/** Cuántos días puede valer uno */
+export const API_TOKEN_DAYS = [7, 30, 90, 365] as const
+
+export const listApiTokens = defineAction({
+  name: 'listApiTokens',
+  kind: 'read',
+  description: 'Los tokens de acceso de la cuenta, con su caducidad y su último uso. Solo desde la interfaz',
+  input: z.object({}),
+  output: z.object({ tokens: z.array(apiToken) })
+})
+
+export const createApiToken = defineAction({
+  name: 'createApiToken',
+  kind: 'write',
+  description:
+    'Crea un token de acceso para guiones: vale como la cuenta en /api/actions (Authorization: Bearer) hasta que caduca o se quita. Se ve una sola vez. Solo desde la interfaz',
+  input: z.object({
+    name: z.string().trim().min(1).max(80),
+    days: z.union(API_TOKEN_DAYS.map((d) => z.literal(d)))
+  }),
+  output: z.object({ token: apiToken, secret: z.string().describe('El token entero: solo se da ahora') })
+})
+
+export const deleteApiToken = defineAction({
+  name: 'deleteApiToken',
+  kind: 'delete',
+  description: 'Quita un token de acceso: deja de valer al momento. Solo desde la interfaz',
+  input: z.object({ tokenId: z.uuid() }),
+  output: z.object({ tokens: z.array(apiToken) })
+})

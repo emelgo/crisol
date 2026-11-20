@@ -40,7 +40,7 @@ export const importFoundry = defineAction({
   name: 'importFoundry',
   kind: 'write',
   description:
-    'Crea un sistema de la cuenta con un sistema o un módulo de contenido de Foundry VTT (su zip en base64): sus tipos de objeto y de actor, sus diarios (reglas) y sus tablas de tirar, con su compendio y una fuente por paquete. Con into, mete su contenido en uno propio (con la versión que se tenía) sin quitarle nada. packs: los paquetes que se traen (sin él, todos); language: el idioma de sus textos. Si no cabe (5000 documentos, 10 MB), FOUNDRY_TOO_BIG: hay que elegir menos paquetes',
+    'Crea un sistema de la cuenta con un sistema o un módulo de contenido de Foundry VTT (su zip en base64): sus tipos de objeto y de actor, sus diarios (reglas) y sus tablas de tirar, con su compendio y una fuente por paquete. Con into, mete su contenido en uno propio (con la versión que se tenía) sin quitarle nada. packs: los paquetes que se traen (sin él, todos); language: el idioma de sus textos. Si no cabe (5000 documentos, 64 MB), FOUNDRY_TOO_BIG: hay que elegir menos paquetes',
   input: z.object({
     organizationId: z.uuid().optional(),
     into: z.object({ systemId: z.uuid(), version: z.int().min(1) }).optional(),
@@ -64,7 +64,7 @@ export const putSystemImages = defineAction({
   name: 'putSystemImages',
   kind: 'write',
   description:
-    'Sube imágenes de un sistema de la cuenta (las de un zip de Foundry), por su ruta (la que nombra su contenido en img), con su licencia y su crédito. Las que ya estaban se cambian. En tandas: como mucho 6 MB por petición. Solo imágenes (png, jpeg, webp, gif, avif o svg)',
+    'Sube imágenes de un sistema de la cuenta por su ruta, con su licencia y su crédito: las que nombra su contenido en img (retratos, fichas, iconos) o las que se incrustan en los capítulos de sus libros con ![[ruta]]. Las que ya estaban se cambian. En tandas: como mucho 6 MB y 100 imágenes por petición. Solo imágenes (png, jpeg, webp, gif, avif o svg)',
   input: z.object({
     systemId: z.uuid(),
     images: z

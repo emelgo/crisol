@@ -1233,6 +1233,7 @@ export const es = {
     pending: '«{{name}}» aún no está subido',
     upload: 'Subirlo',
     trashed: '«{{name}}» está en la papelera',
+    missingImage: 'Falta la imagen «{{name}}»',
     uploading: 'Subiendo «{{name}}»…',
     uploaded: '«{{name}}» subido',
     failed: 'No se pudo subir «{{name}}»: {{error}}'
@@ -5001,6 +5002,27 @@ export const es = {
     recentTitle: 'Últimas peticiones',
     recentEmpty: 'Aún no ha pedido nada que esperase tu aprobación.'
   },
+  apiTokens: {
+    title: 'Tokens de acceso',
+    hint: 'Para que la IA cargue mucho de una vez con un programa. Valen como tu cuenta: no los compartas.',
+    name: 'Nombre',
+    namePlaceholder: 'Carga del sistema',
+    expires: 'Caduca en',
+    days_one: '{{count}} día',
+    days_other: '{{count}} días',
+    create: 'Crear token',
+    created: 'Token «{{name}}» creado',
+    secret: 'Token «{{name}}»',
+    once: 'Cópialo ahora: no se volverá a ver.',
+    done: 'Hecho',
+    until: 'caduca el {{date}}',
+    expired: 'caducó el {{date}}',
+    used: 'usado {{when}}',
+    unused: 'sin usar',
+    removeButton: 'Quitar el token «{{name}}»',
+    removeWarning: '«{{name}}» dejará de valer al momento.',
+    removed: 'Token «{{name}}» quitado'
+  },
   notices: {
     title: 'Avisos',
     joined: '{{member}} ha entrado en {{campaign}}.',
@@ -5345,6 +5367,7 @@ export const es = {
     BAD_TAB_PLACE: 'Esa pestaña ya no está',
     TOO_MANY_TABS: 'No caben más pestañas en esta página',
     TOO_MANY_PINS: 'No caben más pines en este mapa',
+    TOO_MANY_TOKENS: 'No caben más tokens: quita alguno',
     BAD_HOME_PAGE: 'La portada tiene que ser una página de este mundo',
     HOME_PAGE: 'La portada del mundo no se borra ni se mete dentro de otra página',
     PARENT_IN_TRASH: 'Su página madre también está en la papelera: restáurala antes',

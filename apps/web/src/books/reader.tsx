@@ -570,6 +570,7 @@ function OpenChapter({
           onClean={() => setState((now) => (now === 'dirty' ? (saved.current ? 'saved' : 'idle') : now))}
           onChange={(markdown) => save({ markdown })}
           onEditor={onEditor}
+          imagesOf={systemId}
           {...(editable ? { systemId } : {})}
         />
       </div>
