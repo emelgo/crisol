@@ -258,7 +258,12 @@ export const contentTable = z.object({
         id: z.string().min(1).max(40),
         from: z.int(),
         to: z.int(),
-        text: z.string().max(2000).describe('Lo que sale; puede llevar tiradas'),
+        text: z
+          .union([
+            z.string().max(2000),
+            z.object({ es: z.string().max(2000).optional(), en: z.string().max(2000).optional() })
+          ])
+          .describe('Lo que sale; puede llevar tiradas. En uno o en dos idiomas ({ es, en })'),
         key: z
           .string()
           .max(100)

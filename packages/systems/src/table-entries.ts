@@ -7,6 +7,7 @@ import { describeTableProblem, tableProblemList } from '@crisol/dice'
 import { z } from 'zod'
 import type { System } from './format.ts'
 import { own } from './own.ts'
+import type { Text } from './text.ts'
 
 /** La clave del tipo «Tabla» */
 export const TABLE_TYPE = 'tabla'
@@ -18,7 +19,8 @@ export interface TableEntryRow {
   id: string
   from: number
   to: number
-  text: string
+  /** En uno o en dos idiomas ({ es, en }), como los demás textos */
+  text: Text
   key?: string | null
 }
 
@@ -42,7 +44,10 @@ export const tableEntrySchema = z.object({
         id: z.string().min(1).max(40),
         from: z.int().min(-1000).max(100_000),
         to: z.int().min(-1000).max(100_000),
-        text: z.string().max(2000),
+        text: z.union([
+          z.string().max(2000),
+          z.strictObject({ es: z.string().max(2000).optional(), en: z.string().max(2000).optional() })
+        ]),
         key: z
           .string()
           .regex(KEY)

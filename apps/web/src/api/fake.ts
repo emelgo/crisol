@@ -3472,7 +3472,7 @@ export function fakeApi(
         const stored = rolls.find((r) => r.id === out.roll.id)
         for (const each of stored ? [out.roll, stored] : [out.roll]) {
           each.label = name
-          each.table = { name, results: hits.map((r) => ({ text: r.text, page: null })) }
+          each.table = { name, results: hits.map((r) => ({ text: textOf(r.text), page: null })) }
         }
         return { roll: out.roll, row: hits[0] ? rows.indexOf(hits[0]) : null, drawn: [] }
       }

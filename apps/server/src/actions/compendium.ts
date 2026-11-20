@@ -119,6 +119,8 @@ interface Drawing {
   open: (key: string) => Promise<ContentItem | null>
   shown: (key: string) => boolean
   nameOf: (entry: ContentItem) => string
+  /** El idioma de lo que sale (una fila puede venir en dos) */
+  language: Language
 }
 
 /**
@@ -145,7 +147,11 @@ async function drawEntry(
   for (const row of rows) {
     if (drawing.results.length >= TABLE_RESULTS) break
     const linked = row.key && drawing.shown(row.key) ? row.key : null
-    drawing.results.push({ text: `${prefix}${row.text}`, page: null, ...(linked ? { content: linked } : {}) })
+    drawing.results.push({
+      text: `${prefix}${textOf(row.text, drawing.language)}`,
+      page: null,
+      ...(linked ? { content: linked } : {})
+    })
     if (!repeats) {
       drawn.add(row.id)
       drawing.draws.push({ key: entry.key, rowId: row.id })
@@ -327,7 +333,8 @@ export const compendiumActions = [
           const [found] = await layers.contentByKeys(ctx, row.id, layer, [k])
           return found ?? null
         },
-        nameOf
+        nameOf,
+        language: choices.language
       }
       const name = nameOf(item)
       const drawnNow = await drawEntry(ctx, drawing, { key, name, table: item.table }, [key], '')
