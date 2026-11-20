@@ -18,6 +18,10 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   lean los jugadores» lo devuelve.
 - [ ] **Portada de un libro desde una imagen del sistema** (la pone la IA): se ve en Libros, en el Inicio y en el
   compendio.
+- [ ] **Enlaces sin ambigüedad**: en una página o un capítulo, `[[@objeto/Escudo]]` lleva a la armadura y
+  `[[@conjuro/Escudo]]` al conjuro; `[[@clave]]` también vale. El enlace enseña el nombre de la entrada.
+- [ ] **Tablas y listas en dos idiomas**: las tablas del D&D 2024 que suba la IA se tiran y se ven en español; las
+  listas de una criatura (sentidos, idiomas) se leen bien en el compendio y en su ficha.
 - Decidido sin ti: hasta 20 000 entradas por sistema (antes 5000; la IA pedía 50 000).
 
 ## Tokens de acceso, imágenes en los capítulos y sistemas de hasta 64 MB (rama `api/tokens-e-imagenes`; migración 0094; 2026-11-20; ADR-0033)
