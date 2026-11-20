@@ -121,7 +121,10 @@ function build(strict: boolean) {
     obj({ ...base, kind: kind('boolean', 'Sí o no'), default: z.boolean().optional() }),
     obj({
       ...base,
-      kind: kind('list', 'Una lista de textos cortos (idiomas, rasgos)'),
+      kind: kind(
+        'list',
+        'Una lista de textos cortos (idiomas, rasgos); cada uno, en uno o en dos idiomas ({ es, en })'
+      ),
       default: z.array(z.string().max(200)).max(200).optional(),
       max: z.int().min(1).max(200).optional(),
       options: z

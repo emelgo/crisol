@@ -13,6 +13,8 @@ import {
   type SheetBlockView,
   setValue,
   spend,
+  type Text,
+  textOf,
   type ValueView
 } from '@crisol/systems'
 import { useMutation, useQuery } from '@tanstack/react-query'
@@ -114,7 +116,9 @@ const shown = (value: unknown, signedWhen = false, fraction = false): string => 
     return signedWhen ? signed(value) : decimal.format(value)
   }
   if (typeof value === 'boolean') return value ? '✓' : ''
-  if (Array.isArray(value)) return value.join(', ')
+  // Una lista puede llevar textos en dos idiomas ({ es, en })
+  if (Array.isArray(value))
+    return value.map((item) => (item && typeof item === 'object' ? textOf(item as Text) : String(item))).join(', ')
   if (value && typeof value === 'object' && 'value' in value) return shown((value as { value: unknown }).value)
   return value === null || value === undefined ? '' : String(value)
 }

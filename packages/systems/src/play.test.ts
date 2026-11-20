@@ -170,3 +170,13 @@ describe('lo de la partida', () => {
     expect(played.document.uses).toEqual({ suerte: 1 })
   })
 })
+
+describe('una lista en dos idiomas (ADR-0033)', () => {
+  it('cada texto, una cadena o { es, en }; nada más', () => {
+    const fields = { idiomas: { kind: 'list', label: 'Idiomas', play: true } } as const
+    const ok = playValues(fields as never, { idiomas: ['Común', { es: 'Élfico', en: 'Elvish' }] })
+    expect(ok.problems).toEqual([])
+    expect(playValues(fields as never, { idiomas: [{ fr: 'Elfique' }] }).problems).toHaveLength(1)
+    expect(playValues(fields as never, { idiomas: [{ es: 'x'.repeat(201) }] }).problems).toHaveLength(1)
+  })
+})

@@ -94,7 +94,10 @@ function valueText(field: Field, value: unknown, language: Language, yes: string
     case 'choice':
       return option(value)
     case 'list':
-      return Array.isArray(value) && value.length > 0 ? value.map(option).join(', ') : null
+      // Una lista puede llevar textos en dos idiomas ({ es, en })
+      return Array.isArray(value) && value.length > 0
+        ? value.map((v) => (v && typeof v === 'object' ? textOf(v as Text, language) : option(v))).join(', ')
+        : null
     case 'text':
       return textOf(value as Text, language) || null
     default:
