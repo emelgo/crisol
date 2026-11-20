@@ -34,6 +34,28 @@ export function withFileEmbedView(node: Node) {
   })
 }
 
+/**
+ * Si el texto tiene el foco: lo elegido en él solo enseña sus ajustes mientras se escribe. Un campo de la propia figura
+ * (el texto alternativo, el ancho) cuenta como dentro
+ */
+function useEditorFocus(editor: NodeViewProps['editor']) {
+  const [focused, setFocused] = useState(() => editor.isFocused)
+  useEffect(() => {
+    const onFocus = () => setFocused(true)
+    const onBlur = ({ event }: { event: FocusEvent }) => {
+      const next = event.relatedTarget as globalThis.Node | null
+      setFocused(Boolean(next && editor.view.dom.contains(next)))
+    }
+    editor.on('focus', onFocus)
+    editor.on('blur', onBlur)
+    return () => {
+      editor.off('focus', onFocus)
+      editor.off('blur', onBlur)
+    }
+  }, [editor])
+  return focused
+}
+
 type FileState = { state: 'ok'; file: WorldFile } | { state: 'pending' } | { state: 'trashed' } | { state: 'loading' }
 
 /** Qué archivo es: por su id; sin id, por su nombre (el servidor le pondrá el id en cuanto lo vea) */
@@ -75,10 +97,13 @@ const attrsOf = (node: { attrs?: Record<string, unknown> }): Attrs => ({
   caption: (node.attrs?.caption as string | null) ?? null
 })
 
-function FileEmbedView({ node, selected, editor, updateAttributes }: NodeViewProps) {
+function FileEmbedView({ node, selected: picked, editor, updateAttributes }: NodeViewProps) {
   const { t } = useTranslation()
   const attrs = attrsOf(node)
   const editable = editor.isEditable
+  // Elegida mientras se escribe: al leer (sin el foco en el texto) no salen su marco ni sus ajustes
+  const focused = useEditorFocus(editor)
+  const selected = picked && focused
   return (
     <NodeViewWrapper
       as="figure"
