@@ -324,8 +324,9 @@ describe('el Markdown de una página', () => {
       ].join('\n')
     )
     const [warning, note, secret, links, quote] = read.body.content ?? []
-    expect(warning).toMatchObject({ type: 'callout', attrs: { kind: 'warning' } })
-    expect(warning?.content?.map((p) => p.content?.[0]?.text)).toEqual(['Cuidado', 'con la marea'])
+    // Su título va aparte (ADR-0033), y vuelve al escribirlo
+    expect(warning).toMatchObject({ type: 'callout', attrs: { kind: 'warning', title: 'Cuidado' } })
+    expect(warning?.content?.map((p) => p.content?.[0]?.text)).toEqual(['con la marea'])
     expect(note?.type).toBe('note')
     expect(secret?.type).toBe('secret')
     expect(secret?.attrs?.id).toMatch(/^[a-z0-9]{8}$/)
@@ -407,5 +408,16 @@ describe('el Markdown de una página', () => {
     )
     // Sin título ni sección no es un enlace
     expect(pageFromMarkdown('[[]]').body.content?.[0]?.content?.[0]?.type).toBe('text')
+  })
+
+  it('el título de un recuadro va aparte y vuelve igual; > [!cita] es una cita (ADR-0033)', () => {
+    const markdown =
+      '> [!nota] Aprender viendo jugar\n> Una buena forma de aprender.\n\n> [!cita]\n> Esta historia comenzó hace 50 años.\n'
+    const { body } = pageFromMarkdown(markdown)
+    expect(body.content?.map((n) => n.attrs)).toMatchObject([
+      { kind: 'note', title: 'Aprender viendo jugar' },
+      { kind: 'quote', title: null }
+    ])
+    expect(pageToMarkdown({ properties: [], body, separate: () => null })).toBe(markdown)
   })
 })

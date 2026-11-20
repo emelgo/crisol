@@ -16,6 +16,9 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
 - [ ] **Conjuros de una criatura**: en su hoja, «Lanzamiento de conjuros» con su CD y su ataque; a voluntad y 1/día cada
   uno, con los usos que se gastan y vuelven al descansar; «Daño» o «Ataque» tira el conjuro con la CD de la criatura.
 - [ ] **Dones épicos**: +1 a una característica no pasa de 30.
+- [ ] **El aspecto de libro** (como 5etools): en los capítulos y en el compendio, títulos dorados en versalitas, recuadros
+  con su título y sombra, «leer en voz alta» azulado, citas en cursiva, imágenes centradas; la lectura, centrada. El
+  título de un recuadro se cambia escribiendo en él.
 - [ ] **Pies, créditos y enlaces en los capítulos** (cuando la IA repase los libros): bajo cada imagen, su pie y
   «✎ quien la hizo»; «capítulo 4», «Manual del jugador» o «apéndice C» llevan a su sitio (en otro libro también, y a la
   sección si la nombra). Desde una campaña, lo que no tiene o es solo del máster queda como texto.

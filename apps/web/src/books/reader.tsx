@@ -27,6 +27,7 @@ import { Menu, MenuItem } from '../components/menu.tsx'
 import { Modal } from '../components/modal.tsx'
 import { type ContentScope, ContentScopeProvider } from '../wiki/content-scope.tsx'
 import { useNarrow } from '../wiki/panel.tsx'
+import book from './book-look.module.css'
 import { ChapterText } from './chapter-text.tsx'
 import styles from './reader.module.css'
 
@@ -520,7 +521,7 @@ function OpenChapter({
     <div className={styles.open}>
       <div className={styles.chapterHead}>
         {editable ? (
-          <h2 className={styles.chapterTitle}>
+          <h2 className={`${styles.chapterTitle} ${book.name}`}>
             <input
               className={styles.titleInput}
               aria-label={t('chapters.name')}
@@ -542,13 +543,13 @@ function OpenChapter({
             />
           </h2>
         ) : (
-          <h2 className={styles.chapterTitle}>{chapter.data.title}</h2>
+          <h2 className={`${styles.chapterTitle} ${book.name}`}>{chapter.data.title}</h2>
         )}
         {chapter.data.master && <span className={styles.masterTag}>{t('chapters.masterTag')}</span>}
         {editable && (
           <div className={styles.tools}>
             <SaveStatus state={state} />
-            <Menu label={t('chapters.more')} icon={<Ellipsis aria-hidden="true" size={18} />}>
+            <Menu label={t('chapters.more')} icon={<Ellipsis aria-hidden="true" size={18} />} className={styles.more}>
               {(close) => (
                 <>
                   <MenuItem
@@ -615,7 +616,7 @@ function OpenChapter({
           </button>
         </div>
       )}
-      <div className={styles.text}>
+      <div className={`${styles.text} ${book.book}`}>
         <ChapterText
           key={reload}
           markdown={chapter.data.markdown}

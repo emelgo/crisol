@@ -1,5 +1,7 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { expect, test } from '@playwright/test'
-import { campaignLink, import5e, newPlayer, settled } from './ayudas.ts'
+import { campaignLink, freshOwner, import5e, newPlayer, settled } from './ayudas.ts'
 
 const COMBATE = `Cada asalto dura seis segundos.
 
@@ -126,4 +128,74 @@ test('los capítulos de un libro: el dueño del sistema los escribe y los ordena
   await ana.screenshot({ path: test.info().outputPath('4-movil.png') })
   await goTo.selectOption({ label: 'La magia' })
   await expect(ana.getByRole('heading', { level: 2, name: 'La magia' })).toBeVisible()
+})
+
+test('el aspecto de libro (ADR-0033): recuadros con título, citas, imágenes con pie y crédito, y enlaces entre capítulos', async ({
+  page
+}) => {
+  test.slow()
+  await freshOwner(page)
+  const five = await import5e(page)
+  const api = async (name: string, data: object) => {
+    const response = await page.request.post(`/api/actions/${name}`, { data })
+    expect(response.status(), name).toBe(200)
+    return response.json()
+  }
+  const svg = readFileSync(join(import.meta.dirname, '..', 'fixtures', 'cripta.svg'))
+  await api('putSystemImages', {
+    systemId: five,
+    images: [{ path: 'book/cripta.svg', data: svg.toString('base64'), license: 'unknown', credit: 'Luca Bancone' }]
+  })
+  const second = await api('saveChapter', {
+    systemId: five,
+    source: 'srd51',
+    title: 'Capítulo 2: Más reglas',
+    markdown: '## Encuentros\n\nAlgo.'
+  })
+  const first = await api('saveChapter', {
+    systemId: five,
+    source: 'srd51',
+    title: 'Capítulo 1: Lo básico',
+    markdown: [
+      '> [!cita]',
+      '> Esta historia comenzó hace 50 años, y tú formas parte de ella.',
+      '> — Jeremy Crawford',
+      '',
+      '![[book/cripta.svg|Una cripta|500]]',
+      '*No hace falta una mesa mágica, pero ¿a que sería divertido?*',
+      '',
+      'Dungeons & Dragons es un juego de historias compartidas: lee [[Capítulo 2]] y [[Capítulo 2#Encuentros|sus encuentros]].',
+      '',
+      '## ¿Qué hace el máster?',
+      '',
+      '> [!nota] Aprender viendo jugar',
+      '> Una buena forma de aprender lo básico es ver cómo juega otra gente.',
+      '',
+      '> [!leer]',
+      '> El viento silba entre las lápidas.'
+    ].join('\n')
+  })
+  await page.goto(`/sistemas/${five}/libros/srd51?vista=capitulos&capitulo=${first.id}`)
+  // Quien lo escribe, su título en su sitio, para cambiarlo
+  await expect(page.getByRole('textbox', { name: 'Título del recuadro (Nota)' })).toHaveValue('Aprender viendo jugar')
+  await expect(page.getByText('Luca Bancone')).toBeVisible()
+  await expect(page.getByRole('textbox', { name: 'Pie de la imagen' })).toHaveValue(
+    'No hace falta una mesa mágica, pero ¿a que sería divertido?'
+  )
+  const link = page.getByRole('link', { name: 'Capítulo 2', exact: true })
+  await expect(link).toHaveAttribute('href', new RegExp(`capitulo=${second.id}`))
+  await settled(page)
+  if (process.env.CRISOL_CAPTURAS)
+    await page.screenshot({ path: `${process.env.CRISOL_CAPTURAS}/libro.png`, fullPage: true })
+
+  // A otro capítulo, a su sección
+  await page.getByRole('link', { name: 'sus encuentros' }).click()
+  await expect(page).toHaveURL(new RegExp(`capitulo=${second.id}`))
+  await expect(page.getByLabel('Título del capítulo')).toHaveValue('Capítulo 2: Más reglas')
+
+  // El compendio, con el nombre como en un bloque de estadísticas
+  await page.goto(`/sistemas/${five}/compendio?ver=lobo_2024`)
+  await expect(page.getByRole('heading', { level: 2, name: 'Lobo' })).toBeVisible()
+  await settled(page)
+  if (process.env.CRISOL_CAPTURAS) await page.screenshot({ path: `${process.env.CRISOL_CAPTURAS}/compendio.png` })
 })

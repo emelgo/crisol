@@ -32,19 +32,29 @@ export const Callout = Node.create({
       },
       renderHTML: (attributes) => ({ 'data-callout': attributes.kind })
     },
+    // Su título (`> [!nota] Aprender viendo jugar`); sin él, el nombre de su tipo
+    title: {
+      default: null,
+      parseHTML: (element) => element.getAttribute('data-title'),
+      renderHTML: (attributes) => (attributes.title ? { 'data-title': attributes.title } : {})
+    },
     ...wideAttribute
   }),
   parseHTML: () => [{ tag: 'div[data-callout]' }],
   renderHTML: ({ HTMLAttributes }) => ['div', mergeAttributes(HTMLAttributes), 0],
   // En Markdown: `> [!aviso]`
-  markdownTokenizer: calloutTokenizer('callout', (type, options) => {
-    const kind = calloutKindOf(type)
-    return kind ? { kind, wide: options.includes('ancho') } : null
-  }),
+  markdownTokenizer: calloutTokenizer(
+    'callout',
+    (type, options) => {
+      const kind = calloutKindOf(type)
+      return kind ? { kind, wide: options.includes('ancho') } : null
+    },
+    true
+  ),
   parseMarkdown: (token, helpers) =>
     helpers.createNode(
       'callout',
-      { kind: token.attrs?.kind ?? 'note', wide: token.attrs?.wide ?? false },
+      { kind: token.attrs?.kind ?? 'note', wide: token.attrs?.wide ?? false, title: token.attrs?.title ?? null },
       (helpers.parseBlockChildren ?? helpers.parseChildren)(token.tokens ?? [])
     ),
   renderMarkdown: (node, helpers) =>
@@ -52,7 +62,8 @@ export const Callout = Node.create({
       CALLOUT_MARKDOWN[node.attrs?.kind as CalloutKind] ?? 'nota',
       node,
       helpers,
-      node.attrs?.wide ? ['ancho'] : []
+      node.attrs?.wide ? ['ancho'] : [],
+      (node.attrs?.title as string | null) ?? null
     ),
   addCommands() {
     return {

@@ -11,7 +11,8 @@ export const CALLOUT_MARKDOWN: Record<CalloutKind, string> = {
   tip: 'consejo',
   warning: 'aviso',
   danger: 'peligro',
-  'read-aloud': 'leer'
+  'read-aloud': 'leer',
+  quote: 'cita'
 }
 
 /** Lo que se lee como recuadro: los nombres en español y los de Obsidian en inglés */
@@ -46,7 +47,11 @@ const CALLOUT_READ: Record<string, CalloutKind> = {
   missing: 'danger',
   bug: 'danger',
   leer: 'read-aloud',
-  'leer-en-voz-alta': 'read-aloud'
+  'leer-en-voz-alta': 'read-aloud',
+  // Una cita (las palabras de alguien, con su autor al final), como `quote` y `cite` de Obsidian
+  cita: 'quote',
+  quote: 'quote',
+  cite: 'quote'
 }
 
 export const calloutKindOf = (name: string): CalloutKind | null => CALLOUT_READ[name] ?? null
@@ -57,7 +62,9 @@ export const calloutKindOf = (name: string): CalloutKind | null => CALLOUT_READ[
  */
 export function calloutTokenizer(
   name: string,
-  accept: (type: string, options: readonly string[]) => Record<string, unknown> | null
+  accept: (type: string, options: readonly string[]) => Record<string, unknown> | null,
+  /** El título tras `[!tipo]`, aparte (en `title`) en vez de como primer párrafo */
+  keepTitle = false
 ): MarkdownTokenizer {
   return {
     name,
@@ -76,7 +83,7 @@ export function calloutTokenizer(
       let raw = head[0]
       const lines: string[] = []
       const title = (head[3] ?? '').trim()
-      if (title) lines.push(title, '')
+      if (title && !keepTitle) lines.push(title, '')
       let rest = src.slice(raw.length)
       for (
         let line = /^ {0,3}> ?([^\n]*)(?:\n|$)/.exec(rest);
@@ -87,7 +94,12 @@ export function calloutTokenizer(
         raw += line[0]
         rest = rest.slice(line[0].length)
       }
-      return { type: name, raw, attrs, tokens: lexer.blockTokens(lines.join('\n')) }
+      return {
+        type: name,
+        raw,
+        attrs: keepTitle && title ? { ...attrs, title } : attrs,
+        tokens: lexer.blockTokens(lines.join('\n'))
+      }
     }
   }
 }
@@ -97,14 +109,15 @@ export function renderCallout(
   type: string,
   node: JSONContent,
   h: MarkdownRendererHelpers,
-  options: readonly string[] = []
+  options: readonly string[] = [],
+  title: string | null = null
 ) {
   const inner = (node.content ?? []).map((child, index) => h.renderChild?.(child, index) ?? h.renderChildren([child]))
   const lines = inner
     .join('\n\n')
     .split('\n')
     .map((line) => (line.trim() === '' ? '>' : `> ${line}`))
-  const head = `> [!${[type, ...options].join('|')}]`
+  const head = `> [!${[type, ...options].join('|')}]${title ? ` ${title.replace(/\n/g, ' ')}` : ''}`
   return [head, ...(lines.length > 0 && inner.join('') !== '' ? lines : [])].join('\n')
 }
 

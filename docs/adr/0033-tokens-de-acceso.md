@@ -59,6 +59,11 @@ Foundry, los capítulos no podían incrustarlas, y el archivo de un sistema ten�
   otro libro (`[[Manual del jugador]]`, su primer capítulo; `[[Manual del jugador#Capítulo 1]]`) o a una sección
   (`[[#Sección]]`, `[[Capítulo 4#Encuentros]]`); el servidor los resuelve al leerlo con lo que ve quien lee, y lo que no
   se ve queda como texto. `[[#Sección]]` vale también en la wiki (como en Obsidian): no es un enlace a otra página.
+- **El aspecto de libro, como el lector de 5etools** (Enrique: «quiero una vista igual»; MIT, ADR-0014,
+  `docs/terceros.md`): en los capítulos y el cuerpo de las entradas del compendio, títulos en versalitas dorados, los
+  recuadros como cajas con sombra y su título (`> [!nota] Título`, que ahora se guarda aparte y se escribe en su sitio),
+  «leer en voz alta» azulado, citas (`> [!cita]`, también `quote` y `cite`) e imágenes centradas con su pie y su
+  crédito; la columna de lectura, centrada.
 - **El archivo de un sistema, hasta 64 MB** (antes 10): un sistema con sus libros en dos idiomas pasa de 30 MB. Se
   descartó bajarlo libro a libro: subir un archivo con `into` reemplaza el sistema entero.
 
