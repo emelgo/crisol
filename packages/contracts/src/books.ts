@@ -251,7 +251,7 @@ export const chapter = chapterSummary.extend({
   markdown: z
     .string()
     .describe(
-      'Su texto, en Markdown de Obsidian (títulos, listas, tablas, llamadas, [[@Entrada]]; una imagen del sistema, por su ruta: ![[ruta/imagen.webp|texto alternativo|ancho]])'
+      'Su texto, en Markdown de Obsidian (títulos, listas, tablas, llamadas, [[@Entrada]], [[@tipo/Entrada]] o [[@clave]] si hay dos que se llaman igual; una imagen del sistema, por su ruta: ![[ruta/imagen.webp|texto alternativo|ancho]])'
     )
 })
 export type ChapterSummary = z.infer<typeof chapterSummary>

@@ -81,7 +81,8 @@ function ContentLinkView({ node, selected }: NodeViewProps) {
           }}
         >
           <BookOpen size={13} aria-hidden="true" />
-          {label ?? name}
+          {/* Sin texto propio, su nombre de verdad (el enlace puede ir por su clave o con su tipo delante) */}
+          {label ?? entry?.name ?? name}
         </a>
       ) : (
         <span

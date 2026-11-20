@@ -243,6 +243,19 @@ describe('el compendio del mundo (docs/specs/compendio-mundo.md)', () => {
     })
     expect(linked.entry.lines).toEqual(expect.arrayContaining([{ label: 'Clase de armadura', value: '15' }]))
     expect((await ok200('getLinkedContent', { worldId, name: 'No existe' })).entry).toBeNull()
+    // Sin ambigüedad (ADR-0033): por su clave, con su tipo delante y por su nombre en inglés
+    const key = async (name: string, extra: object = { worldId }) =>
+      (await ok200('getLinkedContent', { ...extra, name })).entry?.key
+    expect(await key('guerrero_goblin_2014')).toBe('guerrero_goblin_2014')
+    expect(await key('criatura/Goblin')).toBe('guerrero_goblin_2014')
+    expect(await key('Criatura/guerrero_goblin_2014')).toBe('guerrero_goblin_2014')
+    expect(await key('Goblin del valle')).toBe('goblin_valle')
+    // Desde la campaña, lo que ve ella (su edición)
+    const hit = (await ok200('searchCampaignContent', { campaignId, query: 'goblin' })).items[0]
+    expect(await key(hit.name, { campaignId })).toBe(hit.key)
+    expect(await key(`${hit.type}/${hit.key}`, { campaignId })).toBe(hit.key)
+    // Con otro tipo delante no es esa
+    expect(await key(`conjuro/${hit.key}`, { campaignId })).not.toBe(hit.key)
     // La jugadora no lleva la wiki: ni busca ni lee
     expect((await call('searchLinkableContent', { worldId, query: 'goblin' }, ana.cookie)).statusCode).toBe(404)
   })

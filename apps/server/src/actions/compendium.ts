@@ -20,7 +20,7 @@ import {
 } from '@crisol/contracts'
 import { chaptersRepo, systemImagesRepo, systemsRepo, tablesRepo, worldContentRepo } from '@crisol/db'
 import { cryptoRoller, DiceSyntaxError } from '@crisol/dice'
-import { authorize, can, foldName, NotFoundError } from '@crisol/domain'
+import { authorize, can, foldName, matchLinkTarget, NotFoundError } from '@crisol/domain'
 import {
   browseContent,
   type Choices,
@@ -419,6 +419,10 @@ export function linesOf(system: System | undefined, item: ContentItem | undefine
     .map(([key, f]) => ({ label: textOf(f.label as Text, language) || key, value: String(item?.data[key]) }))
 }
 
+/** Un texto en todos sus idiomas (para buscar por cualquiera) */
+export const textsOf = (text: Text | undefined): string[] =>
+  !text ? [] : typeof text === 'string' ? [text] : Object.values(text).filter((t): t is string => Boolean(t))
+
 /**
  * Lo que enlaza o incrusta `[[@Nombre]]` desde una campaña (lo que ve ella: quien juega, solo lo suyo) o desde un
  * sistema (sus capítulos): la entrada con ese nombre, lo del mundo antes. Con `system` (el elegido al ponerla), solo
@@ -436,13 +440,19 @@ export async function linkedIn(
       : await systemScope(ctx, scope.systemId, undefined)
   if (!found?.row || (system && system !== found.row.id)) return null
   const { document, row, choices, entries, layer } = found
-  const wanted = foldName(name)
-  const named = (entry: ContentEntry) => foldName(textOf(entry.name as Text | undefined, choices.language) || entry.key)
   // Lo del mundo lleva su marca (layers.ts)
   const ofWorld = (entry: ContentEntry) => Boolean((entry as ContentEntry & { world?: boolean }).world)
   const seen = visibleContent(document, entries, choices).map((s) => s.item)
-  const match =
-    seen.find((entry) => ofWorld(entry) && named(entry) === wanted) ?? seen.find((entry) => named(entry) === wanted)
+  // `tipo/Nombre`, la clave o el nombre en cualquier idioma (ADR-0033)
+  const targets = seen.map((entry) => ({
+    entry,
+    key: entry.key,
+    names: textsOf(entry.name as Text | undefined),
+    type: entry.type,
+    typeLabels: textsOf(document.types[entry.type]?.label as Text | undefined),
+    world: ofWorld(entry)
+  }))
+  const match = matchLinkTarget(targets, name)?.entry
   if (!match) return null
   const [item] = await layers.contentByKeys(ctx, row.id, layer, [match.key])
   const label = document.types[match.type]?.label

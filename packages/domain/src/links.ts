@@ -110,3 +110,40 @@ export function searchNames(query: string, pages: readonly NamedPage[], limit = 
     .sort((a, b) => a.score - b.score || a.name.length - b.name.length || a.name.localeCompare(b.name, 'es'))
     .slice(0, limit)
 }
+
+/** Lo que hace falta de una entrada del compendio para saber si un enlace `[[@…]]` la nombra */
+export interface LinkTarget {
+  key: string
+  /** Sus nombres, en cada idioma */
+  names: readonly string[]
+  type: string
+  /** El nombre de su tipo, en cada idioma */
+  typeLabels: readonly string[]
+  /** Del compendio del mundo: gana a la del sistema con el mismo nombre */
+  world: boolean
+}
+
+/**
+ * Qué entrada nombra un enlace `[[@…]]` (ADR-0033): `tipo/Nombre` (el tipo por su clave o por su nombre, para lo que
+ * se llama igual: el conjuro y la armadura «Escudo»), su clave o su nombre en cualquier idioma; lo del mundo, antes
+ */
+export function matchLinkTarget<T extends LinkTarget>(items: readonly T[], link: string): T | undefined {
+  const byName = (list: readonly T[], name: string) => {
+    const wanted = foldName(name)
+    const named = (item: T) => item.names.some((n) => foldName(n) === wanted)
+    return list.find((item) => item.world && named(item)) ?? list.find(named)
+  }
+  const byKey = (list: readonly T[], key: string) =>
+    list.find((item) => item.world && item.key === key.trim()) ?? list.find((item) => item.key === key.trim())
+  const slash = link.indexOf('/')
+  if (slash > 0) {
+    const prefix = foldName(link.slice(0, slash))
+    const rest = link.slice(slash + 1)
+    const typed = items.filter(
+      (item) => foldName(item.type) === prefix || item.typeLabels.some((label) => foldName(label) === prefix)
+    )
+    const hit = typed.length > 0 ? (byName(typed, rest) ?? byKey(typed, rest)) : undefined
+    if (hit) return hit
+  }
+  return byName(items, link) ?? byKey(items, link)
+}
