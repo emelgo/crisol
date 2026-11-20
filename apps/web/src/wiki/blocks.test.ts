@@ -28,8 +28,8 @@ describe('los bloques del menú «/»', () => {
       'callout-quote'
     ])
     expect(ids('autor')).toEqual(['callout-quote'])
-    // Los dados salieron de la wiki (revisión, tanda 7): lo que se tira va a una entrada del compendio
-    expect(ids('dados')).toEqual([])
+    expect(ids('tir')).toEqual(['diceRoll'])
+    expect(ids('dados')).toEqual(['diceRoll'])
     expect(ids('xyz')).toEqual([])
   })
 

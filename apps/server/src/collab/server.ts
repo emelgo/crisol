@@ -15,7 +15,6 @@ import { actorFrom, authorize, can, NotFoundError } from '@crisol/domain'
 import { BODY_FIELD } from '@crisol/editor'
 import { Hocuspocus } from '@hocuspocus/server'
 import * as Y from 'yjs'
-import { diceRollsToText } from '../wiki/dice-text.ts'
 import { playerEdits } from '../wiki/player-pages.ts'
 import { createSessions, type SessionTimes } from './sessions.ts'
 
@@ -169,8 +168,6 @@ export function createCollab({
           ? await documentsRepo.findBody(db, target.pageId)
           : await documentsRepo.findSeparate(db, target.documentId)
       if (stored) Y.applyUpdate(document, stored.state)
-      // Las tiradas escritas de antes, a texto en código (los dados salieron de la wiki, revisión tanda 7)
-      diceRollsToText(document.getXmlFragment(BODY_FIELD))
       // El cuerpo, sin sesiones abiertas: si quedó una a medias al pararse el servidor, se cierra ahora
       const place = opened.get(documentName)
       if (target.kind === 'body' && place && onBodyLoaded && !sessions.isOpen(place.pageId) && !closing) {

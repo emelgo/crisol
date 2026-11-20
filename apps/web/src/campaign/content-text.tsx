@@ -7,6 +7,7 @@ import { type ContentTable, diceTableOf } from '@crisol/systems'
 import { BookOpen, Dices } from 'lucide-react'
 import { createContext, Fragment, type ReactNode, useContext, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { DiceChip } from '../wiki/dice-roll.tsx'
 import { FloatingCard } from '../wiki/floating-card.tsx'
 import styles from './content-text.module.css'
 
@@ -70,15 +71,28 @@ function ContentRef({ name, label, embed }: { name: string; label: string | unde
 /** Enlaces (`[[@…]]`, `![[@…]]`), negrita (**…**) y cursiva (*…* o _…_) dentro de una línea */
 function inline(text: string, key: string): ReactNode[] {
   const parts: ReactNode[] = []
-  const pattern = /(!?)\[\[@([^\]\n]+?)\]\]|\*\*(.+?)\*\*|\*(.+?)\*|_(.+?)_/g
+  const pattern = /`dice:([^`]*)`|(!?)\[\[@([^\]\n]+?)\]\]|\*\*(.+?)\*\*|\*(.+?)\*|_(.+?)_/g
   let last = 0
   let n = 0
   for (const match of text.matchAll(pattern)) {
     const at = match.index ?? 0
     if (at > last) parts.push(text.slice(last, at))
-    const [, bang, link, bold, italic, underscored] = match
+    const [, dice, bang, link, bold, italic, underscored] = match
     const id = `${key}-${n++}`
-    if (link !== undefined) {
+    if (dice !== undefined) {
+      // Una tirada escrita (`dice: 2d6+3`, `dice: 1d20+7|+7`, `dice: 1d6 # Nombre`): se pulsa y tira (ADR-0033)
+      const hash = dice.indexOf('#')
+      const head = hash < 0 ? dice : dice.slice(0, hash)
+      const bar = head.indexOf('|')
+      parts.push(
+        <DiceChip
+          key={id}
+          formula={(bar < 0 ? head : head.slice(0, bar)).trim()}
+          label={hash < 0 ? null : dice.slice(hash + 1).trim() || null}
+          display={bar < 0 ? null : head.slice(bar + 1).trim() || null}
+        />
+      )
+    } else if (link !== undefined) {
       // En una tabla, la barra del texto propio va escapada (`[[@X\|texto]]`)
       const [name = '', ...label] = link.split(/\\?\|/)
       parts.push(<ContentRef key={id} name={name} label={label.join('|') || undefined} embed={bang === '!'} />)

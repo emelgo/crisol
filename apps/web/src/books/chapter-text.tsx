@@ -20,6 +20,7 @@ import { withContentEmbedView } from '../wiki/content-embed.tsx'
 import { withContentLinkView } from '../wiki/content-link.tsx'
 import editorStyles from '../wiki/editor.module.css'
 import { EmptyHint } from '../wiki/editor.tsx'
+import { withDiceRollView } from '../wiki/dice-roll.tsx'
 import { SystemImagesContext, withFileEmbedView } from '../wiki/file-embed.tsx'
 import { FloatingCard } from '../wiki/floating-card.tsx'
 import { GhostLine } from '../wiki/ghost-line.ts'
@@ -79,6 +80,8 @@ function chapterView(node: Node) {
   if (node.name === 'contentEmbed') return withContentEmbedView(node)
   if (node.name === 'fileEmbed') return withFileEmbedView(node)
   if (node.name === 'pageLink') return withChapterLinkView(node)
+  // Una tirada escrita (`dice: 2d6+3`): se pulsa y tira en la bandeja de dados (ADR-0033)
+  if (node.name === 'diceRoll') return withDiceRollView(node)
   return withSheetView(node)
 }
 

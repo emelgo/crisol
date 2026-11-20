@@ -4,7 +4,7 @@ import '../i18n.ts'
 import { Block } from './content.tsx'
 
 describe('lo que se lee sin editor (la jugadora, la vista previa, la impresión)', () => {
-  it('no pierde el código ni los enlaces al compendio (una tirada de antes, `dice:`, es texto en código)', () => {
+  it('no pierde las tiradas ni los enlaces al compendio: sin dónde tirar (al imprimir), la tirada sale como texto', () => {
     render(
       <Block
         worldId="w"
@@ -12,7 +12,7 @@ describe('lo que se lee sin editor (la jugadora, la vista previa, la impresión)
           type: 'paragraph',
           content: [
             { type: 'text', text: 'Mordisco. ' },
-            { type: 'text', text: 'dice: 1d20+4 # Ataque', marks: [{ type: 'code' }] },
+            { type: 'diceRoll', attrs: { formula: '1d20+4', label: 'Ataque' } },
             { type: 'text', text: ' contra ' },
             { type: 'contentLink', attrs: { name: 'Goblin jefe', label: null } }
           ]
@@ -20,6 +20,6 @@ describe('lo que se lee sin editor (la jugadora, la vista previa, la impresión)
       />
     )
     const paragraph = screen.getByText(/Mordisco/).closest('p')
-    expect(paragraph?.textContent).toBe('Mordisco. dice: 1d20+4 # Ataque contra Goblin jefe')
+    expect(paragraph?.textContent).toBe('Mordisco. 1d20+4 contra Goblin jefe')
   })
 })
