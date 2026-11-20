@@ -359,8 +359,10 @@ lleva, cuando la hay, su frase. Se añade aquí lo nuevo; no en otros documentos
   campos, en su orden (sin migración); **la
   marca «Plantilla» lleva el color de acento**, para no confundirse con la píldora que lleva a una plantilla; **bajo
   cada plantilla, sus primeros campos** (en la lista y al elegir una), no sus pestañas.
-- **Las tiradas no se escriben en las páginas** (Enrique, 2026-11-11, revisión de la app): los dados salen del texto y
-  van a las entradas del compendio, que se tiran con su botón y se enlazan o se incrustan en una página.
+- **Las tiradas escritas vuelven, en todas partes** (Enrique, 2026-11-20: «todo»; sustituye a «las tiradas no se
+  escriben en las páginas» del 2026-11-11): `` `dice: 2d6+3 # Nombre` `` en páginas, capítulos y el texto del compendio
+  es un botón con el dado que tira en la bandeja; `|texto` enseña otra cosa (`dice: 1d20+7|+7` → «+7»). Lo de una
+  criatura o una trampa sigue mejor en su entrada del compendio, con su mecánica.
 - **La wiki se edita en el sitio, como en el Crisol antiguo** (`docs/specs/wiki-edicion.md`): «no me gusta que todo sea
   como con botones, debe ser más ágil, poder cambiar todo en edición, incluso el título». Se abre la página y se
   escribe: el título es el propio encabezado (Intro guarda, Escape deshace) y todo se guarda solo («Guardando…»,

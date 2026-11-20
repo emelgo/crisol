@@ -168,15 +168,7 @@ export function DiceChip({
   return <RollableChip formula={formula} label={label} display={display} />
 }
 
-function RollableChip({
-  formula,
-  label,
-  display
-}: {
-  formula: string
-  label: string | null
-  display: string | null
-}) {
+function RollableChip({ formula, label, display }: { formula: string; label: string | null; display: string | null }) {
   const { t } = useTranslation()
   const rollHere = useRollHere()
   const written = label ? `${formula} # ${label}` : formula

@@ -79,4 +79,10 @@ describe('el texto de un documento del contenido', () => {
     expect(container.querySelector('[data-callout="secret"]')?.textContent).toContain('Es un vampiro.')
     expect(container.querySelector('blockquote')?.textContent).toBe('Una cita sin más.')
   })
+
+  it('una tirada escrita (`dice: 1d20+7|+7`) enseña lo suyo (sin la bandeja de dados, como texto)', () => {
+    render(<ContentText text={'Mordisco: `dice: 1d20+7|+7`, daño `dice: 2d6+3`.'} />)
+    expect(screen.getByText('+7')).toBeDefined()
+    expect(screen.getByText('2d6+3')).toBeDefined()
+  })
 })
