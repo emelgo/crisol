@@ -7,6 +7,14 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
+### Para retomar (2026-11-20, tarde: tanda C y libros como 5etools)
+
+- En `main` con el PR #126 (sin migración nueva): acciones con opciones, `choose.max`, conjuros de las criaturas,
+  enlaces, pies, créditos y páginas en los capítulos, recuadros con título, citas y el aspecto de libro de 5etools
+  (`apps/web/src/books/book-look.module.css`). Todo en el ADR-0033 y en `tasks/probar.md`.
+- **Siguiente**: desplegar al oficial (`scripts/desplegar-produccion.sh`, lo lanza Enrique) y que la IA repase los
+  capítulos ya subidos (títulos de los recuadros, citas con su firma, pies, enlaces y páginas).
+
 ### Para retomar (2026-11-20, mediodía: la carga del D&D 2024, en el oficial)
 
 - En `main` y en el oficial: PR #123 (tokens de acceso, `![[ruta]]` en los capítulos, 64 MB; migración 0094) y PR #124
