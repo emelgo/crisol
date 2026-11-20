@@ -44,7 +44,8 @@ async function renderBook(
     markdown = COMBATE,
     fail,
     failures = Number.POSITIVE_INFINITY,
-    prepare
+    prepare,
+    editing = true
   }: {
     /** Sin ellos, el libro vacío */
     chapters?: boolean
@@ -56,6 +57,8 @@ async function renderBook(
     failures?: number
     /** Algo que preparar antes (subir una imagen) */
     prepare?: (api: ReturnType<typeof fakeApi>) => Promise<unknown>
+    /** Ponerlo a escribir al abrirlo («⋯ › Editar»; se abre para leer) */
+    editing?: boolean
   } = {}
 ) {
   const api = fakeApi({ organizations: [ORG], worlds: [WORLD], systems: [OWN], systemContent: { [OWN.id]: [WOLF] } })
@@ -89,6 +92,16 @@ async function renderBook(
       api={client}
     />
   )
+  // Se abre para leer: el dueño lo pone a escribir desde «⋯»
+  if (chapters && editing && path.startsWith('/sistemas/')) {
+    const more = await screen
+      .findByRole('button', { name: 'Más acciones del capítulo' }, { timeout: 1500 })
+      .catch(() => null)
+    if (more) {
+      await userEvent.click(more)
+      await userEvent.click(await screen.findByRole('button', { name: 'Editar' }))
+    }
+  }
   return { api, router, first: first ?? { id: '' } }
 }
 
@@ -135,7 +148,8 @@ describe('el lector de capítulos (ADR-0025)', () => {
     // Y «Anterior» vuelve
     const back = within(screen.getByRole('navigation', { name: 'Anterior y siguiente' }))
     await userEvent.click(back.getByRole('link', { name: /Anterior/ }))
-    await waitFor(() => expect(screen.getByLabelText('Título del capítulo')).toHaveProperty('value', 'El combate'))
+    // Se abre para leer
+    expect(await screen.findByRole('heading', { level: 2, name: 'El combate' })).toBeDefined()
   })
 
   it('una imagen del sistema en el texto (![[ruta]]), por su ruta; si falta, lo dice', async () => {
@@ -201,6 +215,40 @@ describe('el lector de capítulos (ADR-0025)', () => {
     expect(scroll).toHaveBeenCalled()
   })
 
+  it('se abre para leer; «⋯ › Editar» lo pone a escribir y «Dejar de editar» lo vuelve a dejar para leer', async () => {
+    await renderBook(BOOK, { editing: false })
+    expect(await screen.findByRole('heading', { level: 2, name: 'El combate' })).toBeDefined()
+    expect(screen.queryByLabelText('Título del capítulo')).toBeNull()
+    await userEvent.click(screen.getByRole('button', { name: 'Más acciones del capítulo' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Editar' }))
+    expect(await screen.findByLabelText('Título del capítulo')).toBeDefined()
+    await userEvent.click(screen.getByRole('button', { name: 'Más acciones del capítulo' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Dejar de editar' }))
+    expect(screen.queryByLabelText('Título del capítulo')).toBeNull()
+  })
+
+  it('al leerlo, los enlaces al compendio ([[@…]]) se resuelven y, al pasar el ratón, enseñan la entrada entera', async () => {
+    await renderBook(BOOK, { editing: false, markdown: 'Ver [[@Lobo]] y [[@Nadie]].' })
+    const link = await screen.findByRole('link', { name: 'Lobo' })
+    expect(link.getAttribute('href')).toContain('lobo')
+    await userEvent.hover(link)
+    const card = await screen.findByRole('tooltip')
+    expect(within(card).getByText('Lobo')).toBeDefined()
+  })
+
+  it('un enlace a otro capítulo enseña, al pasar el ratón, ese apartado', async () => {
+    await renderBook(BOOK, { editing: false, markdown: 'Lee [[La magia]].' })
+    // El del texto (el índice y «Siguiente» también llevan a «La magia»)
+    const text = await waitFor(() => {
+      const found = screen.getAllByRole('link', { name: 'La magia' }).find((a) => a.closest('.ProseMirror'))
+      if (!found) throw new Error('falta el enlace')
+      return found
+    })
+    await userEvent.hover(text)
+    const card = await screen.findByRole('tooltip')
+    expect(await within(card).findByText('Espacios.')).toBeDefined()
+  })
+
   it('pulsar una sección del índice va a su título y la marca como la que se lee', async () => {
     const scroll = vi.fn()
     Element.prototype.scrollIntoView = scroll
@@ -230,7 +278,8 @@ describe('el lector de capítulos (ADR-0025)', () => {
     const retry = await screen.findByRole('button', { name: 'Reintentar' })
     expect(screen.queryByLabelText('Título del capítulo')).toBeNull()
     await userEvent.click(retry)
-    await waitFor(() => expect(screen.getByLabelText('Título del capítulo')).toHaveProperty('value', 'El combate'))
+    // Se abre para leer
+    expect(await screen.findByRole('heading', { level: 2, name: 'El combate' })).toBeDefined()
   })
 
   it('cambiar el título lo guarda con su versión y lo pone en el índice', async () => {

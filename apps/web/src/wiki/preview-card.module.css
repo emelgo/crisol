@@ -1,0 +1,31 @@
+/* La vista previa de un enlace: una ventana flotante con la entrada o el apartado entero, que se desplaza si no cabe */
+.card {
+  position: fixed;
+  z-index: 60;
+  display: grid;
+  align-content: start;
+  gap: var(--space-2);
+  overflow-y: auto;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 45%);
+  color: var(--color-text);
+  font-size: 0.875rem;
+  font-style: normal;
+  font-weight: normal;
+  text-align: start;
+  text-indent: 0;
+  white-space: normal;
+}
+
+.kind {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+}
+
+.name {
+  font-size: 1.35rem;
+  line-height: 1.15;
+}

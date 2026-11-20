@@ -71,8 +71,9 @@ export const PageLink = Node.create({
         type: 'pageLink',
         raw: match[0],
         embed: match[1] === '!',
-        title: (match[2] ?? '').trim(),
-        anchor: match[3] ? match[3].slice(1).trim() || null : null,
+        // En una tabla, la barra del texto propio va escapada (`[[Destino\\|texto]]`): la `\\` no es del destino
+        title: (match[2] ?? '').trim().replace(/\\$/, ''),
+        anchor: match[3] ? match[3].slice(1).trim().replace(/\\$/, '') || null : null,
         label: match[4]?.trim() || null
       }
     }

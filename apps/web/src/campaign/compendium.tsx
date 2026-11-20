@@ -46,7 +46,9 @@ import { useDice } from '../dice/context.tsx'
 import { appendRoll } from '../dice/rolls.ts'
 import { useTray } from '../dice/tray.tsx'
 import { visibilityIn } from '../dice/visibility.ts'
+import { ContentScopeProvider } from '../wiki/content-scope.tsx'
 import { useNarrow } from '../wiki/panel.tsx'
+import { LinkedPreview } from '../wiki/preview-card.tsx'
 import { BookCover } from './book-cover.tsx'
 import styles from './compendium.module.css'
 import { CompendiumSettings } from './compendium-settings.tsx'
@@ -1052,6 +1054,14 @@ function Entry({
   // Sus tablas de tirar se tiran en la campaña, para quien elijan los dados (si vale en ella)
   const dice = useDice()
   const inSystem = systemOfScope(campaignId) !== null
+  // Un enlace del texto (`[[@…]]`): su entrada, como se ve desde aquí, se abre en el compendio (ADR-0033)
+  const openLinked = (name: string) => {
+    const systemId = systemOfScope(campaignId)
+    void api.call('getLinkedContent', systemId ? { systemId, name } : { campaignId, name }).then((found) => {
+      if (found.entry) onOpen(found.entry.key)
+      else announce(t('compendium.linkMissing', { name }))
+    })
+  }
   const campaign = useQuery({
     queryKey: ['campaign', campaignId],
     queryFn: () => api.call('getCampaign', { campaignId }),
@@ -1219,7 +1229,20 @@ function Entry({
         <FormError message={rolling.error ? errorText(rolling.error) : null} />
         {body && (
           <div className={bookLook.book}>
-            <ContentText text={body} {...(inSystem ? {} : { onRoll: roll })} />
+            <ContentScopeProvider
+              value={
+                inSystem
+                  ? { kind: 'system', systemId: systemOfScope(campaignId) ?? '' }
+                  : { kind: 'campaign', campaignId }
+              }
+            >
+              <ContentText
+                text={body}
+                {...(inSystem ? {} : { onRoll: roll })}
+                onLink={openLinked}
+                preview={(name) => <LinkedPreview name={name} />}
+              />
+            </ContentScopeProvider>
           </div>
         )}
         {item.table && (

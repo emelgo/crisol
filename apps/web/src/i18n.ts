@@ -452,6 +452,7 @@ export const es = {
   },
   // El compendio de una campaña: el contenido de su sistema
   compendium: {
+    linkMissing: '«{{name}}» no está en el compendio',
     bookIndex: 'Lo que trae, por tipo',
     bookEmpty: 'Este libro aún no trae nada.',
     view: 'Ver',
@@ -3508,6 +3509,8 @@ export const es = {
   // Los libros de un sistema (ADR-0021, systems/system.tsx)
   chapters: {
     masterTag: 'Solo para el máster',
+    edit: 'Editar',
+    stopEditing: 'Dejar de editar',
     onlyMaster: 'Solo para el máster',
     forEveryone: 'Que lo lean los jugadores',
     index: 'Capítulos',
@@ -4180,6 +4183,7 @@ export const es = {
     danger: 'Peligro',
     'read-aloud': 'Leer en voz alta',
     quote: 'Cita',
+    secret: 'Secreto',
     title: 'Título del recuadro ({{kind}})',
     page: 'p{{page}}'
   },

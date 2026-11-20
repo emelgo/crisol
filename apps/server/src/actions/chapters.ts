@@ -64,7 +64,8 @@ async function readingScope(
 export function chapterTargets(markdown: string): string[] {
   const found = new Set<string>()
   for (const m of markdown.matchAll(/(?<!!)\[\[(?!@)([^\]|\n]*)(?:\|[^\]\n]*)?\]\]/g)) {
-    const target = (m[1] ?? '').trim()
+    // En una tabla, la barra del texto propio va escapada (`[[Destino\\|texto]]`): la `\\` no es del destino
+    const target = (m[1] ?? '').trim().replace(/\\$/, '').trim()
     if (target) found.add(target)
   }
   return [...found]

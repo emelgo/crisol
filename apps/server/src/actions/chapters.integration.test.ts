@@ -290,7 +290,7 @@ describe('los capítulos de los libros (ADR-0025)', () => {
       systemId: five,
       source: 'srd51',
       title: 'Introducción',
-      markdown: `![[book/mesa.webp]]\n*Una mesa mágica*\n\nLee [[Capítulo 4]], [[Capítulo 4#Encuentros|sus encuentros]], [[${newer}]], [[${newer}#Capítulo 1]], [[#Arriba]], [[No existe]] y [[@Goblin]].`
+      markdown: `![[book/mesa.webp]]\n*Una mesa mágica*\n\nLee [[Capítulo 4]], [[Capítulo 4#Encuentros|sus encuentros]], [[${newer}]], [[${newer}#Capítulo 1]], [[#Arriba]], [[No existe]] y [[@Goblin]].\n\n| Dónde |\n| --- |\n| [[Capítulo 4: Crear aventuras\\|el cuarto]] |`
     })
     const read = await ok200('getChapter', { chapterId: intro.id })
     expect(read.credits).toEqual({ 'book/mesa.webp': 'Luca Bancone' })
@@ -305,6 +305,8 @@ describe('los capítulos de los libros (ADR-0025)', () => {
     expect(to(`${newer}#Capítulo 1`)).toMatchObject({ chapter: { id: other.id }, section: null })
     expect(to('#Arriba')).toMatchObject({ chapter: { id: intro.id }, section: 'Arriba' })
     expect(to('No existe')).toEqual({ target: 'No existe', chapter: null, section: null })
+    // En una tabla, sin la barra escapada en el destino
+    expect(to('Capítulo 4: Crear aventuras')).toMatchObject({ chapter: { id: fourth.id } })
     expect(read.links.some((l: { target: string }) => l.target.startsWith('@'))).toBe(false)
 
     // Desde una campaña que no tiene el otro libro, ese enlace no lleva a ningún sitio

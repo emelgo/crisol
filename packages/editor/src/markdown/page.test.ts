@@ -431,4 +431,11 @@ describe('el Markdown de una página', () => {
     const withId = pageFromMarkdown('## Encuentros {p.12} ^abc123').body.content?.[0]
     expect(withId?.attrs).toMatchObject({ page: 12, id: 'abc123' })
   })
+
+  it('en una tabla, la barra escapada de un enlace ([[Destino\\|texto]]) no se queda en el destino', () => {
+    const body = pageFromMarkdown('| A |\n| --- |\n| [[Guía del máster (2024)\\|la guía]] |').body
+    const link = JSON.stringify(body)
+    expect(link).toContain('"title":"Guía del máster (2024)"')
+    expect(link).toContain('"label":"la guía"')
+  })
 })

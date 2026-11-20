@@ -8,7 +8,18 @@
 import type { Chapter, ChapterSummary } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { Editor } from '@tiptap/core'
-import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Ellipsis, Eye, EyeOff, Trash2 } from 'lucide-react'
+import {
+  ArrowDown,
+  ArrowLeft,
+  ArrowRight,
+  ArrowUp,
+  BookOpen,
+  Ellipsis,
+  Eye,
+  EyeOff,
+  Pencil,
+  Trash2
+} from 'lucide-react'
 import { type MouseEvent, type ReactNode, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ApiError } from '../api/client.ts'
@@ -50,6 +61,18 @@ const sectionsOf = (editor: Editor): Section[] => {
 
 /** Un enlace de un capítulo, resuelto: a qué capítulo y a qué sección */
 type ResolvedLink = { chapter: { id: string; source: string }; section: string | null }
+
+/** Lo enlazado por un `[[…]]` (Título#Sección), comparado sin la barra de una tabla ni espacios de más */
+const sameTarget = (a: string, b: string) => {
+  const fold = (t: string) =>
+    t
+      .replace(/\\$/, '')
+      .replace(/\s*#\s*/, '#')
+      .trim()
+      .replace(/\s+/g, ' ')
+      .toLocaleLowerCase('es')
+  return fold(a) === fold(b)
+}
 
 /** Si un título de sección es el pedido (sin mayúsculas ni espacios de más) */
 const sameTitle = (a: string, b: string) =>
@@ -104,6 +127,8 @@ export function BookReader({
   const previous = at > 0 ? chapters[at - 1] : undefined
   const next = at >= 0 ? chapters[at + 1] : undefined
   const [editor, setEditor] = useState<Editor | null>(null)
+  // Se abre para leer; «⋯ › Editar» lo pone a escribir, y sigue así al pasar de capítulo
+  const [editing, setEditing] = useState(false)
   const [sections, setSections] = useState<Section[]>([])
   const [active, setActive] = useState(-1)
   const refresh = async () => {
@@ -316,6 +341,8 @@ export function BookReader({
                   : `${link.chapter.source === source ? chapterHref(link.chapter.id) : bookHref(link.chapter.source, link.chapter.id)}${link.section ? `#${encodeURIComponent(link.section)}` : ''}`
               }
               onSection={goToSectionNamed}
+              editing={editing}
+              onEditing={setEditing}
               onChanged={refresh}
               onDeleted={() => {
                 void refresh()
@@ -421,6 +448,8 @@ function OpenChapter({
   onEditor,
   hrefOf,
   onSection,
+  editing,
+  onEditing,
   onChanged,
   onDeleted
 }: {
@@ -437,6 +466,9 @@ function OpenChapter({
   hrefOf: (link: ResolvedLink) => string
   /** Ir a una sección de este capítulo, por su nombre */
   onSection: (name: string) => boolean
+  /** Si se está escribiendo (si no, se lee), y cambiarlo */
+  editing: boolean
+  onEditing: (editing: boolean) => void
   onChanged: () => Promise<void>
   onDeleted: () => void
 }) {
@@ -460,6 +492,12 @@ function OpenChapter({
   const saved = useRef(false)
   const [title, setTitle] = useState<string | null>(null)
   const [reload, setReload] = useState(0)
+  // Uno vacío (recién creado) se abre ya para escribir
+  const empty = chapter.data?.markdown === ''
+  useEffect(() => {
+    if (editable && empty) onEditing(true)
+  }, [editable, empty, onEditing])
+  const writing = editable && editing
   const [deleting, setDeleting] = useState(false)
 
   /** Guarda en orden (cada uno con la versión que dejó el anterior) */
@@ -520,7 +558,7 @@ function OpenChapter({
   return (
     <div className={styles.open}>
       <div className={styles.chapterHead}>
-        {editable ? (
+        {writing ? (
           <h2 className={`${styles.chapterTitle} ${book.name}`}>
             <input
               className={styles.titleInput}
@@ -552,6 +590,15 @@ function OpenChapter({
             <Menu label={t('chapters.more')} icon={<Ellipsis aria-hidden="true" size={18} />} className={styles.more}>
               {(close) => (
                 <>
+                  <MenuItem
+                    onClick={() => {
+                      close()
+                      onEditing(!editing)
+                    }}
+                  >
+                    {editing ? <BookOpen size={16} aria-hidden="true" /> : <Pencil size={16} aria-hidden="true" />}
+                    {t(editing ? 'chapters.stopEditing' : 'chapters.edit')}
+                  </MenuItem>
                   <MenuItem
                     disabled={position <= 0 || move.isPending}
                     onClick={() => {
@@ -618,9 +665,10 @@ function OpenChapter({
       )}
       <div className={`${styles.text} ${book.book}`}>
         <ChapterText
-          key={reload}
+          // Al pasar de leer a escribir, de nuevo: así cada pieza del texto sabe en qué modo está
+          key={`${reload}-${writing}`}
           markdown={chapter.data.markdown}
-          editable={editable && state !== 'conflict'}
+          editable={writing && state !== 'conflict'}
           label={t('chapters.text', { title: chapter.data.title })}
           onDirty={() => setState('dirty')}
           onClean={() => setState((now) => (now === 'dirty' ? (saved.current ? 'saved' : 'idle') : now))}
@@ -629,17 +677,19 @@ function OpenChapter({
           imagesOf={systemId}
           credits={chapter.data.credits ?? {}}
           linkTo={(target) => {
-            const link = chapter.data?.links?.find((l) => l.target === target)
+            // Lo enlazado, como lo escribió el editor y como lo leyó el servidor, comparado sin espacios de más
+            const link = chapter.data?.links?.find((l) => sameTarget(l.target, target))
             if (!link?.chapter) return null
             const resolved = { chapter: link.chapter, section: link.section }
             return {
               href: hrefOf(resolved),
               // Una sección de este mismo capítulo: se va a ella sin cambiar de página
-              here: resolved.chapter.id === chapterId && resolved.section ? resolved.section : null
+              here: resolved.chapter.id === chapterId && resolved.section ? resolved.section : null,
+              preview: { chapterId: resolved.chapter.id, section: resolved.section, campaignId: campaignId ?? null }
             }
           }}
           onSection={onSection}
-          {...(editable ? { systemId } : {})}
+          systemId={systemId}
         />
       </div>
       {deleting && (

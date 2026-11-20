@@ -11,6 +11,8 @@ import { type FocusEvent, type KeyboardEvent, useId, useRef, useState } from 're
 import { useTranslation } from 'react-i18next'
 import styles from './content-link.module.css'
 import { entryHref, useLinkedEntry } from './content-scope.tsx'
+import { FloatingCard } from './floating-card.tsx'
+import { EntryPreview } from './preview-card.tsx'
 
 export function withContentLinkView(node: Node) {
   return node.extend({
@@ -29,6 +31,7 @@ function ContentLinkView({ node, selected }: NodeViewProps) {
   const [hovering, setHovering] = useState(false)
   const [pinned, setPinned] = useState(false)
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const anchor = useRef<HTMLSpanElement>(null)
   // Desde donde se lee: el mundo, la campaña (lo que ve ella) o el sistema de un capítulo
   const { scope, entry, missing } = useLinkedEntry(name)
   const href = entry ? entryHref(scope, entry) : null
@@ -45,6 +48,7 @@ function ContentLinkView({ node, selected }: NodeViewProps) {
   return (
     <NodeViewWrapper
       as="span"
+      ref={anchor}
       className={styles.wrapper}
       onMouseEnter={() => {
         setClosed(false)
@@ -96,20 +100,15 @@ function ContentLinkView({ node, selected }: NodeViewProps) {
         </span>
       )}
       {show && entry && (
-        <span id={cardId} className={styles.card} data-content-card="" contentEditable={false}>
-          <span className={styles.kind}>
-            {entry.world ? t('contentLink.world', { type: entry.typeLabel }) : entry.typeLabel}
-          </span>
-          <strong className={styles.name}>{entry.name}</strong>
-          {entry.lines.length > 0 && (
-            <span className={styles.lines}>
-              {entry.lines.map((line) => (
-                <span key={line.label} className={styles.line}>
-                  <span className={styles.label}>{line.label}</span> {line.value}
-                </span>
-              ))}
-            </span>
-          )}
+        <FloatingCard anchor={anchor.current} id={cardId} onEnter={() => hover(true)} onLeave={() => hover(false)}>
+          {/* La entrada entera, como en 5etools (ADR-0033) */}
+          <EntryPreview
+            scope={scope}
+            entry={{
+              ...entry,
+              typeLabel: entry.world ? t('contentLink.world', { type: entry.typeLabel }) : entry.typeLabel
+            }}
+          />
           {href && (
             <button
               type="button"
@@ -120,7 +119,7 @@ function ContentLinkView({ node, selected }: NodeViewProps) {
               {t('contentLink.open')}
             </button>
           )}
-        </span>
+        </FloatingCard>
       )}
     </NodeViewWrapper>
   )
