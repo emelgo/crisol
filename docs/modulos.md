@@ -7,6 +7,18 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
+### Para retomar (2026-11-20, noche: libros fluidos y ficha de cada tipo)
+
+- En `main` (sin migración nueva): PR #128 y #129 (ya en el oficial: capítulos en lectura con «⋯ › Editar», compendio con
+  enlaces, recuadros y secretos, vistas previas al pasar el ratón, tiradas escritas `dice:` en todas partes); PR #130
+  (vista previa de capítulos con el lector del libro, `getLinkedContents` para los `[[@…]]` de un capítulo en una
+  petición, ids de bloque antes de abrir el editor —el capítulo más grande, de 6,2 s a 3,3 s—, precarga de capítulos y el
+  índice que se desplaza dentro de su caja); PR #131 (la ficha de cada tipo en el compendio, `types.<tipo>.card`, como
+  en 5etools: línea de tipo, bloque de datos a dos lados, campos ocultos). Todo en el ADR-0033 y en `tasks/probar.md`.
+- **Siguiente**: desplegar #130 y #131 al oficial (lo lanza Enrique) y que la IA ponga `card` en los tipos del D&D 2024.
+  Si abrir un capítulo enorme sigue lento: leer el Markdown (~0,5 s) y montar el editor (~0,8 s) son lo que queda; se
+  podría pintar en solo lectura sin el editor.
+
 ### Para retomar (2026-11-20, tarde: tanda C y libros como 5etools)
 
 - En `main` con el PR #126 (sin migración nueva): acciones con opciones, `choose.max`, conjuros de las criaturas,
