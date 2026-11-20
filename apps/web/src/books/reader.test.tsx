@@ -167,6 +167,8 @@ describe('el lector de capítulos (ADR-0025)', () => {
     })
     expect(await screen.findByText('Luca Bancone')).toBeDefined()
     expect(screen.getByText('Ilustración de')).toBeDefined()
+    // Al leerlo (sin escribir en el texto), sin los ajustes de la imagen aunque quede elegida
+    expect(screen.queryByLabelText('Ancho')).toBeNull()
   })
 
   it('el dueño marca un capítulo solo para el máster desde «⋯»: lleva su etiqueta y se guarda', async () => {

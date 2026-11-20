@@ -112,12 +112,15 @@
   color: var(--color-on-accent);
 }
 
-/* Lo que se lee: una columna de lectura, centrada en su sitio */
+/* Lo que se lee: la caja, tan ancha como las del esqueleto de las páginas; dentro, la columna de lectura, centrada */
 .reading {
-  justify-self: center;
+  padding-block-start: var(--space-6);
+}
+
+.reading > * {
   inline-size: 100%;
   max-inline-size: 72ch;
-  padding-block-start: var(--space-6);
+  margin-inline: auto;
 }
 
 .open {
