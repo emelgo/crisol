@@ -167,6 +167,53 @@ describe('las criaturas en juego (docs/specs/criaturas.md)', () => {
     expect(save.roll.label).toMatch(/^Goblin 1 · /)
   })
 
+  it('una acción con opciones (ADR-0033): sale en su hoja con cada una armada y se tira la elegida', async () => {
+    const beholder = {
+      type: 'criatura',
+      key: 'contemplador',
+      data: { name: { es: 'Contemplador' } },
+      mechanics: {
+        actions: [
+          {
+            key: 'rayos',
+            label: 'Rayos oculares',
+            save: { ability: 'des', dc: '16' },
+            count: 2,
+            distinct: true,
+            pick: '1d2',
+            options: [
+              { key: 'encanto', label: 'Rayo de encanto', save: { ability: 'sab', dc: '16' } },
+              { key: 'enervante', label: 'Rayo enervante', damage: [{ formula: '4d8', type: 'necrotico' }] }
+            ]
+          }
+        ]
+      }
+    }
+    await ok200('putWorldContent', { worldId, systemId: five, items: [beholder] })
+    const [one] = (await ok200('putInPlay', { campaignId, key: 'contemplador' })).creatures
+    const { state } = await ok200('getInPlay', { creatureId: one.id })
+    const rayos = state.actions.find((a: { key: string }) => a.key === 'rayos')
+    expect(rayos).toMatchObject({ count: 2, distinct: true, pick: '1d2' })
+    expect(rayos.options.map((o: { key: string; save: { dc: number } | null }) => [o.key, o.save?.dc])).toEqual([
+      ['encanto', 16],
+      ['enervante', 16]
+    ])
+    const damage = await ok200('rollForCreature', {
+      creatureId: one.id,
+      action: { item: null, key: 'rayos', part: 'damage', option: 'enervante' }
+    })
+    expect(damage.roll.label).toBe('Contemplador 1 · Rayos oculares · Rayo enervante · daño')
+    expect(damage.roll.formula).toBe('4d8')
+    expect(
+      (
+        await code('rollForCreature', {
+          creatureId: one.id,
+          action: { item: null, key: 'rayos', part: 'damage', option: 'no' }
+        })
+      ).status
+    ).toBe(400)
+  })
+
   it('quitar las copias de una entrada (la única se queda) y deshacerlo', async () => {
     await ok200('putInPlay', { campaignId, key: GOBLIN, count: 3 })
     const [unique] = (await ok200('putInPlay', { campaignId, key: GOBLIN, unique: true, name: 'Jefe' })).creatures

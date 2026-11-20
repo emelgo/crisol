@@ -306,6 +306,7 @@ export const trySystemAction = defineAction({
     level: z.int().min(0).max(30).optional().describe('A qué nivel se tira (el del espacio de un conjuro)'),
     mode: z.string().min(1).max(60).optional().describe('Un modo del sistema para el ataque (ventaja)'),
     critical: z.boolean().optional().describe('Si el ataque fue crítico: los dados del daño, dobles'),
+    option: z.string().max(60).optional().describe('De una acción con opciones (sus options), cuál se tira'),
     language: z.enum(['es', 'en']).optional(),
     document: testDocument,
     organizationId: z.uuid().optional()
@@ -736,7 +737,8 @@ export const rollContentAction = defineAction({
       part: z.enum(['attack', 'damage', 'heal']),
       level: z.int().min(0).max(30).optional().describe('A qué nivel (el del espacio de un conjuro)'),
       mode: z.string().max(60).optional().describe('Un modo del sistema para el ataque (ventaja)'),
-      critical: z.boolean().optional().describe('Si el ataque fue crítico: los dados del daño, dobles')
+      critical: z.boolean().optional().describe('Si el ataque fue crítico: los dados del daño, dobles'),
+      option: z.string().max(60).optional().describe('De una acción con opciones (sus options), cuál se tira')
     }),
     characterId: z.uuid().optional().describe('Con la hoja de quién (un objeto o un conjuro)'),
     visibility: z.enum(['all', 'self', 'master', 'hidden']).default('all')

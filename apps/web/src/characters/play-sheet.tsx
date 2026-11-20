@@ -97,7 +97,7 @@ export interface SheetSubject {
 export interface SheetRoll {
   visibility: 'all' | 'self' | 'master' | 'hidden'
   roll?: { key: string; element?: string; mode?: string }
-  action?: { item: string | null; key: string; part: 'attack' | 'damage' | 'heal'; mode?: string }
+  action?: { item: string | null; key: string; part: 'attack' | 'damage' | 'heal'; mode?: string; option?: string }
 }
 
 const signed = (n: number) => (n >= 0 ? `+${n}` : `−${-n}`)
@@ -129,8 +129,10 @@ interface Ctx {
   save: (change: Change) => Promise<void>
   roll: (input: {
     roll?: { key: string; element?: string }
-    action?: { item: string | null; key: string; part: 'attack' | 'damage' | 'heal' }
+    action?: { item: string | null; key: string; part: 'attack' | 'damage' | 'heal'; option?: string }
   }) => void
+  /** Tira una fórmula suelta al registro, con su nombre (la de una acción con opciones: cuál sale) */
+  rollFormula: (formula: string, label: string) => Promise<number | null>
 }
 
 export function PlaySheet({
@@ -191,6 +193,15 @@ export function PlaySheet({
     save,
     roll: (input) => {
       if (!rolling.isPending) rolling.mutate(input)
+    },
+    rollFormula: async (formula, label) => {
+      const out = await api.call('rollDice', {
+        campaignId: subject.campaignId,
+        formula: `${formula} # ${label}`,
+        visibility
+      })
+      setLast(out.roll)
+      return out.roll.total
     }
   }
   const layout = state.layout as SheetBlockView[]
@@ -855,48 +866,146 @@ function ActionsBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: '
         {block.label ?? t('playSheet.actions')}
       </h2>
       <ul className={styles.items}>
-        {actions.map((a) => (
-          <li key={`${a.item}-${a.key}`} className={styles.item}>
-            <span className={styles.itemName}>{a.label}</span>
-            {a.bonus !== null && (
-              <button
-                type="button"
-                className={styles.smallRoll}
-                onClick={() => ctx.roll({ action: { item: a.item, key: a.key, part: 'attack' } })}
-                aria-label={t('playSheet.attackOf', { what: a.label, bonus: signed(a.bonus) })}
-              >
-                {signed(a.bonus)}
-              </button>
-            )}
-            {a.save && (
-              <span className={styles.itemValue}>
-                {t('playSheet.saveDc', { ability: a.save.abilityLabel, dc: a.save.dc })}
-              </span>
-            )}
-            {a.damage.length > 0 && (
-              <button
-                type="button"
-                className={styles.smallRoll}
-                onClick={() => ctx.roll({ action: { item: a.item, key: a.key, part: 'damage' } })}
-                aria-label={t('playSheet.damageOf', { what: a.label })}
-              >
-                {a.damage.map((d) => d.formula).join(' + ')}
-              </button>
-            )}
-            {a.heal && (
-              <button
-                type="button"
-                className={styles.smallRoll}
-                onClick={() => ctx.roll({ action: { item: a.item, key: a.key, part: 'heal' } })}
-                aria-label={t('playSheet.healOf', { what: a.label })}
-              >
-                {a.heal}
-              </button>
-            )}
-          </li>
-        ))}
+        {actions.map((a) =>
+          a.options ? (
+            <OptionsAction key={`${a.item}-${a.key}`} action={a} ctx={ctx} />
+          ) : (
+            <li key={`${a.item}-${a.key}`} className={styles.item}>
+              <span className={styles.itemName}>{a.label}</span>
+              {a.bonus !== null && (
+                <button
+                  type="button"
+                  className={styles.smallRoll}
+                  onClick={() => ctx.roll({ action: { item: a.item, key: a.key, part: 'attack' } })}
+                  aria-label={t('playSheet.attackOf', { what: a.label, bonus: signed(a.bonus) })}
+                >
+                  {signed(a.bonus)}
+                </button>
+              )}
+              {a.save && (
+                <span className={styles.itemValue}>
+                  {t('playSheet.saveDc', { ability: a.save.abilityLabel, dc: a.save.dc })}
+                </span>
+              )}
+              {a.damage.length > 0 && (
+                <button
+                  type="button"
+                  className={styles.smallRoll}
+                  onClick={() => ctx.roll({ action: { item: a.item, key: a.key, part: 'damage' } })}
+                  aria-label={t('playSheet.damageOf', { what: a.label })}
+                >
+                  {a.damage.map((d) => d.formula).join(' + ')}
+                </button>
+              )}
+              {a.heal && (
+                <button
+                  type="button"
+                  className={styles.smallRoll}
+                  onClick={() => ctx.roll({ action: { item: a.item, key: a.key, part: 'heal' } })}
+                  aria-label={t('playSheet.healOf', { what: a.label })}
+                >
+                  {a.heal}
+                </button>
+              )}
+            </li>
+          )
+        )}
       </ul>
     </Part>
+  )
+}
+
+type SheetAction = State['actions'][number]
+
+/**
+ * Una acción que es «uno de estos efectos» (los rayos del contemplador, ADR-0033): cuántas se usan y, si trae fórmula,
+ * «Tirar» para que salga una (se marca); debajo, cada opción con lo suyo para tirarlo
+ */
+function OptionsAction({ action, ctx }: { action: SheetAction; ctx: Ctx }) {
+  const { t } = useTranslation()
+  const [picked, setPicked] = useState<string | null>(null)
+  const [picking, setPicking] = useState(false)
+  const options = action.options ?? []
+  const count = action.count ?? 1
+  const pick = async () => {
+    if (!action.pick || picking) return
+    setPicking(true)
+    try {
+      const total = await ctx.rollFormula(action.pick, action.label)
+      setPicked(total !== null ? (options[total - 1]?.key ?? null) : null)
+    } finally {
+      setPicking(false)
+    }
+  }
+  return (
+    <li className={`${styles.item} ${styles.optionsAction}`}>
+      <span className={styles.itemName}>{action.label}</span>
+      <span className={styles.itemValue}>
+        {t(action.distinct ? 'playSheet.optionsDistinct' : 'playSheet.optionsCount', { count })}
+      </span>
+      {action.pick && (
+        <button
+          type="button"
+          className={styles.smallRoll}
+          aria-disabled={picking || undefined}
+          onClick={pick}
+          aria-label={t('playSheet.pickOf', { what: action.label, formula: action.pick })}
+        >
+          {t('playSheet.pick', { formula: action.pick })}
+        </button>
+      )}
+      <ul className={styles.options} aria-label={t('playSheet.optionsOf', { what: action.label })}>
+        {options.map((o, i) => {
+          const what = `${action.label} · ${o.label}`
+          const roll = (part: 'attack' | 'damage' | 'heal') =>
+            ctx.roll({ action: { item: action.item, key: action.key, part, option: o.key } })
+          return (
+            <li key={o.key} className={styles.item} data-picked={picked === o.key || undefined}>
+              <span className={styles.itemName}>
+                {action.pick && <span className={styles.optionNumber}>{i + 1}</span>}
+                {o.label}
+                {picked === o.key && <span className={styles.hidden}> · {t('playSheet.picked')}</span>}
+              </span>
+              {o.bonus !== null && (
+                <button
+                  type="button"
+                  className={styles.smallRoll}
+                  onClick={() => roll('attack')}
+                  aria-label={t('playSheet.attackOf', { what, bonus: signed(o.bonus) })}
+                >
+                  {signed(o.bonus)}
+                </button>
+              )}
+              {o.save && (
+                <span className={styles.itemValue}>
+                  {t('playSheet.saveDc', { ability: o.save.abilityLabel, dc: o.save.dc })}
+                </span>
+              )}
+              {o.damage.length > 0 && (
+                <button
+                  type="button"
+                  className={styles.smallRoll}
+                  onClick={() => roll('damage')}
+                  aria-label={t('playSheet.damageOf', { what })}
+                >
+                  {o.damage.map((d) => d.formula).join(' + ')}
+                </button>
+              )}
+              {o.heal && (
+                <button
+                  type="button"
+                  className={styles.smallRoll}
+                  onClick={() => roll('heal')}
+                  aria-label={t('playSheet.healOf', { what })}
+                >
+                  {o.heal}
+                </button>
+              )}
+            </li>
+          )
+        })}
+      </ul>
+    </li>
   )
 }
 

@@ -236,7 +236,8 @@ export const compendiumActions = [
       language: choices.language,
       ...(action.level !== undefined ? { level: action.level } : {}),
       ...(action.mode !== undefined ? { mode: action.mode } : {}),
-      ...(action.critical ? { critical: true } : {})
+      ...(action.critical ? { critical: true } : {}),
+      ...(action.option ? { option: action.option } : {})
     }
     try {
       let rolledAction: ReturnType<typeof tryAction>

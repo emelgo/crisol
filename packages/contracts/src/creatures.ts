@@ -130,7 +130,8 @@ export const rollForCreature = defineAction({
         part: z.enum(['attack', 'damage', 'heal']),
         level: z.int().min(0).max(30).optional(),
         mode: z.string().max(60).optional(),
-        critical: z.boolean().optional()
+        critical: z.boolean().optional(),
+        option: z.string().max(60).optional().describe('De una acción con opciones (sus options), cuál se tira')
       })
       .optional(),
     visibility: z.enum(['all', 'self', 'master', 'hidden']).default('hidden')

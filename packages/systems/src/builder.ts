@@ -739,7 +739,24 @@ export function playedSheet(
         save: a.save,
         damage: a.damage.map((d) => ({ formula: d.formula, ...(d.type ? { type: d.type } : {}) })),
         heal: a.heal?.formula ?? null,
-        ...(a.error ? { error: a.error } : {})
+        ...(a.error ? { error: a.error } : {}),
+        // Una acción con opciones (ADR-0033): cada una armada, cuántas se usan, si distintas y la fórmula para sacar una
+        ...(a.options
+          ? {
+              options: a.options.map((o) => ({
+                key: o.key,
+                label: o.label,
+                attack: o.attack,
+                bonus: o.bonus,
+                save: o.save,
+                damage: o.damage.map((d) => ({ formula: d.formula, ...(d.type ? { type: d.type } : {}) })),
+                heal: o.heal?.formula ?? null
+              })),
+              count: a.count ?? 1,
+              ...(a.distinct ? { distinct: true } : {}),
+              ...(a.pick ? { pick: a.pick } : {})
+            }
+          : {})
       })),
       // Los bloques de su hoja, con sus nombres
       layout: sheetView(system, type, language),

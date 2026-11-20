@@ -31,6 +31,8 @@ export interface ActionOptions {
   mode?: string
   /** Si el ataque fue crítico: los dados del daño, dobles */
   critical?: boolean
+  /** De una acción con opciones (los rayos del contemplador), cuál se tira (ADR-0033) */
+  option?: string
   roller?: DieRoller
   language?: Language
   settings?: Record<string, unknown>
@@ -65,6 +67,25 @@ export interface PreparedAction {
   recharge?: string
   cost?: number
   attackTree: DiceNode | null
+  /** La opción que se tira, si es de una acción con opciones */
+  option?: { key: string; label: string }
+  /** Sus opciones, ya armadas (su CD, su daño), cuántas se usan, si distintas y la fórmula para que salga una */
+  options?: PreparedOption[]
+  count?: number
+  distinct?: boolean
+  pick?: string
+}
+
+/** Una opción de una acción, armada: lo que se enseña de ella */
+export interface PreparedOption {
+  key: string
+  label: string
+  attack: string | null
+  bonus: number | null
+  save: PreparedAction['save']
+  damage: Omit<DamagePart, 'tree'>[]
+  heal: Omit<DamagePart, 'tree'> | null
+  range?: string
 }
 
 /** De quién es una acción: un objeto que lleva o el propio documento */
@@ -169,8 +190,18 @@ export function prepareAction(
   const type = own(system.types, typeKey)
   if (!type) throw new RollError(`No existe el tipo «${typeKey}»`)
   const { item, mechanics } = ownerOf(doc, itemId)
-  const action = mechanics?.actions?.find((a) => a.key === actionKey)
-  if (!action) throw new RollError(`No existe la acción «${actionKey}»`)
+  const found = mechanics?.actions?.find((a) => a.key === actionKey)
+  if (!found) throw new RollError(`No existe la acción «${actionKey}»`)
+  // Con una opción, lo suyo sobre lo de la acción (su ataque, su salvación, su daño)
+  const chosen = options.option === undefined ? undefined : found.options?.find((o) => o.key === options.option)
+  if (options.option !== undefined && !chosen)
+    throw new RollError(`«${found.key}» no tiene la opción «${options.option}»`)
+  const action: Action = chosen
+    ? (() => {
+        const { key: _key, label: _label, ...own } = chosen
+        return { ...found, ...own }
+      })()
+    : found
   const { scope, evaluated } = rollContext(system, typeKey, doc, options)
   // @este: el objeto (ya calculado, con lo que sale de quien lo lleva) o, en una criatura, ella misma
   // @origen: lo que lo concedió (la clase de un rasgo, para su nivel)
@@ -248,7 +279,10 @@ export function prepareAction(
   return {
     item: item?.id ?? null,
     key: action.key,
-    label: textOf(action.label, language),
+    // Con una opción, la acción y la opción («Rayos oculares · Rayo enervante»)
+    label: chosen
+      ? `${textOf(found.label, language)} · ${textOf(chosen.label, language)}`
+      : textOf(action.label, language),
     ...(action.activation ? { activation: action.activation } : {}),
     ...(level !== undefined ? { level } : {}),
     attack: attackTree ? plain(attackTree) : null,
@@ -267,7 +301,40 @@ export function prepareAction(
     ...(action.range ? { range: textOf(action.range, language) } : {}),
     ...(action.uses ? { uses: action.uses } : {}),
     ...(action.recharge ? { recharge: action.recharge } : {}),
-    ...(action.cost ? { cost: action.cost } : {})
+    ...(action.cost ? { cost: action.cost } : {}),
+    ...(chosen ? { option: { key: chosen.key, label: textOf(chosen.label, language) } } : {}),
+    ...(!chosen && found.options
+      ? {
+          options: found.options.map((o) => optionView(system, typeKey, doc, itemId, actionKey, o.key, options)),
+          count: found.count ?? 1,
+          ...(found.distinct ? { distinct: true } : {}),
+          ...(found.pick ? { pick: found.pick } : {})
+        }
+      : {})
+  }
+}
+
+/** Una opción armada, para enseñarla (sin sus árboles de dados) */
+function optionView(
+  system: System,
+  typeKey: string,
+  doc: SystemDocument,
+  itemId: string | null,
+  actionKey: string,
+  option: string,
+  options: ActionOptions
+): PreparedOption {
+  const p = prepareAction(system, typeKey, doc, itemId, actionKey, { ...options, option })
+  const bare = ({ tree: _tree, ...rest }: DamagePart) => rest
+  return {
+    key: option,
+    label: p.option?.label ?? option,
+    attack: p.attack,
+    bonus: p.bonus,
+    save: p.save,
+    damage: p.damage.map(bare),
+    heal: p.heal ? bare(p.heal) : null,
+    ...(p.range ? { range: p.range } : {})
   }
 }
 

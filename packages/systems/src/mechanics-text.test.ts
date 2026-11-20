@@ -93,3 +93,28 @@ describe('la mecánica en palabras', () => {
     expect(say('@nivel == null')).toBe('sin Nivel')
   })
 })
+
+describe('una acción con opciones, en palabras (ADR-0033)', () => {
+  it('cuántas, cómo se sacan y cada una con su salvación y su daño', () => {
+    const mechanics: Mechanics = {
+      actions: [
+        {
+          key: 'rayos',
+          label: 'Rayos oculares',
+          save: { ability: 'des', dc: '16' },
+          count: 2,
+          distinct: true,
+          pick: '1d2',
+          options: [
+            { key: 'encanto', label: 'Rayo de encanto', save: { ability: 'sab', dc: '16' } },
+            { key: 'enervante', label: 'Rayo enervante', damage: [{ formula: '4d8' }] }
+          ]
+        }
+      ]
+    }
+    const parts = mechanicsText(fiveE, 'criatura', mechanics, 'es', { data: {} })?.actions[0]?.parts ?? []
+    expect(parts).toContain('2 distintas de estas, al azar con 1d2')
+    expect(parts.some((p) => p.startsWith('1. Rayo de encanto: ') && p.includes('16'))).toBe(true)
+    expect(parts.some((p) => p.startsWith('2. Rayo enervante: ') && p.includes('4d8'))).toBe(true)
+  })
+})

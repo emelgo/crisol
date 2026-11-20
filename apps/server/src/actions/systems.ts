@@ -762,6 +762,7 @@ export const systemActions = [
         ...(input.level !== undefined ? { level: input.level } : {}),
         ...(input.mode ? { mode: input.mode } : {}),
         ...(input.critical ? { critical: true } : {}),
+        ...(input.option ? { option: input.option } : {}),
         language,
         roller: cryptoRoller
       }

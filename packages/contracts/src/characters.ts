@@ -154,7 +154,33 @@ export const characterState = z.object({
           .nullable(),
         damage: z.array(z.object({ formula: z.string(), type: z.string().optional() })),
         heal: z.string().nullable(),
-        error: z.string().optional()
+        error: z.string().optional(),
+        options: z
+          .array(
+            z.object({
+              key: z.string(),
+              label: z.string(),
+              attack: z.string().nullable(),
+              bonus: z.number().nullable(),
+              save: z
+                .object({
+                  ability: z.string(),
+                  abilityLabel: z.string(),
+                  dc: z.number(),
+                  success: z.string().optional()
+                })
+                .nullable(),
+              damage: z.array(z.object({ formula: z.string(), type: z.string().optional() })),
+              heal: z.string().nullable()
+            })
+          )
+          .optional()
+          .describe(
+            'Si es «uno de estos efectos» (los rayos del contemplador): cada opción, armada; se tira con option'
+          ),
+        count: z.int().optional().describe('Cuántas opciones se usan cada vez'),
+        distinct: z.boolean().optional().describe('Si tienen que ser distintas'),
+        pick: z.string().optional().describe('La fórmula para que salga una al azar: el puesto que sale, desde 1')
       })
     )
     .describe('Lo que puede hacer (ataques, conjuros): su ataque, su salvación y su daño, armados'),
@@ -324,7 +350,8 @@ export const rollForCharacter = defineAction({
         part: z.enum(['attack', 'damage', 'heal']),
         level: z.int().min(0).max(30).optional(),
         mode: z.string().max(60).optional(),
-        critical: z.boolean().optional()
+        critical: z.boolean().optional(),
+        option: z.string().max(60).optional().describe('De una acción con opciones (sus options), cuál se tira')
       })
       .optional(),
     visibility: z.enum(['all', 'self', 'master', 'hidden']).default('all')

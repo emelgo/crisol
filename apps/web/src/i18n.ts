@@ -330,6 +330,14 @@ export const es = {
   // La hoja de un personaje en partida
   playSheet: {
     values: 'Sus valores',
+    optionsCount_one: 'una de estas',
+    optionsCount_other: '{{count}} de estas',
+    optionsDistinct_one: 'una de estas',
+    optionsDistinct_other: '{{count}} distintas',
+    optionsOf: 'Opciones de {{what}}',
+    pick: 'Tirar {{formula}}',
+    pickOf: 'Tirar {{formula}} para ver qué sale de {{what}}',
+    picked: 'ha salido',
     rollOf: 'Tirar {{what}} ({{value}})',
     rollStat: 'Tirar {{what}}',
     rollFor: 'Tirar por {{what}}',
