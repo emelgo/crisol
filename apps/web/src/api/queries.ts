@@ -19,6 +19,9 @@ export const aiSettingsQuery = (api: ApiClient) =>
 export const aiConnectionsQuery = (api: ApiClient) =>
   queryOptions({ queryKey: ['aiConnections'], queryFn: () => api.call('listAiConnections', {}) })
 
+export const apiTokensQuery = (api: ApiClient) =>
+  queryOptions({ queryKey: ['apiTokens'], queryFn: () => api.call('listApiTokens', {}) })
+
 /** La dirección del conector de una campaña: la de Mundos más la campaña (ADR-0030) */
 export const campaignConnectorUrl = (connectorUrl: string, campaignId: string) =>
   `${connectorUrl}/campanas/${campaignId}`

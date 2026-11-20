@@ -1,6 +1,6 @@
 import type { AiConnection, Approval, Campaign, Organization, World } from '@crisol/contracts'
 import { createMemoryHistory } from '@tanstack/react-router'
-import { act, render, screen, within } from '@testing-library/react'
+import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { fakeAccountClient } from '../account/fake.ts'
@@ -168,6 +168,35 @@ describe('los ajustes de IA', () => {
     expect(screen.queryByLabelText('Dirección del conector')).toBeNull()
     expect(screen.queryByRole('radio', { name: /^Copiloto/ })).toBeNull()
     expect(await screen.findByText('Ninguna IA conectada.')).toBeDefined()
+    expect(screen.queryByRole('heading', { name: 'Tokens de acceso' })).toBeNull()
+  })
+
+  it('tokens de acceso: se crea uno, se ve una sola vez y se quita confirmándolo', async () => {
+    const { api } = renderAt('/ajustes')
+    const section = within(
+      (await screen.findByRole('heading', { name: 'Tokens de acceso' })).closest('section') as HTMLElement
+    )
+    await userEvent.type(section.getByLabelText('Nombre'), 'Carga del 5e')
+    await userEvent.selectOptions(section.getByLabelText('Caduca en'), '90 días')
+    await userEvent.click(section.getByRole('button', { name: 'Crear token' }))
+    const secret = await section.findByLabelText<HTMLInputElement>('Token «Carga del 5e»')
+    expect(secret.value).toMatch(/^crisol_pat_/)
+    expect(section.getByText('Cópialo ahora: no se volverá a ver.')).toBeDefined()
+    await waitFor(() => expect(announced()).toContain('Token «Carga del 5e» creado'))
+    const [token] = (await api.client.call('listApiTokens', {})).tokens
+    const days = (new Date(token?.expiresAt ?? 0).getTime() - Date.now()) / 86_400_000
+    expect(Math.round(days)).toBe(90)
+    // En la lista, su principio, cuándo caduca y que no se ha usado; el valor entero ya no
+    expect(await section.findByText(/crisol_pat_.{4}… · caduca el .+ · sin usar/)).toBeDefined()
+    await userEvent.click(section.getByRole('button', { name: 'Hecho' }))
+    expect(section.queryByLabelText('Token «Carga del 5e»')).toBeNull()
+
+    await userEvent.click(section.getByRole('button', { name: 'Quitar el token «Carga del 5e»' }))
+    expect(section.getByText('«Carga del 5e» dejará de valer al momento.')).toBeDefined()
+    await userEvent.click(section.getByRole('button', { name: 'Quitar' }))
+    await waitFor(() => expect(announced()).toContain('Token «Carga del 5e» quitado'))
+    expect((await api.client.call('listApiTokens', {})).tokens).toEqual([])
+    expect(section.queryByRole('listitem')).toBeNull()
   })
 
   it('cambiar el modo se guarda al momento', async () => {

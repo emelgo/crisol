@@ -9,6 +9,19 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
+## Tokens de acceso, imágenes en los capítulos y sistemas de hasta 64 MB (rama `api/tokens-e-imagenes`; migración 0094; 2026-11-20; ADR-0033)
+
+- [ ] **Tokens de acceso** (Ajustes › IA, abajo): crea uno con nombre y caducidad; sale entero una sola vez con
+  «Copiar»; en la lista, su principio, cuándo caduca y su último uso. «Quitar» pide confirmarlo y deja de valer al
+  momento. Dáselo a la IA para que cargue el 5e con un programa: lo que haga sale en el Historial como «IA (token
+  «…»)» y se deshace como siempre.
+- [ ] **Imágenes en los capítulos**: en el texto de un capítulo, `![[ruta/imagen.webp]]` enseña la imagen del sistema
+  con esa ruta (la que suba la IA con el token); si no está, «Falta la imagen…». Ancho, texto alternativo y pie, como
+  en la wiki.
+- [ ] **Sistemas grandes**: bajar y subir el archivo de un sistema de más de 10 MB (hasta 64 MB).
+- Decidido sin ti (ADR-0033): el token no sigue el modo de IA (crearlo ya es aprobarlo); solo lo ven quienes crean
+  mundos; como mucho 20 por cuenta; caducidad de 7, 30, 90 o 365 días.
+
 ## Ajustes de interfaz (ajustes tras los módulos, bloque A; rama `ajustes/tras-modulos`; 2026-11-19)
 
 En local o en staging cuando llegue el PR de esta rama.

@@ -169,6 +169,8 @@ describe('operation', () => {
     notTracked.add('bootstrap_tokens')
     // Los ajustes y la cola de la IA: lo que se aprueba pasa por el historial al hacerse
     notTracked.add('ai_settings').add('approvals')
+    // Los tokens de acceso: un ajuste de la cuenta; lo que se hace con ellos, sí pasa (ADR-0033)
+    notTracked.add('api_tokens')
     // Las pestañas y los marcadores de cada cuenta en la wiki: son suyos, no datos del mundo
     notTracked.add('wiki_preferences')
     // El estado de Yjs de cada documento: lo que cambia el texto lo cuentan las sesiones de edición (ADR-0003)

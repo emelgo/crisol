@@ -7,6 +7,18 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
+### Para retomar (2026-11-20: tokens de acceso, imágenes en los capítulos, sistemas de 64 MB)
+
+- Lo pidió la IA al empezar a cargar el 5e en el oficial: el conector no da para miles de entradas. Rama
+  `api/tokens-e-imagenes` (ADR-0033, **migración 0094** `api_tokens`, aplicada en local): tokens de acceso personales
+  en Ajustes › IA (`Authorization: Bearer crisol_pat_…` en `/api/actions` y `/api/files`, como la cuenta, al historial
+  como «IA (token «…»)»; `apps/server/src/auth/api-tokens.ts`), `![[ruta]]` en un capítulo es una imagen del sistema
+  (`SystemImagesContext` en `wiki/file-embed.tsx`) y `FILE_BYTES` a 64 MB. Las instrucciones del MCP lo explican.
+- Pruebas: integración `api-tokens.integration.test.ts`, web (`ai-settings`, `reader`), editor (ruta con carpetas) y
+  e2e en `conector.spec.ts`. Lo que tiene que probar Enrique, en `tasks/probar.md`.
+- **Siguiente**: batería entera, PR a `main` (`[skip ci]`) y desplegar al oficial con `scripts/desplegar-produccion.sh`
+  (migra solo, con copia antes).
+
 ### Para retomar (2026-11-19, noche: el Crisol oficial publicado)
 
 - **Oficial**: https://app.crisol.144-91-122-245.sslip.io (Compose `crisol-prod` en `~/crisol-prod`, puerto 8150 en loopback,

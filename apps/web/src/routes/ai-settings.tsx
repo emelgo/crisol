@@ -15,36 +15,17 @@ import { FormError } from '../components/field.tsx'
 import { focusAfterRemoving, focusOnMount, useReturnFocus } from '../components/focus.ts'
 import form from '../components/form.module.css'
 import styles from '../components/list.module.css'
+import { since } from '../components/since.ts'
 import settings from './ai-settings.module.css'
+import { ApiTokens } from './api-tokens.tsx'
 import { clientLabel } from './consent.tsx'
 
 const MODES: AiMode[] = ['readOnly', 'assistant', 'copilot']
 
-/** «Hace 5 minutos», «ayer»… */
-const relative = new Intl.RelativeTimeFormat('es', { numeric: 'auto' })
-const STEPS: Array<[Intl.RelativeTimeFormatUnit, number]> = [
-  ['minute', 60],
-  ['hour', 60],
-  ['day', 24],
-  ['week', 7],
-  ['month', 4.35],
-  ['year', 12]
-]
-
-export function since(at: string, now = Date.now()): string {
-  let value = (new Date(at).getTime() - now) / 1000
-  if (Math.abs(value) < 60) return relative.format(0, 'second')
-  value /= 60
-  for (const [unit, next] of STEPS) {
-    if (Math.abs(value) < next || unit === 'year') return relative.format(Math.round(value), unit)
-    value /= next
-  }
-  return relative.format(Math.round(value), 'year')
-}
-
 /**
  * Los ajustes de la IA, dentro de «Ajustes» (docs/diseno.md): el conector de Mundos (quien crea mundos), el modo (quien
- * dirige algo) y tus conexiones, con su último uso y «Quitar» (ADR-0030). El de cada campaña está en su Inicio
+ * dirige algo), tus conexiones, con su último uso y «Quitar» (ADR-0030), y los tokens de acceso (quien crea mundos,
+ * ADR-0033). El conector de cada campaña está en su Inicio
  */
 export function AiSettings({
   creates = false,
@@ -135,6 +116,7 @@ export function AiSettings({
           )}
           {setMode.isSuccess && <p>{t('ai.saved')}</p>}
           <Connections />
+          {creates && <ApiTokens />}
         </>
       )}
       <FormError message={current.error || setMode.error ? errorText(current.error ?? setMode.error) : null} />

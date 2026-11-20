@@ -83,3 +83,30 @@
 .campaigns a:hover {
   text-decoration: underline;
 }
+
+/* Un token recién creado: el valor para copiar, el aviso de que no se volverá a ver y «Hecho» */
+.secret {
+  composes: frame from "../components/frame.module.css";
+  display: grid;
+  justify-items: start;
+  gap: var(--space-2);
+  margin-block: var(--space-4);
+  padding: var(--space-4);
+}
+
+.secret > :first-child {
+  justify-self: stretch;
+}
+
+/* Crear un token: el nombre, la caducidad y el botón, en una fila (en lo estrecho, una debajo de otra) */
+.newToken {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--space-3);
+  margin-block-start: var(--space-4);
+}
+
+.newToken > :first-child {
+  flex: 1 1 14rem;
+}

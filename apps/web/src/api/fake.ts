@@ -2,6 +2,7 @@
 import type {
   AiConnection,
   AiMode,
+  ApiToken,
   Approval,
   Campaign,
   CampaignTableView,
@@ -366,6 +367,7 @@ export function fakeApi(
   const approvals = [...(options.approvals ?? [])]
   const aiSettings = () => ({ mode: aiMode, connectorUrl: 'https://crisol.test/mcp' })
   let aiConnections = [...(options.aiConnections ?? [])]
+  let apiTokens: Array<ApiToken> = []
   // Como el servidor: lo aprobado se hace (aquí, sin más) y lo rechazado no
   const decide = (approvalId: string, status: 'done' | 'rejected') => {
     const found = approvals.find((a) => a.id === approvalId)
@@ -1911,6 +1913,26 @@ export function fakeApi(
     removeAiConnection: ({ clientId, url }) => {
       aiConnections = aiConnections.filter((c) => c.clientId !== clientId || c.url !== url)
       return { connections: aiConnections.map((c) => ({ ...c })) }
+    },
+    listApiTokens: () => ({ tokens: apiTokens.map((t) => ({ ...t })) }),
+    createApiToken: ({ name, days }) => {
+      const now = Date.now()
+      const secret = `crisol_pat_${crypto.randomUUID().replaceAll('-', '')}`
+      const token: ApiToken = {
+        id: crypto.randomUUID(),
+        name,
+        prefix: secret.slice(0, 15),
+        createdAt: new Date(now).toISOString(),
+        expiresAt: new Date(now + days * 86_400_000).toISOString(),
+        lastUsedAt: null
+      }
+      apiTokens = [...apiTokens, token]
+      return { token: { ...token }, secret }
+    },
+    deleteApiToken: ({ tokenId }) => {
+      if (!apiTokens.some((t) => t.id === tokenId)) throw new ApiError('NOT_FOUND', 404)
+      apiTokens = apiTokens.filter((t) => t.id !== tokenId)
+      return { tokens: apiTokens.map((t) => ({ ...t })) }
     },
     approve: ({ approvalId }) => decide(approvalId, 'done'),
     reject: ({ approvalId }) => decide(approvalId, 'rejected'),

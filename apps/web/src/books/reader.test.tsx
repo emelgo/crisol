@@ -134,6 +134,24 @@ describe('el lector de capítulos (ADR-0025)', () => {
     await waitFor(() => expect(screen.getByLabelText('Título del capítulo')).toHaveProperty('value', 'El combate'))
   })
 
+  it('una imagen del sistema en el texto (![[ruta]]), por su ruta; si falta, lo dice', async () => {
+    await renderBook(BOOK, {
+      markdown: 'Antes.\n\n![[systems/5e/tokens/trasgo.webp|Un trasgo|300]]\n\n![[iconos/no-esta.webp]]\n'
+    })
+    const image = (await screen.findByRole('img', { name: 'Un trasgo' })) as HTMLImageElement
+    expect(image.getAttribute('src')).toBe(
+      `/api/system-images/${OWN.id}?path=${encodeURIComponent('systems/5e/tokens/trasgo.webp')}`
+    )
+    expect(image.style.inlineSize).toBe('300px')
+    // Sin texto alternativo es decorativa (sin papel de imagen): se busca por su dirección
+    const missing = document.querySelector('img[src*="no-esta"]')
+    if (!missing) throw new Error('falta la imagen')
+    act(() => {
+      missing.dispatchEvent(new Event('error'))
+    })
+    expect(await screen.findByText('Falta la imagen «iconos/no-esta.webp»')).toBeDefined()
+  })
+
   it('pulsar una sección del índice va a su título y la marca como la que se lee', async () => {
     const scroll = vi.fn()
     Element.prototype.scrollIntoView = scroll

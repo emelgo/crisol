@@ -64,7 +64,7 @@ export const putSystemImages = defineAction({
   name: 'putSystemImages',
   kind: 'write',
   description:
-    'Sube imágenes de un sistema de la cuenta (las de un zip de Foundry), por su ruta (la que nombra su contenido en img), con su licencia y su crédito. Las que ya estaban se cambian. En tandas: como mucho 6 MB por petición. Solo imágenes (png, jpeg, webp, gif, avif o svg)',
+    'Sube imágenes de un sistema de la cuenta por su ruta, con su licencia y su crédito: las que nombra su contenido en img (retratos, fichas, iconos) o las que se incrustan en los capítulos de sus libros con ![[ruta]]. Las que ya estaban se cambian. En tandas: como mucho 6 MB y 100 imágenes por petición. Solo imágenes (png, jpeg, webp, gif, avif o svg)',
   input: z.object({
     systemId: z.uuid(),
     images: z

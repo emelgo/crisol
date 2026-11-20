@@ -19,6 +19,7 @@ import { withContentEmbedView } from '../wiki/content-embed.tsx'
 import { withContentLinkView } from '../wiki/content-link.tsx'
 import editorStyles from '../wiki/editor.module.css'
 import { EmptyHint } from '../wiki/editor.tsx'
+import { SystemImagesContext, withFileEmbedView } from '../wiki/file-embed.tsx'
 import { GhostLine } from '../wiki/ghost-line.ts'
 import type { PageLinks } from '../wiki/links-context.ts'
 import { LinkSuggest } from '../wiki/page-links.tsx'
@@ -72,6 +73,7 @@ function chapterView(node: Node) {
   if (node.name === 'callout') return withCalloutView(node)
   if (node.name === 'contentLink') return withContentLinkView(node)
   if (node.name === 'contentEmbed') return withContentEmbedView(node)
+  if (node.name === 'fileEmbed') return withFileEmbedView(node)
   return withSheetView(node)
 }
 
@@ -83,7 +85,8 @@ export function ChapterText({
   onDirty,
   onClean,
   onEditor,
-  systemId
+  systemId,
+  imagesOf
 }: {
   markdown: string
   editable: boolean
@@ -98,6 +101,8 @@ export function ChapterText({
   onEditor?: (editor: Editor | null) => void
   /** Su sistema: lo que se enlaza o se incrusta con `[[@` y `![[@` sale de su compendio */
   systemId?: string
+  /** El sistema de sus imágenes: `![[ruta]]` es una de ellas (también al leerlo) */
+  imagesOf?: string
 }) {
   const { t } = useTranslation()
   const announce = useAnnounce()
@@ -225,15 +230,17 @@ export function ChapterText({
   )
   return (
     <LocalSeparatesContext.Provider value={local.current}>
-      <div className={editorStyles.body}>
-        <EditorContent editor={editor} />
-        {editable && editor && (
-          <>
-            <FormatMenu editor={editor} onSecret={() => makeLocalSeparate(editor, 'secret', local.current)} />
-            <TableMenu editor={editor} />
-          </>
-        )}
-      </div>
+      <SystemImagesContext.Provider value={imagesOf ?? null}>
+        <div className={editorStyles.body}>
+          <EditorContent editor={editor} />
+          {editable && editor && (
+            <>
+              <FormatMenu editor={editor} onSecret={() => makeLocalSeparate(editor, 'secret', local.current)} />
+              <TableMenu editor={editor} />
+            </>
+          )}
+        </div>
+      </SystemImagesContext.Provider>
     </LocalSeparatesContext.Provider>
   )
 }
