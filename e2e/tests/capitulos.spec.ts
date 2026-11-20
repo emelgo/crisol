@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { expect, test } from '@playwright/test'
-import { campaignLink, freshOwner, import5e, newPlayer, settled } from './ayudas.ts'
+import { campaignLink, import5e, newPlayer, settled } from './ayudas.ts'
 
 const COMBATE = `Cada asalto dura seis segundos.
 
@@ -131,10 +131,13 @@ test('los capítulos de un libro: el dueño del sistema los escribe y los ordena
 })
 
 test('el aspecto de libro (ADR-0033): recuadros con título, citas, imágenes con pie y crédito, y enlaces entre capítulos', async ({
-  page
+  page,
+  browser
 }) => {
   test.slow()
-  await freshOwner(page)
+  const invitation = await campaignLink(page)
+  const campaignId = new URL(page.url()).pathname.split('/campanas/')[1]?.split('/')[0] ?? ''
+  const worldId = new URL(page.url()).pathname.split('/')[2] ?? ''
   const five = await import5e(page)
   const api = async (name: string, data: object) => {
     const response = await page.request.post(`/api/actions/${name}`, { data })
@@ -159,6 +162,7 @@ test('el aspecto de libro (ADR-0033): recuadros con título, citas, imágenes co
     markdown: [
       '> [!cita]',
       '> Esta historia comenzó hace 50 años, y tú formas parte de ella.',
+      '>',
       '> — Jeremy Crawford',
       '',
       '![[book/cripta.svg|Una cripta|500]]',
@@ -175,6 +179,7 @@ test('el aspecto de libro (ADR-0033): recuadros con título, citas, imágenes co
       '> El viento silba entre las lápidas.'
     ].join('\n')
   })
+  await api('updateCampaign', { campaignId, system: five })
   await page.goto(`/sistemas/${five}/libros/srd51?vista=capitulos&capitulo=${first.id}`)
   // Quien lo escribe, su título en su sitio, para cambiarlo
   await expect(page.getByRole('textbox', { name: 'Título del recuadro (Nota)' })).toHaveValue('Aprender viendo jugar')
@@ -192,6 +197,16 @@ test('el aspecto de libro (ADR-0033): recuadros con título, citas, imágenes co
   await page.getByRole('link', { name: 'sus encuentros' }).click()
   await expect(page).toHaveURL(new RegExp(`capitulo=${second.id}`))
   await expect(page.getByLabel('Título del capítulo')).toHaveValue('Capítulo 2: Más reglas')
+
+  // Como lo lee una jugadora: sin rótulos en los recuadros sin título, el pie y el crédito bajo la imagen
+  const ana = await newPlayer(browser, invitation, 'Ana')
+  await ana.goto(`/mundos/${worldId}/campanas/${campaignId}/libros/srd51?capitulo=${first.id}`)
+  await expect(ana.getByText('Aprender viendo jugar')).toBeVisible()
+  await expect(ana.getByText('No hace falta una mesa mágica, pero ¿a que sería divertido?')).toBeVisible()
+  await expect(ana.getByText('— Jeremy Crawford')).toHaveCSS('text-align', 'right')
+  await settled(ana)
+  if (process.env.CRISOL_CAPTURAS)
+    await ana.screenshot({ path: `${process.env.CRISOL_CAPTURAS}/libro-jugadora.png`, fullPage: true })
 
   // El compendio, con el nombre como en un bloque de estadísticas
   await page.goto(`/sistemas/${five}/compendio?ver=lobo_2024`)

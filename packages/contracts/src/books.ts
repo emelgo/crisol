@@ -274,7 +274,7 @@ const chapterText = z
   .string()
   .max(400_000)
   .describe(
-    'En Markdown de Obsidian; una imagen del sistema, por su ruta: ![[ruta/imagen.webp|texto alternativo|ancho]] y, en la línea siguiente, su pie en cursiva (*El pie*); el crédito del ilustrador sale solo (el de la imagen). Otro capítulo, otro libro o una sección: [[Capítulo 4: Crear aventuras]] (o solo [[Capítulo 4]]), [[Manual del jugador]], [[Manual del jugador#Capítulo 1]], [[#Una sección]], [[Capítulo 4#Encuentros]], con |texto propio'
+    'En Markdown de Obsidian; una imagen del sistema, por su ruta: ![[ruta/imagen.webp|texto alternativo|ancho]] y, en la línea siguiente, su pie en cursiva (*El pie*); el crédito del ilustrador sale solo (el de la imagen). Un recuadro con su título: > [!nota] Su título (también consejo, aviso, peligro o leer, para leer en voz alta); una cita: > [!cita] con sus líneas y, tras una línea > vacía, quien la dice en su propio párrafo (> — Autor). Otro capítulo, otro libro o una sección: [[Capítulo 4: Crear aventuras]] (o solo [[Capítulo 4]]), [[Manual del jugador]], [[Manual del jugador#Capítulo 1]], [[#Una sección]], [[Capítulo 4#Encuentros]], con |texto propio'
   )
 
 export const listBookChapters = defineAction({

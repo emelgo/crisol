@@ -13,6 +13,8 @@
   --book-readaloud-bg: #28303a;
   --book-shadow: rgb(152 142 124);
   --book-serif: "Times New Roman", "Liberation Serif", Times, serif;
+  /* $rgb-link-blue--night */
+  --book-link: #7db6e8;
 
   line-height: 1.6;
 }
@@ -81,6 +83,16 @@
   font-variant: small-caps;
 }
 
+/* Sin título, al leerlo, sin rótulo (en 5etools, un recuadro sin nombre no lo lleva); quien escribe ve dónde ponerlo */
+.book.book [data-callout] > div:first-child:not([data-titled]):not(:has(input)) {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 /* Lo que sigue a un párrafo dentro de un recuadro, con sangría */
 .book.book [data-callout] p + p {
   text-indent: 0.7em;
@@ -107,6 +119,18 @@
 
 .book.book [data-callout="quote"] p {
   margin-block-end: 5px;
+  text-indent: 0;
+}
+
+/* Quien la dice (rd__quote-by): su párrafo, el último, a la derecha */
+.book.book [data-callout="quote"] p:last-of-type:not(:first-of-type) {
+  text-align: right;
+}
+
+/* Los enlaces, del azul de 5etools */
+.book.book a {
+  color: var(--book-link);
+  text-decoration-color: color-mix(in srgb, var(--book-link) 45%, transparent);
 }
 
 /* Las imágenes (rd__wrp-image, rd__image-title, rd__image-credit): centradas, el pie en cursiva subrayado */
