@@ -1,0 +1,76 @@
+/* La ficha de una entrada, como el encabezado de un objeto o un conjuro en 5etools */
+.card {
+  display: grid;
+  gap: var(--space-2);
+  margin-block-end: var(--space-4);
+}
+
+/* Su línea de tipo (rd__subtitle): en cursiva, bajo el nombre */
+.line {
+  margin: 0;
+  font-style: italic;
+}
+
+/* El bloque de datos, entre dos rayas finas, a dos lados */
+.block {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-1) var(--space-6);
+  padding-block: var(--space-2);
+  border-block: 1px solid var(--line-soft);
+}
+
+.side {
+  display: grid;
+  align-content: start;
+  gap: 2px;
+}
+
+.side p {
+  margin: 0;
+}
+
+.right {
+  text-align: end;
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  gap: var(--space-2) var(--space-6);
+  margin: 0;
+}
+
+.fields dt {
+  color: var(--color-muted);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.fields dd {
+  margin: 2px 0 0;
+}
+
+/* En la vista previa, más junto */
+.card[data-compact] {
+  gap: var(--space-1);
+  margin-block-end: var(--space-2);
+}
+
+.card[data-compact] .fields {
+  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+  gap: var(--space-1) var(--space-4);
+}
+
+/* En lo estrecho, un lado debajo del otro */
+@media (max-width: 30rem) {
+  .block {
+    grid-template-columns: 1fr;
+  }
+
+  .right {
+    text-align: start;
+  }
+}

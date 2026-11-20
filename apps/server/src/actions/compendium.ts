@@ -35,6 +35,7 @@ import {
   contentTables,
   creatureView,
   dataWithoutSecrets,
+  entryCard,
   type Language,
   type Mechanics,
   mechanicsText,
@@ -706,6 +707,8 @@ async function contentView(ctx: ActionContext, found: Scope, wanted: string[], c
           play: mechanicsText(document, item.type, item.mechanics as Mechanics | undefined, choices.language, {
             data: item.data as Record<string, unknown>
           }),
+          // Su ficha como en 5etools, si su tipo la tiene (con lo que se ve: sin sus secretos)
+          card: entryCard(document, { type: item.type, data: copy.data as Record<string, unknown> }, choices.language),
           ...(item.img && images.has(item.img)
             ? {
                 image: {

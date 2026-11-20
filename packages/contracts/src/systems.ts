@@ -468,7 +468,8 @@ export const compendiumType = z.object({
       key: z.string(),
       label: z.string(),
       kind: z.enum(['text', 'number', 'boolean', 'list', 'choice', 'dice']),
-      options: z.array(z.object({ value: z.string(), label: z.string() })).optional()
+      options: z.array(z.object({ value: z.string(), label: z.string() })).optional(),
+      inCard: z.boolean().optional().describe('Sale en la ficha del tipo: en la lista no se repite')
     })
   ),
   text: z.string().nullable().describe('El campo de su texto largo (la descripción)'),
@@ -614,6 +615,16 @@ export const compendiumItem = contentItem.extend({
   versions: z.array(z.object({ key: z.string(), edition: z.string().nullable(), legacy: z.boolean() })),
   granted: z.array(granted),
   play: mechanicsText.nullable().describe('Su mecánica, en palabras'),
+  card: z
+    .object({
+      line: z.string().nullable().describe('Su línea de tipo, en cursiva bajo el nombre'),
+      left: z.array(z.string()).describe('El bloque de datos, a la izquierda (Markdown de una línea)'),
+      right: z.array(z.string()).describe('Y a la derecha'),
+      fields: z.array(z.object({ label: z.string(), value: z.string() })).describe('Los demás campos con valor')
+    })
+    .nullable()
+    .optional()
+    .describe('Su ficha, si su tipo la tiene (types.<tipo>.card), como en 5etools'),
   image: z
     .object({ credit: z.string().nullable(), license: z.string() })
     .optional()

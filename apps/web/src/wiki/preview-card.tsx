@@ -9,17 +9,21 @@ import { useQuery } from '@tanstack/react-query'
 import { useApi } from '../api/context.tsx'
 import bookLook from '../books/book-look.module.css'
 import { ContentText } from '../campaign/content-text.tsx'
+import { EntryCard } from '../campaign/entry-card.tsx'
 import { type ContentScope, useContentScope, useLinkedEntry } from './content-scope.tsx'
 import styles from './preview-card.module.css'
 
-/** El texto principal de una entrada: el más largo de sus textos (su descripción, su bloque de estadísticas) */
+/**
+ * El texto principal de una entrada: el más largo de sus textos (su descripción, su bloque de estadísticas); una sola
+ * palabra (una clave, «espada_larga») no lo es
+ */
 export function bodyOf(data: Record<string, unknown>, language: 'es' | 'en' = 'es') {
   let best = ''
   for (const [key, value] of Object.entries(data)) {
     if (key === 'name') continue
     const isText = typeof value === 'string' || (value && typeof value === 'object' && !Array.isArray(value))
     const text = isText ? textOf(value as Text, language) : ''
-    if (typeof text === 'string' && text.length > best.length) best = text
+    if (typeof text === 'string' && /\s/.test(text.trim()) && text.length > best.length) best = text
   }
   return best
 }
@@ -48,6 +52,8 @@ export function EntryPreview({
     <>
       <span className={styles.kind}>{entry.typeLabel}</span>
       <strong className={`${styles.name} ${bookLook.name}`}>{entry.name}</strong>
+      {/* Su ficha, como en su página (si su tipo la tiene) */}
+      {item?.card && <EntryCard card={item.card} compact />}
       {body && (
         <div className={bookLook.book}>
           <ContentText text={body} />

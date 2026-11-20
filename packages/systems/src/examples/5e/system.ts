@@ -700,6 +700,21 @@ export const fiveE = {
           { signed: true }
         ),
         descripcion: description
+      },
+      // Su ficha en el compendio, como en 5etools
+      card: {
+        line: t('Arma {categoria}{distancia: a distancia}', '{categoria}{distancia: ranged} weapon'),
+        left: [t('{peso} lb., {coste} po', '{peso} lb., {coste} gp')],
+        right: [
+          t(
+            '{dano} {tipo_dano}{dano_versatil: (a dos manos, {dano_versatil})}',
+            '{dano} {tipo_dano}{dano_versatil: (two-handed, {dano_versatil})}'
+          ),
+          '{propiedades}{alcance_distancia: ({alcance_distancia} pies)}',
+          t('Maestría: {maestria}', 'Mastery: {maestria}'),
+          'bono'
+        ],
+        hidden: ['equipado', 'cantidad', 'base']
       }
     },
     armadura: {

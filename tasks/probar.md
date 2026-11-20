@@ -9,6 +9,15 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
+## La ficha de cada tipo en el compendio (rama `compendio/ficha-por-tipo`; sin migración; 2026-11-20; ADR-0033)
+
+- [ ] **En el 5e de ejemplo**: una espada larga dice «Arma Marcial» en cursiva bajo el nombre, «3 lb., 15 po» a la
+  izquierda y el daño (con su botón de tirar), las propiedades y la maestría a la derecha; no salen «Equipada» ni
+  «Cantidad».
+- [ ] **La misma ficha** en la vista previa al pasar el ratón por un `[[@…]]` y al desplegar una entrada incrustada
+  (`![[@…]]`).
+- [ ] **En el D&D 2024** (cuando la IA ponga `card` en sus tipos): objetos mágicos, conjuros y armas como en 5etools.
+
 ## Libros más fluidos y vista previa de capítulos (rama `libros/vista-previa-capitulo`; sin migración; 2026-11-20)
 
 - [ ] **Pasar de capítulo**: en un libro grande, abrir capítulos desde el índice y con «Siguiente»: se abren mucho antes

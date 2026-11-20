@@ -117,3 +117,37 @@ test('la campaña en su vista: la jugadora entra, abre el compendio, busca «fir
   await nav.getByRole('link', { name: 'Crisol' }).click()
   await expect(player.getByRole('heading', { level: 1, name: 'Mis mundos' })).toBeVisible()
 })
+
+test('la ficha de cada tipo (ADR-0033): línea de tipo, bloque de datos a dos lados y sin lo de la hoja, también en la vista previa', async ({
+  page
+}) => {
+  await campaignLink(page)
+  const five = await import5e(page)
+  await page.goto(`/sistemas/${five}/compendio?ver=espada_larga_2024`)
+  const article = page.getByRole('article', { name: 'Espada larga' })
+  await expect(article.getByText('Arma Marcial', { exact: true })).toBeVisible()
+  await expect(article.getByText('3 lb., 15 po')).toBeVisible()
+  await expect(article.getByText('Maestría: Debilitar')).toBeVisible()
+  // El daño, para tirarlo
+  await expect(article.getByRole('button', { name: /1d8/ }).first()).toBeVisible()
+  // Lo de la hoja no sale; lo de la ficha no se repite en la lista
+  await expect(article.getByText('Equipada')).toHaveCount(0)
+  await expect(article.getByText('Coste (po)')).toHaveCount(0)
+  await accessible(page)
+  if (process.env.CRISOL_CAPTURAS) await page.screenshot({ path: `${process.env.CRISOL_CAPTURAS}/ficha-arma.png` })
+
+  // La misma ficha en la vista previa de un enlace desde un capítulo
+  const chapter = await (
+    await page.request.post('/api/actions/saveChapter', {
+      data: { systemId: five, source: 'srd521', title: 'Armas', markdown: 'Lleva una [[@espada_larga_2024]].' }
+    })
+  ).json()
+  await page.goto(`/sistemas/${five}/libros/srd521?vista=capitulos&capitulo=${chapter.id}`)
+  await page.getByRole('link', { name: 'Espada larga' }).hover()
+  const preview = page.getByRole('tooltip')
+  await expect(preview.getByText('Arma Marcial', { exact: true })).toBeVisible()
+  await expect(preview.getByText('Maestría: Debilitar')).toBeVisible()
+  await settled(page)
+  if (process.env.CRISOL_CAPTURAS)
+    await page.screenshot({ path: `${process.env.CRISOL_CAPTURAS}/ficha-vista-previa.png` })
+})

@@ -5,6 +5,7 @@
 
 import { DiceSyntaxError, parseDice } from '@crisol/dice'
 import { type core, z } from 'zod'
+import { templateKeys } from './card-template.ts'
 import { checkCompendium } from './compendium-check.ts'
 import {
   type Field,
@@ -18,7 +19,7 @@ import {
 import { checkFormulas } from './formulas/system.ts'
 import { own } from './own.ts'
 import { checkSheet } from './sheet.ts'
-import { type Language, textOf } from './text.ts'
+import { type Language, type Text, textOf } from './text.ts'
 
 export interface Problem {
   /** Para la IA y el JSON: types.personaje.fields.defensa.formula */
@@ -106,6 +107,11 @@ const PARTS: Record<string, string> = {
   to: 'Apunta a',
   of: 'Lleva',
   modifiers: 'Bonos',
+  card: 'Ficha',
+  line: 'Línea de tipo',
+  left: 'Izquierda',
+  right: 'Derecha',
+  hidden: 'Ocultos',
   target: 'Objetivo',
   value: 'Valor',
   when: 'Cuándo',
@@ -343,6 +349,27 @@ function checkReferences(
     }
     if (count > LIMITS.fieldsPerType)
       add(['types', typeKey, 'fields'], `Como mucho, ${LIMITS.fieldsPerType} campos por tipo`)
+    // Su ficha en el compendio: lo que nombra son campos suyos
+    const card = type.card
+    if (card) {
+      const known = (k: string) => k in type.fields
+      const templates: [Segment[], Text | undefined][] = [
+        [['types', typeKey, 'card', 'line'], card.line],
+        ...(card.left ?? []).map((t, i): [Segment[], Text] => [['types', typeKey, 'card', 'left', i], t]),
+        ...(card.right ?? []).map((t, i): [Segment[], Text] => [['types', typeKey, 'card', 'right', i], t])
+      ]
+      for (const [at, template] of templates) {
+        if (template === undefined) continue
+        for (const each of typeof template === 'string' ? [template] : Object.values(template)) {
+          if (!each) continue
+          const keys = each.includes('{') ? templateKeys(each) : [each.trim()]
+          for (const k of keys) if (!known(k)) add(at, `«${typeKey}» no tiene el campo «${k}»`)
+        }
+      }
+      card.hidden?.forEach((k, i) => {
+        if (!known(k)) add(['types', typeKey, 'card', 'hidden', i], `«${typeKey}» no tiene el campo «${k}»`, 'warning')
+      })
+    }
     type.modifiers?.forEach((modifier, i) => {
       if (type.document !== 'item') add(['types', typeKey, 'modifiers', i], 'Solo los objetos dan bonos')
       const at = ['types', typeKey, 'modifiers', i, 'target']
