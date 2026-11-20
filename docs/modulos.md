@@ -7,6 +7,16 @@ queda, qué se recorta y qué se descarta. Las decisiones se apuntan aquí.
 
 Actualiza esta sección al acabar cada sesión: es lo primero que lee la siguiente.
 
+### Para retomar (2026-11-20, mediodía: la carga del D&D 2024, en el oficial)
+
+- En `main` y en el oficial: PR #123 (tokens de acceso, `![[ruta]]` en los capítulos, 64 MB; migración 0094) y PR #124
+  (imágenes del sistema por el MCP, portada desde una imagen del sistema, libros y capítulos solo para el máster,
+  20 000 entradas, `[[@tipo/Nombre]]` y `[[@clave]]`, filas de tabla y listas en dos idiomas; migración 0095). Todo en
+  el ADR-0033 y en `tasks/probar.md`.
+- **Siguiente**: la IA carga el D&D 2024 con un token. Pendiente de diseñar con Enrique (tanda C de lo que pidió la IA):
+  acciones con opciones (los rayos del contemplador), tope en un aumento elegido (los dones épicos, hasta 30) y el
+  lanzamiento de conjuros de las criaturas; mientras, van como texto.
+
 ### Para retomar (2026-11-20: tokens de acceso, imágenes en los capítulos, sistemas de 64 MB)
 
 - Lo pidió la IA al empezar a cargar el 5e en el oficial: el conector no da para miles de entradas. Rama
