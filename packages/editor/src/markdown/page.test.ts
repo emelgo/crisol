@@ -394,4 +394,18 @@ describe('el Markdown de una página', () => {
     expect(read.properties).toEqual([])
     expect(read.body.content?.map((b) => b.type)).toEqual(['horizontalRule', 'paragraph'])
   })
+
+  it('[[#Sección]], como en Obsidian: un enlace sin título a una sección de donde se escribe', () => {
+    const body = pageFromMarkdown('Ver [[#La iniciativa|la iniciativa]] y [[#Combate]].').body
+    const links = body.content?.[0]?.content?.filter((n) => n.type === 'pageLink')
+    expect(links?.map((n) => n.attrs)).toEqual([
+      { pageId: null, title: '', anchor: 'La iniciativa', label: 'la iniciativa' },
+      { pageId: null, title: '', anchor: 'Combate', label: null }
+    ])
+    expect(pageToMarkdown({ properties: [], body, separate: () => null })).toBe(
+      'Ver [[#La iniciativa|la iniciativa]] y [[#Combate]].\n'
+    )
+    // Sin título ni sección no es un enlace
+    expect(pageFromMarkdown('[[]]').body.content?.[0]?.content?.[0]?.type).toBe('text')
+  })
 })

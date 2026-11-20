@@ -47,6 +47,13 @@ const sectionsOf = (editor: Editor): Section[] => {
   return found
 }
 
+/** Un enlace de un capítulo, resuelto: a qué capítulo y a qué sección */
+type ResolvedLink = { chapter: { id: string; source: string }; section: string | null }
+
+/** Si un título de sección es el pedido (sin mayúsculas ni espacios de más) */
+const sameTitle = (a: string, b: string) =>
+  a.trim().replace(/\s+/g, ' ').toLocaleLowerCase('es') === b.trim().replace(/\s+/g, ' ').toLocaleLowerCase('es')
+
 const reducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
 
 export function BookReader({
@@ -56,6 +63,7 @@ export function BookReader({
   chapterId,
   onChapter,
   chapterHref,
+  bookHref,
   head,
   worldId
 }: {
@@ -68,6 +76,8 @@ export function BookReader({
   onChapter: (id: string | null) => void
   /** Su dirección, para que los enlaces se abran también en otra pestaña */
   chapterHref: (id: string) => string
+  /** La de un capítulo de cualquier libro del sistema (los enlaces de un capítulo a otro libro, ADR-0033) */
+  bookHref: (source: string, chapterId: string) => string
   /** El título del libro y sus pestañas, en el sitio del título de todas las pantallas */
   head: ReactNode
   /** El mundo de la campaña (para abrir en su compendio lo que se enlaza) */
@@ -160,6 +170,20 @@ export function BookReader({
     pinned.current = Date.now() + 900
     element.scrollIntoView({ block: 'start', behavior: reducedMotion() ? 'auto' : 'smooth' })
   }
+  // Ir a una sección por su nombre (un enlace `[[#Sección]]` o la que trae la dirección tras «#»)
+  const goToSectionNamed = (name: string) => {
+    const index = sections.findIndex((section) => sameTitle(section.text, name))
+    if (index >= 0) goToSection(index)
+    return index >= 0
+  }
+  // La que pide la dirección al llegar (de un enlace desde otro capítulo), en cuanto se ven sus secciones
+  const wanted = useRef<string | null>(null)
+  useEffect(() => {
+    wanted.current = decodeURIComponent(window.location.hash.slice(1)) || null
+  }, [currentId])
+  useEffect(() => {
+    if (wanted.current && sections.length > 0 && goToSectionNamed(wanted.current)) wanted.current = null
+  })
   const follow = (id: string) => (event: MouseEvent<HTMLAnchorElement>) => {
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return
     event.preventDefault()
@@ -285,6 +309,12 @@ export function BookReader({
               count={chapters.length}
               chapterIds={chapters.map((c) => c.id)}
               onEditor={setEditor}
+              hrefOf={(link) =>
+                link.chapter.id === currentId && link.section
+                  ? `#${encodeURIComponent(link.section)}`
+                  : `${link.chapter.source === source ? chapterHref(link.chapter.id) : bookHref(link.chapter.source, link.chapter.id)}${link.section ? `#${encodeURIComponent(link.section)}` : ''}`
+              }
+              onSection={goToSectionNamed}
               onChanged={refresh}
               onDeleted={() => {
                 void refresh()
@@ -388,6 +418,8 @@ function OpenChapter({
   count,
   chapterIds,
   onEditor,
+  hrefOf,
+  onSection,
   onChanged,
   onDeleted
 }: {
@@ -400,6 +432,10 @@ function OpenChapter({
   count: number
   chapterIds: readonly string[]
   onEditor: (editor: Editor | null) => void
+  /** La dirección a la que lleva un enlace resuelto de su texto */
+  hrefOf: (link: ResolvedLink) => string
+  /** Ir a una sección de este capítulo, por su nombre */
+  onSection: (name: string) => boolean
   onChanged: () => Promise<void>
   onDeleted: () => void
 }) {
@@ -439,7 +475,12 @@ function OpenChapter({
           ...changes
         })
         version.current = result.version
-        queryClient.setQueryData(queryKey, result)
+        // Sus enlaces y sus créditos solo llegan al leerlo: se quedan los de antes
+        queryClient.setQueryData(queryKey, (old: Chapter | undefined) => ({
+          ...result,
+          ...(old?.links ? { links: old.links } : {}),
+          ...(old?.credits ? { credits: old.credits } : {})
+        }))
         saved.current = true
         setState('saved')
         if (changes.title !== undefined || changes.master !== undefined) await onChanged()
@@ -585,6 +626,18 @@ function OpenChapter({
           onChange={(markdown) => save({ markdown })}
           onEditor={onEditor}
           imagesOf={systemId}
+          credits={chapter.data.credits ?? {}}
+          linkTo={(target) => {
+            const link = chapter.data?.links?.find((l) => l.target === target)
+            if (!link?.chapter) return null
+            const resolved = { chapter: link.chapter, section: link.section }
+            return {
+              href: hrefOf(resolved),
+              // Una sección de este mismo capítulo: se va a ella sin cambiar de página
+              here: resolved.chapter.id === chapterId && resolved.section ? resolved.section : null
+            }
+          }}
+          onSection={onSection}
           {...(editable ? { systemId } : {})}
         />
       </div>

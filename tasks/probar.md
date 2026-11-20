@@ -16,6 +16,9 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
 - [ ] **Conjuros de una criatura**: en su hoja, «Lanzamiento de conjuros» con su CD y su ataque; a voluntad y 1/día cada
   uno, con los usos que se gastan y vuelven al descansar; «Daño» o «Ataque» tira el conjuro con la CD de la criatura.
 - [ ] **Dones épicos**: +1 a una característica no pasa de 30.
+- [ ] **Pies, créditos y enlaces en los capítulos** (cuando la IA repase los libros): bajo cada imagen, su pie y
+  «✎ quien la hizo»; «capítulo 4», «Manual del jugador» o «apéndice C» llevan a su sitio (en otro libro también, y a la
+  sección si la nombra). Desde una campaña, lo que no tiene o es solo del máster queda como texto.
 
 ## Carga del D&D 2024, tanda A (rama `sistemas/carga-2024`; migración 0095; 2026-11-20; ADR-0033)
 

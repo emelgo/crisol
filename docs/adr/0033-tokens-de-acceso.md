@@ -53,6 +53,12 @@ Foundry, los capítulos no podían incrustarlas, y el archivo de un sistema ten�
     día cada uno, con los conjuros por su clave o su concepto). Los de N al día son recursos de la criatura
     (`conjuro_<grupo>_<puesto>`, vuelven con el descanso largo); en la hoja, un bloque con sus usos y lo que se tira de
     cada uno; `rollForCreature` con `spell` tira la acción del conjuro con la CD y el ataque de la criatura.
+- **Pies, créditos y enlaces en los capítulos** (Enrique, al ver la Guía del máster frente a 5etools): bajo una imagen
+  del sistema, su pie (la línea en cursiva que la sigue) y el crédito de quien la hizo (el de la imagen, solo). Los
+  `[[…]]` de un capítulo llevan a otro capítulo (`[[Capítulo 4]]`, por su título o lo de antes de los dos puntos), a
+  otro libro (`[[Manual del jugador]]`, su primer capítulo; `[[Manual del jugador#Capítulo 1]]`) o a una sección
+  (`[[#Sección]]`, `[[Capítulo 4#Encuentros]]`); el servidor los resuelve al leerlo con lo que ve quien lee, y lo que no
+  se ve queda como texto. `[[#Sección]]` vale también en la wiki (como en Obsidian): no es un enlace a otra página.
 - **El archivo de un sistema, hasta 64 MB** (antes 10): un sistema con sus libros en dos idiomas pasa de 30 MB. Se
   descartó bajarlo libro a libro: subir un archivo con `into` reemplaza el sistema entero.
 

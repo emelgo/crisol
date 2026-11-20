@@ -123,7 +123,36 @@ export function withPageLinkView(node: Node) {
 /** Un toque en el móvil (sin ratón fino): la vista previa va en una hoja abajo */
 const coarsePointer = () => typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches
 
-function PageLinkView({ node, updateAttributes, selected, editor }: NodeViewProps) {
+function PageLinkView(props: NodeViewProps) {
+  const title = String(props.node.attrs.title ?? '').trim()
+  return !title && !props.node.attrs.pageId ? <SectionLinkView {...props} /> : <WikiPageLinkView {...props} />
+}
+
+/** `[[#Sección]]`: a una sección de esta misma página (su título), sin salir de ella */
+function SectionLinkView({ node, editor }: NodeViewProps) {
+  const anchor = String(node.attrs.anchor ?? '').trim()
+  const label = (node.attrs.label as string | null) || anchor
+  const fold = (text: string) => text.trim().replace(/\s+/g, ' ').toLocaleLowerCase('es')
+  return (
+    <NodeViewWrapper as="span" className={styles.wrapper}>
+      <a
+        href={`#${encodeURIComponent(anchor)}`}
+        className={styles.link}
+        onClick={(event) => {
+          event.preventDefault()
+          const heading = [...editor.view.dom.querySelectorAll('h1, h2, h3, h4, h5, h6')].find(
+            (h) => fold(h.textContent ?? '') === fold(anchor)
+          )
+          heading?.scrollIntoView({ block: 'start' })
+        }}
+      >
+        {label}
+      </a>
+    </NodeViewWrapper>
+  )
+}
+
+function WikiPageLinkView({ node, updateAttributes, selected, editor }: NodeViewProps) {
   const { t } = useTranslation()
   const api = useApi()
   const queryClient = useQueryClient()

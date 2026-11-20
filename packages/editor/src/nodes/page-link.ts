@@ -5,8 +5,11 @@
  */
 import { mergeAttributes, Node } from '@tiptap/core'
 
-/** `[[Título]]`, `[[Título#Sección]]`, `[[Título#^id]]`, `[[Título|texto]]`. Con `!` delante es incrustar (tarea 15) */
-const LINK = /^(!?)\[\[(?!@)([^[\]\n|#]+?)(#[^[\]\n|]*)?(?:\|([^[\]\n]*))?\]\]/
+/**
+ * `[[Título]]`, `[[Título#Sección]]`, `[[Título#^id]]`, `[[Título|texto]]` y, como en Obsidian, `[[#Sección]]` (una
+ * sección de donde se escribe). Con `!` delante es incrustar (tarea 15)
+ */
+const LINK = /^(!?)\[\[(?!@)([^[\]\n|#]*?)(#[^[\]\n|]*)?(?:\|([^[\]\n]*))?\]\]/
 
 export interface PageLinkAttrs {
   pageId: string | null
@@ -62,7 +65,8 @@ export const PageLink = Node.create({
     start: (src) => src.search(/!?\[\[/),
     tokenize: (src) => {
       const match = LINK.exec(src)
-      if (!match) return undefined
+      // Sin título, solo con su sección
+      if (!match || (!match[2]?.trim() && !match[3]?.slice(1).trim())) return undefined
       return {
         type: 'pageLink',
         raw: match[0],

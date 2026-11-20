@@ -7,6 +7,7 @@ import { Extension, type JSONContent, type Node } from '@tiptap/core'
 import { Plugin, PluginKey } from '@tiptap/pm/state'
 import type { EditorView } from '@tiptap/pm/view'
 import { type NodeViewProps, NodeViewWrapper, ReactNodeViewRenderer } from '@tiptap/react'
+import { PenLine } from 'lucide-react'
 import { createContext, useContext, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
@@ -23,7 +24,7 @@ export const ImageLoading = createContext<'lazy' | 'eager'>('lazy')
  * El sistema de un capítulo de libro (ADR-0033): ahí `![[ruta]]` es una de sus imágenes (las que nombra `img` en su
  * contenido), no un archivo del mundo
  */
-export const SystemImagesContext = createContext<string | null>(null)
+export const SystemImagesContext = createContext<{ systemId: string; credits: Record<string, string> } | null>(null)
 
 export function withFileEmbedView(node: Node) {
   return node.extend({
@@ -105,22 +106,48 @@ export function FileEmbedBlock({ node }: { node: JSONContent }) {
 type Edit = { selected: boolean; update: (attrs: Partial<Attrs>) => void } | null
 
 function FileFigure({ attrs, edit }: { attrs: Attrs; edit: Edit }) {
-  const systemId = useContext(SystemImagesContext)
-  return systemId ? (
-    <SystemImageFigure systemId={systemId} attrs={attrs} edit={edit} />
+  const images = useContext(SystemImagesContext)
+  return images ? (
+    <SystemImageFigure
+      systemId={images.systemId}
+      credit={images.credits[attrs.name.trim()] ?? null}
+      attrs={attrs}
+      edit={edit}
+    />
   ) : (
     <WorldFileFigure attrs={attrs} edit={edit} />
   )
 }
 
-/** Una imagen del sistema por su ruta; si no está (aún no se ha subido), lo dice */
-function SystemImageFigure({ systemId, attrs, edit }: { systemId: string; attrs: Attrs; edit: Edit }) {
+/** Una imagen del sistema por su ruta, con el crédito de quien la hizo; si no está (aún no se ha subido), lo dice */
+function SystemImageFigure({
+  systemId,
+  credit,
+  attrs,
+  edit
+}: {
+  systemId: string
+  credit: string | null
+  attrs: Attrs
+  edit: Edit
+}) {
   const { t } = useTranslation()
   const path = attrs.name.trim()
   const [failed, setFailed] = useState<string | null>(null)
   if (failed === path) return <p className={styles.note}>{t('fileEmbed.missingImage', { name: path })}</p>
   const file = { url: systemImageUrl(systemId, path), name: path.split('/').pop() || path }
-  return <ImageFigure attrs={attrs} file={file} edit={edit} onError={() => setFailed(path)} />
+  return (
+    <>
+      <ImageFigure attrs={attrs} file={file} edit={edit} onError={() => setFailed(path)} />
+      {credit && (
+        <span className={styles.credit}>
+          <PenLine size={12} aria-hidden="true" />
+          <span className={styles.hidden}>{t('fileEmbed.creditBy')} </span>
+          {credit}
+        </span>
+      )}
+    </>
+  )
 }
 
 function WorldFileFigure({ attrs, edit }: { attrs: Attrs; edit: Edit }) {

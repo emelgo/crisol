@@ -21,7 +21,9 @@ export function linksIn(
   json: JSONContent,
   found: { pageId: string | null; title: string; anchor: string | null }[] = []
 ) {
-  if (json.type === 'pageLink' || json.type === 'pageEmbed') {
+  // `[[#Sección]]` lleva a la misma página: no es un enlace a otra
+  const sameSection = json.type === 'pageLink' && !json.attrs?.pageId && !String(json.attrs?.title ?? '').trim()
+  if ((json.type === 'pageLink' || json.type === 'pageEmbed') && !sameSection) {
     const pageId = typeof json.attrs?.pageId === 'string' && UUID.test(json.attrs.pageId) ? json.attrs.pageId : null
     found.push({
       pageId,
@@ -73,7 +75,11 @@ export function resolveIncoming(
   files: ReadonlyMap<string, string> = new Map()
 ): JSONContent {
   if (json.type === 'fileEmbed') return withResolvedFiles(json, files)
-  if ((json.type === 'pageLink' || json.type === 'pageEmbed') && !json.attrs?.pageId) {
+  if (
+    (json.type === 'pageLink' || json.type === 'pageEmbed') &&
+    !json.attrs?.pageId &&
+    String(json.attrs?.title ?? '').trim()
+  ) {
     const title = String(json.attrs?.title ?? '')
     const found = resolveName(title, names)
     if (found.length > 1) {

@@ -1254,6 +1254,7 @@ export const es = {
     upload: 'Subirlo',
     trashed: '«{{name}}» está en la papelera',
     missingImage: 'Falta la imagen «{{name}}»',
+    creditBy: 'Ilustración de',
     uploading: 'Subiendo «{{name}}»…',
     uploaded: '«{{name}}» subido',
     failed: 'No se pudo subir «{{name}}»: {{error}}'

@@ -43,7 +43,8 @@ async function renderBook(
     chapters = true,
     markdown = COMBATE,
     fail,
-    failures = Number.POSITIVE_INFINITY
+    failures = Number.POSITIVE_INFINITY,
+    prepare
   }: {
     /** Sin ellos, el libro vacío */
     chapters?: boolean
@@ -53,9 +54,12 @@ async function renderBook(
     fail?: string
     /** …tantas veces (sin decirlo, siempre) */
     failures?: number
+    /** Algo que preparar antes (subir una imagen) */
+    prepare?: (api: ReturnType<typeof fakeApi>) => Promise<unknown>
   } = {}
 ) {
   const api = fakeApi({ organizations: [ORG], worlds: [WORLD], systems: [OWN], systemContent: { [OWN.id]: [WOLF] } })
+  await prepare?.(api)
   const first = chapters
     ? await api.client.call('saveChapter', { systemId: OWN.id, source: 'srd51', title: 'El combate', markdown })
     : null
@@ -152,6 +156,19 @@ describe('el lector de capítulos (ADR-0025)', () => {
     expect(await screen.findByText('Falta la imagen «iconos/no-esta.webp»')).toBeDefined()
   })
 
+  it('una imagen del sistema lleva debajo el crédito de quien la hizo', async () => {
+    await renderBook(BOOK, {
+      markdown: '![[book/mesa.webp]]\n*Una mesa mágica*\n',
+      prepare: (api) =>
+        api.client.call('putSystemImages', {
+          systemId: OWN.id,
+          images: [{ path: 'book/mesa.webp', data: 'UklGRg==', license: 'unknown', credit: 'Luca Bancone' }]
+        })
+    })
+    expect(await screen.findByText('Luca Bancone')).toBeDefined()
+    expect(screen.getByText('Ilustración de')).toBeDefined()
+  })
+
   it('el dueño marca un capítulo solo para el máster desde «⋯»: lleva su etiqueta y se guarda', async () => {
     const { api, first } = await renderBook(BOOK)
     await screen.findByLabelText('Título del capítulo')
@@ -161,6 +178,25 @@ describe('el lector de capítulos (ADR-0025)', () => {
     await waitFor(async () => expect((await api.client.call('getChapter', { chapterId: first.id })).master).toBe(true))
     await userEvent.click(screen.getByRole('button', { name: 'Más acciones del capítulo' }))
     expect(await screen.findByRole('button', { name: 'Que lo lean los jugadores' })).toBeDefined()
+  })
+
+  it('sus enlaces (ADR-0033): a otro capítulo con su dirección, a una sección suya, y sin destino, solo su texto', async () => {
+    const scroll = vi.fn()
+    Element.prototype.scrollIntoView = scroll
+    const { api } = await renderBook(BOOK, {
+      markdown: 'Lee [[La magia]], [[#La iniciativa|la iniciativa]] y [[Nada]].\n\n## La iniciativa\n\nTira.'
+    })
+    // El de la sección, cuando ya está el texto (el índice y «Siguiente» también llevan a «La magia»)
+    const section = await screen.findByRole('link', { name: 'la iniciativa' })
+    const text = section.closest('.ProseMirror') as HTMLElement
+    const magia = within(text).getByRole('link', { name: 'La magia' }) as HTMLAnchorElement
+    const chapters = (await api.client.call('listBookChapters', { systemId: OWN.id, source: 'srd51' })).chapters
+    const second = chapters.find((c: { title: string }) => c.title === 'La magia')
+    expect(magia.getAttribute('href')).toContain(`capitulo=${second?.id}`)
+    expect(within(text).queryByRole('link', { name: 'Nada' })).toBeNull()
+    expect(text.textContent).toContain('y Nada')
+    await userEvent.click(section)
+    expect(scroll).toHaveBeenCalled()
   })
 
   it('pulsar una sección del índice va a su título y la marca como la que se lee', async () => {

@@ -6,10 +6,11 @@
  */
 import { editorExtensions, type SeparateKind } from '@crisol/editor'
 import { pageFromMarkdown, pageToMarkdown } from '@crisol/editor/markdown'
+import { useNavigate } from '@tanstack/react-router'
 import type { Editor, JSONContent, Node } from '@tiptap/core'
 import type { Transaction } from '@tiptap/pm/state'
 import { EditorContent, type NodeViewProps, NodeViewWrapper, ReactNodeViewRenderer, useEditor } from '@tiptap/react'
-import { createContext, useContext, useEffect, useRef } from 'react'
+import { createContext, type MouseEvent, useContext, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { useAnnounce } from '../components/announcer.tsx'
@@ -22,6 +23,7 @@ import { EmptyHint } from '../wiki/editor.tsx'
 import { SystemImagesContext, withFileEmbedView } from '../wiki/file-embed.tsx'
 import { GhostLine } from '../wiki/ghost-line.ts'
 import type { PageLinks } from '../wiki/links-context.ts'
+import linkStyles from '../wiki/page-links.module.css'
 import { LinkSuggest } from '../wiki/page-links.tsx'
 import separateStyles from '../wiki/separate.module.css'
 import { withSheetView } from '../wiki/sheet-blocks.tsx'
@@ -74,6 +76,7 @@ function chapterView(node: Node) {
   if (node.name === 'contentLink') return withContentLinkView(node)
   if (node.name === 'contentEmbed') return withContentEmbedView(node)
   if (node.name === 'fileEmbed') return withFileEmbedView(node)
+  if (node.name === 'pageLink') return withChapterLinkView(node)
   return withSheetView(node)
 }
 
@@ -86,7 +89,10 @@ export function ChapterText({
   onClean,
   onEditor,
   systemId,
-  imagesOf
+  imagesOf,
+  credits = {},
+  linkTo,
+  onSection
 }: {
   markdown: string
   editable: boolean
@@ -103,6 +109,12 @@ export function ChapterText({
   systemId?: string
   /** El sistema de sus imágenes: `![[ruta]]` es una de ellas (también al leerlo) */
   imagesOf?: string
+  /** El crédito de cada una, por su ruta */
+  credits?: Record<string, string>
+  /** A dónde lleva un `[[…]]` de su texto (otro capítulo, otro libro, una sección), tal como se escribió; si a ninguno, null */
+  linkTo?: (target: string) => ChapterLinkTarget | null
+  /** Ir a una sección de este capítulo, por su nombre */
+  onSection?: (name: string) => boolean
 }) {
   const { t } = useTranslation()
   const announce = useAnnounce()
@@ -230,16 +242,18 @@ export function ChapterText({
   )
   return (
     <LocalSeparatesContext.Provider value={local.current}>
-      <SystemImagesContext.Provider value={imagesOf ?? null}>
-        <div className={editorStyles.body}>
-          <EditorContent editor={editor} />
-          {editable && editor && (
-            <>
-              <FormatMenu editor={editor} onSecret={() => makeLocalSeparate(editor, 'secret', local.current)} />
-              <TableMenu editor={editor} />
-            </>
-          )}
-        </div>
+      <SystemImagesContext.Provider value={imagesOf ? { systemId: imagesOf, credits } : null}>
+        <ChapterLinksContext.Provider value={linkTo ? { linkTo, onSection: onSection ?? (() => false) } : null}>
+          <div className={editorStyles.body}>
+            <EditorContent editor={editor} />
+            {editable && editor && (
+              <>
+                <FormatMenu editor={editor} onSecret={() => makeLocalSeparate(editor, 'secret', local.current)} />
+                <TableMenu editor={editor} />
+              </>
+            )}
+          </div>
+        </ChapterLinksContext.Provider>
       </SystemImagesContext.Provider>
     </LocalSeparatesContext.Provider>
   )
@@ -358,6 +372,59 @@ function LocalSeparateView({ node, editor, getPos, selected }: NodeViewProps) {
           </>
         )}
       </div>
+    </NodeViewWrapper>
+  )
+}
+
+/** A dónde lleva un enlace de un capítulo: su dirección y, si es una sección de este mismo, su nombre */
+export interface ChapterLinkTarget {
+  href: string
+  here: string | null
+}
+
+const ChapterLinksContext = createContext<{
+  linkTo: (target: string) => ChapterLinkTarget | null
+  onSection: (name: string) => boolean
+} | null>(null)
+
+function withChapterLinkView(node: Node) {
+  return node.extend({
+    addNodeView() {
+      return ReactNodeViewRenderer(ChapterLinkView, { as: 'span' })
+    }
+  })
+}
+
+/**
+ * Un `[[…]]` en un capítulo (ADR-0033): a otro capítulo, a otro libro o a una sección. Si no lleva a ninguno que se vea,
+ * su texto, sin enlace
+ */
+function ChapterLinkView({ node }: NodeViewProps) {
+  const links = useContext(ChapterLinksContext)
+  const navigate = useNavigate()
+  const title = String(node.attrs.title ?? '').trim()
+  const anchor = (node.attrs.anchor as string | null)?.trim() || null
+  const label = (node.attrs.label as string | null) || null
+  const shown = label ?? (title || anchor || '')
+  const target = links?.linkTo(anchor ? `${title}#${anchor}` : title) ?? null
+  return (
+    <NodeViewWrapper as="span">
+      {target ? (
+        <a
+          href={target.href}
+          className={linkStyles.link}
+          onClick={(event: MouseEvent<HTMLAnchorElement>) => {
+            if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return
+            event.preventDefault()
+            if (target.here && links?.onSection(target.here)) return
+            void navigate({ href: target.href })
+          }}
+        >
+          {shown}
+        </a>
+      ) : (
+        <span>{shown}</span>
+      )}
     </NodeViewWrapper>
   )
 }
