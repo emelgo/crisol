@@ -115,7 +115,7 @@ import {
   restoreFile,
   updateFolder
 } from './files.ts'
-import { importFoundry, inspectFoundry, putSystemImages } from './foundry.ts'
+import { deleteSystemImages, importFoundry, inspectFoundry, listSystemImages, putSystemImages } from './foundry.ts'
 import { importFoundryScenes, inspectFoundryScenes } from './foundry-scenes.ts'
 import { listGameIcons } from './game-icons.ts'
 import { listRandomTables, setGmScreen } from './gm-screen.ts'
@@ -601,6 +601,8 @@ export const ACTIONS = [
   inspectFoundry,
   importFoundry,
   putSystemImages,
+  listSystemImages,
+  deleteSystemImages,
   inspectFoundryScenes,
   importFoundryScenes,
   listScenes,
@@ -951,6 +953,8 @@ export type Actions = {
   inspectFoundry: typeof inspectFoundry
   importFoundry: typeof importFoundry
   putSystemImages: typeof putSystemImages
+  listSystemImages: typeof listSystemImages
+  deleteSystemImages: typeof deleteSystemImages
   inspectFoundryScenes: typeof inspectFoundryScenes
   importFoundryScenes: typeof importFoundryScenes
   listScenes: typeof listScenes

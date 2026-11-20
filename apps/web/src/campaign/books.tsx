@@ -47,7 +47,7 @@ export function CampaignBooks({ worldId, worldName, campaign }: Props) {
   const [only, setOnly] = useState(false)
   const [choosing, setChoosing] = useState<Book | null>(null)
   const [opened, setOpened] = useState<Book | null>(null)
-  const all = books.data?.books ?? []
+  const all = (books.data?.books ?? []).map((b) => ({ ...b, systemId: system?.id ?? null }))
   const sources = campaign.systemChoices?.sources ?? all.map((b) => b.key)
   const excluded = campaign.systemChoices?.excluded ?? []
   const refresh = async () => {

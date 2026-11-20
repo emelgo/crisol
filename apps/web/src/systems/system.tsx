@@ -88,7 +88,7 @@ export function SystemScreen() {
             >
               <span className={books.hidden}>{`${t('books.openPrefix')} `}</span>
               <BookCover
-                book={book}
+                book={{ ...book, systemId }}
                 sub={[book.origin ? t(`books.origin.${book.origin}`) : '', book.edition].filter(Boolean).join(' · ')}
               />
             </Link>
@@ -528,7 +528,8 @@ function BookSettings({
         {coverOpen && (
           <CoverDialog
             title={t('systemBooks.coverOf', { name: book.name })}
-            cover={book.cover}
+            // La de una imagen del sistema (la pone la IA) no se elige aquí: elegir una de los comunes la cambia
+            cover={book.cover?.fileId ? { ...book.cover, fileId: book.cover.fileId } : null}
             aspect="3 / 4"
             onSave={saveCover}
             onClose={() => setCoverOpen(false)}

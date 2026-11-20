@@ -206,7 +206,9 @@ describe('lo que no cabe', () => {
       type: 'weapon'
     }))
     expect(() => convertFoundry(input)).toThrow(FoundryError)
-    expect(() => convertFoundry(input)).toThrow(`Son ${LIMITS.contentDocuments + 4} documentos y caben 5000`)
+    expect(() => convertFoundry(input)).toThrow(
+      `Son ${LIMITS.contentDocuments + 4} documentos y caben ${LIMITS.contentDocuments}`
+    )
   })
 })
 

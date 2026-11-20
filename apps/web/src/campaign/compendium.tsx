@@ -354,7 +354,13 @@ export function Compendium({
               {fixedBook && sources.find((s) => s.key === book) ? (
                 <span className={styles.bookHead}>
                   <span className={styles.bookMini}>
-                    <BookCover book={sources.find((s) => s.key === book) as (typeof sources)[number]} size="spine" />
+                    <BookCover
+                      book={{
+                        ...(sources.find((s) => s.key === book) as (typeof sources)[number]),
+                        systemId: system.id
+                      }}
+                      size="spine"
+                    />
                   </span>
                   {[sources.find((s) => s.key === book)?.name, sources.find((s) => s.key === book)?.edition]
                     .filter(Boolean)
@@ -482,7 +488,7 @@ export function Compendium({
                 <li key={s.key}>
                   <button type="button" className={styles.bookRow} onClick={() => setBook(s.key)}>
                     <span className={styles.bookMini}>
-                      <BookCover book={s} size="spine" />
+                      <BookCover book={{ ...s, systemId: system.id }} size="spine" />
                     </span>
                     <span>{s.name}</span>
                     <span className={styles.bookCount}>{s.count}</span>

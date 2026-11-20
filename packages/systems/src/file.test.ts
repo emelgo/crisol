@@ -92,7 +92,7 @@ describe('el contenido de un sistema', () => {
         cinco,
         Array.from({ length: LIMITS.contentDocuments + 1 }, () => anillo)
       )[0]?.message
-    ).toBe('Como mucho, 5000 documentos')
+    ).toBe('Como mucho, 20000 documentos')
   })
 
   it('un nombre en varios idiomas vale', () => {

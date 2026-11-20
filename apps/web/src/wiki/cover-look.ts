@@ -16,7 +16,7 @@ export const useWorldFiles = (worldId: string, enabled = true) => {
  * Cómo se pinta una portada: recortada alrededor de su punto de encuadre y, si se acercó, ampliada desde ese punto.
  * Quien la contiene recorta lo que sobra (overflow: hidden)
  */
-export function coverStyle(cover: Cover): CSSProperties {
+export function coverStyle(cover: Pick<Cover, 'x' | 'y' | 'zoom'>): CSSProperties {
   const at = `${cover.x}% ${cover.y}%`
   const zoom = cover.zoom ?? 1
   return zoom === 1 ? { objectPosition: at } : { objectPosition: at, transform: `scale(${zoom})`, transformOrigin: at }

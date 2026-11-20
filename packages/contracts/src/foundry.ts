@@ -40,7 +40,7 @@ export const importFoundry = defineAction({
   name: 'importFoundry',
   kind: 'write',
   description:
-    'Crea un sistema de la cuenta con un sistema o un módulo de contenido de Foundry VTT (su zip en base64): sus tipos de objeto y de actor, sus diarios (reglas) y sus tablas de tirar, con su compendio y una fuente por paquete. Con into, mete su contenido en uno propio (con la versión que se tenía) sin quitarle nada. packs: los paquetes que se traen (sin él, todos); language: el idioma de sus textos. Si no cabe (5000 documentos, 64 MB), FOUNDRY_TOO_BIG: hay que elegir menos paquetes',
+    'Crea un sistema de la cuenta con un sistema o un módulo de contenido de Foundry VTT (su zip en base64): sus tipos de objeto y de actor, sus diarios (reglas) y sus tablas de tirar, con su compendio y una fuente por paquete. Con into, mete su contenido en uno propio (con la versión que se tenía) sin quitarle nada. packs: los paquetes que se traen (sin él, todos); language: el idioma de sus textos. Si no cabe (20 000 documentos, 64 MB), FOUNDRY_TOO_BIG: hay que elegir menos paquetes',
   input: z.object({
     organizationId: z.uuid().optional(),
     into: z.object({ systemId: z.uuid(), version: z.int().min(1) }).optional(),
@@ -83,4 +83,41 @@ export const putSystemImages = defineAction({
       .max(100)
   }),
   output: z.object({ saved: z.int(), skipped: z.array(z.string()).describe('Las que no eran imágenes') })
+})
+
+const imageLicense = z.enum(['foundry-only', 'cc-by', 'cc-by-nc-sa', 'mit', 'unknown'])
+
+export const listSystemImages = defineAction({
+  name: 'listSystemImages',
+  kind: 'read',
+  description:
+    'Las imágenes de un sistema de la cuenta (sin sus bytes), por su ruta y en orden: su tipo, su tamaño, su licencia y su crédito. Con prefix, solo las de esa carpeta (bestiary/tokens/). De 500 en 500 con offset',
+  input: z.object({
+    systemId: z.uuid(),
+    prefix: z.string().max(500).optional(),
+    limit: z.int().min(1).max(500).default(200),
+    offset: z.int().min(0).default(0)
+  }),
+  output: z.object({
+    total: z.int(),
+    images: z.array(
+      z.object({
+        path: z.string(),
+        mime: z.string(),
+        bytes: z.int(),
+        license: imageLicense,
+        credit: z.string().nullable(),
+        url: z.string().describe('/api/system-images/<sistema>?path=…')
+      })
+    )
+  })
+})
+
+export const deleteSystemImages = defineAction({
+  name: 'deleteSystemImages',
+  kind: 'delete',
+  description:
+    'Quita imágenes de un sistema de la cuenta por su ruta (hasta 500 de una vez). Las entradas y capítulos que las nombran se quedan sin ella. No se deshace: se vuelven a subir',
+  input: z.object({ systemId: z.uuid(), paths: z.array(z.string().min(1).max(500)).min(1).max(500) }),
+  output: z.object({ deleted: z.array(z.string()), missing: z.array(z.string()) })
 })

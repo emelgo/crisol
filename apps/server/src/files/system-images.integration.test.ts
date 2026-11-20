@@ -113,4 +113,53 @@ describe('las imágenes de un sistema (docs/specs/imagenes.md)', () => {
     const svg = await image(system.id, 'systems/mazmorra/icons/a.svg')
     expect(svg.headers['content-security-policy']).toContain('sandbox')
   })
+
+  it('listarlas por carpeta, quitarlas por su ruta (con sus bytes) y una portada de libro que es una de ellas', async () => {
+    const system = await ok200('createSystem', { name: 'Mazmorra' })
+    const put = (path: string) => ({ path, data: WEBP.toString('base64'), license: 'unknown', credit: 'Alguien' })
+    await ok200('putSystemImages', {
+      systemId: system.id,
+      images: [put('bestiary/tokens/aboleth.webp'), put('bestiary/tokens/trasgo.webp'), put('covers/phb.webp')]
+    })
+    const tokens = await ok200('listSystemImages', { systemId: system.id, prefix: 'bestiary/tokens/' })
+    expect(tokens.total).toBe(2)
+    expect(tokens.images.map((i: { path: string }) => i.path)).toEqual([
+      'bestiary/tokens/aboleth.webp',
+      'bestiary/tokens/trasgo.webp'
+    ])
+    expect(tokens.images[0]).toMatchObject({ mime: 'image/webp', license: 'unknown', credit: 'Alguien' })
+    expect((await ok200('listSystemImages', { systemId: system.id, limit: 1, offset: 2 })).images).toHaveLength(1)
+    // Un % en el prefijo no es un comodín
+    expect((await ok200('listSystemImages', { systemId: system.id, prefix: '%' })).total).toBe(0)
+
+    const before = (await storage.keys()).length
+    const removed = await ok200('deleteSystemImages', {
+      systemId: system.id,
+      paths: ['bestiary/tokens/aboleth.webp', 'no/esta.webp']
+    })
+    expect(removed).toEqual({ deleted: ['bestiary/tokens/aboleth.webp'], missing: ['no/esta.webp'] })
+    expect((await storage.keys()).length).toBe(before - 1)
+    expect((await image(system.id, 'bestiary/tokens/aboleth.webp')).statusCode).toBe(404)
+
+    // La portada de un libro, una imagen del sistema por su ruta (o de los comunes, pero no las dos)
+    const book = await ok200('createBook', {
+      systemId: system.id,
+      version: system.version,
+      name: 'Manual del jugador',
+      cover: { image: 'covers/phb.webp', x: 50, y: 50 }
+    })
+    const books = await ok200('getSystemBooks', { systemId: system.id })
+    expect(books.books.find((b: { key: string }) => b.key === book.key).cover).toEqual({
+      image: 'covers/phb.webp',
+      x: 50,
+      y: 50
+    })
+    const both = await call('updateBook', {
+      systemId: system.id,
+      version: book.version,
+      key: book.key,
+      cover: { image: 'covers/phb.webp', fileId: crypto.randomUUID(), x: 50, y: 50 }
+    })
+    expect(both.statusCode).toBe(400)
+  })
 })

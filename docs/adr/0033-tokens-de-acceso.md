@@ -39,4 +39,4 @@ Foundry, los capítulos no podían incrustarlas, y el archivo de un sistema ten�
 - Un token robado vale como la cuenta hasta que caduca o se quita: por eso la caducidad es obligatoria y corta por
   defecto (30 días), y la lista dice su último uso (apuntado como mucho una vez por minuto).
 - Las instrucciones del MCP explican a la IA que, para lo que no cabe en la conversación, puede pedir un token.
-- El tope de 5000 documentos de contenido por sistema sigue igual.
+- El tope de documentos de contenido por sistema sube de 5000 a 20 000 (la IA ya llevaba 3264 con cinco libros).

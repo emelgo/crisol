@@ -5,7 +5,7 @@
 import { z } from 'zod'
 import { defineAction } from './action.ts'
 import { contentItem, systemRef } from './systems.ts'
-import { worldColor, worldCover } from './worlds.ts'
+import { bookCover, worldColor } from './worlds.ts'
 
 const bookKey = z
   .string()
@@ -23,7 +23,9 @@ const bookFields = {
   publisher: z.string().trim().max(200).optional(),
   origin: z.enum(['pdf', 'file', 'own']).optional().describe('De un PDF (con la IA), de un archivo o hecho a mano'),
   file: z.uuid().optional().describe('El PDF de la biblioteca del que sale (listar con ver_biblioteca)'),
-  cover: worldCover.optional().describe('Su portada: una imagen de los archivos comunes, encuadrada'),
+  cover: bookCover
+    .optional()
+    .describe('Su portada, encuadrada: una imagen de los archivos comunes (fileId) o del sistema por su ruta (image)'),
   color: worldColor.optional().describe('Su color, sin portada (uno de los fijos o #rrggbb)'),
   requires: z.array(bookKey).max(20).optional().describe('Las claves de los libros de este sistema a los que amplía')
 }
@@ -38,7 +40,7 @@ export const book = z.object({
   publisher: z.string().nullable(),
   origin: z.enum(['pdf', 'file', 'own']).nullable(),
   file: z.uuid().nullable(),
-  cover: worldCover.nullable(),
+  cover: bookCover.nullable(),
   color: worldColor.nullable(),
   requires: z.array(z.string()),
   version: z.int(),
@@ -96,7 +98,7 @@ export const updateBook = defineAction({
     attribution: z.string().trim().max(4000).optional(),
     publisher: z.string().trim().max(200).nullable().optional(),
     file: z.uuid().nullable().optional(),
-    cover: worldCover.nullable().optional(),
+    cover: bookCover.nullable().optional(),
     color: worldColor.nullable().optional(),
     requires: z.array(bookKey).max(20).optional(),
     newVersion: z.literal(true).optional().describe('Sube su versión (al traer una nueva)')

@@ -678,6 +678,9 @@ export const MCP_TOOLS: Record<string, McpTool> = {
   capitulos_libro: { action: 'listBookChapters' },
   leer_capitulo: { action: 'getChapter' },
   guardar_capitulo: { action: 'saveChapter' },
+  subir_imagenes_sistema: { action: 'putSystemImages' },
+  ver_imagenes_sistema: { action: 'listSystemImages' },
+  borrar_imagenes_sistema: { action: 'deleteSystemImages' },
   ordenar_capitulos: { action: 'orderChapters' },
   borrar_capitulo: { action: 'deleteChapter' },
   // Las criaturas en juego de una campaña (del máster): ponerlas, su hoja, la partida, tirar, aplicar y quitarlas
