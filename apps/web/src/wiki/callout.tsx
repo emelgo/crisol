@@ -19,12 +19,14 @@ function CalloutView({ node, editor, updateAttributes }: NodeViewProps) {
   const id = useId()
   const kind = node.attrs.kind as CalloutKind
   const title = (node.attrs.title as string | null) || null
+  // Su página en el libro (ADR-0033), a la derecha del título, como en 5etools
+  const page = (node.attrs.page as number | null) ?? null
   // Su título se escribe en su sitio; al salir del campo, se guarda (vacío: el nombre de su tipo)
   const [draft, setDraft] = useState(title ?? '')
   useEffect(() => setDraft(title ?? ''), [title])
   return (
     <NodeViewWrapper role="note" aria-labelledby={id} className={styles.callout} data-callout={kind}>
-      <div id={id} className={styles.label} contentEditable={false} data-titled={title ? '' : undefined}>
+      <div id={id} className={styles.label} contentEditable={false} data-titled={title || page ? '' : undefined}>
         {editor.isEditable ? (
           <input
             className={styles.titleInput}
@@ -44,8 +46,10 @@ function CalloutView({ node, editor, updateAttributes }: NodeViewProps) {
             }}
           />
         ) : (
-          (title ?? t(`callout.${kind}`))
+          // Solo con su página, sin el nombre de su tipo (como un recuadro sin nombre de 5etools)
+          <span>{title ?? (page ? '' : t(`callout.${kind}`))}</span>
         )}
+        {page && <span className={styles.page}>{t('callout.page', { page })}</span>}
       </div>
       <NodeViewContent className={styles.content} />
     </NodeViewWrapper>

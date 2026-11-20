@@ -420,4 +420,15 @@ describe('el Markdown de una página', () => {
     ])
     expect(pageToMarkdown({ properties: [], body, separate: () => null })).toBe(markdown)
   })
+
+  it('la página del libro de un título y de un recuadro (ADR-0033): {p12} y [!nota|p5], y vuelven igual', () => {
+    const markdown = '## Encuentros {p12}\n\n> [!nota|p5] Aprender viendo jugar\n> Mira cómo juegan.\n'
+    const { body } = pageFromMarkdown(markdown)
+    expect(body.content?.[0]).toMatchObject({ type: 'heading', attrs: { page: 12 }, content: [{ text: 'Encuentros' }] })
+    expect(body.content?.[1]).toMatchObject({ type: 'callout', attrs: { page: 5, title: 'Aprender viendo jugar' } })
+    expect(pageToMarkdown({ properties: [], body, separate: () => null })).toBe(markdown)
+    // Con su id, también
+    const withId = pageFromMarkdown('## Encuentros {p.12} ^abc123').body.content?.[0]
+    expect(withId?.attrs).toMatchObject({ page: 12, id: 'abc123' })
+  })
 })

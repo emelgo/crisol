@@ -43,6 +43,20 @@
   font-size: 1.35em;
 }
 
+/* Su página en el libro, a la derecha (rd__title-link): pequeña y tenue */
+.book.book :is(h1, h2, h3, h4)[data-page]::after {
+  content: "p" attr(data-page);
+  float: inline-end;
+  margin-block-start: 0.5em;
+  color: var(--color-text);
+  opacity: 0.3;
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  font-style: normal;
+  font-variant: normal;
+  font-weight: normal;
+}
+
 /* Los de dentro de un párrafo (rd__h--3): en negrita y cursiva */
 .book.book :is(h4, h5, h6) {
   margin: var(--space-3) 0 0.2em;

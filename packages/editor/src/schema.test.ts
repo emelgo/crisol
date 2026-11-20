@@ -105,7 +105,7 @@ describe('el esquema del editor', () => {
     const copy = withoutBlockIds(Fragment.from(callout)).firstChild
     expect(copy?.toJSON()).toEqual({
       type: 'callout',
-      attrs: { id: null, kind: 'tip', title: null, wide: false },
+      attrs: { id: null, kind: 'tip', title: null, wide: false, page: null },
       content: [
         { type: 'paragraph', attrs: { id: null }, content: [{ type: 'text', text: 'Ojo', marks: [{ type: 'bold' }] }] }
       ]

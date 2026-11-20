@@ -9,6 +9,12 @@
         "files": ["apps/web/src/wiki/editor.module.css"],
         "createdAt": "2026-11-10T15:58:52.597Z",
         "reason": "Claude: es la raya de las citas (blockquote) del texto de las páginas, convención tipográfica; viene de la revisión #115, no de una tarjeta"
+      },
+      {
+        "rule": "overused-font",
+        "value": "arial",
+        "createdAt": "2026-11-20T12:08:18.047Z",
+        "reason": "Enrique pidió el aspecto de libro igual que 5etools (2026-11-20); Arial 12px es su rd__title-link para el número de página"
       }
     ]
   }

@@ -1168,8 +1168,8 @@ export const es = {
     calloutHint: 'Recuadro',
     calloutReadAloud: 'Leer en voz alta',
     calloutReadAloudHint: 'Para la mesa',
-    calloutQuote: 'Cita',
-    calloutQuoteHint: 'Las palabras de alguien',
+    calloutQuote: 'Cita con autor',
+    calloutQuoteHint: 'Las palabras de alguien y quien las dice',
     box: 'Caja',
     boxHint: 'Con marco',
     pageBreak: 'Salto de página',
@@ -4180,7 +4180,8 @@ export const es = {
     danger: 'Peligro',
     'read-aloud': 'Leer en voz alta',
     quote: 'Cita',
-    title: 'Título del recuadro ({{kind}})'
+    title: 'Título del recuadro ({{kind}})',
+    page: 'p{{page}}'
   },
   format: {
     toolbar: 'Formato',

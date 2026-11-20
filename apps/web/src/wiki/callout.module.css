@@ -46,6 +46,24 @@
   line-height: 1.6;
 }
 
+/* Con título o página: el título a la izquierda y su página a la derecha */
+.label[data-titled] {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+/* Su página en el libro (rd__title-link de 5etools): pequeña y tenue */
+.page {
+  flex: none;
+  opacity: 0.3;
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  font-variant: normal;
+  font-weight: normal;
+}
+
 .callout[data-callout="quote"] .label {
   position: absolute;
   inline-size: 1px;

@@ -170,9 +170,9 @@ test('el aspecto de libro (ADR-0033): recuadros con título, citas, imágenes co
       '',
       'Dungeons & Dragons es un juego de historias compartidas: lee [[Capítulo 2]] y [[Capítulo 2#Encuentros|sus encuentros]].',
       '',
-      '## ¿Qué hace el máster?',
+      '## ¿Qué hace el máster? {p5}',
       '',
-      '> [!nota] Aprender viendo jugar',
+      '> [!nota|p6] Aprender viendo jugar',
       '> Una buena forma de aprender lo básico es ver cómo juega otra gente.',
       '',
       '> [!leer]',
@@ -202,6 +202,10 @@ test('el aspecto de libro (ADR-0033): recuadros con título, citas, imágenes co
   const ana = await newPlayer(browser, invitation, 'Ana')
   await ana.goto(`/mundos/${worldId}/campanas/${campaignId}/libros/srd51?capitulo=${first.id}`)
   await expect(ana.getByText('Aprender viendo jugar')).toBeVisible()
+  // De verdad a la vista (no solo para los lectores de pantalla)
+  expect((await ana.getByText('Aprender viendo jugar').boundingBox())?.width ?? 0).toBeGreaterThan(50)
+  // Su página en el libro, a la derecha
+  await expect(ana.getByText('p6', { exact: true })).toBeVisible()
   await expect(ana.getByText('No hace falta una mesa mágica, pero ¿a que sería divertido?')).toBeVisible()
   await expect(ana.getByText('— Jeremy Crawford')).toHaveCSS('text-align', 'right')
   await settled(ana)

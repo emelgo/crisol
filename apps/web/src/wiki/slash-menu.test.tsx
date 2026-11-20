@@ -141,8 +141,11 @@ describe('el menú «/»', () => {
     const editor = await mount()
     type(editor, '/cita')
     const list = within(await menu())
-    await waitFor(() => expect(list.getAllByRole('option').map((o) => o.textContent)).toEqual(['Cita']))
-    const option = list.getByRole('option', { name: 'Cita' })
+    // La cita de siempre y la que lleva a quien la dice (el recuadro, ADR-0033)
+    await waitFor(() =>
+      expect(list.getAllByRole('option').map((o) => o.textContent)).toEqual(['Cita', 'Cita con autor'])
+    )
+    const option = list.getByRole('option', { name: /^Cita$/ })
     fireEvent.mouseMove(option, { movementX: 4, movementY: 2 })
     expect(option.getAttribute('aria-selected')).toBe('true')
     fireEvent.mouseDown(option)
