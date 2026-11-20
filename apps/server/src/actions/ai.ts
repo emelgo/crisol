@@ -1,28 +1,39 @@
 import {
   type AiConnection,
+  type ApiToken,
   type Approval,
   approve,
+  createApiToken,
+  deleteApiToken,
   getAiSettings,
   listAiConnections,
+  listApiTokens,
   listApprovals,
   reject,
   removeAiConnection,
   setAiMode
 } from '@crisol/contracts'
-import { aiRepo, campaignsRepo } from '@crisol/db'
+import { aiRepo, apiTokensRepo, campaignsRepo } from '@crisol/db'
 import { type AiMode, approvalStatus, can, ForbiddenError, NotFoundError } from '@crisol/domain'
+import { newApiToken } from '../auth/api-tokens.ts'
 import { campaignOfResource, mcpResource } from '../mcp/scope.ts'
 import { approvalsChanged } from '../realtime/events.ts'
 import { sealJson } from '../secrets.ts'
 import { type ActionContext, errorCode, InvalidRequestError } from './context.ts'
 import { implement } from './registry.ts'
 
-/** Lo que solo se hace desde la interfaz: la IA no aprueba lo suyo, ni cambia su propio modo, ni quita conexiones */
+/**
+ * Lo que solo se hace desde la interfaz: la IA no aprueba lo suyo, ni cambia su propio modo, ni quita conexiones, ni
+ * ve, crea o quita tokens de acceso (tampoco con un token: ADR-0033)
+ */
 export const UI_ONLY: ReadonlySet<string> = new Set([
   setAiMode.name,
   approve.name,
   reject.name,
-  removeAiConnection.name
+  removeAiConnection.name,
+  listApiTokens.name,
+  createApiToken.name,
+  deleteApiToken.name
 ])
 
 function fromInterface(ctx: ActionContext) {
@@ -118,6 +129,20 @@ async function execute(ctx: ActionContext, row: aiRepo.Approval): Promise<aiRepo
   return finished
 }
 
+const DAY = 24 * 60 * 60 * 1000
+
+const tokenView = (row: apiTokensRepo.ApiToken): ApiToken => ({
+  id: row.id,
+  name: row.name,
+  prefix: row.prefix,
+  createdAt: row.createdAt.toISOString(),
+  expiresAt: row.expiresAt.toISOString(),
+  lastUsedAt: row.lastUsedAt?.toISOString() ?? null
+})
+
+const tokensOf = async (ctx: ActionContext) =>
+  (await apiTokensRepo.listApiTokens(ctx.db, ctx.actor.userId)).map(tokenView)
+
 /** Aprobar o rechazar: solo la propia cuenta, una sola vez y antes de que caduque */
 async function decide(ctx: ActionContext, approvalId: string, decision: 'approved' | 'rejected') {
   fromInterface(ctx)
@@ -166,6 +191,29 @@ export const aiActions = [
     await aiRepo.revokeAiConnection(ctx.db, { userId, clientId, resource: url, now: new Date() })
     ctx.aiConnections?.removed(userId, clientId, url)
     return { connections: await connections(ctx) }
+  }),
+
+  // Los tokens de acceso (ADR-0033): un ajuste de la cuenta, como el modo; no pasan por el historial
+  implement(listApiTokens, async (ctx) => {
+    fromInterface(ctx)
+    return { tokens: await tokensOf(ctx) }
+  }),
+
+  implement(createApiToken, async (ctx, { name, days }) => {
+    fromInterface(ctx)
+    const userId = ctx.actor.userId
+    const existing = await apiTokensRepo.listApiTokens(ctx.db, userId)
+    if (existing.length >= apiTokensRepo.MAX_API_TOKENS) throw new InvalidRequestError('TOO_MANY_TOKENS')
+    const { secret, hash, prefix } = newApiToken()
+    const expiresAt = new Date(Date.now() + days * DAY)
+    const token = await apiTokensRepo.createApiToken(ctx.db, { userId, name, hash, prefix, expiresAt })
+    return { token: tokenView(token), secret }
+  }),
+
+  implement(deleteApiToken, async (ctx, { tokenId }) => {
+    fromInterface(ctx)
+    if (!(await apiTokensRepo.deleteApiToken(ctx.db, ctx.actor.userId, tokenId))) throw new NotFoundError('token')
+    return { tokens: await tokensOf(ctx) }
   }),
 
   implement(approve, (ctx, { approvalId }) => decide(ctx, approvalId, 'approved')),

@@ -42,7 +42,7 @@ describe('el archivo de un sistema', () => {
     const big = toFile(fronteras, [
       { ...anillo, type: 'objeto', source: null, data: { name: 'x', relleno: 'x'.repeat(FILE_BYTES) } }
     ])
-    expect(validateFile(big).problems[0]?.message).toBe('Como mucho, 10 MB')
+    expect(validateFile(big).problems[0]?.message).toBe('Como mucho, 64 MB')
   })
 
   it('los problemas del sistema, con su ruta dentro del archivo', () => {

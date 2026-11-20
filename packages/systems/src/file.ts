@@ -10,8 +10,8 @@ import { type Language, textOf } from './text.ts'
 import { errorMap, type Problem, pathText, validateSystem } from './validate.ts'
 
 export const SYSTEM_FILE = 'crisol-system'
-/** El archivo entero: el sistema (hasta 2 MB) y su contenido */
-export const FILE_BYTES = 10 * 1024 * 1024
+/** El archivo entero: el sistema (hasta 2 MB), su contenido y los capítulos de sus libros, en dos idiomas */
+export const FILE_BYTES = 64 * 1024 * 1024
 /** Las claves del contenido: como las del sistema, y además con guiones (`srd-bola-de-fuego`) */
 export const CONTENT_KEY = /^[a-z0-9][a-z0-9_-]{0,99}$/
 

@@ -3,8 +3,8 @@ import { loadMemberships } from '@crisol/db'
 import { actorFrom, ForbiddenError, NotFoundError } from '@crisol/domain'
 import { FILE_BYTES } from '@crisol/systems'
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
+import { requesterOf, viaOf } from '../auth/api-tokens.ts'
 import type { Auth } from '../auth/auth.ts'
-import { toHeaders } from '../http.ts'
 import { type ActionEnv, InvalidRequestError, malformedId, TooManyRequestsError } from './context.ts'
 import { implementationsByName } from './implementations.ts'
 
@@ -15,15 +15,16 @@ export function registerActionRoutes(app: FastifyInstance, env: ActionEnv, auth:
   const run = async (name: string, request: FastifyRequest, reply: FastifyReply) => {
     const impl = implementationsByName.get(name)
     if (!impl) return reply.code(404).send({ code: 'UNKNOWN_ACTION' })
-    const session = await auth.api.getSession({ headers: toHeaders(request.headers) })
-    if (!session) return reply.code(401).send({ code: 'UNAUTHENTICATED' })
+    // La sesión de la web o un token de acceso (ADR-0033)
+    const requester = await requesterOf(request, auth, db)
+    if (!requester) return reply.code(401).send({ code: 'UNAUTHENTICATED' })
     const input = impl.action.input.safeParse(request.body ?? {})
     if (!input.success) return reply.code(400).send({ code: 'INVALID_INPUT', issues: input.error.issues })
 
     // Las pertenencias se leen en cada petición: revocar es inmediato
-    const actor = actorFrom(session.user.id, await loadMemberships(db, session.user.id))
+    const actor = actorFrom(requester.userId, await loadMemberships(db, requester.userId))
     try {
-      const output = await impl.handler({ ...env, actor, via: 'ui' }, input.data)
+      const output = await impl.handler({ ...env, actor, ...viaOf(requester) }, input.data)
       // La salida pasa por el contrato: lo que no está en él no sale
       return impl.action.output.parse(output)
     } catch (error) {
@@ -39,14 +40,13 @@ export function registerActionRoutes(app: FastifyInstance, env: ActionEnv, auth:
     run(request.params.name, request, reply)
   )
 
-  // Un sistema entero (hasta 2 MB), el archivo de uno con su contenido (hasta 10 MB) y el zip de uno de Foundry: con
-  // más sitio, y solo con sesión, que se mira antes de leer el cuerpo
+  // Un sistema entero (hasta 2 MB), el archivo de uno con su contenido (hasta 64 MB) y el zip de uno de Foundry: con
+  // más sitio, y solo con sesión (o token), que se mira antes de leer el cuerpo
   for (const [name, bodyLimit] of Object.entries(BIG_ACTIONS))
     app.post(`/api/actions/${name}`, {
       bodyLimit,
       onRequest: async (request, reply) => {
-        if (!(await auth.api.getSession({ headers: toHeaders(request.headers) })))
-          return reply.code(401).send({ code: 'UNAUTHENTICATED' })
+        if (!(await requesterOf(request, auth, db))) return reply.code(401).send({ code: 'UNAUTHENTICATED' })
       },
       handler: (request, reply) => run(name, request, reply)
     })
