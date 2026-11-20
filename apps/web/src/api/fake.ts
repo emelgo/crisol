@@ -4138,6 +4138,30 @@ export function fakeApi(
       for (const image of images) systemImages.push({ systemId, path: image.path, license: image.license })
       return { saved: images.length, skipped: [] }
     },
+    listSystemImages: ({ systemId, prefix, limit = 200, offset = 0 }) => {
+      const found = systemImages
+        .filter((i) => i.systemId === systemId && (!prefix || i.path.startsWith(prefix)))
+        .sort((a, b) => a.path.localeCompare(b.path))
+      return {
+        total: found.length,
+        images: found.slice(offset, offset + limit).map((i) => ({
+          path: i.path,
+          mime: 'image/webp',
+          bytes: 0,
+          license: i.license as 'unknown',
+          credit: null,
+          url: `/api/system-images/${systemId}?path=${encodeURIComponent(i.path)}`
+        }))
+      }
+    },
+    deleteSystemImages: ({ systemId, paths }) => {
+      const deleted = paths.filter((p) => systemImages.some((i) => i.systemId === systemId && i.path === p))
+      for (let at = systemImages.length - 1; at >= 0; at--) {
+        const image = systemImages[at]
+        if (image && image.systemId === systemId && paths.includes(image.path)) systemImages.splice(at, 1)
+      }
+      return { deleted, missing: paths.filter((p) => !deleted.includes(p)) }
+    },
     importSystem: ({ file, into }) => {
       const { file: valid, problems } = validateFile(file)
       if (!valid) throw new ApiError('SYSTEM_INVALID', 400)
