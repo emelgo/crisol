@@ -128,22 +128,40 @@ export interface LinkTarget {
  * se llama igual: el conjuro y la armadura «Escudo»), su clave o su nombre en cualquier idioma; lo del mundo, antes
  */
 export function matchLinkTarget<T extends LinkTarget>(items: readonly T[], link: string): T | undefined {
-  const byName = (list: readonly T[], name: string) => {
-    const wanted = foldName(name)
-    const named = (item: T) => item.names.some((n) => foldName(n) === wanted)
-    return list.find((item) => item.world && named(item)) ?? list.find(named)
+  return linkMatcher(items)(link)
+}
+
+/**
+ * Lo mismo, para muchos enlaces contra la misma lista (un capítulo con cientos): la indexa una vez por sus nombres y
+ * sus claves, y cada enlace se resuelve sin recorrerla
+ */
+export function linkMatcher<T extends LinkTarget>(items: readonly T[]): (link: string) => T | undefined {
+  const byName = new Map<string, T[]>()
+  const byKey = new Map<string, T[]>()
+  const add = (map: Map<string, T[]>, key: string, item: T) => {
+    const list = map.get(key)
+    if (list) list.push(item)
+    else map.set(key, [item])
   }
-  const byKey = (list: readonly T[], key: string) =>
-    list.find((item) => item.world && item.key === key.trim()) ?? list.find((item) => item.key === key.trim())
-  const slash = link.indexOf('/')
-  if (slash > 0) {
-    const prefix = foldName(link.slice(0, slash))
-    const rest = link.slice(slash + 1)
-    const typed = items.filter(
-      (item) => foldName(item.type) === prefix || item.typeLabels.some((label) => foldName(label) === prefix)
-    )
-    const hit = typed.length > 0 ? (byName(typed, rest) ?? byKey(typed, rest)) : undefined
-    if (hit) return hit
+  for (const item of items) {
+    for (const name of new Set(item.names.map(foldName))) add(byName, name, item)
+    add(byKey, item.key, item)
   }
-  return byName(items, link) ?? byKey(items, link)
+  // Lo del mundo gana; si no, la primera de la lista
+  const pick = (list: readonly T[] | undefined, keep: (item: T) => boolean = () => true) =>
+    list?.find((item) => item.world && keep(item)) ?? list?.find(keep)
+  const named = (name: string, keep?: (item: T) => boolean) => pick(byName.get(foldName(name)), keep)
+  const keyed = (key: string, keep?: (item: T) => boolean) => pick(byKey.get(key.trim()), keep)
+  return (link) => {
+    const slash = link.indexOf('/')
+    if (slash > 0) {
+      const prefix = foldName(link.slice(0, slash))
+      const rest = link.slice(slash + 1)
+      const ofType = (item: T) =>
+        foldName(item.type) === prefix || item.typeLabels.some((label) => foldName(label) === prefix)
+      const hit = named(rest, ofType) ?? keyed(rest, ofType)
+      if (hit) return hit
+    }
+    return named(link) ?? keyed(link)
+  }
 }

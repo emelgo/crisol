@@ -164,3 +164,24 @@ export const getLinkedContent = defineAction({
       .nullable()
   })
 })
+
+/** Una entrada enlazada, con unas cifras suyas y una campaña donde abrirla */
+const linkedEntry = getLinkedContent.output.shape.entry
+
+export const getLinkedContents = defineAction({
+  name: 'getLinkedContents',
+  kind: 'read',
+  description:
+    'Lo mismo que getLinkedContent para muchos [[@…]] de una vez (los de un capítulo o una página): cada nombre, con su entrada o null',
+  input: z
+    .object({
+      names: z.array(z.string().trim().min(1).max(200)).min(1).max(500),
+      worldId: z.uuid().optional(),
+      campaignId: z.uuid().optional(),
+      systemId: z.uuid().optional()
+    })
+    .refine((input) => Boolean(input.worldId || input.campaignId || input.systemId), {
+      message: 'worldId, campaignId o systemId'
+    }),
+  output: z.object({ items: z.array(z.object({ name: z.string(), entry: linkedEntry })) })
+})

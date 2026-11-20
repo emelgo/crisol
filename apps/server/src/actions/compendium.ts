@@ -20,7 +20,7 @@ import {
 } from '@crisol/contracts'
 import { chaptersRepo, systemImagesRepo, systemsRepo, tablesRepo, worldContentRepo } from '@crisol/db'
 import { cryptoRoller, DiceSyntaxError } from '@crisol/dice'
-import { authorize, can, foldName, matchLinkTarget, NotFoundError } from '@crisol/domain'
+import { authorize, can, linkMatcher, NotFoundError } from '@crisol/domain'
 import {
   browseContent,
   type Choices,
@@ -443,39 +443,74 @@ export async function linkedIn(
   name: string,
   system?: string | null
 ) {
+  return (await linkedManyIn(ctx, scope, [name], system)).get(name) ?? null
+}
+
+/** Lo mismo para muchos nombres de una vez (los `[[@…]]` de un capítulo): el compendio se lee e indexa una sola vez */
+export async function linkedManyIn(
+  ctx: ActionContext,
+  scope: { campaignId: string } | { systemId: string },
+  names: readonly string[],
+  system?: string | null
+) {
+  const out = new Map<string, LinkedEntry | null>()
   const found =
     'campaignId' in scope
       ? await campaignSystem(ctx, scope.campaignId)
       : await systemScope(ctx, scope.systemId, undefined)
-  if (!found?.row || (system && system !== found.row.id)) return null
+  if (!found?.row || (system && system !== found.row.id)) return out
   const { document, row, choices, entries, layer } = found
   // Lo del mundo lleva su marca (layers.ts)
   const ofWorld = (entry: ContentEntry) => Boolean((entry as ContentEntry & { world?: boolean }).world)
   const seen = visibleContent(document, entries, choices).map((s) => s.item)
   // `tipo/Nombre`, la clave o el nombre en cualquier idioma (ADR-0033)
-  const targets = seen.map((entry) => ({
-    entry,
-    key: entry.key,
-    names: textsOf(entry.name as Text | undefined),
-    type: entry.type,
-    typeLabels: textsOf(document.types[entry.type]?.label as Text | undefined),
-    world: ofWorld(entry)
-  }))
-  const match = matchLinkTarget(targets, name)?.entry
-  if (!match) return null
-  const [item] = await layers.contentByKeys(ctx, row.id, layer, [match.key])
-  const label = document.types[match.type]?.label
-  return {
-    key: match.key,
-    name: textOf(match.name as Text | undefined, choices.language) || match.key,
-    type: match.type,
-    typeLabel: label ? textOf(label as Text, choices.language) : match.type,
-    world: ofWorld(match),
-    systemId: row.id,
-    systemName: textOf(document.name, choices.language),
-    lines: linesOf(document, item, choices.language),
-    campaignId: 'campaignId' in scope ? scope.campaignId : null
+  const match = linkMatcher(
+    seen.map((entry) => ({
+      entry,
+      key: entry.key,
+      names: textsOf(entry.name as Text | undefined),
+      type: entry.type,
+      typeLabels: textsOf(document.types[entry.type]?.label as Text | undefined),
+      world: ofWorld(entry)
+    }))
+  )
+  const matched = new Map(names.map((name) => [name, match(name)?.entry]))
+  const keys = [...new Set([...matched.values()].flatMap((entry) => (entry ? [entry.key] : [])))]
+  const items = new Map(
+    keys.length > 0 ? (await layers.contentByKeys(ctx, row.id, layer, keys)).map((item) => [item.key, item]) : []
+  )
+  for (const [name, entry] of matched) {
+    if (!entry) {
+      out.set(name, null)
+      continue
+    }
+    const label = document.types[entry.type]?.label
+    out.set(name, {
+      key: entry.key,
+      name: textOf(entry.name as Text | undefined, choices.language) || entry.key,
+      type: entry.type,
+      typeLabel: label ? textOf(label as Text, choices.language) : entry.type,
+      world: ofWorld(entry),
+      systemId: row.id,
+      systemName: textOf(document.name, choices.language),
+      lines: linesOf(document, items.get(entry.key), choices.language),
+      campaignId: 'campaignId' in scope ? scope.campaignId : null
+    })
   }
+  return out
+}
+
+/** Una entrada enlazada, como la devuelve getLinkedContent */
+export interface LinkedEntry {
+  key: string
+  name: string
+  type: string
+  typeLabel: string
+  world: boolean
+  systemId: string
+  systemName: string
+  lines: { label: string; value: string }[]
+  campaignId: string | null
 }
 
 async function systemScope(ctx: ActionContext, systemId: string, organizationId: string | undefined): Promise<Scope> {

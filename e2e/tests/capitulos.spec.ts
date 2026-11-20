@@ -153,7 +153,20 @@ test('el aspecto de libro (ADR-0033): recuadros con título, citas, imágenes co
     systemId: five,
     source: 'srd51',
     title: 'Capítulo 2: Más reglas',
-    markdown: '## Encuentros\n\nAlgo.'
+    markdown: [
+      '## Encuentros {p105}',
+      '',
+      '![[book/cripta.svg|Una cripta|500]]',
+      '*Una cripta en ruinas*',
+      '',
+      'Algo, como en [[Capítulo 1: Lo básico|el principio]], con `dice: 2d6+3`.',
+      '',
+      'Dos.',
+      '',
+      'Tres.',
+      '',
+      'Lo que ya no cabe.'
+    ].join('\n')
   })
   const first = await api('saveChapter', {
     systemId: five,
@@ -190,6 +203,21 @@ test('el aspecto de libro (ADR-0033): recuadros con título, citas, imágenes co
   await settled(page)
   if (process.env.CRISOL_CAPTURAS)
     await page.screenshot({ path: `${process.env.CRISOL_CAPTURAS}/libro.png`, fullPage: true })
+
+  // Su vista previa, como en el libro: la imagen con su pie, los enlaces y las tiradas, sin la sintaxis; y corta
+  await page.getByRole('link', { name: 'sus encuentros' }).hover()
+  const preview = page.getByRole('tooltip')
+  await expect(preview.getByRole('heading', { name: 'Encuentros' })).toHaveAttribute('data-page', '105')
+  await expect(preview.getByRole('button', { name: 'Ver «Una cripta» en grande' })).toBeVisible()
+  await expect(preview.getByText('Una cripta en ruinas')).toBeVisible()
+  await expect(preview.getByRole('link', { name: 'el principio' })).toBeVisible()
+  await expect(preview.getByRole('button', { name: /2d6\+3/ })).toBeVisible()
+  await expect(preview).not.toContainText('![[')
+  await expect(preview).not.toContainText('{p105}')
+  await expect(preview).not.toContainText('Lo que ya no cabe')
+  await settled(page)
+  if (process.env.CRISOL_CAPTURAS)
+    await page.screenshot({ path: `${process.env.CRISOL_CAPTURAS}/libro-vista-previa.png` })
 
   // A otro capítulo, a su sección
   await page.getByRole('link', { name: 'sus encuentros' }).click()

@@ -193,6 +193,7 @@ describe('Actions', () => {
       readBookAgain: true,
       searchLinkableContent: true,
       getLinkedContent: true,
+      getLinkedContents: true,
       getCampaignContent: true,
       getSystemCompendium: true,
       searchSystemCompendium: true,
