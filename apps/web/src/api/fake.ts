@@ -1552,6 +1552,7 @@ export function fakeApi(
     markdown: string
     position: number
     version: number
+    master: boolean
   }[] = []
   const compendiumOf = (campaignId: string) => {
     // El compendio de un sistema sin campaña (su espacio): todos sus libros, las dos ediciones y nada del mundo
@@ -3853,6 +3854,7 @@ export function fakeApi(
             count: summary?.count ?? 0,
             byType: summary?.byType ?? [],
             pending: summary?.pending ?? 0,
+            master: source.master ?? false,
             chapters: chapters.filter((c) => c.systemId === systemId && c.source === source.key).length,
             campaigns: using.map((c) => ({ id: c.id, worldId: c.worldId, name: c.name }))
           }
@@ -3863,8 +3865,16 @@ export function fakeApi(
     listBookChapters: ({ systemId, source, campaignId }) => ({
       chapters: chapters
         .filter((c) => c.systemId === systemId && c.source === source)
+        .filter((c) => !c.master || !campaignId || campaigns.find((x) => x.id === campaignId)?.role !== 'player')
         .sort((a, b) => a.position - b.position)
-        .map(({ id, source: book, title, position, version }) => ({ id, source: book, title, position, version })),
+        .map(({ id, source: book, title, position, version, master }) => ({
+          id,
+          source: book,
+          title,
+          position,
+          version,
+          master
+        })),
       editable: !campaignId && ownSystems.some((s) => s.id === systemId && !s.deleted)
     }),
     getChapter: ({ chapterId, campaignId }) => {
@@ -3875,7 +3885,7 @@ export function fakeApi(
       const { systemId: _, ...rest } = found
       return { ...rest, markdown }
     },
-    saveChapter: ({ systemId, source, chapterId, version, title, markdown }) => {
+    saveChapter: ({ systemId, source, chapterId, version, title, markdown, master }) => {
       if (chapterId) {
         const found = chapters.find((c) => c.id === chapterId)
         if (!found) throw new ApiError('NOT_FOUND', 404)
@@ -3883,6 +3893,7 @@ export function fakeApi(
         Object.assign(found, {
           ...(title !== undefined ? { title } : {}),
           ...(markdown !== undefined ? { markdown } : {}),
+          ...(master !== undefined ? { master } : {}),
           version: found.version + 1
         })
         const { systemId: _, ...rest } = found
@@ -3890,7 +3901,16 @@ export function fakeApi(
       }
       if (!title) throw new ApiError('TITLE_REQUIRED', 400)
       const position = chapters.filter((c) => c.systemId === systemId && c.source === source).length
-      const made = { id: crypto.randomUUID(), systemId, source, title, markdown: markdown ?? '', position, version: 1 }
+      const made = {
+        id: crypto.randomUUID(),
+        systemId,
+        source,
+        title,
+        markdown: markdown ?? '',
+        position,
+        version: 1,
+        master: master ?? false
+      }
       chapters.push(made)
       const { systemId: _, ...rest } = made
       return rest

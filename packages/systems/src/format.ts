@@ -374,7 +374,13 @@ function build(strict: boolean) {
       .max(20)
       .optional()
       .describe('Las claves de los libros de este sistema a los que amplía (subclases, conjuros para sus listas…)'),
-    version: z.int().min(1).max(10_000).optional().describe('Su versión: sube al traer una nueva')
+    version: z.int().min(1).max(10_000).optional().describe('Su versión: sube al traer una nueva'),
+    master: z
+      .boolean()
+      .optional()
+      .describe(
+        'Solo para el máster (una guía, un bestiario, una aventura): sus capítulos no los leen los jugadores; sus entradas del compendio, sí'
+      )
   })
   // Los bloques de la hoja: tipos neutros; cada uno dice qué campos lee y qué se tira desde él
   const label = text().optional().describe('Su título (sin él, el del campo)')

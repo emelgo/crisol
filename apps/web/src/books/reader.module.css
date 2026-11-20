@@ -297,3 +297,16 @@
   clip-path: inset(50%);
   white-space: nowrap;
 }
+
+/* Un capítulo solo para el máster (ADR-0033): una etiqueta pequeña junto al título, como las de las listas */
+.masterTag {
+  flex: none;
+  padding: 0.1875rem 0.625rem;
+  border: 1px solid color-mix(in srgb, var(--color-text) 14%, transparent);
+  border-radius: 999px;
+  color: var(--color-muted);
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}

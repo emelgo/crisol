@@ -392,6 +392,7 @@ function BookSettings({
     attribution: book.attribution,
     requires: book.requires,
     color: book.color,
+    master: book.master,
     newVersion: false
   })
   // Su portada: con el cuadro de la de un mundo (de los archivos comunes; una subida va a ellos), se guarda al momento
@@ -421,6 +422,7 @@ function BookSettings({
         ...(draft.attribution !== book.attribution ? { attribution: draft.attribution } : {}),
         ...(draft.requires.join() !== book.requires.join() ? { requires: draft.requires } : {}),
         ...(draft.color !== book.color ? { color: draft.color } : {}),
+        ...(draft.master !== book.master ? { master: draft.master } : {}),
         ...(draft.newVersion ? { newVersion: true as const } : {})
       }),
     onSuccess: async () => {
@@ -508,6 +510,17 @@ function BookSettings({
             ))}
           </fieldset>
         )}
+        <label className={form.check}>
+          <input
+            type="checkbox"
+            checked={draft.master}
+            onChange={(event) => setDraft({ ...draft, master: event.currentTarget.checked })}
+          />
+          <span>
+            {t('systemBooks.master')}
+            <span className={form.hint}> · {t('systemBooks.masterHint')}</span>
+          </span>
+        </label>
         <label className={form.check}>
           <input
             type="checkbox"

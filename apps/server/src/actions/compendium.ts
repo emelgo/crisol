@@ -95,7 +95,7 @@ export async function campaignSystem(ctx: ActionContext, campaignId: string) {
     (entry) => !hidden.includes(entry.type)
   )
   // `layer`: lo que se lee del mundo; `world`: el compendio del mundo como tal (su id, sus copias), solo del máster
-  return { document, row, choices, entries, layer, world: master ? layer : null, wiki, hidden }
+  return { document, row, choices, entries, layer, world: master ? layer : null, wiki, hidden, master }
 }
 
 /** El id del objeto de la entrada en la hoja del personaje con el que se tira, mientras se tira */
@@ -477,12 +477,14 @@ async function systemScope(ctx: ActionContext, systemId: string, organizationId:
     layer: null,
     world: null,
     wiki: { worldId: '', organizationId: row?.organizationId ?? '' },
-    hidden: []
+    hidden: [],
+    // Desde el sistema lo lee quien lo lleva: todo
+    master: true
   }
 }
 
 async function compendiumView(ctx: ActionContext, found: Scope) {
-  const { document, row, choices, entries, world, wiki, hidden } = found
+  const { document, row, choices, entries, world, wiki, hidden, master } = found
   const language = choices.language
   // Los tipos que la campaña oculta a sus jugadores no salen (ni en sus secciones)
   const shownTypes = (types: CompendiumType[]) => types.filter((type) => !hidden.includes(type.key))
@@ -491,7 +493,8 @@ async function compendiumView(ctx: ActionContext, found: Scope) {
   const books = new Map(
     summarizeBooks(document, entries, { excluded: choices.excluded ?? [], language }).map((b) => [b.key, b])
   )
-  const chapters = row ? await chaptersRepo.chapterCounts(ctx.db, row.id) : new Map<string, number>()
+  // Lo que es solo para el máster no cuenta para quien no dirige (ADR-0033)
+  const chapters = row ? await chaptersRepo.chapterCounts(ctx.db, row.id, { open: !master }) : new Map<string, number>()
   const typeView = (type: CompendiumType) => ({
     ...type,
     label: say(type.label),
@@ -528,7 +531,7 @@ async function compendiumView(ctx: ActionContext, found: Scope) {
           requires: s.requires ?? [],
           count: (summary?.count ?? 0) - (summary?.excluded ?? 0),
           excluded: summary?.excluded ?? 0,
-          chapters: chapters.get(s.key) ?? 0
+          chapters: !master && s.master ? 0 : (chapters.get(s.key) ?? 0)
         }
       }),
     sections: compendiumSections(document, shownTypes(compendiumTypes(document, entries, choices)))

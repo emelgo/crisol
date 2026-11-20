@@ -1,4 +1,4 @@
-import { index, integer, jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core'
+import { boolean, index, integer, jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core'
 import { organizations } from './organizations.ts'
 import { trackedColumns } from './tracked.ts'
 import { worlds } from './worlds.ts'
@@ -64,7 +64,9 @@ export const systemChapters = pgTable(
     source: text().notNull(),
     position: integer().notNull(),
     title: text().notNull(),
-    markdown: text().notNull().default('')
+    markdown: text().notNull().default(''),
+    /** Solo para quien dirige (ADR-0033): los jugadores de una campaña con su libro no lo leen */
+    master: boolean().notNull().default(false)
   },
   (t) => [index().on(t.systemId, t.source, t.position)]
 )

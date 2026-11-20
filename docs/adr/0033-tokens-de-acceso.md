@@ -31,6 +31,13 @@ Foundry, los capítulos no podían incrustarlas, y el archivo de un sistema ten�
 - **Imágenes en los capítulos**: en el texto de un capítulo, `![[ruta]]` (con texto alternativo, ancho y pie, como en la
   wiki) es una imagen del sistema del libro por su ruta, no un archivo del mundo. Si falta, se dice. Se suben con
   `putSystemImages` (ya existía; ahora cualquiera, no solo las de un zip de Foundry), por la misma ruta.
+- **Imágenes del sistema, también por el MCP** (`subir_imagenes_sistema`, `ver_imagenes_sistema`,
+  `borrar_imagenes_sistema`): listarlas por carpeta y quitarlas por su ruta (con sus bytes; no se deshace).
+- **La portada de un libro puede ser una imagen del sistema** (`cover.image`, su ruta) en vez de un archivo de los
+  comunes (`cover.fileId`): una de las dos.
+- **Libros y capítulos solo para el máster** (`master` en una fuente del sistema o en un capítulo; migración 0095): a
+  quien no dirige la campaña no le llegan esos capítulos (ni en la lista, ni al pedirlos, ni en la cuenta del libro);
+  las entradas del compendio de ese libro, sí. Viaja en el archivo del sistema.
 - **El archivo de un sistema, hasta 64 MB** (antes 10): un sistema con sus libros en dos idiomas pasa de 30 MB. Se
   descartó bajarlo libro a libro: subir un archivo con `into` reemplaza el sistema entero.
 

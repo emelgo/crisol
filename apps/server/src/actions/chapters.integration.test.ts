@@ -203,6 +203,66 @@ describe('los capítulos de los libros (ADR-0025)', () => {
     ).toBe(404)
   })
 
+  it('solo para el máster (ADR-0033): un capítulo o un libro entero; sus entradas siguen llegando', async () => {
+    const five = await import5e()
+    const open = await ok200('saveChapter', {
+      systemId: five,
+      source: 'srd51',
+      title: 'Abierto',
+      markdown: 'Para todos.'
+    })
+    const hidden = await ok200('saveChapter', {
+      systemId: five,
+      source: 'srd51',
+      title: 'La aventura',
+      markdown: 'El villano es el alcalde.',
+      master: true
+    })
+    expect(hidden.master).toBe(true)
+    const worldId = (await ok200('createWorld', { name: 'Valdren' })).id
+    const campaignId = (await ok200('createCampaign', { worldId, name: 'La Marca', system: five })).id
+    const ana = await signUpTestUser(auth, { name: 'Ana', email: 'ana@crisol.test' })
+    const url = (await ok200('getInvitation', { campaignId })).url as string
+    await app.inject({
+      method: 'POST',
+      url: '/api/join',
+      payload: { secret: url.split('/unirse/')[1] },
+      headers: { origin: BASE_URL, cookie: ana.cookie }
+    })
+    const chaptersOf = async (cookie: string) =>
+      (await ok200('getCampaignCompendium', { campaignId }, cookie)).sources.find(
+        (s: { key: string }) => s.key === 'srd51'
+      ).chapters
+
+    // La jugadora no ve el capítulo del máster, ni en la lista, ni al pedirlo, ni en la cuenta del libro
+    expect(await titles(five, 'srd51', { campaignId }, ana.cookie)).toEqual(['Abierto'])
+    expect((await code('getChapter', { chapterId: hidden.id, campaignId }, ana.cookie)).status).toBe(404)
+    expect(await chaptersOf(ana.cookie)).toBe(1)
+    // El máster, todo
+    expect(await titles(five, 'srd51', { campaignId })).toEqual(['Abierto', 'La aventura'])
+    expect(await chaptersOf(owner.cookie)).toBe(2)
+
+    // El libro entero, solo para el máster: a la jugadora no le llega ningún capítulo, pero sí sus entradas
+    const { version } = await ok200('getSystem', { systemId: five })
+    await ok200('updateBook', { systemId: five, version, key: 'srd51', master: true })
+    expect(
+      (await ok200('getSystemBooks', { systemId: five })).books.find((b: { key: string }) => b.key === 'srd51')
+    ).toMatchObject({
+      master: true
+    })
+    expect(await titles(five, 'srd51', { campaignId }, ana.cookie)).toEqual([])
+    expect((await code('getChapter', { chapterId: open.id, campaignId }, ana.cookie)).status).toBe(404)
+    expect(await chaptersOf(ana.cookie)).toBe(0)
+    const found = await ok200('searchCampaignContent', { campaignId, query: 'bola de fuego' }, ana.cookie)
+    expect(found.items.length).toBeGreaterThan(0)
+
+    // Y viaja con el archivo del sistema
+    const exported = (await ok200('exportSystem', { systemId: five })).file
+    expect(exported.chapters.find((c: { title: string }) => c.title === 'La aventura').master).toBe(true)
+    expect(exported.chapters.find((c: { title: string }) => c.title === 'Abierto').master).toBeUndefined()
+    expect(exported.system.sources.find((s: { key: string }) => s.key === 'srd51').master).toBe(true)
+  })
+
   it('viajan con el sistema: exportar, importar, copiar y reemplazar', async () => {
     const five = await import5e()
     await ok200('saveChapter', { systemId: five, source: 'srd51', title: 'Uno', markdown: 'Primero.' })

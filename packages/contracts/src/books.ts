@@ -27,7 +27,13 @@ const bookFields = {
     .optional()
     .describe('Su portada, encuadrada: una imagen de los archivos comunes (fileId) o del sistema por su ruta (image)'),
   color: worldColor.optional().describe('Su color, sin portada (uno de los fijos o #rrggbb)'),
-  requires: z.array(bookKey).max(20).optional().describe('Las claves de los libros de este sistema a los que amplía')
+  requires: z.array(bookKey).max(20).optional().describe('Las claves de los libros de este sistema a los que amplía'),
+  master: z
+    .boolean()
+    .optional()
+    .describe(
+      'Solo para el máster (una guía, un bestiario, una aventura): sus capítulos no los leen los jugadores; sus entradas del compendio, sí'
+    )
 }
 
 export const book = z.object({
@@ -43,6 +49,7 @@ export const book = z.object({
   cover: bookCover.nullable(),
   color: worldColor.nullable(),
   requires: z.array(z.string()),
+  master: z.boolean().describe('Solo para el máster: sus capítulos no los leen los jugadores'),
   version: z.int(),
   count: z.int().describe('Cuántas entradas aceptadas trae'),
   byType: z.array(z.object({ type: z.string(), label: z.string(), count: z.int(), examples: z.array(z.string()) })),
@@ -101,6 +108,7 @@ export const updateBook = defineAction({
     cover: bookCover.nullable().optional(),
     color: worldColor.nullable().optional(),
     requires: z.array(bookKey).max(20).optional(),
+    master: z.boolean().optional(),
     newVersion: z.literal(true).optional().describe('Sube su versión (al traer una nueva)')
   }),
   output: z.object({ version: z.int() })
@@ -236,7 +244,8 @@ export const chapterSummary = z.object({
   source: z.string().describe('La clave de su libro'),
   title: z.string(),
   position: z.int(),
-  version: z.int().describe('Para cambiarlo, la que se tenía')
+  version: z.int().describe('Para cambiarlo, la que se tenía'),
+  master: z.boolean().describe('Solo para el máster: los jugadores no lo leen')
 })
 export const chapter = chapterSummary.extend({
   markdown: z
@@ -286,14 +295,18 @@ export const saveChapter = defineAction({
   name: 'saveChapter',
   kind: 'write',
   description:
-    'Crea un capítulo al final de un libro de un sistema de la cuenta (sin chapterId) o cambia uno (con chapterId y la versión que se tenía: si otro lo cambió entre medias, CHAPTER_CHANGED). Su texto, en Markdown de Obsidian; lo del máster, en > [!secreto]. Se deshace desde el historial',
+    'Crea un capítulo al final de un libro de un sistema de la cuenta (sin chapterId) o cambia uno (con chapterId y la versión que se tenía: si otro lo cambió entre medias, CHAPTER_CHANGED). Su texto, en Markdown de Obsidian; lo del máster, en > [!secreto] o, si es el capítulo entero, con master. Se deshace desde el historial',
   input: z.object({
     systemId: z.uuid(),
     source: bookKey,
     chapterId: z.uuid().optional(),
     version: z.int().min(1).optional(),
     title: chapterTitle.optional(),
-    markdown: chapterText.optional()
+    markdown: chapterText.optional(),
+    master: z
+      .boolean()
+      .optional()
+      .describe('Solo para el máster: los jugadores de las campañas con su libro no lo leen')
   }),
   output: chapter
 })

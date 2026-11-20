@@ -9,6 +9,17 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
+## Carga del D&D 2024, tanda A (rama `sistemas/carga-2024`; migración 0095; 2026-11-20; ADR-0033)
+
+- [ ] **Libro solo para el máster**: en el sistema, editar un libro › «Solo para el máster». En una campaña con ese
+  libro, una jugadora no ve sus capítulos (el libro sale con 0 capítulos), pero sí sus criaturas, objetos y reglas en el
+  compendio.
+- [ ] **Capítulo solo para el máster**: en su «⋯», «Solo para el máster» (lleva la etiqueta junto al título); «Que lo
+  lean los jugadores» lo devuelve.
+- [ ] **Portada de un libro desde una imagen del sistema** (la pone la IA): se ve en Libros, en el Inicio y en el
+  compendio.
+- Decidido sin ti: hasta 20 000 entradas por sistema (antes 5000; la IA pedía 50 000).
+
 ## Tokens de acceso, imágenes en los capítulos y sistemas de hasta 64 MB (rama `api/tokens-e-imagenes`; migración 0094; 2026-11-20; ADR-0033)
 
 - [ ] **Tokens de acceso** (Ajustes › IA, abajo): crea uno con nombre y caducidad; sale entero una sola vez con

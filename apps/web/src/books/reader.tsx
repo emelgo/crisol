@@ -8,7 +8,7 @@
 import type { Chapter, ChapterSummary } from '@crisol/contracts'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { Editor } from '@tiptap/core'
-import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Ellipsis, Trash2 } from 'lucide-react'
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Ellipsis, Eye, EyeOff, Trash2 } from 'lucide-react'
 import { type MouseEvent, type ReactNode, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ApiError } from '../api/client.ts'
@@ -426,7 +426,7 @@ function OpenChapter({
   const [deleting, setDeleting] = useState(false)
 
   /** Guarda en orden (cada uno con la versión que dejó el anterior) */
-  const save = (changes: { title?: string; markdown?: string }) => {
+  const save = (changes: { title?: string; markdown?: string; master?: boolean }) => {
     setState('saving')
     queue.current = queue.current.then(async () => {
       if (version.current === null) return
@@ -442,7 +442,7 @@ function OpenChapter({
         queryClient.setQueryData(queryKey, result)
         saved.current = true
         setState('saved')
-        if (changes.title !== undefined) await onChanged()
+        if (changes.title !== undefined || changes.master !== undefined) await onChanged()
       } catch (error) {
         setState(error instanceof ApiError && error.code === 'CHAPTER_CHANGED' ? 'conflict' : 'error')
       }
@@ -503,6 +503,7 @@ function OpenChapter({
         ) : (
           <h2 className={styles.chapterTitle}>{chapter.data.title}</h2>
         )}
+        {chapter.data.master && <span className={styles.masterTag}>{t('chapters.masterTag')}</span>}
         {editable && (
           <div className={styles.tools}>
             <SaveStatus state={state} />
@@ -528,6 +529,19 @@ function OpenChapter({
                   >
                     <ArrowDown size={16} aria-hidden="true" />
                     {t('chapters.down')}
+                  </MenuItem>
+                  <MenuItem
+                    onClick={() => {
+                      close()
+                      save({ master: !chapter.data?.master })
+                    }}
+                  >
+                    {chapter.data.master ? (
+                      <Eye size={16} aria-hidden="true" />
+                    ) : (
+                      <EyeOff size={16} aria-hidden="true" />
+                    )}
+                    {t(chapter.data.master ? 'chapters.forEveryone' : 'chapters.onlyMaster')}
                   </MenuItem>
                   <MenuItem
                     onClick={() => {
