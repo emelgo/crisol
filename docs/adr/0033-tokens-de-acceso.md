@@ -67,6 +67,16 @@ Foundry, los capítulos no podían incrustarlas, y el archivo de un sistema ten�
 - **El archivo de un sistema, hasta 64 MB** (antes 10): un sistema con sus libros en dos idiomas pasa de 30 MB. Se
   descartó bajarlo libro a libro: subir un archivo con `into` reemplaza el sistema entero.
 
+### La ficha de cada tipo en el compendio (2026-11-20)
+
+Pedido al cargar el D&D 2024: el compendio enseñaba todos los campos del tipo como «etiqueta: valor», también los de la
+hoja (sintonizado, equipado, cantidad), y la vista previa solo el texto más largo. Cada tipo puede decir su ficha en el
+formato (`types.<tipo>.card`), como el encabezado de 5etools: una línea de tipo con plantilla (`{campo}`,
+`{campo: si lo tiene}`, `{!campo: si no}`), un bloque de datos a dos lados (un campo por su clave, con su nombre, o una
+plantilla; los dados se tiran) y los campos que no salen. La arma el servidor (`entryCard`, en Markdown de una línea)
+con cada entrada que se lee, y se pinta igual en su página, en la vista previa y al desplegarla incrustada. Lo que sale
+en la ficha se sigue escribiendo en el editor de la entrada, pero no se repite en la lista de debajo.
+
 ## Consecuencias
 
 - Un token robado vale como la cuenta hasta que caduca o se quita: por eso la caducidad es obligatoria y corta por

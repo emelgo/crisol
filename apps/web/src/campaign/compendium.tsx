@@ -46,13 +46,14 @@ import { useDice } from '../dice/context.tsx'
 import { appendRoll } from '../dice/rolls.ts'
 import { useTray } from '../dice/tray.tsx'
 import { visibilityIn } from '../dice/visibility.ts'
-import { ContentScopeProvider } from '../wiki/content-scope.tsx'
+import { type ContentScope, ContentScopeProvider } from '../wiki/content-scope.tsx'
 import { useNarrow } from '../wiki/panel.tsx'
 import { LinkedPreview } from '../wiki/preview-card.tsx'
 import { BookCover } from './book-cover.tsx'
 import styles from './compendium.module.css'
 import { CompendiumSettings } from './compendium-settings.tsx'
 import { ContentText } from './content-text.tsx'
+import { EntryCard, EntryCardLine } from './entry-card.tsx'
 import { DeleteEntry, EntryEditor, type EntryTarget } from './entry-editor.tsx'
 import { EntryTable } from './entry-table.tsx'
 import { OriginNotice, ToSystem } from './origin.tsx'
@@ -1135,6 +1136,10 @@ function Entry({
   const fromWorld = item.world ? { ...item, world: item.world } : null
   const target = fromWorld ? worldTarget : systemTarget
   const where = world ? { worldId: world.worldId, systemId: world.systemId } : null
+  // Desde dónde se leen sus enlaces: su sistema o la campaña
+  const linkScope: ContentScope = inSystem
+    ? { kind: 'system', systemId: systemOfScope(campaignId) ?? '' }
+    : { kind: 'campaign', campaignId }
   return (
     <>
       <article className={styles.reading} aria-labelledby={titleId}>
@@ -1160,6 +1165,7 @@ function Entry({
           <h2 id={titleId} className={`${styles.name} ${bookLook.name}`} tabIndex={-1}>
             {name}
           </h2>
+          {item.card?.line && <EntryCardLine text={item.card.line} />}
           {fromWorld ? <WorldTag /> : <EditionTag edition={item.edition} legacy={item.legacy} />}
           {(target || (!fromWorld && worldTarget) || (fromWorld && systemTarget)) && (
             <div className={styles.entryActions}>
@@ -1200,15 +1206,28 @@ function Entry({
             writable={Boolean(worldTarget)}
           />
         )}
-        {fields.length > 0 && (
-          <dl className={styles.fields}>
-            {fields.map(({ field, text }) => (
-              <div key={field.key}>
-                <dt>{field.label}</dt>
-                <dd>{text}</dd>
-              </div>
-            ))}
-          </dl>
+        {item.card ? (
+          <EntryCard
+            card={item.card}
+            withLine={false}
+            onLink={openLinked}
+            preview={(linked) => (
+              <ContentScopeProvider value={linkScope}>
+                <LinkedPreview name={linked} />
+              </ContentScopeProvider>
+            )}
+          />
+        ) : (
+          fields.length > 0 && (
+            <dl className={styles.fields}>
+              {fields.map(({ field, text }) => (
+                <div key={field.key}>
+                  <dt>{field.label}</dt>
+                  <dd>{text}</dd>
+                </div>
+              ))}
+            </dl>
+          )
         )}
         {item.play && (
           <InPlay
@@ -1229,13 +1248,7 @@ function Entry({
         <FormError message={rolling.error ? errorText(rolling.error) : null} />
         {body && (
           <div className={bookLook.book}>
-            <ContentScopeProvider
-              value={
-                inSystem
-                  ? { kind: 'system', systemId: systemOfScope(campaignId) ?? '' }
-                  : { kind: 'campaign', campaignId }
-              }
-            >
+            <ContentScopeProvider value={linkScope}>
               <ContentText
                 text={body}
                 {...(inSystem ? {} : { onRoll: roll })}

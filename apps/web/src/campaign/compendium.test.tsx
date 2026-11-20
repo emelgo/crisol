@@ -68,7 +68,14 @@ const SYSTEM: System = {
         },
         ritual: { kind: 'boolean', label: { es: 'Ritual', en: 'Ritual' } },
         preparado: { kind: 'boolean', label: { es: 'Preparado', en: 'Prepared' } },
+        alcance: { kind: 'text', label: { es: 'Alcance', en: 'Range' } },
         descripcion: { kind: 'text', label: { es: 'Descripción', en: 'Description' }, lines: 8 }
+      },
+      // Su ficha, como en 5etools: la línea de tipo y el bloque de datos
+      card: {
+        line: '{!nivel: Truco de {escuela}}{nivel: Conjuro de nivel {nivel} de {escuela}}{ritual: (ritual)}',
+        left: ['alcance'],
+        hidden: ['preparado']
       }
     },
     clase: { document: 'item', label: { es: 'Clase', en: 'Class' }, fields: {} },
@@ -90,6 +97,8 @@ const spell = (source: string, edition: string): ContentItem => ({
     nivel: 3,
     escuela: 'evocacion',
     ritual: false,
+    alcance: '150 pies',
+    preparado: true,
     descripcion: { es: `Una **explosión** de ${edition}.`, en: 'A blast.' }
   },
   mechanics: {
@@ -222,9 +231,12 @@ describe('el compendio de una campaña', () => {
     await userEvent.click(library.getByRole('button', { name: 'Quitar los filtros' }))
     await userEvent.click(await library.findByRole('button', { name: 'Bola de fuego' }))
     const article = within(await screen.findByRole('article', { name: 'Bola de fuego' }))
-    expect(await article.findByText('Evocación')).toBeDefined()
-    expect(article.getByText('3')).toBeDefined()
+    // Su ficha: la línea de tipo bajo el nombre, el bloque de datos con su nombre en negrita y sin lo de la hoja
+    expect(await article.findByText('Conjuro de nivel 3 de Evocación')).toBeDefined()
+    expect(article.getByText('Alcance').tagName).toBe('STRONG')
+    expect(article.getByText(/150 pies/)).toBeDefined()
     expect(article.queryByText('Ritual')).toBeNull()
+    expect(article.queryByText('Preparado')).toBeNull()
     expect(article.getByText('explosión').tagName).toBe('STRONG')
     // Su mecánica, en palabras
     const play = within(article.getByRole('region', { name: 'En juego' }))
@@ -299,7 +311,7 @@ describe('el compendio de una campaña', () => {
     await userEvent.type(created.getByRole('textbox', { name: 'Texto' }), 'Un haz de luz plateada.')
     await userEvent.click(created.getByRole('button', { name: 'Guardar' }))
     const article = within(await screen.findByRole('article', { name: 'Rayo de luna' }))
-    expect(article.getByText('Evocación')).toBeDefined()
+    expect(article.getByText('Conjuro de nivel 2 de Evocación (ritual)')).toBeDefined()
     expect(article.getByText('Un haz de luz plateada.')).toBeDefined()
 
     await userEvent.click(article.getByRole('button', { name: 'Editar' }))
@@ -403,7 +415,7 @@ describe('el compendio de una campaña', () => {
     await userEvent.click(library.getByRole('button', { name: /^Conjuros/ }))
     await userEvent.click(await library.findByRole('button', { name: 'Bola de fuego' }))
     const article = within(await screen.findByRole('article', { name: 'Bola de fuego' }))
-    expect(await article.findByText('Evocación')).toBeDefined()
+    expect(await article.findByText('Conjuro de nivel 3 de Evocación')).toBeDefined()
     expect(api.calls).toContain('browseSystemCompendium')
     expect(api.calls).toContain('readSystemCompendium')
   })

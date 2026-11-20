@@ -12,6 +12,7 @@ import { useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { InPlay } from '../campaign/compendium.tsx'
+import { EntryCard } from '../campaign/entry-card.tsx'
 import { useOptionalDice } from '../dice/context.tsx'
 import { visibilityIn } from '../dice/visibility.ts'
 import styles from './content-embed.module.css'
@@ -93,12 +94,14 @@ export function ContentCard({
   const href = entryHref(scope, entry)
   const actor = compendium.data?.types.find((type) => type.key === entry.type)?.document === 'actor'
   const playable = Boolean(item?.play && (item.play.actions.length > 0 || item.play.effects.length > 0))
+  // Se despliega si tiene qué enseñar: su ficha (como en 5etools) o lo que hace en juego
+  const expandable = playable || Boolean(item?.card)
   return (
     <article className={styles.card} aria-labelledby={titleId} data-content-card="" data-open={open || undefined}>
       <div className={styles.line}>
         <BookOpen size={15} aria-hidden="true" className={styles.icon} />
         {/* Una línea, como una mención: su nombre (que despliega lo que hace en juego), su tipo y sus cifras */}
-        {playable ? (
+        {expandable ? (
           <button
             type="button"
             id={titleId}
@@ -128,22 +131,25 @@ export function ContentCard({
           </Link>
         )}
       </div>
-      {open && item?.play && (
+      {open && item && (item.card || playable) && (
         <div className={styles.more}>
-          <InPlay
-            play={item.play}
-            titleId={titleId}
-            {...(campaignId && compendium.data && dice
-              ? {
-                  rolling: {
-                    campaignId,
-                    entryKey: entry.key,
-                    actor,
-                    visibility: visibilityIn(dice?.visibility ?? 'all', readAs ? 'player' : 'master')
+          {item.card && <EntryCard card={item.card} compact />}
+          {item.play && playable && (
+            <InPlay
+              play={item.play}
+              titleId={titleId}
+              {...(campaignId && compendium.data && dice
+                ? {
+                    rolling: {
+                      campaignId,
+                      entryKey: entry.key,
+                      actor,
+                      visibility: visibilityIn(dice?.visibility ?? 'all', readAs ? 'player' : 'master')
+                    }
                   }
-                }
-              : {})}
-          />
+                : {})}
+            />
+          )}
         </div>
       )}
     </article>

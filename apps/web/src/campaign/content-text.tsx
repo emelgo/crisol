@@ -333,3 +333,20 @@ export function ContentText({
     </ContentLinks.Provider>
   )
 }
+
+/** Una línea de texto de una entrada (la de su ficha): sus enlaces, sus tiradas, su negrita y su cursiva, sin párrafo */
+export function ContentLine({
+  text,
+  onLink,
+  preview
+}: {
+  text: string
+  onLink?: ((name: string) => void) | undefined
+  preview?: ((name: string) => ReactNode) | undefined
+}) {
+  return (
+    <ContentLinks.Provider value={onLink ?? null}>
+      <ContentPreviews.Provider value={preview ?? null}>{inline(text, 'l')}</ContentPreviews.Provider>
+    </ContentLinks.Provider>
+  )
+}

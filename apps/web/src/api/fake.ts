@@ -111,6 +111,7 @@ import {
   creatureView,
   damageTaken,
   defensesOf,
+  entryCard,
   fileName,
   type Mechanics,
   mechanicsText,
@@ -3565,6 +3566,11 @@ export function fakeApi(
             ...plain,
             ...entry,
             play: mechanicsText(document, item.type, item.mechanics as Mechanics | undefined, choices.language),
+            card: entryCard(
+              document,
+              { type: item.type, data: item.data as Record<string, unknown> },
+              choices.language
+            ),
             granted: entry.granted.map((g) =>
               'choose' in g
                 ? { level: g.level, choose: textOf(g.choose, choices.language), count: g.count }

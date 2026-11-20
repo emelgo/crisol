@@ -261,7 +261,37 @@ function build(strict: boolean) {
       .array(modifier)
       .max(50)
       .optional()
-      .describe('Los bonos que da a quien lo lleva (un anillo, +1 a la defensa)')
+      .describe('Los bonos que da a quien lo lleva (un anillo, +1 a la defensa)'),
+    card: obj({
+      line: text(300)
+        .optional()
+        .describe(
+          'Su línea de tipo, en cursiva bajo el nombre: una plantilla con {campo}, {campo: lo que sale si lo tiene} y {!campo: lo que sale si no} («{tipo}, {rareza}{sintonia: (requiere sintonización {sintonia_por})}», «{!nivel: Truco de {escuela}}{nivel: Conjuro de nivel {nivel} de {escuela}}»)'
+        ),
+      left: z
+        .array(text(300))
+        .max(12)
+        .optional()
+        .describe(
+          'El bloque de datos, a la izquierda, renglón a renglón: un campo por su clave (sale con su nombre delante) o una plantilla («{peso} lb., {coste}»). Un campo de dados sale para tirarlo'
+        ),
+      right: z
+        .array(text(300))
+        .max(12)
+        .optional()
+        .describe('Lo mismo, a la derecha («{dano} {tipo_dano}», «{propiedades}», «Maestría: {maestria}»)'),
+      hidden: z
+        .array(key)
+        .max(100)
+        .optional()
+        .describe(
+          'Los campos que no salen en el compendio (los de la hoja: equipado, sintonizado, cantidad, preparado)'
+        )
+    })
+      .optional()
+      .describe(
+        'Su ficha en el compendio, como en 5etools (en su página, en la vista previa al pasar el ratón y al desplegarla): los campos que no nombra salen debajo, en una lista'
+      )
   })
 
   const roll = obj({

@@ -2,6 +2,7 @@
  * El compendio de una campaña (docs/specs/personajes.md § campana): los tipos de su contenido, con cuántos hay de cada
  * uno y los campos que se leen, y de cada documento su edición, sus otras versiones y lo que concede por nivel
  */
+import { cardKeys } from './card-template.ts'
 import type { Choices } from './choices.ts'
 import { editionOf, resolveConcept, type Seen, type Versioned, visibleContent } from './content.ts'
 import type { Field, System } from './format.ts'
@@ -14,6 +15,8 @@ export interface CompendiumField {
   label: Text
   kind: 'text' | 'number' | 'boolean' | 'list' | 'choice' | 'dice'
   options?: { value: string; label: Text }[]
+  /** Sale en la ficha del tipo (su línea o su bloque de datos): en la lista de debajo no se repite */
+  inCard?: true
 }
 
 export interface CompendiumType {
@@ -45,6 +48,25 @@ const longText = (fields: Record<string, Field>) =>
 /** El campo del texto largo de un tipo de un sistema (su descripción); sin él, null */
 export const textFieldOf = (system: System, type: string) => longText(system.types[type]?.fields ?? {})
 
+/** Los campos de un tipo que se leen (y se escriben) en el compendio: ni su texto largo, ni lo de la partida */
+export function compendiumFields(system: System, typeKey: string): CompendiumField[] {
+  const type = system.types[typeKey]
+  if (!type) return []
+  const text = longText(type.fields)
+  // Una criatura (un documento de tipo actor) lleva su bloque de estadísticas en su texto: sus campos no se repiten
+  if (type.document === 'actor' && text) return []
+  // Lo de la hoja que dice que no sale, fuera; lo de su ficha, marcado (se escribe, pero no se repite en la lista)
+  const hidden = new Set(type.card?.hidden ?? [])
+  const inCard = cardKeys(type.card)
+  return Object.entries(type.fields).flatMap(([field, f]): CompendiumField[] => {
+    if (field === text || IN_PLAY.has(field) || !READ_KINDS.has(f.kind) || hidden.has(field)) return []
+    const read: CompendiumField = { key: field, label: f.label, kind: f.kind as CompendiumField['kind'] }
+    if ((f.kind === 'choice' || f.kind === 'list') && f.options) read.options = f.options
+    if (inCard.has(field)) read.inCard = true
+    return [read]
+  })
+}
+
 /** Los tipos con contenido en lo que se ve, en el orden del sistema, con cuántos hay y los campos que se leen */
 export function compendiumTypes(
   system: System,
@@ -66,16 +88,7 @@ export function compendiumTypes(
     const count = counts.get(key) ?? 0
     if (count === 0 && !all) return []
     const text = longText(type.fields)
-    // Una criatura (un documento de tipo actor) lleva su bloque de estadísticas en su texto: sus campos no se repiten
-    const fields =
-      type.document === 'actor' && text
-        ? []
-        : Object.entries(type.fields).flatMap(([field, f]): CompendiumField[] => {
-            if (field === text || IN_PLAY.has(field) || !READ_KINDS.has(f.kind)) return []
-            const read: CompendiumField = { key: field, label: f.label, kind: f.kind as CompendiumField['kind'] }
-            if ((f.kind === 'choice' || f.kind === 'list') && f.options) read.options = f.options
-            return [read]
-          })
+    const fields = compendiumFields(system, key)
     return [{ key, label: type.label, document: type.document, count, fields, text, editions: editions.get(key) ?? {} }]
   })
 }
