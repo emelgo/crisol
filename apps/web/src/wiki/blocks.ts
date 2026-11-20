@@ -231,6 +231,7 @@ export const BLOCKS: readonly BlockChoice[] = [
   callout('warning', 'calloutWarning', 'calloutHint', 'aviso'),
   callout('danger', 'calloutDanger', 'calloutHint', 'peligro'),
   callout('read-aloud', 'calloutReadAloud', 'calloutReadAloudHint', 'leer voz alta mesa'),
+  callout('quote', 'calloutQuote', 'calloutQuoteHint', 'cita frase autor quote'),
   {
     id: 'box',
     group: 'boxes',

@@ -133,10 +133,41 @@ export const characterState = z.object({
         left: z.number(),
         recovery: z.string().optional(),
         amount: z.string().optional(),
-        error: z.string().optional()
+        error: z.string().optional(),
+        spell: z
+          .object({ group: z.int(), spell: z.string() })
+          .optional()
+          .describe('Los usos de un conjuro de una criatura (N al día): de qué grupo y qué conjuro')
       })
     )
     .describe('Los usos de lo que lleva (la Furia, las cargas): su máximo, lo gastado y cuándo se recuperan'),
+  spellcasting: z
+    .object({
+      label: z.string(),
+      ability: z.string().nullable().describe('El nombre de su característica'),
+      dc: z.number().nullable(),
+      attack: z.number().nullable(),
+      groups: z.array(
+        z.object({
+          label: z.string().nullable(),
+          uses: z.int().nullable().describe('Al día cada uno; null, a voluntad'),
+          spells: z.array(
+            z.object({
+              ref: z.string().describe('Como lo nombra (su clave o su concepto)'),
+              key: z.string().nullable().describe('La entrada del compendio, si está'),
+              name: z.string(),
+              resource: z.string().nullable().describe('Su recurso de usos (N al día)'),
+              rolls: z
+                .array(z.enum(['attack', 'damage', 'heal']))
+                .optional()
+                .describe('Lo que se tira de su acción (rollForCreature con spell)')
+            })
+          )
+        })
+      )
+    })
+    .optional()
+    .describe('Los conjuros de una criatura (ADR-0033): su CD, su ataque y sus grupos'),
   itemValues: z
     .record(z.string(), z.record(z.string(), z.unknown()))
     .describe('Los valores calculados de cada cosa que lleva, por su id'),
@@ -154,7 +185,33 @@ export const characterState = z.object({
           .nullable(),
         damage: z.array(z.object({ formula: z.string(), type: z.string().optional() })),
         heal: z.string().nullable(),
-        error: z.string().optional()
+        error: z.string().optional(),
+        options: z
+          .array(
+            z.object({
+              key: z.string(),
+              label: z.string(),
+              attack: z.string().nullable(),
+              bonus: z.number().nullable(),
+              save: z
+                .object({
+                  ability: z.string(),
+                  abilityLabel: z.string(),
+                  dc: z.number(),
+                  success: z.string().optional()
+                })
+                .nullable(),
+              damage: z.array(z.object({ formula: z.string(), type: z.string().optional() })),
+              heal: z.string().nullable()
+            })
+          )
+          .optional()
+          .describe(
+            'Si es «uno de estos efectos» (los rayos del contemplador): cada opción, armada; se tira con option'
+          ),
+        count: z.int().optional().describe('Cuántas opciones se usan cada vez'),
+        distinct: z.boolean().optional().describe('Si tienen que ser distintas'),
+        pick: z.string().optional().describe('La fórmula para que salga una al azar: el puesto que sale, desde 1')
       })
     )
     .describe('Lo que puede hacer (ataques, conjuros): su ataque, su salvación y su daño, armados'),
@@ -324,7 +381,8 @@ export const rollForCharacter = defineAction({
         part: z.enum(['attack', 'damage', 'heal']),
         level: z.int().min(0).max(30).optional(),
         mode: z.string().max(60).optional(),
-        critical: z.boolean().optional()
+        critical: z.boolean().optional(),
+        option: z.string().max(60).optional().describe('De una acción con opciones (sus options), cuál se tira')
       })
       .optional(),
     visibility: z.enum(['all', 'self', 'master', 'hidden']).default('all')

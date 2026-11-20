@@ -1298,7 +1298,7 @@ export function fakeApi(
   /** Quien lleva el mundo: en la falsa, el propietario */
   const leadsWorlds = () => organizations.some((o) => o.role === 'owner')
   // Las imágenes subidas de los sistemas (en la falsa, sin sus bytes)
-  const systemImages: Array<{ systemId: string; path: string; license: string }> = []
+  const systemImages: Array<{ systemId: string; path: string; license: string; credit?: string | null }> = []
   // Las criaturas en juego (docs/specs/criaturas.md), en la falsa: las del máster
   const creatures: Array<{
     id: string
@@ -3883,7 +3883,19 @@ export function fakeApi(
       const player = campaignId ? campaigns.find((c) => c.id === campaignId)?.role === 'player' : false
       const markdown = player ? markdownWithoutSecrets(found.markdown) : found.markdown
       const { systemId: _, ...rest } = found
-      return { ...rest, markdown }
+      // Sus enlaces, como el servidor (solo a capítulos del mismo sistema por su título, o a una sección suya)
+      const links = [...markdown.matchAll(/(?<!!)\[\[(?!@)([^\]|\n]*)(?:\|[^\]\n]*)?\]\]/g)].map((m) => {
+        const target = (m[1] ?? '').trim()
+        const [title = '', section = null] = target.split('#') as [string, string | undefined]
+        const to = title ? chapters.find((c) => c.systemId === found.systemId && c.title === title.trim()) : found
+        return { target, chapter: to ? { id: to.id, source: to.source } : null, section: section?.trim() || null }
+      })
+      const credits = Object.fromEntries(
+        systemImages.flatMap((i) =>
+          i.systemId === found.systemId && i.credit && markdown.includes(`![[${i.path}`) ? [[i.path, i.credit]] : []
+        )
+      )
+      return { ...rest, markdown, links, credits }
     },
     saveChapter: ({ systemId, source, chapterId, version, title, markdown, master }) => {
       if (chapterId) {
@@ -4155,7 +4167,8 @@ export function fakeApi(
     // Las imágenes subidas de un sistema, en la falsa: solo se apuntan
     putSystemImages: ({ systemId, images }) => {
       if (!ownSystems.some((s) => s.id === systemId && !s.deleted)) throw new ApiError('NOT_FOUND', 404)
-      for (const image of images) systemImages.push({ systemId, path: image.path, license: image.license })
+      for (const image of images)
+        systemImages.push({ systemId, path: image.path, license: image.license, credit: image.credit })
       return { saved: images.length, skipped: [] }
     },
     listSystemImages: ({ systemId, prefix, limit = 200, offset = 0 }) => {

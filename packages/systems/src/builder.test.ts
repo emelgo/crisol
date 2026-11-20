@@ -217,6 +217,27 @@ describe('el creador: montar un personaje de sus elecciones', () => {
     expect(valueAt(sheet, 'caracteristicas.fue.puntuacion')).toBe(17)
   })
 
+  it('un aumento elegido con tope (max, ADR-0033): no pasa de él, como los dones épicos hasta 30', () => {
+    const capped = content.map((item) =>
+      item.key === 'barbaro_mejora_de_caracteristica_2014' || item.concept === 'barbaro_mejora_de_caracteristica'
+        ? {
+            ...item,
+            mechanics: {
+              ...item.mechanics,
+              grants: item.mechanics?.grants?.map((g) => (g.choose ? { ...g, choose: { ...g.choose, max: '16' } } : g))
+            }
+          }
+        : item
+    )
+    const built = buildCharacter(fiveE, capped, campaign, {
+      scores: { base: scores },
+      picks: [{ id: 'c1', step: 'clase', key: 'barbaro_2014', level: 4 }],
+      decisions: { 'c1>barbaro_mejora_de_caracteristica@4>mejora': ['fue', 'fue'] }
+    })
+    const sheet = evaluate(fiveE, 'personaje', built.document).values
+    expect(valueAt(sheet, 'caracteristicas.fue.puntuacion')).toBe(16)
+  })
+
   it('los aumentos de un trasfondo de 2024: de sus tres características, +2 y +1 o +1 a las tres', () => {
     const b = (chosen: string[]): Build => ({
       scores: { base: scores },

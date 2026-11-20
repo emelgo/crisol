@@ -324,8 +324,9 @@ describe('el Markdown de una página', () => {
       ].join('\n')
     )
     const [warning, note, secret, links, quote] = read.body.content ?? []
-    expect(warning).toMatchObject({ type: 'callout', attrs: { kind: 'warning' } })
-    expect(warning?.content?.map((p) => p.content?.[0]?.text)).toEqual(['Cuidado', 'con la marea'])
+    // Su título va aparte (ADR-0033), y vuelve al escribirlo
+    expect(warning).toMatchObject({ type: 'callout', attrs: { kind: 'warning', title: 'Cuidado' } })
+    expect(warning?.content?.map((p) => p.content?.[0]?.text)).toEqual(['con la marea'])
     expect(note?.type).toBe('note')
     expect(secret?.type).toBe('secret')
     expect(secret?.attrs?.id).toMatch(/^[a-z0-9]{8}$/)
@@ -393,5 +394,41 @@ describe('el Markdown de una página', () => {
     const read = pageFromMarkdown(markdown)
     expect(read.properties).toEqual([])
     expect(read.body.content?.map((b) => b.type)).toEqual(['horizontalRule', 'paragraph'])
+  })
+
+  it('[[#Sección]], como en Obsidian: un enlace sin título a una sección de donde se escribe', () => {
+    const body = pageFromMarkdown('Ver [[#La iniciativa|la iniciativa]] y [[#Combate]].').body
+    const links = body.content?.[0]?.content?.filter((n) => n.type === 'pageLink')
+    expect(links?.map((n) => n.attrs)).toEqual([
+      { pageId: null, title: '', anchor: 'La iniciativa', label: 'la iniciativa' },
+      { pageId: null, title: '', anchor: 'Combate', label: null }
+    ])
+    expect(pageToMarkdown({ properties: [], body, separate: () => null })).toBe(
+      'Ver [[#La iniciativa|la iniciativa]] y [[#Combate]].\n'
+    )
+    // Sin título ni sección no es un enlace
+    expect(pageFromMarkdown('[[]]').body.content?.[0]?.content?.[0]?.type).toBe('text')
+  })
+
+  it('el título de un recuadro va aparte y vuelve igual; > [!cita] es una cita (ADR-0033)', () => {
+    const markdown =
+      '> [!nota] Aprender viendo jugar\n> Una buena forma de aprender.\n\n> [!cita]\n> Esta historia comenzó hace 50 años.\n'
+    const { body } = pageFromMarkdown(markdown)
+    expect(body.content?.map((n) => n.attrs)).toMatchObject([
+      { kind: 'note', title: 'Aprender viendo jugar' },
+      { kind: 'quote', title: null }
+    ])
+    expect(pageToMarkdown({ properties: [], body, separate: () => null })).toBe(markdown)
+  })
+
+  it('la página del libro de un título y de un recuadro (ADR-0033): {p12} y [!nota|p5], y vuelven igual', () => {
+    const markdown = '## Encuentros {p12}\n\n> [!nota|p5] Aprender viendo jugar\n> Mira cómo juegan.\n'
+    const { body } = pageFromMarkdown(markdown)
+    expect(body.content?.[0]).toMatchObject({ type: 'heading', attrs: { page: 12 }, content: [{ text: 'Encuentros' }] })
+    expect(body.content?.[1]).toMatchObject({ type: 'callout', attrs: { page: 5, title: 'Aprender viendo jugar' } })
+    expect(pageToMarkdown({ properties: [], body, separate: () => null })).toBe(markdown)
+    // Con su id, también
+    const withId = pageFromMarkdown('## Encuentros {p.12} ^abc123').body.content?.[0]
+    expect(withId?.attrs).toMatchObject({ page: 12, id: 'abc123' })
   })
 })

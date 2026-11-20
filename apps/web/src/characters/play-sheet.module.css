@@ -684,3 +684,60 @@
 .item[draggable="true"] {
   cursor: grab;
 }
+
+/* Una acción con opciones (ADR-0033): su nombre, cuántas y «Tirar» arriba; sus opciones debajo, un poco metidas */
+.optionsAction {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.options {
+  display: grid;
+  flex-basis: 100%;
+  gap: 0;
+  margin: 0;
+  padding: 0 0 0 var(--space-4);
+  list-style: none;
+}
+
+.options > .item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  border-block-end: 0;
+}
+
+.options > .item .itemName {
+  font-weight: 400;
+}
+
+/* La que ha salido al tirar: marcada con el acento, sin mover nada */
+.options > .item[data-picked] {
+  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+  box-shadow: inset 3px 0 0 var(--color-accent);
+}
+
+.optionNumber {
+  display: inline-block;
+  min-inline-size: 1.5em;
+  color: var(--color-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Los conjuros de una criatura (ADR-0033): cada grupo con su rótulo pequeño encima */
+.spellGroup {
+  margin-block-start: var(--space-3);
+}
+
+.spellGroupTitle {
+  margin: 0 0 var(--space-1);
+  color: var(--color-muted);
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}

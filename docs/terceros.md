@@ -24,6 +24,7 @@ qué hay que repasar.
 | Los gráficos del texto, cargados aparte con el primero. Dependencia de npm, sin copiar su código | `apps/web/package.json` | Chart.js (https://github.com/chartjs/Chart.js) | 4.6.1 | MIT |
 | El grafo de relaciones: las fuerzas, mover y acercar y la selección del SVG o del lienzo. Dependencias de npm, sin copiar su código | `apps/web/package.json` | d3-force, d3-zoom, d3-selection (https://github.com/d3), de Mike Bostock | 3.0.1 | ISC |
 | La disposición del árbol genealógico y del organigrama en tarjetas. Dependencia de npm, sin copiar su código | `apps/web/package.json` | @dagrejs/dagre (https://github.com/dagrejs/dagre) | 3.1.3 | MIT |
+| El aspecto de libro de los capítulos y del compendio (títulos en versalitas y su color, recuadros con sombra y bordes, leer en voz alta, citas, imágenes con pie y crédito): sus colores y medidas del modo noche, pasados a CSS y adaptados a nuestras piezas | `apps/web/src/books/book-look.module.css` | 5etools-src (https://github.com/5etools-mirror-3/5etools-src), `scss/includes/render.scss` y `render--night.scss` | `main` del 2026-11-20 | MIT (© 2017 TheGiddyLimit y colaboradores) |
 
 ## Imágenes propias de la app (2026-11-12)
 

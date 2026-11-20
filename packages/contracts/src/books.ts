@@ -247,12 +247,24 @@ export const chapterSummary = z.object({
   version: z.int().describe('Para cambiarlo, la que se tenía'),
   master: z.boolean().describe('Solo para el máster: los jugadores no lo leen')
 })
+/** A dónde lleva un enlace `[[…]]` de un capítulo (ADR-0033): a un capítulo (de este libro o de otro) y una sección */
+export const chapterLink = z.object({
+  target: z.string().describe('Lo enlazado, tal como se escribió (Título#Sección)'),
+  chapter: z.object({ id: z.uuid(), source: z.string() }).nullable().describe('null: no existe o no se ve'),
+  section: z.string().nullable()
+})
+
 export const chapter = chapterSummary.extend({
   markdown: z
     .string()
     .describe(
-      'Su texto, en Markdown de Obsidian (títulos, listas, tablas, llamadas, [[@Entrada]], [[@tipo/Entrada]] o [[@clave]] si hay dos que se llaman igual; una imagen del sistema, por su ruta: ![[ruta/imagen.webp|texto alternativo|ancho]])'
-    )
+      'Su texto, en Markdown de Obsidian (títulos, listas, tablas, llamadas, [[@Entrada]], [[@tipo/Entrada]] o [[@clave]] si hay dos que se llaman igual; una imagen del sistema, por su ruta: ![[ruta/imagen.webp|texto alternativo|ancho]] y, en la línea siguiente, su pie en cursiva; otro capítulo, otro libro o una sección: [[Capítulo 4]], [[Manual del jugador]], [[Manual del jugador#Capítulo 1]], [[#Sección]], con |texto propio)'
+    ),
+  links: z.array(chapterLink).optional().describe('A dónde lleva cada [[…]] de su texto, para quien lo lee'),
+  credits: z
+    .record(z.string(), z.string())
+    .optional()
+    .describe('El crédito de cada imagen del sistema que incrusta, por su ruta')
 })
 export type ChapterSummary = z.infer<typeof chapterSummary>
 export type Chapter = z.infer<typeof chapter>
@@ -262,7 +274,7 @@ const chapterText = z
   .string()
   .max(400_000)
   .describe(
-    'En Markdown de Obsidian; una imagen del sistema, por su ruta: ![[ruta/imagen.webp|texto alternativo|ancho]]'
+    'En Markdown de Obsidian; una imagen del sistema, por su ruta: ![[ruta/imagen.webp|texto alternativo|ancho]] y, en la línea siguiente, su pie en cursiva (*El pie*); el crédito del ilustrador sale solo (el de la imagen). Su página en el libro, como en 5etools: al final de un título (## Encuentros {p12}) o entre las opciones de un recuadro (> [!nota|p5] Su título). Un recuadro con su título: > [!nota] Su título (también consejo, aviso, peligro o leer, para leer en voz alta); una cita: > [!cita] con sus líneas y, tras una línea > vacía, quien la dice en su propio párrafo (> — Autor). Otro capítulo, otro libro o una sección: [[Capítulo 4: Crear aventuras]] (o solo [[Capítulo 4]]), [[Manual del jugador]], [[Manual del jugador#Capítulo 1]], [[#Una sección]], [[Capítulo 4#Encuentros]], con |texto propio'
   )
 
 export const listBookChapters = defineAction({

@@ -330,6 +330,26 @@ export const es = {
   // La hoja de un personaje en partida
   playSheet: {
     values: 'Sus valores',
+    spellDc: 'CD {{dc}}',
+    atWill: 'A voluntad',
+    perDay_one: '{{count}}/día',
+    perDay_other: '{{count}}/día cada uno',
+    spell: {
+      attack: 'Ataque de {{what}}',
+      damage: 'Daño de {{what}}',
+      heal: 'Curación de {{what}}',
+      attackShort: 'Ataque',
+      damageShort: 'Daño',
+      healShort: 'Cura'
+    },
+    optionsCount_one: 'una de estas',
+    optionsCount_other: '{{count}} de estas',
+    optionsDistinct_one: 'una de estas',
+    optionsDistinct_other: '{{count}} distintas',
+    optionsOf: 'Opciones de {{what}}',
+    pick: 'Tirar {{formula}}',
+    pickOf: 'Tirar {{formula}} para ver qué sale de {{what}}',
+    picked: 'ha salido',
     rollOf: 'Tirar {{what}} ({{value}})',
     rollStat: 'Tirar {{what}}',
     rollFor: 'Tirar por {{what}}',
@@ -1148,6 +1168,8 @@ export const es = {
     calloutHint: 'Recuadro',
     calloutReadAloud: 'Leer en voz alta',
     calloutReadAloudHint: 'Para la mesa',
+    calloutQuote: 'Cita con autor',
+    calloutQuoteHint: 'Las palabras de alguien y quien las dice',
     box: 'Caja',
     boxHint: 'Con marco',
     pageBreak: 'Salto de página',
@@ -1234,6 +1256,7 @@ export const es = {
     upload: 'Subirlo',
     trashed: '«{{name}}» está en la papelera',
     missingImage: 'Falta la imagen «{{name}}»',
+    creditBy: 'Ilustración de',
     uploading: 'Subiendo «{{name}}»…',
     uploaded: '«{{name}}» subido',
     failed: 'No se pudo subir «{{name}}»: {{error}}'
@@ -4155,7 +4178,10 @@ export const es = {
     tip: 'Consejo',
     warning: 'Aviso',
     danger: 'Peligro',
-    'read-aloud': 'Leer en voz alta'
+    'read-aloud': 'Leer en voz alta',
+    quote: 'Cita',
+    title: 'Título del recuadro ({{kind}})',
+    page: 'p{{page}}'
   },
   format: {
     toolbar: 'Formato',

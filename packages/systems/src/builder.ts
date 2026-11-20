@@ -5,7 +5,7 @@
  * cada paso, su nivel y si ya tiene lo que su sistema pide. Puro: igual en el servidor y en la web
  */
 import { z } from 'zod'
-import { actionsOf } from './actions.ts'
+import { actionsOf, type SpellcastingView, spellcastingOf } from './actions.ts'
 import type { Choices } from './choices.ts'
 import { editionOf, resolveConcept, type Seen, visibleContent } from './content.ts'
 import { type DocumentItem, evaluate, evaluateWith, type Resource, type SystemDocument } from './evaluate.ts'
@@ -705,12 +705,14 @@ export function playedSheet(
   let resources: Resource[] = []
   let itemValues: Record<string, Record<string, Value>> = {}
   let actions: ReturnType<typeof actionsOf> = []
+  let spellcasting: SpellcastingView | null = null
   try {
     const evaluated = evaluate(system, type, played.document, { settings: choices.settings ?? {}, language })
     values = evaluated.values
     resources = evaluated.resources
     itemValues = evaluated.items
     actions = actionsOf(system, type, played.document, { language, settings: choices.settings ?? {} })
+    spellcasting = spellcastingOf(system, type, played.document, { language, settings: choices.settings ?? {} })
   } catch {
     values = {}
   }
@@ -739,8 +741,27 @@ export function playedSheet(
         save: a.save,
         damage: a.damage.map((d) => ({ formula: d.formula, ...(d.type ? { type: d.type } : {}) })),
         heal: a.heal?.formula ?? null,
-        ...(a.error ? { error: a.error } : {})
+        ...(a.error ? { error: a.error } : {}),
+        // Una acción con opciones (ADR-0033): cada una armada, cuántas se usan, si distintas y la fórmula para sacar una
+        ...(a.options
+          ? {
+              options: a.options.map((o) => ({
+                key: o.key,
+                label: o.label,
+                attack: o.attack,
+                bonus: o.bonus,
+                save: o.save,
+                damage: o.damage.map((d) => ({ formula: d.formula, ...(d.type ? { type: d.type } : {}) })),
+                heal: o.heal?.formula ?? null
+              })),
+              count: a.count ?? 1,
+              ...(a.distinct ? { distinct: true } : {}),
+              ...(a.pick ? { pick: a.pick } : {})
+            }
+          : {})
       })),
+      // Los conjuros de una criatura (ADR-0033); sus nombres los pone quien lee el compendio
+      ...(spellcasting ? { spellcasting } : {}),
       // Los bloques de su hoja, con sus nombres
       layout: sheetView(system, type, language),
       rolls: rollsOf(system, type, language, played.document).map((r) => ({

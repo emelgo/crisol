@@ -84,7 +84,7 @@ type CharacterState = ActionOutput<'getCharacter'>['state']
 type State = Pick<
   CharacterState,
   'sheet' | 'resources' | 'itemValues' | 'actions' | 'layout' | 'rolls' | 'carried' | 'playMissing'
-> & { items?: CharacterState['items'] }
+> & { items?: CharacterState['items']; spellcasting?: CharacterState['spellcasting'] }
 type DiceRoll = ActionOutput<'rollForCharacter'>['roll']
 /** De quién es la hoja: su campaña y lo de la partida guardado */
 export interface SheetSubject {
@@ -97,7 +97,9 @@ export interface SheetSubject {
 export interface SheetRoll {
   visibility: 'all' | 'self' | 'master' | 'hidden'
   roll?: { key: string; element?: string; mode?: string }
-  action?: { item: string | null; key: string; part: 'attack' | 'damage' | 'heal'; mode?: string }
+  action?: { item: string | null; key: string; part: 'attack' | 'damage' | 'heal'; mode?: string; option?: string }
+  /** Un conjuro de una criatura (ADR-0033) */
+  spell?: { key: string; part: 'attack' | 'damage' | 'heal' }
 }
 
 const signed = (n: number) => (n >= 0 ? `+${n}` : `−${-n}`)
@@ -129,8 +131,11 @@ interface Ctx {
   save: (change: Change) => Promise<void>
   roll: (input: {
     roll?: { key: string; element?: string }
-    action?: { item: string | null; key: string; part: 'attack' | 'damage' | 'heal' }
+    action?: { item: string | null; key: string; part: 'attack' | 'damage' | 'heal'; option?: string }
+    spell?: { key: string; part: 'attack' | 'damage' | 'heal' }
   }) => void
+  /** Tira una fórmula suelta al registro, con su nombre (la de una acción con opciones: cuál sale) */
+  rollFormula: (formula: string, label: string) => Promise<number | null>
 }
 
 export function PlaySheet({
@@ -179,7 +184,8 @@ export function PlaySheet({
       return rollWith({
         visibility,
         ...(input.roll ? { roll: { ...input.roll, ...withMode } } : {}),
-        ...(input.action ? { action: { ...input.action, ...(input.action.part === 'attack' ? withMode : {}) } } : {})
+        ...(input.action ? { action: { ...input.action, ...(input.action.part === 'attack' ? withMode : {}) } } : {}),
+        ...(input.spell ? { spell: input.spell } : {})
       })
     },
     onSuccess: (out) => setLast(out.roll)
@@ -191,6 +197,15 @@ export function PlaySheet({
     save,
     roll: (input) => {
       if (!rolling.isPending) rolling.mutate(input)
+    },
+    rollFormula: async (formula, label) => {
+      const out = await api.call('rollDice', {
+        campaignId: subject.campaignId,
+        formula: `${formula} # ${label}`,
+        visibility
+      })
+      setLast(out.roll)
+      return out.roll.total
     }
   }
   const layout = state.layout as SheetBlockView[]
@@ -245,6 +260,7 @@ export function PlaySheet({
       {layout.map((block, i) => (
         <Block key={`${block.kind}-${i.toString(36)}`} block={block} ctx={ctx} />
       ))}
+      {state.spellcasting && <SpellcastingBlock casting={state.spellcasting} ctx={ctx} />}
       {rests && <Rests ctx={ctx} label={t('playSheet.rest')} />}
     </div>
   )
@@ -855,47 +871,206 @@ function ActionsBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: '
         {block.label ?? t('playSheet.actions')}
       </h2>
       <ul className={styles.items}>
-        {actions.map((a) => (
-          <li key={`${a.item}-${a.key}`} className={styles.item}>
-            <span className={styles.itemName}>{a.label}</span>
-            {a.bonus !== null && (
-              <button
-                type="button"
-                className={styles.smallRoll}
-                onClick={() => ctx.roll({ action: { item: a.item, key: a.key, part: 'attack' } })}
-                aria-label={t('playSheet.attackOf', { what: a.label, bonus: signed(a.bonus) })}
-              >
-                {signed(a.bonus)}
-              </button>
-            )}
-            {a.save && (
-              <span className={styles.itemValue}>
-                {t('playSheet.saveDc', { ability: a.save.abilityLabel, dc: a.save.dc })}
-              </span>
-            )}
-            {a.damage.length > 0 && (
-              <button
-                type="button"
-                className={styles.smallRoll}
-                onClick={() => ctx.roll({ action: { item: a.item, key: a.key, part: 'damage' } })}
-                aria-label={t('playSheet.damageOf', { what: a.label })}
-              >
-                {a.damage.map((d) => d.formula).join(' + ')}
-              </button>
-            )}
-            {a.heal && (
-              <button
-                type="button"
-                className={styles.smallRoll}
-                onClick={() => ctx.roll({ action: { item: a.item, key: a.key, part: 'heal' } })}
-                aria-label={t('playSheet.healOf', { what: a.label })}
-              >
-                {a.heal}
-              </button>
-            )}
-          </li>
-        ))}
+        {actions.map((a) =>
+          a.options ? (
+            <OptionsAction key={`${a.item}-${a.key}`} action={a} ctx={ctx} />
+          ) : (
+            <li key={`${a.item}-${a.key}`} className={styles.item}>
+              <span className={styles.itemName}>{a.label}</span>
+              {a.bonus !== null && (
+                <button
+                  type="button"
+                  className={styles.smallRoll}
+                  onClick={() => ctx.roll({ action: { item: a.item, key: a.key, part: 'attack' } })}
+                  aria-label={t('playSheet.attackOf', { what: a.label, bonus: signed(a.bonus) })}
+                >
+                  {signed(a.bonus)}
+                </button>
+              )}
+              {a.save && (
+                <span className={styles.itemValue}>
+                  {t('playSheet.saveDc', { ability: a.save.abilityLabel, dc: a.save.dc })}
+                </span>
+              )}
+              {a.damage.length > 0 && (
+                <button
+                  type="button"
+                  className={styles.smallRoll}
+                  onClick={() => ctx.roll({ action: { item: a.item, key: a.key, part: 'damage' } })}
+                  aria-label={t('playSheet.damageOf', { what: a.label })}
+                >
+                  {a.damage.map((d) => d.formula).join(' + ')}
+                </button>
+              )}
+              {a.heal && (
+                <button
+                  type="button"
+                  className={styles.smallRoll}
+                  onClick={() => ctx.roll({ action: { item: a.item, key: a.key, part: 'heal' } })}
+                  aria-label={t('playSheet.healOf', { what: a.label })}
+                >
+                  {a.heal}
+                </button>
+              )}
+            </li>
+          )
+        )}
       </ul>
+    </Part>
+  )
+}
+
+type SheetAction = State['actions'][number]
+
+/**
+ * Una acción que es «uno de estos efectos» (los rayos del contemplador, ADR-0033): cuántas se usan y, si trae fórmula,
+ * «Tirar» para que salga una (se marca); debajo, cada opción con lo suyo para tirarlo
+ */
+function OptionsAction({ action, ctx }: { action: SheetAction; ctx: Ctx }) {
+  const { t } = useTranslation()
+  const [picked, setPicked] = useState<string | null>(null)
+  const [picking, setPicking] = useState(false)
+  const options = action.options ?? []
+  const count = action.count ?? 1
+  const pick = async () => {
+    if (!action.pick || picking) return
+    setPicking(true)
+    try {
+      const total = await ctx.rollFormula(action.pick, action.label)
+      setPicked(total !== null ? (options[total - 1]?.key ?? null) : null)
+    } finally {
+      setPicking(false)
+    }
+  }
+  return (
+    <li className={`${styles.item} ${styles.optionsAction}`}>
+      <span className={styles.itemName}>{action.label}</span>
+      <span className={styles.itemValue}>
+        {t(action.distinct ? 'playSheet.optionsDistinct' : 'playSheet.optionsCount', { count })}
+      </span>
+      {action.pick && (
+        <button
+          type="button"
+          className={styles.smallRoll}
+          aria-disabled={picking || undefined}
+          onClick={pick}
+          aria-label={t('playSheet.pickOf', { what: action.label, formula: action.pick })}
+        >
+          {t('playSheet.pick', { formula: action.pick })}
+        </button>
+      )}
+      <ul className={styles.options} aria-label={t('playSheet.optionsOf', { what: action.label })}>
+        {options.map((o, i) => {
+          const what = `${action.label} · ${o.label}`
+          const roll = (part: 'attack' | 'damage' | 'heal') =>
+            ctx.roll({ action: { item: action.item, key: action.key, part, option: o.key } })
+          return (
+            <li key={o.key} className={styles.item} data-picked={picked === o.key || undefined}>
+              <span className={styles.itemName}>
+                {action.pick && <span className={styles.optionNumber}>{i + 1}</span>}
+                {o.label}
+                {picked === o.key && <span className={styles.hidden}> · {t('playSheet.picked')}</span>}
+              </span>
+              {o.bonus !== null && (
+                <button
+                  type="button"
+                  className={styles.smallRoll}
+                  onClick={() => roll('attack')}
+                  aria-label={t('playSheet.attackOf', { what, bonus: signed(o.bonus) })}
+                >
+                  {signed(o.bonus)}
+                </button>
+              )}
+              {o.save && (
+                <span className={styles.itemValue}>
+                  {t('playSheet.saveDc', { ability: o.save.abilityLabel, dc: o.save.dc })}
+                </span>
+              )}
+              {o.damage.length > 0 && (
+                <button
+                  type="button"
+                  className={styles.smallRoll}
+                  onClick={() => roll('damage')}
+                  aria-label={t('playSheet.damageOf', { what })}
+                >
+                  {o.damage.map((d) => d.formula).join(' + ')}
+                </button>
+              )}
+              {o.heal && (
+                <button
+                  type="button"
+                  className={styles.smallRoll}
+                  onClick={() => roll('heal')}
+                  aria-label={t('playSheet.healOf', { what })}
+                >
+                  {o.heal}
+                </button>
+              )}
+            </li>
+          )
+        })}
+      </ul>
+    </li>
+  )
+}
+
+/**
+ * Los conjuros de una criatura (ADR-0033): su característica, su CD y su ataque; cada grupo (a voluntad, N al día cada
+ * uno) con sus conjuros, lo que se tira de cada uno y, si son de N al día, sus usos
+ */
+function SpellcastingBlock({ casting, ctx }: { casting: NonNullable<State['spellcasting']>; ctx: Ctx }) {
+  const { t } = useTranslation()
+  const id = useId()
+  const titleClass = useTitleClass(casting.label)
+  const resources = new Map(ctx.state.resources.map((r) => [r.key, r]))
+  const facts = [
+    casting.ability,
+    casting.dc !== null ? t('playSheet.spellDc', { dc: casting.dc }) : null,
+    casting.attack !== null ? signed(casting.attack) : null
+  ].filter(Boolean)
+  return (
+    <Part className={styles.block} labelledBy={id}>
+      <h2 id={id} className={titleClass}>
+        {casting.label}
+      </h2>
+      {facts.length > 0 && <p className={styles.itemValue}>{facts.join(' · ')}</p>}
+      {casting.groups.map((group, g) => (
+        <div key={`${g}-${group.label ?? ''}`} className={styles.spellGroup}>
+          <h3 className={styles.spellGroupTitle}>
+            {group.label ?? (group.uses ? t('playSheet.perDay', { count: group.uses }) : t('playSheet.atWill'))}
+          </h3>
+          <ul className={styles.items}>
+            {group.spells.map((sp) => {
+              const r = sp.resource ? resources.get(sp.resource) : undefined
+              return (
+                <li key={sp.ref} className={styles.item}>
+                  <span className={styles.itemName}>{sp.name}</span>
+                  {r && (
+                    <Stepper
+                      label={sp.name}
+                      value={t('playSheet.left', { left: r.left, max: r.max })}
+                      onLess={r.left > 0 ? () => void ctx.save({ play: (p) => spend(p, r, 1) }) : undefined}
+                      onMore={r.used > 0 ? () => void ctx.save({ play: (p) => spend(p, r, -1) }) : undefined}
+                    />
+                  )}
+                  {sp.key &&
+                    (sp.rolls ?? []).map((part) => (
+                      <button
+                        key={part}
+                        type="button"
+                        className={styles.smallRoll}
+                        onClick={() => sp.key && ctx.roll({ spell: { key: sp.key, part } })}
+                        aria-label={t(`playSheet.spell.${part}`, { what: sp.name })}
+                      >
+                        {t(`playSheet.spell.${part}Short`)}
+                      </button>
+                    ))}
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+      ))}
     </Part>
   )
 }
@@ -903,7 +1078,8 @@ function ActionsBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: '
 function UsesBlock({ block, ctx }: { block: Extract<SheetBlockView, { kind: 'uses' }>; ctx: Ctx }) {
   const { t } = useTranslation()
   const id = useId()
-  const uses = ctx.state.resources.filter((r) => !r.error && r.max > 0)
+  // Los usos de los conjuros de una criatura van en su bloque de conjuros
+  const uses = ctx.state.resources.filter((r) => !r.error && r.max > 0 && !r.spell)
   // De quién es cada uno (Tomar aliento, la Furia): lo que da, o lo que lleva
   const owners = new Map([
     ...(ctx.state.items ?? []).map((it) => [it.id, it.name] as const),

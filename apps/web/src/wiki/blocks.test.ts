@@ -24,8 +24,10 @@ describe('los bloques del menú «/»', () => {
       'callout-tip',
       'callout-warning',
       'callout-danger',
-      'callout-read-aloud'
+      'callout-read-aloud',
+      'callout-quote'
     ])
+    expect(ids('autor')).toEqual(['callout-quote'])
     // Los dados salieron de la wiki (revisión, tanda 7): lo que se tira va a una entrada del compendio
     expect(ids('dados')).toEqual([])
     expect(ids('xyz')).toEqual([])

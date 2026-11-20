@@ -93,3 +93,50 @@ describe('la mecánica en palabras', () => {
     expect(say('@nivel == null')).toBe('sin Nivel')
   })
 })
+
+describe('una acción con opciones, en palabras (ADR-0033)', () => {
+  it('cuántas, cómo se sacan y cada una con su salvación y su daño', () => {
+    const mechanics: Mechanics = {
+      actions: [
+        {
+          key: 'rayos',
+          label: 'Rayos oculares',
+          save: { ability: 'des', dc: '16' },
+          count: 2,
+          distinct: true,
+          pick: '1d2',
+          options: [
+            { key: 'encanto', label: 'Rayo de encanto', save: { ability: 'sab', dc: '16' } },
+            { key: 'enervante', label: 'Rayo enervante', damage: [{ formula: '4d8' }] }
+          ]
+        }
+      ]
+    }
+    const parts = mechanicsText(fiveE, 'criatura', mechanics, 'es', { data: {} })?.actions[0]?.parts ?? []
+    expect(parts).toContain('2 distintas de estas, al azar con 1d2')
+    expect(parts.some((p) => p.startsWith('1. Rayo de encanto: ') && p.includes('16'))).toBe(true)
+    expect(parts.some((p) => p.startsWith('2. Rayo enervante: ') && p.includes('4d8'))).toBe(true)
+  })
+})
+
+describe('los conjuros de una criatura, en palabras (ADR-0033)', () => {
+  it('su característica, su CD, su ataque y sus grupos', () => {
+    const mechanics: Mechanics = {
+      spellcasting: {
+        ability: 'int',
+        dc: '15',
+        attack: '7',
+        groups: [{ spells: ['luz'] }, { uses: 1, spells: ['bola_de_fuego'] }]
+      }
+    }
+    const casting = mechanicsText(fiveE, 'criatura', mechanics, 'es', { data: {} })?.actions.find(
+      (a) => a.key === 'conjuros'
+    )
+    expect(casting?.label).toBe('Lanzamiento de conjuros')
+    expect(casting?.parts).toEqual([
+      'Inteligencia, CD 15, ataque +7',
+      'A voluntad: Luz',
+      '1/día cada uno: Bola de fuego'
+    ])
+  })
+})

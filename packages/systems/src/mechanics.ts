@@ -46,18 +46,35 @@ const resource = z.strictObject({
   amount: formula.optional()
 })
 
+const save = z.strictObject({ ability: key, dc: formula, success: z.enum(['half', 'none', 'special']).optional() })
+
+/** Una opción de una acción que es «uno de estos efectos» (los rayos del contemplador): lo suyo, sobre lo de la acción */
+const actionOption = z.strictObject({
+  key,
+  label: text(),
+  attack: formula.optional(),
+  save: save.optional(),
+  damage: z.array(damage).max(10).optional(),
+  heal: formula.optional(),
+  range: text(100).optional()
+})
+
 const action = z.strictObject({
   key,
   label: text(),
   activation: z.enum(ACTIVATIONS).optional(),
   // El bono de ataque, lo que se suma al d20
   attack: formula.optional(),
-  save: z
-    .strictObject({ ability: key, dc: formula, success: z.enum(['half', 'none', 'special']).optional() })
-    .optional(),
+  save: save.optional(),
   damage: z.array(damage).max(10).optional(),
   heal: formula.optional(),
   range: text(100).optional(),
+  // Uno de estos efectos (ADR-0033): cuántos se usan cada vez, si distintos, y una fórmula para que salga uno al azar
+  // (el puesto que sale, desde 1)
+  options: z.array(actionOption).min(2).max(20).optional(),
+  count: z.int().min(1).max(20).optional(),
+  distinct: z.boolean().optional(),
+  pick: z.string().trim().min(1).max(100).optional(),
   // Lo que gasta: un recurso suyo, una recarga (5-6) o su coste en acciones legendarias
   uses: key.optional(),
   recharge: z
@@ -90,7 +107,9 @@ const grant = z
         when: formula.optional(),
         // Se puede elegir lo mismo más de una vez (+1 y +1 a la misma característica), como mucho `most` veces
         repeat: z.boolean().optional(),
-        most: z.int().min(1).max(10).optional()
+        most: z.int().min(1).max(10).optional(),
+        // Hasta dónde puede subir lo elegido al sumarle (los dones épicos: una característica, hasta 30)
+        max: formula.optional()
       })
       .refine((c) => (c.type === undefined) !== (c.set === undefined), 'Elige de un tipo o de un conjunto')
       .optional()
@@ -121,6 +140,26 @@ export const mechanicsSchema = z.strictObject({
   actions: z.array(action).max(50).optional(),
   grants: z.array(grant).max(300).optional(),
   scaling: scaling.optional(),
+  // Los conjuros de una criatura (ADR-0033): su característica, su CD y su ataque, y grupos a voluntad (sin uses) o
+  // de N al día cada uno; cada conjuro, por su clave o su concepto en el compendio
+  spellcasting: z
+    .strictObject({
+      label: text().optional(),
+      ability: key.optional(),
+      dc: formula.optional(),
+      attack: formula.optional(),
+      groups: z
+        .array(
+          z.strictObject({
+            label: text().optional(),
+            uses: z.int().min(1).max(20).optional(),
+            spells: z.array(key).min(1).max(100)
+          })
+        )
+        .min(1)
+        .max(20)
+    })
+    .optional(),
   // Se activa y se desactiva (la Furia, Mago armadura): sus efectos piden `@este.activo`
   toggle: z.strictObject({ label: text().optional(), duration: text(100).optional() }).optional(),
   automation: z.enum(AUTOMATION).optional(),
@@ -234,7 +273,28 @@ export function validateMechanics(system: System, type: string, mechanics: unkno
     for (const [j, d] of (a.damage ?? []).entries()) check(d.formula, [...here, 'damage', j, 'formula'])
     if (a.heal) check(a.heal, [...here, 'heal'])
     if (a.uses && !m.resources?.some((r) => r.key === a.uses)) add([...here, 'uses'], `No tiene el recurso «${a.uses}»`)
+    if (a.pick) check(a.pick, [...here, 'pick'])
+    if ((a.count !== undefined || a.distinct !== undefined || a.pick !== undefined) && !a.options)
+      add([...here, 'options'], 'count, distinct y pick van con options')
+    if (a.options && a.count && a.distinct && a.count > a.options.length)
+      add([...here, 'count'], `Son ${a.options.length} opciones: no se pueden usar ${a.count} distintas`)
+    const keys = new Set<string>()
+    a.options?.forEach((o, j) => {
+      const there = [...here, 'options', j]
+      if (keys.has(o.key)) add([...there, 'key'], `«${o.key}» está repetida`)
+      keys.add(o.key)
+      if (o.attack) check(o.attack, [...there, 'attack'], 'Un bono de ataque no lleva dados: es lo que se suma al dado')
+      if (o.save) check(o.save.dc, [...there, 'save', 'dc'], 'Una CD no lleva dados')
+      for (const [k, d] of (o.damage ?? []).entries()) check(d.formula, [...there, 'damage', k, 'formula'])
+      if (o.heal) check(o.heal, [...there, 'heal'])
+    })
   })
+  if (m.spellcasting) {
+    const here = [...at, 'spellcasting']
+    if (m.spellcasting.dc) check(m.spellcasting.dc, [...here, 'dc'], 'Una CD no lleva dados')
+    if (m.spellcasting.attack)
+      check(m.spellcasting.attack, [...here, 'attack'], 'Un bono de ataque no lleva dados: es lo que se suma al dado')
+  }
   m.grants?.forEach((g, i) => {
     const here = [...at, 'grants', i]
     if (g.type && !own(system.types, g.type)) add([...here, 'type'], `No existe el tipo «${g.type}»`)
@@ -253,6 +313,7 @@ export function validateMechanics(system: System, type: string, mechanics: unkno
       if (c.value) check(c.value, [...here, 'choose', 'value'], 'Un valor no lleva dados')
     }
     check(g.choose.count, [...here, 'choose', 'count'], 'Cuántos se eligen no lleva dados')
+    if (g.choose.max) check(g.choose.max, [...here, 'choose', 'max'], 'Un tope no lleva dados')
     if (g.choose.when) yesOrNo(g.choose.when, [...here, 'choose', 'when'])
   })
   const s = m.scaling

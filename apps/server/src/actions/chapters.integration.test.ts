@@ -6,7 +6,8 @@ import type { FastifyInstance } from 'fastify'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { buildApp } from '../app.ts'
 import type { Auth } from '../auth/auth.ts'
-import { createTestAuth, signUpTestUser, TEST_SEAL_KEY } from '../testing.ts'
+import { diskStorage } from '../files/storage.ts'
+import { createTestAuth, signUpTestUser, TEST_SEAL_KEY, testDataDir } from '../testing.ts'
 
 const BASE_URL = 'http://localhost:5173'
 const ok = async () => undefined
@@ -55,7 +56,8 @@ describe('los capítulos de los libros (ADR-0025)', () => {
     auth = createTestAuth(conn.db, BASE_URL)
     app = buildApp({
       checks: { postgres: ok, valkey: ok },
-      accounts: { auth, db: conn.db, publicUrl: BASE_URL, sealKey: TEST_SEAL_KEY }
+      accounts: { auth, db: conn.db, publicUrl: BASE_URL, sealKey: TEST_SEAL_KEY },
+      storage: diskStorage(testDataDir())
     })
     owner = await signUpTestUser(auth, { name: 'Enrique', email: 'enrique@crisol.test' })
     const [org] = await conn.db.insert(schema.organizations).values({ name: 'Mesa' }).returning()
@@ -261,6 +263,56 @@ describe('los capítulos de los libros (ADR-0025)', () => {
     expect(exported.chapters.find((c: { title: string }) => c.title === 'La aventura').master).toBe(true)
     expect(exported.chapters.find((c: { title: string }) => c.title === 'Abierto').master).toBeUndefined()
     expect(exported.system.sources.find((s: { key: string }) => s.key === 'srd51').master).toBe(true)
+  })
+
+  it('sus enlaces a otro capítulo, otro libro o una sección, y el crédito de sus imágenes (ADR-0033)', async () => {
+    const five = await import5e()
+    const WEBP = Buffer.concat([Buffer.from('RIFF'), Buffer.from([0, 0, 0, 0]), Buffer.from('WEBPVP8 una mesa')])
+    await ok200('putSystemImages', {
+      systemId: five,
+      images: [{ path: 'book/mesa.webp', data: WEBP.toString('base64'), license: 'unknown', credit: 'Luca Bancone' }]
+    })
+    const other = await ok200('saveChapter', {
+      systemId: five,
+      source: 'srd521',
+      title: 'Capítulo 1: Cómo jugar',
+      markdown: 'Uno.'
+    })
+    const fourth = await ok200('saveChapter', {
+      systemId: five,
+      source: 'srd51',
+      title: 'Capítulo 4: Crear aventuras',
+      markdown: '## Encuentros\n\nAlgo.'
+    })
+    const books = (await ok200('getSystemBooks', { systemId: five })).books as { key: string; name: string }[]
+    const newer = books.find((b) => b.key === 'srd521')?.name ?? ''
+    const intro = await ok200('saveChapter', {
+      systemId: five,
+      source: 'srd51',
+      title: 'Introducción',
+      markdown: `![[book/mesa.webp]]\n*Una mesa mágica*\n\nLee [[Capítulo 4]], [[Capítulo 4#Encuentros|sus encuentros]], [[${newer}]], [[${newer}#Capítulo 1]], [[#Arriba]], [[No existe]] y [[@Goblin]].`
+    })
+    const read = await ok200('getChapter', { chapterId: intro.id })
+    expect(read.credits).toEqual({ 'book/mesa.webp': 'Luca Bancone' })
+    const to = (target: string) => read.links.find((l: { target: string }) => l.target === target)
+    expect(to('Capítulo 4')).toEqual({
+      target: 'Capítulo 4',
+      chapter: { id: fourth.id, source: 'srd51' },
+      section: null
+    })
+    expect(to('Capítulo 4#Encuentros')).toMatchObject({ chapter: { id: fourth.id }, section: 'Encuentros' })
+    expect(to(newer)).toMatchObject({ chapter: { id: other.id, source: 'srd521' }, section: null })
+    expect(to(`${newer}#Capítulo 1`)).toMatchObject({ chapter: { id: other.id }, section: null })
+    expect(to('#Arriba')).toMatchObject({ chapter: { id: intro.id }, section: 'Arriba' })
+    expect(to('No existe')).toEqual({ target: 'No existe', chapter: null, section: null })
+    expect(read.links.some((l: { target: string }) => l.target.startsWith('@'))).toBe(false)
+
+    // Desde una campaña que no tiene el otro libro, ese enlace no lleva a ningún sitio
+    const worldId = (await ok200('createWorld', { name: 'Valdren' })).id
+    const campaignId = (await ok200('createCampaign', { worldId, name: 'La Marca', system: five })).id
+    await ok200('updateCampaign', { campaignId, systemChoices: { sources: ['srd51'], duplicates: 'both' } })
+    const fromCampaign = await ok200('getChapter', { chapterId: intro.id, campaignId })
+    expect(fromCampaign.links.find((l: { target: string }) => l.target === newer).chapter).toBeNull()
   })
 
   it('viajan con el sistema: exportar, importar, copiar y reemplazar', async () => {

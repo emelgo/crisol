@@ -69,8 +69,8 @@ describe('el esquema del editor', () => {
     for (const id of ids) expect(id).toMatch(/^[a-z0-9]{8}$/)
   })
 
-  it('un recuadro es de uno de los cinco tipos, y lleva bloques dentro', () => {
-    expect(CALLOUT_KINDS).toEqual(['note', 'tip', 'warning', 'danger', 'read-aloud'])
+  it('un recuadro es de uno de los seis tipos, y lleva bloques dentro', () => {
+    expect(CALLOUT_KINDS).toEqual(['note', 'tip', 'warning', 'danger', 'read-aloud', 'quote'])
     const doc = schema.nodeFromJSON({
       type: 'doc',
       content: [
@@ -105,7 +105,7 @@ describe('el esquema del editor', () => {
     const copy = withoutBlockIds(Fragment.from(callout)).firstChild
     expect(copy?.toJSON()).toEqual({
       type: 'callout',
-      attrs: { id: null, kind: 'tip', wide: false },
+      attrs: { id: null, kind: 'tip', title: null, wide: false, page: null },
       content: [
         { type: 'paragraph', attrs: { id: null }, content: [{ type: 'text', text: 'Ojo', marks: [{ type: 'bold' }] }] }
       ]

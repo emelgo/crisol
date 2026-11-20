@@ -30,6 +30,7 @@ import { useAccounts } from '../account/context.tsx'
 import type { ActionOutput } from '../api/client.ts'
 import { useApi } from '../api/context.tsx'
 import { useErrorText } from '../api/errors.ts'
+import bookLook from '../books/book-look.module.css'
 import { useAnnounce } from '../components/announcer.tsx'
 import { Loading } from '../components/brand.tsx'
 import { BusyButton } from '../components/busy-button.tsx'
@@ -1146,7 +1147,7 @@ function Entry({
               </>
             )}
           </p>
-          <h2 id={titleId} className={styles.name} tabIndex={-1}>
+          <h2 id={titleId} className={`${styles.name} ${bookLook.name}`} tabIndex={-1}>
             {name}
           </h2>
           {fromWorld ? <WorldTag /> : <EditionTag edition={item.edition} legacy={item.legacy} />}
@@ -1216,7 +1217,11 @@ function Entry({
           />
         )}
         <FormError message={rolling.error ? errorText(rolling.error) : null} />
-        {body && <ContentText text={body} {...(inSystem ? {} : { onRoll: roll })} />}
+        {body && (
+          <div className={bookLook.book}>
+            <ContentText text={body} {...(inSystem ? {} : { onRoll: roll })} />
+          </div>
+        )}
         {item.table && (
           <EntryTable
             campaignId={campaignId}

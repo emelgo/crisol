@@ -115,3 +115,23 @@
   display: block;
   margin: var(--space-3) auto 0;
 }
+
+/* Quién hizo una imagen del sistema (su crédito, ADR-0033): pequeño, debajo del pie, como en los libros */
+.credit {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-block-start: 2px;
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-style: italic;
+}
+
+.hidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

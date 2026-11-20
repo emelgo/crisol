@@ -46,6 +46,13 @@ const WORDS = {
   uses: { es: 'Gasta: {x}', en: 'Uses: {x}' },
   recharge: { es: 'Recarga {x}', en: 'Recharge {x}' },
   cost: { es: 'Cuesta {x}', en: 'Costs {x}' },
+  options: { es: '{x} de estas', en: '{x} of these' },
+  optionsDistinct: { es: '{x} distintas de estas', en: '{x} different ones of these' },
+  pick: { es: 'al azar con {x}', en: 'at random with {x}' },
+  spellcasting: { es: 'Lanzamiento de conjuros', en: 'Spellcasting' },
+  atWill: { es: 'A voluntad: {x}', en: 'At will: {x}' },
+  perDay: { es: '{n}/día cada uno: {x}', en: '{n}/day each: {x}' },
+  spellAttack: { es: 'ataque {x}', en: '{x} to hit' },
   max: { es: 'Como mucho, {x}', en: 'Up to {x}' },
   short: { es: 'se recupera con un descanso corto', en: 'recovers on a short rest' },
   long: { es: 'se recupera con un descanso largo', en: 'recovers on a long rest' },
@@ -338,6 +345,39 @@ export function mechanicsText(
     }
     if (a.recharge) parts.push(say('recharge', language, { x: a.recharge.replace('-', '–') }))
     if (a.cost) parts.push(say('cost', language, { x: String(a.cost) }))
+    // Uno de estos efectos (ADR-0033): cuántos, cómo se sacan y cada uno con su salvación y su daño
+    if (a.options) {
+      const count = String(a.count ?? 1)
+      parts.push(
+        [
+          say(a.distinct ? 'optionsDistinct' : 'options', language, { x: count }),
+          ...(a.pick ? [say('pick', language, { x: a.pick })] : [])
+        ].join(', ')
+      )
+      for (const [i, o] of (ready?.options ?? []).entries()) {
+        const bits = [
+          ...(o.bonus !== null
+            ? [say('attack', language, { x: `${o.bonus < 0 ? '−' : '+'}${Math.abs(o.bonus)}` })]
+            : []),
+          ...(o.save
+            ? [say('save', language, { x: o.save.abilityLabel, y: say('dc', language, { x: String(o.save.dc) }) })]
+            : []),
+          ...(o.damage.length
+            ? [
+                o.damage
+                  .map((d) =>
+                    d.type
+                      ? say('damage', language, { x: d.formula, y: names.options.get(d.type) ?? d.type })
+                      : d.formula
+                  )
+                  .join(' + ')
+              ]
+            : []),
+          ...(o.heal ? [say('heal', language, { x: o.heal.formula })] : [])
+        ]
+        parts.push(`${a.pick ? `${i + 1}. ` : ''}${o.label}${bits.length ? `: ${bits.join(', ')}` : ''}`)
+      }
+    }
     const rolls: ActionPart[] = [
       ...(a.attack ? (['attack'] as const) : []),
       ...(a.damage?.length ? (['damage'] as const) : []),
@@ -370,6 +410,26 @@ export function mechanicsText(
         .filter(Boolean)
         .join('; ') || null
   const duration = mechanics.toggle?.duration
+  // Los conjuros de una criatura (ADR-0033), como una acción más: su característica, su CD, su ataque y sus grupos
+  const casting = mechanics.spellcasting
+  if (casting) {
+    const head = [
+      ...(casting.ability ? [names.elements.get(casting.ability) ?? humanize(casting.ability)] : []),
+      ...(casting.dc ? [say('dc', language, { x: f(casting.dc) })] : []),
+      ...(casting.attack ? [say('spellAttack', language, { x: `+${f(casting.attack)}` })] : [])
+    ].join(', ')
+    const groups = casting.groups.map((g) => {
+      const x = g.spells.map(humanize).join(', ')
+      const line = g.uses ? say('perDay', language, { n: String(g.uses), x }) : say('atWill', language, { x })
+      return g.label ? `${textOf(g.label, language)}: ${x}` : line
+    })
+    actions.push({
+      key: 'conjuros',
+      label: casting.label ? textOf(casting.label, language) : say('spellcasting', language),
+      parts: [...(head ? [head] : []), ...groups],
+      rolls: []
+    })
+  }
   return {
     actions,
     resources,

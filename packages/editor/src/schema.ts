@@ -17,6 +17,7 @@ import { ContentLink } from './nodes/content-link.ts'
 import { FileEmbed } from './nodes/file-embed.ts'
 import { PageEmbed } from './nodes/page-embed.ts'
 import { PageLink } from './nodes/page-link.ts'
+import { PageNumbers } from './nodes/page-number.ts'
 import { HiddenNote, Secret } from './nodes/separate.ts'
 import {
   ColumnBreak,
@@ -105,6 +106,7 @@ export function editorExtensions(options: EditorOptions = {}): Extensions {
     view(TableOfContents),
     view(Chart),
     ...(nested ? [] : [view(Secret), view(HiddenNote)]),
+    PageNumbers,
     BlockIds
   ]
 }

@@ -340,4 +340,68 @@ describe('las acciones de un documento', () => {
       ['roto', 'x', expect.stringMatching(/nada/)]
     ])
   })
+
+  it('una acción con opciones (ADR-0033): cada una armada con lo suyo, y se tira la elegida', () => {
+    const beholder = {
+      data: {},
+      items: [],
+      mechanics: {
+        actions: [
+          {
+            key: 'rayos',
+            label: 'Rayos oculares',
+            save: { ability: 'des', dc: '16' },
+            count: 3,
+            distinct: true,
+            pick: '1d10',
+            options: [
+              { key: 'encanto', label: 'Rayo de encanto' },
+              { key: 'enervante', label: 'Rayo enervante', damage: [{ formula: '4d8', type: 'necrotico' }] },
+              {
+                key: 'desintegrador',
+                label: 'Rayo desintegrador',
+                save: { ability: 'des', dc: '17' },
+                damage: [{ formula: '10d6 + 40' }]
+              }
+            ]
+          }
+        ]
+      } satisfies Mechanics
+    }
+    const shown = prepareAction(system, 'criatura', beholder, null, 'rayos')
+    expect(shown).toMatchObject({ count: 3, distinct: true, pick: '1d10' })
+    expect(shown.options?.map((o) => [o.key, o.save?.dc, o.damage.map((d) => d.formula)])).toEqual([
+      ['encanto', 16, []],
+      ['enervante', 16, ['4d8']],
+      ['desintegrador', 17, ['10d6+40']]
+    ])
+    const rolled = tryAction(system, 'criatura', beholder, null, 'rayos', { option: 'enervante', roller: fixed(5) })
+    expect(rolled.option).toEqual({ key: 'enervante', label: 'Rayo enervante' })
+    expect(rolled.damage[0]?.result.total).toBe(20)
+    expect(() => prepareAction(system, 'criatura', beholder, null, 'rayos', { option: 'no' })).toThrow(RollError)
+  })
+
+  it('un conjuro lanzado por una criatura (cast, ADR-0033): con su CD y su ataque, no los de la acción', () => {
+    const spell = {
+      id: 'conjuro-lanzado',
+      type: 'objeto',
+      name: 'Rayo',
+      data: {},
+      mechanics: {
+        actions: [
+          {
+            key: 'lanzar',
+            label: 'Rayo',
+            attack: '@portador.no_existe',
+            save: { ability: 'des', dc: '@portador.no_existe' }
+          }
+        ]
+      } satisfies Mechanics
+    }
+    const doc = { data: {}, items: [spell] }
+    const cast = prepareAction(system, 'criatura', doc, 'conjuro-lanzado', 'lanzar', { cast: { dc: 15, attack: 7 } })
+    expect(cast.save?.dc).toBe(15)
+    expect(cast.bonus).toBe(7)
+    expect(() => prepareAction(system, 'criatura', doc, 'conjuro-lanzado', 'lanzar')).toThrow(RollError)
+  })
 })

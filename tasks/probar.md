@@ -9,6 +9,20 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
+## Carga del D&D 2024, tanda C (rama `sistemas/tanda-c`; sin migración; 2026-11-20; ADR-0033)
+
+- [ ] **Rayos del contemplador** (cuando la IA lo cargue): en su hoja en la Mesa, «Rayos oculares» con «2 distintas» (o
+  las que sean) y sus rayos debajo, cada uno con su CD y su daño; «Tirar 1d10» marca el que sale.
+- [ ] **Conjuros de una criatura**: en su hoja, «Lanzamiento de conjuros» con su CD y su ataque; a voluntad y 1/día cada
+  uno, con los usos que se gastan y vuelven al descansar; «Daño» o «Ataque» tira el conjuro con la CD de la criatura.
+- [ ] **Dones épicos**: +1 a una característica no pasa de 30.
+- [ ] **El aspecto de libro** (como 5etools): en los capítulos y en el compendio, títulos dorados en versalitas, recuadros
+  con su título y sombra, «leer en voz alta» azulado, citas en cursiva, imágenes centradas; la lectura, centrada. El
+  título de un recuadro se cambia escribiendo en él.
+- [ ] **Pies, créditos y enlaces en los capítulos** (cuando la IA repase los libros): bajo cada imagen, su pie y
+  «✎ quien la hizo»; «capítulo 4», «Manual del jugador» o «apéndice C» llevan a su sitio (en otro libro también, y a la
+  sección si la nombra). Desde una campaña, lo que no tiene o es solo del máster queda como texto.
+
 ## Carga del D&D 2024, tanda A (rama `sistemas/carga-2024`; migración 0095; 2026-11-20; ADR-0033)
 
 - [ ] **Libro solo para el máster**: en el sistema, editar un libro › «Solo para el máster». En una campaña con ese

@@ -78,6 +78,7 @@ export function SystemBook() {
             void navigate({ search: (prev) => ({ ...prev, vista: 'capitulos', capitulo: id ?? undefined }) })
           }
           chapterHref={(id) => `/sistemas/${systemId}/libros/${bookKey}?vista=capitulos&capitulo=${id}`}
+          bookHref={(book, id) => `/sistemas/${systemId}/libros/${book}?vista=capitulos&capitulo=${id}`}
           head={
             <>
               <PageTitle>{book.name}</PageTitle>

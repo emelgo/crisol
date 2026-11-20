@@ -167,6 +167,106 @@ describe('las criaturas en juego (docs/specs/criaturas.md)', () => {
     expect(save.roll.label).toMatch(/^Goblin 1 · /)
   })
 
+  it('una acción con opciones (ADR-0033): sale en su hoja con cada una armada y se tira la elegida', async () => {
+    const beholder = {
+      type: 'criatura',
+      key: 'contemplador',
+      data: { name: { es: 'Contemplador' } },
+      mechanics: {
+        actions: [
+          {
+            key: 'rayos',
+            label: 'Rayos oculares',
+            save: { ability: 'des', dc: '16' },
+            count: 2,
+            distinct: true,
+            pick: '1d2',
+            options: [
+              { key: 'encanto', label: 'Rayo de encanto', save: { ability: 'sab', dc: '16' } },
+              { key: 'enervante', label: 'Rayo enervante', damage: [{ formula: '4d8', type: 'necrotico' }] }
+            ]
+          }
+        ]
+      }
+    }
+    await ok200('putWorldContent', { worldId, systemId: five, items: [beholder] })
+    const [one] = (await ok200('putInPlay', { campaignId, key: 'contemplador' })).creatures
+    const { state } = await ok200('getInPlay', { creatureId: one.id })
+    const rayos = state.actions.find((a: { key: string }) => a.key === 'rayos')
+    expect(rayos).toMatchObject({ count: 2, distinct: true, pick: '1d2' })
+    expect(rayos.options.map((o: { key: string; save: { dc: number } | null }) => [o.key, o.save?.dc])).toEqual([
+      ['encanto', 16],
+      ['enervante', 16]
+    ])
+    const damage = await ok200('rollForCreature', {
+      creatureId: one.id,
+      action: { item: null, key: 'rayos', part: 'damage', option: 'enervante' }
+    })
+    expect(damage.roll.label).toBe('Contemplador 1 · Rayos oculares · Rayo enervante · daño')
+    expect(damage.roll.formula).toBe('4d8')
+    expect(
+      (
+        await code('rollForCreature', {
+          creatureId: one.id,
+          action: { item: null, key: 'rayos', part: 'damage', option: 'no' }
+        })
+      ).status
+    ).toBe(400)
+  })
+
+  it('sus conjuros (ADR-0033): con su CD, enlazados al compendio, se lanzan y los de N al día gastan y vuelven', async () => {
+    const mago = {
+      type: 'criatura',
+      key: 'mago_oscuro',
+      data: { name: { es: 'Mago oscuro' } },
+      mechanics: {
+        spellcasting: {
+          ability: 'int',
+          dc: '15',
+          attack: '7',
+          groups: [{ spells: ['luz'] }, { label: '1/día', uses: 1, spells: ['bola_de_fuego'] }]
+        }
+      }
+    }
+    await ok200('putWorldContent', { worldId, systemId: five, items: [mago] })
+    const [one] = (await ok200('putInPlay', { campaignId, key: 'mago_oscuro' })).creatures
+    const { state } = await ok200('getInPlay', { creatureId: one.id })
+    expect(state.spellcasting).toMatchObject({
+      dc: 15,
+      attack: 7,
+      groups: [{ uses: null }, { label: '1/día', uses: 1 }]
+    })
+    const fireball = state.spellcasting.groups[1].spells[0]
+    expect(fireball).toMatchObject({ ref: 'bola_de_fuego', name: 'Bola de fuego', resource: 'conjuro_1_0' })
+    expect(fireball.key).toMatch(/^bola_de_fuego_20(14|24)$/)
+    expect(state.resources.find((r: { key: string }) => r.key === 'conjuro_1_0')).toMatchObject({
+      label: 'Bola de fuego',
+      max: 1,
+      left: 1,
+      recovery: 'long'
+    })
+
+    // Lanzarlo: su daño, a nombre de la criatura
+    const cast = await ok200('rollForCreature', { creatureId: one.id, spell: { key: fireball.key, part: 'damage' } })
+    expect(cast.roll.label).toBe('Mago oscuro 1 · Bola de fuego · daño')
+    expect(cast.roll.formula).toBe('8d6')
+    // Uno que no es suyo, no
+    expect(
+      (await code('rollForCreature', { creatureId: one.id, spell: { key: 'espada_larga_2014', part: 'damage' } }))
+        .status
+    ).toBe(400)
+
+    // Gastar su uso y recuperarlo con un descanso largo
+    const spent = await ok200('playCreature', {
+      creatureId: one.id,
+      version: one.version,
+      play: { uses: { '': { conjuro_1_0: 1 } } }
+    })
+    expect(spent.state.resources.find((r: { key: string }) => r.key === 'conjuro_1_0').left).toBe(0)
+    const rested = await ok200('playCreature', { creatureId: one.id, version: spent.creature.version, rest: 'long' })
+    expect(rested.state.resources.find((r: { key: string }) => r.key === 'conjuro_1_0').left).toBe(1)
+  })
+
   it('quitar las copias de una entrada (la única se queda) y deshacerlo', async () => {
     await ok200('putInPlay', { campaignId, key: GOBLIN, count: 3 })
     const [unique] = (await ok200('putInPlay', { campaignId, key: GOBLIN, unique: true, name: 'Jefe' })).creatures

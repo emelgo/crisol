@@ -2,10 +2,12 @@
  * Una página entera en Markdown y de vuelta: las propiedades en YAML, el cuerpo y, dentro, sus secretos y notas
  * ocultas. Lo mismo para exportar, para que Claude lea y para que Claude escriba (ADR-0003)
  */
+
 import type { JSONContent } from '@tiptap/core'
 import { MarkdownManager } from '@tiptap/markdown'
 import { BLOCK_TYPES, newBlockId } from '../ids.ts'
 import { isExternalUrl } from '../links.ts'
+import { HEADING_PAGE } from '../nodes/page-number.ts'
 import type { SeparateKind } from '../nodes/separate.ts'
 import { editorExtensions } from '../schema.ts'
 import { type ReadProperty, readFrontmatter, type WritableProperty, writeFrontmatter } from './frontmatter.ts'
@@ -79,9 +81,11 @@ function withLinkTitles(node: JSONContent, page: Pick<WritePage, 'pageTitle' | '
 
 /** Un bloque de primer nivel en Markdown, con su id si se pide */
 function blockMarkdown(block: JSONContent, ids: boolean) {
-  const text = markdown()
+  let text = markdown()
     .serialize({ type: 'doc', content: [block] })
     .replace(/\s+$/, '')
+  // La página del libro de un título, al final (ADR-0033)
+  if (block.type === 'heading' && block.attrs?.page) text = `${text} {p${block.attrs.page}}`
   const id = block.attrs?.id as string | null | undefined
   if (!ids || !id) return text
   const marker = block.type === 'secret' ? `^s-${id}` : `^${id}`
@@ -161,6 +165,14 @@ export function pageFromMarkdown(text: string): ReadPage {
       last.text = (last.text ?? '').slice(0, endId.index).replace(/\s+$/, '')
       if (last.text === '') block.content = block.content?.slice(0, -1)
       block.attrs = { ...block.attrs, id: endId[1] }
+    }
+    // La página del libro de un título: `{p12}` al final (ADR-0033)
+    const title = block.type === 'heading' ? lastText(block) : null
+    const page = title ? HEADING_PAGE.exec(title.text ?? '') : null
+    if (title && page) {
+      title.text = (title.text ?? '').slice(0, page.index)
+      if (title.text === '') block.content = block.content?.slice(0, -1)
+      block.attrs = { ...block.attrs, page: Number(page[1]) }
     }
     blocks.push(block)
   }

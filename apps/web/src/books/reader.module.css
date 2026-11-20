@@ -112,8 +112,11 @@
   color: var(--color-on-accent);
 }
 
-/* Lo que se lee */
+/* Lo que se lee: una columna de lectura, centrada en su sitio */
 .reading {
+  justify-self: center;
+  inline-size: 100%;
+  max-inline-size: 72ch;
   padding-block-start: var(--space-6);
 }
 
@@ -165,6 +168,28 @@
   align-items: center;
   gap: var(--space-2);
   padding-block-start: var(--space-2);
+}
+
+/* «⋯» del capítulo: como el de las páginas, sin caja; se aclara al pasar o abierto */
+.more {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-inline-size: 2.25rem;
+  min-block-size: 2.25rem;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--color-muted);
+  clip-path: none;
+  cursor: pointer;
+}
+
+.more:hover,
+.more[aria-expanded="true"] {
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+  color: var(--color-text);
 }
 
 .status {

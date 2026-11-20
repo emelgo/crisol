@@ -519,7 +519,8 @@ export const characterActions = [
         ...options,
         ...(action.level !== undefined ? { level: action.level } : {}),
         ...(action.mode !== undefined ? { mode: action.mode } : {}),
-        ...(action.critical ? { critical: true } : {})
+        ...(action.critical ? { critical: true } : {}),
+        ...(action.option ? { option: action.option } : {})
       })
       const parts =
         action.part === 'attack'

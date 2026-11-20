@@ -76,7 +76,12 @@ export interface Resource {
   /** Cuánto se recupera (una fórmula, con dados); sin ella, todo */
   amount?: string
   error?: string
+  /** Los usos de un conjuro de una criatura (N al día, ADR-0033): de qué grupo y qué conjuro */
+  spell?: { group: number; spell: string }
 }
+
+/** La clave del recurso de los usos de un conjuro de una criatura: su grupo y su puesto en él */
+export const spellUsesKey = (group: number, index: number) => `conjuro_${group}_${index}`
 
 export const BUDGET = 200_000
 
@@ -377,7 +382,8 @@ export function evaluate(
           label: item.name,
           legacy: false,
           value: exprOf(system, c.value ?? '1'),
-          ...(when ? { when: exprOf(system, when) } : {})
+          ...(when ? { when: exprOf(system, when) } : {}),
+          ...(c.max ? { cap: exprOf(system, c.max) } : {})
         })
     }
   }
@@ -464,7 +470,9 @@ export function evaluate(
       t = [{ label: e.label, value: v, kind: 'base', origin: e.item.id }]
     }
     for (const e of active.filter((x) => x.op === 'add')) {
-      const n = amount(e)
+      let n = amount(e)
+      // Con tope, lo que falte hasta él (nunca resta)
+      if (e.cap) n = Math.max(0, Math.min(n, toNumber(evaluateExpr(e.cap, effectScope(e), runtime)) - v))
       v += n
       t = [...t, { label: e.label, value: n, kind: 'bonus', origin: e.item.id }]
     }
@@ -810,6 +818,25 @@ export function evaluate(
       }
       resources.push(entry)
     }
+  // Los conjuros de N al día de una criatura (ADR-0033): un recurso por conjuro, que vuelve con el descanso largo
+  for (const [g, group] of (doc.mechanics?.spellcasting?.groups ?? []).entries()) {
+    if (!group.uses) continue
+    for (const [j, spell] of group.spells.entries()) {
+      const key = spellUsesKey(g, j)
+      const spent = own(doc.uses ?? {}, key)
+      const used = typeof spent === 'number' && Number.isFinite(spent) ? Math.min(group.uses, Math.max(0, spent)) : 0
+      resources.push({
+        item: null,
+        key,
+        label: spell,
+        max: group.uses,
+        used,
+        left: group.uses - used,
+        recovery: 'long',
+        spell: { group: g, spell }
+      })
+    }
+  }
   // Lo que lleva, ya calculado, con su nombre
   const carried: Evaluated['items'] = {}
   for (const it of items)
@@ -838,6 +865,8 @@ interface Effect {
   value?: Expr
   when?: Expr
   target?: string
+  /** Hasta dónde puede subir el valor al sumarle (un aumento elegido con tope: los dones épicos, hasta 30) */
+  cap?: Expr
 }
 
 function defaultOf(field: Field | SimpleField): Value {
