@@ -241,40 +241,4 @@ describe('archivos, sus carpetas y sus etiquetas', () => {
       expect((await filesRepo.findFile(conn.db, b.id))?.tags).toEqual([])
     })
   })
-
-  describe('barrido de documentos', () => {
-    it('recorre todos los documentos por tandas, en orden de id, y cambia el estado de uno', async () => {
-      const ids: string[] = []
-      for (let n = 0; n < 5; n++) {
-        const page = await pagesRepo.createPage(conn.db, ctx('createPage'), {
-          worldId,
-          title: `P${n}`,
-          placement: { parentId: null }
-        })
-        ids.push(
-          await documentsRepo.createSeparate(conn.db, {
-            pageId: page.id,
-            worldId,
-            kind: 'secret',
-            state: new Uint8Array([n]),
-            userId: 'u1'
-          })
-        )
-      }
-      const batches: string[][] = []
-      for await (const rows of documentsRepo.allStates(conn.db, 2)) batches.push(rows.map((row) => row.id))
-      expect(batches.map((batch) => batch.length)).toEqual([2, 2, 1])
-      expect(batches.flat()).toEqual(ids.toSorted())
-
-      const target = ids[0] ?? ''
-      await documentsRepo.replaceState(conn.db, target, new Uint8Array([42]))
-      expect([...((await documentsRepo.findSeparate(conn.db, target))?.state ?? [])]).toEqual([42])
-    })
-
-    it('sin documentos no da ninguna tanda', async () => {
-      const batches = []
-      for await (const rows of documentsRepo.allStates(conn.db)) batches.push(rows)
-      expect(batches).toEqual([])
-    })
-  })
 })

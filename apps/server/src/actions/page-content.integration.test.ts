@@ -257,7 +257,7 @@ describe('Claude lee y escribe páginas en Markdown', () => {
     )
   })
 
-  it('una tirada escrita (`dice: …`) es texto en código y vuelve igual al leerla (los dados salieron de la wiki)', async () => {
+  it('una tirada escrita (`dice: …`) se guarda como tirada y vuelve igual al leerla', async () => {
     const markdown = 'La trampa hace `dice: 2d6+3 # Trampa del almacén` de daño; el resorte, `dice: 1d20+3`.\n'
     const { pages } = await ok200('createPages', {
       worldId,

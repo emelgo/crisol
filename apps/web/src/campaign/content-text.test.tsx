@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import { ContentText } from './content-text.tsx'
 
@@ -31,5 +32,57 @@ describe('el texto de un documento del contenido', () => {
   it('un título de nivel 1 o 2 baja a 3: el del documento ya es el de la página', () => {
     render(<ContentText text={'# Grande\n\n## Mediano'} />)
     expect(screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent)).toEqual(['Grande', 'Mediano'])
+  })
+
+  it('los enlaces a otras entradas (ADR-0033): [[@Nombre]], con texto propio, con su tipo, por clave e incrustadas', async () => {
+    const opened: string[] = []
+    render(
+      <ContentText
+        text={'Ver [[@Bola de fuego]], [[@objeto/Escudo]], [[@escudo-armadura|el escudo]] y ![[@poción-de-curación]].'}
+        onLink={(name) => opened.push(name)}
+      />
+    )
+    for (const name of ['Bola de fuego', 'Escudo', 'el escudo', 'poción-de-curación'])
+      await userEvent.click(screen.getByRole('button', { name }))
+    expect(opened).toEqual(['Bola de fuego', 'objeto/Escudo', 'escudo-armadura', 'poción-de-curación'])
+  })
+
+  it('sin a dónde abrirlos, los enlaces son solo su texto', () => {
+    render(<ContentText text="Ver [[@Bola de fuego|la bola]]." />)
+    expect(screen.queryByRole('button')).toBeNull()
+    expect(screen.getByText('la bola')).toBeDefined()
+  })
+
+  it('en una tabla, la barra escapada de un enlace (\\|) no parte la celda', () => {
+    render(
+      <ContentText
+        text={'| Objeto | Coste |\n| --- | --- |\n| [[@Espada larga\\|Espada]] | 15 po |'}
+        onLink={() => undefined}
+      />
+    )
+    expect(screen.getAllByRole('cell').map((td) => td.textContent)).toEqual(['Espada', '15 po'])
+  })
+
+  it('los recuadros con su título y su página, las citas y los secretos (que solo le llegan al máster)', () => {
+    const text = [
+      '> [!nota|p5] Aprender viendo jugar\n> Una buena forma de aprender.',
+      '> [!cita]\n> Esta historia comenzó hace 50 años.\n>\n> — Jeremy Crawford',
+      '> [!secreto]\n> Es un vampiro.',
+      '> Una cita sin más.'
+    ].join('\n\n')
+    const { container } = render(<ContentText text={text} />)
+    const note = container.querySelector('[data-callout="note"]')
+    expect(note?.textContent).toContain('Aprender viendo jugar')
+    expect(note?.textContent).toContain('p5')
+    expect(note?.textContent).toContain('Una buena forma de aprender.')
+    expect(container.querySelector('[data-callout="quote"]')?.querySelectorAll('p')).toHaveLength(2)
+    expect(container.querySelector('[data-callout="secret"]')?.textContent).toContain('Es un vampiro.')
+    expect(container.querySelector('blockquote')?.textContent).toBe('Una cita sin más.')
+  })
+
+  it('una tirada escrita (`dice: 1d20+7|+7`) enseña lo suyo (sin la bandeja de dados, como texto)', () => {
+    render(<ContentText text={'Mordisco: `dice: 1d20+7|+7`, daño `dice: 2d6+3`.'} />)
+    expect(screen.getByText('+7')).toBeDefined()
+    expect(screen.getByText('2d6+3')).toBeDefined()
   })
 })

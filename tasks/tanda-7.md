@@ -18,7 +18,7 @@ capturas de antes y después; Enrique revisa las tandas juntas.
   jugadora solo ve la ficha si su campaña ve esa entrada.
 - [x] 5. **«Entrada nueva del compendio» desde el mundo** («/» y al final de las sugerencias de `[[@`), en ventana
   flotante: el gestor de ventanas de la Mesa (`tabletop/windows.tsx`) pasa a `components/` y se monta en el mundo.
-- [x] 6. **Los dados salen de la wiki**: dejar de ofrecer `dice:` → convertir los que haya a texto en código (al cargar
+- [ ] 6. **Los dados salen de la wiki**: dejar de ofrecer `dice:` → convertir los que haya a texto en código (al cargar
   y al restaurar versiones) → barrido → quitar el nodo (`packages/editor/src/nodes/dice-roll.ts`, su vista, i18n, MCP,
   pruebas).
 - [x] 7. Crítica y audit de impeccable, arreglos, capturas y la página de revisión.

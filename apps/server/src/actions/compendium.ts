@@ -34,6 +34,7 @@ import {
   contentFingerprint,
   contentTables,
   creatureView,
+  dataWithoutSecrets,
   type Language,
   type Mechanics,
   mechanicsText,
@@ -660,6 +661,8 @@ async function contentView(ctx: ActionContext, found: Scope, wanted: string[], c
       const entry = compendiumEntry(document, seen, item)
       // Lo del mundo como tal (su id, su origen) va en `world`, solo para el máster
       const { world: _, ...copy } = structuredClone(item) as ContentItem & { world?: unknown }
+      // Sus secretos (`> [!secreto]`), solo a quien dirige
+      if (!found.master) copy.data = dataWithoutSecrets(copy.data as Record<string, unknown>)
       return [
         {
           ...copy,

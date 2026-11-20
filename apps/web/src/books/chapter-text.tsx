@@ -10,7 +10,7 @@ import { useNavigate } from '@tanstack/react-router'
 import type { Editor, JSONContent, Node } from '@tiptap/core'
 import type { Transaction } from '@tiptap/pm/state'
 import { EditorContent, type NodeViewProps, NodeViewWrapper, ReactNodeViewRenderer, useEditor } from '@tiptap/react'
-import { createContext, type MouseEvent, useContext, useEffect, useRef } from 'react'
+import { createContext, type MouseEvent, useContext, useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useApi } from '../api/context.tsx'
 import { useAnnounce } from '../components/announcer.tsx'
@@ -18,13 +18,16 @@ import { FormatMenu, TableMenu } from '../wiki/bubble-menu.tsx'
 import { withCalloutView } from '../wiki/callout.tsx'
 import { withContentEmbedView } from '../wiki/content-embed.tsx'
 import { withContentLinkView } from '../wiki/content-link.tsx'
+import { withDiceRollView } from '../wiki/dice-roll.tsx'
 import editorStyles from '../wiki/editor.module.css'
 import { EmptyHint } from '../wiki/editor.tsx'
 import { SystemImagesContext, withFileEmbedView } from '../wiki/file-embed.tsx'
+import { FloatingCard } from '../wiki/floating-card.tsx'
 import { GhostLine } from '../wiki/ghost-line.ts'
 import type { PageLinks } from '../wiki/links-context.ts'
 import linkStyles from '../wiki/page-links.module.css'
 import { LinkSuggest } from '../wiki/page-links.tsx'
+import { SectionPreview } from '../wiki/preview-card.tsx'
 import separateStyles from '../wiki/separate.module.css'
 import { withSheetView } from '../wiki/sheet-blocks.tsx'
 import { SlashMenu } from '../wiki/slash-menu.tsx'
@@ -77,6 +80,8 @@ function chapterView(node: Node) {
   if (node.name === 'contentEmbed') return withContentEmbedView(node)
   if (node.name === 'fileEmbed') return withFileEmbedView(node)
   if (node.name === 'pageLink') return withChapterLinkView(node)
+  // Una tirada escrita (`dice: 2d6+3`): se pulsa y tira en la bandeja de dados (ADR-0033)
+  if (node.name === 'diceRoll') return withDiceRollView(node)
   return withSheetView(node)
 }
 
@@ -293,6 +298,17 @@ function LocalSeparateView({ node, editor, getPos, selected }: NodeViewProps) {
   const local = useContext(LocalSeparatesContext)
   const kind = node.type.name as SeparateKind
   const documentId = String(node.attrs.documentId ?? node.attrs.id ?? '')
+  // Si se escribe en el de fuera: al pasar de leer a escribir («Editar») cambia sin que esta vista se pinte de nuevo
+  const [writable, setWritable] = useState(editor.isEditable)
+  useEffect(() => {
+    const sync = () => setWritable(editor.isEditable)
+    editor.on('update', sync)
+    editor.on('transaction', sync)
+    return () => {
+      editor.off('update', sync)
+      editor.off('transaction', sync)
+    }
+  }, [editor])
   const nested = useEditor(
     {
       extensions: [
@@ -323,8 +339,8 @@ function LocalSeparateView({ node, editor, getPos, selected }: NodeViewProps) {
     [documentId]
   )
   useEffect(() => {
-    nested?.setEditable(editor.isEditable)
-  }, [nested, editor.isEditable])
+    nested?.setEditable(writable)
+  }, [nested, writable])
 
   /** Convierte el bloque en texto normal: su contenido vuelve al cuerpo, en su sitio */
   const unwrap = () => {
@@ -357,7 +373,7 @@ function LocalSeparateView({ node, editor, getPos, selected }: NodeViewProps) {
           </svg>
           {t(kind === 'secret' ? 'chapters.secretHint' : 'separate.noteHint')}
         </span>
-        {editor.isEditable && (
+        {writable && (
           <button type="button" className={separateStyles.unwrap} onClick={unwrap}>
             {t('separate.unwrap')}
           </button>
@@ -365,7 +381,7 @@ function LocalSeparateView({ node, editor, getPos, selected }: NodeViewProps) {
       </div>
       <div data-nested="">
         <EditorContent editor={nested} />
-        {nested && editor.isEditable && (
+        {nested && writable && (
           <>
             <FormatMenu editor={nested} />
             <TableMenu editor={nested} />
@@ -380,6 +396,8 @@ function LocalSeparateView({ node, editor, getPos, selected }: NodeViewProps) {
 export interface ChapterLinkTarget {
   href: string
   here: string | null
+  /** Lo que se enseña al pasar el ratón: ese capítulo, en ese apartado */
+  preview: { chapterId: string; section: string | null; campaignId: string | null }
 }
 
 const ChapterLinksContext = createContext<{
@@ -402,17 +420,32 @@ function withChapterLinkView(node: Node) {
 function ChapterLinkView({ node }: NodeViewProps) {
   const links = useContext(ChapterLinksContext)
   const navigate = useNavigate()
+  const cardId = useId()
+  const anchor = useRef<HTMLAnchorElement>(null)
+  const [shown, setShown] = useState(false)
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const hover = (inside: boolean) => {
+    clearTimeout(timer.current)
+    timer.current = setTimeout(() => setShown(inside), inside ? 300 : 200)
+  }
+  useEffect(() => () => clearTimeout(timer.current), [])
   const title = String(node.attrs.title ?? '').trim()
-  const anchor = (node.attrs.anchor as string | null)?.trim() || null
+  const section = (node.attrs.anchor as string | null)?.trim() || null
   const label = (node.attrs.label as string | null) || null
-  const shown = label ?? (title || anchor || '')
-  const target = links?.linkTo(anchor ? `${title}#${anchor}` : title) ?? null
+  const text = label ?? (title || section || '')
+  const target = links?.linkTo(section ? `${title}#${section}` : title) ?? null
   return (
     <NodeViewWrapper as="span">
       {target ? (
         <a
+          ref={anchor}
           href={target.href}
           className={linkStyles.link}
+          aria-describedby={shown ? cardId : undefined}
+          onMouseEnter={() => hover(true)}
+          onMouseLeave={() => hover(false)}
+          onFocus={() => setShown(true)}
+          onBlur={() => setShown(false)}
           onClick={(event: MouseEvent<HTMLAnchorElement>) => {
             if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return
             event.preventDefault()
@@ -420,10 +453,15 @@ function ChapterLinkView({ node }: NodeViewProps) {
             void navigate({ href: target.href })
           }}
         >
-          {shown}
+          {text}
         </a>
       ) : (
-        <span>{shown}</span>
+        <span>{text}</span>
+      )}
+      {target && shown && (
+        <FloatingCard anchor={anchor.current} id={cardId} onEnter={() => hover(true)} onLeave={() => hover(false)}>
+          <SectionPreview {...target.preview} />
+        </FloatingCard>
       )}
     </NodeViewWrapper>
   )

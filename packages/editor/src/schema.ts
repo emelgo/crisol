@@ -14,6 +14,7 @@ import { Callout } from './nodes/callout.ts'
 import { Chart } from './nodes/chart.ts'
 import { ContentEmbed } from './nodes/content-embed.ts'
 import { ContentLink } from './nodes/content-link.ts'
+import { DiceRoll } from './nodes/dice-roll.ts'
 import { FileEmbed } from './nodes/file-embed.ts'
 import { PageEmbed } from './nodes/page-embed.ts'
 import { PageLink } from './nodes/page-link.ts'
@@ -93,6 +94,7 @@ export function editorExtensions(options: EditorOptions = {}): Extensions {
     Box,
     view(ContentLink),
     view(PageLink),
+    view(DiceRoll),
     view(PageEmbed),
     view(FileEmbed),
     // Después de la página incrustada: así `![[@Nombre]]` es una ficha y no una página «@Nombre»

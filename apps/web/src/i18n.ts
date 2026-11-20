@@ -81,6 +81,18 @@ export const es = {
     open: 'Notas',
     openOf: 'Notas de {{name}}'
   },
+  // Una tirada escrita en una página
+  diceRoll: {
+    roll: 'Tirar {{formula}}',
+    rollNamed: 'Tirar {{formula}} · {{label}}',
+    wrong: 'Esta tirada no se entiende: {{why}}',
+    change: 'Cambiar la tirada',
+    title: 'La tirada',
+    formula: 'Tirada',
+    label: 'Nombre',
+    optional: 'Opcional',
+    done: 'Listo'
+  },
   // Los dados de una campaña (docs/specs/dados.md)
   dice: {
     clearRolls: 'Vaciar',
@@ -452,6 +464,7 @@ export const es = {
   },
   // El compendio de una campaña: el contenido de su sistema
   compendium: {
+    linkMissing: '«{{name}}» no está en el compendio',
     bookIndex: 'Lo que trae, por tipo',
     bookEmpty: 'Este libro aún no trae nada.',
     view: 'Ver',
@@ -1153,6 +1166,8 @@ export const es = {
     horizontalRule: 'Separador',
     pageLink: 'Enlace a página',
     pageLinkHint: 'O escribe [[',
+    diceRoll: 'Tirada',
+    diceRollHint: 'Se pulsa y tira',
     pageEmbed: 'Incrustar página',
     pageEmbedHint: 'O una sección',
     contentEmbed: 'Ficha del compendio',
@@ -3508,6 +3523,8 @@ export const es = {
   // Los libros de un sistema (ADR-0021, systems/system.tsx)
   chapters: {
     masterTag: 'Solo para el máster',
+    edit: 'Editar',
+    stopEditing: 'Dejar de editar',
     onlyMaster: 'Solo para el máster',
     forEveryone: 'Que lo lean los jugadores',
     index: 'Capítulos',
@@ -4180,6 +4197,7 @@ export const es = {
     danger: 'Peligro',
     'read-aloud': 'Leer en voz alta',
     quote: 'Cita',
+    secret: 'Secreto',
     title: 'Título del recuadro ({{kind}})',
     page: 'p{{page}}'
   },

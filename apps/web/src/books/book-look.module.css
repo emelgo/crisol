@@ -19,6 +19,28 @@
   line-height: 1.6;
 }
 
+/* El texto, a lo ancho de su caja (como en 5etools), también el del compendio */
+.book.book,
+.book.book > * {
+  max-inline-size: none;
+}
+
+/* Las listas de lo que lleva nombre delante («**Sé justo.** Trata a…», rd__list-hang-notitle): sin viñeta y con
+   sangría francesa */
+.book.book ul:has(> li > :is(p:first-child > strong:first-child, strong:first-child)) {
+  padding-inline-start: 0;
+  list-style: none;
+}
+
+.book.book ul:has(> li > :is(p:first-child > strong:first-child, strong:first-child)) > li {
+  padding-inline-start: 1.1em;
+  text-indent: -1.1em;
+}
+
+.book.book ul:has(> li > :is(p:first-child > strong:first-child, strong:first-child)) > li > p {
+  margin-block-end: 3px;
+}
+
 /* Los títulos: en versalitas, de su color; el primero, subrayado (rd__h--1 y rd__h--2) */
 .book.book :is(h1, h2, h3) {
   display: block;
@@ -117,6 +139,11 @@
   border: 1px solid var(--book-inset-border);
   border-inline: 2px solid var(--book-inset-border);
   background: var(--book-readaloud-bg);
+}
+
+/* Un secreto (solo lo ve el máster): la caja, con una raya del acento a la izquierda */
+.book.book [data-callout="secret"]:not([data-callout="quote"]) {
+  border-inline-start: 4px solid var(--color-accent);
 }
 
 /* Una cita (rd__quote): las palabras, en cursiva, sin caja */

@@ -94,7 +94,7 @@ test('los capítulos de un libro: el dueño del sistema los escribe y los ordena
     .getByRole('navigation', { name: 'Anterior y siguiente' })
     .getByRole('link', { name: /Siguiente/ })
     .click()
-  await expect(page.getByLabel('Título del capítulo')).toHaveValue('La magia')
+  await expect(page.getByRole('heading', { level: 2, name: 'La magia' })).toBeVisible()
   await expect(index.getByRole('link', { name: 'La magia' })).toHaveAttribute('aria-current', 'page')
 
   // Subirlo, desde su menú
@@ -181,12 +181,10 @@ test('el aspecto de libro (ADR-0033): recuadros con título, citas, imágenes co
   })
   await api('updateCampaign', { campaignId, system: five })
   await page.goto(`/sistemas/${five}/libros/srd51?vista=capitulos&capitulo=${first.id}`)
-  // Quien lo escribe, su título en su sitio, para cambiarlo
-  await expect(page.getByRole('textbox', { name: 'Título del recuadro (Nota)' })).toHaveValue('Aprender viendo jugar')
+  // Se abre para leer, también para su dueño
+  await expect(page.getByText('Aprender viendo jugar')).toBeVisible()
   await expect(page.getByText('Luca Bancone')).toBeVisible()
-  await expect(page.getByRole('textbox', { name: 'Pie de la imagen' })).toHaveValue(
-    'No hace falta una mesa mágica, pero ¿a que sería divertido?'
-  )
+  await expect(page.getByText('No hace falta una mesa mágica, pero ¿a que sería divertido?')).toBeVisible()
   const link = page.getByRole('link', { name: 'Capítulo 2', exact: true })
   await expect(link).toHaveAttribute('href', new RegExp(`capitulo=${second.id}`))
   await settled(page)
@@ -196,7 +194,7 @@ test('el aspecto de libro (ADR-0033): recuadros con título, citas, imágenes co
   // A otro capítulo, a su sección
   await page.getByRole('link', { name: 'sus encuentros' }).click()
   await expect(page).toHaveURL(new RegExp(`capitulo=${second.id}`))
-  await expect(page.getByLabel('Título del capítulo')).toHaveValue('Capítulo 2: Más reglas')
+  await expect(page.getByRole('heading', { level: 2, name: 'Capítulo 2: Más reglas' })).toBeVisible()
 
   // Como lo lee una jugadora: sin rótulos en los recuadros sin título, el pie y el crédito bajo la imagen
   const ana = await newPlayer(browser, invitation, 'Ana')

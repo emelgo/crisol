@@ -192,6 +192,28 @@ describe('las tablas del compendio (docs/specs/tablas-compendio.md)', () => {
     expect(again.roll.table.results.map((r: { text: string }) => r.text)).toEqual(['Un cofre', 'Otro cofre'])
   })
 
+  it('los secretos del texto de una entrada (> [!secreto], ADR-0033): solo al máster', async () => {
+    const system = await ok200('getSystem', { systemId: five })
+    const cripta = {
+      type: 'tabla',
+      key: 'cripta',
+      source: null,
+      data: {
+        name: { es: 'La cripta' },
+        description: { es: 'Huele a moho.\n\n> [!secreto]\n> El sacerdote es un vampiro.\n\nFin.' }
+      },
+      table: { formula: '1d2', rows: [{ id: 'a', from: 1, to: 2, text: 'Nada' }] }
+    }
+    await ok200('putSystemContent', { systemId: five, version: system.version, items: [cripta] })
+    const read = async (cookie?: string) =>
+      (await ok200('getCampaignContent', { campaignId, keys: ['cripta'] }, cookie)).items[0].data.description.es
+    expect(await read()).toContain('vampiro')
+    const forPlayer = await read(ana.cookie)
+    expect(forPlayer).not.toContain('vampiro')
+    expect(forPlayer).toContain('Huele a moho.')
+    expect(forPlayer).toContain('Fin.')
+  })
+
   it('la jugadora tira una tabla del sistema que lleva a una del mundo: no llega a ella ni ve su clave', async () => {
     await ok200('putWorldContent', { worldId, systemId: five, items: [tesoros] })
     const system = await ok200('getSystem', { systemId: five })

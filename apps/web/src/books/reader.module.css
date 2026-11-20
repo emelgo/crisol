@@ -112,15 +112,9 @@
   color: var(--color-on-accent);
 }
 
-/* Lo que se lee: la caja, tan ancha como las del esqueleto de las páginas; dentro, la columna de lectura, centrada */
+/* Lo que se lee: la caja, tan ancha como las del esqueleto de las páginas, y el texto a lo ancho de ella (como 5etools) */
 .reading {
   padding-block-start: var(--space-6);
-}
-
-.reading > * {
-  inline-size: 100%;
-  max-inline-size: 72ch;
-  margin-inline: auto;
 }
 
 .open {
@@ -225,7 +219,7 @@
 
 /* El texto, a lo que se lee bien (unos 70 caracteres), pegado a su título */
 .text {
-  max-inline-size: 70ch;
+  max-inline-size: none;
 }
 
 .text > :first-child {
