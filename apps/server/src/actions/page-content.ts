@@ -5,7 +5,7 @@
  */
 import { randomUUID } from 'node:crypto'
 import { createPage, createPages, editPage, type PageProperty, pagePanel, readPage } from '@crisol/contracts'
-import { calendarsRepo, copyRepo, documentsRepo, pagesRepo, templatesRepo, worldsRepo } from '@crisol/db'
+import { calendarsRepo, copyRepo, documentsRepo, mapsRepo, pagesRepo, templatesRepo, worldsRepo } from '@crisol/db'
 import {
   applyTemplate,
   ForbiddenError,
@@ -34,7 +34,7 @@ import {
 } from '@crisol/editor/markdown'
 import type { JSONContent } from '@tiptap/core'
 import { pagesChanged } from '../realtime/events.ts'
-import { readDocument, stateOf, writeDocument } from '../wiki/content.ts'
+import { type DocumentRef, readDocument, stateOf, writeDocument } from '../wiki/content.ts'
 import { copyDocuments } from '../wiki/copy.ts'
 import {
   calendarsFor,
@@ -427,12 +427,22 @@ async function createBatch(
   return input.pages.map((page) => byKey.get(page.key)).filter((page) => page !== undefined)
 }
 
+/** El documento de una pestaña de texto de la página; si no es de ella, no es de texto o no la ve, no está */
+async function textTab(ctx: ActionContext, pageId: string, tabId: string, view?: WikiView): Promise<DocumentRef> {
+  const tab = await mapsRepo.findTab(ctx.db, tabId)
+  if (!tab || tab.pageId !== pageId || tab.kind !== 'text' || !tab.documentId) throw new NotFoundError('tab')
+  if (view && !view.seesTab({ id: tab.id, pageId: tab.pageId, hidden: tab.hidden })) throw new NotFoundError('tab')
+  return { kind: 'separate', documentId: tab.documentId, pageId }
+}
+
 export const pageContentActions = [
-  implement(readPage, async (ctx, { pageId, ids, ...as }) => {
+  implement(readPage, async (ctx, { pageId, ids, tabId, ...as }) => {
     const { page, wiki, view: reading } = await viewedPage(ctx, pageId, as)
     const view = pageViewFor(reading, await pageView(ctx, pageId))
+    // El texto principal o el de una pestaña de texto (que no lleva secretos)
+    const ref = tabId ? await textTab(ctx, pageId, tabId, reading) : ({ kind: 'body', pageId } as const)
     // Un jugador: sin lo que no ve, y los enlaces a lo que no conoce, como texto (lo que se escribió)
-    const read = filterBody(await readDocument(ctx, { kind: 'body', pageId }), reading, pageId) ?? { type: 'doc' }
+    const read = filterBody(await readDocument(ctx, ref), reading, pageId) ?? { type: 'doc' }
     const body = reading.full ? read : (unresolvedAsText(read) ?? { type: 'doc' })
     // Solo los secretos que son de esta página
     const own = new Set(
@@ -452,7 +462,8 @@ export const pageContentActions = [
     const nameOf = linkName(await worldNames(ctx, wiki.worldId))
     const calendars = await calendarsFor(ctx.db, wiki.worldId, view.properties)
     const markdown = pageToMarkdown({
-      properties: markdownProperties(calendars, view.properties, reading.full),
+      // Una pestaña, solo su texto (las propiedades son de la página)
+      properties: tabId ? [] : markdownProperties(calendars, view.properties, reading.full),
       body,
       separate: (documentId) => contents.get(documentId) ?? null,
       pageTitle: (id) => nameOf(id) || titles.get(id) || id,
@@ -542,6 +553,10 @@ export const pageContentActions = [
 
   implement(editPage, async (ctx, input) => {
     const { page, wiki, player } = await writablePage(ctx, input)
+    // El texto principal o el de una pestaña de texto (solo el máster; sin YAML ni secretos)
+    if (player && input.tabId)
+      throw new InvalidRequestError('PLAYER_PAGE', 'en una página de jugadores solo se escribe su texto')
+    const ref: DocumentRef = input.tabId ? await textTab(ctx, page.id, input.tabId) : { kind: 'body', pageId: page.id }
     // Lo que se estaba escribiendo queda en su sesión, antes de lo de Claude
     await ctx.collab?.closeSessions(page.id)
     // Con plantilla: lo que le falta (campos, bloques y apartados al final), sin borrar nada (ADR-0009)
@@ -553,6 +568,10 @@ export const pageContentActions = [
     // Un jugador no cambia los campos (ni con el YAML del texto)
     if (player && parsed && parsed.properties.length > 0)
       throw new InvalidRequestError('PLAYER_PAGE', 'en una página de jugadores solo se escribe su texto')
+    if (input.tabId && parsed && parsed.properties.length > 0)
+      throw new InvalidRequestError('TAB_TEXT', 'una pestaña no lleva YAML: las propiedades son de la página')
+    if (input.tabId && parsed && parsed.separates.length > 0)
+      throw new InvalidRequestError('TAB_TEXT', 'una pestaña no lleva secretos ni notas ocultas: se oculta entera')
     // Las propiedades: las que se dan; o, al cambiar el cuerpo entero, las de su YAML
     const fromYaml =
       bodyInput?.mode === 'replace' && parsed && parsed.properties.length > 0 ? parsed.properties : undefined
@@ -569,7 +588,10 @@ export const pageContentActions = [
         : undefined
     const properties = written ? stampDates(await calendarsFor(ctx.db, wiki.worldId, written), written) : undefined
 
-    const stored = await documentsRepo.findBody(ctx.db, page.id)
+    const stored =
+      ref.kind === 'body'
+        ? await documentsRepo.findBody(ctx.db, page.id)
+        : await documentsRepo.findSeparate(ctx.db, ref.documentId)
     const changedSinceRequest = Boolean(ctx.requestedAt && stored && stored.updatedAt > ctx.requestedAt)
     const edit: BodyEdit | null = bodyInput
       ? bodyInput.mode === 'block'
@@ -582,7 +604,7 @@ export const pageContentActions = [
     // El cuerpo nuevo, comprobado contra lo de ahora antes de apuntar nada
     let incoming: JSONContent[] = []
     if (edit && parsed) {
-      const current = await readDocument(ctx, { kind: 'body', pageId: page.id })
+      const current = await readDocument(ctx, ref)
       try {
         editBody(current, edit, [])
       } catch (error) {
@@ -642,6 +664,7 @@ export const pageContentActions = [
       ...(properties ? { properties: true } : {}),
       ...(input.icon !== undefined ? { icon: input.icon } : {}),
       ...(bodyInput ? { body: bodyInput.mode } : {}),
+      ...(input.tabId ? { tabId: input.tabId } : {}),
       ...(applied ? { template: applied.template.name } : {})
     }
     const pagePatch = {
@@ -658,7 +681,7 @@ export const pageContentActions = [
       try {
         await writeDocument(
           ctx,
-          { kind: 'body', pageId: page.id },
+          ref,
           { userId: ctx.actor.userId, worldId: wiki.worldId },
           (current) => {
             const result = editBody(current, edit, incoming)

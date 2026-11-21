@@ -66,7 +66,8 @@ export async function findSeparate(db: Database, documentId: string) {
       pageId: documents.pageId,
       worldId: documents.worldId,
       kind: documents.kind,
-      state: documents.state
+      state: documents.state,
+      updatedAt: documents.updatedAt
     })
     .from(documents)
     .where(and(eq(documents.id, documentId), inArray(documents.kind, ['secret', 'note', 'tab'])))
