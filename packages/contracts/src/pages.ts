@@ -427,6 +427,10 @@ export const readPage = defineAction({
   input: z.object({
     pageId: z.uuid(),
     ids: z.boolean().optional().describe('Los ^id de los bloques de primer nivel, para cambiar uno con editPage'),
+    tabId: z
+      .uuid()
+      .optional()
+      .describe('El texto de una pestaña de texto de la página (en markdown), en lugar de su texto principal'),
     ...readAs
   }),
   output: z.object({
@@ -546,7 +550,7 @@ const propertyInput = z.discriminatedUnion('type', [
 export const editPage = defineAction({
   name: 'editPage',
   kind: 'write',
-  description: `Cambia una página: su título, su icono, sus propiedades (todas, como se den) o su cuerpo, en ${MARKDOWN_HELP}. El cuerpo: append añade al final; replace lo cambia entero (y su YAML, si lo trae, las propiedades); block cambia el bloque blockId por lo que se dé (lee la página con ids); section cambia lo que hay debajo del título section (por su texto o su id), hasta el siguiente título de su nivel. Si la página está abierta, el cambio se ve al momento`,
+  description: `Cambia una página: su título, su icono, sus propiedades (todas, como se den) o su cuerpo, en ${MARKDOWN_HELP}. El cuerpo: append añade al final; replace lo cambia entero (y su YAML, si lo trae, las propiedades); block cambia el bloque blockId por lo que se dé (lee la página con ids); section cambia lo que hay debajo del título section (por su texto o su id), hasta el siguiente título de su nivel. Con tabId, el cuerpo se escribe en esa pestaña de texto de la página (créala con createPageTab; léela con readPage y su tabId), sin YAML ni secretos: la pestaña entera se oculta con updatePageTab. Si la página está abierta, el cambio se ve al momento`,
   input: z
     .object({
       pageId: z.uuid(),
@@ -569,6 +573,10 @@ export const editPage = defineAction({
         .refine((body) => body.mode !== 'block' || body.blockId, { message: 'block necesita blockId' })
         .refine((body) => body.mode !== 'section' || body.section, { message: 'section necesita section' })
         .optional(),
+      tabId: z
+        .uuid()
+        .optional()
+        .describe('Con body: escribirlo en esta pestaña de texto, en lugar del texto principal'),
       template: z
         .string()
         .trim()
@@ -588,7 +596,8 @@ export const editPage = defineAction({
         input.template !== undefined,
       { message: 'Nada que cambiar' }
     )
-    .refine((input) => !(input.template && input.body), { message: 'template no va con body' }),
+    .refine((input) => !(input.template && input.body), { message: 'template no va con body' })
+    .refine((input) => !input.tabId || input.body, { message: 'tabId necesita body' }),
   output: z.object({
     page,
     changedBlocks: z.array(z.string()).describe('Los ids de los bloques de primer nivel que se escribieron'),

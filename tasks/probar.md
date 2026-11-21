@@ -9,6 +9,13 @@ final) y de ahí a su arreglo, o a `docs/diseno.md` si es una norma de la interf
   de propietario.
 - **En local**, con los cambios al momento: http://localhost:5173 (lo arranco cuando haga falta).
 
+## La IA escribe en las pestañas de texto (rama `mejora/editar-pestanas`; sin migración; 2026-11-21)
+
+- [ ] Pídele a la IA que cree una pestaña de texto en una página y la escriba (`editar_pagina` con `tabId`): el texto
+      sale en la pestaña y el principal no cambia.
+- [ ] Que cambie solo una sección de esa pestaña: lo demás se queda.
+- [ ] Si intenta meter un secreto o un YAML en la pestaña, la app se lo rechaza (la pestaña entera se oculta).
+
 ## La ficha de cada tipo en el compendio (rama `compendio/ficha-por-tipo`; sin migración; 2026-11-20; ADR-0033)
 
 - [ ] **En el 5e de ejemplo**: una espada larga dice «Arma Marcial» en cursiva bajo el nombre, «3 lb., 15 po» a la

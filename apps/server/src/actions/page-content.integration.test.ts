@@ -227,6 +227,55 @@ describe('Claude lee y escribe páginas en Markdown', () => {
     })
   })
 
+  it('escribe y lee el texto de una pestaña de texto, sin tocar el principal', async () => {
+    const { pages } = await ok200('createPages', {
+      worldId,
+      parentId: null,
+      pages: [{ key: 'p', title: 'Puerto Ceniza', markdown: '---\nresumen: Puerto libre\n---\nEl texto principal.' }]
+    })
+    const pageId = pages[0].id
+    const tab = await ok200('createPageTab', { pageId, kind: 'text', name: 'Gobierno' })
+    await ok200('editPage', {
+      pageId,
+      tabId: tab.id,
+      body: { mode: 'replace', markdown: '## Consejo\n\nSiete mercaderes.\n\n## Guardia\n\nPocos y mal pagados.' }
+    })
+    await ok200('editPage', {
+      pageId,
+      tabId: tab.id,
+      body: { mode: 'section', section: 'Guardia', markdown: 'Ninguna.' }
+    })
+    const read = await ok200('readPage', { pageId, tabId: tab.id })
+    expect(read.markdown).toBe('## Consejo\n\nSiete mercaderes.\n\n## Guardia\n\nNinguna.\n')
+    const content = await ok200('getPageContent', { pageId, tabId: tab.id })
+    expect(JSON.stringify(content.blocks)).toContain('Siete mercaderes.')
+    // El principal y sus propiedades, como estaban
+    expect((await ok200('readPage', { pageId })).markdown).toBe(
+      '---\nresumen: Puerto libre\n---\nEl texto principal.\n'
+    )
+
+    // Sin YAML ni secretos; ni una pestaña de otra página o que no es de texto
+    const yaml = await call('editPage', {
+      pageId,
+      tabId: tab.id,
+      body: { mode: 'replace', markdown: '---\na: b\n---\nx' }
+    })
+    expect(yaml.json()).toMatchObject({ code: 'TAB_TEXT' })
+    const secret = await call('editPage', {
+      pageId,
+      tabId: tab.id,
+      body: { mode: 'append', markdown: '> [!secreto]\n> Nadie lo sabe.' }
+    })
+    expect(secret.json()).toMatchObject({ code: 'TAB_TEXT' })
+    const other = (await ok200('createPage', { worldId, title: 'Otra' })).id
+    const foreign = await call('editPage', { pageId: other, tabId: tab.id, body: { mode: 'append', markdown: 'x' } })
+    expect(foreign.statusCode).toBe(404)
+    const map = await ok200('createPageTab', { pageId, kind: 'map', name: 'Costa' })
+    const notText = await call('editPage', { pageId, tabId: map.id, body: { mode: 'append', markdown: 'x' } })
+    expect(notText.statusCode).toBe(404)
+    expect((await call('editPage', { pageId, tabId: tab.id, title: 'Nuevo' })).statusCode).toBe(400)
+  })
+
   it('un secreto que ya estaba (mismo ^s-id) cambia su documento; uno nuevo crea otro; nunca entra en el cuerpo', async () => {
     const { pages } = await ok200('createPages', {
       worldId,
